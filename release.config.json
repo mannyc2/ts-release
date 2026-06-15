@@ -1,0 +1,49 @@
+{
+  "identity": {
+    "name": "@cjpher/ts-release",
+    "version": "0.0.0",
+    "commit": "HEAD",
+    "tag": "v0.0.0",
+    "notes": "Initial release of the plan-first release package."
+  },
+  "artifacts": [
+    {
+      "id": "npm-package",
+      "path": ".",
+      "format": "directory",
+      "consumers": ["npm"]
+    },
+    {
+      "id": "package-tarball",
+      "path": ".release/artifacts/cjpher-ts-release-0.0.0.tgz",
+      "format": "tarball",
+      "consumers": ["github"]
+    }
+  ],
+  "targets": [
+    {
+      "_tag": "NpmRegistryTarget",
+      "id": "npm",
+      "registry": "https://registry.npmjs.org",
+      "packagePath": ".",
+      "tokenEnv": "NPM_TOKEN",
+      "provenance": true,
+      "dryRunSupport": "native",
+      "mutability": "immutable",
+      "recovery": "publish-new-version"
+    },
+    {
+      "_tag": "GitHubReleaseTarget",
+      "id": "github",
+      "repository": "cjpher/ts-release",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false,
+      "dryRunSupport": "native",
+      "mutability": "mutable-release",
+      "recovery": "delete-and-recreate"
+    }
+  ],
+  "strict": true,
+  "evidenceDirectory": ".release/evidence"
+}

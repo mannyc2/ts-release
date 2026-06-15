@@ -1,0 +1,11 @@
+dist/
+coverage/
+node_modules/
+.repos/
+.release/
+plans/
+AGENTS.md
+.tmp-*
+.env*
+*.log
+.DS_Store

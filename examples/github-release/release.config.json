@@ -1,0 +1,31 @@
+{
+  "identity": {
+    "name": "release-example-github",
+    "version": "0.1.0",
+    "commit": "example",
+    "tag": "v0.1.0",
+    "notes": "Example GitHub release"
+  },
+  "artifacts": [
+    {
+      "id": "archive",
+      "path": "artifacts/release-example-github-0.1.0.tgz",
+      "format": "tarball",
+      "consumers": ["github"]
+    }
+  ],
+  "targets": [
+    {
+      "_tag": "GitHubReleaseTarget",
+      "id": "github",
+      "repository": "owner/repo",
+      "draft": true,
+      "prerelease": false,
+      "dryRunSupport": "native",
+      "mutability": "mutable-release",
+      "recovery": "delete-and-recreate"
+    }
+  ],
+  "strict": true,
+  "evidenceDirectory": ".release/evidence"
+}

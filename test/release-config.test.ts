@@ -40,7 +40,13 @@ describe("repository release config", () => {
     expect(plan.operations.map((operation) => operation.id)).toContain("github:gh-release-create")
 
     const publishOperations = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
+    const npmPublish = publishOperations.find((operation) => operation.id === "npm:npm-publish")
     expect(publishOperations.length).toBeGreaterThan(0)
     expect(publishOperations.every((operation) => operation.gate.requiresExecute)).toBe(true)
+    expect(npmPublish?._tag).toBe("PublishCommandOperation")
+    if (npmPublish?._tag === "PublishCommandOperation") {
+      expect(npmPublish.command.args).toContain("--access")
+      expect(npmPublish.command.args).toContain("public")
+    }
   })
 })

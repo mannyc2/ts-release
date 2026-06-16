@@ -13,6 +13,10 @@
   "bugs": {
     "url": "https://github.com/mannyc2/ts-release/issues"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "keywords": [
     "ts-release",
     "publishing",

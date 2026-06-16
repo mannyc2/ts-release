@@ -305,6 +305,37 @@ describe("SPEC completeness", () => {
     expect(renderPlanText(provenancePlan)).toContain("npm publish . --registry https://registry.npmjs.org --provenance")
   })
 
+  test("adds npm access only when target policy enables it", async () => {
+    const publicAccessConfig = minimalConfig.replace(
+      "\"tokenEnv\":\"NPM_TOKEN\",",
+      "\"tokenEnv\":\"NPM_TOKEN\",\"access\":\"public\","
+    )
+    const publicAccessPlan = await runEffect(createPlan(publicAccessConfig), TestLayer)
+    const defaultPlan = await runEffect(createPlan(), TestLayer)
+
+    const publicAccessPublish = publicAccessPlan.operations.find((operation) => operation.id === "npm:npm-publish")
+    const defaultPublish = defaultPlan.operations.find((operation) => operation.id === "npm:npm-publish")
+
+    expect(publicAccessPublish?._tag).toBe("PublishCommandOperation")
+    expect(defaultPublish?._tag).toBe("PublishCommandOperation")
+    if (publicAccessPublish?._tag === "PublishCommandOperation") {
+      expect(publicAccessPublish.command.args).toEqual([
+        "publish",
+        ".",
+        "--registry",
+        "https://registry.npmjs.org",
+        "--access",
+        "public"
+      ])
+    }
+    if (defaultPublish?._tag === "PublishCommandOperation") {
+      expect(defaultPublish.command.args).not.toContain("--access")
+    }
+    expect(renderPlanText(publicAccessPlan)).toContain(
+      "npm publish . --registry https://registry.npmjs.org --access public"
+    )
+  })
+
   test("plans Homebrew tap capabilities and formula rendering", async () => {
     const plan = await runEffect(createPlan(homebrewConfig()), HomebrewLayer)
     const homebrew = plan.targetCapabilities.find((capability) => capability.targetId === "homebrew")

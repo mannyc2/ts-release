@@ -80,6 +80,9 @@ const npmDryRunOperation = (target: NpmRegistryTarget): Operation =>
 
 const npmPublishArgs = (target: NpmRegistryTarget): ReadonlyArray<string> => {
   const args = ["publish", target.packagePath, "--registry", target.registry]
+  if (target.access !== undefined) {
+    args.push("--access", target.access)
+  }
   if (target.provenance === true) {
     args.push("--provenance")
   }

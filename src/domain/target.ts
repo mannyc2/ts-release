@@ -20,11 +20,15 @@ export type TargetRecovery = typeof TargetRecovery.Type
 export const TargetValidationStrategy = Schema.Literals(["native-command", "simulated-plan", "skipped"])
 export type TargetValidationStrategy = typeof TargetValidationStrategy.Type
 
+export const NpmAccess = Schema.Literals(["public", "restricted"])
+export type NpmAccess = typeof NpmAccess.Type
+
 export class NpmRegistryTarget extends Schema.TaggedClass<NpmRegistryTarget>()("NpmRegistryTarget", {
   id: TargetId,
   registry: Schema.String,
   packagePath: Schema.String,
   tokenEnv: Schema.optionalKey(Schema.String),
+  access: Schema.optionalKey(NpmAccess),
   provenance: Schema.optionalKey(Schema.Boolean),
   dryRunSupport: TargetDryRunSupport,
   mutability: TargetMutability,

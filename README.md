@@ -107,6 +107,7 @@ The helper provides the Bun host and live target registry internally, so callers
       "registry": "https://registry.npmjs.org",
       "packagePath": ".",
       "tokenEnv": "NPM_TOKEN",
+      "access": "public",
       "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
@@ -241,7 +242,7 @@ Example configs are checked through the same programmatic CLI command path:
 bun run check:examples
 ```
 
-This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` to mean the current committed checkout for a stored self-release config. The local first-release config uses CLI authentication; enable npm provenance for CI-based publishes where the registry can generate provenance.
+This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` to mean the current committed checkout for a stored self-release config. The local first-release config uses a local `NPM_TOKEN` for npm and GitHub CLI authentication for GitHub; enable npm provenance for CI-based publishes where the registry can generate provenance.
 
 ```sh
 bun run check:self-release-config

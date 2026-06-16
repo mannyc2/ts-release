@@ -1,7 +1,7 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
-import { resolve } from "node:path"
+import { isAbsolute, normalize, resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as ts from "typescript"
 import { bannedAggregateExports, expectedPublicExports } from "./lib/public-api-policy.js"
@@ -118,11 +118,21 @@ const packageImportSpecifier = (packageName: string, subpath: string): string =>
   subpath === "." ? packageName : `${packageName}/${subpath.slice(2)}`
 
 const checkTargetExists = (target: FileTarget, failures: Array<string>): void => {
-  if (!target.path.startsWith("./")) {
+  const packageRelativeTarget = target.path.startsWith("./")
+    ? target.path
+    : target.label.startsWith("bin.")
+    ? target.path
+    : undefined
+
+  if (packageRelativeTarget === undefined) {
     failures.push(`${target.label} must use a relative package path, got ${target.path}`)
     return
   }
-  const absolutePath = resolve(root, target.path)
+  if (isAbsolute(packageRelativeTarget) || normalize(packageRelativeTarget).startsWith("..")) {
+    failures.push(`${target.label} must stay inside the package, got ${target.path}`)
+    return
+  }
+  const absolutePath = resolve(root, packageRelativeTarget)
   if (!existsSync(absolutePath)) {
     failures.push(`${target.label} points to missing file ${target.path}`)
   }

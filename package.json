@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mannyc2/ts-release.git"
+    "url": "git+https://github.com/mannyc2/ts-release.git"
   },
   "homepage": "https://github.com/mannyc2/ts-release#readme",
   "bugs": {
@@ -24,7 +24,7 @@
     "bun": ">=1.3.14"
   },
   "bin": {
-    "release": "./dist/cli/main.js"
+    "release": "dist/cli/main.js"
   },
   "sideEffects": [
     "./dist/cli/main.js"

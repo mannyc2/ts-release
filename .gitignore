@@ -7,5 +7,6 @@ plans/
 AGENTS.md
 .tmp-*
 .env*
+.npmrc
 *.log
 .DS_Store

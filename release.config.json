@@ -26,7 +26,6 @@
       "id": "npm",
       "registry": "https://registry.npmjs.org",
       "packagePath": ".",
-      "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"

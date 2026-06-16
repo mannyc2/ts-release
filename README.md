@@ -241,7 +241,7 @@ Example configs are checked through the same programmatic CLI command path:
 bun run check:examples
 ```
 
-This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` to mean the current committed checkout for a stored self-release config.
+This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` to mean the current committed checkout for a stored self-release config. The local first-release config uses CLI authentication; enable npm provenance for CI-based publishes where the registry can generate provenance.
 
 ```sh
 bun run check:self-release-config

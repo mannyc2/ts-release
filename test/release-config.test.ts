@@ -14,7 +14,7 @@ const TestLayer = Layer.mergeAll(
   makeTestReleaseHostLayer({
     directories: new Set(["."]),
     files: new Map([
-      [".release/artifacts/cjpher-ts-release-0.0.0.tgz", "package tarball fixture\n"]
+      [".release/artifacts/mannyc1-ts-release-0.0.0.tgz", "package tarball fixture\n"]
     ]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
@@ -34,7 +34,7 @@ describe("repository release config", () => {
       TestLayer
     )
 
-    expect(plan.identity.name).toBe("@cjpher/ts-release")
+    expect(plan.identity.name).toBe("@mannyc1/ts-release")
     expect(plan.targets.map((target) => target.id).sort()).toEqual(["github", "npm"])
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
     expect(plan.operations.map((operation) => operation.id)).toContain("github:gh-release-create")

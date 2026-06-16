@@ -1,6 +1,6 @@
 {
   "identity": {
-    "name": "@cjpher/ts-release",
+    "name": "@mannyc1/ts-release",
     "version": "0.0.0",
     "commit": "HEAD",
     "tag": "v0.0.0",
@@ -15,7 +15,7 @@
     },
     {
       "id": "package-tarball",
-      "path": ".release/artifacts/cjpher-ts-release-0.0.0.tgz",
+      "path": ".release/artifacts/mannyc1-ts-release-0.0.0.tgz",
       "format": "tarball",
       "consumers": ["github"]
     }
@@ -26,7 +26,6 @@
       "id": "npm",
       "registry": "https://registry.npmjs.org",
       "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
       "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
@@ -35,8 +34,7 @@
     {
       "_tag": "GitHubReleaseTarget",
       "id": "github",
-      "repository": "cjpher/ts-release",
-      "tokenEnv": "GH_TOKEN",
+      "repository": "mannyc2/ts-release",
       "draft": true,
       "prerelease": false,
       "dryRunSupport": "native",

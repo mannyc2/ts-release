@@ -1,6 +1,6 @@
 # release
 
-`@cjpher/ts-release` turns release intent into explicit, inspectable, repeatable publishing operations.
+`@mannyc1/ts-release` turns release intent into explicit, inspectable, repeatable publishing operations.
 
 The default workflow is plan-first:
 
@@ -22,11 +22,11 @@ The package intentionally avoids aggregate library barrels. The root `release` e
 ```ts
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { type ReleaseIntent } from "@cjpher/ts-release/domain/release"
-import { BunReleaseHostLayer } from "@cjpher/ts-release/host/bun"
-import { createReleasePlan } from "@cjpher/ts-release/planner/create-release-plan"
-import { validatePlan } from "@cjpher/ts-release/planner/executor"
-import { LiveTargetRegistryLayer } from "@cjpher/ts-release/targets/live"
+import { type ReleaseIntent } from "@mannyc1/ts-release/domain/release"
+import { BunReleaseHostLayer } from "@mannyc1/ts-release/host/bun"
+import { createReleasePlan } from "@mannyc1/ts-release/planner/create-release-plan"
+import { validatePlan } from "@mannyc1/ts-release/planner/executor"
+import { LiveTargetRegistryLayer } from "@mannyc1/ts-release/targets/live"
 
 const planAndValidate = (intent: ReleaseIntent) =>
   Effect.gen(function*() {
@@ -51,7 +51,7 @@ import {
   planReleaseConfig,
   ReleaseCliOptions,
   runReleaseCli
-} from "@cjpher/ts-release/cli/programmatic"
+} from "@mannyc1/ts-release/cli/programmatic"
 
 await Effect.runPromise(
   runReleaseCli([
@@ -80,7 +80,7 @@ The helper provides the Bun host and live target registry internally, so callers
 ```json
 {
   "identity": {
-    "name": "@cjpher/ts-release",
+    "name": "@mannyc1/ts-release",
     "version": "0.1.0",
     "commit": "abc123",
     "tag": "v0.1.0",
@@ -95,7 +95,7 @@ The helper provides the Bun host and live target registry internally, so callers
     },
     {
       "id": "github-asset",
-      "path": "artifacts/cjpher-ts-release-0.1.0.tgz",
+      "path": "artifacts/mannyc1-ts-release-0.1.0.tgz",
       "format": "tarball",
       "consumers": ["github"]
     }
@@ -139,7 +139,7 @@ Homebrew tap targets model catalog updates as generated files plus an approval-g
   "formulaName": "release",
   "formulaPath": ".release/generated/release.rb",
   "artifactId": "github-asset",
-  "url": "https://github.com/owner/repo/releases/download/v0.1.0/cjpher-ts-release-0.1.0.tgz",
+  "url": "https://github.com/owner/repo/releases/download/v0.1.0/mannyc1-ts-release-0.1.0.tgz",
   "installPath": "bin/release",
   "dryRunSupport": "simulated",
   "mutability": "mutable-index",
@@ -154,7 +154,7 @@ Use `plan`, `render --execute`, `validate`, `print`, `execute --execute`, and `v
 Text plans include the release identity, evidence directory, artifact inventory, target capabilities, operation commands, validation notes, and execution gates.
 
 ```text
-@cjpher/ts-release@0.1.0
+@mannyc1/ts-release@0.1.0
 commit: abc123
 evidence: .release/evidence
 artifacts: 2
@@ -241,7 +241,7 @@ Example configs are checked through the same programmatic CLI command path:
 bun run check:examples
 ```
 
-This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@cjpher/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` to mean the current committed checkout for a stored self-release config.
+This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` to mean the current committed checkout for a stored self-release config.
 
 ```sh
 bun run check:self-release-config

@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { EvidenceBundle } from "../domain/evidence.js"
+import { EvidenceBundle, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -31,9 +31,11 @@ export class EvidenceWriteError extends Schema.TaggedErrorClass<EvidenceWriteErr
 
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
   operationId: Schema.String,
-  exitCode: Schema.Number,
+  exitCode: Schema.optionalKey(Schema.Number),
+  responseStatus: Schema.optionalKey(Schema.Number),
   reason: Schema.String,
-  evidence: Schema.optionalKey(EvidenceBundle)
+  evidence: Schema.optionalKey(EvidenceBundle),
+  workflowEvidence: Schema.optionalKey(ReleaseWorkflowFailureEvidence)
 }) {}
 
 export type PlannerError =

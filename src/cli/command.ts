@@ -4,12 +4,12 @@ import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
 import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
-import { EvidenceBundle } from "../domain/evidence.js"
+import { EvidenceBundle, ReleaseWorkflowEvidence, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
 import { ExecutionApproval } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseHost } from "../host/host.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
-import { executePlan, renderPlan, validatePlan, verifyPlan } from "../planner/executor.js"
+import { executePlan, renderPlan, runApprovedReleaseWorkflow, validatePlan, verifyPlan } from "../planner/executor.js"
 import { renderEvidenceJson, writeEvidenceBundle } from "../planner/evidence-recorder.js"
 import { renderPlanJson, renderPlanText } from "../planner/render-plan.js"
 
@@ -81,6 +81,37 @@ const writeFailedEvidence = Effect.fn("writeFailedEvidence")(function*(
   if (error.evidence !== undefined) {
     yield* writeAndPrintEvidence(plan, name, error.evidence)
   }
+})
+
+type WritableWorkflowEvidence = ReleaseWorkflowEvidence | ReleaseWorkflowFailureEvidence
+
+const writeWorkflowEvidence = Effect.fn("writeWorkflowEvidence")(function*(
+  plan: ReleasePlan,
+  evidence: WritableWorkflowEvidence
+) {
+  const paths: {
+    render?: string
+    validation?: string
+    execution?: string
+    verification?: string
+  } = {}
+  if (evidence.render !== undefined) {
+    paths.render = evidencePath(plan, "render")
+    yield* writeEvidenceBundle(paths.render, evidence.render)
+  }
+  if (evidence.validation !== undefined) {
+    paths.validation = evidencePath(plan, "validation")
+    yield* writeEvidenceBundle(paths.validation, evidence.validation)
+  }
+  if (evidence.execution !== undefined) {
+    paths.execution = evidencePath(plan, "execution")
+    yield* writeEvidenceBundle(paths.execution, evidence.execution)
+  }
+  if (evidence.verification !== undefined) {
+    paths.verification = evidencePath(plan, "verification")
+    yield* writeEvidenceBundle(paths.verification, evidence.verification)
+  }
+  yield* Console.log(`${JSON.stringify({ evidence: paths }, null, 2)}`)
 })
 
 const validateCommand = Command.make(
@@ -156,6 +187,30 @@ const verifyCommand = Command.make(
   })
 )
 
+const runCommand = Command.make(
+  "run",
+  {
+    config: configFlag,
+    execute: executeFlag,
+    approveIrreversible: approveIrreversibleFlag
+  },
+  Effect.fn("cli.run")(function*({ config, execute, approveIrreversible }) {
+    const plan = yield* loadPlanFromConfig(config)
+    const approval = ExecutionApproval.make({ execute, approveIrreversible })
+    const evidence = yield* runApprovedReleaseWorkflow(plan, approval).pipe(
+      Effect.catchTag("OperationFailedError", (error) => {
+        if (error.workflowEvidence === undefined) {
+          return Effect.fail(error)
+        }
+        return writeWorkflowEvidence(plan, error.workflowEvidence).pipe(
+          Effect.flatMap(() => Effect.fail(error))
+        )
+      })
+    )
+    yield* writeWorkflowEvidence(plan, evidence)
+  })
+)
+
 export const cli = Command.make("release").pipe(
-  Command.withSubcommands([planCommand, renderCommand, validateCommand, printCommand, executeCommand, verifyCommand])
+  Command.withSubcommands([planCommand, renderCommand, validateCommand, printCommand, executeCommand, verifyCommand, runCommand])
 )

@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { CommandSpec, OperationId } from "./operation.js"
+import { CommandSpec, HttpEnvHeader, HttpHeader, HttpMethod, OperationId } from "./operation.js"
 import { TargetId } from "./target.js"
 
 export type * from "../types/effect-internal.js"
@@ -28,6 +28,33 @@ export class CommandEvidence extends Schema.Class<CommandEvidence>("CommandEvide
   durationMillis: Schema.Number
 }) {}
 
+export class HttpRequestEvidence extends Schema.Class<HttpRequestEvidence>("HttpRequestEvidence")({
+  method: HttpMethod,
+  url: Schema.String,
+  headers: Schema.Array(HttpHeader),
+  envHeaders: Schema.Array(HttpEnvHeader)
+}) {}
+
+export class HttpCheckEvidence extends Schema.Class<HttpCheckEvidence>("HttpCheckEvidence")({
+  description: Schema.String,
+  passed: Schema.Boolean
+}) {}
+
+export class HttpEvidence extends Schema.Class<HttpEvidence>("HttpEvidence")({
+  id: EvidenceId,
+  operationId: OperationId,
+  targetId: Schema.optionalKey(TargetId),
+  status: EvidenceStatus,
+  severity: EvidenceSeverity,
+  request: HttpRequestEvidence,
+  responseStatus: Schema.optionalKey(Schema.Number),
+  checks: Schema.Array(HttpCheckEvidence),
+  message: Schema.String,
+  startedAt: Schema.String,
+  endedAt: Schema.String,
+  durationMillis: Schema.Number
+}) {}
+
 export class ValidationEvidence extends Schema.Class<ValidationEvidence>("ValidationEvidence")({
   id: EvidenceId,
   targetId: Schema.optionalKey(TargetId),
@@ -48,7 +75,7 @@ export class ExecutionEvidence extends Schema.Class<ExecutionEvidence>("Executio
   timestamp: Schema.String
 }) {}
 
-export const EvidenceRecord = Schema.Union([CommandEvidence, ValidationEvidence, ExecutionEvidence])
+export const EvidenceRecord = Schema.Union([CommandEvidence, HttpEvidence, ValidationEvidence, ExecutionEvidence])
 export type EvidenceRecord = typeof EvidenceRecord.Type
 
 export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundle")({
@@ -56,4 +83,20 @@ export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundle
   releaseName: Schema.String,
   releaseVersion: Schema.String,
   records: Schema.Array(EvidenceRecord)
+}) {}
+
+export class ReleaseWorkflowEvidence extends Schema.Class<ReleaseWorkflowEvidence>("ReleaseWorkflowEvidence")({
+  render: EvidenceBundle,
+  validation: EvidenceBundle,
+  execution: EvidenceBundle,
+  verification: EvidenceBundle
+}) {}
+
+export class ReleaseWorkflowFailureEvidence extends Schema.Class<ReleaseWorkflowFailureEvidence>(
+  "ReleaseWorkflowFailureEvidence"
+)({
+  render: Schema.optionalKey(EvidenceBundle),
+  validation: Schema.optionalKey(EvidenceBundle),
+  execution: Schema.optionalKey(EvidenceBundle),
+  verification: Schema.optionalKey(EvidenceBundle)
 }) {}

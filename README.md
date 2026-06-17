@@ -38,7 +38,7 @@ const planAndValidate = (intent: ReleaseIntent) =>
   )
 ```
 
-`createReleasePlan` needs a `TargetRegistry` layer. Workflows that read files, run commands, or write evidence also need a `ReleaseHost` layer. Internal Effect imports use deep module paths such as `effect/Effect` and `effect/Layer` to keep bundlers from depending on broad root-package analysis.
+`createReleasePlan` needs a `TargetRegistry` layer. `validatePlan` needs `ReleaseHost` and `TargetRegistry` layers. Workflows that verify HTTP evidence, such as `verifyPlan`, `runApprovedReleaseWorkflow`, or direct `VerifyHttpOperation` execution, also need a `ReleaseHttp` layer. Bun callers can import `LiveReleaseHttpLayer` from `@mannyc1/ts-release/host/http-live` and provide it with a `ReleaseHost` layer plus an Effect HTTP client such as `@effect/platform-bun/BunHttpClient`; tests can import `makeTestReleaseHttpLayer` from `@mannyc1/ts-release/host/http`. Internal Effect imports use deep module paths such as `effect/Effect` and `effect/Layer` to keep bundlers from depending on broad root-package analysis.
 
 ## Programmatic CLI
 

@@ -90,6 +90,14 @@
       "types": "./dist/host/bun.d.ts",
       "default": "./dist/host/bun.js"
     },
+    "./host/http": {
+      "types": "./dist/host/http.d.ts",
+      "default": "./dist/host/http.js"
+    },
+    "./host/http-live": {
+      "types": "./dist/host/http-live.d.ts",
+      "default": "./dist/host/http-live.js"
+    },
     "./host/test": {
       "types": "./dist/host/test.d.ts",
       "default": "./dist/host/test.js"

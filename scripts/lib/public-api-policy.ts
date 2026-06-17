@@ -66,6 +66,8 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./domain/target", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./host", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./host/bun", allowedRuntimeSourcePaths: ["host/bun.ts"], allowedExternalPrefixes: ["node:"], allowsBunGlobal: true },
+  { subpath: "./host/http", allowedRuntimeSourcePaths: ["host/http.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./host/http-live", allowedRuntimeSourcePaths: ["host/http-live.ts", "host/http.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./host/test", allowedRuntimeSourcePaths: ["host/test.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/create-release-plan", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/errors", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },

@@ -4,12 +4,25 @@ import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { CommandSpec } from "../src/domain/operation.js"
-import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
+import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
+import { renderPlanText } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { runEffect } from "./helpers.js"
 
 const config = readFileSync("release.config.json", "utf8")
+
+const releaseArtifactFiles = [
+  ".release/artifacts/mannyc1-ts-release-0.0.1.tgz",
+  ".release/artifacts/ts-release-0.0.1-linux-x64",
+  ".release/artifacts/ts-release-0.0.1-linux-arm64",
+  ".release/artifacts/ts-release-0.0.1-darwin-x64",
+  ".release/artifacts/ts-release-0.0.1-darwin-arm64",
+  ".release/artifacts/ts-release-0.0.1-windows-x64.exe"
+]
+
+const releaseArtifactFixtures = (): ReadonlyArray<readonly [string, string]> =>
+  releaseArtifactFiles.map((path) => [path, `${path} fixture\n`])
 
 const gitHeadCommand = CommandSpec.make({
   executable: "git",
@@ -19,11 +32,9 @@ const gitHeadCommand = CommandSpec.make({
 })
 
 const TestLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     directories: new Set(["."]),
-    files: new Map([
-      [".release/artifacts/mannyc1-ts-release-0.0.1.tgz", "package tarball fixture\n"]
-    ]),
+    files: new Map(releaseArtifactFixtures()),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]
@@ -53,16 +64,36 @@ describe("repository release config", () => {
     expect(plan.identity.commit).toBe("81587b5")
     expect(plan.targets.map((target) => target.id).sort()).toEqual(["github", "npm"])
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
+    expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-package-exists")
+    expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-version-verify")
     expect(plan.operations.map((operation) => operation.id)).toContain("github:gh-release-create")
+    const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
+    const text = renderPlanText(plan)
 
     const publishOperations = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
     const npmPublish = publishOperations.find((operation) => operation.id === "npm:npm-publish")
+    const githubPublish = publishOperations.find((operation) => operation.id === "github:gh-release-create")
     expect(publishOperations.length).toBeGreaterThan(0)
+    expect(publishOperations.map((operation) => operation.id)).toEqual(["npm:npm-publish", "github:gh-release-create"])
     expect(publishOperations.every((operation) => operation.gate.requiresExecute)).toBe(true)
     expect(npmPublish?._tag).toBe("PublishCommandOperation")
+    expect(npm?.authRequirement).toBe("trusted-publishing")
+    expect(npm?.authSetup?.workflow).toBe("release.yml")
+    expect(text).toContain(
+      "auth=trusted-publishing runs-in=ci provider=github-actions workflow=release.yml required-permission=id-token:write package-prerequisite=exists"
+    )
     if (npmPublish?._tag === "PublishCommandOperation") {
       expect(npmPublish.command.args).toContain("--access")
       expect(npmPublish.command.args).toContain("public")
+      expect(npmPublish.command.args).toContain("--provenance")
+    }
+    const npmVerify = plan.operations.find((operation) => operation.id === "npm:npm-version-verify")
+    expect(npmVerify?._tag).toBe("VerifyRemoteOperation")
+    expect(githubPublish?._tag).toBe("PublishCommandOperation")
+    if (githubPublish?._tag === "PublishCommandOperation") {
+      for (const path of releaseArtifactFiles) {
+        expect(githubPublish.command.args).toContain(path)
+      }
     }
   })
 })

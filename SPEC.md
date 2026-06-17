@@ -19,6 +19,7 @@ release intent
   -> validation evidence
   -> gated execution
   -> post-publish verification
+  -> status and conservative resume
 ```
 
 The package owns the model and the orchestration. Ecosystem tools remain the source of truth for ecosystem-specific behavior.
@@ -51,13 +52,15 @@ Examples:
 - A catalog update changes a repository or index that points at artifacts.
 - A deployment promotes already-built assets into an environment.
 
-Each target should declare its required inputs, auth requirements, dry-run support, validation strategy, mutability rules, and recovery behavior.
+Each target should declare its required inputs, auth requirements, dry-run support, validation strategy, mutability rules, and recovery behavior. When auth cannot be proven locally, the target should also model the expected execution context, provider-specific setup, and setup prerequisites.
 
 ### Evidence-driven validation
 
 Validation should produce structured evidence, not just console output.
 
 Evidence should be machine-readable enough for CI and human-readable enough for debugging. It should include command invocations, tool versions where practical, exit statuses, important paths, skipped checks, warnings, failures, and timestamps.
+
+Evidence should also support status reporting and conservative resume after failed or interrupted releases.
 
 Strict mode should fail on missing required validators. Non-strict mode may record skips, but skips must be visible in the evidence.
 
@@ -66,6 +69,8 @@ Strict mode should fail on missing required validators. Non-strict mode may reco
 Operations that publish immutable versions, create public releases, overwrite indexes, or otherwise affect users must be marked as irreversible or externally visible.
 
 The default behavior should be dry-run or print-only. Execution should require an explicit execute flag, and irreversible operations should require a second confirmation flag or equivalent programmatic approval.
+
+Failed publish evidence must not be treated as proof that nothing was published.
 
 The package should make it hard to accidentally publish and easy to see exactly what would be published.
 
@@ -82,6 +87,8 @@ The library should expose APIs for:
 - preparing executable operations
 - running approved operations through an injected host interface
 - recording evidence
+- reporting release status from evidence
+- conservatively resuming safe unfinished work
 
 The CLI should mainly parse arguments, call the library, and format output.
 

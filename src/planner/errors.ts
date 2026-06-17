@@ -29,6 +29,21 @@ export class EvidenceWriteError extends Schema.TaggedErrorClass<EvidenceWriteErr
   reason: Schema.String
 }) {}
 
+export class EvidenceReadError extends Schema.TaggedErrorClass<EvidenceReadError>()("EvidenceReadError", {
+  path: Schema.String,
+  reason: Schema.String
+}) {}
+
+export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteError>()("WorkspaceWriteError", {
+  path: Schema.String,
+  reason: Schema.String
+}) {}
+
+export class ResumeBlockedError extends Schema.TaggedErrorClass<ResumeBlockedError>()("ResumeBlockedError", {
+  operationId: Schema.String,
+  reason: Schema.String
+}) {}
+
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
   operationId: Schema.String,
   exitCode: Schema.optionalKey(Schema.Number),
@@ -43,4 +58,7 @@ export type PlannerError =
   | ArtifactInventoryError
   | PlanConstructionError
   | EvidenceWriteError
+  | EvidenceReadError
+  | WorkspaceWriteError
+  | ResumeBlockedError
   | OperationFailedError

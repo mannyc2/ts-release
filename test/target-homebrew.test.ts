@@ -3,14 +3,14 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { ExecutionApproval } from "../src/domain/operation.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlan, validatePlan } from "../src/planner/executor.js"
 import { releaseConfig, homebrewConfig, runEffect } from "./helpers.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 
 const HomebrewLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     files: new Map([["artifacts/release-0.1.0.tgz", "homebrew archive"]]),
     directories: new Set(["."])
   }),
@@ -52,7 +52,7 @@ describe("Homebrew target", () => {
     if (render?._tag === "RenderFileOperation") {
       expect(render.path).toBe(".release/generated/release.rb")
       expect(render.contents).toContain("class Release < Formula")
-      expect(render.contents).toContain("sha256 \"sha256:16:artifacts/release-0.1.0.tgz\"")
+      expect(render.contents).toContain("sha256 \"686f6d65627265772061726368697665\"")
       expect(render.contents).toContain("bin.install \"bin/release\" => \"release\"")
     }
     if (publish?._tag === "PublishCommandOperation") {

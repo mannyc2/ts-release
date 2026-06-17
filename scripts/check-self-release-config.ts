@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
+import { packageTarballArtifactPath, releaseCliArtifactTargets } from "./build-release-artifacts.js"
 
 const root = cwd()
 const currentCommitSelector = "HEAD"
@@ -18,6 +19,20 @@ const readText = (path: string): string | undefined => {
   } catch {
     return undefined
   }
+}
+
+const readReleaseVersion = (failures: Array<string>): string | undefined => {
+  const contents = readText("src/version.ts")
+  if (contents === undefined) {
+    failures.push("src/version.ts must define RELEASE_VERSION")
+    return undefined
+  }
+  const match = contents.match(/export\s+const\s+RELEASE_VERSION\s*=\s*"([^"]+)"/)
+  if (match === null || match[1] === undefined || match[1].length === 0) {
+    failures.push("src/version.ts must export RELEASE_VERSION as a non-empty string literal")
+    return undefined
+  }
+  return match[1]
 }
 
 const field = (record: Record<string, unknown>, name: string): unknown =>
@@ -69,6 +84,51 @@ const collectTokenEnvNames = (targets: ReadonlyArray<unknown>): ReadonlyArray<st
   return [...names].sort()
 }
 
+const stringArrayIncludes = (value: unknown, expected: string): boolean =>
+  Array.isArray(value) && value.some((item) => item === expected)
+
+const collectArtifactRecords = (
+  artifacts: ReadonlyArray<unknown>,
+  failures: Array<string>
+): Map<string, Record<string, unknown>> => {
+  const records = new Map<string, Record<string, unknown>>()
+  for (const artifact of artifacts) {
+    if (!isRecord(artifact)) {
+      failures.push("release artifacts must be objects")
+      continue
+    }
+    const id = artifact.id
+    if (typeof id !== "string" || id.length === 0) {
+      failures.push("release artifact id must be a non-empty string")
+      continue
+    }
+    records.set(id, artifact)
+  }
+  return records
+}
+
+const checkArtifactPath = (
+  artifact: Record<string, unknown> | undefined,
+  id: string,
+  expectedPath: string,
+  expectedFormat: string,
+  failures: Array<string>
+): void => {
+  if (artifact === undefined) {
+    failures.push(`release config must include artifact ${id}`)
+    return
+  }
+  if (artifact.path !== expectedPath) {
+    failures.push(`artifact ${id} path ${String(artifact.path)} must equal ${expectedPath}`)
+  }
+  if (artifact.format !== expectedFormat) {
+    failures.push(`artifact ${id} format ${String(artifact.format)} must equal ${expectedFormat}`)
+  }
+  if (!stringArrayIncludes(artifact.consumers, "github")) {
+    failures.push(`artifact ${id} must be consumed by github`)
+  }
+}
+
 const envExampleDocuments = (contents: string, name: string): boolean =>
   contents.split(/\r?\n/).some((line) => {
     const trimmed = line.trim()
@@ -78,6 +138,7 @@ const envExampleDocuments = (contents: string, name: string): boolean =>
 const failures: Array<string> = []
 const manifest = readJson("package.json")
 const config = readJson("release.config.json")
+const releaseVersion = readReleaseVersion(failures)
 const currentGitCommit = await readCurrentGitCommit()
 const trackedGitStatus = await readTrackedGitStatus()
 
@@ -91,6 +152,9 @@ if (!isRecord(config)) {
 if (isRecord(manifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name", failures)
   const packageVersion = stringField(manifest, "version", failures)
+  if (packageVersion !== undefined && releaseVersion !== undefined && packageVersion !== releaseVersion) {
+    failures.push(`src/version.ts RELEASE_VERSION ${releaseVersion} must match package version ${packageVersion}`)
+  }
   if (packageName === "release") {
     failures.push("package name `release` is already published on npm; use the confirmed scoped package name")
   }
@@ -126,6 +190,39 @@ if (isRecord(manifest) && isRecord(config)) {
     }
   }
 
+  const artifacts = field(config, "artifacts")
+  if (!Array.isArray(artifacts)) {
+    failures.push("release.config.json artifacts must be an array")
+  } else if (packageName !== undefined && packageVersion !== undefined) {
+    const artifactRecords = collectArtifactRecords(artifacts, failures)
+    for (const artifact of artifactRecords.values()) {
+      const artifactPath = artifact.path
+      if (
+        typeof artifactPath === "string" &&
+        artifactPath.startsWith(".release/artifacts/") &&
+        !artifactPath.includes(packageVersion)
+      ) {
+        failures.push(`artifact path ${artifactPath} must include package version ${packageVersion}`)
+      }
+    }
+    checkArtifactPath(
+      artifactRecords.get("package-tarball"),
+      "package-tarball",
+      packageTarballArtifactPath({ name: packageName, version: packageVersion }),
+      "tarball",
+      failures
+    )
+    for (const target of releaseCliArtifactTargets(packageVersion)) {
+      checkArtifactPath(
+        artifactRecords.get(target.id),
+        target.id,
+        target.outfile,
+        "file",
+        failures
+      )
+    }
+  }
+
   const targets = field(config, "targets")
   if (!Array.isArray(targets)) {
     failures.push("release.config.json targets must be an array")
@@ -149,6 +246,12 @@ if (isRecord(manifest) && isRecord(config)) {
       }
       if (target._tag === "GitHubReleaseTarget" && target.repository === "owner/repo") {
         failures.push("GitHub release target repository must not use owner/repo placeholder")
+      }
+      if (target._tag === "NpmRegistryTarget" && target.id === "npm" && target.provenance !== true) {
+        failures.push("npm self-release target must enable provenance for GitHub Actions publishing")
+      }
+      if (target._tag === "NpmRegistryTarget" && target.id === "npm" && target.packageName !== packageName) {
+        failures.push(`npm self-release target packageName ${String(target.packageName)} must match package name ${packageName}`)
       }
     }
   }

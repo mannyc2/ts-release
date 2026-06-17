@@ -36,8 +36,13 @@
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
+      "packageName": "release-example-multi-target",
       "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "packageExists": true
+      },
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"

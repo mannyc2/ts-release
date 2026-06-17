@@ -1,21 +1,26 @@
 import { describe, expect, test } from "bun:test"
+import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
+import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Command from "effect/unstable/cli/Command"
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { cli } from "../src/cli/command.js"
 import {
   PlanReleaseConfigOptions,
   planReleaseConfig,
-  ReleaseCliOptions,
-  runReleaseCli
-} from "../src/cli/programmatic.js"
+  renderReleaseConfigPlan
+} from "../src/api.js"
+import { LiveReleaseApiLayer } from "../src/api/live.js"
+import { cli } from "../src/cli/command.js"
+import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
 import { CommandSpec } from "../src/domain/operation.js"
-import { CommandResult, FileInfo, HostError, ReleaseHostTest } from "../src/host/host.js"
-import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
+import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
+import { makePlatformCommandRunnerLayer } from "../src/host/platform.js"
+import { commandKey } from "../src/host/test.js"
+import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig } from "./helpers.js"
 
@@ -69,6 +74,7 @@ const partialWorkflowConfig = JSON.stringify({
       _tag: "NpmRegistryTarget",
       id: "npm",
       registry: "https://registry.npmjs.org",
+      packageName: "release",
       packagePath: ".",
       tokenEnv: "NPM_TOKEN",
       dryRunSupport: "native",
@@ -86,12 +92,7 @@ interface CliCommandResponse {
   readonly stderr: string
 }
 
-const checksumPrefix = (algorithm: "sha256" | "sha512"): string =>
-  algorithm === "sha256" ? "sha256" : "sha512"
-
-const makeObservableReleaseHostLayer = (options: {
-  readonly files: Map<string, string>
-  readonly directories: ReadonlySet<string>
+const makeObservableCommandRunnerLayer = (options: {
   readonly env: ReadonlyMap<string, string>
   readonly commands: ReadonlyMap<string, CliCommandResponse>
 }) => {
@@ -103,88 +104,49 @@ const makeObservableReleaseHostLayer = (options: {
     return value
   }
 
-  return ReleaseHostTest({
-    readFileString: (path) =>
-      Effect.sync(() => options.files.get(path)).pipe(
-        Effect.flatMap((contents) =>
-          contents === undefined
-            ? Effect.fail(HostError.make({ operation: "readFileString", path, reason: "File not found" }))
-            : Effect.succeed(contents)
-        )
-      ),
+  const envRecord: Record<string, string> = {}
+  for (const [name, value] of options.env) {
+    envRecord[name] = value
+  }
 
-    writeFileString: (path, contents) =>
-      Effect.sync(() => {
-        options.files.set(path, contents)
-      }),
-
-    stat: (path) =>
-      Effect.sync(() => {
-        const contents = options.files.get(path)
-        if (contents !== undefined) {
-          return FileInfo.make({ path, sizeBytes: contents.length, kind: "file" })
-        }
-        if (options.directories.has(path)) {
-          return FileInfo.make({ path, sizeBytes: 0, kind: "directory" })
-        }
-        return undefined
-      }).pipe(
-        Effect.flatMap((info) =>
-          info === undefined
-            ? Effect.fail(HostError.make({ operation: "stat", path, reason: "File not found" }))
-            : Effect.succeed(info)
-        )
-      ),
-
-    hashFile: (path, algorithm) =>
-      Effect.sync(() => options.files.get(path)).pipe(
-        Effect.flatMap((contents) =>
-          options.directories.has(path)
-            ? Effect.fail(HostError.make({ operation: "hashFile", path, reason: "Only file artifacts can be hashed" }))
-            : contents === undefined
-            ? Effect.fail(HostError.make({ operation: "hashFile", path, reason: "File not found" }))
-            : Effect.succeed(`${checksumPrefix(algorithm)}:${contents.length}:${path}`)
-        )
-      ),
-
-    readEnv: (name) => Effect.sync(() => options.env.get(name)),
-
-    runCommand: (command) =>
-      Effect.gen(function*() {
-        const missing: Array<string> = []
-        for (const name of command.requiredEnv) {
-          if (!options.env.has(name)) {
-            missing.push(name)
+  return Layer.mergeAll(
+    ReleaseCommandRunnerTestLayer({
+      runCommand: (command) =>
+        Effect.gen(function*() {
+          const missing: Array<string> = []
+          for (const name of command.requiredEnv) {
+            if (!options.env.has(name)) {
+              missing.push(name)
+            }
           }
-        }
-        if (missing.length > 0) {
-          return yield* Effect.fail(
-            HostError.make({
-              operation: "runCommand",
-              reason: `Missing required environment variables: ${missing.join(", ")}`
-            })
-          )
-        }
-        const startedAt = nextTimestamp()
-        const endedAt = nextTimestamp()
-        const response = options.commands.get(commandKey(command)) ?? {
-          exitCode: 0,
-          stdout: "",
-          stderr: ""
-        }
-        return CommandResult.make({
-          command,
-          exitCode: response.exitCode,
-          stdout: response.stdout,
-          stderr: response.stderr,
-          startedAt,
-          endedAt,
-          durationMillis: 1
+          if (missing.length > 0) {
+            return yield* Effect.fail(
+              CommandRunnerError.make({
+                operation: "runCommand",
+                reason: `Missing required environment variables: ${missing.join(", ")}`
+              })
+            )
+          }
+          const startedAt = nextTimestamp()
+          const endedAt = nextTimestamp()
+          const response = options.commands.get(commandKey(command)) ?? {
+            exitCode: 0,
+            stdout: "",
+            stderr: ""
+          }
+          return CommandResult.make({
+            command,
+            exitCode: response.exitCode,
+            stdout: response.stdout,
+            stderr: response.stderr,
+            startedAt,
+            endedAt,
+            durationMillis: 1
+          })
         })
-      }),
-
-    now: Effect.sync(nextTimestamp)
-  })
+    }),
+    ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
+  )
 }
 
 describe("cli command", () => {
@@ -195,51 +157,67 @@ describe("cli command", () => {
       "plan",
       "print",
       "render",
+      "resume",
       "run",
+      "status",
       "validate",
       "verify"
     ])
   })
 
   test("parses plan command with a config path", async () => {
-    const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
-        files: new Map([["release.config.json", minimalConfig]]),
-        directories: new Set(["."])
-      }),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-plan-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map()
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
 
-    await Effect.runPromise(
-      Command.runWith(cli, { version: "0.0.0" })([
-        "plan",
-        "--config",
-        "release.config.json",
-        "--out",
-        "release-plan.json"
-      ]).pipe(Effect.provide(layer))
-    )
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "plan",
+          "--config",
+          configPath,
+          "--out",
+          join(root, "release-plan.json")
+        ]).pipe(Effect.provide(layer))
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
-  test("runs programmatically against a scoped Bun host root", async () => {
+  test("renders release configs through the TypeScript API", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-root-"))
     try {
       await writeFile(join(root, "release.config.json"), minimalConfig)
 
-      await Effect.runPromise(
-        runReleaseCli([
-          "plan",
-          "--config",
-          "release.config.json",
-          "--format",
-          "text",
-          "--out",
-          "plan.txt"
-        ], ReleaseCliOptions.make({ root }))
+      const output = await Effect.runPromise(
+        renderReleaseConfigPlan(
+          PlanReleaseConfigOptions.make({
+            root,
+            configPath: "release.config.json",
+            format: "text"
+          })
+        ).pipe(
+          Effect.provide(
+            Layer.mergeAll(
+              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+              LiveTargetRegistryLayer
+            )
+          )
+        )
       )
 
-      const output = await readFile(join(root, "plan.txt"), "utf8")
       expect(output).toContain("release@0.1.0")
     } finally {
       await rm(root, { recursive: true, force: true })
@@ -252,7 +230,14 @@ describe("cli command", () => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
 
       const plan = await Effect.runPromise(
-        planReleaseConfig(PlanReleaseConfigOptions.make({ root }))
+        planReleaseConfig(PlanReleaseConfigOptions.make({ root })).pipe(
+          Effect.provide(
+            Layer.mergeAll(
+              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+              LiveTargetRegistryLayer
+            )
+          )
+        )
       )
 
       expect(plan.identity.name).toBe("release")
@@ -263,73 +248,119 @@ describe("cli command", () => {
     }
   })
 
-  test("execute command fails without execute approval", async () => {
-    const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
-        files: new Map([["release.config.json", minimalConfig]]),
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ])
-      }),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
+  test("supports platform-neutral API layer composition", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-api-platform-"))
+    try {
+      await writeFile(join(root, "release.config.json"), minimalConfig)
+      const layer = LiveReleaseApiLayer.pipe(
+        Layer.provideMerge(
+          Layer.mergeAll(
+            makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+            BunHttpClient.layer
+          )
+        )
+      )
 
-    const exit = await Effect.runPromiseExit(
-      Command.runWith(cli, { version: "0.0.0" })([
-        "execute",
-        "--config",
-        "release.config.json"
-      ]).pipe(Effect.provide(layer))
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
+      const plan = await Effect.runPromise(
+        planReleaseConfig(PlanReleaseConfigOptions.make({ root, configPath: "release.config.json" })).pipe(
+          Effect.provide(layer)
+        )
+      )
+
+      expect(plan.identity.name).toBe("release")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("execute command fails without execute approval", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-execute-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map()
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "execute",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(layer))
+      )
+      expect(exit._tag).toBe("Failure")
+      if (exit._tag === "Failure") {
+        expect(String(exit.cause)).toContain("ExecutionApprovalError")
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
     }
   })
 
   test("run command fails without execute approval", async () => {
-    const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
-        files: new Map([["release.config.json", minimalConfig]]),
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ])
-      }),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-run-approval-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map()
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
 
-    const exit = await Effect.runPromiseExit(
-      Command.runWith(cli, { version: "0.0.0" })([
-        "run",
-        "--config",
-        "release.config.json"
-      ]).pipe(Effect.provide(layer))
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "run",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(layer))
+      )
+      expect(exit._tag).toBe("Failure")
+      if (exit._tag === "Failure") {
+        expect(String(exit.cause)).toContain("ExecutionApprovalError")
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
     }
   })
 
   test("run command writes workflow evidence files", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-run-root-"))
     try {
-      await writeFile(join(root, "release.config.json"), noOpConfig)
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, noOpConfig)
 
       await Effect.runPromise(
-        runReleaseCli([
+        Command.runWith(cli, { version: "0.0.0" })([
           "run",
           "--config",
-          "release.config.json",
+          configPath,
           "--execute",
           "--approve-irreversible"
-        ], ReleaseCliOptions.make({ root }))
+        ]).pipe(
+          Effect.provide(
+            Layer.mergeAll(
+              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+              LiveTargetRegistryLayer,
+              BunServices.layer
+            )
+          )
+        )
       )
 
       for (const name of ["render", "validation", "execution", "verification"]) {
@@ -341,73 +372,206 @@ describe("cli command", () => {
     }
   })
 
-  test("run command writes partial workflow evidence on validation failure", async () => {
-    const files = new Map([
-      ["release.config.json", partialWorkflowConfig],
-      ["artifacts/release-0.1.0.tgz", "fake archive text"]
-    ])
-    const npmVersionCommand = CommandSpec.make({
-      executable: "npm",
-      args: ["--version"],
-      requiredEnv: [],
-      redactedEnv: []
-    })
-    const layer = Layer.mergeAll(
-      makeObservableReleaseHostLayer({
-        files,
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ]),
-        commands: new Map([
-          [commandKey(npmVersionCommand), {
+  test("status command renders JSON without executing operations", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-status-root-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, noOpConfig)
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "status",
+          "--config",
+          configPath,
+          "--format",
+          "json"
+        ]).pipe(
+          Effect.provide(
+            Layer.mergeAll(
+              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+              LiveTargetRegistryLayer,
+              BunServices.layer
+            )
+          )
+        )
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("resume command writes workflow evidence files", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-resume-root-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, noOpConfig)
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "resume",
+          "--config",
+          configPath
+        ]).pipe(
+          Effect.provide(
+            Layer.mergeAll(
+              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+              LiveTargetRegistryLayer,
+              BunServices.layer
+            )
+          )
+        )
+      )
+
+      for (const name of ["render", "validation", "execution", "verification"]) {
+        const output = await readFile(join(root, ".release", "evidence", `${name}.json`), "utf8")
+        expect(output).toContain("\"releaseName\": \"release\"")
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("resume command blocks on failed publish evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-resume-blocked-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      await mkdir(join(root, ".release", "evidence"), { recursive: true })
+      const publishCommand = CommandSpec.make({
+        executable: "npm",
+        args: ["publish", ".", "--registry", "https://registry.npmjs.org"],
+        requiredEnv: ["NPM_TOKEN"],
+        redactedEnv: ["NPM_TOKEN"]
+      })
+      const executionEvidence = EvidenceBundle.make({
+        schemaVersion: "release-evidence/v1",
+        releaseName: "release",
+        releaseVersion: "0.1.0",
+        records: [
+          CommandEvidence.make({
+            id: "npm:npm-publish:command",
+            operationId: "npm:npm-publish",
+            targetId: "npm",
+            status: "failed",
+            severity: "error",
+            command: publishCommand,
             exitCode: 1,
             stdout: "",
-            stderr: "npm unavailable"
-          }]
-        ])
-      }),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
+            stderr: "publish failed",
+            startedAt: "2026-06-17T00:00:00.000Z",
+            endedAt: "2026-06-17T00:00:00.001Z",
+            durationMillis: 1
+          })
+        ]
+      })
+      await writeFile(join(root, ".release", "evidence", "execution.json"), renderEvidenceJson(executionEvidence))
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map()
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
 
-    const exit = await Effect.runPromiseExit(
-      Command.runWith(cli, { version: "0.0.0" })([
-        "run",
-        "--config",
-        "release.config.json",
-        "--execute",
-        "--approve-irreversible"
-      ]).pipe(Effect.provide(layer))
-    )
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "resume",
+          "--config",
+          configPath,
+          "--execute",
+          "--approve-irreversible"
+        ]).pipe(Effect.provide(layer))
+      )
 
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("OperationFailedError")
+      expect(exit._tag).toBe("Failure")
+      if (exit._tag === "Failure") {
+        expect(String(exit.cause)).toContain("ResumeBlockedError")
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
     }
-    expect(files.get(".release/evidence/render.json")).toContain("homebrew:homebrew-render-formula:execution")
-    expect(files.get(".release/evidence/validation.json")).toContain("npm:npm-version:command")
-    expect(files.has(".release/evidence/execution.json")).toBe(false)
-    expect(files.has(".release/evidence/verification.json")).toBe(false)
+  })
+
+  test("run command writes partial workflow evidence on validation failure", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-partial-evidence-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, partialWorkflowConfig)
+      await mkdir(join(root, "artifacts"), { recursive: true })
+      await writeFile(join(root, "artifacts", "release-0.1.0.tgz"), "fake archive text")
+      const npmVersionCommand = CommandSpec.make({
+        executable: "npm",
+        args: ["--version"],
+        requiredEnv: [],
+        redactedEnv: []
+      })
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map([
+            [commandKey(npmVersionCommand), {
+              exitCode: 1,
+              stdout: "",
+              stderr: "npm unavailable"
+            }]
+          ])
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "run",
+          "--config",
+          configPath,
+          "--execute",
+          "--approve-irreversible"
+        ]).pipe(Effect.provide(layer))
+      )
+
+      expect(exit._tag).toBe("Failure")
+      if (exit._tag === "Failure") {
+        expect(String(exit.cause)).toContain("OperationFailedError")
+      }
+      const renderEvidence = await readFile(join(root, ".release", "evidence", "render.json"), "utf8")
+      const validationEvidence = await readFile(join(root, ".release", "evidence", "validation.json"), "utf8")
+      expect(renderEvidence).toContain("homebrew:homebrew-render-formula:execution")
+      expect(validationEvidence).toContain("npm:npm-version:command")
+      await expect(readFile(join(root, ".release", "evidence", "execution.json"), "utf8")).rejects.toThrow()
+      await expect(readFile(join(root, ".release", "evidence", "verification.json"), "utf8")).rejects.toThrow()
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   test("render command succeeds without approval when there is nothing to render", async () => {
-    const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
-        files: new Map([["release.config.json", minimalConfig]]),
-        directories: new Set(["."])
-      }),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-render-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      const layer = Layer.mergeAll(
+        makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
 
-    await Effect.runPromise(
-      Command.runWith(cli, { version: "0.0.0" })([
-        "render",
-        "--config",
-        "release.config.json"
-      ]).pipe(Effect.provide(layer))
-    )
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "render",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(layer))
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })

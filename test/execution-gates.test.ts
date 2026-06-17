@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
@@ -15,14 +16,14 @@ import {
 } from "../src/domain/operation.js"
 import { ReleasePlan } from "../src/domain/release.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
+import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { executePlan, renderPlan, runApprovedReleaseWorkflow, runOperation, validatePlan } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
@@ -30,7 +31,8 @@ const TestLayer = Layer.mergeAll(
     ])
   }),
   makeTestReleaseHttpLayer(),
-  LiveTargetRegistryLayer
+  LiveTargetRegistryLayer,
+  BunServices.layer
 )
 
 const planWithRenderAndPublish = Effect.gen(function*() {
@@ -194,7 +196,7 @@ describe("execution gates", () => {
     })
     const exit = await Effect.runPromiseExit(
       runOperation(operation, ExecutionApproval.none).pipe(
-        Effect.provide(makeTestReleaseHostLayer())
+        Effect.provide(makeTestCommandRunnerLayer())
       )
     )
     expect(exit._tag).toBe("Failure")
@@ -259,7 +261,7 @@ describe("execution gates", () => {
     })
     const exit = await Effect.runPromiseExit(
       runOperation(operation, ExecutionApproval.none).pipe(
-        Effect.provide(makeTestReleaseHostLayer({
+        Effect.provide(makeTestCommandRunnerLayer({
           commands: new Map([
             [commandKey(command), {
               exitCode: 1,
@@ -278,7 +280,7 @@ describe("execution gates", () => {
 
   test("runs approved release workflow in stage order", async () => {
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
+      makeTestCommandRunnerLayer({
         directories: new Set(["."]),
         env: new Map([
           ["NPM_TOKEN", "npm_secret"],
@@ -286,7 +288,8 @@ describe("execution gates", () => {
         ])
       }),
       makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer
+      LiveTargetRegistryLayer,
+      BunServices.layer
     )
 
     const evidence = await runEffect(
@@ -322,7 +325,7 @@ describe("execution gates", () => {
 
   test("workflow stops on validation failure before publish", async () => {
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
+      makeTestCommandRunnerLayer({
         directories: new Set(["."]),
         env: new Map([
           ["NPM_TOKEN", "npm_secret"],
@@ -342,7 +345,8 @@ describe("execution gates", () => {
         ])
       }),
       makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer
+      LiveTargetRegistryLayer,
+      BunServices.layer
     )
 
     const error = await runEffect(
@@ -371,7 +375,7 @@ describe("execution gates", () => {
 
   test("workflow preserves render and validation evidence on publish failure", async () => {
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
+      makeTestCommandRunnerLayer({
         directories: new Set(["."]),
         env: new Map([
           ["NPM_TOKEN", "npm_secret"],
@@ -391,7 +395,8 @@ describe("execution gates", () => {
         ])
       }),
       makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer
+      LiveTargetRegistryLayer,
+      BunServices.layer
     )
 
     const error = await runEffect(
@@ -422,7 +427,7 @@ describe("execution gates", () => {
 
   test("workflow preserves all completed evidence on verification failure", async () => {
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
+      makeTestCommandRunnerLayer({
         directories: new Set(["."]),
         env: new Map([
           ["NPM_TOKEN", "npm_secret"],
@@ -437,7 +442,8 @@ describe("execution gates", () => {
         ])
       }),
       makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer
+      LiveTargetRegistryLayer,
+      BunServices.layer
     )
 
     const error = await runEffect(

@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release package
+    if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Run release checks
+        run: bun run check:release
+
+      - name: Check release eligibility
+        id: eligibility
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package_name="$(bun -e 'const manifest = await Bun.file("package.json").json(); console.log(manifest.name)')"
+          package_version="$(bun -e 'const manifest = await Bun.file("package.json").json(); console.log(manifest.version)')"
+
+          npm_exists=false
+          github_exists=false
+
+          if npm view "${package_name}@${package_version}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+            npm_exists=true
+          fi
+
+          if gh release view "v${package_version}" --repo mannyc2/ts-release >/dev/null 2>&1; then
+            github_exists=true
+          fi
+
+          if [[ "${npm_exists}" == "true" && "${github_exists}" == "true" ]]; then
+            echo "should_release=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ "${npm_exists}" == "true" && "${github_exists}" == "false" ]]; then
+            echo "npm package ${package_name}@${package_version} exists but GitHub release v${package_version} is missing" >&2
+            exit 1
+          fi
+
+          if [[ "${npm_exists}" == "false" && "${github_exists}" == "true" ]]; then
+            echo "GitHub release v${package_version} exists but npm package ${package_name}@${package_version} is missing" >&2
+            exit 1
+          fi
+
+          echo "should_release=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Build release artifacts
+        if: steps.eligibility.outputs.should_release == 'true'
+        run: bun run release:artifacts
+
+      - name: Record release plan
+        if: steps.eligibility.outputs.should_release == 'true'
+        run: bun dist/cli/main.js plan --config release.config.json --format text --out .release/evidence/plan.txt
+
+      - name: Run approved release
+        if: steps.eligibility.outputs.should_release == 'true'
+        run: bun dist/cli/main.js run --config release.config.json --execute --approve-irreversible
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: .release/evidence/**
+          if-no-files-found: ignore

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { validatePlan } from "../src/planner/executor.js"
 import { renderPlanText } from "../src/planner/render-plan.js"
@@ -10,7 +10,7 @@ import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, releaseConfig, releaseIdentity, runEffect } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],

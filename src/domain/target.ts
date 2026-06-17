@@ -5,7 +5,12 @@ export type * from "../types/effect-internal.js"
 export const TargetId = Schema.String
 export type TargetId = typeof TargetId.Type
 
-export const TargetAuthRequirement = Schema.Literals(["none", "env-token", "cli-auth"])
+export const TargetAuthRequirement = Schema.Literals([
+  "none",
+  "env-token",
+  "cli-auth",
+  "trusted-publishing"
+])
 export type TargetAuthRequirement = typeof TargetAuthRequirement.Type
 
 export const TargetDryRunSupport = Schema.Literals(["none", "native", "simulated"])
@@ -23,11 +28,25 @@ export type TargetValidationStrategy = typeof TargetValidationStrategy.Type
 export const NpmAccess = Schema.Literals(["public", "restricted"])
 export type NpmAccess = typeof NpmAccess.Type
 
+export const NpmTrustedPublishingProvider = Schema.Literals(["github-actions"])
+export type NpmTrustedPublishingProvider = typeof NpmTrustedPublishingProvider.Type
+
+export class NpmTrustedPublishingConfig extends Schema.Class<NpmTrustedPublishingConfig>(
+  "NpmTrustedPublishingConfig"
+)({
+  provider: NpmTrustedPublishingProvider,
+  workflow: Schema.String,
+  packageExists: Schema.Literal(true),
+  verifyPackageExists: Schema.optionalKey(Schema.Boolean)
+}) {}
+
 export class NpmRegistryTarget extends Schema.TaggedClass<NpmRegistryTarget>()("NpmRegistryTarget", {
   id: TargetId,
   registry: Schema.String,
+  packageName: Schema.String,
   packagePath: Schema.String,
   tokenEnv: Schema.optionalKey(Schema.String),
+  trustedPublishing: Schema.optionalKey(NpmTrustedPublishingConfig),
   access: Schema.optionalKey(NpmAccess),
   provenance: Schema.optionalKey(Schema.Boolean),
   dryRunSupport: TargetDryRunSupport,
@@ -99,6 +118,22 @@ export const TargetConfig = Schema.Union([
 ])
 export type TargetConfig = typeof TargetConfig.Type
 
+export const TargetRunsIn = Schema.Literals(["ci"])
+export type TargetRunsIn = typeof TargetRunsIn.Type
+
+export class TargetRequiredPermission extends Schema.Class<TargetRequiredPermission>("TargetRequiredPermission")({
+  name: Schema.String,
+  value: Schema.String
+}) {}
+
+export class TargetAuthSetup extends Schema.Class<TargetAuthSetup>("TargetAuthSetup")({
+  runsIn: TargetRunsIn,
+  provider: NpmTrustedPublishingProvider,
+  workflow: Schema.String,
+  requiredPermissions: Schema.Array(TargetRequiredPermission),
+  prerequisites: Schema.Array(Schema.String)
+}) {}
+
 export class TargetCapabilities extends Schema.Class<TargetCapabilities>("TargetCapabilities")({
   targetId: TargetId,
   targetTag: Schema.String,
@@ -106,7 +141,8 @@ export class TargetCapabilities extends Schema.Class<TargetCapabilities>("Target
   dryRunSupport: TargetDryRunSupport,
   mutability: TargetMutability,
   recovery: TargetRecovery,
-  validationStrategy: TargetValidationStrategy
+  validationStrategy: TargetValidationStrategy,
+  authSetup: Schema.optionalKey(TargetAuthSetup)
 }) {}
 
 export const targetOrder = (left: TargetConfig, right: TargetConfig): number =>
@@ -116,6 +152,9 @@ export const targetCapabilitiesOrder = (left: TargetCapabilities, right: TargetC
   left.targetId.localeCompare(right.targetId)
 
 export const targetAuthRequirement = (target: TargetConfig): TargetAuthRequirement => {
+  if (target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined) {
+    return "trusted-publishing"
+  }
   if (target._tag === "PyPiRegistryTarget") {
     return target.usernameEnv === undefined && target.passwordEnv === undefined ? "cli-auth" : "env-token"
   }

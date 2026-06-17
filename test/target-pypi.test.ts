@@ -2,14 +2,14 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { validatePlan } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { pypiConfig, releaseConfig, runEffect } from "./helpers.js"
 
 const PyPiLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     files: new Map([["dist/release-0.1.0-py3-none-any.whl", "pypi wheel"]]),
     directories: new Set(["."]),
     env: new Map([

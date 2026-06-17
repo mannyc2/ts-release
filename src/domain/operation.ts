@@ -213,5 +213,37 @@ export const requireExecutionApproval = Effect.fn("requireExecutionApproval")(fu
   )
 })
 
+const operationPhasePriority = (operation: Operation): number => {
+  switch (operation._tag) {
+    case "RenderFileOperation":
+      return 0
+    case "ValidateCommandOperation":
+    case "ValidationNoteOperation":
+      return 1
+    case "PublishCommandOperation":
+      return 2
+    case "VerifyRemoteOperation":
+    case "VerifyHttpOperation":
+      return 3
+  }
+}
+
+const publishOperationPriority = (operation: PublishCommandOperation): number => {
+  if (operation.id.endsWith(":npm-publish") || operation.id.endsWith(":twine-upload")) {
+    return 0
+  }
+  if (operation.id.endsWith(":gh-release-create")) {
+    return 1
+  }
+  if (operation.id.endsWith(":homebrew-push") || operation.id.endsWith(":scoop-push")) {
+    return 2
+  }
+  return 3
+}
+
 export const operationOrder = (left: Operation, right: Operation): number =>
+  operationPhasePriority(left) - operationPhasePriority(right) ||
+  (left._tag === "PublishCommandOperation" && right._tag === "PublishCommandOperation"
+    ? publishOperationPriority(left) - publishOperationPriority(right)
+    : 0) ||
   left.id.localeCompare(right.id)

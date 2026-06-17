@@ -1,9 +1,10 @@
+import * as Config from "effect/Config"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
 import { HttpRequestSpec } from "../domain/operation.js"
-import { ReleaseHost, ReleaseHostShape } from "./host.js"
 import { HttpError, HttpResult, ReleaseHttp } from "./http.js"
 
 export type * from "../types/effect-internal.js"
@@ -11,7 +12,18 @@ export type * from "../types/effect-internal.js"
 const formatUnknown = (cause: unknown): string =>
   cause instanceof Error ? cause.message : String(cause)
 
-const resolveHeaders = Effect.fn("resolveHeaders")(function*(host: ReleaseHostShape, request: HttpRequestSpec) {
+const nowIso = Effect.fn("http.nowIso")(function*() {
+  const millis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  return new Date(millis).toISOString()
+})
+
+const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
+  Config.string(name).pipe(
+    Effect.option,
+    Effect.map(Option.getOrUndefined)
+  )
+
+const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpRequestSpec) {
   const envNames = new Set([
     ...request.requiredEnv,
     ...request.envHeaders.map((header) => header.valueEnv)
@@ -19,7 +31,7 @@ const resolveHeaders = Effect.fn("resolveHeaders")(function*(host: ReleaseHostSh
   const env = new Map<string, string>()
   const missing: Array<string> = []
   for (const name of envNames) {
-    const value = yield* host.readEnv(name)
+    const value = yield* readOptionalEnv(name)
     if (value === undefined) {
       missing.push(name)
     } else {
@@ -49,17 +61,16 @@ const resolveHeaders = Effect.fn("resolveHeaders")(function*(host: ReleaseHostSh
   return headers
 })
 
-export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, ReleaseHost | HttpClient.HttpClient> =
+export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.HttpClient> =
   Layer.effect(ReleaseHttp)(
     Effect.gen(function*() {
-      const host = yield* ReleaseHost
       const client = yield* HttpClient.HttpClient
       return {
         runJson: (request: HttpRequestSpec) =>
           Effect.gen(function*() {
-            const headers = yield* resolveHeaders(host, request)
-            const startedAt = new Date().toISOString()
-            const started = performance.now()
+            const headers = yield* resolveHeaders(request)
+            const startedAt = yield* nowIso()
+            const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
             const httpRequest = HttpClientRequest.make(request.method)(request.url, { headers })
             const response = yield* client.execute(httpRequest).pipe(
               Effect.mapError((error) =>
@@ -81,14 +92,15 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, ReleaseHost |
                   })
                 )
               )
-            const endedAt = new Date().toISOString()
+            const endedAt = yield* nowIso()
+            const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
             return HttpResult.make({
               request,
               status: response.status,
               json,
               startedAt,
               endedAt,
-              durationMillis: Math.round(performance.now() - started)
+              durationMillis: Math.max(0, ended - started)
             })
           })
       }

@@ -5,7 +5,12 @@ export type * from "../types/effect-internal.js"
 export const TargetId = Schema.String
 export type TargetId = typeof TargetId.Type
 
-export const TargetAuthRequirement = Schema.Literals(["none", "env-token", "cli-auth"])
+export const TargetAuthRequirement = Schema.Literals([
+  "none",
+  "env-token",
+  "cli-auth",
+  "trusted-publishing"
+])
 export type TargetAuthRequirement = typeof TargetAuthRequirement.Type
 
 export const TargetDryRunSupport = Schema.Literals(["none", "native", "simulated"])
@@ -28,6 +33,7 @@ export class NpmRegistryTarget extends Schema.TaggedClass<NpmRegistryTarget>()("
   registry: Schema.String,
   packagePath: Schema.String,
   tokenEnv: Schema.optionalKey(Schema.String),
+  trustedPublishing: Schema.optionalKey(Schema.Boolean),
   access: Schema.optionalKey(NpmAccess),
   provenance: Schema.optionalKey(Schema.Boolean),
   dryRunSupport: TargetDryRunSupport,
@@ -116,6 +122,9 @@ export const targetCapabilitiesOrder = (left: TargetCapabilities, right: TargetC
   left.targetId.localeCompare(right.targetId)
 
 export const targetAuthRequirement = (target: TargetConfig): TargetAuthRequirement => {
+  if (target._tag === "NpmRegistryTarget" && target.trustedPublishing === true) {
+    return "trusted-publishing"
+  }
   if (target._tag === "PyPiRegistryTarget") {
     return target.usernameEnv === undefined && target.passwordEnv === undefined ? "cli-auth" : "env-token"
   }

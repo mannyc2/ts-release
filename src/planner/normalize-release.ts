@@ -110,6 +110,14 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   for (const target of intent.targets) {
     if (target._tag === "NpmRegistryTarget") {
       yield* validateSafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath)
+      if (target.trustedPublishing === true && target.tokenEnv !== undefined) {
+        return yield* Effect.fail(
+          ReleaseNormalizationError.make({
+            field: `targets.${target.id}.tokenEnv`,
+            reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
+          })
+        )
+      }
     }
     if (target._tag === "HomebrewTapTarget") {
       yield* validateSafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath)

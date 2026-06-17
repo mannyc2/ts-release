@@ -19,7 +19,7 @@
       "id": "npm",
       "registry": "https://registry.npmjs.org",
       "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
+      "trustedPublishing": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"

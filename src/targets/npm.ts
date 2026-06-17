@@ -20,7 +20,7 @@ import {
 export type * from "../types/effect-internal.js"
 
 const envNames = (target: NpmRegistryTarget): ReadonlyArray<string> =>
-  target.tokenEnv === undefined ? [] : [target.tokenEnv]
+  target.trustedPublishing === true || target.tokenEnv === undefined ? [] : [target.tokenEnv]
 
 const npmCommand = (
   target: NpmRegistryTarget,
@@ -62,6 +62,27 @@ const npmDryRunOperation = (target: NpmRegistryTarget): Operation => {
     })
 }
 
+const npmAuthOperation = (target: NpmRegistryTarget): Operation =>
+  target.trustedPublishing === true
+    ? validationNoteOperation({
+      id: `${target.id}:npm-trusted-publishing-auth`,
+      targetId: target.id,
+      dryRunSupport: "simulated",
+      simulatedDescription: "Record npm trusted publishing authentication mode.",
+      skippedDescription: "Record skipped npm trusted publishing authentication mode.",
+      simulatedMessage:
+        "NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode.",
+      skippedMessage: "NPM trusted publishing authentication validation was skipped."
+    })
+    : ValidateCommandOperation.make({
+      id: `${target.id}:npm-whoami`,
+      targetId: target.id,
+      description: "Validate npm CLI authentication.",
+      risk: "read-only",
+      gate: noApprovalGate("npm whoami checks CLI authentication without publishing."),
+      command: npmCommand(target, ["whoami", "--registry", target.registry], undefined, true)
+    })
+
 const npmPublishArgs = (target: NpmRegistryTarget): ReadonlyArray<string> => {
   const args = ["publish", target.packagePath, "--registry", target.registry]
   if (target.access !== undefined) {
@@ -87,14 +108,7 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
       gate: noApprovalGate("CLI availability validation is read-only."),
       command: npmCommand(target, ["--version"], undefined, false)
     }),
-    ValidateCommandOperation.make({
-      id: `${target.id}:npm-whoami`,
-      targetId: target.id,
-      description: "Validate npm CLI authentication.",
-      risk: "read-only",
-      gate: noApprovalGate("npm whoami checks CLI authentication without publishing."),
-      command: npmCommand(target, ["whoami", "--registry", target.registry], undefined, true)
-    }),
+    npmAuthOperation(target),
     npmDryRunOperation(target),
     PublishCommandOperation.make({
       id: `${target.id}:npm-publish`,

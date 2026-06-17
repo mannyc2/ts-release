@@ -70,6 +70,42 @@ describe("npm target", () => {
     }
   })
 
+  test("models npm trusted publishing without npm whoami", async () => {
+    const trustedPublishingConfig = minimalConfig.replace(
+      "\"tokenEnv\":\"NPM_TOKEN\",",
+      "\"trustedPublishing\":true,"
+    )
+    const plan = await runEffect(createPlan(trustedPublishingConfig), TestLayer)
+    const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
+    const whoami = plan.operations.find((operation) => operation.id === "npm:npm-whoami")
+    const authNote = plan.operations.find((operation) => operation.id === "npm:npm-trusted-publishing-auth")
+    const publish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
+
+    expect(npm?.authRequirement).toBe("trusted-publishing")
+    expect(whoami).toBeUndefined()
+    expect(authNote?._tag).toBe("ValidationNoteOperation")
+    expect(publish?._tag).toBe("PublishCommandOperation")
+    if (publish?._tag === "PublishCommandOperation") {
+      expect(publish.command.requiredEnv).toEqual([])
+      expect(publish.command.redactedEnv).toEqual([])
+    }
+    expect(renderPlanText(plan)).toContain("auth=trusted-publishing")
+  })
+
+  test("rejects npm trusted publishing when tokenEnv is also declared", async () => {
+    const invalidConfig = minimalConfig.replace(
+      "\"tokenEnv\":\"NPM_TOKEN\",",
+      "\"tokenEnv\":\"NPM_TOKEN\",\"trustedPublishing\":true,"
+    )
+    const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
+
+    expect(error._tag).toBe("ReleaseNormalizationError")
+    if (error._tag === "ReleaseNormalizationError") {
+      expect(error.field).toBe("targets.npm.tokenEnv")
+      expect(error.reason).toContain("trusted publishing")
+    }
+  })
+
   test("adds npm provenance only when target policy enables it", async () => {
     const provenanceConfig = minimalConfig.replace(
       "\"tokenEnv\":\"NPM_TOKEN\",",

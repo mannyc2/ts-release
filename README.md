@@ -116,9 +116,8 @@ The helper provides the Bun host and live target registry internally, so callers
       "id": "npm",
       "registry": "https://registry.npmjs.org",
       "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
+      "trustedPublishing": true,
       "access": "public",
-      "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"
@@ -212,7 +211,7 @@ operations: 9
 
 targets:
   - github [GitHubReleaseTarget] auth=env-token dry-run=simulated strategy=simulated-plan mutability=mutable-release recovery=delete-and-recreate
-  - npm [NpmRegistryTarget] auth=env-token dry-run=native strategy=native-command mutability=immutable recovery=publish-new-version
+  - npm [NpmRegistryTarget] auth=trusted-publishing dry-run=native strategy=native-command mutability=immutable recovery=publish-new-version
 ```
 
 JSON plans include the same data in a stable, CI-artifact-friendly shape, including `targetCapabilities`.
@@ -301,6 +300,16 @@ bun run check:self-release-config
 
 ### Local Release Auth
 
-Use `.env.example` as the local credential contract. Export `NPM_TOKEN` and `GH_TOKEN`, or copy `.env.example` to `.env` and fill in the tokens locally. `.env` and `.npmrc` are ignored intentionally; keep token values out of commits. `.npmrc.example` shows npm's `${NPM_TOKEN}` interpolation form for local setup.
+Use `.env.example` as the local credential contract. Export `GH_TOKEN`, or copy
+`.env.example` to `.env` and fill in token values locally. `.env` and `.npmrc`
+are ignored intentionally; keep token values out of commits. `.npmrc.example`
+shows npm's `${NPM_TOKEN}` interpolation form for token-based npm targets.
+
+For npmjs releases from GitHub Actions, prefer `trustedPublishing: true` on the
+npm target. Trusted publishing authenticates during `npm publish` with CI OIDC,
+so `ts-release` records that mode in validation evidence instead of running
+`npm whoami`, which does not validate OIDC publishing. Configure npmjs trusted
+publishing for the package and use a GitHub-hosted runner with `id-token: write`,
+Node 22.14+ and npm 11.5.1+.
 
 The first-release GitHub target uses `GH_TOKEN` for both `gh` command authentication and read-only REST API verification. Draft release verification requires authenticated API access. Enable npm provenance for CI-based publishes where the registry can generate provenance.

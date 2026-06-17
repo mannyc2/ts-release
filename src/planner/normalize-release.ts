@@ -1,9 +1,10 @@
 import * as Effect from "effect/Effect"
-import { ArtifactInventoryItem, artifactInventoryOrder, Checksum } from "../domain/artifact.js"
+import { artifactInventoryOrder } from "../domain/artifact.js"
 import { CommandSpec } from "../domain/operation.js"
 import { ReleaseIdentity, ReleaseIntent, ReleaseModel, SourceMetadata } from "../domain/release.js"
 import { targetOrder } from "../domain/target.js"
-import { ReleaseHost } from "../host/host.js"
+import { ReleaseCommandRunner } from "../host/host.js"
+import { inventoryArtifact } from "./artifact-inventory.js"
 import { ReleaseNormalizationError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
@@ -52,6 +53,38 @@ const validateSafeRelativePath = (
   )
 }
 
+const validateWorkflowFileName = (
+  field: string,
+  value: string
+): Effect.Effect<void, ReleaseNormalizationError> => {
+  const hasPathSeparator = value.includes("/") || value.includes("\\")
+  const hasWorkflowExtension = value.endsWith(".yml") || value.endsWith(".yaml")
+  if (value.length > 0 && !hasPathSeparator && hasWorkflowExtension) {
+    return Effect.void
+  }
+  return Effect.fail(
+    ReleaseNormalizationError.make({
+      field,
+      reason: "Workflow must be a .yml or .yaml filename without path separators."
+    })
+  )
+}
+
+const validateNonEmptyString = (
+  field: string,
+  value: string
+): Effect.Effect<void, ReleaseNormalizationError> => {
+  if (value.trim().length > 0) {
+    return Effect.void
+  }
+  return Effect.fail(
+    ReleaseNormalizationError.make({
+      field,
+      reason: "Value must not be empty."
+    })
+  )
+}
+
 const gitHeadCommand = (root: string): CommandSpec =>
   CommandSpec.make({
     executable: "git",
@@ -66,8 +99,8 @@ const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(ident
     return identity
   }
 
-  const host = yield* ReleaseHost
-  const result = yield* host.runCommand(gitHeadCommand(root)).pipe(
+  const commandRunner = yield* ReleaseCommandRunner
+  const result = yield* commandRunner.runCommand(gitHeadCommand(root)).pipe(
     Effect.mapError((error) =>
       ReleaseNormalizationError.make({
         field: "identity.commit",
@@ -109,7 +142,22 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   }
   for (const target of intent.targets) {
     if (target._tag === "NpmRegistryTarget") {
+      yield* validateNonEmptyString(`targets.${target.id}.packageName`, target.packageName)
       yield* validateSafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath)
+      if (target.trustedPublishing !== undefined && target.tokenEnv !== undefined) {
+        return yield* Effect.fail(
+          ReleaseNormalizationError.make({
+            field: `targets.${target.id}.tokenEnv`,
+            reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
+          })
+        )
+      }
+      if (target.trustedPublishing !== undefined) {
+        yield* validateWorkflowFileName(
+          `targets.${target.id}.trustedPublishing.workflow`,
+          target.trustedPublishing.workflow
+        )
+      }
     }
     if (target._tag === "HomebrewTapTarget") {
       yield* validateSafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath)
@@ -125,59 +173,8 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
     }
   }
 
-  const host = yield* ReleaseHost
   const identity = yield* resolveIdentityCommit(intent.identity, root)
-  const inventory: Array<ArtifactInventoryItem> = []
-
-  for (const artifact of intent.artifacts) {
-    const info = yield* host.stat(artifact.path).pipe(
-      Effect.mapError((error) =>
-        ReleaseNormalizationError.make({
-          field: `artifacts.${artifact.id}.path`,
-          reason: error.reason
-        })
-      )
-    )
-    if (artifact.format === "directory" && info.kind !== "directory") {
-      return yield* Effect.fail(
-        ReleaseNormalizationError.make({
-          field: `artifacts.${artifact.id}.format`,
-          reason: `Expected directory artifact at ${artifact.path}`
-        })
-      )
-    }
-    if (artifact.format !== "directory" && info.kind === "directory") {
-      return yield* Effect.fail(
-        ReleaseNormalizationError.make({
-          field: `artifacts.${artifact.id}.format`,
-          reason: `Expected file-like artifact at ${artifact.path}`
-        })
-      )
-    }
-    const checksum = artifact.checksum ?? (artifact.format === "directory"
-      ? undefined
-      : Checksum.make({
-        algorithm: "sha256",
-        value: yield* host.hashFile(artifact.path, "sha256").pipe(
-          Effect.mapError((error) =>
-            ReleaseNormalizationError.make({
-              field: `artifacts.${artifact.id}.checksum`,
-              reason: error.reason
-            })
-          )
-        )
-      }))
-    inventory.push(
-      ArtifactInventoryItem.make({
-        id: artifact.id,
-        path: artifact.path,
-        format: artifact.format,
-        consumers: [...artifact.consumers].sort(),
-        sizeBytes: info.sizeBytes,
-        ...(checksum === undefined ? {} : { checksum })
-      })
-    )
-  }
+  const inventory = yield* Effect.forEach(intent.artifacts, (artifact) => inventoryArtifact(root, artifact))
 
   return ReleaseModel.make({
     identity,

@@ -18,16 +18,16 @@ export const aggregateSourcePaths: ReadonlyArray<string> = [
 ]
 
 export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
-  "host/bun.ts",
   "host/http-live.ts",
+  "host/platform.ts",
   "host/test.ts",
+  "api/live.ts",
   "targets/live.ts",
   "targets/npm.ts",
   "targets/github.ts",
   "targets/homebrew.ts",
   "targets/pypi.ts",
   "targets/scoop.ts",
-  "cli/programmatic.ts",
   "cli/main.ts"
 ]
 
@@ -39,29 +39,15 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
 
 export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: ".", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./api", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  {
+    subpath: "./api/live",
+    allowedRuntimeSourcePaths: ["api/live.ts", "host/http-live.ts", "host/http.ts", "targets/live.ts", "targets/npm.ts", "targets/github.ts", "targets/homebrew.ts", "targets/pypi.ts", "targets/scoop.ts"],
+    allowedExternalPrefixes: [],
+    allowsBunGlobal: false
+  },
   { subpath: "./cli", allowedRuntimeSourcePaths: ["cli/command.ts"], allowedExternalPrefixes: ["effect/unstable/cli"], allowsBunGlobal: false },
   { subpath: "./cli/command", allowedRuntimeSourcePaths: ["cli/command.ts"], allowedExternalPrefixes: ["effect/unstable/cli"], allowsBunGlobal: false },
-  {
-    subpath: "./cli/programmatic",
-    allowedRuntimeSourcePaths: [
-      "cli/programmatic.ts",
-      "cli/command.ts",
-      "host/bun.ts",
-      "host/http-live.ts",
-      "targets/live.ts",
-      "targets/npm.ts",
-      "targets/github.ts",
-      "targets/homebrew.ts",
-      "targets/pypi.ts",
-      "targets/scoop.ts"
-    ],
-    allowedExternalPrefixes: [
-      "@effect/platform-bun",
-      "effect/unstable/cli",
-      "node:"
-    ],
-    allowsBunGlobal: true
-  },
   { subpath: "./config/errors", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/load", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/schema", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
@@ -69,11 +55,12 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./domain/evidence", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./domain/operation", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./domain/release", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./domain/status", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./domain/target", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./host", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
-  { subpath: "./host/bun", allowedRuntimeSourcePaths: ["host/bun.ts"], allowedExternalPrefixes: ["node:"], allowsBunGlobal: true },
   { subpath: "./host/http", allowedRuntimeSourcePaths: ["host/http.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./host/http-live", allowedRuntimeSourcePaths: ["host/http-live.ts", "host/http.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./host/platform", allowedRuntimeSourcePaths: ["host/platform.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./host/test", allowedRuntimeSourcePaths: ["host/test.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/create-release-plan", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/errors", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
@@ -81,6 +68,7 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./planner/executor", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/normalize-release", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/render-plan", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./planner/status", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/adapter", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/github", allowedRuntimeSourcePaths: ["targets/github.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/homebrew", allowedRuntimeSourcePaths: ["targets/homebrew.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },

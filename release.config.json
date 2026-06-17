@@ -18,6 +18,36 @@
       "path": ".release/artifacts/mannyc1-ts-release-0.0.1.tgz",
       "format": "tarball",
       "consumers": ["github"]
+    },
+    {
+      "id": "cli-linux-x64",
+      "path": ".release/artifacts/ts-release-0.0.1-linux-x64",
+      "format": "file",
+      "consumers": ["github"]
+    },
+    {
+      "id": "cli-linux-arm64",
+      "path": ".release/artifacts/ts-release-0.0.1-linux-arm64",
+      "format": "file",
+      "consumers": ["github"]
+    },
+    {
+      "id": "cli-darwin-x64",
+      "path": ".release/artifacts/ts-release-0.0.1-darwin-x64",
+      "format": "file",
+      "consumers": ["github"]
+    },
+    {
+      "id": "cli-darwin-arm64",
+      "path": ".release/artifacts/ts-release-0.0.1-darwin-arm64",
+      "format": "file",
+      "consumers": ["github"]
+    },
+    {
+      "id": "cli-windows-x64",
+      "path": ".release/artifacts/ts-release-0.0.1-windows-x64.exe",
+      "format": "file",
+      "consumers": ["github"]
     }
   ],
   "targets": [
@@ -25,9 +55,16 @@
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
+      "packageName": "@mannyc1/ts-release",
       "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "packageExists": true,
+        "verifyPackageExists": true
+      },
       "access": "public",
+      "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"
@@ -37,7 +74,7 @@
       "id": "github",
       "repository": "mannyc2/ts-release",
       "tokenEnv": "GH_TOKEN",
-      "draft": true,
+      "draft": false,
       "prerelease": false,
       "dryRunSupport": "simulated",
       "mutability": "mutable-release",

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { mkdir, rm } from "node:fs/promises"
@@ -7,8 +8,8 @@ import { dirname } from "node:path"
 import { pid } from "node:process"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { ExecutionApproval } from "../src/domain/operation.js"
-import { BunReleaseHostLayer } from "../src/host/bun.js"
 import { LiveReleaseHttpLayer } from "../src/host/http-live.js"
+import { PlatformCommandRunnerLayer } from "../src/host/platform.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { runOperations } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
@@ -23,7 +24,7 @@ const npmPackagePath = `${fixtureRoot}/npm-package`
 const githubAssetPath = `${fixtureRoot}/github-asset.tgz`
 
 const IntegrationHostHttpClientLayer = Layer.mergeAll(
-  BunReleaseHostLayer,
+  PlatformCommandRunnerLayer.pipe(Layer.provideMerge(BunServices.layer)),
   BunHttpClient.layer
 )
 
@@ -87,6 +88,7 @@ describe("real tool integrations", () => {
             _tag: "NpmRegistryTarget",
             id: "npm",
             registry: "https://registry.npmjs.org",
+            packageName: "release-integration-fixture",
             packagePath: npmPackagePath,
             dryRunSupport: "native",
             mutability: "immutable",

@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import {
+  EvidenceBundle,
+  ExecutionEvidence
+} from "../src/domain/evidence.js"
+import {
   CommandSpec,
   ExecutionApproval,
   HttpEnvHeader,
@@ -13,11 +17,66 @@ import {
   ValidateCommandOperation,
   VerifyHttpOperation
 } from "../src/domain/operation.js"
+import {
+  PlannerMetadata,
+  ReleaseIdentity,
+  ReleasePlan,
+  SourceMetadata
+} from "../src/domain/release.js"
 import { httpRequestKey, makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
-import { redactText } from "../src/planner/evidence-recorder.js"
+import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
+import {
+  mergeEvidenceBundles,
+  readEvidenceBundle,
+  redactText,
+  renderEvidenceJson,
+  tryReadEvidenceBundle
+} from "../src/planner/evidence-recorder.js"
 import { runOperation } from "../src/planner/executor.js"
 import { runEffect } from "./helpers.js"
+
+const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlan =>
+  ReleasePlan.make({
+    schemaVersion: "release-plan/v1",
+    identity: ReleaseIdentity.make({
+      name,
+      version,
+      commit: "abc123"
+    }),
+    source: SourceMetadata.make({
+      root: "."
+    }),
+    artifacts: [],
+    targets: [],
+    targetCapabilities: [],
+    operations: [],
+    evidenceDirectory: ".release/evidence",
+    metadata: PlannerMetadata.make({
+      createdBy: "test",
+      planSchemaVersion: "release-plan/v1"
+    })
+  })
+
+const evidenceRecord = (operationId: string) =>
+  ExecutionEvidence.make({
+    id: `${operationId}:execution`,
+    operationId,
+    status: "passed",
+    severity: "info",
+    message: "ok",
+    timestamp: "2026-06-17T00:00:00.000Z"
+  })
+
+const evidenceBundle = (
+  plan: ReleasePlan,
+  records: EvidenceBundle["records"] = []
+): EvidenceBundle =>
+  EvidenceBundle.make({
+    schemaVersion: "release-evidence/v1",
+    releaseName: plan.identity.name,
+    releaseVersion: plan.identity.version,
+    records
+  })
 
 describe("evidence recorder", () => {
   test("redacts known secret values", () => {
@@ -42,7 +101,7 @@ describe("evidence recorder", () => {
       gate: noApprovalGate("read-only"),
       command
     })
-    const layer = makeTestReleaseHostLayer({
+    const layer = makeTestCommandRunnerLayer({
       env: new Map([["TOKEN", "super_secret"]]),
       commands: new Map([
         [commandKey(command), {
@@ -84,7 +143,7 @@ describe("evidence recorder", () => {
       ]
     })
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
+      makeTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
       makeTestReleaseHttpLayer({
         responses: new Map([
           [httpRequestKey(request), {
@@ -126,7 +185,7 @@ describe("evidence recorder", () => {
       ]
     })
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer(),
+      makeTestCommandRunnerLayer(),
       makeTestReleaseHttpLayer({
         responses: new Map([
           [httpRequestKey(request), {
@@ -144,5 +203,84 @@ describe("evidence recorder", () => {
       expect(error.responseStatus).toBe(200)
       expect(error.reason).toBe("HTTP verification failed.")
     }
+  })
+
+  test("reads a valid evidence bundle", async () => {
+    const plan = makePlan()
+    const bundle = evidenceBundle(plan)
+    const read = await runEffect(
+      readEvidenceBundle(".release/evidence/render.json"),
+      makeTestCommandRunnerLayer({
+        files: new Map([
+          [".release/evidence/render.json", renderEvidenceJson(bundle)]
+        ])
+      })
+    )
+
+    expect(read.releaseName).toBe("release")
+    expect(read.records).toEqual([])
+  })
+
+  test("returns undefined for missing optional evidence", async () => {
+    const read = await runEffect(
+      tryReadEvidenceBundle(".release/evidence/render.json"),
+      makeTestCommandRunnerLayer()
+    )
+
+    expect(read).toBeUndefined()
+  })
+
+  test("fails invalid evidence JSON with EvidenceReadError", async () => {
+    const error = await runEffect(
+      readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip),
+      makeTestCommandRunnerLayer({
+        files: new Map([
+          [".release/evidence/render.json", "{not json"]
+        ])
+      })
+    )
+
+    expect(error._tag).toBe("EvidenceReadError")
+  })
+
+  test("fails wrong evidence schema with EvidenceReadError", async () => {
+    const error = await runEffect(
+      readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip),
+      makeTestCommandRunnerLayer({
+        files: new Map([
+          [".release/evidence/render.json", JSON.stringify({ schemaVersion: "wrong" })]
+        ])
+      })
+    )
+
+    expect(error._tag).toBe("EvidenceReadError")
+  })
+
+  test("merges evidence bundles in order", async () => {
+    const plan = makePlan()
+    const merged = await runEffect(
+      mergeEvidenceBundles(
+        plan,
+        evidenceBundle(plan, [evidenceRecord("first")]),
+        evidenceBundle(plan, [evidenceRecord("second")])
+      ),
+      makeTestCommandRunnerLayer()
+    )
+
+    expect(merged.records.map((record) => record.id)).toEqual(["first:execution", "second:execution"])
+  })
+
+  test("rejects merging evidence from another release", async () => {
+    const plan = makePlan()
+    const error = await runEffect(
+      mergeEvidenceBundles(
+        plan,
+        evidenceBundle(plan),
+        evidenceBundle(makePlan("other", "9.9.9"))
+      ).pipe(Effect.flip),
+      makeTestCommandRunnerLayer()
+    )
+
+    expect(error._tag).toBe("EvidenceReadError")
   })
 })

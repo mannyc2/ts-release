@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { validatePlan } from "../src/planner/executor.js"
 import { renderPlanText } from "../src/planner/render-plan.js"
@@ -10,7 +10,7 @@ import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
@@ -25,6 +25,11 @@ const createPlan = (config: string = minimalConfig) =>
     const intent = yield* parseReleaseIntent(config)
     return yield* createReleasePlan(intent)
   })
+
+const trustedPublishingConfig = minimalConfig.replace(
+  "\"tokenEnv\":\"NPM_TOKEN\",",
+  "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+)
 
 const expectValidationRecord = (
   records: ReadonlyArray<{ readonly id: string; readonly status: string; readonly severity?: string; readonly skipped?: boolean }>,
@@ -55,6 +60,20 @@ describe("SPEC completeness", () => {
     expect(github?.dryRunSupport).toBe("simulated")
     expect(github?.validationStrategy).toBe("simulated-plan")
     expect(github?.recovery).toBe("delete-and-recreate")
+  })
+
+  test("records trusted publishing setup in target capabilities", async () => {
+    const plan = await runEffect(createPlan(trustedPublishingConfig), TestLayer)
+    const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
+
+    expect(npm?.authRequirement).toBe("trusted-publishing")
+    expect(npm?.authSetup).toEqual({
+      runsIn: "ci",
+      provider: "github-actions",
+      workflow: "release.yml",
+      requiredPermissions: [{ name: "id-token", value: "write" }],
+      prerequisites: ["npm-package-exists"]
+    })
   })
 
   test("records skipped dry-run validators in non-strict evidence", async () => {
@@ -119,12 +138,17 @@ describe("SPEC completeness", () => {
   })
 
   test("renders review-critical details in text plans", async () => {
-    const plan = await runEffect(createPlan(), TestLayer)
+    const plan = await runEffect(createPlan(trustedPublishingConfig), TestLayer)
     const text = renderPlanText(plan)
 
     expect(text).toContain("evidence: .release/evidence")
     expect(text).toContain("checksum=none")
-    expect(text).toContain("auth=env-token")
+    expect(text).toContain("auth=trusted-publishing")
+    expect(text).toContain("runs-in=ci")
+    expect(text).toContain("provider=github-actions")
+    expect(text).toContain("workflow=release.yml")
+    expect(text).toContain("required-permission=id-token:write")
+    expect(text).toContain("package-prerequisite=exists")
     expect(text).toContain("dry-run=simulated")
     expect(text).toContain("strategy=simulated-plan")
     expect(text).toContain("recovery=delete-and-recreate")

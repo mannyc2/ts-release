@@ -3,14 +3,14 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/domain/operation.js"
-import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
+import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlanJson } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
@@ -28,7 +28,7 @@ const gitHeadCommand = CommandSpec.make({
 })
 
 describe("planner", () => {
-  test("creates stable plans with sorted targets and operations", async () => {
+  test("creates stable plans with ordered operation phases", async () => {
     const plan = await runEffect(
       Effect.gen(function*() {
         const intent = yield* parseReleaseIntent(minimalConfig)
@@ -37,10 +37,25 @@ describe("planner", () => {
       TestLayer
     )
 
-    expect(plan.targets.map((target) => target.id)).toEqual(["github", "npm"])
-    expect(plan.operations.map((operation) => operation.id)).toEqual(
-      [...plan.operations.map((operation) => operation.id)].sort()
+    const publishIds = plan.operations
+      .filter((operation) => operation._tag === "PublishCommandOperation")
+      .map((operation) => operation.id)
+    const firstPublishIndex = plan.operations.findIndex((operation) => operation._tag === "PublishCommandOperation")
+    const firstVerifyIndex = plan.operations.findIndex((operation) =>
+      operation._tag === "VerifyRemoteOperation" || operation._tag === "VerifyHttpOperation"
     )
+
+    expect(plan.targets.map((target) => target.id)).toEqual(["github", "npm"])
+    expect(publishIds).toEqual(["npm:npm-publish", "github:gh-release-create"])
+    expect(firstPublishIndex).toBeGreaterThan(
+      Math.max(
+        ...plan.operations
+          .map((operation, index) =>
+            operation._tag === "ValidateCommandOperation" || operation._tag === "ValidationNoteOperation" ? index : -1
+          )
+      )
+    )
+    expect(firstVerifyIndex).toBeGreaterThan(firstPublishIndex)
     expect(plan.identity.commit).toBe("abc123")
     expect(renderPlanJson(plan)).toBe(renderPlanJson(plan))
   })
@@ -48,7 +63,7 @@ describe("planner", () => {
   test("resolves HEAD release identity through the host git command", async () => {
     const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
+      makeTestCommandRunnerLayer({
         directories: new Set(["."]),
         env: new Map([
           ["NPM_TOKEN", "npm_secret"],
@@ -79,7 +94,7 @@ describe("planner", () => {
   test("reports git HEAD resolution failures as normalization errors", async () => {
     const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
     const layer = Layer.mergeAll(
-      makeTestReleaseHostLayer({
+      makeTestCommandRunnerLayer({
         directories: new Set(["."]),
         env: new Map([
           ["NPM_TOKEN", "npm_secret"],

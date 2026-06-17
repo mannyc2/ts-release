@@ -11,6 +11,7 @@ Scripts in this directory are maintained release tooling, not a scratchpad.
 - `check-examples.ts` verifies every example can produce a text release plan.
 - `check-readme.ts` validates README fenced snippets and package import subpaths.
 - `check-self-release-config.ts` verifies the repository's own release config is publish-ready.
+- `build-release-artifacts.ts` prepares ignored `.release/artifacts` inputs for `ts-release`, including the npm tarball and standalone CLI executables.
 
 ## Internal Helpers
 

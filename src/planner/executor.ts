@@ -1,4 +1,6 @@
 import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
 import {
   CommandEvidence,
   EvidenceBundle,
@@ -14,7 +16,7 @@ import {
   requireExecutionApproval
 } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
-import { HostError, ReleaseHost } from "../host/host.js"
+import { CommandRunnerError, ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
 import {
   appendEvidenceRecord,
@@ -24,12 +26,12 @@ import {
   httpEvidenceFromResult,
   validationNoteEvidence
 } from "./evidence-recorder.js"
-import { OperationFailedError } from "./errors.js"
+import { OperationFailedError, WorkspaceWriteError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
 
 type OperationFailureEvidence = CommandEvidence | HttpEvidence
-type NonHttpOperation = Exclude<Operation, Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>>
+type CommandOperation = Extract<Operation, { readonly command: unknown }>
 type RenderOperation = Extract<Operation, { readonly _tag: "RenderFileOperation" }>
 type ValidationOperation = Extract<Operation, { readonly _tag: "ValidateCommandOperation" | "ValidationNoteOperation" }>
 type PublishOperation = Extract<Operation, { readonly _tag: "PublishCommandOperation" }>
@@ -37,6 +39,30 @@ type VerificationOperation = Extract<Operation, { readonly _tag: "VerifyRemoteOp
 
 const operationFailed = (evidence: EvidenceRecord): evidence is OperationFailureEvidence =>
   evidence.status === "failed" && ("exitCode" in evidence || "request" in evidence)
+
+const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
+  path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
+
+const writeWorkspaceFile = Effect.fn("writeWorkspaceFile")(function*(
+  root: string,
+  pathName: string,
+  contents: string
+) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const targetPath = workspacePath(path, root, pathName)
+  yield* Effect.gen(function*() {
+    yield* fs.makeDirectory(path.dirname(targetPath), { recursive: true })
+    yield* fs.writeFileString(targetPath, contents)
+  }).pipe(
+    Effect.mapError((error) =>
+      WorkspaceWriteError.make({
+        path: pathName,
+        reason: error.message
+      })
+    )
+  )
+})
 
 const failOperationEvidence = (
   evidence: OperationFailureEvidence,
@@ -73,26 +99,43 @@ const failWorkflowOperation = (
 
 export function runOperationEvidence(
   operation: Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>,
-  approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError, ReleaseHost | ReleaseHttp>
+  approval: ExecutionApproval,
+  root?: string
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError, ReleaseHttp>
 export function runOperationEvidence(
-  operation: NonHttpOperation,
-  approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError | HostError, ReleaseHost>
+  operation: RenderOperation,
+  approval: ExecutionApproval,
+  root?: string
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError | WorkspaceWriteError, FileSystem.FileSystem | Path.Path>
+export function runOperationEvidence(
+  operation: CommandOperation,
+  approval: ExecutionApproval,
+  root?: string
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError | CommandRunnerError, ReleaseCommandRunner>
+export function runOperationEvidence(
+  operation: Extract<Operation, { readonly _tag: "ValidationNoteOperation" }>,
+  approval: ExecutionApproval,
+  root?: string
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError>
 export function runOperationEvidence(
   operation: Operation,
-  approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError | HostError, ReleaseHost | ReleaseHttp>
+  approval: ExecutionApproval,
+  root?: string
+): Effect.Effect<
+  EvidenceRecord,
+  ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError,
+  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+>
 export function runOperationEvidence(
   operation: Operation,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  root: string = "."
 ) {
   return Effect.gen(function*() {
     yield* requireExecutionApproval(operation, approval)
 
     if (operation._tag === "RenderFileOperation") {
-      const host = yield* ReleaseHost
-      yield* host.writeFileString(operation.path, operation.contents)
+      yield* writeWorkspaceFile(root, operation.path, operation.contents)
       return yield* executionEvidence(operation, `Rendered ${operation.path}`)
     }
 
@@ -111,19 +154,43 @@ export function runOperationEvidence(
 export function runOperation(
   operation: Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError | HostError | OperationFailedError, ReleaseHost | ReleaseHttp>
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError | OperationFailedError, ReleaseHttp>
 export function runOperation(
-  operation: NonHttpOperation,
+  operation: RenderOperation,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError | HostError | OperationFailedError, ReleaseHost>
+): Effect.Effect<
+  EvidenceRecord,
+  ExecutionApprovalError | WorkspaceWriteError | OperationFailedError,
+  FileSystem.FileSystem | Path.Path
+>
+export function runOperation(
+  operation: CommandOperation,
+  approval: ExecutionApproval
+): Effect.Effect<
+  EvidenceRecord,
+  ExecutionApprovalError | CommandRunnerError | OperationFailedError,
+  ReleaseCommandRunner
+>
+export function runOperation(
+  operation: Extract<Operation, { readonly _tag: "ValidationNoteOperation" }>,
+  approval: ExecutionApproval
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError | OperationFailedError>
 export function runOperation(
   operation: Operation,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError | HostError | OperationFailedError, ReleaseHost | ReleaseHttp>
+): Effect.Effect<
+  EvidenceRecord,
+  ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
+  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+>
 export function runOperation(
   operation: Operation,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceRecord, ExecutionApprovalError | HostError | OperationFailedError, unknown> {
+): Effect.Effect<
+  EvidenceRecord,
+  ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
+  unknown
+> {
   if (operation._tag === "VerifyHttpOperation") {
     return Effect.gen(function*() {
       const evidence = yield* runOperationEvidence(operation, approval)
@@ -147,17 +214,39 @@ export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<VerificationOperation>,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceBundle, ExecutionApprovalError | HostError | OperationFailedError, ReleaseHost | ReleaseHttp>
+): Effect.Effect<
+  EvidenceBundle,
+  ExecutionApprovalError | CommandRunnerError | OperationFailedError,
+  ReleaseCommandRunner | ReleaseHttp
+>
 export function runOperations(
   plan: ReleasePlan,
-  operations: ReadonlyArray<NonHttpOperation>,
+  operations: ReadonlyArray<RenderOperation>,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceBundle, ExecutionApprovalError | HostError | OperationFailedError, ReleaseHost>
+): Effect.Effect<
+  EvidenceBundle,
+  ExecutionApprovalError | WorkspaceWriteError | OperationFailedError,
+  FileSystem.FileSystem | Path.Path
+>
+export function runOperations(
+  plan: ReleasePlan,
+  operations: ReadonlyArray<ValidationOperation>,
+  approval: ExecutionApproval
+): Effect.Effect<EvidenceBundle, ExecutionApprovalError | CommandRunnerError | OperationFailedError, ReleaseCommandRunner>
+export function runOperations(
+  plan: ReleasePlan,
+  operations: ReadonlyArray<PublishOperation>,
+  approval: ExecutionApproval
+): Effect.Effect<EvidenceBundle, ExecutionApprovalError | CommandRunnerError | OperationFailedError, ReleaseCommandRunner>
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval
-): Effect.Effect<EvidenceBundle, ExecutionApprovalError | HostError | OperationFailedError, ReleaseHost | ReleaseHttp>
+): Effect.Effect<
+  EvidenceBundle,
+  ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
+  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+>
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<Operation>,
@@ -166,7 +255,7 @@ export function runOperations(
   return Effect.gen(function*() {
     let bundle: EvidenceBundle = emptyEvidenceBundle(plan)
     for (const operation of operations) {
-      const evidence = yield* runOperationEvidence(operation, approval)
+      const evidence = yield* runOperationEvidence(operation, approval, plan.source.root)
       bundle = appendEvidenceRecord(bundle, evidence)
       if (operationFailed(evidence)) {
         return yield* failOperationEvidence(evidence, bundle)

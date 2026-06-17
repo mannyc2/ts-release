@@ -38,6 +38,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    },
+    "./api/live": {
+      "types": "./dist/api/live.d.ts",
+      "default": "./dist/api/live.js"
+    },
     "./cli": {
       "types": "./dist/cli/command.d.ts",
       "default": "./dist/cli/command.js"
@@ -45,10 +53,6 @@
     "./cli/command": {
       "types": "./dist/cli/command.d.ts",
       "default": "./dist/cli/command.js"
-    },
-    "./cli/programmatic": {
-      "types": "./dist/cli/programmatic.d.ts",
-      "default": "./dist/cli/programmatic.js"
     },
     "./config/errors": {
       "types": "./dist/config/errors.d.ts",
@@ -78,6 +82,10 @@
       "types": "./dist/domain/release.d.ts",
       "default": "./dist/domain/release.js"
     },
+    "./domain/status": {
+      "types": "./dist/domain/status.d.ts",
+      "default": "./dist/domain/status.js"
+    },
     "./domain/target": {
       "types": "./dist/domain/target.d.ts",
       "default": "./dist/domain/target.js"
@@ -86,10 +94,6 @@
       "types": "./dist/host/host.d.ts",
       "default": "./dist/host/host.js"
     },
-    "./host/bun": {
-      "types": "./dist/host/bun.d.ts",
-      "default": "./dist/host/bun.js"
-    },
     "./host/http": {
       "types": "./dist/host/http.d.ts",
       "default": "./dist/host/http.js"
@@ -97,6 +101,10 @@
     "./host/http-live": {
       "types": "./dist/host/http-live.d.ts",
       "default": "./dist/host/http-live.js"
+    },
+    "./host/platform": {
+      "types": "./dist/host/platform.d.ts",
+      "default": "./dist/host/platform.js"
     },
     "./host/test": {
       "types": "./dist/host/test.d.ts",
@@ -125,6 +133,10 @@
     "./planner/render-plan": {
       "types": "./dist/planner/render-plan.d.ts",
       "default": "./dist/planner/render-plan.js"
+    },
+    "./planner/status": {
+      "types": "./dist/planner/status.d.ts",
+      "default": "./dist/planner/status.js"
     },
     "./targets/adapter": {
       "types": "./dist/targets/adapter.d.ts",
@@ -180,6 +192,7 @@
     "check:self-release-config": "bun run scripts/check-self-release-config.ts",
     "check:portable": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports && bun dist/cli/main.js --help",
     "check:release": "bun run check:self-release-config && bun run check:portable",
+    "release:artifacts": "bun run scripts/build-release-artifacts.ts",
     "cli": "bun run src/cli/main.ts"
   },
   "dependencies": {

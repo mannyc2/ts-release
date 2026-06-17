@@ -3,14 +3,14 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { ExecutionApproval } from "../src/domain/operation.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlan, validatePlan } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { releaseConfig, runEffect, scoopConfig } from "./helpers.js"
 
 const ScoopLayer = Layer.mergeAll(
-  makeTestReleaseHostLayer({
+  makeTestCommandRunnerLayer({
     files: new Map([["artifacts/release-0.1.0.zip", "scoop archive"]]),
     directories: new Set(["."])
   }),
@@ -56,7 +56,7 @@ describe("Scoop target", () => {
       expect(render.contents).toContain("\"homepage\": \"https://github.com/owner/release\"")
       expect(render.contents).toContain("\"license\": \"MIT\"")
       expect(render.contents).toContain("\"url\": \"https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.zip\"")
-      expect(render.contents).toContain("\"hash\": \"sha256:13:artifacts/release-0.1.0.zip\"")
+      expect(render.contents).toContain("\"hash\": \"73636f6f702061726368697665\"")
       expect(render.contents).toContain("\"bin\": \"release.exe\"")
     }
     if (publish?._tag === "PublishCommandOperation") {

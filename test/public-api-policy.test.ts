@@ -37,6 +37,12 @@ describe("public API policy", () => {
     expect(policySubpaths).toEqual(actualSubpaths)
   })
 
+  test("publishes the TypeScript API instead of the old programmatic CLI surface", () => {
+    const subpaths = new Set(publicExportPolicies.map((policy) => policy.subpath))
+    expect(subpaths.has("./api")).toBe(true)
+    expect(subpaths.has("./cli/programmatic")).toBe(false)
+  })
+
   test("uses source-relative runtime paths", () => {
     for (const policy of publicExportPolicies) {
       for (const sourcePath of policy.allowedRuntimeSourcePaths) {

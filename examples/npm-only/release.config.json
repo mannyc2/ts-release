@@ -18,8 +18,13 @@
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
+      "packageName": "release-example-npm-only",
       "packagePath": ".",
-      "trustedPublishing": true,
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "packageExists": true
+      },
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"

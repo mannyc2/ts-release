@@ -1,4 +1,9 @@
+import * as Config from "effect/Config"
 import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Option from "effect/Option"
+import * as Path from "effect/Path"
+import * as PlatformError from "effect/PlatformError"
 import * as Schema from "effect/Schema"
 import {
   CommandEvidence,
@@ -12,9 +17,9 @@ import {
 } from "../domain/evidence.js"
 import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, VerifyHttpOperation } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
-import { ReleaseHost } from "../host/host.js"
+import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
-import { EvidenceWriteError } from "./errors.js"
+import { EvidenceReadError, EvidenceWriteError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -47,8 +52,27 @@ export const redactText = (input: string, secrets: ReadonlyArray<string>): strin
   return output
 }
 
+const nowIso = Effect.fn("evidence.nowIso")(function*() {
+  const millis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  return new Date(millis).toISOString()
+})
+
+const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
+  Config.string(name).pipe(
+    Effect.option,
+    Effect.map(Option.getOrUndefined)
+  )
+
+const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
+  path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
+
+const formatUnknown = (cause: unknown): string =>
+  cause instanceof Error ? cause.message : String(cause)
+
+const isNotFoundError = (error: PlatformError.PlatformError): boolean =>
+  error.reason._tag === "NotFound"
+
 export const readRedactionSecrets = Effect.fn("readRedactionSecrets")(function*(operation: Operation) {
-  const host = yield* ReleaseHost
   const secrets: Array<string> = []
   const names = "command" in operation
     ? operation.command.redactedEnv
@@ -56,7 +80,7 @@ export const readRedactionSecrets = Effect.fn("readRedactionSecrets")(function*(
     ? operation.request.redactedEnv
     : []
   for (const name of names) {
-    const value = yield* host.readEnv(name)
+    const value = yield* readOptionalEnv(name)
     if (value !== undefined) {
       secrets.push(value)
     }
@@ -67,9 +91,9 @@ export const readRedactionSecrets = Effect.fn("readRedactionSecrets")(function*(
 export const commandEvidenceFromResult = Effect.fn("commandEvidenceFromResult")(function*(
   operation: Extract<Operation, { readonly command: CommandSpec }>
 ) {
-  const host = yield* ReleaseHost
+  const commandRunner = yield* ReleaseCommandRunner
   const secrets = yield* readRedactionSecrets(operation)
-  const result = yield* host.runCommand(operation.command)
+  const result = yield* commandRunner.runCommand(operation.command)
   const status = result.exitCode === 0 ? "passed" : "failed"
   return CommandEvidence.make({
     id: `${operation.id}:command`,
@@ -193,15 +217,14 @@ const httpRequestEvidence = (operation: VerifyHttpOperation): HttpRequestEvidenc
   })
 
 export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(function*(operation: VerifyHttpOperation) {
-  const host = yield* ReleaseHost
   const http = yield* ReleaseHttp
 
   return yield* http.runJson(operation.request).pipe(
     Effect.matchEffect({
       onFailure: (error) =>
         Effect.gen(function*() {
-          const startedAt = yield* host.now
-          const endedAt = yield* host.now
+          const startedAt = yield* nowIso()
+          const endedAt = yield* nowIso()
           return HttpEvidence.make({
             id: `${operation.id}:http`,
             operationId: operation.id,
@@ -254,8 +277,7 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
 })
 
 export const executionEvidence = Effect.fn("executionEvidence")(function*(operation: Operation, message: string) {
-  const host = yield* ReleaseHost
-  const timestamp = yield* host.now
+  const timestamp = yield* nowIso()
   return ExecutionEvidence.make({
     id: `${operation.id}:execution`,
     operationId: operation.id,
@@ -270,8 +292,7 @@ export const executionEvidence = Effect.fn("executionEvidence")(function*(operat
 export const validationNoteEvidence = Effect.fn("validationNoteEvidence")(function*(
   operation: Extract<Operation, { readonly _tag: "ValidationNoteOperation" }>
 ) {
-  const host = yield* ReleaseHost
-  const timestamp = yield* host.now
+  const timestamp = yield* nowIso()
   const status = operation.skipped ? "skipped" : operation.severity === "warning" ? "warning" : "passed"
   return ValidationEvidence.make({
     id: `${operation.id}:validation`,
@@ -287,16 +308,133 @@ export const validationNoteEvidence = Effect.fn("validationNoteEvidence")(functi
 export const renderEvidenceJson = (bundle: EvidenceBundle): string =>
   `${JSON.stringify(bundle, null, 2)}\n`
 
-export const writeEvidenceBundle = Effect.fn("writeEvidenceBundle")(function*(path: string, bundle: EvidenceBundle) {
-  const host = yield* ReleaseHost
-  yield* host.writeFileString(path, renderEvidenceJson(bundle)).pipe(
+export const writeEvidenceBundle = Effect.fn("writeEvidenceBundle")(function*(
+  pathName: string,
+  bundle: EvidenceBundle,
+  root: string = "."
+) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const targetPath = workspacePath(path, root, pathName)
+  yield* Effect.gen(function*() {
+    yield* fs.makeDirectory(path.dirname(targetPath), { recursive: true })
+    yield* fs.writeFileString(targetPath, renderEvidenceJson(bundle))
+  }).pipe(
     Effect.mapError((error) =>
       EvidenceWriteError.make({
-        path,
-        reason: error.reason
+        path: pathName,
+        reason: error.message
       })
     )
   )
 })
 
 export const decodeEvidenceBundle = Schema.decodeUnknownEffect(EvidenceBundle)
+
+const readEvidenceJson = Effect.fn("readEvidenceJson")(function*(pathName: string, root: string) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const targetPath = workspacePath(path, root, pathName)
+  const contents = yield* fs.readFileString(targetPath).pipe(
+    Effect.mapError((error) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: error.message
+      })
+    )
+  )
+  const parsed: unknown = yield* Effect.try({
+    try: () => JSON.parse(contents),
+    catch: (cause) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: formatUnknown(cause)
+      })
+  })
+  return parsed
+})
+
+export const readEvidenceBundle = Effect.fn("readEvidenceBundle")(function*(
+  pathName: string,
+  root: string = "."
+) {
+  const parsed = yield* readEvidenceJson(pathName, root)
+  return yield* decodeEvidenceBundle(parsed).pipe(
+    Effect.mapError((error) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: error.message
+      })
+    )
+  )
+})
+
+export const tryReadEvidenceBundle = Effect.fn("tryReadEvidenceBundle")(function*(
+  pathName: string,
+  root: string = "."
+) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const targetPath = workspacePath(path, root, pathName)
+  const contents = yield* fs.readFileString(targetPath).pipe(
+    Effect.catchIf(isNotFoundError, () => Effect.succeed(undefined)),
+    Effect.mapError((error) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: error.message
+      })
+    )
+  )
+  if (contents === undefined) {
+    return undefined
+  }
+  const parsed: unknown = yield* Effect.try({
+    try: () => JSON.parse(contents),
+    catch: (cause) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: formatUnknown(cause)
+      })
+  })
+  return yield* decodeEvidenceBundle(parsed).pipe(
+    Effect.mapError((error) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: error.message
+      })
+    )
+  )
+})
+
+const ensureBundleMatchesPlan = (
+  plan: ReleasePlan,
+  bundle: EvidenceBundle,
+  pathName: string
+): Effect.Effect<void, EvidenceReadError> => {
+  if (bundle.releaseName === plan.identity.name && bundle.releaseVersion === plan.identity.version) {
+    return Effect.void
+  }
+  return Effect.fail(
+    EvidenceReadError.make({
+      path: pathName,
+      reason:
+        `Evidence bundle is for ${bundle.releaseName}@${bundle.releaseVersion}, expected ${plan.identity.name}@${plan.identity.version}.`
+    })
+  )
+}
+
+export const mergeEvidenceBundles = Effect.fn("mergeEvidenceBundles")(function*(
+  plan: ReleasePlan,
+  existing: EvidenceBundle | undefined,
+  fresh: EvidenceBundle
+) {
+  const base = existing ?? emptyEvidenceBundle(plan)
+  yield* ensureBundleMatchesPlan(plan, base, plan.evidenceDirectory)
+  yield* ensureBundleMatchesPlan(plan, fresh, plan.evidenceDirectory)
+  return EvidenceBundle.make({
+    schemaVersion: "release-evidence/v1",
+    releaseName: plan.identity.name,
+    releaseVersion: plan.identity.version,
+    records: [...base.records, ...fresh.records]
+  })
+})

@@ -26,6 +26,7 @@ export const minimalConfig = JSON.stringify({
       _tag: "NpmRegistryTarget",
       id: "npm",
       registry: "https://registry.npmjs.org",
+      packageName: "release",
       packagePath: ".",
       tokenEnv: "NPM_TOKEN",
       dryRunSupport: "native",

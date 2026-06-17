@@ -1,9 +1,9 @@
 {
   "identity": {
     "name": "@mannyc1/ts-release",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "commit": "HEAD",
-    "tag": "v0.0.0",
+    "tag": "v0.0.1",
     "notes": "Initial release of the plan-first release package."
   },
   "artifacts": [
@@ -15,7 +15,7 @@
     },
     {
       "id": "package-tarball",
-      "path": ".release/artifacts/mannyc1-ts-release-0.0.0.tgz",
+      "path": ".release/artifacts/mannyc1-ts-release-0.0.1.tgz",
       "format": "tarball",
       "consumers": ["github"]
     }

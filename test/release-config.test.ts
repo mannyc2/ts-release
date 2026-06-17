@@ -22,7 +22,7 @@ const TestLayer = Layer.mergeAll(
   makeTestReleaseHostLayer({
     directories: new Set(["."]),
     files: new Map([
-      [".release/artifacts/mannyc1-ts-release-0.0.0.tgz", "package tarball fixture\n"]
+      [".release/artifacts/mannyc1-ts-release-0.0.1.tgz", "package tarball fixture\n"]
     ]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],

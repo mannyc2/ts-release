@@ -22,7 +22,7 @@ const MainLayer = Layer.mergeAll(
   BunServices.layer
 )
 
-Command.run(cli, { version: "0.0.0" }).pipe(
+Command.run(cli, { version: "0.0.1" }).pipe(
   Effect.provide(MainLayer),
   BunRuntime.runMain
 )

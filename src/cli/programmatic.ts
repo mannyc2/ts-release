@@ -17,7 +17,7 @@ import { cli } from "./command.js"
 
 export type * from "../types/effect-internal.js"
 
-export const DEFAULT_RELEASE_CLI_VERSION = "0.0.0"
+export const DEFAULT_RELEASE_CLI_VERSION = "0.0.1"
 
 export const ReleasePlanFormat = Schema.Literals(["json", "text"])
 export type ReleasePlanFormat = typeof ReleasePlanFormat.Type

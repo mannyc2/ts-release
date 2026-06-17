@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { canExecuteOperation, ExecutionApproval } from "../src/domain/operation.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/domain/operation.js"
+import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlanJson } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
@@ -20,6 +20,13 @@ const TestLayer = Layer.mergeAll(
   LiveTargetRegistryLayer
 )
 
+const gitHeadCommand = CommandSpec.make({
+  executable: "git",
+  args: ["rev-parse", "--short", "HEAD"],
+  requiredEnv: [],
+  redactedEnv: []
+})
+
 describe("planner", () => {
   test("creates stable plans with sorted targets and operations", async () => {
     const plan = await runEffect(
@@ -34,7 +41,72 @@ describe("planner", () => {
     expect(plan.operations.map((operation) => operation.id)).toEqual(
       [...plan.operations.map((operation) => operation.id)].sort()
     )
+    expect(plan.identity.commit).toBe("abc123")
     expect(renderPlanJson(plan)).toBe(renderPlanJson(plan))
+  })
+
+  test("resolves HEAD release identity through the host git command", async () => {
+    const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
+    const layer = Layer.mergeAll(
+      makeTestReleaseHostLayer({
+        directories: new Set(["."]),
+        env: new Map([
+          ["NPM_TOKEN", "npm_secret"],
+          ["GH_TOKEN", "gh_secret"]
+        ]),
+        commands: new Map([
+          [commandKey(gitHeadCommand), {
+            exitCode: 0,
+            stdout: "81587b5\n",
+            stderr: ""
+          }]
+        ])
+      }),
+      LiveTargetRegistryLayer
+    )
+
+    const plan = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(headConfig)
+        return yield* createReleasePlan(intent)
+      }),
+      layer
+    )
+
+    expect(plan.identity.commit).toBe("81587b5")
+  })
+
+  test("reports git HEAD resolution failures as normalization errors", async () => {
+    const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
+    const layer = Layer.mergeAll(
+      makeTestReleaseHostLayer({
+        directories: new Set(["."]),
+        env: new Map([
+          ["NPM_TOKEN", "npm_secret"],
+          ["GH_TOKEN", "gh_secret"]
+        ]),
+        commands: new Map([
+          [commandKey(gitHeadCommand), {
+            exitCode: 1,
+            stdout: "",
+            stderr: "not a git checkout"
+          }]
+        ])
+      }),
+      LiveTargetRegistryLayer
+    )
+
+    const exit = await Effect.runPromiseExit(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(headConfig)
+        return yield* createReleasePlan(intent)
+      }).pipe(Effect.provide(layer))
+    )
+
+    expect(exit._tag).toBe("Failure")
+    if (exit._tag === "Failure") {
+      expect(String(exit.cause)).toContain("ReleaseNormalizationError")
+    }
   })
 
   test("marks publish operations as gated", async () => {

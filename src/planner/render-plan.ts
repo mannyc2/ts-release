@@ -6,6 +6,11 @@ export type * from "../types/effect-internal.js"
 const commandLine = (operation: Extract<Operation, { readonly command: CommandSpec }>): string =>
   [operation.command.executable, ...operation.command.args].join(" ")
 
+const commandArgv = (operation: Extract<Operation, { readonly command: CommandSpec }>): ReadonlyArray<string> => [
+  operation.command.executable,
+  ...operation.command.args
+]
+
 const artifactLine = (artifact: ReleasePlan["artifacts"][number]): string => {
   const checksum = artifact.checksum === undefined
     ? "checksum=none"
@@ -48,12 +53,17 @@ export const renderPlanText = (plan: ReleasePlan): string => {
     lines.push(`  - ${operation.id} [${operation.risk}] ${operation.description}`)
     if ("command" in operation) {
       lines.push(`  command: ${commandLine(operation)}`)
+      lines.push(`  argv: ${JSON.stringify(commandArgv(operation))}`)
     }
     if (operation._tag === "RenderFileOperation") {
       lines.push(`  write: ${operation.path}`)
     }
     if (operation._tag === "ValidationNoteOperation") {
       lines.push(`  note: ${operation.message}`)
+    }
+    if (operation._tag === "VerifyHttpOperation") {
+      lines.push(`  http: ${operation.request.method} ${operation.request.url}`)
+      lines.push(`  expect: status ${operation.expectedStatus}, checks ${operation.checks.length}`)
     }
     if (operation.gate.requiresExecute) {
       lines.push(`  gate: execute${operation.gate.requiresIrreversibleApproval ? " + irreversible approval" : ""}`)

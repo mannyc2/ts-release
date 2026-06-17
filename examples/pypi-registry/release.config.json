@@ -1,0 +1,30 @@
+{
+  "identity": {
+    "name": "release-example-pypi",
+    "version": "0.1.0",
+    "commit": "example",
+    "tag": "v0.1.0"
+  },
+  "artifacts": [
+    {
+      "id": "wheel",
+      "path": "artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
+      "format": "file",
+      "consumers": ["pypi"]
+    }
+  ],
+  "targets": [
+    {
+      "_tag": "PyPiRegistryTarget",
+      "id": "pypi",
+      "repositoryUrl": "https://test.pypi.org/legacy/",
+      "usernameEnv": "TWINE_USERNAME",
+      "passwordEnv": "TWINE_PASSWORD",
+      "dryRunSupport": "native",
+      "mutability": "immutable",
+      "recovery": "publish-new-version"
+    }
+  ],
+  "strict": true,
+  "evidenceDirectory": ".release/evidence"
+}

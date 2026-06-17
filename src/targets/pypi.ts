@@ -1,0 +1,174 @@
+import * as Effect from "effect/Effect"
+import {
+  CommandSpec,
+  irreversibleGate,
+  noApprovalGate,
+  Operation,
+  PublishCommandOperation,
+  ValidateCommandOperation
+} from "../domain/operation.js"
+import { ReleaseModel } from "../domain/release.js"
+import { PyPiRegistryTarget, TargetCapabilities } from "../domain/target.js"
+import { PlanConstructionError } from "../planner/errors.js"
+import { PyPiTargetAdapter } from "./adapter.js"
+import {
+  rejectNoDryRunInStrictMode,
+  targetCapabilitiesFor,
+  validationNoteOperation,
+  validationStrategyForDryRun
+} from "./adapter-helpers.js"
+
+export type * from "../types/effect-internal.js"
+
+const twineUsernameEnv = "TWINE_USERNAME"
+const twinePasswordEnv = "TWINE_PASSWORD"
+
+const envNames = (target: PyPiRegistryTarget): ReadonlyArray<string> =>
+  target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv]
+
+const pythonCommand = (
+  target: PyPiRegistryTarget,
+  args: ReadonlyArray<string>,
+  includeAuth: boolean
+): CommandSpec =>
+  CommandSpec.make({
+    executable: "python",
+    args: [...args],
+    requiredEnv: includeAuth ? envNames(target) : [],
+    redactedEnv: includeAuth ? envNames(target) : []
+  })
+
+const twineCommand = (
+  target: PyPiRegistryTarget,
+  args: ReadonlyArray<string>,
+  includeAuth: boolean
+): CommandSpec =>
+  pythonCommand(target, ["-m", "twine", ...args], includeAuth)
+
+export const pypiTargetCapabilities = (target: PyPiRegistryTarget): TargetCapabilities =>
+  targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
+
+const targetArtifacts = (target: PyPiRegistryTarget, model: ReleaseModel) =>
+  model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
+
+const pypiDryRunOperation = (target: PyPiRegistryTarget, artifactPaths: ReadonlyArray<string>): Operation => {
+  const dryRunSupport = target.dryRunSupport
+  return dryRunSupport === "native"
+    ? ValidateCommandOperation.make({
+      id: `${target.id}:twine-check`,
+      targetId: target.id,
+      description: "Validate Python distribution metadata with twine check.",
+      risk: "read-only",
+      gate: noApprovalGate("twine check validates built distributions without publishing."),
+      command: twineCommand(target, ["check", ...artifactPaths], false)
+    })
+    : validationNoteOperation({
+      id: `${target.id}:twine-check`,
+      targetId: target.id,
+      dryRunSupport,
+      simulatedDescription: "Record simulated PyPI distribution validation.",
+      skippedDescription: "Record skipped PyPI distribution validation.",
+      simulatedMessage:
+        "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
+      skippedMessage: "PyPI distribution validation was skipped because this target declares no dry-run support."
+    })
+}
+
+const pypiPublishArgs = (
+  target: PyPiRegistryTarget,
+  artifactPaths: ReadonlyArray<string>
+): ReadonlyArray<string> => [
+  "upload",
+  "--repository-url",
+  target.repositoryUrl,
+  ...artifactPaths
+]
+
+const validateAuthConfig = (target: PyPiRegistryTarget): Effect.Effect<void, PlanConstructionError> => {
+  const hasUsername = target.usernameEnv !== undefined
+  const hasPassword = target.passwordEnv !== undefined
+
+  if (!hasUsername && !hasPassword) {
+    return Effect.void
+  }
+  if (hasUsername !== hasPassword) {
+    return Effect.fail(
+      PlanConstructionError.make({
+        targetId: target.id,
+        reason: "PyPI token auth must configure both usernameEnv and passwordEnv, or neither."
+      })
+    )
+  }
+  if (target.usernameEnv === twineUsernameEnv && target.passwordEnv === twinePasswordEnv) {
+    return Effect.void
+  }
+  return Effect.fail(
+    PlanConstructionError.make({
+      targetId: target.id,
+      reason:
+        "PyPI token auth only supports usernameEnv TWINE_USERNAME and passwordEnv TWINE_PASSWORD because Twine reads those environment variables directly; this adapter keeps secrets out of argv and does not remap env names."
+    })
+  )
+}
+
+export const planPyPiOperations = Effect.fn("planPyPiOperations")(function*(
+  target: PyPiRegistryTarget,
+  model: ReleaseModel
+) {
+  yield* validateAuthConfig(target)
+  yield* rejectNoDryRunInStrictMode(target, model, "PyPI target declares no dry-run support in strict mode.")
+
+  const artifacts = targetArtifacts(target, model)
+  if (artifacts.length === 0) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId: target.id,
+        reason: "PyPI target must have at least one artifact consumer."
+      })
+    )
+  }
+  const directoryArtifact = artifacts.find((artifact) => artifact.format === "directory")
+  if (directoryArtifact !== undefined) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId: target.id,
+        reason: `PyPI target artifact ${directoryArtifact.id} must be a built distribution file, not a directory.`
+      })
+    )
+  }
+
+  const artifactPaths = artifacts.map((artifact) => artifact.path)
+  return [
+    ValidateCommandOperation.make({
+      id: `${target.id}:python-version`,
+      targetId: target.id,
+      description: "Check Python CLI availability.",
+      risk: "read-only",
+      gate: noApprovalGate("CLI availability validation is read-only."),
+      command: pythonCommand(target, ["--version"], false)
+    }),
+    ValidateCommandOperation.make({
+      id: `${target.id}:twine-version`,
+      targetId: target.id,
+      description: "Check Twine CLI availability.",
+      risk: "read-only",
+      gate: noApprovalGate("Twine availability validation is read-only."),
+      command: twineCommand(target, ["--version"], false)
+    }),
+    pypiDryRunOperation(target, artifactPaths),
+    PublishCommandOperation.make({
+      id: `${target.id}:twine-upload`,
+      targetId: target.id,
+      description: `Publish ${model.identity.name}@${model.identity.version} to PyPI-compatible registry.`,
+      risk: "irreversible",
+      gate: irreversibleGate("PyPI package versions are immutable once published."),
+      command: twineCommand(target, pypiPublishArgs(target, artifactPaths), true)
+    })
+  ] satisfies ReadonlyArray<Operation>
+})
+
+export const PyPiAdapter: PyPiTargetAdapter = {
+  targetTag: "PyPiRegistryTarget",
+  capabilities: pypiTargetCapabilities,
+  planOperations: planPyPiOperations
+}

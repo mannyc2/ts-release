@@ -7,59 +7,51 @@ import {
   Operation,
   PublishCommandOperation,
   RenderFileOperation,
-  ValidateCommandOperation,
-  ValidationNoteOperation
+  ValidateCommandOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
   HomebrewTapTarget,
-  TargetCapabilities,
-  targetAuthRequirement,
-  TargetValidationStrategy
+  TargetCapabilities
 } from "../domain/target.js"
 import { PlanConstructionError } from "../planner/errors.js"
 import { HomebrewTargetAdapter } from "./adapter.js"
+import {
+  findRequiredArtifact,
+  requireSha256FileArtifact,
+  rejectNoDryRunInStrictMode,
+  targetCapabilitiesFor,
+  validationNoteOperation,
+  validationStrategyForDryRun
+} from "./adapter-helpers.js"
 
 export type * from "../types/effect-internal.js"
 
-const envNames = (target: HomebrewTapTarget): ReadonlyArray<string> =>
-  target.tokenEnv === undefined ? [] : [target.tokenEnv]
-
 const command = (
-  target: HomebrewTapTarget,
   executable: string,
-  args: ReadonlyArray<string>,
-  includeAuth: boolean,
-  cwd: string | undefined = undefined
+  args: ReadonlyArray<string>
 ): CommandSpec =>
   CommandSpec.make({
     executable,
     args: [...args],
-    ...(cwd === undefined ? {} : { cwd }),
-    requiredEnv: includeAuth ? envNames(target) : [],
-    redactedEnv: includeAuth ? envNames(target) : []
+    requiredEnv: [],
+    redactedEnv: []
   })
 
-const validationStrategy = (target: HomebrewTapTarget): TargetValidationStrategy => {
-  if (target.dryRunSupport === "native") {
-    return "native-command"
+const rejectUnsupportedTokenEnv = Effect.fn("rejectUnsupportedHomebrewTokenEnv")(function*(target: HomebrewTapTarget) {
+  if (target.tokenEnv !== undefined) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId: target.id,
+        reason:
+          "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
+      })
+    )
   }
-  if (target.dryRunSupport === "simulated") {
-    return "simulated-plan"
-  }
-  return "skipped"
-}
+})
 
 export const homebrewTargetCapabilities = (target: HomebrewTapTarget): TargetCapabilities =>
-  TargetCapabilities.make({
-    targetId: target.id,
-    targetTag: target._tag,
-    authRequirement: targetAuthRequirement(target),
-    dryRunSupport: target.dryRunSupport,
-    mutability: target.mutability,
-    recovery: target.recovery,
-    validationStrategy: validationStrategy(target)
-  })
+  targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
 
 const pathBaseName = (path: string): string => {
   const parts = path.replaceAll("\\", "/").split("/")
@@ -77,44 +69,30 @@ const formulaClassName = (formulaName: string): string => {
 
 const renderFormula = (target: HomebrewTapTarget, model: ReleaseModel): Effect.Effect<string, PlanConstructionError> =>
   Effect.gen(function*() {
-    const artifact = model.artifacts.find((item) => item.id === target.artifactId)
-    if (artifact === undefined) {
-      return yield* Effect.fail(
-        PlanConstructionError.make({
-          targetId: target.id,
-          reason: `Homebrew target references missing artifact ${target.artifactId}.`
-        })
-      )
-    }
-    if (artifact.format === "directory") {
-      return yield* Effect.fail(
-        PlanConstructionError.make({
-          targetId: target.id,
-          reason: "Homebrew formula artifacts must be file-like, not directories."
-        })
-      )
-    }
-    if (artifact.checksum === undefined || artifact.checksum.algorithm !== "sha256") {
-      return yield* Effect.fail(
-        PlanConstructionError.make({
-          targetId: target.id,
-          reason: "Homebrew formula rendering requires a sha256 artifact checksum."
-        })
-      )
-    }
+    const artifact = yield* findRequiredArtifact(
+      model,
+      target.id,
+      target.artifactId,
+      `Homebrew target references missing artifact ${target.artifactId}.`
+    )
+    const validated = yield* requireSha256FileArtifact(artifact, {
+      targetId: target.id,
+      directoryReason: "Homebrew formula artifacts must be file-like, not directories.",
+      checksumReason: "Homebrew formula rendering requires a sha256 artifact checksum."
+    })
 
     const installLines = target.installPath === undefined
       ? ["    prefix.install Dir[\"*\"]"]
       : [`    bin.install ${rubyString(target.installPath)} => ${rubyString(target.formulaName)}`]
     const homepage = target.homepage ?? `https://github.com/${target.repository}`
-    const url = target.url ?? artifact.path
+    const url = target.url ?? validated.artifact.path
 
     return [
       `class ${formulaClassName(target.formulaName)} < Formula`,
       `  desc ${rubyString(`${model.identity.name} ${model.identity.version} release artifact`)}`,
       `  homepage ${rubyString(homepage)}`,
       `  url ${rubyString(url)}`,
-      `  sha256 ${rubyString(artifact.checksum.value)}`,
+      `  sha256 ${rubyString(validated.checksum.value)}`,
       `  version ${rubyString(model.identity.version)}`,
       "",
       "  def install",
@@ -125,43 +103,34 @@ const renderFormula = (target: HomebrewTapTarget, model: ReleaseModel): Effect.E
     ].join("\n")
   })
 
-const dryRunOperation = (target: HomebrewTapTarget): Operation =>
-  target.dryRunSupport === "native"
+const dryRunOperation = (target: HomebrewTapTarget): Operation => {
+  const dryRunSupport = target.dryRunSupport
+  return dryRunSupport === "native"
     ? ValidateCommandOperation.make({
       id: `${target.id}:brew-audit`,
       targetId: target.id,
       description: "Validate generated Homebrew formula with brew audit.",
       risk: "read-only",
       gate: noApprovalGate("brew audit validates the generated formula without publishing."),
-      command: command(target, "brew", ["audit", "--strict", "--formula", target.formulaPath], false)
+      command: command("brew", ["audit", "--strict", "--formula", target.formulaPath])
     })
-    : ValidationNoteOperation.make({
+    : validationNoteOperation({
       id: `${target.id}:brew-audit`,
       targetId: target.id,
-      description: target.dryRunSupport === "simulated"
-        ? "Record simulated Homebrew formula validation."
-        : "Record skipped Homebrew formula validation.",
-      risk: "read-only",
-      gate: noApprovalGate("Validation notes do not modify local or remote state."),
-      message: target.dryRunSupport === "simulated"
-        ? "Homebrew formula validation is simulated by the deterministic release plan."
-        : "Homebrew formula validation was skipped because this target declares no dry-run support.",
-      skipped: target.dryRunSupport === "none",
-      severity: target.dryRunSupport === "none" ? "warning" : "info"
+      dryRunSupport,
+      simulatedDescription: "Record simulated Homebrew formula validation.",
+      skippedDescription: "Record skipped Homebrew formula validation.",
+      simulatedMessage: "Homebrew formula validation is simulated by the deterministic release plan.",
+      skippedMessage: "Homebrew formula validation was skipped because this target declares no dry-run support."
     })
+}
 
 export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(function*(
   target: HomebrewTapTarget,
   model: ReleaseModel
 ) {
-  if (model.strict && target.dryRunSupport === "none") {
-    return yield* Effect.fail(
-      PlanConstructionError.make({
-        targetId: target.id,
-        reason: "Homebrew tap target declares no dry-run support in strict mode."
-      })
-    )
-  }
+  yield* rejectUnsupportedTokenEnv(target)
+  yield* rejectNoDryRunInStrictMode(target, model, "Homebrew tap target declares no dry-run support in strict mode.")
 
   const formula = yield* renderFormula(target, model)
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
@@ -189,7 +158,7 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
         description: "Check Homebrew CLI availability.",
         risk: "read-only",
         gate: noApprovalGate("CLI availability validation is read-only."),
-        command: command(target, "brew", ["--version"], false)
+        command: command("brew", ["--version"])
       })
     )
   }
@@ -202,7 +171,7 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
       description: `Push Homebrew tap update for ${model.identity.name}@${model.identity.version}.`,
       risk: publishRisk,
       gate: publishGate,
-      command: command(target, "git", ["-C", tapDirectory, "push"], true)
+      command: command("git", ["-C", tapDirectory, "push"])
     })
   )
 

@@ -62,7 +62,41 @@ export class HomebrewTapTarget extends Schema.TaggedClass<HomebrewTapTarget>()("
   recovery: TargetRecovery
 }) {}
 
-export const TargetConfig = Schema.Union([NpmRegistryTarget, GitHubReleaseTarget, HomebrewTapTarget])
+export class PyPiRegistryTarget extends Schema.TaggedClass<PyPiRegistryTarget>()("PyPiRegistryTarget", {
+  id: TargetId,
+  repositoryUrl: Schema.String,
+  usernameEnv: Schema.optionalKey(Schema.String),
+  passwordEnv: Schema.optionalKey(Schema.String),
+  dryRunSupport: TargetDryRunSupport,
+  mutability: TargetMutability,
+  recovery: TargetRecovery
+}) {}
+
+export class ScoopBucketTarget extends Schema.TaggedClass<ScoopBucketTarget>()("ScoopBucketTarget", {
+  id: TargetId,
+  repository: Schema.String,
+  manifestName: Schema.String,
+  manifestPath: Schema.String,
+  artifactId: Schema.String,
+  homepage: Schema.optionalKey(Schema.String),
+  description: Schema.optionalKey(Schema.String),
+  license: Schema.optionalKey(Schema.String),
+  url: Schema.optionalKey(Schema.String),
+  bin: Schema.optionalKey(Schema.String),
+  bucketDirectory: Schema.optionalKey(Schema.String),
+  tokenEnv: Schema.optionalKey(Schema.String),
+  dryRunSupport: TargetDryRunSupport,
+  mutability: TargetMutability,
+  recovery: TargetRecovery
+}) {}
+
+export const TargetConfig = Schema.Union([
+  NpmRegistryTarget,
+  GitHubReleaseTarget,
+  HomebrewTapTarget,
+  PyPiRegistryTarget,
+  ScoopBucketTarget
+])
 export type TargetConfig = typeof TargetConfig.Type
 
 export class TargetCapabilities extends Schema.Class<TargetCapabilities>("TargetCapabilities")({
@@ -82,8 +116,11 @@ export const targetCapabilitiesOrder = (left: TargetCapabilities, right: TargetC
   left.targetId.localeCompare(right.targetId)
 
 export const targetAuthRequirement = (target: TargetConfig): TargetAuthRequirement => {
-  if (target._tag === "NpmRegistryTarget") {
-    return target.tokenEnv === undefined ? "cli-auth" : "env-token"
+  if (target._tag === "PyPiRegistryTarget") {
+    return target.usernameEnv === undefined && target.passwordEnv === undefined ? "cli-auth" : "env-token"
+  }
+  if (target._tag === "HomebrewTapTarget" || target._tag === "ScoopBucketTarget") {
+    return "cli-auth"
   }
   return target.tokenEnv === undefined ? "cli-auth" : "env-token"
 }

@@ -3,12 +3,20 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestReleaseHostLayer } from "../src/host/test.js"
+import { CommandSpec } from "../src/domain/operation.js"
+import { commandKey, makeTestReleaseHostLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { runEffect } from "./helpers.js"
 
 const config = readFileSync("release.config.json", "utf8")
+
+const gitHeadCommand = CommandSpec.make({
+  executable: "git",
+  args: ["rev-parse", "--short", "HEAD"],
+  requiredEnv: [],
+  redactedEnv: []
+})
 
 const TestLayer = Layer.mergeAll(
   makeTestReleaseHostLayer({
@@ -19,6 +27,13 @@ const TestLayer = Layer.mergeAll(
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]
+    ]),
+    commands: new Map([
+      [commandKey(gitHeadCommand), {
+        exitCode: 0,
+        stdout: "81587b5\n",
+        stderr: ""
+      }]
     ])
   }),
   LiveTargetRegistryLayer
@@ -35,6 +50,7 @@ describe("repository release config", () => {
     )
 
     expect(plan.identity.name).toBe("@mannyc1/ts-release")
+    expect(plan.identity.commit).toBe("81587b5")
     expect(plan.targets.map((target) => target.id).sort()).toEqual(["github", "npm"])
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
     expect(plan.operations.map((operation) => operation.id)).toContain("github:gh-release-create")

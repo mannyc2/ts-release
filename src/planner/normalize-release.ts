@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 import { ArtifactInventoryItem, artifactInventoryOrder, Checksum } from "../domain/artifact.js"
-import { ReleaseIntent, ReleaseModel, SourceMetadata } from "../domain/release.js"
+import { CommandSpec } from "../domain/operation.js"
+import { ReleaseIdentity, ReleaseIntent, ReleaseModel, SourceMetadata } from "../domain/release.js"
 import { targetOrder } from "../domain/target.js"
 import { ReleaseHost } from "../host/host.js"
 import { ReleaseNormalizationError } from "./errors.js"
@@ -51,6 +52,50 @@ const validateSafeRelativePath = (
   )
 }
 
+const gitHeadCommand = (root: string): CommandSpec =>
+  CommandSpec.make({
+    executable: "git",
+    args: ["rev-parse", "--short", "HEAD"],
+    cwd: root,
+    requiredEnv: [],
+    redactedEnv: []
+  })
+
+const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(identity: ReleaseIdentity, root: string) {
+  if (identity.commit !== "HEAD") {
+    return identity
+  }
+
+  const host = yield* ReleaseHost
+  const result = yield* host.runCommand(gitHeadCommand(root)).pipe(
+    Effect.mapError((error) =>
+      ReleaseNormalizationError.make({
+        field: "identity.commit",
+        reason: error.reason
+      })
+    )
+  )
+  const commit = result.stdout.trim()
+  if (result.exitCode !== 0 || commit.length === 0) {
+    return yield* Effect.fail(
+      ReleaseNormalizationError.make({
+        field: "identity.commit",
+        reason: result.exitCode === 0
+          ? "Git HEAD resolved to an empty commit."
+          : "Unable to resolve Git HEAD."
+      })
+    )
+  }
+
+  return ReleaseIdentity.make({
+    name: identity.name,
+    version: identity.version,
+    commit,
+    ...(identity.tag === undefined ? {} : { tag: identity.tag }),
+    ...(identity.notes === undefined ? {} : { notes: identity.notes })
+  })
+})
+
 export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(function*(
   intent: ReleaseIntent,
   root: string = ".",
@@ -72,9 +117,16 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
         yield* validateSafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory)
       }
     }
+    if (target._tag === "ScoopBucketTarget") {
+      yield* validateSafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath)
+      if (target.bucketDirectory !== undefined) {
+        yield* validateSafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory)
+      }
+    }
   }
 
   const host = yield* ReleaseHost
+  const identity = yield* resolveIdentityCommit(intent.identity, root)
   const inventory: Array<ArtifactInventoryItem> = []
 
   for (const artifact of intent.artifacts) {
@@ -128,7 +180,7 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   }
 
   return ReleaseModel.make({
-    identity: intent.identity,
+    identity,
     source: SourceMetadata.make({
       root,
       ...(configPath === undefined ? {} : { configPath })

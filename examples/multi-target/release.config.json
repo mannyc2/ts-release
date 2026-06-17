@@ -1,0 +1,62 @@
+{
+  "identity": {
+    "name": "release-example-multi-target",
+    "version": "0.1.0",
+    "commit": "example",
+    "tag": "v0.1.0",
+    "notes": "Example coordinated release"
+  },
+  "artifacts": [
+    {
+      "id": "package",
+      "path": ".",
+      "format": "directory",
+      "consumers": ["npm"]
+    },
+    {
+      "id": "archive",
+      "path": "artifacts/release-example-multi-target-0.1.0.tgz",
+      "format": "tarball",
+      "consumers": ["github", "homebrew"]
+    }
+  ],
+  "targets": [
+    {
+      "_tag": "GitHubReleaseTarget",
+      "id": "github",
+      "repository": "owner/release-example-multi-target",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false,
+      "dryRunSupport": "simulated",
+      "mutability": "mutable-release",
+      "recovery": "delete-and-recreate"
+    },
+    {
+      "_tag": "NpmRegistryTarget",
+      "id": "npm",
+      "registry": "https://registry.npmjs.org",
+      "packagePath": ".",
+      "tokenEnv": "NPM_TOKEN",
+      "dryRunSupport": "native",
+      "mutability": "immutable",
+      "recovery": "publish-new-version"
+    },
+    {
+      "_tag": "HomebrewTapTarget",
+      "id": "homebrew",
+      "repository": "owner/homebrew-tap",
+      "formulaName": "release-example-multi-target",
+      "formulaPath": ".release/generated/release-example-multi-target.rb",
+      "artifactId": "archive",
+      "homepage": "https://github.com/owner/release-example-multi-target",
+      "url": "https://github.com/owner/release-example-multi-target/releases/download/v0.1.0/release-example-multi-target-0.1.0.tgz",
+      "installPath": "bin/release-example-multi-target",
+      "dryRunSupport": "simulated",
+      "mutability": "mutable-index",
+      "recovery": "manual"
+    }
+  ],
+  "strict": true,
+  "evidenceDirectory": ".release/evidence"
+}

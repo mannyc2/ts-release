@@ -19,9 +19,10 @@
       "_tag": "GitHubReleaseTarget",
       "id": "github",
       "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
       "draft": true,
       "prerelease": false,
-      "dryRunSupport": "native",
+      "dryRunSupport": "simulated",
       "mutability": "mutable-release",
       "recovery": "delete-and-recreate"
     }

@@ -5,6 +5,8 @@ import {
   GitHubReleaseTarget,
   HomebrewTapTarget,
   NpmRegistryTarget,
+  PyPiRegistryTarget,
+  ScoopBucketTarget,
   TargetCapabilities,
   TargetConfig
 } from "../domain/target.js"
@@ -24,3 +26,5 @@ export interface TargetAdapter<Target extends TargetConfig> {
 export type NpmTargetAdapter = TargetAdapter<NpmRegistryTarget>
 export type GitHubTargetAdapter = TargetAdapter<GitHubReleaseTarget>
 export type HomebrewTargetAdapter = TargetAdapter<HomebrewTapTarget>
+export type PyPiTargetAdapter = TargetAdapter<PyPiRegistryTarget>
+export type ScoopTargetAdapter = TargetAdapter<ScoopBucketTarget>

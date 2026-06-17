@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { mkdir, rm } from "node:fs/promises"
@@ -7,6 +8,7 @@ import { pid } from "node:process"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { ExecutionApproval } from "../src/domain/operation.js"
 import { BunReleaseHostLayer } from "../src/host/bun.js"
+import { LiveReleaseHttpLayer } from "../src/host/http-live.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { runOperations } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
@@ -20,7 +22,15 @@ const fixtureRoot = Bun.env.RELEASE_INTEGRATION_FIXTURE_DIR ?? `.tmp-release-int
 const npmPackagePath = `${fixtureRoot}/npm-package`
 const githubAssetPath = `${fixtureRoot}/github-asset.tgz`
 
-const IntegrationLayer = Layer.mergeAll(BunReleaseHostLayer, LiveTargetRegistryLayer)
+const IntegrationHostHttpClientLayer = Layer.mergeAll(
+  BunReleaseHostLayer,
+  BunHttpClient.layer
+)
+
+const IntegrationLayer = Layer.mergeAll(
+  LiveReleaseHttpLayer.pipe(Layer.provideMerge(IntegrationHostHttpClientLayer)),
+  LiveTargetRegistryLayer
+)
 
 const writeText = async (path: string, contents: string): Promise<void> => {
   await mkdir(dirname(path), { recursive: true })

@@ -18,6 +18,7 @@
       "_tag": "GitHubReleaseTarget",
       "id": "github",
       "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
       "draft": true,
       "dryRunSupport": "none",
       "mutability": "mutable-release",

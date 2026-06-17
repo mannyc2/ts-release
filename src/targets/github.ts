@@ -2,23 +2,28 @@ import * as Effect from "effect/Effect"
 import {
   CommandSpec,
   executeGate,
+  HttpEnvHeader,
+  HttpHeader,
+  HttpJsonArrayObjectFieldEqualsCheck,
+  HttpJsonEqualsCheck,
+  HttpRequestSpec,
   irreversibleGate,
   noApprovalGate,
   Operation,
   PublishCommandOperation,
   ValidateCommandOperation,
-  ValidationNoteOperation,
-  VerifyRemoteOperation
+  VerifyHttpOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
   GitHubReleaseTarget,
   TargetCapabilities,
-  targetAuthRequirement,
+  TargetDryRunSupport,
   TargetValidationStrategy
 } from "../domain/target.js"
 import { PlanConstructionError } from "../planner/errors.js"
 import { GitHubTargetAdapter } from "./adapter.js"
+import { rejectNoDryRunInStrictMode, targetCapabilitiesFor, validationNoteOperation } from "./adapter-helpers.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -41,15 +46,7 @@ const githubValidationStrategy = (target: GitHubReleaseTarget): TargetValidation
   target.dryRunSupport === "none" ? "skipped" : "simulated-plan"
 
 export const githubTargetCapabilities = (target: GitHubReleaseTarget): TargetCapabilities =>
-  TargetCapabilities.make({
-    targetId: target.id,
-    targetTag: target._tag,
-    authRequirement: targetAuthRequirement(target),
-    dryRunSupport: target.dryRunSupport,
-    mutability: target.mutability,
-    recovery: target.recovery,
-    validationStrategy: githubValidationStrategy(target)
-  })
+  targetCapabilitiesFor(target, githubValidationStrategy(target))
 
 const targetArtifacts = (target: GitHubReleaseTarget, model: ReleaseModel) =>
   model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
@@ -58,30 +55,6 @@ const pathBaseName = (path: string): string => {
   const parts = path.replaceAll("\\", "/").split("/")
   return parts[parts.length - 1] ?? path
 }
-
-const jqString = (value: string): string =>
-  JSON.stringify(value)
-
-const jqAssert = (condition: string, message: string): string =>
-  `if ${condition} then empty else error(${jqString(message)}) end`
-
-const releaseViewJsonCommand = (
-  target: GitHubReleaseTarget,
-  model: ReleaseModel,
-  fields: ReadonlyArray<string>,
-  jq: string
-): CommandSpec =>
-  ghCommand(target, [
-    "release",
-    "view",
-    model.identity.tag ?? model.identity.version,
-    "--repo",
-    target.repository,
-    "--json",
-    fields.join(","),
-    "--jq",
-    jq
-  ], true)
 
 const releaseArgs = (target: GitHubReleaseTarget, model: ReleaseModel): ReadonlyArray<string> => {
   const args: Array<string> = [
@@ -108,6 +81,25 @@ const releaseArgs = (target: GitHubReleaseTarget, model: ReleaseModel): Readonly
   return args
 }
 
+const githubReleaseApiUrl = (target: GitHubReleaseTarget, tag: string): string =>
+  `https://api.github.com/repos/${target.repository}/releases/tags/${encodeURIComponent(tag)}`
+
+const githubApiHeaders = (): ReadonlyArray<HttpHeader> => [
+  HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
+  HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
+]
+
+const githubApiEnvHeaders = (target: GitHubReleaseTarget): ReadonlyArray<HttpEnvHeader> =>
+  target.tokenEnv === undefined
+    ? []
+    : [
+      HttpEnvHeader.make({
+        name: "Authorization",
+        valueEnv: target.tokenEnv,
+        prefix: "Bearer "
+      })
+    ]
+
 const githubVerificationOperations = (
   target: GitHubReleaseTarget,
   model: ReleaseModel
@@ -116,113 +108,86 @@ const githubVerificationOperations = (
   const title = `${model.identity.name} ${model.identity.version}`
   const isDraft = target.draft === true
   const isPrerelease = target.prerelease === true
+  const artifactChecks = targetArtifacts(target, model).map((artifact) =>
+    HttpJsonArrayObjectFieldEqualsCheck.make({
+      path: ["assets"],
+      field: "name",
+      expected: pathBaseName(artifact.path)
+    })
+  )
 
   return [
-    VerifyRemoteOperation.make({
-      id: `${target.id}:gh-release-view`,
+    VerifyHttpOperation.make({
+      id: `${target.id}:github-release-verify-http`,
       targetId: target.id,
-      description: "Verify the GitHub release tag exists.",
+      description: "Verify the GitHub release through the GitHub API.",
       risk: "read-only",
-      gate: noApprovalGate("Release verification is read-only."),
-      command: releaseViewJsonCommand(
-        target,
-        model,
-        ["tagName"],
-        jqAssert(`.tagName == ${jqString(tag)}`, `Expected release tag ${tag}.`)
-      )
-    }),
-    VerifyRemoteOperation.make({
-      id: `${target.id}:gh-release-verify-title`,
-      targetId: target.id,
-      description: "Verify the GitHub release title.",
-      risk: "read-only",
-      gate: noApprovalGate("Release title verification is read-only."),
-      command: releaseViewJsonCommand(
-        target,
-        model,
-        ["name"],
-        jqAssert(`.name == ${jqString(title)}`, `Expected release title ${title}.`)
-      )
-    }),
-    VerifyRemoteOperation.make({
-      id: `${target.id}:gh-release-verify-draft`,
-      targetId: target.id,
-      description: "Verify the GitHub release draft flag.",
-      risk: "read-only",
-      gate: noApprovalGate("Release draft verification is read-only."),
-      command: releaseViewJsonCommand(
-        target,
-        model,
-        ["isDraft"],
-        jqAssert(`.isDraft == ${isDraft ? "true" : "false"}`, `Expected release draft flag ${isDraft}.`)
-      )
-    }),
-    VerifyRemoteOperation.make({
-      id: `${target.id}:gh-release-verify-prerelease`,
-      targetId: target.id,
-      description: "Verify the GitHub release prerelease flag.",
-      risk: "read-only",
-      gate: noApprovalGate("Release prerelease verification is read-only."),
-      command: releaseViewJsonCommand(
-        target,
-        model,
-        ["isPrerelease"],
-        jqAssert(
-          `.isPrerelease == ${isPrerelease ? "true" : "false"}`,
-          `Expected release prerelease flag ${isPrerelease}.`
-        )
-      )
-    }),
-    ...targetArtifacts(target, model).map((artifact) => {
-      const assetName = pathBaseName(artifact.path)
-      return VerifyRemoteOperation.make({
-        id: `${target.id}:gh-release-verify-asset-${artifact.id}`,
-        targetId: target.id,
-        description: `Verify GitHub release asset ${assetName}.`,
-        risk: "read-only",
-        gate: noApprovalGate("Release asset verification is read-only."),
-        command: releaseViewJsonCommand(
-          target,
-          model,
-          ["assets"],
-          jqAssert(
-            `.assets | map(.name) | index(${jqString(assetName)}) != null`,
-            `Expected release asset ${assetName}`
-          )
-        )
-      })
+      gate: noApprovalGate("GitHub API release verification is read-only."),
+      request: HttpRequestSpec.make({
+        method: "GET",
+        url: githubReleaseApiUrl(target, tag),
+        headers: githubApiHeaders(),
+        envHeaders: githubApiEnvHeaders(target),
+        requiredEnv: envNames(target),
+        redactedEnv: envNames(target)
+      }),
+      expectedStatus: 200,
+      checks: [
+        HttpJsonEqualsCheck.make({
+          path: ["tag_name"],
+          expected: tag
+        }),
+        HttpJsonEqualsCheck.make({
+          path: ["name"],
+          expected: title
+        }),
+        HttpJsonEqualsCheck.make({
+          path: ["draft"],
+          expected: isDraft
+        }),
+        HttpJsonEqualsCheck.make({
+          path: ["prerelease"],
+          expected: isPrerelease
+        }),
+        ...artifactChecks
+      ]
     })
   ]
 }
 
-const githubDryRunOperation = (target: GitHubReleaseTarget): Operation =>
-  ValidationNoteOperation.make({
+const githubDryRunOperation = (
+  target: GitHubReleaseTarget,
+  dryRunSupport: Exclude<TargetDryRunSupport, "native">
+): Operation =>
+  validationNoteOperation({
     id: `${target.id}:gh-release-dry-run`,
     targetId: target.id,
-    description: target.dryRunSupport === "none"
-      ? "Record skipped GitHub release dry-run validation."
-      : "Record simulated GitHub release dry-run validation.",
-    risk: "read-only",
-    gate: noApprovalGate("Validation notes do not modify local or remote state."),
-    message: target.dryRunSupport === "none"
-      ? "GitHub release dry-run validation was skipped because this target declares no dry-run support."
-      : "GitHub release dry-run validation is simulated by the deterministic release plan; gh release create has no native dry-run command.",
-    skipped: target.dryRunSupport === "none",
-    severity: target.dryRunSupport === "none" ? "warning" : "info"
+    dryRunSupport,
+    simulatedDescription: "Record simulated GitHub release dry-run validation.",
+    skippedDescription: "Record skipped GitHub release dry-run validation.",
+    simulatedMessage:
+      "GitHub release dry-run validation is simulated by the deterministic release plan; gh release create has no native dry-run command.",
+    skippedMessage: "GitHub release dry-run validation was skipped because this target declares no dry-run support."
   })
 
 export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
   target: GitHubReleaseTarget,
   model: ReleaseModel
 ) {
-  if (model.strict && target.dryRunSupport === "none") {
+  const dryRunSupport = target.dryRunSupport
+  if (dryRunSupport === "native") {
     return yield* Effect.fail(
       PlanConstructionError.make({
         targetId: target.id,
-        reason: "GitHub release target declares no dry-run support in strict mode."
+        reason: "GitHub release targets do not support native dry-run; use simulated dry-run support."
       })
     )
   }
+  yield* rejectNoDryRunInStrictMode(
+    target,
+    model,
+    "GitHub release target declares no dry-run support in strict mode."
+  )
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
   const publishGate = publishRisk === "irreversible"
     ? irreversibleGate("Creating this GitHub release is externally visible and configured as immutable.")
@@ -245,7 +210,7 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
       gate: noApprovalGate("gh auth status checks authentication without publishing."),
       command: ghCommand(target, ["auth", "status"], true)
     }),
-    githubDryRunOperation(target),
+    githubDryRunOperation(target, dryRunSupport),
     PublishCommandOperation.make({
       id: `${target.id}:gh-release-create`,
       targetId: target.id,

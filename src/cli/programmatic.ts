@@ -1,3 +1,4 @@
+import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -8,6 +9,7 @@ import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { ReleasePlan } from "../domain/release.js"
 import { makeBunReleaseHostLayer } from "../host/bun.js"
 import { ReleaseHost } from "../host/host.js"
+import { LiveReleaseHttpLayer } from "../host/http-live.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import { renderPlanJson, renderPlanText } from "../planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../targets/live.js"
@@ -31,12 +33,17 @@ export class PlanReleaseConfigOptions extends Schema.Class<PlanReleaseConfigOpti
   format: Schema.optionalKey(ReleasePlanFormat)
 }) {}
 
-const programmaticLayer = (root: string | undefined) =>
-  Layer.mergeAll(
+const programmaticLayer = (root: string | undefined) => {
+  const hostHttpClientLayer = Layer.mergeAll(
     makeBunReleaseHostLayer({ root }),
+    BunHttpClient.layer
+  )
+  return Layer.mergeAll(
+    LiveReleaseHttpLayer.pipe(Layer.provideMerge(hostHttpClientLayer)),
     LiveTargetRegistryLayer,
     BunServices.layer
   )
+}
 
 const loadPlanFromOptions = Effect.fn("cli.programmatic.loadPlanFromOptions")(function*(
   options: PlanReleaseConfigOptions

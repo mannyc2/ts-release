@@ -24,6 +24,49 @@ export class CommandSpec extends Schema.Class<CommandSpec>("CommandSpec")({
   redactedEnv: Schema.Array(Schema.String)
 }) {}
 
+export const HttpMethod = Schema.Literals(["GET", "HEAD"])
+export type HttpMethod = typeof HttpMethod.Type
+
+export class HttpHeader extends Schema.Class<HttpHeader>("HttpHeader")({
+  name: Schema.String,
+  value: Schema.String
+}) {}
+
+export class HttpEnvHeader extends Schema.Class<HttpEnvHeader>("HttpEnvHeader")({
+  name: Schema.String,
+  valueEnv: Schema.String,
+  prefix: Schema.optionalKey(Schema.String)
+}) {}
+
+export class HttpRequestSpec extends Schema.Class<HttpRequestSpec>("HttpRequestSpec")({
+  method: HttpMethod,
+  url: Schema.String,
+  headers: Schema.Array(HttpHeader),
+  envHeaders: Schema.Array(HttpEnvHeader),
+  requiredEnv: Schema.Array(Schema.String),
+  redactedEnv: Schema.Array(Schema.String)
+}) {}
+
+export const JsonPathSegment = Schema.Union([Schema.String, Schema.Number])
+export type JsonPathSegment = typeof JsonPathSegment.Type
+
+export class HttpJsonEqualsCheck extends Schema.TaggedClass<HttpJsonEqualsCheck>()("HttpJsonEqualsCheck", {
+  path: Schema.Array(JsonPathSegment),
+  expected: Schema.Json
+}) {}
+
+export class HttpJsonArrayObjectFieldEqualsCheck extends Schema.TaggedClass<HttpJsonArrayObjectFieldEqualsCheck>()(
+  "HttpJsonArrayObjectFieldEqualsCheck",
+  {
+    path: Schema.Array(JsonPathSegment),
+    field: Schema.String,
+    expected: Schema.Json
+  }
+) {}
+
+export const HttpJsonCheck = Schema.Union([HttpJsonEqualsCheck, HttpJsonArrayObjectFieldEqualsCheck])
+export type HttpJsonCheck = typeof HttpJsonCheck.Type
+
 export class RenderFileOperation extends Schema.TaggedClass<RenderFileOperation>()("RenderFileOperation", {
   id: OperationId,
   targetId: Schema.optionalKey(TargetId),
@@ -72,12 +115,24 @@ export class VerifyRemoteOperation extends Schema.TaggedClass<VerifyRemoteOperat
   command: CommandSpec
 }) {}
 
+export class VerifyHttpOperation extends Schema.TaggedClass<VerifyHttpOperation>()("VerifyHttpOperation", {
+  id: OperationId,
+  targetId: TargetId,
+  description: Schema.String,
+  risk: OperationRisk,
+  gate: ExecutionGate,
+  request: HttpRequestSpec,
+  expectedStatus: Schema.Number,
+  checks: Schema.Array(HttpJsonCheck)
+}) {}
+
 export const Operation = Schema.Union([
   RenderFileOperation,
   ValidateCommandOperation,
   ValidationNoteOperation,
   PublishCommandOperation,
-  VerifyRemoteOperation
+  VerifyRemoteOperation,
+  VerifyHttpOperation
 ])
 export type Operation = typeof Operation.Type
 

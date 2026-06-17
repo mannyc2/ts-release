@@ -12,6 +12,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const readJson = (path: string): unknown =>
   JSON.parse(readFileSync(resolve(root, path), "utf8"))
 
+const readText = (path: string): string | undefined => {
+  try {
+    return readFileSync(resolve(root, path), "utf8")
+  } catch {
+    return undefined
+  }
+}
+
 const field = (record: Record<string, unknown>, name: string): unknown =>
   record[name]
 
@@ -39,10 +47,39 @@ const readCurrentGitCommit = async (): Promise<string | undefined> => {
   return exitCode === 0 ? stdout.trim() : undefined
 }
 
+const readTrackedGitStatus = async (): Promise<string | undefined> => {
+  const subprocess = Bun.spawn(["git", "status", "--porcelain", "--untracked-files=no"], {
+    cwd: root,
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "ignore"
+  })
+  const stdout = await streamText(subprocess.stdout)
+  const exitCode = await subprocess.exited
+  return exitCode === 0 ? stdout.trim() : undefined
+}
+
+const collectTokenEnvNames = (targets: ReadonlyArray<unknown>): ReadonlyArray<string> => {
+  const names = new Set<string>()
+  for (const target of targets) {
+    if (isRecord(target) && typeof target.tokenEnv === "string" && target.tokenEnv.length > 0) {
+      names.add(target.tokenEnv)
+    }
+  }
+  return [...names].sort()
+}
+
+const envExampleDocuments = (contents: string, name: string): boolean =>
+  contents.split(/\r?\n/).some((line) => {
+    const trimmed = line.trim()
+    return trimmed === name || trimmed.startsWith(`${name}=`)
+  })
+
 const failures: Array<string> = []
 const manifest = readJson("package.json")
 const config = readJson("release.config.json")
 const currentGitCommit = await readCurrentGitCommit()
+const trackedGitStatus = await readTrackedGitStatus()
 
 if (!isRecord(manifest)) {
   failures.push("package.json must be a JSON object")
@@ -78,6 +115,9 @@ if (isRecord(manifest) && isRecord(config)) {
     if (commit === currentCommitSelector && currentGitCommit === undefined) {
       failures.push("release identity commit HEAD requires a committed Git checkout")
     }
+    if (commit === currentCommitSelector && currentGitCommit !== undefined && trackedGitStatus !== undefined && trackedGitStatus.length > 0) {
+      failures.push("release identity commit HEAD requires a clean tracked working tree")
+    }
     if (commit !== undefined && commit !== currentCommitSelector && currentGitCommit !== undefined && commit !== currentGitCommit) {
       failures.push(`release identity commit ${commit} must match current git commit ${currentGitCommit}`)
     }
@@ -90,6 +130,18 @@ if (isRecord(manifest) && isRecord(config)) {
   if (!Array.isArray(targets)) {
     failures.push("release.config.json targets must be an array")
   } else {
+    const tokenEnvNames = collectTokenEnvNames(targets)
+    const envExample = readText(".env.example")
+    if (tokenEnvNames.length > 0 && envExample === undefined) {
+      failures.push(".env.example must document release token environment variables")
+    }
+    if (envExample !== undefined) {
+      for (const name of tokenEnvNames) {
+        if (!envExampleDocuments(envExample, name)) {
+          failures.push(`.env.example must document ${name}`)
+        }
+      }
+    }
     for (const target of targets) {
       if (!isRecord(target)) {
         failures.push("release targets must be objects")

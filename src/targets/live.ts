@@ -5,7 +5,9 @@ import { TargetConfig } from "../domain/target.js"
 import { GitHubAdapter } from "./github.js"
 import { HomebrewAdapter } from "./homebrew.js"
 import { NpmAdapter } from "./npm.js"
+import { PyPiAdapter } from "./pypi.js"
 import { TargetRegistry } from "./registry.js"
+import { ScoopAdapter } from "./scoop.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -20,6 +22,10 @@ const planLiveTargetOperations = Effect.fn("planLiveTargetOperations")(function*
       return yield* GitHubAdapter.planOperations(target, model)
     case "HomebrewTapTarget":
       return yield* HomebrewAdapter.planOperations(target, model)
+    case "PyPiRegistryTarget":
+      return yield* PyPiAdapter.planOperations(target, model)
+    case "ScoopBucketTarget":
+      return yield* ScoopAdapter.planOperations(target, model)
   }
 })
 
@@ -31,6 +37,10 @@ const liveTargetCapabilities = (target: TargetConfig) => {
       return GitHubAdapter.capabilities(target)
     case "HomebrewTapTarget":
       return HomebrewAdapter.capabilities(target)
+    case "PyPiRegistryTarget":
+      return PyPiAdapter.capabilities(target)
+    case "ScoopBucketTarget":
+      return ScoopAdapter.capabilities(target)
   }
 }
 

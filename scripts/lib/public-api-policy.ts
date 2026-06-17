@@ -19,11 +19,14 @@ export const aggregateSourcePaths: ReadonlyArray<string> = [
 
 export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "host/bun.ts",
+  "host/http-live.ts",
   "host/test.ts",
   "targets/live.ts",
   "targets/npm.ts",
   "targets/github.ts",
   "targets/homebrew.ts",
+  "targets/pypi.ts",
+  "targets/scoop.ts",
   "cli/programmatic.ts",
   "cli/main.ts"
 ]
@@ -44,10 +47,13 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
       "cli/programmatic.ts",
       "cli/command.ts",
       "host/bun.ts",
+      "host/http-live.ts",
       "targets/live.ts",
       "targets/npm.ts",
       "targets/github.ts",
-      "targets/homebrew.ts"
+      "targets/homebrew.ts",
+      "targets/pypi.ts",
+      "targets/scoop.ts"
     ],
     allowedExternalPrefixes: [
       "@effect/platform-bun",
@@ -84,13 +90,17 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
       "targets/live.ts",
       "targets/npm.ts",
       "targets/github.ts",
-      "targets/homebrew.ts"
+      "targets/homebrew.ts",
+      "targets/pypi.ts",
+      "targets/scoop.ts"
     ],
     allowedExternalPrefixes: [],
     allowsBunGlobal: false
   },
   { subpath: "./targets/npm", allowedRuntimeSourcePaths: ["targets/npm.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
-  { subpath: "./targets/registry", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false }
+  { subpath: "./targets/pypi", allowedRuntimeSourcePaths: ["targets/pypi.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./targets/registry", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./targets/scoop", allowedRuntimeSourcePaths: ["targets/scoop.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false }
 ]
 
 export const expectedPublicExports: ReadonlyArray<string> =

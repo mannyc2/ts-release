@@ -36,9 +36,10 @@
       "_tag": "GitHubReleaseTarget",
       "id": "github",
       "repository": "mannyc2/ts-release",
+      "tokenEnv": "GH_TOKEN",
       "draft": true,
       "prerelease": false,
-      "dryRunSupport": "native",
+      "dryRunSupport": "simulated",
       "mutability": "mutable-release",
       "recovery": "delete-and-recreate"
     }

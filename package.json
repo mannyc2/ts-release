@@ -146,9 +146,17 @@
       "types": "./dist/targets/npm.d.ts",
       "default": "./dist/targets/npm.js"
     },
+    "./targets/pypi": {
+      "types": "./dist/targets/pypi.d.ts",
+      "default": "./dist/targets/pypi.js"
+    },
     "./targets/registry": {
       "types": "./dist/targets/registry.d.ts",
       "default": "./dist/targets/registry.js"
+    },
+    "./targets/scoop": {
+      "types": "./dist/targets/scoop.d.ts",
+      "default": "./dist/targets/scoop.js"
     }
   },
   "files": [
@@ -168,8 +176,9 @@
     "check:effect-imports": "bun run scripts/check-effect-imports.ts",
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",
+    "check:readme": "bun run scripts/check-readme.ts",
     "check:self-release-config": "bun run scripts/check-self-release-config.ts",
-    "check:portable": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:package-exports && bun dist/cli/main.js --help",
+    "check:portable": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports && bun dist/cli/main.js --help",
     "check:release": "bun run check:self-release-config && bun run check:portable",
     "cli": "bun run src/cli/main.ts"
   },

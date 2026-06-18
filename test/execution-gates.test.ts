@@ -15,10 +15,18 @@ import {
   VerifyRemoteOperation
 } from "../src/domain/operation.js"
 import { ReleasePlan } from "../src/domain/release.js"
+import { CommandResult, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { executePlan, renderPlan, runApprovedReleaseWorkflow, runOperation, validatePlan } from "../src/planner/executor.js"
+import {
+  executePlan,
+  renderPlan,
+  runApprovedReleaseWorkflow,
+  runOperation,
+  validatePlan,
+  verifyPlan
+} from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 
@@ -86,6 +94,13 @@ const workflowVerifyCommand = CommandSpec.make({
   redactedEnv: []
 })
 
+const npmVersionVerifyCommand = CommandSpec.make({
+  executable: "npm",
+  args: ["view", "release@0.1.0", "version", "--registry", "https://registry.npmjs.org"],
+  requiredEnv: [],
+  redactedEnv: []
+})
+
 const planWithFullWorkflow = Effect.gen(function*() {
   const intent = yield* parseReleaseIntent(minimalConfig)
   const plan = yield* createReleasePlan(intent)
@@ -129,6 +144,31 @@ const planWithFullWorkflow = Effect.gen(function*() {
         risk: "read-only",
         gate: noApprovalGate("read-only"),
         command: workflowVerifyCommand
+      })
+    ]
+  })
+})
+
+const planWithNpmVersionVerification = Effect.gen(function*() {
+  const intent = yield* parseReleaseIntent(minimalConfig)
+  const plan = yield* createReleasePlan(intent)
+  return ReleasePlan.make({
+    schemaVersion: plan.schemaVersion,
+    identity: plan.identity,
+    source: plan.source,
+    artifacts: plan.artifacts,
+    targets: plan.targets,
+    targetCapabilities: plan.targetCapabilities,
+    evidenceDirectory: plan.evidenceDirectory,
+    metadata: plan.metadata,
+    operations: [
+      VerifyRemoteOperation.make({
+        id: "npm:npm-version-verify",
+        targetId: "npm",
+        description: "Verify npm package version.",
+        risk: "read-only",
+        gate: noApprovalGate("read-only"),
+        command: npmVersionVerifyCommand
       })
     ]
   })
@@ -307,6 +347,46 @@ describe("execution gates", () => {
     expect(evidence.validation.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
     expect(evidence.execution.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
     expect(evidence.verification.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
+  })
+
+  test("retries npm version verification before recording success", async () => {
+    let attempts = 0
+    const layer = Layer.mergeAll(
+      ReleaseCommandRunnerTestLayer({
+        runCommand: (command) =>
+          Effect.sync(() => {
+            const isNpmVersionVerify = commandKey(command) === commandKey(npmVersionVerifyCommand)
+            if (isNpmVersionVerify) {
+              attempts += 1
+            }
+            const failed = isNpmVersionVerify && attempts < 3
+            return CommandResult.make({
+              command,
+              exitCode: failed ? 1 : 0,
+              stdout: failed ? "" : "0.1.0\n",
+              stderr: failed ? "npm ERR! code E404\nnpm ERR! No match found for version 0.1.0" : "",
+              startedAt: `2026-06-16T00:00:0${attempts}.000Z`,
+              endedAt: `2026-06-16T00:00:0${attempts}.000Z`,
+              durationMillis: 0
+            })
+          })
+      }),
+      makeTestReleaseHttpLayer(),
+      LiveTargetRegistryLayer,
+      BunServices.layer
+    )
+
+    const evidence = await runEffect(
+      Effect.gen(function*() {
+        const plan = yield* planWithNpmVersionVerification
+        return yield* verifyPlan(plan)
+      }),
+      layer
+    )
+
+    expect(attempts).toBe(3)
+    expect(evidence.records.map((record) => record.id)).toEqual(["npm:npm-version-verify:command"])
+    expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
   })
 
   test("workflow fails before publishing without execute approval", async () => {

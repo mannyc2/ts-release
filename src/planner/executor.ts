@@ -1,6 +1,9 @@
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
+import * as Schedule from "effect/Schedule"
+import * as Schema from "effect/Schema"
 import {
   CommandEvidence,
   EvidenceBundle,
@@ -37,8 +40,28 @@ type ValidationOperation = Extract<Operation, { readonly _tag: "ValidateCommandO
 type PublishOperation = Extract<Operation, { readonly _tag: "PublishCommandOperation" }>
 type VerificationOperation = Extract<Operation, { readonly _tag: "VerifyRemoteOperation" | "VerifyHttpOperation" }>
 
+class RetryableVerificationEvidenceFailure extends Schema.TaggedErrorClass<RetryableVerificationEvidenceFailure>()(
+  "RetryableVerificationEvidenceFailure",
+  {
+    evidence: Schema.Union([CommandEvidence, HttpEvidence])
+  }
+) {}
+
+const npmVersionVerificationRetryPolicy = Schedule.addDelay(
+  Schedule.recurs(10),
+  () => Effect.succeed(Duration.millis(500))
+)
+
 const operationFailed = (evidence: EvidenceRecord): evidence is OperationFailureEvidence =>
   evidence.status === "failed" && ("exitCode" in evidence || "request" in evidence)
+
+const isNpmVersionVerificationOperation = (
+  operation: Operation
+): operation is Extract<Operation, { readonly _tag: "VerifyRemoteOperation" }> =>
+  operation._tag === "VerifyRemoteOperation" &&
+  operation.id.endsWith(":npm-version-verify") &&
+  operation.command.executable === "npm" &&
+  operation.command.args[0] === "view"
 
 const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
@@ -151,6 +174,35 @@ export function runOperationEvidence(
   })
 }
 
+const retryNpmVersionVerificationEvidence = Effect.fn("retryNpmVersionVerificationEvidence")(function*(
+  operation: Extract<Operation, { readonly _tag: "VerifyRemoteOperation" }>,
+  approval: ExecutionApproval,
+  root: string
+) {
+  return yield* runOperationEvidence(operation, approval, root).pipe(
+    Effect.flatMap((evidence) =>
+      operationFailed(evidence)
+        ? Effect.fail(RetryableVerificationEvidenceFailure.make({ evidence }))
+        : Effect.succeed(evidence)
+    ),
+    Effect.retry(npmVersionVerificationRetryPolicy),
+    Effect.catchTag("RetryableVerificationEvidenceFailure", (error) => Effect.succeed(error.evidence))
+  )
+})
+
+const runOperationEvidenceWithVerificationRetry = (
+  operation: Operation,
+  approval: ExecutionApproval,
+  root: string
+): Effect.Effect<
+  EvidenceRecord,
+  ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError,
+  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+> =>
+  isNpmVersionVerificationOperation(operation)
+    ? retryNpmVersionVerificationEvidence(operation, approval, root)
+    : runOperationEvidence(operation, approval, root)
+
 export function runOperation(
   operation: Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>,
   approval: ExecutionApproval
@@ -255,7 +307,7 @@ export function runOperations(
   return Effect.gen(function*() {
     let bundle: EvidenceBundle = emptyEvidenceBundle(plan)
     for (const operation of operations) {
-      const evidence = yield* runOperationEvidence(operation, approval, plan.source.root)
+      const evidence = yield* runOperationEvidenceWithVerificationRetry(operation, approval, plan.source.root)
       bundle = appendEvidenceRecord(bundle, evidence)
       if (operationFailed(evidence)) {
         return yield* failOperationEvidence(evidence, bundle)

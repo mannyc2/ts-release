@@ -50,40 +50,7 @@ jobs:
 
       - name: Check release eligibility
         id: eligibility
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          package_name="$(bun -e 'const manifest = await Bun.file("package.json").json(); console.log(manifest.name)')"
-          package_version="$(bun -e 'const manifest = await Bun.file("package.json").json(); console.log(manifest.version)')"
-
-          npm_exists=false
-          github_exists=false
-
-          if npm view "${package_name}@${package_version}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
-            npm_exists=true
-          fi
-
-          if gh release view "v${package_version}" --repo mannyc2/ts-release >/dev/null 2>&1; then
-            github_exists=true
-          fi
-
-          if [[ "${npm_exists}" == "true" && "${github_exists}" == "true" ]]; then
-            echo "should_release=false" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          if [[ "${npm_exists}" == "true" && "${github_exists}" == "false" ]]; then
-            echo "npm package ${package_name}@${package_version} exists but GitHub release v${package_version} is missing" >&2
-            exit 1
-          fi
-
-          if [[ "${npm_exists}" == "false" && "${github_exists}" == "true" ]]; then
-            echo "GitHub release v${package_version} exists but npm package ${package_name}@${package_version} is missing" >&2
-            exit 1
-          fi
-
-          echo "should_release=true" >> "${GITHUB_OUTPUT}"
+        run: bun run scripts/check-release-eligibility.ts
 
       - name: Build release artifacts
         if: steps.eligibility.outputs.should_release == 'true'

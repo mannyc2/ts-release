@@ -1,6 +1,6 @@
 {
   "name": "@mannyc1/ts-release",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "packageManager": "bun@1.3.14",
   "description": "Plan-first release orchestration with explicit validation, evidence, and execution gates.",
@@ -37,14 +37,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./api": {
-      "types": "./dist/api.d.ts",
-      "default": "./dist/api.js"
-    },
-    "./api/live": {
-      "types": "./dist/api/live.d.ts",
-      "default": "./dist/api/live.js"
     },
     "./cli": {
       "types": "./dist/cli/command.d.ts",
@@ -138,6 +130,10 @@
       "types": "./dist/planner/status.d.ts",
       "default": "./dist/planner/status.js"
     },
+    "./runtime/bun": {
+      "types": "./dist/runtime/bun.d.ts",
+      "default": "./dist/runtime/bun.js"
+    },
     "./targets/adapter": {
       "types": "./dist/targets/adapter.d.ts",
       "default": "./dist/targets/adapter.js"
@@ -169,9 +165,22 @@
     "./targets/scoop": {
       "types": "./dist/targets/scoop.d.ts",
       "default": "./dist/targets/scoop.js"
+    },
+    "./workflows/config": {
+      "types": "./dist/workflows/config.d.ts",
+      "default": "./dist/workflows/config.js"
+    },
+    "./workflows/evidence": {
+      "types": "./dist/workflows/evidence.d.ts",
+      "default": "./dist/workflows/evidence.js"
+    },
+    "./workflows/live": {
+      "types": "./dist/workflows/live.d.ts",
+      "default": "./dist/workflows/live.js"
     }
   },
   "files": [
+    "ARCHITECTURE.md",
     "dist",
     "examples",
     "SPEC.md",

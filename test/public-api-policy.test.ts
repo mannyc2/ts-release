@@ -37,9 +37,13 @@ describe("public API policy", () => {
     expect(policySubpaths).toEqual(actualSubpaths)
   })
 
-  test("publishes the TypeScript API instead of the old programmatic CLI surface", () => {
+  test("publishes explicit workflows instead of the old api facade or programmatic CLI surface", () => {
     const subpaths = new Set(publicExportPolicies.map((policy) => policy.subpath))
-    expect(subpaths.has("./api")).toBe(true)
+    expect(subpaths.has("./api")).toBe(false)
+    expect(subpaths.has("./api/live")).toBe(false)
+    expect(subpaths.has("./workflows/config")).toBe(true)
+    expect(subpaths.has("./workflows/evidence")).toBe(true)
+    expect(subpaths.has("./workflows/live")).toBe(true)
     expect(subpaths.has("./cli/programmatic")).toBe(false)
   })
 

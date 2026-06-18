@@ -7,7 +7,7 @@ import { TargetRegistry } from "../targets/registry.js"
 
 export type * from "../types/effect-internal.js"
 
-export const LiveReleaseApiLayer: Layer.Layer<
+export const LiveReleaseWorkflowLayer: Layer.Layer<
   ReleaseHttp | TargetRegistry,
   never,
   HttpClient.HttpClient

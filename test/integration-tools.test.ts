@@ -1,18 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
-import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
-import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import { mkdir, rm } from "node:fs/promises"
 import { dirname } from "node:path"
 import { pid } from "node:process"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { ExecutionApproval } from "../src/domain/operation.js"
-import { LiveReleaseHttpLayer } from "../src/host/http-live.js"
-import { PlatformCommandRunnerLayer } from "../src/host/platform.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { runOperations } from "../src/planner/executor.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { BunReleaseWorkflowRuntimeLayer } from "../src/runtime/bun.js"
 import { runEffect } from "./helpers.js"
 
 const integrationEnabled = Bun.env.RELEASE_INTEGRATION_TOOLS === "1"
@@ -23,15 +18,7 @@ const fixtureRoot = Bun.env.RELEASE_INTEGRATION_FIXTURE_DIR ?? `.tmp-release-int
 const npmPackagePath = `${fixtureRoot}/npm-package`
 const githubAssetPath = `${fixtureRoot}/github-asset.tgz`
 
-const IntegrationHostHttpClientLayer = Layer.mergeAll(
-  PlatformCommandRunnerLayer.pipe(Layer.provideMerge(BunServices.layer)),
-  BunHttpClient.layer
-)
-
-const IntegrationLayer = Layer.mergeAll(
-  LiveReleaseHttpLayer.pipe(Layer.provideMerge(IntegrationHostHttpClientLayer)),
-  LiveTargetRegistryLayer
-)
+const IntegrationLayer = BunReleaseWorkflowRuntimeLayer
 
 const writeText = async (path: string, contents: string): Promise<void> => {
   await mkdir(dirname(path), { recursive: true })
@@ -136,7 +123,7 @@ describe("real tool integrations", () => {
             id: "github",
             repository: "owner/repo",
             ...(Bun.env.GH_TOKEN === undefined ? {} : { tokenEnv: "GH_TOKEN" }),
-            dryRunSupport: "native",
+            dryRunSupport: "simulated",
             mutability: "mutable-release",
             recovery: "delete-and-recreate"
           }

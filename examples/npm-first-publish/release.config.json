@@ -1,0 +1,32 @@
+{
+  "identity": {
+    "name": "@scope/release-example-first",
+    "version": "0.1.0",
+    "commit": "example",
+    "tag": "v0.1.0"
+  },
+  "artifacts": [
+    {
+      "id": "package",
+      "path": ".",
+      "format": "directory",
+      "consumers": ["npm"]
+    }
+  ],
+  "targets": [
+    {
+      "_tag": "NpmRegistryTarget",
+      "id": "npm",
+      "registry": "https://registry.npmjs.org",
+      "packageName": "@scope/release-example-first",
+      "packagePath": ".",
+      "tokenEnv": "NPM_TOKEN",
+      "access": "public",
+      "dryRunSupport": "native",
+      "mutability": "immutable",
+      "recovery": "publish-new-version"
+    }
+  ],
+  "strict": true,
+  "evidenceDirectory": ".release/evidence"
+}

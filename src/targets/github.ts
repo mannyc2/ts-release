@@ -27,6 +27,11 @@ import { rejectNoDryRunInStrictMode, targetCapabilitiesFor, validationNoteOperat
 
 export type * from "../types/effect-internal.js"
 
+interface GitHubReleaseContext {
+  readonly identity: ReleaseModel["identity"]
+  readonly artifacts: ReleaseModel["artifacts"]
+}
+
 const envNames = (target: GitHubReleaseTarget): ReadonlyArray<string> =>
   target.tokenEnv === undefined ? [] : [target.tokenEnv]
 
@@ -48,7 +53,7 @@ const githubValidationStrategy = (target: GitHubReleaseTarget): TargetValidation
 export const githubTargetCapabilities = (target: GitHubReleaseTarget): TargetCapabilities =>
   targetCapabilitiesFor(target, githubValidationStrategy(target))
 
-const targetArtifacts = (target: GitHubReleaseTarget, model: ReleaseModel) =>
+const targetArtifacts = (target: GitHubReleaseTarget, model: GitHubReleaseContext) =>
   model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
 
 const pathBaseName = (path: string): string => {
@@ -56,15 +61,21 @@ const pathBaseName = (path: string): string => {
   return parts[parts.length - 1] ?? path
 }
 
-const releaseArgs = (target: GitHubReleaseTarget, model: ReleaseModel): ReadonlyArray<string> => {
+const githubReleaseTag = (model: GitHubReleaseContext): string =>
+  model.identity.tag ?? model.identity.version
+
+const githubReleaseTitle = (model: GitHubReleaseContext): string =>
+  `${model.identity.name} ${model.identity.version}`
+
+const releaseArgs = (target: GitHubReleaseTarget, model: GitHubReleaseContext): ReadonlyArray<string> => {
   const args: Array<string> = [
     "release",
     "create",
-    model.identity.tag ?? model.identity.version,
+    githubReleaseTag(model),
     "--repo",
     target.repository,
     "--title",
-    `${model.identity.name} ${model.identity.version}`
+    githubReleaseTitle(model)
   ]
   if (target.draft === true) {
     args.push("--draft")
@@ -100,12 +111,31 @@ const githubApiEnvHeaders = (target: GitHubReleaseTarget): ReadonlyArray<HttpEnv
       })
     ]
 
+const githubReleaseRequestSpec = (
+  target: GitHubReleaseTarget,
+  tag: string
+): HttpRequestSpec =>
+  HttpRequestSpec.make({
+    method: "GET",
+    url: githubReleaseApiUrl(target, tag),
+    headers: githubApiHeaders(),
+    envHeaders: githubApiEnvHeaders(target),
+    requiredEnv: envNames(target),
+    redactedEnv: envNames(target)
+  })
+
+const githubReleaseCreateCommand = (
+  target: GitHubReleaseTarget,
+  model: GitHubReleaseContext
+): CommandSpec =>
+  ghCommand(target, releaseArgs(target, model), true)
+
 const githubVerificationOperations = (
   target: GitHubReleaseTarget,
   model: ReleaseModel
 ): ReadonlyArray<Operation> => {
-  const tag = model.identity.tag ?? model.identity.version
-  const title = `${model.identity.name} ${model.identity.version}`
+  const tag = githubReleaseTag(model)
+  const title = githubReleaseTitle(model)
   const isDraft = target.draft === true
   const isPrerelease = target.prerelease === true
   const artifactChecks = targetArtifacts(target, model).map((artifact) =>
@@ -123,14 +153,7 @@ const githubVerificationOperations = (
       description: "Verify the GitHub release through the GitHub API.",
       risk: "read-only",
       gate: noApprovalGate("GitHub API release verification is read-only."),
-      request: HttpRequestSpec.make({
-        method: "GET",
-        url: githubReleaseApiUrl(target, tag),
-        headers: githubApiHeaders(),
-        envHeaders: githubApiEnvHeaders(target),
-        requiredEnv: envNames(target),
-        redactedEnv: envNames(target)
-      }),
+      request: githubReleaseRequestSpec(target, tag),
       expectedStatus: 200,
       checks: [
         HttpJsonEqualsCheck.make({
@@ -217,7 +240,7 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
       description: `Create GitHub release for ${model.identity.name}@${model.identity.version}.`,
       risk: publishRisk,
       gate: publishGate,
-      command: ghCommand(target, releaseArgs(target, model), true)
+      command: githubReleaseCreateCommand(target, model)
     }),
     ...githubVerificationOperations(target, model)
   ] satisfies ReadonlyArray<Operation>

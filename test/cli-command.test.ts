@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test"
-import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
@@ -12,13 +11,13 @@ import {
   PlanReleaseConfigOptions,
   planReleaseConfig,
   renderReleaseConfigPlan
-} from "../src/api.js"
-import { LiveReleaseApiLayer } from "../src/api/live.js"
+} from "../src/workflows/config.js"
 import { cli } from "../src/cli/command.js"
 import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
 import { CommandSpec } from "../src/domain/operation.js"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
-import { makePlatformCommandRunnerLayer } from "../src/host/platform.js"
+import { makeTestReleaseHttpLayer } from "../src/host/http.js"
+import { makeBunReleaseWorkflowRuntimeLayer } from "../src/runtime/bun.js"
 import { commandKey } from "../src/host/test.js"
 import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
@@ -69,6 +68,55 @@ const partialWorkflowConfig = JSON.stringify({
       dryRunSupport: "simulated",
       mutability: "mutable-index",
       recovery: "manual"
+    },
+    {
+      _tag: "NpmRegistryTarget",
+      id: "npm",
+      registry: "https://registry.npmjs.org",
+      packageName: "release",
+      packagePath: ".",
+      tokenEnv: "NPM_TOKEN",
+      dryRunSupport: "native",
+      mutability: "immutable",
+      recovery: "publish-new-version"
+    }
+  ],
+  strict: true,
+  evidenceDirectory: ".release/evidence"
+})
+
+const reconcileConfig = JSON.stringify({
+  identity: {
+    name: "release",
+    version: "0.1.0",
+    commit: "abc123",
+    tag: "v0.1.0"
+  },
+  artifacts: [
+    {
+      id: "github-asset",
+      path: "dist/release.tgz",
+      format: "tarball",
+      consumers: ["github"]
+    },
+    {
+      id: "package",
+      path: ".",
+      format: "directory",
+      consumers: ["npm"]
+    }
+  ],
+  targets: [
+    {
+      _tag: "GitHubReleaseTarget",
+      id: "github",
+      repository: "owner/repo",
+      tokenEnv: "GH_TOKEN",
+      draft: false,
+      prerelease: false,
+      dryRunSupport: "simulated",
+      mutability: "mutable-release",
+      recovery: "delete-and-recreate"
     },
     {
       _tag: "NpmRegistryTarget",
@@ -153,9 +201,11 @@ describe("cli command", () => {
   test("exports the root release command", () => {
     expect(cli.name).toBe("release")
     expect(cli.subcommands.flatMap((group) => group.commands.map((command) => command.name)).sort()).toEqual([
+      "eligibility",
       "execute",
       "plan",
       "print",
+      "reconcile",
       "render",
       "resume",
       "run",
@@ -196,7 +246,7 @@ describe("cli command", () => {
     }
   })
 
-  test("renders release configs through the TypeScript API", async () => {
+  test("renders release configs through the explicit config workflow", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-root-"))
     try {
       await writeFile(join(root, "release.config.json"), minimalConfig)
@@ -209,12 +259,7 @@ describe("cli command", () => {
             format: "text"
           })
         ).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-              LiveTargetRegistryLayer
-            )
-          )
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
 
@@ -231,12 +276,7 @@ describe("cli command", () => {
 
       const plan = await Effect.runPromise(
         planReleaseConfig(PlanReleaseConfigOptions.make({ root })).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-              LiveTargetRegistryLayer
-            )
-          )
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
 
@@ -248,22 +288,14 @@ describe("cli command", () => {
     }
   })
 
-  test("supports platform-neutral API layer composition", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-api-platform-"))
+  test("supports named Bun workflow runtime layer composition", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-workflow-runtime-"))
     try {
       await writeFile(join(root, "release.config.json"), minimalConfig)
-      const layer = LiveReleaseApiLayer.pipe(
-        Layer.provideMerge(
-          Layer.mergeAll(
-            makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-            BunHttpClient.layer
-          )
-        )
-      )
 
       const plan = await Effect.runPromise(
         planReleaseConfig(PlanReleaseConfigOptions.make({ root, configPath: "release.config.json" })).pipe(
-          Effect.provide(layer)
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
 
@@ -339,6 +371,70 @@ describe("cli command", () => {
     }
   })
 
+  test("eligibility command checks remote state through the config workflow", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-eligibility-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "release",
+        version: "0.1.0"
+      }))
+      const npmView = CommandSpec.make({
+        executable: "npm",
+        args: ["view", "release@0.1.0", "version", "--registry", "https://registry.npmjs.org"],
+        requiredEnv: [],
+        redactedEnv: []
+      })
+      const ghReleaseView = CommandSpec.make({
+        executable: "gh",
+        args: [
+          "release",
+          "view",
+          "v0.1.0",
+          "--repo",
+          "owner/repo",
+          "--json",
+          "isDraft,tagName,publishedAt"
+        ],
+        requiredEnv: ["GH_TOKEN"],
+        redactedEnv: ["GH_TOKEN"]
+      })
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map([
+            [commandKey(npmView), {
+              exitCode: 1,
+              stdout: "",
+              stderr: "E404 Not Found"
+            }],
+            [commandKey(ghReleaseView), {
+              exitCode: 1,
+              stdout: "",
+              stderr: "not found"
+            }]
+          ])
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "eligibility",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(layer))
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   test("run command writes workflow evidence files", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-run-root-"))
     try {
@@ -353,13 +449,7 @@ describe("cli command", () => {
           "--execute",
           "--approve-irreversible"
         ]).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-              LiveTargetRegistryLayer,
-              BunServices.layer
-            )
-          )
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
 
@@ -386,13 +476,7 @@ describe("cli command", () => {
           "--format",
           "json"
         ]).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-              LiveTargetRegistryLayer,
-              BunServices.layer
-            )
-          )
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
     } finally {
@@ -412,13 +496,7 @@ describe("cli command", () => {
           "--config",
           configPath
         ]).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-              LiveTargetRegistryLayer,
-              BunServices.layer
-            )
-          )
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
 
@@ -496,6 +574,57 @@ describe("cli command", () => {
     }
   })
 
+  test("reconcile command publishes a matching GitHub draft with execute approval", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-reconcile-root-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, reconcileConfig)
+      await mkdir(join(root, "dist"), { recursive: true })
+      await writeFile(join(root, "dist", "release.tgz"), "fake archive text")
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map()
+        }),
+        makeTestReleaseHttpLayer({
+          responses: new Map([
+            ["GET\u0000https://api.github.com/repos/owner/repo/releases/tags/v0.1.0", {
+              status: 200,
+              json: {
+                tag_name: "v0.1.0",
+                name: "release 0.1.0",
+                draft: true,
+                prerelease: false,
+                assets: [{ name: "release.tgz" }]
+              }
+            }]
+          ])
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "reconcile",
+          "--config",
+          configPath,
+          "--execute"
+        ]).pipe(Effect.provide(layer))
+      )
+
+      const evidence = await readFile(join(root, ".release", "evidence", "reconciliation.json"), "utf8")
+      expect(evidence).toContain("github:gh-release-publish-draft:command")
+      expect(evidence).toContain("--draft=false")
+      expect(evidence).not.toContain("npm:npm-publish")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   test("run command writes partial workflow evidence on validation failure", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-partial-evidence-"))
     try {
@@ -557,11 +686,7 @@ describe("cli command", () => {
     try {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
-      const layer = Layer.mergeAll(
-        makePlatformCommandRunnerLayer({ root }).pipe(Layer.provideMerge(BunServices.layer)),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
+      const layer = makeBunReleaseWorkflowRuntimeLayer({ root })
 
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([

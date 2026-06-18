@@ -53,4 +53,49 @@ describe("platform command runner", () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toBe("required-secret")
   })
+
+  test("forwards GitHub Actions context env to child commands", async () => {
+    const result = await Effect.runPromise(
+      runCommand(
+        CommandSpec.make({
+          executable: process.execPath,
+          args: [
+            "-e",
+            "process.stdout.write(JSON.stringify({ actions: process.env.GITHUB_ACTIONS, workflowRef: process.env.GITHUB_WORKFLOW_REF, runner: process.env.RUNNER_ENVIRONMENT }))"
+          ],
+          requiredEnv: [],
+          redactedEnv: []
+        }),
+        {
+          GITHUB_ACTIONS: "true",
+          GITHUB_WORKFLOW_REF: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
+          RUNNER_ENVIRONMENT: "github-hosted"
+        }
+      )
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(JSON.parse(result.stdout)).toEqual({
+      actions: "true",
+      workflowRef: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/main",
+      runner: "github-hosted"
+    })
+  })
+
+  test("does not forward setup-node token env by default", async () => {
+    const result = await Effect.runPromise(
+      runCommand(
+        CommandSpec.make({
+          executable: process.execPath,
+          args: ["-e", "process.stdout.write(process.env.NODE_AUTH_TOKEN ?? '')"],
+          requiredEnv: [],
+          redactedEnv: []
+        }),
+        { NODE_AUTH_TOKEN: "token-like-value" }
+      )
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toBe("")
+  })
 })

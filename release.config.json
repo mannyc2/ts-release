@@ -1,9 +1,9 @@
 {
   "identity": {
     "name": "@mannyc1/ts-release",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "commit": "HEAD",
-    "tag": "v0.0.1",
+    "tag": "v0.0.2",
     "notes": "Initial release of the plan-first release package."
   },
   "artifacts": [
@@ -15,37 +15,37 @@
     },
     {
       "id": "package-tarball",
-      "path": ".release/artifacts/mannyc1-ts-release-0.0.1.tgz",
+      "path": ".release/artifacts/mannyc1-ts-release-0.0.2.tgz",
       "format": "tarball",
       "consumers": ["github"]
     },
     {
       "id": "cli-linux-x64",
-      "path": ".release/artifacts/ts-release-0.0.1-linux-x64",
+      "path": ".release/artifacts/ts-release-0.0.2-linux-x64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-linux-arm64",
-      "path": ".release/artifacts/ts-release-0.0.1-linux-arm64",
+      "path": ".release/artifacts/ts-release-0.0.2-linux-arm64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-darwin-x64",
-      "path": ".release/artifacts/ts-release-0.0.1-darwin-x64",
+      "path": ".release/artifacts/ts-release-0.0.2-darwin-x64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-darwin-arm64",
-      "path": ".release/artifacts/ts-release-0.0.1-darwin-arm64",
+      "path": ".release/artifacts/ts-release-0.0.2-darwin-arm64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-windows-x64",
-      "path": ".release/artifacts/ts-release-0.0.1-windows-x64.exe",
+      "path": ".release/artifacts/ts-release-0.0.2-windows-x64.exe",
       "format": "file",
       "consumers": ["github"]
     }
@@ -82,5 +82,5 @@
     }
   ],
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidenceDirectory": ".release/evidence/{version}"
 }

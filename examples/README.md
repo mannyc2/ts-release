@@ -18,12 +18,15 @@ Focused examples:
 
 - `multi-target`: one release coordinated across GitHub Releases, npm, and Homebrew.
 - `npm-only`: npm package directory with native npm dry-run validation.
+- `npm-first-publish`: token-based npm bootstrap config for the first version before switching to trusted publishing.
 - `github-release`: GitHub release asset with simulated GitHub dry-run validation.
 - `homebrew-tap`: Homebrew tap formula rendering with simulated formula validation.
 - `pypi-registry`: prebuilt Python distribution planned for TestPyPI with Twine.
 - `scoop-bucket`: Scoop bucket manifest rendering with simulated validation.
 - `non-strict-skips`: non-strict config that records skipped dry-run evidence.
 
-TestPyPI is still a real registry publish target, not a dry-run. The example
-only renders the plan; do not run publish operations without intentional
-credentials and approval flags.
+`npm-first-publish` demonstrates only the bootstrap shape for a package that
+does not exist on npm yet. Replace it with trusted publishing after the first
+version exists. TestPyPI is still a real registry publish target, not a dry-run.
+The examples only render plans; do not run publish operations without
+intentional credentials and approval flags.

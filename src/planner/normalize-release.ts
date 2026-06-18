@@ -53,6 +53,9 @@ const validateSafeRelativePath = (
   )
 }
 
+const expandEvidenceDirectory = (value: string, version: string): string =>
+  value.split("{version}").join(version)
+
 const validateWorkflowFileName = (
   field: string,
   value: string
@@ -136,7 +139,6 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
 ) {
   yield* validateUnique(intent.artifacts.map((artifact) => artifact.id), "artifacts.id")
   yield* validateUnique(intent.targets.map((target) => target.id), "targets.id")
-  yield* validateSafeRelativePath("evidenceDirectory", intent.evidenceDirectory ?? ".release/evidence")
   for (const artifact of intent.artifacts) {
     yield* validateSafeRelativePath(`artifacts.${artifact.id}.path`, artifact.path)
   }
@@ -174,6 +176,11 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   }
 
   const identity = yield* resolveIdentityCommit(intent.identity, root)
+  const evidenceDirectory = expandEvidenceDirectory(
+    intent.evidenceDirectory ?? ".release/evidence",
+    identity.version
+  )
+  yield* validateSafeRelativePath("evidenceDirectory", evidenceDirectory)
   const inventory = yield* Effect.forEach(intent.artifacts, (artifact) => inventoryArtifact(root, artifact))
 
   return ReleaseModel.make({
@@ -185,6 +192,6 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
     artifacts: inventory.sort(artifactInventoryOrder),
     targets: [...intent.targets].sort(targetOrder),
     strict: intent.strict ?? true,
-    evidenceDirectory: intent.evidenceDirectory ?? ".release/evidence"
+    evidenceDirectory
   })
 })

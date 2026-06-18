@@ -10,12 +10,13 @@ Scripts in this directory are maintained release tooling, not a scratchpad.
 - `check-package-exports.ts` validates package exports, declarations, side effects, and consumer type resolution.
 - `check-examples.ts` verifies every example can produce a text release plan.
 - `check-readme.ts` validates README fenced snippets and package import subpaths.
+- `check-release-eligibility.ts` adapts the TypeScript release eligibility workflow to GitHub Actions outputs.
 - `check-self-release-config.ts` verifies the repository's own release config is publish-ready.
 - `build-release-artifacts.ts` prepares ignored `.release/artifacts` inputs for `ts-release`, including the npm tarball and standalone CLI executables.
 
 ## Internal Helpers
 
-- `lib/public-api-policy.ts` contains the public API and tree-shaking policy shared by export checks.
+- `lib/public-api-policy.ts` contains the public API and tree-shaking policy shared by export checks. Keep it aligned with `ARCHITECTURE.md` when adding workflow, runtime, CLI, or lower-level library subpaths.
 - `lib/scratch-workspace.ts` contains guarded scratch directory helpers.
 
 ## Temporary Work

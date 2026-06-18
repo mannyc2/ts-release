@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import { ArtifactInventoryItem } from "../src/domain/artifact.js"
 import {
   CommandEvidence,
   EvidenceBundle,
@@ -22,9 +23,14 @@ import {
   ReleasePlan,
   SourceMetadata
 } from "../src/domain/release.js"
-import { makeTestReleaseHttpLayer } from "../src/host/http.js"
+import { GitHubReleaseTarget } from "../src/domain/target.js"
+import { httpRequestKey, makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
+import {
+  reconcileReleasePlan,
+  ReleaseReconcileOptions
+} from "../src/planner/reconcile.js"
 import {
   ReleaseResumeOptions,
   resumeApprovedReleaseWorkflow,
@@ -103,6 +109,32 @@ const githubPublishOperation = PublishCommandOperation.make({
   command: githubPublishCommand
 })
 
+const githubTarget = GitHubReleaseTarget.make({
+  id: "github",
+  repository: "owner/repo",
+  tokenEnv: "GH_TOKEN",
+  draft: false,
+  prerelease: false,
+  dryRunSupport: "simulated",
+  mutability: "mutable-release",
+  recovery: "delete-and-recreate"
+})
+
+const githubArtifact = ArtifactInventoryItem.make({
+  id: "github-asset",
+  path: "dist/release.tgz",
+  format: "tarball",
+  consumers: ["github"],
+  sizeBytes: 12
+})
+
+const githubDraftEditCommand = CommandSpec.make({
+  executable: "gh",
+  args: ["release", "edit", "v0.1.0", "--repo", "owner/repo", "--draft=false"],
+  requiredEnv: ["GH_TOKEN"],
+  redactedEnv: ["GH_TOKEN"]
+})
+
 const verificationOperation = VerifyRemoteOperation.make({
   id: "workflow-verify",
   targetId: "npm",
@@ -136,6 +168,43 @@ const makePlan = (
     targets: [],
     targetCapabilities: [],
     operations,
+    evidenceDirectory: ".release/evidence",
+    metadata: PlannerMetadata.make({
+      createdBy: "test",
+      planSchemaVersion: "release-plan/v1"
+    })
+  })
+
+const withEvidenceDirectory = (plan: ReleasePlan, evidenceDirectory: string): ReleasePlan =>
+  ReleasePlan.make({
+    schemaVersion: plan.schemaVersion,
+    identity: plan.identity,
+    source: plan.source,
+    artifacts: plan.artifacts,
+    targets: plan.targets,
+    targetCapabilities: plan.targetCapabilities,
+    operations: plan.operations,
+    evidenceDirectory,
+    metadata: plan.metadata
+  })
+
+const makeGitHubPlan = (): ReleasePlan =>
+  ReleasePlan.make({
+    schemaVersion: "release-plan/v1",
+    identity: ReleaseIdentity.make({
+      name: "release",
+      version: "0.1.0",
+      commit: "abc123",
+      tag: "v0.1.0"
+    }),
+    source: SourceMetadata.make({
+      root: ".",
+      configPath: "release.config.json"
+    }),
+    artifacts: [githubArtifact],
+    targets: [githubTarget],
+    targetCapabilities: [],
+    operations: [npmPublishOperation, githubPublishOperation],
     evidenceDirectory: ".release/evidence",
     metadata: PlannerMetadata.make({
       createdBy: "test",
@@ -192,6 +261,43 @@ const testLayer = (options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {
       ...options
     }),
     makeTestReleaseHttpLayer()
+  )
+
+const githubReleaseResponseKey = httpRequestKey({
+  method: "GET",
+  url: "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0",
+  headers: [
+    { name: "Accept", value: "application/vnd.github+json" },
+    { name: "X-GitHub-Api-Version", value: "2022-11-28" }
+  ],
+  envHeaders: [{ name: "Authorization", valueEnv: "GH_TOKEN", prefix: "Bearer " }],
+  requiredEnv: ["GH_TOKEN"],
+  redactedEnv: ["GH_TOKEN"]
+})
+
+const githubDraftResponse = {
+  status: 200,
+  json: {
+    tag_name: "v0.1.0",
+    name: "release 0.1.0",
+    draft: true,
+    prerelease: false,
+    assets: [{ name: "release.tgz" }]
+  }
+}
+
+const githubReconcileLayer = (options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}) =>
+  Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      directories: new Set(["."]),
+      env: new Map([["GH_TOKEN", "gh_secret"]]),
+      ...options
+    }),
+    makeTestReleaseHttpLayer({
+      responses: new Map([
+        [githubReleaseResponseKey, githubDraftResponse]
+      ])
+    })
   )
 
 describe("release status and resume", () => {
@@ -268,6 +374,21 @@ describe("release status and resume", () => {
     )
 
     expect(error._tag).toBe("EvidenceReadError")
+  })
+
+  test("reads status evidence from a resolved versioned directory", async () => {
+    const plan = withEvidenceDirectory(makePlan(), ".release/evidence/0.1.0")
+    const report = await runEffect(
+      statusReleasePlan(plan),
+      testLayer({
+        files: new Map([
+          [".release/evidence/0.1.0/render.json", renderEvidenceJson(bundle(plan, [renderEvidence()]))]
+        ])
+      })
+    )
+
+    expect(report.evidenceDirectory).toBe(".release/evidence/0.1.0")
+    expect(report.operations.find((operation) => operation.operationId === "workflow-render")?.status).toBe("passed")
   })
 
   test("resumes pending publish and verification after completed render and validation", async () => {
@@ -435,5 +556,74 @@ describe("release status and resume", () => {
     )
 
     expect(error._tag).toBe("ExecutionApprovalError")
+  })
+
+  test("blocks GitHub reconciliation without execute approval", async () => {
+    const plan = makeGitHubPlan()
+    const error = await runEffect(
+      reconcileReleasePlan(
+        plan,
+        ReleaseReconcileOptions.make({
+          execute: false
+        })
+      ).pipe(Effect.flip),
+      githubReconcileLayer()
+    )
+
+    expect(error._tag).toBe("ExecutionApprovalError")
+  })
+
+  test("publishes a matching GitHub draft without rerunning npm publish", async () => {
+    const plan = makeGitHubPlan()
+    const evidence = await runEffect(
+      reconcileReleasePlan(
+        plan,
+        ReleaseReconcileOptions.make({
+          execute: true
+        })
+      ),
+      githubReconcileLayer()
+    )
+
+    expect(evidence.records.map((record) => record.id)).toEqual(["github:gh-release-publish-draft:command"])
+    const record = evidence.records[0]
+    if (record !== undefined && "command" in record) {
+      expect(record.command).toEqual(githubDraftEditCommand)
+    }
+    expect(evidence.records.some((record) => "operationId" in record && record.operationId === "npm:npm-publish")).toBe(false)
+  })
+
+  test("blocks GitHub reconciliation when remote assets differ", async () => {
+    const plan = makeGitHubPlan()
+    const error = await runEffect(
+      reconcileReleasePlan(
+        plan,
+        ReleaseReconcileOptions.make({
+          execute: true
+        })
+      ).pipe(Effect.flip),
+      Layer.mergeAll(
+        makeTestCommandRunnerLayer({
+          directories: new Set(["."]),
+          env: new Map([["GH_TOKEN", "gh_secret"]])
+        }),
+        makeTestReleaseHttpLayer({
+          responses: new Map([
+            [githubReleaseResponseKey, {
+              status: 200,
+              json: {
+                tag_name: "v0.1.0",
+                name: "release 0.1.0",
+                draft: true,
+                prerelease: false,
+                assets: [{ name: "other.tgz" }]
+              }
+            }]
+          ])
+        })
+      )
+    )
+
+    expect(error._tag).toBe("ReconciliationBlockedError")
   })
 })

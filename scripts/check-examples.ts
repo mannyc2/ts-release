@@ -1,11 +1,8 @@
-import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import { readdir } from "node:fs/promises"
 import { join } from "node:path"
-import { PlanReleaseConfigOptions, renderReleaseConfigPlan } from "../src/api.js"
-import { makePlatformCommandRunnerLayer } from "../src/host/platform.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { makeBunReleaseWorkflowRuntimeLayer } from "../src/runtime/bun.js"
+import { PlanReleaseConfigOptions, renderReleaseConfigPlan } from "../src/workflows/config.js"
 
 const root = process.cwd()
 const examplesRoot = join(root, "examples")
@@ -34,6 +31,12 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
   ["npm-only", [
     "[NpmRegistryTarget]",
     "npm:npm-pack-dry-run",
+    "npm:npm-publish"
+  ]],
+  ["npm-first-publish", [
+    "[NpmRegistryTarget]",
+    "auth=env-token",
+    "npm:npm-whoami",
     "npm:npm-publish"
   ]],
   ["pypi-registry", [
@@ -72,12 +75,7 @@ const runExamplePlan = Effect.fn("scripts.runExamplePlan")(function*(
       format: "text"
     })
   ).pipe(
-    Effect.provide(
-      Layer.mergeAll(
-        makePlatformCommandRunnerLayer({ root: exampleDirectory }).pipe(Layer.provideMerge(BunServices.layer)),
-        LiveTargetRegistryLayer
-      )
-    )
+    Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root: exampleDirectory }))
   )
   for (const snippet of expectedSnippets.get(exampleName) ?? []) {
     if (!plan.includes(snippet)) {

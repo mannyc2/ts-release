@@ -44,6 +44,30 @@ export class ResumeBlockedError extends Schema.TaggedErrorClass<ResumeBlockedErr
   reason: Schema.String
 }) {}
 
+export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteStateInspectionError>()(
+  "RemoteStateInspectionError",
+  {
+    targetId: Schema.String,
+    reason: Schema.String
+  }
+) {}
+
+export class ReleaseEligibilityCheckError extends Schema.TaggedErrorClass<ReleaseEligibilityCheckError>()(
+  "ReleaseEligibilityCheckError",
+  {
+    targetId: Schema.optionalKey(Schema.String),
+    reason: Schema.String
+  }
+) {}
+
+export class ReconciliationBlockedError extends Schema.TaggedErrorClass<ReconciliationBlockedError>()(
+  "ReconciliationBlockedError",
+  {
+    targetId: Schema.String,
+    reasons: Schema.Array(Schema.String)
+  }
+) {}
+
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
   operationId: Schema.String,
   exitCode: Schema.optionalKey(Schema.Number),
@@ -61,4 +85,7 @@ export type PlannerError =
   | EvidenceReadError
   | WorkspaceWriteError
   | ResumeBlockedError
+  | RemoteStateInspectionError
+  | ReleaseEligibilityCheckError
+  | ReconciliationBlockedError
   | OperationFailedError

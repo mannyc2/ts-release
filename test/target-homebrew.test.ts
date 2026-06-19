@@ -145,7 +145,7 @@ describe("Homebrew target", () => {
     }
   })
 
-  test("rejects non-sha256 checksums for Homebrew formulas", async () => {
+  test("rejects non-sha256 checksums during artifact inventory", async () => {
     const error = await runEffect(
       createPlan(
         homebrewConfig().replace(
@@ -156,9 +156,26 @@ describe("Homebrew target", () => {
       HomebrewLayer
     )
 
-    expect(error._tag).toBe("PlanConstructionError")
-    if (error._tag === "PlanConstructionError") {
-      expect(error.reason).toBe("Homebrew formula rendering requires a sha256 artifact checksum.")
+    expect(error._tag).toBe("ReleaseNormalizationError")
+    if (error._tag === "ReleaseNormalizationError") {
+      expect(error.field).toBe("artifacts.archive.checksum")
+    }
+  })
+
+  test("rejects mismatched manual sha256 checksums before formula rendering", async () => {
+    const error = await runEffect(
+      createPlan(
+        homebrewConfig().replace(
+          "\"consumers\":[\"homebrew\"]",
+          "\"consumers\":[\"homebrew\"],\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
+        )
+      ).pipe(Effect.flip),
+      HomebrewLayer
+    )
+
+    expect(error._tag).toBe("ReleaseNormalizationError")
+    if (error._tag === "ReleaseNormalizationError") {
+      expect(error.field).toBe("artifacts.archive.checksum")
     }
   })
 

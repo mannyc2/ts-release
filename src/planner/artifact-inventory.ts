@@ -85,6 +85,36 @@ const checksumArtifact = Effect.fn("checksumArtifact")(function*(
   })
 })
 
+const verifiedChecksum = Effect.fn("verifiedChecksum")(function*(
+  artifact: ArtifactIntent,
+  targetPath: string,
+  fileType: FileSystem.File.Type
+) {
+  if (artifact.checksum === undefined) {
+    return artifact.format === "directory"
+      ? undefined
+      : yield* checksumArtifact(artifact, targetPath, fileType)
+  }
+  if (artifact.checksum.algorithm !== "sha256") {
+    return yield* Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `artifacts.${artifact.id}.checksum`,
+        reason: "Only sha256 artifact checksums are supported."
+      })
+    )
+  }
+  const computed = yield* checksumArtifact(artifact, targetPath, fileType)
+  if (artifact.checksum.value !== computed.value) {
+    return yield* Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `artifacts.${artifact.id}.checksum`,
+        reason: "Artifact checksum does not match artifact bytes."
+      })
+    )
+  }
+  return artifact.checksum
+})
+
 export const inventoryArtifact = Effect.fn("inventoryArtifact")(function*(
   root: string,
   artifact: ArtifactIntent
@@ -98,9 +128,7 @@ export const inventoryArtifact = Effect.fn("inventoryArtifact")(function*(
   const kind = artifactKind(info)
   yield* validateArtifactFormat(artifact, kind)
 
-  const checksum = artifact.checksum ?? (artifact.format === "directory"
-    ? undefined
-    : yield* checksumArtifact(artifact, targetPath, info.type))
+  const checksum = yield* verifiedChecksum(artifact, targetPath, info.type)
 
   return ArtifactInventoryItem.make({
     id: artifact.id,

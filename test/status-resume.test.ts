@@ -5,16 +5,23 @@ import { ArtifactInventoryItem } from "../src/domain/artifact.js"
 import {
   CommandEvidence,
   EvidenceBundle,
-  ExecutionEvidence
+  ExecutionEvidence,
+  HttpEvidence,
+  HttpRequestEvidence
 } from "../src/domain/evidence.js"
 import {
   CommandSpec,
   executeGate,
+  HttpJsonEqualsCheck,
+  HttpRequestSpec,
   irreversibleGate,
   noApprovalGate,
+  Operation,
+  operationFingerprint,
   PublishCommandOperation,
   RenderFileOperation,
   ValidateCommandOperation,
+  VerifyHttpOperation,
   VerifyRemoteOperation
 } from "../src/domain/operation.js"
 import {
@@ -144,8 +151,28 @@ const verificationOperation = VerifyRemoteOperation.make({
   command: verifyCommand
 })
 
+const httpVerificationRequest = HttpRequestSpec.make({
+  method: "GET",
+  url: "https://registry.example.test/release/0.1.0",
+  headers: [],
+  envHeaders: [],
+  requiredEnv: [],
+  redactedEnv: []
+})
+
+const httpVerificationOperation = VerifyHttpOperation.make({
+  id: "workflow-http-verify",
+  targetId: "github",
+  description: "Verify HTTP workflow.",
+  risk: "read-only",
+  gate: noApprovalGate("HTTP verification is read-only."),
+  request: httpVerificationRequest,
+  expectedStatus: 200,
+  checks: [HttpJsonEqualsCheck.make({ path: ["ok"], expected: true })]
+})
+
 const makePlan = (
-  operations = [
+  operations: ReadonlyArray<Operation> = [
     renderOperation,
     validationOperation,
     npmPublishOperation,
@@ -220,10 +247,14 @@ const bundle = (plan: ReleasePlan, records: EvidenceBundle["records"]): Evidence
     records
   })
 
-const renderEvidence = (status: "passed" | "failed" = "passed") =>
+const renderEvidence = (
+  operation: RenderFileOperation = renderOperation,
+  status: "passed" | "failed" = "passed"
+) =>
   ExecutionEvidence.make({
-    id: "workflow-render:execution",
-    operationId: "workflow-render",
+    id: `${operation.id}:execution`,
+    operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
     status,
     severity: status === "failed" ? "error" : "info",
     message: "Rendered workflow.",
@@ -231,19 +262,42 @@ const renderEvidence = (status: "passed" | "failed" = "passed") =>
   })
 
 const commandEvidence = (
-  operationId: string,
-  command: CommandSpec,
+  operation: Extract<Operation, { readonly command: CommandSpec }>,
   status: "passed" | "failed" = "passed"
 ) =>
   CommandEvidence.make({
-    id: `${operationId}:command`,
-    operationId,
+    id: `${operation.id}:command`,
+    operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
+    ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
     status,
     severity: status === "failed" ? "error" : "info",
-    command,
+    command: operation.command,
     exitCode: status === "failed" ? 1 : 0,
     stdout: "",
     stderr: status === "failed" ? "failed" : "",
+    startedAt: "2026-06-17T00:00:00.000Z",
+    endedAt: "2026-06-17T00:00:00.001Z",
+    durationMillis: 1
+  })
+
+const httpEvidence = (operation: VerifyHttpOperation = httpVerificationOperation) =>
+  HttpEvidence.make({
+    id: `${operation.id}:http`,
+    operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
+    targetId: operation.targetId,
+    status: "passed",
+    severity: "info",
+    request: HttpRequestEvidence.make({
+      method: operation.request.method,
+      url: operation.request.url,
+      headers: operation.request.headers,
+      envHeaders: operation.request.envHeaders
+    }),
+    responseStatus: operation.expectedStatus,
+    checks: [],
+    message: "HTTP verification passed.",
     startedAt: "2026-06-17T00:00:00.000Z",
     endedAt: "2026-06-17T00:00:00.001Z",
     durationMillis: 1
@@ -314,7 +368,7 @@ describe("release status and resume", () => {
     const plan = makePlan()
     const report = summarizeReleaseStatus(plan, {
       render: bundle(plan, [renderEvidence()]),
-      validation: bundle(plan, [commandEvidence("workflow-validate", validateCommand)])
+      validation: bundle(plan, [commandEvidence(validationOperation)])
     })
 
     expect(report.overallStatus).toBe("in-progress")
@@ -325,7 +379,7 @@ describe("release status and resume", () => {
   test("classifies validation failures as retryable read-only work", () => {
     const plan = makePlan()
     const report = summarizeReleaseStatus(plan, {
-      validation: bundle(plan, [commandEvidence("workflow-validate", validateCommand, "failed")])
+      validation: bundle(plan, [commandEvidence(validationOperation, "failed")])
     })
     const validation = report.operations.find((operation) => operation.operationId === "workflow-validate")
 
@@ -337,7 +391,7 @@ describe("release status and resume", () => {
   test("blocks resume after failed publish evidence", () => {
     const plan = makePlan()
     const report = summarizeReleaseStatus(plan, {
-      execution: bundle(plan, [commandEvidence("npm:npm-publish", npmPublishCommand, "failed")])
+      execution: bundle(plan, [commandEvidence(npmPublishOperation, "failed")])
     })
     const publish = report.operations.find((operation) => operation.operationId === "npm:npm-publish")
 
@@ -348,11 +402,120 @@ describe("release status and resume", () => {
 
   test("does not let unknown old evidence satisfy current operations", () => {
     const plan = makePlan()
+    const oldPublishOperation = PublishCommandOperation.make({
+      id: "old:npm-publish",
+      targetId: npmPublishOperation.targetId,
+      description: npmPublishOperation.description,
+      risk: npmPublishOperation.risk,
+      gate: npmPublishOperation.gate,
+      command: npmPublishCommand
+    })
     const report = summarizeReleaseStatus(plan, {
-      execution: bundle(plan, [commandEvidence("old:npm-publish", npmPublishCommand)])
+      execution: bundle(plan, [commandEvidence(oldPublishOperation)])
     })
 
     expect(report.operations.find((operation) => operation.operationId === "npm:npm-publish")?.status).toBe("pending")
+  })
+
+  test("skips unchanged command operations with matching fingerprints", () => {
+    const plan = makePlan()
+    const report = summarizeReleaseStatus(plan, {
+      execution: bundle(plan, [commandEvidence(npmPublishOperation)])
+    })
+    const publish = report.operations.find((operation) => operation.operationId === "npm:npm-publish")
+
+    expect(publish?.status).toBe("passed")
+    expect(publish?.resumeAction).toBe("skip")
+  })
+
+  test("keeps publish evidence valid when only review wording changes", () => {
+    const rewrittenPublish = PublishCommandOperation.make({
+      id: npmPublishOperation.id,
+      targetId: npmPublishOperation.targetId,
+      description: "Publish the package to npm.",
+      risk: npmPublishOperation.risk,
+      gate: irreversibleGate("Changed reviewer-facing wording."),
+      command: npmPublishCommand
+    })
+    const plan = makePlan([rewrittenPublish])
+    const report = summarizeReleaseStatus(plan, {
+      execution: bundle(plan, [commandEvidence(npmPublishOperation)])
+    })
+    const publish = report.operations.find((operation) => operation.operationId === "npm:npm-publish")
+
+    expect(publish?.status).toBe("passed")
+    expect(publish?.resumeAction).toBe("skip")
+  })
+
+  test("treats same-id command evidence with changed args as pending", () => {
+    const changedPublish = PublishCommandOperation.make({
+      id: npmPublishOperation.id,
+      targetId: npmPublishOperation.targetId,
+      description: npmPublishOperation.description,
+      risk: npmPublishOperation.risk,
+      gate: npmPublishOperation.gate,
+      command: CommandSpec.make({
+        executable: npmPublishCommand.executable,
+        args: ["publish", "npm", "--otp", "123456"],
+        requiredEnv: npmPublishCommand.requiredEnv,
+        redactedEnv: npmPublishCommand.redactedEnv
+      })
+    })
+    const plan = makePlan([changedPublish])
+    const report = summarizeReleaseStatus(plan, {
+      execution: bundle(plan, [commandEvidence(npmPublishOperation)])
+    })
+    const publish = report.operations.find((operation) => operation.operationId === "npm:npm-publish")
+
+    expect(publish?.status).toBe("pending")
+    expect(publish?.resumeAction).toBe("run")
+  })
+
+  test("treats same-id render evidence with changed contents as pending", () => {
+    const changedRender = RenderFileOperation.make({
+      id: renderOperation.id,
+      description: renderOperation.description,
+      risk: renderOperation.risk,
+      gate: renderOperation.gate,
+      path: renderOperation.path,
+      contents: "changed workflow\n"
+    })
+    const plan = makePlan([changedRender])
+    const report = summarizeReleaseStatus(plan, {
+      render: bundle(plan, [renderEvidence(renderOperation)])
+    })
+    const render = report.operations.find((operation) => operation.operationId === "workflow-render")
+
+    expect(render?.status).toBe("pending")
+    expect(render?.resumeAction).toBe("run")
+  })
+
+  test("treats same-id HTTP evidence with changed request as pending", () => {
+    const changedHttp = VerifyHttpOperation.make({
+      id: httpVerificationOperation.id,
+      targetId: httpVerificationOperation.targetId,
+      description: httpVerificationOperation.description,
+      risk: httpVerificationOperation.risk,
+      gate: httpVerificationOperation.gate,
+      request: HttpRequestSpec.make({
+        method: httpVerificationRequest.method,
+        url: "https://registry.example.test/release/0.1.1",
+        headers: httpVerificationRequest.headers,
+        envHeaders: httpVerificationRequest.envHeaders,
+        requiredEnv: httpVerificationRequest.requiredEnv,
+        redactedEnv: httpVerificationRequest.redactedEnv
+      }),
+      expectedStatus: httpVerificationOperation.expectedStatus,
+      checks: httpVerificationOperation.checks
+    })
+    const plan = makePlan([changedHttp])
+    const report = summarizeReleaseStatus(plan, {
+      verification: bundle(plan, [httpEvidence(httpVerificationOperation)])
+    })
+    const verify = report.operations.find((operation) => operation.operationId === "workflow-http-verify")
+
+    expect(verify?.status).toBe("pending")
+    expect(verify?.resumeAction).toBe("run")
   })
 
   test("fails status when evidence belongs to another release", async () => {
@@ -369,6 +532,47 @@ describe("release status and resume", () => {
       testLayer({
         files: new Map([
           [".release/evidence/render.json", renderEvidenceJson(wrongRelease)]
+        ])
+      })
+    )
+
+    expect(error._tag).toBe("EvidenceReadError")
+  })
+
+  test("fails status when command evidence omits operation fingerprints", async () => {
+    const plan = makePlan()
+    const rawEvidence = {
+      schemaVersion: "release-evidence/v1",
+      releaseName: "release",
+      releaseVersion: "0.1.0",
+      records: [
+        {
+          id: "npm:npm-publish:command",
+          operationId: "npm:npm-publish",
+          targetId: "npm",
+          status: "passed",
+          severity: "info",
+          command: {
+            executable: "tool",
+            args: ["publish", "npm"],
+            requiredEnv: [],
+            redactedEnv: []
+          },
+          exitCode: 0,
+          stdout: "",
+          stderr: "",
+          startedAt: "2026-06-17T00:00:00.000Z",
+          endedAt: "2026-06-17T00:00:00.001Z",
+          durationMillis: 1
+        }
+      ]
+    }
+
+    const error = await runEffect(
+      statusReleasePlan(plan).pipe(Effect.flip),
+      testLayer({
+        files: new Map([
+          [".release/evidence/execution.json", `${JSON.stringify(rawEvidence)}\n`]
         ])
       })
     )
@@ -400,7 +604,7 @@ describe("release status and resume", () => {
           [".release/evidence/render.json", renderEvidenceJson(bundle(plan, [renderEvidence()]))],
           [
             ".release/evidence/validation.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("workflow-validate", validateCommand)]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(validationOperation)]))
           ]
         ])
       })
@@ -428,11 +632,11 @@ describe("release status and resume", () => {
           [".release/evidence/render.json", renderEvidenceJson(bundle(plan, [renderEvidence()]))],
           [
             ".release/evidence/validation.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("workflow-validate", validateCommand)]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(validationOperation)]))
           ],
           [
             ".release/evidence/execution.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("npm:npm-publish", npmPublishCommand)]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(npmPublishOperation)]))
           ]
         ])
       })
@@ -453,15 +657,15 @@ describe("release status and resume", () => {
           [".release/evidence/render.json", renderEvidenceJson(bundle(plan, [renderEvidence()]))],
           [
             ".release/evidence/validation.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("workflow-validate", validateCommand)]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(validationOperation)]))
           ],
           [
             ".release/evidence/execution.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("npm:npm-publish", npmPublishCommand)]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(npmPublishOperation)]))
           ],
           [
             ".release/evidence/verification.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("workflow-verify", verifyCommand, "failed")]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(verificationOperation, "failed")]))
           ]
         ])
       })
@@ -480,7 +684,7 @@ describe("release status and resume", () => {
           [".release/evidence/render.json", renderEvidenceJson(bundle(plan, [renderEvidence()]))],
           [
             ".release/evidence/validation.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("workflow-validate", validateCommand, "failed")]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(validationOperation, "failed")]))
           ]
         ]),
         commands: new Map([
@@ -509,7 +713,7 @@ describe("release status and resume", () => {
         files: new Map([
           [
             ".release/evidence/execution.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("npm:npm-publish", npmPublishCommand, "failed")]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(npmPublishOperation, "failed")]))
           ]
         ])
       })
@@ -549,7 +753,7 @@ describe("release status and resume", () => {
           [".release/evidence/render.json", renderEvidenceJson(bundle(plan, [renderEvidence()]))],
           [
             ".release/evidence/validation.json",
-            renderEvidenceJson(bundle(plan, [commandEvidence("workflow-validate", validateCommand)]))
+            renderEvidenceJson(bundle(plan, [commandEvidence(validationOperation)]))
           ]
         ])
       })

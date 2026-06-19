@@ -16,6 +16,7 @@ export type EvidenceStatus = typeof EvidenceStatus.Type
 export class CommandEvidence extends Schema.Class<CommandEvidence>("CommandEvidence")({
   id: EvidenceId,
   operationId: OperationId,
+  operationFingerprint: Schema.String,
   targetId: Schema.optionalKey(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -43,6 +44,7 @@ export class HttpCheckEvidence extends Schema.Class<HttpCheckEvidence>("HttpChec
 export class HttpEvidence extends Schema.Class<HttpEvidence>("HttpEvidence")({
   id: EvidenceId,
   operationId: OperationId,
+  operationFingerprint: Schema.String,
   targetId: Schema.optionalKey(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -57,6 +59,7 @@ export class HttpEvidence extends Schema.Class<HttpEvidence>("HttpEvidence")({
 
 export class ValidationEvidence extends Schema.Class<ValidationEvidence>("ValidationEvidence")({
   id: EvidenceId,
+  operationFingerprint: Schema.String,
   targetId: Schema.optionalKey(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -68,6 +71,7 @@ export class ValidationEvidence extends Schema.Class<ValidationEvidence>("Valida
 export class ExecutionEvidence extends Schema.Class<ExecutionEvidence>("ExecutionEvidence")({
   id: EvidenceId,
   operationId: OperationId,
+  operationFingerprint: Schema.String,
   targetId: Schema.optionalKey(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,

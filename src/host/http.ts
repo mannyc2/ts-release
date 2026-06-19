@@ -2,7 +2,7 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import { HttpRequestSpec } from "../domain/operation.js"
+import { HttpHeader, HttpRequestSpec } from "../domain/operation.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -16,6 +16,7 @@ export class HttpResult extends Schema.Class<HttpResult>("HttpResult")({
   request: HttpRequestSpec,
   status: Schema.Number,
   json: Schema.Json,
+  responseHeaders: Schema.Array(HttpHeader),
   startedAt: Schema.String,
   endedAt: Schema.String,
   durationMillis: Schema.Number
@@ -30,6 +31,7 @@ export class ReleaseHttp extends Context.Service<ReleaseHttp, ReleaseHttpShape>(
 export interface TestHttpResponse {
   readonly status: number
   readonly json: Schema.Json
+  readonly responseHeaders?: ReadonlyArray<HttpHeader> | undefined
 }
 
 export interface TestReleaseHttpOptions {
@@ -72,6 +74,7 @@ export const makeTestReleaseHttpLayer = (
           request,
           status: response.status,
           json: response.json,
+          responseHeaders: response.responseHeaders === undefined ? [] : [...response.responseHeaders],
           startedAt,
           endedAt,
           durationMillis: 0

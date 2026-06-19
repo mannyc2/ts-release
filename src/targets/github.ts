@@ -56,6 +56,22 @@ export const githubTargetCapabilities = (target: GitHubReleaseTarget): TargetCap
 const targetArtifacts = (target: GitHubReleaseTarget, model: GitHubReleaseContext) =>
   model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
 
+const rejectDirectoryAssets = Effect.fn("github.rejectDirectoryAssets")(function*(
+  target: GitHubReleaseTarget,
+  model: GitHubReleaseContext
+) {
+  const directoryAsset = targetArtifacts(target, model).find((artifact) => artifact.format === "directory")
+  if (directoryAsset === undefined) {
+    return
+  }
+  return yield* Effect.fail(
+    PlanConstructionError.make({
+      targetId: target.id,
+      reason: "GitHub release assets must be file-like, not directories."
+    })
+  )
+})
+
 const pathBaseName = (path: string): string => {
   const parts = path.replaceAll("\\", "/").split("/")
   return parts[parts.length - 1] ?? path
@@ -211,6 +227,7 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
     model,
     "GitHub release target declares no dry-run support in strict mode."
   )
+  yield* rejectDirectoryAssets(target, model)
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
   const publishGate = publishRisk === "irreversible"
     ? irreversibleGate("Creating this GitHub release is externally visible and configured as immutable.")

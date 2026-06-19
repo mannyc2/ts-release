@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { EvidenceBundle, EvidenceRecord, ReleaseWorkflowEvidence, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
-import { ExecutionApproval, Operation } from "../domain/operation.js"
+import { ExecutionApproval, Operation, operationFingerprint } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import {
   ReleaseOperationStatus,
@@ -134,12 +134,19 @@ const evidenceBundleForPhase = (
 const recordOperationId = (record: EvidenceRecord): string | undefined =>
   "operationId" in record ? record.operationId : undefined
 
-const matchesOperation = (operation: Operation, record: EvidenceRecord): boolean => {
+const hasOperationIdentity = (operation: Operation, record: EvidenceRecord): boolean => {
   const operationId = recordOperationId(record)
   if (operationId !== undefined) {
     return operationId === operation.id
   }
   return operation._tag === "ValidationNoteOperation" && record.id === `${operation.id}:validation`
+}
+
+const matchesOperation = (operation: Operation, record: EvidenceRecord): boolean => {
+  if (!hasOperationIdentity(operation, record)) {
+    return false
+  }
+  return record.operationFingerprint === operationFingerprint(operation)
 }
 
 const latestEvidenceRecord = (

@@ -50,7 +50,7 @@ const baseAppManifest = (version: string = "0.0.0") => ({
   private: true
 })
 
-const releaseArtifacts = (version: string = "0.0.0") => [
+const releaseArtifacts = () => [
   {
     id: "npm-package",
     path: ".",
@@ -59,37 +59,37 @@ const releaseArtifacts = (version: string = "0.0.0") => [
   },
   {
     id: "package-tarball",
-    path: `.release/artifacts/mannyc1-ts-release-${version}.tgz`,
+    path: ".release/artifacts/{normalizedName}-{version}.tgz",
     format: "tarball",
     consumers: ["github"]
   },
   {
     id: "cli-linux-x64",
-    path: `.release/artifacts/ts-release-${version}-linux-x64`,
+    path: ".release/artifacts/ts-release-{version}-linux-x64",
     format: "file",
     consumers: ["github"]
   },
   {
     id: "cli-linux-arm64",
-    path: `.release/artifacts/ts-release-${version}-linux-arm64`,
+    path: ".release/artifacts/ts-release-{version}-linux-arm64",
     format: "file",
     consumers: ["github"]
   },
   {
     id: "cli-darwin-x64",
-    path: `.release/artifacts/ts-release-${version}-darwin-x64`,
+    path: ".release/artifacts/ts-release-{version}-darwin-x64",
     format: "file",
     consumers: ["github"]
   },
   {
     id: "cli-darwin-arm64",
-    path: `.release/artifacts/ts-release-${version}-darwin-arm64`,
+    path: ".release/artifacts/ts-release-{version}-darwin-arm64",
     format: "file",
     consumers: ["github"]
   },
   {
     id: "cli-windows-x64",
-    path: `.release/artifacts/ts-release-${version}-windows-x64.exe`,
+    path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
     format: "file",
     consumers: ["github"]
   }
@@ -97,12 +97,11 @@ const releaseArtifacts = (version: string = "0.0.0") => [
 
 const baseConfig = (version: string = "0.0.0") => ({
   identity: {
-    name: "@mannyc1/ts-release",
-    version,
+    _tag: "PackageManifestReleaseIdentitySource",
     commit: "HEAD",
-    tag: `v${version}`
+    tagTemplate: "v{version}"
   },
-  artifacts: releaseArtifacts(version),
+  artifacts: releaseArtifacts(),
   targets: [
     {
       _tag: "NpmRegistryTarget",
@@ -129,23 +128,18 @@ const prepareWorkspace = async (
     readonly manifest?: Record<string, unknown>
     readonly appManifest?: Record<string, unknown>
     readonly config?: Record<string, unknown>
-    readonly appSourceVersion?: string
   } = {}
 ): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "ts-release-self-config-"))
   const manifest = options.manifest ?? baseManifest()
   const packageVersion = typeof manifest.version === "string" ? manifest.version : "0.0.0"
   await writeJson(join(root, "package.json"), manifest)
-  await mkdir(join(root, "apps", "release-ts", "src"), { recursive: true })
+  await mkdir(join(root, "apps", "release-ts"), { recursive: true })
   await writeJson(
     join(root, "apps", "release-ts", "package.json"),
     options.appManifest ?? baseAppManifest(packageVersion)
   )
   await writeJson(join(root, "apps", "release-ts", "release.config.json"), options.config ?? baseConfig(packageVersion))
-  await writeFile(
-    join(root, "apps", "release-ts", "src", "version.ts"),
-    `export const RELEASE_VERSION = "${options.appSourceVersion ?? packageVersion}"\n`
-  )
   await writeFile(join(root, "README.md"), "clean\n")
   if (options.envExample !== undefined) {
     await writeFile(join(root, ".env.example"), options.envExample)
@@ -200,19 +194,17 @@ describe("self-release config script", () => {
     }
   })
 
-  test("fails when package, release config, and app source versions disagree", async () => {
+  test("fails when package and app package versions disagree", async () => {
     const root = await prepareWorkspace({
       envExample: "NPM_TOKEN=\n",
       manifest: baseManifest("1.0.0"),
-      config: baseConfig("2.0.0"),
-      appSourceVersion: "3.0.0"
+      appManifest: baseAppManifest("2.0.0")
     })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("release identity version 2.0.0 must match package version 1.0.0")
-      expect(result.stderr).toContain("apps/release-ts/src/version.ts RELEASE_VERSION 3.0.0 must match app package version 1.0.0")
+      expect(result.stderr).toContain("apps/release-ts/package.json version 2.0.0 must match package version 1.0.0")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

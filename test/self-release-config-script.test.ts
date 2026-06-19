@@ -129,7 +129,6 @@ const prepareWorkspace = async (
     readonly manifest?: Record<string, unknown>
     readonly appManifest?: Record<string, unknown>
     readonly config?: Record<string, unknown>
-    readonly sourceVersion?: string
     readonly appSourceVersion?: string
   } = {}
 ): Promise<string> => {
@@ -143,8 +142,6 @@ const prepareWorkspace = async (
     options.appManifest ?? baseAppManifest(packageVersion)
   )
   await writeJson(join(root, "apps", "release-ts", "release.config.json"), options.config ?? baseConfig(packageVersion))
-  await mkdir(join(root, "src"), { recursive: true })
-  await writeFile(join(root, "src", "version.ts"), `export const RELEASE_VERSION = "${options.sourceVersion ?? packageVersion}"\n`)
   await writeFile(
     join(root, "apps", "release-ts", "src", "version.ts"),
     `export const RELEASE_VERSION = "${options.appSourceVersion ?? packageVersion}"\n`
@@ -203,19 +200,19 @@ describe("self-release config script", () => {
     }
   })
 
-  test("fails when package, release config, and source versions disagree", async () => {
+  test("fails when package, release config, and app source versions disagree", async () => {
     const root = await prepareWorkspace({
       envExample: "NPM_TOKEN=\n",
       manifest: baseManifest("1.0.0"),
       config: baseConfig("2.0.0"),
-      sourceVersion: "3.0.0"
+      appSourceVersion: "3.0.0"
     })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
       expect(result.stderr).toContain("release identity version 2.0.0 must match package version 1.0.0")
-      expect(result.stderr).toContain("src/version.ts RELEASE_VERSION 3.0.0 must match package version 1.0.0")
+      expect(result.stderr).toContain("apps/release-ts/src/version.ts RELEASE_VERSION 3.0.0 must match app package version 1.0.0")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

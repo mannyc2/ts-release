@@ -9,7 +9,7 @@ import {
   packageTarballArtifactPath,
   releaseCliArtifactTargets,
   UnsafeReleaseArtifactsPathError
-} from "../scripts/build-release-artifacts.js"
+} from "../apps/release-ts/scripts/build-release-artifacts.js"
 
 describe("build release artifacts script", () => {
   test("derives package artifact names from scoped package identity", () => {

@@ -26,10 +26,19 @@ const isReadonlyArray = (value: unknown): value is ReadonlyArray<unknown> =>
 const formatUnknown = (cause: unknown): string =>
   cause instanceof Error ? cause.message : String(cause)
 
-const readManifest = (): Record<string, unknown> => {
-  const parsed: unknown = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"))
+const readManifest = (
+  path: string,
+  label: string,
+  failures: Array<string>
+): Record<string, unknown> | undefined => {
+  if (!existsSync(path)) {
+    failures.push(`${label} must exist`)
+    return undefined
+  }
+  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"))
   if (!isRecord(parsed)) {
-    throw new Error("package.json did not parse to an object")
+    failures.push(`${label} did not parse to an object`)
+    return undefined
   }
   return parsed
 }
@@ -92,13 +101,12 @@ const collectSideEffectTargets = (
   sideEffectsField: unknown,
   failures: Array<string>
 ): Array<FileTarget> => {
-  const requiredCliMain = "./dist/cli/main.js"
-  if (!isReadonlyArray(sideEffectsField)) {
-    failures.push(`package.json sideEffects must include ${requiredCliMain}`)
+  if (sideEffectsField === undefined) {
     return []
   }
-  if (!sideEffectsField.some((value) => value === requiredCliMain)) {
-    failures.push(`package.json sideEffects must preserve ${requiredCliMain}`)
+  if (!isReadonlyArray(sideEffectsField)) {
+    failures.push("package.json sideEffects must be an array when present")
+    return []
   }
 
   const targets: Array<FileTarget> = []
@@ -206,10 +214,27 @@ const checkConsumerTypeResolution = async (
 
 const main = async (): Promise<void> => {
   const failures: Array<string> = []
-  const manifest = readManifest()
+  const manifest = readManifest(resolve(root, "package.json"), "package.json", failures)
+  const appManifest = readManifest(
+    resolve(root, "apps", "release-ts", "package.json"),
+    "apps/release-ts/package.json",
+    failures
+  )
+  if (manifest === undefined) {
+    throw new Error("package.json is required for package export checks")
+  }
   const packageName = manifest.name
   if (typeof packageName !== "string" || packageName.length === 0) {
     failures.push("package.json name must be a non-empty string")
+  }
+  if (manifest.bin !== undefined) {
+    failures.push("package.json must not declare a root bin; apps/release-ts owns the release executable")
+  }
+  if (
+    isReadonlyArray(manifest.sideEffects) &&
+    manifest.sideEffects.some((value) => value === "./dist/cli/main.js")
+  ) {
+    failures.push("package.json must not preserve root CLI sideEffects; apps/release-ts owns dist/cli/main.js")
   }
 
   const exportTargets = collectExportTargets(manifest.exports, failures)
@@ -255,6 +280,24 @@ const main = async (): Promise<void> => {
           failures.push(`failed to import ${specifier}: ${formatUnknown(cause)}`)
         }
       }
+    }
+  }
+
+  if (appManifest !== undefined) {
+    if (appManifest.private !== true) {
+      failures.push("apps/release-ts/package.json must remain private until an app publishing plan changes it")
+    }
+    if (appManifest.exports !== undefined) {
+      failures.push("apps/release-ts/package.json must not declare root library exports")
+    }
+    if (!isRecord(appManifest.bin) || appManifest.bin.release !== "dist/cli/main.js") {
+      failures.push("apps/release-ts/package.json must own bin.release as dist/cli/main.js")
+    }
+    if (
+      !isReadonlyArray(appManifest.sideEffects) ||
+      !appManifest.sideEffects.some((value) => value === "./dist/cli/main.js")
+    ) {
+      failures.push("apps/release-ts/package.json sideEffects must preserve ./dist/cli/main.js")
     }
   }
 

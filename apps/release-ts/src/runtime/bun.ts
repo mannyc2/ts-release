@@ -1,11 +1,9 @@
 import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Layer from "effect/Layer"
-import { makePlatformCommandRunnerLayer } from "../host/platform.js"
-import type { PlatformCommandRunnerOptions } from "../host/platform.js"
-import { LiveReleaseWorkflowLayer } from "../workflows/live.js"
-
-export type * from "../types/effect-internal.js"
+import { makePlatformCommandRunnerLayer } from "@mannyc1/ts-release/host/platform"
+import type { PlatformCommandRunnerOptions } from "@mannyc1/ts-release/host/platform"
+import { LiveReleaseWorkflowLayer } from "@mannyc1/ts-release/workflows/live"
 
 export const makeBunCommandRuntimeLayer = (
   options: PlatformCommandRunnerOptions = {}

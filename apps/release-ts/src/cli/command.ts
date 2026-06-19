@@ -2,11 +2,22 @@ import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
+import * as Argument from "effect/unstable/cli/Argument"
 import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
+import { DEFAULT_CONFIG_PATH, renderReleaseConfigJsonSchema } from "@mannyc1/ts-release/config/schema"
+import { EvidenceBundle, ReleaseWorkflowEvidence, ReleaseWorkflowFailureEvidence } from "@mannyc1/ts-release/domain/evidence"
+import { ReleasePlan } from "@mannyc1/ts-release/domain/release"
+import { renderEvidenceJson } from "@mannyc1/ts-release/planner/evidence-recorder"
+import {
+  renderReleaseEligibilityJson,
+  renderReleaseEligibilityText
+} from "@mannyc1/ts-release/planner/release-eligibility"
 import {
   checkReleaseConfigEligibility,
   executeReleaseConfig,
+  explainReleaseConfigOperation,
+  ExplainReleaseConfigOptions,
   PlanReleaseConfigOptions,
   planReleaseConfig,
   reconcileReleaseConfig,
@@ -18,33 +29,57 @@ import {
   renderReleaseConfig,
   RenderReleaseConfigOptions,
   renderReleaseConfigPlan,
+  renderReleaseConfigValidation,
   renderReleaseStatus,
   resumeReleaseConfig,
   runReleaseConfig,
   ReleaseStatusOptions,
+  ValidateReleaseConfigFileOptions,
   validateReleaseConfig,
   verifyReleaseConfig
-} from "../workflows/config.js"
-import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
-import { EvidenceBundle, ReleaseWorkflowEvidence, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
-import { ReleasePlan } from "../domain/release.js"
-import { renderEvidenceJson } from "../planner/evidence-recorder.js"
-import {
-  renderReleaseEligibilityJson,
-  renderReleaseEligibilityText
-} from "../planner/release-eligibility.js"
+} from "@mannyc1/ts-release/workflows/config"
 import {
   writeFailedOperationEvidence,
   writeNamedEvidence,
   writeWorkflowEvidence as persistWorkflowEvidence
-} from "../workflows/evidence.js"
-
-export type * from "../types/effect-internal.js"
+} from "@mannyc1/ts-release/workflows/evidence"
+import {
+  ReleaseInitOptions,
+  renderReleaseInitPlan,
+  runReleaseInit
+} from "@mannyc1/ts-release/workflows/init"
+import {
+  checkAuthReleaseConfig,
+  checkCiReleaseConfig,
+  doctorReleaseConfig,
+  ReleaseDiagnosticsOptions,
+  renderReleaseDiagnostics
+} from "@mannyc1/ts-release/workflows/diagnostics"
 
 const configFlag = Flag.string("config").pipe(Flag.withDefault(DEFAULT_CONFIG_PATH))
 const outputFlag = Flag.string("out").pipe(Flag.withDefault(""))
-const formatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("json"))
+const formatFlag = Flag.choice("format", ["json", "text", "summary", "markdown"]).pipe(Flag.withDefault("json"))
+const validationFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
 const statusFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
+const diagnosticsFormatFlag = Flag.choice("format", ["json", "text", "markdown"]).pipe(Flag.withDefault("text"))
+const initFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
+const initTemplateFlag = Flag.choice("template", [
+  "npm-only",
+  "npm-github",
+  "multi-target-homebrew",
+  "multi-target-scoop"
+]).pipe(Flag.withDefault("npm-only"))
+const packageFlag = Flag.string("package").pipe(Flag.withDefault("@scope/pkg"))
+const repoFlag = Flag.string("repo").pipe(Flag.withDefault("owner/repo"))
+const workflowFlag = Flag.string("workflow").pipe(Flag.withDefault("release.yml"))
+const tapFlag = Flag.string("tap").pipe(Flag.withDefault("owner/homebrew-tap"))
+const bucketFlag = Flag.string("bucket").pipe(Flag.withDefault("owner/scoop-bucket"))
+const writeFlag = Flag.boolean("write").pipe(Flag.withDefault(false))
+const overwriteFlag = Flag.boolean("overwrite").pipe(Flag.withDefault(false))
+const githubActionsFlag = Flag.boolean("github-actions").pipe(Flag.withDefault(false))
+const targetFlag = Flag.string("target").pipe(Flag.withDefault(""))
+const ciProviderFlag = Flag.choice("provider", ["github-actions"]).pipe(Flag.withDefault("github-actions"))
+const ciWorkflowFlag = Flag.string("workflow").pipe(Flag.withDefault(".github/workflows/release.yml"))
 const executeFlag = Flag.boolean("execute").pipe(Flag.withDefault(false))
 const approveIrreversibleFlag = Flag.boolean("approve-irreversible").pipe(Flag.withDefault(false))
 
@@ -78,6 +113,16 @@ const planCommand = Command.make(
   })
 )
 
+const schemaCommand = Command.make(
+  "schema",
+  {
+    out: outputFlag
+  },
+  Effect.fn("cli.schema")(function*({ out }) {
+    yield* writeOrPrint(out, renderReleaseConfigJsonSchema())
+  })
+)
+
 const printCommand = Command.make(
   "print",
   {
@@ -88,6 +133,20 @@ const printCommand = Command.make(
       configPath: config,
       format: "text"
     }))
+    yield* Console.log(contents.trimEnd())
+  })
+)
+
+const explainCommand = Command.make(
+  "explain",
+  {
+    operation: Argument.string("operation"),
+    config: configFlag
+  },
+  Effect.fn("cli.explain")(function*({ operation, config }) {
+    const contents = yield* explainReleaseConfigOperation(
+      ExplainReleaseConfigOptions.make({ configPath: config, operationId: operation })
+    )
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -169,6 +228,122 @@ const validateCommand = Command.make(
         ))
     )
     yield* writeAndPrintEvidence(plan, "validation", evidence)
+  })
+)
+
+const validateConfigCommand = Command.make(
+  "validate-config",
+  {
+    config: configFlag,
+    format: validationFormatFlag
+  },
+  Effect.fn("cli.validateConfig")(function*({ config, format }) {
+    const contents = yield* renderReleaseConfigValidation(
+      ValidateReleaseConfigFileOptions.make({ configPath: config, format })
+    )
+    yield* Console.log(contents.trimEnd())
+  })
+)
+
+const initCommand = Command.make(
+  "init",
+  {
+    template: initTemplateFlag,
+    config: configFlag,
+    package: packageFlag,
+    repo: repoFlag,
+    workflow: workflowFlag,
+    tap: tapFlag,
+    bucket: bucketFlag,
+    githubActions: githubActionsFlag,
+    write: writeFlag,
+    overwrite: overwriteFlag,
+    format: initFormatFlag
+  },
+  Effect.fn("cli.init")(function*({
+    template,
+    config,
+    package: packageName,
+    repo,
+    workflow,
+    tap,
+    bucket,
+    githubActions,
+    write,
+    overwrite,
+    format
+  }) {
+    const plan = yield* runReleaseInit(ReleaseInitOptions.make({
+      template,
+      configPath: config,
+      package: packageName,
+      repo,
+      workflow,
+      tap,
+      bucket,
+      githubActions,
+      write,
+      overwrite,
+      format
+    }))
+    yield* Console.log(renderReleaseInitPlan(plan, format).trimEnd())
+  })
+)
+
+const diagnosticsOptions = (input: {
+  readonly config: string
+  readonly format: "json" | "text" | "markdown"
+  readonly target?: string | undefined
+  readonly workflow?: string | undefined
+}) =>
+  ReleaseDiagnosticsOptions.make({
+    configPath: input.config,
+    format: input.format,
+    ...(input.target === undefined || input.target.length === 0 ? {} : { target: input.target }),
+    ...(input.workflow === undefined || input.workflow.length === 0 ? {} : { workflow: input.workflow })
+  })
+
+const checkAuthCommand = Command.make(
+  "check-auth",
+  {
+    config: configFlag,
+    target: targetFlag,
+    format: diagnosticsFormatFlag
+  },
+  Effect.fn("cli.checkAuth")(function*({ config, target, format }) {
+    const report = yield* checkAuthReleaseConfig(diagnosticsOptions({ config, target, format }))
+    yield* Console.log(renderReleaseDiagnostics(report, format).trimEnd())
+  })
+)
+
+const checkCiCommand = Command.make(
+  "check-ci",
+  {
+    config: configFlag,
+    provider: ciProviderFlag,
+    workflow: ciWorkflowFlag,
+    format: diagnosticsFormatFlag
+  },
+  Effect.fn("cli.checkCi")(function*({ config, provider, workflow, format }) {
+    const report = yield* checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+      configPath: config,
+      provider,
+      workflow,
+      format
+    }))
+    yield* Console.log(renderReleaseDiagnostics(report, format).trimEnd())
+  })
+)
+
+const doctorCommand = Command.make(
+  "doctor",
+  {
+    config: configFlag,
+    format: diagnosticsFormatFlag
+  },
+  Effect.fn("cli.doctor")(function*({ config, format }) {
+    const report = yield* doctorReleaseConfig(diagnosticsOptions({ config, format }))
+    yield* Console.log(renderReleaseDiagnostics(report, format).trimEnd())
   })
 )
 
@@ -299,8 +474,15 @@ const reconcileCommand = Command.make(
 export const cli = Command.make("release").pipe(
   Command.withSubcommands([
     planCommand,
+    schemaCommand,
+    initCommand,
+    explainCommand,
+    checkAuthCommand,
+    checkCiCommand,
+    doctorCommand,
     renderCommand,
     validateCommand,
+    validateConfigCommand,
     printCommand,
     statusCommand,
     eligibilityCommand,

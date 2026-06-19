@@ -3,7 +3,14 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
-const scriptPath = resolve(import.meta.dir, "..", "scripts", "check-self-release-config.ts")
+const scriptPath = resolve(
+  import.meta.dir,
+  "..",
+  "apps",
+  "release-ts",
+  "scripts",
+  "check-self-release-config.ts"
+)
 
 const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
   stream === null ? "" : await new Response(stream).text()
@@ -35,6 +42,12 @@ const writeJson = (path: string, value: unknown): Promise<void> =>
 const baseManifest = (version: string = "0.0.0") => ({
   name: "@mannyc1/ts-release",
   version
+})
+
+const baseAppManifest = (version: string = "0.0.0") => ({
+  name: "@mannyc1/release-ts-app",
+  version,
+  private: true
 })
 
 const releaseArtifacts = (version: string = "0.0.0") => [
@@ -114,15 +127,28 @@ const prepareWorkspace = async (
     readonly envExample?: string | undefined
     readonly dirty?: boolean
     readonly manifest?: Record<string, unknown>
+    readonly appManifest?: Record<string, unknown>
     readonly config?: Record<string, unknown>
     readonly sourceVersion?: string
+    readonly appSourceVersion?: string
   } = {}
 ): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "ts-release-self-config-"))
-  await writeJson(join(root, "package.json"), options.manifest ?? baseManifest())
-  await writeJson(join(root, "release.config.json"), options.config ?? baseConfig())
+  const manifest = options.manifest ?? baseManifest()
+  const packageVersion = typeof manifest.version === "string" ? manifest.version : "0.0.0"
+  await writeJson(join(root, "package.json"), manifest)
+  await mkdir(join(root, "apps", "release-ts", "src"), { recursive: true })
+  await writeJson(
+    join(root, "apps", "release-ts", "package.json"),
+    options.appManifest ?? baseAppManifest(packageVersion)
+  )
+  await writeJson(join(root, "apps", "release-ts", "release.config.json"), options.config ?? baseConfig(packageVersion))
   await mkdir(join(root, "src"), { recursive: true })
-  await writeFile(join(root, "src", "version.ts"), `export const RELEASE_VERSION = "${options.sourceVersion ?? "0.0.0"}"\n`)
+  await writeFile(join(root, "src", "version.ts"), `export const RELEASE_VERSION = "${options.sourceVersion ?? packageVersion}"\n`)
+  await writeFile(
+    join(root, "apps", "release-ts", "src", "version.ts"),
+    `export const RELEASE_VERSION = "${options.appSourceVersion ?? packageVersion}"\n`
+  )
   await writeFile(join(root, "README.md"), "clean\n")
   if (options.envExample !== undefined) {
     await writeFile(join(root, ".env.example"), options.envExample)

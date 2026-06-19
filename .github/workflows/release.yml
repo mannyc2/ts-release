@@ -50,7 +50,7 @@ jobs:
 
       - name: Check release eligibility
         id: eligibility
-        run: bun run scripts/check-release-eligibility.ts
+        run: bun run apps/release-ts/scripts/check-release-eligibility.ts
 
       - name: Build release artifacts
         if: steps.eligibility.outputs.should_release == 'true'
@@ -58,11 +58,11 @@ jobs:
 
       - name: Record release plan
         if: steps.eligibility.outputs.should_release == 'true'
-        run: bun dist/cli/main.js plan --config release.config.json --format text --out .release/evidence/plan.txt
+        run: bun apps/release-ts/src/cli/main.ts plan --config apps/release-ts/release.config.json --format text --out .release/evidence/plan.txt
 
       - name: Run approved release
         if: steps.eligibility.outputs.should_release == 'true'
-        run: bun dist/cli/main.js run --config release.config.json --execute --approve-irreversible
+        run: bun apps/release-ts/src/cli/main.ts run --config apps/release-ts/release.config.json --execute --approve-irreversible
 
       - name: Upload release evidence
         if: always()

@@ -24,27 +24,16 @@
     "bun",
     "cli"
   ],
+  "workspaces": [
+    "apps/*"
+  ],
   "engines": {
     "bun": ">=1.3.14"
   },
-  "bin": {
-    "release": "dist/cli/main.js"
-  },
-  "sideEffects": [
-    "./dist/cli/main.js"
-  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./cli": {
-      "types": "./dist/cli/command.d.ts",
-      "default": "./dist/cli/command.js"
-    },
-    "./cli/command": {
-      "types": "./dist/cli/command.d.ts",
-      "default": "./dist/cli/command.js"
     },
     "./config/errors": {
       "types": "./dist/config/errors.d.ts",
@@ -122,6 +111,10 @@
       "types": "./dist/planner/normalize-release.d.ts",
       "default": "./dist/planner/normalize-release.js"
     },
+    "./planner/release-eligibility": {
+      "types": "./dist/planner/release-eligibility.d.ts",
+      "default": "./dist/planner/release-eligibility.js"
+    },
     "./planner/render-plan": {
       "types": "./dist/planner/render-plan.d.ts",
       "default": "./dist/planner/render-plan.js"
@@ -129,10 +122,6 @@
     "./planner/status": {
       "types": "./dist/planner/status.d.ts",
       "default": "./dist/planner/status.js"
-    },
-    "./runtime/bun": {
-      "types": "./dist/runtime/bun.d.ts",
-      "default": "./dist/runtime/bun.js"
     },
     "./targets/adapter": {
       "types": "./dist/targets/adapter.d.ts",
@@ -174,6 +163,14 @@
       "types": "./dist/workflows/evidence.d.ts",
       "default": "./dist/workflows/evidence.js"
     },
+    "./workflows/diagnostics": {
+      "types": "./dist/workflows/diagnostics.d.ts",
+      "default": "./dist/workflows/diagnostics.js"
+    },
+    "./workflows/init": {
+      "types": "./dist/workflows/init.d.ts",
+      "default": "./dist/workflows/init.js"
+    },
     "./workflows/live": {
       "types": "./dist/workflows/live.d.ts",
       "default": "./dist/workflows/live.js"
@@ -183,6 +180,7 @@
     "ARCHITECTURE.md",
     "dist",
     "examples",
+    "templates",
     "SPEC.md",
     "README.md"
   ],
@@ -198,18 +196,22 @@
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",
     "check:readme": "bun run scripts/check-readme.ts",
-    "check:self-release-config": "bun run scripts/check-self-release-config.ts",
-    "check:portable": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports && bun dist/cli/main.js --help",
+    "check:self-release-config": "bun run apps/release-ts/scripts/check-self-release-config.ts",
+    "check:core": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports",
+    "check:app": "bun run --cwd apps/release-ts check && bun test test/cli-command.test.ts",
+    "check:action": "bun run --cwd apps/ts-release-action check && bun run --cwd apps/ts-release-action build && bun test test/action-command.test.ts",
+    "check:portable": "bun run check:core && bun run check:app && bun run check:action",
     "check:release": "bun run check:self-release-config && bun run check:portable",
-    "release:artifacts": "bun run scripts/build-release-artifacts.ts",
-    "cli": "bun run src/cli/main.ts"
+    "release:artifacts": "bun run apps/release-ts/scripts/build-release-artifacts.ts",
+    "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.0.0-beta.83",
     "effect": "4.0.0-beta.83"
   },
   "devDependencies": {
+    "@effect/platform-bun": "4.0.0-beta.83",
     "@types/bun": "^1.3.14",
+    "bun-types": "^1.3.14",
     "typescript": "^6.0.3"
   }
 }

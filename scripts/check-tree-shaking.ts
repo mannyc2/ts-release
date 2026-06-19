@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, extname, relative, resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as ts from "typescript"
@@ -30,6 +30,12 @@ const sourcePath = (...segments: ReadonlyArray<string>): string =>
 
 const rootSourcePath = sourcePath("index.ts")
 const cliDirectory = sourcePath("cli")
+const appDirectory = resolve(root, "apps", "release-ts")
+const appScanRoots = [
+  resolve(appDirectory, "src"),
+  resolve(appDirectory, "scripts"),
+  resolve(appDirectory, "test")
+]
 
 const policySourcePath = (path: string): string =>
   sourcePath(...path.split("/"))
@@ -66,6 +72,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isUnderDirectory = (file: string, directory: string): boolean => {
   const path = relative(directory, file)
   return path.length > 0 && !path.startsWith("..") && !path.startsWith("/")
+}
+
+const isInsidePath = (file: string, directory: string): boolean => {
+  const path = relative(directory, file)
+  return path.length === 0 || (!path.startsWith("..") && !path.startsWith("/"))
 }
 
 const matchesPrefix = (specifier: string, prefix: string): boolean =>
@@ -168,6 +179,60 @@ const moduleReferences = (source: ts.SourceFile): Array<ModuleReference> => {
   visit(source)
   return references
 }
+
+const allModuleReferences = (source: ts.SourceFile): Array<ModuleReference> => {
+  const references: Array<ModuleReference> = []
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+      references.push({
+        specifier: node.moduleSpecifier.text,
+        position: node.moduleSpecifier.getStart(source)
+      })
+    }
+    if (
+      ts.isExportDeclaration(node) &&
+      node.moduleSpecifier !== undefined &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      references.push({
+        specifier: node.moduleSpecifier.text,
+        position: node.moduleSpecifier.getStart(source)
+      })
+    }
+    ts.forEachChild(node, visit)
+  }
+
+  visit(source)
+  return references
+}
+
+const collectTypeScriptFiles = (directory: string): Array<string> => {
+  if (!existsSync(directory)) {
+    return []
+  }
+
+  const files: Array<string> = []
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name)
+    if (entry.isDirectory()) {
+      if (entry.name !== "dist" && entry.name !== "node_modules") {
+        files.push(...collectTypeScriptFiles(path))
+      }
+      continue
+    }
+    if (entry.isFile() && path.endsWith(".ts")) {
+      files.push(path)
+    }
+  }
+  return files
+}
+
+const sourceFiles = (): Array<string> =>
+  collectTypeScriptFiles(resolve(root, "src"))
+
+const appFiles = (): Array<string> =>
+  appScanRoots.flatMap(collectTypeScriptFiles)
 
 const bunGlobalLocations = (source: ts.SourceFile): Array<string> => {
   const failures: Array<string> = []
@@ -288,6 +353,10 @@ const checkExportGraph = (target: PackageExportTarget, failures: Array<string>):
     visited.add(next)
 
     const displayPath = toDisplayPath(next)
+    if (isInsidePath(next, appDirectory)) {
+      failures.push(`package export ${target.subpath} reaches app-only module ${displayPath}`)
+      continue
+    }
     if (runtimeBearingFiles.has(next) && !allowedRuntimeFiles.has(next)) {
       failures.push(`package export ${target.subpath} reaches runtime-bearing module ${displayPath}`)
       continue
@@ -331,6 +400,54 @@ const checkExportGraph = (target: PackageExportTarget, failures: Array<string>):
   }
 }
 
+const checkRootDoesNotImportApp = (failures: Array<string>): void => {
+  for (const file of sourceFiles()) {
+    const source = ts.createSourceFile(
+      file,
+      readFileSync(file, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS
+    )
+
+    for (const reference of allModuleReferences(source)) {
+      if (reference.specifier.startsWith(".")) {
+        const resolved = resolveRelativeModule(file, reference.specifier)
+        if (resolved !== undefined && isInsidePath(resolved, appDirectory)) {
+          failures.push(`${location(source, reference.position)} root src must not import app module ${toDisplayPath(resolved)}`)
+        }
+        continue
+      }
+      if (reference.specifier === "apps" || reference.specifier.startsWith("apps/")) {
+        failures.push(`${location(source, reference.position)} root src must not import app module ${reference.specifier}`)
+      }
+    }
+  }
+}
+
+const checkAppDoesNotImportRootInternals = (failures: Array<string>): void => {
+  const rootSourceDirectory = resolve(root, "src")
+  for (const file of appFiles()) {
+    const source = ts.createSourceFile(
+      file,
+      readFileSync(file, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS
+    )
+
+    for (const reference of allModuleReferences(source)) {
+      if (!reference.specifier.startsWith(".")) {
+        continue
+      }
+      const resolved = resolveRelativeModule(file, reference.specifier)
+      if (resolved !== undefined && isInsidePath(resolved, rootSourceDirectory)) {
+        failures.push(`${location(source, reference.position)} app code must import root library through @mannyc1/ts-release/*, not ${reference.specifier}`)
+      }
+    }
+  }
+}
+
 const failures: Array<string> = []
 const targets = packageExportTargets(failures)
 assertEmptyRootEntrypoint(targets.find((target) => target.subpath === "."), failures)
@@ -338,6 +455,8 @@ assertEmptyRootEntrypoint(targets.find((target) => target.subpath === "."), fail
 for (const target of targets) {
   checkExportGraph(target, failures)
 }
+checkRootDoesNotImportApp(failures)
+checkAppDoesNotImportRootInternals(failures)
 
 if (failures.length > 0) {
   console.error("Tree-shaking boundary checks failed:")

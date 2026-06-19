@@ -1,10 +1,19 @@
-import { readdirSync, readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join, relative } from "node:path"
 import { cwd, exit } from "node:process"
 import * as ts from "typescript"
 
 const root = cwd()
-const scanRoots = ["src", "test", "scripts"]
+const scanRoots = [
+  "src",
+  "test",
+  "scripts",
+  "apps/release-ts/src",
+  "apps/release-ts/scripts",
+  "apps/release-ts/test",
+  "apps/ts-release-action/src",
+  "apps/ts-release-action/test"
+]
 
 const toDisplayPath = (path: string): string =>
   relative(root, path).replaceAll("\\", "/")
@@ -57,7 +66,10 @@ const checkFile = (file: string): Array<string> => {
   return failures
 }
 
-const files = scanRoots.flatMap((directory) => collectTypeScriptFiles(join(root, directory)))
+const files = scanRoots.flatMap((directory) => {
+  const path = join(root, directory)
+  return existsSync(path) ? collectTypeScriptFiles(path) : []
+})
 const failures = files.flatMap(checkFile)
 
 if (failures.length > 0) {

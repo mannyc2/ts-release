@@ -7,7 +7,7 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import { ExecutionApproval } from "../src/domain/operation.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { runOperations } from "../src/planner/executor.js"
-import { BunReleaseWorkflowRuntimeLayer } from "../src/runtime/bun.js"
+import { BunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { runEffect } from "./helpers.js"
 
 const integrationEnabled = Bun.env.RELEASE_INTEGRATION_TOOLS === "1"

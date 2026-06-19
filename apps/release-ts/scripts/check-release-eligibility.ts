@@ -1,11 +1,11 @@
 import * as Effect from "effect/Effect"
 import { appendFileSync } from "node:fs"
 import { cwd, env, exit } from "node:process"
-import { makeBunCommandRuntimeLayer } from "../src/runtime/bun.js"
+import { makeBunCommandRuntimeLayer } from "../src/runtime.js"
 import {
   checkReleaseConfigEligibility,
   ReleaseEligibilityConfigOptions
-} from "../src/workflows/config.js"
+} from "@mannyc1/ts-release/workflows/config"
 
 const root = cwd()
 
@@ -28,7 +28,7 @@ const result = await Effect.runPromise(
   checkReleaseConfigEligibility(
     ReleaseEligibilityConfigOptions.make({
       root,
-      configPath: "release.config.json",
+      configPath: "apps/release-ts/release.config.json",
       packagePath: "package.json"
     })
   ).pipe(

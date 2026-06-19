@@ -11,10 +11,8 @@ import {
   GitHubReleaseRemoteState
 } from "../domain/remote-state.js"
 import {
-  CommandSpec,
   executeGate,
   ExecutionApproval,
-  HttpEnvHeader,
   HttpHeader,
   HttpRequestSpec,
   PublishCommandOperation
@@ -22,6 +20,15 @@ import {
 import { ReleasePlan } from "../domain/release.js"
 import { GitHubReleaseTarget } from "../domain/target.js"
 import { ReleaseHttp } from "../host/http.js"
+import {
+  githubApiGetRequestSpec,
+  githubReleaseCreateCommand,
+  githubReleasePublishDraftCommand,
+  githubReleaseRequestSpec,
+  githubReleaseTag,
+  githubReleaseTitle,
+  githubTargetArtifactAssetNames
+} from "../targets/github-release.js"
 import { emptyEvidenceBundle } from "./evidence-recorder.js"
 import { runOperations } from "./executor.js"
 import { ReconciliationBlockedError, RemoteStateInspectionError } from "./errors.js"
@@ -52,68 +59,11 @@ const decodeGitHubReleaseResponses = Schema.decodeUnknownEffect(Schema.Array(Git
 const githubTargets = (plan: ReleasePlan): ReadonlyArray<GitHubReleaseTarget> =>
   plan.targets.filter((target): target is GitHubReleaseTarget => target._tag === "GitHubReleaseTarget")
 
-const envNames = (target: GitHubReleaseTarget): ReadonlyArray<string> =>
-  target.tokenEnv === undefined ? [] : [target.tokenEnv]
-
-const ghCommand = (
-  target: GitHubReleaseTarget,
-  args: ReadonlyArray<string>,
-  includeAuth: boolean
-): CommandSpec =>
-  CommandSpec.make({
-    executable: "gh",
-    args: [...args],
-    requiredEnv: includeAuth ? envNames(target) : [],
-    redactedEnv: includeAuth ? envNames(target) : []
-  })
-
-const pathBaseName = (path: string): string => {
-  const parts = path.replaceAll("\\", "/").split("/")
-  return parts[parts.length - 1] ?? path
-}
-
-const targetArtifacts = (target: GitHubReleaseTarget, plan: ReleasePlan) =>
-  plan.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
-
-const githubReleaseTag = (plan: ReleasePlan): string =>
-  plan.identity.tag ?? plan.identity.version
-
-const githubReleaseTitle = (plan: ReleasePlan): string =>
-  `${plan.identity.name} ${plan.identity.version}`
-
 const githubTargetArtifactNames = (
   target: GitHubReleaseTarget,
   plan: ReleasePlan
 ): ReadonlyArray<string> =>
-  targetArtifacts(target, plan).map((artifact) => pathBaseName(artifact.path)).sort()
-
-const releaseArgs = (target: GitHubReleaseTarget, plan: ReleasePlan): ReadonlyArray<string> => {
-  const args: Array<string> = [
-    "release",
-    "create",
-    githubReleaseTag(plan),
-    "--repo",
-    target.repository,
-    "--title",
-    githubReleaseTitle(plan)
-  ]
-  if (target.draft === true) {
-    args.push("--draft")
-  }
-  if (target.prerelease === true) {
-    args.push("--prerelease")
-  }
-  if (plan.identity.notes !== undefined) {
-    args.push("--notes", plan.identity.notes)
-  }
-  for (const artifact of targetArtifacts(target, plan)) {
-    args.push(artifact.path)
-  }
-  return args
-}
-
-const githubReleaseApiUrl = (target: GitHubReleaseTarget, tag: string): string =>
-  `https://api.github.com/repos/${target.repository}/releases/tags/${encodeURIComponent(tag)}`
+  [...githubTargetArtifactAssetNames(target, plan)].sort()
 
 const githubReleaseListApiUrl = (target: GitHubReleaseTarget): string =>
   `https://api.github.com/repos/${target.repository}/releases?per_page=100`
@@ -121,50 +71,8 @@ const githubReleaseListApiUrl = (target: GitHubReleaseTarget): string =>
 const githubReleaseListApiPath = (target: GitHubReleaseTarget): string =>
   `/repos/${target.repository}/releases`
 
-const githubApiHeaders = (): ReadonlyArray<HttpHeader> => [
-  HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
-  HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
-]
-
-const githubApiEnvHeaders = (target: GitHubReleaseTarget): ReadonlyArray<HttpEnvHeader> =>
-  target.tokenEnv === undefined
-    ? []
-    : [
-      HttpEnvHeader.make({
-        name: "Authorization",
-        valueEnv: target.tokenEnv,
-        prefix: "Bearer "
-      })
-    ]
-
-const githubReleaseRequestSpec = (
-  target: GitHubReleaseTarget,
-  tag: string
-): HttpRequestSpec =>
-  HttpRequestSpec.make({
-    method: "GET",
-    url: githubReleaseApiUrl(target, tag),
-    headers: githubApiHeaders(),
-    envHeaders: githubApiEnvHeaders(target),
-    requiredEnv: envNames(target),
-    redactedEnv: envNames(target)
-  })
-
 const githubReleaseListRequestSpec = (target: GitHubReleaseTarget, url: string = githubReleaseListApiUrl(target)): HttpRequestSpec =>
-  HttpRequestSpec.make({
-    method: "GET",
-    url,
-    headers: githubApiHeaders(),
-    envHeaders: githubApiEnvHeaders(target),
-    requiredEnv: envNames(target),
-    redactedEnv: envNames(target)
-  })
-
-const githubReleaseCreateCommand = (
-  target: GitHubReleaseTarget,
-  plan: ReleasePlan
-): CommandSpec =>
-  ghCommand(target, releaseArgs(target, plan), true)
+  githubApiGetRequestSpec(target, url)
 
 const githubReleaseReconcileCreateOperation = (
   target: GitHubReleaseTarget,
@@ -189,18 +97,7 @@ const githubReleasePublishDraftOperation = (
     description: `Publish existing GitHub draft release for ${plan.identity.name}@${plan.identity.version}.`,
     risk: "externally-visible",
     gate: executeGate("Publishing this GitHub draft release is externally visible."),
-    command: ghCommand(
-      target,
-      [
-        "release",
-        "edit",
-        githubReleaseTag(plan),
-        "--repo",
-        target.repository,
-        "--draft=false"
-      ],
-      true
-    )
+    command: githubReleasePublishDraftCommand(target, plan)
   })
 
 const sortedAssetNames = (response: GitHubReleaseResponse): ReadonlyArray<string> =>

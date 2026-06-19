@@ -155,6 +155,10 @@
       "types": "./dist/targets/scoop.d.ts",
       "default": "./dist/targets/scoop.js"
     },
+    "./workflows": {
+      "types": "./dist/workflows/index.d.ts",
+      "default": "./dist/workflows/index.js"
+    },
     "./workflows/config": {
       "types": "./dist/workflows/config.d.ts",
       "default": "./dist/workflows/config.js"

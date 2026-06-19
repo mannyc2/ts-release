@@ -59,6 +59,7 @@ describe("public API policy", () => {
     const subpaths = new Set(publicExportPolicies.map((policy) => policy.subpath))
     expect(subpaths.has("./api")).toBe(false)
     expect(subpaths.has("./api/live")).toBe(false)
+    expect(subpaths.has("./workflows")).toBe(true)
     expect(subpaths.has("./workflows/config")).toBe(true)
     expect(subpaths.has("./workflows/evidence")).toBe(true)
     expect(subpaths.has("./workflows/live")).toBe(true)

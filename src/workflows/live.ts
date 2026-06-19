@@ -2,6 +2,8 @@ import * as Layer from "effect/Layer"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import { ReleaseHttp } from "../host/http.js"
 import { LiveReleaseHttpLayer } from "../host/http-live.js"
+import { makePlatformCommandRunnerLayer } from "../host/platform.js"
+import type { PlatformCommandRunnerOptions } from "../host/platform.js"
 import { LiveTargetRegistryLayer } from "../targets/live.js"
 import { TargetRegistry } from "../targets/registry.js"
 
@@ -15,3 +17,11 @@ export const LiveReleaseWorkflowLayer: Layer.Layer<
   LiveReleaseHttpLayer,
   LiveTargetRegistryLayer
 )
+
+export const makeLayer = (
+  options: PlatformCommandRunnerOptions = {}
+) =>
+  Layer.mergeAll(
+    makePlatformCommandRunnerLayer(options),
+    LiveReleaseWorkflowLayer
+  )

@@ -77,7 +77,7 @@ The executable is an argv and console adapter over TypeScript workflows. Release
 
 ## Imports
 
-The package intentionally avoids aggregate library barrels. The root `release` export is intentionally empty; import the exact module you need from an explicit subpath.
+The package root export is intentionally empty. For onboarding and application workflow code, import the opt-in workflow facade from `@mannyc1/ts-release/workflows`; for maximum tree-shaking or target-author control, import the exact module you need from an explicit subpath.
 
 ```ts
 import * as Effect from "effect/Effect"
@@ -92,7 +92,7 @@ export const planAndValidate = Effect.fn("docs.planAndValidate")(function*(inten
 })
 ```
 
-`createReleasePlan` needs a `TargetRegistry` layer. Command execution needs a `ReleaseCommandRunner` layer, while artifact checks and checksum generation use Effect Platform `FileSystem`, `Path`, and `Crypto` services directly. High-level config-file workflows, render writes, and evidence writes also need Effect Platform `FileSystem` and `Path` services. Workflows that verify HTTP evidence, such as `verifyPlan`, `runApprovedReleaseWorkflow`, or direct `VerifyHttpOperation` execution, also need a `ReleaseHttp` layer. Applications compose `@mannyc1/ts-release/workflows/live`, `@mannyc1/ts-release/host/platform`, and their platform services at the edge. Tests can import `makeTestReleaseHttpLayer` from `@mannyc1/ts-release/host/http`. Internal Effect imports use deep module paths such as `effect/Effect` and `effect/Layer` to keep bundlers from depending on broad root-package analysis. See `ARCHITECTURE.md` for the module taxonomy.
+`createReleasePlan` needs a `TargetRegistry` layer. Command execution needs a `ReleaseCommandRunner` layer, while artifact checks and checksum generation use Effect Platform `FileSystem`, `Path`, and `Crypto` services directly. High-level config-file workflows, render writes, and evidence writes also need Effect Platform `FileSystem` and `Path` services. Workflows that verify HTTP evidence, such as `verifyPlan`, `runApprovedReleaseWorkflow`, or direct `VerifyHttpOperation` execution, also need a `ReleaseHttp` layer. Applications can compose `@mannyc1/ts-release/workflows` and their platform services at the edge, or use exact lower-level imports from `@mannyc1/ts-release/workflows/live`, `@mannyc1/ts-release/host/platform`, and `@mannyc1/ts-release/host/http`. Tests can import `makeTestReleaseHttpLayer` from `@mannyc1/ts-release/host/http`. Internal Effect imports use deep module paths such as `effect/Effect` and `effect/Layer` to keep bundlers from depending on broad root-package analysis. See `ARCHITECTURE.md` for the module taxonomy.
 
 Reusable operations in docs and examples should use `Effect.fn`; workflow bodies use `Effect.gen`. Durable data, options, tagged target variants, and typed errors use `Schema.Class`, `Schema.TaggedClass`, and `Schema.TaggedErrorClass`, with `.make(...)` for construction. Runtime layers are provided once at CLI, action, script, application, or test boundaries.
 
@@ -105,108 +105,75 @@ import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { makePlatformCommandRunnerLayer } from "@mannyc1/ts-release/host/platform"
-import { LiveReleaseWorkflowLayer } from "@mannyc1/ts-release/workflows/live"
-import {
-  PlanReleaseConfigOptions,
-  ReleaseExecutionOptions,
-  ReleaseEligibilityConfigOptions,
-  ReleaseReconcileConfigOptions,
-  ReleaseResumeConfigOptions,
-  ReleaseStatusOptions,
-  checkReleaseConfigEligibility,
-  reconcileReleaseConfig,
-  planReleaseConfig,
-  renderReleaseConfigPlan,
-  resumeReleaseConfig,
-  runReleaseConfig,
-  statusReleaseConfig
-} from "@mannyc1/ts-release/workflows/config"
+import { Config, Live } from "@mannyc1/ts-release/workflows"
 
 const root = "/path/to/release-workspace"
-const PlatformLayer = BunServices.layer
-const CommandLayer = makePlatformCommandRunnerLayer({ root }).pipe(
-  Layer.provideMerge(PlatformLayer)
-)
-const WorkflowLayer = LiveReleaseWorkflowLayer.pipe(
+const RuntimeLayer = Live.makeLayer({ root }).pipe(
+  Layer.provideMerge(BunServices.layer),
   Layer.provideMerge(BunHttpClient.layer)
-)
-const RuntimeLayer = Layer.mergeAll(
-  CommandLayer,
-  WorkflowLayer
 )
 
 const textPlan = await Effect.runPromise(
-  renderReleaseConfigPlan(
-    PlanReleaseConfigOptions.make({ root, configPath: "release.config.json", format: "text" })
-  ).pipe(Effect.provide(RuntimeLayer))
+  Config.renderPlan({ root, configPath: "release.config.json", format: "text" }).pipe(
+    Effect.provide(RuntimeLayer)
+  )
 )
 
 const plan = await Effect.runPromise(
-  planReleaseConfig(PlanReleaseConfigOptions.make({ root, configPath: "release.config.json" })).pipe(
+  Config.plan({ root, configPath: "release.config.json" }).pipe(
     Effect.provide(RuntimeLayer)
   )
 )
 
 const evidence = await Effect.runPromise(
-  runReleaseConfig(
-    ReleaseExecutionOptions.make({
-      root,
-      configPath: "release.config.json",
-      execute: true,
-      approveIrreversible: true
-    })
-  ).pipe(
+  Config.run({
+    root,
+    configPath: "release.config.json",
+    execute: true,
+    approveIrreversible: true
+  }).pipe(
     Effect.provide(RuntimeLayer)
   )
 )
 
 const status = await Effect.runPromise(
-  statusReleaseConfig(
-    ReleaseStatusOptions.make({ root, configPath: "release.config.json", format: "json" })
-  ).pipe(
+  Config.status({ root, configPath: "release.config.json", format: "json" }).pipe(
     Effect.provide(RuntimeLayer)
   )
 )
 
 const resumedEvidence = await Effect.runPromise(
-  resumeReleaseConfig(
-    ReleaseResumeConfigOptions.make({
-      root,
-      configPath: "release.config.json",
-      execute: true,
-      approveIrreversible: true
-    })
-  ).pipe(
+  Config.resume({
+    root,
+    configPath: "release.config.json",
+    execute: true,
+    approveIrreversible: true
+  }).pipe(
     Effect.provide(RuntimeLayer)
   )
 )
 
 const eligibility = await Effect.runPromise(
-  checkReleaseConfigEligibility(
-    ReleaseEligibilityConfigOptions.make({
-      root,
-      configPath: "release.config.json"
-    })
-  ).pipe(
+  Config.checkEligibility({
+    root,
+    configPath: "release.config.json"
+  }).pipe(
     Effect.provide(RuntimeLayer)
   )
 )
 
 const reconciliationEvidence = await Effect.runPromise(
-  reconcileReleaseConfig(
-    ReleaseReconcileConfigOptions.make({
-      root,
-      configPath: "release.config.json",
-      execute: true
-    })
-  ).pipe(
+  Config.reconcile({
+    root,
+    configPath: "release.config.json",
+    execute: true
+  }).pipe(
     Effect.provide(RuntimeLayer)
   )
 )
 ```
 
-Use `@mannyc1/ts-release/workflows/config` for high-level config-file workflows, `@mannyc1/ts-release/workflows/init` for data-first scaffolding, `@mannyc1/ts-release/workflows/diagnostics` for static doctor/auth/CI reports, `@mannyc1/ts-release/workflows/evidence` for reusable evidence persistence, and `@mannyc1/ts-release/workflows/live` for the live target/HTTP layer. Applications provide platform services at the edge, such as `FileSystem`, `Path`, `HttpClient`, and a `ReleaseCommandRunner` layer from `@mannyc1/ts-release/host/platform`. Use explicit lower-level planner, config, target, host, and domain subpaths when an application needs finer control over planning, execution, or test layers.
+Use `@mannyc1/ts-release/workflows` for the curated `Config`, `Init`, `Diagnostics`, `Evidence`, and `Live` namespaces. Exact leaf imports such as `@mannyc1/ts-release/workflows/config`, `@mannyc1/ts-release/workflows/init`, `@mannyc1/ts-release/workflows/diagnostics`, `@mannyc1/ts-release/workflows/evidence`, and `@mannyc1/ts-release/workflows/live` remain stable and are preferred when an application needs maximum tree-shaking or direct access to option classes. Applications provide platform services at the edge, such as `FileSystem`, `Path`, `HttpClient`, and command execution. Use explicit lower-level planner, config, target, host, and domain subpaths when an application needs finer control over planning, execution, or test layers.
 
 ## Example Config
 
@@ -379,7 +346,7 @@ GitHub release verification uses the GitHub REST API to check the release tag, t
 
 ## Public API
 
-The intentional public API is the explicit subpath list in `package.json`. Programmatic callers should import high-level workflows from `@mannyc1/ts-release/workflows/config`, `@mannyc1/ts-release/workflows/init`, or `@mannyc1/ts-release/workflows/diagnostics`, or use the explicit lower-level planner/config/target/status subpaths for finer control. The official CLI command adapter lives in the private `apps/release-ts` app rather than the reusable root package API.
+The intentional public API is the explicit subpath list in `package.json`. The root package export remains empty. Programmatic callers can use the opt-in `@mannyc1/ts-release/workflows` facade for happy-path workflow APIs, or exact leaf subpaths such as `@mannyc1/ts-release/workflows/config`, `@mannyc1/ts-release/workflows/init`, and `@mannyc1/ts-release/workflows/diagnostics` for maximum tree-shaking and direct option-class access. Lower-level planner/config/target/status subpaths remain available for finer control. The official CLI command adapter lives in the private `apps/release-ts` app rather than the reusable root package API.
 
 The package export checker fails if a new export is added without being added to the intentional API list.
 
@@ -408,9 +375,7 @@ Add `--github-actions` to include the action-first trusted-publishing workflow
 template in the preview or write set. Existing files are not overwritten unless
 `--overwrite` is also passed.
 
-Action-first GitHub templates live under `templates/github-actions/`. The raw
-CLI fallback workflow lives under `templates/github-actions-cli/` for portable
-CI systems and local debugging.
+Action-first GitHub templates live under `templates/github-actions/`.
 
 Use `doctor`, `check-auth`, and `check-ci` after writing a template to inspect
 static readiness before any publish operation is approved.
@@ -453,6 +418,7 @@ Render, validation, execution, and verification evidence is written as JSON bund
     {
       "id": "npm:npm-pack-dry-run:command",
       "operationId": "npm:npm-pack-dry-run",
+      "operationFingerprint": "{\"_tag\":\"ValidateCommandOperation\",\"id\":\"npm:npm-pack-dry-run\",\"targetId\":\"npm\",\"approval\":{\"requiresExecute\":false,\"requiresIrreversibleApproval\":false},\"command\":{\"executable\":\"npm\",\"args\":[\"pack\",\"--dry-run\",\"--json\"],\"requiredEnv\":[],\"redactedEnv\":[]}}",
       "status": "passed",
       "severity": "info",
       "exitCode": 0
@@ -556,9 +522,6 @@ The reusable GitHub Actions trusted-publishing workflow template lives at
 artifacts, and requires a protected `release` environment before running
 approved execution. npm trusted publishing uses OIDC, not `NPM_TOKEN`;
 `GH_TOKEN` is for GitHub Releases and API verification.
-
-The raw CLI fallback remains at
-`templates/github-actions-cli/trusted-publishing.yml`.
 
 ### First npm Publish Bootstrap
 

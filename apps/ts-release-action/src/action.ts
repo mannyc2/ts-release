@@ -115,6 +115,42 @@ export const formatActionError = (cause: unknown): string =>
 const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
 
+const hasParentTraversal = (pathName: string): boolean =>
+  pathName.split(/[\\/]+/).includes("..")
+
+const isInsideWorkspace = (path: Path.Path, root: string, targetPath: string): boolean => {
+  const relative = path.relative(path.resolve(root), targetPath)
+  return relative.length === 0 || (!relative.startsWith("..") && !path.isAbsolute(relative))
+}
+
+const workspaceOutputPath = (
+  path: Path.Path,
+  options: ActionOptions,
+  pathName: string
+): Effect.Effect<string, ActionCommandError> => {
+  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
+    return Effect.fail(
+      ActionCommandError.make({
+        command: options.command,
+        reason: "plan-path must be non-empty and must not contain parent traversal."
+      })
+    )
+  }
+  const rootPath = path.resolve(options.root)
+  const targetPath = path.isAbsolute(pathName)
+    ? path.resolve(pathName)
+    : path.resolve(rootPath, pathName)
+  if (isInsideWorkspace(path, rootPath, targetPath)) {
+    return Effect.succeed(targetPath)
+  }
+  return Effect.fail(
+    ActionCommandError.make({
+      command: options.command,
+      reason: "plan-path must resolve inside the action root."
+    })
+  )
+}
+
 const planOptions = (options: ActionOptions): PlanReleaseConfigOptions =>
   PlanReleaseConfigOptions.make({
     root: options.root,
@@ -360,7 +396,7 @@ const runPlan = Effect.fn("action.runPlan")(function*(options: ActionOptions, io
   const path = yield* Path.Path
   const plan = yield* planReleaseConfig(planOptions(options))
   const rendered = yield* renderReleaseConfigPlan(planOptions(options))
-  const outputPath = workspacePath(path, options.root, options.planPath)
+  const outputPath = yield* workspaceOutputPath(path, options, options.planPath)
   yield* io.writeFile(outputPath, rendered)
   if (options.writeStepSummary) {
     const markdown = options.format === "markdown"

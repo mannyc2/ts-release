@@ -80,13 +80,19 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./targets/pypi", allowedRuntimeSourcePaths: ["targets/pypi.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/registry", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/scoop", allowedRuntimeSourcePaths: ["targets/scoop.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  {
+    subpath: "./workflows",
+    allowedRuntimeSourcePaths: ["workflows/index.ts", "workflows/live.ts", "host/platform.ts", "host/http-live.ts", "host/http.ts", "targets/live.ts", "targets/npm.ts", "targets/github.ts", "targets/homebrew.ts", "targets/pypi.ts", "targets/scoop.ts"],
+    allowedExternalPrefixes: [],
+    allowsBunGlobal: false
+  },
   { subpath: "./workflows/config", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/diagnostics", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/evidence", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/init", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   {
     subpath: "./workflows/live",
-    allowedRuntimeSourcePaths: ["workflows/live.ts", "host/http-live.ts", "host/http.ts", "targets/live.ts", "targets/npm.ts", "targets/github.ts", "targets/homebrew.ts", "targets/pypi.ts", "targets/scoop.ts"],
+    allowedRuntimeSourcePaths: ["workflows/live.ts", "host/platform.ts", "host/http-live.ts", "host/http.ts", "targets/live.ts", "targets/npm.ts", "targets/github.ts", "targets/homebrew.ts", "targets/pypi.ts", "targets/scoop.ts"],
     allowedExternalPrefixes: [],
     allowsBunGlobal: false
   }

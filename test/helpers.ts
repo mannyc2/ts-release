@@ -18,7 +18,7 @@ export const minimalConfig = JSON.stringify({
       id: "package",
       path: ".",
       format: "directory",
-      consumers: ["npm", "github"]
+      consumers: ["npm"]
     }
   ],
   targets: [

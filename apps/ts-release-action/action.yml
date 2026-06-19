@@ -3,7 +3,7 @@ description: Plan, validate, and run ts-release workflows from GitHub Actions.
 author: mannyc2
 inputs:
   command:
-    description: plan, validate-config, status, doctor, check-auth, check-ci, validate, run, resume, or reconcile.
+    description: plan, validate-config, status, eligibility, doctor, check-auth, check-ci, validate, run, resume, or reconcile.
     required: false
     default: plan
   config:
@@ -67,6 +67,10 @@ outputs:
     description: Evidence directory for the release plan.
   plan_path:
     description: Path written by command plan.
+  should_release:
+    description: true when command eligibility determines the selected strategy should release.
+  eligibility_status:
+    description: Eligibility status from command eligibility.
   status:
     description: Final action command status.
 runs:

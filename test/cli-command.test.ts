@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test"
 import * as BunServices from "@effect/platform-bun/BunServices"
-import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Command from "effect/unstable/cli/Command"
@@ -31,187 +30,18 @@ import {
   operationFingerprint,
   PublishCommandOperation
 } from "../src/domain/operation.js"
-import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { commandKey } from "../src/host/test.js"
 import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { minimalConfig } from "./helpers.js"
-
-const noOpConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  artifacts: [],
-  targets: [],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
-const partialWorkflowConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  artifacts: [
-    {
-      id: "package",
-      path: ".",
-      format: "directory",
-      consumers: ["npm"]
-    },
-    {
-      id: "archive",
-      path: "artifacts/release-0.1.0.tgz",
-      format: "tarball",
-      consumers: ["homebrew"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "HomebrewTapTarget",
-      id: "homebrew",
-      repository: "owner/homebrew-tap",
-      formulaName: "release",
-      formulaPath: ".release/generated/release.rb",
-      artifactId: "archive",
-      dryRunSupport: "simulated",
-      mutability: "mutable-index",
-      recovery: "manual"
-    },
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
-      registry: "https://registry.npmjs.org",
-      packageName: "release",
-      packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
-    }
-  ],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
-const reconcileConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  artifacts: [
-    {
-      id: "github-asset",
-      path: "dist/release.tgz",
-      format: "tarball",
-      consumers: ["github"]
-    },
-    {
-      id: "package",
-      path: ".",
-      format: "directory",
-      consumers: ["npm"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "GitHubReleaseTarget",
-      id: "github",
-      repository: "owner/repo",
-      tokenEnv: "GH_TOKEN",
-      draft: false,
-      prerelease: false,
-      dryRunSupport: "simulated",
-      mutability: "mutable-release",
-      recovery: "delete-and-recreate"
-    },
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
-      registry: "https://registry.npmjs.org",
-      packageName: "release",
-      packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
-    }
-  ],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
-interface CliCommandResponse {
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
-}
-
-const makeObservableCommandRunnerLayer = (options: {
-  readonly env: ReadonlyMap<string, string>
-  readonly commands: ReadonlyMap<string, CliCommandResponse>
-}) => {
-  const timestamps = ["2026-06-17T00:00:00.000Z", "2026-06-17T00:00:00.001Z"]
-  let timestampIndex = 0
-  const nextTimestamp = (): string => {
-    const value = timestamps[timestampIndex] ?? timestamps[timestamps.length - 1] ?? "2026-06-17T00:00:00.000Z"
-    timestampIndex += 1
-    return value
-  }
-
-  const envRecord: Record<string, string> = {}
-  for (const [name, value] of options.env) {
-    envRecord[name] = value
-  }
-
-  return Layer.mergeAll(
-    ReleaseCommandRunnerTestLayer({
-      runCommand: (command) =>
-        Effect.gen(function*() {
-          const missing: Array<string> = []
-          for (const name of command.requiredEnv) {
-            if (!options.env.has(name)) {
-              missing.push(name)
-            }
-          }
-          if (missing.length > 0) {
-            return yield* Effect.fail(
-              CommandRunnerError.make({
-                operation: "runCommand",
-                reason: `Missing required environment variables: ${missing.join(", ")}`
-              })
-            )
-          }
-          const startedAt = nextTimestamp()
-          const endedAt = nextTimestamp()
-          const response = options.commands.get(commandKey(command)) ?? {
-            exitCode: 0,
-            stdout: "",
-            stderr: ""
-          }
-          return CommandResult.make({
-            command,
-            exitCode: response.exitCode,
-            stdout: response.stdout,
-            stderr: response.stderr,
-            startedAt,
-            endedAt,
-            durationMillis: 1
-          })
-        })
-    }),
-    ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
-  )
-}
+import {
+  makeObservableCommandRunnerLayer,
+  minimalConfig,
+  noOpConfig,
+  partialWorkflowConfig,
+  reconcileConfig
+} from "./helpers.js"
 
 const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
   stream === null ? "" : await new Response(stream).text()
@@ -222,6 +52,7 @@ describe("cli command", () => {
     expect(cli.subcommands.flatMap((group) => group.commands.map((command) => command.name)).sort()).toEqual([
       "check-auth",
       "check-ci",
+      "check-intent",
       "doctor",
       "eligibility",
       "execute",
@@ -513,7 +344,7 @@ describe("cli command", () => {
         expect(configFile).toBeDefined()
         if (configFile !== undefined) {
           const intent = await Effect.runPromise(parseReleaseIntent(configFile.contents))
-          expect(intent.identity.name).toBe("@scope/pkg")
+          expect("name" in intent.identity ? intent.identity.name : undefined).toBe("@scope/pkg")
           expect(configFile.contents).toContain("\"$schema\"")
           if (template === "multi-target-homebrew") {
             expect(configFile.contents).toContain("owner/homebrew-tap")
@@ -905,6 +736,51 @@ describe("cli command", () => {
           configPath
         ]).pipe(Effect.provide(layer))
       )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-intent command fails when required intent files are missing", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-intent-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, JSON.stringify({
+        identity: {
+          name: "@scope/pkg",
+          version: "1.2.3",
+          commit: "abc123",
+          tag: "v1.2.3"
+        },
+        releaseDecision: {
+          _tag: "IntentFilesReleaseDecision",
+          directory: ".release/intents",
+          packagePath: "package.json",
+          tagTemplate: "v{version}",
+          requireIntent: true
+        },
+        artifacts: [],
+        targets: [],
+        strict: true,
+        evidenceDirectory: ".release/evidence"
+      }))
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "@scope/pkg",
+        version: "1.2.3"
+      }))
+
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "check-intent",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root })))
+      )
+
+      expect(exit._tag).toBe("Failure")
+      if (exit._tag === "Failure") {
+        expect(String(exit.cause)).toContain("ReleaseEligibilityCheckError")
+      }
     } finally {
       await rm(root, { recursive: true, force: true })
     }

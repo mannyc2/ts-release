@@ -99999,10 +99999,14 @@ var createReleasePlan = fn2("createReleasePlan")(function* (intent, root = ".", 
 var hasParentTraversal = (pathName) => pathName.split(/[\\/]+/).includes("..");
 var resolveWorkspacePath = (path4, root, pathName) => {
   const rootPath = path4.resolve(root);
-  return path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
+  if (path4.isAbsolute(pathName)) {
+    return path4.resolve(pathName);
+  }
+  return path4.resolve(rootPath, pathName);
 };
 var isInsidePathBoundary = (path4, root, targetPath) => {
-  const relative = path4.relative(path4.resolve(root), targetPath);
+  const rootPath = path4.resolve(root);
+  const relative = path4.relative(rootPath, targetPath);
   return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
 };
 var validateWorkspaceWritePath = (path4, root, pathName) => {
@@ -100012,9 +100016,8 @@ var validateWorkspaceWritePath = (path4, root, pathName) => {
       reason: "empty-or-parent-traversal"
     };
   }
-  const rootPath = path4.resolve(root);
-  const targetPath = resolveWorkspacePath(path4, rootPath, pathName);
-  if (isInsidePathBoundary(path4, rootPath, targetPath)) {
+  const targetPath = resolveWorkspacePath(path4, root, pathName);
+  if (isInsidePathBoundary(path4, root, targetPath)) {
     return {
       _tag: "Ok",
       path: targetPath

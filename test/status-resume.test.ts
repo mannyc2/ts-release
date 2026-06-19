@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { ArtifactInventoryItem } from "../src/domain/artifact.js"
@@ -312,6 +313,7 @@ const testLayer = (options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {
   Layer.mergeAll(
     makeTestCommandRunnerLayer({
       directories: new Set(["."]),
+      pathLayer: BunPath.layer,
       ...options
     }),
     makeTestReleaseHttpLayer()
@@ -345,6 +347,7 @@ const githubReconcileLayer = (options: Parameters<typeof makeTestCommandRunnerLa
     makeTestCommandRunnerLayer({
       directories: new Set(["."]),
       env: new Map([["GH_TOKEN", "gh_secret"]]),
+      pathLayer: BunPath.layer,
       ...options
     }),
     makeTestReleaseHttpLayer({
@@ -809,7 +812,8 @@ describe("release status and resume", () => {
       Layer.mergeAll(
         makeTestCommandRunnerLayer({
           directories: new Set(["."]),
-          env: new Map([["GH_TOKEN", "gh_secret"]])
+          env: new Map([["GH_TOKEN", "gh_secret"]]),
+          pathLayer: BunPath.layer
         }),
         makeTestReleaseHttpLayer({
           responses: new Map([

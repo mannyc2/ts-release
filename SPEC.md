@@ -51,7 +51,7 @@ The primary output of the package is a release plan, not a side effect.
 
 A plan should be serializable, reviewable, and suitable for CI artifacts. It should explain:
 
-- release identity: name, version, commit, tag, notes, and source metadata
+- release identity: name, version, commit, tag, notes, source metadata, and the strategy that resolved it
 - artifact inventory: files, checksums, sizes, formats, and intended consumers
 - target operations: what each target will do and what inputs it needs
 - validation steps: which checks must run before publishing
@@ -149,6 +149,10 @@ User-authored input describing what should be released.
 
 It should be concise but complete enough to identify the release, locate artifacts, choose targets, and declare policy.
 
+Identity may be static config data or may be derived from a package manifest. Decision strategies may then decide whether a release should be attempted from explicit remote-state config, the current Git tag, conventional commits since the latest matching tag, or first-party intent files. These strategies choose the intended identity and skipped/ready/complete/partial eligibility result; they do not publish.
+
+Intent files are a small first-party reviewed-intent format, not a promise of full Changesets compatibility. An empty/no-release intent can satisfy CI while producing a skipped release decision.
+
 ### Release Model
 
 A normalized internal representation with defaults resolved, paths normalized, targets expanded, and invalid combinations rejected.
@@ -214,6 +218,16 @@ Good config answers:
 - What must be validated first?
 - Which generated files or indexes will change?
 - Which operations are allowed to execute in this environment?
+
+Release strategies should stay declarative:
+
+- static config is for manually audited release identity
+- package manifest identity is for package releases with one version source
+- Git tag decisions are for tag-triggered workflows
+- conventional commit decisions are for automated SemVer from commit messages
+- intent-file decisions are for release intent reviewed in PRs
+
+Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, and `{normalizedName}`. They must be expanded before path safety and artifact inventory checks.
 
 ## Testing Strategy
 

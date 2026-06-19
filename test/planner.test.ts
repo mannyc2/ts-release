@@ -12,7 +12,7 @@ import {
   renderPlanSummary
 } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { homebrewConfig, minimalConfig, runEffect, scoopConfig } from "./helpers.js"
+import { homebrewConfig, minimalConfig, releaseConfig, runEffect, scoopConfig } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -124,6 +124,113 @@ describe("planner", () => {
     )
 
     expect(plan.identity.commit).toBe("81587b5")
+  })
+
+  test("resolves package manifest identity during normalization", async () => {
+    const config = releaseConfig({
+      identity: {
+        _tag: "PackageManifestReleaseIdentitySource",
+        commit: "HEAD",
+        tagTemplate: "v{version}"
+      },
+      artifacts: [
+        {
+          id: "archive",
+          path: "artifacts/{normalizedName}-{version}.tgz",
+          format: "tarball",
+          consumers: []
+        }
+      ],
+      targets: []
+    })
+    const layer = Layer.mergeAll(
+      makeTestCommandRunnerLayer({
+        files: new Map([
+          ["package.json", JSON.stringify({ name: "@scope/pkg", version: "1.2.3" })],
+          ["artifacts/scope-pkg-1.2.3.tgz", "archive"]
+        ]),
+        commands: new Map([
+          [commandKey(gitHeadCommand), {
+            exitCode: 0,
+            stdout: "81587b5\n",
+            stderr: ""
+          }]
+        ])
+      }),
+      LiveTargetRegistryLayer
+    )
+
+    const plan = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(config)
+        return yield* createReleasePlan(intent)
+      }),
+      layer
+    )
+
+    expect(plan.identity).toMatchObject({
+      name: "@scope/pkg",
+      version: "1.2.3",
+      commit: "81587b5",
+      tag: "v1.2.3"
+    })
+    expect(plan.artifacts[0]?.path).toBe("artifacts/scope-pkg-1.2.3.tgz")
+  })
+
+  test("rejects unsafe package manifest identity paths", async () => {
+    const config = releaseConfig({
+      identity: {
+        _tag: "PackageManifestReleaseIdentitySource",
+        packagePath: "../package.json",
+        commit: "HEAD",
+        tagTemplate: "v{version}"
+      },
+      artifacts: [],
+      targets: []
+    })
+
+    const error = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(config)
+        return yield* createReleasePlan(intent)
+      }).pipe(Effect.flip),
+      TestLayer
+    )
+
+    expect(error._tag).toBe("ReleaseNormalizationError")
+    if (error._tag === "ReleaseNormalizationError") {
+      expect(error.field).toBe("identity.packagePath")
+    }
+  })
+
+  test("expands artifact path templates before inventory", async () => {
+    const config = releaseConfig({
+      artifacts: [
+        {
+          id: "archive",
+          path: "artifacts/{name}-{version}-{normalizedName}.tgz",
+          format: "tarball",
+          consumers: []
+        }
+      ],
+      targets: []
+    })
+    const layer = Layer.mergeAll(
+      makeTestCommandRunnerLayer({
+        files: new Map([["artifacts/release-0.1.0-release.tgz", "archive"]])
+      }),
+      LiveTargetRegistryLayer
+    )
+
+    const plan = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(config)
+        return yield* createReleasePlan(intent)
+      }),
+      layer
+    )
+
+    expect(plan.artifacts[0]?.path).toBe("artifacts/release-0.1.0-release.tgz")
   })
 
   test("reports git HEAD resolution failures as normalization errors", async () => {

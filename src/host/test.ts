@@ -129,6 +129,51 @@ const hasFixtureDirectory = (directories: ReadonlySet<string>, path: string): bo
   return false
 }
 
+const fixtureDirectoryEntries = (
+  files: ReadonlyMap<string, string>,
+  directories: ReadonlySet<string>,
+  path: string
+): Array<string> | undefined => {
+  const entries = new Set<string>()
+  let found = false
+  for (const variant of pathVariants(path)) {
+    const normalizedDirectory = normalizedSeparators(variant).replace(/\/$/, "")
+    if (directories.has(variant) || directories.has(normalizedDirectory)) {
+      found = true
+    }
+    const prefix = normalizedDirectory === "." ? "" : `${normalizedDirectory}/`
+    for (const filePath of files.keys()) {
+      const normalizedFile = normalizedSeparators(filePath)
+      if (!normalizedFile.startsWith(prefix)) {
+        continue
+      }
+      const remainder = prefix.length === 0 ? normalizedFile : normalizedFile.slice(prefix.length)
+      const entry = remainder.split("/")[0]
+      if (entry !== undefined && entry.length > 0 && remainder !== normalizedFile) {
+        entries.add(entry)
+        found = true
+      }
+      if (entry !== undefined && entry.length > 0 && prefix.length === 0) {
+        entries.add(entry)
+        found = true
+      }
+    }
+    for (const directoryPath of directories) {
+      const normalizedChild = normalizedSeparators(directoryPath)
+      if (!normalizedChild.startsWith(prefix) || normalizedChild === normalizedDirectory) {
+        continue
+      }
+      const remainder = prefix.length === 0 ? normalizedChild : normalizedChild.slice(prefix.length)
+      const entry = remainder.split("/")[0]
+      if (entry !== undefined && entry.length > 0) {
+        entries.add(entry)
+        found = true
+      }
+    }
+  }
+  return found ? [...entries].sort() : undefined
+}
+
 export const makeTestCommandRunnerLayer = (
   options: TestCommandRunnerOptions = {}
 ) => {
@@ -185,6 +230,15 @@ export const makeTestCommandRunnerLayer = (
             contents === undefined
               ? Effect.fail(notFound("readFileString", path))
               : Effect.succeed(contents)
+          )
+        ),
+
+      readDirectory: (path) =>
+        Effect.sync(() => fixtureDirectoryEntries(files, directories, path)).pipe(
+          Effect.flatMap((entries) =>
+            entries === undefined
+              ? Effect.fail(notFound("readDirectory", path))
+              : Effect.succeed(entries)
           )
         ),
 

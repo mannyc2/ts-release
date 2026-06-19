@@ -99997,12 +99997,50 @@ var createReleasePlan = fn2("createReleasePlan")(function* (intent, root = ".", 
 
 // ../../src/internal/workspace-path.ts
 var hasParentTraversal = (pathName) => pathName.split(/[\\/]+/).includes("..");
+var isWindowsAbsolutePath = (pathName) => /^[A-Za-z]:[\\/]/.test(pathName) || /^[/\\]{2}[^/\\]+[/\\][^/\\]+/.test(pathName);
+var trimTrailingSeparators = (pathName) => {
+  if (/^[A-Za-z]:[\\/]?$/.test(pathName)) {
+    return pathName;
+  }
+  const trimmed = pathName.replace(/[\\/]+$/, "");
+  return trimmed.length === 0 ? pathName : trimmed;
+};
+var stripLeadingCurrentDirectory = (pathName) => pathName.replace(/^\.[\\/]+/, "");
+var joinWindowsAbsolutePath = (root, pathName) => {
+  const relative = stripLeadingCurrentDirectory(pathName);
+  if (relative.length === 0 || relative === ".") {
+    return root;
+  }
+  return `${trimTrailingSeparators(root)}/${relative.replace(/^[\\/]+/, "")}`;
+};
+var resolvedRootPath = (path4, root) => {
+  if (isWindowsAbsolutePath(root)) {
+    return root;
+  }
+  return path4.resolve(root);
+};
+var normalizedWindowsBoundary = (pathName) => trimTrailingSeparators(pathName).replaceAll("\\", "/").toLowerCase();
 var resolveWorkspacePath = (path4, root, pathName) => {
-  const rootPath = path4.resolve(root);
-  return path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
+  const rootPath = resolvedRootPath(path4, root);
+  if (path4.isAbsolute(pathName)) {
+    return path4.resolve(pathName);
+  }
+  if (isWindowsAbsolutePath(pathName)) {
+    return pathName;
+  }
+  if (isWindowsAbsolutePath(rootPath)) {
+    return joinWindowsAbsolutePath(rootPath, pathName);
+  }
+  return path4.resolve(rootPath, pathName);
 };
 var isInsidePathBoundary = (path4, root, targetPath) => {
-  const relative = path4.relative(path4.resolve(root), targetPath);
+  const rootPath = resolvedRootPath(path4, root);
+  if (isWindowsAbsolutePath(rootPath) || isWindowsAbsolutePath(targetPath)) {
+    const normalizedRoot = normalizedWindowsBoundary(rootPath);
+    const normalizedTarget = normalizedWindowsBoundary(targetPath);
+    return normalizedTarget === normalizedRoot || normalizedTarget.startsWith(`${normalizedRoot}/`);
+  }
+  const relative = path4.relative(rootPath, targetPath);
   return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
 };
 var validateWorkspaceWritePath = (path4, root, pathName) => {
@@ -100012,7 +100050,7 @@ var validateWorkspaceWritePath = (path4, root, pathName) => {
       reason: "empty-or-parent-traversal"
     };
   }
-  const rootPath = path4.resolve(root);
+  const rootPath = resolvedRootPath(path4, root);
   const targetPath = resolveWorkspacePath(path4, rootPath, pathName);
   if (isInsidePathBoundary(path4, rootPath, targetPath)) {
     return {

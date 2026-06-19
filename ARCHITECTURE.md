@@ -2,19 +2,50 @@
 
 `@mannyc1/ts-release` is library-first and CLI-second.
 
-The package turns release intent into typed data, plans, evidence, and approved operations. The CLI is only an argv, console, and terminal-file adapter over those workflows.
+The package turns release intent into typed data, plans, evidence, and approved operations. The CLI and GitHub Action are adapters over those workflows.
 
-## Module Taxonomy
+## Target Boundary
+
+The intended repository shape separates reusable library code from the
+first-party release application:
+
+```text
+src/                 reusable TypeScript release library
+apps/release-ts/     official CLI app, Bun runtime shell, and self-release dogfood
+apps/ts-release-action/
+                     official JavaScript action app and Node runtime shell
+scripts/             repo-wide maintenance gates only
+examples/            reusable release config examples
+```
+
+`src/` contains generic library code only. It may require platform services
+such as `FileSystem`, `Path`, `ReleaseCommandRunner`, `ReleaseHttp`, or
+`HttpClient`, but it must not provide the concrete Bun runtime for the official
+CLI.
+
+`apps/release-ts/` owns argv parsing, terminal output, Bun runtime assembly,
+standalone CLI compilation, and self-release policy/config. A module consumed
+only by the official CLI or self-release dogfood belongs in `apps/release-ts/`
+unless it is made generic and documented as public library API.
+
+`apps/ts-release-action/` owns GitHub Action input parsing, GitHub step-summary
+and output adapters, evidence artifact upload, and the Node runtime assembly
+used by the bundled action. Action code should call public workflow APIs rather
+than reaching into CLI modules.
+
+## Current Module Taxonomy
 
 - `domain/` contains durable schema-backed data models and errors.
 - `config/` parses and validates release config into domain values.
 - `planner/` normalizes release intent, builds plans, renders plans, executes operation data through injected services, records evidence, reports status, resumes safe work, and reconciles remote state.
 - `targets/` models ecosystem-specific target semantics and produces operation data. Target modules may describe commands and HTTP checks, but they do not execute them.
 - `host/` defines injectable command and HTTP services plus live or test implementations.
-- `workflows/` contains reusable application workflows over config files, evidence files, and live target/HTTP composition. This is the high-level programmatic surface.
-- `runtime/` contains runtime-specific layer assembly. `runtime/bun` is the Bun composition used by the published executable and maintenance scripts.
-- `cli/` parses command-line flags, calls workflows, prints terminal output, and writes user-requested CLI output files.
-- `scripts/` contains repository maintenance checks. Scripts may use runtime layers, but they are not package library code.
+- `workflows/` contains reusable application workflows over config files, init/scaffolding plans, diagnostics, evidence files, and live target/HTTP composition. This is the high-level programmatic surface.
+- `apps/release-ts/src/runtime/` contains the Bun runtime shell for the official CLI app.
+- `apps/release-ts/src/cli/` parses command-line flags, calls workflows, prints terminal output, and writes user-requested CLI output files.
+- `apps/ts-release-action/src/runtime/` contains the Node runtime shell for the bundled GitHub Action.
+- `apps/ts-release-action/src/` adapts GitHub Action inputs, outputs, step summaries, and artifact uploads to workflow calls.
+- `scripts/` contains repository maintenance checks. Scripts may use app runtime layers, but they are not package library code.
 
 ## Dependency Direction
 
@@ -27,8 +58,10 @@ domain <- config
 domain <- planner <- targets
 domain <- host
 workflows -> config/planner/host/targets
-runtime -> host/workflows/platform layers
-cli -> workflows/runtime boundary
+apps/release-ts runtime -> host/workflows/platform layers
+apps/release-ts cli -> workflows/runtime boundary
+apps/ts-release-action runtime -> host/workflows/platform layers
+apps/ts-release-action action -> workflows/runtime boundary
 ```
 
 `src/index.ts` intentionally stays empty. Public API is the explicit subpath list in `package.json`, checked by `scripts/check-package-exports.ts` and `scripts/check-tree-shaking.ts`.
@@ -38,9 +71,10 @@ cli -> workflows/runtime boundary
 There is no public `./api` facade. The public workflow modules are named after the work they own:
 
 - `./workflows/config` for config-file release workflows.
+- `./workflows/init` for data-first scaffolding previews and approved writes.
+- `./workflows/diagnostics` for static config, auth, and CI readiness reports.
 - `./workflows/evidence` for reusable evidence persistence.
 - `./workflows/live` for runtime-neutral live target and HTTP services.
-- `./runtime/bun` for the Bun runtime composition.
 
 Use lower-level `domain/`, `config/`, `planner/`, `host/`, and `targets/` subpaths when a caller needs more control than the workflow modules provide.
 
@@ -48,6 +82,11 @@ Use lower-level `domain/`, `config/`, `planner/`, `host/`, and `targets/` subpat
 
 - Publish operations are data until execution is explicitly approved.
 - `Effect.run*` belongs at true runtime boundaries.
-- Layers are provided at CLI, runtime, script, and test boundaries.
+- Reusable effectful operations use `Effect.fn`; inline orchestration bodies use `Effect.gen`.
+- Durable models, options, target variants, and typed errors use `Schema.Class`, `Schema.TaggedClass`, and `Schema.TaggedErrorClass`.
+- Layers are provided at CLI, action, runtime, script, application, and test boundaries.
 - Config parsing, evidence persistence, status, resume, reconciliation, and release execution are library workflows, not CLI behavior.
-- Terminal formatting, argv parsing, and `--out` file writing belong in `cli/`.
+- Terminal formatting, argv parsing, and `--out` file writing belong in
+  `apps/release-ts/src/cli/`.
+- GitHub Action input parsing, output names, step summaries, and evidence artifact
+  uploads belong in `apps/ts-release-action/src/`.

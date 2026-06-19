@@ -1,0 +1,30 @@
+name: Release Plan
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - uses: mannyc2/ts-release-action@v1
+        with:
+          command: plan
+          config: release.config.json
+          format: markdown
+          write-step-summary: true
+          plan-path: release-plan.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-plan
+          path: |
+            release-plan.md
+            .release/evidence/

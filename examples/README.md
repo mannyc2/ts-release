@@ -4,15 +4,17 @@ Start with the coordinated release example:
 
 ```sh
 cd examples/multi-target
-bun ../../dist/cli/main.js plan --config release.config.json --format text
+bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --format text
 ```
 
-That plan shows one release split across the target classes this package models:
-a release host (`github`), package registries (`npm`, `pypi`), and installer
-catalogs (`homebrew`, `scoop`). Inspect the artifact inventory, target
-capabilities, `argv` lines, approval gates, and generated catalog-file
-operations. `plan` is safe: publish operations stay data until a caller passes
-explicit execution approval.
+That plan shows one release split across GitHub Releases, npm, and a Homebrew
+tap. Inspect the artifact inventory, target capabilities, `argv` lines,
+approval gates, and generated catalog-file operations. `plan` is safe: publish
+operations stay data until a caller passes explicit execution approval.
+
+Templates live in `../templates/` and are copyable starting points for new
+repositories. These examples are runnable fixtures for this repository's
+checks.
 
 Focused examples:
 
@@ -25,8 +27,10 @@ Focused examples:
 - `scoop-bucket`: Scoop bucket manifest rendering with simulated validation.
 - `non-strict-skips`: non-strict config that records skipped dry-run evidence.
 
-`npm-first-publish` demonstrates only the bootstrap shape for a package that
-does not exist on npm yet. Replace it with trusted publishing after the first
-version exists. TestPyPI is still a real registry publish target, not a dry-run.
-The examples only render plans; do not run publish operations without
-intentional credentials and approval flags.
+Trusted-publishing npm examples use `provenance` and
+`verifyPackageExists`. `npm-first-publish` demonstrates only the bootstrap shape
+for a package that does not exist on npm yet, so it stays token-based and omits
+`trustedPublishing`. Replace it with trusted publishing after the first version
+exists. TestPyPI is still a real registry publish target, not a dry-run. The
+examples only render plans; do not run publish operations without intentional
+credentials and approval flags.

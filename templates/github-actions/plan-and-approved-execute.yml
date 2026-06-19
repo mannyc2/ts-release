@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - uses: mannyc2/ts-release-action@v1
+        with:
+          command: plan
+          config: release.config.json
+          format: markdown
+          write-step-summary: true
+          plan-path: release-plan.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-plan
+          path: |
+            release-plan.md
+            .release/evidence/
+
+  execute:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - uses: mannyc2/ts-release-action@v1
+        with:
+          command: run
+          config: release.config.json
+          execute: true
+          approve-irreversible: true
+          write-step-summary: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-evidence
+          path: .release/evidence/

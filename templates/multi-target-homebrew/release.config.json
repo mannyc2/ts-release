@@ -1,11 +1,10 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
-    "name": "release-example-multi-target",
+    "name": "@scope/pkg",
     "version": "0.1.0",
-    "commit": "example",
-    "tag": "v0.1.0",
-    "notes": "Example coordinated release"
+    "commit": "abc123",
+    "tag": "v0.1.0"
   },
   "artifacts": [
     {
@@ -16,28 +15,17 @@
     },
     {
       "id": "archive",
-      "path": "artifacts/release-example-multi-target-0.1.0.tgz",
+      "path": "artifacts/pkg-0.1.0.tgz",
       "format": "tarball",
       "consumers": ["github", "homebrew"]
     }
   ],
   "targets": [
     {
-      "_tag": "GitHubReleaseTarget",
-      "id": "github",
-      "repository": "owner/release-example-multi-target",
-      "tokenEnv": "GH_TOKEN",
-      "draft": true,
-      "prerelease": false,
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-release",
-      "recovery": "delete-and-recreate"
-    },
-    {
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
-      "packageName": "release-example-multi-target",
+      "packageName": "@scope/pkg",
       "packagePath": ".",
       "trustedPublishing": {
         "provider": "github-actions",
@@ -52,20 +40,31 @@
       "recovery": "publish-new-version"
     },
     {
+      "_tag": "GitHubReleaseTarget",
+      "id": "github",
+      "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false,
+      "dryRunSupport": "simulated",
+      "mutability": "mutable-release",
+      "recovery": "delete-and-recreate"
+    },
+    {
       "_tag": "HomebrewTapTarget",
       "id": "homebrew",
       "repository": "owner/homebrew-tap",
-      "formulaName": "release-example-multi-target",
-      "formulaPath": ".release/generated/release-example-multi-target.rb",
+      "formulaName": "pkg",
+      "formulaPath": ".release/generated/pkg.rb",
       "artifactId": "archive",
-      "homepage": "https://github.com/owner/release-example-multi-target",
-      "url": "https://github.com/owner/release-example-multi-target/releases/download/v0.1.0/release-example-multi-target-0.1.0.tgz",
-      "installPath": "bin/release-example-multi-target",
+      "homepage": "https://github.com/owner/repo",
+      "url": "https://github.com/owner/repo/releases/download/v0.1.0/pkg-0.1.0.tgz",
+      "installPath": "bin/pkg",
       "dryRunSupport": "simulated",
       "mutability": "mutable-index",
       "recovery": "manual"
     }
   ],
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidenceDirectory": ".release/evidence/{version}"
 }

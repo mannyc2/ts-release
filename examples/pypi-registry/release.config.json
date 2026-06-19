@@ -1,4 +1,5 @@
 {
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
     "name": "release-example-pypi",
     "version": "0.1.0",

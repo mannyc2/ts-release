@@ -16,6 +16,7 @@ A release is a data flow:
 release intent
   -> normalized release model
   -> target-specific operations
+  -> optional generated files
   -> validation evidence
   -> gated execution
   -> post-publish verification
@@ -25,6 +26,22 @@ release intent
 The package owns the model and the orchestration. Ecosystem tools remain the source of truth for ecosystem-specific behavior.
 
 For example, npm, PyPI, GitHub Releases, Homebrew taps, OCI registries, app stores, or other targets may each need different commands, credentials, artifacts, and validators. The release package should describe those differences directly instead of hiding them behind one fake universal publish abstraction.
+
+## Current Shape
+
+The root package is the reusable library. It exposes explicit subpaths for domain data, config loading, planners, target adapters, host services, and high-level workflows. The official Bun CLI lives in `apps/release-ts`, and the GitHub Action lives in `apps/ts-release-action`; both are runtime adapters over the same TypeScript workflows.
+
+Current first-party workflows cover:
+
+- config validation and plan rendering
+- data-first init/scaffolding previews with approved writes
+- static doctor/auth/CI diagnostics
+- render, validation, execution, verification, and workflow evidence
+- status reporting from existing evidence
+- conservative resume after interrupted work
+- narrow GitHub release reconciliation without republishing npm versions
+
+Reusable configs live in `templates/`, runnable fixtures live in `examples/`, and publish operations remain data until an execute approval and any irreversible approval are supplied.
 
 ## Design Goals
 
@@ -82,15 +99,19 @@ The library should expose APIs for:
 
 - loading and normalizing config
 - constructing a release plan
+- scaffolding starter configs and CI workflows as proposed files
+- rendering config schemas and validation results
 - rendering target files or generated metadata
 - validating plans and artifacts
+- reporting static auth and CI readiness with confidence levels
 - preparing executable operations
 - running approved operations through an injected host interface
 - recording evidence
 - reporting release status from evidence
 - conservatively resuming safe unfinished work
+- reconciling narrowly modeled remote state without replaying immutable publishes
 
-The CLI should mainly parse arguments, call the library, and format output.
+The CLI and GitHub Action should mainly parse host inputs, call the library, format host-specific output, and persist evidence.
 
 ### Host abstraction without pretending the world is pure
 
@@ -162,14 +183,19 @@ Evidence should survive outside the process as JSON or another stable format. It
 
 The package should make these workflows straightforward:
 
+- initialize a starter config and optional CI workflow from templates
+- validate config JSON and schema shape
 - create a plan from config
 - inspect the plan without executing anything
 - render target-specific files
 - validate artifacts and target readiness
+- report static auth and CI readiness
 - produce evidence artifacts
 - print publish operations
 - execute approved operations
 - verify published state after execution
+- inspect status and resume only safe unfinished work
+- reconcile a matching GitHub draft release without republishing immutable registries
 
 The API should favor explicit functions and typed data over hidden global state.
 
@@ -220,6 +246,8 @@ The rewrite is successful when:
 - irreversible operations require deliberate approval
 - core behavior is covered with deterministic tests
 - a CLI can be rebuilt as a thin adapter over the library
+- a GitHub Action can run the same workflows without embedding CLI behavior
+- starter templates can be checked by the same workflow path as examples
 - adding a new target does not require rewriting the core planner
 
 ## Biases
@@ -243,19 +271,21 @@ Avoid:
 - special cases that only work for one repository shape
 - abstractions that erase important ecosystem differences
 
-## Rewrite Direction
+## Implementation Direction
 
-Start from the data model.
+Continue from the data model.
 
-Define the smallest set of types needed to represent release identity, artifacts, targets, operations, validation results, execution gates, and evidence. Then implement one or two target adapters end to end to prove that the abstractions carry real differences without becoming generic mush.
+Keep the smallest set of types needed to represent release identity, artifacts, targets, operations, validation results, execution gates, and evidence. Add target adapters end to end only when they prove the abstractions carry real differences without becoming generic mush.
 
-The first working version should be narrow but honest:
+The implementation should stay narrow but honest:
 
 1. Load config.
 2. Normalize into a release model.
 3. Generate a serializable plan.
-4. Validate with structured evidence.
-5. Print executable operations.
-6. Execute only when explicitly approved.
+4. Render generated files only through explicit render operations.
+5. Validate with structured evidence.
+6. Print executable operations.
+7. Execute only when explicitly approved.
+8. Verify remote state and report status from evidence.
 
 Everything else should be added only after it has a clear place in that flow.

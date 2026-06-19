@@ -1,9 +1,9 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
-    "name": "@scope/release-example-first",
+    "name": "@scope/pkg",
     "version": "0.1.0",
-    "commit": "example",
+    "commit": "abc123",
     "tag": "v0.1.0"
   },
   "artifacts": [
@@ -19,15 +19,21 @@
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
-      "packageName": "@scope/release-example-first",
+      "packageName": "@scope/pkg",
       "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "packageExists": true,
+        "verifyPackageExists": true
+      },
       "access": "public",
+      "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"
     }
   ],
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidenceDirectory": ".release/evidence/{version}"
 }

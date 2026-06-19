@@ -15,10 +15,11 @@ import {
   HttpRequestEvidence,
   ValidationEvidence
 } from "../domain/evidence.js"
-import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, VerifyHttpOperation } from "../domain/operation.js"
+import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, operationFingerprint, VerifyHttpOperation } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
+import { resolveWorkspacePath, validateWorkspaceWritePath } from "../internal/workspace-path.js"
 import { EvidenceReadError, EvidenceWriteError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
@@ -63,8 +64,24 @@ const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
     Effect.map(Option.getOrUndefined)
   )
 
-const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
-  path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
+const workspaceWritePath = (
+  path: Path.Path,
+  root: string,
+  pathName: string
+): Effect.Effect<string, EvidenceWriteError> => {
+  const result = validateWorkspaceWritePath(path, root, pathName)
+  if (result._tag === "Ok") {
+    return Effect.succeed(result.path)
+  }
+  return Effect.fail(
+    EvidenceWriteError.make({
+      path: pathName,
+      reason: result.reason === "empty-or-parent-traversal"
+        ? "Path must be non-empty and must not contain parent traversal."
+        : "Path must resolve inside the workspace root."
+    })
+  )
+}
 
 const formatUnknown = (cause: unknown): string =>
   cause instanceof Error ? cause.message : String(cause)
@@ -98,6 +115,7 @@ export const commandEvidenceFromResult = Effect.fn("commandEvidenceFromResult")(
   return CommandEvidence.make({
     id: `${operation.id}:command`,
     operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
     ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
     status,
     severity: result.exitCode === 0 ? "info" : "error",
@@ -228,6 +246,7 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
           return HttpEvidence.make({
             id: `${operation.id}:http`,
             operationId: operation.id,
+            operationFingerprint: operationFingerprint(operation),
             targetId: operation.targetId,
             status: "failed",
             severity: "error",
@@ -252,6 +271,7 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
           HttpEvidence.make({
             id: `${operation.id}:http`,
             operationId: operation.id,
+            operationFingerprint: operationFingerprint(operation),
             targetId: operation.targetId,
             status: failed.length === 0 ? "passed" : "failed",
             severity: failed.length === 0 ? "info" : "error",
@@ -281,6 +301,7 @@ export const executionEvidence = Effect.fn("executionEvidence")(function*(operat
   return ExecutionEvidence.make({
     id: `${operation.id}:execution`,
     operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
     ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
     status: "passed",
     severity: "info",
@@ -296,6 +317,7 @@ export const validationNoteEvidence = Effect.fn("validationNoteEvidence")(functi
   const status = operation.skipped ? "skipped" : operation.severity === "warning" ? "warning" : "passed"
   return ValidationEvidence.make({
     id: `${operation.id}:validation`,
+    operationFingerprint: operationFingerprint(operation),
     ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
     status,
     severity: operation.severity,
@@ -315,7 +337,7 @@ export const writeEvidenceBundle = Effect.fn("writeEvidenceBundle")(function*(
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const targetPath = workspacePath(path, root, pathName)
+  const targetPath = yield* workspaceWritePath(path, root, pathName)
   yield* Effect.gen(function*() {
     yield* fs.makeDirectory(path.dirname(targetPath), { recursive: true })
     yield* fs.writeFileString(targetPath, renderEvidenceJson(bundle))
@@ -334,7 +356,7 @@ export const decodeEvidenceBundle = Schema.decodeUnknownEffect(EvidenceBundle)
 const readEvidenceJson = Effect.fn("readEvidenceJson")(function*(pathName: string, root: string) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const targetPath = workspacePath(path, root, pathName)
+  const targetPath = resolveWorkspacePath(path, root, pathName)
   const contents = yield* fs.readFileString(targetPath).pipe(
     Effect.mapError((error) =>
       EvidenceReadError.make({
@@ -375,7 +397,7 @@ export const tryReadEvidenceBundle = Effect.fn("tryReadEvidenceBundle")(function
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const targetPath = workspacePath(path, root, pathName)
+  const targetPath = resolveWorkspacePath(path, root, pathName)
   const contents = yield* fs.readFileString(targetPath).pipe(
     Effect.catchIf(isNotFoundError, () => Effect.succeed(undefined)),
     Effect.mapError((error) =>

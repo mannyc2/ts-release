@@ -4,7 +4,7 @@ import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
-import { HttpRequestSpec } from "../domain/operation.js"
+import { HttpHeader, HttpRequestSpec } from "../domain/operation.js"
 import { HttpError, HttpResult, ReleaseHttp } from "./http.js"
 
 export type * from "../types/effect-internal.js"
@@ -61,6 +61,9 @@ const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpReques
   return headers
 })
 
+const responseHeaders = (headers: Readonly<Record<string, string>>): ReadonlyArray<HttpHeader> =>
+  Object.entries(headers).map(([name, value]) => HttpHeader.make({ name, value }))
+
 export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.HttpClient> =
   Layer.effect(ReleaseHttp)(
     Effect.gen(function*() {
@@ -98,6 +101,7 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
               request,
               status: response.status,
               json,
+              responseHeaders: responseHeaders(response.headers),
               startedAt,
               endedAt,
               durationMillis: Math.max(0, ended - started)

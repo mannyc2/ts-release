@@ -40,9 +40,7 @@ GitHub Actions templates are action-first:
 
 They use `mannyc2/ts-release-action@v1`; the action source lives in this repo at
 `apps/ts-release-action` until the first action release is cut or mirrored.
-The action currently defaults to `runtime: bundled`. Use the CLI fallback
-template at `github-actions-cli/trusted-publishing.yml` for portable raw-command
-workflows.
+The action currently defaults to `runtime: bundled`.
 
 The trusted-publishing templates do not use `NPM_TOKEN`; configure npm trusted
 publishing and a protected GitHub environment named `release` before approving

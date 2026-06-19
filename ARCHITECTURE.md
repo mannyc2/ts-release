@@ -64,19 +64,20 @@ apps/ts-release-action runtime -> host/workflows/platform layers
 apps/ts-release-action action -> workflows/runtime boundary
 ```
 
-`src/index.ts` intentionally stays empty. Public API is the explicit subpath list in `package.json`, checked by `scripts/check-package-exports.ts` and `scripts/check-tree-shaking.ts`.
+`src/index.ts` intentionally stays empty. Public API is the explicit subpath list in `package.json`, checked by `scripts/check-package-exports.ts` and `scripts/check-tree-shaking.ts`. The only workflow aggregate is the opt-in `./workflows` facade.
 
 ## Public Workflow Surface
 
-There is no public `./api` facade. The public workflow modules are named after the work they own:
+There is no public `./api` facade, and the root package export stays empty. The public workflow modules are named after the work they own:
 
+- `./workflows` for the curated opt-in `Config`, `Init`, `Diagnostics`, `Evidence`, and `Live` namespaces.
 - `./workflows/config` for config-file release workflows.
 - `./workflows/init` for data-first scaffolding previews and approved writes.
 - `./workflows/diagnostics` for static config, auth, and CI readiness reports.
 - `./workflows/evidence` for reusable evidence persistence.
 - `./workflows/live` for runtime-neutral live target and HTTP services.
 
-Use lower-level `domain/`, `config/`, `planner/`, `host/`, and `targets/` subpaths when a caller needs more control than the workflow modules provide.
+The `./workflows` facade lives at `src/workflows/index.ts` and should only re-export workflow namespaces. Use exact workflow leaf imports for maximum tree-shaking or direct option-class access, and lower-level `domain/`, `config/`, `planner/`, `host/`, and `targets/` subpaths when a caller needs more control than the workflow modules provide.
 
 ## Boundary Rules
 

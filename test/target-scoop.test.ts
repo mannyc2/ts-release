@@ -166,20 +166,35 @@ describe("Scoop target", () => {
       ).pipe(Effect.flip),
       ScoopLayer
     )
+    const mismatchedSha256Checksum = await runEffect(
+      createPlan(
+        scoopConfig({
+          artifactId: "archive"
+        }).replace(
+          "\"consumers\":[\"scoop\"]",
+          "\"consumers\":[\"scoop\"],\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
+        )
+      ).pipe(Effect.flip),
+      ScoopLayer
+    )
 
     expect(noDryRun._tag).toBe("PlanConstructionError")
     expect(nativeDryRun._tag).toBe("PlanConstructionError")
     expect(missingArtifact._tag).toBe("PlanConstructionError")
     expect(directoryArtifact._tag).toBe("PlanConstructionError")
-    expect(nonSha256Checksum._tag).toBe("PlanConstructionError")
+    expect(nonSha256Checksum._tag).toBe("ReleaseNormalizationError")
+    expect(mismatchedSha256Checksum._tag).toBe("ReleaseNormalizationError")
     if (missingArtifact._tag === "PlanConstructionError") {
       expect(missingArtifact.reason).toBe("Scoop target references missing artifact missing.")
     }
     if (directoryArtifact._tag === "PlanConstructionError") {
       expect(directoryArtifact.reason).toBe("Scoop manifest artifacts must be file-like, not directories.")
     }
-    if (nonSha256Checksum._tag === "PlanConstructionError") {
-      expect(nonSha256Checksum.reason).toBe("Scoop manifest rendering requires a sha256 artifact checksum.")
+    if (nonSha256Checksum._tag === "ReleaseNormalizationError") {
+      expect(nonSha256Checksum.field).toBe("artifacts.archive.checksum")
+    }
+    if (mismatchedSha256Checksum._tag === "ReleaseNormalizationError") {
+      expect(mismatchedSha256Checksum.field).toBe("artifacts.archive.checksum")
     }
   })
 })

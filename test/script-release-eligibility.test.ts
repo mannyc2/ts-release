@@ -1,15 +1,18 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import { parseReleaseIntent } from "../src/config/load.js"
 import {
   checkReleaseEligibility,
   decideReleaseEligibility,
+  releaseEligibilityRemoteCheckFromIntent,
+  ReleasePackageManifest,
   ReleaseEligibilityRemoteCheck
 } from "../src/planner/release-eligibility.js"
 import { GitHubReleaseAvailability, NpmRemoteState } from "../src/domain/remote-state.js"
 import { CommandSpec } from "../src/domain/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { runEffect } from "./helpers.js"
+import { releaseConfig, runEffect } from "./helpers.js"
 
 interface EligibilityCase {
   readonly name: string
@@ -126,6 +129,7 @@ describe("release eligibility workflow", () => {
           npmRegistry: "https://registry.npmjs.org",
           githubTargetId: "github",
           githubRepository: "owner/repo",
+          githubTag: "v1.2.3",
           githubTokenEnv: "GH_TOKEN",
           expectedGithubDraft: false
         })
@@ -155,6 +159,107 @@ describe("release eligibility workflow", () => {
     expect(decision.reason).toContain("still a draft")
   })
 
+  test("uses the configured GitHub tag in remote checks", async () => {
+    const ghReleaseView = CommandSpec.make({
+      executable: "gh",
+      args: [
+        "release",
+        "view",
+        "release-1.2.3",
+        "--repo",
+        "owner/repo",
+        "--json",
+        "isDraft,tagName,publishedAt"
+      ],
+      requiredEnv: ["GH_TOKEN"],
+      redactedEnv: ["GH_TOKEN"]
+    })
+    const decision = await runEffect(
+      checkReleaseEligibility(
+        ReleaseEligibilityRemoteCheck.make({
+          packageName: "@scope/pkg",
+          packageVersion: "1.2.3",
+          npmTargetId: "npm",
+          npmRegistry: "https://registry.npmjs.org",
+          githubTargetId: "github",
+          githubRepository: "owner/repo",
+          githubTag: "release-1.2.3",
+          githubTokenEnv: "GH_TOKEN",
+          expectedGithubDraft: false
+        })
+      ),
+      makeTestCommandRunnerLayer({
+        env: new Map([["GH_TOKEN", "gh_secret"]]),
+        commands: new Map([
+          [commandKey(ghReleaseView), {
+            exitCode: 1,
+            stdout: "",
+            stderr: "not found"
+          }]
+        ])
+      })
+    )
+
+    expect(decision.status).toBe("partial")
+  })
+
+  test("rejects npm target package drift even when the target id is npm", async () => {
+    const intent = await Effect.runPromise(
+      parseReleaseIntent(
+        releaseConfig({
+          artifacts: [
+            {
+              id: "package",
+              path: ".",
+              format: "directory",
+              consumers: ["npm"]
+            }
+          ],
+          targets: [
+            {
+              _tag: "NpmRegistryTarget",
+              id: "npm",
+              registry: "https://registry.npmjs.org",
+              packageName: "@scope/other",
+              packagePath: ".",
+              tokenEnv: "NPM_TOKEN",
+              dryRunSupport: "native",
+              mutability: "immutable",
+              recovery: "publish-new-version"
+            },
+            {
+              _tag: "GitHubReleaseTarget",
+              id: "github",
+              repository: "owner/repo",
+              tokenEnv: "GH_TOKEN",
+              draft: true,
+              dryRunSupport: "simulated",
+              mutability: "mutable-release",
+              recovery: "delete-and-recreate"
+            }
+          ]
+        })
+      )
+    )
+    const error = await runEffect(
+      releaseEligibilityRemoteCheckFromIntent(
+        ReleasePackageManifest.make({
+          name: "@scope/pkg",
+          version: "1.2.3"
+        }),
+        intent
+      ).pipe(Effect.flip),
+      makeTestCommandRunnerLayer()
+    )
+
+    expect(error._tag).toBe("ReleaseEligibilityCheckError")
+    if (error._tag === "ReleaseEligibilityCheckError") {
+      expect(error.targetId).toBe("npm")
+      expect(error.reason).toContain("@scope/other")
+      expect(error.reason).toContain("@scope/pkg")
+    }
+  })
+
   test("fails unexpected command failures instead of treating them as missing", async () => {
     const npmView = CommandSpec.make({
       executable: "npm",
@@ -171,6 +276,7 @@ describe("release eligibility workflow", () => {
           npmRegistry: "https://registry.npmjs.org",
           githubTargetId: "github",
           githubRepository: "owner/repo",
+          githubTag: "v1.2.3",
           expectedGithubDraft: false
         })
       ).pipe(Effect.flip),

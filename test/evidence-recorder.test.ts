@@ -7,6 +7,7 @@ import {
 } from "../src/domain/evidence.js"
 import {
   CommandSpec,
+  executeGate,
   ExecutionApproval,
   HttpEnvHeader,
   HttpHeader,
@@ -14,7 +15,10 @@ import {
   HttpJsonEqualsCheck,
   HttpRequestSpec,
   noApprovalGate,
+  operationFingerprint,
+  RenderFileOperation,
   ValidateCommandOperation,
+  ValidationNoteOperation,
   VerifyHttpOperation
 } from "../src/domain/operation.js"
 import {
@@ -30,7 +34,8 @@ import {
   readEvidenceBundle,
   redactText,
   renderEvidenceJson,
-  tryReadEvidenceBundle
+  tryReadEvidenceBundle,
+  writeEvidenceBundle
 } from "../src/planner/evidence-recorder.js"
 import { runOperation } from "../src/planner/executor.js"
 import { runEffect } from "./helpers.js"
@@ -61,6 +66,7 @@ const evidenceRecord = (operationId: string) =>
   ExecutionEvidence.make({
     id: `${operationId}:execution`,
     operationId,
+    operationFingerprint: `${operationId}:fingerprint`,
     status: "passed",
     severity: "info",
     message: "ok",
@@ -117,6 +123,8 @@ describe("evidence recorder", () => {
     if ("stdout" in evidence && "stderr" in evidence) {
       expect(evidence.stdout).toBe("stdout [REDACTED]")
       expect(evidence.stderr).toBe("stderr [REDACTED]")
+      expect(evidence.operationFingerprint).toBe(operationFingerprint(operation))
+      expect(evidence.operationFingerprint).not.toContain("super_secret")
     }
   })
 
@@ -148,6 +156,12 @@ describe("evidence recorder", () => {
         responses: new Map([
           [httpRequestKey(request), {
             status: 200,
+            responseHeaders: [
+              HttpHeader.make({
+                name: "Link",
+                value: "<https://api.github.com/repos/owner/repo/releases?per_page=100&page=2>; rel=\"next\""
+              })
+            ],
             json: {
               tag_name: "v0.1.0",
               assets: [{ name: "package.tgz" }]
@@ -161,6 +175,70 @@ describe("evidence recorder", () => {
 
     expect("responseStatus" in evidence && evidence.responseStatus).toBe(200)
     expect("checks" in evidence && evidence.checks.every((check) => check.passed)).toBe(true)
+    expect("operationFingerprint" in evidence && evidence.operationFingerprint).toBe(operationFingerprint(operation))
+    expect("responseHeaders" in evidence).toBe(false)
+  })
+
+  test("records fingerprints for render and validation-note evidence", async () => {
+    const renderOperation = RenderFileOperation.make({
+      id: "render-readme",
+      description: "Render README.",
+      risk: "writes-local",
+      gate: executeGate("Rendering writes a local file."),
+      path: ".release/generated/readme.md",
+      contents: "# Release\n"
+    })
+    const validationOperation = ValidationNoteOperation.make({
+      id: "validate-note",
+      description: "Record validation note.",
+      risk: "read-only",
+      gate: noApprovalGate("read-only"),
+      message: "No local validation command is configured.",
+      skipped: true,
+      severity: "info"
+    })
+    const layer = makeTestCommandRunnerLayer({ directories: new Set(["."]) })
+
+    const renderEvidence = await runEffect(
+      runOperation(
+        renderOperation,
+        ExecutionApproval.make({ execute: true, approveIrreversible: false })
+      ),
+      layer
+    )
+    const validationEvidence = await runEffect(
+      runOperation(validationOperation, ExecutionApproval.none),
+      layer
+    )
+
+    expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toBe(
+      operationFingerprint(renderOperation)
+    )
+    expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).not.toContain("# Release")
+    expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toContain("contentsDigest")
+    expect("operationFingerprint" in validationEvidence && validationEvidence.operationFingerprint).toBe(
+      operationFingerprint(validationOperation)
+    )
+  })
+
+  test("rejects render writes outside the workspace root", async () => {
+    const operation = RenderFileOperation.make({
+      id: "render-outside",
+      description: "Render outside.",
+      risk: "writes-local",
+      gate: executeGate("Rendering writes a local file."),
+      path: "../outside.md",
+      contents: "# Release\n"
+    })
+    const error = await runEffect(
+      runOperation(
+        operation,
+        ExecutionApproval.make({ execute: true, approveIrreversible: false })
+      ).pipe(Effect.flip),
+      makeTestCommandRunnerLayer({ directories: new Set(["."]) })
+    )
+
+    expect(error._tag).toBe("WorkspaceWriteError")
   })
 
   test("fails HTTP verification when JSON checks do not match", async () => {
@@ -254,6 +332,54 @@ describe("evidence recorder", () => {
     )
 
     expect(error._tag).toBe("EvidenceReadError")
+  })
+
+  test("fails command evidence without operation fingerprints", async () => {
+    const rawEvidence = {
+      schemaVersion: "release-evidence/v1",
+      releaseName: "release",
+      releaseVersion: "0.1.0",
+      records: [
+        {
+          id: "validate-token:command",
+          operationId: "validate-token",
+          status: "passed",
+          severity: "info",
+          command: {
+            executable: "tool",
+            args: ["validate"],
+            requiredEnv: [],
+            redactedEnv: []
+          },
+          exitCode: 0,
+          stdout: "",
+          stderr: "",
+          startedAt: "2026-06-17T00:00:00.000Z",
+          endedAt: "2026-06-17T00:00:00.001Z",
+          durationMillis: 1
+        }
+      ]
+    }
+    const error = await runEffect(
+      readEvidenceBundle(".release/evidence/validation.json").pipe(Effect.flip),
+      makeTestCommandRunnerLayer({
+        files: new Map([
+          [".release/evidence/validation.json", `${JSON.stringify(rawEvidence)}\n`]
+        ])
+      })
+    )
+
+    expect(error._tag).toBe("EvidenceReadError")
+  })
+
+  test("rejects evidence writes outside the workspace root", async () => {
+    const plan = makePlan()
+    const error = await runEffect(
+      writeEvidenceBundle("../outside.json", evidenceBundle(plan), ".").pipe(Effect.flip),
+      makeTestCommandRunnerLayer({ directories: new Set(["."]) })
+    )
+
+    expect(error._tag).toBe("EvidenceWriteError")
   })
 
   test("merges evidence bundles in order", async () => {

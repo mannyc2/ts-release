@@ -25,7 +25,12 @@ import {
 } from "../src/workflows/init.js"
 import { cli } from "../apps/release-ts/src/cli/command.js"
 import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
-import { CommandSpec } from "../src/domain/operation.js"
+import {
+  CommandSpec,
+  irreversibleGate,
+  operationFingerprint,
+  PublishCommandOperation
+} from "../src/domain/operation.js"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
@@ -463,6 +468,9 @@ describe("cli command", () => {
       const config = await readFile(configPath, "utf8")
       expect(config).toContain("\"$schema\"")
       expect(config).toContain("\"repository\": \"owner/repo\"")
+      const intent = await Effect.runPromise(parseReleaseIntent(config))
+      const packageArtifact = intent.artifacts.find((artifact) => artifact.id === "package")
+      expect(packageArtifact?.consumers).toEqual(["npm"])
 
       const blocked = await Effect.runPromiseExit(
         Command.runWith(cli, { version: "0.0.0" })([
@@ -513,6 +521,10 @@ describe("cli command", () => {
           if (template === "multi-target-scoop") {
             expect(configFile.contents).toContain("owner/scoop-bucket")
           }
+          if (template === "npm-github") {
+            const packageArtifact = intent.artifacts.find((artifact) => artifact.id === "package")
+            expect(packageArtifact?.consumers).toEqual(["npm"])
+          }
         }
       } finally {
         await rm(root, { recursive: true, force: true })
@@ -551,6 +563,39 @@ describe("cli command", () => {
       expect(workflow).toContain("approve-irreversible: true")
       expect(workflow).toContain("id-token: write")
       expect(workflow).not.toContain("NPM_TOKEN")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("init rejects workflow traversal without writing output", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-unsafe-workflow-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--template",
+          "npm-github",
+          "--package",
+          "@scope/pkg",
+          "--repo",
+          "owner/repo",
+          "--config",
+          configPath,
+          "--github-actions",
+          "--workflow",
+          "../outside.yml",
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      expect(exit._tag).toBe("Failure")
+      if (exit._tag === "Failure") {
+        expect(String(exit.cause)).toContain("ReleaseInitWriteError")
+      }
+      await expect(readFile(configPath, "utf8")).rejects.toThrow()
+      await expect(readFile(join(root, ".github", "outside.yml"), "utf8")).rejects.toThrow()
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -805,7 +850,7 @@ describe("cli command", () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-eligibility-"))
     try {
       const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig)
+      await writeFile(configPath, minimalConfig.replace("\"tag\":\"v0.1.0\"", "\"tag\":\"release-0.1.0\""))
       await writeFile(join(root, "package.json"), JSON.stringify({
         name: "release",
         version: "0.1.0"
@@ -821,7 +866,7 @@ describe("cli command", () => {
         args: [
           "release",
           "view",
-          "v0.1.0",
+          "release-0.1.0",
           "--repo",
           "owner/repo",
           "--json",
@@ -951,6 +996,14 @@ describe("cli command", () => {
         requiredEnv: ["NPM_TOKEN"],
         redactedEnv: ["NPM_TOKEN"]
       })
+      const publishOperation = PublishCommandOperation.make({
+        id: "npm:npm-publish",
+        targetId: "npm",
+        description: "Publish to npm.",
+        risk: "irreversible",
+        gate: irreversibleGate("npm versions are immutable."),
+        command: publishCommand
+      })
       const executionEvidence = EvidenceBundle.make({
         schemaVersion: "release-evidence/v1",
         releaseName: "release",
@@ -959,6 +1012,7 @@ describe("cli command", () => {
           CommandEvidence.make({
             id: "npm:npm-publish:command",
             operationId: "npm:npm-publish",
+            operationFingerprint: operationFingerprint(publishOperation),
             targetId: "npm",
             status: "failed",
             severity: "error",

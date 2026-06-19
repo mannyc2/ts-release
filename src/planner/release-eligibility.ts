@@ -28,6 +28,7 @@ export class ReleaseEligibilityRemoteCheck extends Schema.Class<ReleaseEligibili
   npmRegistry: Schema.String,
   githubTargetId: Schema.String,
   githubRepository: Schema.String,
+  githubTag: Schema.String,
   githubTokenEnv: Schema.optionalKey(Schema.String),
   expectedGithubDraft: Schema.Boolean
 }) {}
@@ -104,7 +105,15 @@ const findNpmTarget = (
   packageName: string
 ): NpmRegistryTarget | undefined =>
   intent.targets.find((target): target is NpmRegistryTarget =>
-    target._tag === "NpmRegistryTarget" && (target.packageName === packageName || target.id === "npm")
+    target._tag === "NpmRegistryTarget" && target.packageName === packageName
+  )
+
+const findNpmTargetById = (
+  intent: ReleaseIntent,
+  targetId: string
+): NpmRegistryTarget | undefined =>
+  intent.targets.find((target): target is NpmRegistryTarget =>
+    target._tag === "NpmRegistryTarget" && target.id === targetId
   )
 
 const findGitHubTarget = (intent: ReleaseIntent): GitHubReleaseTarget | undefined =>
@@ -115,6 +124,15 @@ export const releaseEligibilityRemoteCheckFromIntent = Effect.fn(
 )(function*(manifest: ReleasePackageManifest, intent: ReleaseIntent) {
   const npmTarget = findNpmTarget(intent, manifest.name)
   if (npmTarget === undefined) {
+    const npmTargetById = findNpmTargetById(intent, "npm")
+    if (npmTargetById !== undefined) {
+      return yield* Effect.fail(
+        eligibilityError(
+          `npm target ${npmTargetById.id} packageName ${npmTargetById.packageName} does not match package manifest ${manifest.name}.`,
+          npmTargetById.id
+        )
+      )
+    }
     return yield* Effect.fail(
       eligibilityError(`release config must include an npm target for ${manifest.name}`)
     )
@@ -134,6 +152,7 @@ export const releaseEligibilityRemoteCheckFromIntent = Effect.fn(
     npmRegistry: npmTarget.registry,
     githubTargetId: githubTarget.id,
     githubRepository: githubTarget.repository,
+    githubTag: intent.identity.tag ?? intent.identity.version,
     ...(githubTarget.tokenEnv === undefined ? {} : { githubTokenEnv: githubTarget.tokenEnv }),
     expectedGithubDraft: githubTarget.draft ?? false
   })
@@ -172,7 +191,7 @@ const githubReleaseViewCommand = (input: ReleaseEligibilityRemoteCheck): Command
     args: [
       "release",
       "view",
-      `v${input.packageVersion}`,
+      input.githubTag,
       "--repo",
       input.githubRepository,
       "--json",

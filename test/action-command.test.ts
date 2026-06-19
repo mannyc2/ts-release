@@ -16,7 +16,12 @@ import { ActionOptions, type ActionCommand, type ActionFormat, type ActionRuntim
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
 import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
 import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
-import { CommandSpec } from "../src/domain/operation.js"
+import {
+  CommandSpec,
+  irreversibleGate,
+  operationFingerprint,
+  PublishCommandOperation
+} from "../src/domain/operation.js"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { commandKey } from "../src/host/test.js"
@@ -339,6 +344,28 @@ describe("ts-release action", () => {
     }
   })
 
+  test("plan rejects unsafe plan paths without writing files", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-unsafe-plan-path-"))
+    try {
+      await writeFile(join(root, "release.config.json"), minimalConfig)
+      for (const planPath of ["../outside.md", ""]) {
+        const io = makeFakeActionIo()
+
+        await runAction(
+          actionOptions(root, { planPath }),
+          io,
+          makeNodeReleaseWorkflowRuntimeLayer({ root })
+        )
+
+        expect(io.outputs.get("status")).toBe("failed")
+        expect(io.failures.join("\n")).toContain("plan-path")
+        expect(io.files.size).toBe(0)
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   test("diagnostics fail without leaking secret values", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-action-diagnostics-"))
     try {
@@ -604,6 +631,14 @@ describe("ts-release action", () => {
         requiredEnv: ["NPM_TOKEN"],
         redactedEnv: ["NPM_TOKEN"]
       })
+      const publishOperation = PublishCommandOperation.make({
+        id: "npm:npm-publish",
+        targetId: "npm",
+        description: "Publish to npm.",
+        risk: "irreversible",
+        gate: irreversibleGate("npm versions are immutable."),
+        command: publishCommand
+      })
       await writeFile(
         join(root, ".release", "evidence", "execution.json"),
         renderEvidenceJson(EvidenceBundle.make({
@@ -614,6 +649,7 @@ describe("ts-release action", () => {
             CommandEvidence.make({
               id: "npm:npm-publish:command",
               operationId: "npm:npm-publish",
+              operationFingerprint: operationFingerprint(publishOperation),
               targetId: "npm",
               status: "failed",
               severity: "error",

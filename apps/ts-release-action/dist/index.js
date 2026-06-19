@@ -99138,6 +99138,118 @@ var Operation = Union2([
   VerifyRemoteOperation,
   VerifyHttpOperation
 ]);
+var isJsonObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
+var stableJson = (value2) => {
+  if (Array.isArray(value2)) {
+    return value2.map(stableJson);
+  }
+  if (isJsonObject(value2)) {
+    const output = {};
+    for (const key of Object.keys(value2).sort()) {
+      const item = value2[key];
+      if (item !== undefined) {
+        output[key] = stableJson(item);
+      }
+    }
+    return output;
+  }
+  return value2;
+};
+var commandSpecPayload = (command) => ({
+  executable: command.executable,
+  args: command.args,
+  ...command.cwd === undefined ? {} : { cwd: command.cwd },
+  requiredEnv: command.requiredEnv,
+  redactedEnv: command.redactedEnv
+});
+var httpHeaderPayload = (header) => ({
+  name: header.name,
+  value: header.value
+});
+var httpEnvHeaderPayload = (header) => ({
+  name: header.name,
+  valueEnv: header.valueEnv,
+  ...header.prefix === undefined ? {} : { prefix: header.prefix }
+});
+var httpRequestPayload = (request2) => ({
+  method: request2.method,
+  url: request2.url,
+  headers: request2.headers.map(httpHeaderPayload),
+  envHeaders: request2.envHeaders.map(httpEnvHeaderPayload),
+  requiredEnv: request2.requiredEnv,
+  redactedEnv: request2.redactedEnv
+});
+var httpJsonCheckPayload = (check) => {
+  switch (check._tag) {
+    case "HttpJsonEqualsCheck":
+      return {
+        _tag: check._tag,
+        path: check.path,
+        expected: stableJson(check.expected)
+      };
+    case "HttpJsonArrayObjectFieldEqualsCheck":
+      return {
+        _tag: check._tag,
+        path: check.path,
+        field: check.field,
+        expected: stableJson(check.expected)
+      };
+  }
+};
+var textEncoder = new TextEncoder;
+var fnv1a64Offset = 0xcbf29ce484222325n;
+var fnv1a64Prime = 0x100000001b3n;
+var fnv1a64Mask = 0xffffffffffffffffn;
+var contentDigest = (contents) => {
+  let hash2 = fnv1a64Offset;
+  for (const byte of textEncoder.encode(contents)) {
+    hash2 ^= BigInt(byte);
+    hash2 = hash2 * fnv1a64Prime & fnv1a64Mask;
+  }
+  return `fnv1a64:${hash2.toString(16).padStart(16, "0")}`;
+};
+var approvalPayload = (operation) => ({
+  requiresExecute: operation.gate.requiresExecute || operation._tag === "PublishCommandOperation" || operation._tag === "RenderFileOperation" || operation.risk !== "read-only",
+  requiresIrreversibleApproval: operation.gate.requiresIrreversibleApproval || operation.risk === "irreversible"
+});
+var commonOperationPayload = (operation) => ({
+  _tag: operation._tag,
+  id: operation.id,
+  ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
+  approval: approvalPayload(operation)
+});
+var operationFingerprint = (operation) => {
+  const common = commonOperationPayload(operation);
+  switch (operation._tag) {
+    case "RenderFileOperation":
+      return JSON.stringify({
+        ...common,
+        path: operation.path,
+        contentsDigest: contentDigest(operation.contents)
+      });
+    case "ValidateCommandOperation":
+    case "PublishCommandOperation":
+    case "VerifyRemoteOperation":
+      return JSON.stringify({
+        ...common,
+        command: commandSpecPayload(operation.command)
+      });
+    case "ValidationNoteOperation":
+      return JSON.stringify({
+        ...common,
+        message: operation.message,
+        severity: operation.severity,
+        skipped: operation.skipped
+      });
+    case "VerifyHttpOperation":
+      return JSON.stringify({
+        ...common,
+        request: httpRequestPayload(operation.request),
+        expectedStatus: operation.expectedStatus,
+        checks: operation.checks.map(httpJsonCheckPayload)
+      });
+  }
+};
 
 class ExecutionApproval extends Class4("ExecutionApproval")({
   execute: Boolean3,
@@ -99226,6 +99338,7 @@ var EvidenceStatus = Literals(["passed", "failed", "skipped", "warning"]);
 class CommandEvidence extends Class4("CommandEvidence")({
   id: EvidenceId,
   operationId: OperationId,
+  operationFingerprint: String4,
   targetId: optionalKey2(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -99256,6 +99369,7 @@ class HttpCheckEvidence extends Class4("HttpCheckEvidence")({
 class HttpEvidence extends Class4("HttpEvidence")({
   id: EvidenceId,
   operationId: OperationId,
+  operationFingerprint: String4,
   targetId: optionalKey2(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -99271,6 +99385,7 @@ class HttpEvidence extends Class4("HttpEvidence")({
 
 class ValidationEvidence extends Class4("ValidationEvidence")({
   id: EvidenceId,
+  operationFingerprint: String4,
   targetId: optionalKey2(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -99283,6 +99398,7 @@ class ValidationEvidence extends Class4("ValidationEvidence")({
 class ExecutionEvidence extends Class4("ExecutionEvidence")({
   id: EvidenceId,
   operationId: OperationId,
+  operationFingerprint: String4,
   targetId: optionalKey2(TargetId),
   status: EvidenceStatus,
   severity: EvidenceSeverity,
@@ -99692,6 +99808,25 @@ var checksumArtifact = fn2("checksumArtifact")(function* (artifact2, targetPath,
     value: encodeHex(digest)
   });
 });
+var verifiedChecksum = fn2("verifiedChecksum")(function* (artifact2, targetPath, fileType) {
+  if (artifact2.checksum === undefined) {
+    return artifact2.format === "directory" ? undefined : yield* checksumArtifact(artifact2, targetPath, fileType);
+  }
+  if (artifact2.checksum.algorithm !== "sha256") {
+    return yield* fail6(ReleaseNormalizationError.make({
+      field: `artifacts.${artifact2.id}.checksum`,
+      reason: "Only sha256 artifact checksums are supported."
+    }));
+  }
+  const computed = yield* checksumArtifact(artifact2, targetPath, fileType);
+  if (artifact2.checksum.value !== computed.value) {
+    return yield* fail6(ReleaseNormalizationError.make({
+      field: `artifacts.${artifact2.id}.checksum`,
+      reason: "Artifact checksum does not match artifact bytes."
+    }));
+  }
+  return artifact2.checksum;
+});
 var inventoryArtifact = fn2("inventoryArtifact")(function* (root, artifact2) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
@@ -99699,7 +99834,7 @@ var inventoryArtifact = fn2("inventoryArtifact")(function* (root, artifact2) {
   const info2 = yield* fs8.stat(targetPath).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.path`)));
   const kind = artifactKind(info2);
   yield* validateArtifactFormat(artifact2, kind);
-  const checksum = artifact2.checksum ?? (artifact2.format === "directory" ? undefined : yield* checksumArtifact(artifact2, targetPath, info2.type));
+  const checksum = yield* verifiedChecksum(artifact2, targetPath, info2.type);
   return ArtifactInventoryItem.make({
     id: artifact2.id,
     path: artifact2.path,
@@ -99725,15 +99860,16 @@ var validateUnique = (values, field) => sync2(() => {
   field,
   reason: `Duplicate values: ${duplicates.join(", ")}`
 }))));
-var validateSafeRelativePath = (field, value2) => {
+var validateNonEmptySafeRelativePath = (field, value2) => {
+  const isEmpty = value2.trim().length === 0;
   const isAbsolute = value2.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value2);
   const hasTraversal = value2.split(/[\\/]+/).includes("..");
-  if (!isAbsolute && !hasTraversal) {
+  if (!isEmpty && !isAbsolute && !hasTraversal) {
     return void_3;
   }
   return fail6(ReleaseNormalizationError.make({
     field,
-    reason: "Path must be relative and must not contain parent traversal."
+    reason: "Path must be non-empty, relative, and must not contain parent traversal."
   }));
 };
 var expandEvidenceDirectory = (value2, version4) => value2.split("{version}").join(version4);
@@ -99792,12 +99928,12 @@ var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, ro
   yield* validateUnique(intent.artifacts.map((artifact2) => artifact2.id), "artifacts.id");
   yield* validateUnique(intent.targets.map((target) => target.id), "targets.id");
   for (const artifact2 of intent.artifacts) {
-    yield* validateSafeRelativePath(`artifacts.${artifact2.id}.path`, artifact2.path);
+    yield* validateNonEmptySafeRelativePath(`artifacts.${artifact2.id}.path`, artifact2.path);
   }
   for (const target of intent.targets) {
     if (target._tag === "NpmRegistryTarget") {
       yield* validateNonEmptyString(`targets.${target.id}.packageName`, target.packageName);
-      yield* validateSafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath);
+      yield* validateNonEmptySafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath);
       if (target.trustedPublishing !== undefined && target.tokenEnv !== undefined) {
         return yield* fail6(ReleaseNormalizationError.make({
           field: `targets.${target.id}.tokenEnv`,
@@ -99809,21 +99945,21 @@ var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, ro
       }
     }
     if (target._tag === "HomebrewTapTarget") {
-      yield* validateSafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath);
+      yield* validateNonEmptySafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath);
       if (target.tapDirectory !== undefined) {
-        yield* validateSafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory);
+        yield* validateNonEmptySafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory);
       }
     }
     if (target._tag === "ScoopBucketTarget") {
-      yield* validateSafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath);
+      yield* validateNonEmptySafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath);
       if (target.bucketDirectory !== undefined) {
-        yield* validateSafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory);
+        yield* validateNonEmptySafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory);
       }
     }
   }
   const identity2 = yield* resolveIdentityCommit(intent.identity, root);
   const evidenceDirectory = expandEvidenceDirectory(intent.evidenceDirectory ?? ".release/evidence", identity2.version);
-  yield* validateSafeRelativePath("evidenceDirectory", evidenceDirectory);
+  yield* validateNonEmptySafeRelativePath("evidenceDirectory", evidenceDirectory);
   const inventory = yield* forEach2(intent.artifacts, (artifact2) => inventoryArtifact(root, artifact2));
   return ReleaseModel.make({
     identity: identity2,
@@ -99858,6 +99994,37 @@ var createReleasePlan = fn2("createReleasePlan")(function* (intent, root = ".", 
     })
   });
 });
+
+// ../../src/internal/workspace-path.ts
+var hasParentTraversal = (pathName) => pathName.split(/[\\/]+/).includes("..");
+var resolveWorkspacePath = (path4, root, pathName) => {
+  const rootPath = path4.resolve(root);
+  return path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
+};
+var isInsidePathBoundary = (path4, root, targetPath) => {
+  const relative = path4.relative(path4.resolve(root), targetPath);
+  return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
+};
+var validateWorkspaceWritePath = (path4, root, pathName) => {
+  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
+    return {
+      _tag: "Invalid",
+      reason: "empty-or-parent-traversal"
+    };
+  }
+  const rootPath = path4.resolve(root);
+  const targetPath = resolveWorkspacePath(path4, rootPath, pathName);
+  if (isInsidePathBoundary(path4, rootPath, targetPath)) {
+    return {
+      _tag: "Ok",
+      path: targetPath
+    };
+  }
+  return {
+    _tag: "Invalid",
+    reason: "outside-root"
+  };
+};
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
 function makeValue(value2) {
@@ -100103,6 +100270,7 @@ class HttpResult extends Class4("HttpResult")({
   request: HttpRequestSpec,
   status: Number5,
   json: Json2,
+  responseHeaders: ArraySchema(HttpHeader),
   startedAt: String4,
   endedAt: String4,
   durationMillis: Number5
@@ -100139,7 +100307,16 @@ var nowIso = fn2("evidence.nowIso")(function* () {
   return new Date(millis2).toISOString();
 });
 var readOptionalEnv = (name) => string3(name).pipe(option2, map5(getOrUndefined));
-var workspacePath = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
+var workspaceWritePath = (path4, root, pathName) => {
+  const result2 = validateWorkspaceWritePath(path4, root, pathName);
+  if (result2._tag === "Ok") {
+    return succeed6(result2.path);
+  }
+  return fail6(EvidenceWriteError.make({
+    path: pathName,
+    reason: result2.reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root."
+  }));
+};
 var formatUnknown3 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var isNotFoundError = (error2) => error2.reason._tag === "NotFound";
 var readRedactionSecrets = fn2("readRedactionSecrets")(function* (operation) {
@@ -100161,6 +100338,7 @@ var commandEvidenceFromResult = fn2("commandEvidenceFromResult")(function* (oper
   return CommandEvidence.make({
     id: `${operation.id}:command`,
     operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
     ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
     status,
     severity: result2.exitCode === 0 ? "info" : "error",
@@ -100173,7 +100351,7 @@ var commandEvidenceFromResult = fn2("commandEvidenceFromResult")(function* (oper
     durationMillis: result2.durationMillis
   });
 });
-var isJsonObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
+var isJsonObject2 = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
 var jsonAt = (value2, path4) => {
   let current = value2;
   for (const segment of path4) {
@@ -100186,7 +100364,7 @@ var jsonAt = (value2, path4) => {
       }
       current = current[segment];
     } else {
-      if (!isJsonObject(current)) {
+      if (!isJsonObject2(current)) {
         return;
       }
       current = current[segment];
@@ -100205,7 +100383,7 @@ var jsonEquals = (left, right) => {
       return rightValue !== undefined && jsonEquals(value2, rightValue);
     });
   }
-  if (isJsonObject(left) && isJsonObject(right)) {
+  if (isJsonObject2(left) && isJsonObject2(right)) {
     const leftKeys = objectKeys(left);
     const rightKeys = objectKeys(right);
     return leftKeys.length === rightKeys.length && leftKeys.every((key, index) => {
@@ -100240,7 +100418,7 @@ var evaluateHttpCheck = (json, check) => {
     case "HttpJsonArrayObjectFieldEqualsCheck": {
       const actual = jsonAt(json, check.path);
       const passed = Array.isArray(actual) && actual.some((item) => {
-        if (!isJsonObject(item)) {
+        if (!isJsonObject2(item)) {
           return false;
         }
         const value2 = item[check.field];
@@ -100268,6 +100446,7 @@ var httpEvidenceFromResult = fn2("httpEvidenceFromResult")(function* (operation)
       return HttpEvidence.make({
         id: `${operation.id}:http`,
         operationId: operation.id,
+        operationFingerprint: operationFingerprint(operation),
         targetId: operation.targetId,
         status: "failed",
         severity: "error",
@@ -100291,6 +100470,7 @@ var httpEvidenceFromResult = fn2("httpEvidenceFromResult")(function* (operation)
       return succeed6(HttpEvidence.make({
         id: `${operation.id}:http`,
         operationId: operation.id,
+        operationFingerprint: operationFingerprint(operation),
         targetId: operation.targetId,
         status: failed.length === 0 ? "passed" : "failed",
         severity: failed.length === 0 ? "info" : "error",
@@ -100315,6 +100495,7 @@ var executionEvidence = fn2("executionEvidence")(function* (operation, message) 
   return ExecutionEvidence.make({
     id: `${operation.id}:execution`,
     operationId: operation.id,
+    operationFingerprint: operationFingerprint(operation),
     ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
     status: "passed",
     severity: "info",
@@ -100327,6 +100508,7 @@ var validationNoteEvidence = fn2("validationNoteEvidence")(function* (operation)
   const status = operation.skipped ? "skipped" : operation.severity === "warning" ? "warning" : "passed";
   return ValidationEvidence.make({
     id: `${operation.id}:validation`,
+    operationFingerprint: operationFingerprint(operation),
     ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
     status,
     severity: operation.severity,
@@ -100340,7 +100522,7 @@ var renderEvidenceJson = (bundle) => `${JSON.stringify(bundle, null, 2)}
 var writeEvidenceBundle = fn2("writeEvidenceBundle")(function* (pathName, bundle, root = ".") {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const targetPath = workspacePath(path4, root, pathName);
+  const targetPath = yield* workspaceWritePath(path4, root, pathName);
   yield* gen2(function* () {
     yield* fs8.makeDirectory(path4.dirname(targetPath), { recursive: true });
     yield* fs8.writeFileString(targetPath, renderEvidenceJson(bundle));
@@ -100353,7 +100535,7 @@ var decodeEvidenceBundle = decodeUnknownEffect2(EvidenceBundle);
 var readEvidenceJson = fn2("readEvidenceJson")(function* (pathName, root) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const targetPath = workspacePath(path4, root, pathName);
+  const targetPath = resolveWorkspacePath(path4, root, pathName);
   const contents = yield* fs8.readFileString(targetPath).pipe(mapError3((error2) => EvidenceReadError.make({
     path: pathName,
     reason: error2.message
@@ -100377,7 +100559,7 @@ var readEvidenceBundle = fn2("readEvidenceBundle")(function* (pathName, root = "
 var tryReadEvidenceBundle = fn2("tryReadEvidenceBundle")(function* (pathName, root = ".") {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const targetPath = workspacePath(path4, root, pathName);
+  const targetPath = resolveWorkspacePath(path4, root, pathName);
   const contents = yield* fs8.readFileString(targetPath).pipe(catchIf2(isNotFoundError, () => succeed6(undefined)), mapError3((error2) => EvidenceReadError.make({
     path: pathName,
     reason: error2.message
@@ -100426,11 +100608,20 @@ class RetryableVerificationEvidenceFailure extends TaggedErrorClass()("Retryable
 var npmVersionVerificationRetryPolicy = addDelay(recurs(10), () => succeed6(millis(500)));
 var operationFailed = (evidence) => evidence.status === "failed" && (("exitCode" in evidence) || ("request" in evidence));
 var isNpmVersionVerificationOperation = (operation) => operation._tag === "VerifyRemoteOperation" && operation.id.endsWith(":npm-version-verify") && operation.command.executable === "npm" && operation.command.args[0] === "view";
-var workspacePath2 = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
+var workspacePath = (path4, root, pathName) => {
+  const result2 = validateWorkspaceWritePath(path4, root, pathName);
+  if (result2._tag === "Ok") {
+    return succeed6(result2.path);
+  }
+  return fail6(WorkspaceWriteError.make({
+    path: pathName,
+    reason: result2.reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root."
+  }));
+};
 var writeWorkspaceFile = fn2("writeWorkspaceFile")(function* (root, pathName, contents) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const targetPath = workspacePath2(path4, root, pathName);
+  const targetPath = yield* workspacePath(path4, root, pathName);
   yield* gen2(function* () {
     yield* fs8.makeDirectory(path4.dirname(targetPath), { recursive: true });
     yield* fs8.writeFileString(targetPath, contents);
@@ -100889,12 +101080,18 @@ var evidenceBundleForPhase = (evidence, phase) => {
   }
 };
 var recordOperationId = (record2) => ("operationId" in record2) ? record2.operationId : undefined;
-var matchesOperation = (operation, record2) => {
+var hasOperationIdentity = (operation, record2) => {
   const operationId = recordOperationId(record2);
   if (operationId !== undefined) {
     return operationId === operation.id;
   }
   return operation._tag === "ValidationNoteOperation" && record2.id === `${operation.id}:validation`;
+};
+var matchesOperation = (operation, record2) => {
+  if (!hasOperationIdentity(operation, record2)) {
+    return false;
+  }
+  return record2.operationFingerprint === operationFingerprint(operation);
 };
 var latestEvidenceRecord = (operation, bundle) => {
   if (bundle === undefined) {
@@ -101307,6 +101504,7 @@ var releaseArgs = (target, plan) => {
 };
 var githubReleaseApiUrl = (target, tag2) => `https://api.github.com/repos/${target.repository}/releases/tags/${encodeURIComponent(tag2)}`;
 var githubReleaseListApiUrl = (target) => `https://api.github.com/repos/${target.repository}/releases?per_page=100`;
+var githubReleaseListApiPath = (target) => `/repos/${target.repository}/releases`;
 var githubApiHeaders = () => [
   HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
   HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
@@ -101326,9 +101524,9 @@ var githubReleaseRequestSpec = (target, tag2) => HttpRequestSpec.make({
   requiredEnv: envNames(target),
   redactedEnv: envNames(target)
 });
-var githubReleaseListRequestSpec = (target) => HttpRequestSpec.make({
+var githubReleaseListRequestSpec = (target, url2 = githubReleaseListApiUrl(target)) => HttpRequestSpec.make({
   method: "GET",
-  url: githubReleaseListApiUrl(target),
+  url: url2,
   headers: githubApiHeaders(),
   envHeaders: githubApiEnvHeaders(target),
   requiredEnv: envNames(target),
@@ -101380,21 +101578,75 @@ var releaseStateFromResponse = (target, response) => {
     draft: false
   });
 };
+var linkHeaderNextUrl = (value2) => {
+  for (const entry of value2.split(",")) {
+    const parts = entry.split(";").map((part) => part.trim());
+    const urlPart = parts[0];
+    if (urlPart === undefined || !urlPart.startsWith("<") || !urlPart.endsWith(">")) {
+      continue;
+    }
+    const hasNextRelation = parts.slice(1).some((part) => part.toLowerCase() === 'rel="next"');
+    if (hasNextRelation) {
+      return urlPart.slice(1, -1);
+    }
+  }
+  return;
+};
+var responseNextUrl = (headers) => {
+  for (const header of headers) {
+    if (header.name.toLowerCase() !== "link") {
+      continue;
+    }
+    const nextUrl = linkHeaderNextUrl(header.value);
+    if (nextUrl !== undefined) {
+      return nextUrl;
+    }
+  }
+  return;
+};
+var validateReleaseListNextUrl = fn2("validateReleaseListNextUrl")(function* (target, url2) {
+  const parsed = yield* try_2({
+    try: () => new URL(url2),
+    catch: () => remoteStateError(target, "GitHub release list next link is not a valid URL.")
+  });
+  if (parsed.protocol !== "https:" || parsed.hostname !== "api.github.com" || parsed.pathname !== githubReleaseListApiPath(target)) {
+    return yield* fail6(remoteStateError(target, "GitHub release list next link does not point to the expected releases endpoint."));
+  }
+  return parsed.toString();
+});
+var releaseListNextUrl = fn2("releaseListNextUrl")(function* (target, headers) {
+  const nextUrl = responseNextUrl(headers);
+  return nextUrl === undefined ? undefined : yield* validateReleaseListNextUrl(target, nextUrl);
+});
 var inspectGitHubReleaseListForTag = fn2("inspectGitHubReleaseListForTag")(function* (target, plan) {
   const tag2 = githubReleaseTag(plan);
-  const request2 = githubReleaseListRequestSpec(target);
   const http3 = yield* ReleaseHttp;
-  const result2 = yield* http3.runJson(request2).pipe(mapError3((error2) => remoteStateError(target, error2.reason)));
-  if (result2.status !== 200) {
-    return yield* fail6(remoteStateError(target, `GitHub release list lookup returned HTTP ${result2.status}.`));
+  const visitedUrls = new Set;
+  let request2 = githubReleaseListRequestSpec(target);
+  while (true) {
+    const result2 = yield* http3.runJson(request2).pipe(mapError3((error2) => remoteStateError(target, error2.reason)));
+    if (result2.status !== 200) {
+      return yield* fail6(remoteStateError(target, `GitHub release list lookup returned HTTP ${result2.status}.`));
+    }
+    const releases = yield* decodeGitHubReleaseResponses(result2.json).pipe(mapError3((error2) => remoteStateError(target, `GitHub release list response did not match the expected schema: ${error2.message}`)));
+    const release = releases.find((item) => item.tag_name === tag2);
+    if (release !== undefined) {
+      return releaseStateFromResponse(target, release);
+    }
+    visitedUrls.add(request2.url);
+    const nextUrl = yield* releaseListNextUrl(target, result2.responseHeaders);
+    if (nextUrl === undefined) {
+      return GitHubReleaseMissing.make({
+        targetId: target.id,
+        repository: target.repository,
+        tag: tag2
+      });
+    }
+    if (visitedUrls.has(nextUrl)) {
+      return yield* fail6(remoteStateError(target, "GitHub release list pagination loop detected."));
+    }
+    request2 = githubReleaseListRequestSpec(target, nextUrl);
   }
-  const releases = yield* decodeGitHubReleaseResponses(result2.json).pipe(mapError3((error2) => remoteStateError(target, `GitHub release list response did not match the expected schema: ${error2.message}`)));
-  const release = releases.find((item) => item.tag_name === tag2);
-  return release === undefined ? GitHubReleaseMissing.make({
-    targetId: target.id,
-    repository: target.repository,
-    tag: tag2
-  }) : releaseStateFromResponse(target, release);
 });
 var inspectGitHubReleaseState = fn2("inspectGitHubReleaseState")(function* (target, plan) {
   const tag2 = githubReleaseTag(plan);
@@ -101527,6 +101779,7 @@ class ReleaseEligibilityRemoteCheck extends Class4("ReleaseEligibilityRemoteChec
   npmRegistry: String4,
   githubTargetId: String4,
   githubRepository: String4,
+  githubTag: String4,
   githubTokenEnv: optionalKey2(String4),
   expectedGithubDraft: Boolean3
 }) {
@@ -101579,11 +101832,16 @@ var eligibilityError = (reason, targetId) => ReleaseEligibilityCheckError.make({
   ...targetId === undefined ? {} : { targetId },
   reason
 });
-var findNpmTarget = (intent, packageName) => intent.targets.find((target) => target._tag === "NpmRegistryTarget" && (target.packageName === packageName || target.id === "npm"));
+var findNpmTarget = (intent, packageName) => intent.targets.find((target) => target._tag === "NpmRegistryTarget" && target.packageName === packageName);
+var findNpmTargetById = (intent, targetId) => intent.targets.find((target) => target._tag === "NpmRegistryTarget" && target.id === targetId);
 var findGitHubTarget = (intent) => intent.targets.find((target) => target._tag === "GitHubReleaseTarget");
 var releaseEligibilityRemoteCheckFromIntent = fn2("releaseEligibilityRemoteCheckFromIntent")(function* (manifest, intent) {
   const npmTarget = findNpmTarget(intent, manifest.name);
   if (npmTarget === undefined) {
+    const npmTargetById = findNpmTargetById(intent, "npm");
+    if (npmTargetById !== undefined) {
+      return yield* fail6(eligibilityError(`npm target ${npmTargetById.id} packageName ${npmTargetById.packageName} does not match package manifest ${manifest.name}.`, npmTargetById.id));
+    }
     return yield* fail6(eligibilityError(`release config must include an npm target for ${manifest.name}`));
   }
   const githubTarget = findGitHubTarget(intent);
@@ -101597,6 +101855,7 @@ var releaseEligibilityRemoteCheckFromIntent = fn2("releaseEligibilityRemoteCheck
     npmRegistry: npmTarget.registry,
     githubTargetId: githubTarget.id,
     githubRepository: githubTarget.repository,
+    githubTag: intent.identity.tag ?? intent.identity.version,
     ...githubTarget.tokenEnv === undefined ? {} : { githubTokenEnv: githubTarget.tokenEnv },
     expectedGithubDraft: githubTarget.draft ?? false
   });
@@ -101628,7 +101887,7 @@ var githubReleaseViewCommand = (input) => CommandSpec.make({
   args: [
     "release",
     "view",
-    `v${input.packageVersion}`,
+    input.githubTag,
     "--repo",
     input.githubRepository,
     "--json",
@@ -101677,6 +101936,23 @@ var checkReleaseEligibility = fn2("checkReleaseEligibility")(function* (input) {
     npm,
     github
   }));
+});
+
+// ../../src/workflows/options.ts
+var releaseConfigFields = (input) => ({
+  ...input.root === undefined ? {} : { root: input.root },
+  ...input.configPath === undefined ? {} : { configPath: input.configPath }
+});
+var releaseFormatField = (input) => ({
+  ...input.format === undefined ? {} : { format: input.format }
+});
+var releaseExecuteField = (input) => ({
+  ...input.execute === undefined ? {} : { execute: input.execute }
+});
+var releaseExecutionFields = (input) => ({
+  ...releaseConfigFields(input),
+  ...releaseExecuteField(input),
+  ...input.approveIrreversible === undefined ? {} : { approveIrreversible: input.approveIrreversible }
 });
 
 // ../../src/workflows/config.ts
@@ -101760,6 +102036,37 @@ class ReleaseEligibilityConfigOptions extends Class4("ReleaseEligibilityConfigOp
   packagePath: optionalKey2(String4)
 }) {
 }
+var releaseConfigOptionsFromInput = (input = {}) => ReleaseConfigOptions.make(releaseConfigFields(input));
+var validateReleaseConfigFileOptionsFromInput = (input = {}) => ValidateReleaseConfigFileOptions.make({
+  ...releaseConfigFields(input),
+  ...releaseFormatField(input)
+});
+var planReleaseConfigOptionsFromInput = (input = {}) => PlanReleaseConfigOptions.make({
+  ...releaseConfigFields(input),
+  ...releaseFormatField(input)
+});
+var renderReleaseConfigOptionsFromInput = (input = {}) => RenderReleaseConfigOptions.make({
+  ...releaseConfigFields(input),
+  ...releaseExecuteField(input)
+});
+var explainReleaseConfigOptionsFromInput = (input) => ExplainReleaseConfigOptions.make({
+  ...releaseConfigFields(input),
+  operationId: input.operationId
+});
+var releaseExecutionOptionsFromInput = (input = {}) => ReleaseExecutionOptions.make(releaseExecutionFields(input));
+var releaseStatusOptionsFromInput = (input = {}) => ReleaseStatusOptions.make({
+  ...releaseConfigFields(input),
+  ...releaseFormatField(input)
+});
+var releaseResumeConfigOptionsFromInput = (input = {}) => ReleaseResumeConfigOptions.make(releaseExecutionFields(input));
+var releaseReconcileConfigOptionsFromInput = (input = {}) => ReleaseReconcileConfigOptions.make({
+  ...releaseConfigFields(input),
+  ...releaseExecuteField(input)
+});
+var releaseEligibilityConfigOptionsFromInput = (input = {}) => ReleaseEligibilityConfigOptions.make({
+  ...releaseConfigFields(input),
+  ...input.packagePath === undefined ? {} : { packagePath: input.packagePath }
+});
 var configRoot = (path4, options) => {
   if (options.root !== undefined) {
     return options.root;
@@ -101824,14 +102131,16 @@ var readPackageManifest = fn2("workflows.config.readPackageManifest")(function* 
     reason: `package manifest is missing release identity fields: ${error2.message}`
   })));
 });
-var planReleaseConfig = fn2("workflows.config.planReleaseConfig")(function* (options = PlanReleaseConfigOptions.make({})) {
+var planReleaseConfig = fn2("workflows.config.planReleaseConfig")(function* (input = {}) {
+  const options = planReleaseConfigOptionsFromInput(input);
   const path4 = yield* Path;
   const pathName = configPath(options);
   const contents = yield* readReleaseConfig(options);
   const intent = yield* parseReleaseIntent(contents, pathName);
   return yield* createReleasePlan(intent, configRoot(path4, options), pathName);
 });
-var renderReleaseConfigPlan = fn2("workflows.config.renderReleaseConfigPlan")(function* (options = PlanReleaseConfigOptions.make({})) {
+var renderReleaseConfigPlan = fn2("workflows.config.renderReleaseConfigPlan")(function* (input = {}) {
+  const options = planReleaseConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   switch (options.format ?? "text") {
     case "json":
@@ -101844,18 +102153,20 @@ var renderReleaseConfigPlan = fn2("workflows.config.renderReleaseConfigPlan")(fu
       return renderPlanText(plan);
   }
 });
-var explainReleaseConfigOperation = fn2("workflows.config.explainReleaseConfigOperation")(function* (options) {
+var explainReleaseConfigOperation = fn2("workflows.config.explainReleaseConfigOperation")(function* (input) {
+  const options = explainReleaseConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(PlanReleaseConfigOptions.make({
-    ...options.root === undefined ? {} : { root: options.root },
-    ...options.configPath === undefined ? {} : { configPath: options.configPath }
+    ...releaseConfigFields(options)
   }));
   return yield* renderPlanOperationExplanation(plan, options.operationId);
 });
-var renderReleaseConfig = fn2("workflows.config.renderReleaseConfig")(function* (options = RenderReleaseConfigOptions.make({})) {
+var renderReleaseConfig = fn2("workflows.config.renderReleaseConfig")(function* (input = {}) {
+  const options = renderReleaseConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* renderPlan(plan, renderApprovalFromOptions(options));
 });
-var validateReleaseConfigFile = fn2("workflows.config.validateReleaseConfigFile")(function* (options = ValidateReleaseConfigFileOptions.make({})) {
+var validateReleaseConfigFile = fn2("workflows.config.validateReleaseConfigFile")(function* (input = {}) {
+  const options = validateReleaseConfigFileOptionsFromInput(input);
   const pathName = configPath(options);
   const contents = yield* readReleaseConfig(options);
   yield* parseReleaseIntent(contents, pathName);
@@ -101870,43 +102181,53 @@ var renderReleaseConfigValidationJson = (result2) => `${JSON.stringify(result2, 
 var renderReleaseConfigValidationText = (result2) => `config: ${result2.path}
 valid: ${result2.valid ? "true" : "false"}
 `;
-var renderReleaseConfigValidation = fn2("workflows.config.renderReleaseConfigValidation")(function* (options = ValidateReleaseConfigFileOptions.make({})) {
+var renderReleaseConfigValidation = fn2("workflows.config.renderReleaseConfigValidation")(function* (input = {}) {
+  const options = validateReleaseConfigFileOptionsFromInput(input);
   const result2 = yield* validateReleaseConfigFile(options);
   return (options.format ?? "text") === "json" ? renderReleaseConfigValidationJson(result2) : renderReleaseConfigValidationText(result2);
 });
-var validateReleaseConfig = fn2("workflows.config.validateReleaseConfig")(function* (options = ReleaseConfigOptions.make({})) {
+var validateReleaseConfig = fn2("workflows.config.validateReleaseConfig")(function* (input = {}) {
+  const options = releaseConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* validatePlan(plan);
 });
-var executeReleaseConfig = fn2("workflows.config.executeReleaseConfig")(function* (options = ReleaseExecutionOptions.make({})) {
+var executeReleaseConfig = fn2("workflows.config.executeReleaseConfig")(function* (input = {}) {
+  const options = releaseExecutionOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* executePlan(plan, approvalFromOptions(options));
 });
-var verifyReleaseConfig = fn2("workflows.config.verifyReleaseConfig")(function* (options = ReleaseConfigOptions.make({})) {
+var verifyReleaseConfig = fn2("workflows.config.verifyReleaseConfig")(function* (input = {}) {
+  const options = releaseConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* verifyPlan(plan);
 });
-var runReleaseConfig = fn2("workflows.config.runReleaseConfig")(function* (options = ReleaseExecutionOptions.make({})) {
+var runReleaseConfig = fn2("workflows.config.runReleaseConfig")(function* (input = {}) {
+  const options = releaseExecutionOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* runApprovedReleaseWorkflow(plan, approvalFromOptions(options));
 });
-var statusReleaseConfig = fn2("workflows.config.statusReleaseConfig")(function* (options = ReleaseStatusOptions.make({})) {
+var statusReleaseConfig = fn2("workflows.config.statusReleaseConfig")(function* (input = {}) {
+  const options = releaseStatusOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* statusReleasePlan(plan);
 });
-var renderReleaseStatus = fn2("workflows.config.renderReleaseStatus")(function* (options = ReleaseStatusOptions.make({})) {
+var renderReleaseStatus = fn2("workflows.config.renderReleaseStatus")(function* (input = {}) {
+  const options = releaseStatusOptionsFromInput(input);
   const report = yield* statusReleaseConfig(options);
   return (options.format ?? "text") === "json" ? renderReleaseStatusJson(report) : renderReleaseStatusText(report);
 });
-var resumeReleaseConfig = fn2("workflows.config.resumeReleaseConfig")(function* (options = ReleaseResumeConfigOptions.make({})) {
+var resumeReleaseConfig = fn2("workflows.config.resumeReleaseConfig")(function* (input = {}) {
+  const options = releaseResumeConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* resumeApprovedReleaseWorkflow(plan, resumeOptionsFromConfigOptions(options));
 });
-var reconcileReleaseConfig = fn2("workflows.config.reconcileReleaseConfig")(function* (options = ReleaseReconcileConfigOptions.make({})) {
+var reconcileReleaseConfig = fn2("workflows.config.reconcileReleaseConfig")(function* (input = {}) {
+  const options = releaseReconcileConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   return yield* reconcileReleasePlan(plan, reconcileOptionsFromConfigOptions(options));
 });
-var checkReleaseConfigEligibility = fn2("workflows.config.checkReleaseConfigEligibility")(function* (options = ReleaseEligibilityConfigOptions.make({})) {
+var checkReleaseConfigEligibility = fn2("workflows.config.checkReleaseConfigEligibility")(function* (input = {}) {
+  const options = releaseEligibilityConfigOptionsFromInput(input);
   const pathName = configPath(options);
   const contents = yield* readReleaseConfig(options);
   const intent = yield* parseReleaseIntent(contents, pathName);
@@ -101948,6 +102269,14 @@ class ReleaseDiagnosticsOptions extends Class4("ReleaseDiagnosticsOptions")({
   missingCiIsNotChecked: optionalKey2(Boolean3)
 }) {
 }
+var releaseDiagnosticsOptionsFromInput = (input = {}) => ReleaseDiagnosticsOptions.make({
+  ...releaseConfigFields(input),
+  ...input.target === undefined ? {} : { target: input.target },
+  ...input.provider === undefined ? {} : { provider: input.provider },
+  ...input.workflow === undefined ? {} : { workflow: input.workflow },
+  ...releaseFormatField(input),
+  ...input.missingCiIsNotChecked === undefined ? {} : { missingCiIsNotChecked: input.missingCiIsNotChecked }
+});
 var formatUnknown4 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var readOptionalEnv2 = (name) => string3(name).pipe(option2, map5(getOrUndefined));
 var envExists = fn2("diagnostics.envExists")(function* (name) {
@@ -102064,7 +102393,7 @@ var basename3 = (pathName) => {
   const parts = pathName.replaceAll("\\", "/").split("/");
   return parts[parts.length - 1] ?? pathName;
 };
-var workspacePath3 = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
+var workspacePath2 = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
 var configRoot2 = (path4, options) => {
   if (options.root !== undefined) {
     return options.root;
@@ -102074,14 +102403,8 @@ var configRoot2 = (path4, options) => {
   }
   return ".";
 };
-var planOptionsFromDiagnostics = (options) => PlanReleaseConfigOptions.make({
-  ...options.root === undefined ? {} : { root: options.root },
-  ...options.configPath === undefined ? {} : { configPath: options.configPath }
-});
-var validationOptionsFromDiagnostics = (options) => ValidateReleaseConfigFileOptions.make({
-  ...options.root === undefined ? {} : { root: options.root },
-  ...options.configPath === undefined ? {} : { configPath: options.configPath }
-});
+var planOptionsFromDiagnostics = (options) => PlanReleaseConfigOptions.make(releaseConfigFields(options));
+var validationOptionsFromDiagnostics = (options) => ValidateReleaseConfigFileOptions.make(releaseConfigFields(options));
 var inferredTrustedPublishingWorkflow = (plan) => {
   for (const target of plan.targets) {
     if (target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined) {
@@ -102227,7 +102550,7 @@ var readWorkflowChecks = fn2("diagnostics.readWorkflowChecks")(function* (plan, 
   const path4 = yield* Path;
   const root = configRoot2(path4, options);
   const workflowPath = options.workflow ?? defaultWorkflowPath(plan) ?? ".github/workflows/release.yml";
-  const absolutePath = workspacePath3(path4, root, workflowPath);
+  const absolutePath = workspacePath2(path4, root, workflowPath);
   const exists3 = yield* fs8.exists(absolutePath);
   if (!exists3) {
     return [
@@ -102242,17 +102565,20 @@ var readWorkflowChecks = fn2("diagnostics.readWorkflowChecks")(function* (plan, 
   const contents = yield* fs8.readFileString(absolutePath);
   return ciChecksForContents(plan, workflowPath, contents);
 });
-var checkAuthReleaseConfig = fn2("diagnostics.checkAuthReleaseConfig")(function* (options = ReleaseDiagnosticsOptions.make({})) {
+var checkAuthReleaseConfig = fn2("diagnostics.checkAuthReleaseConfig")(function* (input = {}) {
+  const options = releaseDiagnosticsOptionsFromInput(input);
   const plan = yield* planReleaseConfig(planOptionsFromDiagnostics(options));
   const checks = yield* authChecksForPlan(plan, options.target);
   return reportForPlan(plan, checks);
 });
-var checkCiReleaseConfig = fn2("diagnostics.checkCiReleaseConfig")(function* (options = ReleaseDiagnosticsOptions.make({})) {
+var checkCiReleaseConfig = fn2("diagnostics.checkCiReleaseConfig")(function* (input = {}) {
+  const options = releaseDiagnosticsOptionsFromInput(input);
   const plan = yield* planReleaseConfig(planOptionsFromDiagnostics(options));
   const checks = yield* readWorkflowChecks(plan, options);
   return reportForPlan(plan, checks);
 });
-var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (options = ReleaseDiagnosticsOptions.make({})) {
+var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (input = {}) {
+  const options = releaseDiagnosticsOptionsFromInput(input);
   const validation = yield* validateReleaseConfigFile(validationOptionsFromDiagnostics(options)).pipe(match5({
     onFailure: (error2) => check({
       id: "config:validation",
@@ -102290,8 +102616,7 @@ var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (opti
   const authChecks = yield* authChecksForPlan(planned.plan, options.target);
   const workflow = options.workflow ?? defaultWorkflowPath(planned.plan);
   const ciChecks = yield* readWorkflowChecks(planned.plan, ReleaseDiagnosticsOptions.make({
-    ...options.root === undefined ? {} : { root: options.root },
-    ...options.configPath === undefined ? {} : { configPath: options.configPath },
+    ...releaseConfigFields(options),
     ...workflow === undefined ? {} : { workflow },
     missingCiIsNotChecked: true
   }));
@@ -102411,7 +102736,29 @@ var formatTaggedError = (cause) => {
   return;
 };
 var formatActionError = (cause) => formatTaggedError(isCause2(cause) ? squash(cause) : cause) ?? formatUnknown5(isCause2(cause) ? squash(cause) : cause);
-var workspacePath4 = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
+var workspacePath3 = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
+var hasParentTraversal2 = (pathName) => pathName.split(/[\\/]+/).includes("..");
+var isInsideWorkspace = (path4, root, targetPath) => {
+  const relative = path4.relative(path4.resolve(root), targetPath);
+  return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
+};
+var workspaceOutputPath = (path4, options, pathName) => {
+  if (pathName.trim().length === 0 || hasParentTraversal2(pathName)) {
+    return fail6(ActionCommandError.make({
+      command: options.command,
+      reason: "plan-path must be non-empty and must not contain parent traversal."
+    }));
+  }
+  const rootPath = path4.resolve(options.root);
+  const targetPath = path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
+  if (isInsideWorkspace(path4, rootPath, targetPath)) {
+    return succeed6(targetPath);
+  }
+  return fail6(ActionCommandError.make({
+    command: options.command,
+    reason: "plan-path must resolve inside the action root."
+  }));
+};
 var planOptions = (options) => PlanReleaseConfigOptions.make({
   root: options.root,
   configPath: options.config,
@@ -102504,7 +102851,7 @@ var writeWorkflowEvidenceWithFailure = (plan, effect2) => effect2.pipe(matchEffe
 var collectEvidenceFiles = fn2("action.collectEvidenceFiles")(function* (root, evidenceDirectory) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const absoluteDirectory = workspacePath4(path4, root, evidenceDirectory);
+  const absoluteDirectory = workspacePath3(path4, root, evidenceDirectory);
   const exists3 = yield* fs8.exists(absoluteDirectory);
   if (!exists3) {
     return {
@@ -102554,7 +102901,7 @@ var runPlan = fn2("action.runPlan")(function* (options, io) {
   const path4 = yield* Path;
   const plan = yield* planReleaseConfig(planOptions(options));
   const rendered = yield* renderReleaseConfigPlan(planOptions(options));
-  const outputPath = workspacePath4(path4, options.root, options.planPath);
+  const outputPath = yield* workspaceOutputPath(path4, options, options.planPath);
   yield* io.writeFile(outputPath, rendered);
   if (options.writeStepSummary) {
     const markdown = options.format === "markdown" ? rendered : yield* renderReleaseConfigPlan(PlanReleaseConfigOptions.make({
@@ -105350,6 +105697,7 @@ var resolveHeaders = fn2("resolveHeaders")(function* (request2) {
   }
   return headers;
 });
+var responseHeaders = (headers) => Object.entries(headers).map(([name, value2]) => HttpHeader.make({ name, value: value2 }));
 var LiveReleaseHttpLayer = effect(ReleaseHttp)(gen2(function* () {
   const client3 = yield* HttpClient3;
   return {
@@ -105374,6 +105722,7 @@ var LiveReleaseHttpLayer = effect(ReleaseHttp)(gen2(function* () {
         request: request2,
         status: response.status,
         json: json2,
+        responseHeaders: responseHeaders(response.headers),
         startedAt,
         endedAt,
         durationMillis: Math.max(0, ended - started)
@@ -105457,6 +105806,16 @@ var ghCommand2 = (target, args2, includeAuth) => CommandSpec.make({
 var githubValidationStrategy = (target) => target.dryRunSupport === "none" ? "skipped" : "simulated-plan";
 var githubTargetCapabilities = (target) => targetCapabilitiesFor(target, githubValidationStrategy(target));
 var targetArtifacts2 = (target, model) => model.artifacts.filter((artifact2) => artifact2.consumers.includes(target.id));
+var rejectDirectoryAssets = fn2("github.rejectDirectoryAssets")(function* (target, model) {
+  const directoryAsset = targetArtifacts2(target, model).find((artifact2) => artifact2.format === "directory");
+  if (directoryAsset === undefined) {
+    return;
+  }
+  return yield* fail6(PlanConstructionError.make({
+    targetId: target.id,
+    reason: "GitHub release assets must be file-like, not directories."
+  }));
+});
 var pathBaseName2 = (path4) => {
   const parts = path4.replaceAll("\\", "/").split("/");
   return parts[parts.length - 1] ?? path4;
@@ -105567,6 +105926,7 @@ var planGitHubOperations = fn2("planGitHubOperations")(function* (target, model)
     }));
   }
   yield* rejectNoDryRunInStrictMode(target, model, "GitHub release target declares no dry-run support in strict mode.");
+  yield* rejectDirectoryAssets(target, model);
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible";
   const publishGate = publishRisk === "irreversible" ? irreversibleGate("Creating this GitHub release is externally visible and configured as immutable.") : executeGate("Creating or updating a GitHub release is externally visible.");
   return [

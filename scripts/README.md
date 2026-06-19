@@ -14,6 +14,7 @@ logic belongs in `src/`.
 - `check-package-exports.ts` validates package exports, declarations, side effects, and consumer type resolution.
 - `check-examples.ts` verifies every example can produce a text release plan, trusted-publishing npm examples/templates keep provenance and package-exists verification enabled, and every template stays schema/checker compatible.
 - `check-readme.ts` validates README fenced snippets and package import subpaths.
+- `check-action-bundle.ts` verifies the tracked GitHub Action bundle matches a fresh temporary build.
 
 Self-release dogfood scripts are app-owned under `apps/release-ts/scripts/`.
 Root package scripts delegate to those app scripts for release eligibility,

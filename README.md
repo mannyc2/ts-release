@@ -2,12 +2,39 @@
 
 `@mannyc1/ts-release` turns release intent into explicit, inspectable, repeatable publishing operations.
 
+The root package is the reusable TypeScript release library. The official Bun
+CLI app lives in `apps/release-ts`, and the root `cli` script delegates to that
+private first-party app.
+
 The default workflow is plan-first:
 
 ```sh
+bun run cli validate-config --config release.config.json
 bun run cli plan --config release.config.json --format text
 bun run cli run --config release.config.json --execute --approve-irreversible
 ```
+
+On GitHub Actions, the primary CI integration is the JavaScript action:
+
+```yaml
+- uses: mannyc2/ts-release-action@v1
+  with:
+    command: plan
+    config: release.config.json
+    format: markdown
+```
+
+The action calls the TypeScript workflow APIs directly and keeps target-native
+operations visible in the plan. It defaults to `runtime: bundled`; workspace
+runtime mode is deferred until a same-module-graph Node platform setup can be
+required without surprising users. The source currently lives in
+`apps/ts-release-action`.
+
+The action supports the review commands `plan`, `validate-config`, `status`,
+`doctor`, `check-auth`, and `check-ci`, plus the approved workflow commands
+`validate`, `run`, `resume`, and `reconcile`. Use `upload-evidence: true` when
+an action job should publish collected `.release/evidence` JSON files even after
+a command fails.
 
 The `run` command is the recommended release path: it renders generated files,
 validates every preflight, executes approved publish operations, and verifies
@@ -15,7 +42,15 @@ remote state in order. The primitive commands remain available for review and
 debug flows:
 
 ```sh
+bun run cli schema --out release-config.schema.json
+bun run cli init --template npm-github --package @scope/pkg --repo owner/repo
+bun run cli validate-config --config release.config.json --format text
 bun run cli plan --config release.config.json --format text
+bun run cli plan --config release.config.json --format summary
+bun run cli explain npm:npm-publish --config release.config.json
+bun run cli doctor --config release.config.json --format text
+bun run cli check-auth --config release.config.json --target npm --format text
+bun run cli check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
 bun run cli render --config release.config.json --execute
 bun run cli validate --config release.config.json
 bun run cli print --config release.config.json
@@ -49,27 +84,29 @@ import * as Effect from "effect/Effect"
 import { type ReleaseIntent } from "@mannyc1/ts-release/domain/release"
 import { createReleasePlan } from "@mannyc1/ts-release/planner/create-release-plan"
 import { validatePlan } from "@mannyc1/ts-release/planner/executor"
-import { makeBunReleaseWorkflowRuntimeLayer } from "@mannyc1/ts-release/runtime/bun"
 
-const planAndValidate = (intent: ReleaseIntent) =>
-  Effect.gen(function*() {
-    const plan = yield* createReleasePlan(intent)
-    const evidence = yield* validatePlan(plan)
-    return { plan, evidence }
-  }).pipe(
-    Effect.provide(makeBunReleaseWorkflowRuntimeLayer())
-  )
+export const planAndValidate = Effect.fn("docs.planAndValidate")(function*(intent: ReleaseIntent) {
+  const plan = yield* createReleasePlan(intent)
+  const evidence = yield* validatePlan(plan)
+  return { plan, evidence }
+})
 ```
 
-`createReleasePlan` needs a `TargetRegistry` layer. Command execution needs a `ReleaseCommandRunner` layer, while artifact checks and checksum generation use Effect Platform `FileSystem`, `Path`, and `Crypto` services directly. High-level config-file workflows, render writes, and evidence writes also need Effect Platform `FileSystem` and `Path` services. Workflows that verify HTTP evidence, such as `verifyPlan`, `runApprovedReleaseWorkflow`, or direct `VerifyHttpOperation` execution, also need a `ReleaseHttp` layer. `makeBunReleaseWorkflowRuntimeLayer` is the Bun runtime composition used by the published CLI; applications on other runtimes can compose `@mannyc1/ts-release/workflows/live`, `@mannyc1/ts-release/host/platform`, and their platform services at the edge. Tests can import `makeTestReleaseHttpLayer` from `@mannyc1/ts-release/host/http`. Internal Effect imports use deep module paths such as `effect/Effect` and `effect/Layer` to keep bundlers from depending on broad root-package analysis. See `ARCHITECTURE.md` for the module taxonomy.
+`createReleasePlan` needs a `TargetRegistry` layer. Command execution needs a `ReleaseCommandRunner` layer, while artifact checks and checksum generation use Effect Platform `FileSystem`, `Path`, and `Crypto` services directly. High-level config-file workflows, render writes, and evidence writes also need Effect Platform `FileSystem` and `Path` services. Workflows that verify HTTP evidence, such as `verifyPlan`, `runApprovedReleaseWorkflow`, or direct `VerifyHttpOperation` execution, also need a `ReleaseHttp` layer. Applications compose `@mannyc1/ts-release/workflows/live`, `@mannyc1/ts-release/host/platform`, and their platform services at the edge. Tests can import `makeTestReleaseHttpLayer` from `@mannyc1/ts-release/host/http`. Internal Effect imports use deep module paths such as `effect/Effect` and `effect/Layer` to keep bundlers from depending on broad root-package analysis. See `ARCHITECTURE.md` for the module taxonomy.
+
+Reusable operations in docs and examples should use `Effect.fn`; workflow bodies use `Effect.gen`. Durable data, options, tagged target variants, and typed errors use `Schema.Class`, `Schema.TaggedClass`, and `Schema.TaggedErrorClass`, with `.make(...)` for construction. Runtime layers are provided once at CLI, action, script, application, or test boundaries.
 
 ## TypeScript Workflows
 
 Applications can call high-level release workflows without argv arrays or CLI command names:
 
 ```ts
+import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import { makeBunReleaseWorkflowRuntimeLayer } from "@mannyc1/ts-release/runtime/bun"
+import * as Layer from "effect/Layer"
+import { makePlatformCommandRunnerLayer } from "@mannyc1/ts-release/host/platform"
+import { LiveReleaseWorkflowLayer } from "@mannyc1/ts-release/workflows/live"
 import {
   PlanReleaseConfigOptions,
   ReleaseExecutionOptions,
@@ -87,7 +124,17 @@ import {
 } from "@mannyc1/ts-release/workflows/config"
 
 const root = "/path/to/release-workspace"
-const RuntimeLayer = makeBunReleaseWorkflowRuntimeLayer({ root })
+const PlatformLayer = BunServices.layer
+const CommandLayer = makePlatformCommandRunnerLayer({ root }).pipe(
+  Layer.provideMerge(PlatformLayer)
+)
+const WorkflowLayer = LiveReleaseWorkflowLayer.pipe(
+  Layer.provideMerge(BunHttpClient.layer)
+)
+const RuntimeLayer = Layer.mergeAll(
+  CommandLayer,
+  WorkflowLayer
+)
 
 const textPlan = await Effect.runPromise(
   renderReleaseConfigPlan(
@@ -159,12 +206,13 @@ const reconciliationEvidence = await Effect.runPromise(
 )
 ```
 
-Use `@mannyc1/ts-release/workflows/config` for high-level config-file workflows, `@mannyc1/ts-release/workflows/evidence` for reusable evidence persistence, and `@mannyc1/ts-release/workflows/live` for the live target/HTTP layer. Bun callers can use `@mannyc1/ts-release/runtime/bun` for the same runtime layer used by the published binary. Node callers can provide Node platform services and a Node HTTP client instead. Use explicit lower-level planner, config, target, host, and domain subpaths when an application needs finer control over planning, execution, or test layers.
+Use `@mannyc1/ts-release/workflows/config` for high-level config-file workflows, `@mannyc1/ts-release/workflows/init` for data-first scaffolding, `@mannyc1/ts-release/workflows/diagnostics` for static doctor/auth/CI reports, `@mannyc1/ts-release/workflows/evidence` for reusable evidence persistence, and `@mannyc1/ts-release/workflows/live` for the live target/HTTP layer. Applications provide platform services at the edge, such as `FileSystem`, `Path`, `HttpClient`, and a `ReleaseCommandRunner` layer from `@mannyc1/ts-release/host/platform`. Use explicit lower-level planner, config, target, host, and domain subpaths when an application needs finer control over planning, execution, or test layers.
 
 ## Example Config
 
 ```json
 {
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
     "name": "@mannyc1/ts-release",
     "version": "0.1.0",
@@ -200,6 +248,7 @@ Use `@mannyc1/ts-release/workflows/config` for high-level config-file workflows,
         "verifyPackageExists": true
       },
       "access": "public",
+      "provenance": true,
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"
@@ -219,6 +268,8 @@ Use `@mannyc1/ts-release/workflows/config` for high-level config-file workflows,
   "evidenceDirectory": ".release/evidence/{version}"
 }
 ```
+
+The optional `$schema` key powers editor completion and does not change release behavior. Print the derived schema with `bun run cli schema`, and use `bun run cli validate-config` to check JSON syntax and release config shape without running target validators.
 
 Paths are release-workspace relative and may not be absolute or contain parent traversal. `evidenceDirectory` may include the literal `{version}` placeholder, which is resolved during planning so each release version can use its own evidence directory.
 
@@ -296,6 +347,24 @@ targets:
   - npm [NpmRegistryTarget] auth=trusted-publishing runs-in=ci provider=github-actions workflow=release.yml required-permission=id-token:write package-prerequisite=exists dry-run=native strategy=native-command mutability=immutable recovery=publish-new-version
 ```
 
+Summary plans provide a compact human first pass over risk, execution gates, target auth setup, and gated operation IDs:
+
+```sh
+bun run cli plan --config release.config.json --format summary
+```
+
+Markdown plans are intended for CI artifacts and PR review:
+
+```sh
+bun run cli plan --config release.config.json --format markdown > release-plan.md
+```
+
+Use `explain` when one operation needs a focused review without executing anything:
+
+```sh
+bun run cli explain npm:npm-publish --config release.config.json
+```
+
 JSON plans include the same data in a stable, CI-artifact-friendly shape, including `targetCapabilities`.
 
 GitHub release verification uses the GitHub REST API to check the release tag, title, draft flag, prerelease flag, and each uploaded artifact name.
@@ -310,9 +379,41 @@ GitHub release verification uses the GitHub REST API to check the release tag, t
 
 ## Public API
 
-The intentional public API is the explicit subpath list in `package.json`. The npm package exposes the `release` executable through `bin`; programmatic callers should import high-level workflows from `@mannyc1/ts-release/workflows/config` or use the explicit lower-level planner/config/target/status subpaths for finer control. `release/cli` and `release/cli/command` remain public for applications that need to embed the CLI command adapter.
+The intentional public API is the explicit subpath list in `package.json`. Programmatic callers should import high-level workflows from `@mannyc1/ts-release/workflows/config`, `@mannyc1/ts-release/workflows/init`, or `@mannyc1/ts-release/workflows/diagnostics`, or use the explicit lower-level planner/config/target/status subpaths for finer control. The official CLI command adapter lives in the private `apps/release-ts` app rather than the reusable root package API.
 
 The package export checker fails if a new export is added without being added to the intentional API list.
+
+## Templates
+
+Copyable starter configs live in `templates/`. They are authoring starting
+points with placeholder package, repository, tap, and bucket names. Runnable
+fixtures live in `examples/`.
+
+Config templates are intentionally narrow:
+
+- `npm-only` for an existing npm package using GitHub Actions trusted publishing.
+- `npm-github` for npm plus GitHub Releases.
+- `multi-target-homebrew` for npm, GitHub Releases, and a Homebrew tap.
+- `multi-target-scoop` for npm, GitHub Releases, and a Scoop bucket.
+
+```sh
+bun run cli init --template npm-github --package @scope/pkg --repo owner/repo
+bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --write
+bun run cli plan --config release.config.json --format text
+```
+
+The npm templates enable provenance and set `verifyPackageExists: true`, which
+adds a read-only `npm view <package>` validation before trusted publishing.
+Add `--github-actions` to include the action-first trusted-publishing workflow
+template in the preview or write set. Existing files are not overwritten unless
+`--overwrite` is also passed.
+
+Action-first GitHub templates live under `templates/github-actions/`. The raw
+CLI fallback workflow lives under `templates/github-actions-cli/` for portable
+CI systems and local debugging.
+
+Use `doctor`, `check-auth`, and `check-ci` after writing a template to inspect
+static readiness before any publish operation is approved.
 
 ## Examples
 
@@ -327,13 +428,17 @@ Runnable example configs live in `examples/`:
 - `examples/scoop-bucket`
 - `examples/non-strict-skips`
 
-`examples/multi-target` demonstrates one release coordinated across a release host, a package registry, and an installer catalog. Build the package first, then plan an example from its directory:
+`examples/multi-target` demonstrates one release coordinated across GitHub Releases, npm, and a Homebrew tap. The focused fixtures cover PyPI, Scoop, npm-only trusted publishing, token-based first npm publish, GitHub-only releases, and non-strict skipped validators. Build the package first, then plan an example from its directory:
 
 ```sh
 bun run build
 cd examples/multi-target
-bun ../../dist/cli/main.js plan --config release.config.json --format text
+bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --format text
 ```
+
+Trusted-publishing npm examples use provenance and `verifyPackageExists`. The
+`npm-first-publish` example intentionally stays token-based because npm trusted
+publishing can only be configured after the package already exists.
 
 ## Evidence
 
@@ -377,13 +482,13 @@ RELEASE_INTEGRATION_GITHUB=1 bun run test:integration:tools
 
 The first command validates npm adapter operations against the real `npm` CLI. The second also validates GitHub adapter readiness checks against the real `gh` CLI and requires `gh auth status` to succeed. GitHub release creation itself has no native dry-run; release validation is simulated from the deterministic plan before publish and verified against GitHub only after publish.
 
-Example configs are checked through the TypeScript workflow path:
+Example configs and templates are checked through the TypeScript workflow path:
 
 ```sh
 bun run check:examples
 ```
 
-This repository also includes a first release config at `release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` as a stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
+This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release scripts live under `apps/release-ts/scripts`, with root package scripts delegating to them. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` as a stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
 
 ```sh
 bun run check:self-release-config
@@ -396,10 +501,10 @@ The local non-publish gates for this package are:
 ```sh
 bun run check:release
 bun run release:artifacts
-bun dist/cli/main.js plan --config release.config.json --format text
+bun run cli plan --config apps/release-ts/release.config.json --format text
 ```
 
-`release:artifacts` writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs the approved release workflow on protected `main` when the package version has not already been published. The workflow uses npm trusted publishing with GitHub Actions OIDC instead of an npm token, and uploads `.release/evidence/**` for audit.
+`release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs the approved release workflow on protected `main` when the package version has not already been published. The workflow uses npm trusted publishing with GitHub Actions OIDC instead of an npm token, runs the app CLI with `--config apps/release-ts/release.config.json`, and uploads `.release/evidence/**` for audit.
 
 ### Local Release Auth
 
@@ -407,6 +512,7 @@ Use `.env.example` as the local credential contract. Export `GH_TOKEN`, or copy
 `.env.example` to `.env` and fill in token values locally. `.env` and `.npmrc`
 are ignored intentionally; keep token values out of commits. `.npmrc.example`
 shows npm's `${NPM_TOKEN}` interpolation form for token-based npm targets.
+`TWINE_USERNAME` and `TWINE_PASSWORD` are only needed for PyPI/Twine examples.
 
 For npmjs releases from GitHub Actions, prefer structured `trustedPublishing` on
 the npm target:
@@ -419,7 +525,9 @@ the npm target:
     "workflow": "release.yml",
     "packageExists": true,
     "verifyPackageExists": true
-  }
+  },
+  "access": "public",
+  "provenance": true
 }
 ```
 
@@ -432,6 +540,25 @@ publishing for an existing package and use a GitHub-hosted runner with
 `verifyPackageExists` to `true` adds a read-only `npm view <package>` validation
 check. Trusted publishing does not use `NPM_TOKEN` for `npm publish`; token-based
 npm targets may still use `.npmrc.example` and `NPM_TOKEN`.
+
+Diagnostics stay static by default and report confidence instead of pretending
+local checks prove provider setup:
+
+```sh
+bun run cli check-auth --config release.config.json --format text
+bun run cli check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
+bun run cli doctor --config release.config.json --format json
+```
+
+The reusable GitHub Actions trusted-publishing workflow template lives at
+`templates/github-actions/trusted-publishing.yml`. It uses
+`mannyc2/ts-release-action@v1` to record a Markdown plan, uploads review
+artifacts, and requires a protected `release` environment before running
+approved execution. npm trusted publishing uses OIDC, not `NPM_TOKEN`;
+`GH_TOKEN` is for GitHub Releases and API verification.
+
+The raw CLI fallback remains at
+`templates/github-actions-cli/trusted-publishing.yml`.
 
 ### First npm Publish Bootstrap
 

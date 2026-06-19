@@ -1,9 +1,9 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
-    "name": "release-example-npm-only",
+    "name": "@scope/pkg",
     "version": "0.1.0",
-    "commit": "example",
+    "commit": "abc123",
     "tag": "v0.1.0"
   },
   "artifacts": [
@@ -11,7 +11,7 @@
       "id": "package",
       "path": ".",
       "format": "directory",
-      "consumers": ["npm"]
+      "consumers": ["npm", "github"]
     }
   ],
   "targets": [
@@ -19,7 +19,7 @@
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
-      "packageName": "release-example-npm-only",
+      "packageName": "@scope/pkg",
       "packagePath": ".",
       "trustedPublishing": {
         "provider": "github-actions",
@@ -32,8 +32,19 @@
       "dryRunSupport": "native",
       "mutability": "immutable",
       "recovery": "publish-new-version"
+    },
+    {
+      "_tag": "GitHubReleaseTarget",
+      "id": "github",
+      "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false,
+      "dryRunSupport": "simulated",
+      "mutability": "mutable-release",
+      "recovery": "delete-and-recreate"
     }
   ],
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidenceDirectory": ".release/evidence/{version}"
 }

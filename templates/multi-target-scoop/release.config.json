@@ -1,0 +1,72 @@
+{
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
+  "identity": {
+    "name": "@scope/pkg",
+    "version": "0.1.0",
+    "commit": "abc123",
+    "tag": "v0.1.0"
+  },
+  "artifacts": [
+    {
+      "id": "package",
+      "path": ".",
+      "format": "directory",
+      "consumers": ["npm"]
+    },
+    {
+      "id": "archive",
+      "path": "artifacts/pkg-0.1.0.zip",
+      "format": "zip",
+      "consumers": ["github", "scoop"]
+    }
+  ],
+  "targets": [
+    {
+      "_tag": "NpmRegistryTarget",
+      "id": "npm",
+      "registry": "https://registry.npmjs.org",
+      "packageName": "@scope/pkg",
+      "packagePath": ".",
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "packageExists": true,
+        "verifyPackageExists": true
+      },
+      "access": "public",
+      "provenance": true,
+      "dryRunSupport": "native",
+      "mutability": "immutable",
+      "recovery": "publish-new-version"
+    },
+    {
+      "_tag": "GitHubReleaseTarget",
+      "id": "github",
+      "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false,
+      "dryRunSupport": "simulated",
+      "mutability": "mutable-release",
+      "recovery": "delete-and-recreate"
+    },
+    {
+      "_tag": "ScoopBucketTarget",
+      "id": "scoop",
+      "repository": "owner/scoop-bucket",
+      "manifestName": "pkg",
+      "manifestPath": ".release/generated/pkg.json",
+      "artifactId": "archive",
+      "homepage": "https://github.com/owner/repo",
+      "description": "Example Scoop manifest for pkg",
+      "license": "MIT",
+      "url": "https://github.com/owner/repo/releases/download/v0.1.0/pkg-0.1.0.zip",
+      "bin": "pkg.exe",
+      "dryRunSupport": "simulated",
+      "mutability": "mutable-index",
+      "recovery": "manual"
+    }
+  ],
+  "strict": true,
+  "evidenceDirectory": ".release/evidence/{version}"
+}

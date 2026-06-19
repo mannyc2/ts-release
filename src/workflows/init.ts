@@ -3,6 +3,13 @@ import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 import { DEFAULT_CONFIG_PATH, RELEASE_CONFIG_SCHEMA_ID } from "../config/schema.js"
+import {
+  hasParentTraversal,
+  isInsidePathBoundary,
+  resolveWorkspacePath,
+  validateWorkspaceWritePath
+} from "../internal/workspace-path.js"
+import { releaseConfigFields } from "./options.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -32,6 +39,21 @@ export class ReleaseInitOptions extends Schema.Class<ReleaseInitOptions>("Releas
   format: Schema.optionalKey(ReleaseInitFormat)
 }) {}
 
+export interface ReleaseInitInput {
+  readonly root?: string | undefined
+  readonly configPath?: string | undefined
+  readonly template?: ReleaseInitTemplateName | undefined
+  readonly package?: string | undefined
+  readonly repo?: string | undefined
+  readonly workflow?: string | undefined
+  readonly tap?: string | undefined
+  readonly bucket?: string | undefined
+  readonly githubActions?: boolean | undefined
+  readonly write?: boolean | undefined
+  readonly overwrite?: boolean | undefined
+  readonly format?: ReleaseInitFormat | undefined
+}
+
 export class ReleaseInitProposedFile extends Schema.Class<ReleaseInitProposedFile>("ReleaseInitProposedFile")({
   path: Schema.String,
   contents: Schema.String,
@@ -51,6 +73,23 @@ export class ReleaseInitWriteError extends Schema.TaggedErrorClass<ReleaseInitWr
 }) {}
 
 export const TS_RELEASE_ACTION_REFERENCE = "mannyc2/ts-release-action@v1"
+
+const releaseInitOptionsFromInput = (
+  input: ReleaseInitInput = {}
+): ReleaseInitOptions =>
+  ReleaseInitOptions.make({
+    ...releaseConfigFields(input),
+    ...(input.template === undefined ? {} : { template: input.template }),
+    ...(input.package === undefined ? {} : { package: input.package }),
+    ...(input.repo === undefined ? {} : { repo: input.repo }),
+    ...(input.workflow === undefined ? {} : { workflow: input.workflow }),
+    ...(input.tap === undefined ? {} : { tap: input.tap }),
+    ...(input.bucket === undefined ? {} : { bucket: input.bucket }),
+    ...(input.githubActions === undefined ? {} : { githubActions: input.githubActions }),
+    ...(input.write === undefined ? {} : { write: input.write }),
+    ...(input.overwrite === undefined ? {} : { overwrite: input.overwrite }),
+    ...(input.format === undefined ? {} : { format: input.format })
+  })
 
 interface NormalizedInitOptions {
   readonly root: string
@@ -173,7 +212,7 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
       id: "package",
       path: ".",
       format: "directory",
-      consumers: options.template === "npm-only" ? ["npm"] : ["npm", "github"]
+      consumers: ["npm"]
     }
   ]
   const targets: Array<Record<string, unknown>> = [configTargetNpm(options)]
@@ -281,7 +320,7 @@ export const renderGithubActionsTrustedPublishingWorkflow = (configPath: string)
 
 const workflowConfigPath = (path: Path.Path, options: NormalizedInitOptions): string => {
   const root = path.resolve(options.root)
-  const config = workspacePath(path, options.root, options.configPath)
+  const config = resolveWorkspacePath(path, options.root, options.configPath)
   const relative = path.relative(root, config).replaceAll("\\", "/")
   if (relative.length === 0 || relative === ".." || relative.startsWith("../")) {
     return path.basename(options.configPath)
@@ -306,25 +345,85 @@ const proposedFileSpecs = (path: Path.Path, options: NormalizedInitOptions): Rea
   return files
 }
 
-const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
-  path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
+const workspacePath = (
+  path: Path.Path,
+  root: string,
+  pathName: string
+): Effect.Effect<string, ReleaseInitWriteError> => {
+  const result = validateWorkspaceWritePath(path, root, pathName)
+  if (result._tag === "Ok") {
+    return Effect.succeed(result.path)
+  }
+  return Effect.fail(
+    ReleaseInitWriteError.make({
+      path: pathName,
+      reason: result.reason === "empty-or-parent-traversal"
+        ? "Path must be non-empty and must not contain parent traversal."
+        : "Path must resolve inside the workspace root."
+    })
+  )
+}
+
+const validateWorkflowFileName = (
+  workflow: string
+): Effect.Effect<void, ReleaseInitWriteError> => {
+  const hasPathSeparator = workflow.includes("/") || workflow.includes("\\")
+  const hasWorkflowExtension = workflow.endsWith(".yml") || workflow.endsWith(".yaml")
+  if (workflow.trim().length > 0 && !hasPathSeparator && !hasParentTraversal(workflow) && hasWorkflowExtension) {
+    return Effect.void
+  }
+  return Effect.fail(
+    ReleaseInitWriteError.make({
+      path: workflow,
+      reason: "Workflow must be a .yml or .yaml filename without path separators."
+    })
+  )
+}
+
+const validateInitOptions = Effect.fn("workflows.init.validateInitOptions")(function*(
+  path: Path.Path,
+  options: NormalizedInitOptions
+) {
+  yield* workspacePath(path, options.root, options.configPath)
+  if (!options.githubActions) {
+    return
+  }
+  yield* validateWorkflowFileName(options.workflow)
+  const workflowsRoot = resolveWorkspacePath(path, options.root, ".github/workflows")
+  const workflowPath = yield* workspacePath(path, options.root, `.github/workflows/${options.workflow}`)
+  if (isInsidePathBoundary(path, workflowsRoot, workflowPath)) {
+    return
+  }
+  return yield* Effect.fail(
+    ReleaseInitWriteError.make({
+      path: options.workflow,
+      reason: "Workflow output must resolve inside .github/workflows."
+    })
+  )
+})
 
 export const planReleaseInit = Effect.fn("workflows.init.planReleaseInit")(function*(
-  options: ReleaseInitOptions = ReleaseInitOptions.make({})
+  input: ReleaseInitInput = {}
 ) {
+  const options = releaseInitOptionsFromInput(input)
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const normalized = normalizeOptions(options, initRoot(path, options))
+  yield* validateInitOptions(path, normalized)
   const files = yield* Effect.forEach(
     proposedFileSpecs(path, normalized),
     (file) =>
-      fs.exists(workspacePath(path, normalized.root, file.path)).pipe(
-        Effect.map((alreadyExists) =>
-          ReleaseInitProposedFile.make({
-            path: file.path,
-            contents: file.contents,
-            alreadyExists
-          })
+      workspacePath(path, normalized.root, file.path).pipe(
+        Effect.flatMap((targetPath) =>
+          fs.exists(targetPath).pipe(
+            Effect.map((alreadyExists) =>
+              ReleaseInitProposedFile.make({
+                path: file.path,
+                contents: file.contents,
+                alreadyExists
+              })
+            )
+          )
         )
       )
   )
@@ -352,14 +451,15 @@ const writeInitFile = Effect.fn("workflows.init.writeInitFile")(function*(
   }
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const outputPath = workspacePath(path, root, file.path)
+  const outputPath = yield* workspacePath(path, root, file.path)
   yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true })
   yield* fs.writeFileString(outputPath, file.contents)
 })
 
 export const runReleaseInit = Effect.fn("workflows.init.runReleaseInit")(function*(
-  options: ReleaseInitOptions = ReleaseInitOptions.make({})
+  input: ReleaseInitInput = {}
 ) {
+  const options = releaseInitOptionsFromInput(input)
   const path = yield* Path.Path
   const normalized = normalizeOptions(options, initRoot(path, options))
   const plan = yield* planReleaseInit(options)
@@ -393,3 +493,7 @@ export const renderReleaseInitText = (plan: ReleaseInitPlan): string => {
 
 export const renderReleaseInitPlan = (plan: ReleaseInitPlan, format: ReleaseInitFormat = "text"): string =>
   format === "json" ? renderReleaseInitJson(plan) : renderReleaseInitText(plan)
+
+export const plan = planReleaseInit
+export const run = runReleaseInit
+export const renderPlan = renderReleaseInitPlan

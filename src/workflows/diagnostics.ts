@@ -13,6 +13,10 @@ import {
   ValidateReleaseConfigFileOptions,
   validateReleaseConfigFile
 } from "./config.js"
+import {
+  releaseConfigFields,
+  releaseFormatField
+} from "./options.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -52,6 +56,28 @@ export class ReleaseDiagnosticsOptions extends Schema.Class<ReleaseDiagnosticsOp
   format: Schema.optionalKey(ReleaseDiagnosticsFormat),
   missingCiIsNotChecked: Schema.optionalKey(Schema.Boolean)
 }) {}
+
+export interface ReleaseDiagnosticsInput {
+  readonly root?: string | undefined
+  readonly configPath?: string | undefined
+  readonly target?: string | undefined
+  readonly provider?: ReleaseCiProvider | undefined
+  readonly workflow?: string | undefined
+  readonly format?: ReleaseDiagnosticsFormat | undefined
+  readonly missingCiIsNotChecked?: boolean | undefined
+}
+
+const releaseDiagnosticsOptionsFromInput = (
+  input: ReleaseDiagnosticsInput = {}
+): ReleaseDiagnosticsOptions =>
+  ReleaseDiagnosticsOptions.make({
+    ...releaseConfigFields(input),
+    ...(input.target === undefined ? {} : { target: input.target }),
+    ...(input.provider === undefined ? {} : { provider: input.provider }),
+    ...(input.workflow === undefined ? {} : { workflow: input.workflow }),
+    ...releaseFormatField(input),
+    ...(input.missingCiIsNotChecked === undefined ? {} : { missingCiIsNotChecked: input.missingCiIsNotChecked })
+  })
 
 const formatUnknown = (cause: unknown): string =>
   cause instanceof Error ? cause.message : String(cause)
@@ -242,16 +268,10 @@ const configRoot = (path: Path.Path, options: ReleaseDiagnosticsOptions): string
 }
 
 const planOptionsFromDiagnostics = (options: ReleaseDiagnosticsOptions): PlanReleaseConfigOptions =>
-  PlanReleaseConfigOptions.make({
-    ...(options.root === undefined ? {} : { root: options.root }),
-    ...(options.configPath === undefined ? {} : { configPath: options.configPath })
-  })
+  PlanReleaseConfigOptions.make(releaseConfigFields(options))
 
 const validationOptionsFromDiagnostics = (options: ReleaseDiagnosticsOptions): ValidateReleaseConfigFileOptions =>
-  ValidateReleaseConfigFileOptions.make({
-    ...(options.root === undefined ? {} : { root: options.root }),
-    ...(options.configPath === undefined ? {} : { configPath: options.configPath })
-  })
+  ValidateReleaseConfigFileOptions.make(releaseConfigFields(options))
 
 const inferredTrustedPublishingWorkflow = (plan: ReleasePlan): string | undefined => {
   for (const target of plan.targets) {
@@ -478,24 +498,27 @@ const readWorkflowChecks = Effect.fn("diagnostics.readWorkflowChecks")(function*
 })
 
 export const checkAuthReleaseConfig = Effect.fn("diagnostics.checkAuthReleaseConfig")(function*(
-  options: ReleaseDiagnosticsOptions = ReleaseDiagnosticsOptions.make({})
+  input: ReleaseDiagnosticsInput = {}
 ) {
+  const options = releaseDiagnosticsOptionsFromInput(input)
   const plan = yield* planReleaseConfig(planOptionsFromDiagnostics(options))
   const checks = yield* authChecksForPlan(plan, options.target)
   return reportForPlan(plan, checks)
 })
 
 export const checkCiReleaseConfig = Effect.fn("diagnostics.checkCiReleaseConfig")(function*(
-  options: ReleaseDiagnosticsOptions = ReleaseDiagnosticsOptions.make({})
+  input: ReleaseDiagnosticsInput = {}
 ) {
+  const options = releaseDiagnosticsOptionsFromInput(input)
   const plan = yield* planReleaseConfig(planOptionsFromDiagnostics(options))
   const checks = yield* readWorkflowChecks(plan, options)
   return reportForPlan(plan, checks)
 })
 
 export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(function*(
-  options: ReleaseDiagnosticsOptions = ReleaseDiagnosticsOptions.make({})
+  input: ReleaseDiagnosticsInput = {}
 ) {
+  const options = releaseDiagnosticsOptionsFromInput(input)
   const validation = yield* validateReleaseConfigFile(validationOptionsFromDiagnostics(options)).pipe(
     Effect.match({
       onFailure: (error) => check({
@@ -542,8 +565,7 @@ export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(
   const ciChecks = yield* readWorkflowChecks(
     planned.plan,
     ReleaseDiagnosticsOptions.make({
-      ...(options.root === undefined ? {} : { root: options.root }),
-      ...(options.configPath === undefined ? {} : { configPath: options.configPath }),
+      ...releaseConfigFields(options),
       ...(workflow === undefined ? {} : { workflow }),
       missingCiIsNotChecked: true
     })
@@ -600,3 +622,8 @@ export const renderReleaseDiagnostics = (
       return renderReleaseDiagnosticsText(report)
   }
 }
+
+export const checkAuth = checkAuthReleaseConfig
+export const checkCi = checkCiReleaseConfig
+export const doctor = doctorReleaseConfig
+export const render = renderReleaseDiagnostics

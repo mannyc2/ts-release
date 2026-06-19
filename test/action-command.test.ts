@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test"
 import * as BunServices from "@effect/platform-bun/BunServices"
-import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
@@ -22,123 +21,18 @@ import {
   operationFingerprint,
   PublishCommandOperation
 } from "../src/domain/operation.js"
-import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { commandKey } from "../src/host/test.js"
 import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { homebrewConfig, minimalConfig } from "./helpers.js"
-
-const noOpConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  artifacts: [],
-  targets: [],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
-const partialWorkflowConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  artifacts: [
-    {
-      id: "package",
-      path: ".",
-      format: "directory",
-      consumers: ["npm"]
-    },
-    {
-      id: "archive",
-      path: "artifacts/release-0.1.0.tgz",
-      format: "tarball",
-      consumers: ["homebrew"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "HomebrewTapTarget",
-      id: "homebrew",
-      repository: "owner/homebrew-tap",
-      formulaName: "release",
-      formulaPath: ".release/generated/release.rb",
-      artifactId: "archive",
-      dryRunSupport: "simulated",
-      mutability: "mutable-index",
-      recovery: "manual"
-    },
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
-      registry: "https://registry.npmjs.org",
-      packageName: "release",
-      packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
-    }
-  ],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
-const reconcileConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  artifacts: [
-    {
-      id: "github-asset",
-      path: "dist/release.tgz",
-      format: "tarball",
-      consumers: ["github"]
-    },
-    {
-      id: "package",
-      path: ".",
-      format: "directory",
-      consumers: ["npm"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "GitHubReleaseTarget",
-      id: "github",
-      repository: "owner/repo",
-      tokenEnv: "GH_TOKEN",
-      draft: false,
-      prerelease: false,
-      dryRunSupport: "simulated",
-      mutability: "mutable-release",
-      recovery: "delete-and-recreate"
-    },
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
-      registry: "https://registry.npmjs.org",
-      packageName: "release",
-      packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
-    }
-  ],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
+import {
+  homebrewConfig,
+  makeObservableCommandRunnerLayer,
+  minimalConfig,
+  noOpConfig,
+  partialWorkflowConfig,
+  reconcileConfig
+} from "./helpers.js"
 
 interface ActionOptionsOverrides {
   readonly command?: ActionCommand
@@ -161,12 +55,6 @@ interface FakeActionIo extends ActionIo {
   readonly files: Map<string, string>
   readonly failures: Array<string>
   readonly infos: Array<string>
-}
-
-interface CliCommandResponse {
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
 }
 
 const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): ActionOptions =>
@@ -232,53 +120,6 @@ const makeArtifactClient = () => {
   return { client, uploads }
 }
 
-const makeObservableCommandRunnerLayer = (options: {
-  readonly env: ReadonlyMap<string, string>
-  readonly commands: ReadonlyMap<string, CliCommandResponse>
-}) => {
-  const envRecord: Record<string, string> = {}
-  for (const [name, value] of options.env) {
-    envRecord[name] = value
-  }
-
-  return Layer.mergeAll(
-    ReleaseCommandRunnerTestLayer({
-      runCommand: (command) =>
-        Effect.gen(function*() {
-          const missing: Array<string> = []
-          for (const name of command.requiredEnv) {
-            if (!options.env.has(name)) {
-              missing.push(name)
-            }
-          }
-          if (missing.length > 0) {
-            return yield* Effect.fail(
-              CommandRunnerError.make({
-                operation: "runCommand",
-                reason: `Missing required environment variables: ${missing.join(", ")}`
-              })
-            )
-          }
-          const response = options.commands.get(commandKey(command)) ?? {
-            exitCode: 0,
-            stdout: "",
-            stderr: ""
-          }
-          return CommandResult.make({
-            command,
-            exitCode: response.exitCode,
-            stdout: response.stdout,
-            stderr: response.stderr,
-            startedAt: "2026-06-18T00:00:00.000Z",
-            endedAt: "2026-06-18T00:00:00.001Z",
-            durationMillis: 1
-          })
-        })
-    }),
-    ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
-  )
-}
-
 describe("ts-release action", () => {
   test("declares Node action metadata inputs and outputs", async () => {
     const metadata = await readFile("apps/ts-release-action/action.yml", "utf8")
@@ -310,6 +151,8 @@ describe("ts-release action", () => {
       "target_count:",
       "evidence_directory:",
       "plan_path:",
+      "should_release:",
+      "eligibility_status:",
       "status:"
     ]) {
       expect(metadata).toContain(output)
@@ -338,6 +181,104 @@ describe("ts-release action", () => {
       expect(io.outputs.get("status")).toBe("passed")
       expect([...io.files.values()][0]).toContain("# Release Plan release@0.1.0")
       expect(io.summaries.join("\n")).toContain("npm:npm-publish")
+      expect(io.failures).toEqual([])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("eligibility command exposes skipped decisions as successful outputs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-eligibility-"))
+    try {
+      await writeFile(join(root, "release.config.json"), JSON.stringify({
+        identity: {
+          name: "@scope/pkg",
+          version: "1.2.3",
+          commit: "abc123",
+          tag: "v1.2.3"
+        },
+        releaseDecision: {
+          _tag: "ConventionalCommitsReleaseDecision",
+          packagePath: "package.json",
+          tagTemplate: "v{version}"
+        },
+        artifacts: [],
+        targets: [
+          {
+            _tag: "NpmRegistryTarget",
+            id: "npm",
+            registry: "https://registry.npmjs.org",
+            packageName: "@scope/pkg",
+            packagePath: ".",
+            tokenEnv: "NPM_TOKEN",
+            dryRunSupport: "native",
+            mutability: "immutable",
+            recovery: "publish-new-version"
+          },
+          {
+            _tag: "GitHubReleaseTarget",
+            id: "github",
+            repository: "owner/repo",
+            tokenEnv: "GH_TOKEN",
+            draft: false,
+            dryRunSupport: "simulated",
+            mutability: "mutable-release",
+            recovery: "delete-and-recreate"
+          }
+        ],
+        strict: true,
+        evidenceDirectory: ".release/evidence"
+      }))
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "@scope/pkg",
+        version: "1.2.3"
+      }))
+      const gitListTags = CommandSpec.make({
+        executable: "git",
+        args: ["tag", "--list", "--merged", "HEAD"],
+        requiredEnv: [],
+        redactedEnv: []
+      })
+      const gitLog = CommandSpec.make({
+        executable: "git",
+        args: ["log", "--format=%B%x1e"],
+        requiredEnv: [],
+        redactedEnv: []
+      })
+      const io = makeFakeActionIo()
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"],
+            ["GH_TOKEN", "gh_secret"]
+          ]),
+          commands: new Map([
+            [commandKey(gitListTags), {
+              exitCode: 0,
+              stdout: "",
+              stderr: ""
+            }],
+            [commandKey(gitLog), {
+              exitCode: 0,
+              stdout: "docs: update readme\x1e",
+              stderr: ""
+            }]
+          ])
+        }),
+        LiveTargetRegistryLayer,
+        makeTestReleaseHttpLayer({ responses: new Map() }),
+        BunServices.layer
+      )
+
+      await runAction(
+        actionOptions(root, { command: "eligibility", format: "json" }),
+        io,
+        layer
+      )
+
+      expect(io.outputs.get("status")).toBe("passed")
+      expect(io.outputs.get("should_release")).toBe("false")
+      expect(io.outputs.get("eligibility_status")).toBe("skipped")
       expect(io.failures).toEqual([])
     } finally {
       await rm(root, { recursive: true, force: true })

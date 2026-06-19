@@ -19,13 +19,15 @@ export const hasParentTraversal = (pathName: string): boolean =>
 
 export const resolveWorkspacePath = (path: Path.Path, root: string, pathName: string): string => {
   const rootPath = path.resolve(root)
-  return path.isAbsolute(pathName)
-    ? path.resolve(pathName)
-    : path.resolve(rootPath, pathName)
+  if (path.isAbsolute(pathName)) {
+    return path.resolve(pathName)
+  }
+  return path.resolve(rootPath, pathName)
 }
 
 export const isInsidePathBoundary = (path: Path.Path, root: string, targetPath: string): boolean => {
-  const relative = path.relative(path.resolve(root), targetPath)
+  const rootPath = path.resolve(root)
+  const relative = path.relative(rootPath, targetPath)
   return relative.length === 0 || (!relative.startsWith("..") && !path.isAbsolute(relative))
 }
 
@@ -40,9 +42,8 @@ export const validateWorkspaceWritePath = (
       reason: "empty-or-parent-traversal"
     }
   }
-  const rootPath = path.resolve(root)
-  const targetPath = resolveWorkspacePath(path, rootPath, pathName)
-  if (isInsidePathBoundary(path, rootPath, targetPath)) {
+  const targetPath = resolveWorkspacePath(path, root, pathName)
+  if (isInsidePathBoundary(path, root, targetPath)) {
     return {
       _tag: "Ok",
       path: targetPath

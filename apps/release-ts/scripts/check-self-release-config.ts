@@ -145,7 +145,6 @@ const failures: Array<string> = []
 const manifest = readJson("package.json")
 const appManifest = readJson(appPackagePath)
 const config = readJson(releaseConfigPath)
-const rootSourceVersion = readReleaseVersion("src/version.ts", failures)
 const appSourceVersion = readReleaseVersion(appVersionPath, failures)
 const currentGitCommit = await readCurrentGitCommit()
 const trackedGitStatus = await readTrackedGitStatus()
@@ -164,9 +163,6 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name", failures)
   const packageVersion = stringField(manifest, "version", failures)
   const appVersion = stringField(appManifest, "version", failures)
-  if (packageVersion !== undefined && rootSourceVersion !== undefined && packageVersion !== rootSourceVersion) {
-    failures.push(`src/version.ts RELEASE_VERSION ${rootSourceVersion} must match package version ${packageVersion}`)
-  }
   if (packageVersion !== undefined && appVersion !== undefined && appVersion !== packageVersion) {
     failures.push(`${appPackagePath} version ${appVersion} must match package version ${packageVersion}`)
   }

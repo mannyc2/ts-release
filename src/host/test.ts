@@ -23,6 +23,7 @@ export interface TestCommandRunnerOptions {
   readonly env?: ReadonlyMap<string, string> | undefined
   readonly commands?: ReadonlyMap<string, TestCommandResponse> | undefined
   readonly timestamps?: ReadonlyArray<string> | undefined
+  readonly pathLayer?: Layer.Layer<Path.Path> | undefined
 }
 
 export const commandKey = (command: CommandSpec): string =>
@@ -74,18 +75,39 @@ const directoryInfo: FileSystem.File.Info = {
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
+const normalizedSeparators = (path: string): string =>
+  path.replaceAll("\\", "/")
+
+const addVariant = (variants: Set<string>, path: string): void => {
+  variants.add(path)
+  variants.add(normalizedSeparators(path))
+}
+
+const addRelativePathVariants = (variants: Set<string>, cwd: string, path: string): void => {
+  const normalizedCwd = normalizedSeparators(cwd)
+  const normalizedPath = normalizedSeparators(path)
+  if (normalizedPath === normalizedCwd) {
+    variants.add(".")
+    return
+  }
+  const cwdPrefix = `${normalizedCwd}/`
+  if (normalizedPath.startsWith(cwdPrefix)) {
+    variants.add(normalizedPath.slice(cwdPrefix.length))
+  }
+}
+
 const pathVariants = (path: string): ReadonlyArray<string> => {
+  const variants = new Set<string>()
+  addVariant(variants, path)
   const cwd = globalThis.process?.cwd()
   if (cwd === undefined) {
-    return [path]
+    return [...variants]
   }
   if (path === cwd) {
-    return [path, "."]
+    variants.add(".")
   }
-  const cwdPrefix = `${cwd}/`
-  return path.startsWith(cwdPrefix)
-    ? [path, path.slice(cwdPrefix.length)]
-    : [path]
+  addRelativePathVariants(variants, cwd, path)
+  return [...variants]
 }
 
 const getFixtureFile = (files: ReadonlyMap<string, string>, path: string): string | undefined => {
@@ -181,7 +203,7 @@ export const makeTestCommandRunnerLayer = (
           files.set(path, data)
         })
     }),
-    Path.layer,
+    options.pathLayer ?? Path.layer,
     Layer.succeed(Crypto.Crypto)(
       Crypto.make({
         randomBytes: (size) => new Uint8Array(size),

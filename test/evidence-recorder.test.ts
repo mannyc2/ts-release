@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import {
@@ -39,6 +40,14 @@ import {
 } from "../src/planner/evidence-recorder.js"
 import { runOperation } from "../src/planner/executor.js"
 import { runEffect } from "./helpers.js"
+
+const makeWorkspaceTestCommandRunnerLayer = (
+  options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}
+) =>
+  makeTestCommandRunnerLayer({
+    pathLayer: BunPath.layer,
+    ...options
+  })
 
 const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlan =>
   ReleasePlan.make({
@@ -107,7 +116,7 @@ describe("evidence recorder", () => {
       gate: noApprovalGate("read-only"),
       command
     })
-    const layer = makeTestCommandRunnerLayer({
+    const layer = makeWorkspaceTestCommandRunnerLayer({
       env: new Map([["TOKEN", "super_secret"]]),
       commands: new Map([
         [commandKey(command), {
@@ -151,7 +160,7 @@ describe("evidence recorder", () => {
       ]
     })
     const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
+      makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
       makeTestReleaseHttpLayer({
         responses: new Map([
           [httpRequestKey(request), {
@@ -197,7 +206,7 @@ describe("evidence recorder", () => {
       skipped: true,
       severity: "info"
     })
-    const layer = makeTestCommandRunnerLayer({ directories: new Set(["."]) })
+    const layer = makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) })
 
     const renderEvidence = await runEffect(
       runOperation(
@@ -235,7 +244,7 @@ describe("evidence recorder", () => {
         operation,
         ExecutionApproval.make({ execute: true, approveIrreversible: false })
       ).pipe(Effect.flip),
-      makeTestCommandRunnerLayer({ directories: new Set(["."]) })
+      makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) })
     )
 
     expect(error._tag).toBe("WorkspaceWriteError")
@@ -263,7 +272,7 @@ describe("evidence recorder", () => {
       ]
     })
     const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer(),
+      makeWorkspaceTestCommandRunnerLayer(),
       makeTestReleaseHttpLayer({
         responses: new Map([
           [httpRequestKey(request), {
@@ -288,7 +297,7 @@ describe("evidence recorder", () => {
     const bundle = evidenceBundle(plan)
     const read = await runEffect(
       readEvidenceBundle(".release/evidence/render.json"),
-      makeTestCommandRunnerLayer({
+      makeWorkspaceTestCommandRunnerLayer({
         files: new Map([
           [".release/evidence/render.json", renderEvidenceJson(bundle)]
         ])
@@ -302,7 +311,7 @@ describe("evidence recorder", () => {
   test("returns undefined for missing optional evidence", async () => {
     const read = await runEffect(
       tryReadEvidenceBundle(".release/evidence/render.json"),
-      makeTestCommandRunnerLayer()
+      makeWorkspaceTestCommandRunnerLayer()
     )
 
     expect(read).toBeUndefined()
@@ -311,7 +320,7 @@ describe("evidence recorder", () => {
   test("fails invalid evidence JSON with EvidenceReadError", async () => {
     const error = await runEffect(
       readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip),
-      makeTestCommandRunnerLayer({
+      makeWorkspaceTestCommandRunnerLayer({
         files: new Map([
           [".release/evidence/render.json", "{not json"]
         ])
@@ -324,7 +333,7 @@ describe("evidence recorder", () => {
   test("fails wrong evidence schema with EvidenceReadError", async () => {
     const error = await runEffect(
       readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip),
-      makeTestCommandRunnerLayer({
+      makeWorkspaceTestCommandRunnerLayer({
         files: new Map([
           [".release/evidence/render.json", JSON.stringify({ schemaVersion: "wrong" })]
         ])
@@ -362,7 +371,7 @@ describe("evidence recorder", () => {
     }
     const error = await runEffect(
       readEvidenceBundle(".release/evidence/validation.json").pipe(Effect.flip),
-      makeTestCommandRunnerLayer({
+      makeWorkspaceTestCommandRunnerLayer({
         files: new Map([
           [".release/evidence/validation.json", `${JSON.stringify(rawEvidence)}\n`]
         ])
@@ -376,7 +385,7 @@ describe("evidence recorder", () => {
     const plan = makePlan()
     const error = await runEffect(
       writeEvidenceBundle("../outside.json", evidenceBundle(plan), ".").pipe(Effect.flip),
-      makeTestCommandRunnerLayer({ directories: new Set(["."]) })
+      makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) })
     )
 
     expect(error._tag).toBe("EvidenceWriteError")
@@ -390,7 +399,7 @@ describe("evidence recorder", () => {
         evidenceBundle(plan, [evidenceRecord("first")]),
         evidenceBundle(plan, [evidenceRecord("second")])
       ),
-      makeTestCommandRunnerLayer()
+      makeWorkspaceTestCommandRunnerLayer()
     )
 
     expect(merged.records.map((record) => record.id)).toEqual(["first:execution", "second:execution"])
@@ -404,7 +413,7 @@ describe("evidence recorder", () => {
         evidenceBundle(plan),
         evidenceBundle(makePlan("other", "9.9.9"))
       ).pipe(Effect.flip),
-      makeTestCommandRunnerLayer()
+      makeWorkspaceTestCommandRunnerLayer()
     )
 
     expect(error._tag).toBe("EvidenceReadError")

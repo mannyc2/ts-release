@@ -12,7 +12,7 @@ import {
   renderPlanSummary
 } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { minimalConfig, runEffect } from "./helpers.js"
+import { homebrewConfig, minimalConfig, runEffect, scoopConfig } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -31,6 +31,36 @@ const gitHeadCommand = CommandSpec.make({
   requiredEnv: [],
   redactedEnv: []
 })
+
+const manualChecksumConfig = (checksum: { readonly algorithm: "sha256" | "sha512"; readonly value: string }) =>
+  JSON.stringify({
+    identity: {
+      name: "release",
+      version: "0.1.0",
+      commit: "abc123",
+      tag: "v0.1.0"
+    },
+    artifacts: [
+      {
+        id: "archive",
+        path: "artifacts/archive.tgz",
+        format: "tarball",
+        consumers: [],
+        checksum
+      }
+    ],
+    targets: [],
+    strict: true,
+    evidenceDirectory: ".release/evidence"
+  })
+
+const ChecksumLayer = Layer.mergeAll(
+  makeTestCommandRunnerLayer({
+    files: new Map([["artifacts/archive.tgz", "manual archive"]]),
+    directories: new Set(["."])
+  }),
+  LiveTargetRegistryLayer
+)
 
 describe("planner", () => {
   test("creates stable plans with ordered operation phases", async () => {
@@ -179,6 +209,55 @@ describe("planner", () => {
     }
   })
 
+  test("rejects empty path fields during normalization", async () => {
+    const cases: ReadonlyArray<{
+      readonly label: string
+      readonly config: string
+      readonly field: string
+    }> = [
+      {
+        label: "evidence directory",
+        config: minimalConfig.replace("\"evidenceDirectory\":\".release/evidence\"", "\"evidenceDirectory\":\"\""),
+        field: "evidenceDirectory"
+      },
+      {
+        label: "artifact path",
+        config: minimalConfig.replace("\"path\":\".\"", "\"path\":\"\""),
+        field: "artifacts.package.path"
+      },
+      {
+        label: "npm package path",
+        config: minimalConfig.replace("\"packagePath\":\".\"", "\"packagePath\":\"\""),
+        field: "targets.npm.packagePath"
+      },
+      {
+        label: "Homebrew formula path",
+        config: homebrewConfig({ formulaPath: "" }),
+        field: "targets.homebrew.formulaPath"
+      },
+      {
+        label: "Scoop manifest path",
+        config: scoopConfig({ manifestPath: "" }),
+        field: "targets.scoop.manifestPath"
+      }
+    ]
+
+    for (const item of cases) {
+      const error = await runEffect(
+        Effect.gen(function*() {
+          const intent = yield* parseReleaseIntent(item.config)
+          return yield* createReleasePlan(intent)
+        }).pipe(Effect.flip),
+        TestLayer
+      )
+
+      expect(error._tag, item.label).toBe("ReleaseNormalizationError")
+      if (error._tag === "ReleaseNormalizationError") {
+        expect(error.field).toBe(item.field)
+      }
+    }
+  })
+
   test("rejects missing artifacts", async () => {
     const missingConfig = minimalConfig.replace("\"path\":\".\"", "\"path\":\"missing.tgz\"")
       .replace("\"format\":\"directory\"", "\"format\":\"tarball\"")
@@ -191,6 +270,49 @@ describe("planner", () => {
     expect(exit._tag).toBe("Failure")
     if (exit._tag === "Failure") {
       expect(String(exit.cause)).toContain("ReleaseNormalizationError")
+    }
+  })
+
+  test("preserves matching manual sha256 checksums", async () => {
+    const checksum = "6d616e75616c2061726368697665"
+    const plan = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(manualChecksumConfig({ algorithm: "sha256", value: checksum }))
+        return yield* createReleasePlan(intent)
+      }),
+      ChecksumLayer
+    )
+
+    expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: checksum })
+  })
+
+  test("rejects mismatched manual sha256 checksums", async () => {
+    const error = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(manualChecksumConfig({ algorithm: "sha256", value: "00" }))
+        return yield* createReleasePlan(intent)
+      }).pipe(Effect.flip),
+      ChecksumLayer
+    )
+
+    expect(error._tag).toBe("ReleaseNormalizationError")
+    if (error._tag === "ReleaseNormalizationError") {
+      expect(error.field).toBe("artifacts.archive.checksum")
+    }
+  })
+
+  test("rejects manual non-sha256 checksums during artifact inventory", async () => {
+    const error = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(manualChecksumConfig({ algorithm: "sha512", value: "sha512:manual" }))
+        return yield* createReleasePlan(intent)
+      }).pipe(Effect.flip),
+      ChecksumLayer
+    )
+
+    expect(error._tag).toBe("ReleaseNormalizationError")
+    if (error._tag === "ReleaseNormalizationError") {
+      expect(error.field).toBe("artifacts.archive.checksum")
     }
   })
 

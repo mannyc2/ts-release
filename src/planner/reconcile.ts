@@ -118,6 +118,9 @@ const githubReleaseApiUrl = (target: GitHubReleaseTarget, tag: string): string =
 const githubReleaseListApiUrl = (target: GitHubReleaseTarget): string =>
   `https://api.github.com/repos/${target.repository}/releases?per_page=100`
 
+const githubReleaseListApiPath = (target: GitHubReleaseTarget): string =>
+  `/repos/${target.repository}/releases`
+
 const githubApiHeaders = (): ReadonlyArray<HttpHeader> => [
   HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
   HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
@@ -147,10 +150,10 @@ const githubReleaseRequestSpec = (
     redactedEnv: envNames(target)
   })
 
-const githubReleaseListRequestSpec = (target: GitHubReleaseTarget): HttpRequestSpec =>
+const githubReleaseListRequestSpec = (target: GitHubReleaseTarget, url: string = githubReleaseListApiUrl(target)): HttpRequestSpec =>
   HttpRequestSpec.make({
     method: "GET",
-    url: githubReleaseListApiUrl(target),
+    url,
     headers: githubApiHeaders(),
     envHeaders: githubApiEnvHeaders(target),
     requiredEnv: envNames(target),
@@ -236,37 +239,111 @@ const releaseStateFromResponse = (
     })
 }
 
+const linkHeaderNextUrl = (value: string): string | undefined => {
+  for (const entry of value.split(",")) {
+    const parts = entry.split(";").map((part) => part.trim())
+    const urlPart = parts[0]
+    if (urlPart === undefined || !urlPart.startsWith("<") || !urlPart.endsWith(">")) {
+      continue
+    }
+    const hasNextRelation = parts.slice(1).some((part) => part.toLowerCase() === "rel=\"next\"")
+    if (hasNextRelation) {
+      return urlPart.slice(1, -1)
+    }
+  }
+  return undefined
+}
+
+const responseNextUrl = (headers: ReadonlyArray<HttpHeader>): string | undefined => {
+  for (const header of headers) {
+    if (header.name.toLowerCase() !== "link") {
+      continue
+    }
+    const nextUrl = linkHeaderNextUrl(header.value)
+    if (nextUrl !== undefined) {
+      return nextUrl
+    }
+  }
+  return undefined
+}
+
+const validateReleaseListNextUrl = Effect.fn("validateReleaseListNextUrl")(function*(
+  target: GitHubReleaseTarget,
+  url: string
+) {
+  const parsed = yield* Effect.try({
+    try: () => new URL(url),
+    catch: () => remoteStateError(target, "GitHub release list next link is not a valid URL.")
+  })
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname !== "api.github.com" ||
+    parsed.pathname !== githubReleaseListApiPath(target)
+  ) {
+    return yield* Effect.fail(
+      remoteStateError(target, "GitHub release list next link does not point to the expected releases endpoint.")
+    )
+  }
+  return parsed.toString()
+})
+
+const releaseListNextUrl = Effect.fn("releaseListNextUrl")(function*(
+  target: GitHubReleaseTarget,
+  headers: ReadonlyArray<HttpHeader>
+) {
+  const nextUrl = responseNextUrl(headers)
+  return nextUrl === undefined
+    ? undefined
+    : yield* validateReleaseListNextUrl(target, nextUrl)
+})
+
 const inspectGitHubReleaseListForTag = Effect.fn("inspectGitHubReleaseListForTag")(function*(
   target: GitHubReleaseTarget,
   plan: ReleasePlan
 ) {
   const tag = githubReleaseTag(plan)
-  const request = githubReleaseListRequestSpec(target)
   const http = yield* ReleaseHttp
-  const result = yield* http.runJson(request).pipe(
-    Effect.mapError((error) => remoteStateError(target, error.reason))
-  )
+  const visitedUrls = new Set<string>()
+  let request = githubReleaseListRequestSpec(target)
 
-  if (result.status !== 200) {
-    return yield* Effect.fail(
-      remoteStateError(target, `GitHub release list lookup returned HTTP ${result.status}.`)
+  while (true) {
+    const result = yield* http.runJson(request).pipe(
+      Effect.mapError((error) => remoteStateError(target, error.reason))
     )
+
+    if (result.status !== 200) {
+      return yield* Effect.fail(
+        remoteStateError(target, `GitHub release list lookup returned HTTP ${result.status}.`)
+      )
+    }
+
+    const releases = yield* decodeGitHubReleaseResponses(result.json).pipe(
+      Effect.mapError((error) =>
+        remoteStateError(target, `GitHub release list response did not match the expected schema: ${error.message}`)
+      )
+    )
+    const release = releases.find((item) => item.tag_name === tag)
+
+    if (release !== undefined) {
+      return releaseStateFromResponse(target, release)
+    }
+
+    visitedUrls.add(request.url)
+    const nextUrl = yield* releaseListNextUrl(target, result.responseHeaders)
+    if (nextUrl === undefined) {
+      return GitHubReleaseMissing.make({
+        targetId: target.id,
+        repository: target.repository,
+        tag
+      })
+    }
+    if (visitedUrls.has(nextUrl)) {
+      return yield* Effect.fail(
+        remoteStateError(target, "GitHub release list pagination loop detected.")
+      )
+    }
+    request = githubReleaseListRequestSpec(target, nextUrl)
   }
-
-  const releases = yield* decodeGitHubReleaseResponses(result.json).pipe(
-    Effect.mapError((error) =>
-      remoteStateError(target, `GitHub release list response did not match the expected schema: ${error.message}`)
-    )
-  )
-  const release = releases.find((item) => item.tag_name === tag)
-
-  return release === undefined
-    ? GitHubReleaseMissing.make({
-      targetId: target.id,
-      repository: target.repository,
-      tag
-    })
-    : releaseStateFromResponse(target, release)
 })
 
 export const inspectGitHubReleaseState = Effect.fn("inspectGitHubReleaseState")(function*(

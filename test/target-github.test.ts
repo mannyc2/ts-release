@@ -7,6 +7,7 @@ import {
   GitHubReleaseMissing,
   GitHubReleasePublished
 } from "../src/domain/remote-state.js"
+import { HttpHeader } from "../src/domain/operation.js"
 import { ReleasePlan } from "../src/domain/release.js"
 import { GitHubReleaseTarget } from "../src/domain/target.js"
 import { httpRequestKey, makeTestReleaseHttpLayer } from "../src/host/http.js"
@@ -24,6 +25,9 @@ import { minimalConfig, releaseConfig, releaseIdentity, runEffect } from "./help
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
     directories: new Set(["."]),
+    files: new Map([
+      ["artifacts/release-0.1.0.tgz", "fake archive"]
+    ]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]
@@ -61,10 +65,18 @@ const githubReleaseRequestKey = (target: GitHubReleaseTarget, tag: string): stri
     redactedEnv: target.tokenEnv === undefined ? [] : [target.tokenEnv]
   })
 
-const githubReleaseListRequestKey = (target: GitHubReleaseTarget): string =>
+const githubReleaseListUrl = (target: GitHubReleaseTarget, page: number | undefined = undefined): string => {
+  const url = `https://api.github.com/repos/${target.repository}/releases?per_page=100`
+  return page === undefined ? url : `${url}&page=${page}`
+}
+
+const githubReleaseListRequestKey = (
+  target: GitHubReleaseTarget,
+  url: string = githubReleaseListUrl(target)
+): string =>
   httpRequestKey({
     method: "GET",
-    url: `https://api.github.com/repos/${target.repository}/releases?per_page=100`,
+    url,
     headers: [
       { name: "Accept", value: "application/vnd.github+json" },
       { name: "X-GitHub-Api-Version", value: "2022-11-28" }
@@ -122,8 +134,8 @@ describe("GitHub target", () => {
       artifacts: [
         {
           id: "github-asset",
-          path: ".",
-          format: "directory",
+          path: "artifacts/release-0.1.0.tgz",
+          format: "tarball",
           consumers: ["github"]
         },
         {
@@ -171,7 +183,7 @@ describe("GitHub target", () => {
         "--prerelease",
         "--notes",
         "ship it",
-        "."
+        "artifacts/release-0.1.0.tgz"
       ])
     }
     expect(text).toContain(
@@ -188,7 +200,7 @@ describe("GitHub target", () => {
         "--prerelease",
         "--notes",
         "ship it",
-        "."
+        "artifacts/release-0.1.0.tgz"
       ])}`
     )
     expect(npmOnlyAsset).toBeUndefined()
@@ -226,12 +238,45 @@ describe("GitHub target", () => {
         _tag: "HttpJsonArrayObjectFieldEqualsCheck",
         path: ["assets"],
         field: "name",
-        expected: "."
+        expected: "release-0.1.0.tgz"
       })
     }
     expect(text).toContain("http: GET https://api.github.com/repos/owner/repo/releases/tags/v0.1.0")
     expect(text).toContain("expect: status 200, checks 5")
     expect(text).not.toContain("gh release view")
+  })
+
+  test("rejects directory artifacts consumed by GitHub releases", async () => {
+    const githubConfig = releaseConfig({
+      artifacts: [
+        {
+          id: "github-asset",
+          path: ".",
+          format: "directory",
+          consumers: ["github"]
+        }
+      ],
+      targets: [
+        {
+          _tag: "GitHubReleaseTarget",
+          id: "github",
+          repository: "owner/repo",
+          tokenEnv: "GH_TOKEN",
+          draft: true,
+          prerelease: false,
+          dryRunSupport: "simulated",
+          mutability: "mutable-release",
+          recovery: "delete-and-recreate"
+        }
+      ]
+    })
+
+    const error = await runEffect(createPlan(githubConfig).pipe(Effect.flip), TestLayer)
+
+    expect(error._tag).toBe("PlanConstructionError")
+    if (error._tag === "PlanConstructionError") {
+      expect(error.reason).toBe("GitHub release assets must be file-like, not directories.")
+    }
   })
 
   test("inspects GitHub remote state through HTTP responses", async () => {
@@ -304,6 +349,64 @@ describe("GitHub target", () => {
     }
   })
 
+  test("follows paginated GitHub release lists to find draft releases", async () => {
+    const plan = await runEffect(createPlan(), TestLayer)
+    const target = findGitHubTarget(plan)
+    const secondPageUrl = githubReleaseListUrl(target, 2)
+    const state = await runEffect(
+      inspectGitHubReleaseState(target, plan),
+      Layer.mergeAll(
+        TestLayer,
+        makeTestReleaseHttpLayer({
+          responses: new Map([
+            [githubReleaseRequestKey(target, "v0.1.0"), {
+              status: 404,
+              json: {
+                message: "Not Found"
+              }
+            }],
+            [githubReleaseListRequestKey(target), {
+              status: 200,
+              responseHeaders: [
+                HttpHeader.make({
+                  name: "Link",
+                  value: `<${secondPageUrl}>; rel="next"`
+                })
+              ],
+              json: [
+                {
+                  tag_name: "v0.0.9",
+                  name: "release 0.0.9",
+                  draft: true,
+                  prerelease: false,
+                  assets: []
+                }
+              ]
+            }],
+            [githubReleaseListRequestKey(target, secondPageUrl), {
+              status: 200,
+              json: [
+                {
+                  tag_name: "v0.1.0",
+                  name: "release 0.1.0",
+                  draft: true,
+                  prerelease: false,
+                  assets: [{ name: "." }]
+                }
+              ]
+            }]
+          ])
+        })
+      )
+    )
+
+    expect(state._tag).toBe("GitHubReleaseDraft")
+    if (state._tag === "GitHubReleaseDraft") {
+      expect(state.assetNames).toEqual(["."])
+      expect(state.draft).toBe(true)
+    }
+  })
+
   test("classifies missing GitHub releases from 404 responses and empty release lists", async () => {
     const plan = await runEffect(createPlan(), TestLayer)
     const target = findGitHubTarget(plan)
@@ -331,6 +434,42 @@ describe("GitHub target", () => {
     expect(state._tag).toBe("GitHubReleaseMissing")
   })
 
+  test("rejects GitHub release list next links outside the releases endpoint", async () => {
+    const plan = await runEffect(createPlan(), TestLayer)
+    const target = findGitHubTarget(plan)
+    const error = await runEffect(
+      inspectGitHubReleaseState(target, plan).pipe(Effect.flip),
+      Layer.mergeAll(
+        TestLayer,
+        makeTestReleaseHttpLayer({
+          responses: new Map([
+            [githubReleaseRequestKey(target, "v0.1.0"), {
+              status: 404,
+              json: {
+                message: "Not Found"
+              }
+            }],
+            [githubReleaseListRequestKey(target), {
+              status: 200,
+              responseHeaders: [
+                HttpHeader.make({
+                  name: "Link",
+                  value: "<https://api.github.com/repos/owner/repo/issues?page=2>; rel=\"next\""
+                })
+              ],
+              json: []
+            }]
+          ])
+        })
+      )
+    )
+
+    expect(error._tag).toBe("RemoteStateInspectionError")
+    if (error._tag === "RemoteStateInspectionError") {
+      expect(error.reason).toContain("expected releases endpoint")
+    }
+  })
+
   test("decides GitHub reconciliation actions for matching and mismatched states", async () => {
     const publicGithubConfig = minimalConfig.replace("\"draft\":true", "\"draft\":false")
     const plan = await runEffect(createPlan(publicGithubConfig), TestLayer)
@@ -342,7 +481,7 @@ describe("GitHub target", () => {
       title: "release 0.1.0",
       draft: false,
       prerelease: false,
-      assetNames: ["."]
+      assetNames: []
     })
     const draft = GitHubReleaseDraft.make({
       targetId: "github",
@@ -351,7 +490,7 @@ describe("GitHub target", () => {
       title: "release 0.1.0",
       draft: true,
       prerelease: false,
-      assetNames: ["."]
+      assetNames: []
     })
     const mismatchedAssets = GitHubReleaseDraft.make({
       targetId: "github",

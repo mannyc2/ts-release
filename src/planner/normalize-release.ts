@@ -36,19 +36,20 @@ const validateUnique = (
     )
   )
 
-const validateSafeRelativePath = (
+const validateNonEmptySafeRelativePath = (
   field: string,
   value: string
 ): Effect.Effect<void, ReleaseNormalizationError> => {
+  const isEmpty = value.trim().length === 0
   const isAbsolute = value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value)
   const hasTraversal = value.split(/[\\/]+/).includes("..")
-  if (!isAbsolute && !hasTraversal) {
+  if (!isEmpty && !isAbsolute && !hasTraversal) {
     return Effect.void
   }
   return Effect.fail(
     ReleaseNormalizationError.make({
       field,
-      reason: "Path must be relative and must not contain parent traversal."
+      reason: "Path must be non-empty, relative, and must not contain parent traversal."
     })
   )
 }
@@ -140,12 +141,12 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   yield* validateUnique(intent.artifacts.map((artifact) => artifact.id), "artifacts.id")
   yield* validateUnique(intent.targets.map((target) => target.id), "targets.id")
   for (const artifact of intent.artifacts) {
-    yield* validateSafeRelativePath(`artifacts.${artifact.id}.path`, artifact.path)
+    yield* validateNonEmptySafeRelativePath(`artifacts.${artifact.id}.path`, artifact.path)
   }
   for (const target of intent.targets) {
     if (target._tag === "NpmRegistryTarget") {
       yield* validateNonEmptyString(`targets.${target.id}.packageName`, target.packageName)
-      yield* validateSafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath)
+      yield* validateNonEmptySafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath)
       if (target.trustedPublishing !== undefined && target.tokenEnv !== undefined) {
         return yield* Effect.fail(
           ReleaseNormalizationError.make({
@@ -162,15 +163,15 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
       }
     }
     if (target._tag === "HomebrewTapTarget") {
-      yield* validateSafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath)
+      yield* validateNonEmptySafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath)
       if (target.tapDirectory !== undefined) {
-        yield* validateSafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory)
+        yield* validateNonEmptySafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory)
       }
     }
     if (target._tag === "ScoopBucketTarget") {
-      yield* validateSafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath)
+      yield* validateNonEmptySafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath)
       if (target.bucketDirectory !== undefined) {
-        yield* validateSafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory)
+        yield* validateNonEmptySafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory)
       }
     }
   }
@@ -180,7 +181,7 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
     intent.evidenceDirectory ?? ".release/evidence",
     identity.version
   )
-  yield* validateSafeRelativePath("evidenceDirectory", evidenceDirectory)
+  yield* validateNonEmptySafeRelativePath("evidenceDirectory", evidenceDirectory)
   const inventory = yield* Effect.forEach(intent.artifacts, (artifact) => inventoryArtifact(root, artifact))
 
   return ReleaseModel.make({

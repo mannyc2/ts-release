@@ -21,6 +21,7 @@ import {
 import { ReleasePlan } from "../domain/release.js"
 import { CommandRunnerError, ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
+import { validateWorkspaceWritePath } from "../internal/workspace-path.js"
 import {
   appendEvidenceRecord,
   commandEvidenceFromResult,
@@ -63,8 +64,24 @@ const isNpmVersionVerificationOperation = (
   operation.command.executable === "npm" &&
   operation.command.args[0] === "view"
 
-const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
-  path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
+const workspacePath = (
+  path: Path.Path,
+  root: string,
+  pathName: string
+): Effect.Effect<string, WorkspaceWriteError> => {
+  const result = validateWorkspaceWritePath(path, root, pathName)
+  if (result._tag === "Ok") {
+    return Effect.succeed(result.path)
+  }
+  return Effect.fail(
+    WorkspaceWriteError.make({
+      path: pathName,
+      reason: result.reason === "empty-or-parent-traversal"
+        ? "Path must be non-empty and must not contain parent traversal."
+        : "Path must resolve inside the workspace root."
+    })
+  )
+}
 
 const writeWorkspaceFile = Effect.fn("writeWorkspaceFile")(function*(
   root: string,
@@ -73,7 +90,7 @@ const writeWorkspaceFile = Effect.fn("writeWorkspaceFile")(function*(
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const targetPath = workspacePath(path, root, pathName)
+  const targetPath = yield* workspacePath(path, root, pathName)
   yield* Effect.gen(function*() {
     yield* fs.makeDirectory(path.dirname(targetPath), { recursive: true })
     yield* fs.writeFileString(targetPath, contents)

@@ -35,7 +35,10 @@ const gitHeadCommand = CommandSpec.make({
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
     directories: new Set(["."]),
-    files: new Map(releaseArtifactFixtures()),
+    files: new Map([
+      ["package.json", JSON.stringify({ name: "@mannyc1/ts-release", version: "0.0.3" })],
+      ...releaseArtifactFixtures()
+    ]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]

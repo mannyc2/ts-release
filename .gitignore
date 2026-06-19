@@ -1,4 +1,6 @@
 dist/
+!apps/ts-release-action/dist/
+!apps/ts-release-action/dist/index.js
 coverage/
 node_modules/
 .repos/

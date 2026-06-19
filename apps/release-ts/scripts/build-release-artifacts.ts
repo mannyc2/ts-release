@@ -1,7 +1,7 @@
 import * as BunRuntime from "@effect/platform-bun/BunRuntime"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { mkdir, readFile, rm, stat } from "node:fs/promises"
+import { mkdir, readFile, rm } from "node:fs/promises"
 import { basename, dirname, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
@@ -170,28 +170,6 @@ const prepareReleaseArtifactsDirectory = Effect.fn("scripts.prepareReleaseArtifa
   return directory
 })
 
-const verifyBuiltCli = Effect.fn("scripts.verifyBuiltCli")(function*(root: string) {
-  const cliPath = resolve(root, "dist/cli/main.js")
-  const info = yield* Effect.tryPromise({
-    try: () => stat(cliPath),
-    catch: (cause) =>
-      ReleaseArtifactsBuildError.make({
-        operation: "verifyBuiltCli",
-        path: cliPath,
-        reason: `dist/cli/main.js is required before packaging; run bun run build. ${formatUnknown(cause)}`
-      })
-  })
-  if (!info.isFile()) {
-    return yield* Effect.fail(
-      ReleaseArtifactsBuildError.make({
-        operation: "verifyBuiltCli",
-        path: cliPath,
-        reason: "dist/cli/main.js is required before packaging; run bun run build."
-      })
-    )
-  }
-})
-
 const runBunPack = Effect.fn("scripts.runBunPack")(function*(
   root: string,
   identity: ReleasePackageIdentity
@@ -233,7 +211,7 @@ const compileCliArtifact = Effect.fn("scripts.compileCliArtifact")(function*(
 ) {
   const output = yield* Effect.promise(() =>
     Bun.build({
-      entrypoints: [resolve(root, "src/cli/main.ts")],
+      entrypoints: [resolve(root, "apps/release-ts/src/cli/main.ts")],
       compile: {
         target: target.bunTarget,
         outfile: resolve(root, target.outfile)
@@ -257,7 +235,6 @@ export const buildReleaseArtifacts = Effect.fn("scripts.buildReleaseArtifacts")(
 ) {
   const identity = yield* readPackageIdentity(root)
   yield* prepareReleaseArtifactsDirectory(root)
-  yield* verifyBuiltCli(root)
   const tarball = yield* runBunPack(root, identity)
   const cliArtifacts = releaseCliArtifactTargets(identity.version)
   for (const target of cliArtifacts) {

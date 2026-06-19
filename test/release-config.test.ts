@@ -10,7 +10,8 @@ import { renderPlanText } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { runEffect } from "./helpers.js"
 
-const config = readFileSync("release.config.json", "utf8")
+const selfReleaseConfigPath = "apps/release-ts/release.config.json"
+const config = readFileSync(selfReleaseConfigPath, "utf8")
 
 const releaseArtifactFiles = [
   ".release/artifacts/mannyc1-ts-release-0.0.2.tgz",
@@ -54,7 +55,7 @@ describe("repository release config", () => {
   test("plans npm and GitHub publication as gated operations", async () => {
     const plan = await runEffect(
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(config, "release.config.json")
+        const intent = yield* parseReleaseIntent(config, selfReleaseConfigPath)
         return yield* createReleasePlan(intent)
       }),
       TestLayer
@@ -102,7 +103,7 @@ describe("repository release config", () => {
     const unsafeConfig = config.replace("\".release/evidence/{version}\"", "\"../evidence/{version}\"")
     const error = await runEffect(
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(unsafeConfig, "release.config.json")
+        const intent = yield* parseReleaseIntent(unsafeConfig, selfReleaseConfigPath)
         return yield* createReleasePlan(intent)
       }).pipe(Effect.flip),
       TestLayer

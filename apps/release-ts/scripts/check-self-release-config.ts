@@ -6,6 +6,9 @@ import { packageTarballArtifactPath, releaseCliArtifactTargets } from "./build-r
 const root = cwd()
 const currentCommitSelector = "HEAD"
 const placeholderCommits = new Set(["replace-with-release-commit", "0000000"])
+const appPackagePath = "apps/release-ts/package.json"
+const appVersionPath = "apps/release-ts/src/version.ts"
+const releaseConfigPath = "apps/release-ts/release.config.json"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -21,15 +24,18 @@ const readText = (path: string): string | undefined => {
   }
 }
 
-const readReleaseVersion = (failures: Array<string>): string | undefined => {
-  const contents = readText("src/version.ts")
+const readReleaseVersion = (
+  path: string,
+  failures: Array<string>
+): string | undefined => {
+  const contents = readText(path)
   if (contents === undefined) {
-    failures.push("src/version.ts must define RELEASE_VERSION")
+    failures.push(`${path} must define RELEASE_VERSION`)
     return undefined
   }
   const match = contents.match(/export\s+const\s+RELEASE_VERSION\s*=\s*"([^"]+)"/)
   if (match === null || match[1] === undefined || match[1].length === 0) {
-    failures.push("src/version.ts must export RELEASE_VERSION as a non-empty string literal")
+    failures.push(`${path} must export RELEASE_VERSION as a non-empty string literal`)
     return undefined
   }
   return match[1]
@@ -137,30 +143,42 @@ const envExampleDocuments = (contents: string, name: string): boolean =>
 
 const failures: Array<string> = []
 const manifest = readJson("package.json")
-const config = readJson("release.config.json")
-const releaseVersion = readReleaseVersion(failures)
+const appManifest = readJson(appPackagePath)
+const config = readJson(releaseConfigPath)
+const rootSourceVersion = readReleaseVersion("src/version.ts", failures)
+const appSourceVersion = readReleaseVersion(appVersionPath, failures)
 const currentGitCommit = await readCurrentGitCommit()
 const trackedGitStatus = await readTrackedGitStatus()
 
 if (!isRecord(manifest)) {
   failures.push("package.json must be a JSON object")
 }
+if (!isRecord(appManifest)) {
+  failures.push(`${appPackagePath} must be a JSON object`)
+}
 if (!isRecord(config)) {
-  failures.push("release.config.json must be a JSON object")
+  failures.push(`${releaseConfigPath} must be a JSON object`)
 }
 
-if (isRecord(manifest) && isRecord(config)) {
+if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name", failures)
   const packageVersion = stringField(manifest, "version", failures)
-  if (packageVersion !== undefined && releaseVersion !== undefined && packageVersion !== releaseVersion) {
-    failures.push(`src/version.ts RELEASE_VERSION ${releaseVersion} must match package version ${packageVersion}`)
+  const appVersion = stringField(appManifest, "version", failures)
+  if (packageVersion !== undefined && rootSourceVersion !== undefined && packageVersion !== rootSourceVersion) {
+    failures.push(`src/version.ts RELEASE_VERSION ${rootSourceVersion} must match package version ${packageVersion}`)
+  }
+  if (packageVersion !== undefined && appVersion !== undefined && appVersion !== packageVersion) {
+    failures.push(`${appPackagePath} version ${appVersion} must match package version ${packageVersion}`)
+  }
+  if (appVersion !== undefined && appSourceVersion !== undefined && appVersion !== appSourceVersion) {
+    failures.push(`${appVersionPath} RELEASE_VERSION ${appSourceVersion} must match app package version ${appVersion}`)
   }
   if (packageName === "release") {
     failures.push("package name `release` is already published on npm; use the confirmed scoped package name")
   }
   const identity = field(config, "identity")
   if (!isRecord(identity)) {
-    failures.push("release.config.json identity must be an object")
+    failures.push(`${releaseConfigPath} identity must be an object`)
   } else {
     const releaseName = stringField(identity, "name", failures)
     const releaseVersion = stringField(identity, "version", failures)
@@ -192,7 +210,7 @@ if (isRecord(manifest) && isRecord(config)) {
 
   const artifacts = field(config, "artifacts")
   if (!Array.isArray(artifacts)) {
-    failures.push("release.config.json artifacts must be an array")
+    failures.push(`${releaseConfigPath} artifacts must be an array`)
   } else if (packageName !== undefined && packageVersion !== undefined) {
     const artifactRecords = collectArtifactRecords(artifacts, failures)
     for (const artifact of artifactRecords.values()) {
@@ -225,7 +243,7 @@ if (isRecord(manifest) && isRecord(config)) {
 
   const targets = field(config, "targets")
   if (!Array.isArray(targets)) {
-    failures.push("release.config.json targets must be an array")
+    failures.push(`${releaseConfigPath} targets must be an array`)
   } else {
     const tokenEnvNames = collectTokenEnvNames(targets)
     const envExample = readText(".env.example")

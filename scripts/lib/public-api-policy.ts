@@ -21,15 +21,13 @@ export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "host/http-live.ts",
   "host/platform.ts",
   "host/test.ts",
-  "runtime/bun.ts",
   "workflows/live.ts",
   "targets/live.ts",
   "targets/npm.ts",
   "targets/github.ts",
   "targets/homebrew.ts",
   "targets/pypi.ts",
-  "targets/scoop.ts",
-  "cli/main.ts"
+  "targets/scoop.ts"
 ]
 
 export const bannedExternalPrefixes: ReadonlyArray<string> = [
@@ -40,8 +38,6 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
 
 export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: ".", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
-  { subpath: "./cli", allowedRuntimeSourcePaths: ["cli/command.ts"], allowedExternalPrefixes: ["effect/unstable/cli"], allowsBunGlobal: false },
-  { subpath: "./cli/command", allowedRuntimeSourcePaths: ["cli/command.ts"], allowedExternalPrefixes: ["effect/unstable/cli"], allowsBunGlobal: false },
   { subpath: "./config/errors", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/load", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/schema", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
@@ -61,26 +57,9 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./planner/evidence-recorder", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/executor", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/normalize-release", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./planner/release-eligibility", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/render-plan", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/status", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
-  {
-    subpath: "./runtime/bun",
-    allowedRuntimeSourcePaths: [
-      "runtime/bun.ts",
-      "host/platform.ts",
-      "host/http-live.ts",
-      "host/http.ts",
-      "workflows/live.ts",
-      "targets/live.ts",
-      "targets/npm.ts",
-      "targets/github.ts",
-      "targets/homebrew.ts",
-      "targets/pypi.ts",
-      "targets/scoop.ts"
-    ],
-    allowedExternalPrefixes: ["@effect/platform-bun"],
-    allowsBunGlobal: false
-  },
   { subpath: "./targets/adapter", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/github", allowedRuntimeSourcePaths: ["targets/github.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/homebrew", allowedRuntimeSourcePaths: ["targets/homebrew.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
@@ -102,7 +81,9 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./targets/registry", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/scoop", allowedRuntimeSourcePaths: ["targets/scoop.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/config", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./workflows/diagnostics", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/evidence", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./workflows/init", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   {
     subpath: "./workflows/live",
     allowedRuntimeSourcePaths: ["workflows/live.ts", "host/http-live.ts", "host/http.ts", "targets/live.ts", "targets/npm.ts", "targets/github.ts", "targets/homebrew.ts", "targets/pypi.ts", "targets/scoop.ts"],

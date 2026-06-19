@@ -7,17 +7,28 @@ import * as Command from "effect/unstable/cli/Command"
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { parseReleaseIntent } from "../src/config/load.js"
 import {
   PlanReleaseConfigOptions,
   planReleaseConfig,
   renderReleaseConfigPlan
 } from "../src/workflows/config.js"
-import { cli } from "../src/cli/command.js"
+import {
+  checkAuthReleaseConfig,
+  checkCiReleaseConfig,
+  ReleaseDiagnosticsOptions
+} from "../src/workflows/diagnostics.js"
+import {
+  planReleaseInit,
+  ReleaseInitOptions,
+  renderGithubActionsTrustedPublishingWorkflow
+} from "../src/workflows/init.js"
+import { cli } from "../apps/release-ts/src/cli/command.js"
 import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
 import { CommandSpec } from "../src/domain/operation.js"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { makeBunReleaseWorkflowRuntimeLayer } from "../src/runtime/bun.js"
+import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { commandKey } from "../src/host/test.js"
 import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
@@ -197,20 +208,30 @@ const makeObservableCommandRunnerLayer = (options: {
   )
 }
 
+const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
+  stream === null ? "" : await new Response(stream).text()
+
 describe("cli command", () => {
   test("exports the root release command", () => {
     expect(cli.name).toBe("release")
     expect(cli.subcommands.flatMap((group) => group.commands.map((command) => command.name)).sort()).toEqual([
+      "check-auth",
+      "check-ci",
+      "doctor",
       "eligibility",
       "execute",
+      "explain",
+      "init",
       "plan",
       "print",
       "reconcile",
       "render",
       "resume",
       "run",
+      "schema",
       "status",
       "validate",
+      "validate-config",
       "verify"
     ])
   })
@@ -246,6 +267,71 @@ describe("cli command", () => {
     }
   })
 
+  test("schema command writes parseable JSON Schema", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-schema-"))
+    try {
+      const out = join(root, "release-config.schema.json")
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "schema",
+          "--out",
+          out
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      const parsed: unknown = JSON.parse(await readFile(out, "utf8"))
+      expect(typeof parsed).toBe("object")
+      expect(JSON.stringify(parsed)).toContain("ReleaseIntent")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("validate-config command checks config shape only", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-validate-config-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "validate-config",
+          "--config",
+          configPath,
+          "--format",
+          "json"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("root cli script preserves caller-relative config paths", async () => {
+    const subprocess = Bun.spawn([
+      "bun",
+      "run",
+      "cli",
+      "validate-config",
+      "--config",
+      "apps/release-ts/release.config.json",
+      "--format",
+      "text"
+    ], {
+      cwd: process.cwd(),
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe"
+    })
+    const stdout = streamText(subprocess.stdout)
+    const stderr = streamText(subprocess.stderr)
+    const exitCode = await subprocess.exited
+
+    expect(await stdout).toContain("valid: true")
+    expect(await stderr).not.toContain("ConfigReadError")
+    expect(exitCode).toBe(0)
+  })
+
   test("renders release configs through the explicit config workflow", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-root-"))
     try {
@@ -264,6 +350,350 @@ describe("cli command", () => {
       )
 
       expect(output).toContain("release@0.1.0")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("renders summary and markdown plan formats through the workflow", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-plan-formats-"))
+    try {
+      await writeFile(join(root, "release.config.json"), minimalConfig)
+
+      const summary = await Effect.runPromise(
+        renderReleaseConfigPlan(
+          PlanReleaseConfigOptions.make({
+            root,
+            configPath: "release.config.json",
+            format: "summary"
+          })
+        ).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+      const markdown = await Effect.runPromise(
+        renderReleaseConfigPlan(
+          PlanReleaseConfigOptions.make({
+            root,
+            configPath: "release.config.json",
+            format: "markdown"
+          })
+        ).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      expect(summary).toContain("gated operations")
+      expect(markdown).toContain("### npm:npm-publish")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("explain command reports one operation without executing it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-explain-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "explain",
+          "npm:npm-publish",
+          "--config",
+          configPath
+        ]).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      const missing = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "explain",
+          "missing:operation",
+          "--config",
+          configPath
+        ]).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+      expect(missing._tag).toBe("Failure")
+      if (missing._tag === "Failure") {
+        expect(String(missing.cause)).toContain("PlanOperationNotFoundError")
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("init previews without writing and writes only when approved", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-"))
+    try {
+      const configPath = join(root, "release.config.json")
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--template",
+          "npm-github",
+          "--package",
+          "@scope/pkg",
+          "--repo",
+          "owner/repo",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+      await expect(readFile(configPath, "utf8")).rejects.toThrow()
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--template",
+          "npm-github",
+          "--package",
+          "@scope/pkg",
+          "--repo",
+          "owner/repo",
+          "--config",
+          configPath,
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+      const config = await readFile(configPath, "utf8")
+      expect(config).toContain("\"$schema\"")
+      expect(config).toContain("\"repository\": \"owner/repo\"")
+
+      const blocked = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--config",
+          configPath,
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+      expect(blocked._tag).toBe("Failure")
+      if (blocked._tag === "Failure") {
+        expect(String(blocked.cause)).toContain("ReleaseInitWriteError")
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("init generates schema-valid configs for every template", async () => {
+    const templates: ReadonlyArray<"npm-only" | "npm-github" | "multi-target-homebrew" | "multi-target-scoop"> = [
+      "npm-only",
+      "npm-github",
+      "multi-target-homebrew",
+      "multi-target-scoop"
+    ]
+    for (const template of templates) {
+      const root = await mkdtemp(join(tmpdir(), `ts-release-cli-init-${template}-`))
+      try {
+        const plan = await Effect.runPromise(
+          planReleaseInit(ReleaseInitOptions.make({
+            root,
+            template,
+            package: "@scope/pkg",
+            repo: "owner/repo",
+            tap: "owner/homebrew-tap",
+            bucket: "owner/scoop-bucket"
+          })).pipe(Effect.provide(BunServices.layer))
+        )
+        const configFile = plan.files.find((file) => file.path === "release.config.json")
+        expect(configFile).toBeDefined()
+        if (configFile !== undefined) {
+          const intent = await Effect.runPromise(parseReleaseIntent(configFile.contents))
+          expect(intent.identity.name).toBe("@scope/pkg")
+          expect(configFile.contents).toContain("\"$schema\"")
+          if (template === "multi-target-homebrew") {
+            expect(configFile.contents).toContain("owner/homebrew-tap")
+          }
+          if (template === "multi-target-scoop") {
+            expect(configFile.contents).toContain("owner/scoop-bucket")
+          }
+        }
+      } finally {
+        await rm(root, { recursive: true, force: true })
+      }
+    }
+  })
+
+  test("init can include the GitHub Actions trusted-publishing template", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-actions-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--template",
+          "npm-github",
+          "--package",
+          "@scope/pkg",
+          "--repo",
+          "owner/repo",
+          "--config",
+          configPath,
+          "--github-actions",
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      const workflow = await readFile(join(root, ".github", "workflows", "release.yml"), "utf8")
+      expect(workflow).toContain("uses: mannyc2/ts-release-action@v1")
+      expect(workflow).toContain("config: release.config.json")
+      expect(workflow).not.toContain(configPath)
+      expect(workflow).toContain("command: plan")
+      expect(workflow).toContain("format: markdown")
+      expect(workflow).toContain("command: run")
+      expect(workflow).toContain("execute: true")
+      expect(workflow).toContain("approve-irreversible: true")
+      expect(workflow).toContain("id-token: write")
+      expect(workflow).not.toContain("NPM_TOKEN")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-auth reports env names without secret values", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-auth-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map([
+            ["NPM_TOKEN", "npm_secret"]
+          ]),
+          commands: new Map()
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      const report = await Effect.runPromise(
+        checkAuthReleaseConfig(ReleaseDiagnosticsOptions.make({
+          configPath
+        })).pipe(Effect.provide(layer))
+      )
+      const serialized = JSON.stringify(report)
+      expect(serialized).toContain("NPM_TOKEN")
+      expect(serialized).toContain("GH_TOKEN")
+      expect(serialized).not.toContain("npm_secret")
+      expect(report.checks.some((item) => item.status === "fail" && item.message.includes("GH_TOKEN"))).toBe(true)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-ci accepts the trusted publishing workflow template", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      const trustedConfig = minimalConfig.replace(
+        "\"tokenEnv\":\"NPM_TOKEN\",",
+        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+      )
+      await writeFile(configPath, trustedConfig)
+      await mkdir(join(root, ".github", "workflows"), { recursive: true })
+      await writeFile(
+        join(root, ".github", "workflows", "release.yml"),
+        renderGithubActionsTrustedPublishingWorkflow("release.config.json")
+      )
+
+      const report = await Effect.runPromise(
+        checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+          configPath,
+          workflow: ".github/workflows/release.yml"
+        })).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-ci rejects action execution in the plan job", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-plan-exec-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      const trustedConfig = minimalConfig.replace(
+        "\"tokenEnv\":\"NPM_TOKEN\",",
+        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+      )
+      await writeFile(configPath, trustedConfig)
+      await mkdir(join(root, ".github", "workflows"), { recursive: true })
+      await writeFile(
+        join(root, ".github", "workflows", "release.yml"),
+        [
+          "name: Release",
+          "on:",
+          "  workflow_dispatch:",
+          "jobs:",
+          "  plan:",
+          "    runs-on: ubuntu-latest",
+          "    steps:",
+          "      - uses: mannyc2/ts-release-action@v1",
+          "        with:",
+          "          command: run",
+          "          config: release.config.json",
+          "          execute: true",
+          "  execute:",
+          "    runs-on: ubuntu-latest",
+          "    environment: release",
+          "    permissions:",
+          "      contents: write",
+          "      id-token: write",
+          "    steps:",
+          "      - uses: mannyc2/ts-release-action@v1",
+          "        with:",
+          "          command: run",
+          "          config: release.config.json",
+          "          execute: true",
+          "          approve-irreversible: true",
+          "      - uses: actions/upload-artifact@v4",
+          "        if: always()",
+          ""
+        ].join("\n")
+      )
+
+      const report = await Effect.runPromise(
+        checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+          configPath,
+          workflow: ".github/workflows/release.yml"
+        })).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      const planSafety = report.checks.find((item) => item.id === "ci:plan-job-no-execute")
+      expect(planSafety?.status).toBe("fail")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("doctor command composes static diagnostics", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-doctor-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "doctor",
+          "--config",
+          configPath,
+          "--format",
+          "json"
+        ]).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
     } finally {
       await rm(root, { recursive: true, force: true })
     }

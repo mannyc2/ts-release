@@ -1,0 +1,74 @@
+name: ts-release
+description: Plan, validate, and run ts-release workflows from GitHub Actions.
+author: mannyc2
+inputs:
+  command:
+    description: plan, validate-config, status, doctor, check-auth, check-ci, validate, run, resume, or reconcile.
+    required: false
+    default: plan
+  config:
+    description: Path to the release config file.
+    required: false
+    default: release.config.json
+  format:
+    description: Output format where supported: text, markdown, json, or summary.
+    required: false
+    default: markdown
+  write-step-summary:
+    description: Write a compact command result to the GitHub step summary.
+    required: false
+    default: "true"
+  plan-path:
+    description: Path where command plan writes the rendered release plan.
+    required: false
+    default: release-plan.md
+  fail-on-warnings:
+    description: Fail diagnostic commands when any warning is reported.
+    required: false
+    default: "false"
+  target:
+    description: Optional target filter for command check-auth.
+    required: false
+  workflow:
+    description: Optional GitHub Actions workflow path for command check-ci.
+    required: false
+  runtime:
+    description: Runtime module source. bundled is the default; workspace is deferred until same-graph Node platform loading is safe.
+    required: false
+    default: bundled
+  execute:
+    description: Allow approved execution commands to run operations requiring execute approval.
+    required: false
+    default: "false"
+  approve-irreversible:
+    description: Allow irreversible operations when execute is also true.
+    required: false
+    default: "false"
+  upload-evidence:
+    description: Upload the release evidence directory as an artifact after command completion or failure.
+    required: false
+    default: "false"
+  evidence-artifact-name:
+    description: Artifact name used when upload-evidence is true.
+    required: false
+    default: release-evidence
+outputs:
+  release_name:
+    description: Planned release name.
+  release_version:
+    description: Planned release version.
+  operation_count:
+    description: Number of operations in the release plan.
+  irreversible_operation_count:
+    description: Number of irreversible operations in the release plan.
+  target_count:
+    description: Number of targets in the release plan.
+  evidence_directory:
+    description: Evidence directory for the release plan.
+  plan_path:
+    description: Path written by command plan.
+  status:
+    description: Final action command status.
+runs:
+  using: node20
+  main: dist/index.js

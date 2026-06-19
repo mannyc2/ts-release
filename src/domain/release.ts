@@ -31,6 +31,7 @@ export class SourceMetadata extends Schema.Class<SourceMetadata>("SourceMetadata
 }) {}
 
 export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")({
+  "$schema": Schema.optionalKey(Schema.String),
   identity: ReleaseIdentity,
   artifacts: Schema.Array(ArtifactIntent),
   targets: Schema.Array(TargetConfig),

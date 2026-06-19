@@ -66,7 +66,6 @@ const expectedTemplateTags = new Map<string, ReadonlyArray<string>>([
 interface WorkflowTemplateExpectation {
   readonly path: string
   readonly actionFirst: boolean
-  readonly cliFallback: boolean
   readonly hasExecuteJob: boolean
   readonly trustedPublishing: boolean
 }
@@ -75,35 +74,18 @@ const workflowTemplates: ReadonlyArray<WorkflowTemplateExpectation> = [
   {
     path: join("github-actions", "plan-only.yml"),
     actionFirst: true,
-    cliFallback: false,
     hasExecuteJob: false,
     trustedPublishing: false
   },
   {
     path: join("github-actions", "plan-and-approved-execute.yml"),
     actionFirst: true,
-    cliFallback: false,
     hasExecuteJob: true,
     trustedPublishing: false
   },
   {
     path: join("github-actions", "trusted-publishing.yml"),
     actionFirst: true,
-    cliFallback: false,
-    hasExecuteJob: true,
-    trustedPublishing: true
-  },
-  {
-    path: join("github-actions-trusted-publishing", "release.yml"),
-    actionFirst: true,
-    cliFallback: false,
-    hasExecuteJob: true,
-    trustedPublishing: true
-  },
-  {
-    path: join("github-actions-cli", "trusted-publishing.yml"),
-    actionFirst: false,
-    cliFallback: true,
     hasExecuteJob: true,
     trustedPublishing: true
   }
@@ -250,9 +232,6 @@ const checkWorkflowTemplate = Effect.fn("scripts.checkWorkflowTemplate")(functio
   }
   if (template.actionFirst) {
     snippets.push("uses: mannyc2/ts-release-action@v1", "command: plan", "format: markdown")
-  }
-  if (template.cliFallback) {
-    snippets.push("validate-config", "--format markdown", "--execute --approve-irreversible")
   }
   if (template.hasExecuteJob && template.actionFirst) {
     snippets.push("command: run", "execute: true", "approve-irreversible: true")

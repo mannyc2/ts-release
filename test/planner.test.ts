@@ -5,7 +5,12 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/domain/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { renderPlanJson } from "../src/planner/render-plan.js"
+import {
+  renderPlanJson,
+  renderPlanMarkdown,
+  renderPlanOperationExplanation,
+  renderPlanSummary
+} from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 
@@ -186,6 +191,57 @@ describe("planner", () => {
     expect(exit._tag).toBe("Failure")
     if (exit._tag === "Failure") {
       expect(String(exit.cause)).toContain("ReleaseNormalizationError")
+    }
+  })
+
+  test("renders summary and Markdown review output", async () => {
+    const plan = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(minimalConfig)
+        return yield* createReleasePlan(intent)
+      }),
+      TestLayer
+    )
+
+    const summary = renderPlanSummary(plan)
+    expect(summary).toContain("irreversible approval required")
+    expect(summary).toContain("execute required")
+    expect(summary).toContain("npm:npm-publish")
+
+    const markdown = renderPlanMarkdown(plan)
+    expect(markdown).toContain("# Release Plan release@0.1.0")
+    expect(markdown).toContain("### npm:npm-publish")
+    expect(markdown).toContain(JSON.stringify(["npm", "publish", ".", "--registry", "https://registry.npmjs.org"], null, 2))
+  })
+
+  test("explains one operation by stable id", async () => {
+    const explanation = await runEffect(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(minimalConfig)
+        const plan = yield* createReleasePlan(intent)
+        return yield* renderPlanOperationExplanation(plan, "npm:npm-publish")
+      }),
+      TestLayer
+    )
+
+    expect(explanation).toContain("operation: npm:npm-publish")
+    expect(explanation).toContain("risk: irreversible")
+    expect(explanation).toContain("execution gate: --execute + --approve-irreversible")
+    expect(explanation).toContain("argv:")
+  })
+
+  test("explaining a missing operation returns a typed error", async () => {
+    const exit = await Effect.runPromiseExit(
+      Effect.gen(function*() {
+        const intent = yield* parseReleaseIntent(minimalConfig)
+        const plan = yield* createReleasePlan(intent)
+        return yield* renderPlanOperationExplanation(plan, "missing:operation")
+      }).pipe(Effect.provide(TestLayer))
+    )
+
+    expect(exit._tag).toBe("Failure")
+    if (exit._tag === "Failure") {
+      expect(String(exit.cause)).toContain("PlanOperationNotFoundError")
     }
   })
 })

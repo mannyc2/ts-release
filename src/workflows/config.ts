@@ -8,7 +8,13 @@ import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { ExecutionApproval } from "../domain/operation.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import { executePlan, renderPlan, runApprovedReleaseWorkflow, validatePlan, verifyPlan } from "../planner/executor.js"
-import { renderPlanJson, renderPlanText } from "../planner/render-plan.js"
+import {
+  renderPlanJson,
+  renderPlanMarkdown,
+  renderPlanOperationExplanation,
+  renderPlanSummary,
+  renderPlanText
+} from "../planner/render-plan.js"
 import {
   ReleaseResumeOptions,
   renderReleaseStatusJson,
@@ -32,12 +38,31 @@ export type * from "../types/effect-internal.js"
 
 export { RELEASE_VERSION }
 
-export const ReleasePlanFormat = Schema.Literals(["json", "text"])
+export const ReleasePlanFormat = Schema.Literals(["json", "text", "summary", "markdown"])
 export type ReleasePlanFormat = typeof ReleasePlanFormat.Type
+
+export const ReleaseConfigValidationFormat = Schema.Literals(["json", "text"])
+export type ReleaseConfigValidationFormat = typeof ReleaseConfigValidationFormat.Type
 
 export class ReleaseConfigOptions extends Schema.Class<ReleaseConfigOptions>("ReleaseConfigOptions")({
   root: Schema.optionalKey(Schema.String),
   configPath: Schema.optionalKey(Schema.String)
+}) {}
+
+export class ValidateReleaseConfigFileOptions extends Schema.Class<ValidateReleaseConfigFileOptions>(
+  "ValidateReleaseConfigFileOptions"
+)({
+  root: Schema.optionalKey(Schema.String),
+  configPath: Schema.optionalKey(Schema.String),
+  format: Schema.optionalKey(ReleaseConfigValidationFormat)
+}) {}
+
+export class ReleaseConfigValidationResult extends Schema.Class<ReleaseConfigValidationResult>(
+  "ReleaseConfigValidationResult"
+)({
+  schemaVersion: Schema.Literal("release-config-validation/v1"),
+  path: Schema.String,
+  valid: Schema.Boolean
 }) {}
 
 export class PlanReleaseConfigOptions extends Schema.Class<PlanReleaseConfigOptions>("PlanReleaseConfigOptions")({
@@ -50,6 +75,14 @@ export class RenderReleaseConfigOptions extends Schema.Class<RenderReleaseConfig
   root: Schema.optionalKey(Schema.String),
   configPath: Schema.optionalKey(Schema.String),
   execute: Schema.optionalKey(Schema.Boolean)
+}) {}
+
+export class ExplainReleaseConfigOptions extends Schema.Class<ExplainReleaseConfigOptions>(
+  "ExplainReleaseConfigOptions"
+)({
+  root: Schema.optionalKey(Schema.String),
+  configPath: Schema.optionalKey(Schema.String),
+  operationId: Schema.String
 }) {}
 
 export class ReleaseExecutionOptions extends Schema.Class<ReleaseExecutionOptions>("ReleaseExecutionOptions")({
@@ -199,9 +232,26 @@ export const renderReleaseConfigPlan = Effect.fn("workflows.config.renderRelease
   options: PlanReleaseConfigOptions = PlanReleaseConfigOptions.make({})
 ) {
   const plan = yield* planReleaseConfig(options)
-  return (options.format ?? "text") === "json"
-    ? renderPlanJson(plan)
-    : renderPlanText(plan)
+  switch (options.format ?? "text") {
+    case "json":
+      return renderPlanJson(plan)
+    case "summary":
+      return renderPlanSummary(plan)
+    case "markdown":
+      return renderPlanMarkdown(plan)
+    case "text":
+      return renderPlanText(plan)
+  }
+})
+
+export const explainReleaseConfigOperation = Effect.fn("workflows.config.explainReleaseConfigOperation")(function*(
+  options: ExplainReleaseConfigOptions
+) {
+  const plan = yield* planReleaseConfig(PlanReleaseConfigOptions.make({
+    ...(options.root === undefined ? {} : { root: options.root }),
+    ...(options.configPath === undefined ? {} : { configPath: options.configPath })
+  }))
+  return yield* renderPlanOperationExplanation(plan, options.operationId)
 })
 
 export const renderReleaseConfig = Effect.fn("workflows.config.renderReleaseConfig")(function*(
@@ -209,6 +259,34 @@ export const renderReleaseConfig = Effect.fn("workflows.config.renderReleaseConf
 ) {
   const plan = yield* planReleaseConfig(options)
   return yield* renderPlan(plan, renderApprovalFromOptions(options))
+})
+
+export const validateReleaseConfigFile = Effect.fn("workflows.config.validateReleaseConfigFile")(function*(
+  options: ValidateReleaseConfigFileOptions = ValidateReleaseConfigFileOptions.make({})
+) {
+  const pathName = configPath(options)
+  const contents = yield* readReleaseConfig(options)
+  yield* parseReleaseIntent(contents, pathName)
+  return ReleaseConfigValidationResult.make({
+    schemaVersion: "release-config-validation/v1",
+    path: pathName,
+    valid: true
+  })
+})
+
+export const renderReleaseConfigValidationJson = (result: ReleaseConfigValidationResult): string =>
+  `${JSON.stringify(result, null, 2)}\n`
+
+export const renderReleaseConfigValidationText = (result: ReleaseConfigValidationResult): string =>
+  `config: ${result.path}\nvalid: ${result.valid ? "true" : "false"}\n`
+
+export const renderReleaseConfigValidation = Effect.fn("workflows.config.renderReleaseConfigValidation")(function*(
+  options: ValidateReleaseConfigFileOptions = ValidateReleaseConfigFileOptions.make({})
+) {
+  const result = yield* validateReleaseConfigFile(options)
+  return (options.format ?? "text") === "json"
+    ? renderReleaseConfigValidationJson(result)
+    : renderReleaseConfigValidationText(result)
 })
 
 export const validateReleaseConfig = Effect.fn("workflows.config.validateReleaseConfig")(function*(

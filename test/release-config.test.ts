@@ -14,12 +14,12 @@ const selfReleaseConfigPath = "apps/release-ts/release.config.json"
 const config = readFileSync(selfReleaseConfigPath, "utf8")
 
 const releaseArtifactFiles = [
-  ".release/artifacts/mannyc1-ts-release-0.0.2.tgz",
-  ".release/artifacts/ts-release-0.0.2-linux-x64",
-  ".release/artifacts/ts-release-0.0.2-linux-arm64",
-  ".release/artifacts/ts-release-0.0.2-darwin-x64",
-  ".release/artifacts/ts-release-0.0.2-darwin-arm64",
-  ".release/artifacts/ts-release-0.0.2-windows-x64.exe"
+  ".release/artifacts/mannyc1-ts-release-0.0.3.tgz",
+  ".release/artifacts/ts-release-0.0.3-linux-x64",
+  ".release/artifacts/ts-release-0.0.3-linux-arm64",
+  ".release/artifacts/ts-release-0.0.3-darwin-x64",
+  ".release/artifacts/ts-release-0.0.3-darwin-arm64",
+  ".release/artifacts/ts-release-0.0.3-windows-x64.exe"
 ]
 
 const releaseArtifactFixtures = (): ReadonlyArray<readonly [string, string]> =>
@@ -63,7 +63,7 @@ describe("repository release config", () => {
 
     expect(plan.identity.name).toBe("@mannyc1/ts-release")
     expect(plan.identity.commit).toBe("81587b5")
-    expect(plan.evidenceDirectory).toBe(".release/evidence/0.0.2")
+    expect(plan.evidenceDirectory).toBe(".release/evidence/0.0.3")
     expect(plan.targets.map((target) => target.id).sort()).toEqual(["github", "npm"])
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-package-exists")

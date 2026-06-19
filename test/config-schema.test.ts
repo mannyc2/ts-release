@@ -22,11 +22,35 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 describe("config schema", () => {
   test("decodes a minimal release config", async () => {
     const intent = await Effect.runPromise(parseReleaseIntent(minimalConfig))
-    expect(intent.identity.name).toBe("release")
+    expect("name" in intent.identity ? intent.identity.name : undefined).toBe("release")
     expect(intent.targets.map((target) => target._tag).sort()).toEqual([
       "GitHubReleaseTarget",
       "NpmRegistryTarget"
     ])
+  })
+
+  test("decodes package-manifest identity and release decision strategies", async () => {
+    const intent = await Effect.runPromise(parseReleaseIntent(JSON.stringify({
+      identity: {
+        _tag: "PackageManifestReleaseIdentitySource",
+        commit: "HEAD",
+        tagTemplate: "v{version}"
+      },
+      releaseDecision: {
+        _tag: "IntentFilesReleaseDecision",
+        directory: ".release/intents",
+        packagePath: "package.json",
+        tagTemplate: "v{version}",
+        requireIntent: true
+      },
+      artifacts: [],
+      targets: [],
+      strict: true,
+      evidenceDirectory: ".release/evidence/{version}"
+    })))
+
+    expect("_tag" in intent.identity ? intent.identity._tag : undefined).toBe("PackageManifestReleaseIdentitySource")
+    expect(intent.releaseDecision?._tag).toBe("IntentFilesReleaseDecision")
   })
 
   test("decodes structured npm trusted publishing config", async () => {

@@ -31,7 +31,7 @@ required without surprising users. The source currently lives in
 `apps/ts-release-action`.
 
 The action supports the review commands `plan`, `validate-config`, `status`,
-`doctor`, `check-auth`, and `check-ci`, plus the approved workflow commands
+`eligibility`, `doctor`, `check-auth`, and `check-ci`, plus the approved workflow commands
 `validate`, `run`, `resume`, and `reconcile`. Use `upload-evidence: true` when
 an action job should publish collected `.release/evidence` JSON files even after
 a command fails.
@@ -51,6 +51,7 @@ bun run cli explain npm:npm-publish --config release.config.json
 bun run cli doctor --config release.config.json --format text
 bun run cli check-auth --config release.config.json --target npm --format text
 bun run cli check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
+bun run cli check-intent --config release.config.json --format text
 bun run cli render --config release.config.json --execute
 bun run cli validate --config release.config.json
 bun run cli print --config release.config.json
@@ -70,7 +71,8 @@ bun run cli resume --config release.config.json --execute --approve-irreversible
 ```
 
 Resume skips operations with successful matching evidence, reruns safe read-only failures, and blocks failed publish operations until remote state is reconciled manually.
-`eligibility` checks npm and GitHub remote state before the self-release workflow decides whether to run.
+`eligibility` resolves the configured release decision strategy and checks npm and GitHub remote state when a release is intended.
+`check-intent` is a read-only CI gate for the explicit intent-file strategy.
 `reconcile` is separate from resume: it inspects GitHub release state through the API and can publish a matching draft release with explicit `--execute` without republishing immutable npm versions.
 
 The executable is an argv and console adapter over TypeScript workflows. Release workflows are modeled as typed functions first, then exposed through the CLI for terminal and CI usage.
@@ -239,6 +241,59 @@ Use `@mannyc1/ts-release/workflows` for the curated `Config`, `Init`, `Diagnosti
 The optional `$schema` key powers editor completion and does not change release behavior. Print the derived schema with `bun run cli schema`, and use `bun run cli validate-config` to check JSON syntax and release config shape without running target validators.
 
 Paths are release-workspace relative and may not be absolute or contain parent traversal. `evidenceDirectory` may include the literal `{version}` placeholder, which is resolved during planning so each release version can use its own evidence directory.
+Artifact paths may use `{version}`, `{name}`, and `{normalizedName}`. `normalizedName` removes a leading npm scope marker and replaces `/` with `-`, matching generated self-release artifact names such as `mannyc1-ts-release-0.1.0.tgz`.
+
+## Release Strategies
+
+Release identity and release decisions are strategy-backed data. Target adapters still receive a concrete release identity and still produce reviewable, approval-gated operations.
+
+| Strategy | Good for | Source of truth |
+|---|---|---|
+| Static config | audited/manual release identity | release config |
+| Package manifest | npm/package releases with one version source | `package.json` |
+| Git tag | tag-triggered release workflows | current Git tag |
+| Conventional commits | automated SemVer from commit messages | commits since the latest matching tag |
+| Intent files | reviewed release intent in PRs | `.release/intents/*.json` |
+
+Static identity remains supported:
+
+```json
+{
+  "identity": {
+    "name": "@scope/pkg",
+    "version": "0.1.0",
+    "commit": "abc123",
+    "tag": "v0.1.0"
+  }
+}
+```
+
+For npm-style packages, prefer manifest-derived identity to avoid repeating versions in release config:
+
+```json
+{
+  "identity": {
+    "_tag": "PackageManifestReleaseIdentitySource",
+    "packagePath": "package.json",
+    "commit": "HEAD",
+    "tagTemplate": "v{version}"
+  }
+}
+```
+
+Decision strategies are opt-in through `releaseDecision`. The default `RemoteStateReleaseDecision` uses the resolved identity, then checks npm and GitHub state. Git tag and conventional commit strategies can return `skipped` without error when no release input is present. Intent files are small JSON documents in `.release/intents`:
+
+```json
+{
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-intent.schema.json",
+  "package": "@scope/pkg",
+  "release": "patch",
+  "summary": "Explain the user-visible change.",
+  "empty": false
+}
+```
+
+This is a first-party intent-file format, not full Changesets compatibility. Publish operations remain plan data until explicit execution approval, regardless of which strategy chose the intended version.
 
 Homebrew tap targets model catalog updates as generated files plus an approval-gated push:
 
@@ -454,7 +509,7 @@ Example configs and templates are checked through the TypeScript workflow path:
 bun run check:examples
 ```
 
-This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release scripts live under `apps/release-ts/scripts`, with root package scripts delegating to them. The self-release config must pass `bun run check:self-release-config` before release checks proceed. Its `identity.commit` may be the explicit current short commit, or `HEAD` as a stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
+This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release scripts live under `apps/release-ts/scripts`, with root package scripts delegating to them. The self-release config must pass `bun run check:self-release-config` before release checks proceed. It derives name and version from the root `package.json`, uses `{version}` artifact templates, and keeps `identity.commit` as `HEAD` for stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
 
 ```sh
 bun run check:self-release-config

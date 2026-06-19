@@ -1,11 +1,19 @@
 import * as Effect from "effect/Effect"
 import { ArtifactInventoryItem, Checksum } from "../domain/artifact.js"
-import { ValidationNoteOperation, noApprovalGate } from "../domain/operation.js"
+import {
+  CommandSpec,
+  PublishCommandOperation,
+  ValidationNoteOperation,
+  executeGate,
+  irreversibleGate,
+  noApprovalGate
+} from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
   TargetCapabilities,
   TargetConfig,
   TargetDryRunSupport,
+  TargetMutability,
   TargetValidationStrategy,
   targetAuthRequirement
 } from "../domain/target.js"
@@ -27,6 +35,66 @@ interface ArtifactErrorReasons {
   readonly targetId: string
   readonly directoryReason: string
   readonly checksumReason: string
+}
+
+interface UnsupportedCatalogTokenEnvOptions {
+  readonly targetId: string
+  readonly targetLabel: string
+  readonly tokenEnv: string | undefined
+}
+
+interface CatalogGitPushOperationOptions {
+  readonly id: string
+  readonly targetId: string
+  readonly description: string
+  readonly mutability: TargetMutability
+  readonly directory: string | undefined
+  readonly irreversibleReason: string
+  readonly externallyVisibleReason: string
+}
+
+export const noAuthCommand = (
+  executable: string,
+  args: ReadonlyArray<string>
+): CommandSpec =>
+  CommandSpec.make({
+    executable,
+    args: [...args],
+    requiredEnv: [],
+    redactedEnv: []
+  })
+
+export const catalogPathBaseName = (pathName: string): string => {
+  const parts = pathName.replaceAll("\\", "/").split("/")
+  return parts[parts.length - 1] ?? pathName
+}
+
+export const rejectUnsupportedCatalogTokenEnv = Effect.fn("rejectUnsupportedCatalogTokenEnv")(function*(
+  options: UnsupportedCatalogTokenEnvOptions
+) {
+  if (options.tokenEnv !== undefined) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId: options.targetId,
+        reason:
+          `${options.targetLabel} targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet.`
+      })
+    )
+  }
+})
+
+export const catalogGitPushOperation = (options: CatalogGitPushOperationOptions): PublishCommandOperation => {
+  const publishRisk = options.mutability === "immutable" ? "irreversible" : "externally-visible"
+  return PublishCommandOperation.make({
+    id: options.id,
+    targetId: options.targetId,
+    description: options.description,
+    risk: publishRisk,
+    gate: publishRisk === "irreversible"
+      ? irreversibleGate(options.irreversibleReason)
+      : executeGate(options.externallyVisibleReason),
+    command: noAuthCommand("git", ["-C", options.directory ?? ".", "push"])
+  })
 }
 
 export const validationStrategyForDryRun = (dryRunSupport: TargetDryRunSupport): TargetValidationStrategy => {

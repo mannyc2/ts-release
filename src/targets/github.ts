@@ -1,12 +1,8 @@
 import * as Effect from "effect/Effect"
 import {
-  CommandSpec,
   executeGate,
-  HttpEnvHeader,
-  HttpHeader,
   HttpJsonArrayObjectFieldEqualsCheck,
   HttpJsonEqualsCheck,
-  HttpRequestSpec,
   irreversibleGate,
   noApprovalGate,
   Operation,
@@ -24,28 +20,18 @@ import {
 import { PlanConstructionError } from "../planner/errors.js"
 import { GitHubTargetAdapter } from "./adapter.js"
 import { rejectNoDryRunInStrictMode, targetCapabilitiesFor, validationNoteOperation } from "./adapter-helpers.js"
+import {
+  GitHubReleaseContext,
+  githubGhCommand,
+  githubReleaseAssetName,
+  githubReleaseCreateCommand,
+  githubReleaseRequestSpec,
+  githubReleaseTag,
+  githubReleaseTitle,
+  githubTargetArtifacts
+} from "./github-release.js"
 
 export type * from "../types/effect-internal.js"
-
-interface GitHubReleaseContext {
-  readonly identity: ReleaseModel["identity"]
-  readonly artifacts: ReleaseModel["artifacts"]
-}
-
-const envNames = (target: GitHubReleaseTarget): ReadonlyArray<string> =>
-  target.tokenEnv === undefined ? [] : [target.tokenEnv]
-
-const ghCommand = (
-  target: GitHubReleaseTarget,
-  args: ReadonlyArray<string>,
-  includeAuth: boolean
-): CommandSpec =>
-  CommandSpec.make({
-    executable: "gh",
-    args: [...args],
-    requiredEnv: includeAuth ? envNames(target) : [],
-    redactedEnv: includeAuth ? envNames(target) : []
-  })
 
 const githubValidationStrategy = (target: GitHubReleaseTarget): TargetValidationStrategy =>
   target.dryRunSupport === "none" ? "skipped" : "simulated-plan"
@@ -53,14 +39,11 @@ const githubValidationStrategy = (target: GitHubReleaseTarget): TargetValidation
 export const githubTargetCapabilities = (target: GitHubReleaseTarget): TargetCapabilities =>
   targetCapabilitiesFor(target, githubValidationStrategy(target))
 
-const targetArtifacts = (target: GitHubReleaseTarget, model: GitHubReleaseContext) =>
-  model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
-
 const rejectDirectoryAssets = Effect.fn("github.rejectDirectoryAssets")(function*(
   target: GitHubReleaseTarget,
   model: GitHubReleaseContext
 ) {
-  const directoryAsset = targetArtifacts(target, model).find((artifact) => artifact.format === "directory")
+  const directoryAsset = githubTargetArtifacts(target, model).find((artifact) => artifact.format === "directory")
   if (directoryAsset === undefined) {
     return
   }
@@ -72,80 +55,6 @@ const rejectDirectoryAssets = Effect.fn("github.rejectDirectoryAssets")(function
   )
 })
 
-const pathBaseName = (path: string): string => {
-  const parts = path.replaceAll("\\", "/").split("/")
-  return parts[parts.length - 1] ?? path
-}
-
-const githubReleaseTag = (model: GitHubReleaseContext): string =>
-  model.identity.tag ?? model.identity.version
-
-const githubReleaseTitle = (model: GitHubReleaseContext): string =>
-  `${model.identity.name} ${model.identity.version}`
-
-const releaseArgs = (target: GitHubReleaseTarget, model: GitHubReleaseContext): ReadonlyArray<string> => {
-  const args: Array<string> = [
-    "release",
-    "create",
-    githubReleaseTag(model),
-    "--repo",
-    target.repository,
-    "--title",
-    githubReleaseTitle(model)
-  ]
-  if (target.draft === true) {
-    args.push("--draft")
-  }
-  if (target.prerelease === true) {
-    args.push("--prerelease")
-  }
-  if (model.identity.notes !== undefined) {
-    args.push("--notes", model.identity.notes)
-  }
-  for (const artifact of targetArtifacts(target, model)) {
-    args.push(artifact.path)
-  }
-  return args
-}
-
-const githubReleaseApiUrl = (target: GitHubReleaseTarget, tag: string): string =>
-  `https://api.github.com/repos/${target.repository}/releases/tags/${encodeURIComponent(tag)}`
-
-const githubApiHeaders = (): ReadonlyArray<HttpHeader> => [
-  HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
-  HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
-]
-
-const githubApiEnvHeaders = (target: GitHubReleaseTarget): ReadonlyArray<HttpEnvHeader> =>
-  target.tokenEnv === undefined
-    ? []
-    : [
-      HttpEnvHeader.make({
-        name: "Authorization",
-        valueEnv: target.tokenEnv,
-        prefix: "Bearer "
-      })
-    ]
-
-const githubReleaseRequestSpec = (
-  target: GitHubReleaseTarget,
-  tag: string
-): HttpRequestSpec =>
-  HttpRequestSpec.make({
-    method: "GET",
-    url: githubReleaseApiUrl(target, tag),
-    headers: githubApiHeaders(),
-    envHeaders: githubApiEnvHeaders(target),
-    requiredEnv: envNames(target),
-    redactedEnv: envNames(target)
-  })
-
-const githubReleaseCreateCommand = (
-  target: GitHubReleaseTarget,
-  model: GitHubReleaseContext
-): CommandSpec =>
-  ghCommand(target, releaseArgs(target, model), true)
-
 const githubVerificationOperations = (
   target: GitHubReleaseTarget,
   model: ReleaseModel
@@ -154,11 +63,11 @@ const githubVerificationOperations = (
   const title = githubReleaseTitle(model)
   const isDraft = target.draft === true
   const isPrerelease = target.prerelease === true
-  const artifactChecks = targetArtifacts(target, model).map((artifact) =>
+  const artifactChecks = githubTargetArtifacts(target, model).map((artifact) =>
     HttpJsonArrayObjectFieldEqualsCheck.make({
       path: ["assets"],
       field: "name",
-      expected: pathBaseName(artifact.path)
+      expected: githubReleaseAssetName(artifact.path)
     })
   )
 
@@ -240,7 +149,7 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
       description: "Check GitHub CLI availability.",
       risk: "read-only",
       gate: noApprovalGate("CLI availability validation is read-only."),
-      command: ghCommand(target, ["--version"], false)
+      command: githubGhCommand(target, ["--version"], false)
     }),
     ValidateCommandOperation.make({
       id: `${target.id}:gh-auth-status`,
@@ -248,7 +157,7 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
       description: "Validate GitHub CLI authentication.",
       risk: "read-only",
       gate: noApprovalGate("gh auth status checks authentication without publishing."),
-      command: ghCommand(target, ["auth", "status"], true)
+      command: githubGhCommand(target, ["auth", "status"], true)
     }),
     githubDryRunOperation(target, dryRunSupport),
     PublishCommandOperation.make({

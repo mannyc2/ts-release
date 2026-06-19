@@ -2,9 +2,9 @@
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
     "name": "@mannyc1/ts-release",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "commit": "HEAD",
-    "tag": "v0.0.2",
+    "tag": "v0.0.3",
     "notes": "Initial release of the plan-first release package."
   },
   "artifacts": [
@@ -16,37 +16,37 @@
     },
     {
       "id": "package-tarball",
-      "path": ".release/artifacts/mannyc1-ts-release-0.0.2.tgz",
+      "path": ".release/artifacts/mannyc1-ts-release-0.0.3.tgz",
       "format": "tarball",
       "consumers": ["github"]
     },
     {
       "id": "cli-linux-x64",
-      "path": ".release/artifacts/ts-release-0.0.2-linux-x64",
+      "path": ".release/artifacts/ts-release-0.0.3-linux-x64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-linux-arm64",
-      "path": ".release/artifacts/ts-release-0.0.2-linux-arm64",
+      "path": ".release/artifacts/ts-release-0.0.3-linux-arm64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-darwin-x64",
-      "path": ".release/artifacts/ts-release-0.0.2-darwin-x64",
+      "path": ".release/artifacts/ts-release-0.0.3-darwin-x64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-darwin-arm64",
-      "path": ".release/artifacts/ts-release-0.0.2-darwin-arm64",
+      "path": ".release/artifacts/ts-release-0.0.3-darwin-arm64",
       "format": "file",
       "consumers": ["github"]
     },
     {
       "id": "cli-windows-x64",
-      "path": ".release/artifacts/ts-release-0.0.2-windows-x64.exe",
+      "path": ".release/artifacts/ts-release-0.0.3-windows-x64.exe",
       "format": "file",
       "consumers": ["github"]
     }

@@ -15,7 +15,7 @@
     },
     "apps/release-ts": {
       "name": "@mannyc1/release-ts-app",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "bin": {
         "release": "dist/cli/main.js",
       },
@@ -27,7 +27,7 @@
     },
     "apps/ts-release-action": {
       "name": "@mannyc1/ts-release-action-app",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "dependencies": {
         "@actions/artifact": "^6.2.1",
         "@actions/core": "^3.0.1",

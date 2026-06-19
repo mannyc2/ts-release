@@ -38,7 +38,6 @@ import {
   releaseEligibilityRemoteCheckFromIntent
 } from "../planner/release-eligibility.js"
 import { ReleaseEligibilityCheckError } from "../planner/errors.js"
-import { RELEASE_VERSION } from "../version.js"
 import {
   releaseConfigFields,
   releaseExecuteField,
@@ -47,8 +46,6 @@ import {
 } from "./options.js"
 
 export type * from "../types/effect-internal.js"
-
-export { RELEASE_VERSION }
 
 export const ReleasePlanFormat = Schema.Literals(["json", "text", "summary", "markdown"])
 export type ReleasePlanFormat = typeof ReleasePlanFormat.Type

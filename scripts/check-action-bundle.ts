@@ -1,7 +1,11 @@
+import * as BunRuntime from "@effect/platform-bun/BunRuntime"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import { mkdtemp, readFile, rm } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
+import * as Stream from "effect/Stream"
+import * as ChildProcess from "effect/unstable/process/ChildProcess"
+import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 
 interface BuildResult {
   readonly exitCode: number
@@ -10,24 +14,19 @@ interface BuildResult {
 }
 
 const root = process.cwd()
-const actionRoot = join(root, "apps", "ts-release-action")
-const trackedBundlePath = join(actionRoot, "dist", "index.js")
-
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
 
 const makeTempDirectory = Effect.fn("scripts.checkActionBundle.makeTempDirectory")(function*() {
-  return yield* Effect.tryPromise({
-    try: () => mkdtemp(join(tmpdir(), "ts-release-action-bundle-")),
-    catch: (cause) => new Error(`Failed to create temporary directory: ${formatUnknown(cause)}`)
-  })
+  const fs = yield* FileSystem.FileSystem
+  return yield* fs.makeTempDirectory({ prefix: "ts-release-action-bundle-" }).pipe(
+    Effect.mapError((cause) => new Error("Failed to create temporary directory.", { cause }))
+  )
 })
 
 const removeTempDirectory = Effect.fn("scripts.checkActionBundle.removeTempDirectory")(function*(path: string) {
-  return yield* Effect.tryPromise({
-    try: () => rm(path, { recursive: true, force: true }),
-    catch: (cause) => new Error(`Failed to remove temporary directory ${path}: ${formatUnknown(cause)}`)
-  })
+  const fs = yield* FileSystem.FileSystem
+  return yield* fs.remove(path, { recursive: true, force: true }).pipe(
+    Effect.mapError((cause) => new Error(`Failed to remove temporary directory ${path}.`, { cause }))
+  )
 })
 
 const ignoreRemoveTempDirectoryError = (path: string) =>
@@ -39,36 +38,61 @@ const ignoreRemoveTempDirectoryError = (path: string) =>
   )
 
 const readBytes = Effect.fn("scripts.checkActionBundle.readBytes")(function*(path: string) {
-  return yield* Effect.tryPromise({
-    try: () => readFile(path),
-    catch: (cause) => new Error(`Failed to read ${path}: ${formatUnknown(cause)}`)
-  })
+  const fs = yield* FileSystem.FileSystem
+  return yield* fs.readFile(path).pipe(
+    Effect.mapError((cause) => new Error(`Failed to read ${path}.`, { cause }))
+  )
 })
 
-const decodeBytes = (bytes: Uint8Array): string =>
-  new TextDecoder().decode(bytes)
+const commandOutput = (stream: Stream.Stream<Uint8Array, unknown>) =>
+  Stream.mkString(Stream.decodeText(stream))
 
-const buildTempBundle = Effect.fn("scripts.checkActionBundle.buildTempBundle")(function*(outputPath: string) {
-  const result: BuildResult = yield* Effect.sync(() => {
-    const process = Bun.spawnSync([
-      "bun",
-      "build",
-      "src/index.ts",
-      "--target=node",
-      "--format=esm",
-      "--outfile",
-      outputPath
-    ], {
-      cwd: actionRoot,
-      stdout: "pipe",
-      stderr: "pipe"
+const runChildProcess = Effect.fn("scripts.checkActionBundle.runChildProcess")(function*(
+  command: ChildProcess.Command
+) {
+  const spawner = yield* ChildProcessSpawner
+  const output = yield* Effect.scoped(
+    Effect.gen(function*() {
+      const handle = yield* spawner.spawn(command)
+      return yield* Effect.all({
+        stdout: commandOutput(handle.stdout),
+        stderr: commandOutput(handle.stderr),
+        exitCode: handle.exitCode
+      }, { concurrency: "unbounded" })
     })
-    return {
-      exitCode: process.exitCode,
-      stdout: decodeBytes(process.stdout),
-      stderr: decodeBytes(process.stderr)
-    }
-  })
+  )
+  return {
+    exitCode: Number(output.exitCode),
+    stdout: output.stdout,
+    stderr: output.stderr
+  }
+})
+
+const buildTempBundle = Effect.fn("scripts.checkActionBundle.buildTempBundle")(function*(
+  actionRoot: string,
+  outputPath: string
+) {
+  const result: BuildResult = yield* runChildProcess(
+    ChildProcess.make(
+      "bun",
+      [
+        "build",
+        "src/index.ts",
+        "--target=node",
+        "--format=esm",
+        "--outfile",
+        outputPath
+      ],
+      {
+        cwd: actionRoot,
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe"
+      }
+    )
+  ).pipe(
+    Effect.mapError((cause) => new Error("Action bundle temp build failed.", { cause }))
+  )
 
   if (result.exitCode !== 0) {
     return yield* Effect.fail(
@@ -99,10 +123,13 @@ const staleBundleMessage =
   "Action bundle is stale. Run bun run --cwd apps/ts-release-action build and include apps/ts-release-action/dist/index.js."
 
 const checkActionBundle = Effect.fn("scripts.checkActionBundle")(function*() {
+  const path = yield* Path.Path
+  const actionRoot = path.join(root, "apps", "ts-release-action")
+  const trackedBundlePath = path.join(actionRoot, "dist", "index.js")
   const tempDirectory = yield* makeTempDirectory()
-  const tempBundlePath = join(tempDirectory, "index.js")
+  const tempBundlePath = path.join(tempDirectory, "index.js")
   const check = Effect.gen(function*() {
-    yield* buildTempBundle(tempBundlePath)
+    yield* buildTempBundle(actionRoot, tempBundlePath)
     const trackedBundle = yield* readBytes(trackedBundlePath)
     const tempBundle = yield* readBytes(tempBundlePath)
     if (!bytesEqual(trackedBundle, tempBundle)) {
@@ -115,10 +142,15 @@ const checkActionBundle = Effect.fn("scripts.checkActionBundle")(function*() {
   )
 })
 
-try {
-  await Effect.runPromise(checkActionBundle())
-  console.log("Action bundle is fresh.")
-} catch (cause) {
-  console.error(formatUnknown(cause))
-  process.exit(1)
-}
+BunRuntime.runMain(
+  checkActionBundle().pipe(
+    Effect.tap(() => Effect.sync(() => console.log("Action bundle is fresh."))),
+    Effect.catch((cause: Error) =>
+      Effect.sync(() => {
+        console.error(cause.message)
+        process.exitCode = 1
+      })
+    ),
+    Effect.provide(BunServices.layer)
+  )
+)

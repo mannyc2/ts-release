@@ -1,8 +1,12 @@
 import * as BunRuntime from "@effect/platform-bun/BunRuntime"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { mkdir, readFile, rm } from "node:fs/promises"
-import { basename, dirname, resolve } from "node:path"
+import * as Stream from "effect/Stream"
+import * as ChildProcess from "effect/unstable/process/ChildProcess"
+import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { pathToFileURL } from "node:url"
 
 export class UnsafeReleaseArtifactsPathError extends Schema.TaggedErrorClass<UnsafeReleaseArtifactsPathError>()(
@@ -18,7 +22,8 @@ export class ReleaseArtifactsBuildError extends Schema.TaggedErrorClass<ReleaseA
   {
     operation: Schema.String,
     path: Schema.optionalKey(Schema.String),
-    reason: Schema.String
+    reason: Schema.String,
+    cause: Schema.optionalKey(Schema.Defect())
   }
 ) {}
 
@@ -43,11 +48,8 @@ const artifactsDirectory = ".release/artifacts"
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
-const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
-  stream === null ? "" : await new Response(stream).text()
+const commandOutput = (stream: Stream.Stream<Uint8Array, unknown>) =>
+  Stream.mkString(Stream.decodeText(stream))
 
 export const normalizedArtifactPackageName = (name: string): string => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name
@@ -97,14 +99,15 @@ export const assertSafeReleaseArtifactsDirectory = Effect.fn("scripts.assertSafe
   root: string,
   directory: string = artifactsDirectory
 ) {
-  const resolvedRoot = resolve(root)
-  const expectedDirectory = resolve(resolvedRoot, artifactsDirectory)
-  const resolvedDirectory = resolve(resolvedRoot, directory)
+  const path = yield* Path.Path
+  const resolvedRoot = path.resolve(root)
+  const expectedDirectory = path.resolve(resolvedRoot, artifactsDirectory)
+  const resolvedDirectory = path.resolve(resolvedRoot, directory)
 
   if (
     resolvedDirectory !== expectedDirectory ||
-    dirname(resolvedDirectory) !== resolve(resolvedRoot, ".release") ||
-    basename(resolvedDirectory) !== "artifacts"
+    path.dirname(resolvedDirectory) !== path.resolve(resolvedRoot, ".release") ||
+    path.basename(resolvedDirectory) !== "artifacts"
   ) {
     return yield* Effect.fail(
       UnsafeReleaseArtifactsPathError.make({
@@ -118,17 +121,29 @@ export const assertSafeReleaseArtifactsDirectory = Effect.fn("scripts.assertSafe
 })
 
 const readPackageIdentity = Effect.fn("scripts.readPackageIdentity")(function*(root: string) {
-  const packagePath = resolve(root, "package.json")
-  const contents = yield* Effect.tryPromise({
-    try: () => readFile(packagePath, "utf8"),
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const packagePath = path.resolve(root, "package.json")
+  const contents = yield* fs.readFileString(packagePath).pipe(
+    Effect.mapError((cause) =>
+      ReleaseArtifactsBuildError.make({
+        operation: "readPackageJson",
+        path: packagePath,
+        reason: "Unable to read package.json.",
+        cause
+      })
+    )
+  )
+  const parsed: unknown = yield* Effect.try({
+    try: () => JSON.parse(contents),
     catch: (cause) =>
       ReleaseArtifactsBuildError.make({
         operation: "readPackageJson",
         path: packagePath,
-        reason: formatUnknown(cause)
+        reason: "package.json is not valid JSON.",
+        cause
       })
   })
-  const parsed: unknown = JSON.parse(contents)
   if (!isRecord(parsed) || typeof parsed.name !== "string" || parsed.name.length === 0) {
     return yield* Effect.fail(
       ReleaseArtifactsBuildError.make({
@@ -154,20 +169,43 @@ const readPackageIdentity = Effect.fn("scripts.readPackageIdentity")(function*(r
 })
 
 const prepareReleaseArtifactsDirectory = Effect.fn("scripts.prepareReleaseArtifactsDirectory")(function*(root: string) {
+  const fs = yield* FileSystem.FileSystem
   const directory = yield* assertSafeReleaseArtifactsDirectory(root)
-  yield* Effect.tryPromise({
-    try: async () => {
-      await rm(directory, { recursive: true, force: true })
-      await mkdir(directory, { recursive: true })
-    },
-    catch: (cause) =>
+  yield* Effect.gen(function*() {
+    yield* fs.remove(directory, { recursive: true, force: true })
+    yield* fs.makeDirectory(directory, { recursive: true })
+  }).pipe(
+    Effect.mapError((cause) =>
       ReleaseArtifactsBuildError.make({
         operation: "prepareArtifactsDirectory",
         path: directory,
-        reason: formatUnknown(cause)
+        reason: "Unable to prepare .release/artifacts.",
+        cause
       })
-  })
+    )
+  )
   return directory
+})
+
+const runChildProcess = Effect.fn("scripts.runChildProcess")(function*(
+  command: ChildProcess.Command
+) {
+  const spawner = yield* ChildProcessSpawner
+  const output = yield* Effect.scoped(
+    Effect.gen(function*() {
+      const handle = yield* spawner.spawn(command)
+      return yield* Effect.all({
+        stdout: commandOutput(handle.stdout),
+        stderr: commandOutput(handle.stderr),
+        exitCode: handle.exitCode
+      }, { concurrency: "unbounded" })
+    })
+  )
+  return {
+    exitCode: Number(output.exitCode),
+    stdout: output.stdout,
+    stderr: output.stderr
+  }
 })
 
 const runBunPack = Effect.fn("scripts.runBunPack")(function*(
@@ -175,48 +213,69 @@ const runBunPack = Effect.fn("scripts.runBunPack")(function*(
   identity: ReleasePackageIdentity
 ) {
   const filename = packageTarballArtifactPath(identity)
-  const subprocess = Bun.spawn([
-    "bun",
-    "pm",
-    "pack",
-    "--filename",
-    filename,
-    "--quiet",
-    "--ignore-scripts"
-  ], {
-    cwd: root,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe"
-  })
-  const stdout = streamText(subprocess.stdout)
-  const stderr = streamText(subprocess.stderr)
-  const exitCode = yield* Effect.promise(() => subprocess.exited)
-  const output = `${yield* Effect.promise(() => stdout)}${yield* Effect.promise(() => stderr)}`
-  if (exitCode !== 0) {
+  const result = yield* runChildProcess(
+    ChildProcess.make(
+      "bun",
+      [
+        "pm",
+        "pack",
+        "--filename",
+        filename,
+        "--quiet",
+        "--ignore-scripts"
+      ],
+      {
+        cwd: root,
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe"
+      }
+    )
+  ).pipe(
+    Effect.mapError((cause) =>
+      ReleaseArtifactsBuildError.make({
+        operation: "bunPmPack",
+        path: filename,
+        reason: "Unable to run bun pm pack.",
+        cause
+      })
+    )
+  )
+  const output = `${result.stdout}${result.stderr}`
+  if (result.exitCode !== 0) {
     return yield* Effect.fail(
       ReleaseArtifactsBuildError.make({
         operation: "bunPmPack",
-        path: packageTarballArtifactPath(identity),
-        reason: output.trim().length === 0 ? `bun pm pack exited with ${exitCode}.` : output.trim()
+        path: filename,
+        reason: output.trim().length === 0 ? `bun pm pack exited with ${result.exitCode}.` : output.trim()
       })
     )
   }
-  return packageTarballArtifactPath(identity)
+  return filename
 })
 
 const compileCliArtifact = Effect.fn("scripts.compileCliArtifact")(function*(
   root: string,
   target: ReleaseCliArtifactTarget
 ) {
-  const output = yield* Effect.promise(() =>
-    Bun.build({
-      entrypoints: [resolve(root, "apps/release-ts/src/cli/main.ts")],
-      compile: {
-        target: target.bunTarget,
-        outfile: resolve(root, target.outfile)
-      }
-    })
+  const path = yield* Path.Path
+  const output = yield* Effect.tryPromise({
+    try: () =>
+      Bun.build({
+        entrypoints: [path.resolve(root, "apps/release-ts/src/cli/main.ts")],
+        compile: {
+          target: target.bunTarget,
+          outfile: path.resolve(root, target.outfile)
+        }
+      }),
+    catch: (cause) =>
+      ReleaseArtifactsBuildError.make({
+        operation: "bunBuildCompile",
+        path: target.outfile,
+        reason: `Bun.build rejected while compiling ${target.id}.`,
+        cause
+      })
+  }
   )
   if (!output.success) {
     const reason = output.logs.map((log) => String(log)).join("\n").trim()
@@ -247,5 +306,5 @@ export const buildReleaseArtifacts = Effect.fn("scripts.buildReleaseArtifacts")(
 })
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  BunRuntime.runMain(buildReleaseArtifacts())
+  BunRuntime.runMain(buildReleaseArtifacts().pipe(Effect.provide(BunServices.layer)))
 }

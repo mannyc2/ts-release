@@ -23,9 +23,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isReadonlyArray = (value: unknown): value is ReadonlyArray<unknown> =>
   Array.isArray(value)
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const readManifest = (
   path: string,
   label: string,
@@ -277,7 +274,8 @@ const main = async (): Promise<void> => {
             failures.push(`package root ${specifier} must be empty, got exports: ${Object.keys(module).join(", ")}`)
           }
         } catch (cause) {
-          failures.push(`failed to import ${specifier}: ${formatUnknown(cause)}`)
+          const message = cause instanceof Error ? cause.message : String(cause)
+          failures.push(`failed to import ${specifier}: ${message}`)
         }
       }
     }

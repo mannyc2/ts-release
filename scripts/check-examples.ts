@@ -1,14 +1,14 @@
+import * as BunRuntime from "@effect/platform-bun/BunRuntime"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import { readFile, readdir } from "node:fs/promises"
-import { join } from "node:path"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { RELEASE_CONFIG_SCHEMA_ID } from "../src/config/schema.js"
 import { PlanReleaseConfigOptions, renderReleaseConfigPlan } from "../src/workflows/config.js"
 
 const root = process.cwd()
-const examplesRoot = join(root, "examples")
-const templatesRoot = join(root, "templates")
 const expectedSnippets = new Map<string, ReadonlyArray<string>>([
   ["github-release", [
     "[GitHubReleaseTarget]",
@@ -72,19 +72,19 @@ interface WorkflowTemplateExpectation {
 
 const workflowTemplates: ReadonlyArray<WorkflowTemplateExpectation> = [
   {
-    path: join("github-actions", "plan-only.yml"),
+    path: "github-actions/plan-only.yml",
     actionFirst: true,
     hasExecuteJob: false,
     trustedPublishing: false
   },
   {
-    path: join("github-actions", "plan-and-approved-execute.yml"),
+    path: "github-actions/plan-and-approved-execute.yml",
     actionFirst: true,
     hasExecuteJob: true,
     trustedPublishing: false
   },
   {
-    path: join("github-actions", "trusted-publishing.yml"),
+    path: "github-actions/trusted-publishing.yml",
     actionFirst: true,
     hasExecuteJob: true,
     trustedPublishing: true
@@ -95,20 +95,25 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
 const readExampleNames = Effect.fn("scripts.readExampleNames")(function*() {
-  const entries = yield* Effect.tryPromise({
-    try: () => readdir(examplesRoot, { withFileTypes: true }),
-    catch: (cause) => cause
-  })
-  return entries
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort()
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const examplesRoot = path.join(root, "examples")
+  const entries = yield* fs.readDirectory(examplesRoot)
+  const names: Array<string> = []
+  for (const entry of entries) {
+    const info = yield* fs.stat(path.join(examplesRoot, entry))
+    if (info.type === "Directory") {
+      names.push(entry)
+    }
+  }
+  return names.sort()
 })
 
 const runExamplePlan = Effect.fn("scripts.runExamplePlan")(function*(
   exampleName: string
 ) {
-  const exampleDirectory = join(examplesRoot, exampleName)
+  const path = yield* Path.Path
+  const exampleDirectory = path.join(root, "examples", exampleName)
   const plan = yield* renderReleaseConfigPlan(
     PlanReleaseConfigOptions.make({
       root: exampleDirectory,
@@ -126,17 +131,15 @@ const runExamplePlan = Effect.fn("scripts.runExamplePlan")(function*(
 })
 
 const readTemplateConfig = Effect.fn("scripts.readTemplateConfig")(function*(templateName: string) {
-  return yield* Effect.tryPromise({
-    try: () => readFile(join(templatesRoot, templateName, "release.config.json"), "utf8"),
-    catch: (cause) => cause
-  })
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  return yield* fs.readFileString(path.join(root, "templates", templateName, "release.config.json"))
 })
 
 const readExampleConfig = Effect.fn("scripts.readExampleConfig")(function*(exampleName: string) {
-  return yield* Effect.tryPromise({
-    try: () => readFile(join(examplesRoot, exampleName, "release.config.json"), "utf8"),
-    catch: (cause) => cause
-  })
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  return yield* fs.readFileString(path.join(root, "examples", exampleName, "release.config.json"))
 })
 
 const checkTrustedPublishingNpmPolicy = Effect.fn("scripts.checkTrustedPublishingNpmPolicy")(function*(
@@ -201,7 +204,8 @@ const checkTemplateConfig = Effect.fn("scripts.checkTemplateConfig")(function*(t
   }
   yield* checkConfigNpmPolicy(`Template ${templateName}`, parsed)
 
-  const intent = yield* parseReleaseIntent(contents, join("templates", templateName, "release.config.json"))
+  const path = yield* Path.Path
+  const intent = yield* parseReleaseIntent(contents, path.join("templates", templateName, "release.config.json"))
   const actualTags = intent.targets.map((target) => target._tag).sort()
   const expected = expectedTemplateTags.get(templateName) ?? []
   const expectedTags = [...expected].sort()
@@ -215,10 +219,9 @@ const checkTemplateConfig = Effect.fn("scripts.checkTemplateConfig")(function*(t
 const checkWorkflowTemplate = Effect.fn("scripts.checkWorkflowTemplate")(function*(
   template: WorkflowTemplateExpectation
 ) {
-  const contents = yield* Effect.tryPromise({
-    try: () => readFile(join(templatesRoot, template.path), "utf8"),
-    catch: (cause) => cause
-  })
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const contents = yield* fs.readFileString(path.join(root, "templates", template.path))
   const snippets = [
     "  plan:",
     "if: always()",
@@ -283,7 +286,15 @@ const main = Effect.fn("scripts.checkExamples")(function*() {
   }
 })
 
-const checked = await Effect.runPromise(main())
-console.log(
-  `Checked ${checked.examples} release examples, ${checked.templates} release templates, and ${checked.workflows} workflow templates`
+BunRuntime.runMain(
+  main().pipe(
+    Effect.tap((checked) =>
+      Effect.sync(() =>
+        console.log(
+          `Checked ${checked.examples} release examples, ${checked.templates} release templates, and ${checked.workflows} workflow templates`
+        )
+      )
+    ),
+    Effect.provide(BunServices.layer)
+  )
 )

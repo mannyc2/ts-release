@@ -12,13 +12,16 @@ logic belongs in `src/`.
 - `check-effect-imports.ts` rejects broad root `effect` imports.
 - `check-tree-shaking.ts` checks public export graphs against the shared public API policy.
 - `check-package-exports.ts` validates package exports, declarations, side effects, and consumer type resolution.
-- `check-examples.ts` verifies every example can produce a text release plan, trusted-publishing npm examples/templates keep provenance and package-exists verification enabled, and every template stays schema/checker compatible.
+- `check-examples.ts` verifies every example can produce a text release plan through Effect Platform path/filesystem services, trusted-publishing npm examples/templates keep provenance and package-exists verification enabled, and every template stays schema/checker compatible.
 - `check-readme.ts` validates README fenced snippets and package import subpaths.
-- `check-action-bundle.ts` verifies the tracked GitHub Action bundle matches a fresh temporary build.
+- `check-action-bundle.ts` verifies the tracked GitHub Action bundle matches a fresh temporary build through Effect Platform temporary-directory, filesystem, path, and child-process services.
 
 Self-release dogfood scripts are app-owned under `apps/release-ts/scripts/`.
 Root package scripts delegate to those app scripts for release eligibility,
-self-release config checks, and release artifact preparation.
+self-release config checks, and release artifact preparation. Release artifact
+preparation uses Effect Platform filesystem, path, and child-process services
+where the Bun runtime exposes them, while keeping `Bun.build` for standalone
+CLI compilation.
 
 ## Internal Helpers
 

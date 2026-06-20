@@ -104431,7 +104431,7 @@ var readIntentFiles = fn2("readIntentFiles")(function* (root, strategy) {
   const files = [];
   for (const entry of entries.filter((item) => item.endsWith(".json")).sort()) {
     yield* validateNonEmptySafeRelativePath("releaseDecision.intentFile", entry);
-    const intentPath = path4.resolve(absoluteDirectory, entry);
+    const intentPath = path4.join(absoluteDirectory, entry);
     const contents = yield* fs8.readFileString(intentPath).pipe(mapError3((error2) => eligibilityError(`Unable to read release intent file ${entry}: ${error2.message}`, undefined, error2)));
     const parsed = yield* try_2({
       try: () => JSON.parse(contents),

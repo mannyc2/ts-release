@@ -776,7 +776,7 @@ const readIntentFiles = Effect.fn("readIntentFiles")(function*(
   const files: Array<ReleaseIntentFile> = []
   for (const entry of entries.filter((item) => item.endsWith(".json")).sort()) {
     yield* validateNonEmptySafeRelativePath("releaseDecision.intentFile", entry)
-    const intentPath = path.resolve(absoluteDirectory, entry)
+    const intentPath = path.join(absoluteDirectory, entry)
     const contents = yield* fs.readFileString(intentPath).pipe(
       Effect.mapError((error) =>
         eligibilityError(`Unable to read release intent file ${entry}: ${error.message}`, undefined, error)

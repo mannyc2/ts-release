@@ -1,5 +1,8 @@
+import { expect } from "@effect/bun-test"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as ConfigProvider from "effect/ConfigProvider"
+import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { commandKey } from "../src/host/test.js"
@@ -9,6 +12,20 @@ export const runEffect = <A, E, R>(
   effect: Effect.Effect<A, E, R>,
   layer: Layer.Layer<R>
 ): Promise<A> => Effect.runPromise(effect.pipe(Effect.provide(layer)))
+
+const isTaggedError = (value: unknown): value is { readonly _tag: string } =>
+  typeof value === "object" && value !== null && "_tag" in value
+
+export const expectTaggedError = (error: unknown, tag: string): void => {
+  expect(isTaggedError(error) ? error._tag : undefined).toBe(tag)
+}
+
+export const expectExitFailureTag = <A, E>(exit: Exit.Exit<A, E>, tag: string): void => {
+  expect(exit._tag).toBe("Failure")
+  if (exit._tag === "Failure") {
+    expectTaggedError(Cause.squash(exit.cause), tag)
+  }
+}
 
 export const minimalConfig = JSON.stringify({
   identity: {

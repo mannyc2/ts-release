@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, layer, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import type * as Scope from "effect/Scope"
 import * as Command from "effect/unstable/cli/Command"
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -36,6 +37,8 @@ import { commandKey } from "../src/host/test.js"
 import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import {
+  expectExitFailureTag,
+  expectTaggedError,
   makeObservableCommandRunnerLayer,
   minimalConfig,
   noOpConfig,
@@ -46,6 +49,29 @@ import {
 const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
   stream === null ? "" : await new Response(stream).text()
 
+const withTempDirectory = <A, E, R>(
+  prefix: string,
+  use: (root: string) => Effect.Effect<A, E, R>
+): Effect.Effect<A, E, R | Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.promise(() => mkdtemp(join(tmpdir(), prefix))),
+    (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
+  ).pipe(Effect.flatMap(use))
+
+const approvalCliLayer = Layer.mergeAll(
+  makeObservableCommandRunnerLayer({
+    env: new Map([
+      ["NPM_TOKEN", "npm_secret"],
+      ["GH_TOKEN", "gh_secret"]
+    ]),
+    commands: new Map()
+  }),
+  LiveTargetRegistryLayer,
+  BunServices.layer
+)
+
+// The remaining direct Effect.provide calls in this file exercise CLI entrypoints
+// around one-off temp-directory setup; reusable Effect fixtures use layer(...).
 describe("cli command", () => {
   test("exports the root release command", () => {
     expect(cli.name).toBe("release")
@@ -253,10 +279,7 @@ describe("cli command", () => {
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
-      expect(missing._tag).toBe("Failure")
-      if (missing._tag === "Failure") {
-        expect(String(missing.cause)).toContain("PlanOperationNotFoundError")
-      }
+      expectExitFailureTag(missing, "PlanOperationNotFoundError")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -311,10 +334,7 @@ describe("cli command", () => {
           "--write"
         ]).pipe(Effect.provide(BunServices.layer))
       )
-      expect(blocked._tag).toBe("Failure")
-      if (blocked._tag === "Failure") {
-        expect(String(blocked.cause)).toContain("ReleaseInitWriteError")
-      }
+      expectExitFailureTag(blocked, "ReleaseInitWriteError")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -421,10 +441,7 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(BunServices.layer))
       )
 
-      expect(exit._tag).toBe("Failure")
-      if (exit._tag === "Failure") {
-        expect(String(exit.cause)).toContain("ReleaseInitWriteError")
-      }
+      expectExitFailureTag(exit, "ReleaseInitWriteError")
       await expect(readFile(configPath, "utf8")).rejects.toThrow()
       await expect(readFile(join(root, ".github", "outside.yml"), "utf8")).rejects.toThrow()
     } finally {
@@ -611,70 +628,36 @@ describe("cli command", () => {
     }
   })
 
-  test("execute command fails without execute approval", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-execute-"))
-    try {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig)
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map()
-        }),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
+  layer(approvalCliLayer)((it) => {
+    it.effect("execute command fails without execute approval", () =>
+      withTempDirectory("ts-release-cli-execute-", (root) =>
+        Effect.gen(function*() {
+          const configPath = join(root, "release.config.json")
+          yield* Effect.promise(() => writeFile(configPath, minimalConfig))
+          const error = yield* Command.runWith(cli, { version: "0.0.0" })([
+            "execute",
+            "--config",
+            configPath
+          ]).pipe(Effect.flip)
 
-      const exit = await Effect.runPromiseExit(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "execute",
-          "--config",
-          configPath
-        ]).pipe(Effect.provide(layer))
-      )
-      expect(exit._tag).toBe("Failure")
-      if (exit._tag === "Failure") {
-        expect(String(exit.cause)).toContain("ExecutionApprovalError")
-      }
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+          expectTaggedError(error, "ExecutionApprovalError")
+        })
+      ))
 
-  test("run command fails without execute approval", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-run-approval-"))
-    try {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig)
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map()
-        }),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
+    it.effect("run command fails without execute approval", () =>
+      withTempDirectory("ts-release-cli-run-approval-", (root) =>
+        Effect.gen(function*() {
+          const configPath = join(root, "release.config.json")
+          yield* Effect.promise(() => writeFile(configPath, minimalConfig))
+          const error = yield* Command.runWith(cli, { version: "0.0.0" })([
+            "run",
+            "--config",
+            configPath
+          ]).pipe(Effect.flip)
 
-      const exit = await Effect.runPromiseExit(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "run",
-          "--config",
-          configPath
-        ]).pipe(Effect.provide(layer))
-      )
-      expect(exit._tag).toBe("Failure")
-      if (exit._tag === "Failure") {
-        expect(String(exit.cause)).toContain("ExecutionApprovalError")
-      }
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+          expectTaggedError(error, "ExecutionApprovalError")
+        })
+      ))
   })
 
   test("eligibility command checks remote state through the config workflow", async () => {
@@ -777,10 +760,7 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root })))
       )
 
-      expect(exit._tag).toBe("Failure")
-      if (exit._tag === "Failure") {
-        expect(String(exit.cause)).toContain("ReleaseEligibilityCheckError")
-      }
+      expectExitFailureTag(exit, "ReleaseEligibilityCheckError")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -925,10 +905,7 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(layer))
       )
 
-      expect(exit._tag).toBe("Failure")
-      if (exit._tag === "Failure") {
-        expect(String(exit.cause)).toContain("ResumeBlockedError")
-      }
+      expectExitFailureTag(exit, "ResumeBlockedError")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -1026,10 +1003,7 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(layer))
       )
 
-      expect(exit._tag).toBe("Failure")
-      if (exit._tag === "Failure") {
-        expect(String(exit.cause)).toContain("OperationFailedError")
-      }
+      expectExitFailureTag(exit, "OperationFailedError")
       const renderEvidence = await readFile(join(root, ".release", "evidence", "render.json"), "utf8")
       const validationEvidence = await readFile(join(root, ".release", "evidence", "validation.json"), "utf8")
       expect(renderEvidence).toContain("homebrew:homebrew-render-formula:execution")

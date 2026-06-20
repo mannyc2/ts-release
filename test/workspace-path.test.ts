@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "@effect/bun-test"
 import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"

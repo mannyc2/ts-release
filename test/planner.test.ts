@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
@@ -12,7 +12,7 @@ import {
   renderPlanSummary
 } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { homebrewConfig, minimalConfig, releaseConfig, runEffect, scoopConfig } from "./helpers.js"
+import { expectTaggedError, homebrewConfig, minimalConfig, releaseConfig, scoopConfig } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -62,415 +62,332 @@ const ChecksumLayer = Layer.mergeAll(
   LiveTargetRegistryLayer
 )
 
+const createPlan = (config: string) =>
+  Effect.gen(function*() {
+    const intent = yield* parseReleaseIntent(config)
+    return yield* createReleasePlan(intent)
+  })
+
 describe("planner", () => {
-  test("creates stable plans with ordered operation phases", async () => {
-    const plan = await runEffect(
+  layer(TestLayer)((it) => {
+    it.effect("creates stable plans with ordered operation phases", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        return yield* createReleasePlan(intent)
-      }),
-      TestLayer
-    )
+        const plan = yield* createPlan(minimalConfig)
+        const publishIds = plan.operations
+          .filter((operation) => operation._tag === "PublishCommandOperation")
+          .map((operation) => operation.id)
+        const firstPublishIndex = plan.operations.findIndex((operation) => operation._tag === "PublishCommandOperation")
+        const firstVerifyIndex = plan.operations.findIndex((operation) =>
+          operation._tag === "VerifyRemoteOperation" || operation._tag === "VerifyHttpOperation"
+        )
 
-    const publishIds = plan.operations
-      .filter((operation) => operation._tag === "PublishCommandOperation")
-      .map((operation) => operation.id)
-    const firstPublishIndex = plan.operations.findIndex((operation) => operation._tag === "PublishCommandOperation")
-    const firstVerifyIndex = plan.operations.findIndex((operation) =>
-      operation._tag === "VerifyRemoteOperation" || operation._tag === "VerifyHttpOperation"
-    )
-
-    expect(plan.targets.map((target) => target.id)).toEqual(["github", "npm"])
-    expect(publishIds).toEqual(["npm:npm-publish", "github:gh-release-create"])
-    expect(firstPublishIndex).toBeGreaterThan(
-      Math.max(
-        ...plan.operations
-          .map((operation, index) =>
-            operation._tag === "ValidateCommandOperation" || operation._tag === "ValidationNoteOperation" ? index : -1
+        expect(plan.targets.map((target) => target.id)).toEqual(["github", "npm"])
+        expect(publishIds).toEqual(["npm:npm-publish", "github:gh-release-create"])
+        expect(firstPublishIndex).toBeGreaterThan(
+          Math.max(
+            ...plan.operations
+              .map((operation, index) =>
+                operation._tag === "ValidateCommandOperation" || operation._tag === "ValidationNoteOperation" ? index : -1
+              )
           )
-      )
-    )
-    expect(firstVerifyIndex).toBeGreaterThan(firstPublishIndex)
-    expect(plan.identity.commit).toBe("abc123")
-    expect(renderPlanJson(plan)).toBe(renderPlanJson(plan))
-  })
+        )
+        expect(firstVerifyIndex).toBeGreaterThan(firstPublishIndex)
+        expect(plan.identity.commit).toBe("abc123")
+        expect(renderPlanJson(plan)).toBe(renderPlanJson(plan))
+      }))
 
-  test("resolves HEAD release identity through the host git command", async () => {
-    const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ]),
-        commands: new Map([
-          [commandKey(gitHeadCommand), {
-            exitCode: 0,
-            stdout: "81587b5\n",
-            stderr: ""
-          }]
-        ])
-      }),
-      LiveTargetRegistryLayer
-    )
-
-    const plan = await runEffect(
+    it.effect("rejects unsafe package manifest identity paths", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(headConfig)
-        return yield* createReleasePlan(intent)
-      }),
-      layer
-    )
+        const config = releaseConfig({
+          identity: {
+            _tag: "PackageManifestReleaseIdentitySource",
+            packagePath: "../package.json",
+            commit: "HEAD",
+            tagTemplate: "v{version}"
+          },
+          artifacts: [],
+          targets: []
+        })
 
-    expect(plan.identity.commit).toBe("81587b5")
-  })
+        const error = yield* createPlan(config).pipe(Effect.flip)
 
-  test("resolves package manifest identity during normalization", async () => {
-    const config = releaseConfig({
-      identity: {
-        _tag: "PackageManifestReleaseIdentitySource",
-        commit: "HEAD",
-        tagTemplate: "v{version}"
-      },
-      artifacts: [
-        {
-          id: "archive",
-          path: "artifacts/{normalizedName}-{version}.tgz",
-          format: "tarball",
-          consumers: []
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("identity.packagePath")
         }
-      ],
-      targets: []
-    })
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        files: new Map([
-          ["package.json", JSON.stringify({ name: "@scope/pkg", version: "1.2.3" })],
-          ["artifacts/scope-pkg-1.2.3.tgz", "archive"]
-        ]),
-        commands: new Map([
-          [commandKey(gitHeadCommand), {
-            exitCode: 0,
-            stdout: "81587b5\n",
-            stderr: ""
-          }]
-        ])
-      }),
-      LiveTargetRegistryLayer
-    )
+      }))
 
-    const plan = await runEffect(
+    it.effect("marks publish operations as gated", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(config)
-        return yield* createReleasePlan(intent)
-      }),
-      layer
-    )
+        const plan = yield* createPlan(minimalConfig)
+        const publish = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
 
-    expect(plan.identity).toMatchObject({
-      name: "@scope/pkg",
-      version: "1.2.3",
-      commit: "81587b5",
-      tag: "v1.2.3"
-    })
-    expect(plan.artifacts[0]?.path).toBe("artifacts/scope-pkg-1.2.3.tgz")
-  })
+        expect(publish.length).toBe(2)
+        expect(publish.every((operation) => !canExecuteOperation(operation, ExecutionApproval.none))).toBe(true)
+      }))
 
-  test("rejects unsafe package manifest identity paths", async () => {
-    const config = releaseConfig({
-      identity: {
-        _tag: "PackageManifestReleaseIdentitySource",
-        packagePath: "../package.json",
-        commit: "HEAD",
-        tagTemplate: "v{version}"
-      },
-      artifacts: [],
-      targets: []
-    })
-
-    const error = await runEffect(
+    it.effect("does not attach npm tokens to pack dry-run validation", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(config)
-        return yield* createReleasePlan(intent)
-      }).pipe(Effect.flip),
-      TestLayer
-    )
+        const plan = yield* createPlan(minimalConfig)
+        const pack = plan.operations.find((operation) => operation.id === "npm:npm-pack-dry-run")
+        const publish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("identity.packagePath")
-    }
-  })
-
-  test("expands artifact path templates before inventory", async () => {
-    const config = releaseConfig({
-      artifacts: [
-        {
-          id: "archive",
-          path: "artifacts/{name}-{version}-{normalizedName}.tgz",
-          format: "tarball",
-          consumers: []
+        expect(pack?._tag).toBe("ValidateCommandOperation")
+        expect(publish?._tag).toBe("PublishCommandOperation")
+        if (pack?._tag === "ValidateCommandOperation" && publish?._tag === "PublishCommandOperation") {
+          expect(pack.command.requiredEnv).toEqual([])
+          expect(publish.command.requiredEnv).toEqual(["NPM_TOKEN"])
         }
-      ],
-      targets: []
-    })
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        files: new Map([["artifacts/release-0.1.0-release.tgz", "archive"]])
-      }),
-      LiveTargetRegistryLayer
-    )
+      }))
 
-    const plan = await runEffect(
+    it.effect("rejects unsafe evidence directory traversal", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(config)
-        return yield* createReleasePlan(intent)
-      }),
-      layer
-    )
+        const unsafeConfig = minimalConfig.replace(
+          "\"evidenceDirectory\":\".release/evidence\"",
+          "\"evidenceDirectory\":\"../outside\""
+        )
+        const error = yield* createPlan(unsafeConfig).pipe(Effect.flip)
 
-    expect(plan.artifacts[0]?.path).toBe("artifacts/release-0.1.0-release.tgz")
+        expectTaggedError(error, "ReleaseNormalizationError")
+      }))
+
+    it.effect("rejects empty path fields during normalization", () =>
+      Effect.gen(function*() {
+        const cases: ReadonlyArray<{
+          readonly label: string
+          readonly config: string
+          readonly field: string
+        }> = [
+          {
+            label: "evidence directory",
+            config: minimalConfig.replace("\"evidenceDirectory\":\".release/evidence\"", "\"evidenceDirectory\":\"\""),
+            field: "evidenceDirectory"
+          },
+          {
+            label: "artifact path",
+            config: minimalConfig.replace("\"path\":\".\"", "\"path\":\"\""),
+            field: "artifacts.package.path"
+          },
+          {
+            label: "npm package path",
+            config: minimalConfig.replace("\"packagePath\":\".\"", "\"packagePath\":\"\""),
+            field: "targets.npm.packagePath"
+          },
+          {
+            label: "Homebrew formula path",
+            config: homebrewConfig({ formulaPath: "" }),
+            field: "targets.homebrew.formulaPath"
+          },
+          {
+            label: "Scoop manifest path",
+            config: scoopConfig({ manifestPath: "" }),
+            field: "targets.scoop.manifestPath"
+          }
+        ]
+
+        for (const item of cases) {
+          const error = yield* createPlan(item.config).pipe(Effect.flip)
+
+          expect(error._tag, item.label).toBe("ReleaseNormalizationError")
+          if (error._tag === "ReleaseNormalizationError") {
+            expect(error.field).toBe(item.field)
+          }
+        }
+      }))
+
+    it.effect("rejects missing artifacts", () =>
+      Effect.gen(function*() {
+        const missingConfig = minimalConfig.replace("\"path\":\".\"", "\"path\":\"missing.tgz\"")
+          .replace("\"format\":\"directory\"", "\"format\":\"tarball\"")
+        const error = yield* createPlan(missingConfig).pipe(Effect.flip)
+
+        expectTaggedError(error, "ReleaseNormalizationError")
+      }))
+
+    it.effect("renders summary and Markdown review output", () =>
+      Effect.gen(function*() {
+        const plan = yield* createPlan(minimalConfig)
+        const summary = renderPlanSummary(plan)
+        const markdown = renderPlanMarkdown(plan)
+
+        expect(summary).toContain("irreversible approval required")
+        expect(summary).toContain("execute required")
+        expect(summary).toContain("npm:npm-publish")
+        expect(markdown).toContain("# Release Plan release@0.1.0")
+        expect(markdown).toContain("### npm:npm-publish")
+        expect(markdown).toContain(JSON.stringify(["npm", "publish", ".", "--registry", "https://registry.npmjs.org"], null, 2))
+      }))
+
+    it.effect("explains one operation by stable id", () =>
+      Effect.gen(function*() {
+        const plan = yield* createPlan(minimalConfig)
+        const explanation = yield* renderPlanOperationExplanation(plan, "npm:npm-publish")
+
+        expect(explanation).toContain("operation: npm:npm-publish")
+        expect(explanation).toContain("risk: irreversible")
+        expect(explanation).toContain("execution gate: --execute + --approve-irreversible")
+        expect(explanation).toContain("argv:")
+      }))
+
+    it.effect("explaining a missing operation returns a typed error", () =>
+      Effect.gen(function*() {
+        const plan = yield* createPlan(minimalConfig)
+        const error = yield* renderPlanOperationExplanation(plan, "missing:operation").pipe(Effect.flip)
+
+        expectTaggedError(error, "PlanOperationNotFoundError")
+      }))
   })
 
-  test("reports git HEAD resolution failures as normalization errors", async () => {
-    const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ]),
-        commands: new Map([
-          [commandKey(gitHeadCommand), {
-            exitCode: 1,
-            stdout: "",
-            stderr: "not a git checkout"
-          }]
-        ])
-      }),
-      LiveTargetRegistryLayer
-    )
-
-    const exit = await Effect.runPromiseExit(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      directories: new Set(["."]),
+      env: new Map([
+        ["NPM_TOKEN", "npm_secret"],
+        ["GH_TOKEN", "gh_secret"]
+      ]),
+      commands: new Map([
+        [commandKey(gitHeadCommand), {
+          exitCode: 0,
+          stdout: "81587b5\n",
+          stderr: ""
+        }]
+      ])
+    }),
+    LiveTargetRegistryLayer
+  ))((it) => {
+    it.effect("resolves HEAD release identity through the host git command", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(headConfig)
-        return yield* createReleasePlan(intent)
-      }).pipe(Effect.provide(layer))
-    )
+        const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
+        const plan = yield* createPlan(headConfig)
 
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ReleaseNormalizationError")
-    }
+        expect(plan.identity.commit).toBe("81587b5")
+      }))
   })
 
-  test("marks publish operations as gated", async () => {
-    const plan = await runEffect(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      files: new Map([
+        ["package.json", JSON.stringify({ name: "@scope/pkg", version: "1.2.3" })],
+        ["artifacts/scope-pkg-1.2.3.tgz", "archive"]
+      ]),
+      commands: new Map([
+        [commandKey(gitHeadCommand), {
+          exitCode: 0,
+          stdout: "81587b5\n",
+          stderr: ""
+        }]
+      ])
+    }),
+    LiveTargetRegistryLayer
+  ))((it) => {
+    it.effect("resolves package manifest identity during normalization", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        return yield* createReleasePlan(intent)
-      }),
-      TestLayer
-    )
+        const config = releaseConfig({
+          identity: {
+            _tag: "PackageManifestReleaseIdentitySource",
+            commit: "HEAD",
+            tagTemplate: "v{version}"
+          },
+          artifacts: [
+            {
+              id: "archive",
+              path: "artifacts/{normalizedName}-{version}.tgz",
+              format: "tarball",
+              consumers: []
+            }
+          ],
+          targets: []
+        })
+        const plan = yield* createPlan(config)
 
-    const publish = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
-    expect(publish.length).toBe(2)
-    expect(publish.every((operation) => !canExecuteOperation(operation, ExecutionApproval.none))).toBe(true)
+        expect(plan.identity).toMatchObject({
+          name: "@scope/pkg",
+          version: "1.2.3",
+          commit: "81587b5",
+          tag: "v1.2.3"
+        })
+        expect(plan.artifacts[0]?.path).toBe("artifacts/scope-pkg-1.2.3.tgz")
+      }))
   })
 
-  test("does not attach npm tokens to pack dry-run validation", async () => {
-    const plan = await runEffect(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      files: new Map([["artifacts/release-0.1.0-release.tgz", "archive"]])
+    }),
+    LiveTargetRegistryLayer
+  ))((it) => {
+    it.effect("expands artifact path templates before inventory", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        return yield* createReleasePlan(intent)
-      }),
-      TestLayer
-    )
+        const config = releaseConfig({
+          artifacts: [
+            {
+              id: "archive",
+              path: "artifacts/{name}-{version}-{normalizedName}.tgz",
+              format: "tarball",
+              consumers: []
+            }
+          ],
+          targets: []
+        })
+        const plan = yield* createPlan(config)
 
-    const pack = plan.operations.find((operation) => operation.id === "npm:npm-pack-dry-run")
-    const publish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
-    expect(pack?._tag).toBe("ValidateCommandOperation")
-    expect(publish?._tag).toBe("PublishCommandOperation")
-    if (pack?._tag === "ValidateCommandOperation" && publish?._tag === "PublishCommandOperation") {
-      expect(pack.command.requiredEnv).toEqual([])
-      expect(publish.command.requiredEnv).toEqual(["NPM_TOKEN"])
-    }
+        expect(plan.artifacts[0]?.path).toBe("artifacts/release-0.1.0-release.tgz")
+      }))
   })
 
-  test("rejects unsafe evidence directory traversal", async () => {
-    const unsafeConfig = minimalConfig.replace(
-      "\"evidenceDirectory\":\".release/evidence\"",
-      "\"evidenceDirectory\":\"../outside\""
-    )
-    const exit = await Effect.runPromiseExit(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      directories: new Set(["."]),
+      env: new Map([
+        ["NPM_TOKEN", "npm_secret"],
+        ["GH_TOKEN", "gh_secret"]
+      ]),
+      commands: new Map([
+        [commandKey(gitHeadCommand), {
+          exitCode: 1,
+          stdout: "",
+          stderr: "not a git checkout"
+        }]
+      ])
+    }),
+    LiveTargetRegistryLayer
+  ))((it) => {
+    it.effect("reports git HEAD resolution failures as normalization errors", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(unsafeConfig)
-        return yield* createReleasePlan(intent)
-      }).pipe(Effect.provide(TestLayer))
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ReleaseNormalizationError")
-    }
+        const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
+        const error = yield* createPlan(headConfig).pipe(Effect.flip)
+
+        expectTaggedError(error, "ReleaseNormalizationError")
+      }))
   })
 
-  test("rejects empty path fields during normalization", async () => {
-    const cases: ReadonlyArray<{
-      readonly label: string
-      readonly config: string
-      readonly field: string
-    }> = [
-      {
-        label: "evidence directory",
-        config: minimalConfig.replace("\"evidenceDirectory\":\".release/evidence\"", "\"evidenceDirectory\":\"\""),
-        field: "evidenceDirectory"
-      },
-      {
-        label: "artifact path",
-        config: minimalConfig.replace("\"path\":\".\"", "\"path\":\"\""),
-        field: "artifacts.package.path"
-      },
-      {
-        label: "npm package path",
-        config: minimalConfig.replace("\"packagePath\":\".\"", "\"packagePath\":\"\""),
-        field: "targets.npm.packagePath"
-      },
-      {
-        label: "Homebrew formula path",
-        config: homebrewConfig({ formulaPath: "" }),
-        field: "targets.homebrew.formulaPath"
-      },
-      {
-        label: "Scoop manifest path",
-        config: scoopConfig({ manifestPath: "" }),
-        field: "targets.scoop.manifestPath"
-      }
-    ]
-
-    for (const item of cases) {
-      const error = await runEffect(
-        Effect.gen(function*() {
-          const intent = yield* parseReleaseIntent(item.config)
-          return yield* createReleasePlan(intent)
-        }).pipe(Effect.flip),
-        TestLayer
-      )
-
-      expect(error._tag, item.label).toBe("ReleaseNormalizationError")
-      if (error._tag === "ReleaseNormalizationError") {
-        expect(error.field).toBe(item.field)
-      }
-    }
-  })
-
-  test("rejects missing artifacts", async () => {
-    const missingConfig = minimalConfig.replace("\"path\":\".\"", "\"path\":\"missing.tgz\"")
-      .replace("\"format\":\"directory\"", "\"format\":\"tarball\"")
-    const exit = await Effect.runPromiseExit(
+  layer(ChecksumLayer)((it) => {
+    it.effect("preserves matching manual sha256 checksums", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(missingConfig)
-        return yield* createReleasePlan(intent)
-      }).pipe(Effect.provide(TestLayer))
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ReleaseNormalizationError")
-    }
-  })
+        const checksum = "6d616e75616c2061726368697665"
+        const plan = yield* createPlan(manualChecksumConfig({ algorithm: "sha256", value: checksum }))
 
-  test("preserves matching manual sha256 checksums", async () => {
-    const checksum = "6d616e75616c2061726368697665"
-    const plan = await runEffect(
+        expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: checksum })
+      }))
+
+    it.effect("rejects mismatched manual sha256 checksums", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(manualChecksumConfig({ algorithm: "sha256", value: checksum }))
-        return yield* createReleasePlan(intent)
-      }),
-      ChecksumLayer
-    )
+        const error = yield* createPlan(manualChecksumConfig({ algorithm: "sha256", value: "00" })).pipe(Effect.flip)
 
-    expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: checksum })
-  })
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifacts.archive.checksum")
+        }
+      }))
 
-  test("rejects mismatched manual sha256 checksums", async () => {
-    const error = await runEffect(
+    it.effect("rejects manual non-sha256 checksums during artifact inventory", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(manualChecksumConfig({ algorithm: "sha256", value: "00" }))
-        return yield* createReleasePlan(intent)
-      }).pipe(Effect.flip),
-      ChecksumLayer
-    )
+        const error = yield* createPlan(manualChecksumConfig({ algorithm: "sha512", value: "sha512:manual" })).pipe(Effect.flip)
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("artifacts.archive.checksum")
-    }
-  })
-
-  test("rejects manual non-sha256 checksums during artifact inventory", async () => {
-    const error = await runEffect(
-      Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(manualChecksumConfig({ algorithm: "sha512", value: "sha512:manual" }))
-        return yield* createReleasePlan(intent)
-      }).pipe(Effect.flip),
-      ChecksumLayer
-    )
-
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("artifacts.archive.checksum")
-    }
-  })
-
-  test("renders summary and Markdown review output", async () => {
-    const plan = await runEffect(
-      Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        return yield* createReleasePlan(intent)
-      }),
-      TestLayer
-    )
-
-    const summary = renderPlanSummary(plan)
-    expect(summary).toContain("irreversible approval required")
-    expect(summary).toContain("execute required")
-    expect(summary).toContain("npm:npm-publish")
-
-    const markdown = renderPlanMarkdown(plan)
-    expect(markdown).toContain("# Release Plan release@0.1.0")
-    expect(markdown).toContain("### npm:npm-publish")
-    expect(markdown).toContain(JSON.stringify(["npm", "publish", ".", "--registry", "https://registry.npmjs.org"], null, 2))
-  })
-
-  test("explains one operation by stable id", async () => {
-    const explanation = await runEffect(
-      Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        return yield* renderPlanOperationExplanation(plan, "npm:npm-publish")
-      }),
-      TestLayer
-    )
-
-    expect(explanation).toContain("operation: npm:npm-publish")
-    expect(explanation).toContain("risk: irreversible")
-    expect(explanation).toContain("execution gate: --execute + --approve-irreversible")
-    expect(explanation).toContain("argv:")
-  })
-
-  test("explaining a missing operation returns a typed error", async () => {
-    const exit = await Effect.runPromiseExit(
-      Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        return yield* renderPlanOperationExplanation(plan, "missing:operation")
-      }).pipe(Effect.provide(TestLayer))
-    )
-
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("PlanOperationNotFoundError")
-    }
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifacts.archive.checksum")
+        }
+      }))
   })
 })

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -7,7 +7,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
   type ActionArtifactClient,
+  ActionArtifactUploadError,
   type ActionIo,
+  formatActionError,
   NoopActionArtifactClient,
   runAction
 } from "../apps/ts-release-action/src/action.js"
@@ -423,6 +425,19 @@ describe("ts-release action", () => {
     expect(io.outputs.get("status")).toBe("failed")
     expect(io.failures.join("\n")).toContain("ActionInputError")
     expect(io.failures.join("\n")).toContain("Expected true or false")
+  })
+
+  test("artifact upload errors preserve compact foreign causes", () => {
+    const cause = new Error("artifact service unavailable")
+    const error = ActionArtifactUploadError.make({
+      reason: "upload failed",
+      cause
+    })
+
+    expect(error.cause).toBe(cause)
+    expect(formatActionError(error)).toBe(
+      "ActionArtifactUploadError: upload failed (cause: artifact service unavailable)"
+    )
   })
 
   test("validate writes validation evidence and can upload it through a fake artifact client", async () => {

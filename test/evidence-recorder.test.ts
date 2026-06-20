@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, layer, test } from "@effect/bun-test"
 import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -39,7 +39,6 @@ import {
   writeEvidenceBundle
 } from "../src/planner/evidence-recorder.js"
 import { runOperation } from "../src/planner/executor.js"
-import { runEffect } from "./helpers.js"
 
 const makeWorkspaceTestCommandRunnerLayer = (
   options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}
@@ -102,7 +101,7 @@ describe("evidence recorder", () => {
     expect(redactText("plain output", [""])).toBe("plain output")
   })
 
-  test("redacts command output through the shared executor", async () => {
+  {
     const command = CommandSpec.make({
       executable: "tool",
       args: ["validate"],
@@ -116,7 +115,8 @@ describe("evidence recorder", () => {
       gate: noApprovalGate("read-only"),
       command
     })
-    const layer = makeWorkspaceTestCommandRunnerLayer({
+
+    layer(makeWorkspaceTestCommandRunnerLayer({
       env: new Map([["TOKEN", "super_secret"]]),
       commands: new Map([
         [commandKey(command), {
@@ -125,19 +125,23 @@ describe("evidence recorder", () => {
           stderr: "stderr super_secret"
         }]
       ])
+    }))((it) => {
+      it.effect("redacts command output through the shared executor", () =>
+        Effect.gen(function*() {
+          const evidence = yield* runOperation(operation, ExecutionApproval.none)
+
+          expect("stdout" in evidence && "stderr" in evidence).toBe(true)
+          if ("stdout" in evidence && "stderr" in evidence) {
+            expect(evidence.stdout).toBe("stdout [REDACTED]")
+            expect(evidence.stderr).toBe("stderr [REDACTED]")
+            expect(evidence.operationFingerprint).toBe(operationFingerprint(operation))
+            expect(evidence.operationFingerprint).not.toContain("super_secret")
+          }
+        }))
     })
+  }
 
-    const evidence = await runEffect(runOperation(operation, ExecutionApproval.none), layer)
-    expect("stdout" in evidence && "stderr" in evidence).toBe(true)
-    if ("stdout" in evidence && "stderr" in evidence) {
-      expect(evidence.stdout).toBe("stdout [REDACTED]")
-      expect(evidence.stderr).toBe("stderr [REDACTED]")
-      expect(evidence.operationFingerprint).toBe(operationFingerprint(operation))
-      expect(evidence.operationFingerprint).not.toContain("super_secret")
-    }
-  })
-
-  test("evaluates HTTP verification evidence through the shared executor", async () => {
+  {
     const request = HttpRequestSpec.make({
       method: "GET",
       url: "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0",
@@ -159,7 +163,8 @@ describe("evidence recorder", () => {
         HttpJsonArrayObjectFieldEqualsCheck.make({ path: ["assets"], field: "name", expected: "package.tgz" })
       ]
     })
-    const layer = Layer.mergeAll(
+
+    layer(Layer.mergeAll(
       makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
       makeTestReleaseHttpLayer({
         responses: new Map([
@@ -178,79 +183,84 @@ describe("evidence recorder", () => {
           }]
         ])
       })
-    )
+    ))((it) => {
+      it.effect("evaluates HTTP verification evidence through the shared executor", () =>
+        Effect.gen(function*() {
+          const evidence = yield* runOperation(operation, ExecutionApproval.none)
 
-    const evidence = await runEffect(runOperation(operation, ExecutionApproval.none), layer)
+          expect("responseStatus" in evidence && evidence.responseStatus).toBe(200)
+          expect("checks" in evidence && evidence.checks.every((check) => check.passed)).toBe(true)
+          expect("operationFingerprint" in evidence && evidence.operationFingerprint).toBe(operationFingerprint(operation))
+          expect("responseHeaders" in evidence).toBe(false)
+        }))
+    })
+  }
 
-    expect("responseStatus" in evidence && evidence.responseStatus).toBe(200)
-    expect("checks" in evidence && evidence.checks.every((check) => check.passed)).toBe(true)
-    expect("operationFingerprint" in evidence && evidence.operationFingerprint).toBe(operationFingerprint(operation))
-    expect("responseHeaders" in evidence).toBe(false)
+  layer(makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) }))((it) => {
+    it.effect("records fingerprints for render and validation-note evidence", () =>
+      Effect.gen(function*() {
+        const renderOperation = RenderFileOperation.make({
+          id: "render-readme",
+          description: "Render README.",
+          risk: "writes-local",
+          gate: executeGate("Rendering writes a local file."),
+          path: ".release/generated/readme.md",
+          contents: "# Release\n"
+        })
+        const validationOperation = ValidationNoteOperation.make({
+          id: "validate-note",
+          description: "Record validation note.",
+          risk: "read-only",
+          gate: noApprovalGate("read-only"),
+          message: "No local validation command is configured.",
+          skipped: true,
+          severity: "info"
+        })
+
+        const renderEvidence = yield* runOperation(
+          renderOperation,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        )
+        const validationEvidence = yield* runOperation(validationOperation, ExecutionApproval.none)
+
+        expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toBe(
+          operationFingerprint(renderOperation)
+        )
+        expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).not.toContain("# Release")
+        expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toContain("contentsDigest")
+        expect("operationFingerprint" in validationEvidence && validationEvidence.operationFingerprint).toBe(
+          operationFingerprint(validationOperation)
+        )
+      }))
+
+    it.effect("rejects render writes outside the workspace root", () =>
+      Effect.gen(function*() {
+        const operation = RenderFileOperation.make({
+          id: "render-outside",
+          description: "Render outside.",
+          risk: "writes-local",
+          gate: executeGate("Rendering writes a local file."),
+          path: "../outside.md",
+          contents: "# Release\n"
+        })
+        const error = yield* runOperation(
+          operation,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        ).pipe(Effect.flip)
+
+        expect(error._tag).toBe("WorkspaceWriteError")
+      }))
+
+    it.effect("rejects evidence writes outside the workspace root", () =>
+      Effect.gen(function*() {
+        const plan = makePlan()
+        const error = yield* writeEvidenceBundle("../outside.json", evidenceBundle(plan), ".").pipe(Effect.flip)
+
+        expect(error._tag).toBe("EvidenceWriteError")
+      }))
   })
 
-  test("records fingerprints for render and validation-note evidence", async () => {
-    const renderOperation = RenderFileOperation.make({
-      id: "render-readme",
-      description: "Render README.",
-      risk: "writes-local",
-      gate: executeGate("Rendering writes a local file."),
-      path: ".release/generated/readme.md",
-      contents: "# Release\n"
-    })
-    const validationOperation = ValidationNoteOperation.make({
-      id: "validate-note",
-      description: "Record validation note.",
-      risk: "read-only",
-      gate: noApprovalGate("read-only"),
-      message: "No local validation command is configured.",
-      skipped: true,
-      severity: "info"
-    })
-    const layer = makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) })
-
-    const renderEvidence = await runEffect(
-      runOperation(
-        renderOperation,
-        ExecutionApproval.make({ execute: true, approveIrreversible: false })
-      ),
-      layer
-    )
-    const validationEvidence = await runEffect(
-      runOperation(validationOperation, ExecutionApproval.none),
-      layer
-    )
-
-    expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toBe(
-      operationFingerprint(renderOperation)
-    )
-    expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).not.toContain("# Release")
-    expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toContain("contentsDigest")
-    expect("operationFingerprint" in validationEvidence && validationEvidence.operationFingerprint).toBe(
-      operationFingerprint(validationOperation)
-    )
-  })
-
-  test("rejects render writes outside the workspace root", async () => {
-    const operation = RenderFileOperation.make({
-      id: "render-outside",
-      description: "Render outside.",
-      risk: "writes-local",
-      gate: executeGate("Rendering writes a local file."),
-      path: "../outside.md",
-      contents: "# Release\n"
-    })
-    const error = await runEffect(
-      runOperation(
-        operation,
-        ExecutionApproval.make({ execute: true, approveIrreversible: false })
-      ).pipe(Effect.flip),
-      makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) })
-    )
-
-    expect(error._tag).toBe("WorkspaceWriteError")
-  })
-
-  test("fails HTTP verification when JSON checks do not match", async () => {
+  {
     const request = HttpRequestSpec.make({
       method: "GET",
       url: "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0",
@@ -271,7 +281,8 @@ describe("evidence recorder", () => {
         HttpJsonEqualsCheck.make({ path: ["draft"], expected: true })
       ]
     })
-    const layer = Layer.mergeAll(
+
+    layer(Layer.mergeAll(
       makeWorkspaceTestCommandRunnerLayer(),
       makeTestReleaseHttpLayer({
         responses: new Map([
@@ -281,141 +292,134 @@ describe("evidence recorder", () => {
           }]
         ])
       })
-    )
+    ))((it) => {
+      it.effect("fails HTTP verification when JSON checks do not match", () =>
+        Effect.gen(function*() {
+          const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
 
-    const error = await runEffect(runOperation(operation, ExecutionApproval.none).pipe(Effect.flip), layer)
+          expect(error._tag).toBe("OperationFailedError")
+          if (error._tag === "OperationFailedError") {
+            expect(error.responseStatus).toBe(200)
+            expect(error.reason).toBe("HTTP verification failed.")
+          }
+        }))
+    })
+  }
 
-    expect(error._tag).toBe("OperationFailedError")
-    if (error._tag === "OperationFailedError") {
-      expect(error.responseStatus).toBe(200)
-      expect(error.reason).toBe("HTTP verification failed.")
-    }
-  })
-
-  test("reads a valid evidence bundle", async () => {
+  {
     const plan = makePlan()
     const bundle = evidenceBundle(plan)
-    const read = await runEffect(
-      readEvidenceBundle(".release/evidence/render.json"),
-      makeWorkspaceTestCommandRunnerLayer({
-        files: new Map([
-          [".release/evidence/render.json", renderEvidenceJson(bundle)]
-        ])
-      })
-    )
+    layer(makeWorkspaceTestCommandRunnerLayer({
+      files: new Map([
+        [".release/evidence/render.json", renderEvidenceJson(bundle)]
+      ])
+    }))((it) => {
+      it.effect("reads a valid evidence bundle", () =>
+        Effect.gen(function*() {
+          const read = yield* readEvidenceBundle(".release/evidence/render.json")
 
-    expect(read.releaseName).toBe("release")
-    expect(read.records).toEqual([])
+          expect(read.releaseName).toBe("release")
+          expect(read.records).toEqual([])
+        }))
+    })
+  }
+
+  layer(makeWorkspaceTestCommandRunnerLayer())((it) => {
+    it.effect("returns undefined for missing optional evidence", () =>
+      Effect.gen(function*() {
+        const read = yield* tryReadEvidenceBundle(".release/evidence/render.json")
+
+        expect(read).toBeUndefined()
+      }))
+
+    it.effect("merges evidence bundles in order", () =>
+      Effect.gen(function*() {
+        const plan = makePlan()
+        const merged = yield* mergeEvidenceBundles(
+          plan,
+          evidenceBundle(plan, [evidenceRecord("first")]),
+          evidenceBundle(plan, [evidenceRecord("second")])
+        )
+
+        expect(merged.records.map((record) => record.id)).toEqual(["first:execution", "second:execution"])
+      }))
+
+    it.effect("rejects merging evidence from another release", () =>
+      Effect.gen(function*() {
+        const plan = makePlan()
+        const error = yield* mergeEvidenceBundles(
+          plan,
+          evidenceBundle(plan),
+          evidenceBundle(makePlan("other", "9.9.9"))
+        ).pipe(Effect.flip)
+
+        expect(error._tag).toBe("EvidenceReadError")
+      }))
   })
 
-  test("returns undefined for missing optional evidence", async () => {
-    const read = await runEffect(
-      tryReadEvidenceBundle(".release/evidence/render.json"),
-      makeWorkspaceTestCommandRunnerLayer()
-    )
+  layer(makeWorkspaceTestCommandRunnerLayer({
+    files: new Map([
+      [".release/evidence/render.json", "{not json"]
+    ])
+  }))((it) => {
+    it.effect("fails invalid evidence JSON with EvidenceReadError", () =>
+      Effect.gen(function*() {
+        const error = yield* readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip)
 
-    expect(read).toBeUndefined()
-  })
-
-  test("fails invalid evidence JSON with EvidenceReadError", async () => {
-    const error = await runEffect(
-      readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip),
-      makeWorkspaceTestCommandRunnerLayer({
-        files: new Map([
-          [".release/evidence/render.json", "{not json"]
-        ])
-      })
-    )
-
-    expect(error._tag).toBe("EvidenceReadError")
-  })
-
-  test("fails wrong evidence schema with EvidenceReadError", async () => {
-    const error = await runEffect(
-      readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip),
-      makeWorkspaceTestCommandRunnerLayer({
-        files: new Map([
-          [".release/evidence/render.json", JSON.stringify({ schemaVersion: "wrong" })]
-        ])
-      })
-    )
-
-    expect(error._tag).toBe("EvidenceReadError")
-  })
-
-  test("fails command evidence without operation fingerprints", async () => {
-    const rawEvidence = {
-      schemaVersion: "release-evidence/v1",
-      releaseName: "release",
-      releaseVersion: "0.1.0",
-      records: [
-        {
-          id: "validate-token:command",
-          operationId: "validate-token",
-          status: "passed",
-          severity: "info",
-          command: {
-            executable: "tool",
-            args: ["validate"],
-            requiredEnv: [],
-            redactedEnv: []
-          },
-          exitCode: 0,
-          stdout: "",
-          stderr: "",
-          startedAt: "2026-06-17T00:00:00.000Z",
-          endedAt: "2026-06-17T00:00:00.001Z",
-          durationMillis: 1
+        expect(error._tag).toBe("EvidenceReadError")
+        if (error._tag === "EvidenceReadError") {
+          expect(error.cause).toBeDefined()
         }
-      ]
-    }
-    const error = await runEffect(
-      readEvidenceBundle(".release/evidence/validation.json").pipe(Effect.flip),
-      makeWorkspaceTestCommandRunnerLayer({
-        files: new Map([
-          [".release/evidence/validation.json", `${JSON.stringify(rawEvidence)}\n`]
-        ])
-      })
-    )
-
-    expect(error._tag).toBe("EvidenceReadError")
+      }))
   })
 
-  test("rejects evidence writes outside the workspace root", async () => {
-    const plan = makePlan()
-    const error = await runEffect(
-      writeEvidenceBundle("../outside.json", evidenceBundle(plan), ".").pipe(Effect.flip),
-      makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) })
-    )
+  layer(makeWorkspaceTestCommandRunnerLayer({
+    files: new Map([
+      [".release/evidence/render.json", JSON.stringify({ schemaVersion: "wrong" })]
+    ])
+  }))((it) => {
+    it.effect("fails wrong evidence schema with EvidenceReadError", () =>
+      Effect.gen(function*() {
+        const error = yield* readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip)
 
-    expect(error._tag).toBe("EvidenceWriteError")
+        expect(error._tag).toBe("EvidenceReadError")
+      }))
   })
 
-  test("merges evidence bundles in order", async () => {
-    const plan = makePlan()
-    const merged = await runEffect(
-      mergeEvidenceBundles(
-        plan,
-        evidenceBundle(plan, [evidenceRecord("first")]),
-        evidenceBundle(plan, [evidenceRecord("second")])
-      ),
-      makeWorkspaceTestCommandRunnerLayer()
-    )
+  layer(makeWorkspaceTestCommandRunnerLayer({
+    files: new Map([
+      [".release/evidence/validation.json", `${JSON.stringify({
+        schemaVersion: "release-evidence/v1",
+        releaseName: "release",
+        releaseVersion: "0.1.0",
+        records: [
+          {
+            id: "validate-token:command",
+            operationId: "validate-token",
+            status: "passed",
+            severity: "info",
+            command: {
+              executable: "tool",
+              args: ["validate"],
+              requiredEnv: [],
+              redactedEnv: []
+            },
+            exitCode: 0,
+            stdout: "",
+            stderr: "",
+            startedAt: "2026-06-17T00:00:00.000Z",
+            endedAt: "2026-06-17T00:00:00.001Z",
+            durationMillis: 1
+          }
+        ]
+      })}\n`]
+    ])
+  }))((it) => {
+    it.effect("fails command evidence without operation fingerprints", () =>
+      Effect.gen(function*() {
+        const error = yield* readEvidenceBundle(".release/evidence/validation.json").pipe(Effect.flip)
 
-    expect(merged.records.map((record) => record.id)).toEqual(["first:execution", "second:execution"])
-  })
-
-  test("rejects merging evidence from another release", async () => {
-    const plan = makePlan()
-    const error = await runEffect(
-      mergeEvidenceBundles(
-        plan,
-        evidenceBundle(plan),
-        evidenceBundle(makePlan("other", "9.9.9"))
-      ).pipe(Effect.flip),
-      makeWorkspaceTestCommandRunnerLayer()
-    )
-
-    expect(error._tag).toBe("EvidenceReadError")
+        expect(error._tag).toBe("EvidenceReadError")
+      }))
   })
 })

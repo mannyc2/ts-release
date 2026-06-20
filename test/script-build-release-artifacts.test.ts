@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "@effect/bun-test"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -10,6 +11,14 @@ import {
   releaseCliArtifactTargets,
   UnsafeReleaseArtifactsPathError
 } from "../apps/release-ts/scripts/build-release-artifacts.js"
+
+const runScriptEffect = <A, E>(
+  effect: Effect.Effect<A, E, BunServices.BunServices>
+): Promise<A> => Effect.runPromise(effect.pipe(Effect.provide(BunServices.layer)))
+
+const runScriptFailure = <A, E>(
+  effect: Effect.Effect<A, E, BunServices.BunServices>
+): Promise<E> => runScriptEffect(effect.pipe(Effect.flip))
 
 describe("build release artifacts script", () => {
   test("derives package artifact names from scoped package identity", () => {
@@ -55,17 +64,14 @@ describe("build release artifacts script", () => {
   test("refuses to prepare unsafe artifact directories", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-artifacts-root-"))
     try {
-      const accepted = await Effect.runPromise(assertSafeReleaseArtifactsDirectory(root))
+      const accepted = await runScriptEffect(assertSafeReleaseArtifactsDirectory(root))
       expect(accepted).toBe(resolve(root, ".release", "artifacts"))
+      expect(await runScriptEffect(assertSafeReleaseArtifactsDirectory(root, ".release/artifacts"))).toBe(accepted)
 
-      const outside = await Effect.runPromise(
-        assertSafeReleaseArtifactsDirectory(root, resolve(root, "..", "outside")).pipe(Effect.flip)
-      )
+      const outside = await runScriptFailure(assertSafeReleaseArtifactsDirectory(root, resolve(root, "..", "outside")))
       expect(outside).toBeInstanceOf(UnsafeReleaseArtifactsPathError)
 
-      const parent = await Effect.runPromise(
-        assertSafeReleaseArtifactsDirectory(root, ".release").pipe(Effect.flip)
-      )
+      const parent = await runScriptFailure(assertSafeReleaseArtifactsDirectory(root, ".release"))
       expect(parent).toBeInstanceOf(UnsafeReleaseArtifactsPathError)
     } finally {
       await rm(root, { recursive: true, force: true })

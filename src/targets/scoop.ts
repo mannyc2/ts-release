@@ -1,11 +1,7 @@
 import * as Effect from "effect/Effect"
 import {
-  CommandSpec,
   executeGate,
-  irreversibleGate,
-  noApprovalGate,
   Operation,
-  PublishCommandOperation,
   RenderFileOperation,
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
@@ -17,9 +13,12 @@ import {
 import { PlanConstructionError } from "../planner/errors.js"
 import { ScoopTargetAdapter } from "./adapter.js"
 import {
+  catalogGitPushOperation,
+  catalogPathBaseName,
   findRequiredArtifact,
   requireSha256FileArtifact,
   rejectNoDryRunInStrictMode,
+  rejectUnsupportedCatalogTokenEnv,
   targetCapabilitiesFor,
   validationNoteOperation,
   validationStrategyForDryRun
@@ -27,36 +26,16 @@ import {
 
 export type * from "../types/effect-internal.js"
 
-const command = (
-  executable: string,
-  args: ReadonlyArray<string>
-): CommandSpec =>
-  CommandSpec.make({
-    executable,
-    args: [...args],
-    requiredEnv: [],
-    redactedEnv: []
-  })
-
 const rejectUnsupportedTokenEnv = Effect.fn("rejectUnsupportedScoopTokenEnv")(function*(target: ScoopBucketTarget) {
-  if (target.tokenEnv !== undefined) {
-    return yield* Effect.fail(
-      PlanConstructionError.make({
-        targetId: target.id,
-        reason:
-          "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
-      })
-    )
-  }
+  return yield* rejectUnsupportedCatalogTokenEnv({
+    targetId: target.id,
+    targetLabel: "Scoop bucket",
+    tokenEnv: target.tokenEnv
+  })
 })
 
 export const scoopTargetCapabilities = (target: ScoopBucketTarget): TargetCapabilities =>
   targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
-
-const pathBaseName = (path: string): string => {
-  const parts = path.replaceAll("\\", "/").split("/")
-  return parts[parts.length - 1] ?? path
-}
 
 interface ScoopManifest {
   readonly version: string
@@ -126,30 +105,26 @@ export const planScoopOperations = Effect.fn("planScoopOperations")(function*(
   yield* rejectNoDryRunInStrictMode(target, model, "Scoop bucket target declares no dry-run support in strict mode.")
 
   const manifest = yield* renderManifest(target, model)
-  const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
-  const publishGate = publishRisk === "irreversible"
-    ? irreversibleGate("Pushing a Scoop bucket update is configured as irreversible.")
-    : executeGate("Pushing a Scoop bucket update is externally visible.")
-  const bucketDirectory = target.bucketDirectory ?? "."
 
   return [
     RenderFileOperation.make({
       id: `${target.id}:scoop-render-manifest`,
       targetId: target.id,
-      description: `Render Scoop manifest ${pathBaseName(target.manifestPath)}.`,
+      description: `Render Scoop manifest ${catalogPathBaseName(target.manifestPath)}.`,
       risk: "writes-local",
       gate: executeGate("Rendering a Scoop manifest writes a local generated file."),
       path: target.manifestPath,
       contents: manifest
     }),
     dryRunOperation(target, dryRunSupport),
-    PublishCommandOperation.make({
+    catalogGitPushOperation({
       id: `${target.id}:scoop-push`,
       targetId: target.id,
       description: `Push Scoop bucket update for ${model.identity.name}@${model.identity.version}.`,
-      risk: publishRisk,
-      gate: publishGate,
-      command: command("git", ["-C", bucketDirectory, "push"])
+      mutability: target.mutability,
+      directory: target.bucketDirectory,
+      irreversibleReason: "Pushing a Scoop bucket update is configured as irreversible.",
+      externallyVisibleReason: "Pushing a Scoop bucket update is externally visible."
     })
   ] satisfies ReadonlyArray<Operation>
 })

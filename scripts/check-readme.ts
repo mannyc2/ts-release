@@ -30,13 +30,10 @@ const packageJsonPath = join(root, "package.json")
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const readTextFile = Effect.fn("scripts.checkReadme.readTextFile")(function*(path: string) {
   return yield* Effect.tryPromise({
     try: () => readFile(path, "utf8"),
-    catch: (cause) => new Error(`Failed to read ${path}: ${formatUnknown(cause)}`)
+    catch: (cause) => new Error(`Failed to read ${path}.`, { cause })
   })
 })
 
@@ -44,7 +41,7 @@ const readPackageMetadata = Effect.fn("scripts.checkReadme.readPackageMetadata")
   const contents = yield* readTextFile(packageJsonPath)
   const parsed = yield* Effect.try({
     try: () => JSON.parse(contents),
-    catch: (cause) => new Error(`package.json is not valid JSON: ${formatUnknown(cause)}`)
+    catch: (cause) => new Error("package.json is not valid JSON.", { cause })
   })
 
   if (!isRecord(parsed)) {
@@ -119,7 +116,8 @@ const checkJsonBlock = Effect.fn("scripts.checkReadme.checkJsonBlock")(function*
     try {
       JSON.parse(block.content)
     } catch (cause) {
-      failures.push(`README.md:${block.contentStartLine}:1 invalid JSON snippet: ${formatUnknown(cause)}`)
+      const message = cause instanceof Error ? cause.message : String(cause)
+      failures.push(`README.md:${block.contentStartLine}:1 invalid JSON snippet: ${message}`)
     }
     return failures
   })

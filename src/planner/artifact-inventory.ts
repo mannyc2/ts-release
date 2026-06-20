@@ -18,19 +18,17 @@ type ArtifactKind = "file" | "directory" | "other"
 const checksumName = (algorithm: ChecksumAlgorithm): Crypto.DigestAlgorithm =>
   algorithm === "sha256" ? "SHA-256" : "SHA-512"
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const artifactPath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
 
 const artifactKind = (info: FileSystem.File.Info): ArtifactKind =>
   info.type === "Directory" ? "directory" : info.type === "File" ? "file" : "other"
 
-const normalizationPlatformError = (field: string) => (cause: unknown) =>
+const normalizationPlatformError = (field: string, reason: string) => (cause: unknown) =>
   ReleaseNormalizationError.make({
     field,
-    reason: formatUnknown(cause)
+    reason,
+    cause
   })
 
 const validateArtifactFormat = (
@@ -73,10 +71,13 @@ const checksumArtifact = Effect.fn("checksumArtifact")(function*(
   const fs = yield* FileSystem.FileSystem
   const crypto = yield* Crypto.Crypto
   const bytes = yield* fs.readFile(targetPath).pipe(
-    Effect.mapError(normalizationPlatformError(`artifacts.${artifact.id}.checksum`))
+    Effect.mapError(normalizationPlatformError(`artifacts.${artifact.id}.checksum`, "Unable to read artifact bytes."))
   )
   const digest = yield* crypto.digest(checksumName("sha256"), bytes).pipe(
-    Effect.mapError(normalizationPlatformError(`artifacts.${artifact.id}.checksum`))
+    Effect.mapError(normalizationPlatformError(
+      `artifacts.${artifact.id}.checksum`,
+      "Unable to compute artifact checksum."
+    ))
   )
 
   return Checksum.make({
@@ -123,7 +124,7 @@ export const inventoryArtifact = Effect.fn("inventoryArtifact")(function*(
   const path = yield* Path.Path
   const targetPath = artifactPath(path, root, artifact.path)
   const info = yield* fs.stat(targetPath).pipe(
-    Effect.mapError(normalizationPlatformError(`artifacts.${artifact.id}.path`))
+    Effect.mapError(normalizationPlatformError(`artifacts.${artifact.id}.path`, "Unable to inspect artifact path."))
   )
   const kind = artifactKind(info)
   yield* validateArtifactFormat(artifact, kind)

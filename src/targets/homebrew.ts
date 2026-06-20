@@ -1,11 +1,8 @@
 import * as Effect from "effect/Effect"
 import {
-  CommandSpec,
   executeGate,
-  irreversibleGate,
   noApprovalGate,
   Operation,
-  PublishCommandOperation,
   RenderFileOperation,
   ValidateCommandOperation
 } from "../domain/operation.js"
@@ -17,9 +14,13 @@ import {
 import { PlanConstructionError } from "../planner/errors.js"
 import { HomebrewTargetAdapter } from "./adapter.js"
 import {
+  catalogGitPushOperation,
+  catalogPathBaseName,
   findRequiredArtifact,
+  noAuthCommand,
   requireSha256FileArtifact,
   rejectNoDryRunInStrictMode,
+  rejectUnsupportedCatalogTokenEnv,
   targetCapabilitiesFor,
   validationNoteOperation,
   validationStrategyForDryRun
@@ -27,36 +28,16 @@ import {
 
 export type * from "../types/effect-internal.js"
 
-const command = (
-  executable: string,
-  args: ReadonlyArray<string>
-): CommandSpec =>
-  CommandSpec.make({
-    executable,
-    args: [...args],
-    requiredEnv: [],
-    redactedEnv: []
-  })
-
 const rejectUnsupportedTokenEnv = Effect.fn("rejectUnsupportedHomebrewTokenEnv")(function*(target: HomebrewTapTarget) {
-  if (target.tokenEnv !== undefined) {
-    return yield* Effect.fail(
-      PlanConstructionError.make({
-        targetId: target.id,
-        reason:
-          "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
-      })
-    )
-  }
+  return yield* rejectUnsupportedCatalogTokenEnv({
+    targetId: target.id,
+    targetLabel: "Homebrew tap",
+    tokenEnv: target.tokenEnv
+  })
 })
 
 export const homebrewTargetCapabilities = (target: HomebrewTapTarget): TargetCapabilities =>
   targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
-
-const pathBaseName = (path: string): string => {
-  const parts = path.replaceAll("\\", "/").split("/")
-  return parts[parts.length - 1] ?? path
-}
 
 const rubyString = (value: string): string =>
   JSON.stringify(value)
@@ -112,7 +93,7 @@ const dryRunOperation = (target: HomebrewTapTarget): Operation => {
       description: "Validate generated Homebrew formula with brew audit.",
       risk: "read-only",
       gate: noApprovalGate("brew audit validates the generated formula without publishing."),
-      command: command("brew", ["audit", "--strict", "--formula", target.formulaPath])
+      command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath])
     })
     : validationNoteOperation({
       id: `${target.id}:brew-audit`,
@@ -133,16 +114,11 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
   yield* rejectNoDryRunInStrictMode(target, model, "Homebrew tap target declares no dry-run support in strict mode.")
 
   const formula = yield* renderFormula(target, model)
-  const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
-  const publishGate = publishRisk === "irreversible"
-    ? irreversibleGate("Pushing a Homebrew tap update is configured as irreversible.")
-    : executeGate("Pushing a Homebrew tap update is externally visible.")
-  const tapDirectory = target.tapDirectory ?? "."
   const operations: Array<Operation> = [
     RenderFileOperation.make({
       id: `${target.id}:homebrew-render-formula`,
       targetId: target.id,
-      description: `Render Homebrew formula ${pathBaseName(target.formulaPath)}.`,
+      description: `Render Homebrew formula ${catalogPathBaseName(target.formulaPath)}.`,
       risk: "writes-local",
       gate: executeGate("Rendering a Homebrew formula writes a local generated file."),
       path: target.formulaPath,
@@ -158,20 +134,21 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
         description: "Check Homebrew CLI availability.",
         risk: "read-only",
         gate: noApprovalGate("CLI availability validation is read-only."),
-        command: command("brew", ["--version"])
+        command: noAuthCommand("brew", ["--version"])
       })
     )
   }
 
   operations.push(
     dryRunOperation(target),
-    PublishCommandOperation.make({
+    catalogGitPushOperation({
       id: `${target.id}:homebrew-push`,
       targetId: target.id,
       description: `Push Homebrew tap update for ${model.identity.name}@${model.identity.version}.`,
-      risk: publishRisk,
-      gate: publishGate,
-      command: command("git", ["-C", tapDirectory, "push"])
+      mutability: target.mutability,
+      directory: target.tapDirectory,
+      irreversibleReason: "Pushing a Homebrew tap update is configured as irreversible.",
+      externallyVisibleReason: "Pushing a Homebrew tap update is externally visible."
     })
   )
 

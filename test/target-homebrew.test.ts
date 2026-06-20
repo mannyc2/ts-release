@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
@@ -50,6 +50,7 @@ describe("Homebrew target", () => {
     expect(render?._tag).toBe("RenderFileOperation")
     expect(publish?._tag).toBe("PublishCommandOperation")
     if (render?._tag === "RenderFileOperation") {
+      expect(render.description).toContain("release.rb")
       expect(render.path).toBe(".release/generated/release.rb")
       expect(render.contents).toContain("class Release < Formula")
       expect(render.contents).toContain("sha256 \"686f6d65627265772061726368697665\"")
@@ -63,11 +64,24 @@ describe("Homebrew target", () => {
     }
   })
 
+  test("marks immutable Homebrew tap pushes as irreversible", async () => {
+    const plan = await runEffect(createPlan(homebrewConfig({ mutability: "immutable" })), HomebrewLayer)
+    const publish = plan.operations.find((operation) => operation.id === "homebrew:homebrew-push")
+
+    expect(publish?._tag).toBe("PublishCommandOperation")
+    if (publish?._tag === "PublishCommandOperation") {
+      expect(publish.risk).toBe("irreversible")
+      expect(publish.gate.requiresIrreversibleApproval).toBe(true)
+      expect(publish.gate.reason).toBe("Pushing a Homebrew tap update is configured as irreversible.")
+    }
+  })
+
   test("rejects Homebrew tokenEnv because tap pushes use Git credentials", async () => {
     const error = await runEffect(createPlan(homebrewConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), HomebrewLayer)
 
     expect(error._tag).toBe("PlanConstructionError")
     if (error._tag === "PlanConstructionError") {
+      expect(error.reason).toContain("Homebrew tap targets")
       expect(error.reason).toContain("plain git push")
       expect(error.reason).toContain("Git credentials")
     }

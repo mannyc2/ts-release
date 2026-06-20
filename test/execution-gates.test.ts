@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, layer } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -28,7 +28,7 @@ import {
   verifyPlan
 } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { minimalConfig, runEffect } from "./helpers.js"
+import { expectTaggedError, minimalConfig } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -175,183 +175,155 @@ const planWithNpmVersionVerification = Effect.gen(function*() {
 })
 
 describe("execution gates", () => {
-  test("runs validation without publish approval", async () => {
-    const evidence = await runEffect(
+  layer(TestLayer)((it) => {
+    it.effect("runs validation without publish approval", () =>
       Effect.gen(function*() {
         const intent = yield* parseReleaseIntent(minimalConfig)
         const plan = yield* createReleasePlan(intent)
-        return yield* validatePlan(plan)
-      }),
-      TestLayer
-    )
+        const evidence = yield* validatePlan(plan)
 
-    expect(evidence.records.length).toBeGreaterThan(0)
-    expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
-  })
+        expect(evidence.records.length).toBeGreaterThan(0)
+        expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
+      }))
 
-  test("blocks publish without execute approval", async () => {
-    const exit = await Effect.runPromiseExit(
+    it.effect("blocks publish without execute approval", () =>
       Effect.gen(function*() {
         const intent = yield* parseReleaseIntent(minimalConfig)
         const plan = yield* createReleasePlan(intent)
-        return yield* executePlan(plan, ExecutionApproval.none)
-      }).pipe(Effect.provide(TestLayer))
-    )
+        const error = yield* executePlan(plan, ExecutionApproval.none).pipe(Effect.flip)
 
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
-    }
-  })
+        expectTaggedError(error, "ExecutionApprovalError")
+      }))
 
-  test("blocks irreversible publish without irreversible approval", async () => {
-    const exit = await Effect.runPromiseExit(
+    it.effect("blocks irreversible publish without irreversible approval", () =>
       Effect.gen(function*() {
         const intent = yield* parseReleaseIntent(minimalConfig)
         const plan = yield* createReleasePlan(intent)
-        return yield* executePlan(plan, ExecutionApproval.make({ execute: true, approveIrreversible: false }))
-      }).pipe(Effect.provide(TestLayer))
-    )
+        const error = yield* executePlan(
+          plan,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        ).pipe(Effect.flip)
 
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
-    }
-  })
+        expectTaggedError(error, "ExecutionApprovalError")
+      }))
 
-  test("blocks malformed publish operations even when the gate is too weak", async () => {
-    const command = CommandSpec.make({
-      executable: "npm",
-      args: ["publish"],
-      requiredEnv: [],
-      redactedEnv: []
-    })
-    const operation = PublishCommandOperation.make({
-      id: "malformed-publish",
-      targetId: "npm",
-      description: "Malformed publish",
-      risk: "irreversible",
-      gate: noApprovalGate("bad adapter metadata"),
-      command
-    })
-    const exit = await Effect.runPromiseExit(
-      runOperation(operation, ExecutionApproval.none).pipe(
-        Effect.provide(makeTestCommandRunnerLayer())
-      )
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
-    }
-  })
-
-  test("blocks render operations without execute approval", async () => {
-    const exit = await Effect.runPromiseExit(
+    it.effect("blocks render operations without execute approval", () =>
       Effect.gen(function*() {
         const plan = yield* planWithRenderAndPublish
-        return yield* renderPlan(plan, ExecutionApproval.none)
-      }).pipe(Effect.provide(TestLayer))
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
-    }
-  })
+        const error = yield* renderPlan(plan, ExecutionApproval.none).pipe(Effect.flip)
 
-  test("runs render operations with execute approval", async () => {
-    const evidence = await runEffect(
+        expectTaggedError(error, "ExecutionApprovalError")
+      }))
+
+    it.effect("runs render operations with execute approval", () =>
       Effect.gen(function*() {
         const plan = yield* planWithRenderAndPublish
-        return yield* renderPlan(plan, ExecutionApproval.make({ execute: true, approveIrreversible: false }))
-      }),
-      TestLayer
-    )
+        const evidence = yield* renderPlan(
+          plan,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        )
 
-    expect(evidence.records.map((record) => record.id)).toEqual(["local:render-file:execution"])
-  })
+        expect(evidence.records.map((record) => record.id)).toEqual(["local:render-file:execution"])
+      }))
 
-  test("does not run render operations during publish execution", async () => {
-    const evidence = await runEffect(
+    it.effect("does not run render operations during publish execution", () =>
       Effect.gen(function*() {
         const plan = yield* planWithRenderAndPublish
-        return yield* executePlan(plan, ExecutionApproval.make({ execute: true, approveIrreversible: true }))
-      }),
-      TestLayer
-    )
-
-    expect(evidence.records.filter((record) => "operationId" in record).map((record) => record.operationId)).not.toContain(
-      "local:render-file"
-    )
-    expect(evidence.records.every((record) => record.id !== "local:render-file:execution")).toBe(true)
-  })
-
-  test("fails when a command exits nonzero", async () => {
-    const command = CommandSpec.make({
-      executable: "tool",
-      args: ["fail"],
-      requiredEnv: [],
-      redactedEnv: []
-    })
-    const operation = ValidateCommandOperation.make({
-      id: "validate-fail",
-      description: "Failing validator",
-      risk: "read-only",
-      gate: noApprovalGate("read-only"),
-      command
-    })
-    const exit = await Effect.runPromiseExit(
-      runOperation(operation, ExecutionApproval.none).pipe(
-        Effect.provide(makeTestCommandRunnerLayer({
-          commands: new Map([
-            [commandKey(command), {
-              exitCode: 1,
-              stdout: "",
-              stderr: "failed"
-            }]
-          ])
-        }))
-      )
-    )
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("OperationFailedError")
-    }
-  })
-
-  test("runs approved release workflow in stage order", async () => {
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ])
-      }),
-      makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
-
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
-        return yield* runApprovedReleaseWorkflow(
+        const evidence = yield* executePlan(
           plan,
           ExecutionApproval.make({ execute: true, approveIrreversible: true })
         )
-      }),
-      layer
-    )
 
-    expect(evidence.render.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-    expect(evidence.validation.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
-    expect(evidence.execution.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
-    expect(evidence.verification.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
+        expect(evidence.records.filter((record) => "operationId" in record).map((record) => record.operationId)).not.toContain(
+          "local:render-file"
+        )
+        expect(evidence.records.every((record) => record.id !== "local:render-file:execution")).toBe(true)
+      }))
+
+    it.effect("runs approved release workflow in stage order", () =>
+      Effect.gen(function*() {
+        const plan = yield* planWithFullWorkflow
+        const evidence = yield* runApprovedReleaseWorkflow(
+          plan,
+          ExecutionApproval.make({ execute: true, approveIrreversible: true })
+        )
+
+        expect(evidence.render.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
+        expect(evidence.validation.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
+        expect(evidence.execution.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
+        expect(evidence.verification.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
+      }))
+
+    it.effect("workflow fails before publishing without execute approval", () =>
+      Effect.gen(function*() {
+        const plan = yield* planWithFullWorkflow
+        const error = yield* runApprovedReleaseWorkflow(plan, ExecutionApproval.none).pipe(Effect.flip)
+
+        expectTaggedError(error, "ExecutionApprovalError")
+      }))
   })
 
-  test("retries npm version verification before recording success", async () => {
+  layer(makeTestCommandRunnerLayer())((it) => {
+    it.effect("blocks malformed publish operations even when the gate is too weak", () =>
+      Effect.gen(function*() {
+        const command = CommandSpec.make({
+          executable: "npm",
+          args: ["publish"],
+          requiredEnv: [],
+          redactedEnv: []
+        })
+        const operation = PublishCommandOperation.make({
+          id: "malformed-publish",
+          targetId: "npm",
+          description: "Malformed publish",
+          risk: "irreversible",
+          gate: noApprovalGate("bad adapter metadata"),
+          command
+        })
+        const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
+
+        expectTaggedError(error, "ExecutionApprovalError")
+      }))
+  })
+
+  layer(makeTestCommandRunnerLayer({
+    commands: new Map([
+      [commandKey(CommandSpec.make({
+        executable: "tool",
+        args: ["fail"],
+        requiredEnv: [],
+        redactedEnv: []
+      })), {
+        exitCode: 1,
+        stdout: "",
+        stderr: "failed"
+      }]
+    ])
+  }))((it) => {
+    it.effect("fails when a command exits nonzero", () =>
+      Effect.gen(function*() {
+        const command = CommandSpec.make({
+          executable: "tool",
+          args: ["fail"],
+          requiredEnv: [],
+          redactedEnv: []
+        })
+        const operation = ValidateCommandOperation.make({
+          id: "validate-fail",
+          description: "Failing validator",
+          risk: "read-only",
+          gate: noApprovalGate("read-only"),
+          command
+        })
+        const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
+
+        expectTaggedError(error, "OperationFailedError")
+      }))
+  })
+
+  {
     let attempts = 0
-    const layer = Layer.mergeAll(
+    const RetryLayer = Layer.mergeAll(
       ReleaseCommandRunnerTestLayer({
         runCommand: (command) =>
           Effect.sync(() => {
@@ -376,181 +348,155 @@ describe("execution gates", () => {
       BunServices.layer
     )
 
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* planWithNpmVersionVerification
-        return yield* verifyPlan(plan)
-      }),
-      layer
-    )
+    layer(RetryLayer, { excludeTestServices: true })((it) => {
+      it.effect("retries npm version verification before recording success", () =>
+        Effect.gen(function*() {
+          const plan = yield* planWithNpmVersionVerification
+          const evidence = yield* verifyPlan(plan)
 
-    expect(attempts).toBe(3)
-    expect(evidence.records.map((record) => record.id)).toEqual(["npm:npm-version-verify:command"])
-    expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
-  })
+          expect(attempts).toBe(3)
+          expect(evidence.records.map((record) => record.id)).toEqual(["npm:npm-version-verify:command"])
+          expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
+        }))
+    })
+  }
 
-  test("workflow fails before publishing without execute approval", async () => {
-    const exit = await Effect.runPromiseExit(
-      Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
-        return yield* runApprovedReleaseWorkflow(plan, ExecutionApproval.none)
-      }).pipe(Effect.provide(TestLayer))
-    )
-
-    expect(exit._tag).toBe("Failure")
-    if (exit._tag === "Failure") {
-      expect(String(exit.cause)).toContain("ExecutionApprovalError")
-    }
-  })
-
-  test("workflow stops on validation failure before publish", async () => {
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ]),
-        commands: new Map([
-          [commandKey(workflowValidateCommand), {
-            exitCode: 1,
-            stdout: "",
-            stderr: "validation failed"
-          }],
-          [commandKey(workflowPublishCommand), {
-            exitCode: 1,
-            stdout: "",
-            stderr: "publish should not run"
-          }]
-        ])
-      }),
-      makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
-
-    const error = await runEffect(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      directories: new Set(["."]),
+      env: new Map([
+        ["NPM_TOKEN", "npm_secret"],
+        ["GH_TOKEN", "gh_secret"]
+      ]),
+      commands: new Map([
+        [commandKey(workflowValidateCommand), {
+          exitCode: 1,
+          stdout: "",
+          stderr: "validation failed"
+        }],
+        [commandKey(workflowPublishCommand), {
+          exitCode: 1,
+          stdout: "",
+          stderr: "publish should not run"
+        }]
+      ])
+    }),
+    makeTestReleaseHttpLayer(),
+    LiveTargetRegistryLayer,
+    BunServices.layer
+  ))((it) => {
+    it.effect("workflow stops on validation failure before publish", () =>
       Effect.gen(function*() {
         const plan = yield* planWithFullWorkflow
-        return yield* runApprovedReleaseWorkflow(
+        const error = yield* runApprovedReleaseWorkflow(
           plan,
           ExecutionApproval.make({ execute: true, approveIrreversible: true })
-        )
-      }).pipe(Effect.flip),
-      layer
-    )
+        ).pipe(Effect.flip)
 
-    expect(error._tag).toBe("OperationFailedError")
-    if (error._tag === "OperationFailedError") {
-      expect(error.operationId).toBe("workflow-validate")
-      expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
-      expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-      expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
-        "workflow-validate:command"
-      ])
-      expect(error.workflowEvidence?.execution).toBeUndefined()
-      expect(error.workflowEvidence?.verification).toBeUndefined()
-    }
+        expect(error._tag).toBe("OperationFailedError")
+        if (error._tag === "OperationFailedError") {
+          expect(error.operationId).toBe("workflow-validate")
+          expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
+          expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
+          expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
+            "workflow-validate:command"
+          ])
+          expect(error.workflowEvidence?.execution).toBeUndefined()
+          expect(error.workflowEvidence?.verification).toBeUndefined()
+        }
+      }))
   })
 
-  test("workflow preserves render and validation evidence on publish failure", async () => {
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ]),
-        commands: new Map([
-          [commandKey(workflowPublishCommand), {
-            exitCode: 1,
-            stdout: "",
-            stderr: "publish failed"
-          }],
-          [commandKey(workflowVerifyCommand), {
-            exitCode: 1,
-            stdout: "",
-            stderr: "verify should not run"
-          }]
-        ])
-      }),
-      makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
-
-    const error = await runEffect(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      directories: new Set(["."]),
+      env: new Map([
+        ["NPM_TOKEN", "npm_secret"],
+        ["GH_TOKEN", "gh_secret"]
+      ]),
+      commands: new Map([
+        [commandKey(workflowPublishCommand), {
+          exitCode: 1,
+          stdout: "",
+          stderr: "publish failed"
+        }],
+        [commandKey(workflowVerifyCommand), {
+          exitCode: 1,
+          stdout: "",
+          stderr: "verify should not run"
+        }]
+      ])
+    }),
+    makeTestReleaseHttpLayer(),
+    LiveTargetRegistryLayer,
+    BunServices.layer
+  ))((it) => {
+    it.effect("workflow preserves render and validation evidence on publish failure", () =>
       Effect.gen(function*() {
         const plan = yield* planWithFullWorkflow
-        return yield* runApprovedReleaseWorkflow(
+        const error = yield* runApprovedReleaseWorkflow(
           plan,
           ExecutionApproval.make({ execute: true, approveIrreversible: true })
-        )
-      }).pipe(Effect.flip),
-      layer
-    )
+        ).pipe(Effect.flip)
 
-    expect(error._tag).toBe("OperationFailedError")
-    if (error._tag === "OperationFailedError") {
-      expect(error.operationId).toBe("workflow-publish")
-      expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
-      expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-      expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
-        "workflow-validate:command"
-      ])
-      expect(error.workflowEvidence?.execution?.records.map((record) => record.id)).toEqual([
-        "workflow-publish:command"
-      ])
-      expect(error.workflowEvidence?.verification).toBeUndefined()
-    }
+        expect(error._tag).toBe("OperationFailedError")
+        if (error._tag === "OperationFailedError") {
+          expect(error.operationId).toBe("workflow-publish")
+          expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
+          expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
+          expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
+            "workflow-validate:command"
+          ])
+          expect(error.workflowEvidence?.execution?.records.map((record) => record.id)).toEqual([
+            "workflow-publish:command"
+          ])
+          expect(error.workflowEvidence?.verification).toBeUndefined()
+        }
+      }))
   })
 
-  test("workflow preserves all completed evidence on verification failure", async () => {
-    const layer = Layer.mergeAll(
-      makeTestCommandRunnerLayer({
-        directories: new Set(["."]),
-        env: new Map([
-          ["NPM_TOKEN", "npm_secret"],
-          ["GH_TOKEN", "gh_secret"]
-        ]),
-        commands: new Map([
-          [commandKey(workflowVerifyCommand), {
-            exitCode: 1,
-            stdout: "",
-            stderr: "verify failed"
-          }]
-        ])
-      }),
-      makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer,
-      BunServices.layer
-    )
-
-    const error = await runEffect(
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      directories: new Set(["."]),
+      env: new Map([
+        ["NPM_TOKEN", "npm_secret"],
+        ["GH_TOKEN", "gh_secret"]
+      ]),
+      commands: new Map([
+        [commandKey(workflowVerifyCommand), {
+          exitCode: 1,
+          stdout: "",
+          stderr: "verify failed"
+        }]
+      ])
+    }),
+    makeTestReleaseHttpLayer(),
+    LiveTargetRegistryLayer,
+    BunServices.layer
+  ))((it) => {
+    it.effect("workflow preserves all completed evidence on verification failure", () =>
       Effect.gen(function*() {
         const plan = yield* planWithFullWorkflow
-        return yield* runApprovedReleaseWorkflow(
+        const error = yield* runApprovedReleaseWorkflow(
           plan,
           ExecutionApproval.make({ execute: true, approveIrreversible: true })
-        )
-      }).pipe(Effect.flip),
-      layer
-    )
+        ).pipe(Effect.flip)
 
-    expect(error._tag).toBe("OperationFailedError")
-    if (error._tag === "OperationFailedError") {
-      expect(error.operationId).toBe("workflow-verify")
-      expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
-      expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-      expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
-        "workflow-validate:command"
-      ])
-      expect(error.workflowEvidence?.execution?.records.map((record) => record.id)).toEqual([
-        "workflow-publish:command"
-      ])
-      expect(error.workflowEvidence?.verification?.records.map((record) => record.id)).toEqual([
-        "workflow-verify:command"
-      ])
-    }
+        expect(error._tag).toBe("OperationFailedError")
+        if (error._tag === "OperationFailedError") {
+          expect(error.operationId).toBe("workflow-verify")
+          expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
+          expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
+          expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
+            "workflow-validate:command"
+          ])
+          expect(error.workflowEvidence?.execution?.records.map((record) => record.id)).toEqual([
+            "workflow-publish:command"
+          ])
+          expect(error.workflowEvidence?.verification?.records.map((record) => record.id)).toEqual([
+            "workflow-verify:command"
+          ])
+        }
+      }))
   })
 })

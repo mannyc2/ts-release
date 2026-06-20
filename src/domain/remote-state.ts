@@ -9,7 +9,7 @@ export type NpmRemoteState = typeof NpmRemoteState.Type
 export const GitHubReleaseAvailability = Schema.Literals(["missing", "draft", "published"])
 export type GitHubReleaseAvailability = typeof GitHubReleaseAvailability.Type
 
-export const ReleaseEligibilityStatus = Schema.Literals(["ready", "complete", "partial"])
+export const ReleaseEligibilityStatus = Schema.Literals(["ready", "complete", "partial", "skipped"])
 export type ReleaseEligibilityStatus = typeof ReleaseEligibilityStatus.Type
 
 export class ReleaseEligibilityInput extends Schema.Class<ReleaseEligibilityInput>("ReleaseEligibilityInput")({
@@ -25,7 +25,12 @@ export class ReleaseEligibilityDecision extends Schema.Class<ReleaseEligibilityD
 )({
   shouldRelease: Schema.Boolean,
   status: ReleaseEligibilityStatus,
-  reason: Schema.String
+  reason: Schema.String,
+  strategy: Schema.optionalKey(Schema.String),
+  packageName: Schema.optionalKey(Schema.String),
+  packageVersion: Schema.optionalKey(Schema.String),
+  githubTag: Schema.optionalKey(Schema.String),
+  source: Schema.optionalKey(Schema.String)
 }) {}
 
 export class GitHubReleaseMissing extends Schema.TaggedClass<GitHubReleaseMissing>()("GitHubReleaseMissing", {

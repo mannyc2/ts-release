@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "@effect/bun-test"
 import { readFileSync } from "node:fs"
 import { isAbsolute } from "node:path"
 import {

@@ -9,9 +9,6 @@ import { HttpError, HttpResult, ReleaseHttp } from "./http.js"
 
 export type * from "../types/effect-internal.js"
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const nowIso = Effect.fn("http.nowIso")(function*() {
   const millis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
   return new Date(millis).toISOString()
@@ -80,7 +77,8 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
                 HttpError.make({
                   operation: "execute",
                   url: request.url,
-                  reason: formatUnknown(error)
+                  reason: "HTTP request failed.",
+                  cause: error
                 })
               )
             )
@@ -91,7 +89,8 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
                   HttpError.make({
                     operation: "json",
                     url: request.url,
-                    reason: formatUnknown(error)
+                    reason: "HTTP response JSON decoding failed.",
+                    cause: error
                   })
                 )
               )

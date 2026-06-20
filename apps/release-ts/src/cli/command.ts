@@ -6,55 +6,9 @@ import * as Argument from "effect/unstable/cli/Argument"
 import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
 import { DEFAULT_CONFIG_PATH, renderReleaseConfigJsonSchema } from "@mannyc1/ts-release/config/schema"
-import { EvidenceBundle, ReleaseWorkflowEvidence, ReleaseWorkflowFailureEvidence } from "@mannyc1/ts-release/domain/evidence"
-import { ReleasePlan } from "@mannyc1/ts-release/domain/release"
+import { EvidenceBundle } from "@mannyc1/ts-release/domain/evidence"
 import { renderEvidenceJson } from "@mannyc1/ts-release/planner/evidence-recorder"
-import {
-  renderReleaseEligibilityJson,
-  renderReleaseEligibilityText
-} from "@mannyc1/ts-release/planner/release-eligibility"
-import {
-  checkReleaseConfigEligibility,
-  executeReleaseConfig,
-  explainReleaseConfigOperation,
-  ExplainReleaseConfigOptions,
-  PlanReleaseConfigOptions,
-  planReleaseConfig,
-  reconcileReleaseConfig,
-  ReleaseConfigOptions,
-  ReleaseExecutionOptions,
-  ReleaseEligibilityConfigOptions,
-  ReleaseReconcileConfigOptions,
-  ReleaseResumeConfigOptions,
-  renderReleaseConfig,
-  RenderReleaseConfigOptions,
-  renderReleaseConfigPlan,
-  renderReleaseConfigValidation,
-  renderReleaseStatus,
-  resumeReleaseConfig,
-  runReleaseConfig,
-  ReleaseStatusOptions,
-  ValidateReleaseConfigFileOptions,
-  validateReleaseConfig,
-  verifyReleaseConfig
-} from "@mannyc1/ts-release/workflows/config"
-import {
-  writeFailedOperationEvidence,
-  writeNamedEvidence,
-  writeWorkflowEvidence as persistWorkflowEvidence
-} from "@mannyc1/ts-release/workflows/evidence"
-import {
-  ReleaseInitOptions,
-  renderReleaseInitPlan,
-  runReleaseInit
-} from "@mannyc1/ts-release/workflows/init"
-import {
-  checkAuthReleaseConfig,
-  checkCiReleaseConfig,
-  doctorReleaseConfig,
-  ReleaseDiagnosticsOptions,
-  renderReleaseDiagnostics
-} from "@mannyc1/ts-release/workflows/diagnostics"
+import { Config, Diagnostics, Init } from "@mannyc1/ts-release/workflows"
 
 const configFlag = Flag.string("config").pipe(Flag.withDefault(DEFAULT_CONFIG_PATH))
 const outputFlag = Flag.string("out").pipe(Flag.withDefault(""))
@@ -105,10 +59,7 @@ const planCommand = Command.make(
     format: formatFlag
   },
   Effect.fn("cli.plan")(function*({ config, out, format }) {
-    const contents = yield* renderReleaseConfigPlan(PlanReleaseConfigOptions.make({
-      configPath: config,
-      format
-    }))
+    const contents = yield* Config.renderPlan({ configPath: config, format })
     yield* writeOrPrint(out, contents)
   })
 )
@@ -129,10 +80,7 @@ const printCommand = Command.make(
     config: configFlag
   },
   Effect.fn("cli.print")(function*({ config }) {
-    const contents = yield* renderReleaseConfigPlan(PlanReleaseConfigOptions.make({
-      configPath: config,
-      format: "text"
-    }))
+    const contents = yield* Config.renderPlan({ configPath: config, format: "text" })
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -144,9 +92,7 @@ const explainCommand = Command.make(
     config: configFlag
   },
   Effect.fn("cli.explain")(function*({ operation, config }) {
-    const contents = yield* explainReleaseConfigOperation(
-      ExplainReleaseConfigOptions.make({ configPath: config, operationId: operation })
-    )
+    const contents = yield* Config.explain({ configPath: config, operationId: operation })
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -158,10 +104,7 @@ const statusCommand = Command.make(
     format: statusFormatFlag
   },
   Effect.fn("cli.status")(function*({ config, format }) {
-    const contents = yield* renderReleaseStatus(ReleaseStatusOptions.make({
-      configPath: config,
-      format
-    }))
+    const contents = yield* Config.renderStatus({ configPath: config, format })
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -173,43 +116,30 @@ const eligibilityCommand = Command.make(
     format: statusFormatFlag
   },
   Effect.fn("cli.eligibility")(function*({ config, format }) {
-    const decision = yield* checkReleaseConfigEligibility(
-      ReleaseEligibilityConfigOptions.make({
-        configPath: config
-      })
-    )
-    const contents = format === "json"
-      ? renderReleaseEligibilityJson(decision)
-      : renderReleaseEligibilityText(decision)
+    const decision = yield* Config.checkEligibility({ configPath: config })
+    const contents = Config.renderEligibilityDecision(decision, format)
     yield* Console.log(contents.trimEnd())
   })
 )
 
-const writeAndPrintEvidence = Effect.fn("writeAndPrintEvidence")(function*(
-  plan: ReleasePlan,
-  name: string,
-  evidence: EvidenceBundle
-) {
-  yield* writeNamedEvidence(plan, name, evidence)
+const checkIntentCommand = Command.make(
+  "check-intent",
+  {
+    config: configFlag,
+    format: statusFormatFlag
+  },
+  Effect.fn("cli.checkIntent")(function*({ config, format }) {
+    const decision = yield* Config.checkIntent({ configPath: config })
+    const contents = Config.renderEligibilityDecision(decision, format)
+    yield* Console.log(contents.trimEnd())
+  })
+)
+
+const printEvidence = Effect.fn("cli.printEvidence")(function*(evidence: EvidenceBundle) {
   yield* Console.log(renderEvidenceJson(evidence).trimEnd())
 })
 
-const writeFailedEvidence = Effect.fn("writeFailedEvidence")(function*(
-  plan: ReleasePlan,
-  name: string,
-  error: { readonly evidence?: EvidenceBundle | undefined }
-) {
-  const path = yield* writeFailedOperationEvidence(plan, name, error)
-  if (path !== undefined && error.evidence !== undefined) {
-    yield* Console.log(renderEvidenceJson(error.evidence).trimEnd())
-  }
-})
-
-const writeWorkflowEvidence = Effect.fn("writeWorkflowEvidence")(function*(
-  plan: ReleasePlan,
-  evidence: ReleaseWorkflowEvidence | ReleaseWorkflowFailureEvidence
-) {
-  const paths = yield* persistWorkflowEvidence(plan, evidence)
+const printWorkflowEvidencePaths = Effect.fn("cli.printWorkflowEvidencePaths")(function*(paths: unknown) {
   yield* Console.log(`${JSON.stringify({ evidence: paths }, null, 2)}`)
 })
 
@@ -219,15 +149,8 @@ const validateCommand = Command.make(
     config: configFlag
   },
   Effect.fn("cli.validate")(function*({ config }) {
-    const options = ReleaseConfigOptions.make({ configPath: config })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* validateReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) =>
-        writeFailedEvidence(plan, "validation", error).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        ))
-    )
-    yield* writeAndPrintEvidence(plan, "validation", evidence)
+    const result = yield* Config.planAndWriteValidation({ configPath: config })
+    yield* printEvidence(result.evidence)
   })
 )
 
@@ -238,9 +161,7 @@ const validateConfigCommand = Command.make(
     format: validationFormatFlag
   },
   Effect.fn("cli.validateConfig")(function*({ config, format }) {
-    const contents = yield* renderReleaseConfigValidation(
-      ValidateReleaseConfigFileOptions.make({ configPath: config, format })
-    )
+    const contents = yield* Config.renderValidation({ configPath: config, format })
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -273,7 +194,7 @@ const initCommand = Command.make(
     overwrite,
     format
   }) {
-    const plan = yield* runReleaseInit(ReleaseInitOptions.make({
+    const plan = yield* Init.run({
       template,
       configPath: config,
       package: packageName,
@@ -285,8 +206,8 @@ const initCommand = Command.make(
       write,
       overwrite,
       format
-    }))
-    yield* Console.log(renderReleaseInitPlan(plan, format).trimEnd())
+    })
+    yield* Console.log(Init.renderPlan(plan, format).trimEnd())
   })
 )
 
@@ -295,8 +216,7 @@ const diagnosticsOptions = (input: {
   readonly format: "json" | "text" | "markdown"
   readonly target?: string | undefined
   readonly workflow?: string | undefined
-}) =>
-  ReleaseDiagnosticsOptions.make({
+}) => ({
     configPath: input.config,
     format: input.format,
     ...(input.target === undefined || input.target.length === 0 ? {} : { target: input.target }),
@@ -311,8 +231,8 @@ const checkAuthCommand = Command.make(
     format: diagnosticsFormatFlag
   },
   Effect.fn("cli.checkAuth")(function*({ config, target, format }) {
-    const report = yield* checkAuthReleaseConfig(diagnosticsOptions({ config, target, format }))
-    yield* Console.log(renderReleaseDiagnostics(report, format).trimEnd())
+    const report = yield* Diagnostics.checkAuth(diagnosticsOptions({ config, target, format }))
+    yield* Console.log(Diagnostics.render(report, format).trimEnd())
   })
 )
 
@@ -325,13 +245,13 @@ const checkCiCommand = Command.make(
     format: diagnosticsFormatFlag
   },
   Effect.fn("cli.checkCi")(function*({ config, provider, workflow, format }) {
-    const report = yield* checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+    const report = yield* Diagnostics.checkCi({
       configPath: config,
       provider,
       workflow,
       format
-    }))
-    yield* Console.log(renderReleaseDiagnostics(report, format).trimEnd())
+    })
+    yield* Console.log(Diagnostics.render(report, format).trimEnd())
   })
 )
 
@@ -342,8 +262,8 @@ const doctorCommand = Command.make(
     format: diagnosticsFormatFlag
   },
   Effect.fn("cli.doctor")(function*({ config, format }) {
-    const report = yield* doctorReleaseConfig(diagnosticsOptions({ config, format }))
-    yield* Console.log(renderReleaseDiagnostics(report, format).trimEnd())
+    const report = yield* Diagnostics.doctor(diagnosticsOptions({ config, format }))
+    yield* Console.log(Diagnostics.render(report, format).trimEnd())
   })
 )
 
@@ -354,15 +274,8 @@ const renderCommand = Command.make(
     execute: executeFlag
   },
   Effect.fn("cli.render")(function*({ config, execute }) {
-    const options = RenderReleaseConfigOptions.make({ configPath: config, execute })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* renderReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) =>
-        writeFailedEvidence(plan, "render", error).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        ))
-    )
-    yield* writeAndPrintEvidence(plan, "render", evidence)
+    const result = yield* Config.planAndWriteRender({ configPath: config, execute })
+    yield* printEvidence(result.evidence)
   })
 )
 
@@ -374,15 +287,8 @@ const executeCommand = Command.make(
     approveIrreversible: approveIrreversibleFlag
   },
   Effect.fn("cli.execute")(function*({ config, execute, approveIrreversible }) {
-    const options = ReleaseExecutionOptions.make({ configPath: config, execute, approveIrreversible })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* executeReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) =>
-        writeFailedEvidence(plan, "execution", error).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        ))
-    )
-    yield* writeAndPrintEvidence(plan, "execution", evidence)
+    const result = yield* Config.planAndWriteExecution({ configPath: config, execute, approveIrreversible })
+    yield* printEvidence(result.evidence)
   })
 )
 
@@ -392,15 +298,8 @@ const verifyCommand = Command.make(
     config: configFlag
   },
   Effect.fn("cli.verify")(function*({ config }) {
-    const options = ReleaseConfigOptions.make({ configPath: config })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* verifyReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) =>
-        writeFailedEvidence(plan, "verification", error).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        ))
-    )
-    yield* writeAndPrintEvidence(plan, "verification", evidence)
+    const result = yield* Config.planAndWriteVerification({ configPath: config })
+    yield* printEvidence(result.evidence)
   })
 )
 
@@ -412,19 +311,8 @@ const runCommand = Command.make(
     approveIrreversible: approveIrreversibleFlag
   },
   Effect.fn("cli.run")(function*({ config, execute, approveIrreversible }) {
-    const options = ReleaseExecutionOptions.make({ configPath: config, execute, approveIrreversible })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* runReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) => {
-        if (error.workflowEvidence === undefined) {
-          return Effect.fail(error)
-        }
-        return writeWorkflowEvidence(plan, error.workflowEvidence).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        )
-      })
-    )
-    yield* writeWorkflowEvidence(plan, evidence)
+    const result = yield* Config.planAndWriteRun({ configPath: config, execute, approveIrreversible })
+    yield* printWorkflowEvidencePaths(result.paths)
   })
 )
 
@@ -436,19 +324,8 @@ const resumeCommand = Command.make(
     approveIrreversible: approveIrreversibleFlag
   },
   Effect.fn("cli.resume")(function*({ config, execute, approveIrreversible }) {
-    const options = ReleaseResumeConfigOptions.make({ configPath: config, execute, approveIrreversible })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* resumeReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) => {
-        if (error.workflowEvidence === undefined) {
-          return Effect.fail(error)
-        }
-        return writeWorkflowEvidence(plan, error.workflowEvidence).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        )
-      })
-    )
-    yield* writeWorkflowEvidence(plan, evidence)
+    const result = yield* Config.planAndWriteResume({ configPath: config, execute, approveIrreversible })
+    yield* printWorkflowEvidencePaths(result.paths)
   })
 )
 
@@ -459,15 +336,8 @@ const reconcileCommand = Command.make(
     execute: executeFlag
   },
   Effect.fn("cli.reconcile")(function*({ config, execute }) {
-    const options = ReleaseReconcileConfigOptions.make({ configPath: config, execute })
-    const plan = yield* planReleaseConfig(options)
-    const evidence = yield* reconcileReleaseConfig(options).pipe(
-      Effect.catchTag("OperationFailedError", (error) =>
-        writeFailedEvidence(plan, "reconciliation", error).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        ))
-    )
-    yield* writeAndPrintEvidence(plan, "reconciliation", evidence)
+    const result = yield* Config.planAndWriteReconcile({ configPath: config, execute })
+    yield* printEvidence(result.evidence)
   })
 )
 
@@ -486,6 +356,7 @@ export const cli = Command.make("release").pipe(
     printCommand,
     statusCommand,
     eligibilityCommand,
+    checkIntentCommand,
     executeCommand,
     verifyCommand,
     runCommand,

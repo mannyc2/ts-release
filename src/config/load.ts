@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import { ReleaseIntent } from "../domain/release.js"
-import { ConfigParseError, ConfigReadError, ConfigValidationError, formatUnknown } from "./errors.js"
+import { ConfigParseError, ConfigReadError, ConfigValidationError } from "./errors.js"
 import { decodeReleaseConfig, DEFAULT_CONFIG_PATH } from "./schema.js"
 
 export type * from "../types/effect-internal.js"
@@ -12,7 +12,8 @@ export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(inpu
     catch: (cause) =>
       ConfigParseError.make({
         path,
-        reason: formatUnknown(cause)
+        reason: "Release config is not valid JSON.",
+        cause
       })
   })
 
@@ -32,7 +33,8 @@ export const loadReleaseIntent = Effect.fn("loadReleaseIntent")(function*(path: 
     Effect.mapError((error) =>
       ConfigReadError.make({
         path,
-        reason: error.message
+        reason: error.message,
+        cause: error
       })
     )
   )

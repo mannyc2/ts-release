@@ -8,6 +8,7 @@
     "paths": {
       "@mannyc1/ts-release": ["../../src/index.ts"],
       "@mannyc1/ts-release/host": ["../../src/host/host.ts"],
+      "@mannyc1/ts-release/workflows": ["../../src/workflows/index.ts"],
       "@mannyc1/ts-release/*": ["../../src/*.ts"]
     }
   },

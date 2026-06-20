@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { mkdir, rm } from "node:fs/promises"
 import { dirname } from "node:path"

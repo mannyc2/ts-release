@@ -7,7 +7,6 @@ const root = cwd()
 const currentCommitSelector = "HEAD"
 const placeholderCommits = new Set(["replace-with-release-commit", "0000000"])
 const appPackagePath = "apps/release-ts/package.json"
-const appVersionPath = "apps/release-ts/src/version.ts"
 const releaseConfigPath = "apps/release-ts/release.config.json"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -22,23 +21,6 @@ const readText = (path: string): string | undefined => {
   } catch {
     return undefined
   }
-}
-
-const readReleaseVersion = (
-  path: string,
-  failures: Array<string>
-): string | undefined => {
-  const contents = readText(path)
-  if (contents === undefined) {
-    failures.push(`${path} must define RELEASE_VERSION`)
-    return undefined
-  }
-  const match = contents.match(/export\s+const\s+RELEASE_VERSION\s*=\s*"([^"]+)"/)
-  if (match === null || match[1] === undefined || match[1].length === 0) {
-    failures.push(`${path} must export RELEASE_VERSION as a non-empty string literal`)
-    return undefined
-  }
-  return match[1]
 }
 
 const field = (record: Record<string, unknown>, name: string): unknown =>
@@ -93,6 +75,17 @@ const collectTokenEnvNames = (targets: ReadonlyArray<unknown>): ReadonlyArray<st
 const stringArrayIncludes = (value: unknown, expected: string): boolean =>
   Array.isArray(value) && value.some((item) => item === expected)
 
+const normalizedTemplatePackageName = (name: string): string => {
+  const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name
+  return withoutScopePrefix.replaceAll("/", "-")
+}
+
+const expandReleaseTemplate = (value: string, packageName: string, packageVersion: string): string =>
+  value
+    .split("{version}").join(packageVersion)
+    .split("{name}").join(packageName)
+    .split("{normalizedName}").join(normalizedTemplatePackageName(packageName))
+
 const collectArtifactRecords = (
   artifacts: ReadonlyArray<unknown>,
   failures: Array<string>
@@ -118,14 +111,24 @@ const checkArtifactPath = (
   id: string,
   expectedPath: string,
   expectedFormat: string,
+  packageName: string,
+  packageVersion: string,
   failures: Array<string>
 ): void => {
   if (artifact === undefined) {
     failures.push(`release config must include artifact ${id}`)
     return
   }
-  if (artifact.path !== expectedPath) {
-    failures.push(`artifact ${id} path ${String(artifact.path)} must equal ${expectedPath}`)
+  if (typeof artifact.path !== "string" || artifact.path.length === 0) {
+    failures.push(`artifact ${id} path must be a non-empty string`)
+    return
+  }
+  const expandedPath = expandReleaseTemplate(artifact.path, packageName, packageVersion)
+  if (expandedPath !== expectedPath) {
+    failures.push(`artifact ${id} path ${artifact.path} expands to ${expandedPath}; expected ${expectedPath}`)
+  }
+  if (artifact.path.startsWith(".release/artifacts/") && !artifact.path.includes("{version}")) {
+    failures.push(`artifact ${id} path ${artifact.path} must use {version}`)
   }
   if (artifact.format !== expectedFormat) {
     failures.push(`artifact ${id} format ${String(artifact.format)} must equal ${expectedFormat}`)
@@ -145,7 +148,6 @@ const failures: Array<string> = []
 const manifest = readJson("package.json")
 const appManifest = readJson(appPackagePath)
 const config = readJson(releaseConfigPath)
-const appSourceVersion = readReleaseVersion(appVersionPath, failures)
 const currentGitCommit = await readCurrentGitCommit()
 const trackedGitStatus = await readTrackedGitStatus()
 
@@ -166,9 +168,6 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
   if (packageVersion !== undefined && appVersion !== undefined && appVersion !== packageVersion) {
     failures.push(`${appPackagePath} version ${appVersion} must match package version ${packageVersion}`)
   }
-  if (appVersion !== undefined && appSourceVersion !== undefined && appVersion !== appSourceVersion) {
-    failures.push(`${appVersionPath} RELEASE_VERSION ${appSourceVersion} must match app package version ${appVersion}`)
-  }
   if (packageName === "release") {
     failures.push("package name `release` is already published on npm; use the confirmed scoped package name")
   }
@@ -176,16 +175,19 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
   if (!isRecord(identity)) {
     failures.push(`${releaseConfigPath} identity must be an object`)
   } else {
-    const releaseName = stringField(identity, "name", failures)
-    const releaseVersion = stringField(identity, "version", failures)
+    const sourceTag = stringField(identity, "_tag", failures)
     const commit = stringField(identity, "commit", failures)
-    const tag = stringField(identity, "tag", failures)
+    const tagTemplate = stringField(identity, "tagTemplate", failures)
+    const packagePathValue = field(identity, "packagePath")
 
-    if (packageName !== undefined && releaseName !== undefined && packageName !== releaseName) {
-      failures.push(`release identity name ${releaseName} must match package name ${packageName}`)
+    if (sourceTag !== undefined && sourceTag !== "PackageManifestReleaseIdentitySource") {
+      failures.push(`release identity source ${sourceTag} must be PackageManifestReleaseIdentitySource`)
     }
-    if (packageVersion !== undefined && releaseVersion !== undefined && packageVersion !== releaseVersion) {
-      failures.push(`release identity version ${releaseVersion} must match package version ${packageVersion}`)
+    if (field(identity, "name") !== undefined || field(identity, "version") !== undefined || field(identity, "tag") !== undefined) {
+      failures.push("release identity must derive name, version, and tag from package manifest data")
+    }
+    if (packagePathValue !== undefined && packagePathValue !== "package.json") {
+      failures.push(`release identity packagePath ${String(packagePathValue)} must be package.json or omitted`)
     }
     if (commit !== undefined && placeholderCommits.has(commit)) {
       failures.push("release identity commit must not use a placeholder value")
@@ -199,8 +201,8 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
     if (commit !== undefined && commit !== currentCommitSelector && currentGitCommit !== undefined && commit !== currentGitCommit) {
       failures.push(`release identity commit ${commit} must match current git commit ${currentGitCommit}`)
     }
-    if (releaseVersion !== undefined && tag !== undefined && tag !== `v${releaseVersion}`) {
-      failures.push(`release identity tag ${tag} must match v${releaseVersion}`)
+    if (tagTemplate !== undefined && tagTemplate !== "v{version}") {
+      failures.push(`release identity tagTemplate ${tagTemplate} must equal v{version}`)
     }
   }
 
@@ -209,21 +211,13 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
     failures.push(`${releaseConfigPath} artifacts must be an array`)
   } else if (packageName !== undefined && packageVersion !== undefined) {
     const artifactRecords = collectArtifactRecords(artifacts, failures)
-    for (const artifact of artifactRecords.values()) {
-      const artifactPath = artifact.path
-      if (
-        typeof artifactPath === "string" &&
-        artifactPath.startsWith(".release/artifacts/") &&
-        !artifactPath.includes(packageVersion)
-      ) {
-        failures.push(`artifact path ${artifactPath} must include package version ${packageVersion}`)
-      }
-    }
     checkArtifactPath(
       artifactRecords.get("package-tarball"),
       "package-tarball",
       packageTarballArtifactPath({ name: packageName, version: packageVersion }),
       "tarball",
+      packageName,
+      packageVersion,
       failures
     )
     for (const target of releaseCliArtifactTargets(packageVersion)) {
@@ -232,6 +226,8 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
         target.id,
         target.outfile,
         "file",
+        packageName,
+        packageVersion,
         failures
       )
     }

@@ -79,9 +79,6 @@ const releaseDiagnosticsOptionsFromInput = (
     ...(input.missingCiIsNotChecked === undefined ? {} : { missingCiIsNotChecked: input.missingCiIsNotChecked })
   })
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
   Config.string(name).pipe(
     Effect.option,
@@ -525,7 +522,7 @@ export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(
         id: "config:validation",
         status: "fail",
         confidence: "confirmed",
-        message: `Config validation failed: ${formatUnknown(error)}`
+        message: `Config validation failed: ${error.message}`
       }),
       onSuccess: (result) => check({
         id: "config:validation",
@@ -538,7 +535,7 @@ export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(
 
   const planned = yield* planReleaseConfig(planOptionsFromDiagnostics(options)).pipe(
     Effect.match({
-      onFailure: (error) => plannedFailure(formatUnknown(error)),
+      onFailure: (error) => plannedFailure(error.message),
       onSuccess: plannedSuccess
     })
   )

@@ -7,7 +7,8 @@ export class ReleaseNormalizationError extends Schema.TaggedErrorClass<ReleaseNo
   "ReleaseNormalizationError",
   {
     field: Schema.String,
-    reason: Schema.String
+    reason: Schema.String,
+    cause: Schema.optionalKey(Schema.Defect())
   }
 ) {}
 
@@ -15,7 +16,8 @@ export class ArtifactInventoryError extends Schema.TaggedErrorClass<ArtifactInve
   "ArtifactInventoryError",
   {
     path: Schema.String,
-    reason: Schema.String
+    reason: Schema.String,
+    cause: Schema.optionalKey(Schema.Defect())
   }
 ) {}
 
@@ -26,12 +28,14 @@ export class PlanConstructionError extends Schema.TaggedErrorClass<PlanConstruct
 
 export class EvidenceWriteError extends Schema.TaggedErrorClass<EvidenceWriteError>()("EvidenceWriteError", {
   path: Schema.String,
-  reason: Schema.String
+  reason: Schema.String,
+  cause: Schema.optionalKey(Schema.Defect())
 }) {}
 
 export class EvidenceReadError extends Schema.TaggedErrorClass<EvidenceReadError>()("EvidenceReadError", {
   path: Schema.String,
-  reason: Schema.String
+  reason: Schema.String,
+  cause: Schema.optionalKey(Schema.Defect())
 }) {}
 
 export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteError>()("WorkspaceWriteError", {
@@ -48,7 +52,8 @@ export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteSt
   "RemoteStateInspectionError",
   {
     targetId: Schema.String,
-    reason: Schema.String
+    reason: Schema.String,
+    cause: Schema.optionalKey(Schema.Defect())
   }
 ) {}
 
@@ -56,7 +61,8 @@ export class ReleaseEligibilityCheckError extends Schema.TaggedErrorClass<Releas
   "ReleaseEligibilityCheckError",
   {
     targetId: Schema.optionalKey(Schema.String),
-    reason: Schema.String
+    reason: Schema.String,
+    cause: Schema.optionalKey(Schema.Defect())
   }
 ) {}
 

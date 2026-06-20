@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
@@ -50,6 +50,7 @@ describe("Scoop target", () => {
     expect(render?._tag).toBe("RenderFileOperation")
     expect(publish?._tag).toBe("PublishCommandOperation")
     if (render?._tag === "RenderFileOperation") {
+      expect(render.description).toContain("release.json")
       expect(render.path).toBe(".release/generated/release.json")
       expect(render.contents).toContain("\"version\": \"0.1.0\"")
       expect(render.contents).toContain("\"description\": \"Example Scoop release\"")
@@ -67,11 +68,24 @@ describe("Scoop target", () => {
     }
   })
 
+  test("marks immutable Scoop bucket pushes as irreversible", async () => {
+    const plan = await runEffect(createPlan(scoopConfig({ mutability: "immutable" })), ScoopLayer)
+    const publish = plan.operations.find((operation) => operation.id === "scoop:scoop-push")
+
+    expect(publish?._tag).toBe("PublishCommandOperation")
+    if (publish?._tag === "PublishCommandOperation") {
+      expect(publish.risk).toBe("irreversible")
+      expect(publish.gate.requiresIrreversibleApproval).toBe(true)
+      expect(publish.gate.reason).toBe("Pushing a Scoop bucket update is configured as irreversible.")
+    }
+  })
+
   test("rejects Scoop tokenEnv because bucket pushes use Git credentials", async () => {
     const error = await runEffect(createPlan(scoopConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), ScoopLayer)
 
     expect(error._tag).toBe("PlanConstructionError")
     if (error._tag === "PlanConstructionError") {
+      expect(error.reason).toContain("Scoop bucket targets")
       expect(error.reason).toContain("plain git push")
       expect(error.reason).toContain("Git credentials")
     }

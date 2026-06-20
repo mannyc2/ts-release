@@ -1,7 +1,19 @@
 import * as Effect from "effect/Effect"
-import { artifactInventoryOrder } from "../domain/artifact.js"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
+import * as Schema from "effect/Schema"
+import { ArtifactIntent, artifactInventoryOrder } from "../domain/artifact.js"
 import { CommandSpec } from "../domain/operation.js"
-import { ReleaseIdentity, ReleaseIntent, ReleaseModel, SourceMetadata } from "../domain/release.js"
+import {
+  PackageManifestReleaseIdentitySource,
+  ReleaseIdentity,
+  ReleaseIdentitySource,
+  ReleaseIntent,
+  ReleaseModel,
+  ReleasePackageManifest,
+  SourceMetadata,
+  StaticReleaseIdentitySource
+} from "../domain/release.js"
 import { targetOrder } from "../domain/target.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { inventoryArtifact } from "./artifact-inventory.js"
@@ -36,7 +48,7 @@ const validateUnique = (
     )
   )
 
-const validateNonEmptySafeRelativePath = (
+export const validateNonEmptySafeRelativePath = (
   field: string,
   value: string
 ): Effect.Effect<void, ReleaseNormalizationError> => {
@@ -54,8 +66,31 @@ const validateNonEmptySafeRelativePath = (
   )
 }
 
-const expandEvidenceDirectory = (value: string, version: string): string =>
+export const normalizedArtifactPackageName = (name: string): string => {
+  const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name
+  return withoutScopePrefix.replaceAll("/", "-")
+}
+
+export const renderReleaseTemplate = (value: string, identity: ReleaseIdentity): string =>
+  value
+    .split("{version}").join(identity.version)
+    .split("{name}").join(identity.name)
+    .split("{normalizedName}").join(normalizedArtifactPackageName(identity.name))
+
+export const renderReleaseVersionTemplate = (value: string, version: string): string =>
   value.split("{version}").join(version)
+
+const templateField = (field: string, value: string): Effect.Effect<void, ReleaseNormalizationError> => {
+  if (value.includes("{name}") || value.includes("{normalizedName}")) {
+    return Effect.fail(
+      ReleaseNormalizationError.make({
+        field,
+        reason: "Only the {version} placeholder is supported here."
+      })
+    )
+  }
+  return Effect.void
+}
 
 const validateWorkflowFileName = (
   field: string,
@@ -98,7 +133,7 @@ const gitHeadCommand = (root: string): CommandSpec =>
     redactedEnv: []
   })
 
-const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(identity: ReleaseIdentity, root: string) {
+export const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(identity: ReleaseIdentity, root: string) {
   if (identity.commit !== "HEAD") {
     return identity
   }
@@ -108,7 +143,8 @@ const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(ident
     Effect.mapError((error) =>
       ReleaseNormalizationError.make({
         field: "identity.commit",
-        reason: error.reason
+        reason: error.reason,
+        cause: error
       })
     )
   )
@@ -133,6 +169,92 @@ const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(ident
   })
 })
 
+const decodePackageManifest = Schema.decodeUnknownEffect(ReleasePackageManifest)
+
+export const readReleasePackageManifest = Effect.fn("readReleasePackageManifest")(function*(
+  root: string,
+  packagePath: string,
+  field: string
+) {
+  yield* validateNonEmptySafeRelativePath(field, packagePath)
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const readPath = path.resolve(root, packagePath)
+  const contents = yield* fs.readFileString(readPath).pipe(
+    Effect.mapError((error) =>
+      ReleaseNormalizationError.make({
+        field,
+        reason: error.message,
+        cause: error
+      })
+    )
+  )
+  const parsed: unknown = yield* Effect.try({
+    try: () => JSON.parse(contents),
+    catch: (cause) =>
+      ReleaseNormalizationError.make({
+        field,
+        reason: "Package manifest is not valid JSON.",
+        cause
+      })
+  })
+  return yield* decodePackageManifest(parsed).pipe(
+    Effect.mapError((error) =>
+      ReleaseNormalizationError.make({
+        field,
+        reason: `Package manifest must include name and version: ${error.message}`
+      })
+    )
+  )
+})
+
+const releaseIdentityFromStaticSource = (source: StaticReleaseIdentitySource): ReleaseIdentity =>
+  ReleaseIdentity.make({
+    name: source.name,
+    version: source.version,
+    commit: source.commit,
+    ...(source.tag === undefined ? {} : { tag: source.tag }),
+    ...(source.notes === undefined ? {} : { notes: source.notes })
+  })
+
+const releaseIdentityFromManifestSource = Effect.fn("releaseIdentityFromManifestSource")(function*(
+  source: PackageManifestReleaseIdentitySource,
+  root: string
+) {
+  const manifest = yield* readReleasePackageManifest(root, source.packagePath ?? "package.json", "identity.packagePath")
+  const tagTemplate = source.tagTemplate ?? "v{version}"
+  yield* templateField("identity.tagTemplate", tagTemplate)
+  return ReleaseIdentity.make({
+    name: manifest.name,
+    version: manifest.version,
+    commit: source.commit,
+    tag: renderReleaseVersionTemplate(tagTemplate, manifest.version),
+    ...(source.notes === undefined ? {} : { notes: source.notes })
+  })
+})
+
+export const resolveReleaseIdentitySource = Effect.fn("resolveReleaseIdentitySource")(function*(
+  source: ReleaseIdentitySource,
+  root: string
+) {
+  const identity = source instanceof PackageManifestReleaseIdentitySource
+    ? yield* releaseIdentityFromManifestSource(source, root)
+    : releaseIdentityFromStaticSource(source)
+  return yield* resolveIdentityCommit(identity, root)
+})
+
+const expandArtifactIntent = (
+  artifact: ArtifactIntent,
+  identity: ReleaseIdentity
+): ArtifactIntent =>
+  ArtifactIntent.make({
+    id: artifact.id,
+    path: renderReleaseTemplate(artifact.path, identity),
+    format: artifact.format,
+    consumers: [...artifact.consumers],
+    ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum })
+  })
+
 export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(function*(
   intent: ReleaseIntent,
   root: string = ".",
@@ -140,7 +262,11 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
 ) {
   yield* validateUnique(intent.artifacts.map((artifact) => artifact.id), "artifacts.id")
   yield* validateUnique(intent.targets.map((target) => target.id), "targets.id")
-  for (const artifact of intent.artifacts) {
+
+  const identity = yield* resolveReleaseIdentitySource(intent.identity, root)
+  const artifacts = intent.artifacts.map((artifact) => expandArtifactIntent(artifact, identity))
+
+  for (const artifact of artifacts) {
     yield* validateNonEmptySafeRelativePath(`artifacts.${artifact.id}.path`, artifact.path)
   }
   for (const target of intent.targets) {
@@ -176,13 +302,12 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
     }
   }
 
-  const identity = yield* resolveIdentityCommit(intent.identity, root)
-  const evidenceDirectory = expandEvidenceDirectory(
+  const evidenceDirectory = renderReleaseVersionTemplate(
     intent.evidenceDirectory ?? ".release/evidence",
     identity.version
   )
   yield* validateNonEmptySafeRelativePath("evidenceDirectory", evidenceDirectory)
-  const inventory = yield* Effect.forEach(intent.artifacts, (artifact) => inventoryArtifact(root, artifact))
+  const inventory = yield* Effect.forEach(artifacts, (artifact) => inventoryArtifact(root, artifact))
 
   return ReleaseModel.make({
     identity,

@@ -143,7 +143,8 @@ export const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function
     Effect.mapError((error) =>
       ReleaseNormalizationError.make({
         field: "identity.commit",
-        reason: error.reason
+        reason: error.reason,
+        cause: error
       })
     )
   )
@@ -183,7 +184,8 @@ export const readReleasePackageManifest = Effect.fn("readReleasePackageManifest"
     Effect.mapError((error) =>
       ReleaseNormalizationError.make({
         field,
-        reason: error.message
+        reason: error.message,
+        cause: error
       })
     )
   )
@@ -192,7 +194,8 @@ export const readReleasePackageManifest = Effect.fn("readReleasePackageManifest"
     catch: (cause) =>
       ReleaseNormalizationError.make({
         field,
-        reason: `Package manifest is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`
+        reason: "Package manifest is not valid JSON.",
+        cause
       })
   })
   return yield* decodePackageManifest(parsed).pipe(

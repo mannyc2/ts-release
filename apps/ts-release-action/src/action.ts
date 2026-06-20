@@ -2,6 +2,7 @@ import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import type * as Crypto from "effect/Crypto"
+import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
@@ -38,7 +39,8 @@ export class ActionCommandError extends Schema.TaggedErrorClass<ActionCommandErr
 export class ActionArtifactUploadError extends Schema.TaggedErrorClass<ActionArtifactUploadError>()(
   "ActionArtifactUploadError",
   {
-    reason: Schema.String
+    reason: Schema.String,
+    cause: Schema.optionalKey(Schema.Defect())
   }
 ) {}
 
@@ -58,8 +60,15 @@ type PlanObserver = (plan: ReleasePlan) => void
 
 const NoopPlanObserver: PlanObserver = () => {}
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
+const renderActionCause = (cause: unknown): string => {
+  if (Cause.isCause(cause)) {
+    return Cause.pretty(cause)
+  }
+  if (cause instanceof Error && cause.message.length > 0) {
+    return cause.message
+  }
+  return Inspectable.toStringUnknown(cause)
+}
 
 const formatTaggedError = (cause: unknown): string | undefined => {
   if (
@@ -68,17 +77,21 @@ const formatTaggedError = (cause: unknown): string | undefined => {
     "_tag" in cause &&
     typeof cause._tag === "string"
   ) {
-    const reason = "reason" in cause && typeof cause.reason === "string"
-      ? `: ${cause.reason}`
+    const reason = "reason" in cause && typeof cause.reason === "string" ? cause.reason : undefined
+    const causeMessage = "cause" in cause && cause.cause !== undefined ? renderActionCause(cause.cause) : undefined
+    const causeSuffix = causeMessage !== undefined &&
+        causeMessage.length > 0 &&
+        causeMessage !== reason
+      ? ` (cause: ${causeMessage})`
       : ""
-    return `${cause._tag}${reason}`
+    return `${cause._tag}${reason === undefined ? "" : `: ${reason}`}${causeSuffix}`
   }
   return undefined
 }
 
 export const formatActionError = (cause: unknown): string =>
   formatTaggedError(Cause.isCause(cause) ? Cause.squash(cause) : cause) ??
-    formatUnknown(Cause.isCause(cause) ? Cause.squash(cause) : cause)
+    renderActionCause(cause)
 
 const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
@@ -280,7 +293,7 @@ const ignoreUploadFailure = <R>(
 ) =>
   upload.pipe(
     Effect.matchEffect({
-      onFailure: (uploadError) => io.info(`Evidence upload failed: ${formatUnknown(uploadError)}`),
+      onFailure: (uploadError) => io.info(`Evidence upload failed: ${formatActionError(uploadError)}`),
       onSuccess: () => Effect.void
     })
   )

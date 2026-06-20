@@ -83,9 +83,6 @@ const workspaceWritePath = (
   )
 }
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const isNotFoundError = (error: PlatformError.PlatformError): boolean =>
   error.reason._tag === "NotFound"
 
@@ -345,7 +342,8 @@ export const writeEvidenceBundle = Effect.fn("writeEvidenceBundle")(function*(
     Effect.mapError((error) =>
       EvidenceWriteError.make({
         path: pathName,
-        reason: error.message
+        reason: error.message,
+        cause: error
       })
     )
   )
@@ -361,7 +359,8 @@ const readEvidenceJson = Effect.fn("readEvidenceJson")(function*(pathName: strin
     Effect.mapError((error) =>
       EvidenceReadError.make({
         path: pathName,
-        reason: error.message
+        reason: error.message,
+        cause: error
       })
     )
   )
@@ -370,7 +369,8 @@ const readEvidenceJson = Effect.fn("readEvidenceJson")(function*(pathName: strin
     catch: (cause) =>
       EvidenceReadError.make({
         path: pathName,
-        reason: formatUnknown(cause)
+        reason: "Evidence bundle is not valid JSON.",
+        cause
       })
   })
   return parsed
@@ -385,7 +385,8 @@ export const readEvidenceBundle = Effect.fn("readEvidenceBundle")(function*(
     Effect.mapError((error) =>
       EvidenceReadError.make({
         path: pathName,
-        reason: error.message
+        reason: error.message,
+        cause: error
       })
     )
   )
@@ -415,7 +416,8 @@ export const tryReadEvidenceBundle = Effect.fn("tryReadEvidenceBundle")(function
     catch: (cause) =>
       EvidenceReadError.make({
         path: pathName,
-        reason: formatUnknown(cause)
+        reason: "Evidence bundle is not valid JSON.",
+        cause
       })
   })
   return yield* decodeEvidenceBundle(parsed).pipe(

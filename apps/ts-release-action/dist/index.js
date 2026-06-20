@@ -92362,11 +92362,17 @@ function isNotNullish(input) {
 function isUnknown(_2) {
   return true;
 }
+function isObject2(input) {
+  return typeof input === "object" && input !== null && !Array.isArray(input);
+}
 function isObjectKeyword(input) {
   return typeof input === "object" && input !== null || isFunction(input);
 }
 var hasProperty = /* @__PURE__ */ dual(2, (self2, property) => isObjectKeyword(self2) && (property in self2));
 var isTagged = /* @__PURE__ */ dual(2, (self2, tag) => hasProperty(self2, "_tag") && self2["_tag"] === tag);
+function isError3(input) {
+  return input instanceof Error;
+}
 function isIterable(input) {
   return hasProperty(input, Symbol.iterator) || isString(input);
 }
@@ -96286,6 +96292,7 @@ var fail5 = causeFail;
 var squash = causeSquash;
 var findError2 = findError;
 var hasInterrupts2 = hasInterrupts;
+var pretty = causePretty;
 var isDone3 = isDone;
 var Done2 = Done;
 var done3 = done;
@@ -97124,6 +97131,60 @@ function passthrough3() {
 }
 var numberFromString = /* @__PURE__ */ new Transformation(/* @__PURE__ */ Number3(), /* @__PURE__ */ String2());
 var dateFromString = /* @__PURE__ */ new Transformation(/* @__PURE__ */ Date3(), /* @__PURE__ */ transform(formatDate));
+var isJsonError = (input) => isObject2(input) && typeof input["message"] === "string";
+var decodeJsonError = (input) => {
+  const hasCause = Object.hasOwn(input, "cause");
+  const err = hasCause ? new Error(input.message, {
+    cause: decodeDefect(input.cause)
+  }) : new Error(input.message);
+  if (typeof input.name === "string" && input.name !== "Error")
+    err.name = input.name;
+  if (typeof input.stack === "string")
+    err.stack = input.stack;
+  return err;
+};
+var encodeUnknownAsJson = (input) => {
+  try {
+    const json = formatJson(input);
+    return json === undefined ? format(input) : JSON.parse(json);
+  } catch {
+    return format(input);
+  }
+};
+var encodeJsonError = (input, options, encodeDefect) => {
+  const encoded = {
+    name: input.name,
+    message: typeof input.message === "string" ? input.message : ""
+  };
+  if (options?.includeStack && typeof input.stack === "string") {
+    encoded.stack = input.stack;
+  }
+  if (!options?.excludeCause && input.cause !== undefined) {
+    encoded.cause = encodeDefect(input.cause);
+  }
+  return encoded;
+};
+var makeEncodeDefect = (options) => {
+  const seen = new WeakSet;
+  const encode = (input) => {
+    if (isError3(input)) {
+      if (seen.has(input)) {
+        return "[Circular]";
+      }
+      seen.add(input);
+      const encoded = encodeJsonError(input, options, encode);
+      seen.delete(input);
+      return encoded;
+    }
+    return encodeUnknownAsJson(input);
+  };
+  return encode;
+};
+var decodeDefect = (input) => isJsonError(input) ? decodeJsonError(input) : input;
+var defectFromJson = (options) => transform2({
+  decode: decodeDefect,
+  encode: makeEncodeDefect(options)
+});
 var urlFromString = /* @__PURE__ */ transformOrFail2({
   decode: (s) => try_2({
     try: () => new URL(s),
@@ -100151,6 +100212,7 @@ function Literal2(literal) {
   });
   return out;
 }
+var Unknown2 = /* @__PURE__ */ make17(unknown);
 var String4 = /* @__PURE__ */ make17(string2);
 var Number5 = /* @__PURE__ */ make17(number2);
 var Boolean3 = /* @__PURE__ */ make17(boolean);
@@ -100250,6 +100312,37 @@ function isBase64(annotations) {
     },
     ...annotations
   });
+}
+var getErrorOptionsKey = (options) => (options?.includeStack === true ? 1 : 0) | (options?.excludeCause === true ? 2 : 0);
+var getErrorOptions = (key) => {
+  switch (key) {
+    case 0:
+      return;
+    case 1:
+      return {
+        includeStack: true
+      };
+    case 2:
+      return {
+        excludeCause: true
+      };
+    case 3:
+      return {
+        includeStack: true,
+        excludeCause: true
+      };
+  }
+};
+var defectSchemaCache = [];
+function Defect(options) {
+  const key = getErrorOptionsKey(options);
+  const cached3 = defectSchemaCache[key];
+  if (cached3 !== undefined) {
+    return cached3;
+  }
+  const schema = Json2.pipe(decodeTo2(Unknown2, defectFromJson(getErrorOptions(key))));
+  defectSchemaCache[key] = schema;
+  return schema;
 }
 var RegExp3 = /* @__PURE__ */ instanceOf(globalThis.RegExp, {
   typeConstructor: {
@@ -100818,13 +100911,15 @@ __export(exports_config, {
 // ../../src/config/errors.ts
 class ConfigReadError extends TaggedErrorClass()("ConfigReadError", {
   path: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
 class ConfigParseError extends TaggedErrorClass()("ConfigParseError", {
   path: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
@@ -100833,7 +100928,6 @@ class ConfigValidationError extends TaggedErrorClass()("ConfigValidationError", 
   reason: String4
 }) {
 }
-var formatUnknown = (cause) => cause instanceof Error ? cause.message : String(cause);
 
 // ../../src/domain/artifact.ts
 var ArtifactId = String4;
@@ -101486,7 +101580,8 @@ var parseReleaseIntent = fn2("parseReleaseIntent")(function* (input, path4 = DEF
     try: () => JSON.parse(input),
     catch: (cause) => ConfigParseError.make({
       path: path4,
-      reason: formatUnknown(cause)
+      reason: "Release config is not valid JSON.",
+      cause
     })
   });
   return yield* decodeReleaseConfig(parsed).pipe(mapError3((error2) => ConfigValidationError.make({
@@ -101498,7 +101593,8 @@ var loadReleaseIntent = fn2("loadReleaseIntent")(function* (path4 = DEFAULT_CONF
   const fs8 = yield* FileSystem;
   const contents = yield* fs8.readFileString(path4).pipe(mapError3((error2) => ConfigReadError.make({
     path: path4,
-    reason: error2.message
+    reason: error2.message,
+    cause: error2
   })));
   return yield* parseReleaseIntent(contents, path4);
 });
@@ -101691,7 +101787,8 @@ var planAllTargetOperations = fn2("planAllTargetOperations")(function* (model) {
 // ../../src/host/host.ts
 class CommandRunnerError extends TaggedErrorClass()("CommandRunnerError", {
   operation: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
@@ -101785,13 +101882,15 @@ var formatUUIDv7 = (timestampMillis, bytes) => {
 // ../../src/planner/errors.ts
 class ReleaseNormalizationError extends TaggedErrorClass()("ReleaseNormalizationError", {
   field: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
 class ArtifactInventoryError extends TaggedErrorClass()("ArtifactInventoryError", {
   path: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
@@ -101803,13 +101902,15 @@ class PlanConstructionError extends TaggedErrorClass()("PlanConstructionError", 
 
 class EvidenceWriteError extends TaggedErrorClass()("EvidenceWriteError", {
   path: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
 class EvidenceReadError extends TaggedErrorClass()("EvidenceReadError", {
   path: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
@@ -101827,13 +101928,15 @@ class ResumeBlockedError extends TaggedErrorClass()("ResumeBlockedError", {
 
 class RemoteStateInspectionError extends TaggedErrorClass()("RemoteStateInspectionError", {
   targetId: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
 class ReleaseEligibilityCheckError extends TaggedErrorClass()("ReleaseEligibilityCheckError", {
   targetId: optionalKey2(String4),
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
@@ -101855,12 +101958,12 @@ class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
 
 // ../../src/planner/artifact-inventory.ts
 var checksumName = (algorithm) => algorithm === "sha256" ? "SHA-256" : "SHA-512";
-var formatUnknown2 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var artifactPath = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
 var artifactKind = (info2) => info2.type === "Directory" ? "directory" : info2.type === "File" ? "file" : "other";
-var normalizationPlatformError = (field) => (cause) => ReleaseNormalizationError.make({
+var normalizationPlatformError = (field, reason) => (cause) => ReleaseNormalizationError.make({
   field,
-  reason: formatUnknown2(cause)
+  reason,
+  cause
 });
 var validateArtifactFormat = (artifact2, kind) => {
   if (artifact2.format === "directory" && kind !== "directory") {
@@ -101886,8 +101989,8 @@ var checksumArtifact = fn2("checksumArtifact")(function* (artifact2, targetPath,
   }
   const fs8 = yield* FileSystem;
   const crypto5 = yield* Crypto;
-  const bytes = yield* fs8.readFile(targetPath).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`)));
-  const digest = yield* crypto5.digest(checksumName("sha256"), bytes).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`)));
+  const bytes = yield* fs8.readFile(targetPath).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`, "Unable to read artifact bytes.")));
+  const digest = yield* crypto5.digest(checksumName("sha256"), bytes).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`, "Unable to compute artifact checksum.")));
   return Checksum.make({
     algorithm: "sha256",
     value: encodeHex(digest)
@@ -101916,7 +102019,7 @@ var inventoryArtifact = fn2("inventoryArtifact")(function* (root, artifact2) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
   const targetPath = artifactPath(path4, root, artifact2.path);
-  const info2 = yield* fs8.stat(targetPath).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.path`)));
+  const info2 = yield* fs8.stat(targetPath).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.path`, "Unable to inspect artifact path.")));
   const kind = artifactKind(info2);
   yield* validateArtifactFormat(artifact2, kind);
   const checksum = yield* verifiedChecksum(artifact2, targetPath, info2.type);
@@ -102006,7 +102109,8 @@ var resolveIdentityCommit = fn2("resolveIdentityCommit")(function* (identity2, r
   const commandRunner = yield* ReleaseCommandRunner;
   const result2 = yield* commandRunner.runCommand(gitHeadCommand(root)).pipe(mapError3((error2) => ReleaseNormalizationError.make({
     field: "identity.commit",
-    reason: error2.reason
+    reason: error2.reason,
+    cause: error2
   })));
   const commit = result2.stdout.trim();
   if (result2.exitCode !== 0 || commit.length === 0) {
@@ -102031,13 +102135,15 @@ var readReleasePackageManifest = fn2("readReleasePackageManifest")(function* (ro
   const readPath = path4.resolve(root, packagePath);
   const contents = yield* fs8.readFileString(readPath).pipe(mapError3((error2) => ReleaseNormalizationError.make({
     field,
-    reason: error2.message
+    reason: error2.message,
+    cause: error2
   })));
   const parsed = yield* try_2({
     try: () => JSON.parse(contents),
     catch: (cause) => ReleaseNormalizationError.make({
       field,
-      reason: `Package manifest is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`
+      reason: "Package manifest is not valid JSON.",
+      cause
     })
   });
   return yield* decodePackageManifest(parsed).pipe(mapError3((error2) => ReleaseNormalizationError.make({
@@ -102417,7 +102523,8 @@ function string3(name) {
 class HttpError extends TaggedErrorClass()("HttpError", {
   operation: String4,
   url: String4,
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 
@@ -102472,7 +102579,6 @@ var workspaceWritePath = (path4, root, pathName) => {
     reason: result2.reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root."
   }));
 };
-var formatUnknown3 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var isNotFoundError = (error2) => error2.reason._tag === "NotFound";
 var readRedactionSecrets = fn2("readRedactionSecrets")(function* (operation) {
   const secrets = [];
@@ -102683,7 +102789,8 @@ var writeEvidenceBundle = fn2("writeEvidenceBundle")(function* (pathName, bundle
     yield* fs8.writeFileString(targetPath, renderEvidenceJson(bundle));
   }).pipe(mapError3((error2) => EvidenceWriteError.make({
     path: pathName,
-    reason: error2.message
+    reason: error2.message,
+    cause: error2
   })));
 });
 var decodeEvidenceBundle = decodeUnknownEffect2(EvidenceBundle);
@@ -102693,13 +102800,15 @@ var readEvidenceJson = fn2("readEvidenceJson")(function* (pathName, root) {
   const targetPath = resolveWorkspacePath(path4, root, pathName);
   const contents = yield* fs8.readFileString(targetPath).pipe(mapError3((error2) => EvidenceReadError.make({
     path: pathName,
-    reason: error2.message
+    reason: error2.message,
+    cause: error2
   })));
   const parsed = yield* try_2({
     try: () => JSON.parse(contents),
     catch: (cause) => EvidenceReadError.make({
       path: pathName,
-      reason: formatUnknown3(cause)
+      reason: "Evidence bundle is not valid JSON.",
+      cause
     })
   });
   return parsed;
@@ -102708,7 +102817,8 @@ var readEvidenceBundle = fn2("readEvidenceBundle")(function* (pathName, root = "
   const parsed = yield* readEvidenceJson(pathName, root);
   return yield* decodeEvidenceBundle(parsed).pipe(mapError3((error2) => EvidenceReadError.make({
     path: pathName,
-    reason: error2.message
+    reason: error2.message,
+    cause: error2
   })));
 });
 var tryReadEvidenceBundle = fn2("tryReadEvidenceBundle")(function* (pathName, root = ".") {
@@ -102726,7 +102836,8 @@ var tryReadEvidenceBundle = fn2("tryReadEvidenceBundle")(function* (pathName, ro
     try: () => JSON.parse(contents),
     catch: (cause) => EvidenceReadError.make({
       path: pathName,
-      reason: formatUnknown3(cause)
+      reason: "Evidence bundle is not valid JSON.",
+      cause
     })
   });
   return yield* decodeEvidenceBundle(parsed).pipe(mapError3((error2) => EvidenceReadError.make({
@@ -103957,9 +104068,10 @@ var decideReleaseEligibility = (input) => {
     reason: `${releaseLabel(input)} has partial remote state: npm=${input.npm}, github=${input.github}, expected-github=${expectedGithub}.`
   });
 };
-var eligibilityError = (reason, targetId) => ReleaseEligibilityCheckError.make({
+var eligibilityError = (reason, targetId, cause) => ReleaseEligibilityCheckError.make({
   ...targetId === undefined ? {} : { targetId },
-  reason
+  reason,
+  ...cause === undefined ? {} : { cause }
 });
 var findNpmTarget = (targets, packageName) => targets.find((target) => target._tag === "NpmRegistryTarget" && target.packageName === packageName);
 var findNpmTargetById = (targets, targetId) => targets.find((target) => target._tag === "NpmRegistryTarget" && target.id === targetId);
@@ -104058,7 +104170,7 @@ var gitLogCommand = (root, sinceTag) => CommandSpec.make({
 var parseGitHubCliReleaseView = fn2("parseGitHubCliReleaseView")(function* (input, stdout) {
   const parsed = yield* try_2({
     try: () => JSON.parse(stdout),
-    catch: (cause) => eligibilityError(cause instanceof Error ? cause.message : String(cause), input.githubTargetId)
+    catch: (cause) => eligibilityError("gh release view returned invalid JSON.", input.githubTargetId, cause)
   });
   const response = yield* decodeGitHubCliReleaseViewResponse(parsed).pipe(mapError3((error2) => eligibilityError(`gh release view returned malformed JSON: ${error2.message}`, input.githubTargetId)));
   return response.isDraft ? "draft" : "published";
@@ -104320,10 +104432,10 @@ var readIntentFiles = fn2("readIntentFiles")(function* (root, strategy) {
   for (const entry of entries.filter((item) => item.endsWith(".json")).sort()) {
     yield* validateNonEmptySafeRelativePath("releaseDecision.intentFile", entry);
     const intentPath = path4.resolve(absoluteDirectory, entry);
-    const contents = yield* fs8.readFileString(intentPath).pipe(mapError3((error2) => eligibilityError(`Unable to read release intent file ${entry}: ${error2.message}`)));
+    const contents = yield* fs8.readFileString(intentPath).pipe(mapError3((error2) => eligibilityError(`Unable to read release intent file ${entry}: ${error2.message}`, undefined, error2)));
     const parsed = yield* try_2({
       try: () => JSON.parse(contents),
-      catch: (cause) => eligibilityError(`Release intent file ${entry} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`)
+      catch: (cause) => eligibilityError(`Release intent file ${entry} is not valid JSON.`, undefined, cause)
     });
     const decoded = yield* decodeReleaseIntentFile(parsed).pipe(mapError3((error2) => eligibilityError(`Release intent file ${entry} is invalid: ${error2.message}`)));
     if (decoded.package === manifest.name) {
@@ -105015,7 +105127,6 @@ var releaseDiagnosticsOptionsFromInput = (input = {}) => ReleaseDiagnosticsOptio
   ...releaseFormatField(input),
   ...input.missingCiIsNotChecked === undefined ? {} : { missingCiIsNotChecked: input.missingCiIsNotChecked }
 });
-var formatUnknown4 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var readOptionalEnv2 = (name) => string3(name).pipe(option2, map5(getOrUndefined));
 var envExists = fn2("diagnostics.envExists")(function* (name) {
   const value2 = yield* readOptionalEnv2(name);
@@ -105322,7 +105433,7 @@ var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (inpu
       id: "config:validation",
       status: "fail",
       confidence: "confirmed",
-      message: `Config validation failed: ${formatUnknown4(error2)}`
+      message: `Config validation failed: ${error2.message}`
     }),
     onSuccess: (result2) => check({
       id: "config:validation",
@@ -105332,7 +105443,7 @@ var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (inpu
     })
   }));
   const planned = yield* planReleaseConfig(planOptionsFromDiagnostics(options)).pipe(match5({
-    onFailure: (error2) => plannedFailure(formatUnknown4(error2)),
+    onFailure: (error2) => plannedFailure(error2.message),
     onSuccess: plannedSuccess
   }));
   if (planned._tag === "Failed") {
@@ -106738,7 +106849,6 @@ class InterruptibleResponse {
 }
 
 // ../../src/host/http-live.ts
-var formatUnknown5 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var nowIso2 = fn2("http.nowIso")(function* () {
   const millis2 = yield* clockWith2((clock) => clock.currentTimeMillis);
   return new Date(millis2).toISOString();
@@ -106790,12 +106900,14 @@ var LiveReleaseHttpLayer = effect(ReleaseHttp)(gen2(function* () {
       const response = yield* client3.execute(httpRequest).pipe(mapError3((error2) => HttpError.make({
         operation: "execute",
         url: request2.url,
-        reason: formatUnknown5(error2)
+        reason: "HTTP request failed.",
+        cause: error2
       })));
       const json2 = request2.method === "HEAD" ? null : yield* response.json.pipe(mapError3((error2) => HttpError.make({
         operation: "json",
         url: request2.url,
-        reason: formatUnknown5(error2)
+        reason: "HTTP response JSON decoding failed.",
+        cause: error2
       })));
       const endedAt = yield* nowIso2();
       const ended = yield* clockWith2((clock) => clock.currentTimeMillis);
@@ -107001,7 +107113,6 @@ var inheritedEnvNames = [
   "RUNNER_ENVIRONMENT",
   "RUNNER_OS"
 ];
-var formatUnknown6 = (cause) => cause instanceof Error ? cause.message : String(cause);
 var readOptionalEnv4 = (name) => string3(name).pipe(option2, map5(getOrUndefined));
 var commandEnv = fn2("platform.commandEnv")(function* (command) {
   const names = new Set([
@@ -107064,7 +107175,8 @@ var makePlatformCommandRunnerLayer = (options = {}) => effect(ReleaseCommandRunn
         }, { concurrency: "unbounded" });
       })).pipe(mapError3((cause) => CommandRunnerError.make({
         operation: "runCommand",
-        reason: formatUnknown6(cause)
+        reason: "Command execution failed.",
+        cause
       })));
       const endedAt = yield* nowIso3();
       const endedMillis = yield* clockWith2((clock) => clock.currentTimeMillis);
@@ -107750,22 +107862,33 @@ class ActionCommandError extends TaggedErrorClass()("ActionCommandError", {
 }
 
 class ActionArtifactUploadError extends TaggedErrorClass()("ActionArtifactUploadError", {
-  reason: String4
+  reason: String4,
+  cause: optionalKey2(Defect())
 }) {
 }
 var NoopActionArtifactClient = {
   uploadArtifact: () => void_3
 };
 var NoopPlanObserver = () => {};
-var formatUnknown7 = (cause) => cause instanceof Error ? cause.message : String(cause);
+var renderActionCause = (cause) => {
+  if (isCause2(cause)) {
+    return pretty(cause);
+  }
+  if (cause instanceof Error && cause.message.length > 0) {
+    return cause.message;
+  }
+  return toStringUnknown(cause);
+};
 var formatTaggedError = (cause) => {
   if (typeof cause === "object" && cause !== null && "_tag" in cause && typeof cause._tag === "string") {
-    const reason = "reason" in cause && typeof cause.reason === "string" ? `: ${cause.reason}` : "";
-    return `${cause._tag}${reason}`;
+    const reason = "reason" in cause && typeof cause.reason === "string" ? cause.reason : undefined;
+    const causeMessage = "cause" in cause && cause.cause !== undefined ? renderActionCause(cause.cause) : undefined;
+    const causeSuffix = causeMessage !== undefined && causeMessage.length > 0 && causeMessage !== reason ? ` (cause: ${causeMessage})` : "";
+    return `${cause._tag}${reason === undefined ? "" : `: ${reason}`}${causeSuffix}`;
   }
   return;
 };
-var formatActionError = (cause) => formatTaggedError(isCause2(cause) ? squash(cause) : cause) ?? formatUnknown7(isCause2(cause) ? squash(cause) : cause);
+var formatActionError = (cause) => formatTaggedError(isCause2(cause) ? squash(cause) : cause) ?? renderActionCause(cause);
 var workspacePath4 = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
 var hasParentTraversal2 = (pathName) => pathName.split(/[\\/]+/).includes("..");
 var isInsideWorkspace = (path4, root, targetPath) => {
@@ -107902,7 +108025,7 @@ var uploadEvidence = fn2("action.uploadEvidence")(function* (options, io, artifa
   yield* artifactClient.uploadArtifact(options.evidenceArtifactName, evidence.files, evidence.directory);
 });
 var ignoreUploadFailure = (upload, io) => upload.pipe(matchEffect3({
-  onFailure: (uploadError) => io.info(`Evidence upload failed: ${formatUnknown7(uploadError)}`),
+  onFailure: (uploadError) => io.info(`Evidence upload failed: ${formatActionError(uploadError)}`),
   onSuccess: () => void_3
 }));
 var withEvidenceUpload = (options, io, artifactClient, planRef, effect2) => effect2.pipe(matchEffect3({
@@ -109509,7 +109632,8 @@ var actionsArtifactClient = () => {
         await client3.uploadArtifact(name, [...files], rootDirectory);
       },
       catch: (cause) => ActionArtifactUploadError.make({
-        reason: cause instanceof Error ? cause.message : String(cause)
+        reason: "Artifact upload failed.",
+        cause
       })
     })
   };

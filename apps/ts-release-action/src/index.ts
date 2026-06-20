@@ -42,7 +42,8 @@ const actionsArtifactClient = (): ActionArtifactClient => {
         },
         catch: (cause) =>
           ActionArtifactUploadError.make({
-            reason: cause instanceof Error ? cause.message : String(cause)
+            reason: "Artifact upload failed.",
+            cause
           })
       })
   }

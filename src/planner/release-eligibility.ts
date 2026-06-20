@@ -180,11 +180,13 @@ export const decideReleaseEligibility = (
 
 const eligibilityError = (
   reason: string,
-  targetId?: string
+  targetId?: string,
+  cause?: unknown
 ): ReleaseEligibilityCheckError =>
   ReleaseEligibilityCheckError.make({
     ...(targetId === undefined ? {} : { targetId }),
-    reason
+    reason,
+    ...(cause === undefined ? {} : { cause })
   })
 
 const findNpmTarget = (
@@ -340,8 +342,9 @@ const parseGitHubCliReleaseView = Effect.fn("parseGitHubCliReleaseView")(functio
     try: () => JSON.parse(stdout),
     catch: (cause) =>
       eligibilityError(
-        cause instanceof Error ? cause.message : String(cause),
-        input.githubTargetId
+        "gh release view returned invalid JSON.",
+        input.githubTargetId,
+        cause
       )
   })
 
@@ -776,14 +779,16 @@ const readIntentFiles = Effect.fn("readIntentFiles")(function*(
     const intentPath = path.resolve(absoluteDirectory, entry)
     const contents = yield* fs.readFileString(intentPath).pipe(
       Effect.mapError((error) =>
-        eligibilityError(`Unable to read release intent file ${entry}: ${error.message}`)
+        eligibilityError(`Unable to read release intent file ${entry}: ${error.message}`, undefined, error)
       )
     )
     const parsed: unknown = yield* Effect.try({
       try: () => JSON.parse(contents),
       catch: (cause) =>
         eligibilityError(
-          `Release intent file ${entry} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`
+          `Release intent file ${entry} is not valid JSON.`,
+          undefined,
+          cause
         )
     })
     const decoded = yield* decodeReleaseIntentFile(parsed).pipe(

@@ -9,7 +9,8 @@ export type * from "../types/effect-internal.js"
 export class HttpError extends Schema.TaggedErrorClass<HttpError>()("HttpError", {
   operation: Schema.String,
   url: Schema.String,
-  reason: Schema.String
+  reason: Schema.String,
+  cause: Schema.optionalKey(Schema.Defect())
 }) {}
 
 export class HttpResult extends Schema.Class<HttpResult>("HttpResult")({

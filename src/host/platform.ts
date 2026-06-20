@@ -45,9 +45,6 @@ const inheritedEnvNames = [
   "RUNNER_OS"
 ]
 
-const formatUnknown = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause)
-
 const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
   Config.string(name).pipe(
     Effect.option,
@@ -137,7 +134,8 @@ export const makePlatformCommandRunnerLayer = (
               Effect.mapError((cause) =>
                 CommandRunnerError.make({
                   operation: "runCommand",
-                  reason: formatUnknown(cause)
+                  reason: "Command execution failed.",
+                  cause
                 })
               )
             )

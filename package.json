@@ -1,6 +1,6 @@
 {
   "name": "@mannyc1/ts-release",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "packageManager": "bun@1.3.14",
   "description": "Plan-first release orchestration with explicit validation, evidence, and execution gates.",

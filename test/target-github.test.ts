@@ -162,9 +162,10 @@ describe("GitHub target", () => {
 
     const plan = await runEffect(createPlan(githubConfig), TestLayer)
     const publish = plan.operations.find((operation) => operation.id === "github:gh-release-create")
-    const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-http")
-    const legacyVerify = plan.operations.find((operation) =>
-      operation.id === "github:gh-release-view" || operation.id.startsWith("github:gh-release-verify-")
+    const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-gh")
+    const draftTagHttpVerify = plan.operations.find((operation) =>
+      operation._tag === "VerifyHttpOperation" &&
+      operation.request.url === "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0"
     )
     const npmOnlyAsset = plan.operations.find((operation) => operation.id === "github:gh-release-verify-asset-npm-only")
     const text = renderPlanText(plan)
@@ -204,7 +205,55 @@ describe("GitHub target", () => {
       ])}`
     )
     expect(npmOnlyAsset).toBeUndefined()
-    expect(legacyVerify).toBeUndefined()
+    expect(draftTagHttpVerify).toBeUndefined()
+    expect(verify?._tag).toBe("VerifyRemoteOperation")
+    if (verify?._tag === "VerifyRemoteOperation") {
+      expect(verify.command.executable).toBe("gh")
+      expect(verify.command.requiredEnv).toEqual(["GH_TOKEN"])
+      expect(verify.command.redactedEnv).toEqual(["GH_TOKEN"])
+      expect(verify.command.args).toEqual([
+        "release",
+        "view",
+        "v0.1.0",
+        "--repo",
+        "owner/repo",
+        "--json",
+        "tagName,name,isDraft,isPrerelease,assets"
+      ])
+    }
+    expect(text).not.toContain("http: GET https://api.github.com/repos/owner/repo/releases/tags/v0.1.0")
+    expect(text).toContain("gh release view")
+  })
+
+  test("keeps HTTP verification checks for non-draft GitHub releases", async () => {
+    const githubConfig = releaseConfig({
+      artifacts: [
+        {
+          id: "github-asset",
+          path: "artifacts/release-0.1.0.tgz",
+          format: "tarball",
+          consumers: ["github"]
+        }
+      ],
+      targets: [
+        {
+          _tag: "GitHubReleaseTarget",
+          id: "github",
+          repository: "owner/repo",
+          tokenEnv: "GH_TOKEN",
+          draft: false,
+          prerelease: true,
+          dryRunSupport: "simulated",
+          mutability: "mutable-release",
+          recovery: "delete-and-recreate"
+        }
+      ]
+    })
+
+    const plan = await runEffect(createPlan(githubConfig), TestLayer)
+    const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-http")
+    const text = renderPlanText(plan)
+
     expect(verify?._tag).toBe("VerifyHttpOperation")
     if (verify?._tag === "VerifyHttpOperation") {
       expect(verify.request.method).toBe("GET")
@@ -227,7 +276,7 @@ describe("GitHub target", () => {
       expect(verify.checks).toContainEqual({
         _tag: "HttpJsonEqualsCheck",
         path: ["draft"],
-        expected: true
+        expected: false
       })
       expect(verify.checks).toContainEqual({
         _tag: "HttpJsonEqualsCheck",
@@ -243,7 +292,6 @@ describe("GitHub target", () => {
     }
     expect(text).toContain("http: GET https://api.github.com/repos/owner/repo/releases/tags/v0.1.0")
     expect(text).toContain("expect: status 200, checks 5")
-    expect(text).not.toContain("gh release view")
   })
 
   test("rejects directory artifacts consumed by GitHub releases", async () => {

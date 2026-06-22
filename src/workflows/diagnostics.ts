@@ -7,8 +7,8 @@ import * as Schema from "effect/Schema"
 import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { Operation } from "../domain/operation.js"
-import { ReleaseIdentity, ReleasePlan } from "../domain/release.js"
-import { TargetCapabilities, TargetConfig, targetCapabilitiesOrder, targetOrder } from "../domain/target.js"
+import { ReleaseIdentity, ReleaseName, ReleasePlan, ReleaseVersion } from "../domain/release.js"
+import { TargetCapabilities, TargetConfig, TargetId, targetCapabilitiesOrder, targetOrder } from "../domain/target.js"
 import { resolveReleaseIdentitySource } from "../planner/normalize-release.js"
 import { targetCapabilities } from "../targets/registry.js"
 import {
@@ -37,8 +37,8 @@ export const ReleaseCiProvider = Schema.Literals(["github-actions"])
 export type ReleaseCiProvider = typeof ReleaseCiProvider.Type
 
 export class ReleaseDiagnosticCheck extends Schema.Class<ReleaseDiagnosticCheck>("ReleaseDiagnosticCheck")({
-  id: Schema.String,
-  targetId: Schema.optionalKey(Schema.String),
+  id: Schema.NonEmptyString,
+  targetId: Schema.optionalKey(TargetId),
   status: ReleaseDiagnosticStatus,
   confidence: ReleaseDiagnosticConfidence,
   message: Schema.String
@@ -46,8 +46,8 @@ export class ReleaseDiagnosticCheck extends Schema.Class<ReleaseDiagnosticCheck>
 
 export class ReleaseDiagnosticReport extends Schema.Class<ReleaseDiagnosticReport>("ReleaseDiagnosticReport")({
   schemaVersion: Schema.Literal("release-diagnostics/v1"),
-  releaseName: Schema.String,
-  releaseVersion: Schema.String,
+  releaseName: ReleaseName,
+  releaseVersion: ReleaseVersion,
   checks: Schema.Array(ReleaseDiagnosticCheck)
 }) {}
 

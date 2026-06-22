@@ -5,16 +5,16 @@ import { TargetCapabilities, TargetConfig } from "./target.js"
 
 export type * from "../types/effect-internal.js"
 
-export const ReleaseName = Schema.String
+export const ReleaseName = Schema.NonEmptyString
 export type ReleaseName = typeof ReleaseName.Type
 
-export const ReleaseVersion = Schema.String
+export const ReleaseVersion = Schema.NonEmptyString
 export type ReleaseVersion = typeof ReleaseVersion.Type
 
-export const GitCommit = Schema.String
+export const GitCommit = Schema.NonEmptyString
 export type GitCommit = typeof GitCommit.Type
 
-export const GitTag = Schema.String
+export const GitTag = Schema.NonEmptyString
 export type GitTag = typeof GitTag.Type
 
 export const ReleaseBump = Schema.Literals(["major", "minor", "patch", "none"])

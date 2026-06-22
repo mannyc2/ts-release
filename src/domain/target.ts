@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema"
 
 export type * from "../types/effect-internal.js"
 
-export const TargetId = Schema.String
+export const TargetId = Schema.NonEmptyString
 export type TargetId = typeof TargetId.Type
 
 export const TargetAuthRequirement = Schema.Literals([

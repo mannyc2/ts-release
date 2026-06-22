@@ -4,7 +4,7 @@ import { TargetId } from "./target.js"
 
 export type * from "../types/effect-internal.js"
 
-export const OperationId = Schema.String
+export const OperationId = Schema.NonEmptyString
 export type OperationId = typeof OperationId.Type
 
 export const OperationRisk = Schema.Literals(["read-only", "writes-local", "externally-visible", "irreversible"])

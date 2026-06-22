@@ -94,6 +94,24 @@ describe("config schema", () => {
       expectTaggedError(error, "ConfigValidationError")
     }))
 
+  const invalidDomainScalarConfigs: ReadonlyArray<readonly [string, string]> = [
+    ["release name", minimalConfig.replace("\"name\":\"release\"", "\"name\":\"\"")],
+    ["release version", minimalConfig.replace("\"version\":\"0.1.0\"", "\"version\":\"\"")],
+    ["git commit", minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"\"")],
+    ["git tag", minimalConfig.replace("\"tag\":\"v0.1.0\"", "\"tag\":\"\"")],
+    ["artifact id", minimalConfig.replace("\"id\":\"package\"", "\"id\":\"\"")],
+    ["target id", minimalConfig.replace("\"id\":\"npm\"", "\"id\":\"\"")]
+  ]
+
+  for (const [label, config] of invalidDomainScalarConfigs) {
+    it.effect(`rejects empty ${label}`, () =>
+      Effect.gen(function*() {
+        const error = yield* parseReleaseIntent(config).pipe(Effect.flip)
+
+        expectTaggedError(error, "ConfigValidationError")
+      }))
+  }
+
   it.effect("reports invalid JSON as a typed parse error", () =>
     Effect.gen(function*() {
       const error = yield* parseReleaseIntent("{").pipe(Effect.flip)
@@ -130,6 +148,7 @@ describe("config schema", () => {
     const serialized = JSON.stringify(schema)
     expect(serialized).toContain("NpmRegistryTarget")
     expect(serialized).toContain("GitHubReleaseTarget")
+    expect(serialized).toContain("\"minLength\":1")
   })
 
   layer(BunServices.layer)((it) => {

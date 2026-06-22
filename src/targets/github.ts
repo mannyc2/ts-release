@@ -8,7 +8,8 @@ import {
   Operation,
   PublishCommandOperation,
   ValidateCommandOperation,
-  VerifyHttpOperation
+  VerifyHttpOperation,
+  VerifyRemoteOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
@@ -28,6 +29,7 @@ import {
   githubReleaseRequestSpec,
   githubReleaseTag,
   githubReleaseTitle,
+  githubReleaseViewCommand,
   githubTargetArtifacts
 } from "./github-release.js"
 
@@ -59,9 +61,21 @@ const githubVerificationOperations = (
   target: GitHubReleaseTarget,
   model: ReleaseModel
 ): ReadonlyArray<Operation> => {
+  if (target.draft === true) {
+    return [
+      VerifyRemoteOperation.make({
+        id: `${target.id}:github-release-verify-gh`,
+        targetId: target.id,
+        description: "Verify the GitHub draft release through the GitHub CLI.",
+        risk: "read-only",
+        gate: noApprovalGate("GitHub CLI release verification is read-only."),
+        command: githubReleaseViewCommand(target, model)
+      })
+    ]
+  }
+
   const tag = githubReleaseTag(model)
   const title = githubReleaseTitle(model)
-  const isDraft = target.draft === true
   const isPrerelease = target.prerelease === true
   const artifactChecks = githubTargetArtifacts(target, model).map((artifact) =>
     HttpJsonArrayObjectFieldEqualsCheck.make({
@@ -91,7 +105,7 @@ const githubVerificationOperations = (
         }),
         HttpJsonEqualsCheck.make({
           path: ["draft"],
-          expected: isDraft
+          expected: false
         }),
         HttpJsonEqualsCheck.make({
           path: ["prerelease"],

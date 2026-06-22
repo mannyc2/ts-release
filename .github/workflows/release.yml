@@ -7,18 +7,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Release package
+  plan:
+    name: Plan release
     if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.eligibility.outputs.should_release }}
     env:
       GH_TOKEN: ${{ github.token }}
 
@@ -45,9 +46,6 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Run release checks
-        run: bun run check:release
-
       - name: Check release eligibility
         id: eligibility
         uses: ./apps/ts-release-action
@@ -55,6 +53,10 @@ jobs:
           command: eligibility
           config: apps/release-ts/release.config.json
           format: text
+
+      - name: Run release checks
+        if: steps.eligibility.outputs.should_release == 'true'
+        run: bun run check:release
 
       - name: Build release artifacts
         if: steps.eligibility.outputs.should_release == 'true'
@@ -66,11 +68,71 @@ jobs:
         with:
           command: plan
           config: apps/release-ts/release.config.json
-          format: text
-          plan-path: .release/evidence/plan.txt
+          format: markdown
+          write-step-summary: "true"
+          plan-path: .release/evidence/release-plan.md
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: .release/evidence/**
+          if-no-files-found: ignore
+
+      - name: Upload release artifacts
+        if: steps.eligibility.outputs.should_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: .release/artifacts/**
+          if-no-files-found: error
+
+  execute:
+    name: Execute release
+    needs: plan
+    if: needs.plan.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Build package
+        run: bun run build
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: .release/artifacts
 
       - name: Run approved release
-        if: steps.eligibility.outputs.should_release == 'true'
         uses: ./apps/ts-release-action
         with:
           command: run
@@ -82,6 +144,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: release-evidence
+          name: release-execution-evidence
           path: .release/evidence/**
           if-no-files-found: ignore

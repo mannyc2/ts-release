@@ -413,7 +413,99 @@ describe("cli command", () => {
       expect(workflow).toContain("execute: true")
       expect(workflow).toContain("approve-irreversible: true")
       expect(workflow).toContain("id-token: write")
+      expect(workflow).toContain("oven-sh/setup-bun@v2")
+      expect(workflow).toContain("bun install --frozen-lockfile")
+      expect(workflow).toContain("bun run build")
       expect(workflow).not.toContain("NPM_TOKEN")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("init can render npm and pnpm GitHub Actions setup", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-actions-npm-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--template",
+          "npm-github",
+          "--package",
+          "@scope/pkg",
+          "--repo",
+          "owner/repo",
+          "--config",
+          configPath,
+          "--github-actions",
+          "--package-manager",
+          "npm",
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      const npmWorkflow = await readFile(join(root, ".github", "workflows", "release.yml"), "utf8")
+      expect(npmWorkflow).toContain("npm ci")
+      expect(npmWorkflow).toContain("npm run build --if-present")
+      expect(npmWorkflow).not.toContain("oven-sh/setup-bun@v2")
+
+      const pnpmPlan = await Effect.runPromise(
+        planReleaseInit(ReleaseInitOptions.make({
+          root,
+          template: "npm-github",
+          package: "@scope/pkg",
+          repo: "owner/repo",
+          githubActions: true,
+          packageManager: "pnpm"
+        })).pipe(Effect.provide(BunServices.layer))
+      )
+      const pnpmWorkflow = pnpmPlan.files.find((file) => file.path === ".github/workflows/release.yml")?.contents ?? ""
+      expect(pnpmWorkflow).toContain("corepack enable && pnpm install --frozen-lockfile")
+      expect(pnpmWorkflow).toContain("pnpm run build --if-present")
+      expect(pnpmWorkflow).not.toContain("oven-sh/setup-bun@v2")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("init supports workflow command overrides and rejects multiline commands", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-actions-commands-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--template",
+          "npm-github",
+          "--package",
+          "@scope/pkg",
+          "--repo",
+          "owner/repo",
+          "--config",
+          configPath,
+          "--github-actions",
+          "--package-manager",
+          "npm",
+          "--install-command",
+          "npm install --legacy-peer-deps",
+          "--build-command",
+          "npm run compile",
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      const workflow = await readFile(join(root, ".github", "workflows", "release.yml"), "utf8")
+      expect(workflow.split("npm install --legacy-peer-deps").length - 1).toBe(1)
+      expect(workflow.split("npm run compile").length - 1).toBe(1)
+
+      const rejected = await Effect.runPromiseExit(
+        planReleaseInit(ReleaseInitOptions.make({
+          root,
+          githubActions: true,
+          installCommand: "npm ci\nnpm run build"
+        })).pipe(Effect.provide(BunServices.layer))
+      )
+      expectExitFailureTag(rejected, "ReleaseInitWriteError")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -510,6 +602,153 @@ describe("cli command", () => {
     }
   })
 
+  test("check-ci does not require referenced release artifacts to exist", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-missing-artifacts-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "@scope/pkg",
+        version: "1.2.3"
+      }))
+      await writeFile(configPath, JSON.stringify({
+        identity: {
+          _tag: "PackageManifestReleaseIdentitySource",
+          commit: "abc123",
+          tagTemplate: "v{version}"
+        },
+        artifacts: [
+          {
+            id: "package-tarball",
+            path: ".release/artifacts/{version}.tgz",
+            format: "tarball",
+            consumers: ["npm"]
+          }
+        ],
+        targets: [
+          {
+            _tag: "NpmRegistryTarget",
+            id: "npm",
+            registry: "https://registry.npmjs.org",
+            packageName: "@scope/pkg",
+            packagePath: ".",
+            trustedPublishing: {
+              provider: "github-actions",
+              workflow: "release.yml",
+              packageExists: true
+            },
+            access: "public",
+            provenance: true,
+            dryRunSupport: "native",
+            mutability: "immutable",
+            recovery: "publish-new-version"
+          }
+        ],
+        strict: true,
+        evidenceDirectory: ".release/evidence"
+      }))
+      await mkdir(join(root, ".github", "workflows"), { recursive: true })
+      await writeFile(
+        join(root, ".github", "workflows", "release.yml"),
+        renderGithubActionsTrustedPublishingWorkflow("release.config.json")
+      )
+
+      const report = await Effect.runPromise(
+        checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+          configPath,
+          workflow: ".github/workflows/release.yml"
+        })).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      expect(report.checks.some((item) => item.id === "ci:workflow-file")).toBe(true)
+      expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-ci accepts the real self-release workflow", async () => {
+    const root = process.cwd()
+    const report = await Effect.runPromise(
+      checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+        root,
+        configPath: "apps/release-ts/release.config.json",
+        workflow: ".github/workflows/release.yml"
+      })).pipe(
+        Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+      )
+    )
+
+    expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
+    expect(report.checks.find((item) => item.id === "ci:plan-job")?.status).toBe("ok")
+    expect(report.checks.find((item) => item.id === "ci:execute-job")?.status).toBe("ok")
+    expect(report.checks.find((item) => item.id === "ci:execute-id-token")?.status).toBe("ok")
+    expect(report.checks.find((item) => item.id === "ci:execute-contents")?.status).toBe("ok")
+    expect(report.checks.find((item) => item.id === "ci:execute-approval")?.status).toBe("ok")
+  })
+
+  test("check-ci accepts safely renamed workflow jobs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-renamed-jobs-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      const trustedConfig = minimalConfig.replace(
+        "\"tokenEnv\":\"NPM_TOKEN\",",
+        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+      )
+      await writeFile(configPath, trustedConfig)
+      await mkdir(join(root, ".github", "workflows"), { recursive: true })
+      await writeFile(
+        join(root, ".github", "workflows", "release.yml"),
+        [
+          "name: Release",
+          "on:",
+          "  workflow_dispatch:",
+          "jobs:",
+          "  review_release:",
+          "    runs-on: ubuntu-latest",
+          "    steps:",
+          "      - uses: mannyc2/ts-release-action@v1",
+          "        with:",
+          "          command: plan",
+          "          config: release.config.json",
+          "          format: markdown",
+          "      - uses: actions/upload-artifact@v4",
+          "        if: always()",
+          "  publish_release:",
+          "    runs-on: ubuntu-latest",
+          "    environment: release",
+          "    permissions:",
+          "      contents: write",
+          "      id-token: write",
+          "    steps:",
+          "      - uses: mannyc2/ts-release-action@v1",
+          "        with:",
+          "          command: run",
+          "          config: release.config.json",
+          "          execute: true",
+          "          approve-irreversible: true",
+          "      - uses: actions/upload-artifact@v4",
+          "        if: always()",
+          ""
+        ].join("\n")
+      )
+
+      const report = await Effect.runPromise(
+        checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+          configPath,
+          workflow: ".github/workflows/release.yml"
+        })).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   test("check-ci rejects action execution in the plan job", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-plan-exec-"))
     try {
@@ -535,6 +774,7 @@ describe("cli command", () => {
           "          command: run",
           "          config: release.config.json",
           "          execute: true",
+          "          approve-irreversible: true",
           "  execute:",
           "    runs-on: ubuntu-latest",
           "    environment: release",
@@ -565,6 +805,66 @@ describe("cli command", () => {
 
       const planSafety = report.checks.find((item) => item.id === "ci:plan-job-no-execute")
       expect(planSafety?.status).toBe("fail")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-ci rejects an execute job without approved execution", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-execute-approval-"))
+    try {
+      const configPath = join(root, "release.config.json")
+      const trustedConfig = minimalConfig.replace(
+        "\"tokenEnv\":\"NPM_TOKEN\",",
+        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+      )
+      await writeFile(configPath, trustedConfig)
+      await mkdir(join(root, ".github", "workflows"), { recursive: true })
+      await writeFile(
+        join(root, ".github", "workflows", "release.yml"),
+        [
+          "name: Release",
+          "on:",
+          "  workflow_dispatch:",
+          "jobs:",
+          "  plan:",
+          "    runs-on: ubuntu-latest",
+          "    steps:",
+          "      - uses: mannyc2/ts-release-action@v1",
+          "        with:",
+          "          command: plan",
+          "          config: release.config.json",
+          "          format: markdown",
+          "      - uses: actions/upload-artifact@v4",
+          "        if: always()",
+          "  execute:",
+          "    runs-on: ubuntu-latest",
+          "    environment: release",
+          "    permissions:",
+          "      contents: write",
+          "      id-token: write",
+          "    steps:",
+          "      - uses: mannyc2/ts-release-action@v1",
+          "        with:",
+          "          command: run",
+          "          config: release.config.json",
+          "          execute: true",
+          "      - uses: actions/upload-artifact@v4",
+          "        if: always()",
+          ""
+        ].join("\n")
+      )
+
+      const report = await Effect.runPromise(
+        checkCiReleaseConfig(ReleaseDiagnosticsOptions.make({
+          configPath,
+          workflow: ".github/workflows/release.yml"
+        })).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      expect(report.checks.find((item) => item.id === "ci:execute-approval")?.status).toBe("fail")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

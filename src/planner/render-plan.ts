@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { CommandSpec, Operation } from "../domain/operation.js"
+import { CommandSpec, Operation, OperationId } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 
 export type * from "../types/effect-internal.js"
@@ -8,7 +8,7 @@ export type * from "../types/effect-internal.js"
 export class PlanOperationNotFoundError extends Schema.TaggedErrorClass<PlanOperationNotFoundError>()(
   "PlanOperationNotFoundError",
   {
-    operationId: Schema.String
+    operationId: OperationId
   }
 ) {}
 

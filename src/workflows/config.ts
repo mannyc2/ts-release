@@ -6,7 +6,7 @@ import { ConfigReadError } from "../config/errors.js"
 import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { EvidenceBundle, ReleaseWorkflowEvidence } from "../domain/evidence.js"
-import { ExecutionApproval } from "../domain/operation.js"
+import { ExecutionApproval, OperationId } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseEligibilityDecision } from "../domain/remote-state.js"
 import { ReleaseStatusReport } from "../domain/status.js"
@@ -117,7 +117,7 @@ export class ExplainReleaseConfigOptions extends Schema.Class<ExplainReleaseConf
 )({
   root: Schema.optionalKey(Schema.String),
   configPath: Schema.optionalKey(Schema.String),
-  operationId: Schema.String
+  operationId: OperationId
 }) {}
 
 export interface ExplainReleaseConfigInput extends ReleaseConfigInput {

@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema"
 import { OperationId, OperationRisk } from "./operation.js"
+import { ReleaseName, ReleaseVersion } from "./release.js"
 import { TargetId } from "./target.js"
 
 export type * from "../types/effect-internal.js"
@@ -51,8 +52,8 @@ export class ReleasePhaseStatusRecord extends Schema.Class<ReleasePhaseStatusRec
 
 export class ReleaseStatusReport extends Schema.Class<ReleaseStatusReport>("ReleaseStatusReport")({
   schemaVersion: Schema.Literal("release-status/v1"),
-  releaseName: Schema.String,
-  releaseVersion: Schema.String,
+  releaseName: ReleaseName,
+  releaseVersion: ReleaseVersion,
   overallStatus: ReleaseOverallStatus,
   canResume: Schema.Boolean,
   evidenceDirectory: Schema.String,

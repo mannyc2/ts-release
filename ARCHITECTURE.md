@@ -35,7 +35,7 @@ than reaching into CLI modules.
 
 ## Current Module Taxonomy
 
-- `domain/` contains durable schema-backed data models and errors.
+- `domain/` contains durable schema-backed data models, typed errors, and scalar schemas owned by their semantic domain modules, such as release names in `domain/release`, target IDs in `domain/target`, artifact IDs in `domain/artifact`, operation IDs in `domain/operation`, and evidence IDs in `domain/evidence`.
 - `config/` parses and validates release config into domain values.
 - `planner/` normalizes release intent, builds plans, renders plans, executes operation data through injected services, records evidence, reports status, resumes safe work, and reconciles remote state.
 - `targets/` models ecosystem-specific target semantics and produces operation data. Target modules may describe commands and HTTP checks, but they do not execute them.

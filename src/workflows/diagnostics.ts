@@ -4,9 +4,13 @@ import * as FileSystem from "effect/FileSystem"
 import * as Option from "effect/Option"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
+import { parseReleaseIntent } from "../config/load.js"
+import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { Operation } from "../domain/operation.js"
-import { ReleasePlan } from "../domain/release.js"
-import { TargetConfig } from "../domain/target.js"
+import { ReleaseIdentity, ReleasePlan } from "../domain/release.js"
+import { TargetCapabilities, TargetConfig, targetCapabilitiesOrder, targetOrder } from "../domain/target.js"
+import { resolveReleaseIdentitySource } from "../planner/normalize-release.js"
+import { targetCapabilities } from "../targets/registry.js"
 import {
   PlanReleaseConfigOptions,
   planReleaseConfig,
@@ -113,6 +117,23 @@ const reportForPlan = (
     schemaVersion: "release-diagnostics/v1",
     releaseName: plan.identity.name,
     releaseVersion: plan.identity.version,
+    checks: [...checks]
+  })
+
+interface ReleaseCiDiagnosticSubject {
+  readonly identity: ReleaseIdentity
+  readonly targets: ReadonlyArray<TargetConfig>
+  readonly targetCapabilities: ReadonlyArray<TargetCapabilities>
+}
+
+const reportForSubject = (
+  subject: ReleaseCiDiagnosticSubject,
+  checks: ReadonlyArray<ReleaseDiagnosticCheck>
+): ReleaseDiagnosticReport =>
+  ReleaseDiagnosticReport.make({
+    schemaVersion: "release-diagnostics/v1",
+    releaseName: subject.identity.name,
+    releaseVersion: subject.identity.version,
     checks: [...checks]
   })
 
@@ -270,8 +291,35 @@ const planOptionsFromDiagnostics = (options: ReleaseDiagnosticsOptions): PlanRel
 const validationOptionsFromDiagnostics = (options: ReleaseDiagnosticsOptions): ValidateReleaseConfigFileOptions =>
   ValidateReleaseConfigFileOptions.make(releaseConfigFields(options))
 
-const inferredTrustedPublishingWorkflow = (plan: ReleasePlan): string | undefined => {
-  for (const target of plan.targets) {
+const configPath = (options: ReleaseDiagnosticsOptions): string =>
+  options.configPath ?? DEFAULT_CONFIG_PATH
+
+const configReadPath = (path: Path.Path, options: ReleaseDiagnosticsOptions): string => {
+  const pathName = configPath(options)
+  return path.isAbsolute(pathName) ? pathName : path.resolve(configRoot(path, options), pathName)
+}
+
+const readReleaseCiDiagnosticSubject = Effect.fn("diagnostics.readReleaseCiDiagnosticSubject")(function*(
+  options: ReleaseDiagnosticsOptions
+) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const pathName = configPath(options)
+  const root = configRoot(path, options)
+  const contents = yield* fs.readFileString(configReadPath(path, options))
+  const intent = yield* parseReleaseIntent(contents, pathName)
+  const identity = yield* resolveReleaseIdentitySource(intent.identity, root)
+  const targets = [...intent.targets].sort(targetOrder)
+  const capabilities = yield* Effect.forEach(targets, targetCapabilities)
+  return {
+    identity,
+    targets,
+    targetCapabilities: capabilities.sort(targetCapabilitiesOrder)
+  }
+})
+
+const inferredTrustedPublishingWorkflow = (subject: ReleaseCiDiagnosticSubject): string | undefined => {
+  for (const target of subject.targets) {
     if (target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined) {
       return target.trustedPublishing.workflow
     }
@@ -279,26 +327,47 @@ const inferredTrustedPublishingWorkflow = (plan: ReleasePlan): string | undefine
   return undefined
 }
 
-const defaultWorkflowPath = (plan: ReleasePlan): string | undefined => {
-  const workflow = inferredTrustedPublishingWorkflow(plan)
+const defaultWorkflowPath = (subject: ReleaseCiDiagnosticSubject): string | undefined => {
+  const workflow = inferredTrustedPublishingWorkflow(subject)
   return workflow === undefined ? undefined : `.github/workflows/${workflow}`
 }
 
-const jobBlock = (contents: string, jobName: string): string | undefined => {
+interface WorkflowJobBlock {
+  readonly name: string
+  readonly contents: string
+}
+
+const workflowJobBlocks = (contents: string): ReadonlyArray<WorkflowJobBlock> => {
   const lines = contents.split(/\r?\n/)
-  const start = lines.findIndex((line) => line === `  ${jobName}:`)
-  if (start < 0) {
-    return undefined
+  const jobsStart = lines.findIndex((line) => /^jobs:\s*$/.test(line))
+  if (jobsStart < 0) {
+    return []
   }
-  const collected: Array<string> = []
-  for (let index = start; index < lines.length; index += 1) {
+  const jobs: Array<WorkflowJobBlock> = []
+  for (let index = jobsStart + 1; index < lines.length; index += 1) {
     const line = lines[index] ?? ""
-    if (index > start && /^  [A-Za-z0-9_-]+:\s*$/.test(line)) {
+    if (/^[A-Za-z0-9_-]+:\s*$/.test(line)) {
       break
     }
-    collected.push(line)
+    const match = /^  ([A-Za-z0-9_-]+):\s*$/.exec(line)
+    if (match === null) {
+      continue
+    }
+    const name = match[1] ?? ""
+    const collected: Array<string> = []
+    for (let jobIndex = index; jobIndex < lines.length; jobIndex += 1) {
+      const jobLine = lines[jobIndex] ?? ""
+      if (jobIndex > index && (/^  [A-Za-z0-9_-]+:\s*$/.test(jobLine) || /^[A-Za-z0-9_-]+:\s*$/.test(jobLine))) {
+        break
+      }
+      collected.push(jobLine)
+    }
+    jobs.push({
+      name,
+      contents: collected.join("\n")
+    })
   }
-  return collected.join("\n")
+  return jobs
 }
 
 const hasPermission = (block: string, name: string, value: string): boolean => {
@@ -310,7 +379,7 @@ const hasUploadAlways = (block: string): boolean =>
   block.includes("actions/upload-artifact") && /^\s+if:\s*always\(\)\s*$/m.test(block)
 
 const hasTsReleaseAction = (block: string): boolean =>
-  /^\s+-\s+uses:\s+(mannyc2\/ts-release-action@v1|\.\/apps\/ts-release-action)\s*$/m.test(block)
+  /^\s+(?:-\s+)?uses:\s+(mannyc2\/ts-release-action@v1|\.\/apps\/ts-release-action)\s*$/m.test(block)
 
 const hasYamlValue = (block: string, name: string, value: string): boolean => {
   const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -324,12 +393,16 @@ const hasActionTruthyInput = (block: string, name: string): boolean =>
   hasTsReleaseAction(block) && hasYamlValue(block, name, "true")
 
 const hasCliPlanReview = (block: string): boolean =>
-  block.includes("validate-config") && block.includes("--format markdown")
+  (block.includes(" cli plan ") || block.includes(" release plan ") || block.includes("run cli plan ")) &&
+  block.includes("--format markdown")
 
 const hasActionPlanReview = (block: string): boolean =>
   hasActionCommand(block, "plan") && hasYamlValue(block, "format", "markdown")
 
-const planJobExecutes = (block: string): boolean =>
+const hasPlanReview = (block: string): boolean =>
+  hasCliPlanReview(block) || hasActionPlanReview(block)
+
+const jobExecutesRelease = (block: string): boolean =>
   block.includes("--execute") ||
   hasActionTruthyInput(block, "execute") ||
   hasActionCommand(block, "run") ||
@@ -344,14 +417,35 @@ const hasActionApprovedExecution = (block: string): boolean =>
   hasActionTruthyInput(block, "execute") &&
   hasActionTruthyInput(block, "approve-irreversible")
 
-const hasWorkflowTrustedTarget = (plan: ReleasePlan): boolean =>
-  plan.targets.some((target) => target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined)
+const hasApprovedExecution = (block: string): boolean =>
+  hasCliApprovedExecution(block) || hasActionApprovedExecution(block)
 
-const hasGitHubReleaseTarget = (plan: ReleasePlan): boolean =>
-  plan.targets.some((target) => target._tag === "GitHubReleaseTarget")
+const hasEnvironment = (block: string): boolean =>
+  /^\s+environment:\s*\S+/m.test(block)
+
+const planReviewJobs = (jobs: ReadonlyArray<WorkflowJobBlock>): ReadonlyArray<WorkflowJobBlock> =>
+  jobs.filter((job) => hasPlanReview(job.contents) && !jobExecutesRelease(job.contents))
+
+const planExecutionCandidates = (jobs: ReadonlyArray<WorkflowJobBlock>): ReadonlyArray<WorkflowJobBlock> =>
+  jobs.filter((job) => job.name === "plan" || hasPlanReview(job.contents))
+
+const executeJobCandidates = (jobs: ReadonlyArray<WorkflowJobBlock>): ReadonlyArray<WorkflowJobBlock> =>
+  jobs.filter((job) => hasApprovedExecution(job.contents))
+
+const fallbackNamedJob = (
+  jobs: ReadonlyArray<WorkflowJobBlock>,
+  name: string
+): WorkflowJobBlock | undefined =>
+  jobs.find((job) => job.name === name)
+
+const hasWorkflowTrustedTarget = (subject: ReleaseCiDiagnosticSubject): boolean =>
+  subject.targets.some((target) => target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined)
+
+const hasGitHubReleaseTarget = (subject: ReleaseCiDiagnosticSubject): boolean =>
+  subject.targets.some((target) => target._tag === "GitHubReleaseTarget")
 
 const ciChecksForContents = (
-  plan: ReleasePlan,
+  subject: ReleaseCiDiagnosticSubject,
   workflowPath: string,
   contents: string
 ): ReadonlyArray<ReleaseDiagnosticCheck> => {
@@ -363,7 +457,7 @@ const ciChecksForContents = (
       message: `Workflow file ${workflowPath} exists.`
     })
   ]
-  const expectedWorkflow = inferredTrustedPublishingWorkflow(plan)
+  const expectedWorkflow = inferredTrustedPublishingWorkflow(subject)
   if (expectedWorkflow !== undefined) {
     const matches = basename(workflowPath) === expectedWorkflow
     checks.push(check({
@@ -376,90 +470,96 @@ const ciChecksForContents = (
     }))
   }
 
-  const planJob = jobBlock(contents, "plan")
-  const executeJob = jobBlock(contents, "execute")
+  const jobs = workflowJobBlocks(contents)
+  const safePlanJobs = planReviewJobs(jobs)
+  const unsafePlanJobs = planExecutionCandidates(jobs).filter((job) => jobExecutesRelease(job.contents))
+  const planJob = safePlanJobs[0] ?? fallbackNamedJob(jobs, "plan")
+  const executeJobs = executeJobCandidates(jobs)
+  const executeJob = executeJobs[0] ?? fallbackNamedJob(jobs, "execute")
+  const executeJobHasApprovedExecution = executeJob === undefined ? false : hasApprovedExecution(executeJob.contents)
   checks.push(check({
     id: "ci:plan-job",
-    status: planJob === undefined ? "fail" : "ok",
+    status: safePlanJobs.length === 0 ? "fail" : "ok",
     confidence: "confirmed",
-    message: planJob === undefined ? "Workflow is missing a plan job." : "Workflow has a plan job."
+    message: safePlanJobs.length === 0
+      ? "Workflow is missing a plan review job."
+      : `Workflow has a plan review job (${safePlanJobs[0]?.name ?? "unknown"}).`
   }))
-  if (planJob !== undefined) {
-    const reviewReady = hasCliPlanReview(planJob) || hasActionPlanReview(planJob)
-    checks.push(check({
-      id: "ci:plan-job-no-execute",
-      status: planJobExecutes(planJob) ? "fail" : "ok",
-      confidence: "confirmed",
-      message: planJobExecutes(planJob)
-        ? "Plan job includes release execution."
-        : "Plan job does not execute release operations."
-    }))
-    checks.push(check({
-      id: "ci:plan-review",
-      status: reviewReady ? "ok" : "warn",
-      confidence: "confirmed",
-      message: reviewReady
-        ? "Plan job records a Markdown release plan."
-        : "Plan job should validate config and record a Markdown plan."
-    }))
-    checks.push(check({
-      id: "ci:plan-artifact",
-      status: hasUploadAlways(planJob) ? "ok" : "warn",
-      confidence: "confirmed",
-      message: hasUploadAlways(planJob)
-        ? "Plan job uploads review artifacts with if: always()."
-        : "Plan job should upload review artifacts with if: always()."
-    }))
-  }
+  checks.push(check({
+    id: "ci:plan-job-no-execute",
+    status: unsafePlanJobs.length > 0 ? "fail" : "ok",
+    confidence: "confirmed",
+    message: unsafePlanJobs.length > 0
+      ? `Plan review candidate includes release execution (${unsafePlanJobs.map((job) => job.name).join(", ")}).`
+      : "Plan review jobs do not execute release operations."
+  }))
+  checks.push(check({
+    id: "ci:plan-review",
+    status: safePlanJobs.length > 0 ? "ok" : "warn",
+    confidence: "confirmed",
+    message: safePlanJobs.length > 0
+      ? "Plan review job records a Markdown release plan."
+      : "Workflow should record a Markdown release plan in a non-executing job."
+  }))
+  checks.push(check({
+    id: "ci:plan-artifact",
+    status: planJob !== undefined && hasUploadAlways(planJob.contents) ? "ok" : "warn",
+    confidence: "confirmed",
+    message: planJob !== undefined && hasUploadAlways(planJob.contents)
+      ? "Plan review job uploads review artifacts with if: always()."
+      : "Plan review job should upload review artifacts with if: always()."
+  }))
 
   checks.push(check({
     id: "ci:execute-job",
-    status: executeJob === undefined ? "fail" : "ok",
+    status: executeJobHasApprovedExecution ? "ok" : "fail",
     confidence: "confirmed",
-    message: executeJob === undefined ? "Workflow is missing an execute job." : "Workflow has an execute job."
+    message: executeJobHasApprovedExecution
+      ? `Workflow has an approved execute job (${executeJob?.name ?? "unknown"}).`
+      : "Workflow is missing a job that runs approved release execution."
   }))
   if (executeJob !== undefined) {
     checks.push(check({
       id: "ci:execute-environment",
-      status: /^\s+environment:\s*\S+/m.test(executeJob) ? "ok" : "fail",
+      status: hasEnvironment(executeJob.contents) ? "ok" : "fail",
       confidence: "confirmed",
-      message: /^\s+environment:\s*\S+/m.test(executeJob)
+      message: hasEnvironment(executeJob.contents)
         ? "Execute job is protected by a GitHub environment."
         : "Execute job must configure a GitHub environment."
     }))
-    if (hasWorkflowTrustedTarget(plan)) {
+    if (hasWorkflowTrustedTarget(subject)) {
       checks.push(check({
         id: "ci:execute-id-token",
-        status: hasPermission(executeJob, "id-token", "write") ? "ok" : "fail",
+        status: hasPermission(executeJob.contents, "id-token", "write") ? "ok" : "fail",
         confidence: "confirmed",
-        message: hasPermission(executeJob, "id-token", "write")
+        message: hasPermission(executeJob.contents, "id-token", "write")
           ? "Execute job grants id-token: write for trusted publishing."
           : "Execute job must grant id-token: write for trusted publishing."
       }))
     }
-    if (hasGitHubReleaseTarget(plan)) {
+    if (hasGitHubReleaseTarget(subject)) {
       checks.push(check({
         id: "ci:execute-contents",
-        status: hasPermission(executeJob, "contents", "write") ? "ok" : "fail",
+        status: hasPermission(executeJob.contents, "contents", "write") ? "ok" : "fail",
         confidence: "confirmed",
-        message: hasPermission(executeJob, "contents", "write")
+        message: hasPermission(executeJob.contents, "contents", "write")
           ? "Execute job grants contents: write for GitHub Releases."
           : "Execute job must grant contents: write for GitHub Releases."
       }))
     }
     checks.push(check({
       id: "ci:execute-approval",
-      status: hasCliApprovedExecution(executeJob) || hasActionApprovedExecution(executeJob) ? "ok" : "fail",
+      status: executeJobHasApprovedExecution ? "ok" : "fail",
       confidence: "confirmed",
-      message: hasCliApprovedExecution(executeJob) || hasActionApprovedExecution(executeJob)
+      message: executeJobHasApprovedExecution
         ? "Execute job runs approved release execution."
         : "Execute job must run release execution with execute and irreversible approval."
     }))
     checks.push(check({
       id: "ci:execute-evidence",
-      status: hasUploadAlways(executeJob) ? "ok" : "warn",
+      status: hasUploadAlways(executeJob.contents) ? "ok" : "warn",
       confidence: "confirmed",
-      message: hasUploadAlways(executeJob)
+      message: hasUploadAlways(executeJob.contents)
         ? "Execute job uploads evidence with if: always()."
         : "Execute job should upload evidence with if: always()."
     }))
@@ -469,13 +569,13 @@ const ciChecksForContents = (
 }
 
 const readWorkflowChecks = Effect.fn("diagnostics.readWorkflowChecks")(function*(
-  plan: ReleasePlan,
+  subject: ReleaseCiDiagnosticSubject,
   options: ReleaseDiagnosticsOptions
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const root = configRoot(path, options)
-  const workflowPath = options.workflow ?? defaultWorkflowPath(plan) ?? ".github/workflows/release.yml"
+  const workflowPath = options.workflow ?? defaultWorkflowPath(subject) ?? ".github/workflows/release.yml"
   const absolutePath = workspacePath(path, root, workflowPath)
   const exists = yield* fs.exists(absolutePath)
   if (!exists) {
@@ -491,7 +591,7 @@ const readWorkflowChecks = Effect.fn("diagnostics.readWorkflowChecks")(function*
     ]
   }
   const contents = yield* fs.readFileString(absolutePath)
-  return ciChecksForContents(plan, workflowPath, contents)
+  return ciChecksForContents(subject, workflowPath, contents)
 })
 
 export const checkAuthReleaseConfig = Effect.fn("diagnostics.checkAuthReleaseConfig")(function*(
@@ -507,9 +607,9 @@ export const checkCiReleaseConfig = Effect.fn("diagnostics.checkCiReleaseConfig"
   input: ReleaseDiagnosticsInput = {}
 ) {
   const options = releaseDiagnosticsOptionsFromInput(input)
-  const plan = yield* planReleaseConfig(planOptionsFromDiagnostics(options))
-  const checks = yield* readWorkflowChecks(plan, options)
-  return reportForPlan(plan, checks)
+  const subject = yield* readReleaseCiDiagnosticSubject(options)
+  const checks = yield* readWorkflowChecks(subject, options)
+  return reportForSubject(subject, checks)
 })
 
 export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(function*(

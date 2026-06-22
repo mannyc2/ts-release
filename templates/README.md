@@ -19,6 +19,7 @@ The CLI can preview or write these configs:
 ```sh
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --write
+bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --package-manager npm --write
 ```
 
 Available config templates:
@@ -41,6 +42,10 @@ GitHub Actions templates are action-first:
 They use `mannyc2/ts-release-action@v1`; the action source lives in this repo at
 `apps/ts-release-action` until the first action release is cut or mirrored.
 The action currently defaults to `runtime: bundled`.
+
+Generated workflows support Bun, npm, pnpm, and yarn setup presets. Static
+checked-in workflow templates use npm setup by default; setup, install, and
+build commands are workflow scaffolding rather than release config policy.
 
 The trusted-publishing templates do not use `NPM_TOKEN`; configure npm trusted
 publishing and a protected GitHub environment named `release` before approving

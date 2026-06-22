@@ -28,6 +28,9 @@ const repoFlag = Flag.string("repo").pipe(Flag.withDefault("owner/repo"))
 const workflowFlag = Flag.string("workflow").pipe(Flag.withDefault("release.yml"))
 const tapFlag = Flag.string("tap").pipe(Flag.withDefault("owner/homebrew-tap"))
 const bucketFlag = Flag.string("bucket").pipe(Flag.withDefault("owner/scoop-bucket"))
+const packageManagerFlag = Flag.choice("package-manager", ["bun", "npm", "pnpm", "yarn"]).pipe(Flag.withDefault("bun"))
+const installCommandFlag = Flag.string("install-command").pipe(Flag.withDefault(""))
+const buildCommandFlag = Flag.string("build-command").pipe(Flag.withDefault(""))
 const writeFlag = Flag.boolean("write").pipe(Flag.withDefault(false))
 const overwriteFlag = Flag.boolean("overwrite").pipe(Flag.withDefault(false))
 const githubActionsFlag = Flag.boolean("github-actions").pipe(Flag.withDefault(false))
@@ -177,6 +180,9 @@ const initCommand = Command.make(
     tap: tapFlag,
     bucket: bucketFlag,
     githubActions: githubActionsFlag,
+    packageManager: packageManagerFlag,
+    installCommand: installCommandFlag,
+    buildCommand: buildCommandFlag,
     write: writeFlag,
     overwrite: overwriteFlag,
     format: initFormatFlag
@@ -190,6 +196,9 @@ const initCommand = Command.make(
     tap,
     bucket,
     githubActions,
+    packageManager,
+    installCommand,
+    buildCommand,
     write,
     overwrite,
     format
@@ -203,6 +212,9 @@ const initCommand = Command.make(
       tap,
       bucket,
       githubActions,
+      packageManager,
+      ...(installCommand.length === 0 ? {} : { installCommand }),
+      ...(buildCommand.length === 0 ? {} : { buildCommand }),
       write,
       overwrite,
       format

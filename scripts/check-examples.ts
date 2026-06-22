@@ -224,6 +224,9 @@ const checkWorkflowTemplate = Effect.fn("scripts.checkWorkflowTemplate")(functio
   const contents = yield* fs.readFileString(path.join(root, "templates", template.path))
   const snippets = [
     "  plan:",
+    "actions/setup-node@v4",
+    "npm ci",
+    "npm run build --if-present",
     "if: always()",
     "release-plan.md"
   ]
@@ -253,6 +256,9 @@ const checkWorkflowTemplate = Effect.fn("scripts.checkWorkflowTemplate")(functio
   }
   if (contents.includes("NPM_TOKEN")) {
     return yield* Effect.fail(new Error(`Workflow template ${template.path} must not mention NPM_TOKEN`))
+  }
+  if (contents.includes("oven-sh/setup-bun")) {
+    return yield* Effect.fail(new Error(`Workflow template ${template.path} must not require Bun setup`))
   }
 })
 

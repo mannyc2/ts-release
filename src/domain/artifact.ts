@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema"
 
 export type * from "../types/effect-internal.js"
 
-export const ArtifactId = Schema.String
+export const ArtifactId = Schema.NonEmptyString
 export type ArtifactId = typeof ArtifactId.Type
 
 export const ArtifactFormat = Schema.Literals(["tarball", "zip", "file", "directory", "oci-image"])

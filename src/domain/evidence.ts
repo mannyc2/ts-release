@@ -1,10 +1,11 @@
 import * as Schema from "effect/Schema"
 import { CommandSpec, HttpEnvHeader, HttpHeader, HttpMethod, OperationId } from "./operation.js"
+import { ReleaseName, ReleaseVersion } from "./release.js"
 import { TargetId } from "./target.js"
 
 export type * from "../types/effect-internal.js"
 
-export const EvidenceId = Schema.String
+export const EvidenceId = Schema.NonEmptyString
 export type EvidenceId = typeof EvidenceId.Type
 
 export const EvidenceSeverity = Schema.Literals(["info", "warning", "error"])
@@ -84,8 +85,8 @@ export type EvidenceRecord = typeof EvidenceRecord.Type
 
 export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundle")({
   schemaVersion: Schema.Literal("release-evidence/v1"),
-  releaseName: Schema.String,
-  releaseVersion: Schema.String,
+  releaseName: ReleaseName,
+  releaseVersion: ReleaseVersion,
   records: Schema.Array(EvidenceRecord)
 }) {}
 

@@ -24,6 +24,9 @@ export type ReleaseInitTemplateName = typeof ReleaseInitTemplateName.Type
 export const ReleaseInitFormat = Schema.Literals(["json", "text"])
 export type ReleaseInitFormat = typeof ReleaseInitFormat.Type
 
+export const ReleaseInitPackageManager = Schema.Literals(["bun", "npm", "pnpm", "yarn"])
+export type ReleaseInitPackageManager = typeof ReleaseInitPackageManager.Type
+
 export class ReleaseInitOptions extends Schema.Class<ReleaseInitOptions>("ReleaseInitOptions")({
   root: Schema.optionalKey(Schema.String),
   configPath: Schema.optionalKey(Schema.String),
@@ -34,6 +37,9 @@ export class ReleaseInitOptions extends Schema.Class<ReleaseInitOptions>("Releas
   tap: Schema.optionalKey(Schema.String),
   bucket: Schema.optionalKey(Schema.String),
   githubActions: Schema.optionalKey(Schema.Boolean),
+  packageManager: Schema.optionalKey(ReleaseInitPackageManager),
+  installCommand: Schema.optionalKey(Schema.String),
+  buildCommand: Schema.optionalKey(Schema.String),
   write: Schema.optionalKey(Schema.Boolean),
   overwrite: Schema.optionalKey(Schema.Boolean),
   format: Schema.optionalKey(ReleaseInitFormat)
@@ -49,6 +55,9 @@ export interface ReleaseInitInput {
   readonly tap?: string | undefined
   readonly bucket?: string | undefined
   readonly githubActions?: boolean | undefined
+  readonly packageManager?: ReleaseInitPackageManager | undefined
+  readonly installCommand?: string | undefined
+  readonly buildCommand?: string | undefined
   readonly write?: boolean | undefined
   readonly overwrite?: boolean | undefined
   readonly format?: ReleaseInitFormat | undefined
@@ -86,6 +95,9 @@ const releaseInitOptionsFromInput = (
     ...(input.tap === undefined ? {} : { tap: input.tap }),
     ...(input.bucket === undefined ? {} : { bucket: input.bucket }),
     ...(input.githubActions === undefined ? {} : { githubActions: input.githubActions }),
+    ...(input.packageManager === undefined ? {} : { packageManager: input.packageManager }),
+    ...(input.installCommand === undefined ? {} : { installCommand: input.installCommand }),
+    ...(input.buildCommand === undefined ? {} : { buildCommand: input.buildCommand }),
     ...(input.write === undefined ? {} : { write: input.write }),
     ...(input.overwrite === undefined ? {} : { overwrite: input.overwrite }),
     ...(input.format === undefined ? {} : { format: input.format })
@@ -101,6 +113,9 @@ interface NormalizedInitOptions {
   readonly tap: string
   readonly bucket: string
   readonly githubActions: boolean
+  readonly packageManager: ReleaseInitPackageManager
+  readonly installCommand: string
+  readonly buildCommand: string
 }
 
 interface ProposedFileSpec {
@@ -118,17 +133,49 @@ const initRoot = (path: Path.Path, options: ReleaseInitOptions): string => {
   return "."
 }
 
-const normalizeOptions = (options: ReleaseInitOptions, root: string): NormalizedInitOptions => ({
-  root,
-  configPath: options.configPath ?? DEFAULT_CONFIG_PATH,
-  template: options.template ?? "npm-only",
-  packageName: options["package"] ?? "@scope/pkg",
-  repository: options.repo ?? "owner/repo",
-  workflow: options.workflow ?? "release.yml",
-  tap: options.tap ?? "owner/homebrew-tap",
-  bucket: options.bucket ?? "owner/scoop-bucket",
-  githubActions: options.githubActions ?? false
-})
+const defaultInstallCommand = (packageManager: ReleaseInitPackageManager): string => {
+  switch (packageManager) {
+    case "bun":
+      return "bun install --frozen-lockfile"
+    case "npm":
+      return "npm ci"
+    case "pnpm":
+      return "corepack enable && pnpm install --frozen-lockfile"
+    case "yarn":
+      return "corepack enable && yarn install --immutable"
+  }
+}
+
+const defaultBuildCommand = (packageManager: ReleaseInitPackageManager): string => {
+  switch (packageManager) {
+    case "bun":
+      return "bun run build"
+    case "npm":
+      return "npm run build --if-present"
+    case "pnpm":
+      return "pnpm run build --if-present"
+    case "yarn":
+      return "yarn run build"
+  }
+}
+
+const normalizeOptions = (options: ReleaseInitOptions, root: string): NormalizedInitOptions => {
+  const packageManager = options.packageManager ?? "bun"
+  return {
+    root,
+    configPath: options.configPath ?? DEFAULT_CONFIG_PATH,
+    template: options.template ?? "npm-only",
+    packageName: options["package"] ?? "@scope/pkg",
+    repository: options.repo ?? "owner/repo",
+    workflow: options.workflow ?? "release.yml",
+    tap: options.tap ?? "owner/homebrew-tap",
+    bucket: options.bucket ?? "owner/scoop-bucket",
+    githubActions: options.githubActions ?? false,
+    packageManager,
+    installCommand: (options.installCommand ?? defaultInstallCommand(packageManager)).trim(),
+    buildCommand: (options.buildCommand ?? defaultBuildCommand(packageManager)).trim()
+  }
+}
 
 const packageShortName = (packageName: string): string => {
   const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
@@ -254,8 +301,51 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
   }
 }
 
-export const renderGithubActionsTrustedPublishingWorkflow = (configPath: string): string =>
-  [
+interface GithubActionsWorkflowSetup {
+  readonly packageManager: ReleaseInitPackageManager
+  readonly installCommand: string
+  readonly buildCommand: string
+}
+
+interface GithubActionsWorkflowSetupInput {
+  readonly packageManager?: ReleaseInitPackageManager | undefined
+  readonly installCommand?: string | undefined
+  readonly buildCommand?: string | undefined
+}
+
+const githubActionsWorkflowSetup = (
+  input: GithubActionsWorkflowSetupInput = {}
+): GithubActionsWorkflowSetup => {
+  const packageManager = input.packageManager ?? "bun"
+  return {
+    packageManager,
+    installCommand: (input.installCommand ?? defaultInstallCommand(packageManager)).trim(),
+    buildCommand: (input.buildCommand ?? defaultBuildCommand(packageManager)).trim()
+  }
+}
+
+const planSetupSteps = (): ReadonlyArray<string> => [
+  "      - uses: actions/checkout@v4"
+]
+
+const executeSetupSteps = (setup: GithubActionsWorkflowSetup): ReadonlyArray<string> => [
+  "      - uses: actions/checkout@v4",
+  ...(setup.packageManager === "bun" ? ["      - uses: oven-sh/setup-bun@v2"] : []),
+  "      - uses: actions/setup-node@v4",
+  "        with:",
+  "          node-version: 22.14.0",
+  "          registry-url: https://registry.npmjs.org",
+  "      - run: npm install -g npm@^11.5.1",
+  `      - run: ${setup.installCommand}`,
+  `      - run: ${setup.buildCommand}`
+]
+
+export const renderGithubActionsTrustedPublishingWorkflow = (
+  configPath: string,
+  input: GithubActionsWorkflowSetupInput = {}
+): string => {
+  const setup = githubActionsWorkflowSetup(input)
+  return [
     "name: Release",
     "",
     "on:",
@@ -268,9 +358,7 @@ export const renderGithubActionsTrustedPublishingWorkflow = (configPath: string)
     "  plan:",
     "    runs-on: ubuntu-latest",
     "    steps:",
-    "      - uses: actions/checkout@v4",
-    "      - uses: oven-sh/setup-bun@v2",
-    "      - run: bun install --frozen-lockfile",
+    ...planSetupSteps(),
     `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
     "        with:",
     "          command: plan",
@@ -294,15 +382,7 @@ export const renderGithubActionsTrustedPublishingWorkflow = (configPath: string)
     "      contents: write",
     "      id-token: write",
     "    steps:",
-    "      - uses: actions/checkout@v4",
-    "      - uses: oven-sh/setup-bun@v2",
-    "      - uses: actions/setup-node@v4",
-    "        with:",
-    "          node-version: 22.14.0",
-    "          registry-url: https://registry.npmjs.org",
-    "      - run: npm install -g npm@^11.5.1",
-    "      - run: bun install --frozen-lockfile",
-    "      - run: bun run build",
+    ...executeSetupSteps(setup),
     `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
     "        with:",
     "          command: run",
@@ -317,6 +397,7 @@ export const renderGithubActionsTrustedPublishingWorkflow = (configPath: string)
     "          path: .release/evidence/",
     ""
   ].join("\n")
+}
 
 const workflowConfigPath = (path: Path.Path, options: NormalizedInitOptions): string => {
   const root = path.resolve(options.root)
@@ -339,7 +420,11 @@ const proposedFileSpecs = (path: Path.Path, options: NormalizedInitOptions): Rea
   if (options.githubActions) {
     files.push({
       path: `.github/workflows/${options.workflow}`,
-      contents: renderGithubActionsTrustedPublishingWorkflow(workflowConfigPath(path, options))
+      contents: renderGithubActionsTrustedPublishingWorkflow(workflowConfigPath(path, options), {
+        packageManager: options.packageManager,
+        installCommand: options.installCommand,
+        buildCommand: options.buildCommand
+      })
     })
   }
   return files
@@ -380,11 +465,28 @@ const validateWorkflowFileName = (
   )
 }
 
+const validateWorkflowCommand = (
+  field: string,
+  command: string
+): Effect.Effect<void, ReleaseInitWriteError> => {
+  if (command.trim().length > 0 && !command.includes("\n") && !command.includes("\r")) {
+    return Effect.void
+  }
+  return Effect.fail(
+    ReleaseInitWriteError.make({
+      path: field,
+      reason: "Command overrides must be single non-empty lines."
+    })
+  )
+}
+
 const validateInitOptions = Effect.fn("workflows.init.validateInitOptions")(function*(
   path: Path.Path,
   options: NormalizedInitOptions
 ) {
   yield* workspacePath(path, options.root, options.configPath)
+  yield* validateWorkflowCommand("install-command", options.installCommand)
+  yield* validateWorkflowCommand("build-command", options.buildCommand)
   if (!options.githubActions) {
     return
   }

@@ -6,17 +6,13 @@ import * as Path from "effect/Path"
 import {
   ArtifactIntent,
   ArtifactInventoryItem,
-  Checksum,
-  ChecksumAlgorithm
+  Checksum
 } from "../domain/artifact.js"
 import { ReleaseNormalizationError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
 
 type ArtifactKind = "file" | "directory" | "other"
-
-const checksumName = (algorithm: ChecksumAlgorithm): Crypto.DigestAlgorithm =>
-  algorithm === "sha256" ? "SHA-256" : "SHA-512"
 
 const artifactPath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
@@ -73,7 +69,7 @@ const checksumArtifact = Effect.fn("checksumArtifact")(function*(
   const bytes = yield* fs.readFile(targetPath).pipe(
     Effect.mapError(normalizationPlatformError(`artifacts.${artifact.id}.checksum`, "Unable to read artifact bytes."))
   )
-  const digest = yield* crypto.digest(checksumName("sha256"), bytes).pipe(
+  const digest = yield* crypto.digest("SHA-256", bytes).pipe(
     Effect.mapError(normalizationPlatformError(
       `artifacts.${artifact.id}.checksum`,
       "Unable to compute artifact checksum."

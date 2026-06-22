@@ -2,17 +2,15 @@ import type * as Path from "effect/Path"
 
 export type WorkspacePathBoundaryReason = "empty-or-parent-traversal" | "outside-root"
 
-export interface WorkspacePathOk {
-  readonly _tag: "Ok"
-  readonly path: string
-}
-
-export interface WorkspacePathInvalid {
-  readonly _tag: "Invalid"
-  readonly reason: WorkspacePathBoundaryReason
-}
-
-export type WorkspacePathResult = WorkspacePathOk | WorkspacePathInvalid
+export type WorkspacePathResult =
+  | {
+    readonly _tag: "Ok"
+    readonly path: string
+  }
+  | {
+    readonly _tag: "Invalid"
+    readonly reason: WorkspacePathBoundaryReason
+  }
 
 export const hasParentTraversal = (pathName: string): boolean =>
   pathName.split(/[\\/]+/).includes("..")
@@ -54,3 +52,8 @@ export const validateWorkspaceWritePath = (
     reason: "outside-root"
   }
 }
+
+export const workspacePathBoundaryReasonMessage = (reason: WorkspacePathBoundaryReason): string =>
+  reason === "empty-or-parent-traversal"
+    ? "Path must be non-empty and must not contain parent traversal."
+    : "Path must resolve inside the workspace root."

@@ -8,9 +8,8 @@ import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { Operation } from "../domain/operation.js"
 import { ReleaseIdentity, ReleaseName, ReleasePlan, ReleaseVersion } from "../domain/release.js"
-import { TargetCapabilities, TargetConfig, TargetId, targetCapabilitiesOrder, targetOrder } from "../domain/target.js"
+import { TargetConfig, TargetId, targetOrder } from "../domain/target.js"
 import { resolveReleaseIdentitySource } from "../planner/normalize-release.js"
-import { targetCapabilities } from "../targets/registry.js"
 import {
   PlanReleaseConfigOptions,
   planReleaseConfig,
@@ -109,33 +108,21 @@ const check = (input: {
     message: input.message
   })
 
-const reportForPlan = (
-  plan: ReleasePlan,
+const reportForIdentity = (
+  identity: Pick<ReleaseIdentity, "name" | "version">,
   checks: ReadonlyArray<ReleaseDiagnosticCheck>
 ): ReleaseDiagnosticReport =>
   ReleaseDiagnosticReport.make({
     schemaVersion: "release-diagnostics/v1",
-    releaseName: plan.identity.name,
-    releaseVersion: plan.identity.version,
+    releaseName: identity.name,
+    releaseVersion: identity.version,
     checks: [...checks]
   })
 
 interface ReleaseCiDiagnosticSubject {
   readonly identity: ReleaseIdentity
   readonly targets: ReadonlyArray<TargetConfig>
-  readonly targetCapabilities: ReadonlyArray<TargetCapabilities>
 }
-
-const reportForSubject = (
-  subject: ReleaseCiDiagnosticSubject,
-  checks: ReadonlyArray<ReleaseDiagnosticCheck>
-): ReleaseDiagnosticReport =>
-  ReleaseDiagnosticReport.make({
-    schemaVersion: "release-diagnostics/v1",
-    releaseName: subject.identity.name,
-    releaseVersion: subject.identity.version,
-    checks: [...checks]
-  })
 
 type PlannedRelease =
   | {
@@ -310,11 +297,9 @@ const readReleaseCiDiagnosticSubject = Effect.fn("diagnostics.readReleaseCiDiagn
   const intent = yield* parseReleaseIntent(contents, pathName)
   const identity = yield* resolveReleaseIdentitySource(intent.identity, root)
   const targets = [...intent.targets].sort(targetOrder)
-  const capabilities = yield* Effect.forEach(targets, targetCapabilities)
   return {
     identity,
-    targets,
-    targetCapabilities: capabilities.sort(targetCapabilitiesOrder)
+    targets
   }
 })
 
@@ -600,7 +585,7 @@ export const checkAuthReleaseConfig = Effect.fn("diagnostics.checkAuthReleaseCon
   const options = releaseDiagnosticsOptionsFromInput(input)
   const plan = yield* planReleaseConfig(planOptionsFromDiagnostics(options))
   const checks = yield* authChecksForPlan(plan, options.target)
-  return reportForPlan(plan, checks)
+  return reportForIdentity(plan.identity, checks)
 })
 
 export const checkCiReleaseConfig = Effect.fn("diagnostics.checkCiReleaseConfig")(function*(
@@ -609,7 +594,7 @@ export const checkCiReleaseConfig = Effect.fn("diagnostics.checkCiReleaseConfig"
   const options = releaseDiagnosticsOptionsFromInput(input)
   const subject = yield* readReleaseCiDiagnosticSubject(options)
   const checks = yield* readWorkflowChecks(subject, options)
-  return reportForSubject(subject, checks)
+  return reportForIdentity(subject.identity, checks)
 })
 
 export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(function*(
@@ -667,7 +652,7 @@ export const doctorReleaseConfig = Effect.fn("diagnostics.doctorReleaseConfig")(
       missingCiIsNotChecked: true
     })
   )
-  return reportForPlan(planned.plan, [
+  return reportForIdentity(planned.plan.identity, [
     validation,
     check({
       id: "plan:construction",

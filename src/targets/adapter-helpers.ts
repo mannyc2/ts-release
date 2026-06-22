@@ -3,6 +3,7 @@ import { ArtifactInventoryItem, Checksum } from "../domain/artifact.js"
 import {
   CommandSpec,
   PublishCommandOperation,
+  ValidateCommandOperation,
   ValidationNoteOperation,
   executeGate,
   irreversibleGate,
@@ -10,6 +11,7 @@ import {
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
+  TargetAuthSetup,
   TargetCapabilities,
   TargetConfig,
   TargetDryRunSupport,
@@ -29,6 +31,21 @@ interface DryRunValidationNoteOptions {
   readonly skippedDescription: string
   readonly simulatedMessage: string
   readonly skippedMessage: string
+}
+
+interface ReadOnlyCommandValidationOptions {
+  readonly id: string
+  readonly targetId: string
+  readonly description: string
+  readonly gateReason: string
+  readonly command: CommandSpec
+}
+
+interface DryRunValidationOperationOptions extends Omit<DryRunValidationNoteOptions, "dryRunSupport"> {
+  readonly dryRunSupport: TargetDryRunSupport
+  readonly nativeDescription: string
+  readonly nativeGateReason: string
+  readonly command: CommandSpec
 }
 
 interface ArtifactErrorReasons {
@@ -109,7 +126,8 @@ export const validationStrategyForDryRun = (dryRunSupport: TargetDryRunSupport):
 
 export const targetCapabilitiesFor = (
   target: TargetConfig,
-  validationStrategy: TargetValidationStrategy
+  validationStrategy: TargetValidationStrategy,
+  authSetup?: TargetAuthSetup | undefined
 ): TargetCapabilities =>
   TargetCapabilities.make({
     targetId: target.id,
@@ -118,7 +136,20 @@ export const targetCapabilitiesFor = (
     dryRunSupport: target.dryRunSupport,
     mutability: target.mutability,
     recovery: target.recovery,
-    validationStrategy
+    validationStrategy,
+    ...(authSetup === undefined ? {} : { authSetup })
+  })
+
+export const readOnlyCommandValidationOperation = (
+  options: ReadOnlyCommandValidationOptions
+): ValidateCommandOperation =>
+  ValidateCommandOperation.make({
+    id: options.id,
+    targetId: options.targetId,
+    description: options.description,
+    risk: "read-only",
+    gate: noApprovalGate(options.gateReason),
+    command: options.command
   })
 
 export const validationNoteOperation = (options: DryRunValidationNoteOptions): ValidationNoteOperation =>
@@ -132,6 +163,27 @@ export const validationNoteOperation = (options: DryRunValidationNoteOptions): V
     skipped: options.dryRunSupport === "none",
     severity: options.dryRunSupport === "simulated" ? "info" : "warning"
   })
+
+export const dryRunValidationOperation = (
+  options: DryRunValidationOperationOptions
+): ValidateCommandOperation | ValidationNoteOperation =>
+  options.dryRunSupport === "native"
+    ? readOnlyCommandValidationOperation({
+      id: options.id,
+      targetId: options.targetId,
+      description: options.nativeDescription,
+      gateReason: options.nativeGateReason,
+      command: options.command
+    })
+    : validationNoteOperation({
+      id: options.id,
+      targetId: options.targetId,
+      dryRunSupport: options.dryRunSupport,
+      simulatedDescription: options.simulatedDescription,
+      skippedDescription: options.skippedDescription,
+      simulatedMessage: options.simulatedMessage,
+      skippedMessage: options.skippedMessage
+    })
 
 export const rejectNoDryRunInStrictMode = Effect.fn("rejectNoDryRunInStrictMode")(function*(
   target: TargetConfig,

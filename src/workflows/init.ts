@@ -5,9 +5,9 @@ import * as Schema from "effect/Schema"
 import { DEFAULT_CONFIG_PATH, RELEASE_CONFIG_SCHEMA_ID } from "../config/schema.js"
 import {
   hasParentTraversal,
-  isInsidePathBoundary,
   resolveWorkspacePath,
-  validateWorkspaceWritePath
+  validateWorkspaceWritePath,
+  workspacePathBoundaryReasonMessage
 } from "../internal/workspace-path.js"
 import { releaseConfigFields } from "./options.js"
 
@@ -442,9 +442,7 @@ const workspacePath = (
   return Effect.fail(
     ReleaseInitWriteError.make({
       path: pathName,
-      reason: result.reason === "empty-or-parent-traversal"
-        ? "Path must be non-empty and must not contain parent traversal."
-        : "Path must resolve inside the workspace root."
+      reason: workspacePathBoundaryReasonMessage(result.reason)
     })
   )
 }
@@ -491,17 +489,7 @@ const validateInitOptions = Effect.fn("workflows.init.validateInitOptions")(func
     return
   }
   yield* validateWorkflowFileName(options.workflow)
-  const workflowsRoot = resolveWorkspacePath(path, options.root, ".github/workflows")
-  const workflowPath = yield* workspacePath(path, options.root, `.github/workflows/${options.workflow}`)
-  if (isInsidePathBoundary(path, workflowsRoot, workflowPath)) {
-    return
-  }
-  return yield* Effect.fail(
-    ReleaseInitWriteError.make({
-      path: options.workflow,
-      reason: "Workflow output must resolve inside .github/workflows."
-    })
-  )
+  yield* workspacePath(path, options.root, `.github/workflows/${options.workflow}`)
 })
 
 export const planReleaseInit = Effect.fn("workflows.init.planReleaseInit")(function*(

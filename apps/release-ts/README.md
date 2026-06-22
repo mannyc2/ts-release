@@ -22,4 +22,9 @@ bun run --cwd apps/release-ts cli plan --config release.config.json --format tex
 Self-release config lives in `release.config.json`. App release scripts live in
 `scripts/` and keep release workspace paths root-relative. Root package scripts
 delegate to these app scripts for release eligibility, self-release config
-checks, and release artifact preparation.
+checks, the static self-release CI diagnostic, and release artifact preparation.
+
+The repository dogfoods the same safe workflow model recommended to users:
+GitHub Actions checks eligibility first, runs the full release gate only when a
+release is needed, records a non-publishing plan job, and executes only from a
+protected `release` environment with `contents: write` and `id-token: write`.

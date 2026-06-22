@@ -11,7 +11,7 @@ inputs:
     required: false
     default: release.config.json
   format:
-    description: Output format where supported: text, markdown, json, or summary.
+    description: "Output format where supported: text, markdown, json, or summary."
     required: false
     default: markdown
   write-step-summary:

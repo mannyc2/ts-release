@@ -1,10 +1,8 @@
 import * as Effect from "effect/Effect"
 import {
   executeGate,
-  noApprovalGate,
   Operation,
-  RenderFileOperation,
-  ValidateCommandOperation
+  RenderFileOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
@@ -16,13 +14,14 @@ import { HomebrewTargetAdapter } from "./adapter.js"
 import {
   catalogGitPushOperation,
   catalogPathBaseName,
+  dryRunValidationOperation,
   findRequiredArtifact,
   noAuthCommand,
+  readOnlyCommandValidationOperation,
   requireSha256FileArtifact,
   rejectNoDryRunInStrictMode,
   rejectUnsupportedCatalogTokenEnv,
   targetCapabilitiesFor,
-  validationNoteOperation,
   validationStrategyForDryRun
 } from "./adapter-helpers.js"
 
@@ -84,27 +83,19 @@ const renderFormula = (target: HomebrewTapTarget, model: ReleaseModel): Effect.E
     ].join("\n")
   })
 
-const dryRunOperation = (target: HomebrewTapTarget): Operation => {
-  const dryRunSupport = target.dryRunSupport
-  return dryRunSupport === "native"
-    ? ValidateCommandOperation.make({
-      id: `${target.id}:brew-audit`,
-      targetId: target.id,
-      description: "Validate generated Homebrew formula with brew audit.",
-      risk: "read-only",
-      gate: noApprovalGate("brew audit validates the generated formula without publishing."),
-      command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath])
-    })
-    : validationNoteOperation({
-      id: `${target.id}:brew-audit`,
-      targetId: target.id,
-      dryRunSupport,
-      simulatedDescription: "Record simulated Homebrew formula validation.",
-      skippedDescription: "Record skipped Homebrew formula validation.",
-      simulatedMessage: "Homebrew formula validation is simulated by the deterministic release plan.",
-      skippedMessage: "Homebrew formula validation was skipped because this target declares no dry-run support."
-    })
-}
+const dryRunOperation = (target: HomebrewTapTarget): Operation =>
+  dryRunValidationOperation({
+    id: `${target.id}:brew-audit`,
+    targetId: target.id,
+    dryRunSupport: target.dryRunSupport,
+    nativeDescription: "Validate generated Homebrew formula with brew audit.",
+    nativeGateReason: "brew audit validates the generated formula without publishing.",
+    command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath]),
+    simulatedDescription: "Record simulated Homebrew formula validation.",
+    skippedDescription: "Record skipped Homebrew formula validation.",
+    simulatedMessage: "Homebrew formula validation is simulated by the deterministic release plan.",
+    skippedMessage: "Homebrew formula validation was skipped because this target declares no dry-run support."
+  })
 
 export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(function*(
   target: HomebrewTapTarget,
@@ -128,12 +119,11 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
 
   if (target.dryRunSupport === "native") {
     operations.push(
-      ValidateCommandOperation.make({
+      readOnlyCommandValidationOperation({
         id: `${target.id}:brew-version`,
         targetId: target.id,
         description: "Check Homebrew CLI availability.",
-        risk: "read-only",
-        gate: noApprovalGate("CLI availability validation is read-only."),
+        gateReason: "CLI availability validation is read-only.",
         command: noAuthCommand("brew", ["--version"])
       })
     )

@@ -101329,7 +101329,7 @@ var contentDigest = (contents) => {
   }
   return `fnv1a64:${hash2.toString(16).padStart(16, "0")}`;
 };
-var approvalPayload = (operation) => ({
+var operationApprovalRequirements = (operation) => ({
   requiresExecute: operation.gate.requiresExecute || operation._tag === "PublishCommandOperation" || operation._tag === "RenderFileOperation" || operation.risk !== "read-only",
   requiresIrreversibleApproval: operation.gate.requiresIrreversibleApproval || operation.risk === "irreversible"
 });
@@ -101337,7 +101337,7 @@ var commonOperationPayload = (operation) => ({
   _tag: operation._tag,
   id: operation.id,
   ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
-  approval: approvalPayload(operation)
+  approval: operationApprovalRequirements(operation)
 });
 var operationFingerprint = (operation) => {
   const common = commonOperationPayload(operation);
@@ -101403,12 +101403,11 @@ var irreversibleGate = (reason) => ExecutionGate.make({
   reason
 });
 var canExecuteOperation = (operation, approval) => {
-  const requiresExecute = operation.gate.requiresExecute || operation._tag === "PublishCommandOperation" || operation._tag === "RenderFileOperation" || operation.risk !== "read-only";
-  const requiresIrreversibleApproval = operation.gate.requiresIrreversibleApproval || operation.risk === "irreversible";
-  if (requiresExecute && !approval.execute) {
+  const requirements = operationApprovalRequirements(operation);
+  if (requirements.requiresExecute && !approval.execute) {
     return false;
   }
-  if (requiresIrreversibleApproval && !approval.approveIrreversible) {
+  if (requirements.requiresIrreversibleApproval && !approval.approveIrreversible) {
     return false;
   }
   return true;
@@ -101417,7 +101416,8 @@ var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operat
   if (canExecuteOperation(operation, approval)) {
     return;
   }
-  const reason = (operation.gate.requiresIrreversibleApproval || operation.risk === "irreversible") && !approval.approveIrreversible ? "Operation requires irreversible approval." : "Operation requires execute approval.";
+  const requirements = operationApprovalRequirements(operation);
+  const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible ? "Operation requires irreversible approval." : "Operation requires execute approval.";
   return yield* fail6(ExecutionApprovalError.make({
     operationId: operation.id,
     reason
@@ -101979,7 +101979,6 @@ class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
 }
 
 // ../../src/planner/artifact-inventory.ts
-var checksumName = (algorithm) => algorithm === "sha256" ? "SHA-256" : "SHA-512";
 var artifactPath = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
 var artifactKind = (info2) => info2.type === "Directory" ? "directory" : info2.type === "File" ? "file" : "other";
 var normalizationPlatformError = (field, reason) => (cause) => ReleaseNormalizationError.make({
@@ -102012,7 +102011,7 @@ var checksumArtifact = fn2("checksumArtifact")(function* (artifact2, targetPath,
   const fs8 = yield* FileSystem;
   const crypto5 = yield* Crypto;
   const bytes = yield* fs8.readFile(targetPath).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`, "Unable to read artifact bytes.")));
-  const digest = yield* crypto5.digest(checksumName("sha256"), bytes).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`, "Unable to compute artifact checksum.")));
+  const digest = yield* crypto5.digest("SHA-256", bytes).pipe(mapError3(normalizationPlatformError(`artifacts.${artifact2.id}.checksum`, "Unable to compute artifact checksum.")));
   return Checksum.make({
     algorithm: "sha256",
     value: encodeHex(digest)
@@ -102308,6 +102307,7 @@ var validateWorkspaceWritePath = (path4, root, pathName) => {
     reason: "outside-root"
   };
 };
+var workspacePathBoundaryReasonMessage = (reason) => reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root.";
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
 function makeValue(value2) {
@@ -102598,7 +102598,7 @@ var workspaceWritePath = (path4, root, pathName) => {
   }
   return fail6(EvidenceWriteError.make({
     path: pathName,
-    reason: result2.reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root."
+    reason: workspacePathBoundaryReasonMessage(result2.reason)
   }));
 };
 var isNotFoundError = (error2) => error2.reason._tag === "NotFound";
@@ -102816,56 +102816,44 @@ var writeEvidenceBundle = fn2("writeEvidenceBundle")(function* (pathName, bundle
   })));
 });
 var decodeEvidenceBundle = decodeUnknownEffect2(EvidenceBundle);
-var readEvidenceJson = fn2("readEvidenceJson")(function* (pathName, root) {
+var readEvidenceContents = fn2("readEvidenceContents")(function* (pathName, root) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
   const targetPath = resolveWorkspacePath(path4, root, pathName);
-  const contents = yield* fs8.readFileString(targetPath).pipe(mapError3((error2) => EvidenceReadError.make({
-    path: pathName,
-    reason: error2.message,
-    cause: error2
-  })));
-  const parsed = yield* try_2({
-    try: () => JSON.parse(contents),
-    catch: (cause) => EvidenceReadError.make({
-      path: pathName,
-      reason: "Evidence bundle is not valid JSON.",
-      cause
-    })
-  });
-  return parsed;
+  return yield* fs8.readFileString(targetPath);
 });
+var parseEvidenceJson = (contents, pathName) => try_2({
+  try: () => JSON.parse(contents),
+  catch: (cause) => EvidenceReadError.make({
+    path: pathName,
+    reason: "Evidence bundle is not valid JSON.",
+    cause
+  })
+});
+var decodeEvidenceJson = (parsed, pathName, includeCause) => decodeEvidenceBundle(parsed).pipe(mapError3((error2) => EvidenceReadError.make({
+  path: pathName,
+  reason: error2.message,
+  ...includeCause ? { cause: error2 } : {}
+})));
 var readEvidenceBundle = fn2("readEvidenceBundle")(function* (pathName, root = ".") {
-  const parsed = yield* readEvidenceJson(pathName, root);
-  return yield* decodeEvidenceBundle(parsed).pipe(mapError3((error2) => EvidenceReadError.make({
+  const contents = yield* readEvidenceContents(pathName, root).pipe(mapError3((error2) => EvidenceReadError.make({
     path: pathName,
     reason: error2.message,
     cause: error2
   })));
+  const parsed = yield* parseEvidenceJson(contents, pathName);
+  return yield* decodeEvidenceJson(parsed, pathName, true);
 });
 var tryReadEvidenceBundle = fn2("tryReadEvidenceBundle")(function* (pathName, root = ".") {
-  const fs8 = yield* FileSystem;
-  const path4 = yield* Path;
-  const targetPath = resolveWorkspacePath(path4, root, pathName);
-  const contents = yield* fs8.readFileString(targetPath).pipe(catchIf2(isNotFoundError, () => succeed6(undefined)), mapError3((error2) => EvidenceReadError.make({
+  const contents = yield* readEvidenceContents(pathName, root).pipe(catchIf2(isNotFoundError, () => succeed6(undefined)), mapError3((error2) => EvidenceReadError.make({
     path: pathName,
     reason: error2.message
   })));
   if (contents === undefined) {
     return;
   }
-  const parsed = yield* try_2({
-    try: () => JSON.parse(contents),
-    catch: (cause) => EvidenceReadError.make({
-      path: pathName,
-      reason: "Evidence bundle is not valid JSON.",
-      cause
-    })
-  });
-  return yield* decodeEvidenceBundle(parsed).pipe(mapError3((error2) => EvidenceReadError.make({
-    path: pathName,
-    reason: error2.message
-  })));
+  const parsed = yield* parseEvidenceJson(contents, pathName);
+  return yield* decodeEvidenceJson(parsed, pathName, false);
 });
 var ensureBundleMatchesPlan = (plan, bundle, pathName) => {
   if (bundle.releaseName === plan.identity.name && bundle.releaseVersion === plan.identity.version) {
@@ -102903,7 +102891,7 @@ var workspacePath = (path4, root, pathName) => {
   }
   return fail6(WorkspaceWriteError.make({
     path: pathName,
-    reason: result2.reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root."
+    reason: workspacePathBoundaryReasonMessage(result2.reason)
   }));
 };
 var writeWorkspaceFile = fn2("writeWorkspaceFile")(function* (root, pathName, contents) {
@@ -103250,13 +103238,15 @@ var renderPlanOperationExplanation = fn2("renderPlanOperationExplanation")(funct
   return renderOperationExplanationText(plan, operation);
 });
 
+// ../../src/internal/workflow-phases.ts
+var workflowPhases = ["render", "validation", "execution", "verification"];
+
 // ../../src/planner/status.ts
 class ReleaseResumeOptions extends Class4("ReleaseResumeOptions")({
   execute: Boolean3,
   approveIrreversible: Boolean3
 }) {
 }
-var workflowPhases = ["render", "validation", "execution", "verification"];
 var workflowEvidencePaths = (plan) => ({
   render: `${plan.evidenceDirectory}/render.json`,
   validation: `${plan.evidenceDirectory}/validation.json`,
@@ -103277,20 +103267,15 @@ var ensureBundleMatchesPlan2 = (plan, pathName, bundle) => {
 };
 var loadWorkflowEvidence = fn2("loadWorkflowEvidence")(function* (plan) {
   const paths = workflowEvidencePaths(plan);
-  const render = yield* tryReadEvidenceBundle(paths.render, plan.source.root);
-  yield* ensureBundleMatchesPlan2(plan, paths.render, render);
-  const validation = yield* tryReadEvidenceBundle(paths.validation, plan.source.root);
-  yield* ensureBundleMatchesPlan2(plan, paths.validation, validation);
-  const execution = yield* tryReadEvidenceBundle(paths.execution, plan.source.root);
-  yield* ensureBundleMatchesPlan2(plan, paths.execution, execution);
-  const verification = yield* tryReadEvidenceBundle(paths.verification, plan.source.root);
-  yield* ensureBundleMatchesPlan2(plan, paths.verification, verification);
-  return {
-    render,
-    validation,
-    execution,
-    verification
-  };
+  const evidence = {};
+  for (const phase of workflowPhases) {
+    const bundle = yield* tryReadEvidenceBundle(paths[phase], plan.source.root);
+    yield* ensureBundleMatchesPlan2(plan, paths[phase], bundle);
+    if (bundle !== undefined) {
+      evidence[phase] = bundle;
+    }
+  }
+  return evidence;
 });
 var phaseOperations = (plan, phase) => {
   switch (phase) {
@@ -103302,18 +103287,6 @@ var phaseOperations = (plan, phase) => {
       return publishOperations(plan);
     case "verification":
       return verificationOperations(plan);
-  }
-};
-var evidenceBundleForPhase = (evidence, phase) => {
-  switch (phase) {
-    case "render":
-      return evidence.render;
-    case "validation":
-      return evidence.validation;
-    case "execution":
-      return evidence.execution;
-    case "verification":
-      return evidence.verification;
   }
 };
 var recordOperationId = (record2) => ("operationId" in record2) ? record2.operationId : undefined;
@@ -103342,76 +103315,64 @@ var latestEvidenceRecord = (operation, bundle) => {
   }
   return latest;
 };
-var statusFromEvidence = (record2) => {
-  switch (record2.status) {
-    case "passed":
-      return "passed";
-    case "warning":
-      return "warning";
-    case "skipped":
-      return "skipped";
-    case "failed":
-      return "failed";
-  }
-};
-var failedResumeAction = (operation) => {
+var failedOperationPolicy = (operation) => {
   switch (operation._tag) {
     case "PublishCommandOperation":
-      return "block";
+      return {
+        status: "blocked",
+        resumeAction: "block",
+        reason: "Previous publish evidence failed; inspect remote state before retry."
+      };
     case "ValidateCommandOperation":
     case "ValidationNoteOperation":
+      return {
+        status: "failed",
+        resumeAction: "retry-read-only",
+        reason: "Previous validation evidence failed; resume can rerun this read-only operation."
+      };
     case "VerifyRemoteOperation":
     case "VerifyHttpOperation":
-      return "retry-read-only";
+      return {
+        status: "failed",
+        resumeAction: "retry-read-only",
+        reason: "Previous verification evidence failed; resume can rerun this read-only operation."
+      };
     case "RenderFileOperation":
-      return "run";
-  }
-};
-var failedStatus = (operation) => operation._tag === "PublishCommandOperation" ? "blocked" : "failed";
-var failedReason = (operation) => {
-  switch (operation._tag) {
-    case "PublishCommandOperation":
-      return "Previous publish evidence failed; inspect remote state before retry.";
-    case "ValidateCommandOperation":
-    case "ValidationNoteOperation":
-      return "Previous validation evidence failed; resume can rerun this read-only operation.";
-    case "VerifyRemoteOperation":
-    case "VerifyHttpOperation":
-      return "Previous verification evidence failed; resume can rerun this read-only operation.";
-    case "RenderFileOperation":
-      return "Previous render evidence failed; resume can rerun this local render operation.";
+      return {
+        status: "failed",
+        resumeAction: "run",
+        reason: "Previous render evidence failed; resume can rerun this local render operation."
+      };
   }
 };
 var operationStatusRecord = (operation, phase, bundle) => {
   const record2 = latestEvidenceRecord(operation, bundle);
+  const base = {
+    operationId: operation.id,
+    ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
+    phase,
+    risk: operation.risk
+  };
   if (record2 === undefined) {
     return ReleaseOperationStatusRecord.make({
-      operationId: operation.id,
-      ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
-      phase,
-      risk: operation.risk,
+      ...base,
       status: "pending",
       resumeAction: "run"
     });
   }
   if (record2.status === "failed") {
+    const policy = failedOperationPolicy(operation);
     return ReleaseOperationStatusRecord.make({
-      operationId: operation.id,
-      ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
-      phase,
-      risk: operation.risk,
-      status: failedStatus(operation),
-      resumeAction: failedResumeAction(operation),
+      ...base,
+      status: policy.status,
+      resumeAction: policy.resumeAction,
       evidenceId: record2.id,
-      reason: failedReason(operation)
+      reason: policy.reason
     });
   }
   return ReleaseOperationStatusRecord.make({
-    operationId: operation.id,
-    ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
-    phase,
-    risk: operation.risk,
-    status: statusFromEvidence(record2),
+    ...base,
+    status: record2.status,
     resumeAction: "skip",
     evidenceId: record2.id
   });
@@ -103445,7 +103406,7 @@ var phaseStatusRecord = (phase, records) => ReleasePhaseStatusRecord.make({
   total: records.length
 });
 var overallStatus = (evidence, operations, phases) => {
-  const evidenceFilesExist = workflowPhases.some((phase) => evidenceBundleForPhase(evidence, phase) !== undefined);
+  const evidenceFilesExist = workflowPhases.some((phase) => evidence[phase] !== undefined);
   const operationEvidenceExists = operations.some((operation) => operation.evidenceId !== undefined);
   if (!evidenceFilesExist && !operationEvidenceExists) {
     return "not-started";
@@ -103466,7 +103427,7 @@ var summarizeReleaseStatus = (plan, evidence) => {
   const operations = [];
   const phases = [];
   for (const phase of workflowPhases) {
-    const bundle = evidenceBundleForPhase(evidence, phase);
+    const bundle = evidence[phase];
     const records = phaseOperations(plan, phase).map((operation) => operationStatusRecord(operation, phase, bundle));
     operations.push(...records);
     phases.push(phaseStatusRecord(phase, records));
@@ -103541,16 +103502,16 @@ var failWorkflowOperation2 = (error2, workflowEvidence) => fail6(OperationFailed
   ...error2.evidence === undefined ? {} : { evidence: error2.evidence },
   workflowEvidence
 }));
-var workflowFailureEvidence = (prefix2, phase, current) => ReleaseWorkflowFailureEvidence.make({
-  ...prefix2.render === undefined ? {} : { render: prefix2.render },
-  ...prefix2.validation === undefined ? {} : { validation: prefix2.validation },
-  ...prefix2.execution === undefined ? {} : { execution: prefix2.execution },
-  ...prefix2.verification === undefined ? {} : { verification: prefix2.verification },
-  ...phase === "render" && current !== undefined ? { render: current } : {},
-  ...phase === "validation" && current !== undefined ? { validation: current } : {},
-  ...phase === "execution" && current !== undefined ? { execution: current } : {},
-  ...phase === "verification" && current !== undefined ? { verification: current } : {}
-});
+var workflowFailureEvidence = (prefix2, phase, current) => {
+  const evidence = {};
+  for (const evidencePhase of workflowPhases) {
+    const bundle = evidencePhase === phase ? current : prefix2[evidencePhase];
+    if (bundle !== undefined) {
+      evidence[evidencePhase] = bundle;
+    }
+  }
+  return ReleaseWorkflowFailureEvidence.make(evidence);
+};
 var resumePhase = fn2("resumePhase")(function* (plan, phase, existing, operations, approval, report, prefix2) {
   const runnable = operations.filter((operation) => shouldRunOperation(report, operation));
   if (runnable.length === 0) {
@@ -103638,19 +103599,10 @@ class GitHubReleasePublished extends TaggedClass()("GitHubReleasePublished", {
   assetNames: ArraySchema(String4)
 }) {
 }
-
-class GitHubReleaseMismatch extends TaggedClass()("GitHubReleaseMismatch", {
-  targetId: TargetId,
-  repository: String4,
-  tag: GitTag,
-  reasons: ArraySchema(String4)
-}) {
-}
 var GitHubReleaseRemoteState = Union2([
   GitHubReleaseMissing,
   GitHubReleaseDraft,
-  GitHubReleasePublished,
-  GitHubReleaseMismatch
+  GitHubReleasePublished
 ]);
 
 class GitHubReconcileSkip extends TaggedClass()("GitHubReconcileSkip", {
@@ -103676,12 +103628,6 @@ class GitHubReconcileBlock extends TaggedClass()("GitHubReconcileBlock", {
   reasons: ArraySchema(String4)
 }) {
 }
-var GitHubReleaseReconciliationDecision = Union2([
-  GitHubReconcileSkip,
-  GitHubReconcileCreateRelease,
-  GitHubReconcilePublishDraft,
-  GitHubReconcileBlock
-]);
 
 // ../../src/targets/github-release.ts
 var githubAuthEnvNames = (target) => target.tokenEnv === undefined ? [] : [target.tokenEnv];
@@ -103944,8 +103890,6 @@ var decideGitHubReleaseReconciliation = (target, plan, state3) => {
         targetId: target.id,
         reason: `GitHub release ${githubReleaseTag(plan)} is missing.`
       });
-    case "GitHubReleaseMismatch":
-      return blockDecision(target, state3.reasons);
     case "GitHubReleaseDraft": {
       const reasons = existingMismatchReasons(target, plan, state3);
       if (reasons.length > 0) {
@@ -104605,27 +104549,18 @@ var writeFailedOperationEvidence = fn2("workflows.evidence.writeFailedOperationE
   }
   return yield* writeNamedEvidence(plan, name, error2.evidence);
 });
-var isOperationFailedError = (error2) => error2 instanceof OperationFailedError || typeof error2 === "object" && error2 !== null && ("_tag" in error2) && error2._tag === "OperationFailedError";
+var isOperationFailedError = (error2) => typeof error2 === "object" && error2 !== null && ("_tag" in error2) && error2._tag === "OperationFailedError";
 var hasWorkflowEvidence = (error2) => isOperationFailedError(error2) && error2.workflowEvidence !== undefined;
 var writeNamedEvidenceWithFailure = (plan, name, effect2) => effect2.pipe(catchIf2(isOperationFailedError, (error2) => writeFailedOperationEvidence(plan, name, error2).pipe(flatMap3(() => fail6(error2)))), flatMap3((evidence) => writeNamedEvidence(plan, name, evidence).pipe(map5(() => evidence))));
 var writeWorkflowEvidence = fn2("workflows.evidence.writeWorkflowEvidence")(function* (plan, evidence) {
   const paths = workflowEvidencePaths(plan);
   const written = {};
-  if (evidence.render !== undefined) {
-    written.render = paths.render;
-    yield* writeEvidenceBundle(paths.render, evidence.render, plan.source.root);
-  }
-  if (evidence.validation !== undefined) {
-    written.validation = paths.validation;
-    yield* writeEvidenceBundle(paths.validation, evidence.validation, plan.source.root);
-  }
-  if (evidence.execution !== undefined) {
-    written.execution = paths.execution;
-    yield* writeEvidenceBundle(paths.execution, evidence.execution, plan.source.root);
-  }
-  if (evidence.verification !== undefined) {
-    written.verification = paths.verification;
-    yield* writeEvidenceBundle(paths.verification, evidence.verification, plan.source.root);
+  for (const phase of workflowPhases) {
+    const bundle = evidence[phase];
+    if (bundle !== undefined) {
+      written[phase] = paths[phase];
+      yield* writeEvidenceBundle(paths[phase], bundle, plan.source.root);
+    }
   }
   return WorkflowEvidencePathsWritten.make(written);
 });
@@ -104708,8 +104643,7 @@ class ReleaseReconcileConfigOptions extends Class4("ReleaseReconcileConfigOption
 
 class ReleaseEligibilityConfigOptions extends Class4("ReleaseEligibilityConfigOptions")({
   root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  packagePath: optionalKey2(String4)
+  configPath: optionalKey2(String4)
 }) {
 }
 
@@ -104781,10 +104715,7 @@ var releaseReconcileConfigOptionsFromInput = (input = {}) => ReleaseReconcileCon
   ...releaseConfigFields(input),
   ...releaseExecuteField(input)
 });
-var releaseEligibilityConfigOptionsFromInput = (input = {}) => ReleaseEligibilityConfigOptions.make({
-  ...releaseConfigFields(input),
-  ...input.packagePath === undefined ? {} : { packagePath: input.packagePath }
-});
+var releaseEligibilityConfigOptionsFromInput = (input = {}) => ReleaseEligibilityConfigOptions.make(releaseConfigFields(input));
 var configRoot = (path4, options) => {
   if (options.root !== undefined) {
     return options.root;
@@ -105170,16 +105101,10 @@ var check = (input) => ReleaseDiagnosticCheck.make({
   confidence: input.confidence,
   message: input.message
 });
-var reportForPlan = (plan2, checks) => ReleaseDiagnosticReport.make({
+var reportForIdentity = (identity2, checks) => ReleaseDiagnosticReport.make({
   schemaVersion: "release-diagnostics/v1",
-  releaseName: plan2.identity.name,
-  releaseVersion: plan2.identity.version,
-  checks: [...checks]
-});
-var reportForSubject = (subject, checks) => ReleaseDiagnosticReport.make({
-  schemaVersion: "release-diagnostics/v1",
-  releaseName: subject.identity.name,
-  releaseVersion: subject.identity.version,
+  releaseName: identity2.name,
+  releaseVersion: identity2.version,
   checks: [...checks]
 });
 var plannedFailure = (message) => ({
@@ -105305,11 +105230,9 @@ var readReleaseCiDiagnosticSubject = fn2("diagnostics.readReleaseCiDiagnosticSub
   const intent = yield* parseReleaseIntent(contents, pathName);
   const identity2 = yield* resolveReleaseIdentitySource(intent.identity, root);
   const targets = [...intent.targets].sort(targetOrder);
-  const capabilities = yield* forEach2(targets, targetCapabilities);
   return {
     identity: identity2,
-    targets,
-    targetCapabilities: capabilities.sort(targetCapabilitiesOrder)
+    targets
   };
 });
 var inferredTrustedPublishingWorkflow = (subject) => {
@@ -105501,13 +105424,13 @@ var checkAuthReleaseConfig = fn2("diagnostics.checkAuthReleaseConfig")(function*
   const options = releaseDiagnosticsOptionsFromInput(input);
   const plan2 = yield* planReleaseConfig(planOptionsFromDiagnostics(options));
   const checks = yield* authChecksForPlan(plan2, options.target);
-  return reportForPlan(plan2, checks);
+  return reportForIdentity(plan2.identity, checks);
 });
 var checkCiReleaseConfig = fn2("diagnostics.checkCiReleaseConfig")(function* (input = {}) {
   const options = releaseDiagnosticsOptionsFromInput(input);
   const subject = yield* readReleaseCiDiagnosticSubject(options);
   const checks = yield* readWorkflowChecks(subject, options);
-  return reportForSubject(subject, checks);
+  return reportForIdentity(subject.identity, checks);
 });
 var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (input = {}) {
   const options = releaseDiagnosticsOptionsFromInput(input);
@@ -105552,7 +105475,7 @@ var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (inpu
     ...workflow === undefined ? {} : { workflow },
     missingCiIsNotChecked: true
   }));
-  return reportForPlan(planned.plan, [
+  return reportForIdentity(planned.plan.identity, [
     validation,
     check({
       id: "plan:construction",
@@ -105952,7 +105875,7 @@ var workspacePath3 = (path4, root, pathName) => {
   }
   return fail6(ReleaseInitWriteError.make({
     path: pathName,
-    reason: result2.reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root."
+    reason: workspacePathBoundaryReasonMessage(result2.reason)
   }));
 };
 var validateWorkflowFileName2 = (workflow) => {
@@ -105984,15 +105907,7 @@ var validateInitOptions = fn2("workflows.init.validateInitOptions")(function* (p
     return;
   }
   yield* validateWorkflowFileName2(options.workflow);
-  const workflowsRoot = resolveWorkspacePath(path4, options.root, ".github/workflows");
-  const workflowPath = yield* workspacePath3(path4, options.root, `.github/workflows/${options.workflow}`);
-  if (isInsidePathBoundary(path4, workflowsRoot, workflowPath)) {
-    return;
-  }
-  return yield* fail6(ReleaseInitWriteError.make({
-    path: options.workflow,
-    reason: "Workflow output must resolve inside .github/workflows."
-  }));
+  yield* workspacePath3(path4, options.root, `.github/workflows/${options.workflow}`);
 });
 var planReleaseInit = fn2("workflows.init.planReleaseInit")(function* (input = {}) {
   const options = releaseInitOptionsFromInput(input);
@@ -107271,28 +107186,22 @@ var commandEnv = fn2("platform.commandEnv")(function* (command) {
     ...command.requiredEnv
   ]);
   const env = {};
+  const values = new Map;
   for (const name of names) {
     const value2 = yield* readOptionalEnv4(name);
+    values.set(name, value2);
     if (value2 !== undefined) {
       env[name] = value2;
     }
   }
-  return env;
-});
-var validateEnv = (command) => gen2(function* () {
-  const missing = [];
-  for (const name of command.requiredEnv) {
-    const value2 = yield* readOptionalEnv4(name);
-    if (value2 === undefined) {
-      missing.push(name);
-    }
-  }
+  const missing = command.requiredEnv.filter((name) => values.get(name) === undefined);
   if (missing.length > 0) {
     return yield* fail6(CommandRunnerError.make({
       operation: "runCommand",
       reason: `Missing required environment variables: ${missing.join(", ")}`
     }));
   }
+  return env;
 });
 var nowIso3 = fn2("platform.nowIso")(function* () {
   const millis2 = yield* clockWith2((clock) => clock.currentTimeMillis);
@@ -107304,7 +107213,6 @@ var makePlatformCommandRunnerLayer = (options = {}) => effect(ReleaseCommandRunn
   const commandCwd = (command) => command.cwd === undefined ? options.root : command.cwd;
   return {
     runCommand: (command) => gen2(function* () {
-      yield* validateEnv(command);
       const startedAt = yield* nowIso3();
       const startedMillis = yield* clockWith2((clock) => clock.currentTimeMillis);
       const env = yield* commandEnv(command);
@@ -107384,14 +107292,23 @@ var validationStrategyForDryRun = (dryRunSupport) => {
   }
   return "skipped";
 };
-var targetCapabilitiesFor = (target, validationStrategy) => TargetCapabilities.make({
+var targetCapabilitiesFor = (target, validationStrategy, authSetup) => TargetCapabilities.make({
   targetId: target.id,
   targetTag: target._tag,
   authRequirement: targetAuthRequirement(target),
   dryRunSupport: target.dryRunSupport,
   mutability: target.mutability,
   recovery: target.recovery,
-  validationStrategy
+  validationStrategy,
+  ...authSetup === undefined ? {} : { authSetup }
+});
+var readOnlyCommandValidationOperation = (options) => ValidateCommandOperation.make({
+  id: options.id,
+  targetId: options.targetId,
+  description: options.description,
+  risk: "read-only",
+  gate: noApprovalGate(options.gateReason),
+  command: options.command
 });
 var validationNoteOperation = (options) => ValidationNoteOperation.make({
   id: options.id,
@@ -107402,6 +107319,21 @@ var validationNoteOperation = (options) => ValidationNoteOperation.make({
   message: options.dryRunSupport === "simulated" ? options.simulatedMessage : options.skippedMessage,
   skipped: options.dryRunSupport === "none",
   severity: options.dryRunSupport === "simulated" ? "info" : "warning"
+});
+var dryRunValidationOperation = (options) => options.dryRunSupport === "native" ? readOnlyCommandValidationOperation({
+  id: options.id,
+  targetId: options.targetId,
+  description: options.nativeDescription,
+  gateReason: options.nativeGateReason,
+  command: options.command
+}) : validationNoteOperation({
+  id: options.id,
+  targetId: options.targetId,
+  dryRunSupport: options.dryRunSupport,
+  simulatedDescription: options.simulatedDescription,
+  skippedDescription: options.skippedDescription,
+  simulatedMessage: options.simulatedMessage,
+  skippedMessage: options.skippedMessage
 });
 var rejectNoDryRunInStrictMode = fn2("rejectNoDryRunInStrictMode")(function* (target, model, reason) {
   if (model.strict && target.dryRunSupport === "none") {
@@ -107525,20 +107457,18 @@ var planGitHubOperations = fn2("planGitHubOperations")(function* (target, model)
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible";
   const publishGate = publishRisk === "irreversible" ? irreversibleGate("Creating this GitHub release is externally visible and configured as immutable.") : executeGate("Creating or updating a GitHub release is externally visible.");
   return [
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:gh-version`,
       targetId: target.id,
       description: "Check GitHub CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
+      gateReason: "CLI availability validation is read-only.",
       command: githubGhCommand(target, ["--version"], false)
     }),
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:gh-auth-status`,
       targetId: target.id,
       description: "Validate GitHub CLI authentication.",
-      risk: "read-only",
-      gate: noApprovalGate("gh auth status checks authentication without publishing."),
+      gateReason: "gh auth status checks authentication without publishing.",
       command: githubGhCommand(target, ["auth", "status"], true)
     }),
     githubDryRunOperation(target, dryRunSupport),
@@ -107600,25 +107530,18 @@ var renderFormula = (target, model) => gen2(function* () {
   ].join(`
 `);
 });
-var dryRunOperation = (target) => {
-  const dryRunSupport = target.dryRunSupport;
-  return dryRunSupport === "native" ? ValidateCommandOperation.make({
-    id: `${target.id}:brew-audit`,
-    targetId: target.id,
-    description: "Validate generated Homebrew formula with brew audit.",
-    risk: "read-only",
-    gate: noApprovalGate("brew audit validates the generated formula without publishing."),
-    command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath])
-  }) : validationNoteOperation({
-    id: `${target.id}:brew-audit`,
-    targetId: target.id,
-    dryRunSupport,
-    simulatedDescription: "Record simulated Homebrew formula validation.",
-    skippedDescription: "Record skipped Homebrew formula validation.",
-    simulatedMessage: "Homebrew formula validation is simulated by the deterministic release plan.",
-    skippedMessage: "Homebrew formula validation was skipped because this target declares no dry-run support."
-  });
-};
+var dryRunOperation = (target) => dryRunValidationOperation({
+  id: `${target.id}:brew-audit`,
+  targetId: target.id,
+  dryRunSupport: target.dryRunSupport,
+  nativeDescription: "Validate generated Homebrew formula with brew audit.",
+  nativeGateReason: "brew audit validates the generated formula without publishing.",
+  command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath]),
+  simulatedDescription: "Record simulated Homebrew formula validation.",
+  skippedDescription: "Record skipped Homebrew formula validation.",
+  simulatedMessage: "Homebrew formula validation is simulated by the deterministic release plan.",
+  skippedMessage: "Homebrew formula validation was skipped because this target declares no dry-run support."
+});
 var planHomebrewOperations = fn2("planHomebrewOperations")(function* (target, model) {
   yield* rejectUnsupportedTokenEnv(target);
   yield* rejectNoDryRunInStrictMode(target, model, "Homebrew tap target declares no dry-run support in strict mode.");
@@ -107635,12 +107558,11 @@ var planHomebrewOperations = fn2("planHomebrewOperations")(function* (target, mo
     })
   ];
   if (target.dryRunSupport === "native") {
-    operations.push(ValidateCommandOperation.make({
+    operations.push(readOnlyCommandValidationOperation({
       id: `${target.id}:brew-version`,
       targetId: target.id,
       description: "Check Homebrew CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
+      gateReason: "CLI availability validation is read-only.",
       command: noAuthCommand("brew", ["--version"])
     }));
   }
@@ -107663,19 +107585,21 @@ var HomebrewAdapter = {
 
 // ../../src/targets/npm.ts
 var isTrustedPublishing = (target) => target.trustedPublishing !== undefined;
-var envNames = (target) => isTrustedPublishing(target) || target.tokenEnv === undefined ? [] : [target.tokenEnv];
-var trustedPublishingRequiredEnvNames = [
+var trustedPublishingAuthEnvNames = [
   "ACTIONS_ID_TOKEN_REQUEST_URL",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
 ];
-var requiredAuthEnvNames = (target) => isTrustedPublishing(target) ? trustedPublishingRequiredEnvNames : envNames(target);
-var redactedAuthEnvNames = (target) => isTrustedPublishing(target) ? trustedPublishingRequiredEnvNames : envNames(target);
-var npmCommand = (target, args2, cwd, includeAuth) => CommandSpec.make({
+var authEnvNames = (target) => {
+  if (isTrustedPublishing(target)) {
+    return trustedPublishingAuthEnvNames;
+  }
+  return target.tokenEnv === undefined ? [] : [target.tokenEnv];
+};
+var npmCommand = (target, args2, includeAuth) => CommandSpec.make({
   executable: "npm",
   args: [...args2],
-  ...cwd === undefined ? {} : { cwd },
-  requiredEnv: includeAuth ? requiredAuthEnvNames(target) : [],
-  redactedEnv: includeAuth ? redactedAuthEnvNames(target) : []
+  requiredEnv: includeAuth ? authEnvNames(target) : [],
+  redactedEnv: includeAuth ? authEnvNames(target) : []
 });
 var trustedPublishingAuthSetup = (workflow) => TargetAuthSetup.make({
   runsIn: "ci",
@@ -107688,39 +107612,20 @@ var trustedPublishingAuthSetup = (workflow) => TargetAuthSetup.make({
 });
 var npmTargetCapabilities = (target) => {
   const trustedPublishing = target.trustedPublishing;
-  if (trustedPublishing === undefined) {
-    return targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport));
-  }
-  return TargetCapabilities.make({
-    targetId: target.id,
-    targetTag: target._tag,
-    authRequirement: "trusted-publishing",
-    dryRunSupport: target.dryRunSupport,
-    mutability: target.mutability,
-    recovery: target.recovery,
-    validationStrategy: validationStrategyForDryRun(target.dryRunSupport),
-    authSetup: trustedPublishingAuthSetup(trustedPublishing.workflow)
-  });
+  return targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport), trustedPublishing === undefined ? undefined : trustedPublishingAuthSetup(trustedPublishing.workflow));
 };
-var npmDryRunOperation = (target) => {
-  const dryRunSupport = target.dryRunSupport;
-  return dryRunSupport === "native" ? ValidateCommandOperation.make({
-    id: `${target.id}:npm-pack-dry-run`,
-    targetId: target.id,
-    description: "Validate npm package contents with npm pack dry-run.",
-    risk: "read-only",
-    gate: noApprovalGate("npm pack --dry-run validates package contents without publishing."),
-    command: npmCommand(target, ["pack", "--dry-run", "--json", target.packagePath], undefined, false)
-  }) : validationNoteOperation({
-    id: `${target.id}:npm-pack-dry-run`,
-    targetId: target.id,
-    dryRunSupport,
-    simulatedDescription: "Record simulated npm dry-run validation.",
-    skippedDescription: "Record skipped npm dry-run validation.",
-    simulatedMessage: "npm dry-run validation is marked as simulated by target configuration; no npm pack --dry-run command was planned.",
-    skippedMessage: "npm dry-run validation was skipped because this target declares no dry-run support."
-  });
-};
+var npmDryRunOperation = (target) => dryRunValidationOperation({
+  id: `${target.id}:npm-pack-dry-run`,
+  targetId: target.id,
+  dryRunSupport: target.dryRunSupport,
+  nativeDescription: "Validate npm package contents with npm pack dry-run.",
+  nativeGateReason: "npm pack --dry-run validates package contents without publishing.",
+  command: npmCommand(target, ["pack", "--dry-run", "--json", target.packagePath], false),
+  simulatedDescription: "Record simulated npm dry-run validation.",
+  skippedDescription: "Record skipped npm dry-run validation.",
+  simulatedMessage: "npm dry-run validation is marked as simulated by target configuration; no npm pack --dry-run command was planned.",
+  skippedMessage: "npm dry-run validation was skipped because this target declares no dry-run support."
+});
 var npmAuthOperation = (target) => target.trustedPublishing !== undefined ? validationNoteOperation({
   id: `${target.id}:npm-trusted-publishing-auth`,
   targetId: target.id,
@@ -107729,21 +107634,19 @@ var npmAuthOperation = (target) => target.trustedPublishing !== undefined ? vali
   skippedDescription: "Record skipped npm trusted publishing authentication mode.",
   simulatedMessage: `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${target.trustedPublishing.provider}, workflow ${target.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${target.packageName} to already exist on the registry.`,
   skippedMessage: "NPM trusted publishing authentication validation was skipped."
-}) : ValidateCommandOperation.make({
+}) : readOnlyCommandValidationOperation({
   id: `${target.id}:npm-whoami`,
   targetId: target.id,
   description: "Validate npm CLI authentication.",
-  risk: "read-only",
-  gate: noApprovalGate("npm whoami checks CLI authentication without publishing."),
-  command: npmCommand(target, ["whoami", "--registry", target.registry], undefined, true)
+  gateReason: "npm whoami checks CLI authentication without publishing.",
+  command: npmCommand(target, ["whoami", "--registry", target.registry], true)
 });
-var npmPackageExistsOperation = (target) => ValidateCommandOperation.make({
+var npmPackageExistsOperation = (target) => readOnlyCommandValidationOperation({
   id: `${target.id}:npm-package-exists`,
   targetId: target.id,
   description: "Verify npm package exists before trusted publishing.",
-  risk: "read-only",
-  gate: noApprovalGate("npm view checks package metadata without publishing."),
-  command: npmCommand(target, ["view", target.packageName, "name", "--registry", target.registry], undefined, false)
+  gateReason: "npm view checks package metadata without publishing.",
+  command: npmCommand(target, ["view", target.packageName, "name", "--registry", target.registry], false)
 });
 var npmPublishArgs = (target) => {
   const args2 = ["publish", target.packagePath, "--registry", target.registry];
@@ -107758,13 +107661,12 @@ var npmPublishArgs = (target) => {
 var planNpmOperations = fn2("planNpmOperations")(function* (target, model) {
   yield* rejectNoDryRunInStrictMode(target, model, "npm target declares no dry-run support in strict mode.");
   const operations = [
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:npm-version`,
       targetId: target.id,
       description: "Check npm CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
-      command: npmCommand(target, ["--version"], undefined, false)
+      gateReason: "CLI availability validation is read-only.",
+      command: npmCommand(target, ["--version"], false)
     }),
     npmAuthOperation(target),
     ...target.trustedPublishing?.verifyPackageExists === true ? [npmPackageExistsOperation(target)] : [],
@@ -107775,7 +107677,7 @@ var planNpmOperations = fn2("planNpmOperations")(function* (target, model) {
       description: `Publish ${target.packageName}@${model.identity.version} to npm.`,
       risk: "irreversible",
       gate: irreversibleGate("npm package versions are immutable once published."),
-      command: npmCommand(target, npmPublishArgs(target), undefined, true)
+      command: npmCommand(target, npmPublishArgs(target), true)
     }),
     VerifyRemoteOperation.make({
       id: `${target.id}:npm-version-verify`,
@@ -107783,7 +107685,7 @@ var planNpmOperations = fn2("planNpmOperations")(function* (target, model) {
       description: `Verify ${target.packageName}@${model.identity.version} exists on npm.`,
       risk: "read-only",
       gate: noApprovalGate("npm view verifies published package metadata without publishing."),
-      command: npmCommand(target, ["view", `${target.packageName}@${model.identity.version}`, "version", "--registry", target.registry], undefined, false)
+      command: npmCommand(target, ["view", `${target.packageName}@${model.identity.version}`, "version", "--registry", target.registry], false)
     })
   ];
   return operations;
@@ -107797,35 +107699,27 @@ var NpmAdapter = {
 // ../../src/targets/pypi.ts
 var twineUsernameEnv = "TWINE_USERNAME";
 var twinePasswordEnv = "TWINE_PASSWORD";
-var envNames2 = (target) => target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv];
-var pythonCommand = (target, args2, includeAuth) => CommandSpec.make({
+var envNames = (target) => target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv];
+var twineAuthCommand = (target, args2) => CommandSpec.make({
   executable: "python",
-  args: [...args2],
-  requiredEnv: includeAuth ? envNames2(target) : [],
-  redactedEnv: includeAuth ? envNames2(target) : []
+  args: ["-m", "twine", ...args2],
+  requiredEnv: envNames(target),
+  redactedEnv: envNames(target)
 });
-var twineCommand = (target, args2, includeAuth) => pythonCommand(target, ["-m", "twine", ...args2], includeAuth);
 var pypiTargetCapabilities = (target) => targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport));
 var targetArtifacts = (target, model) => model.artifacts.filter((artifact2) => artifact2.consumers.includes(target.id));
-var pypiDryRunOperation = (target, artifactPaths) => {
-  const dryRunSupport = target.dryRunSupport;
-  return dryRunSupport === "native" ? ValidateCommandOperation.make({
-    id: `${target.id}:twine-check`,
-    targetId: target.id,
-    description: "Validate Python distribution metadata with twine check.",
-    risk: "read-only",
-    gate: noApprovalGate("twine check validates built distributions without publishing."),
-    command: twineCommand(target, ["check", ...artifactPaths], false)
-  }) : validationNoteOperation({
-    id: `${target.id}:twine-check`,
-    targetId: target.id,
-    dryRunSupport,
-    simulatedDescription: "Record simulated PyPI distribution validation.",
-    skippedDescription: "Record skipped PyPI distribution validation.",
-    simulatedMessage: "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
-    skippedMessage: "PyPI distribution validation was skipped because this target declares no dry-run support."
-  });
-};
+var pypiDryRunOperation = (target, artifactPaths) => dryRunValidationOperation({
+  id: `${target.id}:twine-check`,
+  targetId: target.id,
+  dryRunSupport: target.dryRunSupport,
+  nativeDescription: "Validate Python distribution metadata with twine check.",
+  nativeGateReason: "twine check validates built distributions without publishing.",
+  command: noAuthCommand("python", ["-m", "twine", "check", ...artifactPaths]),
+  simulatedDescription: "Record simulated PyPI distribution validation.",
+  skippedDescription: "Record skipped PyPI distribution validation.",
+  simulatedMessage: "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
+  skippedMessage: "PyPI distribution validation was skipped because this target declares no dry-run support."
+});
 var pypiPublishArgs = (target, artifactPaths) => [
   "upload",
   "--repository-url",
@@ -107871,21 +107765,19 @@ var planPyPiOperations = fn2("planPyPiOperations")(function* (target, model) {
   }
   const artifactPaths = artifacts.map((artifact2) => artifact2.path);
   return [
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:python-version`,
       targetId: target.id,
       description: "Check Python CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
-      command: pythonCommand(target, ["--version"], false)
+      gateReason: "CLI availability validation is read-only.",
+      command: noAuthCommand("python", ["--version"])
     }),
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:twine-version`,
       targetId: target.id,
       description: "Check Twine CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("Twine availability validation is read-only."),
-      command: twineCommand(target, ["--version"], false)
+      gateReason: "Twine availability validation is read-only.",
+      command: noAuthCommand("python", ["-m", "twine", "--version"])
     }),
     pypiDryRunOperation(target, artifactPaths),
     PublishCommandOperation.make({
@@ -107894,7 +107786,7 @@ var planPyPiOperations = fn2("planPyPiOperations")(function* (target, model) {
       description: `Publish ${model.identity.name}@${model.identity.version} to PyPI-compatible registry.`,
       risk: "irreversible",
       gate: irreversibleGate("PyPI package versions are immutable once published."),
-      command: twineCommand(target, pypiPublishArgs(target, artifactPaths), true)
+      command: twineAuthCommand(target, pypiPublishArgs(target, artifactPaths))
     })
   ];
 });
@@ -107981,34 +107873,43 @@ var ScoopAdapter = {
 };
 
 // ../../src/targets/live.ts
-var planLiveTargetOperations = fn2("planLiveTargetOperations")(function* (target, model) {
+var liveTargetAdapters = {
+  NpmRegistryTarget: NpmAdapter,
+  GitHubReleaseTarget: GitHubAdapter,
+  HomebrewTapTarget: HomebrewAdapter,
+  PyPiRegistryTarget: PyPiAdapter,
+  ScoopBucketTarget: ScoopAdapter
+};
+var withLiveTargetAdapter = (target, handlers) => {
   switch (target._tag) {
     case "NpmRegistryTarget":
-      return yield* NpmAdapter.planOperations(target, model);
+      return handlers.NpmRegistryTarget(liveTargetAdapters.NpmRegistryTarget, target);
     case "GitHubReleaseTarget":
-      return yield* GitHubAdapter.planOperations(target, model);
+      return handlers.GitHubReleaseTarget(liveTargetAdapters.GitHubReleaseTarget, target);
     case "HomebrewTapTarget":
-      return yield* HomebrewAdapter.planOperations(target, model);
+      return handlers.HomebrewTapTarget(liveTargetAdapters.HomebrewTapTarget, target);
     case "PyPiRegistryTarget":
-      return yield* PyPiAdapter.planOperations(target, model);
+      return handlers.PyPiRegistryTarget(liveTargetAdapters.PyPiRegistryTarget, target);
     case "ScoopBucketTarget":
-      return yield* ScoopAdapter.planOperations(target, model);
-  }
-});
-var liveTargetCapabilities = (target) => {
-  switch (target._tag) {
-    case "NpmRegistryTarget":
-      return NpmAdapter.capabilities(target);
-    case "GitHubReleaseTarget":
-      return GitHubAdapter.capabilities(target);
-    case "HomebrewTapTarget":
-      return HomebrewAdapter.capabilities(target);
-    case "PyPiRegistryTarget":
-      return PyPiAdapter.capabilities(target);
-    case "ScoopBucketTarget":
-      return ScoopAdapter.capabilities(target);
+      return handlers.ScoopBucketTarget(liveTargetAdapters.ScoopBucketTarget, target);
   }
 };
+var planLiveTargetOperations = fn2("planLiveTargetOperations")(function* (target, model) {
+  return yield* withLiveTargetAdapter(target, {
+    NpmRegistryTarget: (adapter, target2) => adapter.planOperations(target2, model),
+    GitHubReleaseTarget: (adapter, target2) => adapter.planOperations(target2, model),
+    HomebrewTapTarget: (adapter, target2) => adapter.planOperations(target2, model),
+    PyPiRegistryTarget: (adapter, target2) => adapter.planOperations(target2, model),
+    ScoopBucketTarget: (adapter, target2) => adapter.planOperations(target2, model)
+  });
+});
+var liveTargetCapabilities = (target) => withLiveTargetAdapter(target, {
+  NpmRegistryTarget: (adapter, target2) => adapter.capabilities(target2),
+  GitHubReleaseTarget: (adapter, target2) => adapter.capabilities(target2),
+  HomebrewTapTarget: (adapter, target2) => adapter.capabilities(target2),
+  PyPiRegistryTarget: (adapter, target2) => adapter.capabilities(target2),
+  ScoopBucketTarget: (adapter, target2) => adapter.capabilities(target2)
+});
 var LiveTargetRegistryLayer = succeed5(TargetRegistry)({
   targetCapabilities: liveTargetCapabilities,
   planTargetOperations: planLiveTargetOperations

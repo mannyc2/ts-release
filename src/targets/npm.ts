@@ -5,7 +5,6 @@ import {
   noApprovalGate,
   Operation,
   PublishCommandOperation,
-  ValidateCommandOperation,
   VerifyRemoteOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
@@ -17,6 +16,8 @@ import {
 } from "../domain/target.js"
 import { NpmTargetAdapter } from "./adapter.js"
 import {
+  dryRunValidationOperation,
+  readOnlyCommandValidationOperation,
   rejectNoDryRunInStrictMode,
   targetCapabilitiesFor,
   validationNoteOperation,
@@ -28,32 +29,28 @@ export type * from "../types/effect-internal.js"
 const isTrustedPublishing = (target: NpmRegistryTarget): boolean =>
   target.trustedPublishing !== undefined
 
-const envNames = (target: NpmRegistryTarget): ReadonlyArray<string> =>
-  isTrustedPublishing(target) || target.tokenEnv === undefined ? [] : [target.tokenEnv]
-
-const trustedPublishingRequiredEnvNames = [
+const trustedPublishingAuthEnvNames = [
   "ACTIONS_ID_TOKEN_REQUEST_URL",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
 ]
 
-const requiredAuthEnvNames = (target: NpmRegistryTarget): ReadonlyArray<string> =>
-  isTrustedPublishing(target) ? trustedPublishingRequiredEnvNames : envNames(target)
-
-const redactedAuthEnvNames = (target: NpmRegistryTarget): ReadonlyArray<string> =>
-  isTrustedPublishing(target) ? trustedPublishingRequiredEnvNames : envNames(target)
+const authEnvNames = (target: NpmRegistryTarget): ReadonlyArray<string> => {
+  if (isTrustedPublishing(target)) {
+    return trustedPublishingAuthEnvNames
+  }
+  return target.tokenEnv === undefined ? [] : [target.tokenEnv]
+}
 
 const npmCommand = (
   target: NpmRegistryTarget,
   args: ReadonlyArray<string>,
-  cwd: string | undefined,
   includeAuth: boolean
 ): CommandSpec =>
   CommandSpec.make({
     executable: "npm",
     args: [...args],
-    ...(cwd === undefined ? {} : { cwd }),
-    requiredEnv: includeAuth ? requiredAuthEnvNames(target) : [],
-    redactedEnv: includeAuth ? redactedAuthEnvNames(target) : []
+    requiredEnv: includeAuth ? authEnvNames(target) : [],
+    redactedEnv: includeAuth ? authEnvNames(target) : []
   })
 
 const trustedPublishingAuthSetup = (workflow: string): TargetAuthSetup =>
@@ -69,43 +66,27 @@ const trustedPublishingAuthSetup = (workflow: string): TargetAuthSetup =>
 
 export const npmTargetCapabilities = (target: NpmRegistryTarget): TargetCapabilities => {
   const trustedPublishing = target.trustedPublishing
-  if (trustedPublishing === undefined) {
-    return targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
-  }
-  return TargetCapabilities.make({
-    targetId: target.id,
-    targetTag: target._tag,
-    authRequirement: "trusted-publishing",
-    dryRunSupport: target.dryRunSupport,
-    mutability: target.mutability,
-    recovery: target.recovery,
-    validationStrategy: validationStrategyForDryRun(target.dryRunSupport),
-    authSetup: trustedPublishingAuthSetup(trustedPublishing.workflow)
-  })
+  return targetCapabilitiesFor(
+    target,
+    validationStrategyForDryRun(target.dryRunSupport),
+    trustedPublishing === undefined ? undefined : trustedPublishingAuthSetup(trustedPublishing.workflow)
+  )
 }
 
-const npmDryRunOperation = (target: NpmRegistryTarget): Operation => {
-  const dryRunSupport = target.dryRunSupport
-  return dryRunSupport === "native"
-    ? ValidateCommandOperation.make({
-      id: `${target.id}:npm-pack-dry-run`,
-      targetId: target.id,
-      description: "Validate npm package contents with npm pack dry-run.",
-      risk: "read-only",
-      gate: noApprovalGate("npm pack --dry-run validates package contents without publishing."),
-      command: npmCommand(target, ["pack", "--dry-run", "--json", target.packagePath], undefined, false)
-    })
-    : validationNoteOperation({
-      id: `${target.id}:npm-pack-dry-run`,
-      targetId: target.id,
-      dryRunSupport,
-      simulatedDescription: "Record simulated npm dry-run validation.",
-      skippedDescription: "Record skipped npm dry-run validation.",
-      simulatedMessage:
-        "npm dry-run validation is marked as simulated by target configuration; no npm pack --dry-run command was planned.",
-      skippedMessage: "npm dry-run validation was skipped because this target declares no dry-run support."
-    })
-}
+const npmDryRunOperation = (target: NpmRegistryTarget): Operation =>
+  dryRunValidationOperation({
+    id: `${target.id}:npm-pack-dry-run`,
+    targetId: target.id,
+    dryRunSupport: target.dryRunSupport,
+    nativeDescription: "Validate npm package contents with npm pack dry-run.",
+    nativeGateReason: "npm pack --dry-run validates package contents without publishing.",
+    command: npmCommand(target, ["pack", "--dry-run", "--json", target.packagePath], false),
+    simulatedDescription: "Record simulated npm dry-run validation.",
+    skippedDescription: "Record skipped npm dry-run validation.",
+    simulatedMessage:
+      "npm dry-run validation is marked as simulated by target configuration; no npm pack --dry-run command was planned.",
+    skippedMessage: "npm dry-run validation was skipped because this target declares no dry-run support."
+  })
 
 const npmAuthOperation = (target: NpmRegistryTarget): Operation =>
   target.trustedPublishing !== undefined
@@ -119,23 +100,21 @@ const npmAuthOperation = (target: NpmRegistryTarget): Operation =>
         `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${target.trustedPublishing.provider}, workflow ${target.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${target.packageName} to already exist on the registry.`,
       skippedMessage: "NPM trusted publishing authentication validation was skipped."
     })
-    : ValidateCommandOperation.make({
+    : readOnlyCommandValidationOperation({
       id: `${target.id}:npm-whoami`,
       targetId: target.id,
       description: "Validate npm CLI authentication.",
-      risk: "read-only",
-      gate: noApprovalGate("npm whoami checks CLI authentication without publishing."),
-      command: npmCommand(target, ["whoami", "--registry", target.registry], undefined, true)
+      gateReason: "npm whoami checks CLI authentication without publishing.",
+      command: npmCommand(target, ["whoami", "--registry", target.registry], true)
     })
 
 const npmPackageExistsOperation = (target: NpmRegistryTarget): Operation =>
-  ValidateCommandOperation.make({
+  readOnlyCommandValidationOperation({
     id: `${target.id}:npm-package-exists`,
     targetId: target.id,
     description: "Verify npm package exists before trusted publishing.",
-    risk: "read-only",
-    gate: noApprovalGate("npm view checks package metadata without publishing."),
-    command: npmCommand(target, ["view", target.packageName, "name", "--registry", target.registry], undefined, false)
+    gateReason: "npm view checks package metadata without publishing.",
+    command: npmCommand(target, ["view", target.packageName, "name", "--registry", target.registry], false)
   })
 
 const npmPublishArgs = (target: NpmRegistryTarget): ReadonlyArray<string> => {
@@ -155,13 +134,12 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
 ) {
   yield* rejectNoDryRunInStrictMode(target, model, "npm target declares no dry-run support in strict mode.")
   const operations: Array<Operation> = [
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:npm-version`,
       targetId: target.id,
       description: "Check npm CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
-      command: npmCommand(target, ["--version"], undefined, false)
+      gateReason: "CLI availability validation is read-only.",
+      command: npmCommand(target, ["--version"], false)
     }),
     npmAuthOperation(target),
     ...(target.trustedPublishing?.verifyPackageExists === true ? [npmPackageExistsOperation(target)] : []),
@@ -172,7 +150,7 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
       description: `Publish ${target.packageName}@${model.identity.version} to npm.`,
       risk: "irreversible",
       gate: irreversibleGate("npm package versions are immutable once published."),
-      command: npmCommand(target, npmPublishArgs(target), undefined, true)
+      command: npmCommand(target, npmPublishArgs(target), true)
     }),
     VerifyRemoteOperation.make({
       id: `${target.id}:npm-version-verify`,
@@ -183,7 +161,6 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
       command: npmCommand(
         target,
         ["view", `${target.packageName}@${model.identity.version}`, "version", "--registry", target.registry],
-        undefined,
         false
       )
     })

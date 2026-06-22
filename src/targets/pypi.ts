@@ -2,19 +2,19 @@ import * as Effect from "effect/Effect"
 import {
   CommandSpec,
   irreversibleGate,
-  noApprovalGate,
   Operation,
-  PublishCommandOperation,
-  ValidateCommandOperation
+  PublishCommandOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import { PyPiRegistryTarget, TargetCapabilities } from "../domain/target.js"
 import { PlanConstructionError } from "../planner/errors.js"
 import { PyPiTargetAdapter } from "./adapter.js"
 import {
+  dryRunValidationOperation,
+  noAuthCommand,
+  readOnlyCommandValidationOperation,
   rejectNoDryRunInStrictMode,
   targetCapabilitiesFor,
-  validationNoteOperation,
   validationStrategyForDryRun
 } from "./adapter-helpers.js"
 
@@ -26,24 +26,16 @@ const twinePasswordEnv = "TWINE_PASSWORD"
 const envNames = (target: PyPiRegistryTarget): ReadonlyArray<string> =>
   target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv]
 
-const pythonCommand = (
+const twineAuthCommand = (
   target: PyPiRegistryTarget,
-  args: ReadonlyArray<string>,
-  includeAuth: boolean
+  args: ReadonlyArray<string>
 ): CommandSpec =>
   CommandSpec.make({
     executable: "python",
-    args: [...args],
-    requiredEnv: includeAuth ? envNames(target) : [],
-    redactedEnv: includeAuth ? envNames(target) : []
+    args: ["-m", "twine", ...args],
+    requiredEnv: envNames(target),
+    redactedEnv: envNames(target)
   })
-
-const twineCommand = (
-  target: PyPiRegistryTarget,
-  args: ReadonlyArray<string>,
-  includeAuth: boolean
-): CommandSpec =>
-  pythonCommand(target, ["-m", "twine", ...args], includeAuth)
 
 export const pypiTargetCapabilities = (target: PyPiRegistryTarget): TargetCapabilities =>
   targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
@@ -51,28 +43,20 @@ export const pypiTargetCapabilities = (target: PyPiRegistryTarget): TargetCapabi
 const targetArtifacts = (target: PyPiRegistryTarget, model: ReleaseModel) =>
   model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
 
-const pypiDryRunOperation = (target: PyPiRegistryTarget, artifactPaths: ReadonlyArray<string>): Operation => {
-  const dryRunSupport = target.dryRunSupport
-  return dryRunSupport === "native"
-    ? ValidateCommandOperation.make({
-      id: `${target.id}:twine-check`,
-      targetId: target.id,
-      description: "Validate Python distribution metadata with twine check.",
-      risk: "read-only",
-      gate: noApprovalGate("twine check validates built distributions without publishing."),
-      command: twineCommand(target, ["check", ...artifactPaths], false)
-    })
-    : validationNoteOperation({
-      id: `${target.id}:twine-check`,
-      targetId: target.id,
-      dryRunSupport,
-      simulatedDescription: "Record simulated PyPI distribution validation.",
-      skippedDescription: "Record skipped PyPI distribution validation.",
-      simulatedMessage:
-        "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
-      skippedMessage: "PyPI distribution validation was skipped because this target declares no dry-run support."
-    })
-}
+const pypiDryRunOperation = (target: PyPiRegistryTarget, artifactPaths: ReadonlyArray<string>): Operation =>
+  dryRunValidationOperation({
+    id: `${target.id}:twine-check`,
+    targetId: target.id,
+    dryRunSupport: target.dryRunSupport,
+    nativeDescription: "Validate Python distribution metadata with twine check.",
+    nativeGateReason: "twine check validates built distributions without publishing.",
+    command: noAuthCommand("python", ["-m", "twine", "check", ...artifactPaths]),
+    simulatedDescription: "Record simulated PyPI distribution validation.",
+    skippedDescription: "Record skipped PyPI distribution validation.",
+    simulatedMessage:
+      "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
+    skippedMessage: "PyPI distribution validation was skipped because this target declares no dry-run support."
+  })
 
 const pypiPublishArgs = (
   target: PyPiRegistryTarget,
@@ -139,21 +123,19 @@ export const planPyPiOperations = Effect.fn("planPyPiOperations")(function*(
 
   const artifactPaths = artifacts.map((artifact) => artifact.path)
   return [
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:python-version`,
       targetId: target.id,
       description: "Check Python CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
-      command: pythonCommand(target, ["--version"], false)
+      gateReason: "CLI availability validation is read-only.",
+      command: noAuthCommand("python", ["--version"])
     }),
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:twine-version`,
       targetId: target.id,
       description: "Check Twine CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("Twine availability validation is read-only."),
-      command: twineCommand(target, ["--version"], false)
+      gateReason: "Twine availability validation is read-only.",
+      command: noAuthCommand("python", ["-m", "twine", "--version"])
     }),
     pypiDryRunOperation(target, artifactPaths),
     PublishCommandOperation.make({
@@ -162,7 +144,7 @@ export const planPyPiOperations = Effect.fn("planPyPiOperations")(function*(
       description: `Publish ${model.identity.name}@${model.identity.version} to PyPI-compatible registry.`,
       risk: "irreversible",
       gate: irreversibleGate("PyPI package versions are immutable once published."),
-      command: twineCommand(target, pypiPublishArgs(target, artifactPaths), true)
+      command: twineAuthCommand(target, pypiPublishArgs(target, artifactPaths))
     })
   ] satisfies ReadonlyArray<Operation>
 })

@@ -21,7 +21,7 @@ import {
 import { ReleasePlan } from "../domain/release.js"
 import { CommandRunnerError, ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
-import { validateWorkspaceWritePath } from "../internal/workspace-path.js"
+import { validateWorkspaceWritePath, workspacePathBoundaryReasonMessage } from "../internal/workspace-path.js"
 import {
   appendEvidenceRecord,
   commandEvidenceFromResult,
@@ -76,9 +76,7 @@ const workspacePath = (
   return Effect.fail(
     WorkspaceWriteError.make({
       path: pathName,
-      reason: result.reason === "empty-or-parent-traversal"
-        ? "Path must be non-empty and must not contain parent traversal."
-        : "Path must resolve inside the workspace root."
+      reason: workspacePathBoundaryReasonMessage(result.reason)
     })
   )
 }
@@ -260,16 +258,6 @@ export function runOperation(
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
   unknown
 > {
-  if (operation._tag === "VerifyHttpOperation") {
-    return Effect.gen(function*() {
-      const evidence = yield* runOperationEvidence(operation, approval)
-      if (operationFailed(evidence)) {
-        return yield* failOperationEvidence(evidence, undefined)
-      }
-      return evidence
-    })
-  }
-
   return Effect.gen(function*() {
     const evidence = yield* runOperationEvidence(operation, approval)
     if (operationFailed(evidence)) {

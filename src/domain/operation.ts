@@ -220,7 +220,7 @@ const contentDigest = (contents: string): string => {
   return `fnv1a64:${hash.toString(16).padStart(16, "0")}`
 }
 
-const approvalPayload = (operation: Operation) => ({
+const operationApprovalRequirements = (operation: Operation) => ({
   requiresExecute: operation.gate.requiresExecute ||
     operation._tag === "PublishCommandOperation" ||
     operation._tag === "RenderFileOperation" ||
@@ -233,7 +233,7 @@ const commonOperationPayload = (operation: Operation) => ({
   _tag: operation._tag,
   id: operation.id,
   ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
-  approval: approvalPayload(operation)
+  approval: operationApprovalRequirements(operation)
 })
 
 export const operationFingerprint = (operation: Operation): string => {
@@ -309,17 +309,12 @@ export const irreversibleGate = (reason: string): ExecutionGate =>
   })
 
 export const canExecuteOperation = (operation: Operation, approval: ExecutionApproval): boolean => {
-  const requiresExecute = operation.gate.requiresExecute ||
-    operation._tag === "PublishCommandOperation" ||
-    operation._tag === "RenderFileOperation" ||
-    operation.risk !== "read-only"
-  const requiresIrreversibleApproval = operation.gate.requiresIrreversibleApproval ||
-    operation.risk === "irreversible"
+  const requirements = operationApprovalRequirements(operation)
 
-  if (requiresExecute && !approval.execute) {
+  if (requirements.requiresExecute && !approval.execute) {
     return false
   }
-  if (requiresIrreversibleApproval && !approval.approveIrreversible) {
+  if (requirements.requiresIrreversibleApproval && !approval.approveIrreversible) {
     return false
   }
   return true
@@ -333,8 +328,8 @@ export const requireExecutionApproval = Effect.fn("requireExecutionApproval")(fu
     return
   }
 
-  const reason = (operation.gate.requiresIrreversibleApproval || operation.risk === "irreversible") &&
-      !approval.approveIrreversible
+  const requirements = operationApprovalRequirements(operation)
+  const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible
     ? "Operation requires irreversible approval."
     : "Operation requires execute approval."
 

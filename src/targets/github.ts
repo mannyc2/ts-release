@@ -7,7 +7,6 @@ import {
   noApprovalGate,
   Operation,
   PublishCommandOperation,
-  ValidateCommandOperation,
   VerifyHttpOperation,
   VerifyRemoteOperation
 } from "../domain/operation.js"
@@ -20,7 +19,12 @@ import {
 } from "../domain/target.js"
 import { PlanConstructionError } from "../planner/errors.js"
 import { GitHubTargetAdapter } from "./adapter.js"
-import { rejectNoDryRunInStrictMode, targetCapabilitiesFor, validationNoteOperation } from "./adapter-helpers.js"
+import {
+  readOnlyCommandValidationOperation,
+  rejectNoDryRunInStrictMode,
+  targetCapabilitiesFor,
+  validationNoteOperation
+} from "./adapter-helpers.js"
 import {
   GitHubReleaseContext,
   githubGhCommand,
@@ -157,20 +161,18 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
     : executeGate("Creating or updating a GitHub release is externally visible.")
 
   return [
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:gh-version`,
       targetId: target.id,
       description: "Check GitHub CLI availability.",
-      risk: "read-only",
-      gate: noApprovalGate("CLI availability validation is read-only."),
+      gateReason: "CLI availability validation is read-only.",
       command: githubGhCommand(target, ["--version"], false)
     }),
-    ValidateCommandOperation.make({
+    readOnlyCommandValidationOperation({
       id: `${target.id}:gh-auth-status`,
       targetId: target.id,
       description: "Validate GitHub CLI authentication.",
-      risk: "read-only",
-      gate: noApprovalGate("gh auth status checks authentication without publishing."),
+      gateReason: "gh auth status checks authentication without publishing.",
       command: githubGhCommand(target, ["auth", "status"], true)
     }),
     githubDryRunOperation(target, dryRunSupport),

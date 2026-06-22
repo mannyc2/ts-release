@@ -171,13 +171,10 @@ export class ReleaseEligibilityConfigOptions extends Schema.Class<ReleaseEligibi
   "ReleaseEligibilityConfigOptions"
 )({
   root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  packagePath: Schema.optionalKey(Schema.String)
+  configPath: Schema.optionalKey(Schema.String)
 }) {}
 
-export interface ReleaseEligibilityConfigInput extends ReleaseConfigInput {
-  readonly packagePath?: string | undefined
-}
+export interface ReleaseEligibilityConfigInput extends ReleaseConfigInput {}
 
 export class ReleaseIntentCheckOptions extends Schema.Class<ReleaseIntentCheckOptions>("ReleaseIntentCheckOptions")({
   root: Schema.optionalKey(Schema.String),
@@ -294,10 +291,7 @@ const releaseReconcileConfigOptionsFromInput = (
 const releaseEligibilityConfigOptionsFromInput = (
   input: ReleaseEligibilityConfigInput = {}
 ): ReleaseEligibilityConfigOptions =>
-  ReleaseEligibilityConfigOptions.make({
-    ...releaseConfigFields(input),
-    ...(input.packagePath === undefined ? {} : { packagePath: input.packagePath })
-  })
+  ReleaseEligibilityConfigOptions.make(releaseConfigFields(input))
 
 const configRoot = (path: Path.Path, options: ReleaseConfigOptions): string => {
   if (options.root !== undefined) {

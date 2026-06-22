@@ -60,18 +60,10 @@ export class GitHubReleasePublished extends Schema.TaggedClass<GitHubReleasePubl
   assetNames: Schema.Array(Schema.String)
 }) {}
 
-export class GitHubReleaseMismatch extends Schema.TaggedClass<GitHubReleaseMismatch>()("GitHubReleaseMismatch", {
-  targetId: TargetId,
-  repository: Schema.String,
-  tag: GitTag,
-  reasons: Schema.Array(Schema.String)
-}) {}
-
 export const GitHubReleaseRemoteState = Schema.Union([
   GitHubReleaseMissing,
   GitHubReleaseDraft,
-  GitHubReleasePublished,
-  GitHubReleaseMismatch
+  GitHubReleasePublished
 ])
 export type GitHubReleaseRemoteState = typeof GitHubReleaseRemoteState.Type
 
@@ -100,11 +92,3 @@ export class GitHubReconcileBlock extends Schema.TaggedClass<GitHubReconcileBloc
   targetId: TargetId,
   reasons: Schema.Array(Schema.String)
 }) {}
-
-export const GitHubReleaseReconciliationDecision = Schema.Union([
-  GitHubReconcileSkip,
-  GitHubReconcileCreateRelease,
-  GitHubReconcilePublishDraft,
-  GitHubReconcileBlock
-])
-export type GitHubReleaseReconciliationDecision = typeof GitHubReleaseReconciliationDecision.Type

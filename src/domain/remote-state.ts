@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { GitTag, ReleaseName, ReleaseVersion } from "./release.js"
 import { TargetId } from "./target.js"
 
 export type * from "../types/effect-internal.js"
@@ -13,8 +14,8 @@ export const ReleaseEligibilityStatus = Schema.Literals(["ready", "complete", "p
 export type ReleaseEligibilityStatus = typeof ReleaseEligibilityStatus.Type
 
 export class ReleaseEligibilityInput extends Schema.Class<ReleaseEligibilityInput>("ReleaseEligibilityInput")({
-  packageName: Schema.String,
-  packageVersion: Schema.String,
+  packageName: ReleaseName,
+  packageVersion: ReleaseVersion,
   expectedGithubDraft: Schema.Boolean,
   npm: NpmRemoteState,
   github: GitHubReleaseAvailability
@@ -27,22 +28,22 @@ export class ReleaseEligibilityDecision extends Schema.Class<ReleaseEligibilityD
   status: ReleaseEligibilityStatus,
   reason: Schema.String,
   strategy: Schema.optionalKey(Schema.String),
-  packageName: Schema.optionalKey(Schema.String),
-  packageVersion: Schema.optionalKey(Schema.String),
-  githubTag: Schema.optionalKey(Schema.String),
+  packageName: Schema.optionalKey(ReleaseName),
+  packageVersion: Schema.optionalKey(ReleaseVersion),
+  githubTag: Schema.optionalKey(GitTag),
   source: Schema.optionalKey(Schema.String)
 }) {}
 
 export class GitHubReleaseMissing extends Schema.TaggedClass<GitHubReleaseMissing>()("GitHubReleaseMissing", {
   targetId: TargetId,
   repository: Schema.String,
-  tag: Schema.String
+  tag: GitTag
 }) {}
 
 export class GitHubReleaseDraft extends Schema.TaggedClass<GitHubReleaseDraft>()("GitHubReleaseDraft", {
   targetId: TargetId,
   repository: Schema.String,
-  tag: Schema.String,
+  tag: GitTag,
   title: Schema.String,
   draft: Schema.Literal(true),
   prerelease: Schema.Boolean,
@@ -52,7 +53,7 @@ export class GitHubReleaseDraft extends Schema.TaggedClass<GitHubReleaseDraft>()
 export class GitHubReleasePublished extends Schema.TaggedClass<GitHubReleasePublished>()("GitHubReleasePublished", {
   targetId: TargetId,
   repository: Schema.String,
-  tag: Schema.String,
+  tag: GitTag,
   title: Schema.String,
   draft: Schema.Literal(false),
   prerelease: Schema.Boolean,
@@ -62,7 +63,7 @@ export class GitHubReleasePublished extends Schema.TaggedClass<GitHubReleasePubl
 export class GitHubReleaseMismatch extends Schema.TaggedClass<GitHubReleaseMismatch>()("GitHubReleaseMismatch", {
   targetId: TargetId,
   repository: Schema.String,
-  tag: Schema.String,
+  tag: GitTag,
   reasons: Schema.Array(Schema.String)
 }) {}
 

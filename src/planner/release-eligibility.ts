@@ -13,6 +13,7 @@ import {
 import {
   ConventionalCommitReleaseRule,
   ConventionalCommitsReleaseDecision,
+  GitTag,
   GitTagReleaseDecision,
   IntentFilesReleaseDecision,
   PackageManifestReleaseIdentitySource,
@@ -21,11 +22,13 @@ import {
   ReleaseIdentity,
   ReleaseIntent,
   ReleaseIntentFile,
+  ReleaseName,
   ReleasePackageManifest,
+  ReleaseVersion,
   RemoteStateReleaseDecision,
   StaticReleaseIdentitySource
 } from "../domain/release.js"
-import { GitHubReleaseTarget, NpmRegistryTarget, TargetConfig } from "../domain/target.js"
+import { GitHubReleaseTarget, NpmRegistryTarget, TargetConfig, TargetId } from "../domain/target.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseEligibilityCheckError } from "./errors.js"
 import {
@@ -43,13 +46,13 @@ export { ReleasePackageManifest } from "../domain/release.js"
 export class ReleaseEligibilityRemoteCheck extends Schema.Class<ReleaseEligibilityRemoteCheck>(
   "ReleaseEligibilityRemoteCheck"
 )({
-  packageName: Schema.String,
-  packageVersion: Schema.String,
-  npmTargetId: Schema.String,
+  packageName: ReleaseName,
+  packageVersion: ReleaseVersion,
+  npmTargetId: TargetId,
   npmRegistry: Schema.String,
-  githubTargetId: Schema.String,
+  githubTargetId: TargetId,
   githubRepository: Schema.String,
-  githubTag: Schema.String,
+  githubTag: GitTag,
   githubTokenEnv: Schema.optionalKey(Schema.String),
   expectedGithubDraft: Schema.Boolean
 }) {}

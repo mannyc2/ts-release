@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema"
 import { EvidenceBundle, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
+import { OperationId } from "../domain/operation.js"
+import { TargetId } from "../domain/target.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -22,7 +24,7 @@ export class ArtifactInventoryError extends Schema.TaggedErrorClass<ArtifactInve
 ) {}
 
 export class PlanConstructionError extends Schema.TaggedErrorClass<PlanConstructionError>()("PlanConstructionError", {
-  targetId: Schema.optionalKey(Schema.String),
+  targetId: Schema.optionalKey(TargetId),
   reason: Schema.String
 }) {}
 
@@ -44,14 +46,14 @@ export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteE
 }) {}
 
 export class ResumeBlockedError extends Schema.TaggedErrorClass<ResumeBlockedError>()("ResumeBlockedError", {
-  operationId: Schema.String,
+  operationId: OperationId,
   reason: Schema.String
 }) {}
 
 export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteStateInspectionError>()(
   "RemoteStateInspectionError",
   {
-    targetId: Schema.String,
+    targetId: TargetId,
     reason: Schema.String,
     cause: Schema.optionalKey(Schema.Defect())
   }
@@ -60,7 +62,7 @@ export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteSt
 export class ReleaseEligibilityCheckError extends Schema.TaggedErrorClass<ReleaseEligibilityCheckError>()(
   "ReleaseEligibilityCheckError",
   {
-    targetId: Schema.optionalKey(Schema.String),
+    targetId: Schema.optionalKey(TargetId),
     reason: Schema.String,
     cause: Schema.optionalKey(Schema.Defect())
   }
@@ -69,13 +71,13 @@ export class ReleaseEligibilityCheckError extends Schema.TaggedErrorClass<Releas
 export class ReconciliationBlockedError extends Schema.TaggedErrorClass<ReconciliationBlockedError>()(
   "ReconciliationBlockedError",
   {
-    targetId: Schema.String,
+    targetId: TargetId,
     reasons: Schema.Array(Schema.String)
   }
 ) {}
 
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
-  operationId: Schema.String,
+  operationId: OperationId,
   exitCode: Schema.optionalKey(Schema.Number),
   responseStatus: Schema.optionalKey(Schema.Number),
   reason: Schema.String,

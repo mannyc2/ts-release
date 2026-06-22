@@ -100301,6 +100301,7 @@ function link() {
     return new Link(encodeTo.ast, make8(transformation));
   };
 }
+var makeFilter2 = makeFilter;
 var isPattern2 = isPattern;
 function isBase64(annotations) {
   const regExp = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
@@ -100313,6 +100314,27 @@ function isBase64(annotations) {
     ...annotations
   });
 }
+function isMinLength(minLength, annotations) {
+  minLength = Math.max(0, Math.floor(minLength));
+  return makeFilter2((input) => input.length >= minLength, {
+    expected: `a value with a length of at least ${minLength}`,
+    meta: {
+      _tag: "isMinLength",
+      minLength
+    },
+    [STRUCTURAL_ANNOTATION_KEY]: true,
+    arbitrary: {
+      constraint: {
+        minLength
+      }
+    },
+    ...annotations
+  });
+}
+function isNonEmpty(annotations) {
+  return isMinLength(1, annotations);
+}
+var NonEmptyString = /* @__PURE__ */ String4.check(/* @__PURE__ */ isNonEmpty());
 var getErrorOptionsKey = (options) => (options?.includeStack === true ? 1 : 0) | (options?.excludeCause === true ? 2 : 0);
 var getErrorOptions = (key) => {
   switch (key) {
@@ -100930,7 +100952,7 @@ class ConfigValidationError extends TaggedErrorClass()("ConfigValidationError", 
 }
 
 // ../../src/domain/artifact.ts
-var ArtifactId = String4;
+var ArtifactId = NonEmptyString;
 var ArtifactFormat = Literals(["tarball", "zip", "file", "directory", "oci-image"]);
 var ChecksumAlgorithm = Literals(["sha256", "sha512"]);
 
@@ -100961,7 +100983,7 @@ class ArtifactInventoryItem extends Class4("ArtifactInventoryItem")({
 var artifactInventoryOrder = (left, right) => left.id.localeCompare(right.id);
 
 // ../../src/domain/target.ts
-var TargetId = String4;
+var TargetId = NonEmptyString;
 var TargetAuthRequirement = Literals([
   "none",
   "env-token",
@@ -101107,7 +101129,7 @@ var targetAuthRequirement = (target) => {
 };
 
 // ../../src/domain/operation.ts
-var OperationId = String4;
+var OperationId = NonEmptyString;
 var OperationRisk = Literals(["read-only", "writes-local", "externally-visible", "irreversible"]);
 
 class ExecutionGate extends Class4("ExecutionGate")({
@@ -101430,10 +101452,10 @@ var publishOperationPriority = (operation) => {
 var operationOrder = (left, right) => operationPhasePriority(left) - operationPhasePriority(right) || (left._tag === "PublishCommandOperation" && right._tag === "PublishCommandOperation" ? publishOperationPriority(left) - publishOperationPriority(right) : 0) || left.id.localeCompare(right.id);
 
 // ../../src/domain/release.ts
-var ReleaseName = String4;
-var ReleaseVersion = String4;
-var GitCommit = String4;
-var GitTag = String4;
+var ReleaseName = NonEmptyString;
+var ReleaseVersion = NonEmptyString;
+var GitCommit = NonEmptyString;
+var GitTag = NonEmptyString;
 var ReleaseBump = Literals(["major", "minor", "patch", "none"]);
 
 class ReleaseIdentity extends Class4("ReleaseIdentity")({
@@ -101600,7 +101622,7 @@ var loadReleaseIntent = fn2("loadReleaseIntent")(function* (path4 = DEFAULT_CONF
 });
 
 // ../../src/domain/evidence.ts
-var EvidenceId = String4;
+var EvidenceId = NonEmptyString;
 var EvidenceSeverity = Literals(["info", "warning", "error"]);
 var EvidenceStatus = Literals(["passed", "failed", "skipped", "warning"]);
 
@@ -101679,8 +101701,8 @@ var EvidenceRecord = Union2([CommandEvidence, HttpEvidence, ValidationEvidence, 
 
 class EvidenceBundle extends Class4("EvidenceBundle")({
   schemaVersion: Literal2("release-evidence/v1"),
-  releaseName: String4,
-  releaseVersion: String4,
+  releaseName: ReleaseName,
+  releaseVersion: ReleaseVersion,
   records: ArraySchema(EvidenceRecord)
 }) {
 }
@@ -101742,8 +101764,8 @@ class ReleasePhaseStatusRecord extends Class4("ReleasePhaseStatusRecord")({
 
 class ReleaseStatusReport extends Class4("ReleaseStatusReport")({
   schemaVersion: Literal2("release-status/v1"),
-  releaseName: String4,
-  releaseVersion: String4,
+  releaseName: ReleaseName,
+  releaseVersion: ReleaseVersion,
   overallStatus: ReleaseOverallStatus,
   canResume: Boolean3,
   evidenceDirectory: String4,
@@ -101895,7 +101917,7 @@ class ArtifactInventoryError extends TaggedErrorClass()("ArtifactInventoryError"
 }
 
 class PlanConstructionError extends TaggedErrorClass()("PlanConstructionError", {
-  targetId: optionalKey2(String4),
+  targetId: optionalKey2(TargetId),
   reason: String4
 }) {
 }
@@ -101921,33 +101943,33 @@ class WorkspaceWriteError extends TaggedErrorClass()("WorkspaceWriteError", {
 }
 
 class ResumeBlockedError extends TaggedErrorClass()("ResumeBlockedError", {
-  operationId: String4,
+  operationId: OperationId,
   reason: String4
 }) {
 }
 
 class RemoteStateInspectionError extends TaggedErrorClass()("RemoteStateInspectionError", {
-  targetId: String4,
+  targetId: TargetId,
   reason: String4,
   cause: optionalKey2(Defect())
 }) {
 }
 
 class ReleaseEligibilityCheckError extends TaggedErrorClass()("ReleaseEligibilityCheckError", {
-  targetId: optionalKey2(String4),
+  targetId: optionalKey2(TargetId),
   reason: String4,
   cause: optionalKey2(Defect())
 }) {
 }
 
 class ReconciliationBlockedError extends TaggedErrorClass()("ReconciliationBlockedError", {
-  targetId: String4,
+  targetId: TargetId,
   reasons: ArraySchema(String4)
 }) {
 }
 
 class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
-  operationId: String4,
+  operationId: OperationId,
   exitCode: optionalKey2(Number5),
   responseStatus: optionalKey2(Number5),
   reason: String4,
@@ -102997,7 +103019,7 @@ var runApprovedReleaseWorkflow = fn2("runApprovedReleaseWorkflow")(function* (pl
 
 // ../../src/planner/render-plan.ts
 class PlanOperationNotFoundError extends TaggedErrorClass()("PlanOperationNotFoundError", {
-  operationId: String4
+  operationId: OperationId
 }) {
 }
 var commandLine = (operation) => [operation.command.executable, ...operation.command.args].join(" ");
@@ -103568,8 +103590,8 @@ var GitHubReleaseAvailability = Literals(["missing", "draft", "published"]);
 var ReleaseEligibilityStatus = Literals(["ready", "complete", "partial", "skipped"]);
 
 class ReleaseEligibilityInput extends Class4("ReleaseEligibilityInput")({
-  packageName: String4,
-  packageVersion: String4,
+  packageName: ReleaseName,
+  packageVersion: ReleaseVersion,
   expectedGithubDraft: Boolean3,
   npm: NpmRemoteState,
   github: GitHubReleaseAvailability
@@ -103581,9 +103603,9 @@ class ReleaseEligibilityDecision extends Class4("ReleaseEligibilityDecision")({
   status: ReleaseEligibilityStatus,
   reason: String4,
   strategy: optionalKey2(String4),
-  packageName: optionalKey2(String4),
-  packageVersion: optionalKey2(String4),
-  githubTag: optionalKey2(String4),
+  packageName: optionalKey2(ReleaseName),
+  packageVersion: optionalKey2(ReleaseVersion),
+  githubTag: optionalKey2(GitTag),
   source: optionalKey2(String4)
 }) {
 }
@@ -103591,14 +103613,14 @@ class ReleaseEligibilityDecision extends Class4("ReleaseEligibilityDecision")({
 class GitHubReleaseMissing extends TaggedClass()("GitHubReleaseMissing", {
   targetId: TargetId,
   repository: String4,
-  tag: String4
+  tag: GitTag
 }) {
 }
 
 class GitHubReleaseDraft extends TaggedClass()("GitHubReleaseDraft", {
   targetId: TargetId,
   repository: String4,
-  tag: String4,
+  tag: GitTag,
   title: String4,
   draft: Literal2(true),
   prerelease: Boolean3,
@@ -103609,7 +103631,7 @@ class GitHubReleaseDraft extends TaggedClass()("GitHubReleaseDraft", {
 class GitHubReleasePublished extends TaggedClass()("GitHubReleasePublished", {
   targetId: TargetId,
   repository: String4,
-  tag: String4,
+  tag: GitTag,
   title: String4,
   draft: Literal2(false),
   prerelease: Boolean3,
@@ -103620,7 +103642,7 @@ class GitHubReleasePublished extends TaggedClass()("GitHubReleasePublished", {
 class GitHubReleaseMismatch extends TaggedClass()("GitHubReleaseMismatch", {
   targetId: TargetId,
   repository: String4,
-  tag: String4,
+  tag: GitTag,
   reasons: ArraySchema(String4)
 }) {
 }
@@ -103723,6 +103745,15 @@ var githubApiGetRequestSpec = (target, url2) => HttpRequestSpec.make({
 });
 var githubReleaseRequestSpec = (target, tag2) => githubApiGetRequestSpec(target, githubReleaseApiUrl(target, tag2));
 var githubReleaseCreateCommand = (target, context7) => githubGhCommand(target, githubReleaseCreateArgs(target, context7), true);
+var githubReleaseViewCommand = (target, context7) => githubGhCommand(target, [
+  "release",
+  "view",
+  githubReleaseTag(context7),
+  "--repo",
+  target.repository,
+  "--json",
+  "tagName,name,isDraft,isPrerelease,assets"
+], true);
 var githubReleasePublishDraftCommand = (target, context7) => githubGhCommand(target, [
   "release",
   "edit",
@@ -103986,13 +104017,13 @@ var reconcileReleasePlan = fn2("reconcileReleasePlan")(function* (plan, options)
 // ../../src/planner/release-eligibility.ts
 var Semver = __toESM(require_semver2(), 1);
 class ReleaseEligibilityRemoteCheck extends Class4("ReleaseEligibilityRemoteCheck")({
-  packageName: String4,
-  packageVersion: String4,
-  npmTargetId: String4,
+  packageName: ReleaseName,
+  packageVersion: ReleaseVersion,
+  npmTargetId: TargetId,
   npmRegistry: String4,
-  githubTargetId: String4,
+  githubTargetId: TargetId,
   githubRepository: String4,
-  githubTag: String4,
+  githubTag: GitTag,
   githubTokenEnv: optionalKey2(String4),
   expectedGithubDraft: Boolean3
 }) {
@@ -104132,7 +104163,7 @@ var npmViewCommand = (input) => CommandSpec.make({
   requiredEnv: [],
   redactedEnv: []
 });
-var githubReleaseViewCommand = (input) => CommandSpec.make({
+var githubReleaseViewCommand2 = (input) => CommandSpec.make({
   executable: "gh",
   args: [
     "release",
@@ -104188,7 +104219,7 @@ var classifyNpmRemoteState = fn2("classifyNpmRemoteState")(function* (input) {
 });
 var classifyGitHubReleaseAvailability = fn2("classifyGitHubReleaseAvailability")(function* (input) {
   const commandRunner = yield* ReleaseCommandRunner;
-  const result2 = yield* commandRunner.runCommand(githubReleaseViewCommand(input));
+  const result2 = yield* commandRunner.runCommand(githubReleaseViewCommand2(input));
   if (result2.exitCode === 0) {
     return yield* parseGitHubCliReleaseView(input, result2.stdout);
   }
@@ -104641,7 +104672,7 @@ class RenderReleaseConfigOptions extends Class4("RenderReleaseConfigOptions")({
 class ExplainReleaseConfigOptions extends Class4("ExplainReleaseConfigOptions")({
   root: optionalKey2(String4),
   configPath: optionalKey2(String4),
-  operationId: String4
+  operationId: OperationId
 }) {
 }
 
@@ -105093,8 +105124,8 @@ var ReleaseDiagnosticsFormat = Literals(["json", "text", "markdown"]);
 var ReleaseCiProvider = Literals(["github-actions"]);
 
 class ReleaseDiagnosticCheck extends Class4("ReleaseDiagnosticCheck")({
-  id: String4,
-  targetId: optionalKey2(String4),
+  id: NonEmptyString,
+  targetId: optionalKey2(TargetId),
   status: ReleaseDiagnosticStatus,
   confidence: ReleaseDiagnosticConfidence,
   message: String4
@@ -105103,8 +105134,8 @@ class ReleaseDiagnosticCheck extends Class4("ReleaseDiagnosticCheck")({
 
 class ReleaseDiagnosticReport extends Class4("ReleaseDiagnosticReport")({
   schemaVersion: Literal2("release-diagnostics/v1"),
-  releaseName: String4,
-  releaseVersion: String4,
+  releaseName: ReleaseName,
+  releaseVersion: ReleaseVersion,
   checks: ArraySchema(ReleaseDiagnosticCheck)
 }) {
 }
@@ -107421,9 +107452,20 @@ var rejectDirectoryAssets = fn2("github.rejectDirectoryAssets")(function* (targe
   }));
 });
 var githubVerificationOperations = (target, model) => {
+  if (target.draft === true) {
+    return [
+      VerifyRemoteOperation.make({
+        id: `${target.id}:github-release-verify-gh`,
+        targetId: target.id,
+        description: "Verify the GitHub draft release through the GitHub CLI.",
+        risk: "read-only",
+        gate: noApprovalGate("GitHub CLI release verification is read-only."),
+        command: githubReleaseViewCommand(target, model)
+      })
+    ];
+  }
   const tag2 = githubReleaseTag(model);
   const title = githubReleaseTitle(model);
-  const isDraft = target.draft === true;
   const isPrerelease = target.prerelease === true;
   const artifactChecks = githubTargetArtifacts(target, model).map((artifact2) => HttpJsonArrayObjectFieldEqualsCheck.make({
     path: ["assets"],
@@ -107450,7 +107492,7 @@ var githubVerificationOperations = (target, model) => {
         }),
         HttpJsonEqualsCheck.make({
           path: ["draft"],
-          expected: isDraft
+          expected: false
         }),
         HttpJsonEqualsCheck.make({
           path: ["prerelease"],

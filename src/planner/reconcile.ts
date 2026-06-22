@@ -331,8 +331,6 @@ export const decideGitHubReleaseReconciliation = (
         targetId: target.id,
         reason: `GitHub release ${githubReleaseTag(plan)} is missing.`
       })
-    case "GitHubReleaseMismatch":
-      return blockDecision(target, state.reasons)
     case "GitHubReleaseDraft": {
       const reasons = existingMismatchReasons(target, plan, state)
       if (reasons.length > 0) {

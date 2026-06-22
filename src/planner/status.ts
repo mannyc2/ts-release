@@ -17,6 +17,7 @@ import {
   mergeEvidenceBundles,
   tryReadEvidenceBundle
 } from "./evidence-recorder.js"
+import { workflowPhases } from "../internal/workflow-phases.js"
 import {
   publishOperations,
   renderOperations,
@@ -36,25 +37,16 @@ export interface WorkflowEvidencePaths {
 }
 
 export interface OptionalWorkflowEvidence {
-  readonly render?: EvidenceBundle | undefined
-  readonly validation?: EvidenceBundle | undefined
-  readonly execution?: EvidenceBundle | undefined
-  readonly verification?: EvidenceBundle | undefined
-}
-
-interface WorkflowEvidencePrefix {
-  readonly render?: EvidenceBundle | undefined
-  readonly validation?: EvidenceBundle | undefined
-  readonly execution?: EvidenceBundle | undefined
-  readonly verification?: EvidenceBundle | undefined
+  readonly render?: EvidenceBundle
+  readonly validation?: EvidenceBundle
+  readonly execution?: EvidenceBundle
+  readonly verification?: EvidenceBundle
 }
 
 export class ReleaseResumeOptions extends Schema.Class<ReleaseResumeOptions>("ReleaseResumeOptions")({
   execute: Schema.Boolean,
   approveIrreversible: Schema.Boolean
 }) {}
-
-const workflowPhases: ReadonlyArray<ReleaseWorkflowPhase> = ["render", "validation", "execution", "verification"]
 
 export const workflowEvidencePaths = (plan: ReleasePlan): WorkflowEvidencePaths => ({
   render: `${plan.evidenceDirectory}/render.json`,
@@ -85,21 +77,21 @@ const ensureBundleMatchesPlan = (
 
 export const loadWorkflowEvidence = Effect.fn("loadWorkflowEvidence")(function*(plan: ReleasePlan) {
   const paths = workflowEvidencePaths(plan)
-  const render = yield* tryReadEvidenceBundle(paths.render, plan.source.root)
-  yield* ensureBundleMatchesPlan(plan, paths.render, render)
-  const validation = yield* tryReadEvidenceBundle(paths.validation, plan.source.root)
-  yield* ensureBundleMatchesPlan(plan, paths.validation, validation)
-  const execution = yield* tryReadEvidenceBundle(paths.execution, plan.source.root)
-  yield* ensureBundleMatchesPlan(plan, paths.execution, execution)
-  const verification = yield* tryReadEvidenceBundle(paths.verification, plan.source.root)
-  yield* ensureBundleMatchesPlan(plan, paths.verification, verification)
+  const evidence: {
+    render?: EvidenceBundle
+    validation?: EvidenceBundle
+    execution?: EvidenceBundle
+    verification?: EvidenceBundle
+  } = {}
+  for (const phase of workflowPhases) {
+    const bundle = yield* tryReadEvidenceBundle(paths[phase], plan.source.root)
+    yield* ensureBundleMatchesPlan(plan, paths[phase], bundle)
+    if (bundle !== undefined) {
+      evidence[phase] = bundle
+    }
+  }
 
-  return {
-    render,
-    validation,
-    execution,
-    verification
-  } satisfies OptionalWorkflowEvidence
+  return evidence satisfies OptionalWorkflowEvidence
 })
 
 export const phaseOperations = (plan: ReleasePlan, phase: ReleaseWorkflowPhase): ReadonlyArray<Operation> => {
@@ -112,22 +104,6 @@ export const phaseOperations = (plan: ReleasePlan, phase: ReleaseWorkflowPhase):
       return publishOperations(plan)
     case "verification":
       return verificationOperations(plan)
-  }
-}
-
-const evidenceBundleForPhase = (
-  evidence: OptionalWorkflowEvidence,
-  phase: ReleaseWorkflowPhase
-): EvidenceBundle | undefined => {
-  switch (phase) {
-    case "render":
-      return evidence.render
-    case "validation":
-      return evidence.validation
-    case "execution":
-      return evidence.execution
-    case "verification":
-      return evidence.verification
   }
 }
 
@@ -165,48 +141,40 @@ const latestEvidenceRecord = (
   return latest
 }
 
-const statusFromEvidence = (record: EvidenceRecord): ReleaseOperationStatus => {
-  switch (record.status) {
-    case "passed":
-      return "passed"
-    case "warning":
-      return "warning"
-    case "skipped":
-      return "skipped"
-    case "failed":
-      return "failed"
-  }
-}
-
-const failedResumeAction = (operation: Operation): ReleaseResumeAction => {
+const failedOperationPolicy = (
+  operation: Operation
+): {
+  readonly status: ReleaseOperationStatus
+  readonly resumeAction: ReleaseResumeAction
+  readonly reason: string
+} => {
   switch (operation._tag) {
     case "PublishCommandOperation":
-      return "block"
+      return {
+        status: "blocked",
+        resumeAction: "block",
+        reason: "Previous publish evidence failed; inspect remote state before retry."
+      }
     case "ValidateCommandOperation":
     case "ValidationNoteOperation":
+      return {
+        status: "failed",
+        resumeAction: "retry-read-only",
+        reason: "Previous validation evidence failed; resume can rerun this read-only operation."
+      }
     case "VerifyRemoteOperation":
     case "VerifyHttpOperation":
-      return "retry-read-only"
+      return {
+        status: "failed",
+        resumeAction: "retry-read-only",
+        reason: "Previous verification evidence failed; resume can rerun this read-only operation."
+      }
     case "RenderFileOperation":
-      return "run"
-  }
-}
-
-const failedStatus = (operation: Operation): ReleaseOperationStatus =>
-  operation._tag === "PublishCommandOperation" ? "blocked" : "failed"
-
-const failedReason = (operation: Operation): string => {
-  switch (operation._tag) {
-    case "PublishCommandOperation":
-      return "Previous publish evidence failed; inspect remote state before retry."
-    case "ValidateCommandOperation":
-    case "ValidationNoteOperation":
-      return "Previous validation evidence failed; resume can rerun this read-only operation."
-    case "VerifyRemoteOperation":
-    case "VerifyHttpOperation":
-      return "Previous verification evidence failed; resume can rerun this read-only operation."
-    case "RenderFileOperation":
-      return "Previous render evidence failed; resume can rerun this local render operation."
+      return {
+        status: "failed",
+        resumeAction: "run",
+        reason: "Previous render evidence failed; resume can rerun this local render operation."
+      }
   }
 }
 
@@ -216,36 +184,34 @@ const operationStatusRecord = (
   bundle: EvidenceBundle | undefined
 ): ReleaseOperationStatusRecord => {
   const record = latestEvidenceRecord(operation, bundle)
+  const base = {
+    operationId: operation.id,
+    ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
+    phase,
+    risk: operation.risk
+  }
   if (record === undefined) {
     return ReleaseOperationStatusRecord.make({
-      operationId: operation.id,
-      ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
-      phase,
-      risk: operation.risk,
+      ...base,
       status: "pending",
       resumeAction: "run"
     })
   }
 
   if (record.status === "failed") {
+    const policy = failedOperationPolicy(operation)
     return ReleaseOperationStatusRecord.make({
-      operationId: operation.id,
-      ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
-      phase,
-      risk: operation.risk,
-      status: failedStatus(operation),
-      resumeAction: failedResumeAction(operation),
+      ...base,
+      status: policy.status,
+      resumeAction: policy.resumeAction,
       evidenceId: record.id,
-      reason: failedReason(operation)
+      reason: policy.reason
     })
   }
 
   return ReleaseOperationStatusRecord.make({
-    operationId: operation.id,
-    ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
-    phase,
-    risk: operation.risk,
-    status: statusFromEvidence(record),
+    ...base,
+    status: record.status,
     resumeAction: "skip",
     evidenceId: record.id
   })
@@ -292,7 +258,7 @@ const overallStatus = (
   operations: ReadonlyArray<ReleaseOperationStatusRecord>,
   phases: ReadonlyArray<ReleasePhaseStatusRecord>
 ): ReleaseOverallStatus => {
-  const evidenceFilesExist = workflowPhases.some((phase) => evidenceBundleForPhase(evidence, phase) !== undefined)
+  const evidenceFilesExist = workflowPhases.some((phase) => evidence[phase] !== undefined)
   const operationEvidenceExists = operations.some((operation) => operation.evidenceId !== undefined)
   if (!evidenceFilesExist && !operationEvidenceExists) {
     return "not-started"
@@ -324,7 +290,7 @@ export const summarizeReleaseStatus = (
   const operations: Array<ReleaseOperationStatusRecord> = []
   const phases: Array<ReleasePhaseStatusRecord> = []
   for (const phase of workflowPhases) {
-    const bundle = evidenceBundleForPhase(evidence, phase)
+    const bundle = evidence[phase]
     const records = phaseOperations(plan, phase).map((operation) => operationStatusRecord(operation, phase, bundle))
     operations.push(...records)
     phases.push(phaseStatusRecord(phase, records))
@@ -417,20 +383,24 @@ const failWorkflowOperation = (
   )
 
 const workflowFailureEvidence = (
-  prefix: WorkflowEvidencePrefix,
+  prefix: OptionalWorkflowEvidence,
   phase: ReleaseWorkflowPhase,
   current: EvidenceBundle | undefined
-): ReleaseWorkflowFailureEvidence =>
-  ReleaseWorkflowFailureEvidence.make({
-    ...(prefix.render === undefined ? {} : { render: prefix.render }),
-    ...(prefix.validation === undefined ? {} : { validation: prefix.validation }),
-    ...(prefix.execution === undefined ? {} : { execution: prefix.execution }),
-    ...(prefix.verification === undefined ? {} : { verification: prefix.verification }),
-    ...(phase === "render" && current !== undefined ? { render: current } : {}),
-    ...(phase === "validation" && current !== undefined ? { validation: current } : {}),
-    ...(phase === "execution" && current !== undefined ? { execution: current } : {}),
-    ...(phase === "verification" && current !== undefined ? { verification: current } : {})
-  })
+): ReleaseWorkflowFailureEvidence => {
+  const evidence: {
+    render?: EvidenceBundle
+    validation?: EvidenceBundle
+    execution?: EvidenceBundle
+    verification?: EvidenceBundle
+  } = {}
+  for (const evidencePhase of workflowPhases) {
+    const bundle = evidencePhase === phase ? current : prefix[evidencePhase]
+    if (bundle !== undefined) {
+      evidence[evidencePhase] = bundle
+    }
+  }
+  return ReleaseWorkflowFailureEvidence.make(evidence)
+}
 
 const resumePhase = Effect.fn("resumePhase")(function*(
   plan: ReleasePlan,
@@ -439,7 +409,7 @@ const resumePhase = Effect.fn("resumePhase")(function*(
   operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval,
   report: ReleaseStatusReport,
-  prefix: WorkflowEvidencePrefix
+  prefix: OptionalWorkflowEvidence
 ) {
   const runnable = operations.filter((operation) => shouldRunOperation(report, operation))
   if (runnable.length === 0) {

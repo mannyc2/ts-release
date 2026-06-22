@@ -57,33 +57,27 @@ const commandEnv = Effect.fn("platform.commandEnv")(function*(command: CommandSp
     ...command.requiredEnv
   ])
   const env: Record<string, string> = {}
+  const values = new Map<string, string | undefined>()
   for (const name of names) {
     const value = yield* readOptionalEnv(name)
+    values.set(name, value)
     if (value !== undefined) {
       env[name] = value
     }
   }
+
+  const missing = command.requiredEnv.filter((name) => values.get(name) === undefined)
+  if (missing.length > 0) {
+    return yield* Effect.fail(
+      CommandRunnerError.make({
+        operation: "runCommand",
+        reason: `Missing required environment variables: ${missing.join(", ")}`
+      })
+    )
+  }
+
   return env
 })
-
-const validateEnv = (command: CommandSpec): Effect.Effect<void, CommandRunnerError> =>
-  Effect.gen(function*() {
-    const missing: Array<string> = []
-    for (const name of command.requiredEnv) {
-      const value = yield* readOptionalEnv(name)
-      if (value === undefined) {
-        missing.push(name)
-      }
-    }
-    if (missing.length > 0) {
-      return yield* Effect.fail(
-        CommandRunnerError.make({
-          operation: "runCommand",
-          reason: `Missing required environment variables: ${missing.join(", ")}`
-        })
-      )
-    }
-  })
 
 const nowIso = Effect.fn("platform.nowIso")(function*() {
   const millis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
@@ -108,7 +102,6 @@ export const makePlatformCommandRunnerLayer = (
       return {
         runCommand: (command) =>
           Effect.gen(function*() {
-            yield* validateEnv(command)
             const startedAt = yield* nowIso()
             const startedMillis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
             const env = yield* commandEnv(command)

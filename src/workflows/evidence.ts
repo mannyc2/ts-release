@@ -4,6 +4,7 @@ import type * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 import { EvidenceBundle, ReleaseWorkflowEvidence, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
 import { ReleasePlan } from "../domain/release.js"
+import { workflowPhases } from "../internal/workflow-phases.js"
 import { writeEvidenceBundle } from "../planner/evidence-recorder.js"
 import { EvidenceWriteError, OperationFailedError } from "../planner/errors.js"
 import { workflowEvidencePaths } from "../planner/status.js"
@@ -44,13 +45,10 @@ export const writeFailedOperationEvidence = Effect.fn("workflows.evidence.writeF
 })
 
 const isOperationFailedError = (error: unknown): error is OperationFailedError =>
-  error instanceof OperationFailedError ||
-  (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "OperationFailedError"
-  )
+  typeof error === "object" &&
+  error !== null &&
+  "_tag" in error &&
+  error._tag === "OperationFailedError"
 
 const hasWorkflowEvidence = (
   error: unknown
@@ -89,21 +87,12 @@ export const writeWorkflowEvidence = Effect.fn("workflows.evidence.writeWorkflow
     verification?: string
   } = {}
 
-  if (evidence.render !== undefined) {
-    written.render = paths.render
-    yield* writeEvidenceBundle(paths.render, evidence.render, plan.source.root)
-  }
-  if (evidence.validation !== undefined) {
-    written.validation = paths.validation
-    yield* writeEvidenceBundle(paths.validation, evidence.validation, plan.source.root)
-  }
-  if (evidence.execution !== undefined) {
-    written.execution = paths.execution
-    yield* writeEvidenceBundle(paths.execution, evidence.execution, plan.source.root)
-  }
-  if (evidence.verification !== undefined) {
-    written.verification = paths.verification
-    yield* writeEvidenceBundle(paths.verification, evidence.verification, plan.source.root)
+  for (const phase of workflowPhases) {
+    const bundle = evidence[phase]
+    if (bundle !== undefined) {
+      written[phase] = paths[phase]
+      yield* writeEvidenceBundle(paths[phase], bundle, plan.source.root)
+    }
   }
 
   return WorkflowEvidencePathsWritten.make(written)
@@ -114,12 +103,10 @@ export const writeWorkflowEvidenceWithFailure = <E, R>(
   effect: Effect.Effect<ReleaseWorkflowEvidence, E | OperationFailedError, R>
 ) : Effect.Effect<WorkflowEvidencePathsWritten, E | OperationFailedError | EvidenceWriteError, R | FileSystem.FileSystem | Path.Path> =>
   effect.pipe(
-    Effect.catchIf(
-      hasWorkflowEvidence,
-      (error) =>
-        writeWorkflowEvidence(plan, error.workflowEvidence).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        )
+    Effect.catchIf(hasWorkflowEvidence, (error) =>
+      writeWorkflowEvidence(plan, error.workflowEvidence).pipe(
+        Effect.flatMap(() => Effect.fail(error))
+      )
     ),
     Effect.flatMap((evidence) => writeWorkflowEvidence(plan, evidence))
   )

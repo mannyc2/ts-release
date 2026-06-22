@@ -19,7 +19,11 @@ import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, operationFinger
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
-import { resolveWorkspacePath, validateWorkspaceWritePath } from "../internal/workspace-path.js"
+import {
+  resolveWorkspacePath,
+  validateWorkspaceWritePath,
+  workspacePathBoundaryReasonMessage
+} from "../internal/workspace-path.js"
 import { EvidenceReadError, EvidenceWriteError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
@@ -76,9 +80,7 @@ const workspaceWritePath = (
   return Effect.fail(
     EvidenceWriteError.make({
       path: pathName,
-      reason: result.reason === "empty-or-parent-traversal"
-        ? "Path must be non-empty and must not contain parent traversal."
-        : "Path must resolve inside the workspace root."
+      reason: workspacePathBoundaryReasonMessage(result.reason)
     })
   )
 }
@@ -351,20 +353,15 @@ export const writeEvidenceBundle = Effect.fn("writeEvidenceBundle")(function*(
 
 export const decodeEvidenceBundle = Schema.decodeUnknownEffect(EvidenceBundle)
 
-const readEvidenceJson = Effect.fn("readEvidenceJson")(function*(pathName: string, root: string) {
+const readEvidenceContents = Effect.fn("readEvidenceContents")(function*(pathName: string, root: string) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const targetPath = resolveWorkspacePath(path, root, pathName)
-  const contents = yield* fs.readFileString(targetPath).pipe(
-    Effect.mapError((error) =>
-      EvidenceReadError.make({
-        path: pathName,
-        reason: error.message,
-        cause: error
-      })
-    )
-  )
-  const parsed: unknown = yield* Effect.try({
+  return yield* fs.readFileString(targetPath)
+})
+
+const parseEvidenceJson = (contents: string, pathName: string): Effect.Effect<unknown, EvidenceReadError> =>
+  Effect.try({
     try: () => JSON.parse(contents),
     catch: (cause) =>
       EvidenceReadError.make({
@@ -373,15 +370,27 @@ const readEvidenceJson = Effect.fn("readEvidenceJson")(function*(pathName: strin
         cause
       })
   })
-  return parsed
-})
+
+const decodeEvidenceJson = (
+  parsed: unknown,
+  pathName: string,
+  includeCause: boolean
+): Effect.Effect<EvidenceBundle, EvidenceReadError> =>
+  decodeEvidenceBundle(parsed).pipe(
+    Effect.mapError((error) =>
+      EvidenceReadError.make({
+        path: pathName,
+        reason: error.message,
+        ...(includeCause ? { cause: error } : {})
+      })
+    )
+  )
 
 export const readEvidenceBundle = Effect.fn("readEvidenceBundle")(function*(
   pathName: string,
   root: string = "."
 ) {
-  const parsed = yield* readEvidenceJson(pathName, root)
-  return yield* decodeEvidenceBundle(parsed).pipe(
+  const contents = yield* readEvidenceContents(pathName, root).pipe(
     Effect.mapError((error) =>
       EvidenceReadError.make({
         path: pathName,
@@ -390,16 +399,15 @@ export const readEvidenceBundle = Effect.fn("readEvidenceBundle")(function*(
       })
     )
   )
+  const parsed = yield* parseEvidenceJson(contents, pathName)
+  return yield* decodeEvidenceJson(parsed, pathName, true)
 })
 
 export const tryReadEvidenceBundle = Effect.fn("tryReadEvidenceBundle")(function*(
   pathName: string,
   root: string = "."
 ) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const targetPath = resolveWorkspacePath(path, root, pathName)
-  const contents = yield* fs.readFileString(targetPath).pipe(
+  const contents = yield* readEvidenceContents(pathName, root).pipe(
     Effect.catchIf(isNotFoundError, () => Effect.succeed(undefined)),
     Effect.mapError((error) =>
       EvidenceReadError.make({
@@ -411,23 +419,8 @@ export const tryReadEvidenceBundle = Effect.fn("tryReadEvidenceBundle")(function
   if (contents === undefined) {
     return undefined
   }
-  const parsed: unknown = yield* Effect.try({
-    try: () => JSON.parse(contents),
-    catch: (cause) =>
-      EvidenceReadError.make({
-        path: pathName,
-        reason: "Evidence bundle is not valid JSON.",
-        cause
-      })
-  })
-  return yield* decodeEvidenceBundle(parsed).pipe(
-    Effect.mapError((error) =>
-      EvidenceReadError.make({
-        path: pathName,
-        reason: error.message
-      })
-    )
-  )
+  const parsed = yield* parseEvidenceJson(contents, pathName)
+  return yield* decodeEvidenceJson(parsed, pathName, false)
 })
 
 const ensureBundleMatchesPlan = (

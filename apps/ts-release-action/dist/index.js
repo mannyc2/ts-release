@@ -105145,6 +105145,12 @@ var reportForPlan = (plan2, checks) => ReleaseDiagnosticReport.make({
   releaseVersion: plan2.identity.version,
   checks: [...checks]
 });
+var reportForSubject = (subject, checks) => ReleaseDiagnosticReport.make({
+  schemaVersion: "release-diagnostics/v1",
+  releaseName: subject.identity.name,
+  releaseVersion: subject.identity.version,
+  checks: [...checks]
+});
 var plannedFailure = (message) => ({
   _tag: "Failed",
   message
@@ -105254,55 +105260,99 @@ var configRoot2 = (path4, options) => {
 };
 var planOptionsFromDiagnostics = (options) => PlanReleaseConfigOptions.make(releaseConfigFields(options));
 var validationOptionsFromDiagnostics = (options) => ValidateReleaseConfigFileOptions.make(releaseConfigFields(options));
-var inferredTrustedPublishingWorkflow = (plan2) => {
-  for (const target of plan2.targets) {
+var configPath2 = (options) => options.configPath ?? DEFAULT_CONFIG_PATH;
+var configReadPath2 = (path4, options) => {
+  const pathName = configPath2(options);
+  return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot2(path4, options), pathName);
+};
+var readReleaseCiDiagnosticSubject = fn2("diagnostics.readReleaseCiDiagnosticSubject")(function* (options) {
+  const fs8 = yield* FileSystem;
+  const path4 = yield* Path;
+  const pathName = configPath2(options);
+  const root = configRoot2(path4, options);
+  const contents = yield* fs8.readFileString(configReadPath2(path4, options));
+  const intent = yield* parseReleaseIntent(contents, pathName);
+  const identity2 = yield* resolveReleaseIdentitySource(intent.identity, root);
+  const targets = [...intent.targets].sort(targetOrder);
+  const capabilities = yield* forEach2(targets, targetCapabilities);
+  return {
+    identity: identity2,
+    targets,
+    targetCapabilities: capabilities.sort(targetCapabilitiesOrder)
+  };
+});
+var inferredTrustedPublishingWorkflow = (subject) => {
+  for (const target of subject.targets) {
     if (target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined) {
       return target.trustedPublishing.workflow;
     }
   }
   return;
 };
-var defaultWorkflowPath = (plan2) => {
-  const workflow = inferredTrustedPublishingWorkflow(plan2);
+var defaultWorkflowPath = (subject) => {
+  const workflow = inferredTrustedPublishingWorkflow(subject);
   return workflow === undefined ? undefined : `.github/workflows/${workflow}`;
 };
-var jobBlock = (contents, jobName) => {
+var workflowJobBlocks = (contents) => {
   const lines = contents.split(/\r?\n/);
-  const start = lines.findIndex((line) => line === `  ${jobName}:`);
-  if (start < 0) {
-    return;
+  const jobsStart = lines.findIndex((line) => /^jobs:\s*$/.test(line));
+  if (jobsStart < 0) {
+    return [];
   }
-  const collected = [];
-  for (let index = start;index < lines.length; index += 1) {
+  const jobs = [];
+  for (let index = jobsStart + 1;index < lines.length; index += 1) {
     const line = lines[index] ?? "";
-    if (index > start && /^  [A-Za-z0-9_-]+:\s*$/.test(line)) {
+    if (/^[A-Za-z0-9_-]+:\s*$/.test(line)) {
       break;
     }
-    collected.push(line);
+    const match6 = /^  ([A-Za-z0-9_-]+):\s*$/.exec(line);
+    if (match6 === null) {
+      continue;
+    }
+    const name = match6[1] ?? "";
+    const collected = [];
+    for (let jobIndex = index;jobIndex < lines.length; jobIndex += 1) {
+      const jobLine = lines[jobIndex] ?? "";
+      if (jobIndex > index && (/^  [A-Za-z0-9_-]+:\s*$/.test(jobLine) || /^[A-Za-z0-9_-]+:\s*$/.test(jobLine))) {
+        break;
+      }
+      collected.push(jobLine);
+    }
+    jobs.push({
+      name,
+      contents: collected.join(`
+`)
+    });
   }
-  return collected.join(`
-`);
+  return jobs;
 };
 var hasPermission = (block, name, value2) => {
   const pattern = new RegExp(`^\\s+${name}:\\s*${value2}\\s*$`, "m");
   return pattern.test(block);
 };
 var hasUploadAlways = (block) => block.includes("actions/upload-artifact") && /^\s+if:\s*always\(\)\s*$/m.test(block);
-var hasTsReleaseAction = (block) => /^\s+-\s+uses:\s+(mannyc2\/ts-release-action@v1|\.\/apps\/ts-release-action)\s*$/m.test(block);
+var hasTsReleaseAction = (block) => /^\s+(?:-\s+)?uses:\s+(mannyc2\/ts-release-action@v1|\.\/apps\/ts-release-action)\s*$/m.test(block);
 var hasYamlValue = (block, name, value2) => {
   const escaped = value2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`^\\s+${name}:\\s*["']?${escaped}["']?\\s*$`, "m").test(block);
 };
 var hasActionCommand = (block, command) => hasTsReleaseAction(block) && hasYamlValue(block, "command", command);
 var hasActionTruthyInput = (block, name) => hasTsReleaseAction(block) && hasYamlValue(block, name, "true");
-var hasCliPlanReview = (block) => block.includes("validate-config") && block.includes("--format markdown");
+var hasCliPlanReview = (block) => (block.includes(" cli plan ") || block.includes(" release plan ") || block.includes("run cli plan ")) && block.includes("--format markdown");
 var hasActionPlanReview = (block) => hasActionCommand(block, "plan") && hasYamlValue(block, "format", "markdown");
-var planJobExecutes = (block) => block.includes("--execute") || hasActionTruthyInput(block, "execute") || hasActionCommand(block, "run") || hasActionCommand(block, "resume") || hasActionCommand(block, "reconcile");
+var hasPlanReview = (block) => hasCliPlanReview(block) || hasActionPlanReview(block);
+var jobExecutesRelease = (block) => block.includes("--execute") || hasActionTruthyInput(block, "execute") || hasActionCommand(block, "run") || hasActionCommand(block, "resume") || hasActionCommand(block, "reconcile");
 var hasCliApprovedExecution = (block) => block.includes("run") && block.includes("--execute") && block.includes("--approve-irreversible");
 var hasActionApprovedExecution = (block) => hasActionCommand(block, "run") && hasActionTruthyInput(block, "execute") && hasActionTruthyInput(block, "approve-irreversible");
-var hasWorkflowTrustedTarget = (plan2) => plan2.targets.some((target) => target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined);
-var hasGitHubReleaseTarget = (plan2) => plan2.targets.some((target) => target._tag === "GitHubReleaseTarget");
-var ciChecksForContents = (plan2, workflowPath, contents) => {
+var hasApprovedExecution = (block) => hasCliApprovedExecution(block) || hasActionApprovedExecution(block);
+var hasEnvironment = (block) => /^\s+environment:\s*\S+/m.test(block);
+var planReviewJobs = (jobs) => jobs.filter((job) => hasPlanReview(job.contents) && !jobExecutesRelease(job.contents));
+var planExecutionCandidates = (jobs) => jobs.filter((job) => job.name === "plan" || hasPlanReview(job.contents));
+var executeJobCandidates = (jobs) => jobs.filter((job) => hasApprovedExecution(job.contents));
+var fallbackNamedJob = (jobs, name) => jobs.find((job) => job.name === name);
+var hasWorkflowTrustedTarget = (subject) => subject.targets.some((target) => target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined);
+var hasGitHubReleaseTarget = (subject) => subject.targets.some((target) => target._tag === "GitHubReleaseTarget");
+var ciChecksForContents = (subject, workflowPath, contents) => {
   const checks = [
     check({
       id: "ci:workflow-file",
@@ -105311,7 +105361,7 @@ var ciChecksForContents = (plan2, workflowPath, contents) => {
       message: `Workflow file ${workflowPath} exists.`
     })
   ];
-  const expectedWorkflow = inferredTrustedPublishingWorkflow(plan2);
+  const expectedWorkflow = inferredTrustedPublishingWorkflow(subject);
   if (expectedWorkflow !== undefined) {
     const matches = basename3(workflowPath) === expectedWorkflow;
     checks.push(check({
@@ -105321,84 +105371,86 @@ var ciChecksForContents = (plan2, workflowPath, contents) => {
       message: matches ? `Workflow filename matches trusted publishing workflow ${expectedWorkflow}.` : `Workflow filename ${basename3(workflowPath)} does not match trusted publishing workflow ${expectedWorkflow}.`
     }));
   }
-  const planJob = jobBlock(contents, "plan");
-  const executeJob = jobBlock(contents, "execute");
+  const jobs = workflowJobBlocks(contents);
+  const safePlanJobs = planReviewJobs(jobs);
+  const unsafePlanJobs = planExecutionCandidates(jobs).filter((job) => jobExecutesRelease(job.contents));
+  const planJob = safePlanJobs[0] ?? fallbackNamedJob(jobs, "plan");
+  const executeJobs = executeJobCandidates(jobs);
+  const executeJob = executeJobs[0] ?? fallbackNamedJob(jobs, "execute");
+  const executeJobHasApprovedExecution = executeJob === undefined ? false : hasApprovedExecution(executeJob.contents);
   checks.push(check({
     id: "ci:plan-job",
-    status: planJob === undefined ? "fail" : "ok",
+    status: safePlanJobs.length === 0 ? "fail" : "ok",
     confidence: "confirmed",
-    message: planJob === undefined ? "Workflow is missing a plan job." : "Workflow has a plan job."
+    message: safePlanJobs.length === 0 ? "Workflow is missing a plan review job." : `Workflow has a plan review job (${safePlanJobs[0]?.name ?? "unknown"}).`
   }));
-  if (planJob !== undefined) {
-    const reviewReady = hasCliPlanReview(planJob) || hasActionPlanReview(planJob);
-    checks.push(check({
-      id: "ci:plan-job-no-execute",
-      status: planJobExecutes(planJob) ? "fail" : "ok",
-      confidence: "confirmed",
-      message: planJobExecutes(planJob) ? "Plan job includes release execution." : "Plan job does not execute release operations."
-    }));
-    checks.push(check({
-      id: "ci:plan-review",
-      status: reviewReady ? "ok" : "warn",
-      confidence: "confirmed",
-      message: reviewReady ? "Plan job records a Markdown release plan." : "Plan job should validate config and record a Markdown plan."
-    }));
-    checks.push(check({
-      id: "ci:plan-artifact",
-      status: hasUploadAlways(planJob) ? "ok" : "warn",
-      confidence: "confirmed",
-      message: hasUploadAlways(planJob) ? "Plan job uploads review artifacts with if: always()." : "Plan job should upload review artifacts with if: always()."
-    }));
-  }
+  checks.push(check({
+    id: "ci:plan-job-no-execute",
+    status: unsafePlanJobs.length > 0 ? "fail" : "ok",
+    confidence: "confirmed",
+    message: unsafePlanJobs.length > 0 ? `Plan review candidate includes release execution (${unsafePlanJobs.map((job) => job.name).join(", ")}).` : "Plan review jobs do not execute release operations."
+  }));
+  checks.push(check({
+    id: "ci:plan-review",
+    status: safePlanJobs.length > 0 ? "ok" : "warn",
+    confidence: "confirmed",
+    message: safePlanJobs.length > 0 ? "Plan review job records a Markdown release plan." : "Workflow should record a Markdown release plan in a non-executing job."
+  }));
+  checks.push(check({
+    id: "ci:plan-artifact",
+    status: planJob !== undefined && hasUploadAlways(planJob.contents) ? "ok" : "warn",
+    confidence: "confirmed",
+    message: planJob !== undefined && hasUploadAlways(planJob.contents) ? "Plan review job uploads review artifacts with if: always()." : "Plan review job should upload review artifacts with if: always()."
+  }));
   checks.push(check({
     id: "ci:execute-job",
-    status: executeJob === undefined ? "fail" : "ok",
+    status: executeJobHasApprovedExecution ? "ok" : "fail",
     confidence: "confirmed",
-    message: executeJob === undefined ? "Workflow is missing an execute job." : "Workflow has an execute job."
+    message: executeJobHasApprovedExecution ? `Workflow has an approved execute job (${executeJob?.name ?? "unknown"}).` : "Workflow is missing a job that runs approved release execution."
   }));
   if (executeJob !== undefined) {
     checks.push(check({
       id: "ci:execute-environment",
-      status: /^\s+environment:\s*\S+/m.test(executeJob) ? "ok" : "fail",
+      status: hasEnvironment(executeJob.contents) ? "ok" : "fail",
       confidence: "confirmed",
-      message: /^\s+environment:\s*\S+/m.test(executeJob) ? "Execute job is protected by a GitHub environment." : "Execute job must configure a GitHub environment."
+      message: hasEnvironment(executeJob.contents) ? "Execute job is protected by a GitHub environment." : "Execute job must configure a GitHub environment."
     }));
-    if (hasWorkflowTrustedTarget(plan2)) {
+    if (hasWorkflowTrustedTarget(subject)) {
       checks.push(check({
         id: "ci:execute-id-token",
-        status: hasPermission(executeJob, "id-token", "write") ? "ok" : "fail",
+        status: hasPermission(executeJob.contents, "id-token", "write") ? "ok" : "fail",
         confidence: "confirmed",
-        message: hasPermission(executeJob, "id-token", "write") ? "Execute job grants id-token: write for trusted publishing." : "Execute job must grant id-token: write for trusted publishing."
+        message: hasPermission(executeJob.contents, "id-token", "write") ? "Execute job grants id-token: write for trusted publishing." : "Execute job must grant id-token: write for trusted publishing."
       }));
     }
-    if (hasGitHubReleaseTarget(plan2)) {
+    if (hasGitHubReleaseTarget(subject)) {
       checks.push(check({
         id: "ci:execute-contents",
-        status: hasPermission(executeJob, "contents", "write") ? "ok" : "fail",
+        status: hasPermission(executeJob.contents, "contents", "write") ? "ok" : "fail",
         confidence: "confirmed",
-        message: hasPermission(executeJob, "contents", "write") ? "Execute job grants contents: write for GitHub Releases." : "Execute job must grant contents: write for GitHub Releases."
+        message: hasPermission(executeJob.contents, "contents", "write") ? "Execute job grants contents: write for GitHub Releases." : "Execute job must grant contents: write for GitHub Releases."
       }));
     }
     checks.push(check({
       id: "ci:execute-approval",
-      status: hasCliApprovedExecution(executeJob) || hasActionApprovedExecution(executeJob) ? "ok" : "fail",
+      status: executeJobHasApprovedExecution ? "ok" : "fail",
       confidence: "confirmed",
-      message: hasCliApprovedExecution(executeJob) || hasActionApprovedExecution(executeJob) ? "Execute job runs approved release execution." : "Execute job must run release execution with execute and irreversible approval."
+      message: executeJobHasApprovedExecution ? "Execute job runs approved release execution." : "Execute job must run release execution with execute and irreversible approval."
     }));
     checks.push(check({
       id: "ci:execute-evidence",
-      status: hasUploadAlways(executeJob) ? "ok" : "warn",
+      status: hasUploadAlways(executeJob.contents) ? "ok" : "warn",
       confidence: "confirmed",
-      message: hasUploadAlways(executeJob) ? "Execute job uploads evidence with if: always()." : "Execute job should upload evidence with if: always()."
+      message: hasUploadAlways(executeJob.contents) ? "Execute job uploads evidence with if: always()." : "Execute job should upload evidence with if: always()."
     }));
   }
   return checks;
 };
-var readWorkflowChecks = fn2("diagnostics.readWorkflowChecks")(function* (plan2, options) {
+var readWorkflowChecks = fn2("diagnostics.readWorkflowChecks")(function* (subject, options) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
   const root = configRoot2(path4, options);
-  const workflowPath = options.workflow ?? defaultWorkflowPath(plan2) ?? ".github/workflows/release.yml";
+  const workflowPath = options.workflow ?? defaultWorkflowPath(subject) ?? ".github/workflows/release.yml";
   const absolutePath = workspacePath2(path4, root, workflowPath);
   const exists3 = yield* fs8.exists(absolutePath);
   if (!exists3) {
@@ -105412,7 +105464,7 @@ var readWorkflowChecks = fn2("diagnostics.readWorkflowChecks")(function* (plan2,
     ];
   }
   const contents = yield* fs8.readFileString(absolutePath);
-  return ciChecksForContents(plan2, workflowPath, contents);
+  return ciChecksForContents(subject, workflowPath, contents);
 });
 var checkAuthReleaseConfig = fn2("diagnostics.checkAuthReleaseConfig")(function* (input = {}) {
   const options = releaseDiagnosticsOptionsFromInput(input);
@@ -105422,9 +105474,9 @@ var checkAuthReleaseConfig = fn2("diagnostics.checkAuthReleaseConfig")(function*
 });
 var checkCiReleaseConfig = fn2("diagnostics.checkCiReleaseConfig")(function* (input = {}) {
   const options = releaseDiagnosticsOptionsFromInput(input);
-  const plan2 = yield* planReleaseConfig(planOptionsFromDiagnostics(options));
-  const checks = yield* readWorkflowChecks(plan2, options);
-  return reportForPlan(plan2, checks);
+  const subject = yield* readReleaseCiDiagnosticSubject(options);
+  const checks = yield* readWorkflowChecks(subject, options);
+  return reportForSubject(subject, checks);
 });
 var doctorReleaseConfig = fn2("diagnostics.doctorReleaseConfig")(function* (input = {}) {
   const options = releaseDiagnosticsOptionsFromInput(input);
@@ -105530,6 +105582,7 @@ var ReleaseInitTemplateName = Literals([
   "multi-target-scoop"
 ]);
 var ReleaseInitFormat = Literals(["json", "text"]);
+var ReleaseInitPackageManager = Literals(["bun", "npm", "pnpm", "yarn"]);
 
 class ReleaseInitOptions extends Class4("ReleaseInitOptions")({
   root: optionalKey2(String4),
@@ -105541,6 +105594,9 @@ class ReleaseInitOptions extends Class4("ReleaseInitOptions")({
   tap: optionalKey2(String4),
   bucket: optionalKey2(String4),
   githubActions: optionalKey2(Boolean3),
+  packageManager: optionalKey2(ReleaseInitPackageManager),
+  installCommand: optionalKey2(String4),
+  buildCommand: optionalKey2(String4),
   write: optionalKey2(Boolean3),
   overwrite: optionalKey2(Boolean3),
   format: optionalKey2(ReleaseInitFormat)
@@ -105577,6 +105633,9 @@ var releaseInitOptionsFromInput = (input = {}) => ReleaseInitOptions.make({
   ...input.tap === undefined ? {} : { tap: input.tap },
   ...input.bucket === undefined ? {} : { bucket: input.bucket },
   ...input.githubActions === undefined ? {} : { githubActions: input.githubActions },
+  ...input.packageManager === undefined ? {} : { packageManager: input.packageManager },
+  ...input.installCommand === undefined ? {} : { installCommand: input.installCommand },
+  ...input.buildCommand === undefined ? {} : { buildCommand: input.buildCommand },
   ...input.write === undefined ? {} : { write: input.write },
   ...input.overwrite === undefined ? {} : { overwrite: input.overwrite },
   ...input.format === undefined ? {} : { format: input.format }
@@ -105590,17 +105649,47 @@ var initRoot = (path4, options) => {
   }
   return ".";
 };
-var normalizeOptions = (options, root) => ({
-  root,
-  configPath: options.configPath ?? DEFAULT_CONFIG_PATH,
-  template: options.template ?? "npm-only",
-  packageName: options["package"] ?? "@scope/pkg",
-  repository: options.repo ?? "owner/repo",
-  workflow: options.workflow ?? "release.yml",
-  tap: options.tap ?? "owner/homebrew-tap",
-  bucket: options.bucket ?? "owner/scoop-bucket",
-  githubActions: options.githubActions ?? false
-});
+var defaultInstallCommand = (packageManager) => {
+  switch (packageManager) {
+    case "bun":
+      return "bun install --frozen-lockfile";
+    case "npm":
+      return "npm ci";
+    case "pnpm":
+      return "corepack enable && pnpm install --frozen-lockfile";
+    case "yarn":
+      return "corepack enable && yarn install --immutable";
+  }
+};
+var defaultBuildCommand = (packageManager) => {
+  switch (packageManager) {
+    case "bun":
+      return "bun run build";
+    case "npm":
+      return "npm run build --if-present";
+    case "pnpm":
+      return "pnpm run build --if-present";
+    case "yarn":
+      return "yarn run build";
+  }
+};
+var normalizeOptions = (options, root) => {
+  const packageManager = options.packageManager ?? "bun";
+  return {
+    root,
+    configPath: options.configPath ?? DEFAULT_CONFIG_PATH,
+    template: options.template ?? "npm-only",
+    packageName: options["package"] ?? "@scope/pkg",
+    repository: options.repo ?? "owner/repo",
+    workflow: options.workflow ?? "release.yml",
+    tap: options.tap ?? "owner/homebrew-tap",
+    bucket: options.bucket ?? "owner/scoop-bucket",
+    githubActions: options.githubActions ?? false,
+    packageManager,
+    installCommand: (options.installCommand ?? defaultInstallCommand(packageManager)).trim(),
+    buildCommand: (options.buildCommand ?? defaultBuildCommand(packageManager)).trim()
+  };
+};
 var packageShortName = (packageName) => {
   const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName;
   const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-");
@@ -105717,69 +105806,84 @@ var releaseConfigForTemplate = (options) => {
     evidenceDirectory: ".release/evidence/{version}"
   };
 };
-var renderGithubActionsTrustedPublishingWorkflow = (configPath2) => [
-  "name: Release",
-  "",
-  "on:",
-  "  workflow_dispatch:",
-  "",
-  "permissions:",
-  "  contents: read",
-  "",
-  "jobs:",
-  "  plan:",
-  "    runs-on: ubuntu-latest",
-  "    steps:",
+var githubActionsWorkflowSetup = (input = {}) => {
+  const packageManager = input.packageManager ?? "bun";
+  return {
+    packageManager,
+    installCommand: (input.installCommand ?? defaultInstallCommand(packageManager)).trim(),
+    buildCommand: (input.buildCommand ?? defaultBuildCommand(packageManager)).trim()
+  };
+};
+var planSetupSteps = () => [
+  "      - uses: actions/checkout@v4"
+];
+var executeSetupSteps = (setup) => [
   "      - uses: actions/checkout@v4",
-  "      - uses: oven-sh/setup-bun@v2",
-  "      - run: bun install --frozen-lockfile",
-  `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
-  "        with:",
-  "          command: plan",
-  `          config: ${configPath2}`,
-  "          format: markdown",
-  "          write-step-summary: true",
-  "          plan-path: release-plan.md",
-  "      - uses: actions/upload-artifact@v4",
-  "        if: always()",
-  "        with:",
-  "          name: release-plan",
-  "          path: |",
-  "            release-plan.md",
-  "            .release/evidence/",
-  "",
-  "  execute:",
-  "    needs: plan",
-  "    runs-on: ubuntu-latest",
-  "    environment: release",
-  "    permissions:",
-  "      contents: write",
-  "      id-token: write",
-  "    steps:",
-  "      - uses: actions/checkout@v4",
-  "      - uses: oven-sh/setup-bun@v2",
+  ...setup.packageManager === "bun" ? ["      - uses: oven-sh/setup-bun@v2"] : [],
   "      - uses: actions/setup-node@v4",
   "        with:",
   "          node-version: 22.14.0",
   "          registry-url: https://registry.npmjs.org",
   "      - run: npm install -g npm@^11.5.1",
-  "      - run: bun install --frozen-lockfile",
-  "      - run: bun run build",
-  `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
-  "        with:",
-  "          command: run",
-  `          config: ${configPath2}`,
-  "          execute: true",
-  "          approve-irreversible: true",
-  "          write-step-summary: true",
-  "      - uses: actions/upload-artifact@v4",
-  "        if: always()",
-  "        with:",
-  "          name: release-evidence",
-  "          path: .release/evidence/",
-  ""
-].join(`
+  `      - run: ${setup.installCommand}`,
+  `      - run: ${setup.buildCommand}`
+];
+var renderGithubActionsTrustedPublishingWorkflow = (configPath3, input = {}) => {
+  const setup = githubActionsWorkflowSetup(input);
+  return [
+    "name: Release",
+    "",
+    "on:",
+    "  workflow_dispatch:",
+    "",
+    "permissions:",
+    "  contents: read",
+    "",
+    "jobs:",
+    "  plan:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+    ...planSetupSteps(),
+    `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
+    "        with:",
+    "          command: plan",
+    `          config: ${configPath3}`,
+    "          format: markdown",
+    "          write-step-summary: true",
+    "          plan-path: release-plan.md",
+    "      - uses: actions/upload-artifact@v4",
+    "        if: always()",
+    "        with:",
+    "          name: release-plan",
+    "          path: |",
+    "            release-plan.md",
+    "            .release/evidence/",
+    "",
+    "  execute:",
+    "    needs: plan",
+    "    runs-on: ubuntu-latest",
+    "    environment: release",
+    "    permissions:",
+    "      contents: write",
+    "      id-token: write",
+    "    steps:",
+    ...executeSetupSteps(setup),
+    `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
+    "        with:",
+    "          command: run",
+    `          config: ${configPath3}`,
+    "          execute: true",
+    "          approve-irreversible: true",
+    "          write-step-summary: true",
+    "      - uses: actions/upload-artifact@v4",
+    "        if: always()",
+    "        with:",
+    "          name: release-evidence",
+    "          path: .release/evidence/",
+    ""
+  ].join(`
 `);
+};
 var workflowConfigPath = (path4, options) => {
   const root = path4.resolve(options.root);
   const config = resolveWorkspacePath(path4, options.root, options.configPath);
@@ -105801,7 +105905,11 @@ var proposedFileSpecs = (path4, options) => {
   if (options.githubActions) {
     files.push({
       path: `.github/workflows/${options.workflow}`,
-      contents: renderGithubActionsTrustedPublishingWorkflow(workflowConfigPath(path4, options))
+      contents: renderGithubActionsTrustedPublishingWorkflow(workflowConfigPath(path4, options), {
+        packageManager: options.packageManager,
+        installCommand: options.installCommand,
+        buildCommand: options.buildCommand
+      })
     });
   }
   return files;
@@ -105827,8 +105935,20 @@ var validateWorkflowFileName2 = (workflow) => {
     reason: "Workflow must be a .yml or .yaml filename without path separators."
   }));
 };
+var validateWorkflowCommand = (field, command) => {
+  if (command.trim().length > 0 && !command.includes(`
+`) && !command.includes("\r")) {
+    return void_3;
+  }
+  return fail6(ReleaseInitWriteError.make({
+    path: field,
+    reason: "Command overrides must be single non-empty lines."
+  }));
+};
 var validateInitOptions = fn2("workflows.init.validateInitOptions")(function* (path4, options) {
   yield* workspacePath3(path4, options.root, options.configPath);
+  yield* validateWorkflowCommand("install-command", options.installCommand);
+  yield* validateWorkflowCommand("build-command", options.buildCommand);
   if (!options.githubActions) {
     return;
   }

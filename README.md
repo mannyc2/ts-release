@@ -421,16 +421,22 @@ Config templates are intentionally narrow:
 ```sh
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --write
+bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --package-manager npm --write
 bun run cli plan --config release.config.json --format text
 ```
 
 The npm templates enable provenance and set `verifyPackageExists: true`, which
 adds a read-only `npm view <package>` validation before trusted publishing.
 Add `--github-actions` to include the action-first trusted-publishing workflow
-template in the preview or write set. Existing files are not overwritten unless
-`--overwrite` is also passed.
+template in the preview or write set. Workflow scaffolding supports
+`--package-manager bun|npm|pnpm|yarn`, plus single-line `--install-command` and
+`--build-command` overrides. Those commands are CI setup steps, not release
+target policy; publish operations still come from the `ts-release` plan.
+Existing files are not overwritten unless `--overwrite` is also passed.
 
-Action-first GitHub templates live under `templates/github-actions/`.
+Action-first GitHub templates live under `templates/github-actions/`. The
+checked-in templates use npm setup by default, while this repository's own
+self-release workflow uses the Bun preset.
 
 Use `doctor`, `check-auth`, and `check-ci` after writing a template to inspect
 static readiness before any publish operation is approved.
@@ -492,7 +498,9 @@ Normal verification stays deterministic and does not require live external servi
 bun run check:release
 ```
 
-CI runs the portable package checks on Linux, macOS, and Windows. The Ubuntu release-readiness lane also runs the self-release config guard.
+CI runs the portable package checks on Linux, macOS, and Windows. The release
+gate runs the self-release config guard, the static self-release CI diagnostic,
+and then the portable checks.
 
 Real-tool integration checks are opt-in:
 
@@ -509,10 +517,11 @@ Example configs and templates are checked through the TypeScript workflow path:
 bun run check:examples
 ```
 
-This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release scripts live under `apps/release-ts/scripts`, with root package scripts delegating to them. The self-release config must pass `bun run check:self-release-config` before release checks proceed. It derives name and version from the root `package.json`, uses `{version}` artifact templates, and keeps `identity.commit` as `HEAD` for stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
+This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release scripts live under `apps/release-ts/scripts`, with root package scripts delegating to them. The self-release config must pass `bun run check:self-release-config`, and the workflow must pass `bun run check:self-release-ci`, before portable release checks proceed. It derives name and version from the root `package.json`, uses `{version}` artifact templates, and keeps `identity.commit` as `HEAD` for stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
 
 ```sh
 bun run check:self-release-config
+bun run check:self-release-ci
 ```
 
 ### Self Release
@@ -525,7 +534,7 @@ bun run release:artifacts
 bun run cli plan --config apps/release-ts/release.config.json --format text
 ```
 
-`release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs the approved release workflow on protected `main` when the package version has not already been published. The workflow uses npm trusted publishing with GitHub Actions OIDC instead of an npm token, runs the app CLI with `--config apps/release-ts/release.config.json`, and uploads `.release/evidence/**` for audit.
+`release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs on protected `main` and checks release eligibility before the full release gate. When `should_release` is true, the plan job runs `check:release`, builds artifacts, records a Markdown release plan, uploads evidence, and does not execute release operations. The protected `execute` job uses the reviewed `.release/artifacts` download, grants `contents: write` and `id-token: write`, and runs approved execution with npm trusted publishing OIDC instead of an npm token.
 
 ### Local Release Auth
 

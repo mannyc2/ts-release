@@ -124,6 +124,24 @@ export const githubReleaseCreateCommand = (
 ): CommandSpec =>
   githubGhCommand(target, githubReleaseCreateArgs(target, context), true)
 
+export const githubReleaseViewCommand = (
+  target: GitHubReleaseTarget,
+  context: GitHubReleaseContext
+): CommandSpec =>
+  githubGhCommand(
+    target,
+    [
+      "release",
+      "view",
+      githubReleaseTag(context),
+      "--repo",
+      target.repository,
+      "--json",
+      "tagName,name,isDraft,isPrerelease,assets"
+    ],
+    true
+  )
+
 export const githubReleasePublishDraftCommand = (
   target: GitHubReleaseTarget,
   context: GitHubReleaseContext

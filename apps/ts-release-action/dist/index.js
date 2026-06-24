@@ -107917,6 +107917,152 @@ var LiveTargetRegistryLayer = succeed5(TargetRegistry)({
 
 // ../../src/workflows/live.ts
 var LiveReleaseWorkflowLayer = mergeAll2(LiveReleaseHttpLayer, LiveTargetRegistryLayer);
+// src/input.ts
+var ActionCommand = Literals([
+  "plan",
+  "validate-config",
+  "status",
+  "eligibility",
+  "check-intent",
+  "doctor",
+  "check-auth",
+  "check-ci",
+  "validate",
+  "run",
+  "resume",
+  "reconcile"
+]);
+var ActionFormat = Literals(["json", "text", "summary", "markdown"]);
+var ActionRuntime = Literals(["bundled", "workspace"]);
+
+class ActionOptions extends Class4("ActionOptions")({
+  root: String4,
+  command: ActionCommand,
+  config: String4,
+  format: ActionFormat,
+  writeStepSummary: Boolean3,
+  planPath: String4,
+  failOnWarnings: Boolean3,
+  target: optionalKey2(String4),
+  workflow: optionalKey2(String4),
+  runtime: ActionRuntime,
+  execute: Boolean3,
+  approveIrreversible: Boolean3,
+  uploadEvidence: Boolean3,
+  evidenceArtifactName: String4
+}) {
+}
+
+class ActionInputError extends TaggedErrorClass()("ActionInputError", {
+  input: String4,
+  reason: String4
+}) {
+}
+var commands = [
+  "plan",
+  "validate-config",
+  "status",
+  "eligibility",
+  "check-intent",
+  "doctor",
+  "check-auth",
+  "check-ci",
+  "validate",
+  "run",
+  "resume",
+  "reconcile"
+];
+var formats = ["json", "text", "summary", "markdown"];
+var runtimes = ["bundled", "workspace"];
+var isCommand = (value2) => commands.some((command) => command === value2);
+var isFormat = (value2) => formats.some((format3) => format3 === value2);
+var isRuntime = (value2) => runtimes.some((runtime) => runtime === value2);
+var inputOrDefault = (reader, name, fallback) => {
+  const value2 = reader.getInput(name).trim();
+  return value2.length === 0 ? fallback : value2;
+};
+var configInputOrDefault = (reader, fallback) => {
+  const raw2 = reader.getInput("config");
+  if (raw2.length === 0) {
+    return fallback;
+  }
+  const value2 = raw2.trim();
+  if (value2.length === 0) {
+    throw ActionInputError.make({
+      input: "config",
+      reason: "config must be a non-empty path."
+    });
+  }
+  return value2;
+};
+var optionalInput = (reader, name) => {
+  const value2 = reader.getInput(name).trim();
+  return value2.length === 0 ? undefined : value2;
+};
+var parseBooleanInput = (reader, name, fallback) => {
+  const value2 = reader.getInput(name).trim();
+  if (value2.length === 0) {
+    return fallback;
+  }
+  if (value2 === "true") {
+    return true;
+  }
+  if (value2 === "false") {
+    return false;
+  }
+  throw ActionInputError.make({
+    input: name,
+    reason: "Expected true or false."
+  });
+};
+var parseCommandInput = (value2) => {
+  if (isCommand(value2)) {
+    return value2;
+  }
+  throw ActionInputError.make({
+    input: "command",
+    reason: `Unsupported command ${value2}.`
+  });
+};
+var parseFormatInput = (value2) => {
+  if (isFormat(value2)) {
+    return value2;
+  }
+  throw ActionInputError.make({
+    input: "format",
+    reason: `Unsupported format ${value2}.`
+  });
+};
+var parseRuntimeInput = (value2) => {
+  if (isRuntime(value2)) {
+    return value2;
+  }
+  throw ActionInputError.make({
+    input: "runtime",
+    reason: `Unsupported runtime ${value2}.`
+  });
+};
+var readActionOptions = (reader, root) => {
+  const target = optionalInput(reader, "target");
+  const workflow = optionalInput(reader, "workflow");
+  return ActionOptions.make({
+    root,
+    command: parseCommandInput(inputOrDefault(reader, "command", "plan")),
+    config: configInputOrDefault(reader, "release.config.json"),
+    format: parseFormatInput(inputOrDefault(reader, "format", "markdown")),
+    writeStepSummary: parseBooleanInput(reader, "write-step-summary", true),
+    planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
+    failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
+    ...target === undefined ? {} : { target },
+    ...workflow === undefined ? {} : { workflow },
+    runtime: parseRuntimeInput(inputOrDefault(reader, "runtime", "bundled")),
+    execute: parseBooleanInput(reader, "execute", false),
+    approveIrreversible: parseBooleanInput(reader, "approve-irreversible", false),
+    uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),
+    evidenceArtifactName: inputOrDefault(reader, "evidence-artifact-name", "release-evidence")
+  });
+};
+
 // src/action.ts
 class ActionCommandError extends TaggedErrorClass()("ActionCommandError", {
   command: String4,
@@ -107975,6 +108121,39 @@ var workspaceOutputPath = (path4, options, pathName) => {
     reason: "plan-path must resolve inside the action root."
   }));
 };
+var workspaceConfigPath = (path4, options, pathName) => {
+  if (pathName.trim().length === 0 || hasParentTraversal2(pathName)) {
+    return fail6(ActionCommandError.make({
+      command: options.command,
+      reason: "config must be non-empty and must not contain parent traversal."
+    }));
+  }
+  const rootPath = path4.resolve(options.root);
+  const targetPath = path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
+  if (!isInsideWorkspace(path4, rootPath, targetPath)) {
+    return fail6(ActionCommandError.make({
+      command: options.command,
+      reason: "config must resolve inside the action root."
+    }));
+  }
+  return succeed6(path4.isAbsolute(pathName) ? path4.relative(rootPath, targetPath) : pathName);
+};
+var actionOptionsWithConfig = (options, config) => ActionOptions.make({
+  root: options.root,
+  command: options.command,
+  config,
+  format: options.format,
+  writeStepSummary: options.writeStepSummary,
+  planPath: options.planPath,
+  failOnWarnings: options.failOnWarnings,
+  ...options.target === undefined ? {} : { target: options.target },
+  ...options.workflow === undefined ? {} : { workflow: options.workflow },
+  runtime: options.runtime,
+  execute: options.execute,
+  approveIrreversible: options.approveIrreversible,
+  uploadEvidence: options.uploadEvidence,
+  evidenceArtifactName: options.evidenceArtifactName
+});
 var planInput = (options) => ({
   root: options.root,
   configPath: options.config,
@@ -108173,6 +108352,33 @@ ${rendered.trimEnd()}
   }
   yield* io.setOutput("status", "passed");
 });
+var runCheckIntent = fn2("action.runCheckIntent")(function* (options, io) {
+  const decision = yield* exports_config.checkIntent(eligibilityInput(options));
+  const rendered = exports_config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text");
+  if (options.writeStepSummary) {
+    yield* io.appendSummary(`## ts-release check-intent
+
+\`\`\`text
+${rendered.trimEnd()}
+\`\`\`
+`);
+  }
+  if (decision.packageName !== undefined) {
+    yield* io.setOutput("release_name", decision.packageName);
+  }
+  if (decision.packageVersion !== undefined) {
+    yield* io.setOutput("release_version", decision.packageVersion);
+  }
+  yield* io.setOutput("should_release", decision.shouldRelease ? "true" : "false");
+  yield* io.setOutput("eligibility_status", decision.status);
+  if (decision.status === "partial") {
+    return yield* fail6(ActionCommandError.make({
+      command: options.command,
+      reason: decision.reason
+    }));
+  }
+  yield* io.setOutput("status", "passed");
+});
 var runDiagnostics = fn2("action.runDiagnostics")(function* (command, options, io) {
   const report = command === "doctor" ? yield* exports_diagnostics.doctor(diagnosticsInput(options)) : command === "check-auth" ? yield* exports_diagnostics.checkAuth(diagnosticsInput(options)) : yield* exports_diagnostics.checkCi(diagnosticsInput(options));
   const rendered = exports_diagnostics.render(report, diagnosticsFormat(options));
@@ -108237,40 +108443,46 @@ evidence: ${plan2.evidenceDirectory}/reconciliation.json
   return plan2;
 });
 var runActionEffect = fn2("action.runActionEffect")(function* (options, io, artifactClient = NoopActionArtifactClient) {
-  yield* ensureRuntime(options);
+  const path4 = yield* Path;
+  const config = yield* workspaceConfigPath(path4, options, options.config);
+  const safeOptions = actionOptionsWithConfig(options, config);
+  yield* ensureRuntime(safeOptions);
   let planForUpload;
   const rememberPlan = (plan2) => {
     planForUpload = plan2;
     return plan2;
   };
-  yield* withEvidenceUpload(options, io, artifactClient, () => planForUpload, gen2(function* () {
-    switch (options.command) {
+  yield* withEvidenceUpload(safeOptions, io, artifactClient, () => planForUpload, gen2(function* () {
+    switch (safeOptions.command) {
       case "plan":
-        rememberPlan(yield* runPlan(options, io));
+        rememberPlan(yield* runPlan(safeOptions, io));
         return;
       case "validate-config":
-        yield* runValidateConfig(options, io);
+        yield* runValidateConfig(safeOptions, io);
         return;
       case "status":
-        yield* runStatus(options, io);
+        yield* runStatus(safeOptions, io);
         return;
       case "eligibility":
-        yield* runEligibility(options, io);
+        yield* runEligibility(safeOptions, io);
+        return;
+      case "check-intent":
+        yield* runCheckIntent(safeOptions, io);
         return;
       case "doctor":
       case "check-auth":
       case "check-ci":
-        yield* runDiagnostics(options.command, options, io);
+        yield* runDiagnostics(safeOptions.command, safeOptions, io);
         return;
       case "validate":
-        yield* runValidate(options, io, rememberPlan);
+        yield* runValidate(safeOptions, io, rememberPlan);
         return;
       case "run":
       case "resume":
-        yield* runWorkflow(options.command, options, io, rememberPlan);
+        yield* runWorkflow(safeOptions.command, safeOptions, io, rememberPlan);
         return;
       case "reconcile":
-        yield* runReconcile(options, io, rememberPlan);
+        yield* runReconcile(safeOptions, io, rememberPlan);
         return;
     }
   }));
@@ -108282,136 +108494,6 @@ var runAction = async (options, io, layer, artifactClient = NoopActionArtifactCl
     await runPromise2(io.setOutput("status", "failed"));
     await runPromise2(io.setFailed(message));
   }
-};
-
-// src/input.ts
-var ActionCommand = Literals([
-  "plan",
-  "validate-config",
-  "status",
-  "eligibility",
-  "doctor",
-  "check-auth",
-  "check-ci",
-  "validate",
-  "run",
-  "resume",
-  "reconcile"
-]);
-var ActionFormat = Literals(["json", "text", "summary", "markdown"]);
-var ActionRuntime = Literals(["bundled", "workspace"]);
-
-class ActionOptions extends Class4("ActionOptions")({
-  root: String4,
-  command: ActionCommand,
-  config: String4,
-  format: ActionFormat,
-  writeStepSummary: Boolean3,
-  planPath: String4,
-  failOnWarnings: Boolean3,
-  target: optionalKey2(String4),
-  workflow: optionalKey2(String4),
-  runtime: ActionRuntime,
-  execute: Boolean3,
-  approveIrreversible: Boolean3,
-  uploadEvidence: Boolean3,
-  evidenceArtifactName: String4
-}) {
-}
-
-class ActionInputError extends TaggedErrorClass()("ActionInputError", {
-  input: String4,
-  reason: String4
-}) {
-}
-var commands = [
-  "plan",
-  "validate-config",
-  "status",
-  "eligibility",
-  "doctor",
-  "check-auth",
-  "check-ci",
-  "validate",
-  "run",
-  "resume",
-  "reconcile"
-];
-var formats = ["json", "text", "summary", "markdown"];
-var runtimes = ["bundled", "workspace"];
-var isCommand = (value2) => commands.some((command) => command === value2);
-var isFormat = (value2) => formats.some((format3) => format3 === value2);
-var isRuntime = (value2) => runtimes.some((runtime) => runtime === value2);
-var inputOrDefault = (reader, name, fallback) => {
-  const value2 = reader.getInput(name).trim();
-  return value2.length === 0 ? fallback : value2;
-};
-var optionalInput = (reader, name) => {
-  const value2 = reader.getInput(name).trim();
-  return value2.length === 0 ? undefined : value2;
-};
-var parseBooleanInput = (reader, name, fallback) => {
-  const value2 = reader.getInput(name).trim();
-  if (value2.length === 0) {
-    return fallback;
-  }
-  if (value2 === "true") {
-    return true;
-  }
-  if (value2 === "false") {
-    return false;
-  }
-  throw ActionInputError.make({
-    input: name,
-    reason: "Expected true or false."
-  });
-};
-var parseCommandInput = (value2) => {
-  if (isCommand(value2)) {
-    return value2;
-  }
-  throw ActionInputError.make({
-    input: "command",
-    reason: `Unsupported command ${value2}.`
-  });
-};
-var parseFormatInput = (value2) => {
-  if (isFormat(value2)) {
-    return value2;
-  }
-  throw ActionInputError.make({
-    input: "format",
-    reason: `Unsupported format ${value2}.`
-  });
-};
-var parseRuntimeInput = (value2) => {
-  if (isRuntime(value2)) {
-    return value2;
-  }
-  throw ActionInputError.make({
-    input: "runtime",
-    reason: `Unsupported runtime ${value2}.`
-  });
-};
-var readActionOptions = (reader, root) => {
-  const target = optionalInput(reader, "target");
-  const workflow = optionalInput(reader, "workflow");
-  return ActionOptions.make({
-    root,
-    command: parseCommandInput(inputOrDefault(reader, "command", "plan")),
-    config: inputOrDefault(reader, "config", "release.config.json"),
-    format: parseFormatInput(inputOrDefault(reader, "format", "markdown")),
-    writeStepSummary: parseBooleanInput(reader, "write-step-summary", true),
-    planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
-    failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
-    ...target === undefined ? {} : { target },
-    ...workflow === undefined ? {} : { workflow },
-    runtime: parseRuntimeInput(inputOrDefault(reader, "runtime", "bundled")),
-    execute: parseBooleanInput(reader, "execute", false),
-    approveIrreversible: parseBooleanInput(reader, "approve-irreversible", false),
-    uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),
-    evidenceArtifactName: inputOrDefault(reader, "evidence-artifact-name", "release-evidence")
-  });
 };
 
 // src/main.ts

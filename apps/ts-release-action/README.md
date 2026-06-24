@@ -14,6 +14,8 @@ Supported action commands are:
 - `plan`
 - `validate-config`
 - `status`
+- `eligibility`
+- `check-intent`
 - `doctor`
 - `check-auth`
 - `check-ci`
@@ -33,3 +35,8 @@ Use `upload-evidence: true` when a workflow should upload collected
 `.release/evidence` JSON files after command completion or failure. Approved
 execution still requires `execute: true`, and irreversible operations also
 require `approve-irreversible: true`.
+
+`eligibility` decides whether the configured release strategy should run.
+`check-intent` is the stricter read-only gate for intent-file workflows: it
+fails when required intent files are missing, while explicit no-release intent
+files pass with `should_release=false`.

@@ -31,7 +31,7 @@ required without surprising users. The source currently lives in
 `apps/ts-release-action`.
 
 The action supports the review commands `plan`, `validate-config`, `status`,
-`eligibility`, `doctor`, `check-auth`, and `check-ci`, plus the approved workflow commands
+`eligibility`, `check-intent`, `doctor`, `check-auth`, and `check-ci`, plus the approved workflow commands
 `validate`, `run`, `resume`, and `reconcile`. Use `upload-evidence: true` when
 an action job should publish collected `.release/evidence` JSON files even after
 a command fails.
@@ -72,7 +72,7 @@ bun run cli resume --config release.config.json --execute --approve-irreversible
 
 Resume skips operations with successful matching evidence, reruns safe read-only failures, and blocks failed publish operations until remote state is reconciled manually.
 `eligibility` resolves the configured release decision strategy and checks npm and GitHub remote state when a release is intended.
-`check-intent` is a read-only CI gate for the explicit intent-file strategy.
+`check-intent` is a read-only CI gate for the explicit intent-file strategy, and the GitHub Action exposes the same command for intent-file workflows.
 `reconcile` is separate from resume: it inspects GitHub release state through the API and can publish a matching draft release with explicit `--execute` without republishing immutable npm versions.
 
 The executable is an argv and console adapter over TypeScript workflows. Release workflows are modeled as typed functions first, then exposed through the CLI for terminal and CI usage.
@@ -532,6 +532,7 @@ The local non-publish gates for this package are:
 bun run check:release
 bun run release:artifacts
 bun run cli plan --config apps/release-ts/release.config.json --format text
+bun run --cwd apps/release-ts cli plan --root ../.. --config apps/release-ts/release.config.json --format text
 ```
 
 `release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs on protected `main` and checks release eligibility before the full release gate. When `should_release` is true, the plan job runs `check:release`, builds artifacts, records a Markdown release plan, uploads evidence, and does not execute release operations. The protected `execute` job uses the reviewed `.release/artifacts` download, grants `contents: write` and `id-token: write`, and runs approved execution with npm trusted publishing OIDC instead of an npm token.

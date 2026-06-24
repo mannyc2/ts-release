@@ -38,6 +38,7 @@ import {
 
 interface ActionOptionsOverrides {
   readonly command?: ActionCommand
+  readonly config?: string
   readonly format?: ActionFormat
   readonly writeStepSummary?: boolean
   readonly planPath?: string
@@ -63,7 +64,7 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
   ActionOptions.make({
     root,
     command: overrides.command ?? "plan",
-    config: "release.config.json",
+    config: overrides.config ?? "release.config.json",
     format: overrides.format ?? "markdown",
     writeStepSummary: overrides.writeStepSummary ?? true,
     planPath: overrides.planPath ?? "release-plan.md",
@@ -122,12 +123,33 @@ const makeArtifactClient = () => {
   return { client, uploads }
 }
 
+const intentFilesConfig = JSON.stringify({
+  identity: {
+    name: "@scope/pkg",
+    version: "1.2.3",
+    commit: "abc123",
+    tag: "v1.2.3"
+  },
+  releaseDecision: {
+    _tag: "IntentFilesReleaseDecision",
+    directory: ".release/intents",
+    packagePath: "package.json",
+    tagTemplate: "v{version}",
+    requireIntent: true
+  },
+  artifacts: [],
+  targets: [],
+  strict: true,
+  evidenceDirectory: ".release/evidence"
+})
+
 describe("ts-release action", () => {
   test("declares Node action metadata inputs and outputs", async () => {
     const metadata = await readFile("apps/ts-release-action/action.yml", "utf8")
     expect(metadata).toContain("runs:")
     expect(metadata).toContain("using: node20")
     expect(metadata).toContain("main: dist/index.js")
+    expect(metadata).toContain("check-intent")
     for (const input of [
       "command:",
       "config:",
@@ -309,6 +331,62 @@ describe("ts-release action", () => {
     }
   })
 
+  test("rejects unsafe config paths before planning, writing files, or uploading evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-unsafe-config-"))
+    const outside = await mkdtemp(join(tmpdir(), "ts-release-action-outside-config-"))
+    try {
+      await writeFile(join(root, "release.config.json"), minimalConfig)
+      await writeFile(join(outside, "release.config.json"), minimalConfig)
+      for (const config of ["../release.config.json", "", join(outside, "release.config.json")]) {
+        const io = makeFakeActionIo()
+        const artifact = makeArtifactClient()
+
+        await runAction(
+          actionOptions(root, { config, uploadEvidence: true }),
+          io,
+          makeNodeReleaseWorkflowRuntimeLayer({ root }),
+          artifact.client
+        )
+
+        expect(io.outputs.get("status")).toBe("failed")
+        expect(io.failures.join("\n")).toContain("config")
+        expect(io.files.size).toBe(0)
+        expect(artifact.uploads).toHaveLength(0)
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
+      await rm(outside, { recursive: true, force: true })
+    }
+  })
+
+  test("accepts absolute config paths inside the action workspace", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-absolute-config-"))
+    try {
+      const config = join(root, "release.config.json")
+      await writeFile(config, noOpConfig)
+      const io = makeFakeActionIo()
+      const artifact = makeArtifactClient()
+
+      await runAction(
+        actionOptions(root, {
+          command: "validate",
+          config,
+          uploadEvidence: true
+        }),
+        io,
+        makeNodeReleaseWorkflowRuntimeLayer({ root }),
+        artifact.client
+      )
+
+      expect(io.outputs.get("status")).toBe("passed")
+      expect(artifact.uploads).toHaveLength(1)
+      expect(artifact.uploads[0]?.rootDirectory).toBe(join(root, ".release", "evidence"))
+      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("validation.json"))).toBe(true)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   test("diagnostics fail without leaking secret values", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-action-diagnostics-"))
     try {
@@ -425,6 +503,99 @@ describe("ts-release action", () => {
     expect(io.outputs.get("status")).toBe("failed")
     expect(io.failures.join("\n")).toContain("ActionInputError")
     expect(io.failures.join("\n")).toContain("Expected true or false")
+  })
+
+  test("whitespace-only config input fails through action outputs", async () => {
+    const io = makeFakeActionIo()
+
+    await runActionFromInputs(
+      {
+        getInput: (name) => name === "config" ? "   " : ""
+      },
+      io,
+      process.cwd(),
+      makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
+      NoopActionArtifactClient
+    )
+
+    expect(io.outputs.get("status")).toBe("failed")
+    expect(io.failures.join("\n")).toContain("ActionInputError")
+    expect(io.failures.join("\n")).toContain("config")
+  })
+
+  test("check-intent fails when required intent files are missing", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-check-intent-missing-"))
+    try {
+      await writeFile(join(root, "release.config.json"), intentFilesConfig)
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "@scope/pkg",
+        version: "1.2.3"
+      }))
+      const io = makeFakeActionIo()
+
+      await runAction(
+        actionOptions(root, { command: "check-intent", format: "text" }),
+        io,
+        makeNodeReleaseWorkflowRuntimeLayer({ root })
+      )
+
+      expect(io.outputs.get("status")).toBe("failed")
+      expect(io.failures.join("\n")).toContain("ReleaseEligibilityCheckError")
+      expect(io.failures.join("\n")).toContain("release intent files are required")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("check-intent passes explicit empty and release-requesting intent files", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-check-intent-"))
+    try {
+      await writeFile(join(root, "release.config.json"), intentFilesConfig)
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "@scope/pkg",
+        version: "1.2.3"
+      }))
+      await mkdir(join(root, ".release", "intents"), { recursive: true })
+
+      await writeFile(join(root, ".release", "intents", "empty.json"), JSON.stringify({
+        package: "@scope/pkg",
+        release: "none",
+        summary: "No release needed.",
+        empty: true
+      }))
+      const emptyIo = makeFakeActionIo()
+      await runAction(
+        actionOptions(root, { command: "check-intent", format: "json" }),
+        emptyIo,
+        makeNodeReleaseWorkflowRuntimeLayer({ root })
+      )
+
+      expect(emptyIo.outputs.get("status")).toBe("passed")
+      expect(emptyIo.outputs.get("release_name")).toBe("@scope/pkg")
+      expect(emptyIo.outputs.get("should_release")).toBe("false")
+      expect(emptyIo.outputs.get("eligibility_status")).toBe("skipped")
+      expect(emptyIo.summaries.join("\n")).toContain("\"shouldRelease\": false")
+
+      await writeFile(join(root, ".release", "intents", "feature.json"), JSON.stringify({
+        package: "@scope/pkg",
+        release: "minor",
+        summary: "Add an action command."
+      }))
+      const releaseIo = makeFakeActionIo()
+      await runAction(
+        actionOptions(root, { command: "check-intent", format: "text" }),
+        releaseIo,
+        makeNodeReleaseWorkflowRuntimeLayer({ root })
+      )
+
+      expect(releaseIo.outputs.get("status")).toBe("passed")
+      expect(releaseIo.outputs.get("release_name")).toBe("@scope/pkg")
+      expect(releaseIo.outputs.get("should_release")).toBe("true")
+      expect(releaseIo.outputs.get("eligibility_status")).toBe("ready")
+      expect(releaseIo.summaries.join("\n")).toContain("request a minor release")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   test("artifact upload errors preserve compact foreign causes", () => {

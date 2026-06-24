@@ -194,6 +194,82 @@ describe("cli command", () => {
     expect(exitCode).toBe(0)
   })
 
+  test("config-backed commands accept an explicit release root", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-explicit-root-"))
+    try {
+      await mkdir(join(root, "app"), { recursive: true })
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        name: "@scope/root-package",
+        version: "1.2.3"
+      }))
+      await writeFile(join(root, "app", "release.config.json"), JSON.stringify({
+        identity: {
+          _tag: "PackageManifestReleaseIdentitySource",
+          packagePath: "package.json",
+          commit: "abc123",
+          tagTemplate: "v{version}"
+        },
+        releaseDecision: {
+          _tag: "IntentFilesReleaseDecision",
+          directory: ".release/intents",
+          packagePath: "package.json",
+          tagTemplate: "v{version}",
+          requireIntent: true
+        },
+        artifacts: [],
+        targets: [],
+        strict: true,
+        evidenceDirectory: ".release/evidence"
+      }))
+      await mkdir(join(root, ".release", "intents"), { recursive: true })
+      await writeFile(join(root, ".release", "intents", "empty.json"), JSON.stringify({
+        package: "@scope/root-package",
+        release: "none",
+        summary: "No release needed.",
+        empty: true
+      }))
+      const out = join(root, "plan-summary.txt")
+      const layer = makeBunReleaseWorkflowRuntimeLayer({ root })
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "plan",
+          "--root",
+          root,
+          "--config",
+          "app/release.config.json",
+          "--format",
+          "summary",
+          "--out",
+          out
+        ]).pipe(Effect.provide(layer))
+      )
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "eligibility",
+          "--root",
+          root,
+          "--config",
+          "app/release.config.json"
+        ]).pipe(Effect.provide(layer))
+      )
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "check-intent",
+          "--root",
+          root,
+          "--config",
+          "app/release.config.json"
+        ]).pipe(Effect.provide(layer))
+      )
+
+      const summary = await readFile(out, "utf8")
+      expect(summary).toContain("@scope/root-package@1.2.3")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   test("renders release configs through the explicit config workflow", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-cli-root-"))
     try {

@@ -132,6 +132,59 @@ const workspaceOutputPath = (
   )
 }
 
+const workspaceConfigPath = (
+  path: Path.Path,
+  options: ActionOptions,
+  pathName: string
+): Effect.Effect<string, ActionCommandError> => {
+  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
+    return Effect.fail(
+      ActionCommandError.make({
+        command: options.command,
+        reason: "config must be non-empty and must not contain parent traversal."
+      })
+    )
+  }
+  const rootPath = path.resolve(options.root)
+  const targetPath = path.isAbsolute(pathName)
+    ? path.resolve(pathName)
+    : path.resolve(rootPath, pathName)
+  if (!isInsideWorkspace(path, rootPath, targetPath)) {
+    return Effect.fail(
+      ActionCommandError.make({
+        command: options.command,
+        reason: "config must resolve inside the action root."
+      })
+    )
+  }
+  return Effect.succeed(
+    path.isAbsolute(pathName)
+      ? path.relative(rootPath, targetPath)
+      : pathName
+  )
+}
+
+const actionOptionsWithConfig = (
+  options: ActionOptions,
+  config: string
+): ActionOptions =>
+  ActionOptions.make({
+    root: options.root,
+    command: options.command,
+    config,
+    format: options.format,
+    writeStepSummary: options.writeStepSummary,
+    planPath: options.planPath,
+    failOnWarnings: options.failOnWarnings,
+    ...(options.target === undefined ? {} : { target: options.target }),
+    ...(options.workflow === undefined ? {} : { workflow: options.workflow }),
+    runtime: options.runtime,
+    execute: options.execute,
+    approveIrreversible: options.approveIrreversible,
+    uploadEvidence: options.uploadEvidence,
+    evidenceArtifactName: options.evidenceArtifactName
+  })
+
 const planInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
@@ -389,6 +442,29 @@ const runEligibility = Effect.fn("action.runEligibility")(function*(options: Act
   yield* io.setOutput("status", "passed")
 })
 
+const runCheckIntent = Effect.fn("action.runCheckIntent")(function*(options: ActionOptions, io: ActionIo) {
+  const decision = yield* Config.checkIntent(eligibilityInput(options))
+  const rendered = Config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text")
+  if (options.writeStepSummary) {
+    yield* io.appendSummary(`## ts-release check-intent\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
+  }
+  if (decision.packageName !== undefined) {
+    yield* io.setOutput("release_name", decision.packageName)
+  }
+  if (decision.packageVersion !== undefined) {
+    yield* io.setOutput("release_version", decision.packageVersion)
+  }
+  yield* io.setOutput("should_release", decision.shouldRelease ? "true" : "false")
+  yield* io.setOutput("eligibility_status", decision.status)
+  if (decision.status === "partial") {
+    return yield* Effect.fail(ActionCommandError.make({
+      command: options.command,
+      reason: decision.reason
+    }))
+  }
+  yield* io.setOutput("status", "passed")
+})
+
 const runDiagnostics = Effect.fn("action.runDiagnostics")(function*(
   command: "doctor" | "check-auth" | "check-ci",
   options: ActionOptions,
@@ -469,40 +545,46 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   io: ActionIo,
   artifactClient: ActionArtifactClient = NoopActionArtifactClient
 ) {
-  yield* ensureRuntime(options)
+  const path = yield* Path.Path
+  const config = yield* workspaceConfigPath(path, options, options.config)
+  const safeOptions = actionOptionsWithConfig(options, config)
+  yield* ensureRuntime(safeOptions)
   let planForUpload: ReleasePlan | undefined
   const rememberPlan = (plan: ReleasePlan): ReleasePlan => {
     planForUpload = plan
     return plan
   }
-  yield* withEvidenceUpload(options, io, artifactClient, () => planForUpload, Effect.gen(function*() {
-    switch (options.command) {
+  yield* withEvidenceUpload(safeOptions, io, artifactClient, () => planForUpload, Effect.gen(function*() {
+    switch (safeOptions.command) {
       case "plan":
-        rememberPlan(yield* runPlan(options, io))
+        rememberPlan(yield* runPlan(safeOptions, io))
         return
       case "validate-config":
-        yield* runValidateConfig(options, io)
+        yield* runValidateConfig(safeOptions, io)
         return
       case "status":
-        yield* runStatus(options, io)
+        yield* runStatus(safeOptions, io)
         return
       case "eligibility":
-        yield* runEligibility(options, io)
+        yield* runEligibility(safeOptions, io)
+        return
+      case "check-intent":
+        yield* runCheckIntent(safeOptions, io)
         return
       case "doctor":
       case "check-auth":
       case "check-ci":
-        yield* runDiagnostics(options.command, options, io)
+        yield* runDiagnostics(safeOptions.command, safeOptions, io)
         return
       case "validate":
-        yield* runValidate(options, io, rememberPlan)
+        yield* runValidate(safeOptions, io, rememberPlan)
         return
       case "run":
       case "resume":
-        yield* runWorkflow(options.command, options, io, rememberPlan)
+        yield* runWorkflow(safeOptions.command, safeOptions, io, rememberPlan)
         return
       case "reconcile":
-        yield* runReconcile(options, io, rememberPlan)
+        yield* runReconcile(safeOptions, io, rememberPlan)
         return
     }
   }))

@@ -3,11 +3,11 @@ description: Plan, validate, and run ts-release workflows from GitHub Actions.
 author: mannyc2
 inputs:
   command:
-    description: plan, validate-config, status, eligibility, doctor, check-auth, check-ci, validate, run, resume, or reconcile.
+    description: plan, validate-config, status, eligibility, check-intent, doctor, check-auth, check-ci, validate, run, resume, or reconcile.
     required: false
     default: plan
   config:
-    description: Path to the release config file.
+    description: Workspace-contained path to the release config file.
     required: false
     default: release.config.json
   format:

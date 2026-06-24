@@ -11,6 +11,7 @@ import { renderEvidenceJson } from "@mannyc1/ts-release/planner/evidence-recorde
 import { Config, Diagnostics, Init } from "@mannyc1/ts-release/workflows"
 
 const configFlag = Flag.string("config").pipe(Flag.withDefault(DEFAULT_CONFIG_PATH))
+const rootFlag = Flag.string("root").pipe(Flag.withDefault(""))
 const outputFlag = Flag.string("out").pipe(Flag.withDefault(""))
 const formatFlag = Flag.choice("format", ["json", "text", "summary", "markdown"]).pipe(Flag.withDefault("json"))
 const validationFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
@@ -54,15 +55,68 @@ const writeOrPrint = Effect.fn("writeOrPrint")(function*(out: string, contents: 
   return yield* writeFile(out, contents)
 })
 
+const configInput = (input: {
+  readonly root: string
+  readonly config: string
+}): {
+  readonly root?: string
+  readonly configPath: string
+} => ({
+    ...(input.root.length === 0 ? {} : { root: input.root }),
+    configPath: input.config
+  })
+
+const formattedConfigInput = <Format extends string>(input: {
+  readonly root: string
+  readonly config: string
+  readonly format: Format
+}): {
+  readonly root?: string
+  readonly configPath: string
+  readonly format: Format
+} => ({
+    ...configInput(input),
+    format: input.format
+  })
+
+const executableConfigInput = (input: {
+  readonly root: string
+  readonly config: string
+  readonly execute: boolean
+}): {
+  readonly root?: string
+  readonly configPath: string
+  readonly execute: boolean
+} => ({
+    ...configInput(input),
+    execute: input.execute
+  })
+
+const approvedConfigInput = (input: {
+  readonly root: string
+  readonly config: string
+  readonly execute: boolean
+  readonly approveIrreversible: boolean
+}): {
+  readonly root?: string
+  readonly configPath: string
+  readonly execute: boolean
+  readonly approveIrreversible: boolean
+} => ({
+    ...executableConfigInput(input),
+    approveIrreversible: input.approveIrreversible
+  })
+
 const planCommand = Command.make(
   "plan",
   {
+    root: rootFlag,
     config: configFlag,
     out: outputFlag,
     format: formatFlag
   },
-  Effect.fn("cli.plan")(function*({ config, out, format }) {
-    const contents = yield* Config.renderPlan({ configPath: config, format })
+  Effect.fn("cli.plan")(function*({ root, config, out, format }) {
+    const contents = yield* Config.renderPlan(formattedConfigInput({ root, config, format }))
     yield* writeOrPrint(out, contents)
   })
 )
@@ -80,10 +134,11 @@ const schemaCommand = Command.make(
 const printCommand = Command.make(
   "print",
   {
+    root: rootFlag,
     config: configFlag
   },
-  Effect.fn("cli.print")(function*({ config }) {
-    const contents = yield* Config.renderPlan({ configPath: config, format: "text" })
+  Effect.fn("cli.print")(function*({ root, config }) {
+    const contents = yield* Config.renderPlan(formattedConfigInput<"text">({ root, config, format: "text" }))
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -92,10 +147,11 @@ const explainCommand = Command.make(
   "explain",
   {
     operation: Argument.string("operation"),
+    root: rootFlag,
     config: configFlag
   },
-  Effect.fn("cli.explain")(function*({ operation, config }) {
-    const contents = yield* Config.explain({ configPath: config, operationId: operation })
+  Effect.fn("cli.explain")(function*({ operation, root, config }) {
+    const contents = yield* Config.explain({ ...configInput({ root, config }), operationId: operation })
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -103,11 +159,12 @@ const explainCommand = Command.make(
 const statusCommand = Command.make(
   "status",
   {
+    root: rootFlag,
     config: configFlag,
     format: statusFormatFlag
   },
-  Effect.fn("cli.status")(function*({ config, format }) {
-    const contents = yield* Config.renderStatus({ configPath: config, format })
+  Effect.fn("cli.status")(function*({ root, config, format }) {
+    const contents = yield* Config.renderStatus(formattedConfigInput({ root, config, format }))
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -115,11 +172,12 @@ const statusCommand = Command.make(
 const eligibilityCommand = Command.make(
   "eligibility",
   {
+    root: rootFlag,
     config: configFlag,
     format: statusFormatFlag
   },
-  Effect.fn("cli.eligibility")(function*({ config, format }) {
-    const decision = yield* Config.checkEligibility({ configPath: config })
+  Effect.fn("cli.eligibility")(function*({ root, config, format }) {
+    const decision = yield* Config.checkEligibility(configInput({ root, config }))
     const contents = Config.renderEligibilityDecision(decision, format)
     yield* Console.log(contents.trimEnd())
   })
@@ -128,11 +186,12 @@ const eligibilityCommand = Command.make(
 const checkIntentCommand = Command.make(
   "check-intent",
   {
+    root: rootFlag,
     config: configFlag,
     format: statusFormatFlag
   },
-  Effect.fn("cli.checkIntent")(function*({ config, format }) {
-    const decision = yield* Config.checkIntent({ configPath: config })
+  Effect.fn("cli.checkIntent")(function*({ root, config, format }) {
+    const decision = yield* Config.checkIntent(configInput({ root, config }))
     const contents = Config.renderEligibilityDecision(decision, format)
     yield* Console.log(contents.trimEnd())
   })
@@ -149,10 +208,11 @@ const printWorkflowEvidencePaths = Effect.fn("cli.printWorkflowEvidencePaths")(f
 const validateCommand = Command.make(
   "validate",
   {
+    root: rootFlag,
     config: configFlag
   },
-  Effect.fn("cli.validate")(function*({ config }) {
-    const result = yield* Config.planAndWriteValidation({ configPath: config })
+  Effect.fn("cli.validate")(function*({ root, config }) {
+    const result = yield* Config.planAndWriteValidation(configInput({ root, config }))
     yield* printEvidence(result.evidence)
   })
 )
@@ -160,11 +220,12 @@ const validateCommand = Command.make(
 const validateConfigCommand = Command.make(
   "validate-config",
   {
+    root: rootFlag,
     config: configFlag,
     format: validationFormatFlag
   },
-  Effect.fn("cli.validateConfig")(function*({ config, format }) {
-    const contents = yield* Config.renderValidation({ configPath: config, format })
+  Effect.fn("cli.validateConfig")(function*({ root, config, format }) {
+    const contents = yield* Config.renderValidation(formattedConfigInput({ root, config, format }))
     yield* Console.log(contents.trimEnd())
   })
 )
@@ -224,12 +285,13 @@ const initCommand = Command.make(
 )
 
 const diagnosticsOptions = (input: {
+  readonly root: string
   readonly config: string
   readonly format: "json" | "text" | "markdown"
   readonly target?: string | undefined
   readonly workflow?: string | undefined
 }) => ({
-    configPath: input.config,
+    ...configInput(input),
     format: input.format,
     ...(input.target === undefined || input.target.length === 0 ? {} : { target: input.target }),
     ...(input.workflow === undefined || input.workflow.length === 0 ? {} : { workflow: input.workflow })
@@ -238,12 +300,13 @@ const diagnosticsOptions = (input: {
 const checkAuthCommand = Command.make(
   "check-auth",
   {
+    root: rootFlag,
     config: configFlag,
     target: targetFlag,
     format: diagnosticsFormatFlag
   },
-  Effect.fn("cli.checkAuth")(function*({ config, target, format }) {
-    const report = yield* Diagnostics.checkAuth(diagnosticsOptions({ config, target, format }))
+  Effect.fn("cli.checkAuth")(function*({ root, config, target, format }) {
+    const report = yield* Diagnostics.checkAuth(diagnosticsOptions({ root, config, target, format }))
     yield* Console.log(Diagnostics.render(report, format).trimEnd())
   })
 )
@@ -251,14 +314,15 @@ const checkAuthCommand = Command.make(
 const checkCiCommand = Command.make(
   "check-ci",
   {
+    root: rootFlag,
     config: configFlag,
     provider: ciProviderFlag,
     workflow: ciWorkflowFlag,
     format: diagnosticsFormatFlag
   },
-  Effect.fn("cli.checkCi")(function*({ config, provider, workflow, format }) {
+  Effect.fn("cli.checkCi")(function*({ root, config, provider, workflow, format }) {
     const report = yield* Diagnostics.checkCi({
-      configPath: config,
+      ...configInput({ root, config }),
       provider,
       workflow,
       format
@@ -270,11 +334,12 @@ const checkCiCommand = Command.make(
 const doctorCommand = Command.make(
   "doctor",
   {
+    root: rootFlag,
     config: configFlag,
     format: diagnosticsFormatFlag
   },
-  Effect.fn("cli.doctor")(function*({ config, format }) {
-    const report = yield* Diagnostics.doctor(diagnosticsOptions({ config, format }))
+  Effect.fn("cli.doctor")(function*({ root, config, format }) {
+    const report = yield* Diagnostics.doctor(diagnosticsOptions({ root, config, format }))
     yield* Console.log(Diagnostics.render(report, format).trimEnd())
   })
 )
@@ -282,11 +347,12 @@ const doctorCommand = Command.make(
 const renderCommand = Command.make(
   "render",
   {
+    root: rootFlag,
     config: configFlag,
     execute: executeFlag
   },
-  Effect.fn("cli.render")(function*({ config, execute }) {
-    const result = yield* Config.planAndWriteRender({ configPath: config, execute })
+  Effect.fn("cli.render")(function*({ root, config, execute }) {
+    const result = yield* Config.planAndWriteRender(executableConfigInput({ root, config, execute }))
     yield* printEvidence(result.evidence)
   })
 )
@@ -294,12 +360,15 @@ const renderCommand = Command.make(
 const executeCommand = Command.make(
   "execute",
   {
+    root: rootFlag,
     config: configFlag,
     execute: executeFlag,
     approveIrreversible: approveIrreversibleFlag
   },
-  Effect.fn("cli.execute")(function*({ config, execute, approveIrreversible }) {
-    const result = yield* Config.planAndWriteExecution({ configPath: config, execute, approveIrreversible })
+  Effect.fn("cli.execute")(function*({ root, config, execute, approveIrreversible }) {
+    const result = yield* Config.planAndWriteExecution(
+      approvedConfigInput({ root, config, execute, approveIrreversible })
+    )
     yield* printEvidence(result.evidence)
   })
 )
@@ -307,10 +376,11 @@ const executeCommand = Command.make(
 const verifyCommand = Command.make(
   "verify",
   {
+    root: rootFlag,
     config: configFlag
   },
-  Effect.fn("cli.verify")(function*({ config }) {
-    const result = yield* Config.planAndWriteVerification({ configPath: config })
+  Effect.fn("cli.verify")(function*({ root, config }) {
+    const result = yield* Config.planAndWriteVerification(configInput({ root, config }))
     yield* printEvidence(result.evidence)
   })
 )
@@ -318,12 +388,15 @@ const verifyCommand = Command.make(
 const runCommand = Command.make(
   "run",
   {
+    root: rootFlag,
     config: configFlag,
     execute: executeFlag,
     approveIrreversible: approveIrreversibleFlag
   },
-  Effect.fn("cli.run")(function*({ config, execute, approveIrreversible }) {
-    const result = yield* Config.planAndWriteRun({ configPath: config, execute, approveIrreversible })
+  Effect.fn("cli.run")(function*({ root, config, execute, approveIrreversible }) {
+    const result = yield* Config.planAndWriteRun(
+      approvedConfigInput({ root, config, execute, approveIrreversible })
+    )
     yield* printWorkflowEvidencePaths(result.paths)
   })
 )
@@ -331,12 +404,15 @@ const runCommand = Command.make(
 const resumeCommand = Command.make(
   "resume",
   {
+    root: rootFlag,
     config: configFlag,
     execute: executeFlag,
     approveIrreversible: approveIrreversibleFlag
   },
-  Effect.fn("cli.resume")(function*({ config, execute, approveIrreversible }) {
-    const result = yield* Config.planAndWriteResume({ configPath: config, execute, approveIrreversible })
+  Effect.fn("cli.resume")(function*({ root, config, execute, approveIrreversible }) {
+    const result = yield* Config.planAndWriteResume(
+      approvedConfigInput({ root, config, execute, approveIrreversible })
+    )
     yield* printWorkflowEvidencePaths(result.paths)
   })
 )
@@ -344,11 +420,12 @@ const resumeCommand = Command.make(
 const reconcileCommand = Command.make(
   "reconcile",
   {
+    root: rootFlag,
     config: configFlag,
     execute: executeFlag
   },
-  Effect.fn("cli.reconcile")(function*({ config, execute }) {
-    const result = yield* Config.planAndWriteReconcile({ configPath: config, execute })
+  Effect.fn("cli.reconcile")(function*({ root, config, execute }) {
+    const result = yield* Config.planAndWriteReconcile(executableConfigInput({ root, config, execute }))
     yield* printEvidence(result.evidence)
   })
 )

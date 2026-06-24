@@ -5,6 +5,7 @@ export const ActionCommand = Schema.Literals([
   "validate-config",
   "status",
   "eligibility",
+  "check-intent",
   "doctor",
   "check-auth",
   "check-ci",
@@ -52,6 +53,7 @@ const commands: ReadonlyArray<ActionCommand> = [
   "validate-config",
   "status",
   "eligibility",
+  "check-intent",
   "doctor",
   "check-auth",
   "check-ci",
@@ -76,6 +78,21 @@ const isRuntime = (value: string): value is ActionRuntime =>
 const inputOrDefault = (reader: ActionInputReader, name: string, fallback: string): string => {
   const value = reader.getInput(name).trim()
   return value.length === 0 ? fallback : value
+}
+
+const configInputOrDefault = (reader: ActionInputReader, fallback: string): string => {
+  const raw = reader.getInput("config")
+  if (raw.length === 0) {
+    return fallback
+  }
+  const value = raw.trim()
+  if (value.length === 0) {
+    throw ActionInputError.make({
+      input: "config",
+      reason: "config must be a non-empty path."
+    })
+  }
+  return value
 }
 
 const optionalInput = (reader: ActionInputReader, name: string): string | undefined => {
@@ -136,7 +153,7 @@ export const readActionOptions = (reader: ActionInputReader, root: string): Acti
   return ActionOptions.make({
     root,
     command: parseCommandInput(inputOrDefault(reader, "command", "plan")),
-    config: inputOrDefault(reader, "config", "release.config.json"),
+    config: configInputOrDefault(reader, "release.config.json"),
     format: parseFormatInput(inputOrDefault(reader, "format", "markdown")),
     writeStepSummary: parseBooleanInput(reader, "write-step-summary", true),
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),

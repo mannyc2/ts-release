@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { EvidenceBundle, ReleaseWorkflowFailureEvidence } from "../domain/evidence.js"
+import { EvidenceBundle } from "../domain/evidence.js"
 import { OperationId } from "../domain/operation.js"
 import { TargetId } from "../domain/target.js"
 
@@ -45,11 +45,6 @@ export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteE
   reason: Schema.String
 }) {}
 
-export class ResumeBlockedError extends Schema.TaggedErrorClass<ResumeBlockedError>()("ResumeBlockedError", {
-  operationId: OperationId,
-  reason: Schema.String
-}) {}
-
 export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteStateInspectionError>()(
   "RemoteStateInspectionError",
   {
@@ -81,8 +76,7 @@ export class OperationFailedError extends Schema.TaggedErrorClass<OperationFaile
   exitCode: Schema.optionalKey(Schema.Number),
   responseStatus: Schema.optionalKey(Schema.Number),
   reason: Schema.String,
-  evidence: Schema.optionalKey(EvidenceBundle),
-  workflowEvidence: Schema.optionalKey(ReleaseWorkflowFailureEvidence)
+  evidence: Schema.optionalKey(EvidenceBundle)
 }) {}
 
 export type PlannerError =
@@ -92,7 +86,6 @@ export type PlannerError =
   | EvidenceWriteError
   | EvidenceReadError
   | WorkspaceWriteError
-  | ResumeBlockedError
   | RemoteStateInspectionError
   | ReleaseEligibilityCheckError
   | ReconciliationBlockedError

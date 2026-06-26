@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { CommandSpec } from "../src/domain/operation.js"
+import { CommandSpec, operationRequiresExecute } from "../src/domain/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlanText } from "../src/planner/render-plan.js"
@@ -55,7 +55,7 @@ const TestLayer = Layer.mergeAll(
 )
 
 describe("repository release config", () => {
-  test("plans npm and GitHub publication as gated operations", async () => {
+  test("plans npm and GitHub publication as approval-required operations", async () => {
     const plan = await runEffect(
       Effect.gen(function*() {
         const intent = yield* parseReleaseIntent(config, selfReleaseConfigPath)
@@ -80,7 +80,7 @@ describe("repository release config", () => {
     const githubPublish = publishOperations.find((operation) => operation.id === "github:gh-release-create")
     expect(publishOperations.length).toBeGreaterThan(0)
     expect(publishOperations.map((operation) => operation.id)).toEqual(["npm:npm-publish", "github:gh-release-create"])
-    expect(publishOperations.every((operation) => operation.gate.requiresExecute)).toBe(true)
+    expect(publishOperations.every(operationRequiresExecute)).toBe(true)
     expect(npmPublish?._tag).toBe("PublishCommandOperation")
     expect(npm?.authRequirement).toBe("trusted-publishing")
     expect(npm?.authSetup?.workflow).toBe("release.yml")

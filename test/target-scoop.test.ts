@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { ExecutionApproval } from "../src/domain/operation.js"
+import { ExecutionApproval, operationRequiresIrreversibleApproval } from "../src/domain/operation.js"
 import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlan, validatePlan } from "../src/planner/executor.js"
@@ -75,8 +75,7 @@ describe("Scoop target", () => {
     expect(publish?._tag).toBe("PublishCommandOperation")
     if (publish?._tag === "PublishCommandOperation") {
       expect(publish.risk).toBe("irreversible")
-      expect(publish.gate.requiresIrreversibleApproval).toBe(true)
-      expect(publish.gate.reason).toBe("Pushing a Scoop bucket update is configured as irreversible.")
+      expect(operationRequiresIrreversibleApproval(publish)).toBe(true)
     }
   })
 

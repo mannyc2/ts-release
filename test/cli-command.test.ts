@@ -24,17 +24,10 @@ import {
   renderGithubActionsTrustedPublishingWorkflow
 } from "../src/workflows/init.js"
 import { cli } from "../apps/release-ts/src/cli/command.js"
-import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
-import {
-  CommandSpec,
-  irreversibleGate,
-  operationFingerprint,
-  PublishCommandOperation
-} from "../src/domain/operation.js"
+import { CommandSpec } from "../src/domain/operation.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { commandKey } from "../src/host/test.js"
-import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import {
   expectExitFailureTag,
@@ -57,6 +50,18 @@ const withTempDirectory = <A, E, R>(
     Effect.promise(() => mkdtemp(join(tmpdir(), prefix))),
     (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
   ).pipe(Effect.flatMap(use))
+
+const withTempDirectoryPromise = async <A>(
+  prefix: string,
+  use: (root: string) => Promise<A>
+): Promise<A> => {
+  const root = await mkdtemp(join(tmpdir(), prefix))
+  try {
+    return await use(root)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
 
 const approvalCliLayer = Layer.mergeAll(
   makeObservableCommandRunnerLayer({
@@ -88,19 +93,16 @@ describe("cli command", () => {
       "print",
       "reconcile",
       "render",
-      "resume",
       "run",
       "schema",
-      "status",
       "validate",
       "validate-config",
       "verify"
     ])
   })
 
-  test("parses plan command with a config path", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-plan-"))
-    try {
+  test("parses plan command with a config path", () =>
+    withTempDirectoryPromise("ts-release-cli-plan-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
       const layer = Layer.mergeAll(
@@ -124,14 +126,10 @@ describe("cli command", () => {
           join(root, "release-plan.json")
         ]).pipe(Effect.provide(layer))
       )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("schema command writes parseable JSON Schema", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-schema-"))
-    try {
+  test("schema command writes parseable JSON Schema", () =>
+    withTempDirectoryPromise("ts-release-cli-schema-", async (root) => {
       const out = join(root, "release-config.schema.json")
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
@@ -144,14 +142,10 @@ describe("cli command", () => {
       const parsed: unknown = JSON.parse(await readFile(out, "utf8"))
       expect(typeof parsed).toBe("object")
       expect(JSON.stringify(parsed)).toContain("ReleaseIntent")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("validate-config command checks config shape only", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-validate-config-"))
-    try {
+  test("validate-config command checks config shape only", () =>
+    withTempDirectoryPromise("ts-release-cli-validate-config-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
 
@@ -164,10 +158,7 @@ describe("cli command", () => {
           "json"
         ]).pipe(Effect.provide(BunServices.layer))
       )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
   test("root cli script preserves caller-relative config paths", async () => {
     const subprocess = Bun.spawn([
@@ -194,9 +185,8 @@ describe("cli command", () => {
     expect(exitCode).toBe(0)
   })
 
-  test("config-backed commands accept an explicit release root", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-explicit-root-"))
-    try {
+  test("config-backed commands accept an explicit release root", () =>
+    withTempDirectoryPromise("ts-release-cli-explicit-root-", async (root) => {
       await mkdir(join(root, "app"), { recursive: true })
       await writeFile(join(root, "package.json"), JSON.stringify({
         name: "@scope/root-package",
@@ -265,14 +255,10 @@ describe("cli command", () => {
 
       const summary = await readFile(out, "utf8")
       expect(summary).toContain("@scope/root-package@1.2.3")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("renders release configs through the explicit config workflow", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-root-"))
-    try {
+  test("renders release configs through the explicit config workflow", () =>
+    withTempDirectoryPromise("ts-release-cli-root-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
 
       const output = await Effect.runPromise(
@@ -288,14 +274,10 @@ describe("cli command", () => {
       )
 
       expect(output).toContain("release@0.1.0")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("renders summary and markdown plan formats through the workflow", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-plan-formats-"))
-    try {
+  test("renders summary and markdown plan formats through the workflow", () =>
+    withTempDirectoryPromise("ts-release-cli-plan-formats-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
 
       const summary = await Effect.runPromise(
@@ -321,16 +303,12 @@ describe("cli command", () => {
         )
       )
 
-      expect(summary).toContain("gated operations")
+      expect(summary).toContain("approval-required operations")
       expect(markdown).toContain("### npm:npm-publish")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("explain command reports one operation without executing it", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-explain-"))
-    try {
+  test("explain command reports one operation without executing it", () =>
+    withTempDirectoryPromise("ts-release-cli-explain-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
 
@@ -356,14 +334,10 @@ describe("cli command", () => {
         )
       )
       expectExitFailureTag(missing, "PlanOperationNotFoundError")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("init previews without writing and writes only when approved", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-"))
-    try {
+  test("init previews without writing and writes only when approved", () =>
+    withTempDirectoryPromise("ts-release-cli-init-", async (root) => {
       const configPath = join(root, "release.config.json")
 
       await Effect.runPromise(
@@ -411,10 +385,7 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(BunServices.layer))
       )
       expectExitFailureTag(blocked, "ReleaseInitWriteError")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
   test("init generates schema-valid configs for every template", async () => {
     const templates: ReadonlyArray<"npm-only" | "npm-github" | "multi-target-homebrew" | "multi-target-scoop"> = [
@@ -424,8 +395,7 @@ describe("cli command", () => {
       "multi-target-scoop"
     ]
     for (const template of templates) {
-      const root = await mkdtemp(join(tmpdir(), `ts-release-cli-init-${template}-`))
-      try {
+      await withTempDirectoryPromise(`ts-release-cli-init-${template}-`, async (root) => {
         const plan = await Effect.runPromise(
           planReleaseInit(ReleaseInitOptions.make({
             root,
@@ -453,15 +423,12 @@ describe("cli command", () => {
             expect(packageArtifact?.consumers).toEqual(["npm"])
           }
         }
-      } finally {
-        await rm(root, { recursive: true, force: true })
-      }
+      })
     }
   })
 
-  test("init can include the GitHub Actions trusted-publishing template", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-actions-"))
-    try {
+  test("init can include the GitHub Actions trusted-publishing template", () =>
+    withTempDirectoryPromise("ts-release-cli-init-actions-", async (root) => {
       const configPath = join(root, "release.config.json")
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
@@ -493,14 +460,10 @@ describe("cli command", () => {
       expect(workflow).toContain("bun install --frozen-lockfile")
       expect(workflow).toContain("bun run build")
       expect(workflow).not.toContain("NPM_TOKEN")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("init can render npm and pnpm GitHub Actions setup", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-actions-npm-"))
-    try {
+  test("init can render npm and pnpm GitHub Actions setup", () =>
+    withTempDirectoryPromise("ts-release-cli-init-actions-npm-", async (root) => {
       const configPath = join(root, "release.config.json")
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
@@ -539,14 +502,10 @@ describe("cli command", () => {
       expect(pnpmWorkflow).toContain("corepack enable && pnpm install --frozen-lockfile")
       expect(pnpmWorkflow).toContain("pnpm run build --if-present")
       expect(pnpmWorkflow).not.toContain("oven-sh/setup-bun@v2")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("init supports workflow command overrides and rejects multiline commands", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-actions-commands-"))
-    try {
+  test("init supports workflow command overrides and rejects multiline commands", () =>
+    withTempDirectoryPromise("ts-release-cli-init-actions-commands-", async (root) => {
       const configPath = join(root, "release.config.json")
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
@@ -582,14 +541,10 @@ describe("cli command", () => {
         })).pipe(Effect.provide(BunServices.layer))
       )
       expectExitFailureTag(rejected, "ReleaseInitWriteError")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("init rejects workflow traversal without writing output", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-init-unsafe-workflow-"))
-    try {
+  test("init rejects workflow traversal without writing output", () =>
+    withTempDirectoryPromise("ts-release-cli-init-unsafe-workflow-", async (root) => {
       const configPath = join(root, "release.config.json")
       const exit = await Effect.runPromiseExit(
         Command.runWith(cli, { version: "0.0.0" })([
@@ -612,14 +567,10 @@ describe("cli command", () => {
       expectExitFailureTag(exit, "ReleaseInitWriteError")
       await expect(readFile(configPath, "utf8")).rejects.toThrow()
       await expect(readFile(join(root, ".github", "outside.yml"), "utf8")).rejects.toThrow()
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("check-auth reports env names without secret values", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-auth-"))
-    try {
+  test("check-auth reports env names without secret values", () =>
+    withTempDirectoryPromise("ts-release-cli-check-auth-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
       const layer = Layer.mergeAll(
@@ -643,14 +594,10 @@ describe("cli command", () => {
       expect(serialized).toContain("GH_TOKEN")
       expect(serialized).not.toContain("npm_secret")
       expect(report.checks.some((item) => item.status === "fail" && item.message.includes("GH_TOKEN"))).toBe(true)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("check-ci accepts the trusted publishing workflow template", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-"))
-    try {
+  test("check-ci accepts the trusted publishing workflow template", () =>
+    withTempDirectoryPromise("ts-release-cli-check-ci-", async (root) => {
       const configPath = join(root, "release.config.json")
       const trustedConfig = minimalConfig.replace(
         "\"tokenEnv\":\"NPM_TOKEN\",",
@@ -673,14 +620,10 @@ describe("cli command", () => {
       )
 
       expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("check-ci does not require referenced release artifacts to exist", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-missing-artifacts-"))
-    try {
+  test("check-ci does not require referenced release artifacts to exist", () =>
+    withTempDirectoryPromise("ts-release-cli-check-ci-missing-artifacts-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(join(root, "package.json"), JSON.stringify({
         name: "@scope/pkg",
@@ -739,10 +682,7 @@ describe("cli command", () => {
 
       expect(report.checks.some((item) => item.id === "ci:workflow-file")).toBe(true)
       expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
   test("check-ci accepts the real self-release workflow", async () => {
     const root = process.cwd()
@@ -764,9 +704,8 @@ describe("cli command", () => {
     expect(report.checks.find((item) => item.id === "ci:execute-approval")?.status).toBe("ok")
   })
 
-  test("check-ci accepts safely renamed workflow jobs", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-renamed-jobs-"))
-    try {
+  test("check-ci accepts safely renamed workflow jobs", () =>
+    withTempDirectoryPromise("ts-release-cli-check-ci-renamed-jobs-", async (root) => {
       const configPath = join(root, "release.config.json")
       const trustedConfig = minimalConfig.replace(
         "\"tokenEnv\":\"NPM_TOKEN\",",
@@ -820,14 +759,10 @@ describe("cli command", () => {
       )
 
       expect(report.checks.filter((item) => item.status === "fail")).toEqual([])
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("check-ci rejects action execution in the plan job", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-plan-exec-"))
-    try {
+  test("check-ci rejects action execution in the plan job", () =>
+    withTempDirectoryPromise("ts-release-cli-check-ci-plan-exec-", async (root) => {
       const configPath = join(root, "release.config.json")
       const trustedConfig = minimalConfig.replace(
         "\"tokenEnv\":\"NPM_TOKEN\",",
@@ -881,14 +816,10 @@ describe("cli command", () => {
 
       const planSafety = report.checks.find((item) => item.id === "ci:plan-job-no-execute")
       expect(planSafety?.status).toBe("fail")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("check-ci rejects an execute job without approved execution", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-ci-execute-approval-"))
-    try {
+  test("check-ci rejects an execute job without approved execution", () =>
+    withTempDirectoryPromise("ts-release-cli-check-ci-execute-approval-", async (root) => {
       const configPath = join(root, "release.config.json")
       const trustedConfig = minimalConfig.replace(
         "\"tokenEnv\":\"NPM_TOKEN\",",
@@ -941,14 +872,10 @@ describe("cli command", () => {
       )
 
       expect(report.checks.find((item) => item.id === "ci:execute-approval")?.status).toBe("fail")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("doctor command composes static diagnostics", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-doctor-"))
-    try {
+  test("doctor command composes static diagnostics", () =>
+    withTempDirectoryPromise("ts-release-cli-doctor-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
 
@@ -963,14 +890,10 @@ describe("cli command", () => {
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("plans release configs programmatically", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-plan-root-"))
-    try {
+  test("plans release configs programmatically", () =>
+    withTempDirectoryPromise("ts-release-plan-root-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
 
       const plan = await Effect.runPromise(
@@ -982,14 +905,10 @@ describe("cli command", () => {
       expect(plan.identity.name).toBe("release")
       expect(plan.source.root).toBe(root)
       expect(plan.source.configPath).toBe("release.config.json")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("supports named Bun workflow runtime layer composition", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-workflow-runtime-"))
-    try {
+  test("supports named Bun workflow runtime layer composition", () =>
+    withTempDirectoryPromise("ts-release-workflow-runtime-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
 
       const plan = await Effect.runPromise(
@@ -999,10 +918,7 @@ describe("cli command", () => {
       )
 
       expect(plan.identity.name).toBe("release")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
   layer(approvalCliLayer)((it) => {
     it.effect("execute command fails without execute approval", () =>
@@ -1036,9 +952,8 @@ describe("cli command", () => {
       ))
   })
 
-  test("eligibility command checks remote state through the config workflow", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-eligibility-"))
-    try {
+  test("eligibility command checks remote state through the config workflow", () =>
+    withTempDirectoryPromise("ts-release-cli-eligibility-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig.replace("\"tag\":\"v0.1.0\"", "\"tag\":\"release-0.1.0\""))
       await writeFile(join(root, "package.json"), JSON.stringify({
@@ -1095,14 +1010,10 @@ describe("cli command", () => {
           configPath
         ]).pipe(Effect.provide(layer))
       )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("check-intent command fails when required intent files are missing", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-check-intent-"))
-    try {
+  test("check-intent command fails when required intent files are missing", () =>
+    withTempDirectoryPromise("ts-release-cli-check-intent-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, JSON.stringify({
         identity: {
@@ -1137,14 +1048,10 @@ describe("cli command", () => {
       )
 
       expectExitFailureTag(exit, "ReleaseEligibilityCheckError")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("run command writes workflow evidence files", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-run-root-"))
-    try {
+  test("run command writes one workflow evidence file", () =>
+    withTempDirectoryPromise("ts-release-run-root-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, noOpConfig)
 
@@ -1160,136 +1067,13 @@ describe("cli command", () => {
         )
       )
 
-      for (const name of ["render", "validation", "execution", "verification"]) {
-        const output = await readFile(join(root, ".release", "evidence", `${name}.json`), "utf8")
-        expect(output).toContain("\"releaseName\": \"release\"")
-      }
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+      const output = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
+      expect(output).toContain("\"releaseName\": \"release\"")
+      expect(output).toContain("\"records\": []")
+    }))
 
-  test("status command renders JSON without executing operations", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-status-root-"))
-    try {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, noOpConfig)
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "status",
-          "--config",
-          configPath,
-          "--format",
-          "json"
-        ]).pipe(
-          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
-        )
-      )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("resume command writes workflow evidence files", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-resume-root-"))
-    try {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, noOpConfig)
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "resume",
-          "--config",
-          configPath
-        ]).pipe(
-          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
-        )
-      )
-
-      for (const name of ["render", "validation", "execution", "verification"]) {
-        const output = await readFile(join(root, ".release", "evidence", `${name}.json`), "utf8")
-        expect(output).toContain("\"releaseName\": \"release\"")
-      }
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("resume command blocks on failed publish evidence", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-resume-blocked-"))
-    try {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig)
-      await mkdir(join(root, ".release", "evidence"), { recursive: true })
-      const publishCommand = CommandSpec.make({
-        executable: "npm",
-        args: ["publish", ".", "--registry", "https://registry.npmjs.org"],
-        requiredEnv: ["NPM_TOKEN"],
-        redactedEnv: ["NPM_TOKEN"]
-      })
-      const publishOperation = PublishCommandOperation.make({
-        id: "npm:npm-publish",
-        targetId: "npm",
-        description: "Publish to npm.",
-        risk: "irreversible",
-        gate: irreversibleGate("npm versions are immutable."),
-        command: publishCommand
-      })
-      const executionEvidence = EvidenceBundle.make({
-        schemaVersion: "release-evidence/v1",
-        releaseName: "release",
-        releaseVersion: "0.1.0",
-        records: [
-          CommandEvidence.make({
-            id: "npm:npm-publish:command",
-            operationId: "npm:npm-publish",
-            operationFingerprint: operationFingerprint(publishOperation),
-            targetId: "npm",
-            status: "failed",
-            severity: "error",
-            command: publishCommand,
-            exitCode: 1,
-            stdout: "",
-            stderr: "publish failed",
-            startedAt: "2026-06-17T00:00:00.000Z",
-            endedAt: "2026-06-17T00:00:00.001Z",
-            durationMillis: 1
-          })
-        ]
-      })
-      await writeFile(join(root, ".release", "evidence", "execution.json"), renderEvidenceJson(executionEvidence))
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map()
-        }),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
-
-      const exit = await Effect.runPromiseExit(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "resume",
-          "--config",
-          configPath,
-          "--execute",
-          "--approve-irreversible"
-        ]).pipe(Effect.provide(layer))
-      )
-
-      expectExitFailureTag(exit, "ResumeBlockedError")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("reconcile command publishes a matching GitHub draft with execute approval", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-reconcile-root-"))
-    try {
+  test("reconcile command publishes a matching GitHub draft with execute approval", () =>
+    withTempDirectoryPromise("ts-release-reconcile-root-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, reconcileConfig)
       await mkdir(join(root, "dist"), { recursive: true })
@@ -1333,14 +1117,10 @@ describe("cli command", () => {
       expect(evidence).toContain("github:gh-release-publish-draft:command")
       expect(evidence).toContain("--draft=false")
       expect(evidence).not.toContain("npm:npm-publish")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 
-  test("run command writes partial workflow evidence on validation failure", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-partial-evidence-"))
-    try {
+  test("run command writes partial workflow evidence on validation failure", () =>
+    withTempDirectoryPromise("ts-release-cli-partial-evidence-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, partialWorkflowConfig)
       await mkdir(join(root, "artifacts"), { recursive: true })
@@ -1380,20 +1160,15 @@ describe("cli command", () => {
       )
 
       expectExitFailureTag(exit, "OperationFailedError")
-      const renderEvidence = await readFile(join(root, ".release", "evidence", "render.json"), "utf8")
-      const validationEvidence = await readFile(join(root, ".release", "evidence", "validation.json"), "utf8")
-      expect(renderEvidence).toContain("homebrew:homebrew-render-formula:execution")
-      expect(validationEvidence).toContain("npm:npm-version:command")
-      await expect(readFile(join(root, ".release", "evidence", "execution.json"), "utf8")).rejects.toThrow()
-      await expect(readFile(join(root, ".release", "evidence", "verification.json"), "utf8")).rejects.toThrow()
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+      const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
+      expect(evidence).toContain("homebrew:homebrew-render-formula:execution")
+      expect(evidence).toContain("npm:npm-version:command")
+      expect(evidence).toContain("\"phase\": \"render\"")
+      expect(evidence).toContain("\"phase\": \"validation\"")
+    }))
 
-  test("render command succeeds without approval when there is nothing to render", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-render-"))
-    try {
+  test("render command succeeds without approval when there is nothing to render", () =>
+    withTempDirectoryPromise("ts-release-cli-render-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
       const layer = makeBunReleaseWorkflowRuntimeLayer({ root })
@@ -1405,8 +1180,5 @@ describe("cli command", () => {
           configPath
         ]).pipe(Effect.provide(layer))
       )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
+    }))
 })

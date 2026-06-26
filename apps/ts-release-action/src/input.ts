@@ -3,7 +3,6 @@ import * as Schema from "effect/Schema"
 export const ActionCommand = Schema.Literals([
   "plan",
   "validate-config",
-  "status",
   "eligibility",
   "check-intent",
   "doctor",
@@ -11,7 +10,6 @@ export const ActionCommand = Schema.Literals([
   "check-ci",
   "validate",
   "run",
-  "resume",
   "reconcile"
 ])
 export type ActionCommand = typeof ActionCommand.Type
@@ -51,7 +49,6 @@ export interface ActionInputReader {
 const commands: ReadonlyArray<ActionCommand> = [
   "plan",
   "validate-config",
-  "status",
   "eligibility",
   "check-intent",
   "doctor",
@@ -59,7 +56,6 @@ const commands: ReadonlyArray<ActionCommand> = [
   "check-ci",
   "validate",
   "run",
-  "resume",
   "reconcile"
 ]
 

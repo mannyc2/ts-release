@@ -1,8 +1,6 @@
 import * as Effect from "effect/Effect"
 import {
   CommandSpec,
-  irreversibleGate,
-  noApprovalGate,
   Operation,
   PublishCommandOperation,
   VerifyRemoteOperation
@@ -79,7 +77,6 @@ const npmDryRunOperation = (target: NpmRegistryTarget): Operation =>
     targetId: target.id,
     dryRunSupport: target.dryRunSupport,
     nativeDescription: "Validate npm package contents with npm pack dry-run.",
-    nativeGateReason: "npm pack --dry-run validates package contents without publishing.",
     command: npmCommand(target, ["pack", "--dry-run", "--json", target.packagePath], false),
     simulatedDescription: "Record simulated npm dry-run validation.",
     skippedDescription: "Record skipped npm dry-run validation.",
@@ -104,7 +101,6 @@ const npmAuthOperation = (target: NpmRegistryTarget): Operation =>
       id: `${target.id}:npm-whoami`,
       targetId: target.id,
       description: "Validate npm CLI authentication.",
-      gateReason: "npm whoami checks CLI authentication without publishing.",
       command: npmCommand(target, ["whoami", "--registry", target.registry], true)
     })
 
@@ -113,7 +109,6 @@ const npmPackageExistsOperation = (target: NpmRegistryTarget): Operation =>
     id: `${target.id}:npm-package-exists`,
     targetId: target.id,
     description: "Verify npm package exists before trusted publishing.",
-    gateReason: "npm view checks package metadata without publishing.",
     command: npmCommand(target, ["view", target.packageName, "name", "--registry", target.registry], false)
   })
 
@@ -138,7 +133,6 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
       id: `${target.id}:npm-version`,
       targetId: target.id,
       description: "Check npm CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: npmCommand(target, ["--version"], false)
     }),
     npmAuthOperation(target),
@@ -149,7 +143,6 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
       targetId: target.id,
       description: `Publish ${target.packageName}@${model.identity.version} to npm.`,
       risk: "irreversible",
-      gate: irreversibleGate("npm package versions are immutable once published."),
       command: npmCommand(target, npmPublishArgs(target), true)
     }),
     VerifyRemoteOperation.make({
@@ -157,7 +150,6 @@ export const planNpmOperations = Effect.fn("planNpmOperations")(function*(
       targetId: target.id,
       description: `Verify ${target.packageName}@${model.identity.version} exists on npm.`,
       risk: "read-only",
-      gate: noApprovalGate("npm view verifies published package metadata without publishing."),
       command: npmCommand(
         target,
         ["view", `${target.packageName}@${model.identity.version}`, "version", "--registry", target.registry],

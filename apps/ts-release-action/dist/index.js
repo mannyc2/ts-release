@@ -100829,8 +100829,6 @@ __export(exports_config, {
   writePlannedValidation: () => writePlannedValidation,
   writePlannedRunWorkflowEvidence: () => writePlannedRunWorkflowEvidence,
   writePlannedRun: () => writePlannedRun,
-  writePlannedResumeWorkflowEvidence: () => writePlannedResumeWorkflowEvidence,
-  writePlannedResume: () => writePlannedResume,
   writePlannedRenderEvidence: () => writePlannedRenderEvidence,
   writePlannedRender: () => writePlannedRender,
   writePlannedReconciliationEvidence: () => writePlannedReconciliationEvidence,
@@ -100843,17 +100841,9 @@ __export(exports_config, {
   validateReleaseConfig: () => validateReleaseConfig,
   validateFile: () => validateFile,
   validate: () => validate3,
-  statusReleaseConfig: () => statusReleaseConfig,
-  status: () => status,
   runReleaseConfig: () => runReleaseConfig,
   run: () => run3,
-  resumeReleaseConfig: () => resumeReleaseConfig,
-  resume: () => resume,
   renderValidation: () => renderValidation,
-  renderStatusReport: () => renderStatusReport,
-  renderStatus: () => renderStatus,
-  renderReleaseStatusReport: () => renderReleaseStatusReport,
-  renderReleaseStatus: () => renderReleaseStatus,
   renderReleasePlan: () => renderReleasePlan,
   renderReleaseEligibilityDecision: () => renderReleaseEligibilityDecision,
   renderReleaseConfigValidationText: () => renderReleaseConfigValidationText,
@@ -100875,8 +100865,6 @@ __export(exports_config, {
   planAndWriteValidation: () => planAndWriteValidation,
   planAndWriteRunWorkflowEvidence: () => planAndWriteRunWorkflowEvidence,
   planAndWriteRun: () => planAndWriteRun,
-  planAndWriteResumeWorkflowEvidence: () => planAndWriteResumeWorkflowEvidence,
-  planAndWriteResume: () => planAndWriteResume,
   planAndWriteRenderEvidence: () => planAndWriteRenderEvidence,
   planAndWriteRender: () => planAndWriteRender,
   planAndWriteReconciliationEvidence: () => planAndWriteReconciliationEvidence,
@@ -100887,12 +100875,8 @@ __export(exports_config, {
   planAndVerify: () => planAndVerify,
   planAndValidateReleaseConfig: () => planAndValidateReleaseConfig,
   planAndValidate: () => planAndValidate,
-  planAndStatusReleaseConfig: () => planAndStatusReleaseConfig,
-  planAndStatus: () => planAndStatus,
   planAndRunReleaseConfig: () => planAndRunReleaseConfig,
   planAndRun: () => planAndRun,
-  planAndResumeReleaseConfig: () => planAndResumeReleaseConfig,
-  planAndResume: () => planAndResume,
   planAndRenderReleaseConfig: () => planAndRenderReleaseConfig,
   planAndRender: () => planAndRender,
   planAndReconcileReleaseConfig: () => planAndReconcileReleaseConfig,
@@ -100910,8 +100894,6 @@ __export(exports_config, {
   checkEligibility: () => checkEligibility,
   ValidateReleaseConfigFileOptions: () => ValidateReleaseConfigFileOptions,
   RenderReleaseConfigOptions: () => RenderReleaseConfigOptions,
-  ReleaseStatusOptions: () => ReleaseStatusOptions,
-  ReleaseResumeConfigOptions: () => ReleaseResumeConfigOptions,
   ReleaseReconcileConfigOptions: () => ReleaseReconcileConfigOptions,
   ReleasePlanFormat: () => ReleasePlanFormat,
   ReleaseIntentCheckOptions: () => ReleaseIntentCheckOptions,
@@ -100920,10 +100902,7 @@ __export(exports_config, {
   ReleaseConfigValidationResult: () => ReleaseConfigValidationResult,
   ReleaseConfigValidationFormat: () => ReleaseConfigValidationFormat,
   ReleaseConfigOptions: () => ReleaseConfigOptions,
-  PlannedReleaseConfigWrittenWorkflowResult: () => PlannedReleaseConfigWrittenWorkflowResult,
   PlannedReleaseConfigWrittenEvidenceResult: () => PlannedReleaseConfigWrittenEvidenceResult,
-  PlannedReleaseConfigWorkflowResult: () => PlannedReleaseConfigWorkflowResult,
-  PlannedReleaseConfigStatusResult: () => PlannedReleaseConfigStatusResult,
   PlannedReleaseConfigPlanResult: () => PlannedReleaseConfigPlanResult,
   PlannedReleaseConfigEvidenceResult: () => PlannedReleaseConfigEvidenceResult,
   PlanReleaseConfigOptions: () => PlanReleaseConfigOptions,
@@ -101132,13 +101111,6 @@ var targetAuthRequirement = (target) => {
 var OperationId = NonEmptyString;
 var OperationRisk = Literals(["read-only", "writes-local", "externally-visible", "irreversible"]);
 
-class ExecutionGate extends Class4("ExecutionGate")({
-  requiresExecute: Boolean3,
-  requiresIrreversibleApproval: Boolean3,
-  reason: String4
-}) {
-}
-
 class CommandSpec extends Class4("CommandSpec")({
   executable: String4,
   args: ArraySchema(String4),
@@ -101192,7 +101164,6 @@ class RenderFileOperation extends TaggedClass()("RenderFileOperation", {
   targetId: optionalKey2(TargetId),
   description: String4,
   risk: OperationRisk,
-  gate: ExecutionGate,
   path: String4,
   contents: String4
 }) {
@@ -101203,7 +101174,6 @@ class ValidateCommandOperation extends TaggedClass()("ValidateCommandOperation",
   targetId: optionalKey2(TargetId),
   description: String4,
   risk: OperationRisk,
-  gate: ExecutionGate,
   command: CommandSpec
 }) {
 }
@@ -101213,7 +101183,6 @@ class ValidationNoteOperation extends TaggedClass()("ValidationNoteOperation", {
   targetId: optionalKey2(TargetId),
   description: String4,
   risk: OperationRisk,
-  gate: ExecutionGate,
   message: String4,
   skipped: Boolean3,
   severity: Literals(["info", "warning"])
@@ -101225,7 +101194,6 @@ class PublishCommandOperation extends TaggedClass()("PublishCommandOperation", {
   targetId: TargetId,
   description: String4,
   risk: OperationRisk,
-  gate: ExecutionGate,
   command: CommandSpec
 }) {
 }
@@ -101235,7 +101203,6 @@ class VerifyRemoteOperation extends TaggedClass()("VerifyRemoteOperation", {
   targetId: TargetId,
   description: String4,
   risk: OperationRisk,
-  gate: ExecutionGate,
   command: CommandSpec
 }) {
 }
@@ -101245,7 +101212,6 @@ class VerifyHttpOperation extends TaggedClass()("VerifyHttpOperation", {
   targetId: TargetId,
   description: String4,
   risk: OperationRisk,
-  gate: ExecutionGate,
   request: HttpRequestSpec,
   expectedStatus: Number5,
   checks: ArraySchema(HttpJsonCheck)
@@ -101259,118 +101225,6 @@ var Operation = Union2([
   VerifyRemoteOperation,
   VerifyHttpOperation
 ]);
-var isJsonObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
-var stableJson = (value2) => {
-  if (Array.isArray(value2)) {
-    return value2.map(stableJson);
-  }
-  if (isJsonObject(value2)) {
-    const output = {};
-    for (const key of Object.keys(value2).sort()) {
-      const item = value2[key];
-      if (item !== undefined) {
-        output[key] = stableJson(item);
-      }
-    }
-    return output;
-  }
-  return value2;
-};
-var commandSpecPayload = (command) => ({
-  executable: command.executable,
-  args: command.args,
-  ...command.cwd === undefined ? {} : { cwd: command.cwd },
-  requiredEnv: command.requiredEnv,
-  redactedEnv: command.redactedEnv
-});
-var httpHeaderPayload = (header) => ({
-  name: header.name,
-  value: header.value
-});
-var httpEnvHeaderPayload = (header) => ({
-  name: header.name,
-  valueEnv: header.valueEnv,
-  ...header.prefix === undefined ? {} : { prefix: header.prefix }
-});
-var httpRequestPayload = (request2) => ({
-  method: request2.method,
-  url: request2.url,
-  headers: request2.headers.map(httpHeaderPayload),
-  envHeaders: request2.envHeaders.map(httpEnvHeaderPayload),
-  requiredEnv: request2.requiredEnv,
-  redactedEnv: request2.redactedEnv
-});
-var httpJsonCheckPayload = (check) => {
-  switch (check._tag) {
-    case "HttpJsonEqualsCheck":
-      return {
-        _tag: check._tag,
-        path: check.path,
-        expected: stableJson(check.expected)
-      };
-    case "HttpJsonArrayObjectFieldEqualsCheck":
-      return {
-        _tag: check._tag,
-        path: check.path,
-        field: check.field,
-        expected: stableJson(check.expected)
-      };
-  }
-};
-var textEncoder = new TextEncoder;
-var fnv1a64Offset = 0xcbf29ce484222325n;
-var fnv1a64Prime = 0x100000001b3n;
-var fnv1a64Mask = 0xffffffffffffffffn;
-var contentDigest = (contents) => {
-  let hash2 = fnv1a64Offset;
-  for (const byte of textEncoder.encode(contents)) {
-    hash2 ^= BigInt(byte);
-    hash2 = hash2 * fnv1a64Prime & fnv1a64Mask;
-  }
-  return `fnv1a64:${hash2.toString(16).padStart(16, "0")}`;
-};
-var operationApprovalRequirements = (operation) => ({
-  requiresExecute: operation.gate.requiresExecute || operation._tag === "PublishCommandOperation" || operation._tag === "RenderFileOperation" || operation.risk !== "read-only",
-  requiresIrreversibleApproval: operation.gate.requiresIrreversibleApproval || operation.risk === "irreversible"
-});
-var commonOperationPayload = (operation) => ({
-  _tag: operation._tag,
-  id: operation.id,
-  ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
-  approval: operationApprovalRequirements(operation)
-});
-var operationFingerprint = (operation) => {
-  const common = commonOperationPayload(operation);
-  switch (operation._tag) {
-    case "RenderFileOperation":
-      return JSON.stringify({
-        ...common,
-        path: operation.path,
-        contentsDigest: contentDigest(operation.contents)
-      });
-    case "ValidateCommandOperation":
-    case "PublishCommandOperation":
-    case "VerifyRemoteOperation":
-      return JSON.stringify({
-        ...common,
-        command: commandSpecPayload(operation.command)
-      });
-    case "ValidationNoteOperation":
-      return JSON.stringify({
-        ...common,
-        message: operation.message,
-        severity: operation.severity,
-        skipped: operation.skipped
-      });
-    case "VerifyHttpOperation":
-      return JSON.stringify({
-        ...common,
-        request: httpRequestPayload(operation.request),
-        expectedStatus: operation.expectedStatus,
-        checks: operation.checks.map(httpJsonCheckPayload)
-      });
-  }
-};
 
 class ExecutionApproval extends Class4("ExecutionApproval")({
   execute: Boolean3,
@@ -101387,21 +101241,17 @@ class ExecutionApprovalError extends TaggedErrorClass()("ExecutionApprovalError"
   reason: String4
 }) {
 }
-var noApprovalGate = (reason) => ExecutionGate.make({
-  requiresExecute: false,
-  requiresIrreversibleApproval: false,
-  reason
+var operationApprovalRequirements = (operation) => ({
+  requiresExecute: operation.risk !== "read-only",
+  requiresIrreversibleApproval: operation.risk === "irreversible"
 });
-var executeGate = (reason) => ExecutionGate.make({
-  requiresExecute: true,
-  requiresIrreversibleApproval: false,
-  reason
-});
-var irreversibleGate = (reason) => ExecutionGate.make({
-  requiresExecute: true,
-  requiresIrreversibleApproval: true,
-  reason
-});
+var operationApprovalLabel = (operation) => {
+  const requirements = operationApprovalRequirements(operation);
+  if (!requirements.requiresExecute) {
+    return "none";
+  }
+  return requirements.requiresIrreversibleApproval ? "--execute + --approve-irreversible" : "--execute";
+};
 var canExecuteOperation = (operation, approval) => {
   const requirements = operationApprovalRequirements(operation);
   if (requirements.requiresExecute && !approval.execute) {
@@ -101625,23 +101475,7 @@ var loadReleaseIntent = fn2("loadReleaseIntent")(function* (path4 = DEFAULT_CONF
 var EvidenceId = NonEmptyString;
 var EvidenceSeverity = Literals(["info", "warning", "error"]);
 var EvidenceStatus = Literals(["passed", "failed", "skipped", "warning"]);
-
-class CommandEvidence extends Class4("CommandEvidence")({
-  id: EvidenceId,
-  operationId: OperationId,
-  operationFingerprint: String4,
-  targetId: optionalKey2(TargetId),
-  status: EvidenceStatus,
-  severity: EvidenceSeverity,
-  command: CommandSpec,
-  exitCode: Number5,
-  stdout: String4,
-  stderr: String4,
-  startedAt: String4,
-  endedAt: String4,
-  durationMillis: Number5
-}) {
-}
+var EvidencePhase = Literals(["render", "validation", "execution", "verification", "reconciliation"]);
 
 class HttpRequestEvidence extends Class4("HttpRequestEvidence")({
   method: HttpMethod,
@@ -101657,120 +101491,35 @@ class HttpCheckEvidence extends Class4("HttpCheckEvidence")({
 }) {
 }
 
-class HttpEvidence extends Class4("HttpEvidence")({
+class OperationEvidenceRecord extends Class4("OperationEvidenceRecord")({
   id: EvidenceId,
   operationId: OperationId,
-  operationFingerprint: String4,
+  phase: EvidencePhase,
   targetId: optionalKey2(TargetId),
+  risk: OperationRisk,
   status: EvidenceStatus,
   severity: EvidenceSeverity,
-  request: HttpRequestEvidence,
-  responseStatus: optionalKey2(Number5),
-  checks: ArraySchema(HttpCheckEvidence),
   message: String4,
   startedAt: String4,
   endedAt: String4,
-  durationMillis: Number5
+  durationMillis: Number5,
+  command: optionalKey2(CommandSpec),
+  exitCode: optionalKey2(Number5),
+  stdout: optionalKey2(String4),
+  stderr: optionalKey2(String4),
+  request: optionalKey2(HttpRequestEvidence),
+  responseStatus: optionalKey2(Number5),
+  checks: optionalKey2(ArraySchema(HttpCheckEvidence)),
+  skipped: optionalKey2(Boolean3)
 }) {
 }
-
-class ValidationEvidence extends Class4("ValidationEvidence")({
-  id: EvidenceId,
-  operationFingerprint: String4,
-  targetId: optionalKey2(TargetId),
-  status: EvidenceStatus,
-  severity: EvidenceSeverity,
-  message: String4,
-  timestamp: String4,
-  skipped: Boolean3
-}) {
-}
-
-class ExecutionEvidence extends Class4("ExecutionEvidence")({
-  id: EvidenceId,
-  operationId: OperationId,
-  operationFingerprint: String4,
-  targetId: optionalKey2(TargetId),
-  status: EvidenceStatus,
-  severity: EvidenceSeverity,
-  message: String4,
-  timestamp: String4
-}) {
-}
-var EvidenceRecord = Union2([CommandEvidence, HttpEvidence, ValidationEvidence, ExecutionEvidence]);
+var EvidenceRecord = OperationEvidenceRecord;
 
 class EvidenceBundle extends Class4("EvidenceBundle")({
   schemaVersion: Literal2("release-evidence/v1"),
   releaseName: ReleaseName,
   releaseVersion: ReleaseVersion,
   records: ArraySchema(EvidenceRecord)
-}) {
-}
-
-class ReleaseWorkflowEvidence extends Class4("ReleaseWorkflowEvidence")({
-  render: EvidenceBundle,
-  validation: EvidenceBundle,
-  execution: EvidenceBundle,
-  verification: EvidenceBundle
-}) {
-}
-
-class ReleaseWorkflowFailureEvidence extends Class4("ReleaseWorkflowFailureEvidence")({
-  render: optionalKey2(EvidenceBundle),
-  validation: optionalKey2(EvidenceBundle),
-  execution: optionalKey2(EvidenceBundle),
-  verification: optionalKey2(EvidenceBundle)
-}) {
-}
-
-// ../../src/domain/status.ts
-var ReleaseWorkflowPhase = Literals(["render", "validation", "execution", "verification"]);
-var ReleaseOperationStatus = Literals([
-  "pending",
-  "passed",
-  "warning",
-  "skipped",
-  "failed",
-  "blocked"
-]);
-var ReleaseOverallStatus = Literals([
-  "not-started",
-  "in-progress",
-  "failed",
-  "blocked",
-  "complete"
-]);
-var ReleaseResumeAction = Literals(["skip", "run", "retry-read-only", "block"]);
-
-class ReleaseOperationStatusRecord extends Class4("ReleaseOperationStatusRecord")({
-  operationId: OperationId,
-  targetId: optionalKey2(TargetId),
-  phase: ReleaseWorkflowPhase,
-  risk: OperationRisk,
-  status: ReleaseOperationStatus,
-  resumeAction: ReleaseResumeAction,
-  evidenceId: optionalKey2(String4),
-  reason: optionalKey2(String4)
-}) {
-}
-
-class ReleasePhaseStatusRecord extends Class4("ReleasePhaseStatusRecord")({
-  phase: ReleaseWorkflowPhase,
-  status: ReleaseOperationStatus,
-  completed: Number5,
-  total: Number5
-}) {
-}
-
-class ReleaseStatusReport extends Class4("ReleaseStatusReport")({
-  schemaVersion: Literal2("release-status/v1"),
-  releaseName: ReleaseName,
-  releaseVersion: ReleaseVersion,
-  overallStatus: ReleaseOverallStatus,
-  canResume: Boolean3,
-  evidenceDirectory: String4,
-  phases: ArraySchema(ReleasePhaseStatusRecord),
-  operations: ArraySchema(ReleaseOperationStatusRecord)
 }) {
 }
 
@@ -101942,12 +101691,6 @@ class WorkspaceWriteError extends TaggedErrorClass()("WorkspaceWriteError", {
 }) {
 }
 
-class ResumeBlockedError extends TaggedErrorClass()("ResumeBlockedError", {
-  operationId: OperationId,
-  reason: String4
-}) {
-}
-
 class RemoteStateInspectionError extends TaggedErrorClass()("RemoteStateInspectionError", {
   targetId: TargetId,
   reason: String4,
@@ -101973,8 +101716,7 @@ class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
   exitCode: optionalKey2(Number5),
   responseStatus: optionalKey2(Number5),
   reason: String4,
-  evidence: optionalKey2(EvidenceBundle),
-  workflowEvidence: optionalKey2(ReleaseWorkflowFailureEvidence)
+  evidence: optionalKey2(EvidenceBundle)
 }) {
 }
 
@@ -102577,6 +102319,12 @@ var appendEvidenceRecord = (bundle, record2) => EvidenceBundle.make({
   releaseVersion: bundle.releaseVersion,
   records: [...bundle.records, record2]
 });
+var appendEvidenceBundle = (bundle, next) => EvidenceBundle.make({
+  schemaVersion: bundle.schemaVersion,
+  releaseName: bundle.releaseName,
+  releaseVersion: bundle.releaseVersion,
+  records: [...bundle.records, ...next.records]
+});
 var redactText = (input, secrets) => {
   let output = input;
   for (const secret of secrets) {
@@ -102613,18 +102361,34 @@ var readRedactionSecrets = fn2("readRedactionSecrets")(function* (operation) {
   }
   return secrets;
 });
-var commandEvidenceFromResult = fn2("commandEvidenceFromResult")(function* (operation) {
+var operationEvidencePhase = (operation) => {
+  switch (operation._tag) {
+    case "RenderFileOperation":
+      return "render";
+    case "ValidateCommandOperation":
+    case "ValidationNoteOperation":
+      return "validation";
+    case "PublishCommandOperation":
+      return "execution";
+    case "VerifyRemoteOperation":
+    case "VerifyHttpOperation":
+      return "verification";
+  }
+};
+var commandEvidenceFromResult = fn2("commandEvidenceFromResult")(function* (operation, phase = operationEvidencePhase(operation)) {
   const commandRunner = yield* ReleaseCommandRunner;
   const secrets = yield* readRedactionSecrets(operation);
   const result2 = yield* commandRunner.runCommand(operation.command);
   const status = result2.exitCode === 0 ? "passed" : "failed";
-  return CommandEvidence.make({
+  return OperationEvidenceRecord.make({
     id: `${operation.id}:command`,
     operationId: operation.id,
-    operationFingerprint: operationFingerprint(operation),
+    phase,
     ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
+    risk: operation.risk,
     status,
     severity: result2.exitCode === 0 ? "info" : "error",
+    message: result2.exitCode === 0 ? "Command completed successfully." : "Command exited with a nonzero status.",
     command: result2.command,
     exitCode: result2.exitCode,
     stdout: redactText(result2.stdout, secrets),
@@ -102634,7 +102398,7 @@ var commandEvidenceFromResult = fn2("commandEvidenceFromResult")(function* (oper
     durationMillis: result2.durationMillis
   });
 });
-var isJsonObject2 = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
+var isJsonObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
 var jsonAt = (value2, path4) => {
   let current = value2;
   for (const segment of path4) {
@@ -102647,7 +102411,7 @@ var jsonAt = (value2, path4) => {
       }
       current = current[segment];
     } else {
-      if (!isJsonObject2(current)) {
+      if (!isJsonObject(current)) {
         return;
       }
       current = current[segment];
@@ -102666,7 +102430,7 @@ var jsonEquals = (left, right) => {
       return rightValue !== undefined && jsonEquals(value2, rightValue);
     });
   }
-  if (isJsonObject2(left) && isJsonObject2(right)) {
+  if (isJsonObject(left) && isJsonObject(right)) {
     const leftKeys = objectKeys(left);
     const rightKeys = objectKeys(right);
     return leftKeys.length === rightKeys.length && leftKeys.every((key, index) => {
@@ -102701,7 +102465,7 @@ var evaluateHttpCheck = (json, check) => {
     case "HttpJsonArrayObjectFieldEqualsCheck": {
       const actual = jsonAt(json, check.path);
       const passed = Array.isArray(actual) && actual.some((item) => {
-        if (!isJsonObject2(item)) {
+        if (!isJsonObject(item)) {
           return false;
         }
         const value2 = item[check.field];
@@ -102720,22 +102484,23 @@ var httpRequestEvidence = (operation) => HttpRequestEvidence.make({
   headers: operation.request.headers,
   envHeaders: operation.request.envHeaders
 });
-var httpEvidenceFromResult = fn2("httpEvidenceFromResult")(function* (operation) {
+var httpEvidenceFromResult = fn2("httpEvidenceFromResult")(function* (operation, phase = operationEvidencePhase(operation)) {
   const http3 = yield* ReleaseHttp;
   return yield* http3.runJson(operation.request).pipe(matchEffect3({
     onFailure: (error2) => gen2(function* () {
       const startedAt = yield* nowIso();
       const endedAt = yield* nowIso();
-      return HttpEvidence.make({
+      return OperationEvidenceRecord.make({
         id: `${operation.id}:http`,
         operationId: operation.id,
-        operationFingerprint: operationFingerprint(operation),
+        phase,
         targetId: operation.targetId,
+        risk: operation.risk,
         status: "failed",
         severity: "error",
+        message: error2.reason,
         request: httpRequestEvidence(operation),
         checks: [],
-        message: error2.reason,
         startedAt,
         endedAt,
         durationMillis: 0
@@ -102750,11 +102515,12 @@ var httpEvidenceFromResult = fn2("httpEvidenceFromResult")(function* (operation)
         ...operation.checks.map((check) => evaluateHttpCheck(result2.json, check))
       ];
       const failed = checks.filter((check) => !check.passed);
-      return succeed6(HttpEvidence.make({
+      return succeed6(OperationEvidenceRecord.make({
         id: `${operation.id}:http`,
         operationId: operation.id,
-        operationFingerprint: operationFingerprint(operation),
+        phase,
         targetId: operation.targetId,
+        risk: operation.risk,
         status: failed.length === 0 ? "passed" : "failed",
         severity: failed.length === 0 ? "info" : "error",
         request: HttpRequestEvidence.make({
@@ -102775,28 +102541,35 @@ var httpEvidenceFromResult = fn2("httpEvidenceFromResult")(function* (operation)
 });
 var executionEvidence = fn2("executionEvidence")(function* (operation, message) {
   const timestamp2 = yield* nowIso();
-  return ExecutionEvidence.make({
+  return OperationEvidenceRecord.make({
     id: `${operation.id}:execution`,
     operationId: operation.id,
-    operationFingerprint: operationFingerprint(operation),
+    phase: operationEvidencePhase(operation),
     ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
+    risk: operation.risk,
     status: "passed",
     severity: "info",
     message,
-    timestamp: timestamp2
+    startedAt: timestamp2,
+    endedAt: timestamp2,
+    durationMillis: 0
   });
 });
-var validationNoteEvidence = fn2("validationNoteEvidence")(function* (operation) {
+var validationNoteEvidence = fn2("validationNoteEvidence")(function* (operation, phase = operationEvidencePhase(operation)) {
   const timestamp2 = yield* nowIso();
   const status = operation.skipped ? "skipped" : operation.severity === "warning" ? "warning" : "passed";
-  return ValidationEvidence.make({
+  return OperationEvidenceRecord.make({
     id: `${operation.id}:validation`,
-    operationFingerprint: operationFingerprint(operation),
+    operationId: operation.id,
+    phase,
     ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
+    risk: operation.risk,
     status,
     severity: operation.severity,
     message: operation.message,
-    timestamp: timestamp2,
+    startedAt: timestamp2,
+    endedAt: timestamp2,
+    durationMillis: 0,
     skipped: operation.skipped
   });
 });
@@ -102878,7 +102651,7 @@ var mergeEvidenceBundles = fn2("mergeEvidenceBundles")(function* (plan, existing
 
 // ../../src/planner/executor.ts
 class RetryableVerificationEvidenceFailure extends TaggedErrorClass()("RetryableVerificationEvidenceFailure", {
-  evidence: Union2([CommandEvidence, HttpEvidence])
+  evidence: EvidenceRecord
 }) {
 }
 var npmVersionVerificationRetryPolicy = addDelay(recurs(10), () => succeed6(millis(500)));
@@ -102908,20 +102681,12 @@ var writeWorkspaceFile = fn2("writeWorkspaceFile")(function* (root, pathName, co
 });
 var failOperationEvidence = (evidence, bundle) => fail6(OperationFailedError.make({
   operationId: evidence.operationId,
-  ..."exitCode" in evidence ? { exitCode: evidence.exitCode } : {},
-  ..."responseStatus" in evidence && evidence.responseStatus !== undefined ? { responseStatus: evidence.responseStatus } : {},
-  reason: "exitCode" in evidence ? "Command exited with a nonzero status." : "HTTP verification failed.",
+  ...evidence.exitCode === undefined ? {} : { exitCode: evidence.exitCode },
+  ...evidence.responseStatus === undefined ? {} : { responseStatus: evidence.responseStatus },
+  reason: evidence.exitCode !== undefined ? "Command exited with a nonzero status." : "HTTP verification failed.",
   ...bundle === undefined ? {} : { evidence: bundle }
 }));
-var failWorkflowOperation = (error2, workflowEvidence) => fail6(OperationFailedError.make({
-  operationId: error2.operationId,
-  ...error2.exitCode === undefined ? {} : { exitCode: error2.exitCode },
-  ...error2.responseStatus === undefined ? {} : { responseStatus: error2.responseStatus },
-  reason: error2.reason,
-  ...error2.evidence === undefined ? {} : { evidence: error2.evidence },
-  workflowEvidence
-}));
-function runOperationEvidence(operation, approval, root = ".") {
+function runOperationEvidence(operation, approval, root = ".", phase) {
   return gen2(function* () {
     yield* requireExecutionApproval(operation, approval);
     if (operation._tag === "RenderFileOperation") {
@@ -102929,23 +102694,23 @@ function runOperationEvidence(operation, approval, root = ".") {
       return yield* executionEvidence(operation, `Rendered ${operation.path}`);
     }
     if (operation._tag === "ValidationNoteOperation") {
-      return yield* validationNoteEvidence(operation);
+      return yield* validationNoteEvidence(operation, phase);
     }
     if (operation._tag === "VerifyHttpOperation") {
-      return yield* httpEvidenceFromResult(operation);
+      return yield* httpEvidenceFromResult(operation, phase);
     }
-    return yield* commandEvidenceFromResult(operation);
+    return yield* commandEvidenceFromResult(operation, phase);
   });
 }
-var retryNpmVersionVerificationEvidence = fn2("retryNpmVersionVerificationEvidence")(function* (operation, approval, root) {
-  return yield* runOperationEvidence(operation, approval, root).pipe(flatMap3((evidence) => operationFailed(evidence) ? fail6(RetryableVerificationEvidenceFailure.make({ evidence })) : succeed6(evidence)), retry3(npmVersionVerificationRetryPolicy), catchTag2("RetryableVerificationEvidenceFailure", (error2) => succeed6(error2.evidence)));
+var retryNpmVersionVerificationEvidence = fn2("retryNpmVersionVerificationEvidence")(function* (operation, approval, root, phase) {
+  return yield* runOperationEvidence(operation, approval, root, phase).pipe(flatMap3((evidence) => operationFailed(evidence) ? fail6(RetryableVerificationEvidenceFailure.make({ evidence })) : succeed6(evidence)), retry3(npmVersionVerificationRetryPolicy), catchTag2("RetryableVerificationEvidenceFailure", (error2) => succeed6(error2.evidence)));
 });
-var runOperationEvidenceWithVerificationRetry = (operation, approval, root) => isNpmVersionVerificationOperation(operation) ? retryNpmVersionVerificationEvidence(operation, approval, root) : runOperationEvidence(operation, approval, root);
-function runOperations(plan, operations, approval) {
+var runOperationEvidenceWithVerificationRetry = (operation, approval, root, phase) => isNpmVersionVerificationOperation(operation) ? retryNpmVersionVerificationEvidence(operation, approval, root, phase) : runOperationEvidence(operation, approval, root, phase);
+function runOperations(plan, operations, approval, phase) {
   return gen2(function* () {
     let bundle = emptyEvidenceBundle(plan);
     for (const operation of operations) {
-      const evidence = yield* runOperationEvidenceWithVerificationRetry(operation, approval, plan.source.root);
+      const evidence = yield* runOperationEvidenceWithVerificationRetry(operation, approval, plan.source.root, phase);
       bundle = appendEvidenceRecord(bundle, evidence);
       if (operationFailed(evidence)) {
         return yield* failOperationEvidence(evidence, bundle);
@@ -102963,46 +102728,42 @@ var publishOperations = (plan) => plan.operations.filter(isPublishOperation);
 var renderOperations = (plan) => plan.operations.filter(isRenderOperation);
 var verificationOperations = (plan) => plan.operations.filter(isVerificationOperation);
 var validatePlan = fn2("validatePlan")(function* (plan) {
-  return yield* runOperations(plan, validationOperations(plan), ExecutionApproval.none);
+  return yield* runOperations(plan, validationOperations(plan), ExecutionApproval.none, "validation");
 });
 var executePlan = fn2("executePlan")(function* (plan, approval) {
-  return yield* runOperations(plan, publishOperations(plan), approval);
+  return yield* runOperations(plan, publishOperations(plan), approval, "execution");
 });
 var renderPlan = fn2("renderPlan")(function* (plan, approval) {
-  return yield* runOperations(plan, renderOperations(plan), approval);
+  return yield* runOperations(plan, renderOperations(plan), approval, "render");
 });
 var verifyPlan = fn2("verifyPlan")(function* (plan) {
-  return yield* runOperations(plan, verificationOperations(plan), ExecutionApproval.none);
+  return yield* runOperations(plan, verificationOperations(plan), ExecutionApproval.none, "verification");
 });
+var appendFailureEvidence = (accumulated, error2) => {
+  const evidence = error2.evidence === undefined ? accumulated : appendEvidenceBundle(accumulated, error2.evidence);
+  return OperationFailedError.make({
+    operationId: error2.operationId,
+    ...error2.exitCode === undefined ? {} : { exitCode: error2.exitCode },
+    ...error2.responseStatus === undefined ? {} : { responseStatus: error2.responseStatus },
+    reason: error2.reason,
+    evidence
+  });
+};
 var runApprovedReleaseWorkflow = fn2("runApprovedReleaseWorkflow")(function* (plan, approval) {
+  let evidence = emptyEvidenceBundle(plan);
   const renderApproval = ExecutionApproval.make({
     execute: approval.execute,
     approveIrreversible: false
   });
-  const render = yield* renderPlan(plan, renderApproval).pipe(catchTag2("OperationFailedError", (error2) => failWorkflowOperation(error2, ReleaseWorkflowFailureEvidence.make({
-    ...error2.evidence === undefined ? {} : { render: error2.evidence }
-  }))));
-  const validation = yield* validatePlan(plan).pipe(catchTag2("OperationFailedError", (error2) => failWorkflowOperation(error2, ReleaseWorkflowFailureEvidence.make({
-    render,
-    ...error2.evidence === undefined ? {} : { validation: error2.evidence }
-  }))));
-  const execution = yield* executePlan(plan, approval).pipe(catchTag2("OperationFailedError", (error2) => failWorkflowOperation(error2, ReleaseWorkflowFailureEvidence.make({
-    render,
-    validation,
-    ...error2.evidence === undefined ? {} : { execution: error2.evidence }
-  }))));
-  const verification = yield* verifyPlan(plan).pipe(catchTag2("OperationFailedError", (error2) => failWorkflowOperation(error2, ReleaseWorkflowFailureEvidence.make({
-    render,
-    validation,
-    execution,
-    ...error2.evidence === undefined ? {} : { verification: error2.evidence }
-  }))));
-  return ReleaseWorkflowEvidence.make({
-    render,
-    validation,
-    execution,
-    verification
-  });
+  const render = yield* renderPlan(plan, renderApproval).pipe(catchTag2("OperationFailedError", (error2) => fail6(appendFailureEvidence(evidence, error2))));
+  evidence = appendEvidenceBundle(evidence, render);
+  const validation = yield* validatePlan(plan).pipe(catchTag2("OperationFailedError", (error2) => fail6(appendFailureEvidence(evidence, error2))));
+  evidence = appendEvidenceBundle(evidence, validation);
+  const execution = yield* executePlan(plan, approval).pipe(catchTag2("OperationFailedError", (error2) => fail6(appendFailureEvidence(evidence, error2))));
+  evidence = appendEvidenceBundle(evidence, execution);
+  const verification = yield* verifyPlan(plan).pipe(catchTag2("OperationFailedError", (error2) => fail6(appendFailureEvidence(evidence, error2))));
+  evidence = appendEvidenceBundle(evidence, verification);
+  return evidence;
 });
 
 // ../../src/planner/render-plan.ts
@@ -103033,12 +102794,6 @@ var capabilitySetupFields = (capability) => {
     permissions,
     prerequisites
   ].filter((field) => field.length > 0).join(" ");
-};
-var gateLabel = (operation) => {
-  if (!operation.gate.requiresExecute) {
-    return "none";
-  }
-  return operation.gate.requiresIrreversibleApproval ? "--execute + --approve-irreversible" : "--execute";
 };
 var operationTargetCapability = (plan, operation) => {
   if (operation.targetId === undefined) {
@@ -103112,8 +102867,9 @@ var renderPlanText = (plan) => {
       lines.push(`  http: ${operation.request.method} ${operation.request.url}`);
       lines.push(`  expect: status ${operation.expectedStatus}, checks ${operation.checks.length}`);
     }
-    if (operation.gate.requiresExecute) {
-      lines.push(`  gate: execute${operation.gate.requiresIrreversibleApproval ? " + irreversible approval" : ""}`);
+    const approval = operationApprovalRequirements(operation);
+    if (approval.requiresExecute) {
+      lines.push(`  approval: execute${approval.requiresIrreversibleApproval ? " + irreversible approval" : ""}`);
     }
   }
   return `${lines.join(`
@@ -103137,8 +102893,8 @@ var renderPlanSummary = (plan) => {
   for (const risk of risks) {
     lines.push(`  ${risk}: ${plan.operations.filter((operation) => operation.risk === risk).length}`);
   }
-  const executeOperations = plan.operations.filter((operation) => operation.gate.requiresExecute);
-  const irreversibleOperations = plan.operations.filter((operation) => operation.gate.requiresIrreversibleApproval);
+  const executeOperations = plan.operations.filter((operation) => operationApprovalRequirements(operation).requiresExecute);
+  const irreversibleOperations = plan.operations.filter((operation) => operationApprovalRequirements(operation).requiresIrreversibleApproval);
   lines.push(`execute required: ${executeOperations.length}`);
   lines.push(`irreversible approval required: ${irreversibleOperations.length}`);
   lines.push("");
@@ -103148,9 +102904,9 @@ var renderPlanSummary = (plan) => {
     lines.push(`  - ${capability.targetId} [${capability.targetTag}] auth=${capability.authRequirement}` + `${setupFields.length === 0 ? "" : ` ${setupFields}`}`);
   }
   lines.push("");
-  lines.push("gated operations:");
+  lines.push("approval-required operations:");
   for (const operation of executeOperations) {
-    lines.push(`  - ${operation.id}: ${gateLabel(operation)} (${operation.risk})`);
+    lines.push(`  - ${operation.id}: ${operationApprovalLabel(operation)} (${operation.risk})`);
   }
   if (executeOperations.length === 0) {
     lines.push("  - none");
@@ -103185,8 +102941,8 @@ var renderPlanMarkdown = (plan) => {
     lines.push("");
     lines.push(`- target: ${operation.targetId ?? "none"}`);
     lines.push(`- risk: ${operation.risk}`);
-    lines.push(`- gate: ${gateLabel(operation)}`);
-    lines.push(`- why: ${operation.description} ${operation.gate.reason}`);
+    lines.push(`- approval: ${operationApprovalLabel(operation)}`);
+    lines.push(`- why: ${operation.description}`);
     if ("command" in operation) {
       lines.push("");
       lines.push("Command argv:");
@@ -103215,8 +102971,8 @@ var renderOperationExplanationText = (plan, operation) => {
     `operation: ${operation.id}`,
     `target: ${operation.targetId ?? "none"}`,
     `risk: ${operation.risk}`,
-    `why: ${operation.description} ${operation.gate.reason}`,
-    `execution gate: ${gateLabel(operation)}`
+    `why: ${operation.description}`,
+    `execution approval: ${operationApprovalLabel(operation)}`
   ];
   if (capability !== undefined) {
     lines.push(`target capability: auth=${capability.authRequirement} dry-run=${capability.dryRunSupport} ` + `strategy=${capability.validationStrategy} mutability=${capability.mutability} recovery=${capability.recovery}`);
@@ -103236,313 +102992,6 @@ var renderPlanOperationExplanation = fn2("renderPlanOperationExplanation")(funct
     return yield* fail6(PlanOperationNotFoundError.make({ operationId }));
   }
   return renderOperationExplanationText(plan, operation);
-});
-
-// ../../src/internal/workflow-phases.ts
-var workflowPhases = ["render", "validation", "execution", "verification"];
-
-// ../../src/planner/status.ts
-class ReleaseResumeOptions extends Class4("ReleaseResumeOptions")({
-  execute: Boolean3,
-  approveIrreversible: Boolean3
-}) {
-}
-var workflowEvidencePaths = (plan) => ({
-  render: `${plan.evidenceDirectory}/render.json`,
-  validation: `${plan.evidenceDirectory}/validation.json`,
-  execution: `${plan.evidenceDirectory}/execution.json`,
-  verification: `${plan.evidenceDirectory}/verification.json`
-});
-var ensureBundleMatchesPlan2 = (plan, pathName, bundle) => {
-  if (bundle === undefined) {
-    return void_3;
-  }
-  if (bundle.releaseName === plan.identity.name && bundle.releaseVersion === plan.identity.version) {
-    return void_3;
-  }
-  return fail6(EvidenceReadError.make({
-    path: pathName,
-    reason: `Evidence bundle is for ${bundle.releaseName}@${bundle.releaseVersion}, expected ${plan.identity.name}@${plan.identity.version}.`
-  }));
-};
-var loadWorkflowEvidence = fn2("loadWorkflowEvidence")(function* (plan) {
-  const paths = workflowEvidencePaths(plan);
-  const evidence = {};
-  for (const phase of workflowPhases) {
-    const bundle = yield* tryReadEvidenceBundle(paths[phase], plan.source.root);
-    yield* ensureBundleMatchesPlan2(plan, paths[phase], bundle);
-    if (bundle !== undefined) {
-      evidence[phase] = bundle;
-    }
-  }
-  return evidence;
-});
-var phaseOperations = (plan, phase) => {
-  switch (phase) {
-    case "render":
-      return renderOperations(plan);
-    case "validation":
-      return validationOperations(plan);
-    case "execution":
-      return publishOperations(plan);
-    case "verification":
-      return verificationOperations(plan);
-  }
-};
-var recordOperationId = (record2) => ("operationId" in record2) ? record2.operationId : undefined;
-var hasOperationIdentity = (operation, record2) => {
-  const operationId = recordOperationId(record2);
-  if (operationId !== undefined) {
-    return operationId === operation.id;
-  }
-  return operation._tag === "ValidationNoteOperation" && record2.id === `${operation.id}:validation`;
-};
-var matchesOperation = (operation, record2) => {
-  if (!hasOperationIdentity(operation, record2)) {
-    return false;
-  }
-  return record2.operationFingerprint === operationFingerprint(operation);
-};
-var latestEvidenceRecord = (operation, bundle) => {
-  if (bundle === undefined) {
-    return;
-  }
-  let latest;
-  for (const record2 of bundle.records) {
-    if (matchesOperation(operation, record2)) {
-      latest = record2;
-    }
-  }
-  return latest;
-};
-var failedOperationPolicy = (operation) => {
-  switch (operation._tag) {
-    case "PublishCommandOperation":
-      return {
-        status: "blocked",
-        resumeAction: "block",
-        reason: "Previous publish evidence failed; inspect remote state before retry."
-      };
-    case "ValidateCommandOperation":
-    case "ValidationNoteOperation":
-      return {
-        status: "failed",
-        resumeAction: "retry-read-only",
-        reason: "Previous validation evidence failed; resume can rerun this read-only operation."
-      };
-    case "VerifyRemoteOperation":
-    case "VerifyHttpOperation":
-      return {
-        status: "failed",
-        resumeAction: "retry-read-only",
-        reason: "Previous verification evidence failed; resume can rerun this read-only operation."
-      };
-    case "RenderFileOperation":
-      return {
-        status: "failed",
-        resumeAction: "run",
-        reason: "Previous render evidence failed; resume can rerun this local render operation."
-      };
-  }
-};
-var operationStatusRecord = (operation, phase, bundle) => {
-  const record2 = latestEvidenceRecord(operation, bundle);
-  const base = {
-    operationId: operation.id,
-    ...operation.targetId === undefined ? {} : { targetId: operation.targetId },
-    phase,
-    risk: operation.risk
-  };
-  if (record2 === undefined) {
-    return ReleaseOperationStatusRecord.make({
-      ...base,
-      status: "pending",
-      resumeAction: "run"
-    });
-  }
-  if (record2.status === "failed") {
-    const policy = failedOperationPolicy(operation);
-    return ReleaseOperationStatusRecord.make({
-      ...base,
-      status: policy.status,
-      resumeAction: policy.resumeAction,
-      evidenceId: record2.id,
-      reason: policy.reason
-    });
-  }
-  return ReleaseOperationStatusRecord.make({
-    ...base,
-    status: record2.status,
-    resumeAction: "skip",
-    evidenceId: record2.id
-  });
-};
-var completedOperation = (status) => status === "passed" || status === "warning" || status === "skipped";
-var phaseStatus = (records) => {
-  if (records.length === 0) {
-    return "passed";
-  }
-  if (records.some((record2) => record2.status === "blocked")) {
-    return "blocked";
-  }
-  if (records.some((record2) => record2.status === "failed")) {
-    return "failed";
-  }
-  if (records.some((record2) => record2.status === "pending")) {
-    return "pending";
-  }
-  if (records.some((record2) => record2.status === "warning")) {
-    return "warning";
-  }
-  if (records.every((record2) => record2.status === "skipped")) {
-    return "skipped";
-  }
-  return "passed";
-};
-var phaseStatusRecord = (phase, records) => ReleasePhaseStatusRecord.make({
-  phase,
-  status: phaseStatus(records),
-  completed: records.filter((record2) => completedOperation(record2.status)).length,
-  total: records.length
-});
-var overallStatus = (evidence, operations, phases) => {
-  const evidenceFilesExist = workflowPhases.some((phase) => evidence[phase] !== undefined);
-  const operationEvidenceExists = operations.some((operation) => operation.evidenceId !== undefined);
-  if (!evidenceFilesExist && !operationEvidenceExists) {
-    return "not-started";
-  }
-  if (operations.some((operation) => operation.status === "blocked")) {
-    return "blocked";
-  }
-  if (operations.some((operation) => operation.status === "failed")) {
-    return "failed";
-  }
-  if (phases.every((phase) => phase.completed === phase.total)) {
-    return "complete";
-  }
-  return "in-progress";
-};
-var canResumeReport = (overall, operations) => overall !== "blocked" && overall !== "complete" && operations.some((operation) => operation.resumeAction === "run" || operation.resumeAction === "retry-read-only");
-var summarizeReleaseStatus = (plan, evidence) => {
-  const operations = [];
-  const phases = [];
-  for (const phase of workflowPhases) {
-    const bundle = evidence[phase];
-    const records = phaseOperations(plan, phase).map((operation) => operationStatusRecord(operation, phase, bundle));
-    operations.push(...records);
-    phases.push(phaseStatusRecord(phase, records));
-  }
-  const overall = overallStatus(evidence, operations, phases);
-  return ReleaseStatusReport.make({
-    schemaVersion: "release-status/v1",
-    releaseName: plan.identity.name,
-    releaseVersion: plan.identity.version,
-    overallStatus: overall,
-    canResume: canResumeReport(overall, operations),
-    evidenceDirectory: plan.evidenceDirectory,
-    phases,
-    operations
-  });
-};
-var statusReleasePlan = fn2("statusReleasePlan")(function* (plan) {
-  const evidence = yield* loadWorkflowEvidence(plan);
-  return summarizeReleaseStatus(plan, evidence);
-});
-var renderReleaseStatusText = (report) => {
-  const lines = [
-    `${report.releaseName}@${report.releaseVersion} status=${report.overallStatus} can-resume=${report.canResume} evidence=${report.evidenceDirectory}`,
-    "",
-    "phases:"
-  ];
-  for (const phase of report.phases) {
-    lines.push(`  ${phase.phase}: ${phase.status} ${phase.completed}/${phase.total}`);
-  }
-  lines.push("", "operations:");
-  for (const operation of report.operations) {
-    const fields = [
-      `  - ${operation.operationId} [${operation.phase}] ${operation.status}`,
-      `resume=${operation.resumeAction}`,
-      operation.evidenceId === undefined ? "" : `evidence=${operation.evidenceId}`,
-      operation.reason === undefined ? "" : `reason=${JSON.stringify(operation.reason)}`
-    ].filter((field) => field.length > 0);
-    lines.push(fields.join(" "));
-  }
-  return `${lines.join(`
-`)}
-`;
-};
-var renderReleaseStatusJson = (report) => `${JSON.stringify(report, null, 2)}
-`;
-var approvalForPhase = (phase, options) => {
-  switch (phase) {
-    case "render":
-      return ExecutionApproval.make({
-        execute: options.execute,
-        approveIrreversible: false
-      });
-    case "validation":
-    case "verification":
-      return ExecutionApproval.none;
-    case "execution":
-      return ExecutionApproval.make({
-        execute: options.execute,
-        approveIrreversible: options.approveIrreversible
-      });
-  }
-};
-var shouldRunOperation = (report, operation) => {
-  const status = report.operations.find((record2) => record2.operationId === operation.id);
-  return status?.resumeAction === "run" || status?.resumeAction === "retry-read-only";
-};
-var failWorkflowOperation2 = (error2, workflowEvidence) => fail6(OperationFailedError.make({
-  operationId: error2.operationId,
-  ...error2.exitCode === undefined ? {} : { exitCode: error2.exitCode },
-  ...error2.responseStatus === undefined ? {} : { responseStatus: error2.responseStatus },
-  reason: error2.reason,
-  ...error2.evidence === undefined ? {} : { evidence: error2.evidence },
-  workflowEvidence
-}));
-var workflowFailureEvidence = (prefix2, phase, current) => {
-  const evidence = {};
-  for (const evidencePhase of workflowPhases) {
-    const bundle = evidencePhase === phase ? current : prefix2[evidencePhase];
-    if (bundle !== undefined) {
-      evidence[evidencePhase] = bundle;
-    }
-  }
-  return ReleaseWorkflowFailureEvidence.make(evidence);
-};
-var resumePhase = fn2("resumePhase")(function* (plan, phase, existing, operations, approval, report, prefix2) {
-  const runnable = operations.filter((operation) => shouldRunOperation(report, operation));
-  if (runnable.length === 0) {
-    return existing ?? emptyEvidenceBundle(plan);
-  }
-  const fresh = yield* runOperations(plan, runnable, approval).pipe(catchTag2("OperationFailedError", (error2) => gen2(function* () {
-    const current = error2.evidence === undefined ? existing : yield* mergeEvidenceBundles(plan, existing, error2.evidence);
-    return yield* failWorkflowOperation2(error2, workflowFailureEvidence(prefix2, phase, current));
-  })));
-  return yield* mergeEvidenceBundles(plan, existing, fresh);
-});
-var resumeApprovedReleaseWorkflow = fn2("resumeApprovedReleaseWorkflow")(function* (plan, options) {
-  const evidence = yield* loadWorkflowEvidence(plan);
-  const report = summarizeReleaseStatus(plan, evidence);
-  const blocked = report.operations.find((operation) => operation.resumeAction === "block");
-  if (blocked !== undefined) {
-    return yield* fail6(ResumeBlockedError.make({
-      operationId: blocked.operationId,
-      reason: blocked.reason ?? "Resume is blocked by previous failed publish evidence."
-    }));
-  }
-  const render = yield* resumePhase(plan, "render", evidence.render, renderOperations(plan), approvalForPhase("render", options), report, {});
-  const validation = yield* resumePhase(plan, "validation", evidence.validation, validationOperations(plan), approvalForPhase("validation", options), report, { render });
-  const execution = yield* resumePhase(plan, "execution", evidence.execution, publishOperations(plan), approvalForPhase("execution", options), report, { render, validation });
-  const verification = yield* resumePhase(plan, "verification", evidence.verification, verificationOperations(plan), approvalForPhase("verification", options), report, { render, validation, execution });
-  return ReleaseWorkflowEvidence.make({
-    render,
-    validation,
-    execution,
-    verification
-  });
 });
 
 // ../../src/domain/remote-state.ts
@@ -103740,7 +103189,6 @@ var githubReleaseReconcileCreateOperation = (target, plan) => PublishCommandOper
   targetId: target.id,
   description: `Create missing GitHub release for ${plan.identity.name}@${plan.identity.version}.`,
   risk: "externally-visible",
-  gate: executeGate("Creating this GitHub release is externally visible."),
   command: githubReleaseCreateCommand(target, plan)
 });
 var githubReleasePublishDraftOperation = (target, plan) => PublishCommandOperation.make({
@@ -103748,7 +103196,6 @@ var githubReleasePublishDraftOperation = (target, plan) => PublishCommandOperati
   targetId: target.id,
   description: `Publish existing GitHub draft release for ${plan.identity.name}@${plan.identity.version}.`,
   risk: "externally-visible",
-  gate: executeGate("Publishing this GitHub draft release is externally visible."),
   command: githubReleasePublishDraftCommand(target, plan)
 });
 var sortedAssetNames = (response) => response.assets.map((asset) => asset.name).sort();
@@ -103955,7 +103402,7 @@ var reconcileReleasePlan = fn2("reconcileReleasePlan")(function* (plan, options)
   return yield* runOperations(plan, operations, ExecutionApproval.make({
     execute: options.execute,
     approveIrreversible: false
-  }));
+  }), "reconciliation");
 });
 
 // ../../src/planner/release-eligibility.ts
@@ -104530,41 +103977,32 @@ var releaseExecutionFields = (input) => ({
 });
 
 // ../../src/workflows/evidence.ts
-class WorkflowEvidencePathsWritten extends Class4("WorkflowEvidencePathsWritten")({
-  render: optionalKey2(String4),
-  validation: optionalKey2(String4),
-  execution: optionalKey2(String4),
-  verification: optionalKey2(String4)
-}) {
-}
 var releaseEvidencePath = (plan, name) => `${plan.evidenceDirectory}/${name}.json`;
+var releaseWorkflowEvidencePath = (plan) => releaseEvidencePath(plan, "evidence");
 var writeNamedEvidence = fn2("workflows.evidence.writeNamedEvidence")(function* (plan, name, evidence) {
   const path4 = releaseEvidencePath(plan, name);
   yield* writeEvidenceBundle(path4, evidence, plan.source.root);
   return path4;
 });
+var writeWorkflowEvidence = fn2("workflows.evidence.writeWorkflowEvidence")(function* (plan, evidence) {
+  const path4 = releaseWorkflowEvidencePath(plan);
+  yield* writeEvidenceBundle(path4, evidence, plan.source.root);
+  return path4;
+});
+var isOperationFailedError = (error2) => typeof error2 === "object" && error2 !== null && ("_tag" in error2) && error2._tag === "OperationFailedError";
 var writeFailedOperationEvidence = fn2("workflows.evidence.writeFailedOperationEvidence")(function* (plan, name, error2) {
   if (error2.evidence === undefined) {
     return;
   }
   return yield* writeNamedEvidence(plan, name, error2.evidence);
 });
-var isOperationFailedError = (error2) => typeof error2 === "object" && error2 !== null && ("_tag" in error2) && error2._tag === "OperationFailedError";
-var hasWorkflowEvidence = (error2) => isOperationFailedError(error2) && error2.workflowEvidence !== undefined;
 var writeNamedEvidenceWithFailure = (plan, name, effect2) => effect2.pipe(catchIf2(isOperationFailedError, (error2) => writeFailedOperationEvidence(plan, name, error2).pipe(flatMap3(() => fail6(error2)))), flatMap3((evidence) => writeNamedEvidence(plan, name, evidence).pipe(map5(() => evidence))));
-var writeWorkflowEvidence = fn2("workflows.evidence.writeWorkflowEvidence")(function* (plan, evidence) {
-  const paths = workflowEvidencePaths(plan);
-  const written = {};
-  for (const phase of workflowPhases) {
-    const bundle = evidence[phase];
-    if (bundle !== undefined) {
-      written[phase] = paths[phase];
-      yield* writeEvidenceBundle(paths[phase], bundle, plan.source.root);
-    }
+var writeWorkflowEvidenceWithFailure = (plan, effect2) => effect2.pipe(catchIf2(isOperationFailedError, (error2) => gen2(function* () {
+  if (error2.evidence !== undefined) {
+    yield* writeWorkflowEvidence(plan, error2.evidence);
   }
-  return WorkflowEvidencePathsWritten.make(written);
-});
-var writeWorkflowEvidenceWithFailure = (plan, effect2) => effect2.pipe(catchIf2(hasWorkflowEvidence, (error2) => writeWorkflowEvidence(plan, error2.workflowEvidence).pipe(flatMap3(() => fail6(error2)))), flatMap3((evidence) => writeWorkflowEvidence(plan, evidence)));
+  return yield* fail6(error2);
+})), flatMap3((evidence) => writeWorkflowEvidence(plan, evidence).pipe(map5(() => evidence))));
 
 // ../../src/workflows/config.ts
 var ReleasePlanFormat = Literals(["json", "text", "summary", "markdown"]);
@@ -104619,21 +104057,6 @@ class ReleaseExecutionOptions extends Class4("ReleaseExecutionOptions")({
 }) {
 }
 
-class ReleaseStatusOptions extends Class4("ReleaseStatusOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  format: optionalKey2(ReleasePlanFormat)
-}) {
-}
-
-class ReleaseResumeConfigOptions extends Class4("ReleaseResumeConfigOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  execute: optionalKey2(Boolean3),
-  approveIrreversible: optionalKey2(Boolean3)
-}) {
-}
-
 class ReleaseReconcileConfigOptions extends Class4("ReleaseReconcileConfigOptions")({
   root: optionalKey2(String4),
   configPath: optionalKey2(String4),
@@ -104665,27 +104088,9 @@ class PlannedReleaseConfigEvidenceResult extends Class4("PlannedReleaseConfigEvi
 }) {
 }
 
-class PlannedReleaseConfigWorkflowResult extends Class4("PlannedReleaseConfigWorkflowResult")({
-  plan: ReleasePlan,
-  evidence: ReleaseWorkflowEvidence
-}) {
-}
-
 class PlannedReleaseConfigWrittenEvidenceResult extends Class4("PlannedReleaseConfigWrittenEvidenceResult")({
   plan: ReleasePlan,
   evidence: EvidenceBundle
-}) {
-}
-
-class PlannedReleaseConfigWrittenWorkflowResult extends Class4("PlannedReleaseConfigWrittenWorkflowResult")({
-  plan: ReleasePlan,
-  paths: WorkflowEvidencePathsWritten
-}) {
-}
-
-class PlannedReleaseConfigStatusResult extends Class4("PlannedReleaseConfigStatusResult")({
-  plan: ReleasePlan,
-  report: ReleaseStatusReport
 }) {
 }
 var releaseConfigOptionsFromInput = (input = {}) => ReleaseConfigOptions.make(releaseConfigFields(input));
@@ -104706,11 +104111,6 @@ var explainReleaseConfigOptionsFromInput = (input) => ExplainReleaseConfigOption
   operationId: input.operationId
 });
 var releaseExecutionOptionsFromInput = (input = {}) => ReleaseExecutionOptions.make(releaseExecutionFields(input));
-var releaseStatusOptionsFromInput = (input = {}) => ReleaseStatusOptions.make({
-  ...releaseConfigFields(input),
-  ...releaseFormatField(input)
-});
-var releaseResumeConfigOptionsFromInput = (input = {}) => ReleaseResumeConfigOptions.make(releaseExecutionFields(input));
 var releaseReconcileConfigOptionsFromInput = (input = {}) => ReleaseReconcileConfigOptions.make({
   ...releaseConfigFields(input),
   ...releaseExecuteField(input)
@@ -104731,10 +104131,6 @@ var configReadPath = (path4, options) => {
   return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot(path4, options), pathName);
 };
 var approvalFromOptions = (options) => ExecutionApproval.make({
-  execute: options.execute ?? false,
-  approveIrreversible: options.approveIrreversible ?? false
-});
-var resumeOptionsFromConfigOptions = (options) => ReleaseResumeOptions.make({
   execute: options.execute ?? false,
   approveIrreversible: options.approveIrreversible ?? false
 });
@@ -104901,7 +104297,7 @@ var planAndRunReleaseConfig = fn2("workflows.config.planAndRunReleaseConfig")(fu
   const options = releaseExecutionOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
   const evidence = yield* runApprovedReleaseWorkflow(plan, approvalFromOptions(options));
-  return PlannedReleaseConfigWorkflowResult.make({ plan, evidence });
+  return PlannedReleaseConfigEvidenceResult.make({ plan, evidence });
 });
 var writePlannedRunWorkflowEvidence = fn2("workflows.config.writePlannedRunWorkflowEvidence")(function* (plan, input = {}) {
   const options = releaseExecutionOptionsFromInput(input);
@@ -104910,44 +104306,8 @@ var writePlannedRunWorkflowEvidence = fn2("workflows.config.writePlannedRunWorkf
 var planAndWriteRunWorkflowEvidence = fn2("workflows.config.planAndWriteRunWorkflowEvidence")(function* (input = {}) {
   const options = releaseExecutionOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
-  const paths = yield* writePlannedRunWorkflowEvidence(plan, options);
-  return PlannedReleaseConfigWrittenWorkflowResult.make({ plan, paths });
-});
-var statusReleaseConfig = fn2("workflows.config.statusReleaseConfig")(function* (input = {}) {
-  const result2 = yield* planAndStatusReleaseConfig(input);
-  return result2.report;
-});
-var planAndStatusReleaseConfig = fn2("workflows.config.planAndStatusReleaseConfig")(function* (input = {}) {
-  const options = releaseStatusOptionsFromInput(input);
-  const plan = yield* planReleaseConfig(options);
-  const report = yield* statusReleasePlan(plan);
-  return PlannedReleaseConfigStatusResult.make({ plan, report });
-});
-var renderReleaseStatus = fn2("workflows.config.renderReleaseStatus")(function* (input = {}) {
-  const options = releaseStatusOptionsFromInput(input);
-  const report = yield* statusReleaseConfig(options);
-  return renderReleaseStatusReport(report, options.format ?? "text");
-});
-var renderReleaseStatusReport = (report, format3 = "text") => format3 === "json" ? renderReleaseStatusJson(report) : renderReleaseStatusText(report);
-var resumeReleaseConfig = fn2("workflows.config.resumeReleaseConfig")(function* (input = {}) {
-  const result2 = yield* planAndResumeReleaseConfig(input);
-  return result2.evidence;
-});
-var planAndResumeReleaseConfig = fn2("workflows.config.planAndResumeReleaseConfig")(function* (input = {}) {
-  const options = releaseResumeConfigOptionsFromInput(input);
-  const plan = yield* planReleaseConfig(options);
-  const evidence = yield* resumeApprovedReleaseWorkflow(plan, resumeOptionsFromConfigOptions(options));
-  return PlannedReleaseConfigWorkflowResult.make({ plan, evidence });
-});
-var writePlannedResumeWorkflowEvidence = fn2("workflows.config.writePlannedResumeWorkflowEvidence")(function* (plan, input = {}) {
-  const options = releaseResumeConfigOptionsFromInput(input);
-  return yield* writeWorkflowEvidenceWithFailure(plan, resumeApprovedReleaseWorkflow(plan, resumeOptionsFromConfigOptions(options)));
-});
-var planAndWriteResumeWorkflowEvidence = fn2("workflows.config.planAndWriteResumeWorkflowEvidence")(function* (input = {}) {
-  const options = releaseResumeConfigOptionsFromInput(input);
-  const plan = yield* planReleaseConfig(options);
-  const paths = yield* writePlannedResumeWorkflowEvidence(plan, options);
-  return PlannedReleaseConfigWrittenWorkflowResult.make({ plan, paths });
+  const evidence = yield* writePlannedRunWorkflowEvidence(plan, options);
+  return PlannedReleaseConfigWrittenEvidenceResult.make({ plan, evidence });
 });
 var reconcileReleaseConfig = fn2("workflows.config.reconcileReleaseConfig")(function* (input = {}) {
   const result2 = yield* planAndReconcileReleaseConfig(input);
@@ -105012,14 +104372,6 @@ var run3 = runReleaseConfig;
 var planAndRun = planAndRunReleaseConfig;
 var writePlannedRun = writePlannedRunWorkflowEvidence;
 var planAndWriteRun = planAndWriteRunWorkflowEvidence;
-var status = statusReleaseConfig;
-var planAndStatus = planAndStatusReleaseConfig;
-var renderStatusReport = renderReleaseStatusReport;
-var renderStatus = renderReleaseStatus;
-var resume = resumeReleaseConfig;
-var planAndResume = planAndResumeReleaseConfig;
-var writePlannedResume = writePlannedResumeWorkflowEvidence;
-var planAndWriteResume = planAndWriteResumeWorkflowEvidence;
 var reconcile = reconcileReleaseConfig;
 var planAndReconcile = planAndReconcileReleaseConfig;
 var writePlannedReconcile = writePlannedReconciliationEvidence;
@@ -105295,7 +104647,7 @@ var hasActionTruthyInput = (block, name) => hasTsReleaseAction(block) && hasYaml
 var hasCliPlanReview = (block) => (block.includes(" cli plan ") || block.includes(" release plan ") || block.includes("run cli plan ")) && block.includes("--format markdown");
 var hasActionPlanReview = (block) => hasActionCommand(block, "plan") && hasYamlValue(block, "format", "markdown");
 var hasPlanReview = (block) => hasCliPlanReview(block) || hasActionPlanReview(block);
-var jobExecutesRelease = (block) => block.includes("--execute") || hasActionTruthyInput(block, "execute") || hasActionCommand(block, "run") || hasActionCommand(block, "resume") || hasActionCommand(block, "reconcile");
+var jobExecutesRelease = (block) => block.includes("--execute") || hasActionTruthyInput(block, "execute") || hasActionCommand(block, "run") || hasActionCommand(block, "reconcile");
 var hasCliApprovedExecution = (block) => block.includes("run") && block.includes("--execute") && block.includes("--approve-irreversible");
 var hasActionApprovedExecution = (block) => hasActionCommand(block, "run") && hasActionTruthyInput(block, "execute") && hasActionTruthyInput(block, "approve-irreversible");
 var hasApprovedExecution = (block) => hasCliApprovedExecution(block) || hasActionApprovedExecution(block);
@@ -107279,7 +106631,6 @@ var catalogGitPushOperation = (options) => {
     targetId: options.targetId,
     description: options.description,
     risk: publishRisk,
-    gate: publishRisk === "irreversible" ? irreversibleGate(options.irreversibleReason) : executeGate(options.externallyVisibleReason),
     command: noAuthCommand("git", ["-C", options.directory ?? ".", "push"])
   });
 };
@@ -107307,7 +106658,6 @@ var readOnlyCommandValidationOperation = (options) => ValidateCommandOperation.m
   targetId: options.targetId,
   description: options.description,
   risk: "read-only",
-  gate: noApprovalGate(options.gateReason),
   command: options.command
 });
 var validationNoteOperation = (options) => ValidationNoteOperation.make({
@@ -107315,7 +106665,6 @@ var validationNoteOperation = (options) => ValidationNoteOperation.make({
   targetId: options.targetId,
   description: options.dryRunSupport === "simulated" ? options.simulatedDescription : options.skippedDescription,
   risk: "read-only",
-  gate: noApprovalGate("Validation notes do not modify local or remote state."),
   message: options.dryRunSupport === "simulated" ? options.simulatedMessage : options.skippedMessage,
   skipped: options.dryRunSupport === "none",
   severity: options.dryRunSupport === "simulated" ? "info" : "warning"
@@ -107324,7 +106673,6 @@ var dryRunValidationOperation = (options) => options.dryRunSupport === "native" 
   id: options.id,
   targetId: options.targetId,
   description: options.nativeDescription,
-  gateReason: options.nativeGateReason,
   command: options.command
 }) : validationNoteOperation({
   id: options.id,
@@ -107391,7 +106739,6 @@ var githubVerificationOperations = (target, model) => {
         targetId: target.id,
         description: "Verify the GitHub draft release through the GitHub CLI.",
         risk: "read-only",
-        gate: noApprovalGate("GitHub CLI release verification is read-only."),
         command: githubReleaseViewCommand(target, model)
       })
     ];
@@ -107410,7 +106757,6 @@ var githubVerificationOperations = (target, model) => {
       targetId: target.id,
       description: "Verify the GitHub release through the GitHub API.",
       risk: "read-only",
-      gate: noApprovalGate("GitHub API release verification is read-only."),
       request: githubReleaseRequestSpec(target, tag2),
       expectedStatus: 200,
       checks: [
@@ -107455,20 +106801,17 @@ var planGitHubOperations = fn2("planGitHubOperations")(function* (target, model)
   yield* rejectNoDryRunInStrictMode(target, model, "GitHub release target declares no dry-run support in strict mode.");
   yield* rejectDirectoryAssets(target, model);
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible";
-  const publishGate = publishRisk === "irreversible" ? irreversibleGate("Creating this GitHub release is externally visible and configured as immutable.") : executeGate("Creating or updating a GitHub release is externally visible.");
   return [
     readOnlyCommandValidationOperation({
       id: `${target.id}:gh-version`,
       targetId: target.id,
       description: "Check GitHub CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: githubGhCommand(target, ["--version"], false)
     }),
     readOnlyCommandValidationOperation({
       id: `${target.id}:gh-auth-status`,
       targetId: target.id,
       description: "Validate GitHub CLI authentication.",
-      gateReason: "gh auth status checks authentication without publishing.",
       command: githubGhCommand(target, ["auth", "status"], true)
     }),
     githubDryRunOperation(target, dryRunSupport),
@@ -107477,7 +106820,6 @@ var planGitHubOperations = fn2("planGitHubOperations")(function* (target, model)
       targetId: target.id,
       description: `Create GitHub release for ${model.identity.name}@${model.identity.version}.`,
       risk: publishRisk,
-      gate: publishGate,
       command: githubReleaseCreateCommand(target, model)
     }),
     ...githubVerificationOperations(target, model)
@@ -107535,7 +106877,6 @@ var dryRunOperation = (target) => dryRunValidationOperation({
   targetId: target.id,
   dryRunSupport: target.dryRunSupport,
   nativeDescription: "Validate generated Homebrew formula with brew audit.",
-  nativeGateReason: "brew audit validates the generated formula without publishing.",
   command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath]),
   simulatedDescription: "Record simulated Homebrew formula validation.",
   skippedDescription: "Record skipped Homebrew formula validation.",
@@ -107552,7 +106893,6 @@ var planHomebrewOperations = fn2("planHomebrewOperations")(function* (target, mo
       targetId: target.id,
       description: `Render Homebrew formula ${catalogPathBaseName(target.formulaPath)}.`,
       risk: "writes-local",
-      gate: executeGate("Rendering a Homebrew formula writes a local generated file."),
       path: target.formulaPath,
       contents: formula
     })
@@ -107562,7 +106902,6 @@ var planHomebrewOperations = fn2("planHomebrewOperations")(function* (target, mo
       id: `${target.id}:brew-version`,
       targetId: target.id,
       description: "Check Homebrew CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: noAuthCommand("brew", ["--version"])
     }));
   }
@@ -107571,9 +106910,7 @@ var planHomebrewOperations = fn2("planHomebrewOperations")(function* (target, mo
     targetId: target.id,
     description: `Push Homebrew tap update for ${model.identity.name}@${model.identity.version}.`,
     mutability: target.mutability,
-    directory: target.tapDirectory,
-    irreversibleReason: "Pushing a Homebrew tap update is configured as irreversible.",
-    externallyVisibleReason: "Pushing a Homebrew tap update is externally visible."
+    directory: target.tapDirectory
   }));
   return operations;
 });
@@ -107619,7 +106956,6 @@ var npmDryRunOperation = (target) => dryRunValidationOperation({
   targetId: target.id,
   dryRunSupport: target.dryRunSupport,
   nativeDescription: "Validate npm package contents with npm pack dry-run.",
-  nativeGateReason: "npm pack --dry-run validates package contents without publishing.",
   command: npmCommand(target, ["pack", "--dry-run", "--json", target.packagePath], false),
   simulatedDescription: "Record simulated npm dry-run validation.",
   skippedDescription: "Record skipped npm dry-run validation.",
@@ -107638,14 +106974,12 @@ var npmAuthOperation = (target) => target.trustedPublishing !== undefined ? vali
   id: `${target.id}:npm-whoami`,
   targetId: target.id,
   description: "Validate npm CLI authentication.",
-  gateReason: "npm whoami checks CLI authentication without publishing.",
   command: npmCommand(target, ["whoami", "--registry", target.registry], true)
 });
 var npmPackageExistsOperation = (target) => readOnlyCommandValidationOperation({
   id: `${target.id}:npm-package-exists`,
   targetId: target.id,
   description: "Verify npm package exists before trusted publishing.",
-  gateReason: "npm view checks package metadata without publishing.",
   command: npmCommand(target, ["view", target.packageName, "name", "--registry", target.registry], false)
 });
 var npmPublishArgs = (target) => {
@@ -107665,7 +106999,6 @@ var planNpmOperations = fn2("planNpmOperations")(function* (target, model) {
       id: `${target.id}:npm-version`,
       targetId: target.id,
       description: "Check npm CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: npmCommand(target, ["--version"], false)
     }),
     npmAuthOperation(target),
@@ -107676,7 +107009,6 @@ var planNpmOperations = fn2("planNpmOperations")(function* (target, model) {
       targetId: target.id,
       description: `Publish ${target.packageName}@${model.identity.version} to npm.`,
       risk: "irreversible",
-      gate: irreversibleGate("npm package versions are immutable once published."),
       command: npmCommand(target, npmPublishArgs(target), true)
     }),
     VerifyRemoteOperation.make({
@@ -107684,7 +107016,6 @@ var planNpmOperations = fn2("planNpmOperations")(function* (target, model) {
       targetId: target.id,
       description: `Verify ${target.packageName}@${model.identity.version} exists on npm.`,
       risk: "read-only",
-      gate: noApprovalGate("npm view verifies published package metadata without publishing."),
       command: npmCommand(target, ["view", `${target.packageName}@${model.identity.version}`, "version", "--registry", target.registry], false)
     })
   ];
@@ -107713,7 +107044,6 @@ var pypiDryRunOperation = (target, artifactPaths) => dryRunValidationOperation({
   targetId: target.id,
   dryRunSupport: target.dryRunSupport,
   nativeDescription: "Validate Python distribution metadata with twine check.",
-  nativeGateReason: "twine check validates built distributions without publishing.",
   command: noAuthCommand("python", ["-m", "twine", "check", ...artifactPaths]),
   simulatedDescription: "Record simulated PyPI distribution validation.",
   skippedDescription: "Record skipped PyPI distribution validation.",
@@ -107769,14 +107099,12 @@ var planPyPiOperations = fn2("planPyPiOperations")(function* (target, model) {
       id: `${target.id}:python-version`,
       targetId: target.id,
       description: "Check Python CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: noAuthCommand("python", ["--version"])
     }),
     readOnlyCommandValidationOperation({
       id: `${target.id}:twine-version`,
       targetId: target.id,
       description: "Check Twine CLI availability.",
-      gateReason: "Twine availability validation is read-only.",
       command: noAuthCommand("python", ["-m", "twine", "--version"])
     }),
     pypiDryRunOperation(target, artifactPaths),
@@ -107785,7 +107113,6 @@ var planPyPiOperations = fn2("planPyPiOperations")(function* (target, model) {
       targetId: target.id,
       description: `Publish ${model.identity.name}@${model.identity.version} to PyPI-compatible registry.`,
       risk: "irreversible",
-      gate: irreversibleGate("PyPI package versions are immutable once published."),
       command: twineAuthCommand(target, pypiPublishArgs(target, artifactPaths))
     })
   ];
@@ -107850,7 +107177,6 @@ var planScoopOperations = fn2("planScoopOperations")(function* (target, model) {
       targetId: target.id,
       description: `Render Scoop manifest ${catalogPathBaseName(target.manifestPath)}.`,
       risk: "writes-local",
-      gate: executeGate("Rendering a Scoop manifest writes a local generated file."),
       path: target.manifestPath,
       contents: manifest
     }),
@@ -107860,9 +107186,7 @@ var planScoopOperations = fn2("planScoopOperations")(function* (target, model) {
       targetId: target.id,
       description: `Push Scoop bucket update for ${model.identity.name}@${model.identity.version}.`,
       mutability: target.mutability,
-      directory: target.bucketDirectory,
-      irreversibleReason: "Pushing a Scoop bucket update is configured as irreversible.",
-      externallyVisibleReason: "Pushing a Scoop bucket update is externally visible."
+      directory: target.bucketDirectory
     })
   ];
 });
@@ -107921,7 +107245,6 @@ var LiveReleaseWorkflowLayer = mergeAll2(LiveReleaseHttpLayer, LiveTargetRegistr
 var ActionCommand = Literals([
   "plan",
   "validate-config",
-  "status",
   "eligibility",
   "check-intent",
   "doctor",
@@ -107929,7 +107252,6 @@ var ActionCommand = Literals([
   "check-ci",
   "validate",
   "run",
-  "resume",
   "reconcile"
 ]);
 var ActionFormat = Literals(["json", "text", "summary", "markdown"]);
@@ -107961,7 +107283,6 @@ class ActionInputError extends TaggedErrorClass()("ActionInputError", {
 var commands = [
   "plan",
   "validate-config",
-  "status",
   "eligibility",
   "check-intent",
   "doctor",
@@ -107969,7 +107290,6 @@ var commands = [
   "check-ci",
   "validate",
   "run",
-  "resume",
   "reconcile"
 ];
 var formats = ["json", "text", "summary", "markdown"];
@@ -108169,22 +107489,11 @@ var validationInput = (options) => ({
   configPath: options.config,
   format: textOutputFormat(options)
 });
-var statusInput = (options) => ({
-  root: options.root,
-  configPath: options.config,
-  format: textOutputFormat(options)
-});
 var eligibilityInput = (options) => ({
   root: options.root,
   configPath: options.config
 });
 var executionInput = (options) => ({
-  root: options.root,
-  configPath: options.config,
-  execute: options.execute,
-  approveIrreversible: options.approveIrreversible
-});
-var resumeInput = (options) => ({
   root: options.root,
   configPath: options.config,
   execute: options.execute,
@@ -108308,23 +107617,6 @@ ${rendered.trimEnd()}
   }
   yield* io.setOutput("status", "passed");
 });
-var runStatus = fn2("action.runStatus")(function* (options, io) {
-  const input = statusInput(options);
-  const planned = yield* exports_config.planAndStatus(input);
-  const rendered = exports_config.renderStatusReport(planned.report, input.format);
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release status
-
-\`\`\`text
-${rendered.trimEnd()}
-\`\`\`
-`);
-  }
-  yield* io.setOutput("release_name", planned.report.releaseName);
-  yield* io.setOutput("release_version", planned.report.releaseVersion);
-  yield* io.setOutput("evidence_directory", planned.report.evidenceDirectory);
-  yield* io.setOutput("status", planned.report.overallStatus);
-});
 var runEligibility = fn2("action.runEligibility")(function* (options, io) {
   const decision = yield* exports_config.checkEligibility(eligibilityInput(options));
   const rendered = exports_config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text");
@@ -108406,21 +107698,17 @@ evidence: ${plan2.evidenceDirectory}/validation.json
   yield* io.setOutput("status", "passed");
   return plan2;
 });
-var runWorkflow = fn2("action.runWorkflow")(function* (command, options, io, observePlan = NoopPlanObserver) {
+var runWorkflow = fn2("action.runWorkflow")(function* (options, io, observePlan = NoopPlanObserver) {
   const plan2 = yield* exports_config.plan(releaseInput(options));
   observePlan(plan2);
   yield* outputEvidenceDirectory(io, plan2);
-  if (command === "run") {
-    yield* exports_config.writePlannedRun(plan2, executionInput(options));
-  } else {
-    yield* exports_config.writePlannedResume(plan2, resumeInput(options));
-  }
+  yield* exports_config.writePlannedRun(plan2, executionInput(options));
   if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release ${command}
+    yield* io.appendSummary(`## ts-release run
 
 status: passed
 
-evidence: ${plan2.evidenceDirectory}
+evidence: ${plan2.evidenceDirectory}/evidence.json
 `);
   }
   yield* io.setOutput("status", "passed");
@@ -108460,9 +107748,6 @@ var runActionEffect = fn2("action.runActionEffect")(function* (options, io, arti
       case "validate-config":
         yield* runValidateConfig(safeOptions, io);
         return;
-      case "status":
-        yield* runStatus(safeOptions, io);
-        return;
       case "eligibility":
         yield* runEligibility(safeOptions, io);
         return;
@@ -108478,8 +107763,7 @@ var runActionEffect = fn2("action.runActionEffect")(function* (options, io, arti
         yield* runValidate(safeOptions, io, rememberPlan);
         return;
       case "run":
-      case "resume":
-        yield* runWorkflow(safeOptions.command, safeOptions, io, rememberPlan);
+        yield* runWorkflow(safeOptions, io, rememberPlan);
         return;
       case "reconcile":
         yield* runReconcile(safeOptions, io, rememberPlan);
@@ -108519,20 +107803,20 @@ var fromWritableChannel = (options) => fromTransform((pull) => {
 });
 var pullIntoWritable = (options) => options.pull.pipe(flatMap3((chunk) => {
   let i = 0;
-  return callback2(function loop(resume2) {
+  return callback2(function loop(resume) {
     for (;i < chunk.length; ) {
       const success = options.writable.write(chunk[i++], options.encoding);
       if (!success) {
-        options.writable.once("drain", () => loop(resume2));
+        options.writable.once("drain", () => loop(resume));
         return;
       }
     }
-    resume2(void_3);
+    resume(void_3);
   });
 }), forever3({
   disableYield: true
-}), raceFirst2(callback2((resume2) => {
-  const onError4 = (error2) => resume2(fail6(options.onError(error2)));
+}), raceFirst2(callback2((resume) => {
+  const onError4 = (error2) => resume(fail6(options.onError(error2)));
   options.writable.once("error", onError4);
   return sync2(() => {
     options.writable.off("error", onError4);
@@ -108541,8 +107825,8 @@ var pullIntoWritable = (options) => options.pull.pipe(flatMap3((chunk) => {
   if ("closed" in options.writable && options.writable.closed) {
     return done3(_2);
   }
-  return callback2((resume2) => {
-    options.writable.once("finish", () => resume2(done3(_2)));
+  return callback2((resume) => {
+    options.writable.once("finish", () => resume(done3(_2)));
     options.writable.end();
   });
 }) : identity);
@@ -108885,17 +108169,17 @@ var make28 = /* @__PURE__ */ gen2(function* () {
       all: all3
     };
   };
-  const spawn2 = (command, spawnOptions) => callback2((resume2) => {
+  const spawn2 = (command, spawnOptions) => callback2((resume) => {
     const deferred = makeUnsafe2();
     const handle = NodeChildProcess.spawn(command.command, command.args, spawnOptions);
     handle.on("error", (error2) => {
-      resume2(fail6(toPlatformError("spawn", error2, command)));
+      resume(fail6(toPlatformError("spawn", error2, command)));
     });
     handle.on("exit", (...args2) => {
       doneUnsafe(deferred, succeed4(args2));
     });
     handle.on("spawn", () => {
-      resume2(succeed6([handle, deferred]));
+      resume(succeed6([handle, deferred]));
     });
     return sync2(() => {
       handle.kill("SIGTERM");
@@ -108903,12 +108187,12 @@ var make28 = /* @__PURE__ */ gen2(function* () {
   });
   const killProcessGroup = (command, childProcess, signal) => {
     if (globalThis.process.platform === "win32") {
-      return callback2((resume2) => {
+      return callback2((resume) => {
         NodeChildProcess.exec(`taskkill /pid ${childProcess.pid} /T /F`, (error2) => {
           if (error2) {
-            resume2(fail6(toPlatformError("kill", toError(error2), command)));
+            resume(fail6(toPlatformError("kill", toError(error2), command)));
           } else {
-            resume2(void_3);
+            resume(void_3);
           }
         });
       });
@@ -109417,19 +108701,19 @@ var readDirectory = (path4, options) => tryPromise2({
   try: () => NFS.promises.readdir(path4, options),
   catch: (err) => handleErrnoException("FileSystem", "readDirectory")(err, [path4])
 });
-var readFile2 = (path4) => callback2((resume2, signal) => {
+var readFile2 = (path4) => callback2((resume, signal) => {
   try {
     NFS.readFile(path4, {
       signal
     }, (err, data) => {
       if (err) {
-        resume2(fail6(handleErrnoException("FileSystem", "readFile")(err, [path4])));
+        resume(fail6(handleErrnoException("FileSystem", "readFile")(err, [path4])));
       } else {
-        resume2(succeed6(data));
+        resume(succeed6(data));
       }
     });
   } catch (err) {
-    resume2(fail6(handleBadArgument("readFile")(err)));
+    resume(fail6(handleBadArgument("readFile")(err)));
   }
 });
 var readLink = /* @__PURE__ */ (() => {
@@ -109520,7 +108804,7 @@ var watchNode = (path4) => callback3((queue) => acquireRelease2(sync2(() => {
   return watcher;
 }), (watcher) => sync2(() => watcher.close())));
 var watch2 = (backend, path4) => stat3(path4).pipe(map5((stat4) => backend.pipe(flatMap((_2) => _2.register(path4, stat4)), getOrElse(() => watchNode(path4)))), unwrap3);
-var writeFile3 = (path4, data, options) => callback2((resume2, signal) => {
+var writeFile3 = (path4, data, options) => callback2((resume, signal) => {
   try {
     NFS.writeFile(path4, data, {
       signal,
@@ -109528,13 +108812,13 @@ var writeFile3 = (path4, data, options) => callback2((resume2, signal) => {
       mode: options?.mode
     }, (err) => {
       if (err) {
-        resume2(fail6(handleErrnoException("FileSystem", "writeFile")(err, [path4])));
+        resume(fail6(handleErrnoException("FileSystem", "writeFile")(err, [path4])));
       } else {
-        resume2(void_3);
+        resume(void_3);
       }
     });
   } catch (err) {
-    resume2(fail6(handleBadArgument("writeFile")(err)));
+    resume(fail6(handleBadArgument("writeFile")(err)));
   }
 });
 var makeFileSystem = /* @__PURE__ */ map5(/* @__PURE__ */ serviceOption2(WatchBackend), (backend) => make14({
@@ -109712,13 +108996,13 @@ var make32 = /* @__PURE__ */ fnUntraced2(function* (shouldQuit = defaultShouldQu
     stdin.on("keypress", handleKeypress);
     return queue;
   });
-  const readLine = scoped2(flatMap3(get3(rlRef), (readlineInterface) => callback2((resume2) => {
-    const onLine = (line) => resume2(succeed6(line));
+  const readLine = scoped2(flatMap3(get3(rlRef), (readlineInterface) => callback2((resume) => {
+    const onLine = (line) => resume(succeed6(line));
     readlineInterface.once("line", onLine);
     return sync2(() => readlineInterface.off("line", onLine));
   })));
-  const display = (prompt) => uninterruptible2(callback2((resume2) => {
-    stdout.write(prompt, (err) => isNullish(err) ? resume2(void_3) : resume2(fail6(badArgument({
+  const display = (prompt) => uninterruptible2(callback2((resume) => {
+    stdout.write(prompt, (err) => isNullish(err) ? resume(void_3) : resume(fail6(badArgument({
       module: "Terminal",
       method: "display",
       description: "Failed to write prompt to stdout",

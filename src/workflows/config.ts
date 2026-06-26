@@ -5,11 +5,10 @@ import * as Schema from "effect/Schema"
 import { ConfigReadError } from "../config/errors.js"
 import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
-import { EvidenceBundle, ReleaseWorkflowEvidence } from "../domain/evidence.js"
+import { EvidenceBundle } from "../domain/evidence.js"
 import { ExecutionApproval, OperationId } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseEligibilityDecision } from "../domain/remote-state.js"
-import { ReleaseStatusReport } from "../domain/status.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import {
   executePlan,
@@ -25,13 +24,6 @@ import {
   renderPlanSummary,
   renderPlanText
 } from "../planner/render-plan.js"
-import {
-  ReleaseResumeOptions,
-  renderReleaseStatusJson,
-  renderReleaseStatusText,
-  resumeApprovedReleaseWorkflow,
-  statusReleasePlan
-} from "../planner/status.js"
 import {
   reconcileReleasePlan,
   ReleaseReconcileOptions
@@ -49,7 +41,6 @@ import {
   releaseFormatField
 } from "./options.js"
 import {
-  WorkflowEvidencePathsWritten,
   writeNamedEvidenceWithFailure,
   writeWorkflowEvidenceWithFailure
 } from "./evidence.js"
@@ -136,25 +127,6 @@ export interface ReleaseExecutionInput extends ReleaseConfigInput {
   readonly approveIrreversible?: boolean | undefined
 }
 
-export class ReleaseStatusOptions extends Schema.Class<ReleaseStatusOptions>("ReleaseStatusOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  format: Schema.optionalKey(ReleasePlanFormat)
-}) {}
-
-export interface ReleaseStatusInput extends ReleaseConfigInput {
-  readonly format?: ReleasePlanFormat | undefined
-}
-
-export class ReleaseResumeConfigOptions extends Schema.Class<ReleaseResumeConfigOptions>("ReleaseResumeConfigOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  execute: Schema.optionalKey(Schema.Boolean),
-  approveIrreversible: Schema.optionalKey(Schema.Boolean)
-}) {}
-
-export interface ReleaseResumeConfigInput extends ReleaseExecutionInput {}
-
 export class ReleaseReconcileConfigOptions extends Schema.Class<ReleaseReconcileConfigOptions>(
   "ReleaseReconcileConfigOptions"
 )({
@@ -197,32 +169,11 @@ export class PlannedReleaseConfigEvidenceResult extends Schema.Class<PlannedRele
   evidence: EvidenceBundle
 }) {}
 
-export class PlannedReleaseConfigWorkflowResult extends Schema.Class<PlannedReleaseConfigWorkflowResult>(
-  "PlannedReleaseConfigWorkflowResult"
-)({
-  plan: ReleasePlan,
-  evidence: ReleaseWorkflowEvidence
-}) {}
-
 export class PlannedReleaseConfigWrittenEvidenceResult extends Schema.Class<PlannedReleaseConfigWrittenEvidenceResult>(
   "PlannedReleaseConfigWrittenEvidenceResult"
 )({
   plan: ReleasePlan,
   evidence: EvidenceBundle
-}) {}
-
-export class PlannedReleaseConfigWrittenWorkflowResult extends Schema.Class<PlannedReleaseConfigWrittenWorkflowResult>(
-  "PlannedReleaseConfigWrittenWorkflowResult"
-)({
-  plan: ReleasePlan,
-  paths: WorkflowEvidencePathsWritten
-}) {}
-
-export class PlannedReleaseConfigStatusResult extends Schema.Class<PlannedReleaseConfigStatusResult>(
-  "PlannedReleaseConfigStatusResult"
-)({
-  plan: ReleasePlan,
-  report: ReleaseStatusReport
 }) {}
 
 const releaseConfigOptionsFromInput = (
@@ -267,19 +218,6 @@ const releaseExecutionOptionsFromInput = (
 ): ReleaseExecutionOptions =>
   ReleaseExecutionOptions.make(releaseExecutionFields(input))
 
-const releaseStatusOptionsFromInput = (
-  input: ReleaseStatusInput = {}
-): ReleaseStatusOptions =>
-  ReleaseStatusOptions.make({
-    ...releaseConfigFields(input),
-    ...releaseFormatField(input)
-  })
-
-const releaseResumeConfigOptionsFromInput = (
-  input: ReleaseResumeConfigInput = {}
-): ReleaseResumeConfigOptions =>
-  ReleaseResumeConfigOptions.make(releaseExecutionFields(input))
-
 const releaseReconcileConfigOptionsFromInput = (
   input: ReleaseReconcileConfigInput = {}
 ): ReleaseReconcileConfigOptions =>
@@ -313,12 +251,6 @@ const configReadPath = (path: Path.Path, options: ReleaseConfigOptions): string 
 
 const approvalFromOptions = (options: ReleaseExecutionOptions): ExecutionApproval =>
   ExecutionApproval.make({
-    execute: options.execute ?? false,
-    approveIrreversible: options.approveIrreversible ?? false
-  })
-
-const resumeOptionsFromConfigOptions = (options: ReleaseResumeConfigOptions): ReleaseResumeOptions =>
-  ReleaseResumeOptions.make({
     execute: options.execute ?? false,
     approveIrreversible: options.approveIrreversible ?? false
   })
@@ -579,7 +511,7 @@ export const planAndRunReleaseConfig = Effect.fn("workflows.config.planAndRunRel
   const options = releaseExecutionOptionsFromInput(input)
   const plan = yield* planReleaseConfig(options)
   const evidence = yield* runApprovedReleaseWorkflow(plan, approvalFromOptions(options))
-  return PlannedReleaseConfigWorkflowResult.make({ plan, evidence })
+  return PlannedReleaseConfigEvidenceResult.make({ plan, evidence })
 })
 
 export const writePlannedRunWorkflowEvidence = Effect.fn("workflows.config.writePlannedRunWorkflowEvidence")(function*(
@@ -598,80 +530,8 @@ export const planAndWriteRunWorkflowEvidence = Effect.fn("workflows.config.planA
 ) {
   const options = releaseExecutionOptionsFromInput(input)
   const plan = yield* planReleaseConfig(options)
-  const paths = yield* writePlannedRunWorkflowEvidence(plan, options)
-  return PlannedReleaseConfigWrittenWorkflowResult.make({ plan, paths })
-})
-
-export const statusReleaseConfig = Effect.fn("workflows.config.statusReleaseConfig")(function*(
-  input: ReleaseStatusInput = {}
-) {
-  const result = yield* planAndStatusReleaseConfig(input)
-  return result.report
-})
-
-export const planAndStatusReleaseConfig = Effect.fn("workflows.config.planAndStatusReleaseConfig")(function*(
-  input: ReleaseStatusInput = {}
-) {
-  const options = releaseStatusOptionsFromInput(input)
-  const plan = yield* planReleaseConfig(options)
-  const report = yield* statusReleasePlan(plan)
-  return PlannedReleaseConfigStatusResult.make({ plan, report })
-})
-
-export const renderReleaseStatus = Effect.fn("workflows.config.renderReleaseStatus")(function*(
-  input: ReleaseStatusInput = {}
-) {
-  const options = releaseStatusOptionsFromInput(input)
-  const report = yield* statusReleaseConfig(options)
-  return renderReleaseStatusReport(report, options.format ?? "text")
-})
-
-export const renderReleaseStatusReport = (
-  report: ReleaseStatusReport,
-  format: ReleasePlanFormat = "text"
-): string =>
-  format === "json"
-    ? renderReleaseStatusJson(report)
-    : renderReleaseStatusText(report)
-
-export const resumeReleaseConfig = Effect.fn("workflows.config.resumeReleaseConfig")(function*(
-  input: ReleaseResumeConfigInput = {}
-) {
-  const result = yield* planAndResumeReleaseConfig(input)
-  return result.evidence
-})
-
-export const planAndResumeReleaseConfig = Effect.fn("workflows.config.planAndResumeReleaseConfig")(function*(
-  input: ReleaseResumeConfigInput = {}
-) {
-  const options = releaseResumeConfigOptionsFromInput(input)
-  const plan = yield* planReleaseConfig(options)
-  const evidence = yield* resumeApprovedReleaseWorkflow(plan, resumeOptionsFromConfigOptions(options))
-  return PlannedReleaseConfigWorkflowResult.make({ plan, evidence })
-})
-
-export const writePlannedResumeWorkflowEvidence = Effect.fn(
-  "workflows.config.writePlannedResumeWorkflowEvidence"
-)(function*(
-  plan: ReleasePlan,
-  input: ReleaseResumeConfigInput = {}
-) {
-  const options = releaseResumeConfigOptionsFromInput(input)
-  return yield* writeWorkflowEvidenceWithFailure(
-    plan,
-    resumeApprovedReleaseWorkflow(plan, resumeOptionsFromConfigOptions(options))
-  )
-})
-
-export const planAndWriteResumeWorkflowEvidence = Effect.fn(
-  "workflows.config.planAndWriteResumeWorkflowEvidence"
-)(function*(
-  input: ReleaseResumeConfigInput = {}
-) {
-  const options = releaseResumeConfigOptionsFromInput(input)
-  const plan = yield* planReleaseConfig(options)
-  const paths = yield* writePlannedResumeWorkflowEvidence(plan, options)
-  return PlannedReleaseConfigWrittenWorkflowResult.make({ plan, paths })
+  const evidence = yield* writePlannedRunWorkflowEvidence(plan, options)
+  return PlannedReleaseConfigWrittenEvidenceResult.make({ plan, evidence })
 })
 
 export const reconcileReleaseConfig = Effect.fn("workflows.config.reconcileReleaseConfig")(function*(
@@ -771,14 +631,6 @@ export const run = runReleaseConfig
 export const planAndRun = planAndRunReleaseConfig
 export const writePlannedRun = writePlannedRunWorkflowEvidence
 export const planAndWriteRun = planAndWriteRunWorkflowEvidence
-export const status = statusReleaseConfig
-export const planAndStatus = planAndStatusReleaseConfig
-export const renderStatusReport = renderReleaseStatusReport
-export const renderStatus = renderReleaseStatus
-export const resume = resumeReleaseConfig
-export const planAndResume = planAndResumeReleaseConfig
-export const writePlannedResume = writePlannedResumeWorkflowEvidence
-export const planAndWriteResume = planAndWriteResumeWorkflowEvidence
 export const reconcile = reconcileReleaseConfig
 export const planAndReconcile = planAndReconcileReleaseConfig
 export const writePlannedReconcile = writePlannedReconciliationEvidence

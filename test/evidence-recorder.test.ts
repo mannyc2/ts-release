@@ -2,21 +2,15 @@ import { describe, expect, layer, test } from "@effect/bun-test"
 import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import {
-  EvidenceBundle,
-  ExecutionEvidence
-} from "../src/domain/evidence.js"
+import { EvidenceBundle, OperationEvidenceRecord } from "../src/domain/evidence.js"
 import {
   CommandSpec,
-  executeGate,
   ExecutionApproval,
   HttpEnvHeader,
   HttpHeader,
   HttpJsonArrayObjectFieldEqualsCheck,
   HttpJsonEqualsCheck,
   HttpRequestSpec,
-  noApprovalGate,
-  operationFingerprint,
   RenderFileOperation,
   ValidateCommandOperation,
   ValidationNoteOperation,
@@ -70,15 +64,18 @@ const makePlan = (name: string = "release", version: string = "0.1.0"): ReleaseP
     })
   })
 
-const evidenceRecord = (operationId: string) =>
-  ExecutionEvidence.make({
+const evidenceRecord = (operationId: string): OperationEvidenceRecord =>
+  OperationEvidenceRecord.make({
     id: `${operationId}:execution`,
     operationId,
-    operationFingerprint: `${operationId}:fingerprint`,
+    phase: "execution",
+    risk: "writes-local",
     status: "passed",
     severity: "info",
     message: "ok",
-    timestamp: "2026-06-17T00:00:00.000Z"
+    startedAt: "2026-06-17T00:00:00.000Z",
+    endedAt: "2026-06-17T00:00:00.000Z",
+    durationMillis: 0
   })
 
 const evidenceBundle = (
@@ -112,7 +109,6 @@ describe("evidence recorder", () => {
       id: "validate-token",
       description: "Validate token handling.",
       risk: "read-only",
-      gate: noApprovalGate("read-only"),
       command
     })
 
@@ -130,13 +126,11 @@ describe("evidence recorder", () => {
         Effect.gen(function*() {
           const evidence = yield* runOperation(operation, ExecutionApproval.none)
 
-          expect("stdout" in evidence && "stderr" in evidence).toBe(true)
-          if ("stdout" in evidence && "stderr" in evidence) {
-            expect(evidence.stdout).toBe("stdout [REDACTED]")
-            expect(evidence.stderr).toBe("stderr [REDACTED]")
-            expect(evidence.operationFingerprint).toBe(operationFingerprint(operation))
-            expect(evidence.operationFingerprint).not.toContain("super_secret")
-          }
+          expect(evidence.phase).toBe("validation")
+          expect(evidence.risk).toBe("read-only")
+          expect(evidence.stdout).toBe("stdout [REDACTED]")
+          expect(evidence.stderr).toBe("stderr [REDACTED]")
+          expect(evidence.message).toBe("Command completed successfully.")
         }))
     })
   }
@@ -155,7 +149,6 @@ describe("evidence recorder", () => {
       targetId: "github",
       description: "Verify release.",
       risk: "read-only",
-      gate: noApprovalGate("read-only"),
       request,
       expectedStatus: 200,
       checks: [
@@ -188,22 +181,21 @@ describe("evidence recorder", () => {
         Effect.gen(function*() {
           const evidence = yield* runOperation(operation, ExecutionApproval.none)
 
-          expect("responseStatus" in evidence && evidence.responseStatus).toBe(200)
-          expect("checks" in evidence && evidence.checks.every((check) => check.passed)).toBe(true)
-          expect("operationFingerprint" in evidence && evidence.operationFingerprint).toBe(operationFingerprint(operation))
+          expect(evidence.phase).toBe("verification")
+          expect(evidence.responseStatus).toBe(200)
+          expect(evidence.checks?.every((check) => check.passed)).toBe(true)
           expect("responseHeaders" in evidence).toBe(false)
         }))
     })
   }
 
   layer(makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) }))((it) => {
-    it.effect("records fingerprints for render and validation-note evidence", () =>
+    it.effect("records render and validation-note evidence with phase and risk", () =>
       Effect.gen(function*() {
         const renderOperation = RenderFileOperation.make({
           id: "render-readme",
           description: "Render README.",
           risk: "writes-local",
-          gate: executeGate("Rendering writes a local file."),
           path: ".release/generated/readme.md",
           contents: "# Release\n"
         })
@@ -211,7 +203,6 @@ describe("evidence recorder", () => {
           id: "validate-note",
           description: "Record validation note.",
           risk: "read-only",
-          gate: noApprovalGate("read-only"),
           message: "No local validation command is configured.",
           skipped: true,
           severity: "info"
@@ -223,14 +214,11 @@ describe("evidence recorder", () => {
         )
         const validationEvidence = yield* runOperation(validationOperation, ExecutionApproval.none)
 
-        expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toBe(
-          operationFingerprint(renderOperation)
-        )
-        expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).not.toContain("# Release")
-        expect("operationFingerprint" in renderEvidence && renderEvidence.operationFingerprint).toContain("contentsDigest")
-        expect("operationFingerprint" in validationEvidence && validationEvidence.operationFingerprint).toBe(
-          operationFingerprint(validationOperation)
-        )
+        expect(renderEvidence.phase).toBe("render")
+        expect(renderEvidence.risk).toBe("writes-local")
+        expect(renderEvidence.message).toBe("Rendered .release/generated/readme.md")
+        expect(validationEvidence.phase).toBe("validation")
+        expect(validationEvidence.skipped).toBe(true)
       }))
 
     it.effect("rejects render writes outside the workspace root", () =>
@@ -239,7 +227,6 @@ describe("evidence recorder", () => {
           id: "render-outside",
           description: "Render outside.",
           risk: "writes-local",
-          gate: executeGate("Rendering writes a local file."),
           path: "../outside.md",
           contents: "# Release\n"
         })
@@ -274,7 +261,6 @@ describe("evidence recorder", () => {
       targetId: "github",
       description: "Verify release.",
       risk: "read-only",
-      gate: noApprovalGate("read-only"),
       request,
       expectedStatus: 200,
       checks: [
@@ -311,12 +297,12 @@ describe("evidence recorder", () => {
     const bundle = evidenceBundle(plan)
     layer(makeWorkspaceTestCommandRunnerLayer({
       files: new Map([
-        [".release/evidence/render.json", renderEvidenceJson(bundle)]
+        [".release/evidence/evidence.json", renderEvidenceJson(bundle)]
       ])
     }))((it) => {
       it.effect("reads a valid evidence bundle", () =>
         Effect.gen(function*() {
-          const read = yield* readEvidenceBundle(".release/evidence/render.json")
+          const read = yield* readEvidenceBundle(".release/evidence/evidence.json")
 
           expect(read.releaseName).toBe("release")
           expect(read.records).toEqual([])
@@ -327,7 +313,7 @@ describe("evidence recorder", () => {
   layer(makeWorkspaceTestCommandRunnerLayer())((it) => {
     it.effect("returns undefined for missing optional evidence", () =>
       Effect.gen(function*() {
-        const read = yield* tryReadEvidenceBundle(".release/evidence/render.json")
+        const read = yield* tryReadEvidenceBundle(".release/evidence/evidence.json")
 
         expect(read).toBeUndefined()
       }))
@@ -359,12 +345,12 @@ describe("evidence recorder", () => {
 
   layer(makeWorkspaceTestCommandRunnerLayer({
     files: new Map([
-      [".release/evidence/render.json", "{not json"]
+      [".release/evidence/evidence.json", "{not json"]
     ])
   }))((it) => {
     it.effect("fails invalid evidence JSON with EvidenceReadError", () =>
       Effect.gen(function*() {
-        const error = yield* readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip)
+        const error = yield* readEvidenceBundle(".release/evidence/evidence.json").pipe(Effect.flip)
 
         expect(error._tag).toBe("EvidenceReadError")
         if (error._tag === "EvidenceReadError") {
@@ -375,12 +361,12 @@ describe("evidence recorder", () => {
 
   layer(makeWorkspaceTestCommandRunnerLayer({
     files: new Map([
-      [".release/evidence/render.json", JSON.stringify({ schemaVersion: "wrong" })]
+      [".release/evidence/evidence.json", JSON.stringify({ schemaVersion: "wrong" })]
     ])
   }))((it) => {
     it.effect("fails wrong evidence schema with EvidenceReadError", () =>
       Effect.gen(function*() {
-        const error = yield* readEvidenceBundle(".release/evidence/render.json").pipe(Effect.flip)
+        const error = yield* readEvidenceBundle(".release/evidence/evidence.json").pipe(Effect.flip)
 
         expect(error._tag).toBe("EvidenceReadError")
       }))
@@ -388,7 +374,7 @@ describe("evidence recorder", () => {
 
   layer(makeWorkspaceTestCommandRunnerLayer({
     files: new Map([
-      [".release/evidence/validation.json", `${JSON.stringify({
+      [".release/evidence/evidence.json", `${JSON.stringify({
         schemaVersion: "release-evidence/v1",
         releaseName: "release",
         releaseVersion: "0.1.0",
@@ -397,27 +383,15 @@ describe("evidence recorder", () => {
             id: "validate-token:command",
             operationId: "validate-token",
             status: "passed",
-            severity: "info",
-            command: {
-              executable: "tool",
-              args: ["validate"],
-              requiredEnv: [],
-              redactedEnv: []
-            },
-            exitCode: 0,
-            stdout: "",
-            stderr: "",
-            startedAt: "2026-06-17T00:00:00.000Z",
-            endedAt: "2026-06-17T00:00:00.001Z",
-            durationMillis: 1
+            severity: "info"
           }
         ]
       })}\n`]
     ])
   }))((it) => {
-    it.effect("fails command evidence without operation fingerprints", () =>
+    it.effect("fails operation evidence without required phase and timing fields", () =>
       Effect.gen(function*() {
-        const error = yield* readEvidenceBundle(".release/evidence/validation.json").pipe(Effect.flip)
+        const error = yield* readEvidenceBundle(".release/evidence/evidence.json").pipe(Effect.flip)
 
         expect(error._tag).toBe("EvidenceReadError")
       }))

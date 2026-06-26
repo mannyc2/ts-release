@@ -1,6 +1,12 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { CommandSpec, Operation, OperationId } from "../domain/operation.js"
+import {
+  CommandSpec,
+  Operation,
+  operationApprovalLabel,
+  operationApprovalRequirements,
+  OperationId
+} from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 
 export type * from "../types/effect-internal.js"
@@ -47,15 +53,6 @@ const capabilitySetupFields = (capability: ReleasePlan["targetCapabilities"][num
     permissions,
     prerequisites
   ].filter((field) => field.length > 0).join(" ")
-}
-
-const gateLabel = (operation: Operation): string => {
-  if (!operation.gate.requiresExecute) {
-    return "none"
-  }
-  return operation.gate.requiresIrreversibleApproval
-    ? "--execute + --approve-irreversible"
-    : "--execute"
 }
 
 const operationTargetCapability = (
@@ -145,8 +142,9 @@ export const renderPlanText = (plan: ReleasePlan): string => {
       lines.push(`  http: ${operation.request.method} ${operation.request.url}`)
       lines.push(`  expect: status ${operation.expectedStatus}, checks ${operation.checks.length}`)
     }
-    if (operation.gate.requiresExecute) {
-      lines.push(`  gate: execute${operation.gate.requiresIrreversibleApproval ? " + irreversible approval" : ""}`)
+    const approval = operationApprovalRequirements(operation)
+    if (approval.requiresExecute) {
+      lines.push(`  approval: execute${approval.requiresIrreversibleApproval ? " + irreversible approval" : ""}`)
     }
   }
 
@@ -172,8 +170,12 @@ export const renderPlanSummary = (plan: ReleasePlan): string => {
     lines.push(`  ${risk}: ${plan.operations.filter((operation) => operation.risk === risk).length}`)
   }
 
-  const executeOperations = plan.operations.filter((operation) => operation.gate.requiresExecute)
-  const irreversibleOperations = plan.operations.filter((operation) => operation.gate.requiresIrreversibleApproval)
+  const executeOperations = plan.operations.filter((operation) =>
+    operationApprovalRequirements(operation).requiresExecute
+  )
+  const irreversibleOperations = plan.operations.filter((operation) =>
+    operationApprovalRequirements(operation).requiresIrreversibleApproval
+  )
   lines.push(`execute required: ${executeOperations.length}`)
   lines.push(`irreversible approval required: ${irreversibleOperations.length}`)
   lines.push("")
@@ -186,9 +188,9 @@ export const renderPlanSummary = (plan: ReleasePlan): string => {
     )
   }
   lines.push("")
-  lines.push("gated operations:")
+  lines.push("approval-required operations:")
   for (const operation of executeOperations) {
-    lines.push(`  - ${operation.id}: ${gateLabel(operation)} (${operation.risk})`)
+    lines.push(`  - ${operation.id}: ${operationApprovalLabel(operation)} (${operation.risk})`)
   }
   if (executeOperations.length === 0) {
     lines.push("  - none")
@@ -224,8 +226,8 @@ export const renderPlanMarkdown = (plan: ReleasePlan): string => {
     lines.push("")
     lines.push(`- target: ${operation.targetId ?? "none"}`)
     lines.push(`- risk: ${operation.risk}`)
-    lines.push(`- gate: ${gateLabel(operation)}`)
-    lines.push(`- why: ${operation.description} ${operation.gate.reason}`)
+    lines.push(`- approval: ${operationApprovalLabel(operation)}`)
+    lines.push(`- why: ${operation.description}`)
     if ("command" in operation) {
       lines.push("")
       lines.push("Command argv:")
@@ -254,8 +256,8 @@ const renderOperationExplanationText = (plan: ReleasePlan, operation: Operation)
     `operation: ${operation.id}`,
     `target: ${operation.targetId ?? "none"}`,
     `risk: ${operation.risk}`,
-    `why: ${operation.description} ${operation.gate.reason}`,
-    `execution gate: ${gateLabel(operation)}`
+    `why: ${operation.description}`,
+    `execution approval: ${operationApprovalLabel(operation)}`
   ]
 
   if (capability !== undefined) {

@@ -6,16 +6,14 @@ import * as Path from "effect/Path"
 import * as PlatformError from "effect/PlatformError"
 import * as Schema from "effect/Schema"
 import {
-  CommandEvidence,
+  EvidencePhase,
   EvidenceBundle,
   EvidenceRecord,
-  ExecutionEvidence,
   HttpCheckEvidence,
-  HttpEvidence,
+  OperationEvidenceRecord,
   HttpRequestEvidence,
-  ValidationEvidence
 } from "../domain/evidence.js"
-import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, operationFingerprint, VerifyHttpOperation } from "../domain/operation.js"
+import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, VerifyHttpOperation } from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
@@ -45,6 +43,17 @@ export const appendEvidenceRecord = (
     releaseName: bundle.releaseName,
     releaseVersion: bundle.releaseVersion,
     records: [...bundle.records, record]
+  })
+
+export const appendEvidenceBundle = (
+  bundle: EvidenceBundle,
+  next: EvidenceBundle
+): EvidenceBundle =>
+  EvidenceBundle.make({
+    schemaVersion: bundle.schemaVersion,
+    releaseName: bundle.releaseName,
+    releaseVersion: bundle.releaseVersion,
+    records: [...bundle.records, ...next.records]
   })
 
 export const redactText = (input: string, secrets: ReadonlyArray<string>): string => {
@@ -104,20 +113,40 @@ export const readRedactionSecrets = Effect.fn("readRedactionSecrets")(function*(
   return secrets
 })
 
+export const operationEvidencePhase = (operation: Operation): EvidencePhase => {
+  switch (operation._tag) {
+    case "RenderFileOperation":
+      return "render"
+    case "ValidateCommandOperation":
+    case "ValidationNoteOperation":
+      return "validation"
+    case "PublishCommandOperation":
+      return "execution"
+    case "VerifyRemoteOperation":
+    case "VerifyHttpOperation":
+      return "verification"
+  }
+}
+
 export const commandEvidenceFromResult = Effect.fn("commandEvidenceFromResult")(function*(
-  operation: Extract<Operation, { readonly command: CommandSpec }>
+  operation: Extract<Operation, { readonly command: CommandSpec }>,
+  phase: EvidencePhase = operationEvidencePhase(operation)
 ) {
   const commandRunner = yield* ReleaseCommandRunner
   const secrets = yield* readRedactionSecrets(operation)
   const result = yield* commandRunner.runCommand(operation.command)
   const status = result.exitCode === 0 ? "passed" : "failed"
-  return CommandEvidence.make({
+  return OperationEvidenceRecord.make({
     id: `${operation.id}:command`,
     operationId: operation.id,
-    operationFingerprint: operationFingerprint(operation),
+    phase,
     ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
+    risk: operation.risk,
     status,
     severity: result.exitCode === 0 ? "info" : "error",
+    message: result.exitCode === 0
+      ? "Command completed successfully."
+      : "Command exited with a nonzero status.",
     command: result.command,
     exitCode: result.exitCode,
     stdout: redactText(result.stdout, secrets),
@@ -233,7 +262,10 @@ const httpRequestEvidence = (operation: VerifyHttpOperation): HttpRequestEvidenc
     envHeaders: operation.request.envHeaders
   })
 
-export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(function*(operation: VerifyHttpOperation) {
+export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(function*(
+  operation: VerifyHttpOperation,
+  phase: EvidencePhase = operationEvidencePhase(operation)
+) {
   const http = yield* ReleaseHttp
 
   return yield* http.runJson(operation.request).pipe(
@@ -242,16 +274,17 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
         Effect.gen(function*() {
           const startedAt = yield* nowIso()
           const endedAt = yield* nowIso()
-          return HttpEvidence.make({
+          return OperationEvidenceRecord.make({
             id: `${operation.id}:http`,
             operationId: operation.id,
-            operationFingerprint: operationFingerprint(operation),
+            phase,
             targetId: operation.targetId,
+            risk: operation.risk,
             status: "failed",
             severity: "error",
+            message: error.reason,
             request: httpRequestEvidence(operation),
             checks: [],
-            message: error.reason,
             startedAt,
             endedAt,
             durationMillis: 0
@@ -267,11 +300,12 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
         ]
         const failed = checks.filter((check) => !check.passed)
         return Effect.succeed(
-          HttpEvidence.make({
+          OperationEvidenceRecord.make({
             id: `${operation.id}:http`,
             operationId: operation.id,
-            operationFingerprint: operationFingerprint(operation),
+            phase,
             targetId: operation.targetId,
+            risk: operation.risk,
             status: failed.length === 0 ? "passed" : "failed",
             severity: failed.length === 0 ? "info" : "error",
             request: HttpRequestEvidence.make({
@@ -297,31 +331,39 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
 
 export const executionEvidence = Effect.fn("executionEvidence")(function*(operation: Operation, message: string) {
   const timestamp = yield* nowIso()
-  return ExecutionEvidence.make({
+  return OperationEvidenceRecord.make({
     id: `${operation.id}:execution`,
     operationId: operation.id,
-    operationFingerprint: operationFingerprint(operation),
+    phase: operationEvidencePhase(operation),
     ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
+    risk: operation.risk,
     status: "passed",
     severity: "info",
     message,
-    timestamp
+    startedAt: timestamp,
+    endedAt: timestamp,
+    durationMillis: 0
   })
 })
 
 export const validationNoteEvidence = Effect.fn("validationNoteEvidence")(function*(
-  operation: Extract<Operation, { readonly _tag: "ValidationNoteOperation" }>
+  operation: Extract<Operation, { readonly _tag: "ValidationNoteOperation" }>,
+  phase: EvidencePhase = operationEvidencePhase(operation)
 ) {
   const timestamp = yield* nowIso()
   const status = operation.skipped ? "skipped" : operation.severity === "warning" ? "warning" : "passed"
-  return ValidationEvidence.make({
+  return OperationEvidenceRecord.make({
     id: `${operation.id}:validation`,
-    operationFingerprint: operationFingerprint(operation),
+    operationId: operation.id,
+    phase,
     ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
+    risk: operation.risk,
     status,
     severity: operation.severity,
     message: operation.message,
-    timestamp,
+    startedAt: timestamp,
+    endedAt: timestamp,
+    durationMillis: 0,
     skipped: operation.skipped
   })
 })

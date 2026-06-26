@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect"
 import {
-  executeGate,
   Operation,
   RenderFileOperation,
 } from "../domain/operation.js"
@@ -112,7 +111,6 @@ export const planScoopOperations = Effect.fn("planScoopOperations")(function*(
       targetId: target.id,
       description: `Render Scoop manifest ${catalogPathBaseName(target.manifestPath)}.`,
       risk: "writes-local",
-      gate: executeGate("Rendering a Scoop manifest writes a local generated file."),
       path: target.manifestPath,
       contents: manifest
     }),
@@ -122,9 +120,7 @@ export const planScoopOperations = Effect.fn("planScoopOperations")(function*(
       targetId: target.id,
       description: `Push Scoop bucket update for ${model.identity.name}@${model.identity.version}.`,
       mutability: target.mutability,
-      directory: target.bucketDirectory,
-      irreversibleReason: "Pushing a Scoop bucket update is configured as irreversible.",
-      externallyVisibleReason: "Pushing a Scoop bucket update is externally visible."
+      directory: target.bucketDirectory
     })
   ] satisfies ReadonlyArray<Operation>
 })

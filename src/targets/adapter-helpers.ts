@@ -4,10 +4,7 @@ import {
   CommandSpec,
   PublishCommandOperation,
   ValidateCommandOperation,
-  ValidationNoteOperation,
-  executeGate,
-  irreversibleGate,
-  noApprovalGate
+  ValidationNoteOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
@@ -37,14 +34,12 @@ interface ReadOnlyCommandValidationOptions {
   readonly id: string
   readonly targetId: string
   readonly description: string
-  readonly gateReason: string
   readonly command: CommandSpec
 }
 
 interface DryRunValidationOperationOptions extends Omit<DryRunValidationNoteOptions, "dryRunSupport"> {
   readonly dryRunSupport: TargetDryRunSupport
   readonly nativeDescription: string
-  readonly nativeGateReason: string
   readonly command: CommandSpec
 }
 
@@ -66,8 +61,6 @@ interface CatalogGitPushOperationOptions {
   readonly description: string
   readonly mutability: TargetMutability
   readonly directory: string | undefined
-  readonly irreversibleReason: string
-  readonly externallyVisibleReason: string
 }
 
 export const noAuthCommand = (
@@ -107,9 +100,6 @@ export const catalogGitPushOperation = (options: CatalogGitPushOperationOptions)
     targetId: options.targetId,
     description: options.description,
     risk: publishRisk,
-    gate: publishRisk === "irreversible"
-      ? irreversibleGate(options.irreversibleReason)
-      : executeGate(options.externallyVisibleReason),
     command: noAuthCommand("git", ["-C", options.directory ?? ".", "push"])
   })
 }
@@ -148,7 +138,6 @@ export const readOnlyCommandValidationOperation = (
     targetId: options.targetId,
     description: options.description,
     risk: "read-only",
-    gate: noApprovalGate(options.gateReason),
     command: options.command
   })
 
@@ -158,7 +147,6 @@ export const validationNoteOperation = (options: DryRunValidationNoteOptions): V
     targetId: options.targetId,
     description: options.dryRunSupport === "simulated" ? options.simulatedDescription : options.skippedDescription,
     risk: "read-only",
-    gate: noApprovalGate("Validation notes do not modify local or remote state."),
     message: options.dryRunSupport === "simulated" ? options.simulatedMessage : options.skippedMessage,
     skipped: options.dryRunSupport === "none",
     severity: options.dryRunSupport === "simulated" ? "info" : "warning"
@@ -172,7 +160,6 @@ export const dryRunValidationOperation = (
       id: options.id,
       targetId: options.targetId,
       description: options.nativeDescription,
-      gateReason: options.nativeGateReason,
       command: options.command
     })
     : validationNoteOperation({

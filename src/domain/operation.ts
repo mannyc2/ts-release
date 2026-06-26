@@ -10,12 +10,6 @@ export type OperationId = typeof OperationId.Type
 export const OperationRisk = Schema.Literals(["read-only", "writes-local", "externally-visible", "irreversible"])
 export type OperationRisk = typeof OperationRisk.Type
 
-export class ExecutionGate extends Schema.Class<ExecutionGate>("ExecutionGate")({
-  requiresExecute: Schema.Boolean,
-  requiresIrreversibleApproval: Schema.Boolean,
-  reason: Schema.String
-}) {}
-
 export class CommandSpec extends Schema.Class<CommandSpec>("CommandSpec")({
   executable: Schema.String,
   args: Schema.Array(Schema.String),
@@ -72,7 +66,6 @@ export class RenderFileOperation extends Schema.TaggedClass<RenderFileOperation>
   targetId: Schema.optionalKey(TargetId),
   description: Schema.String,
   risk: OperationRisk,
-  gate: ExecutionGate,
   path: Schema.String,
   contents: Schema.String
 }) {}
@@ -82,7 +75,6 @@ export class ValidateCommandOperation extends Schema.TaggedClass<ValidateCommand
   targetId: Schema.optionalKey(TargetId),
   description: Schema.String,
   risk: OperationRisk,
-  gate: ExecutionGate,
   command: CommandSpec
 }) {}
 
@@ -91,7 +83,6 @@ export class ValidationNoteOperation extends Schema.TaggedClass<ValidationNoteOp
   targetId: Schema.optionalKey(TargetId),
   description: Schema.String,
   risk: OperationRisk,
-  gate: ExecutionGate,
   message: Schema.String,
   skipped: Schema.Boolean,
   severity: Schema.Literals(["info", "warning"])
@@ -102,7 +93,6 @@ export class PublishCommandOperation extends Schema.TaggedClass<PublishCommandOp
   targetId: TargetId,
   description: Schema.String,
   risk: OperationRisk,
-  gate: ExecutionGate,
   command: CommandSpec
 }) {}
 
@@ -111,7 +101,6 @@ export class VerifyRemoteOperation extends Schema.TaggedClass<VerifyRemoteOperat
   targetId: TargetId,
   description: Schema.String,
   risk: OperationRisk,
-  gate: ExecutionGate,
   command: CommandSpec
 }) {}
 
@@ -120,7 +109,6 @@ export class VerifyHttpOperation extends Schema.TaggedClass<VerifyHttpOperation>
   targetId: TargetId,
   description: Schema.String,
   risk: OperationRisk,
-  gate: ExecutionGate,
   request: HttpRequestSpec,
   expectedStatus: Schema.Number,
   checks: Schema.Array(HttpJsonCheck)
@@ -135,139 +123,6 @@ export const Operation = Schema.Union([
   VerifyHttpOperation
 ])
 export type Operation = typeof Operation.Type
-
-type StableJson = null | boolean | number | string | ReadonlyArray<StableJson> | { readonly [key: string]: StableJson }
-
-type JsonObject = { readonly [key: string]: Schema.Json }
-
-const isJsonObject = (value: Schema.Json): value is JsonObject =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-
-const stableJson = (value: Schema.Json): StableJson => {
-  if (Array.isArray(value)) {
-    return value.map(stableJson)
-  }
-  if (isJsonObject(value)) {
-    const output: Record<string, StableJson> = {}
-    for (const key of Object.keys(value).sort()) {
-      const item = value[key]
-      if (item !== undefined) {
-        output[key] = stableJson(item)
-      }
-    }
-    return output
-  }
-  return value
-}
-
-const commandSpecPayload = (command: CommandSpec) => ({
-  executable: command.executable,
-  args: command.args,
-  ...(command.cwd === undefined ? {} : { cwd: command.cwd }),
-  requiredEnv: command.requiredEnv,
-  redactedEnv: command.redactedEnv
-})
-
-const httpHeaderPayload = (header: HttpHeader) => ({
-  name: header.name,
-  value: header.value
-})
-
-const httpEnvHeaderPayload = (header: HttpEnvHeader) => ({
-  name: header.name,
-  valueEnv: header.valueEnv,
-  ...(header.prefix === undefined ? {} : { prefix: header.prefix })
-})
-
-const httpRequestPayload = (request: HttpRequestSpec) => ({
-  method: request.method,
-  url: request.url,
-  headers: request.headers.map(httpHeaderPayload),
-  envHeaders: request.envHeaders.map(httpEnvHeaderPayload),
-  requiredEnv: request.requiredEnv,
-  redactedEnv: request.redactedEnv
-})
-
-const httpJsonCheckPayload = (check: HttpJsonCheck) => {
-  switch (check._tag) {
-    case "HttpJsonEqualsCheck":
-      return {
-        _tag: check._tag,
-        path: check.path,
-        expected: stableJson(check.expected)
-      }
-    case "HttpJsonArrayObjectFieldEqualsCheck":
-      return {
-        _tag: check._tag,
-        path: check.path,
-        field: check.field,
-        expected: stableJson(check.expected)
-      }
-  }
-}
-
-const textEncoder = new TextEncoder()
-const fnv1a64Offset = 0xcbf29ce484222325n
-const fnv1a64Prime = 0x100000001b3n
-const fnv1a64Mask = 0xffffffffffffffffn
-
-const contentDigest = (contents: string): string => {
-  let hash = fnv1a64Offset
-  for (const byte of textEncoder.encode(contents)) {
-    hash ^= BigInt(byte)
-    hash = (hash * fnv1a64Prime) & fnv1a64Mask
-  }
-  return `fnv1a64:${hash.toString(16).padStart(16, "0")}`
-}
-
-const operationApprovalRequirements = (operation: Operation) => ({
-  requiresExecute: operation.gate.requiresExecute ||
-    operation._tag === "PublishCommandOperation" ||
-    operation._tag === "RenderFileOperation" ||
-    operation.risk !== "read-only",
-  requiresIrreversibleApproval: operation.gate.requiresIrreversibleApproval ||
-    operation.risk === "irreversible"
-})
-
-const commonOperationPayload = (operation: Operation) => ({
-  _tag: operation._tag,
-  id: operation.id,
-  ...(operation.targetId === undefined ? {} : { targetId: operation.targetId }),
-  approval: operationApprovalRequirements(operation)
-})
-
-export const operationFingerprint = (operation: Operation): string => {
-  const common = commonOperationPayload(operation)
-  switch (operation._tag) {
-    case "RenderFileOperation":
-      return JSON.stringify({
-        ...common,
-        path: operation.path,
-        contentsDigest: contentDigest(operation.contents)
-      })
-    case "ValidateCommandOperation":
-    case "PublishCommandOperation":
-    case "VerifyRemoteOperation":
-      return JSON.stringify({
-        ...common,
-        command: commandSpecPayload(operation.command)
-      })
-    case "ValidationNoteOperation":
-      return JSON.stringify({
-        ...common,
-        message: operation.message,
-        severity: operation.severity,
-        skipped: operation.skipped
-      })
-    case "VerifyHttpOperation":
-      return JSON.stringify({
-        ...common,
-        request: httpRequestPayload(operation.request),
-        expectedStatus: operation.expectedStatus,
-        checks: operation.checks.map(httpJsonCheckPayload)
-      })
-  }
-}
 
 export class ExecutionApproval extends Schema.Class<ExecutionApproval>("ExecutionApproval")({
   execute: Schema.Boolean,
@@ -287,26 +142,26 @@ export class ExecutionApprovalError extends Schema.TaggedErrorClass<ExecutionApp
   }
 ) {}
 
-export const noApprovalGate = (reason: string): ExecutionGate =>
-  ExecutionGate.make({
-    requiresExecute: false,
-    requiresIrreversibleApproval: false,
-    reason
-  })
+export const operationApprovalRequirements = (operation: Operation) => ({
+  requiresExecute: operation.risk !== "read-only",
+  requiresIrreversibleApproval: operation.risk === "irreversible"
+})
 
-export const executeGate = (reason: string): ExecutionGate =>
-  ExecutionGate.make({
-    requiresExecute: true,
-    requiresIrreversibleApproval: false,
-    reason
-  })
+export const operationRequiresExecute = (operation: Operation): boolean =>
+  operationApprovalRequirements(operation).requiresExecute
 
-export const irreversibleGate = (reason: string): ExecutionGate =>
-  ExecutionGate.make({
-    requiresExecute: true,
-    requiresIrreversibleApproval: true,
-    reason
-  })
+export const operationRequiresIrreversibleApproval = (operation: Operation): boolean =>
+  operationApprovalRequirements(operation).requiresIrreversibleApproval
+
+export const operationApprovalLabel = (operation: Operation): string => {
+  const requirements = operationApprovalRequirements(operation)
+  if (!requirements.requiresExecute) {
+    return "none"
+  }
+  return requirements.requiresIrreversibleApproval
+    ? "--execute + --approve-irreversible"
+    : "--execute"
+}
 
 export const canExecuteOperation = (operation: Operation, approval: ExecutionApproval): boolean => {
   const requirements = operationApprovalRequirements(operation)

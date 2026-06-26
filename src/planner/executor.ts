@@ -5,12 +5,9 @@ import * as Path from "effect/Path"
 import * as Schedule from "effect/Schedule"
 import * as Schema from "effect/Schema"
 import {
-  CommandEvidence,
   EvidenceBundle,
+  EvidencePhase,
   EvidenceRecord,
-  HttpEvidence,
-  ReleaseWorkflowFailureEvidence,
-  ReleaseWorkflowEvidence
 } from "../domain/evidence.js"
 import {
   ExecutionApproval,
@@ -23,6 +20,7 @@ import { CommandRunnerError, ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
 import { validateWorkspaceWritePath, workspacePathBoundaryReasonMessage } from "../internal/workspace-path.js"
 import {
+  appendEvidenceBundle,
   appendEvidenceRecord,
   commandEvidenceFromResult,
   emptyEvidenceBundle,
@@ -34,7 +32,7 @@ import { OperationFailedError, WorkspaceWriteError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
 
-type OperationFailureEvidence = CommandEvidence | HttpEvidence
+type OperationFailureEvidence = EvidenceRecord
 type CommandOperation = Extract<Operation, { readonly command: unknown }>
 type RenderOperation = Extract<Operation, { readonly _tag: "RenderFileOperation" }>
 type ValidationOperation = Extract<Operation, { readonly _tag: "ValidateCommandOperation" | "ValidationNoteOperation" }>
@@ -44,7 +42,7 @@ type VerificationOperation = Extract<Operation, { readonly _tag: "VerifyRemoteOp
 class RetryableVerificationEvidenceFailure extends Schema.TaggedErrorClass<RetryableVerificationEvidenceFailure>()(
   "RetryableVerificationEvidenceFailure",
   {
-    evidence: Schema.Union([CommandEvidence, HttpEvidence])
+    evidence: EvidenceRecord
   }
 ) {}
 
@@ -109,56 +107,44 @@ const failOperationEvidence = (
   Effect.fail(
     OperationFailedError.make({
       operationId: evidence.operationId,
-      ...("exitCode" in evidence ? { exitCode: evidence.exitCode } : {}),
-      ...("responseStatus" in evidence && evidence.responseStatus !== undefined
-        ? { responseStatus: evidence.responseStatus }
-        : {}),
-      reason: "exitCode" in evidence
+      ...(evidence.exitCode === undefined ? {} : { exitCode: evidence.exitCode }),
+      ...(evidence.responseStatus === undefined ? {} : { responseStatus: evidence.responseStatus }),
+      reason: evidence.exitCode !== undefined
         ? "Command exited with a nonzero status."
         : "HTTP verification failed.",
       ...(bundle === undefined ? {} : { evidence: bundle })
     })
   )
 
-const failWorkflowOperation = (
-  error: OperationFailedError,
-  workflowEvidence: ReleaseWorkflowFailureEvidence
-): Effect.Effect<never, OperationFailedError> =>
-  Effect.fail(
-    OperationFailedError.make({
-      operationId: error.operationId,
-      ...(error.exitCode === undefined ? {} : { exitCode: error.exitCode }),
-      ...(error.responseStatus === undefined ? {} : { responseStatus: error.responseStatus }),
-      reason: error.reason,
-      ...(error.evidence === undefined ? {} : { evidence: error.evidence }),
-      workflowEvidence
-    })
-  )
-
 export function runOperationEvidence(
   operation: Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>,
   approval: ExecutionApproval,
-  root?: string
+  root?: string,
+  phase?: EvidencePhase
 ): Effect.Effect<EvidenceRecord, ExecutionApprovalError, ReleaseHttp>
 export function runOperationEvidence(
   operation: RenderOperation,
   approval: ExecutionApproval,
-  root?: string
+  root?: string,
+  phase?: EvidencePhase
 ): Effect.Effect<EvidenceRecord, ExecutionApprovalError | WorkspaceWriteError, FileSystem.FileSystem | Path.Path>
 export function runOperationEvidence(
   operation: CommandOperation,
   approval: ExecutionApproval,
-  root?: string
+  root?: string,
+  phase?: EvidencePhase
 ): Effect.Effect<EvidenceRecord, ExecutionApprovalError | CommandRunnerError, ReleaseCommandRunner>
 export function runOperationEvidence(
   operation: Extract<Operation, { readonly _tag: "ValidationNoteOperation" }>,
   approval: ExecutionApproval,
-  root?: string
+  root?: string,
+  phase?: EvidencePhase
 ): Effect.Effect<EvidenceRecord, ExecutionApprovalError>
 export function runOperationEvidence(
   operation: Operation,
   approval: ExecutionApproval,
-  root?: string
+  root?: string,
+  phase?: EvidencePhase
 ): Effect.Effect<
   EvidenceRecord,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError,
@@ -167,7 +153,8 @@ export function runOperationEvidence(
 export function runOperationEvidence(
   operation: Operation,
   approval: ExecutionApproval,
-  root: string = "."
+  root: string = ".",
+  phase?: EvidencePhase
 ) {
   return Effect.gen(function*() {
     yield* requireExecutionApproval(operation, approval)
@@ -178,23 +165,24 @@ export function runOperationEvidence(
     }
 
     if (operation._tag === "ValidationNoteOperation") {
-      return yield* validationNoteEvidence(operation)
+      return yield* validationNoteEvidence(operation, phase)
     }
 
     if (operation._tag === "VerifyHttpOperation") {
-      return yield* httpEvidenceFromResult(operation)
+      return yield* httpEvidenceFromResult(operation, phase)
     }
 
-    return yield* commandEvidenceFromResult(operation)
+    return yield* commandEvidenceFromResult(operation, phase)
   })
 }
 
 const retryNpmVersionVerificationEvidence = Effect.fn("retryNpmVersionVerificationEvidence")(function*(
   operation: Extract<Operation, { readonly _tag: "VerifyRemoteOperation" }>,
   approval: ExecutionApproval,
-  root: string
+  root: string,
+  phase?: EvidencePhase
 ) {
-  return yield* runOperationEvidence(operation, approval, root).pipe(
+  return yield* runOperationEvidence(operation, approval, root, phase).pipe(
     Effect.flatMap((evidence) =>
       operationFailed(evidence)
         ? Effect.fail(RetryableVerificationEvidenceFailure.make({ evidence }))
@@ -208,15 +196,16 @@ const retryNpmVersionVerificationEvidence = Effect.fn("retryNpmVersionVerificati
 const runOperationEvidenceWithVerificationRetry = (
   operation: Operation,
   approval: ExecutionApproval,
-  root: string
+  root: string,
+  phase?: EvidencePhase
 ): Effect.Effect<
   EvidenceRecord,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError,
   ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
 > =>
   isNpmVersionVerificationOperation(operation)
-    ? retryNpmVersionVerificationEvidence(operation, approval, root)
-    : runOperationEvidence(operation, approval, root)
+    ? retryNpmVersionVerificationEvidence(operation, approval, root, phase)
+    : runOperationEvidence(operation, approval, root, phase)
 
 export function runOperation(
   operation: Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>,
@@ -270,7 +259,8 @@ export function runOperation(
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<VerificationOperation>,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  phase?: EvidencePhase
 ): Effect.Effect<
   EvidenceBundle,
   ExecutionApprovalError | CommandRunnerError | OperationFailedError,
@@ -279,7 +269,8 @@ export function runOperations(
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<RenderOperation>,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  phase?: EvidencePhase
 ): Effect.Effect<
   EvidenceBundle,
   ExecutionApprovalError | WorkspaceWriteError | OperationFailedError,
@@ -288,17 +279,20 @@ export function runOperations(
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<ValidationOperation>,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  phase?: EvidencePhase
 ): Effect.Effect<EvidenceBundle, ExecutionApprovalError | CommandRunnerError | OperationFailedError, ReleaseCommandRunner>
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<PublishOperation>,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  phase?: EvidencePhase
 ): Effect.Effect<EvidenceBundle, ExecutionApprovalError | CommandRunnerError | OperationFailedError, ReleaseCommandRunner>
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  phase?: EvidencePhase
 ): Effect.Effect<
   EvidenceBundle,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
@@ -307,12 +301,13 @@ export function runOperations(
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  phase?: EvidencePhase
 ) {
   return Effect.gen(function*() {
     let bundle: EvidenceBundle = emptyEvidenceBundle(plan)
     for (const operation of operations) {
-      const evidence = yield* runOperationEvidenceWithVerificationRetry(operation, approval, plan.source.root)
+      const evidence = yield* runOperationEvidenceWithVerificationRetry(operation, approval, plan.source.root, phase)
       bundle = appendEvidenceRecord(bundle, evidence)
       if (operationFailed(evidence)) {
         return yield* failOperationEvidence(evidence, bundle)
@@ -347,76 +342,66 @@ export const verificationOperations = (plan: ReleasePlan): ReadonlyArray<Verific
   plan.operations.filter(isVerificationOperation)
 
 export const validatePlan = Effect.fn("validatePlan")(function*(plan: ReleasePlan) {
-  return yield* runOperations(plan, validationOperations(plan), ExecutionApproval.none)
+  return yield* runOperations(plan, validationOperations(plan), ExecutionApproval.none, "validation")
 })
 
 export const executePlan = Effect.fn("executePlan")(function*(plan: ReleasePlan, approval: ExecutionApproval) {
-  return yield* runOperations(plan, publishOperations(plan), approval)
+  return yield* runOperations(plan, publishOperations(plan), approval, "execution")
 })
 
 export const renderPlan = Effect.fn("renderPlan")(function*(plan: ReleasePlan, approval: ExecutionApproval) {
-  return yield* runOperations(plan, renderOperations(plan), approval)
+  return yield* runOperations(plan, renderOperations(plan), approval, "render")
 })
 
 export const verifyPlan = Effect.fn("verifyPlan")(function*(plan: ReleasePlan) {
-  return yield* runOperations(plan, verificationOperations(plan), ExecutionApproval.none)
+  return yield* runOperations(plan, verificationOperations(plan), ExecutionApproval.none, "verification")
 })
+
+const appendFailureEvidence = (
+  accumulated: EvidenceBundle,
+  error: OperationFailedError
+): OperationFailedError => {
+  const evidence = error.evidence === undefined
+    ? accumulated
+    : appendEvidenceBundle(accumulated, error.evidence)
+  return OperationFailedError.make({
+    operationId: error.operationId,
+    ...(error.exitCode === undefined ? {} : { exitCode: error.exitCode }),
+    ...(error.responseStatus === undefined ? {} : { responseStatus: error.responseStatus }),
+    reason: error.reason,
+    evidence
+  })
+}
 
 export const runApprovedReleaseWorkflow = Effect.fn("runApprovedReleaseWorkflow")(function*(
   plan: ReleasePlan,
   approval: ExecutionApproval
 ) {
+  let evidence = emptyEvidenceBundle(plan)
   const renderApproval = ExecutionApproval.make({
     execute: approval.execute,
     approveIrreversible: false
   })
   const render = yield* renderPlan(plan, renderApproval).pipe(
     Effect.catchTag("OperationFailedError", (error) =>
-      failWorkflowOperation(
-        error,
-        ReleaseWorkflowFailureEvidence.make({
-          ...(error.evidence === undefined ? {} : { render: error.evidence })
-        })
-      ))
+      Effect.fail(appendFailureEvidence(evidence, error)))
   )
+  evidence = appendEvidenceBundle(evidence, render)
   const validation = yield* validatePlan(plan).pipe(
     Effect.catchTag("OperationFailedError", (error) =>
-      failWorkflowOperation(
-        error,
-        ReleaseWorkflowFailureEvidence.make({
-          render,
-          ...(error.evidence === undefined ? {} : { validation: error.evidence })
-        })
-      ))
+      Effect.fail(appendFailureEvidence(evidence, error)))
   )
+  evidence = appendEvidenceBundle(evidence, validation)
   const execution = yield* executePlan(plan, approval).pipe(
     Effect.catchTag("OperationFailedError", (error) =>
-      failWorkflowOperation(
-        error,
-        ReleaseWorkflowFailureEvidence.make({
-          render,
-          validation,
-          ...(error.evidence === undefined ? {} : { execution: error.evidence })
-        })
-      ))
+      Effect.fail(appendFailureEvidence(evidence, error)))
   )
+  evidence = appendEvidenceBundle(evidence, execution)
   const verification = yield* verifyPlan(plan).pipe(
     Effect.catchTag("OperationFailedError", (error) =>
-      failWorkflowOperation(
-        error,
-        ReleaseWorkflowFailureEvidence.make({
-          render,
-          validation,
-          execution,
-          ...(error.evidence === undefined ? {} : { verification: error.evidence })
-        })
-      ))
+      Effect.fail(appendFailureEvidence(evidence, error)))
   )
+  evidence = appendEvidenceBundle(evidence, verification)
 
-  return ReleaseWorkflowEvidence.make({
-    render,
-    validation,
-    execution,
-    verification
-  })
+  return evidence
 })

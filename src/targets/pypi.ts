@@ -1,7 +1,6 @@
 import * as Effect from "effect/Effect"
 import {
   CommandSpec,
-  irreversibleGate,
   Operation,
   PublishCommandOperation
 } from "../domain/operation.js"
@@ -49,7 +48,6 @@ const pypiDryRunOperation = (target: PyPiRegistryTarget, artifactPaths: Readonly
     targetId: target.id,
     dryRunSupport: target.dryRunSupport,
     nativeDescription: "Validate Python distribution metadata with twine check.",
-    nativeGateReason: "twine check validates built distributions without publishing.",
     command: noAuthCommand("python", ["-m", "twine", "check", ...artifactPaths]),
     simulatedDescription: "Record simulated PyPI distribution validation.",
     skippedDescription: "Record skipped PyPI distribution validation.",
@@ -127,14 +125,12 @@ export const planPyPiOperations = Effect.fn("planPyPiOperations")(function*(
       id: `${target.id}:python-version`,
       targetId: target.id,
       description: "Check Python CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: noAuthCommand("python", ["--version"])
     }),
     readOnlyCommandValidationOperation({
       id: `${target.id}:twine-version`,
       targetId: target.id,
       description: "Check Twine CLI availability.",
-      gateReason: "Twine availability validation is read-only.",
       command: noAuthCommand("python", ["-m", "twine", "--version"])
     }),
     pypiDryRunOperation(target, artifactPaths),
@@ -143,7 +139,6 @@ export const planPyPiOperations = Effect.fn("planPyPiOperations")(function*(
       targetId: target.id,
       description: `Publish ${model.identity.name}@${model.identity.version} to PyPI-compatible registry.`,
       risk: "irreversible",
-      gate: irreversibleGate("PyPI package versions are immutable once published."),
       command: twineAuthCommand(target, pypiPublishArgs(target, artifactPaths))
     })
   ] satisfies ReadonlyArray<Operation>

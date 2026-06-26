@@ -117,7 +117,7 @@ describe("planner", () => {
         }
       }))
 
-    it.effect("marks publish operations as gated", () =>
+    it.effect("marks publish operations as approval-required", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
         const publish = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
@@ -225,7 +225,7 @@ describe("planner", () => {
 
         expect(explanation).toContain("operation: npm:npm-publish")
         expect(explanation).toContain("risk: irreversible")
-        expect(explanation).toContain("execution gate: --execute + --approve-irreversible")
+        expect(explanation).toContain("execution approval: --execute + --approve-irreversible")
         expect(explanation).toContain("argv:")
       }))
 

@@ -9,7 +9,7 @@ bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --fo
 
 That plan shows one release split across GitHub Releases, npm, and a Homebrew
 tap. Inspect the artifact inventory, target capabilities, `argv` lines,
-approval gates, and generated catalog-file operations. `plan` is safe: publish
+approval requirements, and generated catalog-file operations. `plan` is safe: publish
 operations stay data until a caller passes explicit execution approval.
 
 Templates live in `../templates/` and are copyable starting points for new

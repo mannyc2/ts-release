@@ -11,7 +11,6 @@ import {
   GitHubReleaseRemoteState
 } from "../domain/remote-state.js"
 import {
-  executeGate,
   ExecutionApproval,
   HttpHeader,
   HttpRequestSpec,
@@ -83,7 +82,6 @@ const githubReleaseReconcileCreateOperation = (
     targetId: target.id,
     description: `Create missing GitHub release for ${plan.identity.name}@${plan.identity.version}.`,
     risk: "externally-visible",
-    gate: executeGate("Creating this GitHub release is externally visible."),
     command: githubReleaseCreateCommand(target, plan)
   })
 
@@ -96,7 +94,6 @@ const githubReleasePublishDraftOperation = (
     targetId: target.id,
     description: `Publish existing GitHub draft release for ${plan.identity.name}@${plan.identity.version}.`,
     risk: "externally-visible",
-    gate: executeGate("Publishing this GitHub draft release is externally visible."),
     command: githubReleasePublishDraftCommand(target, plan)
   })
 
@@ -417,6 +414,7 @@ export const reconcileReleasePlan = Effect.fn("reconcileReleasePlan")(function*(
     ExecutionApproval.make({
       execute: options.execute,
       approveIrreversible: false
-    })
+    }),
+    "reconciliation"
   )
 })

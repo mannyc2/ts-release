@@ -30,9 +30,9 @@ runtime mode is deferred until a same-module-graph Node platform setup can be
 required without surprising users. The source currently lives in
 `apps/ts-release-action`.
 
-The action supports the review commands `plan`, `validate-config`, `status`,
+The action supports the review commands `plan`, `validate-config`,
 `eligibility`, `check-intent`, `doctor`, `check-auth`, and `check-ci`, plus the approved workflow commands
-`validate`, `run`, `resume`, and `reconcile`. Use `upload-evidence: true` when
+`validate`, `run`, and `reconcile`. Use `upload-evidence: true` when
 an action job should publish collected `.release/evidence` JSON files even after
 a command fails.
 
@@ -61,19 +61,10 @@ bun run cli eligibility --config release.config.json --format text
 bun run cli reconcile --config release.config.json --execute
 ```
 
-Rendering writes generated target files locally and records `render.json` evidence. `execute` is a lower-level primitive that runs publish operations only. Publishing is blocked unless execution is explicitly approved. Irreversible operations require a second approval flag.
-
-Status and resume commands use existing `.release/evidence` files to report progress and continue conservative unfinished work:
-
-```sh
-bun run cli status --config release.config.json --format text
-bun run cli resume --config release.config.json --execute --approve-irreversible
-```
-
-Resume skips operations with successful matching evidence, reruns safe read-only failures, and blocks failed publish operations until remote state is reconciled manually.
+Rendering writes generated target files locally and records `render.json` evidence. The full `run` workflow records a single `evidence.json` bundle with attempted operation records in stage order. `execute` is a lower-level primitive that runs publish operations only. Publishing is blocked unless execution is explicitly approved. Irreversible operations require a second approval flag.
 `eligibility` resolves the configured release decision strategy and checks npm and GitHub remote state when a release is intended.
 `check-intent` is a read-only CI gate for the explicit intent-file strategy, and the GitHub Action exposes the same command for intent-file workflows.
-`reconcile` is separate from resume: it inspects GitHub release state through the API and can publish a matching draft release with explicit `--execute` without republishing immutable npm versions.
+`reconcile` inspects GitHub release state through the API and can publish a matching draft release with explicit `--execute` without republishing immutable npm versions.
 
 The executable is an argv and console adapter over TypeScript workflows. Release workflows are modeled as typed functions first, then exposed through the CLI for terminal and CI usage.
 
@@ -129,23 +120,6 @@ const plan = await Effect.runPromise(
 
 const evidence = await Effect.runPromise(
   Config.run({
-    root,
-    configPath: "release.config.json",
-    execute: true,
-    approveIrreversible: true
-  }).pipe(
-    Effect.provide(RuntimeLayer)
-  )
-)
-
-const status = await Effect.runPromise(
-  Config.status({ root, configPath: "release.config.json", format: "json" }).pipe(
-    Effect.provide(RuntimeLayer)
-  )
-)
-
-const resumedEvidence = await Effect.runPromise(
-  Config.resume({
     root,
     configPath: "release.config.json",
     execute: true,
@@ -245,7 +219,7 @@ Artifact paths may use `{version}`, `{name}`, and `{normalizedName}`. `normalize
 
 ## Release Strategies
 
-Release identity and release decisions are strategy-backed data. Target adapters still receive a concrete release identity and still produce reviewable, approval-gated operations.
+Release identity and release decisions are strategy-backed data. Target adapters still receive a concrete release identity and still produce reviewable operations with approval derived from operation risk.
 
 | Strategy | Good for | Source of truth |
 |---|---|---|
@@ -295,7 +269,7 @@ Decision strategies are opt-in through `releaseDecision`. The default `RemoteSta
 
 This is a first-party intent-file format, not full Changesets compatibility. Publish operations remain plan data until explicit execution approval, regardless of which strategy chose the intended version.
 
-Homebrew tap targets model catalog updates as generated files plus an approval-gated push:
+Homebrew tap targets model catalog updates as generated files plus an explicitly approved push:
 
 ```json
 {
@@ -330,7 +304,7 @@ PyPI registry targets coordinate already-built Python distributions through Twin
 
 Use `TWINE_USERNAME` and `TWINE_PASSWORD` for token-based local publishing so secrets stay in environment variables rather than command arguments. PyPI Trusted Publishing belongs at the CI/auth layer; this adapter records Twine commands and their auth requirements. TestPyPI is a real registry publish target, not a dry-run.
 
-Scoop bucket targets model Windows installer catalog updates as generated JSON manifests plus an approval-gated push:
+Scoop bucket targets model Windows installer catalog updates as generated JSON manifests plus an explicitly approved push:
 
 ```json
 {
@@ -354,7 +328,7 @@ Use `run --execute --approve-irreversible` for the ordered release workflow, or 
 
 ## Plan Review
 
-Text plans include the release identity, evidence directory, artifact inventory, target capabilities, operation commands, HTTP verification requests, validation notes, and execution gates. Command operations include a human command summary plus an `argv:` JSON array that preserves exact argument boundaries for review.
+Text plans include the release identity, evidence directory, artifact inventory, target capabilities, operation commands, HTTP verification requests, validation notes, and approval requirements. Command operations include a human command summary plus an `argv:` JSON array that preserves exact argument boundaries for review.
 
 ```text
 @mannyc1/ts-release@0.1.0
@@ -369,7 +343,7 @@ targets:
   - npm [NpmRegistryTarget] auth=trusted-publishing runs-in=ci provider=github-actions workflow=release.yml required-permission=id-token:write package-prerequisite=exists dry-run=native strategy=native-command mutability=immutable recovery=publish-new-version
 ```
 
-Summary plans provide a compact human first pass over risk, execution gates, target auth setup, and gated operation IDs:
+Summary plans provide a compact human first pass over risk, approval requirements, target auth setup, and approval-required operation IDs:
 
 ```sh
 bun run cli plan --config release.config.json --format summary
@@ -391,17 +365,13 @@ JSON plans include the same data in a stable, CI-artifact-friendly shape, includ
 
 GitHub release verification uses the GitHub REST API to check the release tag, title, draft flag, prerelease flag, and each uploaded artifact name.
 
-## Status and Resume
-
-`status` reads local phase evidence and reports each current operation as pending, passed, failed, blocked, or complete without executing anything. The JSON format is schema-backed for CI or dashboards; the text format is intended for terminal review.
-
-`resume` is intentionally conservative. It skips successful matching evidence, can rerun missing work and failed read-only validation or verification operations, and never reruns a failed publish operation. A failed publish command can still have changed the outside world, so resume blocks until a maintainer reconciles npm, GitHub, or any other remote state manually.
+## Reconcile
 
 `reconcile` is the narrow remote repair path for GitHub Releases. It reads the GitHub release by tag, blocks on mismatched metadata or assets, skips an already matching published release, and can run `gh release edit <tag> --draft=false` for a matching draft when the target expects a public release. It does not run `npm publish`.
 
 ## Public API
 
-The intentional public API is the explicit subpath list in `package.json`. The root package export remains empty. Programmatic callers can use the opt-in `@mannyc1/ts-release/workflows` facade for happy-path workflow APIs, or exact leaf subpaths such as `@mannyc1/ts-release/workflows/config`, `@mannyc1/ts-release/workflows/init`, and `@mannyc1/ts-release/workflows/diagnostics` for maximum tree-shaking and direct option-class access. Lower-level planner/config/target/status subpaths remain available for finer control. The official CLI command adapter lives in the private `apps/release-ts` app rather than the reusable root package API.
+The intentional public API is the explicit subpath list in `package.json`. The root package export remains empty. Programmatic callers can use the opt-in `@mannyc1/ts-release/workflows` facade for happy-path workflow APIs, or exact leaf subpaths such as `@mannyc1/ts-release/workflows/config`, `@mannyc1/ts-release/workflows/init`, and `@mannyc1/ts-release/workflows/diagnostics` for maximum tree-shaking and direct option-class access. Lower-level planner/config/target subpaths remain available for finer control. The official CLI command adapter lives in the private `apps/release-ts` app rather than the reusable root package API.
 
 The package export checker fails if a new export is added without being added to the intentional API list.
 
@@ -468,7 +438,7 @@ publishing can only be configured after the package already exists.
 
 ## Evidence
 
-Render, validation, execution, and verification evidence is written as JSON bundles. Failed commands still preserve partial evidence before the command failure is returned. Use `evidenceDirectory` such as `.release/evidence/{version}` when older local evidence should not collide with the current release version.
+Render, validation, execution, and verification evidence is written as JSON bundles. Primitive commands write named bundles such as `validation.json`; the full `run` workflow writes one `evidence.json` bundle. Failed commands still preserve partial evidence before the command failure is returned. Use `evidenceDirectory` such as `.release/evidence/{version}` when older local evidence should not collide with the current release version.
 
 ```json
 {
@@ -479,9 +449,16 @@ Render, validation, execution, and verification evidence is written as JSON bund
     {
       "id": "npm:npm-pack-dry-run:command",
       "operationId": "npm:npm-pack-dry-run",
-      "operationFingerprint": "{\"_tag\":\"ValidateCommandOperation\",\"id\":\"npm:npm-pack-dry-run\",\"targetId\":\"npm\",\"approval\":{\"requiresExecute\":false,\"requiresIrreversibleApproval\":false},\"command\":{\"executable\":\"npm\",\"args\":[\"pack\",\"--dry-run\",\"--json\"],\"requiredEnv\":[],\"redactedEnv\":[]}}",
+      "phase": "validation",
+      "targetId": "npm",
+      "risk": "read-only",
       "status": "passed",
       "severity": "info",
+      "message": "npm pack dry run passed.",
+      "startedAt": "2026-01-01T00:00:00.000Z",
+      "endedAt": "2026-01-01T00:00:00.100Z",
+      "durationMillis": 100,
+      "command": "npm pack --dry-run --json",
       "exitCode": 0
     }
   ]
@@ -499,7 +476,7 @@ bun run check:release
 ```
 
 CI runs the portable package checks on Linux, macOS, and Windows. The release
-gate runs the self-release config guard, the static self-release CI diagnostic,
+workflow runs the self-release config guard, the static self-release CI diagnostic,
 and then the portable checks.
 
 Real-tool integration checks are opt-in:
@@ -526,7 +503,7 @@ bun run check:self-release-ci
 
 ### Self Release
 
-The local non-publish gates for this package are:
+The local non-publish checks for this package are:
 
 ```sh
 bun run check:release
@@ -535,7 +512,7 @@ bun run cli plan --config apps/release-ts/release.config.json --format text
 bun run --cwd apps/release-ts cli plan --root ../.. --config apps/release-ts/release.config.json --format text
 ```
 
-`release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs on protected `main` and checks release eligibility before the full release gate. When `should_release` is true, the plan job runs `check:release`, builds artifacts, records a Markdown release plan, uploads evidence, and does not execute release operations. The protected `execute` job uses the reviewed `.release/artifacts` download, grants `contents: write` and `id-token: write`, and runs approved execution with npm trusted publishing OIDC instead of an npm token.
+`release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs on protected `main` and checks release eligibility before the full release check. When `should_release` is true, the plan job runs `check:release`, builds artifacts, records a Markdown release plan, uploads evidence, and does not execute release operations. The protected `execute` job uses the reviewed `.release/artifacts` download, grants `contents: write` and `id-token: write`, and runs approved execution with npm trusted publishing OIDC instead of an npm token.
 
 ### Local Release Auth
 

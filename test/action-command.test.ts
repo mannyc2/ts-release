@@ -16,16 +16,9 @@ import {
 import { ActionOptions, type ActionCommand, type ActionFormat, type ActionRuntime } from "../apps/ts-release-action/src/input.js"
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
 import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
-import { CommandEvidence, EvidenceBundle } from "../src/domain/evidence.js"
-import {
-  CommandSpec,
-  irreversibleGate,
-  operationFingerprint,
-  PublishCommandOperation
-} from "../src/domain/operation.js"
+import { CommandSpec } from "../src/domain/operation.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { commandKey } from "../src/host/test.js"
-import { renderEvidenceJson } from "../src/planner/evidence-recorder.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import {
   homebrewConfig,
@@ -640,7 +633,7 @@ describe("ts-release action", () => {
     }
   })
 
-  test("run without execute fails at the approval gate", async () => {
+  test("run without execute fails without approval", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-action-run-approval-"))
     try {
       await writeFile(join(root, "release.config.json"), homebrewConfig())
@@ -661,7 +654,7 @@ describe("ts-release action", () => {
     }
   })
 
-  test("run with a no-target config writes workflow evidence", async () => {
+  test("run with a no-target config writes one workflow evidence file", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-action-run-noop-"))
     try {
       await writeFile(join(root, "release.config.json"), noOpConfig)
@@ -677,10 +670,9 @@ describe("ts-release action", () => {
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
 
-      for (const name of ["render", "validation", "execution", "verification"]) {
-        const evidence = await readFile(join(root, ".release", "evidence", `${name}.json`), "utf8")
-        expect(evidence).toContain("\"releaseName\": \"release\"")
-      }
+      const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
+      expect(evidence).toContain("\"releaseName\": \"release\"")
+      expect(evidence).toContain("\"records\": []")
       expect(io.outputs.get("status")).toBe("passed")
     } finally {
       await rm(root, { recursive: true, force: true })
@@ -735,88 +727,12 @@ describe("ts-release action", () => {
       expect(io.outputs.get("status")).toBe("failed")
       expect(io.failures.join("\n")).toContain("OperationFailedError")
       expect(artifact.uploads).toHaveLength(1)
-      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("render.json"))).toBe(true)
-      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("validation.json"))).toBe(true)
-      expect(await readFile(join(root, ".release", "evidence", "render.json"), "utf8"))
-        .toContain("homebrew:homebrew-render-formula:execution")
-      expect(await readFile(join(root, ".release", "evidence", "validation.json"), "utf8"))
-        .toContain("npm:npm-version:command")
-      await expect(readFile(join(root, ".release", "evidence", "execution.json"), "utf8")).rejects.toThrow()
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("resume blocks on failed publish evidence", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-resume-block-"))
-    try {
-      await writeFile(join(root, "release.config.json"), minimalConfig)
-      await mkdir(join(root, ".release", "evidence"), { recursive: true })
-      const publishCommand = CommandSpec.make({
-        executable: "npm",
-        args: ["publish", ".", "--registry", "https://registry.npmjs.org"],
-        requiredEnv: ["NPM_TOKEN"],
-        redactedEnv: ["NPM_TOKEN"]
-      })
-      const publishOperation = PublishCommandOperation.make({
-        id: "npm:npm-publish",
-        targetId: "npm",
-        description: "Publish to npm.",
-        risk: "irreversible",
-        gate: irreversibleGate("npm versions are immutable."),
-        command: publishCommand
-      })
-      await writeFile(
-        join(root, ".release", "evidence", "execution.json"),
-        renderEvidenceJson(EvidenceBundle.make({
-          schemaVersion: "release-evidence/v1",
-          releaseName: "release",
-          releaseVersion: "0.1.0",
-          records: [
-            CommandEvidence.make({
-              id: "npm:npm-publish:command",
-              operationId: "npm:npm-publish",
-              operationFingerprint: operationFingerprint(publishOperation),
-              targetId: "npm",
-              status: "failed",
-              severity: "error",
-              command: publishCommand,
-              exitCode: 1,
-              stdout: "",
-              stderr: "publish failed",
-              startedAt: "2026-06-18T00:00:00.000Z",
-              endedAt: "2026-06-18T00:00:00.001Z",
-              durationMillis: 1
-            })
-          ]
-        }))
-      )
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map()
-        }),
-        LiveTargetRegistryLayer,
-        makeTestReleaseHttpLayer({ responses: new Map() }),
-        BunServices.layer
-      )
-      const io = makeFakeActionIo()
-
-      await runAction(
-        actionOptions(root, {
-          command: "resume",
-          execute: true,
-          approveIrreversible: true
-        }),
-        io,
-        layer
-      )
-
-      expect(io.outputs.get("status")).toBe("failed")
-      expect(io.failures.join("\n")).toContain("ResumeBlockedError")
+      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("evidence.json"))).toBe(true)
+      const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
+      expect(evidence).toContain("homebrew:homebrew-render-formula:execution")
+      expect(evidence).toContain("npm:npm-version:command")
+      expect(evidence).toContain("\"phase\": \"render\"")
+      expect(evidence).toContain("\"phase\": \"validation\"")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

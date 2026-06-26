@@ -1,10 +1,7 @@
 import * as Effect from "effect/Effect"
 import {
-  executeGate,
   HttpJsonArrayObjectFieldEqualsCheck,
   HttpJsonEqualsCheck,
-  irreversibleGate,
-  noApprovalGate,
   Operation,
   PublishCommandOperation,
   VerifyHttpOperation,
@@ -72,7 +69,6 @@ const githubVerificationOperations = (
         targetId: target.id,
         description: "Verify the GitHub draft release through the GitHub CLI.",
         risk: "read-only",
-        gate: noApprovalGate("GitHub CLI release verification is read-only."),
         command: githubReleaseViewCommand(target, model)
       })
     ]
@@ -95,7 +91,6 @@ const githubVerificationOperations = (
       targetId: target.id,
       description: "Verify the GitHub release through the GitHub API.",
       risk: "read-only",
-      gate: noApprovalGate("GitHub API release verification is read-only."),
       request: githubReleaseRequestSpec(target, tag),
       expectedStatus: 200,
       checks: [
@@ -156,23 +151,18 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
   )
   yield* rejectDirectoryAssets(target, model)
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
-  const publishGate = publishRisk === "irreversible"
-    ? irreversibleGate("Creating this GitHub release is externally visible and configured as immutable.")
-    : executeGate("Creating or updating a GitHub release is externally visible.")
 
   return [
     readOnlyCommandValidationOperation({
       id: `${target.id}:gh-version`,
       targetId: target.id,
       description: "Check GitHub CLI availability.",
-      gateReason: "CLI availability validation is read-only.",
       command: githubGhCommand(target, ["--version"], false)
     }),
     readOnlyCommandValidationOperation({
       id: `${target.id}:gh-auth-status`,
       targetId: target.id,
       description: "Validate GitHub CLI authentication.",
-      gateReason: "gh auth status checks authentication without publishing.",
       command: githubGhCommand(target, ["auth", "status"], true)
     }),
     githubDryRunOperation(target, dryRunSupport),
@@ -181,7 +171,6 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
       targetId: target.id,
       description: `Create GitHub release for ${model.identity.name}@${model.identity.version}.`,
       risk: publishRisk,
-      gate: publishGate,
       command: githubReleaseCreateCommand(target, model)
     }),
     ...githubVerificationOperations(target, model)

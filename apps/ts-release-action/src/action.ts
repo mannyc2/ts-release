@@ -205,25 +205,12 @@ const validationInput = (options: ActionOptions) => ({
   format: textOutputFormat(options)
 })
 
-const statusInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  format: textOutputFormat(options)
-})
-
 const eligibilityInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config
 })
 
 const executionInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  execute: options.execute,
-  approveIrreversible: options.approveIrreversible
-})
-
-const resumeInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
   execute: options.execute,
@@ -406,19 +393,6 @@ const runValidateConfig = Effect.fn("action.runValidateConfig")(function*(option
   yield* io.setOutput("status", "passed")
 })
 
-const runStatus = Effect.fn("action.runStatus")(function*(options: ActionOptions, io: ActionIo) {
-  const input = statusInput(options)
-  const planned = yield* Config.planAndStatus(input)
-  const rendered = Config.renderStatusReport(planned.report, input.format)
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release status\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
-  }
-  yield* io.setOutput("release_name", planned.report.releaseName)
-  yield* io.setOutput("release_version", planned.report.releaseVersion)
-  yield* io.setOutput("evidence_directory", planned.report.evidenceDirectory)
-  yield* io.setOutput("status", planned.report.overallStatus)
-})
-
 const runEligibility = Effect.fn("action.runEligibility")(function*(options: ActionOptions, io: ActionIo) {
   const decision = yield* Config.checkEligibility(eligibilityInput(options))
   const rendered = Config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text")
@@ -502,7 +476,6 @@ const runValidate = Effect.fn("action.runValidate")(function*(
 })
 
 const runWorkflow = Effect.fn("action.runWorkflow")(function*(
-  command: "run" | "resume",
   options: ActionOptions,
   io: ActionIo,
   observePlan: PlanObserver = NoopPlanObserver
@@ -510,13 +483,9 @@ const runWorkflow = Effect.fn("action.runWorkflow")(function*(
   const plan = yield* Config.plan(releaseInput(options))
   observePlan(plan)
   yield* outputEvidenceDirectory(io, plan)
-  if (command === "run") {
-    yield* Config.writePlannedRun(plan, executionInput(options))
-  } else {
-    yield* Config.writePlannedResume(plan, resumeInput(options))
-  }
+  yield* Config.writePlannedRun(plan, executionInput(options))
   if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release ${command}\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}\n`)
+    yield* io.appendSummary(`## ts-release run\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/evidence.json\n`)
   }
   yield* io.setOutput("status", "passed")
   return plan
@@ -562,9 +531,6 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
       case "validate-config":
         yield* runValidateConfig(safeOptions, io)
         return
-      case "status":
-        yield* runStatus(safeOptions, io)
-        return
       case "eligibility":
         yield* runEligibility(safeOptions, io)
         return
@@ -580,8 +546,7 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
         yield* runValidate(safeOptions, io, rememberPlan)
         return
       case "run":
-      case "resume":
-        yield* runWorkflow(safeOptions.command, safeOptions, io, rememberPlan)
+        yield* runWorkflow(safeOptions, io, rememberPlan)
         return
       case "reconcile":
         yield* runReconcile(safeOptions, io, rememberPlan)

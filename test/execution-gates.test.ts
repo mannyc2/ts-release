@@ -5,10 +5,7 @@ import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
   CommandSpec,
-  executeGate,
   ExecutionApproval,
-  irreversibleGate,
-  noApprovalGate,
   PublishCommandOperation,
   RenderFileOperation,
   ValidateCommandOperation,
@@ -64,7 +61,6 @@ const planWithRenderAndPublish = Effect.gen(function*() {
         id: "local:render-file",
         description: "Render generated file.",
         risk: "writes-local",
-        gate: executeGate("Rendering writes a local generated file."),
         path: ".release/generated/file.txt",
         contents: "generated\n"
       }),
@@ -118,7 +114,6 @@ const planWithFullWorkflow = Effect.gen(function*() {
         id: "workflow-render",
         description: "Render workflow file.",
         risk: "writes-local",
-        gate: executeGate("Rendering writes a local generated file."),
         path: ".release/generated/workflow.txt",
         contents: "workflow\n"
       }),
@@ -126,7 +121,6 @@ const planWithFullWorkflow = Effect.gen(function*() {
         id: "workflow-validate",
         description: "Validate workflow.",
         risk: "read-only",
-        gate: noApprovalGate("read-only"),
         command: workflowValidateCommand
       }),
       PublishCommandOperation.make({
@@ -134,7 +128,6 @@ const planWithFullWorkflow = Effect.gen(function*() {
         targetId: "npm",
         description: "Publish workflow.",
         risk: "irreversible",
-        gate: irreversibleGate("irreversible"),
         command: workflowPublishCommand
       }),
       VerifyRemoteOperation.make({
@@ -142,7 +135,6 @@ const planWithFullWorkflow = Effect.gen(function*() {
         targetId: "npm",
         description: "Verify workflow.",
         risk: "read-only",
-        gate: noApprovalGate("read-only"),
         command: workflowVerifyCommand
       })
     ]
@@ -167,14 +159,13 @@ const planWithNpmVersionVerification = Effect.gen(function*() {
         targetId: "npm",
         description: "Verify npm package version.",
         risk: "read-only",
-        gate: noApprovalGate("read-only"),
         command: npmVersionVerifyCommand
       })
     ]
   })
 })
 
-describe("execution gates", () => {
+describe("execution approval", () => {
   layer(TestLayer)((it) => {
     it.effect("runs validation without publish approval", () =>
       Effect.gen(function*() {
@@ -248,10 +239,18 @@ describe("execution gates", () => {
           ExecutionApproval.make({ execute: true, approveIrreversible: true })
         )
 
-        expect(evidence.render.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-        expect(evidence.validation.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
-        expect(evidence.execution.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
-        expect(evidence.verification.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
+        expect(evidence.records.map((record) => record.id)).toEqual([
+          "workflow-render:execution",
+          "workflow-validate:command",
+          "workflow-publish:command",
+          "workflow-verify:command"
+        ])
+        expect(evidence.records.map((record) => record.phase)).toEqual([
+          "render",
+          "validation",
+          "execution",
+          "verification"
+        ])
       }))
 
     it.effect("workflow fails before publishing without execute approval", () =>
@@ -264,7 +263,7 @@ describe("execution gates", () => {
   })
 
   layer(makeTestCommandRunnerLayer())((it) => {
-    it.effect("blocks malformed publish operations even when the gate is too weak", () =>
+    it.effect("blocks irreversible publish operations based on risk", () =>
       Effect.gen(function*() {
         const command = CommandSpec.make({
           executable: "npm",
@@ -275,9 +274,8 @@ describe("execution gates", () => {
         const operation = PublishCommandOperation.make({
           id: "malformed-publish",
           targetId: "npm",
-          description: "Malformed publish",
+          description: "Publish operation",
           risk: "irreversible",
-          gate: noApprovalGate("bad adapter metadata"),
           command
         })
         const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
@@ -312,7 +310,6 @@ describe("execution gates", () => {
           id: "validate-fail",
           description: "Failing validator",
           risk: "read-only",
-          gate: noApprovalGate("read-only"),
           command
         })
         const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
@@ -396,13 +393,11 @@ describe("execution gates", () => {
         expect(error._tag).toBe("OperationFailedError")
         if (error._tag === "OperationFailedError") {
           expect(error.operationId).toBe("workflow-validate")
-          expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-validate:command"])
-          expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-          expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
+          expect(error.evidence?.records.map((record) => record.id)).toEqual([
+            "workflow-render:execution",
             "workflow-validate:command"
           ])
-          expect(error.workflowEvidence?.execution).toBeUndefined()
-          expect(error.workflowEvidence?.verification).toBeUndefined()
+          expect(error.evidence?.records.map((record) => record.phase)).toEqual(["render", "validation"])
         }
       }))
   })
@@ -442,15 +437,12 @@ describe("execution gates", () => {
         expect(error._tag).toBe("OperationFailedError")
         if (error._tag === "OperationFailedError") {
           expect(error.operationId).toBe("workflow-publish")
-          expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-publish:command"])
-          expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-          expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
-            "workflow-validate:command"
-          ])
-          expect(error.workflowEvidence?.execution?.records.map((record) => record.id)).toEqual([
+          expect(error.evidence?.records.map((record) => record.id)).toEqual([
+            "workflow-render:execution",
+            "workflow-validate:command",
             "workflow-publish:command"
           ])
-          expect(error.workflowEvidence?.verification).toBeUndefined()
+          expect(error.evidence?.records.map((record) => record.phase)).toEqual(["render", "validation", "execution"])
         }
       }))
   })
@@ -485,16 +477,17 @@ describe("execution gates", () => {
         expect(error._tag).toBe("OperationFailedError")
         if (error._tag === "OperationFailedError") {
           expect(error.operationId).toBe("workflow-verify")
-          expect(error.evidence?.records.map((record) => record.id)).toEqual(["workflow-verify:command"])
-          expect(error.workflowEvidence?.render?.records.map((record) => record.id)).toEqual(["workflow-render:execution"])
-          expect(error.workflowEvidence?.validation?.records.map((record) => record.id)).toEqual([
-            "workflow-validate:command"
-          ])
-          expect(error.workflowEvidence?.execution?.records.map((record) => record.id)).toEqual([
-            "workflow-publish:command"
-          ])
-          expect(error.workflowEvidence?.verification?.records.map((record) => record.id)).toEqual([
+          expect(error.evidence?.records.map((record) => record.id)).toEqual([
+            "workflow-render:execution",
+            "workflow-validate:command",
+            "workflow-publish:command",
             "workflow-verify:command"
+          ])
+          expect(error.evidence?.records.map((record) => record.phase)).toEqual([
+            "render",
+            "validation",
+            "execution",
+            "verification"
           ])
         }
       }))

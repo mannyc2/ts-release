@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect"
 import {
-  executeGate,
   Operation,
   RenderFileOperation
 } from "../domain/operation.js"
@@ -89,7 +88,6 @@ const dryRunOperation = (target: HomebrewTapTarget): Operation =>
     targetId: target.id,
     dryRunSupport: target.dryRunSupport,
     nativeDescription: "Validate generated Homebrew formula with brew audit.",
-    nativeGateReason: "brew audit validates the generated formula without publishing.",
     command: noAuthCommand("brew", ["audit", "--strict", "--formula", target.formulaPath]),
     simulatedDescription: "Record simulated Homebrew formula validation.",
     skippedDescription: "Record skipped Homebrew formula validation.",
@@ -111,7 +109,6 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
       targetId: target.id,
       description: `Render Homebrew formula ${catalogPathBaseName(target.formulaPath)}.`,
       risk: "writes-local",
-      gate: executeGate("Rendering a Homebrew formula writes a local generated file."),
       path: target.formulaPath,
       contents: formula
     })
@@ -123,7 +120,6 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
         id: `${target.id}:brew-version`,
         targetId: target.id,
         description: "Check Homebrew CLI availability.",
-        gateReason: "CLI availability validation is read-only.",
         command: noAuthCommand("brew", ["--version"])
       })
     )
@@ -136,9 +132,7 @@ export const planHomebrewOperations = Effect.fn("planHomebrewOperations")(functi
       targetId: target.id,
       description: `Push Homebrew tap update for ${model.identity.name}@${model.identity.version}.`,
       mutability: target.mutability,
-      directory: target.tapDirectory,
-      irreversibleReason: "Pushing a Homebrew tap update is configured as irreversible.",
-      externallyVisibleReason: "Pushing a Homebrew tap update is externally visible."
+      directory: target.tapDirectory
     })
   )
 

@@ -25,7 +25,7 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
     "[GitHubReleaseTarget]",
     "[NpmRegistryTarget]",
     "[HomebrewTapTarget]",
-    "gate: execute"
+    "approval: execute"
   ]],
   ["non-strict-skips", [
     "strategy=skipped",

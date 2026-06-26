@@ -63,10 +63,6 @@
       "types": "./dist/domain/release.d.ts",
       "default": "./dist/domain/release.js"
     },
-    "./domain/status": {
-      "types": "./dist/domain/status.d.ts",
-      "default": "./dist/domain/status.js"
-    },
     "./domain/target": {
       "types": "./dist/domain/target.d.ts",
       "default": "./dist/domain/target.js"
@@ -118,10 +114,6 @@
     "./planner/render-plan": {
       "types": "./dist/planner/render-plan.d.ts",
       "default": "./dist/planner/render-plan.js"
-    },
-    "./planner/status": {
-      "types": "./dist/planner/status.d.ts",
-      "default": "./dist/planner/status.js"
     },
     "./targets/adapter": {
       "types": "./dist/targets/adapter.d.ts",

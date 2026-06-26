@@ -15,7 +15,7 @@ const rootFlag = Flag.string("root").pipe(Flag.withDefault(""))
 const outputFlag = Flag.string("out").pipe(Flag.withDefault(""))
 const formatFlag = Flag.choice("format", ["json", "text", "summary", "markdown"]).pipe(Flag.withDefault("json"))
 const validationFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
-const statusFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
+const textJsonFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
 const diagnosticsFormatFlag = Flag.choice("format", ["json", "text", "markdown"]).pipe(Flag.withDefault("text"))
 const initFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDefault("text"))
 const initTemplateFlag = Flag.choice("template", [
@@ -156,25 +156,12 @@ const explainCommand = Command.make(
   })
 )
 
-const statusCommand = Command.make(
-  "status",
-  {
-    root: rootFlag,
-    config: configFlag,
-    format: statusFormatFlag
-  },
-  Effect.fn("cli.status")(function*({ root, config, format }) {
-    const contents = yield* Config.renderStatus(formattedConfigInput({ root, config, format }))
-    yield* Console.log(contents.trimEnd())
-  })
-)
-
 const eligibilityCommand = Command.make(
   "eligibility",
   {
     root: rootFlag,
     config: configFlag,
-    format: statusFormatFlag
+    format: textJsonFormatFlag
   },
   Effect.fn("cli.eligibility")(function*({ root, config, format }) {
     const decision = yield* Config.checkEligibility(configInput({ root, config }))
@@ -188,7 +175,7 @@ const checkIntentCommand = Command.make(
   {
     root: rootFlag,
     config: configFlag,
-    format: statusFormatFlag
+    format: textJsonFormatFlag
   },
   Effect.fn("cli.checkIntent")(function*({ root, config, format }) {
     const decision = yield* Config.checkIntent(configInput({ root, config }))
@@ -199,10 +186,6 @@ const checkIntentCommand = Command.make(
 
 const printEvidence = Effect.fn("cli.printEvidence")(function*(evidence: EvidenceBundle) {
   yield* Console.log(renderEvidenceJson(evidence).trimEnd())
-})
-
-const printWorkflowEvidencePaths = Effect.fn("cli.printWorkflowEvidencePaths")(function*(paths: unknown) {
-  yield* Console.log(`${JSON.stringify({ evidence: paths }, null, 2)}`)
 })
 
 const validateCommand = Command.make(
@@ -397,23 +380,7 @@ const runCommand = Command.make(
     const result = yield* Config.planAndWriteRun(
       approvedConfigInput({ root, config, execute, approveIrreversible })
     )
-    yield* printWorkflowEvidencePaths(result.paths)
-  })
-)
-
-const resumeCommand = Command.make(
-  "resume",
-  {
-    root: rootFlag,
-    config: configFlag,
-    execute: executeFlag,
-    approveIrreversible: approveIrreversibleFlag
-  },
-  Effect.fn("cli.resume")(function*({ root, config, execute, approveIrreversible }) {
-    const result = yield* Config.planAndWriteResume(
-      approvedConfigInput({ root, config, execute, approveIrreversible })
-    )
-    yield* printWorkflowEvidencePaths(result.paths)
+    yield* printEvidence(result.evidence)
   })
 )
 
@@ -443,13 +410,11 @@ export const cli = Command.make("release").pipe(
     validateCommand,
     validateConfigCommand,
     printCommand,
-    statusCommand,
     eligibilityCommand,
     checkIntentCommand,
     executeCommand,
     verifyCommand,
     runCommand,
-    resumeCommand,
     reconcileCommand
   ])
 )

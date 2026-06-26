@@ -391,7 +391,6 @@ const jobExecutesRelease = (block: string): boolean =>
   block.includes("--execute") ||
   hasActionTruthyInput(block, "execute") ||
   hasActionCommand(block, "run") ||
-  hasActionCommand(block, "resume") ||
   hasActionCommand(block, "reconcile")
 
 const hasCliApprovedExecution = (block: string): boolean =>

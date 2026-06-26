@@ -13,7 +13,6 @@ Supported action commands are:
 
 - `plan`
 - `validate-config`
-- `status`
 - `eligibility`
 - `check-intent`
 - `doctor`
@@ -21,7 +20,6 @@ Supported action commands are:
 - `check-ci`
 - `validate`
 - `run`
-- `resume`
 - `reconcile`
 
 Useful app-local commands:
@@ -32,7 +30,7 @@ bun run --cwd apps/ts-release-action build
 ```
 
 Use `upload-evidence: true` when a workflow should upload collected
-`.release/evidence` JSON files after command completion or failure. Approved
+`.release/evidence` JSON bundles after command completion or failure. Approved
 execution still requires `execute: true`, and irreversible operations also
 require `approve-irreversible: true`.
 

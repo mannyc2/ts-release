@@ -16,6 +16,7 @@ export type * from "../types/effect-internal.js"
 export const ReleaseInitTemplateName = Schema.Literals([
   "npm-only",
   "npm-github",
+  "bun-cli-github",
   "multi-target-homebrew",
   "multi-target-scoop"
 ])
@@ -252,6 +253,47 @@ const configTargetScoop = (options: NormalizedInitOptions): Record<string, unkno
   }
 }
 
+const configArtifactRecipeBunCli = (options: NormalizedInitOptions): Record<string, unknown> => {
+  const name = packageShortName(options.packageName)
+  return {
+    _tag: "BunExecutableArtifactRecipe",
+    id: "cli",
+    entrypoint: "src/cli.ts",
+    outputs: [
+      {
+        id: "cli-linux-x64",
+        target: "bun-linux-x64-baseline",
+        path: `artifacts/${name}-{version}-linux-x64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-linux-arm64",
+        target: "bun-linux-arm64",
+        path: `artifacts/${name}-{version}-linux-arm64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-darwin-x64",
+        target: "bun-darwin-x64",
+        path: `artifacts/${name}-{version}-darwin-x64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-darwin-arm64",
+        target: "bun-darwin-arm64",
+        path: `artifacts/${name}-{version}-darwin-arm64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-windows-x64",
+        target: "bun-windows-x64-baseline",
+        path: `artifacts/${name}-{version}-windows-x64.exe`,
+        consumers: ["github"]
+      }
+    ]
+  }
+}
+
 const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
   const artifacts: Array<Record<string, unknown>> = [
@@ -262,10 +304,14 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
       consumers: ["npm"]
     }
   ]
+  const artifactRecipes: Array<Record<string, unknown>> = []
   const targets: Array<Record<string, unknown>> = [configTargetNpm(options)]
 
   if (options.template !== "npm-only") {
     targets.push(configTargetGitHub(options))
+  }
+  if (options.template === "bun-cli-github") {
+    artifactRecipes.push(configArtifactRecipeBunCli(options))
   }
   if (options.template === "multi-target-homebrew") {
     artifacts.push({
@@ -295,6 +341,7 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
       tag: "v0.1.0"
     },
     artifacts,
+    ...(artifactRecipes.length === 0 ? {} : { artifactRecipes }),
     targets,
     strict: true,
     evidenceDirectory: ".release/evidence/{version}"

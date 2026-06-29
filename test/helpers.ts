@@ -258,6 +258,7 @@ export const releaseIdentity = (overrides: Record<string, unknown> = {}) => ({
 export const releaseConfig = ({
   identity = releaseIdentity(),
   artifacts,
+  artifactRecipes,
   targets,
   strict = true,
   evidenceDirectory = ".release/evidence",
@@ -265,6 +266,7 @@ export const releaseConfig = ({
 }: {
   readonly identity?: Record<string, unknown>
   readonly artifacts: ReadonlyArray<Record<string, unknown>>
+  readonly artifactRecipes?: ReadonlyArray<Record<string, unknown>>
   readonly targets: ReadonlyArray<Record<string, unknown>>
   readonly strict?: boolean
   readonly evidenceDirectory?: string
@@ -274,6 +276,7 @@ export const releaseConfig = ({
     identity,
     ...(releaseDecision === undefined ? {} : { releaseDecision }),
     artifacts,
+    ...(artifactRecipes === undefined ? {} : { artifactRecipes }),
     targets,
     strict,
     evidenceDirectory

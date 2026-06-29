@@ -56,42 +56,46 @@ const releaseArtifacts = () => [
     path: ".",
     format: "directory",
     consumers: ["npm"]
-  },
+  }
+]
+
+const releaseArtifactRecipes = () => [
   {
-    id: "package-tarball",
-    path: ".release/artifacts/{normalizedName}-{version}.tgz",
-    format: "tarball",
-    consumers: ["github"]
-  },
-  {
-    id: "cli-linux-x64",
-    path: ".release/artifacts/ts-release-{version}-linux-x64",
-    format: "file",
-    consumers: ["github"]
-  },
-  {
-    id: "cli-linux-arm64",
-    path: ".release/artifacts/ts-release-{version}-linux-arm64",
-    format: "file",
-    consumers: ["github"]
-  },
-  {
-    id: "cli-darwin-x64",
-    path: ".release/artifacts/ts-release-{version}-darwin-x64",
-    format: "file",
-    consumers: ["github"]
-  },
-  {
-    id: "cli-darwin-arm64",
-    path: ".release/artifacts/ts-release-{version}-darwin-arm64",
-    format: "file",
-    consumers: ["github"]
-  },
-  {
-    id: "cli-windows-x64",
-    path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
-    format: "file",
-    consumers: ["github"]
+    _tag: "BunExecutableArtifactRecipe",
+    id: "release-ts-cli",
+    entrypoint: "apps/release-ts/src/cli/main.ts",
+    outputs: [
+      {
+        id: "cli-linux-x64",
+        target: "bun-linux-x64-baseline",
+        path: ".release/artifacts/ts-release-{version}-linux-x64",
+        consumers: ["github"]
+      },
+      {
+        id: "cli-linux-arm64",
+        target: "bun-linux-arm64",
+        path: ".release/artifacts/ts-release-{version}-linux-arm64",
+        consumers: ["github"]
+      },
+      {
+        id: "cli-darwin-x64",
+        target: "bun-darwin-x64",
+        path: ".release/artifacts/ts-release-{version}-darwin-x64",
+        consumers: ["github"]
+      },
+      {
+        id: "cli-darwin-arm64",
+        target: "bun-darwin-arm64",
+        path: ".release/artifacts/ts-release-{version}-darwin-arm64",
+        consumers: ["github"]
+      },
+      {
+        id: "cli-windows-x64",
+        target: "bun-windows-x64-baseline",
+        path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
+        consumers: ["github"]
+      }
+    ]
   }
 ]
 
@@ -102,6 +106,7 @@ const baseConfig = (version: string = "0.0.0") => ({
     tagTemplate: "v{version}"
   },
   artifacts: releaseArtifacts(),
+  artifactRecipes: releaseArtifactRecipes(),
   targets: [
     {
       _tag: "NpmRegistryTarget",
@@ -212,31 +217,56 @@ describe("self-release config script", () => {
 
   test("fails when generated artifact paths drift", async () => {
     const config = baseConfig()
-    config.artifacts = releaseArtifacts().map((artifact) =>
-      artifact.id === "package-tarball"
-        ? { ...artifact, path: ".release/artifacts/wrong-0.0.0.tgz" }
-        : artifact
-    )
+    const [recipe] = config.artifactRecipes
+    const [output] = recipe?.outputs ?? []
+    if (output !== undefined) {
+      output.path = ".release/artifacts/wrong-0.0.0"
+    }
     const root = await prepareWorkspace({ envExample: "NPM_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact package-tarball path")
+      expect(result.stderr).toContain("artifact recipe output cli-linux-x64 path")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test("fails when expected CLI artifact entries are missing", async () => {
+  test("fails when expected CLI recipe outputs are missing", async () => {
     const config = baseConfig()
-    config.artifacts = releaseArtifacts().filter((artifact) => artifact.id !== "cli-windows-x64")
+    const [recipe] = config.artifactRecipes
+    if (recipe !== undefined) {
+      recipe.outputs = recipe.outputs.filter((output) => output.id !== "cli-windows-x64")
+    }
     const root = await prepareWorkspace({ envExample: "NPM_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("release config must include artifact cli-windows-x64")
+      expect(result.stderr).toContain("artifact recipe release-ts-cli must include output cli-windows-x64")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("fails when CLI artifacts are declared statically", async () => {
+    const config = baseConfig()
+    config.artifacts = [
+      ...releaseArtifacts(),
+      {
+        id: "cli-linux-x64",
+        path: ".release/artifacts/ts-release-{version}-linux-x64",
+        format: "file",
+        consumers: ["github"]
+      }
+    ]
+    const root = await prepareWorkspace({ envExample: "NPM_TOKEN=\n", config })
+    try {
+      const result = await run(["bun", scriptPath], root)
+
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by artifactRecipes")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

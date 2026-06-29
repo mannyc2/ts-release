@@ -21,6 +21,7 @@ const initFormatFlag = Flag.choice("format", ["json", "text"]).pipe(Flag.withDef
 const initTemplateFlag = Flag.choice("template", [
   "npm-only",
   "npm-github",
+  "bun-cli-github",
   "multi-target-homebrew",
   "multi-target-scoop"
 ]).pipe(Flag.withDefault("npm-only"))
@@ -140,6 +141,20 @@ const printCommand = Command.make(
   Effect.fn("cli.print")(function*({ root, config }) {
     const contents = yield* Config.renderPlan(formattedConfigInput<"text">({ root, config, format: "text" }))
     yield* Console.log(contents.trimEnd())
+  })
+)
+
+const stageArtifactsCommand = Command.make(
+  "stage-artifacts",
+  {
+    root: rootFlag,
+    config: configFlag,
+    format: textJsonFormatFlag,
+    out: outputFlag
+  },
+  Effect.fn("cli.stageArtifacts")(function*({ root, config, format, out }) {
+    const result = yield* Config.stageArtifacts(formattedConfigInput({ root, config, format }))
+    yield* writeOrPrint(out, Config.renderStagedArtifacts(result, format))
   })
 )
 
@@ -402,6 +417,7 @@ export const cli = Command.make("release").pipe(
     planCommand,
     schemaCommand,
     initCommand,
+    stageArtifactsCommand,
     explainCommand,
     checkAuthCommand,
     checkCiCommand,

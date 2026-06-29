@@ -45,6 +45,9 @@ const stageRecipe = () =>
     configPath: "release.config.json"
   })
 
+const portablePath = (path: string): string =>
+  path.replaceAll("\\", "/")
+
 describe("Bun executable artifact recipe adapter", () => {
   const calls: Array<BunExecutableBuildInput> = []
   const TestLayer = Layer.mergeAll(
@@ -66,17 +69,22 @@ describe("Bun executable artifact recipe adapter", () => {
           "dist/release-0.1.0-linux-x64",
           "dist/release-0.1.0-darwin-arm64"
         ])
-        expect(calls).toEqual([
+        expect(calls.map((call) => ({
+          entrypoint: portablePath(call.entrypoint),
+          target: call.target,
+          outfile: portablePath(call.outfile),
+          minify: call.minify
+        }))).toEqual([
           {
-            entrypoint: "/workspace/src/cli.ts",
+            entrypoint: expect.stringMatching(/\/workspace\/src\/cli\.ts$/),
             target: "bun-linux-x64-baseline",
-            outfile: "/workspace/dist/release-0.1.0-linux-x64",
+            outfile: expect.stringMatching(/\/workspace\/dist\/release-0\.1\.0-linux-x64$/),
             minify: true
           },
           {
-            entrypoint: "/workspace/src/cli.ts",
+            entrypoint: expect.stringMatching(/\/workspace\/src\/cli\.ts$/),
             target: "bun-darwin-arm64",
-            outfile: "/workspace/dist/release-0.1.0-darwin-arm64",
+            outfile: expect.stringMatching(/\/workspace\/dist\/release-0\.1\.0-darwin-arm64$/),
             minify: true
           }
         ])

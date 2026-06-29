@@ -58,7 +58,6 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: "./planner/evidence-recorder", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/executor", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/normalize-release", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
-  { subpath: "./planner/release-eligibility", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./planner/render-plan", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/adapter", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./targets/github", allowedRuntimeSourcePaths: ["targets/github.ts"], allowedExternalPrefixes: [], allowsBunGlobal: false },
@@ -88,6 +87,7 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   },
   { subpath: "./workflows/config", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/diagnostics", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./workflows/distribution", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/evidence", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./workflows/init", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   {

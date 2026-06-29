@@ -116,33 +116,14 @@ const makeArtifactClient = () => {
   return { client, uploads }
 }
 
-const intentFilesConfig = JSON.stringify({
-  identity: {
-    name: "@scope/pkg",
-    version: "1.2.3",
-    commit: "abc123",
-    tag: "v1.2.3"
-  },
-  releaseDecision: {
-    _tag: "IntentFilesReleaseDecision",
-    directory: ".release/intents",
-    packagePath: "package.json",
-    tagTemplate: "v{version}",
-    requireIntent: true
-  },
-  artifacts: [],
-  targets: [],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
 describe("ts-release action", () => {
   test("declares Node action metadata inputs and outputs", async () => {
     const metadata = await readFile("apps/ts-release-action/action.yml", "utf8")
     expect(metadata).toContain("runs:")
     expect(metadata).toContain("using: node20")
     expect(metadata).toContain("main: dist/index.js")
-    expect(metadata).toContain("check-intent")
+    expect(metadata).not.toContain("check-intent")
+    expect(metadata).not.toContain("eligibility")
     for (const input of [
       "command:",
       "config:",
@@ -168,8 +149,6 @@ describe("ts-release action", () => {
       "target_count:",
       "evidence_directory:",
       "plan_path:",
-      "should_release:",
-      "eligibility_status:",
       "status:"
     ]) {
       expect(metadata).toContain(output)
@@ -198,104 +177,6 @@ describe("ts-release action", () => {
       expect(io.outputs.get("status")).toBe("passed")
       expect([...io.files.values()][0]).toContain("# Release Plan release@0.1.0")
       expect(io.summaries.join("\n")).toContain("npm:npm-publish")
-      expect(io.failures).toEqual([])
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("eligibility command exposes skipped decisions as successful outputs", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-eligibility-"))
-    try {
-      await writeFile(join(root, "release.config.json"), JSON.stringify({
-        identity: {
-          name: "@scope/pkg",
-          version: "1.2.3",
-          commit: "abc123",
-          tag: "v1.2.3"
-        },
-        releaseDecision: {
-          _tag: "ConventionalCommitsReleaseDecision",
-          packagePath: "package.json",
-          tagTemplate: "v{version}"
-        },
-        artifacts: [],
-        targets: [
-          {
-            _tag: "NpmRegistryTarget",
-            id: "npm",
-            registry: "https://registry.npmjs.org",
-            packageName: "@scope/pkg",
-            packagePath: ".",
-            tokenEnv: "NPM_TOKEN",
-            dryRunSupport: "native",
-            mutability: "immutable",
-            recovery: "publish-new-version"
-          },
-          {
-            _tag: "GitHubReleaseTarget",
-            id: "github",
-            repository: "owner/repo",
-            tokenEnv: "GH_TOKEN",
-            draft: false,
-            dryRunSupport: "simulated",
-            mutability: "mutable-release",
-            recovery: "delete-and-recreate"
-          }
-        ],
-        strict: true,
-        evidenceDirectory: ".release/evidence"
-      }))
-      await writeFile(join(root, "package.json"), JSON.stringify({
-        name: "@scope/pkg",
-        version: "1.2.3"
-      }))
-      const gitListTags = CommandSpec.make({
-        executable: "git",
-        args: ["tag", "--list", "--merged", "HEAD"],
-        requiredEnv: [],
-        redactedEnv: []
-      })
-      const gitLog = CommandSpec.make({
-        executable: "git",
-        args: ["log", "--format=%B%x1e"],
-        requiredEnv: [],
-        redactedEnv: []
-      })
-      const io = makeFakeActionIo()
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map([
-            [commandKey(gitListTags), {
-              exitCode: 0,
-              stdout: "",
-              stderr: ""
-            }],
-            [commandKey(gitLog), {
-              exitCode: 0,
-              stdout: "docs: update readme\x1e",
-              stderr: ""
-            }]
-          ])
-        }),
-        LiveTargetRegistryLayer,
-        makeTestReleaseHttpLayer({ responses: new Map() }),
-        BunServices.layer
-      )
-
-      await runAction(
-        actionOptions(root, { command: "eligibility", format: "json" }),
-        io,
-        layer
-      )
-
-      expect(io.outputs.get("status")).toBe("passed")
-      expect(io.outputs.get("should_release")).toBe("false")
-      expect(io.outputs.get("eligibility_status")).toBe("skipped")
       expect(io.failures).toEqual([])
     } finally {
       await rm(root, { recursive: true, force: true })
@@ -514,81 +395,6 @@ describe("ts-release action", () => {
     expect(io.outputs.get("status")).toBe("failed")
     expect(io.failures.join("\n")).toContain("ActionInputError")
     expect(io.failures.join("\n")).toContain("config")
-  })
-
-  test("check-intent fails when required intent files are missing", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-check-intent-missing-"))
-    try {
-      await writeFile(join(root, "release.config.json"), intentFilesConfig)
-      await writeFile(join(root, "package.json"), JSON.stringify({
-        name: "@scope/pkg",
-        version: "1.2.3"
-      }))
-      const io = makeFakeActionIo()
-
-      await runAction(
-        actionOptions(root, { command: "check-intent", format: "text" }),
-        io,
-        makeNodeReleaseWorkflowRuntimeLayer({ root })
-      )
-
-      expect(io.outputs.get("status")).toBe("failed")
-      expect(io.failures.join("\n")).toContain("ReleaseEligibilityCheckError")
-      expect(io.failures.join("\n")).toContain("release intent files are required")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("check-intent passes explicit empty and release-requesting intent files", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-check-intent-"))
-    try {
-      await writeFile(join(root, "release.config.json"), intentFilesConfig)
-      await writeFile(join(root, "package.json"), JSON.stringify({
-        name: "@scope/pkg",
-        version: "1.2.3"
-      }))
-      await mkdir(join(root, ".release", "intents"), { recursive: true })
-
-      await writeFile(join(root, ".release", "intents", "empty.json"), JSON.stringify({
-        package: "@scope/pkg",
-        release: "none",
-        summary: "No release needed.",
-        empty: true
-      }))
-      const emptyIo = makeFakeActionIo()
-      await runAction(
-        actionOptions(root, { command: "check-intent", format: "json" }),
-        emptyIo,
-        makeNodeReleaseWorkflowRuntimeLayer({ root })
-      )
-
-      expect(emptyIo.outputs.get("status")).toBe("passed")
-      expect(emptyIo.outputs.get("release_name")).toBe("@scope/pkg")
-      expect(emptyIo.outputs.get("should_release")).toBe("false")
-      expect(emptyIo.outputs.get("eligibility_status")).toBe("skipped")
-      expect(emptyIo.summaries.join("\n")).toContain("\"shouldRelease\": false")
-
-      await writeFile(join(root, ".release", "intents", "feature.json"), JSON.stringify({
-        package: "@scope/pkg",
-        release: "minor",
-        summary: "Add an action command."
-      }))
-      const releaseIo = makeFakeActionIo()
-      await runAction(
-        actionOptions(root, { command: "check-intent", format: "text" }),
-        releaseIo,
-        makeNodeReleaseWorkflowRuntimeLayer({ root })
-      )
-
-      expect(releaseIo.outputs.get("status")).toBe("passed")
-      expect(releaseIo.outputs.get("release_name")).toBe("@scope/pkg")
-      expect(releaseIo.outputs.get("should_release")).toBe("true")
-      expect(releaseIo.outputs.get("eligibility_status")).toBe("ready")
-      expect(releaseIo.summaries.join("\n")).toContain("request a minor release")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
   })
 
   test("artifact upload errors preserve compact foreign causes", () => {

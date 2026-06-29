@@ -54,15 +54,6 @@ export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteSt
   }
 ) {}
 
-export class ReleaseEligibilityCheckError extends Schema.TaggedErrorClass<ReleaseEligibilityCheckError>()(
-  "ReleaseEligibilityCheckError",
-  {
-    targetId: Schema.optionalKey(TargetId),
-    reason: Schema.String,
-    cause: Schema.optionalKey(Schema.Defect())
-  }
-) {}
-
 export class ReconciliationBlockedError extends Schema.TaggedErrorClass<ReconciliationBlockedError>()(
   "ReconciliationBlockedError",
   {
@@ -87,6 +78,5 @@ export type PlannerError =
   | EvidenceReadError
   | WorkspaceWriteError
   | RemoteStateInspectionError
-  | ReleaseEligibilityCheckError
   | ReconciliationBlockedError
   | OperationFailedError

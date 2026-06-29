@@ -122,6 +122,7 @@ jobs:
   homebrew:
     steps:
       - run: brew tap mannyc2/ts-release https://github.com/mannyc2/homebrew-ts-release
+      - run: brew trust mannyc2/ts-release
   scoop:
     steps:
       - run: scoop bucket add ts-release https://github.com/mannyc2/scoop-ts-release

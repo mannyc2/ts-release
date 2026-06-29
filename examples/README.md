@@ -1,6 +1,6 @@
 # release examples
 
-Start with the coordinated release example:
+Start with the coordinated distribution example:
 
 ```sh
 cd examples/multi-target
@@ -9,14 +9,14 @@ bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --fo
 
 That plan shows one release split across GitHub Releases, npm, and a Homebrew
 tap. Inspect the artifact inventory, target capabilities, `argv` lines,
-approval requirements, and generated catalog-file operations. `plan` is safe: publish
-operations stay data until a caller passes explicit execution approval.
+approval requirements, and generated catalog-file operations. `plan` is safe:
+publish operations stay data until a caller passes explicit execution approval.
 
 Templates live in `../templates/` and are copyable starting points for new
 repositories. These examples are runnable fixtures for this repository's
 checks.
 
-Focused examples:
+Focused distribution examples:
 
 - `multi-target`: one release coordinated across GitHub Releases, npm, and Homebrew.
 - `npm-only`: npm package directory with native npm dry-run validation.

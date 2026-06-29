@@ -218,10 +218,16 @@ const publishOperationPriority = (operation: PublishCommandOperation): number =>
   if (operation.id.endsWith(":gh-release-create")) {
     return 1
   }
-  if (operation.id.endsWith(":homebrew-push") || operation.id.endsWith(":scoop-push")) {
+  if (operation.id.endsWith(":add")) {
     return 2
   }
-  return 3
+  if (operation.id.endsWith(":commit")) {
+    return 3
+  }
+  if (operation.id.endsWith(":homebrew-push") || operation.id.endsWith(":scoop-push")) {
+    return 4
+  }
+  return 5
 }
 
 export const operationOrder = (left: Operation, right: Operation): number =>

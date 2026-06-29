@@ -205,11 +205,6 @@ const validationInput = (options: ActionOptions) => ({
   format: textOutputFormat(options)
 })
 
-const eligibilityInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config
-})
-
 const executionInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
@@ -393,52 +388,6 @@ const runValidateConfig = Effect.fn("action.runValidateConfig")(function*(option
   yield* io.setOutput("status", "passed")
 })
 
-const runEligibility = Effect.fn("action.runEligibility")(function*(options: ActionOptions, io: ActionIo) {
-  const decision = yield* Config.checkEligibility(eligibilityInput(options))
-  const rendered = Config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text")
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release eligibility\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
-  }
-  if (decision.packageName !== undefined) {
-    yield* io.setOutput("release_name", decision.packageName)
-  }
-  if (decision.packageVersion !== undefined) {
-    yield* io.setOutput("release_version", decision.packageVersion)
-  }
-  yield* io.setOutput("should_release", decision.shouldRelease ? "true" : "false")
-  yield* io.setOutput("eligibility_status", decision.status)
-  if (decision.status === "partial") {
-    return yield* Effect.fail(ActionCommandError.make({
-      command: options.command,
-      reason: decision.reason
-    }))
-  }
-  yield* io.setOutput("status", "passed")
-})
-
-const runCheckIntent = Effect.fn("action.runCheckIntent")(function*(options: ActionOptions, io: ActionIo) {
-  const decision = yield* Config.checkIntent(eligibilityInput(options))
-  const rendered = Config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text")
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release check-intent\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
-  }
-  if (decision.packageName !== undefined) {
-    yield* io.setOutput("release_name", decision.packageName)
-  }
-  if (decision.packageVersion !== undefined) {
-    yield* io.setOutput("release_version", decision.packageVersion)
-  }
-  yield* io.setOutput("should_release", decision.shouldRelease ? "true" : "false")
-  yield* io.setOutput("eligibility_status", decision.status)
-  if (decision.status === "partial") {
-    return yield* Effect.fail(ActionCommandError.make({
-      command: options.command,
-      reason: decision.reason
-    }))
-  }
-  yield* io.setOutput("status", "passed")
-})
-
 const runDiagnostics = Effect.fn("action.runDiagnostics")(function*(
   command: "doctor" | "check-auth" | "check-ci",
   options: ActionOptions,
@@ -530,12 +479,6 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
         return
       case "validate-config":
         yield* runValidateConfig(safeOptions, io)
-        return
-      case "eligibility":
-        yield* runEligibility(safeOptions, io)
-        return
-      case "check-intent":
-        yield* runCheckIntent(safeOptions, io)
         return
       case "doctor":
       case "check-auth":

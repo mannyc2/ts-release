@@ -213,7 +213,7 @@ const authChecksForPlan = Effect.fn("diagnostics.authChecksForPlan")(function*(
         confidence: hasOidcUrl && hasOidcToken ? "confirmed" : "inferred",
         message: hasOidcUrl && hasOidcToken
           ? `${target.id} has GitHub Actions OIDC request environment available.`
-          : `${target.id} uses npm trusted publishing; provider setup is confirmed only inside GitHub Actions.`
+          : `${target.id} uses trusted publishing; provider setup is confirmed only inside GitHub Actions.`
       }))
       if (capability.authSetup !== undefined) {
         checks.push(check({
@@ -306,6 +306,9 @@ const readReleaseCiDiagnosticSubject = Effect.fn("diagnostics.readReleaseCiDiagn
 const inferredTrustedPublishingWorkflow = (subject: ReleaseCiDiagnosticSubject): string | undefined => {
   for (const target of subject.targets) {
     if (target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined) {
+      return target.trustedPublishing.workflow
+    }
+    if (target._tag === "PyPiRegistryTarget" && target.trustedPublishing !== undefined) {
       return target.trustedPublishing.workflow
     }
   }
@@ -423,7 +426,10 @@ const fallbackNamedJob = (
   jobs.find((job) => job.name === name)
 
 const hasWorkflowTrustedTarget = (subject: ReleaseCiDiagnosticSubject): boolean =>
-  subject.targets.some((target) => target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined)
+  subject.targets.some((target) =>
+    (target._tag === "NpmRegistryTarget" || target._tag === "PyPiRegistryTarget") &&
+    target.trustedPublishing !== undefined
+  )
 
 const hasGitHubReleaseTarget = (subject: ReleaseCiDiagnosticSubject): boolean =>
   subject.targets.some((target) => target._tag === "GitHubReleaseTarget")

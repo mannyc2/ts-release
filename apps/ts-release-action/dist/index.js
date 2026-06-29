@@ -50550,1850 +50550,6 @@ var require_light = __commonJS((exports, module) => {
   });
 });
 
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/constants.js
-var require_constants8 = __commonJS((exports, module) => {
-  var SEMVER_SPEC_VERSION = "2.0.0";
-  var MAX_LENGTH = 256;
-  var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || 9007199254740991;
-  var MAX_SAFE_COMPONENT_LENGTH = 16;
-  var MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6;
-  var RELEASE_TYPES = [
-    "major",
-    "premajor",
-    "minor",
-    "preminor",
-    "patch",
-    "prepatch",
-    "prerelease"
-  ];
-  module.exports = {
-    MAX_LENGTH,
-    MAX_SAFE_COMPONENT_LENGTH,
-    MAX_SAFE_BUILD_LENGTH,
-    MAX_SAFE_INTEGER,
-    RELEASE_TYPES,
-    SEMVER_SPEC_VERSION,
-    FLAG_INCLUDE_PRERELEASE: 1,
-    FLAG_LOOSE: 2
-  };
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/debug.js
-var require_debug = __commonJS((exports, module) => {
-  var debug2 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args2) => console.error("SEMVER", ...args2) : () => {};
-  module.exports = debug2;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/re.js
-var require_re = __commonJS((exports, module) => {
-  var {
-    MAX_SAFE_COMPONENT_LENGTH,
-    MAX_SAFE_BUILD_LENGTH,
-    MAX_LENGTH
-  } = require_constants8();
-  var debug2 = require_debug();
-  exports = module.exports = {};
-  var re = exports.re = [];
-  var safeRe = exports.safeRe = [];
-  var src = exports.src = [];
-  var safeSrc = exports.safeSrc = [];
-  var t = exports.t = {};
-  var R = 0;
-  var LETTERDASHNUMBER = "[a-zA-Z0-9-]";
-  var safeRegexReplacements = [
-    ["\\s", 1],
-    ["\\d", MAX_LENGTH],
-    [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH]
-  ];
-  var makeSafeRegex = (value2) => {
-    for (const [token, max2] of safeRegexReplacements) {
-      value2 = value2.split(`${token}*`).join(`${token}{0,${max2}}`).split(`${token}+`).join(`${token}{1,${max2}}`);
-    }
-    return value2;
-  };
-  var createToken = (name, value2, isGlobal) => {
-    const safe = makeSafeRegex(value2);
-    const index = R++;
-    debug2(name, index, value2);
-    t[name] = index;
-    src[index] = value2;
-    safeSrc[index] = safe;
-    re[index] = new RegExp(value2, isGlobal ? "g" : undefined);
-    safeRe[index] = new RegExp(safe, isGlobal ? "g" : undefined);
-  };
-  createToken("NUMERICIDENTIFIER", "0|[1-9]\\d*");
-  createToken("NUMERICIDENTIFIERLOOSE", "\\d+");
-  createToken("NONNUMERICIDENTIFIER", `\\d*[a-zA-Z-]${LETTERDASHNUMBER}*`);
-  createToken("MAINVERSION", `(${src[t.NUMERICIDENTIFIER]})\\.` + `(${src[t.NUMERICIDENTIFIER]})\\.` + `(${src[t.NUMERICIDENTIFIER]})`);
-  createToken("MAINVERSIONLOOSE", `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` + `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` + `(${src[t.NUMERICIDENTIFIERLOOSE]})`);
-  createToken("PRERELEASEIDENTIFIER", `(?:${src[t.NONNUMERICIDENTIFIER]}|${src[t.NUMERICIDENTIFIER]})`);
-  createToken("PRERELEASEIDENTIFIERLOOSE", `(?:${src[t.NONNUMERICIDENTIFIER]}|${src[t.NUMERICIDENTIFIERLOOSE]})`);
-  createToken("PRERELEASE", `(?:-(${src[t.PRERELEASEIDENTIFIER]}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`);
-  createToken("PRERELEASELOOSE", `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`);
-  createToken("BUILDIDENTIFIER", `${LETTERDASHNUMBER}+`);
-  createToken("BUILD", `(?:\\+(${src[t.BUILDIDENTIFIER]}(?:\\.${src[t.BUILDIDENTIFIER]})*))`);
-  createToken("FULLPLAIN", `v?${src[t.MAINVERSION]}${src[t.PRERELEASE]}?${src[t.BUILD]}?`);
-  createToken("FULL", `^${src[t.FULLPLAIN]}$`);
-  createToken("LOOSEPLAIN", `[v=\\s]*${src[t.MAINVERSIONLOOSE]}${src[t.PRERELEASELOOSE]}?${src[t.BUILD]}?`);
-  createToken("LOOSE", `^${src[t.LOOSEPLAIN]}$`);
-  createToken("GTLT", "((?:<|>)?=?)");
-  createToken("XRANGEIDENTIFIERLOOSE", `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
-  createToken("XRANGEIDENTIFIER", `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`);
-  createToken("XRANGEPLAIN", `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` + `(?:\\.(${src[t.XRANGEIDENTIFIER]})` + `(?:\\.(${src[t.XRANGEIDENTIFIER]})` + `(?:${src[t.PRERELEASE]})?${src[t.BUILD]}?` + `)?)?`);
-  createToken("XRANGEPLAINLOOSE", `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` + `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` + `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` + `(?:${src[t.PRERELEASELOOSE]})?${src[t.BUILD]}?` + `)?)?`);
-  createToken("XRANGE", `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`);
-  createToken("XRANGELOOSE", `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`);
-  createToken("COERCEPLAIN", `${"(^|[^\\d])" + "(\\d{1,"}${MAX_SAFE_COMPONENT_LENGTH}})` + `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` + `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`);
-  createToken("COERCE", `${src[t.COERCEPLAIN]}(?:$|[^\\d])`);
-  createToken("COERCEFULL", src[t.COERCEPLAIN] + `(?:${src[t.PRERELEASE]})?` + `(?:${src[t.BUILD]})?` + `(?:$|[^\\d])`);
-  createToken("COERCERTL", src[t.COERCE], true);
-  createToken("COERCERTLFULL", src[t.COERCEFULL], true);
-  createToken("LONETILDE", "(?:~>?)");
-  createToken("TILDETRIM", `(\\s*)${src[t.LONETILDE]}\\s+`, true);
-  exports.tildeTrimReplace = "$1~";
-  createToken("TILDE", `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`);
-  createToken("TILDELOOSE", `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`);
-  createToken("LONECARET", "(?:\\^)");
-  createToken("CARETTRIM", `(\\s*)${src[t.LONECARET]}\\s+`, true);
-  exports.caretTrimReplace = "$1^";
-  createToken("CARET", `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`);
-  createToken("CARETLOOSE", `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`);
-  createToken("COMPARATORLOOSE", `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`);
-  createToken("COMPARATOR", `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`);
-  createToken("COMPARATORTRIM", `(\\s*)${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true);
-  exports.comparatorTrimReplace = "$1$2$3";
-  createToken("HYPHENRANGE", `^\\s*(${src[t.XRANGEPLAIN]})` + `\\s+-\\s+` + `(${src[t.XRANGEPLAIN]})` + `\\s*$`);
-  createToken("HYPHENRANGELOOSE", `^\\s*(${src[t.XRANGEPLAINLOOSE]})` + `\\s+-\\s+` + `(${src[t.XRANGEPLAINLOOSE]})` + `\\s*$`);
-  createToken("STAR", "(<|>)?=?\\s*\\*");
-  createToken("GTE0", "^\\s*>=\\s*0\\.0\\.0\\s*$");
-  createToken("GTE0PRE", "^\\s*>=\\s*0\\.0\\.0-0\\s*$");
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/parse-options.js
-var require_parse_options = __commonJS((exports, module) => {
-  var looseOption = Object.freeze({ loose: true });
-  var emptyOpts = Object.freeze({});
-  var parseOptions = (options) => {
-    if (!options) {
-      return emptyOpts;
-    }
-    if (typeof options !== "object") {
-      return looseOption;
-    }
-    return options;
-  };
-  module.exports = parseOptions;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/identifiers.js
-var require_identifiers = __commonJS((exports, module) => {
-  var numeric = /^[0-9]+$/;
-  var compareIdentifiers = (a, b) => {
-    if (typeof a === "number" && typeof b === "number") {
-      return a === b ? 0 : a < b ? -1 : 1;
-    }
-    const anum = numeric.test(a);
-    const bnum = numeric.test(b);
-    if (anum && bnum) {
-      a = +a;
-      b = +b;
-    }
-    return a === b ? 0 : anum && !bnum ? -1 : bnum && !anum ? 1 : a < b ? -1 : 1;
-  };
-  var rcompareIdentifiers = (a, b) => compareIdentifiers(b, a);
-  module.exports = {
-    compareIdentifiers,
-    rcompareIdentifiers
-  };
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/classes/semver.js
-var require_semver = __commonJS((exports, module) => {
-  var debug2 = require_debug();
-  var { MAX_LENGTH, MAX_SAFE_INTEGER } = require_constants8();
-  var { safeRe: re, t } = require_re();
-  var parseOptions = require_parse_options();
-  var { compareIdentifiers } = require_identifiers();
-  var isPrereleaseIdentifier = (prerelease, identifier2) => {
-    const identifiers = identifier2.split(".");
-    if (identifiers.length > prerelease.length) {
-      return false;
-    }
-    for (let i = 0;i < identifiers.length; i++) {
-      if (compareIdentifiers(prerelease[i], identifiers[i]) !== 0) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  class SemVer {
-    constructor(version4, options) {
-      options = parseOptions(options);
-      if (version4 instanceof SemVer) {
-        if (version4.loose === !!options.loose && version4.includePrerelease === !!options.includePrerelease) {
-          return version4;
-        } else {
-          version4 = version4.version;
-        }
-      } else if (typeof version4 !== "string") {
-        throw new TypeError(`Invalid version. Must be a string. Got type "${typeof version4}".`);
-      }
-      if (version4.length > MAX_LENGTH) {
-        throw new TypeError(`version is longer than ${MAX_LENGTH} characters`);
-      }
-      debug2("SemVer", version4, options);
-      this.options = options;
-      this.loose = !!options.loose;
-      this.includePrerelease = !!options.includePrerelease;
-      const m = version4.trim().match(options.loose ? re[t.LOOSE] : re[t.FULL]);
-      if (!m) {
-        throw new TypeError(`Invalid Version: ${version4}`);
-      }
-      this.raw = version4;
-      this.major = +m[1];
-      this.minor = +m[2];
-      this.patch = +m[3];
-      if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
-        throw new TypeError("Invalid major version");
-      }
-      if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
-        throw new TypeError("Invalid minor version");
-      }
-      if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
-        throw new TypeError("Invalid patch version");
-      }
-      if (!m[4]) {
-        this.prerelease = [];
-      } else {
-        this.prerelease = m[4].split(".").map((id) => {
-          if (/^[0-9]+$/.test(id)) {
-            const num = +id;
-            if (num >= 0 && num < MAX_SAFE_INTEGER) {
-              return num;
-            }
-          }
-          return id;
-        });
-      }
-      this.build = m[5] ? m[5].split(".") : [];
-      this.format();
-    }
-    format() {
-      this.version = `${this.major}.${this.minor}.${this.patch}`;
-      if (this.prerelease.length) {
-        this.version += `-${this.prerelease.join(".")}`;
-      }
-      return this.version;
-    }
-    toString() {
-      return this.version;
-    }
-    compare(other) {
-      debug2("SemVer.compare", this.version, this.options, other);
-      if (!(other instanceof SemVer)) {
-        if (typeof other === "string" && other === this.version) {
-          return 0;
-        }
-        other = new SemVer(other, this.options);
-      }
-      if (other.version === this.version) {
-        return 0;
-      }
-      return this.compareMain(other) || this.comparePre(other);
-    }
-    compareMain(other) {
-      if (!(other instanceof SemVer)) {
-        other = new SemVer(other, this.options);
-      }
-      if (this.major < other.major) {
-        return -1;
-      }
-      if (this.major > other.major) {
-        return 1;
-      }
-      if (this.minor < other.minor) {
-        return -1;
-      }
-      if (this.minor > other.minor) {
-        return 1;
-      }
-      if (this.patch < other.patch) {
-        return -1;
-      }
-      if (this.patch > other.patch) {
-        return 1;
-      }
-      return 0;
-    }
-    comparePre(other) {
-      if (!(other instanceof SemVer)) {
-        other = new SemVer(other, this.options);
-      }
-      if (this.prerelease.length && !other.prerelease.length) {
-        return -1;
-      } else if (!this.prerelease.length && other.prerelease.length) {
-        return 1;
-      } else if (!this.prerelease.length && !other.prerelease.length) {
-        return 0;
-      }
-      let i = 0;
-      do {
-        const a = this.prerelease[i];
-        const b = other.prerelease[i];
-        debug2("prerelease compare", i, a, b);
-        if (a === undefined && b === undefined) {
-          return 0;
-        } else if (b === undefined) {
-          return 1;
-        } else if (a === undefined) {
-          return -1;
-        } else if (a === b) {
-          continue;
-        } else {
-          return compareIdentifiers(a, b);
-        }
-      } while (++i);
-    }
-    compareBuild(other) {
-      if (!(other instanceof SemVer)) {
-        other = new SemVer(other, this.options);
-      }
-      let i = 0;
-      do {
-        const a = this.build[i];
-        const b = other.build[i];
-        debug2("build compare", i, a, b);
-        if (a === undefined && b === undefined) {
-          return 0;
-        } else if (b === undefined) {
-          return 1;
-        } else if (a === undefined) {
-          return -1;
-        } else if (a === b) {
-          continue;
-        } else {
-          return compareIdentifiers(a, b);
-        }
-      } while (++i);
-    }
-    inc(release, identifier2, identifierBase) {
-      if (release.startsWith("pre")) {
-        if (!identifier2 && identifierBase === false) {
-          throw new Error("invalid increment argument: identifier is empty");
-        }
-        if (identifier2) {
-          const match6 = `-${identifier2}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE]);
-          if (!match6 || match6[1] !== identifier2) {
-            throw new Error(`invalid identifier: ${identifier2}`);
-          }
-        }
-      }
-      switch (release) {
-        case "premajor":
-          this.prerelease.length = 0;
-          this.patch = 0;
-          this.minor = 0;
-          this.major++;
-          this.inc("pre", identifier2, identifierBase);
-          break;
-        case "preminor":
-          this.prerelease.length = 0;
-          this.patch = 0;
-          this.minor++;
-          this.inc("pre", identifier2, identifierBase);
-          break;
-        case "prepatch":
-          this.prerelease.length = 0;
-          this.inc("patch", identifier2, identifierBase);
-          this.inc("pre", identifier2, identifierBase);
-          break;
-        case "prerelease":
-          if (this.prerelease.length === 0) {
-            this.inc("patch", identifier2, identifierBase);
-          }
-          this.inc("pre", identifier2, identifierBase);
-          break;
-        case "release":
-          if (this.prerelease.length === 0) {
-            throw new Error(`version ${this.raw} is not a prerelease`);
-          }
-          this.prerelease.length = 0;
-          break;
-        case "major":
-          if (this.minor !== 0 || this.patch !== 0 || this.prerelease.length === 0) {
-            this.major++;
-          }
-          this.minor = 0;
-          this.patch = 0;
-          this.prerelease = [];
-          break;
-        case "minor":
-          if (this.patch !== 0 || this.prerelease.length === 0) {
-            this.minor++;
-          }
-          this.patch = 0;
-          this.prerelease = [];
-          break;
-        case "patch":
-          if (this.prerelease.length === 0) {
-            this.patch++;
-          }
-          this.prerelease = [];
-          break;
-        case "pre": {
-          const base = Number(identifierBase) ? 1 : 0;
-          if (this.prerelease.length === 0) {
-            this.prerelease = [base];
-          } else {
-            let i = this.prerelease.length;
-            while (--i >= 0) {
-              if (typeof this.prerelease[i] === "number") {
-                this.prerelease[i]++;
-                i = -2;
-              }
-            }
-            if (i === -1) {
-              if (identifier2 === this.prerelease.join(".") && identifierBase === false) {
-                throw new Error("invalid increment argument: identifier already exists");
-              }
-              this.prerelease.push(base);
-            }
-          }
-          if (identifier2) {
-            let prerelease = [identifier2, base];
-            if (identifierBase === false) {
-              prerelease = [identifier2];
-            }
-            if (isPrereleaseIdentifier(this.prerelease, identifier2)) {
-              const prereleaseBase = this.prerelease[identifier2.split(".").length];
-              if (isNaN(prereleaseBase)) {
-                this.prerelease = prerelease;
-              }
-            } else {
-              this.prerelease = prerelease;
-            }
-          }
-          break;
-        }
-        default:
-          throw new Error(`invalid increment argument: ${release}`);
-      }
-      this.raw = this.format();
-      if (this.build.length) {
-        this.raw += `+${this.build.join(".")}`;
-      }
-      return this;
-    }
-  }
-  module.exports = SemVer;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/parse.js
-var require_parse2 = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var parse4 = (version4, options, throwErrors = false) => {
-    if (version4 instanceof SemVer) {
-      return version4;
-    }
-    try {
-      return new SemVer(version4, options);
-    } catch (er) {
-      if (!throwErrors) {
-        return null;
-      }
-      throw er;
-    }
-  };
-  module.exports = parse4;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/valid.js
-var require_valid = __commonJS((exports, module) => {
-  var parse4 = require_parse2();
-  var valid = (version4, options) => {
-    const v = parse4(version4, options);
-    return v ? v.version : null;
-  };
-  module.exports = valid;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/clean.js
-var require_clean = __commonJS((exports, module) => {
-  var parse4 = require_parse2();
-  var clean = (version4, options) => {
-    const s = parse4(version4.trim().replace(/^[=v]+/, ""), options);
-    return s ? s.version : null;
-  };
-  module.exports = clean;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/inc.js
-var require_inc = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var inc = (version4, release, options, identifier2, identifierBase) => {
-    if (typeof options === "string") {
-      identifierBase = identifier2;
-      identifier2 = options;
-      options = undefined;
-    }
-    try {
-      return new SemVer(version4 instanceof SemVer ? version4.version : version4, options).inc(release, identifier2, identifierBase).version;
-    } catch (er) {
-      return null;
-    }
-  };
-  module.exports = inc;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/diff.js
-var require_diff = __commonJS((exports, module) => {
-  var parse4 = require_parse2();
-  var diff = (version1, version22) => {
-    const v1 = parse4(version1, null, true);
-    const v2 = parse4(version22, null, true);
-    const comparison = v1.compare(v2);
-    if (comparison === 0) {
-      return null;
-    }
-    const v1Higher = comparison > 0;
-    const highVersion = v1Higher ? v1 : v2;
-    const lowVersion = v1Higher ? v2 : v1;
-    const highHasPre = !!highVersion.prerelease.length;
-    const lowHasPre = !!lowVersion.prerelease.length;
-    if (lowHasPre && !highHasPre) {
-      if (!lowVersion.patch && !lowVersion.minor) {
-        return "major";
-      }
-      if (lowVersion.compareMain(highVersion) === 0) {
-        if (lowVersion.minor && !lowVersion.patch) {
-          return "minor";
-        }
-        return "patch";
-      }
-    }
-    const prefix2 = highHasPre ? "pre" : "";
-    if (v1.major !== v2.major) {
-      return prefix2 + "major";
-    }
-    if (v1.minor !== v2.minor) {
-      return prefix2 + "minor";
-    }
-    if (v1.patch !== v2.patch) {
-      return prefix2 + "patch";
-    }
-    return "prerelease";
-  };
-  module.exports = diff;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/major.js
-var require_major = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var major = (a, loose) => new SemVer(a, loose).major;
-  module.exports = major;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/minor.js
-var require_minor = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var minor = (a, loose) => new SemVer(a, loose).minor;
-  module.exports = minor;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/patch.js
-var require_patch = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var patch = (a, loose) => new SemVer(a, loose).patch;
-  module.exports = patch;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/prerelease.js
-var require_prerelease = __commonJS((exports, module) => {
-  var parse4 = require_parse2();
-  var prerelease = (version4, options) => {
-    const parsed = parse4(version4, options);
-    return parsed && parsed.prerelease.length ? parsed.prerelease : null;
-  };
-  module.exports = prerelease;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/compare.js
-var require_compare = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var compare = (a, b, loose) => new SemVer(a, loose).compare(new SemVer(b, loose));
-  module.exports = compare;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/rcompare.js
-var require_rcompare = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var rcompare = (a, b, loose) => compare(b, a, loose);
-  module.exports = rcompare;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/compare-loose.js
-var require_compare_loose = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var compareLoose = (a, b) => compare(a, b, true);
-  module.exports = compareLoose;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/compare-build.js
-var require_compare_build = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var compareBuild = (a, b, loose) => {
-    const versionA = new SemVer(a, loose);
-    const versionB = new SemVer(b, loose);
-    return versionA.compare(versionB) || versionA.compareBuild(versionB);
-  };
-  module.exports = compareBuild;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/sort.js
-var require_sort = __commonJS((exports, module) => {
-  var compareBuild = require_compare_build();
-  var sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose));
-  module.exports = sort;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/rsort.js
-var require_rsort = __commonJS((exports, module) => {
-  var compareBuild = require_compare_build();
-  var rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose));
-  module.exports = rsort;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/gt.js
-var require_gt = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var gt = (a, b, loose) => compare(a, b, loose) > 0;
-  module.exports = gt;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/lt.js
-var require_lt = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var lt = (a, b, loose) => compare(a, b, loose) < 0;
-  module.exports = lt;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/eq.js
-var require_eq2 = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var eq = (a, b, loose) => compare(a, b, loose) === 0;
-  module.exports = eq;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/neq.js
-var require_neq = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var neq = (a, b, loose) => compare(a, b, loose) !== 0;
-  module.exports = neq;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/gte.js
-var require_gte = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var gte = (a, b, loose) => compare(a, b, loose) >= 0;
-  module.exports = gte;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/lte.js
-var require_lte = __commonJS((exports, module) => {
-  var compare = require_compare();
-  var lte = (a, b, loose) => compare(a, b, loose) <= 0;
-  module.exports = lte;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/cmp.js
-var require_cmp = __commonJS((exports, module) => {
-  var eq = require_eq2();
-  var neq = require_neq();
-  var gt = require_gt();
-  var gte = require_gte();
-  var lt = require_lt();
-  var lte = require_lte();
-  var cmp = (a, op, b, loose) => {
-    switch (op) {
-      case "===":
-        if (typeof a === "object") {
-          a = a.version;
-        }
-        if (typeof b === "object") {
-          b = b.version;
-        }
-        return a === b;
-      case "!==":
-        if (typeof a === "object") {
-          a = a.version;
-        }
-        if (typeof b === "object") {
-          b = b.version;
-        }
-        return a !== b;
-      case "":
-      case "=":
-      case "==":
-        return eq(a, b, loose);
-      case "!=":
-        return neq(a, b, loose);
-      case ">":
-        return gt(a, b, loose);
-      case ">=":
-        return gte(a, b, loose);
-      case "<":
-        return lt(a, b, loose);
-      case "<=":
-        return lte(a, b, loose);
-      default:
-        throw new TypeError(`Invalid operator: ${op}`);
-    }
-  };
-  module.exports = cmp;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/coerce.js
-var require_coerce = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var parse4 = require_parse2();
-  var { safeRe: re, t } = require_re();
-  var coerce = (version4, options) => {
-    if (version4 instanceof SemVer) {
-      return version4;
-    }
-    if (typeof version4 === "number") {
-      version4 = String(version4);
-    }
-    if (typeof version4 !== "string") {
-      return null;
-    }
-    options = options || {};
-    let match6 = null;
-    if (!options.rtl) {
-      match6 = version4.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE]);
-    } else {
-      const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL];
-      let next;
-      while ((next = coerceRtlRegex.exec(version4)) && (!match6 || match6.index + match6[0].length !== version4.length)) {
-        if (!match6 || next.index + next[0].length !== match6.index + match6[0].length) {
-          match6 = next;
-        }
-        coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length;
-      }
-      coerceRtlRegex.lastIndex = -1;
-    }
-    if (match6 === null) {
-      return null;
-    }
-    const major = match6[2];
-    const minor = match6[3] || "0";
-    const patch = match6[4] || "0";
-    const prerelease = options.includePrerelease && match6[5] ? `-${match6[5]}` : "";
-    const build = options.includePrerelease && match6[6] ? `+${match6[6]}` : "";
-    return parse4(`${major}.${minor}.${patch}${prerelease}${build}`, options);
-  };
-  module.exports = coerce;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/truncate.js
-var require_truncate = __commonJS((exports, module) => {
-  var parse4 = require_parse2();
-  var constants3 = require_constants8();
-  var SemVer = require_semver();
-  var truncate = (version4, truncation, options) => {
-    if (!constants3.RELEASE_TYPES.includes(truncation)) {
-      return null;
-    }
-    const clonedVersion = cloneInputVersion(version4, options);
-    return clonedVersion && doTruncation(clonedVersion, truncation);
-  };
-  var cloneInputVersion = (version4, options) => {
-    const versionStringToParse = version4 instanceof SemVer ? version4.version : version4;
-    return parse4(versionStringToParse, options);
-  };
-  var doTruncation = (version4, truncation) => {
-    if (isPrerelease(truncation)) {
-      return version4.version;
-    }
-    version4.prerelease = [];
-    switch (truncation) {
-      case "major":
-        version4.minor = 0;
-        version4.patch = 0;
-        break;
-      case "minor":
-        version4.patch = 0;
-        break;
-    }
-    return version4.format();
-  };
-  var isPrerelease = (type) => {
-    return type.startsWith("pre");
-  };
-  module.exports = truncate;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/lrucache.js
-var require_lrucache = __commonJS((exports, module) => {
-  class LRUCache {
-    constructor() {
-      this.max = 1000;
-      this.map = new Map;
-    }
-    get(key) {
-      const value2 = this.map.get(key);
-      if (value2 === undefined) {
-        return;
-      } else {
-        this.map.delete(key);
-        this.map.set(key, value2);
-        return value2;
-      }
-    }
-    delete(key) {
-      return this.map.delete(key);
-    }
-    set(key, value2) {
-      const deleted = this.delete(key);
-      if (!deleted && value2 !== undefined) {
-        if (this.map.size >= this.max) {
-          const firstKey = this.map.keys().next().value;
-          this.delete(firstKey);
-        }
-        this.map.set(key, value2);
-      }
-      return this;
-    }
-  }
-  module.exports = LRUCache;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/classes/range.js
-var require_range = __commonJS((exports, module) => {
-  var SPACE_CHARACTERS = /\s+/g;
-
-  class Range {
-    constructor(range3, options) {
-      options = parseOptions(options);
-      if (range3 instanceof Range) {
-        if (range3.loose === !!options.loose && range3.includePrerelease === !!options.includePrerelease) {
-          return range3;
-        } else {
-          return new Range(range3.raw, options);
-        }
-      }
-      if (range3 instanceof Comparator) {
-        this.raw = range3.value;
-        this.set = [[range3]];
-        this.formatted = undefined;
-        return this;
-      }
-      this.options = options;
-      this.loose = !!options.loose;
-      this.includePrerelease = !!options.includePrerelease;
-      this.raw = range3.trim().replace(SPACE_CHARACTERS, " ");
-      this.set = this.raw.split("||").map((r) => this.parseRange(r.trim())).filter((c) => c.length);
-      if (!this.set.length) {
-        throw new TypeError(`Invalid SemVer Range: ${this.raw}`);
-      }
-      if (this.set.length > 1) {
-        const first = this.set[0];
-        this.set = this.set.filter((c) => !isNullSet(c[0]));
-        if (this.set.length === 0) {
-          this.set = [first];
-        } else if (this.set.length > 1) {
-          for (const c of this.set) {
-            if (c.length === 1 && isAny(c[0])) {
-              this.set = [c];
-              break;
-            }
-          }
-        }
-      }
-      this.formatted = undefined;
-    }
-    get range() {
-      if (this.formatted === undefined) {
-        this.formatted = "";
-        for (let i = 0;i < this.set.length; i++) {
-          if (i > 0) {
-            this.formatted += "||";
-          }
-          const comps = this.set[i];
-          for (let k = 0;k < comps.length; k++) {
-            if (k > 0) {
-              this.formatted += " ";
-            }
-            this.formatted += comps[k].toString().trim();
-          }
-        }
-      }
-      return this.formatted;
-    }
-    format() {
-      return this.range;
-    }
-    toString() {
-      return this.range;
-    }
-    parseRange(range3) {
-      range3 = range3.replace(BUILDSTRIPRE, "");
-      const memoOpts = (this.options.includePrerelease && FLAG_INCLUDE_PRERELEASE) | (this.options.loose && FLAG_LOOSE);
-      const memoKey = memoOpts + ":" + range3;
-      const cached3 = cache.get(memoKey);
-      if (cached3) {
-        return cached3;
-      }
-      const loose = this.options.loose;
-      const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE];
-      range3 = range3.replace(hr, hyphenReplace(this.options.includePrerelease));
-      debug2("hyphen replace", range3);
-      range3 = range3.replace(re[t.COMPARATORTRIM], comparatorTrimReplace);
-      debug2("comparator trim", range3);
-      range3 = range3.replace(re[t.TILDETRIM], tildeTrimReplace);
-      debug2("tilde trim", range3);
-      range3 = range3.replace(re[t.CARETTRIM], caretTrimReplace);
-      debug2("caret trim", range3);
-      let rangeList = range3.split(" ").map((comp26) => parseComparator(comp26, this.options)).join(" ").split(/\s+/).map((comp26) => replaceGTE0(comp26, this.options));
-      if (loose) {
-        rangeList = rangeList.filter((comp26) => {
-          debug2("loose invalid filter", comp26, this.options);
-          return !!comp26.match(re[t.COMPARATORLOOSE]);
-        });
-      }
-      debug2("range list", rangeList);
-      const rangeMap = new Map;
-      const comparators = rangeList.map((comp26) => new Comparator(comp26, this.options));
-      for (const comp26 of comparators) {
-        if (isNullSet(comp26)) {
-          return [comp26];
-        }
-        rangeMap.set(comp26.value, comp26);
-      }
-      if (rangeMap.size > 1 && rangeMap.has("")) {
-        rangeMap.delete("");
-      }
-      const result2 = [...rangeMap.values()];
-      cache.set(memoKey, result2);
-      return result2;
-    }
-    intersects(range3, options) {
-      if (!(range3 instanceof Range)) {
-        throw new TypeError("a Range is required");
-      }
-      return this.set.some((thisComparators) => {
-        return isSatisfiable(thisComparators, options) && range3.set.some((rangeComparators) => {
-          return isSatisfiable(rangeComparators, options) && thisComparators.every((thisComparator) => {
-            return rangeComparators.every((rangeComparator) => {
-              return thisComparator.intersects(rangeComparator, options);
-            });
-          });
-        });
-      });
-    }
-    test(version4) {
-      if (!version4) {
-        return false;
-      }
-      if (typeof version4 === "string") {
-        try {
-          version4 = new SemVer(version4, this.options);
-        } catch (er) {
-          return false;
-        }
-      }
-      for (let i = 0;i < this.set.length; i++) {
-        if (testSet(this.set[i], version4, this.options)) {
-          return true;
-        }
-      }
-      return false;
-    }
-  }
-  module.exports = Range;
-  var LRU = require_lrucache();
-  var cache = new LRU;
-  var parseOptions = require_parse_options();
-  var Comparator = require_comparator();
-  var debug2 = require_debug();
-  var SemVer = require_semver();
-  var {
-    safeRe: re,
-    src,
-    t,
-    comparatorTrimReplace,
-    tildeTrimReplace,
-    caretTrimReplace
-  } = require_re();
-  var { FLAG_INCLUDE_PRERELEASE, FLAG_LOOSE } = require_constants8();
-  var BUILDSTRIPRE = new RegExp(src[t.BUILD], "g");
-  var isNullSet = (c) => c.value === "<0.0.0-0";
-  var isAny = (c) => c.value === "";
-  var isSatisfiable = (comparators, options) => {
-    let result2 = true;
-    const remainingComparators = comparators.slice();
-    let testComparator = remainingComparators.pop();
-    while (result2 && remainingComparators.length) {
-      result2 = remainingComparators.every((otherComparator) => {
-        return testComparator.intersects(otherComparator, options);
-      });
-      testComparator = remainingComparators.pop();
-    }
-    return result2;
-  };
-  var parseComparator = (comp26, options) => {
-    comp26 = comp26.replace(re[t.BUILD], "");
-    debug2("comp", comp26, options);
-    comp26 = replaceCarets(comp26, options);
-    debug2("caret", comp26);
-    comp26 = replaceTildes(comp26, options);
-    debug2("tildes", comp26);
-    comp26 = replaceXRanges(comp26, options);
-    debug2("xrange", comp26);
-    comp26 = replaceStars(comp26, options);
-    debug2("stars", comp26);
-    return comp26;
-  };
-  var isX = (id) => !id || id.toLowerCase() === "x" || id === "*";
-  var invalidXRangeOrder = (M, m, p) => isX(M) && !isX(m) || isX(m) && p && !isX(p);
-  var replaceTildes = (comp26, options) => {
-    return comp26.trim().split(/\s+/).map((c) => replaceTilde(c, options)).join(" ");
-  };
-  var replaceTilde = (comp26, options) => {
-    const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE];
-    const z = options.includePrerelease ? "-0" : "";
-    return comp26.replace(r, (_2, M, m, p, pr) => {
-      debug2("tilde", comp26, _2, M, m, p, pr);
-      let ret;
-      if (isX(M)) {
-        ret = "";
-      } else if (isX(m)) {
-        ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
-      } else if (isX(p)) {
-        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
-      } else if (pr) {
-        debug2("replaceTilde pr", pr);
-        ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
-      } else {
-        ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
-      }
-      debug2("tilde return", ret);
-      return ret;
-    });
-  };
-  var replaceCarets = (comp26, options) => {
-    return comp26.trim().split(/\s+/).map((c) => replaceCaret(c, options)).join(" ");
-  };
-  var replaceCaret = (comp26, options) => {
-    debug2("caret", comp26, options);
-    const r = options.loose ? re[t.CARETLOOSE] : re[t.CARET];
-    const z = options.includePrerelease ? "-0" : "";
-    return comp26.replace(r, (_2, M, m, p, pr) => {
-      debug2("caret", comp26, _2, M, m, p, pr);
-      let ret;
-      if (isX(M)) {
-        ret = "";
-      } else if (isX(m)) {
-        ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
-      } else if (isX(p)) {
-        if (M === "0") {
-          ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
-        } else {
-          ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
-        }
-      } else if (pr) {
-        debug2("replaceCaret pr", pr);
-        if (M === "0") {
-          if (m === "0") {
-            ret = `>=${M}.${m}.${p}-${pr} <${M}.${m}.${+p + 1}-0`;
-          } else {
-            ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
-          }
-        } else {
-          ret = `>=${M}.${m}.${p}-${pr} <${+M + 1}.0.0-0`;
-        }
-      } else {
-        debug2("no pr");
-        if (M === "0") {
-          if (m === "0") {
-            ret = `>=${M}.${m}.${p} <${M}.${m}.${+p + 1}-0`;
-          } else {
-            ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
-          }
-        } else {
-          ret = `>=${M}.${m}.${p} <${+M + 1}.0.0-0`;
-        }
-      }
-      debug2("caret return", ret);
-      return ret;
-    });
-  };
-  var replaceXRanges = (comp26, options) => {
-    debug2("replaceXRanges", comp26, options);
-    return comp26.split(/\s+/).map((c) => replaceXRange(c, options)).join(" ");
-  };
-  var replaceXRange = (comp26, options) => {
-    comp26 = comp26.trim();
-    const r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE];
-    return comp26.replace(r, (ret, gtlt, M, m, p, pr) => {
-      debug2("xRange", comp26, ret, gtlt, M, m, p, pr);
-      if (invalidXRangeOrder(M, m, p)) {
-        return comp26;
-      }
-      const xM = isX(M);
-      const xm = xM || isX(m);
-      const xp = xm || isX(p);
-      const anyX = xp;
-      if (gtlt === "=" && anyX) {
-        gtlt = "";
-      }
-      pr = options.includePrerelease ? "-0" : "";
-      if (xM) {
-        if (gtlt === ">" || gtlt === "<") {
-          ret = "<0.0.0-0";
-        } else {
-          ret = "*";
-        }
-      } else if (gtlt && anyX) {
-        if (xm) {
-          m = 0;
-        }
-        p = 0;
-        if (gtlt === ">") {
-          gtlt = ">=";
-          if (xm) {
-            M = +M + 1;
-            m = 0;
-            p = 0;
-          } else {
-            m = +m + 1;
-            p = 0;
-          }
-        } else if (gtlt === "<=") {
-          gtlt = "<";
-          if (xm) {
-            M = +M + 1;
-          } else {
-            m = +m + 1;
-          }
-        }
-        if (gtlt === "<") {
-          pr = "-0";
-        }
-        ret = `${gtlt + M}.${m}.${p}${pr}`;
-      } else if (xm) {
-        ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
-      } else if (xp) {
-        ret = `>=${M}.${m}.0${pr} <${M}.${+m + 1}.0-0`;
-      }
-      debug2("xRange return", ret);
-      return ret;
-    });
-  };
-  var replaceStars = (comp26, options) => {
-    debug2("replaceStars", comp26, options);
-    return comp26.trim().replace(re[t.STAR], "");
-  };
-  var replaceGTE0 = (comp26, options) => {
-    debug2("replaceGTE0", comp26, options);
-    return comp26.trim().replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], "");
-  };
-  var hyphenReplace = (incPr) => ($0, from, fM, fm, fp, fpr, fb, to, tM, tm, tp, tpr) => {
-    if (isX(fM)) {
-      from = "";
-    } else if (isX(fm)) {
-      from = `>=${fM}.0.0${incPr ? "-0" : ""}`;
-    } else if (isX(fp)) {
-      from = `>=${fM}.${fm}.0${incPr ? "-0" : ""}`;
-    } else if (fpr) {
-      from = `>=${from}`;
-    } else {
-      from = `>=${from}${incPr ? "-0" : ""}`;
-    }
-    if (isX(tM)) {
-      to = "";
-    } else if (isX(tm)) {
-      to = `<${+tM + 1}.0.0-0`;
-    } else if (isX(tp)) {
-      to = `<${tM}.${+tm + 1}.0-0`;
-    } else if (tpr) {
-      to = `<=${tM}.${tm}.${tp}-${tpr}`;
-    } else if (incPr) {
-      to = `<${tM}.${tm}.${+tp + 1}-0`;
-    } else {
-      to = `<=${to}`;
-    }
-    return `${from} ${to}`.trim();
-  };
-  var testSet = (set2, version4, options) => {
-    for (let i = 0;i < set2.length; i++) {
-      if (!set2[i].test(version4)) {
-        return false;
-      }
-    }
-    if (version4.prerelease.length && !options.includePrerelease) {
-      for (let i = 0;i < set2.length; i++) {
-        debug2(set2[i].semver);
-        if (set2[i].semver === Comparator.ANY) {
-          continue;
-        }
-        if (set2[i].semver.prerelease.length > 0) {
-          const allowed = set2[i].semver;
-          if (allowed.major === version4.major && allowed.minor === version4.minor && allowed.patch === version4.patch) {
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-    return true;
-  };
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/classes/comparator.js
-var require_comparator = __commonJS((exports, module) => {
-  var ANY = Symbol("SemVer ANY");
-
-  class Comparator {
-    static get ANY() {
-      return ANY;
-    }
-    constructor(comp26, options) {
-      options = parseOptions(options);
-      if (comp26 instanceof Comparator) {
-        if (comp26.loose === !!options.loose) {
-          return comp26;
-        } else {
-          comp26 = comp26.value;
-        }
-      }
-      comp26 = comp26.trim().split(/\s+/).join(" ");
-      debug2("comparator", comp26, options);
-      this.options = options;
-      this.loose = !!options.loose;
-      this.parse(comp26);
-      if (this.semver === ANY) {
-        this.value = "";
-      } else {
-        this.value = this.operator + this.semver.version;
-      }
-      debug2("comp", this);
-    }
-    parse(comp26) {
-      const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR];
-      const m = comp26.match(r);
-      if (!m) {
-        throw new TypeError(`Invalid comparator: ${comp26}`);
-      }
-      this.operator = m[1] !== undefined ? m[1] : "";
-      if (this.operator === "=") {
-        this.operator = "";
-      }
-      if (!m[2]) {
-        this.semver = ANY;
-      } else {
-        this.semver = new SemVer(m[2], this.options.loose);
-      }
-    }
-    toString() {
-      return this.value;
-    }
-    test(version4) {
-      debug2("Comparator.test", version4, this.options.loose);
-      if (this.semver === ANY || version4 === ANY) {
-        return true;
-      }
-      if (typeof version4 === "string") {
-        try {
-          version4 = new SemVer(version4, this.options);
-        } catch (er) {
-          return false;
-        }
-      }
-      return cmp(version4, this.operator, this.semver, this.options);
-    }
-    intersects(comp26, options) {
-      if (!(comp26 instanceof Comparator)) {
-        throw new TypeError("a Comparator is required");
-      }
-      if (this.operator === "") {
-        if (this.value === "") {
-          return true;
-        }
-        return new Range(comp26.value, options).test(this.value);
-      } else if (comp26.operator === "") {
-        if (comp26.value === "") {
-          return true;
-        }
-        return new Range(this.value, options).test(comp26.semver);
-      }
-      options = parseOptions(options);
-      if (options.includePrerelease && (this.value === "<0.0.0-0" || comp26.value === "<0.0.0-0")) {
-        return false;
-      }
-      if (!options.includePrerelease && (this.value.startsWith("<0.0.0") || comp26.value.startsWith("<0.0.0"))) {
-        return false;
-      }
-      if (this.operator.startsWith(">") && comp26.operator.startsWith(">")) {
-        return true;
-      }
-      if (this.operator.startsWith("<") && comp26.operator.startsWith("<")) {
-        return true;
-      }
-      if (this.semver.version === comp26.semver.version && this.operator.includes("=") && comp26.operator.includes("=")) {
-        return true;
-      }
-      if (cmp(this.semver, "<", comp26.semver, options) && this.operator.startsWith(">") && comp26.operator.startsWith("<")) {
-        return true;
-      }
-      if (cmp(this.semver, ">", comp26.semver, options) && this.operator.startsWith("<") && comp26.operator.startsWith(">")) {
-        return true;
-      }
-      return false;
-    }
-  }
-  module.exports = Comparator;
-  var parseOptions = require_parse_options();
-  var { safeRe: re, t } = require_re();
-  var cmp = require_cmp();
-  var debug2 = require_debug();
-  var SemVer = require_semver();
-  var Range = require_range();
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/satisfies.js
-var require_satisfies = __commonJS((exports, module) => {
-  var Range = require_range();
-  var satisfies = (version4, range3, options) => {
-    try {
-      range3 = new Range(range3, options);
-    } catch (er) {
-      return false;
-    }
-    return range3.test(version4);
-  };
-  module.exports = satisfies;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/to-comparators.js
-var require_to_comparators = __commonJS((exports, module) => {
-  var Range = require_range();
-  var toComparators = (range3, options) => new Range(range3, options).set.map((comp26) => comp26.map((c) => c.value).join(" ").trim().split(" "));
-  module.exports = toComparators;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/max-satisfying.js
-var require_max_satisfying = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var Range = require_range();
-  var maxSatisfying = (versions, range3, options) => {
-    let max2 = null;
-    let maxSV = null;
-    let rangeObj = null;
-    try {
-      rangeObj = new Range(range3, options);
-    } catch (er) {
-      return null;
-    }
-    versions.forEach((v) => {
-      if (rangeObj.test(v)) {
-        if (!max2 || maxSV.compare(v) === -1) {
-          max2 = v;
-          maxSV = new SemVer(max2, options);
-        }
-      }
-    });
-    return max2;
-  };
-  module.exports = maxSatisfying;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/min-satisfying.js
-var require_min_satisfying = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var Range = require_range();
-  var minSatisfying = (versions, range3, options) => {
-    let min2 = null;
-    let minSV = null;
-    let rangeObj = null;
-    try {
-      rangeObj = new Range(range3, options);
-    } catch (er) {
-      return null;
-    }
-    versions.forEach((v) => {
-      if (rangeObj.test(v)) {
-        if (!min2 || minSV.compare(v) === 1) {
-          min2 = v;
-          minSV = new SemVer(min2, options);
-        }
-      }
-    });
-    return min2;
-  };
-  module.exports = minSatisfying;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/min-version.js
-var require_min_version = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var Range = require_range();
-  var gt = require_gt();
-  var minVersion = (range3, loose) => {
-    range3 = new Range(range3, loose);
-    let minver = new SemVer("0.0.0");
-    if (range3.test(minver)) {
-      return minver;
-    }
-    minver = new SemVer("0.0.0-0");
-    if (range3.test(minver)) {
-      return minver;
-    }
-    minver = null;
-    for (let i = 0;i < range3.set.length; ++i) {
-      const comparators = range3.set[i];
-      let setMin = null;
-      comparators.forEach((comparator) => {
-        const compver = new SemVer(comparator.semver.version);
-        switch (comparator.operator) {
-          case ">":
-            if (compver.prerelease.length === 0) {
-              compver.patch++;
-            } else {
-              compver.prerelease.push(0);
-            }
-            compver.raw = compver.format();
-          case "":
-          case ">=":
-            if (!setMin || gt(compver, setMin)) {
-              setMin = compver;
-            }
-            break;
-          case "<":
-          case "<=":
-            break;
-          default:
-            throw new Error(`Unexpected operation: ${comparator.operator}`);
-        }
-      });
-      if (setMin && (!minver || gt(minver, setMin))) {
-        minver = setMin;
-      }
-    }
-    if (minver && range3.test(minver)) {
-      return minver;
-    }
-    return null;
-  };
-  module.exports = minVersion;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/valid.js
-var require_valid2 = __commonJS((exports, module) => {
-  var Range = require_range();
-  var validRange = (range3, options) => {
-    try {
-      return new Range(range3, options).range || "*";
-    } catch (er) {
-      return null;
-    }
-  };
-  module.exports = validRange;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/outside.js
-var require_outside = __commonJS((exports, module) => {
-  var SemVer = require_semver();
-  var Comparator = require_comparator();
-  var { ANY } = Comparator;
-  var Range = require_range();
-  var satisfies = require_satisfies();
-  var gt = require_gt();
-  var lt = require_lt();
-  var lte = require_lte();
-  var gte = require_gte();
-  var outside = (version4, range3, hilo, options) => {
-    version4 = new SemVer(version4, options);
-    range3 = new Range(range3, options);
-    let gtfn, ltefn, ltfn, comp26, ecomp;
-    switch (hilo) {
-      case ">":
-        gtfn = gt;
-        ltefn = lte;
-        ltfn = lt;
-        comp26 = ">";
-        ecomp = ">=";
-        break;
-      case "<":
-        gtfn = lt;
-        ltefn = gte;
-        ltfn = gt;
-        comp26 = "<";
-        ecomp = "<=";
-        break;
-      default:
-        throw new TypeError('Must provide a hilo val of "<" or ">"');
-    }
-    if (satisfies(version4, range3, options)) {
-      return false;
-    }
-    for (let i = 0;i < range3.set.length; ++i) {
-      const comparators = range3.set[i];
-      let high = null;
-      let low = null;
-      comparators.forEach((comparator) => {
-        if (comparator.semver === ANY) {
-          comparator = new Comparator(">=0.0.0");
-        }
-        high = high || comparator;
-        low = low || comparator;
-        if (gtfn(comparator.semver, high.semver, options)) {
-          high = comparator;
-        } else if (ltfn(comparator.semver, low.semver, options)) {
-          low = comparator;
-        }
-      });
-      if (high.operator === comp26 || high.operator === ecomp) {
-        return false;
-      }
-      if ((!low.operator || low.operator === comp26) && ltefn(version4, low.semver)) {
-        return false;
-      } else if (low.operator === ecomp && ltfn(version4, low.semver)) {
-        return false;
-      }
-    }
-    return true;
-  };
-  module.exports = outside;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/gtr.js
-var require_gtr = __commonJS((exports, module) => {
-  var outside = require_outside();
-  var gtr = (version4, range3, options) => outside(version4, range3, ">", options);
-  module.exports = gtr;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/ltr.js
-var require_ltr = __commonJS((exports, module) => {
-  var outside = require_outside();
-  var ltr = (version4, range3, options) => outside(version4, range3, "<", options);
-  module.exports = ltr;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/intersects.js
-var require_intersects = __commonJS((exports, module) => {
-  var Range = require_range();
-  var intersects = (r1, r2, options) => {
-    r1 = new Range(r1, options);
-    r2 = new Range(r2, options);
-    return r1.intersects(r2, options);
-  };
-  module.exports = intersects;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/simplify.js
-var require_simplify = __commonJS((exports, module) => {
-  var satisfies = require_satisfies();
-  var compare = require_compare();
-  module.exports = (versions, range3, options) => {
-    const set2 = [];
-    let first = null;
-    let prev = null;
-    const v = versions.sort((a, b) => compare(a, b, options));
-    for (const version4 of v) {
-      const included = satisfies(version4, range3, options);
-      if (included) {
-        prev = version4;
-        if (!first) {
-          first = version4;
-        }
-      } else {
-        if (prev) {
-          set2.push([first, prev]);
-        }
-        prev = null;
-        first = null;
-      }
-    }
-    if (first) {
-      set2.push([first, null]);
-    }
-    const ranges = [];
-    for (const [min2, max2] of set2) {
-      if (min2 === max2) {
-        ranges.push(min2);
-      } else if (!max2 && min2 === v[0]) {
-        ranges.push("*");
-      } else if (!max2) {
-        ranges.push(`>=${min2}`);
-      } else if (min2 === v[0]) {
-        ranges.push(`<=${max2}`);
-      } else {
-        ranges.push(`${min2} - ${max2}`);
-      }
-    }
-    const simplified = ranges.join(" || ");
-    const original = typeof range3.raw === "string" ? range3.raw : String(range3);
-    return simplified.length < original.length ? simplified : range3;
-  };
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/subset.js
-var require_subset = __commonJS((exports, module) => {
-  var Range = require_range();
-  var Comparator = require_comparator();
-  var { ANY } = Comparator;
-  var satisfies = require_satisfies();
-  var compare = require_compare();
-  var subset = (sub, dom, options = {}) => {
-    if (sub === dom) {
-      return true;
-    }
-    sub = new Range(sub, options);
-    dom = new Range(dom, options);
-    let sawNonNull = false;
-    OUTER:
-      for (const simpleSub of sub.set) {
-        for (const simpleDom of dom.set) {
-          const isSub = simpleSubset(simpleSub, simpleDom, options);
-          sawNonNull = sawNonNull || isSub !== null;
-          if (isSub) {
-            continue OUTER;
-          }
-        }
-        if (sawNonNull) {
-          return false;
-        }
-      }
-    return true;
-  };
-  var minimumVersionWithPreRelease = [new Comparator(">=0.0.0-0")];
-  var minimumVersion = [new Comparator(">=0.0.0")];
-  var simpleSubset = (sub, dom, options) => {
-    if (sub === dom) {
-      return true;
-    }
-    if (sub.length === 1 && sub[0].semver === ANY) {
-      if (dom.length === 1 && dom[0].semver === ANY) {
-        return true;
-      } else if (options.includePrerelease) {
-        sub = minimumVersionWithPreRelease;
-      } else {
-        sub = minimumVersion;
-      }
-    }
-    if (dom.length === 1 && dom[0].semver === ANY) {
-      if (options.includePrerelease) {
-        return true;
-      } else {
-        dom = minimumVersion;
-      }
-    }
-    const eqSet = new Set;
-    let gt, lt;
-    for (const c of sub) {
-      if (c.operator === ">" || c.operator === ">=") {
-        gt = higherGT(gt, c, options);
-      } else if (c.operator === "<" || c.operator === "<=") {
-        lt = lowerLT(lt, c, options);
-      } else {
-        eqSet.add(c.semver);
-      }
-    }
-    if (eqSet.size > 1) {
-      return null;
-    }
-    let gtltComp;
-    if (gt && lt) {
-      gtltComp = compare(gt.semver, lt.semver, options);
-      if (gtltComp > 0) {
-        return null;
-      } else if (gtltComp === 0 && (gt.operator !== ">=" || lt.operator !== "<=")) {
-        return null;
-      }
-    }
-    for (const eq of eqSet) {
-      if (gt && !satisfies(eq, String(gt), options)) {
-        return null;
-      }
-      if (lt && !satisfies(eq, String(lt), options)) {
-        return null;
-      }
-      for (const c of dom) {
-        if (!satisfies(eq, String(c), options)) {
-          return false;
-        }
-      }
-      return true;
-    }
-    let higher, lower;
-    let hasDomLT, hasDomGT;
-    let needDomLTPre = lt && !options.includePrerelease && lt.semver.prerelease.length ? lt.semver : false;
-    let needDomGTPre = gt && !options.includePrerelease && gt.semver.prerelease.length ? gt.semver : false;
-    if (needDomLTPre && needDomLTPre.prerelease.length === 1 && lt.operator === "<" && needDomLTPre.prerelease[0] === 0) {
-      needDomLTPre = false;
-    }
-    for (const c of dom) {
-      hasDomGT = hasDomGT || c.operator === ">" || c.operator === ">=";
-      hasDomLT = hasDomLT || c.operator === "<" || c.operator === "<=";
-      if (gt) {
-        if (needDomGTPre) {
-          if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomGTPre.major && c.semver.minor === needDomGTPre.minor && c.semver.patch === needDomGTPre.patch) {
-            needDomGTPre = false;
-          }
-        }
-        if (c.operator === ">" || c.operator === ">=") {
-          higher = higherGT(gt, c, options);
-          if (higher === c && higher !== gt) {
-            return false;
-          }
-        } else if (gt.operator === ">=" && !c.test(gt.semver)) {
-          return false;
-        }
-      }
-      if (lt) {
-        if (needDomLTPre) {
-          if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomLTPre.major && c.semver.minor === needDomLTPre.minor && c.semver.patch === needDomLTPre.patch) {
-            needDomLTPre = false;
-          }
-        }
-        if (c.operator === "<" || c.operator === "<=") {
-          lower = lowerLT(lt, c, options);
-          if (lower === c && lower !== lt) {
-            return false;
-          }
-        } else if (lt.operator === "<=" && !c.test(lt.semver)) {
-          return false;
-        }
-      }
-      if (!c.operator && (lt || gt) && gtltComp !== 0) {
-        return false;
-      }
-    }
-    if (gt && hasDomLT && !lt && gtltComp !== 0) {
-      return false;
-    }
-    if (lt && hasDomGT && !gt && gtltComp !== 0) {
-      return false;
-    }
-    if (needDomGTPre || needDomLTPre) {
-      return false;
-    }
-    return true;
-  };
-  var higherGT = (a, b, options) => {
-    if (!a) {
-      return b;
-    }
-    const comp26 = compare(a.semver, b.semver, options);
-    return comp26 > 0 ? a : comp26 < 0 ? b : b.operator === ">" && a.operator === ">=" ? b : a;
-  };
-  var lowerLT = (a, b, options) => {
-    if (!a) {
-      return b;
-    }
-    const comp26 = compare(a.semver, b.semver, options);
-    return comp26 < 0 ? a : comp26 > 0 ? b : b.operator === "<" && a.operator === "<=" ? b : a;
-  };
-  module.exports = subset;
-});
-
-// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/index.js
-var require_semver2 = __commonJS((exports, module) => {
-  var internalRe = require_re();
-  var constants3 = require_constants8();
-  var SemVer = require_semver();
-  var identifiers = require_identifiers();
-  var parse4 = require_parse2();
-  var valid = require_valid();
-  var clean = require_clean();
-  var inc = require_inc();
-  var diff = require_diff();
-  var major = require_major();
-  var minor = require_minor();
-  var patch = require_patch();
-  var prerelease = require_prerelease();
-  var compare = require_compare();
-  var rcompare = require_rcompare();
-  var compareLoose = require_compare_loose();
-  var compareBuild = require_compare_build();
-  var sort = require_sort();
-  var rsort = require_rsort();
-  var gt = require_gt();
-  var lt = require_lt();
-  var eq = require_eq2();
-  var neq = require_neq();
-  var gte = require_gte();
-  var lte = require_lte();
-  var cmp = require_cmp();
-  var coerce = require_coerce();
-  var truncate = require_truncate();
-  var Comparator = require_comparator();
-  var Range = require_range();
-  var satisfies = require_satisfies();
-  var toComparators = require_to_comparators();
-  var maxSatisfying = require_max_satisfying();
-  var minSatisfying = require_min_satisfying();
-  var minVersion = require_min_version();
-  var validRange = require_valid2();
-  var outside = require_outside();
-  var gtr = require_gtr();
-  var ltr = require_ltr();
-  var intersects = require_intersects();
-  var simplifyRange = require_simplify();
-  var subset = require_subset();
-  module.exports = {
-    parse: parse4,
-    valid,
-    clean,
-    inc,
-    diff,
-    major,
-    minor,
-    patch,
-    prerelease,
-    compare,
-    rcompare,
-    compareLoose,
-    compareBuild,
-    sort,
-    rsort,
-    gt,
-    lt,
-    eq,
-    neq,
-    gte,
-    lte,
-    cmp,
-    coerce,
-    truncate,
-    Comparator,
-    Range,
-    satisfies,
-    toComparators,
-    maxSatisfying,
-    minSatisfying,
-    minVersion,
-    validRange,
-    outside,
-    gtr,
-    ltr,
-    intersects,
-    simplifyRange,
-    subset,
-    SemVer,
-    re: internalRe.re,
-    src: internalRe.src,
-    tokens: internalRe.t,
-    SEMVER_SPEC_VERSION: constants3.SEMVER_SPEC_VERSION,
-    RELEASE_TYPES: constants3.RELEASE_TYPES,
-    compareIdentifiers: identifiers.compareIdentifiers,
-    rcompareIdentifiers: identifiers.rcompareIdentifiers
-  };
-});
-
 // ../../node_modules/.bun/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
 import * as os from "os";
 
@@ -100852,7 +99008,6 @@ __export(exports_config, {
   renderStageReleaseConfigArtifacts: () => renderStageReleaseConfigArtifacts,
   renderStageArtifacts: () => renderStageArtifacts,
   renderReleasePlan: () => renderReleasePlan,
-  renderReleaseEligibilityDecision: () => renderReleaseEligibilityDecision,
   renderReleaseConfigValidationText: () => renderReleaseConfigValidationText,
   renderReleaseConfigValidationJson: () => renderReleaseConfigValidationJson,
   renderReleaseConfigValidation: () => renderReleaseConfigValidation,
@@ -100861,7 +99016,6 @@ __export(exports_config, {
   renderPlannedReleaseConfigPlan: () => renderPlannedReleaseConfigPlan,
   renderPlannedPlan: () => renderPlannedPlan,
   renderPlan: () => renderPlan2,
-  renderEligibilityDecision: () => renderEligibilityDecision,
   render: () => render,
   reconcileReleaseConfig: () => reconcileReleaseConfig,
   reconcile: () => reconcile,
@@ -100895,10 +99049,6 @@ __export(exports_config, {
   explain: () => explain,
   executeReleaseConfig: () => executeReleaseConfig,
   execute: () => execute,
-  checkReleaseConfigIntent: () => checkReleaseConfigIntent,
-  checkReleaseConfigEligibility: () => checkReleaseConfigEligibility,
-  checkIntent: () => checkIntent,
-  checkEligibility: () => checkEligibility,
   ValidateReleaseConfigFileOptions: () => ValidateReleaseConfigFileOptions,
   StagedReleaseArtifactsResult: () => StagedReleaseArtifactsResult,
   StageArtifactsFormat: () => StageArtifactsFormat,
@@ -100906,9 +99056,7 @@ __export(exports_config, {
   RenderReleaseConfigOptions: () => RenderReleaseConfigOptions,
   ReleaseReconcileConfigOptions: () => ReleaseReconcileConfigOptions,
   ReleasePlanFormat: () => ReleasePlanFormat,
-  ReleaseIntentCheckOptions: () => ReleaseIntentCheckOptions,
   ReleaseExecutionOptions: () => ReleaseExecutionOptions,
-  ReleaseEligibilityConfigOptions: () => ReleaseEligibilityConfigOptions,
   ReleaseConfigValidationResult: () => ReleaseConfigValidationResult,
   ReleaseConfigValidationFormat: () => ReleaseConfigValidationFormat,
   ReleaseConfigOptions: () => ReleaseConfigOptions,
@@ -100921,9 +99069,12 @@ __export(exports_config, {
 
 // ../../src/domain/artifact.ts
 var ArtifactId = NonEmptyString;
-var ArtifactFormat = Literals(["tarball", "zip", "file", "directory", "oci-image"]);
+var ArtifactFormat = Literals(["tarball", "zip", "file", "directory", "oci-image", "executable"]);
 var ChecksumAlgorithm = Literals(["sha256", "sha512"]);
 var ArtifactRecipeId = NonEmptyString;
+var ArtifactOperatingSystem = Literals(["linux", "darwin", "windows"]);
+var ArtifactArchitecture = Literals(["x64", "arm64"]);
+var ArtifactLibc = Literals(["glibc", "musl"]);
 var BunExecutableCompileTarget = Literals([
   "bun-linux-x64",
   "bun-linux-x64-baseline",
@@ -100949,12 +99100,36 @@ class Checksum extends Class4("Checksum")({
 }) {
 }
 
+class InstallableArtifactVariant extends Class4("InstallableArtifactVariant")({
+  os: ArtifactOperatingSystem,
+  arch: ArtifactArchitecture,
+  libc: optionalKey2(ArtifactLibc),
+  binaryName: optionalKey2(NonEmptyString),
+  executableExtension: optionalKey2(NonEmptyString),
+  installPath: optionalKey2(NonEmptyString),
+  targetTriple: optionalKey2(NonEmptyString)
+}) {
+}
+
+class InstallableArtifactVariantOverride extends Class4("InstallableArtifactVariantOverride")({
+  os: optionalKey2(ArtifactOperatingSystem),
+  arch: optionalKey2(ArtifactArchitecture),
+  libc: optionalKey2(ArtifactLibc),
+  binaryName: optionalKey2(NonEmptyString),
+  executableExtension: optionalKey2(NonEmptyString),
+  installPath: optionalKey2(NonEmptyString),
+  targetTriple: optionalKey2(NonEmptyString)
+}) {
+}
+
 class ArtifactIntent extends Class4("ArtifactIntent")({
   id: ArtifactId,
   path: String4,
+  downloadUrl: optionalKey2(String4),
   format: ArtifactFormat,
   consumers: ArraySchema(String4),
-  checksum: optionalKey2(Checksum)
+  checksum: optionalKey2(Checksum),
+  variant: optionalKey2(InstallableArtifactVariant)
 }) {
 }
 
@@ -100962,7 +99137,9 @@ class BunExecutableArtifactOutput extends Class4("BunExecutableArtifactOutput")(
   id: ArtifactId,
   target: BunExecutableCompileTarget,
   path: String4,
-  consumers: ArraySchema(String4)
+  downloadUrl: optionalKey2(String4),
+  consumers: ArraySchema(String4),
+  variant: optionalKey2(InstallableArtifactVariantOverride)
 }) {
 }
 
@@ -100973,17 +99150,122 @@ class BunExecutableArtifactRecipe extends TaggedClass()("BunExecutableArtifactRe
   minify: optionalKey2(Boolean3)
 }) {
 }
-var ArtifactRecipe = Union2([BunExecutableArtifactRecipe]);
+
+class PyPiWheelBinaryArtifact extends Class4("PyPiWheelBinaryArtifact")({
+  os: ArtifactOperatingSystem,
+  arch: ArtifactArchitecture,
+  sourcePath: String4,
+  wheelPath: String4
+}) {
+}
+
+class PyPiWheelArtifactRecipe extends TaggedClass()("PyPiWheelArtifactRecipe", {
+  id: ArtifactId,
+  path: String4,
+  wheelTag: String4,
+  packageName: String4,
+  moduleName: String4,
+  consoleScript: String4,
+  summary: String4,
+  homepage: String4,
+  license: String4,
+  requiresPython: String4,
+  binaries: ArraySchema(PyPiWheelBinaryArtifact),
+  consumers: ArraySchema(String4)
+}) {
+}
+var ArtifactRecipe = Union2([BunExecutableArtifactRecipe, PyPiWheelArtifactRecipe]);
 
 class ArtifactInventoryItem extends Class4("ArtifactInventoryItem")({
   id: ArtifactId,
   path: String4,
+  downloadUrl: optionalKey2(String4),
   format: ArtifactFormat,
   consumers: ArraySchema(String4),
   sizeBytes: Number5,
-  checksum: optionalKey2(Checksum)
+  checksum: optionalKey2(Checksum),
+  variant: optionalKey2(InstallableArtifactVariant)
 }) {
 }
+var bunExecutableCompileTargetVariant = (target) => {
+  switch (target) {
+    case "bun-linux-x64":
+    case "bun-linux-x64-baseline":
+    case "bun-linux-x64-modern":
+      return InstallableArtifactVariant.make({
+        os: "linux",
+        arch: "x64",
+        libc: "glibc",
+        targetTriple: target
+      });
+    case "bun-linux-arm64":
+      return InstallableArtifactVariant.make({
+        os: "linux",
+        arch: "arm64",
+        libc: "glibc",
+        targetTriple: target
+      });
+    case "bun-linux-x64-musl":
+    case "bun-linux-x64-baseline-musl":
+    case "bun-linux-x64-modern-musl":
+      return InstallableArtifactVariant.make({
+        os: "linux",
+        arch: "x64",
+        libc: "musl",
+        targetTriple: target
+      });
+    case "bun-linux-arm64-musl":
+      return InstallableArtifactVariant.make({
+        os: "linux",
+        arch: "arm64",
+        libc: "musl",
+        targetTriple: target
+      });
+    case "bun-darwin-x64":
+    case "bun-darwin-x64-baseline":
+    case "bun-darwin-x64-modern":
+      return InstallableArtifactVariant.make({
+        os: "darwin",
+        arch: "x64",
+        targetTriple: target
+      });
+    case "bun-darwin-arm64":
+      return InstallableArtifactVariant.make({
+        os: "darwin",
+        arch: "arm64",
+        targetTriple: target
+      });
+    case "bun-windows-x64":
+    case "bun-windows-x64-baseline":
+    case "bun-windows-x64-modern":
+      return InstallableArtifactVariant.make({
+        os: "windows",
+        arch: "x64",
+        executableExtension: ".exe",
+        targetTriple: target
+      });
+    case "bun-windows-arm64":
+      return InstallableArtifactVariant.make({
+        os: "windows",
+        arch: "arm64",
+        executableExtension: ".exe",
+        targetTriple: target
+      });
+  }
+};
+var bunExecutableOutputVariant = (target, override) => {
+  const derived = bunExecutableCompileTargetVariant(target);
+  const fields = {
+    os: override?.os ?? derived.os,
+    arch: override?.arch ?? derived.arch,
+    ...override?.libc !== undefined ? { libc: override.libc } : derived.libc === undefined ? {} : { libc: derived.libc },
+    ...override?.binaryName === undefined ? {} : { binaryName: override.binaryName },
+    ...override?.executableExtension !== undefined ? { executableExtension: override.executableExtension } : derived.executableExtension === undefined ? {} : { executableExtension: derived.executableExtension },
+    ...override?.installPath === undefined ? {} : { installPath: override.installPath },
+    targetTriple: override?.targetTriple ?? derived.targetTriple ?? target
+  };
+  return InstallableArtifactVariant.make(fields);
+};
 var artifactInventoryOrder = (left, right) => left.id.localeCompare(right.id);
 
 // ../../src/artifacts/adapter.ts
@@ -101064,13 +99346,19 @@ var TargetMutability = Literals(["immutable", "mutable-release", "mutable-index"
 var TargetRecovery = Literals(["publish-new-version", "delete-and-recreate", "manual"]);
 var TargetValidationStrategy = Literals(["native-command", "simulated-plan", "skipped"]);
 var NpmAccess = Literals(["public", "restricted"]);
-var NpmTrustedPublishingProvider = Literals(["github-actions"]);
-
+var TrustedPublishingProvider = Literals(["github-actions"]);
 class NpmTrustedPublishingConfig extends Class4("NpmTrustedPublishingConfig")({
-  provider: NpmTrustedPublishingProvider,
+  provider: TrustedPublishingProvider,
   workflow: String4,
   packageExists: Literal2(true),
   verifyPackageExists: optionalKey2(Boolean3)
+}) {
+}
+
+class PyPiTrustedPublishingConfig extends Class4("PyPiTrustedPublishingConfig")({
+  provider: TrustedPublishingProvider,
+  workflow: String4,
+  publisherConfigured: Literal2(true)
 }) {
 }
 
@@ -101107,7 +99395,9 @@ class HomebrewTapTarget extends TaggedClass()("HomebrewTapTarget", {
   formulaName: String4,
   formulaPath: String4,
   artifactId: String4,
+  artifactIds: optionalKey2(ArraySchema(String4)),
   homepage: optionalKey2(String4),
+  description: optionalKey2(String4),
   url: optionalKey2(String4),
   tapDirectory: optionalKey2(String4),
   installPath: optionalKey2(String4),
@@ -101121,8 +99411,10 @@ class HomebrewTapTarget extends TaggedClass()("HomebrewTapTarget", {
 class PyPiRegistryTarget extends TaggedClass()("PyPiRegistryTarget", {
   id: TargetId,
   repositoryUrl: String4,
+  pythonExecutable: optionalKey2(String4),
   usernameEnv: optionalKey2(String4),
   passwordEnv: optionalKey2(String4),
+  trustedPublishing: optionalKey2(PyPiTrustedPublishingConfig),
   dryRunSupport: TargetDryRunSupport,
   mutability: TargetMutability,
   recovery: TargetRecovery
@@ -101164,7 +99456,7 @@ class TargetRequiredPermission extends Class4("TargetRequiredPermission")({
 
 class TargetAuthSetup extends Class4("TargetAuthSetup")({
   runsIn: TargetRunsIn,
-  provider: NpmTrustedPublishingProvider,
+  provider: TrustedPublishingProvider,
   workflow: String4,
   requiredPermissions: ArraySchema(TargetRequiredPermission),
   prerequisites: ArraySchema(String4)
@@ -101189,6 +99481,9 @@ var targetAuthRequirement = (target) => {
     return "trusted-publishing";
   }
   if (target._tag === "PyPiRegistryTarget") {
+    if (target.trustedPublishing !== undefined) {
+      return "trusted-publishing";
+    }
     return target.usernameEnv === undefined && target.passwordEnv === undefined ? "cli-auth" : "env-token";
   }
   if (target._tag === "HomebrewTapTarget" || target._tag === "ScoopBucketTarget") {
@@ -101384,10 +99679,16 @@ var publishOperationPriority = (operation) => {
   if (operation.id.endsWith(":gh-release-create")) {
     return 1;
   }
-  if (operation.id.endsWith(":homebrew-push") || operation.id.endsWith(":scoop-push")) {
+  if (operation.id.endsWith(":add")) {
     return 2;
   }
-  return 3;
+  if (operation.id.endsWith(":commit")) {
+    return 3;
+  }
+  if (operation.id.endsWith(":homebrew-push") || operation.id.endsWith(":scoop-push")) {
+    return 4;
+  }
+  return 5;
 };
 var operationOrder = (left, right) => operationPhasePriority(left) - operationPhasePriority(right) || (left._tag === "PublishCommandOperation" && right._tag === "PublishCommandOperation" ? publishOperationPriority(left) - publishOperationPriority(right) : 0) || left.id.localeCompare(right.id);
 
@@ -101396,7 +99697,6 @@ var ReleaseName = NonEmptyString;
 var ReleaseVersion = NonEmptyString;
 var GitCommit = NonEmptyString;
 var GitTag = NonEmptyString;
-var ReleaseBump = Literals(["major", "minor", "patch", "none"]);
 
 class ReleaseIdentity extends Class4("ReleaseIdentity")({
   name: ReleaseName,
@@ -101434,56 +99734,6 @@ var ReleaseIdentitySource = Union2([
   PackageManifestReleaseIdentitySource
 ]);
 
-class RemoteStateReleaseDecision extends TaggedClass()("RemoteStateReleaseDecision", {}) {
-}
-
-class GitTagReleaseDecision extends TaggedClass()("GitTagReleaseDecision", {
-  tag: optionalKey2(GitTag),
-  tagTemplate: optionalKey2(String4),
-  packagePath: optionalKey2(String4),
-  requireCurrentRef: optionalKey2(Boolean3)
-}) {
-}
-
-class ConventionalCommitReleaseRule extends Class4("ConventionalCommitReleaseRule")({
-  type: optionalKey2(String4),
-  breaking: optionalKey2(Boolean3),
-  release: ReleaseBump
-}) {
-}
-
-class ConventionalCommitsReleaseDecision extends TaggedClass()("ConventionalCommitsReleaseDecision", {
-  packagePath: optionalKey2(String4),
-  tagTemplate: optionalKey2(String4),
-  base: optionalKey2(Literal2("latest-tag")),
-  preset: optionalKey2(Literal2("conventionalcommits")),
-  releaseRules: optionalKey2(ArraySchema(ConventionalCommitReleaseRule))
-}) {
-}
-
-class IntentFilesReleaseDecision extends TaggedClass()("IntentFilesReleaseDecision", {
-  directory: optionalKey2(String4),
-  packagePath: optionalKey2(String4),
-  tagTemplate: optionalKey2(String4),
-  requireIntent: optionalKey2(Boolean3)
-}) {
-}
-var ReleaseDecisionStrategy = Union2([
-  RemoteStateReleaseDecision,
-  GitTagReleaseDecision,
-  ConventionalCommitsReleaseDecision,
-  IntentFilesReleaseDecision
-]);
-
-class ReleaseIntentFile extends Class4("ReleaseIntentFile")({
-  $schema: optionalKey2(String4),
-  package: ReleaseName,
-  release: ReleaseBump,
-  summary: String4,
-  empty: optionalKey2(Boolean3)
-}) {
-}
-
 class SourceMetadata extends Class4("SourceMetadata")({
   root: String4,
   configPath: optionalKey2(String4)
@@ -101493,7 +99743,6 @@ class SourceMetadata extends Class4("SourceMetadata")({
 class ReleaseIntent extends Class4("ReleaseIntent")({
   $schema: optionalKey2(String4),
   identity: ReleaseIdentitySource,
-  releaseDecision: optionalKey2(ReleaseDecisionStrategy),
   artifacts: ArraySchema(ArtifactIntent),
   artifactRecipes: optionalKey2(ArraySchema(ArtifactRecipe)),
   targets: ArraySchema(TargetConfig),
@@ -101789,13 +100038,6 @@ class RemoteStateInspectionError extends TaggedErrorClass()("RemoteStateInspecti
 }) {
 }
 
-class ReleaseEligibilityCheckError extends TaggedErrorClass()("ReleaseEligibilityCheckError", {
-  targetId: optionalKey2(TargetId),
-  reason: String4,
-  cause: optionalKey2(Defect())
-}) {
-}
-
 class ReconciliationBlockedError extends TaggedErrorClass()("ReconciliationBlockedError", {
   targetId: TargetId,
   reasons: ArraySchema(String4)
@@ -101880,10 +100122,12 @@ var inventoryArtifact = fn2("inventoryArtifact")(function* (root, artifact2) {
   return ArtifactInventoryItem.make({
     id: artifact2.id,
     path: artifact2.path,
+    ...artifact2.downloadUrl === undefined ? {} : { downloadUrl: artifact2.downloadUrl },
     format: artifact2.format,
     consumers: [...artifact2.consumers].sort(),
     sizeBytes: Number(info2.size),
-    ...checksum === undefined ? {} : { checksum }
+    ...checksum === undefined ? {} : { checksum },
+    ...artifact2.variant === undefined ? {} : { variant: artifact2.variant }
   });
 });
 
@@ -102031,18 +100275,70 @@ var resolveReleaseIdentitySource = fn2("resolveReleaseIdentitySource")(function*
 var expandArtifactIntent = (artifact2, identity2) => ArtifactIntent.make({
   id: artifact2.id,
   path: renderReleaseTemplate(artifact2.path, identity2),
+  ...artifact2.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(artifact2.downloadUrl, identity2) },
   format: artifact2.format,
   consumers: [...artifact2.consumers],
-  ...artifact2.checksum === undefined ? {} : { checksum: artifact2.checksum }
+  ...artifact2.checksum === undefined ? {} : { checksum: artifact2.checksum },
+  ...artifact2.variant === undefined ? {} : { variant: artifact2.variant }
 });
+var validateInstallableArtifactVariant = (field, variant) => {
+  if (variant.libc !== undefined && variant.os !== "linux") {
+    return fail6(ReleaseNormalizationError.make({
+      field: `${field}.libc`,
+      reason: "libc may only be set for linux artifact variants."
+    }));
+  }
+  return void_3;
+};
+var validateBunExecutableOutputVariant = (field, output) => {
+  const derived = bunExecutableCompileTargetVariant(output.target);
+  const override = output.variant;
+  if (override?.os !== undefined && override.os !== derived.os) {
+    return fail6(ReleaseNormalizationError.make({
+      field: `${field}.os`,
+      reason: `Variant os must match Bun compile target ${output.target}.`
+    }));
+  }
+  if (override?.arch !== undefined && override.arch !== derived.arch) {
+    return fail6(ReleaseNormalizationError.make({
+      field: `${field}.arch`,
+      reason: `Variant arch must match Bun compile target ${output.target}.`
+    }));
+  }
+  if (override?.libc !== undefined && override.libc !== derived.libc) {
+    return fail6(ReleaseNormalizationError.make({
+      field: `${field}.libc`,
+      reason: `Variant libc must match Bun compile target ${output.target}.`
+    }));
+  }
+  if (override?.targetTriple !== undefined && override.targetTriple !== derived.targetTriple) {
+    return fail6(ReleaseNormalizationError.make({
+      field: `${field}.targetTriple`,
+      reason: `Variant targetTriple must match Bun compile target ${output.target}.`
+    }));
+  }
+  return validateInstallableArtifactVariant(field, bunExecutableOutputVariant(output.target, output.variant));
+};
 var artifactIntentsFromRecipe = (recipe, identity2) => {
   if (recipe instanceof BunExecutableArtifactRecipe) {
     return recipe.outputs.map((output) => ArtifactIntent.make({
       id: output.id,
       path: renderReleaseTemplate(output.path, identity2),
-      format: "file",
-      consumers: [...output.consumers]
+      ...output.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(output.downloadUrl, identity2) },
+      format: "executable",
+      consumers: [...output.consumers],
+      variant: bunExecutableOutputVariant(output.target, output.variant)
     }));
+  }
+  if (recipe instanceof PyPiWheelArtifactRecipe) {
+    return [
+      ArtifactIntent.make({
+        id: recipe.id,
+        path: renderReleaseTemplate(recipe.path, identity2),
+        format: "file",
+        consumers: [...recipe.consumers]
+      })
+    ];
   }
   return [];
 };
@@ -102059,6 +100355,25 @@ var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, ro
       for (const output of recipe.outputs) {
         const outputPath = renderReleaseTemplate(output.path, identity2);
         yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.outputs.${output.id}.path`, outputPath);
+        if (output.downloadUrl !== undefined) {
+          yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.outputs.${output.id}.downloadUrl`, renderReleaseTemplate(output.downloadUrl, identity2));
+        }
+        yield* validateBunExecutableOutputVariant(`artifactRecipes.${recipe.id}.outputs.${output.id}.variant`, output);
+      }
+    }
+    if (recipe instanceof PyPiWheelArtifactRecipe) {
+      yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.path`, renderReleaseTemplate(recipe.path, identity2));
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.wheelTag`, recipe.wheelTag);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.packageName`, recipe.packageName);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.moduleName`, recipe.moduleName);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.consoleScript`, recipe.consoleScript);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.summary`, recipe.summary);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.homepage`, recipe.homepage);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.license`, recipe.license);
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.requiresPython`, recipe.requiresPython);
+      for (const [index, binary] of recipe.binaries.entries()) {
+        yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.binaries.${index}.sourcePath`, renderReleaseTemplate(binary.sourcePath, identity2));
+        yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.binaries.${index}.wheelPath`, binary.wheelPath);
       }
     }
   }
@@ -102069,6 +100384,12 @@ var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, ro
   yield* validateUnique(artifacts.map((artifact2) => artifact2.id), "artifacts.id");
   for (const artifact2 of artifacts) {
     yield* validateNonEmptySafeRelativePath(`artifacts.${artifact2.id}.path`, artifact2.path);
+    if (artifact2.downloadUrl !== undefined) {
+      yield* validateNonEmptyString(`artifacts.${artifact2.id}.downloadUrl`, artifact2.downloadUrl);
+    }
+    if (artifact2.variant !== undefined) {
+      yield* validateInstallableArtifactVariant(`artifacts.${artifact2.id}.variant`, artifact2.variant);
+    }
   }
   for (const target of intent.targets) {
     if (target._tag === "NpmRegistryTarget") {
@@ -102086,6 +100407,18 @@ var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, ro
     }
     if (target._tag === "HomebrewTapTarget") {
       yield* validateNonEmptySafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath);
+      if (target.description !== undefined) {
+        yield* validateNonEmptyString(`targets.${target.id}.description`, target.description);
+      }
+      if (target.artifactIds !== undefined) {
+        yield* validateUnique(target.artifactIds, `targets.${target.id}.artifactIds`);
+        if (target.artifactIds.length === 0) {
+          yield* fail6(ReleaseNormalizationError.make({
+            field: `targets.${target.id}.artifactIds`,
+            reason: "Homebrew artifactIds must not be empty."
+          }));
+        }
+      }
       if (target.tapDirectory !== undefined) {
         yield* validateNonEmptySafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory);
       }
@@ -102094,6 +100427,14 @@ var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, ro
       yield* validateNonEmptySafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath);
       if (target.bucketDirectory !== undefined) {
         yield* validateNonEmptySafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory);
+      }
+    }
+    if (target._tag === "PyPiRegistryTarget") {
+      if (target.pythonExecutable !== undefined) {
+        yield* validateNonEmptyString(`targets.${target.id}.pythonExecutable`, target.pythonExecutable);
+      }
+      if (target.trustedPublishing !== undefined) {
+        yield* validateWorkflowFileName(`targets.${target.id}.trustedPublishing.workflow`, target.trustedPublishing.workflow);
       }
     }
   }
@@ -103113,31 +101454,6 @@ var renderPlanOperationExplanation = fn2("renderPlanOperationExplanation")(funct
 });
 
 // ../../src/domain/remote-state.ts
-var NpmRemoteState = Literals(["missing", "published"]);
-var GitHubReleaseAvailability = Literals(["missing", "draft", "published"]);
-var ReleaseEligibilityStatus = Literals(["ready", "complete", "partial", "skipped"]);
-
-class ReleaseEligibilityInput extends Class4("ReleaseEligibilityInput")({
-  packageName: ReleaseName,
-  packageVersion: ReleaseVersion,
-  expectedGithubDraft: Boolean3,
-  npm: NpmRemoteState,
-  github: GitHubReleaseAvailability
-}) {
-}
-
-class ReleaseEligibilityDecision extends Class4("ReleaseEligibilityDecision")({
-  shouldRelease: Boolean3,
-  status: ReleaseEligibilityStatus,
-  reason: String4,
-  strategy: optionalKey2(String4),
-  packageName: optionalKey2(ReleaseName),
-  packageVersion: optionalKey2(ReleaseVersion),
-  githubTag: optionalKey2(GitTag),
-  source: optionalKey2(String4)
-}) {
-}
-
 class GitHubReleaseMissing extends TaggedClass()("GitHubReleaseMissing", {
   targetId: TargetId,
   repository: String4,
@@ -103523,560 +101839,6 @@ var reconcileReleasePlan = fn2("reconcileReleasePlan")(function* (plan, options)
   }), "reconciliation");
 });
 
-// ../../src/planner/release-eligibility.ts
-var Semver = __toESM(require_semver2(), 1);
-class ReleaseEligibilityRemoteCheck extends Class4("ReleaseEligibilityRemoteCheck")({
-  packageName: ReleaseName,
-  packageVersion: ReleaseVersion,
-  npmTargetId: TargetId,
-  npmRegistry: String4,
-  githubTargetId: TargetId,
-  githubRepository: String4,
-  githubTag: GitTag,
-  githubTokenEnv: optionalKey2(String4),
-  expectedGithubDraft: Boolean3
-}) {
-}
-
-class GitHubCliReleaseViewResponse extends Class4("GitHubCliReleaseViewResponse")({
-  isDraft: Boolean3
-}) {
-}
-var decodeGitHubCliReleaseViewResponse = decodeUnknownEffect2(GitHubCliReleaseViewResponse);
-var decodeReleaseIntentFile = decodeUnknownEffect2(ReleaseIntentFile);
-var defaultReleaseRules = [
-  ConventionalCommitReleaseRule.make({ breaking: true, release: "major" }),
-  ConventionalCommitReleaseRule.make({ type: "feat", release: "minor" }),
-  ConventionalCommitReleaseRule.make({ type: "fix", release: "patch" })
-];
-var releaseLabel = (input) => `${input.packageName}@${input.packageVersion}`;
-var expectedGithubState = (input) => input.expectedGithubDraft ? "draft" : "published";
-var decisionStrategy = (metadata2) => metadata2?.strategy;
-var enrichDecision = (decision, input, metadata2) => {
-  const strategy = decisionStrategy(metadata2);
-  return ReleaseEligibilityDecision.make({
-    shouldRelease: decision.shouldRelease,
-    status: decision.status,
-    reason: decision.reason,
-    ...strategy === undefined ? {} : { strategy },
-    packageName: input.packageName,
-    packageVersion: input.packageVersion,
-    githubTag: input.githubTag,
-    ...metadata2?.source === undefined ? {} : { source: metadata2.source }
-  });
-};
-var skippedDecision = (reason, metadata2) => ReleaseEligibilityDecision.make({
-  shouldRelease: false,
-  status: "skipped",
-  reason,
-  ...metadata2.strategy === undefined ? {} : { strategy: metadata2.strategy },
-  ...metadata2.source === undefined ? {} : { source: metadata2.source }
-});
-var decideReleaseEligibility = (input) => {
-  if (input.npm === "missing" && input.github === "missing") {
-    return ReleaseEligibilityDecision.make({
-      shouldRelease: true,
-      status: "ready",
-      reason: `${releaseLabel(input)} is missing from npm and GitHub.`
-    });
-  }
-  const expectedGithub = expectedGithubState(input);
-  if (input.npm === "published" && input.github === expectedGithub) {
-    return ReleaseEligibilityDecision.make({
-      shouldRelease: false,
-      status: "complete",
-      reason: `${releaseLabel(input)} is already published to npm and GitHub.`
-    });
-  }
-  if (input.npm === "published" && input.github === "draft" && !input.expectedGithubDraft) {
-    return ReleaseEligibilityDecision.make({
-      shouldRelease: false,
-      status: "partial",
-      reason: `${releaseLabel(input)} is published to npm, but GitHub release v${input.packageVersion} is still a draft.`
-    });
-  }
-  if (input.npm === "published" && input.github === "published" && input.expectedGithubDraft) {
-    return ReleaseEligibilityDecision.make({
-      shouldRelease: false,
-      status: "partial",
-      reason: `${releaseLabel(input)} is published to npm, but GitHub release v${input.packageVersion} is public while the target expects a draft.`
-    });
-  }
-  return ReleaseEligibilityDecision.make({
-    shouldRelease: false,
-    status: "partial",
-    reason: `${releaseLabel(input)} has partial remote state: npm=${input.npm}, github=${input.github}, expected-github=${expectedGithub}.`
-  });
-};
-var eligibilityError = (reason, targetId, cause) => ReleaseEligibilityCheckError.make({
-  ...targetId === undefined ? {} : { targetId },
-  reason,
-  ...cause === undefined ? {} : { cause }
-});
-var findNpmTarget = (targets, packageName) => targets.find((target) => target._tag === "NpmRegistryTarget" && target.packageName === packageName);
-var findNpmTargetById = (targets, targetId) => targets.find((target) => target._tag === "NpmRegistryTarget" && target.id === targetId);
-var findGitHubTarget = (targets) => targets.find((target) => target._tag === "GitHubReleaseTarget");
-var releaseEligibilityRemoteCheckFromIdentity = fn2("releaseEligibilityRemoteCheckFromIdentity")(function* (identity2, targets) {
-  const npmTarget = findNpmTarget(targets, identity2.name);
-  if (npmTarget === undefined) {
-    const npmTargetById = findNpmTargetById(targets, "npm");
-    if (npmTargetById !== undefined) {
-      return yield* fail6(eligibilityError(`npm target ${npmTargetById.id} packageName ${npmTargetById.packageName} does not match release identity ${identity2.name}.`, npmTargetById.id));
-    }
-    return yield* fail6(eligibilityError(`release config must include an npm target for ${identity2.name}`));
-  }
-  const githubTarget = findGitHubTarget(targets);
-  if (githubTarget === undefined) {
-    return yield* fail6(eligibilityError("release config must include a GitHub release target"));
-  }
-  return ReleaseEligibilityRemoteCheck.make({
-    packageName: identity2.name,
-    packageVersion: identity2.version,
-    npmTargetId: npmTarget.id,
-    npmRegistry: npmTarget.registry,
-    githubTargetId: githubTarget.id,
-    githubRepository: githubTarget.repository,
-    githubTag: identity2.tag ?? identity2.version,
-    ...githubTarget.tokenEnv === undefined ? {} : { githubTokenEnv: githubTarget.tokenEnv },
-    expectedGithubDraft: githubTarget.draft ?? false
-  });
-});
-var releaseEligibilityRemoteCheckFromIntent = fn2("releaseEligibilityRemoteCheckFromIntent")(function* (manifest, intent) {
-  const staticTag = intent.identity instanceof StaticReleaseIdentitySource ? intent.identity.tag : undefined;
-  return yield* releaseEligibilityRemoteCheckFromIdentity(ReleaseIdentity.make({
-    name: manifest.name,
-    version: manifest.version,
-    commit: "HEAD",
-    ...staticTag === undefined ? {} : { tag: staticTag }
-  }), intent.targets);
-});
-var looksMissing = (stdout, stderr) => {
-  const text = `${stdout}
-${stderr}`.toLowerCase();
-  return text.includes("not found") || text.includes("404") || text.includes("e404");
-};
-var firstDiagnosticLine = (result2) => {
-  const lines = `${result2.stderr}
-${result2.stdout}`.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
-  return lines[0] ?? `exit code ${result2.exitCode}`;
-};
-var npmViewCommand = (input) => CommandSpec.make({
-  executable: "npm",
-  args: [
-    "view",
-    `${input.packageName}@${input.packageVersion}`,
-    "version",
-    "--registry",
-    input.npmRegistry
-  ],
-  requiredEnv: [],
-  redactedEnv: []
-});
-var githubReleaseViewCommand2 = (input) => CommandSpec.make({
-  executable: "gh",
-  args: [
-    "release",
-    "view",
-    input.githubTag,
-    "--repo",
-    input.githubRepository,
-    "--json",
-    "isDraft,tagName,publishedAt"
-  ],
-  requiredEnv: input.githubTokenEnv === undefined ? [] : [input.githubTokenEnv],
-  redactedEnv: input.githubTokenEnv === undefined ? [] : [input.githubTokenEnv]
-});
-var gitTagsAtHeadCommand = (root) => CommandSpec.make({
-  executable: "git",
-  args: ["tag", "--points-at", "HEAD"],
-  cwd: root,
-  requiredEnv: [],
-  redactedEnv: []
-});
-var gitListTagsCommand = (root) => CommandSpec.make({
-  executable: "git",
-  args: ["tag", "--list", "--merged", "HEAD"],
-  cwd: root,
-  requiredEnv: [],
-  redactedEnv: []
-});
-var gitLogCommand = (root, sinceTag) => CommandSpec.make({
-  executable: "git",
-  args: sinceTag === undefined ? ["log", "--format=%B%x1e"] : ["log", `${sinceTag}..HEAD`, "--format=%B%x1e"],
-  cwd: root,
-  requiredEnv: [],
-  redactedEnv: []
-});
-var parseGitHubCliReleaseView = fn2("parseGitHubCliReleaseView")(function* (input, stdout) {
-  const parsed = yield* try_2({
-    try: () => JSON.parse(stdout),
-    catch: (cause) => eligibilityError("gh release view returned invalid JSON.", input.githubTargetId, cause)
-  });
-  const response = yield* decodeGitHubCliReleaseViewResponse(parsed).pipe(mapError3((error2) => eligibilityError(`gh release view returned malformed JSON: ${error2.message}`, input.githubTargetId)));
-  return response.isDraft ? "draft" : "published";
-});
-var classifyNpmRemoteState = fn2("classifyNpmRemoteState")(function* (input) {
-  const commandRunner = yield* ReleaseCommandRunner;
-  const result2 = yield* commandRunner.runCommand(npmViewCommand(input));
-  if (result2.exitCode === 0) {
-    return "published";
-  }
-  if (looksMissing(result2.stdout, result2.stderr)) {
-    return "missing";
-  }
-  return yield* fail6(eligibilityError(`npm view failed while checking package state: ${firstDiagnosticLine(result2)}`, input.npmTargetId));
-});
-var classifyGitHubReleaseAvailability = fn2("classifyGitHubReleaseAvailability")(function* (input) {
-  const commandRunner = yield* ReleaseCommandRunner;
-  const result2 = yield* commandRunner.runCommand(githubReleaseViewCommand2(input));
-  if (result2.exitCode === 0) {
-    return yield* parseGitHubCliReleaseView(input, result2.stdout);
-  }
-  if (looksMissing(result2.stdout, result2.stderr)) {
-    return "missing";
-  }
-  return yield* fail6(eligibilityError(`gh release view failed while checking release state: ${firstDiagnosticLine(result2)}`, input.githubTargetId));
-});
-var checkReleaseEligibility = fn2("checkReleaseEligibility")(function* (input, metadata2 = undefined) {
-  const npm = yield* classifyNpmRemoteState(input);
-  const github = yield* classifyGitHubReleaseAvailability(input);
-  return enrichDecision(decideReleaseEligibility(ReleaseEligibilityInput.make({
-    packageName: input.packageName,
-    packageVersion: input.packageVersion,
-    expectedGithubDraft: input.expectedGithubDraft,
-    npm,
-    github
-  })), input, metadata2);
-});
-var strategyFromIntent = (intent) => intent.releaseDecision ?? RemoteStateReleaseDecision.make({});
-var identitySourceName = (intent) => intent.identity instanceof PackageManifestReleaseIdentitySource ? "PackageManifestReleaseIdentitySource" : "StaticReleaseIdentitySource";
-var checkRemoteStateForIdentity = fn2("checkRemoteStateForIdentity")(function* (identity2, targets, metadata2) {
-  const remoteCheck = yield* releaseEligibilityRemoteCheckFromIdentity(identity2, targets);
-  return yield* checkReleaseEligibility(remoteCheck, metadata2);
-});
-var skippedReleaseResolution = (decision) => ({
-  _tag: "Skipped",
-  decision
-});
-var resolvedReleaseResolution = (identity2, targets, metadata2) => ({
-  _tag: "Resolved",
-  identity: identity2,
-  targets,
-  metadata: metadata2
-});
-var resolveRemoteStateDecision = fn2("resolveRemoteStateDecision")(function* (strategy, intent, root) {
-  const identity2 = yield* resolveReleaseIdentitySource(intent.identity, root);
-  return resolvedReleaseResolution(identity2, intent.targets, {
-    strategy: strategy._tag,
-    source: identitySourceName(intent)
-  });
-});
-var templateParts = (template, field) => {
-  const placeholder = "{version}";
-  const firstIndex = template.indexOf(placeholder);
-  const lastIndex = template.lastIndexOf(placeholder);
-  if (firstIndex >= 0 && firstIndex === lastIndex) {
-    return succeed6({
-      prefix: template.slice(0, firstIndex),
-      suffix: template.slice(firstIndex + placeholder.length)
-    });
-  }
-  return fail6(eligibilityError(`${field} must contain exactly one {version} placeholder.`));
-};
-var versionFromTag = (tag2, parts) => {
-  if (!tag2.startsWith(parts.prefix) || !tag2.endsWith(parts.suffix)) {
-    return;
-  }
-  const suffixStart = tag2.length - parts.suffix.length;
-  const version4 = tag2.slice(parts.prefix.length, suffixStart);
-  return version4.length === 0 ? undefined : version4;
-};
-var stdoutLines = (stdout) => stdout.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
-var readMatchingCurrentTags = fn2("readMatchingCurrentTags")(function* (root, template, providedTag, requireCurrentRef) {
-  const parts = yield* templateParts(template, "releaseDecision.tagTemplate");
-  const tags2 = providedTag !== undefined && !requireCurrentRef ? [providedTag] : yield* gen2(function* () {
-    const commandRunner = yield* ReleaseCommandRunner;
-    const result2 = yield* commandRunner.runCommand(gitTagsAtHeadCommand(root));
-    if (result2.exitCode !== 0) {
-      return yield* fail6(eligibilityError(`git tag --points-at HEAD failed: ${firstDiagnosticLine(result2)}`));
-    }
-    const currentTags = stdoutLines(result2.stdout);
-    return providedTag === undefined ? currentTags : currentTags.filter((tag2) => tag2 === providedTag);
-  });
-  return tags2.flatMap((tag2) => {
-    const version4 = versionFromTag(tag2, parts);
-    return version4 === undefined ? [] : [{ tag: tag2, version: version4 }];
-  });
-});
-var resolveTagIdentity = fn2("resolveTagIdentity")(function* (root, manifest, tag2) {
-  return yield* resolveIdentityCommit(ReleaseIdentity.make({
-    name: manifest.name,
-    version: tag2.version,
-    commit: "HEAD",
-    tag: tag2.tag
-  }), root);
-});
-var resolveGitTagDecision = fn2("resolveGitTagDecision")(function* (strategy, intent, root) {
-  const metadata2 = {
-    strategy: strategy._tag,
-    source: strategy.tag === undefined ? "git tag --points-at HEAD" : `tag ${strategy.tag}`
-  };
-  const manifest = yield* readReleasePackageManifest(root, strategy.packagePath ?? "package.json", "releaseDecision.packagePath");
-  const tagTemplate = strategy.tagTemplate ?? "v{version}";
-  const requireCurrentRef = strategy.requireCurrentRef ?? true;
-  const matchingTags = yield* readMatchingCurrentTags(root, tagTemplate, strategy.tag, requireCurrentRef);
-  if (matchingTags.length === 0) {
-    if (strategy.tag !== undefined && requireCurrentRef) {
-      return skippedReleaseResolution(skippedDecision(`Release tag ${strategy.tag} does not point at HEAD.`, metadata2));
-    }
-    return skippedReleaseResolution(skippedDecision("No release tag matching releaseDecision.tagTemplate points at HEAD.", metadata2));
-  }
-  if (matchingTags.length > 1) {
-    return yield* fail6(eligibilityError(`Multiple release tags match ${tagTemplate}: ${matchingTags.map((tag3) => tag3.tag).join(", ")}.`));
-  }
-  const tag2 = matchingTags[0];
-  if (tag2 === undefined) {
-    return skippedReleaseResolution(skippedDecision("No release tag matching releaseDecision.tagTemplate points at HEAD.", metadata2));
-  }
-  const identity2 = yield* resolveTagIdentity(root, manifest, tag2);
-  return resolvedReleaseResolution(identity2, intent.targets, metadata2);
-});
-var matchingTagsFromList = fn2("matchingTagsFromList")(function* (stdout, template) {
-  const parts = yield* templateParts(template, "releaseDecision.tagTemplate");
-  const candidates = [];
-  for (const tag2 of stdoutLines(stdout)) {
-    const version4 = versionFromTag(tag2, parts);
-    if (version4 === undefined) {
-      continue;
-    }
-    const validVersion = Semver.valid(version4);
-    if (validVersion !== null) {
-      candidates.push({ tag: tag2, version: validVersion });
-    }
-  }
-  return candidates.sort((left, right) => Semver.rcompare(left.version, right.version));
-});
-var latestMatchingTag = fn2("latestMatchingTag")(function* (root, template) {
-  const commandRunner = yield* ReleaseCommandRunner;
-  const result2 = yield* commandRunner.runCommand(gitListTagsCommand(root));
-  if (result2.exitCode !== 0) {
-    return yield* fail6(eligibilityError(`git tag --list failed: ${firstDiagnosticLine(result2)}`));
-  }
-  const matching = yield* matchingTagsFromList(result2.stdout, template);
-  return matching[0];
-});
-var parseCommit = (message) => {
-  const firstLine = message.split(/\r?\n/)[0]?.trim() ?? "";
-  const match6 = /^([A-Za-z][A-Za-z0-9-]*)(?:\([^)]+\))?(!)?:/.exec(firstLine);
-  const type = match6?.[1];
-  const breakingSubject = match6?.[2] === "!";
-  const breakingBody = /^BREAKING[ -]CHANGE:/m.test(message);
-  return {
-    type,
-    breaking: breakingSubject || breakingBody
-  };
-};
-var bumpRank = (bump) => {
-  switch (bump) {
-    case "major":
-      return 3;
-    case "minor":
-      return 2;
-    case "patch":
-      return 1;
-    case "none":
-      return 0;
-  }
-};
-var higherBump = (left, right) => bumpRank(right) > bumpRank(left) ? right : left;
-var ruleMatches = (rule, commit) => {
-  if (rule.breaking !== undefined && rule.breaking !== commit.breaking) {
-    return false;
-  }
-  if (rule.type !== undefined && rule.type !== commit.type) {
-    return false;
-  }
-  return rule.breaking !== undefined || rule.type !== undefined;
-};
-var classifyConventionalCommitBump = (message, rules) => {
-  const commit = parseCommit(message);
-  let bump = "none";
-  for (const rule of rules) {
-    if (ruleMatches(rule, commit)) {
-      bump = higherBump(bump, rule.release);
-    }
-  }
-  return bump;
-};
-var readCommitMessages = fn2("readCommitMessages")(function* (root, sinceTag) {
-  const commandRunner = yield* ReleaseCommandRunner;
-  const result2 = yield* commandRunner.runCommand(gitLogCommand(root, sinceTag));
-  if (result2.exitCode !== 0) {
-    return yield* fail6(eligibilityError(`git log failed: ${firstDiagnosticLine(result2)}`));
-  }
-  return result2.stdout.split("\x1E").map((message) => message.trim()).filter((message) => message.length > 0);
-});
-var nextSemverVersion = (version4, bump, field) => {
-  const validVersion = Semver.valid(version4);
-  if (validVersion === null) {
-    return fail6(eligibilityError(`${field} must be a valid SemVer version.`));
-  }
-  const nextVersion = Semver.inc(validVersion, bump);
-  if (nextVersion !== null) {
-    return succeed6(nextVersion);
-  }
-  return fail6(eligibilityError(`Unable to increment ${validVersion} as ${bump}.`));
-};
-var highestConventionalBump = (messages, rules) => {
-  let bump = "none";
-  for (const message of messages) {
-    bump = higherBump(bump, classifyConventionalCommitBump(message, rules));
-  }
-  return bump;
-};
-var resolveConventionalCommitsDecision = fn2("resolveConventionalCommitsDecision")(function* (strategy, intent, root) {
-  const metadata2 = {
-    strategy: strategy._tag,
-    source: "git commits"
-  };
-  const tagTemplate = strategy.tagTemplate ?? "v{version}";
-  const manifest = yield* readReleasePackageManifest(root, strategy.packagePath ?? "package.json", "releaseDecision.packagePath");
-  const latest = yield* latestMatchingTag(root, tagTemplate);
-  const messages = yield* readCommitMessages(root, latest?.tag);
-  if (messages.length === 0) {
-    return skippedReleaseResolution(skippedDecision("No commits were found for conventional commit analysis.", metadata2));
-  }
-  const bump = highestConventionalBump(messages, strategy.releaseRules ?? defaultReleaseRules);
-  if (bump === "none") {
-    return skippedReleaseResolution(skippedDecision("No releasable conventional commits were found.", metadata2));
-  }
-  const baseVersion = latest?.version ?? manifest.version;
-  const nextVersion = yield* nextSemverVersion(baseVersion, bump, latest === undefined ? "package.json version" : "release tag version");
-  const identity2 = yield* resolveIdentityCommit(ReleaseIdentity.make({
-    name: manifest.name,
-    version: nextVersion,
-    commit: "HEAD",
-    tag: renderReleaseVersionTemplate(tagTemplate, nextVersion)
-  }), root);
-  return resolvedReleaseResolution(identity2, intent.targets, metadata2);
-});
-var readIntentFiles = fn2("readIntentFiles")(function* (root, strategy) {
-  const directory = strategy.directory ?? ".release/intents";
-  yield* validateNonEmptySafeRelativePath("releaseDecision.directory", directory);
-  const manifest = yield* readReleasePackageManifest(root, strategy.packagePath ?? "package.json", "releaseDecision.packagePath");
-  const fs8 = yield* FileSystem;
-  const path4 = yield* Path;
-  const absoluteDirectory = path4.resolve(root, directory);
-  const entries = yield* fs8.readDirectory(absoluteDirectory).pipe(catch_2(() => succeed6([])));
-  const files = [];
-  for (const entry of entries.filter((item) => item.endsWith(".json")).sort()) {
-    yield* validateNonEmptySafeRelativePath("releaseDecision.intentFile", entry);
-    const intentPath = path4.join(absoluteDirectory, entry);
-    const contents = yield* fs8.readFileString(intentPath).pipe(mapError3((error2) => eligibilityError(`Unable to read release intent file ${entry}: ${error2.message}`, undefined, error2)));
-    const parsed = yield* try_2({
-      try: () => JSON.parse(contents),
-      catch: (cause) => eligibilityError(`Release intent file ${entry} is not valid JSON.`, undefined, cause)
-    });
-    const decoded = yield* decodeReleaseIntentFile(parsed).pipe(mapError3((error2) => eligibilityError(`Release intent file ${entry} is invalid: ${error2.message}`)));
-    if (decoded.package === manifest.name) {
-      files.push(decoded);
-    }
-  }
-  return {
-    manifest,
-    packageName: manifest.name,
-    directory,
-    files
-  };
-});
-var highestIntentBump = (files) => {
-  let bump = "none";
-  for (const file of files) {
-    const release = file.empty === true ? "none" : file.release;
-    bump = higherBump(bump, release);
-  }
-  return bump;
-};
-var resolveIntentFilesDecision = fn2("resolveIntentFilesDecision")(function* (strategy, intent, root) {
-  const metadata2 = {
-    strategy: strategy._tag,
-    source: strategy.directory ?? ".release/intents"
-  };
-  const intentFiles = yield* readIntentFiles(root, strategy);
-  const manifest = intentFiles.manifest;
-  if (intentFiles.files.length === 0) {
-    return skippedReleaseResolution(skippedDecision(`No release intent files were found for ${manifest.name}.`, metadata2));
-  }
-  const bump = highestIntentBump(intentFiles.files);
-  if (bump === "none") {
-    return skippedReleaseResolution(skippedDecision(`Release intent files for ${manifest.name} request no release.`, metadata2));
-  }
-  const nextVersion = yield* nextSemverVersion(manifest.version, bump, "package.json version");
-  const tagTemplate = strategy.tagTemplate ?? "v{version}";
-  yield* templateParts(tagTemplate, "releaseDecision.tagTemplate");
-  const identity2 = yield* resolveIdentityCommit(ReleaseIdentity.make({
-    name: manifest.name,
-    version: nextVersion,
-    commit: "HEAD",
-    tag: renderReleaseVersionTemplate(tagTemplate, nextVersion)
-  }), root);
-  return resolvedReleaseResolution(identity2, intent.targets, metadata2);
-});
-var resolveReleaseDecision = fn2("resolveReleaseDecision")(function* (intent, root = ".") {
-  const strategy = strategyFromIntent(intent);
-  switch (strategy._tag) {
-    case "RemoteStateReleaseDecision":
-      return yield* resolveRemoteStateDecision(strategy, intent, root);
-    case "GitTagReleaseDecision":
-      return yield* resolveGitTagDecision(strategy, intent, root);
-    case "ConventionalCommitsReleaseDecision":
-      return yield* resolveConventionalCommitsDecision(strategy, intent, root);
-    case "IntentFilesReleaseDecision":
-      return yield* resolveIntentFilesDecision(strategy, intent, root);
-  }
-});
-var checkReleaseDecision = fn2("checkReleaseDecision")(function* (intent, root = ".") {
-  const resolution = yield* resolveReleaseDecision(intent, root);
-  switch (resolution._tag) {
-    case "Skipped":
-      return resolution.decision;
-    case "Resolved":
-      return yield* checkRemoteStateForIdentity(resolution.identity, resolution.targets, resolution.metadata);
-  }
-});
-var checkReleaseIntentRequirement = fn2("checkReleaseIntentRequirement")(function* (intent, root = ".") {
-  const strategy = strategyFromIntent(intent);
-  if (!(strategy instanceof IntentFilesReleaseDecision)) {
-    return skippedDecision("Release config is not using IntentFilesReleaseDecision.", {
-      strategy: strategy._tag,
-      source: "releaseDecision"
-    });
-  }
-  const intentFiles = yield* readIntentFiles(root, strategy);
-  if (intentFiles.files.length === 0 && (strategy.requireIntent ?? true)) {
-    return yield* fail6(eligibilityError(`release intent files are required for ${intentFiles.packageName} in ${intentFiles.directory}.`));
-  }
-  const bump = highestIntentBump(intentFiles.files);
-  return ReleaseEligibilityDecision.make({
-    shouldRelease: bump !== "none",
-    status: bump === "none" ? "skipped" : "ready",
-    reason: bump === "none" ? `Release intent files for ${intentFiles.packageName} request no release.` : `Release intent files for ${intentFiles.packageName} request a ${bump} release.`,
-    strategy: strategy._tag,
-    packageName: intentFiles.packageName,
-    source: intentFiles.directory
-  });
-});
-var renderReleaseEligibilityText = (decision) => {
-  const strategy = decision.strategy === undefined ? "" : ` strategy=${decision.strategy}`;
-  const source = decision.source === undefined ? "" : ` source=${JSON.stringify(decision.source)}`;
-  const release = decision.packageName === undefined || decision.packageVersion === undefined ? "" : ` release=${decision.packageName}@${decision.packageVersion}`;
-  const tag2 = decision.githubTag === undefined ? "" : ` github-tag=${decision.githubTag}`;
-  return `release eligibility status=${decision.status} should-release=${decision.shouldRelease}${strategy}${source}${release}${tag2} reason=${JSON.stringify(decision.reason)}
-`;
-};
-var renderReleaseEligibilityJson = (decision) => `${JSON.stringify(decision, null, 2)}
-`;
-
 // ../../src/workflows/options.ts
 var releaseConfigFields = (input) => ({
   ...input.root === undefined ? {} : { root: input.root },
@@ -104190,18 +101952,6 @@ class ReleaseReconcileConfigOptions extends Class4("ReleaseReconcileConfigOption
 }) {
 }
 
-class ReleaseEligibilityConfigOptions extends Class4("ReleaseEligibilityConfigOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4)
-}) {
-}
-
-class ReleaseIntentCheckOptions extends Class4("ReleaseIntentCheckOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4)
-}) {
-}
-
 class PlannedReleaseConfigPlanResult extends Class4("PlannedReleaseConfigPlanResult")({
   plan: ReleasePlan,
   contents: String4
@@ -104254,7 +102004,6 @@ var releaseReconcileConfigOptionsFromInput = (input = {}) => ReleaseReconcileCon
   ...releaseConfigFields(input),
   ...releaseExecuteField(input)
 });
-var releaseEligibilityConfigOptionsFromInput = (input = {}) => ReleaseEligibilityConfigOptions.make(releaseConfigFields(input));
 var configRoot = (path4, options) => {
   if (options.root !== undefined) {
     return options.root;
@@ -104516,23 +102265,6 @@ var planAndWriteReconciliationEvidence = fn2("workflows.config.planAndWriteRecon
   const evidence = yield* writePlannedReconciliationEvidence(plan, options);
   return PlannedReleaseConfigWrittenEvidenceResult.make({ plan, evidence });
 });
-var checkReleaseConfigEligibility = fn2("workflows.config.checkReleaseConfigEligibility")(function* (input = {}) {
-  const options = releaseEligibilityConfigOptionsFromInput(input);
-  const path4 = yield* Path;
-  const pathName = configPath(options);
-  const contents = yield* readReleaseConfig(options);
-  const intent = yield* parseReleaseIntent(contents, pathName);
-  return yield* checkReleaseDecision(intent, configRoot(path4, options));
-});
-var checkReleaseConfigIntent = fn2("workflows.config.checkReleaseConfigIntent")(function* (input = {}) {
-  const options = releaseConfigOptionsFromInput(input);
-  const path4 = yield* Path;
-  const pathName = configPath(options);
-  const contents = yield* readReleaseConfig(options);
-  const intent = yield* parseReleaseIntent(contents, pathName);
-  return yield* checkReleaseIntentRequirement(intent, configRoot(path4, options));
-});
-var renderReleaseEligibilityDecision = (decision, format3) => format3 === "json" ? renderReleaseEligibilityJson(decision) : renderReleaseEligibilityText(decision);
 var plan = planReleaseConfig;
 var renderPlan2 = renderReleaseConfigPlan;
 var renderPlannedPlan = renderPlannedReleaseConfigPlan;
@@ -104565,9 +102297,6 @@ var reconcile = reconcileReleaseConfig;
 var planAndReconcile = planAndReconcileReleaseConfig;
 var writePlannedReconcile = writePlannedReconciliationEvidence;
 var planAndWriteReconcile = planAndWriteReconciliationEvidence;
-var checkEligibility = checkReleaseConfigEligibility;
-var checkIntent = checkReleaseConfigIntent;
-var renderEligibilityDecision = renderReleaseEligibilityDecision;
 // ../../src/workflows/diagnostics.ts
 var exports_diagnostics = {};
 __export(exports_diagnostics, {
@@ -104709,7 +102438,7 @@ var authChecksForPlan = fn2("diagnostics.authChecksForPlan")(function* (plan2, t
         targetId: target.id,
         status: hasOidcUrl && hasOidcToken ? "ok" : "info",
         confidence: hasOidcUrl && hasOidcToken ? "confirmed" : "inferred",
-        message: hasOidcUrl && hasOidcToken ? `${target.id} has GitHub Actions OIDC request environment available.` : `${target.id} uses npm trusted publishing; provider setup is confirmed only inside GitHub Actions.`
+        message: hasOidcUrl && hasOidcToken ? `${target.id} has GitHub Actions OIDC request environment available.` : `${target.id} uses trusted publishing; provider setup is confirmed only inside GitHub Actions.`
       }));
       if (capability.authSetup !== undefined) {
         checks.push(check({
@@ -104781,6 +102510,9 @@ var inferredTrustedPublishingWorkflow = (subject) => {
     if (target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined) {
       return target.trustedPublishing.workflow;
     }
+    if (target._tag === "PyPiRegistryTarget" && target.trustedPublishing !== undefined) {
+      return target.trustedPublishing.workflow;
+    }
   }
   return;
 };
@@ -104845,7 +102577,7 @@ var planReviewJobs = (jobs) => jobs.filter((job) => hasPlanReview(job.contents) 
 var planExecutionCandidates = (jobs) => jobs.filter((job) => job.name === "plan" || hasPlanReview(job.contents));
 var executeJobCandidates = (jobs) => jobs.filter((job) => hasApprovedExecution(job.contents));
 var fallbackNamedJob = (jobs, name) => jobs.find((job) => job.name === name);
-var hasWorkflowTrustedTarget = (subject) => subject.targets.some((target) => target._tag === "NpmRegistryTarget" && target.trustedPublishing !== undefined);
+var hasWorkflowTrustedTarget = (subject) => subject.targets.some((target) => (target._tag === "NpmRegistryTarget" || target._tag === "PyPiRegistryTarget") && target.trustedPublishing !== undefined);
 var hasGitHubReleaseTarget = (subject) => subject.targets.some((target) => target._tag === "GitHubReleaseTarget");
 var ciChecksForContents = (subject, workflowPath, contents) => {
   const checks = [
@@ -106869,6 +104601,43 @@ var catalogGitPushOperation = (options) => {
     command: noAuthCommand("git", ["-C", options.directory ?? ".", "push"])
   });
 };
+var catalogFilePath = (filePath, directory) => {
+  if (directory === undefined) {
+    return filePath;
+  }
+  const normalizedFilePath = filePath.replaceAll("\\", "/");
+  const normalizedDirectory = directory.replaceAll("\\", "/").replace(/\/+$/, "");
+  const prefix2 = `${normalizedDirectory}/`;
+  return normalizedFilePath.startsWith(prefix2) ? normalizedFilePath.slice(prefix2.length) : filePath;
+};
+var catalogGitPublishOperations = (options) => [
+  PublishCommandOperation.make({
+    id: `${options.id}:add`,
+    targetId: options.targetId,
+    description: `Stage ${catalogPathBaseName(options.filePath)} for ${options.targetId}.`,
+    risk: "writes-local",
+    command: noAuthCommand("git", [
+      "-C",
+      options.directory ?? ".",
+      "add",
+      catalogFilePath(options.filePath, options.directory)
+    ])
+  }),
+  PublishCommandOperation.make({
+    id: `${options.id}:commit`,
+    targetId: options.targetId,
+    description: `Commit ${catalogPathBaseName(options.filePath)} for ${options.targetId}.`,
+    risk: "writes-local",
+    command: noAuthCommand("git", [
+      "-C",
+      options.directory ?? ".",
+      "commit",
+      "-m",
+      options.commitMessage
+    ])
+  }),
+  catalogGitPushOperation(options)
+];
 var validationStrategyForDryRun = (dryRunSupport) => {
   if (dryRunSupport === "native") {
     return "native-command";
@@ -106928,6 +104697,37 @@ var rejectNoDryRunInStrictMode = fn2("rejectNoDryRunInStrictMode")(function* (ta
 });
 var findRequiredArtifact = fn2("findRequiredArtifact")(function* (model, targetId, artifactId, missingReason) {
   const artifact2 = model.artifacts.find((item) => item.id === artifactId);
+  if (artifact2 === undefined) {
+    return yield* fail6(PlanConstructionError.make({
+      targetId,
+      reason: missingReason
+    }));
+  }
+  return artifact2;
+});
+var artifactMatchesVariantCriteria = (artifact2, criteria) => {
+  const variant = artifact2.variant;
+  if (variant === undefined) {
+    return false;
+  }
+  return (criteria.os === undefined || variant.os === criteria.os) && (criteria.arch === undefined || variant.arch === criteria.arch) && (criteria.libc === undefined || variant.libc === criteria.libc) && (criteria.binaryName === undefined || variant.binaryName === criteria.binaryName) && (criteria.executableExtension === undefined || variant.executableExtension === criteria.executableExtension) && (criteria.installPath === undefined || variant.installPath === criteria.installPath) && (criteria.targetTriple === undefined || variant.targetTriple === criteria.targetTriple);
+};
+var findArtifactsByVariant = (model, criteria) => model.artifacts.filter((artifact2) => artifactMatchesVariantCriteria(artifact2, criteria));
+var findRequiredArtifactVariant = fn2("findRequiredArtifactVariant")(function* (model, targetId, criteria, missingReason, multipleReason = "Multiple artifacts matched the requested installable variant.") {
+  const artifacts = findArtifactsByVariant(model, criteria);
+  if (artifacts.length === 0) {
+    return yield* fail6(PlanConstructionError.make({
+      targetId,
+      reason: missingReason
+    }));
+  }
+  if (artifacts.length > 1) {
+    return yield* fail6(PlanConstructionError.make({
+      targetId,
+      reason: multipleReason
+    }));
+  }
+  const artifact2 = artifacts[0];
   if (artifact2 === undefined) {
     return yield* fail6(PlanConstructionError.make({
       targetId,
@@ -107081,31 +104881,142 @@ var formulaClassName = (formulaName) => {
   const className = parts.map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("");
   return className.length === 0 ? "GeneratedFormula" : className;
 };
-var renderFormula = (target, model) => gen2(function* () {
-  const artifact2 = yield* findRequiredArtifact(model, target.id, target.artifactId, `Homebrew target references missing artifact ${target.artifactId}.`);
-  const validated = yield* requireSha256FileArtifact(artifact2, {
+var artifactUrl = (artifact2, fallbackUrl) => fallbackUrl ?? artifact2.downloadUrl ?? artifact2.path;
+var singleArtifactBinaryName = (target, artifact2) => target.installPath !== undefined ? target.formulaName : artifact2.variant?.binaryName;
+var multiArtifactBinaryName = (target, artifacts) => target.installPath !== undefined ? target.formulaName : artifacts.find((entry) => entry.artifact.variant?.binaryName !== undefined)?.artifact.variant?.binaryName ?? target.formulaName;
+var singleArtifactInstallLines = (target, artifact2) => {
+  if (target.installPath !== undefined) {
+    return [
+      `    bin.install ${rubyString(target.installPath)} => ${rubyString(target.formulaName)}`,
+      `    chmod 0755, bin/${rubyString(target.formulaName)}`
+    ];
+  }
+  const binaryName = artifact2.variant?.binaryName;
+  return binaryName === undefined ? ['    prefix.install Dir["*"]'] : [
+    `    bin.install ${rubyString(catalogPathBaseName(artifact2.path))} => ${rubyString(binaryName)}`,
+    `    chmod 0755, bin/${rubyString(binaryName)}`
+  ];
+};
+var multiArtifactInstallLines = (target, artifacts) => {
+  if (target.installPath !== undefined) {
+    return [
+      `    bin.install ${rubyString(target.installPath)} => ${rubyString(target.formulaName)}`,
+      `    chmod 0755, bin/${rubyString(target.formulaName)}`
+    ];
+  }
+  const binaryName = multiArtifactBinaryName(target, artifacts);
+  return [
+    `    bin.install Dir["*"].find { |path| File.file?(path) } => ${rubyString(binaryName)}`,
+    `    chmod 0755, bin/${rubyString(binaryName)}`
+  ];
+};
+var formulaTestLines = (binaryName) => binaryName === undefined ? [] : [
+  "",
+  "  test do",
+  `    assert File.exist?(bin/${rubyString(binaryName)})`,
+  `    assert File.executable?(bin/${rubyString(binaryName)})`,
+  "  end"
+];
+var requireHomebrewArtifact = fn2("requireHomebrewArtifact")(function* (target, model, artifactId) {
+  const artifact2 = yield* findRequiredArtifact(model, target.id, artifactId, `Homebrew target references missing artifact ${artifactId}.`);
+  return yield* requireSha256FileArtifact(artifact2, {
     targetId: target.id,
     directoryReason: "Homebrew formula artifacts must be file-like, not directories.",
     checksumReason: "Homebrew formula rendering requires a sha256 artifact checksum."
   });
-  const installLines = target.installPath === undefined ? ['    prefix.install Dir["*"]'] : [`    bin.install ${rubyString(target.installPath)} => ${rubyString(target.formulaName)}`];
+});
+var homebrewArchBlock = (arch2) => arch2 === "arm64" ? "on_arm" : "on_intel";
+var homebrewArchOrder = (left, right) => {
+  const priority = (arch2) => arch2 === "arm64" ? 0 : 1;
+  return priority(left.arch) - priority(right.arch);
+};
+var validateHomebrewVariantArtifacts = fn2("validateHomebrewVariantArtifacts")(function* (target, artifacts) {
+  const seen = new Set;
+  const entries = [];
+  for (const entry of artifacts) {
+    const variant = entry.artifact.variant;
+    if (variant === undefined || variant.os !== "darwin") {
+      return yield* fail6(PlanConstructionError.make({
+        targetId: target.id,
+        reason: `Homebrew artifact ${entry.artifact.id} must declare a darwin installable variant.`
+      }));
+    }
+    if (seen.has(variant.arch)) {
+      return yield* fail6(PlanConstructionError.make({
+        targetId: target.id,
+        reason: `Homebrew target has multiple ${variant.arch} artifacts.`
+      }));
+    }
+    seen.add(variant.arch);
+    entries.push({
+      artifact: entry.artifact,
+      checksum: entry.checksum,
+      arch: variant.arch
+    });
+  }
+  return entries.sort(homebrewArchOrder);
+});
+var renderFormulaForArtifact = (target, model, entry) => {
   const homepage = target.homepage ?? `https://github.com/${target.repository}`;
-  const url2 = target.url ?? validated.artifact.path;
+  const description = target.description ?? `${model.identity.name} ${model.identity.version} release artifact`;
+  const url2 = artifactUrl(entry.artifact, target.url);
   return [
     `class ${formulaClassName(target.formulaName)} < Formula`,
-    `  desc ${rubyString(`${model.identity.name} ${model.identity.version} release artifact`)}`,
+    `  desc ${rubyString(description)}`,
     `  homepage ${rubyString(homepage)}`,
     `  url ${rubyString(url2)}`,
-    `  sha256 ${rubyString(validated.checksum.value)}`,
+    `  sha256 ${rubyString(entry.checksum.value)}`,
     `  version ${rubyString(model.identity.version)}`,
     "",
     "  def install",
-    ...installLines,
+    ...singleArtifactInstallLines(target, entry.artifact),
     "  end",
+    ...formulaTestLines(singleArtifactBinaryName(target, entry.artifact)),
     "end",
     ""
   ].join(`
 `);
+};
+var renderFormulaForVariants = (target, model, entries) => {
+  const homepage = target.homepage ?? `https://github.com/${target.repository}`;
+  const description = target.description ?? `${model.identity.name} ${model.identity.version} release artifact`;
+  const variantLines = entries.flatMap((entry) => [
+    `    ${homebrewArchBlock(entry.arch)} do`,
+    `      url ${rubyString(artifactUrl(entry.artifact, undefined))}`,
+    `      sha256 ${rubyString(entry.checksum.value)}`,
+    "    end",
+    ""
+  ]);
+  return [
+    `class ${formulaClassName(target.formulaName)} < Formula`,
+    `  desc ${rubyString(description)}`,
+    `  homepage ${rubyString(homepage)}`,
+    `  version ${rubyString(model.identity.version)}`,
+    "",
+    "  on_macos do",
+    ...variantLines,
+    "  end",
+    "",
+    "  def install",
+    ...multiArtifactInstallLines(target, entries),
+    "  end",
+    ...formulaTestLines(multiArtifactBinaryName(target, entries)),
+    "end",
+    ""
+  ].join(`
+`);
+};
+var renderFormula = (target, model) => gen2(function* () {
+  const artifactIds = target.artifactIds ?? [target.artifactId];
+  const artifacts = yield* forEach2(artifactIds, (artifactId) => requireHomebrewArtifact(target, model, artifactId));
+  if (target.artifactIds === undefined) {
+    const artifact2 = artifacts[0];
+    if (artifact2 !== undefined) {
+      return renderFormulaForArtifact(target, model, artifact2);
+    }
+  }
+  const variants = yield* validateHomebrewVariantArtifacts(target, artifacts);
+  return renderFormulaForVariants(target, model, variants);
 });
 var dryRunOperation = (target) => dryRunValidationOperation({
   id: `${target.id}:brew-audit`,
@@ -107140,12 +105051,14 @@ var planHomebrewOperations = fn2("planHomebrewOperations")(function* (target, mo
       command: noAuthCommand("brew", ["--version"])
     }));
   }
-  operations.push(dryRunOperation(target), catalogGitPushOperation({
+  operations.push(dryRunOperation(target), ...catalogGitPublishOperations({
     id: `${target.id}:homebrew-push`,
     targetId: target.id,
     description: `Push Homebrew tap update for ${model.identity.name}@${model.identity.version}.`,
     mutability: target.mutability,
-    directory: target.tapDirectory
+    directory: target.tapDirectory,
+    filePath: target.formulaPath,
+    commitMessage: `Update ${target.formulaName} to ${model.identity.version}`
   }));
   return operations;
 });
@@ -107265,21 +105178,35 @@ var NpmAdapter = {
 // ../../src/targets/pypi.ts
 var twineUsernameEnv = "TWINE_USERNAME";
 var twinePasswordEnv = "TWINE_PASSWORD";
-var envNames = (target) => target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv];
+var trustedPublishingAuthEnvNames2 = [
+  "ACTIONS_ID_TOKEN_REQUEST_URL",
+  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+];
+var envNames = (target) => target.trustedPublishing !== undefined ? trustedPublishingAuthEnvNames2 : target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv];
+var pythonExecutable = (target) => target.pythonExecutable ?? "python";
 var twineAuthCommand = (target, args2) => CommandSpec.make({
-  executable: "python",
+  executable: pythonExecutable(target),
   args: ["-m", "twine", ...args2],
   requiredEnv: envNames(target),
   redactedEnv: envNames(target)
 });
-var pypiTargetCapabilities = (target) => targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport));
+var trustedPublishingAuthSetup2 = (workflow) => TargetAuthSetup.make({
+  runsIn: "ci",
+  provider: "github-actions",
+  workflow,
+  requiredPermissions: [
+    TargetRequiredPermission.make({ name: "id-token", value: "write" })
+  ],
+  prerequisites: ["pypi-trusted-publisher-configured"]
+});
+var pypiTargetCapabilities = (target) => targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport), target.trustedPublishing === undefined ? undefined : trustedPublishingAuthSetup2(target.trustedPublishing.workflow));
 var targetArtifacts = (target, model) => model.artifacts.filter((artifact2) => artifact2.consumers.includes(target.id));
 var pypiDryRunOperation = (target, artifactPaths) => dryRunValidationOperation({
   id: `${target.id}:twine-check`,
   targetId: target.id,
   dryRunSupport: target.dryRunSupport,
   nativeDescription: "Validate Python distribution metadata with twine check.",
-  command: noAuthCommand("python", ["-m", "twine", "check", ...artifactPaths]),
+  command: noAuthCommand(pythonExecutable(target), ["-m", "twine", "check", ...artifactPaths]),
   simulatedDescription: "Record simulated PyPI distribution validation.",
   skippedDescription: "Record skipped PyPI distribution validation.",
   simulatedMessage: "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
@@ -107287,13 +105214,31 @@ var pypiDryRunOperation = (target, artifactPaths) => dryRunValidationOperation({
 });
 var pypiPublishArgs = (target, artifactPaths) => [
   "upload",
+  "--non-interactive",
   "--repository-url",
   target.repositoryUrl,
   ...artifactPaths
 ];
+var pypiAuthOperation = (target) => target.trustedPublishing === undefined ? [] : [
+  validationNoteOperation({
+    id: `${target.id}:twine-trusted-publishing-auth`,
+    targetId: target.id,
+    dryRunSupport: "simulated",
+    simulatedDescription: "Record PyPI trusted publishing authentication mode.",
+    skippedDescription: "Record skipped PyPI trusted publishing authentication mode.",
+    simulatedMessage: `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${target.trustedPublishing.provider}, workflow ${target.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`,
+    skippedMessage: "PyPI trusted publishing authentication validation was skipped."
+  })
+];
 var validateAuthConfig = (target) => {
   const hasUsername = target.usernameEnv !== undefined;
   const hasPassword = target.passwordEnv !== undefined;
+  if (target.trustedPublishing !== undefined && (hasUsername || hasPassword)) {
+    return fail6(PlanConstructionError.make({
+      targetId: target.id,
+      reason: "PyPI trusted publishing uses CI OIDC and must not also declare usernameEnv or passwordEnv."
+    }));
+  }
   if (!hasUsername && !hasPassword) {
     return void_3;
   }
@@ -107334,14 +105279,15 @@ var planPyPiOperations = fn2("planPyPiOperations")(function* (target, model) {
       id: `${target.id}:python-version`,
       targetId: target.id,
       description: "Check Python CLI availability.",
-      command: noAuthCommand("python", ["--version"])
+      command: noAuthCommand(pythonExecutable(target), ["--version"])
     }),
     readOnlyCommandValidationOperation({
       id: `${target.id}:twine-version`,
       targetId: target.id,
       description: "Check Twine CLI availability.",
-      command: noAuthCommand("python", ["-m", "twine", "--version"])
+      command: noAuthCommand(pythonExecutable(target), ["-m", "twine", "--version"])
     }),
+    ...pypiAuthOperation(target),
     pypiDryRunOperation(target, artifactPaths),
     PublishCommandOperation.make({
       id: `${target.id}:twine-upload`,
@@ -107367,6 +105313,14 @@ var rejectUnsupportedTokenEnv2 = fn2("rejectUnsupportedScoopTokenEnv")(function*
   });
 });
 var scoopTargetCapabilities = (target) => targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport));
+var artifactUrl2 = (artifact2, fallbackUrl) => fallbackUrl ?? artifact2.downloadUrl ?? artifact2.path;
+var artifactBin = (target, artifact2) => {
+  if (target.bin !== undefined) {
+    return target.bin;
+  }
+  const binaryName = artifact2.variant?.binaryName;
+  return binaryName === undefined ? undefined : [[catalogPathBaseName(artifact2.path), binaryName]];
+};
 var renderManifest = (target, model) => gen2(function* () {
   const artifact2 = yield* findRequiredArtifact(model, target.id, target.artifactId, `Scoop target references missing artifact ${target.artifactId}.`);
   const validated = yield* requireSha256FileArtifact(artifact2, {
@@ -107374,14 +105328,15 @@ var renderManifest = (target, model) => gen2(function* () {
     directoryReason: "Scoop manifest artifacts must be file-like, not directories.",
     checksumReason: "Scoop manifest rendering requires a sha256 artifact checksum."
   });
+  const bin = artifactBin(target, validated.artifact);
   const manifest = {
     version: model.identity.version,
     description: target.description ?? `${model.identity.name} ${model.identity.version} release artifact`,
     homepage: target.homepage ?? `https://github.com/${target.repository}`,
     ...target.license === undefined ? {} : { license: target.license },
-    url: target.url ?? validated.artifact.path,
+    url: artifactUrl2(validated.artifact, target.url),
     hash: validated.checksum.value,
-    ...target.bin === undefined ? {} : { bin: target.bin }
+    ...bin === undefined ? {} : { bin }
   };
   return `${JSON.stringify(manifest, null, 2)}
 `;
@@ -107416,12 +105371,14 @@ var planScoopOperations = fn2("planScoopOperations")(function* (target, model) {
       contents: manifest
     }),
     dryRunOperation2(target, dryRunSupport),
-    catalogGitPushOperation({
+    ...catalogGitPublishOperations({
       id: `${target.id}:scoop-push`,
       targetId: target.id,
       description: `Push Scoop bucket update for ${model.identity.name}@${model.identity.version}.`,
       mutability: target.mutability,
-      directory: target.bucketDirectory
+      directory: target.bucketDirectory,
+      filePath: target.manifestPath,
+      commitMessage: `Update ${target.manifestName} to ${model.identity.version}`
     })
   ];
 });
@@ -107480,8 +105437,6 @@ var LiveReleaseWorkflowLayer = mergeAll2(LiveReleaseHttpLayer, LiveTargetRegistr
 var ActionCommand = Literals([
   "plan",
   "validate-config",
-  "eligibility",
-  "check-intent",
   "doctor",
   "check-auth",
   "check-ci",
@@ -107518,8 +105473,6 @@ class ActionInputError extends TaggedErrorClass()("ActionInputError", {
 var commands = [
   "plan",
   "validate-config",
-  "eligibility",
-  "check-intent",
   "doctor",
   "check-auth",
   "check-ci",
@@ -107724,10 +105677,6 @@ var validationInput = (options) => ({
   configPath: options.config,
   format: textOutputFormat(options)
 });
-var eligibilityInput = (options) => ({
-  root: options.root,
-  configPath: options.config
-});
 var executionInput = (options) => ({
   root: options.root,
   configPath: options.config,
@@ -107852,60 +105801,6 @@ ${rendered.trimEnd()}
   }
   yield* io.setOutput("status", "passed");
 });
-var runEligibility = fn2("action.runEligibility")(function* (options, io) {
-  const decision = yield* exports_config.checkEligibility(eligibilityInput(options));
-  const rendered = exports_config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text");
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release eligibility
-
-\`\`\`text
-${rendered.trimEnd()}
-\`\`\`
-`);
-  }
-  if (decision.packageName !== undefined) {
-    yield* io.setOutput("release_name", decision.packageName);
-  }
-  if (decision.packageVersion !== undefined) {
-    yield* io.setOutput("release_version", decision.packageVersion);
-  }
-  yield* io.setOutput("should_release", decision.shouldRelease ? "true" : "false");
-  yield* io.setOutput("eligibility_status", decision.status);
-  if (decision.status === "partial") {
-    return yield* fail6(ActionCommandError.make({
-      command: options.command,
-      reason: decision.reason
-    }));
-  }
-  yield* io.setOutput("status", "passed");
-});
-var runCheckIntent = fn2("action.runCheckIntent")(function* (options, io) {
-  const decision = yield* exports_config.checkIntent(eligibilityInput(options));
-  const rendered = exports_config.renderEligibilityDecision(decision, options.format === "json" ? "json" : "text");
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release check-intent
-
-\`\`\`text
-${rendered.trimEnd()}
-\`\`\`
-`);
-  }
-  if (decision.packageName !== undefined) {
-    yield* io.setOutput("release_name", decision.packageName);
-  }
-  if (decision.packageVersion !== undefined) {
-    yield* io.setOutput("release_version", decision.packageVersion);
-  }
-  yield* io.setOutput("should_release", decision.shouldRelease ? "true" : "false");
-  yield* io.setOutput("eligibility_status", decision.status);
-  if (decision.status === "partial") {
-    return yield* fail6(ActionCommandError.make({
-      command: options.command,
-      reason: decision.reason
-    }));
-  }
-  yield* io.setOutput("status", "passed");
-});
 var runDiagnostics = fn2("action.runDiagnostics")(function* (command, options, io) {
   const report = command === "doctor" ? yield* exports_diagnostics.doctor(diagnosticsInput(options)) : command === "check-auth" ? yield* exports_diagnostics.checkAuth(diagnosticsInput(options)) : yield* exports_diagnostics.checkCi(diagnosticsInput(options));
   const rendered = exports_diagnostics.render(report, diagnosticsFormat(options));
@@ -107982,12 +105877,6 @@ var runActionEffect = fn2("action.runActionEffect")(function* (options, io, arti
         return;
       case "validate-config":
         yield* runValidateConfig(safeOptions, io);
-        return;
-      case "eligibility":
-        yield* runEligibility(safeOptions, io);
-        return;
-      case "check-intent":
-        yield* runCheckIntent(safeOptions, io);
         return;
       case "doctor":
       case "check-auth":

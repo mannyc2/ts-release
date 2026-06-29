@@ -12,8 +12,12 @@ import {
   ArtifactRecipeRegistry,
   MissingArtifactRecipeAdapterError
 } from "@mannyc1/ts-release/artifacts/registry"
-import { BunExecutableArtifactRecipe } from "@mannyc1/ts-release/domain/artifact"
+import {
+  BunExecutableArtifactRecipe,
+  PyPiWheelArtifactRecipe
+} from "@mannyc1/ts-release/domain/artifact"
 import { renderReleaseTemplate } from "@mannyc1/ts-release/planner/normalize-release"
+import { stagePyPiWheelArtifactRecipe } from "./pypi-wheel-artifact-recipes.js"
 
 export interface BunExecutableBuildInput {
   readonly entrypoint: string
@@ -162,18 +166,26 @@ const stageBunRecipe = (
   context: ArtifactRecipeStageContext
 ) => makeBunArtifactRecipeAdapter(build).stage(recipe, context)
 
+const stagePyPiWheelRecipe = (
+  recipe: PyPiWheelArtifactRecipe,
+  context: ArtifactRecipeStageContext
+) => stagePyPiWheelArtifactRecipe(recipe, context)
+
 export const makeBunArtifactRecipeRegistryLayer = (
   build: BunExecutableBuild = liveBunExecutableBuild
 ) =>
   Layer.succeed(ArtifactRecipeRegistry)({
     stageArtifactRecipe: (recipe, context) => {
+      const recipeTag: string = recipe._tag
       switch (recipe._tag) {
         case "BunExecutableArtifactRecipe":
           return stageBunRecipe(build, recipe, context)
+        case "PyPiWheelArtifactRecipe":
+          return stagePyPiWheelRecipe(recipe, context)
       }
       return Effect.fail(
         MissingArtifactRecipeAdapterError.make({
-          recipeTag: recipe._tag
+          recipeTag
         })
       )
     }

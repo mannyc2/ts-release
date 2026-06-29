@@ -46,7 +46,7 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
     "[PyPiRegistryTarget]",
     "pypi:twine-check",
     "pypi:twine-upload",
-    "python -m twine upload --repository-url https://test.pypi.org/legacy/"
+    "python -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/"
   ]],
   ["scoop-bucket", [
     "[ScoopBucketTarget]",

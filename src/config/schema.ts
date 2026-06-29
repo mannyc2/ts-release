@@ -19,7 +19,7 @@ export const releaseConfigJsonSchemaDocument = (): JsonSchema.JsonSchema => {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: RELEASE_CONFIG_SCHEMA_ID,
     title: "ts-release configuration",
-    description: "Configuration for a plan-first ts-release workflow.",
+    description: "Configuration for an artifact-first ts-release distribution workflow.",
     $defs: document.definitions
   }
 }

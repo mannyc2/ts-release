@@ -53,9 +53,13 @@ describe("Homebrew target", () => {
       expect(render.description).toContain("release.rb")
       expect(render.path).toBe(".release/generated/release.rb")
       expect(render.contents).toContain("class Release < Formula")
-      expect(render.contents).toContain("sha256 \"686f6d65627265772061726368697665\"")
-      expect(render.contents).toContain("bin.install \"bin/release\" => \"release\"")
-    }
+	      expect(render.contents).toContain("sha256 \"686f6d65627265772061726368697665\"")
+	      expect(render.contents).toContain("bin.install \"bin/release\" => \"release\"")
+	      expect(render.contents).toContain("chmod 0755, bin/\"release\"")
+	      expect(render.contents).toContain("test do")
+	      expect(render.contents).toContain("assert File.exist?(bin/\"release\")")
+	      expect(render.contents).toContain("assert File.executable?(bin/\"release\")")
+	    }
     if (publish?._tag === "PublishCommandOperation") {
       expect(publish.risk).toBe("externally-visible")
       expect(publish.command.args).toEqual(["-C", ".", "push"])

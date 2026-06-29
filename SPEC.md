@@ -2,30 +2,32 @@
 
 ## Purpose
 
-The `release` package is a small TypeScript library for turning release intent into explicit, inspectable, and repeatable publishing operations.
+The `release` package is a small TypeScript library for turning installable artifacts into explicit, inspectable, and repeatable package-manager distribution plans.
 
-It should not be a build system, a package-manager wrapper, or a generic task runner. Its job is to model what is being released, where it is being published, what must be true before publication, and which irreversible actions require deliberate approval.
+It should not be a fake universal package manager or a generic task runner. Its job is to model what is being distributed, which artifact variants exist, which package managers or install channels consume them, and which externally visible actions require deliberate approval.
 
-The package should make release work boring: the same inputs should produce the same plan, the same validations should produce auditable evidence, and the same publish operation should be understandable before anything is executed.
+The package should make distribution work boring: the same inputs should produce the same plan, the same staged artifacts should produce auditable inventory, and the same publish operation should be understandable before anything is executed.
 
 ## Core Idea
 
-A release is a data flow:
+A distribution is a data flow:
 
 ```text
 release intent
   -> normalized release model
+  -> artifact recipes and inventory
+  -> installable artifact variants
   -> target-specific operations
-  -> optional generated files
-  -> validation evidence
-  -> gated execution
+  -> generated package-manager files
+  -> validation and rendering evidence
+  -> approved execution
   -> post-publish verification
-  -> status and conservative resume
+  -> optional modeled reconciliation
 ```
 
 The package owns the model and the orchestration. Ecosystem tools remain the source of truth for ecosystem-specific behavior.
 
-For example, npm, PyPI, GitHub Releases, Homebrew taps, OCI registries, app stores, or other targets may each need different commands, credentials, artifacts, and validators. The release package should describe those differences directly instead of hiding them behind one fake universal publish abstraction.
+For example, npm, PyPI, GitHub Releases, Homebrew taps, Scoop buckets, OCI registries, app stores, or other targets may each need different manifests, commands, credentials, artifacts, and validators. The release package should describe those differences directly instead of hiding them behind one fake universal abstraction.
 
 ## Current Shape
 
@@ -34,11 +36,10 @@ The root package is the reusable library. It exposes explicit subpaths for domai
 Current first-party workflows cover:
 
 - config validation and plan rendering
+- explicit artifact recipe staging
 - data-first init/scaffolding previews with approved writes
 - static doctor/auth/CI diagnostics
 - render, validation, execution, verification, and workflow evidence
-- status reporting from existing evidence
-- conservative resume after interrupted work
 - narrow GitHub release reconciliation without republishing npm versions
 
 Reusable configs live in `templates/`, runnable fixtures live in `examples/`, and publish operations remain data until an execute approval and any irreversible approval are supplied.
@@ -47,12 +48,12 @@ Reusable configs live in `templates/`, runnable fixtures live in `examples/`, an
 
 ### Plan-first
 
-The primary output of the package is a release plan, not a side effect.
+The primary output of the package is a distribution plan, not a side effect.
 
 A plan should be serializable, reviewable, and suitable for CI artifacts. It should explain:
 
-- release identity: name, version, commit, tag, notes, source metadata, and the strategy that resolved it
-- artifact inventory: files, checksums, sizes, formats, and intended consumers
+- release identity: name, version, commit, tag, notes, and source metadata
+- artifact inventory: files, checksums, sizes, formats, intended consumers, and installable variants
 - target operations: what each target will do and what inputs it needs
 - validation steps: which checks must run before publishing
 - execution gates: which operations are irreversible or require explicit approval
@@ -77,7 +78,7 @@ Validation should produce structured evidence, not just console output.
 
 Evidence should be machine-readable enough for CI and human-readable enough for debugging. It should include command invocations, tool versions where practical, exit statuses, important paths, skipped checks, warnings, failures, and timestamps.
 
-Evidence should also support status reporting and conservative resume after failed or interrupted releases.
+Evidence should also preserve enough context to debug failed or interrupted releases.
 
 Strict mode should fail on missing required validators. Non-strict mode may record skips, but skips must be visible in the evidence.
 
@@ -98,6 +99,7 @@ The core package should be a reusable library. A CLI can exist as an adapter, bu
 The library should expose APIs for:
 
 - loading and normalizing config
+- staging declared artifact recipes through provided adapters
 - constructing a release plan
 - scaffolding starter configs and CI workflows as proposed files
 - rendering config schemas and validation results
@@ -107,8 +109,6 @@ The library should expose APIs for:
 - preparing executable operations
 - running approved operations through an injected host interface
 - recording evidence
-- reporting release status from evidence
-- conservatively resuming safe unfinished work
 - reconciling narrowly modeled remote state without replaying immutable publishes
 
 The CLI and GitHub Action should mainly parse host inputs, call the library, format host-specific output, and persist evidence.
@@ -129,9 +129,9 @@ Builders, packagers, changelog generators, signing tools, registry CLIs, provena
 
 The package should not try to:
 
-- build every artifact itself
+- build every artifact itself or replace full build pipelines
 - replace ecosystem-native publishing tools
-- invent a universal package format
+- invent a universal package format or one manifest schema for every ecosystem
 - hide target-specific auth requirements
 - guarantee semantic versioning policy for the project using it
 - own changelog generation as a core requirement
@@ -149,9 +149,19 @@ User-authored input describing what should be released.
 
 It should be concise but complete enough to identify the release, locate artifacts, choose targets, and declare policy.
 
-Identity may be static config data or may be derived from a package manifest. Decision strategies may then decide whether a release should be attempted from explicit remote-state config, the current Git tag, conventional commits since the latest matching tag, or first-party intent files. These strategies choose the intended identity and skipped/ready/complete/partial eligibility result; they do not publish.
+Identity may be static config data or may be derived from a package manifest. Release intent should declare artifact files, optional artifact recipes, target policy, and evidence location. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local or target-specific adapter.
 
-Intent files are a small first-party reviewed-intent format, not a promise of full Changesets compatibility. An empty/no-release intent can satisfy CI while producing a skipped release decision.
+### Artifact Recipe
+
+An optional, explicit staging contract for artifacts that `ts-release` can create before planning target distribution.
+
+Recipes are data until the caller runs a staging workflow. The first recipe family is Bun executable compilation, which produces executable artifacts with derived operating-system and architecture variants. Additional recipe families should land only when they provide durable distribution value without turning the core into a general build system.
+
+### Installable Artifact Variant
+
+Platform metadata attached to an artifact intent or inventory item.
+
+Variants should capture facts that package-manager targets need to choose or render the right artifact: operating system, architecture, optional Linux libc family, executable extension, binary name, install path, and source target triple. Target adapters should consume this data instead of guessing from filenames.
 
 ### Release Model
 
@@ -189,6 +199,7 @@ The package should make these workflows straightforward:
 
 - initialize a starter config and optional CI workflow from templates
 - validate config JSON and schema shape
+- stage declared artifact recipes
 - create a plan from config
 - inspect the plan without executing anything
 - render target-specific files
@@ -198,7 +209,6 @@ The package should make these workflows straightforward:
 - print publish operations
 - execute approved operations
 - verify published state after execution
-- inspect status and resume only safe unfinished work
 - reconcile a matching GitHub draft release without republishing immutable registries
 
 The API should favor explicit functions and typed data over hidden global state.
@@ -212,22 +222,14 @@ It should describe release facts and target policy, not arbitrary scripts. Escap
 Good config answers:
 
 - What is the release?
-- Which artifacts are part of it?
-- Which targets receive it?
+- Which artifacts and variants are part of it?
+- Which targets or install surfaces receive them?
 - What credentials or environment are required?
 - What must be validated first?
 - Which generated files or indexes will change?
 - Which operations are allowed to execute in this environment?
 
-Release strategies should stay declarative:
-
-- static config is for manually audited release identity
-- package manifest identity is for package releases with one version source
-- Git tag decisions are for tag-triggered workflows
-- conventional commit decisions are for automated SemVer from commit messages
-- intent-file decisions are for release intent reviewed in PRs
-
-Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, and `{normalizedName}`. They must be expanded before path safety and artifact inventory checks.
+Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, and `{normalizedName}`. They must be expanded before path safety and artifact inventory checks. Artifact variants must be explicit data or derived by a known recipe adapter before target rendering.
 
 ## Testing Strategy
 
@@ -252,9 +254,11 @@ Real integration tests can exist for official validators and sandbox registries,
 
 The rewrite is successful when:
 
-- a user can define release intent in a small config
-- the package produces a reviewable release plan with no side effects
+- a user can define an artifact-first distribution intent in a small config
+- the package can stage declared artifacts before target planning
+- the package produces a reviewable distribution plan with no side effects
 - target differences are explicit in the plan
+- installable artifact variants are available before package-manager rendering
 - validation emits structured evidence
 - publish operations are blocked by default
 - irreversible operations require deliberate approval
@@ -289,17 +293,18 @@ Avoid:
 
 Continue from the data model.
 
-Keep the smallest set of types needed to represent release identity, artifacts, targets, operations, validation results, execution gates, and evidence. Add target adapters end to end only when they prove the abstractions carry real differences without becoming generic mush.
+Keep the smallest set of types needed to represent release identity, artifact recipes, artifact variants, targets, operations, validation results, execution gates, and evidence. Add target adapters end to end only when they prove the abstractions carry real differences without becoming generic mush.
 
 The implementation should stay narrow but honest:
 
 1. Load config.
-2. Normalize into a release model.
-3. Generate a serializable plan.
-4. Render generated files only through explicit render operations.
-5. Validate with structured evidence.
-6. Print executable operations.
-7. Execute only when explicitly approved.
-8. Verify remote state and report status from evidence.
+2. Stage declared artifact recipes when requested.
+3. Normalize into a release model with artifact inventory and variants.
+4. Generate a serializable distribution plan.
+5. Render generated files only through explicit render operations.
+6. Validate with structured evidence.
+7. Print executable operations.
+8. Execute only when explicitly approved.
+9. Verify remote state and record evidence.
 
 Everything else should be added only after it has a clear place in that flow.

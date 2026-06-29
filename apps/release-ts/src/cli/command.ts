@@ -171,34 +171,6 @@ const explainCommand = Command.make(
   })
 )
 
-const eligibilityCommand = Command.make(
-  "eligibility",
-  {
-    root: rootFlag,
-    config: configFlag,
-    format: textJsonFormatFlag
-  },
-  Effect.fn("cli.eligibility")(function*({ root, config, format }) {
-    const decision = yield* Config.checkEligibility(configInput({ root, config }))
-    const contents = Config.renderEligibilityDecision(decision, format)
-    yield* Console.log(contents.trimEnd())
-  })
-)
-
-const checkIntentCommand = Command.make(
-  "check-intent",
-  {
-    root: rootFlag,
-    config: configFlag,
-    format: textJsonFormatFlag
-  },
-  Effect.fn("cli.checkIntent")(function*({ root, config, format }) {
-    const decision = yield* Config.checkIntent(configInput({ root, config }))
-    const contents = Config.renderEligibilityDecision(decision, format)
-    yield* Console.log(contents.trimEnd())
-  })
-)
-
 const printEvidence = Effect.fn("cli.printEvidence")(function*(evidence: EvidenceBundle) {
   yield* Console.log(renderEvidenceJson(evidence).trimEnd())
 })
@@ -426,8 +398,6 @@ export const cli = Command.make("release").pipe(
     validateCommand,
     validateConfigCommand,
     printCommand,
-    eligibilityCommand,
-    checkIntentCommand,
     executeCommand,
     verifyCommand,
     runCommand,

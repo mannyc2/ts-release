@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import type { ArtifactInventoryItem } from "../domain/artifact.js"
 import {
   Operation,
   RenderFileOperation,
@@ -12,7 +13,7 @@ import {
 import { PlanConstructionError } from "../planner/errors.js"
 import { ScoopTargetAdapter } from "./adapter.js"
 import {
-  catalogGitPushOperation,
+  catalogGitPublishOperations,
   catalogPathBaseName,
   findRequiredArtifact,
   requireSha256FileArtifact,
@@ -43,7 +44,23 @@ interface ScoopManifest {
   readonly license?: string
   readonly url: string
   readonly hash: string
-  readonly bin?: string
+  readonly bin?: string | ReadonlyArray<ReadonlyArray<string>>
+}
+
+const artifactUrl = (artifact: ArtifactInventoryItem, fallbackUrl: string | undefined): string =>
+  fallbackUrl ?? artifact.downloadUrl ?? artifact.path
+
+const artifactBin = (
+  target: ScoopBucketTarget,
+  artifact: ArtifactInventoryItem
+): string | ReadonlyArray<ReadonlyArray<string>> | undefined => {
+  if (target.bin !== undefined) {
+    return target.bin
+  }
+  const binaryName = artifact.variant?.binaryName
+  return binaryName === undefined
+    ? undefined
+    : [[catalogPathBaseName(artifact.path), binaryName]]
 }
 
 const renderManifest = (target: ScoopBucketTarget, model: ReleaseModel): Effect.Effect<string, PlanConstructionError> =>
@@ -59,15 +76,16 @@ const renderManifest = (target: ScoopBucketTarget, model: ReleaseModel): Effect.
       directoryReason: "Scoop manifest artifacts must be file-like, not directories.",
       checksumReason: "Scoop manifest rendering requires a sha256 artifact checksum."
     })
+    const bin = artifactBin(target, validated.artifact)
 
     const manifest: ScoopManifest = {
       version: model.identity.version,
       description: target.description ?? `${model.identity.name} ${model.identity.version} release artifact`,
       homepage: target.homepage ?? `https://github.com/${target.repository}`,
       ...(target.license === undefined ? {} : { license: target.license }),
-      url: target.url ?? validated.artifact.path,
+      url: artifactUrl(validated.artifact, target.url),
       hash: validated.checksum.value,
-      ...(target.bin === undefined ? {} : { bin: target.bin })
+      ...(bin === undefined ? {} : { bin })
     }
 
     return `${JSON.stringify(manifest, null, 2)}\n`
@@ -115,12 +133,14 @@ export const planScoopOperations = Effect.fn("planScoopOperations")(function*(
       contents: manifest
     }),
     dryRunOperation(target, dryRunSupport),
-    catalogGitPushOperation({
+    ...catalogGitPublishOperations({
       id: `${target.id}:scoop-push`,
       targetId: target.id,
       description: `Push Scoop bucket update for ${model.identity.name}@${model.identity.version}.`,
       mutability: target.mutability,
-      directory: target.bucketDirectory
+      directory: target.bucketDirectory,
+      filePath: target.manifestPath,
+      commitMessage: `Update ${target.manifestName} to ${model.identity.version}`
     })
   ] satisfies ReadonlyArray<Operation>
 })

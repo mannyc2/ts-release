@@ -28,16 +28,27 @@ export type TargetValidationStrategy = typeof TargetValidationStrategy.Type
 export const NpmAccess = Schema.Literals(["public", "restricted"])
 export type NpmAccess = typeof NpmAccess.Type
 
-export const NpmTrustedPublishingProvider = Schema.Literals(["github-actions"])
-export type NpmTrustedPublishingProvider = typeof NpmTrustedPublishingProvider.Type
+export const TrustedPublishingProvider = Schema.Literals(["github-actions"])
+export type TrustedPublishingProvider = typeof TrustedPublishingProvider.Type
+
+export const NpmTrustedPublishingProvider = TrustedPublishingProvider
+export type NpmTrustedPublishingProvider = TrustedPublishingProvider
 
 export class NpmTrustedPublishingConfig extends Schema.Class<NpmTrustedPublishingConfig>(
   "NpmTrustedPublishingConfig"
 )({
-  provider: NpmTrustedPublishingProvider,
+  provider: TrustedPublishingProvider,
   workflow: Schema.String,
   packageExists: Schema.Literal(true),
   verifyPackageExists: Schema.optionalKey(Schema.Boolean)
+}) {}
+
+export class PyPiTrustedPublishingConfig extends Schema.Class<PyPiTrustedPublishingConfig>(
+  "PyPiTrustedPublishingConfig"
+)({
+  provider: TrustedPublishingProvider,
+  workflow: Schema.String,
+  publisherConfigured: Schema.Literal(true)
 }) {}
 
 export class NpmRegistryTarget extends Schema.TaggedClass<NpmRegistryTarget>()("NpmRegistryTarget", {
@@ -71,7 +82,9 @@ export class HomebrewTapTarget extends Schema.TaggedClass<HomebrewTapTarget>()("
   formulaName: Schema.String,
   formulaPath: Schema.String,
   artifactId: Schema.String,
+  artifactIds: Schema.optionalKey(Schema.Array(Schema.String)),
   homepage: Schema.optionalKey(Schema.String),
+  description: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
   tapDirectory: Schema.optionalKey(Schema.String),
   installPath: Schema.optionalKey(Schema.String),
@@ -84,8 +97,10 @@ export class HomebrewTapTarget extends Schema.TaggedClass<HomebrewTapTarget>()("
 export class PyPiRegistryTarget extends Schema.TaggedClass<PyPiRegistryTarget>()("PyPiRegistryTarget", {
   id: TargetId,
   repositoryUrl: Schema.String,
+  pythonExecutable: Schema.optionalKey(Schema.String),
   usernameEnv: Schema.optionalKey(Schema.String),
   passwordEnv: Schema.optionalKey(Schema.String),
+  trustedPublishing: Schema.optionalKey(PyPiTrustedPublishingConfig),
   dryRunSupport: TargetDryRunSupport,
   mutability: TargetMutability,
   recovery: TargetRecovery
@@ -128,7 +143,7 @@ export class TargetRequiredPermission extends Schema.Class<TargetRequiredPermiss
 
 export class TargetAuthSetup extends Schema.Class<TargetAuthSetup>("TargetAuthSetup")({
   runsIn: TargetRunsIn,
-  provider: NpmTrustedPublishingProvider,
+  provider: TrustedPublishingProvider,
   workflow: Schema.String,
   requiredPermissions: Schema.Array(TargetRequiredPermission),
   prerequisites: Schema.Array(Schema.String)
@@ -156,6 +171,9 @@ export const targetAuthRequirement = (target: TargetConfig): TargetAuthRequireme
     return "trusted-publishing"
   }
   if (target._tag === "PyPiRegistryTarget") {
+    if (target.trustedPublishing !== undefined) {
+      return "trusted-publishing"
+    }
     return target.usernameEnv === undefined && target.passwordEnv === undefined ? "cli-auth" : "env-token"
   }
   if (target._tag === "HomebrewTapTarget" || target._tag === "ScoopBucketTarget") {

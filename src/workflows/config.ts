@@ -10,7 +10,6 @@ import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { EvidenceBundle } from "../domain/evidence.js"
 import { ExecutionApproval, OperationId } from "../domain/operation.js"
 import { ReleaseIdentity, ReleasePlan } from "../domain/release.js"
-import { ReleaseEligibilityDecision } from "../domain/remote-state.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import {
   executePlan,
@@ -31,12 +30,6 @@ import {
   reconcileReleasePlan,
   ReleaseReconcileOptions
 } from "../planner/reconcile.js"
-import {
-  checkReleaseDecision,
-  checkReleaseIntentRequirement,
-  renderReleaseEligibilityJson,
-  renderReleaseEligibilityText
-} from "../planner/release-eligibility.js"
 import {
   releaseConfigFields,
   releaseExecuteField,
@@ -157,22 +150,6 @@ export interface ReleaseReconcileConfigInput extends ReleaseConfigInput {
   readonly execute?: boolean | undefined
 }
 
-export class ReleaseEligibilityConfigOptions extends Schema.Class<ReleaseEligibilityConfigOptions>(
-  "ReleaseEligibilityConfigOptions"
-)({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String)
-}) {}
-
-export interface ReleaseEligibilityConfigInput extends ReleaseConfigInput {}
-
-export class ReleaseIntentCheckOptions extends Schema.Class<ReleaseIntentCheckOptions>("ReleaseIntentCheckOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String)
-}) {}
-
-export interface ReleaseIntentCheckInput extends ReleaseConfigInput {}
-
 export class PlannedReleaseConfigPlanResult extends Schema.Class<PlannedReleaseConfigPlanResult>(
   "PlannedReleaseConfigPlanResult"
 )({
@@ -261,11 +238,6 @@ const releaseReconcileConfigOptionsFromInput = (
     ...releaseConfigFields(input),
     ...releaseExecuteField(input)
   })
-
-const releaseEligibilityConfigOptionsFromInput = (
-  input: ReleaseEligibilityConfigInput = {}
-): ReleaseEligibilityConfigOptions =>
-  ReleaseEligibilityConfigOptions.make(releaseConfigFields(input))
 
 const configRoot = (path: Path.Path, options: ReleaseConfigOptions): string => {
   if (options.root !== undefined) {
@@ -676,36 +648,6 @@ export const planAndWriteReconciliationEvidence = Effect.fn(
   return PlannedReleaseConfigWrittenEvidenceResult.make({ plan, evidence })
 })
 
-export const checkReleaseConfigEligibility = Effect.fn("workflows.config.checkReleaseConfigEligibility")(function*(
-  input: ReleaseEligibilityConfigInput = {}
-) {
-  const options = releaseEligibilityConfigOptionsFromInput(input)
-  const path = yield* Path.Path
-  const pathName = configPath(options)
-  const contents = yield* readReleaseConfig(options)
-  const intent = yield* parseReleaseIntent(contents, pathName)
-  return yield* checkReleaseDecision(intent, configRoot(path, options))
-})
-
-export const checkReleaseConfigIntent = Effect.fn("workflows.config.checkReleaseConfigIntent")(function*(
-  input: ReleaseIntentCheckInput = {}
-) {
-  const options = releaseConfigOptionsFromInput(input)
-  const path = yield* Path.Path
-  const pathName = configPath(options)
-  const contents = yield* readReleaseConfig(options)
-  const intent = yield* parseReleaseIntent(contents, pathName)
-  return yield* checkReleaseIntentRequirement(intent, configRoot(path, options))
-})
-
-export const renderReleaseEligibilityDecision = (
-  decision: ReleaseEligibilityDecision,
-  format: "json" | "text"
-): string =>
-  format === "json"
-    ? renderReleaseEligibilityJson(decision)
-    : renderReleaseEligibilityText(decision)
-
 export const plan = planReleaseConfig
 export const renderPlan = renderReleaseConfigPlan
 export const renderPlannedPlan = renderPlannedReleaseConfigPlan
@@ -738,6 +680,3 @@ export const reconcile = reconcileReleaseConfig
 export const planAndReconcile = planAndReconcileReleaseConfig
 export const writePlannedReconcile = writePlannedReconciliationEvidence
 export const planAndWriteReconcile = planAndWriteReconciliationEvidence
-export const checkEligibility = checkReleaseConfigEligibility
-export const checkIntent = checkReleaseConfigIntent
-export const renderEligibilityDecision = renderReleaseEligibilityDecision

@@ -6,7 +6,12 @@ import {
   ArtifactIntent,
   ArtifactRecipe,
   BunExecutableArtifactRecipe,
-  artifactInventoryOrder
+  BunExecutableArtifactOutput,
+  InstallableArtifactVariant,
+  PyPiWheelArtifactRecipe,
+  artifactInventoryOrder,
+  bunExecutableCompileTargetVariant,
+  bunExecutableOutputVariant
 } from "../domain/artifact.js"
 import { CommandSpec } from "../domain/operation.js"
 import {
@@ -255,10 +260,68 @@ const expandArtifactIntent = (
   ArtifactIntent.make({
     id: artifact.id,
     path: renderReleaseTemplate(artifact.path, identity),
+    ...(artifact.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(artifact.downloadUrl, identity) }),
     format: artifact.format,
     consumers: [...artifact.consumers],
-    ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum })
+    ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum }),
+    ...(artifact.variant === undefined ? {} : { variant: artifact.variant })
   })
+
+const validateInstallableArtifactVariant = (
+  field: string,
+  variant: InstallableArtifactVariant
+): Effect.Effect<void, ReleaseNormalizationError> => {
+  if (variant.libc !== undefined && variant.os !== "linux") {
+    return Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `${field}.libc`,
+        reason: "libc may only be set for linux artifact variants."
+      })
+    )
+  }
+  return Effect.void
+}
+
+const validateBunExecutableOutputVariant = (
+  field: string,
+  output: BunExecutableArtifactOutput
+): Effect.Effect<void, ReleaseNormalizationError> => {
+  const derived = bunExecutableCompileTargetVariant(output.target)
+  const override = output.variant
+  if (override?.os !== undefined && override.os !== derived.os) {
+    return Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `${field}.os`,
+        reason: `Variant os must match Bun compile target ${output.target}.`
+      })
+    )
+  }
+  if (override?.arch !== undefined && override.arch !== derived.arch) {
+    return Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `${field}.arch`,
+        reason: `Variant arch must match Bun compile target ${output.target}.`
+      })
+    )
+  }
+  if (override?.libc !== undefined && override.libc !== derived.libc) {
+    return Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `${field}.libc`,
+        reason: `Variant libc must match Bun compile target ${output.target}.`
+      })
+    )
+  }
+  if (override?.targetTriple !== undefined && override.targetTriple !== derived.targetTriple) {
+    return Effect.fail(
+      ReleaseNormalizationError.make({
+        field: `${field}.targetTriple`,
+        reason: `Variant targetTriple must match Bun compile target ${output.target}.`
+      })
+    )
+  }
+  return validateInstallableArtifactVariant(field, bunExecutableOutputVariant(output.target, output.variant))
+}
 
 export const artifactIntentsFromRecipe = (
   recipe: ArtifactRecipe,
@@ -269,10 +332,22 @@ export const artifactIntentsFromRecipe = (
       ArtifactIntent.make({
         id: output.id,
         path: renderReleaseTemplate(output.path, identity),
-        format: "file",
-        consumers: [...output.consumers]
+        ...(output.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(output.downloadUrl, identity) }),
+        format: "executable",
+        consumers: [...output.consumers],
+        variant: bunExecutableOutputVariant(output.target, output.variant)
       })
     )
+  }
+  if (recipe instanceof PyPiWheelArtifactRecipe) {
+    return [
+      ArtifactIntent.make({
+        id: recipe.id,
+        path: renderReleaseTemplate(recipe.path, identity),
+        format: "file",
+        consumers: [...recipe.consumers]
+      })
+    ]
   }
   return []
 }
@@ -306,6 +381,40 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
           `artifactRecipes.${recipe.id}.outputs.${output.id}.path`,
           outputPath
         )
+        if (output.downloadUrl !== undefined) {
+          yield* validateNonEmptyString(
+            `artifactRecipes.${recipe.id}.outputs.${output.id}.downloadUrl`,
+            renderReleaseTemplate(output.downloadUrl, identity)
+          )
+        }
+        yield* validateBunExecutableOutputVariant(
+          `artifactRecipes.${recipe.id}.outputs.${output.id}.variant`,
+          output
+        )
+      }
+    }
+    if (recipe instanceof PyPiWheelArtifactRecipe) {
+      yield* validateNonEmptySafeRelativePath(
+        `artifactRecipes.${recipe.id}.path`,
+        renderReleaseTemplate(recipe.path, identity)
+      )
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.wheelTag`, recipe.wheelTag)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.packageName`, recipe.packageName)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.moduleName`, recipe.moduleName)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.consoleScript`, recipe.consoleScript)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.summary`, recipe.summary)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.homepage`, recipe.homepage)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.license`, recipe.license)
+      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.requiresPython`, recipe.requiresPython)
+      for (const [index, binary] of recipe.binaries.entries()) {
+        yield* validateNonEmptySafeRelativePath(
+          `artifactRecipes.${recipe.id}.binaries.${index}.sourcePath`,
+          renderReleaseTemplate(binary.sourcePath, identity)
+        )
+        yield* validateNonEmptySafeRelativePath(
+          `artifactRecipes.${recipe.id}.binaries.${index}.wheelPath`,
+          binary.wheelPath
+        )
       }
     }
   }
@@ -318,6 +427,12 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
 
   for (const artifact of artifacts) {
     yield* validateNonEmptySafeRelativePath(`artifacts.${artifact.id}.path`, artifact.path)
+    if (artifact.downloadUrl !== undefined) {
+      yield* validateNonEmptyString(`artifacts.${artifact.id}.downloadUrl`, artifact.downloadUrl)
+    }
+    if (artifact.variant !== undefined) {
+      yield* validateInstallableArtifactVariant(`artifacts.${artifact.id}.variant`, artifact.variant)
+    }
   }
   for (const target of intent.targets) {
     if (target._tag === "NpmRegistryTarget") {
@@ -340,6 +455,20 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
     }
     if (target._tag === "HomebrewTapTarget") {
       yield* validateNonEmptySafeRelativePath(`targets.${target.id}.formulaPath`, target.formulaPath)
+      if (target.description !== undefined) {
+        yield* validateNonEmptyString(`targets.${target.id}.description`, target.description)
+      }
+      if (target.artifactIds !== undefined) {
+        yield* validateUnique(target.artifactIds, `targets.${target.id}.artifactIds`)
+        if (target.artifactIds.length === 0) {
+          yield* Effect.fail(
+            ReleaseNormalizationError.make({
+              field: `targets.${target.id}.artifactIds`,
+              reason: "Homebrew artifactIds must not be empty."
+            })
+          )
+        }
+      }
       if (target.tapDirectory !== undefined) {
         yield* validateNonEmptySafeRelativePath(`targets.${target.id}.tapDirectory`, target.tapDirectory)
       }
@@ -348,6 +477,17 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
       yield* validateNonEmptySafeRelativePath(`targets.${target.id}.manifestPath`, target.manifestPath)
       if (target.bucketDirectory !== undefined) {
         yield* validateNonEmptySafeRelativePath(`targets.${target.id}.bucketDirectory`, target.bucketDirectory)
+      }
+    }
+    if (target._tag === "PyPiRegistryTarget") {
+      if (target.pythonExecutable !== undefined) {
+        yield* validateNonEmptyString(`targets.${target.id}.pythonExecutable`, target.pythonExecutable)
+      }
+      if (target.trustedPublishing !== undefined) {
+        yield* validateWorkflowFileName(
+          `targets.${target.id}.trustedPublishing.workflow`,
+          target.trustedPublishing.workflow
+        )
       }
     }
   }

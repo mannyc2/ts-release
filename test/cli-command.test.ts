@@ -83,9 +83,7 @@ describe("cli command", () => {
     expect(cli.subcommands.flatMap((group) => group.commands.map((command) => command.name)).sort()).toEqual([
       "check-auth",
       "check-ci",
-      "check-intent",
       "doctor",
-      "eligibility",
       "execute",
       "explain",
       "init",
@@ -343,24 +341,10 @@ describe("cli command", () => {
           commit: "abc123",
           tagTemplate: "v{version}"
         },
-        releaseDecision: {
-          _tag: "IntentFilesReleaseDecision",
-          directory: ".release/intents",
-          packagePath: "package.json",
-          tagTemplate: "v{version}",
-          requireIntent: true
-        },
         artifacts: [],
         targets: [],
         strict: true,
         evidenceDirectory: ".release/evidence"
-      }))
-      await mkdir(join(root, ".release", "intents"), { recursive: true })
-      await writeFile(join(root, ".release", "intents", "empty.json"), JSON.stringify({
-        package: "@scope/root-package",
-        release: "none",
-        summary: "No release needed.",
-        empty: true
       }))
       const out = join(root, "plan-summary.txt")
       const layer = makeBunReleaseWorkflowRuntimeLayer({ root })
@@ -378,25 +362,6 @@ describe("cli command", () => {
           out
         ]).pipe(Effect.provide(layer))
       )
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "eligibility",
-          "--root",
-          root,
-          "--config",
-          "app/release.config.json"
-        ]).pipe(Effect.provide(layer))
-      )
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "check-intent",
-          "--root",
-          root,
-          "--config",
-          "app/release.config.json"
-        ]).pipe(Effect.provide(layer))
-      )
-
       const summary = await readFile(out, "utf8")
       expect(summary).toContain("@scope/root-package@1.2.3")
     }))
@@ -572,13 +537,15 @@ describe("cli command", () => {
           if (template === "bun-cli-github") {
             const recipe = intent.artifactRecipes?.find((candidate) => candidate.id === "cli")
             expect(recipe?._tag).toBe("BunExecutableArtifactRecipe")
-            expect(recipe?.outputs.map((output) => output.target).sort()).toEqual([
-              "bun-darwin-arm64",
-              "bun-darwin-x64",
-              "bun-linux-arm64",
-              "bun-linux-x64-baseline",
-              "bun-windows-x64-baseline"
-            ])
+            if (recipe?._tag === "BunExecutableArtifactRecipe") {
+              expect(recipe.outputs.map((output) => output.target).sort()).toEqual([
+                "bun-darwin-arm64",
+                "bun-darwin-x64",
+                "bun-linux-arm64",
+                "bun-linux-x64-baseline",
+                "bun-windows-x64-baseline"
+              ])
+            }
           }
         }
       })
@@ -1120,104 +1087,6 @@ describe("cli command", () => {
         })
       ))
   })
-
-  test("eligibility command checks remote state through the config workflow", () =>
-    withTempDirectoryPromise("ts-release-cli-eligibility-", async (root) => {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig.replace("\"tag\":\"v0.1.0\"", "\"tag\":\"release-0.1.0\""))
-      await writeFile(join(root, "package.json"), JSON.stringify({
-        name: "release",
-        version: "0.1.0"
-      }))
-      const npmView = CommandSpec.make({
-        executable: "npm",
-        args: ["view", "release@0.1.0", "version", "--registry", "https://registry.npmjs.org"],
-        requiredEnv: [],
-        redactedEnv: []
-      })
-      const ghReleaseView = CommandSpec.make({
-        executable: "gh",
-        args: [
-          "release",
-          "view",
-          "release-0.1.0",
-          "--repo",
-          "owner/repo",
-          "--json",
-          "isDraft,tagName,publishedAt"
-        ],
-        requiredEnv: ["GH_TOKEN"],
-        redactedEnv: ["GH_TOKEN"]
-      })
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map([
-            [commandKey(npmView), {
-              exitCode: 1,
-              stdout: "",
-              stderr: "E404 Not Found"
-            }],
-            [commandKey(ghReleaseView), {
-              exitCode: 1,
-              stdout: "",
-              stderr: "not found"
-            }]
-          ])
-        }),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "eligibility",
-          "--config",
-          configPath
-        ]).pipe(Effect.provide(layer))
-      )
-    }))
-
-  test("check-intent command fails when required intent files are missing", () =>
-    withTempDirectoryPromise("ts-release-cli-check-intent-", async (root) => {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, JSON.stringify({
-        identity: {
-          name: "@scope/pkg",
-          version: "1.2.3",
-          commit: "abc123",
-          tag: "v1.2.3"
-        },
-        releaseDecision: {
-          _tag: "IntentFilesReleaseDecision",
-          directory: ".release/intents",
-          packagePath: "package.json",
-          tagTemplate: "v{version}",
-          requireIntent: true
-        },
-        artifacts: [],
-        targets: [],
-        strict: true,
-        evidenceDirectory: ".release/evidence"
-      }))
-      await writeFile(join(root, "package.json"), JSON.stringify({
-        name: "@scope/pkg",
-        version: "1.2.3"
-      }))
-
-      const exit = await Effect.runPromiseExit(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "check-intent",
-          "--config",
-          configPath
-        ]).pipe(Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root })))
-      )
-
-      expectExitFailureTag(exit, "ReleaseEligibilityCheckError")
-    }))
 
   test("run command writes one workflow evidence file", () =>
     withTempDirectoryPromise("ts-release-run-root-", async (root) => {

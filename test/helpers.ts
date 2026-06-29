@@ -261,8 +261,7 @@ export const releaseConfig = ({
   artifactRecipes,
   targets,
   strict = true,
-  evidenceDirectory = ".release/evidence",
-  releaseDecision
+  evidenceDirectory = ".release/evidence"
 }: {
   readonly identity?: Record<string, unknown>
   readonly artifacts: ReadonlyArray<Record<string, unknown>>
@@ -270,11 +269,9 @@ export const releaseConfig = ({
   readonly targets: ReadonlyArray<Record<string, unknown>>
   readonly strict?: boolean
   readonly evidenceDirectory?: string
-  readonly releaseDecision?: Record<string, unknown>
 }) =>
   JSON.stringify({
     identity,
-    ...(releaseDecision === undefined ? {} : { releaseDecision }),
     artifacts,
     ...(artifactRecipes === undefined ? {} : { artifactRecipes }),
     targets,

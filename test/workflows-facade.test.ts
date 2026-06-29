@@ -3,7 +3,7 @@ import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Layer from "effect/Layer"
 import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { Config, Diagnostics, Init, Live } from "../src/workflows/index.js"
+import { Config, Diagnostics, Distribution, Init, Live } from "../src/workflows/index.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
@@ -49,6 +49,29 @@ describe("workflows facade", () => {
 
     expect(plan.identity.name).toBe("release")
     expect(plan.targets.map((target) => target.id).sort()).toEqual(["github", "npm"])
+  })
+
+  test("Distribution facade exposes the artifact-first happy path", async () => {
+    const plan = await runEffect(
+      Distribution.plan({
+        root: ".",
+        configPath: "release.config.json"
+      }),
+      TestLayer
+    )
+    const text = await runEffect(
+      Distribution.renderPlan({
+        root: ".",
+        configPath: "release.config.json",
+        format: "text"
+      }),
+      TestLayer
+    )
+
+    expect(plan.identity.name).toBe("release")
+    expect(text).toContain("release@0.1.0")
+    expect(Distribution.stage).toBe(Distribution.stageArtifacts)
+    expect(Distribution.execute).toBe(Distribution.executeApprovedDistribution)
   })
 
   test("Init aliases accept plain object inputs without writing", async () => {

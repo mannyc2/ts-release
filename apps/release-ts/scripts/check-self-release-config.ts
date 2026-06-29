@@ -1,13 +1,21 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
-import { packageTarballArtifactPath, releaseCliArtifactTargets } from "./build-release-artifacts.js"
 
 const root = cwd()
 const currentCommitSelector = "HEAD"
 const placeholderCommits = new Set(["replace-with-release-commit", "0000000"])
 const appPackagePath = "apps/release-ts/package.json"
 const releaseConfigPath = "apps/release-ts/release.config.json"
+const releaseCliRecipeId = "release-ts-cli"
+const releaseCliEntrypoint = "apps/release-ts/src/cli/main.ts"
+
+interface ExpectedRecipeOutput {
+  readonly id: string
+  readonly target: string
+  readonly path: string
+  readonly consumers: ReadonlyArray<string>
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -106,11 +114,53 @@ const collectArtifactRecords = (
   return records
 }
 
+const collectRecipeRecords = (
+  recipes: ReadonlyArray<unknown>,
+  failures: Array<string>
+): Map<string, Record<string, unknown>> => {
+  const records = new Map<string, Record<string, unknown>>()
+  for (const recipe of recipes) {
+    if (!isRecord(recipe)) {
+      failures.push("artifact recipes must be objects")
+      continue
+    }
+    const id = recipe.id
+    if (typeof id !== "string" || id.length === 0) {
+      failures.push("artifact recipe id must be a non-empty string")
+      continue
+    }
+    records.set(id, recipe)
+  }
+  return records
+}
+
+const collectOutputRecords = (
+  outputs: ReadonlyArray<unknown>,
+  recipeId: string,
+  failures: Array<string>
+): Map<string, Record<string, unknown>> => {
+  const records = new Map<string, Record<string, unknown>>()
+  for (const output of outputs) {
+    if (!isRecord(output)) {
+      failures.push(`artifact recipe ${recipeId} outputs must be objects`)
+      continue
+    }
+    const id = output.id
+    if (typeof id !== "string" || id.length === 0) {
+      failures.push(`artifact recipe ${recipeId} output id must be a non-empty string`)
+      continue
+    }
+    records.set(id, output)
+  }
+  return records
+}
+
 const checkArtifactPath = (
   artifact: Record<string, unknown> | undefined,
   id: string,
   expectedPath: string,
   expectedFormat: string,
+  expectedConsumers: ReadonlyArray<string>,
   packageName: string,
   packageVersion: string,
   failures: Array<string>
@@ -133,8 +183,75 @@ const checkArtifactPath = (
   if (artifact.format !== expectedFormat) {
     failures.push(`artifact ${id} format ${String(artifact.format)} must equal ${expectedFormat}`)
   }
-  if (!stringArrayIncludes(artifact.consumers, "github")) {
-    failures.push(`artifact ${id} must be consumed by github`)
+  for (const consumer of expectedConsumers) {
+    if (!stringArrayIncludes(artifact.consumers, consumer)) {
+      failures.push(`artifact ${id} must be consumed by ${consumer}`)
+    }
+  }
+}
+
+const expectedRecipeOutputs = (version: string): ReadonlyArray<ExpectedRecipeOutput> => [
+  {
+    id: "cli-linux-x64",
+    target: "bun-linux-x64-baseline",
+    path: `.release/artifacts/ts-release-${version}-linux-x64`,
+    consumers: ["github"]
+  },
+  {
+    id: "cli-linux-arm64",
+    target: "bun-linux-arm64",
+    path: `.release/artifacts/ts-release-${version}-linux-arm64`,
+    consumers: ["github"]
+  },
+  {
+    id: "cli-darwin-x64",
+    target: "bun-darwin-x64",
+    path: `.release/artifacts/ts-release-${version}-darwin-x64`,
+    consumers: ["github"]
+  },
+  {
+    id: "cli-darwin-arm64",
+    target: "bun-darwin-arm64",
+    path: `.release/artifacts/ts-release-${version}-darwin-arm64`,
+    consumers: ["github"]
+  },
+  {
+    id: "cli-windows-x64",
+    target: "bun-windows-x64-baseline",
+    path: `.release/artifacts/ts-release-${version}-windows-x64.exe`,
+    consumers: ["github"]
+  }
+]
+
+const checkRecipeOutput = (
+  output: Record<string, unknown> | undefined,
+  expected: ExpectedRecipeOutput,
+  packageName: string,
+  packageVersion: string,
+  failures: Array<string>
+): void => {
+  if (output === undefined) {
+    failures.push(`artifact recipe ${releaseCliRecipeId} must include output ${expected.id}`)
+    return
+  }
+  if (output.target !== expected.target) {
+    failures.push(`artifact recipe output ${expected.id} target ${String(output.target)} must equal ${expected.target}`)
+  }
+  if (typeof output.path !== "string" || output.path.length === 0) {
+    failures.push(`artifact recipe output ${expected.id} path must be a non-empty string`)
+    return
+  }
+  const expandedPath = expandReleaseTemplate(output.path, packageName, packageVersion)
+  if (expandedPath !== expected.path) {
+    failures.push(`artifact recipe output ${expected.id} path ${output.path} expands to ${expandedPath}; expected ${expected.path}`)
+  }
+  if (output.path.startsWith(".release/artifacts/") && !output.path.includes("{version}")) {
+    failures.push(`artifact recipe output ${expected.id} path ${output.path} must use {version}`)
+  }
+  for (const consumer of expected.consumers) {
+    if (!stringArrayIncludes(output.consumers, consumer)) {
+      failures.push(`artifact recipe output ${expected.id} must be consumed by ${consumer}`)
+    }
   }
 }
 
@@ -212,24 +329,56 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
   } else if (packageName !== undefined && packageVersion !== undefined) {
     const artifactRecords = collectArtifactRecords(artifacts, failures)
     checkArtifactPath(
-      artifactRecords.get("package-tarball"),
-      "package-tarball",
-      packageTarballArtifactPath({ name: packageName, version: packageVersion }),
-      "tarball",
+      artifactRecords.get("npm-package"),
+      "npm-package",
+      ".",
+      "directory",
+      ["npm"],
       packageName,
       packageVersion,
       failures
     )
-    for (const target of releaseCliArtifactTargets(packageVersion)) {
-      checkArtifactPath(
-        artifactRecords.get(target.id),
-        target.id,
-        target.outfile,
-        "file",
-        packageName,
-        packageVersion,
-        failures
-      )
+    for (const artifactId of artifactRecords.keys()) {
+      if (artifactId.startsWith("cli-")) {
+        failures.push(`artifact ${artifactId} must be declared by artifactRecipes, not static artifacts`)
+      } else if (artifactId !== "npm-package") {
+        failures.push(`artifact ${artifactId} is not part of the self-release static artifact set`)
+      }
+    }
+  }
+
+  const artifactRecipes = field(config, "artifactRecipes")
+  if (!Array.isArray(artifactRecipes)) {
+    failures.push(`${releaseConfigPath} artifactRecipes must be an array`)
+  } else if (packageName !== undefined && packageVersion !== undefined) {
+    const recipes = collectRecipeRecords(artifactRecipes, failures)
+    if (recipes.size !== 1) {
+      failures.push(`${releaseConfigPath} artifactRecipes must contain exactly one release-ts CLI recipe`)
+    }
+    const recipe = recipes.get(releaseCliRecipeId)
+    if (recipe === undefined) {
+      failures.push(`${releaseConfigPath} artifactRecipes must include recipe ${releaseCliRecipeId}`)
+    } else {
+      if (recipe._tag !== "BunExecutableArtifactRecipe") {
+        failures.push(`artifact recipe ${releaseCliRecipeId} _tag must be BunExecutableArtifactRecipe`)
+      }
+      if (recipe.entrypoint !== releaseCliEntrypoint) {
+        failures.push(`artifact recipe ${releaseCliRecipeId} entrypoint ${String(recipe.entrypoint)} must equal ${releaseCliEntrypoint}`)
+      }
+      const outputs = field(recipe, "outputs")
+      if (!Array.isArray(outputs)) {
+        failures.push(`artifact recipe ${releaseCliRecipeId} outputs must be an array`)
+      } else {
+        const outputRecords = collectOutputRecords(outputs, releaseCliRecipeId, failures)
+        for (const expected of expectedRecipeOutputs(packageVersion)) {
+          checkRecipeOutput(outputRecords.get(expected.id), expected, packageName, packageVersion, failures)
+        }
+        for (const outputId of outputRecords.keys()) {
+          if (!expectedRecipeOutputs(packageVersion).some((expected) => expected.id === outputId)) {
+            failures.push(`artifact recipe ${releaseCliRecipeId} has unexpected output ${outputId}`)
+          }
+        }
+      }
     }
   }
 

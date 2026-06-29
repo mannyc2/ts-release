@@ -54,6 +54,21 @@ const manualChecksumConfig = (checksum: { readonly algorithm: "sha256" | "sha512
     evidenceDirectory: ".release/evidence"
   })
 
+const bunExecutableRecipe = (overrides: Record<string, unknown> = {}) => ({
+  _tag: "BunExecutableArtifactRecipe",
+  id: "release-cli",
+  entrypoint: "src/cli.ts",
+  outputs: [
+    {
+      id: "cli-linux-x64",
+      target: "bun-linux-x64-baseline",
+      path: "dist/release-{version}-linux-x64",
+      consumers: ["github"]
+    }
+  ],
+  ...overrides
+})
+
 const ChecksumLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
     files: new Map([["artifacts/archive.tgz", "manual archive"]]),
@@ -332,6 +347,101 @@ describe("planner", () => {
         const plan = yield* createPlan(config)
 
         expect(plan.artifacts[0]?.path).toBe("artifacts/release-0.1.0-release.tgz")
+      }))
+  })
+
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      files: new Map([["dist/release-0.1.0-linux-x64", "compiled binary"]])
+    }),
+    LiveTargetRegistryLayer
+  ))((it) => {
+    it.effect("adds recipe outputs to the artifact inventory", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [],
+          artifactRecipes: [bunExecutableRecipe()],
+          targets: []
+        })
+        const plan = yield* createPlan(config)
+        const artifact = plan.artifacts.find((item) => item.id === "cli-linux-x64")
+
+        expect(artifact).toMatchObject({
+          id: "cli-linux-x64",
+          path: "dist/release-0.1.0-linux-x64",
+          format: "file",
+          consumers: ["github"],
+          sizeBytes: 15,
+          checksum: {
+            algorithm: "sha256",
+            value: "636f6d70696c65642062696e617279"
+          }
+        })
+      }))
+  })
+
+  layer(TestLayer)((it) => {
+    it.effect("rejects recipe output ids that collide with static artifact ids", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [
+            {
+              id: "cli-linux-x64",
+              path: ".",
+              format: "directory",
+              consumers: []
+            }
+          ],
+          artifactRecipes: [bunExecutableRecipe()],
+          targets: []
+        })
+        const error = yield* createPlan(config).pipe(Effect.flip)
+
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifacts.id")
+        }
+      }))
+
+    it.effect("rejects unsafe recipe entrypoint paths", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [],
+          artifactRecipes: [bunExecutableRecipe({ entrypoint: "../cli.ts" })],
+          targets: []
+        })
+        const error = yield* createPlan(config).pipe(Effect.flip)
+
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifactRecipes.release-cli.entrypoint")
+        }
+      }))
+
+    it.effect("rejects unsafe recipe output paths", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [],
+          artifactRecipes: [
+            bunExecutableRecipe({
+              outputs: [
+                {
+                  id: "cli-linux-x64",
+                  target: "bun-linux-x64-baseline",
+                  path: "../dist/release-{version}",
+                  consumers: ["github"]
+                }
+              ]
+            })
+          ],
+          targets: []
+        })
+        const error = yield* createPlan(config).pipe(Effect.flip)
+
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifactRecipes.release-cli.outputs.cli-linux-x64.path")
+        }
       }))
   })
 

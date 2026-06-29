@@ -2,12 +2,14 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
+import { StagedArtifactRecipeResult } from "../artifacts/adapter.js"
+import { stageAllArtifactRecipes } from "../artifacts/registry.js"
 import { ConfigReadError } from "../config/errors.js"
 import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
 import { EvidenceBundle } from "../domain/evidence.js"
 import { ExecutionApproval, OperationId } from "../domain/operation.js"
-import { ReleasePlan } from "../domain/release.js"
+import { ReleaseIdentity, ReleasePlan } from "../domain/release.js"
 import { ReleaseEligibilityDecision } from "../domain/remote-state.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import {
@@ -17,6 +19,7 @@ import {
   validatePlan,
   verifyPlan
 } from "../planner/executor.js"
+import { resolveReleaseIdentitySource } from "../planner/normalize-release.js"
 import {
   renderPlanJson,
   renderPlanMarkdown,
@@ -52,6 +55,9 @@ export type ReleasePlanFormat = typeof ReleasePlanFormat.Type
 
 export const ReleaseConfigValidationFormat = Schema.Literals(["json", "text"])
 export type ReleaseConfigValidationFormat = typeof ReleaseConfigValidationFormat.Type
+
+export const StageArtifactsFormat = Schema.Literals(["json", "text"])
+export type StageArtifactsFormat = typeof StageArtifactsFormat.Type
 
 export class ReleaseConfigOptions extends Schema.Class<ReleaseConfigOptions>("ReleaseConfigOptions")({
   root: Schema.optionalKey(Schema.String),
@@ -91,6 +97,18 @@ export class PlanReleaseConfigOptions extends Schema.Class<PlanReleaseConfigOpti
 
 export interface PlanReleaseConfigInput extends ReleaseConfigInput {
   readonly format?: ReleasePlanFormat | undefined
+}
+
+export class StageArtifactsConfigOptions extends Schema.Class<StageArtifactsConfigOptions>(
+  "StageArtifactsConfigOptions"
+)({
+  root: Schema.optionalKey(Schema.String),
+  configPath: Schema.optionalKey(Schema.String),
+  format: Schema.optionalKey(StageArtifactsFormat)
+}) {}
+
+export interface StageArtifactsConfigInput extends ReleaseConfigInput {
+  readonly format?: StageArtifactsFormat | undefined
 }
 
 export class RenderReleaseConfigOptions extends Schema.Class<RenderReleaseConfigOptions>("RenderReleaseConfigOptions")({
@@ -162,6 +180,16 @@ export class PlannedReleaseConfigPlanResult extends Schema.Class<PlannedReleaseC
   contents: Schema.String
 }) {}
 
+export class StagedReleaseArtifactsResult extends Schema.Class<StagedReleaseArtifactsResult>(
+  "StagedReleaseArtifactsResult"
+)({
+  schemaVersion: Schema.Literal("artifact-stage/v1"),
+  identity: ReleaseIdentity,
+  configPath: Schema.String,
+  recipes: Schema.Array(StagedArtifactRecipeResult),
+  plan: ReleasePlan
+}) {}
+
 export class PlannedReleaseConfigEvidenceResult extends Schema.Class<PlannedReleaseConfigEvidenceResult>(
   "PlannedReleaseConfigEvidenceResult"
 )({
@@ -193,6 +221,14 @@ const planReleaseConfigOptionsFromInput = (
   input: PlanReleaseConfigInput = {}
 ): PlanReleaseConfigOptions =>
   PlanReleaseConfigOptions.make({
+    ...releaseConfigFields(input),
+    ...releaseFormatField(input)
+  })
+
+const stageArtifactsConfigOptionsFromInput = (
+  input: StageArtifactsConfigInput = {}
+): StageArtifactsConfigOptions =>
+  StageArtifactsConfigOptions.make({
     ...releaseConfigFields(input),
     ...releaseFormatField(input)
   })
@@ -307,6 +343,71 @@ export const renderReleasePlan = (
       return renderPlanText(plan)
   }
 }
+
+export const renderStagedArtifactsJson = (result: StagedReleaseArtifactsResult): string =>
+  `${JSON.stringify(result, null, 2)}\n`
+
+export const renderStagedArtifactsText = (result: StagedReleaseArtifactsResult): string => {
+  const artifacts = result.recipes.flatMap((recipe) => recipe.artifacts)
+  const lines = [
+    `staged artifact recipes: ${result.recipes.length}`,
+    "artifacts:"
+  ]
+  if (artifacts.length === 0) {
+    lines.push("  none")
+  } else {
+    for (const artifact of artifacts) {
+      lines.push(`  ${artifact.id} ${artifact.path}`)
+    }
+  }
+  return `${lines.join("\n")}\n`
+}
+
+export const renderStagedArtifacts = (
+  result: StagedReleaseArtifactsResult,
+  format: StageArtifactsFormat = "text"
+): string =>
+  format === "json"
+    ? renderStagedArtifactsJson(result)
+    : renderStagedArtifactsText(result)
+
+export const stageReleaseConfigArtifacts = Effect.fn("workflows.config.stageReleaseConfigArtifacts")(function*(
+  input: StageArtifactsConfigInput = {}
+) {
+  const options = stageArtifactsConfigOptionsFromInput(input)
+  const path = yield* Path.Path
+  const pathName = configPath(options)
+  const root = configRoot(path, options)
+  const contents = yield* readReleaseConfig(options)
+  const intent = yield* parseReleaseIntent(contents, pathName)
+  const identity = yield* resolveReleaseIdentitySource(intent.identity, root)
+  const recipes = intent.artifactRecipes ?? []
+  const staged = recipes.length === 0
+    ? []
+    : yield* stageAllArtifactRecipes(recipes, {
+      root,
+      identity,
+      configPath: pathName
+    })
+  const plan = yield* createReleasePlan(intent, root, pathName)
+  return StagedReleaseArtifactsResult.make({
+    schemaVersion: "artifact-stage/v1",
+    identity,
+    configPath: pathName,
+    recipes: staged,
+    plan
+  })
+})
+
+export const renderStageReleaseConfigArtifacts = Effect.fn(
+  "workflows.config.renderStageReleaseConfigArtifacts"
+)(function*(
+  input: StageArtifactsConfigInput = {}
+) {
+  const options = stageArtifactsConfigOptionsFromInput(input)
+  const result = yield* stageReleaseConfigArtifacts(options)
+  return renderStagedArtifacts(result, options.format ?? "text")
+})
 
 export const renderPlannedReleaseConfigPlan = Effect.fn("workflows.config.renderPlannedReleaseConfigPlan")(function*(
   input: PlanReleaseConfigInput = {}
@@ -608,6 +709,8 @@ export const renderReleaseEligibilityDecision = (
 export const plan = planReleaseConfig
 export const renderPlan = renderReleaseConfigPlan
 export const renderPlannedPlan = renderPlannedReleaseConfigPlan
+export const stageArtifacts = stageReleaseConfigArtifacts
+export const renderStageArtifacts = renderStageReleaseConfigArtifacts
 export const explain = explainReleaseConfigOperation
 export const render = renderReleaseConfig
 export const planAndRender = planAndRenderReleaseConfig

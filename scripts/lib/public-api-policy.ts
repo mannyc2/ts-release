@@ -38,6 +38,8 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
 
 export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   { subpath: ".", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./artifacts/adapter", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
+  { subpath: "./artifacts/registry", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/errors", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/load", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },
   { subpath: "./config/schema", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false },

@@ -1,14 +1,14 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "identity": {
-    "_tag": "PackageManifestReleaseIdentitySource",
-    "commit": "HEAD",
-    "tagTemplate": "v{version}",
-    "notes": "Initial release of the plan-first release package."
+    "name": "@scope/pkg",
+    "version": "0.1.0",
+    "commit": "abc123",
+    "tag": "v0.1.0"
   },
   "artifacts": [
     {
-      "id": "npm-package",
+      "id": "package",
       "path": ".",
       "format": "directory",
       "consumers": ["npm"]
@@ -17,37 +17,37 @@
   "artifactRecipes": [
     {
       "_tag": "BunExecutableArtifactRecipe",
-      "id": "release-ts-cli",
-      "entrypoint": "apps/release-ts/src/cli/main.ts",
+      "id": "cli",
+      "entrypoint": "src/cli.ts",
       "outputs": [
         {
           "id": "cli-linux-x64",
           "target": "bun-linux-x64-baseline",
-          "path": ".release/artifacts/ts-release-{version}-linux-x64",
+          "path": "artifacts/pkg-{version}-linux-x64",
           "consumers": ["github"]
         },
         {
           "id": "cli-linux-arm64",
           "target": "bun-linux-arm64",
-          "path": ".release/artifacts/ts-release-{version}-linux-arm64",
+          "path": "artifacts/pkg-{version}-linux-arm64",
           "consumers": ["github"]
         },
         {
           "id": "cli-darwin-x64",
           "target": "bun-darwin-x64",
-          "path": ".release/artifacts/ts-release-{version}-darwin-x64",
+          "path": "artifacts/pkg-{version}-darwin-x64",
           "consumers": ["github"]
         },
         {
           "id": "cli-darwin-arm64",
           "target": "bun-darwin-arm64",
-          "path": ".release/artifacts/ts-release-{version}-darwin-arm64",
+          "path": "artifacts/pkg-{version}-darwin-arm64",
           "consumers": ["github"]
         },
         {
           "id": "cli-windows-x64",
           "target": "bun-windows-x64-baseline",
-          "path": ".release/artifacts/ts-release-{version}-windows-x64.exe",
+          "path": "artifacts/pkg-{version}-windows-x64.exe",
           "consumers": ["github"]
         }
       ]
@@ -58,7 +58,7 @@
       "_tag": "NpmRegistryTarget",
       "id": "npm",
       "registry": "https://registry.npmjs.org",
-      "packageName": "@mannyc1/ts-release",
+      "packageName": "@scope/pkg",
       "packagePath": ".",
       "trustedPublishing": {
         "provider": "github-actions",
@@ -75,9 +75,9 @@
     {
       "_tag": "GitHubReleaseTarget",
       "id": "github",
-      "repository": "mannyc2/ts-release",
+      "repository": "owner/repo",
       "tokenEnv": "GH_TOKEN",
-      "draft": false,
+      "draft": true,
       "prerelease": false,
       "dryRunSupport": "simulated",
       "mutability": "mutable-release",

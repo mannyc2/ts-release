@@ -26,7 +26,7 @@ import {
 import { cli } from "../apps/release-ts/src/cli/command.js"
 import { CommandSpec } from "../src/domain/operation.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
+import { BunExecutableBuild, makeBunArtifactRecipeRegistryLayer, makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { commandKey } from "../src/host/test.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import {
@@ -95,6 +95,7 @@ describe("cli command", () => {
       "render",
       "run",
       "schema",
+      "stage-artifacts",
       "validate",
       "validate-config",
       "verify"
@@ -126,6 +127,149 @@ describe("cli command", () => {
           join(root, "release-plan.json")
         ]).pipe(Effect.provide(layer))
       )
+    }))
+
+  test("stage-artifacts command stages recipe outputs and writes text output", () =>
+    withTempDirectoryPromise("ts-release-cli-stage-artifacts-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      const out = join(root, "stage.txt")
+      await writeFile(configPath, JSON.stringify({
+        identity: {
+          name: "release",
+          version: "0.1.0",
+          commit: "abc123",
+          tag: "v0.1.0"
+        },
+        artifacts: [],
+        artifactRecipes: [
+          {
+            _tag: "BunExecutableArtifactRecipe",
+            id: "release-cli",
+            entrypoint: "src/cli.ts",
+            outputs: [
+              {
+                id: "cli-linux-x64",
+                target: "bun-linux-x64-baseline",
+                path: "dist/release-{version}-linux-x64",
+                consumers: ["github"]
+              }
+            ]
+          }
+        ],
+        targets: []
+      }))
+      const build: BunExecutableBuild = async (input) => {
+        await mkdir(join(root, "dist"), { recursive: true })
+        await writeFile(input.outfile, "compiled binary")
+        return { success: true, logs: [] }
+      }
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map(),
+          commands: new Map()
+        }),
+        makeBunArtifactRecipeRegistryLayer(build),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "stage-artifacts",
+          "--config",
+          configPath,
+          "--out",
+          out
+        ]).pipe(Effect.provide(layer))
+      )
+
+      const contents = await readFile(out, "utf8")
+      expect(contents).toContain("staged artifact recipes: 1")
+      expect(contents).toContain("cli-linux-x64 dist/release-0.1.0-linux-x64")
+    }))
+
+  test("stage-artifacts command succeeds with no recipes", () =>
+    withTempDirectoryPromise("ts-release-cli-stage-artifacts-empty-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      const out = join(root, "stage.json")
+      await writeFile(configPath, noOpConfig)
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map(),
+          commands: new Map()
+        }),
+        makeBunArtifactRecipeRegistryLayer(async () => ({ success: true, logs: [] })),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "stage-artifacts",
+          "--config",
+          configPath,
+          "--format",
+          "json",
+          "--out",
+          out
+        ]).pipe(Effect.provide(layer))
+      )
+
+      const parsed: unknown = JSON.parse(await readFile(out, "utf8"))
+      expect(JSON.stringify(parsed)).toContain("\"schemaVersion\":\"artifact-stage/v1\"")
+      expect(JSON.stringify(parsed)).toContain("\"recipes\":[]")
+    }))
+
+  test("stage-artifacts command reports build failures", () =>
+    withTempDirectoryPromise("ts-release-cli-stage-artifacts-failure-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, JSON.stringify({
+        identity: {
+          name: "release",
+          version: "0.1.0",
+          commit: "abc123",
+          tag: "v0.1.0"
+        },
+        artifacts: [],
+        artifactRecipes: [
+          {
+            _tag: "BunExecutableArtifactRecipe",
+            id: "release-cli",
+            entrypoint: "src/cli.ts",
+            outputs: [
+              {
+                id: "cli-linux-x64",
+                target: "bun-linux-x64-baseline",
+                path: "dist/release-{version}-linux-x64",
+                consumers: ["github"]
+              }
+            ]
+          }
+        ],
+        targets: []
+      }))
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map(),
+          commands: new Map()
+        }),
+        makeBunArtifactRecipeRegistryLayer(async () => ({
+          success: false,
+          logs: ["compile failed"]
+        })),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      const exit = await Effect.runPromiseExit(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "stage-artifacts",
+          "--config",
+          configPath
+        ]).pipe(Effect.provide(layer))
+      )
+
+      expectExitFailureTag(exit, "ArtifactRecipeStageError")
     }))
 
   test("schema command writes parseable JSON Schema", () =>
@@ -388,9 +532,12 @@ describe("cli command", () => {
     }))
 
   test("init generates schema-valid configs for every template", async () => {
-    const templates: ReadonlyArray<"npm-only" | "npm-github" | "multi-target-homebrew" | "multi-target-scoop"> = [
+    const templates: ReadonlyArray<
+      "npm-only" | "npm-github" | "bun-cli-github" | "multi-target-homebrew" | "multi-target-scoop"
+    > = [
       "npm-only",
       "npm-github",
+      "bun-cli-github",
       "multi-target-homebrew",
       "multi-target-scoop"
     ]
@@ -421,6 +568,17 @@ describe("cli command", () => {
           if (template === "npm-github") {
             const packageArtifact = intent.artifacts.find((artifact) => artifact.id === "package")
             expect(packageArtifact?.consumers).toEqual(["npm"])
+          }
+          if (template === "bun-cli-github") {
+            const recipe = intent.artifactRecipes?.find((candidate) => candidate.id === "cli")
+            expect(recipe?._tag).toBe("BunExecutableArtifactRecipe")
+            expect(recipe?.outputs.map((output) => output.target).sort()).toEqual([
+              "bun-darwin-arm64",
+              "bun-darwin-x64",
+              "bun-linux-arm64",
+              "bun-linux-x64-baseline",
+              "bun-windows-x64-baseline"
+            ])
           }
         }
       })
@@ -637,10 +795,10 @@ describe("cli command", () => {
         },
         artifacts: [
           {
-            id: "package-tarball",
-            path: ".release/artifacts/{version}.tgz",
-            format: "tarball",
-            consumers: ["npm"]
+            id: "github-asset",
+            path: ".release/artifacts/{version}.bin",
+            format: "file",
+            consumers: ["github"]
           }
         ],
         targets: [
@@ -660,6 +818,17 @@ describe("cli command", () => {
             dryRunSupport: "native",
             mutability: "immutable",
             recovery: "publish-new-version"
+          },
+          {
+            _tag: "GitHubReleaseTarget",
+            id: "github",
+            repository: "owner/repo",
+            tokenEnv: "GH_TOKEN",
+            draft: true,
+            prerelease: false,
+            dryRunSupport: "simulated",
+            mutability: "mutable-release",
+            recovery: "delete-and-recreate"
           }
         ],
         strict: true,

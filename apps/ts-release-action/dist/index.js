@@ -100841,9 +100841,16 @@ __export(exports_config, {
   validateReleaseConfig: () => validateReleaseConfig,
   validateFile: () => validateFile,
   validate: () => validate3,
+  stageReleaseConfigArtifacts: () => stageReleaseConfigArtifacts,
+  stageArtifacts: () => stageArtifacts,
   runReleaseConfig: () => runReleaseConfig,
   run: () => run3,
   renderValidation: () => renderValidation,
+  renderStagedArtifactsText: () => renderStagedArtifactsText,
+  renderStagedArtifactsJson: () => renderStagedArtifactsJson,
+  renderStagedArtifacts: () => renderStagedArtifacts,
+  renderStageReleaseConfigArtifacts: () => renderStageReleaseConfigArtifacts,
+  renderStageArtifacts: () => renderStageArtifacts,
   renderReleasePlan: () => renderReleasePlan,
   renderReleaseEligibilityDecision: () => renderReleaseEligibilityDecision,
   renderReleaseConfigValidationText: () => renderReleaseConfigValidationText,
@@ -100893,6 +100900,9 @@ __export(exports_config, {
   checkIntent: () => checkIntent,
   checkEligibility: () => checkEligibility,
   ValidateReleaseConfigFileOptions: () => ValidateReleaseConfigFileOptions,
+  StagedReleaseArtifactsResult: () => StagedReleaseArtifactsResult,
+  StageArtifactsFormat: () => StageArtifactsFormat,
+  StageArtifactsConfigOptions: () => StageArtifactsConfigOptions,
   RenderReleaseConfigOptions: () => RenderReleaseConfigOptions,
   ReleaseReconcileConfigOptions: () => ReleaseReconcileConfigOptions,
   ReleasePlanFormat: () => ReleasePlanFormat,
@@ -100907,6 +100917,117 @@ __export(exports_config, {
   PlannedReleaseConfigEvidenceResult: () => PlannedReleaseConfigEvidenceResult,
   PlanReleaseConfigOptions: () => PlanReleaseConfigOptions,
   ExplainReleaseConfigOptions: () => ExplainReleaseConfigOptions
+});
+
+// ../../src/domain/artifact.ts
+var ArtifactId = NonEmptyString;
+var ArtifactFormat = Literals(["tarball", "zip", "file", "directory", "oci-image"]);
+var ChecksumAlgorithm = Literals(["sha256", "sha512"]);
+var ArtifactRecipeId = NonEmptyString;
+var BunExecutableCompileTarget = Literals([
+  "bun-linux-x64",
+  "bun-linux-x64-baseline",
+  "bun-linux-x64-modern",
+  "bun-linux-arm64",
+  "bun-windows-x64",
+  "bun-windows-x64-baseline",
+  "bun-windows-x64-modern",
+  "bun-windows-arm64",
+  "bun-darwin-x64",
+  "bun-darwin-x64-baseline",
+  "bun-darwin-x64-modern",
+  "bun-darwin-arm64",
+  "bun-linux-x64-musl",
+  "bun-linux-x64-baseline-musl",
+  "bun-linux-x64-modern-musl",
+  "bun-linux-arm64-musl"
+]);
+
+class Checksum extends Class4("Checksum")({
+  algorithm: ChecksumAlgorithm,
+  value: String4
+}) {
+}
+
+class ArtifactIntent extends Class4("ArtifactIntent")({
+  id: ArtifactId,
+  path: String4,
+  format: ArtifactFormat,
+  consumers: ArraySchema(String4),
+  checksum: optionalKey2(Checksum)
+}) {
+}
+
+class BunExecutableArtifactOutput extends Class4("BunExecutableArtifactOutput")({
+  id: ArtifactId,
+  target: BunExecutableCompileTarget,
+  path: String4,
+  consumers: ArraySchema(String4)
+}) {
+}
+
+class BunExecutableArtifactRecipe extends TaggedClass()("BunExecutableArtifactRecipe", {
+  id: ArtifactRecipeId,
+  entrypoint: String4,
+  outputs: ArraySchema(BunExecutableArtifactOutput),
+  minify: optionalKey2(Boolean3)
+}) {
+}
+var ArtifactRecipe = Union2([BunExecutableArtifactRecipe]);
+
+class ArtifactInventoryItem extends Class4("ArtifactInventoryItem")({
+  id: ArtifactId,
+  path: String4,
+  format: ArtifactFormat,
+  consumers: ArraySchema(String4),
+  sizeBytes: Number5,
+  checksum: optionalKey2(Checksum)
+}) {
+}
+var artifactInventoryOrder = (left, right) => left.id.localeCompare(right.id);
+
+// ../../src/artifacts/adapter.ts
+class StagedArtifact extends Class4("StagedArtifact")({
+  id: ArtifactId,
+  path: String4
+}) {
+}
+
+class StagedArtifactRecipeResult extends Class4("StagedArtifactRecipeResult")({
+  recipeId: ArtifactRecipeId,
+  recipeTag: String4,
+  artifacts: ArraySchema(StagedArtifact)
+}) {
+}
+
+class ArtifactRecipeStageError extends TaggedErrorClass()("ArtifactRecipeStageError", {
+  recipeId: ArtifactRecipeId,
+  recipeTag: String4,
+  artifactId: optionalKey2(ArtifactId),
+  path: optionalKey2(String4),
+  reason: String4,
+  cause: optionalKey2(Defect())
+}) {
+}
+
+// ../../src/artifacts/registry.ts
+class MissingArtifactRecipeAdapterError extends TaggedErrorClass()("MissingArtifactRecipeAdapterError", {
+  recipeTag: String4
+}) {
+}
+
+class ArtifactRecipeRegistry extends Service()("ArtifactRecipeRegistry") {
+}
+var stageArtifactRecipe = fn2("stageArtifactRecipe")(function* (recipe, context7) {
+  const registry = yield* ArtifactRecipeRegistry;
+  return yield* registry.stageArtifactRecipe(recipe, context7);
+});
+var stageAllArtifactRecipes = fn2("stageAllArtifactRecipes")(function* (recipes, context7) {
+  const results = [];
+  for (const recipe of recipes) {
+    results.push(yield* stageArtifactRecipe(recipe, context7));
+  }
+  return results;
 });
 
 // ../../src/config/errors.ts
@@ -100929,37 +101050,6 @@ class ConfigValidationError extends TaggedErrorClass()("ConfigValidationError", 
   reason: String4
 }) {
 }
-
-// ../../src/domain/artifact.ts
-var ArtifactId = NonEmptyString;
-var ArtifactFormat = Literals(["tarball", "zip", "file", "directory", "oci-image"]);
-var ChecksumAlgorithm = Literals(["sha256", "sha512"]);
-
-class Checksum extends Class4("Checksum")({
-  algorithm: ChecksumAlgorithm,
-  value: String4
-}) {
-}
-
-class ArtifactIntent extends Class4("ArtifactIntent")({
-  id: ArtifactId,
-  path: String4,
-  format: ArtifactFormat,
-  consumers: ArraySchema(String4),
-  checksum: optionalKey2(Checksum)
-}) {
-}
-
-class ArtifactInventoryItem extends Class4("ArtifactInventoryItem")({
-  id: ArtifactId,
-  path: String4,
-  format: ArtifactFormat,
-  consumers: ArraySchema(String4),
-  sizeBytes: Number5,
-  checksum: optionalKey2(Checksum)
-}) {
-}
-var artifactInventoryOrder = (left, right) => left.id.localeCompare(right.id);
 
 // ../../src/domain/target.ts
 var TargetId = NonEmptyString;
@@ -101405,6 +101495,7 @@ class ReleaseIntent extends Class4("ReleaseIntent")({
   identity: ReleaseIdentitySource,
   releaseDecision: optionalKey2(ReleaseDecisionStrategy),
   artifacts: ArraySchema(ArtifactIntent),
+  artifactRecipes: optionalKey2(ArraySchema(ArtifactRecipe)),
   targets: ArraySchema(TargetConfig),
   strict: optionalKey2(Boolean3),
   evidenceDirectory: optionalKey2(String4)
@@ -101944,11 +102035,38 @@ var expandArtifactIntent = (artifact2, identity2) => ArtifactIntent.make({
   consumers: [...artifact2.consumers],
   ...artifact2.checksum === undefined ? {} : { checksum: artifact2.checksum }
 });
+var artifactIntentsFromRecipe = (recipe, identity2) => {
+  if (recipe instanceof BunExecutableArtifactRecipe) {
+    return recipe.outputs.map((output) => ArtifactIntent.make({
+      id: output.id,
+      path: renderReleaseTemplate(output.path, identity2),
+      format: "file",
+      consumers: [...output.consumers]
+    }));
+  }
+  return [];
+};
+var artifactIntentsFromRecipes = (recipes, identity2) => recipes.flatMap((recipe) => artifactIntentsFromRecipe(recipe, identity2));
 var normalizeReleaseIntent = fn2("normalizeReleaseIntent")(function* (intent, root = ".", configPath = undefined) {
-  yield* validateUnique(intent.artifacts.map((artifact2) => artifact2.id), "artifacts.id");
+  const artifactRecipes = intent.artifactRecipes ?? [];
+  yield* validateUnique(artifactRecipes.map((recipe) => recipe.id), "artifactRecipes.id");
   yield* validateUnique(intent.targets.map((target) => target.id), "targets.id");
   const identity2 = yield* resolveReleaseIdentitySource(intent.identity, root);
-  const artifacts = intent.artifacts.map((artifact2) => expandArtifactIntent(artifact2, identity2));
+  for (const recipe of artifactRecipes) {
+    if (recipe instanceof BunExecutableArtifactRecipe) {
+      yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.entrypoint`, recipe.entrypoint);
+      yield* validateUnique(recipe.outputs.map((output) => output.id), `artifactRecipes.${recipe.id}.outputs.id`);
+      for (const output of recipe.outputs) {
+        const outputPath = renderReleaseTemplate(output.path, identity2);
+        yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.outputs.${output.id}.path`, outputPath);
+      }
+    }
+  }
+  const artifacts = [
+    ...intent.artifacts.map((artifact2) => expandArtifactIntent(artifact2, identity2)),
+    ...artifactIntentsFromRecipes(artifactRecipes, identity2)
+  ];
+  yield* validateUnique(artifacts.map((artifact2) => artifact2.id), "artifacts.id");
   for (const artifact2 of artifacts) {
     yield* validateNonEmptySafeRelativePath(`artifacts.${artifact2.id}.path`, artifact2.path);
   }
@@ -104007,6 +104125,7 @@ var writeWorkflowEvidenceWithFailure = (plan, effect2) => effect2.pipe(catchIf2(
 // ../../src/workflows/config.ts
 var ReleasePlanFormat = Literals(["json", "text", "summary", "markdown"]);
 var ReleaseConfigValidationFormat = Literals(["json", "text"]);
+var StageArtifactsFormat = Literals(["json", "text"]);
 
 class ReleaseConfigOptions extends Class4("ReleaseConfigOptions")({
   root: optionalKey2(String4),
@@ -104032,6 +104151,13 @@ class PlanReleaseConfigOptions extends Class4("PlanReleaseConfigOptions")({
   root: optionalKey2(String4),
   configPath: optionalKey2(String4),
   format: optionalKey2(ReleasePlanFormat)
+}) {
+}
+
+class StageArtifactsConfigOptions extends Class4("StageArtifactsConfigOptions")({
+  root: optionalKey2(String4),
+  configPath: optionalKey2(String4),
+  format: optionalKey2(StageArtifactsFormat)
 }) {
 }
 
@@ -104082,6 +104208,15 @@ class PlannedReleaseConfigPlanResult extends Class4("PlannedReleaseConfigPlanRes
 }) {
 }
 
+class StagedReleaseArtifactsResult extends Class4("StagedReleaseArtifactsResult")({
+  schemaVersion: Literal2("artifact-stage/v1"),
+  identity: ReleaseIdentity,
+  configPath: String4,
+  recipes: ArraySchema(StagedArtifactRecipeResult),
+  plan: ReleasePlan
+}) {
+}
+
 class PlannedReleaseConfigEvidenceResult extends Class4("PlannedReleaseConfigEvidenceResult")({
   plan: ReleasePlan,
   evidence: EvidenceBundle
@@ -104099,6 +104234,10 @@ var validateReleaseConfigFileOptionsFromInput = (input = {}) => ValidateReleaseC
   ...releaseFormatField(input)
 });
 var planReleaseConfigOptionsFromInput = (input = {}) => PlanReleaseConfigOptions.make({
+  ...releaseConfigFields(input),
+  ...releaseFormatField(input)
+});
+var stageArtifactsConfigOptionsFromInput = (input = {}) => StageArtifactsConfigOptions.make({
   ...releaseConfigFields(input),
   ...releaseFormatField(input)
 });
@@ -104171,6 +104310,54 @@ var renderReleasePlan = (plan, format3 = "text") => {
       return renderPlanText(plan);
   }
 };
+var renderStagedArtifactsJson = (result2) => `${JSON.stringify(result2, null, 2)}
+`;
+var renderStagedArtifactsText = (result2) => {
+  const artifacts = result2.recipes.flatMap((recipe) => recipe.artifacts);
+  const lines = [
+    `staged artifact recipes: ${result2.recipes.length}`,
+    "artifacts:"
+  ];
+  if (artifacts.length === 0) {
+    lines.push("  none");
+  } else {
+    for (const artifact2 of artifacts) {
+      lines.push(`  ${artifact2.id} ${artifact2.path}`);
+    }
+  }
+  return `${lines.join(`
+`)}
+`;
+};
+var renderStagedArtifacts = (result2, format3 = "text") => format3 === "json" ? renderStagedArtifactsJson(result2) : renderStagedArtifactsText(result2);
+var stageReleaseConfigArtifacts = fn2("workflows.config.stageReleaseConfigArtifacts")(function* (input = {}) {
+  const options = stageArtifactsConfigOptionsFromInput(input);
+  const path4 = yield* Path;
+  const pathName = configPath(options);
+  const root = configRoot(path4, options);
+  const contents = yield* readReleaseConfig(options);
+  const intent = yield* parseReleaseIntent(contents, pathName);
+  const identity2 = yield* resolveReleaseIdentitySource(intent.identity, root);
+  const recipes = intent.artifactRecipes ?? [];
+  const staged = recipes.length === 0 ? [] : yield* stageAllArtifactRecipes(recipes, {
+    root,
+    identity: identity2,
+    configPath: pathName
+  });
+  const plan = yield* createReleasePlan(intent, root, pathName);
+  return StagedReleaseArtifactsResult.make({
+    schemaVersion: "artifact-stage/v1",
+    identity: identity2,
+    configPath: pathName,
+    recipes: staged,
+    plan
+  });
+});
+var renderStageReleaseConfigArtifacts = fn2("workflows.config.renderStageReleaseConfigArtifacts")(function* (input = {}) {
+  const options = stageArtifactsConfigOptionsFromInput(input);
+  const result2 = yield* stageReleaseConfigArtifacts(options);
+  return renderStagedArtifacts(result2, options.format ?? "text");
+});
 var renderPlannedReleaseConfigPlan = fn2("workflows.config.renderPlannedReleaseConfigPlan")(function* (input = {}) {
   const options = planReleaseConfigOptionsFromInput(input);
   const plan = yield* planReleaseConfig(options);
@@ -104349,6 +104536,8 @@ var renderReleaseEligibilityDecision = (decision, format3) => format3 === "json"
 var plan = planReleaseConfig;
 var renderPlan2 = renderReleaseConfigPlan;
 var renderPlannedPlan = renderPlannedReleaseConfigPlan;
+var stageArtifacts = stageReleaseConfigArtifacts;
+var renderStageArtifacts = renderStageReleaseConfigArtifacts;
 var explain = explainReleaseConfigOperation;
 var render = renderReleaseConfig;
 var planAndRender = planAndRenderReleaseConfig;
@@ -104884,6 +105073,7 @@ var render2 = renderReleaseDiagnostics;
 var ReleaseInitTemplateName = Literals([
   "npm-only",
   "npm-github",
+  "bun-cli-github",
   "multi-target-homebrew",
   "multi-target-scoop"
 ]);
@@ -105066,6 +105256,46 @@ var configTargetScoop = (options) => {
     recovery: "manual"
   };
 };
+var configArtifactRecipeBunCli = (options) => {
+  const name = packageShortName(options.packageName);
+  return {
+    _tag: "BunExecutableArtifactRecipe",
+    id: "cli",
+    entrypoint: "src/cli.ts",
+    outputs: [
+      {
+        id: "cli-linux-x64",
+        target: "bun-linux-x64-baseline",
+        path: `artifacts/${name}-{version}-linux-x64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-linux-arm64",
+        target: "bun-linux-arm64",
+        path: `artifacts/${name}-{version}-linux-arm64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-darwin-x64",
+        target: "bun-darwin-x64",
+        path: `artifacts/${name}-{version}-darwin-x64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-darwin-arm64",
+        target: "bun-darwin-arm64",
+        path: `artifacts/${name}-{version}-darwin-arm64`,
+        consumers: ["github"]
+      },
+      {
+        id: "cli-windows-x64",
+        target: "bun-windows-x64-baseline",
+        path: `artifacts/${name}-{version}-windows-x64.exe`,
+        consumers: ["github"]
+      }
+    ]
+  };
+};
 var releaseConfigForTemplate = (options) => {
   const name = packageShortName(options.packageName);
   const artifacts = [
@@ -105076,9 +105306,13 @@ var releaseConfigForTemplate = (options) => {
       consumers: ["npm"]
     }
   ];
+  const artifactRecipes = [];
   const targets = [configTargetNpm(options)];
   if (options.template !== "npm-only") {
     targets.push(configTargetGitHub(options));
+  }
+  if (options.template === "bun-cli-github") {
+    artifactRecipes.push(configArtifactRecipeBunCli(options));
   }
   if (options.template === "multi-target-homebrew") {
     artifacts.push({
@@ -105107,6 +105341,7 @@ var releaseConfigForTemplate = (options) => {
       tag: "v0.1.0"
     },
     artifacts,
+    ...artifactRecipes.length === 0 ? {} : { artifactRecipes },
     targets,
     strict: true,
     evidenceDirectory: ".release/evidence/{version}"

@@ -57,6 +57,7 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
 ])
 
 const expectedTemplateTags = new Map<string, ReadonlyArray<string>>([
+  ["bun-cli-github", ["GitHubReleaseTarget", "NpmRegistryTarget"]],
   ["multi-target-homebrew", ["GitHubReleaseTarget", "HomebrewTapTarget", "NpmRegistryTarget"]],
   ["multi-target-scoop", ["GitHubReleaseTarget", "NpmRegistryTarget", "ScoopBucketTarget"]],
   ["npm-github", ["GitHubReleaseTarget", "NpmRegistryTarget"]],

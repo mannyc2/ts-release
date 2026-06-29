@@ -18,6 +18,7 @@ The CLI can preview or write these configs:
 
 ```sh
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo
+bun run cli init --template bun-cli-github --package @scope/pkg --repo owner/repo
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --write
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --package-manager npm --write
 ```
@@ -26,8 +27,16 @@ Available config templates:
 
 - `npm-only`: existing npm package with GitHub Actions trusted publishing.
 - `npm-github`: npm plus GitHub Releases.
+- `bun-cli-github`: npm plus GitHub Releases with a Bun executable artifact recipe.
 - `multi-target-homebrew`: npm, GitHub Releases, and a Homebrew tap.
 - `multi-target-scoop`: npm, GitHub Releases, and a Scoop bucket.
+
+Templates with `artifactRecipes` require an explicit staging step before the
+plan expects those files to exist:
+
+```sh
+bun run cli stage-artifacts --config release.config.json
+```
 
 The npm templates enable provenance, require `packageExists: true`, and set
 `verifyPackageExists: true` so planning includes a read-only `npm view` check

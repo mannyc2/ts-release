@@ -67,5 +67,5 @@ reachable.
 After a successful live release, manually dispatch the `Install Smoke` workflow
 with the published version and tag. It imports the npm package, downloads the
 GitHub Release Linux binary, installs the PyPI wrapper on Linux/macOS/Windows,
-installs from the Homebrew tap on macOS, installs from the Scoop bucket on
-Windows, and checks each CLI install reports the requested version.
+trusts and installs from the Homebrew tap on macOS, installs from the Scoop
+bucket on Windows, and checks each CLI install reports the requested version.

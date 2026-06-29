@@ -137,6 +137,7 @@ jobs:
         run: |
           set -euo pipefail
           brew tap mannyc2/ts-release https://github.com/mannyc2/homebrew-ts-release
+          brew trust mannyc2/ts-release
           brew install ts-release
           ts-release --version | tee version.txt
           grep -F "v$VERSION" version.txt

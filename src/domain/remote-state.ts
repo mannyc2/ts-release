@@ -1,38 +1,8 @@
 import * as Schema from "effect/Schema"
-import { GitTag, ReleaseName, ReleaseVersion } from "./release.js"
+import { GitTag } from "./release.js"
 import { TargetId } from "./target.js"
 
 export type * from "../types/effect-internal.js"
-
-export const NpmRemoteState = Schema.Literals(["missing", "published"])
-export type NpmRemoteState = typeof NpmRemoteState.Type
-
-export const GitHubReleaseAvailability = Schema.Literals(["missing", "draft", "published"])
-export type GitHubReleaseAvailability = typeof GitHubReleaseAvailability.Type
-
-export const ReleaseEligibilityStatus = Schema.Literals(["ready", "complete", "partial", "skipped"])
-export type ReleaseEligibilityStatus = typeof ReleaseEligibilityStatus.Type
-
-export class ReleaseEligibilityInput extends Schema.Class<ReleaseEligibilityInput>("ReleaseEligibilityInput")({
-  packageName: ReleaseName,
-  packageVersion: ReleaseVersion,
-  expectedGithubDraft: Schema.Boolean,
-  npm: NpmRemoteState,
-  github: GitHubReleaseAvailability
-}) {}
-
-export class ReleaseEligibilityDecision extends Schema.Class<ReleaseEligibilityDecision>(
-  "ReleaseEligibilityDecision"
-)({
-  shouldRelease: Schema.Boolean,
-  status: ReleaseEligibilityStatus,
-  reason: Schema.String,
-  strategy: Schema.optionalKey(Schema.String),
-  packageName: Schema.optionalKey(ReleaseName),
-  packageVersion: Schema.optionalKey(ReleaseVersion),
-  githubTag: Schema.optionalKey(GitTag),
-  source: Schema.optionalKey(Schema.String)
-}) {}
 
 export class GitHubReleaseMissing extends Schema.TaggedClass<GitHubReleaseMissing>()("GitHubReleaseMissing", {
   targetId: TargetId,

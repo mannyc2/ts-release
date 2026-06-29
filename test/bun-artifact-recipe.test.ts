@@ -4,7 +4,11 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { stageAllArtifactRecipes } from "../src/artifacts/registry.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { BunExecutableArtifactRecipe } from "../src/domain/artifact.js"
+import {
+  BunExecutableArtifactRecipe,
+  bunExecutableCompileTargetVariant,
+  bunExecutableOutputVariant
+} from "../src/domain/artifact.js"
 import { ReleaseIdentity } from "../src/domain/release.js"
 import {
   BunExecutableBuildInput,
@@ -49,6 +53,46 @@ const portablePath = (path: string): string =>
   path.replaceAll("\\", "/")
 
 describe("Bun executable artifact recipe adapter", () => {
+  it("maps Bun compile targets to installable artifact variants", () => {
+    expect(bunExecutableCompileTargetVariant("bun-linux-x64-baseline")).toMatchObject({
+      os: "linux",
+      arch: "x64",
+      libc: "glibc",
+      targetTriple: "bun-linux-x64-baseline"
+    })
+    expect(bunExecutableCompileTargetVariant("bun-linux-arm64-musl")).toMatchObject({
+      os: "linux",
+      arch: "arm64",
+      libc: "musl",
+      targetTriple: "bun-linux-arm64-musl"
+    })
+    expect(bunExecutableCompileTargetVariant("bun-darwin-arm64")).toMatchObject({
+      os: "darwin",
+      arch: "arm64",
+      targetTriple: "bun-darwin-arm64"
+    })
+    expect(bunExecutableCompileTargetVariant("bun-windows-x64-baseline")).toMatchObject({
+      os: "windows",
+      arch: "x64",
+      executableExtension: ".exe",
+      targetTriple: "bun-windows-x64-baseline"
+    })
+  })
+
+  it("merges Bun variant install overrides without changing target facts", () => {
+    expect(bunExecutableOutputVariant("bun-windows-x64-baseline", {
+      binaryName: "release",
+      installPath: "bin/release"
+    })).toMatchObject({
+      os: "windows",
+      arch: "x64",
+      executableExtension: ".exe",
+      binaryName: "release",
+      installPath: "bin/release",
+      targetTriple: "bun-windows-x64-baseline"
+    })
+  })
+
   const calls: Array<BunExecutableBuildInput> = []
   const TestLayer = Layer.mergeAll(
     makeBunArtifactRecipeRegistryLayer(async (input) => {
@@ -204,7 +248,11 @@ describe("Bun executable artifact recipe adapter", () => {
                 id: "cli-windows-x64",
                 target: "bun-windows-x64-baseline",
                 path: "dist/release-windows-x64.exe",
-                consumers: ["github"]
+                consumers: ["github"],
+                variant: {
+                  binaryName: "release",
+                  installPath: "bin/release"
+                }
               }
             ]
           }
@@ -213,5 +261,9 @@ describe("Bun executable artifact recipe adapter", () => {
       }))
 
       expect(intent.artifactRecipes?.[0]?._tag).toBe("BunExecutableArtifactRecipe")
+      const recipe = intent.artifactRecipes?.[0]
+      if (recipe?._tag === "BunExecutableArtifactRecipe") {
+        expect(recipe.outputs[4]?.variant?.binaryName).toBe("release")
+      }
     }))
 })

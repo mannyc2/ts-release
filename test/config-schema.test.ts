@@ -14,7 +14,7 @@ import {
   ValidateReleaseConfigFileOptions,
   validateReleaseConfigFile
 } from "../src/workflows/config.js"
-import { expectTaggedError, minimalConfig } from "./helpers.js"
+import { expectTaggedError, minimalConfig, pypiConfig } from "./helpers.js"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -30,20 +30,13 @@ describe("config schema", () => {
       ])
     }))
 
-  it.effect("decodes package-manifest identity and release decision strategies", () =>
+  it.effect("decodes package-manifest identity", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(JSON.stringify({
         identity: {
           _tag: "PackageManifestReleaseIdentitySource",
           commit: "HEAD",
           tagTemplate: "v{version}"
-        },
-        releaseDecision: {
-          _tag: "IntentFilesReleaseDecision",
-          directory: ".release/intents",
-          packagePath: "package.json",
-          tagTemplate: "v{version}",
-          requireIntent: true
         },
         artifacts: [],
         targets: [],
@@ -52,7 +45,6 @@ describe("config schema", () => {
       }))
 
       expect("_tag" in intent.identity ? intent.identity._tag : undefined).toBe("PackageManifestReleaseIdentitySource")
-      expect(intent.releaseDecision?._tag).toBe("IntentFilesReleaseDecision")
     }))
 
   it.effect("decodes structured npm trusted publishing config", () =>
@@ -90,6 +82,42 @@ describe("config schema", () => {
         "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":false},"
       )
       const error = yield* parseReleaseIntent(config).pipe(Effect.flip)
+
+      expectTaggedError(error, "ConfigValidationError")
+    }))
+
+  it.effect("decodes structured PyPI trusted publishing config", () =>
+    Effect.gen(function*() {
+      const intent = yield* parseReleaseIntent(pypiConfig({
+        usernameEnv: undefined,
+        passwordEnv: undefined,
+        trustedPublishing: {
+          provider: "github-actions",
+          workflow: "release.yml",
+          publisherConfigured: true
+        }
+      }))
+      const pypi = intent.targets.find((target) => target.id === "pypi")
+
+      expect(pypi?._tag).toBe("PyPiRegistryTarget")
+      if (pypi?._tag === "PyPiRegistryTarget") {
+        expect(pypi.trustedPublishing?.provider).toBe("github-actions")
+        expect(pypi.trustedPublishing?.workflow).toBe("release.yml")
+        expect(pypi.trustedPublishing?.publisherConfigured).toBe(true)
+      }
+    }))
+
+  it.effect("requires PyPI trusted publisher setup acknowledgement", () =>
+    Effect.gen(function*() {
+      const error = yield* parseReleaseIntent(pypiConfig({
+        usernameEnv: undefined,
+        passwordEnv: undefined,
+        trustedPublishing: {
+          provider: "github-actions",
+          workflow: "release.yml",
+          publisherConfigured: false
+        }
+      })).pipe(Effect.flip)
 
       expectTaggedError(error, "ConfigValidationError")
     }))

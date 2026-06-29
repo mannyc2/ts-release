@@ -1,11 +1,13 @@
 # Release Templates
 
 Templates are copyable starting points for new repositories. They use
-placeholder names and may reference artifacts that you still need to build.
+placeholder names and may reference artifacts that you still need to build or
+stage before package-manager targets can consume them.
 The checked-in JSON templates are the same policy shape produced by `release
 init`.
 
-After copying a template, preview the release plan first:
+After copying a template, stage declared artifacts when the template has
+`artifactRecipes`, then preview the distribution plan:
 
 ```sh
 bun run cli plan --config release.config.json --format text
@@ -27,12 +29,14 @@ Available config templates:
 
 - `npm-only`: existing npm package with GitHub Actions trusted publishing.
 - `npm-github`: npm plus GitHub Releases.
-- `bun-cli-github`: npm plus GitHub Releases with a Bun executable artifact recipe.
+- `bun-cli-github`: binary-first distribution with a Bun executable artifact recipe, npm package publishing, and GitHub Release assets.
 - `multi-target-homebrew`: npm, GitHub Releases, and a Homebrew tap.
 - `multi-target-scoop`: npm, GitHub Releases, and a Scoop bucket.
 
-Templates with `artifactRecipes` require an explicit staging step before the
-plan expects those files to exist:
+Templates with `artifactRecipes` require an explicit staging step before target
+planning expects those files to exist. The Bun CLI template derives
+installable variant metadata such as operating system, architecture, Linux libc,
+and Windows `.exe` extension from each compile target:
 
 ```sh
 bun run cli stage-artifacts --config release.config.json

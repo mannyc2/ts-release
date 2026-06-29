@@ -1,9 +1,9 @@
 name: ts-release
-description: Plan, validate, and run ts-release workflows from GitHub Actions.
+description: Plan, validate, and run ts-release distribution workflows from GitHub Actions.
 author: mannyc2
 inputs:
   command:
-    description: plan, validate-config, eligibility, check-intent, doctor, check-auth, check-ci, validate, run, or reconcile.
+    description: plan, validate-config, doctor, check-auth, check-ci, validate, run, or reconcile.
     required: false
     default: plan
   config:
@@ -19,7 +19,7 @@ inputs:
     required: false
     default: "true"
   plan-path:
-    description: Path where command plan writes the rendered release plan.
+    description: Path where command plan writes the rendered distribution plan.
     required: false
     default: release-plan.md
   fail-on-warnings:
@@ -58,19 +58,15 @@ outputs:
   release_version:
     description: Planned release version.
   operation_count:
-    description: Number of operations in the release plan.
+    description: Number of operations in the distribution plan.
   irreversible_operation_count:
-    description: Number of irreversible operations in the release plan.
+    description: Number of irreversible operations in the distribution plan.
   target_count:
-    description: Number of targets in the release plan.
+    description: Number of targets in the distribution plan.
   evidence_directory:
-    description: Evidence directory for the release plan.
+    description: Evidence directory for the distribution plan.
   plan_path:
     description: Path written by command plan.
-  should_release:
-    description: true when command eligibility determines the selected strategy should release.
-  eligibility_status:
-    description: Eligibility status from command eligibility.
   status:
     description: Final action command status.
 runs:

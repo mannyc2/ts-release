@@ -1,0 +1,167 @@
+name: Install Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to install.
+        required: true
+        default: "0.0.7"
+      release_tag:
+        description: GitHub Release tag that owns the binary assets.
+        required: true
+        default: "v0.0.7"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: install-smoke-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  npm-package:
+    name: npm package import
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install and import npm package
+        run: |
+          set -euo pipefail
+          mkdir smoke-npm
+          cd smoke-npm
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "@mannyc1/ts-release@$VERSION"
+          node --input-type=module <<'JS'
+          const workflows = await import("@mannyc1/ts-release/workflows")
+          if (workflows.Distribution === undefined) {
+            throw new Error("Distribution workflow export is missing")
+          }
+          console.log(`npm package import ok for ${process.env.VERSION}`)
+          JS
+
+  github-release-assets:
+    name: GitHub Release assets
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+
+    steps:
+      - name: Download all binary assets and run Linux x64 asset
+        run: |
+          set -euo pipefail
+          assets=(
+            "ts-release-$VERSION-linux-x64"
+            "ts-release-$VERSION-linux-arm64"
+            "ts-release-$VERSION-darwin-x64"
+            "ts-release-$VERSION-darwin-arm64"
+            "ts-release-$VERSION-windows-x64.exe"
+          )
+          for asset in "${assets[@]}"; do
+            curl -fsSLO "https://github.com/mannyc2/ts-release/releases/download/$RELEASE_TAG/$asset"
+            test -s "$asset"
+          done
+          chmod +x "ts-release-$VERSION-linux-x64"
+          "./ts-release-$VERSION-linux-x64" --version | tee version.txt
+          grep -F "v$VERSION" version.txt
+
+  pypi-unix:
+    name: PyPI wheel (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install and run PyPI CLI wrapper
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install "ts-release==$VERSION"
+          ts-release --version | tee version.txt
+          grep -F "v$VERSION" version.txt
+
+  pypi-windows:
+    name: PyPI wheel (windows-latest)
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install and run PyPI CLI wrapper
+        shell: pwsh
+        run: |
+          py -3 -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip
+          .\.venv\Scripts\python.exe -m pip install "ts-release==$env:VERSION"
+          $output = .\.venv\Scripts\ts-release.exe --version
+          $output
+          if ($output -notlike "*v$env:VERSION*") {
+            throw "Expected ts-release version output to contain v$env:VERSION"
+          }
+
+  homebrew:
+    name: Homebrew install
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Install from Homebrew tap
+        run: |
+          set -euo pipefail
+          brew tap mannyc2/ts-release https://github.com/mannyc2/homebrew-ts-release
+          brew install ts-release
+          ts-release --version | tee version.txt
+          grep -F "v$VERSION" version.txt
+
+  scoop:
+    name: Scoop install
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+          "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install from Scoop bucket
+        shell: pwsh
+        run: |
+          scoop bucket add ts-release https://github.com/mannyc2/scoop-ts-release
+          scoop install ts-release
+          $output = ts-release --version
+          $output
+          if ($output -notlike "*v$env:VERSION*") {
+            throw "Expected ts-release version output to contain v$env:VERSION"
+          }

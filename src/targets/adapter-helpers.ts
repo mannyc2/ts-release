@@ -1,5 +1,11 @@
 import * as Effect from "effect/Effect"
-import { ArtifactInventoryItem, Checksum } from "../domain/artifact.js"
+import {
+  ArtifactArchitecture,
+  ArtifactInventoryItem,
+  ArtifactLibc,
+  ArtifactOperatingSystem,
+  Checksum
+} from "../domain/artifact.js"
 import {
   CommandSpec,
   PublishCommandOperation,
@@ -49,6 +55,20 @@ interface ArtifactErrorReasons {
   readonly checksumReason: string
 }
 
+export interface ArtifactVariantCriteria {
+  readonly os?: ArtifactOperatingSystem | undefined
+  readonly arch?: ArtifactArchitecture | undefined
+  readonly libc?: ArtifactLibc | undefined
+  readonly binaryName?: string | undefined
+  readonly executableExtension?: string | undefined
+  readonly installPath?: string | undefined
+  readonly targetTriple?: string | undefined
+}
+
+interface ArtifactInventory {
+  readonly artifacts: ReadonlyArray<ArtifactInventoryItem>
+}
+
 interface UnsupportedCatalogTokenEnvOptions {
   readonly targetId: string
   readonly targetLabel: string
@@ -61,6 +81,11 @@ interface CatalogGitPushOperationOptions {
   readonly description: string
   readonly mutability: TargetMutability
   readonly directory: string | undefined
+}
+
+interface CatalogGitPublishOperationOptions extends CatalogGitPushOperationOptions {
+  readonly filePath: string
+  readonly commitMessage: string
 }
 
 export const noAuthCommand = (
@@ -103,6 +128,49 @@ export const catalogGitPushOperation = (options: CatalogGitPushOperationOptions)
     command: noAuthCommand("git", ["-C", options.directory ?? ".", "push"])
   })
 }
+
+const catalogFilePath = (filePath: string, directory: string | undefined): string => {
+  if (directory === undefined) {
+    return filePath
+  }
+  const normalizedFilePath = filePath.replaceAll("\\", "/")
+  const normalizedDirectory = directory.replaceAll("\\", "/").replace(/\/+$/, "")
+  const prefix = `${normalizedDirectory}/`
+  return normalizedFilePath.startsWith(prefix)
+    ? normalizedFilePath.slice(prefix.length)
+    : filePath
+}
+
+export const catalogGitPublishOperations = (
+  options: CatalogGitPublishOperationOptions
+): ReadonlyArray<PublishCommandOperation> => [
+  PublishCommandOperation.make({
+    id: `${options.id}:add`,
+    targetId: options.targetId,
+    description: `Stage ${catalogPathBaseName(options.filePath)} for ${options.targetId}.`,
+    risk: "writes-local",
+    command: noAuthCommand("git", [
+      "-C",
+      options.directory ?? ".",
+      "add",
+      catalogFilePath(options.filePath, options.directory)
+    ])
+  }),
+  PublishCommandOperation.make({
+    id: `${options.id}:commit`,
+    targetId: options.targetId,
+    description: `Commit ${catalogPathBaseName(options.filePath)} for ${options.targetId}.`,
+    risk: "writes-local",
+    command: noAuthCommand("git", [
+      "-C",
+      options.directory ?? ".",
+      "commit",
+      "-m",
+      options.commitMessage
+    ])
+  }),
+  catalogGitPushOperation(options)
+]
 
 export const validationStrategyForDryRun = (dryRunSupport: TargetDryRunSupport): TargetValidationStrategy => {
   if (dryRunSupport === "native") {
@@ -194,6 +262,65 @@ export const findRequiredArtifact = Effect.fn("findRequiredArtifact")(function*(
   missingReason: string
 ) {
   const artifact = model.artifacts.find((item) => item.id === artifactId)
+  if (artifact === undefined) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId,
+        reason: missingReason
+      })
+    )
+  }
+  return artifact
+})
+
+const artifactMatchesVariantCriteria = (
+  artifact: ArtifactInventoryItem,
+  criteria: ArtifactVariantCriteria
+): boolean => {
+  const variant = artifact.variant
+  if (variant === undefined) {
+    return false
+  }
+  return (criteria.os === undefined || variant.os === criteria.os) &&
+    (criteria.arch === undefined || variant.arch === criteria.arch) &&
+    (criteria.libc === undefined || variant.libc === criteria.libc) &&
+    (criteria.binaryName === undefined || variant.binaryName === criteria.binaryName) &&
+    (criteria.executableExtension === undefined || variant.executableExtension === criteria.executableExtension) &&
+    (criteria.installPath === undefined || variant.installPath === criteria.installPath) &&
+    (criteria.targetTriple === undefined || variant.targetTriple === criteria.targetTriple)
+}
+
+export const findArtifactsByVariant = (
+  model: ArtifactInventory,
+  criteria: ArtifactVariantCriteria
+): ReadonlyArray<ArtifactInventoryItem> =>
+  model.artifacts.filter((artifact) => artifactMatchesVariantCriteria(artifact, criteria))
+
+export const findRequiredArtifactVariant = Effect.fn("findRequiredArtifactVariant")(function*(
+  model: ArtifactInventory,
+  targetId: string,
+  criteria: ArtifactVariantCriteria,
+  missingReason: string,
+  multipleReason: string = "Multiple artifacts matched the requested installable variant."
+) {
+  const artifacts = findArtifactsByVariant(model, criteria)
+  if (artifacts.length === 0) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId,
+        reason: missingReason
+      })
+    )
+  }
+  if (artifacts.length > 1) {
+    return yield* Effect.fail(
+      PlanConstructionError.make({
+        targetId,
+        reason: multipleReason
+      })
+    )
+  }
+  const artifact = artifacts[0]
   if (artifact === undefined) {
     return yield* Effect.fail(
       PlanConstructionError.make({

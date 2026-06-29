@@ -11,6 +11,10 @@ import {
   renderPlanOperationExplanation,
   renderPlanSummary
 } from "../src/planner/render-plan.js"
+import {
+  findArtifactsByVariant,
+  findRequiredArtifactVariant
+} from "../src/targets/adapter-helpers.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { expectTaggedError, homebrewConfig, minimalConfig, releaseConfig, scoopConfig } from "./helpers.js"
 
@@ -369,14 +373,44 @@ describe("planner", () => {
         expect(artifact).toMatchObject({
           id: "cli-linux-x64",
           path: "dist/release-0.1.0-linux-x64",
-          format: "file",
+          format: "executable",
           consumers: ["github"],
           sizeBytes: 15,
           checksum: {
             algorithm: "sha256",
             value: "636f6d70696c65642062696e617279"
+          },
+          variant: {
+            os: "linux",
+            arch: "x64",
+            libc: "glibc",
+            targetTriple: "bun-linux-x64-baseline"
           }
         })
+      }))
+
+    it.effect("selects artifact inventory items by installable variant", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [],
+          artifactRecipes: [bunExecutableRecipe()],
+          targets: []
+        })
+        const plan = yield* createPlan(config)
+        const linuxArtifacts = findArtifactsByVariant(plan, {
+          os: "linux",
+          arch: "x64",
+          libc: "glibc"
+        })
+        const artifact = yield* findRequiredArtifactVariant(
+          plan,
+          "github",
+          { targetTriple: "bun-linux-x64-baseline" },
+          "expected linux binary"
+        )
+
+        expect(linuxArtifacts.map((item) => item.id)).toEqual(["cli-linux-x64"])
+        expect(artifact.id).toBe("cli-linux-x64")
       }))
   })
 
@@ -441,6 +475,101 @@ describe("planner", () => {
         expect(error._tag).toBe("ReleaseNormalizationError")
         if (error._tag === "ReleaseNormalizationError") {
           expect(error.field).toBe("artifactRecipes.release-cli.outputs.cli-linux-x64.path")
+        }
+      }))
+
+    it.effect("rejects recipe variant overrides that contradict the Bun target", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [],
+          artifactRecipes: [
+            bunExecutableRecipe({
+              outputs: [
+                {
+                  id: "cli-linux-x64",
+                  target: "bun-linux-x64-baseline",
+                  path: "dist/release-{version}",
+                  consumers: ["github"],
+                  variant: {
+                    os: "windows"
+                  }
+                }
+              ]
+            })
+          ],
+          targets: []
+        })
+        const error = yield* createPlan(config).pipe(Effect.flip)
+
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifactRecipes.release-cli.outputs.cli-linux-x64.variant.os")
+        }
+      }))
+  })
+
+  layer(Layer.mergeAll(
+    makeTestCommandRunnerLayer({
+      files: new Map([["dist/release-darwin-arm64", "compiled binary"]])
+    }),
+    LiveTargetRegistryLayer
+  ))((it) => {
+    it.effect("preserves direct artifact variant metadata", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [
+            {
+              id: "cli-darwin-arm64",
+              path: "dist/release-darwin-arm64",
+              format: "executable",
+              consumers: ["github"],
+              variant: {
+                os: "darwin",
+                arch: "arm64",
+                binaryName: "release",
+                installPath: "bin/release"
+              }
+            }
+          ],
+          targets: []
+        })
+        const plan = yield* createPlan(config)
+
+        expect(plan.artifacts[0]).toMatchObject({
+          id: "cli-darwin-arm64",
+          format: "executable",
+          variant: {
+            os: "darwin",
+            arch: "arm64",
+            binaryName: "release",
+            installPath: "bin/release"
+          }
+        })
+      }))
+
+    it.effect("rejects impossible direct artifact variants", () =>
+      Effect.gen(function*() {
+        const config = releaseConfig({
+          artifacts: [
+            {
+              id: "cli-darwin-arm64",
+              path: "dist/release-darwin-arm64",
+              format: "executable",
+              consumers: ["github"],
+              variant: {
+                os: "darwin",
+                arch: "arm64",
+                libc: "musl"
+              }
+            }
+          ],
+          targets: []
+        })
+        const error = yield* createPlan(config).pipe(Effect.flip)
+
+        expect(error._tag).toBe("ReleaseNormalizationError")
+        if (error._tag === "ReleaseNormalizationError") {
+          expect(error.field).toBe("artifacts.cli-darwin-arm64.variant.libc")
         }
       }))
   })

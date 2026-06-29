@@ -5,7 +5,12 @@ import {
   PublishCommandOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
-import { PyPiRegistryTarget, TargetCapabilities } from "../domain/target.js"
+import {
+  PyPiRegistryTarget,
+  TargetAuthSetup,
+  TargetCapabilities,
+  TargetRequiredPermission
+} from "../domain/target.js"
 import { PlanConstructionError } from "../planner/errors.js"
 import { PyPiTargetAdapter } from "./adapter.js"
 import {
@@ -14,6 +19,7 @@ import {
   readOnlyCommandValidationOperation,
   rejectNoDryRunInStrictMode,
   targetCapabilitiesFor,
+  validationNoteOperation,
   validationStrategyForDryRun
 } from "./adapter-helpers.js"
 
@@ -21,23 +27,51 @@ export type * from "../types/effect-internal.js"
 
 const twineUsernameEnv = "TWINE_USERNAME"
 const twinePasswordEnv = "TWINE_PASSWORD"
+const trustedPublishingAuthEnvNames = [
+  "ACTIONS_ID_TOKEN_REQUEST_URL",
+  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+]
 
 const envNames = (target: PyPiRegistryTarget): ReadonlyArray<string> =>
-  target.usernameEnv === undefined || target.passwordEnv === undefined ? [] : [target.usernameEnv, target.passwordEnv]
+  target.trustedPublishing !== undefined
+    ? trustedPublishingAuthEnvNames
+    : target.usernameEnv === undefined || target.passwordEnv === undefined
+    ? []
+    : [target.usernameEnv, target.passwordEnv]
+
+const pythonExecutable = (target: PyPiRegistryTarget): string =>
+  target.pythonExecutable ?? "python"
 
 const twineAuthCommand = (
   target: PyPiRegistryTarget,
   args: ReadonlyArray<string>
 ): CommandSpec =>
   CommandSpec.make({
-    executable: "python",
+    executable: pythonExecutable(target),
     args: ["-m", "twine", ...args],
     requiredEnv: envNames(target),
     redactedEnv: envNames(target)
   })
 
+const trustedPublishingAuthSetup = (workflow: string): TargetAuthSetup =>
+  TargetAuthSetup.make({
+    runsIn: "ci",
+    provider: "github-actions",
+    workflow,
+    requiredPermissions: [
+      TargetRequiredPermission.make({ name: "id-token", value: "write" })
+    ],
+    prerequisites: ["pypi-trusted-publisher-configured"]
+  })
+
 export const pypiTargetCapabilities = (target: PyPiRegistryTarget): TargetCapabilities =>
-  targetCapabilitiesFor(target, validationStrategyForDryRun(target.dryRunSupport))
+  targetCapabilitiesFor(
+    target,
+    validationStrategyForDryRun(target.dryRunSupport),
+    target.trustedPublishing === undefined
+      ? undefined
+      : trustedPublishingAuthSetup(target.trustedPublishing.workflow)
+  )
 
 const targetArtifacts = (target: PyPiRegistryTarget, model: ReleaseModel) =>
   model.artifacts.filter((artifact) => artifact.consumers.includes(target.id))
@@ -48,7 +82,7 @@ const pypiDryRunOperation = (target: PyPiRegistryTarget, artifactPaths: Readonly
     targetId: target.id,
     dryRunSupport: target.dryRunSupport,
     nativeDescription: "Validate Python distribution metadata with twine check.",
-    command: noAuthCommand("python", ["-m", "twine", "check", ...artifactPaths]),
+    command: noAuthCommand(pythonExecutable(target), ["-m", "twine", "check", ...artifactPaths]),
     simulatedDescription: "Record simulated PyPI distribution validation.",
     skippedDescription: "Record skipped PyPI distribution validation.",
     simulatedMessage:
@@ -61,15 +95,40 @@ const pypiPublishArgs = (
   artifactPaths: ReadonlyArray<string>
 ): ReadonlyArray<string> => [
   "upload",
+  "--non-interactive",
   "--repository-url",
   target.repositoryUrl,
   ...artifactPaths
 ]
 
+const pypiAuthOperation = (target: PyPiRegistryTarget): ReadonlyArray<Operation> =>
+  target.trustedPublishing === undefined
+    ? []
+    : [
+      validationNoteOperation({
+        id: `${target.id}:twine-trusted-publishing-auth`,
+        targetId: target.id,
+        dryRunSupport: "simulated",
+        simulatedDescription: "Record PyPI trusted publishing authentication mode.",
+        skippedDescription: "Record skipped PyPI trusted publishing authentication mode.",
+        simulatedMessage:
+          `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${target.trustedPublishing.provider}, workflow ${target.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`,
+        skippedMessage: "PyPI trusted publishing authentication validation was skipped."
+      })
+    ]
+
 const validateAuthConfig = (target: PyPiRegistryTarget): Effect.Effect<void, PlanConstructionError> => {
   const hasUsername = target.usernameEnv !== undefined
   const hasPassword = target.passwordEnv !== undefined
 
+  if (target.trustedPublishing !== undefined && (hasUsername || hasPassword)) {
+    return Effect.fail(
+      PlanConstructionError.make({
+        targetId: target.id,
+        reason: "PyPI trusted publishing uses CI OIDC and must not also declare usernameEnv or passwordEnv."
+      })
+    )
+  }
   if (!hasUsername && !hasPassword) {
     return Effect.void
   }
@@ -125,14 +184,15 @@ export const planPyPiOperations = Effect.fn("planPyPiOperations")(function*(
       id: `${target.id}:python-version`,
       targetId: target.id,
       description: "Check Python CLI availability.",
-      command: noAuthCommand("python", ["--version"])
+      command: noAuthCommand(pythonExecutable(target), ["--version"])
     }),
     readOnlyCommandValidationOperation({
       id: `${target.id}:twine-version`,
       targetId: target.id,
       description: "Check Twine CLI availability.",
-      command: noAuthCommand("python", ["-m", "twine", "--version"])
+      command: noAuthCommand(pythonExecutable(target), ["-m", "twine", "--version"])
     }),
+    ...pypiAuthOperation(target),
     pypiDryRunOperation(target, artifactPaths),
     PublishCommandOperation.make({
       id: `${target.id}:twine-upload`,

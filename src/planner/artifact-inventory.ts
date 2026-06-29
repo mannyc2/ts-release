@@ -130,9 +130,11 @@ export const inventoryArtifact = Effect.fn("inventoryArtifact")(function*(
   return ArtifactInventoryItem.make({
     id: artifact.id,
     path: artifact.path,
+    ...(artifact.downloadUrl === undefined ? {} : { downloadUrl: artifact.downloadUrl }),
     format: artifact.format,
     consumers: [...artifact.consumers].sort(),
     sizeBytes: Number(info.size),
-    ...(checksum === undefined ? {} : { checksum })
+    ...(checksum === undefined ? {} : { checksum }),
+    ...(artifact.variant === undefined ? {} : { variant: artifact.variant })
   })
 })

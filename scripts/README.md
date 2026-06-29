@@ -3,8 +3,8 @@
 Scripts in this directory are maintained release tooling, not a scratchpad.
 Use Bun for script entrypoints, keep reusable work in `Effect.fn`, and provide
 runtime layers only at the script boundary. Scripts may import app-owned runtime
-layers when they are dogfooding the official CLI/runtime, but generic release
-logic belongs in `src/`.
+layers when they are dogfooding the official CLI/runtime, but shared
+distribution logic belongs in `src/`.
 
 ## Durable Gates
 

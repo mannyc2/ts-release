@@ -16,15 +16,16 @@ Useful app-local commands:
 
 ```sh
 bun run --cwd apps/release-ts check
+bun run --cwd apps/release-ts cli stage-artifacts --root ../.. --config apps/release-ts/release.config.json
 bun run --cwd apps/release-ts cli plan --root ../.. --config apps/release-ts/release.config.json --format text
 ```
 
 Self-release config lives in `release.config.json`. When invoking the app-local
 CLI for the root package, pass `--root ../..` and keep the config path
-root-relative. App release scripts live in `scripts/` and keep release
-workspace paths root-relative. Root package scripts delegate to these app
-scripts for release eligibility, self-release config checks, the static
-self-release CI diagnostic, and release artifact preparation.
+root-relative. App release scripts live in `scripts/` only for app-owned
+self-release policy checks. Artifact staging goes through the CLI workflow. The
+Bun executable artifact recipe adapter is composed here at the runtime boundary;
+root workflows keep artifact recipes as data until staging is explicitly run.
 
 The repository dogfoods the same safe workflow model recommended to users:
 GitHub Actions checks eligibility first, runs the full release gate only when a

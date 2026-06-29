@@ -16,12 +16,10 @@ logic belongs in `src/`.
 - `check-readme.ts` validates README fenced snippets and package import subpaths.
 - `check-action-bundle.ts` verifies the tracked GitHub Action bundle matches a fresh temporary build through Effect Platform temporary-directory, filesystem, path, and child-process services.
 
-Self-release dogfood scripts are app-owned under `apps/release-ts/scripts/`.
-Root package scripts delegate to those app scripts for release eligibility,
-self-release config checks, and release artifact preparation. Release artifact
-preparation uses Effect Platform filesystem, path, and child-process services
-where the Bun runtime exposes them, while keeping `Bun.build` for standalone
-CLI compilation.
+Self-release dogfood policy checks are app-owned under `apps/release-ts/scripts/`.
+Root package scripts delegate there for self-release config checks. Release
+artifact staging goes through the official CLI workflow so build-system-specific
+work stays in artifact recipe adapters at the app runtime boundary.
 
 ## Internal Helpers
 

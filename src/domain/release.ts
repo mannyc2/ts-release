@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { ArtifactIntent, ArtifactInventoryItem } from "./artifact.js"
+import { ArtifactIntent, ArtifactInventoryItem, ArtifactRecipe } from "./artifact.js"
 import { Operation } from "./operation.js"
 import { TargetCapabilities, TargetConfig } from "./target.js"
 
@@ -126,6 +126,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   identity: ReleaseIdentitySource,
   releaseDecision: Schema.optionalKey(ReleaseDecisionStrategy),
   artifacts: Schema.Array(ArtifactIntent),
+  artifactRecipes: Schema.optionalKey(Schema.Array(ArtifactRecipe)),
   targets: Schema.Array(TargetConfig),
   strict: Schema.optionalKey(Schema.Boolean),
   evidenceDirectory: Schema.optionalKey(Schema.String)

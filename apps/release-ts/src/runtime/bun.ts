@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer"
 import { makePlatformCommandRunnerLayer } from "@mannyc1/ts-release/host/platform"
 import type { PlatformCommandRunnerOptions } from "@mannyc1/ts-release/host/platform"
 import { LiveReleaseWorkflowLayer } from "@mannyc1/ts-release/workflows/live"
+import { LiveBunArtifactRecipeRegistryLayer } from "./bun-artifact-recipes.js"
 
 export const makeBunCommandRuntimeLayer = (
   options: PlatformCommandRunnerOptions = {}
@@ -17,9 +18,23 @@ export const makeBunReleaseWorkflowRuntimeLayer = (
 ) =>
   Layer.mergeAll(
     makeBunCommandRuntimeLayer(options),
-    LiveReleaseWorkflowLayer.pipe(Layer.provideMerge(BunHttpClient.layer))
+    LiveReleaseWorkflowLayer.pipe(Layer.provideMerge(BunHttpClient.layer)),
+    LiveBunArtifactRecipeRegistryLayer
   )
 
 export const BunCommandRuntimeLayer = makeBunCommandRuntimeLayer()
 
 export const BunReleaseWorkflowRuntimeLayer = makeBunReleaseWorkflowRuntimeLayer()
+
+export {
+  LiveBunArtifactRecipeRegistryLayer,
+  liveBunExecutableBuild,
+  makeBunArtifactRecipeAdapter,
+  makeBunArtifactRecipeRegistryLayer
+} from "./bun-artifact-recipes.js"
+
+export type {
+  BunExecutableBuild,
+  BunExecutableBuildInput,
+  BunExecutableBuildOutput
+} from "./bun-artifact-recipes.js"

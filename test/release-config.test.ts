@@ -14,7 +14,6 @@ const selfReleaseConfigPath = "apps/release-ts/release.config.json"
 const config = readFileSync(selfReleaseConfigPath, "utf8")
 
 const releaseArtifactFiles = [
-  ".release/artifacts/mannyc1-ts-release-0.0.3.tgz",
   ".release/artifacts/ts-release-0.0.3-linux-x64",
   ".release/artifacts/ts-release-0.0.3-linux-arm64",
   ".release/artifacts/ts-release-0.0.3-darwin-x64",

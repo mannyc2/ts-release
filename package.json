@@ -35,6 +35,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./artifacts/adapter": {
+      "types": "./dist/artifacts/adapter.d.ts",
+      "default": "./dist/artifacts/adapter.js"
+    },
+    "./artifacts/registry": {
+      "types": "./dist/artifacts/registry.d.ts",
+      "default": "./dist/artifacts/registry.js"
+    },
     "./config/errors": {
       "types": "./dist/config/errors.d.ts",
       "default": "./dist/config/errors.js"
@@ -200,7 +208,7 @@
     "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/action-command.test.ts",
     "check:portable": "bun run check:core && bun run check:app && bun run check:action",
     "check:release": "bun run check:self-release-config && bun run check:self-release-ci && bun run check:portable",
-    "release:artifacts": "bun run apps/release-ts/scripts/build-release-artifacts.ts",
+    "release:artifacts": "bun run cli stage-artifacts --config apps/release-ts/release.config.json --format text",
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {

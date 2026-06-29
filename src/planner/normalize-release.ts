@@ -2,7 +2,12 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { ArtifactIntent, artifactInventoryOrder } from "../domain/artifact.js"
+import {
+  ArtifactIntent,
+  ArtifactRecipe,
+  BunExecutableArtifactRecipe,
+  artifactInventoryOrder
+} from "../domain/artifact.js"
 import { CommandSpec } from "../domain/operation.js"
 import {
   PackageManifestReleaseIdentitySource,
@@ -255,16 +260,61 @@ const expandArtifactIntent = (
     ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum })
   })
 
+export const artifactIntentsFromRecipe = (
+  recipe: ArtifactRecipe,
+  identity: ReleaseIdentity
+): ReadonlyArray<ArtifactIntent> => {
+  if (recipe instanceof BunExecutableArtifactRecipe) {
+    return recipe.outputs.map((output) =>
+      ArtifactIntent.make({
+        id: output.id,
+        path: renderReleaseTemplate(output.path, identity),
+        format: "file",
+        consumers: [...output.consumers]
+      })
+    )
+  }
+  return []
+}
+
+export const artifactIntentsFromRecipes = (
+  recipes: ReadonlyArray<ArtifactRecipe>,
+  identity: ReleaseIdentity
+): ReadonlyArray<ArtifactIntent> =>
+  recipes.flatMap((recipe) => artifactIntentsFromRecipe(recipe, identity))
+
 export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(function*(
   intent: ReleaseIntent,
   root: string = ".",
   configPath: string | undefined = undefined
 ) {
-  yield* validateUnique(intent.artifacts.map((artifact) => artifact.id), "artifacts.id")
+  const artifactRecipes = intent.artifactRecipes ?? []
+  yield* validateUnique(artifactRecipes.map((recipe) => recipe.id), "artifactRecipes.id")
   yield* validateUnique(intent.targets.map((target) => target.id), "targets.id")
 
   const identity = yield* resolveReleaseIdentitySource(intent.identity, root)
-  const artifacts = intent.artifacts.map((artifact) => expandArtifactIntent(artifact, identity))
+  for (const recipe of artifactRecipes) {
+    if (recipe instanceof BunExecutableArtifactRecipe) {
+      yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.entrypoint`, recipe.entrypoint)
+      yield* validateUnique(
+        recipe.outputs.map((output) => output.id),
+        `artifactRecipes.${recipe.id}.outputs.id`
+      )
+      for (const output of recipe.outputs) {
+        const outputPath = renderReleaseTemplate(output.path, identity)
+        yield* validateNonEmptySafeRelativePath(
+          `artifactRecipes.${recipe.id}.outputs.${output.id}.path`,
+          outputPath
+        )
+      }
+    }
+  }
+
+  const artifacts = [
+    ...intent.artifacts.map((artifact) => expandArtifactIntent(artifact, identity)),
+    ...artifactIntentsFromRecipes(artifactRecipes, identity)
+  ]
+  yield* validateUnique(artifacts.map((artifact) => artifact.id), "artifacts.id")
 
   for (const artifact of artifacts) {
     yield* validateNonEmptySafeRelativePath(`artifacts.${artifact.id}.path`, artifact.path)

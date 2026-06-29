@@ -52,6 +52,7 @@ bun run cli doctor --config release.config.json --format text
 bun run cli check-auth --config release.config.json --target npm --format text
 bun run cli check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
 bun run cli check-intent --config release.config.json --format text
+bun run cli stage-artifacts --config release.config.json --format text
 bun run cli render --config release.config.json --execute
 bun run cli validate --config release.config.json
 bun run cli print --config release.config.json
@@ -216,6 +217,19 @@ The optional `$schema` key powers editor completion and does not change release 
 
 Paths are release-workspace relative and may not be absolute or contain parent traversal. `evidenceDirectory` may include the literal `{version}` placeholder, which is resolved during planning so each release version can use its own evidence directory.
 Artifact paths may use `{version}`, `{name}`, and `{normalizedName}`. `normalizedName` removes a leading npm scope marker and replaces `/` with `-`, matching generated self-release artifact names such as `mannyc1-ts-release-0.1.0.tgz`.
+
+`artifactRecipes` are an optional staging layer for projects that want
+ts-release to prepare artifacts before planning. The first supported recipe is
+`BunExecutableArtifactRecipe`, which calls the Bun runtime adapter to compile a
+standalone CLI matrix. Staging is explicit:
+
+```sh
+bun run cli stage-artifacts --config release.config.json
+```
+
+After staging, the derived outputs are treated like ordinary file artifacts in
+the release plan. Recipe and output `id` values are arbitrary project-local
+identifiers, not hardcoded ts-release binary names.
 
 ## Release Strategies
 
@@ -385,11 +399,13 @@ Config templates are intentionally narrow:
 
 - `npm-only` for an existing npm package using GitHub Actions trusted publishing.
 - `npm-github` for npm plus GitHub Releases.
+- `bun-cli-github` for npm plus GitHub Releases with a Bun CLI artifact matrix.
 - `multi-target-homebrew` for npm, GitHub Releases, and a Homebrew tap.
 - `multi-target-scoop` for npm, GitHub Releases, and a Scoop bucket.
 
 ```sh
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo
+bun run cli init --template bun-cli-github --package @scope/pkg --repo owner/repo
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --write
 bun run cli init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --package-manager npm --write
 bun run cli plan --config release.config.json --format text
@@ -494,7 +510,7 @@ Example configs and templates are checked through the TypeScript workflow path:
 bun run check:examples
 ```
 
-This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release scripts live under `apps/release-ts/scripts`, with root package scripts delegating to them. The self-release config must pass `bun run check:self-release-config`, and the workflow must pass `bun run check:self-release-ci`, before portable release checks proceed. It derives name and version from the root `package.json`, uses `{version}` artifact templates, and keeps `identity.commit` as `HEAD` for stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
+This repository also includes a self-release config at `apps/release-ts/release.config.json` that targets both npm and GitHub for the scoped `@mannyc1/ts-release` package. The app-owned self-release policy guard lives under `apps/release-ts/scripts`, with root package scripts delegating to it. The self-release config must pass `bun run check:self-release-config`, and the workflow must pass `bun run check:self-release-ci`, before portable release checks proceed. It derives name and version from the root `package.json`, uses `{version}` artifact templates, and keeps `identity.commit` as `HEAD` for stored-config convenience. Generated plans resolve `HEAD` to the current short commit, and the self-release guard requires a committed Git checkout with clean tracked files.
 
 ```sh
 bun run check:self-release-config
@@ -512,7 +528,7 @@ bun run cli plan --config apps/release-ts/release.config.json --format text
 bun run --cwd apps/release-ts cli plan --root ../.. --config apps/release-ts/release.config.json --format text
 ```
 
-`release:artifacts` delegates to `apps/release-ts/scripts/build-release-artifacts.ts` and writes ignored files under `.release/artifacts`: the npm package tarball and standalone CLI executables for Linux, macOS, and Windows. GitHub Actions runs on protected `main` and checks release eligibility before the full release check. When `should_release` is true, the plan job runs `check:release`, builds artifacts, records a Markdown release plan, uploads evidence, and does not execute release operations. The protected `execute` job uses the reviewed `.release/artifacts` download, grants `contents: write` and `id-token: write`, and runs approved execution with npm trusted publishing OIDC instead of an npm token.
+`release:artifacts` runs the same `stage-artifacts` workflow used by the CLI and writes ignored standalone CLI executables under `.release/artifacts` for Linux, macOS, and Windows. GitHub Actions runs on protected `main` and checks release eligibility before the full release check. When `should_release` is true, the plan job runs `check:release`, builds artifacts, records a Markdown release plan, uploads evidence, and does not execute release operations. The protected `execute` job uses the reviewed `.release/artifacts` download, grants `contents: write` and `id-token: write`, and runs approved execution with npm trusted publishing OIDC instead of an npm token.
 
 ### Local Release Auth
 

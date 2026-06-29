@@ -2,6 +2,105 @@
 
 Portable artifact and package-manager distribution planning for TypeScript projects.
 
+## How To Install
+
+Choose the install surface that matches how you want to use `ts-release`.
+
+### Homebrew
+
+Installs the macOS CLI from the published Homebrew tap:
+
+```sh
+brew install mannyc2/ts-release/ts-release
+ts-release --version
+```
+
+### uv
+
+Installs the CLI wrapper from PyPI into an isolated tool environment:
+
+```sh
+uv tool install ts-release
+ts-release --version
+```
+
+### pipx
+
+Installs the CLI wrapper from PyPI with pipx:
+
+```sh
+pipx install ts-release
+ts-release --version
+```
+
+### pip
+
+Installs the PyPI package into the active Python environment:
+
+```sh
+python -m pip install ts-release
+ts-release --version
+```
+
+### Scoop
+
+Installs the Windows CLI from the published Scoop bucket:
+
+```powershell
+scoop bucket add ts-release https://github.com/mannyc2/scoop-ts-release
+scoop install ts-release
+ts-release --version
+```
+
+### npm
+
+Installs the TypeScript library/API package:
+
+```sh
+npm install @mannyc1/ts-release
+```
+
+### Bun
+
+Installs the TypeScript library/API package with Bun:
+
+```sh
+bun add @mannyc1/ts-release effect@beta @effect/platform-bun@beta
+```
+
+### GitHub Releases
+
+Downloads a raw platform binary from the GitHub Release:
+
+```sh
+curl -fsSLO https://github.com/mannyc2/ts-release/releases/download/v0.0.7/ts-release-0.0.7-linux-x64
+chmod +x ts-release-0.0.7-linux-x64
+./ts-release-0.0.7-linux-x64 --version
+```
+
+The CLI is currently distributed through Homebrew, Scoop, PyPI, and GitHub
+Release binaries. The npm package is the reusable TypeScript library surface.
+
+## Use The CLI
+
+Use the installed CLI to scaffold, inspect, stage, and render a release config:
+
+```sh
+ts-release init --template bun-cli-github --package @scope/pkg --repo owner/repo --github-actions --write
+ts-release validate-config --config release.config.json
+ts-release stage-artifacts --config release.config.json --format text
+ts-release plan --config release.config.json --format text
+ts-release render --config release.config.json
+```
+
+These commands do not publish anything unless an execution command receives
+explicit approval. To publish through the full ordered workflow, pass both
+execution approvals:
+
+```sh
+ts-release run --config release.config.json --execute --approve-irreversible
+```
+
 `@mannyc1/ts-release` helps you declare the thing you want to distribute, stage
 platform-specific artifacts when needed, and feed those artifacts into
 target-specific package managers, catalogs, release hosts, and install surfaces.
@@ -16,9 +115,9 @@ Use it when you need to answer:
 - Which operations are only rendering data, and which ones publish externally?
 - What evidence proves what was staged, rendered, validated, or executed?
 
-The root package is the reusable TypeScript library. This repo also contains the
-first-party Bun CLI app in `apps/release-ts` and the bundled GitHub Action in
-`apps/ts-release-action`.
+The npm package is the reusable TypeScript library. The package-manager CLI
+wraps the same release planning model for teams that want a command-line
+workflow.
 
 ## What It Does
 
@@ -52,39 +151,22 @@ not replace full build pipelines, compilers, signing, or installer toolchains.
 The job is to keep shared artifact inventory and target-specific distribution
 data in one typed plan.
 
-## Quick Start
-
-Inside this repository, the CLI script runs the first-party Bun app:
-
-```sh
-bun run cli init --template bun-cli-github --package @scope/pkg --repo owner/repo --github-actions --write
-bun run cli validate-config --config release.config.json
-bun run cli stage-artifacts --config release.config.json --format text
-bun run cli plan --config release.config.json --format text
-bun run cli render --config release.config.json
-```
+## CLI Workflow
 
 The first useful path is artifact-first: write or scaffold a config, stage any
 declared artifact recipes, plan the target distribution work, then render
-package-manager files or release metadata. These commands do not publish
-anything unless an execution command receives explicit approval.
-
-To publish through the full ordered workflow, pass both execution approvals:
-
-```sh
-bun run cli run --config release.config.json --execute --approve-irreversible
-```
+package-manager files or release metadata.
 
 `run` renders generated files, validates preflights, executes approved publish
-operations, and verifies remote state. The lower-level commands are available
-when you want a manual pause between phases:
+operations, and verifies remote state. Lower-level commands are available when
+you want a manual pause between phases:
 
 ```sh
-bun run cli render --config release.config.json --execute
-bun run cli validate --config release.config.json
-bun run cli print --config release.config.json
-bun run cli execute --config release.config.json --execute --approve-irreversible
-bun run cli verify --config release.config.json
+ts-release render --config release.config.json --execute
+ts-release validate --config release.config.json
+ts-release print --config release.config.json
+ts-release execute --config release.config.json --execute --approve-irreversible
+ts-release verify --config release.config.json
 ```
 
 ## GitHub Actions
@@ -176,10 +258,10 @@ location.
 Useful config commands:
 
 ```sh
-bun run cli schema --out release-config.schema.json
-bun run cli validate-config --config release.config.json --format text
-bun run cli plan --config release.config.json --format summary
-bun run cli explain npm:npm-publish --config release.config.json
+ts-release schema --out release-config.schema.json
+ts-release validate-config --config release.config.json --format text
+ts-release plan --config release.config.json --format summary
+ts-release explain npm:npm-publish --config release.config.json
 ```
 
 Paths are release-workspace relative. Artifact paths can interpolate
@@ -226,9 +308,9 @@ Static diagnostics help catch missing auth and unsafe workflow setup before an
 approved run:
 
 ```sh
-bun run cli doctor --config release.config.json --format text
-bun run cli check-auth --config release.config.json --target npm --format text
-bun run cli check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
+ts-release doctor --config release.config.json --format text
+ts-release check-auth --config release.config.json --target npm --format text
+ts-release check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
 ```
 
 Diagnostics report confidence levels instead of pretending local checks can
@@ -290,7 +372,13 @@ subpath list in `package.json`.
 
 ## Templates And Examples
 
-Config templates live in `templates/`:
+Create a starter config with `init --template`:
+
+```sh
+ts-release init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --write
+```
+
+Available templates:
 
 - `npm-only`
 - `npm-github`
@@ -298,20 +386,11 @@ Config templates live in `templates/`:
 - `multi-target-homebrew`
 - `multi-target-scoop`
 
-Runnable fixtures live in `examples/` and are checked through the same workflow
-path as user configs.
-
-```sh
-bun run build
-cd examples/multi-target
-bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --format text
-```
-
 Templates with `artifactRecipes` need an explicit staging step before target
 planning expects the generated files to exist:
 
 ```sh
-bun run cli stage-artifacts --config release.config.json --format text
+ts-release stage-artifacts --config release.config.json --format text
 ```
 
 ## Evidence
@@ -357,25 +436,10 @@ published release, and can publish a matching draft with `--execute`.
 It does not replay immutable registry publishes:
 
 ```sh
-bun run cli reconcile --config release.config.json --execute
+ts-release reconcile --config release.config.json --execute
 ```
 
-## Repository Checks
-
-Use Bun for package management, scripts, and tests:
-
-```sh
-bun run check:release
-bun run check:examples
-bun run check:readme
-```
-
-Real-tool integration checks are opt-in:
-
-```sh
-bun run test:integration:tools
-RELEASE_INTEGRATION_GITHUB=1 bun run test:integration:tools
-```
+## More Docs
 
 See `ARCHITECTURE.md` for module boundaries, `SPEC.md` for the design contract,
 `templates/README.md` for starter configs, and `examples/README.md` for runnable

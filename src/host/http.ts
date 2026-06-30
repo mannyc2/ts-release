@@ -38,6 +38,7 @@ export interface TestHttpResponse {
 export interface TestReleaseHttpOptions {
   readonly responses?: ReadonlyMap<string, TestHttpResponse> | undefined
   readonly timestamps?: ReadonlyArray<string> | undefined
+  readonly onRequest?: ((request: HttpRequestSpec) => void) | undefined
 }
 
 export const httpRequestKey = (request: HttpRequestSpec): string =>
@@ -59,6 +60,7 @@ export const makeTestReleaseHttpLayer = (
   return Layer.succeed(ReleaseHttp)({
     runJson: (request) =>
       Effect.gen(function*() {
+        options.onRequest?.(request)
         const startedAt = nextTimestamp()
         const response = responses.get(httpRequestKey(request))
         if (response === undefined) {

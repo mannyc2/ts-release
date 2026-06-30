@@ -84,6 +84,12 @@ const operationDetailLines = (operation: Operation): ReadonlyArray<string> => {
       `expect: status ${operation.expectedStatus}, checks ${operation.checks.length}`
     ]
   }
+  if (operation._tag === "PublishGitHubReleaseOperation") {
+    return [`github-api: create release ${operation.repository} ${operation.tag} assets=${operation.assets.length}`]
+  }
+  if (operation._tag === "VerifyGitHubReleaseOperation") {
+    return [`github-api: verify release ${operation.repository} ${operation.tag} assets=${operation.assetNames.length}`]
+  }
   return []
 }
 
@@ -141,6 +147,12 @@ export const renderPlanText = (plan: ReleasePlan): string => {
     if (operation._tag === "VerifyHttpOperation") {
       lines.push(`  http: ${operation.request.method} ${operation.request.url}`)
       lines.push(`  expect: status ${operation.expectedStatus}, checks ${operation.checks.length}`)
+    }
+    if (operation._tag === "PublishGitHubReleaseOperation") {
+      lines.push(`  github-api: create release ${operation.repository} ${operation.tag} assets=${operation.assets.length}`)
+    }
+    if (operation._tag === "VerifyGitHubReleaseOperation") {
+      lines.push(`  github-api: verify release ${operation.repository} ${operation.tag} assets=${operation.assetNames.length}`)
     }
     const approval = operationApprovalRequirements(operation)
     if (approval.requiresExecute) {
@@ -244,6 +256,14 @@ export const renderPlanMarkdown = (plan: ReleasePlan): string => {
       lines.push(`- http: ${operation.request.method} ${operation.request.url}`)
       lines.push(`- expected status: ${operation.expectedStatus}`)
       lines.push(`- checks: ${operation.checks.length}`)
+    }
+    if (operation._tag === "PublishGitHubReleaseOperation") {
+      lines.push(`- github-api: create release ${operation.repository} ${operation.tag}`)
+      lines.push(`- assets: ${operation.assets.length}`)
+    }
+    if (operation._tag === "VerifyGitHubReleaseOperation") {
+      lines.push(`- github-api: verify release ${operation.repository} ${operation.tag}`)
+      lines.push(`- assets: ${operation.assetNames.length}`)
     }
   }
 

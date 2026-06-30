@@ -1,31 +1,31 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
+  "project": {
     "name": "release-example-pypi",
+    "packageName": "release-example-pypi",
     "version": "0.1.0",
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "artifacts": [
-    {
-      "id": "wheel",
-      "path": "artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
-      "format": "file",
-      "consumers": ["pypi"]
-    }
-  ],
-  "targets": [
-    {
-      "_tag": "PyPiRegistryTarget",
-      "id": "pypi",
+  "build": {
+    "artifacts": [
+      {
+        "id": "wheel",
+        "path": "artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
+        "format": "file",
+        "consumers": [
+          "pypi"
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "pypi": {
       "repositoryUrl": "https://test.pypi.org/legacy/",
       "usernameEnv": "TWINE_USERNAME",
-      "passwordEnv": "TWINE_PASSWORD",
-      "dryRunSupport": "native",
-      "mutability": "immutable",
-      "recovery": "publish-new-version"
+      "passwordEnv": "TWINE_PASSWORD"
     }
-  ],
+  },
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidence": ".release/evidence"
 }

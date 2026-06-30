@@ -15,7 +15,10 @@ import {
 } from "../apps/ts-release-action/src/action.js"
 import { ActionOptions, type ActionCommand, type ActionFormat, type ActionRuntime } from "../apps/ts-release-action/src/input.js"
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
-import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
+import {
+  makeNodeReleaseWorkflowRuntimeLayer,
+  UnsupportedNodeArtifactRecipeRegistryLayer
+} from "../apps/ts-release-action/src/runtime/node.js"
 import { CommandSpec } from "../src/domain/operation.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
 import { commandKey } from "../src/host/test.js"
@@ -26,7 +29,7 @@ import {
   minimalConfig,
   noOpConfig,
   partialWorkflowConfig,
-  reconcileConfig
+  TestGitHubApiLayer,
 } from "./helpers.js"
 
 interface ActionOptionsOverrides {
@@ -37,10 +40,9 @@ interface ActionOptionsOverrides {
   readonly planPath?: string
   readonly failOnWarnings?: boolean
   readonly target?: string
-  readonly workflow?: string
   readonly runtime?: ActionRuntime
   readonly execute?: boolean
-  readonly approveIrreversible?: boolean
+  readonly approvePublish?: boolean
   readonly uploadEvidence?: boolean
   readonly evidenceArtifactName?: string
 }
@@ -63,10 +65,9 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
     planPath: overrides.planPath ?? "release-plan.md",
     failOnWarnings: overrides.failOnWarnings ?? false,
     ...(overrides.target === undefined ? {} : { target: overrides.target }),
-    ...(overrides.workflow === undefined ? {} : { workflow: overrides.workflow }),
     runtime: overrides.runtime ?? "bundled",
     execute: overrides.execute ?? false,
-    approveIrreversible: overrides.approveIrreversible ?? false,
+    approvePublish: overrides.approvePublish ?? false,
     uploadEvidence: overrides.uploadEvidence ?? false,
     evidenceArtifactName: overrides.evidenceArtifactName ?? "release-evidence"
   })
@@ -132,10 +133,9 @@ describe("ts-release action", () => {
       "plan-path:",
       "fail-on-warnings:",
       "target:",
-      "workflow:",
       "runtime:",
       "execute:",
-      "approve-irreversible:",
+      "approve-publish:",
       "upload-evidence:",
       "evidence-artifact-name:"
     ]) {
@@ -169,7 +169,7 @@ describe("ts-release action", () => {
 
       expect(io.outputs.get("release_name")).toBe("release")
       expect(io.outputs.get("release_version")).toBe("0.1.0")
-      expect(io.outputs.get("operation_count")).toBe("10")
+      expect(io.outputs.get("operation_count")).toBe("8")
       expect(io.outputs.get("irreversible_operation_count")).toBe("1")
       expect(io.outputs.get("target_count")).toBe("2")
       expect(io.outputs.get("evidence_directory")).toBe(".release/evidence")
@@ -243,7 +243,7 @@ describe("ts-release action", () => {
 
       await runAction(
         actionOptions(root, {
-          command: "validate",
+          command: "verify",
           config,
           uploadEvidence: true
         }),
@@ -255,7 +255,7 @@ describe("ts-release action", () => {
       expect(io.outputs.get("status")).toBe("passed")
       expect(artifact.uploads).toHaveLength(1)
       expect(artifact.uploads[0]?.rootDirectory).toBe(join(root, ".release", "evidence"))
-      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("validation.json"))).toBe(true)
+      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("verification.json"))).toBe(true)
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -271,7 +271,9 @@ describe("ts-release action", () => {
           env: new Map([["NPM_TOKEN", "npm_secret"]]),
           commands: new Map()
         }),
+        UnsupportedNodeArtifactRecipeRegistryLayer,
         LiveTargetRegistryLayer,
+        TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
       )
@@ -293,49 +295,37 @@ describe("ts-release action", () => {
     }
   })
 
-  test("fail-on-warnings promotes warning diagnostics to failure", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-warnings-"))
+  test("fail-on-warnings leaves informational diagnostics non-fatal", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-info-diagnostics-"))
     try {
       const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig)
-      await mkdir(join(root, ".github", "workflows"), { recursive: true })
-      await writeFile(
-        join(root, ".github", "workflows", "release.yml"),
-        [
-          "name: Release",
-          "on:",
-          "  workflow_dispatch:",
-          "jobs:",
-          "  plan:",
-          "    runs-on: ubuntu-latest",
-          "    steps:",
-          "      - run: bun run cli validate-config --config release.config.json",
-          "      - run: bun run cli plan --config release.config.json --format markdown > release-plan.md",
-          "  execute:",
-          "    runs-on: ubuntu-latest",
-          "    environment: release",
-          "    permissions:",
-          "      contents: write",
-          "    steps:",
-          "      - run: bun run cli run --config release.config.json --execute --approve-irreversible",
-          ""
-        ].join("\n")
-      )
+      await writeFile(configPath, noOpConfig)
       const io = makeFakeActionIo()
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map(),
+          commands: new Map()
+        }),
+        UnsupportedNodeArtifactRecipeRegistryLayer,
+        LiveTargetRegistryLayer,
+        TestGitHubApiLayer,
+        makeTestReleaseHttpLayer({ responses: new Map() }),
+        BunServices.layer
+      )
 
       await runAction(
         actionOptions(root, {
-          command: "check-ci",
+          command: "doctor",
           format: "text",
-          workflow: ".github/workflows/release.yml",
           failOnWarnings: true
         }),
         io,
-        makeNodeReleaseWorkflowRuntimeLayer({ root })
+        layer
       )
 
-      expect(io.outputs.get("status")).toBe("failed")
-      expect(io.failures.join("\n")).toContain("fail-on-warnings")
+      expect(io.outputs.get("status")).toBe("passed")
+      expect(io.summaries.join("\n")).toContain("info")
+      expect(io.failures).toEqual([])
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -410,8 +400,31 @@ describe("ts-release action", () => {
     )
   })
 
-  test("validate writes validation evidence and can upload it through a fake artifact client", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-validate-"))
+  test("build stages artifacts with the bundled action runtime", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-build-"))
+    try {
+      await writeFile(join(root, "release.config.json"), noOpConfig)
+      const io = makeFakeActionIo()
+
+      await runAction(
+        actionOptions(root, {
+          command: "build",
+          format: "text"
+        }),
+        io,
+        makeNodeReleaseWorkflowRuntimeLayer({ root })
+      )
+
+      expect(io.outputs.get("status")).toBe("passed")
+      expect(io.outputs.get("release_name")).toBe("release")
+      expect(io.summaries.join("\n")).toContain("staged artifact recipes: 0")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("verify writes verification evidence and can upload it through a fake artifact client", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-verify-"))
     try {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
@@ -419,7 +432,7 @@ describe("ts-release action", () => {
 
       await runAction(
         actionOptions(root, {
-          command: "validate",
+          command: "verify",
           uploadEvidence: true,
           evidenceArtifactName: "audit-evidence"
         }),
@@ -428,19 +441,19 @@ describe("ts-release action", () => {
         artifact.client
       )
 
-      const evidence = await readFile(join(root, ".release", "evidence", "validation.json"), "utf8")
+      const evidence = await readFile(join(root, ".release", "evidence", "verification.json"), "utf8")
       expect(evidence).toContain("\"releaseName\": \"release\"")
       expect(io.outputs.get("status")).toBe("passed")
       expect(artifact.uploads).toHaveLength(1)
       expect(artifact.uploads[0]?.name).toBe("audit-evidence")
-      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("validation.json"))).toBe(true)
+      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("verification.json"))).toBe(true)
     } finally {
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test("run without execute fails without approval", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-run-approval-"))
+  test("release without execute fails without approval", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-release-approval-"))
     try {
       await writeFile(join(root, "release.config.json"), homebrewConfig())
       await mkdir(join(root, "artifacts"), { recursive: true })
@@ -448,7 +461,7 @@ describe("ts-release action", () => {
       const io = makeFakeActionIo()
 
       await runAction(
-        actionOptions(root, { command: "run" }),
+        actionOptions(root, { command: "release" }),
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
@@ -460,17 +473,17 @@ describe("ts-release action", () => {
     }
   })
 
-  test("run with a no-target config writes one workflow evidence file", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-run-noop-"))
+  test("release with a no-target config writes one workflow evidence file", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-release-noop-"))
     try {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
 
       await runAction(
         actionOptions(root, {
-          command: "run",
+          command: "release",
           execute: true,
-          approveIrreversible: true
+          approvePublish: true
         }),
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
@@ -485,7 +498,7 @@ describe("ts-release action", () => {
     }
   })
 
-  test("run writes partial workflow evidence on validation failure", async () => {
+  test("release writes partial workflow evidence on validation failure", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-action-partial-evidence-"))
     try {
       await writeFile(join(root, "release.config.json"), partialWorkflowConfig)
@@ -511,7 +524,9 @@ describe("ts-release action", () => {
             }]
           ])
         }),
+        UnsupportedNodeArtifactRecipeRegistryLayer,
         LiveTargetRegistryLayer,
+        TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
       )
@@ -520,9 +535,9 @@ describe("ts-release action", () => {
 
       await runAction(
         actionOptions(root, {
-          command: "run",
+          command: "release",
           execute: true,
-          approveIrreversible: true,
+          approvePublish: true,
           uploadEvidence: true
         }),
         io,
@@ -544,54 +559,4 @@ describe("ts-release action", () => {
     }
   })
 
-  test("reconcile writes reconciliation evidence with fake HTTP state", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-action-reconcile-"))
-    try {
-      await writeFile(join(root, "release.config.json"), reconcileConfig)
-      await mkdir(join(root, "dist"), { recursive: true })
-      await writeFile(join(root, "dist", "release.tgz"), "fake archive")
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([
-            ["NPM_TOKEN", "npm_secret"],
-            ["GH_TOKEN", "gh_secret"]
-          ]),
-          commands: new Map()
-        }),
-        makeTestReleaseHttpLayer({
-          responses: new Map([
-            ["GET\u0000https://api.github.com/repos/owner/repo/releases/tags/v0.1.0", {
-              status: 200,
-              json: {
-                tag_name: "v0.1.0",
-                name: "release 0.1.0",
-                draft: true,
-                prerelease: false,
-                assets: [{ name: "release.tgz" }]
-              }
-            }]
-          ])
-        }),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
-      const io = makeFakeActionIo()
-
-      await runAction(
-        actionOptions(root, {
-          command: "reconcile",
-          execute: true
-        }),
-        io,
-        layer
-      )
-
-      const evidence = await readFile(join(root, ".release", "evidence", "reconciliation.json"), "utf8")
-      expect(evidence).toContain("github:gh-release-publish-draft:command")
-      expect(evidence).not.toContain("npm:npm-publish")
-      expect(io.outputs.get("status")).toBe("passed")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
 })

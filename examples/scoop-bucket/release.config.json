@@ -1,23 +1,26 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
+  "project": {
     "name": "release-example-scoop",
+    "packageName": "release-example-scoop",
     "version": "0.1.0",
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "artifacts": [
-    {
-      "id": "archive",
-      "path": "artifacts/release-example-scoop-0.1.0.zip",
-      "format": "zip",
-      "consumers": ["scoop"]
-    }
-  ],
-  "targets": [
-    {
-      "_tag": "ScoopBucketTarget",
-      "id": "scoop",
+  "build": {
+    "artifacts": [
+      {
+        "id": "archive",
+        "path": "artifacts/release-example-scoop-0.1.0.zip",
+        "format": "zip",
+        "consumers": [
+          "scoop"
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "scoop": {
       "repository": "owner/scoop-bucket",
       "manifestName": "release-example-scoop",
       "manifestPath": ".release/generated/release-example-scoop.json",
@@ -26,12 +29,9 @@
       "description": "Example Scoop manifest for a release artifact",
       "license": "MIT",
       "url": "https://github.com/owner/release-example-scoop/releases/download/v0.1.0/release-example-scoop-0.1.0.zip",
-      "bin": "release-example-scoop.exe",
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-index",
-      "recovery": "manual"
+      "bin": "release-example-scoop.exe"
     }
-  ],
+  },
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidence": ".release/evidence"
 }

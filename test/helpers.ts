@@ -7,6 +7,7 @@ import * as Layer from "effect/Layer"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
 import { commandKey } from "../src/host/test.js"
 import type { CommandSpec } from "../src/domain/operation.js"
+import { GitHubApi, GitHubApiError } from "../src/targets/github-api.js"
 
 export const runEffect = <A, E, R>(
   effect: Effect.Effect<A, E, R>,
@@ -27,157 +28,108 @@ export const expectExitFailureTag = <A, E>(exit: Exit.Exit<A, E>, tag: string): 
   }
 }
 
+export const TestGitHubApiLayer = Layer.succeed(GitHubApi)({
+  createRelease: (request) =>
+    Effect.fail(
+      GitHubApiError.make({
+        operation: "createRelease",
+        url: request.repository,
+        reason: "No test GitHub API response configured."
+      })
+    ),
+  inspectRelease: (request) =>
+    Effect.fail(
+      GitHubApiError.make({
+        operation: "inspectRelease",
+        url: request.repository,
+        reason: "No test GitHub API response configured."
+      })
+    )
+})
+
 export const minimalConfig = JSON.stringify({
-  identity: {
+  project: {
     name: "release",
+    packageName: "release",
     version: "0.1.0",
     commit: "abc123",
     tag: "v0.1.0"
   },
-  artifacts: [
-    {
+  build: {
+    npmPackage: {
       id: "package",
       path: ".",
-      format: "directory",
       consumers: ["npm"]
     }
-  ],
-  targets: [
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
+  },
+  publish: {
+    npm: {
       registry: "https://registry.npmjs.org",
       packageName: "release",
       packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
+      tokenEnv: "NPM_TOKEN"
     },
-    {
-      _tag: "GitHubReleaseTarget",
-      id: "github",
+    github: {
       repository: "owner/repo",
       tokenEnv: "GH_TOKEN",
-      draft: true,
-      dryRunSupport: "simulated",
-      mutability: "mutable-release",
-      recovery: "delete-and-recreate"
+      draft: true
     }
-  ],
+  },
   strict: true,
-  evidenceDirectory: ".release/evidence"
+  evidence: ".release/evidence"
 })
 
 export const noOpConfig = JSON.stringify({
-  identity: {
+  project: {
     name: "release",
     version: "0.1.0",
     commit: "abc123",
     tag: "v0.1.0"
   },
-  artifacts: [],
-  targets: [],
+  publish: {},
   strict: true,
-  evidenceDirectory: ".release/evidence"
+  evidence: ".release/evidence"
 })
 
 export const partialWorkflowConfig = JSON.stringify({
-  identity: {
+  project: {
     name: "release",
+    packageName: "release",
     version: "0.1.0",
     commit: "abc123",
     tag: "v0.1.0"
   },
-  artifacts: [
-    {
+  build: {
+    npmPackage: {
       id: "package",
       path: ".",
-      format: "directory",
       consumers: ["npm"]
     },
-    {
-      id: "archive",
-      path: "artifacts/release-0.1.0.tgz",
-      format: "tarball",
-      consumers: ["homebrew"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "HomebrewTapTarget",
-      id: "homebrew",
+    artifacts: [
+      {
+        id: "archive",
+        path: "artifacts/release-0.1.0.tgz",
+        format: "tarball",
+        consumers: ["homebrew"]
+      }
+    ]
+  },
+  publish: {
+    homebrew: {
       repository: "owner/homebrew-tap",
       formulaName: "release",
       formulaPath: ".release/generated/release.rb",
-      artifactId: "archive",
-      dryRunSupport: "simulated",
-      mutability: "mutable-index",
-      recovery: "manual"
+      artifactId: "archive"
     },
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
+    npm: {
       registry: "https://registry.npmjs.org",
       packageName: "release",
       packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
+      tokenEnv: "NPM_TOKEN"
     }
-  ],
-  strict: true,
-  evidenceDirectory: ".release/evidence"
-})
-
-export const reconcileConfig = JSON.stringify({
-  identity: {
-    name: "release",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
   },
-  artifacts: [
-    {
-      id: "github-asset",
-      path: "dist/release.tgz",
-      format: "tarball",
-      consumers: ["github"]
-    },
-    {
-      id: "package",
-      path: ".",
-      format: "directory",
-      consumers: ["npm"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "GitHubReleaseTarget",
-      id: "github",
-      repository: "owner/repo",
-      tokenEnv: "GH_TOKEN",
-      draft: false,
-      prerelease: false,
-      dryRunSupport: "simulated",
-      mutability: "mutable-release",
-      recovery: "delete-and-recreate"
-    },
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
-      registry: "https://registry.npmjs.org",
-      packageName: "release",
-      packagePath: ".",
-      tokenEnv: "NPM_TOKEN",
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
-    }
-  ],
   strict: true,
-  evidenceDirectory: ".release/evidence"
+  evidence: ".release/evidence"
 })
 
 export interface CliCommandResponse {
@@ -255,6 +207,140 @@ export const releaseIdentity = (overrides: Record<string, unknown> = {}) => ({
   ...overrides
 })
 
+const compactProjectFromIdentity = (identity: Record<string, unknown>): Record<string, unknown> => {
+  if (identity._tag === "PackageManifestReleaseIdentitySource") {
+    return {
+      ...(typeof identity.packagePath === "string" ? { packagePath: identity.packagePath } : {}),
+      ...(typeof identity.commit === "string" ? { commit: identity.commit } : {}),
+      ...(typeof identity.tagTemplate === "string" ? { tagTemplate: identity.tagTemplate } : {}),
+      ...(typeof identity.notes === "string" ? { notes: identity.notes } : {})
+    }
+  }
+  return {
+    ...(typeof identity.name === "string" ? { name: identity.name, packageName: identity.name } : {}),
+    ...(typeof identity.version === "string" ? { version: identity.version } : {}),
+    ...(typeof identity.commit === "string" ? { commit: identity.commit } : {}),
+    ...(typeof identity.tag === "string" ? { tag: identity.tag } : {}),
+    ...(typeof identity.notes === "string" ? { notes: identity.notes } : {})
+  }
+}
+
+const copyFields = (
+  source: Record<string, unknown>,
+  fields: ReadonlyArray<string>
+): Record<string, unknown> => {
+  const copied: Record<string, unknown> = {}
+  for (const field of fields) {
+    if (source[field] !== undefined) {
+      copied[field] = source[field]
+    }
+  }
+  return copied
+}
+
+const compactPublishFromTargets = (targets: ReadonlyArray<Record<string, unknown>>): Record<string, unknown> => {
+  const publish: Record<string, unknown> = {}
+  for (const target of targets) {
+    if (target._tag === "NpmRegistryTarget") {
+      publish.npm = copyFields(target, [
+        "registry",
+        "packageName",
+        "packagePath",
+        "tokenEnv",
+        "trustedPublishing",
+        "access",
+        "provenance"
+      ])
+    }
+    if (target._tag === "GitHubReleaseTarget") {
+      publish.github = copyFields(target, ["repository", "tokenEnv", "draft", "prerelease"])
+    }
+    if (target._tag === "HomebrewTapTarget") {
+      publish.homebrew = copyFields(target, [
+        "repository",
+        "formulaName",
+        "formulaPath",
+        "artifactId",
+        "artifactIds",
+        "homepage",
+        "description",
+        "url",
+        "tapDirectory",
+        "installPath",
+        "tokenEnv"
+      ])
+    }
+    if (target._tag === "PyPiRegistryTarget") {
+      publish.pypi = copyFields(target, [
+        "repositoryUrl",
+        "pythonExecutable",
+        "usernameEnv",
+        "passwordEnv",
+        "trustedPublishing"
+      ])
+    }
+    if (target._tag === "ScoopBucketTarget") {
+      publish.scoop = copyFields(target, [
+        "repository",
+        "manifestName",
+        "manifestPath",
+        "artifactId",
+        "homepage",
+        "description",
+        "license",
+        "url",
+        "bin",
+        "bucketDirectory",
+        "tokenEnv"
+      ])
+    }
+  }
+  return publish
+}
+
+const compactBuildFromOldInputs = (
+  artifacts: ReadonlyArray<Record<string, unknown>>,
+  artifactRecipes: ReadonlyArray<Record<string, unknown>> | undefined
+): Record<string, unknown> | undefined => {
+  const build: Record<string, unknown> = {}
+  if (artifacts.length > 0) {
+    build.artifacts = artifacts
+  }
+  const pypiWheels: Array<Record<string, unknown>> = []
+  for (const recipe of artifactRecipes ?? []) {
+    if (recipe._tag === "BunExecutableArtifactRecipe") {
+      build.bun = {
+        ...copyFields(recipe, ["id", "minify"]),
+        entry: recipe.entrypoint,
+        outputs: recipe.outputs
+      }
+    }
+    if (recipe._tag === "PyPiWheelArtifactRecipe") {
+      pypiWheels.push(copyFields(recipe, [
+        "id",
+        "path",
+        "wheelTag",
+        "packageName",
+        "moduleName",
+        "consoleScript",
+        "summary",
+        "homepage",
+        "license",
+        "requiresPython",
+        "binaries",
+        "consumers"
+      ]))
+    }
+  }
+  if (pypiWheels.length === 1) {
+    build.pypiWheel = pypiWheels[0]
+  }
+  if (pypiWheels.length > 1) {
+    build.pypiWheel = pypiWheels
+  }
+  return Object.keys(build).length === 0 ? undefined : build
+}
+
 export const releaseConfig = ({
   identity = releaseIdentity(),
   artifacts,
@@ -271,12 +357,13 @@ export const releaseConfig = ({
   readonly evidenceDirectory?: string
 }) =>
   JSON.stringify({
-    identity,
-    artifacts,
-    ...(artifactRecipes === undefined ? {} : { artifactRecipes }),
-    targets,
+    project: compactProjectFromIdentity(identity),
+    ...(compactBuildFromOldInputs(artifacts, artifactRecipes) === undefined
+      ? {}
+      : { build: compactBuildFromOldInputs(artifacts, artifactRecipes) }),
+    publish: compactPublishFromTargets(targets),
     strict,
-    evidenceDirectory
+    evidence: evidenceDirectory
   })
 
 export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>

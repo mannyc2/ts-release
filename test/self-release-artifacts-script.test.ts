@@ -52,12 +52,10 @@ const fakeWheel = (wheelTag: string): string => [
 ].join("\n")
 
 const releaseConfig = () => ({
-  artifacts: [],
-  artifactRecipes: [
-    {
-      _tag: "BunExecutableArtifactRecipe",
+  build: {
+    bun: {
       id: "release-ts-cli",
-      entrypoint: "apps/release-ts/src/cli/main.ts",
+      entry: "apps/release-ts/src/cli/main.ts",
       outputs: [
         {
           id: "cli-darwin-arm64",
@@ -73,39 +71,34 @@ const releaseConfig = () => ({
         }
       ]
     },
-    {
-      _tag: "PyPiWheelArtifactRecipe",
-      id: "pypi-wheel-linux-x64",
-      path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-      wheelTag: "py3-none-manylinux2014_x86_64",
-      packageName: "ts-release",
-      moduleName: "ts_release",
-      consoleScript: "ts-release",
-      summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      homepage: "https://github.com/mannyc2/ts-release",
-      license: "MIT",
-      requiresPython: ">=3.8",
-      binaries: [],
-      consumers: ["pypi"]
-    }
-  ],
-  targets: [
-    {
-      _tag: "HomebrewTapTarget",
-      id: "homebrew",
+    pypiWheel: [
+      {
+        id: "pypi-wheel-linux-x64",
+        path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
+        wheelTag: "py3-none-manylinux2014_x86_64",
+        packageName: "ts-release",
+        moduleName: "ts_release",
+        consoleScript: "ts-release",
+        summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
+        homepage: "https://github.com/mannyc2/ts-release",
+        license: "MIT",
+        requiresPython: ">=3.8",
+        binaries: [],
+        consumers: ["pypi"]
+      }
+    ]
+  },
+  publish: {
+    homebrew: {
       formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb"
     },
-    {
-      _tag: "ScoopBucketTarget",
-      id: "scoop",
+    scoop: {
       manifestPath: ".release/catalogs/scoop-ts-release/bucket/ts-release.json"
     },
-    {
-      _tag: "PyPiRegistryTarget",
-      id: "pypi",
+    pypi: {
       pythonExecutable: "python3"
     }
-  ]
+  }
 })
 
 const prepareWorkspace = async (): Promise<string> => {

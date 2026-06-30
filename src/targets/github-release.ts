@@ -1,9 +1,4 @@
-import {
-  CommandSpec,
-  HttpEnvHeader,
-  HttpHeader,
-  HttpRequestSpec
-} from "../domain/operation.js"
+import { HttpEnvHeader, HttpHeader, HttpRequestSpec } from "../domain/operation.js"
 import { ReleaseModel, ReleasePlan } from "../domain/release.js"
 import { GitHubReleaseTarget } from "../domain/target.js"
 
@@ -16,18 +11,6 @@ export interface GitHubReleaseContext {
 
 export const githubAuthEnvNames = (target: GitHubReleaseTarget): ReadonlyArray<string> =>
   target.tokenEnv === undefined ? [] : [target.tokenEnv]
-
-export const githubGhCommand = (
-  target: GitHubReleaseTarget,
-  args: ReadonlyArray<string>,
-  includeAuth: boolean
-): CommandSpec =>
-  CommandSpec.make({
-    executable: "gh",
-    args: [...args],
-    requiredEnv: includeAuth ? githubAuthEnvNames(target) : [],
-    redactedEnv: includeAuth ? githubAuthEnvNames(target) : []
-  })
 
 export const githubTargetArtifacts = (
   target: GitHubReleaseTarget,
@@ -51,34 +34,6 @@ export const githubReleaseTag = (context: GitHubReleaseContext): string =>
 
 export const githubReleaseTitle = (context: GitHubReleaseContext): string =>
   `${context.identity.name} ${context.identity.version}`
-
-export const githubReleaseCreateArgs = (
-  target: GitHubReleaseTarget,
-  context: GitHubReleaseContext
-): ReadonlyArray<string> => {
-  const args: Array<string> = [
-    "release",
-    "create",
-    githubReleaseTag(context),
-    "--repo",
-    target.repository,
-    "--title",
-    githubReleaseTitle(context)
-  ]
-  if (target.draft === true) {
-    args.push("--draft")
-  }
-  if (target.prerelease === true) {
-    args.push("--prerelease")
-  }
-  if (context.identity.notes !== undefined) {
-    args.push("--notes", context.identity.notes)
-  }
-  for (const artifact of githubTargetArtifacts(target, context)) {
-    args.push(artifact.path)
-  }
-  return args
-}
 
 export const githubReleaseApiUrl = (target: GitHubReleaseTarget, tag: string): string =>
   `https://api.github.com/repos/${target.repository}/releases/tags/${encodeURIComponent(tag)}`
@@ -117,44 +72,3 @@ export const githubReleaseRequestSpec = (
   tag: string
 ): HttpRequestSpec =>
   githubApiGetRequestSpec(target, githubReleaseApiUrl(target, tag))
-
-export const githubReleaseCreateCommand = (
-  target: GitHubReleaseTarget,
-  context: GitHubReleaseContext
-): CommandSpec =>
-  githubGhCommand(target, githubReleaseCreateArgs(target, context), true)
-
-export const githubReleaseViewCommand = (
-  target: GitHubReleaseTarget,
-  context: GitHubReleaseContext
-): CommandSpec =>
-  githubGhCommand(
-    target,
-    [
-      "release",
-      "view",
-      githubReleaseTag(context),
-      "--repo",
-      target.repository,
-      "--json",
-      "tagName,name,isDraft,isPrerelease,assets"
-    ],
-    true
-  )
-
-export const githubReleasePublishDraftCommand = (
-  target: GitHubReleaseTarget,
-  context: GitHubReleaseContext
-): CommandSpec =>
-  githubGhCommand(
-    target,
-    [
-      "release",
-      "edit",
-      githubReleaseTag(context),
-      "--repo",
-      target.repository,
-      "--draft=false"
-    ],
-    true
-  )

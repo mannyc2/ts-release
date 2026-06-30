@@ -93,11 +93,13 @@ const runCommand = async (args: ReadonlyArray<string>): Promise<CommandResult> =
   }
 }
 
-const targetById = (targets: ReadonlyArray<unknown>, id: string): Record<string, unknown> | undefined =>
-  targets.find((target): target is Record<string, unknown> => isRecord(target) && target.id === id)
+const publishTarget = (publish: Record<string, unknown>, id: string): Record<string, unknown> | undefined => {
+  const target = publish[id]
+  return isRecord(target) ? target : undefined
+}
 
 const collectArtifactPaths = (
-  recipes: ReadonlyArray<unknown>,
+  build: Record<string, unknown>,
   packageName: string,
   packageVersion: string
 ): {
@@ -106,29 +108,30 @@ const collectArtifactPaths = (
 } => {
   const binaries: Array<string> = []
   const wheels: Array<{ readonly path: string; readonly wheelTag: string | undefined }> = []
-  for (const recipe of recipes) {
+  const bunRecipe = build.bun
+  if (isRecord(bunRecipe) && Array.isArray(bunRecipe.outputs)) {
+    for (const output of bunRecipe.outputs) {
+      if (!isRecord(output)) {
+        continue
+      }
+      const path = stringField(output, "path")
+      if (path !== undefined) {
+        binaries.push(expandReleaseTemplate(path, packageName, packageVersion))
+      }
+    }
+  }
+  const pypiWheel = build.pypiWheel
+  const pypiWheelRecipes = Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : []
+  for (const recipe of pypiWheelRecipes) {
     if (!isRecord(recipe)) {
       continue
     }
-    if (recipe._tag === "BunExecutableArtifactRecipe" && Array.isArray(recipe.outputs)) {
-      for (const output of recipe.outputs) {
-        if (!isRecord(output)) {
-          continue
-        }
-        const path = stringField(output, "path")
-        if (path !== undefined) {
-          binaries.push(expandReleaseTemplate(path, packageName, packageVersion))
-        }
-      }
-    }
-    if (recipe._tag === "PyPiWheelArtifactRecipe") {
-      const path = stringField(recipe, "path")
-      if (path !== undefined) {
-        wheels.push({
-          path: expandReleaseTemplate(path, packageName, packageVersion),
-          wheelTag: stringField(recipe, "wheelTag")
-        })
-      }
+    const path = stringField(recipe, "path")
+    if (path !== undefined) {
+      wheels.push({
+        path: expandReleaseTemplate(path, packageName, packageVersion),
+        wheelTag: stringField(recipe, "wheelTag")
+      })
     }
   }
   return {
@@ -334,8 +337,8 @@ if (!isRecord(config)) {
 if (isRecord(manifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name")
   const packageVersion = stringField(manifest, "version")
-  const recipes = config.artifactRecipes
-  const targets = config.targets
+  const build = config.build
+  const publish = config.publish
 
   if (packageName === undefined) {
     checks.push({ id: "manifest:name", ok: false, message: `${packagePath} name must be configured.` })
@@ -343,15 +346,15 @@ if (isRecord(manifest) && isRecord(config)) {
   if (packageVersion === undefined) {
     checks.push({ id: "manifest:version", ok: false, message: `${packagePath} version must be configured.` })
   }
-  if (!Array.isArray(recipes)) {
-    checks.push({ id: "config:artifact-recipes", ok: false, message: `${releaseConfigPath} artifactRecipes must be an array.` })
+  if (!isRecord(build)) {
+    checks.push({ id: "config:build", ok: false, message: `${releaseConfigPath} build must be an object.` })
   }
-  if (!Array.isArray(targets)) {
-    checks.push({ id: "config:targets", ok: false, message: `${releaseConfigPath} targets must be an array.` })
+  if (!isRecord(publish)) {
+    checks.push({ id: "config:publish", ok: false, message: `${releaseConfigPath} publish must be an object.` })
   }
 
-  if (packageName !== undefined && packageVersion !== undefined && Array.isArray(recipes) && Array.isArray(targets)) {
-    const artifacts = collectArtifactPaths(recipes, packageName, packageVersion)
+  if (packageName !== undefined && packageVersion !== undefined && isRecord(build) && isRecord(publish)) {
+    const artifacts = collectArtifactPaths(build, packageName, packageVersion)
     for (const [index, path] of artifacts.binaries.entries()) {
       checks.push(fileCheck(`github:binary:${index}`, path, "CLI binary artifact"))
     }
@@ -363,9 +366,9 @@ if (isRecord(manifest) && isRecord(config)) {
       )
     }
     checks.push(
-      ...homebrewChecks(targetById(targets, "homebrew"), packageVersion),
-      ...scoopChecks(targetById(targets, "scoop"), packageVersion),
-      await twineCheck(targetById(targets, "pypi"), artifacts.wheels)
+      ...homebrewChecks(publishTarget(publish, "homebrew"), packageVersion),
+      ...scoopChecks(publishTarget(publish, "scoop"), packageVersion),
+      await twineCheck(publishTarget(publish, "pypi"), artifacts.wheels)
     )
   }
 }

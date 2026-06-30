@@ -6,6 +6,37 @@ import {
   publicExportPolicies
 } from "../scripts/lib/public-api-policy.js"
 
+const removedPublicSubpaths = [
+  "./api",
+  "./api/live",
+  "./artifacts/adapter",
+  "./artifacts/registry",
+  "./cli",
+  "./cli/command",
+  "./cli/programmatic",
+  "./config/schema",
+  "./domain/artifact",
+  "./domain/evidence",
+  "./domain/release",
+  "./host",
+  "./host/http",
+  "./host/platform",
+  "./planner/create-release-plan",
+  "./planner/evidence-recorder",
+  "./planner/normalize-release",
+  "./runtime/bun",
+  "./targets/github",
+  "./targets/homebrew",
+  "./targets/npm",
+  "./targets/pypi",
+  "./targets/registry",
+  "./targets/scoop",
+  "./workflows",
+  "./workflows/config",
+  "./workflows/evidence",
+  "./workflows/live"
+]
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
@@ -55,15 +86,12 @@ describe("public API policy", () => {
     expect(policySubpaths).toEqual(actualSubpaths)
   })
 
-  test("publishes explicit workflows instead of the old api facade or programmatic CLI surface", () => {
+  test("publishes only the root TypeScript API", () => {
     const subpaths = new Set(publicExportPolicies.map((policy) => policy.subpath))
-    expect(subpaths.has("./api")).toBe(false)
-    expect(subpaths.has("./api/live")).toBe(false)
-    expect(subpaths.has("./workflows")).toBe(true)
-    expect(subpaths.has("./workflows/config")).toBe(true)
-    expect(subpaths.has("./workflows/evidence")).toBe(true)
-    expect(subpaths.has("./workflows/live")).toBe(true)
-    expect(subpaths.has("./cli/programmatic")).toBe(false)
+    expect(subpaths).toEqual(new Set(["."]))
+    for (const subpath of removedPublicSubpaths) {
+      expect(subpaths.has(subpath)).toBe(false)
+    }
   })
 
   test("keeps official CLI and Bun runtime out of root public exports", () => {
@@ -71,13 +99,28 @@ describe("public API policy", () => {
     expect(subpaths.has("./cli")).toBe(false)
     expect(subpaths.has("./cli/command")).toBe(false)
     expect(subpaths.has("./runtime/bun")).toBe(false)
+    for (const subpath of removedPublicSubpaths) {
+      expect(subpaths.has(subpath)).toBe(false)
+    }
+  })
+
+  test("documents the root TypeScript API and CLI contract", () => {
+    const pkg = rootPackage()
+    expect(packageExports()).toEqual({
+      ".": {
+        types: "./dist/index.d.ts",
+        default: "./dist/index.js"
+      }
+    })
+    expect(pkg.bin).toEqual({
+      "ts-release": "./apps/release-ts/src/cli/main.ts"
+    })
   })
 
   test("keeps Bun runtime dependency out of root runtime dependencies", () => {
     const pkg = rootPackage()
     expect(isRecord(pkg.dependencies) && Object.hasOwn(pkg.dependencies, "@effect/platform-bun")).toBe(false)
     expect(isRecord(pkg.devDependencies) && Object.hasOwn(pkg.devDependencies, "@effect/platform-bun")).toBe(true)
-    expect(pkg.bin).toBeUndefined()
   })
 
   test("uses source-relative runtime paths", () => {

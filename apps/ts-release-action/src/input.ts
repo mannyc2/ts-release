@@ -2,13 +2,10 @@ import * as Schema from "effect/Schema"
 
 export const ActionCommand = Schema.Literals([
   "plan",
-  "validate-config",
   "doctor",
-  "check-auth",
-  "check-ci",
-  "validate",
-  "run",
-  "reconcile"
+  "build",
+  "release",
+  "verify"
 ])
 export type ActionCommand = typeof ActionCommand.Type
 
@@ -27,10 +24,9 @@ export class ActionOptions extends Schema.Class<ActionOptions>("ActionOptions")(
   planPath: Schema.String,
   failOnWarnings: Schema.Boolean,
   target: Schema.optionalKey(Schema.String),
-  workflow: Schema.optionalKey(Schema.String),
   runtime: ActionRuntime,
   execute: Schema.Boolean,
-  approveIrreversible: Schema.Boolean,
+  approvePublish: Schema.Boolean,
   uploadEvidence: Schema.Boolean,
   evidenceArtifactName: Schema.String
 }) {}
@@ -46,13 +42,10 @@ export interface ActionInputReader {
 
 const commands: ReadonlyArray<ActionCommand> = [
   "plan",
-  "validate-config",
   "doctor",
-  "check-auth",
-  "check-ci",
-  "validate",
-  "run",
-  "reconcile"
+  "build",
+  "release",
+  "verify"
 ]
 
 const formats: ReadonlyArray<ActionFormat> = ["json", "text", "summary", "markdown"]
@@ -141,7 +134,6 @@ const parseRuntimeInput = (value: string): ActionRuntime => {
 
 export const readActionOptions = (reader: ActionInputReader, root: string): ActionOptions => {
   const target = optionalInput(reader, "target")
-  const workflow = optionalInput(reader, "workflow")
   return ActionOptions.make({
     root,
     command: parseCommandInput(inputOrDefault(reader, "command", "plan")),
@@ -151,10 +143,9 @@ export const readActionOptions = (reader: ActionInputReader, root: string): Acti
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
     failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
     ...(target === undefined ? {} : { target }),
-    ...(workflow === undefined ? {} : { workflow }),
     runtime: parseRuntimeInput(inputOrDefault(reader, "runtime", "bundled")),
     execute: parseBooleanInput(reader, "execute", false),
-    approveIrreversible: parseBooleanInput(reader, "approve-irreversible", false),
+    approvePublish: parseBooleanInput(reader, "approve-publish", false),
     uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),
     evidenceArtifactName: inputOrDefault(reader, "evidence-artifact-name", "release-evidence")
   })

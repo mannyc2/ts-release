@@ -1,0 +1,262 @@
+{
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
+  "project": {
+    "name": "@scope/pkg",
+    "packageName": "@scope/pkg",
+    "repository": "owner/repo",
+    "version": "0.1.0",
+    "commit": "abc123",
+    "tag": "v0.1.0"
+  },
+  "build": {
+    "bun": {
+      "id": "cli",
+      "entry": "src/cli.ts",
+      "outputs": [
+        {
+          "id": "cli-linux-x64",
+          "target": "bun-linux-x64-baseline",
+          "path": "artifacts/pkg-{version}-linux-x64",
+          "downloadUrl": "https://github.com/owner/repo/releases/download/v{version}/pkg-{version}-linux-x64",
+          "consumers": [
+            "github"
+          ],
+          "variant": {
+            "binaryName": "pkg",
+            "installPath": "bin/pkg"
+          }
+        },
+        {
+          "id": "cli-linux-arm64",
+          "target": "bun-linux-arm64",
+          "path": "artifacts/pkg-{version}-linux-arm64",
+          "downloadUrl": "https://github.com/owner/repo/releases/download/v{version}/pkg-{version}-linux-arm64",
+          "consumers": [
+            "github"
+          ],
+          "variant": {
+            "binaryName": "pkg",
+            "installPath": "bin/pkg"
+          }
+        },
+        {
+          "id": "cli-darwin-x64",
+          "target": "bun-darwin-x64",
+          "path": "artifacts/pkg-{version}-darwin-x64",
+          "downloadUrl": "https://github.com/owner/repo/releases/download/v{version}/pkg-{version}-darwin-x64",
+          "consumers": [
+            "github",
+            "homebrew"
+          ],
+          "variant": {
+            "binaryName": "pkg",
+            "installPath": "bin/pkg"
+          }
+        },
+        {
+          "id": "cli-darwin-arm64",
+          "target": "bun-darwin-arm64",
+          "path": "artifacts/pkg-{version}-darwin-arm64",
+          "downloadUrl": "https://github.com/owner/repo/releases/download/v{version}/pkg-{version}-darwin-arm64",
+          "consumers": [
+            "github",
+            "homebrew"
+          ],
+          "variant": {
+            "binaryName": "pkg",
+            "installPath": "bin/pkg"
+          }
+        },
+        {
+          "id": "cli-windows-x64",
+          "target": "bun-windows-x64-baseline",
+          "path": "artifacts/pkg-{version}-windows-x64.exe",
+          "downloadUrl": "https://github.com/owner/repo/releases/download/v{version}/pkg-{version}-windows-x64.exe",
+          "consumers": [
+            "github",
+            "scoop"
+          ],
+          "variant": {
+            "binaryName": "pkg",
+            "installPath": "bin/pkg.exe"
+          }
+        }
+      ]
+    },
+    "pypiWheel": [
+      {
+        "id": "pypi-wheel-linux-x64",
+        "path": "artifacts/pkg-{version}-py3-none-manylinux2014_x86_64.whl",
+        "wheelTag": "py3-none-manylinux2014_x86_64",
+        "packageName": "pkg",
+        "moduleName": "pkg",
+        "consoleScript": "pkg",
+        "summary": "Portable CLI wrapper for @scope/pkg.",
+        "homepage": "https://github.com/owner/repo",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "linux",
+            "arch": "x64",
+            "sourcePath": "artifacts/pkg-{version}-linux-x64",
+            "wheelPath": "pkg/bin/pkg-linux-x64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-linux-arm64",
+        "path": "artifacts/pkg-{version}-py3-none-manylinux2014_aarch64.whl",
+        "wheelTag": "py3-none-manylinux2014_aarch64",
+        "packageName": "pkg",
+        "moduleName": "pkg",
+        "consoleScript": "pkg",
+        "summary": "Portable CLI wrapper for @scope/pkg.",
+        "homepage": "https://github.com/owner/repo",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "linux",
+            "arch": "arm64",
+            "sourcePath": "artifacts/pkg-{version}-linux-arm64",
+            "wheelPath": "pkg/bin/pkg-linux-arm64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-darwin-x64",
+        "path": "artifacts/pkg-{version}-py3-none-macosx_10_15_x86_64.whl",
+        "wheelTag": "py3-none-macosx_10_15_x86_64",
+        "packageName": "pkg",
+        "moduleName": "pkg",
+        "consoleScript": "pkg",
+        "summary": "Portable CLI wrapper for @scope/pkg.",
+        "homepage": "https://github.com/owner/repo",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "darwin",
+            "arch": "x64",
+            "sourcePath": "artifacts/pkg-{version}-darwin-x64",
+            "wheelPath": "pkg/bin/pkg-darwin-x64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-darwin-arm64",
+        "path": "artifacts/pkg-{version}-py3-none-macosx_11_0_arm64.whl",
+        "wheelTag": "py3-none-macosx_11_0_arm64",
+        "packageName": "pkg",
+        "moduleName": "pkg",
+        "consoleScript": "pkg",
+        "summary": "Portable CLI wrapper for @scope/pkg.",
+        "homepage": "https://github.com/owner/repo",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "darwin",
+            "arch": "arm64",
+            "sourcePath": "artifacts/pkg-{version}-darwin-arm64",
+            "wheelPath": "pkg/bin/pkg-darwin-arm64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-windows-x64",
+        "path": "artifacts/pkg-{version}-py3-none-win_amd64.whl",
+        "wheelTag": "py3-none-win_amd64",
+        "packageName": "pkg",
+        "moduleName": "pkg",
+        "consoleScript": "pkg",
+        "summary": "Portable CLI wrapper for @scope/pkg.",
+        "homepage": "https://github.com/owner/repo",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "windows",
+            "arch": "x64",
+            "sourcePath": "artifacts/pkg-{version}-windows-x64.exe",
+            "wheelPath": "pkg/bin/pkg-windows-x64.exe"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      }
+    ],
+    "npmPackage": {
+      "id": "package",
+      "path": ".",
+      "consumers": [
+        "npm"
+      ]
+    }
+  },
+  "publish": {
+    "npm": {
+      "registry": "https://registry.npmjs.org",
+      "packageName": "@scope/pkg",
+      "packagePath": ".",
+      "trustedPublishing": {
+        "workflow": "release.yml",
+        "packageExists": true,
+        "verifyPackageExists": true
+      },
+      "access": "public",
+      "provenance": true
+    },
+    "github": {
+      "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false
+    },
+    "homebrew": {
+      "repository": "owner/homebrew-tap",
+      "formulaName": "pkg",
+      "formulaPath": ".release/generated/pkg.rb",
+      "artifactId": "cli-darwin-arm64",
+      "artifactIds": [
+        "cli-darwin-arm64",
+        "cli-darwin-x64"
+      ],
+      "homepage": "https://github.com/owner/repo",
+      "description": "Portable CLI distribution for @scope/pkg"
+    },
+    "scoop": {
+      "repository": "owner/scoop-bucket",
+      "manifestName": "pkg",
+      "manifestPath": ".release/generated/pkg.json",
+      "artifactId": "cli-windows-x64",
+      "homepage": "https://github.com/owner/repo",
+      "description": "Portable CLI distribution for @scope/pkg",
+      "license": "MIT"
+    },
+    "pypi": {
+      "repositoryUrl": "https://upload.pypi.org/legacy/",
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "publisherConfigured": true
+      }
+    }
+  },
+  "strict": true,
+  "evidence": ".release/evidence/{version}"
+}

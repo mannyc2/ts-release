@@ -321,20 +321,13 @@ const packageExportTargets = (failures: Array<string>): Array<PackageExportTarge
   return targets
 }
 
-const assertEmptyRootEntrypoint = (rootEntrypoint: PackageExportTarget | undefined, failures: Array<string>): void => {
+const assertRootEntrypoint = (rootEntrypoint: PackageExportTarget | undefined, failures: Array<string>): void => {
   if (rootEntrypoint === undefined) {
     failures.push("package.json exports must include the package root")
     return
   }
   if (rootEntrypoint.sourcePath !== rootSourcePath) {
     failures.push(`package root must resolve to ${toDisplayPath(rootSourcePath)}, got ${toDisplayPath(rootEntrypoint.sourcePath)}`)
-    return
-  }
-
-  const contents = readFileSync(rootEntrypoint.sourcePath, "utf8").trim()
-  const normalized = contents.endsWith(";") ? contents.slice(0, -1).trim() : contents
-  if (normalized !== "export {}") {
-    failures.push("src/index.ts must contain only `export {}` and no imports or aggregate exports")
   }
 }
 
@@ -425,8 +418,8 @@ const checkRootDoesNotImportApp = (failures: Array<string>): void => {
   }
 }
 
-const checkAppDoesNotImportRootInternals = (failures: Array<string>): void => {
-  const rootSourceDirectory = resolve(root, "src")
+const checkAppDoesNotImportPackageSubpaths = (failures: Array<string>): void => {
+  const packageName = "@mannyc1/ts-release"
   for (const file of appFiles()) {
     const source = ts.createSourceFile(
       file,
@@ -437,12 +430,8 @@ const checkAppDoesNotImportRootInternals = (failures: Array<string>): void => {
     )
 
     for (const reference of allModuleReferences(source)) {
-      if (!reference.specifier.startsWith(".")) {
-        continue
-      }
-      const resolved = resolveRelativeModule(file, reference.specifier)
-      if (resolved !== undefined && isInsidePath(resolved, rootSourceDirectory)) {
-        failures.push(`${location(source, reference.position)} app code must import root library through @mannyc1/ts-release/*, not ${reference.specifier}`)
+      if (reference.specifier.startsWith(`${packageName}/`)) {
+        failures.push(`${location(source, reference.position)} app code must not import unpublished package subpath ${reference.specifier}`)
       }
     }
   }
@@ -450,13 +439,13 @@ const checkAppDoesNotImportRootInternals = (failures: Array<string>): void => {
 
 const failures: Array<string> = []
 const targets = packageExportTargets(failures)
-assertEmptyRootEntrypoint(targets.find((target) => target.subpath === "."), failures)
+assertRootEntrypoint(targets.find((target) => target.subpath === "."), failures)
 
 for (const target of targets) {
   checkExportGraph(target, failures)
 }
 checkRootDoesNotImportApp(failures)
-checkAppDoesNotImportRootInternals(failures)
+checkAppDoesNotImportPackageSubpaths(failures)
 
 if (failures.length > 0) {
   console.error("Tree-shaking boundary checks failed:")

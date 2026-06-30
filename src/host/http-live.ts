@@ -1,5 +1,6 @@
 import * as Config from "effect/Config"
 import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as HttpClient from "effect/unstable/http/HttpClient"
@@ -61,17 +62,55 @@ const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpReques
 const responseHeaders = (headers: Readonly<Record<string, string>>): ReadonlyArray<HttpHeader> =>
   Object.entries(headers).map(([name, value]) => HttpHeader.make({ name, value }))
 
-export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.HttpClient> =
+const requestWithBody = Effect.fn("http.requestWithBody")(function*(
+  request: HttpRequestSpec,
+  headers: Record<string, string>,
+  fileSystem: FileSystem.FileSystem
+) {
+  const httpRequest = HttpClientRequest.make(request.method)(request.url, { headers })
+  const body = request.body
+  if (body === undefined) {
+    return httpRequest
+  }
+  switch (body._tag) {
+    case "HttpJsonRequestBody":
+      return yield* HttpClientRequest.bodyJson(httpRequest, body.json).pipe(
+        Effect.mapError((error) =>
+          HttpError.make({
+            operation: "bodyJson",
+            url: request.url,
+            reason: "HTTP request JSON body encoding failed.",
+            cause: error
+          })
+        )
+      )
+    case "HttpFileRequestBody":
+      return yield* fileSystem.readFile(body.path).pipe(
+        Effect.map((bytes) => HttpClientRequest.bodyUint8Array(httpRequest, bytes, body.contentType)),
+        Effect.mapError((error) =>
+          HttpError.make({
+            operation: "bodyFile",
+            url: request.url,
+            reason: "HTTP request file body preparation failed.",
+            cause: error
+          })
+        )
+      )
+  }
+})
+
+export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.HttpClient | FileSystem.FileSystem> =
   Layer.effect(ReleaseHttp)(
     Effect.gen(function*() {
       const client = yield* HttpClient.HttpClient
+      const fileSystem = yield* FileSystem.FileSystem
       return {
         runJson: (request: HttpRequestSpec) =>
           Effect.gen(function*() {
             const headers = yield* resolveHeaders(request)
             const startedAt = yield* nowIso()
             const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-            const httpRequest = HttpClientRequest.make(request.method)(request.url, { headers })
+            const httpRequest = yield* requestWithBody(request, headers, fileSystem)
             const response = yield* client.execute(httpRequest).pipe(
               Effect.mapError((error) =>
                 HttpError.make({

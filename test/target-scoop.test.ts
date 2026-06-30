@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { ExecutionApproval, operationRequiresIrreversibleApproval } from "../src/domain/operation.js"
+import { ExecutionApproval } from "../src/domain/operation.js"
 import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlan, validatePlan } from "../src/planner/executor.js"
@@ -68,17 +68,6 @@ describe("Scoop target", () => {
     }
   })
 
-  test("marks immutable Scoop bucket pushes as irreversible", async () => {
-    const plan = await runEffect(createPlan(scoopConfig({ mutability: "immutable" })), ScoopLayer)
-    const publish = plan.operations.find((operation) => operation.id === "scoop:scoop-push")
-
-    expect(publish?._tag).toBe("PublishCommandOperation")
-    if (publish?._tag === "PublishCommandOperation") {
-      expect(publish.risk).toBe("irreversible")
-      expect(operationRequiresIrreversibleApproval(publish)).toBe(true)
-    }
-  })
-
   test("rejects Scoop tokenEnv because bucket pushes use Git credentials", async () => {
     const error = await runEffect(createPlan(scoopConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), ScoopLayer)
 
@@ -118,28 +107,7 @@ describe("Scoop target", () => {
     expect(evidence.records.map((record) => record.id)).toEqual(["scoop:scoop-render-manifest:execution"])
   })
 
-  test("records skipped Scoop validation in non-strict mode", async () => {
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(scoopConfig({ dryRunSupport: "none" }).replace("\"strict\":true", "\"strict\":false"))
-        return yield* validatePlan(plan)
-      }),
-      ScoopLayer
-    )
-
-    expect(evidence.records.filter((record) => record.status === "skipped").map((record) => record.id)).toEqual([
-      "scoop:scoop-manifest-validation:validation"
-    ])
-    expectValidationRecord(evidence.records, "scoop:scoop-manifest-validation:validation", {
-      status: "skipped",
-      skipped: true,
-      severity: "warning"
-    })
-  })
-
   test("rejects unsafe Scoop target shapes", async () => {
-    const noDryRun = await runEffect(createPlan(scoopConfig({ dryRunSupport: "none" })).pipe(Effect.flip), ScoopLayer)
-    const nativeDryRun = await runEffect(createPlan(scoopConfig({ dryRunSupport: "native" })).pipe(Effect.flip), ScoopLayer)
     const missingArtifact = await runEffect(
       createPlan(scoopConfig({ artifactId: "missing" })).pipe(Effect.flip),
       ScoopLayer
@@ -191,8 +159,6 @@ describe("Scoop target", () => {
       ScoopLayer
     )
 
-    expect(noDryRun._tag).toBe("PlanConstructionError")
-    expect(nativeDryRun._tag).toBe("PlanConstructionError")
     expect(missingArtifact._tag).toBe("PlanConstructionError")
     expect(directoryArtifact._tag).toBe("PlanConstructionError")
     expect(nonSha256Checksum._tag).toBe("ReleaseNormalizationError")

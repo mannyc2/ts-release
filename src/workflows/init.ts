@@ -17,6 +17,7 @@ export const ReleaseInitTemplateName = Schema.Literals([
   "npm-only",
   "npm-github",
   "bun-cli-github",
+  "portable-cli",
   "multi-target-homebrew",
   "multi-target-scoop"
 ])
@@ -37,6 +38,11 @@ export class ReleaseInitOptions extends Schema.Class<ReleaseInitOptions>("Releas
   workflow: Schema.optionalKey(Schema.String),
   tap: Schema.optionalKey(Schema.String),
   bucket: Schema.optionalKey(Schema.String),
+  binaryName: Schema.optionalKey(Schema.String),
+  entrypoint: Schema.optionalKey(Schema.String),
+  pypiPackage: Schema.optionalKey(Schema.String),
+  pypiModule: Schema.optionalKey(Schema.String),
+  consoleScript: Schema.optionalKey(Schema.String),
   githubActions: Schema.optionalKey(Schema.Boolean),
   packageManager: Schema.optionalKey(ReleaseInitPackageManager),
   installCommand: Schema.optionalKey(Schema.String),
@@ -55,6 +61,11 @@ export interface ReleaseInitInput {
   readonly workflow?: string | undefined
   readonly tap?: string | undefined
   readonly bucket?: string | undefined
+  readonly binaryName?: string | undefined
+  readonly entrypoint?: string | undefined
+  readonly pypiPackage?: string | undefined
+  readonly pypiModule?: string | undefined
+  readonly consoleScript?: string | undefined
   readonly githubActions?: boolean | undefined
   readonly packageManager?: ReleaseInitPackageManager | undefined
   readonly installCommand?: string | undefined
@@ -95,6 +106,11 @@ const releaseInitOptionsFromInput = (
     ...(input.workflow === undefined ? {} : { workflow: input.workflow }),
     ...(input.tap === undefined ? {} : { tap: input.tap }),
     ...(input.bucket === undefined ? {} : { bucket: input.bucket }),
+    ...(input.binaryName === undefined ? {} : { binaryName: input.binaryName }),
+    ...(input.entrypoint === undefined ? {} : { entrypoint: input.entrypoint }),
+    ...(input.pypiPackage === undefined ? {} : { pypiPackage: input.pypiPackage }),
+    ...(input.pypiModule === undefined ? {} : { pypiModule: input.pypiModule }),
+    ...(input.consoleScript === undefined ? {} : { consoleScript: input.consoleScript }),
     ...(input.githubActions === undefined ? {} : { githubActions: input.githubActions }),
     ...(input.packageManager === undefined ? {} : { packageManager: input.packageManager }),
     ...(input.installCommand === undefined ? {} : { installCommand: input.installCommand }),
@@ -113,6 +129,11 @@ interface NormalizedInitOptions {
   readonly workflow: string
   readonly tap: string
   readonly bucket: string
+  readonly binaryName: string
+  readonly entrypoint: string
+  readonly pypiPackage?: string | undefined
+  readonly pypiModule?: string | undefined
+  readonly consoleScript: string
   readonly githubActions: boolean
   readonly packageManager: ReleaseInitPackageManager
   readonly installCommand: string
@@ -160,17 +181,47 @@ const defaultBuildCommand = (packageManager: ReleaseInitPackageManager): string 
   }
 }
 
+const packageShortName = (packageName: string): string => {
+  const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
+  const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
+  return normalized.length === 0 ? "pkg" : normalized
+}
+
+const nonEmpty = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim()
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed
+}
+
+const pythonModuleName = (value: string): string => {
+  const normalized = packageShortName(value).replace(/-/g, "_")
+  return normalized.length === 0 ? "pkg" : normalized
+}
+
+const pythonDistributionName = (value: string): string =>
+  value.replace(/[-.]+/g, "_")
+
 const normalizeOptions = (options: ReleaseInitOptions, root: string): NormalizedInitOptions => {
   const packageManager = options.packageManager ?? "bun"
+  const packageName = options["package"] ?? "@scope/pkg"
+  const binaryName = nonEmpty(options.binaryName) ?? packageShortName(packageName)
+  const pypiPackage = nonEmpty(options.pypiPackage)
+  const pypiModule = nonEmpty(options.pypiModule)
   return {
     root,
     configPath: options.configPath ?? DEFAULT_CONFIG_PATH,
     template: options.template ?? "npm-only",
-    packageName: options["package"] ?? "@scope/pkg",
+    packageName,
     repository: options.repo ?? "owner/repo",
     workflow: options.workflow ?? "release.yml",
     tap: options.tap ?? "owner/homebrew-tap",
     bucket: options.bucket ?? "owner/scoop-bucket",
+    binaryName,
+    entrypoint: nonEmpty(options.entrypoint) ?? "src/cli.ts",
+    ...(pypiPackage === undefined ? {} : { pypiPackage }),
+    ...(pypiPackage === undefined && pypiModule === undefined
+      ? {}
+      : { pypiModule: pypiModule ?? pythonModuleName(pypiPackage ?? binaryName) }),
+    consoleScript: nonEmpty(options.consoleScript) ?? binaryName,
     githubActions: options.githubActions ?? false,
     packageManager,
     installCommand: (options.installCommand ?? defaultInstallCommand(packageManager)).trim(),
@@ -178,66 +229,42 @@ const normalizeOptions = (options: ReleaseInitOptions, root: string): Normalized
   }
 }
 
-const packageShortName = (packageName: string): string => {
-  const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
-  const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
-  return normalized.length === 0 ? "pkg" : normalized
-}
-
 const configTargetNpm = (options: NormalizedInitOptions): Record<string, unknown> => ({
-  _tag: "NpmRegistryTarget",
-  id: "npm",
   registry: "https://registry.npmjs.org",
   packageName: options.packageName,
   packagePath: ".",
   trustedPublishing: {
-    provider: "github-actions",
     workflow: options.workflow,
     packageExists: true,
     verifyPackageExists: true
   },
   access: "public",
-  provenance: true,
-  dryRunSupport: "native",
-  mutability: "immutable",
-  recovery: "publish-new-version"
+  provenance: true
 })
 
 const configTargetGitHub = (options: NormalizedInitOptions): Record<string, unknown> => ({
-  _tag: "GitHubReleaseTarget",
-  id: "github",
   repository: options.repository,
   tokenEnv: "GH_TOKEN",
   draft: true,
-  prerelease: false,
-  dryRunSupport: "simulated",
-  mutability: "mutable-release",
-  recovery: "delete-and-recreate"
+  prerelease: false
 })
 
 const configTargetHomebrew = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
   return {
-    _tag: "HomebrewTapTarget",
-    id: "homebrew",
     repository: options.tap,
     formulaName: name,
     formulaPath: `.release/generated/${name}.rb`,
     artifactId: "archive",
     homepage: `https://github.com/${options.repository}`,
     url: `https://github.com/${options.repository}/releases/download/v0.1.0/${name}-0.1.0.tgz`,
-    installPath: `bin/${name}`,
-    dryRunSupport: "simulated",
-    mutability: "mutable-index",
-    recovery: "manual"
+    installPath: `bin/${name}`
   }
 }
 
 const configTargetScoop = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
   return {
-    _tag: "ScoopBucketTarget",
-    id: "scoop",
     repository: options.bucket,
     manifestName: name,
     manifestPath: `.release/generated/${name}.json`,
@@ -246,19 +273,170 @@ const configTargetScoop = (options: NormalizedInitOptions): Record<string, unkno
     description: `Example Scoop manifest for ${name}`,
     license: "MIT",
     url: `https://github.com/${options.repository}/releases/download/v0.1.0/${name}-0.1.0.zip`,
-    bin: `${name}.exe`,
-    dryRunSupport: "simulated",
-    mutability: "mutable-index",
-    recovery: "manual"
+    bin: `${name}.exe`
   }
 }
+
+const portableCliArtifactPath = (binaryName: string, suffix: string): string =>
+  `artifacts/${binaryName}-{version}-${suffix}`
+
+const portableCliDownloadUrl = (options: NormalizedInitOptions, suffix: string): string =>
+  `https://github.com/${options.repository}/releases/download/v{version}/${options.binaryName}-{version}-${suffix}`
+
+const portableCliVariant = (binaryName: string, windows: boolean): Record<string, unknown> => ({
+  binaryName,
+  installPath: windows ? `bin/${binaryName}.exe` : `bin/${binaryName}`
+})
+
+const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<string, unknown> => {
+  const binaryName = options.binaryName
+  return {
+    id: "cli",
+    entry: options.entrypoint,
+    outputs: [
+      {
+        id: "cli-linux-x64",
+        target: "bun-linux-x64-baseline",
+        path: portableCliArtifactPath(binaryName, "linux-x64"),
+        downloadUrl: portableCliDownloadUrl(options, "linux-x64"),
+        consumers: ["github"],
+        variant: portableCliVariant(binaryName, false)
+      },
+      {
+        id: "cli-linux-arm64",
+        target: "bun-linux-arm64",
+        path: portableCliArtifactPath(binaryName, "linux-arm64"),
+        downloadUrl: portableCliDownloadUrl(options, "linux-arm64"),
+        consumers: ["github"],
+        variant: portableCliVariant(binaryName, false)
+      },
+      {
+        id: "cli-darwin-x64",
+        target: "bun-darwin-x64",
+        path: portableCliArtifactPath(binaryName, "darwin-x64"),
+        downloadUrl: portableCliDownloadUrl(options, "darwin-x64"),
+        consumers: ["github", "homebrew"],
+        variant: portableCliVariant(binaryName, false)
+      },
+      {
+        id: "cli-darwin-arm64",
+        target: "bun-darwin-arm64",
+        path: portableCliArtifactPath(binaryName, "darwin-arm64"),
+        downloadUrl: portableCliDownloadUrl(options, "darwin-arm64"),
+        consumers: ["github", "homebrew"],
+        variant: portableCliVariant(binaryName, false)
+      },
+      {
+        id: "cli-windows-x64",
+        target: "bun-windows-x64-baseline",
+        path: portableCliArtifactPath(binaryName, "windows-x64.exe"),
+        downloadUrl: portableCliDownloadUrl(options, "windows-x64.exe"),
+        consumers: ["github", "scoop"],
+        variant: portableCliVariant(binaryName, true)
+      }
+    ]
+  }
+}
+
+const configTargetPortableHomebrew = (options: NormalizedInitOptions): Record<string, unknown> => ({
+  repository: options.tap,
+  formulaName: options.binaryName,
+  formulaPath: `.release/generated/${options.binaryName}.rb`,
+  artifactId: "cli-darwin-arm64",
+  artifactIds: ["cli-darwin-arm64", "cli-darwin-x64"],
+  homepage: `https://github.com/${options.repository}`,
+  description: `Portable CLI distribution for ${options.packageName}`
+})
+
+const configTargetPortableScoop = (options: NormalizedInitOptions): Record<string, unknown> => ({
+  repository: options.bucket,
+  manifestName: options.binaryName,
+  manifestPath: `.release/generated/${options.binaryName}.json`,
+  artifactId: "cli-windows-x64",
+  homepage: `https://github.com/${options.repository}`,
+  description: `Portable CLI distribution for ${options.packageName}`,
+  license: "MIT"
+})
+
+const portablePyPiWheel = (
+  options: NormalizedInitOptions,
+  input: {
+    readonly id: string
+    readonly suffix: string
+    readonly wheelTag: string
+    readonly os: string
+    readonly arch: string
+  }
+): Record<string, unknown> => {
+  const pypiPackage = options.pypiPackage ?? options.binaryName
+  const moduleName = options.pypiModule ?? pythonModuleName(pypiPackage)
+  const distributionName = pythonDistributionName(pypiPackage)
+  return {
+    id: input.id,
+    path: `artifacts/${distributionName}-{version}-${input.wheelTag}.whl`,
+    wheelTag: input.wheelTag,
+    packageName: pypiPackage,
+    moduleName,
+    consoleScript: options.consoleScript,
+    summary: `Portable CLI wrapper for ${options.packageName}.`,
+    homepage: `https://github.com/${options.repository}`,
+    license: "MIT",
+    requiresPython: ">=3.8",
+    binaries: [
+      {
+        os: input.os,
+        arch: input.arch,
+        sourcePath: portableCliArtifactPath(options.binaryName, input.suffix),
+        wheelPath: `${moduleName}/bin/${options.binaryName}-${input.suffix}`
+      }
+    ],
+    consumers: ["pypi"]
+  }
+}
+
+const configPortablePyPiWheels = (options: NormalizedInitOptions): ReadonlyArray<Record<string, unknown>> => [
+  portablePyPiWheel(options, {
+    id: "pypi-wheel-linux-x64",
+    suffix: "linux-x64",
+    wheelTag: "py3-none-manylinux2014_x86_64",
+    os: "linux",
+    arch: "x64"
+  }),
+  portablePyPiWheel(options, {
+    id: "pypi-wheel-linux-arm64",
+    suffix: "linux-arm64",
+    wheelTag: "py3-none-manylinux2014_aarch64",
+    os: "linux",
+    arch: "arm64"
+  }),
+  portablePyPiWheel(options, {
+    id: "pypi-wheel-darwin-x64",
+    suffix: "darwin-x64",
+    wheelTag: "py3-none-macosx_10_15_x86_64",
+    os: "darwin",
+    arch: "x64"
+  }),
+  portablePyPiWheel(options, {
+    id: "pypi-wheel-darwin-arm64",
+    suffix: "darwin-arm64",
+    wheelTag: "py3-none-macosx_11_0_arm64",
+    os: "darwin",
+    arch: "arm64"
+  }),
+  portablePyPiWheel(options, {
+    id: "pypi-wheel-windows-x64",
+    suffix: "windows-x64.exe",
+    wheelTag: "py3-none-win_amd64",
+    os: "windows",
+    arch: "x64"
+  })
+]
 
 const configArtifactRecipeBunCli = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
   return {
-    _tag: "BunExecutableArtifactRecipe",
     id: "cli",
-    entrypoint: "src/cli.ts",
+    entry: "src/cli.ts",
     outputs: [
       {
         id: "cli-linux-x64",
@@ -296,55 +474,76 @@ const configArtifactRecipeBunCli = (options: NormalizedInitOptions): Record<stri
 
 const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
-  const artifacts: Array<Record<string, unknown>> = [
-    {
+  const build: Record<string, unknown> = {
+    npmPackage: {
       id: "package",
       path: ".",
-      format: "directory",
       consumers: ["npm"]
     }
-  ]
-  const artifactRecipes: Array<Record<string, unknown>> = []
-  const targets: Array<Record<string, unknown>> = [configTargetNpm(options)]
+  }
+  const publish: Record<string, unknown> = {
+    npm: configTargetNpm(options)
+  }
 
   if (options.template !== "npm-only") {
-    targets.push(configTargetGitHub(options))
+    publish.github = configTargetGitHub(options)
   }
   if (options.template === "bun-cli-github") {
-    artifactRecipes.push(configArtifactRecipeBunCli(options))
+    build.bun = configArtifactRecipeBunCli(options)
+  }
+  if (options.template === "portable-cli") {
+    build.bun = configPortableCliBunRecipe(options)
+    publish.homebrew = configTargetPortableHomebrew(options)
+    publish.scoop = configTargetPortableScoop(options)
+    if (options.pypiPackage !== undefined || options.pypiModule !== undefined) {
+      build.pypiWheel = configPortablePyPiWheels(options)
+      publish.pypi = {
+        repositoryUrl: "https://upload.pypi.org/legacy/",
+        trustedPublishing: {
+          provider: "github-actions",
+          workflow: options.workflow,
+          publisherConfigured: true
+        }
+      }
+    }
   }
   if (options.template === "multi-target-homebrew") {
-    artifacts.push({
-      id: "archive",
-      path: `artifacts/${name}-0.1.0.tgz`,
-      format: "tarball",
-      consumers: ["github", "homebrew"]
-    })
-    targets.push(configTargetHomebrew(options))
+    build.artifacts = [
+      {
+        id: "archive",
+        path: `artifacts/${name}-0.1.0.tgz`,
+        format: "tarball",
+        consumers: ["github", "homebrew"]
+      }
+    ]
+    publish.homebrew = configTargetHomebrew(options)
   }
   if (options.template === "multi-target-scoop") {
-    artifacts.push({
-      id: "archive",
-      path: `artifacts/${name}-0.1.0.zip`,
-      format: "zip",
-      consumers: ["github", "scoop"]
-    })
-    targets.push(configTargetScoop(options))
+    build.artifacts = [
+      {
+        id: "archive",
+        path: `artifacts/${name}-0.1.0.zip`,
+        format: "zip",
+        consumers: ["github", "scoop"]
+      }
+    ]
+    publish.scoop = configTargetScoop(options)
   }
 
   return {
     $schema: RELEASE_CONFIG_SCHEMA_ID,
-    identity: {
+    project: {
       name: options.packageName,
+      packageName: options.packageName,
+      repository: options.repository,
       version: "0.1.0",
       commit: "abc123",
       tag: "v0.1.0"
     },
-    artifacts,
-    ...(artifactRecipes.length === 0 ? {} : { artifactRecipes }),
-    targets,
+    build,
+    publish,
     strict: true,
-    evidenceDirectory: ".release/evidence/{version}"
+    evidence: ".release/evidence/{version}"
   }
 }
 
@@ -432,10 +631,10 @@ export const renderGithubActionsTrustedPublishingWorkflow = (
     ...executeSetupSteps(setup),
     `      - uses: ${TS_RELEASE_ACTION_REFERENCE}`,
     "        with:",
-    "          command: run",
+    "          command: release",
     `          config: ${configPath}`,
     "          execute: true",
-    "          approve-irreversible: true",
+    "          approve-publish: true",
     "          write-step-summary: true",
     "      - uses: actions/upload-artifact@v4",
     "        if: always()",

@@ -1,9 +1,9 @@
 name: ts-release
-description: Plan, validate, and run ts-release distribution workflows from GitHub Actions.
+description: Plan, diagnose, build, release, and verify ts-release workflows from GitHub Actions.
 author: mannyc2
 inputs:
   command:
-    description: plan, validate-config, doctor, check-auth, check-ci, validate, run, or reconcile.
+    description: plan, doctor, build, release, or verify.
     required: false
     default: plan
   config:
@@ -27,10 +27,7 @@ inputs:
     required: false
     default: "false"
   target:
-    description: Optional target filter for command check-auth.
-    required: false
-  workflow:
-    description: Optional GitHub Actions workflow path for command check-ci.
+    description: Optional target filter for command doctor.
     required: false
   runtime:
     description: Runtime module source. bundled is the default; workspace is deferred until same-graph Node platform loading is safe.
@@ -40,8 +37,8 @@ inputs:
     description: Allow approved execution commands to run operations requiring execute approval.
     required: false
     default: "false"
-  approve-irreversible:
-    description: Allow irreversible operations when execute is also true.
+  approve-publish:
+    description: Allow publish operations when execute is also true.
     required: false
     default: "false"
   upload-evidence:

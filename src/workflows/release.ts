@@ -16,6 +16,7 @@ import { TargetConfig, TargetId } from "../domain/target.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import { writeEvidenceBundle } from "../planner/evidence-recorder.js"
 import {
+  renderPlan,
   runApprovedReleaseWorkflow,
   verifyPlan
 } from "../planner/executor.js"
@@ -358,6 +359,18 @@ export const writeVerificationEvidence = Effect.fn("workflows.release.writeVerif
   return yield* writeNamedEvidenceWithFailure(plan, "verification", verifyPlan(plan))
 })
 
+export const writeRenderEvidence = Effect.fn("workflows.release.writeRenderEvidence")(function*(
+  plan: ReleasePlan,
+  input: ReleaseExecutionInput = {}
+) {
+  const options = executionOptionsFromInput(input)
+  const approval = ExecutionApproval.make({
+    execute: options.execute ?? false,
+    approveIrreversible: false
+  })
+  return yield* writeNamedEvidenceWithFailure(plan, "render", renderPlan(plan, approval))
+})
+
 export const writeReleaseEvidence = Effect.fn("workflows.release.writeReleaseEvidence")(function*(
   plan: ReleasePlan,
   input: ReleaseExecutionInput = {}
@@ -375,6 +388,15 @@ export const verifyRelease = Effect.fn("workflows.release.verifyRelease")(functi
   const options = sourceOptionsFromInput(input)
   const plan = yield* planRelease(options)
   const evidence = yield* writeVerificationEvidence(plan)
+  return ReleaseEvidenceResult.make({ plan, evidence })
+})
+
+export const renderReleaseFiles = Effect.fn("workflows.release.renderReleaseFiles")(function*(
+  input: ReleaseExecutionInput = {}
+) {
+  const options = executionOptionsFromInput(input)
+  const plan = yield* planRelease(options)
+  const evidence = yield* writeRenderEvidence(plan, options)
   return ReleaseEvidenceResult.make({ plan, evidence })
 })
 

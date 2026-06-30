@@ -250,6 +250,21 @@ const verifyCommand = Command.make(
   })
 )
 
+const renderCommand = Command.make(
+  "render",
+  {
+    root: rootFlag,
+    config: configFlag,
+    execute: executeFlag
+  },
+  Effect.fn("cli.render")(function*({ root, config, execute }) {
+    const result = yield* Release.renderReleaseFiles(
+      executableConfigInput({ root, config, execute })
+    )
+    yield* printEvidence(result.evidence)
+  })
+)
+
 const releaseCommand = Command.make(
   "release",
   {
@@ -272,6 +287,7 @@ export const cli = Command.make("release").pipe(
     doctorCommand,
     initCommand,
     planCommand,
+    renderCommand,
     releaseCommand,
     verifyCommand
   ])

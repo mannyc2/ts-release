@@ -88,6 +88,7 @@ jobs:
       GH_TOKEN: \${{ github.token }}
     steps:
       - run: python3 -m pip install --upgrade "twine>=6.2.0"
+      - run: bun run release:catalogs
       - run: bun run check:self-release-artifacts
       - uses: actions/checkout@v4
         with:

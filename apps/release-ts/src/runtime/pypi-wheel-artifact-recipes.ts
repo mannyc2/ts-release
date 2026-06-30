@@ -9,9 +9,9 @@ import {
   ArtifactRecipeStageError,
   StagedArtifact,
   StagedArtifactRecipeResult
-} from "@mannyc1/ts-release/artifacts/adapter"
-import { PyPiWheelArtifactRecipe } from "@mannyc1/ts-release/domain/artifact"
-import { renderReleaseTemplate } from "@mannyc1/ts-release/planner/normalize-release"
+} from "../../../../src/artifacts/adapter.js"
+import { PyPiWheelArtifactRecipe } from "../../../../src/domain/artifact.js"
+import { renderReleaseTemplate } from "../../../../src/planner/normalize-release.js"
 
 interface WheelEntry {
   readonly path: string

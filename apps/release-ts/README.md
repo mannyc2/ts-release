@@ -4,7 +4,8 @@ This private first-party app owns the official CLI, Bun runtime shell, and
 self-release dogfood for `@mannyc1/ts-release`.
 
 The reusable release library remains in the repository root `src/` tree and is
-consumed through package subpaths.
+consumed by first-party apps through private source imports. The published npm
+package exposes only the root TypeScript API plus the `ts-release` executable.
 
 The app runtime composes Bun platform services, the platform command runner, and
 the library live target/HTTP workflow layer at the CLI boundary. CLI modules
@@ -16,7 +17,7 @@ Useful app-local commands:
 
 ```sh
 bun run --cwd apps/release-ts check
-bun run --cwd apps/release-ts cli stage-artifacts --root ../.. --config apps/release-ts/release.config.json
+bun run --cwd apps/release-ts cli build --root ../.. --config apps/release-ts/release.config.json
 bun run --cwd apps/release-ts cli plan --root ../.. --config apps/release-ts/release.config.json --format text
 ```
 
@@ -53,7 +54,6 @@ Before a live release, run:
 
 ```sh
 bun run release:artifacts
-bun run release:catalogs
 bun run check:self-release-artifacts
 bun run check:self-release-live
 ```
@@ -65,7 +65,7 @@ PyPI, and that the public Homebrew tap and Scoop bucket repositories are
 reachable.
 
 After a successful live release, manually dispatch the `Install Smoke` workflow
-with the published version and tag. It imports the npm package, downloads the
+with the published version and tag. It runs the npm package CLI, downloads the
 GitHub Release Linux binary, installs the PyPI wrapper on Linux/macOS/Windows,
 trusts and installs from the Homebrew tap on macOS, installs from the Scoop
 bucket on Windows, and checks each CLI install reports the requested version.

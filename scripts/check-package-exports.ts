@@ -16,6 +16,15 @@ const root = cwd()
 const bannedAggregateExportSet = new Set(bannedAggregateExports)
 const expectedPublicExportSet = new Set(expectedPublicExports)
 const ScriptLayer = BunServices.layer
+const expectedRootBin = {
+  "ts-release": "./apps/release-ts/src/cli/main.ts"
+} as const
+const expectedRootRuntimeExports = new Set([
+  "RELEASE_CONFIG_SCHEMA_ID",
+  "defineRelease",
+  "releaseConfigJsonSchema",
+  "renderReleaseConfigJsonSchema"
+])
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -224,8 +233,19 @@ const main = async (): Promise<void> => {
   if (typeof packageName !== "string" || packageName.length === 0) {
     failures.push("package.json name must be a non-empty string")
   }
-  if (manifest.bin !== undefined) {
-    failures.push("package.json must not declare a root bin; apps/release-ts owns the release executable")
+  if (!isRecord(manifest.bin)) {
+    failures.push("package.json must declare the ts-release root bin")
+  } else {
+    for (const [name, path] of Object.entries(expectedRootBin)) {
+      if (manifest.bin[name] !== path) {
+        failures.push(`package.json bin.${name} must point at ${path}`)
+      }
+    }
+    for (const name of Object.keys(manifest.bin)) {
+      if (!Object.hasOwn(expectedRootBin, name)) {
+        failures.push(`package.json bin.${name} is not in the intentional root bin list`)
+      }
+    }
   }
   if (
     isReadonlyArray(manifest.sideEffects) &&
@@ -270,8 +290,18 @@ const main = async (): Promise<void> => {
         const specifier = packageImportSpecifier(packageName, subpath)
         try {
           const module = await import(specifier)
-          if (subpath === "." && Object.keys(module).length > 0) {
-            failures.push(`package root ${specifier} must be empty, got exports: ${Object.keys(module).join(", ")}`)
+          if (subpath === ".") {
+            const actualRuntimeExports = new Set(Object.keys(module))
+            for (const expected of expectedRootRuntimeExports) {
+              if (!actualRuntimeExports.has(expected)) {
+                failures.push(`package root ${specifier} is missing runtime export ${expected}`)
+              }
+            }
+            for (const actual of actualRuntimeExports) {
+              if (!expectedRootRuntimeExports.has(actual)) {
+                failures.push(`package root ${specifier} exposes unexpected runtime export ${actual}`)
+              }
+            }
           }
         } catch (cause) {
           const message = cause instanceof Error ? cause.message : String(cause)

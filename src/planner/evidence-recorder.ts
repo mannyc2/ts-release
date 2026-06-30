@@ -9,11 +9,19 @@ import {
   EvidencePhase,
   EvidenceBundle,
   EvidenceRecord,
+  GitHubReleaseEvidence,
   HttpCheckEvidence,
   OperationEvidenceRecord,
   HttpRequestEvidence,
 } from "../domain/evidence.js"
-import { CommandSpec, HttpJsonCheck, JsonPathSegment, Operation, VerifyHttpOperation } from "../domain/operation.js"
+import {
+  CommandSpec,
+  HttpJsonCheck,
+  HttpRequestSpec,
+  JsonPathSegment,
+  Operation,
+  VerifyHttpOperation
+} from "../domain/operation.js"
 import { ReleasePlan } from "../domain/release.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
@@ -22,6 +30,12 @@ import {
   validateWorkspaceWritePath,
   workspacePathBoundaryReasonMessage
 } from "../internal/workspace-path.js"
+import {
+  GitHubApi,
+  GitHubApiError,
+  GitHubReleaseCreateRequest,
+  GitHubReleaseInspectRequest
+} from "../targets/github-api.js"
 import { EvidenceReadError, EvidenceWriteError } from "./errors.js"
 
 export type * from "../types/effect-internal.js"
@@ -103,6 +117,8 @@ export const readRedactionSecrets = Effect.fn("readRedactionSecrets")(function*(
     ? operation.command.redactedEnv
     : operation._tag === "VerifyHttpOperation"
     ? operation.request.redactedEnv
+    : operation._tag === "PublishGitHubReleaseOperation" || operation._tag === "VerifyGitHubReleaseOperation"
+    ? operation.tokenEnv === undefined ? [] : [operation.tokenEnv]
     : []
   for (const name of names) {
     const value = yield* readOptionalEnv(name)
@@ -121,9 +137,11 @@ export const operationEvidencePhase = (operation: Operation): EvidencePhase => {
     case "ValidationNoteOperation":
       return "validation"
     case "PublishCommandOperation":
+    case "PublishGitHubReleaseOperation":
       return "execution"
     case "VerifyRemoteOperation":
     case "VerifyHttpOperation":
+    case "VerifyGitHubReleaseOperation":
       return "verification"
   }
 }
@@ -254,12 +272,23 @@ const evaluateHttpCheck = (json: Schema.Json, check: HttpJsonCheck): HttpCheckEv
   }
 }
 
-const httpRequestEvidence = (operation: VerifyHttpOperation): HttpRequestEvidence =>
+const httpRequestEvidence = (request: HttpRequestSpec): HttpRequestEvidence =>
   HttpRequestEvidence.make({
-    method: operation.request.method,
-    url: operation.request.url,
-    headers: operation.request.headers,
-    envHeaders: operation.request.envHeaders
+    method: request.method,
+    url: request.url,
+    headers: request.headers,
+    envHeaders: request.envHeaders,
+    ...(request.body === undefined
+      ? {}
+      : {
+        body: request.body._tag === "HttpJsonRequestBody" ? "json" : "file",
+        ...(request.body._tag === "HttpFileRequestBody"
+          ? {
+            bodyPath: request.body.path,
+            contentType: request.body.contentType
+          }
+          : {})
+      })
   })
 
 export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(function*(
@@ -283,7 +312,7 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
             status: "failed",
             severity: "error",
             message: error.reason,
-            request: httpRequestEvidence(operation),
+            request: httpRequestEvidence(operation.request),
             checks: [],
             startedAt,
             endedAt,
@@ -308,12 +337,7 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
             risk: operation.risk,
             status: failed.length === 0 ? "passed" : "failed",
             severity: failed.length === 0 ? "info" : "error",
-            request: HttpRequestEvidence.make({
-              method: result.request.method,
-              url: result.request.url,
-              headers: result.request.headers,
-              envHeaders: result.request.envHeaders
-            }),
+            request: httpRequestEvidence(result.request),
             responseStatus: result.status,
             checks,
             message: failed.length === 0
@@ -325,6 +349,180 @@ export const httpEvidenceFromResult = Effect.fn("httpEvidenceFromResult")(functi
           })
         )
       }
+    })
+  )
+})
+
+const githubReleaseEvidence = (input: {
+  readonly repository: string
+  readonly tag: string
+  readonly releaseId?: number | undefined
+  readonly title?: string | undefined
+  readonly draft?: boolean | undefined
+  readonly prerelease?: boolean | undefined
+  readonly assets: ReadonlyArray<string>
+}): GitHubReleaseEvidence =>
+  GitHubReleaseEvidence.make({
+    repository: input.repository,
+    tag: input.tag,
+    ...(input.releaseId === undefined ? {} : { releaseId: input.releaseId }),
+    ...(input.title === undefined ? {} : { title: input.title }),
+    ...(input.draft === undefined ? {} : { draft: input.draft }),
+    ...(input.prerelease === undefined ? {} : { prerelease: input.prerelease }),
+    assets: [...input.assets]
+  })
+
+const githubApiFailureEvidence = Effect.fn("githubApiFailureEvidence")(function*(
+  operation: Extract<Operation, { readonly _tag: "PublishGitHubReleaseOperation" | "VerifyGitHubReleaseOperation" }>,
+  error: GitHubApiError,
+  phase: EvidencePhase
+) {
+  const timestamp = yield* nowIso()
+  return OperationEvidenceRecord.make({
+    id: `${operation.id}:github-api`,
+    operationId: operation.id,
+    phase,
+    targetId: operation.targetId,
+    risk: operation.risk,
+    status: "failed",
+    severity: "error",
+    message: error.reason,
+    ...(error.status === undefined ? {} : { responseStatus: error.status }),
+    githubRelease: githubReleaseEvidence({
+      repository: operation.repository,
+      tag: operation.tag,
+      assets: operation._tag === "PublishGitHubReleaseOperation"
+        ? operation.assets.map((asset) => asset.name)
+        : operation.assetNames
+    }),
+    startedAt: timestamp,
+    endedAt: timestamp,
+    durationMillis: 0
+  })
+})
+
+export const githubCreateEvidenceFromResult = Effect.fn("githubCreateEvidenceFromResult")(function*(
+  operation: Extract<Operation, { readonly _tag: "PublishGitHubReleaseOperation" }>,
+  phase: EvidencePhase = operationEvidencePhase(operation)
+) {
+  const api = yield* GitHubApi
+  const startedAt = yield* nowIso()
+  const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  return yield* api.createRelease(
+    GitHubReleaseCreateRequest.make({
+      repository: operation.repository,
+      ...(operation.tokenEnv === undefined ? {} : { tokenEnv: operation.tokenEnv }),
+      tag: operation.tag,
+      title: operation.title,
+      ...(operation.notes === undefined ? {} : { notes: operation.notes }),
+      draft: operation.draft,
+      prerelease: operation.prerelease,
+      assets: [...operation.assets]
+    })
+  ).pipe(
+    Effect.matchEffect({
+      onFailure: (error) => githubApiFailureEvidence(operation, error, phase),
+      onSuccess: (release) =>
+        Effect.gen(function*() {
+          const endedAt = yield* nowIso()
+          const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+          return OperationEvidenceRecord.make({
+            id: `${operation.id}:github-api`,
+            operationId: operation.id,
+            phase,
+            targetId: operation.targetId,
+            risk: operation.risk,
+            status: "passed",
+            severity: "info",
+            message: "GitHub release created through the GitHub API.",
+            githubRelease: githubReleaseEvidence({
+              repository: operation.repository,
+              tag: release.tag_name,
+              releaseId: release.id,
+              title: release.name,
+              draft: release.draft,
+              prerelease: release.prerelease,
+              assets: release.assets.map((asset) => asset.name)
+            }),
+            startedAt,
+            endedAt,
+            durationMillis: Math.max(0, ended - started)
+          })
+        })
+    })
+  )
+})
+
+const sortedStrings = (values: ReadonlyArray<string>): ReadonlyArray<string> =>
+  [...values].sort()
+
+const sameStringSet = (left: ReadonlyArray<string>, right: ReadonlyArray<string>): boolean => {
+  const sortedLeft = sortedStrings(left)
+  const sortedRight = sortedStrings(right)
+  return sortedLeft.length === sortedRight.length && sortedLeft.every((value, index) => sortedRight[index] === value)
+}
+
+export const githubVerifyEvidenceFromResult = Effect.fn("githubVerifyEvidenceFromResult")(function*(
+  operation: Extract<Operation, { readonly _tag: "VerifyGitHubReleaseOperation" }>,
+  phase: EvidencePhase = operationEvidencePhase(operation)
+) {
+  const api = yield* GitHubApi
+  const startedAt = yield* nowIso()
+  const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  return yield* api.inspectRelease(
+    GitHubReleaseInspectRequest.make({
+      repository: operation.repository,
+      ...(operation.tokenEnv === undefined ? {} : { tokenEnv: operation.tokenEnv }),
+      tag: operation.tag
+    })
+  ).pipe(
+    Effect.matchEffect({
+      onFailure: (error) => githubApiFailureEvidence(operation, error, phase),
+      onSuccess: (release) =>
+        Effect.gen(function*() {
+          const assetNames = release.assets.map((asset) => asset.name)
+          const checks = [
+            HttpCheckEvidence.make({ description: `tag is ${operation.tag}`, passed: release.tag_name === operation.tag }),
+            HttpCheckEvidence.make({ description: `title is ${operation.title}`, passed: release.name === operation.title }),
+            HttpCheckEvidence.make({ description: `draft is ${operation.draft}`, passed: release.draft === operation.draft }),
+            HttpCheckEvidence.make({
+              description: `prerelease is ${operation.prerelease}`,
+              passed: release.prerelease === operation.prerelease
+            }),
+            HttpCheckEvidence.make({
+              description: `assets are ${sortedStrings(operation.assetNames).join(", ")}`,
+              passed: sameStringSet(assetNames, operation.assetNames)
+            })
+          ]
+          const failed = checks.filter((check) => !check.passed)
+          const endedAt = yield* nowIso()
+          const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+          return OperationEvidenceRecord.make({
+            id: `${operation.id}:github-api`,
+            operationId: operation.id,
+            phase,
+            targetId: operation.targetId,
+            risk: operation.risk,
+            status: failed.length === 0 ? "passed" : "failed",
+            severity: failed.length === 0 ? "info" : "error",
+            message: failed.length === 0
+              ? "GitHub release verification passed."
+              : `GitHub release verification failed: ${failed.map((check) => check.description).join("; ")}`,
+            githubRelease: githubReleaseEvidence({
+              repository: operation.repository,
+              tag: release.tag_name,
+              releaseId: release.id,
+              title: release.name,
+              draft: release.draft,
+              prerelease: release.prerelease,
+              assets: assetNames
+            }),
+            checks,
+            startedAt,
+            endedAt,
+            durationMillis: Math.max(0, ended - started)
+          })
+        })
     })
   )
 })

@@ -58,9 +58,6 @@ jobs:
       - name: Build release artifacts
         run: bun run release:artifacts
 
-      - name: Render package manager catalogs
-        run: bun run release:catalogs
-
       - name: Validate release artifacts
         run: bun run check:self-release-artifacts
 
@@ -161,19 +158,16 @@ jobs:
           git -C .release/catalogs/scoop-ts-release config user.name "github-actions[bot]"
           git -C .release/catalogs/scoop-ts-release config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Render package manager catalogs
-        run: bun run release:catalogs
-
       - name: Validate release artifacts
         run: bun run check:self-release-artifacts
 
       - name: Run approved release
         uses: ./apps/ts-release-action
         with:
-          command: run
+          command: release
           config: apps/release-ts/release.config.json
           execute: "true"
-          approve-irreversible: "true"
+          approve-publish: "true"
 
       - name: Upload release evidence
         if: always()

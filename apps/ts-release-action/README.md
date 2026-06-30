@@ -2,7 +2,7 @@
 
 This private first-party app builds the `mannyc2/ts-release-action` JavaScript
 action. It adapts GitHub Action inputs, outputs, step summaries, and optional
-evidence artifact uploads to the reusable `@mannyc1/ts-release` workflow APIs.
+evidence artifact uploads to the private `@mannyc1/ts-release` release engine.
 
 The bundled action runtime composes Node platform services, the platform command
 runner, and the library live target/HTTP workflow layer at the action boundary.
@@ -12,13 +12,10 @@ blocked until a same-module-graph Node platform setup can be required safely.
 Supported action commands are:
 
 - `plan`
-- `validate-config`
 - `doctor`
-- `check-auth`
-- `check-ci`
-- `validate`
-- `run`
-- `reconcile`
+- `build`
+- `release`
+- `verify`
 
 Useful app-local commands:
 
@@ -29,5 +26,4 @@ bun run --cwd apps/ts-release-action build
 
 Use `upload-evidence: true` when a workflow should upload collected
 `.release/evidence` JSON bundles after command completion or failure. Approved
-execution still requires `execute: true`, and irreversible operations also
-require `approve-irreversible: true`.
+publication still requires `execute: true` and `approve-publish: true`.

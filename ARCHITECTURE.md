@@ -1,10 +1,11 @@
 # Architecture
 
-`@mannyc1/ts-release` is artifact-first, library-first, and CLI-second.
+`@mannyc1/ts-release` is artifact-first and TypeScript-native, with one public
+root TypeScript API and one official `ts-release` executable.
 
 The package turns release intent into staged artifacts, installable artifact
 variants, target-specific distribution plans, evidence, and approved operations.
-The CLI and GitHub Action are adapters over those workflows.
+The CLI and GitHub Action are adapters over the same private release engine.
 
 ## Target Boundary
 
@@ -32,18 +33,18 @@ unless it is made generic and documented as public library API.
 
 `apps/ts-release-action/` owns GitHub Action input parsing, GitHub step-summary
 and output adapters, evidence artifact upload, and the Node runtime assembly
-used by the bundled action. Action code should call public workflow APIs rather
-than reaching into CLI modules.
+used by the bundled action. Action code may import private root source modules,
+but it must not reach into CLI modules.
 
 ## Current Module Taxonomy
 
 - `domain/` contains durable schema-backed data models, typed errors, and scalar schemas owned by their semantic domain modules, such as release names in `domain/release`, target IDs in `domain/target`, artifact IDs and installable variants in `domain/artifact`, operation IDs in `domain/operation`, and evidence IDs in `domain/evidence`.
 - `config/` parses and validates release config into domain values.
 - `artifacts/` defines the recipe staging adapter and registry boundary. Recipes are data until a runtime provides a staging layer.
-- `planner/` normalizes release intent, builds artifact inventory, carries installable variants, builds plans, renders plans, executes operation data through injected services, records evidence, and reconciles modeled remote state.
+- `planner/` normalizes release intent, builds artifact inventory, carries installable variants, builds plans, renders plans, executes operation data through injected services, and records evidence.
 - `targets/` models ecosystem-specific target semantics and produces operation data. Target modules may describe commands and HTTP checks, but they do not execute them.
 - `host/` defines injectable command and HTTP services plus live or test implementations.
-- `workflows/` contains reusable application workflows over config files, init/scaffolding plans, diagnostics, evidence files, and live target/HTTP composition. This is the high-level programmatic surface.
+- `workflows/` contains reusable application workflows over config files, init/scaffolding plans, diagnostics, evidence files, and live target/HTTP composition. This is an internal engine layer, not a public package subpath.
 - `apps/release-ts/src/runtime/` contains the Bun runtime shell for the official CLI app.
 - `apps/release-ts/src/cli/` parses command-line flags, calls workflows, prints terminal output, and writes user-requested CLI output files.
 - `apps/ts-release-action/src/runtime/` contains the Node runtime shell for the bundled GitHub Action.
@@ -68,21 +69,20 @@ apps/ts-release-action runtime -> host/workflows/platform layers
 apps/ts-release-action action -> workflows/runtime boundary
 ```
 
-`src/index.ts` intentionally stays empty. Public API is the explicit subpath list in `package.json`, checked by `scripts/check-package-exports.ts` and `scripts/check-tree-shaking.ts`. The only workflow aggregate is the opt-in `./workflows` facade.
+`src/index.ts` is the only public TypeScript API entrypoint. `package.json`
+also exposes the `ts-release` executable. Public API policy is checked by
+`scripts/check-package-exports.ts` and `scripts/check-tree-shaking.ts`.
 
-## Public Workflow Surface
+## Public Package Surface
 
-There is no public `./api` facade, and the root package export stays empty. The public workflow modules are named after the work they own:
+There is no public `./api` facade and no public internal taxonomy. The package
+does not export `domain/`, `config/`, `planner/`, `host/`, `targets/`,
+`artifacts/`, or `workflows/` subpaths.
 
-- `./workflows` for the curated opt-in `Distribution`, `Config`, `Init`, `Diagnostics`, `Evidence`, and `Live` namespaces.
-- `./workflows/distribution` for the artifact-first high-level distribution facade.
-- `./workflows/config` for config-file release workflows.
-- `./workflows/init` for data-first scaffolding previews and approved writes.
-- `./workflows/diagnostics` for static config, auth, and CI readiness reports.
-- `./workflows/evidence` for reusable evidence persistence.
-- `./workflows/live` for runtime-neutral live target and HTTP services.
-
-The `./workflows` facade lives at `src/workflows/index.ts` and should only re-export workflow namespaces. Use `Distribution` for the product path: stage artifacts, plan distribution, render target files, execute approved operations, verify, and reconcile. Use exact workflow leaf imports for maximum tree-shaking or direct option-class access, and lower-level `domain/`, `config/`, `planner/`, `host/`, and `targets/` subpaths when a caller needs more control than the workflow modules provide.
+The root export is for config authoring and stable public summary data. The
+`ts-release` executable is the public command surface. Release execution belongs
+to the CLI and GitHub Action until a smaller TypeScript execution API is
+intentionally designed.
 
 ## Boundary Rules
 
@@ -91,7 +91,7 @@ The `./workflows` facade lives at `src/workflows/index.ts` and should only re-ex
 - Reusable effectful operations use `Effect.fn`; inline orchestration bodies use `Effect.gen`.
 - Durable models, options, target variants, and typed errors use `Schema.Class`, `Schema.TaggedClass`, and `Schema.TaggedErrorClass`.
 - Layers are provided at CLI, action, runtime, script, application, and test boundaries.
-- Config parsing, artifact staging, distribution planning, evidence persistence, reconciliation, and approved execution are library workflows, not CLI behavior.
+- Config parsing, artifact staging, distribution planning, evidence persistence, API-backed publishing, and approved execution are library workflows, not CLI behavior.
 - Terminal formatting, argv parsing, and `--out` file writing belong in
   `apps/release-ts/src/cli/`.
 - GitHub Action input parsing, output names, step summaries, and evidence artifact

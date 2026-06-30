@@ -6,14 +6,17 @@ import { EvidenceBundle, OperationEvidenceRecord } from "../src/domain/evidence.
 import {
   CommandSpec,
   ExecutionApproval,
+  GitHubReleaseAssetSpec,
   HttpEnvHeader,
   HttpHeader,
   HttpJsonArrayObjectFieldEqualsCheck,
   HttpJsonEqualsCheck,
   HttpRequestSpec,
+  PublishGitHubReleaseOperation,
   RenderFileOperation,
   ValidateCommandOperation,
   ValidationNoteOperation,
+  VerifyGitHubReleaseOperation,
   VerifyHttpOperation
 } from "../src/domain/operation.js"
 import {
@@ -32,7 +35,8 @@ import {
   tryReadEvidenceBundle,
   writeEvidenceBundle
 } from "../src/planner/evidence-recorder.js"
-import { runOperation } from "../src/planner/executor.js"
+import { runOperation, runOperationEvidence } from "../src/planner/executor.js"
+import { GitHubApiLiveLayer } from "../src/targets/github-api.js"
 
 const makeWorkspaceTestCommandRunnerLayer = (
   options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}
@@ -145,8 +149,8 @@ describe("evidence recorder", () => {
       redactedEnv: ["TOKEN"]
     })
     const operation = VerifyHttpOperation.make({
-      id: "github:github-release-verify-http",
-      targetId: "github",
+      id: "api:response-verify-http",
+      targetId: "api",
       description: "Verify release.",
       risk: "read-only",
       request,
@@ -185,6 +189,179 @@ describe("evidence recorder", () => {
           expect(evidence.responseStatus).toBe(200)
           expect(evidence.checks?.every((check) => check.passed)).toBe(true)
           expect("responseHeaders" in evidence).toBe(false)
+        }))
+    })
+  }
+
+  {
+    const operation = PublishGitHubReleaseOperation.make({
+      id: "github:github-release-create",
+      targetId: "github",
+      description: "Create GitHub release.",
+      risk: "externally-visible",
+      repository: "owner/repo",
+      tokenEnv: "TOKEN",
+      tag: "v0.1.0",
+      title: "release 0.1.0",
+      notes: "ship it",
+      draft: true,
+      prerelease: false,
+      assets: [
+        GitHubReleaseAssetSpec.make({
+          artifactId: "package",
+          path: "dist/package.tgz",
+          name: "package.tgz",
+          contentType: "application/octet-stream"
+        })
+      ]
+    })
+    const createUrl = "https://api.github.com/repos/owner/repo/releases"
+    const uploadUrl = "https://uploads.github.com/repos/owner/repo/releases/123/assets?name=package.tgz"
+    const requests: Array<HttpRequestSpec> = []
+    const httpLayer = makeTestReleaseHttpLayer({
+      onRequest: (request) => {
+        requests.push(request)
+      },
+      responses: new Map([
+        [`POST\u0000${createUrl}`, {
+          status: 201,
+          json: {
+            id: 123,
+            tag_name: "v0.1.0",
+            name: "release 0.1.0",
+            draft: true,
+            prerelease: false,
+            upload_url: "https://uploads.github.com/repos/owner/repo/releases/123/assets{?name,label}",
+            assets: []
+          }
+        }],
+        [`POST\u0000${uploadUrl}`, {
+          status: 201,
+          json: {
+            id: 456,
+            name: "package.tgz",
+            state: "uploaded"
+          }
+        }]
+      ])
+    })
+
+    layer(Layer.provide(GitHubApiLiveLayer, httpLayer))((it) => {
+      it.effect("records successful GitHub API create evidence without request bodies", () =>
+        Effect.gen(function*() {
+          const evidence = yield* runOperation(
+            operation,
+            ExecutionApproval.make({ execute: true, approveIrreversible: false })
+          )
+
+          expect(evidence.id).toBe("github:github-release-create:github-api")
+          expect(evidence.status).toBe("passed")
+          expect(evidence.githubRelease?.releaseId).toBe(123)
+          expect(evidence.githubRelease?.assets).toEqual(["package.tgz"])
+          expect(evidence.request).toBeUndefined()
+          expect(requests.map((request) => request.body?._tag)).toEqual([
+            "HttpJsonRequestBody",
+            "HttpFileRequestBody"
+          ])
+          const uploadRequest = requests[1]
+          expect(uploadRequest?.body?._tag).toBe("HttpFileRequestBody")
+          if (uploadRequest?.body?._tag === "HttpFileRequestBody") {
+            expect(uploadRequest.body.path).toBe("dist/package.tgz")
+            expect(uploadRequest.body.contentType).toBe("application/octet-stream")
+          }
+        }))
+    })
+  }
+
+  {
+    const operation = PublishGitHubReleaseOperation.make({
+      id: "github:github-release-create",
+      targetId: "github",
+      description: "Create GitHub release.",
+      risk: "externally-visible",
+      repository: "owner/repo",
+      tokenEnv: "TOKEN",
+      tag: "v0.1.0",
+      title: "release 0.1.0",
+      draft: false,
+      prerelease: false,
+      assets: []
+    })
+    const createUrl = "https://api.github.com/repos/owner/repo/releases"
+
+    layer(Layer.provide(
+      GitHubApiLiveLayer,
+      makeTestReleaseHttpLayer({
+        responses: new Map([
+          [`POST\u0000${createUrl}`, {
+            status: 422,
+            json: {
+              message: "already_exists"
+            }
+          }]
+        ])
+      })
+    ))((it) => {
+      it.effect("records failed GitHub API create evidence with status only", () =>
+        Effect.gen(function*() {
+          const evidence = yield* runOperationEvidence(
+            operation,
+            ExecutionApproval.make({ execute: true, approveIrreversible: false })
+          )
+
+          expect(evidence.id).toBe("github:github-release-create:github-api")
+          expect(evidence.status).toBe("failed")
+          expect(evidence.responseStatus).toBe(422)
+          expect(evidence.githubRelease?.assets).toEqual([])
+          expect(evidence.message).toContain("HTTP 422")
+        }))
+    })
+  }
+
+  {
+    const operation = VerifyGitHubReleaseOperation.make({
+      id: "github:github-release-verify-api",
+      targetId: "github",
+      description: "Verify release.",
+      risk: "read-only",
+      repository: "owner/repo",
+      tokenEnv: "TOKEN",
+      tag: "v0.1.0",
+      title: "release 0.1.0",
+      draft: false,
+      prerelease: false,
+      assetNames: ["package.tgz"]
+    })
+    const inspectUrl = "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0"
+
+    layer(Layer.provide(
+      GitHubApiLiveLayer,
+      makeTestReleaseHttpLayer({
+        responses: new Map([
+          [`GET\u0000${inspectUrl}`, {
+            status: 200,
+            json: {
+              id: 123,
+              tag_name: "v0.1.0",
+              name: "wrong title",
+              draft: false,
+              prerelease: false,
+              upload_url: "https://uploads.github.com/repos/owner/repo/releases/123/assets{?name,label}",
+              assets: []
+            }
+          }]
+        ])
+      })
+    ))((it) => {
+      it.effect("records GitHub API verification mismatches", () =>
+        Effect.gen(function*() {
+          const evidence = yield* runOperationEvidence(operation, ExecutionApproval.none)
+
+          expect(evidence.id).toBe("github:github-release-verify-api:github-api")
+          expect(evidence.status).toBe("failed")
+          expect(evidence.message).toContain("title is release 0.1.0")
+          expect(evidence.checks?.some((check) => !check.passed)).toBe(true)
+          expect(evidence.githubRelease?.releaseId).toBe(123)
         }))
     })
   }
@@ -257,8 +434,8 @@ describe("evidence recorder", () => {
       redactedEnv: []
     })
     const operation = VerifyHttpOperation.make({
-      id: "github:github-release-verify-http",
-      targetId: "github",
+      id: "api:response-verify-http",
+      targetId: "api",
       description: "Verify release.",
       risk: "read-only",
       request,

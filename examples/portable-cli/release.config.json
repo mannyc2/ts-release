@@ -1,0 +1,262 @@
+{
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
+  "project": {
+    "name": "@scope/portable-example",
+    "packageName": "@scope/portable-example",
+    "repository": "owner/portable-example",
+    "version": "0.1.0",
+    "commit": "abc123",
+    "tag": "v0.1.0"
+  },
+  "build": {
+    "bun": {
+      "id": "cli",
+      "entry": "src/cli.ts",
+      "outputs": [
+        {
+          "id": "cli-linux-x64",
+          "target": "bun-linux-x64-baseline",
+          "path": "artifacts/portable-example-{version}-linux-x64",
+          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-linux-x64",
+          "consumers": [
+            "github"
+          ],
+          "variant": {
+            "binaryName": "portable-example",
+            "installPath": "bin/portable-example"
+          }
+        },
+        {
+          "id": "cli-linux-arm64",
+          "target": "bun-linux-arm64",
+          "path": "artifacts/portable-example-{version}-linux-arm64",
+          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-linux-arm64",
+          "consumers": [
+            "github"
+          ],
+          "variant": {
+            "binaryName": "portable-example",
+            "installPath": "bin/portable-example"
+          }
+        },
+        {
+          "id": "cli-darwin-x64",
+          "target": "bun-darwin-x64",
+          "path": "artifacts/portable-example-{version}-darwin-x64",
+          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-darwin-x64",
+          "consumers": [
+            "github",
+            "homebrew"
+          ],
+          "variant": {
+            "binaryName": "portable-example",
+            "installPath": "bin/portable-example"
+          }
+        },
+        {
+          "id": "cli-darwin-arm64",
+          "target": "bun-darwin-arm64",
+          "path": "artifacts/portable-example-{version}-darwin-arm64",
+          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-darwin-arm64",
+          "consumers": [
+            "github",
+            "homebrew"
+          ],
+          "variant": {
+            "binaryName": "portable-example",
+            "installPath": "bin/portable-example"
+          }
+        },
+        {
+          "id": "cli-windows-x64",
+          "target": "bun-windows-x64-baseline",
+          "path": "artifacts/portable-example-{version}-windows-x64.exe",
+          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-windows-x64.exe",
+          "consumers": [
+            "github",
+            "scoop"
+          ],
+          "variant": {
+            "binaryName": "portable-example",
+            "installPath": "bin/portable-example.exe"
+          }
+        }
+      ]
+    },
+    "pypiWheel": [
+      {
+        "id": "pypi-wheel-linux-x64",
+        "path": "artifacts/portable_example-{version}-py3-none-manylinux2014_x86_64.whl",
+        "wheelTag": "py3-none-manylinux2014_x86_64",
+        "packageName": "portable-example",
+        "moduleName": "portable_example",
+        "consoleScript": "portable-example",
+        "summary": "Portable CLI wrapper for @scope/portable-example.",
+        "homepage": "https://github.com/owner/portable-example",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "linux",
+            "arch": "x64",
+            "sourcePath": "artifacts/portable-example-{version}-linux-x64",
+            "wheelPath": "portable_example/bin/portable-example-linux-x64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-linux-arm64",
+        "path": "artifacts/portable_example-{version}-py3-none-manylinux2014_aarch64.whl",
+        "wheelTag": "py3-none-manylinux2014_aarch64",
+        "packageName": "portable-example",
+        "moduleName": "portable_example",
+        "consoleScript": "portable-example",
+        "summary": "Portable CLI wrapper for @scope/portable-example.",
+        "homepage": "https://github.com/owner/portable-example",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "linux",
+            "arch": "arm64",
+            "sourcePath": "artifacts/portable-example-{version}-linux-arm64",
+            "wheelPath": "portable_example/bin/portable-example-linux-arm64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-darwin-x64",
+        "path": "artifacts/portable_example-{version}-py3-none-macosx_10_15_x86_64.whl",
+        "wheelTag": "py3-none-macosx_10_15_x86_64",
+        "packageName": "portable-example",
+        "moduleName": "portable_example",
+        "consoleScript": "portable-example",
+        "summary": "Portable CLI wrapper for @scope/portable-example.",
+        "homepage": "https://github.com/owner/portable-example",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "darwin",
+            "arch": "x64",
+            "sourcePath": "artifacts/portable-example-{version}-darwin-x64",
+            "wheelPath": "portable_example/bin/portable-example-darwin-x64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-darwin-arm64",
+        "path": "artifacts/portable_example-{version}-py3-none-macosx_11_0_arm64.whl",
+        "wheelTag": "py3-none-macosx_11_0_arm64",
+        "packageName": "portable-example",
+        "moduleName": "portable_example",
+        "consoleScript": "portable-example",
+        "summary": "Portable CLI wrapper for @scope/portable-example.",
+        "homepage": "https://github.com/owner/portable-example",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "darwin",
+            "arch": "arm64",
+            "sourcePath": "artifacts/portable-example-{version}-darwin-arm64",
+            "wheelPath": "portable_example/bin/portable-example-darwin-arm64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-windows-x64",
+        "path": "artifacts/portable_example-{version}-py3-none-win_amd64.whl",
+        "wheelTag": "py3-none-win_amd64",
+        "packageName": "portable-example",
+        "moduleName": "portable_example",
+        "consoleScript": "portable-example",
+        "summary": "Portable CLI wrapper for @scope/portable-example.",
+        "homepage": "https://github.com/owner/portable-example",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "windows",
+            "arch": "x64",
+            "sourcePath": "artifacts/portable-example-{version}-windows-x64.exe",
+            "wheelPath": "portable_example/bin/portable-example-windows-x64.exe"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      }
+    ],
+    "npmPackage": {
+      "id": "package",
+      "path": ".",
+      "consumers": [
+        "npm"
+      ]
+    }
+  },
+  "publish": {
+    "npm": {
+      "registry": "https://registry.npmjs.org",
+      "packageName": "@scope/portable-example",
+      "packagePath": ".",
+      "trustedPublishing": {
+        "workflow": "release.yml",
+        "packageExists": true,
+        "verifyPackageExists": true
+      },
+      "access": "public",
+      "provenance": true
+    },
+    "github": {
+      "repository": "owner/portable-example",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false
+    },
+    "homebrew": {
+      "repository": "owner/homebrew-portable-example",
+      "formulaName": "portable-example",
+      "formulaPath": ".release/generated/portable-example.rb",
+      "artifactId": "cli-darwin-arm64",
+      "artifactIds": [
+        "cli-darwin-arm64",
+        "cli-darwin-x64"
+      ],
+      "homepage": "https://github.com/owner/portable-example",
+      "description": "Portable CLI distribution for @scope/portable-example"
+    },
+    "scoop": {
+      "repository": "owner/scoop-portable-example",
+      "manifestName": "portable-example",
+      "manifestPath": ".release/generated/portable-example.json",
+      "artifactId": "cli-windows-x64",
+      "homepage": "https://github.com/owner/portable-example",
+      "description": "Portable CLI distribution for @scope/portable-example",
+      "license": "MIT"
+    },
+    "pypi": {
+      "repositoryUrl": "https://upload.pypi.org/legacy/",
+      "trustedPublishing": {
+        "provider": "github-actions",
+        "workflow": "release.yml",
+        "publisherConfigured": true
+      }
+    }
+  },
+  "strict": true,
+  "evidence": ".release/evidence/{version}"
+}

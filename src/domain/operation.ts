@@ -18,7 +18,7 @@ export class CommandSpec extends Schema.Class<CommandSpec>("CommandSpec")({
   redactedEnv: Schema.Array(Schema.String)
 }) {}
 
-export const HttpMethod = Schema.Literals(["GET", "HEAD"])
+export const HttpMethod = Schema.Literals(["GET", "HEAD", "POST", "PATCH"])
 export type HttpMethod = typeof HttpMethod.Type
 
 export class HttpHeader extends Schema.Class<HttpHeader>("HttpHeader")({
@@ -32,13 +32,26 @@ export class HttpEnvHeader extends Schema.Class<HttpEnvHeader>("HttpEnvHeader")(
   prefix: Schema.optionalKey(Schema.String)
 }) {}
 
+export class HttpJsonRequestBody extends Schema.TaggedClass<HttpJsonRequestBody>()("HttpJsonRequestBody", {
+  json: Schema.Json
+}) {}
+
+export class HttpFileRequestBody extends Schema.TaggedClass<HttpFileRequestBody>()("HttpFileRequestBody", {
+  path: Schema.String,
+  contentType: Schema.String
+}) {}
+
+export const HttpRequestBody = Schema.Union([HttpJsonRequestBody, HttpFileRequestBody])
+export type HttpRequestBody = typeof HttpRequestBody.Type
+
 export class HttpRequestSpec extends Schema.Class<HttpRequestSpec>("HttpRequestSpec")({
   method: HttpMethod,
   url: Schema.String,
   headers: Schema.Array(HttpHeader),
   envHeaders: Schema.Array(HttpEnvHeader),
   requiredEnv: Schema.Array(Schema.String),
-  redactedEnv: Schema.Array(Schema.String)
+  redactedEnv: Schema.Array(Schema.String),
+  body: Schema.optionalKey(HttpRequestBody)
 }) {}
 
 export const JsonPathSegment = Schema.Union([Schema.String, Schema.Number])
@@ -96,6 +109,31 @@ export class PublishCommandOperation extends Schema.TaggedClass<PublishCommandOp
   command: CommandSpec
 }) {}
 
+export class GitHubReleaseAssetSpec extends Schema.Class<GitHubReleaseAssetSpec>("GitHubReleaseAssetSpec")({
+  artifactId: Schema.String,
+  path: Schema.String,
+  name: Schema.String,
+  contentType: Schema.String
+}) {}
+
+export class PublishGitHubReleaseOperation extends Schema.TaggedClass<PublishGitHubReleaseOperation>()(
+  "PublishGitHubReleaseOperation",
+  {
+    id: OperationId,
+    targetId: TargetId,
+    description: Schema.String,
+    risk: OperationRisk,
+    repository: Schema.String,
+    tokenEnv: Schema.optionalKey(Schema.String),
+    tag: Schema.String,
+    title: Schema.String,
+    notes: Schema.optionalKey(Schema.String),
+    draft: Schema.Boolean,
+    prerelease: Schema.Boolean,
+    assets: Schema.Array(GitHubReleaseAssetSpec)
+  }
+) {}
+
 export class VerifyRemoteOperation extends Schema.TaggedClass<VerifyRemoteOperation>()("VerifyRemoteOperation", {
   id: OperationId,
   targetId: TargetId,
@@ -114,13 +152,32 @@ export class VerifyHttpOperation extends Schema.TaggedClass<VerifyHttpOperation>
   checks: Schema.Array(HttpJsonCheck)
 }) {}
 
+export class VerifyGitHubReleaseOperation extends Schema.TaggedClass<VerifyGitHubReleaseOperation>()(
+  "VerifyGitHubReleaseOperation",
+  {
+    id: OperationId,
+    targetId: TargetId,
+    description: Schema.String,
+    risk: OperationRisk,
+    repository: Schema.String,
+    tokenEnv: Schema.optionalKey(Schema.String),
+    tag: Schema.String,
+    title: Schema.String,
+    draft: Schema.Boolean,
+    prerelease: Schema.Boolean,
+    assetNames: Schema.Array(Schema.String)
+  }
+) {}
+
 export const Operation = Schema.Union([
   RenderFileOperation,
   ValidateCommandOperation,
   ValidationNoteOperation,
   PublishCommandOperation,
+  PublishGitHubReleaseOperation,
   VerifyRemoteOperation,
-  VerifyHttpOperation
+  VerifyHttpOperation,
+  VerifyGitHubReleaseOperation
 ])
 export type Operation = typeof Operation.Type
 
@@ -159,7 +216,7 @@ export const operationApprovalLabel = (operation: Operation): string => {
     return "none"
   }
   return requirements.requiresIrreversibleApproval
-    ? "--execute + --approve-irreversible"
+    ? "--execute + --approve-publish"
     : "--execute"
 }
 
@@ -204,18 +261,22 @@ const operationPhasePriority = (operation: Operation): number => {
     case "ValidationNoteOperation":
       return 1
     case "PublishCommandOperation":
+    case "PublishGitHubReleaseOperation":
       return 2
     case "VerifyRemoteOperation":
     case "VerifyHttpOperation":
+    case "VerifyGitHubReleaseOperation":
       return 3
   }
 }
 
-const publishOperationPriority = (operation: PublishCommandOperation): number => {
+type PublishOperation = Extract<Operation, { readonly _tag: "PublishCommandOperation" | "PublishGitHubReleaseOperation" }>
+
+const publishOperationPriority = (operation: PublishOperation): number => {
   if (operation.id.endsWith(":npm-publish") || operation.id.endsWith(":twine-upload")) {
     return 0
   }
-  if (operation.id.endsWith(":gh-release-create")) {
+  if (operation.id.endsWith(":github-release-create")) {
     return 1
   }
   if (operation.id.endsWith(":add")) {
@@ -232,7 +293,10 @@ const publishOperationPriority = (operation: PublishCommandOperation): number =>
 
 export const operationOrder = (left: Operation, right: Operation): number =>
   operationPhasePriority(left) - operationPhasePriority(right) ||
-  (left._tag === "PublishCommandOperation" && right._tag === "PublishCommandOperation"
+  (isPublishOperation(left) && isPublishOperation(right)
     ? publishOperationPriority(left) - publishOperationPriority(right)
     : 0) ||
   left.id.localeCompare(right.id)
+
+const isPublishOperation = (operation: Operation): operation is PublishOperation =>
+  operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"

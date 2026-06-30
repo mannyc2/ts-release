@@ -38,24 +38,26 @@ const gitHeadCommand = CommandSpec.make({
 
 const manualChecksumConfig = (checksum: { readonly algorithm: "sha256" | "sha512"; readonly value: string }) =>
   JSON.stringify({
-    identity: {
+    project: {
       name: "release",
       version: "0.1.0",
       commit: "abc123",
       tag: "v0.1.0"
     },
-    artifacts: [
-      {
-        id: "archive",
-        path: "artifacts/archive.tgz",
-        format: "tarball",
-        consumers: [],
-        checksum
-      }
-    ],
-    targets: [],
+    build: {
+      artifacts: [
+        {
+          id: "archive",
+          path: "artifacts/archive.tgz",
+          format: "tarball",
+          consumers: [],
+          checksum
+        }
+      ]
+    },
+    publish: {},
     strict: true,
-    evidenceDirectory: ".release/evidence"
+    evidence: ".release/evidence"
   })
 
 const bunExecutableRecipe = (overrides: Record<string, unknown> = {}) => ({
@@ -93,15 +95,19 @@ describe("planner", () => {
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
         const publishIds = plan.operations
-          .filter((operation) => operation._tag === "PublishCommandOperation")
+          .filter((operation) =>
+            operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+          )
           .map((operation) => operation.id)
-        const firstPublishIndex = plan.operations.findIndex((operation) => operation._tag === "PublishCommandOperation")
+        const firstPublishIndex = plan.operations.findIndex((operation) =>
+          operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+        )
         const firstVerifyIndex = plan.operations.findIndex((operation) =>
           operation._tag === "VerifyRemoteOperation" || operation._tag === "VerifyHttpOperation"
         )
 
         expect(plan.targets.map((target) => target.id)).toEqual(["github", "npm"])
-        expect(publishIds).toEqual(["npm:npm-publish", "github:gh-release-create"])
+        expect(publishIds).toEqual(["npm:npm-publish", "github:github-release-create"])
         expect(firstPublishIndex).toBeGreaterThan(
           Math.max(
             ...plan.operations
@@ -139,7 +145,9 @@ describe("planner", () => {
     it.effect("marks publish operations as approval-required", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
-        const publish = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
+        const publish = plan.operations.filter((operation) =>
+          operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+        )
 
         expect(publish.length).toBe(2)
         expect(publish.every((operation) => !canExecuteOperation(operation, ExecutionApproval.none))).toBe(true)
@@ -162,8 +170,8 @@ describe("planner", () => {
     it.effect("rejects unsafe evidence directory traversal", () =>
       Effect.gen(function*() {
         const unsafeConfig = minimalConfig.replace(
-          "\"evidenceDirectory\":\".release/evidence\"",
-          "\"evidenceDirectory\":\"../outside\""
+          "\"evidence\":\".release/evidence\"",
+          "\"evidence\":\"../outside\""
         )
         const error = yield* createPlan(unsafeConfig).pipe(Effect.flip)
 
@@ -179,13 +187,23 @@ describe("planner", () => {
         }> = [
           {
             label: "evidence directory",
-            config: minimalConfig.replace("\"evidenceDirectory\":\".release/evidence\"", "\"evidenceDirectory\":\"\""),
+            config: minimalConfig.replace("\"evidence\":\".release/evidence\"", "\"evidence\":\"\""),
             field: "evidenceDirectory"
           },
           {
             label: "artifact path",
-            config: minimalConfig.replace("\"path\":\".\"", "\"path\":\"\""),
-            field: "artifacts.package.path"
+            config: releaseConfig({
+              artifacts: [
+                {
+                  id: "archive",
+                  path: "",
+                  format: "tarball",
+                  consumers: []
+                }
+              ],
+              targets: []
+            }),
+            field: "artifacts.archive.path"
           },
           {
             label: "npm package path",
@@ -244,7 +262,7 @@ describe("planner", () => {
 
         expect(explanation).toContain("operation: npm:npm-publish")
         expect(explanation).toContain("risk: irreversible")
-        expect(explanation).toContain("execution approval: --execute + --approve-irreversible")
+        expect(explanation).toContain("execution approval: --execute + --approve-publish")
         expect(explanation).toContain("argv:")
       }))
 

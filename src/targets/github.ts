@@ -1,11 +1,9 @@
 import * as Effect from "effect/Effect"
 import {
-  HttpJsonArrayObjectFieldEqualsCheck,
-  HttpJsonEqualsCheck,
+  GitHubReleaseAssetSpec,
   Operation,
-  PublishCommandOperation,
-  VerifyHttpOperation,
-  VerifyRemoteOperation
+  PublishGitHubReleaseOperation,
+  VerifyGitHubReleaseOperation
 } from "../domain/operation.js"
 import { ReleaseModel } from "../domain/release.js"
 import {
@@ -17,20 +15,15 @@ import {
 import { PlanConstructionError } from "../planner/errors.js"
 import { GitHubTargetAdapter } from "./adapter.js"
 import {
-  readOnlyCommandValidationOperation,
   rejectNoDryRunInStrictMode,
   targetCapabilitiesFor,
   validationNoteOperation
 } from "./adapter-helpers.js"
 import {
   GitHubReleaseContext,
-  githubGhCommand,
   githubReleaseAssetName,
-  githubReleaseCreateCommand,
-  githubReleaseRequestSpec,
   githubReleaseTag,
   githubReleaseTitle,
-  githubReleaseViewCommand,
   githubTargetArtifacts
 } from "./github-release.js"
 
@@ -62,56 +55,23 @@ const githubVerificationOperations = (
   target: GitHubReleaseTarget,
   model: ReleaseModel
 ): ReadonlyArray<Operation> => {
-  if (target.draft === true) {
-    return [
-      VerifyRemoteOperation.make({
-        id: `${target.id}:github-release-verify-gh`,
-        targetId: target.id,
-        description: "Verify the GitHub draft release through the GitHub CLI.",
-        risk: "read-only",
-        command: githubReleaseViewCommand(target, model)
-      })
-    ]
-  }
-
   const tag = githubReleaseTag(model)
   const title = githubReleaseTitle(model)
   const isPrerelease = target.prerelease === true
-  const artifactChecks = githubTargetArtifacts(target, model).map((artifact) =>
-    HttpJsonArrayObjectFieldEqualsCheck.make({
-      path: ["assets"],
-      field: "name",
-      expected: githubReleaseAssetName(artifact.path)
-    })
-  )
 
   return [
-    VerifyHttpOperation.make({
-      id: `${target.id}:github-release-verify-http`,
+    VerifyGitHubReleaseOperation.make({
+      id: `${target.id}:github-release-verify-api`,
       targetId: target.id,
       description: "Verify the GitHub release through the GitHub API.",
       risk: "read-only",
-      request: githubReleaseRequestSpec(target, tag),
-      expectedStatus: 200,
-      checks: [
-        HttpJsonEqualsCheck.make({
-          path: ["tag_name"],
-          expected: tag
-        }),
-        HttpJsonEqualsCheck.make({
-          path: ["name"],
-          expected: title
-        }),
-        HttpJsonEqualsCheck.make({
-          path: ["draft"],
-          expected: false
-        }),
-        HttpJsonEqualsCheck.make({
-          path: ["prerelease"],
-          expected: isPrerelease
-        }),
-        ...artifactChecks
-      ]
+      repository: target.repository,
+      ...(target.tokenEnv === undefined ? {} : { tokenEnv: target.tokenEnv }),
+      tag,
+      title,
+      draft: target.draft === true,
+      prerelease: isPrerelease,
+      assetNames: githubTargetArtifacts(target, model).map((artifact) => githubReleaseAssetName(artifact.path))
     })
   ]
 }
@@ -121,15 +81,28 @@ const githubDryRunOperation = (
   dryRunSupport: Exclude<TargetDryRunSupport, "native">
 ): Operation =>
   validationNoteOperation({
-    id: `${target.id}:gh-release-dry-run`,
+    id: `${target.id}:github-release-dry-run`,
     targetId: target.id,
     dryRunSupport,
     simulatedDescription: "Record simulated GitHub release dry-run validation.",
     skippedDescription: "Record skipped GitHub release dry-run validation.",
     simulatedMessage:
-      "GitHub release dry-run validation is simulated by the deterministic release plan; gh release create has no native dry-run command.",
+      "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.",
     skippedMessage: "GitHub release dry-run validation was skipped because this target declares no dry-run support."
   })
+
+const githubReleaseAssets = (
+  target: GitHubReleaseTarget,
+  model: ReleaseModel
+): ReadonlyArray<GitHubReleaseAssetSpec> =>
+  githubTargetArtifacts(target, model).map((artifact) =>
+    GitHubReleaseAssetSpec.make({
+      artifactId: artifact.id,
+      path: artifact.path,
+      name: githubReleaseAssetName(artifact.path),
+      contentType: "application/octet-stream"
+    })
+  )
 
 export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
   target: GitHubReleaseTarget,
@@ -153,25 +126,20 @@ export const planGitHubOperations = Effect.fn("planGitHubOperations")(function*(
   const publishRisk = target.mutability === "immutable" ? "irreversible" : "externally-visible"
 
   return [
-    readOnlyCommandValidationOperation({
-      id: `${target.id}:gh-version`,
-      targetId: target.id,
-      description: "Check GitHub CLI availability.",
-      command: githubGhCommand(target, ["--version"], false)
-    }),
-    readOnlyCommandValidationOperation({
-      id: `${target.id}:gh-auth-status`,
-      targetId: target.id,
-      description: "Validate GitHub CLI authentication.",
-      command: githubGhCommand(target, ["auth", "status"], true)
-    }),
     githubDryRunOperation(target, dryRunSupport),
-    PublishCommandOperation.make({
-      id: `${target.id}:gh-release-create`,
+    PublishGitHubReleaseOperation.make({
+      id: `${target.id}:github-release-create`,
       targetId: target.id,
       description: `Create GitHub release for ${model.identity.name}@${model.identity.version}.`,
       risk: publishRisk,
-      command: githubReleaseCreateCommand(target, model)
+      repository: target.repository,
+      ...(target.tokenEnv === undefined ? {} : { tokenEnv: target.tokenEnv }),
+      tag: githubReleaseTag(model),
+      title: githubReleaseTitle(model),
+      ...(model.identity.notes === undefined ? {} : { notes: model.identity.notes }),
+      draft: target.draft === true,
+      prerelease: target.prerelease === true,
+      assets: githubReleaseAssets(target, model)
     }),
     ...githubVerificationOperations(target, model)
   ] satisfies ReadonlyArray<Operation>

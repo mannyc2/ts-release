@@ -1,31 +1,31 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
+  "project": {
     "name": "release-example-skips",
+    "packageName": "release-example-skips",
     "version": "0.1.0",
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "artifacts": [
-    {
-      "id": "archive",
-      "path": "artifacts/release-example-skips-0.1.0.tgz",
-      "format": "tarball",
-      "consumers": ["github"]
-    }
-  ],
-  "targets": [
-    {
-      "_tag": "GitHubReleaseTarget",
-      "id": "github",
+  "build": {
+    "artifacts": [
+      {
+        "id": "archive",
+        "path": "artifacts/release-example-skips-0.1.0.tgz",
+        "format": "tarball",
+        "consumers": [
+          "github"
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "github": {
       "repository": "owner/repo",
       "tokenEnv": "GH_TOKEN",
-      "draft": true,
-      "dryRunSupport": "none",
-      "mutability": "mutable-release",
-      "recovery": "manual"
+      "draft": true
     }
-  ],
+  },
   "strict": false,
-  "evidenceDirectory": ".release/evidence"
+  "evidence": ".release/evidence"
 }

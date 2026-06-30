@@ -6,14 +6,16 @@ import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { ReleasePlan } from "@mannyc1/ts-release/domain/release"
-import type { ReleaseCommandRunner } from "@mannyc1/ts-release/host"
-import type { ReleaseHttp } from "@mannyc1/ts-release/host/http"
-import type { TargetRegistry } from "@mannyc1/ts-release/targets/registry"
-import { Config, Diagnostics } from "@mannyc1/ts-release/workflows"
+import type { ArtifactRecipeRegistry } from "../../../src/artifacts/registry.js"
+import { ReleasePlan } from "../../../src/domain/release.js"
+import type { ReleaseCommandRunner } from "../../../src/host/host.js"
+import type { ReleaseHttp } from "../../../src/host/http.js"
+import type { GitHubApi } from "../../../src/targets/github-api.js"
+import type { TargetRegistry } from "../../../src/targets/registry.js"
+import * as Release from "../../../src/workflows/release.js"
 import { ActionOptions } from "./input.js"
 
-type ReleaseDiagnosticReport = Diagnostics.ReleaseDiagnosticReport
+type ReleaseDiagnosticReport = Release.ReleaseDiagnosticReport
 
 export interface ActionIo {
   readonly setOutput: (name: string, value: string) => Effect.Effect<void, unknown>
@@ -54,6 +56,8 @@ export type ActionRuntimeServices =
   | Path.Path
   | ReleaseCommandRunner
   | ReleaseHttp
+  | GitHubApi
+  | ArtifactRecipeRegistry
   | TargetRegistry
 
 type PlanObserver = (plan: ReleasePlan) => void
@@ -177,10 +181,9 @@ const actionOptionsWithConfig = (
     planPath: options.planPath,
     failOnWarnings: options.failOnWarnings,
     ...(options.target === undefined ? {} : { target: options.target }),
-    ...(options.workflow === undefined ? {} : { workflow: options.workflow }),
     runtime: options.runtime,
     execute: options.execute,
-    approveIrreversible: options.approveIrreversible,
+    approvePublish: options.approvePublish,
     uploadEvidence: options.uploadEvidence,
     evidenceArtifactName: options.evidenceArtifactName
   })
@@ -199,7 +202,7 @@ const releaseInput = (options: ActionOptions) => ({
 const textOutputFormat = (options: ActionOptions): "json" | "text" =>
   options.format === "json" ? "json" : "text"
 
-const validationInput = (options: ActionOptions) => ({
+const buildInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
   format: textOutputFormat(options)
@@ -209,13 +212,7 @@ const executionInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
   execute: options.execute,
-  approveIrreversible: options.approveIrreversible
-})
-
-const reconcileInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  execute: options.execute
+  approveIrreversible: options.approvePublish
 })
 
 const diagnosticsFormat = (options: ActionOptions): "json" | "text" | "markdown" =>
@@ -225,8 +222,7 @@ const diagnosticsInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
   format: diagnosticsFormat(options),
-  ...(options.target === undefined ? {} : { target: options.target }),
-  ...(options.workflow === undefined ? {} : { workflow: options.workflow })
+  ...(options.target === undefined ? {} : { target: options.target })
 })
 
 const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlan, planPath: string) {
@@ -366,93 +362,79 @@ const ensureRuntime = (options: ActionOptions): Effect.Effect<void, ActionComman
 
 const runPlan = Effect.fn("action.runPlan")(function*(options: ActionOptions, io: ActionIo) {
   const path = yield* Path.Path
-  const planned = yield* Config.renderPlannedPlan(planInput(options))
+  const plan = yield* Release.planRelease(planInput(options))
+  const contents = Release.renderReleasePlan(plan, options.format)
   const outputPath = yield* workspaceOutputPath(path, options, options.planPath)
-  yield* io.writeFile(outputPath, planned.contents)
+  yield* io.writeFile(outputPath, contents)
   if (options.writeStepSummary) {
     const markdown = options.format === "markdown"
-      ? planned.contents
-      : Config.renderReleasePlan(planned.plan, "markdown")
+      ? contents
+      : Release.renderReleasePlan(plan, "markdown")
     yield* io.appendSummary(markdown)
   }
-  yield* outputPlan(io, planned.plan, options.planPath)
+  yield* outputPlan(io, plan, options.planPath)
   yield* io.setOutput("status", "passed")
-  return planned.plan
+  return plan
 })
 
-const runValidateConfig = Effect.fn("action.runValidateConfig")(function*(options: ActionOptions, io: ActionIo) {
-  const rendered = yield* Config.renderValidation(validationInput(options))
+const runBuild = Effect.fn("action.runBuild")(function*(
+  options: ActionOptions,
+  io: ActionIo,
+  observePlan: PlanObserver = NoopPlanObserver
+) {
+  const staged = yield* Release.buildReleaseArtifacts(buildInput(options))
+  observePlan(staged.plan)
+  const rendered = Release.renderBuildArtifacts(staged, textOutputFormat(options))
   if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release validate-config\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
+    yield* io.appendSummary(`## ts-release build\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
   }
+  yield* outputEvidenceDirectory(io, staged.plan)
   yield* io.setOutput("status", "passed")
+  return staged.plan
 })
 
 const runDiagnostics = Effect.fn("action.runDiagnostics")(function*(
-  command: "doctor" | "check-auth" | "check-ci",
   options: ActionOptions,
   io: ActionIo
 ) {
-  const report = command === "doctor"
-    ? yield* Diagnostics.doctor(diagnosticsInput(options))
-    : command === "check-auth"
-    ? yield* Diagnostics.checkAuth(diagnosticsInput(options))
-    : yield* Diagnostics.checkCi(diagnosticsInput(options))
-  const rendered = Diagnostics.render(report, diagnosticsFormat(options))
+  const report = yield* Release.doctorRelease(diagnosticsInput(options))
+  const rendered = Release.renderReleaseDiagnostics(report, diagnosticsFormat(options))
   if (options.writeStepSummary) {
     yield* io.appendSummary(rendered)
   }
   yield* io.setOutput("release_name", report.releaseName)
   yield* io.setOutput("release_version", report.releaseVersion)
-  yield* failForDiagnostics(command, report, options.failOnWarnings)
+  yield* failForDiagnostics("doctor", report, options.failOnWarnings)
   yield* io.setOutput("status", "passed")
 })
 
-const runValidate = Effect.fn("action.runValidate")(function*(
+const runVerify = Effect.fn("action.runVerify")(function*(
   options: ActionOptions,
   io: ActionIo,
   observePlan: PlanObserver = NoopPlanObserver
 ) {
-  const plan = yield* Config.plan(releaseInput(options))
+  const plan = yield* Release.planRelease(releaseInput(options))
   observePlan(plan)
   yield* outputEvidenceDirectory(io, plan)
-  yield* Config.writePlannedValidation(plan)
+  yield* Release.writeVerificationEvidence(plan)
   if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release validate\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/validation.json\n`)
+    yield* io.appendSummary(`## ts-release verify\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/verification.json\n`)
   }
   yield* io.setOutput("status", "passed")
   return plan
 })
 
-const runWorkflow = Effect.fn("action.runWorkflow")(function*(
+const runRelease = Effect.fn("action.runRelease")(function*(
   options: ActionOptions,
   io: ActionIo,
   observePlan: PlanObserver = NoopPlanObserver
 ) {
-  const plan = yield* Config.plan(releaseInput(options))
+  const plan = yield* Release.planRelease(releaseInput(options))
   observePlan(plan)
   yield* outputEvidenceDirectory(io, plan)
-  yield* Config.writePlannedRun(plan, executionInput(options))
+  yield* Release.writeReleaseEvidence(plan, executionInput(options))
   if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release run\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/evidence.json\n`)
-  }
-  yield* io.setOutput("status", "passed")
-  return plan
-})
-
-const runReconcile = Effect.fn("action.runReconcile")(function*(
-  options: ActionOptions,
-  io: ActionIo,
-  observePlan: PlanObserver = NoopPlanObserver
-) {
-  const plan = yield* Config.plan(releaseInput(options))
-  observePlan(plan)
-  yield* outputEvidenceDirectory(io, plan)
-  yield* Config.writePlannedReconcile(plan, reconcileInput(options))
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(
-      `## ts-release reconcile\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/reconciliation.json\n`
-    )
+    yield* io.appendSummary(`## ts-release release\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/evidence.json\n`)
   }
   yield* io.setOutput("status", "passed")
   return plan
@@ -477,22 +459,17 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
       case "plan":
         rememberPlan(yield* runPlan(safeOptions, io))
         return
-      case "validate-config":
-        yield* runValidateConfig(safeOptions, io)
-        return
       case "doctor":
-      case "check-auth":
-      case "check-ci":
-        yield* runDiagnostics(safeOptions.command, safeOptions, io)
+        yield* runDiagnostics(safeOptions, io)
         return
-      case "validate":
-        yield* runValidate(safeOptions, io, rememberPlan)
+      case "build":
+        rememberPlan(yield* runBuild(safeOptions, io))
         return
-      case "run":
-        yield* runWorkflow(safeOptions, io, rememberPlan)
+      case "release":
+        yield* runRelease(safeOptions, io, rememberPlan)
         return
-      case "reconcile":
-        yield* runReconcile(safeOptions, io, rememberPlan)
+      case "verify":
+        yield* runVerify(safeOptions, io, rememberPlan)
         return
     }
   }))

@@ -102637,6 +102637,14 @@ var writeWorkflowEvidenceWithFailure = (plan, effect2) => effect2.pipe(catchIf2(
 var writeVerificationEvidence = fn2("workflows.release.writeVerificationEvidence")(function* (plan) {
   return yield* writeNamedEvidenceWithFailure(plan, "verification", verifyPlan(plan));
 });
+var writeRenderEvidence = fn2("workflows.release.writeRenderEvidence")(function* (plan, input = {}) {
+  const options = executionOptionsFromInput(input);
+  const approval = ExecutionApproval.make({
+    execute: options.execute ?? false,
+    approveIrreversible: false
+  });
+  return yield* writeNamedEvidenceWithFailure(plan, "render", renderPlan(plan, approval));
+});
 var writeReleaseEvidence = fn2("workflows.release.writeReleaseEvidence")(function* (plan, input = {}) {
   const options = executionOptionsFromInput(input);
   return yield* writeWorkflowEvidenceWithFailure(plan, runApprovedReleaseWorkflow(plan, approvalFromOptions(options)));
@@ -102645,6 +102653,12 @@ var verifyRelease = fn2("workflows.release.verifyRelease")(function* (input = {}
   const options = sourceOptionsFromInput(input);
   const plan = yield* planRelease(options);
   const evidence = yield* writeVerificationEvidence(plan);
+  return ReleaseEvidenceResult.make({ plan, evidence });
+});
+var renderReleaseFiles = fn2("workflows.release.renderReleaseFiles")(function* (input = {}) {
+  const options = executionOptionsFromInput(input);
+  const plan = yield* planRelease(options);
+  const evidence = yield* writeRenderEvidence(plan, options);
   return ReleaseEvidenceResult.make({ plan, evidence });
 });
 var runApprovedRelease = fn2("workflows.release.runApprovedRelease")(function* (input = {}) {

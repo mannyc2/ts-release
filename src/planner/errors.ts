@@ -45,23 +45,6 @@ export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteE
   reason: Schema.String
 }) {}
 
-export class RemoteStateInspectionError extends Schema.TaggedErrorClass<RemoteStateInspectionError>()(
-  "RemoteStateInspectionError",
-  {
-    targetId: TargetId,
-    reason: Schema.String,
-    cause: Schema.optionalKey(Schema.Defect())
-  }
-) {}
-
-export class ReconciliationBlockedError extends Schema.TaggedErrorClass<ReconciliationBlockedError>()(
-  "ReconciliationBlockedError",
-  {
-    targetId: TargetId,
-    reasons: Schema.Array(Schema.String)
-  }
-) {}
-
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
   operationId: OperationId,
   exitCode: Schema.optionalKey(Schema.Number),
@@ -77,6 +60,4 @@ export type PlannerError =
   | EvidenceWriteError
   | EvidenceReadError
   | WorkspaceWriteError
-  | RemoteStateInspectionError
-  | ReconciliationBlockedError
   | OperationFailedError

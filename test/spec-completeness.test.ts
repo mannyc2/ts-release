@@ -27,8 +27,8 @@ const createPlan = (config: string = minimalConfig) =>
   })
 
 const trustedPublishingConfig = minimalConfig.replace(
-  "\"tokenEnv\":\"NPM_TOKEN\",",
-  "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+  "\"tokenEnv\":\"NPM_TOKEN\"",
+  "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true}"
 )
 
 const expectValidationRecord = (
@@ -79,40 +79,35 @@ describe("SPEC completeness", () => {
         })
       }))
 
-    it.effect("records skipped dry-run validators in non-strict evidence", () =>
+    it.effect("records compact policy validators in non-strict evidence", () =>
       Effect.gen(function*() {
-        const nonStrictNoDryRunConfig = minimalConfig
-          .replaceAll("\"dryRunSupport\":\"native\"", "\"dryRunSupport\":\"none\"")
-          .replace("\"dryRunSupport\":\"simulated\"", "\"dryRunSupport\":\"none\"")
-          .replace("\"strict\":true", "\"strict\":false")
+        const nonStrictConfig = minimalConfig.replace("\"strict\":true", "\"strict\":false")
 
-        const plan = yield* createPlan(nonStrictNoDryRunConfig)
+        const plan = yield* createPlan(nonStrictConfig)
         const evidence = yield* validatePlan(plan)
 
-        expect(evidence.records.filter((record) => record.status === "skipped").map((record) => record.id).sort()).toEqual([
-          "github:gh-release-dry-run:validation",
-          "npm:npm-pack-dry-run:validation"
-        ])
-        expectValidationRecord(evidence.records, "github:gh-release-dry-run:validation", {
-          status: "skipped",
-          skipped: true,
-          severity: "warning"
+        expect(evidence.records.filter((record) => record.status === "skipped")).toEqual([])
+        expectValidationRecord(evidence.records, "github:github-release-dry-run:validation", {
+          status: "passed",
+          skipped: false,
+          severity: "info"
         })
-        expectValidationRecord(evidence.records, "npm:npm-pack-dry-run:validation", {
-          status: "skipped",
-          skipped: true,
-          severity: "warning"
+        expectValidationRecord(evidence.records, "npm:npm-pack-dry-run:command", {
+          status: "passed",
+          skipped: false,
+          severity: "info"
         })
       }))
 
-    it.effect("strict mode rejects targets without dry-run support", () =>
+    it.effect("rejects removed target policy knobs at the config boundary", () =>
       Effect.gen(function*() {
-        const strictNoDryRunConfig = minimalConfig
-          .replaceAll("\"dryRunSupport\":\"native\"", "\"dryRunSupport\":\"none\"")
-          .replace("\"dryRunSupport\":\"simulated\"", "\"dryRunSupport\":\"none\"")
-        const error = yield* createPlan(strictNoDryRunConfig).pipe(Effect.flip)
+        const removedPolicyConfig = minimalConfig.replace(
+          "\"publish\":{\"npm\":{",
+          "\"publish\":{\"npm\":{\"dryRunSupport\":\"none\","
+        )
+        const error = yield* createPlan(removedPolicyConfig).pipe(Effect.flip)
 
-        expectTaggedError(error, "PlanConstructionError")
+        expectTaggedError(error, "ConfigValidationError")
       }))
 
     it.effect("rejects unsafe artifact and package paths", () =>

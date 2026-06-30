@@ -14,14 +14,27 @@ export type EvidenceSeverity = typeof EvidenceSeverity.Type
 export const EvidenceStatus = Schema.Literals(["passed", "failed", "skipped", "warning"])
 export type EvidenceStatus = typeof EvidenceStatus.Type
 
-export const EvidencePhase = Schema.Literals(["render", "validation", "execution", "verification", "reconciliation"])
+export const EvidencePhase = Schema.Literals(["render", "validation", "execution", "verification"])
 export type EvidencePhase = typeof EvidencePhase.Type
 
 export class HttpRequestEvidence extends Schema.Class<HttpRequestEvidence>("HttpRequestEvidence")({
   method: HttpMethod,
   url: Schema.String,
   headers: Schema.Array(HttpHeader),
-  envHeaders: Schema.Array(HttpEnvHeader)
+  envHeaders: Schema.Array(HttpEnvHeader),
+  body: Schema.optionalKey(Schema.Literals(["json", "file"])),
+  bodyPath: Schema.optionalKey(Schema.String),
+  contentType: Schema.optionalKey(Schema.String)
+}) {}
+
+export class GitHubReleaseEvidence extends Schema.Class<GitHubReleaseEvidence>("GitHubReleaseEvidence")({
+  repository: Schema.String,
+  tag: Schema.String,
+  releaseId: Schema.optionalKey(Schema.Number),
+  title: Schema.optionalKey(Schema.String),
+  draft: Schema.optionalKey(Schema.Boolean),
+  prerelease: Schema.optionalKey(Schema.Boolean),
+  assets: Schema.Array(Schema.String)
 }) {}
 
 export class HttpCheckEvidence extends Schema.Class<HttpCheckEvidence>("HttpCheckEvidence")({
@@ -47,6 +60,7 @@ export class OperationEvidenceRecord extends Schema.Class<OperationEvidenceRecor
   stderr: Schema.optionalKey(Schema.String),
   request: Schema.optionalKey(HttpRequestEvidence),
   responseStatus: Schema.optionalKey(Schema.Number),
+  githubRelease: Schema.optionalKey(GitHubReleaseEvidence),
   checks: Schema.optionalKey(Schema.Array(HttpCheckEvidence)),
   skipped: Schema.optionalKey(Schema.Boolean)
 }) {}

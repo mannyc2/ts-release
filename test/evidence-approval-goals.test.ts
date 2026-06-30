@@ -18,9 +18,9 @@ import {
   validatePlan
 } from "../src/planner/executor.js"
 import {
-  planReleaseConfig,
-  writePlannedRunWorkflowEvidence
-} from "../src/workflows/config.js"
+  planRelease,
+  writeReleaseEvidence
+} from "../src/workflows/release.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { commandKey } from "../src/host/test.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
@@ -28,7 +28,8 @@ import {
   expectTaggedError,
   makeObservableCommandRunnerLayer,
   minimalConfig,
-  partialWorkflowConfig
+  partialWorkflowConfig,
+  TestGitHubApiLayer
 } from "./helpers.js"
 
 const withTempDirectory = async <A>(
@@ -53,6 +54,7 @@ const TestLayer = Layer.mergeAll(
   }),
   makeTestReleaseHttpLayer(),
   LiveTargetRegistryLayer,
+  TestGitHubApiLayer,
   BunServices.layer
 )
 
@@ -123,13 +125,14 @@ describe("minimal evidence and approval goals", () => {
         }),
         makeTestReleaseHttpLayer(),
         LiveTargetRegistryLayer,
+        TestGitHubApiLayer,
         BunServices.layer
       )
 
       const exit = await Effect.runPromiseExit(
         Effect.gen(function*() {
-          const plan = yield* planReleaseConfig({ root, configPath })
-          return yield* writePlannedRunWorkflowEvidence(plan, {
+          const plan = yield* planRelease({ root, configPath })
+          return yield* writeReleaseEvidence(plan, {
             root,
             configPath,
             execute: true,

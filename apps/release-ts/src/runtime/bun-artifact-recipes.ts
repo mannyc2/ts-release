@@ -7,16 +7,16 @@ import {
   ArtifactRecipeStageError,
   StagedArtifact,
   StagedArtifactRecipeResult
-} from "@mannyc1/ts-release/artifacts/adapter"
+} from "../../../../src/artifacts/adapter.js"
 import {
   ArtifactRecipeRegistry,
   MissingArtifactRecipeAdapterError
-} from "@mannyc1/ts-release/artifacts/registry"
+} from "../../../../src/artifacts/registry.js"
 import {
   BunExecutableArtifactRecipe,
   PyPiWheelArtifactRecipe
-} from "@mannyc1/ts-release/domain/artifact"
-import { renderReleaseTemplate } from "@mannyc1/ts-release/planner/normalize-release"
+} from "../../../../src/domain/artifact.js"
+import { renderReleaseTemplate } from "../../../../src/planner/normalize-release.js"
 import { stagePyPiWheelArtifactRecipe } from "./pypi-wheel-artifact-recipes.js"
 
 export interface BunExecutableBuildInput {

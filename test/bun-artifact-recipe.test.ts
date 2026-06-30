@@ -207,18 +207,16 @@ describe("Bun executable artifact recipe adapter", () => {
   it.effect("accepts the self-release Bun compile target strings in config", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(JSON.stringify({
-        identity: {
+        project: {
           name: "release",
           version: "0.1.0",
           commit: "abc123",
           tag: "v0.1.0"
         },
-        artifacts: [],
-        artifactRecipes: [
-          {
-            _tag: "BunExecutableArtifactRecipe",
+        build: {
+          bun: {
             id: "release-cli",
-            entrypoint: "src/cli.ts",
+            entry: "src/cli.ts",
             outputs: [
               {
                 id: "cli-linux-x64",
@@ -256,14 +254,11 @@ describe("Bun executable artifact recipe adapter", () => {
               }
             ]
           }
-        ],
-        targets: []
+        },
+        publish: {}
       }))
 
-      expect(intent.artifactRecipes?.[0]?._tag).toBe("BunExecutableArtifactRecipe")
-      const recipe = intent.artifactRecipes?.[0]
-      if (recipe?._tag === "BunExecutableArtifactRecipe") {
-        expect(recipe.outputs[4]?.variant?.binaryName).toBe("release")
-      }
+      expect(intent.build?.bun?.id).toBe("release-cli")
+      expect(intent.build?.bun?.outputs?.[4]?.variant?.binaryName).toBe("release")
     }))
 })

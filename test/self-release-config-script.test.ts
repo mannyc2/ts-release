@@ -59,6 +59,15 @@ const releaseArtifacts = () => [
   }
 ]
 
+interface StaticArtifactFixture {
+  readonly id: string
+  readonly path: string
+  readonly format: string
+  readonly consumers: ReadonlyArray<string>
+}
+
+const releaseStaticArtifacts = (): Array<StaticArtifactFixture> => []
+
 const pypiWheelRecipe = (input: {
   readonly id: string
   readonly path: string
@@ -68,7 +77,6 @@ const pypiWheelRecipe = (input: {
   readonly sourcePath: string
   readonly wheelPath: string
 }) => ({
-  _tag: "PyPiWheelArtifactRecipe",
   id: input.id,
   path: input.path,
   wheelTag: input.wheelTag,
@@ -138,64 +146,61 @@ const releasePyPiWheelRecipes = () => [
   })
 ]
 
-const releaseArtifactRecipes = () => [
-  {
-    _tag: "BunExecutableArtifactRecipe",
-    id: "release-ts-cli",
-    entrypoint: "apps/release-ts/src/cli/main.ts",
-    outputs: [
-      {
-        id: "cli-linux-x64",
-        target: "bun-linux-x64-baseline",
-        path: ".release/artifacts/ts-release-{version}-linux-x64",
-        downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-x64",
-        consumers: ["github"]
-      },
-      {
-        id: "cli-linux-arm64",
-        target: "bun-linux-arm64",
-        path: ".release/artifacts/ts-release-{version}-linux-arm64",
-        downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-arm64",
-        consumers: ["github"]
-      },
-      {
-        id: "cli-darwin-x64",
-        target: "bun-darwin-x64",
-        path: ".release/artifacts/ts-release-{version}-darwin-x64",
-        downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-x64",
-        consumers: ["github", "homebrew"]
-      },
-      {
-        id: "cli-darwin-arm64",
-        target: "bun-darwin-arm64",
-        path: ".release/artifacts/ts-release-{version}-darwin-arm64",
-        downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-arm64",
-        consumers: ["github", "homebrew"]
-      },
-      {
-        id: "cli-windows-x64",
-        target: "bun-windows-x64-baseline",
-        path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
-        downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-windows-x64.exe",
-        consumers: ["github", "scoop"]
-      }
-    ]
-  },
-  ...releasePyPiWheelRecipes()
-]
+const releaseBunRecipe = () => ({
+  id: "release-ts-cli",
+  entry: "apps/release-ts/src/cli/main.ts",
+  outputs: [
+    {
+      id: "cli-linux-x64",
+      target: "bun-linux-x64-baseline",
+      path: ".release/artifacts/ts-release-{version}-linux-x64",
+      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-x64",
+      consumers: ["github"]
+    },
+    {
+      id: "cli-linux-arm64",
+      target: "bun-linux-arm64",
+      path: ".release/artifacts/ts-release-{version}-linux-arm64",
+      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-arm64",
+      consumers: ["github"]
+    },
+    {
+      id: "cli-darwin-x64",
+      target: "bun-darwin-x64",
+      path: ".release/artifacts/ts-release-{version}-darwin-x64",
+      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-x64",
+      consumers: ["github", "homebrew"]
+    },
+    {
+      id: "cli-darwin-arm64",
+      target: "bun-darwin-arm64",
+      path: ".release/artifacts/ts-release-{version}-darwin-arm64",
+      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-arm64",
+      consumers: ["github", "homebrew"]
+    },
+    {
+      id: "cli-windows-x64",
+      target: "bun-windows-x64-baseline",
+      path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
+      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-windows-x64.exe",
+      consumers: ["github", "scoop"]
+    }
+  ]
+})
 
 const baseConfig = (version: string = "0.0.0") => ({
-  identity: {
-    _tag: "PackageManifestReleaseIdentitySource",
+  project: {
     commit: "HEAD",
     tagTemplate: "v{version}"
   },
-  artifacts: releaseArtifacts(),
-  artifactRecipes: releaseArtifactRecipes(),
-  targets: [
-    {
-      _tag: "NpmRegistryTarget",
-      id: "npm",
+  build: {
+    artifacts: releaseStaticArtifacts(),
+    npmPackage: releaseArtifacts()[0],
+    bun: releaseBunRecipe(),
+    pypiWheel: releasePyPiWheelRecipes()
+  },
+  publish: {
+    npm: {
       registry: "https://registry.npmjs.org",
       packageName: "@mannyc1/ts-release",
       packagePath: ".",
@@ -206,25 +211,15 @@ const baseConfig = (version: string = "0.0.0") => ({
         verifyPackageExists: true
       },
       access: "public",
-      provenance: true,
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
+      provenance: true
     },
-    {
-      _tag: "GitHubReleaseTarget",
-      id: "github",
+    github: {
       repository: "mannyc2/ts-release",
       tokenEnv: "GH_TOKEN",
       draft: false,
-      prerelease: false,
-      dryRunSupport: "simulated",
-      mutability: "mutable-release",
-      recovery: "delete-and-recreate"
+      prerelease: false
     },
-    {
-      _tag: "HomebrewTapTarget",
-      id: "homebrew",
+    homebrew: {
       repository: "mannyc2/homebrew-ts-release",
       formulaName: "ts-release",
       formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
@@ -232,14 +227,9 @@ const baseConfig = (version: string = "0.0.0") => ({
       artifactIds: ["cli-darwin-arm64", "cli-darwin-x64"],
       homepage: "https://github.com/mannyc2/ts-release",
       description: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      tapDirectory: ".release/catalogs/homebrew-ts-release",
-      dryRunSupport: "simulated",
-      mutability: "mutable-index",
-      recovery: "manual"
+      tapDirectory: ".release/catalogs/homebrew-ts-release"
     },
-    {
-      _tag: "ScoopBucketTarget",
-      id: "scoop",
+    scoop: {
       repository: "mannyc2/scoop-ts-release",
       manifestName: "ts-release",
       manifestPath: ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
@@ -247,33 +237,24 @@ const baseConfig = (version: string = "0.0.0") => ({
       homepage: "https://github.com/mannyc2/ts-release",
       description: "Portable artifact and package-manager distribution planning for TypeScript projects.",
       license: "MIT",
-      bucketDirectory: ".release/catalogs/scoop-ts-release",
-      dryRunSupport: "simulated",
-      mutability: "mutable-index",
-      recovery: "manual"
+      bucketDirectory: ".release/catalogs/scoop-ts-release"
     },
-    {
-      _tag: "PyPiRegistryTarget",
-      id: "pypi",
+    pypi: {
       repositoryUrl: "https://upload.pypi.org/legacy/",
       pythonExecutable: "python3",
       trustedPublishing: {
         provider: "github-actions",
         workflow: "release.yml",
         publisherConfigured: true
-      },
-      dryRunSupport: "native",
-      mutability: "immutable",
-      recovery: "publish-new-version"
+      }
     }
-  ],
+  },
   strict: true,
-  evidenceDirectory: ".release/evidence"
+  evidence: ".release/evidence"
 })
 
 interface MutableReleaseCliRecipeFixture {
   readonly id: string
-  readonly _tag: string
   outputs: Array<{
     readonly id: string
     readonly target: string
@@ -286,13 +267,7 @@ interface MutableReleaseCliRecipeFixture {
 const releaseCliRecipeFixture = (
   config: ReturnType<typeof baseConfig>
 ): MutableReleaseCliRecipeFixture => {
-  const recipe = config.artifactRecipes.find((candidate) => candidate.id === "release-ts-cli") as
-    | MutableReleaseCliRecipeFixture
-    | undefined
-  if (recipe === undefined || recipe._tag !== "BunExecutableArtifactRecipe") {
-    throw new Error("release-ts-cli fixture must be a Bun executable recipe")
-  }
-  return recipe
+  return config.build.bun
 }
 
 const prepareWorkspace = async (
@@ -356,13 +331,12 @@ describe("self-release config script", () => {
     }
   })
 
-  test("fails when HEAD release uses dirty tracked files", async () => {
+  test("allows HEAD release with dirty tracked files", async () => {
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", dirty: true })
     try {
       const result = await run(["bun", scriptPath], root)
 
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("release identity commit HEAD requires a clean tracked working tree")
+      expect(result.exitCode).toBe(0)
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -419,8 +393,7 @@ describe("self-release config script", () => {
 
   test("fails when CLI artifacts are declared statically", async () => {
     const config = baseConfig()
-    config.artifacts = [
-      ...releaseArtifacts(),
+    config.build.artifacts = [
       {
         id: "cli-linux-x64",
         path: ".release/artifacts/ts-release-{version}-linux-x64",
@@ -433,7 +406,7 @@ describe("self-release config script", () => {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by artifactRecipes")
+      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by build.bun outputs")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -441,10 +414,7 @@ describe("self-release config script", () => {
 
   test("fails when npm provenance is disabled", async () => {
     const config = baseConfig()
-    const [target] = config.targets
-    if (target !== undefined) {
-      target.provenance = false
-    }
+    config.publish.npm.provenance = false
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)
@@ -458,10 +428,7 @@ describe("self-release config script", () => {
 
   test("fails when npm package name drifts from package manifest", async () => {
     const config = baseConfig()
-    const [target] = config.targets
-    if (target !== undefined) {
-      target.packageName = "@mannyc1/other-package"
-    }
+    config.publish.npm.packageName = "@mannyc1/other-package"
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)

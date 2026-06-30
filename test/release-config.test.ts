@@ -79,7 +79,7 @@ describe("repository release config", () => {
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-package-exists")
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-version-verify")
-    expect(plan.operations.map((operation) => operation.id)).toContain("github:gh-release-create")
+    expect(plan.operations.map((operation) => operation.id)).toContain("github:github-release-create")
     expect(plan.operations.map((operation) => operation.id)).toContain("homebrew:homebrew-render-formula")
     expect(plan.operations.map((operation) => operation.id)).toContain("pypi:twine-upload")
     expect(plan.operations.map((operation) => operation.id)).toContain("scoop:scoop-render-manifest")
@@ -89,14 +89,16 @@ describe("repository release config", () => {
     const scoop = plan.targetCapabilities.find((capability) => capability.targetId === "scoop")
     const text = renderPlanText(plan)
 
-    const publishOperations = plan.operations.filter((operation) => operation._tag === "PublishCommandOperation")
+    const publishOperations = plan.operations.filter((operation) =>
+      operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+    )
     const npmPublish = publishOperations.find((operation) => operation.id === "npm:npm-publish")
-    const githubPublish = publishOperations.find((operation) => operation.id === "github:gh-release-create")
+    const githubPublish = publishOperations.find((operation) => operation.id === "github:github-release-create")
     expect(publishOperations.length).toBeGreaterThan(0)
     expect(publishOperations.map((operation) => operation.id)).toEqual([
       "npm:npm-publish",
       "pypi:twine-upload",
-      "github:gh-release-create",
+      "github:github-release-create",
       "homebrew:homebrew-push:add",
       "scoop:scoop-push:add",
       "homebrew:homebrew-push:commit",
@@ -121,13 +123,15 @@ describe("repository release config", () => {
     }
     const npmVerify = plan.operations.find((operation) => operation.id === "npm:npm-version-verify")
     expect(npmVerify?._tag).toBe("VerifyRemoteOperation")
-    expect(githubPublish?._tag).toBe("PublishCommandOperation")
-    if (githubPublish?._tag === "PublishCommandOperation") {
+    expect(githubPublish?._tag).toBe("PublishGitHubReleaseOperation")
+    if (githubPublish?._tag === "PublishGitHubReleaseOperation") {
       for (const path of releaseArtifactFiles) {
         if (!path.endsWith(".whl")) {
-          expect(githubPublish.command.args).toContain(path)
+          expect(githubPublish.assets.map((asset) => asset.path)).toContain(path)
         }
       }
+      expect(githubPublish.repository).toBe("mannyc2/ts-release")
+      expect(githubPublish.tokenEnv).toBe("GH_TOKEN")
     }
     const pypiPublish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
     expect(pypiPublish?._tag).toBe("PublishCommandOperation")

@@ -1,31 +1,23 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
-    "_tag": "PackageManifestReleaseIdentitySource",
+  "project": {
     "commit": "HEAD",
     "tagTemplate": "v{version}",
     "notes": "Portable artifact and package-manager distribution release."
   },
-  "artifacts": [
-    {
-      "id": "npm-package",
-      "path": ".",
-      "format": "directory",
-      "consumers": ["npm"]
-    }
-  ],
-  "artifactRecipes": [
-    {
-      "_tag": "BunExecutableArtifactRecipe",
+  "build": {
+    "bun": {
       "id": "release-ts-cli",
-      "entrypoint": "apps/release-ts/src/cli/main.ts",
+      "entry": "apps/release-ts/src/cli/main.ts",
       "outputs": [
         {
           "id": "cli-linux-x64",
           "target": "bun-linux-x64-baseline",
           "path": ".release/artifacts/ts-release-{version}-linux-x64",
           "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-x64",
-          "consumers": ["github"],
+          "consumers": [
+            "github"
+          ],
           "variant": {
             "binaryName": "ts-release",
             "installPath": "bin/ts-release"
@@ -36,7 +28,9 @@
           "target": "bun-linux-arm64",
           "path": ".release/artifacts/ts-release-{version}-linux-arm64",
           "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-arm64",
-          "consumers": ["github"],
+          "consumers": [
+            "github"
+          ],
           "variant": {
             "binaryName": "ts-release",
             "installPath": "bin/ts-release"
@@ -47,7 +41,10 @@
           "target": "bun-darwin-x64",
           "path": ".release/artifacts/ts-release-{version}-darwin-x64",
           "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-x64",
-          "consumers": ["github", "homebrew"],
+          "consumers": [
+            "github",
+            "homebrew"
+          ],
           "variant": {
             "binaryName": "ts-release",
             "installPath": "bin/ts-release"
@@ -58,7 +55,10 @@
           "target": "bun-darwin-arm64",
           "path": ".release/artifacts/ts-release-{version}-darwin-arm64",
           "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-arm64",
-          "consumers": ["github", "homebrew"],
+          "consumers": [
+            "github",
+            "homebrew"
+          ],
           "variant": {
             "binaryName": "ts-release",
             "installPath": "bin/ts-release"
@@ -69,7 +69,10 @@
           "target": "bun-windows-x64-baseline",
           "path": ".release/artifacts/ts-release-{version}-windows-x64.exe",
           "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-windows-x64.exe",
-          "consumers": ["github", "scoop"],
+          "consumers": [
+            "github",
+            "scoop"
+          ],
           "variant": {
             "binaryName": "ts-release",
             "installPath": "bin/ts-release.exe"
@@ -77,121 +80,133 @@
         }
       ]
     },
-    {
-      "_tag": "PyPiWheelArtifactRecipe",
-      "id": "pypi-wheel-linux-x64",
-      "path": ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-      "wheelTag": "py3-none-manylinux2014_x86_64",
-      "packageName": "ts-release",
-      "moduleName": "ts_release",
-      "consoleScript": "ts-release",
-      "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      "homepage": "https://github.com/mannyc2/ts-release",
-      "license": "MIT",
-      "requiresPython": ">=3.8",
-      "binaries": [
-        {
-          "os": "linux",
-          "arch": "x64",
-          "sourcePath": ".release/artifacts/ts-release-{version}-linux-x64",
-          "wheelPath": "ts_release/bin/ts-release-linux-x64"
-        }
-      ],
-      "consumers": ["pypi"]
-    },
-    {
-      "_tag": "PyPiWheelArtifactRecipe",
-      "id": "pypi-wheel-linux-arm64",
-      "path": ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_aarch64.whl",
-      "wheelTag": "py3-none-manylinux2014_aarch64",
-      "packageName": "ts-release",
-      "moduleName": "ts_release",
-      "consoleScript": "ts-release",
-      "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      "homepage": "https://github.com/mannyc2/ts-release",
-      "license": "MIT",
-      "requiresPython": ">=3.8",
-      "binaries": [
-        {
-          "os": "linux",
-          "arch": "arm64",
-          "sourcePath": ".release/artifacts/ts-release-{version}-linux-arm64",
-          "wheelPath": "ts_release/bin/ts-release-linux-arm64"
-        }
-      ],
-      "consumers": ["pypi"]
-    },
-    {
-      "_tag": "PyPiWheelArtifactRecipe",
-      "id": "pypi-wheel-darwin-x64",
-      "path": ".release/artifacts/ts_release-{version}-py3-none-macosx_10_15_x86_64.whl",
-      "wheelTag": "py3-none-macosx_10_15_x86_64",
-      "packageName": "ts-release",
-      "moduleName": "ts_release",
-      "consoleScript": "ts-release",
-      "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      "homepage": "https://github.com/mannyc2/ts-release",
-      "license": "MIT",
-      "requiresPython": ">=3.8",
-      "binaries": [
-        {
-          "os": "darwin",
-          "arch": "x64",
-          "sourcePath": ".release/artifacts/ts-release-{version}-darwin-x64",
-          "wheelPath": "ts_release/bin/ts-release-darwin-x64"
-        }
-      ],
-      "consumers": ["pypi"]
-    },
-    {
-      "_tag": "PyPiWheelArtifactRecipe",
-      "id": "pypi-wheel-darwin-arm64",
-      "path": ".release/artifacts/ts_release-{version}-py3-none-macosx_11_0_arm64.whl",
-      "wheelTag": "py3-none-macosx_11_0_arm64",
-      "packageName": "ts-release",
-      "moduleName": "ts_release",
-      "consoleScript": "ts-release",
-      "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      "homepage": "https://github.com/mannyc2/ts-release",
-      "license": "MIT",
-      "requiresPython": ">=3.8",
-      "binaries": [
-        {
-          "os": "darwin",
-          "arch": "arm64",
-          "sourcePath": ".release/artifacts/ts-release-{version}-darwin-arm64",
-          "wheelPath": "ts_release/bin/ts-release-darwin-arm64"
-        }
-      ],
-      "consumers": ["pypi"]
-    },
-    {
-      "_tag": "PyPiWheelArtifactRecipe",
-      "id": "pypi-wheel-windows-x64",
-      "path": ".release/artifacts/ts_release-{version}-py3-none-win_amd64.whl",
-      "wheelTag": "py3-none-win_amd64",
-      "packageName": "ts-release",
-      "moduleName": "ts_release",
-      "consoleScript": "ts-release",
-      "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      "homepage": "https://github.com/mannyc2/ts-release",
-      "license": "MIT",
-      "requiresPython": ">=3.8",
-      "binaries": [
-        {
-          "os": "windows",
-          "arch": "x64",
-          "sourcePath": ".release/artifacts/ts-release-{version}-windows-x64.exe",
-          "wheelPath": "ts_release/bin/ts-release-windows-x64.exe"
-        }
-      ],
-      "consumers": ["pypi"]
+    "pypiWheel": [
+      {
+        "id": "pypi-wheel-linux-x64",
+        "path": ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
+        "wheelTag": "py3-none-manylinux2014_x86_64",
+        "packageName": "ts-release",
+        "moduleName": "ts_release",
+        "consoleScript": "ts-release",
+        "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+        "homepage": "https://github.com/mannyc2/ts-release",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "linux",
+            "arch": "x64",
+            "sourcePath": ".release/artifacts/ts-release-{version}-linux-x64",
+            "wheelPath": "ts_release/bin/ts-release-linux-x64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-linux-arm64",
+        "path": ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_aarch64.whl",
+        "wheelTag": "py3-none-manylinux2014_aarch64",
+        "packageName": "ts-release",
+        "moduleName": "ts_release",
+        "consoleScript": "ts-release",
+        "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+        "homepage": "https://github.com/mannyc2/ts-release",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "linux",
+            "arch": "arm64",
+            "sourcePath": ".release/artifacts/ts-release-{version}-linux-arm64",
+            "wheelPath": "ts_release/bin/ts-release-linux-arm64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-darwin-x64",
+        "path": ".release/artifacts/ts_release-{version}-py3-none-macosx_10_15_x86_64.whl",
+        "wheelTag": "py3-none-macosx_10_15_x86_64",
+        "packageName": "ts-release",
+        "moduleName": "ts_release",
+        "consoleScript": "ts-release",
+        "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+        "homepage": "https://github.com/mannyc2/ts-release",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "darwin",
+            "arch": "x64",
+            "sourcePath": ".release/artifacts/ts-release-{version}-darwin-x64",
+            "wheelPath": "ts_release/bin/ts-release-darwin-x64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-darwin-arm64",
+        "path": ".release/artifacts/ts_release-{version}-py3-none-macosx_11_0_arm64.whl",
+        "wheelTag": "py3-none-macosx_11_0_arm64",
+        "packageName": "ts-release",
+        "moduleName": "ts_release",
+        "consoleScript": "ts-release",
+        "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+        "homepage": "https://github.com/mannyc2/ts-release",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "darwin",
+            "arch": "arm64",
+            "sourcePath": ".release/artifacts/ts-release-{version}-darwin-arm64",
+            "wheelPath": "ts_release/bin/ts-release-darwin-arm64"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      },
+      {
+        "id": "pypi-wheel-windows-x64",
+        "path": ".release/artifacts/ts_release-{version}-py3-none-win_amd64.whl",
+        "wheelTag": "py3-none-win_amd64",
+        "packageName": "ts-release",
+        "moduleName": "ts_release",
+        "consoleScript": "ts-release",
+        "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+        "homepage": "https://github.com/mannyc2/ts-release",
+        "license": "MIT",
+        "requiresPython": ">=3.8",
+        "binaries": [
+          {
+            "os": "windows",
+            "arch": "x64",
+            "sourcePath": ".release/artifacts/ts-release-{version}-windows-x64.exe",
+            "wheelPath": "ts_release/bin/ts-release-windows-x64.exe"
+          }
+        ],
+        "consumers": [
+          "pypi"
+        ]
+      }
+    ],
+    "npmPackage": {
+      "id": "npm-package",
+      "path": ".",
+      "consumers": [
+        "npm"
+      ]
     }
-  ],
-  "targets": [
-    {
-      "_tag": "NpmRegistryTarget",
-      "id": "npm",
+  },
+  "publish": {
+    "npm": {
       "registry": "https://registry.npmjs.org",
       "packageName": "@mannyc1/ts-release",
       "packagePath": ".",
@@ -202,40 +217,28 @@
         "verifyPackageExists": true
       },
       "access": "public",
-      "provenance": true,
-      "dryRunSupport": "native",
-      "mutability": "immutable",
-      "recovery": "publish-new-version"
+      "provenance": true
     },
-    {
-      "_tag": "GitHubReleaseTarget",
-      "id": "github",
+    "github": {
       "repository": "mannyc2/ts-release",
       "tokenEnv": "GH_TOKEN",
       "draft": false,
-      "prerelease": false,
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-release",
-      "recovery": "delete-and-recreate"
+      "prerelease": false
     },
-    {
-      "_tag": "HomebrewTapTarget",
-      "id": "homebrew",
+    "homebrew": {
       "repository": "mannyc2/homebrew-ts-release",
       "formulaName": "ts-release",
       "formulaPath": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
       "artifactId": "cli-darwin-arm64",
-      "artifactIds": ["cli-darwin-arm64", "cli-darwin-x64"],
+      "artifactIds": [
+        "cli-darwin-arm64",
+        "cli-darwin-x64"
+      ],
       "homepage": "https://github.com/mannyc2/ts-release",
       "description": "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      "tapDirectory": ".release/catalogs/homebrew-ts-release",
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-index",
-      "recovery": "manual"
+      "tapDirectory": ".release/catalogs/homebrew-ts-release"
     },
-    {
-      "_tag": "ScoopBucketTarget",
-      "id": "scoop",
+    "scoop": {
       "repository": "mannyc2/scoop-ts-release",
       "manifestName": "ts-release",
       "manifestPath": ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
@@ -243,26 +246,18 @@
       "homepage": "https://github.com/mannyc2/ts-release",
       "description": "Portable artifact and package-manager distribution planning for TypeScript projects.",
       "license": "MIT",
-      "bucketDirectory": ".release/catalogs/scoop-ts-release",
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-index",
-      "recovery": "manual"
+      "bucketDirectory": ".release/catalogs/scoop-ts-release"
     },
-    {
-      "_tag": "PyPiRegistryTarget",
-      "id": "pypi",
+    "pypi": {
       "repositoryUrl": "https://upload.pypi.org/legacy/",
       "pythonExecutable": "python3",
       "trustedPublishing": {
         "provider": "github-actions",
         "workflow": "release.yml",
         "publisherConfigured": true
-      },
-      "dryRunSupport": "native",
-      "mutability": "immutable",
-      "recovery": "publish-new-version"
+      }
     }
-  ],
+  },
   "strict": true,
-  "evidenceDirectory": ".release/evidence/{version}"
+  "evidence": ".release/evidence/{version}"
 }

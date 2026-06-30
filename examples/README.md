@@ -23,6 +23,7 @@ Focused distribution examples:
 - `npm-first-publish`: token-based npm bootstrap config for the first version before switching to trusted publishing.
 - `github-release`: GitHub release asset with simulated GitHub dry-run validation.
 - `homebrew-tap`: Homebrew tap formula rendering with simulated formula validation.
+- `portable-cli`: one CLI distributed through GitHub Release assets, npm, Homebrew, Scoop, and PyPI wrapper wheels.
 - `pypi-registry`: prebuilt Python distribution planned for TestPyPI with Twine.
 - `scoop-bucket`: Scoop bucket manifest rendering with simulated validation.
 - `non-strict-skips`: non-strict config that records skipped dry-run evidence.

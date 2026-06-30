@@ -21,32 +21,28 @@ concurrency:
 
 jobs:
   npm-package:
-    name: npm package import
+    name: npm package CLI
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ inputs.version }}
 
     steps:
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - name: Install and import npm package
+      - name: Run published npm package CLI
         run: |
           set -euo pipefail
-          mkdir smoke-npm
-          cd smoke-npm
-          npm init -y >/dev/null
-          npm install --no-audit --no-fund "@mannyc1/ts-release@$VERSION"
-          node --input-type=module <<'JS'
-          const workflows = await import("@mannyc1/ts-release/workflows")
-          if (workflows.Distribution === undefined) {
-            throw new Error("Distribution workflow export is missing")
-          }
-          console.log(`npm package import ok for ${process.env.VERSION}`)
-          JS
+          npm exec --yes --package="@mannyc1/ts-release@$VERSION" -- ts-release --version | tee version.txt
+          grep -F "v$VERSION" version.txt
 
   github-release-assets:
     name: GitHub Release assets

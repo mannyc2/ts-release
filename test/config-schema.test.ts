@@ -1,19 +1,11 @@
-import { describe, expect, it, layer, test } from "@effect/bun-test"
-import * as BunServices from "@effect/platform-bun/BunServices"
+import { describe, expect, it, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import { mkdtemp, rm, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
   RELEASE_CONFIG_SCHEMA_ID,
   releaseConfigJsonSchemaDocument,
   renderReleaseConfigJsonSchema
 } from "../src/config/schema.js"
-import {
-  ValidateReleaseConfigFileOptions,
-  validateReleaseConfigFile
-} from "../src/workflows/config.js"
 import { expectTaggedError, minimalConfig, pypiConfig } from "./helpers.js"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -23,63 +15,69 @@ describe("config schema", () => {
   it.effect("decodes a minimal release config", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(minimalConfig)
-      expect("name" in intent.identity ? intent.identity.name : undefined).toBe("release")
-      expect(intent.targets.map((target) => target._tag).sort()).toEqual([
-        "GitHubReleaseTarget",
-        "NpmRegistryTarget"
-      ])
+      expect(intent.project.name).toBe("release")
+      expect(intent.build?.npmPackage).toBeDefined()
+      expect(intent.publish.github).toBeDefined()
+      expect(intent.publish.npm).toBeDefined()
     }))
 
   it.effect("decodes package-manifest identity", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(JSON.stringify({
-        identity: {
-          _tag: "PackageManifestReleaseIdentitySource",
+        project: {
           commit: "HEAD",
           tagTemplate: "v{version}"
         },
-        artifacts: [],
-        targets: [],
+        publish: {},
         strict: true,
-        evidenceDirectory: ".release/evidence/{version}"
+        evidence: ".release/evidence/{version}"
       }))
 
-      expect("_tag" in intent.identity ? intent.identity._tag : undefined).toBe("PackageManifestReleaseIdentitySource")
+      expect(intent.project.commit).toBe("HEAD")
+      expect(intent.project.tagTemplate).toBe("v{version}")
     }))
 
   it.effect("decodes structured npm trusted publishing config", () =>
     Effect.gen(function*() {
       const config = minimalConfig.replace(
-        "\"tokenEnv\":\"NPM_TOKEN\",",
-        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+        "\"tokenEnv\":\"NPM_TOKEN\"",
+        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true}"
       )
       const intent = yield* parseReleaseIntent(config)
-      const npm = intent.targets.find((target) => target.id === "npm")
+      const npm = intent.publish.npm
 
-      expect(npm?._tag).toBe("NpmRegistryTarget")
-      if (npm?._tag === "NpmRegistryTarget") {
-        expect(npm.trustedPublishing?.provider).toBe("github-actions")
-        expect(npm.trustedPublishing?.workflow).toBe("release.yml")
-        expect(npm.trustedPublishing?.packageExists).toBe(true)
+      expect(typeof npm).toBe("object")
+      if (npm !== undefined && typeof npm === "object") {
+        const trustedPublishing = npm.trustedPublishing
+        expect(typeof trustedPublishing).toBe("object")
+        if (trustedPublishing !== undefined && typeof trustedPublishing === "object") {
+          expect(trustedPublishing.provider).toBe("github-actions")
+          expect(trustedPublishing.workflow).toBe("release.yml")
+          expect(trustedPublishing.packageExists).toBe(true)
+        }
       }
     }))
 
-  it.effect("rejects bare trusted publishing boolean", () =>
+  it.effect("decodes bare trusted publishing boolean", () =>
     Effect.gen(function*() {
       const config = minimalConfig.replace(
-        "\"tokenEnv\":\"NPM_TOKEN\",",
-        "\"trustedPublishing\":true,"
+        "\"tokenEnv\":\"NPM_TOKEN\"",
+        "\"trustedPublishing\":true"
       )
-      const error = yield* parseReleaseIntent(config).pipe(Effect.flip)
+      const intent = yield* parseReleaseIntent(config)
+      const npm = intent.publish.npm
 
-      expectTaggedError(error, "ConfigValidationError")
+      expect(typeof npm).toBe("object")
+      if (npm !== undefined && typeof npm === "object") {
+        expect(npm.trustedPublishing).toBe(true)
+      }
     }))
 
   it.effect("requires trusted publishing package existence acknowledgement", () =>
     Effect.gen(function*() {
       const config = minimalConfig.replace(
-        "\"tokenEnv\":\"NPM_TOKEN\",",
-        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":false},"
+        "\"tokenEnv\":\"NPM_TOKEN\"",
+        "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":false}"
       )
       const error = yield* parseReleaseIntent(config).pipe(Effect.flip)
 
@@ -97,13 +95,17 @@ describe("config schema", () => {
           publisherConfigured: true
         }
       }))
-      const pypi = intent.targets.find((target) => target.id === "pypi")
+      const pypi = intent.publish.pypi
 
-      expect(pypi?._tag).toBe("PyPiRegistryTarget")
-      if (pypi?._tag === "PyPiRegistryTarget") {
-        expect(pypi.trustedPublishing?.provider).toBe("github-actions")
-        expect(pypi.trustedPublishing?.workflow).toBe("release.yml")
-        expect(pypi.trustedPublishing?.publisherConfigured).toBe(true)
+      expect(typeof pypi).toBe("object")
+      if (pypi !== undefined && typeof pypi === "object") {
+        const trustedPublishing = pypi.trustedPublishing
+        expect(typeof trustedPublishing).toBe("object")
+        if (trustedPublishing !== undefined && typeof trustedPublishing === "object") {
+          expect(trustedPublishing.provider).toBe("github-actions")
+          expect(trustedPublishing.workflow).toBe("release.yml")
+          expect(trustedPublishing.publisherConfigured).toBe(true)
+        }
       }
     }))
 
@@ -122,13 +124,29 @@ describe("config schema", () => {
       expectTaggedError(error, "ConfigValidationError")
     }))
 
+  const legacyFieldConfigs: ReadonlyArray<readonly [string, string]> = [
+    ["_tag", minimalConfig.replace("\"project\":{", "\"_tag\":\"NpmRegistryTarget\",\"project\":{")],
+    ["dryRunSupport", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"dryRunSupport\":\"native\",")],
+    ["mutability", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"mutability\":\"immutable\",")],
+    ["recovery", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"recovery\":\"manual\",")]
+  ]
+
+  for (const [field, config] of legacyFieldConfigs) {
+    it.effect(`rejects removed legacy config field ${field}`, () =>
+      Effect.gen(function*() {
+        const error = yield* parseReleaseIntent(config).pipe(Effect.flip)
+
+        expectTaggedError(error, "ConfigValidationError")
+      }))
+  }
+
   const invalidDomainScalarConfigs: ReadonlyArray<readonly [string, string]> = [
     ["release name", minimalConfig.replace("\"name\":\"release\"", "\"name\":\"\"")],
     ["release version", minimalConfig.replace("\"version\":\"0.1.0\"", "\"version\":\"\"")],
     ["git commit", minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"\"")],
     ["git tag", minimalConfig.replace("\"tag\":\"v0.1.0\"", "\"tag\":\"\"")],
     ["artifact id", minimalConfig.replace("\"id\":\"package\"", "\"id\":\"\"")],
-    ["target id", minimalConfig.replace("\"id\":\"npm\"", "\"id\":\"\"")]
+    ["npm package name", minimalConfig.replace("\"packageName\":\"release\",\"packagePath\"", "\"packageName\":\"\",\"packagePath\"")]
   ]
 
   for (const [label, config] of invalidDomainScalarConfigs) {
@@ -165,66 +183,18 @@ describe("config schema", () => {
         const properties = releaseIntent.properties
         expect(isRecord(properties)).toBe(true)
         if (isRecord(properties)) {
-          expect(properties.identity).toBeDefined()
-          expect(properties.artifacts).toBeDefined()
-          expect(properties.targets).toBeDefined()
+          expect(properties.project).toBeDefined()
+          expect(properties.build).toBeDefined()
+          expect(properties.publish).toBeDefined()
           expect(properties.$schema).toBeDefined()
         }
       }
     }
 
     const serialized = JSON.stringify(schema)
-    expect(serialized).toContain("NpmRegistryTarget")
-    expect(serialized).toContain("GitHubReleaseTarget")
-    expect(serialized).toContain("\"minLength\":1")
-  })
-
-  layer(BunServices.layer)((it) => {
-    it.effect("validates config files without planning target operations", () =>
-      Effect.acquireRelease(
-        Effect.promise(() => mkdtemp(join(tmpdir(), "ts-release-config-validation-"))),
-        (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
-      ).pipe(
-        Effect.flatMap((root) =>
-          Effect.gen(function*() {
-            yield* Effect.promise(() => writeFile(join(root, "release.config.json"), minimalConfig))
-            const result = yield* validateReleaseConfigFile(ValidateReleaseConfigFileOptions.make({
-              root,
-              configPath: "release.config.json"
-            }))
-
-            expect(result.valid).toBe(true)
-            expect(result.path).toBe("release.config.json")
-          })
-        )
-      ))
-
-    it.effect("config-only validation preserves parse and validation error semantics", () =>
-      Effect.acquireRelease(
-        Effect.promise(() => mkdtemp(join(tmpdir(), "ts-release-config-validation-errors-"))),
-        (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
-      ).pipe(
-        Effect.flatMap((root) =>
-          Effect.gen(function*() {
-            yield* Effect.promise(() => writeFile(join(root, "invalid-json.config.json"), "{"))
-            const parseError = yield* validateReleaseConfigFile(ValidateReleaseConfigFileOptions.make({
-              root,
-              configPath: "invalid-json.config.json"
-            })).pipe(Effect.flip)
-            expectTaggedError(parseError, "ConfigParseError")
-
-            const invalidTrustedPublishing = minimalConfig.replace(
-              "\"tokenEnv\":\"NPM_TOKEN\",",
-              "\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":false},"
-            )
-            yield* Effect.promise(() => writeFile(join(root, "invalid-schema.config.json"), invalidTrustedPublishing))
-            const validationError = yield* validateReleaseConfigFile(ValidateReleaseConfigFileOptions.make({
-              root,
-              configPath: "invalid-schema.config.json"
-            })).pipe(Effect.flip)
-            expectTaggedError(validationError, "ConfigValidationError")
-          })
-        )
-      ))
+    expect(serialized).toContain("ReleaseConfigNpmPublish")
+    expect(serialized).toContain("ReleaseConfigGitHubPublish")
+    expect(serialized).not.toContain("NpmRegistryTarget")
+    expect(serialized).not.toContain("GitHubReleaseTarget")
   })
 })

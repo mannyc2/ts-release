@@ -6,14 +6,15 @@ import * as Path from "effect/Path"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { RELEASE_CONFIG_SCHEMA_ID } from "../src/config/schema.js"
-import { PlanReleaseConfigOptions, renderReleaseConfigPlan } from "../src/workflows/config.js"
+import { resolveReleasePlanningInputs } from "../src/planner/normalize-release.js"
+import { planRelease, renderReleasePlan } from "../src/workflows/release.js"
 
 const root = process.cwd()
 const expectedSnippets = new Map<string, ReadonlyArray<string>>([
   ["github-release", [
     "[GitHubReleaseTarget]",
-    "github:gh-release-dry-run",
-    "github:gh-release-create"
+    "github:github-release-dry-run",
+    "github:github-release-create"
   ]],
   ["homebrew-tap", [
     "[HomebrewTapTarget]",
@@ -28,8 +29,8 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
     "approval: execute"
   ]],
   ["non-strict-skips", [
-    "strategy=skipped",
-    "Record skipped GitHub release dry-run validation"
+    "strategy=simulated-plan",
+    "Record simulated GitHub release dry-run validation"
   ]],
   ["npm-only", [
     "[NpmRegistryTarget]",
@@ -48,6 +49,18 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
     "pypi:twine-upload",
     "python -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/"
   ]],
+  ["portable-cli", [
+    "targets: 5",
+    "[GitHubReleaseTarget]",
+    "[HomebrewTapTarget]",
+    "[NpmRegistryTarget]",
+    "[PyPiRegistryTarget]",
+    "[ScoopBucketTarget]",
+    "github:github-release-create",
+    "homebrew:homebrew-render-formula",
+    "scoop:scoop-render-manifest",
+    "pypi:twine-upload"
+  ]],
   ["scoop-bucket", [
     "[ScoopBucketTarget]",
     "scoop:scoop-render-manifest",
@@ -61,7 +74,14 @@ const expectedTemplateTags = new Map<string, ReadonlyArray<string>>([
   ["multi-target-homebrew", ["GitHubReleaseTarget", "HomebrewTapTarget", "NpmRegistryTarget"]],
   ["multi-target-scoop", ["GitHubReleaseTarget", "NpmRegistryTarget", "ScoopBucketTarget"]],
   ["npm-github", ["GitHubReleaseTarget", "NpmRegistryTarget"]],
-  ["npm-only", ["NpmRegistryTarget"]]
+  ["npm-only", ["NpmRegistryTarget"]],
+  ["portable-cli", [
+    "GitHubReleaseTarget",
+    "HomebrewTapTarget",
+    "NpmRegistryTarget",
+    "PyPiRegistryTarget",
+    "ScoopBucketTarget"
+  ]]
 ])
 
 interface WorkflowTemplateExpectation {
@@ -115,17 +135,16 @@ const runExamplePlan = Effect.fn("scripts.runExamplePlan")(function*(
 ) {
   const path = yield* Path.Path
   const exampleDirectory = path.join(root, "examples", exampleName)
-  const plan = yield* renderReleaseConfigPlan(
-    PlanReleaseConfigOptions.make({
+  const plan = yield* planRelease({
       root: exampleDirectory,
       configPath: "release.config.json",
       format: "text"
-    })
-  ).pipe(
+    }).pipe(
     Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root: exampleDirectory }))
   )
+  const rendered = renderReleasePlan(plan, "text")
   for (const snippet of expectedSnippets.get(exampleName) ?? []) {
-    if (!plan.includes(snippet)) {
+    if (!rendered.includes(snippet)) {
       return yield* Effect.fail(new Error(`Example ${exampleName} plan is missing expected snippet: ${snippet}`))
     }
   }
@@ -147,7 +166,7 @@ const checkTrustedPublishingNpmPolicy = Effect.fn("scripts.checkTrustedPublishin
   owner: string,
   target: Record<string, unknown>
 ) {
-  if (target._tag !== "NpmRegistryTarget" || target.trustedPublishing === undefined) {
+  if (target.trustedPublishing === undefined) {
     return
   }
   if (!isRecord(target.trustedPublishing)) {
@@ -168,14 +187,13 @@ const checkConfigNpmPolicy = Effect.fn("scripts.checkConfigNpmPolicy")(function*
   owner: string,
   parsed: Record<string, unknown>
 ) {
-  const targets = parsed.targets
-  if (!Array.isArray(targets)) {
-    return yield* Effect.fail(new Error(`${owner} config must include a targets array`))
+  const publish = parsed.publish
+  if (!isRecord(publish)) {
+    return yield* Effect.fail(new Error(`${owner} config must include a publish object`))
   }
-  for (const target of targets) {
-    if (isRecord(target)) {
-      yield* checkTrustedPublishingNpmPolicy(owner, target)
-    }
+  const npm = publish.npm
+  if (isRecord(npm)) {
+    yield* checkTrustedPublishingNpmPolicy(owner, npm)
   }
 })
 
@@ -207,7 +225,8 @@ const checkTemplateConfig = Effect.fn("scripts.checkTemplateConfig")(function*(t
 
   const path = yield* Path.Path
   const intent = yield* parseReleaseIntent(contents, path.join("templates", templateName, "release.config.json"))
-  const actualTags = intent.targets.map((target) => target._tag).sort()
+  const inputs = yield* resolveReleasePlanningInputs(intent)
+  const actualTags = inputs.targets.map((target) => target._tag).sort()
   const expected = expectedTemplateTags.get(templateName) ?? []
   const expectedTags = [...expected].sort()
   if (actualTags.join(",") !== expectedTags.join(",")) {
@@ -241,7 +260,7 @@ const checkWorkflowTemplate = Effect.fn("scripts.checkWorkflowTemplate")(functio
     snippets.push("uses: mannyc2/ts-release-action@v1", "command: plan", "format: markdown")
   }
   if (template.hasExecuteJob && template.actionFirst) {
-    snippets.push("command: run", "execute: true", "approve-irreversible: true")
+    snippets.push("command: release", "execute: true", "approve-publish: true")
   }
   for (const snippet of snippets) {
     if (!contents.includes(snippet)) {
@@ -252,7 +271,7 @@ const checkWorkflowTemplate = Effect.fn("scripts.checkWorkflowTemplate")(functio
   const planJob = executeIndex < 0
     ? contents.slice(contents.indexOf("  plan:"))
     : contents.slice(contents.indexOf("  plan:"), executeIndex)
-  if (planJob.includes("--execute") || planJob.includes("execute: true") || planJob.includes("command: run")) {
+  if (planJob.includes("--execute") || planJob.includes("execute: true") || planJob.includes("command: release")) {
     return yield* Effect.fail(new Error(`Workflow template ${template.path} plan job must not execute releases`))
   }
   if (contents.includes("NPM_TOKEN")) {
@@ -302,6 +321,7 @@ BunRuntime.runMain(
         )
       )
     ),
+    Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root })),
     Effect.provide(BunServices.layer)
   )
 )

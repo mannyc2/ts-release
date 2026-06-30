@@ -1,29 +1,34 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
+  "project": {
     "name": "@scope/pkg",
+    "packageName": "@scope/pkg",
     "version": "0.1.0",
     "commit": "abc123",
     "tag": "v0.1.0"
   },
-  "artifacts": [
-    {
+  "build": {
+    "npmPackage": {
       "id": "package",
       "path": ".",
-      "format": "directory",
-      "consumers": ["npm"]
+      "consumers": [
+        "npm"
+      ]
     },
-    {
-      "id": "archive",
-      "path": "artifacts/pkg-0.1.0.tgz",
-      "format": "tarball",
-      "consumers": ["github", "homebrew"]
-    }
-  ],
-  "targets": [
-    {
-      "_tag": "NpmRegistryTarget",
-      "id": "npm",
+    "artifacts": [
+      {
+        "id": "archive",
+        "path": "artifacts/pkg-0.1.0.tgz",
+        "format": "tarball",
+        "consumers": [
+          "github",
+          "homebrew"
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "npm": {
       "registry": "https://registry.npmjs.org",
       "packageName": "@scope/pkg",
       "packagePath": ".",
@@ -34,37 +39,24 @@
         "verifyPackageExists": true
       },
       "access": "public",
-      "provenance": true,
-      "dryRunSupport": "native",
-      "mutability": "immutable",
-      "recovery": "publish-new-version"
+      "provenance": true
     },
-    {
-      "_tag": "GitHubReleaseTarget",
-      "id": "github",
+    "github": {
       "repository": "owner/repo",
       "tokenEnv": "GH_TOKEN",
       "draft": true,
-      "prerelease": false,
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-release",
-      "recovery": "delete-and-recreate"
+      "prerelease": false
     },
-    {
-      "_tag": "HomebrewTapTarget",
-      "id": "homebrew",
+    "homebrew": {
       "repository": "owner/homebrew-tap",
       "formulaName": "pkg",
       "formulaPath": ".release/generated/pkg.rb",
       "artifactId": "archive",
       "homepage": "https://github.com/owner/repo",
       "url": "https://github.com/owner/repo/releases/download/v0.1.0/pkg-0.1.0.tgz",
-      "installPath": "bin/pkg",
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-index",
-      "recovery": "manual"
+      "installPath": "bin/pkg"
     }
-  ],
+  },
   "strict": true,
-  "evidenceDirectory": ".release/evidence/{version}"
+  "evidence": ".release/evidence/{version}"
 }

@@ -83,14 +83,13 @@ Release binaries. The npm package is the reusable TypeScript library surface.
 
 ## Use The CLI
 
-Use the installed CLI to scaffold, inspect, stage, and render a release config:
+Use the installed CLI to scaffold, inspect, build, plan, release, and verify:
 
 ```sh
-ts-release init --template bun-cli-github --package @scope/pkg --repo owner/repo --github-actions --write
-ts-release validate-config --config release.config.json
-ts-release stage-artifacts --config release.config.json --format text
+ts-release init --template portable-cli --package @scope/pkg --repo owner/repo --tap owner/homebrew-pkg --bucket owner/scoop-pkg --pypi-package pkg --github-actions --write
+ts-release doctor --config release.config.json
+ts-release build --config release.config.json --format text
 ts-release plan --config release.config.json --format text
-ts-release render --config release.config.json
 ```
 
 These commands do not publish anything unless an execution command receives
@@ -98,7 +97,7 @@ explicit approval. To publish through the full ordered workflow, pass both
 execution approvals:
 
 ```sh
-ts-release run --config release.config.json --execute --approve-irreversible
+ts-release release --config release.config.json --execute --approve-publish
 ```
 
 `@mannyc1/ts-release` helps you declare the thing you want to distribute, stage
@@ -115,9 +114,10 @@ Use it when you need to answer:
 - Which operations are only rendering data, and which ones publish externally?
 - What evidence proves what was staged, rendered, validated, or executed?
 
-The npm package is the reusable TypeScript library. The package-manager CLI
-wraps the same release planning model for teams that want a command-line
-workflow.
+The npm package ships both public surfaces: a small root TypeScript API for
+typed config authoring and schema helpers, and the `ts-release` executable for
+planning, staging, publishing, verification, and diagnostics. They use the same
+release model; the CLI is not a separate product direction.
 
 ## What It Does
 
@@ -131,7 +131,7 @@ release config
   -> target-specific distribution operations
   -> generated package-manager files
   -> explicit execution evidence
-  -> verification or reconciliation
+  -> post-publish verification
 ```
 
 The library currently plans, stages, and validates these distribution surfaces:
@@ -139,7 +139,7 @@ The library currently plans, stages, and validates these distribution surfaces:
 | Surface | What ts-release models |
 |---|---|
 | npm | package publish, native dry-run validation, provenance, trusted publishing |
-| GitHub Releases | release creation, asset uploads, REST API verification, draft reconciliation |
+| GitHub Releases | release creation, asset uploads, and REST API verification |
 | Homebrew taps | generated formula files, macOS artifact variants, and approved tap pushes |
 | PyPI | already-built distributions and platform CLI wrapper wheels published through Twine |
 | Scoop buckets | generated manifest files, Windows binary shims, and approved bucket pushes |
@@ -154,18 +154,17 @@ data in one typed plan.
 ## CLI Workflow
 
 The first useful path is artifact-first: write or scaffold a config, stage any
-declared artifact recipes, plan the target distribution work, then render
-package-manager files or release metadata.
+declared artifact recipes, plan the target distribution work, then run the
+approved release workflow.
 
-`run` renders generated files, validates preflights, executes approved publish
-operations, and verifies remote state. Lower-level commands are available when
-you want a manual pause between phases:
+The CLI intentionally has six top-level verbs:
 
 ```sh
-ts-release render --config release.config.json --execute
-ts-release validate --config release.config.json
-ts-release print --config release.config.json
-ts-release execute --config release.config.json --execute --approve-irreversible
+ts-release init --config release.config.json
+ts-release doctor --config release.config.json
+ts-release build --config release.config.json --format text
+ts-release plan --config release.config.json --format markdown
+ts-release release --config release.config.json --execute --approve-publish
 ts-release verify --config release.config.json
 ```
 
@@ -182,19 +181,18 @@ The bundled action is the intended CI adapter:
     upload-evidence: true
 ```
 
-Supported action commands are `plan`, `validate-config`, `doctor`, `check-auth`,
-`check-ci`, `validate`, `run`, and `reconcile`. Artifact recipe staging remains
-owned by the Bun CLI/runtime because the bundled action runs on Node.
+Supported action commands are `plan`, `doctor`, `build`, `release`, and
+`verify`.
 
 Publishing still needs explicit approval:
 
 ```yaml
 - uses: mannyc2/ts-release-action@v1
   with:
-    command: run
+    command: release
     config: release.config.json
     execute: "true"
-    approve-irreversible: "true"
+    approve-publish: "true"
     upload-evidence: true
 ```
 
@@ -210,58 +208,49 @@ keep `trustedPublishing` in the PyPI target. Twine uses OIDC during
 
 ## Config
 
-A release config declares identity, artifacts, target policy, and evidence
-location.
+A release config declares project identity, build outputs, publish surfaces,
+and evidence location.
 
 ```json
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
-    "_tag": "PackageManifestReleaseIdentitySource",
-    "packagePath": "package.json",
+  "project": {
+    "packageName": "@scope/pkg",
+    "repository": "owner/repo",
     "commit": "HEAD",
     "tagTemplate": "v{version}"
   },
-  "artifacts": [
-    {
+  "build": {
+    "npmPackage": {
       "id": "package",
       "path": ".",
-      "format": "directory",
       "consumers": ["npm"]
     }
-  ],
-  "targets": [
-    {
-      "_tag": "NpmRegistryTarget",
-      "id": "npm",
+  },
+  "publish": {
+    "npm": {
       "registry": "https://registry.npmjs.org",
       "packageName": "@scope/pkg",
       "packagePath": ".",
       "trustedPublishing": {
-        "provider": "github-actions",
         "workflow": "release.yml",
         "packageExists": true,
         "verifyPackageExists": true
       },
       "access": "public",
-      "provenance": true,
-      "dryRunSupport": "native",
-      "mutability": "immutable",
-      "recovery": "publish-new-version"
+      "provenance": true
     }
-  ],
+  },
   "strict": true,
-  "evidenceDirectory": ".release/evidence/{version}"
+  "evidence": ".release/evidence/{version}"
 }
 ```
 
 Useful config commands:
 
 ```sh
-ts-release schema --out release-config.schema.json
-ts-release validate-config --config release.config.json --format text
+ts-release doctor --config release.config.json --format text
 ts-release plan --config release.config.json --format summary
-ts-release explain npm:npm-publish --config release.config.json
 ```
 
 Paths are release-workspace relative. Artifact paths can interpolate
@@ -309,66 +298,63 @@ approved run:
 
 ```sh
 ts-release doctor --config release.config.json --format text
-ts-release check-auth --config release.config.json --target npm --format text
-ts-release check-ci --config release.config.json --workflow .github/workflows/release.yml --format markdown
+ts-release doctor --config release.config.json --target npm --format text
+ts-release doctor --config release.config.json --format markdown
 ```
 
 Diagnostics report confidence levels instead of pretending local checks can
 prove provider-side setup. For example, npm trusted publishing can only be fully
 confirmed inside the configured GitHub Actions environment.
 
-## Programmatic API
+## TypeScript API
 
-Install the library and provide platform services at your application boundary:
+Install the package when you want typed config authoring or schema helpers:
 
 ```sh
-bun add @mannyc1/ts-release effect@beta @effect/platform-bun@beta
+bun add -d @mannyc1/ts-release
 ```
 
-High-level workflows are available from the opt-in workflow facade:
+The public TypeScript API lives at the package root. It is intentionally small
+and pairs with the `ts-release` executable published by the same package:
 
 ```ts
-import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
-import * as BunServices from "@effect/platform-bun/BunServices"
-import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
-import { Distribution, Live } from "@mannyc1/ts-release/workflows"
+import { defineRelease, renderReleaseConfigJsonSchema } from "@mannyc1/ts-release"
 
-const root = "/path/to/release-workspace"
-const RuntimeLayer = Live.makeLayer({ root }).pipe(
-  Layer.provideMerge(BunServices.layer),
-  Layer.provideMerge(BunHttpClient.layer)
-)
+export default defineRelease({
+  project: {
+    name: "release",
+    packageName: "@scope/pkg",
+    repository: "owner/repo",
+    version: "0.1.0",
+    commit: "abc123",
+    tag: "v0.1.0"
+  },
+  build: {
+    npmPackage: {
+      id: "package",
+      path: ".",
+      consumers: ["npm"]
+    }
+  },
+  publish: {
+    npm: {
+      registry: "https://registry.npmjs.org",
+      packageName: "@scope/pkg",
+      packagePath: ".",
+      access: "public",
+      provenance: true
+    }
+  },
+  strict: true
+})
 
-const textPlan = await Effect.runPromise(
-  Distribution.renderPlan({ root, configPath: "release.config.json", format: "text" }).pipe(
-    Effect.provide(RuntimeLayer)
-  )
-)
-
-const evidence = await Effect.runPromise(
-  Distribution.run({
-    root,
-    configPath: "release.config.json",
-    execute: true,
-    approveIrreversible: true
-  }).pipe(Effect.provide(RuntimeLayer))
-)
-
-console.log(textPlan)
-console.log(evidence.schemaVersion)
+console.log(renderReleaseConfigJsonSchema())
 ```
 
-Use `@mannyc1/ts-release/workflows` for the curated `Distribution`, `Config`,
-`Init`, `Diagnostics`, `Evidence`, and `Live` namespaces. The `Distribution`
-namespace is the artifact-first facade; `Config` keeps the lower-level
-config-file workflow names. Use exact subpaths such as
-`@mannyc1/ts-release/workflows/distribution` or lower-level `domain/`,
-`planner/`, `targets/`, and `host/` modules when you need tighter control or
-maximum tree-shaking.
-
-The package root export is intentionally empty. Public API is the explicit
-subpath list in `package.json`.
+The package does not expose internal `domain/`, `planner/`, `targets/`,
+`host/`, `artifacts/`, or `workflows/` subpaths. Use the root import for typed
+config/schema work, and use the `ts-release` CLI or GitHub Action for release
+execution.
 
 ## Templates And Examples
 
@@ -376,6 +362,7 @@ Create a starter config with `init --template`:
 
 ```sh
 ts-release init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --write
+ts-release init --template portable-cli --package @scope/pkg --repo owner/repo --tap owner/homebrew-pkg --bucket owner/scoop-pkg --pypi-package pkg --write
 ```
 
 Available templates:
@@ -383,21 +370,21 @@ Available templates:
 - `npm-only`
 - `npm-github`
 - `bun-cli-github`
+- `portable-cli`
 - `multi-target-homebrew`
 - `multi-target-scoop`
 
-Templates with `artifactRecipes` need an explicit staging step before target
+Templates with build recipes need an explicit staging step before publish
 planning expects the generated files to exist:
 
 ```sh
-ts-release stage-artifacts --config release.config.json --format text
+ts-release build --config release.config.json --format text
 ```
 
 ## Evidence
 
-Validation, rendering, execution, reconciliation, and verification write JSON
-evidence bundles. Primitive commands write named files such as
-`validation.json`; the full `run` workflow writes `evidence.json`.
+Release and verification commands write JSON evidence bundles. The full
+`release` workflow writes `evidence.json`.
 
 ```json
 {
@@ -426,18 +413,6 @@ evidence bundles. Primitive commands write named files such as
 
 Failed commands preserve partial evidence when possible. Non-strict mode records
 missing validators as visible skipped evidence instead of silently dropping them.
-
-## Reconciliation
-
-`reconcile` is a narrow repair path for GitHub Releases. It reads the release by
-tag, blocks on mismatched metadata or assets, skips an already matching
-published release, and can publish a matching draft with `--execute`.
-
-It does not replay immutable registry publishes:
-
-```sh
-ts-release reconcile --config release.config.json --execute
-```
 
 ## More Docs
 

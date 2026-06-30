@@ -6,7 +6,7 @@ to a GitHub Release.
 Before planning or running the release, stage the executable artifacts:
 
 ```sh
-bun run cli stage-artifacts --config release.config.json
+bun run cli build --config release.config.json
 ```
 
 The `id` fields are project-local identifiers. Rename the recipe, outputs,

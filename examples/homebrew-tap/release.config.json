@@ -1,35 +1,35 @@
 {
   "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
-  "identity": {
+  "project": {
     "name": "release-example-homebrew",
+    "packageName": "release-example-homebrew",
     "version": "0.1.0",
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "artifacts": [
-    {
-      "id": "archive",
-      "path": "artifacts/release-example-homebrew-0.1.0.tgz",
-      "format": "tarball",
-      "consumers": ["homebrew"]
-    }
-  ],
-  "targets": [
-    {
-      "_tag": "HomebrewTapTarget",
-      "id": "homebrew",
+  "build": {
+    "artifacts": [
+      {
+        "id": "archive",
+        "path": "artifacts/release-example-homebrew-0.1.0.tgz",
+        "format": "tarball",
+        "consumers": [
+          "homebrew"
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "homebrew": {
       "repository": "owner/homebrew-tap",
       "formulaName": "release-example-homebrew",
       "formulaPath": ".release/generated/release-example-homebrew.rb",
       "artifactId": "archive",
       "homepage": "https://github.com/owner/release-example-homebrew",
       "url": "https://github.com/owner/release-example-homebrew/releases/download/v0.1.0/release-example-homebrew-0.1.0.tgz",
-      "installPath": "bin/release-example-homebrew",
-      "dryRunSupport": "simulated",
-      "mutability": "mutable-index",
-      "recovery": "manual"
+      "installPath": "bin/release-example-homebrew"
     }
-  ],
+  },
   "strict": true,
-  "evidenceDirectory": ".release/evidence"
+  "evidence": ".release/evidence"
 }

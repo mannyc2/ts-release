@@ -4,7 +4,6 @@ import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { validatePlan } from "../src/planner/executor.js"
 import { renderPlanText } from "../src/planner/render-plan.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { minimalConfig, runEffect } from "./helpers.js"
@@ -36,44 +35,25 @@ const trustedPublishingConfig = (
     ...(options.verifyPackageExists === undefined ? {} : { verifyPackageExists: options.verifyPackageExists })
   }
   return minimalConfig.replace(
-    "\"tokenEnv\":\"NPM_TOKEN\",",
-    `"trustedPublishing":${JSON.stringify(trustedPublishing)},`
+    "\"tokenEnv\":\"NPM_TOKEN\"",
+    `"trustedPublishing":${JSON.stringify(trustedPublishing)}`
   )
 }
 
-const expectValidationRecord = (
-  records: ReadonlyArray<{ readonly id: string; readonly status: string; readonly severity?: string; readonly skipped?: boolean }>,
-  id: string,
-  expected: { readonly status: string; readonly severity: string; readonly skipped: boolean }
-) => {
-  const record = records.find((item) => item.id === id)
-  expect(record?.status).toBe(expected.status)
-  expect(record?.severity).toBe(expected.severity)
-  if (record !== undefined && "skipped" in record) {
-    expect(record.skipped).toBe(expected.skipped)
-  }
-}
-
 describe("npm target", () => {
-  test("records simulated validation note evidence with current adapter severities", async () => {
-    const npmSimulatedConfig = minimalConfig.replace("\"dryRunSupport\":\"native\"", "\"dryRunSupport\":\"simulated\"")
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(npmSimulatedConfig)
-        return yield* validatePlan(plan)
-      }),
-      TestLayer
-    )
+  test("plans native npm pack dry-run validation", async () => {
+    const plan = await runEffect(createPlan(), TestLayer)
+    const dryRun = plan.operations.find((operation) => operation.id === "npm:npm-pack-dry-run")
 
-    expectValidationRecord(evidence.records, "npm:npm-pack-dry-run:validation", {
-      status: "passed",
-      skipped: false,
-      severity: "info"
-    })
+    expect(dryRun?._tag).toBe("ValidateCommandOperation")
+    if (dryRun?._tag === "ValidateCommandOperation") {
+      expect(dryRun.command.args).toEqual(["pack", "--dry-run", "--json", "."])
+      expect(dryRun.command.requiredEnv).toEqual([])
+    }
   })
 
   test("validates npm cli auth even when auth comes from the local CLI", async () => {
-    const cliAuthConfig = minimalConfig.replace("\"tokenEnv\":\"NPM_TOKEN\",", "")
+    const cliAuthConfig = minimalConfig.replace(",\"tokenEnv\":\"NPM_TOKEN\"", "")
     const plan = await runEffect(createPlan(cliAuthConfig), TestLayer)
     const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
     const whoami = plan.operations.find((operation) => operation.id === "npm:npm-whoami")
@@ -159,7 +139,7 @@ describe("npm target", () => {
   test("validates trusted publishing package existence with target package name", async () => {
     const config = trustedPublishingConfig({ verifyPackageExists: true })
       .replace("\"name\":\"release\"", "\"name\":\"workspace-release\"")
-      .replace("\"packageName\":\"release\"", "\"packageName\":\"@scope/package\"")
+      .replace("\"packageName\":\"release\",\"packagePath\"", "\"packageName\":\"@scope/package\",\"packagePath\"")
     const plan = await runEffect(createPlan(config), TestLayer)
     const packageExists = plan.operations.find((operation) => operation.id === "npm:npm-package-exists")
 
@@ -177,8 +157,8 @@ describe("npm target", () => {
 
   test("rejects npm trusted publishing when tokenEnv is also declared", async () => {
     const invalidConfig = minimalConfig.replace(
-      "\"tokenEnv\":\"NPM_TOKEN\",",
-      "\"tokenEnv\":\"NPM_TOKEN\",\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true},"
+      "\"tokenEnv\":\"NPM_TOKEN\"",
+      "\"tokenEnv\":\"NPM_TOKEN\",\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true}"
     )
     const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
 
@@ -214,19 +194,16 @@ describe("npm target", () => {
   })
 
   test("rejects empty npm package name", async () => {
-    const invalidConfig = minimalConfig.replace("\"packageName\":\"release\"", "\"packageName\":\"\"")
+    const invalidConfig = minimalConfig.replace("\"packageName\":\"release\",\"packagePath\"", "\"packageName\":\"\",\"packagePath\"")
     const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("targets.npm.packageName")
-    }
+    expect(error._tag).toBe("ConfigValidationError")
   })
 
   test("adds npm provenance only when target policy enables it", async () => {
     const provenanceConfig = minimalConfig.replace(
-      "\"tokenEnv\":\"NPM_TOKEN\",",
-      "\"tokenEnv\":\"NPM_TOKEN\",\"provenance\":true,"
+      "\"tokenEnv\":\"NPM_TOKEN\"",
+      "\"tokenEnv\":\"NPM_TOKEN\",\"provenance\":true"
     )
     const provenancePlan = await runEffect(createPlan(provenanceConfig), TestLayer)
     const defaultPlan = await runEffect(createPlan(), TestLayer)
@@ -247,8 +224,8 @@ describe("npm target", () => {
 
   test("adds npm access only when target policy enables it", async () => {
     const publicAccessConfig = minimalConfig.replace(
-      "\"tokenEnv\":\"NPM_TOKEN\",",
-      "\"tokenEnv\":\"NPM_TOKEN\",\"access\":\"public\","
+      "\"tokenEnv\":\"NPM_TOKEN\"",
+      "\"tokenEnv\":\"NPM_TOKEN\",\"access\":\"public\""
     )
     const publicAccessPlan = await runEffect(createPlan(publicAccessConfig), TestLayer)
     const defaultPlan = await runEffect(createPlan(), TestLayer)

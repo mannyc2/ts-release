@@ -74,18 +74,6 @@ const readCurrentGitCommit = async (): Promise<string | undefined> => {
   return exitCode === 0 ? stdout.trim() : undefined
 }
 
-const readTrackedGitStatus = async (): Promise<string | undefined> => {
-  const subprocess = Bun.spawn(["git", "status", "--porcelain", "--untracked-files=no"], {
-    cwd: root,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "ignore"
-  })
-  const stdout = await streamText(subprocess.stdout)
-  const exitCode = await subprocess.exited
-  return exitCode === 0 ? stdout.trim() : undefined
-}
-
 const collectTokenEnvNames = (targets: ReadonlyArray<unknown>): ReadonlyArray<string> => {
   const names = new Set<string>()
   for (const target of targets) {
@@ -494,7 +482,6 @@ const manifest = readJson("package.json")
 const appManifest = readJson(appPackagePath)
 const config = readJson(releaseConfigPath)
 const currentGitCommit = await readCurrentGitCommit()
-const trackedGitStatus = await readTrackedGitStatus()
 
 if (!isRecord(manifest)) {
   failures.push("package.json must be a JSON object")
@@ -516,83 +503,69 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
   if (packageName === "release") {
     failures.push("package name `release` is already published on npm; use the confirmed scoped package name")
   }
-  const identity = field(config, "identity")
-  if (!isRecord(identity)) {
-    failures.push(`${releaseConfigPath} identity must be an object`)
+  const project = field(config, "project")
+  if (!isRecord(project)) {
+    failures.push(`${releaseConfigPath} project must be an object`)
   } else {
-    const sourceTag = stringField(identity, "_tag", failures)
-    const commit = stringField(identity, "commit", failures)
-    const tagTemplate = stringField(identity, "tagTemplate", failures)
-    const packagePathValue = field(identity, "packagePath")
+    const commit = stringField(project, "commit", failures)
+    const tagTemplate = stringField(project, "tagTemplate", failures)
+    const packagePathValue = field(project, "packagePath")
 
-    if (sourceTag !== undefined && sourceTag !== "PackageManifestReleaseIdentitySource") {
-      failures.push(`release identity source ${sourceTag} must be PackageManifestReleaseIdentitySource`)
-    }
-    if (field(identity, "name") !== undefined || field(identity, "version") !== undefined || field(identity, "tag") !== undefined) {
-      failures.push("release identity must derive name, version, and tag from package manifest data")
+    if (field(project, "name") !== undefined || field(project, "version") !== undefined || field(project, "tag") !== undefined) {
+      failures.push("release project must derive name, version, and tag from package manifest data")
     }
     if (packagePathValue !== undefined && packagePathValue !== "package.json") {
-      failures.push(`release identity packagePath ${String(packagePathValue)} must be package.json or omitted`)
+      failures.push(`release project packagePath ${String(packagePathValue)} must be package.json or omitted`)
     }
     if (commit !== undefined && placeholderCommits.has(commit)) {
-      failures.push("release identity commit must not use a placeholder value")
+      failures.push("release project commit must not use a placeholder value")
     }
     if (commit === currentCommitSelector && currentGitCommit === undefined) {
-      failures.push("release identity commit HEAD requires a committed Git checkout")
-    }
-    if (commit === currentCommitSelector && currentGitCommit !== undefined && trackedGitStatus !== undefined && trackedGitStatus.length > 0) {
-      failures.push("release identity commit HEAD requires a clean tracked working tree")
+      failures.push("release project commit HEAD requires a committed Git checkout")
     }
     if (commit !== undefined && commit !== currentCommitSelector && currentGitCommit !== undefined && commit !== currentGitCommit) {
-      failures.push(`release identity commit ${commit} must match current git commit ${currentGitCommit}`)
+      failures.push(`release project commit ${commit} must match current git commit ${currentGitCommit}`)
     }
     if (tagTemplate !== undefined && tagTemplate !== "v{version}") {
-      failures.push(`release identity tagTemplate ${tagTemplate} must equal v{version}`)
+      failures.push(`release project tagTemplate ${tagTemplate} must equal v{version}`)
     }
   }
 
-  const artifacts = field(config, "artifacts")
-  if (!Array.isArray(artifacts)) {
-    failures.push(`${releaseConfigPath} artifacts must be an array`)
+  const build = field(config, "build")
+  if (!isRecord(build)) {
+    failures.push(`${releaseConfigPath} build must be an object`)
   } else if (packageName !== undefined && packageVersion !== undefined) {
-    const artifactRecords = collectArtifactRecords(artifacts, failures)
-    checkArtifactPath(
-      artifactRecords.get("npm-package"),
-      "npm-package",
-      ".",
-      "directory",
-      ["npm"],
-      packageName,
-      packageVersion,
-      failures
-    )
-    for (const artifactId of artifactRecords.keys()) {
-      if (artifactId.startsWith("cli-") || artifactId.startsWith(pypiWheelArtifactPrefix)) {
-        failures.push(`artifact ${artifactId} must be declared by artifactRecipes, not static artifacts`)
-      } else if (artifactId !== "npm-package") {
-        failures.push(`artifact ${artifactId} is not part of the self-release static artifact set`)
-      }
+    const npmPackage = field(build, "npmPackage")
+    if (!isRecord(npmPackage)) {
+      failures.push(`${releaseConfigPath} build.npmPackage must be an object`)
+    } else {
+      checkTargetField(npmPackage, "build.npmPackage", "id", "npm-package", failures)
+      checkTargetField(npmPackage, "build.npmPackage", "path", ".", failures)
+      checkTargetArrayField(npmPackage, "build.npmPackage", "consumers", ["npm"], failures)
     }
-  }
-
-  const artifactRecipes = field(config, "artifactRecipes")
-  if (!Array.isArray(artifactRecipes)) {
-    failures.push(`${releaseConfigPath} artifactRecipes must be an array`)
-  } else if (packageName !== undefined && packageVersion !== undefined) {
-    const recipes = collectRecipeRecords(artifactRecipes, failures)
+    const bunRecipe = field(build, "bun")
+    const pypiWheel = field(build, "pypiWheel")
+    const recipeInputs = [
+      ...(isRecord(bunRecipe) ? [bunRecipe] : []),
+      ...(Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : [])
+    ]
+    const recipes = collectRecipeRecords(recipeInputs, failures)
     const expectedPyPiRecipes = expectedPyPiWheelRecipes(packageVersion)
+    if (!isRecord(bunRecipe)) {
+      failures.push(`${releaseConfigPath} build.bun must be an object`)
+    }
+    if (!Array.isArray(pypiWheel)) {
+      failures.push(`${releaseConfigPath} build.pypiWheel must be an array`)
+    }
     if (recipes.size !== 1 + expectedPyPiRecipes.length) {
-      failures.push(`${releaseConfigPath} artifactRecipes must contain release-ts CLI and platform PyPI wheel recipes`)
+      failures.push(`${releaseConfigPath} build must contain release-ts CLI and platform PyPI wheel recipes`)
     }
     const recipe = recipes.get(releaseCliRecipeId)
     if (recipe === undefined) {
-      failures.push(`${releaseConfigPath} artifactRecipes must include recipe ${releaseCliRecipeId}`)
+      failures.push(`${releaseConfigPath} build.bun must include recipe ${releaseCliRecipeId}`)
     } else {
-      if (recipe._tag !== "BunExecutableArtifactRecipe") {
-        failures.push(`artifact recipe ${releaseCliRecipeId} _tag must be BunExecutableArtifactRecipe`)
-      }
-      if (recipe.entrypoint !== releaseCliEntrypoint) {
-        failures.push(`artifact recipe ${releaseCliRecipeId} entrypoint ${String(recipe.entrypoint)} must equal ${releaseCliEntrypoint}`)
+      if (recipe.entry !== releaseCliEntrypoint) {
+        failures.push(`artifact recipe ${releaseCliRecipeId} entry ${String(recipe.entry)} must equal ${releaseCliEntrypoint}`)
       }
       const outputs = field(recipe, "outputs")
       if (!Array.isArray(outputs)) {
@@ -612,11 +585,8 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
     for (const expected of expectedPyPiRecipes) {
       const pypiWheelRecipe = recipes.get(expected.id)
       if (pypiWheelRecipe === undefined) {
-        failures.push(`${releaseConfigPath} artifactRecipes must include recipe ${expected.id}`)
+        failures.push(`${releaseConfigPath} build.pypiWheel must include recipe ${expected.id}`)
         continue
-      }
-      if (pypiWheelRecipe._tag !== "PyPiWheelArtifactRecipe") {
-        failures.push(`artifact recipe ${expected.id} _tag must be PyPiWheelArtifactRecipe`)
       }
       checkPyPiWheelPath(pypiWheelRecipe, expected, packageName, packageVersion, failures)
       if (pypiWheelRecipe.packageName !== "ts-release") {
@@ -659,16 +629,35 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
     }
     for (const recipeId of recipes.keys()) {
       if (recipeId !== releaseCliRecipeId && !expectedPyPiRecipes.some((expected) => expected.id === recipeId)) {
-        failures.push(`${releaseConfigPath} artifactRecipes has unexpected recipe ${recipeId}`)
+        failures.push(`${releaseConfigPath} build has unexpected recipe ${recipeId}`)
+      }
+    }
+    const staticArtifacts = field(build, "artifacts")
+    if (staticArtifacts !== undefined) {
+      if (!Array.isArray(staticArtifacts)) {
+        failures.push(`${releaseConfigPath} build.artifacts must be an array when configured`)
+      } else {
+        const staticArtifactRecords = collectArtifactRecords(staticArtifacts, failures)
+        for (const expected of expectedRecipeOutputs(packageVersion)) {
+          if (staticArtifactRecords.has(expected.id)) {
+            failures.push(`artifact ${expected.id} must be declared by build.bun outputs, not build.artifacts`)
+          }
+        }
+        for (const expected of expectedPyPiRecipes) {
+          if (staticArtifactRecords.has(expected.id)) {
+            failures.push(`artifact ${expected.id} must be declared by build.pypiWheel, not build.artifacts`)
+          }
+        }
       }
     }
   }
 
-  const targets = field(config, "targets")
-  if (!Array.isArray(targets)) {
-    failures.push(`${releaseConfigPath} targets must be an array`)
+  const publish = field(config, "publish")
+  if (!isRecord(publish)) {
+    failures.push(`${releaseConfigPath} publish must be an object`)
   } else {
-    const tokenEnvNames = collectTokenEnvNames(targets)
+    const publishTargets = Object.values(publish)
+    const tokenEnvNames = collectTokenEnvNames(publishTargets)
     const envExample = readText(".env.example")
     if (tokenEnvNames.length > 0 && envExample === undefined) {
       failures.push(".env.example must document release token environment variables")
@@ -680,18 +669,24 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
         }
       }
     }
-    const targetRecords = collectTargetRecords(targets, failures)
+    const targetRecords = new Map<string, Record<string, unknown>>()
+    for (const [targetId, target] of Object.entries(publish)) {
+      if (!isRecord(target)) {
+        failures.push(`self-release publish.${targetId} must be an object`)
+        continue
+      }
+      targetRecords.set(targetId, target)
+    }
     for (const expectedTargetId of ["github", "homebrew", "npm", "pypi", "scoop"]) {
       if (!targetRecords.has(expectedTargetId)) {
-        failures.push(`self-release targets must include ${expectedTargetId}`)
+        failures.push(`self-release publish must include ${expectedTargetId}`)
       }
     }
     for (const targetId of targetRecords.keys()) {
       if (!["github", "homebrew", "npm", "pypi", "scoop"].includes(targetId)) {
-        failures.push(`self-release target ${targetId} is not expected yet`)
+        failures.push(`self-release publish.${targetId} is not expected yet`)
       }
     }
-    checkTargetField(targetRecords.get("homebrew"), "homebrew", "_tag", "HomebrewTapTarget", failures)
     checkTargetField(targetRecords.get("homebrew"), "homebrew", "repository", "mannyc2/homebrew-ts-release", failures)
     checkTargetField(
       targetRecords.get("homebrew"),
@@ -715,7 +710,6 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
       failures
     )
     checkTargetArrayField(targetRecords.get("homebrew"), "homebrew", "artifactIds", ["cli-darwin-arm64", "cli-darwin-x64"], failures)
-    checkTargetField(targetRecords.get("scoop"), "scoop", "_tag", "ScoopBucketTarget", failures)
     checkTargetField(targetRecords.get("scoop"), "scoop", "repository", "mannyc2/scoop-ts-release", failures)
     checkTargetField(
       targetRecords.get("scoop"),
@@ -726,7 +720,6 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
     )
     checkTargetField(targetRecords.get("scoop"), "scoop", "bucketDirectory", ".release/catalogs/scoop-ts-release", failures)
     checkTargetField(targetRecords.get("scoop"), "scoop", "artifactId", "cli-windows-x64", failures)
-    checkTargetField(targetRecords.get("pypi"), "pypi", "_tag", "PyPiRegistryTarget", failures)
     checkTargetField(targetRecords.get("pypi"), "pypi", "repositoryUrl", "https://upload.pypi.org/legacy/", failures)
     checkTargetField(targetRecords.get("pypi"), "pypi", "pythonExecutable", "python3", failures)
     const pypiTarget = targetRecords.get("pypi")
@@ -749,19 +742,16 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
         }
       }
     }
-    for (const target of targets) {
-      if (!isRecord(target)) {
-        continue
-      }
-      if (target._tag === "GitHubReleaseTarget" && target.repository === "owner/repo") {
-        failures.push("GitHub release target repository must not use owner/repo placeholder")
-      }
-      if (target._tag === "NpmRegistryTarget" && target.id === "npm" && target.provenance !== true) {
-        failures.push("npm self-release target must enable provenance for GitHub Actions publishing")
-      }
-      if (target._tag === "NpmRegistryTarget" && target.id === "npm" && target.packageName !== packageName) {
-        failures.push(`npm self-release target packageName ${String(target.packageName)} must match package name ${packageName}`)
-      }
+    const githubTarget = targetRecords.get("github")
+    if (githubTarget?.repository === "owner/repo") {
+      failures.push("GitHub release target repository must not use owner/repo placeholder")
+    }
+    const npmTarget = targetRecords.get("npm")
+    if (npmTarget?.provenance !== true) {
+      failures.push("npm self-release target must enable provenance for GitHub Actions publishing")
+    }
+    if (npmTarget !== undefined && npmTarget.packageName !== packageName) {
+      failures.push(`npm self-release target packageName ${String(npmTarget.packageName)} must match package name ${packageName}`)
     }
   }
 }

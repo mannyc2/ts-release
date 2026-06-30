@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { ExecutionApproval, operationRequiresIrreversibleApproval } from "../src/domain/operation.js"
+import { ExecutionApproval } from "../src/domain/operation.js"
 import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
 import { renderPlan, validatePlan } from "../src/planner/executor.js"
@@ -65,17 +65,6 @@ describe("Homebrew target", () => {
       expect(publish.command.args).toEqual(["-C", ".", "push"])
       expect(publish.command.requiredEnv).toEqual([])
       expect(publish.command.redactedEnv).toEqual([])
-    }
-  })
-
-  test("marks immutable Homebrew tap pushes as irreversible", async () => {
-    const plan = await runEffect(createPlan(homebrewConfig({ mutability: "immutable" })), HomebrewLayer)
-    const publish = plan.operations.find((operation) => operation.id === "homebrew:homebrew-push")
-
-    expect(publish?._tag).toBe("PublishCommandOperation")
-    if (publish?._tag === "PublishCommandOperation") {
-      expect(publish.risk).toBe("irreversible")
-      expect(operationRequiresIrreversibleApproval(publish)).toBe(true)
     }
   })
 
@@ -196,22 +185,4 @@ describe("Homebrew target", () => {
     }
   })
 
-  test("records skipped Homebrew validation in non-strict mode", async () => {
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(homebrewConfig({ dryRunSupport: "none" }).replace("\"strict\":true", "\"strict\":false"))
-        return yield* validatePlan(plan)
-      }),
-      HomebrewLayer
-    )
-
-    expect(evidence.records.filter((record) => record.status === "skipped").map((record) => record.id)).toEqual([
-      "homebrew:brew-audit:validation"
-    ])
-    expectValidationRecord(evidence.records, "homebrew:brew-audit:validation", {
-      status: "skipped",
-      skipped: true,
-      severity: "warning"
-    })
-  })
 })

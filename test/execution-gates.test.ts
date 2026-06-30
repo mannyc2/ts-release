@@ -25,7 +25,7 @@ import {
   verifyPlan
 } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { expectTaggedError, minimalConfig } from "./helpers.js"
+import { expectTaggedError, minimalConfig, TestGitHubApiLayer } from "./helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -37,6 +37,7 @@ const TestLayer = Layer.mergeAll(
   }),
   makeTestReleaseHttpLayer(),
   LiveTargetRegistryLayer,
+  TestGitHubApiLayer,
   BunServices.layer
 )
 
@@ -342,6 +343,7 @@ describe("execution approval", () => {
       }),
       makeTestReleaseHttpLayer(),
       LiveTargetRegistryLayer,
+      TestGitHubApiLayer,
       BunServices.layer
     )
 
@@ -380,6 +382,7 @@ describe("execution approval", () => {
     }),
     makeTestReleaseHttpLayer(),
     LiveTargetRegistryLayer,
+    TestGitHubApiLayer,
     BunServices.layer
   ))((it) => {
     it.effect("workflow stops on validation failure before publish", () =>
@@ -424,6 +427,7 @@ describe("execution approval", () => {
     }),
     makeTestReleaseHttpLayer(),
     LiveTargetRegistryLayer,
+    TestGitHubApiLayer,
     BunServices.layer
   ))((it) => {
     it.effect("workflow preserves render and validation evidence on publish failure", () =>
@@ -464,6 +468,7 @@ describe("execution approval", () => {
     }),
     makeTestReleaseHttpLayer(),
     LiveTargetRegistryLayer,
+    TestGitHubApiLayer,
     BunServices.layer
   ))((it) => {
     it.effect("workflow preserves all completed evidence on verification failure", () =>

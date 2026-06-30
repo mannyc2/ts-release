@@ -5,9 +5,11 @@ import * as Schema from "effect/Schema"
 import {
   ArtifactIntent,
   ArtifactRecipe,
+  BunExecutableCompileTarget,
   BunExecutableArtifactRecipe,
   BunExecutableArtifactOutput,
   InstallableArtifactVariant,
+  InstallableArtifactVariantOverride,
   PyPiWheelArtifactRecipe,
   artifactInventoryOrder,
   bunExecutableCompileTargetVariant,
@@ -16,6 +18,19 @@ import {
 import { CommandSpec } from "../domain/operation.js"
 import {
   PackageManifestReleaseIdentitySource,
+  ReleaseConfigBunExecutableBuild,
+  ReleaseConfigBunExecutableOutput,
+  ReleaseConfigGitHubPublish,
+  ReleaseConfigHomebrewPublish,
+  ReleaseConfigManualArtifact,
+  ReleaseConfigNpmPackageBuild,
+  ReleaseConfigNpmPublish,
+  ReleaseConfigNpmTrustedPublishing,
+  ReleaseConfigProject,
+  ReleaseConfigPyPiPublish,
+  ReleaseConfigPyPiTrustedPublishing,
+  ReleaseConfigPyPiWheelBuild,
+  ReleaseConfigScoopPublish,
   ReleaseIdentity,
   ReleaseIdentitySource,
   ReleaseIntent,
@@ -24,7 +39,17 @@ import {
   SourceMetadata,
   StaticReleaseIdentitySource
 } from "../domain/release.js"
-import { targetOrder } from "../domain/target.js"
+import {
+  GitHubReleaseTarget,
+  HomebrewTapTarget,
+  NpmRegistryTarget,
+  NpmTrustedPublishingConfig,
+  PyPiRegistryTarget,
+  PyPiTrustedPublishingConfig,
+  ScoopBucketTarget,
+  TargetConfig,
+  targetOrder
+} from "../domain/target.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { inventoryArtifact } from "./artifact-inventory.js"
 import { ReleaseNormalizationError } from "./errors.js"
@@ -134,6 +159,22 @@ const validateNonEmptyString = (
   )
 }
 
+const requireCompactString = (
+  field: string,
+  value: string | undefined,
+  reason: string
+): Effect.Effect<string, ReleaseNormalizationError> => {
+  if (value !== undefined && value.trim().length > 0) {
+    return Effect.succeed(value)
+  }
+  return Effect.fail(
+    ReleaseNormalizationError.make({
+      field,
+      reason
+    })
+  )
+}
+
 const gitHeadCommand = (root: string): CommandSpec =>
   CommandSpec.make({
     executable: "git",
@@ -142,6 +183,47 @@ const gitHeadCommand = (root: string): CommandSpec =>
     requiredEnv: [],
     redactedEnv: []
   })
+
+const projectPackageName = (project: ReleaseConfigProject): string | undefined =>
+  project.packageName ?? project.package ?? project.name
+
+const projectManifestPath = (project: ReleaseConfigProject): string | undefined => {
+  const packagePath = project.packagePath
+  if (packagePath === undefined || packagePath.endsWith("package.json")) {
+    return packagePath
+  }
+  return `${packagePath.replace(/[/\\]+$/, "")}/package.json`
+}
+
+const releaseIdentitySourceFromConfig = Effect.fn("releaseIdentitySourceFromConfig")(function*(
+  project: ReleaseConfigProject
+) {
+  const commit = project.commit ?? "HEAD"
+  if (project.version !== undefined) {
+    const name = yield* requireCompactString(
+      "project.name",
+      project.name ?? projectPackageName(project),
+      "Static project identity requires project.name or project.packageName."
+    )
+    const tagTemplate = project.tagTemplate ?? "v{version}"
+    yield* templateField("project.tagTemplate", tagTemplate)
+    return StaticReleaseIdentitySource.make({
+      name,
+      version: project.version,
+      commit,
+      tag: project.tag ?? renderReleaseVersionTemplate(tagTemplate, project.version),
+      ...(project.notes === undefined ? {} : { notes: project.notes })
+    })
+  }
+
+  const manifestPath = projectManifestPath(project)
+  return PackageManifestReleaseIdentitySource.make({
+    ...(manifestPath === undefined ? {} : { packagePath: manifestPath }),
+    commit,
+    tagTemplate: project.tagTemplate ?? "v{version}",
+    ...(project.notes === undefined ? {} : { notes: project.notes })
+  })
+})
 
 export const resolveIdentityCommit = Effect.fn("resolveIdentityCommit")(function*(identity: ReleaseIdentity, root: string) {
   if (identity.commit !== "HEAD") {
@@ -358,16 +440,390 @@ export const artifactIntentsFromRecipes = (
 ): ReadonlyArray<ArtifactIntent> =>
   recipes.flatMap((recipe) => artifactIntentsFromRecipe(recipe, identity))
 
+const compactPackageShortName = (packageName: string): string => {
+  const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
+  const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
+  return normalized.length === 0 ? "release" : normalized
+}
+
+const compactNpmPackageArtifact = (
+  config: boolean | ReleaseConfigNpmPackageBuild | undefined,
+  project: ReleaseConfigProject
+): ArtifactIntent | undefined => {
+  if (config === undefined || config === false) {
+    return undefined
+  }
+  const packageConfig = config === true ? undefined : config
+  return ArtifactIntent.make({
+    id: packageConfig?.id ?? "npm-package",
+    path: packageConfig?.path ?? project.packagePath ?? ".",
+    format: "directory",
+    consumers: [...(packageConfig?.consumers ?? ["npm"])]
+  })
+}
+
+const compactManualArtifact = (artifact: ReleaseConfigManualArtifact): ArtifactIntent =>
+  ArtifactIntent.make({
+    id: artifact.id,
+    path: artifact.path,
+    ...(artifact.downloadUrl === undefined ? {} : { downloadUrl: artifact.downloadUrl }),
+    format: artifact.format,
+    consumers: [...artifact.consumers],
+    ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum }),
+    ...(artifact.variant === undefined ? {} : { variant: artifact.variant })
+  })
+
+const defaultBunExecutableTargets: ReadonlyArray<BunExecutableCompileTarget> = [
+  "bun-linux-x64-baseline",
+  "bun-linux-arm64",
+  "bun-darwin-x64",
+  "bun-darwin-arm64",
+  "bun-windows-x64-baseline"
+]
+
+const bunExecutableTargetSuffix = (target: BunExecutableCompileTarget): string => {
+  const withoutPrefix = target.startsWith("bun-") ? target.slice("bun-".length) : target
+  return withoutPrefix
+    .replace("-baseline", "")
+    .replace("-modern", "")
+}
+
+const bunExecutableTargetPath = (
+  target: BunExecutableCompileTarget,
+  outDir: string,
+  name: string
+): string => {
+  const suffix = bunExecutableTargetSuffix(target)
+  const extension = suffix.startsWith("windows-") ? ".exe" : ""
+  return `${outDir.replace(/[/\\]+$/, "")}/${name}-{version}-${suffix}${extension}`
+}
+
+const compactBunExecutableVariant = (
+  build: ReleaseConfigBunExecutableBuild,
+  output: ReleaseConfigBunExecutableOutput | undefined
+): InstallableArtifactVariantOverride | undefined => {
+  if (output?.variant !== undefined) {
+    return output.variant
+  }
+  if (build.binaryName === undefined && build.installPath === undefined) {
+    return undefined
+  }
+  return InstallableArtifactVariantOverride.make({
+    ...(build.binaryName === undefined ? {} : { binaryName: build.binaryName }),
+    ...(build.installPath === undefined ? {} : { installPath: build.installPath })
+  })
+}
+
+const compactBunExecutableOutput = (
+  build: ReleaseConfigBunExecutableBuild,
+  output: ReleaseConfigBunExecutableOutput | undefined,
+  target: BunExecutableCompileTarget,
+  name: string
+): BunExecutableArtifactOutput => {
+  const recipeId = build.id ?? "cli"
+  const suffix = bunExecutableTargetSuffix(target)
+  const variant = compactBunExecutableVariant(build, output)
+  return BunExecutableArtifactOutput.make({
+    id: output?.id ?? `${recipeId}-${suffix}`,
+    target,
+    path: output?.path ?? bunExecutableTargetPath(target, build.outDir ?? ".release/artifacts", name),
+    ...(output?.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl }),
+    consumers: [...(output?.consumers ?? build.consumers ?? ["github"])],
+    ...(variant === undefined ? {} : { variant })
+  })
+}
+
+const compactBunExecutableRecipe = (
+  build: ReleaseConfigBunExecutableBuild,
+  identity: ReleaseIdentity
+): BunExecutableArtifactRecipe => {
+  const name = build.name ?? compactPackageShortName(identity.name)
+  const outputs = build.outputs === undefined
+    ? (build.targets ?? defaultBunExecutableTargets).map((target) =>
+      compactBunExecutableOutput(build, undefined, target, name)
+    )
+    : build.outputs.map((output) => compactBunExecutableOutput(build, output, output.target, name))
+  return BunExecutableArtifactRecipe.make({
+    id: build.id ?? "cli",
+    entrypoint: build.entry,
+    outputs,
+    ...(build.minify === undefined ? {} : { minify: build.minify })
+  })
+}
+
+const compactPyPiWheelRecipes = (
+  config: ReleaseConfigPyPiWheelBuild | ReadonlyArray<ReleaseConfigPyPiWheelBuild> | undefined
+): ReadonlyArray<PyPiWheelArtifactRecipe> => {
+  if (config === undefined) {
+    return []
+  }
+  const wheels = Array.isArray(config) ? config : [config]
+  return wheels.map((wheel) =>
+    PyPiWheelArtifactRecipe.make({
+      id: wheel.id,
+      path: wheel.path,
+      wheelTag: wheel.wheelTag,
+      packageName: wheel.packageName,
+      moduleName: wheel.moduleName,
+      consoleScript: wheel.consoleScript,
+      summary: wheel.summary,
+      homepage: wheel.homepage,
+      license: wheel.license,
+      requiresPython: wheel.requiresPython,
+      binaries: [...wheel.binaries],
+      consumers: [...(wheel.consumers ?? ["pypi"])]
+    })
+  )
+}
+
+const compactArtifacts = (
+  intent: ReleaseIntent
+): ReadonlyArray<ArtifactIntent> => {
+  const npmPackage = compactNpmPackageArtifact(intent.build?.npmPackage, intent.project)
+  return [
+    ...(npmPackage === undefined ? [] : [npmPackage]),
+    ...(intent.build?.artifacts ?? []).map(compactManualArtifact)
+  ]
+}
+
+const compactArtifactRecipes = (
+  intent: ReleaseIntent,
+  identity: ReleaseIdentity
+): ReadonlyArray<ArtifactRecipe> => [
+  ...(intent.build?.bun === undefined ? [] : [compactBunExecutableRecipe(intent.build.bun, identity)]),
+  ...compactPyPiWheelRecipes(intent.build?.pypiWheel)
+]
+
+const compactNpmTrustedPublishing = (
+  config: boolean | ReleaseConfigNpmTrustedPublishing | undefined
+): NpmTrustedPublishingConfig | undefined => {
+  if (config === undefined || config === false) {
+    return undefined
+  }
+  if (config === true) {
+    return NpmTrustedPublishingConfig.make({
+      provider: "github-actions",
+      workflow: "release.yml",
+      packageExists: true
+    })
+  }
+  return NpmTrustedPublishingConfig.make({
+    provider: config.provider ?? "github-actions",
+    workflow: config.workflow ?? "release.yml",
+    packageExists: true,
+    ...(config.verifyPackageExists === undefined ? {} : { verifyPackageExists: config.verifyPackageExists })
+  })
+}
+
+const compactPyPiTrustedPublishing = (
+  config: boolean | ReleaseConfigPyPiTrustedPublishing | undefined
+): PyPiTrustedPublishingConfig | undefined => {
+  if (config === undefined || config === false) {
+    return undefined
+  }
+  if (config === true) {
+    return PyPiTrustedPublishingConfig.make({
+      provider: "github-actions",
+      workflow: "release.yml",
+      publisherConfigured: true
+    })
+  }
+  return PyPiTrustedPublishingConfig.make({
+    provider: config.provider ?? "github-actions",
+    workflow: config.workflow ?? "release.yml",
+    publisherConfigured: true
+  })
+}
+
+const compactNpmTarget = Effect.fn("compactNpmTarget")(function*(
+  project: ReleaseConfigProject,
+  identity: ReleaseIdentity,
+  config: true | ReleaseConfigNpmPublish
+) {
+  const publish = config === true ? ReleaseConfigNpmPublish.make({}) : config
+  const trustedPublishing = compactNpmTrustedPublishing(publish.trustedPublishing)
+  const packageName = yield* requireCompactString(
+    "publish.npm.packageName",
+    publish.packageName ?? projectPackageName(project) ?? identity.name,
+    "NPM publishing requires a package name."
+  )
+  return NpmRegistryTarget.make({
+    id: "npm",
+    registry: publish.registry ?? "https://registry.npmjs.org",
+    packageName,
+    packagePath: publish.packagePath ?? project.packagePath ?? ".",
+    ...(publish.tokenEnv === undefined ? {} : { tokenEnv: publish.tokenEnv }),
+    ...(trustedPublishing === undefined ? {} : { trustedPublishing }),
+    ...(publish.access === undefined ? {} : { access: publish.access }),
+    ...(publish.provenance === undefined ? {} : { provenance: publish.provenance }),
+    dryRunSupport: "native",
+    mutability: "immutable",
+    recovery: "publish-new-version"
+  })
+})
+
+const compactGitHubTarget = Effect.fn("compactGitHubTarget")(function*(
+  project: ReleaseConfigProject,
+  config: true | ReleaseConfigGitHubPublish
+) {
+  const publish = config === true ? ReleaseConfigGitHubPublish.make({}) : config
+  const repository = yield* requireCompactString(
+    "publish.github.repository",
+    publish.repository ?? project.repository,
+    "GitHub publishing requires publish.github.repository or project.repository."
+  )
+  return GitHubReleaseTarget.make({
+    id: "github",
+    repository,
+    ...(publish.tokenEnv === undefined ? {} : { tokenEnv: publish.tokenEnv }),
+    draft: publish.draft ?? true,
+    prerelease: publish.prerelease ?? false,
+    dryRunSupport: "simulated",
+    mutability: "mutable-release",
+    recovery: "delete-and-recreate"
+  })
+})
+
+const firstArtifactConsumerId = (
+  artifacts: ReadonlyArray<ArtifactIntent>,
+  consumer: string,
+  fallback: string
+): string =>
+  artifacts.find((artifact) => artifact.consumers.includes(consumer))?.id ?? fallback
+
+const compactHomebrewTarget = (
+  project: ReleaseConfigProject,
+  identity: ReleaseIdentity,
+  artifacts: ReadonlyArray<ArtifactIntent>,
+  publish: ReleaseConfigHomebrewPublish
+): HomebrewTapTarget => {
+  const name = publish.formulaName ?? compactPackageShortName(projectPackageName(project) ?? identity.name)
+  const artifactId = publish.artifactId ?? firstArtifactConsumerId(artifacts, "homebrew", "archive")
+  return HomebrewTapTarget.make({
+    id: "homebrew",
+    repository: publish.repository,
+    formulaName: name,
+    formulaPath: publish.formulaPath ?? `.release/generated/${name}.rb`,
+    artifactId,
+    ...(publish.artifactIds === undefined ? {} : { artifactIds: [...publish.artifactIds] }),
+    ...(publish.homepage === undefined ? {} : { homepage: publish.homepage }),
+    ...(publish.description === undefined ? {} : { description: publish.description }),
+    ...(publish.url === undefined ? {} : { url: publish.url }),
+    ...(publish.tapDirectory === undefined ? {} : { tapDirectory: publish.tapDirectory }),
+    ...(publish.installPath === undefined ? {} : { installPath: publish.installPath }),
+    ...(publish.tokenEnv === undefined ? {} : { tokenEnv: publish.tokenEnv }),
+    dryRunSupport: "simulated",
+    mutability: "mutable-index",
+    recovery: "manual"
+  })
+}
+
+const compactScoopTarget = (
+  project: ReleaseConfigProject,
+  identity: ReleaseIdentity,
+  artifacts: ReadonlyArray<ArtifactIntent>,
+  publish: ReleaseConfigScoopPublish
+): ScoopBucketTarget => {
+  const name = publish.manifestName ?? compactPackageShortName(projectPackageName(project) ?? identity.name)
+  return ScoopBucketTarget.make({
+    id: "scoop",
+    repository: publish.repository,
+    manifestName: name,
+    manifestPath: publish.manifestPath ?? `.release/generated/${name}.json`,
+    artifactId: publish.artifactId ?? firstArtifactConsumerId(artifacts, "scoop", "archive"),
+    ...(publish.homepage === undefined ? {} : { homepage: publish.homepage }),
+    ...(publish.description === undefined ? {} : { description: publish.description }),
+    ...(publish.license === undefined ? {} : { license: publish.license }),
+    ...(publish.url === undefined ? {} : { url: publish.url }),
+    ...(publish.bin === undefined ? {} : { bin: publish.bin }),
+    ...(publish.bucketDirectory === undefined ? {} : { bucketDirectory: publish.bucketDirectory }),
+    ...(publish.tokenEnv === undefined ? {} : { tokenEnv: publish.tokenEnv }),
+    dryRunSupport: "simulated",
+    mutability: "mutable-index",
+    recovery: "manual"
+  })
+}
+
+const compactPyPiTarget = (
+  config: true | ReleaseConfigPyPiPublish
+): PyPiRegistryTarget => {
+  const publish = config === true ? ReleaseConfigPyPiPublish.make({}) : config
+  const trustedPublishing = compactPyPiTrustedPublishing(publish.trustedPublishing)
+  return PyPiRegistryTarget.make({
+    id: "pypi",
+    repositoryUrl: publish.repositoryUrl ?? "https://upload.pypi.org/legacy/",
+    ...(publish.pythonExecutable === undefined ? {} : { pythonExecutable: publish.pythonExecutable }),
+    ...(publish.usernameEnv === undefined ? {} : { usernameEnv: publish.usernameEnv }),
+    ...(publish.passwordEnv === undefined ? {} : { passwordEnv: publish.passwordEnv }),
+    ...(trustedPublishing === undefined ? {} : { trustedPublishing }),
+    dryRunSupport: "native",
+    mutability: "immutable",
+    recovery: "publish-new-version"
+  })
+}
+
+const compactTargets = Effect.fn("compactTargets")(function*(
+  intent: ReleaseIntent,
+  identity: ReleaseIdentity,
+  artifacts: ReadonlyArray<ArtifactIntent>
+) {
+  const targets: Array<TargetConfig> = []
+  if (intent.publish.npm !== undefined && intent.publish.npm !== false) {
+    targets.push(yield* compactNpmTarget(intent.project, identity, intent.publish.npm))
+  }
+  if (intent.publish.github !== undefined && intent.publish.github !== false) {
+    targets.push(yield* compactGitHubTarget(intent.project, intent.publish.github))
+  }
+  if (intent.publish.homebrew !== undefined) {
+    targets.push(compactHomebrewTarget(intent.project, identity, artifacts, intent.publish.homebrew))
+  }
+  if (intent.publish.scoop !== undefined) {
+    targets.push(compactScoopTarget(intent.project, identity, artifacts, intent.publish.scoop))
+  }
+  if (intent.publish.pypi !== undefined && intent.publish.pypi !== false) {
+    targets.push(compactPyPiTarget(intent.publish.pypi))
+  }
+  return targets
+})
+
+export const resolveReleaseBuild = Effect.fn("resolveReleaseBuild")(function*(
+  intent: ReleaseIntent,
+  root: string = "."
+) {
+  const identitySource = yield* releaseIdentitySourceFromConfig(intent.project)
+  const identity = yield* resolveReleaseIdentitySource(identitySource, root)
+  return {
+    identity,
+    artifactInputs: compactArtifacts(intent),
+    artifactRecipes: compactArtifactRecipes(intent, identity)
+  }
+})
+
+export const resolveReleasePlanningInputs = Effect.fn("resolveReleasePlanningInputs")(function*(
+  intent: ReleaseIntent,
+  root: string = "."
+) {
+  const build = yield* resolveReleaseBuild(intent, root)
+  const targets = yield* compactTargets(intent, build.identity, build.artifactInputs)
+  return {
+    ...build,
+    targets
+  }
+})
+
 export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(function*(
   intent: ReleaseIntent,
   root: string = ".",
   configPath: string | undefined = undefined
 ) {
-  const artifactRecipes = intent.artifactRecipes ?? []
+  const inputs = yield* resolveReleasePlanningInputs(intent, root)
+  const identity = inputs.identity
+  const artifactRecipes = inputs.artifactRecipes
+  const artifactInputs = inputs.artifactInputs
+  const targetInputs = inputs.targets
   yield* validateUnique(artifactRecipes.map((recipe) => recipe.id), "artifactRecipes.id")
-  yield* validateUnique(intent.targets.map((target) => target.id), "targets.id")
+  yield* validateUnique(targetInputs.map((target) => target.id), "targets.id")
 
-  const identity = yield* resolveReleaseIdentitySource(intent.identity, root)
   for (const recipe of artifactRecipes) {
     if (recipe instanceof BunExecutableArtifactRecipe) {
       yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.entrypoint`, recipe.entrypoint)
@@ -420,7 +876,7 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   }
 
   const artifacts = [
-    ...intent.artifacts.map((artifact) => expandArtifactIntent(artifact, identity)),
+    ...artifactInputs.map((artifact) => expandArtifactIntent(artifact, identity)),
     ...artifactIntentsFromRecipes(artifactRecipes, identity)
   ]
   yield* validateUnique(artifacts.map((artifact) => artifact.id), "artifacts.id")
@@ -434,7 +890,7 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
       yield* validateInstallableArtifactVariant(`artifacts.${artifact.id}.variant`, artifact.variant)
     }
   }
-  for (const target of intent.targets) {
+  for (const target of targetInputs) {
     if (target._tag === "NpmRegistryTarget") {
       yield* validateNonEmptyString(`targets.${target.id}.packageName`, target.packageName)
       yield* validateNonEmptySafeRelativePath(`targets.${target.id}.packagePath`, target.packagePath)
@@ -493,7 +949,7 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
   }
 
   const evidenceDirectory = renderReleaseVersionTemplate(
-    intent.evidenceDirectory ?? ".release/evidence",
+    typeof intent.evidence === "string" ? intent.evidence : intent.evidence?.directory ?? ".release/evidence",
     identity.version
   )
   yield* validateNonEmptySafeRelativePath("evidenceDirectory", evidenceDirectory)
@@ -506,7 +962,7 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
       ...(configPath === undefined ? {} : { configPath })
     }),
     artifacts: inventory.sort(artifactInventoryOrder),
-    targets: [...intent.targets].sort(targetOrder),
+    targets: [...targetInputs].sort(targetOrder),
     strict: intent.strict ?? true,
     evidenceDirectory
   })

@@ -4,7 +4,6 @@ import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { makeTestCommandRunnerLayer } from "../src/host/test.js"
 import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { validatePlan } from "../src/planner/executor.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import { pypiConfig, releaseConfig, runEffect } from "./helpers.js"
 
@@ -27,19 +26,6 @@ const createPlan = (config: string) =>
     const intent = yield* parseReleaseIntent(config)
     return yield* createReleasePlan(intent)
   })
-
-const expectValidationRecord = (
-  records: ReadonlyArray<{ readonly id: string; readonly status: string; readonly severity?: string; readonly skipped?: boolean }>,
-  id: string,
-  expected: { readonly status: string; readonly severity: string; readonly skipped: boolean }
-) => {
-  const record = records.find((item) => item.id === id)
-  expect(record?.status).toBe(expected.status)
-  expect(record?.severity).toBe(expected.severity)
-  if (record !== undefined && "skipped" in record) {
-    expect(record.skipped).toBe(expected.skipped)
-  }
-}
 
 describe("PyPI target", () => {
   test("plans PyPI registry capabilities and Twine commands", async () => {
@@ -124,22 +110,6 @@ describe("PyPI target", () => {
     }
   })
 
-  test("records simulated validation note evidence with current adapter severities", async () => {
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(pypiConfig({ dryRunSupport: "simulated" }))
-        return yield* validatePlan(plan)
-      }),
-      PyPiLayer
-    )
-
-    expectValidationRecord(evidence.records, "pypi:twine-check:validation", {
-      status: "passed",
-      skipped: false,
-      severity: "info"
-    })
-  })
-
   test("uses a configured Python executable for Twine commands", async () => {
     const plan = await runEffect(createPlan(pypiConfig({ pythonExecutable: "python3" })), PyPiLayer)
     const pythonVersion = plan.operations.find((operation) => operation.id === "pypi:python-version")
@@ -161,27 +131,7 @@ describe("PyPI target", () => {
     }
   })
 
-  test("records skipped PyPI validation in non-strict mode", async () => {
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(pypiConfig({ dryRunSupport: "none" }).replace("\"strict\":true", "\"strict\":false"))
-        return yield* validatePlan(plan)
-      }),
-      PyPiLayer
-    )
-
-    expect(evidence.records.filter((record) => record.status === "skipped").map((record) => record.id)).toEqual([
-      "pypi:twine-check:validation"
-    ])
-    expectValidationRecord(evidence.records, "pypi:twine-check:validation", {
-      status: "skipped",
-      skipped: true,
-      severity: "warning"
-    })
-  })
-
   test("rejects unsafe PyPI target shapes", async () => {
-    const noDryRun = await runEffect(createPlan(pypiConfig({ dryRunSupport: "none" })).pipe(Effect.flip), PyPiLayer)
     const halfAuth = await runEffect(
       createPlan(pypiConfig({ passwordEnv: undefined })).pipe(Effect.flip),
       PyPiLayer
@@ -238,7 +188,6 @@ describe("PyPI target", () => {
       PyPiLayer
     )
 
-    expect(noDryRun._tag).toBe("PlanConstructionError")
     expect(halfAuth._tag).toBe("PlanConstructionError")
     expect(customAuth._tag).toBe("PlanConstructionError")
     expect(trustedWithToken._tag).toBe("PlanConstructionError")

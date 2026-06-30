@@ -11,9 +11,7 @@ import { BunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.j
 import { runEffect } from "./helpers.js"
 
 const integrationEnabled = Bun.env.RELEASE_INTEGRATION_TOOLS === "1"
-const githubEnabled = integrationEnabled && Bun.env.RELEASE_INTEGRATION_GITHUB === "1"
 const maybeTest = integrationEnabled ? test : test.skip
-const maybeGithubTest = githubEnabled ? test : test.skip
 const fixtureRoot = Bun.env.RELEASE_INTEGRATION_FIXTURE_DIR ?? `.tmp-release-integration-tools-${pid}`
 const npmPackagePath = `${fixtureRoot}/npm-package`
 const githubAssetPath = `${fixtureRoot}/github-asset.tgz`
@@ -100,7 +98,7 @@ describe("real tool integrations", () => {
     expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
   })
 
-  maybeGithubTest("runs GitHub adapter validators against the real gh CLI", async () => {
+  maybeTest("plans GitHub adapter validation without shelling out", async () => {
     const plan = await runEffect(
       planFromConfig({
         identity: {
@@ -135,17 +133,15 @@ describe("real tool integrations", () => {
     )
 
     const operations = plan.operations.filter((operation) =>
-      operation.id === "github:gh-version" ||
-      operation.id === "github:gh-auth-status" ||
-      operation.id === "github:gh-release-dry-run"
+      operation.id === "github:github-release-dry-run"
     )
-    const evidence = await runEffect(runOperations(plan, operations, ExecutionApproval.none), IntegrationLayer)
+    const evidence = await runEffect(
+      runOperations(plan, operations, ExecutionApproval.none),
+      IntegrationLayer
+    )
 
-    expect(evidence.records.map((record) => record.id).sort()).toEqual([
-      "github:gh-auth-status:command",
-      "github:gh-release-dry-run:validation",
-      "github:gh-version:command"
-    ])
+    expect(plan.operations.some((operation) => operation.id.startsWith("github:gh-"))).toBe(false)
+    expect(evidence.records.map((record) => record.id)).toEqual(["github:github-release-dry-run:validation"])
     expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
   })
 })

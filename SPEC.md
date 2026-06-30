@@ -22,7 +22,6 @@ release intent
   -> validation and rendering evidence
   -> approved execution
   -> post-publish verification
-  -> optional modeled reconciliation
 ```
 
 The package owns the model and the orchestration. Ecosystem tools remain the source of truth for ecosystem-specific behavior.
@@ -31,7 +30,13 @@ For example, npm, PyPI, GitHub Releases, Homebrew taps, Scoop buckets, OCI regis
 
 ## Current Shape
 
-The root package is the reusable library. It exposes explicit subpaths for domain data, config loading, planners, target adapters, host services, and high-level workflows. The official Bun CLI lives in `apps/release-ts`, and the GitHub Action lives in `apps/ts-release-action`; both are runtime adapters over the same TypeScript workflows.
+The root package is the stable user surface. It exposes one TypeScript import
+for config authoring and schema helpers, plus the `ts-release` executable. The
+domain model, config loader, planners, target adapters, host services, and
+workflow modules are repository-internal until they are deliberately promoted.
+The official Bun CLI lives in `apps/release-ts`, and the GitHub Action lives in
+`apps/ts-release-action`; both are runtime adapters over the same private
+release engine.
 
 Current first-party workflows cover:
 
@@ -40,7 +45,7 @@ Current first-party workflows cover:
 - data-first init/scaffolding previews with approved writes
 - static doctor/auth/CI diagnostics
 - render, validation, execution, verification, and workflow evidence
-- narrow GitHub release reconciliation without republishing npm versions
+- API-native GitHub release publishing and verification
 
 Reusable configs live in `templates/`, runnable fixtures live in `examples/`, and publish operations remain data until an execute approval and any irreversible approval are supplied.
 
@@ -92,11 +97,15 @@ Failed publish evidence must not be treated as proof that nothing was published.
 
 The package should make it hard to accidentally publish and easy to see exactly what would be published.
 
-### Library-first, CLI-second
+### Shared engine, small public surfaces
 
-The core package should be a reusable library. A CLI can exist as an adapter, but it should not contain the release logic.
+The core release logic should stay reusable and host-independent. The public
+package can still expose both a TypeScript API and a CLI: the TypeScript API is
+for typed config authoring, schema helpers, and stable summary data, while the
+`ts-release` executable is the command surface for staging, planning,
+publishing, verification, and diagnostics.
 
-The library should expose APIs for:
+The internal engine should support:
 
 - loading and normalizing config
 - staging declared artifact recipes through provided adapters
@@ -111,7 +120,10 @@ The library should expose APIs for:
 - recording evidence
 - reconciling narrowly modeled remote state without replaying immutable publishes
 
-The CLI and GitHub Action should mainly parse host inputs, call the library, format host-specific output, and persist evidence.
+Those engine workflows are not automatically public package subpaths. The CLI
+and GitHub Action should mainly parse host inputs, call the engine, format
+host-specific output, and persist evidence. A broader TypeScript execution API
+should be designed deliberately before promotion.
 
 ### Host abstraction without pretending the world is pure
 
@@ -147,9 +159,9 @@ These may be integrated through adapters, but they should not define the core.
 
 User-authored input describing what should be released.
 
-It should be concise but complete enough to identify the release, locate artifacts, choose targets, and declare policy.
+It should be concise but complete enough to identify the project, describe build outputs, choose publish surfaces, and choose evidence location.
 
-Identity may be static config data or may be derived from a package manifest. Release intent should declare artifact files, optional artifact recipes, target policy, and evidence location. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local or target-specific adapter.
+Identity may be static config data or may be derived from a package manifest. Release intent should declare project facts, optional build recipes, manual artifacts when needed, publish surfaces, and evidence location. Target capability policy such as dry-run support, mutability, and recovery belongs in normalized internals and release plans, not in user-authored config. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local or target-specific adapter.
 
 ### Artifact Recipe
 
@@ -195,7 +207,7 @@ Evidence should survive outside the process as JSON or another stable format. It
 
 ## Expected Public Surface
 
-The package should make these workflows straightforward:
+The package should make these user workflows straightforward:
 
 - initialize a starter config and optional CI workflow from templates
 - validate config JSON and schema shape
@@ -209,9 +221,11 @@ The package should make these workflows straightforward:
 - print publish operations
 - execute approved operations
 - verify published state after execution
-- reconcile a matching GitHub draft release without republishing immutable registries
 
-The API should favor explicit functions and typed data over hidden global state.
+The public npm surface should stay small: the package root TypeScript API for
+typed config helpers and stable summary data, and the `ts-release` executable
+for planning, publishing, verification, and diagnostics. Internal module names
+should not become user-facing compatibility promises.
 
 ## Configuration Principles
 

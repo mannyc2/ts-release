@@ -25,10 +25,13 @@ import {
   commandEvidenceFromResult,
   emptyEvidenceBundle,
   executionEvidence,
+  githubCreateEvidenceFromResult,
+  githubVerifyEvidenceFromResult,
   httpEvidenceFromResult,
   validationNoteEvidence
 } from "./evidence-recorder.js"
 import { OperationFailedError, WorkspaceWriteError } from "./errors.js"
+import { GitHubApi } from "../targets/github-api.js"
 
 export type * from "../types/effect-internal.js"
 
@@ -36,8 +39,11 @@ type OperationFailureEvidence = EvidenceRecord
 type CommandOperation = Extract<Operation, { readonly command: unknown }>
 type RenderOperation = Extract<Operation, { readonly _tag: "RenderFileOperation" }>
 type ValidationOperation = Extract<Operation, { readonly _tag: "ValidateCommandOperation" | "ValidationNoteOperation" }>
-type PublishOperation = Extract<Operation, { readonly _tag: "PublishCommandOperation" }>
-type VerificationOperation = Extract<Operation, { readonly _tag: "VerifyRemoteOperation" | "VerifyHttpOperation" }>
+type PublishOperation = Extract<Operation, { readonly _tag: "PublishCommandOperation" | "PublishGitHubReleaseOperation" }>
+type VerificationOperation = Extract<
+  Operation,
+  { readonly _tag: "VerifyRemoteOperation" | "VerifyHttpOperation" | "VerifyGitHubReleaseOperation" }
+>
 
 class RetryableVerificationEvidenceFailure extends Schema.TaggedErrorClass<RetryableVerificationEvidenceFailure>()(
   "RetryableVerificationEvidenceFailure",
@@ -52,7 +58,20 @@ const npmVersionVerificationRetryPolicy = Schedule.addDelay(
 )
 
 const operationFailed = (evidence: EvidenceRecord): evidence is OperationFailureEvidence =>
-  evidence.status === "failed" && ("exitCode" in evidence || "request" in evidence)
+  evidence.status === "failed" && ("exitCode" in evidence || "request" in evidence || "githubRelease" in evidence)
+
+const operationFailureReason = (evidence: OperationFailureEvidence): string => {
+  if (evidence.exitCode !== undefined) {
+    return "Command exited with a nonzero status."
+  }
+  if (evidence.request !== undefined) {
+    return "HTTP verification failed."
+  }
+  if (evidence.phase === "verification") {
+    return "GitHub release verification failed."
+  }
+  return "GitHub API operation failed."
+}
 
 const isNpmVersionVerificationOperation = (
   operation: Operation
@@ -109,9 +128,7 @@ const failOperationEvidence = (
       operationId: evidence.operationId,
       ...(evidence.exitCode === undefined ? {} : { exitCode: evidence.exitCode }),
       ...(evidence.responseStatus === undefined ? {} : { responseStatus: evidence.responseStatus }),
-      reason: evidence.exitCode !== undefined
-        ? "Command exited with a nonzero status."
-        : "HTTP verification failed.",
+      reason: operationFailureReason(evidence),
       ...(bundle === undefined ? {} : { evidence: bundle })
     })
   )
@@ -122,6 +139,12 @@ export function runOperationEvidence(
   root?: string,
   phase?: EvidencePhase
 ): Effect.Effect<EvidenceRecord, ExecutionApprovalError, ReleaseHttp>
+export function runOperationEvidence(
+  operation: Extract<Operation, { readonly _tag: "PublishGitHubReleaseOperation" | "VerifyGitHubReleaseOperation" }>,
+  approval: ExecutionApproval,
+  root?: string,
+  phase?: EvidencePhase
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError, GitHubApi>
 export function runOperationEvidence(
   operation: RenderOperation,
   approval: ExecutionApproval,
@@ -148,7 +171,7 @@ export function runOperationEvidence(
 ): Effect.Effect<
   EvidenceRecord,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError,
-  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+  ReleaseCommandRunner | ReleaseHttp | GitHubApi | FileSystem.FileSystem | Path.Path
 >
 export function runOperationEvidence(
   operation: Operation,
@@ -170,6 +193,14 @@ export function runOperationEvidence(
 
     if (operation._tag === "VerifyHttpOperation") {
       return yield* httpEvidenceFromResult(operation, phase)
+    }
+
+    if (operation._tag === "PublishGitHubReleaseOperation") {
+      return yield* githubCreateEvidenceFromResult(operation, phase)
+    }
+
+    if (operation._tag === "VerifyGitHubReleaseOperation") {
+      return yield* githubVerifyEvidenceFromResult(operation, phase)
     }
 
     return yield* commandEvidenceFromResult(operation, phase)
@@ -201,7 +232,7 @@ const runOperationEvidenceWithVerificationRetry = (
 ): Effect.Effect<
   EvidenceRecord,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError,
-  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+  ReleaseCommandRunner | ReleaseHttp | GitHubApi | FileSystem.FileSystem | Path.Path
 > =>
   isNpmVersionVerificationOperation(operation)
     ? retryNpmVersionVerificationEvidence(operation, approval, root, phase)
@@ -211,6 +242,10 @@ export function runOperation(
   operation: Extract<Operation, { readonly _tag: "VerifyHttpOperation" }>,
   approval: ExecutionApproval
 ): Effect.Effect<EvidenceRecord, ExecutionApprovalError | OperationFailedError, ReleaseHttp>
+export function runOperation(
+  operation: Extract<Operation, { readonly _tag: "PublishGitHubReleaseOperation" | "VerifyGitHubReleaseOperation" }>,
+  approval: ExecutionApproval
+): Effect.Effect<EvidenceRecord, ExecutionApprovalError | OperationFailedError, GitHubApi>
 export function runOperation(
   operation: RenderOperation,
   approval: ExecutionApproval
@@ -237,7 +272,7 @@ export function runOperation(
 ): Effect.Effect<
   EvidenceRecord,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
-  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+  ReleaseCommandRunner | ReleaseHttp | GitHubApi | FileSystem.FileSystem | Path.Path
 >
 export function runOperation(
   operation: Operation,
@@ -264,7 +299,7 @@ export function runOperations(
 ): Effect.Effect<
   EvidenceBundle,
   ExecutionApprovalError | CommandRunnerError | OperationFailedError,
-  ReleaseCommandRunner | ReleaseHttp
+  ReleaseCommandRunner | ReleaseHttp | GitHubApi
 >
 export function runOperations(
   plan: ReleasePlan,
@@ -287,7 +322,11 @@ export function runOperations(
   operations: ReadonlyArray<PublishOperation>,
   approval: ExecutionApproval,
   phase?: EvidencePhase
-): Effect.Effect<EvidenceBundle, ExecutionApprovalError | CommandRunnerError | OperationFailedError, ReleaseCommandRunner>
+): Effect.Effect<
+  EvidenceBundle,
+  ExecutionApprovalError | CommandRunnerError | OperationFailedError,
+  ReleaseCommandRunner | GitHubApi
+>
 export function runOperations(
   plan: ReleasePlan,
   operations: ReadonlyArray<Operation>,
@@ -296,7 +335,7 @@ export function runOperations(
 ): Effect.Effect<
   EvidenceBundle,
   ExecutionApprovalError | CommandRunnerError | WorkspaceWriteError | OperationFailedError,
-  ReleaseCommandRunner | ReleaseHttp | FileSystem.FileSystem | Path.Path
+  ReleaseCommandRunner | ReleaseHttp | GitHubApi | FileSystem.FileSystem | Path.Path
 >
 export function runOperations(
   plan: ReleasePlan,
@@ -321,13 +360,15 @@ const isValidationOperation = (operation: Operation): operation is ValidationOpe
   operation._tag === "ValidateCommandOperation" || operation._tag === "ValidationNoteOperation"
 
 const isPublishOperation = (operation: Operation): operation is PublishOperation =>
-  operation._tag === "PublishCommandOperation"
+  operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
 
 const isRenderOperation = (operation: Operation): operation is RenderOperation =>
   operation._tag === "RenderFileOperation"
 
 const isVerificationOperation = (operation: Operation): operation is VerificationOperation =>
-  operation._tag === "VerifyRemoteOperation" || operation._tag === "VerifyHttpOperation"
+  operation._tag === "VerifyRemoteOperation" ||
+  operation._tag === "VerifyHttpOperation" ||
+  operation._tag === "VerifyGitHubReleaseOperation"
 
 export const validationOperations = (plan: ReleasePlan): ReadonlyArray<ValidationOperation> =>
   plan.operations.filter(isValidationOperation)

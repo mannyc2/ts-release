@@ -50,35 +50,32 @@ const writeJson = (path: string, value: unknown): Promise<void> =>
   writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 
 const releaseConfig = () => ({
-  artifactRecipes: [
-    {
-      _tag: "PyPiWheelArtifactRecipe",
-      id: "pypi-wheel-linux-x64",
-      packageName: "ts-release"
-    }
-  ],
-  targets: [
-    {
-      id: "github",
+  build: {
+    pypiWheel: [
+      {
+        id: "pypi-wheel-linux-x64",
+        packageName: "ts-release"
+      }
+    ]
+  },
+  publish: {
+    github: {
       repository: "mannyc2/ts-release"
     },
-    {
-      id: "homebrew",
+    homebrew: {
       repository: "mannyc2/homebrew-ts-release"
     },
-    {
-      id: "scoop",
+    scoop: {
       repository: "mannyc2/scoop-ts-release"
     },
-    {
-      id: "pypi",
+    pypi: {
       trustedPublishing: {
         provider: "github-actions",
         workflow: "release.yml",
         publisherConfigured: true
       }
     }
-  ]
+  }
 })
 
 const workflow = `name: Release
@@ -91,7 +88,6 @@ jobs:
       GH_TOKEN: \${{ github.token }}
     steps:
       - run: python3 -m pip install --upgrade "twine>=6.2.0"
-      - run: bun run release:catalogs
       - run: bun run check:self-release-artifacts
       - uses: actions/checkout@v4
         with:
@@ -175,19 +171,19 @@ describe("self-release live readiness script", () => {
     try {
       const result = await run(root, server.url.origin)
 
-	      expect(result.exitCode).toBe(0)
-	      expect(result.stdout).toContain("ok   npm:version-available")
-	      expect(result.stdout).toContain("ok   github:release-tag-available")
-	      expect(result.stdout).toContain("ok   smoke:workflow-file")
-	      expect(result.stdout).toContain("ok   smoke:github-asset-windows-x64")
-	      expect(result.stdout).toContain("ok   smoke:scoop-bucket")
-	      expect(result.stdout).toContain("ok   pypi:trusted-publisher-configured")
-	      expect(result.stdout).toContain("ok   pypi:version-available")
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain("ok   npm:version-available")
+      expect(result.stdout).toContain("ok   github:release-tag-available")
+      expect(result.stdout).toContain("ok   smoke:workflow-file")
+      expect(result.stdout).toContain("ok   smoke:github-asset-windows-x64")
+      expect(result.stdout).toContain("ok   smoke:scoop-bucket")
+      expect(result.stdout).toContain("ok   pypi:trusted-publisher-configured")
+      expect(result.stdout).toContain("ok   pypi:version-available")
     } finally {
       server.stop(true)
       await rm(root, { recursive: true, force: true })
     }
-	  })
+  })
 
   test("fails when the post-release install smoke workflow is missing", async () => {
     const root = await prepareWorkspace({ installSmokeWorkflow: false })

@@ -309,15 +309,19 @@ const githubRepoChecks = (
   ]
 }
 
-const targetById = (
-  targets: ReadonlyArray<unknown>,
+const publishTarget = (
+  publish: Record<string, unknown>,
   id: string
-): Record<string, unknown> | undefined =>
-  targets.find((target): target is Record<string, unknown> => isRecord(target) && target.id === id)
+): Record<string, unknown> | undefined => {
+  const target = publish[id]
+  return isRecord(target) ? target : undefined
+}
 
-const firstPyPiRecipePackageName = (recipes: ReadonlyArray<unknown>): string | undefined => {
+const firstPyPiRecipePackageName = (build: Record<string, unknown>): string | undefined => {
+  const pypiWheel = build.pypiWheel
+  const recipes = Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : []
   for (const recipe of recipes) {
-    if (isRecord(recipe) && recipe._tag === "PyPiWheelArtifactRecipe") {
+    if (isRecord(recipe)) {
       return stringField(recipe, "packageName")
     }
   }
@@ -391,8 +395,8 @@ if (!isRecord(config)) {
 if (isRecord(manifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name")
   const packageVersion = stringField(manifest, "version")
-  const targets = config.targets
-  const recipes = config.artifactRecipes
+  const build = config.build
+  const publish = config.publish
 
   if (packageName === undefined) {
     checks.push({ id: "manifest:name", ok: false, message: `${packagePath} name must be a non-empty string.` })
@@ -400,19 +404,19 @@ if (isRecord(manifest) && isRecord(config)) {
   if (packageVersion === undefined) {
     checks.push({ id: "manifest:version", ok: false, message: `${packagePath} version must be a non-empty string.` })
   }
-  if (!Array.isArray(targets)) {
-    checks.push({ id: "config:targets", ok: false, message: `${releaseConfigPath} targets must be an array.` })
+  if (!isRecord(build)) {
+    checks.push({ id: "config:build", ok: false, message: `${releaseConfigPath} build must be an object.` })
   }
-  if (!Array.isArray(recipes)) {
-    checks.push({ id: "config:artifact-recipes", ok: false, message: `${releaseConfigPath} artifactRecipes must be an array.` })
+  if (!isRecord(publish)) {
+    checks.push({ id: "config:publish", ok: false, message: `${releaseConfigPath} publish must be an object.` })
   }
 
-  if (packageName !== undefined && packageVersion !== undefined && Array.isArray(targets) && Array.isArray(recipes)) {
-    const githubTarget = targetById(targets, "github")
-    const homebrewTarget = targetById(targets, "homebrew")
-    const scoopTarget = targetById(targets, "scoop")
-    const pypiTarget = targetById(targets, "pypi")
-    const pypiPackageName = firstPyPiRecipePackageName(recipes)
+  if (packageName !== undefined && packageVersion !== undefined && isRecord(build) && isRecord(publish)) {
+    const githubTarget = publishTarget(publish, "github")
+    const homebrewTarget = publishTarget(publish, "homebrew")
+    const scoopTarget = publishTarget(publish, "scoop")
+    const pypiTarget = publishTarget(publish, "pypi")
+    const pypiPackageName = firstPyPiRecipePackageName(build)
     const githubRepository = githubTarget === undefined ? undefined : stringField(githubTarget, "repository")
     const homebrewRepository = homebrewTarget === undefined ? undefined : stringField(homebrewTarget, "repository")
     const scoopRepository = scoopTarget === undefined ? undefined : stringField(scoopTarget, "repository")
@@ -423,13 +427,12 @@ if (isRecord(manifest) && isRecord(config)) {
       workflowContains(workflow, "workflow:catalog-token", "secrets.TS_RELEASE_CATALOG_TOKEN", "Workflow references TS_RELEASE_CATALOG_TOKEN for catalog checkouts."),
       workflowContains(workflow, "workflow:id-token", "id-token: write", "Workflow grants id-token: write for trusted publishing."),
       workflowContains(workflow, "workflow:twine-version", "twine>=6.2.0", "Workflow installs a Twine version with trusted-publishing support."),
-      workflowContains(workflow, "workflow:catalog-render", "bun run release:catalogs", "Workflow renders package manager catalogs before release publication."),
-	      workflowContains(workflow, "workflow:artifact-check", "bun run check:self-release-artifacts", "Workflow validates release artifacts before release publication."),
-	      workflowExcludes(workflow, "workflow:no-twine-username-secret", "secrets.TWINE_USERNAME", "Workflow does not require TWINE_USERNAME for PyPI upload."),
-	      workflowExcludes(workflow, "workflow:no-twine-password-secret", "secrets.TWINE_PASSWORD", "Workflow does not require TWINE_PASSWORD for PyPI upload."),
-	      ...installSmokeWorkflowChecks(installSmokeWorkflow),
-	      ...pypiTrustedPublishingChecks(pypiTarget)
-	    )
+      workflowContains(workflow, "workflow:artifact-check", "bun run check:self-release-artifacts", "Workflow validates release artifacts before release publication."),
+      workflowExcludes(workflow, "workflow:no-twine-username-secret", "secrets.TWINE_USERNAME", "Workflow does not require TWINE_USERNAME for PyPI upload."),
+      workflowExcludes(workflow, "workflow:no-twine-password-secret", "secrets.TWINE_PASSWORD", "Workflow does not require TWINE_PASSWORD for PyPI upload."),
+      ...installSmokeWorkflowChecks(installSmokeWorkflow),
+      ...pypiTrustedPublishingChecks(pypiTarget)
+    )
 
     const npmStatus = await httpStatus(withBase(npmRegistryBase, `${encodeURIComponent(packageName)}/${packageVersion}`))
     checks.push(statusCheck(

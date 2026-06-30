@@ -427,6 +427,7 @@ if (isRecord(manifest) && isRecord(config)) {
       workflowContains(workflow, "workflow:catalog-token", "secrets.TS_RELEASE_CATALOG_TOKEN", "Workflow references TS_RELEASE_CATALOG_TOKEN for catalog checkouts."),
       workflowContains(workflow, "workflow:id-token", "id-token: write", "Workflow grants id-token: write for trusted publishing."),
       workflowContains(workflow, "workflow:twine-version", "twine>=6.2.0", "Workflow installs a Twine version with trusted-publishing support."),
+      workflowContains(workflow, "workflow:catalog-render", "bun run release:catalogs", "Workflow renders package manager catalogs before artifact validation."),
       workflowContains(workflow, "workflow:artifact-check", "bun run check:self-release-artifacts", "Workflow validates release artifacts before release publication."),
       workflowExcludes(workflow, "workflow:no-twine-username-secret", "secrets.TWINE_USERNAME", "Workflow does not require TWINE_USERNAME for PyPI upload."),
       workflowExcludes(workflow, "workflow:no-twine-password-secret", "secrets.TWINE_PASSWORD", "Workflow does not require TWINE_PASSWORD for PyPI upload."),

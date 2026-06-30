@@ -72,6 +72,7 @@
     "check:portable": "bun run check:core && bun run check:app && bun run check:action",
     "check:release": "bun run check:self-release-config && bun run check:self-release-doctor && bun run check:portable",
     "release:artifacts": "bun run cli build --config apps/release-ts/release.config.json --format text",
+    "release:catalogs": "bun run cli render --config apps/release-ts/release.config.json --execute",
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {

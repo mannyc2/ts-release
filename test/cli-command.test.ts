@@ -78,6 +78,7 @@ describe("cli command", () => {
       "init",
       "plan",
       "release",
+      "render",
       "verify"
     ])
   })
@@ -246,6 +247,64 @@ describe("cli command", () => {
       )
 
       expectExitFailureTag(exit, "ArtifactRecipeStageError")
+    }))
+
+  test("render command writes planned files without publishing", () =>
+    withTempDirectoryPromise("ts-release-cli-render-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      const archivePath = join(root, "artifacts", "release-0.1.0.tgz")
+      const formulaPath = join(root, ".release", "generated", "release.rb")
+      await mkdir(join(root, "artifacts"), { recursive: true })
+      await writeFile(archivePath, "homebrew archive")
+      await writeFile(configPath, JSON.stringify({
+        project: {
+          name: "release",
+          version: "0.1.0",
+          commit: "abc123",
+          tag: "v0.1.0"
+        },
+        build: {
+          artifacts: [
+            {
+              id: "archive",
+              path: "artifacts/release-0.1.0.tgz",
+              format: "tarball",
+              consumers: ["homebrew"]
+            }
+          ]
+        },
+        publish: {
+          homebrew: {
+            repository: "owner/homebrew-tap",
+            formulaName: "release",
+            formulaPath: ".release/generated/release.rb",
+            artifactId: "archive"
+          }
+        },
+        strict: true,
+        evidence: ".release/evidence"
+      }))
+      const layer = Layer.mergeAll(
+        makeObservableCommandRunnerLayer({
+          env: new Map(),
+          commands: new Map()
+        }),
+        LiveTargetRegistryLayer,
+        BunServices.layer
+      )
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "render",
+          "--config",
+          configPath,
+          "--execute"
+        ]).pipe(Effect.provide(layer))
+      )
+
+      const contents = await readFile(formulaPath, "utf8")
+      expect(contents).toContain("class Release < Formula")
+      expect(contents).toContain("sha256")
     }))
 
   test("root cli script preserves caller-relative config paths", async () => {

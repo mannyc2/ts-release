@@ -310,7 +310,7 @@ const compactBuildFromOldInputs = (
   for (const recipe of artifactRecipes ?? []) {
     if (recipe._tag === "BunExecutableArtifactRecipe") {
       build.bun = {
-        ...copyFields(recipe, ["id", "minify"]),
+        ...copyFields(recipe, ["id", "binary", "cpu", "minify"]),
         entry: recipe.entrypoint,
         outputs: recipe.outputs
       }

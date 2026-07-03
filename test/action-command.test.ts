@@ -17,7 +17,7 @@ import { ActionOptions, type ActionCommand, type ActionFormat, type ActionRuntim
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
 import {
   makeNodeReleaseWorkflowRuntimeLayer,
-  UnsupportedNodeArtifactRecipeRegistryLayer
+  UnsupportedNodeArtifactStagerLayer
 } from "../apps/ts-release-action/src/runtime/node.js"
 import { CommandSpec } from "../src/domain/operation.js"
 import { makeTestReleaseHttpLayer } from "../src/host/http.js"
@@ -271,7 +271,7 @@ describe("ts-release action", () => {
           env: new Map([["NPM_TOKEN", "npm_secret"]]),
           commands: new Map()
         }),
-        UnsupportedNodeArtifactRecipeRegistryLayer,
+        UnsupportedNodeArtifactStagerLayer,
         LiveTargetRegistryLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
@@ -306,7 +306,7 @@ describe("ts-release action", () => {
           env: new Map(),
           commands: new Map()
         }),
-        UnsupportedNodeArtifactRecipeRegistryLayer,
+        UnsupportedNodeArtifactStagerLayer,
         LiveTargetRegistryLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
@@ -524,7 +524,7 @@ describe("ts-release action", () => {
             }]
           ])
         }),
-        UnsupportedNodeArtifactRecipeRegistryLayer,
+        UnsupportedNodeArtifactStagerLayer,
         LiveTargetRegistryLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),

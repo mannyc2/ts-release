@@ -64,10 +64,11 @@ const bunExecutableRecipe = (overrides: Record<string, unknown> = {}) => ({
   _tag: "BunExecutableArtifactRecipe",
   id: "release-cli",
   entrypoint: "src/cli.ts",
+  cpu: "baseline",
   outputs: [
     {
       id: "cli-linux-x64",
-      target: "bun-linux-x64-baseline",
+      target: "linux-x64",
       path: "dist/release-{version}-linux-x64",
       consumers: ["github"]
     }
@@ -466,7 +467,7 @@ describe("planner", () => {
 
         expect(error._tag).toBe("ReleaseNormalizationError")
         if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("artifactRecipes.release-cli.entrypoint")
+          expect(error.field).toBe("builds[].entry")
         }
       }))
 
@@ -479,7 +480,7 @@ describe("planner", () => {
               outputs: [
                 {
                   id: "cli-linux-x64",
-                  target: "bun-linux-x64-baseline",
+                  target: "linux-x64",
                   path: "../dist/release-{version}",
                   consumers: ["github"]
                 }
@@ -492,7 +493,7 @@ describe("planner", () => {
 
         expect(error._tag).toBe("ReleaseNormalizationError")
         if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("artifactRecipes.release-cli.outputs.cli-linux-x64.path")
+          expect(error.field).toBe("artifacts.cli-linux-x64.path")
         }
       }))
 
@@ -505,7 +506,7 @@ describe("planner", () => {
               outputs: [
                 {
                   id: "cli-linux-x64",
-                  target: "bun-linux-x64-baseline",
+                  target: "linux-x64",
                   path: "dist/release-{version}",
                   consumers: ["github"],
                   variant: {
@@ -521,7 +522,7 @@ describe("planner", () => {
 
         expect(error._tag).toBe("ReleaseNormalizationError")
         if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("artifactRecipes.release-cli.outputs.cli-linux-x64.variant.os")
+          expect(error.field).toBe("builds[].outputs.cli-linux-x64.variant.os")
         }
       }))
   })

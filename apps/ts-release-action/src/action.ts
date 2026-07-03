@@ -6,7 +6,7 @@ import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import type { ArtifactRecipeRegistry } from "../../../src/artifacts/registry.js"
+import type { ArtifactStager } from "../../../src/engine/stager.js"
 import { ReleasePlan } from "../../../src/domain/release.js"
 import type { ReleaseCommandRunner } from "../../../src/host/host.js"
 import type { ReleaseHttp } from "../../../src/host/http.js"
@@ -57,7 +57,7 @@ export type ActionRuntimeServices =
   | ReleaseCommandRunner
   | ReleaseHttp
   | GitHubApi
-  | ArtifactRecipeRegistry
+  | ArtifactStager
   | TargetRegistry
 
 type PlanObserver = (plan: ReleasePlan) => void

@@ -26,13 +26,14 @@ do not execute an older plan when it conflicts with 108-111.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |---|---|---|---|---|---|
 | 113 | Prepare and ship v0.0.8 so the published package matches the hard-cutover surface | P0 | S | 108-112 | DONE (prep; publish dispatch is operator-only) |
-| 114 | Design the GoReleaser-shaped pipeline architecture and the 0.1 public API | P0 | M | - (design-only; may run parallel to 113) | TODO |
-| 119 | Design the language-agnostic builder contract and runtime capability matrix | P0 | M | 114 (design-only) | TODO |
+| 114 | Design the GoReleaser-shaped pipeline architecture and the 0.1 public API | P0 | M | - (design-only; may run parallel to 113) | DONE (contract in `plans/114-pipeline-contract.md`) |
+| 119 | Design the language-agnostic builder contract and runtime capability matrix | P0 | M | 114 (design-only) | TODO (concretized 2026-07-03 — decisions B1-B7 pinned; executor encodes) |
 | 115 | Introduce the pipeline kernel and move builds into library pipes | P0 | L | 113, 114, 119 | TODO |
 | 116 | Port publish surfaces to pipes, delete the target-adapter layer, prove extension cost | P0 | L | 114, 115 | TODO |
 | 117 | Expose the 0.1 public TypeScript API and make the CLI and Action thin wrappers | P0 | M | 114, 115, 116 | TODO |
 | 118 | Effect polish sweep and self-release script dedup | P2 | M | 115, 116, 117 | TODO |
-| 120 | Competitor-analysis research brief (three ready-to-run prompts) | P1 | S | none (parallel-safe; feeds 114 Step 3 + roadmap) | TODO |
+| 120 | Competitor-analysis research brief (three ready-to-run prompts) | P1 | S | none (parallel-safe; feeds 114 Step 3 + roadmap) | IN PROGRESS (120A + 120B delivered + reconciled 2026-07-03; C pending) |
+| 121 | GoReleaser spec-extraction research brief (Prompt D, handoff-ready) | P0 | S-M | none (gates the 114 concretization pass) | DONE (report delivered + reconciled 2026-07-03; concretization pass landed in 114) |
 | 112 | Design the ideal public TypeScript API and CLI contract before cutting code | P0 | M | - | DONE |
 | 108 | Hard-cut the public package API to the minimum release engine surface | P0 | M | 112 | DONE |
 | 109 | Collapse CLI and GitHub Action commands with no legacy aliases | P0 | M | 112, 108 | DONE |
@@ -50,12 +51,15 @@ REJECTED (with one-line rationale).
 ## Research checkouts
 
 `.repos/` is gitignored and holds read-only research checkouts: `effect`
-(Effect v4 beta source — never commit or modify, per AGENTS.md) and, once
-plan 114 Step 0 runs, `goreleaser` (same rules). Design plans cite upstream
-file paths from both; verified-on-2026-07-03 facts are inlined in plans
-114/117/118/119 (GoReleaser pipeline order, artifact/filter system, Builder
-interface; Effect v4 `ManagedRuntime.make`, `Schema.fromJsonString` — note
-v4 renamed `parseJson`).
+(Effect v4 beta source — never commit or modify, per AGENTS.md) and,
+optionally, `goreleaser` (same rules). Since 2026-07-03 the pinned
+authority for GoReleaser semantics is the plan-121 report
+(`plans/research/121-goreleaser-spec.md`, `v2.16.0` @ `d76fb40…`) — a
+goreleaser clone is for spot-checks only. Design plans cite upstream file
+paths; verified-on-2026-07-03 facts are inlined in plans 114/117/118/119
+(GoReleaser pipeline order, artifact/filter system, Builder interface;
+Effect v4 `ManagedRuntime.make`, `Schema.fromJsonString` — note v4
+renamed `parseJson`).
 
 ## Dependency notes
 
@@ -70,6 +74,17 @@ v4 renamed `parseJson`).
   against a *shipped* 0.0.8 baseline. 114's finalized contract is the
   authority over 115-117; its Step 6 patches them where design decisions
   moved.
+- 114 concretization pass (maintainer decision 2026-07-03): COMPLETE
+  (2026-07-03). Both gates landed — the Effect v4 API probe
+  (`plans/research/effect-v4-api-probe.md` — typed extra = tagged union
+  of per-kind classes; method-free state classes; optionalKey convention;
+  ManagedRuntime + disposal story; no-mutation discipline) and the
+  plan-121 GoReleaser spec report
+  (`plans/research/121-goreleaser-spec.md`). Plan 114 now carries a
+  binding "Decided contract inputs" section (decisions D1-D17 from the
+  121 pass; D18-D19 from the same-day open-ideas review) that
+  supersedes its older draft hedges; its executor encodes rather than
+  re-decides. **114 is dispatchable.**
 - 119 sits between 114 and 115: it separates the two build-abstraction axes
   (the effect/platform runtime the engine runs ON — already solved, kept —
   versus the toolchain a build INVOKES — GoReleaser-v2-style `Builder`
@@ -99,8 +114,102 @@ v4 renamed `parseJson`).
   trivial-by-construction in this design (staged prepare/publish/continue ≡
   our plan/execute model; split/merge via serializable ReleaseState;
   .Artifacts/if-filtering via the data catalog; prebuilt via a run-nothing
-  builder; npm/PyPI publishing) are positioning headlines and land early,
+  builder; config includes via TS imports; npm/PyPI publishing) land early,
   not "later because Pro".
+- 120B reconciliation (2026-07-03, report at
+  `plans/research/120B-competitive-landscape.md`): unserved-audience
+  verdict — TS/Bun/Deno compiled-CLI authors are "partially served, but
+  not TS-native served"; adopted the 0.1 tagline "GoReleaser-grade
+  distribution for TypeScript/Bun CLI authors, with typed config and a
+  reviewable publish plan"; the semantic-release objection gets an
+  explicit README answer (117); dist/cargo-dist is ACTIVE (the earlier
+  "axo shutdown" premise was refuted — Prompt C corrected) and is the
+  closest design competitor: its Host-vs-Publish split is now a recorded
+  design consideration in 114; install-side asset-naming compatibility
+  (ubi/eget/cargo-binstall/mise) and generated-CI convergence added as
+  matrix rows; future VersionSource adapters named (changesets,
+  release-please-manifest, github-pr-labels); the `pkg` deprecation
+  validates plan 119's builders-as-replaceable-substrates rule.
+- 120A reconciliation (2026-07-03, report at
+  `plans/research/120A-goreleaser-sentiment.md`): positioning re-ranked on
+  evidence — the lead wedge is the rehearsal/plan-first story (GoReleaser's
+  clearest exploitable gap), then no-Pro-boundary/open-binary + evidence
+  artifacts, then typed DRY config; **npm/PyPI-free is demoted from
+  headline to supporting differentiator** (BET #1: mixed). BET #2 (no
+  template DSL) validated with caveat — 114 now requires a worked
+  per-artifact-conditionals example in TS with ergonomics ≥ Go templates.
+  Changelog pipe elevated to first fast-follow after 0.1 (top-5 evidenced
+  pain), ahead of new publish channels. GoReleaser's deprecation/rename
+  churn is recorded as a cautionary lesson: 0.1 config section names are
+  long-term commitments — the 114 executor should name conservatively.
+- 121 reconciliation (2026-07-03, report at
+  `plans/research/121-goreleaser-spec.md`, pinned to GoReleaser `v2.16.0`
+  @ `d76fb400136f96af3aaa7202776257885c9a6097`): plan 114 gained the
+  binding "Decided contract inputs" section (D1-D17); plans 115/116/119
+  patched to match. Highlights — default artifact naming adopts
+  GoReleaser's defaults byte-for-byte as the install-side compatibility
+  contract (archive `{name}_{version}_{os}_{arch}`, checksum file
+  `{name}_{version}_checksums.txt` with the two-space `sha256sum -c`
+  line format; asset names render `amd64`-style tokens mapped from
+  canonical `x64`); archives/checksums are explicit sections — absence =
+  skip, upstream's implicit defaults and their `format: binary` /
+  `checksum.disable` escape hatches deliberately not reproduced (`init`
+  scaffolds checksums on); **snapshot default corrected — the report
+  refuted the "{nextPatch}-SNAPSHOT" recollection**; actual upstream
+  default `{version}-SNAPSHOT-{shortCommit}` adopted verbatim; git-tag
+  source semantics pinned (env override `TS_RELEASE_CURRENT_TAG` →
+  HEAD tag → nearest ancestor; strip `v`; typed semver/no-tag errors;
+  graceful under snapshot); builds discriminator renamed `tool:` →
+  `builder:` (upstream's exact field; their `tool` means the invoked
+  executable); homebrew stays a FORMULA in 0.1 under a neutral section
+  name (upstream's brews→casks deprecation recorded; casks don't exist
+  on Homebrew-on-Linux; `style: "cask"` reserved as additive); the
+  templated-bool field class (`skip`/`disable`/`skip_upload`/…)
+  collapses into computed TS config, recorded once as a divergence
+  class; GoReleaser's non-serializable `ExtraRefresh` closure is the
+  recorded anti-precedent behind two kernel rules (no function-valued
+  state; artifacts immutable once contributed); no `--skip` flag and no
+  config-version integer (`$schema` + typed decode carry migration);
+  the 120B host-vs-publish question resolved as risk-grade grouping in
+  plan rendering, not a phase split; matrix rows added (Pro `npms`
+  binary distribution, publish continue-on-error, checksum
+  split/extra_files, changelog schema baseline from report §1.6).
+- Open-ideas review (2026-07-03, maintainer + advisor): two additions to
+  114's decided inputs. **D18 — target file structure decided**: one
+  directory per architectural role with one invariant each
+  (`pipeline/` = serializable data + pure functions; `pipes/` = one Pipe
+  per file owning its config section schema + defaults; `builders/` =
+  one Builder per file; `engine/` = the only executor; `api/` = the only
+  Promise/Effect boundary; `domain/`/`planner/`/`targets/`/`artifacts/`/
+  `internal/` cease to exist), with grep-enforceable import-direction
+  rules — pipes and builders import pipeline types only, never engine or
+  host. **D19 — Effect-native public API**: the "isn't Effect the
+  simplest API?" instinct is honored internally — engine entry points
+  natively return the public summary types (api/ = runtime assembly +
+  `runPromise` + error collapse, zero result mapping) — while public
+  exposure stays deferred (beta type churn + the 120B audience is not
+  Effect-literate); the future `/effect` subpath export becomes
+  zero-redesign additive because of that projection rule. Plans
+  115/116/117 patched (builders/ path, `engine/github-api.ts` home,
+  projection rule in 117 Step 1).
+- 119 concretization (2026-07-03, verified against installed bun `1.3.14`
+  types + current source): decisions B1-B7 pinned in plan 119's "Decided
+  contract inputs". Highlights — canonical target grammar
+  `<os>-<arch>[-musl]` with an 8-target initial list (windows-arm64
+  included; valid in bun-types, absent from GoReleaser's list); the bun
+  builder stays **in-process via `Bun.build({ compile })`** (maintainer
+  direction — the current recipe already does this; the port is a move,
+  not a rewrite), emitting structured `StageArtifactOperation` data; the
+  translation table's output type is `Bun.Build.CompileTarget`, so
+  toolchain drift is a compile error — strictly better than upstream's
+  embedded list, which lags in membership AND segment order;
+  `command`/`prebuilt` shapes pinned (argv-only expansion, no shell;
+  prebuilt = zero build ops + read-only existence checks); name-token
+  mapping owned by 119 (`x64→amd64` in default-generated names only —
+  explicit config names win, dogfood assets unchanged; `_musl` suffix;
+  name collisions are plan errors); runtime matrix baseline (Bun full;
+  Node keeps today's typed staging-unsupported error, spawn stager
+  post-0.1; web plan-only); `.release/artifacts` layout kept.
 - 117 ends with the version at 0.1.0; shipping 0.1.0 is a separate
   operator-approved dispatch using plan 113's runbook.
 - 118 runs last so the polish pass touches only post-restructure code. The
@@ -172,9 +281,9 @@ v4 renamed `parseJson`).
   rejected because dual schemas preserve the overbuilt model and double the
   test matrix.
 - Remove the `render` CLI command to match the plan-112 six-command contract
-  exactly: rejected for now because the self-release catalog step
-  (`release:catalogs`) depends on it. Record it as an accepted deviation and
-  revisit only in a deliberate contract revision.
+  exactly: superseded by plan 114. The 0.1 contract dissolves `render` into
+  catalog-phase operations executed by `build`/`release`; plan 117 keeps
+  `release:catalogs` working by re-pointing it without editing the workflow.
 - Implement TypeScript config loading (`ts-release.config.ts`) before shipping
   0.0.8: rejected because the unpublished cutover is the larger gap; executable
   config loading raises sandboxing and Action-runtime questions that deserve
@@ -188,8 +297,13 @@ v4 renamed `parseJson`).
   is a post-0.1 direction question with no current second consumer.
 - Expose an Effect-native public API in 0.1: rejected while Effect 4 is beta —
   Effect types in the public surface would make every Effect bump breaking
-  for users; the Promise layer wraps the Effect engine instead (revisit when
-  Effect 4 stabilizes).
+  for users, and would demand Effect literacy from the target audience.
+  Re-examined 2026-07-03 (open-ideas review) and reaffirmed with a
+  sharper shape: 114 D19's projection rule makes the internal Effect API
+  the real one (engine returns public summary types natively; the
+  Promise layer adds no mapping), so the future `/effect` subpath is
+  additive and zero-redesign when Effect 4 stabilizes and a concrete
+  external Effect consumer exists.
 - Copy GoReleaser's execute-as-you-go pipe semantics: rejected — pipes plan,
   the risk-gated executor executes; operations-as-data + explicit approval is
   this product's core safety differentiator (and enables split/merge-style

@@ -84,6 +84,21 @@ The root export is for config authoring and stable public summary data. The
 to the CLI and GitHub Action until a smaller TypeScript execution API is
 intentionally designed.
 
+## Direction: 0.1
+
+The target 0.1 tree replaces the current `domain/`, `planner/`, `targets/`,
+`artifacts/`, and `internal/` taxonomy with role-based directories:
+`pipeline/` for serializable state and pure helpers, `pipes/` for one pipe
+per config section, `builders/` for build tool adapters, `engine/` for the
+only operation executor, and `api/` for the only Promise/Effect boundary.
+
+Import direction is structural: pipes and builders may import pipeline types
+only, never engine or host; engine imports pipeline plus host; api assembles
+runtime layers and runs engine entry points; apps consume the package root
+plus their own runtime layers. The 0.1 root export adds `plan`, `build`,
+`release`, and `verify` as Promise functions while the internal engine remains
+Effect-native and returns those summary types directly.
+
 ## Boundary Rules
 
 - Publish operations are data until execution is explicitly approved.

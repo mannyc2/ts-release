@@ -49,6 +49,22 @@ Current first-party workflows cover:
 
 Reusable configs live in `templates/`, runnable fixtures live in `examples/`, and publish operations remain data until an execute approval and any irreversible approval are supplied.
 
+## Direction: 0.1
+
+The 0.1 direction is a GoReleaser-shaped pipeline adapted to this package's
+plan-first safety model. Release state becomes serializable data flowing
+through a static ordered list of pipes over a typed artifact catalog:
+`defaults -> identity -> build -> process -> catalog -> publish -> verify`.
+Each feature owns one config section, one pipe, and its defaults; the central
+normalizer and target-adapter layer are design debt to remove.
+
+The public 0.1 TypeScript API is Promise/plain-data: `plan`, `build`,
+`release`, and `verify`, with the CLI and GitHub Action as thin wrappers.
+Internally the engine remains Effect-native and returns the same public
+summary types directly. Snapshot releases use the current resolved version
+plus `-SNAPSHOT-{shortCommit}` and still build locally, while publish-class
+operations are refused regardless of approval flags.
+
 ## Design Goals
 
 ### Plan-first

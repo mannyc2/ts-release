@@ -73,9 +73,9 @@ bun add @mannyc1/ts-release effect@beta @effect/platform-bun@beta
 Downloads a raw platform binary from the GitHub Release:
 
 ```sh
-curl -fsSLO https://github.com/mannyc2/ts-release/releases/download/v0.0.7/ts-release-0.0.7-linux-x64
-chmod +x ts-release-0.0.7-linux-x64
-./ts-release-0.0.7-linux-x64 --version
+curl -fsSLO https://github.com/mannyc2/ts-release/releases/download/v0.0.8/ts-release-0.0.8-linux-x64
+chmod +x ts-release-0.0.8-linux-x64
+./ts-release-0.0.8-linux-x64 --version
 ```
 
 The CLI is currently distributed through Homebrew, Scoop, PyPI, and GitHub

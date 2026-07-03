@@ -3,7 +3,7 @@
   "project": {
     "commit": "HEAD",
     "tagTemplate": "v{version}",
-    "notes": "Portable artifact and package-manager distribution release."
+    "notes": "Breaking: hard cutover to the minimal product surface. New root TypeScript API (defineRelease, schema helpers, plan summary types), a 7-command CLI (init, doctor, build, plan, render, release, verify) with release --execute --approve-publish approval gating, and the compact project/build/publish config. Legacy config fields and the old phase commands are removed with no aliases."
   },
   "build": {
     "bun": {

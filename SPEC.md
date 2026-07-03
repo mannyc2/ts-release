@@ -54,9 +54,11 @@ Reusable configs live in `templates/`, runnable fixtures live in `examples/`, an
 The 0.1 direction is a GoReleaser-shaped pipeline adapted to this package's
 plan-first safety model. Release state becomes serializable data flowing
 through a static ordered list of pipes over a typed artifact catalog:
-`defaults -> identity -> build -> process -> catalog -> publish -> verify`.
+`identity -> defaults -> build -> process -> catalog -> publish -> verify`.
 Each feature owns one config section, one pipe, and its defaults; the central
 normalizer and target-adapter layer are design debt to remove.
+The build phase declares canonical platform targets and dispatches to pure
+builder adapters, with Bun, command, and prebuilt builders in 0.1.
 
 The public 0.1 TypeScript API is Promise/plain-data: `plan`, `build`,
 `release`, and `verify`, with the CLI and GitHub Action as thin wrappers.

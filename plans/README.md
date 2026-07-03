@@ -27,7 +27,7 @@ do not execute an older plan when it conflicts with 108-111.
 |---|---|---|---|---|---|
 | 113 | Prepare and ship v0.0.8 so the published package matches the hard-cutover surface | P0 | S | 108-112 | DONE (prep; publish dispatch is operator-only) |
 | 114 | Design the GoReleaser-shaped pipeline architecture and the 0.1 public API | P0 | M | - (design-only; may run parallel to 113) | DONE (contract in `plans/114-pipeline-contract.md`) |
-| 119 | Design the language-agnostic builder contract and runtime capability matrix | P0 | M | 114 (design-only) | TODO (concretized 2026-07-03 — decisions B1-B7 pinned; executor encodes) |
+| 119 | Design the language-agnostic builder contract and runtime capability matrix | P0 | M | 114 (design-only) | DONE (contract in `plans/119-builder-contract.md`) |
 | 115 | Introduce the pipeline kernel and move builds into library pipes | P0 | L | 113, 114, 119 | TODO |
 | 116 | Port publish surfaces to pipes, delete the target-adapter layer, prove extension cost | P0 | L | 114, 115 | TODO |
 | 117 | Expose the 0.1 public TypeScript API and make the CLI and Action thin wrappers | P0 | M | 114, 115, 116 | TODO |
@@ -85,7 +85,8 @@ renamed `parseJson`).
   121 pass; D18-D19 from the same-day open-ideas review) that
   supersedes its older draft hedges; its executor encodes rather than
   re-decides. **114 is dispatchable.**
-- 119 sits between 114 and 115: it separates the two build-abstraction axes
+- 119 sits between 114 and 115 and is complete in
+  `plans/119-builder-contract.md`: it separates the two build-abstraction axes
   (the effect/platform runtime the engine runs ON — already solved, kept —
   versus the toolchain a build INVOKES — GoReleaser-v2-style `Builder`
   adapters over canonical platform targets, with `command`/`prebuilt` escape

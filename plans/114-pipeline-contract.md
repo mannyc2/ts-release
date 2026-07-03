@@ -8,6 +8,10 @@ GoReleaser spec report
 (`plans/research/effect-v4-api-probe.md`). Plans 119 and 115-117 implement
 against this contract.
 
+The companion builder contract is `plans/119-builder-contract.md`; it owns
+the canonical platform-target grammar, builder interface, name-token mapping,
+and runtime capability matrix referenced below.
+
 GoReleaser is the comparison system, not the product goal. Adopt its shape
 where release-ecosystem tooling depends on it; diverge where typed
 TypeScript config, plan-first execution, and serializable state make a safer
@@ -65,6 +69,7 @@ class PipeNotice extends Schema.Class<PipeNotice>("PipeNotice")({
 
 class ReleaseState extends Schema.Class<ReleaseState>("ReleaseState")({
   identity: ReleaseIdentity,
+  strict: Schema.Boolean,
   artifacts: ArtifactCatalog,
   operations: Schema.Array(Operation),
   notices: Schema.Array(PipeNotice)
@@ -76,6 +81,26 @@ plain objects, so state classes remain method-free; `Schema.optionalKey`
 continues to model omitted keys; and Schema classes are not frozen, so the
 no-mutation rule is explicit contract discipline, not runtime magic
 (`plans/research/effect-v4-api-probe.md`, decisions 2, 3, and 9).
+
+`strict` carries today's top-level strict-mode flag into state so pipes can
+plan against it (for example npm's reject-when-no-dry-run rule). Without it
+the plan-116 port could not reproduce current operation data, because
+`plan(section, state)` is a pipe's only input channel.
+
+Types referenced but not redefined in this contract are pinned as follows.
+`ArtifactId` and `OperationId` are branded string ids (plan 115,
+`pipeline/artifact.ts` / `pipeline/operation.ts`). `Checksum` and
+`InstallableArtifactVariant` are reused from `src/domain/artifact.ts` and
+re-homed in `pipeline/artifact.ts` (plan 115). `ArtifactCatalog` is the data
+wrapper around a readonly `Artifact` array, defined with the filters in
+`pipeline/catalog.ts`. `ResolvedIdentity` is the `VersionSource` output;
+`ReleaseIdentity` is that shape completed with `normalizedName` and snapshot
+bookkeeping (plan 115 pins the exact split). `StageArtifactIntent` is a
+tagged union of per-stager intents (bun compile intent per plan 119 B5,
+wheel assembly per plan 116). `WorkspaceServices` is the read-only host
+access injected into identity sources. `PlanError` and `IdentityError` are
+`TaggedErrorClass` families (plan 115). `ReleaseConfig` is the
+`config/schema.ts` composition.
 
 ### Artifact Schema
 
@@ -147,7 +172,7 @@ class Artifact extends Schema.Class<Artifact>("Artifact")({
   producedBy: Schema.String,
   platform: Schema.optionalKey(InstallableArtifactVariant),
   checksum: Schema.optionalKey(Checksum),
-  extra: ArtifactExtra
+  extra: Schema.optionalKey(ArtifactExtra)
 }) {}
 ```
 
@@ -155,6 +180,15 @@ The initial extras deliberately reference the owning config section or
 package surface rather than embedding copied config objects. GoReleaser's
 private `BrewConfig`/`ScoopConfig` extras duplicate config into artifact
 state; this contract rejects that because duplicated config drifts.
+
+Two invariants bind `kind` and `extra`. An artifact whose `kind` has an
+extra class (`executable`, `archive`, `checksum-file`, `catalog-file`,
+`package`, `wheel`) must carry an `extra` whose tag equals its `kind` — a
+mismatch is a plan error. The kinds without an extra class in 0.1 (`sbom`,
+`signature`, `file`) omit the key; adding their extras later is additive.
+Rendered artifact names must also be unique across the catalog — a collision
+is a plan error (plan 119 B2; upstream's one-archive-per-os/arch error,
+`plans/research/121-goreleaser-spec.md` section 6, is the precedent).
 
 ### Catalog Filters
 
@@ -171,7 +205,6 @@ const byArch = (...arch: ReadonlyArray<"x64" | "arm64">): ArtifactFilter
 const byLibc = (...libc: ReadonlyArray<"glibc" | "musl">): ArtifactFilter
 const byProducer = (...pipeIds: ReadonlyArray<string>): ArtifactFilter
 const byId = (...ids: ReadonlyArray<string>): ArtifactFilter
-const byConsumer = (...consumers: ReadonlyArray<string>): ArtifactFilter
 const and = (...filters: ReadonlyArray<ArtifactFilter>): ArtifactFilter
 const or = (...filters: ReadonlyArray<ArtifactFilter>): ArtifactFilter
 const not = (filter: ArtifactFilter): ArtifactFilter
@@ -182,6 +215,13 @@ found a typed artifact list, filters such as `ByType`/`ByID`/platform
 filters, and combinators, but also a `ByID` quirk where some artifact types
 always match (`plans/research/121-goreleaser-spec.md` sections 5 and 6).
 ts-release adopts the filter idea and rejects type-conditional magic.
+
+There is deliberately no consumer axis on `Artifact` and no `byConsumer`
+filter: the current config-declared `consumers`/`artifactId` wiring
+dissolves with the port. A consuming pipe selects its inputs with its own
+filters — Homebrew for example uses
+`and(byKind("executable", "archive"), byOs("darwin", "linux"))` — and a
+section's optional `ids` narrowing composes in through `byId`.
 
 ### Operations And StageArtifactOperation
 
@@ -212,17 +252,19 @@ portable command or HTTP operation, such as in-process `Bun.build({ compile })`
 or wheel zip assembly. It is executed only by `engine/stager.ts` through an
 injected `ArtifactStager` layer.
 
+The remaining union members port unchanged from `src/domain/operation.ts`
+(command validation and note operations, render-file, the publish command
+and GitHub-release operations, and the `Verify*` family), keeping their ids
+and risks intact. Once appended to `ReleaseState`, every operation carries
+`producedBy` provenance naming the contributing pipe — plan 116 adds the
+field during the port — and summaries and evidence surface it as `pipeId`.
+
 ### Pipe Interface
 
 ```ts
-type PipePhase =
-  | "defaults"
-  | "identity"
-  | "build"
-  | "process"
-  | "catalog"
-  | "publish"
-  | "verify"
+type PipelineStage = "identity" | "defaults" | PipePhase
+
+type PipePhase = "build" | "process" | "catalog" | "publish" | "verify"
 
 interface PipeContribution {
   readonly artifacts: ReadonlyArray<Artifact>
@@ -258,6 +300,14 @@ Binding rules:
    from a prior phase, the kernel gets an explicit deferred-value design with
    executor-recorded resolution evidence; individual pipes do not invent
    placeholders.
+6. `identity` and `defaults` are kernel stages, not pipe-assignable phases:
+   identity is resolved by the `VersionSource` seam, and the runner then
+   applies each pipe's `defaults` — which receive the resolved identity — in
+   pipeline order before any pipe plans. No 0.1 pipe file occupies the
+   `verify` phase either: verify checks are `Verify*` operation data
+   contributed by publish pipes, and the `verify` surface selects and
+   executes exactly that read-only family. The phase stays in `PipePhase`
+   for future dedicated verify pipes.
 
 ### Identity Source Seam
 
@@ -282,7 +332,10 @@ The `git-tag` source follows GoReleaser's order: explicit override or
 `-version:refname`, then nearest ancestor tag; one leading `v` is stripped,
 semver parse errors name the tag, no tag names `--snapshot` as the way out,
 and dirty worktree errors list files (`plans/research/121-goreleaser-spec.md`
-section 4). `snapshot` is a modifier over any source, not a source.
+section 4). Under snapshot the git-tag source degrades instead of failing:
+with no repository or no tag it resolves a fake `0.0.0` base for the
+snapshot suffix (upstream's `v0.0.0` precedent, sections 3 and 4).
+`snapshot` is a modifier over any source, not a source.
 
 Snapshot version format is `{version}-SNAPSHOT-{shortCommit}`. This is the
 current resolved version plus suffix; the earlier "{nextPatch}-SNAPSHOT"
@@ -299,10 +352,15 @@ The 0.1 placeholder vocabulary is fixed:
 {os} {arch} {libc} {targetTriple} {binary}
 ```
 
-Default artifact names render distribution tokens, not config tokens:
-`x64 -> amd64`, `arm64 -> arm64`; OS names are unchanged; `musl` appends
-`_musl` in default-generated names. This applies to bare binaries, archives,
-and checksum files. Explicit user paths and names always win.
+Wherever `{os}`/`{arch}` render into an artifact name — default-generated
+or user-authored — they render distribution tokens, not config tokens:
+`x64 -> amd64`, `arm64 -> arm64`, OS names unchanged. `{libc}` renders its
+literal value (`musl`/`glibc`). The token mapping is defined once, owned by
+the plan-119 builder contract (B2) and implemented in `pipeline/template.ts`.
+Default-generated names are computed by pipe and builder code (functions,
+not stored template strings), follow D1's byte-compatible GoReleaser shapes
+for bare binaries, archives, and checksum files, and append `_musl` for musl
+variants. Explicit user paths and names always win.
 
 No template mini-language exists in 0.1. TypeScript config is the
 expressiveness path; JSON config is limited to named placeholders.
@@ -320,35 +378,45 @@ The ts-release TypeScript authoring style:
 ```ts
 import { defineRelease } from "@mannyc1/ts-release"
 
-const targets = [
+interface Target {
+  readonly os: "linux" | "darwin" | "windows"
+  readonly arch: "x64" | "arm64"
+  readonly libc?: "musl"
+}
+
+const allTargets: ReadonlyArray<Target> = [
   { os: "linux", arch: "x64", libc: "musl" },
   { os: "linux", arch: "arm64", libc: "musl" },
-  { os: "darwin", arch: "arm64" }
-] as const
+  { os: "darwin", arch: "arm64" },
+  { os: "windows", arch: "x64" }
+]
 
 const distArch = { x64: "amd64", arm64: "arm64" } as const
 
 export default defineRelease({
   project: { name: "acme-cli" },
-  builds: targets.map((target) => ({
-    builder: "bun",
-    entry: "src/cli.ts",
-    targets: [`${target.os}-${target.arch}${target.libc === "musl" ? "-musl" : ""}`],
-    binary: target.os === "windows" ? "acme.exe" : "acme",
-    path: [
-      ".release/artifacts/acme",
-      "{version}",
-      target.os,
-      distArch[target.arch],
-      target.libc === "musl" ? "musl" : undefined
-    ].filter(Boolean).join("_")
-  })).filter((build) => !build.targets[0].startsWith("windows"))
+  builds: allTargets
+    .filter((target) => target.os !== "windows") // include an artifact only for some targets
+    .map((target) => ({
+      builder: "bun",
+      entry: "src/cli.ts",
+      targets: [`${target.os}-${target.arch}${target.libc === "musl" ? "-musl" : ""}`],
+      binary: "acme",
+      output: [
+        ".release/artifacts/acme_{version}",
+        target.os,
+        distArch[target.arch],
+        target.os === "linux" ? target.libc ?? "glibc" : undefined
+      ].filter(Boolean).join("_")
+    }))
 })
 ```
 
 This is more verbose than a template expression for a one-off string, but it
 scales to real functions, constants, imports, and shared presets without a
-second DSL.
+second DSL. `output` here overrides D1 default naming (`targets` spells the
+config vocabulary, the computed name spells distribution tokens); omitting
+it yields the default-generated names.
 
 ### Npm Pipe Worked Example
 
@@ -455,7 +523,7 @@ src/
     github-api.ts
   host/
   workflows/
-    init.ts
+    init.ts        # init + doctor entry points stay workflow-level (117)
   types/
     effect-internal.ts
 ```
@@ -478,7 +546,13 @@ Import rules:
 - `engine/` may import `pipeline/` and `host/`.
 - `pipes/` and `builders/` may import pipeline types only; never `engine/`
   or `host/`.
-- `pipeline/` imports `effect` and itself.
+- `pipeline/` imports `effect` and itself, with one sanctioned exception:
+  `pipeline/pipe.ts` may use a type-only import of `ReleaseConfig` from
+  `config/` for the `section` selector. Type-only imports are erased at
+  runtime, so the runtime import graph stays acyclic; the grep check allows
+  `import type` there and nothing else.
+- `workflows/` may import `api/`, `config/`, and `host/` — init and doctor
+  sit above the engine, not inside it.
 - `config/schema.ts` composes the section schemas exported by pipe files.
 
 `src/domain/`, `src/planner/`, `src/targets/`, `src/artifacts/`, and
@@ -490,20 +564,24 @@ must include grep-enforceable checks for the import rules.
 The 0.1 pipeline order is static:
 
 ```txt
-defaults -> identity -> build -> process -> catalog -> publish -> verify
+identity -> defaults -> build -> process -> catalog -> publish -> verify
 ```
 
-Phase assignments:
+Identity resolves first because per-pipe `defaults` take the resolved
+identity as an argument; the earlier draft order (defaults before identity)
+contradicted the contract's own `defaults` signature.
 
-| Phase | Pipes | Notes |
+Stage assignments:
+
+| Stage | Members | Notes |
 |---|---|---|
-| `defaults` | per-pipe defaults in pipeline order | Distributed defaulting replaces `normalize-release.ts`. |
-| `identity` | `identity:manifest`, `identity:git-tag`, snapshot modifier | Resolves name/version/tag/commit. |
+| `identity` | `manifest` and `git-tag` sources, snapshot modifier | Kernel stage (the `VersionSource` seam, not pipes). Resolves name/version/tag/commit. |
+| `defaults` | per-pipe defaults in pipeline order | Kernel stage, after identity and before any pipe plans. Distributed defaulting replaces `normalize-release.ts`. |
 | `build` | `build` generic pipe with `bun`, `command`, `prebuilt` builders; `npm-pack`; `pypi-wheel` | Local artifact-producing work. |
 | `process` | `archive`, `checksum` | Checksums run after all local artifact-producing pipes. |
 | `catalog` | `catalog:homebrew`, `catalog:scoop` | Formula/manifest render operations happen before publish. |
 | `publish` | `publish:github`, `publish:npm`, `publish:pypi`, `publish:homebrew`, `publish:scoop` | Operation risk, not phase, distinguishes reversible hosting from irreversible publishing. |
-| `verify` | `verify:*` contributions from publish pipes | Read-only remote checks. |
+| `verify` | `Verify*` operations contributed by publish pipes | No dedicated pipe files in 0.1; the `verify` surface selects and executes exactly the read-only `Verify*` operation family. |
 
 The 120B host-vs-publish question is resolved as presentation, not a new
 phase. Risk grades already give the operator the useful split:
@@ -527,7 +605,6 @@ where the divergence table records a concrete reason.
 export default defineRelease({
   project: { name, repository, notes },
   versionFrom: "manifest",
-  snapshot: false,
   builds: [{ builder: "bun", entry, targets }],
   npmPackage: { path: "." },
   pypiWheel: [{ wheelTag, binaries }],
@@ -543,11 +620,11 @@ export default defineRelease({
 | `$schema` | `config/schema.ts` | Exists | Schema URL only; no config version integer. |
 | `project.name` | identity/defaults | Exists | Explicit config wins; else package manifest; else hard error. |
 | `project.repository` | publish/catalog defaults | Exists | Used for release URLs and catalog repositories. |
-| `project.notes` | `publish:github` | Exists | GitHub release notes/title inputs. |
+| `project.notes` | identity (consumed by `publish:github`) | Exists | Carried on `ReleaseIdentity.notes`; GitHub release notes/title inputs. |
 | `project.commit` | identity | Exists | Commit override remains identity data where provided. |
 | `project.tagTemplate` | identity | Exists | Tag rendering remains identity data; default can derive from version. |
 | `versionFrom` | identity source | New in 0.1 | `"manifest"` default; `"git-tag"` lands in plan 116. |
-| `snapshot` | identity modifier and executor policy | New in 0.1 | Public flag/API option in plan 117. |
+| `snapshot` | identity modifier and executor policy | New in 0.1 | Run option only (`--snapshot` / `RunOptions.snapshot`, plan 117); not a config key, and the version format is fixed in 0.1. |
 | `builds[]` | `build` pipe + builder registry | Replaces `build.bun` | Canonical targets, `builder` discriminator, binary outputs. |
 | `builds[].builder: "bun"` | `builders/bun.ts` | Exists after migration | Current Bun executable compile, moved into library staging. |
 | `builds[].builder: "command"` | `builders/command.ts` | New in 0.1 | Language-agnostic command escape hatch. |
@@ -556,35 +633,41 @@ export default defineRelease({
 | `pypiWheel[]` | `pypi-wheel` pipe | Exists after migration | Current wheel assembly, moved into library staging. |
 | `archives[]` | `archive` pipe | New in plan 116 | Explicit section; absent means skip. |
 | `checksum` | `checksum` pipe | New in plan 116 | Explicit section; absent means skip. |
-| `publish.github` | `publish:github` and `verify:github` | Exists | GitHub release create/update, upload, verify. |
-| `publish.npm` | `publish:npm` and `verify:npm` | Exists | Real package publish, trusted publishing support. |
-| `publish.pypi` | `publish:pypi` and `verify:pypi` | Exists | Wheel upload/verify. |
-| `publish.homebrew` | `catalog:homebrew`, `publish:homebrew`, `verify:homebrew` | Exists | Formula rendering and tap publish. |
-| `publish.scoop` | `catalog:scoop`, `publish:scoop`, `verify:scoop` | Exists | Manifest rendering and bucket publish. |
-| `evidence` | `engine/evidence.ts` | Exists | Evidence output path/policy. |
+| `publish.github` | `publish:github` | Exists | GitHub release create/update, upload; contributes its `Verify*` checks. |
+| `publish.npm` | `publish:npm` | Exists | Real package publish, trusted publishing support; contributes its `Verify*` checks. |
+| `publish.pypi` | `publish:pypi` | Exists | Wheel upload; contributes its `Verify*` checks. |
+| `publish.homebrew` | `catalog:homebrew` + `publish:homebrew` | Exists | Formula rendering and tap publish; verify checks from the publish pipe. |
+| `publish.scoop` | `catalog:scoop` + `publish:scoop` | Exists | Manifest rendering and bucket publish; verify checks from the publish pipe. |
+| `strict` | kernel state + plan-time pipe policy | Exists | Top-level flag carried into `ReleaseState.strict`; pipes keep today's strict validations (e.g. npm's dry-run requirement). |
+| `evidence` | `engine/evidence.ts` | Exists | Evidence directory (`string \| { directory }`, placeholder-capable). |
 
-No section maps to more than one pipe. Homebrew and Scoop have paired
-catalog/publish pipes because rendering repository files and publishing them
-are separate operations; the config section remains single-owner at the
-surface level.
+Exactly one pipe owns each section's schema and defaults. Homebrew and
+Scoop have paired catalog/publish pipes because rendering repository files
+and publishing them are separate phases; there the catalog pipe is the
+owner (it plans first) and the publish pipe consumes the already-defaulted
+section. Verify checks are not pipes at all: publish pipes contribute
+`Verify*` operations, so no `verify:*` pipe files exist.
 
 ### Per-Section Field Tables
 
 | Section | 0.1 fields | Defaults and semantics |
 |---|---|---|
 | `project` | `name?`, `repository?`, `notes?`, `commit?`, `tagTemplate?` | `name` explicit wins, then package manifest, else error. `tagTemplate` defaults to `v{version}`. |
-| `versionFrom` | `"manifest" | "git-tag"` | Default `"manifest"`. `git-tag` follows D5. |
-| `builds[]` | `id?`, `builder`, `binary?`, `entry?`, `targets`, builder options | `builder` is the discriminator. Canonical target grammar comes from plan 119. |
+| `versionFrom` | `"manifest" \| "git-tag"` | Default `"manifest"`. `git-tag` follows D5. |
+| `builds[]` | `id?`, `builder`, `binary?`, `entry?`, `output?`, `targets`, builder options | `builder` is the discriminator. Canonical target grammar comes from plan 119. `output` is the per-target path template — required by `command`/`prebuilt` (119 B4), optional for `bun` (D1 default naming when absent). |
 | `command` builder | `run`, `output`, `binary?`, `targets` | `run` is string or argv array; string form whitespace-splits without quote rules. |
 | `prebuilt` builder | `output`, `binary?`, `targets` | Emits existence checks and catalog artifacts; no build operation. |
-| `archives[]` | `id?`, `ids?`, `nameTemplate?`, `formats?`, `formatOverrides?`, `files?`, `wrapInDirectory?` | Absent section skips. Defaults: `formats: ["tar.gz"]`, name `{name}_{version}_{os}_{arch}`, default license/readme/changelog globs, windows override example uses `formats: ["zip"]`. |
-| `checksum` | `algorithm?`, `nameTemplate?` | Absent section skips. Default `sha256`; file `{name}_{version}_checksums.txt`; line format `<hex>  <basename>\n`. |
+| `npmPackage` | `path?` | Package staging for `publish:npm`; today's `build.npmPackage` carried forward (plan 115 pins remaining fields during the port). |
+| `pypiWheel[]` | `id?`, `wheelTag`, `packageName`, `binaries[]` | Wheel assembly carried forward from today's `build.pypiWheel`, staged via `StageArtifactOperation` (plan 115). |
+| `archives[]` | `id?`, `ids?`, `nameTemplate?`, `formats?`, `formatOverrides?`, `files?`, `wrapInDirectory?` | Absent section skips. 0.1 format enum: `tar.gz \| zip` (extendable literal union). Defaults: `formats: ["tar.gz"]`, name `{name}_{version}_{os}_{arch}` + extension, one archive per platform (that platform's binaries plus included files), default globs `license*`/`LICENSE*`/`readme*`/`README*`/`changelog*`/`CHANGELOG*` quiet when unmatched; windows override example uses `formats: ["zip"]`. `wrapInDirectory`: `true` wraps in the archive name, a string is the literal directory, absent/`false` no wrap. |
+| `checksum` | `algorithm?`, `nameTemplate?` | Absent section skips. Default `sha256`; file `{name}_{version}_checksums.txt`; line format `<hex>  <basename>\n` — the TWO spaces are load-bearing (`sha256sum -c`/`shasum -c`), entries sort by basename. Inputs are exclusion-form: every catalog artifact except `checksum-file`/`signature` kinds (catalog files render in a later phase, so they are structurally excluded; new kinds are included automatically). |
 | `publish.github` | `repository`, `draft?`, `prerelease?`, `nameTemplate?`, `tokenEnv?` | Name defaults to tag; `prerelease: "auto"` follows semver prerelease. |
 | `publish.npm` | `registry?`, `packageName`, `packagePath?`, `trustedPublishing?`, `access?`, `provenance?`, `tokenEnv?` | Existing semantics; real package publish is already shipped. |
 | `publish.pypi` | `repositoryUrl?`, `packageName`, `tokenEnv?`, `trustedPublishing?` | Existing wheel upload/verify semantics. |
-| `publish.homebrew` | `repository`, `name?`, `commitAuthor?`, `commitMessage?`, `install?`, `ids?`, `style?` | Formula in 0.1. `style: "cask"` reserved additive. |
-| `publish.scoop` | `repository`, `name?`, `homepage?`, `description?`, `license?`, `commitAuthor?`, `commitMessage?`, `ids?` | Current single-URL manifest remains; multi-arch manifest is first post-port improvement. |
-| `evidence` | `path?`, `strict?` | Existing evidence path/strict policy carried forward. |
+| `publish.homebrew` | `repository`, `name?`, `commitAuthor?`, `commitMessage?`, `install?`, `ids?`, `style?` | Formula in 0.1. `style: "cask"` reserved additive. Defaults (D7): name from project name; commit message `Brew formula update for {name} version {tag}`; install one `bin.install` per binary with `install` as override. More than one candidate artifact per os/arch is a config error; sha256 values come from catalog checksums. |
+| `publish.scoop` | `repository`, `name?`, `homepage?`, `description?`, `license?`, `commitAuthor?`, `commitMessage?`, `ids?` | Current single-URL manifest remains; multi-arch manifest is first post-port improvement. Commit message default (D8): `Scoop update for {name} version {tag}`. |
+| `strict` | `boolean?` | Plan-time strict policy, carried in `ReleaseState.strict`; existing semantics unchanged. |
+| `evidence` | `string \| { directory }` | Evidence directory, placeholder-capable (e.g. `.release/evidence/{version}`); carried forward unchanged. |
 
 ### Monorepo Design-Ahead
 
@@ -616,8 +699,8 @@ must be valid inside `projects[]` unchanged.
 | Project name guessing | Guesses Cargo, release repo, Go module, git remote. | Explicit config, then package manifest, else hard error. | Remote-derived guessing surprises TS package authors. |
 | Implicit archives/checksums | Inserts default archive and checksums unless disabled (section 2). | Sections are explicit; absence skips with notice. | Bare binaries are common for Bun/Deno; null state is the escape hatch. |
 | Archive `format: binary` | Pseudo-format to avoid archives. | Not adopted. | No implicit archive means no pseudo-format is needed. |
-| Checksum algorithms | 14 algorithms in upstream enum (section 8). | `sha256 | sha512` in 0.1. | Extendable later; two algorithms cover current need. |
-| Snapshot default | `{version}-SNAPSHOT-{shortCommit}` over current version (section 3). | Same, with correction called out. | Compatibility; avoids the false next-patch assumption. |
+| Checksum algorithms | 14 algorithms in upstream enum (section 8). | `sha256 \| sha512` in 0.1. | Extendable later; two algorithms cover current need. |
+| Snapshot default | `{version}-SNAPSHOT-{shortCommit}` over current version (section 3), template configurable. | Same format, fixed (no version-template config in 0.1); next-patch correction called out. | Compatibility; avoids the false next-patch assumption; a template knob without demand is D10-class surface. |
 | Env override name | `GORELEASER_CURRENT_TAG`. | `TS_RELEASE_CURRENT_TAG`. | Existing repo prefix convention. |
 | Build discriminator | `builder`. | `builder`. | Adopted; previous `tool` draft is rejected because upstream `tool` means executable. |
 | Templated booleans | Many string fields parse as templated bools. | Plain booleans or omitted sections. | TypeScript computes conditionals before decode. |
@@ -643,7 +726,7 @@ The tier column is market context only. It never justifies deferral.
 | Archives | Free | No | `archive` + `archives[]` | One pipe | 0.1 |
 | Checksums | Free | No | `checksum` + `checksum` | One pipe | 0.1 |
 | Snapshot | Free | No | identity modifier + executor policy | Config-layer plus executor policy | 0.1 |
-| Changelog | Free | No | `changelog` pipe + notes-as-data | One pipe; first fast-follow | First post-0.1 |
+| Changelog | Free | No | `changelog` pipe + notes-as-data | One pipe; schema baseline from section 1.6 (default `use: git`, entry-format templates, include-over-exclude filters, ordered groups with catch-all, sort, abbrev) plus section 4 previous-tag discovery | First post-0.1, ahead of any new publish channel |
 | GitHub releases | Free | Yes | `publish:github` | Port existing target to one pipe | 0.1 |
 | Homebrew formulas | Free/deprecated upstream name | Yes | `catalog:homebrew`, `publish:homebrew` | Port existing target; catalog selection improves | 0.1 |
 | Scoop | Free | Yes | `catalog:scoop`, `publish:scoop` | Port existing target; multi-arch improvement later | 0.1 |
@@ -659,7 +742,7 @@ The tier column is market context only. It never justifies deferral.
 | Custom publishers | Free | No | `publish:custom` command pipe | One pipe; command builder patterns reused | Post-0.1 |
 | Announce | Free | No | `announce:*` after publish | One pipe per channel | Post-0.1 |
 | Milestones | Free | No | `publish:github-milestone` | One pipe using GitHub layer | Post-0.1 |
-| npm real package publishing | Pro for GoReleaser `npms` binary feature; package publish is not OSS source | Yes | `publish:npm` | Trivial-by-construction: already shipped | 0.1 |
+| npm real package publishing | Absent upstream (Pro `npms` is binary distribution, not package publish) | Yes | `publish:npm` | Trivial-by-construction: already shipped | 0.1 |
 | PyPI publishing | Not first-class in GoReleaser OSS comparison | Yes | `publish:pypi` | Trivial-by-construction: already shipped | 0.1 |
 | npm binary distribution | Pro docs-derived `npms` | No | `npm-binary` pipe producing platform packages | One pipe; esbuild-style optional dependencies | Post-0.1 |
 | Monorepo | Pro | No | `projects[]` wrapper + per-project identity | Kernel-stressing around orchestration and evidence grouping | Post-0.1 |
@@ -674,11 +757,14 @@ The tier column is market context only. It never justifies deferral.
 | Prepare/publish/continue workflow | Pro staged workflow | Plan/execute already | plan data + approved executor | Trivial-by-construction: this is the default model | 0.1 |
 | Publish continue-on-error/fail-fast | Free publisher behavior | No | executor policy | Config-layer/executor policy row | Post-0.1 |
 | Checksum split/extra files | Free | No | `checksum` options | Config-layer on checksum pipe | Post-0.1 |
-| Changelog schema baseline | Free | No | `changelog` pipe | One pipe; use git default, filters, ordered groups, sort, abbrev | First post-0.1 |
 | Install-side compatibility | Ecosystem expectation | Partial explicit names | default artifact naming/checksum contract | Config defaults; no kernel cost | 0.1 |
 | Generated CI | dist/cargo-dist comparable | `init` creates workflows | `init` templates call same API core | One workflow-template pass | Post-0.1 |
 | Diagnostics | Error encyclopedia upstream | Structured operation descriptions/evidence | pipe/operation ids in errors and summaries | Presentation layer over existing data | 0.1 and ongoing |
 | Future Effect API | Not applicable | No | `/effect` subpath | Zero-redesign because engine already returns summaries | After Effect 4 stable |
+
+Adopted 0.1 tagline (120B, used verbatim by downstream docs):
+*"GoReleaser-grade distribution for TypeScript/Bun CLI authors, with typed
+config and a reviewable publish plan."*
 
 Positioning order for downstream docs:
 
@@ -806,8 +892,11 @@ Baseline at plan time:
 | `src/planner` | 2656 | Replaced |
 | `src/targets` | 2073 | Replaced |
 | `src/artifacts` | 100 | Replaced |
+| `src/domain` | 1085 | Replaced (state/artifact/operation move into `pipeline/`) |
 | `src/workflows` | 1593 | Init/doctor only after 117 |
-| `src/pipeline` | 0 | <= 400 |
+| `src/config` | 136 | Carried forward; composition only |
+| `src/host` | 733 | Carried forward; absorbs `internal/workspace-path.ts` |
+| `src/pipeline` | 0 | <= 800 |
 | `src/pipes/*` | 0 | <= 250 per pipe, about 150 expected |
 | `src/builders/*` | 0 | <= 500 total |
 | `src/engine` | 0 | <= 900 |
@@ -816,13 +905,24 @@ Baseline at plan time:
 | `apps/release-ts/src` | 966 | <= 700 |
 | `apps/ts-release-action/src` | 766 | CLI+Action combined <= about 1200 after 117 |
 
+The pipeline ceiling is 800, not the earlier 400 draft figure: D18 moves
+the ~300-line operation module and the identity sources into the kernel,
+and `src/domain` dissolves into `pipeline/` and the pipes rather than
+surviving as its own area. The combined ceiling below already absorbs that.
+
 Implementation plans must record this exact measurement command:
 
 ```sh
 find src apps/release-ts/src apps/ts-release-action/src -name '*.ts' | xargs wc -l | tail -1
 ```
 
-The combined target for the old planner/targets/artifacts/workflows mass is
-about 4.3k LOC across `pipeline`, `pipes`, `builders`, `engine`, and `api`,
-including the new archive and checksum features. The target is architecture
-pressure, not code golf.
+At contract commit time it reports 10,203: the command covers the library
+and the two app source trees only — `scripts/`, `apps/release-ts/scripts/`,
+and `test/` sit outside it, which is where the older ~13.7k whole-repo
+figure came from.
+
+The combined target for the old planner/targets/artifacts/workflows/domain
+mass (~7.5k) is about 4.3k LOC across `pipeline`, `pipes`, `builders`,
+`engine`, and `api` (800 + ~1.8k + 500 + 900 + 250), including the new
+archive and checksum features. The target is architecture pressure, not
+code golf.

@@ -99,7 +99,8 @@ and `vendor/` untouchable.
 - Create `src/pipeline/` (kernel: state, catalog, pipe interface, runner,
   identity stage, template expansion) per the 114 contract.
 - Create `src/pipes/build.ts` as the generic build pipe with
-  `src/builders/bun.ts` as its first builder, plus
+  `src/builders/bun.ts`, `src/builders/command.ts`, and
+  `src/builders/prebuilt.ts` as the 0.1 builders, plus
   `src/pipes/npm-pack.ts` and `src/pipes/pypi-wheel.ts`.
 - Move wheel/executable staging logic from
   `apps/release-ts/src/runtime/*-recipes.ts` into the library behind the
@@ -132,7 +133,10 @@ and `vendor/` untouchable.
 Run the LOC measure command; record the total in your final report and in
 the `plans/README.md` status note.
 
-**Verify**: a number ≈ 13.7k (± plan-113/114 drift).
+**Verify**: a number ≈ 10.2k (± plan-113/114 drift). The command covers the
+library and app source trees only — `scripts/`, `apps/release-ts/scripts/`,
+and `test/` sit outside it; the ≈ 13.7k figure quoted elsewhere is the
+whole-repo total including scripts.
 
 ### Step 2: Build the kernel data types
 
@@ -183,9 +187,9 @@ before plan. `bun test test/pipeline-runner.test.ts` → pass.
 
 Per the plan-119 builder contract: implement ONE generic build pipe
 (`src/pipes/build.ts`) that consumes a static builder registry, and
-`src/builders/bun.ts` as the first `Builder` (builders live in their own
-top-level `src/builders/` directory per 114 D18 — `pipes/` holds only
-Pipe modules) — its `defaults` absorbs
+`src/builders/bun.ts` as the first dedicated `Builder` (builders live in
+their own top-level `src/builders/` directory per 114 D18 — `pipes/` holds
+only Pipe modules) — its `defaults` absorbs
 the bun-build normalization currently in `normalize-release.ts`, its
 translation table inverts the compile-target→variant switch in
 `src/domain/artifact.ts:145-233` (config now declares canonical
@@ -202,16 +206,22 @@ preserves that (structured compile intent in a `StageArtifactOperation`;
 the translation table's output type is `Bun.Build.CompileTarget` so
 toolchain drift is a compile error), not a switch to a shelled CLI.
 
+In the same generic pipe, add `src/builders/command.ts` and
+`src/builders/prebuilt.ts` exactly per `plans/119-builder-contract.md`:
+`command` emits argv-only `writes-local` command operations and verifies the
+declared `output`, while `prebuilt` emits catalog artifacts plus read-only
+existence checks and no build operation. They are part of 0.1, not a later
+follow-up, because they prove the language-agnostic build axis before any
+publish surfaces port onto the catalog.
+
 Note: npm-pack and pypi-wheel (Step 5) are packaging pipes, NOT builders,
-per the 119 contract. The `command`/`prebuilt` builders from 119 are
-implemented here only if 119's finalized contract assigns them to 0.1 and
-this plan was patched accordingly; otherwise they follow as their own small
-plan.
+per the 119 contract.
 
 **Verify**: `bun test` → 0 fail. `bun run check:app` → exit 0.
 `bun run cli build --config apps/release-ts/release.config.json --format text`
 → exit 0 and stages the same artifact set as before the change (compare
-`.release/artifacts/` listing before/after on the same version).
+`.release/artifacts/` listing before/after on the same version). New build
+pipe tests cover `bun`, `command`, and `prebuilt` operation/catalog shapes.
 
 ### Step 5: Port npm-pack and pypi-wheel builds
 
@@ -250,7 +260,8 @@ delta and where it went — do not golf to force it.
 - `test/pipeline-state.test.ts` — schema round-trip, catalog filters.
 - `test/pipeline-runner.test.ts` — ordering, skips, defaults, contribution
   merge.
-- `test/pipe-build-bun.test.ts`, `test/pipe-build-pypi-wheel.test.ts`,
+- `test/pipe-build-bun.test.ts`, `test/pipe-build-command.test.ts`,
+  `test/pipe-build-prebuilt.test.ts`, `test/pipe-build-pypi-wheel.test.ts`,
   `test/pipe-build-npm-pack.test.ts` — defaults + emitted operations +
   catalog artifacts, no execution (model on `test/target-github.test.ts`).
 - All existing tests keep passing unmodified EXCEPT tests that imported
@@ -259,7 +270,7 @@ delta and where it went — do not golf to force it.
 ## Done criteria
 
 - [ ] `bun run check:portable` and `bun run check:release` exit 0.
-- [ ] `bun test` → 0 fail; the five new test files exist and pass.
+- [ ] `bun test` → 0 fail; the seven new test files exist and pass.
 - [ ] `rg -n "ArtifactRecipe" src apps` → no hits (family deleted).
 - [ ] `apps/release-ts/src/runtime/` no longer contains wheel/compile
       staging logic (`ls apps/release-ts/src/runtime/`).

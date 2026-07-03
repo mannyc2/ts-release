@@ -4,22 +4,12 @@ import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 import {
   ArtifactIntent,
-  ArtifactRecipe,
-  BunExecutableCompileTarget,
-  BunExecutableArtifactRecipe,
-  BunExecutableArtifactOutput,
   InstallableArtifactVariant,
-  InstallableArtifactVariantOverride,
-  PyPiWheelArtifactRecipe,
-  artifactInventoryOrder,
-  bunExecutableCompileTargetVariant,
-  bunExecutableOutputVariant
+  artifactInventoryOrder
 } from "../domain/artifact.js"
 import { CommandSpec } from "../domain/operation.js"
 import {
   PackageManifestReleaseIdentitySource,
-  ReleaseConfigBunExecutableBuild,
-  ReleaseConfigBunExecutableOutput,
   ReleaseConfigGitHubPublish,
   ReleaseConfigHomebrewPublish,
   ReleaseConfigManualArtifact,
@@ -51,6 +41,11 @@ import {
   targetOrder
 } from "../domain/target.js"
 import { ReleaseCommandRunner } from "../host/host.js"
+import type { Artifact } from "../pipeline/artifact.js"
+import { emptyReleaseState, ReleaseIdentity as PipelineReleaseIdentity, type ReleaseState } from "../pipeline/state.js"
+import { buildPipeline } from "../pipeline/pipeline.js"
+import { runPipeline } from "../pipeline/runner.js"
+import { PlanError } from "../pipeline/errors.js"
 import { inventoryArtifact } from "./artifact-inventory.js"
 import { ReleaseNormalizationError } from "./errors.js"
 
@@ -104,6 +99,12 @@ export const validateNonEmptySafeRelativePath = (
 export const normalizedArtifactPackageName = (name: string): string => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name
   return withoutScopePrefix.replaceAll("/", "-")
+}
+
+const compactPackageShortName = (packageName: string): string => {
+  const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
+  const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
+  return normalized.length === 0 ? "release" : normalized
 }
 
 export const renderReleaseTemplate = (value: string, identity: ReleaseIdentity): string =>
@@ -364,104 +365,6 @@ const validateInstallableArtifactVariant = (
   return Effect.void
 }
 
-const validateBunExecutableOutputVariant = (
-  field: string,
-  output: BunExecutableArtifactOutput
-): Effect.Effect<void, ReleaseNormalizationError> => {
-  const derived = bunExecutableCompileTargetVariant(output.target)
-  const override = output.variant
-  if (override?.os !== undefined && override.os !== derived.os) {
-    return Effect.fail(
-      ReleaseNormalizationError.make({
-        field: `${field}.os`,
-        reason: `Variant os must match Bun compile target ${output.target}.`
-      })
-    )
-  }
-  if (override?.arch !== undefined && override.arch !== derived.arch) {
-    return Effect.fail(
-      ReleaseNormalizationError.make({
-        field: `${field}.arch`,
-        reason: `Variant arch must match Bun compile target ${output.target}.`
-      })
-    )
-  }
-  if (override?.libc !== undefined && override.libc !== derived.libc) {
-    return Effect.fail(
-      ReleaseNormalizationError.make({
-        field: `${field}.libc`,
-        reason: `Variant libc must match Bun compile target ${output.target}.`
-      })
-    )
-  }
-  if (override?.targetTriple !== undefined && override.targetTriple !== derived.targetTriple) {
-    return Effect.fail(
-      ReleaseNormalizationError.make({
-        field: `${field}.targetTriple`,
-        reason: `Variant targetTriple must match Bun compile target ${output.target}.`
-      })
-    )
-  }
-  return validateInstallableArtifactVariant(field, bunExecutableOutputVariant(output.target, output.variant))
-}
-
-export const artifactIntentsFromRecipe = (
-  recipe: ArtifactRecipe,
-  identity: ReleaseIdentity
-): ReadonlyArray<ArtifactIntent> => {
-  if (recipe instanceof BunExecutableArtifactRecipe) {
-    return recipe.outputs.map((output) =>
-      ArtifactIntent.make({
-        id: output.id,
-        path: renderReleaseTemplate(output.path, identity),
-        ...(output.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(output.downloadUrl, identity) }),
-        format: "executable",
-        consumers: [...output.consumers],
-        variant: bunExecutableOutputVariant(output.target, output.variant)
-      })
-    )
-  }
-  if (recipe instanceof PyPiWheelArtifactRecipe) {
-    return [
-      ArtifactIntent.make({
-        id: recipe.id,
-        path: renderReleaseTemplate(recipe.path, identity),
-        format: "file",
-        consumers: [...recipe.consumers]
-      })
-    ]
-  }
-  return []
-}
-
-export const artifactIntentsFromRecipes = (
-  recipes: ReadonlyArray<ArtifactRecipe>,
-  identity: ReleaseIdentity
-): ReadonlyArray<ArtifactIntent> =>
-  recipes.flatMap((recipe) => artifactIntentsFromRecipe(recipe, identity))
-
-const compactPackageShortName = (packageName: string): string => {
-  const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
-  const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
-  return normalized.length === 0 ? "release" : normalized
-}
-
-const compactNpmPackageArtifact = (
-  config: boolean | ReleaseConfigNpmPackageBuild | undefined,
-  project: ReleaseConfigProject
-): ArtifactIntent | undefined => {
-  if (config === undefined || config === false) {
-    return undefined
-  }
-  const packageConfig = config === true ? undefined : config
-  return ArtifactIntent.make({
-    id: packageConfig?.id ?? "npm-package",
-    path: packageConfig?.path ?? project.packagePath ?? ".",
-    format: "directory",
-    consumers: [...(packageConfig?.consumers ?? ["npm"])]
-  })
-}
-
 const compactManualArtifact = (artifact: ReleaseConfigManualArtifact): ArtifactIntent =>
   ArtifactIntent.make({
     id: artifact.id,
@@ -473,126 +376,126 @@ const compactManualArtifact = (artifact: ReleaseConfigManualArtifact): ArtifactI
     ...(artifact.variant === undefined ? {} : { variant: artifact.variant })
   })
 
-const defaultBunExecutableTargets: ReadonlyArray<BunExecutableCompileTarget> = [
-  "bun-linux-x64-baseline",
-  "bun-linux-arm64",
-  "bun-darwin-x64",
-  "bun-darwin-arm64",
-  "bun-windows-x64-baseline"
-]
-
-const bunExecutableTargetSuffix = (target: BunExecutableCompileTarget): string => {
-  const withoutPrefix = target.startsWith("bun-") ? target.slice("bun-".length) : target
-  return withoutPrefix
-    .replace("-baseline", "")
-    .replace("-modern", "")
-}
-
-const bunExecutableTargetPath = (
-  target: BunExecutableCompileTarget,
-  outDir: string,
-  name: string
-): string => {
-  const suffix = bunExecutableTargetSuffix(target)
-  const extension = suffix.startsWith("windows-") ? ".exe" : ""
-  return `${outDir.replace(/[/\\]+$/, "")}/${name}-{version}-${suffix}${extension}`
-}
-
-const compactBunExecutableVariant = (
-  build: ReleaseConfigBunExecutableBuild,
-  output: ReleaseConfigBunExecutableOutput | undefined
-): InstallableArtifactVariantOverride | undefined => {
-  if (output?.variant !== undefined) {
-    return output.variant
-  }
-  if (build.binaryName === undefined && build.installPath === undefined) {
-    return undefined
-  }
-  return InstallableArtifactVariantOverride.make({
-    ...(build.binaryName === undefined ? {} : { binaryName: build.binaryName }),
-    ...(build.installPath === undefined ? {} : { installPath: build.installPath })
-  })
-}
-
-const compactBunExecutableOutput = (
-  build: ReleaseConfigBunExecutableBuild,
-  output: ReleaseConfigBunExecutableOutput | undefined,
-  target: BunExecutableCompileTarget,
-  name: string
-): BunExecutableArtifactOutput => {
-  const recipeId = build.id ?? "cli"
-  const suffix = bunExecutableTargetSuffix(target)
-  const variant = compactBunExecutableVariant(build, output)
-  return BunExecutableArtifactOutput.make({
-    id: output?.id ?? `${recipeId}-${suffix}`,
-    target,
-    path: output?.path ?? bunExecutableTargetPath(target, build.outDir ?? ".release/artifacts", name),
-    ...(output?.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl }),
-    consumers: [...(output?.consumers ?? build.consumers ?? ["github"])],
-    ...(variant === undefined ? {} : { variant })
-  })
-}
-
-const compactBunExecutableRecipe = (
-  build: ReleaseConfigBunExecutableBuild,
-  identity: ReleaseIdentity
-): BunExecutableArtifactRecipe => {
-  const name = build.name ?? compactPackageShortName(identity.name)
-  const outputs = build.outputs === undefined
-    ? (build.targets ?? defaultBunExecutableTargets).map((target) =>
-      compactBunExecutableOutput(build, undefined, target, name)
-    )
-    : build.outputs.map((output) => compactBunExecutableOutput(build, output, output.target, name))
-  return BunExecutableArtifactRecipe.make({
-    id: build.id ?? "cli",
-    entrypoint: build.entry,
-    outputs,
-    ...(build.minify === undefined ? {} : { minify: build.minify })
-  })
-}
-
-const compactPyPiWheelRecipes = (
-  config: ReleaseConfigPyPiWheelBuild | ReadonlyArray<ReleaseConfigPyPiWheelBuild> | undefined
-): ReadonlyArray<PyPiWheelArtifactRecipe> => {
-  if (config === undefined) {
-    return []
-  }
-  const wheels = Array.isArray(config) ? config : [config]
-  return wheels.map((wheel) =>
-    PyPiWheelArtifactRecipe.make({
-      id: wheel.id,
-      path: wheel.path,
-      wheelTag: wheel.wheelTag,
-      packageName: wheel.packageName,
-      moduleName: wheel.moduleName,
-      consoleScript: wheel.consoleScript,
-      summary: wheel.summary,
-      homepage: wheel.homepage,
-      license: wheel.license,
-      requiresPython: wheel.requiresPython,
-      binaries: [...wheel.binaries],
-      consumers: [...(wheel.consumers ?? ["pypi"])]
-    })
-  )
-}
-
 const compactArtifacts = (
   intent: ReleaseIntent
 ): ReadonlyArray<ArtifactIntent> => {
-  const npmPackage = compactNpmPackageArtifact(intent.build?.npmPackage, intent.project)
   return [
-    ...(npmPackage === undefined ? [] : [npmPackage]),
     ...(intent.build?.artifacts ?? []).map(compactManualArtifact)
   ]
 }
 
-const compactArtifactRecipes = (
+const pipelineIdentityFromDomain = (identity: ReleaseIdentity): PipelineReleaseIdentity =>
+  PipelineReleaseIdentity.make({
+    name: identity.name,
+    normalizedName: normalizedArtifactPackageName(identity.name),
+    version: identity.version,
+    tag: identity.tag ?? identity.version,
+    commit: identity.commit,
+    shortCommit: identity.commit.slice(0, 7),
+    ...(identity.notes === undefined ? {} : { notes: identity.notes }),
+    versionSource: "manifest",
+    snapshot: false
+  })
+
+export const domainIdentityFromPipeline = (identity: PipelineReleaseIdentity): ReleaseIdentity =>
+  ReleaseIdentity.make({
+    name: identity.name,
+    version: identity.version,
+    commit: identity.commit,
+    tag: identity.tag,
+    ...(identity.notes === undefined ? {} : { notes: identity.notes })
+  })
+
+const planErrorToNormalization = (error: PlanError): ReleaseNormalizationError =>
+  ReleaseNormalizationError.make({
+    field: error.field ?? error.pipeId,
+    reason: error.reason
+  })
+
+const planBuildState = Effect.fn("planBuildState")(function*(
   intent: ReleaseIntent,
   identity: ReleaseIdentity
-): ReadonlyArray<ArtifactRecipe> => [
-  ...(intent.build?.bun === undefined ? [] : [compactBunExecutableRecipe(intent.build.bun, identity)]),
-  ...compactPyPiWheelRecipes(intent.build?.pypiWheel)
-]
+) {
+  const initialState = emptyReleaseState(pipelineIdentityFromDomain(identity), intent.strict ?? true)
+  return yield* runPipeline(initialState, intent, buildPipeline).pipe(
+    Effect.mapError(planErrorToNormalization)
+  )
+})
+
+interface LegacyArtifactMetadata {
+  readonly consumers: ReadonlyArray<string>
+  readonly downloadUrl?: string | undefined
+}
+
+const defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"] as const
+
+const legacyBunArtifactId = (buildId: string, target: string): string =>
+  `${buildId}-${target}`
+
+const legacyArtifactMetadata = (
+  intent: ReleaseIntent
+): ReadonlyMap<string, LegacyArtifactMetadata> => {
+  const metadata = new Map<string, LegacyArtifactMetadata>()
+  const bun = intent.build?.bun
+  if (bun !== undefined) {
+    const buildId = bun.id ?? "cli"
+    if (bun.outputs === undefined) {
+      for (const target of bun.targets ?? defaultBunTargets) {
+        metadata.set(legacyBunArtifactId(buildId, target), {
+          consumers: [...(bun.consumers ?? ["github"])]
+        })
+      }
+    } else {
+      for (const output of bun.outputs) {
+        metadata.set(output.id ?? legacyBunArtifactId(buildId, output.target), {
+          consumers: [...(output.consumers ?? bun.consumers ?? ["github"])],
+          ...(output.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl })
+        })
+      }
+    }
+  }
+  return metadata
+}
+
+const consumersForPipelineArtifact = (
+  artifact: Artifact,
+  metadata: ReadonlyMap<string, LegacyArtifactMetadata>
+): ReadonlyArray<string> => {
+  const hinted = metadata.get(artifact.id)?.consumers
+  if (hinted !== undefined) {
+    return hinted
+  }
+  switch (artifact.kind) {
+    case "package":
+      return ["npm"]
+    case "wheel":
+      return ["pypi"]
+    case "executable":
+      return ["github"]
+    default:
+      return []
+  }
+}
+
+const formatForPipelineArtifact = (artifact: Artifact): "directory" | "executable" | "file" =>
+  artifact.kind === "package" ? "directory" : artifact.kind === "executable" ? "executable" : "file"
+
+const artifactIntentFromPipelineArtifact = (
+  artifact: Artifact,
+  identity: ReleaseIdentity,
+  metadata: ReadonlyMap<string, LegacyArtifactMetadata>
+): ArtifactIntent =>
+  ArtifactIntent.make({
+    id: artifact.id,
+    path: artifact.path,
+    ...(metadata.get(artifact.id)?.downloadUrl === undefined
+      ? {}
+      : { downloadUrl: renderReleaseTemplate(metadata.get(artifact.id)?.downloadUrl ?? "", identity) }),
+    format: formatForPipelineArtifact(artifact),
+    consumers: [...consumersForPipelineArtifact(artifact, metadata)],
+    ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum }),
+    ...(artifact.platform === undefined ? {} : { variant: artifact.platform })
+  })
 
 const compactNpmTrustedPublishing = (
   config: boolean | ReleaseConfigNpmTrustedPublishing | undefined
@@ -792,10 +695,17 @@ export const resolveReleaseBuild = Effect.fn("resolveReleaseBuild")(function*(
 ) {
   const identitySource = yield* releaseIdentitySourceFromConfig(intent.project)
   const identity = yield* resolveReleaseIdentitySource(identitySource, root)
+  const buildState = yield* planBuildState(intent, identity)
+  const metadata = legacyArtifactMetadata(intent)
   return {
     identity,
-    artifactInputs: compactArtifacts(intent),
-    artifactRecipes: compactArtifactRecipes(intent, identity)
+    buildState,
+    artifactInputs: [
+      ...compactArtifacts(intent),
+      ...buildState.artifacts.artifacts.map((artifact) =>
+        artifactIntentFromPipelineArtifact(artifact, identity, metadata)
+      )
+    ]
   }
 })
 
@@ -818,66 +728,12 @@ export const normalizeReleaseIntent = Effect.fn("normalizeReleaseIntent")(functi
 ) {
   const inputs = yield* resolveReleasePlanningInputs(intent, root)
   const identity = inputs.identity
-  const artifactRecipes = inputs.artifactRecipes
   const artifactInputs = inputs.artifactInputs
   const targetInputs = inputs.targets
-  yield* validateUnique(artifactRecipes.map((recipe) => recipe.id), "artifactRecipes.id")
   yield* validateUnique(targetInputs.map((target) => target.id), "targets.id")
 
-  for (const recipe of artifactRecipes) {
-    if (recipe instanceof BunExecutableArtifactRecipe) {
-      yield* validateNonEmptySafeRelativePath(`artifactRecipes.${recipe.id}.entrypoint`, recipe.entrypoint)
-      yield* validateUnique(
-        recipe.outputs.map((output) => output.id),
-        `artifactRecipes.${recipe.id}.outputs.id`
-      )
-      for (const output of recipe.outputs) {
-        const outputPath = renderReleaseTemplate(output.path, identity)
-        yield* validateNonEmptySafeRelativePath(
-          `artifactRecipes.${recipe.id}.outputs.${output.id}.path`,
-          outputPath
-        )
-        if (output.downloadUrl !== undefined) {
-          yield* validateNonEmptyString(
-            `artifactRecipes.${recipe.id}.outputs.${output.id}.downloadUrl`,
-            renderReleaseTemplate(output.downloadUrl, identity)
-          )
-        }
-        yield* validateBunExecutableOutputVariant(
-          `artifactRecipes.${recipe.id}.outputs.${output.id}.variant`,
-          output
-        )
-      }
-    }
-    if (recipe instanceof PyPiWheelArtifactRecipe) {
-      yield* validateNonEmptySafeRelativePath(
-        `artifactRecipes.${recipe.id}.path`,
-        renderReleaseTemplate(recipe.path, identity)
-      )
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.wheelTag`, recipe.wheelTag)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.packageName`, recipe.packageName)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.moduleName`, recipe.moduleName)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.consoleScript`, recipe.consoleScript)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.summary`, recipe.summary)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.homepage`, recipe.homepage)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.license`, recipe.license)
-      yield* validateNonEmptyString(`artifactRecipes.${recipe.id}.requiresPython`, recipe.requiresPython)
-      for (const [index, binary] of recipe.binaries.entries()) {
-        yield* validateNonEmptySafeRelativePath(
-          `artifactRecipes.${recipe.id}.binaries.${index}.sourcePath`,
-          renderReleaseTemplate(binary.sourcePath, identity)
-        )
-        yield* validateNonEmptySafeRelativePath(
-          `artifactRecipes.${recipe.id}.binaries.${index}.wheelPath`,
-          binary.wheelPath
-        )
-      }
-    }
-  }
-
   const artifacts = [
-    ...artifactInputs.map((artifact) => expandArtifactIntent(artifact, identity)),
-    ...artifactIntentsFromRecipes(artifactRecipes, identity)
+    ...artifactInputs.map((artifact) => expandArtifactIntent(artifact, identity))
   ]
   yield* validateUnique(artifacts.map((artifact) => artifact.id), "artifacts.id")
 

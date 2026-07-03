@@ -3,13 +3,12 @@ import {
   ArtifactFormat,
   ArtifactIntent,
   ArtifactInventoryItem,
-  ArtifactRecipe,
-  BunExecutableCompileTarget,
   Checksum,
   InstallableArtifactVariant,
   InstallableArtifactVariantOverride,
   PyPiWheelBinaryArtifact
 } from "./artifact.js"
+import { PlatformTarget } from "../builders/targets.js"
 import { Operation } from "./operation.js"
 import {
   NpmAccess,
@@ -113,7 +112,7 @@ export class ReleaseConfigBunExecutableOutput extends Schema.Class<ReleaseConfig
   "ReleaseConfigBunExecutableOutput"
 )({
   id: Schema.optionalKey(Schema.String),
-  target: BunExecutableCompileTarget,
+  target: PlatformTarget,
   path: Schema.optionalKey(Schema.String),
   downloadUrl: Schema.optionalKey(Schema.String),
   consumers: Schema.optionalKey(Schema.Array(Schema.String)),
@@ -124,16 +123,48 @@ export class ReleaseConfigBunExecutableBuild extends Schema.Class<ReleaseConfigB
   "ReleaseConfigBunExecutableBuild"
 )({
   id: Schema.optionalKey(Schema.String),
+  builder: Schema.optionalKey(Schema.Literal("bun")),
   entry: Schema.String,
-  targets: Schema.optionalKey(Schema.Array(BunExecutableCompileTarget)),
+  targets: Schema.optionalKey(Schema.Array(PlatformTarget)),
+  output: Schema.optionalKey(Schema.String),
   outputs: Schema.optionalKey(Schema.Array(ReleaseConfigBunExecutableOutput)),
   outDir: Schema.optionalKey(Schema.String),
   name: Schema.optionalKey(Schema.String),
+  binary: Schema.optionalKey(Schema.String),
   consumers: Schema.optionalKey(Schema.Array(Schema.String)),
   binaryName: Schema.optionalKey(Schema.String),
   installPath: Schema.optionalKey(Schema.String),
+  cpu: Schema.optionalKey(Schema.Literals(["baseline", "modern"])),
   minify: Schema.optionalKey(Schema.Boolean)
 }) {}
+
+export class ReleaseConfigCommandBuild extends Schema.Class<ReleaseConfigCommandBuild>(
+  "ReleaseConfigCommandBuild"
+)({
+  builder: Schema.Literal("command"),
+  id: Schema.optionalKey(Schema.String),
+  targets: Schema.Array(PlatformTarget),
+  run: Schema.Union([Schema.String, Schema.Array(Schema.String)]),
+  output: Schema.String,
+  binary: Schema.optionalKey(Schema.String)
+}) {}
+
+export class ReleaseConfigPrebuiltBuild extends Schema.Class<ReleaseConfigPrebuiltBuild>(
+  "ReleaseConfigPrebuiltBuild"
+)({
+  builder: Schema.Literal("prebuilt"),
+  id: Schema.optionalKey(Schema.String),
+  targets: Schema.Array(PlatformTarget),
+  output: Schema.String,
+  binary: Schema.optionalKey(Schema.String)
+}) {}
+
+export const ReleaseConfigBuildItem = Schema.Union([
+  ReleaseConfigBunExecutableBuild,
+  ReleaseConfigCommandBuild,
+  ReleaseConfigPrebuiltBuild
+])
+export type ReleaseConfigBuildItem = typeof ReleaseConfigBuildItem.Type
 
 export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiWheelBuild>(
   "ReleaseConfigPyPiWheelBuild"
@@ -250,6 +281,9 @@ export class ReleaseConfigEvidence extends Schema.Class<ReleaseConfigEvidence>("
 export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")({
   "$schema": Schema.optionalKey(Schema.String),
   project: ReleaseConfigProject,
+  builds: Schema.optionalKey(Schema.Array(ReleaseConfigBuildItem)),
+  npmPackage: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigNpmPackageBuild])),
+  pypiWheel: Schema.optionalKey(Schema.Union([ReleaseConfigPyPiWheelBuild, Schema.Array(ReleaseConfigPyPiWheelBuild)])),
   build: Schema.optionalKey(ReleaseConfigBuild),
   publish: ReleaseConfigPublish,
   strict: Schema.optionalKey(Schema.Boolean),

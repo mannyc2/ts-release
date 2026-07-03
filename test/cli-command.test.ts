@@ -19,7 +19,7 @@ import {
 } from "../src/workflows/release.js"
 import { cli } from "../apps/release-ts/src/cli/command.js"
 import { CommandSpec } from "../src/domain/operation.js"
-import { BunExecutableBuild, makeBunArtifactRecipeRegistryLayer, makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
+import { BunExecutableBuild, makeArtifactStagerLayer, makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { commandKey } from "../src/host/test.js"
 import { LiveTargetRegistryLayer } from "../src/targets/live.js"
 import {
@@ -128,7 +128,7 @@ describe("cli command", () => {
             outputs: [
               {
                 id: "cli-linux-x64",
-                target: "bun-linux-x64-baseline",
+                target: "linux-x64",
                 path: "dist/release-{version}-linux-x64",
                 consumers: ["github"]
               }
@@ -147,7 +147,7 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeBunArtifactRecipeRegistryLayer(build),
+        makeArtifactStagerLayer(build),
         LiveTargetRegistryLayer,
         BunServices.layer
       )
@@ -177,7 +177,7 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeBunArtifactRecipeRegistryLayer(async () => ({ success: true, logs: [] })),
+        makeArtifactStagerLayer(async () => ({ success: true, logs: [] })),
         LiveTargetRegistryLayer,
         BunServices.layer
       )
@@ -216,7 +216,7 @@ describe("cli command", () => {
             outputs: [
               {
                 id: "cli-linux-x64",
-                target: "bun-linux-x64-baseline",
+                target: "linux-x64",
                 path: "dist/release-{version}-linux-x64",
                 consumers: ["github"]
               }
@@ -230,7 +230,7 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeBunArtifactRecipeRegistryLayer(async () => ({
+        makeArtifactStagerLayer(async () => ({
           success: false,
           logs: ["compile failed"]
         })),
@@ -246,7 +246,7 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(layer))
       )
 
-      expectExitFailureTag(exit, "ArtifactRecipeStageError")
+      expectExitFailureTag(exit, "ArtifactStageError")
     }))
 
   test("render command writes planned files without publishing", () =>
@@ -512,11 +512,11 @@ describe("cli command", () => {
             expect(recipe?.id).toBe("cli")
             if (recipe !== undefined) {
               expect(recipe.outputs?.map((output) => output.target).sort()).toEqual([
-                "bun-darwin-arm64",
-                "bun-darwin-x64",
-                "bun-linux-arm64",
-                "bun-linux-x64-baseline",
-                "bun-windows-x64-baseline"
+                "darwin-arm64",
+                "darwin-x64",
+                "linux-arm64",
+                "linux-x64",
+                "windows-x64"
               ])
             }
           }

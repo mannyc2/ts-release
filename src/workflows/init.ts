@@ -288,7 +288,7 @@ const portableCliVariant = (binaryName: string, windows: boolean): Record<string
   installPath: windows ? `bin/${binaryName}.exe` : `bin/${binaryName}`
 })
 
-const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<string, unknown> => {
+const configPortableCliBunBuild = (options: NormalizedInitOptions): Record<string, unknown> => {
   const binaryName = options.binaryName
   return {
     id: "cli",
@@ -296,7 +296,7 @@ const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<stri
     outputs: [
       {
         id: "cli-linux-x64",
-        target: "bun-linux-x64-baseline",
+        target: "linux-x64",
         path: portableCliArtifactPath(binaryName, "linux-x64"),
         downloadUrl: portableCliDownloadUrl(options, "linux-x64"),
         consumers: ["github"],
@@ -304,7 +304,7 @@ const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<stri
       },
       {
         id: "cli-linux-arm64",
-        target: "bun-linux-arm64",
+        target: "linux-arm64",
         path: portableCliArtifactPath(binaryName, "linux-arm64"),
         downloadUrl: portableCliDownloadUrl(options, "linux-arm64"),
         consumers: ["github"],
@@ -312,7 +312,7 @@ const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<stri
       },
       {
         id: "cli-darwin-x64",
-        target: "bun-darwin-x64",
+        target: "darwin-x64",
         path: portableCliArtifactPath(binaryName, "darwin-x64"),
         downloadUrl: portableCliDownloadUrl(options, "darwin-x64"),
         consumers: ["github", "homebrew"],
@@ -320,7 +320,7 @@ const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<stri
       },
       {
         id: "cli-darwin-arm64",
-        target: "bun-darwin-arm64",
+        target: "darwin-arm64",
         path: portableCliArtifactPath(binaryName, "darwin-arm64"),
         downloadUrl: portableCliDownloadUrl(options, "darwin-arm64"),
         consumers: ["github", "homebrew"],
@@ -328,7 +328,7 @@ const configPortableCliBunRecipe = (options: NormalizedInitOptions): Record<stri
       },
       {
         id: "cli-windows-x64",
-        target: "bun-windows-x64-baseline",
+        target: "windows-x64",
         path: portableCliArtifactPath(binaryName, "windows-x64.exe"),
         downloadUrl: portableCliDownloadUrl(options, "windows-x64.exe"),
         consumers: ["github", "scoop"],
@@ -432,7 +432,7 @@ const configPortablePyPiWheels = (options: NormalizedInitOptions): ReadonlyArray
   })
 ]
 
-const configArtifactRecipeBunCli = (options: NormalizedInitOptions): Record<string, unknown> => {
+const configBunCliBuild = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
   return {
     id: "cli",
@@ -440,31 +440,31 @@ const configArtifactRecipeBunCli = (options: NormalizedInitOptions): Record<stri
     outputs: [
       {
         id: "cli-linux-x64",
-        target: "bun-linux-x64-baseline",
+        target: "linux-x64",
         path: `artifacts/${name}-{version}-linux-x64`,
         consumers: ["github"]
       },
       {
         id: "cli-linux-arm64",
-        target: "bun-linux-arm64",
+        target: "linux-arm64",
         path: `artifacts/${name}-{version}-linux-arm64`,
         consumers: ["github"]
       },
       {
         id: "cli-darwin-x64",
-        target: "bun-darwin-x64",
+        target: "darwin-x64",
         path: `artifacts/${name}-{version}-darwin-x64`,
         consumers: ["github"]
       },
       {
         id: "cli-darwin-arm64",
-        target: "bun-darwin-arm64",
+        target: "darwin-arm64",
         path: `artifacts/${name}-{version}-darwin-arm64`,
         consumers: ["github"]
       },
       {
         id: "cli-windows-x64",
-        target: "bun-windows-x64-baseline",
+        target: "windows-x64",
         path: `artifacts/${name}-{version}-windows-x64.exe`,
         consumers: ["github"]
       }
@@ -489,10 +489,10 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
     publish.github = configTargetGitHub(options)
   }
   if (options.template === "bun-cli-github") {
-    build.bun = configArtifactRecipeBunCli(options)
+    build.bun = configBunCliBuild(options)
   }
   if (options.template === "portable-cli") {
-    build.bun = configPortableCliBunRecipe(options)
+    build.bun = configPortableCliBunBuild(options)
     publish.homebrew = configTargetPortableHomebrew(options)
     publish.scoop = configTargetPortableScoop(options)
     if (options.pypiPackage !== undefined || options.pypiModule !== undefined) {

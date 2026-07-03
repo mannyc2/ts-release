@@ -203,35 +203,35 @@ const checkArtifactPath = (
 const expectedRecipeOutputs = (version: string): ReadonlyArray<ExpectedRecipeOutput> => [
   {
     id: "cli-linux-x64",
-    target: "bun-linux-x64-baseline",
+    target: "linux-x64",
     path: `.release/artifacts/ts-release-${version}-linux-x64`,
     downloadUrl: `https://github.com/mannyc2/ts-release/releases/download/v${version}/ts-release-${version}-linux-x64`,
     consumers: ["github"]
   },
   {
     id: "cli-linux-arm64",
-    target: "bun-linux-arm64",
+    target: "linux-arm64",
     path: `.release/artifacts/ts-release-${version}-linux-arm64`,
     downloadUrl: `https://github.com/mannyc2/ts-release/releases/download/v${version}/ts-release-${version}-linux-arm64`,
     consumers: ["github"]
   },
   {
     id: "cli-darwin-x64",
-    target: "bun-darwin-x64",
+    target: "darwin-x64",
     path: `.release/artifacts/ts-release-${version}-darwin-x64`,
     downloadUrl: `https://github.com/mannyc2/ts-release/releases/download/v${version}/ts-release-${version}-darwin-x64`,
     consumers: ["github", "homebrew"]
   },
   {
     id: "cli-darwin-arm64",
-    target: "bun-darwin-arm64",
+    target: "darwin-arm64",
     path: `.release/artifacts/ts-release-${version}-darwin-arm64`,
     downloadUrl: `https://github.com/mannyc2/ts-release/releases/download/v${version}/ts-release-${version}-darwin-arm64`,
     consumers: ["github", "homebrew"]
   },
   {
     id: "cli-windows-x64",
-    target: "bun-windows-x64-baseline",
+    target: "windows-x64",
     path: `.release/artifacts/ts-release-${version}-windows-x64.exe`,
     downloadUrl: `https://github.com/mannyc2/ts-release/releases/download/v${version}/ts-release-${version}-windows-x64.exe`,
     consumers: ["github", "scoop"]

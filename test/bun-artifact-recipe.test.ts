@@ -2,100 +2,56 @@ import { describe, expect, it, layer } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { stageAllArtifactRecipes } from "../src/artifacts/registry.js"
+import { makeArtifactStagerLayer, type BunExecutableBuildInput } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import {
-  BunExecutableArtifactRecipe,
-  bunExecutableCompileTargetVariant,
-  bunExecutableOutputVariant
-} from "../src/domain/artifact.js"
-import { ReleaseIdentity } from "../src/domain/release.js"
-import {
-  BunExecutableBuildInput,
-  makeBunArtifactRecipeRegistryLayer
-} from "../apps/release-ts/src/runtime.js"
+import { CommandSpec } from "../src/domain/operation.js"
+import { stageArtifactOperations } from "../src/engine/stager.js"
+import { buildPipe } from "../src/pipes/build.js"
+import { StageArtifactOperation } from "../src/pipeline/operation.js"
+import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
 
 const identity = ReleaseIdentity.make({
   name: "release",
+  normalizedName: "release",
   version: "0.1.0",
   commit: "abc123",
-  tag: "v0.1.0"
+  shortCommit: "abc123",
+  tag: "v0.1.0",
+  versionSource: "config",
+  snapshot: false
 })
 
-const recipe = BunExecutableArtifactRecipe.make({
-  id: "release-cli",
-  entrypoint: "src/cli.ts",
-  minify: true,
-  outputs: [
-    {
-      id: "cli-linux-x64",
-      target: "bun-linux-x64-baseline",
-      path: "dist/release-{version}-linux-x64",
-      consumers: ["github"]
-    },
-    {
-      id: "cli-darwin-arm64",
-      target: "bun-darwin-arm64",
-      path: "dist/release-{version}-darwin-arm64",
-      consumers: ["github"]
-    }
-  ]
-})
-
-const stageRecipe = () =>
-  stageAllArtifactRecipes([recipe], {
-    root: "/workspace",
-    identity,
-    configPath: "release.config.json"
-  })
+const state = emptyReleaseState(identity, true)
 
 const portablePath = (path: string): string =>
   path.replaceAll("\\", "/")
 
-describe("Bun executable artifact recipe adapter", () => {
-  it("maps Bun compile targets to installable artifact variants", () => {
-    expect(bunExecutableCompileTargetVariant("bun-linux-x64-baseline")).toMatchObject({
-      os: "linux",
-      arch: "x64",
-      libc: "glibc",
-      targetTriple: "bun-linux-x64-baseline"
-    })
-    expect(bunExecutableCompileTargetVariant("bun-linux-arm64-musl")).toMatchObject({
-      os: "linux",
-      arch: "arm64",
-      libc: "musl",
-      targetTriple: "bun-linux-arm64-musl"
-    })
-    expect(bunExecutableCompileTargetVariant("bun-darwin-arm64")).toMatchObject({
-      os: "darwin",
-      arch: "arm64",
-      targetTriple: "bun-darwin-arm64"
-    })
-    expect(bunExecutableCompileTargetVariant("bun-windows-x64-baseline")).toMatchObject({
-      os: "windows",
-      arch: "x64",
-      executableExtension: ".exe",
-      targetTriple: "bun-windows-x64-baseline"
-    })
+const isStageArtifactOperation = (operation: unknown): operation is StageArtifactOperation =>
+  typeof operation === "object"
+  && operation !== null
+  && "_tag" in operation
+  && operation._tag === "StageArtifactOperation"
+
+const planBuild = (config: string) =>
+  Effect.gen(function*() {
+    const intent = yield* parseReleaseIntent(config)
+    const section = buildPipe.section(intent)
+    expect(section).toBeDefined()
+    if (section === undefined) {
+      return {
+        artifacts: [],
+        operations: [],
+        notices: []
+      }
+    }
+    const defaulted = buildPipe.defaults === undefined ? section : buildPipe.defaults(section, identity)
+    return yield* buildPipe.plan(defaulted, state)
   })
 
-  it("merges Bun variant install overrides without changing target facts", () => {
-    expect(bunExecutableOutputVariant("bun-windows-x64-baseline", {
-      binaryName: "release",
-      installPath: "bin/release"
-    })).toMatchObject({
-      os: "windows",
-      arch: "x64",
-      executableExtension: ".exe",
-      binaryName: "release",
-      installPath: "bin/release",
-      targetTriple: "bun-windows-x64-baseline"
-    })
-  })
-
+describe("build pipe", () => {
   const calls: Array<BunExecutableBuildInput> = []
   const TestLayer = Layer.mergeAll(
-    makeBunArtifactRecipeRegistryLayer(async (input) => {
+    makeArtifactStagerLayer(async (input) => {
       calls.push(input)
       return { success: true, logs: [] }
     }),
@@ -103,15 +59,64 @@ describe("Bun executable artifact recipe adapter", () => {
   )
 
   layer(TestLayer)((it) => {
-    it.effect("calls the injected builder for each output", () =>
+    it.effect("plans Bun compile intents and stages them through the artifact stager", () =>
       Effect.gen(function*() {
         calls.length = 0
-        const results = yield* stageRecipe()
+        const contribution = yield* planBuild(JSON.stringify({
+          project: {
+            name: "release",
+            version: "0.1.0",
+            commit: "abc123",
+            tag: "v0.1.0"
+          },
+          build: {
+            bun: {
+              id: "release-cli",
+              entry: "src/cli.ts",
+              cpu: "baseline",
+              outputs: [
+                {
+                  id: "cli-linux-x64",
+                  target: "linux-x64",
+                  path: "dist/release-{version}-linux-x64",
+                  consumers: ["github"]
+                }
+              ]
+            }
+          },
+          publish: {}
+        }))
 
-        expect(results).toHaveLength(1)
-        expect(results[0]?.artifacts.map((artifact) => artifact.path)).toEqual([
-          "dist/release-0.1.0-linux-x64",
-          "dist/release-0.1.0-darwin-arm64"
+        expect(contribution.artifacts).toHaveLength(1)
+        expect(contribution.artifacts[0]).toMatchObject({
+          id: "cli-linux-x64",
+          kind: "executable",
+          path: "dist/release-0.1.0-linux-x64",
+          producedBy: "build:bun",
+          platform: {
+            os: "linux",
+            arch: "x64",
+            libc: "glibc",
+            targetTriple: "bun-linux-x64-baseline"
+          }
+        })
+
+        const operations = contribution.operations.filter(isStageArtifactOperation)
+        expect(operations).toHaveLength(1)
+        expect(operations[0]?.intent).toMatchObject({
+          _tag: "bun-compile",
+          target: "linux-x64",
+          compileTarget: "bun-linux-x64-baseline",
+          outfile: "dist/release-0.1.0-linux-x64"
+        })
+
+        const staged = yield* stageArtifactOperations(operations, {
+          root: "/workspace",
+          identity,
+          configPath: "release.config.json"
+        })
+        expect(staged[0]?.artifacts.map((artifact) => artifact.path)).toEqual([
+          "dist/release-0.1.0-linux-x64"
         ])
         expect(calls.map((call) => ({
           entrypoint: portablePath(call.entrypoint),
@@ -123,41 +128,47 @@ describe("Bun executable artifact recipe adapter", () => {
             entrypoint: expect.stringMatching(/\/workspace\/src\/cli\.ts$/),
             target: "bun-linux-x64-baseline",
             outfile: expect.stringMatching(/\/workspace\/dist\/release-0\.1\.0-linux-x64$/),
-            minify: true
-          },
-          {
-            entrypoint: expect.stringMatching(/\/workspace\/src\/cli\.ts$/),
-            target: "bun-darwin-arm64",
-            outfile: expect.stringMatching(/\/workspace\/dist\/release-0\.1\.0-darwin-arm64$/),
-            minify: true
+            minify: undefined
           }
         ])
       }))
 
-    it.effect("rejects unsafe paths before invoking the builder", () =>
+    it.effect("rejects unsafe Bun output paths before invoking the builder", () =>
       Effect.gen(function*() {
         calls.length = 0
-        const unsafeRecipe = BunExecutableArtifactRecipe.make({
-          id: "release-cli",
-          entrypoint: "src/cli.ts",
-          outputs: [
-            {
-              id: "cli-linux-x64",
-              target: "bun-linux-x64-baseline",
-              path: "../dist/release-linux-x64",
-              consumers: ["github"]
+        const contribution = yield* planBuild(JSON.stringify({
+          project: {
+            name: "release",
+            version: "0.1.0",
+            commit: "abc123",
+            tag: "v0.1.0"
+          },
+          build: {
+            bun: {
+              id: "release-cli",
+              entry: "src/cli.ts",
+              outputs: [
+                {
+                  id: "cli-linux-x64",
+                  target: "linux-x64",
+                  path: "../dist/release-linux-x64",
+                  consumers: ["github"]
+                }
+              ]
             }
-          ]
-        })
+          },
+          publish: {}
+        }))
 
-        const error = yield* stageAllArtifactRecipes([unsafeRecipe], {
+        const operations = contribution.operations.filter(isStageArtifactOperation)
+        const error = yield* stageArtifactOperations(operations, {
           root: "/workspace",
           identity,
           configPath: "release.config.json"
         }).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ArtifactRecipeStageError")
-        if (error._tag === "ArtifactRecipeStageError") {
+        expect(error._tag).toBe("ArtifactStageError")
+        if (error._tag === "ArtifactStageError") {
           expect(error.artifactId).toBe("cli-linux-x64")
           expect(error.path).toBe("../dist/release-linux-x64")
         }
@@ -166,7 +177,7 @@ describe("Bun executable artifact recipe adapter", () => {
   })
 
   layer(Layer.mergeAll(
-    makeBunArtifactRecipeRegistryLayer(async () => ({
+    makeArtifactStagerLayer(async () => ({
       success: false,
       logs: ["compile failed"]
     })),
@@ -174,37 +185,137 @@ describe("Bun executable artifact recipe adapter", () => {
   ))((it) => {
     it.effect("preserves Bun build log text on failed builds", () =>
       Effect.gen(function*() {
-        const error = yield* stageRecipe().pipe(Effect.flip)
+        const contribution = yield* planBuild(JSON.stringify({
+          project: {
+            name: "release",
+            version: "0.1.0",
+            commit: "abc123",
+            tag: "v0.1.0"
+          },
+          build: {
+            bun: {
+              id: "release-cli",
+              entry: "src/cli.ts",
+              outputs: [
+                {
+                  id: "cli-linux-x64",
+                  target: "linux-x64",
+                  path: "dist/release-linux-x64",
+                  consumers: ["github"]
+                }
+              ]
+            }
+          },
+          publish: {}
+        }))
+        const operations = contribution.operations.filter(isStageArtifactOperation)
+        const error = yield* stageArtifactOperations(operations, {
+          root: "/workspace",
+          identity
+        }).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ArtifactRecipeStageError")
-        if (error._tag === "ArtifactRecipeStageError") {
-          expect(error.recipeId).toBe("release-cli")
+        expect(error._tag).toBe("ArtifactStageError")
+        if (error._tag === "ArtifactStageError") {
+          expect(error.operationId).toBe("build:bun:cli-linux-x64")
           expect(error.artifactId).toBe("cli-linux-x64")
           expect(error.reason).toBe("compile failed")
         }
       }))
   })
 
-  const rejectedBuildCause = new Error("builder unavailable")
-  layer(Layer.mergeAll(
-    makeBunArtifactRecipeRegistryLayer(async () => {
-      throw rejectedBuildCause
-    }),
-    BunServices.layer
-  ))((it) => {
-    it.effect("preserves rejected builder causes", () =>
-      Effect.gen(function*() {
-        const error = yield* stageRecipe().pipe(Effect.flip)
-
-        expect(error._tag).toBe("ArtifactRecipeStageError")
-        if (error._tag === "ArtifactRecipeStageError") {
-          expect(error.cause).toBe(rejectedBuildCause)
-          expect(error.reason).toBe("Bun.build rejected while compiling cli-linux-x64.")
-        }
+  it.effect("plans command builder outputs as explicit command operations", () =>
+    Effect.gen(function*() {
+      const contribution = yield* planBuild(JSON.stringify({
+        project: {
+          name: "release",
+          version: "0.1.0",
+          commit: "abc123",
+          tag: "v0.1.0"
+        },
+        builds: [
+          {
+            builder: "command",
+            id: "make-cli",
+            targets: ["darwin-arm64"],
+            run: ["bun", "run", "build:{os}:{arch}"],
+            output: "dist/{binary}-{targetTriple}",
+            binary: "release"
+          }
+        ],
+        publish: {}
       }))
-  })
 
-  it.effect("accepts the self-release Bun compile target strings in config", () =>
+      expect(contribution.artifacts[0]).toMatchObject({
+        id: "make-cli-darwin-arm64",
+        kind: "executable",
+        path: "dist/release-darwin-arm64",
+        producedBy: "build:command",
+        platform: {
+          os: "darwin",
+          arch: "arm64",
+          targetTriple: "darwin-arm64"
+        }
+      })
+      expect(contribution.operations[0]).toMatchObject({
+        _tag: "ValidateCommandOperation",
+        id: "build:command:make-cli-darwin-arm64",
+        risk: "writes-local",
+        command: CommandSpec.make({
+          executable: "bun",
+          args: ["run", "build:darwin:arm64"],
+          requiredEnv: [],
+          redactedEnv: []
+        })
+      })
+    }))
+
+  it.effect("plans prebuilt builder outputs with read-only existence checks", () =>
+    Effect.gen(function*() {
+      const contribution = yield* planBuild(JSON.stringify({
+        project: {
+          name: "release",
+          version: "0.1.0",
+          commit: "abc123",
+          tag: "v0.1.0"
+        },
+        builds: [
+          {
+            builder: "prebuilt",
+            id: "dist-cli",
+            targets: ["windows-x64"],
+            output: "dist/{binary}-{targetTriple}.exe",
+            binary: "release"
+          }
+        ],
+        publish: {}
+      }))
+
+      expect(contribution.artifacts[0]).toMatchObject({
+        id: "dist-cli-windows-x64",
+        kind: "executable",
+        path: "dist/release-windows-x64.exe",
+        producedBy: "build:prebuilt",
+        platform: {
+          os: "windows",
+          arch: "x64",
+          executableExtension: ".exe",
+          targetTriple: "windows-x64"
+        }
+      })
+      expect(contribution.operations[0]).toMatchObject({
+        _tag: "ValidateCommandOperation",
+        id: "build:prebuilt:dist-cli-windows-x64:exists",
+        risk: "read-only",
+        command: CommandSpec.make({
+          executable: "test",
+          args: ["-f", "dist/release-windows-x64.exe"],
+          requiredEnv: [],
+          redactedEnv: []
+        })
+      })
+    }))
+
+  it.effect("accepts canonical self-release platform target strings in config", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(JSON.stringify({
         project: {
@@ -220,31 +331,31 @@ describe("Bun executable artifact recipe adapter", () => {
             outputs: [
               {
                 id: "cli-linux-x64",
-                target: "bun-linux-x64-baseline",
+                target: "linux-x64",
                 path: "dist/release-linux-x64",
                 consumers: ["github"]
               },
               {
                 id: "cli-linux-arm64",
-                target: "bun-linux-arm64",
+                target: "linux-arm64",
                 path: "dist/release-linux-arm64",
                 consumers: ["github"]
               },
               {
                 id: "cli-darwin-x64",
-                target: "bun-darwin-x64",
+                target: "darwin-x64",
                 path: "dist/release-darwin-x64",
                 consumers: ["github"]
               },
               {
                 id: "cli-darwin-arm64",
-                target: "bun-darwin-arm64",
+                target: "darwin-arm64",
                 path: "dist/release-darwin-arm64",
                 consumers: ["github"]
               },
               {
                 id: "cli-windows-x64",
-                target: "bun-windows-x64-baseline",
+                target: "windows-x64",
                 path: "dist/release-windows-x64.exe",
                 consumers: ["github"],
                 variant: {
@@ -259,6 +370,7 @@ describe("Bun executable artifact recipe adapter", () => {
       }))
 
       expect(intent.build?.bun?.id).toBe("release-cli")
+      expect(intent.build?.bun?.outputs?.[4]?.target).toBe("windows-x64")
       expect(intent.build?.bun?.outputs?.[4]?.variant?.binaryName).toBe("release")
     }))
 })

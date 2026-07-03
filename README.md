@@ -267,7 +267,7 @@ or `windows`/`x64` before any package-manager adapter consumes the artifact.
 ```json
 {
   "id": "cli-linux-x64",
-  "target": "bun-linux-x64-baseline",
+  "target": "linux-x64",
   "path": "artifacts/pkg-{version}-linux-x64",
   "consumers": ["github"]
 }

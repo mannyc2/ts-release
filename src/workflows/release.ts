@@ -4,8 +4,6 @@ import * as FileSystem from "effect/FileSystem"
 import * as Option from "effect/Option"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { StagedArtifactRecipeResult } from "../artifacts/adapter.js"
-import { stageAllArtifactRecipes } from "../artifacts/registry.js"
 import { ConfigReadError } from "../config/errors.js"
 import { parseReleaseIntent } from "../config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
@@ -13,10 +11,19 @@ import { EvidenceBundle } from "../domain/evidence.js"
 import { ExecutionApproval, Operation } from "../domain/operation.js"
 import { ReleaseIdentity, ReleaseName, ReleasePlan, ReleaseVersion } from "../domain/release.js"
 import { TargetConfig, TargetId } from "../domain/target.js"
+import {
+  stageArtifactOperations,
+  StagedArtifactOperationResult
+} from "../engine/stager.js"
+import {
+  PipelineOperation,
+  StageArtifactOperation
+} from "../pipeline/operation.js"
 import { createReleasePlan } from "../planner/create-release-plan.js"
 import { writeEvidenceBundle } from "../planner/evidence-recorder.js"
 import {
   renderPlan,
+  runOperation,
   runApprovedReleaseWorkflow,
   verifyPlan
 } from "../planner/executor.js"
@@ -128,7 +135,7 @@ export class StagedReleaseArtifactsResult extends Schema.Class<StagedReleaseArti
   schemaVersion: Schema.Literal("artifact-stage/v1"),
   identity: ReleaseIdentity,
   configPath: Schema.String,
-  recipes: Schema.Array(StagedArtifactRecipeResult),
+  recipes: Schema.Array(StagedArtifactOperationResult),
   plan: ReleasePlan
 }) {}
 
@@ -186,6 +193,12 @@ const approvalFromOptions = (options: ReleaseExecutionOptions): ExecutionApprova
     approveIrreversible: options.approveIrreversible ?? false
   })
 
+const isStageArtifactOperation = (operation: PipelineOperation): operation is StageArtifactOperation =>
+  operation._tag === "StageArtifactOperation"
+
+const isDomainOperation = (operation: PipelineOperation): operation is Operation =>
+  operation._tag !== "StageArtifactOperation"
+
 const readReleaseConfig = Effect.fn("workflows.release.readReleaseConfig")(function*(options: ReleaseSourceOptions) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
@@ -236,14 +249,21 @@ export const buildReleaseArtifacts = Effect.fn("workflows.release.buildReleaseAr
   const contents = yield* readReleaseConfig(options)
   const intent = yield* parseReleaseIntent(contents, pathName)
   const build = yield* resolveReleaseBuild(intent, root)
-  const recipes = build.artifactRecipes
-  const staged = recipes.length === 0
+  const stageOperations = build.buildState.operations.filter(isStageArtifactOperation)
+  const commandOperations = build.buildState.operations.filter(isDomainOperation)
+  const staged = stageOperations.length === 0
     ? []
-    : yield* stageAllArtifactRecipes(recipes, {
+    : yield* stageArtifactOperations(stageOperations, {
       root,
-      identity: build.identity,
+      identity: build.buildState.identity,
       configPath: pathName
     })
+  for (const operation of commandOperations) {
+    yield* runOperation(operation, ExecutionApproval.make({
+      execute: true,
+      approveIrreversible: false
+    }))
+  }
   const plan = yield* createReleasePlan(intent, root, pathName)
   return StagedReleaseArtifactsResult.make({
     schemaVersion: "artifact-stage/v1",

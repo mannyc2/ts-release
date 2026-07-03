@@ -19,9 +19,8 @@ const wheels = (section: PyPiWheelSection): ReadonlyArray<ReleaseConfigPyPiWheel
 
 const sectionFromConfig = (config: {
   readonly pypiWheel?: PyPiWheelSection | undefined
-  readonly build?: { readonly pypiWheel?: PyPiWheelSection | undefined } | undefined
 }): PyPiWheelSection | undefined =>
-  config.pypiWheel ?? config.build?.pypiWheel
+  config.pypiWheel
 
 export const pypiWheelPipe: Pipe<PyPiWheelSection> = {
   id: "build:pypi-wheel",

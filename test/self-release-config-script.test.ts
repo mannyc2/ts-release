@@ -68,7 +68,7 @@ interface StaticArtifactFixture {
 
 const releaseStaticArtifacts = (): Array<StaticArtifactFixture> => []
 
-const pypiWheelRecipe = (input: {
+const pypiWheelConfig = (input: {
   readonly id: string
   readonly path: string
   readonly wheelTag: string
@@ -98,8 +98,8 @@ const pypiWheelRecipe = (input: {
   consumers: ["pypi"]
 })
 
-const releasePyPiWheelRecipes = () => [
-  pypiWheelRecipe({
+const releasePyPiWheelConfigs = () => [
+  pypiWheelConfig({
     id: "pypi-wheel-linux-x64",
     path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
     wheelTag: "py3-none-manylinux2014_x86_64",
@@ -108,7 +108,7 @@ const releasePyPiWheelRecipes = () => [
     sourcePath: ".release/artifacts/ts-release-{version}-linux-x64",
     wheelPath: "ts_release/bin/ts-release-linux-x64"
   }),
-  pypiWheelRecipe({
+  pypiWheelConfig({
     id: "pypi-wheel-linux-arm64",
     path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_aarch64.whl",
     wheelTag: "py3-none-manylinux2014_aarch64",
@@ -117,7 +117,7 @@ const releasePyPiWheelRecipes = () => [
     sourcePath: ".release/artifacts/ts-release-{version}-linux-arm64",
     wheelPath: "ts_release/bin/ts-release-linux-arm64"
   }),
-  pypiWheelRecipe({
+  pypiWheelConfig({
     id: "pypi-wheel-darwin-x64",
     path: ".release/artifacts/ts_release-{version}-py3-none-macosx_10_15_x86_64.whl",
     wheelTag: "py3-none-macosx_10_15_x86_64",
@@ -126,7 +126,7 @@ const releasePyPiWheelRecipes = () => [
     sourcePath: ".release/artifacts/ts-release-{version}-darwin-x64",
     wheelPath: "ts_release/bin/ts-release-darwin-x64"
   }),
-  pypiWheelRecipe({
+  pypiWheelConfig({
     id: "pypi-wheel-darwin-arm64",
     path: ".release/artifacts/ts_release-{version}-py3-none-macosx_11_0_arm64.whl",
     wheelTag: "py3-none-macosx_11_0_arm64",
@@ -135,7 +135,7 @@ const releasePyPiWheelRecipes = () => [
     sourcePath: ".release/artifacts/ts-release-{version}-darwin-arm64",
     wheelPath: "ts_release/bin/ts-release-darwin-arm64"
   }),
-  pypiWheelRecipe({
+  pypiWheelConfig({
     id: "pypi-wheel-windows-x64",
     path: ".release/artifacts/ts_release-{version}-py3-none-win_amd64.whl",
     wheelTag: "py3-none-win_amd64",
@@ -146,7 +146,8 @@ const releasePyPiWheelRecipes = () => [
   })
 ]
 
-const releaseBunRecipe = () => ({
+const releaseBunBuild = () => ({
+  builder: "bun",
   id: "release-ts-cli",
   entry: "apps/release-ts/src/cli/main.ts",
   outputs: [
@@ -193,12 +194,10 @@ const baseConfig = (version: string = "0.0.0") => ({
     commit: "HEAD",
     tagTemplate: "v{version}"
   },
-  build: {
-    artifacts: releaseStaticArtifacts(),
-    npmPackage: releaseArtifacts()[0],
-    bun: releaseBunRecipe(),
-    pypiWheel: releasePyPiWheelRecipes()
-  },
+  artifacts: releaseStaticArtifacts(),
+  npmPackage: releaseArtifacts()[0],
+  builds: [releaseBunBuild()],
+  pypiWheel: releasePyPiWheelConfigs(),
   publish: {
     npm: {
       registry: "https://registry.npmjs.org",
@@ -253,7 +252,7 @@ const baseConfig = (version: string = "0.0.0") => ({
   evidence: ".release/evidence"
 })
 
-interface MutableReleaseCliRecipeFixture {
+interface MutableReleaseCliBuildFixture {
   readonly id: string
   outputs: Array<{
     readonly id: string
@@ -264,10 +263,14 @@ interface MutableReleaseCliRecipeFixture {
   }>
 }
 
-const releaseCliRecipeFixture = (
+const releaseCliBuildFixture = (
   config: ReturnType<typeof baseConfig>
-): MutableReleaseCliRecipeFixture => {
-  return config.build.bun
+): MutableReleaseCliBuildFixture => {
+  const build = config.builds[0]
+  if (build === undefined) {
+    throw new Error("expected self-release CLI build fixture")
+  }
+  return build
 }
 
 const prepareWorkspace = async (
@@ -360,8 +363,8 @@ describe("self-release config script", () => {
 
   test("fails when generated artifact paths drift", async () => {
     const config = baseConfig()
-    const recipe = releaseCliRecipeFixture(config)
-    const [output] = recipe.outputs
+    const build = releaseCliBuildFixture(config)
+    const [output] = build.outputs
     if (output !== undefined) {
       output.path = ".release/artifacts/wrong-0.0.0"
     }
@@ -370,22 +373,22 @@ describe("self-release config script", () => {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact recipe output cli-linux-x64 path")
+      expect(result.stderr).toContain("build output cli-linux-x64 path")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test("fails when expected CLI recipe outputs are missing", async () => {
+  test("fails when expected CLI build outputs are missing", async () => {
     const config = baseConfig()
-    const recipe = releaseCliRecipeFixture(config)
-    recipe.outputs = recipe.outputs.filter((output) => output.id !== "cli-windows-x64")
+    const build = releaseCliBuildFixture(config)
+    build.outputs = build.outputs.filter((output) => output.id !== "cli-windows-x64")
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact recipe release-ts-cli must include output cli-windows-x64")
+      expect(result.stderr).toContain("build release-ts-cli must include output cli-windows-x64")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -393,7 +396,7 @@ describe("self-release config script", () => {
 
   test("fails when CLI artifacts are declared statically", async () => {
     const config = baseConfig()
-    config.build.artifacts = [
+    config.artifacts = [
       {
         id: "cli-linux-x64",
         path: ".release/artifacts/ts-release-{version}-linux-x64",
@@ -406,7 +409,7 @@ describe("self-release config script", () => {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by build.bun outputs")
+      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by builds outputs")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

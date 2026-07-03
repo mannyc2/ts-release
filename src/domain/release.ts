@@ -123,7 +123,7 @@ export class ReleaseConfigBunExecutableBuild extends Schema.Class<ReleaseConfigB
   "ReleaseConfigBunExecutableBuild"
 )({
   id: Schema.optionalKey(Schema.String),
-  builder: Schema.optionalKey(Schema.Literal("bun")),
+  builder: Schema.Literal("bun"),
   entry: Schema.String,
   targets: Schema.optionalKey(Schema.Array(PlatformTarget)),
   output: Schema.optionalKey(Schema.String),
@@ -181,13 +181,6 @@ export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiW
   requiresPython: Schema.String,
   binaries: Schema.Array(PyPiWheelBinaryArtifact),
   consumers: Schema.optionalKey(Schema.Array(Schema.String))
-}) {}
-
-export class ReleaseConfigBuild extends Schema.Class<ReleaseConfigBuild>("ReleaseConfigBuild")({
-  npmPackage: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigNpmPackageBuild])),
-  bun: Schema.optionalKey(ReleaseConfigBunExecutableBuild),
-  pypiWheel: Schema.optionalKey(Schema.Union([ReleaseConfigPyPiWheelBuild, Schema.Array(ReleaseConfigPyPiWheelBuild)])),
-  artifacts: Schema.optionalKey(Schema.Array(ReleaseConfigManualArtifact))
 }) {}
 
 export class ReleaseConfigNpmTrustedPublishing extends Schema.Class<ReleaseConfigNpmTrustedPublishing>(
@@ -284,7 +277,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   builds: Schema.optionalKey(Schema.Array(ReleaseConfigBuildItem)),
   npmPackage: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigNpmPackageBuild])),
   pypiWheel: Schema.optionalKey(Schema.Union([ReleaseConfigPyPiWheelBuild, Schema.Array(ReleaseConfigPyPiWheelBuild)])),
-  build: Schema.optionalKey(ReleaseConfigBuild),
+  artifacts: Schema.optionalKey(Schema.Array(ReleaseConfigManualArtifact)),
   publish: ReleaseConfigPublish,
   strict: Schema.optionalKey(Schema.Boolean),
   evidence: Schema.optionalKey(Schema.Union([Schema.String, ReleaseConfigEvidence]))

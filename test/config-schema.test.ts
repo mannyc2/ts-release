@@ -16,7 +16,7 @@ describe("config schema", () => {
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(minimalConfig)
       expect(intent.project.name).toBe("release")
-      expect(intent.build?.npmPackage).toBeDefined()
+      expect(intent.npmPackage).toBeDefined()
       expect(intent.publish.github).toBeDefined()
       expect(intent.publish.npm).toBeDefined()
     }))
@@ -126,6 +126,23 @@ describe("config schema", () => {
 
   const legacyFieldConfigs: ReadonlyArray<readonly [string, string]> = [
     ["_tag", minimalConfig.replace("\"project\":{", "\"_tag\":\"NpmRegistryTarget\",\"project\":{")],
+    ["build", JSON.stringify({
+      project: {
+        name: "release",
+        packageName: "release",
+        version: "0.1.0",
+        commit: "abc123",
+        tag: "v0.1.0"
+      },
+      build: {
+        npmPackage: {
+          id: "package",
+          path: ".",
+          consumers: ["npm"]
+        }
+      },
+      publish: {}
+    })],
     ["dryRunSupport", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"dryRunSupport\":\"native\",")],
     ["mutability", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"mutability\":\"immutable\",")],
     ["recovery", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"recovery\":\"manual\",")]
@@ -184,7 +201,8 @@ describe("config schema", () => {
         expect(isRecord(properties)).toBe(true)
         if (isRecord(properties)) {
           expect(properties.project).toBeDefined()
-          expect(properties.build).toBeDefined()
+          expect(properties.builds).toBeDefined()
+          expect(properties.npmPackage).toBeDefined()
           expect(properties.publish).toBeDefined()
           expect(properties.$schema).toBeDefined()
         }

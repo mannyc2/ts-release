@@ -317,12 +317,12 @@ const publishTarget = (
   return isRecord(target) ? target : undefined
 }
 
-const firstPyPiRecipePackageName = (build: Record<string, unknown>): string | undefined => {
-  const pypiWheel = build.pypiWheel
-  const recipes = Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : []
-  for (const recipe of recipes) {
-    if (isRecord(recipe)) {
-      return stringField(recipe, "packageName")
+const firstPyPiWheelPackageName = (config: Record<string, unknown>): string | undefined => {
+  const pypiWheel = config.pypiWheel
+  const wheels = Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : []
+  for (const wheel of wheels) {
+    if (isRecord(wheel)) {
+      return stringField(wheel, "packageName")
     }
   }
   return undefined
@@ -395,7 +395,6 @@ if (!isRecord(config)) {
 if (isRecord(manifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name")
   const packageVersion = stringField(manifest, "version")
-  const build = config.build
   const publish = config.publish
 
   if (packageName === undefined) {
@@ -404,19 +403,16 @@ if (isRecord(manifest) && isRecord(config)) {
   if (packageVersion === undefined) {
     checks.push({ id: "manifest:version", ok: false, message: `${packagePath} version must be a non-empty string.` })
   }
-  if (!isRecord(build)) {
-    checks.push({ id: "config:build", ok: false, message: `${releaseConfigPath} build must be an object.` })
-  }
   if (!isRecord(publish)) {
     checks.push({ id: "config:publish", ok: false, message: `${releaseConfigPath} publish must be an object.` })
   }
 
-  if (packageName !== undefined && packageVersion !== undefined && isRecord(build) && isRecord(publish)) {
+  if (packageName !== undefined && packageVersion !== undefined && isRecord(publish)) {
     const githubTarget = publishTarget(publish, "github")
     const homebrewTarget = publishTarget(publish, "homebrew")
     const scoopTarget = publishTarget(publish, "scoop")
     const pypiTarget = publishTarget(publish, "pypi")
-    const pypiPackageName = firstPyPiRecipePackageName(build)
+    const pypiPackageName = firstPyPiWheelPackageName(config)
     const githubRepository = githubTarget === undefined ? undefined : stringField(githubTarget, "repository")
     const homebrewRepository = homebrewTarget === undefined ? undefined : stringField(homebrewTarget, "repository")
     const scoopRepository = scoopTarget === undefined ? undefined : stringField(scoopTarget, "repository")

@@ -99,7 +99,7 @@ const publishTarget = (publish: Record<string, unknown>, id: string): Record<str
 }
 
 const collectArtifactPaths = (
-  build: Record<string, unknown>,
+  config: Record<string, unknown>,
   packageName: string,
   packageVersion: string
 ): {
@@ -108,9 +108,12 @@ const collectArtifactPaths = (
 } => {
   const binaries: Array<string> = []
   const wheels: Array<{ readonly path: string; readonly wheelTag: string | undefined }> = []
-  const bunRecipe = build.bun
-  if (isRecord(bunRecipe) && Array.isArray(bunRecipe.outputs)) {
-    for (const output of bunRecipe.outputs) {
+  const builds = Array.isArray(config.builds) ? config.builds : []
+  for (const build of builds) {
+    if (!isRecord(build) || build.builder !== "bun" || !Array.isArray(build.outputs)) {
+      continue
+    }
+    for (const output of build.outputs) {
       if (!isRecord(output)) {
         continue
       }
@@ -120,17 +123,17 @@ const collectArtifactPaths = (
       }
     }
   }
-  const pypiWheel = build.pypiWheel
-  const pypiWheelRecipes = Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : []
-  for (const recipe of pypiWheelRecipes) {
-    if (!isRecord(recipe)) {
+  const pypiWheel = config.pypiWheel
+  const pypiWheels = Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : []
+  for (const wheel of pypiWheels) {
+    if (!isRecord(wheel)) {
       continue
     }
-    const path = stringField(recipe, "path")
+    const path = stringField(wheel, "path")
     if (path !== undefined) {
       wheels.push({
         path: expandReleaseTemplate(path, packageName, packageVersion),
-        wheelTag: stringField(recipe, "wheelTag")
+        wheelTag: stringField(wheel, "wheelTag")
       })
     }
   }
@@ -337,7 +340,6 @@ if (!isRecord(config)) {
 if (isRecord(manifest) && isRecord(config)) {
   const packageName = stringField(manifest, "name")
   const packageVersion = stringField(manifest, "version")
-  const build = config.build
   const publish = config.publish
 
   if (packageName === undefined) {
@@ -346,15 +348,12 @@ if (isRecord(manifest) && isRecord(config)) {
   if (packageVersion === undefined) {
     checks.push({ id: "manifest:version", ok: false, message: `${packagePath} version must be configured.` })
   }
-  if (!isRecord(build)) {
-    checks.push({ id: "config:build", ok: false, message: `${releaseConfigPath} build must be an object.` })
-  }
   if (!isRecord(publish)) {
     checks.push({ id: "config:publish", ok: false, message: `${releaseConfigPath} publish must be an object.` })
   }
 
-  if (packageName !== undefined && packageVersion !== undefined && isRecord(build) && isRecord(publish)) {
-    const artifacts = collectArtifactPaths(build, packageName, packageVersion)
+  if (packageName !== undefined && packageVersion !== undefined && isRecord(publish)) {
+    const artifacts = collectArtifactPaths(config, packageName, packageVersion)
     for (const [index, path] of artifacts.binaries.entries()) {
       checks.push(fileCheck(`github:binary:${index}`, path, "CLI binary artifact"))
     }

@@ -1,8 +1,5 @@
 import * as Effect from "effect/Effect"
-import type {
-  ReleaseConfigBuildItem,
-  ReleaseConfigBunExecutableBuild
-} from "../domain/release.js"
+import type { ReleaseConfigBuildItem } from "../domain/release.js"
 import { bunBuilder, type BunBuildOptions } from "../builders/bun.js"
 import { commandBuilder, type CommandBuildOptions } from "../builders/command.js"
 import { prebuiltBuilder, type PrebuiltBuildOptions } from "../builders/prebuilt.js"
@@ -16,49 +13,9 @@ export type * from "../types/effect-internal.js"
 
 export type BuildOptions = BunBuildOptions | CommandBuildOptions | PrebuiltBuildOptions
 
-const legacyBunBuild = (build: ReleaseConfigBunExecutableBuild): BunBuildOptions => ({
-  builder: "bun",
-  ...(build.id === undefined ? {} : { id: build.id }),
-  entry: build.entry,
-  ...(build.targets === undefined ? {} : { targets: build.targets }),
-  ...(build.outputs === undefined
-    ? {}
-    : {
-      outputs: build.outputs.map((output) => ({
-        ...(output.id === undefined ? {} : { id: output.id }),
-        target: output.target,
-        ...(output.path === undefined ? {} : { path: output.path }),
-        ...(output.variant === undefined ? {} : { variant: output.variant }),
-        ...(output.variant?.binaryName === undefined ? {} : { binaryName: output.variant.binaryName }),
-        ...(output.variant?.installPath === undefined ? {} : { installPath: output.variant.installPath })
-      }))
-    }),
-  ...(build.outDir === undefined ? {} : { outDir: build.outDir }),
-  ...(build.name === undefined ? {} : { name: build.name }),
-  ...(build.binary === undefined ? {} : { binary: build.binary }),
-  ...(build.binaryName === undefined ? {} : { binaryName: build.binaryName }),
-  ...(build.installPath === undefined ? {} : { installPath: build.installPath }),
-  ...(build.cpu === undefined ? {} : { cpu: build.cpu }),
-  ...(build.minify === undefined ? {} : { minify: build.minify })
-})
-
-const buildItemToOptions = (item: ReleaseConfigBuildItem): BuildOptions => {
-  if (item.builder === "command" || item.builder === "prebuilt") {
-    return item
-  }
-  return {
-    ...item,
-    builder: "bun"
-  }
-}
-
 const buildSections = (config: {
   readonly builds?: ReadonlyArray<ReleaseConfigBuildItem> | undefined
-  readonly build?: { readonly bun?: ReleaseConfigBunExecutableBuild | undefined } | undefined
-}): ReadonlyArray<BuildOptions> => [
-  ...(config.builds ?? []).map(buildItemToOptions),
-  ...(config.build?.bun === undefined ? [] : [legacyBunBuild(config.build.bun)])
-]
+}): ReadonlyArray<BuildOptions> => config.builds ?? []
 
 const targetsFor = (options: BuildOptions): ReadonlyArray<PlatformTarget> => {
   if (options.builder === "bun") {

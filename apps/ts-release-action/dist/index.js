@@ -99848,7 +99848,7 @@ class ReleaseConfigBunExecutableOutput extends Class4("ReleaseConfigBunExecutabl
 
 class ReleaseConfigBunExecutableBuild extends Class4("ReleaseConfigBunExecutableBuild")({
   id: optionalKey2(String4),
-  builder: optionalKey2(Literal2("bun")),
+  builder: Literal2("bun"),
   entry: String4,
   targets: optionalKey2(ArraySchema(PlatformTarget)),
   output: optionalKey2(String4),
@@ -99901,14 +99901,6 @@ class ReleaseConfigPyPiWheelBuild extends Class4("ReleaseConfigPyPiWheelBuild")(
   requiresPython: String4,
   binaries: ArraySchema(PyPiWheelBinaryArtifact),
   consumers: optionalKey2(ArraySchema(String4))
-}) {
-}
-
-class ReleaseConfigBuild extends Class4("ReleaseConfigBuild")({
-  npmPackage: optionalKey2(Union2([Boolean3, ReleaseConfigNpmPackageBuild])),
-  bun: optionalKey2(ReleaseConfigBunExecutableBuild),
-  pypiWheel: optionalKey2(Union2([ReleaseConfigPyPiWheelBuild, ArraySchema(ReleaseConfigPyPiWheelBuild)])),
-  artifacts: optionalKey2(ArraySchema(ReleaseConfigManualArtifact))
 }) {
 }
 
@@ -100005,7 +99997,7 @@ class ReleaseIntent extends Class4("ReleaseIntent")({
   builds: optionalKey2(ArraySchema(ReleaseConfigBuildItem)),
   npmPackage: optionalKey2(Union2([Boolean3, ReleaseConfigNpmPackageBuild])),
   pypiWheel: optionalKey2(Union2([ReleaseConfigPyPiWheelBuild, ArraySchema(ReleaseConfigPyPiWheelBuild)])),
-  build: optionalKey2(ReleaseConfigBuild),
+  artifacts: optionalKey2(ArraySchema(ReleaseConfigManualArtifact)),
   publish: ReleaseConfigPublish,
   strict: optionalKey2(Boolean3),
   evidence: optionalKey2(Union2([String4, ReleaseConfigEvidence]))
@@ -100048,7 +100040,7 @@ var decodeReleaseConfig = decodeUnknownEffect2(ReleaseConfig);
 
 // ../../src/config/load.ts
 var forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"]);
-var forbiddenTopLevelConfigFields = new Set(["identity", "targets", "artifactRecipes", "evidenceDirectory"]);
+var forbiddenTopLevelConfigFields = new Set(["identity", "targets", "artifactRecipes", "build", "evidenceDirectory"]);
 var isRecord = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
 var findForbiddenConfigField = (value2, fieldPath = "$") => {
   if (Array.isArray(value2)) {
@@ -100982,7 +100974,8 @@ var bunBuilder = {
     const compile = yield* compileTarget(target, options.cpu);
     yield* validateVariantOverride(id, output);
     const extension = platform2.executableExtension ?? "";
-    const installPath = output.installPath ?? options.installPath;
+    const binaryName = output.binaryName ?? output.variant?.binaryName ?? options.binaryName ?? binary;
+    const installPath = output.installPath ?? output.variant?.installPath ?? options.installPath;
     return {
       artifacts: [
         Artifact.make({
@@ -100992,7 +100985,7 @@ var bunBuilder = {
           producedBy: "build:bun",
           platform: {
             ...platform2,
-            binaryName: output.binaryName ?? options.binaryName ?? binary,
+            binaryName,
             ...installPath === undefined ? {} : { installPath },
             targetTriple: compile
           },
@@ -101137,42 +101130,7 @@ var emptyContribution = {
 };
 
 // ../../src/pipes/build.ts
-var legacyBunBuild = (build) => ({
-  builder: "bun",
-  ...build.id === undefined ? {} : { id: build.id },
-  entry: build.entry,
-  ...build.targets === undefined ? {} : { targets: build.targets },
-  ...build.outputs === undefined ? {} : {
-    outputs: build.outputs.map((output) => ({
-      ...output.id === undefined ? {} : { id: output.id },
-      target: output.target,
-      ...output.path === undefined ? {} : { path: output.path },
-      ...output.variant === undefined ? {} : { variant: output.variant },
-      ...output.variant?.binaryName === undefined ? {} : { binaryName: output.variant.binaryName },
-      ...output.variant?.installPath === undefined ? {} : { installPath: output.variant.installPath }
-    }))
-  },
-  ...build.outDir === undefined ? {} : { outDir: build.outDir },
-  ...build.name === undefined ? {} : { name: build.name },
-  ...build.binary === undefined ? {} : { binary: build.binary },
-  ...build.binaryName === undefined ? {} : { binaryName: build.binaryName },
-  ...build.installPath === undefined ? {} : { installPath: build.installPath },
-  ...build.cpu === undefined ? {} : { cpu: build.cpu },
-  ...build.minify === undefined ? {} : { minify: build.minify }
-});
-var buildItemToOptions = (item) => {
-  if (item.builder === "command" || item.builder === "prebuilt") {
-    return item;
-  }
-  return {
-    ...item,
-    builder: "bun"
-  };
-};
-var buildSections = (config) => [
-  ...(config.builds ?? []).map(buildItemToOptions),
-  ...config.build?.bun === undefined ? [] : [legacyBunBuild(config.build.bun)]
-];
+var buildSections = (config) => config.builds ?? [];
 var targetsFor = (options) => {
   if (options.builder === "bun") {
     if (options.outputs !== undefined) {
@@ -101252,7 +101210,7 @@ var buildPipe = {
 
 // ../../src/pipes/npm-pack.ts
 var sectionFromConfig = (config) => {
-  const section = config.npmPackage ?? config.build?.npmPackage;
+  const section = config.npmPackage;
   return section === false ? undefined : section;
 };
 var npmPackPipe = {
@@ -101285,7 +101243,7 @@ var npmPackPipe = {
 // ../../src/pipes/pypi-wheel.ts
 var isWheelArray = (section) => Array.isArray(section);
 var wheels = (section) => isWheelArray(section) ? section : [section];
-var sectionFromConfig2 = (config) => config.pypiWheel ?? config.build?.pypiWheel;
+var sectionFromConfig2 = (config) => config.pypiWheel;
 var pypiWheelPipe = {
   id: "build:pypi-wheel",
   phase: "build",
@@ -101806,7 +101764,7 @@ var compactManualArtifact = (artifact2) => ArtifactIntent.make({
 });
 var compactArtifacts = (intent) => {
   return [
-    ...(intent.build?.artifacts ?? []).map(compactManualArtifact)
+    ...(intent.artifacts ?? []).map(compactManualArtifact)
   ];
 };
 var pipelineIdentityFromDomain = (identity2) => ReleaseIdentity2.make({
@@ -101829,25 +101787,56 @@ var planBuildState = fn2("planBuildState")(function* (intent, identity2) {
   return yield* runPipeline(initialState, intent, buildPipeline).pipe(mapError3(planErrorToNormalization));
 });
 var defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"];
-var legacyBunArtifactId = (buildId, target) => `${buildId}-${target}`;
-var legacyArtifactMetadata = (intent) => {
+var bunArtifactId = (buildId, target) => `${buildId}-${target}`;
+var isPyPiWheelArray = (wheel) => Array.isArray(wheel);
+var wheelsFromConfig = (wheel) => {
+  if (wheel === undefined) {
+    return [];
+  }
+  return isPyPiWheelArray(wheel) ? wheel : [wheel];
+};
+var buildArtifactMetadata = (intent) => {
   const metadata3 = new Map;
-  const bun = intent.build?.bun;
-  if (bun !== undefined) {
-    const buildId = bun.id ?? "cli";
-    if (bun.outputs === undefined) {
-      for (const target of bun.targets ?? defaultBunTargets) {
-        metadata3.set(legacyBunArtifactId(buildId, target), {
-          consumers: [...bun.consumers ?? ["github"]]
-        });
+  const npmPackage = intent.npmPackage;
+  if (npmPackage !== undefined && npmPackage !== false) {
+    const config = npmPackage === true ? undefined : npmPackage;
+    metadata3.set(config?.id ?? "npm-package", {
+      consumers: [...config?.consumers ?? ["npm"]]
+    });
+  }
+  for (const wheel of wheelsFromConfig(intent.pypiWheel)) {
+    metadata3.set(wheel.id, {
+      consumers: [...wheel.consumers ?? ["pypi"]]
+    });
+  }
+  for (const build of intent.builds ?? []) {
+    switch (build.builder) {
+      case "bun": {
+        const buildId = build.id ?? "cli";
+        if (build.outputs === undefined) {
+          for (const target of build.targets ?? defaultBunTargets) {
+            metadata3.set(bunArtifactId(buildId, target), {
+              consumers: [...build.consumers ?? ["github"]]
+            });
+          }
+        } else {
+          for (const output of build.outputs) {
+            metadata3.set(output.id ?? bunArtifactId(buildId, output.target), {
+              consumers: [...output.consumers ?? build.consumers ?? ["github"]],
+              ...output.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl }
+            });
+          }
+        }
+        break;
       }
-    } else {
-      for (const output of bun.outputs) {
-        metadata3.set(output.id ?? legacyBunArtifactId(buildId, output.target), {
-          consumers: [...output.consumers ?? bun.consumers ?? ["github"]],
-          ...output.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl }
-        });
-      }
+      case "command":
+      case "prebuilt":
+        for (const target of build.targets) {
+          metadata3.set(bunArtifactId(build.id ?? build.builder, target), {
+            consumers: ["github"]
+          });
+        }
+        break;
     }
   }
   return metadata3;
@@ -101869,15 +101858,18 @@ var consumersForPipelineArtifact = (artifact2, metadata3) => {
   }
 };
 var formatForPipelineArtifact = (artifact2) => artifact2.kind === "package" ? "directory" : artifact2.kind === "executable" ? "executable" : "file";
-var artifactIntentFromPipelineArtifact = (artifact2, identity2, metadata3) => ArtifactIntent.make({
-  id: artifact2.id,
-  path: artifact2.path,
-  ...metadata3.get(artifact2.id)?.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(metadata3.get(artifact2.id)?.downloadUrl ?? "", identity2) },
-  format: formatForPipelineArtifact(artifact2),
-  consumers: [...consumersForPipelineArtifact(artifact2, metadata3)],
-  ...artifact2.checksum === undefined ? {} : { checksum: artifact2.checksum },
-  ...artifact2.platform === undefined ? {} : { variant: artifact2.platform }
-});
+var artifactIntentFromPipelineArtifact = (artifact2, identity2, metadata3) => {
+  const artifactMetadata = metadata3.get(artifact2.id);
+  return ArtifactIntent.make({
+    id: artifact2.id,
+    path: artifact2.path,
+    ...artifactMetadata?.downloadUrl === undefined ? {} : { downloadUrl: renderReleaseTemplate(artifactMetadata.downloadUrl, identity2) },
+    format: formatForPipelineArtifact(artifact2),
+    consumers: [...consumersForPipelineArtifact(artifact2, metadata3)],
+    ...artifact2.checksum === undefined ? {} : { checksum: artifact2.checksum },
+    ...artifact2.platform === undefined ? {} : { variant: artifact2.platform }
+  });
+};
 var compactNpmTrustedPublishing = (config) => {
   if (config === undefined || config === false) {
     return;
@@ -102025,7 +102017,7 @@ var resolveReleaseBuild = fn2("resolveReleaseBuild")(function* (intent, root = "
   const identitySource = yield* releaseIdentitySourceFromConfig(intent.project);
   const identity2 = yield* resolveReleaseIdentitySource(identitySource, root);
   const buildState = yield* planBuildState(intent, identity2);
-  const metadata3 = legacyArtifactMetadata(intent);
+  const metadata3 = buildArtifactMetadata(intent);
   return {
     identity: identity2,
     buildState,
@@ -103464,7 +103456,7 @@ class StagedReleaseArtifactsResult extends Class4("StagedReleaseArtifactsResult"
   schemaVersion: Literal2("artifact-stage/v1"),
   identity: ReleaseIdentity,
   configPath: String4,
-  recipes: ArraySchema(StagedArtifactOperationResult),
+  operations: ArraySchema(StagedArtifactOperationResult),
   plan: ReleasePlan
 }) {
 }
@@ -103565,16 +103557,16 @@ var buildReleaseArtifacts = fn2("workflows.release.buildReleaseArtifacts")(funct
     schemaVersion: "artifact-stage/v1",
     identity: build.identity,
     configPath: pathName,
-    recipes: staged,
+    operations: staged,
     plan
   });
 });
 var renderBuildArtifactsJson = (result2) => `${JSON.stringify(result2, null, 2)}
 `;
 var renderBuildArtifactsText = (result2) => {
-  const artifacts = result2.recipes.flatMap((recipe) => recipe.artifacts);
+  const artifacts = result2.operations.flatMap((operation) => operation.artifacts);
   const lines = [
-    `staged artifact recipes: ${result2.recipes.length}`,
+    `staged artifact operations: ${result2.operations.length}`,
     "artifacts:"
   ];
   if (artifacts.length === 0) {

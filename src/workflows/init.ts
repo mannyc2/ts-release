@@ -474,12 +474,13 @@ const configBunCliBuild = (options: NormalizedInitOptions): Record<string, unkno
 
 const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string, unknown> => {
   const name = packageShortName(options.packageName)
-  const build: Record<string, unknown> = {
-    npmPackage: {
-      id: "package",
-      path: ".",
-      consumers: ["npm"]
-    }
+  const builds: Array<Record<string, unknown>> = []
+  let pypiWheel: ReadonlyArray<Record<string, unknown>> | undefined
+  let artifacts: ReadonlyArray<Record<string, unknown>> | undefined
+  const npmPackage = {
+    id: "package",
+    path: ".",
+    consumers: ["npm"]
   }
   const publish: Record<string, unknown> = {
     npm: configTargetNpm(options)
@@ -489,14 +490,14 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
     publish.github = configTargetGitHub(options)
   }
   if (options.template === "bun-cli-github") {
-    build.bun = configBunCliBuild(options)
+    builds.push({ builder: "bun", ...configBunCliBuild(options) })
   }
   if (options.template === "portable-cli") {
-    build.bun = configPortableCliBunBuild(options)
+    builds.push({ builder: "bun", ...configPortableCliBunBuild(options) })
     publish.homebrew = configTargetPortableHomebrew(options)
     publish.scoop = configTargetPortableScoop(options)
     if (options.pypiPackage !== undefined || options.pypiModule !== undefined) {
-      build.pypiWheel = configPortablePyPiWheels(options)
+      pypiWheel = configPortablePyPiWheels(options)
       publish.pypi = {
         repositoryUrl: "https://upload.pypi.org/legacy/",
         trustedPublishing: {
@@ -508,7 +509,7 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
     }
   }
   if (options.template === "multi-target-homebrew") {
-    build.artifacts = [
+    artifacts = [
       {
         id: "archive",
         path: `artifacts/${name}-0.1.0.tgz`,
@@ -519,7 +520,7 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
     publish.homebrew = configTargetHomebrew(options)
   }
   if (options.template === "multi-target-scoop") {
-    build.artifacts = [
+    artifacts = [
       {
         id: "archive",
         path: `artifacts/${name}-0.1.0.zip`,
@@ -540,7 +541,10 @@ const releaseConfigForTemplate = (options: NormalizedInitOptions): Record<string
       commit: "abc123",
       tag: "v0.1.0"
     },
-    build,
+    npmPackage,
+    ...(builds.length === 0 ? {} : { builds }),
+    ...(pypiWheel === undefined ? {} : { pypiWheel }),
+    ...(artifacts === undefined ? {} : { artifacts }),
     publish,
     strict: true,
     evidence: ".release/evidence/{version}"

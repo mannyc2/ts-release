@@ -135,7 +135,7 @@ export class StagedReleaseArtifactsResult extends Schema.Class<StagedReleaseArti
   schemaVersion: Schema.Literal("artifact-stage/v1"),
   identity: ReleaseIdentity,
   configPath: Schema.String,
-  recipes: Schema.Array(StagedArtifactOperationResult),
+  operations: Schema.Array(StagedArtifactOperationResult),
   plan: ReleasePlan
 }) {}
 
@@ -269,7 +269,7 @@ export const buildReleaseArtifacts = Effect.fn("workflows.release.buildReleaseAr
     schemaVersion: "artifact-stage/v1",
     identity: build.identity,
     configPath: pathName,
-    recipes: staged,
+    operations: staged,
     plan
   })
 })
@@ -278,9 +278,9 @@ export const renderBuildArtifactsJson = (result: StagedReleaseArtifactsResult): 
   `${JSON.stringify(result, null, 2)}\n`
 
 export const renderBuildArtifactsText = (result: StagedReleaseArtifactsResult): string => {
-  const artifacts = result.recipes.flatMap((recipe) => recipe.artifacts)
+  const artifacts = result.operations.flatMap((operation) => operation.artifacts)
   const lines = [
-    `staged artifact recipes: ${result.recipes.length}`,
+    `staged artifact operations: ${result.operations.length}`,
     "artifacts:"
   ]
   if (artifacts.length === 0) {

@@ -28,7 +28,7 @@ do not execute an older plan when it conflicts with 108-111.
 | 113 | Prepare and ship v0.0.8 so the published package matches the hard-cutover surface | P0 | S | 108-112 | DONE (prep; publish dispatch is operator-only) |
 | 114 | Design the GoReleaser-shaped pipeline architecture and the 0.1 public API | P0 | M | - (design-only; may run parallel to 113) | DONE (contract in `plans/114-pipeline-contract.md`) |
 | 119 | Design the language-agnostic builder contract and runtime capability matrix | P0 | M | 114 (design-only) | DONE (contract in `plans/119-builder-contract.md`) |
-| 115 | Introduce the pipeline kernel and move builds into library pipes | P0 | L | 113, 114, 119 | DONE (LOC 10203 -> 11025, +822; growth in `workflows/init.ts`, `planner/normalize-release.ts`, `workflows/release.ts`, and new stager/kernel files) |
+| 115 | Introduce the pipeline kernel and move builds into library pipes | P0 | L | 113, 114, 119 | DONE (LOC 10203 -> 11018, +815; hard cutover removes legacy build fallbacks while keeping the kernel/stager growth) |
 | 116 | Port publish surfaces to pipes, delete the target-adapter layer, prove extension cost | P0 | L | 114, 115 | TODO |
 | 117 | Expose the 0.1 public TypeScript API and make the CLI and Action thin wrappers | P0 | M | 114, 115, 116 | TODO |
 | 118 | Effect polish sweep and self-release script dedup | P2 | M | 115, 116, 117 | TODO |
@@ -199,7 +199,7 @@ renamed `parseJson`).
   `<os>-<arch>[-musl]` with an 8-target initial list (windows-arm64
   included; valid in bun-types, absent from GoReleaser's list); the bun
   builder stays **in-process via `Bun.build({ compile })`** (maintainer
-  direction — the current recipe already does this; the port is a move,
+  direction — the current runtime path already does this; the port is a move,
   not a rewrite), emitting structured `StageArtifactOperation` data; the
   translation table's output type is `Bun.Build.CompileTarget`, so
   toolchain drift is a compile error — strictly better than upstream's

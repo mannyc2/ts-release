@@ -110,7 +110,7 @@ describe("cli command", () => {
       )
     }))
 
-  test("build command stages recipe outputs and writes text output", () =>
+  test("build command stages build outputs and writes text output", () =>
     withTempDirectoryPromise("ts-release-cli-build-", async (root) => {
       const configPath = join(root, "release.config.json")
       const out = join(root, "stage.txt")
@@ -121,8 +121,9 @@ describe("cli command", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          bun: {
+        builds: [
+          {
+            builder: "bun",
             id: "release-cli",
             entry: "src/cli.ts",
             outputs: [
@@ -134,7 +135,7 @@ describe("cli command", () => {
               }
             ]
           }
-        },
+        ],
         publish: {}
       }))
       const build: BunExecutableBuild = async (input) => {
@@ -163,11 +164,11 @@ describe("cli command", () => {
       )
 
       const contents = await readFile(out, "utf8")
-      expect(contents).toContain("staged artifact recipes: 1")
+      expect(contents).toContain("staged artifact operations: 1")
       expect(contents).toContain("cli-linux-x64 dist/release-0.1.0-linux-x64")
     }))
 
-  test("build command succeeds with no recipes", () =>
+  test("build command succeeds with no staged operations", () =>
     withTempDirectoryPromise("ts-release-cli-build-empty-", async (root) => {
       const configPath = join(root, "release.config.json")
       const out = join(root, "stage.json")
@@ -196,7 +197,7 @@ describe("cli command", () => {
 
       const parsed: unknown = JSON.parse(await readFile(out, "utf8"))
       expect(JSON.stringify(parsed)).toContain("\"schemaVersion\":\"artifact-stage/v1\"")
-      expect(JSON.stringify(parsed)).toContain("\"recipes\":[]")
+      expect(JSON.stringify(parsed)).toContain("\"operations\":[]")
     }))
 
   test("build command reports build failures", () =>
@@ -209,8 +210,9 @@ describe("cli command", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          bun: {
+        builds: [
+          {
+            builder: "bun",
             id: "release-cli",
             entry: "src/cli.ts",
             outputs: [
@@ -222,7 +224,7 @@ describe("cli command", () => {
               }
             ]
           }
-        },
+        ],
         publish: {}
       }))
       const layer = Layer.mergeAll(
@@ -263,16 +265,14 @@ describe("cli command", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          artifacts: [
-            {
-              id: "archive",
-              path: "artifacts/release-0.1.0.tgz",
-              format: "tarball",
-              consumers: ["homebrew"]
-            }
-          ]
-        },
+        artifacts: [
+          {
+            id: "archive",
+            path: "artifacts/release-0.1.0.tgz",
+            format: "tarball",
+            consumers: ["homebrew"]
+          }
+        ],
         publish: {
           homebrew: {
             repository: "owner/homebrew-tap",
@@ -450,7 +450,7 @@ describe("cli command", () => {
       expect(config).toContain("\"$schema\"")
       expect(config).toContain("\"repository\": \"owner/repo\"")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
-      expect(intent.build?.npmPackage).toBeDefined()
+      expect(intent.npmPackage).toBeDefined()
       expect(intent.publish.npm).toBeDefined()
 
       const blocked = await Effect.runPromiseExit(
@@ -504,14 +504,15 @@ describe("cli command", () => {
             expect(configFile.contents).toContain("owner/scoop-bucket")
           }
           if (template === "npm-github") {
-            expect(intent.build?.npmPackage).toBeDefined()
+            expect(intent.npmPackage).toBeDefined()
             expect(intent.publish.github).toBeDefined()
           }
           if (template === "bun-cli-github") {
-            const recipe = intent.build?.bun
-            expect(recipe?.id).toBe("cli")
-            if (recipe !== undefined) {
-              expect(recipe.outputs?.map((output) => output.target).sort()).toEqual([
+            const build = intent.builds?.[0]
+            expect(build?.builder).toBe("bun")
+            if (build?.builder === "bun") {
+              expect(build.id).toBe("cli")
+              expect(build.outputs?.map((output) => output.target).sort()).toEqual([
                 "darwin-arm64",
                 "darwin-x64",
                 "linux-arm64",
@@ -521,23 +522,26 @@ describe("cli command", () => {
             }
           }
           if (template === "portable-cli") {
-            const recipe = intent.build?.bun
-            expect(recipe?.entry).toBe("src/cli.ts")
+            const build = intent.builds?.[0]
+            expect(build?.builder).toBe("bun")
+            if (build?.builder === "bun") {
+              expect(build.entry).toBe("src/cli.ts")
+            }
             expect(intent.publish.homebrew).toBeDefined()
             expect(intent.publish.scoop).toBeDefined()
             expect(intent.publish.pypi).toBeDefined()
-            if (recipe !== undefined) {
-              expect(recipe.outputs?.find((output) => output.id === "cli-darwin-arm64")?.consumers).toEqual([
+            if (build?.builder === "bun") {
+              expect(build.outputs?.find((output) => output.id === "cli-darwin-arm64")?.consumers).toEqual([
                 "github",
                 "homebrew"
               ])
-              expect(recipe.outputs?.find((output) => output.id === "cli-windows-x64")?.consumers).toEqual([
+              expect(build.outputs?.find((output) => output.id === "cli-windows-x64")?.consumers).toEqual([
                 "github",
                 "scoop"
               ])
-              expect(recipe.outputs?.every((output) => output.variant?.binaryName === "pkg")).toBe(true)
+              expect(build.outputs?.every((output) => output.variant?.binaryName === "pkg")).toBe(true)
             }
-            const wheels = intent.build?.pypiWheel
+            const wheels = intent.pypiWheel
             expect(Array.isArray(wheels) ? wheels.length : 0).toBe(5)
           }
         }
@@ -579,14 +583,17 @@ describe("cli command", () => {
 
       const config = await readFile(configPath, "utf8")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
-      const recipe = intent.build?.bun
-      const wheels = intent.build?.pypiWheel
+      const build = intent.builds?.[0]
+      const wheels = intent.pypiWheel
 
-      expect(recipe?.entry).toBe("src/main.ts")
-      expect(recipe?.outputs?.find((output) => output.id === "cli-darwin-x64")?.consumers).toEqual([
-        "github",
-        "homebrew"
-      ])
+      expect(build?.builder).toBe("bun")
+      if (build?.builder === "bun") {
+        expect(build.entry).toBe("src/main.ts")
+        expect(build.outputs?.find((output) => output.id === "cli-darwin-x64")?.consumers).toEqual([
+          "github",
+          "homebrew"
+        ])
+      }
       expect(intent.publish.homebrew).toBeDefined()
       expect(intent.publish.scoop).toBeDefined()
       expect(intent.publish.pypi).toBeDefined()

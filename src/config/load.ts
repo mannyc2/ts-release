@@ -7,7 +7,7 @@ import { decodeReleaseConfig, DEFAULT_CONFIG_PATH } from "./schema.js"
 export type * from "../types/effect-internal.js"
 
 const forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"])
-const forbiddenTopLevelConfigFields = new Set(["identity", "targets", "artifactRecipes", "evidenceDirectory"])
+const forbiddenTopLevelConfigFields = new Set(["identity", "targets", "artifactRecipes", "build", "evidenceDirectory"])
 
 const isRecord = (value: unknown): value is { readonly [key: string]: unknown } =>
   typeof value === "object" && value !== null && !Array.isArray(value)

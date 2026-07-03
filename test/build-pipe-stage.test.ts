@@ -69,8 +69,9 @@ describe("build pipe", () => {
             commit: "abc123",
             tag: "v0.1.0"
           },
-          build: {
-            bun: {
+          builds: [
+            {
+              builder: "bun",
               id: "release-cli",
               entry: "src/cli.ts",
               cpu: "baseline",
@@ -83,7 +84,7 @@ describe("build pipe", () => {
                 }
               ]
             }
-          },
+          ],
           publish: {}
         }))
 
@@ -143,8 +144,9 @@ describe("build pipe", () => {
             commit: "abc123",
             tag: "v0.1.0"
           },
-          build: {
-            bun: {
+          builds: [
+            {
+              builder: "bun",
               id: "release-cli",
               entry: "src/cli.ts",
               outputs: [
@@ -156,7 +158,7 @@ describe("build pipe", () => {
                 }
               ]
             }
-          },
+          ],
           publish: {}
         }))
 
@@ -192,8 +194,9 @@ describe("build pipe", () => {
             commit: "abc123",
             tag: "v0.1.0"
           },
-          build: {
-            bun: {
+          builds: [
+            {
+              builder: "bun",
               id: "release-cli",
               entry: "src/cli.ts",
               outputs: [
@@ -205,7 +208,7 @@ describe("build pipe", () => {
                 }
               ]
             }
-          },
+          ],
           publish: {}
         }))
         const operations = contribution.operations.filter(isStageArtifactOperation)
@@ -324,8 +327,9 @@ describe("build pipe", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          bun: {
+        builds: [
+          {
+            builder: "bun",
             id: "release-cli",
             entry: "src/cli.ts",
             outputs: [
@@ -365,12 +369,16 @@ describe("build pipe", () => {
               }
             ]
           }
-        },
+        ],
         publish: {}
       }))
 
-      expect(intent.build?.bun?.id).toBe("release-cli")
-      expect(intent.build?.bun?.outputs?.[4]?.target).toBe("windows-x64")
-      expect(intent.build?.bun?.outputs?.[4]?.variant?.binaryName).toBe("release")
+      const build = intent.builds?.[0]
+      expect(build?.builder).toBe("bun")
+      if (build?.builder === "bun") {
+        expect(build.id).toBe("release-cli")
+        expect(build.outputs?.[4]?.target).toBe("windows-x64")
+        expect(build.outputs?.[4]?.variant?.binaryName).toBe("release")
+      }
     }))
 })

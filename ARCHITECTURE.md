@@ -99,6 +99,12 @@ plus their own runtime layers. The 0.1 root export adds `plan`, `build`,
 `release`, and `verify` as Promise functions while the internal engine remains
 Effect-native and returns those summary types directly.
 
+The build phase uses canonical `<os>-<arch>[-musl]` targets and pure builder
+adapters. The 0.1 builder set is Bun, command, and prebuilt; Bun stages
+artifacts in-process through structured `StageArtifactOperation` data, while
+command and prebuilt make the build axis language-agnostic without changing
+the kernel.
+
 ## Boundary Rules
 
 - Publish operations are data until execution is explicitly approved.

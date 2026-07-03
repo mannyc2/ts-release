@@ -204,7 +204,8 @@ export const bunBuilder: Builder<BunBuildOptions> = {
       const compile = yield* compileTarget(target, options.cpu)
       yield* validateVariantOverride(id, output)
       const extension = platform.executableExtension ?? ""
-      const installPath = output.installPath ?? options.installPath
+      const binaryName = output.binaryName ?? output.variant?.binaryName ?? options.binaryName ?? binary
+      const installPath = output.installPath ?? output.variant?.installPath ?? options.installPath
       return {
         artifacts: [
           Artifact.make({
@@ -214,7 +215,7 @@ export const bunBuilder: Builder<BunBuildOptions> = {
             producedBy: "build:bun",
             platform: {
               ...platform,
-              binaryName: output.binaryName ?? options.binaryName ?? binary,
+              binaryName,
               ...(installPath === undefined ? {} : { installPath }),
               targetTriple: compile
             },

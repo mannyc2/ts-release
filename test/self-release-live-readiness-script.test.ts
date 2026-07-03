@@ -50,14 +50,12 @@ const writeJson = (path: string, value: unknown): Promise<void> =>
   writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 
 const releaseConfig = () => ({
-  build: {
-    pypiWheel: [
-      {
-        id: "pypi-wheel-linux-x64",
-        packageName: "ts-release"
-      }
-    ]
-  },
+  pypiWheel: [
+    {
+      id: "pypi-wheel-linux-x64",
+      packageName: "ts-release"
+    }
+  ],
   publish: {
     github: {
       repository: "mannyc2/ts-release"

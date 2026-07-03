@@ -9,9 +9,8 @@ export type NpmPackageSection = true | ReleaseConfigNpmPackageBuild
 
 const sectionFromConfig = (config: {
   readonly npmPackage?: boolean | ReleaseConfigNpmPackageBuild | undefined
-  readonly build?: { readonly npmPackage?: boolean | ReleaseConfigNpmPackageBuild | undefined } | undefined
 }): NpmPackageSection | undefined => {
-  const section = config.npmPackage ?? config.build?.npmPackage
+  const section = config.npmPackage
   return section === false ? undefined : section
 }
 

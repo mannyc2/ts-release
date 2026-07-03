@@ -7,7 +7,7 @@ The checked-in JSON templates are the same policy shape produced by `release
 init`.
 
 After copying a template, stage declared artifacts when the template has build
-recipes, then preview the distribution plan:
+sections, then preview the distribution plan:
 
 ```sh
 bun run cli plan --config release.config.json --format text
@@ -30,12 +30,12 @@ Available config templates:
 
 - `npm-only`: existing npm package with GitHub Actions trusted publishing.
 - `npm-github`: npm plus GitHub Releases.
-- `bun-cli-github`: binary-first distribution with a Bun executable artifact recipe, npm package publishing, and GitHub Release assets.
+- `bun-cli-github`: binary-first distribution with a Bun executable build, npm package publishing, and GitHub Release assets.
 - `portable-cli`: one Bun-compiled CLI distributed through GitHub Release assets, Homebrew, Scoop, npm, and optional PyPI wheels.
 - `multi-target-homebrew`: npm, GitHub Releases, and a Homebrew tap.
 - `multi-target-scoop`: npm, GitHub Releases, and a Scoop bucket.
 
-Templates with build recipes require an explicit staging step before publish
+Templates with build sections require an explicit staging step before publish
 planning expects those files to exist. The Bun CLI template derives
 installable variant metadata such as operating system, architecture, Linux libc,
 and Windows `.exe` extension from each compile target:

@@ -126,7 +126,7 @@ release model; the CLI is not a separate product direction.
 ```text
 release config
   -> normalized release identity
-  -> artifact recipes and inventory
+  -> build outputs and artifact inventory
   -> installable artifact variants
   -> target-specific distribution operations
   -> generated package-manager files
@@ -143,7 +143,7 @@ The library currently plans, stages, and validates these distribution surfaces:
 | Homebrew taps | generated formula files, macOS artifact variants, and approved tap pushes |
 | PyPI | already-built distributions and platform CLI wrapper wheels published through Twine |
 | Scoop buckets | generated manifest files, Windows binary shims, and approved bucket pushes |
-| Bun executables | optional binary artifact recipe staging before target planning |
+| Bun executables | optional Bun compile staging before target planning |
 
 It is not a fake universal package manager and does not hide each ecosystem's
 manifest rules. It can stage declared artifacts through adapters, but it does
@@ -154,7 +154,7 @@ data in one typed plan.
 ## CLI Workflow
 
 The first useful path is artifact-first: write or scaffold a config, stage any
-declared artifact recipes, plan the target distribution work, then run the
+declared build outputs, plan the target distribution work, then run the
 approved release workflow.
 
 The CLI intentionally has six top-level verbs:
@@ -220,12 +220,10 @@ and evidence location.
     "commit": "HEAD",
     "tagTemplate": "v{version}"
   },
-  "build": {
-    "npmPackage": {
-      "id": "package",
-      "path": ".",
-      "consumers": ["npm"]
-    }
+  "npmPackage": {
+    "id": "package",
+    "path": ".",
+    "consumers": ["npm"]
   },
   "publish": {
     "npm": {
@@ -259,10 +257,10 @@ interpolate `{version}`.
 
 ## Artifact Variants
 
-Artifact recipes can produce installable variants for different operating
-systems and architectures. Bun executable recipes derive variant metadata from
-their compile target, so the release plan can carry facts such as `linux`/`x64`
-or `windows`/`x64` before any package-manager adapter consumes the artifact.
+Bun builds can produce installable variants for different operating systems
+and architectures. The Bun builder derives variant metadata from each canonical
+target, so the release plan can carry facts such as `linux`/`x64` or
+`windows`/`x64` before any package-manager adapter consumes the artifact.
 
 ```json
 {
@@ -329,12 +327,10 @@ export default defineRelease({
     commit: "abc123",
     tag: "v0.1.0"
   },
-  build: {
-    npmPackage: {
-      id: "package",
-      path: ".",
-      consumers: ["npm"]
-    }
+  npmPackage: {
+    id: "package",
+    path: ".",
+    consumers: ["npm"]
   },
   publish: {
     npm: {
@@ -374,7 +370,7 @@ Available templates:
 - `multi-target-homebrew`
 - `multi-target-scoop`
 
-Templates with build recipes need an explicit staging step before publish
+Templates with build sections need an explicit staging step before publish
 planning expects the generated files to exist:
 
 ```sh

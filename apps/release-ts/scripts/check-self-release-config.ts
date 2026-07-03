@@ -7,11 +7,11 @@ const currentCommitSelector = "HEAD"
 const placeholderCommits = new Set(["replace-with-release-commit", "0000000"])
 const appPackagePath = "apps/release-ts/package.json"
 const releaseConfigPath = "apps/release-ts/release.config.json"
-const releaseCliRecipeId = "release-ts-cli"
+const releaseCliBuildId = "release-ts-cli"
 const releaseCliEntrypoint = "apps/release-ts/src/cli/main.ts"
 const pypiWheelArtifactPrefix = "pypi-wheel"
 
-interface ExpectedRecipeOutput {
+interface ExpectedBuildOutput {
   readonly id: string
   readonly target: string
   readonly path: string
@@ -26,7 +26,7 @@ interface ExpectedPyPiWheelBinary {
   readonly wheelPath: string
 }
 
-interface ExpectedPyPiWheelRecipe {
+interface ExpectedPyPiWheelConfig {
   readonly id: string
   readonly path: string
   readonly wheelTag: string
@@ -124,40 +124,41 @@ const collectArtifactRecords = (
   return records
 }
 
-const collectRecipeRecords = (
-  recipes: ReadonlyArray<unknown>,
+const collectConfigRecords = (
+  items: ReadonlyArray<unknown>,
+  label: string,
   failures: Array<string>
 ): Map<string, Record<string, unknown>> => {
   const records = new Map<string, Record<string, unknown>>()
-  for (const recipe of recipes) {
-    if (!isRecord(recipe)) {
-      failures.push("artifact recipes must be objects")
+  for (const item of items) {
+    if (!isRecord(item)) {
+      failures.push(`${label} entries must be objects`)
       continue
     }
-    const id = recipe.id
+    const id = item.id
     if (typeof id !== "string" || id.length === 0) {
-      failures.push("artifact recipe id must be a non-empty string")
+      failures.push(`${label} id must be a non-empty string`)
       continue
     }
-    records.set(id, recipe)
+    records.set(id, item)
   }
   return records
 }
 
 const collectOutputRecords = (
   outputs: ReadonlyArray<unknown>,
-  recipeId: string,
+  buildId: string,
   failures: Array<string>
 ): Map<string, Record<string, unknown>> => {
   const records = new Map<string, Record<string, unknown>>()
   for (const output of outputs) {
     if (!isRecord(output)) {
-      failures.push(`artifact recipe ${recipeId} outputs must be objects`)
+      failures.push(`build ${buildId} outputs must be objects`)
       continue
     }
     const id = output.id
     if (typeof id !== "string" || id.length === 0) {
-      failures.push(`artifact recipe ${recipeId} output id must be a non-empty string`)
+      failures.push(`build ${buildId} output id must be a non-empty string`)
       continue
     }
     records.set(id, output)
@@ -200,7 +201,7 @@ const checkArtifactPath = (
   }
 }
 
-const expectedRecipeOutputs = (version: string): ReadonlyArray<ExpectedRecipeOutput> => [
+const expectedBuildOutputs = (version: string): ReadonlyArray<ExpectedBuildOutput> => [
   {
     id: "cli-linux-x64",
     target: "linux-x64",
@@ -238,7 +239,7 @@ const expectedRecipeOutputs = (version: string): ReadonlyArray<ExpectedRecipeOut
   }
 ]
 
-const expectedPyPiWheelRecipes = (version: string): ReadonlyArray<ExpectedPyPiWheelRecipe> => [
+const expectedPyPiWheelConfigs = (version: string): ReadonlyArray<ExpectedPyPiWheelConfig> => [
   {
     id: "pypi-wheel-linux-x64",
     path: `.release/artifacts/ts_release-${version}-py3-none-manylinux2014_x86_64.whl`,
@@ -296,73 +297,73 @@ const expectedPyPiWheelRecipes = (version: string): ReadonlyArray<ExpectedPyPiWh
   }
 ]
 
-const checkRecipeOutput = (
+const checkBuildOutput = (
   output: Record<string, unknown> | undefined,
-  expected: ExpectedRecipeOutput,
+  expected: ExpectedBuildOutput,
   packageName: string,
   packageVersion: string,
   failures: Array<string>
 ): void => {
   if (output === undefined) {
-    failures.push(`artifact recipe ${releaseCliRecipeId} must include output ${expected.id}`)
+    failures.push(`build ${releaseCliBuildId} must include output ${expected.id}`)
     return
   }
   if (output.target !== expected.target) {
-    failures.push(`artifact recipe output ${expected.id} target ${String(output.target)} must equal ${expected.target}`)
+    failures.push(`build output ${expected.id} target ${String(output.target)} must equal ${expected.target}`)
   }
   if (typeof output.path !== "string" || output.path.length === 0) {
-    failures.push(`artifact recipe output ${expected.id} path must be a non-empty string`)
+    failures.push(`build output ${expected.id} path must be a non-empty string`)
     return
   }
   const expandedPath = expandReleaseTemplate(output.path, packageName, packageVersion)
   if (expandedPath !== expected.path) {
-    failures.push(`artifact recipe output ${expected.id} path ${output.path} expands to ${expandedPath}; expected ${expected.path}`)
+    failures.push(`build output ${expected.id} path ${output.path} expands to ${expandedPath}; expected ${expected.path}`)
   }
   if (output.path.startsWith(".release/artifacts/") && !output.path.includes("{version}")) {
-    failures.push(`artifact recipe output ${expected.id} path ${output.path} must use {version}`)
+    failures.push(`build output ${expected.id} path ${output.path} must use {version}`)
   }
   if (typeof output.downloadUrl !== "string" || output.downloadUrl.length === 0) {
-    failures.push(`artifact recipe output ${expected.id} downloadUrl must be a non-empty string`)
+    failures.push(`build output ${expected.id} downloadUrl must be a non-empty string`)
   } else {
     const expandedDownloadUrl = expandReleaseTemplate(output.downloadUrl, packageName, packageVersion)
     if (expandedDownloadUrl !== expected.downloadUrl) {
       failures.push(
-        `artifact recipe output ${expected.id} downloadUrl ${output.downloadUrl} expands to ${expandedDownloadUrl}; expected ${expected.downloadUrl}`
+        `build output ${expected.id} downloadUrl ${output.downloadUrl} expands to ${expandedDownloadUrl}; expected ${expected.downloadUrl}`
       )
     }
   }
   for (const consumer of expected.consumers) {
     if (!stringArrayIncludes(output.consumers, consumer)) {
-      failures.push(`artifact recipe output ${expected.id} must be consumed by ${consumer}`)
+      failures.push(`build output ${expected.id} must be consumed by ${consumer}`)
     }
   }
 }
 
 const checkPyPiWheelPath = (
-  recipe: Record<string, unknown>,
-  expected: ExpectedPyPiWheelRecipe,
+  wheel: Record<string, unknown>,
+  expected: ExpectedPyPiWheelConfig,
   packageName: string,
   packageVersion: string,
   failures: Array<string>
 ): void => {
-  if (typeof recipe.path !== "string" || recipe.path.length === 0) {
-    failures.push(`artifact recipe ${expected.id} path must be a non-empty string`)
+  if (typeof wheel.path !== "string" || wheel.path.length === 0) {
+    failures.push(`PyPI wheel ${expected.id} path must be a non-empty string`)
     return
   }
-  const expandedPath = expandReleaseTemplate(recipe.path, packageName, packageVersion)
+  const expandedPath = expandReleaseTemplate(wheel.path, packageName, packageVersion)
   if (expandedPath !== expected.path) {
-    failures.push(`artifact recipe ${expected.id} path ${recipe.path} expands to ${expandedPath}; expected ${expected.path}`)
+    failures.push(`PyPI wheel ${expected.id} path ${wheel.path} expands to ${expandedPath}; expected ${expected.path}`)
   }
-  if (recipe.path.startsWith(".release/artifacts/") && !recipe.path.includes("{version}")) {
-    failures.push(`artifact recipe ${expected.id} path ${recipe.path} must use {version}`)
+  if (wheel.path.startsWith(".release/artifacts/") && !wheel.path.includes("{version}")) {
+    failures.push(`PyPI wheel ${expected.id} path ${wheel.path} must use {version}`)
   }
-  if (recipe.wheelTag !== expected.wheelTag) {
-    failures.push(`artifact recipe ${expected.id} wheelTag ${String(recipe.wheelTag)} must equal ${expected.wheelTag}`)
+  if (wheel.wheelTag !== expected.wheelTag) {
+    failures.push(`PyPI wheel ${expected.id} wheelTag ${String(wheel.wheelTag)} must equal ${expected.wheelTag}`)
   }
 }
 
 const checkPyPiWheelBinary = (
-  recipeId: string,
+  wheelId: string,
   binary: Record<string, unknown> | undefined,
   key: string,
   expected: ExpectedPyPiWheelBinary,
@@ -371,46 +372,46 @@ const checkPyPiWheelBinary = (
   failures: Array<string>
 ): void => {
   if (binary === undefined) {
-    failures.push(`artifact recipe ${recipeId} must include binary ${key}`)
+    failures.push(`PyPI wheel ${wheelId} must include binary ${key}`)
     return
   }
   if (binary.os !== expected.os) {
-    failures.push(`artifact recipe ${recipeId} binary ${key} os ${String(binary.os)} must equal ${expected.os}`)
+    failures.push(`PyPI wheel ${wheelId} binary ${key} os ${String(binary.os)} must equal ${expected.os}`)
   }
   if (binary.arch !== expected.arch) {
-    failures.push(`artifact recipe ${recipeId} binary ${key} arch ${String(binary.arch)} must equal ${expected.arch}`)
+    failures.push(`PyPI wheel ${wheelId} binary ${key} arch ${String(binary.arch)} must equal ${expected.arch}`)
   }
   if (typeof binary.sourcePath !== "string" || binary.sourcePath.length === 0) {
-    failures.push(`artifact recipe ${recipeId} binary ${key} sourcePath must be a non-empty string`)
+    failures.push(`PyPI wheel ${wheelId} binary ${key} sourcePath must be a non-empty string`)
   } else {
     const expandedSourcePath = expandReleaseTemplate(binary.sourcePath, packageName, packageVersion)
     if (expandedSourcePath !== expected.sourcePath) {
       failures.push(
-        `artifact recipe ${recipeId} binary ${key} sourcePath ${binary.sourcePath} expands to ${expandedSourcePath}; expected ${expected.sourcePath}`
+        `PyPI wheel ${wheelId} binary ${key} sourcePath ${binary.sourcePath} expands to ${expandedSourcePath}; expected ${expected.sourcePath}`
       )
     }
     if (binary.sourcePath.startsWith(".release/artifacts/") && !binary.sourcePath.includes("{version}")) {
-      failures.push(`artifact recipe ${recipeId} binary ${key} sourcePath ${binary.sourcePath} must use {version}`)
+      failures.push(`PyPI wheel ${wheelId} binary ${key} sourcePath ${binary.sourcePath} must use {version}`)
     }
   }
   if (binary.wheelPath !== expected.wheelPath) {
-    failures.push(`artifact recipe ${recipeId} binary ${key} wheelPath ${String(binary.wheelPath)} must equal ${expected.wheelPath}`)
+    failures.push(`PyPI wheel ${wheelId} binary ${key} wheelPath ${String(binary.wheelPath)} must equal ${expected.wheelPath}`)
   }
 }
 
 const collectPyPiWheelBinaryRecords = (
-  recipeId: string,
+  wheelId: string,
   binaries: ReadonlyArray<unknown>,
   failures: Array<string>
 ): Map<string, Record<string, unknown>> => {
   const records = new Map<string, Record<string, unknown>>()
   for (const binary of binaries) {
     if (!isRecord(binary)) {
-      failures.push(`artifact recipe ${recipeId} binaries must be objects`)
+      failures.push(`PyPI wheel ${wheelId} binaries must be objects`)
       continue
     }
     if (typeof binary.os !== "string" || typeof binary.arch !== "string") {
-      failures.push(`artifact recipe ${recipeId} binary os and arch must be non-empty strings`)
+      failures.push(`PyPI wheel ${wheelId} binary os and arch must be non-empty strings`)
       continue
     }
     records.set(`${binary.os}-${binary.arch}`, binary)
@@ -531,121 +532,123 @@ if (isRecord(manifest) && isRecord(appManifest) && isRecord(config)) {
     }
   }
 
-  const build = field(config, "build")
-  if (!isRecord(build)) {
-    failures.push(`${releaseConfigPath} build must be an object`)
-  } else if (packageName !== undefined && packageVersion !== undefined) {
-    const npmPackage = field(build, "npmPackage")
+  if (packageName !== undefined && packageVersion !== undefined) {
+    const npmPackage = field(config, "npmPackage")
     if (!isRecord(npmPackage)) {
-      failures.push(`${releaseConfigPath} build.npmPackage must be an object`)
+      failures.push(`${releaseConfigPath} npmPackage must be an object`)
     } else {
-      checkTargetField(npmPackage, "build.npmPackage", "id", "npm-package", failures)
-      checkTargetField(npmPackage, "build.npmPackage", "path", ".", failures)
-      checkTargetArrayField(npmPackage, "build.npmPackage", "consumers", ["npm"], failures)
+      checkTargetField(npmPackage, "npmPackage", "id", "npm-package", failures)
+      checkTargetField(npmPackage, "npmPackage", "path", ".", failures)
+      checkTargetArrayField(npmPackage, "npmPackage", "consumers", ["npm"], failures)
     }
-    const bunRecipe = field(build, "bun")
-    const pypiWheel = field(build, "pypiWheel")
-    const recipeInputs = [
-      ...(isRecord(bunRecipe) ? [bunRecipe] : []),
-      ...(Array.isArray(pypiWheel) ? pypiWheel : isRecord(pypiWheel) ? [pypiWheel] : [])
-    ]
-    const recipes = collectRecipeRecords(recipeInputs, failures)
-    const expectedPyPiRecipes = expectedPyPiWheelRecipes(packageVersion)
-    if (!isRecord(bunRecipe)) {
-      failures.push(`${releaseConfigPath} build.bun must be an object`)
+    const builds = field(config, "builds")
+    const pypiWheel = field(config, "pypiWheel")
+    const buildRecords = collectConfigRecords(Array.isArray(builds) ? builds : [], "builds", failures)
+    const pypiWheelRecords = collectConfigRecords(Array.isArray(pypiWheel) ? pypiWheel : [], "pypiWheel", failures)
+    const expectedPyPiWheels = expectedPyPiWheelConfigs(packageVersion)
+    if (!Array.isArray(builds)) {
+      failures.push(`${releaseConfigPath} builds must be an array`)
     }
     if (!Array.isArray(pypiWheel)) {
-      failures.push(`${releaseConfigPath} build.pypiWheel must be an array`)
+      failures.push(`${releaseConfigPath} pypiWheel must be an array`)
     }
-    if (recipes.size !== 1 + expectedPyPiRecipes.length) {
-      failures.push(`${releaseConfigPath} build must contain release-ts CLI and platform PyPI wheel recipes`)
+    if (buildRecords.size !== 1 || pypiWheelRecords.size !== expectedPyPiWheels.length) {
+      failures.push(`${releaseConfigPath} must contain one release-ts CLI build and platform PyPI wheels`)
     }
-    const recipe = recipes.get(releaseCliRecipeId)
-    if (recipe === undefined) {
-      failures.push(`${releaseConfigPath} build.bun must include recipe ${releaseCliRecipeId}`)
+    const build = buildRecords.get(releaseCliBuildId)
+    if (build === undefined) {
+      failures.push(`${releaseConfigPath} builds must include ${releaseCliBuildId}`)
     } else {
-      if (recipe.entry !== releaseCliEntrypoint) {
-        failures.push(`artifact recipe ${releaseCliRecipeId} entry ${String(recipe.entry)} must equal ${releaseCliEntrypoint}`)
+      if (build.builder !== "bun") {
+        failures.push(`build ${releaseCliBuildId} builder must equal bun`)
       }
-      const outputs = field(recipe, "outputs")
+      if (build.entry !== releaseCliEntrypoint) {
+        failures.push(`build ${releaseCliBuildId} entry ${String(build.entry)} must equal ${releaseCliEntrypoint}`)
+      }
+      const outputs = field(build, "outputs")
       if (!Array.isArray(outputs)) {
-        failures.push(`artifact recipe ${releaseCliRecipeId} outputs must be an array`)
+        failures.push(`build ${releaseCliBuildId} outputs must be an array`)
       } else {
-        const outputRecords = collectOutputRecords(outputs, releaseCliRecipeId, failures)
-        for (const expected of expectedRecipeOutputs(packageVersion)) {
-          checkRecipeOutput(outputRecords.get(expected.id), expected, packageName, packageVersion, failures)
+        const outputRecords = collectOutputRecords(outputs, releaseCliBuildId, failures)
+        for (const expected of expectedBuildOutputs(packageVersion)) {
+          checkBuildOutput(outputRecords.get(expected.id), expected, packageName, packageVersion, failures)
         }
         for (const outputId of outputRecords.keys()) {
-          if (!expectedRecipeOutputs(packageVersion).some((expected) => expected.id === outputId)) {
-            failures.push(`artifact recipe ${releaseCliRecipeId} has unexpected output ${outputId}`)
+          if (!expectedBuildOutputs(packageVersion).some((expected) => expected.id === outputId)) {
+            failures.push(`build ${releaseCliBuildId} has unexpected output ${outputId}`)
           }
         }
       }
     }
-    for (const expected of expectedPyPiRecipes) {
-      const pypiWheelRecipe = recipes.get(expected.id)
-      if (pypiWheelRecipe === undefined) {
-        failures.push(`${releaseConfigPath} build.pypiWheel must include recipe ${expected.id}`)
+    for (const expected of expectedPyPiWheels) {
+      const pypiWheelConfig = pypiWheelRecords.get(expected.id)
+      if (pypiWheelConfig === undefined) {
+        failures.push(`${releaseConfigPath} pypiWheel must include ${expected.id}`)
         continue
       }
-      checkPyPiWheelPath(pypiWheelRecipe, expected, packageName, packageVersion, failures)
-      if (pypiWheelRecipe.packageName !== "ts-release") {
-        failures.push(`artifact recipe ${expected.id} packageName must equal ts-release`)
+      checkPyPiWheelPath(pypiWheelConfig, expected, packageName, packageVersion, failures)
+      if (pypiWheelConfig.packageName !== "ts-release") {
+        failures.push(`PyPI wheel ${expected.id} packageName must equal ts-release`)
       }
-      if (pypiWheelRecipe.moduleName !== "ts_release") {
-        failures.push(`artifact recipe ${expected.id} moduleName must equal ts_release`)
+      if (pypiWheelConfig.moduleName !== "ts_release") {
+        failures.push(`PyPI wheel ${expected.id} moduleName must equal ts_release`)
       }
-      if (pypiWheelRecipe.consoleScript !== "ts-release") {
-        failures.push(`artifact recipe ${expected.id} consoleScript must equal ts-release`)
+      if (pypiWheelConfig.consoleScript !== "ts-release") {
+        failures.push(`PyPI wheel ${expected.id} consoleScript must equal ts-release`)
       }
-      if (pypiWheelRecipe.summary !== "Portable artifact and package-manager distribution planning for TypeScript projects.") {
-        failures.push(`artifact recipe ${expected.id} summary must match package description`)
+      if (pypiWheelConfig.summary !== "Portable artifact and package-manager distribution planning for TypeScript projects.") {
+        failures.push(`PyPI wheel ${expected.id} summary must match package description`)
       }
-      if (pypiWheelRecipe.homepage !== "https://github.com/mannyc2/ts-release") {
-        failures.push(`artifact recipe ${expected.id} homepage must equal https://github.com/mannyc2/ts-release`)
+      if (pypiWheelConfig.homepage !== "https://github.com/mannyc2/ts-release") {
+        failures.push(`PyPI wheel ${expected.id} homepage must equal https://github.com/mannyc2/ts-release`)
       }
-      if (pypiWheelRecipe.license !== "MIT") {
-        failures.push(`artifact recipe ${expected.id} license must equal MIT`)
+      if (pypiWheelConfig.license !== "MIT") {
+        failures.push(`PyPI wheel ${expected.id} license must equal MIT`)
       }
-      if (pypiWheelRecipe.requiresPython !== ">=3.8") {
-        failures.push(`artifact recipe ${expected.id} requiresPython must equal >=3.8`)
+      if (pypiWheelConfig.requiresPython !== ">=3.8") {
+        failures.push(`PyPI wheel ${expected.id} requiresPython must equal >=3.8`)
       }
-      if (!stringArrayIncludes(pypiWheelRecipe.consumers, "pypi")) {
-        failures.push(`artifact recipe ${expected.id} must be consumed by pypi`)
+      if (!stringArrayIncludes(pypiWheelConfig.consumers, "pypi")) {
+        failures.push(`PyPI wheel ${expected.id} must be consumed by pypi`)
       }
-      const binaries = field(pypiWheelRecipe, "binaries")
+      const binaries = field(pypiWheelConfig, "binaries")
       if (!Array.isArray(binaries)) {
-        failures.push(`artifact recipe ${expected.id} binaries must be an array`)
+        failures.push(`PyPI wheel ${expected.id} binaries must be an array`)
       } else {
         const binaryRecords = collectPyPiWheelBinaryRecords(expected.id, binaries, failures)
         const key = `${expected.binary.os}-${expected.binary.arch}`
         checkPyPiWheelBinary(expected.id, binaryRecords.get(key), key, expected.binary, packageName, packageVersion, failures)
         for (const binaryKey of binaryRecords.keys()) {
           if (binaryKey !== key) {
-            failures.push(`artifact recipe ${expected.id} has unexpected binary ${binaryKey}`)
+            failures.push(`PyPI wheel ${expected.id} has unexpected binary ${binaryKey}`)
           }
         }
       }
     }
-    for (const recipeId of recipes.keys()) {
-      if (recipeId !== releaseCliRecipeId && !expectedPyPiRecipes.some((expected) => expected.id === recipeId)) {
-        failures.push(`${releaseConfigPath} build has unexpected recipe ${recipeId}`)
+    for (const buildId of buildRecords.keys()) {
+      if (buildId !== releaseCliBuildId) {
+        failures.push(`${releaseConfigPath} builds has unexpected entry ${buildId}`)
       }
     }
-    const staticArtifacts = field(build, "artifacts")
+    for (const wheelId of pypiWheelRecords.keys()) {
+      if (!expectedPyPiWheels.some((expected) => expected.id === wheelId)) {
+        failures.push(`${releaseConfigPath} pypiWheel has unexpected entry ${wheelId}`)
+      }
+    }
+    const staticArtifacts = field(config, "artifacts")
     if (staticArtifacts !== undefined) {
       if (!Array.isArray(staticArtifacts)) {
-        failures.push(`${releaseConfigPath} build.artifacts must be an array when configured`)
+        failures.push(`${releaseConfigPath} artifacts must be an array when configured`)
       } else {
         const staticArtifactRecords = collectArtifactRecords(staticArtifacts, failures)
-        for (const expected of expectedRecipeOutputs(packageVersion)) {
+        for (const expected of expectedBuildOutputs(packageVersion)) {
           if (staticArtifactRecords.has(expected.id)) {
-            failures.push(`artifact ${expected.id} must be declared by build.bun outputs, not build.artifacts`)
+            failures.push(`artifact ${expected.id} must be declared by builds outputs, not artifacts`)
           }
         }
-        for (const expected of expectedPyPiRecipes) {
+        for (const expected of expectedPyPiWheels) {
           if (staticArtifactRecords.has(expected.id)) {
-            failures.push(`artifact ${expected.id} must be declared by build.pypiWheel, not build.artifacts`)
+            failures.push(`artifact ${expected.id} must be declared by pypiWheel, not artifacts`)
           }
         }
       }

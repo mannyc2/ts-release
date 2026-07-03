@@ -7,18 +7,16 @@
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "build": {
-    "artifacts": [
-      {
-        "id": "wheel",
-        "path": "artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
-        "format": "file",
-        "consumers": [
-          "pypi"
-        ]
-      }
-    ]
-  },
+  "artifacts": [
+    {
+      "id": "wheel",
+      "path": "artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
+      "format": "file",
+      "consumers": [
+        "pypi"
+      ]
+    }
+  ],
   "publish": {
     "pypi": {
       "repositoryUrl": "https://test.pypi.org/legacy/",

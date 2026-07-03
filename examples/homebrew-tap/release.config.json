@@ -7,18 +7,16 @@
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "build": {
-    "artifacts": [
-      {
-        "id": "archive",
-        "path": "artifacts/release-example-homebrew-0.1.0.tgz",
-        "format": "tarball",
-        "consumers": [
-          "homebrew"
-        ]
-      }
-    ]
-  },
+  "artifacts": [
+    {
+      "id": "archive",
+      "path": "artifacts/release-example-homebrew-0.1.0.tgz",
+      "format": "tarball",
+      "consumers": [
+        "homebrew"
+      ]
+    }
+  ],
   "publish": {
     "homebrew": {
       "repository": "owner/homebrew-tap",

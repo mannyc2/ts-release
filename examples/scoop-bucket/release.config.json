@@ -7,18 +7,16 @@
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "build": {
-    "artifacts": [
-      {
-        "id": "archive",
-        "path": "artifacts/release-example-scoop-0.1.0.zip",
-        "format": "zip",
-        "consumers": [
-          "scoop"
-        ]
-      }
-    ]
-  },
+  "artifacts": [
+    {
+      "id": "archive",
+      "path": "artifacts/release-example-scoop-0.1.0.zip",
+      "format": "zip",
+      "consumers": [
+        "scoop"
+      ]
+    }
+  ],
   "publish": {
     "scoop": {
       "repository": "owner/scoop-bucket",

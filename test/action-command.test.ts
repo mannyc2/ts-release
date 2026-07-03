@@ -417,7 +417,7 @@ describe("ts-release action", () => {
 
       expect(io.outputs.get("status")).toBe("passed")
       expect(io.outputs.get("release_name")).toBe("release")
-      expect(io.summaries.join("\n")).toContain("staged artifact recipes: 0")
+      expect(io.summaries.join("\n")).toContain("staged artifact operations: 0")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

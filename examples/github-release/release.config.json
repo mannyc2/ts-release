@@ -8,18 +8,16 @@
     "tag": "v0.1.0",
     "notes": "Example GitHub release"
   },
-  "build": {
-    "artifacts": [
-      {
-        "id": "archive",
-        "path": "artifacts/release-example-github-0.1.0.tgz",
-        "format": "tarball",
-        "consumers": [
-          "github"
-        ]
-      }
-    ]
-  },
+  "artifacts": [
+    {
+      "id": "archive",
+      "path": "artifacts/release-example-github-0.1.0.tgz",
+      "format": "tarball",
+      "consumers": [
+        "github"
+      ]
+    }
+  ],
   "publish": {
     "github": {
       "repository": "owner/repo",

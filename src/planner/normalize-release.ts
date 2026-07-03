@@ -380,7 +380,7 @@ const compactArtifacts = (
   intent: ReleaseIntent
 ): ReadonlyArray<ArtifactIntent> => {
   return [
-    ...(intent.build?.artifacts ?? []).map(compactManualArtifact)
+    ...(intent.artifacts ?? []).map(compactManualArtifact)
   ]
 }
 
@@ -422,36 +422,74 @@ const planBuildState = Effect.fn("planBuildState")(function*(
   )
 })
 
-interface LegacyArtifactMetadata {
+interface ArtifactMetadata {
   readonly consumers: ReadonlyArray<string>
   readonly downloadUrl?: string | undefined
 }
 
 const defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"] as const
 
-const legacyBunArtifactId = (buildId: string, target: string): string =>
+const bunArtifactId = (buildId: string, target: string): string =>
   `${buildId}-${target}`
 
-const legacyArtifactMetadata = (
+const isPyPiWheelArray = (
+  wheel: ReleaseIntent["pypiWheel"]
+): wheel is ReadonlyArray<ReleaseConfigPyPiWheelBuild> =>
+  Array.isArray(wheel)
+
+const wheelsFromConfig = (
+  wheel: ReleaseIntent["pypiWheel"]
+): ReadonlyArray<ReleaseConfigPyPiWheelBuild> => {
+  if (wheel === undefined) {
+    return []
+  }
+  return isPyPiWheelArray(wheel) ? wheel : [wheel]
+}
+
+const buildArtifactMetadata = (
   intent: ReleaseIntent
-): ReadonlyMap<string, LegacyArtifactMetadata> => {
-  const metadata = new Map<string, LegacyArtifactMetadata>()
-  const bun = intent.build?.bun
-  if (bun !== undefined) {
-    const buildId = bun.id ?? "cli"
-    if (bun.outputs === undefined) {
-      for (const target of bun.targets ?? defaultBunTargets) {
-        metadata.set(legacyBunArtifactId(buildId, target), {
-          consumers: [...(bun.consumers ?? ["github"])]
-        })
+): ReadonlyMap<string, ArtifactMetadata> => {
+  const metadata = new Map<string, ArtifactMetadata>()
+  const npmPackage = intent.npmPackage
+  if (npmPackage !== undefined && npmPackage !== false) {
+    const config = npmPackage === true ? undefined : npmPackage
+    metadata.set(config?.id ?? "npm-package", {
+      consumers: [...(config?.consumers ?? ["npm"])]
+    })
+  }
+  for (const wheel of wheelsFromConfig(intent.pypiWheel)) {
+    metadata.set(wheel.id, {
+      consumers: [...(wheel.consumers ?? ["pypi"])]
+    })
+  }
+  for (const build of intent.builds ?? []) {
+    switch (build.builder) {
+      case "bun": {
+        const buildId = build.id ?? "cli"
+        if (build.outputs === undefined) {
+          for (const target of build.targets ?? defaultBunTargets) {
+            metadata.set(bunArtifactId(buildId, target), {
+              consumers: [...(build.consumers ?? ["github"])]
+            })
+          }
+        } else {
+          for (const output of build.outputs) {
+            metadata.set(output.id ?? bunArtifactId(buildId, output.target), {
+              consumers: [...(output.consumers ?? build.consumers ?? ["github"])],
+              ...(output.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl })
+            })
+          }
+        }
+        break
       }
-    } else {
-      for (const output of bun.outputs) {
-        metadata.set(output.id ?? legacyBunArtifactId(buildId, output.target), {
-          consumers: [...(output.consumers ?? bun.consumers ?? ["github"])],
-          ...(output.downloadUrl === undefined ? {} : { downloadUrl: output.downloadUrl })
-        })
-      }
+      case "command":
+      case "prebuilt":
+        for (const target of build.targets) {
+          metadata.set(bunArtifactId(build.id ?? build.builder, target), {
+            consumers: ["github"]
+          })
+        }
+        break
     }
   }
   return metadata
@@ -459,7 +497,7 @@ const legacyArtifactMetadata = (
 
 const consumersForPipelineArtifact = (
   artifact: Artifact,
-  metadata: ReadonlyMap<string, LegacyArtifactMetadata>
+  metadata: ReadonlyMap<string, ArtifactMetadata>
 ): ReadonlyArray<string> => {
   const hinted = metadata.get(artifact.id)?.consumers
   if (hinted !== undefined) {
@@ -483,19 +521,21 @@ const formatForPipelineArtifact = (artifact: Artifact): "directory" | "executabl
 const artifactIntentFromPipelineArtifact = (
   artifact: Artifact,
   identity: ReleaseIdentity,
-  metadata: ReadonlyMap<string, LegacyArtifactMetadata>
-): ArtifactIntent =>
-  ArtifactIntent.make({
+  metadata: ReadonlyMap<string, ArtifactMetadata>
+): ArtifactIntent => {
+  const artifactMetadata = metadata.get(artifact.id)
+  return ArtifactIntent.make({
     id: artifact.id,
     path: artifact.path,
-    ...(metadata.get(artifact.id)?.downloadUrl === undefined
+    ...(artifactMetadata?.downloadUrl === undefined
       ? {}
-      : { downloadUrl: renderReleaseTemplate(metadata.get(artifact.id)?.downloadUrl ?? "", identity) }),
+      : { downloadUrl: renderReleaseTemplate(artifactMetadata.downloadUrl, identity) }),
     format: formatForPipelineArtifact(artifact),
     consumers: [...consumersForPipelineArtifact(artifact, metadata)],
     ...(artifact.checksum === undefined ? {} : { checksum: artifact.checksum }),
     ...(artifact.platform === undefined ? {} : { variant: artifact.platform })
   })
+}
 
 const compactNpmTrustedPublishing = (
   config: boolean | ReleaseConfigNpmTrustedPublishing | undefined
@@ -696,7 +736,7 @@ export const resolveReleaseBuild = Effect.fn("resolveReleaseBuild")(function*(
   const identitySource = yield* releaseIdentitySourceFromConfig(intent.project)
   const identity = yield* resolveReleaseIdentitySource(identitySource, root)
   const buildState = yield* planBuildState(intent, identity)
-  const metadata = legacyArtifactMetadata(intent)
+  const metadata = buildArtifactMetadata(intent)
   return {
     identity,
     buildState,

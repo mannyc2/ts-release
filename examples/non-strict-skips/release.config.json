@@ -7,18 +7,16 @@
     "commit": "example",
     "tag": "v0.1.0"
   },
-  "build": {
-    "artifacts": [
-      {
-        "id": "archive",
-        "path": "artifacts/release-example-skips-0.1.0.tgz",
-        "format": "tarball",
-        "consumers": [
-          "github"
-        ]
-      }
-    ]
-  },
+  "artifacts": [
+    {
+      "id": "archive",
+      "path": "artifacts/release-example-skips-0.1.0.tgz",
+      "format": "tarball",
+      "consumers": [
+        "github"
+      ]
+    }
+  ],
   "publish": {
     "github": {
       "repository": "owner/repo",

@@ -55,12 +55,10 @@ export const minimalConfig = JSON.stringify({
     commit: "abc123",
     tag: "v0.1.0"
   },
-  build: {
-    npmPackage: {
-      id: "package",
-      path: ".",
-      consumers: ["npm"]
-    }
+  npmPackage: {
+    id: "package",
+    path: ".",
+    consumers: ["npm"]
   },
   publish: {
     npm: {
@@ -99,21 +97,19 @@ export const partialWorkflowConfig = JSON.stringify({
     commit: "abc123",
     tag: "v0.1.0"
   },
-  build: {
-    npmPackage: {
-      id: "package",
-      path: ".",
-      consumers: ["npm"]
-    },
-    artifacts: [
-      {
-        id: "archive",
-        path: "artifacts/release-0.1.0.tgz",
-        format: "tarball",
-        consumers: ["homebrew"]
-      }
-    ]
+  npmPackage: {
+    id: "package",
+    path: ".",
+    consumers: ["npm"]
   },
+  artifacts: [
+    {
+      id: "archive",
+      path: "artifacts/release-0.1.0.tgz",
+      format: "tarball",
+      consumers: ["homebrew"]
+    }
+  ],
   publish: {
     homebrew: {
       repository: "owner/homebrew-tap",
@@ -298,69 +294,31 @@ const compactPublishFromTargets = (targets: ReadonlyArray<Record<string, unknown
   return publish
 }
 
-const compactBuildFromOldInputs = (
-  artifacts: ReadonlyArray<Record<string, unknown>>,
-  artifactRecipes: ReadonlyArray<Record<string, unknown>> | undefined
-): Record<string, unknown> | undefined => {
-  const build: Record<string, unknown> = {}
-  if (artifacts.length > 0) {
-    build.artifacts = artifacts
-  }
-  const pypiWheels: Array<Record<string, unknown>> = []
-  for (const recipe of artifactRecipes ?? []) {
-    if (recipe._tag === "BunExecutableArtifactRecipe") {
-      build.bun = {
-        ...copyFields(recipe, ["id", "binary", "cpu", "minify"]),
-        entry: recipe.entrypoint,
-        outputs: recipe.outputs
-      }
-    }
-    if (recipe._tag === "PyPiWheelArtifactRecipe") {
-      pypiWheels.push(copyFields(recipe, [
-        "id",
-        "path",
-        "wheelTag",
-        "packageName",
-        "moduleName",
-        "consoleScript",
-        "summary",
-        "homepage",
-        "license",
-        "requiresPython",
-        "binaries",
-        "consumers"
-      ]))
-    }
-  }
-  if (pypiWheels.length === 1) {
-    build.pypiWheel = pypiWheels[0]
-  }
-  if (pypiWheels.length > 1) {
-    build.pypiWheel = pypiWheels
-  }
-  return Object.keys(build).length === 0 ? undefined : build
-}
-
 export const releaseConfig = ({
   identity = releaseIdentity(),
   artifacts,
-  artifactRecipes,
+  builds,
+  npmPackage,
+  pypiWheel,
   targets,
   strict = true,
   evidenceDirectory = ".release/evidence"
 }: {
   readonly identity?: Record<string, unknown>
   readonly artifacts: ReadonlyArray<Record<string, unknown>>
-  readonly artifactRecipes?: ReadonlyArray<Record<string, unknown>>
+  readonly builds?: ReadonlyArray<Record<string, unknown>>
+  readonly npmPackage?: boolean | Record<string, unknown>
+  readonly pypiWheel?: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>
   readonly targets: ReadonlyArray<Record<string, unknown>>
   readonly strict?: boolean
   readonly evidenceDirectory?: string
 }) =>
   JSON.stringify({
     project: compactProjectFromIdentity(identity),
-    ...(compactBuildFromOldInputs(artifacts, artifactRecipes) === undefined
-      ? {}
-      : { build: compactBuildFromOldInputs(artifacts, artifactRecipes) }),
+    ...(npmPackage === undefined ? {} : { npmPackage }),
+    ...(builds === undefined || builds.length === 0 ? {} : { builds }),
+    ...(pypiWheel === undefined ? {} : { pypiWheel }),
+    ...(artifacts.length === 0 ? {} : { artifacts }),
     publish: compactPublishFromTargets(targets),
     strict,
     evidence: evidenceDirectory

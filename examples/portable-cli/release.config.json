@@ -8,8 +8,16 @@
     "commit": "abc123",
     "tag": "v0.1.0"
   },
-  "build": {
-    "bun": {
+  "npmPackage": {
+    "id": "package",
+    "path": ".",
+    "consumers": [
+      "npm"
+    ]
+  },
+  "builds": [
+    {
+      "builder": "bun",
       "id": "cli",
       "entry": "src/cli.ts",
       "outputs": [
@@ -82,132 +90,125 @@
           }
         }
       ]
-    },
-    "pypiWheel": [
-      {
-        "id": "pypi-wheel-linux-x64",
-        "path": "artifacts/portable_example-{version}-py3-none-manylinux2014_x86_64.whl",
-        "wheelTag": "py3-none-manylinux2014_x86_64",
-        "packageName": "portable-example",
-        "moduleName": "portable_example",
-        "consoleScript": "portable-example",
-        "summary": "Portable CLI wrapper for @scope/portable-example.",
-        "homepage": "https://github.com/owner/portable-example",
-        "license": "MIT",
-        "requiresPython": ">=3.8",
-        "binaries": [
-          {
-            "os": "linux",
-            "arch": "x64",
-            "sourcePath": "artifacts/portable-example-{version}-linux-x64",
-            "wheelPath": "portable_example/bin/portable-example-linux-x64"
-          }
-        ],
-        "consumers": [
-          "pypi"
-        ]
-      },
-      {
-        "id": "pypi-wheel-linux-arm64",
-        "path": "artifacts/portable_example-{version}-py3-none-manylinux2014_aarch64.whl",
-        "wheelTag": "py3-none-manylinux2014_aarch64",
-        "packageName": "portable-example",
-        "moduleName": "portable_example",
-        "consoleScript": "portable-example",
-        "summary": "Portable CLI wrapper for @scope/portable-example.",
-        "homepage": "https://github.com/owner/portable-example",
-        "license": "MIT",
-        "requiresPython": ">=3.8",
-        "binaries": [
-          {
-            "os": "linux",
-            "arch": "arm64",
-            "sourcePath": "artifacts/portable-example-{version}-linux-arm64",
-            "wheelPath": "portable_example/bin/portable-example-linux-arm64"
-          }
-        ],
-        "consumers": [
-          "pypi"
-        ]
-      },
-      {
-        "id": "pypi-wheel-darwin-x64",
-        "path": "artifacts/portable_example-{version}-py3-none-macosx_10_15_x86_64.whl",
-        "wheelTag": "py3-none-macosx_10_15_x86_64",
-        "packageName": "portable-example",
-        "moduleName": "portable_example",
-        "consoleScript": "portable-example",
-        "summary": "Portable CLI wrapper for @scope/portable-example.",
-        "homepage": "https://github.com/owner/portable-example",
-        "license": "MIT",
-        "requiresPython": ">=3.8",
-        "binaries": [
-          {
-            "os": "darwin",
-            "arch": "x64",
-            "sourcePath": "artifacts/portable-example-{version}-darwin-x64",
-            "wheelPath": "portable_example/bin/portable-example-darwin-x64"
-          }
-        ],
-        "consumers": [
-          "pypi"
-        ]
-      },
-      {
-        "id": "pypi-wheel-darwin-arm64",
-        "path": "artifacts/portable_example-{version}-py3-none-macosx_11_0_arm64.whl",
-        "wheelTag": "py3-none-macosx_11_0_arm64",
-        "packageName": "portable-example",
-        "moduleName": "portable_example",
-        "consoleScript": "portable-example",
-        "summary": "Portable CLI wrapper for @scope/portable-example.",
-        "homepage": "https://github.com/owner/portable-example",
-        "license": "MIT",
-        "requiresPython": ">=3.8",
-        "binaries": [
-          {
-            "os": "darwin",
-            "arch": "arm64",
-            "sourcePath": "artifacts/portable-example-{version}-darwin-arm64",
-            "wheelPath": "portable_example/bin/portable-example-darwin-arm64"
-          }
-        ],
-        "consumers": [
-          "pypi"
-        ]
-      },
-      {
-        "id": "pypi-wheel-windows-x64",
-        "path": "artifacts/portable_example-{version}-py3-none-win_amd64.whl",
-        "wheelTag": "py3-none-win_amd64",
-        "packageName": "portable-example",
-        "moduleName": "portable_example",
-        "consoleScript": "portable-example",
-        "summary": "Portable CLI wrapper for @scope/portable-example.",
-        "homepage": "https://github.com/owner/portable-example",
-        "license": "MIT",
-        "requiresPython": ">=3.8",
-        "binaries": [
-          {
-            "os": "windows",
-            "arch": "x64",
-            "sourcePath": "artifacts/portable-example-{version}-windows-x64.exe",
-            "wheelPath": "portable_example/bin/portable-example-windows-x64.exe"
-          }
-        ],
-        "consumers": [
-          "pypi"
-        ]
-      }
-    ],
-    "npmPackage": {
-      "id": "package",
-      "path": ".",
+    }
+  ],
+  "pypiWheel": [
+    {
+      "id": "pypi-wheel-linux-x64",
+      "path": "artifacts/portable_example-{version}-py3-none-manylinux2014_x86_64.whl",
+      "wheelTag": "py3-none-manylinux2014_x86_64",
+      "packageName": "portable-example",
+      "moduleName": "portable_example",
+      "consoleScript": "portable-example",
+      "summary": "Portable CLI wrapper for @scope/portable-example.",
+      "homepage": "https://github.com/owner/portable-example",
+      "license": "MIT",
+      "requiresPython": ">=3.8",
+      "binaries": [
+        {
+          "os": "linux",
+          "arch": "x64",
+          "sourcePath": "artifacts/portable-example-{version}-linux-x64",
+          "wheelPath": "portable_example/bin/portable-example-linux-x64"
+        }
+      ],
       "consumers": [
-        "npm"
+        "pypi"
+      ]
+    },
+    {
+      "id": "pypi-wheel-linux-arm64",
+      "path": "artifacts/portable_example-{version}-py3-none-manylinux2014_aarch64.whl",
+      "wheelTag": "py3-none-manylinux2014_aarch64",
+      "packageName": "portable-example",
+      "moduleName": "portable_example",
+      "consoleScript": "portable-example",
+      "summary": "Portable CLI wrapper for @scope/portable-example.",
+      "homepage": "https://github.com/owner/portable-example",
+      "license": "MIT",
+      "requiresPython": ">=3.8",
+      "binaries": [
+        {
+          "os": "linux",
+          "arch": "arm64",
+          "sourcePath": "artifacts/portable-example-{version}-linux-arm64",
+          "wheelPath": "portable_example/bin/portable-example-linux-arm64"
+        }
+      ],
+      "consumers": [
+        "pypi"
+      ]
+    },
+    {
+      "id": "pypi-wheel-darwin-x64",
+      "path": "artifacts/portable_example-{version}-py3-none-macosx_10_15_x86_64.whl",
+      "wheelTag": "py3-none-macosx_10_15_x86_64",
+      "packageName": "portable-example",
+      "moduleName": "portable_example",
+      "consoleScript": "portable-example",
+      "summary": "Portable CLI wrapper for @scope/portable-example.",
+      "homepage": "https://github.com/owner/portable-example",
+      "license": "MIT",
+      "requiresPython": ">=3.8",
+      "binaries": [
+        {
+          "os": "darwin",
+          "arch": "x64",
+          "sourcePath": "artifacts/portable-example-{version}-darwin-x64",
+          "wheelPath": "portable_example/bin/portable-example-darwin-x64"
+        }
+      ],
+      "consumers": [
+        "pypi"
+      ]
+    },
+    {
+      "id": "pypi-wheel-darwin-arm64",
+      "path": "artifacts/portable_example-{version}-py3-none-macosx_11_0_arm64.whl",
+      "wheelTag": "py3-none-macosx_11_0_arm64",
+      "packageName": "portable-example",
+      "moduleName": "portable_example",
+      "consoleScript": "portable-example",
+      "summary": "Portable CLI wrapper for @scope/portable-example.",
+      "homepage": "https://github.com/owner/portable-example",
+      "license": "MIT",
+      "requiresPython": ">=3.8",
+      "binaries": [
+        {
+          "os": "darwin",
+          "arch": "arm64",
+          "sourcePath": "artifacts/portable-example-{version}-darwin-arm64",
+          "wheelPath": "portable_example/bin/portable-example-darwin-arm64"
+        }
+      ],
+      "consumers": [
+        "pypi"
+      ]
+    },
+    {
+      "id": "pypi-wheel-windows-x64",
+      "path": "artifacts/portable_example-{version}-py3-none-win_amd64.whl",
+      "wheelTag": "py3-none-win_amd64",
+      "packageName": "portable-example",
+      "moduleName": "portable_example",
+      "consoleScript": "portable-example",
+      "summary": "Portable CLI wrapper for @scope/portable-example.",
+      "homepage": "https://github.com/owner/portable-example",
+      "license": "MIT",
+      "requiresPython": ">=3.8",
+      "binaries": [
+        {
+          "os": "windows",
+          "arch": "x64",
+          "sourcePath": "artifacts/portable-example-{version}-windows-x64.exe",
+          "wheelPath": "portable_example/bin/portable-example-windows-x64.exe"
+        }
+      ],
+      "consumers": [
+        "pypi"
       ]
     }
-  },
+  ],
   "publish": {
     "npm": {
       "registry": "https://registry.npmjs.org",

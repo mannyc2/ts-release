@@ -44,26 +44,24 @@ const manualChecksumConfig = (checksum: { readonly algorithm: "sha256" | "sha512
       commit: "abc123",
       tag: "v0.1.0"
     },
-    build: {
-      artifacts: [
-        {
-          id: "archive",
-          path: "artifacts/archive.tgz",
-          format: "tarball",
-          consumers: [],
-          checksum
-        }
-      ]
-    },
+    artifacts: [
+      {
+        id: "archive",
+        path: "artifacts/archive.tgz",
+        format: "tarball",
+        consumers: [],
+        checksum
+      }
+    ],
     publish: {},
     strict: true,
     evidence: ".release/evidence"
   })
 
-const bunExecutableRecipe = (overrides: Record<string, unknown> = {}) => ({
-  _tag: "BunExecutableArtifactRecipe",
+const bunExecutableBuild = (overrides: Record<string, unknown> = {}) => ({
+  builder: "bun",
   id: "release-cli",
-  entrypoint: "src/cli.ts",
+  entry: "src/cli.ts",
   cpu: "baseline",
   outputs: [
     {
@@ -379,11 +377,11 @@ describe("planner", () => {
     }),
     LiveTargetRegistryLayer
   ))((it) => {
-    it.effect("adds recipe outputs to the artifact inventory", () =>
+    it.effect("adds build outputs to the artifact inventory", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
-          artifactRecipes: [bunExecutableRecipe()],
+          builds: [bunExecutableBuild()],
           targets: []
         })
         const plan = yield* createPlan(config)
@@ -412,7 +410,7 @@ describe("planner", () => {
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
-          artifactRecipes: [bunExecutableRecipe()],
+          builds: [bunExecutableBuild()],
           targets: []
         })
         const plan = yield* createPlan(config)
@@ -434,7 +432,7 @@ describe("planner", () => {
   })
 
   layer(TestLayer)((it) => {
-    it.effect("rejects recipe output ids that collide with static artifact ids", () =>
+    it.effect("rejects build output ids that collide with static artifact ids", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [
@@ -445,7 +443,7 @@ describe("planner", () => {
               consumers: []
             }
           ],
-          artifactRecipes: [bunExecutableRecipe()],
+          builds: [bunExecutableBuild()],
           targets: []
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
@@ -456,11 +454,11 @@ describe("planner", () => {
         }
       }))
 
-    it.effect("rejects unsafe recipe entrypoint paths", () =>
+    it.effect("rejects unsafe build entry paths", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
-          artifactRecipes: [bunExecutableRecipe({ entrypoint: "../cli.ts" })],
+          builds: [bunExecutableBuild({ entry: "../cli.ts" })],
           targets: []
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
@@ -471,12 +469,12 @@ describe("planner", () => {
         }
       }))
 
-    it.effect("rejects unsafe recipe output paths", () =>
+    it.effect("rejects unsafe build output paths", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
-          artifactRecipes: [
-            bunExecutableRecipe({
+          builds: [
+            bunExecutableBuild({
               outputs: [
                 {
                   id: "cli-linux-x64",
@@ -497,12 +495,12 @@ describe("planner", () => {
         }
       }))
 
-    it.effect("rejects recipe variant overrides that contradict the Bun target", () =>
+    it.effect("rejects build variant overrides that contradict the Bun target", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
-          artifactRecipes: [
-            bunExecutableRecipe({
+          builds: [
+            bunExecutableBuild({
               outputs: [
                 {
                   id: "cli-linux-x64",

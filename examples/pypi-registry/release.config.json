@@ -11,10 +11,7 @@
     {
       "id": "wheel",
       "path": "artifacts/release_example_pypi-0.1.0-py3-none-any.whl",
-      "format": "file",
-      "consumers": [
-        "pypi"
-      ]
+      "format": "file"
     }
   ],
   "publish": {
@@ -24,6 +21,5 @@
       "passwordEnv": "TWINE_PASSWORD"
     }
   },
-  "strict": true,
   "evidence": ".release/evidence"
 }

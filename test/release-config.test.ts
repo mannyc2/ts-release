@@ -2,13 +2,10 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
-import { parseReleaseIntent } from "../src/config/load.js"
-import { CommandSpec, operationRequiresExecute } from "../src/domain/operation.js"
-import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { renderPlanText } from "../src/planner/render-plan.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { CommandSpec, operationRequiresExecute } from "../src/pipeline/operation.js"
+import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { runEffect } from "./helpers.js"
+import { createTestPlan, renderTestPlanText } from "./plan-helpers.js"
 
 const selfReleaseConfigPath = "apps/release-ts/release.config.json"
 const config = readFileSync(selfReleaseConfigPath, "utf8")
@@ -59,15 +56,13 @@ const TestLayer = Layer.mergeAll(
       }]
     ])
   }),
-  LiveTargetRegistryLayer
 )
 
 describe("repository release config", () => {
   test("plans npm and GitHub publication as approval-required operations", async () => {
     const plan = await runEffect(
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(config, selfReleaseConfigPath)
-        return yield* createReleasePlan(intent)
+        return yield* createTestPlan(config, ".", selfReleaseConfigPath)
       }),
       TestLayer
     )
@@ -75,7 +70,7 @@ describe("repository release config", () => {
     expect(plan.identity.name).toBe("@mannyc1/ts-release")
     expect(plan.identity.commit).toBe("81587b5")
     expect(plan.evidenceDirectory).toBe(".release/evidence/0.0.3")
-    expect(plan.targets.map((target) => target.id).sort()).toEqual(["github", "homebrew", "npm", "pypi", "scoop"])
+    expect(plan.surfaceIds).toEqual(["github", "homebrew", "npm", "pypi", "scoop"])
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-package-exists")
     expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-version-verify")
@@ -83,14 +78,12 @@ describe("repository release config", () => {
     expect(plan.operations.map((operation) => operation.id)).toContain("homebrew:homebrew-render-formula")
     expect(plan.operations.map((operation) => operation.id)).toContain("pypi:twine-upload")
     expect(plan.operations.map((operation) => operation.id)).toContain("scoop:scoop-render-manifest")
-    const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
-    const pypi = plan.targetCapabilities.find((capability) => capability.targetId === "pypi")
-    const homebrew = plan.targetCapabilities.find((capability) => capability.targetId === "homebrew")
-    const scoop = plan.targetCapabilities.find((capability) => capability.targetId === "scoop")
-    const text = renderPlanText(plan)
+    const npmAuth = plan.operations.find((operation) => operation.id === "npm:npm-trusted-publishing-auth")
+    const pypiAuth = plan.operations.find((operation) => operation.id === "pypi:twine-trusted-publishing-auth")
+    const text = renderTestPlanText(plan)
 
     const publishOperations = plan.operations.filter((operation) =>
-      operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+      operation.phase === "publish" && operation.risk !== "read-only"
     )
     const npmPublish = publishOperations.find((operation) => operation.id === "npm:npm-publish")
     const githubPublish = publishOperations.find((operation) => operation.id === "github:github-release-create")
@@ -100,82 +93,78 @@ describe("repository release config", () => {
       "pypi:twine-upload",
       "github:github-release-create",
       "homebrew:homebrew-push:add",
-      "scoop:scoop-push:add",
       "homebrew:homebrew-push:commit",
-      "scoop:scoop-push:commit",
       "homebrew:homebrew-push",
+      "scoop:scoop-push:add",
+      "scoop:scoop-push:commit",
       "scoop:scoop-push"
     ])
     expect(publishOperations.every(operationRequiresExecute)).toBe(true)
-    expect(npmPublish?._tag).toBe("PublishCommandOperation")
-    expect(npm?.authRequirement).toBe("trusted-publishing")
-    expect(pypi?.authRequirement).toBe("trusted-publishing")
-    expect(homebrew?.targetTag).toBe("HomebrewTapTarget")
-    expect(scoop?.targetTag).toBe("ScoopBucketTarget")
-    expect(npm?.authSetup?.workflow).toBe("release.yml")
-    expect(text).toContain(
-      "auth=trusted-publishing runs-in=ci provider=github-actions workflow=release.yml required-permission=id-token:write package-prerequisite=exists"
-    )
-    if (npmPublish?._tag === "PublishCommandOperation") {
-      expect(npmPublish.command.args).toContain("--access")
-      expect(npmPublish.command.args).toContain("public")
-      expect(npmPublish.command.args).toContain("--provenance")
+    expect(npmPublish?.action._tag).toBe("command")
+    expect(npmAuth?.action._tag).toBe("note")
+    expect(pypiAuth?.action._tag).toBe("note")
+    expect(text).toContain("surfaces: 5")
+    if (npmPublish?.action._tag === "command") {
+      expect(npmPublish.action.command.args).toContain("--access")
+      expect(npmPublish.action.command.args).toContain("public")
+      expect(npmPublish.action.command.args).toContain("--provenance")
     }
     const npmVerify = plan.operations.find((operation) => operation.id === "npm:npm-version-verify")
-    expect(npmVerify?._tag).toBe("VerifyRemoteOperation")
-    expect(githubPublish?._tag).toBe("PublishGitHubReleaseOperation")
-    if (githubPublish?._tag === "PublishGitHubReleaseOperation") {
+    expect(npmVerify?.action._tag).toBe("command")
+    expect(githubPublish?.action._tag).toBe("github-release-create")
+    if (githubPublish?.action._tag === "github-release-create") {
       for (const path of releaseArtifactFiles) {
         if (!path.endsWith(".whl")) {
-          expect(githubPublish.assets.map((asset) => asset.path)).toContain(path)
+          expect(githubPublish.action.assets.map((asset) => asset.path)).toContain(path)
         }
       }
-      expect(githubPublish.repository).toBe("mannyc2/ts-release")
-      expect(githubPublish.tokenEnv).toBe("GH_TOKEN")
+      expect(githubPublish.action.repository).toBe("mannyc2/ts-release")
+      expect(githubPublish.action.tokenEnv).toBe("GH_TOKEN")
     }
     const pypiPublish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
-    expect(pypiPublish?._tag).toBe("PublishCommandOperation")
-    if (pypiPublish?._tag === "PublishCommandOperation") {
-      expect(pypiPublish.command.executable).toBe("python3")
-      expect(pypiPublish.command.args).toEqual([
+    expect(pypiPublish?.action._tag).toBe("command")
+    if (pypiPublish?.action._tag === "command") {
+      expect(pypiPublish.action.command.executable).toBe("python3")
+      expect(pypiPublish.action.command.args).toEqual([
         "-m",
         "twine",
         "upload",
         "--non-interactive",
         "--repository-url",
         "https://upload.pypi.org/legacy/",
-        ".release/artifacts/ts_release-0.0.3-py3-none-macosx_11_0_arm64.whl",
-        ".release/artifacts/ts_release-0.0.3-py3-none-macosx_10_15_x86_64.whl",
-        ".release/artifacts/ts_release-0.0.3-py3-none-manylinux2014_aarch64.whl",
         ".release/artifacts/ts_release-0.0.3-py3-none-manylinux2014_x86_64.whl",
+        ".release/artifacts/ts_release-0.0.3-py3-none-manylinux2014_aarch64.whl",
+        ".release/artifacts/ts_release-0.0.3-py3-none-macosx_10_15_x86_64.whl",
+        ".release/artifacts/ts_release-0.0.3-py3-none-macosx_11_0_arm64.whl",
         ".release/artifacts/ts_release-0.0.3-py3-none-win_amd64.whl"
       ])
-      expect(pypiPublish.command.requiredEnv).toEqual([
+      expect(pypiPublish.action.command.requiredEnv).toEqual([
         "ACTIONS_ID_TOKEN_REQUEST_URL",
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ])
     }
     const homebrewRender = plan.operations.find((operation) => operation.id === "homebrew:homebrew-render-formula")
-    expect(homebrewRender?._tag).toBe("RenderFileOperation")
-    if (homebrewRender?._tag === "RenderFileOperation") {
-      expect(homebrewRender.path).toBe(".release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
-      expect(homebrewRender.contents).toContain("Portable artifact and package-manager distribution planning")
-      expect(homebrewRender.contents).toContain("on_macos do")
-      expect(homebrewRender.contents).toContain("on_arm do")
-	      expect(homebrewRender.contents).toContain("on_intel do")
-	      expect(homebrewRender.contents).toContain("https://github.com/mannyc2/ts-release/releases/download/v0.0.3/ts-release-0.0.3-darwin-arm64")
-	      expect(homebrewRender.contents).toContain("https://github.com/mannyc2/ts-release/releases/download/v0.0.3/ts-release-0.0.3-darwin-x64")
-	      expect(homebrewRender.contents).toContain("test do")
-	      expect(homebrewRender.contents).toContain("assert File.executable?(bin/\"ts-release\")")
-	    }
+    expect(homebrewRender?.action._tag).toBe("write-file")
+    if (homebrewRender?.action._tag === "write-file") {
+      expect(homebrewRender.action.path).toBe(".release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
+      expect(typeof homebrewRender.action.contents).toBe("object")
+      if (typeof homebrewRender.action.contents === "object" && homebrewRender.action.contents._tag === "homebrew-formula") {
+        expect(homebrewRender.action.contents.description).toContain("Portable artifact and package-manager distribution planning")
+        expect(homebrewRender.action.contents.entries.map((entry) => entry.artifactId)).toEqual([
+          "cli-darwin-arm64",
+          "cli-darwin-x64"
+        ])
+      }
+    }
     const scoopRender = plan.operations.find((operation) => operation.id === "scoop:scoop-render-manifest")
-    expect(scoopRender?._tag).toBe("RenderFileOperation")
-    if (scoopRender?._tag === "RenderFileOperation") {
-      expect(scoopRender.path).toBe(".release/catalogs/scoop-ts-release/bucket/ts-release.json")
-      expect(scoopRender.contents).toContain("https://github.com/mannyc2/ts-release/releases/download/v0.0.3/ts-release-0.0.3-windows-x64.exe")
-      expect(scoopRender.contents).toContain("\"bin\": [")
-      expect(scoopRender.contents).toContain("\"ts-release-0.0.3-windows-x64.exe\"")
-      expect(scoopRender.contents).toContain("\"ts-release\"")
+    expect(scoopRender?.action._tag).toBe("write-file")
+    if (scoopRender?.action._tag === "write-file") {
+      expect(scoopRender.action.path).toBe(".release/catalogs/scoop-ts-release/bucket/ts-release.json")
+      expect(typeof scoopRender.action.contents).toBe("object")
+      if (typeof scoopRender.action.contents === "object" && scoopRender.action.contents._tag === "scoop-manifest") {
+        expect(scoopRender.action.contents.url).toBe("https://github.com/mannyc2/ts-release/releases/download/v0.0.3/ts-release-0.0.3-windows-x64.exe")
+        expect(scoopRender.action.contents.artifactId).toBe("cli-windows-x64")
+      }
     }
   })
 
@@ -183,13 +172,12 @@ describe("repository release config", () => {
     const unsafeConfig = config.replace("\".release/evidence/{version}\"", "\"../evidence/{version}\"")
     const error = await runEffect(
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(unsafeConfig, selfReleaseConfigPath)
-        return yield* createReleasePlan(intent)
+        return yield* createTestPlan(unsafeConfig, ".", selfReleaseConfigPath)
       }).pipe(Effect.flip),
       TestLayer
     )
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
+    expect(error._tag).toBe("ConfigValidationError")
     if (error._tag === "ReleaseNormalizationError") {
       expect(error.field).toBe("evidenceDirectory")
     }

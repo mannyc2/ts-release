@@ -1,8 +1,7 @@
 import * as Schema from "effect/Schema"
 import { ArtifactCatalog } from "./catalog.js"
-import { PipelineOperation } from "./operation.js"
+import { Operation } from "./operation.js"
 
-export type * from "../types/effect-internal.js"
 
 export class ReleaseIdentity extends Schema.Class<ReleaseIdentity>("PipelineReleaseIdentity")({
   name: Schema.String,
@@ -24,16 +23,14 @@ export class PipeNotice extends Schema.Class<PipeNotice>("PipeNotice")({
 
 export class ReleaseState extends Schema.Class<ReleaseState>("ReleaseState")({
   identity: ReleaseIdentity,
-  strict: Schema.Boolean,
   artifacts: ArtifactCatalog,
-  operations: Schema.Array(PipelineOperation),
+  operations: Schema.Array(Operation),
   notices: Schema.Array(PipeNotice)
 }) {}
 
-export const emptyReleaseState = (identity: ReleaseIdentity, strict: boolean): ReleaseState =>
+export const emptyReleaseState = (identity: ReleaseIdentity): ReleaseState =>
   ReleaseState.make({
     identity,
-    strict,
     artifacts: ArtifactCatalog.empty,
     operations: [],
     notices: []

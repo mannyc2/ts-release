@@ -1,7 +1,5 @@
-import type { InstallableArtifactVariant } from "../domain/artifact.js"
+import type { InstallableArtifactVariant } from "./artifact.js"
 import type { ReleaseIdentity } from "./state.js"
-
-export type * from "../types/effect-internal.js"
 
 export interface TemplateContext {
   readonly identity: ReleaseIdentity
@@ -12,6 +10,15 @@ export interface TemplateContext {
 
 export const distributionArchToken = (arch: "x64" | "arm64"): "amd64" | "arm64" =>
   arch === "x64" ? "amd64" : "arm64"
+
+export const defaultArtifactBaseName = (
+  binary: string,
+  platform: InstallableArtifactVariant
+): string => {
+  const libcSuffix = platform.libc === "musl" ? "_musl" : ""
+  const extension = platform.executableExtension ?? ""
+  return `${binary}_{version}_${platform.os}_${distributionArchToken(platform.arch)}${libcSuffix}${extension}`
+}
 
 export const renderTemplate = (
   value: string,
@@ -28,6 +35,7 @@ export const renderTemplate = (
     .split("{os}").join(platform?.os ?? "")
     .split("{arch}").join(platform === undefined ? "" : distributionArchToken(platform.arch))
     .split("{libc}").join(platform?.libc ?? "")
+    .split("{ext}").join(platform?.executableExtension ?? "")
     .split("{targetTriple}").join(context.targetTriple ?? platform?.targetTriple ?? "")
     .split("{binary}").join(context.binary ?? "")
 }

@@ -26,7 +26,6 @@ describe("npm pack build pipe", () => {
           tag: "v0.1.0"
         },
         npmPackage: {
-          id: "package",
           path: "packages/cli"
         },
         publish: {}
@@ -37,10 +36,10 @@ describe("npm pack build pipe", () => {
         return
       }
 
-      const contribution = yield* npmPackPipe.plan(section, emptyReleaseState(identity, true))
+      const contribution = yield* npmPackPipe.plan(section, emptyReleaseState(identity))
 
       expect(contribution.artifacts[0]).toMatchObject({
-        id: "package",
+        id: "npm-package",
         kind: "package",
         path: "packages/cli",
         producedBy: "build:npm-pack"

@@ -1,42 +1,45 @@
-import { describe, expect, layer, test } from "@effect/bun-test"
+import { describe, expect, layer } from "@effect/bun-test"
 import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { EvidenceBundle, OperationEvidenceRecord } from "../src/domain/evidence.js"
+import { ArtifactCatalog } from "../src/pipeline/catalog.js"
 import {
+  CommandAction,
   CommandSpec,
   ExecutionApproval,
   GitHubReleaseAssetSpec,
+  GitHubReleaseCreateAction,
+  GitHubReleaseVerifyAction,
+  HttpCheckAction,
   HttpEnvHeader,
   HttpHeader,
   HttpJsonArrayObjectFieldEqualsCheck,
   HttpJsonEqualsCheck,
   HttpRequestSpec,
-  PublishGitHubReleaseOperation,
-  RenderFileOperation,
-  ValidateCommandOperation,
-  ValidationNoteOperation,
-  VerifyGitHubReleaseOperation,
-  VerifyHttpOperation
-} from "../src/domain/operation.js"
+  NoteAction,
+  Operation,
+  WriteFileAction
+} from "../src/pipeline/operation.js"
+import { PipeNotice, ReleaseIdentity, ReleaseState } from "../src/pipeline/state.js"
+import { httpRequestKey, makeTestReleaseHttpLayer } from "./host-fakes.js"
+import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
-  PlannerMetadata,
-  ReleaseIdentity,
-  ReleasePlan,
-  SourceMetadata
-} from "../src/domain/release.js"
-import { httpRequestKey, makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
+  EvidenceBundle,
+  EvidenceRecord,
+  redactText,
+  renderEvidenceJson
+} from "../src/engine/evidence.js"
 import {
   mergeEvidenceBundles,
   readEvidenceBundle,
-  redactText,
-  renderEvidenceJson,
   tryReadEvidenceBundle,
   writeEvidenceBundle
-} from "../src/planner/evidence-recorder.js"
-import { runOperation, runOperationEvidence } from "../src/planner/executor.js"
-import { GitHubApiLiveLayer } from "../src/targets/github-api.js"
+} from "../src/engine/engine.js"
+import { runOperation, runOperationEvidence } from "../src/engine/executor.js"
+import { ReleasePlanDocument, SourceMetadata } from "../src/engine/plan-document.js"
+import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { GitHubApiLiveLayer } from "../src/engine/github.js"
+import { TestGitHubApiLayer } from "./helpers.js"
 
 const makeWorkspaceTestCommandRunnerLayer = (
   options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}
@@ -46,36 +49,47 @@ const makeWorkspaceTestCommandRunnerLayer = (
     ...options
   })
 
-const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlan =>
-  ReleasePlan.make({
-    schemaVersion: "release-plan/v1",
-    identity: ReleaseIdentity.make({
-      name,
-      version,
-      commit: "abc123"
-    }),
-    source: SourceMetadata.make({
-      root: "."
-    }),
-    artifacts: [],
-    targets: [],
-    targetCapabilities: [],
-    operations: [],
-    evidenceDirectory: ".release/evidence",
-    metadata: PlannerMetadata.make({
-      createdBy: "test",
-      planSchemaVersion: "release-plan/v1"
-    })
+const identity = (name: string = "release", version: string = "0.1.0"): ReleaseIdentity =>
+  ReleaseIdentity.make({
+    name,
+    normalizedName: name.replaceAll("/", "-").replaceAll("@", ""),
+    version,
+    tag: `v${version}`,
+    commit: "abc123",
+    shortCommit: "abc123",
+    versionSource: "test",
+    snapshot: false
   })
 
-const evidenceRecord = (operationId: string): OperationEvidenceRecord =>
-  OperationEvidenceRecord.make({
-    id: `${operationId}:execution`,
+const context = (releaseIdentity: ReleaseIdentity = identity()) => ({
+  root: ".",
+  identity: releaseIdentity,
+  notices: [] satisfies ReadonlyArray<PipeNotice>
+})
+
+const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlanDocument => {
+  const releaseIdentity = identity(name, version)
+  return ReleasePlanDocument.make({
+    schemaVersion: "release-plan/v2",
+    state: ReleaseState.make({
+      identity: releaseIdentity,
+      artifacts: ArtifactCatalog.empty,
+      operations: [],
+      notices: []
+    }),
+    source: SourceMetadata.make({ root: "." }),
+    artifacts: [],
+    evidenceDirectory: ".release/evidence"
+  })
+}
+
+const evidenceRecord = (operationId: string): EvidenceRecord =>
+  EvidenceRecord.make({
     operationId,
-    phase: "execution",
+    pipeId: "test",
+    phase: "publish",
     risk: "writes-local",
     status: "passed",
-    severity: "info",
     message: "ok",
     startedAt: "2026-06-17T00:00:00.000Z",
     endedAt: "2026-06-17T00:00:00.000Z",
@@ -83,23 +97,38 @@ const evidenceRecord = (operationId: string): OperationEvidenceRecord =>
   })
 
 const evidenceBundle = (
-  plan: ReleasePlan,
+  plan: ReleasePlanDocument,
   records: EvidenceBundle["records"] = []
 ): EvidenceBundle =>
   EvidenceBundle.make({
-    schemaVersion: "release-evidence/v1",
-    releaseName: plan.identity.name,
-    releaseVersion: plan.identity.version,
+    schemaVersion: "release-evidence/v2",
+    releaseName: plan.state.identity.name,
+    releaseVersion: plan.state.identity.version,
+    notices: [],
     records
   })
 
-describe("evidence recorder", () => {
-  test("redacts known secret values", () => {
-    expect(redactText("token npm_secret leaked", ["npm_secret"])).toBe("token [REDACTED] leaked")
-  })
+const baseEngineLayer = (
+  commandOptions: Parameters<typeof makeWorkspaceTestCommandRunnerLayer>[0] = {}
+) =>
+  Layer.mergeAll(
+    makeWorkspaceTestCommandRunnerLayer(commandOptions),
+    makeTestReleaseHttpLayer(),
+    TestGitHubApiLayer,
+    UnsupportedArtifactStagerLayer
+  )
 
-  test("does not alter text when the secret is empty", () => {
-    expect(redactText("plain output", [""])).toBe("plain output")
+describe("evidence recorder", () => {
+  layer(baseEngineLayer())((it) => {
+    it.effect("redacts known secret values", () =>
+      Effect.sync(() => {
+        expect(redactText("token npm_secret leaked", ["npm_secret"])).toBe("token [REDACTED] leaked")
+      }))
+
+    it.effect("does not alter text when the secret is empty", () =>
+      Effect.sync(() => {
+        expect(redactText("plain output", [""])).toBe("plain output")
+      }))
   })
 
   {
@@ -109,14 +138,16 @@ describe("evidence recorder", () => {
       requiredEnv: ["TOKEN"],
       redactedEnv: ["TOKEN"]
     })
-    const operation = ValidateCommandOperation.make({
+    const operation = Operation.make({
       id: "validate-token",
-      description: "Validate token handling.",
+      pipeId: "test",
+      phase: "publish",
       risk: "read-only",
-      command
+      description: "Validate token handling.",
+      action: CommandAction.make({ command })
     })
 
-    layer(makeWorkspaceTestCommandRunnerLayer({
+    layer(baseEngineLayer({
       env: new Map([["TOKEN", "super_secret"]]),
       commands: new Map([
         [commandKey(command), {
@@ -128,12 +159,15 @@ describe("evidence recorder", () => {
     }))((it) => {
       it.effect("redacts command output through the shared executor", () =>
         Effect.gen(function*() {
-          const evidence = yield* runOperation(operation, ExecutionApproval.none)
+          const evidence = yield* runOperation(operation, ExecutionApproval.none, context())
 
-          expect(evidence.phase).toBe("validation")
+          expect(evidence.phase).toBe("publish")
           expect(evidence.risk).toBe("read-only")
-          expect(evidence.stdout).toBe("stdout [REDACTED]")
-          expect(evidence.stderr).toBe("stderr [REDACTED]")
+          expect(evidence.outcome?._tag).toBe("command")
+          if (evidence.outcome?._tag === "command") {
+            expect(evidence.outcome.stdout).toBe("stdout [REDACTED]")
+            expect(evidence.outcome.stderr).toBe("stderr [REDACTED]")
+          }
           expect(evidence.message).toBe("Command completed successfully.")
         }))
     })
@@ -148,17 +182,20 @@ describe("evidence recorder", () => {
       requiredEnv: ["TOKEN"],
       redactedEnv: ["TOKEN"]
     })
-    const operation = VerifyHttpOperation.make({
+    const operation = Operation.make({
       id: "api:response-verify-http",
-      targetId: "api",
-      description: "Verify release.",
+      pipeId: "test",
+      phase: "verify",
       risk: "read-only",
-      request,
-      expectedStatus: 200,
-      checks: [
-        HttpJsonEqualsCheck.make({ path: ["tag_name"], expected: "v0.1.0" }),
-        HttpJsonArrayObjectFieldEqualsCheck.make({ path: ["assets"], field: "name", expected: "package.tgz" })
-      ]
+      description: "Verify release.",
+      action: HttpCheckAction.make({
+        request,
+        expectedStatus: 200,
+        checks: [
+          HttpJsonEqualsCheck.make({ path: ["tag_name"], expected: "v0.1.0" }),
+          HttpJsonArrayObjectFieldEqualsCheck.make({ path: ["assets"], field: "name", expected: "package.tgz" })
+        ]
+      })
     })
 
     layer(Layer.mergeAll(
@@ -179,41 +216,49 @@ describe("evidence recorder", () => {
             }
           }]
         ])
-      })
+      }),
+      TestGitHubApiLayer,
+      UnsupportedArtifactStagerLayer
     ))((it) => {
       it.effect("evaluates HTTP verification evidence through the shared executor", () =>
         Effect.gen(function*() {
-          const evidence = yield* runOperation(operation, ExecutionApproval.none)
+          const evidence = yield* runOperation(operation, ExecutionApproval.none, context())
 
-          expect(evidence.phase).toBe("verification")
-          expect(evidence.responseStatus).toBe(200)
-          expect(evidence.checks?.every((check) => check.passed)).toBe(true)
+          expect(evidence.phase).toBe("verify")
+          expect(evidence.outcome?._tag).toBe("http")
+          if (evidence.outcome?._tag === "http") {
+            expect(evidence.outcome.responseStatus).toBe(200)
+            expect(evidence.outcome.checks.every((check) => check.passed)).toBe(true)
+          }
           expect("responseHeaders" in evidence).toBe(false)
         }))
     })
   }
 
   {
-    const operation = PublishGitHubReleaseOperation.make({
+    const operation = Operation.make({
       id: "github:github-release-create",
-      targetId: "github",
-      description: "Create GitHub release.",
+      pipeId: "publish:github",
+      phase: "publish",
       risk: "externally-visible",
-      repository: "owner/repo",
-      tokenEnv: "TOKEN",
-      tag: "v0.1.0",
-      title: "release 0.1.0",
-      notes: "ship it",
-      draft: true,
-      prerelease: false,
-      assets: [
-        GitHubReleaseAssetSpec.make({
-          artifactId: "package",
-          path: "dist/package.tgz",
-          name: "package.tgz",
-          contentType: "application/octet-stream"
-        })
-      ]
+      description: "Create GitHub release.",
+      action: GitHubReleaseCreateAction.make({
+        repository: "owner/repo",
+        tokenEnv: "TOKEN",
+        tag: "v0.1.0",
+        title: "release 0.1.0",
+        notes: "ship it",
+        draft: true,
+        prerelease: false,
+        assets: [
+          GitHubReleaseAssetSpec.make({
+            artifactId: "package",
+            path: "dist/package.tgz",
+            name: "package.tgz",
+            contentType: "application/octet-stream"
+          })
+        ]
+      })
     })
     const createUrl = "https://api.github.com/repos/owner/repo/releases"
     const uploadUrl = "https://uploads.github.com/repos/owner/repo/releases/123/assets?name=package.tgz"
@@ -246,19 +291,31 @@ describe("evidence recorder", () => {
       ])
     })
 
-    layer(Layer.provide(GitHubApiLiveLayer, httpLayer))((it) => {
+    layer(Layer.mergeAll(
+      makeWorkspaceTestCommandRunnerLayer({
+        files: new Map([["dist/package.tgz", "package bytes"]]),
+        env: new Map([["TOKEN", "super_secret"]])
+      }),
+      httpLayer,
+      Layer.provide(GitHubApiLiveLayer, httpLayer),
+      UnsupportedArtifactStagerLayer
+    ))((it) => {
       it.effect("records successful GitHub API create evidence without request bodies", () =>
         Effect.gen(function*() {
           const evidence = yield* runOperation(
             operation,
-            ExecutionApproval.make({ execute: true, approveIrreversible: false })
+            ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+            context()
           )
 
-          expect(evidence.id).toBe("github:github-release-create:github-api")
+          expect(evidence.operationId).toBe("github:github-release-create")
           expect(evidence.status).toBe("passed")
-          expect(evidence.githubRelease?.releaseId).toBe(123)
-          expect(evidence.githubRelease?.assets).toEqual(["package.tgz"])
-          expect(evidence.request).toBeUndefined()
+          expect(evidence.outcome?._tag).toBe("github-release")
+          if (evidence.outcome?._tag === "github-release") {
+            expect(evidence.outcome.release.releaseId).toBe(123)
+            expect(evidence.outcome.release.assets).toEqual(["package.tgz"])
+          }
+          expect("request" in evidence).toBe(false)
           expect(requests.map((request) => request.body?._tag)).toEqual([
             "HttpJsonRequestBody",
             "HttpFileRequestBody"
@@ -274,142 +331,175 @@ describe("evidence recorder", () => {
   }
 
   {
-    const operation = PublishGitHubReleaseOperation.make({
+    const operation = Operation.make({
       id: "github:github-release-create",
-      targetId: "github",
-      description: "Create GitHub release.",
+      pipeId: "publish:github",
+      phase: "publish",
       risk: "externally-visible",
-      repository: "owner/repo",
-      tokenEnv: "TOKEN",
-      tag: "v0.1.0",
-      title: "release 0.1.0",
-      draft: false,
-      prerelease: false,
-      assets: []
+      description: "Create GitHub release.",
+      action: GitHubReleaseCreateAction.make({
+        repository: "owner/repo",
+        tokenEnv: "TOKEN",
+        tag: "v0.1.0",
+        title: "release 0.1.0",
+        draft: false,
+        prerelease: false,
+        assets: []
+      })
     })
     const createUrl = "https://api.github.com/repos/owner/repo/releases"
+    const httpLayer = makeTestReleaseHttpLayer({
+      responses: new Map([
+        [`POST\u0000${createUrl}`, {
+          status: 422,
+          json: {
+            message: "already_exists"
+          }
+        }]
+      ])
+    })
 
-    layer(Layer.provide(
-      GitHubApiLiveLayer,
-      makeTestReleaseHttpLayer({
-        responses: new Map([
-          [`POST\u0000${createUrl}`, {
-            status: 422,
-            json: {
-              message: "already_exists"
-            }
-          }]
-        ])
-      })
+    layer(Layer.mergeAll(
+      makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
+      httpLayer,
+      Layer.provide(GitHubApiLiveLayer, httpLayer),
+      UnsupportedArtifactStagerLayer
     ))((it) => {
       it.effect("records failed GitHub API create evidence with status only", () =>
         Effect.gen(function*() {
           const evidence = yield* runOperationEvidence(
             operation,
-            ExecutionApproval.make({ execute: true, approveIrreversible: false })
+            ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+            context()
           )
 
-          expect(evidence.id).toBe("github:github-release-create:github-api")
+          expect(evidence.operationId).toBe("github:github-release-create")
           expect(evidence.status).toBe("failed")
-          expect(evidence.responseStatus).toBe(422)
-          expect(evidence.githubRelease?.assets).toEqual([])
+          expect(evidence.outcome?._tag).toBe("github-release")
+          if (evidence.outcome?._tag === "github-release") {
+            expect(evidence.outcome.responseStatus).toBe(422)
+            expect(evidence.outcome.release.assets).toEqual([])
+          }
           expect(evidence.message).toContain("HTTP 422")
         }))
     })
   }
 
   {
-    const operation = VerifyGitHubReleaseOperation.make({
+    const operation = Operation.make({
       id: "github:github-release-verify-api",
-      targetId: "github",
-      description: "Verify release.",
+      pipeId: "publish:github",
+      phase: "verify",
       risk: "read-only",
-      repository: "owner/repo",
-      tokenEnv: "TOKEN",
-      tag: "v0.1.0",
-      title: "release 0.1.0",
-      draft: false,
-      prerelease: false,
-      assetNames: ["package.tgz"]
+      description: "Verify release.",
+      action: GitHubReleaseVerifyAction.make({
+        repository: "owner/repo",
+        tokenEnv: "TOKEN",
+        tag: "v0.1.0",
+        title: "release 0.1.0",
+        draft: false,
+        prerelease: false,
+        assetNames: ["package.tgz"]
+      })
     })
     const inspectUrl = "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0"
+    const httpLayer = makeTestReleaseHttpLayer({
+      responses: new Map([
+        [`GET\u0000${inspectUrl}`, {
+          status: 200,
+          json: {
+            id: 123,
+            tag_name: "v0.1.0",
+            name: "wrong title",
+            draft: false,
+            prerelease: false,
+            upload_url: "https://uploads.github.com/repos/owner/repo/releases/123/assets{?name,label}",
+            assets: []
+          }
+        }]
+      ])
+    })
 
-    layer(Layer.provide(
-      GitHubApiLiveLayer,
-      makeTestReleaseHttpLayer({
-        responses: new Map([
-          [`GET\u0000${inspectUrl}`, {
-            status: 200,
-            json: {
-              id: 123,
-              tag_name: "v0.1.0",
-              name: "wrong title",
-              draft: false,
-              prerelease: false,
-              upload_url: "https://uploads.github.com/repos/owner/repo/releases/123/assets{?name,label}",
-              assets: []
-            }
-          }]
-        ])
-      })
+    layer(Layer.mergeAll(
+      makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
+      httpLayer,
+      Layer.provide(GitHubApiLiveLayer, httpLayer),
+      UnsupportedArtifactStagerLayer
     ))((it) => {
       it.effect("records GitHub API verification mismatches", () =>
         Effect.gen(function*() {
-          const evidence = yield* runOperationEvidence(operation, ExecutionApproval.none)
+          const evidence = yield* runOperationEvidence(operation, ExecutionApproval.none, context())
 
-          expect(evidence.id).toBe("github:github-release-verify-api:github-api")
+          expect(evidence.operationId).toBe("github:github-release-verify-api")
           expect(evidence.status).toBe("failed")
           expect(evidence.message).toContain("title is release 0.1.0")
-          expect(evidence.checks?.some((check) => !check.passed)).toBe(true)
-          expect(evidence.githubRelease?.releaseId).toBe(123)
+          expect(evidence.outcome?._tag).toBe("github-release")
+          if (evidence.outcome?._tag === "github-release") {
+            expect(evidence.outcome.checks?.some((check) => !check.passed)).toBe(true)
+            expect(evidence.outcome.release.releaseId).toBe(123)
+          }
         }))
     })
   }
 
-  layer(makeWorkspaceTestCommandRunnerLayer({ directories: new Set(["."]) }))((it) => {
-    it.effect("records render and validation-note evidence with phase and risk", () =>
+  layer(baseEngineLayer({ directories: new Set(["."]) }))((it) => {
+    it.effect("records write-file and note evidence with phase and risk", () =>
       Effect.gen(function*() {
-        const renderOperation = RenderFileOperation.make({
+        const renderOperation = Operation.make({
           id: "render-readme",
-          description: "Render README.",
+          pipeId: "catalog:test",
+          phase: "catalog",
           risk: "writes-local",
-          path: ".release/generated/readme.md",
-          contents: "# Release\n"
+          description: "Render README.",
+          action: WriteFileAction.make({
+            path: ".release/generated/readme.md",
+            contents: "# Release\n"
+          })
         })
-        const validationOperation = ValidationNoteOperation.make({
+        const validationOperation = Operation.make({
           id: "validate-note",
-          description: "Record validation note.",
+          pipeId: "publish:test",
+          phase: "publish",
           risk: "read-only",
-          message: "No local validation command is configured.",
-          skipped: true,
-          severity: "info"
+          description: "Record validation note.",
+          action: NoteAction.make({
+            message: "No local validation command is configured.",
+            skipped: true,
+            severity: "info"
+          })
         })
 
         const renderEvidence = yield* runOperation(
           renderOperation,
-          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+          ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+          context()
         )
-        const validationEvidence = yield* runOperation(validationOperation, ExecutionApproval.none)
+        const validationEvidence = yield* runOperation(validationOperation, ExecutionApproval.none, context())
 
-        expect(renderEvidence.phase).toBe("render")
+        expect(renderEvidence.phase).toBe("catalog")
         expect(renderEvidence.risk).toBe("writes-local")
         expect(renderEvidence.message).toBe("Rendered .release/generated/readme.md")
-        expect(validationEvidence.phase).toBe("validation")
-        expect(validationEvidence.skipped).toBe(true)
+        expect(validationEvidence.phase).toBe("publish")
+        expect(validationEvidence.status).toBe("skipped")
       }))
 
     it.effect("rejects render writes outside the workspace root", () =>
       Effect.gen(function*() {
-        const operation = RenderFileOperation.make({
+        const operation = Operation.make({
           id: "render-outside",
-          description: "Render outside.",
+          pipeId: "catalog:test",
+          phase: "catalog",
           risk: "writes-local",
-          path: "../outside.md",
-          contents: "# Release\n"
+          description: "Render outside.",
+          action: WriteFileAction.make({
+            path: "../outside.md",
+            contents: "# Release\n"
+          })
         })
         const error = yield* runOperation(
           operation,
-          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+          ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+          context()
         ).pipe(Effect.flip)
 
         expect(error._tag).toBe("WorkspaceWriteError")
@@ -433,16 +523,19 @@ describe("evidence recorder", () => {
       requiredEnv: [],
       redactedEnv: []
     })
-    const operation = VerifyHttpOperation.make({
+    const operation = Operation.make({
       id: "api:response-verify-http",
-      targetId: "api",
-      description: "Verify release.",
+      pipeId: "verify:test",
+      phase: "verify",
       risk: "read-only",
-      request,
-      expectedStatus: 200,
-      checks: [
-        HttpJsonEqualsCheck.make({ path: ["draft"], expected: true })
-      ]
+      description: "Verify release.",
+      action: HttpCheckAction.make({
+        request,
+        expectedStatus: 200,
+        checks: [
+          HttpJsonEqualsCheck.make({ path: ["draft"], expected: true })
+        ]
+      })
     })
 
     layer(Layer.mergeAll(
@@ -454,16 +547,19 @@ describe("evidence recorder", () => {
             json: { draft: false }
           }]
         ])
-      })
+      }),
+      TestGitHubApiLayer,
+      UnsupportedArtifactStagerLayer
     ))((it) => {
       it.effect("fails HTTP verification when JSON checks do not match", () =>
         Effect.gen(function*() {
-          const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
+          const error = yield* runOperation(operation, ExecutionApproval.none, context()).pipe(Effect.flip)
 
           expect(error._tag).toBe("OperationFailedError")
           if (error._tag === "OperationFailedError") {
             expect(error.responseStatus).toBe(200)
-            expect(error.reason).toBe("HTTP verification failed.")
+            expect(error.reason).toContain("HTTP verification failed")
+            expect(error.reason).toContain("$.draft equals true")
           }
         }))
     })
@@ -504,7 +600,7 @@ describe("evidence recorder", () => {
           evidenceBundle(plan, [evidenceRecord("second")])
         )
 
-        expect(merged.records.map((record) => record.id)).toEqual(["first:execution", "second:execution"])
+        expect(merged.records.map((record) => record.operationId)).toEqual(["first", "second"])
       }))
 
     it.effect("rejects merging evidence from another release", () =>
@@ -531,6 +627,7 @@ describe("evidence recorder", () => {
 
         expect(error._tag).toBe("EvidenceReadError")
         if (error._tag === "EvidenceReadError") {
+          expect(error.reason).toBe("Evidence bundle is not valid JSON.")
           expect(error.cause).toBeDefined()
         }
       }))
@@ -552,15 +649,14 @@ describe("evidence recorder", () => {
   layer(makeWorkspaceTestCommandRunnerLayer({
     files: new Map([
       [".release/evidence/evidence.json", `${JSON.stringify({
-        schemaVersion: "release-evidence/v1",
+        schemaVersion: "release-evidence/v2",
         releaseName: "release",
         releaseVersion: "0.1.0",
+        notices: [],
         records: [
           {
-            id: "validate-token:command",
             operationId: "validate-token",
-            status: "passed",
-            severity: "info"
+            status: "passed"
           }
         ]
       })}\n`]

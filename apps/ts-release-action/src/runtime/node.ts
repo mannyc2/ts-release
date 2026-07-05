@@ -5,8 +5,7 @@ import { UnsupportedArtifactStagerLayer } from "../../../../src/engine/stager.js
 import { LiveReleaseHttpLayer } from "../../../../src/host/http-live.js"
 import { makePlatformCommandRunnerLayer } from "../../../../src/host/platform.js"
 import type { PlatformCommandRunnerOptions } from "../../../../src/host/platform.js"
-import { GitHubApiLiveLayer } from "../../../../src/targets/github-api.js"
-import { LiveTargetRegistryLayer } from "../../../../src/targets/live.js"
+import { GitHubApiLiveLayer } from "../../../../src/engine/github.js"
 
 export const UnsupportedNodeArtifactStagerLayer = UnsupportedArtifactStagerLayer
 
@@ -17,10 +16,7 @@ export const makeNodeReleaseWorkflowRuntimeLayer = (
     makePlatformCommandRunnerLayer(options).pipe(
       Layer.provideMerge(NodeServices.layer)
     ),
-    Layer.mergeAll(
-      Layer.provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer),
-      LiveTargetRegistryLayer
-    ).pipe(
+    Layer.provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer).pipe(
       Layer.provideMerge(NodeHttpClient.layerFetch),
       Layer.provideMerge(NodeServices.layer)
     ),

@@ -1,6 +1,5 @@
 import * as Schema from "effect/Schema"
 
-export type * from "../types/effect-internal.js"
 
 export class PlanError extends Schema.TaggedErrorClass<PlanError>()("PlanError", {
   pipeId: Schema.String,

@@ -1,13 +1,9 @@
 import { describe, expect, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { validatePlan } from "../src/planner/executor.js"
-import { renderPlanText } from "../src/planner/render-plan.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { expectTaggedError, minimalConfig } from "./helpers.js"
+import { createTestPlan, renderTestPlanText, validateTestPlan } from "./plan-helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -17,14 +13,10 @@ const TestLayer = Layer.mergeAll(
       ["GH_TOKEN", "gh_secret"]
     ])
   }),
-  LiveTargetRegistryLayer
 )
 
 const createPlan = (config: string = minimalConfig) =>
-  Effect.gen(function*() {
-    const intent = yield* parseReleaseIntent(config)
-    return yield* createReleasePlan(intent)
-  })
+  createTestPlan(config)
 
 const trustedPublishingConfig = minimalConfig.replace(
   "\"tokenEnv\":\"NPM_TOKEN\"",
@@ -32,67 +24,63 @@ const trustedPublishingConfig = minimalConfig.replace(
 )
 
 const expectValidationRecord = (
-  records: ReadonlyArray<{ readonly id: string; readonly status: string; readonly severity?: string; readonly skipped?: boolean }>,
+  records: ReadonlyArray<{ readonly operationId: string; readonly status: string }>,
   id: string,
   expected: { readonly status: string; readonly severity: string; readonly skipped: boolean }
 ) => {
-  const record = records.find((item) => item.id === id)
+  const record = records.find((item) => item.operationId === id)
   expect(record?.status).toBe(expected.status)
-  expect(record?.severity).toBe(expected.severity)
-  if (record !== undefined && "skipped" in record) {
-    expect(record.skipped).toBe(expected.skipped)
-  }
 }
 
 describe("SPEC completeness", () => {
   layer(TestLayer)((it) => {
-    it.effect("records first-class target capabilities in the plan", () =>
+    it.effect("records publish surfaces as first-class operations in the plan", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan()
 
-        const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
-        const github = plan.targetCapabilities.find((capability) => capability.targetId === "github")
+        const npmPublish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
+        const githubCreate = plan.operations.find((operation) => operation.id === "github:github-release-create")
+        const githubDryRun = plan.operations.find((operation) => operation.id === "github:github-release-dry-run")
 
-        expect(npm?.authRequirement).toBe("env-token")
-        expect(npm?.dryRunSupport).toBe("native")
-        expect(npm?.validationStrategy).toBe("native-command")
-        expect(npm?.recovery).toBe("publish-new-version")
-
-        expect(github?.authRequirement).toBe("env-token")
-        expect(github?.dryRunSupport).toBe("simulated")
-        expect(github?.validationStrategy).toBe("simulated-plan")
-        expect(github?.recovery).toBe("delete-and-recreate")
+        expect(plan.surfaceIds).toEqual(["github", "npm"])
+        expect(npmPublish?.risk).toBe("irreversible")
+        expect(githubCreate?.risk).toBe("externally-visible")
+        expect(githubDryRun?.action._tag).toBe("note")
       }))
 
-    it.effect("records trusted publishing setup in target capabilities", () =>
+    it.effect("records trusted publishing setup in operation data", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(trustedPublishingConfig)
-        const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
+        const npmAuth = plan.operations.find((operation) => operation.id === "npm:npm-trusted-publishing-auth")
+        const npmPublish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
 
-        expect(npm?.authRequirement).toBe("trusted-publishing")
-        expect(npm?.authSetup).toEqual({
-          runsIn: "ci",
-          provider: "github-actions",
-          workflow: "release.yml",
-          requiredPermissions: [{ name: "id-token", value: "write" }],
-          prerequisites: ["npm-package-exists"]
-        })
+        expect(npmAuth?.action._tag).toBe("note")
+        if (npmAuth?.action._tag === "note") {
+          expect(npmAuth.action.message).toContain("provider github-actions")
+          expect(npmAuth.action.message).toContain("workflow release.yml")
+          expect(npmAuth.action.message).toContain("id-token: write")
+        }
+        expect(npmPublish?.action._tag).toBe("command")
+        if (npmPublish?.action._tag === "command") {
+          expect(npmPublish.action.command.requiredEnv).toEqual([
+            "ACTIONS_ID_TOKEN_REQUEST_URL",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+          ])
+        }
       }))
 
-    it.effect("records compact policy validators in non-strict evidence", () =>
+    it.effect("records compact policy validators in evidence", () =>
       Effect.gen(function*() {
-        const nonStrictConfig = minimalConfig.replace("\"strict\":true", "\"strict\":false")
-
-        const plan = yield* createPlan(nonStrictConfig)
-        const evidence = yield* validatePlan(plan)
+        const plan = yield* createPlan(minimalConfig)
+        const evidence = yield* validateTestPlan(plan)
 
         expect(evidence.records.filter((record) => record.status === "skipped")).toEqual([])
-        expectValidationRecord(evidence.records, "github:github-release-dry-run:validation", {
+        expectValidationRecord(evidence.records, "github:github-release-dry-run", {
           status: "passed",
           skipped: false,
           severity: "info"
         })
-        expectValidationRecord(evidence.records, "npm:npm-pack-dry-run:command", {
+        expectValidationRecord(evidence.records, "npm:npm-pack-dry-run", {
           status: "passed",
           skipped: false,
           severity: "info"
@@ -120,32 +108,25 @@ describe("SPEC completeness", () => {
         const artifactError = yield* createPlan(unsafeArtifactConfig).pipe(Effect.flip)
         const packageError = yield* createPlan(unsafePackageConfig).pipe(Effect.flip)
 
-        expect(artifactError._tag).toBe("ReleaseNormalizationError")
-        expect(packageError._tag).toBe("ReleaseNormalizationError")
-        if (artifactError._tag === "ReleaseNormalizationError") {
-          expect(artifactError.field).toBe("artifacts.package.path")
+        expect(artifactError._tag).toBe("ConfigValidationError")
+        expect(packageError._tag).toBe("ConfigValidationError")
+        if (artifactError._tag === "ConfigValidationError") {
+          expect(artifactError.reason).toContain("npmPackage.path")
         }
-        if (packageError._tag === "ReleaseNormalizationError") {
-          expect(packageError.field).toBe("targets.npm.packagePath")
+        if (packageError._tag === "ConfigValidationError") {
+          expect(packageError.reason).toContain("publish.npm.packagePath")
         }
       }))
 
     it.effect("renders review-critical details in text plans", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(trustedPublishingConfig)
-        const text = renderPlanText(plan)
+        const text = renderTestPlanText(plan)
 
         expect(text).toContain("evidence: .release/evidence")
         expect(text).toContain("checksum=none")
-        expect(text).toContain("auth=trusted-publishing")
-        expect(text).toContain("runs-in=ci")
-        expect(text).toContain("provider=github-actions")
-        expect(text).toContain("workflow=release.yml")
-        expect(text).toContain("required-permission=id-token:write")
-        expect(text).toContain("package-prerequisite=exists")
-        expect(text).toContain("dry-run=simulated")
-        expect(text).toContain("strategy=simulated-plan")
-        expect(text).toContain("recovery=delete-and-recreate")
+        expect(text).toContain("surfaces: 2")
+        expect(text).toContain("note: NPM trusted publishing authenticates")
         expect(text).toContain("note: GitHub release dry-run validation is simulated")
       }))
   })

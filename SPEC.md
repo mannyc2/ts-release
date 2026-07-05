@@ -17,7 +17,7 @@ release intent
   -> normalized release model
   -> artifact recipes and inventory
   -> installable artifact variants
-  -> target-specific operations
+  -> pipe-owned publish and catalog operations
   -> generated package-manager files
   -> validation and rendering evidence
   -> approved execution
@@ -31,9 +31,10 @@ For example, npm, PyPI, GitHub Releases, Homebrew taps, Scoop buckets, OCI regis
 ## Current Shape
 
 The root package is the stable user surface. It exposes one TypeScript import
-for config authoring and schema helpers, plus the `ts-release` executable. The
-domain model, config loader, planners, target adapters, host services, and
-workflow modules are repository-internal until they are deliberately promoted.
+for config authoring, schema helpers, and Promise/plain-data release summaries,
+plus the `ts-release` executable. The pipeline model, config loader, pipe
+planners, engine, host services, and workflow modules are repository-internal
+until they are deliberately promoted.
 The official Bun CLI lives in `apps/release-ts`, and the GitHub Action lives in
 `apps/ts-release-action`; both are runtime adapters over the same private
 release engine.
@@ -56,7 +57,7 @@ plan-first safety model. Release state becomes serializable data flowing
 through a static ordered list of pipes over a typed artifact catalog:
 `identity -> defaults -> build -> process -> catalog -> publish -> verify`.
 Each feature owns one config section, one pipe, and its defaults; the central
-normalizer and target-adapter layer are design debt to remove.
+normalizer and adapter layer have been replaced by pipe-owned section planning.
 The build phase declares canonical platform targets and dispatches to pure
 builder adapters, with Bun, command, and prebuilt builders in 0.1.
 
@@ -76,15 +77,15 @@ The primary output of the package is a distribution plan, not a side effect.
 A plan should be serializable, reviewable, and suitable for CI artifacts. It should explain:
 
 - release identity: name, version, commit, tag, notes, and source metadata
-- artifact inventory: files, checksums, sizes, formats, intended consumers, and installable variants
-- target operations: what each target will do and what inputs it needs
+- artifact inventory: files, checksums, sizes, formats, and installable variants
+- publish and catalog operations: what each surface will do and what inputs it needs
 - validation steps: which checks must run before publishing
 - execution gates: which operations are irreversible or require explicit approval
 - evidence paths: where validation and publish results will be recorded
 
-### Explicit target semantics
+### Explicit Surface Semantics
 
-Different distribution targets have different shapes. The package should model those shapes instead of flattening them.
+Different distribution surfaces have different shapes. The package should model those shapes instead of flattening them.
 
 Examples:
 
@@ -93,7 +94,7 @@ Examples:
 - A catalog update changes a repository or index that points at artifacts.
 - A deployment promotes already-built assets into an environment.
 
-Each target should declare its required inputs, auth requirements, dry-run support, validation strategy, mutability rules, and recovery behavior. When auth cannot be proven locally, the target should also model the expected execution context, provider-specific setup, and setup prerequisites.
+Each surface pipe should emit operation data that declares required inputs, auth requirements, validation strategy, risk, and setup prerequisites. When auth cannot be proven locally, the operation should model the expected execution context and provider-specific setup.
 
 ### Evidence-driven validation
 
@@ -103,7 +104,7 @@ Evidence should be machine-readable enough for CI and human-readable enough for 
 
 Evidence should also preserve enough context to debug failed or interrupted releases.
 
-Strict mode should fail on missing required validators. Non-strict mode may record skips, but skips must be visible in the evidence.
+Skipped or simulated checks must be explicit operation data and visible in the resulting evidence.
 
 ### Gated irreversible actions
 
@@ -130,7 +131,7 @@ The internal engine should support:
 - constructing a release plan
 - scaffolding starter configs and CI workflows as proposed files
 - rendering config schemas and validation results
-- rendering target files or generated metadata
+- rendering catalog files or generated metadata
 - validating plans and artifacts
 - reporting static auth and CI readiness with confidence levels
 - preparing executable operations
@@ -162,14 +163,14 @@ The package should not try to:
 - build every artifact itself or replace full build pipelines
 - replace ecosystem-native publishing tools
 - invent a universal package format or one manifest schema for every ecosystem
-- hide target-specific auth requirements
+- hide surface-specific auth requirements
 - guarantee semantic versioning policy for the project using it
 - own changelog generation as a core requirement
 - require a monorepo
 - require a specific CI provider
 - treat dry-run output as equivalent to successful publication
 
-These may be integrated through adapters, but they should not define the core.
+These may be integrated through focused pipes or adapters, but they should not define the core.
 
 ## Core Concepts
 
@@ -177,13 +178,13 @@ These may be integrated through adapters, but they should not define the core.
 
 User-authored input describing what should be released.
 
-It should be concise but complete enough to identify the project, describe build outputs, choose publish surfaces, and choose evidence location.
+It should be concise but complete enough to identify the project, describe build artifacts, choose publish surfaces, and choose evidence location.
 
-Identity may be static config data or may be derived from a package manifest. Release intent should declare project facts, optional build recipes, manual artifacts when needed, publish surfaces, and evidence location. Target capability policy such as dry-run support, mutability, and recovery belongs in normalized internals and release plans, not in user-authored config. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local or target-specific adapter.
+Identity may be static config data or may be derived from a package manifest. Release intent should declare project facts, optional build recipes, manual artifacts when needed, publish surfaces, and evidence location. Surface-specific policy belongs in pipe defaults and reviewable operation data, not in user-authored policy matrices. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local workflow.
 
 ### Artifact Recipe
 
-An optional, explicit staging contract for artifacts that `ts-release` can create before planning target distribution.
+An optional, explicit staging contract for artifacts that `ts-release` can create before planning distribution.
 
 Recipes are data until the caller runs a staging workflow. The first recipe family is Bun executable compilation, which produces executable artifacts with derived operating-system and architecture variants. Additional recipe families should land only when they provide durable distribution value without turning the core into a general build system.
 
@@ -191,11 +192,11 @@ Recipes are data until the caller runs a staging workflow. The first recipe fami
 
 Platform metadata attached to an artifact intent or inventory item.
 
-Variants should capture facts that package-manager targets need to choose or render the right artifact: operating system, architecture, optional Linux libc family, executable extension, binary name, install path, and source target triple. Target adapters should consume this data instead of guessing from filenames.
+Variants should capture facts that package-manager surfaces need to choose or render the right artifact: operating system, architecture, optional Linux libc family, executable extension, binary name, install path, and source target triple. Pipes should consume this data instead of guessing from filenames.
 
 ### Release Model
 
-A normalized internal representation with defaults resolved, paths normalized, targets expanded, and invalid combinations rejected.
+A normalized internal representation with defaults resolved, paths normalized, pipe sections expanded, and invalid combinations rejected.
 
 The model should be deterministic and independent of terminal formatting or CLI flags.
 
@@ -205,11 +206,11 @@ A serializable plan derived from the release model.
 
 The plan is the contract between planning, validation, execution, and CI review. It should be stable enough to diff in tests and inspect in logs.
 
-### Target Adapter
+### Surface Pipe
 
-A module that knows how to plan, validate, and execute operations for one distribution target.
+A module that owns one config section or publish surface and emits artifacts, notices, and operation data.
 
-Adapters should expose capabilities clearly: dry-run support, required credentials, validation commands, generated files, publish commands, and expected evidence.
+Pipes should expose behavior through operation data: required credentials, validation commands, generated files, publish commands, risk grades, setup notes, and expected evidence.
 
 ### Operation
 
@@ -232,7 +233,7 @@ The package should make these user workflows straightforward:
 - stage declared artifact recipes
 - create a plan from config
 - inspect the plan without executing anything
-- render target-specific files
+- render catalog files
 - validate artifacts and target readiness
 - report static auth and CI readiness
 - produce evidence artifacts
@@ -249,19 +250,19 @@ should not become user-facing compatibility promises.
 
 Configuration should be declarative and boring.
 
-It should describe release facts and target policy, not arbitrary scripts. Escape hatches can exist, but they should be visible in the plan and evidence.
+It should describe release facts, artifacts, and publish surfaces, not arbitrary scripts. Escape hatches can exist, but they should be visible in the plan and evidence.
 
 Good config answers:
 
 - What is the release?
 - Which artifacts and variants are part of it?
-- Which targets or install surfaces receive them?
+- Which publish or install surfaces receive them?
 - What credentials or environment are required?
 - What must be validated first?
 - Which generated files or indexes will change?
 - Which operations are allowed to execute in this environment?
 
-Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, and `{normalizedName}`. They must be expanded before path safety and artifact inventory checks. Artifact variants must be explicit data or derived by a known recipe adapter before target rendering.
+Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, `{normalizedName}`, `{targetTriple}`, and `{ext}` where the section supports platform rendering. They must be expanded before path safety and artifact inventory checks. Artifact variants must be explicit data or derived by a known build adapter before catalog rendering.
 
 ## Testing Strategy
 
@@ -272,13 +273,13 @@ Important test categories:
 - config parsing and normalization
 - invalid config diagnostics
 - deterministic plan generation
-- adapter capability modeling
+- operation-data modeling
 - dry-run behavior
 - irreversible-operation gating
 - evidence recording
 - command construction without execution
 - execution through fake host implementations
-- target adapter contract tests
+- pipe contract tests
 
 Real integration tests can exist for official validators and sandbox registries, but the core should not depend on live services to prove its behavior.
 
@@ -287,9 +288,9 @@ Real integration tests can exist for official validators and sandbox registries,
 The rewrite is successful when:
 
 - a user can define an artifact-first distribution intent in a small config
-- the package can stage declared artifacts before target planning
+- the package can stage declared artifacts before publish planning
 - the package produces a reviewable distribution plan with no side effects
-- target differences are explicit in the plan
+- surface differences are explicit in the plan
 - installable artifact variants are available before package-manager rendering
 - validation emits structured evidence
 - publish operations are blocked by default
@@ -298,14 +299,14 @@ The rewrite is successful when:
 - a CLI can be rebuilt as a thin adapter over the library
 - a GitHub Action can run the same workflows without embedding CLI behavior
 - starter templates can be checked by the same workflow path as examples
-- adding a new target does not require rewriting the core planner
+- adding a new surface does not require rewriting the core engine
 
 ## Biases
 
 Prefer:
 
 - explicit data over implicit conventions
-- small target adapters over a large universal abstraction
+- small surface pipes over a large universal abstraction
 - official ecosystem validators over homegrown approximations
 - deterministic planning over clever runtime discovery
 - evidence artifacts over terminal-only output
@@ -316,7 +317,7 @@ Avoid:
 
 - hook-runner architecture as the core design
 - hidden publish side effects during validation
-- target adapters that silently shell out without modeling risk
+- pipes or adapters that silently shell out without modeling risk
 - global process state in the planning layer
 - special cases that only work for one repository shape
 - abstractions that erase important ecosystem differences
@@ -325,7 +326,7 @@ Avoid:
 
 Continue from the data model.
 
-Keep the smallest set of types needed to represent release identity, artifact recipes, artifact variants, targets, operations, validation results, execution gates, and evidence. Add target adapters end to end only when they prove the abstractions carry real differences without becoming generic mush.
+Keep the smallest set of types needed to represent release identity, artifact recipes, artifact variants, publish surfaces, operations, validation results, execution gates, and evidence. Add new pipes end to end only when they prove the abstractions carry real differences without becoming generic mush.
 
 The implementation should stay narrow but honest:
 

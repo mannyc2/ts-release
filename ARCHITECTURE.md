@@ -4,7 +4,7 @@
 root TypeScript API and one official `ts-release` executable.
 
 The package turns release intent into staged artifacts, installable artifact
-variants, target-specific distribution plans, evidence, and approved operations.
+variants, pipe-owned distribution operations, evidence, and approved operations.
 The CLI and GitHub Action are adapters over the same private release engine.
 
 ## Target Boundary
@@ -19,6 +19,7 @@ apps/ts-release-action/
                      official JavaScript action app and Node runtime shell
 scripts/             repo-wide maintenance gates only
 examples/            reusable release config examples
+templates/           shipped starter configs and CI workflow text
 ```
 
 `src/` contains generic library code only. It may require platform services
@@ -38,17 +39,17 @@ but it must not reach into CLI modules.
 
 ## Current Module Taxonomy
 
-- `domain/` contains durable schema-backed data models, typed errors, and scalar schemas owned by their semantic domain modules, such as release names in `domain/release`, target IDs in `domain/target`, artifact IDs and installable variants in `domain/artifact`, operation IDs in `domain/operation`, and evidence IDs in `domain/evidence`.
-- `config/` parses and validates release config into domain values.
-- `artifacts/` defines the recipe staging adapter and registry boundary. Recipes are data until a runtime provides a staging layer.
-- `planner/` normalizes release intent, builds artifact inventory, carries installable variants, builds plans, renders plans, executes operation data through injected services, and records evidence.
-- `targets/` models ecosystem-specific target semantics and produces operation data. Target modules may describe commands and HTTP checks, but they do not execute them.
-- `host/` defines injectable command and HTTP services plus live or test implementations.
-- `workflows/` contains reusable application workflows over config files, init/scaffolding plans, diagnostics, evidence files, and live target/HTTP composition. This is an internal engine layer, not a public package subpath.
+- `pipeline/` contains serializable release state, artifact catalog data, the one-operation grammar, pure catalog filters, template helpers, and identity helpers.
+- `pipes/` owns config sections and pure planning for build, imported artifacts, catalog files, and publish surfaces. Pipe modules emit grammar operations and artifacts, but never execute them.
+- `builders/` contains language/toolchain build adapters. The current adapters are Bun, command, and prebuilt; they consume pipeline types and produce build-stage operations.
+- `config/` parses JSON release config, composes pipe-owned section schemas, and reports named removed-field migration errors.
+- `engine/` reads config, runs pipelines, renders plans, resolves deferred file content, executes approved operations through injected services, and records evidence.
+- `host/` defines injectable command and HTTP services plus live implementations. Test fakes live under `test/`.
+- `workflows/` contains internal reusable workflows that remain outside the public package subpaths, currently doctor diagnostics.
 - `apps/release-ts/src/runtime/` contains the Bun runtime shell for the official CLI app.
-- `apps/release-ts/src/cli/` parses command-line flags, calls workflows, prints terminal output, and writes user-requested CLI output files.
+- `apps/release-ts/src/cli/` parses command-line flags, calls the engine/workflows, owns init scaffolding over shipped templates, prints terminal output, and writes user-requested CLI output files.
 - `apps/ts-release-action/src/runtime/` contains the Node runtime shell for the bundled GitHub Action.
-- `apps/ts-release-action/src/` adapts GitHub Action inputs, outputs, step summaries, and artifact uploads to workflow calls.
+- `apps/ts-release-action/src/` adapts GitHub Action inputs, outputs, step summaries, and artifact uploads to engine calls.
 - `scripts/` contains repository maintenance checks. Scripts may use app runtime layers, but they are not package library code.
 
 ## Dependency Direction
@@ -58,15 +59,16 @@ Library modules must not import from `cli/`.
 The normal flow is:
 
 ```text
-domain <- config
-domain <- planner <- targets
-domain <- artifacts
-domain <- host
-workflows -> config/artifacts/planner/host/targets
-apps/release-ts runtime -> host/workflows/platform layers
-apps/release-ts cli -> workflows/runtime boundary
-apps/ts-release-action runtime -> host/workflows/platform layers
-apps/ts-release-action action -> workflows/runtime boundary
+config -> builders/pipes/pipeline
+builders -> pipeline
+pipes -> pipeline
+pipeline -> pipeline-local modules
+engine -> config/pipeline/host/internal
+workflows -> config/engine/host
+apps/release-ts runtime -> host/platform layers
+apps/release-ts cli -> engine/workflows/templates/runtime boundary
+apps/ts-release-action runtime -> host/platform layers
+apps/ts-release-action action -> engine/workflows/runtime boundary
 ```
 
 `src/index.ts` is the only public TypeScript API entrypoint. `package.json`
@@ -76,28 +78,25 @@ also exposes the `ts-release` executable. Public API policy is checked by
 ## Public Package Surface
 
 There is no public `./api` facade and no public internal taxonomy. The package
-does not export `domain/`, `config/`, `planner/`, `host/`, `targets/`,
+does not export `pipeline/`, `pipes/`, `builders/`, `config/`, `engine/`, `host/`,
 `artifacts/`, or `workflows/` subpaths.
 
-The root export is for config authoring and stable public summary data. The
-`ts-release` executable is the public command surface. Release execution belongs
-to the CLI and GitHub Action until a smaller TypeScript execution API is
-intentionally designed.
+The root export is for config authoring plus the Promise/plain-data API:
+`plan`, `build`, `release`, and `verify`. Bare `release()` is plan-only; callers
+must pass execution approvals before operations run. The `ts-release`
+executable remains the public command surface for terminal workflows.
 
 ## Direction: 0.1
 
-The target 0.1 tree replaces the current `domain/`, `planner/`, `targets/`,
-`artifacts/`, and `internal/` taxonomy with role-based directories:
-`pipeline/` for serializable state and pure helpers, `pipes/` for one pipe
-per config section, `builders/` for build tool adapters, `engine/` for the
-only operation executor, and `api/` for the only Promise/Effect boundary.
+The 0.1 tree is role-based: `pipeline/` for serializable state and pure
+helpers, `pipes/` for one pipe per config section or surface, `builders/` for
+build tool adapters, and `engine/` for planning, rendering, evidence, and the
+only operation executor.
 
 Import direction is structural: pipes and builders may import pipeline types
-only, never engine or host; engine imports pipeline plus host; api assembles
-runtime layers and runs engine entry points; apps consume the package root
-plus their own runtime layers. The 0.1 root export adds `plan`, `build`,
-`release`, and `verify` as Promise functions while the internal engine remains
-Effect-native and returns those summary types directly.
+only, never engine or host; engine imports pipeline plus host; apps assemble
+runtime layers and run engine entry points. The stable public Promise API is a
+thin root wrapper around engine summaries with a lazily shared runtime.
 
 The build phase uses canonical `<os>-<arch>[-musl]` targets and pure builder
 adapters. The 0.1 builder set is Bun, command, and prebuilt; Bun stages
@@ -115,5 +114,8 @@ the kernel.
 - Config parsing, artifact staging, distribution planning, evidence persistence, API-backed publishing, and approved execution are library workflows, not CLI behavior.
 - Terminal formatting, argv parsing, and `--out` file writing belong in
   `apps/release-ts/src/cli/`.
+- Init/scaffolding belongs in `apps/release-ts/src/cli/` and reads package
+  templates from `templates/`; the template files are the gallery and the source
+  of truth.
 - GitHub Action input parsing, output names, step summaries, and evidence artifact
   uploads belong in `apps/ts-release-action/src/`.

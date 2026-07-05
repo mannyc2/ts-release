@@ -1,8 +1,7 @@
 import * as Schema from "effect/Schema"
 import { Artifact, ArtifactKind } from "./artifact.js"
-import type { ArtifactArchitecture, ArtifactLibc, ArtifactOperatingSystem } from "../domain/artifact.js"
+import type { ArtifactArchitecture, ArtifactLibc, ArtifactOperatingSystem } from "./artifact.js"
 
-export type * from "../types/effect-internal.js"
 
 export class ArtifactCatalog extends Schema.Class<ArtifactCatalog>("ArtifactCatalog")({
   artifacts: Schema.Array(Artifact)

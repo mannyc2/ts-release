@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "description": "Example Scoop manifest for a release artifact",
+  "homepage": "https://github.com/owner/release-example-scoop",
+  "license": "MIT",
+  "url": "https://github.com/owner/release-example-scoop/releases/download/v0.1.0/release-example-scoop-0.1.0.zip",
+  "hash": "821233f5d40c1df83d54dcbd403e4cec109d4a5c7f055160b0c88833f272ba22",
+  "bin": "release-example-scoop.exe"
+}

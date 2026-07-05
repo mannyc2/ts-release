@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "description": "Portable CLI distribution for @scope/portable-example",
+  "homepage": "https://github.com/owner/portable-example",
+  "license": "MIT",
+  "url": "https://github.com/owner/portable-example/releases/download/v0.1.0/portable-example-0.1.0-windows-x64.exe",
+  "hash": "94dd0a9016b5e3b0c12a1bccb74ca3bab8fef50540548228a9fca8b25284c782",
+  "bin": [
+    [
+      "portable-example-0.1.0-windows-x64.exe",
+      "portable-example"
+    ]
+  ]
+}

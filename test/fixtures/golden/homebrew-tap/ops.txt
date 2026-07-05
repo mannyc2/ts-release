@@ -1,0 +1,5 @@
+homebrew:brew-audit	read-only
+homebrew:homebrew-push	externally-visible
+homebrew:homebrew-push:add	writes-local
+homebrew:homebrew-push:commit	writes-local
+homebrew:homebrew-render-formula	writes-local

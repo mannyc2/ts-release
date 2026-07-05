@@ -3,9 +3,8 @@ import type { Artifact } from "../pipeline/artifact.js"
 import type { PlanError } from "../pipeline/errors.js"
 import type { PipelineOperation } from "../pipeline/operation.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
-import type { PlatformTarget } from "./targets.js"
+import type { PlatformTarget } from "../pipeline/platform.js"
 
-export type * from "../types/effect-internal.js"
 
 export interface BuilderPlan {
   readonly operations: ReadonlyArray<PipelineOperation>
@@ -16,7 +15,6 @@ export interface Builder<Options extends { readonly builder: string }> {
   readonly id: Options["builder"]
   readonly supportedTargets: ReadonlyArray<PlatformTarget>
   readonly defaults: (options: Options, identity: ReleaseIdentity) => Options
-  readonly doctor: (options: Options) => ReadonlyArray<PipelineOperation>
   readonly plan: (
     options: Options,
     identity: ReleaseIdentity,

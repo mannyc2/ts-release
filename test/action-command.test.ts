@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
@@ -19,10 +19,9 @@ import {
   makeNodeReleaseWorkflowRuntimeLayer,
   UnsupportedNodeArtifactStagerLayer
 } from "../apps/ts-release-action/src/runtime/node.js"
-import { CommandSpec } from "../src/domain/operation.js"
-import { makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { commandKey } from "../src/host/test.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { CommandSpec } from "../src/pipeline/operation.js"
+import { makeTestReleaseHttpLayer } from "./host-fakes.js"
+import { commandKey } from "./host-fakes.js"
 import {
   homebrewConfig,
   makeObservableCommandRunnerLayer,
@@ -41,6 +40,7 @@ interface ActionOptionsOverrides {
   readonly failOnWarnings?: boolean
   readonly target?: string
   readonly runtime?: ActionRuntime
+  readonly snapshot?: boolean
   readonly execute?: boolean
   readonly approvePublish?: boolean
   readonly uploadEvidence?: boolean
@@ -66,6 +66,7 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
     failOnWarnings: overrides.failOnWarnings ?? false,
     ...(overrides.target === undefined ? {} : { target: overrides.target }),
     runtime: overrides.runtime ?? "bundled",
+    snapshot: overrides.snapshot ?? false,
     execute: overrides.execute ?? false,
     approvePublish: overrides.approvePublish ?? false,
     uploadEvidence: overrides.uploadEvidence ?? false,
@@ -134,6 +135,7 @@ describe("ts-release action", () => {
       "fail-on-warnings:",
       "target:",
       "runtime:",
+      "snapshot:",
       "execute:",
       "approve-publish:",
       "upload-evidence:",
@@ -178,6 +180,25 @@ describe("ts-release action", () => {
       expect([...io.files.values()][0]).toContain("# Release Plan release@0.1.0")
       expect(io.summaries.join("\n")).toContain("npm:npm-publish")
       expect(io.failures).toEqual([])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("plan supports snapshot mode", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ts-release-action-plan-snapshot-"))
+    try {
+      await writeFile(join(root, "release.config.json"), noOpConfig)
+      const io = makeFakeActionIo()
+
+      await runAction(
+        actionOptions(root, { snapshot: true }),
+        io,
+        makeNodeReleaseWorkflowRuntimeLayer({ root })
+      )
+
+      expect(io.outputs.get("release_version")).toBe("0.1.0-SNAPSHOT-abc123")
+      expect([...io.files.values()][0]).toContain("release@0.1.0-SNAPSHOT-abc123")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -272,7 +293,6 @@ describe("ts-release action", () => {
           commands: new Map()
         }),
         UnsupportedNodeArtifactStagerLayer,
-        LiveTargetRegistryLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
@@ -307,7 +327,6 @@ describe("ts-release action", () => {
           commands: new Map()
         }),
         UnsupportedNodeArtifactStagerLayer,
-        LiveTargetRegistryLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
@@ -452,7 +471,7 @@ describe("ts-release action", () => {
     }
   })
 
-  test("release without execute fails without approval", async () => {
+  test("release without execute plans without workflow evidence", async () => {
     const root = await mkdtemp(join(tmpdir(), "ts-release-action-release-approval-"))
     try {
       await writeFile(join(root, "release.config.json"), homebrewConfig())
@@ -466,8 +485,11 @@ describe("ts-release action", () => {
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
 
-      expect(io.outputs.get("status")).toBe("failed")
-      expect(io.failures.join("\n")).toContain("ExecutionApprovalError")
+      expect(io.outputs.get("status")).toBe("passed")
+      expect(io.outputs.get("release_version")).toBe("0.1.0")
+      expect(io.summaries.join("\n")).toContain("release planned only")
+      expect(io.failures).toEqual([])
+      await expect(access(join(root, ".release", "evidence", "evidence.json"))).rejects.toThrow()
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -525,7 +547,6 @@ describe("ts-release action", () => {
           ])
         }),
         UnsupportedNodeArtifactStagerLayer,
-        LiveTargetRegistryLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
@@ -550,10 +571,10 @@ describe("ts-release action", () => {
       expect(artifact.uploads).toHaveLength(1)
       expect(artifact.uploads[0]?.files.some((file) => file.endsWith("evidence.json"))).toBe(true)
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
-      expect(evidence).toContain("homebrew:homebrew-render-formula:execution")
-      expect(evidence).toContain("npm:npm-version:command")
-      expect(evidence).toContain("\"phase\": \"render\"")
-      expect(evidence).toContain("\"phase\": \"validation\"")
+      expect(evidence).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")
+      expect(evidence).toContain("\"operationId\": \"npm:npm-version\"")
+      expect(evidence).toContain("\"phase\": \"catalog\"")
+      expect(evidence).toContain("\"phase\": \"publish\"")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

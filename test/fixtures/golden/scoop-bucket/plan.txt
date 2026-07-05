@@ -1,0 +1,38 @@
+release-example-scoop@0.1.0
+commit: example
+evidence: .release/evidence
+artifacts: 2
+surfaces: 1
+operations: 5
+
+artifacts:
+  - archive artifacts/release-example-scoop-0.1.0.zip [zip] size=0 checksum=none
+  - scoop-manifest .release/generated/release-example-scoop.json [file] size=0 checksum=none
+
+surfaces:
+  - scoop operations=5
+
+operations by risk:
+  read-only:
+    - scoop:scoop-manifest-validation Record simulated Scoop manifest validation.
+    note: Scoop manifest validation is simulated by the deterministic release plan.
+  writes-local:
+    - scoop:scoop-render-manifest Render Scoop manifest release-example-scoop.json.
+    write: .release/generated/release-example-scoop.json
+    approval: execute
+    - scoop:scoop-push:add Stage release-example-scoop.json for scoop.
+    command: git -C . add .release/generated/release-example-scoop.json
+    argv: ["git","-C",".","add",".release/generated/release-example-scoop.json"]
+    approval: execute
+    - scoop:scoop-push:commit Commit release-example-scoop.json for scoop.
+    command: git -C . commit -m Update release-example-scoop to 0.1.0
+    argv: ["git","-C",".","commit","-m","Update release-example-scoop to 0.1.0"]
+    approval: execute
+  -- approval boundary: externally visible and irreversible operations require explicit approval --
+  externally-visible:
+    - scoop:scoop-push Push Scoop bucket update for release-example-scoop@0.1.0.
+    command: git -C . push
+    argv: ["git","-C",".","push"]
+    approval: execute
+  irreversible:
+    - none

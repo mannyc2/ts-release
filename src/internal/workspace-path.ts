@@ -1,3 +1,4 @@
+import * as Effect from "effect/Effect"
 import type * as Path from "effect/Path"
 
 export type WorkspacePathBoundaryReason = "empty-or-parent-traversal" | "outside-root"
@@ -57,3 +58,15 @@ export const workspacePathBoundaryReasonMessage = (reason: WorkspacePathBoundary
   reason === "empty-or-parent-traversal"
     ? "Path must be non-empty and must not contain parent traversal."
     : "Path must resolve inside the workspace root."
+
+export const resolveWorkspaceWritePathEffect = <E>(
+  path: Path.Path,
+  root: string,
+  pathName: string,
+  makeError: (pathName: string, reason: string) => E
+): Effect.Effect<string, E> => {
+  const result = validateWorkspaceWritePath(path, root, pathName)
+  return result._tag === "Ok"
+    ? Effect.succeed(result.path)
+    : Effect.fail(makeError(pathName, workspacePathBoundaryReasonMessage(result.reason)))
+}

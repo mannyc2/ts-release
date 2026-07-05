@@ -1,25 +1,12 @@
-import * as Config from "effect/Config"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
-import * as Option from "effect/Option"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
-import { HttpHeader, HttpRequestSpec } from "../domain/operation.js"
+import { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
 import { HttpError, HttpResult, ReleaseHttp } from "./http.js"
+import { nowIso, readOptionalEnv } from "./platform.js"
 
-export type * from "../types/effect-internal.js"
-
-const nowIso = Effect.fn("http.nowIso")(function*() {
-  const millis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-  return new Date(millis).toISOString()
-})
-
-const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
-  Config.string(name).pipe(
-    Effect.option,
-    Effect.map(Option.getOrUndefined)
-  )
 
 const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpRequestSpec) {
   const envNames = new Set([

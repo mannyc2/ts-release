@@ -5,7 +5,6 @@ import type { PipelineOperation } from "./operation.js"
 import type { PlanError } from "./errors.js"
 import type { PipeNotice, ReleaseIdentity, ReleaseState } from "./state.js"
 
-export type * from "../types/effect-internal.js"
 
 export type PipePhase = "build" | "process" | "catalog" | "publish" | "verify"
 export type PipelineStage = "identity" | "defaults" | PipePhase

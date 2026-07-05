@@ -4,10 +4,9 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { makeArtifactStagerLayer, type BunExecutableBuildInput } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { CommandSpec } from "../src/domain/operation.js"
 import { stageArtifactOperations } from "../src/engine/stager.js"
 import { buildPipe } from "../src/pipes/build.js"
-import { StageArtifactOperation } from "../src/pipeline/operation.js"
+import type { Operation, StageAction } from "../src/pipeline/operation.js"
 import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
 
 const identity = ReleaseIdentity.make({
@@ -21,16 +20,21 @@ const identity = ReleaseIdentity.make({
   snapshot: false
 })
 
-const state = emptyReleaseState(identity, true)
+const state = emptyReleaseState(identity)
 
 const portablePath = (path: string): string =>
   path.replaceAll("\\", "/")
 
-const isStageArtifactOperation = (operation: unknown): operation is StageArtifactOperation =>
+type StageOperation = Operation & { readonly action: StageAction }
+
+const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
   typeof operation === "object"
   && operation !== null
-  && "_tag" in operation
-  && operation._tag === "StageArtifactOperation"
+  && "action" in operation
+  && typeof operation.action === "object"
+  && operation.action !== null
+  && "_tag" in operation.action
+  && operation.action._tag === "stage"
 
 const planBuild = (config: string) =>
   Effect.gen(function*() {
@@ -75,14 +79,8 @@ describe("build pipe", () => {
               id: "release-cli",
               entry: "src/cli.ts",
               cpu: "baseline",
-              outputs: [
-                {
-                  id: "cli-linux-x64",
-                  target: "linux-x64",
-                  path: "dist/release-{version}-linux-x64",
-                  consumers: ["github"]
-                }
-              ]
+              targets: ["linux-x64"],
+              output: "dist/release-{version}-{targetTriple}"
             }
           ],
           publish: {}
@@ -90,7 +88,7 @@ describe("build pipe", () => {
 
         expect(contribution.artifacts).toHaveLength(1)
         expect(contribution.artifacts[0]).toMatchObject({
-          id: "cli-linux-x64",
+          id: "release-cli-linux-x64",
           kind: "executable",
           path: "dist/release-0.1.0-linux-x64",
           producedBy: "build:bun",
@@ -104,7 +102,7 @@ describe("build pipe", () => {
 
         const operations = contribution.operations.filter(isStageArtifactOperation)
         expect(operations).toHaveLength(1)
-        expect(operations[0]?.intent).toMatchObject({
+        expect(operations[0]?.action.intent).toMatchObject({
           _tag: "bun-compile",
           target: "linux-x64",
           compileTarget: "bun-linux-x64-baseline",
@@ -137,7 +135,7 @@ describe("build pipe", () => {
     it.effect("rejects unsafe Bun output paths before invoking the builder", () =>
       Effect.gen(function*() {
         calls.length = 0
-        const contribution = yield* planBuild(JSON.stringify({
+        const error = yield* planBuild(JSON.stringify({
           project: {
             name: "release",
             version: "0.1.0",
@@ -149,30 +147,16 @@ describe("build pipe", () => {
               builder: "bun",
               id: "release-cli",
               entry: "src/cli.ts",
-              outputs: [
-                {
-                  id: "cli-linux-x64",
-                  target: "linux-x64",
-                  path: "../dist/release-linux-x64",
-                  consumers: ["github"]
-                }
-              ]
+              targets: ["linux-x64"],
+              output: "../dist/release-{targetTriple}"
             }
           ],
           publish: {}
-        }))
+        })).pipe(Effect.flip)
 
-        const operations = contribution.operations.filter(isStageArtifactOperation)
-        const error = yield* stageArtifactOperations(operations, {
-          root: "/workspace",
-          identity,
-          configPath: "release.config.json"
-        }).pipe(Effect.flip)
-
-        expect(error._tag).toBe("ArtifactStageError")
-        if (error._tag === "ArtifactStageError") {
-          expect(error.artifactId).toBe("cli-linux-x64")
-          expect(error.path).toBe("../dist/release-linux-x64")
+        expect(error._tag).toBe("ConfigValidationError")
+        if (error._tag === "ConfigValidationError") {
+          expect(error.reason).toContain("builds[0].output")
         }
         expect(calls).toHaveLength(0)
       }))
@@ -199,14 +183,8 @@ describe("build pipe", () => {
               builder: "bun",
               id: "release-cli",
               entry: "src/cli.ts",
-              outputs: [
-                {
-                  id: "cli-linux-x64",
-                  target: "linux-x64",
-                  path: "dist/release-linux-x64",
-                  consumers: ["github"]
-                }
-              ]
+              targets: ["linux-x64"],
+              output: "dist/release-{targetTriple}"
             }
           ],
           publish: {}
@@ -219,8 +197,8 @@ describe("build pipe", () => {
 
         expect(error._tag).toBe("ArtifactStageError")
         if (error._tag === "ArtifactStageError") {
-          expect(error.operationId).toBe("build:bun:cli-linux-x64")
-          expect(error.artifactId).toBe("cli-linux-x64")
+          expect(error.operationId).toBe("build:bun:release-cli-linux-x64")
+          expect(error.artifactId).toBe("release-cli-linux-x64")
           expect(error.reason).toBe("compile failed")
         }
       }))
@@ -260,15 +238,19 @@ describe("build pipe", () => {
         }
       })
       expect(contribution.operations[0]).toMatchObject({
-        _tag: "ValidateCommandOperation",
         id: "build:command:make-cli-darwin-arm64",
+        pipeId: "build",
+        phase: "build",
         risk: "writes-local",
-        command: CommandSpec.make({
-          executable: "bun",
-          args: ["run", "build:darwin:arm64"],
-          requiredEnv: [],
-          redactedEnv: []
-        })
+        action: {
+          _tag: "command",
+          command: {
+            executable: "bun",
+            args: ["run", "build:darwin:arm64"],
+            requiredEnv: [],
+            redactedEnv: []
+          }
+        }
       })
     }))
 
@@ -306,15 +288,14 @@ describe("build pipe", () => {
         }
       })
       expect(contribution.operations[0]).toMatchObject({
-        _tag: "ValidateCommandOperation",
         id: "build:prebuilt:dist-cli-windows-x64:exists",
+        pipeId: "build",
+        phase: "build",
         risk: "read-only",
-        command: CommandSpec.make({
-          executable: "test",
-          args: ["-f", "dist/release-windows-x64.exe"],
-          requiredEnv: [],
-          redactedEnv: []
-        })
+        action: {
+          _tag: "check-file",
+          path: "dist/release-windows-x64.exe"
+        }
       })
     }))
 
@@ -332,53 +313,21 @@ describe("build pipe", () => {
             builder: "bun",
             id: "release-cli",
             entry: "src/cli.ts",
-            outputs: [
-              {
-                id: "cli-linux-x64",
-                target: "linux-x64",
-                path: "dist/release-linux-x64",
-                consumers: ["github"]
-              },
-              {
-                id: "cli-linux-arm64",
-                target: "linux-arm64",
-                path: "dist/release-linux-arm64",
-                consumers: ["github"]
-              },
-              {
-                id: "cli-darwin-x64",
-                target: "darwin-x64",
-                path: "dist/release-darwin-x64",
-                consumers: ["github"]
-              },
-              {
-                id: "cli-darwin-arm64",
-                target: "darwin-arm64",
-                path: "dist/release-darwin-arm64",
-                consumers: ["github"]
-              },
-              {
-                id: "cli-windows-x64",
-                target: "windows-x64",
-                path: "dist/release-windows-x64.exe",
-                consumers: ["github"],
-                variant: {
-                  binaryName: "release",
-                  installPath: "bin/release"
-                }
-              }
-            ]
+            targets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"],
+            output: "dist/release-{targetTriple}{ext}",
+            binaryName: "release",
+            installPath: "bin/release"
           }
         ],
         publish: {}
       }))
 
       const build = intent.builds?.[0]
-      expect(build?.builder).toBe("bun")
-      if (build?.builder === "bun") {
-        expect(build.id).toBe("release-cli")
-        expect(build.outputs?.[4]?.target).toBe("windows-x64")
-        expect(build.outputs?.[4]?.variant?.binaryName).toBe("release")
-      }
+        expect(build?.builder).toBe("bun")
+        if (build?.builder === "bun") {
+          expect(build.id).toBe("release-cli")
+          expect(build.targets?.[4]).toBe("windows-x64")
+          expect(build.binaryName).toBe("release")
+        }
     }))
 })

@@ -21,9 +21,15 @@ const expectedRootBin = {
 } as const
 const expectedRootRuntimeExports = new Set([
   "RELEASE_CONFIG_SCHEMA_ID",
+  "ReleaseApiError",
+  "build",
   "defineRelease",
+  "disposeReleaseRuntime",
+  "plan",
+  "release",
   "releaseConfigJsonSchema",
-  "renderReleaseConfigJsonSchema"
+  "renderReleaseConfigJsonSchema",
+  "verify"
 ])
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

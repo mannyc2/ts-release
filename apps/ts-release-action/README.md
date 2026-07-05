@@ -27,3 +27,5 @@ bun run --cwd apps/ts-release-action build
 Use `upload-evidence: true` when a workflow should upload collected
 `.release/evidence` JSON bundles after command completion or failure. Approved
 publication still requires `execute: true` and `approve-publish: true`.
+Use `snapshot: true` to plan a snapshot version; snapshot execution refuses
+externally visible and irreversible operations.

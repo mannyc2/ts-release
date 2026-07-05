@@ -5,15 +5,24 @@ import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
+import { artifactPathBaseName } from "../pipeline/artifact.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import {
+  type ArchiveIntent,
   type BunCompileIntent,
+  type Operation,
   type PyPiWheelIntent,
-  StageArtifactOperation
+  type StageAction
 } from "../pipeline/operation.js"
+import { optionalField } from "../pipeline/optional-field.js"
 import { renderTemplate } from "../pipeline/template.js"
+import {
+  type ArchiveByteEntry,
+  buildTarGzArchive,
+  buildZipArchive,
+  bytes
+} from "./archive-bytes.js"
 
-export type * from "../types/effect-internal.js"
 
 export interface ArtifactStageContext {
   readonly root: string
@@ -62,7 +71,7 @@ export type BunExecutableBuild = (
 export const liveBunExecutableBuild: BunExecutableBuild = (input) =>
   Bun.build({
     entrypoints: [input.entrypoint],
-    ...(input.minify === undefined ? {} : { minify: input.minify }),
+    ...optionalField(input.minify, (minify) => ({ minify })),
     compile: {
       target: input.target,
       outfile: input.outfile
@@ -71,7 +80,7 @@ export const liveBunExecutableBuild: BunExecutableBuild = (input) =>
 
 export interface ArtifactStagerShape {
   readonly stage: (
-    operation: StageArtifactOperation,
+    operation: StageOperation,
     context: ArtifactStageContext
   ) => Effect.Effect<StagedArtifactOperationResult, ArtifactStageError, FileSystem.FileSystem | Path.Path>
 }
@@ -95,9 +104,11 @@ const isInsideRoot = (path: Path.Path, root: string, target: string): boolean =>
   return relative.length === 0 || (!relative.startsWith("..") && !path.isAbsolute(relative))
 }
 
+export type StageOperation = Operation & { readonly action: StageAction }
+
 const resolveStagePath = (
   path: Path.Path,
-  operation: StageArtifactOperation,
+  operation: StageOperation,
   pathName: string,
   context: ArtifactStageContext,
   artifactId?: string | undefined
@@ -107,8 +118,8 @@ const resolveStagePath = (
     return Effect.fail(
       ArtifactStageError.make({
         operationId: operation.id,
-        intentTag: operation.intent._tag,
-        ...(artifactId === undefined ? {} : { artifactId }),
+        intentTag: operation.action.intent._tag,
+        ...optionalField(artifactId, (id) => ({ artifactId: id })),
         path: pathName,
         reason: "Stage paths must be non-empty, relative, and must not contain parent traversal."
       })
@@ -119,8 +130,8 @@ const resolveStagePath = (
     return Effect.fail(
       ArtifactStageError.make({
         operationId: operation.id,
-        intentTag: operation.intent._tag,
-        ...(artifactId === undefined ? {} : { artifactId }),
+        intentTag: operation.action.intent._tag,
+        ...optionalField(artifactId, (id) => ({ artifactId: id })),
         path: pathName,
         reason: "Stage paths must resolve inside the workspace root."
       })
@@ -131,13 +142,13 @@ const resolveStagePath = (
 
 const stageBunCompile = (
   build: BunExecutableBuild,
-  operation: StageArtifactOperation,
+  operation: StageOperation,
   intent: BunCompileIntent,
   context: ArtifactStageContext
 ) =>
   Effect.gen(function*() {
     const path = yield* Path.Path
-    const artifactId = operation.producesArtifactIds[0]
+    const artifactId = operation.action.producesArtifactIds[0]
     const entrypoint = yield* resolveStagePath(path, operation, intent.entry, context)
     const outfile = yield* resolveStagePath(path, operation, intent.outfile, context, artifactId)
     const output = yield* Effect.tryPromise({
@@ -146,13 +157,13 @@ const stageBunCompile = (
           entrypoint,
           target: intent.compileTarget,
           outfile,
-          ...(intent.minify === undefined ? {} : { minify: intent.minify })
+          ...optionalField(intent.minify, (minify) => ({ minify }))
         }),
       catch: (cause) =>
         ArtifactStageError.make({
           operationId: operation.id,
           intentTag: intent._tag,
-          ...(artifactId === undefined ? {} : { artifactId }),
+          ...optionalField(artifactId, (id) => ({ artifactId: id })),
           path: intent.outfile,
           reason: `Bun.build rejected while staging ${artifactId ?? operation.id}.`,
           cause
@@ -163,7 +174,7 @@ const stageBunCompile = (
         ArtifactStageError.make({
           operationId: operation.id,
           intentTag: intent._tag,
-          ...(artifactId === undefined ? {} : { artifactId }),
+          ...optionalField(artifactId, (id) => ({ artifactId: id })),
           path: intent.outfile,
           reason: logsReason(output.logs, `Bun.build failed for ${artifactId ?? operation.id}.`)
         })
@@ -172,7 +183,7 @@ const stageBunCompile = (
     return StagedArtifactOperationResult.make({
       operationId: operation.id,
       intentTag: intent._tag,
-      artifacts: operation.producesArtifactIds.map((id) =>
+      artifacts: operation.action.producesArtifactIds.map((id) =>
         StagedArtifact.make({
           id,
           path: intent.outfile
@@ -181,162 +192,15 @@ const stageBunCompile = (
     })
   })
 
-interface WheelEntry {
-  readonly path: string
-  readonly data: Uint8Array
-  readonly mode: number
-}
-
-interface CentralDirectoryEntry extends WheelEntry {
-  readonly crc32: number
-  readonly offset: number
-}
-
-const encoder = new TextEncoder()
-
-const bytes = (value: string): Uint8Array =>
-  encoder.encode(value)
-
-const concat = (parts: ReadonlyArray<Uint8Array>): Uint8Array => {
-  const length = parts.reduce((sum, part) => sum + part.byteLength, 0)
-  const output = new Uint8Array(length)
-  let offset = 0
-  for (const part of parts) {
-    output.set(part, offset)
-    offset += part.byteLength
-  }
-  return output
-}
-
-const uint16 = (value: number): Uint8Array => {
-  const output = new Uint8Array(2)
-  new DataView(output.buffer).setUint16(0, value, true)
-  return output
-}
-
-const uint32 = (value: number): Uint8Array => {
-  const output = new Uint8Array(4)
-  new DataView(output.buffer).setUint32(0, value, true)
-  return output
-}
-
-const crcTable = (() => {
-  const table: Array<number> = []
-  for (let value = 0; value < 256; value += 1) {
-    let crc = value
-    for (let bit = 0; bit < 8; bit += 1) {
-      crc = (crc & 1) === 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1
-    }
-    table.push(crc >>> 0)
-  }
-  return table
-})()
-
-const crc32 = (data: Uint8Array): number => {
-  let crc = 0xffffffff
-  for (const byte of data) {
-    crc = (crc >>> 8) ^ (crcTable[(crc ^ byte) & 0xff] ?? 0)
-  }
-  return (crc ^ 0xffffffff) >>> 0
-}
-
 const sha256Digest = (data: Uint8Array): string =>
   createHash("sha256").update(data).digest("base64url")
-
-const localFileHeader = (entry: WheelEntry, crc: number): Uint8Array => {
-  const name = bytes(entry.path)
-  return concat([
-    uint32(0x04034b50),
-    uint16(20),
-    uint16(0x0800),
-    uint16(0),
-    uint16(0),
-    uint16(0),
-    uint32(crc),
-    uint32(entry.data.byteLength),
-    uint32(entry.data.byteLength),
-    uint16(name.byteLength),
-    uint16(0),
-    name
-  ])
-}
-
-const centralDirectoryHeader = (entry: CentralDirectoryEntry): Uint8Array => {
-  const name = bytes(entry.path)
-  return concat([
-    uint32(0x02014b50),
-    uint16(0x0314),
-    uint16(20),
-    uint16(0x0800),
-    uint16(0),
-    uint16(0),
-    uint16(0),
-    uint32(entry.crc32),
-    uint32(entry.data.byteLength),
-    uint32(entry.data.byteLength),
-    uint16(name.byteLength),
-    uint16(0),
-    uint16(0),
-    uint16(0),
-    uint16(0),
-    uint32(entry.mode << 16),
-    uint32(entry.offset),
-    name
-  ])
-}
-
-const endOfCentralDirectory = (
-  entryCount: number,
-  centralDirectorySize: number,
-  centralDirectoryOffset: number
-): Uint8Array =>
-  concat([
-    uint32(0x06054b50),
-    uint16(0),
-    uint16(0),
-    uint16(entryCount),
-    uint16(entryCount),
-    uint32(centralDirectorySize),
-    uint32(centralDirectoryOffset),
-    uint16(0)
-  ])
-
-const buildZip = (entries: ReadonlyArray<WheelEntry>): Uint8Array => {
-  const localParts: Array<Uint8Array> = []
-  const centralEntries: Array<CentralDirectoryEntry> = []
-  let offset = 0
-
-  for (const entry of entries) {
-    const crc = crc32(entry.data)
-    const header = localFileHeader(entry, crc)
-    localParts.push(header, entry.data)
-    centralEntries.push({
-      ...entry,
-      crc32: crc,
-      offset
-    })
-    offset += header.byteLength + entry.data.byteLength
-  }
-
-  const centralDirectory = concat(centralEntries.map(centralDirectoryHeader))
-  return concat([
-    ...localParts,
-    centralDirectory,
-    endOfCentralDirectory(centralEntries.length, centralDirectory.byteLength, offset)
-  ])
-}
 
 const distributionName = (packageName: string): string =>
   packageName.replaceAll("-", "_").replaceAll(".", "_")
 
-const fileName = (pathName: string): string => {
-  const parts = pathName.replaceAll("\\", "/").split("/")
-  return parts[parts.length - 1] ?? pathName
-}
-
 const wrapperSource = (intent: PyPiWheelIntent): string => {
   const entries = intent.binaries
-    .map((binary) => `    (${JSON.stringify(binary.os)}, ${JSON.stringify(binary.arch)}): ${JSON.stringify(fileName(binary.wheelPath))}`)
+    .map((binary) => `    (${JSON.stringify(binary.os)}, ${JSON.stringify(binary.arch)}): ${JSON.stringify(artifactPathBaseName(binary.wheelPath))}`)
     .join(",\n")
   return `"""Python launcher for the bundled ${intent.consoleScript} CLI."""
 
@@ -417,14 +281,14 @@ Tag: ${intent.wheelTag}
 `
 
 const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
-  operation: StageArtifactOperation,
+  operation: StageOperation,
   intent: PyPiWheelIntent,
   context: ArtifactStageContext
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const distInfo = `${distributionName(intent.packageName)}-${context.identity.version}.dist-info`
-  const entries: Array<WheelEntry> = [
+  const entries: Array<ArchiveByteEntry> = [
     {
       path: `${intent.moduleName}/__init__.py`,
       data: bytes(`__version__ = "${context.identity.version}"\n`),
@@ -491,17 +355,17 @@ const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
 })
 
 const stagePyPiWheel = (
-  operation: StageArtifactOperation,
+  operation: StageOperation,
   intent: PyPiWheelIntent,
   context: ArtifactStageContext
 ) =>
   Effect.gen(function*() {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path
-    const artifactId = operation.producesArtifactIds[0]
+    const artifactId = operation.action.producesArtifactIds[0]
     const outputPath = yield* resolveStagePath(path, operation, intent.outfile, context, artifactId)
     const entries = yield* buildEntries(operation, intent, context)
-    const wheel = buildZip(entries)
+    const wheel = buildZipArchive(entries)
     yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
       Effect.mapError((cause) =>
         ArtifactStageError.make({
@@ -518,7 +382,7 @@ const stagePyPiWheel = (
         ArtifactStageError.make({
           operationId: operation.id,
           intentTag: intent._tag,
-          ...(artifactId === undefined ? {} : { artifactId }),
+          ...optionalField(artifactId, (id) => ({ artifactId: id })),
           path: intent.outfile,
           reason: "Unable to write PyPI wheel artifact.",
           cause
@@ -528,7 +392,164 @@ const stagePyPiWheel = (
     return StagedArtifactOperationResult.make({
       operationId: operation.id,
       intentTag: intent._tag,
-      artifacts: operation.producesArtifactIds.map((id) =>
+      artifacts: operation.action.producesArtifactIds.map((id) =>
+        StagedArtifact.make({
+          id,
+          path: intent.outfile
+        })
+      )
+    })
+  })
+
+const archiveEntryPath = (wrapDirectory: string | undefined, pathName: string): string =>
+  wrapDirectory === undefined
+    ? pathName
+    : `${wrapDirectory.replace(/\/+$/, "")}/${pathName.replace(/^\/+/, "")}`
+
+const globRegex = (pattern: string): RegExp =>
+  new RegExp(`^${pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replaceAll("*", ".*")}$`)
+
+const fileMatchesPattern = (fileName: string, pattern: string): boolean =>
+  pattern.includes("*")
+    ? globRegex(pattern).test(fileName)
+    : fileName === pattern
+
+const archiveFileEntries = Effect.fn("ArtifactStager.archive.files")(function*(
+  operation: StageOperation,
+  intent: ArchiveIntent,
+  context: ArtifactStageContext
+) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const entries = yield* fs.readDirectory(context.root).pipe(
+    Effect.matchEffect({
+      onFailure: () => Effect.succeed([]),
+      onSuccess: (value) => Effect.succeed(value)
+    })
+  )
+  const matched = new Set<string>()
+  for (const pattern of intent.files) {
+    for (const entry of entries) {
+      if (fileMatchesPattern(entry, pattern)) {
+        matched.add(entry)
+      }
+    }
+  }
+
+  const files: Array<ArchiveByteEntry> = []
+  for (const fileName of [...matched].sort()) {
+    const sourcePath = yield* resolveStagePath(path, operation, fileName, context)
+    const data = yield* fs.readFile(sourcePath).pipe(
+      Effect.matchEffect({
+        onFailure: () => Effect.succeed(undefined),
+        onSuccess: (value) => Effect.succeed(value)
+      })
+    )
+    if (data !== undefined) {
+      files.push({
+        path: archiveEntryPath(intent.wrapDirectory, fileName),
+        data,
+        mode: 0o100644
+      })
+    }
+  }
+  return files
+})
+
+const archiveArtifactEntries = Effect.fn("ArtifactStager.archive.artifacts")(function*(
+  operation: StageOperation,
+  intent: ArchiveIntent,
+  context: ArtifactStageContext
+) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const entries: Array<ArchiveByteEntry> = []
+  for (const artifact of intent.artifacts) {
+    const sourcePath = yield* resolveStagePath(path, operation, artifact.sourcePath, context, artifact.artifactId)
+    const data = yield* fs.readFile(sourcePath).pipe(
+      Effect.mapError((cause) =>
+        ArtifactStageError.make({
+          operationId: operation.id,
+          intentTag: intent._tag,
+          artifactId: artifact.artifactId,
+          path: artifact.sourcePath,
+          reason: "Unable to read archive artifact input.",
+          cause
+        })
+      )
+    )
+    entries.push({
+      path: archiveEntryPath(intent.wrapDirectory, artifact.archivePath),
+      data,
+      mode: 0o100755
+    })
+  }
+  return entries
+})
+
+const archiveBytes = (
+  operation: StageOperation,
+  intent: ArchiveIntent,
+  entries: ReadonlyArray<ArchiveByteEntry>
+): Effect.Effect<Uint8Array, ArtifactStageError> =>
+  Effect.try({
+    try: () => intent.format === "zip" ? buildZipArchive(entries) : buildTarGzArchive(entries),
+    catch: (cause) =>
+      ArtifactStageError.make({
+        operationId: operation.id,
+        intentTag: intent._tag,
+        path: intent.outfile,
+        reason: `Unable to create ${intent.format} archive bytes.`,
+        cause
+      })
+  })
+
+const stageArchive = (
+  operation: StageOperation,
+  intent: ArchiveIntent,
+  context: ArtifactStageContext
+) =>
+  Effect.gen(function*() {
+    const fs = yield* FileSystem.FileSystem
+    const path = yield* Path.Path
+    const artifactId = operation.action.producesArtifactIds[0]
+    const outputPath = yield* resolveStagePath(path, operation, intent.outfile, context, artifactId)
+    const artifactEntries = yield* archiveArtifactEntries(operation, intent, context)
+    const fileEntries = yield* archiveFileEntries(operation, intent, context)
+    const archive = yield* archiveBytes(
+      operation,
+      intent,
+      [...artifactEntries, ...fileEntries].sort((left, right) => left.path.localeCompare(right.path))
+    )
+    yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
+      Effect.mapError((cause) =>
+        ArtifactStageError.make({
+          operationId: operation.id,
+          intentTag: intent._tag,
+          path: intent.outfile,
+          reason: "Unable to create archive output directory.",
+          cause
+        })
+      )
+    )
+    yield* fs.writeFile(outputPath, archive).pipe(
+      Effect.mapError((cause) =>
+        ArtifactStageError.make({
+          operationId: operation.id,
+          intentTag: intent._tag,
+          ...optionalField(artifactId, (id) => ({ artifactId: id })),
+          path: intent.outfile,
+          reason: "Unable to write archive artifact.",
+          cause
+        })
+      )
+    )
+    return StagedArtifactOperationResult.make({
+      operationId: operation.id,
+      intentTag: intent._tag,
+      artifacts: operation.action.producesArtifactIds.map((id) =>
         StagedArtifact.make({
           id,
           path: intent.outfile
@@ -542,17 +563,19 @@ export const makeArtifactStagerLayer = (
 ) =>
   Layer.succeed(ArtifactStager)({
     stage: (operation, context) => {
-      switch (operation.intent._tag) {
+      switch (operation.action.intent._tag) {
         case "bun-compile":
-          return stageBunCompile(build, operation, operation.intent, context)
+          return stageBunCompile(build, operation, operation.action.intent, context)
         case "pypi-wheel":
-          return stagePyPiWheel(operation, operation.intent, context)
+          return stagePyPiWheel(operation, operation.action.intent, context)
+        case "archive":
+          return stageArchive(operation, operation.action.intent, context)
       }
     }
   })
 
 export const stageArtifactOperation = Effect.fn("ArtifactStager.stage")(function*(
-  operation: StageArtifactOperation,
+  operation: StageOperation,
   context: ArtifactStageContext
 ) {
   const stager = yield* ArtifactStager
@@ -560,7 +583,7 @@ export const stageArtifactOperation = Effect.fn("ArtifactStager.stage")(function
 })
 
 export const stageArtifactOperations = Effect.fn("ArtifactStager.stageAll")(function*(
-  operations: ReadonlyArray<StageArtifactOperation>,
+  operations: ReadonlyArray<StageOperation>,
   context: ArtifactStageContext
 ) {
   const results = []
@@ -575,7 +598,7 @@ export const UnsupportedArtifactStagerLayer = Layer.succeed(ArtifactStager)({
     Effect.fail(
       ArtifactStageError.make({
         operationId: operation.id,
-        intentTag: operation.intent._tag,
+        intentTag: operation.action.intent._tag,
         reason: "Artifact staging is not supported by this runtime."
       })
     )

@@ -1,13 +1,31 @@
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import {
   Artifact,
+  PyPiWheelBinaryArtifact,
+  SafeRelativePath,
   WheelExtra
 } from "../pipeline/artifact.js"
-import { PyPiWheelIntent, StageArtifactOperation } from "../pipeline/operation.js"
+import { Operation, PyPiWheelIntent, StageAction } from "../pipeline/operation.js"
 import { renderTemplate } from "../pipeline/template.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import type { ReleaseConfigPyPiWheelBuild } from "../domain/release.js"
+
+export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiWheelBuild>(
+  "ReleaseConfigPyPiWheelBuild"
+)({
+  id: Schema.NonEmptyString,
+  path: SafeRelativePath,
+  wheelTag: Schema.String,
+  packageName: Schema.String,
+  moduleName: Schema.String,
+  consoleScript: Schema.String,
+  summary: Schema.String,
+  homepage: Schema.String,
+  license: Schema.String,
+  requiresPython: Schema.String,
+  binaries: Schema.Array(PyPiWheelBinaryArtifact)
+}) {}
 
 export type PyPiWheelSection = ReleaseConfigPyPiWheelBuild | ReadonlyArray<ReleaseConfigPyPiWheelBuild>
 
@@ -44,23 +62,27 @@ export const pypiWheelPipe: Pipe<PyPiWheelSection> = {
             binaries: wheel.binaries.map((binary) => binary.wheelPath)
           })
         }))
-        operations.push(StageArtifactOperation.make({
+        operations.push(Operation.make({
           id: `build:pypi-wheel:${wheel.id}`,
+          pipeId: "build:pypi-wheel",
+          phase: "build",
           description: `Assemble PyPI wheel ${wheel.id}.`,
           risk: "writes-local",
-          intent: PyPiWheelIntent.make({
-            outfile: path,
-            wheelTag: wheel.wheelTag,
-            packageName: wheel.packageName,
-            moduleName: wheel.moduleName,
-            consoleScript: wheel.consoleScript,
-            summary: wheel.summary,
-            homepage: wheel.homepage,
-            license: wheel.license,
-            requiresPython: wheel.requiresPython,
-            binaries: [...wheel.binaries]
-          }),
-          producesArtifactIds: [wheel.id]
+          action: StageAction.make({
+            intent: PyPiWheelIntent.make({
+              outfile: path,
+              wheelTag: wheel.wheelTag,
+              packageName: wheel.packageName,
+              moduleName: wheel.moduleName,
+              consoleScript: wheel.consoleScript,
+              summary: wheel.summary,
+              homepage: wheel.homepage,
+              license: wheel.license,
+              requiresPython: wheel.requiresPython,
+              binaries: [...wheel.binaries]
+            }),
+            producesArtifactIds: [wheel.id]
+          })
         }))
       }
       return {

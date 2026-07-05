@@ -16,14 +16,10 @@ const removedPublicSubpaths = [
   "./cli/programmatic",
   "./config/schema",
   "./domain/artifact",
-  "./domain/evidence",
   "./domain/release",
   "./host",
   "./host/http",
   "./host/platform",
-  "./planner/create-release-plan",
-  "./planner/evidence-recorder",
-  "./planner/normalize-release",
   "./runtime/bun",
   "./targets/github",
   "./targets/homebrew",
@@ -117,10 +113,10 @@ describe("public API policy", () => {
     })
   })
 
-  test("keeps Bun runtime dependency out of root runtime dependencies", () => {
+  test("keeps Bun runtime dependency aligned with the public default runtime", () => {
     const pkg = rootPackage()
-    expect(isRecord(pkg.dependencies) && Object.hasOwn(pkg.dependencies, "@effect/platform-bun")).toBe(false)
-    expect(isRecord(pkg.devDependencies) && Object.hasOwn(pkg.devDependencies, "@effect/platform-bun")).toBe(true)
+    expect(isRecord(pkg.dependencies) && pkg.dependencies["@effect/platform-bun"]).toBe("4.0.0-beta.83")
+    expect(isRecord(pkg.devDependencies) && Object.hasOwn(pkg.devDependencies, "@effect/platform-bun")).toBe(false)
   })
 
   test("uses source-relative runtime paths", () => {

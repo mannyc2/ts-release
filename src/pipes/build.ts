@@ -1,27 +1,22 @@
 import * as Effect from "effect/Effect"
-import type { ReleaseConfigBuildItem } from "../domain/release.js"
 import { bunBuilder, type BunBuildOptions } from "../builders/bun.js"
 import { commandBuilder, type CommandBuildOptions } from "../builders/command.js"
 import { prebuiltBuilder, type PrebuiltBuildOptions } from "../builders/prebuilt.js"
-import type { PlatformTarget } from "../builders/targets.js"
+import type { PlatformTarget } from "../pipeline/platform.js"
 import { PlanError } from "../pipeline/errors.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 
-export type * from "../types/effect-internal.js"
 
 export type BuildOptions = BunBuildOptions | CommandBuildOptions | PrebuiltBuildOptions
 
 const buildSections = (config: {
-  readonly builds?: ReadonlyArray<ReleaseConfigBuildItem> | undefined
+  readonly builds?: ReadonlyArray<BuildOptions> | undefined
 }): ReadonlyArray<BuildOptions> => config.builds ?? []
 
 const targetsFor = (options: BuildOptions): ReadonlyArray<PlatformTarget> => {
   if (options.builder === "bun") {
-    if (options.outputs !== undefined) {
-      return options.outputs.map((output) => output.target)
-    }
     return options.targets ?? ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"]
   }
   return options.targets

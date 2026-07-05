@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { pypiWheelPipe } from "../src/pipes/pypi-wheel.js"
-import { StageArtifactOperation } from "../src/pipeline/operation.js"
+import type { Operation, StageAction } from "../src/pipeline/operation.js"
 import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
 
 const identity = ReleaseIdentity.make({
@@ -16,11 +16,16 @@ const identity = ReleaseIdentity.make({
   snapshot: false
 })
 
-const isStageArtifactOperation = (operation: unknown): operation is StageArtifactOperation =>
+type StageOperation = Operation & { readonly action: StageAction }
+
+const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
   typeof operation === "object"
   && operation !== null
-  && "_tag" in operation
-  && operation._tag === "StageArtifactOperation"
+  && "action" in operation
+  && typeof operation.action === "object"
+  && operation.action !== null
+  && "_tag" in operation.action
+  && operation.action._tag === "stage"
 
 describe("PyPI wheel build pipe", () => {
   it.effect("emits wheel artifacts and staging operations", () =>
@@ -53,7 +58,7 @@ describe("PyPI wheel build pipe", () => {
         return
       }
 
-      const contribution = yield* pypiWheelPipe.plan(section, emptyReleaseState(identity, true))
+      const contribution = yield* pypiWheelPipe.plan(section, emptyReleaseState(identity))
       const operation = contribution.operations.find(isStageArtifactOperation)
 
       expect(contribution.artifacts[0]).toMatchObject({
@@ -61,7 +66,7 @@ describe("PyPI wheel build pipe", () => {
         kind: "wheel",
         path: "dist/release-0.1.0.whl"
       })
-      expect(operation?.intent).toMatchObject({
+      expect(operation?.action.intent).toMatchObject({
         _tag: "pypi-wheel",
         outfile: "dist/release-0.1.0.whl"
       })

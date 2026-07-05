@@ -11,10 +11,7 @@
     {
       "id": "archive",
       "path": "artifacts/release-example-scoop-0.1.0.zip",
-      "format": "zip",
-      "consumers": [
-        "scoop"
-      ]
+      "format": "zip"
     }
   ],
   "publish": {
@@ -30,6 +27,5 @@
       "bin": "release-example-scoop.exe"
     }
   },
-  "strict": true,
   "evidence": ".release/evidence"
 }

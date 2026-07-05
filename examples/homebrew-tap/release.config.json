@@ -11,10 +11,7 @@
     {
       "id": "archive",
       "path": "artifacts/release-example-homebrew-0.1.0.tgz",
-      "format": "tarball",
-      "consumers": [
-        "homebrew"
-      ]
+      "format": "tarball"
     }
   ],
   "publish": {
@@ -28,6 +25,5 @@
       "installPath": "bin/release-example-homebrew"
     }
   },
-  "strict": true,
   "evidence": ".release/evidence"
 }

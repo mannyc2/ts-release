@@ -1,10 +1,8 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import { HttpHeader, HttpRequestSpec } from "../domain/operation.js"
+import { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
 
-export type * from "../types/effect-internal.js"
 
 export class HttpError extends Schema.TaggedErrorClass<HttpError>()("HttpError", {
   operation: Schema.String,
@@ -28,60 +26,3 @@ export interface ReleaseHttpShape {
 }
 
 export class ReleaseHttp extends Context.Service<ReleaseHttp, ReleaseHttpShape>()("ReleaseHttp") {}
-
-export interface TestHttpResponse {
-  readonly status: number
-  readonly json: Schema.Json
-  readonly responseHeaders?: ReadonlyArray<HttpHeader> | undefined
-}
-
-export interface TestReleaseHttpOptions {
-  readonly responses?: ReadonlyMap<string, TestHttpResponse> | undefined
-  readonly timestamps?: ReadonlyArray<string> | undefined
-  readonly onRequest?: ((request: HttpRequestSpec) => void) | undefined
-}
-
-export const httpRequestKey = (request: HttpRequestSpec): string =>
-  `${request.method}\u0000${request.url}`
-
-export const makeTestReleaseHttpLayer = (
-  options: TestReleaseHttpOptions = {}
-): Layer.Layer<ReleaseHttp> => {
-  const responses = new Map(options.responses ?? [])
-  const timestamps = [...(options.timestamps ?? ["2026-06-16T00:00:00.000Z"])]
-  let timestampIndex = 0
-
-  const nextTimestamp = (): string => {
-    const value = timestamps[timestampIndex] ?? timestamps[timestamps.length - 1] ?? "2026-06-16T00:00:00.000Z"
-    timestampIndex += 1
-    return value
-  }
-
-  return Layer.succeed(ReleaseHttp)({
-    runJson: (request) =>
-      Effect.gen(function*() {
-        options.onRequest?.(request)
-        const startedAt = nextTimestamp()
-        const response = responses.get(httpRequestKey(request))
-        if (response === undefined) {
-          return yield* Effect.fail(
-            HttpError.make({
-              operation: "runJson",
-              url: request.url,
-              reason: "No test HTTP response configured"
-            })
-          )
-        }
-        const endedAt = nextTimestamp()
-        return HttpResult.make({
-          request,
-          status: response.status,
-          json: response.json,
-          responseHeaders: response.responseHeaders === undefined ? [] : [...response.responseHeaders],
-          startedAt,
-          endedAt,
-          durationMillis: 0
-        })
-      })
-  })
-}

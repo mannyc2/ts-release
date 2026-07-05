@@ -1,6 +1,23 @@
 # @mannyc1/ts-release
 
-Portable artifact and package-manager distribution planning for TypeScript projects.
+GoReleaser-grade distribution for TypeScript/Bun CLI authors, with typed
+config and a reviewable publish plan.
+
+`ts-release` is plan-first: produce a reviewable distribution plan, rehearse it
+as a snapshot, then execute only after explicit approval. Snapshot releases use
+the resolved version plus `-SNAPSHOT-{shortCommit}` and refuse externally
+visible or irreversible operations even when execution flags are present.
+
+The package keeps the useful GoReleaser shape without a Pro boundary: artifact
+inventory, package-manager catalog files, publish operations, and evidence
+artifacts all stay visible as data. Typed config keeps repeated distribution
+metadata in one place. npm and PyPI support are first-party surfaces, not the
+whole product.
+
+Compared with semantic-release, `ts-release` starts from distribution artifacts
+and approval gates rather than commit-message versioning. They meet naturally at
+a future conventional-commits version source; today, version identity is explicit
+or read from the package manifest/git tag.
 
 ## How To Install
 
@@ -73,13 +90,61 @@ bun add @mannyc1/ts-release effect@beta @effect/platform-bun@beta
 Downloads a raw platform binary from the GitHub Release:
 
 ```sh
-curl -fsSLO https://github.com/mannyc2/ts-release/releases/download/v0.0.8/ts-release-0.0.8-linux-x64
-chmod +x ts-release-0.0.8-linux-x64
-./ts-release-0.0.8-linux-x64 --version
+curl -fsSLO https://github.com/mannyc2/ts-release/releases/download/v0.1.0/ts-release-0.1.0-linux-x64
+chmod +x ts-release-0.1.0-linux-x64
+./ts-release-0.1.0-linux-x64 --version
 ```
 
 The CLI is currently distributed through Homebrew, Scoop, PyPI, and GitHub
 Release binaries. The npm package is the reusable TypeScript library surface.
+
+## TypeScript API
+
+Use the root import for typed config authoring, Promise-based planning, and
+stable summary data:
+
+```ts
+import {
+  defineRelease,
+  disposeReleaseRuntime,
+  plan,
+  release,
+  renderReleaseConfigJsonSchema
+} from "@mannyc1/ts-release"
+
+const config = defineRelease({
+  project: {
+    name: "release",
+    packageName: "@scope/pkg",
+    repository: "owner/repo",
+    version: "0.1.0",
+    commit: "abc123",
+    tag: "v0.1.0"
+  },
+  npmPackage: {
+    path: "."
+  },
+  publish: {
+    npm: {
+      registry: "https://registry.npmjs.org",
+      packageName: "@scope/pkg",
+      packagePath: ".",
+      access: "public",
+      provenance: true
+    }
+  },
+  evidence: ".release/evidence/{version}"
+})
+
+const rehearsal = await plan({ config, snapshot: true })
+console.log(rehearsal.identity.version)
+
+const dryRun = await release({ config })
+console.log(dryRun.executed.length)
+
+console.log(renderReleaseConfigJsonSchema())
+await disposeReleaseRuntime()
+```
 
 ## Use The CLI
 
@@ -90,11 +155,17 @@ ts-release init --template portable-cli --package @scope/pkg --repo owner/repo -
 ts-release doctor --config release.config.json
 ts-release build --config release.config.json --format text
 ts-release plan --config release.config.json --format text
+ts-release plan --config release.config.json --snapshot --format text
 ```
 
-These commands do not publish anything unless an execution command receives
-explicit approval. To publish through the full ordered workflow, pass both
-execution approvals:
+`release` is plan-only by default and ends with an explicit reminder that
+nothing was executed:
+
+```sh
+ts-release release --config release.config.json
+```
+
+To publish through the full ordered workflow, pass both execution approvals:
 
 ```sh
 ts-release release --config release.config.json --execute --approve-publish
@@ -304,53 +375,12 @@ Diagnostics report confidence levels instead of pretending local checks can
 prove provider-side setup. For example, npm trusted publishing can only be fully
 confirmed inside the configured GitHub Actions environment.
 
-## TypeScript API
+## Public Root Import
 
-Install the package when you want typed config authoring or schema helpers:
-
-```sh
-bun add -d @mannyc1/ts-release
-```
-
-The public TypeScript API lives at the package root. It is intentionally small
-and pairs with the `ts-release` executable published by the same package:
-
-```ts
-import { defineRelease, renderReleaseConfigJsonSchema } from "@mannyc1/ts-release"
-
-export default defineRelease({
-  project: {
-    name: "release",
-    packageName: "@scope/pkg",
-    repository: "owner/repo",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  npmPackage: {
-    id: "package",
-    path: ".",
-    consumers: ["npm"]
-  },
-  publish: {
-    npm: {
-      registry: "https://registry.npmjs.org",
-      packageName: "@scope/pkg",
-      packagePath: ".",
-      access: "public",
-      provenance: true
-    }
-  },
-  strict: true
-})
-
-console.log(renderReleaseConfigJsonSchema())
-```
-
-The package does not expose internal `domain/`, `planner/`, `targets/`,
-`host/`, `artifacts/`, or `workflows/` subpaths. Use the root import for typed
-config/schema work, and use the `ts-release` CLI or GitHub Action for release
-execution.
+The package does not expose internal `pipeline/`, `pipes/`, `builders/`,
+`engine/`, `host/`, `artifacts/`, or `workflows/` subpaths. Use the root import
+for `defineRelease`, schema helpers, `plan`, `build`, `release`, `verify`,
+summary types, and `ReleaseApiError`.
 
 ## Templates And Examples
 

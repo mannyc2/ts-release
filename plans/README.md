@@ -7,14 +7,25 @@ Execute in the order below unless dependencies say otherwise. Each executor
 should read the plan fully before starting, honor its STOP conditions, and
 update the status row when done.
 
-The 113 → 114 → 119 → 115 → 116 → 117 → 118 sequence is the current priority path
-toward 0.1.0: ship the already-merged hard cutover as 0.0.8, design the
-pipeline architecture and 0.1 public API contract, build the kernel, port
-every surface to pipes (proving extension cost with new checksum/archive
-features), expose the public TypeScript API with the CLI/Action as thin
-wrappers, then run the Effect polish sweep. Primary metric: lower LOC via
-architecture, never code golf. Publish operations remain data until the
-operator explicitly dispatches them.
+The 113 → 114 → 119 → 115 → 123 → **129 → 130 → 131 → 126 → 127 →
+132** → 118 sequence is the current priority path toward 0.1.0
+(re-sequenced 2026-07-05 by the semantic-compression audit in
+`plans/research/128-semantic-compression-audit.md`, which supersedes
+plans 124/125 while keeping their decisions — same pattern as the
+122 review superseding 116/117): freeze behavior as a golden corpus
+(129), flip the spine on the one-class operation grammar with uniform
+evidence v2 and a single executor — ReleaseState the only carrier,
+engine summary-native per D19, CLI/Action re-pointed, translation
+sandwich deleted (130), port the five publish surfaces to grammar
+pipes with the deferred-content design, prune config to the 114 field
+tables, and dissolve domain/planner/targets (131), land checksum/
+archive/snapshot/git-tag as the measured extension-cost proof (126),
+expose the public TypeScript API with the CLI/Action as thin wrappers
+(127), demote init templates/test scaffolding out of the core and run
+the residual compression sweep (132), then the Effect polish sweep
+(118). Primary metric: lower LOC via architecture, never code golf.
+Publish operations remain data until the operator explicitly
+dispatches them.
 
 The 108-111 sequence is the new priority path. These plans intentionally make
 breaking cuts with no legacy aliases, fallback config parser, or compatibility
@@ -29,9 +40,24 @@ do not execute an older plan when it conflicts with 108-111.
 | 114 | Design the GoReleaser-shaped pipeline architecture and the 0.1 public API | P0 | M | - (design-only; may run parallel to 113) | DONE (contract in `plans/114-pipeline-contract.md`) |
 | 119 | Design the language-agnostic builder contract and runtime capability matrix | P0 | M | 114 (design-only) | DONE (contract in `plans/119-builder-contract.md`) |
 | 115 | Introduce the pipeline kernel and move builds into library pipes | P0 | L | 113, 114, 119 | DONE (LOC 10203 -> 11018, +815; hard cutover removes legacy build fallbacks while keeping the kernel/stager growth) |
-| 116 | Port publish surfaces to pipes, delete the target-adapter layer, prove extension cost | P0 | L | 114, 115 | TODO |
-| 117 | Expose the 0.1 public TypeScript API and make the CLI and Action thin wrappers | P0 | M | 114, 115, 116 | TODO |
-| 118 | Effect polish sweep and self-release script dedup | P2 | M | 115, 116, 117 | TODO |
+| 122 | Architecture review — first principles, post-115 (memo in `plans/research/122-architecture-review.md`) | P0 | S | 115 | DONE (2026-07-04; re-sequenced the wave into 123-127) |
+| 123 | Kernel contract repairs and guardrails (identity seam, D1 naming, name uniqueness, import-rule checks, effect-internal cleanup) | P0 | M | 115, 122 | DONE (2026-07-04; LOC 11018 -> 11162, +144; dogfood plan byte-identical) |
+| 128 | Semantic-compression audit (memo in `plans/research/128-semantic-compression-audit.md`) | P0 | S | 123 | DONE (2026-07-05; re-sequenced the wave into 129-132; superseded 124/125) |
+| 129 | Golden behavior corpus and snapshot tooling (op id+risk, plan text, formula/manifest bytes, evidence run) | P0 | S-M | 123 | DONE (2026-07-05; LOC baseline 11162; examples + evidence + dogfood fixtures captured) |
+| 130 | One operation grammar (Operation + Action union), uniform evidence v2, one executor, summary-native engine; spine flip; re-point CLI/Action | P0 | L | 123, 129 | DONE (2026-07-05; gates green, dogfood ops diff empty, same-session text parity restored; `src/planner` deleted, workflows = doctor/init, v2 evidence re-pinned, Action bundle rebuilt; LOC 11162 -> 11646, +484 with legacy publish bridge deletion deferred to 131) |
+| 131 | Port publish surfaces to grammar pipes; deferred content; prune config to the 114 tables (incl. `strict` removal); dissolve domain/, planner/, targets/ | P0 | L | 123, 129, 130 | DONE (2026-07-05; `check:release`, import rules, examples, Action bundle, dogfood ops, and self-release artifact guard green; publish/catalog/import pipes own pruned schemas; `strict`/`outputs[]`/`consumers`/`downloadUrl` rejected with migration hints; `domain/`, `planner/`, `targets/`, and legacy engine bridge deleted; `{ext}` + `artifacts[]` -> `import-artifacts` addenda landed; src LOC 9489 vs 128 Stage-2 estimate ~5.4k, residual compression deferred to 126/127/132/118; dogfood rendered catalog text differs only in locally rebuilt sha256 values) |
+| 126 | Checksum + archive pipes, git-tag source, snapshot mode — extension-cost proof | P0 | M-L | 123, 129, 130, 131 | DONE (2026-07-05; gates green: `bun test`, `RELEASE_INTEGRATION_TOOLS=1 bun test test/integration-tools.test.ts`, `check:portable`, `check:release`, `check:self-release-artifacts`, dogfood ops diff empty, Action bundle rebuilt; LOC 11509 total, `src/engine` 3874. Extension-cost report: checksum = 77-line pipe + 1 config line + checksum deferred-content class/union + shared content/executor hashing, with one GitHub asset-filter touch; archive = 192-line pipe + 1 config line + archive intent/union + 190-line byte module + ~156 stager lines to extract/reuse zip and add tar.gz, over the old 900-line engine budget — recorded as kernel budget feedback, not golfed) |
+| 127 | Expose the 0.1 public API; thin CLI/Action; 0.1.0 versions | P0 | M | 123, 129-131, 126 | DONE (2026-07-05; `check:release`, `check:portable`, `bun test`, export/tree-shaking/readme/examples, Action bundle, `release:artifacts`, and `release:catalogs` green; `.github/workflows` untouched; root Promise API + shared runtime/dispose hook landed; `render` removed from CLI, plan rendering risk-grouped, Action `snapshot` added with `target_count` kept as compatibility name for surface count; versions bumped to 0.1.0 and dogfood manual fixtures re-captured for 0.1.0; LOC 11865 total, `src/api` 202, CLI+Action src 1085) |
+| 132 | Demote init templates + test layers out of the core; Bun fact-table merge; github module diet; residual sweep | P1 | M | 130, 131, 126, 127 | DONE (2026-07-05; gates green: `check`, `test`, import rules, portable, release, package exports, tree-shaking, examples, golden corpus/evidence; Action bundle rebuilt; `src/workflows` now doctor-only, host test fakes live under `test/`, Bun compile targets table-driven, GitHub request shells collapsed, residual helpers single-homed; LOC total 11480, src 9593, durable core 3525) |
+| 136 | Design the file-distribution contract: generic `catalogs[]`, parts + typed-hole deferred content, platform-neutral artifacts (design-only; output `plans/136-file-distribution-contract.md`) | P1 | S-M | 131 hard; 126 spec-level; 127/132 soft | TODO (post-0.1 feature wave, added 2026-07-05 by the agentic-artifact assessment; hardened same day by the deterministic-machine review — see dependency notes) |
+| 137 | Make platform-neutral artifacts first-class: files-only archives, strict name rendering (one choke point), open vendor identifiers | P1 | M | 136, 131, 126, 127, 132 (118 soft — wave order) | TODO |
+| 138 | Generic file-catalog distribution (`catalogs[]` pipe pair, parts + typed holes; optional F5b content unification) + agent-plugin proof example — extension-cost proof #2 | P1 | M-L | 136, 137 | TODO |
+| 124 | Make ReleaseState the only carrier; engine summary-native (D19); re-point CLI/Action; delete the translation sandwich | P0 | L | 123 | SUPERSEDED (by 129/130 per the 128 audit; decisions carried forward, operation taxonomy replaced by the grammar) |
+| 125 | Port publish surfaces to pipes; deferred content; dissolve domain/, planner/, targets/; capabilities → operation data | P0 | L | 123, 124 | SUPERSEDED (by 131 per the 128 audit; decisions carried forward, config pruned in the same pass) |
+| 116 | Port publish surfaces to pipes, delete the target-adapter layer, prove extension cost | P0 | L | 114, 115 | SUPERSEDED (by 124-126 per the 122 review; decisions carried forward, sequencing replaced) |
+| 117 | Expose the 0.1 public TypeScript API and make the CLI and Action thin wrappers | P0 | M | 114, 115, 116 | SUPERSEDED (by 124 D19 projection + 127; operator-UX steps carried into 127 verbatim) |
+| 118 | Effect polish sweep and self-release script dedup | P2 | M | 115, 123, 129-132 | DONE (2026-07-05; gates green: `check:portable`, `check:release`, `bun test` 277 pass/3 skip, `check`, generated `check:self-release-artifacts` with Twine skipped; Action bundle rebuilt; `Schema.fromJsonString` JSON helper landed with `rg JSON.parse src` empty; GitHub release-list fallback paginates through `Effect.whileLoop` because beta.83 lacks exported loop/iterate helpers; workspace write wrapper single-homed; `optionalField` converted 100 conditional spreads with 10 low-frequency sites intentionally left; self-release scripts 1567 -> 815 lines, 48% cut, fail probes covered by dedicated script tests; measured LOC 15445 -> 14778) |
+| 133 | DeepWiki per-file Effect-idiom sweep — one `ask_question` per source file against the `effect-smol` v4 wiki, responses saved as a research corpus; a later plan 134 (authored from the corpus) does the triage | P2 | M | 127, 132 hard; 118 recommended first | TODO (added 2026-07-05; MCP endpoint + v4-index calibration probed same day — index at beta.93 vs our beta.83 pin, verify-locally rule covers the skew; read-only on src/) |
 | 120 | Competitor-analysis research brief (three ready-to-run prompts) | P1 | S | none (parallel-safe; feeds 114 Step 3 + roadmap) | IN PROGRESS (120A + 120B delivered + reconciled 2026-07-03; C pending) |
 | 121 | GoReleaser spec-extraction research brief (Prompt D, handoff-ready) | P0 | S-M | none (gates the 114 concretization pass) | DONE (report delivered + reconciled 2026-07-03; concretization pass landed in 114) |
 | 112 | Design the ideal public TypeScript API and CLI contract before cutting code | P0 | M | - | DONE |
@@ -201,9 +227,9 @@ renamed `parseJson`).
   builder stays **in-process via `Bun.build({ compile })`** (maintainer
   direction — the current runtime path already does this; the port is a move,
   not a rewrite), emitting structured `StageArtifactOperation` data; the
-  translation table's output type is `Bun.Build.CompileTarget`, so
-  toolchain drift is a compile error — strictly better than upstream's
-  embedded list, which lags in membership AND segment order;
+  stager boundary's target type is `Bun.Build.CompileTarget`, so
+  toolchain drift is still a compile error without pulling the Bun
+  global through the root config-schema export graph;
   `command`/`prebuilt` shapes pinned (argv-only expansion, no shell;
   prebuilt = zero build ops + read-only existence checks); name-token
   mapping owned by 119 (`x64→amd64` in default-generated names only —
@@ -219,6 +245,21 @@ renamed `parseJson`).
   design; 118 carries only what survives (Schema.parseJson sites, Effect.loop
   pagination, workspace-path wrapper dedup, conditional-spread noise,
   self-release check-script dedup).
+- 133 (added 2026-07-05, maintainer idea) runs after the wave — 127/132
+  hard, 118 recommended first so the oracle reviews the polished corpus
+  instead of re-reporting 118's known worklist. It sends each source
+  file with a fixed, versioned prompt to the hosted DeepWiki MCP
+  (`ask_question` against `Effect-TS/effect-smol`, the Effect v4
+  source wiki — asking about `Effect-TS/effect` would get v3-grounded
+  advice) and saves responses under `plans/research/deepwiki-sweep/`.
+  Same research→reconcile pattern as 120/121→114: the sweep changes no
+  source; plan 134 is authored afterward from the saved corpus, with
+  every cited API verified against `.repos/effect` at the pin
+  (`4.0.0-beta.83` @ `bacca414`) and the frozen-contract gates
+  (operation ids/risks, evidence bytes, renders) ruling every accepted
+  item. Endpoint + index calibration were probed 2026-07-05: stateless
+  `tools/call` works, SSE responses, index reports `4.0.0-beta.93`
+  (slightly ahead of the pin — the verify-locally rule covers it).
 
 - 112 comes first because the ideal TypeScript API, CLI, and action contract
   should guide the cuts. This prevents the cutover from accidentally becoming
@@ -248,8 +289,127 @@ renamed `parseJson`).
 - 106 depends on 103 so wording cleanup does not distract from the immediate
   release-readiness path.
 
+- 128 audit reconciliation (2026-07-05, memo at
+  `plans/research/128-semantic-compression-audit.md`): the wave
+  re-sequenced again — 124/125 as written would have ported the five
+  publish surfaces onto the current nine-class operation union and the
+  20-optional-field evidence record, both of which the audit collapses;
+  executing them then compressing would port every surface twice. The
+  replacement (129-132) lands the grammar first (130) so ports land on
+  final shape once. Decisions recorded by the audit reconciliation and
+  carried by the new plans: (a) **one operation grammar** —
+  `Operation { id, pipeId, phase, risk, description, action, retry? }`
+  over a closed 8-member `Action` union; ordering becomes pipeline-array
+  order (the id-suffix priority sort dies); the npm verify retry becomes
+  operation data; (b) **evidence v2** — base record + typed
+  `ActionOutcome`, bundle `release-evidence/v2` with a `notices` array;
+  one reviewed fixture re-pin in 130; (c) **NoteAction stays an
+  operation** (audit's notes-to-notices idea rejected: notes are
+  reachable plan output and converting them would break every corpus
+  snapshot; only unreachable branches die); (d) **renderers stay in
+  `src/engine/render.ts`** (audit's rendering-to-apps sketch rejected:
+  CLI and Action both consume them and must not share app code); (e)
+  **`strict` is removed** (maintainer decision 2026-07-05: the flag is a
+  runtime no-op — its only consumer is unreachable; config field +
+  state field + SPEC language go; `examples/non-strict-skips` retires);
+  (f) **doctor stays in `src/workflows/doctor.ts`** (the Action exposes
+  it; only init demotes to the CLI); (g) contract addenda landed in
+  131: the `{ext}` template token (JSON configs need
+  per-platform executable extensions once `outputs[]` dies) and the
+  `artifacts[]` → `import-artifacts` pipe mapping row (carried from the
+  125 draft); (h) 130 fixes the POSIX-only `test -f` existence checks
+  (122 drift item 6) via the `check-file` action — the one sanctioned
+  operation-shape change, unit-test-visible only. LOC trajectory
+  recorded by the audit: ~10.0k src today → ~5.6k after 127 → ~4.1k
+  after 132 (durable core ~2.3k); each plan records actuals.
+
+- 122 review reconciliation (2026-07-04, memo at
+  `plans/research/122-architecture-review.md`): the wave re-sequenced —
+  the frozen `workflows/release.ts` surface is internal-only, so plans
+  116/117 as written would have built a second throwaway bridge
+  (state→ReleasePlan projection) on top of the plan-115 sandwich; the
+  replacement (123-127) flips the carrier first and lands the D19
+  projection rule in 124, so every port lands on final shape once.
+  Contract addenda recorded by the memo and carried by the new plans:
+  (a) the honest feature-extension budget is one pipe + one pipeline.ts
+  line + one config composition line + one content/intent class + one
+  engine handler (supersedes 116's ≤5-lines-outside criterion, which its
+  own two proof features could not meet); (b) measured artifact facts
+  (sha256/size needed by catalog pipes) are delivered through typed
+  deferred content resolved by the engine with recorded evidence —
+  114 Pipe rule 5's deferred-value clause made concrete (125); (c) the
+  `artifacts[]` manual-artifact config section, missing from the 114
+  config mapping, maps to a new `import-artifacts` pipe (125); (d)
+  `TargetCapabilities` dissolves into operation data + risk-grouped
+  rendering, with matching SPEC/ARCHITECTURE edits (125); (e) plan 119's
+  `Builder.doctor` member is removed until a real consumer exists (123).
+  Four plan-115 contract items repaired by 123: the VersionSource seam
+  (never built; 116 Step 7 presumed it), D1 default-name byte
+  compatibility (current defaults render `linux-amd64` hyphens),
+  rendered-name uniqueness (paths only today), and the grep-enforceable
+  import-direction checks the 114 contract mandates.
+
+- File-distribution / agentic-artifact assessment (2026-07-05, advisor;
+  plans 136-138): motivated by the maintainer question "release one
+  agent skill/plugin pack to every surface users install from —
+  Claude/Codex/Cursor plugin marketplaces, skill catalogs, GitHub, npm".
+  Verdict: the kernel already carries this shape generically; the gaps
+  are three generic over-fits, none agent-specific. (a) The platform
+  axis is over-universalized — builders, archive grouping, and default
+  names assume os/arch executables while `Artifact.platform` is already
+  optional data. (b) Catalog publishing exists as two hardcoded
+  instances (homebrew, scoop) of one general pattern — "maintain a file
+  in a git repository derived from release facts" — whose git half
+  (`catalogGitPublishOperations`) is already generic. (c) Deferred
+  content is vendor-typed with one engine renderer per format — right
+  for Ruby formulas, pure overhead for the JSON manifests marketplaces
+  use. Plan 136 (design-only, the 114/119 contract pattern) decides the
+  shapes with maintainer sign-off; 137 lands platform-neutral flows;
+  138 lands the generic `catalogs[]` pipe pair + one templated
+  deferred-content member and proves the direction with
+  `examples/agent-plugin` under the 122 §5b budget (extension-cost
+  proof #2). No agent vocabulary enters `src/` — a 138 done criterion
+  (`rg -ni "claude|marketplace|skill|plugin" src/` → zero hits).
+  Sequencing: after the 0.1 wave (…132; 118 soft per wave order). The
+  changelog pipe remains the first post-0.1 fast-follow per the 120A
+  reconciliation — 136 is design-only and can draft in parallel; the
+  maintainer chooses whether 137/138 land before or after changelog.
+  Contract addendum expected on landing (the `{ext}`-token precedent):
+  `CatalogFileExtra.catalog` and `PackageExtra.packageManager` widen to
+  vendor-open strings (137). Catalog content is literal parts + typed
+  holes (`{ fact: "sha256" | "downloadUrl" | "assetName", artifact }`),
+  NOT a token grammar — the placeholder vocabulary is unchanged, there
+  is no parser/escaping surface, and declaration-is-use makes
+  undeclared/unused-fact states unrepresentable (136 F5). If 136 F5b
+  is adopted, 138 also collapses `DeferredFileContent` to ONE
+  parts-based member and deletes the per-vendor engine renderers —
+  the engine stops knowing any vendor's text format (resolves the
+  standing 122-vs-131 tension), byte-parity-gated by the 129 corpus.
+  Hardened 2026-07-05 after a deterministic-machine review of the
+  drafts: no archive mode inference (mixed selection is a plan error),
+  strict name rendering lives in one choke-point function rather than
+  call-site checks, and the catalog write path is derived
+  (`directory`/`file`) so out-of-checkout renders are unrepresentable.
+  Recorded per the non-interactive default: 136-138 are the advisor's
+  top-3 selection for this direction; the 136 contract's agent-target
+  parity table carries the per-vendor triage (expected outcome: every
+  marketplace row is config-only).
+
 ## Superseded or paused plans
 
+- 124 and 125 are superseded by 129-131 (see the 128 audit entry above).
+  Their DECISIONS survive: 124's spine-flip mechanics, D19 projection
+  rule, legacy-publish containment, plan-document v2, and test-reshape
+  rules carry into 130; 125's per-surface port order, snapshot-diff
+  discipline, deferred-content design, import-artifacts pipe, and
+  capability-dissolution SPEC edits carry into 131. Do not execute
+  124/125.
+- 116 and 117 are superseded by 123-127 (see the 122 review entry above).
+  Their DECISIONS survive: 116's port order, per-surface diff discipline,
+  homebrew/scoop selection gate, and checksum/archive/snapshot semantics
+  carry into 125/126; 117's ManagedRuntime/disposal story, DX guard
+  (plan-only closing line), risk-divider rendering, README positioning,
+  and render-command dissolution carry into 127. Do not execute 116/117.
 - 101 is superseded by 108, 109, and 111. It planned a focused facade while
   retaining lower-level operations; the new direction removes old public
   workflow surfaces instead.
@@ -309,3 +469,61 @@ renamed `parseJson`).
   the risk-gated executor executes; operations-as-data + explicit approval is
   this product's core safety differentiator (and enables split/merge-style
   features via ReleaseState serializability).
+- Convert ValidationNote operations into PipeNotices (128 audit sketch):
+  rejected during reconciliation — notes are reachable, operator-visible
+  plan output (npm trusted-publishing auth note, simulated dry-run
+  notes); converting them changes every operation snapshot and evidence
+  row for no behavioral gain. `NoteAction` keeps them as operations;
+  only the unreachable branches die.
+- Move plan/diagnostics rendering into the apps (128 audit sketch):
+  rejected — the CLI and the Action both need the formatters and must
+  not share app code; `src/engine/render.ts` is the single shared home.
+- Re-bind `strict` to new semantics (e.g. warnings fail the plan):
+  rejected 2026-07-05 in favor of removal — the flag controls nothing
+  today, and inventing semantics to save a field is backwards; a real
+  strict policy can return later as pipe-section data.
+- Express GitHub release create/upload as generic data-driven HTTP
+  operations: rejected — create-then-upload is a two-step dependency
+  (the upload URL comes from the create response); encoding it as data
+  would need a mini-workflow language. The typed engine module over
+  `ReleaseHttp` stays.
+- Cut the PyPI wheel channel or the zero-dependency archive writers to
+  reach a sub-3k total src count: surfaced by the 128 audit as product
+  decisions, not adopted — shipped behavior is preserved; the durable
+  core (~2.3k) meets the compression goal without cuts.
+- Dedicated vendor marketplace pipes now (`publish.claudePlugin`-style
+  sections for Claude/Codex/Cursor/Gemini): rejected 2026-07-05 — the
+  generic `catalogs[]` mechanism (plans 136-138) must prove itself
+  first; a dedicated pipe is a promotion-rule decision (heavy
+  `catalogs[]` use for one vendor, mirroring 119's command-builder
+  rule), and vendor manifest schemas are still churning (the 120A
+  naming-churn lesson applies to config section names).
+- An agent-artifact format compiler in core (one source tree emitted
+  as `.mdc` rules, AGENTS.md variants, per-vendor plugin trees):
+  rejected 2026-07-05 — SPEC.md non-goals ("invent a universal package
+  format", "replace full build pipelines"); transforms run upstream in
+  user tooling or CI, and ts-release distributes the resulting files.
+  Files-only archives (137) + `artifacts[]` import are the handoff.
+- Treat agentic artifacts as the "second consumer" justifying a
+  pipe/plugin SDK: rejected 2026-07-05 — the marketplace long tail is
+  served by config data (`catalogs[]`), not third-party pipe code; the
+  standing dynamic-pipe-registration rejection stands unchanged.
+- Target-less `command` builds for platform-neutral assembly: deferred
+  2026-07-05 (136 F9) — files-only archives + `artifacts[]` import
+  cover assembly; `builds[].targets` stays required per 119 B4 until
+  real demand appears.
+- A generic authenticated HTTP-write publish action (JFrog/registry
+  REST): deferred 2026-07-05 (136 F11) — vendor CLIs via `CommandSpec`
+  (`requiredEnv`/`redactedEnv`) cover the known cases; one Action
+  member + one engine arm is pre-priced for when a real consumer
+  arrives.
+- Marketplace-entry JSON merge (read-modify-write of shared
+  marketplace.json files): REJECTED 2026-07-05 (136 F8), not deferred
+  — merging makes the plan a function of remote mutable state, so the
+  plan stops being a deterministic function of (config, identity,
+  catalog); this repo deleted remote-state reconciliation to protect
+  exactly that property (plan 111). ts-release maintains only files it
+  fully derives from release facts. Workarounds: per-plugin catalog
+  files, or a TS config that renders the whole file from data the user
+  owns. Re-open bar: a design in which the catalog repo state is an
+  explicit, pinned plan input.

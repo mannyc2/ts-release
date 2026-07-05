@@ -12,10 +12,7 @@
     {
       "id": "archive",
       "path": "artifacts/release-example-github-0.1.0.tgz",
-      "format": "tarball",
-      "consumers": [
-        "github"
-      ]
+      "format": "tarball"
     }
   ],
   "publish": {
@@ -26,6 +23,5 @@
       "prerelease": false
     }
   },
-  "strict": true,
   "evidence": ".release/evidence"
 }

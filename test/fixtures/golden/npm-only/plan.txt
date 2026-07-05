@@ -1,0 +1,39 @@
+release-example-npm-only@0.1.0
+commit: example
+evidence: .release/evidence
+artifacts: 1
+surfaces: 1
+operations: 6
+
+artifacts:
+  - npm-package . [directory] size=0 checksum=none
+
+surfaces:
+  - npm operations=6
+
+operations by risk:
+  read-only:
+    - npm:npm-version Check npm CLI availability.
+    command: npm --version
+    argv: ["npm","--version"]
+    - npm:npm-trusted-publishing-auth Record npm trusted publishing authentication mode.
+    note: NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and package release-example-npm-only to already exist on the registry.
+    - npm:npm-package-exists Verify npm package exists before trusted publishing.
+    command: npm view release-example-npm-only name --registry https://registry.npmjs.org
+    argv: ["npm","view","release-example-npm-only","name","--registry","https://registry.npmjs.org"]
+    - npm:npm-pack-dry-run Validate npm package contents with npm pack dry-run.
+    command: npm pack --dry-run --json .
+    argv: ["npm","pack","--dry-run","--json","."]
+    - npm:npm-version-verify Verify release-example-npm-only@0.1.0 exists on npm.
+    command: npm view release-example-npm-only@0.1.0 version --registry https://registry.npmjs.org
+    argv: ["npm","view","release-example-npm-only@0.1.0","version","--registry","https://registry.npmjs.org"]
+  writes-local:
+    - none
+  -- approval boundary: externally visible and irreversible operations require explicit approval --
+  externally-visible:
+    - none
+  irreversible:
+    - npm:npm-publish Publish release-example-npm-only@0.1.0 to npm.
+    command: npm publish . --registry https://registry.npmjs.org --access public --provenance
+    argv: ["npm","publish",".","--registry","https://registry.npmjs.org","--access","public","--provenance"]
+    approval: execute + irreversible approval

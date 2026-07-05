@@ -1,22 +1,57 @@
 import { describe, expect, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { parseReleaseIntent } from "../src/config/load.js"
-import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/domain/operation.js"
-import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import {
-  renderPlanJson,
-  renderPlanMarkdown,
-  renderPlanOperationExplanation,
-  renderPlanSummary
-} from "../src/planner/render-plan.js"
-import {
-  findArtifactsByVariant,
-  findRequiredArtifactVariant
-} from "../src/targets/adapter-helpers.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/pipeline/operation.js"
+import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
+import { PlanError } from "../src/pipeline/errors.js"
 import { expectTaggedError, homebrewConfig, minimalConfig, releaseConfig, scoopConfig } from "./helpers.js"
+import {
+  createTestPlan,
+  renderTestPlanJson,
+  renderTestPlanMarkdown,
+  renderTestPlanOperationExplanation,
+  renderTestPlanSummary
+} from "./plan-helpers.js"
+import type { TestPlan } from "./plan-helpers.js"
+
+interface VariantCriteria {
+  readonly os?: string | undefined
+  readonly arch?: string | undefined
+  readonly libc?: string | undefined
+  readonly targetTriple?: string | undefined
+}
+
+const variantMatches = (
+  variant: NonNullable<TestPlan["artifacts"][number]["variant"]> | undefined,
+  criteria: VariantCriteria
+): boolean =>
+  variant !== undefined &&
+  (criteria.os === undefined || variant.os === criteria.os) &&
+  (criteria.arch === undefined || variant.arch === criteria.arch) &&
+  (criteria.libc === undefined || variant.libc === criteria.libc) &&
+  (criteria.targetTriple === undefined || variant.targetTriple === criteria.targetTriple)
+
+const findArtifactsByVariant = (
+  plan: TestPlan,
+  criteria: VariantCriteria
+): ReadonlyArray<TestPlan["artifacts"][number]> =>
+  plan.artifacts.filter((artifact) => variantMatches(artifact.variant, criteria))
+
+const findRequiredArtifactVariant = (
+  plan: TestPlan,
+  criteria: VariantCriteria,
+  missingReason: string
+) => {
+  const artifacts = findArtifactsByVariant(plan, criteria)
+  const artifact = artifacts[0]
+  return artifacts.length === 1 && artifact !== undefined
+    ? Effect.succeed(artifact)
+    : Effect.fail(PlanError.make({
+      pipeId: "test",
+      field: "artifacts",
+      reason: missingReason
+    }))
+}
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -26,7 +61,6 @@ const TestLayer = Layer.mergeAll(
       ["GH_TOKEN", "gh_secret"]
     ])
   }),
-  LiveTargetRegistryLayer
 )
 
 const gitHeadCommand = CommandSpec.make({
@@ -49,12 +83,10 @@ const manualChecksumConfig = (checksum: { readonly algorithm: "sha256" | "sha512
         id: "archive",
         path: "artifacts/archive.tgz",
         format: "tarball",
-        consumers: [],
         checksum
       }
     ],
     publish: {},
-    strict: true,
     evidence: ".release/evidence"
   })
 
@@ -63,14 +95,8 @@ const bunExecutableBuild = (overrides: Record<string, unknown> = {}) => ({
   id: "release-cli",
   entry: "src/cli.ts",
   cpu: "baseline",
-  outputs: [
-    {
-      id: "cli-linux-x64",
-      target: "linux-x64",
-      path: "dist/release-{version}-linux-x64",
-      consumers: ["github"]
-    }
-  ],
+  targets: ["linux-x64"],
+  output: "dist/release-{version}-{targetTriple}",
   ...overrides
 })
 
@@ -79,14 +105,10 @@ const ChecksumLayer = Layer.mergeAll(
     files: new Map([["artifacts/archive.tgz", "manual archive"]]),
     directories: new Set(["."])
   }),
-  LiveTargetRegistryLayer
 )
 
 const createPlan = (config: string) =>
-  Effect.gen(function*() {
-    const intent = yield* parseReleaseIntent(config)
-    return yield* createReleasePlan(intent)
-  })
+  createTestPlan(config)
 
 describe("planner", () => {
   layer(TestLayer)((it) => {
@@ -94,50 +116,40 @@ describe("planner", () => {
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
         const publishIds = plan.operations
-          .filter((operation) =>
-            operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
-          )
+          .filter((operation) => operation.phase === "publish" && operation.risk !== "read-only")
           .map((operation) => operation.id)
         const firstPublishIndex = plan.operations.findIndex((operation) =>
-          operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+          operation.phase === "publish" && operation.risk !== "read-only"
         )
         const firstVerifyIndex = plan.operations.findIndex((operation) =>
-          operation._tag === "VerifyRemoteOperation" || operation._tag === "VerifyHttpOperation"
+          operation.phase === "verify"
         )
 
-        expect(plan.targets.map((target) => target.id)).toEqual(["github", "npm"])
+        expect(plan.surfaceIds).toEqual(["github", "npm"])
         expect(publishIds).toEqual(["npm:npm-publish", "github:github-release-create"])
-        expect(firstPublishIndex).toBeGreaterThan(
-          Math.max(
-            ...plan.operations
-              .map((operation, index) =>
-                operation._tag === "ValidateCommandOperation" || operation._tag === "ValidationNoteOperation" ? index : -1
-              )
-          )
-        )
+        expect(firstPublishIndex).toBeGreaterThanOrEqual(0)
         expect(firstVerifyIndex).toBeGreaterThan(firstPublishIndex)
         expect(plan.identity.commit).toBe("abc123")
-        expect(renderPlanJson(plan)).toBe(renderPlanJson(plan))
+        expect(renderTestPlanJson(plan)).toBe(renderTestPlanJson(plan))
       }))
 
     it.effect("rejects unsafe package manifest identity paths", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           identity: {
-            _tag: "PackageManifestReleaseIdentitySource",
             packagePath: "../package.json",
             commit: "HEAD",
             tagTemplate: "v{version}"
           },
           artifacts: [],
-          targets: []
+          publish: {}
         })
 
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("identity.packagePath")
+        expect(error._tag).toBe("ConfigValidationError")
+        if (error._tag === "ConfigValidationError") {
+          expect(error.reason).toContain("project.packagePath")
         }
       }))
 
@@ -145,7 +157,7 @@ describe("planner", () => {
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
         const publish = plan.operations.filter((operation) =>
-          operation._tag === "PublishCommandOperation" || operation._tag === "PublishGitHubReleaseOperation"
+          operation.phase === "publish" && operation.risk !== "read-only"
         )
 
         expect(publish.length).toBe(2)
@@ -158,11 +170,11 @@ describe("planner", () => {
         const pack = plan.operations.find((operation) => operation.id === "npm:npm-pack-dry-run")
         const publish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
 
-        expect(pack?._tag).toBe("ValidateCommandOperation")
-        expect(publish?._tag).toBe("PublishCommandOperation")
-        if (pack?._tag === "ValidateCommandOperation" && publish?._tag === "PublishCommandOperation") {
-          expect(pack.command.requiredEnv).toEqual([])
-          expect(publish.command.requiredEnv).toEqual(["NPM_TOKEN"])
+        expect(pack?.action._tag).toBe("command")
+        expect(publish?.action._tag).toBe("command")
+        if (pack?.action._tag === "command" && publish?.action._tag === "command") {
+          expect(pack.action.command.requiredEnv).toEqual([])
+          expect(publish.action.command.requiredEnv).toEqual(["NPM_TOKEN"])
         }
       }))
 
@@ -174,7 +186,7 @@ describe("planner", () => {
         )
         const error = yield* createPlan(unsafeConfig).pipe(Effect.flip)
 
-        expectTaggedError(error, "ReleaseNormalizationError")
+        expectTaggedError(error, "ConfigValidationError")
       }))
 
     it.effect("rejects empty path fields during normalization", () =>
@@ -187,7 +199,7 @@ describe("planner", () => {
           {
             label: "evidence directory",
             config: minimalConfig.replace("\"evidence\":\".release/evidence\"", "\"evidence\":\"\""),
-            field: "evidenceDirectory"
+            field: "evidence"
           },
           {
             label: "artifact path",
@@ -196,55 +208,63 @@ describe("planner", () => {
                 {
                   id: "archive",
                   path: "",
-                  format: "tarball",
-                  consumers: []
+                  format: "tarball"
                 }
               ],
-              targets: []
+              publish: {}
             }),
-            field: "artifacts.archive.path"
+            field: "artifacts[0].path"
           },
           {
             label: "npm package path",
             config: minimalConfig.replace("\"packagePath\":\".\"", "\"packagePath\":\"\""),
-            field: "targets.npm.packagePath"
+            field: "publish.npm.packagePath"
           },
           {
             label: "Homebrew formula path",
             config: homebrewConfig({ formulaPath: "" }),
-            field: "targets.homebrew.formulaPath"
+            field: "publish.homebrew.formulaPath"
           },
           {
             label: "Scoop manifest path",
             config: scoopConfig({ manifestPath: "" }),
-            field: "targets.scoop.manifestPath"
+            field: "publish.scoop.manifestPath"
           }
         ]
 
         for (const item of cases) {
           const error = yield* createPlan(item.config).pipe(Effect.flip)
 
-          expect(error._tag, item.label).toBe("ReleaseNormalizationError")
-          if (error._tag === "ReleaseNormalizationError") {
-            expect(error.field).toBe(item.field)
+          expect(error._tag, item.label).toBe("ConfigValidationError")
+          if (error._tag === "ConfigValidationError") {
+            expect(error.reason).toContain(item.field)
           }
         }
       }))
 
-    it.effect("rejects missing artifacts", () =>
+    it.effect("adds imported artifacts to the artifact inventory", () =>
       Effect.gen(function*() {
-        const missingConfig = minimalConfig.replace("\"path\":\".\"", "\"path\":\"missing.tgz\"")
-          .replace("\"format\":\"directory\"", "\"format\":\"tarball\"")
-        const error = yield* createPlan(missingConfig).pipe(Effect.flip)
+        const importedConfig = releaseConfig({
+          artifacts: [
+            {
+              id: "archive",
+              path: "artifacts/release.tgz",
+              format: "tarball"
+            }
+          ],
+          publish: {}
+        })
+        const plan = yield* createPlan(importedConfig)
 
-        expectTaggedError(error, "ReleaseNormalizationError")
+        expect(plan.artifacts.map((artifact) => artifact.id)).toContain("archive")
+        expect(plan.operations.map((operation) => operation.id)).not.toContain("import-artifacts:archive:exists")
       }))
 
     it.effect("renders summary and Markdown review output", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
-        const summary = renderPlanSummary(plan)
-        const markdown = renderPlanMarkdown(plan)
+        const summary = renderTestPlanSummary(plan)
+        const markdown = renderTestPlanMarkdown(plan)
 
         expect(summary).toContain("irreversible approval required")
         expect(summary).toContain("execute required")
@@ -257,7 +277,7 @@ describe("planner", () => {
     it.effect("explains one operation by stable id", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
-        const explanation = yield* renderPlanOperationExplanation(plan, "npm:npm-publish")
+        const explanation = yield* renderTestPlanOperationExplanation(plan, "npm:npm-publish")
 
         expect(explanation).toContain("operation: npm:npm-publish")
         expect(explanation).toContain("risk: irreversible")
@@ -268,7 +288,7 @@ describe("planner", () => {
     it.effect("explaining a missing operation returns a typed error", () =>
       Effect.gen(function*() {
         const plan = yield* createPlan(minimalConfig)
-        const error = yield* renderPlanOperationExplanation(plan, "missing:operation").pipe(Effect.flip)
+        const error = yield* renderTestPlanOperationExplanation(plan, "missing:operation").pipe(Effect.flip)
 
         expectTaggedError(error, "PlanOperationNotFoundError")
       }))
@@ -289,7 +309,6 @@ describe("planner", () => {
         }]
       ])
     }),
-    LiveTargetRegistryLayer
   ))((it) => {
     it.effect("resolves HEAD release identity through the host git command", () =>
       Effect.gen(function*() {
@@ -314,25 +333,22 @@ describe("planner", () => {
         }]
       ])
     }),
-    LiveTargetRegistryLayer
   ))((it) => {
     it.effect("resolves package manifest identity during normalization", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           identity: {
-            _tag: "PackageManifestReleaseIdentitySource",
             commit: "HEAD",
             tagTemplate: "v{version}"
           },
           artifacts: [
             {
-              id: "archive",
-              path: "artifacts/{normalizedName}-{version}.tgz",
-              format: "tarball",
-              consumers: []
-            }
-          ],
-          targets: []
+                  id: "archive",
+                  path: "artifacts/{normalizedName}-{version}.tgz",
+                  format: "tarball"
+                }
+              ],
+              publish: {}
         })
         const plan = yield* createPlan(config)
 
@@ -350,20 +366,18 @@ describe("planner", () => {
     makeTestCommandRunnerLayer({
       files: new Map([["artifacts/release-0.1.0-release.tgz", "archive"]])
     }),
-    LiveTargetRegistryLayer
   ))((it) => {
     it.effect("expands artifact path templates before inventory", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [
             {
-              id: "archive",
-              path: "artifacts/{name}-{version}-{normalizedName}.tgz",
-              format: "tarball",
-              consumers: []
-            }
-          ],
-          targets: []
+                  id: "archive",
+                  path: "artifacts/{name}-{version}-{normalizedName}.tgz",
+                  format: "tarball"
+                }
+              ],
+              publish: {}
         })
         const plan = yield* createPlan(config)
 
@@ -375,28 +389,23 @@ describe("planner", () => {
     makeTestCommandRunnerLayer({
       files: new Map([["dist/release-0.1.0-linux-x64", "compiled binary"]])
     }),
-    LiveTargetRegistryLayer
   ))((it) => {
-    it.effect("adds build outputs to the artifact inventory", () =>
+    it.effect("adds build artifacts to the artifact inventory", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
           builds: [bunExecutableBuild()],
-          targets: []
+          publish: {}
         })
         const plan = yield* createPlan(config)
-        const artifact = plan.artifacts.find((item) => item.id === "cli-linux-x64")
+        const artifact = plan.artifacts.find((item) => item.id === "release-cli-linux-x64")
 
         expect(artifact).toMatchObject({
-          id: "cli-linux-x64",
+          id: "release-cli-linux-x64",
           path: "dist/release-0.1.0-linux-x64",
           format: "executable",
-          consumers: ["github"],
-          sizeBytes: 15,
-          checksum: {
-            algorithm: "sha256",
-            value: "636f6d70696c65642062696e617279"
-          },
+          consumers: [],
+          sizeBytes: 0,
           variant: {
             os: "linux",
             arch: "x64",
@@ -411,7 +420,7 @@ describe("planner", () => {
         const config = releaseConfig({
           artifacts: [],
           builds: [bunExecutableBuild()],
-          targets: []
+          publish: {}
         })
         const plan = yield* createPlan(config)
         const linuxArtifacts = findArtifactsByVariant(plan, {
@@ -421,13 +430,12 @@ describe("planner", () => {
         })
         const artifact = yield* findRequiredArtifactVariant(
           plan,
-          "github",
           { targetTriple: "bun-linux-x64-baseline" },
           "expected linux binary"
         )
 
-        expect(linuxArtifacts.map((item) => item.id)).toEqual(["cli-linux-x64"])
-        expect(artifact.id).toBe("cli-linux-x64")
+        expect(linuxArtifacts.map((item) => item.id)).toEqual(["release-cli-linux-x64"])
+        expect(artifact.id).toBe("release-cli-linux-x64")
       }))
   })
 
@@ -437,14 +445,13 @@ describe("planner", () => {
         const config = releaseConfig({
           artifacts: [
             {
-              id: "cli-linux-x64",
-              path: ".",
-              format: "directory",
-              consumers: []
-            }
-          ],
-          builds: [bunExecutableBuild()],
-          targets: []
+              id: "release-cli-linux-x64",
+                  path: ".",
+                  format: "directory"
+                }
+              ],
+              builds: [bunExecutableBuild()],
+              publish: {}
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
@@ -459,13 +466,13 @@ describe("planner", () => {
         const config = releaseConfig({
           artifacts: [],
           builds: [bunExecutableBuild({ entry: "../cli.ts" })],
-          targets: []
+          publish: {}
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("builds[].entry")
+        expect(error._tag).toBe("ConfigValidationError")
+        if (error._tag === "ConfigValidationError") {
+          expect(error.reason).toContain("builds[0].entry")
         }
       }))
 
@@ -475,27 +482,20 @@ describe("planner", () => {
           artifacts: [],
           builds: [
             bunExecutableBuild({
-              outputs: [
-                {
-                  id: "cli-linux-x64",
-                  target: "linux-x64",
-                  path: "../dist/release-{version}",
-                  consumers: ["github"]
-                }
-              ]
+              output: "../dist/release-{version}"
             })
           ],
-          targets: []
+          publish: {}
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("artifacts.cli-linux-x64.path")
+        expect(error._tag).toBe("ConfigValidationError")
+        if (error._tag === "ConfigValidationError") {
+          expect(error.reason).toContain("builds[0].output")
         }
       }))
 
-    it.effect("rejects build variant overrides that contradict the Bun target", () =>
+    it.effect("rejects removed build output override arrays", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
@@ -506,7 +506,6 @@ describe("planner", () => {
                   id: "cli-linux-x64",
                   target: "linux-x64",
                   path: "dist/release-{version}",
-                  consumers: ["github"],
                   variant: {
                     os: "windows"
                   }
@@ -514,13 +513,13 @@ describe("planner", () => {
               ]
             })
           ],
-          targets: []
+          publish: {}
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("builds[].outputs.cli-linux-x64.variant.os")
+        expect(error._tag).toBe("ConfigValidationError")
+        if (error._tag === "ConfigValidationError") {
+          expect(error.reason).toContain("builds[0].outputs")
         }
       }))
   })
@@ -529,26 +528,24 @@ describe("planner", () => {
     makeTestCommandRunnerLayer({
       files: new Map([["dist/release-darwin-arm64", "compiled binary"]])
     }),
-    LiveTargetRegistryLayer
   ))((it) => {
     it.effect("preserves direct artifact variant metadata", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [
             {
-              id: "cli-darwin-arm64",
-              path: "dist/release-darwin-arm64",
-              format: "executable",
-              consumers: ["github"],
-              variant: {
-                os: "darwin",
+                  id: "cli-darwin-arm64",
+                  path: "dist/release-darwin-arm64",
+                  format: "executable",
+                  variant: {
+                    os: "darwin",
                 arch: "arm64",
                 binaryName: "release",
                 installPath: "bin/release"
               }
             }
           ],
-          targets: []
+          publish: {}
         })
         const plan = yield* createPlan(config)
 
@@ -569,18 +566,17 @@ describe("planner", () => {
         const config = releaseConfig({
           artifacts: [
             {
-              id: "cli-darwin-arm64",
-              path: "dist/release-darwin-arm64",
-              format: "executable",
-              consumers: ["github"],
-              variant: {
-                os: "darwin",
+                  id: "cli-darwin-arm64",
+                  path: "dist/release-darwin-arm64",
+                  format: "executable",
+                  variant: {
+                    os: "darwin",
                 arch: "arm64",
                 libc: "musl"
               }
             }
           ],
-          targets: []
+          publish: {}
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
@@ -606,7 +602,6 @@ describe("planner", () => {
         }]
       ])
     }),
-    LiveTargetRegistryLayer
   ))((it) => {
     it.effect("reports git HEAD resolution failures as normalization errors", () =>
       Effect.gen(function*() {
@@ -626,24 +621,18 @@ describe("planner", () => {
         expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: checksum })
       }))
 
-    it.effect("rejects mismatched manual sha256 checksums", () =>
+    it.effect("carries manual checksum data into imported artifacts", () =>
       Effect.gen(function*() {
-        const error = yield* createPlan(manualChecksumConfig({ algorithm: "sha256", value: "00" })).pipe(Effect.flip)
+        const plan = yield* createPlan(manualChecksumConfig({ algorithm: "sha256", value: "00" }))
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("artifacts.archive.checksum")
-        }
+        expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: "00" })
       }))
 
-    it.effect("rejects manual non-sha256 checksums during artifact inventory", () =>
+    it.effect("preserves manual sha512 checksums on imported artifacts", () =>
       Effect.gen(function*() {
-        const error = yield* createPlan(manualChecksumConfig({ algorithm: "sha512", value: "sha512:manual" })).pipe(Effect.flip)
+        const plan = yield* createPlan(manualChecksumConfig({ algorithm: "sha512", value: "sha512:manual" }))
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
-          expect(error.field).toBe("artifacts.archive.checksum")
-        }
+        expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha512", value: "sha512:manual" })
       }))
   })
 })

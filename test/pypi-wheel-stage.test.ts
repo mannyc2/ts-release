@@ -9,7 +9,7 @@ import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { stageArtifactOperations } from "../src/engine/stager.js"
 import { pypiWheelPipe } from "../src/pipes/pypi-wheel.js"
-import { StageArtifactOperation } from "../src/pipeline/operation.js"
+import type { Operation, StageAction } from "../src/pipeline/operation.js"
 import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
 
 const identity = ReleaseIdentity.make({
@@ -23,11 +23,16 @@ const identity = ReleaseIdentity.make({
   snapshot: false
 })
 
-const isStageArtifactOperation = (operation: unknown): operation is StageArtifactOperation =>
+type StageOperation = Operation & { readonly action: StageAction }
+
+const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
   typeof operation === "object"
   && operation !== null
-  && "_tag" in operation
-  && operation._tag === "StageArtifactOperation"
+  && "action" in operation
+  && typeof operation.action === "object"
+  && operation.action !== null
+  && "_tag" in operation.action
+  && operation.action._tag === "stage"
 
 describe("PyPI wheel build pipe", () => {
   test("builds a platform wheel that embeds one staged CLI binary", async () => {
@@ -63,8 +68,7 @@ describe("PyPI wheel build pipe", () => {
                   sourcePath: "artifacts/ts-release-{version}-linux-x64",
                   wheelPath: "ts_release/bin/ts-release-linux-x64"
                 }
-              ],
-              consumers: ["pypi"]
+              ]
             },
             publish: {}
           }))
@@ -73,7 +77,7 @@ describe("PyPI wheel build pipe", () => {
           if (section === undefined) {
             return []
           }
-          const contribution = yield* pypiWheelPipe.plan(section, emptyReleaseState(identity, true))
+          const contribution = yield* pypiWheelPipe.plan(section, emptyReleaseState(identity))
           expect(contribution.artifacts[0]).toMatchObject({
             id: "pypi-wheel-linux-x64",
             kind: "wheel",

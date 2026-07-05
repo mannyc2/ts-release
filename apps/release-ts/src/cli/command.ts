@@ -5,10 +5,10 @@ import * as Path from "effect/Path"
 import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
 import { DEFAULT_CONFIG_PATH } from "../../../../src/config/schema.js"
-import { EvidenceBundle } from "../../../../src/domain/evidence.js"
-import { renderEvidenceJson } from "../../../../src/planner/evidence-recorder.js"
-import * as Init from "../../../../src/workflows/init.js"
-import * as Release from "../../../../src/workflows/release.js"
+import { EvidenceBundle } from "../../../../src/engine/evidence.js"
+import * as Release from "../../../../src/engine/engine.js"
+import * as Doctor from "../../../../src/workflows/doctor.js"
+import * as Init from "./init.js"
 
 const configFlag = Flag.string("config").pipe(Flag.withDefault(DEFAULT_CONFIG_PATH))
 const rootFlag = Flag.string("root").pipe(Flag.withDefault(""))
@@ -44,6 +44,7 @@ const githubActionsFlag = Flag.boolean("github-actions").pipe(Flag.withDefault(f
 const targetFlag = Flag.string("target").pipe(Flag.withDefault(""))
 const executeFlag = Flag.boolean("execute").pipe(Flag.withDefault(false))
 const approvePublishFlag = Flag.boolean("approve-publish").pipe(Flag.withDefault(false))
+const snapshotFlag = Flag.boolean("snapshot").pipe(Flag.withDefault(false))
 
 const writeFile = Effect.fn("cli.writeFile")(function*(pathName: string, contents: string) {
   const fs = yield* FileSystem.FileSystem
@@ -62,52 +63,47 @@ const writeOrPrint = Effect.fn("writeOrPrint")(function*(out: string, contents: 
 const configInput = (input: {
   readonly root: string
   readonly config: string
+  readonly snapshot?: boolean | undefined
 }): {
   readonly root?: string
   readonly configPath: string
+  readonly snapshot?: boolean | undefined
 } => ({
     ...(input.root.length === 0 ? {} : { root: input.root }),
-    configPath: input.config
+    configPath: input.config,
+    ...(input.snapshot === undefined ? {} : { snapshot: input.snapshot })
   })
 
 const formattedConfigInput = <Format extends string>(input: {
   readonly root: string
   readonly config: string
+  readonly snapshot?: boolean | undefined
   readonly format: Format
 }): {
   readonly root?: string
   readonly configPath: string
+  readonly snapshot?: boolean | undefined
   readonly format: Format
 } => ({
     ...configInput(input),
     format: input.format
   })
 
-const executableConfigInput = (input: {
-  readonly root: string
-  readonly config: string
-  readonly execute: boolean
-}): {
-  readonly root?: string
-  readonly configPath: string
-  readonly execute: boolean
-} => ({
-    ...configInput(input),
-    execute: input.execute
-  })
-
 const approvedConfigInput = (input: {
   readonly root: string
   readonly config: string
+  readonly snapshot?: boolean | undefined
   readonly execute: boolean
   readonly approvePublish: boolean
 }): {
   readonly root?: string
   readonly configPath: string
+  readonly snapshot?: boolean | undefined
   readonly execute: boolean
   readonly approveIrreversible: boolean
 } => ({
-    ...executableConfigInput(input),
+    ...configInput(input),
+    execute: input.execute,
     approveIrreversible: input.approvePublish
   })
 
@@ -116,11 +112,12 @@ const planCommand = Command.make(
   {
     root: rootFlag,
     config: configFlag,
+    snapshot: snapshotFlag,
     out: outputFlag,
     format: formatFlag
   },
-  Effect.fn("cli.plan")(function*({ root, config, out, format }) {
-    const plan = yield* Release.planRelease(formattedConfigInput({ root, config, format }))
+  Effect.fn("cli.plan")(function*({ root, config, snapshot, out, format }) {
+    const plan = yield* Release.planRelease(formattedConfigInput({ root, config, snapshot, format }))
     const contents = Release.renderReleasePlan(plan, format)
     yield* writeOrPrint(out, contents)
   })
@@ -131,17 +128,18 @@ const buildCommand = Command.make(
   {
     root: rootFlag,
     config: configFlag,
+    snapshot: snapshotFlag,
     format: textJsonFormatFlag,
     out: outputFlag
   },
-  Effect.fn("cli.build")(function*({ root, config, format, out }) {
-    const result = yield* Release.buildReleaseArtifacts(formattedConfigInput({ root, config, format }))
+  Effect.fn("cli.build")(function*({ root, config, snapshot, format, out }) {
+    const result = yield* Release.buildReleaseArtifacts(formattedConfigInput({ root, config, snapshot, format }))
     yield* writeOrPrint(out, Release.renderBuildArtifacts(result, format))
   })
 )
 
 const printEvidence = Effect.fn("cli.printEvidence")(function*(evidence: EvidenceBundle) {
-  yield* Console.log(renderEvidenceJson(evidence).trimEnd())
+  yield* Console.log(Release.renderEvidenceJson(evidence).trimEnd())
 })
 
 const initCommand = Command.make(
@@ -216,6 +214,7 @@ const initCommand = Command.make(
 const diagnosticsOptions = (input: {
   readonly root: string
   readonly config: string
+  readonly snapshot?: boolean | undefined
   readonly format: "json" | "text" | "markdown"
   readonly target?: string | undefined
 }) => ({
@@ -233,8 +232,8 @@ const doctorCommand = Command.make(
     format: diagnosticsFormatFlag
   },
   Effect.fn("cli.doctor")(function*({ root, config, target, format }) {
-    const report = yield* Release.doctorRelease(diagnosticsOptions({ root, config, target, format }))
-    yield* Console.log(Release.renderReleaseDiagnostics(report, format).trimEnd())
+    const report = yield* Doctor.doctorRelease(diagnosticsOptions({ root, config, target, format }))
+    yield* Console.log(Doctor.renderReleaseDiagnostics(report, format).trimEnd())
   })
 )
 
@@ -242,25 +241,11 @@ const verifyCommand = Command.make(
   "verify",
   {
     root: rootFlag,
-    config: configFlag
-  },
-  Effect.fn("cli.verify")(function*({ root, config }) {
-    const result = yield* Release.verifyRelease(configInput({ root, config }))
-    yield* printEvidence(result.evidence)
-  })
-)
-
-const renderCommand = Command.make(
-  "render",
-  {
-    root: rootFlag,
     config: configFlag,
-    execute: executeFlag
+    snapshot: snapshotFlag
   },
-  Effect.fn("cli.render")(function*({ root, config, execute }) {
-    const result = yield* Release.renderReleaseFiles(
-      executableConfigInput({ root, config, execute })
-    )
+  Effect.fn("cli.verify")(function*({ root, config, snapshot }) {
+    const result = yield* Release.verifyRelease(configInput({ root, config, snapshot }))
     yield* printEvidence(result.evidence)
   })
 )
@@ -270,12 +255,22 @@ const releaseCommand = Command.make(
   {
     root: rootFlag,
     config: configFlag,
+    snapshot: snapshotFlag,
     execute: executeFlag,
     approvePublish: approvePublishFlag
   },
-  Effect.fn("cli.release")(function*({ root, config, execute, approvePublish }) {
+  Effect.fn("cli.release")(function*({ root, config, snapshot, execute, approvePublish }) {
+    if (!execute) {
+      const plan = yield* Release.planRelease(
+        formattedConfigInput({ root, config, snapshot, format: "text" as const })
+      )
+      yield* Console.log(
+        `${Release.renderReleasePlan(plan, "text").trimEnd()}\nrelease planned only; pass --execute to run approved operations.`
+      )
+      return
+    }
     const result = yield* Release.runApprovedRelease(
-      approvedConfigInput({ root, config, execute, approvePublish })
+      approvedConfigInput({ root, config, snapshot, execute, approvePublish })
     )
     yield* printEvidence(result.evidence)
   })
@@ -287,7 +282,6 @@ export const cli = Command.make("release").pipe(
     doctorCommand,
     initCommand,
     planCommand,
-    renderCommand,
     releaseCommand,
     verifyCommand
   ])

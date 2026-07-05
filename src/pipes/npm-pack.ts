@@ -1,9 +1,15 @@
 import * as Effect from "effect/Effect"
-import { Artifact, PackageExtra } from "../pipeline/artifact.js"
+import * as Schema from "effect/Schema"
+import { Artifact, PackageExtra, SafeRelativePath } from "../pipeline/artifact.js"
 import { renderTemplate } from "../pipeline/template.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import type { ReleaseConfigNpmPackageBuild } from "../domain/release.js"
+
+export class ReleaseConfigNpmPackageBuild extends Schema.Class<ReleaseConfigNpmPackageBuild>(
+  "ReleaseConfigNpmPackageBuild"
+)({
+  path: Schema.optionalKey(SafeRelativePath)
+}) {}
 
 export type NpmPackageSection = true | ReleaseConfigNpmPackageBuild
 
@@ -27,7 +33,7 @@ export const npmPackPipe: Pipe<NpmPackageSection> = {
       ...emptyContribution,
       artifacts: [
         Artifact.make({
-          id: config?.id ?? "npm-package",
+          id: "npm-package",
           kind: "package",
           path,
           producedBy: "build:npm-pack",

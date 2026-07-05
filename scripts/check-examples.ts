@@ -5,82 +5,82 @@ import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { RELEASE_CONFIG_SCHEMA_ID } from "../src/config/schema.js"
-import { resolveReleasePlanningInputs } from "../src/planner/normalize-release.js"
-import { planRelease, renderReleasePlan } from "../src/workflows/release.js"
+import { RELEASE_CONFIG_SCHEMA_ID, type ReleaseIntent } from "../src/config/schema.js"
+import { planRelease, renderReleasePlan } from "../src/engine/engine.js"
 
 const root = process.cwd()
 const expectedSnippets = new Map<string, ReadonlyArray<string>>([
   ["github-release", [
-    "[GitHubReleaseTarget]",
+    "surfaces: 1",
+    "  - github operations=",
     "github:github-release-dry-run",
     "github:github-release-create"
   ]],
   ["homebrew-tap", [
-    "[HomebrewTapTarget]",
+    "surfaces: 1",
+    "  - homebrew operations=",
     "homebrew:homebrew-render-formula",
     "write: .release/generated/"
   ]],
   ["multi-target", [
-    "targets: 3",
-    "[GitHubReleaseTarget]",
-    "[NpmRegistryTarget]",
-    "[HomebrewTapTarget]",
+    "surfaces: 3",
+    "  - github operations=",
+    "  - homebrew operations=",
+    "  - npm operations=",
     "approval: execute"
   ]],
-  ["non-strict-skips", [
-    "strategy=simulated-plan",
-    "Record simulated GitHub release dry-run validation"
-  ]],
   ["npm-only", [
-    "[NpmRegistryTarget]",
+    "surfaces: 1",
+    "  - npm operations=",
     "npm:npm-pack-dry-run",
     "npm:npm-publish"
   ]],
   ["npm-first-publish", [
-    "[NpmRegistryTarget]",
-    "auth=env-token",
+    "surfaces: 1",
+    "  - npm operations=",
     "npm:npm-whoami",
     "npm:npm-publish"
   ]],
   ["pypi-registry", [
-    "[PyPiRegistryTarget]",
+    "surfaces: 1",
+    "  - pypi operations=",
     "pypi:twine-check",
     "pypi:twine-upload",
     "python -m twine upload --non-interactive --repository-url https://test.pypi.org/legacy/"
   ]],
   ["portable-cli", [
-    "targets: 5",
-    "[GitHubReleaseTarget]",
-    "[HomebrewTapTarget]",
-    "[NpmRegistryTarget]",
-    "[PyPiRegistryTarget]",
-    "[ScoopBucketTarget]",
+    "surfaces: 5",
+    "  - github operations=",
+    "  - homebrew operations=",
+    "  - npm operations=",
+    "  - pypi operations=",
+    "  - scoop operations=",
     "github:github-release-create",
     "homebrew:homebrew-render-formula",
     "scoop:scoop-render-manifest",
     "pypi:twine-upload"
   ]],
   ["scoop-bucket", [
-    "[ScoopBucketTarget]",
+    "surfaces: 1",
+    "  - scoop operations=",
     "scoop:scoop-render-manifest",
     "scoop:scoop-push",
     "write: .release/generated/"
   ]]
 ])
 
-const expectedTemplateTags = new Map<string, ReadonlyArray<string>>([
-  ["bun-cli-github", ["GitHubReleaseTarget", "NpmRegistryTarget"]],
-  ["multi-target-homebrew", ["GitHubReleaseTarget", "HomebrewTapTarget", "NpmRegistryTarget"]],
-  ["multi-target-scoop", ["GitHubReleaseTarget", "NpmRegistryTarget", "ScoopBucketTarget"]],
-  ["npm-github", ["GitHubReleaseTarget", "NpmRegistryTarget"]],
-  ["npm-only", ["NpmRegistryTarget"]],
+const expectedTemplateSurfaces = new Map<string, ReadonlyArray<string>>([
+  ["bun-cli-github", ["github", "npm"]],
+  ["multi-target-homebrew", ["github", "homebrew", "npm"]],
+  ["multi-target-scoop", ["github", "npm", "scoop"]],
+  ["npm-github", ["github", "npm"]],
+  ["npm-only", ["npm"]],
   ["portable-cli", [
-    "GitHubReleaseTarget",
-    "HomebrewTapTarget",
-    "NpmRegistryTarget",
-    "PyPiRegistryTarget",
-    "ScoopBucketTarget"
+    "github",
+    "homebrew",
+    "npm",
+    "pypi",
+    "scoop"
   ]]
 ])
 
@@ -114,6 +114,26 @@ const workflowTemplates: ReadonlyArray<WorkflowTemplateExpectation> = [
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
+
+const enabledPublishSurfaces = (publish: ReleaseIntent["publish"]): ReadonlyArray<string> => {
+  const surfaces: Array<string> = []
+  if (publish.github !== undefined) {
+    surfaces.push("github")
+  }
+  if (publish.homebrew !== undefined) {
+    surfaces.push("homebrew")
+  }
+  if (publish.npm !== undefined) {
+    surfaces.push("npm")
+  }
+  if (publish.pypi !== undefined) {
+    surfaces.push("pypi")
+  }
+  if (publish.scoop !== undefined) {
+    surfaces.push("scoop")
+  }
+  return surfaces
+}
 
 const readExampleNames = Effect.fn("scripts.readExampleNames")(function*() {
   const fs = yield* FileSystem.FileSystem
@@ -225,13 +245,16 @@ const checkTemplateConfig = Effect.fn("scripts.checkTemplateConfig")(function*(t
 
   const path = yield* Path.Path
   const intent = yield* parseReleaseIntent(contents, path.join("templates", templateName, "release.config.json"))
-  const inputs = yield* resolveReleasePlanningInputs(intent)
-  const actualTags = inputs.targets.map((target) => target._tag).sort()
-  const expected = expectedTemplateTags.get(templateName) ?? []
-  const expectedTags = [...expected].sort()
-  if (actualTags.join(",") !== expectedTags.join(",")) {
+  const actualSurfaces = [...enabledPublishSurfaces(intent.publish)].sort()
+  const expected = expectedTemplateSurfaces.get(templateName) ?? []
+  const expectedSurfaces = [...expected].sort()
+  if (actualSurfaces.join(",") !== expectedSurfaces.join(",")) {
     return yield* Effect.fail(
-      new Error(`Template ${templateName} target tags ${actualTags.join(", ")} did not match ${expectedTags.join(", ")}`)
+      new Error(
+        `Template ${templateName} publish surfaces ${actualSurfaces.join(", ")} did not match ${
+          expectedSurfaces.join(", ")
+        }`
+      )
     )
   }
 })
@@ -294,7 +317,7 @@ const main = Effect.fn("scripts.checkExamples")(function*() {
     checkExampleConfigPolicy,
     { discard: true }
   )
-  const templateNames = [...expectedTemplateTags.keys()].sort()
+  const templateNames = [...expectedTemplateSurfaces.keys()].sort()
   yield* Effect.forEach(
     templateNames,
     checkTemplateConfig,

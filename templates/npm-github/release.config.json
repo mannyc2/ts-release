@@ -8,11 +8,7 @@
     "tag": "v0.1.0"
   },
   "npmPackage": {
-    "id": "package",
-    "path": ".",
-    "consumers": [
-      "npm"
-    ]
+    "path": "."
   },
   "publish": {
     "npm": {
@@ -35,6 +31,5 @@
       "prerelease": false
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }

@@ -3,90 +3,26 @@
   "project": {
     "commit": "HEAD",
     "tagTemplate": "v{version}",
-    "notes": "Breaking: hard cutover to the minimal product surface. New root TypeScript API (defineRelease, schema helpers, plan summary types), a 7-command CLI (init, doctor, build, plan, render, release, verify) with release --execute --approve-publish approval gating, and the compact project/build/publish config. Legacy config fields and the old phase commands are removed with no aliases."
+    "notes": "Breaking: hard cutover to the 0.1 product surface. New root TypeScript API (defineRelease, schema helpers, plan/build/release/verify summaries), a 6-command CLI (init, doctor, build, plan, release, verify) with snapshot rehearsal and release --execute --approve-publish approval gating, and the compact project/build/publish config. Legacy config fields and the old phase commands are removed with no aliases."
   },
   "npmPackage": {
-    "id": "npm-package",
-    "path": ".",
-    "consumers": [
-      "npm"
-    ]
+    "path": "."
   },
   "builds": [
     {
       "builder": "bun",
-      "id": "release-ts-cli",
+      "id": "cli",
       "entry": "apps/release-ts/src/cli/main.ts",
-      "outputs": [
-        {
-          "id": "cli-linux-x64",
-          "target": "linux-x64",
-          "path": ".release/artifacts/ts-release-{version}-linux-x64",
-          "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-x64",
-          "consumers": [
-            "github"
-          ],
-          "variant": {
-            "binaryName": "ts-release",
-            "installPath": "bin/ts-release"
-          }
-        },
-        {
-          "id": "cli-linux-arm64",
-          "target": "linux-arm64",
-          "path": ".release/artifacts/ts-release-{version}-linux-arm64",
-          "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-arm64",
-          "consumers": [
-            "github"
-          ],
-          "variant": {
-            "binaryName": "ts-release",
-            "installPath": "bin/ts-release"
-          }
-        },
-        {
-          "id": "cli-darwin-x64",
-          "target": "darwin-x64",
-          "path": ".release/artifacts/ts-release-{version}-darwin-x64",
-          "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-x64",
-          "consumers": [
-            "github",
-            "homebrew"
-          ],
-          "variant": {
-            "binaryName": "ts-release",
-            "installPath": "bin/ts-release"
-          }
-        },
-        {
-          "id": "cli-darwin-arm64",
-          "target": "darwin-arm64",
-          "path": ".release/artifacts/ts-release-{version}-darwin-arm64",
-          "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-arm64",
-          "consumers": [
-            "github",
-            "homebrew"
-          ],
-          "variant": {
-            "binaryName": "ts-release",
-            "installPath": "bin/ts-release"
-          }
-        },
-        {
-          "id": "cli-windows-x64",
-          "target": "windows-x64",
-          "path": ".release/artifacts/ts-release-{version}-windows-x64.exe",
-          "downloadUrl": "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-windows-x64.exe",
-          "consumers": [
-            "github",
-            "scoop"
-          ],
-          "variant": {
-            "binaryName": "ts-release",
-            "installPath": "bin/ts-release.exe"
-          }
-        }
-      ]
+      "targets": [
+        "linux-x64",
+        "linux-arm64",
+        "darwin-x64",
+        "darwin-arm64",
+        "windows-x64"
+      ],
+      "output": ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
+      "binaryName": "ts-release",
+      "installPath": "bin/ts-release"
     }
   ],
   "pypiWheel": [
@@ -108,9 +44,6 @@
           "sourcePath": ".release/artifacts/ts-release-{version}-linux-x64",
           "wheelPath": "ts_release/bin/ts-release-linux-x64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -131,9 +64,6 @@
           "sourcePath": ".release/artifacts/ts-release-{version}-linux-arm64",
           "wheelPath": "ts_release/bin/ts-release-linux-arm64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -154,9 +84,6 @@
           "sourcePath": ".release/artifacts/ts-release-{version}-darwin-x64",
           "wheelPath": "ts_release/bin/ts-release-darwin-x64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -177,9 +104,6 @@
           "sourcePath": ".release/artifacts/ts-release-{version}-darwin-arm64",
           "wheelPath": "ts_release/bin/ts-release-darwin-arm64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -200,9 +124,6 @@
           "sourcePath": ".release/artifacts/ts-release-{version}-windows-x64.exe",
           "wheelPath": "ts_release/bin/ts-release-windows-x64.exe"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     }
   ],
@@ -259,6 +180,5 @@
       }
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }

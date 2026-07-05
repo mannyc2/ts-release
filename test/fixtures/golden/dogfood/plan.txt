@@ -1,0 +1,109 @@
+@mannyc1/ts-release@0.1.0
+commit: ed5f63f
+evidence: .release/evidence/0.1.0
+artifacts: 13
+surfaces: 5
+operations: 24
+
+artifacts:
+  - cli-linux-x64 .release/artifacts/ts-release-0.1.0-linux-x64 [executable] size=0 checksum=none
+  - cli-linux-arm64 .release/artifacts/ts-release-0.1.0-linux-arm64 [executable] size=0 checksum=none
+  - cli-darwin-x64 .release/artifacts/ts-release-0.1.0-darwin-x64 [executable] size=0 checksum=none
+  - cli-darwin-arm64 .release/artifacts/ts-release-0.1.0-darwin-arm64 [executable] size=0 checksum=none
+  - cli-windows-x64 .release/artifacts/ts-release-0.1.0-windows-x64.exe [executable] size=0 checksum=none
+  - npm-package . [directory] size=0 checksum=none
+  - pypi-wheel-linux-x64 .release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl [file] size=0 checksum=none
+  - pypi-wheel-linux-arm64 .release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl [file] size=0 checksum=none
+  - pypi-wheel-darwin-x64 .release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl [file] size=0 checksum=none
+  - pypi-wheel-darwin-arm64 .release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl [file] size=0 checksum=none
+  - pypi-wheel-windows-x64 .release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl [file] size=0 checksum=none
+  - homebrew-formula .release/catalogs/homebrew-ts-release/Formula/ts-release.rb [file] size=0 checksum=none
+  - scoop-manifest .release/catalogs/scoop-ts-release/bucket/ts-release.json [file] size=0 checksum=none
+
+surfaces:
+  - github operations=3
+  - homebrew operations=5
+  - npm operations=6
+  - pypi operations=5
+  - scoop operations=5
+
+operations by risk:
+  read-only:
+    - npm:npm-version Check npm CLI availability.
+    command: npm --version
+    argv: ["npm","--version"]
+    - npm:npm-trusted-publishing-auth Record npm trusted publishing authentication mode.
+    note: NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and package @mannyc1/ts-release to already exist on the registry.
+    - npm:npm-package-exists Verify npm package exists before trusted publishing.
+    command: npm view @mannyc1/ts-release name --registry https://registry.npmjs.org
+    argv: ["npm","view","@mannyc1/ts-release","name","--registry","https://registry.npmjs.org"]
+    - npm:npm-pack-dry-run Validate npm package contents with npm pack dry-run.
+    command: npm pack --dry-run --json .
+    argv: ["npm","pack","--dry-run","--json","."]
+    - npm:npm-version-verify Verify @mannyc1/ts-release@0.1.0 exists on npm.
+    command: npm view @mannyc1/ts-release@0.1.0 version --registry https://registry.npmjs.org
+    argv: ["npm","view","@mannyc1/ts-release@0.1.0","version","--registry","https://registry.npmjs.org"]
+    - pypi:python-version Check Python CLI availability.
+    command: python3 --version
+    argv: ["python3","--version"]
+    - pypi:twine-version Check Twine CLI availability.
+    command: python3 -m twine --version
+    argv: ["python3","-m","twine","--version"]
+    - pypi:twine-trusted-publishing-auth Record PyPI trusted publishing authentication mode.
+    note: PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.
+    - pypi:twine-check Validate Python distribution metadata with twine check.
+    command: python3 -m twine check .release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl .release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl .release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl .release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl .release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl
+    argv: ["python3","-m","twine","check",".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl"]
+    - github:github-release-dry-run Record simulated GitHub release dry-run validation.
+    note: GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.
+    - github:github-release-verify-api Verify the GitHub release through the GitHub API.
+    github-api: verify release mannyc2/ts-release v0.1.0 assets=5
+    - homebrew:brew-audit Record simulated Homebrew formula validation.
+    note: Homebrew formula validation is simulated by the deterministic release plan.
+    - scoop:scoop-manifest-validation Record simulated Scoop manifest validation.
+    note: Scoop manifest validation is simulated by the deterministic release plan.
+  writes-local:
+    - homebrew:homebrew-render-formula Render Homebrew formula ts-release.rb.
+    write: .release/catalogs/homebrew-ts-release/Formula/ts-release.rb
+    approval: execute
+    - scoop:scoop-render-manifest Render Scoop manifest ts-release.json.
+    write: .release/catalogs/scoop-ts-release/bucket/ts-release.json
+    approval: execute
+    - homebrew:homebrew-push:add Stage ts-release.rb for homebrew.
+    command: git -C .release/catalogs/homebrew-ts-release add Formula/ts-release.rb
+    argv: ["git","-C",".release/catalogs/homebrew-ts-release","add","Formula/ts-release.rb"]
+    approval: execute
+    - homebrew:homebrew-push:commit Commit ts-release.rb for homebrew.
+    command: git -C .release/catalogs/homebrew-ts-release commit -m Update ts-release to 0.1.0
+    argv: ["git","-C",".release/catalogs/homebrew-ts-release","commit","-m","Update ts-release to 0.1.0"]
+    approval: execute
+    - scoop:scoop-push:add Stage ts-release.json for scoop.
+    command: git -C .release/catalogs/scoop-ts-release add bucket/ts-release.json
+    argv: ["git","-C",".release/catalogs/scoop-ts-release","add","bucket/ts-release.json"]
+    approval: execute
+    - scoop:scoop-push:commit Commit ts-release.json for scoop.
+    command: git -C .release/catalogs/scoop-ts-release commit -m Update ts-release to 0.1.0
+    argv: ["git","-C",".release/catalogs/scoop-ts-release","commit","-m","Update ts-release to 0.1.0"]
+    approval: execute
+  -- approval boundary: externally visible and irreversible operations require explicit approval --
+  externally-visible:
+    - github:github-release-create Create GitHub release for @mannyc1/ts-release@0.1.0.
+    github-api: create release mannyc2/ts-release v0.1.0 assets=5
+    approval: execute
+    - homebrew:homebrew-push Push Homebrew tap update for @mannyc1/ts-release@0.1.0.
+    command: git -C .release/catalogs/homebrew-ts-release push
+    argv: ["git","-C",".release/catalogs/homebrew-ts-release","push"]
+    approval: execute
+    - scoop:scoop-push Push Scoop bucket update for @mannyc1/ts-release@0.1.0.
+    command: git -C .release/catalogs/scoop-ts-release push
+    argv: ["git","-C",".release/catalogs/scoop-ts-release","push"]
+    approval: execute
+  irreversible:
+    - npm:npm-publish Publish @mannyc1/ts-release@0.1.0 to npm.
+    command: npm publish . --registry https://registry.npmjs.org --access public --provenance
+    argv: ["npm","publish",".","--registry","https://registry.npmjs.org","--access","public","--provenance"]
+    approval: execute + irreversible approval
+    - pypi:twine-upload Publish @mannyc1/ts-release@0.1.0 to PyPI-compatible registry.
+    command: python3 -m twine upload --non-interactive --repository-url https://upload.pypi.org/legacy/ .release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl .release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl .release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl .release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl .release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl
+    argv: ["python3","-m","twine","upload","--non-interactive","--repository-url","https://upload.pypi.org/legacy/",".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl"]
+    approval: execute + irreversible approval

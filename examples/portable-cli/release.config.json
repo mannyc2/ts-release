@@ -9,87 +9,23 @@
     "tag": "v0.1.0"
   },
   "npmPackage": {
-    "id": "package",
-    "path": ".",
-    "consumers": [
-      "npm"
-    ]
+    "path": "."
   },
   "builds": [
     {
       "builder": "bun",
       "id": "cli",
       "entry": "src/cli.ts",
-      "outputs": [
-        {
-          "id": "cli-linux-x64",
-          "target": "linux-x64",
-          "path": "artifacts/portable-example-{version}-linux-x64",
-          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-linux-x64",
-          "consumers": [
-            "github"
-          ],
-          "variant": {
-            "binaryName": "portable-example",
-            "installPath": "bin/portable-example"
-          }
-        },
-        {
-          "id": "cli-linux-arm64",
-          "target": "linux-arm64",
-          "path": "artifacts/portable-example-{version}-linux-arm64",
-          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-linux-arm64",
-          "consumers": [
-            "github"
-          ],
-          "variant": {
-            "binaryName": "portable-example",
-            "installPath": "bin/portable-example"
-          }
-        },
-        {
-          "id": "cli-darwin-x64",
-          "target": "darwin-x64",
-          "path": "artifacts/portable-example-{version}-darwin-x64",
-          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-darwin-x64",
-          "consumers": [
-            "github",
-            "homebrew"
-          ],
-          "variant": {
-            "binaryName": "portable-example",
-            "installPath": "bin/portable-example"
-          }
-        },
-        {
-          "id": "cli-darwin-arm64",
-          "target": "darwin-arm64",
-          "path": "artifacts/portable-example-{version}-darwin-arm64",
-          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-darwin-arm64",
-          "consumers": [
-            "github",
-            "homebrew"
-          ],
-          "variant": {
-            "binaryName": "portable-example",
-            "installPath": "bin/portable-example"
-          }
-        },
-        {
-          "id": "cli-windows-x64",
-          "target": "windows-x64",
-          "path": "artifacts/portable-example-{version}-windows-x64.exe",
-          "downloadUrl": "https://github.com/owner/portable-example/releases/download/v{version}/portable-example-{version}-windows-x64.exe",
-          "consumers": [
-            "github",
-            "scoop"
-          ],
-          "variant": {
-            "binaryName": "portable-example",
-            "installPath": "bin/portable-example.exe"
-          }
-        }
-      ]
+      "targets": [
+        "linux-x64",
+        "linux-arm64",
+        "darwin-x64",
+        "darwin-arm64",
+        "windows-x64"
+      ],
+      "output": "artifacts/portable-example-{version}-{targetTriple}{ext}",
+      "binaryName": "portable-example",
+      "installPath": "bin/portable-example"
     }
   ],
   "pypiWheel": [
@@ -111,9 +47,6 @@
           "sourcePath": "artifacts/portable-example-{version}-linux-x64",
           "wheelPath": "portable_example/bin/portable-example-linux-x64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -134,9 +67,6 @@
           "sourcePath": "artifacts/portable-example-{version}-linux-arm64",
           "wheelPath": "portable_example/bin/portable-example-linux-arm64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -157,9 +87,6 @@
           "sourcePath": "artifacts/portable-example-{version}-darwin-x64",
           "wheelPath": "portable_example/bin/portable-example-darwin-x64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -180,9 +107,6 @@
           "sourcePath": "artifacts/portable-example-{version}-darwin-arm64",
           "wheelPath": "portable_example/bin/portable-example-darwin-arm64"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     },
     {
@@ -203,9 +127,6 @@
           "sourcePath": "artifacts/portable-example-{version}-windows-x64.exe",
           "wheelPath": "portable_example/bin/portable-example-windows-x64.exe"
         }
-      ],
-      "consumers": [
-        "pypi"
       ]
     }
   ],
@@ -258,6 +179,5 @@
       }
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }

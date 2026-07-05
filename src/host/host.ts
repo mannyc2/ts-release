@@ -1,10 +1,8 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import { CommandSpec } from "../domain/operation.js"
+import { CommandSpec } from "../pipeline/operation.js"
 
-export type * from "../types/effect-internal.js"
 
 export class CommandRunnerError extends Schema.TaggedErrorClass<CommandRunnerError>()("CommandRunnerError", {
   operation: Schema.String,
@@ -30,8 +28,3 @@ export class ReleaseCommandRunner extends Context.Service<
   ReleaseCommandRunner,
   ReleaseCommandRunnerShape
 >()("ReleaseCommandRunner") {}
-
-export const ReleaseCommandRunnerTestLayer = (
-  commandRunner: ReleaseCommandRunnerShape
-): Layer.Layer<ReleaseCommandRunner> =>
-  Layer.succeed(ReleaseCommandRunner)(commandRunner)

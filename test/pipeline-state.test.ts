@@ -24,12 +24,11 @@ const identity = ReleaseIdentity.make({
 
 describe("pipeline state", () => {
   test("round-trips release state through its schema", () => {
-    const state = emptyReleaseState(identity, true)
+    const state = emptyReleaseState(identity)
     const encoded = Schema.encodeSync(ReleaseState)(state)
     const decoded = Schema.decodeUnknownSync(ReleaseState)(encoded)
 
     expect(decoded.identity.name).toBe("release")
-    expect(decoded.strict).toBe(true)
     expect(decoded.artifacts.artifacts).toEqual([])
   })
 

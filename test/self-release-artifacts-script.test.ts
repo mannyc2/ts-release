@@ -55,22 +55,12 @@ const releaseConfig = () => ({
   builds: [
     {
       builder: "bun",
-      id: "release-ts-cli",
+      id: "cli",
       entry: "apps/release-ts/src/cli/main.ts",
-      outputs: [
-        {
-          id: "cli-darwin-arm64",
-          target: "darwin-arm64",
-          path: ".release/artifacts/ts-release-{version}-darwin-arm64",
-          consumers: ["github", "homebrew"]
-        },
-        {
-          id: "cli-windows-x64",
-          target: "windows-x64",
-          path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
-          consumers: ["github", "scoop"]
-        }
-      ]
+      targets: ["darwin-arm64", "windows-x64"],
+      output: ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
+      binaryName: "ts-release",
+      installPath: "bin/ts-release"
     },
   ],
   pypiWheel: [
@@ -85,8 +75,7 @@ const releaseConfig = () => ({
       homepage: "https://github.com/mannyc2/ts-release",
       license: "MIT",
       requiresPython: ">=3.8",
-      binaries: [],
-      consumers: ["pypi"]
+      binaries: []
     }
   ],
   publish: {

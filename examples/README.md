@@ -26,7 +26,6 @@ Focused distribution examples:
 - `portable-cli`: one CLI distributed through GitHub Release assets, npm, Homebrew, Scoop, and PyPI wrapper wheels.
 - `pypi-registry`: prebuilt Python distribution planned for TestPyPI with Twine.
 - `scoop-bucket`: Scoop bucket manifest rendering with simulated validation.
-- `non-strict-skips`: non-strict config that records skipped dry-run evidence.
 
 Trusted-publishing npm examples use `provenance` and
 `verifyPackageExists`. `npm-first-publish` demonstrates only the bootstrap shape

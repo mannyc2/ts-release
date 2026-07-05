@@ -52,10 +52,7 @@ const baseAppManifest = (version: string = "0.0.0") => ({
 
 const releaseArtifacts = () => [
   {
-    id: "npm-package",
-    path: ".",
-    format: "directory",
-    consumers: ["npm"]
+    path: "."
   }
 ]
 
@@ -63,7 +60,6 @@ interface StaticArtifactFixture {
   readonly id: string
   readonly path: string
   readonly format: string
-  readonly consumers: ReadonlyArray<string>
 }
 
 const releaseStaticArtifacts = (): Array<StaticArtifactFixture> => []
@@ -94,8 +90,7 @@ const pypiWheelConfig = (input: {
       sourcePath: input.sourcePath,
       wheelPath: input.wheelPath
     }
-  ],
-  consumers: ["pypi"]
+  ]
 })
 
 const releasePyPiWheelConfigs = () => [
@@ -148,45 +143,12 @@ const releasePyPiWheelConfigs = () => [
 
 const releaseBunBuild = () => ({
   builder: "bun",
-  id: "release-ts-cli",
+  id: "cli",
   entry: "apps/release-ts/src/cli/main.ts",
-  outputs: [
-    {
-      id: "cli-linux-x64",
-      target: "linux-x64",
-      path: ".release/artifacts/ts-release-{version}-linux-x64",
-      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-x64",
-      consumers: ["github"]
-    },
-    {
-      id: "cli-linux-arm64",
-      target: "linux-arm64",
-      path: ".release/artifacts/ts-release-{version}-linux-arm64",
-      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-linux-arm64",
-      consumers: ["github"]
-    },
-    {
-      id: "cli-darwin-x64",
-      target: "darwin-x64",
-      path: ".release/artifacts/ts-release-{version}-darwin-x64",
-      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-x64",
-      consumers: ["github", "homebrew"]
-    },
-    {
-      id: "cli-darwin-arm64",
-      target: "darwin-arm64",
-      path: ".release/artifacts/ts-release-{version}-darwin-arm64",
-      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-darwin-arm64",
-      consumers: ["github", "homebrew"]
-    },
-    {
-      id: "cli-windows-x64",
-      target: "windows-x64",
-      path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
-      downloadUrl: "https://github.com/mannyc2/ts-release/releases/download/v{version}/ts-release-{version}-windows-x64.exe",
-      consumers: ["github", "scoop"]
-    }
-  ]
+  targets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"],
+  output: ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
+  binaryName: "ts-release",
+  installPath: "bin/ts-release"
 })
 
 const baseConfig = (version: string = "0.0.0") => ({
@@ -248,19 +210,13 @@ const baseConfig = (version: string = "0.0.0") => ({
       }
     }
   },
-  strict: true,
   evidence: ".release/evidence"
 })
 
 interface MutableReleaseCliBuildFixture {
   readonly id: string
-  outputs: Array<{
-    readonly id: string
-    readonly target: string
-    path: string
-    readonly downloadUrl: string
-    readonly consumers: ReadonlyArray<string>
-  }>
+  output: string
+  targets: Array<string>
 }
 
 const releaseCliBuildFixture = (
@@ -364,31 +320,28 @@ describe("self-release config script", () => {
   test("fails when generated artifact paths drift", async () => {
     const config = baseConfig()
     const build = releaseCliBuildFixture(config)
-    const [output] = build.outputs
-    if (output !== undefined) {
-      output.path = ".release/artifacts/wrong-0.0.0"
-    }
+    build.output = ".release/artifacts/wrong-{version}-{targetTriple}{ext}"
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("build output cli-linux-x64 path")
+      expect(result.stderr).toContain("build cli output for linux-x64 expands")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test("fails when expected CLI build outputs are missing", async () => {
+  test("fails when expected CLI build targets are missing", async () => {
     const config = baseConfig()
     const build = releaseCliBuildFixture(config)
-    build.outputs = build.outputs.filter((output) => output.id !== "cli-windows-x64")
+    build.targets = build.targets.filter((target) => target !== "windows-x64")
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
     try {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("build release-ts-cli must include output cli-windows-x64")
+      expect(result.stderr).toContain("build cli targets must equal")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -400,8 +353,7 @@ describe("self-release config script", () => {
       {
         id: "cli-linux-x64",
         path: ".release/artifacts/ts-release-{version}-linux-x64",
-        format: "file",
-        consumers: ["github"]
+        format: "file"
       }
     ]
     const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
@@ -409,7 +361,7 @@ describe("self-release config script", () => {
       const result = await run(["bun", scriptPath], root)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by builds outputs")
+      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by builds")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

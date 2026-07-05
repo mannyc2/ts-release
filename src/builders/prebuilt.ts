@@ -1,25 +1,30 @@
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import {
   Artifact,
-  ExecutableExtra
+  ExecutableExtra,
+  SafeRelativePath
 } from "../pipeline/artifact.js"
-import { CommandSpec, ValidateCommandOperation } from "../pipeline/operation.js"
-import { renderTemplate } from "../pipeline/template.js"
-import type { Builder, BuilderPlan } from "./builder.js"
+import { CheckFileAction, Operation } from "../pipeline/operation.js"
 import {
   allPlatformTargets,
-  platformTargetSuffix,
+  PlatformTarget,
   platformTargetVariant,
-  type PlatformTarget
-} from "./targets.js"
+  type PlatformTarget as PlatformTargetName
+} from "../pipeline/platform.js"
+import { renderTemplate } from "../pipeline/template.js"
+import type { Builder, BuilderPlan } from "./builder.js"
 
-export interface PrebuiltBuildOptions {
-  readonly builder: "prebuilt"
-  readonly id?: string | undefined
-  readonly targets: ReadonlyArray<PlatformTarget>
-  readonly output: string
-  readonly binary?: string | undefined
-}
+export class ReleaseConfigPrebuiltBuild extends Schema.Class<ReleaseConfigPrebuiltBuild>(
+  "ReleaseConfigPrebuiltBuild"
+)({
+  builder: Schema.Literal("prebuilt"),
+  id: Schema.optionalKey(Schema.String),
+  targets: Schema.Array(PlatformTarget),
+  output: SafeRelativePath,
+  binary: Schema.optionalKey(Schema.String)
+}) {}
+export type PrebuiltBuildOptions = typeof ReleaseConfigPrebuiltBuild.Type
 
 export const prebuiltBuilder: Builder<PrebuiltBuildOptions> = {
   id: "prebuilt",
@@ -29,14 +34,13 @@ export const prebuiltBuilder: Builder<PrebuiltBuildOptions> = {
     id: options.id ?? "prebuilt",
     binary: options.binary ?? identity.normalizedName
   }),
-  doctor: () => [],
   plan: (options, identity, target): Effect.Effect<BuilderPlan> =>
     Effect.sync(() => {
       const binary = options.binary ?? identity.normalizedName
       const platform = platformTargetVariant(target)
       const targetTriple = target
       const renderedOutput = renderTemplate(options.output, { identity, platform, targetTriple, binary })
-      const id = `${options.id ?? "prebuilt"}-${platformTargetSuffix(target)}`
+      const id = `${options.id ?? "prebuilt"}-${target}`
       return {
         artifacts: [
           Artifact.make({
@@ -57,16 +61,13 @@ export const prebuiltBuilder: Builder<PrebuiltBuildOptions> = {
           })
         ],
         operations: [
-          ValidateCommandOperation.make({
+          Operation.make({
             id: `build:prebuilt:${id}:exists`,
+            pipeId: "build",
+            phase: "build",
             description: `Verify prebuilt artifact exists for ${target}.`,
             risk: "read-only",
-            command: CommandSpec.make({
-              executable: "test",
-              args: ["-f", renderedOutput],
-              requiredEnv: [],
-              redactedEnv: []
-            })
+            action: CheckFileAction.make({ path: renderedOutput })
           })
         ]
       }

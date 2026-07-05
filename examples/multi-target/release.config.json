@@ -9,21 +9,13 @@
     "notes": "Example coordinated release"
   },
   "npmPackage": {
-    "id": "package",
-    "path": ".",
-    "consumers": [
-      "npm"
-    ]
+    "path": "."
   },
   "artifacts": [
     {
       "id": "archive",
       "path": "artifacts/release-example-multi-target-0.1.0.tgz",
-      "format": "tarball",
-      "consumers": [
-        "github",
-        "homebrew"
-      ]
+      "format": "tarball"
     }
   ],
   "publish": {
@@ -56,6 +48,5 @@
       "installPath": "bin/release-example-multi-target"
     }
   },
-  "strict": true,
   "evidence": ".release/evidence"
 }

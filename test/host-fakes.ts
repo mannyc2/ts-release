@@ -1,3 +1,4 @@
+import * as BunPath from "@effect/platform-bun/BunPath"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Crypto from "effect/Crypto"
 import * as Effect from "effect/Effect"
@@ -282,7 +283,7 @@ export const makeTestCommandRunnerLayer = (
           files.set(path, data)
         })
     }),
-    options.pathLayer ?? Path.layer,
+    options.pathLayer ?? BunPath.layer,
     Layer.succeed(Crypto.Crypto)(
       Crypto.make({
         randomBytes: (size) => new Uint8Array(size),

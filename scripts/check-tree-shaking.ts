@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readFileSync, statSync } from "node:fs"
 import { dirname, extname, relative, resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as ts from "typescript"
@@ -8,6 +8,7 @@ import {
   publicExportPolicies,
   runtimeBearingSourcePaths
 } from "./lib/public-api-policy.js"
+import { collectTypeScriptFiles as walkTypeScriptFiles, makeDisplayPath } from "./lib/walk.js"
 
 interface ModuleReference {
   readonly specifier: string
@@ -22,8 +23,7 @@ interface PackageExportTarget {
 
 const root = cwd()
 
-const toDisplayPath = (path: string): string =>
-  relative(root, path).replaceAll("\\", "/")
+const toDisplayPath = makeDisplayPath(root)
 
 const sourcePath = (...segments: ReadonlyArray<string>): string =>
   resolve(root, "src", ...segments)
@@ -207,26 +207,8 @@ const allModuleReferences = (source: ts.SourceFile): Array<ModuleReference> => {
   return references
 }
 
-const collectTypeScriptFiles = (directory: string): Array<string> => {
-  if (!existsSync(directory)) {
-    return []
-  }
-
-  const files: Array<string> = []
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const path = resolve(directory, entry.name)
-    if (entry.isDirectory()) {
-      if (entry.name !== "dist" && entry.name !== "node_modules") {
-        files.push(...collectTypeScriptFiles(path))
-      }
-      continue
-    }
-    if (entry.isFile() && path.endsWith(".ts")) {
-      files.push(path)
-    }
-  }
-  return files
-}
+const collectTypeScriptFiles = (directory: string): Array<string> =>
+  walkTypeScriptFiles(directory, { skipDirectory: (name) => name === "dist" || name === "node_modules" })
 
 const sourceFiles = (): Array<string> =>
   collectTypeScriptFiles(resolve(root, "src"))

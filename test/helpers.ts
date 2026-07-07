@@ -1,9 +1,14 @@
 import { expect } from "@effect/bun-test"
+import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtemp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as ConfigProvider from "effect/ConfigProvider"
 import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
+import type * as Scope from "effect/Scope"
 import { CommandResult, CommandRunnerError } from "../src/host/host.js"
 import type { CommandSpec } from "../src/pipeline/operation.js"
 import { GitHubApi, GitHubApiError } from "../src/engine/github.js"
@@ -22,6 +27,40 @@ export type {
   TestHttpResponse,
   TestReleaseHttpOptions
 } from "./host-fakes.js"
+
+export const makeTempDirectory = (prefix: string): Promise<string> => mkdtemp(join(tmpdir(), prefix))
+
+export const makeTempDirectorySync = (prefix: string): string => mkdtempSync(join(tmpdir(), prefix))
+
+export const withTempDirectory = <A, E, R>(
+  prefix: string,
+  use: (root: string) => Effect.Effect<A, E, R>
+): Effect.Effect<A, E, R | Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.promise(() => mkdtemp(join(tmpdir(), prefix))),
+    (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
+  ).pipe(Effect.flatMap(use))
+
+export const withTempDirectoryPromise = async <A>(
+  prefix: string,
+  use: (root: string) => Promise<A>
+): Promise<A> => {
+  const root = await mkdtemp(join(tmpdir(), prefix))
+  try {
+    return await use(root)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
+export const withTempDirectorySync = <A>(prefix: string, use: (root: string) => A): A => {
+  const root = mkdtempSync(join(tmpdir(), prefix))
+  try {
+    return use(root)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+}
 
 export const runEffect = <A, E, R>(
   effect: Effect.Effect<A, E, R>,

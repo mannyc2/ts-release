@@ -2,7 +2,8 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, writeFile } from "node:fs/promises"
+import { withTempDirectoryPromise } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
@@ -36,8 +37,7 @@ const isStageArtifactOperation = (operation: unknown): operation is StageOperati
 
 describe("PyPI wheel build pipe", () => {
   test("builds a platform wheel that embeds one staged CLI binary", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-pypi-wheel-pipe-"))
-    try {
+    await withTempDirectoryPromise("ts-release-pypi-wheel-pipe-", async (root) => {
       await mkdir(join(root, "artifacts"), { recursive: true })
       await writeFile(join(root, "artifacts", "ts-release-1.2.3-linux-x64"), "linux binary\n")
 
@@ -103,8 +103,6 @@ describe("PyPI wheel build pipe", () => {
       expect(wheelText).toContain("Tag: py3-none-manylinux2014_x86_64")
       expect(wheelText).toContain("ts-release = ts_release.cli:main")
       expect(wheelText).toContain("ts_release/bin/ts-release-linux-x64")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
   })
 })

@@ -2,10 +2,8 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import type * as Scope from "effect/Scope"
 import * as Command from "effect/unstable/cli/Command"
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { access, mkdir, readFile, writeFile } from "node:fs/promises"
 import { join, relative } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
@@ -24,31 +22,11 @@ import {
   minimalConfig,
   noOpConfig,
   partialWorkflowConfig,
+  withTempDirectoryPromise,
 } from "./helpers.js"
 
 const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
   stream === null ? "" : await new Response(stream).text()
-
-const withTempDirectory = <A, E, R>(
-  prefix: string,
-  use: (root: string) => Effect.Effect<A, E, R>
-): Effect.Effect<A, E, R | Scope.Scope> =>
-  Effect.acquireRelease(
-    Effect.promise(() => mkdtemp(join(tmpdir(), prefix))),
-    (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
-  ).pipe(Effect.flatMap(use))
-
-const withTempDirectoryPromise = async <A>(
-  prefix: string,
-  use: (root: string) => Promise<A>
-): Promise<A> => {
-  const root = await mkdtemp(join(tmpdir(), prefix))
-  try {
-    return await use(root)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-}
 
 // The remaining direct Effect.provide calls in this file exercise CLI entrypoints
 // around one-off temp-directory setup.
@@ -275,8 +253,7 @@ describe("cli command", () => {
     }))
 
   test("root cli script preserves caller-relative config paths", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-relative-"))
-    try {
+    await withTempDirectoryPromise("ts-release-cli-relative-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, noOpConfig)
       const subprocess = Bun.spawn([
@@ -301,14 +278,11 @@ describe("cli command", () => {
       expect(await stdout).toContain("release@")
       expect(await stderr).not.toContain("ConfigReadError")
       expect(exitCode).toBe(0)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
   })
 
   test("plan command exposes snapshot mode", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-snapshot-"))
-    try {
+    await withTempDirectoryPromise("ts-release-cli-snapshot-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, noOpConfig)
       const subprocess = Bun.spawn([
@@ -334,9 +308,7 @@ describe("cli command", () => {
       expect(await stdout).toContain("0.1.0-SNAPSHOT-abc123")
       expect(await stderr).not.toContain("ConfigReadError")
       expect(exitCode).toBe(0)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
   })
 
   test("config-backed commands accept an explicit release root", () =>

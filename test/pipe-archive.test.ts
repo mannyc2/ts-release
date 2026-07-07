@@ -1,4 +1,5 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
+import { makeTempDirectorySync } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "@effect/bun-test"
@@ -175,7 +176,7 @@ describe("archive pipe", () => {
     }))
 
   it("stages tar.gz archives with wrapped binaries and quiet default files", async () => {
-    const root = mkdtempSync(join(tmpdir(), "ts-release-archive-"))
+    const root = makeTempDirectorySync("ts-release-archive-")
     writeFileSync(join(root, "release"), "hello")
     writeFileSync(join(root, "LICENSE"), "license")
     const config = await runEffect(

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { makeTempDirectory } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -136,7 +137,7 @@ jobs:
 const prepareWorkspace = async (
   options: { readonly installSmokeWorkflow?: boolean } = {}
 ): Promise<string> => {
-  const root = await mkdtemp(join(tmpdir(), "ts-release-live-readiness-"))
+  const root = await makeTempDirectory("ts-release-live-readiness-")
   await mkdir(join(root, "apps", "release-ts"), { recursive: true })
   await mkdir(join(root, ".github", "workflows"), { recursive: true })
   await writeJson(join(root, "package.json"), {

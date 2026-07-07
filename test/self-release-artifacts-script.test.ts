@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { makeTempDirectory } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -95,7 +96,7 @@ const releaseConfig = () => ({
 })
 
 const prepareWorkspace = async (): Promise<string> => {
-  const root = await mkdtemp(join(tmpdir(), "ts-release-artifacts-check-"))
+  const root = await makeTempDirectory("ts-release-artifacts-check-")
   await mkdir(join(root, "apps", "release-ts"), { recursive: true })
   await mkdir(join(root, ".release", "artifacts"), { recursive: true })
   await mkdir(join(root, ".release", "catalogs", "homebrew-ts-release", "Formula"), { recursive: true })

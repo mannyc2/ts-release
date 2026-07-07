@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { makeTempDirectory } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -238,7 +239,7 @@ const prepareWorkspace = async (
     readonly config?: Record<string, unknown>
   } = {}
 ): Promise<string> => {
-  const root = await mkdtemp(join(tmpdir(), "ts-release-self-config-"))
+  const root = await makeTempDirectory("ts-release-self-config-")
   const manifest = options.manifest ?? baseManifest()
   const packageVersion = typeof manifest.version === "string" ? manifest.version : "0.0.0"
   await writeJson(join(root, "package.json"), manifest)

@@ -1,5 +1,6 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs"
-import { dirname, join, normalize, relative } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join, normalize } from "node:path"
+import { collectTypeScriptFiles, makeDisplayPath } from "./lib/walk.js"
 import { cwd, exit } from "node:process"
 import * as ts from "typescript"
 
@@ -22,23 +23,7 @@ const sourceRoot = join(root, "src")
 
 const temporaryAllowlist: ReadonlyArray<AllowlistEntry> = []
 
-const toDisplayPath = (path: string): string =>
-  relative(root, path).replaceAll("\\", "/")
-
-const collectTypeScriptFiles = (directory: string): Array<string> => {
-  const files: Array<string> = []
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const path = join(directory, entry.name)
-    if (entry.isDirectory()) {
-      files.push(...collectTypeScriptFiles(path))
-      continue
-    }
-    if (entry.isFile() && path.endsWith(".ts")) {
-      files.push(path)
-    }
-  }
-  return files
-}
+const toDisplayPath = makeDisplayPath(root)
 
 const location = (source: ts.SourceFile, position: number): string => {
   const line = source.getLineAndCharacterOfPosition(position)

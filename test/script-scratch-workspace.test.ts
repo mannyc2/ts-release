@@ -1,8 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import { mkdtemp, rm } from "node:fs/promises"
-import { tmpdir } from "node:os"
 import { basename, join, parse } from "node:path"
 import {
   assertSafeRemovalPath,
@@ -11,6 +9,8 @@ import {
   prepareScratchDirectory,
   UnsafeScratchPathError
 } from "../scripts/lib/scratch-workspace.js"
+import { rm } from "node:fs/promises"
+import { withTempDirectoryPromise } from "./helpers.js"
 
 const ScriptLayer = BunServices.layer
 
@@ -24,17 +24,14 @@ const runScriptFailure = <A, E>(
 
 describe("script scratch workspace", () => {
   test("accepts generated repository scratch directories", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-scratch-root-"))
-    try {
+    await withTempDirectoryPromise("ts-release-scratch-root-", async (root) => {
       const scratch = await runScriptEffect(makeRepoScratchDirectory(".tmp-scratch-test-", root))
       expect(basename(scratch).startsWith(".tmp-scratch-test-")).toBe(true)
       await runScriptEffect(assertSafeRemovalPath(scratch, {
         expectedParent: root,
         allowedPrefixes: [".tmp-scratch-test-"]
       }))
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
   })
 
   test("accepts generated system scratch directories", async () => {
@@ -71,30 +68,24 @@ describe("script scratch workspace", () => {
   })
 
   test("rejects unexpected basenames", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-scratch-parent-"))
-    const unsafe = join(root, "not-allowed")
-    try {
+    await withTempDirectoryPromise("ts-release-scratch-parent-", async (root) => {
+      const unsafe = join(root, "not-allowed")
       const error = await runScriptFailure(assertSafeRemovalPath(unsafe, {
         expectedParent: root,
         allowedPrefixes: [".tmp-allowed-"]
       }))
       expect(error).toBeInstanceOf(UnsafeScratchPathError)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
   })
 
   test("prepares a safe scratch directory", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-prepare-parent-"))
-    const scratch = join(root, ".tmp-prepare-test")
-    try {
+    await withTempDirectoryPromise("ts-release-prepare-parent-", async (root) => {
+      const scratch = join(root, ".tmp-prepare-test")
       const prepared = await runScriptEffect(prepareScratchDirectory(scratch, {
         expectedParent: root,
         allowedPrefixes: [".tmp-prepare-"]
       }))
       expect(prepared).toBe(scratch)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
   })
 })

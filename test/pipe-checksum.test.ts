@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
+import { makeTempDirectorySync } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "@effect/bun-test"
@@ -142,7 +143,7 @@ describe("checksum pipe", () => {
     }))
 
   it("renders checksum files with sha256sum-compatible two-space lines", async () => {
-    const root = mkdtempSync(join(tmpdir(), "ts-release-checksum-"))
+    const root = makeTempDirectorySync("ts-release-checksum-")
     writeFileSync(join(root, "release"), "hello")
     const operation = Operation.make({
       id: "checksum:write",

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdtemp, mkdir, rm, stat, writeFile } from "node:fs/promises"
+import { mkdir, rm, stat, writeFile } from "node:fs/promises"
+import { makeTempDirectory } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -8,7 +9,7 @@ const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<st
 
 describe("script clean-dist", () => {
   test("removes dist from a disposable workspace", async () => {
-    const workspace = await mkdtemp(join(tmpdir(), "ts-release-clean-dist-"))
+    const workspace = await makeTempDirectory("ts-release-clean-dist-")
     const dist = join(workspace, "dist")
     try {
       await mkdir(dist, { recursive: true })

@@ -2,8 +2,7 @@ import { describe, expect, layer, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
@@ -30,20 +29,9 @@ import {
   makeObservableCommandRunnerLayer,
   minimalConfig,
   partialWorkflowConfig,
-  TestGitHubApiLayer
+  TestGitHubApiLayer,
+  withTempDirectoryPromise as withTempDirectory
 } from "./helpers.js"
-
-const withTempDirectory = async <A>(
-  prefix: string,
-  use: (root: string) => Promise<A>
-): Promise<A> => {
-  const root = await mkdtemp(join(tmpdir(), prefix))
-  try {
-    return await use(root)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-}
 
 const TestLayer = Layer.mergeAll(
   makeObservableCommandRunnerLayer({

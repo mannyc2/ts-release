@@ -1,12 +1,8 @@
 import * as Effect from "effect/Effect"
-import * as FileSystem from "effect/FileSystem"
-import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { ConfigReadError } from "../config/errors.js"
 import { parseReleaseIntent } from "../config/load.js"
-import { DEFAULT_CONFIG_PATH } from "../config/schema.js"
-import { planRelease } from "../engine/engine.js"
-import { readOptionalEnv } from "../host/platform.js"
+import { configPath, readReleaseConfig } from "../config/resolve.js"
+import { envExists, planRelease } from "../engine/engine.js"
 import type { ReleasePlanDocument } from "../engine/plan-document.js"
 import type { Operation } from "../pipeline/operation.js"
 import { optionalField } from "../pipeline/optional-field.js"
@@ -24,13 +20,6 @@ export type ReleaseDiagnosticStatus = typeof ReleaseDiagnosticStatus.Type
 
 export const ReleaseDiagnosticConfidence = Schema.Literals(["confirmed", "inferred", "not-checked"])
 export type ReleaseDiagnosticConfidence = typeof ReleaseDiagnosticConfidence.Type
-
-export class DoctorReleaseOptions extends Schema.Class<DoctorReleaseOptions>("DoctorReleaseOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  target: Schema.optionalKey(Schema.String),
-  format: Schema.optionalKey(ReleaseDiagnosticsFormat)
-}) {}
 
 export interface DoctorReleaseInput {
   readonly root?: string | undefined
@@ -53,52 +42,6 @@ export class ReleaseDiagnosticReport extends Schema.Class<ReleaseDiagnosticRepor
   releaseVersion: ReleaseVersion,
   checks: Schema.Array(ReleaseDiagnosticCheck)
 }) {}
-
-const sourceOptionsFromInput = (input: DoctorReleaseInput = {}): DoctorReleaseOptions =>
-  DoctorReleaseOptions.make({
-    ...optionalField(input.root, (root) => ({ root })),
-    ...optionalField(input.configPath, (configPath) => ({ configPath })),
-    ...optionalField(input.target, (target) => ({ target })),
-    ...optionalField(input.format, (format) => ({ format }))
-  })
-
-const configPath = (options: DoctorReleaseOptions): string =>
-  options.configPath ?? DEFAULT_CONFIG_PATH
-
-const configRoot = (path: Path.Path, options: DoctorReleaseOptions): string => {
-  if (options.root !== undefined) {
-    return options.root
-  }
-  if (options.configPath !== undefined && path.isAbsolute(options.configPath)) {
-    return path.dirname(options.configPath)
-  }
-  return "."
-}
-
-const configReadPath = (path: Path.Path, options: DoctorReleaseOptions): string => {
-  const pathName = configPath(options)
-  return path.isAbsolute(pathName) ? pathName : path.resolve(configRoot(path, options), pathName)
-}
-
-const readReleaseConfig = Effect.fn("workflows.doctor.readReleaseConfig")(function*(options: DoctorReleaseOptions) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const pathName = configPath(options)
-  const readPath = configReadPath(path, options)
-  return yield* fs.readFileString(readPath).pipe(
-    Effect.mapError((error) =>
-      ConfigReadError.make({
-        path: pathName,
-        reason: error.message
-      })
-    )
-  )
-})
-
-const envExists = Effect.fn("workflows.doctor.envExists")(function*(name: string) {
-  const value = yield* readOptionalEnv(name)
-  return value !== undefined
-})
 
 const check = (input: {
   readonly id: string
@@ -294,9 +237,8 @@ const plannedSuccess = (plan: ReleasePlanDocument): PlannedRelease => ({
 export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(function*(
   input: DoctorReleaseInput = {}
 ) {
-  const options = sourceOptionsFromInput(input)
-  const pathName = configPath(options)
-  const validation = yield* readReleaseConfig(options).pipe(
+  const pathName = configPath(input)
+  const validation = yield* readReleaseConfig(input).pipe(
     Effect.flatMap((contents) => parseReleaseIntent(contents, pathName)),
     Effect.match({
       onFailure: (error) => check({
@@ -314,7 +256,7 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
     })
   )
 
-  const planned = yield* planRelease(options).pipe(
+  const planned = yield* planRelease(input).pipe(
     Effect.match({
       onFailure: (error) => plannedFailure(error.message),
       onSuccess: plannedSuccess
@@ -338,7 +280,7 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
     })
   }
 
-  const authChecks = yield* authChecksForPlan(planned.plan, options.target)
+  const authChecks = yield* authChecksForPlan(planned.plan, input.target)
   return reportForIdentity(planned.plan.state.identity, [
     validation,
     check({

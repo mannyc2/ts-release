@@ -98834,6 +98834,9 @@ function onSerializerEnsureArray(ast) {
 }
 var Json2 = /* @__PURE__ */ make17(Json);
 
+// ../../src/pipeline/json.ts
+var parseJsonAs = (schema, input, makeError) => decodeUnknownEffect2(fromJsonString2(schema))(input).pipe(mapError3(makeError));
+
 // ../../src/config/errors.ts
 class ConfigReadError extends TaggedErrorClass()("ConfigReadError", {
   path: String4,
@@ -98854,9 +98857,6 @@ class ConfigValidationError extends TaggedErrorClass()("ConfigValidationError", 
   reason: String4
 }) {
 }
-
-// ../../src/pipeline/json.ts
-var parseJsonAs = (schema, input, makeError) => decodeUnknownEffect2(fromJsonString2(schema))(input).pipe(mapError3(makeError));
 
 // ../../src/pipeline/artifact.ts
 var SafeRelativePath = NonEmptyString;
@@ -101368,6 +101368,32 @@ var loadReleaseIntent = fn2("loadReleaseIntent")(function* (path4 = DEFAULT_CONF
     cause: error2
   })));
   return yield* parseReleaseIntent(contents, path4);
+});
+
+// ../../src/config/resolve.ts
+var configPath = (options) => options.configPath ?? DEFAULT_CONFIG_PATH;
+var configRoot = (path4, options) => {
+  if (options.root !== undefined) {
+    return options.root;
+  }
+  if (options.configPath !== undefined && path4.isAbsolute(options.configPath)) {
+    return path4.dirname(options.configPath);
+  }
+  return ".";
+};
+var configReadPath = (path4, options) => {
+  const pathName = configPath(options);
+  return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot(path4, options), pathName);
+};
+var readReleaseConfig = fn2("config.readReleaseConfig")(function* (options) {
+  const fs8 = yield* FileSystem;
+  const path4 = yield* Path;
+  const pathName = configPath(options);
+  const readPath = configReadPath(path4, options);
+  return yield* fs8.readFileString(readPath).pipe(mapError3((error2) => ConfigReadError.make({
+    path: pathName,
+    reason: error2.message
+  })));
 });
 
 // ../../src/host/host.ts
@@ -104180,7 +104206,7 @@ var stageEvidence = fn2("engine.stageEvidence")(function* (operation, context7) 
   const result2 = yield* stageArtifactOperation(operation, {
     root: context7.root,
     identity: context7.identity,
-    ...optionalField(context7.configPath, (configPath) => ({ configPath }))
+    ...optionalField(context7.configPath, (configPath2) => ({ configPath: configPath2 }))
   });
   const timestamp2 = yield* nowIso();
   const firstArtifact = result2.artifacts[0];
@@ -104675,38 +104701,6 @@ var evidenceOperationStatuses = (plan, evidence, evidencePath) => evidence.recor
 var ReleasePlanFormat = Literals(["json", "text", "summary", "markdown"]);
 var StageArtifactsFormat = Literals(["json", "text"]);
 
-class ReleaseSourceOptions extends Class4("ReleaseSourceOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  snapshot: optionalKey2(Boolean3)
-}) {
-}
-
-class PlanReleaseOptions extends Class4("PlanReleaseOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  snapshot: optionalKey2(Boolean3),
-  format: optionalKey2(ReleasePlanFormat)
-}) {
-}
-
-class BuildReleaseArtifactsOptions extends Class4("BuildReleaseArtifactsOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  snapshot: optionalKey2(Boolean3),
-  format: optionalKey2(StageArtifactsFormat)
-}) {
-}
-
-class ReleaseExecutionOptions extends Class4("ReleaseExecutionOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  snapshot: optionalKey2(Boolean3),
-  execute: optionalKey2(Boolean3),
-  approveIrreversible: optionalKey2(Boolean3)
-}) {
-}
-
 class StagedReleaseArtifactsResult extends Class4("StagedReleaseArtifactsResult")({
   schemaVersion: Literal2("artifact-stage/v1"),
   identity: ReleaseIdentity,
@@ -104731,49 +104725,6 @@ var releaseRunOptionsSourceInput = (options) => ({
   execute: options.execute ?? false,
   approveIrreversible: options.approvePublish ?? false
 });
-var sourceOptionsFromInput = (input = {}) => ReleaseSourceOptions.make({
-  ...optionalField(input.root, (root) => ({ root })),
-  ...optionalField(input.configPath, (configPath) => ({ configPath })),
-  ...optionalField(input.snapshot, (snapshot2) => ({ snapshot: snapshot2 }))
-});
-var planOptionsFromInput = (input = {}) => PlanReleaseOptions.make({
-  ...optionalField(input.root, (root) => ({ root })),
-  ...optionalField(input.configPath, (configPath) => ({ configPath })),
-  ...optionalField(input.snapshot, (snapshot2) => ({ snapshot: snapshot2 })),
-  ...optionalField(input.format, (format3) => ({ format: format3 }))
-});
-var buildOptionsFromInput = (input = {}) => BuildReleaseArtifactsOptions.make({
-  ...optionalField(input.root, (root) => ({ root })),
-  ...optionalField(input.configPath, (configPath) => ({ configPath })),
-  ...optionalField(input.snapshot, (snapshot2) => ({ snapshot: snapshot2 })),
-  ...optionalField(input.format, (format3) => ({ format: format3 }))
-});
-var buildOptionsFromRunInput = (input, defaults2 = {}) => buildOptionsFromInput({
-  ...optionalField(defaults2.root, (root) => ({ root })),
-  ...optionalField(defaults2.configPath, (configPath) => ({ configPath })),
-  ...input
-});
-var executionOptionsFromInput = (input = {}) => ReleaseExecutionOptions.make({
-  ...optionalField(input.root, (root) => ({ root })),
-  ...optionalField(input.configPath, (configPath) => ({ configPath })),
-  ...optionalField(input.snapshot, (snapshot2) => ({ snapshot: snapshot2 })),
-  ...optionalField(input.execute, (execute) => ({ execute })),
-  ...optionalField(input.approveIrreversible, (approveIrreversible) => ({ approveIrreversible }))
-});
-var configPath = (options) => options.configPath ?? DEFAULT_CONFIG_PATH;
-var configRoot = (path4, options) => {
-  if (options.root !== undefined) {
-    return options.root;
-  }
-  if (options.configPath !== undefined && path4.isAbsolute(options.configPath)) {
-    return path4.dirname(options.configPath);
-  }
-  return ".";
-};
-var configReadPath = (path4, options) => {
-  const pathName = configPath(options);
-  return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot(path4, options), pathName);
-};
 var identityErrorToNormalization = (error2) => ReleaseNormalizationError.make({
   field: error2.field ?? error2.source,
   reason: error2.reason,
@@ -104816,16 +104767,6 @@ var approvalFromOptions = (options) => ExecutionApproval.make({
   execute: options.execute ?? false,
   approveIrreversible: options.approveIrreversible ?? false
 });
-var readReleaseConfig = fn2("engine.readReleaseConfig")(function* (options) {
-  const fs8 = yield* FileSystem;
-  const path4 = yield* Path;
-  const pathName = configPath(options);
-  const readPath = configReadPath(path4, options);
-  return yield* fs8.readFileString(readPath).pipe(mapError3((error2) => ConfigReadError.make({
-    path: pathName,
-    reason: error2.message
-  })));
-});
 var readIntent = fn2("engine.readIntent")(function* (options) {
   const pathName = configPath(options);
   const contents = yield* readReleaseConfig(options);
@@ -104864,20 +104805,18 @@ var planDocumentFromState = (intent, root, configPathName, state3) => {
   });
 };
 var planReleaseFromIntent = fn2("engine.planReleaseFromIntent")(function* (intent, input = {}) {
-  const options = planOptionsFromInput(input);
   const path4 = yield* Path;
-  const root = configRoot(path4, options);
-  const build = yield* resolveReleaseBuild(intent, root, options.snapshot ?? false);
+  const root = configRoot(path4, input);
+  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false);
   const state3 = yield* runPipeline(build.buildState, intent, publishPipeline);
   return planDocumentFromState(intent, root, input.configPath, state3);
 });
 var planRelease = fn2("engine.planRelease")(function* (input = {}) {
-  const options = planOptionsFromInput(input);
   const path4 = yield* Path;
-  const pathName = configPath(options);
-  const intent = yield* readIntent(options);
-  const root = configRoot(path4, options);
-  const build = yield* resolveReleaseBuild(intent, root, options.snapshot ?? false);
+  const pathName = configPath(input);
+  const intent = yield* readIntent(input);
+  const root = configRoot(path4, input);
+  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false);
   const state3 = yield* runPipeline(build.buildState, intent, publishPipeline);
   return planDocumentFromState(intent, root, pathName, state3);
 });
@@ -104897,10 +104836,9 @@ var operationContextFromState = (state3, root, configPath2) => ({
   ...optionalField(configPath2, (pathName) => ({ configPath: pathName }))
 });
 var buildReleaseArtifactsFromResolvedIntent = fn2("engine.buildReleaseArtifactsFromResolvedIntent")(function* (intent, input, resolved) {
-  const options = buildOptionsFromRunInput(input, resolved);
   const root = resolved.root;
   const pathName = resolved.configPath;
-  const build = yield* resolveReleaseBuild(intent, root, options.snapshot ?? false);
+  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false);
   const buildOps = buildOperations(build.buildState.operations);
   const staged = [];
   for (const operation of buildOps) {
@@ -104925,22 +104863,20 @@ var buildReleaseArtifactsFromResolvedIntent = fn2("engine.buildReleaseArtifactsF
   });
 });
 var buildReleaseArtifactsFromIntent = fn2("engine.buildReleaseArtifactsFromIntent")(function* (intent, input = {}) {
-  const options = buildOptionsFromInput(input);
   const path4 = yield* Path;
-  const root = configRoot(path4, options);
+  const root = configRoot(path4, input);
   return yield* buildReleaseArtifactsFromResolvedIntent(intent, input, {
     root,
-    configPath: configPath(options)
+    configPath: configPath(input)
   });
 });
 var buildReleaseArtifacts = fn2("engine.buildReleaseArtifacts")(function* (input = {}) {
-  const options = buildOptionsFromInput(input);
   const path4 = yield* Path;
-  const root = configRoot(path4, options);
-  const intent = yield* readIntent(options);
+  const root = configRoot(path4, input);
+  const intent = yield* readIntent(input);
   return yield* buildReleaseArtifactsFromResolvedIntent(intent, input, {
     root,
-    configPath: configPath(options)
+    configPath: configPath(input)
   });
 });
 var renderBuildArtifactsJson = (result2) => `${JSON.stringify(result2, null, 2)}
@@ -105046,11 +104982,6 @@ var writeNamedEvidence = fn2("engine.writeNamedEvidence")(function* (plan, name,
   yield* writeEvidenceBundle(path4, evidence, plan.source.root);
   return path4;
 });
-var writeWorkflowEvidence = fn2("engine.writeWorkflowEvidence")(function* (plan, evidence) {
-  const path4 = releaseWorkflowEvidencePath(plan);
-  yield* writeEvidenceBundle(path4, evidence, plan.source.root);
-  return path4;
-});
 var isOperationFailedError = (error2) => typeof error2 === "object" && error2 !== null && ("_tag" in error2) && error2._tag === "OperationFailedError";
 var writeNamedEvidenceWithFailure = (plan, name, effect2) => effect2.pipe(catchIf2(isOperationFailedError, (error2) => gen2(function* () {
   if (error2.evidence !== undefined) {
@@ -105058,43 +104989,32 @@ var writeNamedEvidenceWithFailure = (plan, name, effect2) => effect2.pipe(catchI
   }
   return yield* fail6(error2);
 })), flatMap3((evidence) => writeNamedEvidence(plan, name, evidence).pipe(map5(() => evidence))));
-var writeWorkflowEvidenceWithFailure = (plan, effect2) => effect2.pipe(catchIf2(isOperationFailedError, (error2) => gen2(function* () {
-  if (error2.evidence !== undefined) {
-    yield* writeWorkflowEvidence(plan, error2.evidence);
-  }
-  return yield* fail6(error2);
-})), flatMap3((evidence) => writeWorkflowEvidence(plan, evidence).pipe(map5(() => evidence))));
 var writeVerificationEvidence = fn2("engine.writeVerificationEvidence")(function* (plan) {
   return yield* writeNamedEvidenceWithFailure(plan, "verification", verifyOperations(plan.state.operations, operationContext(plan)));
 });
 var writeRenderEvidence = fn2("engine.writeRenderEvidence")(function* (plan, input = {}) {
-  const options = executionOptionsFromInput(input);
   const approval = ExecutionApproval.make({
-    execute: options.execute ?? false,
+    execute: input.execute ?? false,
     approveIrreversible: false
   });
   return yield* writeNamedEvidenceWithFailure(plan, "render", writeRenderFiles(plan.state.operations, approval, operationContext(plan)));
 });
 var writeReleaseEvidence = fn2("engine.writeReleaseEvidence")(function* (plan, input = {}) {
-  const options = executionOptionsFromInput(input);
-  return yield* writeWorkflowEvidenceWithFailure(plan, runApprovedReleaseWorkflow(plan.state.operations, approvalFromOptions(options), operationContext(plan)));
+  return yield* writeNamedEvidenceWithFailure(plan, "evidence", runApprovedReleaseWorkflow(plan.state.operations, approvalFromOptions(input), operationContext(plan)));
 });
 var verifyRelease = fn2("engine.verifyRelease")(function* (input = {}) {
-  const options = sourceOptionsFromInput(input);
-  const plan = yield* planRelease(options);
+  const plan = yield* planRelease(input);
   const evidence = yield* writeVerificationEvidence(plan);
   return ReleaseEvidenceResult.make({ plan, evidence });
 });
 var renderReleaseFiles = fn2("engine.renderReleaseFiles")(function* (input = {}) {
-  const options = executionOptionsFromInput(input);
-  const plan = yield* planRelease(options);
-  const evidence = yield* writeRenderEvidence(plan, options);
+  const plan = yield* planRelease(input);
+  const evidence = yield* writeRenderEvidence(plan, input);
   return ReleaseEvidenceResult.make({ plan, evidence });
 });
 var runApprovedRelease = fn2("engine.runApprovedRelease")(function* (input = {}) {
-  const options = executionOptionsFromInput(input);
-  const plan = yield* planRelease(options);
-  const evidence = yield* writeReleaseEvidence(plan, options);
+  const plan = yield* planRelease(input);
+  const evidence = yield* writeReleaseEvidence(plan, input);
   return ReleaseEvidenceResult.make({ plan, evidence });
 });
 var planDocumentForRunOptions = fn2("engine.summary.planDocumentForRunOptions")(function* (options) {
@@ -105182,14 +105102,6 @@ var ReleaseDiagnosticsFormat = Literals(["json", "text", "markdown"]);
 var ReleaseDiagnosticStatus = Literals(["ok", "warn", "fail", "info"]);
 var ReleaseDiagnosticConfidence = Literals(["confirmed", "inferred", "not-checked"]);
 
-class DoctorReleaseOptions extends Class4("DoctorReleaseOptions")({
-  root: optionalKey2(String4),
-  configPath: optionalKey2(String4),
-  target: optionalKey2(String4),
-  format: optionalKey2(ReleaseDiagnosticsFormat)
-}) {
-}
-
 class ReleaseDiagnosticCheck extends Class4("ReleaseDiagnosticCheck")({
   id: NonEmptyString,
   targetId: optionalKey2(TargetId),
@@ -105206,40 +105118,6 @@ class ReleaseDiagnosticReport extends Class4("ReleaseDiagnosticReport")({
   checks: ArraySchema(ReleaseDiagnosticCheck)
 }) {
 }
-var sourceOptionsFromInput2 = (input = {}) => DoctorReleaseOptions.make({
-  ...optionalField(input.root, (root) => ({ root })),
-  ...optionalField(input.configPath, (configPath2) => ({ configPath: configPath2 })),
-  ...optionalField(input.target, (target) => ({ target })),
-  ...optionalField(input.format, (format3) => ({ format: format3 }))
-});
-var configPath2 = (options) => options.configPath ?? DEFAULT_CONFIG_PATH;
-var configRoot2 = (path4, options) => {
-  if (options.root !== undefined) {
-    return options.root;
-  }
-  if (options.configPath !== undefined && path4.isAbsolute(options.configPath)) {
-    return path4.dirname(options.configPath);
-  }
-  return ".";
-};
-var configReadPath2 = (path4, options) => {
-  const pathName = configPath2(options);
-  return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot2(path4, options), pathName);
-};
-var readReleaseConfig2 = fn2("workflows.doctor.readReleaseConfig")(function* (options) {
-  const fs8 = yield* FileSystem;
-  const path4 = yield* Path;
-  const pathName = configPath2(options);
-  const readPath = configReadPath2(path4, options);
-  return yield* fs8.readFileString(readPath).pipe(mapError3((error2) => ConfigReadError.make({
-    path: pathName,
-    reason: error2.message
-  })));
-});
-var envExists2 = fn2("workflows.doctor.envExists")(function* (name) {
-  const value2 = yield* readOptionalEnv(name);
-  return value2 !== undefined;
-});
 var check = (input) => ReleaseDiagnosticCheck.make({
   id: input.id,
   ...optionalField(input.targetId, (targetId) => ({ targetId })),
@@ -105299,7 +105177,7 @@ var authChecksForPlan = fn2("workflows.doctor.authChecksForPlan")(function* (pla
     const operations = operationsForTarget(plan2, targetId);
     const envNames2 = commandEnvNames(operations);
     for (const name of envNames2) {
-      const present = yield* envExists2(name);
+      const present = yield* envExists(name);
       checks.push(check({
         id: `${targetId}:env:${name}`,
         targetId,
@@ -105312,8 +105190,8 @@ var authChecksForPlan = fn2("workflows.doctor.authChecksForPlan")(function* (pla
       continue;
     }
     if (hasTrustedPublishingNote(targetId, operations)) {
-      const hasOidcUrl = yield* envExists2("ACTIONS_ID_TOKEN_REQUEST_URL");
-      const hasOidcToken = yield* envExists2("ACTIONS_ID_TOKEN_REQUEST_TOKEN");
+      const hasOidcUrl = yield* envExists("ACTIONS_ID_TOKEN_REQUEST_URL");
+      const hasOidcToken = yield* envExists("ACTIONS_ID_TOKEN_REQUEST_TOKEN");
       checks.push(check({
         id: `${targetId}:trusted-publishing`,
         targetId,
@@ -105371,9 +105249,8 @@ var plannedSuccess = (plan2) => ({
   plan: plan2
 });
 var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {}) {
-  const options = sourceOptionsFromInput2(input);
-  const pathName = configPath2(options);
-  const validation = yield* readReleaseConfig2(options).pipe(flatMap3((contents) => parseReleaseIntent(contents, pathName)), match5({
+  const pathName = configPath(input);
+  const validation = yield* readReleaseConfig(input).pipe(flatMap3((contents) => parseReleaseIntent(contents, pathName)), match5({
     onFailure: (error2) => check({
       id: "config:validation",
       status: "fail",
@@ -105387,7 +105264,7 @@ var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {})
       message: `Config ${pathName} is valid.`
     })
   }));
-  const planned = yield* planRelease(options).pipe(match5({
+  const planned = yield* planRelease(input).pipe(match5({
     onFailure: (error2) => plannedFailure(error2.message),
     onSuccess: plannedSuccess
   }));
@@ -105407,7 +105284,7 @@ var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {})
       ]
     });
   }
-  const authChecks = yield* authChecksForPlan(planned.plan, options.target);
+  const authChecks = yield* authChecksForPlan(planned.plan, input.target);
   return reportForIdentity(planned.plan.state.identity, [
     validation,
     check({

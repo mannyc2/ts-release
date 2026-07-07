@@ -50,28 +50,7 @@ export class ReleaseInitOptions extends Schema.Class<ReleaseInitOptions>("Releas
   format: Schema.optionalKey(ReleaseInitFormat)
 }) {}
 
-export interface ReleaseInitInput {
-  readonly root?: string | undefined
-  readonly configPath?: string | undefined
-  readonly template?: ReleaseInitTemplateName | undefined
-  readonly package?: string | undefined
-  readonly repo?: string | undefined
-  readonly workflow?: string | undefined
-  readonly tap?: string | undefined
-  readonly bucket?: string | undefined
-  readonly binaryName?: string | undefined
-  readonly entrypoint?: string | undefined
-  readonly pypiPackage?: string | undefined
-  readonly pypiModule?: string | undefined
-  readonly consoleScript?: string | undefined
-  readonly githubActions?: boolean | undefined
-  readonly packageManager?: ReleaseInitPackageManager | undefined
-  readonly installCommand?: string | undefined
-  readonly buildCommand?: string | undefined
-  readonly write?: boolean | undefined
-  readonly overwrite?: boolean | undefined
-  readonly format?: ReleaseInitFormat | undefined
-}
+export type ReleaseInitOptionsInput = NonNullable<ConstructorParameters<typeof ReleaseInitOptions>[0]>
 
 export class ReleaseInitProposedFile extends Schema.Class<ReleaseInitProposedFile>("ReleaseInitProposedFile")({
   path: Schema.String,
@@ -91,37 +70,9 @@ export class ReleaseInitWriteError extends Schema.TaggedErrorClass<ReleaseInitWr
   reason: Schema.String
 }) {}
 
-export const TS_RELEASE_ACTION_REFERENCE = "mannyc2/ts-release-action@v1"
-
 type JsonRecord = Record<string, unknown>
 
 const packageRoot = fileURLToPath(new URL("../../../../", import.meta.url))
-
-const releaseInitOptionsFromInput = (
-  input: ReleaseInitInput = {}
-): ReleaseInitOptions =>
-  ReleaseInitOptions.make({
-    ...(input.root === undefined ? {} : { root: input.root }),
-    ...(input.configPath === undefined ? {} : { configPath: input.configPath }),
-    ...(input.template === undefined ? {} : { template: input.template }),
-    ...(input.package === undefined ? {} : { package: input.package }),
-    ...(input.repo === undefined ? {} : { repo: input.repo }),
-    ...(input.workflow === undefined ? {} : { workflow: input.workflow }),
-    ...(input.tap === undefined ? {} : { tap: input.tap }),
-    ...(input.bucket === undefined ? {} : { bucket: input.bucket }),
-    ...(input.binaryName === undefined ? {} : { binaryName: input.binaryName }),
-    ...(input.entrypoint === undefined ? {} : { entrypoint: input.entrypoint }),
-    ...(input.pypiPackage === undefined ? {} : { pypiPackage: input.pypiPackage }),
-    ...(input.pypiModule === undefined ? {} : { pypiModule: input.pypiModule }),
-    ...(input.consoleScript === undefined ? {} : { consoleScript: input.consoleScript }),
-    ...(input.githubActions === undefined ? {} : { githubActions: input.githubActions }),
-    ...(input.packageManager === undefined ? {} : { packageManager: input.packageManager }),
-    ...(input.installCommand === undefined ? {} : { installCommand: input.installCommand }),
-    ...(input.buildCommand === undefined ? {} : { buildCommand: input.buildCommand }),
-    ...(input.write === undefined ? {} : { write: input.write }),
-    ...(input.overwrite === undefined ? {} : { overwrite: input.overwrite }),
-    ...(input.format === undefined ? {} : { format: input.format })
-  })
 
 interface NormalizedInitOptions {
   readonly root: string
@@ -154,13 +105,7 @@ interface GithubActionsWorkflowSetup {
   readonly buildCommand: string
 }
 
-interface GithubActionsWorkflowSetupInput {
-  readonly packageManager?: ReleaseInitPackageManager | undefined
-  readonly installCommand?: string | undefined
-  readonly buildCommand?: string | undefined
-}
-
-const initRoot = (path: Path.Path, options: ReleaseInitOptions): string => {
+const initRoot = (path: Path.Path, options: ReleaseInitOptionsInput): string => {
   if (options.root !== undefined) {
     return options.root
   }
@@ -170,30 +115,18 @@ const initRoot = (path: Path.Path, options: ReleaseInitOptions): string => {
   return "."
 }
 
-const defaultInstallCommand = (packageManager: ReleaseInitPackageManager): string => {
-  switch (packageManager) {
-    case "bun":
-      return "bun install --frozen-lockfile"
-    case "npm":
-      return "npm ci"
-    case "pnpm":
-      return "corepack enable && pnpm install --frozen-lockfile"
-    case "yarn":
-      return "corepack enable && yarn install --immutable"
-  }
+const installCommandByPackageManager: Record<ReleaseInitPackageManager, string> = {
+  bun: "bun install --frozen-lockfile",
+  npm: "npm ci",
+  pnpm: "corepack enable && pnpm install --frozen-lockfile",
+  yarn: "corepack enable && yarn install --immutable"
 }
 
-const defaultBuildCommand = (packageManager: ReleaseInitPackageManager): string => {
-  switch (packageManager) {
-    case "bun":
-      return "bun run build"
-    case "npm":
-      return "npm run build --if-present"
-    case "pnpm":
-      return "pnpm run build --if-present"
-    case "yarn":
-      return "yarn run build"
-  }
+const buildCommandByPackageManager: Record<ReleaseInitPackageManager, string> = {
+  bun: "bun run build",
+  npm: "npm run build --if-present",
+  pnpm: "pnpm run build --if-present",
+  yarn: "yarn run build"
 }
 
 const packageShortName = (packageName: string): string => {
@@ -215,7 +148,7 @@ const pythonModuleName = (value: string): string => {
 const pythonDistributionName = (value: string): string =>
   value.replace(/[-.]+/g, "_")
 
-const normalizeOptions = (options: ReleaseInitOptions, root: string): NormalizedInitOptions => {
+const normalizeOptions = (options: ReleaseInitOptionsInput, root: string): NormalizedInitOptions => {
   const packageManager = options.packageManager ?? "bun"
   const packageName = options["package"] ?? "@scope/pkg"
   const binaryName = nonEmpty(options.binaryName) ?? packageShortName(packageName)
@@ -239,8 +172,8 @@ const normalizeOptions = (options: ReleaseInitOptions, root: string): Normalized
     consoleScript: nonEmpty(options.consoleScript) ?? binaryName,
     githubActions: options.githubActions ?? false,
     packageManager,
-    installCommand: (options.installCommand ?? defaultInstallCommand(packageManager)).trim(),
-    buildCommand: (options.buildCommand ?? defaultBuildCommand(packageManager)).trim()
+    installCommand: (options.installCommand ?? installCommandByPackageManager[packageManager]).trim(),
+    buildCommand: (options.buildCommand ?? buildCommandByPackageManager[packageManager]).trim()
   }
 }
 
@@ -519,21 +452,9 @@ const renderReleaseConfigFromTemplate = Effect.fn("cli.init.renderReleaseConfigF
   return rendered
 })
 
-const githubActionsWorkflowSetup = (
-  input: GithubActionsWorkflowSetupInput = {}
-): GithubActionsWorkflowSetup => {
-  const packageManager = input.packageManager ?? "bun"
-  return {
-    packageManager,
-    installCommand: (input.installCommand ?? defaultInstallCommand(packageManager)).trim(),
-    buildCommand: (input.buildCommand ?? defaultBuildCommand(packageManager)).trim()
-  }
-}
-
 export const renderGithubActionsTrustedPublishingWorkflow = Effect.fn(
   "cli.init.renderGithubActionsTrustedPublishingWorkflow"
-)(function*(configPath: string, input: GithubActionsWorkflowSetupInput = {}) {
-  const setup = githubActionsWorkflowSetup(input)
+)(function*(configPath: string, setup: GithubActionsWorkflowSetup) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const template = yield* fs.readFileString(templatePath(path, "github-actions", "release.yml"))
@@ -640,12 +561,11 @@ const validateInitOptions = Effect.fn("cli.init.validateInitOptions")(function*(
 })
 
 export const planReleaseInit = Effect.fn("cli.init.planReleaseInit")(function*(
-  input: ReleaseInitInput = {}
+  input: ReleaseInitOptionsInput = {}
 ) {
-  const options = releaseInitOptionsFromInput(input)
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const normalized = normalizeOptions(options, initRoot(path, options))
+  const normalized = normalizeOptions(input, initRoot(path, input))
   yield* validateInitOptions(path, normalized)
   const specs = yield* proposedFileSpecs(path, normalized)
   const files = yield* Effect.forEach(
@@ -705,18 +625,17 @@ const writeInitFile = Effect.fn("cli.init.writeInitFile")(function*(
 })
 
 export const runReleaseInit = Effect.fn("cli.init.runReleaseInit")(function*(
-  input: ReleaseInitInput = {}
+  input: ReleaseInitOptionsInput = {}
 ) {
-  const options = releaseInitOptionsFromInput(input)
   const path = yield* Path.Path
-  const normalized = normalizeOptions(options, initRoot(path, options))
-  const plan = yield* planReleaseInit(options)
-  if (options.write !== true) {
+  const normalized = normalizeOptions(input, initRoot(path, input))
+  const plan = yield* planReleaseInit(input)
+  if (input.write !== true) {
     return plan
   }
   yield* Effect.forEach(
     plan.files,
-    (file) => writeInitFile(normalized.root, file, options.overwrite === true),
+    (file) => writeInitFile(normalized.root, file, input.overwrite === true),
     { discard: true }
   )
   return plan

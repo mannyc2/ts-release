@@ -52,12 +52,17 @@ do not execute an older plan when it conflicts with 108-111.
 | 136 | Design the file-distribution contract: generic `catalogs[]`, parts + typed-hole deferred content, platform-neutral artifacts (design-only; output `plans/136-file-distribution-contract.md`) | P1 | S-M | 131 hard; 126 spec-level; 127/132 soft | TODO (post-0.1 feature wave, added 2026-07-05 by the agentic-artifact assessment; hardened same day by the deterministic-machine review — see dependency notes) |
 | 137 | Make platform-neutral artifacts first-class: files-only archives, strict name rendering (one choke point), open vendor identifiers | P1 | M | 136, 131, 126, 127, 132 (118 soft — wave order) | TODO |
 | 138 | Generic file-catalog distribution (`catalogs[]` pipe pair, parts + typed holes; optional F5b content unification) + agent-plugin proof example — extension-cost proof #2 | P1 | M-L | 136, 137 | TODO |
+| 139 | Dissolve the engine options layer; single-home config resolution in `src/config/resolve.ts`; collapse evidence-writer twins | P1 | M | none | TODO (2026-07-06 deterministic-machine audit; ~-150 to -200 LOC, internal-only) |
+| 140 | Make branded invariants real: `SafeRelativePath`/`WorkflowFileName` via `Schema.makeFilter`; delete the load.ts scalar tree-walk + duplicated pipe workflow checks; corpus-gated `SemverVersion` brand closing the manifest-version gap | P1 | M | none (139 recommended first) | TODO (2026-07-06 audit; ~-90 LOC + state-space; Step 5 gated on fixture semver scan) |
+| 134 | CLI boundary rebuild (the reserved DeepWiki-corpus triage plan): `Flag.optional` over empty-string sentinels, shared flags (withSharedFlags-before-withSubcommands with a no-UX-change fallback), one options surface for init, enum switches → Record tables | P1 | M | none (139 soft) | TODO (authored 2026-07-06 from the 133 corpus + maintainer reviews 1-2, pin-verified; ~-150 to -190 LOC) |
+| 141 | Decode Action inputs at the boundary; delete restated literal lists + guards; import `hasParentTraversal` from workspace-path | P2 | S-M | none | TODO (2026-07-06 audit; ~-60 LOC; error-message parity required) |
+| 142 | Single-home guard-script walkers (`scripts/lib/walk.ts`) and test temp-dir/fixture helpers | P2 | M | run after 134/139/140/141 | TODO (2026-07-06 audit; ~-120 to -200 LOC in scripts/ + test/) |
 | 124 | Make ReleaseState the only carrier; engine summary-native (D19); re-point CLI/Action; delete the translation sandwich | P0 | L | 123 | SUPERSEDED (by 129/130 per the 128 audit; decisions carried forward, operation taxonomy replaced by the grammar) |
 | 125 | Port publish surfaces to pipes; deferred content; dissolve domain/, planner/, targets/; capabilities → operation data | P0 | L | 123, 124 | SUPERSEDED (by 131 per the 128 audit; decisions carried forward, config pruned in the same pass) |
 | 116 | Port publish surfaces to pipes, delete the target-adapter layer, prove extension cost | P0 | L | 114, 115 | SUPERSEDED (by 124-126 per the 122 review; decisions carried forward, sequencing replaced) |
 | 117 | Expose the 0.1 public TypeScript API and make the CLI and Action thin wrappers | P0 | M | 114, 115, 116 | SUPERSEDED (by 124 D19 projection + 127; operator-UX steps carried into 127 verbatim) |
 | 118 | Effect polish sweep and self-release script dedup | P2 | M | 115, 123, 129-132 | DONE (2026-07-05; gates green: `check:portable`, `check:release`, `bun test` 277 pass/3 skip, `check`, generated `check:self-release-artifacts` with Twine skipped; Action bundle rebuilt; `Schema.fromJsonString` JSON helper landed with `rg JSON.parse src` empty; GitHub release-list fallback paginates through `Effect.whileLoop` because beta.83 lacks exported loop/iterate helpers; workspace write wrapper single-homed; `optionalField` converted 100 conditional spreads with 10 low-frequency sites intentionally left; self-release scripts 1567 -> 815 lines, 48% cut, fail probes covered by dedicated script tests; measured LOC 15445 -> 14778) |
-| 133 | DeepWiki per-file Effect-idiom sweep — one `ask_question` per source file against the `effect-smol` v4 wiki, responses saved as a research corpus; a later plan 134 (authored from the corpus) does the triage | P2 | M | 127, 132 hard; 118 recommended first | TODO (added 2026-07-05; MCP endpoint + v4-index calibration probed same day — index at beta.93 vs our beta.83 pin, verify-locally rule covers the skew; read-only on src/) |
+| 133 | DeepWiki Effect-idiom sweep — two corpora against the `effect-smol` v4 wiki: per-mechanic capability probes, then a per-file v2 sweep with the maintainer's design-principles prompt; responses saved verbatim, every cited API auto-verified against the pin; plan 134 (authored from the corpus) does the triage | P2 | M | 127, 132 hard; 118 recommended first | DONE (2026-07-06, two waves; original per-file template failed its pilot gate twice — root-caused to the rigid prompt, NOT the endpoint: the maintainer's simple principles prompt works reproducibly and is frozen as `scripts/deepwiki-prompt.md`. Probe corpus: 25/25 ok, 103/103 APIs verified at beta.83. v2 per-file corpus: 68/68 ok, 175 APIs named, 158 verified, 17 missing-at-pin flagged (mostly v3 vestiges: `Effect.catchAll`→`Effect.catch`, `Option.fromNullable`→`fromNullishOr`). Corpus, `INDEX.md`, `INVENTORY.md`, `MAINTAINER-REVIEWS-2026-07-06.md` in `plans/research/deepwiki-sweep/`; five maintainer reviews pin-verdicted; four `apps/release-ts/scripts` converted to schema/CLI-framework reuse as direct fallout; CLI `command.ts`/`init.ts` refactor specified and queued; plan 134 authoring requested — cross-reference 118's deliberate decisions) |
 | 120 | Competitor-analysis research brief (three ready-to-run prompts) | P1 | S | none (parallel-safe; feeds 114 Step 3 + roadmap) | IN PROGRESS (120A + 120B delivered + reconciled 2026-07-03; C pending) |
 | 121 | GoReleaser spec-extraction research brief (Prompt D, handoff-ready) | P0 | S-M | none (gates the 114 concretization pass) | DONE (report delivered + reconciled 2026-07-03; concretization pass landed in 114) |
 | 112 | Design the ideal public TypeScript API and CLI contract before cutting code | P0 | M | - | DONE |
@@ -395,6 +400,35 @@ renamed `parseJson`).
   parity table carries the per-vendor triage (expected outcome: every
   marketplace row is config-only).
 
+- Deterministic-machine audit (2026-07-06, advisor; plans 134 + 139-142):
+  four parallel read-only audits (DeepWiki-corpus mine, src/, apps/+scripts/,
+  test/+config) against the maintainer's frozen v2 lens ("avoid local
+  defenses, broad fallbacks, weak invariants, duplicated workflows,
+  abstractions that do not reduce state space; make invalid states
+  impossible"), every table finding vetted by direct reads at `60806b1`.
+  Plan 134 uses the number reserved by 133 for the corpus triage and carries
+  the two maintainer-specified CLI reviews; 139-142 are the audit's
+  non-corpus findings. Headline confirmations: the engine's four Options
+  Schema.Classes are constructed but never decoded and have zero importers
+  outside engine.ts (139); doctor.ts duplicates the engine's config-path
+  quartet verbatim, with a third copy (`initRoot`) in cli/init.ts (139/134);
+  `SafeRelativePath`/`WorkflowFileName` are NonEmptyString aliases whose
+  real enforcement lives in a field-NAME-keyed recursive tree walk in
+  load.ts plus inline re-checks in publish-npm/pypi (140); manifest identity
+  accepts any non-empty version string while git-tag semver-validates, so
+  `hasSemverPrerelease` can silently answer false on non-semver manifest
+  versions (140 Step 5, corpus-gated per maintainer review 4); the Action
+  restates its Schema.Literals member lists as arrays with hand-rolled
+  guards (141); `collectTypeScriptFiles` is triplicated across guard
+  scripts and temp-dir helpers are re-rolled per test file (142).
+  Recommended order: 139 → 140 → 134 → 141 → 142 (142 last so it dedups
+  the post-refactor state, the plan-118 pattern). All five are
+  behavior-preserving and independent of the 136-138 feature wave; landing
+  them before 137/138 avoids rebase churn, and 140's brands are the types
+  137/138's new path-bearing config fields should declare. Selection made
+  under the non-interactive default: top findings by leverage; the full
+  vetted table lives in this entry's plans and the rejected list below.
+
 ## Superseded or paused plans
 
 - 124 and 125 are superseded by 129-131 (see the 128 audit entry above).
@@ -517,6 +551,40 @@ renamed `parseJson`).
   (`requiredEnv`/`redactedEnv`) cover the known cases; one Action
   member + one engine arm is pre-priced for when a real consumer
   arrives.
+- Convert the executor's operation-retry loop to `Effect.retry` + `Schedule`
+  (2026-07-06 corpus item): rejected — the loop (executor.ts:594-610)
+  retries on a VALUE condition (`record.status === "failed"`), not the
+  error channel; using `Effect.retry` requires lifting the record into an
+  error and lowering it back, adding machinery without reducing state
+  space, and the loop is the single interpreter of the `retry` operation
+  data decided by the 128 audit. Same verdict class as the archive-bytes
+  Effect-wrapping rejection (maintainer review 3).
+- Unify the operation-action `_tag` dispatch across render/evidence/executor
+  (2026-07-06 audit item): rejected — the switches are compiler-checked
+  exhaustive matches over the closed Action union (that IS the
+  deterministic machine); the markdown renderer's if-chain is deliberately
+  non-exhaustive (renders less detail), and any shared dispatcher is
+  corpus-gated on rendered bytes for near-zero LOC gain.
+- Restructure npm/PyPI auth config as tagged-union schema variants
+  (mutually-exclusive tokenEnv × trustedPublishing, username↔password
+  co-occurrence): rejected for now — the flat optional-field wire shape is
+  the decided 114/131 contract; a union decode over overlapping optional
+  structs degrades error-message precision (the current per-pipe PlanErrors
+  carry exact pipeId/field/reason), and the LOC delta is ~neutral. Re-open
+  bar: a schema-filter design that preserves the exact message strings.
+- Move imperative pipe defaults (`registry ?? "https://…"`) into schema
+  decoded-defaults: rejected — beta.83 has no `Schema.optionalWith`; the
+  SchemaTransformation route adds machinery for one-line `??` sites.
+- Add a `validate` flag to test fixture builders: rejected — machinery added
+  to compensate for permissive fixtures; the real fix is the shared
+  factories in plan 142.
+- A shared error-formatting abstraction between CLI and Action: rejected —
+  the Action's formatter targets GitHub Actions log/output conventions;
+  the difference is intentional environment adaptation, not duplication.
+- A reusable TypeScript-AST visitor framework for the guard scripts:
+  rejected — dev-time scripts, three call sites with different rule logic;
+  a framework is an abstraction that reduces no state space. Only the
+  file-walk/display plumbing is shared (plan 142).
 - Marketplace-entry JSON merge (read-modify-write of shared
   marketplace.json files): REJECTED 2026-07-05 (136 F8), not deferred
   — merging makes the plan a function of remote mutable state, so the

@@ -2,9 +2,9 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { ConfigReadError } from "../config/errors.js"
 import { parseReleaseIntent } from "../config/load.js"
-import { DEFAULT_CONFIG_PATH, type ReleaseIntent } from "../config/schema.js"
+import { configPath, configReadPath, configRoot, readReleaseConfig } from "../config/resolve.js"
+import type { ReleaseIntent } from "../config/schema.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { readOptionalEnv } from "../host/platform.js"
 import type { ArtifactInventoryItem } from "../pipeline/artifact.js"
@@ -71,49 +71,19 @@ export type ReleasePlanFormat = typeof ReleasePlanFormat.Type
 export const StageArtifactsFormat = Schema.Literals(["json", "text"])
 export type StageArtifactsFormat = typeof StageArtifactsFormat.Type
 
-export class ReleaseSourceOptions extends Schema.Class<ReleaseSourceOptions>("ReleaseSourceOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  snapshot: Schema.optionalKey(Schema.Boolean)
-}) {}
-
 export interface ReleaseSourceInput {
   readonly root?: string | undefined
   readonly configPath?: string | undefined
   readonly snapshot?: boolean | undefined
 }
 
-export class PlanReleaseOptions extends Schema.Class<PlanReleaseOptions>("PlanReleaseOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  snapshot: Schema.optionalKey(Schema.Boolean),
-  format: Schema.optionalKey(ReleasePlanFormat)
-}) {}
-
 export interface PlanReleaseInput extends ReleaseSourceInput {
   readonly format?: ReleasePlanFormat | undefined
 }
 
-export class BuildReleaseArtifactsOptions extends Schema.Class<BuildReleaseArtifactsOptions>(
-  "BuildReleaseArtifactsOptions"
-)({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  snapshot: Schema.optionalKey(Schema.Boolean),
-  format: Schema.optionalKey(StageArtifactsFormat)
-}) {}
-
 export interface BuildReleaseArtifactsInput extends ReleaseSourceInput {
   readonly format?: StageArtifactsFormat | undefined
 }
-
-export class ReleaseExecutionOptions extends Schema.Class<ReleaseExecutionOptions>("ReleaseExecutionOptions")({
-  root: Schema.optionalKey(Schema.String),
-  configPath: Schema.optionalKey(Schema.String),
-  snapshot: Schema.optionalKey(Schema.Boolean),
-  execute: Schema.optionalKey(Schema.Boolean),
-  approveIrreversible: Schema.optionalKey(Schema.Boolean)
-}) {}
 
 export interface ReleaseExecutionInput extends ReleaseSourceInput {
   readonly execute?: boolean | undefined
@@ -157,69 +127,6 @@ const releaseRunOptionsSourceInput = (options: ReleaseRunOptions): ReleaseExecut
   execute: options.execute ?? false,
   approveIrreversible: options.approvePublish ?? false
 })
-
-const sourceOptionsFromInput = (input: ReleaseSourceInput = {}): ReleaseSourceOptions =>
-  ReleaseSourceOptions.make({
-    ...optionalField(input.root, (root) => ({ root })),
-    ...optionalField(input.configPath, (configPath) => ({ configPath })),
-    ...optionalField(input.snapshot, (snapshot) => ({ snapshot }))
-  })
-
-const planOptionsFromInput = (input: PlanReleaseInput = {}): PlanReleaseOptions =>
-  PlanReleaseOptions.make({
-    ...optionalField(input.root, (root) => ({ root })),
-    ...optionalField(input.configPath, (configPath) => ({ configPath })),
-    ...optionalField(input.snapshot, (snapshot) => ({ snapshot })),
-    ...optionalField(input.format, (format) => ({ format }))
-  })
-
-const buildOptionsFromInput = (input: BuildReleaseArtifactsInput = {}): BuildReleaseArtifactsOptions =>
-  BuildReleaseArtifactsOptions.make({
-    ...optionalField(input.root, (root) => ({ root })),
-    ...optionalField(input.configPath, (configPath) => ({ configPath })),
-    ...optionalField(input.snapshot, (snapshot) => ({ snapshot })),
-    ...optionalField(input.format, (format) => ({ format }))
-  })
-
-const buildOptionsFromRunInput = (
-  input: BuildReleaseArtifactsInput,
-  defaults: {
-    readonly root?: string | undefined
-    readonly configPath?: string | undefined
-  } = {}
-): BuildReleaseArtifactsOptions =>
-  buildOptionsFromInput({
-    ...optionalField(defaults.root, (root) => ({ root })),
-    ...optionalField(defaults.configPath, (configPath) => ({ configPath })),
-    ...input
-  })
-
-const executionOptionsFromInput = (input: ReleaseExecutionInput = {}): ReleaseExecutionOptions =>
-  ReleaseExecutionOptions.make({
-    ...optionalField(input.root, (root) => ({ root })),
-    ...optionalField(input.configPath, (configPath) => ({ configPath })),
-    ...optionalField(input.snapshot, (snapshot) => ({ snapshot })),
-    ...optionalField(input.execute, (execute) => ({ execute })),
-    ...optionalField(input.approveIrreversible, (approveIrreversible) => ({ approveIrreversible }))
-  })
-
-const configPath = (options: ReleaseSourceOptions): string =>
-  options.configPath ?? DEFAULT_CONFIG_PATH
-
-const configRoot = (path: Path.Path, options: ReleaseSourceOptions): string => {
-  if (options.root !== undefined) {
-    return options.root
-  }
-  if (options.configPath !== undefined && path.isAbsolute(options.configPath)) {
-    return path.dirname(options.configPath)
-  }
-  return "."
-}
-
-const configReadPath = (path: Path.Path, options: ReleaseSourceOptions): string => {
-  const pathName = configPath(options)
-  return path.isAbsolute(pathName) ? pathName : path.resolve(configRoot(path, options), pathName)
-}
 
 const identityErrorToNormalization = (error: IdentityError): ReleaseNormalizationError =>
   ReleaseNormalizationError.make({
@@ -290,28 +197,13 @@ const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
   return { identity, buildState }
 })
 
-const approvalFromOptions = (options: ReleaseExecutionOptions): ExecutionApproval =>
+const approvalFromOptions = (options: ReleaseExecutionInput): ExecutionApproval =>
   ExecutionApproval.make({
     execute: options.execute ?? false,
     approveIrreversible: options.approveIrreversible ?? false
   })
 
-const readReleaseConfig = Effect.fn("engine.readReleaseConfig")(function*(options: ReleaseSourceOptions) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const pathName = configPath(options)
-  const readPath = configReadPath(path, options)
-  return yield* fs.readFileString(readPath).pipe(
-    Effect.mapError((error) =>
-      ConfigReadError.make({
-        path: pathName,
-        reason: error.message
-      })
-    )
-  )
-})
-
-const readIntent = Effect.fn("engine.readIntent")(function*(options: ReleaseSourceOptions) {
+const readIntent = Effect.fn("engine.readIntent")(function*(options: ReleaseSourceInput) {
   const pathName = configPath(options)
   const contents = yield* readReleaseConfig(options)
   return yield* parseReleaseIntent(contents, pathName)
@@ -376,21 +268,19 @@ export const planReleaseFromIntent = Effect.fn("engine.planReleaseFromIntent")(f
   intent: ReleaseIntent,
   input: ReleaseSourceInput = {}
 ) {
-  const options = planOptionsFromInput(input)
   const path = yield* Path.Path
-  const root = configRoot(path, options)
-  const build = yield* resolveReleaseBuild(intent, root, options.snapshot ?? false)
+  const root = configRoot(path, input)
+  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false)
   const state = yield* runPipeline(build.buildState, intent, publishPipeline)
   return planDocumentFromState(intent, root, input.configPath, state)
 })
 
 export const planRelease = Effect.fn("engine.planRelease")(function*(input: PlanReleaseInput = {}) {
-  const options = planOptionsFromInput(input)
   const path = yield* Path.Path
-  const pathName = configPath(options)
-  const intent = yield* readIntent(options)
-  const root = configRoot(path, options)
-  const build = yield* resolveReleaseBuild(intent, root, options.snapshot ?? false)
+  const pathName = configPath(input)
+  const intent = yield* readIntent(input)
+  const root = configRoot(path, input)
+  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false)
   const state = yield* runPipeline(build.buildState, intent, publishPipeline)
   return planDocumentFromState(intent, root, pathName, state)
 })
@@ -426,10 +316,9 @@ const buildReleaseArtifactsFromResolvedIntent = Effect.fn("engine.buildReleaseAr
     readonly configPath: string
   }
 ) {
-  const options = buildOptionsFromRunInput(input, resolved)
   const root = resolved.root
   const pathName = resolved.configPath
-  const build = yield* resolveReleaseBuild(intent, root, options.snapshot ?? false)
+  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false)
   const buildOps = buildOperations(build.buildState.operations)
   const staged: Array<StagedArtifactOperationResult> = []
   for (const operation of buildOps) {
@@ -462,25 +351,23 @@ export const buildReleaseArtifactsFromIntent = Effect.fn("engine.buildReleaseArt
   intent: ReleaseIntent,
   input: BuildReleaseArtifactsInput = {}
 ) {
-  const options = buildOptionsFromInput(input)
   const path = yield* Path.Path
-  const root = configRoot(path, options)
+  const root = configRoot(path, input)
   return yield* buildReleaseArtifactsFromResolvedIntent(intent, input, {
     root,
-    configPath: configPath(options)
+    configPath: configPath(input)
   })
 })
 
 export const buildReleaseArtifacts = Effect.fn("engine.buildReleaseArtifacts")(function*(
   input: BuildReleaseArtifactsInput = {}
 ) {
-  const options = buildOptionsFromInput(input)
   const path = yield* Path.Path
-  const root = configRoot(path, options)
-  const intent = yield* readIntent(options)
+  const root = configRoot(path, input)
+  const intent = yield* readIntent(input)
   return yield* buildReleaseArtifactsFromResolvedIntent(intent, input, {
     root,
-    configPath: configPath(options)
+    configPath: configPath(input)
   })
 })
 
@@ -669,15 +556,6 @@ const writeNamedEvidence = Effect.fn("engine.writeNamedEvidence")(function*(
   return path
 })
 
-const writeWorkflowEvidence = Effect.fn("engine.writeWorkflowEvidence")(function*(
-  plan: ReleasePlanDocument,
-  evidence: EvidenceBundle
-) {
-  const path = releaseWorkflowEvidencePath(plan)
-  yield* writeEvidenceBundle(path, evidence, plan.source.root)
-  return path
-})
-
 const isOperationFailedError = (error: unknown): error is OperationFailedError =>
   typeof error === "object" &&
   error !== null &&
@@ -705,26 +583,6 @@ const writeNamedEvidenceWithFailure = <E, R>(
     )
   )
 
-const writeWorkflowEvidenceWithFailure = <E, R>(
-  plan: ReleasePlanDocument,
-  effect: Effect.Effect<EvidenceBundle, E | OperationFailedError, R>
-): Effect.Effect<EvidenceBundle, E | OperationFailedError | EvidenceWriteError, R | FileSystem.FileSystem | Path.Path> =>
-  effect.pipe(
-    Effect.catchIf(isOperationFailedError, (error) =>
-      Effect.gen(function*() {
-        if (error.evidence !== undefined) {
-          yield* writeWorkflowEvidence(plan, error.evidence)
-        }
-        return yield* Effect.fail(error)
-      })
-    ),
-    Effect.flatMap((evidence) =>
-      writeWorkflowEvidence(plan, evidence).pipe(
-        Effect.map(() => evidence)
-      )
-    )
-  )
-
 export const writeVerificationEvidence = Effect.fn("engine.writeVerificationEvidence")(function*(
   plan: ReleasePlanDocument
 ) {
@@ -739,9 +597,8 @@ export const writeRenderEvidence = Effect.fn("engine.writeRenderEvidence")(funct
   plan: ReleasePlanDocument,
   input: ReleaseExecutionInput = {}
 ) {
-  const options = executionOptionsFromInput(input)
   const approval = ExecutionApproval.make({
-    execute: options.execute ?? false,
+    execute: input.execute ?? false,
     approveIrreversible: false
   })
   return yield* writeNamedEvidenceWithFailure(
@@ -755,18 +612,17 @@ export const writeReleaseEvidence = Effect.fn("engine.writeReleaseEvidence")(fun
   plan: ReleasePlanDocument,
   input: ReleaseExecutionInput = {}
 ) {
-  const options = executionOptionsFromInput(input)
-  return yield* writeWorkflowEvidenceWithFailure(
+  return yield* writeNamedEvidenceWithFailure(
     plan,
-    runApprovedReleaseWorkflow(plan.state.operations, approvalFromOptions(options), operationContext(plan))
+    "evidence",
+    runApprovedReleaseWorkflow(plan.state.operations, approvalFromOptions(input), operationContext(plan))
   )
 })
 
 export const verifyRelease = Effect.fn("engine.verifyRelease")(function*(
   input: ReleaseSourceInput = {}
 ) {
-  const options = sourceOptionsFromInput(input)
-  const plan = yield* planRelease(options)
+  const plan = yield* planRelease(input)
   const evidence = yield* writeVerificationEvidence(plan)
   return ReleaseEvidenceResult.make({ plan, evidence })
 })
@@ -774,18 +630,16 @@ export const verifyRelease = Effect.fn("engine.verifyRelease")(function*(
 export const renderReleaseFiles = Effect.fn("engine.renderReleaseFiles")(function*(
   input: ReleaseExecutionInput = {}
 ) {
-  const options = executionOptionsFromInput(input)
-  const plan = yield* planRelease(options)
-  const evidence = yield* writeRenderEvidence(plan, options)
+  const plan = yield* planRelease(input)
+  const evidence = yield* writeRenderEvidence(plan, input)
   return ReleaseEvidenceResult.make({ plan, evidence })
 })
 
 export const runApprovedRelease = Effect.fn("engine.runApprovedRelease")(function*(
   input: ReleaseExecutionInput = {}
 ) {
-  const options = executionOptionsFromInput(input)
-  const plan = yield* planRelease(options)
-  const evidence = yield* writeReleaseEvidence(plan, options)
+  const plan = yield* planRelease(input)
+  const evidence = yield* writeReleaseEvidence(plan, input)
   return ReleaseEvidenceResult.make({ plan, evidence })
 })
 

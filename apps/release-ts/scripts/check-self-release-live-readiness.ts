@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
+import * as Schema from "effect/Schema"
+import { ReleaseConfig } from "../../../src/config/schema.js"
 
 const root = cwd()
 const packagePath = "package.json"
@@ -52,6 +54,7 @@ const smokeNeedles = [
   ["smoke:version-assertion", "v$VERSION", "Install smoke workflow asserts the installed CLI version."]
 ] as const
 
+// Only for JSON the tool does not own a schema for (package.json, gh CLI output).
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
@@ -68,9 +71,6 @@ const field = (record: JsonRecord, key: string): string | undefined => {
   const value = record[key]
   return typeof value === "string" && value.length > 0 ? value : undefined
 }
-
-const publishTarget = (publish: JsonRecord, id: string): JsonRecord | undefined =>
-  isRecord(publish[id]) ? publish[id] : undefined
 
 const check = (id: string, ok: boolean, okMessage: string, failMessage = okMessage): Check => ({
   id,
@@ -207,18 +207,11 @@ const githubRepoChecks = (
   ]
 }
 
-const firstPyPiWheelPackageName = (config: JsonRecord): string | undefined => {
-  const wheels = Array.isArray(config.pypiWheel) ? config.pypiWheel : isRecord(config.pypiWheel) ? [config.pypiWheel] : []
-  for (const wheel of wheels) {
-    if (isRecord(wheel)) return field(wheel, "packageName")
-  }
-  return undefined
-}
-
-const pypiTrustedPublishingChecks = (target: JsonRecord | undefined): ReadonlyArray<Check> => {
-  const trustedPublishing = target?.trustedPublishing
-  if (target === undefined || !isRecord(trustedPublishing)) {
-    return [check("pypi:trusted-publishing-config", false, "", target === undefined ? "PyPI target must be configured." : "PyPI target must declare trustedPublishing for GitHub Actions OIDC upload.")]
+const pypiTrustedPublishingChecks = (target: ReleaseConfig["publish"]["pypi"]): ReadonlyArray<Check> => {
+  const pypi = typeof target === "object" ? target : undefined
+  const trustedPublishing = typeof pypi?.trustedPublishing === "object" ? pypi.trustedPublishing : undefined
+  if (pypi === undefined || trustedPublishing === undefined) {
+    return [check("pypi:trusted-publishing-config", false, "", pypi === undefined ? "PyPI target must be configured." : "PyPI target must declare trustedPublishing for GitHub Actions OIDC upload.")]
   }
   return [
     check("pypi:trusted-publishing-provider", trustedPublishing.provider === "github-actions", "PyPI trusted publishing provider is GitHub Actions.", "PyPI trustedPublishing.provider must be github-actions."),
@@ -231,38 +224,49 @@ const printChecks = (checks: ReadonlyArray<Check>): void => {
   for (const item of checks) console.log(`${item.ok ? "ok  " : "fail"} ${item.id}: ${item.message}`)
 }
 
+const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig)
+
+const decodedConfig = (): { readonly config?: ReleaseConfig; readonly error?: string } => {
+  try {
+    return { config: decodeReleaseConfig(readJson(releaseConfigPath)) }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { error: message.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join(" | ") }
+  }
+}
+
 const checks: Array<Check> = []
 const manifest = readJson(packagePath)
-const config = readJson(releaseConfigPath)
+const { config, error: configError } = decodedConfig()
 const workflow = readText(workflowPath)
 const installSmokeWorkflow = readOptionalText(installSmokeWorkflowPath)
 
 if (!isRecord(manifest)) checks.push(check("manifest:shape", false, "", `${packagePath} must be a JSON object.`))
-if (!isRecord(config)) checks.push(check("config:shape", false, "", `${releaseConfigPath} must be a JSON object.`))
+if (config === undefined) {
+  checks.push(check("config:schema", false, "", `${releaseConfigPath} must decode against the release config schema: ${configError ?? "unknown decode error"}`))
+}
 
-if (isRecord(manifest) && isRecord(config)) {
+if (isRecord(manifest) && config !== undefined) {
   const packageName = field(manifest, "name")
   const packageVersion = field(manifest, "version")
   const publish = config.publish
   if (packageName === undefined) checks.push(check("manifest:name", false, "", `${packagePath} name must be a non-empty string.`))
   if (packageVersion === undefined) checks.push(check("manifest:version", false, "", `${packagePath} version must be a non-empty string.`))
-  if (!isRecord(publish)) checks.push(check("config:publish", false, "", `${releaseConfigPath} publish must be an object.`))
 
-  if (packageName !== undefined && packageVersion !== undefined && isRecord(publish)) {
-    const github = publishTarget(publish, "github")
-    const homebrew = publishTarget(publish, "homebrew")
-    const scoop = publishTarget(publish, "scoop")
-    const pypi = publishTarget(publish, "pypi")
-    const githubRepository = github === undefined ? undefined : field(github, "repository")
-    const homebrewRepository = homebrew === undefined ? undefined : field(homebrew, "repository")
-    const scoopRepository = scoop === undefined ? undefined : field(scoop, "repository")
-    const pypiPackageName = firstPyPiWheelPackageName(config)
+  if (packageName !== undefined && packageVersion !== undefined) {
+    const github = typeof publish.github === "object" ? publish.github : undefined
+    const githubRepository = github?.repository
+    const homebrewRepository = publish.homebrew?.repository
+    const scoopRepository = publish.scoop?.repository
+    const wheelSection = config.pypiWheel
+    const wheelItems = wheelSection === undefined ? [] : Array.isArray(wheelSection) ? wheelSection : [wheelSection]
+    const pypiPackageName = wheelItems[0]?.packageName
 
     checks.push(
       ...workflowNeedles.map(([id, needle, message]) => contains(workflowPath, workflow, id, needle, message)),
       ...workflowBans.map(([id, needle, message]) => excludes(workflowPath, workflow, id, needle, message)),
       ...installSmokeWorkflowChecks(installSmokeWorkflow),
-      ...pypiTrustedPublishingChecks(pypi)
+      ...pypiTrustedPublishingChecks(publish.pypi)
     )
 
     const npmStatus = await fetchStatus(withBase(npmRegistryBase, `${encodeURIComponent(packageName)}/${packageVersion}`))

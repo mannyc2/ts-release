@@ -3,45 +3,27 @@
 import * as BunRuntime from "@effect/platform-bun/BunRuntime"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
+import * as Command from "effect/unstable/cli/Command"
+import * as Flag from "effect/unstable/cli/Flag"
+import packageManifest from "../../../package.json" with { type: "json" }
 import { renderEvidenceJson, renderReleaseFiles } from "../../../src/engine/engine.js"
+import { optionalField } from "../../../src/pipeline/optional-field.js"
 import { BunReleaseWorkflowRuntimeLayer } from "../src/runtime/bun.js"
 
-interface RenderCatalogsArgs {
-  readonly configPath: string
-  readonly root?: string | undefined
-}
-
-const parseArgs = (args: ReadonlyArray<string>): RenderCatalogsArgs => {
-  let configPath = "apps/release-ts/release.config.json"
-  let root: string | undefined
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]
-    const next = args[index + 1]
-    if (arg === "--config" && next !== undefined) {
-      configPath = next
-      index += 1
-      continue
-    }
-    if (arg === "--root" && next !== undefined) {
-      root = next
-      index += 1
-    }
-  }
-  return {
-    configPath,
-    ...(root === undefined ? {} : { root })
-  }
-}
-
-const main = Effect.fn("scripts.renderCatalogs")(function*(args: RenderCatalogsArgs) {
+const renderCatalogs = Command.make("render-catalogs", {
+  config: Flag.string("config").pipe(Flag.withDefault("apps/release-ts/release.config.json")),
+  root: Flag.string("root").pipe(Flag.optional)
+}, Effect.fn("scripts.renderCatalogs")(function*({ config, root }) {
   const result = yield* renderReleaseFiles({
-    ...args,
+    configPath: config,
+    ...optionalField(Option.getOrUndefined(root), (root) => ({ root })),
     execute: true
   })
   yield* Console.log(renderEvidenceJson(result.evidence).trimEnd())
-})
+}))
 
-main(parseArgs(Bun.argv.slice(2))).pipe(
+Command.run(renderCatalogs, { version: packageManifest.version }).pipe(
   Effect.provide(BunReleaseWorkflowRuntimeLayer),
   BunRuntime.runMain
 )

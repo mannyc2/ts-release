@@ -52,6 +52,7 @@ const fakeWheel = (wheelTag: string): string => [
 ].join("\n")
 
 const releaseConfig = () => ({
+  project: {},
   builds: [
     {
       builder: "bun",
@@ -80,9 +81,11 @@ const releaseConfig = () => ({
   ],
   publish: {
     homebrew: {
+      repository: "mannyc2/homebrew-ts-release",
       formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb"
     },
     scoop: {
+      repository: "mannyc2/scoop-ts-release",
       manifestPath: ".release/catalogs/scoop-ts-release/bucket/ts-release.json"
     },
     pypi: {

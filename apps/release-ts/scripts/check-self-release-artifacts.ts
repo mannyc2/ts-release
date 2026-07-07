@@ -1,6 +1,14 @@
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
+import * as Schema from "effect/Schema"
+import { ReleaseConfig } from "../../../src/config/schema.js"
+import { platformTargetVariant } from "../../../src/pipeline/platform.js"
+import { ReleaseIdentity } from "../../../src/pipeline/state.js"
+import { normalizedName, renderTemplate } from "../../../src/pipeline/template.js"
+import type { ReleaseConfigHomebrewPublish } from "../../../src/pipes/catalog-homebrew.js"
+import type { ReleaseConfigScoopPublish } from "../../../src/pipes/catalog-scoop.js"
+import type { ReleaseConfigPyPiPublish } from "../../../src/pipes/publish-pypi.js"
 
 const root = cwd()
 const packagePath = "package.json"
@@ -8,8 +16,6 @@ const releaseConfigPath = "apps/release-ts/release.config.json"
 const defaultTwinePython = ".release/twine-venv/bin/python"
 const maxPyPiArtifactBytes = 100 * 1024 * 1024
 const skipTwineCheck = process.env.SELF_RELEASE_SKIP_TWINE_CHECK === "1"
-
-type JsonRecord = Record<string, unknown>
 
 interface Check {
   readonly id: string
@@ -19,25 +25,25 @@ interface Check {
 
 interface WheelArtifact {
   readonly path: string
-  readonly wheelTag: string | undefined
+  readonly wheelTag: string
 }
 
-const isRecord = (value: unknown): value is JsonRecord =>
+const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig)
+
+// Only for JSON the tool does not own a schema for (package.json, generated Scoop manifest).
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
+
+const stringField = (record: Record<string, unknown>, key: string): string | undefined => {
+  const value = record[key]
+  return typeof value === "string" && value.length > 0 ? value : undefined
+}
 
 const readJson = (path: string): unknown =>
   JSON.parse(readFileSync(resolve(root, path), "utf8"))
 
 const readText = (path: string): string =>
   readFileSync(resolve(root, path), "utf8")
-
-const field = (record: JsonRecord, key: string): string | undefined => {
-  const value = record[key]
-  return typeof value === "string" && value.length > 0 ? value : undefined
-}
-
-const record = (value: JsonRecord, key: string): JsonRecord | undefined =>
-  isRecord(value[key]) ? value[key] : undefined
 
 const check = (id: string, ok: boolean, okMessage: string, failMessage = okMessage): Check => ({
   id,
@@ -62,45 +68,44 @@ const fileSizeCheck = (id: string, path: string, maxBytes: number, label: string
     : check(id, bytes <= maxBytes, `${label} is ${bytes} bytes, within the ${maxBytes} byte limit.`, `${label} is ${bytes} bytes, above the ${maxBytes} byte limit.`)
 }
 
-const normalizedName = (name: string): string =>
-  (name.startsWith("@") ? name.slice(1) : name).replaceAll("/", "-")
-
-const expand = (value: string, packageName: string, packageVersion: string): string =>
-  value
-    .split("{version}").join(packageVersion)
-    .split("{name}").join(packageName)
-    .split("{normalizedName}").join(normalizedName(packageName))
-
-const buildOutput = (value: string, packageName: string, packageVersion: string, target: string): string =>
-  expand(value, packageName, packageVersion)
-    .split("{targetTriple}").join(target)
-    .split("{ext}").join(target === "windows-x64" ? ".exe" : "")
-
-const singleOrManyRecords = (value: unknown): ReadonlyArray<JsonRecord> =>
-  Array.isArray(value) ? value.filter(isRecord) : isRecord(value) ? [value] : []
-
-const publishTarget = (publish: JsonRecord, id: string): JsonRecord | undefined =>
-  record(publish, id)
+const identityFor = (packageName: string, packageVersion: string): ReleaseIdentity =>
+  ReleaseIdentity.make({
+    name: packageName,
+    normalizedName: normalizedName(packageName),
+    version: packageVersion,
+    tag: "",
+    commit: "",
+    shortCommit: "",
+    versionSource: "manifest",
+    snapshot: false
+  })
 
 const collectArtifactPaths = (
-  config: JsonRecord,
-  packageName: string,
-  packageVersion: string
+  config: ReleaseConfig,
+  identity: ReleaseIdentity
 ): { readonly binaries: ReadonlyArray<string>; readonly wheels: ReadonlyArray<WheelArtifact> } => {
   const binaries: Array<string> = []
-  const wheels: Array<WheelArtifact> = []
-  for (const build of singleOrManyRecords(config.builds)) {
-    const output = field(build, "output")
-    const targets = Array.isArray(build.targets) ? build.targets : []
-    if (build.builder !== "bun" || output === undefined) continue
-    for (const target of targets) {
-      if (typeof target === "string") binaries.push(buildOutput(output, packageName, packageVersion, target))
+  for (const build of config.builds ?? []) {
+    if (build.builder !== "bun" || build.output === undefined) continue
+    for (const target of build.targets ?? []) {
+      binaries.push(renderTemplate(build.output, {
+        identity,
+        platform: platformTargetVariant(target),
+        targetTriple: target,
+        binary: build.binary ?? identity.normalizedName
+      }))
     }
   }
-  for (const wheel of singleOrManyRecords(config.pypiWheel)) {
-    const path = field(wheel, "path")
-    if (path !== undefined) wheels.push({ path: expand(path, packageName, packageVersion), wheelTag: field(wheel, "wheelTag") })
-  }
+  const wheelSection = config.pypiWheel
+  const wheelItems = wheelSection === undefined
+    ? []
+    : Array.isArray(wheelSection)
+    ? wheelSection
+    : [wheelSection]
+  const wheels = wheelItems.map((wheel): WheelArtifact => ({
+    path: renderTemplate(wheel.path, { identity }),
+    wheelTag: wheel.wheelTag
+  }))
   return { binaries, wheels }
 }
 
@@ -120,14 +125,15 @@ const runCommand = async (args: ReadonlyArray<string>): Promise<{ readonly exitC
   return { exitCode, stdout: await stdout, stderr: await stderr }
 }
 
-const pythonExecutable = (pypiTarget: JsonRecord | undefined): string => {
+const pythonExecutable = (pypiTarget: ReleaseConfigPyPiPublish | undefined): string => {
   const explicit = process.env.SELF_RELEASE_PYTHON
   if (explicit !== undefined && explicit.length > 0) return explicit
   if (existsSync(resolve(root, defaultTwinePython))) return defaultTwinePython
-  return pypiTarget === undefined ? "python3" : field(pypiTarget, "pythonExecutable") ?? "python3"
+  const configured = pypiTarget?.pythonExecutable
+  return configured !== undefined && configured.length > 0 ? configured : "python3"
 }
 
-const twineCheck = async (pypiTarget: JsonRecord | undefined, wheels: ReadonlyArray<WheelArtifact>): Promise<Check> => {
+const twineCheck = async (pypiTarget: ReleaseConfigPyPiPublish | undefined, wheels: ReadonlyArray<WheelArtifact>): Promise<Check> => {
   if (skipTwineCheck) return check("pypi:twine-check", true, "Twine metadata check skipped by SELF_RELEASE_SKIP_TWINE_CHECK=1.")
   if (wheels.length === 0) return check("pypi:twine-check", false, "", "No PyPI wheel artifacts were found to check with Twine.")
   const result = await runCommand([pythonExecutable(pypiTarget), "-m", "twine", "check", ...wheels.map((wheel) => wheel.path)])
@@ -144,15 +150,15 @@ const wheelMetadataChecks = (index: number, wheel: WheelArtifact): ReadonlyArray
   const contents = readFileSync(resolve(root, wheel.path), "utf8")
   return [
     check("pypi:wheel-root-is-purelib:" + index, contents.includes("Root-Is-Purelib: false"), "PyPI wheel declares platform-library installation metadata.", "PyPI wheel must declare Root-Is-Purelib: false because it bundles a platform-specific CLI binary."),
-    check("pypi:wheel-tag:" + index, wheel.wheelTag !== undefined && contents.includes(`Tag: ${wheel.wheelTag}`), `PyPI wheel metadata declares tag ${wheel.wheelTag}.`, "PyPI wheel metadata must declare the configured wheelTag.")
+    check("pypi:wheel-tag:" + index, wheel.wheelTag.length > 0 && contents.includes(`Tag: ${wheel.wheelTag}`), `PyPI wheel metadata declares tag ${wheel.wheelTag}.`, "PyPI wheel metadata must declare the configured wheelTag.")
   ]
 }
 
 const contentChecks = (checks: ReadonlyArray<readonly [string, boolean, string, string]>): ReadonlyArray<Check> =>
   checks.map(([id, ok, okMessage, failMessage]) => check(id, ok, okMessage, failMessage))
 
-const homebrewChecks = (target: JsonRecord | undefined, packageVersion: string): ReadonlyArray<Check> => {
-  const formulaPath = target === undefined ? undefined : field(target, "formulaPath")
+const homebrewChecks = (target: ReleaseConfigHomebrewPublish | undefined, packageVersion: string): ReadonlyArray<Check> => {
+  const formulaPath = target?.formulaPath
   if (formulaPath === undefined) return [check("homebrew:formula-path", false, "", "Homebrew formulaPath must be configured.")]
   const exists = fileCheck("homebrew:formula-file", formulaPath, "Homebrew formula")
   if (!exists.ok) return [exists]
@@ -168,16 +174,16 @@ const homebrewChecks = (target: JsonRecord | undefined, packageVersion: string):
   ]
 }
 
-const scoopChecks = (target: JsonRecord | undefined, packageVersion: string): ReadonlyArray<Check> => {
-  const manifestPath = target === undefined ? undefined : field(target, "manifestPath")
+const scoopChecks = (target: ReleaseConfigScoopPublish | undefined, packageVersion: string): ReadonlyArray<Check> => {
+  const manifestPath = target?.manifestPath
   if (manifestPath === undefined) return [check("scoop:manifest-path", false, "", "Scoop manifestPath must be configured.")]
   const exists = fileCheck("scoop:manifest-file", manifestPath, "Scoop manifest")
   if (!exists.ok) return [exists]
   const parsed = readJson(manifestPath)
-  if (!isRecord(parsed)) return [exists, check("scoop:manifest-json", false, "", "Scoop manifest must be a JSON object.")]
-  const version = field(parsed, "version")
-  const url = field(parsed, "url")
-  const hash = field(parsed, "hash")
+  if (!isJsonObject(parsed)) return [exists, check("scoop:manifest-json", false, "", "Scoop manifest must be a JSON object.")]
+  const version = stringField(parsed, "version")
+  const url = stringField(parsed, "url")
+  const hash = stringField(parsed, "hash")
   return [
     exists,
     ...contentChecks([
@@ -192,23 +198,32 @@ const printChecks = (checks: ReadonlyArray<Check>): void => {
   for (const item of checks) console.log(`${item.ok ? "ok  " : "fail"} ${item.id}: ${item.message}`)
 }
 
+const decodedConfig = (): { readonly config?: ReleaseConfig; readonly error?: string } => {
+  try {
+    return { config: decodeReleaseConfig(readJson(releaseConfigPath)) }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { error: message.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join(" | ") }
+  }
+}
+
 const checks: Array<Check> = []
 const manifest = readJson(packagePath)
-const config = readJson(releaseConfigPath)
+const { config, error: configError } = decodedConfig()
 
-if (!isRecord(manifest)) checks.push(check("manifest:shape", false, "", `${packagePath} must be a JSON object.`))
-if (!isRecord(config)) checks.push(check("config:shape", false, "", `${releaseConfigPath} must be a JSON object.`))
+if (!isJsonObject(manifest)) checks.push(check("manifest:shape", false, "", `${packagePath} must be a JSON object.`))
+if (config === undefined) {
+  checks.push(check("config:schema", false, "", `${releaseConfigPath} failed release config schema validation: ${configError ?? "unknown decode error"}`))
+}
 
-if (isRecord(manifest) && isRecord(config)) {
-  const packageName = field(manifest, "name")
-  const packageVersion = field(manifest, "version")
-  const publish = config.publish
+if (isJsonObject(manifest) && config !== undefined) {
+  const packageName = stringField(manifest, "name")
+  const packageVersion = stringField(manifest, "version")
   if (packageName === undefined) checks.push(check("manifest:name", false, "", `${packagePath} name must be configured.`))
   if (packageVersion === undefined) checks.push(check("manifest:version", false, "", `${packagePath} version must be configured.`))
-  if (!isRecord(publish)) checks.push(check("config:publish", false, "", `${releaseConfigPath} publish must be an object.`))
 
-  if (packageName !== undefined && packageVersion !== undefined && isRecord(publish)) {
-    const artifacts = collectArtifactPaths(config, packageName, packageVersion)
+  if (packageName !== undefined && packageVersion !== undefined) {
+    const artifacts = collectArtifactPaths(config, identityFor(packageName, packageVersion))
     for (const [index, path] of artifacts.binaries.entries()) checks.push(fileCheck(`github:binary:${index}`, path, "CLI binary artifact"))
     for (const [index, wheel] of artifacts.wheels.entries()) {
       checks.push(
@@ -217,10 +232,11 @@ if (isRecord(manifest) && isRecord(config)) {
         ...wheelMetadataChecks(index, wheel)
       )
     }
+    const pypiTarget = typeof config.publish.pypi === "object" ? config.publish.pypi : undefined
     checks.push(
-      ...homebrewChecks(publishTarget(publish, "homebrew"), packageVersion),
-      ...scoopChecks(publishTarget(publish, "scoop"), packageVersion),
-      await twineCheck(publishTarget(publish, "pypi"), artifacts.wheels)
+      ...homebrewChecks(config.publish.homebrew, packageVersion),
+      ...scoopChecks(config.publish.scoop, packageVersion),
+      await twineCheck(pypiTarget, artifacts.wheels)
     )
   }
 }

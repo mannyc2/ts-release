@@ -178,7 +178,7 @@ describe("PyPI target", () => {
       expect(trustedWithToken.reason).toContain("trusted publishing")
     }
     if (trustedWorkflowPath._tag === "ConfigValidationError") {
-      expect(trustedWorkflowPath.reason).toContain("publish.pypi.trustedPublishing.workflow")
+      expect(trustedWorkflowPath.reason).toContain(`["publish"]["pypi"]["trustedPublishing"]["workflow"]`)
     }
     expect(directoryArtifact._tag).toBe("PlanError")
     expect(noArtifact._tag).toBe("PlanError")

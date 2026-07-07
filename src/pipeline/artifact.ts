@@ -1,9 +1,26 @@
 import * as Schema from "effect/Schema"
 
-export const SafeRelativePath = Schema.NonEmptyString
+export const SafeRelativePath = Schema.String.check(
+  Schema.makeFilter((value: string) => {
+    const isEmpty = value.trim().length === 0
+    const isAbsolute = value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value)
+    const hasTraversal = value.split(/[\\/]+/).includes("..")
+    return isEmpty || isAbsolute || hasTraversal
+      ? "Path must be non-empty, relative, and must not contain parent traversal."
+      : undefined
+  })
+)
 export type SafeRelativePath = typeof SafeRelativePath.Type
 
-export const WorkflowFileName = Schema.NonEmptyString
+export const WorkflowFileName = Schema.String.check(
+  Schema.makeFilter((value: string) => {
+    const hasPathSeparator = value.includes("/") || value.includes("\\")
+    const hasWorkflowExtension = value.endsWith(".yml") || value.endsWith(".yaml")
+    return hasPathSeparator || !hasWorkflowExtension
+      ? "Workflow must be a .yml or .yaml filename without path separators."
+      : undefined
+  })
+)
 export type WorkflowFileName = typeof WorkflowFileName.Type
 
 export const ArtifactId = Schema.NonEmptyString

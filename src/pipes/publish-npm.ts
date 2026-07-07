@@ -200,18 +200,6 @@ const requirePackageName = (
       reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
     }))
   }
-  if (section.trustedPublishing !== undefined) {
-    const workflow = section.trustedPublishing.workflow
-    const hasPathSeparator = workflow.includes("/") || workflow.includes("\\")
-    const hasWorkflowExtension = workflow.endsWith(".yml") || workflow.endsWith(".yaml")
-    if (hasPathSeparator || !hasWorkflowExtension) {
-      return Effect.fail(PlanError.make({
-        pipeId: "publish:npm",
-        field: "publish.npm.trustedPublishing.workflow",
-        reason: "Workflow must be a .yml or .yaml filename without path separators."
-      }))
-    }
-  }
   return Effect.succeed({ ...section, packageName })
 }
 

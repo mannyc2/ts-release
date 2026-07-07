@@ -149,7 +149,7 @@ describe("planner", () => {
 
         expect(error._tag).toBe("ConfigValidationError")
         if (error._tag === "ConfigValidationError") {
-          expect(error.reason).toContain("project.packagePath")
+          expect(error.reason).toContain(`["project"]["packagePath"]`)
         }
       }))
 
@@ -213,22 +213,22 @@ describe("planner", () => {
               ],
               publish: {}
             }),
-            field: "artifacts[0].path"
+            field: `["artifacts"][0]["path"]`
           },
           {
             label: "npm package path",
             config: minimalConfig.replace("\"packagePath\":\".\"", "\"packagePath\":\"\""),
-            field: "publish.npm.packagePath"
+            field: `["publish"]["npm"]["packagePath"]`
           },
           {
             label: "Homebrew formula path",
             config: homebrewConfig({ formulaPath: "" }),
-            field: "publish.homebrew.formulaPath"
+            field: `["publish"]["homebrew"]["formulaPath"]`
           },
           {
             label: "Scoop manifest path",
             config: scoopConfig({ manifestPath: "" }),
-            field: "publish.scoop.manifestPath"
+            field: `["publish"]["scoop"]["manifestPath"]`
           }
         ]
 
@@ -472,7 +472,7 @@ describe("planner", () => {
 
         expect(error._tag).toBe("ConfigValidationError")
         if (error._tag === "ConfigValidationError") {
-          expect(error.reason).toContain("builds[0].entry")
+          expect(error.reason).toContain(`["builds"][0]["entry"]`)
         }
       }))
 
@@ -491,7 +491,7 @@ describe("planner", () => {
 
         expect(error._tag).toBe("ConfigValidationError")
         if (error._tag === "ConfigValidationError") {
-          expect(error.reason).toContain("builds[0].output")
+          expect(error.reason).toContain(`["builds"][0]["output"]`)
         }
       }))
 

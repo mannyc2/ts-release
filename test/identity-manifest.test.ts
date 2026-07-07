@@ -104,6 +104,21 @@ describe("manifest identity source", () => {
         }
       }))
 
+    it.effect("closes the manifest gap: rejects a non-semver static version", () =>
+      Effect.gen(function*() {
+        const error = yield* resolveManifest({
+          name: "configured",
+          version: "not-semver",
+          commit: "abc123"
+        }).pipe(Effect.flip)
+
+        expect(error._tag).toBe("IdentityError")
+        if (error._tag === "IdentityError") {
+          expect(error.field).toBe("project.version")
+          expect(error.reason).toBe("Version not-semver is not a valid semver version.")
+        }
+      }))
+
     it.effect("resolves HEAD through the injected command runner", () =>
       Effect.gen(function*() {
         const identity = yield* resolveManifest({
@@ -141,6 +156,27 @@ describe("manifest identity source", () => {
           expect(error.field).toBe("identity.packagePath")
           expect(error.reason).toBe("Package manifest is not valid JSON.")
           expect(error.cause).toBeDefined()
+        }
+      }))
+  })
+
+  layer(
+    makeTestCommandRunnerLayer({
+      files: new Map([
+        ["package.json", JSON.stringify({ name: "@scope/pkg", version: "not-semver" })]
+      ])
+    })
+  )((it) => {
+    it.effect("closes the manifest gap: rejects a non-semver package manifest version", () =>
+      Effect.gen(function*() {
+        const error = yield* resolveManifest({
+          commit: "abc123"
+        }).pipe(Effect.flip)
+
+        expect(error._tag).toBe("IdentityError")
+        if (error._tag === "IdentityError") {
+          expect(error.field).toBe("identity.version")
+          expect(error.reason).toBe("Version not-semver is not a valid semver version.")
         }
       }))
   })

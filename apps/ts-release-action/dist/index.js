@@ -98859,8 +98859,17 @@ class ConfigValidationError extends TaggedErrorClass()("ConfigValidationError", 
 }
 
 // ../../src/pipeline/artifact.ts
-var SafeRelativePath = NonEmptyString;
-var WorkflowFileName = NonEmptyString;
+var SafeRelativePath = String4.check(makeFilter2((value2) => {
+  const isEmpty = value2.trim().length === 0;
+  const isAbsolute = value2.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value2);
+  const hasTraversal = value2.split(/[\\/]+/).includes("..");
+  return isEmpty || isAbsolute || hasTraversal ? "Path must be non-empty, relative, and must not contain parent traversal." : undefined;
+}));
+var WorkflowFileName = String4.check(makeFilter2((value2) => {
+  const hasPathSeparator = value2.includes("/") || value2.includes("\\");
+  const hasWorkflowExtension = value2.endsWith(".yml") || value2.endsWith(".yaml");
+  return hasPathSeparator || !hasWorkflowExtension ? "Workflow must be a .yml or .yaml filename without path separators." : undefined;
+}));
 var ArtifactId = NonEmptyString;
 var ArtifactFormat = Literals(["tarball", "zip", "file", "directory", "oci-image", "executable"]);
 var ChecksumAlgorithm = Literals(["sha256", "sha512"]);
@@ -100572,6 +100581,7 @@ var numericIdentifier = "(?:0|[1-9]\\d*)";
 var prereleaseIdentifier = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)";
 var buildIdentifier = "(?:[0-9A-Za-z-]+)";
 var semverPattern = new RegExp(`^(${numericIdentifier})\\.(${numericIdentifier})\\.(${numericIdentifier})` + `(?:-(${prereleaseIdentifier}(?:\\.${prereleaseIdentifier})*))?` + `(?:\\+(${buildIdentifier}(?:\\.${buildIdentifier})*))?$`);
+var SemverVersion = String4.check(makeFilter2((value2) => semverPattern.test(value2) ? undefined : `Version ${value2} is not a valid semver version.`));
 var parseSemverVersion = (value2) => semverPattern.test(value2) ? value2 : undefined;
 var hasSemverPrerelease = (value2) => {
   const match6 = semverPattern.exec(value2);
@@ -100809,18 +100819,6 @@ var requirePackageName = (section, identity2) => {
       reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
     }));
   }
-  if (section.trustedPublishing !== undefined) {
-    const workflow = section.trustedPublishing.workflow;
-    const hasPathSeparator = workflow.includes("/") || workflow.includes("\\");
-    const hasWorkflowExtension = workflow.endsWith(".yml") || workflow.endsWith(".yaml");
-    if (hasPathSeparator || !hasWorkflowExtension) {
-      return fail6(PlanError.make({
-        pipeId: "publish:npm",
-        field: "publish.npm.trustedPublishing.workflow",
-        reason: "Workflow must be a .yml or .yaml filename without path separators."
-      }));
-    }
-  }
   return succeed6({ ...section, packageName });
 };
 var publishNpmPipe = {
@@ -100962,18 +100960,6 @@ var validateAuthConfig = (section) => {
       field: "publish.pypi",
       reason: "PyPI trusted publishing uses CI OIDC and must not also declare usernameEnv or passwordEnv."
     }));
-  }
-  if (section.trustedPublishing !== undefined) {
-    const workflow = section.trustedPublishing.workflow;
-    const hasPathSeparator = workflow.includes("/") || workflow.includes("\\");
-    const hasWorkflowExtension = workflow.endsWith(".yml") || workflow.endsWith(".yaml");
-    if (hasPathSeparator || !hasWorkflowExtension) {
-      return fail6(PlanError.make({
-        pipeId: "publish:pypi",
-        field: "publish.pypi.trustedPublishing.workflow",
-        reason: "Workflow must be a .yml or .yaml filename without path separators."
-      }));
-    }
   }
   if (!hasUsername && !hasPassword) {
     return void_3;
@@ -101214,19 +101200,6 @@ var forbiddenTopLevelConfigFields = new Set([
   "evidenceDirectory",
   "strict"
 ]);
-var safeRelativePathFields = new Set([
-  "path",
-  "packagePath",
-  "entry",
-  "output",
-  "outDir",
-  "formulaPath",
-  "tapDirectory",
-  "manifestPath",
-  "bucketDirectory",
-  "directory",
-  "sourcePath"
-]);
 var isRecord = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
 var removedFieldHint = (parentPath, key) => {
   if (key === "outputs") {
@@ -101283,58 +101256,6 @@ var findForbiddenConfigField = (value2, fieldPath = "$") => {
   }
   return;
 };
-var unsafeRelativePathReason = (value2) => {
-  const isEmpty = value2.trim().length === 0;
-  const isAbsolute = value2.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value2);
-  const hasTraversal = value2.split(/[\\/]+/).includes("..");
-  return isEmpty || isAbsolute || hasTraversal ? "Path must be non-empty, relative, and must not contain parent traversal." : undefined;
-};
-var unsafeWorkflowReason = (value2) => {
-  const hasPathSeparator = value2.includes("/") || value2.includes("\\");
-  const hasWorkflowExtension = value2.endsWith(".yml") || value2.endsWith(".yaml");
-  return hasPathSeparator || !hasWorkflowExtension ? "Workflow must be a .yml or .yaml filename without path separators." : undefined;
-};
-var findScalarValidationError = (value2, fieldPath = "$") => {
-  if (Array.isArray(value2)) {
-    for (const [index, item] of value2.entries()) {
-      const nested = findScalarValidationError(item, `${fieldPath}[${index}]`);
-      if (nested !== undefined) {
-        return nested;
-      }
-    }
-    return;
-  }
-  if (!isRecord(value2)) {
-    return;
-  }
-  for (const [key, item] of Object.entries(value2)) {
-    if (typeof item === "string") {
-      if (safeRelativePathFields.has(key)) {
-        const reason = unsafeRelativePathReason(item);
-        if (reason !== undefined) {
-          return { field: fieldPath === "$" ? key : `${fieldPath}.${key}`, reason };
-        }
-      }
-      if (key === "workflow") {
-        const reason = unsafeWorkflowReason(item);
-        if (reason !== undefined) {
-          return { field: fieldPath === "$" ? key : `${fieldPath}.${key}`, reason };
-        }
-      }
-      if (fieldPath === "$" && key === "evidence") {
-        const reason = unsafeRelativePathReason(item);
-        if (reason !== undefined) {
-          return { field: key, reason };
-        }
-      }
-    }
-    const nested = findScalarValidationError(item, fieldPath === "$" ? key : `${fieldPath}.${key}`);
-    if (nested !== undefined) {
-      return nested;
-    }
-  }
-  return;
-};
 var parseReleaseIntent = fn2("parseReleaseIntent")(function* (input, path4 = DEFAULT_CONFIG_PATH) {
   const parsed = yield* parseJsonAs(Unknown2, input, (cause) => ConfigParseError.make({
     path: path4,
@@ -101346,13 +101267,6 @@ var parseReleaseIntent = fn2("parseReleaseIntent")(function* (input, path4 = DEF
     return yield* fail6(ConfigValidationError.make({
       path: path4,
       reason: `Release config uses removed field ${forbiddenField.field}. ${forbiddenField.hint}`
-    }));
-  }
-  const scalarValidation = findScalarValidationError(parsed);
-  if (scalarValidation !== undefined) {
-    return yield* fail6(ConfigValidationError.make({
-      path: path4,
-      reason: `${scalarValidation.field}: ${scalarValidation.reason}`
     }));
   }
   return yield* decodeReleaseConfig(parsed).pipe(mapError3((error2) => ConfigValidationError.make({
@@ -101917,7 +101831,7 @@ var PlatformCommandRunnerLayer = makePlatformCommandRunnerLayer();
 class ReleaseIdentity extends Class4("PipelineReleaseIdentity")({
   name: String4,
   normalizedName: String4,
-  version: String4,
+  version: SemverVersion,
   tag: String4,
   commit: String4,
   shortCommit: String4,
@@ -102104,6 +102018,10 @@ var validateNonEmptySafeRelativePath = (field, value2) => {
   }
   return fail6(identityError2(field, "Path must be non-empty, relative, and must not contain parent traversal."));
 };
+var requireSemverVersion = (field, value2) => {
+  const parsed = parseSemverVersion(value2);
+  return parsed === undefined ? fail6(identityError2(field, `Version ${value2} is not a valid semver version.`)) : succeed6(parsed);
+};
 var requireCompactString = (field, value2, reason) => {
   if (value2 !== undefined && value2.trim().length > 0) {
     return succeed6(value2);
@@ -102161,10 +102079,10 @@ var readPackageManifest = fn2("pipeline.identity.manifest.readPackageManifest")(
 var resolveStaticIdentity = fn2("pipeline.identity.manifest.resolveStaticIdentity")(function* (options) {
   const project = options.project;
   const commit = project.commit ?? "HEAD";
-  const version4 = project.version;
-  if (version4 === undefined) {
+  if (project.version === undefined) {
     return yield* fail6(identityError2("project.version", "Static project identity requires project.version."));
   }
+  const version4 = yield* requireSemverVersion("project.version", project.version);
   const name = yield* requireCompactString("project.name", project.name ?? projectPackageName4(project), "Static project identity requires project.name or project.packageName.");
   const tagTemplate = project.tagTemplate ?? "v{version}";
   yield* templateField("project.tagTemplate", tagTemplate);
@@ -102180,13 +102098,14 @@ var resolveStaticIdentity = fn2("pipeline.identity.manifest.resolveStaticIdentit
 var resolvePackageManifestIdentity = fn2("pipeline.identity.manifest.resolvePackageManifestIdentity")(function* (options, workspace) {
   const project = options.project;
   const manifest = yield* readPackageManifest(options, workspace, projectManifestPath2(project) ?? "package.json");
+  const version4 = yield* requireSemverVersion("identity.version", manifest.version);
   const tagTemplate = project.tagTemplate ?? "v{version}";
   yield* templateField("identity.tagTemplate", tagTemplate);
   return ResolvedIdentity.make({
     name: manifest.name,
-    version: manifest.version,
+    version: version4,
     commit: project.commit ?? "HEAD",
-    tag: renderVersionTemplate(tagTemplate, manifest.version),
+    tag: renderVersionTemplate(tagTemplate, version4),
     ...optionalField(project.notes, (notes) => ({ notes })),
     sourceId: "manifest"
   });

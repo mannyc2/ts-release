@@ -156,7 +156,7 @@ describe("build pipe", () => {
 
         expect(error._tag).toBe("ConfigValidationError")
         if (error._tag === "ConfigValidationError") {
-          expect(error.reason).toContain("builds[0].output")
+          expect(error.reason).toContain(`["builds"][0]["output"]`)
         }
         expect(calls).toHaveLength(0)
       }))

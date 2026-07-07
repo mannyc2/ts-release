@@ -182,4 +182,83 @@ describe("repository release config", () => {
       expect(error.field).toBe("evidenceDirectory")
     }
   })
+
+  test("rejects absolute catalog paths at config decode", async () => {
+    const withFormula = JSON.parse(config)
+    withFormula.publish.homebrew = {
+      ...withFormula.publish.homebrew,
+      formulaPath: "/etc/formula.rb"
+    }
+    const error = await runEffect(
+      Effect.gen(function*() {
+        return yield* createTestPlan(JSON.stringify(withFormula), ".", selfReleaseConfigPath)
+      }).pipe(Effect.flip),
+      TestLayer
+    )
+
+    expect(error._tag).toBe("ConfigValidationError")
+    if (error._tag === "ConfigValidationError") {
+      expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
+      expect(error.reason).toContain(`["publish"]["homebrew"]["formulaPath"]`)
+    }
+  })
+
+  test("rejects traversal catalog paths at config decode", async () => {
+    const withFormula = JSON.parse(config)
+    withFormula.publish.homebrew = {
+      ...withFormula.publish.homebrew,
+      formulaPath: "../outside/formula.rb"
+    }
+    const error = await runEffect(
+      Effect.gen(function*() {
+        return yield* createTestPlan(JSON.stringify(withFormula), ".", selfReleaseConfigPath)
+      }).pipe(Effect.flip),
+      TestLayer
+    )
+
+    expect(error._tag).toBe("ConfigValidationError")
+    if (error._tag === "ConfigValidationError") {
+      expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
+    }
+  })
+
+  test("rejects trusted-publishing workflow names with separators at config decode", async () => {
+    const withWorkflow = JSON.parse(config)
+    withWorkflow.publish.npm = {
+      ...withWorkflow.publish.npm,
+      tokenEnv: undefined,
+      trustedPublishing: { workflow: ".github/workflows/release.yml" }
+    }
+    const error = await runEffect(
+      Effect.gen(function*() {
+        return yield* createTestPlan(JSON.stringify(withWorkflow), ".", selfReleaseConfigPath)
+      }).pipe(Effect.flip),
+      TestLayer
+    )
+
+    expect(error._tag).toBe("ConfigValidationError")
+    if (error._tag === "ConfigValidationError") {
+      expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
+    }
+  })
+
+  test("rejects trusted-publishing workflow names without a yaml extension at config decode", async () => {
+    const withWorkflow = JSON.parse(config)
+    withWorkflow.publish.npm = {
+      ...withWorkflow.publish.npm,
+      tokenEnv: undefined,
+      trustedPublishing: { workflow: "release.txt" }
+    }
+    const error = await runEffect(
+      Effect.gen(function*() {
+        return yield* createTestPlan(JSON.stringify(withWorkflow), ".", selfReleaseConfigPath)
+      }).pipe(Effect.flip),
+      TestLayer
+    )
+
+    expect(error._tag).toBe("ConfigValidationError")
+    if (error._tag === "ConfigValidationError") {
+      expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
+    }
+  })
 })

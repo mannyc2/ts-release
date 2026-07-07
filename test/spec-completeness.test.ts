@@ -111,10 +111,10 @@ describe("SPEC completeness", () => {
         expect(artifactError._tag).toBe("ConfigValidationError")
         expect(packageError._tag).toBe("ConfigValidationError")
         if (artifactError._tag === "ConfigValidationError") {
-          expect(artifactError.reason).toContain("npmPackage.path")
+          expect(artifactError.reason).toContain(`["npmPackage"]["path"]`)
         }
         if (packageError._tag === "ConfigValidationError") {
-          expect(packageError.reason).toContain("publish.npm.packagePath")
+          expect(packageError.reason).toContain(`["publish"]["npm"]["packagePath"]`)
         }
       }))
 

@@ -15,20 +15,6 @@ const forbiddenTopLevelConfigFields = new Set([
   "evidenceDirectory",
   "strict"
 ])
-const safeRelativePathFields = new Set([
-  "path",
-  "packagePath",
-  "entry",
-  "output",
-  "outDir",
-  "formulaPath",
-  "tapDirectory",
-  "manifestPath",
-  "bucketDirectory",
-  "directory",
-  "sourcePath"
-])
-
 const isRecord = (value: unknown): value is { readonly [key: string]: unknown } =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
@@ -92,68 +78,6 @@ const findForbiddenConfigField = (
   return undefined
 }
 
-const unsafeRelativePathReason = (value: string): string | undefined => {
-  const isEmpty = value.trim().length === 0
-  const isAbsolute = value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value)
-  const hasTraversal = value.split(/[\\/]+/).includes("..")
-  return isEmpty || isAbsolute || hasTraversal
-    ? "Path must be non-empty, relative, and must not contain parent traversal."
-    : undefined
-}
-
-const unsafeWorkflowReason = (value: string): string | undefined => {
-  const hasPathSeparator = value.includes("/") || value.includes("\\")
-  const hasWorkflowExtension = value.endsWith(".yml") || value.endsWith(".yaml")
-  return hasPathSeparator || !hasWorkflowExtension
-    ? "Workflow must be a .yml or .yaml filename without path separators."
-    : undefined
-}
-
-const findScalarValidationError = (
-  value: unknown,
-  fieldPath: string = "$"
-): { readonly field: string; readonly reason: string } | undefined => {
-  if (Array.isArray(value)) {
-    for (const [index, item] of value.entries()) {
-      const nested = findScalarValidationError(item, `${fieldPath}[${index}]`)
-      if (nested !== undefined) {
-        return nested
-      }
-    }
-    return undefined
-  }
-  if (!isRecord(value)) {
-    return undefined
-  }
-  for (const [key, item] of Object.entries(value)) {
-    if (typeof item === "string") {
-      if (safeRelativePathFields.has(key)) {
-        const reason = unsafeRelativePathReason(item)
-        if (reason !== undefined) {
-          return { field: fieldPath === "$" ? key : `${fieldPath}.${key}`, reason }
-        }
-      }
-      if (key === "workflow") {
-        const reason = unsafeWorkflowReason(item)
-        if (reason !== undefined) {
-          return { field: fieldPath === "$" ? key : `${fieldPath}.${key}`, reason }
-        }
-      }
-      if (fieldPath === "$" && key === "evidence") {
-        const reason = unsafeRelativePathReason(item)
-        if (reason !== undefined) {
-          return { field: key, reason }
-        }
-      }
-    }
-    const nested = findScalarValidationError(item, fieldPath === "$" ? key : `${fieldPath}.${key}`)
-    if (nested !== undefined) {
-      return nested
-    }
-  }
-  return undefined
-}
-
 export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(input: string, path: string = DEFAULT_CONFIG_PATH) {
   const parsed = yield* parseJsonAs(
     Schema.Unknown,
@@ -172,16 +96,6 @@ export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(inpu
       ConfigValidationError.make({
         path,
         reason: `Release config uses removed field ${forbiddenField.field}. ${forbiddenField.hint}`
-      })
-    )
-  }
-
-  const scalarValidation = findScalarValidationError(parsed)
-  if (scalarValidation !== undefined) {
-    return yield* Effect.fail(
-      ConfigValidationError.make({
-        path,
-        reason: `${scalarValidation.field}: ${scalarValidation.reason}`
       })
     )
   }

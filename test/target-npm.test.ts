@@ -158,7 +158,7 @@ describe("npm target", () => {
 
     expect(error._tag).toBe("ConfigValidationError")
     if (error._tag === "ConfigValidationError") {
-      expect(error.reason).toContain("publish.npm.trustedPublishing.workflow")
+      expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
     }
   })
 
@@ -170,7 +170,7 @@ describe("npm target", () => {
 
     expect(error._tag).toBe("ConfigValidationError")
     if (error._tag === "ConfigValidationError") {
-      expect(error.reason).toContain("publish.npm.trustedPublishing.workflow")
+      expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
     }
   })
 

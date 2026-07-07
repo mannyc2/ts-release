@@ -4,6 +4,7 @@ import { parseJsonAs } from "../json.js"
 import { CommandSpec } from "../operation.js"
 import { optionalField } from "../optional-field.js"
 import { IdentityError } from "../errors.js"
+import { parseSemverVersion } from "../semver.js"
 import { ResolvedIdentity, type VersionSource, type WorkspaceServices } from "./source.js"
 
 
@@ -59,6 +60,16 @@ const validateNonEmptySafeRelativePath = (
       "Path must be non-empty, relative, and must not contain parent traversal."
     )
   )
+}
+
+const requireSemverVersion = (
+  field: string,
+  value: string
+): Effect.Effect<string, IdentityError> => {
+  const parsed = parseSemverVersion(value)
+  return parsed === undefined
+    ? Effect.fail(identityError(field, `Version ${value} is not a valid semver version.`))
+    : Effect.succeed(parsed)
 }
 
 const requireCompactString = (
@@ -177,12 +188,12 @@ const resolveStaticIdentity = Effect.fn("pipeline.identity.manifest.resolveStati
 ) {
   const project = options.project
   const commit = project.commit ?? "HEAD"
-  const version = project.version
-  if (version === undefined) {
+  if (project.version === undefined) {
     return yield* Effect.fail(
       identityError("project.version", "Static project identity requires project.version.")
     )
   }
+  const version = yield* requireSemverVersion("project.version", project.version)
   const name = yield* requireCompactString(
     "project.name",
     project.name ?? projectPackageName(project),
@@ -212,13 +223,14 @@ const resolvePackageManifestIdentity = Effect.fn(
     workspace,
     projectManifestPath(project) ?? "package.json"
   )
+  const version = yield* requireSemverVersion("identity.version", manifest.version)
   const tagTemplate = project.tagTemplate ?? "v{version}"
   yield* templateField("identity.tagTemplate", tagTemplate)
   return ResolvedIdentity.make({
     name: manifest.name,
-    version: manifest.version,
+    version,
     commit: project.commit ?? "HEAD",
-    tag: renderVersionTemplate(tagTemplate, manifest.version),
+    tag: renderVersionTemplate(tagTemplate, version),
     ...optionalField(project.notes, (notes) => ({ notes })),
     sourceId: "manifest"
   })

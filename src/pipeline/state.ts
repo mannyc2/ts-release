@@ -1,12 +1,13 @@
 import * as Schema from "effect/Schema"
 import { ArtifactCatalog } from "./catalog.js"
 import { Operation } from "./operation.js"
+import { SemverVersion } from "./semver.js"
 
 
 export class ReleaseIdentity extends Schema.Class<ReleaseIdentity>("PipelineReleaseIdentity")({
   name: Schema.String,
   normalizedName: Schema.String,
-  version: Schema.String,
+  version: SemverVersion,
   tag: Schema.String,
   commit: Schema.String,
   shortCommit: Schema.String,

@@ -105294,18 +105294,15 @@ class ActionInputError extends TaggedErrorClass()("ActionInputError", {
   reason: String4
 }) {
 }
-var commands = [
-  "plan",
-  "doctor",
-  "build",
-  "release",
-  "verify"
-];
-var formats = ["json", "text", "summary", "markdown"];
-var runtimes = ["bundled", "workspace"];
-var isCommand = (value2) => commands.some((command) => command === value2);
-var isFormat = (value2) => formats.some((format3) => format3 === value2);
-var isRuntime = (value2) => runtimes.some((runtime) => runtime === value2);
+var parseChoice = (schema2, name, value2) => {
+  if (schema2.literals.includes(value2)) {
+    return value2;
+  }
+  throw ActionInputError.make({
+    input: name,
+    reason: `Unsupported ${name} ${value2}.`
+  });
+};
 var inputOrDefault = (reader, name, fallback) => {
   const value2 = reader.getInput(name).trim();
   return value2.length === 0 ? fallback : value2;
@@ -105344,45 +105341,18 @@ var parseBooleanInput = (reader, name, fallback) => {
     reason: "Expected true or false."
   });
 };
-var parseCommandInput = (value2) => {
-  if (isCommand(value2)) {
-    return value2;
-  }
-  throw ActionInputError.make({
-    input: "command",
-    reason: `Unsupported command ${value2}.`
-  });
-};
-var parseFormatInput = (value2) => {
-  if (isFormat(value2)) {
-    return value2;
-  }
-  throw ActionInputError.make({
-    input: "format",
-    reason: `Unsupported format ${value2}.`
-  });
-};
-var parseRuntimeInput = (value2) => {
-  if (isRuntime(value2)) {
-    return value2;
-  }
-  throw ActionInputError.make({
-    input: "runtime",
-    reason: `Unsupported runtime ${value2}.`
-  });
-};
 var readActionOptions = (reader, root) => {
   const target = optionalInput(reader, "target");
   return ActionOptions.make({
     root,
-    command: parseCommandInput(inputOrDefault(reader, "command", "plan")),
+    command: parseChoice(ActionCommand, "command", inputOrDefault(reader, "command", "plan")),
     config: configInputOrDefault(reader, "release.config.json"),
-    format: parseFormatInput(inputOrDefault(reader, "format", "markdown")),
+    format: parseChoice(ActionFormat, "format", inputOrDefault(reader, "format", "markdown")),
     writeStepSummary: parseBooleanInput(reader, "write-step-summary", true),
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
     failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
     ...target === undefined ? {} : { target },
-    runtime: parseRuntimeInput(inputOrDefault(reader, "runtime", "bundled")),
+    runtime: parseChoice(ActionRuntime, "runtime", inputOrDefault(reader, "runtime", "bundled")),
     snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),
@@ -105427,13 +105397,12 @@ var formatTaggedError = (cause) => {
 };
 var formatActionError = (cause) => formatTaggedError(isCause2(cause) ? squash(cause) : cause) ?? renderActionCause(cause);
 var workspacePath = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
-var hasParentTraversal4 = (pathName) => pathName.split(/[\\/]+/).includes("..");
 var isInsideWorkspace = (path4, root, targetPath) => {
   const relative = path4.relative(path4.resolve(root), targetPath);
   return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
 };
 var workspaceOutputPath = (path4, options, pathName) => {
-  if (pathName.trim().length === 0 || hasParentTraversal4(pathName)) {
+  if (pathName.trim().length === 0 || hasParentTraversal2(pathName)) {
     return fail6(ActionCommandError.make({
       command: options.command,
       reason: "plan-path must be non-empty and must not contain parent traversal."
@@ -105450,7 +105419,7 @@ var workspaceOutputPath = (path4, options, pathName) => {
   }));
 };
 var workspaceConfigPath = (path4, options, pathName) => {
-  if (pathName.trim().length === 0 || hasParentTraversal4(pathName)) {
+  if (pathName.trim().length === 0 || hasParentTraversal2(pathName)) {
     return fail6(ActionCommandError.make({
       command: options.command,
       reason: "config must be non-empty and must not contain parent traversal."
@@ -106926,9 +106895,9 @@ var handleErrnoException = (module, method) => (err, [path4]) => {
 var toError = (error2) => error2 instanceof globalThis.Error ? error2 : new globalThis.Error(String(error2));
 var toPlatformError = (method, error2, command) => {
   const {
-    commands: commands2
+    commands
   } = flattenCommand(command);
-  const commandStr = commands2.reduce((acc, curr) => {
+  const commandStr = commands.reduce((acc, curr) => {
     const cmd = `${curr.command} ${curr.args.join(" ")}`;
     return acc.length === 0 ? cmd : `${acc} | ${cmd}`;
   }, "");
@@ -107289,10 +107258,10 @@ var make27 = /* @__PURE__ */ gen2(function* () {
       }
       case "PipedCommand": {
         const {
-          commands: commands2,
+          commands,
           pipeOptions
         } = flattenCommand(cmd);
-        const [root, ...pipeline] = commands2;
+        const [root, ...pipeline] = commands;
         const handles = [yield* spawnCommand(root)];
         for (let i = 0;i < pipeline.length; i++) {
           const command = pipeline[i];
@@ -107364,12 +107333,12 @@ var make27 = /* @__PURE__ */ gen2(function* () {
 });
 var layer2 = /* @__PURE__ */ effect(ChildProcessSpawner, make27);
 var flattenCommand = (command) => {
-  const commands2 = [];
+  const commands = [];
   const pipeOptions = [];
   const flatten4 = (cmd) => {
     switch (cmd._tag) {
       case "StandardCommand": {
-        commands2.push(cmd);
+        commands.push(cmd);
         break;
       }
       case "PipedCommand": {
@@ -107381,10 +107350,10 @@ var flattenCommand = (command) => {
     }
   };
   flatten4(command);
-  if (commands2.length === 0) {
+  if (commands.length === 0) {
     throw new Error("flattenCommand produced empty commands array");
   }
-  const [first, ...rest] = commands2;
+  const [first, ...rest] = commands;
   const nonEmptyCommands = [first, ...rest];
   return {
     commands: nonEmptyCommands,

@@ -388,6 +388,24 @@ describe("ts-release action", () => {
     expect(io.failures.join("\n")).toContain("Expected true or false")
   })
 
+  test("unsupported runtime input fails with the exact reason", async () => {
+    const io = makeFakeActionIo()
+
+    await runActionFromInputs(
+      {
+        getInput: (name) => name === "runtime" ? "container" : ""
+      },
+      io,
+      process.cwd(),
+      makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
+      NoopActionArtifactClient
+    )
+
+    expect(io.outputs.get("status")).toBe("failed")
+    expect(io.failures.join("\n")).toContain("ActionInputError")
+    expect(io.failures.join("\n")).toContain("Unsupported runtime container.")
+  })
+
   test("whitespace-only config input fails through action outputs", async () => {
     const io = makeFakeActionIo()
 

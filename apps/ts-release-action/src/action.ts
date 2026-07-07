@@ -13,6 +13,7 @@ import type { ReleaseCommandRunner } from "../../../src/host/host.js"
 import type { ReleaseHttp } from "../../../src/host/http.js"
 import type { GitHubApi } from "../../../src/engine/github.js"
 import * as Doctor from "../../../src/workflows/doctor.js"
+import { hasParentTraversal } from "../../../src/internal/workspace-path.js"
 import { ActionOptions } from "./input.js"
 
 type ReleaseDiagnosticReport = Doctor.ReleaseDiagnosticReport
@@ -98,9 +99,6 @@ export const formatActionError = (cause: unknown): string =>
 
 const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
-
-const hasParentTraversal = (pathName: string): boolean =>
-  pathName.split(/[\\/]+/).includes("..")
 
 const isInsideWorkspace = (path: Path.Path, root: string, targetPath: string): boolean => {
   const relative = path.relative(path.resolve(root), targetPath)

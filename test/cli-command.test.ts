@@ -463,6 +463,26 @@ describe("cli command", () => {
       expectExitFailureTag(blocked, "ReleaseInitWriteError")
     }))
 
+  test("init with all optional flags omitted writes the default npm-only config", () =>
+    withTempDirectoryPromise("ts-release-cli-init-defaults-", async (root) => {
+      const configPath = join(root, "release.config.json")
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--config",
+          configPath,
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      const config = await readFile(configPath, "utf8")
+      const expected = await Effect.runPromise(
+        planReleaseInit({}).pipe(Effect.provide(BunServices.layer))
+      )
+      expect(config).toBe(expected.files[0]?.contents ?? "")
+    }))
+
   test("init generates schema-valid configs for every template", async () => {
     const templates: ReadonlyArray<
       "npm-only" | "npm-github" | "bun-cli-github" | "portable-cli" | "multi-target-homebrew" | "multi-target-scoop"

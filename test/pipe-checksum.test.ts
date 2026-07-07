@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
 import { readFileSync, writeFileSync } from "node:fs"
-import { makeTempDirectorySync } from "./helpers.js"
+import { makeTempDirectorySync, makePipelineIdentity } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "@effect/bun-test"
@@ -18,21 +18,12 @@ import { Artifact } from "../src/pipeline/artifact.js"
 import { ArtifactCatalog } from "../src/pipeline/catalog.js"
 import { ChecksumFileContent, ExecutionApproval, Operation, WriteFileAction } from "../src/pipeline/operation.js"
 import { runPipeline } from "../src/pipeline/runner.js"
-import { emptyReleaseState, ReleaseIdentity, ReleaseState } from "../src/pipeline/state.js"
+import { emptyReleaseState, ReleaseState } from "../src/pipeline/state.js"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { releaseConfig, releaseIdentity, runEffect, TestGitHubApiLayer } from "./helpers.js"
 import { createTestPlan } from "./plan-helpers.js"
 
-const identity = ReleaseIdentity.make({
-  name: "release",
-  normalizedName: "release",
-  version: "0.1.0",
-  commit: "abc123",
-  shortCommit: "abc123",
-  tag: "v0.1.0",
-  versionSource: "config",
-  snapshot: false
-})
+const identity = makePipelineIdentity()
 
 const artifact = Artifact.make({
   id: "cli-linux-x64",

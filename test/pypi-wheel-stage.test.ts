@@ -3,7 +3,7 @@ import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { mkdir, writeFile } from "node:fs/promises"
-import { withTempDirectoryPromise } from "./helpers.js"
+import { withTempDirectoryPromise, makePipelineIdentity } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
@@ -11,18 +11,9 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import { stageArtifactOperations } from "../src/engine/stager.js"
 import { pypiWheelPipe } from "../src/pipes/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
-import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
+import { emptyReleaseState } from "../src/pipeline/state.js"
 
-const identity = ReleaseIdentity.make({
-  name: "@mannyc1/ts-release",
-  normalizedName: "mannyc1-ts-release",
-  version: "1.2.3",
-  commit: "abc123",
-  shortCommit: "abc123",
-  tag: "v1.2.3",
-  versionSource: "config",
-  snapshot: false
-})
+const identity = makePipelineIdentity({ name: "@mannyc1/ts-release", normalizedName: "mannyc1-ts-release", version: "1.2.3", tag: "v1.2.3" })
 
 type StageOperation = Operation & { readonly action: StageAction }
 

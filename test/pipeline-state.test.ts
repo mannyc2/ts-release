@@ -9,18 +9,10 @@ import {
   byOs,
   filterCatalog
 } from "../src/pipeline/catalog.js"
-import { emptyReleaseState, ReleaseIdentity, ReleaseState } from "../src/pipeline/state.js"
+import { emptyReleaseState, ReleaseState } from "../src/pipeline/state.js"
+import { makePipelineIdentity } from "./helpers.js"
 
-const identity = ReleaseIdentity.make({
-  name: "release",
-  normalizedName: "release",
-  version: "0.1.0",
-  commit: "abc123",
-  shortCommit: "abc123",
-  tag: "v0.1.0",
-  versionSource: "config",
-  snapshot: false
-})
+const identity = makePipelineIdentity()
 
 describe("pipeline state", () => {
   test("round-trips release state through its schema", () => {

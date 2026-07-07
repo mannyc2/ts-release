@@ -2,18 +2,10 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { buildPipe } from "../src/pipes/build.js"
-import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
+import { emptyReleaseState } from "../src/pipeline/state.js"
+import { makePipelineIdentity } from "./helpers.js"
 
-const identity = ReleaseIdentity.make({
-  name: "release",
-  normalizedName: "release",
-  version: "0.1.0",
-  commit: "abc123",
-  shortCommit: "abc123",
-  tag: "v0.1.0",
-  versionSource: "config",
-  snapshot: false
-})
+const identity = makePipelineIdentity()
 
 describe("command build pipe", () => {
   it.effect("emits command operations with expanded templates", () =>

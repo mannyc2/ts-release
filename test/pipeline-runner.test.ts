@@ -4,18 +4,10 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import { Artifact } from "../src/pipeline/artifact.js"
 import { emptyContribution, type Pipe } from "../src/pipeline/pipe.js"
 import { runPipeline } from "../src/pipeline/runner.js"
-import { emptyReleaseState, ReleaseIdentity } from "../src/pipeline/state.js"
+import { emptyReleaseState } from "../src/pipeline/state.js"
+import { makePipelineIdentity } from "./helpers.js"
 
-const identity = ReleaseIdentity.make({
-  name: "release",
-  normalizedName: "release",
-  version: "0.1.0",
-  commit: "abc123",
-  shortCommit: "abc123",
-  tag: "v0.1.0",
-  versionSource: "config",
-  snapshot: false
-})
+const identity = makePipelineIdentity()
 
 describe("pipeline runner", () => {
   it.effect("applies defaults, merges contributions, and records skipped pipes", () =>

@@ -11,7 +11,6 @@ import {
   RetryPolicy,
   WriteFileAction
 } from "../src/pipeline/operation.js"
-import { ReleaseIdentity } from "../src/pipeline/state.js"
 import { CommandResult } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
@@ -25,18 +24,9 @@ import {
 } from "../src/engine/executor.js"
 import { planReleaseFromIntent } from "../src/engine/engine.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
-import { expectTaggedError, minimalConfig, TestGitHubApiLayer } from "./helpers.js"
+import { expectTaggedError, minimalConfig, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 
-const releaseIdentity = ReleaseIdentity.make({
-  name: "release",
-  normalizedName: "release",
-  version: "0.1.0",
-  tag: "v0.1.0",
-  commit: "abc123",
-  shortCommit: "abc123",
-  versionSource: "test",
-  snapshot: false
-})
+const releaseIdentity = makePipelineIdentity({ versionSource: "test" })
 
 const context = {
   root: ".",

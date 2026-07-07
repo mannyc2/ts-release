@@ -13,9 +13,8 @@ import {
   ExecutionApproval,
   Operation
 } from "../src/pipeline/operation.js"
-import { ReleaseIdentity } from "../src/pipeline/state.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
-import { releaseConfig, runEffect, TestGitHubApiLayer } from "./helpers.js"
+import { releaseConfig, runEffect, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 
 const snapshotConfig = JSON.stringify({
   project: {
@@ -71,16 +70,7 @@ const EngineLayer = Layer.mergeAll(
   UnsupportedArtifactStagerLayer
 )
 
-const snapshotIdentity = ReleaseIdentity.make({
-  name: "release",
-  normalizedName: "release",
-  version: "0.1.0-SNAPSHOT-abcdef1",
-  tag: "v0.1.0",
-  commit: "abcdef123",
-  shortCommit: "abcdef1",
-  versionSource: "test",
-  snapshot: true
-})
+const snapshotIdentity = makePipelineIdentity({ version: "0.1.0-SNAPSHOT-abcdef1", commit: "abcdef123", shortCommit: "abcdef1", versionSource: "test", snapshot: true })
 
 describe("snapshot mode", () => {
   it.effect("applies the snapshot suffix over manifest identity and marks the plan", () =>

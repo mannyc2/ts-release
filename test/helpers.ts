@@ -12,6 +12,7 @@ import type * as Scope from "effect/Scope"
 import { CommandResult, CommandRunnerError } from "../src/host/host.js"
 import type { CommandSpec } from "../src/pipeline/operation.js"
 import { GitHubApi, GitHubApiError } from "../src/engine/github.js"
+import { ReleaseIdentity } from "../src/pipeline/state.js"
 import { commandKey, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
 
 export {
@@ -27,6 +28,21 @@ export type {
   TestHttpResponse,
   TestReleaseHttpOptions
 } from "./host-fakes.js"
+
+export const makePipelineIdentity = (
+  overrides: Partial<ConstructorParameters<typeof ReleaseIdentity>[0]> = {}
+): ReleaseIdentity =>
+  ReleaseIdentity.make({
+    name: "release",
+    normalizedName: "release",
+    version: "0.1.0",
+    commit: "abc123",
+    shortCommit: "abc123",
+    tag: "v0.1.0",
+    versionSource: "config",
+    snapshot: false,
+    ...overrides
+  })
 
 export const makeTempDirectory = (prefix: string): Promise<string> => mkdtemp(join(tmpdir(), prefix))
 

@@ -207,14 +207,14 @@ const allModuleReferences = (source: ts.SourceFile): Array<ModuleReference> => {
   return references
 }
 
-const collectTypeScriptFiles = (directory: string): Array<string> =>
+const scanTypeScriptFiles = (directory: string): Array<string> =>
   walkTypeScriptFiles(directory, { skipDirectory: (name) => name === "dist" || name === "node_modules" })
 
 const sourceFiles = (): Array<string> =>
-  collectTypeScriptFiles(resolve(root, "src"))
+  scanTypeScriptFiles(resolve(root, "src"))
 
 const appFiles = (): Array<string> =>
-  appScanRoots.flatMap(collectTypeScriptFiles)
+  appScanRoots.flatMap(scanTypeScriptFiles)
 
 const bunGlobalLocations = (source: ts.SourceFile): Array<string> => {
   const failures: Array<string> = []

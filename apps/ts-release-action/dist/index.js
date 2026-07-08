@@ -99414,6 +99414,67 @@ var renderTemplate = (value2, context7) => {
   const platform2 = context7.platform;
   return value2.split("{name}").join(context7.identity.name).split("{normalizedName}").join(context7.identity.normalizedName).split("{version}").join(context7.identity.version).split("{tag}").join(context7.identity.tag).split("{commit}").join(context7.identity.commit).split("{shortCommit}").join(context7.identity.shortCommit).split("{os}").join(platform2?.os ?? "").split("{arch}").join(platform2 === undefined ? "" : distributionArchToken(platform2.arch)).split("{libc}").join(platform2?.libc ?? "").split("{ext}").join(platform2?.executableExtension ?? "").split("{targetTriple}").join(context7.targetTriple ?? platform2?.targetTriple ?? "").split("{binary}").join(context7.binary ?? "");
 };
+
+class UnresolvedTemplateToken {
+  token;
+  value;
+  _tag = "UnresolvedTemplateToken";
+  constructor(token, value2) {
+    this.token = token;
+    this.value = value2;
+  }
+}
+var vocabularyTokens = [
+  "{name}",
+  "{normalizedName}",
+  "{version}",
+  "{tag}",
+  "{commit}",
+  "{shortCommit}",
+  "{os}",
+  "{arch}",
+  "{libc}",
+  "{ext}",
+  "{targetTriple}",
+  "{binary}"
+];
+var renderArtifactName = (value2, context7) => {
+  const platform2 = context7.platform;
+  const substitutions = [
+    ["{name}", context7.identity.name],
+    ["{normalizedName}", context7.identity.normalizedName],
+    ["{version}", context7.identity.version],
+    ["{tag}", context7.identity.tag],
+    ["{commit}", context7.identity.commit],
+    ["{shortCommit}", context7.identity.shortCommit],
+    ["{os}", platform2?.os],
+    ["{arch}", platform2 === undefined ? undefined : distributionArchToken(platform2.arch)],
+    ["{libc}", platform2?.libc],
+    ["{ext}", platform2 === undefined ? undefined : platform2.executableExtension ?? ""],
+    ["{targetTriple}", context7.targetTriple ?? platform2?.targetTriple],
+    ["{binary}", context7.binary]
+  ];
+  let rendered = value2;
+  for (const [token, substitution] of substitutions) {
+    if (substitution !== undefined) {
+      rendered = rendered.split(token).join(substitution);
+    }
+  }
+  for (const token of vocabularyTokens) {
+    if (rendered.includes(token)) {
+      return new UnresolvedTemplateToken(token, value2);
+    }
+  }
+  return rendered;
+};
+var renderArtifactNameEffect = (value2, context7, source) => {
+  const rendered = renderArtifactName(value2, context7);
+  return typeof rendered === "string" ? succeed6(rendered) : fail6(PlanError.make({
+    pipeId: source.pipeId,
+    field: source.field,
+    reason: `Template ${rendered.token} cannot be resolved here; remove it or provide a platform context.`
+  }));
+};
 var normalizedName = (name) => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name;
   return withoutScopePrefix.replaceAll("/", "-");
@@ -99539,14 +99600,14 @@ var bunBuilder = {
       targetTriple: target,
       binary
     };
-    const renderedEntry = renderTemplate(options.entry, context7);
+    const renderedEntry = yield* renderArtifactNameEffect(options.entry, context7, { pipeId: "build", field: "builds[].entry" });
     yield* validateSafeRelativePath("builds[].entry", renderedEntry);
-    const renderedPath = renderTemplate(outputPath(options, target, binary), {
+    const renderedPath = yield* renderArtifactNameEffect(outputPath(options, target, binary), {
       identity: identity2,
       platform: platform2,
       targetTriple: target,
       binary
-    });
+    }, { pipeId: "build", field: "builds[].output" });
     const compile = yield* compileTarget(target, options.cpu);
     const extension = platform2.executableExtension ?? "";
     const binaryName = options.binaryName ?? binary;
@@ -99618,7 +99679,7 @@ var commandBuilder = {
     const platform2 = platformTargetVariant(target);
     const targetTriple = target;
     const context7 = { identity: identity2, platform: platform2, targetTriple, binary };
-    const renderedOutput = renderTemplate(options.output, context7);
+    const renderedOutput = yield* renderArtifactNameEffect(options.output, context7, { pipeId: "build", field: "builds[].output" });
     const args2 = argv(options.run).map((part) => renderTemplate(part, context7));
     if (args2.length === 0) {
       return yield* fail6(PlanError.make({
@@ -99693,11 +99754,11 @@ var prebuiltBuilder = {
     id: options.id ?? "prebuilt",
     binary: options.binary ?? identity2.normalizedName
   }),
-  plan: (options, identity2, target) => sync2(() => {
+  plan: (options, identity2, target) => gen2(function* () {
     const binary = options.binary ?? identity2.normalizedName;
     const platform2 = platformTargetVariant(target);
     const targetTriple = target;
-    const renderedOutput = renderTemplate(options.output, { identity: identity2, platform: platform2, targetTriple, binary });
+    const renderedOutput = yield* renderArtifactNameEffect(options.output, { identity: identity2, platform: platform2, targetTriple, binary }, { pipeId: "build", field: "builds[].output" });
     const id = `${options.id ?? "prebuilt"}-${target}`;
     return {
       artifacts: [
@@ -100432,7 +100493,10 @@ var importArtifactsPipe = {
           reason: "libc is only valid for linux artifacts."
         }));
       }
-      const path4 = renderTemplate(artifact2.path, { identity: state3.identity });
+      const path4 = yield* renderArtifactNameEffect(artifact2.path, { identity: state3.identity }, {
+        pipeId: "import-artifacts",
+        field: `artifacts.${artifact2.id}.path`
+      });
       const kind = artifactKind(artifact2.format);
       artifacts.push(Artifact.make({
         id: artifact2.id,
@@ -100497,7 +100561,7 @@ var checksumPipe = {
     algorithm: section.algorithm ?? "sha256",
     nameTemplate: section.nameTemplate ?? defaultChecksumNameTemplate
   }),
-  plan: (section, state3) => sync2(() => {
+  plan: (section, state3) => gen2(function* () {
     const algorithm = section.algorithm ?? "sha256";
     const nameTemplate = section.nameTemplate ?? defaultChecksumNameTemplate;
     const inputs = checksumInputs(state3.artifacts.artifacts);
@@ -100505,7 +100569,7 @@ var checksumPipe = {
       artifactId: artifact3.id,
       baseName: artifactPathBaseName(artifact3.path)
     }));
-    const fileName = renderTemplate(nameTemplate, { identity: state3.identity });
+    const fileName = yield* renderArtifactNameEffect(nameTemplate, { identity: state3.identity }, { pipeId: "checksum", field: "checksum.nameTemplate" });
     const path4 = `.release/artifacts/${fileName}`;
     const artifact2 = Artifact.make({
       id: "checksum",
@@ -100554,11 +100618,11 @@ var npmPackPipe = {
   phase: "build",
   section: sectionFromConfig,
   defaults: (section) => section,
-  plan: (section, state3) => {
+  plan: (section, state3) => gen2(function* () {
     const config = section === true ? undefined : section;
     const packageName = state3.identity.name;
-    const path4 = renderTemplate(config?.path ?? ".", { identity: state3.identity });
-    return succeed6({
+    const path4 = yield* renderArtifactNameEffect(config?.path ?? ".", { identity: state3.identity }, { pipeId: "build:npm-pack", field: "npmPackage.path" });
+    return {
       ...emptyContribution,
       artifacts: [
         Artifact.make({
@@ -100572,8 +100636,8 @@ var npmPackPipe = {
           })
         })
       ]
-    });
-  }
+    };
+  })
 };
 
 // ../../src/pipeline/semver.ts
@@ -101090,11 +101154,11 @@ var pypiWheelPipe = {
   phase: "build",
   section: sectionFromConfig5,
   defaults: (section) => section,
-  plan: (section, state3) => sync2(() => {
+  plan: (section, state3) => gen2(function* () {
     const artifacts = [];
     const operations = [];
     for (const wheel of wheels(section)) {
-      const path4 = renderTemplate(wheel.path, { identity: state3.identity });
+      const path4 = yield* renderArtifactNameEffect(wheel.path, { identity: state3.identity }, { pipeId: "build:pypi-wheel", field: `pypiWheel.${wheel.id}.path` });
       artifacts.push(Artifact.make({
         id: wheel.id,
         kind: "wheel",

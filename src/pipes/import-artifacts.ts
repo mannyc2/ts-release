@@ -15,7 +15,7 @@ import { CheckFileAction, Operation } from "../pipeline/operation.js"
 import { optionalField } from "../pipeline/optional-field.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import { renderTemplate } from "../pipeline/template.js"
+import { renderArtifactNameEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigManualArtifact extends Schema.Class<ReleaseConfigManualArtifact>(
   "ReleaseConfigManualArtifact"
@@ -61,7 +61,10 @@ export const importArtifactsPipe: Pipe<ImportArtifactsSection> = {
             reason: "libc is only valid for linux artifacts."
           }))
         }
-        const path = renderTemplate(artifact.path, { identity: state.identity })
+        const path = yield* renderArtifactNameEffect(artifact.path, { identity: state.identity }, {
+          pipeId: "import-artifacts",
+          field: `artifacts.${artifact.id}.path`
+        })
         const kind = artifactKind(artifact.format)
         artifacts.push(Artifact.make({
           id: artifact.id,

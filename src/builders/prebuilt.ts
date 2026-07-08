@@ -12,7 +12,8 @@ import {
   platformTargetVariant,
   type PlatformTarget as PlatformTargetName
 } from "../pipeline/platform.js"
-import { renderTemplate } from "../pipeline/template.js"
+import { PlanError } from "../pipeline/errors.js"
+import { renderArtifactNameEffect } from "../pipeline/template.js"
 import type { Builder, BuilderPlan } from "./builder.js"
 
 export class ReleaseConfigPrebuiltBuild extends Schema.Class<ReleaseConfigPrebuiltBuild>(
@@ -34,12 +35,12 @@ export const prebuiltBuilder: Builder<PrebuiltBuildOptions> = {
     id: options.id ?? "prebuilt",
     binary: options.binary ?? identity.normalizedName
   }),
-  plan: (options, identity, target): Effect.Effect<BuilderPlan> =>
-    Effect.sync(() => {
+  plan: (options, identity, target): Effect.Effect<BuilderPlan, PlanError> =>
+    Effect.gen(function*() {
       const binary = options.binary ?? identity.normalizedName
       const platform = platformTargetVariant(target)
       const targetTriple = target
-      const renderedOutput = renderTemplate(options.output, { identity, platform, targetTriple, binary })
+      const renderedOutput = yield* renderArtifactNameEffect(options.output, { identity, platform, targetTriple, binary }, { pipeId: "build", field: "builds[].output" })
       const id = `${options.id ?? "prebuilt"}-${target}`
       return {
         artifacts: [

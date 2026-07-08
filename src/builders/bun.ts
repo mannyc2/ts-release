@@ -18,7 +18,7 @@ import {
   platformTargetVariant,
   type PlatformTarget as PlatformTargetName
 } from "../pipeline/platform.js"
-import { defaultArtifactBaseName, renderTemplate } from "../pipeline/template.js"
+import { defaultArtifactBaseName, renderArtifactNameEffect } from "../pipeline/template.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import type { Builder, BuilderPlan } from "./builder.js"
 
@@ -191,14 +191,14 @@ export const bunBuilder: Builder<BunBuildOptions> = {
         targetTriple: target,
         binary
       }
-      const renderedEntry = renderTemplate(options.entry, context)
+      const renderedEntry = yield* renderArtifactNameEffect(options.entry, context, { pipeId: "build", field: "builds[].entry" })
       yield* validateSafeRelativePath("builds[].entry", renderedEntry)
-      const renderedPath = renderTemplate(outputPath(options, target, binary), {
+      const renderedPath = yield* renderArtifactNameEffect(outputPath(options, target, binary), {
         identity,
         platform,
         targetTriple: target,
         binary
-      })
+      }, { pipeId: "build", field: "builds[].output" })
       const compile = yield* compileTarget(target, options.cpu)
       const extension = platform.executableExtension ?? ""
       const binaryName = options.binaryName ?? binary

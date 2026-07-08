@@ -8,7 +8,7 @@ import {
 import { ChecksumFileContent, Operation, WriteFileAction } from "../pipeline/operation.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import { renderTemplate } from "../pipeline/template.js"
+import { renderArtifactNameEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("ReleaseConfigChecksum")({
   algorithm: Schema.optionalKey(Schema.Literals(["sha256", "sha512"])),
@@ -31,7 +31,7 @@ export const checksumPipe: Pipe<ReleaseConfigChecksum> = {
     nameTemplate: section.nameTemplate ?? defaultChecksumNameTemplate
   }),
   plan: (section, state) =>
-    Effect.sync(() => {
+    Effect.gen(function*() {
       const algorithm = section.algorithm ?? "sha256"
       const nameTemplate = section.nameTemplate ?? defaultChecksumNameTemplate
       // Catalog-file artifacts are contributed by later catalog-phase pipes,
@@ -41,7 +41,7 @@ export const checksumPipe: Pipe<ReleaseConfigChecksum> = {
         artifactId: artifact.id,
         baseName: artifactPathBaseName(artifact.path)
       }))
-      const fileName = renderTemplate(nameTemplate, { identity: state.identity })
+      const fileName = yield* renderArtifactNameEffect(nameTemplate, { identity: state.identity }, { pipeId: "checksum", field: "checksum.nameTemplate" })
       const path = `.release/artifacts/${fileName}`
       const artifact = Artifact.make({
         id: "checksum",

@@ -7,7 +7,7 @@ import {
   WheelExtra
 } from "../pipeline/artifact.js"
 import { Operation, PyPiWheelIntent, StageAction } from "../pipeline/operation.js"
-import { renderTemplate } from "../pipeline/template.js"
+import { renderArtifactNameEffect } from "../pipeline/template.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 
@@ -46,11 +46,11 @@ export const pypiWheelPipe: Pipe<PyPiWheelSection> = {
   section: sectionFromConfig,
   defaults: (section) => section,
   plan: (section, state) =>
-    Effect.sync(() => {
+    Effect.gen(function*() {
       const artifacts = []
       const operations = []
       for (const wheel of wheels(section)) {
-        const path = renderTemplate(wheel.path, { identity: state.identity })
+        const path = yield* renderArtifactNameEffect(wheel.path, { identity: state.identity }, { pipeId: "build:pypi-wheel", field: `pypiWheel.${wheel.id}.path` })
         artifacts.push(Artifact.make({
           id: wheel.id,
           kind: "wheel",

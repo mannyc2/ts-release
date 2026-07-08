@@ -1,12 +1,9 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { renderPlanText } from "../src/planner/render-plan.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { minimalConfig, runEffect } from "./helpers.js"
+import { createTestPlan, renderTestPlanText } from "./plan-helpers.js"
 
 const TestLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -16,14 +13,10 @@ const TestLayer = Layer.mergeAll(
       ["GH_TOKEN", "gh_secret"]
     ])
   }),
-  LiveTargetRegistryLayer
 )
 
 const createPlan = (config: string = minimalConfig) =>
-  Effect.gen(function*() {
-    const intent = yield* parseReleaseIntent(config)
-    return yield* createReleasePlan(intent)
-  })
+  createTestPlan(config)
 
 const trustedPublishingConfig = (
   options: { readonly verifyPackageExists?: boolean; readonly workflow?: string } = {}
@@ -45,94 +38,82 @@ describe("npm target", () => {
     const plan = await runEffect(createPlan(), TestLayer)
     const dryRun = plan.operations.find((operation) => operation.id === "npm:npm-pack-dry-run")
 
-    expect(dryRun?._tag).toBe("ValidateCommandOperation")
-    if (dryRun?._tag === "ValidateCommandOperation") {
-      expect(dryRun.command.args).toEqual(["pack", "--dry-run", "--json", "."])
-      expect(dryRun.command.requiredEnv).toEqual([])
+    expect(dryRun?.action._tag).toBe("command")
+    if (dryRun?.action._tag === "command") {
+      expect(dryRun.action.command.args).toEqual(["pack", "--dry-run", "--json", "."])
+      expect(dryRun.action.command.requiredEnv).toEqual([])
     }
   })
 
   test("validates npm cli auth even when auth comes from the local CLI", async () => {
     const cliAuthConfig = minimalConfig.replace(",\"tokenEnv\":\"NPM_TOKEN\"", "")
     const plan = await runEffect(createPlan(cliAuthConfig), TestLayer)
-    const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
     const whoami = plan.operations.find((operation) => operation.id === "npm:npm-whoami")
 
-    expect(npm?.authRequirement).toBe("cli-auth")
-    expect(whoami?._tag).toBe("ValidateCommandOperation")
-    if (whoami?._tag === "ValidateCommandOperation") {
-      expect(whoami.command.requiredEnv).toEqual([])
+    expect(plan.surfaceIds).toContain("npm")
+    expect(whoami?.action._tag).toBe("command")
+    if (whoami?.action._tag === "command") {
+      expect(whoami.action.command.requiredEnv).toEqual([])
     }
   })
 
   test("models npm trusted publishing without npm whoami", async () => {
     const plan = await runEffect(createPlan(trustedPublishingConfig()), TestLayer)
-    const npm = plan.targetCapabilities.find((capability) => capability.targetId === "npm")
     const whoami = plan.operations.find((operation) => operation.id === "npm:npm-whoami")
     const authNote = plan.operations.find((operation) => operation.id === "npm:npm-trusted-publishing-auth")
     const packageExists = plan.operations.find((operation) => operation.id === "npm:npm-package-exists")
     const publish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
     const verify = plan.operations.find((operation) => operation.id === "npm:npm-version-verify")
-    const text = renderPlanText(plan)
+    const text = renderTestPlanText(plan)
 
-    expect(npm?.authRequirement).toBe("trusted-publishing")
-    expect(npm?.authSetup?.runsIn).toBe("ci")
-    expect(npm?.authSetup?.provider).toBe("github-actions")
-    expect(npm?.authSetup?.workflow).toBe("release.yml")
-    expect(npm?.authSetup?.requiredPermissions).toEqual([
-      { name: "id-token", value: "write" }
-    ])
-    expect(npm?.authSetup?.prerequisites).toEqual(["npm-package-exists"])
     expect(whoami).toBeUndefined()
     expect(packageExists).toBeUndefined()
-    expect(authNote?._tag).toBe("ValidationNoteOperation")
-    if (authNote?._tag === "ValidationNoteOperation") {
-      expect(authNote.message).toContain("OIDC")
-      expect(authNote.message).toContain("id-token: write")
-      expect(authNote.message).toContain("release.yml")
-      expect(authNote.message).toContain("package release to already exist")
+    expect(authNote?.action._tag).toBe("note")
+    if (authNote?.action._tag === "note") {
+      expect(authNote.action.message).toContain("OIDC")
+      expect(authNote.action.message).toContain("id-token: write")
+      expect(authNote.action.message).toContain("release.yml")
+      expect(authNote.action.message).toContain("package release to already exist")
     }
-    expect(publish?._tag).toBe("PublishCommandOperation")
-    if (publish?._tag === "PublishCommandOperation") {
-      expect(publish.command.requiredEnv).toEqual([
+    expect(publish?.action._tag).toBe("command")
+    if (publish?.action._tag === "command") {
+      expect(publish.action.command.requiredEnv).toEqual([
         "ACTIONS_ID_TOKEN_REQUEST_URL",
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ])
-      expect(publish.command.redactedEnv).toEqual([
+      expect(publish.action.command.redactedEnv).toEqual([
         "ACTIONS_ID_TOKEN_REQUEST_URL",
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ])
     }
-    expect(verify?._tag).toBe("VerifyRemoteOperation")
-    if (verify?._tag === "VerifyRemoteOperation") {
-      expect(verify.command.args).toEqual([
+    expect(verify?.action._tag).toBe("command")
+    if (verify?.action._tag === "command") {
+      expect(verify.action.command.args).toEqual([
         "view",
         "release@0.1.0",
         "version",
         "--registry",
         "https://registry.npmjs.org"
       ])
-      expect(verify.command.requiredEnv).toEqual([])
+      expect(verify.action.command.requiredEnv).toEqual([])
     }
-    expect(text).toContain(
-      "auth=trusted-publishing runs-in=ci provider=github-actions workflow=release.yml required-permission=id-token:write package-prerequisite=exists"
-    )
+    expect(text).toContain("note: NPM trusted publishing authenticates")
   })
 
   test("optionally validates trusted publishing package existence", async () => {
     const plan = await runEffect(createPlan(trustedPublishingConfig({ verifyPackageExists: true })), TestLayer)
     const packageExists = plan.operations.find((operation) => operation.id === "npm:npm-package-exists")
 
-    expect(packageExists?._tag).toBe("ValidateCommandOperation")
-    if (packageExists?._tag === "ValidateCommandOperation") {
-      expect(packageExists.command.args).toEqual([
+    expect(packageExists?.action._tag).toBe("command")
+    if (packageExists?.action._tag === "command") {
+      expect(packageExists.action.command.args).toEqual([
         "view",
         "release",
         "name",
         "--registry",
         "https://registry.npmjs.org"
       ])
-      expect(packageExists.command.requiredEnv).toEqual([])
+      expect(packageExists.action.command.requiredEnv).toEqual([])
     }
   })
 
@@ -143,9 +124,9 @@ describe("npm target", () => {
     const plan = await runEffect(createPlan(config), TestLayer)
     const packageExists = plan.operations.find((operation) => operation.id === "npm:npm-package-exists")
 
-    expect(packageExists?._tag).toBe("ValidateCommandOperation")
-    if (packageExists?._tag === "ValidateCommandOperation") {
-      expect(packageExists.command.args).toEqual([
+    expect(packageExists?.action._tag).toBe("command")
+    if (packageExists?.action._tag === "command") {
+      expect(packageExists.action.command.args).toEqual([
         "view",
         "@scope/package",
         "name",
@@ -162,9 +143,9 @@ describe("npm target", () => {
     )
     const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("targets.npm.tokenEnv")
+    expect(error._tag).toBe("PlanError")
+    if (error._tag === "PlanError") {
+      expect(error.field).toBe("publish.npm.tokenEnv")
       expect(error.reason).toContain("trusted publishing")
     }
   })
@@ -175,9 +156,9 @@ describe("npm target", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("targets.npm.trustedPublishing.workflow")
+    expect(error._tag).toBe("ConfigValidationError")
+    if (error._tag === "ConfigValidationError") {
+      expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
     }
   })
 
@@ -187,9 +168,9 @@ describe("npm target", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ReleaseNormalizationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("targets.npm.trustedPublishing.workflow")
+    expect(error._tag).toBe("ConfigValidationError")
+    if (error._tag === "ConfigValidationError") {
+      expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
     }
   })
 
@@ -211,15 +192,15 @@ describe("npm target", () => {
     const provenancePublish = provenancePlan.operations.find((operation) => operation.id === "npm:npm-publish")
     const defaultPublish = defaultPlan.operations.find((operation) => operation.id === "npm:npm-publish")
 
-    expect(provenancePublish?._tag).toBe("PublishCommandOperation")
-    expect(defaultPublish?._tag).toBe("PublishCommandOperation")
-    if (provenancePublish?._tag === "PublishCommandOperation") {
-      expect(provenancePublish.command.args).toContain("--provenance")
+    expect(provenancePublish?.action._tag).toBe("command")
+    expect(defaultPublish?.action._tag).toBe("command")
+    if (provenancePublish?.action._tag === "command") {
+      expect(provenancePublish.action.command.args).toContain("--provenance")
     }
-    if (defaultPublish?._tag === "PublishCommandOperation") {
-      expect(defaultPublish.command.args).not.toContain("--provenance")
+    if (defaultPublish?.action._tag === "command") {
+      expect(defaultPublish.action.command.args).not.toContain("--provenance")
     }
-    expect(renderPlanText(provenancePlan)).toContain("npm publish . --registry https://registry.npmjs.org --provenance")
+    expect(renderTestPlanText(provenancePlan)).toContain("npm publish . --registry https://registry.npmjs.org --provenance")
   })
 
   test("adds npm access only when target policy enables it", async () => {
@@ -233,10 +214,10 @@ describe("npm target", () => {
     const publicAccessPublish = publicAccessPlan.operations.find((operation) => operation.id === "npm:npm-publish")
     const defaultPublish = defaultPlan.operations.find((operation) => operation.id === "npm:npm-publish")
 
-    expect(publicAccessPublish?._tag).toBe("PublishCommandOperation")
-    expect(defaultPublish?._tag).toBe("PublishCommandOperation")
-    if (publicAccessPublish?._tag === "PublishCommandOperation") {
-      expect(publicAccessPublish.command.args).toEqual([
+    expect(publicAccessPublish?.action._tag).toBe("command")
+    expect(defaultPublish?.action._tag).toBe("command")
+    if (publicAccessPublish?.action._tag === "command") {
+      expect(publicAccessPublish.action.command.args).toEqual([
         "publish",
         ".",
         "--registry",
@@ -245,10 +226,10 @@ describe("npm target", () => {
         "public"
       ])
     }
-    if (defaultPublish?._tag === "PublishCommandOperation") {
-      expect(defaultPublish.command.args).not.toContain("--access")
+    if (defaultPublish?.action._tag === "command") {
+      expect(defaultPublish.action.command.args).not.toContain("--access")
     }
-    expect(renderPlanText(publicAccessPlan)).toContain(
+    expect(renderTestPlanText(publicAccessPlan)).toContain(
       "npm publish . --registry https://registry.npmjs.org --access public"
     )
   })

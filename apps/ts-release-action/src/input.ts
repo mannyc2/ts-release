@@ -25,6 +25,7 @@ export class ActionOptions extends Schema.Class<ActionOptions>("ActionOptions")(
   failOnWarnings: Schema.Boolean,
   target: Schema.optionalKey(Schema.String),
   runtime: ActionRuntime,
+  snapshot: Schema.Boolean,
   execute: Schema.Boolean,
   approvePublish: Schema.Boolean,
   uploadEvidence: Schema.Boolean,
@@ -40,25 +41,19 @@ export interface ActionInputReader {
   readonly getInput: (name: string) => string
 }
 
-const commands: ReadonlyArray<ActionCommand> = [
-  "plan",
-  "doctor",
-  "build",
-  "release",
-  "verify"
-]
-
-const formats: ReadonlyArray<ActionFormat> = ["json", "text", "summary", "markdown"]
-const runtimes: ReadonlyArray<ActionRuntime> = ["bundled", "workspace"]
-
-const isCommand = (value: string): value is ActionCommand =>
-  commands.some((command) => command === value)
-
-const isFormat = (value: string): value is ActionFormat =>
-  formats.some((format) => format === value)
-
-const isRuntime = (value: string): value is ActionRuntime =>
-  runtimes.some((runtime) => runtime === value)
+const parseChoice = <const L extends ReadonlyArray<string>>(
+  schema: { readonly literals: L },
+  name: string,
+  value: string
+): L[number] => {
+  if (schema.literals.includes(value)) {
+    return value as L[number]
+  }
+  throw ActionInputError.make({
+    input: name,
+    reason: `Unsupported ${name} ${value}.`
+  })
+}
 
 const inputOrDefault = (reader: ActionInputReader, name: string, fallback: string): string => {
   const value = reader.getInput(name).trim()
@@ -102,48 +97,19 @@ const parseBooleanInput = (reader: ActionInputReader, name: string, fallback: bo
   })
 }
 
-const parseCommandInput = (value: string): ActionCommand => {
-  if (isCommand(value)) {
-    return value
-  }
-  throw ActionInputError.make({
-    input: "command",
-    reason: `Unsupported command ${value}.`
-  })
-}
-
-const parseFormatInput = (value: string): ActionFormat => {
-  if (isFormat(value)) {
-    return value
-  }
-  throw ActionInputError.make({
-    input: "format",
-    reason: `Unsupported format ${value}.`
-  })
-}
-
-const parseRuntimeInput = (value: string): ActionRuntime => {
-  if (isRuntime(value)) {
-    return value
-  }
-  throw ActionInputError.make({
-    input: "runtime",
-    reason: `Unsupported runtime ${value}.`
-  })
-}
-
 export const readActionOptions = (reader: ActionInputReader, root: string): ActionOptions => {
   const target = optionalInput(reader, "target")
   return ActionOptions.make({
     root,
-    command: parseCommandInput(inputOrDefault(reader, "command", "plan")),
+    command: parseChoice(ActionCommand, "command", inputOrDefault(reader, "command", "plan")),
     config: configInputOrDefault(reader, "release.config.json"),
-    format: parseFormatInput(inputOrDefault(reader, "format", "markdown")),
+    format: parseChoice(ActionFormat, "format", inputOrDefault(reader, "format", "markdown")),
     writeStepSummary: parseBooleanInput(reader, "write-step-summary", true),
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
     failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
     ...(target === undefined ? {} : { target }),
-    runtime: parseRuntimeInput(inputOrDefault(reader, "runtime", "bundled")),
+    runtime: parseChoice(ActionRuntime, "runtime", inputOrDefault(reader, "runtime", "bundled")),
+    snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),
     uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),

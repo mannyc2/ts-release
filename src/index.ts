@@ -1,5 +1,19 @@
 import type { ReleaseConfig } from "./config/schema.js"
 
+export type * from "./types/effect-internal.js"
+
+export {
+  build,
+  disposeReleaseRuntime,
+  plan,
+  release,
+  verify
+} from "./api/api.js"
+
+export {
+  ReleaseApiError
+} from "./api/errors.js"
+
 export {
   RELEASE_CONFIG_SCHEMA_ID,
   releaseConfigJsonSchemaDocument as releaseConfigJsonSchema,
@@ -8,24 +22,14 @@ export {
 
 export type { ReleaseConfig } from "./config/schema.js"
 
-export interface ReleasePlanSummaryArtifact {
-  readonly name: string
-  readonly path: string
-  readonly platform?: string | undefined
-}
-
-export interface ReleasePlanSummaryTarget {
-  readonly name: string
-  readonly operations: number
-  readonly publishes: boolean
-}
-
-export interface ReleasePlanSummary {
-  readonly name: string
-  readonly version: string
-  readonly artifacts: ReadonlyArray<ReleasePlanSummaryArtifact>
-  readonly targets: ReadonlyArray<ReleasePlanSummaryTarget>
-}
+export type {
+  BuildSummary,
+  ReleasePlanSummary,
+  ReleaseRunOptions,
+  ReleaseSummary,
+  RunOptions,
+  VerifySummary
+} from "./engine/engine.js"
 
 export const defineRelease = <const Config extends ReleaseConfig>(config: Config): Config =>
   config

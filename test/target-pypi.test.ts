@@ -1,11 +1,9 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { parseReleaseIntent } from "../src/config/load.js"
-import { makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { pypiConfig, releaseConfig, runEffect } from "./helpers.js"
+import { createTestPlan } from "./plan-helpers.js"
 
 const PyPiLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -18,47 +16,38 @@ const PyPiLayer = Layer.mergeAll(
       ["ACTIONS_ID_TOKEN_REQUEST_TOKEN", "oidc_request_token"]
     ])
   }),
-  LiveTargetRegistryLayer
 )
 
 const createPlan = (config: string) =>
-  Effect.gen(function*() {
-    const intent = yield* parseReleaseIntent(config)
-    return yield* createReleasePlan(intent)
-  })
+  createTestPlan(config)
 
 describe("PyPI target", () => {
   test("plans PyPI registry capabilities and Twine commands", async () => {
     const plan = await runEffect(createPlan(pypiConfig()), PyPiLayer)
-    const pypi = plan.targetCapabilities.find((capability) => capability.targetId === "pypi")
     const pythonVersion = plan.operations.find((operation) => operation.id === "pypi:python-version")
     const twineVersion = plan.operations.find((operation) => operation.id === "pypi:twine-version")
     const twineCheck = plan.operations.find((operation) => operation.id === "pypi:twine-check")
     const publish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
 
-    expect(pypi?.targetTag).toBe("PyPiRegistryTarget")
-    expect(pypi?.authRequirement).toBe("env-token")
-    expect(pypi?.validationStrategy).toBe("native-command")
-    expect(pypi?.mutability).toBe("immutable")
-    expect(pypi?.recovery).toBe("publish-new-version")
-    expect(pythonVersion?._tag).toBe("ValidateCommandOperation")
-    expect(twineVersion?._tag).toBe("ValidateCommandOperation")
-    expect(twineCheck?._tag).toBe("ValidateCommandOperation")
-    expect(publish?._tag).toBe("PublishCommandOperation")
-    if (pythonVersion?._tag === "ValidateCommandOperation") {
-      expect(pythonVersion.command.executable).toBe("python")
-      expect(pythonVersion.command.args).toEqual(["--version"])
+    expect(plan.surfaceIds).toEqual(["pypi"])
+    expect(pythonVersion?.action._tag).toBe("command")
+    expect(twineVersion?.action._tag).toBe("command")
+    expect(twineCheck?.action._tag).toBe("command")
+    expect(publish?.action._tag).toBe("command")
+    if (pythonVersion?.action._tag === "command") {
+      expect(pythonVersion.action.command.executable).toBe("python")
+      expect(pythonVersion.action.command.args).toEqual(["--version"])
     }
-    if (twineVersion?._tag === "ValidateCommandOperation") {
-      expect(twineVersion.command.args).toEqual(["-m", "twine", "--version"])
+    if (twineVersion?.action._tag === "command") {
+      expect(twineVersion.action.command.args).toEqual(["-m", "twine", "--version"])
     }
-    if (twineCheck?._tag === "ValidateCommandOperation") {
-      expect(twineCheck.command.args).toEqual(["-m", "twine", "check", "dist/release-0.1.0-py3-none-any.whl"])
-      expect(twineCheck.command.requiredEnv).toEqual([])
+    if (twineCheck?.action._tag === "command") {
+      expect(twineCheck.action.command.args).toEqual(["-m", "twine", "check", "dist/release-0.1.0-py3-none-any.whl"])
+      expect(twineCheck.action.command.requiredEnv).toEqual([])
     }
-    if (publish?._tag === "PublishCommandOperation") {
+    if (publish?.action._tag === "command") {
       expect(publish.risk).toBe("irreversible")
-      expect(publish.command.args).toEqual([
+      expect(publish.action.command.args).toEqual([
         "-m",
         "twine",
         "upload",
@@ -67,8 +56,8 @@ describe("PyPI target", () => {
         "https://test.pypi.org/legacy/",
         "dist/release-0.1.0-py3-none-any.whl"
       ])
-      expect(publish.command.requiredEnv).toEqual(["TWINE_USERNAME", "TWINE_PASSWORD"])
-      expect(publish.command.redactedEnv).toEqual(["TWINE_USERNAME", "TWINE_PASSWORD"])
+      expect(publish.action.command.requiredEnv).toEqual(["TWINE_USERNAME", "TWINE_PASSWORD"])
+      expect(publish.action.command.redactedEnv).toEqual(["TWINE_USERNAME", "TWINE_PASSWORD"])
     }
   })
 
@@ -85,25 +74,20 @@ describe("PyPI target", () => {
       })),
       PyPiLayer
     )
-    const pypi = plan.targetCapabilities.find((capability) => capability.targetId === "pypi")
     const authNote = plan.operations.find((operation) => operation.id === "pypi:twine-trusted-publishing-auth")
     const publish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
 
-    expect(pypi?.authRequirement).toBe("trusted-publishing")
-    expect(pypi?.authSetup).toEqual({
-      runsIn: "ci",
-      provider: "github-actions",
-      workflow: "release.yml",
-      requiredPermissions: [{ name: "id-token", value: "write" }],
-      prerequisites: ["pypi-trusted-publisher-configured"]
-    })
-    expect(authNote?._tag).toBe("ValidationNoteOperation")
-    if (publish?._tag === "PublishCommandOperation") {
-      expect(publish.command.requiredEnv).toEqual([
+    expect(authNote?.action._tag).toBe("note")
+    if (authNote?.action._tag === "note") {
+      expect(authNote.action.message).toContain("trusted publishing")
+      expect(authNote.action.message).toContain("release.yml")
+    }
+    if (publish?.action._tag === "command") {
+      expect(publish.action.command.requiredEnv).toEqual([
         "ACTIONS_ID_TOKEN_REQUEST_URL",
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ])
-      expect(publish.command.redactedEnv).toEqual([
+      expect(publish.action.command.redactedEnv).toEqual([
         "ACTIONS_ID_TOKEN_REQUEST_URL",
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ])
@@ -117,17 +101,17 @@ describe("PyPI target", () => {
     const twineCheck = plan.operations.find((operation) => operation.id === "pypi:twine-check")
     const publish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
 
-    if (pythonVersion?._tag === "ValidateCommandOperation") {
-      expect(pythonVersion.command.executable).toBe("python3")
+    if (pythonVersion?.action._tag === "command") {
+      expect(pythonVersion.action.command.executable).toBe("python3")
     }
-    if (twineVersion?._tag === "ValidateCommandOperation") {
-      expect(twineVersion.command.executable).toBe("python3")
+    if (twineVersion?.action._tag === "command") {
+      expect(twineVersion.action.command.executable).toBe("python3")
     }
-    if (twineCheck?._tag === "ValidateCommandOperation") {
-      expect(twineCheck.command.executable).toBe("python3")
+    if (twineCheck?.action._tag === "command") {
+      expect(twineCheck.action.command.executable).toBe("python3")
     }
-    if (publish?._tag === "PublishCommandOperation") {
-      expect(publish.command.executable).toBe("python3")
+    if (publish?.action._tag === "command") {
+      expect(publish.action.command.executable).toBe("python3")
     }
   })
 
@@ -167,42 +151,36 @@ describe("PyPI target", () => {
         {
           id: "wheel",
           path: ".",
-          format: "directory",
-          consumers: ["pypi"]
+          format: "directory"
         }
       ],
-      targets: [
-        {
-          _tag: "PyPiRegistryTarget",
-          id: "pypi",
-          repositoryUrl: "https://test.pypi.org/legacy/",
-          dryRunSupport: "native",
-          mutability: "immutable",
-          recovery: "publish-new-version"
+      publish: {
+        pypi: {
+          repositoryUrl: "https://test.pypi.org/legacy/"
         }
-      ]
+      }
     })
     const directoryArtifact = await runEffect(createPlan(directoryConfig).pipe(Effect.flip), PyPiLayer)
     const noArtifact = await runEffect(
-      createPlan(pypiConfig().replace("\"consumers\":[\"pypi\"]", "\"consumers\":[\"other\"]")).pipe(Effect.flip),
+      createPlan(pypiConfig().replace("\"id\":\"wheel\"", "\"id\":\"other\"")).pipe(Effect.flip),
       PyPiLayer
     )
 
-    expect(halfAuth._tag).toBe("PlanConstructionError")
-    expect(customAuth._tag).toBe("PlanConstructionError")
-    expect(trustedWithToken._tag).toBe("PlanConstructionError")
-    expect(trustedWorkflowPath._tag).toBe("ReleaseNormalizationError")
-    if (customAuth._tag === "PlanConstructionError") {
+    expect(halfAuth._tag).toBe("PlanError")
+    expect(customAuth._tag).toBe("PlanError")
+    expect(trustedWithToken._tag).toBe("PlanError")
+    expect(trustedWorkflowPath._tag).toBe("ConfigValidationError")
+    if (customAuth._tag === "PlanError") {
       expect(customAuth.reason).toContain("TWINE_USERNAME")
       expect(customAuth.reason).toContain("TWINE_PASSWORD")
     }
-    if (trustedWithToken._tag === "PlanConstructionError") {
+    if (trustedWithToken._tag === "PlanError") {
       expect(trustedWithToken.reason).toContain("trusted publishing")
     }
-    if (trustedWorkflowPath._tag === "ReleaseNormalizationError") {
-      expect(trustedWorkflowPath.field).toBe("targets.pypi.trustedPublishing.workflow")
+    if (trustedWorkflowPath._tag === "ConfigValidationError") {
+      expect(trustedWorkflowPath.reason).toContain(`["publish"]["pypi"]["trustedPublishing"]["workflow"]`)
     }
-    expect(directoryArtifact._tag).toBe("PlanConstructionError")
-    expect(noArtifact._tag).toBe("PlanConstructionError")
+    expect(directoryArtifact._tag).toBe("PlanError")
+    expect(noArtifact._tag).toBe("PlanError")
   })
 })

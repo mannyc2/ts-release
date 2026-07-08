@@ -1,6 +1,5 @@
 import * as Schema from "effect/Schema"
 
-export type * from "../types/effect-internal.js"
 
 export class ConfigReadError extends Schema.TaggedErrorClass<ConfigReadError>()("ConfigReadError", {
   path: Schema.String,

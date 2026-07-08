@@ -4,69 +4,83 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
+  CommandAction,
   CommandSpec,
   ExecutionApproval,
-  PublishCommandOperation,
-  RenderFileOperation,
-  ValidateCommandOperation,
-  VerifyRemoteOperation
-} from "../src/domain/operation.js"
-import { ReleasePlan } from "../src/domain/release.js"
-import { CommandResult, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
-import { makeTestReleaseHttpLayer } from "../src/host/http.js"
-import { commandKey, makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
+  Operation,
+  RetryPolicy,
+  WriteFileAction
+} from "../src/pipeline/operation.js"
+import { CommandResult } from "../src/host/host.js"
+import { makeTestReleaseHttpLayer } from "./host-fakes.js"
+import { commandKey, makeTestCommandRunnerLayer, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
 import {
-  executePlan,
-  renderPlan,
+  executeOperations,
   runApprovedReleaseWorkflow,
   runOperation,
-  validatePlan,
-  verifyPlan
-} from "../src/planner/executor.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { expectTaggedError, minimalConfig, TestGitHubApiLayer } from "./helpers.js"
+  validateOperations,
+  verifyOperations,
+  writeRenderFiles
+} from "../src/engine/executor.js"
+import { planReleaseFromIntent } from "../src/engine/engine.js"
+import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { expectTaggedError, minimalConfig, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 
-const TestLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
-    directories: new Set(["."]),
-    env: new Map([
-      ["NPM_TOKEN", "npm_secret"],
-      ["GH_TOKEN", "gh_secret"]
-    ])
-  }),
-  makeTestReleaseHttpLayer(),
-  LiveTargetRegistryLayer,
-  TestGitHubApiLayer,
-  BunServices.layer
-)
+const releaseIdentity = makePipelineIdentity({ versionSource: "test" })
 
-const planWithRenderAndPublish = Effect.gen(function*() {
-  const intent = yield* parseReleaseIntent(minimalConfig)
-  const plan = yield* createReleasePlan(intent)
-  const publish = plan.operations.find((operation) => operation._tag === "PublishCommandOperation")
-  if (publish?._tag !== "PublishCommandOperation") {
-    return yield* Effect.die("expected publish operation in minimal config")
-  }
-  return ReleasePlan.make({
-    schemaVersion: plan.schemaVersion,
-    identity: plan.identity,
-    source: plan.source,
-    artifacts: plan.artifacts,
-    targets: plan.targets,
-    targetCapabilities: plan.targetCapabilities,
-    evidenceDirectory: plan.evidenceDirectory,
-    metadata: plan.metadata,
-    operations: [
-      RenderFileOperation.make({
-        id: "local:render-file",
-        description: "Render generated file.",
-        risk: "writes-local",
-        path: ".release/generated/file.txt",
-        contents: "generated\n"
-      }),
-      publish
-    ]
+const context = {
+  root: ".",
+  identity: releaseIdentity,
+  notices: []
+}
+
+const baseLayer = (options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}) =>
+  Layer.mergeAll(
+    makeTestCommandRunnerLayer(options),
+    makeTestReleaseHttpLayer(),
+    TestGitHubApiLayer,
+    UnsupportedArtifactStagerLayer,
+    BunServices.layer
+  )
+
+const TestLayer = baseLayer({
+  directories: new Set(["."]),
+  env: new Map([
+    ["NPM_TOKEN", "npm_secret"],
+    ["GH_TOKEN", "gh_secret"]
+  ])
+})
+
+const planFromConfig = (config: string) =>
+  Effect.gen(function*() {
+    const intent = yield* parseReleaseIntent(config)
+    return yield* planReleaseFromIntent(intent, { root: "." })
+  })
+
+const commandOperation = (
+  id: string,
+  phase: "publish" | "verify",
+  risk: "read-only" | "irreversible",
+  command: CommandSpec
+): Operation =>
+  Operation.make({
+    id,
+    pipeId: phase === "verify" ? "verify:test" : "publish:test",
+    phase,
+    risk,
+    description: `${id} operation.`,
+    action: CommandAction.make({ command })
+  })
+
+const renderOperation = Operation.make({
+  id: "workflow-render",
+  pipeId: "catalog:test",
+  phase: "catalog",
+  risk: "writes-local",
+  description: "Render workflow file.",
+  action: WriteFileAction.make({
+    path: ".release/generated/workflow.txt",
+    contents: "workflow\n"
   })
 })
 
@@ -98,81 +112,48 @@ const npmVersionVerifyCommand = CommandSpec.make({
   redactedEnv: []
 })
 
-const planWithFullWorkflow = Effect.gen(function*() {
-  const intent = yield* parseReleaseIntent(minimalConfig)
-  const plan = yield* createReleasePlan(intent)
-  return ReleasePlan.make({
-    schemaVersion: plan.schemaVersion,
-    identity: plan.identity,
-    source: plan.source,
-    artifacts: plan.artifacts,
-    targets: plan.targets,
-    targetCapabilities: plan.targetCapabilities,
-    evidenceDirectory: plan.evidenceDirectory,
-    metadata: plan.metadata,
-    operations: [
-      RenderFileOperation.make({
-        id: "workflow-render",
-        description: "Render workflow file.",
-        risk: "writes-local",
-        path: ".release/generated/workflow.txt",
-        contents: "workflow\n"
-      }),
-      ValidateCommandOperation.make({
-        id: "workflow-validate",
-        description: "Validate workflow.",
-        risk: "read-only",
-        command: workflowValidateCommand
-      }),
-      PublishCommandOperation.make({
-        id: "workflow-publish",
-        targetId: "npm",
-        description: "Publish workflow.",
-        risk: "irreversible",
-        command: workflowPublishCommand
-      }),
-      VerifyRemoteOperation.make({
-        id: "workflow-verify",
-        targetId: "npm",
-        description: "Verify workflow.",
-        risk: "read-only",
-        command: workflowVerifyCommand
-      })
-    ]
-  })
-})
+const workflowOperations = [
+  renderOperation,
+  commandOperation("workflow-validate", "publish", "read-only", workflowValidateCommand),
+  commandOperation("workflow-publish", "publish", "irreversible", workflowPublishCommand),
+  commandOperation("workflow-verify", "verify", "read-only", workflowVerifyCommand)
+]
 
-const planWithNpmVersionVerification = Effect.gen(function*() {
-  const intent = yield* parseReleaseIntent(minimalConfig)
-  const plan = yield* createReleasePlan(intent)
-  return ReleasePlan.make({
-    schemaVersion: plan.schemaVersion,
-    identity: plan.identity,
-    source: plan.source,
-    artifacts: plan.artifacts,
-    targets: plan.targets,
-    targetCapabilities: plan.targetCapabilities,
-    evidenceDirectory: plan.evidenceDirectory,
-    metadata: plan.metadata,
-    operations: [
-      VerifyRemoteOperation.make({
-        id: "npm:npm-version-verify",
-        targetId: "npm",
-        description: "Verify npm package version.",
-        risk: "read-only",
-        command: npmVersionVerifyCommand
-      })
-    ]
-  })
+const renderAndPublishOperations = [
+  Operation.make({
+    id: "local:render-file",
+    pipeId: "catalog:test",
+    phase: "catalog",
+    risk: "writes-local",
+    description: "Render generated file.",
+    action: WriteFileAction.make({
+      path: ".release/generated/file.txt",
+      contents: "generated\n"
+    })
+  }),
+  commandOperation("workflow-publish", "publish", "irreversible", workflowPublishCommand)
+]
+
+const npmVersionVerifyOperation = Operation.make({
+  id: "npm:npm-version-verify",
+  pipeId: "publish:npm",
+  phase: "verify",
+  risk: "read-only",
+  description: "Verify npm package version.",
+  action: CommandAction.make({ command: npmVersionVerifyCommand }),
+  retry: RetryPolicy.make({ attempts: 11, delayMillis: 500 })
 })
 
 describe("execution approval", () => {
   layer(TestLayer)((it) => {
     it.effect("runs validation without publish approval", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        const evidence = yield* validatePlan(plan)
+        const plan = yield* planFromConfig(minimalConfig)
+        const evidence = yield* validateOperations(plan.state.operations, {
+          root: plan.source.root,
+          identity: plan.state.identity,
+          notices: plan.state.notices
+        })
 
         expect(evidence.records.length).toBeGreaterThan(0)
         expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
@@ -180,20 +161,27 @@ describe("execution approval", () => {
 
     it.effect("blocks publish without execute approval", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        const error = yield* executePlan(plan, ExecutionApproval.none).pipe(Effect.flip)
+        const plan = yield* planFromConfig(minimalConfig)
+        const error = yield* executeOperations(plan.state.operations, ExecutionApproval.none, {
+          root: plan.source.root,
+          identity: plan.state.identity,
+          notices: plan.state.notices
+        }).pipe(Effect.flip)
 
         expectTaggedError(error, "ExecutionApprovalError")
       }))
 
     it.effect("blocks irreversible publish without irreversible approval", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        const error = yield* executePlan(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        const plan = yield* planFromConfig(minimalConfig)
+        const error = yield* executeOperations(
+          plan.state.operations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+          {
+            root: plan.source.root,
+            identity: plan.state.identity,
+            notices: plan.state.notices
+          }
         ).pipe(Effect.flip)
 
         expectTaggedError(error, "ExecutionApprovalError")
@@ -201,69 +189,68 @@ describe("execution approval", () => {
 
     it.effect("blocks render operations without execute approval", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithRenderAndPublish
-        const error = yield* renderPlan(plan, ExecutionApproval.none).pipe(Effect.flip)
+        const error = yield* writeRenderFiles(renderAndPublishOperations, ExecutionApproval.none, context).pipe(
+          Effect.flip
+        )
 
         expectTaggedError(error, "ExecutionApprovalError")
       }))
 
     it.effect("runs render operations with execute approval", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithRenderAndPublish
-        const evidence = yield* renderPlan(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        const evidence = yield* writeRenderFiles(
+          renderAndPublishOperations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+          context
         )
 
-        expect(evidence.records.map((record) => record.id)).toEqual(["local:render-file:execution"])
+        expect(evidence.records.map((record) => record.operationId)).toEqual(["local:render-file"])
       }))
 
     it.effect("does not run render operations during publish execution", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithRenderAndPublish
-        const evidence = yield* executePlan(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: true })
+        const evidence = yield* executeOperations(
+          renderAndPublishOperations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: true }),
+          context
         )
 
-        expect(evidence.records.filter((record) => "operationId" in record).map((record) => record.operationId)).not.toContain(
-          "local:render-file"
-        )
-        expect(evidence.records.every((record) => record.id !== "local:render-file:execution")).toBe(true)
+        expect(evidence.records.map((record) => record.operationId)).not.toContain("local:render-file")
       }))
 
     it.effect("runs approved release workflow in stage order", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
         const evidence = yield* runApprovedReleaseWorkflow(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: true })
+          workflowOperations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: true }),
+          context
         )
 
-        expect(evidence.records.map((record) => record.id)).toEqual([
-          "workflow-render:execution",
-          "workflow-validate:command",
-          "workflow-publish:command",
-          "workflow-verify:command"
+        expect(evidence.records.map((record) => record.operationId)).toEqual([
+          "workflow-render",
+          "workflow-validate",
+          "workflow-publish",
+          "workflow-verify"
         ])
         expect(evidence.records.map((record) => record.phase)).toEqual([
-          "render",
-          "validation",
-          "execution",
-          "verification"
+          "catalog",
+          "publish",
+          "publish",
+          "verify"
         ])
       }))
 
     it.effect("workflow fails before publishing without execute approval", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
-        const error = yield* runApprovedReleaseWorkflow(plan, ExecutionApproval.none).pipe(Effect.flip)
+        const error = yield* runApprovedReleaseWorkflow(workflowOperations, ExecutionApproval.none, context).pipe(
+          Effect.flip
+        )
 
         expectTaggedError(error, "ExecutionApprovalError")
       }))
   })
 
-  layer(makeTestCommandRunnerLayer())((it) => {
+  layer(baseLayer())((it) => {
     it.effect("blocks irreversible publish operations based on risk", () =>
       Effect.gen(function*() {
         const command = CommandSpec.make({
@@ -272,20 +259,14 @@ describe("execution approval", () => {
           requiredEnv: [],
           redactedEnv: []
         })
-        const operation = PublishCommandOperation.make({
-          id: "malformed-publish",
-          targetId: "npm",
-          description: "Publish operation",
-          risk: "irreversible",
-          command
-        })
-        const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
+        const operation = commandOperation("malformed-publish", "publish", "irreversible", command)
+        const error = yield* runOperation(operation, ExecutionApproval.none, context).pipe(Effect.flip)
 
         expectTaggedError(error, "ExecutionApprovalError")
       }))
   })
 
-  layer(makeTestCommandRunnerLayer({
+  layer(baseLayer({
     commands: new Map([
       [commandKey(CommandSpec.make({
         executable: "tool",
@@ -307,13 +288,8 @@ describe("execution approval", () => {
           requiredEnv: [],
           redactedEnv: []
         })
-        const operation = ValidateCommandOperation.make({
-          id: "validate-fail",
-          description: "Failing validator",
-          risk: "read-only",
-          command
-        })
-        const error = yield* runOperation(operation, ExecutionApproval.none).pipe(Effect.flip)
+        const operation = commandOperation("validate-fail", "publish", "read-only", command)
+        const error = yield* runOperation(operation, ExecutionApproval.none, context).pipe(Effect.flip)
 
         expectTaggedError(error, "OperationFailedError")
       }))
@@ -342,157 +318,139 @@ describe("execution approval", () => {
           })
       }),
       makeTestReleaseHttpLayer(),
-      LiveTargetRegistryLayer,
       TestGitHubApiLayer,
+      UnsupportedArtifactStagerLayer,
       BunServices.layer
     )
 
     layer(RetryLayer, { excludeTestServices: true })((it) => {
       it.effect("retries npm version verification before recording success", () =>
         Effect.gen(function*() {
-          const plan = yield* planWithNpmVersionVerification
-          const evidence = yield* verifyPlan(plan)
+          attempts = 0
+          const evidence = yield* verifyOperations([npmVersionVerifyOperation], context)
 
           expect(attempts).toBe(3)
-          expect(evidence.records.map((record) => record.id)).toEqual(["npm:npm-version-verify:command"])
+          expect(evidence.records.map((record) => record.operationId)).toEqual(["npm:npm-version-verify"])
           expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
         }))
     })
   }
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
-      directories: new Set(["."]),
-      env: new Map([
-        ["NPM_TOKEN", "npm_secret"],
-        ["GH_TOKEN", "gh_secret"]
-      ]),
-      commands: new Map([
-        [commandKey(workflowValidateCommand), {
-          exitCode: 1,
-          stdout: "",
-          stderr: "validation failed"
-        }],
-        [commandKey(workflowPublishCommand), {
-          exitCode: 1,
-          stdout: "",
-          stderr: "publish should not run"
-        }]
-      ])
-    }),
-    makeTestReleaseHttpLayer(),
-    LiveTargetRegistryLayer,
-    TestGitHubApiLayer,
-    BunServices.layer
-  ))((it) => {
+  layer(baseLayer({
+    directories: new Set(["."]),
+    env: new Map([
+      ["NPM_TOKEN", "npm_secret"],
+      ["GH_TOKEN", "gh_secret"]
+    ]),
+    commands: new Map([
+      [commandKey(workflowValidateCommand), {
+        exitCode: 1,
+        stdout: "",
+        stderr: "validation failed"
+      }],
+      [commandKey(workflowPublishCommand), {
+        exitCode: 1,
+        stdout: "",
+        stderr: "publish should not run"
+      }]
+    ])
+  }))((it) => {
     it.effect("workflow stops on validation failure before publish", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
         const error = yield* runApprovedReleaseWorkflow(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: true })
+          workflowOperations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: true }),
+          context
         ).pipe(Effect.flip)
 
         expect(error._tag).toBe("OperationFailedError")
         if (error._tag === "OperationFailedError") {
           expect(error.operationId).toBe("workflow-validate")
-          expect(error.evidence?.records.map((record) => record.id)).toEqual([
-            "workflow-render:execution",
-            "workflow-validate:command"
+          expect(error.evidence?.records.map((record) => record.operationId)).toEqual([
+            "workflow-render",
+            "workflow-validate"
           ])
-          expect(error.evidence?.records.map((record) => record.phase)).toEqual(["render", "validation"])
+          expect(error.evidence?.records.map((record) => record.phase)).toEqual(["catalog", "publish"])
         }
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
-      directories: new Set(["."]),
-      env: new Map([
-        ["NPM_TOKEN", "npm_secret"],
-        ["GH_TOKEN", "gh_secret"]
-      ]),
-      commands: new Map([
-        [commandKey(workflowPublishCommand), {
-          exitCode: 1,
-          stdout: "",
-          stderr: "publish failed"
-        }],
-        [commandKey(workflowVerifyCommand), {
-          exitCode: 1,
-          stdout: "",
-          stderr: "verify should not run"
-        }]
-      ])
-    }),
-    makeTestReleaseHttpLayer(),
-    LiveTargetRegistryLayer,
-    TestGitHubApiLayer,
-    BunServices.layer
-  ))((it) => {
+  layer(baseLayer({
+    directories: new Set(["."]),
+    env: new Map([
+      ["NPM_TOKEN", "npm_secret"],
+      ["GH_TOKEN", "gh_secret"]
+    ]),
+    commands: new Map([
+      [commandKey(workflowPublishCommand), {
+        exitCode: 1,
+        stdout: "",
+        stderr: "publish failed"
+      }],
+      [commandKey(workflowVerifyCommand), {
+        exitCode: 1,
+        stdout: "",
+        stderr: "verify should not run"
+      }]
+    ])
+  }))((it) => {
     it.effect("workflow preserves render and validation evidence on publish failure", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
         const error = yield* runApprovedReleaseWorkflow(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: true })
+          workflowOperations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: true }),
+          context
         ).pipe(Effect.flip)
 
         expect(error._tag).toBe("OperationFailedError")
         if (error._tag === "OperationFailedError") {
           expect(error.operationId).toBe("workflow-publish")
-          expect(error.evidence?.records.map((record) => record.id)).toEqual([
-            "workflow-render:execution",
-            "workflow-validate:command",
-            "workflow-publish:command"
+          expect(error.evidence?.records.map((record) => record.operationId)).toEqual([
+            "workflow-render",
+            "workflow-validate",
+            "workflow-publish"
           ])
-          expect(error.evidence?.records.map((record) => record.phase)).toEqual(["render", "validation", "execution"])
+          expect(error.evidence?.records.map((record) => record.phase)).toEqual(["catalog", "publish", "publish"])
         }
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
-      directories: new Set(["."]),
-      env: new Map([
-        ["NPM_TOKEN", "npm_secret"],
-        ["GH_TOKEN", "gh_secret"]
-      ]),
-      commands: new Map([
-        [commandKey(workflowVerifyCommand), {
-          exitCode: 1,
-          stdout: "",
-          stderr: "verify failed"
-        }]
-      ])
-    }),
-    makeTestReleaseHttpLayer(),
-    LiveTargetRegistryLayer,
-    TestGitHubApiLayer,
-    BunServices.layer
-  ))((it) => {
+  layer(baseLayer({
+    directories: new Set(["."]),
+    env: new Map([
+      ["NPM_TOKEN", "npm_secret"],
+      ["GH_TOKEN", "gh_secret"]
+    ]),
+    commands: new Map([
+      [commandKey(workflowVerifyCommand), {
+        exitCode: 1,
+        stdout: "",
+        stderr: "verify failed"
+      }]
+    ])
+  }))((it) => {
     it.effect("workflow preserves all completed evidence on verification failure", () =>
       Effect.gen(function*() {
-        const plan = yield* planWithFullWorkflow
         const error = yield* runApprovedReleaseWorkflow(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: true })
+          workflowOperations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: true }),
+          context
         ).pipe(Effect.flip)
 
         expect(error._tag).toBe("OperationFailedError")
         if (error._tag === "OperationFailedError") {
           expect(error.operationId).toBe("workflow-verify")
-          expect(error.evidence?.records.map((record) => record.id)).toEqual([
-            "workflow-render:execution",
-            "workflow-validate:command",
-            "workflow-publish:command",
-            "workflow-verify:command"
+          expect(error.evidence?.records.map((record) => record.operationId)).toEqual([
+            "workflow-render",
+            "workflow-validate",
+            "workflow-publish",
+            "workflow-verify"
           ])
           expect(error.evidence?.records.map((record) => record.phase)).toEqual([
-            "render",
-            "validation",
-            "execution",
-            "verification"
+            "catalog",
+            "publish",
+            "publish",
+            "verify"
           ])
         }
       }))

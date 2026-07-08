@@ -1,0 +1,38 @@
+release-example-homebrew@0.1.0
+commit: example
+evidence: .release/evidence
+artifacts: 2
+surfaces: 1
+operations: 5
+
+artifacts:
+  - archive artifacts/release-example-homebrew-0.1.0.tgz [tarball] size=0 checksum=none
+  - homebrew-formula .release/generated/release-example-homebrew.rb [file] size=0 checksum=none
+
+surfaces:
+  - homebrew operations=5
+
+operations by risk:
+  read-only:
+    - homebrew:brew-audit Record simulated Homebrew formula validation.
+    note: Homebrew formula validation is simulated by the deterministic release plan.
+  writes-local:
+    - homebrew:homebrew-render-formula Render Homebrew formula release-example-homebrew.rb.
+    write: .release/generated/release-example-homebrew.rb
+    approval: execute
+    - homebrew:homebrew-push:add Stage release-example-homebrew.rb for homebrew.
+    command: git -C . add .release/generated/release-example-homebrew.rb
+    argv: ["git","-C",".","add",".release/generated/release-example-homebrew.rb"]
+    approval: execute
+    - homebrew:homebrew-push:commit Commit release-example-homebrew.rb for homebrew.
+    command: git -C . commit -m Update release-example-homebrew to 0.1.0
+    argv: ["git","-C",".","commit","-m","Update release-example-homebrew to 0.1.0"]
+    approval: execute
+  -- approval boundary: externally visible and irreversible operations require explicit approval --
+  externally-visible:
+    - homebrew:homebrew-push Push Homebrew tap update for release-example-homebrew@0.1.0.
+    command: git -C . push
+    argv: ["git","-C",".","push"]
+    approval: execute
+  irreversible:
+    - none

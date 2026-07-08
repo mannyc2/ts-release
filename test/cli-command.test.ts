@@ -1,74 +1,35 @@
-import { describe, expect, layer, test } from "@effect/bun-test"
+import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import type * as Scope from "effect/Scope"
 import * as Command from "effect/unstable/cli/Command"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { access, mkdir, readFile, writeFile } from "node:fs/promises"
 import { join, relative } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
   planReleaseInit,
   ReleaseInitOptions
-} from "../src/workflows/init.js"
-import {
-  doctorRelease,
-  planRelease,
-  renderReleasePlan
-} from "../src/workflows/release.js"
+} from "../apps/release-ts/src/cli/init.js"
+import { doctorRelease } from "../src/workflows/doctor.js"
+import { planRelease, renderReleasePlan } from "../src/engine/engine.js"
 import { cli } from "../apps/release-ts/src/cli/command.js"
-import { CommandSpec } from "../src/domain/operation.js"
-import { BunExecutableBuild, makeBunArtifactRecipeRegistryLayer, makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
-import { commandKey } from "../src/host/test.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { CommandSpec } from "../src/pipeline/operation.js"
+import { BunExecutableBuild, makeArtifactStagerLayer, makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
+import { commandKey } from "./host-fakes.js"
 import {
   expectExitFailureTag,
-  expectTaggedError,
   makeObservableCommandRunnerLayer,
   minimalConfig,
   noOpConfig,
   partialWorkflowConfig,
+  withTempDirectoryPromise,
 } from "./helpers.js"
 
 const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
   stream === null ? "" : await new Response(stream).text()
 
-const withTempDirectory = <A, E, R>(
-  prefix: string,
-  use: (root: string) => Effect.Effect<A, E, R>
-): Effect.Effect<A, E, R | Scope.Scope> =>
-  Effect.acquireRelease(
-    Effect.promise(() => mkdtemp(join(tmpdir(), prefix))),
-    (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
-  ).pipe(Effect.flatMap(use))
-
-const withTempDirectoryPromise = async <A>(
-  prefix: string,
-  use: (root: string) => Promise<A>
-): Promise<A> => {
-  const root = await mkdtemp(join(tmpdir(), prefix))
-  try {
-    return await use(root)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-}
-
-const approvalCliLayer = Layer.mergeAll(
-  makeObservableCommandRunnerLayer({
-    env: new Map([
-      ["NPM_TOKEN", "npm_secret"],
-      ["GH_TOKEN", "gh_secret"]
-    ]),
-    commands: new Map()
-  }),
-  LiveTargetRegistryLayer,
-  BunServices.layer
-)
-
 // The remaining direct Effect.provide calls in this file exercise CLI entrypoints
-// around one-off temp-directory setup; reusable Effect fixtures use layer(...).
+// around one-off temp-directory setup.
 describe("cli command", () => {
   test("exports the root release command", () => {
     expect(cli.name).toBe("release")
@@ -78,7 +39,6 @@ describe("cli command", () => {
       "init",
       "plan",
       "release",
-      "render",
       "verify"
     ])
   })
@@ -95,7 +55,6 @@ describe("cli command", () => {
           ]),
           commands: new Map()
         }),
-        LiveTargetRegistryLayer,
         BunServices.layer
       )
 
@@ -110,7 +69,7 @@ describe("cli command", () => {
       )
     }))
 
-  test("build command stages recipe outputs and writes text output", () =>
+  test("build command stages build outputs and writes text output", () =>
     withTempDirectoryPromise("ts-release-cli-build-", async (root) => {
       const configPath = join(root, "release.config.json")
       const out = join(root, "stage.txt")
@@ -121,20 +80,15 @@ describe("cli command", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          bun: {
+        builds: [
+          {
+            builder: "bun",
             id: "release-cli",
             entry: "src/cli.ts",
-            outputs: [
-              {
-                id: "cli-linux-x64",
-                target: "bun-linux-x64-baseline",
-                path: "dist/release-{version}-linux-x64",
-                consumers: ["github"]
-              }
-            ]
+            targets: ["linux-x64"],
+            output: "dist/release-{version}-{targetTriple}"
           }
-        },
+        ],
         publish: {}
       }))
       const build: BunExecutableBuild = async (input) => {
@@ -147,8 +101,7 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeBunArtifactRecipeRegistryLayer(build),
-        LiveTargetRegistryLayer,
+        makeArtifactStagerLayer(build),
         BunServices.layer
       )
 
@@ -163,11 +116,11 @@ describe("cli command", () => {
       )
 
       const contents = await readFile(out, "utf8")
-      expect(contents).toContain("staged artifact recipes: 1")
+      expect(contents).toContain("staged artifact operations: 1")
       expect(contents).toContain("cli-linux-x64 dist/release-0.1.0-linux-x64")
     }))
 
-  test("build command succeeds with no recipes", () =>
+  test("build command succeeds with no staged operations", () =>
     withTempDirectoryPromise("ts-release-cli-build-empty-", async (root) => {
       const configPath = join(root, "release.config.json")
       const out = join(root, "stage.json")
@@ -177,8 +130,7 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeBunArtifactRecipeRegistryLayer(async () => ({ success: true, logs: [] })),
-        LiveTargetRegistryLayer,
+        makeArtifactStagerLayer(async () => ({ success: true, logs: [] })),
         BunServices.layer
       )
 
@@ -196,7 +148,7 @@ describe("cli command", () => {
 
       const parsed: unknown = JSON.parse(await readFile(out, "utf8"))
       expect(JSON.stringify(parsed)).toContain("\"schemaVersion\":\"artifact-stage/v1\"")
-      expect(JSON.stringify(parsed)).toContain("\"recipes\":[]")
+      expect(JSON.stringify(parsed)).toContain("\"operations\":[]")
     }))
 
   test("build command reports build failures", () =>
@@ -209,20 +161,15 @@ describe("cli command", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          bun: {
+        builds: [
+          {
+            builder: "bun",
             id: "release-cli",
             entry: "src/cli.ts",
-            outputs: [
-              {
-                id: "cli-linux-x64",
-                target: "bun-linux-x64-baseline",
-                path: "dist/release-{version}-linux-x64",
-                consumers: ["github"]
-              }
-            ]
+            targets: ["linux-x64"],
+            output: "dist/release-{version}-{targetTriple}"
           }
-        },
+        ],
         publish: {}
       }))
       const layer = Layer.mergeAll(
@@ -230,11 +177,10 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeBunArtifactRecipeRegistryLayer(async () => ({
+        makeArtifactStagerLayer(async () => ({
           success: false,
           logs: ["compile failed"]
         })),
-        LiveTargetRegistryLayer,
         BunServices.layer
       )
 
@@ -246,11 +192,11 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(layer))
       )
 
-      expectExitFailureTag(exit, "ArtifactRecipeStageError")
+      expectExitFailureTag(exit, "ArtifactStageError")
     }))
 
-  test("render command writes planned files without publishing", () =>
-    withTempDirectoryPromise("ts-release-cli-render-", async (root) => {
+  test("internal catalog render script writes planned files without publishing", () =>
+    withTempDirectoryPromise("ts-release-catalog-render-", async (root) => {
       const configPath = join(root, "release.config.json")
       const archivePath = join(root, "artifacts", "release-0.1.0.tgz")
       const formulaPath = join(root, ".release", "generated", "release.rb")
@@ -263,16 +209,13 @@ describe("cli command", () => {
           commit: "abc123",
           tag: "v0.1.0"
         },
-        build: {
-          artifacts: [
-            {
-              id: "archive",
-              path: "artifacts/release-0.1.0.tgz",
-              format: "tarball",
-              consumers: ["homebrew"]
-            }
-          ]
-        },
+        artifacts: [
+          {
+            id: "archive",
+            path: "artifacts/release-0.1.0.tgz",
+            format: "tarball"
+          }
+        ],
         publish: {
           homebrew: {
             repository: "owner/homebrew-tap",
@@ -281,26 +224,28 @@ describe("cli command", () => {
             artifactId: "archive"
           }
         },
-        strict: true,
         evidence: ".release/evidence"
       }))
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map(),
-          commands: new Map()
-        }),
-        LiveTargetRegistryLayer,
-        BunServices.layer
-      )
 
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "render",
-          "--config",
-          configPath,
-          "--execute"
-        ]).pipe(Effect.provide(layer))
-      )
+      const subprocess = Bun.spawn([
+        "bun",
+        "run",
+        "apps/release-ts/scripts/render-catalogs.ts",
+        "--config",
+        configPath
+      ], {
+        cwd: process.cwd(),
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe"
+      })
+      const stdout = streamText(subprocess.stdout)
+      const stderr = streamText(subprocess.stderr)
+      const exitCode = await subprocess.exited
+
+      expect(exitCode).toBe(0)
+      expect(await stdout).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")
+      expect(await stderr).toBe("")
 
       const contents = await readFile(formulaPath, "utf8")
       expect(contents).toContain("class Release < Formula")
@@ -308,8 +253,7 @@ describe("cli command", () => {
     }))
 
   test("root cli script preserves caller-relative config paths", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ts-release-cli-relative-"))
-    try {
+    await withTempDirectoryPromise("ts-release-cli-relative-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, noOpConfig)
       const subprocess = Bun.spawn([
@@ -334,9 +278,37 @@ describe("cli command", () => {
       expect(await stdout).toContain("release@")
       expect(await stderr).not.toContain("ConfigReadError")
       expect(exitCode).toBe(0)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    })
+  })
+
+  test("plan command exposes snapshot mode", async () => {
+    await withTempDirectoryPromise("ts-release-cli-snapshot-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, noOpConfig)
+      const subprocess = Bun.spawn([
+        "bun",
+        "run",
+        "cli",
+        "plan",
+        "--config",
+        configPath,
+        "--snapshot",
+        "--format",
+        "text"
+      ], {
+        cwd: process.cwd(),
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe"
+      })
+      const stdout = streamText(subprocess.stdout)
+      const stderr = streamText(subprocess.stderr)
+      const exitCode = await subprocess.exited
+
+      expect(await stdout).toContain("0.1.0-SNAPSHOT-abc123")
+      expect(await stderr).not.toContain("ConfigReadError")
+      expect(exitCode).toBe(0)
+    })
   })
 
   test("config-backed commands accept an explicit release root", () =>
@@ -353,7 +325,6 @@ describe("cli command", () => {
           tagTemplate: "v{version}"
         },
         publish: {},
-        strict: true,
         evidence: ".release/evidence"
       }))
       const out = join(root, "plan-summary.txt")
@@ -450,7 +421,7 @@ describe("cli command", () => {
       expect(config).toContain("\"$schema\"")
       expect(config).toContain("\"repository\": \"owner/repo\"")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
-      expect(intent.build?.npmPackage).toBeDefined()
+      expect(intent.npmPackage).toBeDefined()
       expect(intent.publish.npm).toBeDefined()
 
       const blocked = await Effect.runPromiseExit(
@@ -462,6 +433,26 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(BunServices.layer))
       )
       expectExitFailureTag(blocked, "ReleaseInitWriteError")
+    }))
+
+  test("init with all optional flags omitted writes the default npm-only config", () =>
+    withTempDirectoryPromise("ts-release-cli-init-defaults-", async (root) => {
+      const configPath = join(root, "release.config.json")
+
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "init",
+          "--config",
+          configPath,
+          "--write"
+        ]).pipe(Effect.provide(BunServices.layer))
+      )
+
+      const config = await readFile(configPath, "utf8")
+      const expected = await Effect.runPromise(
+        planReleaseInit({}).pipe(Effect.provide(BunServices.layer))
+      )
+      expect(config).toBe(expected.files[0]?.contents ?? "")
     }))
 
   test("init generates schema-valid configs for every template", async () => {
@@ -504,40 +495,38 @@ describe("cli command", () => {
             expect(configFile.contents).toContain("owner/scoop-bucket")
           }
           if (template === "npm-github") {
-            expect(intent.build?.npmPackage).toBeDefined()
+            expect(intent.npmPackage).toBeDefined()
             expect(intent.publish.github).toBeDefined()
           }
           if (template === "bun-cli-github") {
-            const recipe = intent.build?.bun
-            expect(recipe?.id).toBe("cli")
-            if (recipe !== undefined) {
-              expect(recipe.outputs?.map((output) => output.target).sort()).toEqual([
-                "bun-darwin-arm64",
-                "bun-darwin-x64",
-                "bun-linux-arm64",
-                "bun-linux-x64-baseline",
-                "bun-windows-x64-baseline"
+            const build = intent.builds?.[0]
+            expect(build?.builder).toBe("bun")
+            if (build?.builder === "bun") {
+              expect(build.id).toBe("cli")
+              expect([...(build.targets ?? [])].sort()).toEqual([
+                "darwin-arm64",
+                "darwin-x64",
+                "linux-arm64",
+                "linux-x64",
+                "windows-x64"
               ])
             }
           }
           if (template === "portable-cli") {
-            const recipe = intent.build?.bun
-            expect(recipe?.entry).toBe("src/cli.ts")
+            const build = intent.builds?.[0]
+            expect(build?.builder).toBe("bun")
+            if (build?.builder === "bun") {
+              expect(build.entry).toBe("src/cli.ts")
+            }
             expect(intent.publish.homebrew).toBeDefined()
             expect(intent.publish.scoop).toBeDefined()
             expect(intent.publish.pypi).toBeDefined()
-            if (recipe !== undefined) {
-              expect(recipe.outputs?.find((output) => output.id === "cli-darwin-arm64")?.consumers).toEqual([
-                "github",
-                "homebrew"
-              ])
-              expect(recipe.outputs?.find((output) => output.id === "cli-windows-x64")?.consumers).toEqual([
-                "github",
-                "scoop"
-              ])
-              expect(recipe.outputs?.every((output) => output.variant?.binaryName === "pkg")).toBe(true)
+            if (build?.builder === "bun") {
+              expect(build.targets).toContain("darwin-arm64")
+              expect(build.targets).toContain("windows-x64")
+              expect(build.binaryName).toBe("pkg")
             }
-            const wheels = intent.build?.pypiWheel
+            const wheels = intent.pypiWheel
             expect(Array.isArray(wheels) ? wheels.length : 0).toBe(5)
           }
         }
@@ -579,14 +568,15 @@ describe("cli command", () => {
 
       const config = await readFile(configPath, "utf8")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
-      const recipe = intent.build?.bun
-      const wheels = intent.build?.pypiWheel
+      const build = intent.builds?.[0]
+      const wheels = intent.pypiWheel
 
-      expect(recipe?.entry).toBe("src/main.ts")
-      expect(recipe?.outputs?.find((output) => output.id === "cli-darwin-x64")?.consumers).toEqual([
-        "github",
-        "homebrew"
-      ])
+      expect(build?.builder).toBe("bun")
+      if (build?.builder === "bun") {
+        expect(build.entry).toBe("src/main.ts")
+        expect(build.targets).toContain("darwin-x64")
+        expect(build.binaryName).toBe("rocket")
+      }
       expect(intent.publish.homebrew).toBeDefined()
       expect(intent.publish.scoop).toBeDefined()
       expect(intent.publish.pypi).toBeDefined()
@@ -750,7 +740,6 @@ describe("cli command", () => {
           ]),
           commands: new Map()
         }),
-        LiveTargetRegistryLayer,
         BunServices.layer
       )
 
@@ -794,7 +783,7 @@ describe("cli command", () => {
         )
       )
 
-      expect(plan.identity.name).toBe("release")
+      expect(plan.state.identity.name).toBe("release")
       expect(plan.source.root).toBe(root)
       expect(plan.source.configPath).toBe("release.config.json")
     }))
@@ -809,25 +798,26 @@ describe("cli command", () => {
         )
       )
 
-      expect(plan.identity.name).toBe("release")
+      expect(plan.state.identity.name).toBe("release")
     }))
 
-  layer(approvalCliLayer)((it) => {
-    it.effect("release command fails without execute approval", () =>
-      withTempDirectory("ts-release-cli-release-approval-", (root) =>
-        Effect.gen(function*() {
-          const configPath = join(root, "release.config.json")
-          yield* Effect.promise(() => writeFile(configPath, minimalConfig))
-          const error = yield* Command.runWith(cli, { version: "0.0.0" })([
-            "release",
-            "--config",
-            configPath
-          ]).pipe(Effect.flip)
+  test("release command plans without execute approval", () =>
+    withTempDirectoryPromise("ts-release-cli-release-plan-only-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, minimalConfig)
 
-          expectTaggedError(error, "ExecutionApprovalError")
-        })
-      ))
-  })
+      await Effect.runPromise(
+        Command.runWith(cli, { version: "0.0.0" })([
+          "release",
+          "--config",
+          configPath
+        ]).pipe(
+          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
+        )
+      )
+
+      await expect(access(join(root, ".release", "evidence", "evidence.json"))).rejects.toThrow()
+    }))
 
   test("release command writes one workflow evidence file", () =>
     withTempDirectoryPromise("ts-release-release-root-", async (root) => {
@@ -877,7 +867,6 @@ describe("cli command", () => {
             }]
           ])
         }),
-        LiveTargetRegistryLayer,
         BunServices.layer
       )
 
@@ -893,9 +882,9 @@ describe("cli command", () => {
 
       expectExitFailureTag(exit, "OperationFailedError")
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
-      expect(evidence).toContain("homebrew:homebrew-render-formula:execution")
-      expect(evidence).toContain("npm:npm-version:command")
-      expect(evidence).toContain("\"phase\": \"render\"")
-      expect(evidence).toContain("\"phase\": \"validation\"")
+      expect(evidence).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")
+      expect(evidence).toContain("\"operationId\": \"npm:npm-version\"")
+      expect(evidence).toContain("\"phase\": \"catalog\"")
+      expect(evidence).toContain("\"phase\": \"publish\"")
     }))
 })

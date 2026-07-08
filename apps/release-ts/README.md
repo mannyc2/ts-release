@@ -24,9 +24,9 @@ bun run --cwd apps/release-ts cli plan --root ../.. --config apps/release-ts/rel
 Self-release config lives in `release.config.json`. When invoking the app-local
 CLI for the root package, pass `--root ../..` and keep the config path
 root-relative. App release scripts live in `scripts/` only for app-owned
-self-release policy checks. Artifact staging goes through the CLI workflow. The
-Bun executable artifact recipe adapter is composed here at the runtime boundary;
-root workflows keep artifact recipes as data until staging is explicitly run.
+self-release policy checks. Artifact staging goes through the CLI workflow; Bun
+executable and PyPI wheel staging stay as structured build operations until
+staging is explicitly run.
 
 The repository dogfoods the same distribution workflow recommended to users:
 GitHub Actions stages artifacts, records a non-publishing plan job on main, and

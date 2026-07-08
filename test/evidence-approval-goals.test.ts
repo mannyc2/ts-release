@@ -2,47 +2,36 @@ import { describe, expect, layer, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
+import {
+  executeOperations,
+  validateOperations
+} from "../src/engine/executor.js"
 import {
   CommandSpec,
   ExecutionApproval,
   operationRequiresExecute,
   operationRequiresIrreversibleApproval
-} from "../src/domain/operation.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import {
-  executePlan,
-  validatePlan
-} from "../src/planner/executor.js"
+} from "../src/pipeline/operation.js"
 import {
   planRelease,
+  planReleaseFromIntent,
   writeReleaseEvidence
-} from "../src/workflows/release.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
-import { commandKey } from "../src/host/test.js"
-import { makeTestReleaseHttpLayer } from "../src/host/http.js"
+} from "../src/engine/engine.js"
+import type { ReleasePlanDocument } from "../src/engine/plan-document.js"
+import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { commandKey } from "./host-fakes.js"
+import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import {
   expectTaggedError,
   makeObservableCommandRunnerLayer,
   minimalConfig,
   partialWorkflowConfig,
-  TestGitHubApiLayer
+  TestGitHubApiLayer,
+  withTempDirectoryPromise as withTempDirectory
 } from "./helpers.js"
-
-const withTempDirectory = async <A>(
-  prefix: string,
-  use: (root: string) => Promise<A>
-): Promise<A> => {
-  const root = await mkdtemp(join(tmpdir(), prefix))
-  try {
-    return await use(root)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-}
 
 const TestLayer = Layer.mergeAll(
   makeObservableCommandRunnerLayer({
@@ -53,44 +42,61 @@ const TestLayer = Layer.mergeAll(
     commands: new Map()
   }),
   makeTestReleaseHttpLayer(),
-  LiveTargetRegistryLayer,
   TestGitHubApiLayer,
+  UnsupportedArtifactStagerLayer,
   BunServices.layer
 )
+
+const planFromConfig = (config: string) =>
+  Effect.gen(function*() {
+    const intent = yield* parseReleaseIntent(config)
+    return yield* planReleaseFromIntent(intent, { root: "." })
+  })
+
+const operationContext = (plan: ReleasePlanDocument) => ({
+  root: plan.source.root,
+  identity: plan.state.identity,
+  artifacts: plan.state.artifacts,
+  notices: plan.state.notices,
+  ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
+})
 
 describe("minimal evidence and approval goals", () => {
   layer(TestLayer)((it) => {
     it.effect("approval is derived from operation risk", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        const publish = plan.operations.find((operation) => operation._tag === "PublishCommandOperation")
+        const plan = yield* planFromConfig(minimalConfig)
+        const publish = plan.state.operations.find((operation) => operation.id === "npm:npm-publish")
 
-        expect(publish?._tag).toBe("PublishCommandOperation")
-        if (publish?._tag === "PublishCommandOperation") {
+        expect(publish?.action._tag).toBe("command")
+        if (publish !== undefined) {
           expect(publish.risk).toBe("irreversible")
           expect(operationRequiresExecute(publish)).toBe(true)
           expect(operationRequiresIrreversibleApproval(publish)).toBe(true)
         }
 
-        const withoutExecute = yield* executePlan(plan, ExecutionApproval.none).pipe(Effect.flip)
+        const withoutExecute = yield* executeOperations(
+          plan.state.operations,
+          ExecutionApproval.none,
+          operationContext(plan)
+        ).pipe(Effect.flip)
         expectTaggedError(withoutExecute, "ExecutionApprovalError")
 
-        const withoutIrreversible = yield* executePlan(
-          plan,
-          ExecutionApproval.make({ execute: true, approveIrreversible: false })
+        const withoutIrreversible = yield* executeOperations(
+          plan.state.operations,
+          ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+          operationContext(plan)
         ).pipe(Effect.flip)
         expectTaggedError(withoutIrreversible, "ExecutionApprovalError")
       }))
 
     it.effect("read-only validation runs without publish approval", () =>
       Effect.gen(function*() {
-        const intent = yield* parseReleaseIntent(minimalConfig)
-        const plan = yield* createReleasePlan(intent)
-        const evidence = yield* validatePlan(plan)
+        const plan = yield* planFromConfig(minimalConfig)
+        const evidence = yield* validateOperations(plan.state.operations, operationContext(plan))
 
         expect(evidence.records.length).toBeGreaterThan(0)
-        expect(evidence.records.every((record) => record.phase === "validation")).toBe(true)
+        expect(evidence.records.every((record) => record.phase === "publish")).toBe(true)
         expect(evidence.records.every((record) => record.risk === "read-only")).toBe(true)
         expect(evidence.records.some((record) => record.operationId === "npm:npm-publish")).toBe(false)
       }))
@@ -124,8 +130,8 @@ describe("minimal evidence and approval goals", () => {
           ])
         }),
         makeTestReleaseHttpLayer(),
-        LiveTargetRegistryLayer,
         TestGitHubApiLayer,
+        UnsupportedArtifactStagerLayer,
         BunServices.layer
       )
 
@@ -151,7 +157,7 @@ describe("minimal evidence and approval goals", () => {
       expect(records.map((record) => record.operationId)).toContain("homebrew:homebrew-render-formula")
       expect(records.map((record) => record.operationId)).toContain("npm:npm-version")
       expect(records.some((record) => record.operationId === "npm:npm-publish")).toBe(false)
-      expect(records.some((record) => record.phase === "render")).toBe(true)
-      expect(records.some((record) => record.phase === "validation" && record.status === "failed")).toBe(true)
+      expect(records.some((record) => record.phase === "catalog")).toBe(true)
+      expect(records.some((record) => record.phase === "publish" && record.status === "failed")).toBe(true)
     }))
 })

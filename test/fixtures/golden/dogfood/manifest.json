@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "description": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+  "homepage": "https://github.com/mannyc2/ts-release",
+  "license": "MIT",
+  "url": "https://github.com/mannyc2/ts-release/releases/download/v0.1.0/ts-release-0.1.0-windows-x64.exe",
+  "hash": "d4b9fa39583dc5438cc3b66777282755db666b1ae97aa1acf01b24c94d403574",
+  "bin": [
+    [
+      "ts-release-0.1.0-windows-x64.exe",
+      "ts-release"
+    ]
+  ]
+}

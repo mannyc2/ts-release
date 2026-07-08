@@ -33,6 +33,10 @@ inputs:
     description: Runtime module source. bundled is the default; workspace is deferred until same-graph Node platform loading is safe.
     required: false
     default: bundled
+  snapshot:
+    description: Plan a snapshot release version and refuse externally visible or irreversible operations during execution.
+    required: false
+    default: "false"
   execute:
     description: Allow approved execution commands to run operations requiring execute approval.
     required: false
@@ -59,7 +63,7 @@ outputs:
   irreversible_operation_count:
     description: Number of irreversible operations in the distribution plan.
   target_count:
-    description: Number of targets in the distribution plan.
+    description: Number of publish/catalog surfaces in the distribution plan; output name kept for compatibility.
   evidence_directory:
     description: Evidence directory for the distribution plan.
   plan_path:

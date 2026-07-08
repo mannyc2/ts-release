@@ -107,17 +107,17 @@ const buildTempBundle = Effect.fn("scripts.checkActionBundle.buildTempBundle")(f
   }
 })
 
-const bytesEqual = (left: Uint8Array, right: Uint8Array): boolean => {
-  if (left.byteLength !== right.byteLength) {
-    return false
-  }
-  for (let index = 0; index < left.byteLength; index += 1) {
-    if (left[index] !== right[index]) {
-      return false
-    }
-  }
-  return true
-}
+const textDecoder = new TextDecoder()
+
+const normalizeBunSourcePathComments = (bundle: Uint8Array): string =>
+  textDecoder.decode(bundle).replace(/^\/\/ (.*)$/gm, (line, sourcePath: string) => {
+    const normalizedSourcePath = sourcePath.replaceAll("\\", "/")
+    const bunStoreIndex = normalizedSourcePath.indexOf(".bun/")
+    return bunStoreIndex === -1 ? line : `// ${normalizedSourcePath.slice(bunStoreIndex)}`
+  })
+
+const bundlesEqual = (left: Uint8Array, right: Uint8Array): boolean =>
+  normalizeBunSourcePathComments(left) === normalizeBunSourcePathComments(right)
 
 const staleBundleMessage =
   "Action bundle is stale. Run bun run --cwd apps/ts-release-action build and include apps/ts-release-action/dist/index.js."
@@ -132,7 +132,7 @@ const checkActionBundle = Effect.fn("scripts.checkActionBundle")(function*() {
     yield* buildTempBundle(actionRoot, tempBundlePath)
     const trackedBundle = yield* readBytes(trackedBundlePath)
     const tempBundle = yield* readBytes(tempBundlePath)
-    if (!bytesEqual(trackedBundle, tempBundle)) {
+    if (!bundlesEqual(trackedBundle, tempBundle)) {
       return yield* Effect.fail(new Error(staleBundleMessage))
     }
   })

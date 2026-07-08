@@ -7,14 +7,8 @@
     "commit": "abc123",
     "tag": "v0.1.0"
   },
-  "build": {
-    "npmPackage": {
-      "id": "package",
-      "path": ".",
-      "consumers": [
-        "npm"
-      ]
-    }
+  "npmPackage": {
+    "path": "."
   },
   "publish": {
     "npm": {
@@ -37,6 +31,5 @@
       "prerelease": false
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }

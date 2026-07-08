@@ -1,18 +1,49 @@
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
-import { ReleaseIntent } from "../domain/release.js"
+import * as Schema from "effect/Schema"
+import { parseJsonAs } from "../pipeline/json.js"
 import { ConfigParseError, ConfigReadError, ConfigValidationError } from "./errors.js"
-import { decodeReleaseConfig, DEFAULT_CONFIG_PATH } from "./schema.js"
+import { decodeReleaseConfig, DEFAULT_CONFIG_PATH, type ReleaseIntent } from "./schema.js"
 
-export type * from "../types/effect-internal.js"
 
 const forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"])
-const forbiddenTopLevelConfigFields = new Set(["identity", "targets", "artifactRecipes", "evidenceDirectory"])
-
+const forbiddenTopLevelConfigFields = new Set([
+  "identity",
+  "targets",
+  "artifactRecipes",
+  "build",
+  "evidenceDirectory",
+  "strict"
+])
 const isRecord = (value: unknown): value is { readonly [key: string]: unknown } =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-const findForbiddenConfigField = (value: unknown, fieldPath: string = "$"): string | undefined => {
+const removedFieldHint = (parentPath: string, key: string): string | undefined => {
+  if (key === "outputs") {
+    return "Use builds[].targets plus a build-level output template; include {ext} for platform executable extensions."
+  }
+  if (key === "consumers") {
+    return "Consumer wiring was removed; publish sections select artifacts with catalog filters and optional ids."
+  }
+  if (key === "downloadUrl") {
+    return "Download URLs are derived from publish.github.repository or supplied as a section-level catalog URL."
+  }
+  if (parentPath === "$.project" && key === "package") {
+    return "Use project.packageName for package identity, or publish.npm.packageName for npm publishing."
+  }
+  if (parentPath === "$" && key === "strict") {
+    return "Strict mode was removed; reviewable operations now encode validation behavior directly."
+  }
+  if (parentPath === "$.npmPackage" && key === "id") {
+    return "The npm package artifact id is fixed as npm-package."
+  }
+  return undefined
+}
+
+const findForbiddenConfigField = (
+  value: unknown,
+  fieldPath: string = "$"
+): { readonly field: string; readonly hint: string } | undefined => {
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
       const nested = findForbiddenConfigField(item, `${fieldPath}[${index}]`)
@@ -26,8 +57,18 @@ const findForbiddenConfigField = (value: unknown, fieldPath: string = "$"): stri
     return undefined
   }
   for (const [key, item] of Object.entries(value)) {
+    const removedHint = removedFieldHint(fieldPath, key)
+    if (removedHint !== undefined) {
+      return {
+        field: fieldPath === "$" ? key : `${fieldPath}.${key}`,
+        hint: removedHint
+      }
+    }
     if (forbiddenConfigFields.has(key) || (fieldPath === "$" && forbiddenTopLevelConfigFields.has(key))) {
-      return fieldPath === "$" ? key : `${fieldPath}.${key}`
+      return {
+        field: fieldPath === "$" ? key : `${fieldPath}.${key}`,
+        hint: "Use the compact project/build/publish config shape."
+      }
     }
     const nested = findForbiddenConfigField(item, `${fieldPath}.${key}`)
     if (nested !== undefined) {
@@ -38,22 +79,23 @@ const findForbiddenConfigField = (value: unknown, fieldPath: string = "$"): stri
 }
 
 export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(input: string, path: string = DEFAULT_CONFIG_PATH) {
-  const parsed: unknown = yield* Effect.try({
-    try: () => JSON.parse(input),
-    catch: (cause) =>
+  const parsed = yield* parseJsonAs(
+    Schema.Unknown,
+    input,
+    (cause) =>
       ConfigParseError.make({
         path,
         reason: "Release config is not valid JSON.",
         cause
       })
-  })
+  )
 
   const forbiddenField = findForbiddenConfigField(parsed)
   if (forbiddenField !== undefined) {
     return yield* Effect.fail(
       ConfigValidationError.make({
         path,
-        reason: `Release config uses removed legacy field ${forbiddenField}. Use the compact project/build/publish config shape.`
+        reason: `Release config uses removed field ${forbiddenField.field}. ${forbiddenField.hint}`
       })
     )
   }

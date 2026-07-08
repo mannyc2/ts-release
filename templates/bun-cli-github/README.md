@@ -9,6 +9,6 @@ Before planning or running the release, stage the executable artifacts:
 bun run cli build --config release.config.json
 ```
 
-The `id` fields are project-local identifiers. Rename the recipe, outputs,
-entrypoint, and paths to match your CLI; ts-release uses those values as data
-when it builds the release plan.
+The `id` fields are project-local identifiers. Rename the build, target matrix,
+entrypoint, and output template to match your CLI; ts-release uses those values
+as data when it builds the release plan.

@@ -1,6 +1,6 @@
 {
   "name": "@mannyc1/ts-release",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "type": "module",
   "packageManager": "bun@1.3.14",
   "description": "Portable artifact and package-manager distribution planning for TypeScript projects.",
@@ -58,6 +58,7 @@
     "test:coverage": "bun test --coverage",
     "check:package-exports": "bun run scripts/check-package-exports.ts",
     "check:effect-imports": "bun run scripts/check-effect-imports.ts",
+    "check:import-rules": "bun run scripts/check-import-rules.ts",
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",
     "check:readme": "bun run scripts/check-readme.ts",
@@ -66,22 +67,22 @@
     "check:self-release-live": "bun run apps/release-ts/scripts/check-self-release-live-readiness.ts",
     "check:self-release-artifacts": "bun run apps/release-ts/scripts/check-self-release-artifacts.ts",
     "check:action-bundle": "bun run scripts/check-action-bundle.ts",
-    "check:core": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports",
+    "check:core": "bun run check && bun test && bun audit && bun run check:effect-imports && bun run check:import-rules && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports",
     "check:app": "bun run --cwd apps/release-ts check && bun test test/cli-command.test.ts",
     "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/action-command.test.ts",
     "check:portable": "bun run check:core && bun run check:app && bun run check:action",
     "check:release": "bun run check:self-release-config && bun run check:self-release-doctor && bun run check:portable",
     "release:artifacts": "bun run cli build --config apps/release-ts/release.config.json --format text",
-    "release:catalogs": "bun run cli render --config apps/release-ts/release.config.json --execute",
+    "release:catalogs": "bun run apps/release-ts/scripts/render-catalogs.ts --config apps/release-ts/release.config.json",
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {
+    "@effect/platform-bun": "4.0.0-beta.83",
     "effect": "4.0.0-beta.83",
     "semver": "^7.8.5"
   },
   "devDependencies": {
     "@effect/bun-test": "file:vendor/effect-bun-test",
-    "@effect/platform-bun": "4.0.0-beta.83",
     "@types/bun": "^1.3.14",
     "@types/semver": "^7.7.1",
     "bun-types": "^1.3.14",

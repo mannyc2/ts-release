@@ -4,9 +4,9 @@ import * as Layer from "effect/Layer"
 import { LiveReleaseHttpLayer } from "../../../../src/host/http-live.js"
 import { makePlatformCommandRunnerLayer } from "../../../../src/host/platform.js"
 import type { PlatformCommandRunnerOptions } from "../../../../src/host/platform.js"
-import { GitHubApiLiveLayer } from "../../../../src/targets/github-api.js"
-import { LiveTargetRegistryLayer } from "../../../../src/targets/live.js"
-import { LiveBunArtifactRecipeRegistryLayer } from "./bun-artifact-recipes.js"
+import { makeArtifactStagerLayer, liveBunExecutableBuild } from "../../../../src/engine/stager.js"
+import type { BunExecutableBuild } from "../../../../src/engine/stager.js"
+import { GitHubApiLiveLayer } from "../../../../src/engine/github.js"
 
 export const makeBunCommandRuntimeLayer = (
   options: PlatformCommandRunnerOptions = {}
@@ -20,14 +20,11 @@ export const makeBunReleaseWorkflowRuntimeLayer = (
 ) =>
   Layer.mergeAll(
     makeBunCommandRuntimeLayer(options),
-    Layer.mergeAll(
-      Layer.provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer),
-      LiveTargetRegistryLayer
-    ).pipe(
+    Layer.provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer).pipe(
       Layer.provideMerge(BunHttpClient.layer),
       Layer.provideMerge(BunServices.layer)
     ),
-    LiveBunArtifactRecipeRegistryLayer
+    makeArtifactStagerLayer()
   )
 
 export const BunCommandRuntimeLayer = makeBunCommandRuntimeLayer()
@@ -35,14 +32,12 @@ export const BunCommandRuntimeLayer = makeBunCommandRuntimeLayer()
 export const BunReleaseWorkflowRuntimeLayer = makeBunReleaseWorkflowRuntimeLayer()
 
 export {
-  LiveBunArtifactRecipeRegistryLayer,
   liveBunExecutableBuild,
-  makeBunArtifactRecipeAdapter,
-  makeBunArtifactRecipeRegistryLayer
-} from "./bun-artifact-recipes.js"
+  makeArtifactStagerLayer
+}
 
 export type {
   BunExecutableBuild,
   BunExecutableBuildInput,
   BunExecutableBuildOutput
-} from "./bun-artifact-recipes.js"
+} from "../../../../src/engine/stager.js"

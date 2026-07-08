@@ -7,61 +7,24 @@
     "commit": "abc123",
     "tag": "v0.1.0"
   },
-  "build": {
-    "bun": {
+  "npmPackage": {
+    "path": "."
+  },
+  "builds": [
+    {
+      "builder": "bun",
       "id": "cli",
       "entry": "src/cli.ts",
-      "outputs": [
-        {
-          "id": "cli-linux-x64",
-          "target": "bun-linux-x64-baseline",
-          "path": "artifacts/pkg-{version}-linux-x64",
-          "consumers": [
-            "github"
-          ]
-        },
-        {
-          "id": "cli-linux-arm64",
-          "target": "bun-linux-arm64",
-          "path": "artifacts/pkg-{version}-linux-arm64",
-          "consumers": [
-            "github"
-          ]
-        },
-        {
-          "id": "cli-darwin-x64",
-          "target": "bun-darwin-x64",
-          "path": "artifacts/pkg-{version}-darwin-x64",
-          "consumers": [
-            "github"
-          ]
-        },
-        {
-          "id": "cli-darwin-arm64",
-          "target": "bun-darwin-arm64",
-          "path": "artifacts/pkg-{version}-darwin-arm64",
-          "consumers": [
-            "github"
-          ]
-        },
-        {
-          "id": "cli-windows-x64",
-          "target": "bun-windows-x64-baseline",
-          "path": "artifacts/pkg-{version}-windows-x64.exe",
-          "consumers": [
-            "github"
-          ]
-        }
-      ]
-    },
-    "npmPackage": {
-      "id": "package",
-      "path": ".",
-      "consumers": [
-        "npm"
-      ]
+      "targets": [
+        "linux-x64",
+        "linux-arm64",
+        "darwin-x64",
+        "darwin-arm64",
+        "windows-x64"
+      ],
+      "output": "artifacts/pkg-{version}-{targetTriple}{ext}"
     }
-  },
+  ],
   "publish": {
     "npm": {
       "registry": "https://registry.npmjs.org",
@@ -83,6 +46,5 @@
       "prerelease": false
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }

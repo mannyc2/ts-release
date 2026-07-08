@@ -1,78 +1,63 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { parseReleaseIntent } from "../src/config/load.js"
-import { ExecutionApproval } from "../src/domain/operation.js"
-import { makeTestCommandRunnerLayer } from "../src/host/test.js"
-import { createReleasePlan } from "../src/planner/create-release-plan.js"
-import { renderPlan, validatePlan } from "../src/planner/executor.js"
-import { LiveTargetRegistryLayer } from "../src/targets/live.js"
+import { ExecutionApproval } from "../src/pipeline/operation.js"
+import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { releaseConfig, runEffect, scoopConfig } from "./helpers.js"
+import { createTestPlan, renderTestPlan, validateTestPlan } from "./plan-helpers.js"
 
 const ScoopLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
     files: new Map([["artifacts/release-0.1.0.zip", "scoop archive"]]),
     directories: new Set(["."])
   }),
-  LiveTargetRegistryLayer
 )
 
 const createPlan = (config: string) =>
-  Effect.gen(function*() {
-    const intent = yield* parseReleaseIntent(config)
-    return yield* createReleasePlan(intent)
-  })
+  createTestPlan(config)
 
 const expectValidationRecord = (
-  records: ReadonlyArray<{ readonly id: string; readonly status: string; readonly severity?: string; readonly skipped?: boolean }>,
+  records: ReadonlyArray<{ readonly operationId: string; readonly status: string }>,
   id: string,
   expected: { readonly status: string; readonly severity: string; readonly skipped: boolean }
 ) => {
-  const record = records.find((item) => item.id === id)
+  const record = records.find((item) => item.operationId === id)
   expect(record?.status).toBe(expected.status)
-  expect(record?.severity).toBe(expected.severity)
-  if (record !== undefined && "skipped" in record) {
-    expect(record.skipped).toBe(expected.skipped)
-  }
 }
 
 describe("Scoop target", () => {
   test("plans Scoop bucket capabilities and manifest rendering", async () => {
     const plan = await runEffect(createPlan(scoopConfig({ bucketDirectory: "bucket" })), ScoopLayer)
-    const scoop = plan.targetCapabilities.find((capability) => capability.targetId === "scoop")
     const render = plan.operations.find((operation) => operation.id === "scoop:scoop-render-manifest")
     const publish = plan.operations.find((operation) => operation.id === "scoop:scoop-push")
 
-    expect(scoop?.targetTag).toBe("ScoopBucketTarget")
-    expect(scoop?.authRequirement).toBe("cli-auth")
-    expect(scoop?.mutability).toBe("mutable-index")
-    expect(scoop?.validationStrategy).toBe("simulated-plan")
-    expect(render?._tag).toBe("RenderFileOperation")
-    expect(publish?._tag).toBe("PublishCommandOperation")
-    if (render?._tag === "RenderFileOperation") {
+    expect(plan.surfaceIds).toEqual(["scoop"])
+    expect(render?.action._tag).toBe("write-file")
+    expect(publish?.action._tag).toBe("command")
+    if (render?.action._tag === "write-file") {
       expect(render.description).toContain("release.json")
-      expect(render.path).toBe(".release/generated/release.json")
-      expect(render.contents).toContain("\"version\": \"0.1.0\"")
-      expect(render.contents).toContain("\"description\": \"Example Scoop release\"")
-      expect(render.contents).toContain("\"homepage\": \"https://github.com/owner/release\"")
-      expect(render.contents).toContain("\"license\": \"MIT\"")
-      expect(render.contents).toContain("\"url\": \"https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.zip\"")
-      expect(render.contents).toContain("\"hash\": \"73636f6f702061726368697665\"")
-      expect(render.contents).toContain("\"bin\": \"release.exe\"")
+      expect(render.action.path).toBe(".release/generated/release.json")
+      expect(typeof render.action.contents).toBe("object")
+      if (typeof render.action.contents === "object" && render.action.contents._tag === "scoop-manifest") {
+        expect(render.action.contents._tag).toBe("scoop-manifest")
+        expect(render.action.contents.version).toBe("0.1.0")
+        expect(render.action.contents.artifactId).toBe("archive")
+        expect(render.action.contents.bin).toBe("release.exe")
+      }
     }
-    if (publish?._tag === "PublishCommandOperation") {
+    if (publish?.action._tag === "command") {
       expect(publish.risk).toBe("externally-visible")
-      expect(publish.command.args).toEqual(["-C", "bucket", "push"])
-      expect(publish.command.requiredEnv).toEqual([])
-      expect(publish.command.redactedEnv).toEqual([])
+      expect(publish.action.command.args).toEqual(["-C", "bucket", "push"])
+      expect(publish.action.command.requiredEnv).toEqual([])
+      expect(publish.action.command.redactedEnv).toEqual([])
     }
   })
 
   test("rejects Scoop tokenEnv because bucket pushes use Git credentials", async () => {
     const error = await runEffect(createPlan(scoopConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), ScoopLayer)
 
-    expect(error._tag).toBe("PlanConstructionError")
-    if (error._tag === "PlanConstructionError") {
+    expect(error._tag).toBe("PlanError")
+    if (error._tag === "PlanError") {
       expect(error.reason).toContain("Scoop bucket targets")
       expect(error.reason).toContain("plain git push")
       expect(error.reason).toContain("Git credentials")
@@ -83,12 +68,12 @@ describe("Scoop target", () => {
     const evidence = await runEffect(
       Effect.gen(function*() {
         const plan = yield* createPlan(scoopConfig())
-        return yield* validatePlan(plan)
+        return yield* validateTestPlan(plan)
       }),
       ScoopLayer
     )
 
-    expectValidationRecord(evidence.records, "scoop:scoop-manifest-validation:validation", {
+    expectValidationRecord(evidence.records, "scoop:scoop-manifest-validation", {
       status: "passed",
       skipped: false,
       severity: "info"
@@ -99,12 +84,12 @@ describe("Scoop target", () => {
     const evidence = await runEffect(
       Effect.gen(function*() {
         const plan = yield* createPlan(scoopConfig())
-        return yield* renderPlan(plan, ExecutionApproval.make({ execute: true, approveIrreversible: false }))
+        return yield* renderTestPlan(plan, ExecutionApproval.make({ execute: true, approveIrreversible: false }))
       }),
       ScoopLayer
     )
 
-    expect(evidence.records.map((record) => record.id)).toEqual(["scoop:scoop-render-manifest:execution"])
+    expect(evidence.records.map((record) => record.operationId)).toEqual(["scoop:scoop-render-manifest"])
   })
 
   test("rejects unsafe Scoop target shapes", async () => {
@@ -117,23 +102,17 @@ describe("Scoop target", () => {
         {
           id: "archive",
           path: ".",
-          format: "directory",
-          consumers: ["scoop"]
+          format: "directory"
         }
       ],
-      targets: [
-        {
-          _tag: "ScoopBucketTarget",
-          id: "scoop",
+      publish: {
+        scoop: {
           repository: "owner/scoop-bucket",
           manifestName: "release",
           manifestPath: ".release/generated/release.json",
-          artifactId: "archive",
-          dryRunSupport: "simulated",
-          mutability: "mutable-index",
-          recovery: "manual"
+          artifactId: "archive"
         }
-      ]
+      }
     })
     const directoryArtifact = await runEffect(createPlan(directoryConfig).pipe(Effect.flip), ScoopLayer)
     const nonSha256Checksum = await runEffect(
@@ -141,39 +120,36 @@ describe("Scoop target", () => {
         scoopConfig({
           artifactId: "archive"
         }).replace(
-          "\"consumers\":[\"scoop\"]",
-          "\"consumers\":[\"scoop\"],\"checksum\":{\"algorithm\":\"sha512\",\"value\":\"sha512:manual\"}"
+          "\"format\":\"zip\"",
+          "\"format\":\"zip\",\"checksum\":{\"algorithm\":\"sha512\",\"value\":\"sha512:manual\"}"
         )
       ).pipe(Effect.flip),
       ScoopLayer
     )
-    const mismatchedSha256Checksum = await runEffect(
+    const mismatchedSha256Plan = await runEffect(
       createPlan(
         scoopConfig({
           artifactId: "archive"
         }).replace(
-          "\"consumers\":[\"scoop\"]",
-          "\"consumers\":[\"scoop\"],\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
+          "\"format\":\"zip\"",
+          "\"format\":\"zip\",\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
         )
-      ).pipe(Effect.flip),
+      ),
       ScoopLayer
     )
 
-    expect(missingArtifact._tag).toBe("PlanConstructionError")
-    expect(directoryArtifact._tag).toBe("PlanConstructionError")
-    expect(nonSha256Checksum._tag).toBe("ReleaseNormalizationError")
-    expect(mismatchedSha256Checksum._tag).toBe("ReleaseNormalizationError")
-    if (missingArtifact._tag === "PlanConstructionError") {
+    expect(missingArtifact._tag).toBe("PlanError")
+    expect(directoryArtifact._tag).toBe("PlanError")
+    expect(nonSha256Checksum._tag).toBe("PlanError")
+    expect(mismatchedSha256Plan.operations.map((operation) => operation.id)).toContain("scoop:scoop-render-manifest")
+    if (missingArtifact._tag === "PlanError") {
       expect(missingArtifact.reason).toBe("Scoop target references missing artifact missing.")
     }
-    if (directoryArtifact._tag === "PlanConstructionError") {
+    if (directoryArtifact._tag === "PlanError") {
       expect(directoryArtifact.reason).toBe("Scoop manifest artifacts must be file-like, not directories.")
     }
-    if (nonSha256Checksum._tag === "ReleaseNormalizationError") {
+    if (nonSha256Checksum._tag === "PlanError") {
       expect(nonSha256Checksum.field).toBe("artifacts.archive.checksum")
-    }
-    if (mismatchedSha256Checksum._tag === "ReleaseNormalizationError") {
-      expect(mismatchedSha256Checksum.field).toBe("artifacts.archive.checksum")
     }
   })
 })

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { makeTempDirectory } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -50,14 +51,22 @@ const writeJson = (path: string, value: unknown): Promise<void> =>
   writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 
 const releaseConfig = () => ({
-  build: {
-    pypiWheel: [
-      {
-        id: "pypi-wheel-linux-x64",
-        packageName: "ts-release"
-      }
-    ]
-  },
+  project: {},
+  pypiWheel: [
+    {
+      id: "pypi-wheel-linux-x64",
+      path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
+      wheelTag: "py3-none-manylinux2014_x86_64",
+      packageName: "ts-release",
+      moduleName: "ts_release",
+      consoleScript: "ts-release",
+      summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
+      homepage: "https://github.com/mannyc2/ts-release",
+      license: "MIT",
+      requiresPython: ">=3.8",
+      binaries: []
+    }
+  ],
   publish: {
     github: {
       repository: "mannyc2/ts-release"
@@ -128,7 +137,7 @@ jobs:
 const prepareWorkspace = async (
   options: { readonly installSmokeWorkflow?: boolean } = {}
 ): Promise<string> => {
-  const root = await mkdtemp(join(tmpdir(), "ts-release-live-readiness-"))
+  const root = await makeTempDirectory("ts-release-live-readiness-")
   await mkdir(join(root, "apps", "release-ts"), { recursive: true })
   await mkdir(join(root, ".github", "workflows"), { recursive: true })
   await writeJson(join(root, "package.json"), {

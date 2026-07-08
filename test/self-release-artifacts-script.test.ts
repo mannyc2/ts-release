@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { makeTempDirectory } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -52,47 +53,40 @@ const fakeWheel = (wheelTag: string): string => [
 ].join("\n")
 
 const releaseConfig = () => ({
-  build: {
-    bun: {
-      id: "release-ts-cli",
+  project: {},
+  builds: [
+    {
+      builder: "bun",
+      id: "cli",
       entry: "apps/release-ts/src/cli/main.ts",
-      outputs: [
-        {
-          id: "cli-darwin-arm64",
-          target: "bun-darwin-arm64",
-          path: ".release/artifacts/ts-release-{version}-darwin-arm64",
-          consumers: ["github", "homebrew"]
-        },
-        {
-          id: "cli-windows-x64",
-          target: "bun-windows-x64-baseline",
-          path: ".release/artifacts/ts-release-{version}-windows-x64.exe",
-          consumers: ["github", "scoop"]
-        }
-      ]
+      targets: ["darwin-arm64", "windows-x64"],
+      output: ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
+      binaryName: "ts-release",
+      installPath: "bin/ts-release"
     },
-    pypiWheel: [
-      {
-        id: "pypi-wheel-linux-x64",
-        path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-        wheelTag: "py3-none-manylinux2014_x86_64",
-        packageName: "ts-release",
-        moduleName: "ts_release",
-        consoleScript: "ts-release",
-        summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-        homepage: "https://github.com/mannyc2/ts-release",
-        license: "MIT",
-        requiresPython: ">=3.8",
-        binaries: [],
-        consumers: ["pypi"]
-      }
-    ]
-  },
+  ],
+  pypiWheel: [
+    {
+      id: "pypi-wheel-linux-x64",
+      path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
+      wheelTag: "py3-none-manylinux2014_x86_64",
+      packageName: "ts-release",
+      moduleName: "ts_release",
+      consoleScript: "ts-release",
+      summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
+      homepage: "https://github.com/mannyc2/ts-release",
+      license: "MIT",
+      requiresPython: ">=3.8",
+      binaries: []
+    }
+  ],
   publish: {
     homebrew: {
+      repository: "mannyc2/homebrew-ts-release",
       formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb"
     },
     scoop: {
+      repository: "mannyc2/scoop-ts-release",
       manifestPath: ".release/catalogs/scoop-ts-release/bucket/ts-release.json"
     },
     pypi: {
@@ -102,7 +96,7 @@ const releaseConfig = () => ({
 })
 
 const prepareWorkspace = async (): Promise<string> => {
-  const root = await mkdtemp(join(tmpdir(), "ts-release-artifacts-check-"))
+  const root = await makeTempDirectory("ts-release-artifacts-check-")
   await mkdir(join(root, "apps", "release-ts"), { recursive: true })
   await mkdir(join(root, ".release", "artifacts"), { recursive: true })
   await mkdir(join(root, ".release", "catalogs", "homebrew-ts-release", "Formula"), { recursive: true })

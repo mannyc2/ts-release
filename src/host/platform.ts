@@ -5,10 +5,9 @@ import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
 import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
-import { CommandSpec } from "../domain/operation.js"
+import { CommandSpec } from "../pipeline/operation.js"
 import { CommandResult, CommandRunnerError, ReleaseCommandRunner } from "./host.js"
 
-export type * from "../types/effect-internal.js"
 
 export interface PlatformCommandRunnerOptions {
   readonly root?: string | undefined
@@ -45,7 +44,7 @@ const inheritedEnvNames = [
   "RUNNER_OS"
 ]
 
-const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
+export const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
   Config.string(name).pipe(
     Effect.option,
     Effect.map(Option.getOrUndefined)
@@ -79,7 +78,7 @@ const commandEnv = Effect.fn("platform.commandEnv")(function*(command: CommandSp
   return env
 })
 
-const nowIso = Effect.fn("platform.nowIso")(function*() {
+export const nowIso = Effect.fn("platform.nowIso")(function*() {
   const millis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
   return new Date(millis).toISOString()
 })

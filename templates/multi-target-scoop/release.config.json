@@ -7,26 +7,16 @@
     "commit": "abc123",
     "tag": "v0.1.0"
   },
-  "build": {
-    "npmPackage": {
-      "id": "package",
-      "path": ".",
-      "consumers": [
-        "npm"
-      ]
-    },
-    "artifacts": [
-      {
-        "id": "archive",
-        "path": "artifacts/pkg-0.1.0.zip",
-        "format": "zip",
-        "consumers": [
-          "github",
-          "scoop"
-        ]
-      }
-    ]
+  "npmPackage": {
+    "path": "."
   },
+  "artifacts": [
+    {
+      "id": "archive",
+      "path": "artifacts/pkg-0.1.0.zip",
+      "format": "zip"
+    }
+  ],
   "publish": {
     "npm": {
       "registry": "https://registry.npmjs.org",
@@ -59,6 +49,5 @@
       "bin": "pkg.exe"
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }

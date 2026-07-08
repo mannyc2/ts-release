@@ -6,16 +6,17 @@ import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import type { ArtifactRecipeRegistry } from "../../../src/artifacts/registry.js"
-import { ReleasePlan } from "../../../src/domain/release.js"
+import type { ArtifactStager } from "../../../src/engine/stager.js"
+import { ReleasePlanDocument } from "../../../src/engine/plan-document.js"
+import * as Release from "../../../src/engine/engine.js"
 import type { ReleaseCommandRunner } from "../../../src/host/host.js"
 import type { ReleaseHttp } from "../../../src/host/http.js"
-import type { GitHubApi } from "../../../src/targets/github-api.js"
-import type { TargetRegistry } from "../../../src/targets/registry.js"
-import * as Release from "../../../src/workflows/release.js"
+import type { GitHubApi } from "../../../src/engine/github.js"
+import * as Doctor from "../../../src/workflows/doctor.js"
+import { hasParentTraversal } from "../../../src/internal/workspace-path.js"
 import { ActionOptions } from "./input.js"
 
-type ReleaseDiagnosticReport = Release.ReleaseDiagnosticReport
+type ReleaseDiagnosticReport = Doctor.ReleaseDiagnosticReport
 
 export interface ActionIo {
   readonly setOutput: (name: string, value: string) => Effect.Effect<void, unknown>
@@ -57,10 +58,9 @@ export type ActionRuntimeServices =
   | ReleaseCommandRunner
   | ReleaseHttp
   | GitHubApi
-  | ArtifactRecipeRegistry
-  | TargetRegistry
+  | ArtifactStager
 
-type PlanObserver = (plan: ReleasePlan) => void
+type PlanObserver = (plan: ReleasePlanDocument) => void
 
 const NoopPlanObserver: PlanObserver = () => {}
 
@@ -99,9 +99,6 @@ export const formatActionError = (cause: unknown): string =>
 
 const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
   path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
-
-const hasParentTraversal = (pathName: string): boolean =>
-  pathName.split(/[\\/]+/).includes("..")
 
 const isInsideWorkspace = (path: Path.Path, root: string, targetPath: string): boolean => {
   const relative = path.relative(path.resolve(root), targetPath)
@@ -182,6 +179,7 @@ const actionOptionsWithConfig = (
     failOnWarnings: options.failOnWarnings,
     ...(options.target === undefined ? {} : { target: options.target }),
     runtime: options.runtime,
+    snapshot: options.snapshot,
     execute: options.execute,
     approvePublish: options.approvePublish,
     uploadEvidence: options.uploadEvidence,
@@ -191,12 +189,14 @@ const actionOptionsWithConfig = (
 const planInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
+  snapshot: options.snapshot,
   format: options.format
 })
 
 const releaseInput = (options: ActionOptions) => ({
   root: options.root,
-  configPath: options.config
+  configPath: options.config,
+  snapshot: options.snapshot
 })
 
 const textOutputFormat = (options: ActionOptions): "json" | "text" =>
@@ -205,12 +205,14 @@ const textOutputFormat = (options: ActionOptions): "json" | "text" =>
 const buildInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
+  snapshot: options.snapshot,
   format: textOutputFormat(options)
 })
 
 const executionInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
+  snapshot: options.snapshot,
   execute: options.execute,
   approveIrreversible: options.approvePublish
 })
@@ -225,25 +227,39 @@ const diagnosticsInput = (options: ActionOptions) => ({
   ...(options.target === undefined ? {} : { target: options.target })
 })
 
-const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlan, planPath: string) {
-  yield* io.setOutput("release_name", plan.identity.name)
-  yield* io.setOutput("release_version", plan.identity.version)
-  yield* io.setOutput("operation_count", String(plan.operations.length))
+const operationSurfaceId = (pipeId: string): string | undefined => {
+  const parts = pipeId.split(":")
+  const surface = parts[1]
+  return (pipeId.startsWith("publish:") || pipeId.startsWith("catalog:")) && surface !== undefined
+    ? surface
+    : undefined
+}
+
+const surfaceCount = (plan: ReleasePlanDocument): number =>
+  new Set(plan.state.operations.flatMap((operation) => {
+    const surface = operationSurfaceId(operation.pipeId)
+    return surface === undefined ? [] : [surface]
+  })).size
+
+const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlanDocument, planPath: string) {
+  yield* io.setOutput("release_name", plan.state.identity.name)
+  yield* io.setOutput("release_version", plan.state.identity.version)
+  yield* io.setOutput("operation_count", String(plan.state.operations.length))
   yield* io.setOutput(
     "irreversible_operation_count",
-    String(plan.operations.filter((operation) => operation.risk === "irreversible").length)
+    String(plan.state.operations.filter((operation) => operation.risk === "irreversible").length)
   )
-  yield* io.setOutput("target_count", String(plan.targets.length))
+  yield* io.setOutput("target_count", String(surfaceCount(plan)))
   yield* io.setOutput("evidence_directory", plan.evidenceDirectory)
   yield* io.setOutput("plan_path", planPath)
 })
 
 const outputEvidenceDirectory = Effect.fn("action.outputEvidenceDirectory")(function*(
   io: ActionIo,
-  plan: ReleasePlan
+  plan: ReleasePlanDocument
 ) {
-  yield* io.setOutput("release_name", plan.identity.name)
-  yield* io.setOutput("release_version", plan.identity.version)
+  yield* io.setOutput("release_name", plan.state.identity.name)
+  yield* io.setOutput("release_version", plan.state.identity.version)
   yield* io.setOutput("evidence_directory", plan.evidenceDirectory)
 })
 
@@ -301,7 +317,7 @@ const uploadEvidence = Effect.fn("action.uploadEvidence")(function*(
   options: ActionOptions,
   io: ActionIo,
   artifactClient: ActionArtifactClient,
-  plan: ReleasePlan | undefined
+  plan: ReleasePlanDocument | undefined
 ) {
   if (!options.uploadEvidence) {
     return
@@ -333,7 +349,7 @@ const withEvidenceUpload = <A, E, R>(
   options: ActionOptions,
   io: ActionIo,
   artifactClient: ActionArtifactClient,
-  planRef: () => ReleasePlan | undefined,
+  planRef: () => ReleasePlanDocument | undefined,
   effect: Effect.Effect<A, E, R>
 ) =>
   effect.pipe(
@@ -397,8 +413,8 @@ const runDiagnostics = Effect.fn("action.runDiagnostics")(function*(
   options: ActionOptions,
   io: ActionIo
 ) {
-  const report = yield* Release.doctorRelease(diagnosticsInput(options))
-  const rendered = Release.renderReleaseDiagnostics(report, diagnosticsFormat(options))
+  const report = yield* Doctor.doctorRelease(diagnosticsInput(options))
+  const rendered = Doctor.renderReleaseDiagnostics(report, diagnosticsFormat(options))
   if (options.writeStepSummary) {
     yield* io.appendSummary(rendered)
   }
@@ -432,6 +448,15 @@ const runRelease = Effect.fn("action.runRelease")(function*(
   const plan = yield* Release.planRelease(releaseInput(options))
   observePlan(plan)
   yield* outputEvidenceDirectory(io, plan)
+  if (!options.execute) {
+    if (options.writeStepSummary) {
+      yield* io.appendSummary(
+        `${Release.renderReleasePlan(plan, "markdown").trimEnd()}\n\nrelease planned only; set execute: true to run approved operations.\n`
+      )
+    }
+    yield* io.setOutput("status", "passed")
+    return plan
+  }
   yield* Release.writeReleaseEvidence(plan, executionInput(options))
   if (options.writeStepSummary) {
     yield* io.appendSummary(`## ts-release release\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/evidence.json\n`)
@@ -449,8 +474,8 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   const config = yield* workspaceConfigPath(path, options, options.config)
   const safeOptions = actionOptionsWithConfig(options, config)
   yield* ensureRuntime(safeOptions)
-  let planForUpload: ReleasePlan | undefined
-  const rememberPlan = (plan: ReleasePlan): ReleasePlan => {
+  let planForUpload: ReleasePlanDocument | undefined
+  const rememberPlan = (plan: ReleasePlanDocument): ReleasePlanDocument => {
     planForUpload = plan
     return plan
   }

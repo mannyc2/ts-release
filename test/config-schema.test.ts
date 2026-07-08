@@ -16,7 +16,7 @@ describe("config schema", () => {
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(minimalConfig)
       expect(intent.project.name).toBe("release")
-      expect(intent.build?.npmPackage).toBeDefined()
+      expect(intent.npmPackage).toBeDefined()
       expect(intent.publish.github).toBeDefined()
       expect(intent.publish.npm).toBeDefined()
     }))
@@ -29,12 +29,47 @@ describe("config schema", () => {
           tagTemplate: "v{version}"
         },
         publish: {},
-        strict: true,
         evidence: ".release/evidence/{version}"
       }))
 
       expect(intent.project.commit).toBe("HEAD")
       expect(intent.project.tagTemplate).toBe("v{version}")
+    }))
+
+  it.effect("decodes Plan 126 config additions", () =>
+    Effect.gen(function*() {
+      const intent = yield* parseReleaseIntent(JSON.stringify({
+        project: {
+          name: "release",
+          commit: "abc123",
+          tag: "v1.2.3"
+        },
+        versionFrom: "git-tag",
+        archives: [
+          {
+            formats: ["tar.gz", "zip"],
+            wrapInDirectory: true
+          }
+        ],
+        checksum: {
+          algorithm: "sha512"
+        },
+        publish: {
+          github: {
+            repository: "owner/repo",
+            prerelease: "auto"
+          }
+        }
+      }))
+
+      expect(intent.versionFrom).toBe("git-tag")
+      expect(intent.archives?.[0]?.formats).toEqual(["tar.gz", "zip"])
+      expect(intent.checksum?.algorithm).toBe("sha512")
+      const github = intent.publish.github
+      expect(typeof github).toBe("object")
+      if (github !== undefined && typeof github === "object") {
+        expect(github.prerelease).toBe("auto")
+      }
     }))
 
   it.effect("decodes structured npm trusted publishing config", () =>
@@ -126,6 +161,22 @@ describe("config schema", () => {
 
   const legacyFieldConfigs: ReadonlyArray<readonly [string, string]> = [
     ["_tag", minimalConfig.replace("\"project\":{", "\"_tag\":\"NpmRegistryTarget\",\"project\":{")],
+    ["build", JSON.stringify({
+      project: {
+        name: "release",
+        packageName: "release",
+        version: "0.1.0",
+        commit: "abc123",
+        tag: "v0.1.0"
+      },
+      build: {
+        npmPackage: {
+          id: "package",
+          path: "."
+        }
+      },
+      publish: {}
+    })],
     ["dryRunSupport", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"dryRunSupport\":\"native\",")],
     ["mutability", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"mutability\":\"immutable\",")],
     ["recovery", minimalConfig.replace("\"publish\":{\"npm\":{", "\"publish\":{\"npm\":{\"recovery\":\"manual\",")]
@@ -145,7 +196,24 @@ describe("config schema", () => {
     ["release version", minimalConfig.replace("\"version\":\"0.1.0\"", "\"version\":\"\"")],
     ["git commit", minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"\"")],
     ["git tag", minimalConfig.replace("\"tag\":\"v0.1.0\"", "\"tag\":\"\"")],
-    ["artifact id", minimalConfig.replace("\"id\":\"package\"", "\"id\":\"\"")],
+    ["artifact id", JSON.stringify({
+      project: {
+        name: "release",
+        packageName: "release",
+        version: "0.1.0",
+        commit: "abc123",
+        tag: "v0.1.0"
+      },
+      artifacts: [
+        {
+          id: "",
+          path: "artifacts/release.tgz",
+          format: "tarball"
+        }
+      ],
+      publish: {},
+      evidence: ".release/evidence"
+    })],
     ["npm package name", minimalConfig.replace("\"packageName\":\"release\",\"packagePath\"", "\"packageName\":\"\",\"packagePath\"")]
   ]
 
@@ -184,7 +252,11 @@ describe("config schema", () => {
         expect(isRecord(properties)).toBe(true)
         if (isRecord(properties)) {
           expect(properties.project).toBeDefined()
-          expect(properties.build).toBeDefined()
+          expect(properties.versionFrom).toBeDefined()
+          expect(properties.builds).toBeDefined()
+          expect(properties.npmPackage).toBeDefined()
+          expect(properties.archives).toBeDefined()
+          expect(properties.checksum).toBeDefined()
           expect(properties.publish).toBeDefined()
           expect(properties.$schema).toBeDefined()
         }
@@ -192,6 +264,8 @@ describe("config schema", () => {
     }
 
     const serialized = JSON.stringify(schema)
+    expect(serialized).toContain("ReleaseConfigArchive")
+    expect(serialized).toContain("ReleaseConfigChecksum")
     expect(serialized).toContain("ReleaseConfigNpmPublish")
     expect(serialized).toContain("ReleaseConfigGitHubPublish")
     expect(serialized).not.toContain("NpmRegistryTarget")

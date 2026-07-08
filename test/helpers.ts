@@ -1,13 +1,82 @@
 import { expect } from "@effect/bun-test"
+import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtemp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as ConfigProvider from "effect/ConfigProvider"
 import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
-import { CommandResult, CommandRunnerError, ReleaseCommandRunnerTestLayer } from "../src/host/host.js"
-import { commandKey } from "../src/host/test.js"
-import type { CommandSpec } from "../src/domain/operation.js"
-import { GitHubApi, GitHubApiError } from "../src/targets/github-api.js"
+import type * as Scope from "effect/Scope"
+import { CommandResult, CommandRunnerError } from "../src/host/host.js"
+import type { CommandSpec } from "../src/pipeline/operation.js"
+import { GitHubApi, GitHubApiError } from "../src/engine/github.js"
+import { ReleaseIdentity } from "../src/pipeline/state.js"
+import { commandKey, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
+
+export {
+  commandKey,
+  httpRequestKey,
+  makeTestCommandRunnerLayer,
+  makeTestReleaseHttpLayer,
+  ReleaseCommandRunnerTestLayer
+} from "./host-fakes.js"
+export type {
+  TestCommandResponse,
+  TestCommandRunnerOptions,
+  TestHttpResponse,
+  TestReleaseHttpOptions
+} from "./host-fakes.js"
+
+export const makePipelineIdentity = (
+  overrides: Partial<ConstructorParameters<typeof ReleaseIdentity>[0]> = {}
+): ReleaseIdentity =>
+  ReleaseIdentity.make({
+    name: "release",
+    normalizedName: "release",
+    version: "0.1.0",
+    commit: "abc123",
+    shortCommit: "abc123",
+    tag: "v0.1.0",
+    versionSource: "config",
+    snapshot: false,
+    ...overrides
+  })
+
+export const makeTempDirectory = (prefix: string): Promise<string> => mkdtemp(join(tmpdir(), prefix))
+
+export const makeTempDirectorySync = (prefix: string): string => mkdtempSync(join(tmpdir(), prefix))
+
+export const withTempDirectory = <A, E, R>(
+  prefix: string,
+  use: (root: string) => Effect.Effect<A, E, R>
+): Effect.Effect<A, E, R | Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.promise(() => mkdtemp(join(tmpdir(), prefix))),
+    (root) => Effect.promise(() => rm(root, { recursive: true, force: true })).pipe(Effect.orDie)
+  ).pipe(Effect.flatMap(use))
+
+export const withTempDirectoryPromise = async <A>(
+  prefix: string,
+  use: (root: string) => Promise<A>
+): Promise<A> => {
+  const root = await mkdtemp(join(tmpdir(), prefix))
+  try {
+    return await use(root)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
+export const withTempDirectorySync = <A>(prefix: string, use: (root: string) => A): A => {
+  const root = mkdtempSync(join(tmpdir(), prefix))
+  try {
+    return use(root)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+}
 
 export const runEffect = <A, E, R>(
   effect: Effect.Effect<A, E, R>,
@@ -55,12 +124,8 @@ export const minimalConfig = JSON.stringify({
     commit: "abc123",
     tag: "v0.1.0"
   },
-  build: {
-    npmPackage: {
-      id: "package",
-      path: ".",
-      consumers: ["npm"]
-    }
+  npmPackage: {
+    path: "."
   },
   publish: {
     npm: {
@@ -75,7 +140,6 @@ export const minimalConfig = JSON.stringify({
       draft: true
     }
   },
-  strict: true,
   evidence: ".release/evidence"
 })
 
@@ -87,7 +151,6 @@ export const noOpConfig = JSON.stringify({
     tag: "v0.1.0"
   },
   publish: {},
-  strict: true,
   evidence: ".release/evidence"
 })
 
@@ -99,21 +162,16 @@ export const partialWorkflowConfig = JSON.stringify({
     commit: "abc123",
     tag: "v0.1.0"
   },
-  build: {
-    npmPackage: {
-      id: "package",
-      path: ".",
-      consumers: ["npm"]
-    },
-    artifacts: [
-      {
-        id: "archive",
-        path: "artifacts/release-0.1.0.tgz",
-        format: "tarball",
-        consumers: ["homebrew"]
-      }
-    ]
+  npmPackage: {
+    path: "."
   },
+  artifacts: [
+    {
+      id: "archive",
+      path: "artifacts/release-0.1.0.tgz",
+      format: "tarball"
+    }
+  ],
   publish: {
     homebrew: {
       repository: "owner/homebrew-tap",
@@ -128,7 +186,6 @@ export const partialWorkflowConfig = JSON.stringify({
       tokenEnv: "NPM_TOKEN"
     }
   },
-  strict: true,
   evidence: ".release/evidence"
 })
 
@@ -208,19 +265,14 @@ export const releaseIdentity = (overrides: Record<string, unknown> = {}) => ({
 })
 
 const compactProjectFromIdentity = (identity: Record<string, unknown>): Record<string, unknown> => {
-  if (identity._tag === "PackageManifestReleaseIdentitySource") {
-    return {
-      ...(typeof identity.packagePath === "string" ? { packagePath: identity.packagePath } : {}),
-      ...(typeof identity.commit === "string" ? { commit: identity.commit } : {}),
-      ...(typeof identity.tagTemplate === "string" ? { tagTemplate: identity.tagTemplate } : {}),
-      ...(typeof identity.notes === "string" ? { notes: identity.notes } : {})
-    }
-  }
   return {
     ...(typeof identity.name === "string" ? { name: identity.name, packageName: identity.name } : {}),
+    ...(typeof identity.packageName === "string" ? { packageName: identity.packageName } : {}),
     ...(typeof identity.version === "string" ? { version: identity.version } : {}),
+    ...(typeof identity.packagePath === "string" ? { packagePath: identity.packagePath } : {}),
     ...(typeof identity.commit === "string" ? { commit: identity.commit } : {}),
     ...(typeof identity.tag === "string" ? { tag: identity.tag } : {}),
+    ...(typeof identity.tagTemplate === "string" ? { tagTemplate: identity.tagTemplate } : {}),
     ...(typeof identity.notes === "string" ? { notes: identity.notes } : {})
   }
 }
@@ -238,131 +290,54 @@ const copyFields = (
   return copied
 }
 
-const compactPublishFromTargets = (targets: ReadonlyArray<Record<string, unknown>>): Record<string, unknown> => {
-  const publish: Record<string, unknown> = {}
-  for (const target of targets) {
-    if (target._tag === "NpmRegistryTarget") {
-      publish.npm = copyFields(target, [
-        "registry",
-        "packageName",
-        "packagePath",
-        "tokenEnv",
-        "trustedPublishing",
-        "access",
-        "provenance"
-      ])
-    }
-    if (target._tag === "GitHubReleaseTarget") {
-      publish.github = copyFields(target, ["repository", "tokenEnv", "draft", "prerelease"])
-    }
-    if (target._tag === "HomebrewTapTarget") {
-      publish.homebrew = copyFields(target, [
-        "repository",
-        "formulaName",
-        "formulaPath",
-        "artifactId",
-        "artifactIds",
-        "homepage",
-        "description",
-        "url",
-        "tapDirectory",
-        "installPath",
-        "tokenEnv"
-      ])
-    }
-    if (target._tag === "PyPiRegistryTarget") {
-      publish.pypi = copyFields(target, [
-        "repositoryUrl",
-        "pythonExecutable",
-        "usernameEnv",
-        "passwordEnv",
-        "trustedPublishing"
-      ])
-    }
-    if (target._tag === "ScoopBucketTarget") {
-      publish.scoop = copyFields(target, [
-        "repository",
-        "manifestName",
-        "manifestPath",
-        "artifactId",
-        "homepage",
-        "description",
-        "license",
-        "url",
-        "bin",
-        "bucketDirectory",
-        "tokenEnv"
-      ])
-    }
-  }
-  return publish
-}
-
-const compactBuildFromOldInputs = (
-  artifacts: ReadonlyArray<Record<string, unknown>>,
-  artifactRecipes: ReadonlyArray<Record<string, unknown>> | undefined
-): Record<string, unknown> | undefined => {
-  const build: Record<string, unknown> = {}
-  if (artifacts.length > 0) {
-    build.artifacts = artifacts
-  }
-  const pypiWheels: Array<Record<string, unknown>> = []
-  for (const recipe of artifactRecipes ?? []) {
-    if (recipe._tag === "BunExecutableArtifactRecipe") {
-      build.bun = {
-        ...copyFields(recipe, ["id", "minify"]),
-        entry: recipe.entrypoint,
-        outputs: recipe.outputs
-      }
-    }
-    if (recipe._tag === "PyPiWheelArtifactRecipe") {
-      pypiWheels.push(copyFields(recipe, [
-        "id",
-        "path",
-        "wheelTag",
-        "packageName",
-        "moduleName",
-        "consoleScript",
-        "summary",
-        "homepage",
-        "license",
-        "requiresPython",
-        "binaries",
-        "consumers"
-      ]))
-    }
-  }
-  if (pypiWheels.length === 1) {
-    build.pypiWheel = pypiWheels[0]
-  }
-  if (pypiWheels.length > 1) {
-    build.pypiWheel = pypiWheels
-  }
-  return Object.keys(build).length === 0 ? undefined : build
-}
+const isRecordArray = (
+  value: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>
+): value is ReadonlyArray<Record<string, unknown>> =>
+  Array.isArray(value)
 
 export const releaseConfig = ({
   identity = releaseIdentity(),
+  versionFrom,
   artifacts,
-  artifactRecipes,
-  targets,
-  strict = true,
+  builds,
+  npmPackage,
+  pypiWheel,
+  archives,
+  checksum,
+  publish = {},
   evidenceDirectory = ".release/evidence"
 }: {
   readonly identity?: Record<string, unknown>
+  readonly versionFrom?: string | undefined
   readonly artifacts: ReadonlyArray<Record<string, unknown>>
-  readonly artifactRecipes?: ReadonlyArray<Record<string, unknown>>
-  readonly targets: ReadonlyArray<Record<string, unknown>>
-  readonly strict?: boolean
+  readonly builds?: ReadonlyArray<Record<string, unknown>>
+  readonly npmPackage?: boolean | Record<string, unknown>
+  readonly pypiWheel?: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>
+  readonly archives?: ReadonlyArray<Record<string, unknown>>
+  readonly checksum?: Record<string, unknown>
+  readonly publish?: Record<string, unknown>
   readonly evidenceDirectory?: string
 }) =>
   JSON.stringify({
     project: compactProjectFromIdentity(identity),
-    ...(compactBuildFromOldInputs(artifacts, artifactRecipes) === undefined
-      ? {}
-      : { build: compactBuildFromOldInputs(artifacts, artifactRecipes) }),
-    publish: compactPublishFromTargets(targets),
-    strict,
+    ...(versionFrom === undefined ? {} : { versionFrom }),
+    ...(npmPackage === undefined ? {} : {
+      npmPackage: typeof npmPackage === "object"
+        ? copyFields(npmPackage, ["path"])
+        : npmPackage
+    }),
+    ...(builds === undefined || builds.length === 0 ? {} : { builds }),
+    ...(pypiWheel === undefined ? {} : {
+      pypiWheel: isRecordArray(pypiWheel)
+        ? pypiWheel
+        : pypiWheel
+    }),
+    ...(artifacts.length === 0 ? {} : {
+      artifacts
+    }),
+    ...(archives === undefined ? {} : { archives }),
+    ...(checksum === undefined ? {} : { checksum }),
+    publish,
     evidence: evidenceDirectory
   })
 
@@ -372,14 +347,11 @@ export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>
       {
         id: "archive",
         path: "artifacts/release-0.1.0.tgz",
-        format: "tarball",
-        consumers: ["homebrew"]
+        format: "tarball"
       }
     ],
-    targets: [
-      {
-        _tag: "HomebrewTapTarget",
-        id: "homebrew",
+    publish: {
+      homebrew: {
         repository: "owner/homebrew-tap",
         formulaName: "release",
         formulaPath: ".release/generated/release.rb",
@@ -387,12 +359,9 @@ export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>
         homepage: "https://github.com/owner/release",
         url: "https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.tgz",
         installPath: "bin/release",
-        dryRunSupport: "simulated",
-        mutability: "mutable-index",
-        recovery: "manual",
         ...overrides
       }
-    ]
+    }
   })
 
 export const pypiConfig = (overrides: Record<string, unknown> = {}) =>
@@ -401,23 +370,17 @@ export const pypiConfig = (overrides: Record<string, unknown> = {}) =>
       {
         id: "wheel",
         path: "dist/release-0.1.0-py3-none-any.whl",
-        format: "file",
-        consumers: ["pypi"]
+        format: "file"
       }
     ],
-    targets: [
-      {
-        _tag: "PyPiRegistryTarget",
-        id: "pypi",
+    publish: {
+      pypi: {
         repositoryUrl: "https://test.pypi.org/legacy/",
         usernameEnv: "TWINE_USERNAME",
         passwordEnv: "TWINE_PASSWORD",
-        dryRunSupport: "native",
-        mutability: "immutable",
-        recovery: "publish-new-version",
         ...overrides
       }
-    ]
+    }
   })
 
 export const scoopConfig = (overrides: Record<string, unknown> = {}) =>
@@ -426,14 +389,11 @@ export const scoopConfig = (overrides: Record<string, unknown> = {}) =>
       {
         id: "archive",
         path: "artifacts/release-0.1.0.zip",
-        format: "zip",
-        consumers: ["scoop"]
+        format: "zip"
       }
     ],
-    targets: [
-      {
-        _tag: "ScoopBucketTarget",
-        id: "scoop",
+    publish: {
+      scoop: {
         repository: "owner/scoop-bucket",
         manifestName: "release",
         manifestPath: ".release/generated/release.json",
@@ -443,10 +403,7 @@ export const scoopConfig = (overrides: Record<string, unknown> = {}) =>
         license: "MIT",
         url: "https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.zip",
         bin: "release.exe",
-        dryRunSupport: "simulated",
-        mutability: "mutable-index",
-        recovery: "manual",
         ...overrides
       }
-    ]
+    }
   })

@@ -13,7 +13,7 @@ import {
   platformTargetVariant,
   type PlatformTarget as PlatformTargetName
 } from "../pipeline/platform.js"
-import { renderTemplate } from "../pipeline/template.js"
+import { renderArtifactNameEffect, renderTemplate } from "../pipeline/template.js"
 import type { Builder, BuilderPlan } from "./builder.js"
 
 export class ReleaseConfigCommandBuild extends Schema.Class<ReleaseConfigCommandBuild>(
@@ -45,7 +45,7 @@ export const commandBuilder: Builder<CommandBuildOptions> = {
       const platform = platformTargetVariant(target)
       const targetTriple = target
       const context = { identity, platform, targetTriple, binary }
-      const renderedOutput = renderTemplate(options.output, context)
+      const renderedOutput = yield* renderArtifactNameEffect(options.output, context, { pipeId: "build", field: "builds[].output" })
       const args = argv(options.run).map((part) => renderTemplate(part, context))
       if (args.length === 0) {
         return yield* Effect.fail(PlanError.make({

@@ -7,7 +7,7 @@ import { CommandSpec } from "../pipeline/operation.js"
 export class CommandRunnerError extends Schema.TaggedErrorClass<CommandRunnerError>()("CommandRunnerError", {
   operation: Schema.String,
   reason: Schema.String,
-  cause: Schema.optionalKey(Schema.Defect())
+  cause: Schema.optional(Schema.Defect())
 }) {}
 
 export class CommandResult extends Schema.Class<CommandResult>("CommandResult")({

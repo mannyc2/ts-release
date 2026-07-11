@@ -2,7 +2,7 @@ import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { runApprovedRelease, planReleaseFromIntent, release } from "../src/engine/engine.js"
+import { runApprovedRelease, planRelease, release } from "../src/engine/engine.js"
 import { renderPlanText } from "../src/engine/render.js"
 import { runOperationEvidence } from "../src/engine/executor.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
@@ -76,7 +76,7 @@ describe("snapshot mode", () => {
   it.effect("applies the snapshot suffix over manifest identity and marks the plan", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(snapshotConfig)
-      const plan = yield* planReleaseFromIntent(intent, { root: ".", snapshot: true })
+      const plan = yield* planRelease({ root: ".", snapshot: true }, intent)
 
       expect(plan.state.identity).toMatchObject({
         version: "0.1.0-SNAPSHOT-abcdef1",
@@ -90,7 +90,7 @@ describe("snapshot mode", () => {
   it.effect("applies the snapshot suffix over git-tag identity", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(gitTagConfig)
-      const plan = yield* planReleaseFromIntent(intent, { root: ".", snapshot: true })
+      const plan = yield* planRelease({ root: ".", snapshot: true }, intent)
 
       expect(plan.state.identity).toMatchObject({
         version: "1.2.3-SNAPSHOT-abcdef1",

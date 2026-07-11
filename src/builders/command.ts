@@ -34,11 +34,6 @@ const argv = (run: string | ReadonlyArray<string>): ReadonlyArray<string> =>
 export const commandBuilder: Builder<CommandBuildOptions> = {
   id: "command",
   supportedTargets: allPlatformTargets,
-  defaults: (options, identity) => ({
-    ...options,
-    id: options.id ?? "command",
-    binary: options.binary ?? identity.normalizedName
-  }),
   plan: (options, identity, target): Effect.Effect<BuilderPlan, PlanError> =>
     Effect.gen(function*() {
       const binary = options.binary ?? identity.normalizedName

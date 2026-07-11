@@ -9,14 +9,13 @@ import {
   RetryPolicy
 } from "../pipeline/operation.js"
 import {
-  dryRunValidationOperation,
   readOnlyCommandValidationOperation,
   validationNoteOperation
 } from "../pipeline/operation-helpers.js"
-import { optionalField } from "../pipeline/optional-field.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
+import { compactTrustedPublishing, trustedPublishingAuthEnvNames } from "./shared.js"
 
 export const NpmAccess = Schema.Literals(["public", "restricted"])
 export type NpmAccess = typeof NpmAccess.Type
@@ -58,28 +57,16 @@ interface NpmPublishSection {
   readonly provenance?: boolean | undefined
 }
 
-const trustedPublishingAuthEnvNames = [
-  "ACTIONS_ID_TOKEN_REQUEST_URL",
-  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-]
-
-const compactTrustedPublishing = (
+const compactNpmTrustedPublishing = (
   config: boolean | ReleaseConfigNpmTrustedPublishing | undefined
 ): NpmTrustedPublishingSection | undefined => {
-  if (config === undefined || config === false) {
-    return undefined
-  }
-  if (config === true) {
-    return {
-      provider: "github-actions",
-      workflow: "release.yml"
+  const base = compactTrustedPublishing(config)
+  return base === undefined || typeof config !== "object"
+    ? base
+    : {
+      ...base,
+      verifyPackageExists: config.verifyPackageExists
     }
-  }
-  return {
-    provider: config.provider ?? "github-actions",
-    workflow: config.workflow ?? "release.yml",
-    ...optionalField(config.verifyPackageExists, (verifyPackageExists) => ({ verifyPackageExists }))
-  }
 }
 
 const packageNameFromConfig = (config: {
@@ -117,12 +104,10 @@ const sectionFromConfig = (config: {
     registry: object?.registry ?? "https://registry.npmjs.org",
     packageName: packageNameFromConfig(config),
     packagePath: object?.packagePath ?? config.project.packagePath ?? ".",
-    ...optionalField(object?.tokenEnv, (tokenEnv) => ({ tokenEnv })),
-    ...optionalField(object?.trustedPublishing, (trustedPublishing) => ({
-      trustedPublishing: compactTrustedPublishing(trustedPublishing)
-    })),
-    ...optionalField(object?.access, (access) => ({ access })),
-    ...optionalField(object?.provenance, (provenance) => ({ provenance }))
+    tokenEnv: object?.tokenEnv,
+    trustedPublishing: compactNpmTrustedPublishing(object?.trustedPublishing),
+    access: object?.access,
+    provenance: object?.provenance
   }
 }
 
@@ -148,12 +133,9 @@ const npmAuthOperation = (section: NpmPublishSection): Operation =>
     ? validationNoteOperation({
       id: "npm:npm-trusted-publishing-auth",
       pipeId: "publish:npm",
-      dryRunSupport: "simulated",
-      simulatedDescription: "Record npm trusted publishing authentication mode.",
-      skippedDescription: "Record skipped npm trusted publishing authentication mode.",
-      simulatedMessage:
-        `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`,
-      skippedMessage: "NPM trusted publishing authentication validation was skipped."
+      description: "Record npm trusted publishing authentication mode.",
+      message:
+        `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
     })
     : readOnlyCommandValidationOperation({
       id: "npm:npm-whoami",
@@ -207,10 +189,6 @@ export const publishNpmPipe: Pipe<NpmPublishSection> = {
   id: "publish:npm",
   phase: "publish",
   section: sectionFromConfig,
-  defaults: (section, identity) => ({
-    ...section,
-    packageName: section.packageName ?? identity.name
-  }),
   plan: (rawSection, state) =>
     Effect.gen(function*() {
       const section = yield* requirePackageName(rawSection, state.identity)
@@ -225,17 +203,11 @@ export const publishNpmPipe: Pipe<NpmPublishSection> = {
           }),
           npmAuthOperation(section),
           ...(section.trustedPublishing?.verifyPackageExists === true ? [npmPackageExistsOperation(section)] : []),
-          dryRunValidationOperation({
+          readOnlyCommandValidationOperation({
             id: "npm:npm-pack-dry-run",
             pipeId: "publish:npm",
-            dryRunSupport: "native",
-            nativeDescription: "Validate npm package contents with npm pack dry-run.",
-            command: npmCommand(section, ["pack", "--dry-run", "--json", section.packagePath], false),
-            simulatedDescription: "Record simulated npm dry-run validation.",
-            skippedDescription: "Record skipped npm dry-run validation.",
-            simulatedMessage:
-              "npm dry-run validation is marked as simulated by target configuration; no npm pack --dry-run command was planned.",
-            skippedMessage: "npm dry-run validation was skipped because this target declares no dry-run support."
+            description: "Validate npm package contents with npm pack dry-run.",
+            command: npmCommand(section, ["pack", "--dry-run", "--json", section.packagePath], false)
           }),
           Operation.make({
             id: "npm:npm-publish",

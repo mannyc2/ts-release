@@ -31,7 +31,7 @@ describe("prebuilt build pipe", () => {
         return
       }
 
-      const contribution = yield* buildPipe.plan(buildPipe.defaults?.(section, identity) ?? section, emptyReleaseState(identity))
+      const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
 
       expect(contribution.artifacts[0]?.path).toBe("dist/release-windows-x64.exe")
       expect(contribution.operations[0]).toMatchObject({

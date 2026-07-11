@@ -15,7 +15,6 @@ import {
   OperationPhase,
   OperationRisk
 } from "../pipeline/operation.js"
-import { optionalField } from "../pipeline/optional-field.js"
 import { PipeNotice } from "../pipeline/state.js"
 
 const ReleaseName = Schema.NonEmptyString
@@ -30,18 +29,18 @@ export class HttpRequestEvidence extends Schema.Class<HttpRequestEvidence>("Http
   url: Schema.String,
   headers: Schema.Array(HttpHeader),
   envHeaders: Schema.Array(HttpEnvHeader),
-  body: Schema.optionalKey(Schema.Literals(["json", "file"])),
-  bodyPath: Schema.optionalKey(Schema.String),
-  contentType: Schema.optionalKey(Schema.String)
+  body: Schema.optional(Schema.Literals(["json", "file"])),
+  bodyPath: Schema.optional(Schema.String),
+  contentType: Schema.optional(Schema.String)
 }) {}
 
 export class GitHubReleaseEvidence extends Schema.Class<GitHubReleaseEvidence>("GitHubReleaseEvidence")({
   repository: Schema.String,
   tag: Schema.String,
-  releaseId: Schema.optionalKey(Schema.Number),
-  title: Schema.optionalKey(Schema.String),
-  draft: Schema.optionalKey(Schema.Boolean),
-  prerelease: Schema.optionalKey(Schema.Boolean),
+  releaseId: Schema.optional(Schema.Number),
+  title: Schema.optional(Schema.String),
+  draft: Schema.optional(Schema.Boolean),
+  prerelease: Schema.optional(Schema.Boolean),
   assets: Schema.Array(Schema.String)
 }) {}
 
@@ -59,9 +58,9 @@ export class CommandOutcome extends Schema.TaggedClass<CommandOutcome>()("comman
 
 export class ResolvedFileValue extends Schema.Class<ResolvedFileValue>("ResolvedFileValue")({
   artifactId: Schema.String,
-  sha256: Schema.optionalKey(Schema.String),
-  algorithm: Schema.optionalKey(Schema.Literals(["sha256", "sha512"])),
-  value: Schema.optionalKey(Schema.String)
+  sha256: Schema.optional(Schema.String),
+  algorithm: Schema.optional(Schema.Literals(["sha256", "sha512"])),
+  value: Schema.optional(Schema.String)
 }) {}
 
 export class FileOutcome extends Schema.TaggedClass<FileOutcome>()("file", {
@@ -71,14 +70,14 @@ export class FileOutcome extends Schema.TaggedClass<FileOutcome>()("file", {
 
 export class HttpOutcome extends Schema.TaggedClass<HttpOutcome>()("http", {
   request: HttpRequestEvidence,
-  responseStatus: Schema.optionalKey(Schema.Number),
+  responseStatus: Schema.optional(Schema.Number),
   checks: Schema.Array(HttpCheckEvidence)
 }) {}
 
 export class GitHubReleaseOutcome extends Schema.TaggedClass<GitHubReleaseOutcome>()("github-release", {
   release: GitHubReleaseEvidence,
-  responseStatus: Schema.optionalKey(Schema.Number),
-  checks: Schema.optionalKey(Schema.Array(HttpCheckEvidence))
+  responseStatus: Schema.optional(Schema.Number),
+  checks: Schema.optional(Schema.Array(HttpCheckEvidence))
 }) {}
 
 export const ActionOutcome = Schema.Union([CommandOutcome, FileOutcome, HttpOutcome, GitHubReleaseOutcome])
@@ -94,7 +93,7 @@ export class EvidenceRecord extends Schema.Class<EvidenceRecord>("EvidenceRecord
   startedAt: Schema.String,
   endedAt: Schema.String,
   durationMillis: Schema.Number,
-  outcome: Schema.optionalKey(ActionOutcome)
+  outcome: Schema.optional(ActionOutcome)
 }) {}
 
 export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundleV2")({
@@ -288,17 +287,11 @@ export const httpRequestEvidence = (request: HttpRequestSpec): HttpRequestEviden
     url: request.url,
     headers: request.headers,
     envHeaders: request.envHeaders,
-    ...(request.body === undefined
-      ? {}
-      : {
-        body: request.body._tag === "HttpJsonRequestBody" ? "json" : "file",
-        ...(request.body._tag === "HttpFileRequestBody"
-          ? {
-            bodyPath: request.body.path,
-            contentType: request.body.contentType
-          }
-          : {})
-      })
+    body: request.body === undefined
+      ? undefined
+      : request.body._tag === "HttpJsonRequestBody" ? "json" : "file",
+    bodyPath: request.body?._tag === "HttpFileRequestBody" ? request.body.path : undefined,
+    contentType: request.body?._tag === "HttpFileRequestBody" ? request.body.contentType : undefined
   })
 
 export const githubReleaseEvidence = (input: {
@@ -313,10 +306,10 @@ export const githubReleaseEvidence = (input: {
   GitHubReleaseEvidence.make({
     repository: input.repository,
     tag: input.tag,
-    ...optionalField(input.releaseId, (releaseId) => ({ releaseId })),
-    ...optionalField(input.title, (title) => ({ title })),
-    ...optionalField(input.draft, (draft) => ({ draft })),
-    ...optionalField(input.prerelease, (prerelease) => ({ prerelease })),
+    releaseId: input.releaseId,
+    title: input.title,
+    draft: input.draft,
+    prerelease: input.prerelease,
     assets: [...input.assets]
   })
 
@@ -331,10 +324,10 @@ export const sameStringSet = (left: ReadonlyArray<string>, right: ReadonlyArray<
 
 export const githubCreateRequestFromAction = (action: GitHubReleaseCreateAction) => ({
   repository: action.repository,
-  ...optionalField(action.tokenEnv, (tokenEnv) => ({ tokenEnv })),
+  tokenEnv: action.tokenEnv,
   tag: action.tag,
   title: action.title,
-  ...optionalField(action.notes, (notes) => ({ notes })),
+  notes: action.notes,
   draft: action.draft,
   prerelease: action.prerelease,
   assets: [...action.assets]
@@ -342,6 +335,6 @@ export const githubCreateRequestFromAction = (action: GitHubReleaseCreateAction)
 
 export const githubInspectRequestFromAction = (action: GitHubReleaseVerifyAction) => ({
   repository: action.repository,
-  ...optionalField(action.tokenEnv, (tokenEnv) => ({ tokenEnv })),
+  tokenEnv: action.tokenEnv,
   tag: action.tag
 })

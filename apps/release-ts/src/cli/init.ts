@@ -165,10 +165,10 @@ const normalizeOptions = (options: ReleaseInitOptionsInput, root: string): Norma
     bucket: options.bucket ?? "owner/scoop-bucket",
     binaryName,
     entrypoint: nonEmpty(options.entrypoint) ?? "src/cli.ts",
-    ...(pypiPackage === undefined ? {} : { pypiPackage }),
-    ...(pypiPackage === undefined && pypiModule === undefined
-      ? {}
-      : { pypiModule: pypiModule ?? pythonModuleName(pypiPackage ?? binaryName) }),
+    pypiPackage,
+    pypiModule: pypiPackage === undefined && pypiModule === undefined
+      ? undefined
+      : pypiModule ?? pythonModuleName(pypiPackage ?? binaryName),
     consoleScript: nonEmpty(options.consoleScript) ?? binaryName,
     githubActions: options.githubActions ?? false,
     packageManager,

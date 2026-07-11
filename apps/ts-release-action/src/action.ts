@@ -169,29 +169,7 @@ const actionOptionsWithConfig = (
   options: ActionOptions,
   config: string
 ): ActionOptions =>
-  ActionOptions.make({
-    root: options.root,
-    command: options.command,
-    config,
-    format: options.format,
-    writeStepSummary: options.writeStepSummary,
-    planPath: options.planPath,
-    failOnWarnings: options.failOnWarnings,
-    ...(options.target === undefined ? {} : { target: options.target }),
-    runtime: options.runtime,
-    snapshot: options.snapshot,
-    execute: options.execute,
-    approvePublish: options.approvePublish,
-    uploadEvidence: options.uploadEvidence,
-    evidenceArtifactName: options.evidenceArtifactName
-  })
-
-const planInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  snapshot: options.snapshot,
-  format: options.format
-})
+  ActionOptions.make({ ...options, config })
 
 const releaseInput = (options: ActionOptions) => ({
   root: options.root,
@@ -201,13 +179,6 @@ const releaseInput = (options: ActionOptions) => ({
 
 const textOutputFormat = (options: ActionOptions): "json" | "text" =>
   options.format === "json" ? "json" : "text"
-
-const buildInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  snapshot: options.snapshot,
-  format: textOutputFormat(options)
-})
 
 const executionInput = (options: ActionOptions) => ({
   root: options.root,
@@ -224,7 +195,7 @@ const diagnosticsInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
   format: diagnosticsFormat(options),
-  ...(options.target === undefined ? {} : { target: options.target })
+  target: options.target
 })
 
 const operationSurfaceId = (pipeId: string): string | undefined => {
@@ -378,7 +349,7 @@ const ensureRuntime = (options: ActionOptions): Effect.Effect<void, ActionComman
 
 const runPlan = Effect.fn("action.runPlan")(function*(options: ActionOptions, io: ActionIo) {
   const path = yield* Path.Path
-  const plan = yield* Release.planRelease(planInput(options))
+  const plan = yield* Release.planRelease(releaseInput(options))
   const contents = Release.renderReleasePlan(plan, options.format)
   const outputPath = yield* workspaceOutputPath(path, options, options.planPath)
   yield* io.writeFile(outputPath, contents)
@@ -398,7 +369,7 @@ const runBuild = Effect.fn("action.runBuild")(function*(
   io: ActionIo,
   observePlan: PlanObserver = NoopPlanObserver
 ) {
-  const staged = yield* Release.buildReleaseArtifacts(buildInput(options))
+  const staged = yield* Release.buildReleaseArtifacts(releaseInput(options))
   observePlan(staged.plan)
   const rendered = Release.renderBuildArtifacts(staged, textOutputFormat(options))
   if (options.writeStepSummary) {

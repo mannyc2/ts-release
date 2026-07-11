@@ -1,9 +1,8 @@
 import * as Effect from "effect/Effect"
-import * as FileSystem from "effect/FileSystem"
 import * as Schema from "effect/Schema"
 import { parseJsonAs } from "../pipeline/json.js"
-import { ConfigParseError, ConfigReadError, ConfigValidationError } from "./errors.js"
-import { decodeReleaseConfig, DEFAULT_CONFIG_PATH, type ReleaseIntent } from "./schema.js"
+import { ConfigParseError, ConfigValidationError } from "./errors.js"
+import { decodeReleaseConfig, DEFAULT_CONFIG_PATH } from "./schema.js"
 
 
 const forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"])
@@ -110,19 +109,3 @@ export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(inpu
   )
 })
 
-export const loadReleaseIntent = Effect.fn("loadReleaseIntent")(function*(path: string = DEFAULT_CONFIG_PATH) {
-  const fs = yield* FileSystem.FileSystem
-  const contents = yield* fs.readFileString(path).pipe(
-    Effect.mapError((error) =>
-      ConfigReadError.make({
-        path,
-        reason: error.message,
-        cause: error
-      })
-    )
-  )
-
-  return yield* parseReleaseIntent(contents, path)
-})
-
-export const encodeReleaseIntent = (intent: ReleaseIntent): ReleaseIntent => intent

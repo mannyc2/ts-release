@@ -71,8 +71,7 @@ const planExample = (exampleName: ExampleName) => {
   const exampleDirectory = join(root, "examples", exampleName)
   return planRelease({
     root: exampleDirectory,
-    configPath: "release.config.json",
-    format: "text"
+    configPath: "release.config.json"
   }).pipe(
     Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root: exampleDirectory }))
   )

@@ -30,8 +30,7 @@ describe("pipeline runner", () => {
       const planned: Pipe<string> = {
         id: "planned",
         phase: "build",
-        section: () => "raw",
-        defaults: (section) => `${section}-defaulted`,
+        section: () => "raw-defaulted",
         plan: (section) =>
           Effect.succeed({
             ...emptyContribution,

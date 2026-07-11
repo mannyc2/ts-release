@@ -108,8 +108,8 @@ const runPipe = Effect.fn("pipeline.runPipe")(function*<Section>(
   config: ReleaseConfig,
   pipe: Pipe<Section>
 ) {
-  const rawSection = pipe.section(config)
-  if (rawSection === undefined) {
+  const section = pipe.section(config)
+  if (section === undefined) {
     return ReleaseState.make({
       ...state,
       notices: [
@@ -123,9 +123,6 @@ const runPipe = Effect.fn("pipeline.runPipe")(function*<Section>(
     })
   }
 
-  const section = pipe.defaults === undefined
-    ? rawSection
-    : pipe.defaults(rawSection, state.identity)
   const contribution = yield* pipe.plan(section, state)
   yield* assertUniqueArtifactIds(pipe.id, state, contribution.artifacts)
   yield* assertUniqueArtifactPaths(pipe.id, state, contribution.artifacts.map((artifact) => artifact.path))

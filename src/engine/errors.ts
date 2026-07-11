@@ -8,34 +8,20 @@ export class ReleaseNormalizationError extends Schema.TaggedErrorClass<ReleaseNo
   {
     field: Schema.String,
     reason: Schema.String,
-    cause: Schema.optionalKey(Schema.Defect())
+    cause: Schema.optional(Schema.Defect())
   }
 ) {}
-
-export class ArtifactInventoryError extends Schema.TaggedErrorClass<ArtifactInventoryError>()(
-  "ArtifactInventoryError",
-  {
-    path: Schema.String,
-    reason: Schema.String,
-    cause: Schema.optionalKey(Schema.Defect())
-  }
-) {}
-
-export class PlanConstructionError extends Schema.TaggedErrorClass<PlanConstructionError>()("PlanConstructionError", {
-  targetId: Schema.optionalKey(Schema.NonEmptyString),
-  reason: Schema.String
-}) {}
 
 export class EvidenceWriteError extends Schema.TaggedErrorClass<EvidenceWriteError>()("EvidenceWriteError", {
   path: Schema.String,
   reason: Schema.String,
-  cause: Schema.optionalKey(Schema.Defect())
+  cause: Schema.optional(Schema.Defect())
 }) {}
 
 export class EvidenceReadError extends Schema.TaggedErrorClass<EvidenceReadError>()("EvidenceReadError", {
   path: Schema.String,
   reason: Schema.String,
-  cause: Schema.optionalKey(Schema.Defect())
+  cause: Schema.optional(Schema.Defect())
 }) {}
 
 export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteError>()("WorkspaceWriteError", {
@@ -45,16 +31,14 @@ export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteE
 
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
   operationId: OperationId,
-  exitCode: Schema.optionalKey(Schema.Number),
-  responseStatus: Schema.optionalKey(Schema.Number),
+  exitCode: Schema.optional(Schema.Number),
+  responseStatus: Schema.optional(Schema.Number),
   reason: Schema.String,
-  evidence: Schema.optionalKey(EvidenceBundle)
+  evidence: Schema.optional(EvidenceBundle)
 }) {}
 
 export type EngineError =
   | ReleaseNormalizationError
-  | ArtifactInventoryError
-  | PlanConstructionError
   | EvidenceWriteError
   | EvidenceReadError
   | WorkspaceWriteError

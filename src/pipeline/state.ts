@@ -11,7 +11,7 @@ export class ReleaseIdentity extends Schema.Class<ReleaseIdentity>("PipelineRele
   tag: Schema.String,
   commit: Schema.String,
   shortCommit: Schema.String,
-  notes: Schema.optionalKey(Schema.String),
+  notes: Schema.optional(Schema.String),
   versionSource: Schema.String,
   snapshot: Schema.Boolean
 }) {}

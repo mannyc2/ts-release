@@ -24,7 +24,6 @@ export const npmPackPipe: Pipe<NpmPackageSection> = {
   id: "build:npm-pack",
   phase: "build",
   section: sectionFromConfig,
-  defaults: (section) => section,
   plan: (section, state) =>
     Effect.gen(function*() {
       const config = section === true ? undefined : section

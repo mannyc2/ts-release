@@ -9,7 +9,6 @@ import {
   Operation
 } from "../pipeline/operation.js"
 import { validationNoteOperation } from "../pipeline/operation-helpers.js"
-import { optionalField } from "../pipeline/optional-field.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
@@ -47,7 +46,7 @@ const sectionFromConfig = (config: {
   const object = publish === true ? undefined : publish
   return {
     repository: object?.repository ?? config.project.repository,
-    ...optionalField(object?.tokenEnv, (tokenEnv) => ({ tokenEnv })),
+    tokenEnv: object?.tokenEnv,
     draft: object?.draft ?? true,
     prerelease: object?.prerelease ?? false
   }
@@ -115,7 +114,6 @@ export const publishGitHubPipe: Pipe<GitHubPublishSection> = {
   id: "publish:github",
   phase: "publish",
   section: sectionFromConfig,
-  defaults: (section) => section,
   plan: (rawSection, state) =>
     Effect.gen(function*() {
       const section = yield* requireRepository(rawSection)
@@ -129,12 +127,9 @@ export const publishGitHubPipe: Pipe<GitHubPublishSection> = {
           validationNoteOperation({
             id: "github:github-release-dry-run",
             pipeId: "publish:github",
-            dryRunSupport: "simulated",
-            simulatedDescription: "Record simulated GitHub release dry-run validation.",
-            skippedDescription: "Record skipped GitHub release dry-run validation.",
-            simulatedMessage:
-              "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.",
-            skippedMessage: "GitHub release dry-run validation was skipped because this target declares no dry-run support."
+            description: "Record simulated GitHub release dry-run validation.",
+            message:
+              "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation."
           }),
           Operation.make({
             id: "github:github-release-create",
@@ -144,10 +139,10 @@ export const publishGitHubPipe: Pipe<GitHubPublishSection> = {
             description: `Create GitHub release for ${state.identity.name}@${state.identity.version}.`,
             action: GitHubReleaseCreateAction.make({
               repository: section.repository,
-              ...optionalField(section.tokenEnv, (tokenEnv) => ({ tokenEnv })),
+              tokenEnv: section.tokenEnv,
               tag: state.identity.tag,
               title,
-              ...optionalField(state.identity.notes, (notes) => ({ notes })),
+              notes: state.identity.notes,
               draft: section.draft,
               prerelease,
               assets: githubReleaseAssets(assets)
@@ -161,7 +156,7 @@ export const publishGitHubPipe: Pipe<GitHubPublishSection> = {
             description: "Verify the GitHub release through the GitHub API.",
             action: GitHubReleaseVerifyAction.make({
               repository: section.repository,
-              ...optionalField(section.tokenEnv, (tokenEnv) => ({ tokenEnv })),
+              tokenEnv: section.tokenEnv,
               tag: state.identity.tag,
               title,
               draft: section.draft,

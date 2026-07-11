@@ -128,7 +128,6 @@ export const archivePipe: Pipe<ArchiveSection> = {
   id: "archive",
   phase: "process",
   section: (config) => config.archives,
-  defaults: (section) => section,
   plan: (sections, state) =>
     Effect.sync(() => {
       const artifacts: Array<Artifact> = []
@@ -158,7 +157,7 @@ export const archivePipe: Pipe<ArchiveSection> = {
               platform: group.platform,
               extra: ArchiveExtra.make({
                 format,
-                ...(wrapDirectory === undefined ? {} : { wrappedIn: wrapDirectory }),
+                wrappedIn: wrapDirectory,
                 binaries: archiveEntries.map((entry) => entry.archivePath),
                 files
               })
@@ -173,7 +172,7 @@ export const archivePipe: Pipe<ArchiveSection> = {
                 intent: ArchiveIntent.make({
                   outfile: path,
                   format,
-                  ...(wrapDirectory === undefined ? {} : { wrapDirectory }),
+                  wrapDirectory,
                   artifacts: archiveEntries,
                   files
                 }),

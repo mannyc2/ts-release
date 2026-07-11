@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
-import { CommandSpec, operationRequiresExecute } from "../src/pipeline/operation.js"
+import { CommandSpec } from "../src/pipeline/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { runEffect } from "./helpers.js"
 import { createTestPlan, renderTestPlanText } from "./plan-helpers.js"
@@ -99,7 +99,7 @@ describe("repository release config", () => {
       "scoop:scoop-push:commit",
       "scoop:scoop-push"
     ])
-    expect(publishOperations.every(operationRequiresExecute)).toBe(true)
+    expect(publishOperations.every((operation) => operation.risk !== "read-only")).toBe(true)
     expect(npmPublish?.action._tag).toBe("command")
     expect(npmAuth?.action._tag).toBe("note")
     expect(pypiAuth?.action._tag).toBe("note")

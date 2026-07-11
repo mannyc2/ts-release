@@ -8,7 +8,7 @@ export class HttpError extends Schema.TaggedErrorClass<HttpError>()("HttpError",
   operation: Schema.String,
   url: Schema.String,
   reason: Schema.String,
-  cause: Schema.optionalKey(Schema.Defect())
+  cause: Schema.optional(Schema.Defect())
 }) {}
 
 export class HttpResult extends Schema.Class<HttpResult>("HttpResult")({

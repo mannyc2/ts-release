@@ -2,7 +2,6 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { WorkflowFileName } from "../pipeline/artifact.js"
 import type { Artifact } from "../pipeline/artifact.js"
-import { byKind, filterCatalog } from "../pipeline/catalog.js"
 import { PlanError } from "../pipeline/errors.js"
 import {
   CommandAction,
@@ -10,14 +9,13 @@ import {
   Operation
 } from "../pipeline/operation.js"
 import {
-  dryRunValidationOperation,
   noAuthCommand,
   readOnlyCommandValidationOperation,
   validationNoteOperation
 } from "../pipeline/operation-helpers.js"
-import { optionalField } from "../pipeline/optional-field.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
+import { compactTrustedPublishing, trustedPublishingAuthEnvNames } from "./shared.js"
 
 const TrustedPublishingProvider = Schema.Literals(["github-actions"])
 
@@ -52,28 +50,6 @@ interface PyPiPublishSection {
 
 const twineUsernameEnv = "TWINE_USERNAME"
 const twinePasswordEnv = "TWINE_PASSWORD"
-const trustedPublishingAuthEnvNames = [
-  "ACTIONS_ID_TOKEN_REQUEST_URL",
-  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-]
-
-const compactTrustedPublishing = (
-  config: boolean | ReleaseConfigPyPiTrustedPublishing | undefined
-): PyPiTrustedPublishingSection | undefined => {
-  if (config === undefined || config === false) {
-    return undefined
-  }
-  if (config === true) {
-    return {
-      provider: "github-actions",
-      workflow: "release.yml"
-    }
-  }
-  return {
-    provider: config.provider ?? "github-actions",
-    workflow: config.workflow ?? "release.yml"
-  }
-}
 
 const sectionFromConfig = (config: {
   readonly publish: {
@@ -87,12 +63,10 @@ const sectionFromConfig = (config: {
   const object = publish === true ? undefined : publish
   return {
     repositoryUrl: object?.repositoryUrl ?? "https://upload.pypi.org/legacy/",
-    ...optionalField(object?.pythonExecutable, (pythonExecutable) => ({ pythonExecutable })),
-    ...optionalField(object?.usernameEnv, (usernameEnv) => ({ usernameEnv })),
-    ...optionalField(object?.passwordEnv, (passwordEnv) => ({ passwordEnv })),
-    ...optionalField(object?.trustedPublishing, (trustedPublishing) => ({
-      trustedPublishing: compactTrustedPublishing(trustedPublishing)
-    }))
+    pythonExecutable: object?.pythonExecutable,
+    usernameEnv: object?.usernameEnv,
+    passwordEnv: object?.passwordEnv,
+    trustedPublishing: compactTrustedPublishing(object?.trustedPublishing)
   }
 }
 
@@ -150,7 +124,9 @@ const validateAuthConfig = (section: PyPiPublishSection): Effect.Effect<void, Pl
 }
 
 const pypiArtifacts = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Artifact> =>
-  artifacts.filter((artifact) => artifact.kind === "wheel" || artifact.id === "wheel")
+  artifacts.filter((artifact) =>
+    artifact.kind === "wheel" || (artifact.kind === "file" && artifact.id === "wheel")
+  )
 
 const rejectInvalidArtifacts = (
   artifacts: ReadonlyArray<Artifact>
@@ -182,12 +158,9 @@ const pypiAuthOperation = (section: PyPiPublishSection): ReadonlyArray<Operation
       validationNoteOperation({
         id: "pypi:twine-trusted-publishing-auth",
         pipeId: "publish:pypi",
-        dryRunSupport: "simulated",
-        simulatedDescription: "Record PyPI trusted publishing authentication mode.",
-        skippedDescription: "Record skipped PyPI trusted publishing authentication mode.",
-        simulatedMessage:
-          `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`,
-        skippedMessage: "PyPI trusted publishing authentication validation was skipped."
+        description: "Record PyPI trusted publishing authentication mode.",
+        message:
+          `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`
       })
     ]
 
@@ -206,11 +179,10 @@ export const publishPyPiPipe: Pipe<PyPiPublishSection> = {
   id: "publish:pypi",
   phase: "publish",
   section: sectionFromConfig,
-  defaults: (section) => section,
   plan: (section, state) =>
     Effect.gen(function*() {
       yield* validateAuthConfig(section)
-      const artifacts = pypiArtifacts(filterCatalog(state.artifacts, byKind("wheel", "file")))
+      const artifacts = pypiArtifacts(state.artifacts.artifacts)
       yield* rejectInvalidArtifacts(artifacts)
       const artifactPaths = artifacts.map((artifact) => artifact.path)
       return {
@@ -229,17 +201,11 @@ export const publishPyPiPipe: Pipe<PyPiPublishSection> = {
             command: noAuthCommand(pythonExecutable(section), ["-m", "twine", "--version"])
           }),
           ...pypiAuthOperation(section),
-          dryRunValidationOperation({
+          readOnlyCommandValidationOperation({
             id: "pypi:twine-check",
             pipeId: "publish:pypi",
-            dryRunSupport: "native",
-            nativeDescription: "Validate Python distribution metadata with twine check.",
-            command: noAuthCommand(pythonExecutable(section), ["-m", "twine", "check", ...artifactPaths]),
-            simulatedDescription: "Record simulated PyPI distribution validation.",
-            skippedDescription: "Record skipped PyPI distribution validation.",
-            simulatedMessage:
-              "PyPI distribution validation is simulated by the deterministic release plan; no twine check command was planned.",
-            skippedMessage: "PyPI distribution validation was skipped because this target declares no dry-run support."
+            description: "Validate Python distribution metadata with twine check.",
+            command: noAuthCommand(pythonExecutable(section), ["-m", "twine", "check", ...artifactPaths])
           }),
           Operation.make({
             id: "pypi:twine-upload",

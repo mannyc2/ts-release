@@ -30,11 +30,6 @@ export type PrebuiltBuildOptions = typeof ReleaseConfigPrebuiltBuild.Type
 export const prebuiltBuilder: Builder<PrebuiltBuildOptions> = {
   id: "prebuilt",
   supportedTargets: allPlatformTargets,
-  defaults: (options, identity) => ({
-    ...options,
-    id: options.id ?? "prebuilt",
-    binary: options.binary ?? identity.normalizedName
-  }),
   plan: (options, identity, target): Effect.Effect<BuilderPlan, PlanError> =>
     Effect.gen(function*() {
       const binary = options.binary ?? identity.normalizedName

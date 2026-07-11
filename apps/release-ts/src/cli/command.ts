@@ -68,16 +68,16 @@ const configInput = (input: {
   readonly config: string
   readonly snapshot?: boolean | undefined
 }) => ({
-  ...optionalField(Option.getOrUndefined(input.root), (root) => ({ root })),
+  root: Option.getOrUndefined(input.root),
   configPath: input.config,
-  ...optionalField(input.snapshot, (snapshot) => ({ snapshot }))
+  snapshot: input.snapshot
 })
 
 const planCommand = Command.make(
   "plan",
   { ...sharedFlags, out: outputFlag, format: formatFlag },
   Effect.fn("cli.plan")(function*({ root, config, snapshot, out, format }) {
-    const plan = yield* Release.planRelease({ ...configInput({ root, config, snapshot }), format })
+    const plan = yield* Release.planRelease(configInput({ root, config, snapshot }))
     const contents = Release.renderReleasePlan(plan, format)
     yield* writeOrPrint(out, contents)
   })
@@ -87,7 +87,7 @@ const buildCommand = Command.make(
   "build",
   { ...sharedFlags, format: textJsonFormatFlag, out: outputFlag },
   Effect.fn("cli.build")(function*({ root, config, snapshot, format, out }) {
-    const result = yield* Release.buildReleaseArtifacts({ ...configInput({ root, config, snapshot }), format })
+    const result = yield* Release.buildReleaseArtifacts(configInput({ root, config, snapshot }))
     yield* writeOrPrint(out, Release.renderBuildArtifacts(result, format))
   })
 )
@@ -172,7 +172,7 @@ const doctorCommand = Command.make(
     const report = yield* Doctor.doctorRelease({
       ...configInput({ root, config }),
       format,
-      ...optionalField(Option.getOrUndefined(target), (target) => ({ target }))
+      target: Option.getOrUndefined(target)
     })
     yield* Console.log(Doctor.renderReleaseDiagnostics(report, format).trimEnd())
   })
@@ -192,7 +192,7 @@ const releaseCommand = Command.make(
   { ...sharedFlags, execute: executeFlag, approvePublish: approvePublishFlag },
   Effect.fn("cli.release")(function*({ root, config, snapshot, execute, approvePublish }) {
     if (!execute) {
-      const plan = yield* Release.planRelease({ ...configInput({ root, config, snapshot }), format: "text" })
+      const plan = yield* Release.planRelease(configInput({ root, config, snapshot }))
       yield* Console.log(
         `${Release.renderReleasePlan(plan, "text").trimEnd()}\nrelease planned only; pass --execute to run approved operations.`
       )

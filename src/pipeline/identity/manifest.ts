@@ -1,11 +1,16 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { parseJsonAs } from "../json.js"
-import { CommandSpec } from "../operation.js"
-import { optionalField } from "../optional-field.js"
-import { IdentityError } from "../errors.js"
 import { parseSemverVersion } from "../semver.js"
-import { ResolvedIdentity, type VersionSource, type WorkspaceServices } from "./source.js"
+import {
+  identityError,
+  projectManifestPath,
+  projectPackageName,
+  readPackageManifestJson,
+  ResolvedIdentity,
+  runWorkspaceGit,
+  type VersionSource,
+  type WorkspaceServices
+} from "./source.js"
 
 
 interface ManifestProjectOptions {
@@ -32,22 +37,13 @@ class ReleasePackageManifest extends Schema.Class<ReleasePackageManifest>("Relea
 
 const decodePackageManifest = Schema.decodeUnknownEffect(ReleasePackageManifest)
 
-const identityError = (
-  field: string,
-  reason: string,
-  cause?: unknown
-): IdentityError =>
-  IdentityError.make({
-    source: "manifest",
-    field,
-    reason,
-    ...optionalField(cause, (errorCause) => ({ cause: errorCause }))
-  })
+const manifestError = (field: string, reason: string, cause?: unknown) =>
+  identityError("manifest", field, reason, cause)
 
 const validateNonEmptySafeRelativePath = (
   field: string,
   value: string
-): Effect.Effect<void, IdentityError> => {
+): Effect.Effect<void, ReturnType<typeof manifestError>> => {
   const isEmpty = value.trim().length === 0
   const isAbsolute = value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value)
   const hasTraversal = value.split(/[\\/]+/).includes("..")
@@ -55,7 +51,7 @@ const validateNonEmptySafeRelativePath = (
     return Effect.void
   }
   return Effect.fail(
-    identityError(
+    manifestError(
       field,
       "Path must be non-empty, relative, and must not contain parent traversal."
     )
@@ -65,10 +61,10 @@ const validateNonEmptySafeRelativePath = (
 const requireSemverVersion = (
   field: string,
   value: string
-): Effect.Effect<string, IdentityError> => {
+): Effect.Effect<string, ReturnType<typeof manifestError>> => {
   const parsed = parseSemverVersion(value)
   return parsed === undefined
-    ? Effect.fail(identityError(field, `Version ${value} is not a valid semver version.`))
+    ? Effect.fail(manifestError(field, `Version ${value} is not a valid semver version.`))
     : Effect.succeed(parsed)
 }
 
@@ -76,20 +72,20 @@ const requireCompactString = (
   field: string,
   value: string | undefined,
   reason: string
-): Effect.Effect<string, IdentityError> => {
+): Effect.Effect<string, ReturnType<typeof manifestError>> => {
   if (value !== undefined && value.trim().length > 0) {
     return Effect.succeed(value)
   }
-  return Effect.fail(identityError(field, reason))
+  return Effect.fail(manifestError(field, reason))
 }
 
 const templateField = (
   field: string,
   value: string
-): Effect.Effect<void, IdentityError> => {
+): Effect.Effect<void, ReturnType<typeof manifestError>> => {
   if (value.includes("{name}") || value.includes("{normalizedName}")) {
     return Effect.fail(
-      identityError(field, "Only the {version} placeholder is supported here.")
+      manifestError(field, "Only the {version} placeholder is supported here.")
     )
   }
   return Effect.void
@@ -97,26 +93,6 @@ const templateField = (
 
 const renderVersionTemplate = (value: string, version: string): string =>
   value.split("{version}").join(version)
-
-const gitHeadCommand = (root: string): CommandSpec =>
-  CommandSpec.make({
-    executable: "git",
-    args: ["rev-parse", "--short", "HEAD"],
-    cwd: root,
-    requiredEnv: [],
-    redactedEnv: []
-  })
-
-const projectPackageName = (project: ManifestProjectOptions): string | undefined =>
-  project.packageName ?? project.package ?? project.name
-
-const projectManifestPath = (project: ManifestProjectOptions): string | undefined => {
-  const packagePath = project.packagePath
-  if (packagePath === undefined || packagePath.endsWith("package.json")) {
-    return packagePath
-  }
-  return `${packagePath.replace(/[/\\]+$/, "")}/package.json`
-}
 
 const resolveCommit = Effect.fn("pipeline.identity.manifest.resolveCommit")(function*(
   identity: ResolvedIdentity,
@@ -127,15 +103,14 @@ const resolveCommit = Effect.fn("pipeline.identity.manifest.resolveCommit")(func
     return identity
   }
 
-  const result = yield* workspace.commandRunner.runCommand(gitHeadCommand(root)).pipe(
-    Effect.mapError((error) =>
-      identityError("identity.commit", error.reason, error)
-    )
-  )
+  const result = yield* runWorkspaceGit(workspace, root, ["rev-parse", "--short", "HEAD"], {
+    source: "manifest",
+    field: "identity.commit"
+  })
   const commit = result.stdout.trim()
   if (result.exitCode !== 0 || commit.length === 0) {
     return yield* Effect.fail(
-      identityError(
+      manifestError(
         "identity.commit",
         result.exitCode === 0
           ? "Git HEAD resolved to an empty commit."
@@ -148,39 +123,10 @@ const resolveCommit = Effect.fn("pipeline.identity.manifest.resolveCommit")(func
     name: identity.name,
     version: identity.version,
     commit,
-    ...optionalField(identity.tag, (tag) => ({ tag })),
-    ...optionalField(identity.notes, (notes) => ({ notes })),
+    tag: identity.tag,
+    notes: identity.notes,
     sourceId: identity.sourceId
   })
-})
-
-const readPackageManifest = Effect.fn("pipeline.identity.manifest.readPackageManifest")(function*(
-  options: ManifestIdentityOptions,
-  workspace: WorkspaceServices,
-  packagePath: string
-) {
-  const field = "identity.packagePath"
-  yield* validateNonEmptySafeRelativePath(field, packagePath)
-  const readPath = workspace.path.resolve(options.root, packagePath)
-  const contents = yield* workspace.fileSystem.readFileString(readPath).pipe(
-    Effect.mapError((error) =>
-      identityError(field, error.message, error)
-    )
-  )
-  const parsed = yield* parseJsonAs(
-    Schema.Unknown,
-    contents,
-    (cause) =>
-      identityError(field, "Package manifest is not valid JSON.", cause)
-  )
-  return yield* decodePackageManifest(parsed).pipe(
-    Effect.mapError((error) =>
-      identityError(
-        field,
-        `Package manifest must include name and version: ${error.message}`
-      )
-    )
-  )
 })
 
 const resolveStaticIdentity = Effect.fn("pipeline.identity.manifest.resolveStaticIdentity")(function*(
@@ -190,7 +136,7 @@ const resolveStaticIdentity = Effect.fn("pipeline.identity.manifest.resolveStati
   const commit = project.commit ?? "HEAD"
   if (project.version === undefined) {
     return yield* Effect.fail(
-      identityError("project.version", "Static project identity requires project.version.")
+      manifestError("project.version", "Static project identity requires project.version.")
     )
   }
   const version = yield* requireSemverVersion("project.version", project.version)
@@ -206,7 +152,7 @@ const resolveStaticIdentity = Effect.fn("pipeline.identity.manifest.resolveStati
     version,
     commit,
     tag: project.tag ?? renderVersionTemplate(tagTemplate, version),
-    ...optionalField(project.notes, (notes) => ({ notes })),
+    notes: project.notes,
     sourceId: "manifest"
   })
 })
@@ -218,10 +164,17 @@ const resolvePackageManifestIdentity = Effect.fn(
   workspace: WorkspaceServices
 ) {
   const project = options.project
-  const manifest = yield* readPackageManifest(
-    options,
+  const field = "identity.packagePath"
+  const packagePath = project.packagePath === undefined
+    ? "package.json"
+    : projectManifestPath(project.packagePath)
+  yield* validateNonEmptySafeRelativePath(field, packagePath)
+  const manifest = yield* readPackageManifestJson(
     workspace,
-    projectManifestPath(project) ?? "package.json"
+    options.root,
+    packagePath,
+    decodePackageManifest,
+    { source: "manifest", field, requirement: "name and version" }
   )
   const version = yield* requireSemverVersion("identity.version", manifest.version)
   const tagTemplate = project.tagTemplate ?? "v{version}"
@@ -231,7 +184,7 @@ const resolvePackageManifestIdentity = Effect.fn(
     version,
     commit: project.commit ?? "HEAD",
     tag: renderVersionTemplate(tagTemplate, version),
-    ...optionalField(project.notes, (notes) => ({ notes })),
+    notes: project.notes,
     sourceId: "manifest"
   })
 })

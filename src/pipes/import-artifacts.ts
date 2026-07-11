@@ -48,7 +48,6 @@ export const importArtifactsPipe: Pipe<ImportArtifactsSection> = {
   id: "import-artifacts",
   phase: "build",
   section: (config) => config.artifacts,
-  defaults: (section) => section,
   plan: (section, state) =>
     Effect.gen(function*() {
       const artifacts = []
@@ -107,7 +106,7 @@ export const importArtifactsPipe: Pipe<ImportArtifactsSection> = {
           description: `Verify imported artifact ${artifact.id} exists.`,
           action: CheckFileAction.make({
             path,
-            ...optionalField(artifact.checksum, (checksum) => ({ checksum }))
+            checksum: artifact.checksum
           })
         }))
       }

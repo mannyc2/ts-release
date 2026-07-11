@@ -14,7 +14,6 @@ export interface BuilderPlan {
 export interface Builder<Options extends { readonly builder: string }> {
   readonly id: Options["builder"]
   readonly supportedTargets: ReadonlyArray<PlatformTarget>
-  readonly defaults: (options: Options, identity: ReleaseIdentity) => Options
   readonly plan: (
     options: Options,
     identity: ReleaseIdentity,

@@ -10,7 +10,7 @@ import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { OperationFailedError } from "../src/engine/errors.js"
 import { runApprovedReleaseWorkflow } from "../src/engine/executor.js"
-import { planReleaseFromIntent } from "../src/engine/engine.js"
+import { planRelease } from "../src/engine/engine.js"
 import type { ReleasePlanDocument } from "../src/engine/plan-document.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import {
@@ -123,7 +123,7 @@ const makeGoldenLayer = (failNpmPublish: boolean) =>
 
 const planFixtureRelease = Effect.gen(function*() {
   const intent = yield* parseReleaseIntent(fixtureConfig)
-  return yield* planReleaseFromIntent(intent, { root: "." })
+  return yield* planRelease({ root: "." }, intent)
 })
 
 const operationContext = (plan: ReleasePlanDocument) => ({

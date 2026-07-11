@@ -44,7 +44,6 @@ export const pypiWheelPipe: Pipe<PyPiWheelSection> = {
   id: "build:pypi-wheel",
   phase: "build",
   section: sectionFromConfig,
-  defaults: (section) => section,
   plan: (section, state) =>
     Effect.gen(function*() {
       const artifacts = []

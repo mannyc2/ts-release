@@ -22,52 +22,11 @@ export const defaultArtifactBaseName = (
   return `${binary}_{version}_${platform.os}_${distributionArchToken(platform.arch)}${libcSuffix}${extension}`
 }
 
-export const renderTemplate = (
-  value: string,
-  context: TemplateContext
-): string => {
+// One token vocabulary for both renderers: renderTemplate substitutes
+// absent-context tokens as "", renderArtifactName leaves them and fails.
+const tokenValues = (context: TemplateContext): ReadonlyArray<readonly [string, string | undefined]> => {
   const platform = context.platform
-  return value
-    .split("{name}").join(context.identity.name)
-    .split("{normalizedName}").join(context.identity.normalizedName)
-    .split("{version}").join(context.identity.version)
-    .split("{tag}").join(context.identity.tag)
-    .split("{commit}").join(context.identity.commit)
-    .split("{shortCommit}").join(context.identity.shortCommit)
-    .split("{os}").join(platform?.os ?? "")
-    .split("{arch}").join(platform === undefined ? "" : distributionArchToken(platform.arch))
-    .split("{libc}").join(platform?.libc ?? "")
-    .split("{ext}").join(platform?.executableExtension ?? "")
-    .split("{targetTriple}").join(context.targetTriple ?? platform?.targetTriple ?? "")
-    .split("{binary}").join(context.binary ?? "")
-}
-
-export class UnresolvedTemplateToken {
-  readonly _tag = "UnresolvedTemplateToken"
-  constructor(readonly token: string, readonly value: string) {}
-}
-
-const vocabularyTokens = [
-  "{name}",
-  "{normalizedName}",
-  "{version}",
-  "{tag}",
-  "{commit}",
-  "{shortCommit}",
-  "{os}",
-  "{arch}",
-  "{libc}",
-  "{ext}",
-  "{targetTriple}",
-  "{binary}"
-] as const
-
-export const renderArtifactName = (
-  value: string,
-  context: TemplateContext
-): string | UnresolvedTemplateToken => {
-  const platform = context.platform
-  const substitutions: ReadonlyArray<readonly [string, string | undefined]> = [
+  return [
     ["{name}", context.identity.name],
     ["{normalizedName}", context.identity.normalizedName],
     ["{version}", context.identity.version],
@@ -81,13 +40,34 @@ export const renderArtifactName = (
     ["{targetTriple}", context.targetTriple ?? platform?.targetTriple],
     ["{binary}", context.binary]
   ]
+}
+
+export const renderTemplate = (
+  value: string,
+  context: TemplateContext
+): string =>
+  tokenValues(context).reduce(
+    (rendered, [token, substitution]) => rendered.split(token).join(substitution ?? ""),
+    value
+  )
+
+export class UnresolvedTemplateToken {
+  readonly _tag = "UnresolvedTemplateToken"
+  constructor(readonly token: string, readonly value: string) {}
+}
+
+export const renderArtifactName = (
+  value: string,
+  context: TemplateContext
+): string | UnresolvedTemplateToken => {
+  const substitutions = tokenValues(context)
   let rendered = value
   for (const [token, substitution] of substitutions) {
     if (substitution !== undefined) {
       rendered = rendered.split(token).join(substitution)
     }
   }
-  for (const token of vocabularyTokens) {
+  for (const [token] of substitutions) {
     if (rendered.includes(token)) {
       return new UnresolvedTemplateToken(token, value)
     }

@@ -32,7 +32,7 @@ describe("command build pipe", () => {
         return
       }
 
-      const contribution = yield* buildPipe.plan(buildPipe.defaults?.(section, identity) ?? section, emptyReleaseState(identity))
+      const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
 
       expect(contribution.artifacts[0]?.path).toBe("dist/release-darwin-arm64")
       expect(contribution.operations).toHaveLength(2)
@@ -84,7 +84,7 @@ describe("command build pipe", () => {
       }
 
       const error = yield* buildPipe
-        .plan(buildPipe.defaults?.(section, identity) ?? section, emptyReleaseState(identity))
+        .plan(section, emptyReleaseState(identity))
         .pipe(Effect.flip)
 
       expect(error._tag).toBe("PlanError")

@@ -16,7 +16,7 @@ export type OperationPhase = typeof OperationPhase.Type
 export class CommandSpec extends Schema.Class<CommandSpec>("CommandSpec")({
   executable: Schema.String,
   args: Schema.Array(Schema.String),
-  cwd: Schema.optionalKey(Schema.String),
+  cwd: Schema.optional(Schema.String),
   requiredEnv: Schema.Array(Schema.String),
   redactedEnv: Schema.Array(Schema.String)
 }) {}
@@ -32,7 +32,7 @@ export class HttpHeader extends Schema.Class<HttpHeader>("HttpHeader")({
 export class HttpEnvHeader extends Schema.Class<HttpEnvHeader>("HttpEnvHeader")({
   name: Schema.String,
   valueEnv: Schema.String,
-  prefix: Schema.optionalKey(Schema.String)
+  prefix: Schema.optional(Schema.String)
 }) {}
 
 export class HttpJsonRequestBody extends Schema.TaggedClass<HttpJsonRequestBody>()("HttpJsonRequestBody", {
@@ -54,7 +54,7 @@ export class HttpRequestSpec extends Schema.Class<HttpRequestSpec>("HttpRequestS
   envHeaders: Schema.Array(HttpEnvHeader),
   requiredEnv: Schema.Array(Schema.String),
   redactedEnv: Schema.Array(Schema.String),
-  body: Schema.optionalKey(HttpRequestBody)
+  body: Schema.optional(HttpRequestBody)
 }) {}
 
 export const JsonPathSegment = Schema.Union([Schema.String, Schema.Number])
@@ -115,7 +115,7 @@ export class BunCompileIntent extends Schema.TaggedClass<BunCompileIntent>()("bu
   target: PlatformTarget,
   compileTarget: BunCompileTarget,
   outfile: Schema.String,
-  minify: Schema.optionalKey(Schema.Boolean)
+  minify: Schema.optional(Schema.Boolean)
 }) {}
 
 export class PyPiWheelIntent extends Schema.TaggedClass<PyPiWheelIntent>()("pypi-wheel", {
@@ -143,7 +143,7 @@ export class ArchiveArtifactEntry extends Schema.Class<ArchiveArtifactEntry>("Ar
 export class ArchiveIntent extends Schema.TaggedClass<ArchiveIntent>()("archive", {
   outfile: Schema.String,
   format: ArchiveFormat,
-  wrapDirectory: Schema.optionalKey(Schema.String),
+  wrapDirectory: Schema.optional(Schema.String),
   artifacts: Schema.Array(ArchiveArtifactEntry),
   files: Schema.Array(Schema.String)
 }) {}
@@ -157,7 +157,7 @@ export class CommandAction extends Schema.TaggedClass<CommandAction>()("command"
 
 export class CheckFileAction extends Schema.TaggedClass<CheckFileAction>()("check-file", {
   path: Schema.String,
-  checksum: Schema.optionalKey(Checksum)
+  checksum: Schema.optional(Checksum)
 }) {}
 
 export class HomebrewFormulaEntry extends Schema.Class<HomebrewFormulaEntry>("HomebrewFormulaEntry")({
@@ -182,9 +182,9 @@ export class ScoopManifestContent extends Schema.TaggedClass<ScoopManifestConten
   version: Schema.String,
   description: Schema.String,
   homepage: Schema.String,
-  license: Schema.optionalKey(Schema.String),
+  license: Schema.optional(Schema.String),
   url: Schema.String,
-  bin: Schema.optionalKey(Schema.Union([Schema.String, Schema.Array(Schema.Array(Schema.String))])),
+  bin: Schema.optional(Schema.Union([Schema.String, Schema.Array(Schema.Array(Schema.String))])),
   artifactId: ArtifactId
 }) {}
 
@@ -216,10 +216,10 @@ export class GitHubReleaseCreateAction extends Schema.TaggedClass<GitHubReleaseC
   "github-release-create",
   {
     repository: Schema.String,
-    tokenEnv: Schema.optionalKey(Schema.String),
+    tokenEnv: Schema.optional(Schema.String),
     tag: Schema.String,
     title: Schema.String,
-    notes: Schema.optionalKey(Schema.String),
+    notes: Schema.optional(Schema.String),
     draft: Schema.Boolean,
     prerelease: Schema.Boolean,
     assets: Schema.Array(GitHubReleaseAssetSpec)
@@ -230,7 +230,7 @@ export class GitHubReleaseVerifyAction extends Schema.TaggedClass<GitHubReleaseV
   "github-release-verify",
   {
     repository: Schema.String,
-    tokenEnv: Schema.optionalKey(Schema.String),
+    tokenEnv: Schema.optional(Schema.String),
     tag: Schema.String,
     title: Schema.String,
     draft: Schema.Boolean,
@@ -276,7 +276,7 @@ export class Operation extends Schema.Class<Operation>("Operation")({
   risk: OperationRisk,
   description: Schema.String,
   action: Action,
-  retry: Schema.optionalKey(RetryPolicy)
+  retry: Schema.optional(RetryPolicy)
 }) {}
 
 export class ExecutionApproval extends Schema.Class<ExecutionApproval>("ExecutionApproval")({
@@ -301,12 +301,6 @@ export const operationApprovalRequirements = (operation: Operation) => ({
   requiresExecute: operation.risk !== "read-only",
   requiresIrreversibleApproval: operation.risk === "irreversible"
 })
-
-export const operationRequiresExecute = (operation: Operation): boolean =>
-  operationApprovalRequirements(operation).requiresExecute
-
-export const operationRequiresIrreversibleApproval = (operation: Operation): boolean =>
-  operationApprovalRequirements(operation).requiresIrreversibleApproval
 
 export const operationApprovalLabel = (operation: Operation): string => {
   const requirements = operationApprovalRequirements(operation)

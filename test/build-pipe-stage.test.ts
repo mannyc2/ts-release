@@ -40,8 +40,7 @@ const planBuild = (config: string) =>
         notices: []
       }
     }
-    const defaulted = buildPipe.defaults === undefined ? section : buildPipe.defaults(section, identity)
-    return yield* buildPipe.plan(defaulted, state)
+    return yield* buildPipe.plan(section, state)
   })
 
 describe("build pipe", () => {

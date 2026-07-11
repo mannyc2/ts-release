@@ -36,7 +36,7 @@ const plannedCompileTarget = Effect.fn("pipe-build-bun-test.plannedCompileTarget
     return undefined
   }
 
-  const contribution = yield* buildPipe.plan(buildPipe.defaults?.(section, identity) ?? section, emptyReleaseState(identity))
+  const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
   const operation = contribution.operations.find(isStageArtifactOperation)
   const intent = operation?.action.intent
   return intent?._tag === "bun-compile" ? intent.compileTarget : undefined
@@ -75,7 +75,7 @@ describe("Bun build pipe", () => {
         return
       }
 
-      const contribution = yield* buildPipe.plan(buildPipe.defaults?.(section, identity) ?? section, emptyReleaseState(identity))
+      const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
       const operation = contribution.operations.find(isStageArtifactOperation)
 
       expect(operation?.action.intent).toMatchObject({
@@ -107,7 +107,7 @@ describe("Bun build pipe", () => {
         return
       }
 
-      const contribution = yield* buildPipe.plan(buildPipe.defaults?.(section, identity) ?? section, emptyReleaseState(identity))
+      const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
 
       expect(contribution.artifacts.map((artifact) => artifact.id)).toEqual([
         "cli-linux-x64-musl",

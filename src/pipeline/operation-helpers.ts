@@ -6,8 +6,6 @@ import {
 } from "./operation.js"
 import { artifactPathBaseName } from "./artifact.js"
 
-export type DryRunSupport = "none" | "native" | "simulated"
-
 export interface ReadOnlyCommandValidationOptions {
   readonly id: string
   readonly pipeId: string
@@ -15,20 +13,11 @@ export interface ReadOnlyCommandValidationOptions {
   readonly command: CommandSpec
 }
 
-export interface DryRunValidationNoteOptions {
+export interface ValidationNoteOptions {
   readonly id: string
   readonly pipeId: string
-  readonly dryRunSupport: Exclude<DryRunSupport, "native">
-  readonly simulatedDescription: string
-  readonly skippedDescription: string
-  readonly simulatedMessage: string
-  readonly skippedMessage: string
-}
-
-export interface DryRunValidationOperationOptions extends Omit<DryRunValidationNoteOptions, "dryRunSupport"> {
-  readonly dryRunSupport: DryRunSupport
-  readonly nativeDescription: string
-  readonly command: CommandSpec
+  readonly description: string
+  readonly message: string
 }
 
 export interface CatalogGitPublishOperationOptions {
@@ -77,39 +66,21 @@ export const readOnlyCommandValidationOperation = (
     action: CommandAction.make({ command: options.command })
   })
 
-export const validationNoteOperation = (options: DryRunValidationNoteOptions): Operation =>
+// Simulated dry-run validations are reviewable notes: the plan states what a
+// deterministic run cannot prove instead of pretending to validate it.
+export const validationNoteOperation = (options: ValidationNoteOptions): Operation =>
   Operation.make({
     id: options.id,
     pipeId: options.pipeId,
     phase: "publish",
     risk: "read-only",
-    description: options.dryRunSupport === "simulated" ? options.simulatedDescription : options.skippedDescription,
+    description: options.description,
     action: NoteAction.make({
-      message: options.dryRunSupport === "simulated" ? options.simulatedMessage : options.skippedMessage,
-      skipped: options.dryRunSupport === "none",
-      severity: options.dryRunSupport === "simulated" ? "info" : "warning"
+      message: options.message,
+      skipped: false,
+      severity: "info"
     })
   })
-
-export const dryRunValidationOperation = (
-  options: DryRunValidationOperationOptions
-): Operation =>
-  options.dryRunSupport === "native"
-    ? readOnlyCommandValidationOperation({
-      id: options.id,
-      pipeId: options.pipeId,
-      description: options.nativeDescription,
-      command: options.command
-    })
-    : validationNoteOperation({
-      id: options.id,
-      pipeId: options.pipeId,
-      dryRunSupport: options.dryRunSupport,
-      simulatedDescription: options.simulatedDescription,
-      skippedDescription: options.skippedDescription,
-      simulatedMessage: options.simulatedMessage,
-      skippedMessage: options.skippedMessage
-    })
 
 export const catalogGitPublishOperations = (
   options: CatalogGitPublishOperationOptions

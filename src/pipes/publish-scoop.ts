@@ -26,22 +26,19 @@ export const publishScoopPipe: Pipe<ScoopSection> = {
   id: "publish:scoop",
   phase: "publish",
   section: scoopSectionFromConfig,
-  defaults: defaultScoopSection,
-  plan: (section, state) =>
+  plan: (rawSection, state) =>
     Effect.gen(function*() {
+      const section = defaultScoopSection(rawSection, state.identity)
       yield* rejectUnsupportedTokenEnv(section)
-      const manifestPath = section.manifestPath ?? `.release/generated/${section.manifestName ?? "release"}.json`
+      const manifestPath = section.manifestPath
       return {
         ...emptyContribution,
         operations: [
           validationNoteOperation({
             id: "scoop:scoop-manifest-validation",
             pipeId: "publish:scoop",
-            dryRunSupport: "simulated",
-            simulatedDescription: "Record simulated Scoop manifest validation.",
-            skippedDescription: "Record skipped Scoop manifest validation.",
-            simulatedMessage: "Scoop manifest validation is simulated by the deterministic release plan.",
-            skippedMessage: "Scoop manifest validation was skipped because this target declares no dry-run support."
+            description: "Record simulated Scoop manifest validation.",
+            message: "Scoop manifest validation is simulated by the deterministic release plan."
           }),
           ...catalogGitPublishOperations({
             id: "scoop:scoop-push",
@@ -49,7 +46,7 @@ export const publishScoopPipe: Pipe<ScoopSection> = {
             description: `Push Scoop bucket update for ${state.identity.name}@${state.identity.version}.`,
             directory: section.bucketDirectory,
             filePath: manifestPath,
-            commitMessage: `Update ${section.manifestName ?? "release"} to ${state.identity.version}`
+            commitMessage: `Update ${section.manifestName} to ${state.identity.version}`
           })
         ]
       }

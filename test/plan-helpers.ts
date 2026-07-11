@@ -1,12 +1,11 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { planReleaseFromIntent } from "../src/engine/engine.js"
+import { planRelease } from "../src/engine/engine.js"
 import { ReleasePlanDocument } from "../src/engine/plan-document.js"
 import {
   renderPlanJson,
   renderPlanMarkdown,
-  renderPlanOperationExplanation,
   renderPlanSummary,
   renderPlanText
 } from "../src/engine/render.js"
@@ -52,10 +51,10 @@ export const plannedSurfaceIds = (operations: ReadonlyArray<Operation>): Readonl
 export const createTestPlan = (config: string, root = ".", configPath?: string | undefined) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(config, configPath)
-    const document = yield* planReleaseFromIntent(intent, {
+    const document = yield* planRelease({
       root,
-      ...(configPath === undefined ? {} : { configPath })
-    })
+      configPath
+    }, intent)
     return {
       document,
       identity: document.state.identity,
@@ -71,7 +70,7 @@ const operationContext = (plan: TestPlan) => ({
   identity: plan.document.state.identity,
   artifacts: plan.document.state.artifacts,
   notices: plan.document.state.notices,
-  ...(plan.document.source.configPath === undefined ? {} : { configPath: plan.document.source.configPath })
+  configPath: plan.document.source.configPath
 })
 
 export const validateTestPlan = (plan: TestPlan) =>
@@ -106,6 +105,3 @@ export const renderTestPlanSummary = (plan: TestPlan): string =>
 
 export const renderTestPlanMarkdown = (plan: TestPlan): string =>
   renderPlanMarkdown(plan.document)
-
-export const renderTestPlanOperationExplanation = (plan: TestPlan, operationId: string) =>
-  renderPlanOperationExplanation(plan.document, operationId)

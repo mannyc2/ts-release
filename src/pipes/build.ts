@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import type { Builder, BuilderPlan } from "../builders/builder.js"
 import { bunBuilder, type BunBuildOptions } from "../builders/bun.js"
 import { commandBuilder, type CommandBuildOptions } from "../builders/command.js"
 import { prebuiltBuilder, type PrebuiltBuildOptions } from "../builders/prebuilt.js"
@@ -22,30 +23,35 @@ const targetsFor = (options: BuildOptions): ReadonlyArray<PlatformTarget> => {
   return options.targets
 }
 
-const unsupportedTargetError = (
-  builderId: string,
-  target: PlatformTarget,
-  supportedTargets: ReadonlyArray<PlatformTarget>
-): PlanError =>
-  PlanError.make({
-    pipeId: "build",
-    field: "builds[].targets",
-    reason: `Builder ${builderId} does not support target ${target}. Supported targets: ${supportedTargets.join(", ")}.`
-  })
+const checkAndPlan = <Options extends { readonly builder: string }>(
+  builder: Builder<Options>,
+  options: Options,
+  identity: ReleaseIdentity,
+  target: PlatformTarget
+): Effect.Effect<BuilderPlan, PlanError> =>
+  builder.supportedTargets.includes(target)
+    ? builder.plan(options, identity, target)
+    : Effect.fail(PlanError.make({
+      pipeId: "build",
+      field: "builds[].targets",
+      reason:
+        `Builder ${builder.id} does not support target ${target}. Supported targets: ${builder.supportedTargets.join(", ")}.`
+    }))
 
-const defaultSection = (section: BuildOptions, identity: ReleaseIdentity): BuildOptions => {
+const planSection = (
+  section: BuildOptions,
+  identity: ReleaseIdentity,
+  target: PlatformTarget
+): Effect.Effect<BuilderPlan, PlanError> => {
   switch (section.builder) {
     case "bun":
-      return bunBuilder.defaults(section, identity)
+      return checkAndPlan(bunBuilder, section, identity, target)
     case "command":
-      return commandBuilder.defaults(section, identity)
+      return checkAndPlan(commandBuilder, section, identity, target)
     case "prebuilt":
-      return prebuiltBuilder.defaults(section, identity)
+      return checkAndPlan(prebuiltBuilder, section, identity, target)
   }
 }
-
-const applyDefaults = (sections: ReadonlyArray<BuildOptions>, identity: ReleaseIdentity): ReadonlyArray<BuildOptions> =>
-  sections.map((section) => defaultSection(section, identity))
 
 export const buildPipe: Pipe<ReadonlyArray<BuildOptions>> = {
   id: "build",
@@ -54,46 +60,15 @@ export const buildPipe: Pipe<ReadonlyArray<BuildOptions>> = {
     const sections = buildSections(config)
     return sections.length === 0 ? undefined : sections
   },
-  defaults: applyDefaults,
   plan: (sections, state) =>
     Effect.gen(function*() {
       const artifacts = []
       const operations = []
       for (const section of sections) {
         for (const target of targetsFor(section)) {
-          switch (section.builder) {
-            case "bun": {
-              if (!bunBuilder.supportedTargets.includes(target)) {
-                return yield* Effect.fail(unsupportedTargetError(bunBuilder.id, target, bunBuilder.supportedTargets))
-              }
-              const planned = yield* bunBuilder.plan(section, state.identity, target)
-              artifacts.push(...planned.artifacts)
-              operations.push(...planned.operations)
-              break
-            }
-            case "command": {
-              if (!commandBuilder.supportedTargets.includes(target)) {
-                return yield* Effect.fail(
-                  unsupportedTargetError(commandBuilder.id, target, commandBuilder.supportedTargets)
-                )
-              }
-              const planned = yield* commandBuilder.plan(section, state.identity, target)
-              artifacts.push(...planned.artifacts)
-              operations.push(...planned.operations)
-              break
-            }
-            case "prebuilt": {
-              if (!prebuiltBuilder.supportedTargets.includes(target)) {
-                return yield* Effect.fail(
-                  unsupportedTargetError(prebuiltBuilder.id, target, prebuiltBuilder.supportedTargets)
-                )
-              }
-              const planned = yield* prebuiltBuilder.plan(section, state.identity, target)
-              artifacts.push(...planned.artifacts)
-              operations.push(...planned.operations)
-              break
-            }
-          }
+          const planned = yield* planSection(section, state.identity, target)
+          artifacts.push(...planned.artifacts)
+          operations.push(...planned.operations)
         }
       }
       return {

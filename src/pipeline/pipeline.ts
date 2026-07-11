@@ -32,8 +32,3 @@ export const publishPipeline: ReadonlyArray<Pipe<unknown>> = [
   publishHomebrewPipe,
   publishScoopPipe
 ]
-
-export const releasePipeline: ReadonlyArray<Pipe<unknown>> = [
-  ...buildPipeline,
-  ...publishPipeline
-]

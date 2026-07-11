@@ -2,11 +2,18 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import {
   Artifact,
-  artifactPathBaseName,
   CatalogFileExtra,
   SafeRelativePath
 } from "../pipeline/artifact.js"
 import { PlanError } from "../pipeline/errors.js"
+import {
+  catalogArtifactUrl,
+  compactPackageShortName,
+  findCatalogArtifact,
+  githubRepository,
+  projectPackageName,
+  rejectInvalidCatalogArtifact
+} from "./shared.js"
 import {
   HomebrewFormulaContent,
   HomebrewFormulaEntry,
@@ -16,7 +23,6 @@ import {
 import {
   catalogPathBaseName
 } from "../pipeline/operation-helpers.js"
-import { optionalField } from "../pipeline/optional-field.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
@@ -51,30 +57,6 @@ export interface HomebrewSection {
   readonly githubRepository?: string | undefined
 }
 
-const compactPackageShortName = (packageName: string): string => {
-  const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
-  const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
-  return normalized.length === 0 ? "release" : normalized
-}
-
-const projectPackageName = (project: {
-  readonly name?: string | undefined
-  readonly package?: string | undefined
-  readonly packageName?: string | undefined
-}): string | undefined =>
-  project.packageName ?? project.package ?? project.name
-
-const githubRepository = (config: {
-  readonly project: { readonly repository?: string | undefined }
-  readonly publish: { readonly github?: boolean | { readonly repository?: string | undefined } | undefined }
-}): string | undefined => {
-  const github = config.publish.github
-  if (github === undefined || github === false) {
-    return undefined
-  }
-  return github === true ? config.project.repository : github.repository ?? config.project.repository
-}
-
 export const homebrewSectionFromConfig = (config: {
   readonly project: {
     readonly name?: string | undefined
@@ -98,20 +80,26 @@ export const homebrewSectionFromConfig = (config: {
     formulaName,
     formulaPath: publish.formulaPath ?? `.release/generated/${formulaName}.rb`,
     artifactIds: publish.artifactIds ?? (publish.artifactId === undefined ? undefined : [publish.artifactId]),
-    ...optionalField(publish.homepage, (homepage) => ({ homepage })),
-    ...optionalField(publish.description, (description) => ({ description })),
-    ...optionalField(publish.url, (url) => ({ url })),
-    ...optionalField(publish.tapDirectory, (tapDirectory) => ({ tapDirectory })),
-    ...optionalField(publish.installPath, (installPath) => ({ installPath })),
-    ...optionalField(publish.tokenEnv, (tokenEnv) => ({ tokenEnv })),
-    ...optionalField(repository, (githubRepository) => ({ githubRepository }))
+    homepage: publish.homepage,
+    description: publish.description,
+    url: publish.url,
+    tapDirectory: publish.tapDirectory,
+    installPath: publish.installPath,
+    tokenEnv: publish.tokenEnv,
+    githubRepository: repository
   }
+}
+
+// Totalized section: after defaults, formulaName/formulaPath are facts.
+export interface NormalizedHomebrewSection extends HomebrewSection {
+  readonly formulaName: string
+  readonly formulaPath: string
 }
 
 export const defaultHomebrewSection = (
   section: HomebrewSection,
   identity: ReleaseIdentity
-): HomebrewSection => {
+): NormalizedHomebrewSection => {
   const formulaName = section.formulaName ?? compactPackageShortName(identity.normalizedName)
   return {
     ...section,
@@ -129,30 +117,11 @@ const formulaClassName = (formulaName: string): string => {
 const rubyString = (value: string): string =>
   JSON.stringify(value)
 
-const artifactUrl = (
-  section: HomebrewSection,
-  identity: ReleaseIdentity,
-  artifact: Artifact
-): string =>
-  section.url ??
-    (section.githubRepository === undefined
-      ? artifact.path
-      : `https://github.com/${section.githubRepository}/releases/download/${identity.tag}/${artifactPathBaseName(artifact.path)}`)
-
-const findArtifact = (
-  section: HomebrewSection,
-  artifacts: ReadonlyArray<Artifact>,
-  artifactId: string
-): Effect.Effect<Artifact, PlanError> => {
-  const artifact = artifacts.find((candidate) => candidate.id === artifactId)
-  if (artifact !== undefined) {
-    return Effect.succeed(artifact)
-  }
-  return Effect.fail(PlanError.make({
-    pipeId: "catalog:homebrew",
-    field: "publish.homebrew.ids",
-    reason: `Homebrew target references missing artifact ${artifactId}.`
-  }))
+const errorSource = {
+  pipeId: "catalog:homebrew",
+  field: "publish.homebrew.ids",
+  target: "Homebrew",
+  label: "Homebrew formula"
 }
 
 const selectArtifacts = Effect.fn("catalog.homebrew.selectArtifacts")(function*(
@@ -168,7 +137,7 @@ const selectArtifacts = Effect.fn("catalog.homebrew.selectArtifacts")(function*(
       }))
     }
     return yield* Effect.forEach(section.artifactIds, (artifactId) =>
-      findArtifact(section, artifacts, artifactId)
+      findCatalogArtifact(errorSource, artifacts, artifactId)
     )
   }
   const selected = artifacts.filter((artifact) =>
@@ -214,44 +183,26 @@ const validateVariantArtifacts = Effect.fn("catalog.homebrew.validateVariantArti
   return [...artifacts].sort(homebrewArchOrder)
 })
 
-const rejectInvalidHomebrewArtifact = (artifact: Artifact): Effect.Effect<void, PlanError> => {
-  if (artifact.kind === "package" || (artifact.extra?._tag === "file" && artifact.extra.format === "directory")) {
-    return Effect.fail(PlanError.make({
-      pipeId: "catalog:homebrew",
-      field: "publish.homebrew.ids",
-      reason: "Homebrew formula artifacts must be file-like, not directories."
-    }))
-  }
-  if (artifact.checksum !== undefined && artifact.checksum.algorithm !== "sha256") {
-    return Effect.fail(PlanError.make({
-      pipeId: "catalog:homebrew",
-      field: `artifacts.${artifact.id}.checksum`,
-      reason: "Homebrew formula artifacts require sha256 checksums."
-    }))
-  }
-  return Effect.void
-}
-
 const singleArtifactBinaryName = (
-  section: HomebrewSection,
+  section: NormalizedHomebrewSection,
   artifact: Artifact
 ): string | undefined =>
   section.installPath !== undefined ? section.formulaName : artifact.platform?.binaryName
 
 const multiArtifactBinaryName = (
-  section: HomebrewSection,
+  section: NormalizedHomebrewSection,
   artifacts: ReadonlyArray<Artifact>
 ): string =>
   section.installPath !== undefined
-    ? section.formulaName ?? "release"
+    ? section.formulaName
     : artifacts.find((entry) => entry.platform?.binaryName !== undefined)?.platform?.binaryName ??
-      section.formulaName ?? "release"
+      section.formulaName
 
 const singleArtifactInstallLines = (
-  section: HomebrewSection,
+  section: NormalizedHomebrewSection,
   artifact: Artifact
 ): ReadonlyArray<string> => {
-  const formulaName = section.formulaName ?? "release"
+  const formulaName = section.formulaName
   if (section.installPath !== undefined) {
     return [
       `    bin.install ${rubyString(section.installPath)} => ${rubyString(formulaName)}`,
@@ -268,10 +219,10 @@ const singleArtifactInstallLines = (
 }
 
 const multiArtifactInstallLines = (
-  section: HomebrewSection,
+  section: NormalizedHomebrewSection,
   artifacts: ReadonlyArray<Artifact>
 ): ReadonlyArray<string> => {
-  const formulaName = section.formulaName ?? "release"
+  const formulaName = section.formulaName
   if (section.installPath !== undefined) {
     return [
       `    bin.install ${rubyString(section.installPath)} => ${rubyString(formulaName)}`,
@@ -297,13 +248,13 @@ const formulaTestLines = (binaryName: string | undefined): ReadonlyArray<string>
     ]
 
 const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
-  section: HomebrewSection,
+  section: NormalizedHomebrewSection,
   identity: ReleaseIdentity,
   artifacts: ReadonlyArray<Artifact>
 ) {
   const selected = yield* selectArtifacts(section, artifacts)
-  yield* Effect.forEach(selected, rejectInvalidHomebrewArtifact)
-  const formulaName = section.formulaName ?? "release"
+  yield* Effect.forEach(selected, (artifact) => rejectInvalidCatalogArtifact(errorSource, artifact))
+  const formulaName = section.formulaName
   const homepage = section.homepage ?? `https://github.com/${section.repository}`
   const description = section.description ?? `${identity.name} ${identity.version} release artifact`
   if (selected.length === 1) {
@@ -326,7 +277,7 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
       entries: [
         HomebrewFormulaEntry.make({
           artifactId: artifact.id,
-          url: artifactUrl(section, identity, artifact),
+          url: catalogArtifactUrl(section, identity, artifact),
           os: artifact.platform?.os === "linux" ? "linux" : "darwin",
           arch: artifact.platform?.arch ?? "arm64"
         })
@@ -345,7 +296,7 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
     entries: variants.map((artifact) =>
       HomebrewFormulaEntry.make({
         artifactId: artifact.id,
-        url: artifactUrl(section, identity, artifact),
+        url: catalogArtifactUrl(section, identity, artifact),
         os: "darwin",
         arch: artifact.platform?.arch ?? "arm64"
       })
@@ -357,10 +308,10 @@ export const catalogHomebrewPipe: Pipe<HomebrewSection> = {
   id: "catalog:homebrew",
   phase: "catalog",
   section: homebrewSectionFromConfig,
-  defaults: defaultHomebrewSection,
-  plan: (section, state) =>
+  plan: (rawSection, state) =>
     Effect.gen(function*() {
-      const formulaPath = section.formulaPath ?? `.release/generated/${section.formulaName ?? "release"}.rb`
+      const section = defaultHomebrewSection(rawSection, state.identity)
+      const formulaPath = section.formulaPath
       const content = yield* formulaContent(section, state.identity, state.artifacts.artifacts)
       return {
         ...emptyContribution,

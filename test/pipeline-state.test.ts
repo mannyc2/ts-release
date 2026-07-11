@@ -1,14 +1,7 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Schema from "effect/Schema"
 import { Artifact, ExecutableExtra } from "../src/pipeline/artifact.js"
-import {
-  ArtifactCatalog,
-  and,
-  byArch,
-  byKind,
-  byOs,
-  filterCatalog
-} from "../src/pipeline/catalog.js"
+import { ArtifactCatalog } from "../src/pipeline/catalog.js"
 import { emptyReleaseState, ReleaseState } from "../src/pipeline/state.js"
 import { makePipelineIdentity } from "./helpers.js"
 
@@ -54,6 +47,9 @@ describe("pipeline state", () => {
       ]
     })
 
-    expect(filterCatalog(catalog, and(byKind("executable"), byOs("linux"), byArch("x64")))).toEqual([linux])
+    const filtered = catalog.artifacts.filter((artifact) =>
+      artifact.kind === "executable" && artifact.platform?.os === "linux" && artifact.platform.arch === "x64"
+    )
+    expect(filtered).toEqual([linux])
   })
 })

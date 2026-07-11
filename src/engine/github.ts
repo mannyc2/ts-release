@@ -86,6 +86,22 @@ const decodeGitHubRelease = Schema.decodeUnknownEffect(GitHubReleaseApiResponse)
 const decodeGitHubReleaseList = Schema.decodeUnknownEffect(Schema.Array(GitHubReleaseApiResponse))
 const decodeGitHubAsset = Schema.decodeUnknownEffect(GitHubReleaseApiAssetResponse)
 
+const runGithubJson = (
+  http: ReleaseHttpShape,
+  operation: string,
+  request: HttpRequestSpec
+): Effect.Effect<HttpResult, GitHubApiError> =>
+  http.runJson(request).pipe(
+    Effect.mapError((error) =>
+      GitHubApiError.make({
+        operation,
+        url: error.url,
+        reason: error.reason,
+        cause: error
+      })
+    )
+  )
+
 const parseRepository = Effect.fn("githubApi.parseRepository")(function*(repository: string) {
   const parts = repository.split("/")
   const owner = parts[0]
@@ -169,53 +185,29 @@ const ensureSuccessStatus = (
       })
     )
 
-const decodeReleaseResult = (
+const decodeGithubResult = <A>(
+  decoder: (input: unknown) => Effect.Effect<A, Schema.SchemaError>,
+  what: string
+) =>
+(
   operation: string,
   result: HttpResult
-): Effect.Effect<GitHubReleaseApiResponse, GitHubApiError> =>
-  decodeGitHubRelease(result.json).pipe(
+): Effect.Effect<A, GitHubApiError> =>
+  decoder(result.json).pipe(
     Effect.mapError((error) =>
       GitHubApiError.make({
         operation,
         url: result.request.url,
         status: result.status,
-        reason: "GitHub release response did not match the expected schema.",
+        reason: `GitHub ${what} response did not match the expected schema.`,
         cause: error
       })
     )
   )
 
-const decodeReleaseListResult = (
-  operation: string,
-  result: HttpResult
-): Effect.Effect<ReadonlyArray<GitHubReleaseApiResponse>, GitHubApiError> =>
-  decodeGitHubReleaseList(result.json).pipe(
-    Effect.mapError((error) =>
-      GitHubApiError.make({
-        operation,
-        url: result.request.url,
-        status: result.status,
-        reason: "GitHub release list response did not match the expected schema.",
-        cause: error
-      })
-    )
-  )
-
-const decodeAssetResult = (
-  operation: string,
-  result: HttpResult
-): Effect.Effect<GitHubReleaseApiAssetResponse, GitHubApiError> =>
-  decodeGitHubAsset(result.json).pipe(
-    Effect.mapError((error) =>
-      GitHubApiError.make({
-        operation,
-        url: result.request.url,
-        status: result.status,
-        reason: "GitHub release asset response did not match the expected schema.",
-        cause: error
-      })
-    )
-  )
+const decodeReleaseResult = decodeGithubResult(decodeGitHubRelease, "release")
+const decodeReleaseListResult = decodeGithubResult(decodeGitHubReleaseList, "release list")
+const decodeAssetResult = decodeGithubResult(decodeGitHubAsset, "release asset")
 
 const releaseBody = (request: GitHubReleaseCreateRequest): HttpJsonRequestBody => {
   const json: Record<string, Schema.Json> = {
@@ -313,21 +305,14 @@ const releaseListPage = Effect.fn("githubApi.releaseListPage")(function*(
   tag: string,
   url: string
 ) {
-  const result: HttpResult = yield* http.runJson(
+  const result: HttpResult = yield* runGithubJson(
+    http,
+    "inspectRelease",
     githubRequest({
       method: "GET",
       url,
       tokenEnv
     })
-  ).pipe(
-    Effect.mapError((error) =>
-      GitHubApiError.make({
-        operation: "inspectRelease",
-        url: error.url,
-        reason: error.reason,
-        cause: error
-      })
-    )
   )
   yield* ensureSuccessStatus("inspectRelease", result)
   const releases = yield* decodeReleaseListResult("inspectRelease", result)
@@ -409,7 +394,9 @@ const uploadAsset = Effect.fn("githubApi.uploadAsset")(function*(
   asset: GitHubReleaseAssetSpec
 ) {
   const url = yield* validateUploadUrl(coordinates, uploadUrl, asset.name)
-  const result = yield* http.runJson(
+  const result = yield* runGithubJson(
+    http,
+    "uploadAsset",
     githubRequest({
       method: "POST",
       url,
@@ -419,15 +406,6 @@ const uploadAsset = Effect.fn("githubApi.uploadAsset")(function*(
         contentType: asset.contentType
       })
     })
-  ).pipe(
-    Effect.mapError((error) =>
-      GitHubApiError.make({
-        operation: "uploadAsset",
-        url: error.url,
-        reason: error.reason,
-        cause: error
-      })
-    )
   )
   yield* ensureSuccessStatus("uploadAsset", result)
   return yield* decodeAssetResult("uploadAsset", result)
@@ -459,22 +437,15 @@ export const GitHubApiLiveLayer: Layer.Layer<GitHubApi, never, ReleaseHttp> =
       return {
         createRelease: Effect.fn("githubApi.createRelease")(function*(request: GitHubReleaseCreateRequest) {
           const coordinates = yield* parseRepository(request.repository)
-          const result = yield* http.runJson(
+          const result = yield* runGithubJson(
+            http,
+            "createRelease",
             githubRequest({
               method: "POST",
               url: githubReleasesUrl(coordinates),
               tokenEnv: request.tokenEnv,
               body: releaseBody(request)
             })
-          ).pipe(
-            Effect.mapError((error) =>
-              GitHubApiError.make({
-                operation: "createRelease",
-                url: error.url,
-                reason: error.reason,
-                cause: error
-              })
-            )
           )
           yield* ensureSuccessStatus("createRelease", result)
           const release = yield* decodeReleaseResult("createRelease", result)
@@ -495,21 +466,14 @@ export const GitHubApiLiveLayer: Layer.Layer<GitHubApi, never, ReleaseHttp> =
         inspectRelease: Effect.fn("githubApi.inspectRelease")(function*(request: GitHubReleaseInspectRequest) {
           const coordinates = yield* parseRepository(request.repository)
           const url = githubReleaseByTagUrl(coordinates, request.tag)
-          const result = yield* http.runJson(
+          const result = yield* runGithubJson(
+            http,
+            "inspectRelease",
             githubRequest({
               method: "GET",
               url,
               tokenEnv: request.tokenEnv
             })
-          ).pipe(
-            Effect.mapError((error) =>
-              GitHubApiError.make({
-                operation: "inspectRelease",
-                url: error.url,
-                reason: error.reason,
-                cause: error
-              })
-            )
           )
           if (result.status === 404) {
             return yield* inspectReleaseByList(http, coordinates, request)

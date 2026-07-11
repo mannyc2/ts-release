@@ -354,8 +354,7 @@ describe("cli command", () => {
       const plan = await Effect.runPromise(
         planRelease({
           root,
-          configPath: "release.config.json",
-          format: "text"
+          configPath: "release.config.json"
         }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )

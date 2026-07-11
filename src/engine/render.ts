@@ -1,22 +1,11 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
 import {
   CommandSpec,
   Operation,
   type OperationRisk,
   operationApprovalLabel,
-  operationApprovalRequirements,
-  OperationId
+  operationApprovalRequirements
 } from "../pipeline/operation.js"
 import { ReleasePlanDocument } from "./plan-document.js"
-
-
-export class PlanOperationNotFoundError extends Schema.TaggedErrorClass<PlanOperationNotFoundError>()(
-  "PlanOperationNotFoundError",
-  {
-    operationId: OperationId
-  }
-) {}
 
 const commandLine = (command: CommandSpec): string =>
   [command.executable, ...command.args].join(" ")
@@ -285,31 +274,6 @@ export const renderPlanMarkdown = (plan: ReleasePlanDocument): string => {
 
   return `${lines.join("\n")}\n`
 }
-
-const renderOperationExplanationText = (plan: ReleasePlanDocument, operation: Operation): string => {
-  const lines: Array<string> = [
-    `operation: ${operation.id}`,
-    `target: ${operationTargetId(operation) ?? "none"}`,
-    `pipe: ${operation.pipeId}`,
-    `risk: ${operation.risk}`,
-    `why: ${operation.description}`,
-    `execution approval: ${operationApprovalLabel(operation)}`
-  ]
-
-  lines.push(...operationDetailLines(operation))
-  return `${lines.join("\n")}\n`
-}
-
-export const renderPlanOperationExplanation = Effect.fn("renderPlanOperationExplanation")(function*(
-  plan: ReleasePlanDocument,
-  operationId: string
-) {
-  const operation = plan.state.operations.find((candidate) => candidate.id === operationId)
-  if (operation === undefined) {
-    return yield* Effect.fail(PlanOperationNotFoundError.make({ operationId }))
-  }
-  return renderOperationExplanationText(plan, operation)
-})
 
 export const renderReleasePlan = (
   plan: ReleasePlanDocument,

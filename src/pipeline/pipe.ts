@@ -19,7 +19,6 @@ export interface Pipe<Section> {
   readonly id: string
   readonly phase: PipePhase
   section(config: ReleaseConfig): Section | undefined
-  defaults?(section: Section, identity: ReleaseIdentity): Section
   plan(
     section: Section,
     state: ReleaseState

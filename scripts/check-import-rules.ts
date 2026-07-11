@@ -21,6 +21,17 @@ interface AllowlistEntry {
 const root = cwd()
 const sourceRoot = join(root, "src")
 
+const bareEffectScanRoots = [
+  "src",
+  "test",
+  "scripts",
+  "apps/release-ts/src",
+  "apps/release-ts/scripts",
+  "apps/release-ts/test",
+  "apps/ts-release-action/src",
+  "apps/ts-release-action/test"
+]
+
 const temporaryAllowlist: ReadonlyArray<AllowlistEntry> = []
 
 const toDisplayPath = makeDisplayPath(root)
@@ -256,8 +267,30 @@ const checkFile = (file: string): Array<string> => {
   })
 }
 
+const checkBareEffectImports = (file: string): Array<string> => {
+  const source = ts.createSourceFile(
+    file,
+    readFileSync(file, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  )
+  return collectImports(file).flatMap((reference) =>
+    reference.specifier === "effect"
+      ? [`${location(source, reference.position)} imports from broad "effect"; use effect/<Module>`]
+      : []
+  )
+}
+
 const files = existsSync(sourceRoot) ? collectTypeScriptFiles(sourceRoot) : []
-const failures = files.flatMap(checkFile)
+const bareEffectFiles = bareEffectScanRoots.flatMap((directory) => {
+  const path = join(root, directory)
+  return existsSync(path) ? collectTypeScriptFiles(path) : []
+})
+const failures = [
+  ...files.flatMap(checkFile),
+  ...bareEffectFiles.flatMap(checkBareEffectImports)
+]
 
 if (failures.length > 0) {
   console.error("Import rule checks failed:")

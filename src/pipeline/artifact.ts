@@ -58,18 +58,6 @@ export class InstallableArtifactVariant extends Schema.Class<InstallableArtifact
   targetTriple: Schema.optionalKey(Schema.NonEmptyString)
 }) {}
 
-export class InstallableArtifactVariantOverride extends Schema.Class<InstallableArtifactVariantOverride>(
-  "InstallableArtifactVariantOverride"
-)({
-  os: Schema.optionalKey(ArtifactOperatingSystem),
-  arch: Schema.optionalKey(ArtifactArchitecture),
-  libc: Schema.optionalKey(ArtifactLibc),
-  binaryName: Schema.optionalKey(Schema.NonEmptyString),
-  executableExtension: Schema.optionalKey(Schema.NonEmptyString),
-  installPath: Schema.optionalKey(Schema.NonEmptyString),
-  targetTriple: Schema.optionalKey(Schema.NonEmptyString)
-}) {}
-
 export class PyPiWheelBinaryArtifact extends Schema.Class<PyPiWheelBinaryArtifact>("PyPiWheelBinaryArtifact")({
   os: ArtifactOperatingSystem,
   arch: ArtifactArchitecture,
@@ -77,34 +65,16 @@ export class PyPiWheelBinaryArtifact extends Schema.Class<PyPiWheelBinaryArtifac
   wheelPath: Schema.String
 }) {}
 
-export class ArtifactIntent extends Schema.Class<ArtifactIntent>("ArtifactIntent")({
-  id: ArtifactId,
-  path: SafeRelativePath,
-  downloadUrl: Schema.optionalKey(Schema.String),
-  format: ArtifactFormat,
-  consumers: Schema.Array(Schema.String),
-  checksum: Schema.optionalKey(Checksum),
-  variant: Schema.optionalKey(InstallableArtifactVariant)
-}) {}
-
 export class ArtifactInventoryItem extends Schema.Class<ArtifactInventoryItem>("ArtifactInventoryItem")({
   id: ArtifactId,
   path: SafeRelativePath,
-  downloadUrl: Schema.optionalKey(Schema.String),
+  downloadUrl: Schema.optional(Schema.String),
   format: ArtifactFormat,
   consumers: Schema.Array(Schema.String),
   sizeBytes: Schema.Number,
   checksum: Schema.optionalKey(Checksum),
   variant: Schema.optionalKey(InstallableArtifactVariant)
 }) {}
-
-export const artifactIntentOrder = (left: ArtifactIntent, right: ArtifactIntent): number =>
-  left.id.localeCompare(right.id)
-
-export const artifactInventoryOrder = (
-  left: ArtifactInventoryItem,
-  right: ArtifactInventoryItem
-): number => left.id.localeCompare(right.id)
 
 export const ArtifactKind = Schema.Literals([
   "executable",
@@ -123,12 +93,12 @@ export class ExecutableExtra extends Schema.TaggedClass<ExecutableExtra>()("exec
   binary: Schema.String,
   extension: Schema.String,
   builderId: Schema.String,
-  dynamicallyLinked: Schema.optionalKey(Schema.Boolean)
+  dynamicallyLinked: Schema.optional(Schema.Boolean)
 }) {}
 
 export class ArchiveExtra extends Schema.TaggedClass<ArchiveExtra>()("archive", {
   format: Schema.String,
-  wrappedIn: Schema.optionalKey(Schema.String),
+  wrappedIn: Schema.optional(Schema.String),
   binaries: Schema.Array(Schema.String),
   files: Schema.Array(Schema.String)
 }) {}

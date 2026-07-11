@@ -172,11 +172,6 @@ const validateSafeRelativePath = (
 export const bunBuilder: Builder<BunBuildOptions> = {
   id: "bun",
   supportedTargets: allPlatformTargets,
-  defaults: (options, identity) => ({
-    ...options,
-    id: options.id ?? "cli",
-    binary: options.binary ?? identity.normalizedName
-  }),
   plan: (options, identity, target): Effect.Effect<BuilderPlan, PlanError> =>
     Effect.gen(function*() {
       if (!(options.targets ?? defaultTargets).includes(target)) {

@@ -2,8 +2,7 @@ import * as Effect from "effect/Effect"
 import { PlanError } from "../pipeline/errors.js"
 import {
   catalogGitPublishOperations,
-  dryRunValidationOperation,
-  noAuthCommand
+  validationNoteOperation
 } from "../pipeline/operation-helpers.js"
 import type { Pipe } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
@@ -27,24 +26,19 @@ export const publishHomebrewPipe: Pipe<HomebrewSection> = {
   id: "publish:homebrew",
   phase: "publish",
   section: homebrewSectionFromConfig,
-  defaults: defaultHomebrewSection,
-  plan: (section, state) =>
+  plan: (rawSection, state) =>
     Effect.gen(function*() {
+      const section = defaultHomebrewSection(rawSection, state.identity)
       yield* rejectUnsupportedTokenEnv(section)
-      const formulaPath = section.formulaPath ?? `.release/generated/${section.formulaName ?? "release"}.rb`
+      const formulaPath = section.formulaPath
       return {
         ...emptyContribution,
         operations: [
-          dryRunValidationOperation({
+          validationNoteOperation({
             id: "homebrew:brew-audit",
             pipeId: "publish:homebrew",
-            dryRunSupport: "simulated",
-            nativeDescription: "Validate generated Homebrew formula with brew audit.",
-            command: noAuthCommand("brew", ["audit", "--strict", "--formula", formulaPath]),
-            simulatedDescription: "Record simulated Homebrew formula validation.",
-            skippedDescription: "Record skipped Homebrew formula validation.",
-            simulatedMessage: "Homebrew formula validation is simulated by the deterministic release plan.",
-            skippedMessage: "Homebrew formula validation was skipped because this target declares no dry-run support."
+            description: "Record simulated Homebrew formula validation.",
+            message: "Homebrew formula validation is simulated by the deterministic release plan."
           }),
           ...catalogGitPublishOperations({
             id: "homebrew:homebrew-push",
@@ -52,7 +46,7 @@ export const publishHomebrewPipe: Pipe<HomebrewSection> = {
             description: `Push Homebrew tap update for ${state.identity.name}@${state.identity.version}.`,
             directory: section.tapDirectory,
             filePath: formulaPath,
-            commitMessage: `Update ${section.formulaName ?? "release"} to ${state.identity.version}`
+            commitMessage: `Update ${section.formulaName} to ${state.identity.version}`
           })
         ]
       }

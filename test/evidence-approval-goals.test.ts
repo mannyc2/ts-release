@@ -12,12 +12,10 @@ import {
 import {
   CommandSpec,
   ExecutionApproval,
-  operationRequiresExecute,
-  operationRequiresIrreversibleApproval
+  operationApprovalRequirements
 } from "../src/pipeline/operation.js"
 import {
   planRelease,
-  planReleaseFromIntent,
   writeReleaseEvidence
 } from "../src/engine/engine.js"
 import type { ReleasePlanDocument } from "../src/engine/plan-document.js"
@@ -50,7 +48,7 @@ const TestLayer = Layer.mergeAll(
 const planFromConfig = (config: string) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(config)
-    return yield* planReleaseFromIntent(intent, { root: "." })
+    return yield* planRelease({ root: "." }, intent)
   })
 
 const operationContext = (plan: ReleasePlanDocument) => ({
@@ -71,8 +69,8 @@ describe("minimal evidence and approval goals", () => {
         expect(publish?.action._tag).toBe("command")
         if (publish !== undefined) {
           expect(publish.risk).toBe("irreversible")
-          expect(operationRequiresExecute(publish)).toBe(true)
-          expect(operationRequiresIrreversibleApproval(publish)).toBe(true)
+          expect(operationApprovalRequirements(publish).requiresExecute).toBe(true)
+          expect(operationApprovalRequirements(publish).requiresIrreversibleApproval).toBe(true)
         }
 
         const withoutExecute = yield* executeOperations(

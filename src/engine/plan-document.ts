@@ -7,7 +7,7 @@ import { ReleaseState } from "../pipeline/state.js"
 
 export class SourceMetadata extends Schema.Class<SourceMetadata>("SourceMetadata")({
   root: Schema.String,
-  configPath: Schema.optionalKey(Schema.String)
+  configPath: Schema.optional(Schema.String)
 }) {}
 
 export class ReleasePlanDocument extends Schema.Class<ReleasePlanDocument>("ReleasePlanDocument")({

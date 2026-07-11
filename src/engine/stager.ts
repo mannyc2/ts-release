@@ -106,6 +106,36 @@ const isInsideRoot = (path: Path.Path, root: string, target: string): boolean =>
 
 export type StageOperation = Operation & { readonly action: StageAction }
 
+const stageError = (
+  operation: StageOperation,
+  fields: {
+    readonly artifactId?: string | undefined
+    readonly path?: string | undefined
+    readonly reason: string
+    readonly cause?: unknown
+  }
+): ArtifactStageError =>
+  ArtifactStageError.make({
+    operationId: operation.id,
+    intentTag: operation.action.intent._tag,
+    ...optionalField(fields.artifactId, (artifactId) => ({ artifactId })),
+    ...optionalField(fields.path, (path) => ({ path })),
+    reason: fields.reason,
+    ...optionalField(fields.cause, (cause) => ({ cause }))
+  })
+
+const stagedResult = (
+  operation: StageOperation,
+  intent: { readonly _tag: string; readonly outfile: string }
+): StagedArtifactOperationResult =>
+  StagedArtifactOperationResult.make({
+    operationId: operation.id,
+    intentTag: intent._tag,
+    artifacts: operation.action.producesArtifactIds.map((id) =>
+      StagedArtifact.make({ id, path: intent.outfile })
+    )
+  })
+
 const resolveStagePath = (
   path: Path.Path,
   operation: StageOperation,
@@ -116,10 +146,8 @@ const resolveStagePath = (
   const trimmed = pathName.trim()
   if (trimmed.length === 0 || path.isAbsolute(pathName) || hasParentTraversal(pathName)) {
     return Effect.fail(
-      ArtifactStageError.make({
-        operationId: operation.id,
-        intentTag: operation.action.intent._tag,
-        ...optionalField(artifactId, (id) => ({ artifactId: id })),
+      stageError(operation, {
+        artifactId,
         path: pathName,
         reason: "Stage paths must be non-empty, relative, and must not contain parent traversal."
       })
@@ -128,10 +156,8 @@ const resolveStagePath = (
   const resolved = path.resolve(context.root, pathName)
   if (!isInsideRoot(path, context.root, resolved)) {
     return Effect.fail(
-      ArtifactStageError.make({
-        operationId: operation.id,
-        intentTag: operation.action.intent._tag,
-        ...optionalField(artifactId, (id) => ({ artifactId: id })),
+      stageError(operation, {
+        artifactId,
         path: pathName,
         reason: "Stage paths must resolve inside the workspace root."
       })
@@ -160,10 +186,8 @@ const stageBunCompile = (
           ...optionalField(intent.minify, (minify) => ({ minify }))
         }),
       catch: (cause) =>
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
-          ...optionalField(artifactId, (id) => ({ artifactId: id })),
+        stageError(operation, {
+          artifactId,
           path: intent.outfile,
           reason: `Bun.build rejected while staging ${artifactId ?? operation.id}.`,
           cause
@@ -171,25 +195,14 @@ const stageBunCompile = (
     })
     if (!output.success) {
       return yield* Effect.fail(
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
-          ...optionalField(artifactId, (id) => ({ artifactId: id })),
+        stageError(operation, {
+          artifactId,
           path: intent.outfile,
           reason: logsReason(output.logs, `Bun.build failed for ${artifactId ?? operation.id}.`)
         })
       )
     }
-    return StagedArtifactOperationResult.make({
-      operationId: operation.id,
-      intentTag: intent._tag,
-      artifacts: operation.action.producesArtifactIds.map((id) =>
-        StagedArtifact.make({
-          id,
-          path: intent.outfile
-        })
-      )
-    })
+    return stagedResult(operation, intent)
   })
 
 const sha256Digest = (data: Uint8Array): string =>
@@ -328,9 +341,7 @@ const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
       path: binary.wheelPath,
       data: yield* fs.readFile(resolved).pipe(
         Effect.mapError((cause) =>
-          ArtifactStageError.make({
-            operationId: operation.id,
-            intentTag: intent._tag,
+          stageError(operation, {
             path: sourcePath,
             reason: "Unable to read PyPI wheel binary input.",
             cause
@@ -368,9 +379,7 @@ const stagePyPiWheel = (
     const wheel = buildZipArchive(entries)
     yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
       Effect.mapError((cause) =>
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
+        stageError(operation, {
           path: intent.outfile,
           reason: "Unable to create PyPI wheel output directory.",
           cause
@@ -379,26 +388,15 @@ const stagePyPiWheel = (
     )
     yield* fs.writeFile(outputPath, wheel).pipe(
       Effect.mapError((cause) =>
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
-          ...optionalField(artifactId, (id) => ({ artifactId: id })),
+        stageError(operation, {
+          artifactId,
           path: intent.outfile,
           reason: "Unable to write PyPI wheel artifact.",
           cause
         })
       )
     )
-    return StagedArtifactOperationResult.make({
-      operationId: operation.id,
-      intentTag: intent._tag,
-      artifacts: operation.action.producesArtifactIds.map((id) =>
-        StagedArtifact.make({
-          id,
-          path: intent.outfile
-        })
-      )
-    })
+    return stagedResult(operation, intent)
   })
 
 const archiveEntryPath = (wrapDirectory: string | undefined, pathName: string): string =>
@@ -470,9 +468,7 @@ const archiveArtifactEntries = Effect.fn("ArtifactStager.archive.artifacts")(fun
     const sourcePath = yield* resolveStagePath(path, operation, artifact.sourcePath, context, artifact.artifactId)
     const data = yield* fs.readFile(sourcePath).pipe(
       Effect.mapError((cause) =>
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
+        stageError(operation, {
           artifactId: artifact.artifactId,
           path: artifact.sourcePath,
           reason: "Unable to read archive artifact input.",
@@ -497,9 +493,7 @@ const archiveBytes = (
   Effect.try({
     try: () => intent.format === "zip" ? buildZipArchive(entries) : buildTarGzArchive(entries),
     catch: (cause) =>
-      ArtifactStageError.make({
-        operationId: operation.id,
-        intentTag: intent._tag,
+      stageError(operation, {
         path: intent.outfile,
         reason: `Unable to create ${intent.format} archive bytes.`,
         cause
@@ -525,9 +519,7 @@ const stageArchive = (
     )
     yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
       Effect.mapError((cause) =>
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
+        stageError(operation, {
           path: intent.outfile,
           reason: "Unable to create archive output directory.",
           cause
@@ -536,26 +528,15 @@ const stageArchive = (
     )
     yield* fs.writeFile(outputPath, archive).pipe(
       Effect.mapError((cause) =>
-        ArtifactStageError.make({
-          operationId: operation.id,
-          intentTag: intent._tag,
-          ...optionalField(artifactId, (id) => ({ artifactId: id })),
+        stageError(operation, {
+          artifactId,
           path: intent.outfile,
           reason: "Unable to write archive artifact.",
           cause
         })
       )
     )
-    return StagedArtifactOperationResult.make({
-      operationId: operation.id,
-      intentTag: intent._tag,
-      artifacts: operation.action.producesArtifactIds.map((id) =>
-        StagedArtifact.make({
-          id,
-          path: intent.outfile
-        })
-      )
-    })
+    return stagedResult(operation, intent)
   })
 
 export const makeArtifactStagerLayer = (
@@ -596,9 +577,7 @@ export const stageArtifactOperations = Effect.fn("ArtifactStager.stageAll")(func
 export const UnsupportedArtifactStagerLayer = Layer.succeed(ArtifactStager)({
   stage: (operation) =>
     Effect.fail(
-      ArtifactStageError.make({
-        operationId: operation.id,
-        intentTag: operation.action.intent._tag,
+      stageError(operation, {
         reason: "Artifact staging is not supported by this runtime."
       })
     )

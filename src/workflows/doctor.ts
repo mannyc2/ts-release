@@ -5,7 +5,6 @@ import { configPath, readReleaseConfig } from "../config/resolve.js"
 import { envExists, planRelease } from "../engine/engine.js"
 import type { ReleasePlanDocument } from "../engine/plan-document.js"
 import type { Operation } from "../pipeline/operation.js"
-import { optionalField } from "../pipeline/optional-field.js"
 
 
 const ReleaseName = Schema.NonEmptyString
@@ -30,7 +29,7 @@ export interface DoctorReleaseInput {
 
 export class ReleaseDiagnosticCheck extends Schema.Class<ReleaseDiagnosticCheck>("ReleaseDiagnosticCheck")({
   id: Schema.NonEmptyString,
-  targetId: Schema.optionalKey(TargetId),
+  targetId: Schema.optional(TargetId),
   status: ReleaseDiagnosticStatus,
   confidence: ReleaseDiagnosticConfidence,
   message: Schema.String
@@ -52,7 +51,7 @@ const check = (input: {
 }): ReleaseDiagnosticCheck =>
   ReleaseDiagnosticCheck.make({
     id: input.id,
-    ...optionalField(input.targetId, (targetId) => ({ targetId })),
+    targetId: input.targetId,
     status: input.status,
     confidence: input.confidence,
     message: input.message

@@ -55,28 +55,19 @@ const makeDefaultReleaseRuntimeLayer = async (): Promise<ReleaseRuntimeLayer> =>
 
 let runtimeLayerFactory: ReleaseRuntimeLayerFactory = makeDefaultReleaseRuntimeLayer
 
-let releaseRuntime: ManagedRuntime.ManagedRuntime<ReleaseRuntimeServices, unknown> | undefined
-let releaseRuntimePromise:
+let runtimePromise:
   | Promise<ManagedRuntime.ManagedRuntime<ReleaseRuntimeServices, unknown>>
   | undefined
 
-const getReleaseRuntime = async (): Promise<ManagedRuntime.ManagedRuntime<ReleaseRuntimeServices, unknown>> => {
-  if (releaseRuntime !== undefined) {
-    return releaseRuntime
-  }
-  if (releaseRuntimePromise !== undefined) {
-    return releaseRuntimePromise
-  }
-  releaseRuntimePromise = Promise.resolve(runtimeLayerFactory()).then((layer) => {
-    const runtime = ManagedRuntime.make(layer)
-    releaseRuntime = runtime
-    releaseRuntimePromise = undefined
-    return runtime
-  }, (error) => {
-    releaseRuntimePromise = undefined
-    throw error
-  })
-  return releaseRuntimePromise
+const getReleaseRuntime = (): Promise<ManagedRuntime.ManagedRuntime<ReleaseRuntimeServices, unknown>> => {
+  runtimePromise ??= Promise.resolve(runtimeLayerFactory()).then(
+    (layer) => ManagedRuntime.make(layer),
+    (error) => {
+      runtimePromise = undefined
+      throw error
+    }
+  )
+  return runtimePromise
 }
 
 const runApiEffect = async <A, E>(
@@ -92,19 +83,13 @@ const runApiEffect = async <A, E>(
 }
 
 export const disposeReleaseRuntime = async (): Promise<void> => {
-  const runtime = releaseRuntime
-  const pendingRuntime = releaseRuntimePromise
-  releaseRuntime = undefined
-  releaseRuntimePromise = undefined
+  const pending = runtimePromise
+  runtimePromise = undefined
+  if (pending === undefined) {
+    return
+  }
   try {
-    if (runtime !== undefined) {
-      await runtime.dispose()
-      return
-    }
-    if (pendingRuntime !== undefined) {
-      const resolved = await pendingRuntime
-      await resolved.dispose()
-    }
+    await (await pending).dispose()
   } catch (cause) {
     throw ReleaseApiError.fromCause("dispose", cause)
   }

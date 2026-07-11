@@ -22,7 +22,7 @@ import {
   verifyOperations,
   writeRenderFiles
 } from "../src/engine/executor.js"
-import { planReleaseFromIntent } from "../src/engine/engine.js"
+import { planRelease } from "../src/engine/engine.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { expectTaggedError, minimalConfig, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 
@@ -54,7 +54,7 @@ const TestLayer = baseLayer({
 const planFromConfig = (config: string) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(config)
-    return yield* planReleaseFromIntent(intent, { root: "." })
+    return yield* planRelease({ root: "." }, intent)
   })
 
 const commandOperation = (

@@ -26,10 +26,6 @@ export const checksumPipe: Pipe<ReleaseConfigChecksum> = {
   id: "checksum",
   phase: "process",
   section: (config) => config.checksum,
-  defaults: (section) => ({
-    algorithm: section.algorithm ?? "sha256",
-    nameTemplate: section.nameTemplate ?? defaultChecksumNameTemplate
-  }),
   plan: (section, state) =>
     Effect.gen(function*() {
       const algorithm = section.algorithm ?? "sha256"

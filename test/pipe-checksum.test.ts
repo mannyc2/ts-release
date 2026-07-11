@@ -102,8 +102,7 @@ describe("checksum pipe", () => {
         return
       }
 
-      const defaulted = checksumPipe.defaults?.(section, identity) ?? section
-      const contribution = yield* checksumPipe.plan(defaulted, stateWithArtifact)
+      const contribution = yield* checksumPipe.plan(section, stateWithArtifact)
 
       expect(contribution.artifacts[0]).toMatchObject({
         id: "checksum",

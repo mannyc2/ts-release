@@ -22,7 +22,9 @@ import {
   readRedactionSecrets,
   redactText,
   sameStringSet,
-  sortedStrings
+  sortedStrings,
+  type ActionOutcome,
+  type EvidenceStatus
 } from "./evidence.js"
 import {
   deferredContentDigestAlgorithm,
@@ -50,7 +52,6 @@ import { optionalField } from "../pipeline/optional-field.js"
 import type { ArtifactCatalog } from "../pipeline/catalog.js"
 import type { PipeNotice, ReleaseIdentity } from "../pipeline/state.js"
 import {
-  ArtifactStager,
   stageArtifactOperation,
   type StageOperation
 } from "./stager.js"
@@ -67,6 +68,65 @@ export interface OperationRunContext {
   readonly notices?: ReadonlyArray<PipeNotice> | undefined
   readonly configPath?: string | undefined
 }
+
+interface RecordTiming {
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly durationMillis: number
+}
+
+interface RecordFields extends RecordTiming {
+  readonly status: EvidenceStatus
+  readonly message: string
+  readonly outcome?: ActionOutcome | undefined
+}
+
+const record = (operation: Operation, fields: RecordFields): EvidenceRecord =>
+  EvidenceRecord.make({
+    operationId: operation.id,
+    pipeId: operation.pipeId,
+    phase: operation.phase,
+    risk: operation.risk,
+    status: fields.status,
+    message: fields.message,
+    startedAt: fields.startedAt,
+    endedAt: fields.endedAt,
+    durationMillis: fields.durationMillis,
+    outcome: fields.outcome
+  })
+
+const instantRecord = Effect.fn("engine.instantRecord")(function*(
+  operation: Operation,
+  fields: {
+    readonly status: EvidenceStatus
+    readonly message: string
+    readonly outcome?: ActionOutcome | undefined
+  }
+) {
+  const timestamp = yield* nowIso()
+  return record(operation, {
+    ...fields,
+    startedAt: timestamp,
+    endedAt: timestamp,
+    durationMillis: 0
+  })
+})
+
+const startTiming = Effect.fn("engine.startTiming")(function*() {
+  const startedAt = yield* nowIso()
+  const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  return {
+    end: Effect.fn("engine.endTiming")(function*() {
+      const endedAt = yield* nowIso()
+      const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+      return {
+        startedAt,
+        endedAt,
+        durationMillis: Math.max(0, ended - started)
+      } satisfies RecordTiming
+    })
+  }
+})
 
 const bundleForContext = (context: OperationRunContext): EvidenceBundle =>
   emptyEvidenceBundle({
@@ -176,54 +236,31 @@ const fileCheckEvidence = Effect.fn("engine.fileCheckEvidence")(function*(
   if (operation.action._tag !== "check-file") {
     throw new Error("fileCheckEvidence requires a check-file action")
   }
+  const outcome = FileOutcome.make({ path: operation.action.path })
   const resolved = resolveWorkspacePath(path, context.root, operation.action.path)
   const exists = yield* fs.exists(resolved)
   if (!exists) {
-    const timestamp = yield* nowIso()
-    return EvidenceRecord.make({
-      operationId: operation.id,
-      pipeId: operation.pipeId,
-      phase: operation.phase,
-      risk: operation.risk,
+    return yield* instantRecord(operation, {
       status: "failed",
       message: "File does not exist.",
-      startedAt: timestamp,
-      endedAt: timestamp,
-      durationMillis: 0,
-      outcome: FileOutcome.make({ path: operation.action.path })
+      outcome
     })
   }
   if (operation.action.checksum !== undefined) {
     const bytes = yield* fs.readFile(resolved)
     const actual = digestHex(bytes, operation.action.checksum.algorithm)
     if (actual !== operation.action.checksum.value) {
-      const timestamp = yield* nowIso()
-      return EvidenceRecord.make({
-        operationId: operation.id,
-        pipeId: operation.pipeId,
-        phase: operation.phase,
-        risk: operation.risk,
+      return yield* instantRecord(operation, {
         status: "failed",
         message: "File checksum did not match.",
-        startedAt: timestamp,
-        endedAt: timestamp,
-        durationMillis: 0,
-        outcome: FileOutcome.make({ path: operation.action.path })
+        outcome
       })
     }
   }
-  const timestamp = yield* nowIso()
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
+  return yield* instantRecord(operation, {
     status: "passed",
     message: "File check passed.",
-    startedAt: timestamp,
-    endedAt: timestamp,
-    durationMillis: 0,
-    outcome: FileOutcome.make({ path: operation.action.path })
+    outcome
   })
 })
 
@@ -233,13 +270,8 @@ const commandEvidence = Effect.fn("engine.commandEvidence")(function*(
   const commandRunner = yield* ReleaseCommandRunner
   const secrets = yield* readRedactionSecrets(operation)
   const result = yield* commandRunner.runCommand(operation.action.command)
-  const status = result.exitCode === 0 ? "passed" : "failed"
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
-    status,
+  return record(operation, {
+    status: result.exitCode === 0 ? "passed" : "failed",
     message: result.exitCode === 0
       ? "Command completed successfully."
       : "Command exited with a nonzero status.",
@@ -264,17 +296,9 @@ const writeFileEvidence = Effect.fn("engine.writeFileEvidence")(function*(
   }
   const resolved = yield* resolveWriteFileContents(operation.action.contents, context, operation.action.path)
   yield* writeWorkspaceFile(context.root, operation.action.path, resolved.contents)
-  const timestamp = yield* nowIso()
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
+  return yield* instantRecord(operation, {
     status: "passed",
     message: `Rendered ${operation.action.path}`,
-    startedAt: timestamp,
-    endedAt: timestamp,
-    durationMillis: 0,
     outcome: FileOutcome.make({
       path: operation.action.path,
       ...optionalField(resolved.resolvedValues, (resolvedValues) => ({ resolvedValues: [...resolvedValues] }))
@@ -292,23 +316,12 @@ const httpEvidence = Effect.fn("engine.httpEvidence")(function*(operation: Opera
   return yield* http.runJson(action.request).pipe(
     Effect.matchEffect({
       onFailure: (error) =>
-        Effect.gen(function*() {
-          const startedAt = yield* nowIso()
-          const endedAt = yield* nowIso()
-          return EvidenceRecord.make({
-            operationId: operation.id,
-            pipeId: operation.pipeId,
-            phase: operation.phase,
-            risk: operation.risk,
-            status: "failed",
-            message: error.reason,
-            startedAt,
-            endedAt,
-            durationMillis: 0,
-            outcome: HttpOutcome.make({
-              request: httpRequestEvidence(action.request),
-              checks: []
-            })
+        instantRecord(operation, {
+          status: "failed",
+          message: error.reason,
+          outcome: HttpOutcome.make({
+            request: httpRequestEvidence(action.request),
+            checks: []
           })
         }),
       onSuccess: (result) => {
@@ -320,26 +333,20 @@ const httpEvidence = Effect.fn("engine.httpEvidence")(function*(operation: Opera
           ...action.checks.map((check) => evaluateHttpCheck(result.json, check))
         ]
         const failed = checks.filter((check) => !check.passed)
-        return Effect.succeed(
-          EvidenceRecord.make({
-            operationId: operation.id,
-            pipeId: operation.pipeId,
-            phase: operation.phase,
-            risk: operation.risk,
-            status: failed.length === 0 ? "passed" : "failed",
-            message: failed.length === 0
-              ? "HTTP verification passed."
-              : `HTTP verification failed: ${failed.map((check) => check.description).join("; ")}`,
-            startedAt: result.startedAt,
-            endedAt: result.endedAt,
-            durationMillis: result.durationMillis,
-            outcome: HttpOutcome.make({
-              request: httpRequestEvidence(result.request),
-              responseStatus: result.status,
-              checks
-            })
+        return Effect.succeed(record(operation, {
+          status: failed.length === 0 ? "passed" : "failed",
+          message: failed.length === 0
+            ? "HTTP verification passed."
+            : `HTTP verification failed: ${failed.map((check) => check.description).join("; ")}`,
+          startedAt: result.startedAt,
+          endedAt: result.endedAt,
+          durationMillis: result.durationMillis,
+          outcome: HttpOutcome.make({
+            request: httpRequestEvidence(result.request),
+            responseStatus: result.status,
+            checks
           })
-        )
+        }))
       }
     })
   )
@@ -350,17 +357,9 @@ const githubApiFailureEvidence = Effect.fn("engine.githubApiFailureEvidence")(fu
   action: GitHubReleaseCreateAction | GitHubReleaseVerifyAction,
   error: GitHubApiError
 ) {
-  const timestamp = yield* nowIso()
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
+  return yield* instantRecord(operation, {
     status: "failed",
     message: error.reason,
-    startedAt: timestamp,
-    endedAt: timestamp,
-    durationMillis: 0,
     outcome: GitHubReleaseOutcome.make({
       release: githubReleaseEvidence({
         repository: action.repository,
@@ -369,7 +368,7 @@ const githubApiFailureEvidence = Effect.fn("engine.githubApiFailureEvidence")(fu
           ? action.assets.map((asset) => asset.name)
           : action.assetNames
       }),
-      ...optionalField(error.status, (responseStatus) => ({ responseStatus }))
+      responseStatus: error.status
     })
   })
 })
@@ -379,26 +378,17 @@ const githubCreateEvidence = Effect.fn("engine.githubCreateEvidence")(function*(
   if (operation.action._tag !== "github-release-create") {
     throw new Error("githubCreateEvidence requires a github-release-create action")
   }
-  const startedAt = yield* nowIso()
-  const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
   const action = operation.action
+  const timing = yield* startTiming()
   return yield* api.createRelease(githubCreateRequestFromAction(action)).pipe(
     Effect.matchEffect({
       onFailure: (error) => githubApiFailureEvidence(operation, action, error),
       onSuccess: (release) =>
         Effect.gen(function*() {
-          const endedAt = yield* nowIso()
-          const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-          return EvidenceRecord.make({
-            operationId: operation.id,
-            pipeId: operation.pipeId,
-            phase: operation.phase,
-            risk: operation.risk,
+          return record(operation, {
             status: "passed",
             message: "GitHub release created through the GitHub API.",
-            startedAt,
-            endedAt,
-            durationMillis: Math.max(0, ended - started),
+            ...(yield* timing.end()),
             outcome: GitHubReleaseOutcome.make({
               release: githubReleaseEvidence({
                 repository: action.repository,
@@ -421,9 +411,8 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
   if (operation.action._tag !== "github-release-verify") {
     throw new Error("githubVerifyEvidence requires a github-release-verify action")
   }
-  const startedAt = yield* nowIso()
-  const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
   const action = operation.action
+  const timing = yield* startTiming()
   return yield* api.inspectRelease(githubInspectRequestFromAction(action)).pipe(
     Effect.matchEffect({
       onFailure: (error) => githubApiFailureEvidence(operation, action, error),
@@ -444,20 +433,12 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
             })
           ]
           const failed = checks.filter((check) => !check.passed)
-          const endedAt = yield* nowIso()
-          const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-          return EvidenceRecord.make({
-            operationId: operation.id,
-            pipeId: operation.pipeId,
-            phase: operation.phase,
-            risk: operation.risk,
+          return record(operation, {
             status: failed.length === 0 ? "passed" : "failed",
             message: failed.length === 0
               ? "GitHub release verification passed."
               : `GitHub release verification failed: ${failed.map((check) => check.description).join("; ")}`,
-            startedAt,
-            endedAt,
-            durationMillis: Math.max(0, ended - started),
+            ...(yield* timing.end()),
             outcome: GitHubReleaseOutcome.make({
               release: githubReleaseEvidence({
                 repository: action.repository,
@@ -480,18 +461,9 @@ const noteEvidence = Effect.fn("engine.noteEvidence")(function*(operation: Opera
   if (operation.action._tag !== "note") {
     throw new Error("noteEvidence requires a note action")
   }
-  const timestamp = yield* nowIso()
-  const status = operation.action.skipped ? "skipped" : operation.action.severity === "warning" ? "warning" : "passed"
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
-    status,
-    message: operation.action.message,
-    startedAt: timestamp,
-    endedAt: timestamp,
-    durationMillis: 0
+  return yield* instantRecord(operation, {
+    status: operation.action.skipped ? "skipped" : operation.action.severity === "warning" ? "warning" : "passed",
+    message: operation.action.message
   })
 })
 
@@ -508,21 +480,12 @@ const stageEvidence = Effect.fn("engine.stageEvidence")(function*(
   const result = yield* stageArtifactOperation(operation, {
     root: context.root,
     identity: context.identity,
-    ...optionalField(context.configPath, (configPath) => ({ configPath }))
+    configPath: context.configPath
   })
-  const timestamp = yield* nowIso()
-  const firstArtifact = result.artifacts[0]
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
+  return yield* instantRecord(operation, {
     status: "passed",
     message: "Artifact staging completed.",
-    startedAt: timestamp,
-    endedAt: timestamp,
-    durationMillis: 0,
-    outcome: FileOutcome.make({ path: firstArtifact?.path ?? "" })
+    outcome: FileOutcome.make({ path: result.artifacts[0]?.path ?? "" })
   })
 })
 
@@ -560,11 +523,8 @@ const operationFailureFields = (
   if (outcome?._tag === "command") {
     return { exitCode: outcome.exitCode }
   }
-  if (outcome?._tag === "http") {
-    return optionalField(outcome.responseStatus, (responseStatus) => ({ responseStatus }))
-  }
-  if (outcome?._tag === "github-release") {
-    return optionalField(outcome.responseStatus, (responseStatus) => ({ responseStatus }))
+  if (outcome?._tag === "http" || outcome?._tag === "github-release") {
+    return { responseStatus: outcome.responseStatus }
   }
   return {}
 }
@@ -577,19 +537,13 @@ const failOperationEvidence = (
   return Effect.fail(
     OperationFailedError.make({
       operationId: record.operationId,
-      ...optionalField(fields.exitCode, (exitCode) => ({ exitCode })),
-      ...optionalField(fields.responseStatus, (responseStatus) => ({ responseStatus })),
+      exitCode: fields.exitCode,
+      responseStatus: fields.responseStatus,
       reason: record.message,
-      ...optionalField(bundle, (evidence) => ({ evidence }))
+      evidence: bundle
     })
   )
 }
-
-const runOperationEvidenceAttempt = (
-  operation: Operation,
-  context: OperationRunContext
-) =>
-  runOperationActionEvidence(operation, context)
 
 const runOperationEvidenceWithRetry = Effect.fn("engine.runOperationEvidenceWithRetry")(function*(
   operation: Operation,
@@ -598,35 +552,20 @@ const runOperationEvidenceWithRetry = Effect.fn("engine.runOperationEvidenceWith
   const attempts = Math.max(1, operation.retry?.attempts ?? 1)
   const delayMillis = Math.max(0, operation.retry?.delayMillis ?? 0)
   let attempt = 1
-  let record = yield* runOperationEvidenceAttempt(operation, context)
-  while (record.status === "failed" && attempt < attempts) {
+  let evidence = yield* runOperationActionEvidence(operation, context)
+  while (evidence.status === "failed" && attempt < attempts) {
     attempt += 1
     if (delayMillis > 0) {
       yield* Effect.sleep(Duration.millis(delayMillis))
     }
-    record = yield* runOperationEvidenceAttempt(operation, context)
+    evidence = yield* runOperationActionEvidence(operation, context)
   }
-  return record
+  return evidence
 })
 
 const shouldRefuseForSnapshot = (operation: Operation, context: OperationRunContext): boolean =>
   context.identity.snapshot &&
   (operation.risk === "externally-visible" || operation.risk === "irreversible")
-
-const snapshotRefusalEvidence = Effect.fn("engine.snapshotRefusalEvidence")(function*(operation: Operation) {
-  const timestamp = yield* nowIso()
-  return EvidenceRecord.make({
-    operationId: operation.id,
-    pipeId: operation.pipeId,
-    phase: operation.phase,
-    risk: operation.risk,
-    status: "refused",
-    message: "Refused by snapshot policy.",
-    startedAt: timestamp,
-    endedAt: timestamp,
-    durationMillis: 0
-  })
-})
 
 export const runOperationEvidence = Effect.fn("engine.runOperationEvidence")(function*(
   operation: Operation,
@@ -634,7 +573,10 @@ export const runOperationEvidence = Effect.fn("engine.runOperationEvidence")(fun
   context: OperationRunContext
 ) {
   if (shouldRefuseForSnapshot(operation, context)) {
-    return yield* snapshotRefusalEvidence(operation)
+    return yield* instantRecord(operation, {
+      status: "refused",
+      message: "Refused by snapshot policy."
+    })
   }
   yield* requireExecutionApproval(operation, approval)
   return yield* runOperationEvidenceWithRetry(operation, context)
@@ -668,19 +610,8 @@ export const runOperations = Effect.fn("engine.runOperations")(function*(
   return bundle
 })
 
-export const executeOperationBatch = runOperations
-
-export const renderOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file")
-
-export const validationOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only")
-
 export const publishOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
   operations.filter((operation) => operation.phase === "publish" && operation.risk !== "read-only")
-
-export const verificationOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "verify")
 
 export const buildOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
   operations.filter((operation) => operation.phase === "build" || operation.phase === "process")
@@ -689,7 +620,11 @@ export const validateOperations = Effect.fn("engine.validateOperations")(functio
   operations: ReadonlyArray<Operation>,
   context: OperationRunContext
 ) {
-  return yield* runOperations(validationOperations(operations), ExecutionApproval.none, context)
+  return yield* runOperations(
+    operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only"),
+    ExecutionApproval.none,
+    context
+  )
 })
 
 export const executeOperations = Effect.fn("engine.executeOperations")(function*(
@@ -705,14 +640,22 @@ export const writeRenderFiles = Effect.fn("engine.writeRenderFiles")(function*(
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  return yield* runOperations(renderOperations(operations), approval, context)
+  return yield* runOperations(
+    operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file"),
+    approval,
+    context
+  )
 })
 
 export const verifyOperations = Effect.fn("engine.verifyOperations")(function*(
   operations: ReadonlyArray<Operation>,
   context: OperationRunContext
 ) {
-  return yield* runOperations(verificationOperations(operations), ExecutionApproval.none, context)
+  return yield* runOperations(
+    operations.filter((operation) => operation.phase === "verify"),
+    ExecutionApproval.none,
+    context
+  )
 })
 
 const appendFailureEvidence = (
@@ -724,8 +667,8 @@ const appendFailureEvidence = (
     : appendEvidenceBundle(accumulated, error.evidence)
   return OperationFailedError.make({
     operationId: error.operationId,
-    ...optionalField(error.exitCode, (exitCode) => ({ exitCode })),
-    ...optionalField(error.responseStatus, (responseStatus) => ({ responseStatus })),
+    exitCode: error.exitCode,
+    responseStatus: error.responseStatus,
     reason: error.reason,
     evidence
   })
@@ -741,30 +684,22 @@ export const runApprovedReleaseWorkflow = Effect.fn("engine.runApprovedReleaseWo
     ...context,
     notices: []
   }
-  const renderApproval = ExecutionApproval.make({
-    execute: approval.execute,
-    approveIrreversible: false
-  })
-  const render = yield* writeRenderFiles(operations, renderApproval, passContext).pipe(
-    Effect.catchTag("OperationFailedError", (error) =>
-      Effect.fail(appendFailureEvidence(evidence, error)))
-  )
-  evidence = appendEvidenceBundle(evidence, render)
-  const validation = yield* validateOperations(operations, passContext).pipe(
-    Effect.catchTag("OperationFailedError", (error) =>
-      Effect.fail(appendFailureEvidence(evidence, error)))
-  )
-  evidence = appendEvidenceBundle(evidence, validation)
-  const execution = yield* executeOperations(operations, approval, passContext).pipe(
-    Effect.catchTag("OperationFailedError", (error) =>
-      Effect.fail(appendFailureEvidence(evidence, error)))
-  )
-  evidence = appendEvidenceBundle(evidence, execution)
-  const verification = yield* verifyOperations(operations, passContext).pipe(
-    Effect.catchTag("OperationFailedError", (error) =>
-      Effect.fail(appendFailureEvidence(evidence, error)))
-  )
-  evidence = appendEvidenceBundle(evidence, verification)
-
+  const passes = [
+    writeRenderFiles(
+      operations,
+      ExecutionApproval.make({ execute: approval.execute, approveIrreversible: false }),
+      passContext
+    ),
+    validateOperations(operations, passContext),
+    executeOperations(operations, approval, passContext),
+    verifyOperations(operations, passContext)
+  ]
+  for (const pass of passes) {
+    const bundle = yield* pass.pipe(
+      Effect.catchTag("OperationFailedError", (error) =>
+        Effect.fail(appendFailureEvidence(evidence, error)))
+    )
+    evidence = appendEvidenceBundle(evidence, bundle)
+  }
   return evidence
 })

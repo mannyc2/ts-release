@@ -9,7 +9,6 @@ import {
   createTestPlan,
   renderTestPlanJson,
   renderTestPlanMarkdown,
-  renderTestPlanOperationExplanation,
   renderTestPlanSummary
 } from "./plan-helpers.js"
 import type { TestPlan } from "./plan-helpers.js"
@@ -272,25 +271,6 @@ describe("planner", () => {
         expect(markdown).toContain("# Release Plan release@0.1.0")
         expect(markdown).toContain("### npm:npm-publish")
         expect(markdown).toContain(JSON.stringify(["npm", "publish", ".", "--registry", "https://registry.npmjs.org"], null, 2))
-      }))
-
-    it.effect("explains one operation by stable id", () =>
-      Effect.gen(function*() {
-        const plan = yield* createPlan(minimalConfig)
-        const explanation = yield* renderTestPlanOperationExplanation(plan, "npm:npm-publish")
-
-        expect(explanation).toContain("operation: npm:npm-publish")
-        expect(explanation).toContain("risk: irreversible")
-        expect(explanation).toContain("execution approval: --execute + --approve-publish")
-        expect(explanation).toContain("argv:")
-      }))
-
-    it.effect("explaining a missing operation returns a typed error", () =>
-      Effect.gen(function*() {
-        const plan = yield* createPlan(minimalConfig)
-        const error = yield* renderTestPlanOperationExplanation(plan, "missing:operation").pipe(Effect.flip)
-
-        expectTaggedError(error, "PlanOperationNotFoundError")
       }))
   })
 

@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
+import * as Option from "effect/Option"
 import * as Ref from "effect/Ref"
 import { decodeReleaseIntent, parseReleaseIntent } from "../config/load.js"
 import { configPath, configRoot, readReleaseConfig } from "../config/resolve.js"
@@ -16,6 +17,22 @@ import {
 import { ReleasePlan, SourceMetadata } from "../pipeline/plan.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../pipeline/runner.js"
 import { ReleaseIdentity } from "../pipeline/state.js"
+import { schedule } from "../pipeline/pipe.js"
+import { archivePlanner } from "../pipes/archive.js"
+import { buildPlanner } from "../pipes/build.js"
+import { catalogGenericPlanner } from "../pipes/catalog-generic.js"
+import { catalogHomebrewPlanner } from "../pipes/catalog-homebrew.js"
+import { catalogScoopPlanner } from "../pipes/catalog-scoop.js"
+import { checksumPlanner } from "../pipes/checksum.js"
+import { importArtifactsPlanner } from "../pipes/import-artifacts.js"
+import { npmPackPlanner } from "../pipes/npm-pack.js"
+import { publishCatalogGenericPlanner } from "../pipes/publish-catalog-generic.js"
+import { publishGitHubPlanner } from "../pipes/publish-github.js"
+import { publishHomebrewPlanner } from "../pipes/publish-homebrew.js"
+import { publishNpmPlanner } from "../pipes/publish-npm.js"
+import { publishPyPiPlanner } from "../pipes/publish-pypi.js"
+import { publishScoopPlanner } from "../pipes/publish-scoop.js"
+import { pypiWheelPlanner } from "../pipes/pypi-wheel.js"
 import {
   buildOperations,
   makeEvidenceRef,
@@ -36,7 +53,6 @@ import {
   EvidenceWriteError,
   ReleaseNormalizationError
 } from "./errors.js"
-import { buildPlannerSchedule, distributionPlannerSchedule } from "./planner-schedule.js"
 import { resolveReleaseWorkflow, type ResolvedRelease } from "./resolved-release.js"
 import { renderReleasePlan } from "./render.js"
 import {
@@ -119,7 +135,14 @@ const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
   )
   const buildState = yield* runPipeline(
     emptyPlanAccumulator(release.identity),
-    buildPlannerSchedule(release)
+    [
+      schedule(buildPlanner, release.builds),
+      schedule(npmPackPlanner, release.npmPackage),
+      schedule(pypiWheelPlanner, release.pypiWheels),
+      schedule(importArtifactsPlanner, release.artifacts),
+      schedule(archivePlanner, release.archives),
+      schedule(checksumPlanner, release.checksum)
+    ]
   ).pipe(
     Effect.mapError(planErrorToNormalization)
   )
@@ -167,7 +190,19 @@ export const planRelease = Effect.fn("engine.planRelease")(function*(
   // plan source; a directly supplied intent records only an explicit one.
   const sourcePath = intentArg === undefined ? configPath(input) : input.configPath
   const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false)
-  const state = yield* runPipeline(build.buildState, distributionPlannerSchedule(build.release))
+  const state = yield* runPipeline(build.buildState, [
+    schedule(catalogHomebrewPlanner, build.release.homebrew),
+    schedule(catalogScoopPlanner, build.release.scoop),
+    ...(Option.isSome(build.release.catalogs) ? [schedule(catalogGenericPlanner, build.release.catalogs)] : []),
+    schedule(publishNpmPlanner, build.release.npm),
+    schedule(publishPyPiPlanner, build.release.pypi),
+    schedule(publishGitHubPlanner, build.release.github),
+    schedule(publishHomebrewPlanner, build.release.homebrew),
+    schedule(publishScoopPlanner, build.release.scoop),
+    ...(Option.isSome(build.release.catalogs)
+      ? [schedule(publishCatalogGenericPlanner, build.release.catalogs)]
+      : [])
+  ])
   return releasePlanFromAccumulator(build.release, root, sourcePath, state)
 })
 
@@ -214,7 +249,19 @@ export const buildReleaseArtifacts = Effect.fn("engine.buildReleaseArtifacts")(f
       )
     }
   }
-  const planState = yield* runPipeline(build.buildState, distributionPlannerSchedule(build.release))
+  const planState = yield* runPipeline(build.buildState, [
+    schedule(catalogHomebrewPlanner, build.release.homebrew),
+    schedule(catalogScoopPlanner, build.release.scoop),
+    ...(Option.isSome(build.release.catalogs) ? [schedule(catalogGenericPlanner, build.release.catalogs)] : []),
+    schedule(publishNpmPlanner, build.release.npm),
+    schedule(publishPyPiPlanner, build.release.pypi),
+    schedule(publishGitHubPlanner, build.release.github),
+    schedule(publishHomebrewPlanner, build.release.homebrew),
+    schedule(publishScoopPlanner, build.release.scoop),
+    ...(Option.isSome(build.release.catalogs)
+      ? [schedule(publishCatalogGenericPlanner, build.release.catalogs)]
+      : [])
+  ])
   const plan = releasePlanFromAccumulator(build.release, root, pathName, planState)
   return {
     schemaVersion: "artifact-stage/v1",

@@ -74,8 +74,6 @@ export const ArtifactKind = Schema.Literals([
   "wheel",
   "checksum-file",
   "catalog-file",
-  "sbom",
-  "signature",
   "file"
 ])
 export type ArtifactKind = typeof ArtifactKind.Type

@@ -7,8 +7,6 @@ import { makePlatformCommandRunnerLayer } from "../../../../src/host/platform.js
 import type { PlatformCommandRunnerOptions } from "../../../../src/host/platform.js"
 import { GitHubApiLiveLayer } from "../../../../src/engine/github.js"
 
-export const UnsupportedNodeArtifactStagerLayer = UnsupportedArtifactStagerLayer
-
 export const makeNodeReleaseWorkflowRuntimeLayer = (
   options: PlatformCommandRunnerOptions = {}
 ) =>
@@ -20,7 +18,7 @@ export const makeNodeReleaseWorkflowRuntimeLayer = (
       Layer.provideMerge(NodeHttpClient.layerFetch),
       Layer.provideMerge(NodeServices.layer)
     ),
-    UnsupportedNodeArtifactStagerLayer,
+    UnsupportedArtifactStagerLayer,
     NodeServices.layer
   )
 

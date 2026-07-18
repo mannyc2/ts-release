@@ -12,11 +12,7 @@ import {
   GitHubReleaseAssetSpec,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
-  HttpCheckAction,
-  HttpEnvHeader,
   HttpHeader,
-  HttpJsonArrayObjectFieldEqualsCheck,
-  HttpJsonEqualsCheck,
   HttpRequestSpec,
   NoteAction,
   Operation,
@@ -25,7 +21,7 @@ import {
 } from "../src/pipeline/operation.js"
 import { ReleasePlan, SourceMetadata } from "../src/pipeline/plan.js"
 import { PipeNotice, ReleaseIdentity } from "../src/pipeline/state.js"
-import { httpRequestKey, makeTestReleaseHttpLayer } from "./host-fakes.js"
+import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
   EvidenceBundle,
@@ -192,68 +188,6 @@ describe("evidence recorder", () => {
             expect(evidence.outcome.stderr).toBe("stderr [REDACTED]")
           }
           expect(evidence.message).toBe("Command completed successfully.")
-        }))
-    })
-  }
-
-  {
-    const request = HttpRequestSpec.make({
-      method: "GET",
-      url: "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0",
-      headers: [HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" })],
-      envHeaders: [HttpEnvHeader.make({ name: "Authorization", valueEnv: "TOKEN", prefix: "Bearer " })],
-      requiredEnv: ["TOKEN"],
-      redactedEnv: ["TOKEN"]
-    })
-    const operation = Operation.make({
-      id: "api:response-verify-http",
-      pipeId: "test",
-      phase: "verify",
-      risk: "read-only",
-      description: "Verify release.",
-      action: HttpCheckAction.make({
-        request,
-        expectedStatus: 200,
-        checks: [
-          HttpJsonEqualsCheck.make({ path: ["tag_name"], expected: "v0.1.0" }),
-          HttpJsonArrayObjectFieldEqualsCheck.make({ path: ["assets"], field: "name", expected: "package.tgz" })
-        ]
-      })
-    })
-
-    layer(Layer.mergeAll(
-      makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
-      makeTestReleaseHttpLayer({
-        responses: new Map([
-          [httpRequestKey(request), {
-            status: 200,
-            responseHeaders: [
-              HttpHeader.make({
-                name: "Link",
-                value: "<https://api.github.com/repos/owner/repo/releases?per_page=100&page=2>; rel=\"next\""
-              })
-            ],
-            json: {
-              tag_name: "v0.1.0",
-              assets: [{ name: "package.tgz" }]
-            }
-          }]
-        ])
-      }),
-      TestGitHubApiLayer,
-      UnsupportedArtifactStagerLayer
-    ))((it) => {
-      it.effect("evaluates HTTP verification evidence through the shared executor", () =>
-        Effect.gen(function*() {
-          const evidence = yield* runOperation(operation, ExecutionApproval.none, context())
-
-          expect(evidence.phase).toBe("verify")
-          expect(evidence.outcome?._tag).toBe("http")
-          if (evidence.outcome?._tag === "http") {
-            expect(evidence.outcome.responseStatus).toBe(200)
-            expect(evidence.outcome.checks.every((check) => check.passed)).toBe(true)
-          }
-          expect("responseHeaders" in evidence).toBe(false)
         }))
     })
   }
@@ -536,57 +470,6 @@ describe("evidence recorder", () => {
         expect(error._tag).toBe("EvidenceWriteError")
       }))
   })
-
-  {
-    const request = HttpRequestSpec.make({
-      method: "GET",
-      url: "https://api.github.com/repos/owner/repo/releases/tags/v0.1.0",
-      headers: [],
-      envHeaders: [],
-      requiredEnv: [],
-      redactedEnv: []
-    })
-    const operation = Operation.make({
-      id: "api:response-verify-http",
-      pipeId: "verify:test",
-      phase: "verify",
-      risk: "read-only",
-      description: "Verify release.",
-      action: HttpCheckAction.make({
-        request,
-        expectedStatus: 200,
-        checks: [
-          HttpJsonEqualsCheck.make({ path: ["draft"], expected: true })
-        ]
-      })
-    })
-
-    layer(Layer.mergeAll(
-      makeWorkspaceTestCommandRunnerLayer(),
-      makeTestReleaseHttpLayer({
-        responses: new Map([
-          [httpRequestKey(request), {
-            status: 200,
-            json: { draft: false }
-          }]
-        ])
-      }),
-      TestGitHubApiLayer,
-      UnsupportedArtifactStagerLayer
-    ))((it) => {
-      it.effect("fails HTTP verification when JSON checks do not match", () =>
-        Effect.gen(function*() {
-          const error = yield* runOperation(operation, ExecutionApproval.none, context()).pipe(Effect.flip)
-
-          expect(error._tag).toBe("OperationFailedError")
-          if (error._tag === "OperationFailedError") {
-            expect(error.responseStatus).toBe(200)
-            expect(error.reason).toContain("HTTP verification failed")
-            expect(error.reason).toContain("$.draft equals true")
-          }
-        }))
-    })
-  }
 
   it("encodes canonical artifact summaries as recursive JSON data", () => {
     const encoded = artifactSummary(summaryArtifact("cli", "dist/cli"))

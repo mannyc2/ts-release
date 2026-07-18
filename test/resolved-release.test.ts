@@ -2,7 +2,6 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import { decodeReleaseIntent } from "../src/config/load.js"
-import { buildPlannerSchedule, distributionPlannerSchedule } from "../src/engine/planner-schedule.js"
 import { resolveRelease } from "../src/engine/resolved-release.js"
 import { buildPlanner } from "../src/pipes/build.js"
 import { checksumPlanner } from "../src/pipes/checksum.js"
@@ -38,8 +37,6 @@ describe("resolved release", () => {
       expect([absent.builds, absent.npmPackage, absent.pypiWheels, absent.artifacts, absent.archives,
         absent.checksum, absent.npm, absent.pypi, absent.github, absent.homebrew, absent.scoop, absent.catalogs]
         .map(isNone)).toEqual(Array(12).fill(true))
-      expect(distributionPlannerSchedule(absent).map(({ id }) => id)).toEqual(
-        ["catalog:homebrew", "catalog:scoop", "publish:npm", "publish:pypi", "publish:github", "publish:homebrew", "publish:scoop"])
       expect([empty.builds, empty.npmPackage, empty.npm, empty.pypi, empty.github].map(isNone))
         .toEqual(Array(5).fill(true))
       expect([some(empty.pypiWheels), some(empty.artifacts), some(empty.archives), some(empty.catalogs)]).toEqual([[], [], [], []])
@@ -51,7 +48,7 @@ describe("resolved release", () => {
       expect([shorthand.npm, shorthand.pypi, shorthand.github].map(isSome)).toEqual([true, true, true])
       expect(shorthand.evidenceDirectory).toBe("proof/1.2.3")
     }))
-  it.effect("totalizes defaults once and binds the exact planner order", () =>
+  it.effect("totalizes defaults once", () =>
     Effect.gen(function*() {
       const release = yield* resolved({
         project: { name: "wire-name", packageName: "@scope/wire-name", repository: "owner/release" },
@@ -66,10 +63,6 @@ describe("resolved release", () => {
       })
       const plannedBuild = yield* buildPlanner.plan(some(release.builds)!, emptyPlanAccumulator(identity))
       const plannedChecksum = yield* checksumPlanner.plan(some(release.checksum)!, emptyPlanAccumulator(identity))
-      expect(buildPlannerSchedule(release).map(({ id }) => id)).toEqual(
-        ["build", "build:npm-pack", "build:pypi-wheel", "import-artifacts", "archive", "checksum"])
-      expect(distributionPlannerSchedule(release).map(({ id }) => id)).toEqual(
-        ["catalog:homebrew", "catalog:scoop", "catalog:file", "publish:npm", "publish:pypi", "publish:github", "publish:homebrew", "publish:scoop", "publish:catalog"])
       expect(some(release.builds)?.[0]).toEqual({
         builder: "bun", entry: "src/cli.ts", targets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"]
       })

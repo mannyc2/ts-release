@@ -217,7 +217,7 @@ const checkEngineImport = (
   if (
     target !== undefined
     && isUnder(target, "src/pipes")
-    && (file === "src/engine/resolved-release.ts" || file === "src/engine/planner-schedule.ts")
+    && (file === "src/engine/resolved-release.ts" || file === "src/engine/engine.ts")
   ) {
     return undefined
   }

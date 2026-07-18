@@ -14,11 +14,9 @@ import {
 } from "../apps/ts-release-action/src/action.js"
 import { ActionOptions, type ActionCommand, type ActionFormat, type ActionRuntime } from "../apps/ts-release-action/src/input.js"
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
-import {
-  makeNodeReleaseWorkflowRuntimeLayer,
-  UnsupportedNodeArtifactStagerLayer
-} from "../apps/ts-release-action/src/runtime/node.js"
+import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
 import { CommandSpec } from "../src/pipeline/operation.js"
+import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey } from "./host-fakes.js"
 import {
@@ -267,7 +265,7 @@ describe("ts-release action", () => {
           env: new Map([["NPM_TOKEN", "npm_secret"]]),
           commands: new Map()
         }),
-        UnsupportedNodeArtifactStagerLayer,
+        UnsupportedArtifactStagerLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
@@ -295,7 +293,7 @@ describe("ts-release action", () => {
           env: new Map(),
           commands: new Map()
         }),
-        UnsupportedNodeArtifactStagerLayer,
+        UnsupportedArtifactStagerLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
@@ -486,7 +484,7 @@ describe("ts-release action", () => {
             }]
           ])
         }),
-        UnsupportedNodeArtifactStagerLayer,
+        UnsupportedArtifactStagerLayer,
         TestGitHubApiLayer,
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer

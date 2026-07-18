@@ -91,7 +91,6 @@ const targetIdsForPlan = (plan: ReleasePlan, filter: string | undefined): Readon
 const operationEnvNames = (operation: Operation): ReadonlyArray<string> => {
   switch (operation.action._tag) {
     case "command": return operation.action.command.requiredEnv
-    case "http-check": return operation.action.request.requiredEnv
     case "github-release-create":
     case "github-release-verify": return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
     default: return []

@@ -99126,8 +99126,6 @@ var ArtifactKind = Literals([
   "wheel",
   "checksum-file",
   "catalog-file",
-  "sbom",
-  "signature",
   "file"
 ]);
 
@@ -99319,21 +99317,6 @@ class HttpRequestSpec extends Class4("HttpRequestSpec")({
   body: optional(HttpRequestBody)
 }) {
 }
-var JsonPathSegment = Union2([String4, Number5]);
-
-class HttpJsonEqualsCheck extends TaggedClass()("HttpJsonEqualsCheck", {
-  path: ArraySchema(JsonPathSegment),
-  expected: Json2
-}) {
-}
-
-class HttpJsonArrayObjectFieldEqualsCheck extends TaggedClass()("HttpJsonArrayObjectFieldEqualsCheck", {
-  path: ArraySchema(JsonPathSegment),
-  field: String4,
-  expected: Json2
-}) {
-}
-var HttpJsonCheck = Union2([HttpJsonEqualsCheck, HttpJsonArrayObjectFieldEqualsCheck]);
 
 class GitHubReleaseAssetSpec extends Class4("GitHubReleaseAssetSpec")({
   artifactId: String4,
@@ -99436,13 +99419,6 @@ class WriteFileAction extends TaggedClass()("write-file", {
 }) {
 }
 
-class HttpCheckAction extends TaggedClass()("http-check", {
-  request: HttpRequestSpec,
-  expectedStatus: Number5,
-  checks: ArraySchema(HttpJsonCheck)
-}) {
-}
-
 class GitHubReleaseCreateAction extends TaggedClass()("github-release-create", {
   repository: String4,
   tokenEnv: optional(String4),
@@ -99482,7 +99458,6 @@ var Action = Union2([
   CommandAction,
   CheckFileAction,
   WriteFileAction,
-  HttpCheckAction,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
   NoteAction,
@@ -100796,7 +100771,7 @@ var resolveChecksum = (raw) => raw === undefined ? none2() : some2({
   nameTemplate: raw.nameTemplate ?? defaultChecksumNameTemplate
 });
 var isChecksumFileInput = (artifact2) => {
-  if (artifact2.kind === "package" || artifact2.kind === "checksum-file" || artifact2.kind === "signature") {
+  if (artifact2.kind === "package" || artifact2.kind === "checksum-file") {
     return false;
   }
   if (artifact2.extra?._tag === "file" && artifact2.extra.format === "directory") {
@@ -102114,6 +102089,179 @@ var runPipeline = fn2("pipeline.runPipeline")(function* (initialState, planners)
   return state3;
 });
 
+// ../../src/pipes/build.ts
+var defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"];
+var resolveBuilds = (raw) => {
+  if (raw === undefined || raw.length === 0) {
+    return none2();
+  }
+  return some2(raw.map((build) => build.builder === "bun" ? {
+    ...build,
+    targets: build.targets ?? defaultBunTargets
+  } : build));
+};
+var checkAndPlan = (builder, options, identity2, target) => builder.supportedTargets.includes(target) ? builder.plan(options, identity2, target) : fail6(PlanError.make({
+  pipeId: "build",
+  field: "builds[].targets",
+  reason: `Builder ${builder.id} does not support target ${target}. Supported targets: ${builder.supportedTargets.join(", ")}.`
+}));
+var planSection = (section, identity2, target) => {
+  switch (section.builder) {
+    case "bun":
+      return checkAndPlan(bunBuilder, section, identity2, target);
+    case "command":
+      return checkAndPlan(commandBuilder, section, identity2, target);
+    case "prebuilt":
+      return checkAndPlan(prebuiltBuilder, section, identity2, target);
+  }
+};
+var buildPlanner = {
+  id: "build",
+  plan: (sections, state3) => gen2(function* () {
+    const artifacts = [];
+    const operations = [];
+    for (const section of sections) {
+      for (const target of section.targets) {
+        const planned = yield* planSection(section, state3.identity, target);
+        artifacts.push(...planned.artifacts);
+        operations.push(...planned.operations);
+      }
+    }
+    return {
+      ...emptyContribution,
+      artifacts,
+      operations
+    };
+  })
+};
+
+// ../../src/pipes/publish-catalog-generic.ts
+var argv2 = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/).filter(Boolean) : value2;
+var validation = fn2("catalog.publish.validation")(function* (entry, identity2) {
+  if (entry.validate === undefined)
+    return [];
+  const rendered = argv2(entry.validate).map((part) => renderTemplate(part, { identity: identity2 }));
+  const executable = rendered[0];
+  if (executable === undefined || executable.length === 0) {
+    return yield* fail6(PlanError.make({
+      pipeId: "publish:catalog",
+      field: `catalogs.${entry.id}.validate`,
+      reason: "Catalog validate must render to at least one argv entry."
+    }));
+  }
+  return [readOnlyCommandValidationOperation({
+    id: `catalog:${entry.id}:validate`,
+    pipeId: "publish:catalog",
+    description: `Validate ${entry.id} catalog update.`,
+    command: noAuthCommand(executable, rendered.slice(1))
+  })];
+});
+var command = (id, risk, description, executable, args2, cwd) => Operation.make({
+  id,
+  pipeId: "publish:catalog",
+  phase: "publish",
+  risk,
+  description,
+  action: CommandAction.make({ command: cwd === undefined ? noAuthCommand(executable, args2) : CommandSpec.make({ ...noAuthCommand(executable, args2), cwd }) })
+});
+var publishOperations = (entry, identity2) => {
+  const id = `catalog:${entry.id}:push`;
+  const directory = entry.directory;
+  const commitMessage = renderTemplate(entry.commitMessage, { identity: identity2 });
+  const description = `Push ${entry.id} catalog update for ${identity2.name}@${identity2.version}.`;
+  const common = {
+    id,
+    pipeId: "publish:catalog",
+    description,
+    directory,
+    filePath: catalogWritePath(entry),
+    commitMessage
+  };
+  if (entry.submit === "push")
+    return catalogGitPublishOperations(common);
+  const branch = `ts-release/${identity2.normalizedName}-${identity2.version}`;
+  const git = catalogGitPublishOperations(common);
+  return [
+    command(`catalog:${entry.id}:checkout`, "writes-local", `Create ${branch}.`, "git", ["-C", directory ?? ".", "checkout", "-B", branch]),
+    ...git.slice(0, 2),
+    command(id, "externally-visible", description, "git", ["-C", directory ?? ".", "push", "-u", "origin", branch]),
+    command(`catalog:${entry.id}:pull-request`, "externally-visible", `Open ${entry.id} catalog pull request.`, "gh", ["pr", "create", "--repo", entry.repository, "--title", commitMessage, "--body", description, "--head", branch], directory ?? ".")
+  ];
+};
+var publishCatalogGenericPlanner = {
+  id: "publish:catalog",
+  plan: (entries, state3) => gen2(function* () {
+    const operations = yield* forEach2(entries, (entry) => validation(entry, state3.identity).pipe(map5((checks) => [...checks, ...publishOperations(entry, state3.identity)])));
+    return { ...emptyContribution, operations: operations.flat() };
+  })
+};
+
+// ../../src/pipes/publish-homebrew.ts
+var rejectUnsupportedTokenEnv = (section) => section.tokenEnv === undefined ? void_3 : fail6(PlanError.make({
+  pipeId: "publish:homebrew",
+  field: "publish.homebrew.tokenEnv",
+  reason: "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
+}));
+var publishHomebrewPlanner = {
+  id: "publish:homebrew",
+  plan: (section, state3) => gen2(function* () {
+    yield* rejectUnsupportedTokenEnv(section);
+    const formulaPath = section.formulaPath;
+    return {
+      ...emptyContribution,
+      operations: [
+        validationNoteOperation({
+          id: "homebrew:brew-audit",
+          pipeId: "publish:homebrew",
+          description: "Record simulated Homebrew formula validation.",
+          message: "Homebrew formula validation is simulated by the deterministic release plan."
+        }),
+        ...catalogGitPublishOperations({
+          id: "homebrew:homebrew-push",
+          pipeId: "publish:homebrew",
+          description: `Push Homebrew tap update for ${state3.identity.name}@${state3.identity.version}.`,
+          directory: section.tapDirectory,
+          filePath: formulaPath,
+          commitMessage: `Update ${section.formulaName} to ${state3.identity.version}`
+        })
+      ]
+    };
+  })
+};
+
+// ../../src/pipes/publish-scoop.ts
+var rejectUnsupportedTokenEnv2 = (section) => section.tokenEnv === undefined ? void_3 : fail6(PlanError.make({
+  pipeId: "publish:scoop",
+  field: "publish.scoop.tokenEnv",
+  reason: "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
+}));
+var publishScoopPlanner = {
+  id: "publish:scoop",
+  plan: (section, state3) => gen2(function* () {
+    yield* rejectUnsupportedTokenEnv2(section);
+    const manifestPath = section.manifestPath;
+    return {
+      ...emptyContribution,
+      operations: [
+        validationNoteOperation({
+          id: "scoop:scoop-manifest-validation",
+          pipeId: "publish:scoop",
+          description: "Record simulated Scoop manifest validation.",
+          message: "Scoop manifest validation is simulated by the deterministic release plan."
+        }),
+        ...catalogGitPublishOperations({
+          id: "scoop:scoop-push",
+          pipeId: "publish:scoop",
+          description: `Push Scoop bucket update for ${state3.identity.name}@${state3.identity.version}.`,
+          directory: section.bucketDirectory,
+          filePath: manifestPath,
+          commitMessage: `Update ${section.manifestName} to ${state3.identity.version}`
+        })
+      ]
+    };
+  })
+};
+
 // ../../src/engine/executor.ts
 import { createHash as createHash4 } from "node:crypto";
 
@@ -102121,17 +102269,6 @@ import { createHash as createHash4 } from "node:crypto";
 var ReleaseName = NonEmptyString;
 var ReleaseVersion = NonEmptyString;
 var EvidenceStatus = Literals(["passed", "failed", "skipped", "warning", "refused"]);
-
-class HttpRequestEvidence extends Class4("HttpRequestEvidence")({
-  method: Literals(["GET", "HEAD", "POST", "PATCH"]),
-  url: String4,
-  headers: ArraySchema(HttpHeader),
-  envHeaders: ArraySchema(HttpEnvHeader),
-  body: optional(Literals(["json", "file"])),
-  bodyPath: optional(String4),
-  contentType: optional(String4)
-}) {
-}
 
 class GitHubReleaseEvidence extends Class4("GitHubReleaseEvidence")({
   repository: String4,
@@ -102172,20 +102309,13 @@ class FileOutcome extends TaggedClass()("file", {
 }) {
 }
 
-class HttpOutcome extends TaggedClass()("http", {
-  request: HttpRequestEvidence,
-  responseStatus: optional(Number5),
-  checks: ArraySchema(HttpCheckEvidence)
-}) {
-}
-
 class GitHubReleaseOutcome extends TaggedClass()("github-release", {
   release: GitHubReleaseEvidence,
   responseStatus: optional(Number5),
   checks: optional(ArraySchema(HttpCheckEvidence))
 }) {
 }
-var ActionOutcome = Union2([CommandOutcome, FileOutcome, HttpOutcome, GitHubReleaseOutcome]);
+var ActionOutcome = Union2([CommandOutcome, FileOutcome, GitHubReleaseOutcome]);
 
 class EvidenceRecord extends Class4("EvidenceRecordV2")({
   operationId: OperationId,
@@ -102238,8 +102368,6 @@ var redactedEnvNames = (operation) => {
   switch (operation.action._tag) {
     case "command":
       return operation.action.command.redactedEnv;
-    case "http-check":
-      return operation.action.request.redactedEnv;
     case "github-release-create":
     case "github-release-verify":
       return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv];
@@ -102259,95 +102387,6 @@ var readRedactionSecrets = fn2("engine.evidence.readRedactionSecrets")(function*
     }
   }
   return secrets;
-});
-var isJsonObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
-var jsonAt = (value2, path4) => {
-  let current = value2;
-  for (const segment of path4) {
-    if (current === undefined) {
-      return;
-    }
-    if (typeof segment === "number") {
-      if (!Number.isInteger(segment) || !Array.isArray(current)) {
-        return;
-      }
-      current = current[segment];
-    } else {
-      if (!isJsonObject(current)) {
-        return;
-      }
-      current = current[segment];
-    }
-  }
-  return current;
-};
-var objectKeys = (value2) => Object.keys(value2).sort();
-var jsonEquals = (left, right) => {
-  if (left === right) {
-    return true;
-  }
-  if (Array.isArray(left) && Array.isArray(right)) {
-    return left.length === right.length && left.every((value2, index) => {
-      const rightValue = right[index];
-      return rightValue !== undefined && jsonEquals(value2, rightValue);
-    });
-  }
-  if (isJsonObject(left) && isJsonObject(right)) {
-    const leftKeys = objectKeys(left);
-    const rightKeys = objectKeys(right);
-    return leftKeys.length === rightKeys.length && leftKeys.every((key, index) => {
-      const rightKey = rightKeys[index];
-      const leftValue = left[key];
-      const rightValue = right[key];
-      return rightKey === key && leftValue !== undefined && rightValue !== undefined && jsonEquals(leftValue, rightValue);
-    });
-  }
-  return false;
-};
-var jsonLabel = (value2) => JSON.stringify(value2);
-var pathSegmentLabel = (segment) => typeof segment === "number" ? `[${segment}]` : `.${segment}`;
-var pathLabel = (path4) => path4.length === 0 ? "$" : `$${path4.map(pathSegmentLabel).join("")}`;
-var describeHttpCheck = (check) => {
-  switch (check._tag) {
-    case "HttpJsonEqualsCheck":
-      return `${pathLabel(check.path)} equals ${jsonLabel(check.expected)}`;
-    case "HttpJsonArrayObjectFieldEqualsCheck":
-      return `${pathLabel(check.path)} contains object with ${check.field} equal to ${jsonLabel(check.expected)}`;
-  }
-};
-var evaluateHttpCheck = (json, check) => {
-  switch (check._tag) {
-    case "HttpJsonEqualsCheck": {
-      const actual = jsonAt(json, check.path);
-      return HttpCheckEvidence.make({
-        description: describeHttpCheck(check),
-        passed: actual !== undefined && jsonEquals(actual, check.expected)
-      });
-    }
-    case "HttpJsonArrayObjectFieldEqualsCheck": {
-      const actual = jsonAt(json, check.path);
-      const passed = Array.isArray(actual) && actual.some((item) => {
-        if (!isJsonObject(item)) {
-          return false;
-        }
-        const value2 = item[check.field];
-        return value2 !== undefined && jsonEquals(value2, check.expected);
-      });
-      return HttpCheckEvidence.make({
-        description: describeHttpCheck(check),
-        passed
-      });
-    }
-  }
-};
-var httpRequestEvidence = (request2) => HttpRequestEvidence.make({
-  method: request2.method,
-  url: request2.url,
-  headers: request2.headers,
-  envHeaders: request2.envHeaders,
-  body: request2.body === undefined ? undefined : request2.body._tag === "HttpJsonRequestBody" ? "json" : "file",
-  bodyPath: request2.body?._tag === "HttpFileRequestBody" ? request2.body.path : undefined,
-  contentType: request2.body?._tag === "HttpFileRequestBody" ? request2.body.contentType : undefined
 });
 var githubReleaseEvidence = (input) => GitHubReleaseEvidence.make({
   repository: input.repository,
@@ -102436,18 +102475,6 @@ class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
   reason: String4,
   evidence: optional(EvidenceBundle)
 }) {
-}
-
-// ../../src/host/http.ts
-class HttpError extends TaggedErrorClass()("HttpError", {
-  operation: String4,
-  url: String4,
-  reason: String4,
-  cause: optional(Defect())
-}) {
-}
-
-class ReleaseHttp extends Service()("ReleaseHttp") {
 }
 
 // ../../src/internal/workspace-path.ts
@@ -103013,6 +103040,18 @@ var UnsupportedArtifactStagerLayer = succeed5(ArtifactStager)({
 });
 var LiveArtifactStagerLayer = makeArtifactStagerLayer();
 
+// ../../src/host/http.ts
+class HttpError extends TaggedErrorClass()("HttpError", {
+  operation: String4,
+  url: String4,
+  reason: String4,
+  cause: optional(Defect())
+}) {
+}
+
+class ReleaseHttp extends Service()("ReleaseHttp") {
+}
+
 // ../../src/engine/github.ts
 var githubApiHeaders = () => [
   HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
@@ -103455,42 +103494,6 @@ var writeFileEvidence = fn2("engine.writeFileEvidence")(function* (operation, ac
     })
   });
 });
-var httpEvidence = fn2("engine.httpEvidence")(function* (operation, action5) {
-  const http3 = yield* ReleaseHttp;
-  return yield* http3.runJson(action5.request).pipe(matchEffect3({
-    onFailure: (error2) => instantRecord(operation, {
-      status: "failed",
-      message: error2.reason,
-      outcome: HttpOutcome.make({
-        request: httpRequestEvidence(action5.request),
-        checks: []
-      })
-    }).pipe(flatMap3(failAttempt)),
-    onSuccess: (result2) => {
-      const checks = [
-        HttpCheckEvidence.make({
-          description: `status is ${action5.expectedStatus}`,
-          passed: result2.status === action5.expectedStatus
-        }),
-        ...action5.checks.map((check) => evaluateHttpCheck(result2.json, check))
-      ];
-      const failed = checks.filter((check) => !check.passed);
-      const attemptRecord = record2(operation, {
-        status: failed.length === 0 ? "passed" : "failed",
-        message: failed.length === 0 ? "HTTP verification passed." : `HTTP verification failed: ${failed.map((check) => check.description).join("; ")}`,
-        startedAt: result2.startedAt,
-        endedAt: result2.endedAt,
-        durationMillis: result2.durationMillis,
-        outcome: HttpOutcome.make({
-          request: httpRequestEvidence(result2.request),
-          responseStatus: result2.status,
-          checks
-        })
-      });
-      return failed.length === 0 ? succeed6(attemptRecord) : failAttempt(attemptRecord);
-    }
-  }));
-});
 var githubApiFailureEvidence = fn2("engine.githubApiFailureEvidence")(function* (operation, action5, error2) {
   const failedRecord = yield* instantRecord(operation, {
     status: "failed",
@@ -103601,8 +103604,6 @@ var runOperationActionEvidence = fn2("engine.runOperationActionEvidence")(functi
       return yield* fileCheckEvidence(operation, action5, context7);
     case "write-file":
       return yield* writeFileEvidence(operation, action5, context7);
-    case "http-check":
-      return yield* httpEvidence(operation, action5);
     case "github-release-create":
       return yield* githubCreateEvidence(operation, action5);
     case "github-release-verify":
@@ -103618,7 +103619,7 @@ var operationFailureFields = (record3) => {
   if (outcome?._tag === "command") {
     return { exitCode: outcome.exitCode };
   }
-  if (outcome?._tag === "http" || outcome?._tag === "github-release") {
+  if (outcome?._tag === "github-release") {
     return { responseStatus: outcome.responseStatus };
   }
   return {};
@@ -103673,7 +103674,7 @@ var runOperationsInto = fn2("engine.runOperationsInto")(function* (ref, operatio
     }
   }
 });
-var publishOperations = (operations) => operations.filter((operation) => operation.phase === "publish" && operation.risk !== "read-only");
+var publishOperations2 = (operations) => operations.filter((operation) => operation.phase === "publish" && operation.risk !== "read-only");
 var buildOperations = (operations) => operations.filter((operation) => operation.phase === "build" || operation.phase === "process");
 var renderFileOperations = (operations) => operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file");
 var validationOperations = (operations) => operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only");
@@ -103681,7 +103682,7 @@ var verificationOperations = (operations) => operations.filter((operation) => op
 var releasePassOperations = (operations) => [
   ...renderFileOperations(operations),
   ...validationOperations(operations),
-  ...publishOperations(operations),
+  ...publishOperations2(operations),
   ...verificationOperations(operations)
 ];
 var releaseWorkflowOperations = (operations, context7) => releasePassOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context7));
@@ -103709,12 +103710,12 @@ var validateOperations = fn2("engine.validateOperations")(function* (operations,
   return yield* runOperations(validationOperations(operations), ExecutionApproval.none, context7);
 });
 var executeOperationsInto = fn2("engine.executeOperationsInto")(function* (ref, operations, approval, context7) {
-  const selected = publishOperations(operations);
+  const selected = publishOperations2(operations);
   yield* preflightOperations(selected.filter((operation) => !shouldRefuseForSnapshot(operation, context7)), approval);
   yield* runOperationsInto(ref, selected, approval, context7);
 });
 var executeOperations = fn2("engine.executeOperations")(function* (operations, approval, context7) {
-  return yield* runOperations(publishOperations(operations), approval, context7);
+  return yield* runOperations(publishOperations2(operations), approval, context7);
 });
 var writeRenderFilesInto = fn2("engine.writeRenderFilesInto")(function* (ref, operations, approval, context7) {
   const selected = renderFileOperations(operations);
@@ -103738,7 +103739,7 @@ var runApprovedReleaseWorkflowInto = fn2("engine.runApprovedReleaseWorkflowInto"
   yield* preflightReleaseApproval(operations, approval, context7);
   yield* runOperationsInto(ref, renderFileOperations(operations), approval, context7);
   yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context7);
-  yield* runOperationsInto(ref, publishOperations(operations), approval, context7);
+  yield* runOperationsInto(ref, publishOperations2(operations), approval, context7);
   yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context7);
 });
 var runApprovedReleaseWorkflow = fn2("engine.runApprovedReleaseWorkflow")(function* (operations, approval, context7) {
@@ -103747,200 +103748,6 @@ var runApprovedReleaseWorkflow = fn2("engine.runApprovedReleaseWorkflow")(functi
   yield* runApprovedReleaseWorkflowInto(ref, operations, approval, context7);
   return yield* get4(ref);
 });
-
-// ../../src/pipes/build.ts
-var defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"];
-var resolveBuilds = (raw) => {
-  if (raw === undefined || raw.length === 0) {
-    return none2();
-  }
-  return some2(raw.map((build) => build.builder === "bun" ? {
-    ...build,
-    targets: build.targets ?? defaultBunTargets
-  } : build));
-};
-var checkAndPlan = (builder, options, identity2, target) => builder.supportedTargets.includes(target) ? builder.plan(options, identity2, target) : fail6(PlanError.make({
-  pipeId: "build",
-  field: "builds[].targets",
-  reason: `Builder ${builder.id} does not support target ${target}. Supported targets: ${builder.supportedTargets.join(", ")}.`
-}));
-var planSection = (section, identity2, target) => {
-  switch (section.builder) {
-    case "bun":
-      return checkAndPlan(bunBuilder, section, identity2, target);
-    case "command":
-      return checkAndPlan(commandBuilder, section, identity2, target);
-    case "prebuilt":
-      return checkAndPlan(prebuiltBuilder, section, identity2, target);
-  }
-};
-var buildPlanner = {
-  id: "build",
-  plan: (sections, state3) => gen2(function* () {
-    const artifacts = [];
-    const operations = [];
-    for (const section of sections) {
-      for (const target of section.targets) {
-        const planned = yield* planSection(section, state3.identity, target);
-        artifacts.push(...planned.artifacts);
-        operations.push(...planned.operations);
-      }
-    }
-    return {
-      ...emptyContribution,
-      artifacts,
-      operations
-    };
-  })
-};
-
-// ../../src/pipes/publish-homebrew.ts
-var rejectUnsupportedTokenEnv = (section) => section.tokenEnv === undefined ? void_3 : fail6(PlanError.make({
-  pipeId: "publish:homebrew",
-  field: "publish.homebrew.tokenEnv",
-  reason: "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
-}));
-var publishHomebrewPlanner = {
-  id: "publish:homebrew",
-  plan: (section, state3) => gen2(function* () {
-    yield* rejectUnsupportedTokenEnv(section);
-    const formulaPath = section.formulaPath;
-    return {
-      ...emptyContribution,
-      operations: [
-        validationNoteOperation({
-          id: "homebrew:brew-audit",
-          pipeId: "publish:homebrew",
-          description: "Record simulated Homebrew formula validation.",
-          message: "Homebrew formula validation is simulated by the deterministic release plan."
-        }),
-        ...catalogGitPublishOperations({
-          id: "homebrew:homebrew-push",
-          pipeId: "publish:homebrew",
-          description: `Push Homebrew tap update for ${state3.identity.name}@${state3.identity.version}.`,
-          directory: section.tapDirectory,
-          filePath: formulaPath,
-          commitMessage: `Update ${section.formulaName} to ${state3.identity.version}`
-        })
-      ]
-    };
-  })
-};
-
-// ../../src/pipes/publish-catalog-generic.ts
-var argv2 = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/).filter(Boolean) : value2;
-var validation = fn2("catalog.publish.validation")(function* (entry, identity2) {
-  if (entry.validate === undefined)
-    return [];
-  const rendered = argv2(entry.validate).map((part) => renderTemplate(part, { identity: identity2 }));
-  const executable = rendered[0];
-  if (executable === undefined || executable.length === 0) {
-    return yield* fail6(PlanError.make({
-      pipeId: "publish:catalog",
-      field: `catalogs.${entry.id}.validate`,
-      reason: "Catalog validate must render to at least one argv entry."
-    }));
-  }
-  return [readOnlyCommandValidationOperation({
-    id: `catalog:${entry.id}:validate`,
-    pipeId: "publish:catalog",
-    description: `Validate ${entry.id} catalog update.`,
-    command: noAuthCommand(executable, rendered.slice(1))
-  })];
-});
-var command = (id, risk, description, executable, args2, cwd) => Operation.make({
-  id,
-  pipeId: "publish:catalog",
-  phase: "publish",
-  risk,
-  description,
-  action: CommandAction.make({ command: cwd === undefined ? noAuthCommand(executable, args2) : CommandSpec.make({ ...noAuthCommand(executable, args2), cwd }) })
-});
-var publishOperations2 = (entry, identity2) => {
-  const id = `catalog:${entry.id}:push`;
-  const directory = entry.directory;
-  const commitMessage = renderTemplate(entry.commitMessage, { identity: identity2 });
-  const description = `Push ${entry.id} catalog update for ${identity2.name}@${identity2.version}.`;
-  const common = {
-    id,
-    pipeId: "publish:catalog",
-    description,
-    directory,
-    filePath: catalogWritePath(entry),
-    commitMessage
-  };
-  if (entry.submit === "push")
-    return catalogGitPublishOperations(common);
-  const branch = `ts-release/${identity2.normalizedName}-${identity2.version}`;
-  const git = catalogGitPublishOperations(common);
-  return [
-    command(`catalog:${entry.id}:checkout`, "writes-local", `Create ${branch}.`, "git", ["-C", directory ?? ".", "checkout", "-B", branch]),
-    ...git.slice(0, 2),
-    command(id, "externally-visible", description, "git", ["-C", directory ?? ".", "push", "-u", "origin", branch]),
-    command(`catalog:${entry.id}:pull-request`, "externally-visible", `Open ${entry.id} catalog pull request.`, "gh", ["pr", "create", "--repo", entry.repository, "--title", commitMessage, "--body", description, "--head", branch], directory ?? ".")
-  ];
-};
-var publishCatalogGenericPlanner = {
-  id: "publish:catalog",
-  plan: (entries, state3) => gen2(function* () {
-    const operations = yield* forEach2(entries, (entry) => validation(entry, state3.identity).pipe(map5((checks) => [...checks, ...publishOperations2(entry, state3.identity)])));
-    return { ...emptyContribution, operations: operations.flat() };
-  })
-};
-
-// ../../src/pipes/publish-scoop.ts
-var rejectUnsupportedTokenEnv2 = (section) => section.tokenEnv === undefined ? void_3 : fail6(PlanError.make({
-  pipeId: "publish:scoop",
-  field: "publish.scoop.tokenEnv",
-  reason: "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
-}));
-var publishScoopPlanner = {
-  id: "publish:scoop",
-  plan: (section, state3) => gen2(function* () {
-    yield* rejectUnsupportedTokenEnv2(section);
-    const manifestPath = section.manifestPath;
-    return {
-      ...emptyContribution,
-      operations: [
-        validationNoteOperation({
-          id: "scoop:scoop-manifest-validation",
-          pipeId: "publish:scoop",
-          description: "Record simulated Scoop manifest validation.",
-          message: "Scoop manifest validation is simulated by the deterministic release plan."
-        }),
-        ...catalogGitPublishOperations({
-          id: "scoop:scoop-push",
-          pipeId: "publish:scoop",
-          description: `Push Scoop bucket update for ${state3.identity.name}@${state3.identity.version}.`,
-          directory: section.bucketDirectory,
-          filePath: manifestPath,
-          commitMessage: `Update ${section.manifestName} to ${state3.identity.version}`
-        })
-      ]
-    };
-  })
-};
-
-// ../../src/engine/planner-schedule.ts
-var buildPlannerSchedule = (release) => [
-  schedule2(buildPlanner, release.builds),
-  schedule2(npmPackPlanner, release.npmPackage),
-  schedule2(pypiWheelPlanner, release.pypiWheels),
-  schedule2(importArtifactsPlanner, release.artifacts),
-  schedule2(archivePlanner, release.archives),
-  schedule2(checksumPlanner, release.checksum)
-];
-var distributionPlannerSchedule = (release) => [
-  schedule2(catalogHomebrewPlanner, release.homebrew),
-  schedule2(catalogScoopPlanner, release.scoop),
-  ...isSome2(release.catalogs) ? [schedule2(catalogGenericPlanner, release.catalogs)] : [],
-  schedule2(publishNpmPlanner, release.npm),
-  schedule2(publishPyPiPlanner, release.pypi),
-  schedule2(publishGitHubPlanner, release.github),
-  schedule2(publishHomebrewPlanner, release.homebrew),
-  schedule2(publishScoopPlanner, release.scoop),
-  ...isSome2(release.catalogs) ? [schedule2(publishCatalogGenericPlanner, release.catalogs)] : []
-];
 
 // ../../src/pipeline/identity/source.ts
 class ResolvedIdentity extends Class4("ResolvedIdentity")({
@@ -103958,7 +103765,7 @@ var identityError = (source, field, reason, cause) => IdentityError.make({
   reason,
   cause
 });
-var projectPackageName2 = (project) => project.packageName ?? project.package ?? project.name;
+var projectPackageName2 = (project) => project.packageName ?? project.name;
 var projectManifestPath = (packagePath) => packagePath === undefined || packagePath.endsWith("package.json") ? packagePath ?? "package.json" : `${packagePath.replace(/[/\\]+$/, "")}/package.json`;
 var gitCommand = (root, args2) => CommandSpec.make({
   executable: "git",
@@ -104259,11 +104066,6 @@ var operationDetailLines = (operation) => {
       return [`write: ${operation.action.path}`];
     case "note":
       return [`note: ${operation.action.message}`];
-    case "http-check":
-      return [
-        `http: ${operation.action.request.method} ${operation.action.request.url}`,
-        `expect: status ${operation.action.expectedStatus}, checks ${operation.action.checks.length}`
-      ];
     case "github-release-create":
       return [
         `github-api: create release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assets.length}`
@@ -104429,11 +104231,6 @@ var renderPlanMarkdown = (plan) => {
       if (operation.action._tag === "note") {
         lines.push(`- note: ${operation.action.message}`);
       }
-      if (operation.action._tag === "http-check") {
-        lines.push(`- http: ${operation.action.request.method} ${operation.action.request.url}`);
-        lines.push(`- expected status: ${operation.action.expectedStatus}`);
-        lines.push(`- checks: ${operation.action.checks.length}`);
-      }
       if (operation.action._tag === "github-release-create") {
         lines.push(`- github-api: create release ${operation.action.repository} ${operation.action.tag}`);
         lines.push(`- assets: ${operation.action.assets.length}`);
@@ -104555,7 +104352,14 @@ var planErrorToNormalization = (error2) => ReleaseNormalizationError.make({
 });
 var resolveReleaseBuild = fn2("engine.resolveReleaseBuild")(function* (intent, root, snapshot2) {
   const release = yield* resolveReleaseWorkflow(intent, root, snapshot2).pipe(mapError3(identityErrorToNormalization));
-  const buildState = yield* runPipeline(emptyPlanAccumulator(release.identity), buildPlannerSchedule(release)).pipe(mapError3(planErrorToNormalization));
+  const buildState = yield* runPipeline(emptyPlanAccumulator(release.identity), [
+    schedule2(buildPlanner, release.builds),
+    schedule2(npmPackPlanner, release.npmPackage),
+    schedule2(pypiWheelPlanner, release.pypiWheels),
+    schedule2(importArtifactsPlanner, release.artifacts),
+    schedule2(archivePlanner, release.archives),
+    schedule2(checksumPlanner, release.checksum)
+  ]).pipe(mapError3(planErrorToNormalization));
   return { release, buildState };
 });
 var resolveIntentSource = fn2("engine.resolveIntentSource")(function* (options, intentArg) {
@@ -104583,7 +104387,17 @@ var planRelease = fn2("engine.planRelease")(function* (input = {}, intentArg) {
   const intent = yield* resolveIntentSource(input, intentArg);
   const sourcePath = intentArg === undefined ? configPath(input) : input.configPath;
   const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false);
-  const state3 = yield* runPipeline(build.buildState, distributionPlannerSchedule(build.release));
+  const state3 = yield* runPipeline(build.buildState, [
+    schedule2(catalogHomebrewPlanner, build.release.homebrew),
+    schedule2(catalogScoopPlanner, build.release.scoop),
+    ...isSome2(build.release.catalogs) ? [schedule2(catalogGenericPlanner, build.release.catalogs)] : [],
+    schedule2(publishNpmPlanner, build.release.npm),
+    schedule2(publishPyPiPlanner, build.release.pypi),
+    schedule2(publishGitHubPlanner, build.release.github),
+    schedule2(publishHomebrewPlanner, build.release.homebrew),
+    schedule2(publishScoopPlanner, build.release.scoop),
+    ...isSome2(build.release.catalogs) ? [schedule2(publishCatalogGenericPlanner, build.release.catalogs)] : []
+  ]);
   return releasePlanFromAccumulator(build.release, root, sourcePath, state3);
 });
 var isStageOperation = (operation) => operation.action._tag === "stage";
@@ -104613,7 +104427,17 @@ var buildReleaseArtifacts = fn2("engine.buildReleaseArtifacts")(function* (input
       yield* runOperations([operation], ExecutionApproval.make({ execute: true, approveIrreversible: false }), operationContext(build.buildState, root, pathName));
     }
   }
-  const planState = yield* runPipeline(build.buildState, distributionPlannerSchedule(build.release));
+  const planState = yield* runPipeline(build.buildState, [
+    schedule2(catalogHomebrewPlanner, build.release.homebrew),
+    schedule2(catalogScoopPlanner, build.release.scoop),
+    ...isSome2(build.release.catalogs) ? [schedule2(catalogGenericPlanner, build.release.catalogs)] : [],
+    schedule2(publishNpmPlanner, build.release.npm),
+    schedule2(publishPyPiPlanner, build.release.pypi),
+    schedule2(publishGitHubPlanner, build.release.github),
+    schedule2(publishHomebrewPlanner, build.release.homebrew),
+    schedule2(publishScoopPlanner, build.release.scoop),
+    ...isSome2(build.release.catalogs) ? [schedule2(publishCatalogGenericPlanner, build.release.catalogs)] : []
+  ]);
   const plan = releasePlanFromAccumulator(build.release, root, pathName, planState);
   return {
     schemaVersion: "artifact-stage/v1",
@@ -104801,8 +104625,6 @@ var operationEnvNames = (operation) => {
   switch (operation.action._tag) {
     case "command":
       return operation.action.command.requiredEnv;
-    case "http-check":
-      return operation.action.request.requiredEnv;
     case "github-release-create":
     case "github-release-verify":
       return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv];
@@ -107807,8 +107629,7 @@ var LiveReleaseHttpLayer = effect(ReleaseHttp)(gen2(function* () {
 }));
 
 // src/runtime/node.ts
-var UnsupportedNodeArtifactStagerLayer = UnsupportedArtifactStagerLayer;
-var makeNodeReleaseWorkflowRuntimeLayer = (options = {}) => mergeAll2(makePlatformCommandRunnerLayer(options).pipe(provideMerge(layer13)), provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer).pipe(provideMerge(layer), provideMerge(layer13)), UnsupportedNodeArtifactStagerLayer, layer13);
+var makeNodeReleaseWorkflowRuntimeLayer = (options = {}) => mergeAll2(makePlatformCommandRunnerLayer(options).pipe(provideMerge(layer13)), provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer).pipe(provideMerge(layer), provideMerge(layer13)), UnsupportedArtifactStagerLayer, layer13);
 var NodeReleaseWorkflowRuntimeLayer = makeNodeReleaseWorkflowRuntimeLayer();
 
 // src/index.ts

@@ -51,8 +51,7 @@ const checksumFilterArtifacts = [
     extra: ImportedFileExtra.make({ format: "file" }) }),
   Artifact.make({ id: "directory", kind: "file", path: "import-dir", producedBy: "import-artifacts",
     extra: ImportedFileExtra.make({ format: "directory" }) }),
-  Artifact.make({ id: "existing-checksum", kind: "checksum-file", path: "out/f-checksums", producedBy: "other" }),
-  Artifact.make({ id: "signature", kind: "signature", path: "out/g-signature", producedBy: "sign" })
+  Artifact.make({ id: "existing-checksum", kind: "checksum-file", path: "out/f-checksums", producedBy: "other" })
 ]
 const expectedChecksumEntries = [
   { artifactId: "file", baseName: "a-file" },

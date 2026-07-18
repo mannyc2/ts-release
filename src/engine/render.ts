@@ -74,11 +74,6 @@ const operationDetailLines = (operation: Operation): ReadonlyArray<string> => {
       return [`write: ${operation.action.path}`]
     case "note":
       return [`note: ${operation.action.message}`]
-    case "http-check":
-      return [
-        `http: ${operation.action.request.method} ${operation.action.request.url}`,
-        `expect: status ${operation.action.expectedStatus}, checks ${operation.action.checks.length}`
-      ]
     case "github-release-create":
       return [
         `github-api: create release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assets.length}`
@@ -259,11 +254,6 @@ export const renderPlanMarkdown = (plan: ReleasePlan): string => {
       }
       if (operation.action._tag === "note") {
         lines.push(`- note: ${operation.action.message}`)
-      }
-      if (operation.action._tag === "http-check") {
-        lines.push(`- http: ${operation.action.request.method} ${operation.action.request.url}`)
-        lines.push(`- expected status: ${operation.action.expectedStatus}`)
-        lines.push(`- checks: ${operation.action.checks.length}`)
       }
       if (operation.action._tag === "github-release-create") {
         lines.push(`- github-api: create release ${operation.action.repository} ${operation.action.tag}`)

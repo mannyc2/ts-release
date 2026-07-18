@@ -11,15 +11,12 @@ import {
   emptyEvidenceBundle,
   EvidenceBundle,
   EvidenceRecord,
-  evaluateHttpCheck,
   FileOutcome,
   GitHubReleaseOutcome,
   githubCreateRequestFromAction,
   githubInspectRequestFromAction,
   githubReleaseEvidence,
   HttpCheckEvidence,
-  HttpOutcome,
-  httpRequestEvidence,
   readRedactionSecrets,
   redactText,
   sameStringSet,
@@ -33,7 +30,6 @@ import {
 } from "./content.js"
 import { ActionAttemptFailed, OperationFailedError, WorkspaceWriteError } from "./errors.js"
 import { ReleaseCommandRunner } from "../host/host.js"
-import { ReleaseHttp } from "../host/http.js"
 import { nowIso } from "../host/platform.js"
 import {
   resolveWorkspacePath,
@@ -46,7 +42,6 @@ import {
   ExecutionApproval,
   type GitHubReleaseCreateAction,
   type GitHubReleaseVerifyAction,
-  type HttpCheckAction,
   type NoteAction,
   Operation,
   requireExecutionApproval,
@@ -325,52 +320,6 @@ const writeFileEvidence = Effect.fn("engine.writeFileEvidence")(function*(
   })
 })
 
-const httpEvidence = Effect.fn("engine.httpEvidence")(function*(
-  operation: Operation,
-  action: HttpCheckAction
-) {
-  const http = yield* ReleaseHttp
-
-  return yield* http.runJson(action.request).pipe(
-    Effect.matchEffect({
-      onFailure: (error) =>
-        instantRecord(operation, {
-          status: "failed",
-          message: error.reason,
-          outcome: HttpOutcome.make({
-            request: httpRequestEvidence(action.request),
-            checks: []
-          })
-        }).pipe(Effect.flatMap(failAttempt)),
-      onSuccess: (result) => {
-        const checks = [
-          HttpCheckEvidence.make({
-            description: `status is ${action.expectedStatus}`,
-            passed: result.status === action.expectedStatus
-          }),
-          ...action.checks.map((check) => evaluateHttpCheck(result.json, check))
-        ]
-        const failed = checks.filter((check) => !check.passed)
-        const attemptRecord = record(operation, {
-          status: failed.length === 0 ? "passed" : "failed",
-          message: failed.length === 0
-            ? "HTTP verification passed."
-            : `HTTP verification failed: ${failed.map((check) => check.description).join("; ")}`,
-          startedAt: result.startedAt,
-          endedAt: result.endedAt,
-          durationMillis: result.durationMillis,
-          outcome: HttpOutcome.make({
-            request: httpRequestEvidence(result.request),
-            responseStatus: result.status,
-            checks
-          })
-        })
-        return failed.length === 0 ? Effect.succeed(attemptRecord) : failAttempt(attemptRecord)
-      }
-    })
-  )
-})
-
 const githubApiFailureEvidence = Effect.fn("engine.githubApiFailureEvidence")(function*(
   operation: Operation,
   action: GitHubReleaseCreateAction | GitHubReleaseVerifyAction,
@@ -513,8 +462,6 @@ const runOperationActionEvidence = Effect.fn("engine.runOperationActionEvidence"
       return yield* fileCheckEvidence(operation, action, context)
     case "write-file":
       return yield* writeFileEvidence(operation, action, context)
-    case "http-check":
-      return yield* httpEvidence(operation, action)
     case "github-release-create":
       return yield* githubCreateEvidence(operation, action)
     case "github-release-verify":
@@ -536,7 +483,7 @@ const operationFailureFields = (
   if (outcome?._tag === "command") {
     return { exitCode: outcome.exitCode }
   }
-  if (outcome?._tag === "http" || outcome?._tag === "github-release") {
+  if (outcome?._tag === "github-release") {
     return { responseStatus: outcome.responseStatus }
   }
   return {}

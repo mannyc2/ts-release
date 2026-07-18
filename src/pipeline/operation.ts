@@ -57,26 +57,6 @@ export class HttpRequestSpec extends Schema.Class<HttpRequestSpec>("HttpRequestS
   body: Schema.optional(HttpRequestBody)
 }) {}
 
-export const JsonPathSegment = Schema.Union([Schema.String, Schema.Number])
-export type JsonPathSegment = typeof JsonPathSegment.Type
-
-export class HttpJsonEqualsCheck extends Schema.TaggedClass<HttpJsonEqualsCheck>()("HttpJsonEqualsCheck", {
-  path: Schema.Array(JsonPathSegment),
-  expected: Schema.Json
-}) {}
-
-export class HttpJsonArrayObjectFieldEqualsCheck extends Schema.TaggedClass<HttpJsonArrayObjectFieldEqualsCheck>()(
-  "HttpJsonArrayObjectFieldEqualsCheck",
-  {
-    path: Schema.Array(JsonPathSegment),
-    field: Schema.String,
-    expected: Schema.Json
-  }
-) {}
-
-export const HttpJsonCheck = Schema.Union([HttpJsonEqualsCheck, HttpJsonArrayObjectFieldEqualsCheck])
-export type HttpJsonCheck = typeof HttpJsonCheck.Type
-
 export class GitHubReleaseAssetSpec extends Schema.Class<GitHubReleaseAssetSpec>("GitHubReleaseAssetSpec")({
   artifactId: Schema.String,
   path: Schema.String,
@@ -176,12 +156,6 @@ export class WriteFileAction extends Schema.TaggedClass<WriteFileAction>()("writ
   contents: Schema.Union([Schema.String, DeferredFileContent])
 }) {}
 
-export class HttpCheckAction extends Schema.TaggedClass<HttpCheckAction>()("http-check", {
-  request: HttpRequestSpec,
-  expectedStatus: Schema.Number,
-  checks: Schema.Array(HttpJsonCheck)
-}) {}
-
 export class GitHubReleaseCreateAction extends Schema.TaggedClass<GitHubReleaseCreateAction>()(
   "github-release-create",
   {
@@ -226,7 +200,6 @@ export const Action = Schema.Union([
   CommandAction,
   CheckFileAction,
   WriteFileAction,
-  HttpCheckAction,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
   NoteAction,

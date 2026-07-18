@@ -34,7 +34,7 @@ export const resolveChecksum = (
     })
 
 const isChecksumFileInput = (artifact: Artifact): boolean => {
-  if (artifact.kind === "package" || artifact.kind === "checksum-file" || artifact.kind === "signature") {
+  if (artifact.kind === "package" || artifact.kind === "checksum-file") {
     return false
   }
   if (artifact.extra?._tag === "file" && artifact.extra.format === "directory") {

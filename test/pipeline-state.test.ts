@@ -36,9 +36,6 @@ const operations = [
     parts: ["sha256=", O.Sha256Hole.make({ artifactId: "archive" })]
   }) }),
     "catalog", "writes-local"),
-  op("http-check", O.HttpCheckAction.make({ request: O.HttpRequestSpec.make({
-    method: "GET", url: "https://example.test", headers: [], envHeaders: [], requiredEnv: [], redactedEnv: []
-  }), expectedStatus: 200, checks: [] })),
   op("github-create", O.GitHubReleaseCreateAction.make({ repository: "owner/repo", tag: "v0.1.0",
     title: "v0.1.0", draft: true, prerelease: false, assets: [] }), "publish", "irreversible"),
   op("github-verify", O.GitHubReleaseVerifyAction.make({ repository: "owner/repo", tag: "v0.1.0",
@@ -64,8 +61,7 @@ describe("release plan", () => {
       "executable", "archive", "checksum-file", "catalog-file", "package", "wheel", "file"
     ])
     expect(decoded.operations.map((operation) => operation.action._tag)).toEqual([
-      "command", "check-file", "write-file", "http-check",
-      "github-release-create", "github-release-verify", "note", "stage"
+      "command", "check-file", "write-file", "github-release-create", "github-release-verify", "note", "stage"
     ])
     expect(encoded).not.toHaveProperty("state")
     for (const field of ["consumers", "sizeBytes", "downloadUrl", "variant"])
@@ -76,14 +72,16 @@ describe("release plan", () => {
     Effect.gen(function*() {
       const decoded = yield* decodeReleasePlan(Schema.encodeSync(ReleasePlan)(plan))
       expect(decoded.schemaVersion).toBe("release-plan/v3")
-      expect(decoded.operations).toHaveLength(8)
+      expect(decoded.operations).toHaveLength(7)
     }))
 
-  test("rejects v2, excess fields, and unsafe artifact paths", () => {
+  test("rejects v2, excess fields, removed grammar, and unsafe artifact paths", () => {
     const encoded = Schema.encodeSync(ReleasePlan)(plan)
     for (const invalid of [
       { ...encoded, schemaVersion: "release-plan/v2" },
       { ...encoded, legacy: true },
+      { ...encoded, operations: [{ ...encoded.operations[0], action: { _tag: "http-check" } }] },
+      { ...encoded, artifacts: [{ ...encoded.artifacts[0], kind: "signature" }] },
       ...["../outside", "\\outside"].map((path) => ({
         ...encoded,
         artifacts: [{ ...encoded.artifacts[0], path }, ...encoded.artifacts.slice(1)]

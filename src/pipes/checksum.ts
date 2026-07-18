@@ -9,7 +9,8 @@ import {
 import { FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../pipeline/operation.js"
 import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import { renderArtifactNameEffect, validateSafeRelativePathEffect } from "../pipeline/template.js"
+import { validateSafeRelativePathEffect } from "../pipeline/artifact.js"
+import { renderArtifactNameEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("ReleaseConfigChecksum")({
   algorithm: Schema.optionalKey(Schema.Literals(["sha256", "sha512"])),

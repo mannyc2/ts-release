@@ -1,3 +1,5 @@
+import { formatTaggedReason } from "../internal/error-message.js"
+
 export type ReleaseApiPhase = "plan" | "build" | "release" | "verify" | "dispose"
 
 export interface ReleaseApiErrorInput {
@@ -10,18 +12,8 @@ const errorMessage = (cause: unknown): string => {
   if (cause instanceof Error && cause.message.length > 0) {
     return cause.message
   }
-  if (typeof cause === "object" && cause !== null) {
-    const record = cause as Record<string, unknown>
-    const tag = typeof record._tag === "string" ? record._tag : undefined
-    const reason = typeof record.reason === "string" ? record.reason : undefined
-    if (tag !== undefined && reason !== undefined) {
-      return `${tag}: ${reason}`
-    }
-    if (tag !== undefined) {
-      return tag
-    }
-  }
-  return typeof cause === "string" && cause.length > 0 ? cause : "Release operation failed."
+  return formatTaggedReason(cause) ??
+    (typeof cause === "string" && cause.length > 0 ? cause : "Release operation failed.")
 }
 
 export class ReleaseApiError extends Error {

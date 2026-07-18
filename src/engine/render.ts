@@ -2,11 +2,11 @@ import {
   CommandSpec,
   Operation,
   type OperationRisk,
-  operationApprovalLabel,
   operationApprovalRequirements
 } from "../pipeline/operation.js"
 import * as Schema from "effect/Schema"
 import { ReleasePlan } from "../pipeline/plan.js"
+import { operationSurfaceId, operationSurfaceIds } from "./summary.js"
 
 const commandLine = (command: CommandSpec): string =>
   [command.executable, ...command.args].join(" ")
@@ -15,20 +15,6 @@ const commandArgv = (command: CommandSpec): ReadonlyArray<string> => [
   command.executable,
   ...command.args
 ]
-
-const operationTargetId = (operation: Operation): string | undefined => {
-  const parts = operation.pipeId.split(":")
-  const targetId = parts[1]
-  return operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:")
-    ? targetId
-    : undefined
-}
-
-const operationSurfaceIds = (plan: ReleasePlan): ReadonlyArray<string> =>
-  [...new Set(plan.operations.flatMap((operation) => {
-    const targetId = operationTargetId(operation)
-    return targetId === undefined ? [] : [targetId]
-  }))].sort()
 
 const riskOrder: ReadonlyArray<OperationRisk> = [
   "read-only",
@@ -63,29 +49,54 @@ const artifactLine = (artifact: ReleasePlan["artifacts"][number]): string => {
   return `- ${artifact.id} ${artifact.path} [${artifact.kind}] produced-by=${artifact.producedBy} ${platform} ${checksum}`
 }
 
-const operationDetailLines = (operation: Operation): ReadonlyArray<string> => {
+const operationDetails = (
+  operation: Operation
+): { readonly text: ReadonlyArray<string>; readonly markdown: ReadonlyArray<string> } => {
   switch (operation.action._tag) {
     case "command":
-      return [
-        `command: ${commandLine(operation.action.command)}`,
-        `argv: ${JSON.stringify(commandArgv(operation.action.command))}`
-      ]
+      return {
+        text: [
+          `command: ${commandLine(operation.action.command)}`,
+          `argv: ${JSON.stringify(commandArgv(operation.action.command))}`
+        ],
+        markdown: [
+          "",
+          "Command argv:",
+          "",
+          ...markdownCodeBlock("json", JSON.stringify(commandArgv(operation.action.command), null, 2))
+        ]
+      }
     case "write-file":
-      return [`write: ${operation.action.path}`]
+      return { text: [`write: ${operation.action.path}`], markdown: [`- write path: ${operation.action.path}`] }
     case "note":
-      return [`note: ${operation.action.message}`]
+      return { text: [`note: ${operation.action.message}`], markdown: [`- note: ${operation.action.message}`] }
     case "github-release-create":
-      return [
-        `github-api: create release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assets.length}`
-      ]
+      return {
+        text: [
+          `github-api: create release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assets.length}`
+        ],
+        markdown: [
+          `- github-api: create release ${operation.action.repository} ${operation.action.tag}`,
+          `- assets: ${operation.action.assets.length}`
+        ]
+      }
     case "github-release-verify":
-      return [
-        `github-api: verify release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assetNames.length}`
-      ]
+      return {
+        text: [
+          `github-api: verify release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assetNames.length}`
+        ],
+        markdown: [
+          `- github-api: verify release ${operation.action.repository} ${operation.action.tag}`,
+          `- assets: ${operation.action.assetNames.length}`
+        ]
+      }
     case "check-file":
-      return [`check-file: ${operation.action.path}`]
+      return { text: [`check-file: ${operation.action.path}`], markdown: [] }
     case "stage":
-      return [`stage: ${operation.action.intent._tag} artifacts=${operation.action.producesArtifactIds.length}`]
+      return {
+        text: [`stage: ${operation.action.intent._tag} artifacts=${operation.action.producesArtifactIds.length}`],
+        markdown: []
+      }
   }
 }
 
@@ -118,7 +129,7 @@ export const renderPlanText = (plan: ReleasePlan): string => {
 
   lines.push("surfaces:")
   for (const surface of operationSurfaceIds(plan)) {
-    const count = plan.operations.filter((operation) => operationTargetId(operation) === surface).length
+    const count = plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length
     lines.push(`  - ${surface} operations=${count}`)
   }
   lines.push("")
@@ -137,7 +148,7 @@ export const renderPlanText = (plan: ReleasePlan): string => {
     }
     for (const operation of group.operations) {
       lines.push(`    - ${operation.id} ${operation.description}`)
-      for (const detail of operationDetailLines(operation)) {
+      for (const detail of operationDetails(operation).text) {
         lines.push(`    ${detail}`)
       }
       const approval = operationApprovalRequirements(operation)
@@ -181,13 +192,13 @@ export const renderPlanSummary = (plan: ReleasePlan): string => {
   lines.push("")
   lines.push("surfaces:")
   for (const surface of operationSurfaceIds(plan)) {
-    const count = plan.operations.filter((operation) => operationTargetId(operation) === surface).length
+    const count = plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length
     lines.push(`  - ${surface} operations=${count}`)
   }
   lines.push("")
   lines.push("approval-required operations:")
   for (const operation of executeOperations) {
-    lines.push(`  - ${operation.id}: ${operationApprovalLabel(operation)} (${operation.risk})`)
+    lines.push(`  - ${operation.id}: ${operationApprovalRequirements(operation).label} (${operation.risk})`)
   }
   if (executeOperations.length === 0) {
     lines.push("  - none")
@@ -239,30 +250,11 @@ export const renderPlanMarkdown = (plan: ReleasePlan): string => {
       lines.push("")
       lines.push(`#### ${operation.id}`)
       lines.push("")
-      lines.push(`- target: ${operationTargetId(operation) ?? "none"}`)
+      lines.push(`- target: ${operationSurfaceId(operation) ?? "none"}`)
       lines.push(`- risk: ${operation.risk}`)
-      lines.push(`- approval: ${operationApprovalLabel(operation)}`)
+      lines.push(`- approval: ${operationApprovalRequirements(operation).label}`)
       lines.push(`- why: ${operation.description}`)
-      if (operation.action._tag === "command") {
-        lines.push("")
-        lines.push("Command argv:")
-        lines.push("")
-        lines.push(...markdownCodeBlock("json", JSON.stringify(commandArgv(operation.action.command), null, 2)))
-      }
-      if (operation.action._tag === "write-file") {
-        lines.push(`- write path: ${operation.action.path}`)
-      }
-      if (operation.action._tag === "note") {
-        lines.push(`- note: ${operation.action.message}`)
-      }
-      if (operation.action._tag === "github-release-create") {
-        lines.push(`- github-api: create release ${operation.action.repository} ${operation.action.tag}`)
-        lines.push(`- assets: ${operation.action.assets.length}`)
-      }
-      if (operation.action._tag === "github-release-verify") {
-        lines.push(`- github-api: verify release ${operation.action.repository} ${operation.action.tag}`)
-        lines.push(`- assets: ${operation.action.assetNames.length}`)
-      }
+      lines.push(...operationDetails(operation).markdown)
     }
   }
 

@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import type { Artifact } from "../pipeline/artifact.js"
-import { artifactPathBaseName } from "../pipeline/artifact.js"
+import { artifactPathBaseName, WorkflowFileName } from "../pipeline/artifact.js"
 import { PlanError } from "../pipeline/errors.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 
@@ -82,6 +83,17 @@ export const trustedPublishingAuthEnvNames = [
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
 ]
 
+export const TrustedPublishingProvider = Schema.Literals(["github-actions"])
+export const trustedPublishingConfigFields = {
+  provider: Schema.optionalKey(TrustedPublishingProvider),
+  workflow: Schema.optionalKey(WorkflowFileName)
+}
+
+export interface TrustedPublishingSection {
+  readonly provider: "github-actions"
+  readonly workflow: string
+}
+
 export const compactTrustedPublishing = (
   config:
     | boolean
@@ -90,7 +102,7 @@ export const compactTrustedPublishing = (
       readonly workflow?: string | undefined
     }
     | undefined
-): { readonly provider: "github-actions"; readonly workflow: string } | undefined => {
+): TrustedPublishingSection | undefined => {
   if (config === undefined || config === false) {
     return undefined
   }
@@ -102,3 +114,11 @@ export const compactTrustedPublishing = (
     workflow: config.workflow ?? "release.yml"
   }
 }
+
+export const publishingAuthEnvNames = (
+  trustedPublishing: TrustedPublishingSection | undefined,
+  credentialEnvNames: ReadonlyArray<string | undefined>
+): ReadonlyArray<string> =>
+  trustedPublishing === undefined
+    ? credentialEnvNames.filter((name): name is string => name !== undefined)
+    : trustedPublishingAuthEnvNames

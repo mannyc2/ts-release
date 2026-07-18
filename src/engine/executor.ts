@@ -584,33 +584,41 @@ export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*
   }
 })
 
-export const publishOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "publish" && operation.risk !== "read-only")
+export type OperationPass = "build" | "render" | "validation" | "publish" | "verification"
+export type EvidenceWorkflow = Exclude<OperationPass, "build"> | "release"
 
-export const buildOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "build" || operation.phase === "process")
+const operationMatchesPass: Record<OperationPass, (operation: Operation) => boolean> = {
+  build: (operation) => operation.phase === "build" || operation.phase === "process",
+  render: (operation) => operation.phase === "catalog" && operation.action._tag === "write-file",
+  validation: (operation) => operation.phase === "publish" && operation.risk === "read-only",
+  publish: (operation) => operation.phase === "publish" && operation.risk !== "read-only",
+  verification: (operation) => operation.phase === "verify"
+}
 
-const renderFileOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file")
-
-const validationOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only")
-
-const verificationOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
-  operations.filter((operation) => operation.phase === "verify")
-
-const releasePassOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> => [
-  ...renderFileOperations(operations),
-  ...validationOperations(operations),
-  ...publishOperations(operations),
-  ...verificationOperations(operations)
-]
-
-export const releaseWorkflowOperations = (
+export const operationsForPass = (
   operations: ReadonlyArray<Operation>,
-  context: OperationRunContext
+  pass: OperationPass
 ): ReadonlyArray<Operation> =>
-  releasePassOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context))
+  operations.filter(operationMatchesPass[pass])
+
+const workflowPasses = (workflow: EvidenceWorkflow): ReadonlyArray<OperationPass> =>
+  workflow === "release"
+    ? ["render", "validation", "publish", "verification"]
+    : [workflow]
+
+const operationsForWorkflow = (
+  operations: ReadonlyArray<Operation>,
+  workflow: EvidenceWorkflow
+): ReadonlyArray<Operation> =>
+  workflowPasses(workflow).flatMap((pass) => operationsForPass(operations, pass))
+
+const approvalForPass = (
+  pass: OperationPass,
+  approval: ExecutionApproval
+): ExecutionApproval =>
+  pass === "validation" || pass === "verification"
+    ? ExecutionApproval.none
+    : approval
 
 const preflightOperations = Effect.fn("engine.preflightOperations")(function*(
   operations: ReadonlyArray<Operation>,
@@ -621,21 +629,15 @@ const preflightOperations = Effect.fn("engine.preflightOperations")(function*(
   }
 })
 
-export const preflightReleaseApproval = Effect.fn("engine.preflightReleaseApproval")(function*(
+export const preflightEvidenceWorkflow = Effect.fn("engine.preflightEvidenceWorkflow")(function*(
   operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  yield* preflightOperations(releaseWorkflowOperations(operations, context), approval)
-})
-
-export const preflightRenderApproval = Effect.fn("engine.preflightRenderApproval")(function*(
-  operations: ReadonlyArray<Operation>,
+  workflow: EvidenceWorkflow,
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
   yield* preflightOperations(
-    renderFileOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context)),
+    operationsForWorkflow(operations, workflow)
+      .filter((operation) => !shouldRefuseForSnapshot(operation, context)),
     approval
   )
 })
@@ -654,101 +656,26 @@ export const runOperations = Effect.fn("engine.runOperations")(function*(
   return yield* Ref.get(ref)
 })
 
-export const validateOperationsInto = Effect.fn("engine.validateOperationsInto")(function*(
+export const runEvidenceWorkflowInto = Effect.fn("engine.runEvidenceWorkflowInto")(function*(
   ref: EvidenceRef,
   operations: ReadonlyArray<Operation>,
-  context: OperationRunContext
-) {
-  yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context)
-})
-
-export const validateOperations = Effect.fn("engine.validateOperations")(function*(
-  operations: ReadonlyArray<Operation>,
-  context: OperationRunContext
-) {
-  return yield* runOperations(validationOperations(operations), ExecutionApproval.none, context)
-})
-
-export const executeOperationsInto = Effect.fn("engine.executeOperationsInto")(function*(
-  ref: EvidenceRef,
-  operations: ReadonlyArray<Operation>,
+  workflow: EvidenceWorkflow,
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  const selected = publishOperations(operations)
-  yield* preflightOperations(
-    selected.filter((operation) => !shouldRefuseForSnapshot(operation, context)),
-    approval
-  )
-  yield* runOperationsInto(ref, selected, approval, context)
+  for (const pass of workflowPasses(workflow)) {
+    yield* runOperationsInto(ref, operationsForPass(operations, pass), approvalForPass(pass, approval), context)
+  }
 })
 
-export const executeOperations = Effect.fn("engine.executeOperations")(function*(
+export const runEvidenceWorkflow = Effect.fn("engine.runEvidenceWorkflow")(function*(
   operations: ReadonlyArray<Operation>,
+  workflow: EvidenceWorkflow,
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  return yield* runOperations(publishOperations(operations), approval, context)
-})
-
-export const writeRenderFilesInto = Effect.fn("engine.writeRenderFilesInto")(function*(
-  ref: EvidenceRef,
-  operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  const selected = renderFileOperations(operations)
-  yield* preflightRenderApproval(operations, approval, context)
-  yield* runOperationsInto(ref, selected, approval, context)
-})
-
-export const writeRenderFiles = Effect.fn("engine.writeRenderFiles")(function*(
-  operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  const selected = renderFileOperations(operations)
-  yield* preflightRenderApproval(operations, approval, context)
+  yield* preflightEvidenceWorkflow(operations, workflow, approval, context)
   const ref = yield* makeEvidenceRef(context)
-  yield* runOperationsInto(ref, selected, approval, context)
-  return yield* Ref.get(ref)
-})
-
-export const verifyOperationsInto = Effect.fn("engine.verifyOperationsInto")(function*(
-  ref: EvidenceRef,
-  operations: ReadonlyArray<Operation>,
-  context: OperationRunContext
-) {
-  yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context)
-})
-
-export const verifyOperations = Effect.fn("engine.verifyOperations")(function*(
-  operations: ReadonlyArray<Operation>,
-  context: OperationRunContext
-) {
-  return yield* runOperations(verificationOperations(operations), ExecutionApproval.none, context)
-})
-
-export const runApprovedReleaseWorkflowInto = Effect.fn("engine.runApprovedReleaseWorkflowInto")(function*(
-  ref: EvidenceRef,
-  operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  yield* preflightReleaseApproval(operations, approval, context)
-  yield* runOperationsInto(ref, renderFileOperations(operations), approval, context)
-  yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context)
-  yield* runOperationsInto(ref, publishOperations(operations), approval, context)
-  yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context)
-})
-
-export const runApprovedReleaseWorkflow = Effect.fn("engine.runApprovedReleaseWorkflow")(function*(
-  operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  yield* preflightReleaseApproval(operations, approval, context)
-  const ref = yield* makeEvidenceRef(context)
-  yield* runApprovedReleaseWorkflowInto(ref, operations, approval, context)
+  yield* runEvidenceWorkflowInto(ref, operations, workflow, approval, context)
   return yield* Ref.get(ref)
 })

@@ -17,7 +17,7 @@ import {
 } from "../pipeline/operation.js"
 import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import { distributionArchToken, renderArtifactNameEffect } from "../pipeline/template.js"
+import { defaultArtifactBaseName, renderArtifactNameEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigArchiveFormatOverrides extends Schema.Class<ReleaseConfigArchiveFormatOverrides>(
   "ReleaseConfigArchiveFormatOverrides"
@@ -68,10 +68,7 @@ const platformKey = (platform: InstallableArtifactVariant): string =>
 const archiveBaseName = (
   name: string,
   platform: InstallableArtifactVariant
-): string => {
-  const libcSuffix = platform.libc === "musl" ? "_musl" : ""
-  return `${name}_{version}_${platform.os}_${distributionArchToken(platform.arch)}${libcSuffix}`
-}
+): string => defaultArtifactBaseName(name, { ...platform, executableExtension: "" })
 
 const formatExtension = (format: ArchiveFormat): string =>
   format === "tar.gz" ? ".tar.gz" : ".zip"

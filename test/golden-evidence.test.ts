@@ -9,7 +9,7 @@ import { type EvidenceBundle, EvidenceRecord } from "../src/engine/evidence.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { OperationFailedError } from "../src/engine/errors.js"
-import { runApprovedReleaseWorkflow } from "../src/engine/executor.js"
+import { runEvidenceWorkflow } from "../src/engine/executor.js"
 import { planRelease } from "../src/engine/engine.js"
 import type { ReleasePlan } from "../src/pipeline/plan.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
@@ -123,7 +123,7 @@ const makeGoldenLayer = (failNpmPublish: boolean) =>
 
 const planFixtureRelease = Effect.gen(function*() {
   const intent = yield* parseReleaseIntent(fixtureConfig)
-  return yield* planRelease({ root: "." }, intent)
+  return yield* planRelease({ workspace: ".", config: intent })
 })
 
 const operationContext = (plan: ReleasePlan) => ({
@@ -136,8 +136,9 @@ const operationContext = (plan: ReleasePlan) => ({
 
 const runFixtureRelease = Effect.fn("goldenEvidence.runFixtureRelease")(function*() {
   const plan = yield* planFixtureRelease
-  return yield* runApprovedReleaseWorkflow(
+  return yield* runEvidenceWorkflow(
     plan.operations,
+    "release",
     ExecutionApproval.make({ execute: true, approveIrreversible: true }),
     operationContext(plan)
   )

@@ -24,7 +24,7 @@ import { catalogPathBaseName } from "../pipeline/operation-helpers.js"
 import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
-import { validateSafeRelativePathEffect } from "../pipeline/template.js"
+import { validateSafeRelativePathEffect } from "../pipeline/artifact.js"
 
 export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPublish>(
   "ReleaseConfigScoopPublish"

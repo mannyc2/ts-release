@@ -19,13 +19,9 @@ import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
 import {
-  executeOperations,
-  runApprovedReleaseWorkflow,
+  runEvidenceWorkflow,
   runOperation,
-  runOperationEvidence,
-  validateOperations,
-  verifyOperations,
-  writeRenderFiles
+  runOperationEvidence
 } from "../src/engine/executor.js"
 import { planRelease } from "../src/engine/engine.js"
 import { ArtifactStageError, ArtifactStager, UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
@@ -59,7 +55,7 @@ const TestLayer = baseLayer({
 const planFromConfig = (config: string) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(config)
-    return yield* planRelease({ root: "." }, intent)
+    return yield* planRelease({ workspace: ".", config: intent })
   })
 
 const commandOperation = (
@@ -204,7 +200,7 @@ describe("execution approval", () => {
     it.effect("runs validation without publish approval", () =>
       Effect.gen(function*() {
         const plan = yield* planFromConfig(minimalConfig)
-        const evidence = yield* validateOperations(plan.operations, {
+        const evidence = yield* runEvidenceWorkflow(plan.operations, "validation", ExecutionApproval.none, {
           root: plan.source.root,
           identity: plan.identity,
           artifacts: plan.artifacts,
@@ -229,7 +225,7 @@ describe("execution approval", () => {
           ExecutionApproval.make({ execute: true, approveIrreversible: false })
         ]) {
           expectTaggedError(
-            yield* executeOperations(plan.operations, approval, planContext).pipe(Effect.flip),
+            yield* runEvidenceWorkflow(plan.operations, "publish", approval, planContext).pipe(Effect.flip),
             "ExecutionApprovalError"
           )
         }
@@ -237,7 +233,12 @@ describe("execution approval", () => {
 
     it.effect("blocks render operations without execute approval", () =>
       Effect.gen(function*() {
-        const error = yield* writeRenderFiles(renderAndPublishOperations, ExecutionApproval.none, context).pipe(
+        const error = yield* runEvidenceWorkflow(
+          renderAndPublishOperations,
+          "render",
+          ExecutionApproval.none,
+          context
+        ).pipe(
           Effect.flip
         )
 
@@ -246,8 +247,9 @@ describe("execution approval", () => {
 
     it.effect("runs render operations with execute approval", () =>
       Effect.gen(function*() {
-        const evidence = yield* writeRenderFiles(
+        const evidence = yield* runEvidenceWorkflow(
           renderAndPublishOperations,
+          "render",
           ExecutionApproval.make({ execute: true, approveIrreversible: false }),
           context
         )
@@ -257,8 +259,9 @@ describe("execution approval", () => {
 
     it.effect("does not run render operations during publish execution", () =>
       Effect.gen(function*() {
-        const evidence = yield* executeOperations(
+        const evidence = yield* runEvidenceWorkflow(
           renderAndPublishOperations,
+          "publish",
           ExecutionApproval.make({ execute: true, approveIrreversible: true }),
           context
         )
@@ -268,8 +271,9 @@ describe("execution approval", () => {
 
     it.effect("runs approved release workflow in stage order", () =>
       Effect.gen(function*() {
-        const evidence = yield* runApprovedReleaseWorkflow(
+        const evidence = yield* runEvidenceWorkflow(
           workflowOperations,
+          "release",
           ExecutionApproval.make({ execute: true, approveIrreversible: true }),
           context
         )
@@ -295,7 +299,7 @@ describe("execution approval", () => {
           ExecutionApproval.make({ execute: true, approveIrreversible: false })
         ]) {
           const attempts: Array<number> = []
-          const error = yield* runApprovedReleaseWorkflow(workflowOperations, approval, context).pipe(
+          const error = yield* runEvidenceWorkflow(workflowOperations, "release", approval, context).pipe(
             Effect.provide(retryProbeLayer(attempts, 1)),
             Effect.flip
           )
@@ -370,7 +374,12 @@ describe("execution approval", () => {
       const result = yield* runRetryProbe(npmVersionVerifyOperation(11), 3, 5_000)
       expect(result.times).toHaveLength(3)
       expect(result.evidence.status).toBe("passed")
-      const evidence = yield* verifyOperations([npmVersionVerifyOperation(1)], context).pipe(
+      const evidence = yield* runEvidenceWorkflow(
+        [npmVersionVerifyOperation(1)],
+        "verification",
+        ExecutionApproval.none,
+        context
+      ).pipe(
         Effect.provide(retryProbeLayer([], 1))
       )
       expect(evidence.records.map((record) => [record.operationId, record.status])).toEqual([
@@ -386,8 +395,9 @@ describe("execution approval", () => {
         [workflowVerifyCommand, "workflow-verify", ["workflow-render", "workflow-validate", "workflow-publish", "workflow-verify"], ["catalog", "publish", "publish", "verify"]]
       ] as const
       for (const [command, operationId, operationIds, phases] of cases) {
-        const error = yield* runApprovedReleaseWorkflow(
+        const error = yield* runEvidenceWorkflow(
           workflowOperations,
+          "release",
           ExecutionApproval.make({ execute: true, approveIrreversible: true }),
           context
         ).pipe(

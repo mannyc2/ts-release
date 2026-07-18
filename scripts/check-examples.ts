@@ -167,8 +167,8 @@ const runExamplePlan = Effect.fn("scripts.runExamplePlan")(function*(
   const path = yield* Path.Path
   const exampleDirectory = path.join(root, "examples", exampleName)
   const plan = yield* planRelease({
-      root: exampleDirectory,
-      configPath: "release.config.json"
+      workspace: exampleDirectory,
+      config: "release.config.json"
     }).pipe(
     Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root: exampleDirectory }))
   )

@@ -71,7 +71,7 @@ describe("snapshot mode", () => {
   it.effect("applies the snapshot suffix over manifest identity and marks the plan", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(snapshotConfig)
-      const plan = yield* planRelease({ root: ".", snapshot: true }, intent)
+      const plan = yield* planRelease({ workspace: ".", config: intent, snapshot: true })
       expect(plan.identity).toMatchObject({
         version: "0.1.0-SNAPSHOT-abcdef1",
         snapshot: true,
@@ -84,7 +84,7 @@ describe("snapshot mode", () => {
   it.effect("applies the snapshot suffix over git-tag identity", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(gitTagConfig)
-      const plan = yield* planRelease({ root: ".", snapshot: true }, intent)
+      const plan = yield* planRelease({ workspace: ".", config: intent, snapshot: true })
       expect(plan.identity).toMatchObject({
         version: "1.2.3-SNAPSHOT-abcdef1",
         tag: "v1.2.3",
@@ -130,7 +130,7 @@ describe("snapshot mode", () => {
         const result = yield* runApprovedRelease({
           snapshot: true,
           execute: true,
-          approveIrreversible: true
+          approvePublish: true
         })
         const refusal = result.evidence.records.find((record) => record.operationId === "npm:npm-publish")
         expect(refusal?.status).toBe("refused")

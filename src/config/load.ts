@@ -1,8 +1,15 @@
 import * as Effect from "effect/Effect"
+import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 import { parseJsonAs } from "../pipeline/json.js"
 import { ConfigParseError, ConfigValidationError } from "./errors.js"
-import { decodeReleaseConfig, DEFAULT_CONFIG_PATH } from "./schema.js"
+import { decodeReleaseConfig, DEFAULT_CONFIG_PATH, type ReleaseIntent } from "./schema.js"
+import {
+  configPath,
+  configRoot,
+  readReleaseConfig,
+  type ConfigSource
+} from "./resolve.js"
 
 
 const forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"])
@@ -123,4 +130,27 @@ export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(
   )
 
   return yield* decodeReleaseIntent(parsed, path)
+})
+
+export interface LoadedReleaseIntent {
+  readonly intent: ReleaseIntent
+  readonly root: string
+  readonly sourcePath?: string | undefined
+}
+
+export const loadReleaseIntent = Effect.fn("config.loadReleaseIntent")(function*(
+  config: string | ReleaseIntent | undefined,
+  source: ConfigSource = {}
+) {
+  const path = yield* Path.Path
+  const diskSource = typeof config === "string" ? { ...source, configPath: config } : source
+  const pathName = configPath(diskSource)
+  const intent = typeof config === "object" && config !== null
+    ? yield* decodeReleaseIntent(config, source.configPath ?? "inline config")
+    : yield* parseReleaseIntent(yield* readReleaseConfig(diskSource), pathName)
+  return {
+    intent,
+    root: configRoot(path, diskSource),
+    sourcePath: typeof config === "object" && config !== null ? source.configPath : pathName
+  } satisfies LoadedReleaseIntent
 })

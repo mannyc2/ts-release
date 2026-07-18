@@ -1,10 +1,8 @@
 import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
 import {
-  isSafeRelativePath,
-  safeRelativePathReason,
   type InstallableArtifactVariant,
-  type SafeRelativePath
+  type SafeRelativePath,
+  validateSafeRelativePathEffect
 } from "./artifact.js"
 import { PlanError } from "./errors.js"
 import type { ReleaseIdentity } from "./state.js"
@@ -28,8 +26,8 @@ export const defaultArtifactBaseName = (
   return `${binary}_{version}_${platform.os}_${distributionArchToken(platform.arch)}${libcSuffix}${extension}`
 }
 
-// One token vocabulary for both renderers: renderTemplate substitutes
-// absent-context tokens as "", renderArtifactName leaves them and fails.
+// One token vocabulary and renderer: ordinary templates erase missing
+// context; artifact paths preserve missing tokens so the Effect wrapper fails.
 const tokenValues = (context: TemplateContext): ReadonlyArray<readonly [string, string | undefined]> => {
   const platform = context.platform
   return [
@@ -50,31 +48,13 @@ const tokenValues = (context: TemplateContext): ReadonlyArray<readonly [string, 
 
 export const renderTemplate = (
   value: string,
-  context: TemplateContext
-): string =>
-  tokenValues(context).reduce(
-    (rendered, [token, substitution]) => rendered.split(token).join(substitution ?? ""),
-    value
-  )
-
-export class UnresolvedTemplateToken extends Schema.Class<UnresolvedTemplateToken>(
-  "UnresolvedTemplateToken"
-)({ token: Schema.String, value: Schema.String }) {}
-
-export const renderArtifactName = (
-  value: string,
-  context: TemplateContext
-): string | UnresolvedTemplateToken => {
-  const substitutions = tokenValues(context)
+  context: TemplateContext,
+  unresolved: "empty" | "preserve" = "empty"
+): string => {
   let rendered = value
-  for (const [token, substitution] of substitutions) {
-    if (substitution !== undefined) {
-      rendered = rendered.split(token).join(substitution)
-    }
-  }
-  for (const [token] of substitutions) {
-    if (rendered.includes(token)) {
-      return UnresolvedTemplateToken.make({ token, value })
+  for (const [token, substitution] of tokenValues(context)) {
+    if (substitution !== undefined || unresolved === "empty") {
+      rendered = rendered.split(token).join(substitution ?? "")
     }
   }
   return rendered
@@ -85,28 +65,18 @@ export const renderArtifactNameEffect = (
   context: TemplateContext,
   source: { readonly pipeId: string; readonly field: string }
 ): Effect.Effect<SafeRelativePath, PlanError> => {
-  const rendered = renderArtifactName(value, context)
-  if (typeof rendered !== "string") {
+  const substitutions = tokenValues(context)
+  const rendered = renderTemplate(value, context, "preserve")
+  const unresolved = substitutions.find(([token]) => rendered.includes(token))
+  if (unresolved !== undefined) {
     return Effect.fail(PlanError.make({
       pipeId: source.pipeId,
       field: source.field,
-      reason: `Template ${rendered.token} cannot be resolved here; remove it or provide a platform context.`
+      reason: `Template ${unresolved[0]} cannot be resolved here; remove it or provide a platform context.`
     }))
   }
   return validateSafeRelativePathEffect(rendered, source)
 }
-
-export const validateSafeRelativePathEffect = (
-  value: string,
-  source: { readonly pipeId: string; readonly field: string }
-): Effect.Effect<SafeRelativePath, PlanError> =>
-  isSafeRelativePath(value)
-    ? Effect.succeed(value)
-    : Effect.fail(PlanError.make({
-      pipeId: source.pipeId,
-      field: source.field,
-      reason: safeRelativePathReason
-    }))
 
 export const normalizedName = (name: string): string => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name

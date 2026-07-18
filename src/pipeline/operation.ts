@@ -240,19 +240,18 @@ export class ExecutionApprovalError extends Schema.TaggedErrorClass<ExecutionApp
   }
 ) {}
 
-export const operationApprovalRequirements = (operation: Operation) => ({
-  requiresExecute: operation.risk !== "read-only",
-  requiresIrreversibleApproval: operation.risk === "irreversible"
-})
-
-export const operationApprovalLabel = (operation: Operation): string => {
-  const requirements = operationApprovalRequirements(operation)
-  if (!requirements.requiresExecute) {
-    return "none"
-  }
-  return requirements.requiresIrreversibleApproval
-    ? "--execute + --approve-publish"
-    : "--execute"
+export const operationApprovalRequirements = (operation: Operation) => {
+  const requiresExecute = operation.risk !== "read-only"
+  const requiresIrreversibleApproval = operation.risk === "irreversible"
+  return {
+    requiresExecute,
+    requiresIrreversibleApproval,
+    label: !requiresExecute
+      ? "none"
+      : requiresIrreversibleApproval
+      ? "--execute + --approve-publish"
+      : "--execute"
+  } as const
 }
 
 export const canExecuteOperation = (operation: Operation, approval: ExecutionApproval): boolean => {
@@ -271,11 +270,14 @@ export const requireExecutionApproval = Effect.fn("requireExecutionApproval")(fu
   operation: Operation,
   approval: ExecutionApproval
 ) {
-  if (canExecuteOperation(operation, approval)) {
+  const requirements = operationApprovalRequirements(operation)
+  if (
+    (!requirements.requiresExecute || approval.execute) &&
+    (!requirements.requiresIrreversibleApproval || approval.approveIrreversible)
+  ) {
     return
   }
 
-  const requirements = operationApprovalRequirements(operation)
   const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible
     ? "Operation requires irreversible approval."
     : "Operation requires execute approval."

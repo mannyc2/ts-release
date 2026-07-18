@@ -68,8 +68,8 @@ const configInput = (input: {
   readonly config: string
   readonly snapshot?: boolean | undefined
 }) => ({
-  root: Option.getOrUndefined(input.root),
-  configPath: input.config,
+  workspace: Option.getOrUndefined(input.root),
+  config: input.config,
   snapshot: input.snapshot
 })
 
@@ -201,7 +201,7 @@ const releaseCommand = Command.make(
     const result = yield* Release.runApprovedRelease({
       ...configInput({ root, config, snapshot }),
       execute,
-      approveIrreversible: approvePublish
+      approvePublish
     })
     yield* printEvidence(result.evidence)
   })

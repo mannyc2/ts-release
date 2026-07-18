@@ -62,16 +62,16 @@ const currentExampleNames = (): ReadonlyArray<string> =>
 const planExample = (exampleName: ExampleName) => {
   const exampleDirectory = join(root, "examples", exampleName)
   return planRelease({
-    root: exampleDirectory,
-    configPath: "release.config.json"
+    workspace: exampleDirectory,
+    config: "release.config.json"
   }).pipe(
     Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root: exampleDirectory }))
   )
 }
 const planDogfood = () =>
   planRelease({
-    root,
-    configPath: "apps/release-ts/release.config.json"
+    workspace: root,
+    config: "apps/release-ts/release.config.json"
   }).pipe(
     Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
   )
@@ -95,7 +95,7 @@ const stagedExampleArchiveHash = (exampleName: ExampleName, artifactPath: string
   withTempDirectoryPromise("ts-release-golden-archive-", async (scratchRoot) => {
     const exampleRoot = join(root, "examples", exampleName)
     cpSync(join(exampleRoot, "plugin"), join(scratchRoot, "plugin"), { recursive: true })
-    await runEffect(buildReleaseArtifacts({ root: scratchRoot, configPath: join(exampleRoot, "release.config.json") }),
+    await runEffect(buildReleaseArtifacts({ workspace: scratchRoot, config: join(exampleRoot, "release.config.json") }),
       makeBunReleaseWorkflowRuntimeLayer({ root: scratchRoot })
     )
     return sha256File(join(scratchRoot, artifactPath))

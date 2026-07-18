@@ -335,8 +335,8 @@ describe("cli command", () => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const plan = await Effect.runPromise(
         planRelease({
-          root,
-          configPath: "release.config.json"
+          workspace: root,
+          config: "release.config.json"
         }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
@@ -349,8 +349,8 @@ describe("cli command", () => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const plan = await Effect.runPromise(
         planRelease({
-          root,
-          configPath: "release.config.json"
+          workspace: root,
+          config: "release.config.json"
         }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
@@ -701,7 +701,7 @@ describe("cli command", () => {
     withTempDirectoryPromise("ts-release-plan-root-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const plan = await Effect.runPromise(
-        planRelease({ root }).pipe(
+        planRelease({ workspace: root }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
@@ -713,7 +713,7 @@ describe("cli command", () => {
     withTempDirectoryPromise("ts-release-workflow-runtime-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const plan = await Effect.runPromise(
-        planRelease({ root, configPath: "release.config.json" }).pipe(
+        planRelease({ workspace: root, config: "release.config.json" }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )

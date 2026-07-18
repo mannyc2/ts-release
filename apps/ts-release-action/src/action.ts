@@ -9,11 +9,16 @@ import * as Schema from "effect/Schema"
 import type { ArtifactStager } from "../../../src/engine/stager.js"
 import { ReleasePlan } from "../../../src/pipeline/plan.js"
 import * as Release from "../../../src/engine/engine.js"
+import { operationSurfaceIds } from "../../../src/engine/summary.js"
 import type { ReleaseCommandRunner } from "../../../src/host/host.js"
 import type { ReleaseHttp } from "../../../src/host/http.js"
 import type { GitHubApi } from "../../../src/engine/github.js"
 import * as Doctor from "../../../src/workflows/doctor.js"
-import { hasParentTraversal } from "../../../src/internal/workspace-path.js"
+import { formatTaggedReason } from "../../../src/internal/error-message.js"
+import {
+  resolveWorkspacePath,
+  validateWorkspaceWritePath
+} from "../../../src/internal/workspace-path.js"
 import { ActionOptions } from "./input.js"
 
 type ReleaseDiagnosticReport = Doctor.ReleaseDiagnosticReport
@@ -74,63 +79,28 @@ const renderActionCause = (cause: unknown): string => {
   return Inspectable.toStringUnknown(cause)
 }
 
-const formatTaggedError = (cause: unknown): string | undefined => {
-  if (
-    typeof cause === "object" &&
-    cause !== null &&
-    "_tag" in cause &&
-    typeof cause._tag === "string"
-  ) {
-    const reason = "reason" in cause && typeof cause.reason === "string" ? cause.reason : undefined
-    const causeMessage = "cause" in cause && cause.cause !== undefined ? renderActionCause(cause.cause) : undefined
-    const causeSuffix = causeMessage !== undefined &&
-        causeMessage.length > 0 &&
-        causeMessage !== reason
-      ? ` (cause: ${causeMessage})`
-      : ""
-    return `${cause._tag}${reason === undefined ? "" : `: ${reason}`}${causeSuffix}`
-  }
-  return undefined
-}
-
 export const formatActionError = (cause: unknown): string =>
-  formatTaggedError(Cause.isCause(cause) ? Cause.squash(cause) : cause) ??
-    renderActionCause(cause)
-
-const workspacePath = (path: Path.Path, root: string, pathName: string): string =>
-  path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
-
-const isInsideWorkspace = (path: Path.Path, root: string, targetPath: string): boolean => {
-  const relative = path.relative(path.resolve(root), targetPath)
-  return relative.length === 0 || (!relative.startsWith("..") && !path.isAbsolute(relative))
-}
+  formatTaggedReason(
+    Cause.isCause(cause) ? Cause.squash(cause) : cause,
+    renderActionCause
+  ) ?? renderActionCause(cause)
 
 const workspaceOutputPath = (
   path: Path.Path,
   options: ActionOptions,
   pathName: string
 ): Effect.Effect<string, ActionCommandError> => {
-  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
-    return Effect.fail(
+  const result = validateWorkspaceWritePath(path, options.root, pathName)
+  return result._tag === "Ok"
+    ? Effect.succeed(result.path)
+    : Effect.fail(
       ActionCommandError.make({
         command: options.command,
-        reason: "plan-path must be non-empty and must not contain parent traversal."
+        reason: result.reason === "empty-or-parent-traversal"
+          ? "plan-path must be non-empty and must not contain parent traversal."
+          : "plan-path must resolve inside the action root."
       })
     )
-  }
-  const rootPath = path.resolve(options.root)
-  const targetPath = path.isAbsolute(pathName)
-    ? path.resolve(pathName)
-    : path.resolve(rootPath, pathName)
-  if (isInsideWorkspace(path, rootPath, targetPath)) {
-    return Effect.succeed(targetPath)
-  }
-  return Effect.fail(
-    ActionCommandError.make({
-      command: options.command,
-      reason: "plan-path must resolve inside the action root."
-    })
-  )
 }
 
 const workspaceConfigPath = (
@@ -138,31 +108,19 @@ const workspaceConfigPath = (
   options: ActionOptions,
   pathName: string
 ): Effect.Effect<string, ActionCommandError> => {
-  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
-    return Effect.fail(
-      ActionCommandError.make({
-        command: options.command,
-        reason: "config must be non-empty and must not contain parent traversal."
-      })
-    )
-  }
   const rootPath = path.resolve(options.root)
-  const targetPath = path.isAbsolute(pathName)
-    ? path.resolve(pathName)
-    : path.resolve(rootPath, pathName)
-  if (!isInsideWorkspace(path, rootPath, targetPath)) {
+  const result = validateWorkspaceWritePath(path, rootPath, pathName)
+  if (result._tag === "Invalid") {
     return Effect.fail(
       ActionCommandError.make({
         command: options.command,
-        reason: "config must resolve inside the action root."
+        reason: result.reason === "empty-or-parent-traversal"
+          ? "config must be non-empty and must not contain parent traversal."
+          : "config must resolve inside the action root."
       })
     )
   }
-  return Effect.succeed(
-    path.isAbsolute(pathName)
-      ? path.relative(rootPath, targetPath)
-      : pathName
-  )
+  return Effect.succeed(path.isAbsolute(pathName) ? path.relative(rootPath, result.path) : pathName)
 }
 
 const actionOptionsWithConfig = (
@@ -172,21 +130,15 @@ const actionOptionsWithConfig = (
   ActionOptions.make({ ...options, config })
 
 const releaseInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  snapshot: options.snapshot
+  workspace: options.root,
+  config: options.config,
+  snapshot: options.snapshot,
+  execute: options.execute,
+  approvePublish: options.approvePublish
 })
 
 const textOutputFormat = (options: ActionOptions): "json" | "text" =>
   options.format === "json" ? "json" : "text"
-
-const executionInput = (options: ActionOptions) => ({
-  root: options.root,
-  configPath: options.config,
-  snapshot: options.snapshot,
-  execute: options.execute,
-  approveIrreversible: options.approvePublish
-})
 
 const diagnosticsFormat = (options: ActionOptions): "json" | "text" | "markdown" =>
   options.format === "json" || options.format === "markdown" ? options.format : "text"
@@ -198,19 +150,8 @@ const diagnosticsInput = (options: ActionOptions) => ({
   target: options.target
 })
 
-const operationSurfaceId = (pipeId: string): string | undefined => {
-  const parts = pipeId.split(":")
-  const surface = parts[1]
-  return (pipeId.startsWith("publish:") || pipeId.startsWith("catalog:")) && surface !== undefined
-    ? surface
-    : undefined
-}
-
 const surfaceCount = (plan: ReleasePlan): number =>
-  new Set(plan.operations.flatMap((operation) => {
-    const surface = operationSurfaceId(operation.pipeId)
-    return surface === undefined ? [] : [surface]
-  })).size
+  operationSurfaceIds(plan).length
 
 const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlan, planPath: string) {
   yield* io.setOutput("release_name", plan.identity.name)
@@ -266,7 +207,7 @@ const collectEvidenceFiles = Effect.fn("action.collectEvidenceFiles")(function*(
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const absoluteDirectory = workspacePath(path, root, evidenceDirectory)
+  const absoluteDirectory = resolveWorkspacePath(path, root, evidenceDirectory)
   const exists = yield* fs.exists(absoluteDirectory)
   if (!exists) {
     return {
@@ -428,7 +369,7 @@ const runRelease = Effect.fn("action.runRelease")(function*(
     yield* io.setOutput("status", "passed")
     return plan
   }
-  yield* Release.writeReleaseEvidence(plan, executionInput(options))
+  yield* Release.writeReleaseEvidence(plan, releaseInput(options))
   if (options.writeStepSummary) {
     yield* io.appendSummary(`## ts-release release\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/evidence.json\n`)
   }

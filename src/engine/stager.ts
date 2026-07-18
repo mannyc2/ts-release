@@ -15,6 +15,7 @@ import {
   type StageAction
 } from "../pipeline/operation.js"
 import { optionalField } from "../pipeline/optional-field.js"
+import { validateWorkspaceWritePath } from "../internal/workspace-path.js"
 import { renderTemplate } from "../pipeline/template.js"
 import {
   type ArchiveByteEntry,
@@ -93,15 +94,6 @@ const logsReason = (
   return reason.length === 0 ? fallback : reason
 }
 
-const hasParentTraversal = (pathName: string): boolean =>
-  pathName.split(/[\\/]+/).includes("..")
-
-const isInsideRoot = (path: Path.Path, root: string, target: string): boolean => {
-  const rootPath = path.resolve(root)
-  const relative = path.relative(rootPath, target)
-  return relative.length === 0 || (!relative.startsWith("..") && !path.isAbsolute(relative))
-}
-
 export type StageOperation = Operation & { readonly action: StageAction }
 
 const stageError = (
@@ -141,27 +133,18 @@ const resolveStagePath = (
   context: ArtifactStageContext,
   artifactId?: string | undefined
 ): Effect.Effect<string, ArtifactStageError> => {
-  const trimmed = pathName.trim()
-  if (trimmed.length === 0 || path.isAbsolute(pathName) || hasParentTraversal(pathName)) {
-    return Effect.fail(
+  const result = validateWorkspaceWritePath(path, context.root, pathName, { allowAbsolute: false })
+  return result._tag === "Ok"
+    ? Effect.succeed(result.path)
+    : Effect.fail(
       stageError(operation, {
         artifactId,
         path: pathName,
-        reason: "Stage paths must be non-empty, relative, and must not contain parent traversal."
+        reason: result.reason === "empty-or-parent-traversal"
+          ? "Stage paths must be non-empty, relative, and must not contain parent traversal."
+          : "Stage paths must resolve inside the workspace root."
       })
     )
-  }
-  const resolved = path.resolve(context.root, pathName)
-  if (!isInsideRoot(path, context.root, resolved)) {
-    return Effect.fail(
-      stageError(operation, {
-        artifactId,
-        path: pathName,
-        reason: "Stage paths must resolve inside the workspace root."
-      })
-    )
-  }
-  return Effect.succeed(resolved)
 }
 
 const stageBunCompile = (
@@ -291,6 +274,51 @@ Root-Is-Purelib: false
 Tag: ${intent.wheelTag}
 `
 
+interface StageEntryInput {
+  readonly sourcePath: string
+  readonly entryPath: string
+  readonly mode: number
+  readonly artifactId?: string | undefined
+  readonly failureReason?: string | undefined
+}
+
+const readStageEntries = Effect.fn("ArtifactStager.readEntries")(function*(
+  fileSystem: FileSystem.FileSystem,
+  path: Path.Path,
+  operation: StageOperation,
+  context: ArtifactStageContext,
+  inputs: ReadonlyArray<StageEntryInput>
+) {
+  const entries = yield* Effect.forEach(inputs, (input) =>
+    Effect.gen(function*() {
+      const resolved = yield* resolveStagePath(path, operation, input.sourcePath, context, input.artifactId)
+      const failureReason = input.failureReason
+      const data: Uint8Array | undefined = failureReason === undefined
+        ? yield* fileSystem.readFile(resolved).pipe(
+          Effect.matchEffect({ onFailure: () => Effect.succeed(undefined), onSuccess: Effect.succeed })
+        )
+        : yield* fileSystem.readFile(resolved).pipe(
+          Effect.mapError((cause) =>
+            stageError(operation, {
+              artifactId: input.artifactId,
+              path: input.sourcePath,
+              reason: failureReason,
+              cause
+            })
+          )
+        )
+      return data === undefined
+        ? undefined
+        : {
+          path: input.entryPath,
+          data,
+          mode: input.mode
+        } satisfies ArchiveByteEntry
+    })
+  )
+  return entries.filter((entry): entry is ArchiveByteEntry => entry !== undefined)
+})
+
 const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
   fileSystem: FileSystem.FileSystem,
   path: Path.Path,
@@ -332,23 +360,18 @@ const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
     }
   ]
 
-  for (const binary of intent.binaries) {
-    const sourcePath = renderTemplate(binary.sourcePath, { identity: context.identity })
-    const resolved = yield* resolveStagePath(path, operation, sourcePath, context)
-    entries.push({
-      path: binary.wheelPath,
-      data: yield* fileSystem.readFile(resolved).pipe(
-        Effect.mapError((cause) =>
-          stageError(operation, {
-            path: sourcePath,
-            reason: "Unable to read PyPI wheel binary input.",
-            cause
-          })
-        )
-      ),
-      mode: 0o100755
-    })
-  }
+  entries.push(...yield* readStageEntries(
+    fileSystem,
+    path,
+    operation,
+    context,
+    intent.binaries.map((binary) => ({
+      sourcePath: renderTemplate(binary.sourcePath, { identity: context.identity }),
+      entryPath: binary.wheelPath,
+      mode: 0o100755,
+      failureReason: "Unable to read PyPI wheel binary input."
+    }))
+  ))
 
   const recordPath = `${distInfo}/RECORD`
   const recordRows = entries
@@ -435,24 +458,17 @@ const archiveFileEntries = Effect.fn("ArtifactStager.archive.files")(function*(
     }
   }
 
-  const files: Array<ArchiveByteEntry> = []
-  for (const fileName of [...matched].sort()) {
-    const sourcePath = yield* resolveStagePath(path, operation, fileName, context)
-    const data = yield* fileSystem.readFile(sourcePath).pipe(
-      Effect.matchEffect({
-        onFailure: () => Effect.succeed(undefined),
-        onSuccess: (value) => Effect.succeed(value)
-      })
-    )
-    if (data !== undefined) {
-      files.push({
-        path: archiveEntryPath(intent.wrapDirectory, fileName),
-        data,
-        mode: 0o100644
-      })
-    }
-  }
-  return files
+  return yield* readStageEntries(
+    fileSystem,
+    path,
+    operation,
+    context,
+    [...matched].sort().map((fileName) => ({
+      sourcePath: fileName,
+      entryPath: archiveEntryPath(intent.wrapDirectory, fileName),
+      mode: 0o100644
+    }))
+  )
 })
 
 const archiveArtifactEntries = Effect.fn("ArtifactStager.archive.artifacts")(function*(
@@ -462,26 +478,19 @@ const archiveArtifactEntries = Effect.fn("ArtifactStager.archive.artifacts")(fun
   intent: ArchiveIntent,
   context: ArtifactStageContext
 ) {
-  const entries: Array<ArchiveByteEntry> = []
-  for (const artifact of intent.artifacts) {
-    const sourcePath = yield* resolveStagePath(path, operation, artifact.sourcePath, context, artifact.artifactId)
-    const data = yield* fileSystem.readFile(sourcePath).pipe(
-      Effect.mapError((cause) =>
-        stageError(operation, {
-          artifactId: artifact.artifactId,
-          path: artifact.sourcePath,
-          reason: "Unable to read archive artifact input.",
-          cause
-        })
-      )
-    )
-    entries.push({
-      path: archiveEntryPath(intent.wrapDirectory, artifact.archivePath),
-      data,
-      mode: 0o100755
-    })
-  }
-  return entries
+  return yield* readStageEntries(
+    fileSystem,
+    path,
+    operation,
+    context,
+    intent.artifacts.map((artifact) => ({
+      sourcePath: artifact.sourcePath,
+      entryPath: archiveEntryPath(intent.wrapDirectory, artifact.archivePath),
+      mode: 0o100755,
+      artifactId: artifact.artifactId,
+      failureReason: "Unable to read archive artifact input."
+    }))
+  )
 })
 
 const archiveBytes = (

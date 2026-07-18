@@ -34,7 +34,7 @@ const planFromConfig = (name: string, config: unknown, root: string = ".") =>
     const writePath = root === "." ? `${fixtureRoot}/${configFileName}` : `${root}/${configFileName}`
     const configPath = root === "." ? writePath : configFileName
     yield* Effect.promise(() => writeJson(writePath, config))
-    return yield* planRelease({ root, configPath })
+    return yield* planRelease({ workspace: root, config: configPath })
   })
 
 const runSelectedOperations = (

@@ -5,7 +5,7 @@ import * as Layer from "effect/Layer"
 import { runEvidenceWorkflowWithFinalizer, writeReleaseEvidence } from "../src/engine/engine.js"
 import { OperationFailedError, WorkspaceWriteError } from "../src/engine/errors.js"
 import type { EvidenceBundle } from "../src/engine/evidence.js"
-import { makeEvidenceRef, runApprovedReleaseWorkflowInto, runOperationsInto } from "../src/engine/executor.js"
+import { makeEvidenceRef, runEvidenceWorkflowInto, runOperationsInto } from "../src/engine/executor.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { CheckFileAction, ExecutionApproval, NoteAction, Operation } from "../src/pipeline/operation.js"
 import { ReleasePlan, SourceMetadata } from "../src/pipeline/plan.js"
@@ -56,7 +56,7 @@ it.effect("finalizes partial evidence exactly once for every workflow exit", () 
     const workflow = testCase.mode === "first"
       ? runOperationsInto(ref, [operation(`${testCase.name}-fail`, "verify", "read-only", true), operation("unreached", "verify", "read-only")], ExecutionApproval.none, context)
       : testCase.mode === "later"
-      ? runApprovedReleaseWorkflowInto(ref, [operation("verify-fail", "verify", "read-only", true), operation("publish", "publish", "writes-local"), operation("validate", "publish", "read-only")], approval, context)
+      ? runEvidenceWorkflowInto(ref, [operation("verify-fail", "verify", "read-only", true), operation("publish", "publish", "writes-local"), operation("validate", "publish", "read-only")], "release", approval, context)
       : runOperationsInto(ref, [operation(`${testCase.name}-prior`, "publish", "read-only")], ExecutionApproval.none, context).pipe(
         Effect.andThen(testCase.mode === "tail" ? Effect.failCause(testCase.cause) : Effect.void)
       )

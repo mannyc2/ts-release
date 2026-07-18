@@ -50,16 +50,24 @@ export const readOptionalEnv = (name: string): Effect.Effect<string | undefined>
     Effect.map(Option.getOrUndefined)
   )
 
+export const readEnvironment = Effect.fn("platform.readEnvironment")(function*(
+  names: Iterable<string>
+) {
+  const values = new Map<string, string | undefined>()
+  for (const name of names) {
+    values.set(name, yield* readOptionalEnv(name))
+  }
+  return values
+})
+
 const commandEnv = Effect.fn("platform.commandEnv")(function*(command: CommandSpec) {
   const names = new Set([
     ...inheritedEnvNames,
     ...command.requiredEnv
   ])
   const env: Record<string, string> = {}
-  const values = new Map<string, string | undefined>()
-  for (const name of names) {
-    const value = yield* readOptionalEnv(name)
-    values.set(name, value)
+  const values = yield* readEnvironment(names)
+  for (const [name, value] of values) {
     if (value !== undefined) {
       env[name] = value
     }

@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { SafeRelativePath, WorkflowFileName } from "../pipeline/artifact.js"
+import { SafeRelativePath } from "../pipeline/artifact.js"
 import { PlanError } from "../pipeline/errors.js"
 import {
   CommandAction,
@@ -15,18 +15,20 @@ import {
 import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
-import { compactTrustedPublishing, trustedPublishingAuthEnvNames } from "./shared.js"
+import {
+  compactTrustedPublishing,
+  publishingAuthEnvNames,
+  trustedPublishingConfigFields,
+  type TrustedPublishingSection
+} from "./shared.js"
 
 export const NpmAccess = Schema.Literals(["public", "restricted"])
 export type NpmAccess = typeof NpmAccess.Type
 
-const TrustedPublishingProvider = Schema.Literals(["github-actions"])
-
 export class ReleaseConfigNpmTrustedPublishing extends Schema.Class<ReleaseConfigNpmTrustedPublishing>(
   "ReleaseConfigNpmTrustedPublishing"
 )({
-  provider: Schema.optionalKey(TrustedPublishingProvider),
-  workflow: Schema.optionalKey(WorkflowFileName),
+  ...trustedPublishingConfigFields,
   verifyPackageExists: Schema.optionalKey(Schema.Boolean)
 }) {}
 
@@ -40,9 +42,7 @@ export class ReleaseConfigNpmPublish extends Schema.Class<ReleaseConfigNpmPublis
   provenance: Schema.optionalKey(Schema.Boolean)
 }) {}
 
-interface NpmTrustedPublishingSection {
-  readonly provider: "github-actions"
-  readonly workflow: string
+interface NpmTrustedPublishingSection extends TrustedPublishingSection {
   readonly verifyPackageExists?: boolean | undefined
 }
 
@@ -94,9 +94,7 @@ export const resolveNpmPublish = (config: {
 }
 
 const authEnvNames = (section: ResolvedNpmPublish): ReadonlyArray<string> =>
-  section.trustedPublishing !== undefined
-    ? trustedPublishingAuthEnvNames
-    : section.tokenEnv === undefined ? [] : [section.tokenEnv]
+  publishingAuthEnvNames(section.trustedPublishing, [section.tokenEnv])
 
 const npmCommand = (
   section: ResolvedNpmPublish,

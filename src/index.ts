@@ -26,7 +26,6 @@ export type {
   ArtifactSummary,
   BuildSummary,
   ReleasePlanSummary,
-  ReleaseRunOptions,
   ReleaseSummary,
   RunOptions,
   VerifySummary

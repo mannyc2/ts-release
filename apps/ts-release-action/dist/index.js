@@ -99079,10 +99079,31 @@ class ConfigValidationError extends TaggedErrorClass()("ConfigValidationError", 
 }) {
 }
 
+// ../../src/pipeline/errors.ts
+class PlanError extends TaggedErrorClass()("PlanError", {
+  pipeId: String4,
+  field: optional(String4),
+  reason: String4
+}) {
+}
+
+class IdentityError extends TaggedErrorClass()("IdentityError", {
+  source: String4,
+  field: optional(String4),
+  reason: String4,
+  cause: optional(Defect())
+}) {
+}
+
 // ../../src/pipeline/artifact.ts
 var safeRelativePathReason = "Path must be non-empty, relative, and must not contain parent traversal.";
 var isSafeRelativePath = (value2) => value2.trim().length > 0 && !value2.startsWith("/") && !value2.startsWith("\\") && !/^[A-Za-z]:[\\/]/.test(value2) && !value2.split(/[\\/]+/).includes("..");
 var SafeRelativePath = String4.check(makeFilter2((value2) => isSafeRelativePath(value2) ? undefined : safeRelativePathReason));
+var validateSafeRelativePathEffect = (value2, source) => isSafeRelativePath(value2) ? succeed6(value2) : fail6(PlanError.make({
+  pipeId: source.pipeId,
+  field: source.field,
+  reason: safeRelativePathReason
+}));
 var WorkflowFileName = String4.check(makeFilter2((value2) => {
   const hasPathSeparator = value2.includes("/") || value2.includes("\\");
   const hasWorkflowExtension = value2.endsWith(".yml") || value2.endsWith(".yaml");
@@ -99198,22 +99219,6 @@ var artifactPathBaseName = (pathName) => {
   const parts = pathName.replaceAll("\\", "/").split("/");
   return parts[parts.length - 1] ?? pathName;
 };
-
-// ../../src/pipeline/errors.ts
-class PlanError extends TaggedErrorClass()("PlanError", {
-  pipeId: String4,
-  field: optional(String4),
-  reason: String4
-}) {
-}
-
-class IdentityError extends TaggedErrorClass()("IdentityError", {
-  source: String4,
-  field: optional(String4),
-  reason: String4,
-  cause: optional(Defect())
-}) {
-}
 
 // ../../src/pipeline/platform.ts
 var PlatformTarget = Literals([
@@ -99496,32 +99501,20 @@ class ExecutionApprovalError extends TaggedErrorClass()("ExecutionApprovalError"
   reason: String4
 }) {
 }
-var operationApprovalRequirements = (operation) => ({
-  requiresExecute: operation.risk !== "read-only",
-  requiresIrreversibleApproval: operation.risk === "irreversible"
-});
-var operationApprovalLabel = (operation) => {
-  const requirements = operationApprovalRequirements(operation);
-  if (!requirements.requiresExecute) {
-    return "none";
-  }
-  return requirements.requiresIrreversibleApproval ? "--execute + --approve-publish" : "--execute";
-};
-var canExecuteOperation = (operation, approval) => {
-  const requirements = operationApprovalRequirements(operation);
-  if (requirements.requiresExecute && !approval.execute) {
-    return false;
-  }
-  if (requirements.requiresIrreversibleApproval && !approval.approveIrreversible) {
-    return false;
-  }
-  return true;
+var operationApprovalRequirements = (operation) => {
+  const requiresExecute = operation.risk !== "read-only";
+  const requiresIrreversibleApproval = operation.risk === "irreversible";
+  return {
+    requiresExecute,
+    requiresIrreversibleApproval,
+    label: !requiresExecute ? "none" : requiresIrreversibleApproval ? "--execute + --approve-publish" : "--execute"
+  };
 };
 var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operation, approval) {
-  if (canExecuteOperation(operation, approval)) {
+  const requirements = operationApprovalRequirements(operation);
+  if ((!requirements.requiresExecute || approval.execute) && (!requirements.requiresIrreversibleApproval || approval.approveIrreversible)) {
     return;
   }
-  const requirements = operationApprovalRequirements(operation);
   const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible ? "Operation requires irreversible approval." : "Operation requires execute approval.";
   return yield* fail6(ExecutionApprovalError.make({
     operationId: operation.id,
@@ -99553,41 +99546,28 @@ var tokenValues = (context7) => {
     ["{binary}", context7.binary]
   ];
 };
-var renderTemplate = (value2, context7) => tokenValues(context7).reduce((rendered, [token, substitution]) => rendered.split(token).join(substitution ?? ""), value2);
-
-class UnresolvedTemplateToken extends Class4("UnresolvedTemplateToken")({ token: String4, value: String4 }) {
-}
-var renderArtifactName = (value2, context7) => {
-  const substitutions = tokenValues(context7);
+var renderTemplate = (value2, context7, unresolved = "empty") => {
   let rendered = value2;
-  for (const [token, substitution] of substitutions) {
-    if (substitution !== undefined) {
-      rendered = rendered.split(token).join(substitution);
-    }
-  }
-  for (const [token] of substitutions) {
-    if (rendered.includes(token)) {
-      return UnresolvedTemplateToken.make({ token, value: value2 });
+  for (const [token, substitution] of tokenValues(context7)) {
+    if (substitution !== undefined || unresolved === "empty") {
+      rendered = rendered.split(token).join(substitution ?? "");
     }
   }
   return rendered;
 };
 var renderArtifactNameEffect = (value2, context7, source) => {
-  const rendered = renderArtifactName(value2, context7);
-  if (typeof rendered !== "string") {
+  const substitutions = tokenValues(context7);
+  const rendered = renderTemplate(value2, context7, "preserve");
+  const unresolved = substitutions.find(([token]) => rendered.includes(token));
+  if (unresolved !== undefined) {
     return fail6(PlanError.make({
       pipeId: source.pipeId,
       field: source.field,
-      reason: `Template ${rendered.token} cannot be resolved here; remove it or provide a platform context.`
+      reason: `Template ${unresolved[0]} cannot be resolved here; remove it or provide a platform context.`
     }));
   }
   return validateSafeRelativePathEffect(rendered, source);
 };
-var validateSafeRelativePathEffect = (value2, source) => isSafeRelativePath(value2) ? succeed6(value2) : fail6(PlanError.make({
-  pipeId: source.pipeId,
-  field: source.field,
-  reason: safeRelativePathReason
-}));
 var normalizedName = (name) => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name;
   return withoutScopePrefix.replaceAll("/", "-");
@@ -99948,10 +99928,7 @@ var resolveArchives = (raw) => raw === undefined ? none2() : some2(raw.map((arch
   files: archive.files ?? defaultFileGlobs
 })));
 var platformKey = (platform2) => `${platform2.os}-${platform2.arch}${platform2.libc === "musl" ? "-musl" : ""}`;
-var archiveBaseName = (name, platform2) => {
-  const libcSuffix = platform2.libc === "musl" ? "_musl" : "";
-  return `${name}_{version}_${platform2.os}_${distributionArchToken(platform2.arch)}${libcSuffix}`;
-};
+var archiveBaseName = (name, platform2) => defaultArtifactBaseName(name, { ...platform2, executableExtension: "" });
 var formatExtension = (format3) => format3 === "tar.gz" ? ".tar.gz" : ".zip";
 var formatId = (format3) => format3.replaceAll(".", "-");
 var groupedByPlatform = (artifacts) => {
@@ -100111,6 +100088,11 @@ var trustedPublishingAuthEnvNames = [
   "ACTIONS_ID_TOKEN_REQUEST_URL",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
 ];
+var TrustedPublishingProvider = Literals(["github-actions"]);
+var trustedPublishingConfigFields = {
+  provider: optionalKey2(TrustedPublishingProvider),
+  workflow: optionalKey2(WorkflowFileName)
+};
 var compactTrustedPublishing = (config) => {
   if (config === undefined || config === false) {
     return;
@@ -100123,6 +100105,7 @@ var compactTrustedPublishing = (config) => {
     workflow: config.workflow ?? "release.yml"
   };
 };
+var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing === undefined ? credentialEnvNames.filter((name) => name !== undefined) : trustedPublishingAuthEnvNames;
 
 // ../../src/pipeline/operation-helpers.ts
 var noAuthCommand = (executable, args2) => CommandSpec.make({
@@ -100968,11 +100951,9 @@ var publishGitHubPlanner = {
 
 // ../../src/pipes/publish-npm.ts
 var NpmAccess = Literals(["public", "restricted"]);
-var TrustedPublishingProvider = Literals(["github-actions"]);
 
 class ReleaseConfigNpmTrustedPublishing extends Class4("ReleaseConfigNpmTrustedPublishing")({
-  provider: optionalKey2(TrustedPublishingProvider),
-  workflow: optionalKey2(WorkflowFileName),
+  ...trustedPublishingConfigFields,
   verifyPackageExists: optionalKey2(Boolean3)
 }) {
 }
@@ -101010,7 +100991,7 @@ var resolveNpmPublish = (config, identity2) => {
     provenance: object?.provenance
   };
 };
-var authEnvNames = (section) => section.trustedPublishing !== undefined ? trustedPublishingAuthEnvNames : section.tokenEnv === undefined ? [] : [section.tokenEnv];
+var authEnvNames = (section) => publishingAuthEnvNames(section.trustedPublishing, [section.tokenEnv]);
 var npmCommand = (section, args2, includeAuth) => CommandSpec.make({
   executable: "npm",
   args: [...args2],
@@ -101107,11 +101088,8 @@ var publishNpmPlanner = {
 };
 
 // ../../src/pipes/publish-pypi.ts
-var TrustedPublishingProvider2 = Literals(["github-actions"]);
-
 class ReleaseConfigPyPiTrustedPublishing extends Class4("ReleaseConfigPyPiTrustedPublishing")({
-  provider: optionalKey2(TrustedPublishingProvider2),
-  workflow: optionalKey2(WorkflowFileName),
+  ...trustedPublishingConfigFields,
   publisherConfigured: optionalKey2(Literal2(true))
 }) {
 }
@@ -101141,7 +101119,7 @@ var resolvePyPiPublish = (publish) => {
     artifactIds: object?.artifactIds
   };
 };
-var envNames = (section) => section.trustedPublishing !== undefined ? trustedPublishingAuthEnvNames : section.usernameEnv === undefined || section.passwordEnv === undefined ? [] : [section.usernameEnv, section.passwordEnv];
+var envNames = (section) => publishingAuthEnvNames(section.trustedPublishing, [section.usernameEnv, section.passwordEnv]);
 var twineAuthCommand = (section, args2) => CommandSpec.make({
   executable: section.pythonExecutable,
   args: ["-m", "twine", ...args2],
@@ -101384,6 +101362,32 @@ class ReleaseIntent extends Class4("ReleaseIntent")({
 var ReleaseConfig = ReleaseIntent;
 var decodeReleaseConfig = decodeUnknownEffect2(ReleaseConfig, { onExcessProperty: "error" });
 
+// ../../src/config/resolve.ts
+var configPath = (options) => options.configPath ?? DEFAULT_CONFIG_PATH;
+var configRoot = (path4, options) => {
+  if (options.root !== undefined) {
+    return options.root;
+  }
+  if (options.configPath !== undefined && path4.isAbsolute(options.configPath)) {
+    return path4.dirname(options.configPath);
+  }
+  return ".";
+};
+var configReadPath = (path4, options) => {
+  const pathName = configPath(options);
+  return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot(path4, options), pathName);
+};
+var readReleaseConfig = fn2("config.readReleaseConfig")(function* (options) {
+  const fs8 = yield* FileSystem;
+  const path4 = yield* Path;
+  const pathName = configPath(options);
+  const readPath = configReadPath(path4, options);
+  return yield* fs8.readFileString(readPath).pipe(mapError3((error2) => ConfigReadError.make({
+    path: pathName,
+    reason: error2.message
+  })));
+});
+
 // ../../src/config/load.ts
 var forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"]);
 var forbiddenTopLevelConfigFields = new Set([
@@ -101477,31 +101481,16 @@ var parseReleaseIntent = fn2("parseReleaseIntent")(function* (input, path4 = DEF
   }));
   return yield* decodeReleaseIntent(parsed, path4);
 });
-
-// ../../src/config/resolve.ts
-var configPath = (options) => options.configPath ?? DEFAULT_CONFIG_PATH;
-var configRoot = (path4, options) => {
-  if (options.root !== undefined) {
-    return options.root;
-  }
-  if (options.configPath !== undefined && path4.isAbsolute(options.configPath)) {
-    return path4.dirname(options.configPath);
-  }
-  return ".";
-};
-var configReadPath = (path4, options) => {
-  const pathName = configPath(options);
-  return path4.isAbsolute(pathName) ? pathName : path4.resolve(configRoot(path4, options), pathName);
-};
-var readReleaseConfig = fn2("config.readReleaseConfig")(function* (options) {
-  const fs8 = yield* FileSystem;
+var loadReleaseIntent = fn2("config.loadReleaseIntent")(function* (config, source = {}) {
   const path4 = yield* Path;
-  const pathName = configPath(options);
-  const readPath = configReadPath(path4, options);
-  return yield* fs8.readFileString(readPath).pipe(mapError3((error2) => ConfigReadError.make({
-    path: pathName,
-    reason: error2.message
-  })));
+  const diskSource = typeof config === "string" ? { ...source, configPath: config } : source;
+  const pathName = configPath(diskSource);
+  const intent = typeof config === "object" && config !== null ? yield* decodeReleaseIntent(config, source.configPath ?? "inline config") : yield* parseReleaseIntent(yield* readReleaseConfig(diskSource), pathName);
+  return {
+    intent,
+    root: configRoot(path4, diskSource),
+    sourcePath: typeof config === "object" && config !== null ? source.configPath : pathName
+  };
 });
 
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
@@ -101937,16 +101926,21 @@ var inheritedEnvNames = [
   "RUNNER_OS"
 ];
 var readOptionalEnv = (name) => string3(name).pipe(option2, map5(getOrUndefined));
+var readEnvironment = fn2("platform.readEnvironment")(function* (names) {
+  const values = new Map;
+  for (const name of names) {
+    values.set(name, yield* readOptionalEnv(name));
+  }
+  return values;
+});
 var commandEnv = fn2("platform.commandEnv")(function* (command) {
   const names = new Set([
     ...inheritedEnvNames,
     ...command.requiredEnv
   ]);
   const env = {};
-  const values = new Map;
-  for (const name of names) {
-    const value2 = yield* readOptionalEnv(name);
-    values.set(name, value2);
+  const values = yield* readEnvironment(names);
+  for (const [name, value2] of values) {
     if (value2 !== undefined) {
       env[name] = value2;
     }
@@ -102196,69 +102190,55 @@ var publishCatalogGenericPlanner = {
   })
 };
 
-// ../../src/pipes/publish-homebrew.ts
-var rejectUnsupportedTokenEnv = (section) => section.tokenEnv === undefined ? void_3 : fail6(PlanError.make({
-  pipeId: "publish:homebrew",
-  field: "publish.homebrew.tokenEnv",
-  reason: "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
-}));
+// ../../src/pipes/publish-catalog-git.ts
+var catalogGitPublish = fn2("publish.catalogGit")(function* (tokenEnv, error2, validation2, publish) {
+  if (tokenEnv !== undefined) {
+    return yield* fail6(PlanError.make(error2));
+  }
+  return {
+    ...emptyContribution,
+    operations: [validationNoteOperation(validation2), ...catalogGitPublishOperations(publish)]
+  };
+});
+var identityDescription = (catalog, identity2) => `Push ${catalog} update for ${identity2.name}@${identity2.version}.`;
 var publishHomebrewPlanner = {
   id: "publish:homebrew",
-  plan: (section, state3) => gen2(function* () {
-    yield* rejectUnsupportedTokenEnv(section);
-    const formulaPath = section.formulaPath;
-    return {
-      ...emptyContribution,
-      operations: [
-        validationNoteOperation({
-          id: "homebrew:brew-audit",
-          pipeId: "publish:homebrew",
-          description: "Record simulated Homebrew formula validation.",
-          message: "Homebrew formula validation is simulated by the deterministic release plan."
-        }),
-        ...catalogGitPublishOperations({
-          id: "homebrew:homebrew-push",
-          pipeId: "publish:homebrew",
-          description: `Push Homebrew tap update for ${state3.identity.name}@${state3.identity.version}.`,
-          directory: section.tapDirectory,
-          filePath: formulaPath,
-          commitMessage: `Update ${section.formulaName} to ${state3.identity.version}`
-        })
-      ]
-    };
+  plan: (section, state3) => catalogGitPublish(section.tokenEnv, {
+    pipeId: "publish:homebrew",
+    field: "publish.homebrew.tokenEnv",
+    reason: "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
+  }, {
+    id: "homebrew:brew-audit",
+    pipeId: "publish:homebrew",
+    description: "Record simulated Homebrew formula validation.",
+    message: "Homebrew formula validation is simulated by the deterministic release plan."
+  }, {
+    id: "homebrew:homebrew-push",
+    pipeId: "publish:homebrew",
+    description: identityDescription("Homebrew tap", state3.identity),
+    directory: section.tapDirectory,
+    filePath: section.formulaPath,
+    commitMessage: `Update ${section.formulaName} to ${state3.identity.version}`
   })
 };
-
-// ../../src/pipes/publish-scoop.ts
-var rejectUnsupportedTokenEnv2 = (section) => section.tokenEnv === undefined ? void_3 : fail6(PlanError.make({
-  pipeId: "publish:scoop",
-  field: "publish.scoop.tokenEnv",
-  reason: "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
-}));
 var publishScoopPlanner = {
   id: "publish:scoop",
-  plan: (section, state3) => gen2(function* () {
-    yield* rejectUnsupportedTokenEnv2(section);
-    const manifestPath = section.manifestPath;
-    return {
-      ...emptyContribution,
-      operations: [
-        validationNoteOperation({
-          id: "scoop:scoop-manifest-validation",
-          pipeId: "publish:scoop",
-          description: "Record simulated Scoop manifest validation.",
-          message: "Scoop manifest validation is simulated by the deterministic release plan."
-        }),
-        ...catalogGitPublishOperations({
-          id: "scoop:scoop-push",
-          pipeId: "publish:scoop",
-          description: `Push Scoop bucket update for ${state3.identity.name}@${state3.identity.version}.`,
-          directory: section.bucketDirectory,
-          filePath: manifestPath,
-          commitMessage: `Update ${section.manifestName} to ${state3.identity.version}`
-        })
-      ]
-    };
+  plan: (section, state3) => catalogGitPublish(section.tokenEnv, {
+    pipeId: "publish:scoop",
+    field: "publish.scoop.tokenEnv",
+    reason: "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
+  }, {
+    id: "scoop:scoop-manifest-validation",
+    pipeId: "publish:scoop",
+    description: "Record simulated Scoop manifest validation.",
+    message: "Scoop manifest validation is simulated by the deterministic release plan."
+  }, {
+    id: "scoop:scoop-push",
+    pipeId: "publish:scoop",
+    description: identityDescription("Scoop bucket", state3.identity),
+    directory: section.bucketDirectory,
+    filePath: section.manifestPath,
+    commitMessage: `Update ${section.manifestName} to ${state3.identity.version}`
   })
 };
 
@@ -102491,8 +102471,8 @@ var isInsidePathBoundary = (path4, root, targetPath) => {
   const relative = path4.relative(rootPath, targetPath);
   return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
 };
-var validateWorkspaceWritePath = (path4, root, pathName) => {
-  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
+var validateWorkspaceWritePath = (path4, root, pathName, options = {}) => {
+  if (pathName.trim().length === 0 || hasParentTraversal(pathName) || options.allowAbsolute === false && path4.isAbsolute(pathName)) {
     return {
       _tag: "Invalid",
       reason: "empty-or-parent-traversal"
@@ -102511,8 +102491,8 @@ var validateWorkspaceWritePath = (path4, root, pathName) => {
   };
 };
 var workspacePathBoundaryReasonMessage = (reason) => reason === "empty-or-parent-traversal" ? "Path must be non-empty and must not contain parent traversal." : "Path must resolve inside the workspace root.";
-var resolveWorkspaceWritePathEffect = (path4, root, pathName, makeError) => {
-  const result2 = validateWorkspaceWritePath(path4, root, pathName);
+var resolveWorkspaceWritePathEffect = (path4, root, pathName, makeError, options) => {
+  const result2 = validateWorkspaceWritePath(path4, root, pathName, options);
   return result2._tag === "Ok" ? succeed6(result2.path) : fail6(makeError(pathName, workspacePathBoundaryReasonMessage(result2.reason)));
 };
 
@@ -102701,12 +102681,6 @@ var logsReason = (logs, fallback) => {
 `).trim();
   return reason.length === 0 ? fallback : reason;
 };
-var hasParentTraversal2 = (pathName) => pathName.split(/[\\/]+/).includes("..");
-var isInsideRoot = (path4, root, target) => {
-  const rootPath = path4.resolve(root);
-  const relative = path4.relative(rootPath, target);
-  return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
-};
 var stageError = (operation, fields) => ArtifactStageError.make({
   operationId: operation.id,
   intentTag: operation.action.intent._tag,
@@ -102721,23 +102695,12 @@ var stagedResult = (operation, intent) => ({
   artifacts: operation.action.producesArtifactIds.map((id) => ({ id, path: intent.outfile }))
 });
 var resolveStagePath = (path4, operation, pathName, context7, artifactId2) => {
-  const trimmed = pathName.trim();
-  if (trimmed.length === 0 || path4.isAbsolute(pathName) || hasParentTraversal2(pathName)) {
-    return fail6(stageError(operation, {
-      artifactId: artifactId2,
-      path: pathName,
-      reason: "Stage paths must be non-empty, relative, and must not contain parent traversal."
-    }));
-  }
-  const resolved = path4.resolve(context7.root, pathName);
-  if (!isInsideRoot(path4, context7.root, resolved)) {
-    return fail6(stageError(operation, {
-      artifactId: artifactId2,
-      path: pathName,
-      reason: "Stage paths must resolve inside the workspace root."
-    }));
-  }
-  return succeed6(resolved);
+  const result2 = validateWorkspaceWritePath(path4, context7.root, pathName, { allowAbsolute: false });
+  return result2._tag === "Ok" ? succeed6(result2.path) : fail6(stageError(operation, {
+    artifactId: artifactId2,
+    path: pathName,
+    reason: result2.reason === "empty-or-parent-traversal" ? "Stage paths must be non-empty, relative, and must not contain parent traversal." : "Stage paths must resolve inside the workspace root."
+  }));
 };
 var stageBunCompile = (build, path4, operation, intent, context7) => gen2(function* () {
   const artifactId2 = operation.action.producesArtifactIds[0];
@@ -102846,6 +102809,24 @@ Generator: ts-release
 Root-Is-Purelib: false
 Tag: ${intent.wheelTag}
 `;
+var readStageEntries = fn2("ArtifactStager.readEntries")(function* (fileSystem, path4, operation, context7, inputs) {
+  const entries = yield* forEach2(inputs, (input) => gen2(function* () {
+    const resolved = yield* resolveStagePath(path4, operation, input.sourcePath, context7, input.artifactId);
+    const failureReason = input.failureReason;
+    const data = failureReason === undefined ? yield* fileSystem.readFile(resolved).pipe(matchEffect3({ onFailure: () => succeed6(undefined), onSuccess: succeed6 })) : yield* fileSystem.readFile(resolved).pipe(mapError3((cause) => stageError(operation, {
+      artifactId: input.artifactId,
+      path: input.sourcePath,
+      reason: failureReason,
+      cause
+    })));
+    return data === undefined ? undefined : {
+      path: input.entryPath,
+      data,
+      mode: input.mode
+    };
+  }));
+  return entries.filter((entry) => entry !== undefined);
+});
 var buildEntries = fn2("ArtifactStager.pypiWheel.entries")(function* (fileSystem, path4, operation, intent, context7) {
   const distInfo = `${distributionName(intent.packageName)}-${context7.identity.version}.dist-info`;
   const entries = [
@@ -102884,19 +102865,12 @@ ${intent.consoleScript} = ${intent.moduleName}.cli:main
       mode: 33188
     }
   ];
-  for (const binary of intent.binaries) {
-    const sourcePath = renderTemplate(binary.sourcePath, { identity: context7.identity });
-    const resolved = yield* resolveStagePath(path4, operation, sourcePath, context7);
-    entries.push({
-      path: binary.wheelPath,
-      data: yield* fileSystem.readFile(resolved).pipe(mapError3((cause) => stageError(operation, {
-        path: sourcePath,
-        reason: "Unable to read PyPI wheel binary input.",
-        cause
-      }))),
-      mode: 33261
-    });
-  }
+  entries.push(...yield* readStageEntries(fileSystem, path4, operation, context7, intent.binaries.map((binary) => ({
+    sourcePath: renderTemplate(binary.sourcePath, { identity: context7.identity }),
+    entryPath: binary.wheelPath,
+    mode: 33261,
+    failureReason: "Unable to read PyPI wheel binary input."
+  }))));
   const recordPath = `${distInfo}/RECORD`;
   const recordRows = entries.map((entry) => `${entry.path},sha256=${sha256Digest(entry.data)},${entry.data.byteLength}`);
   recordRows.push(`${recordPath},,`);
@@ -102944,40 +102918,20 @@ var archiveFileEntries = fn2("ArtifactStager.archive.files")(function* (fileSyst
       }
     }
   }
-  const files = [];
-  for (const fileName of [...matched].sort()) {
-    const sourcePath = yield* resolveStagePath(path4, operation, fileName, context7);
-    const data = yield* fileSystem.readFile(sourcePath).pipe(matchEffect3({
-      onFailure: () => succeed6(undefined),
-      onSuccess: (value2) => succeed6(value2)
-    }));
-    if (data !== undefined) {
-      files.push({
-        path: archiveEntryPath(intent.wrapDirectory, fileName),
-        data,
-        mode: 33188
-      });
-    }
-  }
-  return files;
+  return yield* readStageEntries(fileSystem, path4, operation, context7, [...matched].sort().map((fileName) => ({
+    sourcePath: fileName,
+    entryPath: archiveEntryPath(intent.wrapDirectory, fileName),
+    mode: 33188
+  })));
 });
 var archiveArtifactEntries2 = fn2("ArtifactStager.archive.artifacts")(function* (fileSystem, path4, operation, intent, context7) {
-  const entries = [];
-  for (const artifact2 of intent.artifacts) {
-    const sourcePath = yield* resolveStagePath(path4, operation, artifact2.sourcePath, context7, artifact2.artifactId);
-    const data = yield* fileSystem.readFile(sourcePath).pipe(mapError3((cause) => stageError(operation, {
-      artifactId: artifact2.artifactId,
-      path: artifact2.sourcePath,
-      reason: "Unable to read archive artifact input.",
-      cause
-    })));
-    entries.push({
-      path: archiveEntryPath(intent.wrapDirectory, artifact2.archivePath),
-      data,
-      mode: 33261
-    });
-  }
-  return entries;
+  return yield* readStageEntries(fileSystem, path4, operation, context7, intent.artifacts.map((artifact2) => ({
+    sourcePath: artifact2.sourcePath,
+    entryPath: archiveEntryPath(intent.wrapDirectory, artifact2.archivePath),
+    mode: 33261,
+    artifactId: artifact2.artifactId,
+    failureReason: "Unable to read archive artifact input."
+  })));
 });
 var archiveBytes = (operation, intent, entries) => try_2({
   try: () => intent.format === "zip" ? buildZipArchive(entries) : buildTarGzArchive(entries),
@@ -103053,7 +103007,7 @@ class ReleaseHttp extends Service()("ReleaseHttp") {
 }
 
 // ../../src/engine/github.ts
-var githubApiHeaders = () => [
+var githubApiHeaders = [
   HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
   HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
 ];
@@ -103119,23 +103073,18 @@ var encodedRepositoryPath = (coordinates) => `${encodeURIComponent(coordinates.o
 var githubApiUrl = (coordinates, path4) => `https://api.github.com/repos/${encodedRepositoryPath(coordinates)}${path4}`;
 var githubReleasesUrl = (coordinates) => githubApiUrl(coordinates, "/releases");
 var githubReleaseByTagUrl = (coordinates, tag2) => githubApiUrl(coordinates, `/releases/tags/${encodeURIComponent(tag2)}`);
-var githubEnvHeaders = (tokenEnv) => tokenEnv === undefined ? [] : [
-  HttpEnvHeader.make({
-    name: "Authorization",
-    valueEnv: tokenEnv,
-    prefix: "Bearer "
-  })
-];
-var githubAuthEnvNames = (tokenEnv) => tokenEnv === undefined ? [] : [tokenEnv];
-var githubRequest = (input) => HttpRequestSpec.make({
-  method: input.method,
-  url: input.url,
-  headers: [...input.headers ?? githubApiHeaders()],
-  envHeaders: githubEnvHeaders(input.tokenEnv),
-  requiredEnv: githubAuthEnvNames(input.tokenEnv),
-  redactedEnv: githubAuthEnvNames(input.tokenEnv),
-  ...input.body === undefined ? {} : { body: input.body }
-});
+var githubRequest = (input) => {
+  const authEnvNames2 = input.tokenEnv === undefined ? [] : [input.tokenEnv];
+  return HttpRequestSpec.make({
+    method: input.method,
+    url: input.url,
+    headers: [...input.headers ?? githubApiHeaders],
+    envHeaders: input.tokenEnv === undefined ? [] : [HttpEnvHeader.make({ name: "Authorization", valueEnv: input.tokenEnv, prefix: "Bearer " })],
+    requiredEnv: authEnvNames2,
+    redactedEnv: authEnvNames2,
+    ...input.body === undefined ? {} : { body: input.body }
+  });
+};
 var statusOk = (status) => status >= 200 && status < 300;
 var ensureSuccessStatus = (operation, result2) => statusOk(result2.status) ? void_3 : fail6(GitHubApiError.make({
   operation,
@@ -103166,25 +103115,31 @@ var releaseBody = (request2) => {
   return HttpJsonRequestBody.make({ json });
 };
 var responseLinkHeader = (result2) => result2.responseHeaders.find((header) => header.name.toLowerCase() === "link")?.value;
-var validateReleaseListUrl = (coordinates, url2) => try_2({
-  try: () => new URL(url2),
+var validateGitHubUrl = (input, validPath) => try_2({
+  try: () => new URL(input.candidate ?? input.url),
   catch: (cause) => GitHubApiError.make({
-    operation: "validateReleaseListUrl",
-    url: url2,
-    reason: "GitHub pagination URL is not valid.",
+    operation: input.operation,
+    url: input.url,
+    reason: input.invalidReason,
     cause
   })
 }).pipe(flatMap3((parsed) => {
-  const expectedPath = `/repos/${encodedRepositoryPath(coordinates)}/releases`;
-  if (parsed.protocol === "https:" && parsed.hostname === "api.github.com" && parsed.pathname === expectedPath) {
-    return succeed6(parsed.toString());
+  if (parsed.protocol === "https:" && parsed.hostname === input.hostname && validPath(parsed.pathname)) {
+    return succeed6(parsed);
   }
   return fail6(GitHubApiError.make({
-    operation: "validateReleaseListUrl",
-    url: url2,
-    reason: "GitHub pagination URL does not point to the expected releases endpoint."
+    operation: input.operation,
+    url: input.url,
+    reason: input.endpointReason
   }));
 }));
+var validateReleaseListUrl = (coordinates, url2) => validateGitHubUrl({
+  operation: "validateReleaseListUrl",
+  url: url2,
+  hostname: "api.github.com",
+  invalidReason: "GitHub pagination URL is not valid.",
+  endpointReason: "GitHub pagination URL does not point to the expected releases endpoint."
+}, (path4) => path4 === `/repos/${encodedRepositoryPath(coordinates)}/releases`).pipe(map5((parsed) => parsed.toString()));
 var nextReleaseListUrl = (coordinates, result2) => {
   const link2 = responseLinkHeader(result2);
   if (link2 === undefined) {
@@ -103240,26 +103195,20 @@ var paginateReleaseList = fn2("githubApi.paginateReleaseList")(function* (http3,
   });
   return state3.match;
 });
-var validateUploadUrl = (coordinates, uploadUrl, assetName) => try_2({
-  try: () => new URL(uploadUrl.split("{")[0] ?? uploadUrl),
-  catch: (cause) => GitHubApiError.make({
-    operation: "validateUploadUrl",
-    url: uploadUrl,
-    reason: "GitHub upload URL is not valid.",
-    cause
-  })
-}).pipe(flatMap3((parsed) => {
+var validateUploadUrl = (coordinates, uploadUrl, assetName) => {
   const expectedPrefix = `/repos/${encodedRepositoryPath(coordinates)}/releases/`;
-  if (parsed.protocol === "https:" && parsed.hostname === "uploads.github.com" && parsed.pathname.startsWith(expectedPrefix) && parsed.pathname.endsWith("/assets")) {
-    parsed.searchParams.set("name", assetName);
-    return succeed6(parsed.toString());
-  }
-  return fail6(GitHubApiError.make({
+  return validateGitHubUrl({
     operation: "validateUploadUrl",
     url: uploadUrl,
-    reason: "GitHub upload URL does not point to the expected uploads endpoint."
+    candidate: uploadUrl.split("{")[0] ?? uploadUrl,
+    hostname: "uploads.github.com",
+    invalidReason: "GitHub upload URL is not valid.",
+    endpointReason: "GitHub upload URL does not point to the expected uploads endpoint."
+  }, (path4) => path4.startsWith(expectedPrefix) && path4.endsWith("/assets")).pipe(map5((parsed) => {
+    parsed.searchParams.set("name", assetName);
+    return parsed.toString();
   }));
-}));
+};
 var uploadAsset = fn2("githubApi.uploadAsset")(function* (http3, coordinates, tokenEnv, uploadUrl, asset) {
   const url2 = yield* validateUploadUrl(coordinates, uploadUrl, asset.name);
   const result2 = yield* runGithubJson(http3, "uploadAsset", githubRequest({
@@ -103674,28 +103623,24 @@ var runOperationsInto = fn2("engine.runOperationsInto")(function* (ref, operatio
     }
   }
 });
-var publishOperations2 = (operations) => operations.filter((operation) => operation.phase === "publish" && operation.risk !== "read-only");
-var buildOperations = (operations) => operations.filter((operation) => operation.phase === "build" || operation.phase === "process");
-var renderFileOperations = (operations) => operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file");
-var validationOperations = (operations) => operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only");
-var verificationOperations = (operations) => operations.filter((operation) => operation.phase === "verify");
-var releasePassOperations = (operations) => [
-  ...renderFileOperations(operations),
-  ...validationOperations(operations),
-  ...publishOperations2(operations),
-  ...verificationOperations(operations)
-];
-var releaseWorkflowOperations = (operations, context7) => releasePassOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context7));
+var operationMatchesPass = {
+  build: (operation) => operation.phase === "build" || operation.phase === "process",
+  render: (operation) => operation.phase === "catalog" && operation.action._tag === "write-file",
+  validation: (operation) => operation.phase === "publish" && operation.risk === "read-only",
+  publish: (operation) => operation.phase === "publish" && operation.risk !== "read-only",
+  verification: (operation) => operation.phase === "verify"
+};
+var operationsForPass = (operations, pass) => operations.filter(operationMatchesPass[pass]);
+var workflowPasses = (workflow) => workflow === "release" ? ["render", "validation", "publish", "verification"] : [workflow];
+var operationsForWorkflow = (operations, workflow) => workflowPasses(workflow).flatMap((pass) => operationsForPass(operations, pass));
+var approvalForPass = (pass, approval) => pass === "validation" || pass === "verification" ? ExecutionApproval.none : approval;
 var preflightOperations = fn2("engine.preflightOperations")(function* (operations, approval) {
   for (const operation of operations) {
     yield* requireExecutionApproval(operation, approval);
   }
 });
-var preflightReleaseApproval = fn2("engine.preflightReleaseApproval")(function* (operations, approval, context7) {
-  yield* preflightOperations(releaseWorkflowOperations(operations, context7), approval);
-});
-var preflightRenderApproval = fn2("engine.preflightRenderApproval")(function* (operations, approval, context7) {
-  yield* preflightOperations(renderFileOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context7)), approval);
+var preflightEvidenceWorkflow = fn2("engine.preflightEvidenceWorkflow")(function* (operations, workflow, approval, context7) {
+  yield* preflightOperations(operationsForWorkflow(operations, workflow).filter((operation) => !shouldRefuseForSnapshot(operation, context7)), approval);
 });
 var runOperations = fn2("engine.runOperations")(function* (operations, approval, context7) {
   yield* preflightOperations(operations.filter((operation) => !shouldRefuseForSnapshot(operation, context7)), approval);
@@ -103703,49 +103648,15 @@ var runOperations = fn2("engine.runOperations")(function* (operations, approval,
   yield* runOperationsInto(ref, operations, approval, context7);
   return yield* get4(ref);
 });
-var validateOperationsInto = fn2("engine.validateOperationsInto")(function* (ref, operations, context7) {
-  yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context7);
+var runEvidenceWorkflowInto = fn2("engine.runEvidenceWorkflowInto")(function* (ref, operations, workflow, approval, context7) {
+  for (const pass of workflowPasses(workflow)) {
+    yield* runOperationsInto(ref, operationsForPass(operations, pass), approvalForPass(pass, approval), context7);
+  }
 });
-var validateOperations = fn2("engine.validateOperations")(function* (operations, context7) {
-  return yield* runOperations(validationOperations(operations), ExecutionApproval.none, context7);
-});
-var executeOperationsInto = fn2("engine.executeOperationsInto")(function* (ref, operations, approval, context7) {
-  const selected = publishOperations2(operations);
-  yield* preflightOperations(selected.filter((operation) => !shouldRefuseForSnapshot(operation, context7)), approval);
-  yield* runOperationsInto(ref, selected, approval, context7);
-});
-var executeOperations = fn2("engine.executeOperations")(function* (operations, approval, context7) {
-  return yield* runOperations(publishOperations2(operations), approval, context7);
-});
-var writeRenderFilesInto = fn2("engine.writeRenderFilesInto")(function* (ref, operations, approval, context7) {
-  const selected = renderFileOperations(operations);
-  yield* preflightRenderApproval(operations, approval, context7);
-  yield* runOperationsInto(ref, selected, approval, context7);
-});
-var writeRenderFiles = fn2("engine.writeRenderFiles")(function* (operations, approval, context7) {
-  const selected = renderFileOperations(operations);
-  yield* preflightRenderApproval(operations, approval, context7);
+var runEvidenceWorkflow = fn2("engine.runEvidenceWorkflow")(function* (operations, workflow, approval, context7) {
+  yield* preflightEvidenceWorkflow(operations, workflow, approval, context7);
   const ref = yield* makeEvidenceRef(context7);
-  yield* runOperationsInto(ref, selected, approval, context7);
-  return yield* get4(ref);
-});
-var verifyOperationsInto = fn2("engine.verifyOperationsInto")(function* (ref, operations, context7) {
-  yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context7);
-});
-var verifyOperations = fn2("engine.verifyOperations")(function* (operations, context7) {
-  return yield* runOperations(verificationOperations(operations), ExecutionApproval.none, context7);
-});
-var runApprovedReleaseWorkflowInto = fn2("engine.runApprovedReleaseWorkflowInto")(function* (ref, operations, approval, context7) {
-  yield* preflightReleaseApproval(operations, approval, context7);
-  yield* runOperationsInto(ref, renderFileOperations(operations), approval, context7);
-  yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context7);
-  yield* runOperationsInto(ref, publishOperations2(operations), approval, context7);
-  yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context7);
-});
-var runApprovedReleaseWorkflow = fn2("engine.runApprovedReleaseWorkflow")(function* (operations, approval, context7) {
-  yield* preflightReleaseApproval(operations, approval, context7);
-  const ref = yield* makeEvidenceRef(context7);
-  yield* runApprovedReleaseWorkflowInto(ref, operations, approval, context7);
+  yield* runEvidenceWorkflowInto(ref, operations, workflow, approval, context7);
   return yield* get4(ref);
 });
 
@@ -104023,242 +103934,16 @@ var resolveReleaseWorkflow = fn2("release.resolve")(function* (intent, root, sna
   return resolveRelease(intent, identity2);
 });
 
-// ../../src/engine/render.ts
-var commandLine = (command2) => [command2.executable, ...command2.args].join(" ");
-var commandArgv = (command2) => [
-  command2.executable,
-  ...command2.args
-];
-var operationTargetId = (operation) => {
+// ../../src/engine/summary.ts
+var operationSurfaceId = (operation) => {
   const parts = operation.pipeId.split(":");
-  const targetId = parts[1];
-  return operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:") ? targetId : undefined;
+  const surface = parts[1];
+  return (operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:")) && surface !== undefined ? surface : undefined;
 };
 var operationSurfaceIds = (plan) => [...new Set(plan.operations.flatMap((operation) => {
-  const targetId = operationTargetId(operation);
-  return targetId === undefined ? [] : [targetId];
+  const surface = operationSurfaceId(operation);
+  return surface === undefined ? [] : [surface];
 }))].sort();
-var riskOrder = [
-  "read-only",
-  "writes-local",
-  "externally-visible",
-  "irreversible"
-];
-var approvalBoundaryRisks = new Set(["externally-visible", "irreversible"]);
-var operationRiskGroups = (plan) => riskOrder.map((risk) => ({
-  risk,
-  operations: plan.operations.filter((operation) => operation.risk === risk)
-}));
-var hasApprovalBoundaryOperations = (groups) => groups.some((group) => approvalBoundaryRisks.has(group.risk) && group.operations.length > 0);
-var artifactLine = (artifact2) => {
-  const checksum = artifact2.checksum === undefined ? "checksum=none" : `checksum=${artifact2.checksum.algorithm}:${artifact2.checksum.value}`;
-  const platform2 = artifact2.platform === undefined ? "platform=none" : `platform=${[artifact2.platform.os, artifact2.platform.arch, artifact2.platform.libc].filter((part) => part !== undefined).join("-")}`;
-  return `- ${artifact2.id} ${artifact2.path} [${artifact2.kind}] produced-by=${artifact2.producedBy} ${platform2} ${checksum}`;
-};
-var operationDetailLines = (operation) => {
-  switch (operation.action._tag) {
-    case "command":
-      return [
-        `command: ${commandLine(operation.action.command)}`,
-        `argv: ${JSON.stringify(commandArgv(operation.action.command))}`
-      ];
-    case "write-file":
-      return [`write: ${operation.action.path}`];
-    case "note":
-      return [`note: ${operation.action.message}`];
-    case "github-release-create":
-      return [
-        `github-api: create release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assets.length}`
-      ];
-    case "github-release-verify":
-      return [
-        `github-api: verify release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assetNames.length}`
-      ];
-    case "check-file":
-      return [`check-file: ${operation.action.path}`];
-    case "stage":
-      return [`stage: ${operation.action.intent._tag} artifacts=${operation.action.producesArtifactIds.length}`];
-  }
-};
-var markdownCodeBlock = (language, contents) => [
-  `\`\`\`${language}`,
-  contents,
-  "```"
-];
-var renderPlanJson = (plan) => `${JSON.stringify(encodeSync2(ReleasePlan)(plan), null, 2)}
-`;
-var renderPlanText = (plan) => {
-  const lines = [
-    `${plan.identity.name}@${plan.identity.version}`,
-    `commit: ${plan.identity.commit}`,
-    ...plan.identity.snapshot ? ["snapshot: true"] : [],
-    `evidence: ${plan.evidenceDirectory}`,
-    `artifacts: ${plan.artifacts.length}`,
-    `surfaces: ${operationSurfaceIds(plan).length}`,
-    `operations: ${plan.operations.length}`,
-    ""
-  ];
-  lines.push("artifacts:");
-  for (const artifact2 of plan.artifacts) {
-    lines.push(`  ${artifactLine(artifact2)}`);
-  }
-  lines.push("");
-  lines.push("surfaces:");
-  for (const surface of operationSurfaceIds(plan)) {
-    const count = plan.operations.filter((operation) => operationTargetId(operation) === surface).length;
-    lines.push(`  - ${surface} operations=${count}`);
-  }
-  lines.push("");
-  lines.push("operations by risk:");
-  const groups = operationRiskGroups(plan);
-  const showApprovalBoundary = hasApprovalBoundaryOperations(groups);
-  for (const group of groups) {
-    if (group.risk === "externally-visible" && showApprovalBoundary) {
-      lines.push("  -- approval boundary: externally visible and irreversible operations require explicit approval --");
-    }
-    lines.push(`  ${group.risk}:`);
-    if (group.operations.length === 0) {
-      lines.push("    - none");
-      continue;
-    }
-    for (const operation of group.operations) {
-      lines.push(`    - ${operation.id} ${operation.description}`);
-      for (const detail of operationDetailLines(operation)) {
-        lines.push(`    ${detail}`);
-      }
-      const approval = operationApprovalRequirements(operation);
-      if (approval.requiresExecute) {
-        lines.push(`    approval: execute${approval.requiresIrreversibleApproval ? " + irreversible approval" : ""}`);
-      }
-    }
-  }
-  return `${lines.join(`
-`)}
-`;
-};
-var renderPlanSummary = (plan) => {
-  const risks = [
-    "read-only",
-    "writes-local",
-    "externally-visible",
-    "irreversible"
-  ];
-  const lines = [
-    `summary: ${plan.identity.name}@${plan.identity.version}`,
-    `commit: ${plan.identity.commit}`,
-    ...plan.identity.snapshot ? ["snapshot: true"] : [],
-    `evidence: ${plan.evidenceDirectory}`,
-    `operations: ${plan.operations.length}`,
-    "risk:"
-  ];
-  for (const risk of risks) {
-    lines.push(`  ${risk}: ${plan.operations.filter((operation) => operation.risk === risk).length}`);
-  }
-  const executeOperations2 = plan.operations.filter((operation) => operationApprovalRequirements(operation).requiresExecute);
-  const irreversibleOperations = plan.operations.filter((operation) => operationApprovalRequirements(operation).requiresIrreversibleApproval);
-  lines.push(`execute required: ${executeOperations2.length}`);
-  lines.push(`irreversible approval required: ${irreversibleOperations.length}`);
-  lines.push("");
-  lines.push("surfaces:");
-  for (const surface of operationSurfaceIds(plan)) {
-    const count = plan.operations.filter((operation) => operationTargetId(operation) === surface).length;
-    lines.push(`  - ${surface} operations=${count}`);
-  }
-  lines.push("");
-  lines.push("approval-required operations:");
-  for (const operation of executeOperations2) {
-    lines.push(`  - ${operation.id}: ${operationApprovalLabel(operation)} (${operation.risk})`);
-  }
-  if (executeOperations2.length === 0) {
-    lines.push("  - none");
-  }
-  return `${lines.join(`
-`)}
-`;
-};
-var renderPlanMarkdown = (plan) => {
-  const lines = [
-    `# Release Plan ${plan.identity.name}@${plan.identity.version}`,
-    "",
-    ...plan.identity.snapshot ? ["**Snapshot release**", ""] : [],
-    "## Summary",
-    "",
-    ...renderPlanSummary(plan).trimEnd().split(`
-`),
-    "",
-    "## Artifacts",
-    ""
-  ];
-  for (const artifact2 of plan.artifacts) {
-    lines.push(artifactLine(artifact2));
-  }
-  if (plan.artifacts.length === 0) {
-    lines.push("- none");
-  }
-  lines.push("");
-  lines.push("## Operations By Risk");
-  const groups = operationRiskGroups(plan);
-  const showApprovalBoundary = hasApprovalBoundaryOperations(groups);
-  for (const group of groups) {
-    if (group.risk === "externally-visible" && showApprovalBoundary) {
-      lines.push("");
-      lines.push("> Approval boundary: externally visible and irreversible operations require explicit approval.");
-    }
-    lines.push("");
-    lines.push(`### ${group.risk}`);
-    if (group.operations.length === 0) {
-      lines.push("");
-      lines.push("- none");
-      continue;
-    }
-    for (const operation of group.operations) {
-      lines.push("");
-      lines.push(`#### ${operation.id}`);
-      lines.push("");
-      lines.push(`- target: ${operationTargetId(operation) ?? "none"}`);
-      lines.push(`- risk: ${operation.risk}`);
-      lines.push(`- approval: ${operationApprovalLabel(operation)}`);
-      lines.push(`- why: ${operation.description}`);
-      if (operation.action._tag === "command") {
-        lines.push("");
-        lines.push("Command argv:");
-        lines.push("");
-        lines.push(...markdownCodeBlock("json", JSON.stringify(commandArgv(operation.action.command), null, 2)));
-      }
-      if (operation.action._tag === "write-file") {
-        lines.push(`- write path: ${operation.action.path}`);
-      }
-      if (operation.action._tag === "note") {
-        lines.push(`- note: ${operation.action.message}`);
-      }
-      if (operation.action._tag === "github-release-create") {
-        lines.push(`- github-api: create release ${operation.action.repository} ${operation.action.tag}`);
-        lines.push(`- assets: ${operation.action.assets.length}`);
-      }
-      if (operation.action._tag === "github-release-verify") {
-        lines.push(`- github-api: verify release ${operation.action.repository} ${operation.action.tag}`);
-        lines.push(`- assets: ${operation.action.assetNames.length}`);
-      }
-    }
-  }
-  return `${lines.join(`
-`)}
-`;
-};
-var renderReleasePlan = (plan, format3 = "text") => {
-  switch (format3) {
-    case "json":
-      return renderPlanJson(plan);
-    case "summary":
-      return renderPlanSummary(plan);
-    case "markdown":
-      return renderPlanMarkdown(plan);
-    case "text":
-      return renderPlanText(plan);
-  }
-};
-
-// ../../src/engine/summary.ts
 var identitySummary = (identity2) => ({
   name: identity2.name,
   version: identity2.version,
@@ -104340,6 +104025,236 @@ var stagedArtifactSummaries = fn2("engine.summary.stagedArtifactSummaries")(func
   return summaries;
 });
 
+// ../../src/engine/render.ts
+var commandLine = (command2) => [command2.executable, ...command2.args].join(" ");
+var commandArgv = (command2) => [
+  command2.executable,
+  ...command2.args
+];
+var riskOrder = [
+  "read-only",
+  "writes-local",
+  "externally-visible",
+  "irreversible"
+];
+var approvalBoundaryRisks = new Set(["externally-visible", "irreversible"]);
+var operationRiskGroups = (plan) => riskOrder.map((risk) => ({
+  risk,
+  operations: plan.operations.filter((operation) => operation.risk === risk)
+}));
+var hasApprovalBoundaryOperations = (groups) => groups.some((group) => approvalBoundaryRisks.has(group.risk) && group.operations.length > 0);
+var artifactLine = (artifact2) => {
+  const checksum = artifact2.checksum === undefined ? "checksum=none" : `checksum=${artifact2.checksum.algorithm}:${artifact2.checksum.value}`;
+  const platform2 = artifact2.platform === undefined ? "platform=none" : `platform=${[artifact2.platform.os, artifact2.platform.arch, artifact2.platform.libc].filter((part) => part !== undefined).join("-")}`;
+  return `- ${artifact2.id} ${artifact2.path} [${artifact2.kind}] produced-by=${artifact2.producedBy} ${platform2} ${checksum}`;
+};
+var operationDetails = (operation) => {
+  switch (operation.action._tag) {
+    case "command":
+      return {
+        text: [
+          `command: ${commandLine(operation.action.command)}`,
+          `argv: ${JSON.stringify(commandArgv(operation.action.command))}`
+        ],
+        markdown: [
+          "",
+          "Command argv:",
+          "",
+          ...markdownCodeBlock("json", JSON.stringify(commandArgv(operation.action.command), null, 2))
+        ]
+      };
+    case "write-file":
+      return { text: [`write: ${operation.action.path}`], markdown: [`- write path: ${operation.action.path}`] };
+    case "note":
+      return { text: [`note: ${operation.action.message}`], markdown: [`- note: ${operation.action.message}`] };
+    case "github-release-create":
+      return {
+        text: [
+          `github-api: create release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assets.length}`
+        ],
+        markdown: [
+          `- github-api: create release ${operation.action.repository} ${operation.action.tag}`,
+          `- assets: ${operation.action.assets.length}`
+        ]
+      };
+    case "github-release-verify":
+      return {
+        text: [
+          `github-api: verify release ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assetNames.length}`
+        ],
+        markdown: [
+          `- github-api: verify release ${operation.action.repository} ${operation.action.tag}`,
+          `- assets: ${operation.action.assetNames.length}`
+        ]
+      };
+    case "check-file":
+      return { text: [`check-file: ${operation.action.path}`], markdown: [] };
+    case "stage":
+      return {
+        text: [`stage: ${operation.action.intent._tag} artifacts=${operation.action.producesArtifactIds.length}`],
+        markdown: []
+      };
+  }
+};
+var markdownCodeBlock = (language, contents) => [
+  `\`\`\`${language}`,
+  contents,
+  "```"
+];
+var renderPlanJson = (plan) => `${JSON.stringify(encodeSync2(ReleasePlan)(plan), null, 2)}
+`;
+var renderPlanText = (plan) => {
+  const lines = [
+    `${plan.identity.name}@${plan.identity.version}`,
+    `commit: ${plan.identity.commit}`,
+    ...plan.identity.snapshot ? ["snapshot: true"] : [],
+    `evidence: ${plan.evidenceDirectory}`,
+    `artifacts: ${plan.artifacts.length}`,
+    `surfaces: ${operationSurfaceIds(plan).length}`,
+    `operations: ${plan.operations.length}`,
+    ""
+  ];
+  lines.push("artifacts:");
+  for (const artifact2 of plan.artifacts) {
+    lines.push(`  ${artifactLine(artifact2)}`);
+  }
+  lines.push("");
+  lines.push("surfaces:");
+  for (const surface of operationSurfaceIds(plan)) {
+    const count = plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length;
+    lines.push(`  - ${surface} operations=${count}`);
+  }
+  lines.push("");
+  lines.push("operations by risk:");
+  const groups = operationRiskGroups(plan);
+  const showApprovalBoundary = hasApprovalBoundaryOperations(groups);
+  for (const group of groups) {
+    if (group.risk === "externally-visible" && showApprovalBoundary) {
+      lines.push("  -- approval boundary: externally visible and irreversible operations require explicit approval --");
+    }
+    lines.push(`  ${group.risk}:`);
+    if (group.operations.length === 0) {
+      lines.push("    - none");
+      continue;
+    }
+    for (const operation of group.operations) {
+      lines.push(`    - ${operation.id} ${operation.description}`);
+      for (const detail of operationDetails(operation).text) {
+        lines.push(`    ${detail}`);
+      }
+      const approval = operationApprovalRequirements(operation);
+      if (approval.requiresExecute) {
+        lines.push(`    approval: execute${approval.requiresIrreversibleApproval ? " + irreversible approval" : ""}`);
+      }
+    }
+  }
+  return `${lines.join(`
+`)}
+`;
+};
+var renderPlanSummary = (plan) => {
+  const risks = [
+    "read-only",
+    "writes-local",
+    "externally-visible",
+    "irreversible"
+  ];
+  const lines = [
+    `summary: ${plan.identity.name}@${plan.identity.version}`,
+    `commit: ${plan.identity.commit}`,
+    ...plan.identity.snapshot ? ["snapshot: true"] : [],
+    `evidence: ${plan.evidenceDirectory}`,
+    `operations: ${plan.operations.length}`,
+    "risk:"
+  ];
+  for (const risk of risks) {
+    lines.push(`  ${risk}: ${plan.operations.filter((operation) => operation.risk === risk).length}`);
+  }
+  const executeOperations = plan.operations.filter((operation) => operationApprovalRequirements(operation).requiresExecute);
+  const irreversibleOperations = plan.operations.filter((operation) => operationApprovalRequirements(operation).requiresIrreversibleApproval);
+  lines.push(`execute required: ${executeOperations.length}`);
+  lines.push(`irreversible approval required: ${irreversibleOperations.length}`);
+  lines.push("");
+  lines.push("surfaces:");
+  for (const surface of operationSurfaceIds(plan)) {
+    const count = plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length;
+    lines.push(`  - ${surface} operations=${count}`);
+  }
+  lines.push("");
+  lines.push("approval-required operations:");
+  for (const operation of executeOperations) {
+    lines.push(`  - ${operation.id}: ${operationApprovalRequirements(operation).label} (${operation.risk})`);
+  }
+  if (executeOperations.length === 0) {
+    lines.push("  - none");
+  }
+  return `${lines.join(`
+`)}
+`;
+};
+var renderPlanMarkdown = (plan) => {
+  const lines = [
+    `# Release Plan ${plan.identity.name}@${plan.identity.version}`,
+    "",
+    ...plan.identity.snapshot ? ["**Snapshot release**", ""] : [],
+    "## Summary",
+    "",
+    ...renderPlanSummary(plan).trimEnd().split(`
+`),
+    "",
+    "## Artifacts",
+    ""
+  ];
+  for (const artifact2 of plan.artifacts) {
+    lines.push(artifactLine(artifact2));
+  }
+  if (plan.artifacts.length === 0) {
+    lines.push("- none");
+  }
+  lines.push("");
+  lines.push("## Operations By Risk");
+  const groups = operationRiskGroups(plan);
+  const showApprovalBoundary = hasApprovalBoundaryOperations(groups);
+  for (const group of groups) {
+    if (group.risk === "externally-visible" && showApprovalBoundary) {
+      lines.push("");
+      lines.push("> Approval boundary: externally visible and irreversible operations require explicit approval.");
+    }
+    lines.push("");
+    lines.push(`### ${group.risk}`);
+    if (group.operations.length === 0) {
+      lines.push("");
+      lines.push("- none");
+      continue;
+    }
+    for (const operation of group.operations) {
+      lines.push("");
+      lines.push(`#### ${operation.id}`);
+      lines.push("");
+      lines.push(`- target: ${operationSurfaceId(operation) ?? "none"}`);
+      lines.push(`- risk: ${operation.risk}`);
+      lines.push(`- approval: ${operationApprovalRequirements(operation).label}`);
+      lines.push(`- why: ${operation.description}`);
+      lines.push(...operationDetails(operation).markdown);
+    }
+  }
+  return `${lines.join(`
+`)}
+`;
+};
+var renderReleasePlan = (plan, format3 = "text") => {
+  switch (format3) {
+    case "json":
+      return renderPlanJson(plan);
+    case "summary":
+      return renderPlanSummary(plan);
+    case "markdown":
+      return renderPlanMarkdown(plan);
+    case "text":
+      return renderPlanText(plan);
+  }
+};
+
 // ../../src/engine/engine.ts
 var identityErrorToNormalization = (error2) => ReleaseNormalizationError.make({
   field: error2.field ?? error2.source,
@@ -104362,13 +104277,6 @@ var resolveReleaseBuild = fn2("engine.resolveReleaseBuild")(function* (intent, r
   ]).pipe(mapError3(planErrorToNormalization));
   return { release, buildState };
 });
-var resolveIntentSource = fn2("engine.resolveIntentSource")(function* (options, intentArg) {
-  if (intentArg !== undefined) {
-    return yield* decodeReleaseIntent(intentArg, options.configPath ?? "inline config");
-  }
-  const pathName = configPath(options);
-  return yield* parseReleaseIntent(yield* readReleaseConfig(options), pathName);
-});
 var releasePlanFromAccumulator = (release, root, configPathName, state3) => ReleasePlan.make({
   schemaVersion: "release-plan/v3",
   identity: state3.identity,
@@ -104381,12 +104289,12 @@ var releasePlanFromAccumulator = (release, root, configPathName, state3) => Rele
   }),
   evidenceDirectory: release.evidenceDirectory
 });
-var planRelease = fn2("engine.planRelease")(function* (input = {}, intentArg) {
-  const path4 = yield* Path;
-  const root = configRoot(path4, input);
-  const intent = yield* resolveIntentSource(input, intentArg);
-  const sourcePath = intentArg === undefined ? configPath(input) : input.configPath;
-  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false);
+var planRelease = fn2("engine.planRelease")(function* (options = {}) {
+  const source = yield* loadReleaseIntent(options.config, {
+    root: options.workspace,
+    configPath: options.configPath
+  });
+  const build = yield* resolveReleaseBuild(source.intent, source.root, options.snapshot ?? false);
   const state3 = yield* runPipeline(build.buildState, [
     schedule2(catalogHomebrewPlanner, build.release.homebrew),
     schedule2(catalogScoopPlanner, build.release.scoop),
@@ -104398,7 +104306,7 @@ var planRelease = fn2("engine.planRelease")(function* (input = {}, intentArg) {
     schedule2(publishScoopPlanner, build.release.scoop),
     ...isSome2(build.release.catalogs) ? [schedule2(publishCatalogGenericPlanner, build.release.catalogs)] : []
   ]);
-  return releasePlanFromAccumulator(build.release, root, sourcePath, state3);
+  return releasePlanFromAccumulator(build.release, source.root, source.sourcePath, state3);
 });
 var isStageOperation = (operation) => operation.action._tag === "stage";
 var operationContext = (state3, root, configPathName) => ({
@@ -104409,22 +104317,23 @@ var operationContext = (state3, root, configPathName) => ({
   configPath: configPathName
 });
 var planContext = (plan) => operationContext(plan, plan.source.root, plan.source.configPath);
-var buildReleaseArtifacts = fn2("engine.buildReleaseArtifacts")(function* (input = {}, intentArg) {
-  const path4 = yield* Path;
-  const root = configRoot(path4, input);
-  const pathName = configPath(input);
-  const intent = yield* resolveIntentSource(input, intentArg);
-  const build = yield* resolveReleaseBuild(intent, root, input.snapshot ?? false);
+var buildReleaseArtifacts = fn2("engine.buildReleaseArtifacts")(function* (options = {}) {
+  const source = yield* loadReleaseIntent(options.config, {
+    root: options.workspace,
+    configPath: options.configPath
+  });
+  const pathName = source.sourcePath ?? "inline config";
+  const build = yield* resolveReleaseBuild(source.intent, source.root, options.snapshot ?? false);
   const staged = [];
-  for (const operation of buildOperations(build.buildState.operations)) {
+  for (const operation of operationsForPass(build.buildState.operations, "build")) {
     if (isStageOperation(operation)) {
       staged.push(yield* stageArtifactOperation(operation, {
-        root,
+        root: source.root,
         identity: build.buildState.identity,
         configPath: pathName
       }));
     } else {
-      yield* runOperations([operation], ExecutionApproval.make({ execute: true, approveIrreversible: false }), operationContext(build.buildState, root, pathName));
+      yield* runOperations([operation], ExecutionApproval.make({ execute: true, approveIrreversible: false }), operationContext(build.buildState, source.root, pathName));
     }
   }
   const planState = yield* runPipeline(build.buildState, [
@@ -104438,7 +104347,7 @@ var buildReleaseArtifacts = fn2("engine.buildReleaseArtifacts")(function* (input
     schedule2(publishScoopPlanner, build.release.scoop),
     ...isSome2(build.release.catalogs) ? [schedule2(publishCatalogGenericPlanner, build.release.catalogs)] : []
   ]);
-  const plan = releasePlanFromAccumulator(build.release, root, pathName, planState);
+  const plan = releasePlanFromAccumulator(build.release, source.root, source.sourcePath, planState);
   return {
     schemaVersion: "artifact-stage/v1",
     identity: build.buildState.identity,
@@ -104486,58 +104395,47 @@ var finalizeEvidenceOnExit = (plan, name, ref, workflowExit) => get4(ref).pipe(f
 var runEvidenceWorkflowWithFinalizer = fn2("engine.runEvidenceWorkflowWithFinalizer")(function* (plan, name, ref, workflow) {
   return yield* workflow.pipe(onExit2((workflowExit) => finalizeEvidenceOnExit(plan, name, ref, workflowExit)));
 });
-var collectEvidenceAfter = (ref, workflow) => workflow.pipe(andThen2(get4(ref)));
+var writeWorkflowEvidence = fn2("engine.writeWorkflowEvidence")(function* (plan, name, workflow, approval) {
+  const context7 = planContext(plan);
+  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context7);
+  const ref = yield* makeEvidenceRef(context7);
+  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7).pipe(andThen2(get4(ref))));
+});
 var writeVerificationEvidence = fn2("engine.writeVerificationEvidence")(function* (plan) {
-  const context7 = planContext(plan);
-  const ref = yield* makeEvidenceRef(context7);
-  return yield* runEvidenceWorkflowWithFinalizer(plan, "verification", ref, collectEvidenceAfter(ref, verifyOperationsInto(ref, plan.operations, context7)));
+  return yield* writeWorkflowEvidence(plan, "verification", "verification", ExecutionApproval.none);
 });
-var writeReleaseEvidence = fn2("engine.writeReleaseEvidence")(function* (plan, input = {}) {
+var writeReleaseEvidence = fn2("engine.writeReleaseEvidence")(function* (plan, options = {}) {
   const approval = ExecutionApproval.make({
-    execute: input.execute ?? false,
-    approveIrreversible: input.approveIrreversible ?? false
+    execute: options.execute ?? false,
+    approveIrreversible: options.approvePublish ?? false
   });
-  const context7 = planContext(plan);
-  yield* preflightReleaseApproval(plan.operations, approval, context7);
-  const ref = yield* makeEvidenceRef(context7);
-  return yield* runEvidenceWorkflowWithFinalizer(plan, "evidence", ref, collectEvidenceAfter(ref, runApprovedReleaseWorkflowInto(ref, plan.operations, approval, context7)));
+  return yield* writeWorkflowEvidence(plan, "evidence", "release", approval);
 });
-var verifyRelease = fn2("engine.verifyRelease")(function* (input = {}, intentArg) {
-  const plan = yield* planRelease(input, intentArg);
+var verifyRelease = fn2("engine.verifyRelease")(function* (options = {}) {
+  const plan = yield* planRelease(options);
   const evidence = yield* writeVerificationEvidence(plan);
   return { plan, evidence };
 });
-var renderReleaseFiles = fn2("engine.renderReleaseFiles")(function* (input = {}, intentArg) {
-  const plan = yield* planRelease(input, intentArg);
+var renderReleaseFiles = fn2("engine.renderReleaseFiles")(function* (options = {}) {
+  const plan = yield* planRelease(options);
   const approval = ExecutionApproval.make({
-    execute: input.execute ?? false,
+    execute: options.execute ?? false,
     approveIrreversible: false
   });
-  const context7 = planContext(plan);
-  yield* preflightRenderApproval(plan.operations, approval, context7);
-  const ref = yield* makeEvidenceRef(context7);
-  const evidence = yield* runEvidenceWorkflowWithFinalizer(plan, "render", ref, collectEvidenceAfter(ref, writeRenderFilesInto(ref, plan.operations, approval, context7)));
+  const evidence = yield* writeWorkflowEvidence(plan, "render", "render", approval);
   return { plan, evidence };
 });
-var runApprovedRelease = fn2("engine.runApprovedRelease")(function* (input = {}, intentArg) {
-  const plan = yield* planRelease(input, intentArg);
-  const evidence = yield* writeReleaseEvidence(plan, input);
+var runApprovedRelease = fn2("engine.runApprovedRelease")(function* (options = {}) {
+  const plan = yield* planRelease(options);
+  const evidence = yield* writeReleaseEvidence(plan, options);
   return { plan, evidence };
 });
-var runOptionsInput = (options) => ({
-  root: options.workspace,
-  configPath: typeof options.config === "string" ? options.config : undefined,
-  snapshot: options.snapshot,
-  execute: options.execute ?? false,
-  approveIrreversible: options.approvePublish ?? false
-});
-var runOptionsIntent = (options) => typeof options.config === "object" && options.config !== null ? options.config : undefined;
 var plan = fn2("engine.summary.plan")(function* (options = {}) {
-  const document2 = yield* planRelease(runOptionsInput(options), runOptionsIntent(options));
+  const document2 = yield* planRelease(options);
   return plannedSummary(document2);
 });
 var build = fn2("engine.summary.build")(function* (options = {}) {
-  const result2 = yield* buildReleaseArtifacts(runOptionsInput(options), runOptionsIntent(options));
+  const result2 = yield* buildReleaseArtifacts(options);
   return {
     ...plannedSummary(result2.plan),
     stagedArtifacts: yield* stagedArtifactSummaries(result2.plan, result2.operations)
@@ -104545,14 +104443,14 @@ var build = fn2("engine.summary.build")(function* (options = {}) {
 });
 var release = fn2("engine.summary.release")(function* (options = {}) {
   if (options.execute !== true) {
-    const document2 = yield* planRelease(runOptionsInput(options), runOptionsIntent(options));
+    const document2 = yield* planRelease(options);
     return {
       ...plannedSummary(document2),
       executed: [],
       refused: []
     };
   }
-  const result2 = yield* runApprovedRelease(runOptionsInput(options), runOptionsIntent(options));
+  const result2 = yield* runApprovedRelease(options);
   const summary2 = plannedSummary(result2.plan);
   const executed = yield* evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "evidence"));
   return {
@@ -104562,7 +104460,7 @@ var release = fn2("engine.summary.release")(function* (options = {}) {
   };
 });
 var verify = fn2("engine.summary.verify")(function* (options = {}) {
-  const result2 = yield* verifyRelease(runOptionsInput(options), runOptionsIntent(options));
+  const result2 = yield* verifyRelease(options);
   return {
     identity: plannedSummary(result2.plan).identity,
     checks: yield* evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "verification"))
@@ -104610,17 +104508,9 @@ var reportForIdentity = (identity2, checks) => ReleaseDiagnosticReport.make({
   releaseVersion: identity2.version,
   checks: [...checks]
 });
-var operationTargetId2 = (operation) => {
-  const parts = operation.pipeId.split(":");
-  const targetId = parts[1];
-  return operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:") ? targetId : undefined;
-};
-var operationsForTarget = (plan2, targetId) => plan2.operations.filter((operation) => operationTargetId2(operation) === targetId);
+var operationsForTarget = (plan2, targetId) => plan2.operations.filter((operation) => operationSurfaceId(operation) === targetId);
 var targetMatches = (targetId, filter6) => filter6 === undefined || targetId === filter6 || targetId.toLowerCase().includes(filter6.toLowerCase());
-var targetIdsForPlan = (plan2, filter6) => [...new Set(plan2.operations.flatMap((operation) => {
-  const targetId = operationTargetId2(operation);
-  return targetId === undefined || !targetMatches(targetId, filter6) ? [] : [targetId];
-}))].sort();
+var targetIdsForPlan = (plan2, filter6) => operationSurfaceIds(plan2).filter((targetId) => targetMatches(targetId, filter6));
 var operationEnvNames = (operation) => {
   switch (operation.action._tag) {
     case "command":
@@ -104714,21 +104604,26 @@ var plannedSuccess = (plan2) => ({
 });
 var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {}) {
   const pathName = configPath(input);
-  const validation2 = yield* readReleaseConfig(input).pipe(flatMap3((contents) => parseReleaseIntent(contents, pathName)), match5({
-    onFailure: (error2) => check({
-      id: "config:validation",
-      status: "fail",
-      confidence: "confirmed",
-      message: `Config validation failed: ${error2.message}`
-    }),
-    onSuccess: () => check({
-      id: "config:validation",
-      status: "ok",
-      confidence: "confirmed",
-      message: `Config ${pathName} is valid.`
-    })
+  const loaded = yield* loadReleaseIntent(undefined, input).pipe(match5({
+    onFailure: (error2) => ({ _tag: "Failed", error: error2 }),
+    onSuccess: (value2) => ({ _tag: "Ok", value: value2 })
   }));
-  const planned = yield* planRelease(input).pipe(match5({
+  const validation2 = loaded._tag === "Failed" ? check({
+    id: "config:validation",
+    status: "fail",
+    confidence: "confirmed",
+    message: `Config validation failed: ${loaded.error.message}`
+  }) : check({
+    id: "config:validation",
+    status: "ok",
+    confidence: "confirmed",
+    message: `Config ${pathName} is valid.`
+  });
+  const planned = loaded._tag === "Failed" ? plannedFailure(loaded.error.message) : yield* planRelease({
+    workspace: input.root,
+    config: loaded.value.intent,
+    configPath: pathName
+  }).pipe(match5({
     onFailure: (error2) => plannedFailure(error2.message),
     onSuccess: plannedSuccess
   }));
@@ -104797,6 +104692,27 @@ var renderReleaseDiagnostics = (report, format3 = "text") => {
     case "text":
       return renderReleaseDiagnosticsText(report);
   }
+};
+
+// ../../src/internal/error-message.ts
+var taggedReason = (value2) => {
+  if (typeof value2 !== "object" || value2 === null || !("_tag" in value2) || typeof value2._tag !== "string") {
+    return;
+  }
+  return {
+    tag: value2._tag,
+    reason: "reason" in value2 && typeof value2.reason === "string" ? value2.reason : undefined,
+    cause: "cause" in value2 ? value2.cause : undefined
+  };
+};
+var formatTaggedReason = (value2, renderCause) => {
+  const tagged = taggedReason(value2);
+  if (tagged === undefined) {
+    return;
+  }
+  const causeMessage = tagged.cause === undefined || renderCause === undefined ? undefined : renderCause(tagged.cause);
+  const causeSuffix = causeMessage !== undefined && causeMessage.length > 0 && causeMessage !== tagged.reason ? ` (cause: ${causeMessage})` : "";
+  return `${tagged.tag}${tagged.reason === undefined ? "" : `: ${tagged.reason}`}${causeSuffix}`;
 };
 
 // src/input.ts
@@ -104925,69 +104841,34 @@ var renderActionCause = (cause) => {
   }
   return toStringUnknown(cause);
 };
-var formatTaggedError = (cause) => {
-  if (typeof cause === "object" && cause !== null && "_tag" in cause && typeof cause._tag === "string") {
-    const reason = "reason" in cause && typeof cause.reason === "string" ? cause.reason : undefined;
-    const causeMessage = "cause" in cause && cause.cause !== undefined ? renderActionCause(cause.cause) : undefined;
-    const causeSuffix = causeMessage !== undefined && causeMessage.length > 0 && causeMessage !== reason ? ` (cause: ${causeMessage})` : "";
-    return `${cause._tag}${reason === undefined ? "" : `: ${reason}`}${causeSuffix}`;
-  }
-  return;
-};
-var formatActionError = (cause) => formatTaggedError(isCause2(cause) ? squash(cause) : cause) ?? renderActionCause(cause);
-var workspacePath = (path4, root, pathName) => path4.isAbsolute(pathName) ? pathName : path4.resolve(root, pathName);
-var isInsideWorkspace = (path4, root, targetPath) => {
-  const relative = path4.relative(path4.resolve(root), targetPath);
-  return relative.length === 0 || !relative.startsWith("..") && !path4.isAbsolute(relative);
-};
+var formatActionError = (cause) => formatTaggedReason(isCause2(cause) ? squash(cause) : cause, renderActionCause) ?? renderActionCause(cause);
 var workspaceOutputPath = (path4, options, pathName) => {
-  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
-    return fail6(ActionCommandError.make({
-      command: options.command,
-      reason: "plan-path must be non-empty and must not contain parent traversal."
-    }));
-  }
-  const rootPath = path4.resolve(options.root);
-  const targetPath = path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
-  if (isInsideWorkspace(path4, rootPath, targetPath)) {
-    return succeed6(targetPath);
-  }
-  return fail6(ActionCommandError.make({
+  const result2 = validateWorkspaceWritePath(path4, options.root, pathName);
+  return result2._tag === "Ok" ? succeed6(result2.path) : fail6(ActionCommandError.make({
     command: options.command,
-    reason: "plan-path must resolve inside the action root."
+    reason: result2.reason === "empty-or-parent-traversal" ? "plan-path must be non-empty and must not contain parent traversal." : "plan-path must resolve inside the action root."
   }));
 };
 var workspaceConfigPath = (path4, options, pathName) => {
-  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
-    return fail6(ActionCommandError.make({
-      command: options.command,
-      reason: "config must be non-empty and must not contain parent traversal."
-    }));
-  }
   const rootPath = path4.resolve(options.root);
-  const targetPath = path4.isAbsolute(pathName) ? path4.resolve(pathName) : path4.resolve(rootPath, pathName);
-  if (!isInsideWorkspace(path4, rootPath, targetPath)) {
+  const result2 = validateWorkspaceWritePath(path4, rootPath, pathName);
+  if (result2._tag === "Invalid") {
     return fail6(ActionCommandError.make({
       command: options.command,
-      reason: "config must resolve inside the action root."
+      reason: result2.reason === "empty-or-parent-traversal" ? "config must be non-empty and must not contain parent traversal." : "config must resolve inside the action root."
     }));
   }
-  return succeed6(path4.isAbsolute(pathName) ? path4.relative(rootPath, targetPath) : pathName);
+  return succeed6(path4.isAbsolute(pathName) ? path4.relative(rootPath, result2.path) : pathName);
 };
 var actionOptionsWithConfig = (options, config) => ActionOptions.make({ ...options, config });
 var releaseInput = (options) => ({
-  root: options.root,
-  configPath: options.config,
-  snapshot: options.snapshot
-});
-var textOutputFormat = (options) => options.format === "json" ? "json" : "text";
-var executionInput = (options) => ({
-  root: options.root,
-  configPath: options.config,
+  workspace: options.root,
+  config: options.config,
   snapshot: options.snapshot,
   execute: options.execute,
-  approveIrreversible: options.approvePublish
+  approvePublish: options.approvePublish
 });
+var textOutputFormat = (options) => options.format === "json" ? "json" : "text";
 var diagnosticsFormat = (options) => options.format === "json" || options.format === "markdown" ? options.format : "text";
 var diagnosticsInput = (options) => ({
   root: options.root,
@@ -104995,15 +104876,7 @@ var diagnosticsInput = (options) => ({
   format: diagnosticsFormat(options),
   target: options.target
 });
-var operationSurfaceId = (pipeId) => {
-  const parts = pipeId.split(":");
-  const surface = parts[1];
-  return (pipeId.startsWith("publish:") || pipeId.startsWith("catalog:")) && surface !== undefined ? surface : undefined;
-};
-var surfaceCount = (plan2) => new Set(plan2.operations.flatMap((operation) => {
-  const surface = operationSurfaceId(operation.pipeId);
-  return surface === undefined ? [] : [surface];
-})).size;
+var surfaceCount = (plan2) => operationSurfaceIds(plan2).length;
 var outputPlan = fn2("action.outputPlan")(function* (io, plan2, planPath) {
   yield* io.setOutput("release_name", plan2.identity.name);
   yield* io.setOutput("release_version", plan2.identity.version);
@@ -105038,7 +104911,7 @@ var failForDiagnostics = (command2, report, failOnWarnings) => {
 var collectEvidenceFiles = fn2("action.collectEvidenceFiles")(function* (root, evidenceDirectory2) {
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const absoluteDirectory = workspacePath(path4, root, evidenceDirectory2);
+  const absoluteDirectory = resolveWorkspacePath(path4, root, evidenceDirectory2);
   const exists3 = yield* fs8.exists(absoluteDirectory);
   if (!exists3) {
     return {
@@ -105155,7 +105028,7 @@ release planned only; set execute: true to run approved operations.
     yield* io.setOutput("status", "passed");
     return plan2;
   }
-  yield* writeReleaseEvidence(plan2, executionInput(options));
+  yield* writeReleaseEvidence(plan2, releaseInput(options));
   if (options.writeStepSummary) {
     yield* io.appendSummary(`## ts-release release
 
@@ -107539,16 +107412,8 @@ var resolveHeaders = fn2("resolveHeaders")(function* (request2) {
     ...request2.requiredEnv,
     ...request2.envHeaders.map((header) => header.valueEnv)
   ]);
-  const env = new Map;
-  const missing = [];
-  for (const name of envNames2) {
-    const value2 = yield* readOptionalEnv(name);
-    if (value2 === undefined) {
-      missing.push(name);
-    } else {
-      env.set(name, value2);
-    }
-  }
+  const env = yield* readEnvironment(envNames2);
+  const missing = [...envNames2].filter((name) => env.get(name) === undefined);
   if (missing.length > 0) {
     return yield* fail6(HttpError.make({
       operation: "resolveHeaders",

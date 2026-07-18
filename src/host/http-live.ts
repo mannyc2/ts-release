@@ -5,7 +5,7 @@ import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
 import { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
 import { HttpError, ReleaseHttp, type HttpResult } from "./http.js"
-import { nowIso, readOptionalEnv } from "./platform.js"
+import { nowIso, readEnvironment } from "./platform.js"
 
 
 const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpRequestSpec) {
@@ -13,16 +13,8 @@ const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpReques
     ...request.requiredEnv,
     ...request.envHeaders.map((header) => header.valueEnv)
   ])
-  const env = new Map<string, string>()
-  const missing: Array<string> = []
-  for (const name of envNames) {
-    const value = yield* readOptionalEnv(name)
-    if (value === undefined) {
-      missing.push(name)
-    } else {
-      env.set(name, value)
-    }
-  }
+  const env = yield* readEnvironment(envNames)
+  const missing = [...envNames].filter((name) => env.get(name) === undefined)
   if (missing.length > 0) {
     return yield* Effect.fail(
       HttpError.make({

@@ -16,8 +16,8 @@ const renderCatalogs = Command.make("render-catalogs", {
   root: Flag.string("root").pipe(Flag.optional)
 }, Effect.fn("scripts.renderCatalogs")(function*({ config, root }) {
   const result = yield* renderReleaseFiles({
-    configPath: config,
-    ...optionalField(Option.getOrUndefined(root), (root) => ({ root })),
+    config,
+    ...optionalField(Option.getOrUndefined(root), (workspace) => ({ workspace })),
     execute: true
   })
   yield* Console.log(renderEvidenceJson(result.evidence).trimEnd())

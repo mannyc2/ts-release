@@ -54,6 +54,21 @@ export interface VerifySummary {
   readonly checks: ReadonlyArray<OperationSummary>
 }
 
+export const operationSurfaceId = (operation: Pick<Operation, "pipeId">): string | undefined => {
+  const parts = operation.pipeId.split(":")
+  const surface = parts[1]
+  return (operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:")) &&
+      surface !== undefined
+    ? surface
+    : undefined
+}
+
+export const operationSurfaceIds = (plan: Pick<ReleasePlan, "operations">): ReadonlyArray<string> =>
+  [...new Set(plan.operations.flatMap((operation) => {
+    const surface = operationSurfaceId(operation)
+    return surface === undefined ? [] : [surface]
+  }))].sort()
+
 export const identitySummary = (identity: ReleaseIdentity): ReleaseIdentitySummary => ({
   name: identity.name,
   version: identity.version,

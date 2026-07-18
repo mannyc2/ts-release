@@ -1,4 +1,6 @@
+import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import { PlanError } from "./errors.js"
 
 export const safeRelativePathReason = "Path must be non-empty, relative, and must not contain parent traversal."
 
@@ -13,6 +15,18 @@ export const SafeRelativePath = Schema.String.check(
   Schema.makeFilter((value: string) => isSafeRelativePath(value) ? undefined : safeRelativePathReason)
 )
 export type SafeRelativePath = typeof SafeRelativePath.Type
+
+export const validateSafeRelativePathEffect = (
+  value: string,
+  source: { readonly pipeId: string; readonly field: string }
+): Effect.Effect<SafeRelativePath, PlanError> =>
+  isSafeRelativePath(value)
+    ? Effect.succeed(value)
+    : Effect.fail(PlanError.make({
+      pipeId: source.pipeId,
+      field: source.field,
+      reason: safeRelativePathReason
+    }))
 
 export const WorkflowFileName = Schema.String.check(
   Schema.makeFilter((value: string) => {

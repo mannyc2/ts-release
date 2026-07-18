@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { WorkflowFileName } from "../pipeline/artifact.js"
 import type { Artifact } from "../pipeline/artifact.js"
 import { PlanError } from "../pipeline/errors.js"
 import {
@@ -18,16 +17,15 @@ import { emptyContribution } from "../pipeline/pipe.js"
 import {
   compactTrustedPublishing,
   findCatalogArtifact,
-  trustedPublishingAuthEnvNames
+  publishingAuthEnvNames,
+  trustedPublishingConfigFields,
+  type TrustedPublishingSection
 } from "./shared.js"
-
-const TrustedPublishingProvider = Schema.Literals(["github-actions"])
 
 export class ReleaseConfigPyPiTrustedPublishing extends Schema.Class<ReleaseConfigPyPiTrustedPublishing>(
   "ReleaseConfigPyPiTrustedPublishing"
 )({
-  provider: Schema.optionalKey(TrustedPublishingProvider),
-  workflow: Schema.optionalKey(WorkflowFileName),
+  ...trustedPublishingConfigFields,
   publisherConfigured: Schema.optionalKey(Schema.Literal(true))
 }) {}
 
@@ -40,17 +38,12 @@ export class ReleaseConfigPyPiPublish extends Schema.Class<ReleaseConfigPyPiPubl
   artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
 }) {}
 
-interface PyPiTrustedPublishingSection {
-  readonly provider: "github-actions"
-  readonly workflow: string
-}
-
 export interface ResolvedPyPiPublish {
   readonly repositoryUrl: string
   readonly pythonExecutable: string
   readonly usernameEnv?: string | undefined
   readonly passwordEnv?: string | undefined
-  readonly trustedPublishing?: PyPiTrustedPublishingSection | undefined
+  readonly trustedPublishing?: TrustedPublishingSection | undefined
   readonly artifactIds?: readonly [string, ...Array<string>] | undefined
 }
 
@@ -75,11 +68,7 @@ export const resolvePyPiPublish = (
 }
 
 const envNames = (section: ResolvedPyPiPublish): ReadonlyArray<string> =>
-  section.trustedPublishing !== undefined
-    ? trustedPublishingAuthEnvNames
-    : section.usernameEnv === undefined || section.passwordEnv === undefined
-    ? []
-    : [section.usernameEnv, section.passwordEnv]
+  publishingAuthEnvNames(section.trustedPublishing, [section.usernameEnv, section.passwordEnv])
 
 const twineAuthCommand = (
   section: ResolvedPyPiPublish,

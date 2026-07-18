@@ -26,7 +26,7 @@ import {
 import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
-import { validateSafeRelativePathEffect } from "../pipeline/template.js"
+import { validateSafeRelativePathEffect } from "../pipeline/artifact.js"
 
 export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHomebrewPublish>(
   "ReleaseConfigHomebrewPublish"

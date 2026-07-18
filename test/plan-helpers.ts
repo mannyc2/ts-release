@@ -10,9 +10,7 @@ import {
   renderPlanText
 } from "../src/engine/render.js"
 import {
-  runApprovedReleaseWorkflow,
-  validateOperations,
-  writeRenderFiles
+  runEvidenceWorkflow
 } from "../src/engine/executor.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
@@ -47,9 +45,10 @@ export const createTestPlan = (config: string, root = ".", configPath?: string |
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(config, configPath)
     const document = yield* planRelease({
-      root,
+      workspace: root,
+      config: intent,
       configPath
-    }, intent)
+    })
     return {
       document,
       identity: document.identity,
@@ -67,21 +66,26 @@ const operationContext = (plan: TestPlan) => ({
   configPath: plan.document.source.configPath
 })
 export const validateTestPlan = (plan: TestPlan) =>
-  validateOperations(plan.operations, operationContext(plan)).pipe(
+  runEvidenceWorkflow(
+    plan.operations,
+    "validation",
+    ExecutionApproval.none,
+    operationContext(plan)
+  ).pipe(
     Effect.provide(OperationArmTestLayer)
   )
 export const renderTestPlan = (
   plan: TestPlan,
   approval: ExecutionApproval = ExecutionApproval.make({ execute: true, approveIrreversible: false })
 ) =>
-  writeRenderFiles(plan.operations, approval, operationContext(plan)).pipe(
+  runEvidenceWorkflow(plan.operations, "render", approval, operationContext(plan)).pipe(
     Effect.provide(OperationArmTestLayer)
   )
 export const runApprovedTestPlan = (
   plan: TestPlan,
   approval: ExecutionApproval
 ) =>
-  runApprovedReleaseWorkflow(plan.operations, approval, operationContext(plan)).pipe(
+  runEvidenceWorkflow(plan.operations, "release", approval, operationContext(plan)).pipe(
     Effect.provide(OperationArmTestLayer)
   )
 export const renderTestPlanText = (plan: TestPlan): string =>

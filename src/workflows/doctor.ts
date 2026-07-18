@@ -1,10 +1,11 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { parseReleaseIntent } from "../config/load.js"
-import { configPath, readReleaseConfig } from "../config/resolve.js"
+import { loadReleaseIntent } from "../config/load.js"
+import { configPath } from "../config/resolve.js"
 import { envExists, planRelease } from "../engine/engine.js"
 import type { Operation } from "../pipeline/operation.js"
 import type { ReleasePlan } from "../pipeline/plan.js"
+import { operationSurfaceId, operationSurfaceIds } from "../engine/summary.js"
 
 
 const ReleaseName = Schema.NonEmptyString
@@ -68,25 +69,14 @@ const reportForIdentity = (
     checks: [...checks]
   })
 
-const operationTargetId = (operation: Operation): string | undefined => {
-  const parts = operation.pipeId.split(":")
-  const targetId = parts[1]
-  return operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:")
-    ? targetId
-    : undefined
-}
-
 const operationsForTarget = (plan: ReleasePlan, targetId: string): ReadonlyArray<Operation> =>
-  plan.operations.filter((operation) => operationTargetId(operation) === targetId)
+  plan.operations.filter((operation) => operationSurfaceId(operation) === targetId)
 
 const targetMatches = (targetId: string, filter: string | undefined): boolean =>
   filter === undefined || targetId === filter || targetId.toLowerCase().includes(filter.toLowerCase())
 
 const targetIdsForPlan = (plan: ReleasePlan, filter: string | undefined): ReadonlyArray<string> =>
-  [...new Set(plan.operations.flatMap((operation) => {
-    const targetId = operationTargetId(operation)
-    return targetId === undefined || !targetMatches(targetId, filter) ? [] : [targetId]
-  }))].sort()
+  operationSurfaceIds(plan).filter((targetId) => targetMatches(targetId, filter))
 
 const operationEnvNames = (operation: Operation): ReadonlyArray<string> => {
   switch (operation.action._tag) {
@@ -221,30 +211,38 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
   input: DoctorReleaseInput = {}
 ) {
   const pathName = configPath(input)
-  const validation = yield* readReleaseConfig(input).pipe(
-    Effect.flatMap((contents) => parseReleaseIntent(contents, pathName)),
+  const loaded = yield* loadReleaseIntent(undefined, input).pipe(
     Effect.match({
-      onFailure: (error) => check({
+      onFailure: (error) => ({ _tag: "Failed" as const, error }),
+      onSuccess: (value) => ({ _tag: "Ok" as const, value })
+    })
+  )
+  const validation = loaded._tag === "Failed"
+    ? check({
         id: "config:validation",
         status: "fail",
         confidence: "confirmed",
-        message: `Config validation failed: ${error.message}`
-      }),
-      onSuccess: () => check({
+        message: `Config validation failed: ${loaded.error.message}`
+      })
+    : check({
         id: "config:validation",
         status: "ok",
         confidence: "confirmed",
         message: `Config ${pathName} is valid.`
       })
-    })
-  )
 
-  const planned = yield* planRelease(input).pipe(
-    Effect.match({
-      onFailure: (error) => plannedFailure(error.message),
-      onSuccess: plannedSuccess
-    })
-  )
+  const planned = loaded._tag === "Failed"
+    ? plannedFailure(loaded.error.message)
+    : yield* planRelease({
+      workspace: input.root,
+      config: loaded.value.intent,
+      configPath: pathName
+    }).pipe(
+      Effect.match({
+        onFailure: (error) => plannedFailure(error.message),
+        onSuccess: plannedSuccess
+      })
+    )
 
   if (planned._tag === "Failed") {
     return ReleaseDiagnosticReport.make({

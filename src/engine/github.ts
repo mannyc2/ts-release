@@ -13,7 +13,7 @@ import {
 } from "../pipeline/operation.js"
 import { ReleaseHttp, type HttpResult, type ReleaseHttpShape } from "../host/http.js"
 
-const githubApiHeaders = (): ReadonlyArray<HttpHeader> => [
+const githubApiHeaders: ReadonlyArray<HttpHeader> = [
   HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
   HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
 ]
@@ -136,36 +136,26 @@ const githubReleasesUrl = (coordinates: GitHubRepositoryCoordinates): string =>
 const githubReleaseByTagUrl = (coordinates: GitHubRepositoryCoordinates, tag: string): string =>
   githubApiUrl(coordinates, `/releases/tags/${encodeURIComponent(tag)}`)
 
-const githubEnvHeaders = (tokenEnv: string | undefined): ReadonlyArray<HttpEnvHeader> =>
-  tokenEnv === undefined
-    ? []
-    : [
-      HttpEnvHeader.make({
-        name: "Authorization",
-        valueEnv: tokenEnv,
-        prefix: "Bearer "
-      })
-    ]
-
-const githubAuthEnvNames = (tokenEnv: string | undefined): ReadonlyArray<string> =>
-  tokenEnv === undefined ? [] : [tokenEnv]
-
 const githubRequest = (input: {
   readonly method: "GET" | "POST" | "PATCH"
   readonly url: string
   readonly tokenEnv?: string | undefined
   readonly body?: HttpRequestBody | undefined
   readonly headers?: ReadonlyArray<HttpHeader> | undefined
-}): HttpRequestSpec =>
-  HttpRequestSpec.make({
+}): HttpRequestSpec => {
+  const authEnvNames = input.tokenEnv === undefined ? [] : [input.tokenEnv]
+  return HttpRequestSpec.make({
     method: input.method,
     url: input.url,
-    headers: [...(input.headers ?? githubApiHeaders())],
-    envHeaders: githubEnvHeaders(input.tokenEnv),
-    requiredEnv: githubAuthEnvNames(input.tokenEnv),
-    redactedEnv: githubAuthEnvNames(input.tokenEnv),
+    headers: [...(input.headers ?? githubApiHeaders)],
+    envHeaders: input.tokenEnv === undefined
+      ? []
+      : [HttpEnvHeader.make({ name: "Authorization", valueEnv: input.tokenEnv, prefix: "Bearer " })],
+    requiredEnv: authEnvNames,
+    redactedEnv: authEnvNames,
     ...(input.body === undefined ? {} : { body: input.body })
   })
+}
 
 const statusOk = (status: number): boolean =>
   status >= 200 && status < 300
@@ -225,33 +215,53 @@ const releaseBody = (request: GitHubReleaseCreateRequest): HttpJsonRequestBody =
 const responseLinkHeader = (result: HttpResult): string | undefined =>
   result.responseHeaders.find((header) => header.name.toLowerCase() === "link")?.value
 
-const validateReleaseListUrl = (
-  coordinates: GitHubRepositoryCoordinates,
-  url: string
-): Effect.Effect<string, GitHubApiError> =>
+const validateGitHubUrl = (
+  input: {
+    readonly operation: string
+    readonly url: string
+    readonly candidate?: string | undefined
+    readonly hostname: "api.github.com" | "uploads.github.com"
+    readonly invalidReason: string
+    readonly endpointReason: string
+  },
+  validPath: (path: string) => boolean
+): Effect.Effect<URL, GitHubApiError> =>
   Effect.try({
-    try: () => new URL(url),
+    try: () => new URL(input.candidate ?? input.url),
     catch: (cause) =>
       GitHubApiError.make({
-        operation: "validateReleaseListUrl",
-        url,
-        reason: "GitHub pagination URL is not valid.",
+        operation: input.operation,
+        url: input.url,
+        reason: input.invalidReason,
         cause
       })
   }).pipe(
     Effect.flatMap((parsed) => {
-      const expectedPath = `/repos/${encodedRepositoryPath(coordinates)}/releases`
-      if (parsed.protocol === "https:" && parsed.hostname === "api.github.com" && parsed.pathname === expectedPath) {
-        return Effect.succeed(parsed.toString())
+      if (parsed.protocol === "https:" && parsed.hostname === input.hostname && validPath(parsed.pathname)) {
+        return Effect.succeed(parsed)
       }
       return Effect.fail(
         GitHubApiError.make({
-          operation: "validateReleaseListUrl",
-          url,
-          reason: "GitHub pagination URL does not point to the expected releases endpoint."
+          operation: input.operation,
+          url: input.url,
+          reason: input.endpointReason
         })
       )
     })
+  )
+
+const validateReleaseListUrl = (
+  coordinates: GitHubRepositoryCoordinates,
+  url: string
+): Effect.Effect<string, GitHubApiError> =>
+  validateGitHubUrl({
+    operation: "validateReleaseListUrl",
+    url,
+    hostname: "api.github.com",
+    invalidReason: "GitHub pagination URL is not valid.",
+    endpointReason: "GitHub pagination URL does not point to the expected releases endpoint."
+  }, (path) => path === `/repos/${encodedRepositoryPath(coordinates)}/releases`).pipe(
+    Effect.map((parsed) => parsed.toString())
   )
 
 const nextReleaseListUrl = (
@@ -354,37 +364,22 @@ const validateUploadUrl = (
   coordinates: GitHubRepositoryCoordinates,
   uploadUrl: string,
   assetName: string
-): Effect.Effect<string, GitHubApiError> =>
-  Effect.try({
-    try: () => new URL(uploadUrl.split("{")[0] ?? uploadUrl),
-    catch: (cause) =>
-      GitHubApiError.make({
-        operation: "validateUploadUrl",
-        url: uploadUrl,
-        reason: "GitHub upload URL is not valid.",
-        cause
-      })
-  }).pipe(
-    Effect.flatMap((parsed) => {
-      const expectedPrefix = `/repos/${encodedRepositoryPath(coordinates)}/releases/`
-      if (
-        parsed.protocol === "https:" &&
-        parsed.hostname === "uploads.github.com" &&
-        parsed.pathname.startsWith(expectedPrefix) &&
-        parsed.pathname.endsWith("/assets")
-      ) {
-        parsed.searchParams.set("name", assetName)
-        return Effect.succeed(parsed.toString())
-      }
-      return Effect.fail(
-        GitHubApiError.make({
-          operation: "validateUploadUrl",
-          url: uploadUrl,
-          reason: "GitHub upload URL does not point to the expected uploads endpoint."
-        })
-      )
+): Effect.Effect<string, GitHubApiError> => {
+  const expectedPrefix = `/repos/${encodedRepositoryPath(coordinates)}/releases/`
+  return validateGitHubUrl({
+    operation: "validateUploadUrl",
+    url: uploadUrl,
+    candidate: uploadUrl.split("{")[0] ?? uploadUrl,
+    hostname: "uploads.github.com",
+    invalidReason: "GitHub upload URL is not valid.",
+    endpointReason: "GitHub upload URL does not point to the expected uploads endpoint."
+  }, (path) => path.startsWith(expectedPrefix) && path.endsWith("/assets")).pipe(
+    Effect.map((parsed) => {
+      parsed.searchParams.set("name", assetName)
+      return parsed.toString()
     })
   )
+}
 
 const uploadAsset = Effect.fn("githubApi.uploadAsset")(function*(
   http: ReleaseHttpShape,

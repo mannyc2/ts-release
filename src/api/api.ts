@@ -124,7 +124,7 @@ export const build = async (
 }
 
 export const release = async (
-  options: Engine.ReleaseRunOptions = {}
+  options: Engine.RunOptions = {}
 ): Promise<Engine.ReleaseSummary> => {
   const engine = await import("../engine/engine.js")
   return runApiEffect("release", engine.release(options))

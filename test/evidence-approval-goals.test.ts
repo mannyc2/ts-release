@@ -6,8 +6,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
-  executeOperations,
-  validateOperations
+  runEvidenceWorkflow
 } from "../src/engine/executor.js"
 import {
   CommandSpec,
@@ -48,7 +47,7 @@ const TestLayer = Layer.mergeAll(
 const planFromConfig = (config: string) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(config)
-    return yield* planRelease({ root: "." }, intent)
+    return yield* planRelease({ workspace: ".", config: intent })
   })
 
 const operationContext = (plan: ReleasePlan) => ({
@@ -73,15 +72,17 @@ describe("minimal evidence and approval goals", () => {
           expect(operationApprovalRequirements(publish).requiresIrreversibleApproval).toBe(true)
         }
 
-        const withoutExecute = yield* executeOperations(
+        const withoutExecute = yield* runEvidenceWorkflow(
           plan.operations,
+          "publish",
           ExecutionApproval.none,
           operationContext(plan)
         ).pipe(Effect.flip)
         expectTaggedError(withoutExecute, "ExecutionApprovalError")
 
-        const withoutIrreversible = yield* executeOperations(
+        const withoutIrreversible = yield* runEvidenceWorkflow(
           plan.operations,
+          "publish",
           ExecutionApproval.make({ execute: true, approveIrreversible: false }),
           operationContext(plan)
         ).pipe(Effect.flip)
@@ -91,7 +92,12 @@ describe("minimal evidence and approval goals", () => {
     it.effect("read-only validation runs without publish approval", () =>
       Effect.gen(function*() {
         const plan = yield* planFromConfig(minimalConfig)
-        const evidence = yield* validateOperations(plan.operations, operationContext(plan))
+        const evidence = yield* runEvidenceWorkflow(
+          plan.operations,
+          "validation",
+          ExecutionApproval.none,
+          operationContext(plan)
+        )
 
         expect(evidence.records.length).toBeGreaterThan(0)
         expect(evidence.records.every((record) => record.phase === "publish")).toBe(true)
@@ -135,12 +141,10 @@ describe("minimal evidence and approval goals", () => {
 
       const exit = await Effect.runPromiseExit(
         Effect.gen(function*() {
-          const plan = yield* planRelease({ root, configPath })
+          const plan = yield* planRelease({ workspace: root, config: configPath })
           return yield* writeReleaseEvidence(plan, {
-            root,
-            configPath,
             execute: true,
-            approveIrreversible: true
+            approvePublish: true
           })
         }).pipe(Effect.provide(layer))
       )

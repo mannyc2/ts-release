@@ -33,9 +33,14 @@ export const isInsidePathBoundary = (path: Path.Path, root: string, targetPath: 
 export const validateWorkspaceWritePath = (
   path: Path.Path,
   root: string,
-  pathName: string
+  pathName: string,
+  options: { readonly allowAbsolute?: boolean } = {}
 ): WorkspacePathResult => {
-  if (pathName.trim().length === 0 || hasParentTraversal(pathName)) {
+  if (
+    pathName.trim().length === 0 ||
+    hasParentTraversal(pathName) ||
+    (options.allowAbsolute === false && path.isAbsolute(pathName))
+  ) {
     return {
       _tag: "Invalid",
       reason: "empty-or-parent-traversal"
@@ -63,9 +68,10 @@ export const resolveWorkspaceWritePathEffect = <E>(
   path: Path.Path,
   root: string,
   pathName: string,
-  makeError: (pathName: string, reason: string) => E
+  makeError: (pathName: string, reason: string) => E,
+  options?: { readonly allowAbsolute?: boolean }
 ): Effect.Effect<string, E> => {
-  const result = validateWorkspaceWritePath(path, root, pathName)
+  const result = validateWorkspaceWritePath(path, root, pathName, options)
   return result._tag === "Ok"
     ? Effect.succeed(result.path)
     : Effect.fail(makeError(pathName, workspacePathBoundaryReasonMessage(result.reason)))

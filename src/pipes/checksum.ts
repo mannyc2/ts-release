@@ -1,14 +1,15 @@
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import {
   Artifact,
   artifactPathBaseName,
   ChecksumFileExtra
 } from "../pipeline/artifact.js"
-import { ChecksumFileContent, Operation, WriteFileAction } from "../pipeline/operation.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import { FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../pipeline/operation.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import { renderArtifactNameEffect } from "../pipeline/template.js"
+import { renderArtifactNameEffect, validateSafeRelativePathEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("ReleaseConfigChecksum")({
   algorithm: Schema.optionalKey(Schema.Literals(["sha256", "sha512"])),
@@ -17,28 +18,49 @@ export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("
 
 const defaultChecksumNameTemplate = "{name}_{version}_checksums.txt"
 
+export interface ResolvedChecksum {
+  readonly algorithm: "sha256" | "sha512"
+  readonly nameTemplate: string
+}
+
+export const resolveChecksum = (
+  raw: ReleaseConfigChecksum | undefined
+): Option.Option<ResolvedChecksum> =>
+  raw === undefined
+    ? Option.none()
+    : Option.some({
+      algorithm: raw.algorithm ?? "sha256",
+      nameTemplate: raw.nameTemplate ?? defaultChecksumNameTemplate
+    })
+
+const isChecksumFileInput = (artifact: Artifact): boolean => {
+  if (artifact.kind === "package" || artifact.kind === "checksum-file" || artifact.kind === "signature") {
+    return false
+  }
+  if (artifact.extra?._tag === "file" && artifact.extra.format === "directory") {
+    return false
+  }
+  return true
+}
+
 const checksumInputs = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Artifact> =>
   artifacts
-    .filter((artifact) => artifact.kind !== "checksum-file" && artifact.kind !== "signature")
+    .filter(isChecksumFileInput)
     .sort((left, right) => artifactPathBaseName(left.path).localeCompare(artifactPathBaseName(right.path)))
 
-export const checksumPipe: Pipe<ReleaseConfigChecksum> = {
+export const checksumPlanner: FeaturePlanner<ResolvedChecksum> = {
   id: "checksum",
-  phase: "process",
-  section: (config) => config.checksum,
   plan: (section, state) =>
     Effect.gen(function*() {
-      const algorithm = section.algorithm ?? "sha256"
-      const nameTemplate = section.nameTemplate ?? defaultChecksumNameTemplate
+      const { algorithm, nameTemplate } = section
       // Catalog-file artifacts are contributed by later catalog-phase pipes,
       // so process-phase checksums only see build/import/archive artifacts.
-      const inputs = checksumInputs(state.artifacts.artifacts)
-      const entries = inputs.map((artifact) => ({
-        artifactId: artifact.id,
-        baseName: artifactPathBaseName(artifact.path)
-      }))
+      const inputs = checksumInputs(state.artifacts)
       const fileName = yield* renderArtifactNameEffect(nameTemplate, { identity: state.identity }, { pipeId: "checksum", field: "checksum.nameTemplate" })
-      const path = `.release/artifacts/${fileName}`
+      const path = yield* validateSafeRelativePathEffect(
+        `.release/artifacts/${fileName}`,
+        { pipeId: "checksum", field: "checksum.nameTemplate" }
+      )
       const artifact = Artifact.make({
         id: "checksum",
         kind: "checksum-file",
@@ -61,9 +83,11 @@ export const checksumPipe: Pipe<ReleaseConfigChecksum> = {
             description: `Write ${algorithm} checksum file ${fileName}.`,
             action: WriteFileAction.make({
               path,
-              contents: ChecksumFileContent.make({
-                algorithm,
-                entries
+              contents: FilePartsContent.make({
+                parts: inputs.flatMap((input) => [
+                  Sha256Hole.make({ artifactId: input.id }),
+                  `  ${artifactPathBaseName(input.path)}\n`
+                ])
               })
             })
           })

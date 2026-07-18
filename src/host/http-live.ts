@@ -4,7 +4,7 @@ import * as Layer from "effect/Layer"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
 import { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
-import { HttpError, HttpResult, ReleaseHttp } from "./http.js"
+import { HttpError, ReleaseHttp, type HttpResult } from "./http.js"
 import { nowIso, readOptionalEnv } from "./platform.js"
 
 
@@ -122,7 +122,7 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
               )
             const endedAt = yield* nowIso()
             const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-            return HttpResult.make({
+            return {
               request,
               status: response.status,
               json,
@@ -130,7 +130,7 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
               startedAt,
               endedAt,
               durationMillis: Math.max(0, ended - started)
-            })
+            } satisfies HttpResult
           })
       }
     })

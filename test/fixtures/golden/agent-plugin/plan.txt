@@ -1,0 +1,60 @@
+release-example-agent-plugin@0.1.0
+commit: example
+evidence: .release/evidence
+artifacts: 3
+surfaces: 3
+operations: 11
+
+artifacts:
+  - plugin .release/artifacts/release-example-agent-plugin_0.1.0.zip [archive] produced-by=archive platform=none checksum=none
+  - checksum .release/artifacts/release-example-agent-plugin_0.1.0_checksums.txt [checksum-file] produced-by=checksum platform=none checksum=none
+  - catalog-file-claude-marketplace marketplace-checkout/.claude-plugin/marketplace.json [catalog-file] produced-by=catalog:file platform=none checksum=none
+
+surfaces:
+  - catalog operations=5
+  - file operations=1
+  - github operations=3
+
+operations by risk:
+  read-only:
+    - github:github-release-dry-run Record simulated GitHub release dry-run validation.
+    note: GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.
+    - github:github-release-verify-api Verify the GitHub release through the GitHub API.
+    github-api: verify release owner/agent-plugin v0.1.0 assets=2
+  writes-local:
+    - archive:plugin Create zip archive release-example-agent-plugin_0.1.0.zip.
+    stage: archive artifacts=1
+    approval: execute
+    - checksum:write Write sha256 checksum file release-example-agent-plugin_0.1.0_checksums.txt.
+    write: .release/artifacts/release-example-agent-plugin_0.1.0_checksums.txt
+    approval: execute
+    - catalog:claude-marketplace:render Render claude-marketplace catalog file marketplace-checkout/.claude-plugin/marketplace.json.
+    write: marketplace-checkout/.claude-plugin/marketplace.json
+    approval: execute
+    - catalog:claude-marketplace:checkout Create ts-release/release-example-agent-plugin-0.1.0.
+    command: git -C marketplace-checkout checkout -B ts-release/release-example-agent-plugin-0.1.0
+    argv: ["git","-C","marketplace-checkout","checkout","-B","ts-release/release-example-agent-plugin-0.1.0"]
+    approval: execute
+    - catalog:claude-marketplace:push:add Stage marketplace.json for catalog.
+    command: git -C marketplace-checkout add .claude-plugin/marketplace.json
+    argv: ["git","-C","marketplace-checkout","add",".claude-plugin/marketplace.json"]
+    approval: execute
+    - catalog:claude-marketplace:push:commit Commit marketplace.json for catalog.
+    command: git -C marketplace-checkout commit -m Update release-example-agent-plugin to 0.1.0
+    argv: ["git","-C","marketplace-checkout","commit","-m","Update release-example-agent-plugin to 0.1.0"]
+    approval: execute
+  -- approval boundary: externally visible and irreversible operations require explicit approval --
+  externally-visible:
+    - github:github-release-create Create GitHub release for release-example-agent-plugin@0.1.0.
+    github-api: create release owner/agent-plugin v0.1.0 assets=2
+    approval: execute
+    - catalog:claude-marketplace:push Push claude-marketplace catalog update for release-example-agent-plugin@0.1.0.
+    command: git -C marketplace-checkout push -u origin ts-release/release-example-agent-plugin-0.1.0
+    argv: ["git","-C","marketplace-checkout","push","-u","origin","ts-release/release-example-agent-plugin-0.1.0"]
+    approval: execute
+    - catalog:claude-marketplace:pull-request Open claude-marketplace catalog pull request.
+    command: gh pr create --repo owner/claude-marketplace --title Update release-example-agent-plugin to 0.1.0 --body Push claude-marketplace catalog update for release-example-agent-plugin@0.1.0. --head ts-release/release-example-agent-plugin-0.1.0
+    argv: ["gh","pr","create","--repo","owner/claude-marketplace","--title","Update release-example-agent-plugin to 0.1.0","--body","Push claude-marketplace catalog update for release-example-agent-plugin@0.1.0.","--head","ts-release/release-example-agent-plugin-0.1.0"]
+    approval: execute
+  irreversible:
+    - none

@@ -20,21 +20,21 @@ interface VariantCriteria {
   readonly targetTriple?: string | undefined
 }
 
-const variantMatches = (
-  variant: NonNullable<TestPlan["artifacts"][number]["variant"]> | undefined,
+const platformMatches = (
+  platform: NonNullable<TestPlan["artifacts"][number]["platform"]> | undefined,
   criteria: VariantCriteria
 ): boolean =>
-  variant !== undefined &&
-  (criteria.os === undefined || variant.os === criteria.os) &&
-  (criteria.arch === undefined || variant.arch === criteria.arch) &&
-  (criteria.libc === undefined || variant.libc === criteria.libc) &&
-  (criteria.targetTriple === undefined || variant.targetTriple === criteria.targetTriple)
+  platform !== undefined &&
+  (criteria.os === undefined || platform.os === criteria.os) &&
+  (criteria.arch === undefined || platform.arch === criteria.arch) &&
+  (criteria.libc === undefined || platform.libc === criteria.libc) &&
+  (criteria.targetTriple === undefined || platform.targetTriple === criteria.targetTriple)
 
 const findArtifactsByVariant = (
   plan: TestPlan,
   criteria: VariantCriteria
 ): ReadonlyArray<TestPlan["artifacts"][number]> =>
-  plan.artifacts.filter((artifact) => variantMatches(artifact.variant, criteria))
+  plan.artifacts.filter((artifact) => platformMatches(artifact.platform, criteria))
 
 const findRequiredArtifactVariant = (
   plan: TestPlan,
@@ -241,7 +241,7 @@ describe("planner", () => {
         }
       }))
 
-    it.effect("adds imported artifacts to the artifact inventory", () =>
+    it.effect("adds imported artifacts and their build checks to the canonical plan", () =>
       Effect.gen(function*() {
         const importedConfig = releaseConfig({
           artifacts: [
@@ -256,7 +256,20 @@ describe("planner", () => {
         const plan = yield* createPlan(importedConfig)
 
         expect(plan.artifacts.map((artifact) => artifact.id)).toContain("archive")
-        expect(plan.operations.map((operation) => operation.id)).not.toContain("import-artifacts:archive:exists")
+        expect(plan.operations.map((operation) => operation.id)).toEqual(["import-artifacts:archive:exists"])
+      }))
+
+    it.effect("flows a neutral archive through checksum and GitHub planning", () =>
+      Effect.gen(function*() {
+        const plan = yield* createPlan(releaseConfig({ artifacts: [], archives: [{ files: ["docs/**"] }],
+          checksum: {}, publish: { github: { repository: "owner/repo" } } }))
+        const archive = plan.artifacts.find(({ kind }) => kind === "archive")
+        const checksum = plan.artifacts.find(({ kind }) => kind === "checksum-file")
+        const github = plan.operations.find(({ id }) => id === "github:github-release-create")
+        expect(checksum?.extra).toMatchObject({ _tag: "checksum-file", coversArtifactIds: [archive!.id] })
+        expect(github?.action._tag).toBe("github-release-create")
+        if (github?.action._tag === "github-release-create")
+          expect(github.action.assets.map(({ artifactId }) => artifactId)).toContain(archive!.id)
       }))
 
     it.effect("renders summary and Markdown review output", () =>
@@ -370,7 +383,7 @@ describe("planner", () => {
       files: new Map([["dist/release-0.1.0-linux-x64", "compiled binary"]])
     }),
   ))((it) => {
-    it.effect("adds build artifacts to the artifact inventory", () =>
+    it.effect("adds build artifacts to the canonical plan", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
@@ -383,19 +396,24 @@ describe("planner", () => {
         expect(artifact).toMatchObject({
           id: "release-cli-linux-x64",
           path: "dist/release-0.1.0-linux-x64",
-          format: "executable",
-          consumers: [],
-          sizeBytes: 0,
-          variant: {
+          kind: "executable",
+          producedBy: "build:bun",
+          platform: {
             os: "linux",
             arch: "x64",
             libc: "glibc",
             targetTriple: "bun-linux-x64-baseline"
+          },
+          extra: {
+            _tag: "executable",
+            binary: "release",
+            extension: "",
+            builderId: "bun"
           }
         })
       }))
 
-    it.effect("selects artifact inventory items by installable variant", () =>
+    it.effect("selects canonical artifacts by installable platform", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [],
@@ -509,7 +527,7 @@ describe("planner", () => {
       files: new Map([["dist/release-darwin-arm64", "compiled binary"]])
     }),
   ))((it) => {
-    it.effect("preserves direct artifact variant metadata", () =>
+    it.effect("preserves direct artifact platform metadata", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
           artifacts: [
@@ -531,8 +549,9 @@ describe("planner", () => {
 
         expect(plan.artifacts[0]).toMatchObject({
           id: "cli-darwin-arm64",
-          format: "executable",
-          variant: {
+          kind: "executable",
+          producedBy: "import-artifacts",
+          platform: {
             os: "darwin",
             arch: "arm64",
             binaryName: "release",

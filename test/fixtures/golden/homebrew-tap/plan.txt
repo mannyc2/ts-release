@@ -3,17 +3,19 @@ commit: example
 evidence: .release/evidence
 artifacts: 2
 surfaces: 1
-operations: 5
+operations: 6
 
 artifacts:
-  - archive artifacts/release-example-homebrew-0.1.0.tgz [tarball] size=0 checksum=none
-  - homebrew-formula .release/generated/release-example-homebrew.rb [file] size=0 checksum=none
+  - archive artifacts/release-example-homebrew-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
+  - homebrew-formula .release/generated/release-example-homebrew.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
 
 surfaces:
   - homebrew operations=5
 
 operations by risk:
   read-only:
+    - import-artifacts:archive:exists Verify imported artifact archive exists.
+    check-file: artifacts/release-example-homebrew-0.1.0.tgz
     - homebrew:brew-audit Record simulated Homebrew formula validation.
     note: Homebrew formula validation is simulated by the deterministic release plan.
   writes-local:

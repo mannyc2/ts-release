@@ -10,12 +10,12 @@ import * as PlatformError from "effect/PlatformError"
 import * as Schema from "effect/Schema"
 import { CommandSpec, HttpHeader, HttpRequestSpec } from "../src/pipeline/operation.js"
 import {
-  CommandResult,
   CommandRunnerError,
   ReleaseCommandRunner,
+  type CommandResult,
   type ReleaseCommandRunnerShape
 } from "../src/host/host.js"
-import { HttpError, HttpResult, ReleaseHttp } from "../src/host/http.js"
+import { HttpError, ReleaseHttp, type HttpResult } from "../src/host/http.js"
 
 export interface TestCommandResponse {
   readonly exitCode: number
@@ -30,6 +30,8 @@ export interface TestCommandRunnerOptions {
   readonly commands?: ReadonlyMap<string, TestCommandResponse> | undefined
   readonly timestamps?: ReadonlyArray<string> | undefined
   readonly pathLayer?: Layer.Layer<Path.Path> | undefined
+  readonly onWriteFileString?: ((path: string, contents: string) => void) | undefined
+  readonly failWriteFileString?: boolean | undefined
 }
 
 export interface TestHttpResponse {
@@ -62,6 +64,15 @@ const notFound = (method: string, path: string): PlatformError.PlatformError =>
     method,
     pathOrDescriptor: path,
     description: "File not found"
+  })
+
+const permissionDenied = (method: string, path: string): PlatformError.PlatformError =>
+  PlatformError.systemError({
+    _tag: "PermissionDenied",
+    module: "FileSystem",
+    method,
+    pathOrDescriptor: path,
+    description: "Operation not permitted"
   })
 
 const fileInfo = (sizeBytes: number): FileSystem.File.Info => ({
@@ -280,8 +291,16 @@ export const makeTestCommandRunnerLayer = (
 
       writeFileString: (path, data) =>
         Effect.sync(() => {
-          files.set(path, data)
-        })
+          options.onWriteFileString?.(path, data)
+        }).pipe(
+          Effect.flatMap(() =>
+            options.failWriteFileString === true
+              ? Effect.fail(permissionDenied("writeFileString", path))
+              : Effect.sync(() => {
+                files.set(path, data)
+              })
+          )
+        )
     }),
     options.pathLayer ?? BunPath.layer,
     Layer.succeed(Crypto.Crypto)(
@@ -314,7 +333,7 @@ export const makeTestCommandRunnerLayer = (
             stdout: "",
             stderr: ""
           }
-          return CommandResult.make({
+          return {
             command,
             exitCode: response.exitCode,
             stdout: response.stdout,
@@ -322,7 +341,7 @@ export const makeTestCommandRunnerLayer = (
             startedAt,
             endedAt,
             durationMillis: 0
-          })
+          } satisfies CommandResult
         })
     }),
     ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
@@ -358,7 +377,7 @@ export const makeTestReleaseHttpLayer = (
           )
         }
         const endedAt = nextTimestamp()
-        return HttpResult.make({
+        return {
           request,
           status: response.status,
           json: response.json,
@@ -366,7 +385,7 @@ export const makeTestReleaseHttpLayer = (
           startedAt,
           endedAt,
           durationMillis: 0
-        })
+        } satisfies HttpResult
       })
   })
 }

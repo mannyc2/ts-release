@@ -1,3 +1,4 @@
 github:github-release-create	externally-visible
 github:github-release-dry-run	read-only
 github:github-release-verify-api	read-only
+import-artifacts:archive:exists	read-only

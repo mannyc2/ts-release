@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import {
   Artifact,
@@ -8,7 +9,7 @@ import {
 } from "../pipeline/artifact.js"
 import { Operation, PyPiWheelIntent, StageAction } from "../pipeline/operation.js"
 import { renderArtifactNameEffect } from "../pipeline/template.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 
 export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiWheelBuild>(
@@ -28,6 +29,7 @@ export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiW
 }) {}
 
 export type PyPiWheelSection = ReleaseConfigPyPiWheelBuild | ReadonlyArray<ReleaseConfigPyPiWheelBuild>
+export type ResolvedPyPiWheel = ReleaseConfigPyPiWheelBuild
 
 const isWheelArray = (section: PyPiWheelSection): section is ReadonlyArray<ReleaseConfigPyPiWheelBuild> =>
   Array.isArray(section)
@@ -35,20 +37,18 @@ const isWheelArray = (section: PyPiWheelSection): section is ReadonlyArray<Relea
 const wheels = (section: PyPiWheelSection): ReadonlyArray<ReleaseConfigPyPiWheelBuild> =>
   isWheelArray(section) ? section : [section]
 
-const sectionFromConfig = (config: {
-  readonly pypiWheel?: PyPiWheelSection | undefined
-}): PyPiWheelSection | undefined =>
-  config.pypiWheel
+export const resolvePyPiWheels = (
+  raw: PyPiWheelSection | undefined
+): Option.Option<ReadonlyArray<ResolvedPyPiWheel>> =>
+  raw === undefined ? Option.none() : Option.some(wheels(raw))
 
-export const pypiWheelPipe: Pipe<PyPiWheelSection> = {
+export const pypiWheelPlanner: FeaturePlanner<ReadonlyArray<ResolvedPyPiWheel>> = {
   id: "build:pypi-wheel",
-  phase: "build",
-  section: sectionFromConfig,
   plan: (section, state) =>
     Effect.gen(function*() {
       const artifacts = []
       const operations = []
-      for (const wheel of wheels(section)) {
+      for (const wheel of section) {
         const path = yield* renderArtifactNameEffect(wheel.path, { identity: state.identity }, { pipeId: "build:pypi-wheel", field: `pypiWheel.${wheel.id}.path` })
         artifacts.push(Artifact.make({
           id: wheel.id,

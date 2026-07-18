@@ -18,6 +18,7 @@ import {
 import {
   ReleaseConfigScoopPublish
 } from "../pipes/catalog-scoop.js"
+import { ReleaseConfigCatalogEntry } from "../pipes/catalog-generic.js"
 import {
   ReleaseConfigManualArtifact
 } from "../pipes/import-artifacts.js"
@@ -87,6 +88,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   artifacts: Schema.optionalKey(Schema.Array(ReleaseConfigManualArtifact)),
   archives: Schema.optionalKey(Schema.Array(ReleaseConfigArchive)),
   checksum: Schema.optionalKey(ReleaseConfigChecksum),
+  catalogs: Schema.optionalKey(Schema.Array(ReleaseConfigCatalogEntry)),
   publish: ReleaseConfigPublish,
   evidence: Schema.optionalKey(Schema.Union([SafeRelativePath, ReleaseConfigEvidence]))
 }) {}
@@ -94,7 +96,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
 export const ReleaseConfig = ReleaseIntent
 export type ReleaseConfig = typeof ReleaseConfig.Type
 
-export const decodeReleaseConfig = Schema.decodeUnknownEffect(ReleaseConfig)
+export const decodeReleaseConfig = Schema.decodeUnknownEffect(ReleaseConfig, { onExcessProperty: "error" })
 
 export const releaseConfigJsonSchemaDocument = (): JsonSchema.JsonSchema => {
   const document = Schema.toJsonSchemaDocument(ReleaseConfig)

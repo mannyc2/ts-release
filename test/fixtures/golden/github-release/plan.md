@@ -5,9 +5,9 @@
 summary: release-example-github@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 3
+operations: 4
 risk:
-  read-only: 2
+  read-only: 3
   writes-local: 0
   externally-visible: 1
   irreversible: 0
@@ -22,11 +22,18 @@ approval-required operations:
 
 ## Artifacts
 
-- - archive artifacts/release-example-github-0.1.0.tgz [tarball] size=0 checksum=none
+- archive artifacts/release-example-github-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
 
 ## Operations By Risk
 
 ### read-only
+
+#### import-artifacts:archive:exists
+
+- target: none
+- risk: read-only
+- approval: none
+- why: Verify imported artifact archive exists.
 
 #### github:github-release-dry-run
 

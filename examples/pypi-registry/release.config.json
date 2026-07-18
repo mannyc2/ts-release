@@ -16,6 +16,7 @@
   ],
   "publish": {
     "pypi": {
+      "artifactIds": ["wheel"],
       "repositoryUrl": "https://test.pypi.org/legacy/",
       "usernameEnv": "TWINE_USERNAME",
       "passwordEnv": "TWINE_PASSWORD"

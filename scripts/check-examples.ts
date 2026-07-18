@@ -10,6 +10,17 @@ import { planRelease, renderReleasePlan } from "../src/engine/engine.js"
 
 const root = process.cwd()
 const expectedSnippets = new Map<string, ReadonlyArray<string>>([
+  ["agent-plugin", [
+    "surfaces: 3",
+    "  - catalog operations=5",
+    "  - file operations=1",
+    "  - github operations=3",
+    "archive:plugin",
+    "checksum:write",
+    "catalog:claude-marketplace:render",
+    "github:github-release-create",
+    "catalog:claude-marketplace:pull-request"
+  ]],
   ["github-release", [
     "surfaces: 1",
     "  - github operations=",

@@ -13,9 +13,13 @@ import {
   readOnlyCommandValidationOperation,
   validationNoteOperation
 } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
-import { compactTrustedPublishing, trustedPublishingAuthEnvNames } from "./shared.js"
+import {
+  compactTrustedPublishing,
+  findCatalogArtifact,
+  trustedPublishingAuthEnvNames
+} from "./shared.js"
 
 const TrustedPublishingProvider = Schema.Literals(["github-actions"])
 
@@ -32,7 +36,8 @@ export class ReleaseConfigPyPiPublish extends Schema.Class<ReleaseConfigPyPiPubl
   pythonExecutable: Schema.optionalKey(Schema.String),
   usernameEnv: Schema.optionalKey(Schema.String),
   passwordEnv: Schema.optionalKey(Schema.String),
-  trustedPublishing: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigPyPiTrustedPublishing]))
+  trustedPublishing: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigPyPiTrustedPublishing])),
+  artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
 }) {}
 
 interface PyPiTrustedPublishingSection {
@@ -40,40 +45,36 @@ interface PyPiTrustedPublishingSection {
   readonly workflow: string
 }
 
-interface PyPiPublishSection {
+export interface ResolvedPyPiPublish {
   readonly repositoryUrl: string
-  readonly pythonExecutable?: string | undefined
+  readonly pythonExecutable: string
   readonly usernameEnv?: string | undefined
   readonly passwordEnv?: string | undefined
   readonly trustedPublishing?: PyPiTrustedPublishingSection | undefined
+  readonly artifactIds?: readonly [string, ...Array<string>] | undefined
 }
 
 const twineUsernameEnv = "TWINE_USERNAME"
 const twinePasswordEnv = "TWINE_PASSWORD"
 
-const sectionFromConfig = (config: {
-  readonly publish: {
-    readonly pypi?: boolean | ReleaseConfigPyPiPublish | undefined
-  }
-}): PyPiPublishSection | undefined => {
-  const publish = config.publish.pypi
+export const resolvePyPiPublish = (
+  publish: boolean | ReleaseConfigPyPiPublish | undefined
+): ResolvedPyPiPublish | undefined => {
   if (publish === undefined || publish === false) {
     return undefined
   }
   const object = publish === true ? undefined : publish
   return {
     repositoryUrl: object?.repositoryUrl ?? "https://upload.pypi.org/legacy/",
-    pythonExecutable: object?.pythonExecutable,
+    pythonExecutable: object?.pythonExecutable ?? "python",
     usernameEnv: object?.usernameEnv,
     passwordEnv: object?.passwordEnv,
-    trustedPublishing: compactTrustedPublishing(object?.trustedPublishing)
+    trustedPublishing: compactTrustedPublishing(object?.trustedPublishing),
+    artifactIds: object?.artifactIds
   }
 }
 
-const pythonExecutable = (section: PyPiPublishSection): string =>
-  section.pythonExecutable ?? "python"
-
-const envNames = (section: PyPiPublishSection): ReadonlyArray<string> =>
+const envNames = (section: ResolvedPyPiPublish): ReadonlyArray<string> =>
   section.trustedPublishing !== undefined
     ? trustedPublishingAuthEnvNames
     : section.usernameEnv === undefined || section.passwordEnv === undefined
@@ -81,17 +82,17 @@ const envNames = (section: PyPiPublishSection): ReadonlyArray<string> =>
     : [section.usernameEnv, section.passwordEnv]
 
 const twineAuthCommand = (
-  section: PyPiPublishSection,
+  section: ResolvedPyPiPublish,
   args: ReadonlyArray<string>
 ): CommandSpec =>
   CommandSpec.make({
-    executable: pythonExecutable(section),
+    executable: section.pythonExecutable,
     args: ["-m", "twine", ...args],
     requiredEnv: envNames(section),
     redactedEnv: envNames(section)
   })
 
-const validateAuthConfig = (section: PyPiPublishSection): Effect.Effect<void, PlanError> => {
+const validateAuthConfig = (section: ResolvedPyPiPublish): Effect.Effect<void, PlanError> => {
   const hasUsername = section.usernameEnv !== undefined
   const hasPassword = section.passwordEnv !== undefined
 
@@ -123,10 +124,23 @@ const validateAuthConfig = (section: PyPiPublishSection): Effect.Effect<void, Pl
   }))
 }
 
-const pypiArtifacts = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Artifact> =>
-  artifacts.filter((artifact) =>
-    artifact.kind === "wheel" || (artifact.kind === "file" && artifact.id === "wheel")
-  )
+const pypiArtifactErrorSource = {
+  pipeId: "publish:pypi",
+  field: "publish.pypi.artifactIds",
+  target: "PyPI"
+}
+
+const pypiArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
+  section: ResolvedPyPiPublish,
+  artifacts: ReadonlyArray<Artifact>
+) {
+  if (section.artifactIds !== undefined) {
+    return yield* Effect.forEach(section.artifactIds, (artifactId) =>
+      findCatalogArtifact(pypiArtifactErrorSource, artifacts, artifactId)
+    )
+  }
+  return artifacts.filter((artifact) => artifact.kind === "wheel")
+})
 
 const rejectInvalidArtifacts = (
   artifacts: ReadonlyArray<Artifact>
@@ -151,7 +165,7 @@ const rejectInvalidArtifacts = (
   return Effect.void
 }
 
-const pypiAuthOperation = (section: PyPiPublishSection): ReadonlyArray<Operation> =>
+const pypiAuthOperation = (section: ResolvedPyPiPublish): ReadonlyArray<Operation> =>
   section.trustedPublishing === undefined
     ? []
     : [
@@ -165,7 +179,7 @@ const pypiAuthOperation = (section: PyPiPublishSection): ReadonlyArray<Operation
     ]
 
 const pypiPublishArgs = (
-  section: PyPiPublishSection,
+  section: ResolvedPyPiPublish,
   artifactPaths: ReadonlyArray<string>
 ): ReadonlyArray<string> => [
   "upload",
@@ -175,14 +189,12 @@ const pypiPublishArgs = (
   ...artifactPaths
 ]
 
-export const publishPyPiPipe: Pipe<PyPiPublishSection> = {
+export const publishPyPiPlanner: FeaturePlanner<ResolvedPyPiPublish> = {
   id: "publish:pypi",
-  phase: "publish",
-  section: sectionFromConfig,
   plan: (section, state) =>
     Effect.gen(function*() {
       yield* validateAuthConfig(section)
-      const artifacts = pypiArtifacts(state.artifacts.artifacts)
+      const artifacts = yield* pypiArtifacts(section, state.artifacts)
       yield* rejectInvalidArtifacts(artifacts)
       const artifactPaths = artifacts.map((artifact) => artifact.path)
       return {
@@ -192,20 +204,20 @@ export const publishPyPiPipe: Pipe<PyPiPublishSection> = {
             id: "pypi:python-version",
             pipeId: "publish:pypi",
             description: "Check Python CLI availability.",
-            command: noAuthCommand(pythonExecutable(section), ["--version"])
+            command: noAuthCommand(section.pythonExecutable, ["--version"])
           }),
           readOnlyCommandValidationOperation({
             id: "pypi:twine-version",
             pipeId: "publish:pypi",
             description: "Check Twine CLI availability.",
-            command: noAuthCommand(pythonExecutable(section), ["-m", "twine", "--version"])
+            command: noAuthCommand(section.pythonExecutable, ["-m", "twine", "--version"])
           }),
           ...pypiAuthOperation(section),
           readOnlyCommandValidationOperation({
             id: "pypi:twine-check",
             pipeId: "publish:pypi",
             description: "Validate Python distribution metadata with twine check.",
-            command: noAuthCommand(pythonExecutable(section), ["-m", "twine", "check", ...artifactPaths])
+            command: noAuthCommand(section.pythonExecutable, ["-m", "twine", "check", ...artifactPaths])
           }),
           Operation.make({
             id: "pypi:twine-upload",

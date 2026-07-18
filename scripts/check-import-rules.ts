@@ -129,6 +129,12 @@ const failure = (
 ): string =>
   `${location(source, reference.position)} imports ${JSON.stringify(reference.specifier)}: ${reason}`
 
+const isIdentityCommandCapabilityImport = (reference: ImportReference): boolean => {
+  const file = toDisplayPath(reference.file)
+  const target = relativeTarget(reference)
+  return isUnder(file, "src/pipeline/identity") && target === "src/host/host.js"
+}
+
 const checkPipelineImport = (
   source: ts.SourceFile,
   reference: ImportReference
@@ -139,21 +145,14 @@ const checkPipelineImport = (
   if (allowlisted(reference)) {
     return undefined
   }
+  if (isIdentityCommandCapabilityImport(reference)) {
+    return undefined
+  }
   const target = relativeTarget(reference)
   if (target !== undefined && isUnder(target, "src/pipeline")) {
     return undefined
   }
-  if (toDisplayPath(reference.file) === "src/pipeline/pipeline.ts" && target !== undefined && isUnder(target, "src/pipes")) {
-    return undefined
-  }
-  if (
-    reference.typeOnly
-    && (toDisplayPath(reference.file) === "src/pipeline/pipe.ts" || toDisplayPath(reference.file) === "src/pipeline/runner.ts")
-    && reference.specifier === "../config/schema.js"
-  ) {
-    return undefined
-  }
-  return failure(source, reference, "pipeline/ may import only effect/*, pipeline-local modules, and the static pipe registry.")
+  return failure(source, reference, "pipeline/ may import only effect/* and pipeline-local modules.")
 }
 
 const checkPipeImport = (
@@ -214,6 +213,14 @@ const checkEngineImport = (
     return undefined
   }
   const target = relativeTarget(reference)
+  const file = toDisplayPath(reference.file)
+  if (
+    target !== undefined
+    && isUnder(target, "src/pipes")
+    && (file === "src/engine/resolved-release.ts" || file === "src/engine/planner-schedule.ts")
+  ) {
+    return undefined
+  }
   if (
     target !== undefined &&
     (
@@ -282,6 +289,47 @@ const checkBareEffectImports = (file: string): Array<string> => {
   )
 }
 
+const hardCutScanFiles = [
+  ...[
+    "src",
+    "scripts",
+    "apps/release-ts/src",
+    "apps/release-ts/scripts",
+    "apps/ts-release-action/src"
+  ].flatMap((directory) => {
+    const path = join(root, directory)
+    return existsSync(path) ? collectTypeScriptFiles(path) : []
+  }),
+  join(root, "apps/ts-release-action/action.yml")
+].filter((file) => existsSync(file) && toDisplayPath(file) !== "scripts/check-import-rules.ts")
+
+const hardCutTerms = [
+  ["ReleaseState", "durable ReleaseState is forbidden after the v3 cut"],
+  ["ArtifactCatalog", "Artifact is the sole artifact vocabulary"],
+  ["ArtifactInventoryItem", "the projected artifact inventory is forbidden"],
+  ["ReleasePlanDocument", "ReleasePlan is the sole plan type"],
+  ["plan.state", "release-plan/v3 is flat"],
+  ["release-plan/v2", "v2 plan readers and encoders are forbidden"],
+  [["target", "count"].join("_"), "the Action emits surface_count only"]
+] as const
+
+const hardCutViolations = (file: string): Array<string> => {
+  const source = readFileSync(file, "utf8")
+  return hardCutTerms.flatMap(([term, reason]) => {
+    const position = source.indexOf(term)
+    if (position < 0) {
+      return []
+    }
+    const line = source.slice(0, position).split("\n").length
+    return [`${toDisplayPath(file)}:${line}: ${reason}; found ${JSON.stringify(term)}`]
+  })
+}
+
+const forbiddenCarrierFiles = [
+  "src/pipeline/catalog.ts",
+  "src/engine/plan-document.ts"
+]
+
 const files = existsSync(sourceRoot) ? collectTypeScriptFiles(sourceRoot) : []
 const bareEffectFiles = bareEffectScanRoots.flatMap((directory) => {
   const path = join(root, directory)
@@ -289,7 +337,11 @@ const bareEffectFiles = bareEffectScanRoots.flatMap((directory) => {
 })
 const failures = [
   ...files.flatMap(checkFile),
-  ...bareEffectFiles.flatMap(checkBareEffectImports)
+  ...bareEffectFiles.flatMap(checkBareEffectImports),
+  ...hardCutScanFiles.flatMap(hardCutViolations),
+  ...forbiddenCarrierFiles.flatMap((file) =>
+    existsSync(join(root, file)) ? [`${file}: compatibility carrier file must be deleted`] : []
+  )
 ]
 
 if (failures.length > 0) {

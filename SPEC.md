@@ -53,11 +53,13 @@ Reusable configs live in `templates/`, runnable fixtures live in `examples/`, an
 ## Direction: 0.1
 
 The 0.1 direction is a GoReleaser-shaped pipeline adapted to this package's
-plan-first safety model. Release state becomes serializable data flowing
-through a static ordered list of pipes over a typed artifact catalog:
-`identity -> defaults -> build -> process -> catalog -> publish -> verify`.
-Each feature owns one config section, one pipe, and its defaults; the central
-normalizer and adapter layer have been replaced by pipe-owned section planning.
+plan-first safety model. The engine decodes release intent once, resolves
+repository identity, calls each present feature's pure resolver once, and
+binds the resulting typed sections into a static ordered planner schedule:
+`decode -> identity -> resolve -> build -> process -> catalog -> publish -> verify`.
+Each feature owns its wire Schema, pure resolver, and typed planner. The
+pipeline core knows only scheduled planners and owns the deterministic,
+validated contribution fold; it never reads raw config.
 The build phase declares canonical platform targets and dispatches to pure
 builder adapters, with Bun, command, and prebuilt builders in 0.1.
 
@@ -77,8 +79,8 @@ The primary output of the package is a distribution plan, not a side effect.
 A plan should be serializable, reviewable, and suitable for CI artifacts. It should explain:
 
 - release identity: name, version, commit, tag, notes, and source metadata
-- artifact inventory: files, checksums, sizes, formats, and installable variants
-- publish and catalog operations: what each surface will do and what inputs it needs
+- canonical artifacts: kind, path, producer, checksum, and installable platform metadata
+- complete operations: build, processing, catalog, publish, and verification work in original order
 - validation steps: which checks must run before publishing
 - execution gates: which operations are irreversible or require explicit approval
 - evidence paths: where validation and publish results will be recorded
@@ -115,6 +117,43 @@ The default behavior should be dry-run or print-only. Execution should require a
 Failed publish evidence must not be treated as proof that nothing was published.
 
 The package should make it hard to accidentally publish and easy to see exactly what would be published.
+
+Approval is preflighted before any render, validation, command, network,
+staging, mutation, evidence accumulator, or evidence finalizer is started.
+Publish-class operations already refused by snapshot policy are excluded from
+the preflight and later produce explicit refused evidence; snapshot-local
+writes still require execute approval. A failed preflight therefore performs no
+work and writes no evidence file.
+
+### Effect-owned execution lifecycle
+
+Planning, operation selection, approval analysis, artifact selection, and
+content rendering remain deterministic plain code. Publish operations remain
+Schema-backed plan data until approved execution begins. Effect owns the
+effectful side of that boundary: typed failure channels, retry
+`Schedule` interpretation, interruption, workflow finalization, service
+acquisition, and runtime composition.
+
+Each started execution or verification workflow owns one local
+`Ref<EvidenceBundle>`. It preserves the sequential four-pass safety order and
+records only the final outcome of each operation, never every retry attempt.
+One on-exit finalizer invokes the evidence writer exactly once from that local
+state on success, typed failure, defect, or interruption.
+
+If evidence persistence fails after a successful workflow, the write failure is
+returned. If the workflow and evidence persistence both fail, the full Effect
+Cause preserves both in explicit write-first order as
+`Cause.combine(writeCause, workflowCause)`; the write failure is primary when
+collapsed without discarding the workflow failure. Evidence remains the sole,
+unchanged `release-evidence/v2` wire contract.
+
+Capability services capture native filesystem, path, HTTP, and process
+dependencies once in their live layers, and their methods have closed
+environments. Concrete product layers are composed only at the Bun CLI runtime,
+the Node Action runtime, and the lazily shared `ManagedRuntime` Promise API
+boundary; tests supply replacement layers at their own boundary. Engine
+workflows do not construct a catch-all host bag or provide live layers
+internally.
 
 ### Shared engine, small public surfaces
 
@@ -180,7 +219,7 @@ User-authored input describing what should be released.
 
 It should be concise but complete enough to identify the project, describe build artifacts, choose publish surfaces, and choose evidence location.
 
-Identity may be static config data or may be derived from a package manifest. Release intent should declare project facts, optional build recipes, manual artifacts when needed, publish surfaces, and evidence location. Surface-specific policy belongs in pipe defaults and reviewable operation data, not in user-authored policy matrices. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local workflow.
+Identity may be static config data or may be derived from a package manifest. Release intent should declare project facts, optional build recipes, manual artifacts when needed, publish surfaces, and evidence location. Surface-specific policy belongs in feature-owned resolvers and reviewable operation data, not in user-authored policy matrices. Whether a project decides to bump a version from tags, commits, or human review belongs outside the generic distribution model unless it becomes a separate app-local workflow.
 
 ### Artifact Recipe
 
@@ -190,27 +229,37 @@ Recipes are data until the caller runs a staging workflow. The first recipe fami
 
 ### Installable Artifact Variant
 
-Platform metadata attached to an artifact intent or inventory item.
+Platform metadata attached to a canonical artifact.
 
 Variants should capture facts that package-manager surfaces need to choose or render the right artifact: operating system, architecture, optional Linux libc family, executable extension, binary name, install path, and source target triple. Pipes should consume this data instead of guessing from filenames.
 
 ### Release Model
 
-A normalized internal representation with defaults resolved, paths normalized, pipe sections expanded, and invalid combinations rejected.
+A transient resolved-release representation with identity-dependent defaults
+resolved once, paths normalized, feature sections totalized, and absence
+represented explicitly before any planner is scheduled.
 
 The model should be deterministic and independent of terminal formatting or CLI flags.
 
 ### Release Plan
 
-A serializable plan derived from the release model.
+A Schema-backed flat `release-plan/v3` value derived once from the release
+model and transient planner accumulator. It contains identity, one canonical
+Artifact array, the complete ordered Operation array, notices, source metadata,
+and the evidence directory.
 
 The plan is the contract between planning, validation, execution, and CI review. It should be stable enough to diff in tests and inspect in logs.
+No durable fold carrier, duplicate inventory, hidden-operation projection, or
+older plan reader is part of this contract. Evidence is independently versioned
+and remains `release-evidence/v2`.
 
-### Surface Pipe
+### Feature Planner
 
-A module that owns one config section or publish surface and emits artifacts, notices, and operation data.
+A module that owns one config section or publish surface, resolves its wire
+shape into a narrow total input, and emits artifacts, notices, and operation
+data from that typed input.
 
-Pipes should expose behavior through operation data: required credentials, validation commands, generated files, publish commands, risk grades, setup notes, and expected evidence.
+Planners should expose behavior through operation data: required credentials, validation commands, generated files, publish commands, risk grades, setup notes, and expected evidence.
 
 ### Operation
 
@@ -223,6 +272,10 @@ Operations should carry enough metadata to explain their risk level, inputs, out
 Structured records produced by validation, rendering, execution, and verification.
 
 Evidence should survive outside the process as JSON or another stable format. It should be useful for CI summaries, release audits, and debugging failed publishes.
+For every workflow that starts, evidence persistence is finalized exactly once
+from workflow-local state on every exit, including typed failure, defect, and
+interruption. The sole durable evidence contract is
+`release-evidence/v2`.
 
 ## Expected Public Surface
 
@@ -262,7 +315,7 @@ Good config answers:
 - Which generated files or indexes will change?
 - Which operations are allowed to execute in this environment?
 
-Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, `{normalizedName}`, `{targetTriple}`, and `{ext}` where the section supports platform rendering. They must be expanded before path safety and artifact inventory checks. Artifact variants must be explicit data or derived by a known build adapter before catalog rendering.
+Artifact path templates may interpolate only named release data such as `{version}`, `{name}`, `{normalizedName}`, `{targetTriple}`, and `{ext}` where the section supports platform rendering. They must be expanded before path safety and canonical artifact checks. Artifact platform metadata must be explicit data or derived by a known build adapter before catalog rendering.
 
 ## Testing Strategy
 
@@ -290,6 +343,7 @@ The rewrite is successful when:
 - a user can define an artifact-first distribution intent in a small config
 - the package can stage declared artifacts before publish planning
 - the package produces a reviewable distribution plan with no side effects
+- the plan contains every planned operation and exactly one canonical artifact vocabulary
 - surface differences are explicit in the plan
 - installable artifact variants are available before package-manager rendering
 - validation emits structured evidence
@@ -332,8 +386,8 @@ The implementation should stay narrow but honest:
 
 1. Load config.
 2. Stage declared artifact recipes when requested.
-3. Normalize into a release model with artifact inventory and variants.
-4. Generate a serializable distribution plan.
+3. Resolve into a release model with canonical artifacts and platform metadata.
+4. Fold transient planner contributions into the sole flat `release-plan/v3`.
 5. Render generated files only through explicit render operations.
 6. Validate with structured evidence.
 7. Print executable operations.

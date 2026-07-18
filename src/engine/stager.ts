@@ -30,18 +30,16 @@ export interface ArtifactStageContext {
   readonly configPath?: string | undefined
 }
 
-export class StagedArtifact extends Schema.Class<StagedArtifact>("StagedArtifact")({
-  id: Schema.NonEmptyString,
-  path: Schema.String
-}) {}
+export interface StagedArtifact {
+  readonly id: string
+  readonly path: string
+}
 
-export class StagedArtifactOperationResult extends Schema.Class<StagedArtifactOperationResult>(
-  "StagedArtifactOperationResult"
-)({
-  operationId: Schema.NonEmptyString,
-  intentTag: Schema.String,
-  artifacts: Schema.Array(StagedArtifact)
-}) {}
+export interface StagedArtifactOperationResult {
+  readonly operationId: string
+  readonly intentTag: string
+  readonly artifacts: ReadonlyArray<StagedArtifact>
+}
 
 export class ArtifactStageError extends Schema.TaggedErrorClass<ArtifactStageError>()("ArtifactStageError", {
   operationId: Schema.NonEmptyString,
@@ -82,7 +80,7 @@ export interface ArtifactStagerShape {
   readonly stage: (
     operation: StageOperation,
     context: ArtifactStageContext
-  ) => Effect.Effect<StagedArtifactOperationResult, ArtifactStageError, FileSystem.FileSystem | Path.Path>
+  ) => Effect.Effect<StagedArtifactOperationResult, ArtifactStageError>
 }
 
 export class ArtifactStager extends Context.Service<ArtifactStager, ArtifactStagerShape>()("ArtifactStager") {}
@@ -128,11 +126,11 @@ const stagedResult = (
   operation: StageOperation,
   intent: { readonly _tag: string; readonly outfile: string }
 ): StagedArtifactOperationResult =>
-  StagedArtifactOperationResult.make({
+  ({
     operationId: operation.id,
     intentTag: intent._tag,
     artifacts: operation.action.producesArtifactIds.map((id) =>
-      StagedArtifact.make({ id, path: intent.outfile })
+      ({ id, path: intent.outfile }) satisfies StagedArtifact
     )
   })
 
@@ -168,12 +166,12 @@ const resolveStagePath = (
 
 const stageBunCompile = (
   build: BunExecutableBuild,
+  path: Path.Path,
   operation: StageOperation,
   intent: BunCompileIntent,
   context: ArtifactStageContext
 ) =>
   Effect.gen(function*() {
-    const path = yield* Path.Path
     const artifactId = operation.action.producesArtifactIds[0]
     const entrypoint = yield* resolveStagePath(path, operation, intent.entry, context)
     const outfile = yield* resolveStagePath(path, operation, intent.outfile, context, artifactId)
@@ -294,12 +292,12 @@ Tag: ${intent.wheelTag}
 `
 
 const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
+  fileSystem: FileSystem.FileSystem,
+  path: Path.Path,
   operation: StageOperation,
   intent: PyPiWheelIntent,
   context: ArtifactStageContext
 ) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
   const distInfo = `${distributionName(intent.packageName)}-${context.identity.version}.dist-info`
   const entries: Array<ArchiveByteEntry> = [
     {
@@ -339,7 +337,7 @@ const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
     const resolved = yield* resolveStagePath(path, operation, sourcePath, context)
     entries.push({
       path: binary.wheelPath,
-      data: yield* fs.readFile(resolved).pipe(
+      data: yield* fileSystem.readFile(resolved).pipe(
         Effect.mapError((cause) =>
           stageError(operation, {
             path: sourcePath,
@@ -366,18 +364,18 @@ const buildEntries = Effect.fn("ArtifactStager.pypiWheel.entries")(function*(
 })
 
 const stagePyPiWheel = (
+  fileSystem: FileSystem.FileSystem,
+  path: Path.Path,
   operation: StageOperation,
   intent: PyPiWheelIntent,
   context: ArtifactStageContext
 ) =>
   Effect.gen(function*() {
-    const fs = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
     const artifactId = operation.action.producesArtifactIds[0]
     const outputPath = yield* resolveStagePath(path, operation, intent.outfile, context, artifactId)
-    const entries = yield* buildEntries(operation, intent, context)
+    const entries = yield* buildEntries(fileSystem, path, operation, intent, context)
     const wheel = buildZipArchive(entries)
-    yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
+    yield* fileSystem.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
       Effect.mapError((cause) =>
         stageError(operation, {
           path: intent.outfile,
@@ -386,7 +384,7 @@ const stagePyPiWheel = (
         })
       )
     )
-    yield* fs.writeFile(outputPath, wheel).pipe(
+    yield* fileSystem.writeFile(outputPath, wheel).pipe(
       Effect.mapError((cause) =>
         stageError(operation, {
           artifactId,
@@ -415,13 +413,13 @@ const fileMatchesPattern = (fileName: string, pattern: string): boolean =>
     : fileName === pattern
 
 const archiveFileEntries = Effect.fn("ArtifactStager.archive.files")(function*(
+  fileSystem: FileSystem.FileSystem,
+  path: Path.Path,
   operation: StageOperation,
   intent: ArchiveIntent,
   context: ArtifactStageContext
 ) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const entries = yield* fs.readDirectory(context.root).pipe(
+  const entries = yield* fileSystem.readDirectory(context.root, { recursive: true }).pipe(
     Effect.matchEffect({
       onFailure: () => Effect.succeed([]),
       onSuccess: (value) => Effect.succeed(value)
@@ -430,8 +428,9 @@ const archiveFileEntries = Effect.fn("ArtifactStager.archive.files")(function*(
   const matched = new Set<string>()
   for (const pattern of intent.files) {
     for (const entry of entries) {
-      if (fileMatchesPattern(entry, pattern)) {
-        matched.add(entry)
+      const fileName = entry.replaceAll("\\", "/")
+      if (fileMatchesPattern(fileName, pattern)) {
+        matched.add(fileName)
       }
     }
   }
@@ -439,7 +438,7 @@ const archiveFileEntries = Effect.fn("ArtifactStager.archive.files")(function*(
   const files: Array<ArchiveByteEntry> = []
   for (const fileName of [...matched].sort()) {
     const sourcePath = yield* resolveStagePath(path, operation, fileName, context)
-    const data = yield* fs.readFile(sourcePath).pipe(
+    const data = yield* fileSystem.readFile(sourcePath).pipe(
       Effect.matchEffect({
         onFailure: () => Effect.succeed(undefined),
         onSuccess: (value) => Effect.succeed(value)
@@ -457,16 +456,16 @@ const archiveFileEntries = Effect.fn("ArtifactStager.archive.files")(function*(
 })
 
 const archiveArtifactEntries = Effect.fn("ArtifactStager.archive.artifacts")(function*(
+  fileSystem: FileSystem.FileSystem,
+  path: Path.Path,
   operation: StageOperation,
   intent: ArchiveIntent,
   context: ArtifactStageContext
 ) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
   const entries: Array<ArchiveByteEntry> = []
   for (const artifact of intent.artifacts) {
     const sourcePath = yield* resolveStagePath(path, operation, artifact.sourcePath, context, artifact.artifactId)
-    const data = yield* fs.readFile(sourcePath).pipe(
+    const data = yield* fileSystem.readFile(sourcePath).pipe(
       Effect.mapError((cause) =>
         stageError(operation, {
           artifactId: artifact.artifactId,
@@ -501,23 +500,23 @@ const archiveBytes = (
   })
 
 const stageArchive = (
+  fileSystem: FileSystem.FileSystem,
+  path: Path.Path,
   operation: StageOperation,
   intent: ArchiveIntent,
   context: ArtifactStageContext
 ) =>
   Effect.gen(function*() {
-    const fs = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
     const artifactId = operation.action.producesArtifactIds[0]
     const outputPath = yield* resolveStagePath(path, operation, intent.outfile, context, artifactId)
-    const artifactEntries = yield* archiveArtifactEntries(operation, intent, context)
-    const fileEntries = yield* archiveFileEntries(operation, intent, context)
+    const artifactEntries = yield* archiveArtifactEntries(fileSystem, path, operation, intent, context)
+    const fileEntries = yield* archiveFileEntries(fileSystem, path, operation, intent, context)
     const archive = yield* archiveBytes(
       operation,
       intent,
       [...artifactEntries, ...fileEntries].sort((left, right) => left.path.localeCompare(right.path))
     )
-    yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
+    yield* fileSystem.makeDirectory(path.dirname(outputPath), { recursive: true }).pipe(
       Effect.mapError((cause) =>
         stageError(operation, {
           path: intent.outfile,
@@ -526,7 +525,7 @@ const stageArchive = (
         })
       )
     )
-    yield* fs.writeFile(outputPath, archive).pipe(
+    yield* fileSystem.writeFile(outputPath, archive).pipe(
       Effect.mapError((cause) =>
         stageError(operation, {
           artifactId,
@@ -541,19 +540,25 @@ const stageArchive = (
 
 export const makeArtifactStagerLayer = (
   build: BunExecutableBuild = liveBunExecutableBuild
-) =>
-  Layer.succeed(ArtifactStager)({
-    stage: (operation, context) => {
-      switch (operation.action.intent._tag) {
-        case "bun-compile":
-          return stageBunCompile(build, operation, operation.action.intent, context)
-        case "pypi-wheel":
-          return stagePyPiWheel(operation, operation.action.intent, context)
-        case "archive":
-          return stageArchive(operation, operation.action.intent, context)
+): Layer.Layer<ArtifactStager, never, FileSystem.FileSystem | Path.Path> =>
+  Layer.effect(ArtifactStager)(
+    Effect.gen(function*() {
+      const fileSystem = yield* FileSystem.FileSystem
+      const path = yield* Path.Path
+      return {
+        stage: Effect.fn("ArtifactStager.stage")(function*(operation, context) {
+          switch (operation.action.intent._tag) {
+            case "bun-compile":
+              return yield* stageBunCompile(build, path, operation, operation.action.intent, context)
+            case "pypi-wheel":
+              return yield* stagePyPiWheel(fileSystem, path, operation, operation.action.intent, context)
+            case "archive":
+              return yield* stageArchive(fileSystem, path, operation, operation.action.intent, context)
+          }
+        })
       }
-    }
-  })
+    })
+  )
 
 export const stageArtifactOperation = Effect.fn("ArtifactStager.stage")(function*(
   operation: StageOperation,
@@ -574,7 +579,7 @@ export const stageArtifactOperations = Effect.fn("ArtifactStager.stageAll")(func
   return results
 })
 
-export const UnsupportedArtifactStagerLayer = Layer.succeed(ArtifactStager)({
+export const UnsupportedArtifactStagerLayer: Layer.Layer<ArtifactStager> = Layer.succeed(ArtifactStager)({
   stage: (operation) =>
     Effect.fail(
       stageError(operation, {
@@ -583,4 +588,8 @@ export const UnsupportedArtifactStagerLayer = Layer.succeed(ArtifactStager)({
     )
 })
 
-export const LiveArtifactStagerLayer = makeArtifactStagerLayer()
+export const LiveArtifactStagerLayer: Layer.Layer<
+  ArtifactStager,
+  never,
+  FileSystem.FileSystem | Path.Path
+> = makeArtifactStagerLayer()

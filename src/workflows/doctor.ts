@@ -3,8 +3,8 @@ import * as Schema from "effect/Schema"
 import { parseReleaseIntent } from "../config/load.js"
 import { configPath, readReleaseConfig } from "../config/resolve.js"
 import { envExists, planRelease } from "../engine/engine.js"
-import type { ReleasePlanDocument } from "../engine/plan-document.js"
 import type { Operation } from "../pipeline/operation.js"
+import type { ReleasePlan } from "../pipeline/plan.js"
 
 
 const ReleaseName = Schema.NonEmptyString
@@ -58,7 +58,7 @@ const check = (input: {
   })
 
 const reportForIdentity = (
-  identity: Pick<ReleasePlanDocument["state"]["identity"], "name" | "version">,
+  identity: Pick<ReleasePlan["identity"], "name" | "version">,
   checks: ReadonlyArray<ReleaseDiagnosticCheck>
 ): ReleaseDiagnosticReport =>
   ReleaseDiagnosticReport.make({
@@ -76,50 +76,35 @@ const operationTargetId = (operation: Operation): string | undefined => {
     : undefined
 }
 
-const operationsForTarget = (plan: ReleasePlanDocument, targetId: string): ReadonlyArray<Operation> =>
-  plan.state.operations.filter((operation) => operationTargetId(operation) === targetId)
+const operationsForTarget = (plan: ReleasePlan, targetId: string): ReadonlyArray<Operation> =>
+  plan.operations.filter((operation) => operationTargetId(operation) === targetId)
 
 const targetMatches = (targetId: string, filter: string | undefined): boolean =>
   filter === undefined || targetId === filter || targetId.toLowerCase().includes(filter.toLowerCase())
 
-const targetIdsForPlan = (plan: ReleasePlanDocument, filter: string | undefined): ReadonlyArray<string> =>
-  [...new Set(plan.state.operations.flatMap((operation) => {
+const targetIdsForPlan = (plan: ReleasePlan, filter: string | undefined): ReadonlyArray<string> =>
+  [...new Set(plan.operations.flatMap((operation) => {
     const targetId = operationTargetId(operation)
     return targetId === undefined || !targetMatches(targetId, filter) ? [] : [targetId]
   }))].sort()
 
-const commandEnvNames = (operations: ReadonlyArray<Operation>): ReadonlyArray<string> => {
-  const names = new Set<string>()
-  for (const operation of operations) {
-    if (operation.action._tag === "command") {
-      for (const name of operation.action.command.requiredEnv) {
-        names.add(name)
-      }
-    }
-    if (operation.action._tag === "http-check") {
-      for (const name of operation.action.request.requiredEnv) {
-        names.add(name)
-      }
-    }
-    if (
-      (operation.action._tag === "github-release-create" || operation.action._tag === "github-release-verify") &&
-      operation.action.tokenEnv !== undefined
-    ) {
-      names.add(operation.action.tokenEnv)
-    }
+const operationEnvNames = (operation: Operation): ReadonlyArray<string> => {
+  switch (operation.action._tag) {
+    case "command": return operation.action.command.requiredEnv
+    case "http-check": return operation.action.request.requiredEnv
+    case "github-release-create":
+    case "github-release-verify": return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
+    default: return []
   }
-  return [...names].sort()
 }
 
-const commandExecutables = (operations: ReadonlyArray<Operation>): ReadonlyArray<string> => {
-  const names = new Set<string>()
-  for (const operation of operations) {
-    if (operation.action._tag === "command") {
-      names.add(operation.action.command.executable)
-    }
-  }
-  return [...names].sort()
-}
+const commandEnvNames = (operations: ReadonlyArray<Operation>): ReadonlyArray<string> =>
+  [...new Set(operations.flatMap(operationEnvNames))].sort()
+
+const commandExecutables = (operations: ReadonlyArray<Operation>): ReadonlyArray<string> =>
+  [...new Set(operations.flatMap((operation) =>
+    operation.action._tag === "command" ? [operation.action.command.executable] : []
+  ))].sort()
 
 const hasTrustedPublishingNote = (targetId: string, operations: ReadonlyArray<Operation>): boolean =>
   operations.some((operation) =>
@@ -128,7 +113,7 @@ const hasTrustedPublishingNote = (targetId: string, operations: ReadonlyArray<Op
   )
 
 const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(function*(
-  plan: ReleasePlanDocument,
+  plan: ReleasePlan,
   targetFilter: string | undefined
 ) {
   const checks: Array<ReleaseDiagnosticCheck> = []
@@ -190,7 +175,7 @@ const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(functi
   return checks
 })
 
-const capabilityChecksForPlan = (plan: ReleasePlanDocument): ReadonlyArray<ReleaseDiagnosticCheck> => {
+const capabilityChecksForPlan = (plan: ReleasePlan): ReadonlyArray<ReleaseDiagnosticCheck> => {
   const targetIds = targetIdsForPlan(plan, undefined)
   if (targetIds.length === 0) {
     return [
@@ -220,7 +205,7 @@ type PlannedRelease =
   }
   | {
     readonly _tag: "Ok"
-    readonly plan: ReleasePlanDocument
+    readonly plan: ReleasePlan
   }
 
 const plannedFailure = (message: string): PlannedRelease => ({
@@ -228,7 +213,7 @@ const plannedFailure = (message: string): PlannedRelease => ({
   message
 })
 
-const plannedSuccess = (plan: ReleasePlanDocument): PlannedRelease => ({
+const plannedSuccess = (plan: ReleasePlan): PlannedRelease => ({
   _tag: "Ok",
   plan
 })
@@ -280,7 +265,7 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
   }
 
   const authChecks = yield* authChecksForPlan(planned.plan, input.target)
-  return reportForIdentity(planned.plan.state.identity, [
+  return reportForIdentity(planned.plan.identity, [
     validation,
     check({
       id: "plan:construction",
@@ -303,25 +288,23 @@ export const renderReleaseDiagnosticsJson = (report: ReleaseDiagnosticReport): s
   `${JSON.stringify(report, null, 2)}\n`
 
 export const renderReleaseDiagnosticsText = (report: ReleaseDiagnosticReport): string => {
-  const lines: Array<string> = [
-    `diagnostics: ${report.releaseName}@${report.releaseVersion}`
-  ]
-  for (const item of report.checks) {
-    lines.push(`${item.status.padEnd(4)} ${item.confidence.padEnd(11)} ${item.id}: ${item.message}`)
-  }
+  const lines = report.checks.map((item) =>
+    `${item.status.padEnd(4)} ${item.confidence.padEnd(11)} ${item.id}: ${item.message}`
+  )
+  lines.unshift(`diagnostics: ${report.releaseName}@${report.releaseVersion}`)
   return `${lines.join("\n")}\n`
 }
 
 export const renderReleaseDiagnosticsMarkdown = (report: ReleaseDiagnosticReport): string => {
-  const lines: Array<string> = [
+  const lines = [
     `# Release Diagnostics ${report.releaseName}@${report.releaseVersion}`,
     "",
     "| Status | Confidence | Check | Message |",
-    "| --- | --- | --- | --- |"
+    "| --- | --- | --- | --- |",
+    ...report.checks.map((item) =>
+      `| ${item.status} | ${item.confidence} | ${item.id} | ${item.message.replaceAll("|", "\\|")} |`
+    )
   ]
-  for (const item of report.checks) {
-    lines.push(`| ${item.status} | ${item.confidence} | ${item.id} | ${item.message.replaceAll("|", "\\|")} |`)
-  }
   return `${lines.join("\n")}\n`
 }
 

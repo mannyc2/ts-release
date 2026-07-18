@@ -44,9 +44,8 @@ and Windows `.exe` extension from each compile target:
 bun run cli build --config release.config.json
 ```
 
-The npm templates enable provenance, require `packageExists: true`, and set
-`verifyPackageExists: true` so planning includes a read-only `npm view` check
-before trusted publishing.
+The npm templates enable provenance and set `verifyPackageExists: true` so
+planning includes a read-only `npm view` check before trusted publishing.
 
 GitHub Actions templates are action-first:
 

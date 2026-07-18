@@ -137,7 +137,6 @@
       "packagePath": ".",
       "trustedPublishing": {
         "workflow": "release.yml",
-        "packageExists": true,
         "verifyPackageExists": true
       },
       "access": "public",
@@ -153,7 +152,6 @@
       "repository": "owner/homebrew-portable-example",
       "formulaName": "portable-example",
       "formulaPath": ".release/generated/portable-example.rb",
-      "artifactId": "cli-darwin-arm64",
       "artifactIds": [
         "cli-darwin-arm64",
         "cli-darwin-x64"

@@ -3,3 +3,4 @@ homebrew:homebrew-push	externally-visible
 homebrew:homebrew-push:add	writes-local
 homebrew:homebrew-push:commit	writes-local
 homebrew:homebrew-render-formula	writes-local
+import-artifacts:archive:exists	read-only

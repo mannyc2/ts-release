@@ -3,162 +3,84 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { ExecutionApproval } from "../src/pipeline/operation.js"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
-import { releaseConfig, homebrewConfig, runEffect } from "./helpers.js"
+import { homebrewConfig, releaseConfig, runEffect } from "./helpers.js"
 import { createTestPlan, renderTestPlan, validateTestPlan } from "./plan-helpers.js"
 
-const HomebrewLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
-    files: new Map([["artifacts/release-0.1.0.tgz", "homebrew archive"]]),
-    directories: new Set(["."])
-  }),
-)
-
-const createPlan = (config: string) =>
-  createTestPlan(config)
-
-const expectValidationRecord = (
-  records: ReadonlyArray<{ readonly operationId: string; readonly status: string }>,
-  id: string,
-  expected: { readonly status: string; readonly severity: string; readonly skipped: boolean }
-) => {
-  const record = records.find((item) => item.operationId === id)
-  expect(record?.status).toBe(expected.status)
-}
+const HomebrewLayer = Layer.mergeAll(makeTestCommandRunnerLayer({
+  files: new Map([["artifacts/release-0.1.0.tgz", "homebrew archive"]]),
+  directories: new Set(["."])
+}))
+const plan = (config: string) => createTestPlan(config)
 
 describe("Homebrew target", () => {
-  test("plans Homebrew tap capabilities and formula rendering", async () => {
-    const plan = await runEffect(createPlan(homebrewConfig()), HomebrewLayer)
-    const render = plan.operations.find((operation) => operation.id === "homebrew:homebrew-render-formula")
-    const publish = plan.operations.find((operation) => operation.id === "homebrew:homebrew-push")
-
-    expect(plan.surfaceIds).toEqual(["homebrew"])
-    expect(render?.action._tag).toBe("write-file")
-    expect(publish?.action._tag).toBe("command")
-    if (render?.action._tag === "write-file") {
-      expect(render.description).toContain("release.rb")
-      expect(render.action.path).toBe(".release/generated/release.rb")
-      expect(typeof render.action.contents).toBe("object")
-      if (typeof render.action.contents === "object" && render.action.contents._tag === "homebrew-formula") {
-        expect(render.action.contents._tag).toBe("homebrew-formula")
-        expect(render.action.contents.formulaName).toBe("release")
-        expect(render.action.contents.entries.map((entry) => entry.artifactId)).toEqual(["archive"])
-      }
+  test("plans the tap, formula parts, and git push", async () => {
+    const release = await runEffect(plan(homebrewConfig()), HomebrewLayer)
+    const render = release.operations.find(({ id }) => id === "homebrew:homebrew-render-formula")
+    const publish = release.operations.find(({ id }) => id === "homebrew:homebrew-push")
+    expect(release.surfaceIds).toEqual(["homebrew"])
+    expect(render).toMatchObject({ description: expect.stringContaining("release.rb"), action: {
+      _tag: "write-file", path: ".release/generated/release.rb", contents: { _tag: "file-parts" }
+    } })
+    if (render?.action._tag === "write-file" && typeof render.action.contents !== "string") {
+      expect(render.action.contents.parts.flatMap((part) =>
+        typeof part === "string" ? [] : [part.artifactId]
+      )).toEqual(["archive"])
+      expect(render.action.contents.parts.filter((part) => typeof part === "string").join(""))
+        .toContain("class Release < Formula")
     }
-    if (publish?.action._tag === "command") {
-      expect(publish.risk).toBe("externally-visible")
-      expect(publish.action.command.args).toEqual(["-C", ".", "push"])
-      expect(publish.action.command.requiredEnv).toEqual([])
-      expect(publish.action.command.redactedEnv).toEqual([])
-    }
+    expect(publish).toMatchObject({ risk: "externally-visible", action: { _tag: "command", command: {
+      args: ["-C", ".", "push"], requiredEnv: [], redactedEnv: []
+    } } })
   })
 
-  test("rejects Homebrew tokenEnv because tap pushes use Git credentials", async () => {
-    const error = await runEffect(createPlan(homebrewConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), HomebrewLayer)
-
-    expect(error._tag).toBe("PlanError")
+  test("rejects tokenEnv because tap pushes use Git credentials", async () => {
+    const error = await runEffect(plan(homebrewConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), HomebrewLayer)
+    expect(error).toMatchObject({ _tag: "PlanError" })
     if (error._tag === "PlanError") {
-      expect(error.reason).toContain("Homebrew tap targets")
-      expect(error.reason).toContain("plain git push")
-      expect(error.reason).toContain("Git credentials")
+      for (const text of ["Homebrew tap targets", "plain git push", "Git credentials"])
+        expect(error.reason).toContain(text)
     }
   })
 
-  test("records simulated validation note evidence with current adapter severities", async () => {
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(homebrewConfig())
-        return yield* validateTestPlan(plan)
-      }),
-      HomebrewLayer
+  test("keeps validation and render workflows visible", async () => {
+    const result = await runEffect(Effect.gen(function*() {
+      const release = yield* plan(homebrewConfig())
+      const validation = yield* validateTestPlan(release)
+      const rendered = yield* renderTestPlan(
+        release,
+        ExecutionApproval.make({ execute: true, approveIrreversible: false })
+      )
+      return { validation, rendered }
+    }), HomebrewLayer)
+    expect(result.validation.records.find(({ operationId }) => operationId === "homebrew:brew-audit")?.status)
+      .toBe("passed")
+    expect(result.rendered.records.map(({ operationId }) => operationId))
+      .toEqual(["homebrew:homebrew-render-formula"])
+  })
+
+  test("preserves reference, file-shape, and checksum safeguards", async () => {
+    const directory = releaseConfig({ artifacts: [{ id: "archive", path: ".", format: "directory" }],
+      publish: { homebrew: { repository: "owner/homebrew-tap", formulaName: "release",
+        formulaPath: ".release/generated/release.rb", artifactIds: ["archive"] } } })
+    const nonSha256 = homebrewConfig().replace(
+      "\"format\":\"tarball\"",
+      "\"format\":\"tarball\",\"checksum\":{\"algorithm\":\"sha512\",\"value\":\"sha512:manual\"}"
     )
+    const [missing, directoryArtifact, checksum] = await Promise.all([
+      runEffect(plan(homebrewConfig({ artifactIds: ["missing"] })).pipe(Effect.flip), HomebrewLayer),
+      runEffect(plan(directory).pipe(Effect.flip), HomebrewLayer),
+      runEffect(plan(nonSha256).pipe(Effect.flip), HomebrewLayer)
+    ])
+    expect(missing).toMatchObject({ _tag: "PlanError",
+      reason: "Homebrew target references missing artifact missing." })
+    expect(directoryArtifact).toMatchObject({ _tag: "PlanError",
+      reason: "Homebrew formula artifacts must be file-like, not directories." })
+    expect(checksum).toMatchObject({ _tag: "PlanError", field: "artifacts.archive.checksum" })
 
-    expectValidationRecord(evidence.records, "homebrew:brew-audit", {
-      status: "passed",
-      skipped: false,
-      severity: "info"
-    })
+    const manual = await runEffect(plan(homebrewConfig().replace(
+      "\"format\":\"tarball\"",
+      "\"format\":\"tarball\",\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
+    )), HomebrewLayer)
+    expect(manual.operations.map(({ id }) => id).includes("homebrew:homebrew-render-formula")).toBe(true)
   })
-
-  test("renders Homebrew formula evidence through the render workflow", async () => {
-    const evidence = await runEffect(
-      Effect.gen(function*() {
-        const plan = yield* createPlan(homebrewConfig())
-        return yield* renderTestPlan(plan, ExecutionApproval.make({ execute: true, approveIrreversible: false }))
-      }),
-      HomebrewLayer
-    )
-
-    expect(evidence.records.map((record) => record.operationId)).toEqual(["homebrew:homebrew-render-formula"])
-  })
-
-  test("rejects Homebrew targets that reference missing artifacts", async () => {
-    const error = await runEffect(
-      createPlan(homebrewConfig({ artifactId: "missing" })).pipe(Effect.flip),
-      HomebrewLayer
-    )
-
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.reason).toBe("Homebrew target references missing artifact missing.")
-    }
-  })
-
-  test("rejects directory artifacts for Homebrew formulas", async () => {
-    const directoryConfig = releaseConfig({
-      artifacts: [
-        {
-          id: "archive",
-          path: ".",
-          format: "directory"
-        }
-      ],
-      publish: {
-        homebrew: {
-          repository: "owner/homebrew-tap",
-          formulaName: "release",
-          formulaPath: ".release/generated/release.rb",
-          artifactId: "archive"
-        }
-      }
-    })
-    const error = await runEffect(createPlan(directoryConfig).pipe(Effect.flip), HomebrewLayer)
-
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.reason).toBe("Homebrew formula artifacts must be file-like, not directories.")
-    }
-  })
-
-  test("rejects non-sha256 checksums for formula artifacts", async () => {
-    const error = await runEffect(
-      createPlan(
-        homebrewConfig().replace(
-          "\"format\":\"tarball\"",
-          "\"format\":\"tarball\",\"checksum\":{\"algorithm\":\"sha512\",\"value\":\"sha512:manual\"}"
-        )
-      ).pipe(Effect.flip),
-      HomebrewLayer
-    )
-
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.field).toBe("artifacts.archive.checksum")
-    }
-  })
-
-  test("keeps manual sha256 checksums as execution-time artifact checks", async () => {
-    const plan = await runEffect(
-      createPlan(
-        homebrewConfig().replace(
-          "\"format\":\"tarball\"",
-          "\"format\":\"tarball\",\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
-        )
-      ),
-      HomebrewLayer
-    )
-
-    const render = plan.operations.find((operation) => operation.id === "homebrew:homebrew-render-formula")
-    expect(render?.action._tag).toBe("write-file")
-  })
-
 })

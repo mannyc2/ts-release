@@ -62,8 +62,8 @@ outputs:
     description: Number of operations in the distribution plan.
   irreversible_operation_count:
     description: Number of irreversible operations in the distribution plan.
-  target_count:
-    description: Number of publish/catalog surfaces in the distribution plan; output name kept for compatibility.
+  surface_count:
+    description: Number of unique publish/catalog surfaces in the release plan.
   evidence_directory:
     description: Evidence directory for the distribution plan.
   plan_path:

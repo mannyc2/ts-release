@@ -2,6 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
+import { deferredContentArtifactIds } from "../src/engine/content.js"
 import { CommandSpec } from "../src/pipeline/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { runEffect } from "./helpers.js"
@@ -71,13 +72,21 @@ describe("repository release config", () => {
     expect(plan.identity.commit).toBe("81587b5")
     expect(plan.evidenceDirectory).toBe(".release/evidence/0.0.3")
     expect(plan.surfaceIds).toEqual(["github", "homebrew", "npm", "pypi", "scoop"])
-    expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-publish")
-    expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-package-exists")
-    expect(plan.operations.map((operation) => operation.id)).toContain("npm:npm-version-verify")
-    expect(plan.operations.map((operation) => operation.id)).toContain("github:github-release-create")
-    expect(plan.operations.map((operation) => operation.id)).toContain("homebrew:homebrew-render-formula")
-    expect(plan.operations.map((operation) => operation.id)).toContain("pypi:twine-upload")
-    expect(plan.operations.map((operation) => operation.id)).toContain("scoop:scoop-render-manifest")
+    expect(plan.operations.map((operation) => operation.id)).toEqual([
+      "build:bun:cli-linux-x64", "build:bun:cli-linux-arm64", "build:bun:cli-darwin-x64",
+      "build:bun:cli-darwin-arm64", "build:bun:cli-windows-x64",
+      "build:pypi-wheel:pypi-wheel-linux-x64", "build:pypi-wheel:pypi-wheel-linux-arm64",
+      "build:pypi-wheel:pypi-wheel-darwin-x64", "build:pypi-wheel:pypi-wheel-darwin-arm64",
+      "build:pypi-wheel:pypi-wheel-windows-x64", "homebrew:homebrew-render-formula",
+      "scoop:scoop-render-manifest", "npm:npm-version", "npm:npm-trusted-publishing-auth",
+      "npm:npm-package-exists", "npm:npm-pack-dry-run", "npm:npm-publish", "npm:npm-version-verify",
+      "pypi:python-version", "pypi:twine-version", "pypi:twine-trusted-publishing-auth", "pypi:twine-check",
+      "pypi:twine-upload", "github:github-release-dry-run", "github:github-release-create",
+      "github:github-release-verify-api", "homebrew:brew-audit", "homebrew:homebrew-push:add",
+      "homebrew:homebrew-push:commit", "homebrew:homebrew-push", "scoop:scoop-manifest-validation",
+      "scoop:scoop-push:add",
+      "scoop:scoop-push:commit", "scoop:scoop-push"
+    ])
     const npmAuth = plan.operations.find((operation) => operation.id === "npm:npm-trusted-publishing-auth")
     const pypiAuth = plan.operations.find((operation) => operation.id === "pypi:twine-trusted-publishing-auth")
     const text = renderTestPlanText(plan)
@@ -87,18 +96,7 @@ describe("repository release config", () => {
     )
     const npmPublish = publishOperations.find((operation) => operation.id === "npm:npm-publish")
     const githubPublish = publishOperations.find((operation) => operation.id === "github:github-release-create")
-    expect(publishOperations.length).toBeGreaterThan(0)
-    expect(publishOperations.map((operation) => operation.id)).toEqual([
-      "npm:npm-publish",
-      "pypi:twine-upload",
-      "github:github-release-create",
-      "homebrew:homebrew-push:add",
-      "homebrew:homebrew-push:commit",
-      "homebrew:homebrew-push",
-      "scoop:scoop-push:add",
-      "scoop:scoop-push:commit",
-      "scoop:scoop-push"
-    ])
+    expect(publishOperations).toHaveLength(9)
     expect(publishOperations.every((operation) => operation.risk !== "read-only")).toBe(true)
     expect(npmPublish?.action._tag).toBe("command")
     expect(npmAuth?.action._tag).toBe("note")
@@ -148,9 +146,11 @@ describe("repository release config", () => {
     if (homebrewRender?.action._tag === "write-file") {
       expect(homebrewRender.action.path).toBe(".release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
       expect(typeof homebrewRender.action.contents).toBe("object")
-      if (typeof homebrewRender.action.contents === "object" && homebrewRender.action.contents._tag === "homebrew-formula") {
-        expect(homebrewRender.action.contents.description).toContain("Portable artifact and package-manager distribution planning")
-        expect(homebrewRender.action.contents.entries.map((entry) => entry.artifactId)).toEqual([
+      if (typeof homebrewRender.action.contents === "object") {
+        expect(homebrewRender.action.contents._tag).toBe("file-parts")
+        expect(homebrewRender.action.contents.parts.filter((part) => typeof part === "string").join(""))
+          .toContain("Portable artifact and package-manager distribution planning")
+        expect(deferredContentArtifactIds(homebrewRender.action.contents)).toEqual([
           "cli-darwin-arm64",
           "cli-darwin-x64"
         ])
@@ -161,9 +161,11 @@ describe("repository release config", () => {
     if (scoopRender?.action._tag === "write-file") {
       expect(scoopRender.action.path).toBe(".release/catalogs/scoop-ts-release/bucket/ts-release.json")
       expect(typeof scoopRender.action.contents).toBe("object")
-      if (typeof scoopRender.action.contents === "object" && scoopRender.action.contents._tag === "scoop-manifest") {
-        expect(scoopRender.action.contents.url).toBe("https://github.com/mannyc2/ts-release/releases/download/v0.0.3/ts-release-0.0.3-windows-x64.exe")
-        expect(scoopRender.action.contents.artifactId).toBe("cli-windows-x64")
+      if (typeof scoopRender.action.contents === "object") {
+        expect(scoopRender.action.contents._tag).toBe("file-parts")
+        expect(scoopRender.action.contents.parts.filter((part) => typeof part === "string").join(""))
+          .toContain("https://github.com/mannyc2/ts-release/releases/download/v0.0.3/ts-release-0.0.3-windows-x64.exe")
+        expect(deferredContentArtifactIds(scoopRender.action.contents)).toEqual(["cli-windows-x64"])
       }
     }
   })

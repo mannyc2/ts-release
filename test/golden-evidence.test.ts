@@ -11,7 +11,7 @@ import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { OperationFailedError } from "../src/engine/errors.js"
 import { runApprovedReleaseWorkflow } from "../src/engine/executor.js"
 import { planRelease } from "../src/engine/engine.js"
-import type { ReleasePlanDocument } from "../src/engine/plan-document.js"
+import type { ReleasePlan } from "../src/pipeline/plan.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import {
   GitHubApi,
@@ -126,18 +126,18 @@ const planFixtureRelease = Effect.gen(function*() {
   return yield* planRelease({ root: "." }, intent)
 })
 
-const operationContext = (plan: ReleasePlanDocument) => ({
+const operationContext = (plan: ReleasePlan) => ({
   root: plan.source.root,
-  identity: plan.state.identity,
-  artifacts: plan.state.artifacts,
-  notices: plan.state.notices,
+  identity: plan.identity,
+  artifacts: plan.artifacts,
+  notices: plan.notices,
   ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
 })
 
 const runFixtureRelease = Effect.fn("goldenEvidence.runFixtureRelease")(function*() {
   const plan = yield* planFixtureRelease
   return yield* runApprovedReleaseWorkflow(
-    plan.state.operations,
+    plan.operations,
     ExecutionApproval.make({ execute: true, approveIrreversible: true }),
     operationContext(plan)
   )

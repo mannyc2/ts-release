@@ -24,7 +24,9 @@ export const makeBunReleaseWorkflowRuntimeLayer = (
       Layer.provideMerge(BunHttpClient.layer),
       Layer.provideMerge(BunServices.layer)
     ),
-    makeArtifactStagerLayer()
+    makeArtifactStagerLayer().pipe(
+      Layer.provideMerge(BunServices.layer)
+    )
   )
 
 export const BunCommandRuntimeLayer = makeBunCommandRuntimeLayer()

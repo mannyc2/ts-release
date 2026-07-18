@@ -1,7 +1,8 @@
 import * as Effect from "effect/Effect"
-import type * as FileSystem from "effect/FileSystem"
-import type * as Path from "effect/Path"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
+import { ReleaseCommandRunner } from "../../host/host.js"
 import { parseJsonAs } from "../json.js"
 import { CommandSpec } from "../operation.js"
 import { ReleaseIdentity } from "../state.js"
@@ -18,34 +19,16 @@ export class ResolvedIdentity extends Schema.Class<ResolvedIdentity>("ResolvedId
   sourceId: Schema.String
 }) {}
 
-export interface WorkspaceCommandResult {
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
-}
-
-export interface WorkspaceCommandError {
-  readonly reason: string
-}
-
-export interface WorkspaceCommandRunner {
-  readonly runCommand: (
-    command: CommandSpec
-  ) => Effect.Effect<WorkspaceCommandResult, WorkspaceCommandError>
-}
-
-export interface WorkspaceServices {
-  readonly fileSystem: FileSystem.FileSystem
-  readonly path: Path.Path
-  readonly commandRunner: WorkspaceCommandRunner
-}
+export type VersionSourceServices =
+  | FileSystem.FileSystem
+  | Path.Path
+  | ReleaseCommandRunner
 
 export interface VersionSource<Options> {
   readonly id: string
   readonly resolve: (
-    options: Options,
-    workspace: WorkspaceServices
-  ) => Effect.Effect<ResolvedIdentity, IdentityError>
+    options: Options
+  ) => Effect.Effect<ResolvedIdentity, IdentityError, VersionSourceServices>
 }
 
 export type IdentityModifier = (identity: ResolvedIdentity) => ResolvedIdentity
@@ -85,12 +68,12 @@ export const gitCommand = (root: string, args: ReadonlyArray<string>): CommandSp
   })
 
 export const runWorkspaceGit = Effect.fn("pipeline.identity.runWorkspaceGit")(function*(
-  workspace: WorkspaceServices,
   root: string,
   args: ReadonlyArray<string>,
   error: { readonly source: string; readonly field: string }
 ) {
-  return yield* workspace.commandRunner.runCommand(gitCommand(root, args)).pipe(
+  const commandRunner = yield* ReleaseCommandRunner
+  return yield* commandRunner.runCommand(gitCommand(root, args)).pipe(
     Effect.mapError((commandError) =>
       identityError(error.source, error.field, commandError.reason, commandError)
     )
@@ -99,14 +82,15 @@ export const runWorkspaceGit = Effect.fn("pipeline.identity.runWorkspaceGit")(fu
 
 export const readPackageManifestJson = Effect.fn("pipeline.identity.readPackageManifestJson")(
   function*<A>(
-    workspace: WorkspaceServices,
     root: string,
     packagePath: string,
     decode: (parsed: unknown) => Effect.Effect<A, { readonly message: string }>,
     error: { readonly source: string; readonly field: string; readonly requirement: string }
   ) {
-    const readPath = workspace.path.resolve(root, packagePath)
-    const contents = yield* workspace.fileSystem.readFileString(readPath).pipe(
+    const fileSystem = yield* FileSystem.FileSystem
+    const path = yield* Path.Path
+    const readPath = path.resolve(root, packagePath)
+    const contents = yield* fileSystem.readFileString(readPath).pipe(
       Effect.mapError((readError) =>
         identityError(error.source, error.field, readError.message, readError)
       )

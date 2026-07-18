@@ -3,12 +3,12 @@ commit: example
 evidence: .release/evidence
 artifacts: 3
 surfaces: 3
-operations: 14
+operations: 15
 
 artifacts:
-  - npm-package . [directory] size=0 checksum=none
-  - archive artifacts/release-example-multi-target-0.1.0.tgz [tarball] size=0 checksum=none
-  - homebrew-formula .release/generated/release-example-multi-target.rb [file] size=0 checksum=none
+  - npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
+  - archive artifacts/release-example-multi-target-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
+  - homebrew-formula .release/generated/release-example-multi-target.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
 
 surfaces:
   - github operations=3
@@ -17,6 +17,8 @@ surfaces:
 
 operations by risk:
   read-only:
+    - import-artifacts:archive:exists Verify imported artifact archive exists.
+    check-file: artifacts/release-example-multi-target-0.1.0.tgz
     - npm:npm-version Check npm CLI availability.
     command: npm --version
     argv: ["npm","--version"]

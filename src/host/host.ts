@@ -1,7 +1,7 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { CommandSpec } from "../pipeline/operation.js"
+import type { CommandSpec } from "../pipeline/operation.js"
 
 
 export class CommandRunnerError extends Schema.TaggedErrorClass<CommandRunnerError>()("CommandRunnerError", {
@@ -10,15 +10,15 @@ export class CommandRunnerError extends Schema.TaggedErrorClass<CommandRunnerErr
   cause: Schema.optional(Schema.Defect())
 }) {}
 
-export class CommandResult extends Schema.Class<CommandResult>("CommandResult")({
-  command: CommandSpec,
-  exitCode: Schema.Number,
-  stdout: Schema.String,
-  stderr: Schema.String,
-  startedAt: Schema.String,
-  endedAt: Schema.String,
-  durationMillis: Schema.Number
-}) {}
+export interface CommandResult {
+  readonly command: CommandSpec
+  readonly exitCode: number
+  readonly stdout: string
+  readonly stderr: string
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly durationMillis: number
+}
 
 export interface ReleaseCommandRunnerShape {
   readonly runCommand: (command: CommandSpec) => Effect.Effect<CommandResult, CommandRunnerError>

@@ -1,81 +1,53 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPipe } from "../src/pipes/build.js"
+import { buildPlanner, resolveBuilds } from "../src/pipes/build.js"
 import type { BunCompileTarget, Operation, StageAction } from "../src/pipeline/operation.js"
 import type { PlatformTarget } from "../src/pipeline/platform.js"
-import { emptyReleaseState } from "../src/pipeline/state.js"
-import { makePipelineIdentity } from "./helpers.js"
+import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
+import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
 const identity = makePipelineIdentity()
 
 type StageOperation = Operation & { readonly action: StageAction }
 
+const planBuild = (build: Record<string, unknown>) =>
+  Effect.gen(function*() {
+    const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
+    return yield* Option.match(resolveBuilds(config.builds), {
+      onNone: () => Effect.die("Expected a resolved build section."),
+      onSome: (section) => buildPlanner.plan(section, emptyPlanAccumulator(identity))
+    })
+  })
+
 const plannedCompileTarget = Effect.fn("pipe-build-bun-test.plannedCompileTarget")(function*(
   target: PlatformTarget,
   cpu?: "baseline" | "modern" | undefined
 ) {
-  const config = yield* parseReleaseIntent(JSON.stringify({
-    project: {
-      name: "release",
-      version: "0.1.0",
-      commit: "abc123",
-      tag: "v0.1.0"
-    },
-    builds: [{
+  const contribution = yield* planBuild({
       builder: "bun",
       entry: "src/cli.ts",
       targets: [target],
       ...(cpu === undefined ? {} : { cpu })
-    }],
-    publish: {}
-  }))
-  const section = buildPipe.section(config)
-  expect(section).toBeDefined()
-  if (section === undefined) {
-    return undefined
-  }
-
-  const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
+  })
   const operation = contribution.operations.find(isStageArtifactOperation)
   const intent = operation?.action.intent
   return intent?._tag === "bun-compile" ? intent.compileTarget : undefined
 })
 
-const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
-  typeof operation === "object"
-  && operation !== null
-  && "action" in operation
-  && typeof operation.action === "object"
-  && operation.action !== null
-  && "_tag" in operation.action
-  && operation.action._tag === "stage"
+const isStageArtifactOperation = (operation: Operation): operation is StageOperation =>
+  operation.action._tag === "stage"
 
 describe("Bun build pipe", () => {
   it.effect("emits a Bun compile staging operation", () =>
     Effect.gen(function*() {
-      const config = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        builds: [{
+      const contribution = yield* planBuild({
           builder: "bun",
           entry: "src/cli.ts",
           targets: ["linux-x64"],
           cpu: "baseline"
-        }],
-        publish: {}
-      }))
-      const section = buildPipe.section(config)
-      expect(section).toBeDefined()
-      if (section === undefined) {
-        return
-      }
-
-      const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
+      })
       const operation = contribution.operations.find(isStageArtifactOperation)
 
       expect(operation?.action.intent).toMatchObject({
@@ -87,27 +59,11 @@ describe("Bun build pipe", () => {
 
   it.effect("renders default artifact names with distribution tokens", () =>
     Effect.gen(function*() {
-      const config = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        builds: [{
+      const contribution = yield* planBuild({
           builder: "bun",
           entry: "src/cli.ts",
           targets: ["linux-x64-musl", "windows-x64"]
-        }],
-        publish: {}
-      }))
-      const section = buildPipe.section(config)
-      expect(section).toBeDefined()
-      if (section === undefined) {
-        return
-      }
-
-      const contribution = yield* buildPipe.plan(section, emptyReleaseState(identity))
+      })
 
       expect(contribution.artifacts.map((artifact) => artifact.id)).toEqual([
         "cli-linux-x64-musl",

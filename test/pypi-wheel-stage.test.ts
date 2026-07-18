@@ -2,29 +2,24 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
 import { mkdir, writeFile } from "node:fs/promises"
-import { withTempDirectoryPromise, makePipelineIdentity } from "./helpers.js"
+import { makePipelineIdentity, releaseConfig, releaseIdentity, withTempDirectoryPromise } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { stageArtifactOperations } from "../src/engine/stager.js"
-import { pypiWheelPipe } from "../src/pipes/pypi-wheel.js"
+import { pypiWheelPlanner, resolvePyPiWheels } from "../src/pipes/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
-import { emptyReleaseState } from "../src/pipeline/state.js"
+import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
 
 const identity = makePipelineIdentity({ name: "@mannyc1/ts-release", normalizedName: "mannyc1-ts-release", version: "1.2.3", tag: "v1.2.3" })
 
 type StageOperation = Operation & { readonly action: StageAction }
 
-const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
-  typeof operation === "object"
-  && operation !== null
-  && "action" in operation
-  && typeof operation.action === "object"
-  && operation.action !== null
-  && "_tag" in operation.action
-  && operation.action._tag === "stage"
+const isStageArtifactOperation = (operation: Operation): operation is StageOperation =>
+  operation.action._tag === "stage"
 
 describe("PyPI wheel build pipe", () => {
   test("builds a platform wheel that embeds one staged CLI binary", async () => {
@@ -34,13 +29,13 @@ describe("PyPI wheel build pipe", () => {
 
       const results = await Effect.runPromise(
         Effect.gen(function*() {
-          const intent = yield* parseReleaseIntent(JSON.stringify({
-            project: {
+          const intent = yield* parseReleaseIntent(releaseConfig({
+            identity: releaseIdentity({
               name: "@mannyc1/ts-release",
               version: "1.2.3",
-              commit: "abc123",
               tag: "v1.2.3"
-            },
+            }),
+            artifacts: [],
             pypiWheel: {
               id: "pypi-wheel-linux-x64",
               path: "dist/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
@@ -60,15 +55,12 @@ describe("PyPI wheel build pipe", () => {
                   wheelPath: "ts_release/bin/ts-release-linux-x64"
                 }
               ]
-            },
-            publish: {}
+            }
           }))
-          const section = pypiWheelPipe.section(intent)
-          expect(section).toBeDefined()
-          if (section === undefined) {
-            return []
-          }
-          const contribution = yield* pypiWheelPipe.plan(section, emptyReleaseState(identity))
+          const contribution = yield* Option.match(resolvePyPiWheels(intent.pypiWheel), {
+            onNone: () => Effect.die("Expected a resolved PyPI wheel section."),
+            onSome: (section) => pypiWheelPlanner.plan(section, emptyPlanAccumulator(identity))
+          })
           expect(contribution.artifacts[0]).toMatchObject({
             id: "pypi-wheel-linux-x64",
             kind: "wheel",
@@ -80,10 +72,9 @@ describe("PyPI wheel build pipe", () => {
             root,
             identity
           })
-        }).pipe(Effect.provide(Layer.mergeAll(
-          makeArtifactStagerLayer(),
-          BunServices.layer
-        )))
+        }).pipe(Effect.provide(
+          makeArtifactStagerLayer().pipe(Layer.provideMerge(BunServices.layer))
+        ))
       )
 
       expect(results[0]?.artifacts[0]?.path).toBe("dist/ts_release-1.2.3-py3-none-manylinux2014_x86_64.whl")

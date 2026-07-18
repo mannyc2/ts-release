@@ -18,7 +18,7 @@ import {
   planRelease,
   writeReleaseEvidence
 } from "../src/engine/engine.js"
-import type { ReleasePlanDocument } from "../src/engine/plan-document.js"
+import type { ReleasePlan } from "../src/pipeline/plan.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { commandKey } from "./host-fakes.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
@@ -51,11 +51,11 @@ const planFromConfig = (config: string) =>
     return yield* planRelease({ root: "." }, intent)
   })
 
-const operationContext = (plan: ReleasePlanDocument) => ({
+const operationContext = (plan: ReleasePlan) => ({
   root: plan.source.root,
-  identity: plan.state.identity,
-  artifacts: plan.state.artifacts,
-  notices: plan.state.notices,
+  identity: plan.identity,
+  artifacts: plan.artifacts,
+  notices: plan.notices,
   ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
 })
 
@@ -64,7 +64,7 @@ describe("minimal evidence and approval goals", () => {
     it.effect("approval is derived from operation risk", () =>
       Effect.gen(function*() {
         const plan = yield* planFromConfig(minimalConfig)
-        const publish = plan.state.operations.find((operation) => operation.id === "npm:npm-publish")
+        const publish = plan.operations.find((operation) => operation.id === "npm:npm-publish")
 
         expect(publish?.action._tag).toBe("command")
         if (publish !== undefined) {
@@ -74,14 +74,14 @@ describe("minimal evidence and approval goals", () => {
         }
 
         const withoutExecute = yield* executeOperations(
-          plan.state.operations,
+          plan.operations,
           ExecutionApproval.none,
           operationContext(plan)
         ).pipe(Effect.flip)
         expectTaggedError(withoutExecute, "ExecutionApprovalError")
 
         const withoutIrreversible = yield* executeOperations(
-          plan.state.operations,
+          plan.operations,
           ExecutionApproval.make({ execute: true, approveIrreversible: false }),
           operationContext(plan)
         ).pipe(Effect.flip)
@@ -91,7 +91,7 @@ describe("minimal evidence and approval goals", () => {
     it.effect("read-only validation runs without publish approval", () =>
       Effect.gen(function*() {
         const plan = yield* planFromConfig(minimalConfig)
-        const evidence = yield* validateOperations(plan.state.operations, operationContext(plan))
+        const evidence = yield* validateOperations(plan.operations, operationContext(plan))
 
         expect(evidence.records.length).toBeGreaterThan(0)
         expect(evidence.records.every((record) => record.phase === "publish")).toBe(true)

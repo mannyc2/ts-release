@@ -15,7 +15,7 @@ const expectedPackageName = "@mannyc1/ts-release"
 const description = "Portable artifact and package-manager distribution planning for TypeScript projects."
 const targets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"] as const
 
-const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig)
+const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig, { onExcessProperty: "error" })
 
 // Only for JSON the tool does not own a schema for (package manifests).
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
@@ -255,7 +255,11 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
     failures.push(`npm self-release target packageName ${String(npm.packageName)} must match package name ${String(packageName)}`)
   }
   const npmTrusted = typeof npm?.trustedPublishing === "object" ? npm.trustedPublishing : undefined
-  if (npmTrusted?.provider !== "github-actions" || npmTrusted.workflow !== "release.yml" || npmTrusted.packageExists !== true) {
+  if (
+    npmTrusted?.provider !== "github-actions" ||
+    npmTrusted.workflow !== "release.yml" ||
+    npmTrusted.verifyPackageExists !== true
+  ) {
     failures.push("npm self-release target must use GitHub Actions trusted publishing")
   }
 

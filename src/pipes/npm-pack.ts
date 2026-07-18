@@ -1,8 +1,9 @@
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import { Artifact, PackageExtra, SafeRelativePath } from "../pipeline/artifact.js"
 import { renderArtifactNameEffect } from "../pipeline/template.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 
 export class ReleaseConfigNpmPackageBuild extends Schema.Class<ReleaseConfigNpmPackageBuild>(
@@ -11,24 +12,29 @@ export class ReleaseConfigNpmPackageBuild extends Schema.Class<ReleaseConfigNpmP
   path: Schema.optionalKey(SafeRelativePath)
 }) {}
 
-export type NpmPackageSection = true | ReleaseConfigNpmPackageBuild
-
-const sectionFromConfig = (config: {
-  readonly npmPackage?: boolean | ReleaseConfigNpmPackageBuild | undefined
-}): NpmPackageSection | undefined => {
-  const section = config.npmPackage
-  return section === false ? undefined : section
+export interface ResolvedNpmPackage {
+  readonly path: string
+  readonly packageName: string
 }
 
-export const npmPackPipe: Pipe<NpmPackageSection> = {
+export const resolveNpmPackage = (
+  raw: boolean | ReleaseConfigNpmPackageBuild | undefined,
+  packageName: string
+): Option.Option<ResolvedNpmPackage> => {
+  if (raw === undefined || raw === false) {
+    return Option.none()
+  }
+  return Option.some({
+    path: raw === true ? "." : raw.path ?? ".",
+    packageName
+  })
+}
+
+export const npmPackPlanner: FeaturePlanner<ResolvedNpmPackage> = {
   id: "build:npm-pack",
-  phase: "build",
-  section: sectionFromConfig,
   plan: (section, state) =>
     Effect.gen(function*() {
-      const config = section === true ? undefined : section
-      const packageName = state.identity.name
-      const path = yield* renderArtifactNameEffect(config?.path ?? ".", { identity: state.identity }, { pipeId: "build:npm-pack", field: "npmPackage.path" })
+      const path = yield* renderArtifactNameEffect(section.path, { identity: state.identity }, { pipeId: "build:npm-pack", field: "npmPackage.path" })
       return {
         ...emptyContribution,
         artifacts: [
@@ -39,7 +45,7 @@ export const npmPackPipe: Pipe<NpmPackageSection> = {
             producedBy: "build:npm-pack",
             extra: PackageExtra.make({
               packageManager: "npm",
-              packageName
+              packageName: section.packageName
             })
           })
         ]

@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { PyPiWheelBinaryArtifact } from "./artifact.js"
 import { PlatformTarget } from "./platform.js"
-import { ArtifactId, Checksum, ChecksumAlgorithm } from "./artifact.js"
+import { ArtifactId, Checksum } from "./artifact.js"
 
 export const OperationId = Schema.NonEmptyString
 export type OperationId = typeof OperationId.Type
@@ -160,45 +160,15 @@ export class CheckFileAction extends Schema.TaggedClass<CheckFileAction>()("chec
   checksum: Schema.optional(Checksum)
 }) {}
 
-export class HomebrewFormulaEntry extends Schema.Class<HomebrewFormulaEntry>("HomebrewFormulaEntry")({
-  artifactId: ArtifactId,
-  url: Schema.String,
-  os: Schema.Literals(["darwin", "linux"]),
-  arch: Schema.Literals(["x64", "arm64"])
-}) {}
-
-export class HomebrewFormulaContent extends Schema.TaggedClass<HomebrewFormulaContent>()("homebrew-formula", {
-  formulaName: Schema.String,
-  className: Schema.String,
-  description: Schema.String,
-  homepage: Schema.String,
-  version: Schema.String,
-  installLines: Schema.Array(Schema.String),
-  testLines: Schema.Array(Schema.String),
-  entries: Schema.Array(HomebrewFormulaEntry)
-}) {}
-
-export class ScoopManifestContent extends Schema.TaggedClass<ScoopManifestContent>()("scoop-manifest", {
-  version: Schema.String,
-  description: Schema.String,
-  homepage: Schema.String,
-  license: Schema.optional(Schema.String),
-  url: Schema.String,
-  bin: Schema.optional(Schema.Union([Schema.String, Schema.Array(Schema.Array(Schema.String))])),
+export class Sha256Hole extends Schema.Class<Sha256Hole>("Sha256Hole")({
   artifactId: ArtifactId
 }) {}
 
-export class ChecksumFileEntry extends Schema.Class<ChecksumFileEntry>("ChecksumFileEntry")({
-  artifactId: ArtifactId,
-  baseName: Schema.String
+export class FilePartsContent extends Schema.TaggedClass<FilePartsContent>()("file-parts", {
+  parts: Schema.Array(Schema.Union([Schema.String, Sha256Hole]))
 }) {}
 
-export class ChecksumFileContent extends Schema.TaggedClass<ChecksumFileContent>()("checksum-file", {
-  algorithm: ChecksumAlgorithm,
-  entries: Schema.Array(ChecksumFileEntry)
-}) {}
-
-export const DeferredFileContent = Schema.Union([HomebrewFormulaContent, ScoopManifestContent, ChecksumFileContent])
+export const DeferredFileContent = Schema.Union([FilePartsContent])
 export type DeferredFileContent = typeof DeferredFileContent.Type
 
 export class WriteFileAction extends Schema.TaggedClass<WriteFileAction>()("write-file", {

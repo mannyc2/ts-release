@@ -5,9 +5,9 @@
 summary: release-example-pypi@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 4
+operations: 5
 risk:
-  read-only: 3
+  read-only: 4
   writes-local: 0
   externally-visible: 0
   irreversible: 1
@@ -22,11 +22,18 @@ approval-required operations:
 
 ## Artifacts
 
-- - wheel artifacts/release_example_pypi-0.1.0-py3-none-any.whl [file] size=0 checksum=none
+- wheel artifacts/release_example_pypi-0.1.0-py3-none-any.whl [file] produced-by=import-artifacts platform=none checksum=none
 
 ## Operations By Risk
 
 ### read-only
+
+#### import-artifacts:wheel:exists
+
+- target: none
+- risk: read-only
+- approval: none
+- why: Verify imported artifact wheel exists.
 
 #### pypi:python-version
 

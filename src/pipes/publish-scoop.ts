@@ -4,15 +4,13 @@ import {
   catalogGitPublishOperations,
   validationNoteOperation
 } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import {
-  defaultScoopSection,
-  scoopSectionFromConfig,
-  type ScoopSection
+  type ResolvedScoop
 } from "./catalog-scoop.js"
 
-const rejectUnsupportedTokenEnv = (section: ScoopSection): Effect.Effect<void, PlanError> =>
+const rejectUnsupportedTokenEnv = (section: ResolvedScoop): Effect.Effect<void, PlanError> =>
   section.tokenEnv === undefined
     ? Effect.void
     : Effect.fail(PlanError.make({
@@ -22,13 +20,10 @@ const rejectUnsupportedTokenEnv = (section: ScoopSection): Effect.Effect<void, P
         "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
     }))
 
-export const publishScoopPipe: Pipe<ScoopSection> = {
+export const publishScoopPlanner: FeaturePlanner<ResolvedScoop> = {
   id: "publish:scoop",
-  phase: "publish",
-  section: scoopSectionFromConfig,
-  plan: (rawSection, state) =>
+  plan: (section, state) =>
     Effect.gen(function*() {
-      const section = defaultScoopSection(rawSection, state.identity)
       yield* rejectUnsupportedTokenEnv(section)
       const manifestPath = section.manifestPath
       return {

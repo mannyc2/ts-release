@@ -39,14 +39,6 @@ export class ReleaseConfigBunExecutableBuild extends Schema.Class<ReleaseConfigB
 }) {}
 export type BunBuildOptions = typeof ReleaseConfigBunExecutableBuild.Type
 
-const defaultTargets: ReadonlyArray<PlatformTargetName> = [
-  "linux-x64",
-  "linux-arm64",
-  "darwin-x64",
-  "darwin-arm64",
-  "windows-x64"
-]
-
 const bunCompileTargets = {
   "linux-x64": {
     default: "bun-linux-x64",
@@ -150,33 +142,11 @@ const artifactId = (
 ): string =>
   `${options.id ?? "cli"}-${target}`
 
-const hasParentTraversal = (pathName: string): boolean =>
-  pathName.split(/[\\/]+/).includes("..")
-
-const validateSafeRelativePath = (
-  field: string,
-  pathName: string
-): Effect.Effect<void, PlanError> => {
-  const isEmpty = pathName.trim().length === 0
-  const isAbsolute = pathName.startsWith("/") || /^[A-Za-z]:[\\/]/.test(pathName)
-  if (!isEmpty && !isAbsolute && !hasParentTraversal(pathName)) {
-    return Effect.void
-  }
-  return Effect.fail(PlanError.make({
-    pipeId: "build",
-    field,
-    reason: "Path must be non-empty, relative, and must not contain parent traversal."
-  }))
-}
-
 export const bunBuilder: Builder<BunBuildOptions> = {
   id: "bun",
   supportedTargets: allPlatformTargets,
   plan: (options, identity, target): Effect.Effect<BuilderPlan, PlanError> =>
     Effect.gen(function*() {
-      if (!(options.targets ?? defaultTargets).includes(target)) {
-        return { artifacts: [], operations: [] }
-      }
       const binary = options.binary ?? identity.normalizedName
       const platform = platformTargetVariant(target)
       const id = artifactId(options, target)
@@ -187,7 +157,6 @@ export const bunBuilder: Builder<BunBuildOptions> = {
         binary
       }
       const renderedEntry = yield* renderArtifactNameEffect(options.entry, context, { pipeId: "build", field: "builds[].entry" })
-      yield* validateSafeRelativePath("builds[].entry", renderedEntry)
       const renderedPath = yield* renderArtifactNameEffect(outputPath(options, target, binary), {
         identity,
         platform,

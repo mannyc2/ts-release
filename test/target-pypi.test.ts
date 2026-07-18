@@ -156,7 +156,8 @@ describe("PyPI target", () => {
       ],
       publish: {
         pypi: {
-          repositoryUrl: "https://test.pypi.org/legacy/"
+          repositoryUrl: "https://test.pypi.org/legacy/",
+          artifactIds: ["wheel"]
         }
       }
     })
@@ -182,5 +183,33 @@ describe("PyPI target", () => {
     }
     expect(directoryArtifact._tag).toBe("PlanError")
     expect(noArtifact._tag).toBe("PlanError")
+    if (noArtifact._tag === "PlanError") {
+      expect(noArtifact.field).toBe("publish.pypi.artifactIds")
+      expect(noArtifact.reason).toBe("PyPI target references missing artifact wheel.")
+    }
+  })
+
+  test("does not select a generic file solely because its id is wheel", async () => {
+    const config = releaseConfig({
+      artifacts: [
+        {
+          id: "wheel",
+          path: "dist/release-0.1.0-py3-none-any.whl",
+          format: "file"
+        }
+      ],
+      publish: {
+        pypi: {
+          repositoryUrl: "https://test.pypi.org/legacy/"
+        }
+      }
+    })
+    const error = await runEffect(createPlan(config).pipe(Effect.flip), PyPiLayer)
+
+    expect(error._tag).toBe("PlanError")
+    if (error._tag === "PlanError") {
+      expect(error.field).toBe("artifacts")
+      expect(error.reason).toBe("PyPI target must have at least one artifact consumer.")
+    }
   })
 })

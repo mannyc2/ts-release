@@ -15,14 +15,16 @@ import {
   rejectInvalidCatalogArtifact
 } from "./shared.js"
 import {
+  FilePartsContent,
   Operation,
-  ScoopManifestContent,
+  Sha256Hole,
   WriteFileAction
 } from "../pipeline/operation.js"
 import { catalogPathBaseName } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
+import { validateSafeRelativePathEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPublish>(
   "ReleaseConfigScoopPublish"
@@ -40,25 +42,24 @@ export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPu
   tokenEnv: Schema.optionalKey(Schema.String)
 }) {}
 
-export interface ScoopSection {
+export interface ResolvedScoop {
   readonly repository: string
-  readonly manifestName?: string | undefined
-  readonly manifestPath?: string | undefined
+  readonly manifestName: string
+  readonly manifestPath: string
   readonly artifactId?: string | undefined
   readonly homepage?: string | undefined
   readonly description?: string | undefined
   readonly license?: string | undefined
   readonly url?: string | undefined
   readonly bin?: string | undefined
-  readonly bucketDirectory?: string | undefined
+  readonly bucketDirectory: string
   readonly tokenEnv?: string | undefined
   readonly githubRepository?: string | undefined
 }
 
-export const scoopSectionFromConfig = (config: {
+export const resolveScoop = (config: {
   readonly project: {
     readonly name?: string | undefined
-    readonly package?: string | undefined
     readonly packageName?: string | undefined
     readonly repository?: string | undefined
   }
@@ -66,7 +67,7 @@ export const scoopSectionFromConfig = (config: {
     readonly github?: boolean | { readonly repository?: string | undefined } | undefined
     readonly scoop?: ReleaseConfigScoopPublish | undefined
   }
-}): ScoopSection | undefined => {
+}): ResolvedScoop | undefined => {
   const publish = config.publish.scoop
   if (publish === undefined) {
     return undefined
@@ -83,27 +84,9 @@ export const scoopSectionFromConfig = (config: {
     license: publish.license,
     url: publish.url,
     bin: publish.bin,
-    bucketDirectory: publish.bucketDirectory,
+    bucketDirectory: publish.bucketDirectory ?? ".",
     tokenEnv: publish.tokenEnv,
     githubRepository: repository
-  }
-}
-
-// Totalized section: after defaults, manifestName/manifestPath are facts.
-export interface NormalizedScoopSection extends ScoopSection {
-  readonly manifestName: string
-  readonly manifestPath: string
-}
-
-export const defaultScoopSection = (
-  section: ScoopSection,
-  identity: ReleaseIdentity
-): NormalizedScoopSection => {
-  const manifestName = section.manifestName ?? compactPackageShortName(identity.normalizedName)
-  return {
-    ...section,
-    manifestName,
-    manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`
   }
 }
 
@@ -115,7 +98,7 @@ const errorSource = {
 }
 
 const selectArtifact = Effect.fn("catalog.scoop.selectArtifact")(function*(
-  section: ScoopSection,
+  section: ResolvedScoop,
   artifacts: ReadonlyArray<Artifact>
 ) {
   if (section.artifactId !== undefined) {
@@ -135,7 +118,7 @@ const selectArtifact = Effect.fn("catalog.scoop.selectArtifact")(function*(
 })
 
 const artifactBin = (
-  section: ScoopSection,
+  section: ResolvedScoop,
   artifact: Artifact
 ): string | ReadonlyArray<ReadonlyArray<string>> | undefined => {
   if (section.bin !== undefined) {
@@ -148,33 +131,41 @@ const artifactBin = (
 }
 
 const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
-  section: ScoopSection,
+  section: ResolvedScoop,
   identity: ReleaseIdentity,
   artifacts: ReadonlyArray<Artifact>
 ) {
   const artifact = yield* selectArtifact(section, artifacts)
   yield* rejectInvalidCatalogArtifact(errorSource, artifact)
   const bin = artifactBin(section, artifact)
-  return ScoopManifestContent.make({
+  const prefix = JSON.stringify({
     version: identity.version,
     description: section.description ?? `${identity.name} ${identity.version} release artifact`,
     homepage: section.homepage ?? `https://github.com/${section.repository}`,
-    license: section.license,
-    url: catalogArtifactUrl(section, identity, artifact),
-    bin,
-    artifactId: artifact.id
+    ...(section.license === undefined ? {} : { license: section.license }),
+    url: catalogArtifactUrl(section, identity, artifact)
+  }, null, 2).slice(0, -2)
+  const suffix = bin === undefined
+    ? "\"\n}\n"
+    : `\",\n${JSON.stringify({ bin }, null, 2).slice(2, -2)}\n}\n`
+  return FilePartsContent.make({
+    parts: [
+      `${prefix},\n  "hash": "`,
+      Sha256Hole.make({ artifactId: artifact.id }),
+      suffix
+    ]
   })
 })
 
-export const catalogScoopPipe: Pipe<ScoopSection> = {
+export const catalogScoopPlanner: FeaturePlanner<ResolvedScoop> = {
   id: "catalog:scoop",
-  phase: "catalog",
-  section: scoopSectionFromConfig,
-  plan: (rawSection, state) =>
+  plan: (section, state) =>
     Effect.gen(function*() {
-      const section = defaultScoopSection(rawSection, state.identity)
-      const manifestPath = section.manifestPath
-      const content = yield* manifestContent(section, state.identity, state.artifacts.artifacts)
+      const manifestPath = yield* validateSafeRelativePathEffect(section.manifestPath, {
+        pipeId: "catalog:scoop",
+        field: "publish.scoop.manifestPath"
+      })
+      const content = yield* manifestContent(section, state.identity, state.artifacts)
       return {
         ...emptyContribution,
         artifacts: [

@@ -1,142 +1,78 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import { parseReleaseIntent } from "../src/config/load.js"
+import * as Option from "effect/Option"
 import { Artifact } from "../src/pipeline/artifact.js"
-import { emptyContribution, type Pipe } from "../src/pipeline/pipe.js"
-import { runPipeline } from "../src/pipeline/runner.js"
-import { emptyReleaseState } from "../src/pipeline/state.js"
+import { CheckFileAction, Operation } from "../src/pipeline/operation.js"
+import { emptyContribution, schedule, type FeaturePlanner, type ScheduledPlanner } from "../src/pipeline/pipe.js"
+import { emptyPlanAccumulator, runPipeline } from "../src/pipeline/runner.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()
+const artifact = (id: string, path: string) => Artifact.make({ id, kind: "file", path, producedBy: "planned" })
+const operation = (id: string) => Operation.make({
+  id, pipeId: "planned", phase: "build", risk: "read-only", description: id,
+  action: CheckFileAction.make({ path: "dist/file" })
+})
+const planner = (
+  id: string,
+  artifacts: ReadonlyArray<Artifact> = [],
+  operations: ReadonlyArray<Operation> = []
+): ScheduledPlanner => schedule({
+  id, plan: () => Effect.succeed({ ...emptyContribution, artifacts, operations })
+}, Option.some(undefined))
 
 describe("pipeline runner", () => {
-  it.effect("applies defaults, merges contributions, and records skipped pipes", () =>
+  it.effect("merges contributions in order, exposes earlier artifacts, and records skipped planners", () =>
     Effect.gen(function*() {
-      const config = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        publish: {}
-      }))
-      const skipped: Pipe<string> = {
-        id: "skipped",
-        phase: "build",
-        section: () => undefined,
-        plan: () => Effect.succeed(emptyContribution)
-      }
-      const planned: Pipe<string> = {
-        id: "planned",
-        phase: "build",
-        section: () => "raw-defaulted",
-        plan: (section) =>
-          Effect.succeed({
+      const skipped: FeaturePlanner<string> = { id: "skipped", plan: () => Effect.succeed(emptyContribution) }
+      const second: FeaturePlanner<string> = {
+        id: "second",
+        plan: (_section, context) => {
+          expect(context.artifacts.map(({ id }) => id)).toEqual(["first"])
+          return Effect.succeed({
             ...emptyContribution,
-            artifacts: [
-              Artifact.make({
-                id: section,
-                kind: "file",
-                path: `dist/${section}`,
-                producedBy: "planned"
-              })
-            ]
+            artifacts: [artifact("second", "dist/second")],
+            operations: [operation("second:check")]
           })
+        }
       }
-
-      const state = yield* runPipeline(emptyReleaseState(identity), config, [skipped, planned])
-
-      expect(state.notices[0]).toMatchObject({
-        pipeId: "skipped",
-        severity: "info"
-      })
-      expect(state.artifacts.artifacts.map((artifact) => artifact.id)).toEqual(["raw-defaulted"])
+      const state = yield* runPipeline(emptyPlanAccumulator(identity), [
+        schedule(skipped, Option.none()),
+        planner("first", [artifact("first", "dist/first")], [operation("first:check")]),
+        schedule(second, Option.some("resolved"))
+      ])
+      expect(state.notices).toEqual([{
+        pipeId: "skipped", severity: "info", reason: "Config section is absent; pipe skipped."
+      }])
+      expect(state.artifacts.map(({ id }) => id)).toEqual(["first", "second"])
+      expect(state.operations.map(({ id }) => id)).toEqual(["first:check", "second:check"])
     }))
 
-  it.effect("rejects duplicate rendered artifact basenames", () =>
+  it.effect("rejects artifact and operation collisions within and across contributions", () =>
     Effect.gen(function*() {
-      const config = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        publish: {}
-      }))
-      const planned: Pipe<string> = {
-        id: "planned",
-        phase: "build",
-        section: () => "raw",
-        plan: () =>
-          Effect.succeed({
-            ...emptyContribution,
-            artifacts: [
-              Artifact.make({
-                id: "first",
-                kind: "file",
-                path: "a/cli.exe",
-                producedBy: "planned"
-              }),
-              Artifact.make({
-                id: "second",
-                kind: "file",
-                path: "b/cli.exe",
-                producedBy: "planned"
-              })
-            ]
-          })
-      }
-
-      const error = yield* runPipeline(emptyReleaseState(identity), config, [planned]).pipe(Effect.flip)
-
-      expect(error._tag).toBe("PlanError")
-      if (error._tag === "PlanError") {
-        expect(error.field).toBe("artifacts.name")
-        expect(error.reason).toContain("cli.exe")
-        expect(error.reason).toContain("first")
-        expect(error.reason).toContain("second")
+      const cases: ReadonlyArray<readonly [string, ReadonlyArray<ScheduledPlanner>]> = [
+        ["artifacts.id", [planner("one", [artifact("same", "a/one"), artifact("same", "b/two")])]],
+        ["artifacts.path", [planner("one", [artifact("one", "a/file"), artifact("two", "a/file")])]],
+        ["artifacts.name", [planner("one", [artifact("one", "a/file"), artifact("two", "b/file")])]],
+        ["operations.id", [planner("one", [], [operation("same"), operation("same")])]],
+        ["artifacts.id", [planner("one", [artifact("same", "a/one")]), planner("two", [artifact("same", "b/two")])]],
+        ["artifacts.path", [planner("one", [artifact("one", "a/file")]), planner("two", [artifact("two", "a/file")])]],
+        ["artifacts.name", [planner("one", [artifact("one", "a/file")]), planner("two", [artifact("two", "b/file")])]],
+        ["operations.id", [planner("one", [], [operation("same")]), planner("two", [], [operation("same")])]]
+      ]
+      for (const [field, planners] of cases) {
+        const error = yield* runPipeline(emptyPlanAccumulator(identity), planners).pipe(Effect.flip)
+        expect(error).toMatchObject({ _tag: "PlanError", field })
       }
     }))
 
-  it.effect("allows distinct rendered artifact basenames", () =>
+  it.effect("allows distinct artifact paths, basenames, ids, and operation ids", () =>
     Effect.gen(function*() {
-      const config = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        publish: {}
-      }))
-      const planned: Pipe<string> = {
-        id: "planned",
-        phase: "build",
-        section: () => "raw",
-        plan: () =>
-          Effect.succeed({
-            ...emptyContribution,
-            artifacts: [
-              Artifact.make({
-                id: "first",
-                kind: "file",
-                path: "a/cli.exe",
-                producedBy: "planned"
-              }),
-              Artifact.make({
-                id: "second",
-                kind: "file",
-                path: "b/cli-arm64.exe",
-                producedBy: "planned"
-              })
-            ]
-          })
-      }
-
-      const state = yield* runPipeline(emptyReleaseState(identity), config, [planned])
-
-      expect(state.artifacts.artifacts.map((artifact) => artifact.id)).toEqual(["first", "second"])
+      const state = yield* runPipeline(emptyPlanAccumulator(identity), [
+        planner("one", [artifact("first", "a/cli.exe")], [operation("first:check")]),
+        planner("two", [artifact("second", "b/cli-arm64.exe")], [operation("second:check")])
+      ])
+      expect(state.artifacts.map(({ id }) => id)).toEqual(["first", "second"])
+      expect(state.operations.map(({ id }) => id)).toEqual(["first:check", "second:check"])
     }))
 })

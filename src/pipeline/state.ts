@@ -1,6 +1,4 @@
 import * as Schema from "effect/Schema"
-import { ArtifactCatalog } from "./catalog.js"
-import { Operation } from "./operation.js"
 import { SemverVersion } from "./semver.js"
 
 
@@ -21,18 +19,3 @@ export class PipeNotice extends Schema.Class<PipeNotice>("PipeNotice")({
   severity: Schema.Literals(["info", "warning"]),
   reason: Schema.String
 }) {}
-
-export class ReleaseState extends Schema.Class<ReleaseState>("ReleaseState")({
-  identity: ReleaseIdentity,
-  artifacts: ArtifactCatalog,
-  operations: Schema.Array(Operation),
-  notices: Schema.Array(PipeNotice)
-}) {}
-
-export const emptyReleaseState = (identity: ReleaseIdentity): ReleaseState =>
-  ReleaseState.make({
-    identity,
-    artifacts: ArtifactCatalog.empty,
-    operations: [],
-    notices: []
-  })

@@ -18,6 +18,7 @@ checks.
 
 Focused distribution examples:
 
+- `agent-plugin`: platform-neutral plugin zip, checksum, GitHub release, and a generic file-catalog pull request.
 - `multi-target`: one release coordinated across GitHub Releases, npm, and Homebrew.
 - `npm-only`: npm package directory with native npm dry-run validation.
 - `npm-first-publish`: token-based npm bootstrap config for the first version before switching to trusted publishing.
@@ -26,6 +27,10 @@ Focused distribution examples:
 - `portable-cli`: one CLI distributed through GitHub Release assets, npm, Homebrew, Scoop, and PyPI wrapper wheels.
 - `pypi-registry`: prebuilt Python distribution planned for TestPyPI with Twine.
 - `scoop-bucket`: Scoop bucket manifest rendering with simulated validation.
+
+The marketplace JSON in `agent-plugin` is illustrative user-owned data, not a
+vendor schema contract. Vendor schemas drift; the example proves that a whole
+file can be derived from release facts without vendor-specific core code.
 
 Trusted-publishing npm examples use `provenance` and
 `verifyPackageExists`. `npm-first-publish` demonstrates only the bootstrap shape

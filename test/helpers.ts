@@ -9,7 +9,7 @@ import * as ConfigProvider from "effect/ConfigProvider"
 import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
-import { CommandResult, CommandRunnerError } from "../src/host/host.js"
+import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
 import type { CommandSpec } from "../src/pipeline/operation.js"
 import { GitHubApi, GitHubApiError } from "../src/engine/github.js"
 import { ReleaseIdentity } from "../src/pipeline/state.js"
@@ -177,7 +177,7 @@ export const partialWorkflowConfig = JSON.stringify({
       repository: "owner/homebrew-tap",
       formulaName: "release",
       formulaPath: ".release/generated/release.rb",
-      artifactId: "archive"
+      artifactIds: ["archive"]
     },
     npm: {
       registry: "https://registry.npmjs.org",
@@ -241,7 +241,7 @@ export const makeObservableCommandRunnerLayer = (options: {
             stdout: "",
             stderr: ""
           }
-          return CommandResult.make({
+          return {
             command,
             exitCode: response.exitCode,
             stdout: response.stdout,
@@ -249,7 +249,7 @@ export const makeObservableCommandRunnerLayer = (options: {
             startedAt,
             endedAt,
             durationMillis: 1
-          })
+          } satisfies CommandResult
         })
     }),
     ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
@@ -355,7 +355,7 @@ export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>
         repository: "owner/homebrew-tap",
         formulaName: "release",
         formulaPath: ".release/generated/release.rb",
-        artifactId: "archive",
+        artifactIds: ["archive"],
         homepage: "https://github.com/owner/release",
         url: "https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.tgz",
         installPath: "bin/release",
@@ -378,6 +378,7 @@ export const pypiConfig = (overrides: Record<string, unknown> = {}) =>
         repositoryUrl: "https://test.pypi.org/legacy/",
         usernameEnv: "TWINE_USERNAME",
         passwordEnv: "TWINE_PASSWORD",
+        artifactIds: ["wheel"],
         ...overrides
       }
     }

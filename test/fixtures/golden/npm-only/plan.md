@@ -22,7 +22,7 @@ approval-required operations:
 
 ## Artifacts
 
-- - npm-package . [directory] size=0 checksum=none
+- npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
 
 ## Operations By Risk
 

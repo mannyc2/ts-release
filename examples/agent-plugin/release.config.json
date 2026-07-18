@@ -1,0 +1,46 @@
+{
+  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
+  "project": {
+    "name": "release-example-agent-plugin",
+    "packageName": "release-example-agent-plugin",
+    "version": "0.1.0",
+    "commit": "example",
+    "tag": "v0.1.0",
+    "repository": "owner/agent-plugin"
+  },
+  "archives": [
+    {
+      "id": "plugin",
+      "files": ["plugin/**"],
+      "formats": ["zip"]
+    }
+  ],
+  "checksum": {},
+  "publish": {
+    "github": {
+      "repository": "owner/agent-plugin"
+    }
+  },
+  "catalogs": [
+    {
+      "id": "claude-marketplace",
+      "repository": "owner/claude-marketplace",
+      "directory": "marketplace-checkout",
+      "file": ".claude-plugin/marketplace.json",
+      "submit": "pull-request",
+      "content": [
+        "{\n  \"name\": \"example-marketplace\",\n  \"owner\": { \"name\": \"owner\" },\n  \"plugins\": [\n    {\n      \"name\": \"{name}\",\n      \"version\": \"{version}\",\n      \"source\": \"owner/agent-plugin\",\n      \"archiveUrl\": \"",
+        {
+          "fact": "downloadUrl",
+          "artifact": "plugin"
+        },
+        "\",\n      \"sha256\": \"",
+        {
+          "fact": "sha256",
+          "artifact": "plugin"
+        },
+        "\"\n    }\n  ]\n}\n"
+      ]
+    }
+  ]
+}

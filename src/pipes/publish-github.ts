@@ -9,7 +9,7 @@ import {
   Operation
 } from "../pipeline/operation.js"
 import { validationNoteOperation } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import { PlanError } from "../pipeline/errors.js"
@@ -24,21 +24,21 @@ export class ReleaseConfigGitHubPublish extends Schema.Class<ReleaseConfigGitHub
   prerelease: Schema.optionalKey(Schema.Union([Schema.Boolean, Schema.Literal("auto")]))
 }) {}
 
-interface GitHubPublishSection {
+export interface ResolvedGitHubPublish {
   readonly repository?: string | undefined
   readonly tokenEnv?: string | undefined
   readonly draft: boolean
   readonly prerelease: boolean | "auto"
 }
 
-const sectionFromConfig = (config: {
+export const resolveGitHubPublish = (config: {
   readonly project: {
     readonly repository?: string | undefined
   }
   readonly publish: {
     readonly github?: boolean | ReleaseConfigGitHubPublish | undefined
   }
-}): GitHubPublishSection | undefined => {
+}): ResolvedGitHubPublish | undefined => {
   const publish = config.publish.github
   if (publish === undefined || publish === false) {
     return undefined
@@ -53,8 +53,8 @@ const sectionFromConfig = (config: {
 }
 
 const requireRepository = (
-  section: GitHubPublishSection
-): Effect.Effect<GitHubPublishSection & { readonly repository: string }, PlanError> => {
+  section: ResolvedGitHubPublish
+): Effect.Effect<ResolvedGitHubPublish & { readonly repository: string }, PlanError> => {
   if (section.repository !== undefined && section.repository.trim().length > 0) {
     return Effect.succeed({ ...section, repository: section.repository })
   }
@@ -110,14 +110,12 @@ const githubReleaseAssets = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<
     })
   )
 
-export const publishGitHubPipe: Pipe<GitHubPublishSection> = {
+export const publishGitHubPlanner: FeaturePlanner<ResolvedGitHubPublish> = {
   id: "publish:github",
-  phase: "publish",
-  section: sectionFromConfig,
-  plan: (rawSection, state) =>
+  plan: (resolved, state) =>
     Effect.gen(function*() {
-      const section = yield* requireRepository(rawSection)
-      const assets = releaseAssets(state.artifacts.artifacts)
+      const section = yield* requireRepository(resolved)
+      const assets = releaseAssets(state.artifacts)
       yield* rejectInvalidAssets(assets)
       const title = githubReleaseTitle(state.identity)
       const prerelease = githubPrerelease(section.prerelease, state.identity)

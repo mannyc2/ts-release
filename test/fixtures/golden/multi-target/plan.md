@@ -5,9 +5,9 @@
 summary: release-example-multi-target@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 14
+operations: 15
 risk:
-  read-only: 8
+  read-only: 9
   writes-local: 3
   externally-visible: 2
   irreversible: 1
@@ -29,13 +29,20 @@ approval-required operations:
 
 ## Artifacts
 
-- - npm-package . [directory] size=0 checksum=none
-- - archive artifacts/release-example-multi-target-0.1.0.tgz [tarball] size=0 checksum=none
-- - homebrew-formula .release/generated/release-example-multi-target.rb [file] size=0 checksum=none
+- npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
+- archive artifacts/release-example-multi-target-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
+- homebrew-formula .release/generated/release-example-multi-target.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
 
 ## Operations By Risk
 
 ### read-only
+
+#### import-artifacts:archive:exists
+
+- target: none
+- risk: read-only
+- approval: none
+- why: Verify imported artifact archive exists.
 
 #### npm:npm-version
 

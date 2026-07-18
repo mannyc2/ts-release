@@ -7,7 +7,7 @@ import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 import type { ArtifactStager } from "../../../src/engine/stager.js"
-import { ReleasePlanDocument } from "../../../src/engine/plan-document.js"
+import { ReleasePlan } from "../../../src/pipeline/plan.js"
 import * as Release from "../../../src/engine/engine.js"
 import type { ReleaseCommandRunner } from "../../../src/host/host.js"
 import type { ReleaseHttp } from "../../../src/host/http.js"
@@ -60,7 +60,7 @@ export type ActionRuntimeServices =
   | GitHubApi
   | ArtifactStager
 
-type PlanObserver = (plan: ReleasePlanDocument) => void
+type PlanObserver = (plan: ReleasePlan) => void
 
 const NoopPlanObserver: PlanObserver = () => {}
 
@@ -206,31 +206,31 @@ const operationSurfaceId = (pipeId: string): string | undefined => {
     : undefined
 }
 
-const surfaceCount = (plan: ReleasePlanDocument): number =>
-  new Set(plan.state.operations.flatMap((operation) => {
+const surfaceCount = (plan: ReleasePlan): number =>
+  new Set(plan.operations.flatMap((operation) => {
     const surface = operationSurfaceId(operation.pipeId)
     return surface === undefined ? [] : [surface]
   })).size
 
-const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlanDocument, planPath: string) {
-  yield* io.setOutput("release_name", plan.state.identity.name)
-  yield* io.setOutput("release_version", plan.state.identity.version)
-  yield* io.setOutput("operation_count", String(plan.state.operations.length))
+const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlan, planPath: string) {
+  yield* io.setOutput("release_name", plan.identity.name)
+  yield* io.setOutput("release_version", plan.identity.version)
+  yield* io.setOutput("operation_count", String(plan.operations.length))
   yield* io.setOutput(
     "irreversible_operation_count",
-    String(plan.state.operations.filter((operation) => operation.risk === "irreversible").length)
+    String(plan.operations.filter((operation) => operation.risk === "irreversible").length)
   )
-  yield* io.setOutput("target_count", String(surfaceCount(plan)))
+  yield* io.setOutput("surface_count", String(surfaceCount(plan)))
   yield* io.setOutput("evidence_directory", plan.evidenceDirectory)
   yield* io.setOutput("plan_path", planPath)
 })
 
 const outputEvidenceDirectory = Effect.fn("action.outputEvidenceDirectory")(function*(
   io: ActionIo,
-  plan: ReleasePlanDocument
+  plan: ReleasePlan
 ) {
-  yield* io.setOutput("release_name", plan.state.identity.name)
-  yield* io.setOutput("release_version", plan.state.identity.version)
+  yield* io.setOutput("release_name", plan.identity.name)
+  yield* io.setOutput("release_version", plan.identity.version)
   yield* io.setOutput("evidence_directory", plan.evidenceDirectory)
 })
 
@@ -288,7 +288,7 @@ const uploadEvidence = Effect.fn("action.uploadEvidence")(function*(
   options: ActionOptions,
   io: ActionIo,
   artifactClient: ActionArtifactClient,
-  plan: ReleasePlanDocument | undefined
+  plan: ReleasePlan | undefined
 ) {
   if (!options.uploadEvidence) {
     return
@@ -320,7 +320,7 @@ const withEvidenceUpload = <A, E, R>(
   options: ActionOptions,
   io: ActionIo,
   artifactClient: ActionArtifactClient,
-  planRef: () => ReleasePlanDocument | undefined,
+  planRef: () => ReleasePlan | undefined,
   effect: Effect.Effect<A, E, R>
 ) =>
   effect.pipe(
@@ -445,8 +445,8 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   const config = yield* workspaceConfigPath(path, options, options.config)
   const safeOptions = actionOptionsWithConfig(options, config)
   yield* ensureRuntime(safeOptions)
-  let planForUpload: ReleasePlanDocument | undefined
-  const rememberPlan = (plan: ReleasePlanDocument): ReleasePlanDocument => {
+  let planForUpload: ReleasePlan | undefined
+  const rememberPlan = (plan: ReleasePlan): ReleasePlan => {
     planForUpload = plan
     return plan
   }

@@ -12,7 +12,7 @@ import {
   readOnlyCommandValidationOperation,
   validationNoteOperation
 } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import { compactTrustedPublishing, trustedPublishingAuthEnvNames } from "./shared.js"
@@ -27,7 +27,6 @@ export class ReleaseConfigNpmTrustedPublishing extends Schema.Class<ReleaseConfi
 )({
   provider: Schema.optionalKey(TrustedPublishingProvider),
   workflow: Schema.optionalKey(WorkflowFileName),
-  packageExists: Schema.optionalKey(Schema.Literal(true)),
   verifyPackageExists: Schema.optionalKey(Schema.Boolean)
 }) {}
 
@@ -47,9 +46,9 @@ interface NpmTrustedPublishingSection {
   readonly verifyPackageExists?: boolean | undefined
 }
 
-interface NpmPublishSection {
+export interface ResolvedNpmPublish {
   readonly registry: string
-  readonly packageName?: string | undefined
+  readonly packageName: string
   readonly packagePath: string
   readonly tokenEnv?: string | undefined
   readonly trustedPublishing?: NpmTrustedPublishingSection | undefined
@@ -69,32 +68,15 @@ const compactNpmTrustedPublishing = (
     }
 }
 
-const packageNameFromConfig = (config: {
+export const resolveNpmPublish = (config: {
   readonly project: {
-    readonly name?: string | undefined
-    readonly package?: string | undefined
-    readonly packageName?: string | undefined
-  }
-  readonly publish: {
-    readonly npm?: boolean | ReleaseConfigNpmPublish | undefined
-  }
-}): string | undefined => {
-  const publish = config.publish.npm
-  const object = publish === true || publish === false ? undefined : publish
-  return object?.packageName ?? config.project.packageName ?? config.project.package ?? config.project.name
-}
-
-const sectionFromConfig = (config: {
-  readonly project: {
-    readonly name?: string | undefined
-    readonly package?: string | undefined
     readonly packageName?: string | undefined
     readonly packagePath?: string | undefined
   }
   readonly publish: {
     readonly npm?: boolean | ReleaseConfigNpmPublish | undefined
   }
-}): NpmPublishSection | undefined => {
+}, identity: ReleaseIdentity): ResolvedNpmPublish | undefined => {
   const publish = config.publish.npm
   if (publish === undefined || publish === false) {
     return undefined
@@ -102,7 +84,7 @@ const sectionFromConfig = (config: {
   const object = publish === true ? undefined : publish
   return {
     registry: object?.registry ?? "https://registry.npmjs.org",
-    packageName: packageNameFromConfig(config),
+    packageName: object?.packageName ?? config.project.packageName ?? identity.name,
     packagePath: object?.packagePath ?? config.project.packagePath ?? ".",
     tokenEnv: object?.tokenEnv,
     trustedPublishing: compactNpmTrustedPublishing(object?.trustedPublishing),
@@ -111,13 +93,13 @@ const sectionFromConfig = (config: {
   }
 }
 
-const authEnvNames = (section: NpmPublishSection): ReadonlyArray<string> =>
+const authEnvNames = (section: ResolvedNpmPublish): ReadonlyArray<string> =>
   section.trustedPublishing !== undefined
     ? trustedPublishingAuthEnvNames
     : section.tokenEnv === undefined ? [] : [section.tokenEnv]
 
 const npmCommand = (
-  section: NpmPublishSection,
+  section: ResolvedNpmPublish,
   args: ReadonlyArray<string>,
   includeAuth: boolean
 ): CommandSpec =>
@@ -128,7 +110,7 @@ const npmCommand = (
     redactedEnv: includeAuth ? authEnvNames(section) : []
   })
 
-const npmAuthOperation = (section: NpmPublishSection): Operation =>
+const npmAuthOperation = (section: ResolvedNpmPublish): Operation =>
   section.trustedPublishing !== undefined
     ? validationNoteOperation({
       id: "npm:npm-trusted-publishing-auth",
@@ -144,15 +126,15 @@ const npmAuthOperation = (section: NpmPublishSection): Operation =>
       command: npmCommand(section, ["whoami", "--registry", section.registry], true)
     })
 
-const npmPackageExistsOperation = (section: NpmPublishSection): Operation =>
+const npmPackageExistsOperation = (section: ResolvedNpmPublish): Operation =>
   readOnlyCommandValidationOperation({
     id: "npm:npm-package-exists",
     pipeId: "publish:npm",
     description: "Verify npm package exists before trusted publishing.",
-    command: npmCommand(section, ["view", section.packageName ?? "", "name", "--registry", section.registry], false)
+    command: npmCommand(section, ["view", section.packageName, "name", "--registry", section.registry], false)
   })
 
-const npmPublishArgs = (section: NpmPublishSection): ReadonlyArray<string> => {
+const npmPublishArgs = (section: ResolvedNpmPublish): ReadonlyArray<string> => {
   const args = ["publish", section.packagePath, "--registry", section.registry]
   if (section.access !== undefined) {
     args.push("--access", section.access)
@@ -163,12 +145,10 @@ const npmPublishArgs = (section: NpmPublishSection): ReadonlyArray<string> => {
   return args
 }
 
-const requirePackageName = (
-  section: NpmPublishSection,
-  identity: ReleaseIdentity
-): Effect.Effect<NpmPublishSection & { readonly packageName: string }, PlanError> => {
-  const packageName = section.packageName ?? identity.name
-  if (packageName.trim().length === 0) {
+const validateNpmPublish = (
+  section: ResolvedNpmPublish
+): Effect.Effect<ResolvedNpmPublish, PlanError> => {
+  if (section.packageName.trim().length === 0) {
     return Effect.fail(PlanError.make({
       pipeId: "publish:npm",
       field: "publish.npm.packageName",
@@ -182,16 +162,14 @@ const requirePackageName = (
       reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
     }))
   }
-  return Effect.succeed({ ...section, packageName })
+  return Effect.succeed(section)
 }
 
-export const publishNpmPipe: Pipe<NpmPublishSection> = {
+export const publishNpmPlanner: FeaturePlanner<ResolvedNpmPublish> = {
   id: "publish:npm",
-  phase: "publish",
-  section: sectionFromConfig,
-  plan: (rawSection, state) =>
+  plan: (resolved, state) =>
     Effect.gen(function*() {
-      const section = yield* requirePackageName(rawSection, state.identity)
+      const section = yield* validateNpmPublish(resolved)
       return {
         ...emptyContribution,
         operations: [

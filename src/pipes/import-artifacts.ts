@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import {
   Artifact,
@@ -13,7 +14,7 @@ import {
 import { PlanError } from "../pipeline/errors.js"
 import { CheckFileAction, Operation } from "../pipeline/operation.js"
 import { optionalField } from "../pipeline/optional-field.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import { renderArtifactNameEffect } from "../pipeline/template.js"
 
@@ -27,7 +28,12 @@ export class ReleaseConfigManualArtifact extends Schema.Class<ReleaseConfigManua
   variant: Schema.optionalKey(InstallableArtifactVariant)
 }) {}
 
-export type ImportArtifactsSection = ReadonlyArray<ReleaseConfigManualArtifact>
+export type ResolvedManualArtifact = ReleaseConfigManualArtifact
+
+export const resolveManualArtifacts = (
+  raw: ReadonlyArray<ReleaseConfigManualArtifact> | undefined
+): Option.Option<ReadonlyArray<ResolvedManualArtifact>> =>
+  raw === undefined ? Option.none() : Option.some(raw)
 
 const artifactKind = (format: ReleaseConfigManualArtifact["format"]): Artifact["kind"] => {
   switch (format) {
@@ -44,10 +50,8 @@ const artifactKind = (format: ReleaseConfigManualArtifact["format"]): Artifact["
   }
 }
 
-export const importArtifactsPipe: Pipe<ImportArtifactsSection> = {
+export const importArtifactsPlanner: FeaturePlanner<ReadonlyArray<ResolvedManualArtifact>> = {
   id: "import-artifacts",
-  phase: "build",
-  section: (config) => config.artifacts,
   plan: (section, state) =>
     Effect.gen(function*() {
       const artifacts = []

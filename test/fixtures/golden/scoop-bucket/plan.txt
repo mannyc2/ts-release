@@ -3,17 +3,19 @@ commit: example
 evidence: .release/evidence
 artifacts: 2
 surfaces: 1
-operations: 5
+operations: 6
 
 artifacts:
-  - archive artifacts/release-example-scoop-0.1.0.zip [zip] size=0 checksum=none
-  - scoop-manifest .release/generated/release-example-scoop.json [file] size=0 checksum=none
+  - archive artifacts/release-example-scoop-0.1.0.zip [archive] produced-by=import-artifacts platform=none checksum=none
+  - scoop-manifest .release/generated/release-example-scoop.json [catalog-file] produced-by=catalog:scoop platform=none checksum=none
 
 surfaces:
   - scoop operations=5
 
 operations by risk:
   read-only:
+    - import-artifacts:archive:exists Verify imported artifact archive exists.
+    check-file: artifacts/release-example-scoop-0.1.0.zip
     - scoop:scoop-manifest-validation Record simulated Scoop manifest validation.
     note: Scoop manifest validation is simulated by the deterministic release plan.
   writes-local:

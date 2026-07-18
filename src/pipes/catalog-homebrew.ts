@@ -15,17 +15,18 @@ import {
   rejectInvalidCatalogArtifact
 } from "./shared.js"
 import {
-  HomebrewFormulaContent,
-  HomebrewFormulaEntry,
+  FilePartsContent,
   Operation,
+  Sha256Hole,
   WriteFileAction
 } from "../pipeline/operation.js"
 import {
   catalogPathBaseName
 } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
+import { validateSafeRelativePathEffect } from "../pipeline/template.js"
 
 export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHomebrewPublish>(
   "ReleaseConfigHomebrewPublish"
@@ -33,8 +34,7 @@ export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHome
   repository: Schema.String,
   formulaName: Schema.optionalKey(Schema.String),
   formulaPath: Schema.optionalKey(SafeRelativePath),
-  artifactId: Schema.optionalKey(Schema.String),
-  artifactIds: Schema.optionalKey(Schema.Array(Schema.String)),
+  artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString)),
   homepage: Schema.optionalKey(Schema.String),
   description: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
@@ -43,24 +43,23 @@ export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHome
   tokenEnv: Schema.optionalKey(Schema.String)
 }) {}
 
-export interface HomebrewSection {
+export interface ResolvedHomebrew {
   readonly repository: string
-  readonly formulaName?: string | undefined
-  readonly formulaPath?: string | undefined
-  readonly artifactIds?: ReadonlyArray<string> | undefined
+  readonly formulaName: string
+  readonly formulaPath: string
+  readonly artifactIds?: readonly [string, ...Array<string>] | undefined
   readonly homepage?: string | undefined
   readonly description?: string | undefined
   readonly url?: string | undefined
-  readonly tapDirectory?: string | undefined
+  readonly tapDirectory: string
   readonly installPath?: string | undefined
   readonly tokenEnv?: string | undefined
   readonly githubRepository?: string | undefined
 }
 
-export const homebrewSectionFromConfig = (config: {
+export const resolveHomebrew = (config: {
   readonly project: {
     readonly name?: string | undefined
-    readonly package?: string | undefined
     readonly packageName?: string | undefined
     readonly repository?: string | undefined
   }
@@ -68,7 +67,7 @@ export const homebrewSectionFromConfig = (config: {
     readonly github?: boolean | { readonly repository?: string | undefined } | undefined
     readonly homebrew?: ReleaseConfigHomebrewPublish | undefined
   }
-}): HomebrewSection | undefined => {
+}): ResolvedHomebrew | undefined => {
   const publish = config.publish.homebrew
   if (publish === undefined) {
     return undefined
@@ -79,32 +78,14 @@ export const homebrewSectionFromConfig = (config: {
     repository: publish.repository,
     formulaName,
     formulaPath: publish.formulaPath ?? `.release/generated/${formulaName}.rb`,
-    artifactIds: publish.artifactIds ?? (publish.artifactId === undefined ? undefined : [publish.artifactId]),
+    artifactIds: publish.artifactIds,
     homepage: publish.homepage,
     description: publish.description,
     url: publish.url,
-    tapDirectory: publish.tapDirectory,
+    tapDirectory: publish.tapDirectory ?? ".",
     installPath: publish.installPath,
     tokenEnv: publish.tokenEnv,
     githubRepository: repository
-  }
-}
-
-// Totalized section: after defaults, formulaName/formulaPath are facts.
-export interface NormalizedHomebrewSection extends HomebrewSection {
-  readonly formulaName: string
-  readonly formulaPath: string
-}
-
-export const defaultHomebrewSection = (
-  section: HomebrewSection,
-  identity: ReleaseIdentity
-): NormalizedHomebrewSection => {
-  const formulaName = section.formulaName ?? compactPackageShortName(identity.normalizedName)
-  return {
-    ...section,
-    formulaName,
-    formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`
   }
 }
 
@@ -125,17 +106,10 @@ const errorSource = {
 }
 
 const selectArtifacts = Effect.fn("catalog.homebrew.selectArtifacts")(function*(
-  section: HomebrewSection,
+  section: ResolvedHomebrew,
   artifacts: ReadonlyArray<Artifact>
 ) {
   if (section.artifactIds !== undefined) {
-    if (section.artifactIds.length === 0) {
-      return yield* Effect.fail(PlanError.make({
-        pipeId: "catalog:homebrew",
-        field: "publish.homebrew.ids",
-        reason: "Homebrew artifact ids must not be empty."
-      }))
-    }
     return yield* Effect.forEach(section.artifactIds, (artifactId) =>
       findCatalogArtifact(errorSource, artifacts, artifactId)
     )
@@ -184,13 +158,13 @@ const validateVariantArtifacts = Effect.fn("catalog.homebrew.validateVariantArti
 })
 
 const singleArtifactBinaryName = (
-  section: NormalizedHomebrewSection,
+  section: ResolvedHomebrew,
   artifact: Artifact
 ): string | undefined =>
   section.installPath !== undefined ? section.formulaName : artifact.platform?.binaryName
 
 const multiArtifactBinaryName = (
-  section: NormalizedHomebrewSection,
+  section: ResolvedHomebrew,
   artifacts: ReadonlyArray<Artifact>
 ): string =>
   section.installPath !== undefined
@@ -199,7 +173,7 @@ const multiArtifactBinaryName = (
       section.formulaName
 
 const singleArtifactInstallLines = (
-  section: NormalizedHomebrewSection,
+  section: ResolvedHomebrew,
   artifact: Artifact
 ): ReadonlyArray<string> => {
   const formulaName = section.formulaName
@@ -219,7 +193,7 @@ const singleArtifactInstallLines = (
 }
 
 const multiArtifactInstallLines = (
-  section: NormalizedHomebrewSection,
+  section: ResolvedHomebrew,
   artifacts: ReadonlyArray<Artifact>
 ): ReadonlyArray<string> => {
   const formulaName = section.formulaName
@@ -248,7 +222,7 @@ const formulaTestLines = (binaryName: string | undefined): ReadonlyArray<string>
     ]
 
 const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
-  section: NormalizedHomebrewSection,
+  section: ResolvedHomebrew,
   identity: ReleaseIdentity,
   artifacts: ReadonlyArray<Artifact>
 ) {
@@ -257,6 +231,11 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
   const formulaName = section.formulaName
   const homepage = section.homepage ?? `https://github.com/${section.repository}`
   const description = section.description ?? `${identity.name} ${identity.version} release artifact`
+  const common = [
+    `class ${formulaClassName(formulaName)} < Formula`,
+    `  desc ${rubyString(description)}`,
+    `  homepage ${rubyString(homepage)}`
+  ]
   if (selected.length === 1) {
     const artifact = selected[0]
     if (artifact === undefined) {
@@ -266,53 +245,61 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
         reason: "Homebrew publishing requires at least one artifact."
       }))
     }
-    return HomebrewFormulaContent.make({
-      formulaName,
-      className: formulaClassName(formulaName),
-      description,
-      homepage,
-      version: identity.version,
-      installLines: [...singleArtifactInstallLines(section, artifact)],
-      testLines: [...formulaTestLines(singleArtifactBinaryName(section, artifact))],
-      entries: [
-        HomebrewFormulaEntry.make({
-          artifactId: artifact.id,
-          url: catalogArtifactUrl(section, identity, artifact),
-          os: artifact.platform?.os === "linux" ? "linux" : "darwin",
-          arch: artifact.platform?.arch ?? "arm64"
-        })
+    return FilePartsContent.make({
+      parts: [
+        [...common, `  url ${rubyString(catalogArtifactUrl(section, identity, artifact))}`, "  sha256 \""].join("\n"),
+        Sha256Hole.make({ artifactId: artifact.id }),
+        [
+          "\"",
+          `  version ${rubyString(identity.version)}`,
+          "",
+          "  def install",
+          ...singleArtifactInstallLines(section, artifact),
+          "  end",
+          ...formulaTestLines(singleArtifactBinaryName(section, artifact)),
+          "end",
+          ""
+        ].join("\n")
       ]
     })
   }
   const variants = yield* validateVariantArtifacts(selected)
-  return HomebrewFormulaContent.make({
-    formulaName,
-    className: formulaClassName(formulaName),
-    description,
-    homepage,
-    version: identity.version,
-    installLines: [...multiArtifactInstallLines(section, variants)],
-    testLines: [...formulaTestLines(multiArtifactBinaryName(section, variants))],
-    entries: variants.map((artifact) =>
-      HomebrewFormulaEntry.make({
-        artifactId: artifact.id,
-        url: catalogArtifactUrl(section, identity, artifact),
-        os: "darwin",
-        arch: artifact.platform?.arch ?? "arm64"
-      })
-    )
+  const variantParts: Array<string | Sha256Hole> = variants.flatMap((artifact) => [
+    [
+      `    ${artifact.platform?.arch === "arm64" ? "on_arm" : "on_intel"} do`,
+      `      url ${rubyString(catalogArtifactUrl(section, identity, artifact))}`,
+      "      sha256 \""
+    ].join("\n"),
+    Sha256Hole.make({ artifactId: artifact.id }),
+    ["\"", "    end", "", ""].join("\n")
+  ])
+  return FilePartsContent.make({
+    parts: [
+      [...common, `  version ${rubyString(identity.version)}`, "", "  on_macos do", ""].join("\n"),
+      ...variantParts,
+      [
+        "  end",
+        "",
+        "  def install",
+        ...multiArtifactInstallLines(section, variants),
+        "  end",
+        ...formulaTestLines(multiArtifactBinaryName(section, variants)),
+        "end",
+        ""
+      ].join("\n")
+    ]
   })
 })
 
-export const catalogHomebrewPipe: Pipe<HomebrewSection> = {
+export const catalogHomebrewPlanner: FeaturePlanner<ResolvedHomebrew> = {
   id: "catalog:homebrew",
-  phase: "catalog",
-  section: homebrewSectionFromConfig,
-  plan: (rawSection, state) =>
+  plan: (section, state) =>
     Effect.gen(function*() {
-      const section = defaultHomebrewSection(rawSection, state.identity)
-      const formulaPath = section.formulaPath
-      const content = yield* formulaContent(section, state.identity, state.artifacts.artifacts)
+      const formulaPath = yield* validateSafeRelativePathEffect(section.formulaPath, {
+        pipeId: "catalog:homebrew",
+        field: "publish.homebrew.formulaPath"
+      })
+      const content = yield* formulaContent(section, state.identity, state.artifacts)
       return {
         ...emptyContribution,
         artifacts: [

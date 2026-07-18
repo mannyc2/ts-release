@@ -135,7 +135,6 @@
       "trustedPublishing": {
         "provider": "github-actions",
         "workflow": "release.yml",
-        "packageExists": true,
         "verifyPackageExists": true
       },
       "access": "public",
@@ -151,7 +150,6 @@
       "repository": "mannyc2/homebrew-ts-release",
       "formulaName": "ts-release",
       "formulaPath": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
-      "artifactId": "cli-darwin-arm64",
       "artifactIds": [
         "cli-darwin-arm64",
         "cli-darwin-x64"

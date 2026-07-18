@@ -6,7 +6,7 @@ surfaces: 1
 operations: 5
 
 artifacts:
-  - npm-package . [directory] size=0 checksum=none
+  - npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
 
 surfaces:
   - npm operations=5

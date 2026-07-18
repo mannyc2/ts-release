@@ -3,16 +3,18 @@ commit: example
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1
-operations: 4
+operations: 5
 
 artifacts:
-  - wheel artifacts/release_example_pypi-0.1.0-py3-none-any.whl [file] size=0 checksum=none
+  - wheel artifacts/release_example_pypi-0.1.0-py3-none-any.whl [file] produced-by=import-artifacts platform=none checksum=none
 
 surfaces:
   - pypi operations=4
 
 operations by risk:
   read-only:
+    - import-artifacts:wheel:exists Verify imported artifact wheel exists.
+    check-file: artifacts/release_example_pypi-0.1.0-py3-none-any.whl
     - pypi:python-version Check Python CLI availability.
     command: python --version
     argv: ["python","--version"]

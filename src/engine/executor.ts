@@ -3,8 +3,9 @@ import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
+import * as Ref from "effect/Ref"
+import * as Schedule from "effect/Schedule"
 import {
-  appendEvidenceBundle,
   appendEvidenceRecord,
   CommandOutcome,
   emptyEvidenceBundle,
@@ -27,11 +28,10 @@ import {
   type EvidenceStatus
 } from "./evidence.js"
 import {
-  deferredContentDigestAlgorithm,
   deferredContentArtifactIds,
   renderDeferredContent
 } from "./content.js"
-import { OperationFailedError, WorkspaceWriteError } from "./errors.js"
+import { ActionAttemptFailed, OperationFailedError, WorkspaceWriteError } from "./errors.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { ReleaseHttp } from "../host/http.js"
 import { nowIso } from "../host/platform.js"
@@ -40,16 +40,22 @@ import {
   resolveWorkspaceWritePathEffect
 } from "../internal/workspace-path.js"
 import {
-  CommandAction,
+  type CheckFileAction,
+  type CommandAction,
   type DeferredFileContent,
   ExecutionApproval,
-  GitHubReleaseCreateAction,
-  GitHubReleaseVerifyAction,
+  type GitHubReleaseCreateAction,
+  type GitHubReleaseVerifyAction,
+  type HttpCheckAction,
+  type NoteAction,
   Operation,
-  requireExecutionApproval
+  requireExecutionApproval,
+  type RetryPolicy,
+  type StageAction,
+  type WriteFileAction
 } from "../pipeline/operation.js"
 import { optionalField } from "../pipeline/optional-field.js"
-import type { ArtifactCatalog } from "../pipeline/catalog.js"
+import type { Artifact } from "../pipeline/artifact.js"
 import type { PipeNotice, ReleaseIdentity } from "../pipeline/state.js"
 import {
   stageArtifactOperation,
@@ -64,10 +70,12 @@ import {
 export interface OperationRunContext {
   readonly root: string
   readonly identity: ReleaseIdentity
-  readonly artifacts?: ArtifactCatalog | undefined
+  readonly artifacts: ReadonlyArray<Artifact>
   readonly notices?: ReadonlyArray<PipeNotice> | undefined
   readonly configPath?: string | undefined
 }
+
+export type EvidenceRef = Ref.Ref<EvidenceBundle>
 
 interface RecordTiming {
   readonly startedAt: string
@@ -128,12 +136,19 @@ const startTiming = Effect.fn("engine.startTiming")(function*() {
   }
 })
 
-const bundleForContext = (context: OperationRunContext): EvidenceBundle =>
+export const bundleForContext = (context: OperationRunContext): EvidenceBundle =>
   emptyEvidenceBundle({
     releaseName: context.identity.name,
     releaseVersion: context.identity.version,
     notices: context.notices
   })
+
+export const makeEvidenceRef = Effect.fn("engine.makeEvidenceRef")(function*(context: OperationRunContext) {
+  return yield* Ref.make(bundleForContext(context))
+})
+
+const failAttempt = (failedRecord: EvidenceRecord): Effect.Effect<never, ActionAttemptFailed> =>
+  Effect.fail(ActionAttemptFailed.make({ record: failedRecord }))
 
 const writeWorkspaceFile = Effect.fn("engine.writeWorkspaceFile")(function*(
   root: string,
@@ -167,23 +182,14 @@ const digestHex = (bytes: Uint8Array, algorithm: "sha256" | "sha512"): string =>
 const resolveDeferredContentHashes = Effect.fn("engine.resolveDeferredContentHashes")(function*(
   content: DeferredFileContent,
   context: OperationRunContext,
-  outputPath: string
+  outputPath: string,
+  algorithm: "sha256" | "sha512"
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const catalog = context.artifacts
-  if (catalog === undefined) {
-    return yield* Effect.fail(
-      WorkspaceWriteError.make({
-        path: outputPath,
-        reason: "Deferred file content requires the release artifact catalog."
-      })
-    )
-  }
-  const algorithm = deferredContentDigestAlgorithm(content)
   const hashes = new Map<string, string>()
   for (const artifactId of deferredContentArtifactIds(content)) {
-    const artifact = catalog.artifacts.find((candidate) => candidate.id === artifactId)
+    const artifact = context.artifacts.find((candidate) => candidate.id === artifactId)
     if (artifact === undefined) {
       return yield* Effect.fail(
         WorkspaceWriteError.make({
@@ -213,10 +219,23 @@ const resolveWriteFileContents = Effect.fn("engine.resolveWriteFileContents")(fu
   if (typeof contents === "string") {
     return { contents }
   }
-  const hashes = yield* resolveDeferredContentHashes(contents, context, outputPath)
+  const outputArtifact = context.artifacts.find((artifact) =>
+    artifact.path === outputPath && artifact.extra?._tag === "checksum-file"
+  )
+  const checksumAlgorithm = outputArtifact?.extra?._tag === "checksum-file"
+    ? outputArtifact.extra.algorithm
+    : undefined
+  const hashes = yield* resolveDeferredContentHashes(contents, context, outputPath, checksumAlgorithm ?? "sha256")
   try {
     const resolved = renderDeferredContent(contents, hashes)
-    return { contents: resolved.contents, resolvedValues: resolved.values }
+    const resolvedValues = checksumAlgorithm === undefined
+      ? resolved.values
+      : resolved.values.map(({ artifactId, sha256 }) => ({
+        artifactId,
+        algorithm: checksumAlgorithm,
+        value: sha256
+      }))
+    return { contents: resolved.contents, resolvedValues }
   } catch (error) {
     return yield* Effect.fail(
       WorkspaceWriteError.make({
@@ -229,32 +248,32 @@ const resolveWriteFileContents = Effect.fn("engine.resolveWriteFileContents")(fu
 
 const fileCheckEvidence = Effect.fn("engine.fileCheckEvidence")(function*(
   operation: Operation,
+  action: CheckFileAction,
   context: OperationRunContext
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  if (operation.action._tag !== "check-file") {
-    throw new Error("fileCheckEvidence requires a check-file action")
-  }
-  const outcome = FileOutcome.make({ path: operation.action.path })
-  const resolved = resolveWorkspacePath(path, context.root, operation.action.path)
+  const outcome = FileOutcome.make({ path: action.path })
+  const resolved = resolveWorkspacePath(path, context.root, action.path)
   const exists = yield* fs.exists(resolved)
   if (!exists) {
-    return yield* instantRecord(operation, {
+    const failedRecord = yield* instantRecord(operation, {
       status: "failed",
       message: "File does not exist.",
       outcome
     })
+    return yield* failAttempt(failedRecord)
   }
-  if (operation.action.checksum !== undefined) {
+  if (action.checksum !== undefined) {
     const bytes = yield* fs.readFile(resolved)
-    const actual = digestHex(bytes, operation.action.checksum.algorithm)
-    if (actual !== operation.action.checksum.value) {
-      return yield* instantRecord(operation, {
+    const actual = digestHex(bytes, action.checksum.algorithm)
+    if (actual !== action.checksum.value) {
+      const failedRecord = yield* instantRecord(operation, {
         status: "failed",
         message: "File checksum did not match.",
         outcome
       })
+      return yield* failAttempt(failedRecord)
     }
   }
   return yield* instantRecord(operation, {
@@ -265,12 +284,13 @@ const fileCheckEvidence = Effect.fn("engine.fileCheckEvidence")(function*(
 })
 
 const commandEvidence = Effect.fn("engine.commandEvidence")(function*(
-  operation: Operation & { readonly action: CommandAction }
+  operation: Operation,
+  action: CommandAction
 ) {
   const commandRunner = yield* ReleaseCommandRunner
   const secrets = yield* readRedactionSecrets(operation)
-  const result = yield* commandRunner.runCommand(operation.action.command)
-  return record(operation, {
+  const result = yield* commandRunner.runCommand(action.command)
+  const attemptRecord = record(operation, {
     status: result.exitCode === 0 ? "passed" : "failed",
     message: result.exitCode === 0
       ? "Command completed successfully."
@@ -285,33 +305,31 @@ const commandEvidence = Effect.fn("engine.commandEvidence")(function*(
       stderr: redactText(result.stderr, secrets)
     })
   })
+  return result.exitCode === 0 ? attemptRecord : yield* failAttempt(attemptRecord)
 })
 
 const writeFileEvidence = Effect.fn("engine.writeFileEvidence")(function*(
   operation: Operation,
+  action: WriteFileAction,
   context: OperationRunContext
 ) {
-  if (operation.action._tag !== "write-file") {
-    throw new Error("writeFileEvidence requires a write-file action")
-  }
-  const resolved = yield* resolveWriteFileContents(operation.action.contents, context, operation.action.path)
-  yield* writeWorkspaceFile(context.root, operation.action.path, resolved.contents)
+  const resolved = yield* resolveWriteFileContents(action.contents, context, action.path)
+  yield* writeWorkspaceFile(context.root, action.path, resolved.contents)
   return yield* instantRecord(operation, {
     status: "passed",
-    message: `Rendered ${operation.action.path}`,
+    message: `Rendered ${action.path}`,
     outcome: FileOutcome.make({
-      path: operation.action.path,
+      path: action.path,
       ...optionalField(resolved.resolvedValues, (resolvedValues) => ({ resolvedValues: [...resolvedValues] }))
     })
   })
 })
 
-const httpEvidence = Effect.fn("engine.httpEvidence")(function*(operation: Operation) {
+const httpEvidence = Effect.fn("engine.httpEvidence")(function*(
+  operation: Operation,
+  action: HttpCheckAction
+) {
   const http = yield* ReleaseHttp
-  if (operation.action._tag !== "http-check") {
-    throw new Error("httpEvidence requires an http-check action")
-  }
-  const action = operation.action
 
   return yield* http.runJson(action.request).pipe(
     Effect.matchEffect({
@@ -323,7 +341,7 @@ const httpEvidence = Effect.fn("engine.httpEvidence")(function*(operation: Opera
             request: httpRequestEvidence(action.request),
             checks: []
           })
-        }),
+        }).pipe(Effect.flatMap(failAttempt)),
       onSuccess: (result) => {
         const checks = [
           HttpCheckEvidence.make({
@@ -333,7 +351,7 @@ const httpEvidence = Effect.fn("engine.httpEvidence")(function*(operation: Opera
           ...action.checks.map((check) => evaluateHttpCheck(result.json, check))
         ]
         const failed = checks.filter((check) => !check.passed)
-        return Effect.succeed(record(operation, {
+        const attemptRecord = record(operation, {
           status: failed.length === 0 ? "passed" : "failed",
           message: failed.length === 0
             ? "HTTP verification passed."
@@ -346,7 +364,8 @@ const httpEvidence = Effect.fn("engine.httpEvidence")(function*(operation: Opera
             responseStatus: result.status,
             checks
           })
-        }))
+        })
+        return failed.length === 0 ? Effect.succeed(attemptRecord) : failAttempt(attemptRecord)
       }
     })
   )
@@ -357,7 +376,7 @@ const githubApiFailureEvidence = Effect.fn("engine.githubApiFailureEvidence")(fu
   action: GitHubReleaseCreateAction | GitHubReleaseVerifyAction,
   error: GitHubApiError
 ) {
-  return yield* instantRecord(operation, {
+  const failedRecord = yield* instantRecord(operation, {
     status: "failed",
     message: error.reason,
     outcome: GitHubReleaseOutcome.make({
@@ -371,14 +390,14 @@ const githubApiFailureEvidence = Effect.fn("engine.githubApiFailureEvidence")(fu
       responseStatus: error.status
     })
   })
+  return yield* failAttempt(failedRecord)
 })
 
-const githubCreateEvidence = Effect.fn("engine.githubCreateEvidence")(function*(operation: Operation) {
+const githubCreateEvidence = Effect.fn("engine.githubCreateEvidence")(function*(
+  operation: Operation,
+  action: GitHubReleaseCreateAction
+) {
   const api = yield* GitHubApi
-  if (operation.action._tag !== "github-release-create") {
-    throw new Error("githubCreateEvidence requires a github-release-create action")
-  }
-  const action = operation.action
   const timing = yield* startTiming()
   return yield* api.createRelease(githubCreateRequestFromAction(action)).pipe(
     Effect.matchEffect({
@@ -406,12 +425,11 @@ const githubCreateEvidence = Effect.fn("engine.githubCreateEvidence")(function*(
   )
 })
 
-const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(operation: Operation) {
+const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
+  operation: Operation,
+  action: GitHubReleaseVerifyAction
+) {
   const api = yield* GitHubApi
-  if (operation.action._tag !== "github-release-verify") {
-    throw new Error("githubVerifyEvidence requires a github-release-verify action")
-  }
-  const action = operation.action
   const timing = yield* startTiming()
   return yield* api.inspectRelease(githubInspectRequestFromAction(action)).pipe(
     Effect.matchEffect({
@@ -433,7 +451,7 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
             })
           ]
           const failed = checks.filter((check) => !check.passed)
-          return record(operation, {
+          const attemptRecord = record(operation, {
             status: failed.length === 0 ? "passed" : "failed",
             message: failed.length === 0
               ? "GitHub release verification passed."
@@ -452,32 +470,26 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
               checks
             })
           })
+          return failed.length === 0 ? attemptRecord : yield* failAttempt(attemptRecord)
         })
     })
   )
 })
 
-const noteEvidence = Effect.fn("engine.noteEvidence")(function*(operation: Operation) {
-  if (operation.action._tag !== "note") {
-    throw new Error("noteEvidence requires a note action")
-  }
+const noteEvidence = Effect.fn("engine.noteEvidence")(function*(operation: Operation, action: NoteAction) {
   return yield* instantRecord(operation, {
-    status: operation.action.skipped ? "skipped" : operation.action.severity === "warning" ? "warning" : "passed",
-    message: operation.action.message
+    status: action.skipped ? "skipped" : action.severity === "warning" ? "warning" : "passed",
+    message: action.message
   })
 })
 
-const isStageOperation = (operation: Operation): operation is StageOperation =>
-  operation.action._tag === "stage"
-
 const stageEvidence = Effect.fn("engine.stageEvidence")(function*(
   operation: Operation,
+  action: StageAction,
   context: OperationRunContext
 ) {
-  if (!isStageOperation(operation)) {
-    throw new Error("stageEvidence requires a stage action")
-  }
-  const result = yield* stageArtifactOperation(operation, {
+  const stageOperation: StageOperation = { ...operation, action }
+  const result = yield* stageArtifactOperation(stageOperation, {
     root: context.root,
     identity: context.identity,
     configPath: context.configPath
@@ -493,23 +505,24 @@ const runOperationActionEvidence = Effect.fn("engine.runOperationActionEvidence"
   operation: Operation,
   context: OperationRunContext
 ) {
-  switch (operation.action._tag) {
+  const action = operation.action
+  switch (action._tag) {
     case "command":
-      return yield* commandEvidence(operation as Operation & { readonly action: CommandAction })
+      return yield* commandEvidence(operation, action)
     case "check-file":
-      return yield* fileCheckEvidence(operation, context)
+      return yield* fileCheckEvidence(operation, action, context)
     case "write-file":
-      return yield* writeFileEvidence(operation, context)
+      return yield* writeFileEvidence(operation, action, context)
     case "http-check":
-      return yield* httpEvidence(operation)
+      return yield* httpEvidence(operation, action)
     case "github-release-create":
-      return yield* githubCreateEvidence(operation)
+      return yield* githubCreateEvidence(operation, action)
     case "github-release-verify":
-      return yield* githubVerifyEvidence(operation)
+      return yield* githubVerifyEvidence(operation, action)
     case "note":
-      return yield* noteEvidence(operation)
+      return yield* noteEvidence(operation, action)
     case "stage":
-      return yield* stageEvidence(operation, context)
+      return yield* stageEvidence(operation, action, context)
   }
 })
 
@@ -549,23 +562,32 @@ const runOperationEvidenceWithRetry = Effect.fn("engine.runOperationEvidenceWith
   operation: Operation,
   context: OperationRunContext
 ) {
-  const attempts = Math.max(1, operation.retry?.attempts ?? 1)
-  const delayMillis = Math.max(0, operation.retry?.delayMillis ?? 0)
-  let attempt = 1
-  let evidence = yield* runOperationActionEvidence(operation, context)
-  while (evidence.status === "failed" && attempt < attempts) {
-    attempt += 1
-    if (delayMillis > 0) {
-      yield* Effect.sleep(Duration.millis(delayMillis))
-    }
-    evidence = yield* runOperationActionEvidence(operation, context)
-  }
-  return evidence
+  return yield* runOperationActionEvidence(operation, context).pipe(
+    Effect.retry({
+      schedule: scheduleFromRetryPolicy(operation.retry),
+      while: isActionAttemptFailed
+    }),
+    Effect.catchTag("ActionAttemptFailed", (error) => Effect.succeed(error.record))
+  )
 })
 
 const shouldRefuseForSnapshot = (operation: Operation, context: OperationRunContext): boolean =>
   context.identity.snapshot &&
   (operation.risk === "externally-visible" || operation.risk === "irreversible")
+
+const isActionAttemptFailed = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "_tag" in error &&
+  error._tag === "ActionAttemptFailed"
+
+export const scheduleFromRetryPolicy = (policy: RetryPolicy | undefined) => {
+  const attempts = Math.max(1, policy?.attempts ?? 1)
+  const delay = Duration.millis(Math.max(0, policy?.delayMillis ?? 0))
+  return Schedule.spaced(delay).pipe(
+    Schedule.both(Schedule.recurs(attempts - 1))
+  )
+}
 
 export const runOperationEvidence = Effect.fn("engine.runOperationEvidence")(function*(
   operation: Operation,
@@ -589,25 +611,30 @@ export const runOperation = Effect.fn("engine.runOperation")(function*(
 ) {
   const evidence = yield* runOperationEvidence(operation, approval, context)
   if (evidence.status === "failed") {
-    return yield* failOperationEvidence(evidence, undefined)
+    return yield* failOperationEvidence(
+      evidence,
+      appendEvidenceRecord(bundleForContext(context), evidence)
+    )
   }
   return evidence
 })
 
-export const runOperations = Effect.fn("engine.runOperations")(function*(
+const appendEvidenceRecordInto = (ref: EvidenceRef, evidence: EvidenceRecord): Effect.Effect<void> =>
+  Ref.update(ref, (bundle) => appendEvidenceRecord(bundle, evidence))
+
+export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*(
+  ref: EvidenceRef,
   operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  let bundle = bundleForContext(context)
   for (const operation of operations) {
     const evidence = yield* runOperationEvidence(operation, approval, context)
-    bundle = appendEvidenceRecord(bundle, evidence)
+    yield* appendEvidenceRecordInto(ref, evidence)
     if (evidence.status === "failed") {
-      return yield* failOperationEvidence(evidence, bundle)
+      return yield* failOperationEvidence(evidence, yield* Ref.get(ref))
     }
   }
-  return bundle
 })
 
 export const publishOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
@@ -616,15 +643,97 @@ export const publishOperations = (operations: ReadonlyArray<Operation>): Readonl
 export const buildOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
   operations.filter((operation) => operation.phase === "build" || operation.phase === "process")
 
+const renderFileOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
+  operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file")
+
+const validationOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
+  operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only")
+
+const verificationOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> =>
+  operations.filter((operation) => operation.phase === "verify")
+
+const releasePassOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<Operation> => [
+  ...renderFileOperations(operations),
+  ...validationOperations(operations),
+  ...publishOperations(operations),
+  ...verificationOperations(operations)
+]
+
+export const releaseWorkflowOperations = (
+  operations: ReadonlyArray<Operation>,
+  context: OperationRunContext
+): ReadonlyArray<Operation> =>
+  releasePassOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context))
+
+const preflightOperations = Effect.fn("engine.preflightOperations")(function*(
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval
+) {
+  for (const operation of operations) {
+    yield* requireExecutionApproval(operation, approval)
+  }
+})
+
+export const preflightReleaseApproval = Effect.fn("engine.preflightReleaseApproval")(function*(
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
+  yield* preflightOperations(releaseWorkflowOperations(operations, context), approval)
+})
+
+export const preflightRenderApproval = Effect.fn("engine.preflightRenderApproval")(function*(
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
+  yield* preflightOperations(
+    renderFileOperations(operations).filter((operation) => !shouldRefuseForSnapshot(operation, context)),
+    approval
+  )
+})
+
+export const runOperations = Effect.fn("engine.runOperations")(function*(
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
+  yield* preflightOperations(
+    operations.filter((operation) => !shouldRefuseForSnapshot(operation, context)),
+    approval
+  )
+  const ref = yield* makeEvidenceRef(context)
+  yield* runOperationsInto(ref, operations, approval, context)
+  return yield* Ref.get(ref)
+})
+
+export const validateOperationsInto = Effect.fn("engine.validateOperationsInto")(function*(
+  ref: EvidenceRef,
+  operations: ReadonlyArray<Operation>,
+  context: OperationRunContext
+) {
+  yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context)
+})
+
 export const validateOperations = Effect.fn("engine.validateOperations")(function*(
   operations: ReadonlyArray<Operation>,
   context: OperationRunContext
 ) {
-  return yield* runOperations(
-    operations.filter((operation) => operation.phase === "publish" && operation.risk === "read-only"),
-    ExecutionApproval.none,
-    context
+  return yield* runOperations(validationOperations(operations), ExecutionApproval.none, context)
+})
+
+export const executeOperationsInto = Effect.fn("engine.executeOperationsInto")(function*(
+  ref: EvidenceRef,
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
+  const selected = publishOperations(operations)
+  yield* preflightOperations(
+    selected.filter((operation) => !shouldRefuseForSnapshot(operation, context)),
+    approval
   )
+  yield* runOperationsInto(ref, selected, approval, context)
 })
 
 export const executeOperations = Effect.fn("engine.executeOperations")(function*(
@@ -635,71 +744,64 @@ export const executeOperations = Effect.fn("engine.executeOperations")(function*
   return yield* runOperations(publishOperations(operations), approval, context)
 })
 
+export const writeRenderFilesInto = Effect.fn("engine.writeRenderFilesInto")(function*(
+  ref: EvidenceRef,
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
+  const selected = renderFileOperations(operations)
+  yield* preflightRenderApproval(operations, approval, context)
+  yield* runOperationsInto(ref, selected, approval, context)
+})
+
 export const writeRenderFiles = Effect.fn("engine.writeRenderFiles")(function*(
   operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  return yield* runOperations(
-    operations.filter((operation) => operation.phase === "catalog" && operation.action._tag === "write-file"),
-    approval,
-    context
-  )
+  const selected = renderFileOperations(operations)
+  yield* preflightRenderApproval(operations, approval, context)
+  const ref = yield* makeEvidenceRef(context)
+  yield* runOperationsInto(ref, selected, approval, context)
+  return yield* Ref.get(ref)
+})
+
+export const verifyOperationsInto = Effect.fn("engine.verifyOperationsInto")(function*(
+  ref: EvidenceRef,
+  operations: ReadonlyArray<Operation>,
+  context: OperationRunContext
+) {
+  yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context)
 })
 
 export const verifyOperations = Effect.fn("engine.verifyOperations")(function*(
   operations: ReadonlyArray<Operation>,
   context: OperationRunContext
 ) {
-  return yield* runOperations(
-    operations.filter((operation) => operation.phase === "verify"),
-    ExecutionApproval.none,
-    context
-  )
+  return yield* runOperations(verificationOperations(operations), ExecutionApproval.none, context)
 })
 
-const appendFailureEvidence = (
-  accumulated: EvidenceBundle,
-  error: OperationFailedError
-): OperationFailedError => {
-  const evidence = error.evidence === undefined
-    ? accumulated
-    : appendEvidenceBundle(accumulated, error.evidence)
-  return OperationFailedError.make({
-    operationId: error.operationId,
-    exitCode: error.exitCode,
-    responseStatus: error.responseStatus,
-    reason: error.reason,
-    evidence
-  })
-}
+export const runApprovedReleaseWorkflowInto = Effect.fn("engine.runApprovedReleaseWorkflowInto")(function*(
+  ref: EvidenceRef,
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
+  yield* preflightReleaseApproval(operations, approval, context)
+  yield* runOperationsInto(ref, renderFileOperations(operations), approval, context)
+  yield* runOperationsInto(ref, validationOperations(operations), ExecutionApproval.none, context)
+  yield* runOperationsInto(ref, publishOperations(operations), approval, context)
+  yield* runOperationsInto(ref, verificationOperations(operations), ExecutionApproval.none, context)
+})
 
 export const runApprovedReleaseWorkflow = Effect.fn("engine.runApprovedReleaseWorkflow")(function*(
   operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  let evidence = bundleForContext(context)
-  const passContext = {
-    ...context,
-    notices: []
-  }
-  const passes = [
-    writeRenderFiles(
-      operations,
-      ExecutionApproval.make({ execute: approval.execute, approveIrreversible: false }),
-      passContext
-    ),
-    validateOperations(operations, passContext),
-    executeOperations(operations, approval, passContext),
-    verifyOperations(operations, passContext)
-  ]
-  for (const pass of passes) {
-    const bundle = yield* pass.pipe(
-      Effect.catchTag("OperationFailedError", (error) =>
-        Effect.fail(appendFailureEvidence(evidence, error)))
-    )
-    evidence = appendEvidenceBundle(evidence, bundle)
-  }
-  return evidence
+  yield* preflightReleaseApproval(operations, approval, context)
+  const ref = yield* makeEvidenceRef(context)
+  yield* runApprovedReleaseWorkflowInto(ref, operations, approval, context)
+  return yield* Ref.get(ref)
 })

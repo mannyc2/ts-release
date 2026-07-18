@@ -11,8 +11,7 @@ import {
   readPackageManifestJson,
   ResolvedIdentity,
   runWorkspaceGit,
-  type VersionSource,
-  type WorkspaceServices
+  type VersionSource
 } from "./source.js"
 
 interface GitTagProjectOptions {
@@ -41,22 +40,19 @@ const gitTagError = (field: string, reason: string, cause?: unknown) =>
   identityError("git-tag", field, reason, cause)
 
 const runGit = (
-  workspace: WorkspaceServices,
   root: string,
   args: ReadonlyArray<string>,
   field: string
-) => runWorkspaceGit(workspace, root, args, { source: "git-tag", field })
+) => runWorkspaceGit(root, args, { source: "git-tag", field })
 
 const resolveName = Effect.fn("pipeline.identity.gitTag.resolveName")(function*(
-  options: GitTagIdentityOptions,
-  workspace: WorkspaceServices
+  options: GitTagIdentityOptions
 ) {
   const explicit = projectPackageName(options.project)
   if (explicit !== undefined && explicit.trim().length > 0) {
     return explicit
   }
   const manifest = yield* readPackageManifestJson(
-    workspace,
     options.root,
     projectManifestPath(options.project.packagePath),
     decodePackageManifest,
@@ -66,14 +62,13 @@ const resolveName = Effect.fn("pipeline.identity.gitTag.resolveName")(function*(
 })
 
 const resolveCommit = Effect.fn("pipeline.identity.gitTag.resolveCommit")(function*(
-  options: GitTagIdentityOptions,
-  workspace: WorkspaceServices
+  options: GitTagIdentityOptions
 ) {
   const explicit = options.project.commit
   if (explicit !== undefined && explicit.trim().length > 0 && explicit !== "HEAD") {
     return explicit
   }
-  const result = yield* runGit(workspace, options.root, ["rev-parse", "--short", "HEAD"], "project.commit").pipe(
+  const result = yield* runGit(options.root, ["rev-parse", "--short", "HEAD"], "project.commit").pipe(
     Effect.catch((error: IdentityError) =>
       options.snapshot
         ? Effect.succeed({ exitCode: 1, stdout: "", stderr: error.reason })
@@ -95,16 +90,14 @@ const firstNonEmptyLine = (value: string): string | undefined =>
 
 const tagFrom = Effect.fn("pipeline.identity.gitTag.tagFrom")(function*(
   options: GitTagIdentityOptions,
-  workspace: WorkspaceServices,
   args: ReadonlyArray<string>
 ) {
-  const result = yield* runGit(workspace, options.root, args, "versionFrom")
+  const result = yield* runGit(options.root, args, "versionFrom")
   return result.exitCode === 0 ? firstNonEmptyLine(result.stdout) : undefined
 })
 
 const discoverTag = Effect.fn("pipeline.identity.gitTag.discoverTag")(function*(
-  options: GitTagIdentityOptions,
-  workspace: WorkspaceServices
+  options: GitTagIdentityOptions
 ) {
   if (options.project.tag !== undefined && options.project.tag.trim().length > 0) {
     return options.project.tag.trim()
@@ -116,13 +109,13 @@ const discoverTag = Effect.fn("pipeline.identity.gitTag.discoverTag")(function*(
   if (envTag !== undefined && envTag.trim().length > 0) {
     return envTag.trim()
   }
-  const headTag = yield* tagFrom(options, workspace, ["tag", "--points-at", "HEAD", "--sort=-version:refname"]).pipe(
+  const headTag = yield* tagFrom(options, ["tag", "--points-at", "HEAD", "--sort=-version:refname"]).pipe(
     Effect.catch(() => Effect.succeed(undefined))
   )
   if (headTag !== undefined) {
     return headTag
   }
-  return yield* tagFrom(options, workspace, ["describe", "--tags", "--abbrev=0"]).pipe(
+  return yield* tagFrom(options, ["describe", "--tags", "--abbrev=0"]).pipe(
     Effect.catch(() => Effect.succeed(undefined))
   )
 })
@@ -138,12 +131,11 @@ const versionFromTag = (tag: string): Effect.Effect<string, IdentityError> => {
 export const gitTagSource: VersionSource<GitTagIdentityOptions> = {
   id: "git-tag",
   resolve: Effect.fn("pipeline.identity.gitTag.resolve")(function*(
-    options,
-    workspace
+    options
   ) {
-    const name = yield* resolveName(options, workspace)
-    const commit = yield* resolveCommit(options, workspace)
-    const tag = yield* discoverTag(options, workspace)
+    const name = yield* resolveName(options)
+    const commit = yield* resolveCommit(options)
+    const tag = yield* discoverTag(options)
     if (tag === undefined) {
       if (options.snapshot) {
         return ResolvedIdentity.make({

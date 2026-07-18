@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema"
 import { OperationId } from "../pipeline/operation.js"
-import { EvidenceBundle } from "./evidence.js"
+import { EvidenceBundle, EvidenceRecord } from "./evidence.js"
 
 
 export class ReleaseNormalizationError extends Schema.TaggedErrorClass<ReleaseNormalizationError>()(
@@ -18,16 +18,23 @@ export class EvidenceWriteError extends Schema.TaggedErrorClass<EvidenceWriteErr
   cause: Schema.optional(Schema.Defect())
 }) {}
 
-export class EvidenceReadError extends Schema.TaggedErrorClass<EvidenceReadError>()("EvidenceReadError", {
-  path: Schema.String,
-  reason: Schema.String,
-  cause: Schema.optional(Schema.Defect())
+export class ActionAttemptFailed extends Schema.TaggedErrorClass<ActionAttemptFailed>()("ActionAttemptFailed", {
+  record: EvidenceRecord
 }) {}
 
 export class WorkspaceWriteError extends Schema.TaggedErrorClass<WorkspaceWriteError>()("WorkspaceWriteError", {
   path: Schema.String,
   reason: Schema.String
 }) {}
+
+export class PlanReferenceMismatchError extends Schema.TaggedErrorClass<PlanReferenceMismatchError>()(
+  "PlanReferenceMismatchError",
+  {
+    source: Schema.Literals(["evidence", "staged-artifact"]),
+    referencedId: Schema.NonEmptyString,
+    reason: Schema.String
+  }
+) {}
 
 export class OperationFailedError extends Schema.TaggedErrorClass<OperationFailedError>()("OperationFailedError", {
   operationId: OperationId,
@@ -40,6 +47,6 @@ export class OperationFailedError extends Schema.TaggedErrorClass<OperationFaile
 export type EngineError =
   | ReleaseNormalizationError
   | EvidenceWriteError
-  | EvidenceReadError
   | WorkspaceWriteError
+  | PlanReferenceMismatchError
   | OperationFailedError

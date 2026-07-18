@@ -5,9 +5,9 @@
 summary: release-example-scoop@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 5
+operations: 6
 risk:
-  read-only: 1
+  read-only: 2
   writes-local: 3
   externally-visible: 1
   irreversible: 0
@@ -25,12 +25,19 @@ approval-required operations:
 
 ## Artifacts
 
-- - archive artifacts/release-example-scoop-0.1.0.zip [zip] size=0 checksum=none
-- - scoop-manifest .release/generated/release-example-scoop.json [file] size=0 checksum=none
+- archive artifacts/release-example-scoop-0.1.0.zip [archive] produced-by=import-artifacts platform=none checksum=none
+- scoop-manifest .release/generated/release-example-scoop.json [catalog-file] produced-by=catalog:scoop platform=none checksum=none
 
 ## Operations By Risk
 
 ### read-only
+
+#### import-artifacts:archive:exists
+
+- target: none
+- risk: read-only
+- approval: none
+- why: Verify imported artifact archive exists.
 
 #### scoop:scoop-manifest-validation
 

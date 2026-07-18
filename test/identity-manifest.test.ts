@@ -1,11 +1,8 @@
 import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as FileSystem from "effect/FileSystem"
-import * as Path from "effect/Path"
 import { CommandSpec } from "../src/pipeline/operation.js"
 import { manifestSource } from "../src/pipeline/identity/manifest.js"
 import { completeIdentity, ResolvedIdentity } from "../src/pipeline/identity/source.js"
-import { ReleaseCommandRunner } from "../src/host/host.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 
 const gitHeadCommand = (root: string): CommandSpec =>
@@ -28,15 +25,7 @@ const resolveManifest = (project: {
   readonly tagTemplate?: string | undefined
   readonly notes?: string | undefined
 }) =>
-  Effect.gen(function*() {
-    const fileSystem = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
-    const commandRunner = yield* ReleaseCommandRunner
-    return yield* manifestSource.resolve(
-      { project, root: "." },
-      { fileSystem, path, commandRunner }
-    )
-  })
+  manifestSource.resolve({ project, root: "." })
 
 describe("manifest identity source", () => {
   layer(

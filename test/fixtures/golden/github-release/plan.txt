@@ -3,16 +3,18 @@ commit: example
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1
-operations: 3
+operations: 4
 
 artifacts:
-  - archive artifacts/release-example-github-0.1.0.tgz [tarball] size=0 checksum=none
+  - archive artifacts/release-example-github-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
 
 surfaces:
   - github operations=3
 
 operations by risk:
   read-only:
+    - import-artifacts:archive:exists Verify imported artifact archive exists.
+    check-file: artifacts/release-example-github-0.1.0.tgz
     - github:github-release-dry-run Record simulated GitHub release dry-run validation.
     note: GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.
     - github:github-release-verify-api Verify the GitHub release through the GitHub API.

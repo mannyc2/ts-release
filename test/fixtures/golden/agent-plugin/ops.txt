@@ -1,0 +1,11 @@
+archive:plugin	writes-local
+catalog:claude-marketplace:checkout	writes-local
+catalog:claude-marketplace:pull-request	externally-visible
+catalog:claude-marketplace:push	externally-visible
+catalog:claude-marketplace:push:add	writes-local
+catalog:claude-marketplace:push:commit	writes-local
+catalog:claude-marketplace:render	writes-local
+checksum:write	writes-local
+github:github-release-create	externally-visible
+github:github-release-dry-run	read-only
+github:github-release-verify-api	read-only

@@ -197,9 +197,9 @@ release model; the CLI is not a separate product direction.
 ```text
 release config
   -> normalized release identity
-  -> build outputs and artifact inventory
+  -> canonical build and imported artifacts
   -> installable artifact variants
-  -> target-specific distribution operations
+  -> one complete release-plan/v3 operation sequence
   -> generated package-manager files
   -> explicit execution evidence
   -> post-publish verification
@@ -214,12 +214,45 @@ The library currently plans, stages, and validates these distribution surfaces:
 | Homebrew taps | generated formula files, macOS artifact variants, and approved tap pushes |
 | PyPI | already-built distributions and platform CLI wrapper wheels published through Twine |
 | Scoop buckets | generated manifest files, Windows binary shims, and approved bucket pushes |
+| File-based catalogs | user-owned whole files with artifact facts and approved git push or pull-request flows |
 | Bun executables | optional Bun compile staging before target planning |
+
+### Publish to any file-based catalog
+
+Use `catalogs[]` when a distribution surface is a file maintained in a git
+repository. Literal content and predictable asset facts resolve in the plan;
+typed checksum holes resolve only after the referenced artifact exists.
+
+```json
+{
+  "catalogs": [
+    {
+      "id": "marketplace",
+      "repository": "owner/catalog",
+      "directory": "catalog-checkout",
+      "file": "plugins/release.json",
+      "submit": "pull-request",
+      "content": [
+        "{\"name\":\"{name}\",\"sha256\":\"",
+        { "fact": "sha256", "artifact": "plugin" },
+        "\"}\n"
+      ]
+    }
+  ]
+}
+```
+
+The `examples/agent-plugin` fixture shows the complete generic path: a
+platform-neutral zip, checksum, GitHub release assets, catalog rendering, and
+an approval-gated pull request. Catalog content is whole-file, user-owned data;
+the generic surface does not claim that illustrative marketplace JSON is a
+stable vendor contract. `downloadUrl` and `assetName` facts are also available
+for values that can be fixed during planning.
 
 It is not a fake universal package manager and does not hide each ecosystem's
 manifest rules. It can stage declared artifacts through adapters, but it does
 not replace full build pipelines, compilers, signing, or installer toolchains.
-The job is to keep shared artifact inventory and target-specific distribution
+The job is to keep canonical artifact data and target-specific distribution
 data in one typed plan.
 
 ## CLI Workflow
@@ -292,9 +325,7 @@ and evidence location.
     "tagTemplate": "v{version}"
   },
   "npmPackage": {
-    "id": "package",
-    "path": ".",
-    "consumers": ["npm"]
+    "path": "."
   },
   "publish": {
     "npm": {
@@ -303,17 +334,22 @@ and evidence location.
       "packagePath": ".",
       "trustedPublishing": {
         "workflow": "release.yml",
-        "packageExists": true,
         "verifyPackageExists": true
       },
       "access": "public",
       "provenance": true
     }
   },
-  "strict": true,
   "evidence": ".release/evidence/{version}"
 }
 ```
+
+Runtime config decoding is strict: unknown keys are rejected instead of
+silently stripped. npm trusted publishing accepts only
+`verifyPackageExists`; Homebrew accepts a non-empty `artifactIds` array while
+Scoop retains its singular `artifactId`. PyPI can optionally select an
+explicit non-empty `artifactIds` array and otherwise selects wheel artifacts
+by kind.
 
 Useful config commands:
 
@@ -326,6 +362,55 @@ Paths are release-workspace relative. Artifact paths can interpolate
 `{version}`, `{name}`, and `{normalizedName}`. Evidence directories can
 interpolate `{version}`.
 
+## Plan Contract
+
+`release-plan/v3` is the sole plan document. It is flat, contains one
+canonical artifact array, and exposes every planned build, wheel, import,
+archive, checksum, catalog, publish, and verification operation in contribution
+order. Phase selection is execution policy; it does not hide work from JSON,
+text, Markdown, summaries, scripts, doctor, or Action counts.
+
+```json
+{
+  "schemaVersion": "release-plan/v3",
+  "identity": {
+    "name": "pkg",
+    "normalizedName": "pkg",
+    "version": "0.1.0",
+    "commit": "abc123",
+    "shortCommit": "abc123",
+    "tag": "v0.1.0",
+    "versionSource": "manifest",
+    "snapshot": false
+  },
+  "artifacts": [
+    {
+      "id": "cli-linux-x64",
+      "kind": "executable",
+      "path": "artifacts/pkg-0.1.0-linux-x64",
+      "producedBy": "build:bun"
+    }
+  ],
+  "operations": [],
+  "notices": [],
+  "source": {
+    "root": ".",
+    "configPath": "release.config.json"
+  },
+  "evidenceDirectory": ".release/evidence/0.1.0"
+}
+```
+
+The Action reports `operation_count` from this complete array and reports
+unique catalog/publish surfaces as `surface_count`.
+
+This is a hard cut: `release-plan/v2` documents are unsupported and there is
+no fallback reader. The former Action `target_count` output was removed in
+favor of `surface_count`; config `packageExists` was replaced by
+`verifyPackageExists`; Homebrew `artifactId` was replaced by non-empty
+`artifactIds`; and PyPI now uses explicit optional `artifactIds` or canonical
+`kind: "wheel"` selection. These are removals, not deprecations.
+
 ## Artifact Variants
 
 Bun builds can produce installable variants for different operating systems
@@ -336,21 +421,15 @@ target, so the release plan can carry facts such as `linux`/`x64` or
 ```json
 {
   "id": "cli-linux-x64",
-  "target": "linux-x64",
-  "path": "artifacts/pkg-{version}-linux-x64",
-  "consumers": ["github"]
-}
-```
-
-The planned artifact inventory for that output includes an executable artifact
-with a variant like:
-
-```json
-{
-  "os": "linux",
-  "arch": "x64",
-  "libc": "glibc",
-  "targetTriple": "bun-linux-x64-baseline"
+  "kind": "executable",
+  "path": "artifacts/pkg-0.1.0-linux-x64",
+  "producedBy": "build:bun",
+  "platform": {
+    "os": "linux",
+    "arch": "x64",
+    "libc": "glibc",
+    "targetTriple": "bun-linux-x64-baseline"
+  }
 }
 ```
 
@@ -414,24 +493,33 @@ Release and verification commands write JSON evidence bundles. The full
 
 ```json
 {
-  "schemaVersion": "release-evidence/v1",
+  "schemaVersion": "release-evidence/v2",
   "releaseName": "release",
   "releaseVersion": "0.1.0",
+  "notices": [],
   "records": [
     {
-      "id": "npm:npm-pack-dry-run:command",
       "operationId": "npm:npm-pack-dry-run",
-      "phase": "validation",
-      "targetId": "npm",
+      "pipeId": "publish:npm",
+      "phase": "publish",
       "risk": "read-only",
       "status": "passed",
-      "severity": "info",
       "message": "npm pack dry run passed.",
       "startedAt": "2026-01-01T00:00:00.000Z",
       "endedAt": "2026-01-01T00:00:00.100Z",
       "durationMillis": 100,
-      "command": "npm pack --dry-run --json",
-      "exitCode": 0
+      "outcome": {
+        "command": {
+          "executable": "npm",
+          "args": ["pack", "--dry-run", "--json"],
+          "requiredEnv": [],
+          "redactedEnv": []
+        },
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "",
+        "_tag": "command"
+      }
     }
   ]
 }

@@ -23,6 +23,7 @@ export {
 export type { ReleaseConfig } from "./config/schema.js"
 
 export type {
+  ArtifactSummary,
   BuildSummary,
   ReleasePlanSummary,
   ReleaseRunOptions,

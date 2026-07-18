@@ -24,7 +24,6 @@ const trustedPublishingConfig = (
   const trustedPublishing = {
     provider: "github-actions",
     workflow: options.workflow ?? "release.yml",
-    packageExists: true,
     ...(options.verifyPackageExists === undefined ? {} : { verifyPackageExists: options.verifyPackageExists })
   }
   return minimalConfig.replace(
@@ -139,7 +138,7 @@ describe("npm target", () => {
   test("rejects npm trusted publishing when tokenEnv is also declared", async () => {
     const invalidConfig = minimalConfig.replace(
       "\"tokenEnv\":\"NPM_TOKEN\"",
-      "\"tokenEnv\":\"NPM_TOKEN\",\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\",\"packageExists\":true}"
+      "\"tokenEnv\":\"NPM_TOKEN\",\"trustedPublishing\":{\"provider\":\"github-actions\",\"workflow\":\"release.yml\"}"
     )
     const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
 

@@ -36,6 +36,12 @@ const removedFieldHint = (parentPath: string, key: string): string | undefined =
   if (parentPath === "$.npmPackage" && key === "id") {
     return "The npm package artifact id is fixed as npm-package."
   }
+  if (parentPath === "$.publish.npm.trustedPublishing" && key === "packageExists") {
+    return "Use verifyPackageExists for the optional read-only npm package existence check."
+  }
+  if (parentPath === "$.publish.homebrew" && key === "artifactId") {
+    return "Use artifactIds with one or more artifact IDs."
+  }
   return undefined
 }
 
@@ -77,7 +83,34 @@ const findForbiddenConfigField = (
   return undefined
 }
 
-export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(input: string, path: string = DEFAULT_CONFIG_PATH) {
+export const decodeReleaseIntent = Effect.fn("decodeReleaseIntent")(function*(
+  input: unknown,
+  path: string = DEFAULT_CONFIG_PATH
+) {
+  const forbiddenField = findForbiddenConfigField(input)
+  if (forbiddenField !== undefined) {
+    return yield* Effect.fail(
+      ConfigValidationError.make({
+        path,
+        reason: `Release config uses removed field ${forbiddenField.field}. ${forbiddenField.hint}`
+      })
+    )
+  }
+
+  return yield* decodeReleaseConfig(input).pipe(
+    Effect.mapError((error) =>
+      ConfigValidationError.make({
+        path,
+        reason: error.message
+      })
+    )
+  )
+})
+
+export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(
+  input: string,
+  path: string = DEFAULT_CONFIG_PATH
+) {
   const parsed = yield* parseJsonAs(
     Schema.Unknown,
     input,
@@ -89,23 +122,5 @@ export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(inpu
       })
   )
 
-  const forbiddenField = findForbiddenConfigField(parsed)
-  if (forbiddenField !== undefined) {
-    return yield* Effect.fail(
-      ConfigValidationError.make({
-        path,
-        reason: `Release config uses removed field ${forbiddenField.field}. ${forbiddenField.hint}`
-      })
-    )
-  }
-
-  return yield* decodeReleaseConfig(parsed).pipe(
-    Effect.mapError((error) =>
-      ConfigValidationError.make({
-        path,
-        reason: error.message
-      })
-    )
-  )
+  return yield* decodeReleaseIntent(parsed, path)
 })
-

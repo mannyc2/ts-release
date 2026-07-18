@@ -1,7 +1,7 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
+import type { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
 
 
 export class HttpError extends Schema.TaggedErrorClass<HttpError>()("HttpError", {
@@ -11,15 +11,15 @@ export class HttpError extends Schema.TaggedErrorClass<HttpError>()("HttpError",
   cause: Schema.optional(Schema.Defect())
 }) {}
 
-export class HttpResult extends Schema.Class<HttpResult>("HttpResult")({
-  request: HttpRequestSpec,
-  status: Schema.Number,
-  json: Schema.Json,
-  responseHeaders: Schema.Array(HttpHeader),
-  startedAt: Schema.String,
-  endedAt: Schema.String,
-  durationMillis: Schema.Number
-}) {}
+export interface HttpResult {
+  readonly request: HttpRequestSpec
+  readonly status: number
+  readonly json: Schema.Json
+  readonly responseHeaders: ReadonlyArray<HttpHeader>
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly durationMillis: number
+}
 
 export interface ReleaseHttpShape {
   readonly runJson: (request: HttpRequestSpec) => Effect.Effect<HttpResult, HttpError>

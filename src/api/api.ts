@@ -49,7 +49,9 @@ const makeDefaultReleaseRuntimeLayer = async (): Promise<ReleaseRuntimeLayer> =>
       Layer.provideMerge(BunHttpClient.layer),
       Layer.provideMerge(BunServices.layer)
     ),
-    makeArtifactStagerLayer()
+    makeArtifactStagerLayer().pipe(
+      Layer.provideMerge(BunServices.layer)
+    )
   )
 }
 

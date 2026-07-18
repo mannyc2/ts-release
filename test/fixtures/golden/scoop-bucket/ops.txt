@@ -1,3 +1,4 @@
+import-artifacts:archive:exists	read-only
 scoop:scoop-manifest-validation	read-only
 scoop:scoop-push	externally-visible
 scoop:scoop-push:add	writes-local

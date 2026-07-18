@@ -24,10 +24,16 @@ import {
   partialWorkflowConfig,
   withTempDirectoryPromise,
 } from "./helpers.js"
-
 const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
   stream === null ? "" : await new Response(stream).text()
-
+const cliProgram = Command.runWith(cli, { version: "0.0.0" })
+const initEffect = (args: ReadonlyArray<string>) =>
+  cliProgram(["init", ...args]).pipe(Effect.provide(BunServices.layer))
+const runInit = (args: ReadonlyArray<string>) => Effect.runPromise(initEffect(args))
+const workflowEffect = (root: string, args: ReadonlyArray<string>) =>
+  cliProgram([...args]).pipe(Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root })))
+const runWorkflow = (root: string, args: ReadonlyArray<string>) =>
+  Effect.runPromise(workflowEffect(root, args))
 // The remaining direct Effect.provide calls in this file exercise CLI entrypoints
 // around one-off temp-directory setup.
 describe("cli command", () => {
@@ -42,7 +48,6 @@ describe("cli command", () => {
       "verify"
     ])
   })
-
   test("parses plan command with a config path", () =>
     withTempDirectoryPromise("ts-release-cli-plan-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -57,7 +62,6 @@ describe("cli command", () => {
         }),
         BunServices.layer
       )
-
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
           "plan",
@@ -68,7 +72,6 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(layer))
       )
     }))
-
   test("build command stages build outputs and writes text output", () =>
     withTempDirectoryPromise("ts-release-cli-build-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -101,10 +104,9 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeArtifactStagerLayer(build),
+        makeArtifactStagerLayer(build).pipe(Layer.provideMerge(BunServices.layer)),
         BunServices.layer
       )
-
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
           "build",
@@ -114,12 +116,10 @@ describe("cli command", () => {
           out
         ]).pipe(Effect.provide(layer))
       )
-
       const contents = await readFile(out, "utf8")
       expect(contents).toContain("staged artifact operations: 1")
       expect(contents).toContain("cli-linux-x64 dist/release-0.1.0-linux-x64")
     }))
-
   test("build command succeeds with no staged operations", () =>
     withTempDirectoryPromise("ts-release-cli-build-empty-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -130,10 +130,11 @@ describe("cli command", () => {
           env: new Map(),
           commands: new Map()
         }),
-        makeArtifactStagerLayer(async () => ({ success: true, logs: [] })),
+        makeArtifactStagerLayer(async () => ({ success: true, logs: [] })).pipe(
+          Layer.provideMerge(BunServices.layer)
+        ),
         BunServices.layer
       )
-
       await Effect.runPromise(
         Command.runWith(cli, { version: "0.0.0" })([
           "build",
@@ -145,12 +146,10 @@ describe("cli command", () => {
           out
         ]).pipe(Effect.provide(layer))
       )
-
       const parsed: unknown = JSON.parse(await readFile(out, "utf8"))
       expect(JSON.stringify(parsed)).toContain("\"schemaVersion\":\"artifact-stage/v1\"")
       expect(JSON.stringify(parsed)).toContain("\"operations\":[]")
     }))
-
   test("build command reports build failures", () =>
     withTempDirectoryPromise("ts-release-cli-build-failure-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -180,10 +179,9 @@ describe("cli command", () => {
         makeArtifactStagerLayer(async () => ({
           success: false,
           logs: ["compile failed"]
-        })),
+        })).pipe(Layer.provideMerge(BunServices.layer)),
         BunServices.layer
       )
-
       const exit = await Effect.runPromiseExit(
         Command.runWith(cli, { version: "0.0.0" })([
           "build",
@@ -191,10 +189,8 @@ describe("cli command", () => {
           configPath
         ]).pipe(Effect.provide(layer))
       )
-
       expectExitFailureTag(exit, "ArtifactStageError")
     }))
-
   test("internal catalog render script writes planned files without publishing", () =>
     withTempDirectoryPromise("ts-release-catalog-render-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -221,12 +217,11 @@ describe("cli command", () => {
             repository: "owner/homebrew-tap",
             formulaName: "release",
             formulaPath: ".release/generated/release.rb",
-            artifactId: "archive"
+            artifactIds: ["archive"]
           }
         },
         evidence: ".release/evidence"
       }))
-
       const subprocess = Bun.spawn([
         "bun",
         "run",
@@ -242,16 +237,13 @@ describe("cli command", () => {
       const stdout = streamText(subprocess.stdout)
       const stderr = streamText(subprocess.stderr)
       const exitCode = await subprocess.exited
-
       expect(exitCode).toBe(0)
       expect(await stdout).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")
       expect(await stderr).toBe("")
-
       const contents = await readFile(formulaPath, "utf8")
       expect(contents).toContain("class Release < Formula")
       expect(contents).toContain("sha256")
     }))
-
   test("root cli script preserves caller-relative config paths", async () => {
     await withTempDirectoryPromise("ts-release-cli-relative-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -274,13 +266,11 @@ describe("cli command", () => {
       const stdout = streamText(subprocess.stdout)
       const stderr = streamText(subprocess.stderr)
       const exitCode = await subprocess.exited
-
       expect(await stdout).toContain("release@")
       expect(await stderr).not.toContain("ConfigReadError")
       expect(exitCode).toBe(0)
     })
   })
-
   test("plan command exposes snapshot mode", async () => {
     await withTempDirectoryPromise("ts-release-cli-snapshot-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -304,13 +294,11 @@ describe("cli command", () => {
       const stdout = streamText(subprocess.stdout)
       const stderr = streamText(subprocess.stderr)
       const exitCode = await subprocess.exited
-
       expect(await stdout).toContain("0.1.0-SNAPSHOT-abc123")
       expect(await stderr).not.toContain("ConfigReadError")
       expect(exitCode).toBe(0)
     })
   })
-
   test("config-backed commands accept an explicit release root", () =>
     withTempDirectoryPromise("ts-release-cli-explicit-root-", async (root) => {
       await mkdir(join(root, "app"), { recursive: true })
@@ -328,10 +316,7 @@ describe("cli command", () => {
         evidence: ".release/evidence"
       }))
       const out = join(root, "plan-summary.txt")
-      const layer = makeBunReleaseWorkflowRuntimeLayer({ root })
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
+      await runWorkflow(root, [
           "plan",
           "--root",
           root,
@@ -341,16 +326,13 @@ describe("cli command", () => {
           "summary",
           "--out",
           out
-        ]).pipe(Effect.provide(layer))
-      )
+      ])
       const summary = await readFile(out, "utf8")
       expect(summary).toContain("@scope/root-package@1.2.3")
     }))
-
   test("renders release configs through the explicit config workflow", () =>
     withTempDirectoryPromise("ts-release-cli-root-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
-
       const plan = await Effect.runPromise(
         planRelease({
           root,
@@ -360,14 +342,11 @@ describe("cli command", () => {
         )
       )
       const output = renderReleasePlan(plan, "text")
-
       expect(output).toContain("release@0.1.0")
     }))
-
   test("renders summary and markdown plan formats through the workflow", () =>
     withTempDirectoryPromise("ts-release-cli-plan-formats-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
-
       const plan = await Effect.runPromise(
         planRelease({
           root,
@@ -378,18 +357,13 @@ describe("cli command", () => {
       )
       const summary = renderReleasePlan(plan, "summary")
       const markdown = renderReleasePlan(plan, "markdown")
-
       expect(summary).toContain("approval-required operations")
       expect(markdown).toContain("### npm:npm-publish")
     }))
-
   test("init previews without writing and writes only when approved", () =>
     withTempDirectoryPromise("ts-release-cli-init-", async (root) => {
       const configPath = join(root, "release.config.json")
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--template",
           "npm-github",
           "--package",
@@ -398,13 +372,9 @@ describe("cli command", () => {
           "owner/repo",
           "--config",
           configPath
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
+      ])
       await expect(readFile(configPath, "utf8")).rejects.toThrow()
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--template",
           "npm-github",
           "--package",
@@ -414,46 +384,36 @@ describe("cli command", () => {
           "--config",
           configPath,
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
+      ])
       const config = await readFile(configPath, "utf8")
       expect(config).toContain("\"$schema\"")
       expect(config).toContain("\"repository\": \"owner/repo\"")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
       expect(intent.npmPackage).toBeDefined()
       expect(intent.publish.npm).toBeDefined()
-
       const blocked = await Effect.runPromiseExit(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+        initEffect([
           "--config",
           configPath,
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
+        ])
       )
       expectExitFailureTag(blocked, "ReleaseInitWriteError")
     }))
-
   test("init with all optional flags omitted writes the default npm-only config", () =>
     withTempDirectoryPromise("ts-release-cli-init-defaults-", async (root) => {
       const configPath = join(root, "release.config.json")
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--config",
           configPath,
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
-
+      ])
       const config = await readFile(configPath, "utf8")
       const expected = await Effect.runPromise(
         planReleaseInit({}).pipe(Effect.provide(BunServices.layer))
       )
       expect(config).toBe(expected.files[0]?.contents ?? "")
     }))
-
   test("init generates schema-valid configs for every template", async () => {
     const templates: ReadonlyArray<
       "npm-only" | "npm-github" | "bun-cli-github" | "portable-cli" | "multi-target-homebrew" | "multi-target-scoop"
@@ -532,13 +492,10 @@ describe("cli command", () => {
       })
     }
   })
-
   test("init renders the portable CLI template with explicit package-manager fields", () =>
     withTempDirectoryPromise("ts-release-cli-init-portable-", async (root) => {
       const configPath = join(root, "release.config.json")
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--template",
           "portable-cli",
           "--package",
@@ -562,14 +519,11 @@ describe("cli command", () => {
           "--config",
           configPath,
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
-
+      ])
       const config = await readFile(configPath, "utf8")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
       const build = intent.builds?.[0]
       const wheels = intent.pypiWheel
-
       expect(build?.builder).toBe("bun")
       if (build?.builder === "bun") {
         expect(build.entry).toBe("src/main.ts")
@@ -585,13 +539,10 @@ describe("cli command", () => {
       expect(config).toContain("\"moduleName\": \"rocket_cli\"")
       expect(Array.isArray(wheels) ? wheels.length : 0).toBe(5)
     }))
-
   test("init can include the GitHub Actions trusted-publishing template", () =>
     withTempDirectoryPromise("ts-release-cli-init-actions-", async (root) => {
       const configPath = join(root, "release.config.json")
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--template",
           "npm-github",
           "--package",
@@ -602,9 +553,7 @@ describe("cli command", () => {
           configPath,
           "--github-actions",
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
-
+      ])
       const workflow = await readFile(join(root, ".github", "workflows", "release.yml"), "utf8")
       expect(workflow).toContain("uses: mannyc2/ts-release-action@v1")
       expect(workflow).toContain("config: release.config.json")
@@ -620,13 +569,10 @@ describe("cli command", () => {
       expect(workflow).toContain("bun run build")
       expect(workflow).not.toContain("NPM_TOKEN")
     }))
-
   test("init can render npm and pnpm GitHub Actions setup", () =>
     withTempDirectoryPromise("ts-release-cli-init-actions-npm-", async (root) => {
       const configPath = join(root, "release.config.json")
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--template",
           "npm-github",
           "--package",
@@ -639,14 +585,11 @@ describe("cli command", () => {
           "--package-manager",
           "npm",
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
-
+      ])
       const npmWorkflow = await readFile(join(root, ".github", "workflows", "release.yml"), "utf8")
       expect(npmWorkflow).toContain("npm ci")
       expect(npmWorkflow).toContain("npm run build --if-present")
       expect(npmWorkflow).not.toContain("oven-sh/setup-bun@v2")
-
       const pnpmPlan = await Effect.runPromise(
         planReleaseInit(ReleaseInitOptions.make({
           root,
@@ -662,13 +605,10 @@ describe("cli command", () => {
       expect(pnpmWorkflow).toContain("pnpm run build --if-present")
       expect(pnpmWorkflow).not.toContain("oven-sh/setup-bun@v2")
     }))
-
   test("init supports workflow command overrides and rejects multiline commands", () =>
     withTempDirectoryPromise("ts-release-cli-init-actions-commands-", async (root) => {
       const configPath = join(root, "release.config.json")
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+      await runInit([
           "--template",
           "npm-github",
           "--package",
@@ -685,13 +625,10 @@ describe("cli command", () => {
           "--build-command",
           "npm run compile",
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
-      )
-
+      ])
       const workflow = await readFile(join(root, ".github", "workflows", "release.yml"), "utf8")
       expect(workflow.split("npm install --legacy-peer-deps").length - 1).toBe(1)
       expect(workflow.split("npm run compile").length - 1).toBe(1)
-
       const rejected = await Effect.runPromiseExit(
         planReleaseInit(ReleaseInitOptions.make({
           root,
@@ -701,13 +638,11 @@ describe("cli command", () => {
       )
       expectExitFailureTag(rejected, "ReleaseInitWriteError")
     }))
-
   test("init rejects workflow traversal without writing output", () =>
     withTempDirectoryPromise("ts-release-cli-init-unsafe-workflow-", async (root) => {
       const configPath = join(root, "release.config.json")
       const exit = await Effect.runPromiseExit(
-        Command.runWith(cli, { version: "0.0.0" })([
-          "init",
+        initEffect([
           "--template",
           "npm-github",
           "--package",
@@ -720,14 +655,12 @@ describe("cli command", () => {
           "--workflow",
           "../outside.yml",
           "--write"
-        ]).pipe(Effect.provide(BunServices.layer))
+        ])
       )
-
       expectExitFailureTag(exit, "ReleaseInitWriteError")
       await expect(readFile(configPath, "utf8")).rejects.toThrow()
       await expect(readFile(join(root, ".github", "outside.yml"), "utf8")).rejects.toThrow()
     }))
-
   test("diagnostics report env names without secret values", () =>
     withTempDirectoryPromise("ts-release-cli-diagnostics-auth-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -741,7 +674,6 @@ describe("cli command", () => {
         }),
         BunServices.layer
       )
-
       const report = await Effect.runPromise(
         doctorRelease({
           configPath
@@ -753,93 +685,66 @@ describe("cli command", () => {
       expect(serialized).not.toContain("npm_secret")
       expect(report.checks.some((item) => item.status === "fail" && item.message.includes("GH_TOKEN"))).toBe(true)
     }))
-
   test("doctor command composes static diagnostics", () =>
     withTempDirectoryPromise("ts-release-cli-doctor-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
+      await runWorkflow(root, [
           "doctor",
           "--config",
           configPath,
           "--format",
           "json"
-        ]).pipe(
-          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
-        )
-      )
+      ])
     }))
-
   test("plans release configs programmatically", () =>
     withTempDirectoryPromise("ts-release-plan-root-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
-
       const plan = await Effect.runPromise(
         planRelease({ root }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
-
-      expect(plan.state.identity.name).toBe("release")
+      expect(plan.identity.name).toBe("release")
       expect(plan.source.root).toBe(root)
       expect(plan.source.configPath).toBe("release.config.json")
     }))
-
   test("supports named Bun workflow runtime layer composition", () =>
     withTempDirectoryPromise("ts-release-workflow-runtime-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
-
       const plan = await Effect.runPromise(
         planRelease({ root, configPath: "release.config.json" }).pipe(
           Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
         )
       )
-
-      expect(plan.state.identity.name).toBe("release")
+      expect(plan.identity.name).toBe("release")
     }))
-
   test("release command plans without execute approval", () =>
     withTempDirectoryPromise("ts-release-cli-release-plan-only-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, minimalConfig)
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
+      await runWorkflow(root, [
           "release",
           "--config",
           configPath
-        ]).pipe(
-          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
-        )
-      )
-
+      ])
       await expect(access(join(root, ".release", "evidence", "evidence.json"))).rejects.toThrow()
     }))
-
   test("release command writes one workflow evidence file", () =>
     withTempDirectoryPromise("ts-release-release-root-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, noOpConfig)
-
-      await Effect.runPromise(
-        Command.runWith(cli, { version: "0.0.0" })([
+      await runWorkflow(root, [
           "release",
           "--config",
           configPath,
           "--execute",
           "--approve-publish"
-        ]).pipe(
-          Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
-        )
-      )
-
+      ])
       const output = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
       expect(output).toContain("\"releaseName\": \"release\"")
       expect(output).toContain("\"records\": []")
     }))
-
   test("release command writes partial workflow evidence on validation failure", () =>
     withTempDirectoryPromise("ts-release-cli-partial-evidence-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -868,7 +773,6 @@ describe("cli command", () => {
         }),
         BunServices.layer
       )
-
       const exit = await Effect.runPromiseExit(
         Command.runWith(cli, { version: "0.0.0" })([
           "release",
@@ -878,7 +782,6 @@ describe("cli command", () => {
           "--approve-publish"
         ]).pipe(Effect.provide(layer))
       )
-
       expectExitFailureTag(exit, "OperationFailedError")
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
       expect(evidence).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")

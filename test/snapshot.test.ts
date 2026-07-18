@@ -15,7 +15,6 @@ import {
 } from "../src/pipeline/operation.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { releaseConfig, runEffect, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
-
 const snapshotConfig = JSON.stringify({
   project: {
     name: "release",
@@ -26,7 +25,6 @@ const snapshotConfig = JSON.stringify({
   publish: {},
   evidence: ".release/evidence/{version}"
 })
-
 const gitTagConfig = JSON.stringify({
   project: {
     name: "release",
@@ -37,7 +35,6 @@ const gitTagConfig = JSON.stringify({
   publish: {},
   evidence: ".release/evidence/{version}"
 })
-
 const npmSnapshotConfig = releaseConfig({
   identity: {
     name: "release",
@@ -56,7 +53,6 @@ const npmSnapshotConfig = releaseConfig({
     }
   }
 })
-
 const EngineLayer = Layer.mergeAll(
   makeTestCommandRunnerLayer({
     directories: new Set(["."]),
@@ -69,7 +65,6 @@ const EngineLayer = Layer.mergeAll(
   TestGitHubApiLayer,
   UnsupportedArtifactStagerLayer
 )
-
 const snapshotIdentity = makePipelineIdentity({ version: "0.1.0-SNAPSHOT-abcdef1", commit: "abcdef123", shortCommit: "abcdef1", versionSource: "test", snapshot: true })
 
 describe("snapshot mode", () => {
@@ -77,8 +72,7 @@ describe("snapshot mode", () => {
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(snapshotConfig)
       const plan = yield* planRelease({ root: ".", snapshot: true }, intent)
-
-      expect(plan.state.identity).toMatchObject({
+      expect(plan.identity).toMatchObject({
         version: "0.1.0-SNAPSHOT-abcdef1",
         snapshot: true,
         versionSource: "manifest"
@@ -91,8 +85,7 @@ describe("snapshot mode", () => {
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(gitTagConfig)
       const plan = yield* planRelease({ root: ".", snapshot: true }, intent)
-
-      expect(plan.state.identity).toMatchObject({
+      expect(plan.identity).toMatchObject({
         version: "1.2.3-SNAPSHOT-abcdef1",
         tag: "v1.2.3",
         snapshot: true,
@@ -117,17 +110,16 @@ describe("snapshot mode", () => {
           })
         })
       })
-
       const evidence = yield* runOperationEvidence(
         operation,
         ExecutionApproval.make({ execute: true, approveIrreversible: true }),
         {
           root: ".",
           identity: snapshotIdentity,
+          artifacts: [],
           notices: []
         }
       )
-
       expect(evidence.status).toBe("refused")
       expect(evidence.message).toBe("Refused by snapshot policy.")
     }).pipe(Effect.provide(EngineLayer)))
@@ -141,7 +133,6 @@ describe("snapshot mode", () => {
           approveIrreversible: true
         })
         const refusal = result.evidence.records.find((record) => record.operationId === "npm:npm-publish")
-
         expect(refusal?.status).toBe("refused")
         expect(result.evidence.records.some((record) => record.message === "Refused by snapshot policy.")).toBe(true)
       }))
@@ -153,7 +144,6 @@ describe("snapshot mode", () => {
           execute: true,
           approvePublish: true
         })
-
         expect(summary.refused.map((operation) => operation.id)).toContain("npm:npm-publish")
         expect(summary.refused.every((operation) => operation.status === "refused")).toBe(true)
       }))

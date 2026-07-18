@@ -4,15 +4,13 @@ import {
   catalogGitPublishOperations,
   validationNoteOperation
 } from "../pipeline/operation-helpers.js"
-import type { Pipe } from "../pipeline/pipe.js"
+import type { FeaturePlanner } from "../pipeline/pipe.js"
 import { emptyContribution } from "../pipeline/pipe.js"
 import {
-  defaultHomebrewSection,
-  homebrewSectionFromConfig,
-  type HomebrewSection
+  type ResolvedHomebrew
 } from "./catalog-homebrew.js"
 
-const rejectUnsupportedTokenEnv = (section: HomebrewSection): Effect.Effect<void, PlanError> =>
+const rejectUnsupportedTokenEnv = (section: ResolvedHomebrew): Effect.Effect<void, PlanError> =>
   section.tokenEnv === undefined
     ? Effect.void
     : Effect.fail(PlanError.make({
@@ -22,13 +20,10 @@ const rejectUnsupportedTokenEnv = (section: HomebrewSection): Effect.Effect<void
         "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
     }))
 
-export const publishHomebrewPipe: Pipe<HomebrewSection> = {
+export const publishHomebrewPlanner: FeaturePlanner<ResolvedHomebrew> = {
   id: "publish:homebrew",
-  phase: "publish",
-  section: homebrewSectionFromConfig,
-  plan: (rawSection, state) =>
+  plan: (section, state) =>
     Effect.gen(function*() {
-      const section = defaultHomebrewSection(rawSection, state.identity)
       yield* rejectUnsupportedTokenEnv(section)
       const formulaPath = section.formulaPath
       return {

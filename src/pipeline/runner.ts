@@ -1,149 +1,106 @@
 import * as Effect from "effect/Effect"
 import { artifactPathBaseName, type Artifact } from "./artifact.js"
-import { appendArtifacts } from "./catalog.js"
 import { PlanError } from "./errors.js"
-import type { Pipe } from "./pipe.js"
-import { PipeNotice, ReleaseState } from "./state.js"
-import type { ReleaseConfig } from "../config/schema.js"
+import type { PipelineOperation } from "./operation.js"
+import type { PipeContribution, ScheduledPlanner } from "./pipe.js"
+import type { PipeNotice, ReleaseIdentity } from "./state.js"
 
-const assertUniqueArtifactPaths = (
-  pipeId: string,
-  state: ReleaseState,
-  paths: ReadonlyArray<string>
-): Effect.Effect<void, PlanError> =>
-  Effect.sync(() => {
-    const seen = new Set(state.artifacts.artifacts.map((artifact) => artifact.path))
-    const duplicates = new Set<string>()
-    for (const path of paths) {
-      if (seen.has(path)) {
-        duplicates.add(path)
-      }
-      seen.add(path)
-    }
-    return [...duplicates].sort()
-  }).pipe(
-    Effect.flatMap((duplicates) =>
-      duplicates.length === 0
-        ? Effect.void
-        : Effect.fail(PlanError.make({
-          pipeId,
-          field: "artifacts.path",
-          reason: `Duplicate artifact paths: ${duplicates.join(", ")}`
-        }))
-    )
-  )
-
-const assertUniqueArtifactIds = (
-  pipeId: string,
-  state: ReleaseState,
-  artifacts: ReadonlyArray<Artifact>
-): Effect.Effect<void, PlanError> =>
-  Effect.sync(() => {
-    const seen = new Set(state.artifacts.artifacts.map((artifact) => artifact.id))
-    const duplicates = new Set<string>()
-    for (const artifact of artifacts) {
-      if (seen.has(artifact.id)) {
-        duplicates.add(artifact.id)
-      }
-      seen.add(artifact.id)
-    }
-    return [...duplicates].sort()
-  }).pipe(
-    Effect.flatMap((duplicates) =>
-      duplicates.length === 0
-        ? Effect.void
-        : Effect.fail(PlanError.make({
-          pipeId,
-          field: "artifacts.id",
-          reason: `Duplicate artifact ids: ${duplicates.join(", ")}`
-        }))
-    )
-  )
-
-interface ArtifactNameCollision {
-  readonly name: string
-  readonly firstId: string
-  readonly nextId: string
+export interface PlanAccumulator {
+  readonly identity: ReleaseIdentity
+  readonly artifacts: ReadonlyArray<Artifact>
+  readonly operations: ReadonlyArray<PipelineOperation>
+  readonly notices: ReadonlyArray<PipeNotice>
 }
 
-const assertUniqueArtifactNames = (
-  pipeId: string,
-  state: ReleaseState,
-  artifacts: ReadonlyArray<Artifact>
-): Effect.Effect<void, PlanError> =>
-  Effect.sync(() => {
-    const seen = new Map<string, string>()
-    const collisions: Array<ArtifactNameCollision> = []
-    for (const artifact of state.artifacts.artifacts) {
-      seen.set(artifactPathBaseName(artifact.path), artifact.id)
-    }
-    for (const artifact of artifacts) {
-      const name = artifactPathBaseName(artifact.path)
-      const firstId = seen.get(name)
-      if (firstId !== undefined) {
-        collisions.push({ name, firstId, nextId: artifact.id })
-      } else {
-        seen.set(name, artifact.id)
-      }
-    }
-    return collisions
-  }).pipe(
-    Effect.flatMap((collisions) =>
-      collisions.length === 0
-        ? Effect.void
-        : Effect.fail(PlanError.make({
-          pipeId,
-          field: "artifacts.name",
-          reason: `Duplicate artifact names: ${collisions
-            .map((collision) =>
-              `${collision.name} (${collision.firstId}, ${collision.nextId})`
-            )
-            .join(", ")}`
-        }))
-    )
-  )
+export const emptyPlanAccumulator = (identity: ReleaseIdentity): PlanAccumulator => ({
+  identity, artifacts: [], operations: [], notices: []
+})
 
-const runPipe = Effect.fn("pipeline.runPipe")(function*<Section>(
-  state: ReleaseState,
-  config: ReleaseConfig,
-  pipe: Pipe<Section>
-) {
-  const section = pipe.section(config)
-  if (section === undefined) {
-    return ReleaseState.make({
-      ...state,
-      notices: [
-        ...state.notices,
-        PipeNotice.make({
-          pipeId: pipe.id,
-          severity: "info",
-          reason: "Config section is absent; pipe skipped."
-        })
-      ]
-    })
+const duplicateValues = (
+  existing: Iterable<string>,
+  incoming: Iterable<string>
+): ReadonlyArray<string> => {
+  const seen = new Set(existing)
+  const duplicates = new Set<string>()
+  for (const value of incoming) {
+    if (seen.has(value)) duplicates.add(value)
+    seen.add(value)
   }
+  return [...duplicates].sort()
+}
 
-  const contribution = yield* pipe.plan(section, state)
-  yield* assertUniqueArtifactIds(pipe.id, state, contribution.artifacts)
-  yield* assertUniqueArtifactPaths(pipe.id, state, contribution.artifacts.map((artifact) => artifact.path))
-  yield* assertUniqueArtifactNames(pipe.id, state, contribution.artifacts)
+const collision = (
+  pipeId: string,
+  field: string,
+  reason: string
+): Effect.Effect<void, PlanError> =>
+  Effect.fail(PlanError.make({ pipeId, field, reason }))
 
-  return ReleaseState.make({
+const requireUnique = (
+  pipeId: string,
+  field: string,
+  label: string,
+  existing: Iterable<string>,
+  incoming: Iterable<string>
+): Effect.Effect<void, PlanError> => {
+  const duplicates = duplicateValues(existing, incoming)
+  return duplicates.length === 0
+    ? Effect.void
+    : collision(pipeId, field, `Duplicate ${label}: ${duplicates.join(", ")}`)
+}
+
+const requireUniqueArtifactNames = (
+  pipeId: string,
+  state: PlanAccumulator,
+  artifacts: ReadonlyArray<Artifact>
+): Effect.Effect<void, PlanError> => {
+  const seen = new Map(state.artifacts.map((artifact) =>
+    [artifactPathBaseName(artifact.path), artifact.id] as const))
+  const collisions: Array<string> = []
+  for (const artifact of artifacts) {
+    const name = artifactPathBaseName(artifact.path)
+    const firstId = seen.get(name)
+    if (firstId === undefined) seen.set(name, artifact.id)
+    else collisions.push(`${name} (${firstId}, ${artifact.id})`)
+  }
+  return collisions.length === 0
+    ? Effect.void
+    : collision(pipeId, "artifacts.name", `Duplicate artifact names: ${collisions.join(", ")}`)
+}
+
+const appendContribution = Effect.fn("pipeline.appendContribution")(function*(
+  state: PlanAccumulator,
+  pipeId: string,
+  contribution: PipeContribution
+) {
+  yield* requireUnique(pipeId, "artifacts.id", "artifact ids",
+    state.artifacts.map(({ id }) => id), contribution.artifacts.map(({ id }) => id))
+  yield* requireUnique(pipeId, "artifacts.path", "artifact paths",
+    state.artifacts.map(({ path }) => path), contribution.artifacts.map(({ path }) => path))
+  yield* requireUniqueArtifactNames(pipeId, state, contribution.artifacts)
+  yield* requireUnique(pipeId, "operations.id", "operation ids",
+    state.operations.map(({ id }) => id), contribution.operations.map(({ id }) => id))
+  return {
     identity: state.identity,
-    artifacts: appendArtifacts(state.artifacts, contribution.artifacts),
+    artifacts: [...state.artifacts, ...contribution.artifacts],
     operations: [...state.operations, ...contribution.operations],
     notices: [...state.notices, ...contribution.notices]
-  })
+  } satisfies PlanAccumulator
+})
+
+const runPlanner = Effect.fn("pipeline.runPlanner")(function*(
+  state: PlanAccumulator,
+  planner: ScheduledPlanner
+) {
+  const contribution = yield* planner.run({ identity: state.identity, artifacts: state.artifacts })
+  return yield* appendContribution(state, planner.id, contribution)
 })
 
 export const runPipeline = Effect.fn("pipeline.runPipeline")(function*(
-  initialState: ReleaseState,
-  config: ReleaseConfig,
-  pipes: ReadonlyArray<Pipe<unknown>>
+  initialState: PlanAccumulator,
+  planners: ReadonlyArray<ScheduledPlanner>
 ) {
   let state = initialState
-  for (const pipe of pipes) {
-    state = yield* runPipe(state, config, pipe)
-  }
+  for (const planner of planners) state = yield* runPlanner(state, planner)
   return state
 })

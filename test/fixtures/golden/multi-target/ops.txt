@@ -6,6 +6,7 @@ homebrew:homebrew-push	externally-visible
 homebrew:homebrew-push:add	writes-local
 homebrew:homebrew-push:commit	writes-local
 homebrew:homebrew-render-formula	writes-local
+import-artifacts:archive:exists	read-only
 npm:npm-pack-dry-run	read-only
 npm:npm-package-exists	read-only
 npm:npm-publish	irreversible

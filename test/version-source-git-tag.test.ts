@@ -1,9 +1,6 @@
 import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as FileSystem from "effect/FileSystem"
-import * as Path from "effect/Path"
 import { makeTestCommandRunnerLayer, commandKey } from "./host-fakes.js"
-import { ReleaseCommandRunner } from "../src/host/host.js"
 import { gitTagSource } from "../src/pipeline/identity/git-tag.js"
 import { CommandSpec } from "../src/pipeline/operation.js"
 
@@ -24,26 +21,19 @@ const resolveGitTag = (input: {
   readonly project?: {
     readonly name?: string | undefined
     readonly packageName?: string | undefined
+    readonly version?: string | undefined
     readonly commit?: string | undefined
     readonly tag?: string | undefined
   } | undefined
   readonly snapshot?: boolean | undefined
 } = {}) =>
-  Effect.gen(function*() {
-    const fileSystem = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
-    const commandRunner = yield* ReleaseCommandRunner
-    return yield* gitTagSource.resolve(
-      {
-        project: {
-          name: "release",
-          ...(input.project ?? {})
-        },
-        root: ".",
-        snapshot: input.snapshot ?? false
-      },
-      { fileSystem, path, commandRunner }
-    )
+  gitTagSource.resolve({
+    project: {
+      name: "release",
+      ...(input.project ?? {})
+    },
+    root: ".",
+    snapshot: input.snapshot ?? false
   })
 
 describe("git-tag identity source", () => {
@@ -69,11 +59,11 @@ describe("git-tag identity source", () => {
         })
       }))
 
-    it.effect("does not need a commit command when commit is configured", () =>
+    it.effect("derives version from the tag even when project version and commit are explicit", () =>
       Effect.gen(function*() {
-        const identity = yield* resolveGitTag({ project: { commit: "abc123" } })
+        const identity = yield* resolveGitTag({ project: { version: "9.9.9", commit: "abc123" } })
 
-        expect(identity.version).toBe("1.2.3")
+        expect(identity).toMatchObject({ version: "1.2.3", commit: "abc123", tag: "v1.2.3" })
       }))
   })
 
@@ -85,13 +75,17 @@ describe("git-tag identity source", () => {
       ])
     })
   )((it) => {
-    it.effect("lets the environment override discovered tags", () =>
-      Effect.gen(function*() {
-        const identity = yield* resolveGitTag({ project: { commit: "abc123" } })
-
-        expect(identity.version).toBe("2.0.0-beta.1")
-        expect(identity.tag).toBe("v2.0.0-beta.1")
-      }))
+    const cases = [
+      ["lets the environment override discovered tags", {}, "2.0.0-beta.1", "v2.0.0-beta.1"],
+      ["prefers an explicit tag over the environment", { tag: "v3.4.5" }, "3.4.5", "v3.4.5"]
+    ] as const
+    for (const [label, project, version, tag] of cases) {
+      it.effect(label, () =>
+        Effect.gen(function*() {
+          const identity = yield* resolveGitTag({ project: { commit: "abc123", ...project } })
+          expect(identity).toMatchObject({ version, tag, commit: "abc123" })
+        }))
+    }
   })
 
   layer(
@@ -135,19 +129,6 @@ describe("git-tag identity source", () => {
         }
       }))
   })
-
-  it.effect("strips one leading v from an explicit configured tag", () =>
-    Effect.gen(function*() {
-      const identity = yield* resolveGitTag({
-        project: {
-          commit: "abc123",
-          tag: "v3.4.5"
-        }
-      }).pipe(Effect.provide(makeTestCommandRunnerLayer()))
-
-      expect(identity.version).toBe("3.4.5")
-      expect(identity.tag).toBe("v3.4.5")
-    }))
 
   it.effect("reports invalid semver tags by name", () =>
     Effect.gen(function*() {

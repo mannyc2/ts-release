@@ -5,9 +5,9 @@
 summary: release-example-homebrew@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 5
+operations: 6
 risk:
-  read-only: 1
+  read-only: 2
   writes-local: 3
   externally-visible: 1
   irreversible: 0
@@ -25,12 +25,19 @@ approval-required operations:
 
 ## Artifacts
 
-- - archive artifacts/release-example-homebrew-0.1.0.tgz [tarball] size=0 checksum=none
-- - homebrew-formula .release/generated/release-example-homebrew.rb [file] size=0 checksum=none
+- archive artifacts/release-example-homebrew-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
+- homebrew-formula .release/generated/release-example-homebrew.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
 
 ## Operations By Risk
 
 ### read-only
+
+#### import-artifacts:archive:exists
+
+- target: none
+- risk: read-only
+- approval: none
+- why: Verify imported artifact archive exists.
 
 #### homebrew:brew-audit
 

@@ -1,0 +1,1032 @@
+{
+  "schemaVersion": "release-plan/v3",
+  "identity": {
+    "name": "@mannyc1/ts-release",
+    "normalizedName": "mannyc1-ts-release",
+    "version": "0.1.0",
+    "tag": "v0.1.0",
+    "commit": "<commit>",
+    "shortCommit": "<short-commit>",
+    "notes": "Breaking: hard cutover to the 0.1 product surface. New root TypeScript API (defineRelease, schema helpers, plan/build/release/verify summaries), a 6-command CLI (init, doctor, build, plan, release, verify) with snapshot rehearsal and release --execute --approve-publish approval gating, and the compact project/build/publish config. Legacy config fields and the old phase commands are removed with no aliases.",
+    "versionSource": "manifest",
+    "snapshot": false
+  },
+  "artifacts": [
+    {
+      "id": "cli-linux-x64",
+      "kind": "executable",
+      "path": ".release/artifacts/ts-release-0.1.0-linux-x64",
+      "producedBy": "build:bun",
+      "platform": {
+        "os": "linux",
+        "arch": "x64",
+        "libc": "glibc",
+        "binaryName": "ts-release",
+        "installPath": "bin/ts-release",
+        "targetTriple": "bun-linux-x64"
+      },
+      "extra": {
+        "_tag": "executable",
+        "binary": "mannyc1-ts-release",
+        "extension": "",
+        "builderId": "bun"
+      }
+    },
+    {
+      "id": "cli-linux-arm64",
+      "kind": "executable",
+      "path": ".release/artifacts/ts-release-0.1.0-linux-arm64",
+      "producedBy": "build:bun",
+      "platform": {
+        "os": "linux",
+        "arch": "arm64",
+        "libc": "glibc",
+        "binaryName": "ts-release",
+        "installPath": "bin/ts-release",
+        "targetTriple": "bun-linux-arm64"
+      },
+      "extra": {
+        "_tag": "executable",
+        "binary": "mannyc1-ts-release",
+        "extension": "",
+        "builderId": "bun"
+      }
+    },
+    {
+      "id": "cli-darwin-x64",
+      "kind": "executable",
+      "path": ".release/artifacts/ts-release-0.1.0-darwin-x64",
+      "producedBy": "build:bun",
+      "platform": {
+        "os": "darwin",
+        "arch": "x64",
+        "binaryName": "ts-release",
+        "installPath": "bin/ts-release",
+        "targetTriple": "bun-darwin-x64"
+      },
+      "extra": {
+        "_tag": "executable",
+        "binary": "mannyc1-ts-release",
+        "extension": "",
+        "builderId": "bun"
+      }
+    },
+    {
+      "id": "cli-darwin-arm64",
+      "kind": "executable",
+      "path": ".release/artifacts/ts-release-0.1.0-darwin-arm64",
+      "producedBy": "build:bun",
+      "platform": {
+        "os": "darwin",
+        "arch": "arm64",
+        "binaryName": "ts-release",
+        "installPath": "bin/ts-release",
+        "targetTriple": "bun-darwin-arm64"
+      },
+      "extra": {
+        "_tag": "executable",
+        "binary": "mannyc1-ts-release",
+        "extension": "",
+        "builderId": "bun"
+      }
+    },
+    {
+      "id": "cli-windows-x64",
+      "kind": "executable",
+      "path": ".release/artifacts/ts-release-0.1.0-windows-x64.exe",
+      "producedBy": "build:bun",
+      "platform": {
+        "os": "windows",
+        "arch": "x64",
+        "binaryName": "ts-release",
+        "executableExtension": ".exe",
+        "installPath": "bin/ts-release",
+        "targetTriple": "bun-windows-x64"
+      },
+      "extra": {
+        "_tag": "executable",
+        "binary": "mannyc1-ts-release",
+        "extension": ".exe",
+        "builderId": "bun"
+      }
+    },
+    {
+      "id": "npm-package",
+      "kind": "package",
+      "path": ".",
+      "producedBy": "build:npm-pack",
+      "extra": {
+        "_tag": "package",
+        "packageManager": "npm",
+        "packageName": "@mannyc1/ts-release"
+      }
+    },
+    {
+      "id": "pypi-wheel-linux-x64",
+      "kind": "wheel",
+      "path": ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",
+      "producedBy": "build:pypi-wheel",
+      "extra": {
+        "_tag": "wheel",
+        "packageName": "ts-release",
+        "wheelTag": "py3-none-manylinux2014_x86_64",
+        "binaries": [
+          "ts_release/bin/ts-release-linux-x64"
+        ]
+      }
+    },
+    {
+      "id": "pypi-wheel-linux-arm64",
+      "kind": "wheel",
+      "path": ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",
+      "producedBy": "build:pypi-wheel",
+      "extra": {
+        "_tag": "wheel",
+        "packageName": "ts-release",
+        "wheelTag": "py3-none-manylinux2014_aarch64",
+        "binaries": [
+          "ts_release/bin/ts-release-linux-arm64"
+        ]
+      }
+    },
+    {
+      "id": "pypi-wheel-darwin-x64",
+      "kind": "wheel",
+      "path": ".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",
+      "producedBy": "build:pypi-wheel",
+      "extra": {
+        "_tag": "wheel",
+        "packageName": "ts-release",
+        "wheelTag": "py3-none-macosx_10_15_x86_64",
+        "binaries": [
+          "ts_release/bin/ts-release-darwin-x64"
+        ]
+      }
+    },
+    {
+      "id": "pypi-wheel-darwin-arm64",
+      "kind": "wheel",
+      "path": ".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",
+      "producedBy": "build:pypi-wheel",
+      "extra": {
+        "_tag": "wheel",
+        "packageName": "ts-release",
+        "wheelTag": "py3-none-macosx_11_0_arm64",
+        "binaries": [
+          "ts_release/bin/ts-release-darwin-arm64"
+        ]
+      }
+    },
+    {
+      "id": "pypi-wheel-windows-x64",
+      "kind": "wheel",
+      "path": ".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl",
+      "producedBy": "build:pypi-wheel",
+      "extra": {
+        "_tag": "wheel",
+        "packageName": "ts-release",
+        "wheelTag": "py3-none-win_amd64",
+        "binaries": [
+          "ts_release/bin/ts-release-windows-x64.exe"
+        ]
+      }
+    },
+    {
+      "id": "homebrew-formula",
+      "kind": "catalog-file",
+      "path": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
+      "producedBy": "catalog:homebrew",
+      "extra": {
+        "_tag": "catalog-file",
+        "catalog": "homebrew",
+        "repository": "mannyc2/homebrew-ts-release"
+      }
+    },
+    {
+      "id": "scoop-manifest",
+      "kind": "catalog-file",
+      "path": ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
+      "producedBy": "catalog:scoop",
+      "extra": {
+        "_tag": "catalog-file",
+        "catalog": "scoop",
+        "repository": "mannyc2/scoop-ts-release"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "id": "build:bun:cli-linux-x64",
+      "pipeId": "build",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Compile mannyc1-ts-release for linux-x64 with Bun.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "bun-compile",
+          "entry": "apps/release-ts/src/cli/main.ts",
+          "target": "linux-x64",
+          "compileTarget": "bun-linux-x64",
+          "outfile": ".release/artifacts/ts-release-0.1.0-linux-x64"
+        },
+        "producesArtifactIds": [
+          "cli-linux-x64"
+        ]
+      }
+    },
+    {
+      "id": "build:bun:cli-linux-arm64",
+      "pipeId": "build",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Compile mannyc1-ts-release for linux-arm64 with Bun.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "bun-compile",
+          "entry": "apps/release-ts/src/cli/main.ts",
+          "target": "linux-arm64",
+          "compileTarget": "bun-linux-arm64",
+          "outfile": ".release/artifacts/ts-release-0.1.0-linux-arm64"
+        },
+        "producesArtifactIds": [
+          "cli-linux-arm64"
+        ]
+      }
+    },
+    {
+      "id": "build:bun:cli-darwin-x64",
+      "pipeId": "build",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Compile mannyc1-ts-release for darwin-x64 with Bun.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "bun-compile",
+          "entry": "apps/release-ts/src/cli/main.ts",
+          "target": "darwin-x64",
+          "compileTarget": "bun-darwin-x64",
+          "outfile": ".release/artifacts/ts-release-0.1.0-darwin-x64"
+        },
+        "producesArtifactIds": [
+          "cli-darwin-x64"
+        ]
+      }
+    },
+    {
+      "id": "build:bun:cli-darwin-arm64",
+      "pipeId": "build",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Compile mannyc1-ts-release for darwin-arm64 with Bun.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "bun-compile",
+          "entry": "apps/release-ts/src/cli/main.ts",
+          "target": "darwin-arm64",
+          "compileTarget": "bun-darwin-arm64",
+          "outfile": ".release/artifacts/ts-release-0.1.0-darwin-arm64"
+        },
+        "producesArtifactIds": [
+          "cli-darwin-arm64"
+        ]
+      }
+    },
+    {
+      "id": "build:bun:cli-windows-x64",
+      "pipeId": "build",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Compile mannyc1-ts-release for windows-x64 with Bun.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "bun-compile",
+          "entry": "apps/release-ts/src/cli/main.ts",
+          "target": "windows-x64",
+          "compileTarget": "bun-windows-x64",
+          "outfile": ".release/artifacts/ts-release-0.1.0-windows-x64.exe"
+        },
+        "producesArtifactIds": [
+          "cli-windows-x64"
+        ]
+      }
+    },
+    {
+      "id": "build:pypi-wheel:pypi-wheel-linux-x64",
+      "pipeId": "build:pypi-wheel",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Assemble PyPI wheel pypi-wheel-linux-x64.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "pypi-wheel",
+          "outfile": ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",
+          "wheelTag": "py3-none-manylinux2014_x86_64",
+          "packageName": "ts-release",
+          "moduleName": "ts_release",
+          "consoleScript": "ts-release",
+          "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+          "homepage": "https://github.com/mannyc2/ts-release",
+          "license": "MIT",
+          "requiresPython": ">=3.8",
+          "binaries": [
+            {
+              "os": "linux",
+              "arch": "x64",
+              "sourcePath": ".release/artifacts/ts-release-{version}-linux-x64",
+              "wheelPath": "ts_release/bin/ts-release-linux-x64"
+            }
+          ]
+        },
+        "producesArtifactIds": [
+          "pypi-wheel-linux-x64"
+        ]
+      }
+    },
+    {
+      "id": "build:pypi-wheel:pypi-wheel-linux-arm64",
+      "pipeId": "build:pypi-wheel",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Assemble PyPI wheel pypi-wheel-linux-arm64.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "pypi-wheel",
+          "outfile": ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",
+          "wheelTag": "py3-none-manylinux2014_aarch64",
+          "packageName": "ts-release",
+          "moduleName": "ts_release",
+          "consoleScript": "ts-release",
+          "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+          "homepage": "https://github.com/mannyc2/ts-release",
+          "license": "MIT",
+          "requiresPython": ">=3.8",
+          "binaries": [
+            {
+              "os": "linux",
+              "arch": "arm64",
+              "sourcePath": ".release/artifacts/ts-release-{version}-linux-arm64",
+              "wheelPath": "ts_release/bin/ts-release-linux-arm64"
+            }
+          ]
+        },
+        "producesArtifactIds": [
+          "pypi-wheel-linux-arm64"
+        ]
+      }
+    },
+    {
+      "id": "build:pypi-wheel:pypi-wheel-darwin-x64",
+      "pipeId": "build:pypi-wheel",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Assemble PyPI wheel pypi-wheel-darwin-x64.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "pypi-wheel",
+          "outfile": ".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",
+          "wheelTag": "py3-none-macosx_10_15_x86_64",
+          "packageName": "ts-release",
+          "moduleName": "ts_release",
+          "consoleScript": "ts-release",
+          "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+          "homepage": "https://github.com/mannyc2/ts-release",
+          "license": "MIT",
+          "requiresPython": ">=3.8",
+          "binaries": [
+            {
+              "os": "darwin",
+              "arch": "x64",
+              "sourcePath": ".release/artifacts/ts-release-{version}-darwin-x64",
+              "wheelPath": "ts_release/bin/ts-release-darwin-x64"
+            }
+          ]
+        },
+        "producesArtifactIds": [
+          "pypi-wheel-darwin-x64"
+        ]
+      }
+    },
+    {
+      "id": "build:pypi-wheel:pypi-wheel-darwin-arm64",
+      "pipeId": "build:pypi-wheel",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Assemble PyPI wheel pypi-wheel-darwin-arm64.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "pypi-wheel",
+          "outfile": ".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",
+          "wheelTag": "py3-none-macosx_11_0_arm64",
+          "packageName": "ts-release",
+          "moduleName": "ts_release",
+          "consoleScript": "ts-release",
+          "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+          "homepage": "https://github.com/mannyc2/ts-release",
+          "license": "MIT",
+          "requiresPython": ">=3.8",
+          "binaries": [
+            {
+              "os": "darwin",
+              "arch": "arm64",
+              "sourcePath": ".release/artifacts/ts-release-{version}-darwin-arm64",
+              "wheelPath": "ts_release/bin/ts-release-darwin-arm64"
+            }
+          ]
+        },
+        "producesArtifactIds": [
+          "pypi-wheel-darwin-arm64"
+        ]
+      }
+    },
+    {
+      "id": "build:pypi-wheel:pypi-wheel-windows-x64",
+      "pipeId": "build:pypi-wheel",
+      "phase": "build",
+      "risk": "writes-local",
+      "description": "Assemble PyPI wheel pypi-wheel-windows-x64.",
+      "action": {
+        "_tag": "stage",
+        "intent": {
+          "_tag": "pypi-wheel",
+          "outfile": ".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl",
+          "wheelTag": "py3-none-win_amd64",
+          "packageName": "ts-release",
+          "moduleName": "ts_release",
+          "consoleScript": "ts-release",
+          "summary": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+          "homepage": "https://github.com/mannyc2/ts-release",
+          "license": "MIT",
+          "requiresPython": ">=3.8",
+          "binaries": [
+            {
+              "os": "windows",
+              "arch": "x64",
+              "sourcePath": ".release/artifacts/ts-release-{version}-windows-x64.exe",
+              "wheelPath": "ts_release/bin/ts-release-windows-x64.exe"
+            }
+          ]
+        },
+        "producesArtifactIds": [
+          "pypi-wheel-windows-x64"
+        ]
+      }
+    },
+    {
+      "id": "homebrew:homebrew-render-formula",
+      "pipeId": "catalog:homebrew",
+      "phase": "catalog",
+      "risk": "writes-local",
+      "description": "Render Homebrew formula ts-release.rb.",
+      "action": {
+        "_tag": "write-file",
+        "path": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
+        "contents": {
+          "_tag": "file-parts",
+          "parts": [
+            "class TsRelease < Formula\n  desc \"Portable artifact and package-manager distribution planning for TypeScript projects.\"\n  homepage \"https://github.com/mannyc2/ts-release\"\n  version \"0.1.0\"\n\n  on_macos do\n",
+            "    on_arm do\n      url \"https://github.com/mannyc2/ts-release/releases/download/v0.1.0/ts-release-0.1.0-darwin-arm64\"\n      sha256 \"",
+            {
+              "artifactId": "cli-darwin-arm64"
+            },
+            "\"\n    end\n\n",
+            "    on_intel do\n      url \"https://github.com/mannyc2/ts-release/releases/download/v0.1.0/ts-release-0.1.0-darwin-x64\"\n      sha256 \"",
+            {
+              "artifactId": "cli-darwin-x64"
+            },
+            "\"\n    end\n\n",
+            "  end\n\n  def install\n    bin.install Dir[\"*\"].find { |path| File.file?(path) } => \"ts-release\"\n    chmod 0755, bin/\"ts-release\"\n  end\n\n  test do\n    assert File.exist?(bin/\"ts-release\")\n    assert File.executable?(bin/\"ts-release\")\n  end\nend\n"
+          ]
+        }
+      }
+    },
+    {
+      "id": "scoop:scoop-render-manifest",
+      "pipeId": "catalog:scoop",
+      "phase": "catalog",
+      "risk": "writes-local",
+      "description": "Render Scoop manifest ts-release.json.",
+      "action": {
+        "_tag": "write-file",
+        "path": ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
+        "contents": {
+          "_tag": "file-parts",
+          "parts": [
+            "{\n  \"version\": \"0.1.0\",\n  \"description\": \"Portable artifact and package-manager distribution planning for TypeScript projects.\",\n  \"homepage\": \"https://github.com/mannyc2/ts-release\",\n  \"license\": \"MIT\",\n  \"url\": \"https://github.com/mannyc2/ts-release/releases/download/v0.1.0/ts-release-0.1.0-windows-x64.exe\",\n  \"hash\": \"",
+            {
+              "artifactId": "cli-windows-x64"
+            },
+            "\",\n  \"bin\": [\n    [\n      \"ts-release-0.1.0-windows-x64.exe\",\n      \"ts-release\"\n    ]\n  ]\n}\n"
+          ]
+        }
+      }
+    },
+    {
+      "id": "npm:npm-version",
+      "pipeId": "publish:npm",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Check npm CLI availability.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "npm",
+          "args": [
+            "--version"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "npm:npm-trusted-publishing-auth",
+      "pipeId": "publish:npm",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Record npm trusted publishing authentication mode.",
+      "action": {
+        "_tag": "note",
+        "message": "NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and package @mannyc1/ts-release to already exist on the registry.",
+        "severity": "info",
+        "skipped": false
+      }
+    },
+    {
+      "id": "npm:npm-package-exists",
+      "pipeId": "publish:npm",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Verify npm package exists before trusted publishing.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "npm",
+          "args": [
+            "view",
+            "@mannyc1/ts-release",
+            "name",
+            "--registry",
+            "https://registry.npmjs.org"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "npm:npm-pack-dry-run",
+      "pipeId": "publish:npm",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Validate npm package contents with npm pack dry-run.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "npm",
+          "args": [
+            "pack",
+            "--dry-run",
+            "--json",
+            "."
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "npm:npm-publish",
+      "pipeId": "publish:npm",
+      "phase": "publish",
+      "risk": "irreversible",
+      "description": "Publish @mannyc1/ts-release@0.1.0 to npm.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "npm",
+          "args": [
+            "publish",
+            ".",
+            "--registry",
+            "https://registry.npmjs.org",
+            "--access",
+            "public",
+            "--provenance"
+          ],
+          "requiredEnv": [
+            "ACTIONS_ID_TOKEN_REQUEST_URL",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+          ],
+          "redactedEnv": [
+            "ACTIONS_ID_TOKEN_REQUEST_URL",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+          ]
+        }
+      }
+    },
+    {
+      "id": "npm:npm-version-verify",
+      "pipeId": "publish:npm",
+      "phase": "verify",
+      "risk": "read-only",
+      "description": "Verify @mannyc1/ts-release@0.1.0 exists on npm.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "npm",
+          "args": [
+            "view",
+            "@mannyc1/ts-release@0.1.0",
+            "version",
+            "--registry",
+            "https://registry.npmjs.org"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      },
+      "retry": {
+        "attempts": 11,
+        "delayMillis": 500
+      }
+    },
+    {
+      "id": "pypi:python-version",
+      "pipeId": "publish:pypi",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Check Python CLI availability.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "python3",
+          "args": [
+            "--version"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "pypi:twine-version",
+      "pipeId": "publish:pypi",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Check Twine CLI availability.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "python3",
+          "args": [
+            "-m",
+            "twine",
+            "--version"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "pypi:twine-trusted-publishing-auth",
+      "pipeId": "publish:pypi",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Record PyPI trusted publishing authentication mode.",
+      "action": {
+        "_tag": "note",
+        "message": "PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.",
+        "severity": "info",
+        "skipped": false
+      }
+    },
+    {
+      "id": "pypi:twine-check",
+      "pipeId": "publish:pypi",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Validate Python distribution metadata with twine check.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "python3",
+          "args": [
+            "-m",
+            "twine",
+            "check",
+            ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "pypi:twine-upload",
+      "pipeId": "publish:pypi",
+      "phase": "publish",
+      "risk": "irreversible",
+      "description": "Publish @mannyc1/ts-release@0.1.0 to PyPI-compatible registry.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "python3",
+          "args": [
+            "-m",
+            "twine",
+            "upload",
+            "--non-interactive",
+            "--repository-url",
+            "https://upload.pypi.org/legacy/",
+            ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",
+            ".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl"
+          ],
+          "requiredEnv": [
+            "ACTIONS_ID_TOKEN_REQUEST_URL",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+          ],
+          "redactedEnv": [
+            "ACTIONS_ID_TOKEN_REQUEST_URL",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+          ]
+        }
+      }
+    },
+    {
+      "id": "github:github-release-dry-run",
+      "pipeId": "publish:github",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Record simulated GitHub release dry-run validation.",
+      "action": {
+        "_tag": "note",
+        "message": "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.",
+        "severity": "info",
+        "skipped": false
+      }
+    },
+    {
+      "id": "github:github-release-create",
+      "pipeId": "publish:github",
+      "phase": "publish",
+      "risk": "externally-visible",
+      "description": "Create GitHub release for @mannyc1/ts-release@0.1.0.",
+      "action": {
+        "_tag": "github-release-create",
+        "repository": "mannyc2/ts-release",
+        "tokenEnv": "GH_TOKEN",
+        "tag": "v0.1.0",
+        "title": "@mannyc1/ts-release 0.1.0",
+        "notes": "Breaking: hard cutover to the 0.1 product surface. New root TypeScript API (defineRelease, schema helpers, plan/build/release/verify summaries), a 6-command CLI (init, doctor, build, plan, release, verify) with snapshot rehearsal and release --execute --approve-publish approval gating, and the compact project/build/publish config. Legacy config fields and the old phase commands are removed with no aliases.",
+        "draft": false,
+        "prerelease": false,
+        "assets": [
+          {
+            "artifactId": "cli-linux-x64",
+            "path": ".release/artifacts/ts-release-0.1.0-linux-x64",
+            "name": "ts-release-0.1.0-linux-x64",
+            "contentType": "application/octet-stream"
+          },
+          {
+            "artifactId": "cli-linux-arm64",
+            "path": ".release/artifacts/ts-release-0.1.0-linux-arm64",
+            "name": "ts-release-0.1.0-linux-arm64",
+            "contentType": "application/octet-stream"
+          },
+          {
+            "artifactId": "cli-darwin-x64",
+            "path": ".release/artifacts/ts-release-0.1.0-darwin-x64",
+            "name": "ts-release-0.1.0-darwin-x64",
+            "contentType": "application/octet-stream"
+          },
+          {
+            "artifactId": "cli-darwin-arm64",
+            "path": ".release/artifacts/ts-release-0.1.0-darwin-arm64",
+            "name": "ts-release-0.1.0-darwin-arm64",
+            "contentType": "application/octet-stream"
+          },
+          {
+            "artifactId": "cli-windows-x64",
+            "path": ".release/artifacts/ts-release-0.1.0-windows-x64.exe",
+            "name": "ts-release-0.1.0-windows-x64.exe",
+            "contentType": "application/octet-stream"
+          }
+        ]
+      }
+    },
+    {
+      "id": "github:github-release-verify-api",
+      "pipeId": "publish:github",
+      "phase": "verify",
+      "risk": "read-only",
+      "description": "Verify the GitHub release through the GitHub API.",
+      "action": {
+        "_tag": "github-release-verify",
+        "repository": "mannyc2/ts-release",
+        "tokenEnv": "GH_TOKEN",
+        "tag": "v0.1.0",
+        "title": "@mannyc1/ts-release 0.1.0",
+        "draft": false,
+        "prerelease": false,
+        "assetNames": [
+          "ts-release-0.1.0-linux-x64",
+          "ts-release-0.1.0-linux-arm64",
+          "ts-release-0.1.0-darwin-x64",
+          "ts-release-0.1.0-darwin-arm64",
+          "ts-release-0.1.0-windows-x64.exe"
+        ]
+      }
+    },
+    {
+      "id": "homebrew:brew-audit",
+      "pipeId": "publish:homebrew",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Record simulated Homebrew formula validation.",
+      "action": {
+        "_tag": "note",
+        "message": "Homebrew formula validation is simulated by the deterministic release plan.",
+        "severity": "info",
+        "skipped": false
+      }
+    },
+    {
+      "id": "homebrew:homebrew-push:add",
+      "pipeId": "publish:homebrew",
+      "phase": "publish",
+      "risk": "writes-local",
+      "description": "Stage ts-release.rb for homebrew.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "git",
+          "args": [
+            "-C",
+            ".release/catalogs/homebrew-ts-release",
+            "add",
+            "Formula/ts-release.rb"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "homebrew:homebrew-push:commit",
+      "pipeId": "publish:homebrew",
+      "phase": "publish",
+      "risk": "writes-local",
+      "description": "Commit ts-release.rb for homebrew.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "git",
+          "args": [
+            "-C",
+            ".release/catalogs/homebrew-ts-release",
+            "commit",
+            "-m",
+            "Update ts-release to 0.1.0"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "homebrew:homebrew-push",
+      "pipeId": "publish:homebrew",
+      "phase": "publish",
+      "risk": "externally-visible",
+      "description": "Push Homebrew tap update for @mannyc1/ts-release@0.1.0.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "git",
+          "args": [
+            "-C",
+            ".release/catalogs/homebrew-ts-release",
+            "push"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "scoop:scoop-manifest-validation",
+      "pipeId": "publish:scoop",
+      "phase": "publish",
+      "risk": "read-only",
+      "description": "Record simulated Scoop manifest validation.",
+      "action": {
+        "_tag": "note",
+        "message": "Scoop manifest validation is simulated by the deterministic release plan.",
+        "severity": "info",
+        "skipped": false
+      }
+    },
+    {
+      "id": "scoop:scoop-push:add",
+      "pipeId": "publish:scoop",
+      "phase": "publish",
+      "risk": "writes-local",
+      "description": "Stage ts-release.json for scoop.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "git",
+          "args": [
+            "-C",
+            ".release/catalogs/scoop-ts-release",
+            "add",
+            "bucket/ts-release.json"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "scoop:scoop-push:commit",
+      "pipeId": "publish:scoop",
+      "phase": "publish",
+      "risk": "writes-local",
+      "description": "Commit ts-release.json for scoop.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "git",
+          "args": [
+            "-C",
+            ".release/catalogs/scoop-ts-release",
+            "commit",
+            "-m",
+            "Update ts-release to 0.1.0"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    },
+    {
+      "id": "scoop:scoop-push",
+      "pipeId": "publish:scoop",
+      "phase": "publish",
+      "risk": "externally-visible",
+      "description": "Push Scoop bucket update for @mannyc1/ts-release@0.1.0.",
+      "action": {
+        "_tag": "command",
+        "command": {
+          "executable": "git",
+          "args": [
+            "-C",
+            ".release/catalogs/scoop-ts-release",
+            "push"
+          ],
+          "requiredEnv": [],
+          "redactedEnv": []
+        }
+      }
+    }
+  ],
+  "notices": [
+    {
+      "pipeId": "import-artifacts",
+      "severity": "info",
+      "reason": "Config section is absent; pipe skipped."
+    },
+    {
+      "pipeId": "archive",
+      "severity": "info",
+      "reason": "Config section is absent; pipe skipped."
+    },
+    {
+      "pipeId": "checksum",
+      "severity": "info",
+      "reason": "Config section is absent; pipe skipped."
+    }
+  ],
+  "source": {
+    "root": "<dogfood-root>",
+    "configPath": "apps/release-ts/release.config.json"
+  },
+  "evidenceDirectory": ".release/evidence/0.1.0"
+}

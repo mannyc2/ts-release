@@ -1,14 +1,16 @@
 import * as Schema from "effect/Schema"
 
+export const safeRelativePathReason = "Path must be non-empty, relative, and must not contain parent traversal."
+
+export const isSafeRelativePath = (value: string): boolean =>
+  value.trim().length > 0 &&
+  !value.startsWith("/") &&
+  !value.startsWith("\\") &&
+  !/^[A-Za-z]:[\\/]/.test(value) &&
+  !value.split(/[\\/]+/).includes("..")
+
 export const SafeRelativePath = Schema.String.check(
-  Schema.makeFilter((value: string) => {
-    const isEmpty = value.trim().length === 0
-    const isAbsolute = value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value)
-    const hasTraversal = value.split(/[\\/]+/).includes("..")
-    return isEmpty || isAbsolute || hasTraversal
-      ? "Path must be non-empty, relative, and must not contain parent traversal."
-      : undefined
-  })
+  Schema.makeFilter((value: string) => isSafeRelativePath(value) ? undefined : safeRelativePathReason)
 )
 export type SafeRelativePath = typeof SafeRelativePath.Type
 
@@ -65,17 +67,6 @@ export class PyPiWheelBinaryArtifact extends Schema.Class<PyPiWheelBinaryArtifac
   wheelPath: Schema.String
 }) {}
 
-export class ArtifactInventoryItem extends Schema.Class<ArtifactInventoryItem>("ArtifactInventoryItem")({
-  id: ArtifactId,
-  path: SafeRelativePath,
-  downloadUrl: Schema.optional(Schema.String),
-  format: ArtifactFormat,
-  consumers: Schema.Array(Schema.String),
-  sizeBytes: Schema.Number,
-  checksum: Schema.optionalKey(Checksum),
-  variant: Schema.optionalKey(InstallableArtifactVariant)
-}) {}
-
 export const ArtifactKind = Schema.Literals([
   "executable",
   "archive",
@@ -109,12 +100,12 @@ export class ChecksumFileExtra extends Schema.TaggedClass<ChecksumFileExtra>()("
 }) {}
 
 export class CatalogFileExtra extends Schema.TaggedClass<CatalogFileExtra>()("catalog-file", {
-  catalog: Schema.Literals(["homebrew", "scoop"]),
+  catalog: Schema.NonEmptyString,
   repository: Schema.String
 }) {}
 
 export class PackageExtra extends Schema.TaggedClass<PackageExtra>()("package", {
-  packageManager: Schema.Literal("npm"),
+  packageManager: Schema.NonEmptyString,
   packageName: Schema.String
 }) {}
 
@@ -142,7 +133,7 @@ export type ArtifactExtra = typeof ArtifactExtra.Type
 export class Artifact extends Schema.Class<Artifact>("Artifact")({
   id: ArtifactId,
   kind: ArtifactKind,
-  path: Schema.String,
+  path: SafeRelativePath,
   producedBy: Schema.String,
   platform: Schema.optionalKey(InstallableArtifactVariant),
   checksum: Schema.optionalKey(Checksum),

@@ -5,13 +5,13 @@
 summary: @scope/portable-example@0.1.0
 commit: abc123
 evidence: .release/evidence/0.1.0
-operations: 24
+operations: 34
 risk:
   read-only: 13
-  writes-local: 6
+  writes-local: 16
   externally-visible: 3
   irreversible: 2
-execute required: 11
+execute required: 21
 irreversible approval required: 2
 
 surfaces:
@@ -22,6 +22,16 @@ surfaces:
   - scoop operations=5
 
 approval-required operations:
+  - build:bun:cli-linux-x64: --execute (writes-local)
+  - build:bun:cli-linux-arm64: --execute (writes-local)
+  - build:bun:cli-darwin-x64: --execute (writes-local)
+  - build:bun:cli-darwin-arm64: --execute (writes-local)
+  - build:bun:cli-windows-x64: --execute (writes-local)
+  - build:pypi-wheel:pypi-wheel-linux-x64: --execute (writes-local)
+  - build:pypi-wheel:pypi-wheel-linux-arm64: --execute (writes-local)
+  - build:pypi-wheel:pypi-wheel-darwin-x64: --execute (writes-local)
+  - build:pypi-wheel:pypi-wheel-darwin-arm64: --execute (writes-local)
+  - build:pypi-wheel:pypi-wheel-windows-x64: --execute (writes-local)
   - homebrew:homebrew-render-formula: --execute (writes-local)
   - scoop:scoop-render-manifest: --execute (writes-local)
   - npm:npm-publish: --execute + --approve-publish (irreversible)
@@ -36,19 +46,19 @@ approval-required operations:
 
 ## Artifacts
 
-- - cli-linux-x64 artifacts/portable-example-0.1.0-linux-x64 [executable] size=0 checksum=none
-- - cli-linux-arm64 artifacts/portable-example-0.1.0-linux-arm64 [executable] size=0 checksum=none
-- - cli-darwin-x64 artifacts/portable-example-0.1.0-darwin-x64 [executable] size=0 checksum=none
-- - cli-darwin-arm64 artifacts/portable-example-0.1.0-darwin-arm64 [executable] size=0 checksum=none
-- - cli-windows-x64 artifacts/portable-example-0.1.0-windows-x64.exe [executable] size=0 checksum=none
-- - npm-package . [directory] size=0 checksum=none
-- - pypi-wheel-linux-x64 artifacts/portable_example-0.1.0-py3-none-manylinux2014_x86_64.whl [file] size=0 checksum=none
-- - pypi-wheel-linux-arm64 artifacts/portable_example-0.1.0-py3-none-manylinux2014_aarch64.whl [file] size=0 checksum=none
-- - pypi-wheel-darwin-x64 artifacts/portable_example-0.1.0-py3-none-macosx_10_15_x86_64.whl [file] size=0 checksum=none
-- - pypi-wheel-darwin-arm64 artifacts/portable_example-0.1.0-py3-none-macosx_11_0_arm64.whl [file] size=0 checksum=none
-- - pypi-wheel-windows-x64 artifacts/portable_example-0.1.0-py3-none-win_amd64.whl [file] size=0 checksum=none
-- - homebrew-formula .release/generated/portable-example.rb [file] size=0 checksum=none
-- - scoop-manifest .release/generated/portable-example.json [file] size=0 checksum=none
+- cli-linux-x64 artifacts/portable-example-0.1.0-linux-x64 [executable] produced-by=build:bun platform=linux-x64-glibc checksum=none
+- cli-linux-arm64 artifacts/portable-example-0.1.0-linux-arm64 [executable] produced-by=build:bun platform=linux-arm64-glibc checksum=none
+- cli-darwin-x64 artifacts/portable-example-0.1.0-darwin-x64 [executable] produced-by=build:bun platform=darwin-x64 checksum=none
+- cli-darwin-arm64 artifacts/portable-example-0.1.0-darwin-arm64 [executable] produced-by=build:bun platform=darwin-arm64 checksum=none
+- cli-windows-x64 artifacts/portable-example-0.1.0-windows-x64.exe [executable] produced-by=build:bun platform=windows-x64 checksum=none
+- npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
+- pypi-wheel-linux-x64 artifacts/portable_example-0.1.0-py3-none-manylinux2014_x86_64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
+- pypi-wheel-linux-arm64 artifacts/portable_example-0.1.0-py3-none-manylinux2014_aarch64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
+- pypi-wheel-darwin-x64 artifacts/portable_example-0.1.0-py3-none-macosx_10_15_x86_64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
+- pypi-wheel-darwin-arm64 artifacts/portable_example-0.1.0-py3-none-macosx_11_0_arm64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
+- pypi-wheel-windows-x64 artifacts/portable_example-0.1.0-py3-none-win_amd64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
+- homebrew-formula .release/generated/portable-example.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
+- scoop-manifest .release/generated/portable-example.json [catalog-file] produced-by=catalog:scoop platform=none checksum=none
 
 ## Operations By Risk
 
@@ -236,6 +246,76 @@ Command argv:
 - note: Scoop manifest validation is simulated by the deterministic release plan.
 
 ### writes-local
+
+#### build:bun:cli-linux-x64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Compile scope-portable-example for linux-x64 with Bun.
+
+#### build:bun:cli-linux-arm64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Compile scope-portable-example for linux-arm64 with Bun.
+
+#### build:bun:cli-darwin-x64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Compile scope-portable-example for darwin-x64 with Bun.
+
+#### build:bun:cli-darwin-arm64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Compile scope-portable-example for darwin-arm64 with Bun.
+
+#### build:bun:cli-windows-x64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Compile scope-portable-example for windows-x64 with Bun.
+
+#### build:pypi-wheel:pypi-wheel-linux-x64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Assemble PyPI wheel pypi-wheel-linux-x64.
+
+#### build:pypi-wheel:pypi-wheel-linux-arm64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Assemble PyPI wheel pypi-wheel-linux-arm64.
+
+#### build:pypi-wheel:pypi-wheel-darwin-x64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Assemble PyPI wheel pypi-wheel-darwin-x64.
+
+#### build:pypi-wheel:pypi-wheel-darwin-arm64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Assemble PyPI wheel pypi-wheel-darwin-arm64.
+
+#### build:pypi-wheel:pypi-wheel-windows-x64
+
+- target: none
+- risk: writes-local
+- approval: --execute
+- why: Assemble PyPI wheel pypi-wheel-windows-x64.
 
 #### homebrew:homebrew-render-formula
 

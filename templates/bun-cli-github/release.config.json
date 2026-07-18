@@ -33,7 +33,6 @@
       "trustedPublishing": {
         "provider": "github-actions",
         "workflow": "release.yml",
-        "packageExists": true,
         "verifyPackageExists": true
       },
       "access": "public",

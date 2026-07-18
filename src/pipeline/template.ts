@@ -1,5 +1,11 @@
 import * as Effect from "effect/Effect"
-import type { InstallableArtifactVariant } from "./artifact.js"
+import * as Schema from "effect/Schema"
+import {
+  isSafeRelativePath,
+  safeRelativePathReason,
+  type InstallableArtifactVariant,
+  type SafeRelativePath
+} from "./artifact.js"
 import { PlanError } from "./errors.js"
 import type { ReleaseIdentity } from "./state.js"
 
@@ -51,10 +57,9 @@ export const renderTemplate = (
     value
   )
 
-export class UnresolvedTemplateToken {
-  readonly _tag = "UnresolvedTemplateToken"
-  constructor(readonly token: string, readonly value: string) {}
-}
+export class UnresolvedTemplateToken extends Schema.Class<UnresolvedTemplateToken>(
+  "UnresolvedTemplateToken"
+)({ token: Schema.String, value: Schema.String }) {}
 
 export const renderArtifactName = (
   value: string,
@@ -69,7 +74,7 @@ export const renderArtifactName = (
   }
   for (const [token] of substitutions) {
     if (rendered.includes(token)) {
-      return new UnresolvedTemplateToken(token, value)
+      return UnresolvedTemplateToken.make({ token, value })
     }
   }
   return rendered
@@ -79,16 +84,29 @@ export const renderArtifactNameEffect = (
   value: string,
   context: TemplateContext,
   source: { readonly pipeId: string; readonly field: string }
-): Effect.Effect<string, PlanError> => {
+): Effect.Effect<SafeRelativePath, PlanError> => {
   const rendered = renderArtifactName(value, context)
-  return typeof rendered === "string"
-    ? Effect.succeed(rendered)
-    : Effect.fail(PlanError.make({
+  if (typeof rendered !== "string") {
+    return Effect.fail(PlanError.make({
       pipeId: source.pipeId,
       field: source.field,
       reason: `Template ${rendered.token} cannot be resolved here; remove it or provide a platform context.`
     }))
+  }
+  return validateSafeRelativePathEffect(rendered, source)
 }
+
+export const validateSafeRelativePathEffect = (
+  value: string,
+  source: { readonly pipeId: string; readonly field: string }
+): Effect.Effect<SafeRelativePath, PlanError> =>
+  isSafeRelativePath(value)
+    ? Effect.succeed(value)
+    : Effect.fail(PlanError.make({
+      pipeId: source.pipeId,
+      field: source.field,
+      reason: safeRelativePathReason
+    }))
 
 export const normalizedName = (name: string): string => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name

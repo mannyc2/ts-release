@@ -25,7 +25,6 @@
       "trustedPublishing": {
         "provider": "github-actions",
         "workflow": "release.yml",
-        "packageExists": true,
         "verifyPackageExists": true
       },
       "access": "public",
@@ -41,7 +40,9 @@
       "repository": "owner/homebrew-tap",
       "formulaName": "pkg",
       "formulaPath": ".release/generated/pkg.rb",
-      "artifactId": "archive",
+      "artifactIds": [
+        "archive"
+      ],
       "homepage": "https://github.com/owner/repo",
       "url": "https://github.com/owner/repo/releases/download/v0.1.0/pkg-0.1.0.tgz",
       "installPath": "bin/pkg"

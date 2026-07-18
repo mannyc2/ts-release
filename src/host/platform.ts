@@ -6,7 +6,7 @@ import * as Stream from "effect/Stream"
 import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { CommandSpec } from "../pipeline/operation.js"
-import { CommandResult, CommandRunnerError, ReleaseCommandRunner } from "./host.js"
+import { CommandRunnerError, ReleaseCommandRunner, type CommandResult } from "./host.js"
 
 
 export interface PlatformCommandRunnerOptions {
@@ -133,7 +133,7 @@ export const makePlatformCommandRunnerLayer = (
             )
             const endedAt = yield* nowIso()
             const endedMillis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-            return CommandResult.make({
+            return {
               command,
               exitCode: Number(output.exitCode),
               stdout: output.stdout,
@@ -141,7 +141,7 @@ export const makePlatformCommandRunnerLayer = (
               startedAt,
               endedAt,
               durationMillis: Math.max(0, endedMillis - startedMillis)
-            })
+            } satisfies CommandResult
           })
       }
     })

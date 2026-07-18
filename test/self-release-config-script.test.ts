@@ -169,7 +169,6 @@ const baseConfig = (version: string = "0.0.0") => ({
       trustedPublishing: {
         provider: "github-actions",
         workflow: "release.yml",
-        packageExists: true,
         verifyPackageExists: true
       },
       access: "public",
@@ -185,7 +184,6 @@ const baseConfig = (version: string = "0.0.0") => ({
       repository: "mannyc2/homebrew-ts-release",
       formulaName: "ts-release",
       formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
-      artifactId: "cli-darwin-arm64",
       artifactIds: ["cli-darwin-arm64", "cli-darwin-x64"],
       homepage: "https://github.com/mannyc2/ts-release",
       description: "Portable artifact and package-manager distribution planning for TypeScript projects.",
@@ -377,6 +375,20 @@ describe("self-release config script", () => {
 
       expect(result.exitCode).not.toBe(0)
       expect(result.stderr).toContain("npm self-release target must enable provenance")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("fails when npm package verification is disabled", async () => {
+    const config = baseConfig()
+    config.publish.npm.trustedPublishing.verifyPackageExists = false
+    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
+    try {
+      const result = await run(["bun", scriptPath], root)
+
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stderr).toContain("npm self-release target must use GitHub Actions trusted publishing")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

@@ -129,22 +129,8 @@ export const appendEvidenceRecord = (
     records: [...bundle.records, record]
   })
 
-export const appendEvidenceBundle = (
-  bundle: EvidenceBundle,
-  next: EvidenceBundle
-): EvidenceBundle =>
-  EvidenceBundle.make({
-    schemaVersion: bundle.schemaVersion,
-    releaseName: bundle.releaseName,
-    releaseVersion: bundle.releaseVersion,
-    notices: [...bundle.notices, ...next.notices],
-    records: [...bundle.records, ...next.records]
-  })
-
 export const renderEvidenceJson = (bundle: EvidenceBundle): string =>
   `${JSON.stringify(bundle, null, 2)}\n`
-
-export const decodeEvidenceBundle = Schema.decodeUnknownEffect(EvidenceBundle)
 
 export const redactText = (input: string, secrets: ReadonlyArray<string>): string => {
   let output = input

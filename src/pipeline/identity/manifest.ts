@@ -8,8 +8,7 @@ import {
   readPackageManifestJson,
   ResolvedIdentity,
   runWorkspaceGit,
-  type VersionSource,
-  type WorkspaceServices
+  type VersionSource
 } from "./source.js"
 
 
@@ -96,14 +95,13 @@ const renderVersionTemplate = (value: string, version: string): string =>
 
 const resolveCommit = Effect.fn("pipeline.identity.manifest.resolveCommit")(function*(
   identity: ResolvedIdentity,
-  root: string,
-  workspace: WorkspaceServices
+  root: string
 ) {
   if (identity.commit !== "HEAD") {
     return identity
   }
 
-  const result = yield* runWorkspaceGit(workspace, root, ["rev-parse", "--short", "HEAD"], {
+  const result = yield* runWorkspaceGit(root, ["rev-parse", "--short", "HEAD"], {
     source: "manifest",
     field: "identity.commit"
   })
@@ -160,8 +158,7 @@ const resolveStaticIdentity = Effect.fn("pipeline.identity.manifest.resolveStati
 const resolvePackageManifestIdentity = Effect.fn(
   "pipeline.identity.manifest.resolvePackageManifestIdentity"
 )(function*(
-  options: ManifestIdentityOptions,
-  workspace: WorkspaceServices
+  options: ManifestIdentityOptions
 ) {
   const project = options.project
   const field = "identity.packagePath"
@@ -170,7 +167,6 @@ const resolvePackageManifestIdentity = Effect.fn(
     : projectManifestPath(project.packagePath)
   yield* validateNonEmptySafeRelativePath(field, packagePath)
   const manifest = yield* readPackageManifestJson(
-    workspace,
     options.root,
     packagePath,
     decodePackageManifest,
@@ -192,12 +188,11 @@ const resolvePackageManifestIdentity = Effect.fn(
 export const manifestSource: VersionSource<ManifestIdentityOptions> = {
   id: "manifest",
   resolve: Effect.fn("pipeline.identity.manifest.resolve")(function*(
-    options,
-    workspace
+    options
   ) {
     const identity = options.project.version === undefined
-      ? yield* resolvePackageManifestIdentity(options, workspace)
+      ? yield* resolvePackageManifestIdentity(options)
       : yield* resolveStaticIdentity(options)
-    return yield* resolveCommit(identity, options.root, workspace)
+    return yield* resolveCommit(identity, options.root)
   })
 }

@@ -1,9 +1,11 @@
-import { describe, expect, layer } from "@effect/bun-test"
+import { describe, expect, it, layer } from "@effect/bun-test"
 import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { ArtifactCatalog } from "../src/pipeline/catalog.js"
+import * as Schema from "effect/Schema"
+import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant } from "../src/pipeline/artifact.js"
 import {
+  ArchiveIntent,
   CommandAction,
   CommandSpec,
   ExecutionApproval,
@@ -18,26 +20,26 @@ import {
   HttpRequestSpec,
   NoteAction,
   Operation,
+  StageAction,
   WriteFileAction
 } from "../src/pipeline/operation.js"
-import { PipeNotice, ReleaseIdentity, ReleaseState } from "../src/pipeline/state.js"
+import { ReleasePlan, SourceMetadata } from "../src/pipeline/plan.js"
+import { PipeNotice, ReleaseIdentity } from "../src/pipeline/state.js"
 import { httpRequestKey, makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
   EvidenceBundle,
   EvidenceRecord,
-  redactText,
-  renderEvidenceJson
+  redactText
 } from "../src/engine/evidence.js"
-import {
-  mergeEvidenceBundles,
-  readEvidenceBundle,
-  tryReadEvidenceBundle,
-  writeEvidenceBundle
-} from "../src/engine/engine.js"
+import { writeEvidenceBundle } from "../src/engine/engine.js"
 import { runOperation, runOperationEvidence } from "../src/engine/executor.js"
-import { ReleasePlanDocument, SourceMetadata } from "../src/engine/plan-document.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { artifactSummary, evidenceOperationStatuses, stagedArtifactSummaries, type ArtifactSummary } from "../src/engine/summary.js"
+import {
+  UnsupportedArtifactStagerLayer,
+  type StagedArtifact,
+  type StagedArtifactOperationResult
+} from "../src/engine/stager.js"
 import { GitHubApiLiveLayer } from "../src/engine/github.js"
 import { TestGitHubApiLayer } from "./helpers.js"
 
@@ -64,21 +66,19 @@ const identity = (name: string = "release", version: string = "0.1.0"): ReleaseI
 const context = (releaseIdentity: ReleaseIdentity = identity()) => ({
   root: ".",
   identity: releaseIdentity,
+  artifacts: [],
   notices: [] satisfies ReadonlyArray<PipeNotice>
 })
 
-const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlanDocument => {
+const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlan => {
   const releaseIdentity = identity(name, version)
-  return ReleasePlanDocument.make({
-    schemaVersion: "release-plan/v2",
-    state: ReleaseState.make({
-      identity: releaseIdentity,
-      artifacts: ArtifactCatalog.empty,
-      operations: [],
-      notices: []
-    }),
-    source: SourceMetadata.make({ root: "." }),
+  return ReleasePlan.make({
+    schemaVersion: "release-plan/v3",
+    identity: releaseIdentity,
     artifacts: [],
+    operations: [],
+    notices: [],
+    source: SourceMetadata.make({ root: "." }),
     evidenceDirectory: ".release/evidence"
   })
 }
@@ -97,16 +97,39 @@ const evidenceRecord = (operationId: string): EvidenceRecord =>
   })
 
 const evidenceBundle = (
-  plan: ReleasePlanDocument,
+  plan: ReleasePlan,
   records: EvidenceBundle["records"] = []
 ): EvidenceBundle =>
   EvidenceBundle.make({
     schemaVersion: "release-evidence/v2",
-    releaseName: plan.state.identity.name,
-    releaseVersion: plan.state.identity.version,
+    releaseName: plan.identity.name,
+    releaseVersion: plan.identity.version,
     notices: [],
     records
   })
+
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ?
+  (<T>() => T extends B ? 1 : 2) extends (<T>() => T extends A ? 1 : 2) ? true : false : false
+const summaryIsEncoded: Equal<ArtifactSummary, Schema.Codec.Encoded<typeof Artifact>> = true
+const summaryArtifact = (id: string, path: string) => Artifact.make({
+  id, kind: "executable", path, producedBy: "build:test",
+  platform: InstallableArtifactVariant.make({ os: "linux", arch: "x64", libc: "glibc", binaryName: id }),
+  checksum: Checksum.make({ algorithm: "sha256", value: `${id}-digest` }),
+  extra: ExecutableExtra.make({ binary: id, extension: "", builderId: "test" })
+})
+const summaryOperation = (id: string, produces?: ReadonlyArray<string>) => Operation.make({
+  id, pipeId: "test", phase: produces === undefined ? "publish" : "build", risk: "writes-local", description: id,
+  action: produces === undefined ? NoteAction.make({ message: "test", severity: "info", skipped: false }) :
+    StageAction.make({ intent: ArchiveIntent.make({ outfile: `dist/${id}.zip`, format: "zip", artifacts: [], files: [] }), producesArtifactIds: produces })
+})
+const summaryPlan = (artifacts: ReadonlyArray<Artifact> = [], operations: ReadonlyArray<Operation> = []) =>
+  ReleasePlan.make({ ...makePlan(), artifacts, operations })
+const staged = (operationId: string, id: string, path: string, intentTag = "archive") =>
+  ({
+    operationId,
+    intentTag,
+    artifacts: [{ id, path } satisfies StagedArtifact]
+  }) satisfies StagedArtifactOperationResult
 
 const baseEngineLayer = (
   commandOptions: Parameters<typeof makeWorkspaceTestCommandRunnerLayer>[0] = {}
@@ -565,108 +588,55 @@ describe("evidence recorder", () => {
     })
   }
 
-  {
-    const plan = makePlan()
-    const bundle = evidenceBundle(plan)
-    layer(makeWorkspaceTestCommandRunnerLayer({
-      files: new Map([
-        [".release/evidence/evidence.json", renderEvidenceJson(bundle)]
-      ])
-    }))((it) => {
-      it.effect("reads a valid evidence bundle", () =>
-        Effect.gen(function*() {
-          const read = yield* readEvidenceBundle(".release/evidence/evidence.json")
-
-          expect(read.releaseName).toBe("release")
-          expect(read.records).toEqual([])
-        }))
-    })
-  }
-
-  layer(makeWorkspaceTestCommandRunnerLayer())((it) => {
-    it.effect("returns undefined for missing optional evidence", () =>
-      Effect.gen(function*() {
-        const read = yield* tryReadEvidenceBundle(".release/evidence/evidence.json")
-
-        expect(read).toBeUndefined()
-      }))
-
-    it.effect("merges evidence bundles in order", () =>
-      Effect.gen(function*() {
-        const plan = makePlan()
-        const merged = yield* mergeEvidenceBundles(
-          plan,
-          evidenceBundle(plan, [evidenceRecord("first")]),
-          evidenceBundle(plan, [evidenceRecord("second")])
-        )
-
-        expect(merged.records.map((record) => record.operationId)).toEqual(["first", "second"])
-      }))
-
-    it.effect("rejects merging evidence from another release", () =>
-      Effect.gen(function*() {
-        const plan = makePlan()
-        const error = yield* mergeEvidenceBundles(
-          plan,
-          evidenceBundle(plan),
-          evidenceBundle(makePlan("other", "9.9.9"))
-        ).pipe(Effect.flip)
-
-        expect(error._tag).toBe("EvidenceReadError")
-      }))
+  it("encodes canonical artifact summaries as recursive JSON data", () => {
+    const encoded = artifactSummary(summaryArtifact("cli", "dist/cli"))
+    expect(summaryIsEncoded).toBe(true)
+    expect(encoded).toEqual(JSON.parse(JSON.stringify(encoded)))
+    for (const value of [encoded, encoded.platform, encoded.checksum, encoded.extra])
+      expect(Object.getPrototypeOf(value!)).toBe(Object.prototype)
+    expect(encoded).not.toHaveProperty("format"); expect(encoded).not.toHaveProperty("sizeBytes")
   })
 
-  layer(makeWorkspaceTestCommandRunnerLayer({
-    files: new Map([
-      [".release/evidence/evidence.json", "{not json"]
-    ])
-  }))((it) => {
-    it.effect("fails invalid evidence JSON with EvidenceReadError", () =>
-      Effect.gen(function*() {
-        const error = yield* readEvidenceBundle(".release/evidence/evidence.json").pipe(Effect.flip)
+  it.effect("rejects orphan, duplicate, and metadata-mismatched evidence", () => Effect.gen(function*() {
+    const planned = summaryOperation("planned"), releasePlan = summaryPlan([], [planned])
+    const cases = [
+      ["orphan", [evidenceRecord("missing")]], ["duplicate", [evidenceRecord("planned"), evidenceRecord("planned")]],
+      ["pipeId", [EvidenceRecord.make({ ...evidenceRecord("planned"), pipeId: "other" })]],
+      ["phase", [EvidenceRecord.make({ ...evidenceRecord("planned"), phase: "verify" })]],
+      ["risk", [EvidenceRecord.make({ ...evidenceRecord("planned"), risk: "irreversible" })]]
+    ] as const
+    for (const [label, records] of cases) {
+      const error = yield* evidenceOperationStatuses(releasePlan, evidenceBundle(releasePlan, records)).pipe(Effect.flip)
+      expect([error._tag, error.source], label).toEqual(["PlanReferenceMismatchError", "evidence"])
+    }
+  }))
 
-        expect(error._tag).toBe("EvidenceReadError")
-        if (error._tag === "EvidenceReadError") {
-          expect(error.reason).toBe("Evidence bundle is not valid JSON.")
-          expect(error.cause).toBeDefined()
-        }
-      }))
-  })
+  it.effect("joins staged artifacts in result order", () => Effect.gen(function*() {
+    const first = summaryArtifact("first", "dist/first"), second = summaryArtifact("second", "dist/second")
+    const summaries = yield* stagedArtifactSummaries(
+      summaryPlan([first, second], [summaryOperation("stage-second", ["second"]), summaryOperation("stage-first", ["first"])]),
+      [staged("stage-second", "second", "dist/second"), staged("stage-first", "first", "dist/first")])
+    expect(summaries).toEqual([artifactSummary(second), artifactSummary(first)])
+  }))
 
-  layer(makeWorkspaceTestCommandRunnerLayer({
-    files: new Map([
-      [".release/evidence/evidence.json", JSON.stringify({ schemaVersion: "wrong" })]
-    ])
-  }))((it) => {
-    it.effect("fails wrong evidence schema with EvidenceReadError", () =>
-      Effect.gen(function*() {
-        const error = yield* readEvidenceBundle(".release/evidence/evidence.json").pipe(Effect.flip)
-
-        expect(error._tag).toBe("EvidenceReadError")
-      }))
-  })
-
-  layer(makeWorkspaceTestCommandRunnerLayer({
-    files: new Map([
-      [".release/evidence/evidence.json", `${JSON.stringify({
-        schemaVersion: "release-evidence/v2",
-        releaseName: "release",
-        releaseVersion: "0.1.0",
-        notices: [],
-        records: [
-          {
-            operationId: "validate-token",
-            status: "passed"
-          }
-        ]
-      })}\n`]
-    ])
-  }))((it) => {
-    it.effect("fails operation evidence without required phase and timing fields", () =>
-      Effect.gen(function*() {
-        const error = yield* readEvidenceBundle(".release/evidence/evidence.json").pipe(Effect.flip)
-
-        expect(error._tag).toBe("EvidenceReadError")
-      }))
-  })
+  it.effect("rejects staged artifact and operation reference mismatches", () => Effect.gen(function*() {
+    const cli = summaryArtifact("cli", "dist/cli"), other = summaryArtifact("other", "dist/other")
+    const stage = summaryOperation("stage", ["cli"]), result = staged("stage", "cli", "dist/cli")
+    const cases = [
+      ["missing artifact", summaryPlan([], [stage]), [result]],
+      ["duplicate plan artifact", summaryPlan([cli, summaryArtifact("cli", "dist/duplicate")], [stage]), [result]],
+      ["path", summaryPlan([cli], [stage]), [staged("stage", "cli", "dist/wrong")]],
+      ["missing operation", summaryPlan([cli]), [result]],
+      ["non-stage", summaryPlan([cli], [summaryOperation("stage")]), [result]],
+      ["intent", summaryPlan([cli], [stage]), [staged("stage", "cli", "dist/cli", "pypi-wheel")]],
+      ["produced IDs", summaryPlan([cli, other], [stage]), [staged("stage", "other", "dist/other")]],
+      ["duplicate artifacts", summaryPlan([cli], [summaryOperation("one", ["cli"]), summaryOperation("two", ["cli"])]),
+        [staged("one", "cli", "dist/cli"), staged("two", "cli", "dist/cli")]],
+      ["duplicate operations", summaryPlan([cli], [stage]), [result, result]]
+    ] as const
+    for (const [label, releasePlan, results] of cases) {
+      const error = yield* stagedArtifactSummaries(releasePlan, results).pipe(Effect.flip)
+      expect([error._tag, error.source], label).toEqual(["PlanReferenceMismatchError", "staged-artifact"])
+    }
+  }))
 })

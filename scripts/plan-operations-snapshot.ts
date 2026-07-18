@@ -1,45 +1,12 @@
 import { readFileSync } from "node:fs"
 import { stdin, stderr, stdout, argv, exit } from "node:process"
+import { decodeReleasePlanSync, type ReleasePlan } from "../src/pipeline/plan.js"
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
+export const planOperationSnapshotLines = (plan: ReleasePlan): ReadonlyArray<string> =>
+  plan.operations.map((operation) => `${operation.id}\t${operation.risk}`).sort()
 
-const isOperationArray = (value: unknown): value is ReadonlyArray<Record<string, unknown>> =>
-  Array.isArray(value) && value.every(isRecord)
-
-const readOperations = (document: unknown): ReadonlyArray<Record<string, unknown>> | undefined => {
-  if (!isRecord(document)) {
-    return undefined
-  }
-  if (isOperationArray(document.operations)) {
-    return document.operations
-  }
-  if (document.schemaVersion === "release-plan/v2" && isRecord(document.state) && isOperationArray(document.state.operations)) {
-    return document.state.operations
-  }
-  return undefined
-}
-
-export const planOperationSnapshotLines = (document: unknown): ReadonlyArray<string> => {
-  const operations = readOperations(document)
-  if (operations === undefined) {
-    throw new Error("Plan document must have v1 operations or v2 state.operations.")
-  }
-
-  const lines: Array<string> = []
-  for (const operation of operations) {
-    const id = operation.id
-    const risk = operation.risk
-    if (typeof id !== "string" || typeof risk !== "string") {
-      throw new Error("Every operation must have string id and risk fields.")
-    }
-    lines.push(`${id}\t${risk}`)
-  }
-  return lines.sort()
-}
-
-export const formatPlanOperationSnapshot = (document: unknown): string => {
-  const lines = planOperationSnapshotLines(document)
+export const formatPlanOperationSnapshot = (plan: ReleasePlan): string => {
+  const lines = planOperationSnapshotLines(plan)
   return lines.length === 0 ? "" : `${lines.join("\n")}\n`
 }
 
@@ -62,8 +29,8 @@ const main = async (): Promise<void> => {
   }
 
   try {
-    const document: unknown = JSON.parse(await readInput(planPath))
-    stdout.write(formatPlanOperationSnapshot(document))
+    const plan = decodeReleasePlanSync(JSON.parse(await readInput(planPath)))
+    stdout.write(formatPlanOperationSnapshot(plan))
   } catch (error) {
     stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
     exit(1)

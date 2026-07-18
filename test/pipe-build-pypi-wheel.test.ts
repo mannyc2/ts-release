@@ -1,34 +1,24 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { pypiWheelPipe } from "../src/pipes/pypi-wheel.js"
+import { pypiWheelPlanner, resolvePyPiWheels } from "../src/pipes/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
-import { emptyReleaseState } from "../src/pipeline/state.js"
-import { makePipelineIdentity } from "./helpers.js"
+import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
+import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
 const identity = makePipelineIdentity()
 
 type StageOperation = Operation & { readonly action: StageAction }
 
-const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
-  typeof operation === "object"
-  && operation !== null
-  && "action" in operation
-  && typeof operation.action === "object"
-  && operation.action !== null
-  && "_tag" in operation.action
-  && operation.action._tag === "stage"
+const isStageArtifactOperation = (operation: Operation): operation is StageOperation =>
+  operation.action._tag === "stage"
 
 describe("PyPI wheel build pipe", () => {
   it.effect("emits wheel artifacts and staging operations", () =>
     Effect.gen(function*() {
-      const config = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
+      const config = yield* parseReleaseIntent(releaseConfig({
+        artifacts: [],
         pypiWheel: {
           id: "wheel-linux",
           path: "dist/release-{version}.whl",
@@ -41,16 +31,12 @@ describe("PyPI wheel build pipe", () => {
           license: "MIT",
           requiresPython: ">=3.8",
           binaries: []
-        },
-        publish: {}
+        }
       }))
-      const section = pypiWheelPipe.section(config)
-      expect(section).toBeDefined()
-      if (section === undefined) {
-        return
-      }
-
-      const contribution = yield* pypiWheelPipe.plan(section, emptyReleaseState(identity))
+      const contribution = yield* Option.match(resolvePyPiWheels(config.pypiWheel), {
+        onNone: () => Effect.die("Expected a resolved PyPI wheel section."),
+        onSome: (section) => pypiWheelPlanner.plan(section, emptyPlanAccumulator(identity))
+      })
       const operation = contribution.operations.find(isStageArtifactOperation)
 
       expect(contribution.artifacts[0]).toMatchObject({

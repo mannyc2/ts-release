@@ -11,7 +11,7 @@ import {
   HttpRequestBody,
   HttpRequestSpec
 } from "../pipeline/operation.js"
-import { HttpResult, ReleaseHttp, type ReleaseHttpShape } from "../host/http.js"
+import { ReleaseHttp, type HttpResult, type ReleaseHttpShape } from "../host/http.js"
 
 const githubApiHeaders = (): ReadonlyArray<HttpHeader> => [
   HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),

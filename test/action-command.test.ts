@@ -30,7 +30,6 @@ import {
   TestGitHubApiLayer,
   withTempDirectoryPromise,
 } from "./helpers.js"
-
 interface ActionOptionsOverrides {
   readonly command?: ActionCommand
   readonly config?: string
@@ -46,7 +45,6 @@ interface ActionOptionsOverrides {
   readonly uploadEvidence?: boolean
   readonly evidenceArtifactName?: string
 }
-
 interface FakeActionIo extends ActionIo {
   readonly outputs: Map<string, string>
   readonly summaries: Array<string>
@@ -54,7 +52,6 @@ interface FakeActionIo extends ActionIo {
   readonly failures: Array<string>
   readonly infos: Array<string>
 }
-
 const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): ActionOptions =>
   ActionOptions.make({
     root,
@@ -72,7 +69,6 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
     uploadEvidence: overrides.uploadEvidence ?? false,
     evidenceArtifactName: overrides.evidenceArtifactName ?? "release-evidence"
   })
-
 const makeFakeActionIo = (): FakeActionIo => {
   const outputs = new Map<string, string>()
   const summaries: Array<string> = []
@@ -102,7 +98,6 @@ const makeFakeActionIo = (): FakeActionIo => {
     })
   }
 }
-
 const makeArtifactClient = () => {
   const uploads: Array<{
     readonly name: string
@@ -117,7 +112,6 @@ const makeArtifactClient = () => {
   }
   return { client, uploads }
 }
-
 describe("ts-release action", () => {
   test("declares Node action metadata inputs and outputs", async () => {
     const metadata = await readFile("apps/ts-release-action/action.yml", "utf8")
@@ -148,7 +142,7 @@ describe("ts-release action", () => {
       "release_version:",
       "operation_count:",
       "irreversible_operation_count:",
-      "target_count:",
+      "surface_count:",
       "evidence_directory:",
       "plan_path:",
       "status:"
@@ -156,23 +150,20 @@ describe("ts-release action", () => {
       expect(metadata).toContain(output)
     }
   })
-
   test("plan writes a plan file, step summary, and structured outputs", async () => {
     await withTempDirectoryPromise("ts-release-action-plan-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const io = makeFakeActionIo()
-
       await runAction(
         actionOptions(root),
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-
       expect(io.outputs.get("release_name")).toBe("release")
       expect(io.outputs.get("release_version")).toBe("0.1.0")
       expect(io.outputs.get("operation_count")).toBe("8")
       expect(io.outputs.get("irreversible_operation_count")).toBe("1")
-      expect(io.outputs.get("target_count")).toBe("2")
+      expect(io.outputs.get("surface_count")).toBe("2")
       expect(io.outputs.get("evidence_directory")).toBe(".release/evidence")
       expect(io.outputs.get("plan_path")).toBe("release-plan.md")
       expect(io.outputs.get("status")).toBe("passed")
@@ -181,42 +172,49 @@ describe("ts-release action", () => {
       expect(io.failures).toEqual([])
     })
   })
-
   test("plan supports snapshot mode", async () => {
     await withTempDirectoryPromise("ts-release-action-plan-snapshot-", async (root) => {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
-
       await runAction(
         actionOptions(root, { snapshot: true }),
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-
       expect(io.outputs.get("release_version")).toBe("0.1.0-SNAPSHOT-abc123")
       expect([...io.files.values()][0]).toContain("release@0.1.0-SNAPSHOT-abc123")
     })
   })
-
+  test("plan operation_count includes build-phase import checks", async () => {
+    await withTempDirectoryPromise("ts-release-action-complete-plan-", async (root) => {
+      await writeFile(join(root, "release.config.json"), partialWorkflowConfig)
+      const io = makeFakeActionIo()
+      await runAction(
+        actionOptions(root),
+        io,
+        makeNodeReleaseWorkflowRuntimeLayer({ root })
+      )
+      expect(io.outputs.get("operation_count")).toBe("11")
+      expect(io.outputs.get("surface_count")).toBe("2")
+      expect(io.summaries.join("\n")).toContain("import-artifacts:archive:exists")
+    })
+  })
   test("plan rejects unsafe plan paths without writing files", async () => {
     await withTempDirectoryPromise("ts-release-action-unsafe-plan-path-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       for (const planPath of ["../outside.md", ""]) {
         const io = makeFakeActionIo()
-
         await runAction(
           actionOptions(root, { planPath }),
           io,
           makeNodeReleaseWorkflowRuntimeLayer({ root })
         )
-
         expect(io.outputs.get("status")).toBe("failed")
         expect(io.failures.join("\n")).toContain("plan-path")
         expect(io.files.size).toBe(0)
       }
     })
   })
-
   test("rejects unsafe config paths before planning, writing files, or uploading evidence", async () => {
     await withTempDirectoryPromise("ts-release-action-unsafe-config-", (root) =>
       withTempDirectoryPromise("ts-release-action-outside-config-", async (outside) => {
@@ -225,14 +223,12 @@ describe("ts-release action", () => {
       for (const config of ["../release.config.json", "", join(outside, "release.config.json")]) {
         const io = makeFakeActionIo()
         const artifact = makeArtifactClient()
-
         await runAction(
           actionOptions(root, { config, uploadEvidence: true }),
           io,
           makeNodeReleaseWorkflowRuntimeLayer({ root }),
           artifact.client
         )
-
         expect(io.outputs.get("status")).toBe("failed")
         expect(io.failures.join("\n")).toContain("config")
         expect(io.files.size).toBe(0)
@@ -240,14 +236,12 @@ describe("ts-release action", () => {
       }
       }))
   })
-
   test("accepts absolute config paths inside the action workspace", async () => {
     await withTempDirectoryPromise("ts-release-action-absolute-config-", async (root) => {
       const config = join(root, "release.config.json")
       await writeFile(config, noOpConfig)
       const io = makeFakeActionIo()
       const artifact = makeArtifactClient()
-
       await runAction(
         actionOptions(root, {
           command: "verify",
@@ -258,14 +252,12 @@ describe("ts-release action", () => {
         makeNodeReleaseWorkflowRuntimeLayer({ root }),
         artifact.client
       )
-
       expect(io.outputs.get("status")).toBe("passed")
       expect(artifact.uploads).toHaveLength(1)
       expect(artifact.uploads[0]?.rootDirectory).toBe(join(root, ".release", "evidence"))
       expect(artifact.uploads[0]?.files.some((file) => file.endsWith("verification.json"))).toBe(true)
     })
   })
-
   test("diagnostics fail without leaking secret values", async () => {
     await withTempDirectoryPromise("ts-release-action-diagnostics-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
@@ -280,13 +272,11 @@ describe("ts-release action", () => {
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
       )
-
       await runAction(
         actionOptions(root, { command: "doctor", format: "markdown" }),
         io,
         layer
       )
-
       expect(io.outputs.get("status")).toBe("failed")
       expect(io.failures.join("\n")).toContain("Diagnostics reported failing checks")
       const serialized = `${io.summaries.join("\n")}\n${io.failures.join("\n")}`
@@ -295,7 +285,6 @@ describe("ts-release action", () => {
       expect(serialized).not.toContain("npm_secret")
     })
   })
-
   test("fail-on-warnings leaves informational diagnostics non-fatal", async () => {
     await withTempDirectoryPromise("ts-release-action-info-diagnostics-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -311,7 +300,6 @@ describe("ts-release action", () => {
         makeTestReleaseHttpLayer({ responses: new Map() }),
         BunServices.layer
       )
-
       await runAction(
         actionOptions(root, {
           command: "doctor",
@@ -321,33 +309,27 @@ describe("ts-release action", () => {
         io,
         layer
       )
-
       expect(io.outputs.get("status")).toBe("passed")
       expect(io.summaries.join("\n")).toContain("info")
       expect(io.failures).toEqual([])
     })
   })
-
   test("workspace runtime mode is rejected with the documented bundled fallback", async () => {
     await withTempDirectoryPromise("ts-release-action-runtime-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const io = makeFakeActionIo()
-
       await runAction(
         actionOptions(root, { runtime: "workspace" }),
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-
       expect(io.outputs.get("status")).toBe("failed")
       expect(io.failures.join("\n")).toContain("runtime: workspace is deferred")
       expect(io.failures.join("\n")).toContain("Use runtime: bundled")
     })
   })
-
   test("invalid action inputs fail through action outputs", async () => {
     const io = makeFakeActionIo()
-
     await runActionFromInputs(
       {
         getInput: (name) => name === "execute" ? "yes" : ""
@@ -357,15 +339,12 @@ describe("ts-release action", () => {
       makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
       NoopActionArtifactClient
     )
-
     expect(io.outputs.get("status")).toBe("failed")
     expect(io.failures.join("\n")).toContain("ActionInputError")
     expect(io.failures.join("\n")).toContain("Expected true or false")
   })
-
   test("unsupported runtime input fails with the exact reason", async () => {
     const io = makeFakeActionIo()
-
     await runActionFromInputs(
       {
         getInput: (name) => name === "runtime" ? "container" : ""
@@ -375,15 +354,12 @@ describe("ts-release action", () => {
       makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
       NoopActionArtifactClient
     )
-
     expect(io.outputs.get("status")).toBe("failed")
     expect(io.failures.join("\n")).toContain("ActionInputError")
     expect(io.failures.join("\n")).toContain("Unsupported runtime container.")
   })
-
   test("whitespace-only config input fails through action outputs", async () => {
     const io = makeFakeActionIo()
-
     await runActionFromInputs(
       {
         getInput: (name) => name === "config" ? "   " : ""
@@ -393,30 +369,25 @@ describe("ts-release action", () => {
       makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
       NoopActionArtifactClient
     )
-
     expect(io.outputs.get("status")).toBe("failed")
     expect(io.failures.join("\n")).toContain("ActionInputError")
     expect(io.failures.join("\n")).toContain("config")
   })
-
   test("artifact upload errors preserve compact foreign causes", () => {
     const cause = new Error("artifact service unavailable")
     const error = ActionArtifactUploadError.make({
       reason: "upload failed",
       cause
     })
-
     expect(error.cause).toBe(cause)
     expect(formatActionError(error)).toBe(
       "ActionArtifactUploadError: upload failed (cause: artifact service unavailable)"
     )
   })
-
   test("build stages artifacts with the bundled action runtime", async () => {
     await withTempDirectoryPromise("ts-release-action-build-", async (root) => {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
-
       await runAction(
         actionOptions(root, {
           command: "build",
@@ -425,19 +396,16 @@ describe("ts-release action", () => {
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-
       expect(io.outputs.get("status")).toBe("passed")
       expect(io.outputs.get("release_name")).toBe("release")
       expect(io.summaries.join("\n")).toContain("staged artifact operations: 0")
     })
   })
-
   test("verify writes verification evidence and can upload it through a fake artifact client", async () => {
     await withTempDirectoryPromise("ts-release-action-verify-", async (root) => {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
       const artifact = makeArtifactClient()
-
       await runAction(
         actionOptions(root, {
           command: "verify",
@@ -448,7 +416,6 @@ describe("ts-release action", () => {
         makeNodeReleaseWorkflowRuntimeLayer({ root }),
         artifact.client
       )
-
       const evidence = await readFile(join(root, ".release", "evidence", "verification.json"), "utf8")
       expect(evidence).toContain("\"releaseName\": \"release\"")
       expect(io.outputs.get("status")).toBe("passed")
@@ -457,20 +424,17 @@ describe("ts-release action", () => {
       expect(artifact.uploads[0]?.files.some((file) => file.endsWith("verification.json"))).toBe(true)
     })
   })
-
   test("release without execute plans without workflow evidence", async () => {
     await withTempDirectoryPromise("ts-release-action-release-approval-", async (root) => {
       await writeFile(join(root, "release.config.json"), homebrewConfig())
       await mkdir(join(root, "artifacts"), { recursive: true })
       await writeFile(join(root, "artifacts", "release-0.1.0.tgz"), "fake archive")
       const io = makeFakeActionIo()
-
       await runAction(
         actionOptions(root, { command: "release" }),
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-
       expect(io.outputs.get("status")).toBe("passed")
       expect(io.outputs.get("release_version")).toBe("0.1.0")
       expect(io.summaries.join("\n")).toContain("release planned only")
@@ -478,12 +442,10 @@ describe("ts-release action", () => {
       await expect(access(join(root, ".release", "evidence", "evidence.json"))).rejects.toThrow()
     })
   })
-
   test("release with a no-target config writes one workflow evidence file", async () => {
     await withTempDirectoryPromise("ts-release-action-release-noop-", async (root) => {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
-
       await runAction(
         actionOptions(root, {
           command: "release",
@@ -493,14 +455,12 @@ describe("ts-release action", () => {
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
       expect(evidence).toContain("\"releaseName\": \"release\"")
       expect(evidence).toContain("\"records\": []")
       expect(io.outputs.get("status")).toBe("passed")
     })
   })
-
   test("release writes partial workflow evidence on validation failure", async () => {
     await withTempDirectoryPromise("ts-release-action-partial-evidence-", async (root) => {
       await writeFile(join(root, "release.config.json"), partialWorkflowConfig)
@@ -533,7 +493,6 @@ describe("ts-release action", () => {
       )
       const io = makeFakeActionIo()
       const artifact = makeArtifactClient()
-
       await runAction(
         actionOptions(root, {
           command: "release",
@@ -545,7 +504,6 @@ describe("ts-release action", () => {
         layer,
         artifact.client
       )
-
       expect(io.outputs.get("status")).toBe("failed")
       expect(io.failures.join("\n")).toContain("OperationFailedError")
       expect(artifact.uploads).toHaveLength(1)
@@ -557,5 +515,4 @@ describe("ts-release action", () => {
       expect(evidence).toContain("\"phase\": \"publish\"")
     })
   })
-
 })

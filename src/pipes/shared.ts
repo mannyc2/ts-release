@@ -12,10 +12,9 @@ export const compactPackageShortName = (packageName: string): string => {
 
 export const projectPackageName = (project: {
   readonly name?: string | undefined
-  readonly package?: string | undefined
   readonly packageName?: string | undefined
 }): string | undefined =>
-  project.packageName ?? project.package ?? project.name
+  project.packageName ?? project.name
 
 export const githubRepository = (config: {
   readonly project: { readonly repository?: string | undefined }

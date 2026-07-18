@@ -6,8 +6,8 @@ import { pid } from "node:process"
 import { BunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { runOperations } from "../src/engine/executor.js"
 import { planRelease } from "../src/engine/engine.js"
-import { ReleasePlanDocument } from "../src/engine/plan-document.js"
-import { ExecutionApproval } from "../src/pipeline/operation.js"
+import type { ReleasePlan } from "../src/pipeline/plan.js"
+import { ExecutionApproval, type Operation } from "../src/pipeline/operation.js"
 import { runEffect } from "./helpers.js"
 
 const integrationEnabled = Bun.env.RELEASE_INTEGRATION_TOOLS === "1"
@@ -38,27 +38,27 @@ const planFromConfig = (name: string, config: unknown, root: string = ".") =>
   })
 
 const runSelectedOperations = (
-  plan: ReleasePlanDocument,
-  operations: ReadonlyArray<ReleasePlanDocument["state"]["operations"][number]>
+  plan: ReleasePlan,
+  operations: ReadonlyArray<Operation>
 ) =>
   runOperations(operations, ExecutionApproval.none, {
     root: plan.source.root,
-    identity: plan.state.identity,
-    artifacts: plan.state.artifacts,
-    notices: plan.state.notices,
+    identity: plan.identity,
+    artifacts: plan.artifacts,
+    notices: plan.notices,
     ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
   })
 
 const runSelectedOperationsWithApproval = (
-  plan: ReleasePlanDocument,
-  operations: ReadonlyArray<ReleasePlanDocument["state"]["operations"][number]>,
+  plan: ReleasePlan,
+  operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval
 ) =>
   runOperations(operations, approval, {
     root: plan.source.root,
-    identity: plan.state.identity,
-    artifacts: plan.state.artifacts,
-    notices: plan.state.notices,
+    identity: plan.identity,
+    artifacts: plan.artifacts,
+    notices: plan.notices,
     ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
   })
 
@@ -111,7 +111,7 @@ describe("real tool integrations", () => {
       IntegrationLayer
     )
 
-    const operations = plan.state.operations.filter((operation) =>
+    const operations = plan.operations.filter((operation) =>
       operation.id === "npm:npm-version" || operation.id === "npm:npm-pack-dry-run"
     )
     const evidence = await runEffect(runSelectedOperations(plan, operations), IntegrationLayer)
@@ -150,7 +150,7 @@ describe("real tool integrations", () => {
       IntegrationLayer
     )
 
-    const operations = plan.state.operations.filter((operation) =>
+    const operations = plan.operations.filter((operation) =>
       operation.id === "github:github-release-dry-run"
     )
     const evidence = await runEffect(
@@ -158,7 +158,7 @@ describe("real tool integrations", () => {
       IntegrationLayer
     )
 
-    expect(plan.state.operations.some((operation) => operation.id.startsWith("github:gh-"))).toBe(false)
+    expect(plan.operations.some((operation) => operation.id.startsWith("github:gh-"))).toBe(false)
     expect(evidence.records.map((record) => record.operationId)).toEqual(["github:github-release-dry-run"])
     expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
   })
@@ -193,7 +193,7 @@ describe("real tool integrations", () => {
       IntegrationLayer
     )
 
-    const operations = plan.state.operations.filter((operation) => operation.id === "archive:archive-linux-x64")
+    const operations = plan.operations.filter((operation) => operation.id === "archive:archive-linux-x64")
     const evidence = await runEffect(
       runSelectedOperationsWithApproval(
         plan,

@@ -2,80 +2,55 @@ import { describe, expect, it, layer } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
 import { makeArtifactStagerLayer, type BunExecutableBuildInput } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { stageArtifactOperations } from "../src/engine/stager.js"
-import { buildPipe } from "../src/pipes/build.js"
+import { buildPlanner, resolveBuilds } from "../src/pipes/build.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
-import { emptyReleaseState } from "../src/pipeline/state.js"
-import { makePipelineIdentity } from "./helpers.js"
+import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
+import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
 const identity = makePipelineIdentity()
 
-const state = emptyReleaseState(identity)
+const state = emptyPlanAccumulator(identity)
 
 const portablePath = (path: string): string =>
   path.replaceAll("\\", "/")
 
 type StageOperation = Operation & { readonly action: StageAction }
 
-const isStageArtifactOperation = (operation: unknown): operation is StageOperation =>
-  typeof operation === "object"
-  && operation !== null
-  && "action" in operation
-  && typeof operation.action === "object"
-  && operation.action !== null
-  && "_tag" in operation.action
-  && operation.action._tag === "stage"
+const isStageArtifactOperation = (operation: Operation): operation is StageOperation =>
+  operation.action._tag === "stage"
 
-const planBuild = (config: string) =>
+const planBuild = (build: Record<string, unknown>) =>
   Effect.gen(function*() {
-    const intent = yield* parseReleaseIntent(config)
-    const section = buildPipe.section(intent)
-    expect(section).toBeDefined()
-    if (section === undefined) {
-      return {
-        artifacts: [],
-        operations: [],
-        notices: []
-      }
-    }
-    return yield* buildPipe.plan(section, state)
+    const intent = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
+    return yield* Option.match(resolveBuilds(intent.builds), {
+      onNone: () => Effect.die("Expected a resolved build section."),
+      onSome: (section) => buildPlanner.plan(section, state)
+    })
   })
 
 describe("build pipe", () => {
   const calls: Array<BunExecutableBuildInput> = []
-  const TestLayer = Layer.mergeAll(
-    makeArtifactStagerLayer(async (input) => {
-      calls.push(input)
-      return { success: true, logs: [] }
-    }),
-    BunServices.layer
-  )
+  const TestLayer = makeArtifactStagerLayer(async (input) => {
+    calls.push(input)
+    return { success: true, logs: [] }
+  }).pipe(Layer.provideMerge(BunServices.layer))
 
   layer(TestLayer)((it) => {
     it.effect("plans Bun compile intents and stages them through the artifact stager", () =>
       Effect.gen(function*() {
         calls.length = 0
-        const contribution = yield* planBuild(JSON.stringify({
-          project: {
-            name: "release",
-            version: "0.1.0",
-            commit: "abc123",
-            tag: "v0.1.0"
-          },
-          builds: [
-            {
-              builder: "bun",
-              id: "release-cli",
-              entry: "src/cli.ts",
-              cpu: "baseline",
-              targets: ["linux-x64"],
-              output: "dist/release-{version}-{targetTriple}"
-            }
-          ],
-          publish: {}
-        }))
+        const contribution = yield* planBuild({
+          builder: "bun",
+          id: "release-cli",
+          entry: "src/cli.ts",
+          cpu: "baseline",
+          targets: ["linux-x64"],
+          output: "dist/release-{version}-{targetTriple}"
+        })
 
         expect(contribution.artifacts).toHaveLength(1)
         expect(contribution.artifacts[0]).toMatchObject({
@@ -126,24 +101,13 @@ describe("build pipe", () => {
     it.effect("rejects unsafe Bun output paths before invoking the builder", () =>
       Effect.gen(function*() {
         calls.length = 0
-        const error = yield* planBuild(JSON.stringify({
-          project: {
-            name: "release",
-            version: "0.1.0",
-            commit: "abc123",
-            tag: "v0.1.0"
-          },
-          builds: [
-            {
-              builder: "bun",
-              id: "release-cli",
-              entry: "src/cli.ts",
-              targets: ["linux-x64"],
-              output: "../dist/release-{targetTriple}"
-            }
-          ],
-          publish: {}
-        })).pipe(Effect.flip)
+        const error = yield* planBuild({
+          builder: "bun",
+          id: "release-cli",
+          entry: "src/cli.ts",
+          targets: ["linux-x64"],
+          output: "../dist/release-{targetTriple}"
+        }).pipe(Effect.flip)
 
         expect(error._tag).toBe("ConfigValidationError")
         if (error._tag === "ConfigValidationError") {
@@ -153,33 +117,19 @@ describe("build pipe", () => {
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeArtifactStagerLayer(async () => ({
-      success: false,
-      logs: ["compile failed"]
-    })),
-    BunServices.layer
-  ))((it) => {
+  layer(makeArtifactStagerLayer(async () => ({
+    success: false,
+    logs: ["compile failed"]
+  })).pipe(Layer.provideMerge(BunServices.layer)))((it) => {
     it.effect("preserves Bun build log text on failed builds", () =>
       Effect.gen(function*() {
-        const contribution = yield* planBuild(JSON.stringify({
-          project: {
-            name: "release",
-            version: "0.1.0",
-            commit: "abc123",
-            tag: "v0.1.0"
-          },
-          builds: [
-            {
-              builder: "bun",
-              id: "release-cli",
-              entry: "src/cli.ts",
-              targets: ["linux-x64"],
-              output: "dist/release-{targetTriple}"
-            }
-          ],
-          publish: {}
-        }))
+        const contribution = yield* planBuild({
+          builder: "bun",
+          id: "release-cli",
+          entry: "src/cli.ts",
+          targets: ["linux-x64"],
+          output: "dist/release-{targetTriple}"
+        })
         const operations = contribution.operations.filter(isStageArtifactOperation)
         const error = yield* stageArtifactOperations(operations, {
           root: "/workspace",
@@ -197,25 +147,14 @@ describe("build pipe", () => {
 
   it.effect("plans command builder outputs as explicit command operations", () =>
     Effect.gen(function*() {
-      const contribution = yield* planBuild(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        builds: [
-          {
-            builder: "command",
-            id: "make-cli",
-            targets: ["darwin-arm64"],
-            run: ["bun", "run", "build:{os}:{arch}"],
-            output: "dist/{binary}-{targetTriple}",
-            binary: "release"
-          }
-        ],
-        publish: {}
-      }))
+      const contribution = yield* planBuild({
+        builder: "command",
+        id: "make-cli",
+        targets: ["darwin-arm64"],
+        run: ["bun", "run", "build:{os}:{arch}"],
+        output: "dist/{binary}-{targetTriple}",
+        binary: "release"
+      })
 
       expect(contribution.artifacts[0]).toMatchObject({
         id: "make-cli-darwin-arm64",
@@ -247,24 +186,13 @@ describe("build pipe", () => {
 
   it.effect("plans prebuilt builder outputs with read-only existence checks", () =>
     Effect.gen(function*() {
-      const contribution = yield* planBuild(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
-        builds: [
-          {
-            builder: "prebuilt",
-            id: "dist-cli",
-            targets: ["windows-x64"],
-            output: "dist/{binary}-{targetTriple}.exe",
-            binary: "release"
-          }
-        ],
-        publish: {}
-      }))
+      const contribution = yield* planBuild({
+        builder: "prebuilt",
+        id: "dist-cli",
+        targets: ["windows-x64"],
+        output: "dist/{binary}-{targetTriple}.exe",
+        binary: "release"
+      })
 
       expect(contribution.artifacts[0]).toMatchObject({
         id: "dist-cli-windows-x64",
@@ -292,13 +220,8 @@ describe("build pipe", () => {
 
   it.effect("accepts canonical self-release platform target strings in config", () =>
     Effect.gen(function*() {
-      const intent = yield* parseReleaseIntent(JSON.stringify({
-        project: {
-          name: "release",
-          version: "0.1.0",
-          commit: "abc123",
-          tag: "v0.1.0"
-        },
+      const intent = yield* parseReleaseIntent(releaseConfig({
+        artifacts: [],
         builds: [
           {
             builder: "bun",
@@ -309,16 +232,15 @@ describe("build pipe", () => {
             binaryName: "release",
             installPath: "bin/release"
           }
-        ],
-        publish: {}
+        ]
       }))
 
       const build = intent.builds?.[0]
-        expect(build?.builder).toBe("bun")
-        if (build?.builder === "bun") {
-          expect(build.id).toBe("release-cli")
-          expect(build.targets?.[4]).toBe("windows-x64")
-          expect(build.binaryName).toBe("release")
-        }
+      expect(build?.builder).toBe("bun")
+      if (build?.builder === "bun") {
+        expect(build.id).toBe("release-cli")
+        expect(build.targets?.[4]).toBe("windows-x64")
+        expect(build.binaryName).toBe("release")
+      }
     }))
 })

@@ -8,7 +8,7 @@ import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
 import packageManifest from "../../../package.json" with { type: "json" }
 import { renderEvidenceJson, renderReleaseFiles } from "../../../src/engine/engine.js"
-import { optionalField } from "../../../src/pipeline/optional-field.js"
+import { optionalField } from "../../../src/grammar/optional-field.js"
 import { BunReleaseWorkflowRuntimeLayer } from "../src/runtime.js"
 
 const renderCatalogs = Command.make("render-catalogs", {

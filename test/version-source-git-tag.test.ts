@@ -1,8 +1,8 @@
 import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { makeTestCommandRunnerLayer, commandKey } from "./host-fakes.js"
-import { resolveGitTagIdentity } from "../src/engine/resolved-release.js"
-import { CommandSpec } from "../src/pipeline/operation.js"
+import { resolveGitTagIdentity } from "../src/resolve/resolved-release.js"
+import { CommandSpec } from "../src/grammar/operation.js"
 
 const gitCommand = (args: ReadonlyArray<string>): CommandSpec =>
   CommandSpec.make({

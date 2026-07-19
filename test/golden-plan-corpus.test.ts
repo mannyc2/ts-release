@@ -5,10 +5,10 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync
 import { dirname, join } from "node:path"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { formatPlanOperationSnapshot } from "../scripts/plan-operations-snapshot.js"
-import { deferredContentArtifactIds, renderDeferredContent } from "../src/engine/content.js"
+import { deferredContentArtifactIds, renderDeferredContent } from "../src/run/content.js"
 import { buildReleaseArtifacts, planRelease, renderReleasePlan } from "../src/engine/engine.js"
-import type { ReleasePlan } from "../src/pipeline/plan.js"
-import type { DeferredFileContent } from "../src/pipeline/operation.js"
+import type { ReleasePlan } from "../src/grammar/plan.js"
+import type { DeferredFileContent } from "../src/grammar/operation.js"
 import { runEffect, withTempDirectoryPromise } from "./helpers.js"
 const root = process.cwd()
 const exampleNames = [

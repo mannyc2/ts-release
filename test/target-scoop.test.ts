@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { ExecutionApproval } from "../src/pipeline/operation.js"
+import { ExecutionApproval } from "../src/grammar/operation.js"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { releaseConfig, runEffect, scoopConfig } from "./helpers.js"
 import { createTestPlan, renderTestPlan, validateTestPlan } from "./plan-helpers.js"

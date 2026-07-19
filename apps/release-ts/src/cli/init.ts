@@ -10,7 +10,7 @@ import {
   hasParentTraversal,
   resolveWorkspacePath,
   resolveWorkspaceWritePathEffect
-} from "../../../../src/internal/workspace-path.js"
+} from "../../../../src/host/workspace-path.js"
 
 export const ReleaseInitTemplateName = Schema.Literals([
   "npm-only", "npm-github", "bun-cli-github", "portable-cli", "multi-target-homebrew", "multi-target-scoop"

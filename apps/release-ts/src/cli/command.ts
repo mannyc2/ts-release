@@ -7,9 +7,9 @@ import * as Path from "effect/Path"
 import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
 import { DEFAULT_CONFIG_PATH } from "../../../../src/config/schema.js"
-import { EvidenceBundle } from "../../../../src/engine/evidence.js"
+import { EvidenceBundle } from "../../../../src/run/evidence.js"
 import * as Release from "../../../../src/engine/engine.js"
-import * as Doctor from "../../../../src/workflows/doctor.js"
+import * as Doctor from "../../../../src/doctor/doctor.js"
 import * as Init from "./init.js"
 
 const configFlag = Flag.string("config").pipe(Flag.withDefault(DEFAULT_CONFIG_PATH))

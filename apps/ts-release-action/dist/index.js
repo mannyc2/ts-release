@@ -99055,7 +99055,7 @@ var update3 = /* @__PURE__ */ dual(2, (self2, f) => sync2(() => {
   self2.ref.current = f(self2.ref.current);
 }));
 
-// ../../src/pipeline/json.ts
+// ../../src/grammar/json.ts
 var parseJsonAs = (schema, input, makeError) => decodeUnknownEffect2(fromJsonString2(schema))(input).pipe(mapError3(makeError));
 
 // ../../src/config/errors.ts
@@ -99067,7 +99067,7 @@ class ConfigError extends TaggedErrorClass()("ConfigError", {
 }) {
 }
 
-// ../../src/pipeline/errors.ts
+// ../../src/grammar/errors.ts
 class PlanError extends TaggedErrorClass()("PlanError", {
   pipeId: String4,
   field: optional(String4),
@@ -99083,7 +99083,7 @@ class IdentityError extends TaggedErrorClass()("IdentityError", {
 }) {
 }
 
-// ../../src/pipeline/artifact.ts
+// ../../src/grammar/artifact.ts
 var safeRelativePathReason = "Path must be non-empty, relative, and must not contain parent traversal.";
 var isSafeRelativePath = (value2) => value2.trim().length > 0 && !value2.startsWith("/") && !value2.startsWith("\\") && !/^[A-Za-z]:[\\/]/.test(value2) && !value2.split(/[\\/]+/).includes("..");
 var SafeRelativePath = String4.check(makeFilter2((value2) => isSafeRelativePath(value2) ? undefined : safeRelativePathReason));
@@ -99220,7 +99220,7 @@ var platform_variants_default = {
   "windows-arm64": { os: "windows", arch: "arm64", executableExtension: ".exe" }
 };
 
-// ../../src/pipeline/platform.ts
+// ../../src/grammar/platform.ts
 var PlatformTarget = Literals(Object.keys(platform_variants_default));
 var platformVariants = platform_variants_default;
 var platformTargetVariant = (target) => InstallableArtifactVariant.make({ ...platformVariants[target], targetTriple: target });
@@ -99251,7 +99251,7 @@ var bun_compile_targets_default = [
   "bun-windows-arm64"
 ];
 
-// ../../src/pipeline/operation.ts
+// ../../src/grammar/operation.ts
 var OperationId = NonEmptyString;
 var OperationRisk = Literals(["read-only", "writes-local", "externally-visible", "irreversible"]);
 var OperationPhase = Literals(["build", "process", "catalog", "publish", "verify"]);
@@ -99440,7 +99440,7 @@ var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operat
   }));
 });
 
-// ../../src/pipeline/template.ts
+// ../../src/grammar/template.ts
 var distributionArchToken = (arch2) => arch2 === "x64" ? "amd64" : "arm64";
 var defaultArtifactBaseName = (binary, platform2) => {
   const libcSuffix = platform2.libc === "musl" ? "_musl" : "";
@@ -99491,7 +99491,7 @@ var normalizedName = (name) => {
   return withoutScopePrefix.replaceAll("/", "-");
 };
 
-// ../../src/builders/builder.ts
+// ../../src/features/builder.ts
 var executableArtifact = (input) => Artifact.make({
   id: input.id,
   kind: "executable",
@@ -99510,7 +99510,7 @@ var executableArtifact = (input) => Artifact.make({
   })
 });
 
-// ../../src/builders/bun.ts
+// ../../src/features/bun.ts
 class ReleaseConfigBunExecutableBuild extends Class4("ReleaseConfigBunExecutableBuild")({
   id: optionalKey2(String4),
   builder: Literal2("bun"),
@@ -99576,7 +99576,7 @@ var bunBuilder = (options, identity2, target) => gen2(function* () {
   };
 });
 
-// ../../src/builders/command.ts
+// ../../src/features/command.ts
 class ReleaseConfigCommandBuild extends Class4("ReleaseConfigCommandBuild")({
   builder: Literal2("command"),
   id: optionalKey2(String4),
@@ -99630,7 +99630,7 @@ var commandBuilder = (options, identity2, target) => gen2(function* () {
   };
 });
 
-// ../../src/builders/prebuilt.ts
+// ../../src/features/prebuilt.ts
 class ReleaseConfigPrebuiltBuild extends Class4("ReleaseConfigPrebuiltBuild")({
   builder: Literal2("prebuilt"),
   id: optionalKey2(String4),
@@ -99662,7 +99662,7 @@ var prebuiltBuilder = (options, identity2, target) => gen2(function* () {
   };
 });
 
-// ../../src/pipeline/pipe.ts
+// ../../src/grammar/pipe.ts
 var emptyContribution = {
   artifacts: [],
   operations: [],
@@ -99671,7 +99671,7 @@ var emptyContribution = {
 var featurePlanner = (id, plan) => Object.assign((section, context7) => plan(section, context7).pipe(map5((contribution) => ({ ...emptyContribution, ...contribution }))), { id });
 var schedule2 = (planner, section) => [planner, section];
 
-// ../../src/pipes/archive.ts
+// ../../src/features/archive.ts
 class ReleaseConfigArchiveFormatOverrides extends Class4("ReleaseConfigArchiveFormatOverrides")({
   linux: optionalKey2(ArraySchema(ArchiveFormat)),
   darwin: optionalKey2(ArraySchema(ArchiveFormat)),
@@ -99793,63 +99793,7 @@ var archivePlanner = featurePlanner("archive", (sections, state3) => gen2(functi
   return { artifacts, operations };
 }));
 
-// ../../src/pipes/shared.ts
-var noAuthCommand = (executable, args2) => CommandSpec.make({ executable, args: [...args2], requiredEnv: [], redactedEnv: [] });
-var readOnlyCommandValidationOperation = (options) => Operation.make({
-  ...options,
-  phase: "publish",
-  risk: "read-only",
-  action: CommandAction.make({ command: options.command })
-});
-var validationNoteOperation = (options) => Operation.make({
-  id: options.id,
-  pipeId: options.pipeId,
-  phase: "publish",
-  risk: "read-only",
-  description: options.description,
-  action: NoteAction.make({ message: options.message, skipped: false, severity: "info" })
-});
-var catalogFilePath = (filePath, directory) => {
-  if (directory === undefined)
-    return filePath;
-  const normalizedDirectory = directory.replaceAll("\\", "/").replace(/\/+$/, "");
-  const prefix2 = `${normalizedDirectory}/`;
-  const normalizedPath = filePath.replaceAll("\\", "/");
-  return normalizedPath.startsWith(prefix2) ? normalizedPath.slice(prefix2.length) : filePath;
-};
-var catalogGitPublishOperations = (options) => {
-  const command = (args2) => CommandAction.make({
-    command: noAuthCommand("git", ["-C", options.directory ?? ".", ...args2])
-  });
-  const catalog = options.pipeId.replace(/^publish:/, "");
-  const name = artifactPathBaseName(options.filePath);
-  return [
-    Operation.make({
-      id: `${options.id}:add`,
-      pipeId: options.pipeId,
-      phase: "publish",
-      risk: "writes-local",
-      description: `Stage ${name} for ${catalog}.`,
-      action: command(["add", catalogFilePath(options.filePath, options.directory)])
-    }),
-    Operation.make({
-      id: `${options.id}:commit`,
-      pipeId: options.pipeId,
-      phase: "publish",
-      risk: "writes-local",
-      description: `Commit ${name} for ${catalog}.`,
-      action: command(["commit", "-m", options.commitMessage])
-    }),
-    Operation.make({
-      id: options.id,
-      pipeId: options.pipeId,
-      phase: "publish",
-      risk: "externally-visible",
-      description: options.description,
-      action: command(["push"])
-    })
-  ];
-};
+// ../../src/features/catalog-shared.ts
 var catalogPathBaseName = artifactPathBaseName;
 var compactPackageShortName = (packageName) => {
   const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName;
@@ -99893,30 +99837,8 @@ var rejectInvalidCatalogArtifact = (source, artifact2) => {
   }
   return void_3;
 };
-var trustedPublishingAuthEnvNames = [
-  "ACTIONS_ID_TOKEN_REQUEST_URL",
-  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-];
-var TrustedPublishingProvider = Literals(["github-actions"]);
-var trustedPublishingConfigFields = {
-  provider: optionalKey2(TrustedPublishingProvider),
-  workflow: optionalKey2(WorkflowFileName)
-};
-var compactTrustedPublishing = (config) => {
-  if (config === undefined || config === false) {
-    return;
-  }
-  if (config === true) {
-    return { provider: "github-actions", workflow: "release.yml" };
-  }
-  return {
-    provider: config.provider ?? "github-actions",
-    workflow: config.workflow ?? "release.yml"
-  };
-};
-var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing === undefined ? credentialEnvNames.filter((name) => name !== undefined) : trustedPublishingAuthEnvNames;
 
-// ../../src/pipes/catalog-homebrew.ts
+// ../../src/features/catalog-homebrew.ts
 class ReleaseConfigHomebrewPublish extends Class4("ReleaseConfigHomebrewPublish")({
   repository: String4,
   formulaName: optionalKey2(String4),
@@ -100091,7 +100013,7 @@ var catalogHomebrewPlanner = featurePlanner("catalog:homebrew", (section, state3
   };
 }));
 
-// ../../src/pipes/catalog-scoop.ts
+// ../../src/features/catalog-scoop.ts
 class ReleaseConfigScoopPublish extends Class4("ReleaseConfigScoopPublish")({
   repository: String4,
   manifestName: optionalKey2(String4),
@@ -100176,7 +100098,7 @@ var catalogScoopPlanner = featurePlanner("catalog:scoop", (section, state3) => g
   };
 }));
 
-// ../../src/pipes/catalog-generic.ts
+// ../../src/features/catalog-generic.ts
 class ReleaseConfigCatalogFactHole extends Class4("ReleaseConfigCatalogFactHole")({
   fact: Literals(["sha256", "downloadUrl", "assetName"]),
   artifact: NonEmptyString
@@ -100267,7 +100189,7 @@ var catalogGenericPlanner = featurePlanner("catalog:file", (entries2, context7) 
   return { artifacts, operations };
 }));
 
-// ../../src/pipes/import-artifacts.ts
+// ../../src/features/import-artifacts.ts
 class ReleaseConfigManualArtifact extends Class4("ReleaseConfigManualArtifact")({
   id: NonEmptyString,
   path: SafeRelativePath,
@@ -100329,7 +100251,7 @@ var importArtifactsPlanner = featurePlanner("import-artifacts", (section, state3
   operations: planned.map(({ operation }) => operation)
 }))));
 
-// ../../src/pipes/checksum.ts
+// ../../src/features/checksum.ts
 class ReleaseConfigChecksum extends Class4("ReleaseConfigChecksum")({
   algorithm: optionalKey2(Literals(["sha256", "sha512"])),
   nameTemplate: optionalKey2(NonEmptyString)
@@ -100375,7 +100297,7 @@ var checksumPlanner = featurePlanner("checksum", (section, state3) => gen2(funct
   };
 }));
 
-// ../../src/pipes/npm-pack.ts
+// ../../src/features/npm-pack.ts
 class ReleaseConfigNpmPackageBuild extends Class4("ReleaseConfigNpmPackageBuild")({ path: optionalKey2(SafeRelativePath) }) {
 }
 var resolveNpmPackage = (raw, packageName) => raw === undefined || raw === false ? none2() : some2({ path: raw === true ? "." : raw.path ?? ".", packageName });
@@ -100392,7 +100314,7 @@ var npmPackPlanner = featurePlanner("build:npm-pack", (section, state3) => rende
   })]
 }))));
 
-// ../../src/pipeline/semver.ts
+// ../../src/grammar/semver.ts
 var numericIdentifier = "(?:0|[1-9]\\d*)";
 var prereleaseIdentifier = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)";
 var buildIdentifier = "(?:[0-9A-Za-z-]+)";
@@ -100404,7 +100326,65 @@ var hasSemverPrerelease = (value2) => {
   return match6?.[4] !== undefined;
 };
 
-// ../../src/pipes/publish-github.ts
+// ../../src/features/operations.ts
+var noAuthCommand = (executable, args2) => CommandSpec.make({ executable, args: [...args2], requiredEnv: [], redactedEnv: [] });
+var readOnlyCommandValidationOperation = (options) => Operation.make({
+  ...options,
+  phase: "publish",
+  risk: "read-only",
+  action: CommandAction.make({ command: options.command })
+});
+var validationNoteOperation = (options) => Operation.make({
+  id: options.id,
+  pipeId: options.pipeId,
+  phase: "publish",
+  risk: "read-only",
+  description: options.description,
+  action: NoteAction.make({ message: options.message, skipped: false, severity: "info" })
+});
+var catalogFilePath = (filePath, directory) => {
+  if (directory === undefined)
+    return filePath;
+  const normalizedDirectory = directory.replaceAll("\\", "/").replace(/\/+$/, "");
+  const prefix2 = `${normalizedDirectory}/`;
+  const normalizedPath = filePath.replaceAll("\\", "/");
+  return normalizedPath.startsWith(prefix2) ? normalizedPath.slice(prefix2.length) : filePath;
+};
+var catalogGitPublishOperations = (options) => {
+  const command = (args2) => CommandAction.make({
+    command: noAuthCommand("git", ["-C", options.directory ?? ".", ...args2])
+  });
+  const catalog = options.pipeId.replace(/^publish:/, "");
+  const name = artifactPathBaseName(options.filePath);
+  return [
+    Operation.make({
+      id: `${options.id}:add`,
+      pipeId: options.pipeId,
+      phase: "publish",
+      risk: "writes-local",
+      description: `Stage ${name} for ${catalog}.`,
+      action: command(["add", catalogFilePath(options.filePath, options.directory)])
+    }),
+    Operation.make({
+      id: `${options.id}:commit`,
+      pipeId: options.pipeId,
+      phase: "publish",
+      risk: "writes-local",
+      description: `Commit ${name} for ${catalog}.`,
+      action: command(["commit", "-m", options.commitMessage])
+    }),
+    Operation.make({
+      id: options.id,
+      pipeId: options.pipeId,
+      phase: "publish",
+      risk: "externally-visible",
+      description: options.description,
+      action: command(["push"])
+    })
+  ];
+};
+
+// ../../src/features/publish-github.ts
 class ReleaseConfigGitHubPublish extends Class4("ReleaseConfigGitHubPublish")({
   repository: optionalKey2(String4),
   tokenEnv: optionalKey2(String4),
@@ -100488,7 +100468,31 @@ var publishGitHubPlanner = featurePlanner("publish:github", (section, state3) =>
   };
 }));
 
-// ../../src/pipes/publish-npm.ts
+// ../../src/features/trusted-publishing.ts
+var trustedPublishingAuthEnvNames = [
+  "ACTIONS_ID_TOKEN_REQUEST_URL",
+  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+];
+var TrustedPublishingProvider = Literals(["github-actions"]);
+var trustedPublishingConfigFields = {
+  provider: optionalKey2(TrustedPublishingProvider),
+  workflow: optionalKey2(WorkflowFileName)
+};
+var compactTrustedPublishing = (config) => {
+  if (config === undefined || config === false) {
+    return;
+  }
+  if (config === true) {
+    return { provider: "github-actions", workflow: "release.yml" };
+  }
+  return {
+    provider: config.provider ?? "github-actions",
+    workflow: config.workflow ?? "release.yml"
+  };
+};
+var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing === undefined ? credentialEnvNames.filter((name) => name !== undefined) : trustedPublishingAuthEnvNames;
+
+// ../../src/features/publish-npm.ts
 var NpmAccess = Literals(["public", "restricted"]);
 
 class ReleaseConfigNpmTrustedPublishing extends Class4("ReleaseConfigNpmTrustedPublishing")({
@@ -100573,7 +100577,7 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
   return succeed6({ operations });
 });
 
-// ../../src/pipes/publish-pypi.ts
+// ../../src/features/publish-pypi.ts
 class ReleaseConfigPyPiTrustedPublishing extends Class4("ReleaseConfigPyPiTrustedPublishing")({
   ...trustedPublishingConfigFields,
   publisherConfigured: optionalKey2(Literal2(true))
@@ -100666,7 +100670,7 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
   return { operations };
 }));
 
-// ../../src/pipes/pypi-wheel.ts
+// ../../src/features/pypi-wheel.ts
 class ReleaseConfigPyPiWheelBuild extends Class4("ReleaseConfigPyPiWheelBuild")({
   id: NonEmptyString,
   path: SafeRelativePath,
@@ -100865,7 +100869,7 @@ var loadReleaseIntent = fn2("config.load")(function* (config, source3 = {}) {
   };
 });
 
-// ../../src/pipeline/state.ts
+// ../../src/grammar/state.ts
 class ReleaseIdentity extends Class4("PipelineReleaseIdentity")({
   name: String4,
   normalizedName: String4,
@@ -100886,7 +100890,7 @@ class PipeNotice extends Class4("PipeNotice")({
 }) {
 }
 
-// ../../src/pipeline/plan.ts
+// ../../src/grammar/plan.ts
 class SourceMetadata extends Class4("SourceMetadata")({
   root: String4,
   configPath: optional(String4)
@@ -100907,7 +100911,7 @@ var releasePlanDecodeOptions = { onExcessProperty: "error" };
 var decodeReleasePlan = decodeUnknownEffect2(ReleasePlan, releasePlanDecodeOptions);
 var decodeReleasePlanSync = decodeUnknownSync(ReleasePlan, releasePlanDecodeOptions);
 
-// ../../src/pipeline/runner.ts
+// ../../src/grammar/runner.ts
 var emptyPlanAccumulator = (identity2) => ({
   identity: identity2,
   artifacts: [],
@@ -100977,7 +100981,7 @@ var runPipeline = fn2("pipeline.runPipeline")(function* (initialState, planners)
   return state3;
 });
 
-// ../../src/pipes/build.ts
+// ../../src/features/build.ts
 var defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"];
 var resolveBuilds = (raw) => {
   if (raw === undefined || raw.length === 0) {
@@ -101014,7 +101018,7 @@ var buildPlanner = featurePlanner("build", (sections, state3) => gen2(function* 
   };
 }));
 
-// ../../src/pipes/publish-catalog-generic.ts
+// ../../src/features/publish-catalog-generic.ts
 var argv = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/).filter(Boolean) : value2;
 var validation = fn2("catalog.publish.validation")(function* (entry, identity2) {
   if (entry.validate === undefined)
@@ -101072,7 +101076,7 @@ var publishCatalogGenericPlanner = featurePlanner("publish:catalog", (entries2, 
   return { operations: operations.flat() };
 }));
 
-// ../../src/pipes/publish-catalog-git.ts
+// ../../src/features/publish-catalog-git.ts
 var catalogGitPublish = fn2("publish.catalogGit")(function* (tokenEnv, error2, validation2, publish) {
   if (tokenEnv !== undefined) {
     return yield* fail6(PlanError.make(error2));
@@ -101118,7 +101122,7 @@ var publishScoopPlanner = featurePlanner("publish:scoop", (section, state3) => c
   commitMessage: `Update ${section.manifestName} to ${state3.identity.version}`
 }));
 
-// ../../src/engine/executor.ts
+// ../../src/run/executor.ts
 import { createHash as createHash3 } from "node:crypto";
 
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
@@ -101639,7 +101643,7 @@ var makePlatformCommandRunnerLayer = (options = {}) => effect(ReleaseCommandRunn
   };
 }));
 
-// ../../src/engine/evidence.ts
+// ../../src/run/evidence.ts
 var ReleaseName = NonEmptyString;
 var ReleaseVersion = NonEmptyString;
 var EvidenceStatus = Literals(["passed", "failed", "skipped", "warning", "refused"]);
@@ -101748,7 +101752,7 @@ var sameStringSet = (left, right) => {
   return sortedLeft.length === sortedRight.length && sortedLeft.every((value2, index) => sortedRight[index] === value2);
 };
 
-// ../../src/engine/content.ts
+// ../../src/run/content.ts
 var hashFor = (hashes, artifactId) => {
   const hash2 = hashes.get(artifactId);
   if (hash2 === undefined)
@@ -101764,7 +101768,7 @@ var renderDeferredContent = (content, hashes) => {
   };
 };
 
-// ../../src/engine/errors.ts
+// ../../src/run/errors.ts
 class EvidenceWriteError extends TaggedErrorClass()("EvidenceWriteError", {
   path: String4,
   reason: String4,
@@ -101792,7 +101796,7 @@ class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
 }) {
 }
 
-// ../../src/internal/workspace-path.ts
+// ../../src/host/workspace-path.ts
 var hasParentTraversal = (pathName) => pathName.split(/[\\/]+/).includes("..");
 var resolveWorkspacePath = (path4, root, pathName) => {
   const rootPath = path4.resolve(root);
@@ -101836,14 +101840,14 @@ var writeWorkspaceFile = (root, pathName, contents, makeError) => gen2(function*
   yield* fs8.makeDirectory(path4.dirname(target), { recursive: true }).pipe(andThen2(fs8.writeFileString(target, contents)), mapError3((cause) => makeError(pathName, cause.message, cause)));
 });
 
-// ../../src/pipeline/optional-field.ts
+// ../../src/grammar/optional-field.ts
 var optionalField = (value2, field) => {
   if (value2 === undefined) {
     return {};
   }
   return field(value2);
 };
-// ../../src/engine/archive-bytes.ts
+// ../../src/pack/archive-bytes.ts
 var encoder2 = new TextEncoder;
 var crcTable = (() => {
   const table = [];
@@ -101857,7 +101861,7 @@ var crcTable = (() => {
   return table;
 })();
 
-// ../../src/engine/stager.ts
+// ../../src/pack/stager.ts
 class ArtifactStageError extends TaggedErrorClass()("ArtifactStageError", {
   operationId: NonEmptyString,
   intentTag: String4,
@@ -101896,7 +101900,7 @@ class ApiError extends TaggedErrorClass()("GitHubApiError", {
 class ReleaseHttp extends Service()("ReleaseHttp") {
 }
 
-// ../../src/engine/github.ts
+// ../../src/github/github.ts
 class GitHubReleaseApiAssetResponse extends Class4("GitHubReleaseApiAssetResponse")({ id: Number5, name: String4, state: optionalKey2(String4) }) {
 }
 
@@ -102038,7 +102042,7 @@ var GitHubApiLiveLayer = effect(GitHubApi)(gen2(function* () {
   };
 }));
 
-// ../../src/engine/executor.ts
+// ../../src/run/executor.ts
 var record2 = (operation, fields) => EvidenceRecord.make({
   operationId: operation.id,
   pipeId: operation.pipeId,
@@ -102350,7 +102354,7 @@ var runEvidenceWorkflowInto = fn2("engine.runEvidenceWorkflowInto")(function* (r
   yield* runOperationsInto(ref, operationsForWorkflow(operations, workflow), approval, context7);
 });
 
-// ../../src/engine/resolved-release.ts
+// ../../src/resolve/resolved-release.ts
 class ManifestIdentity extends Class4("ReleasePackageManifest")({
   name: NonEmptyString,
   version: NonEmptyString
@@ -102526,7 +102530,7 @@ var resolveReleaseWorkflow = fn2("release.resolve")(function* (intent, root, sna
   return yield* validateResolvedRelease(resolveRelease(intent, identity2));
 });
 
-// ../../src/engine/summary.ts
+// ../../src/render/summary.ts
 var operationSurfaceId = (operation) => {
   const parts = operation.pipeId.split(":");
   const surface = parts[1];
@@ -102563,7 +102567,7 @@ var evidenceOperationStatuses = (plan, evidence, evidencePath) => evidence.recor
 });
 var stagedArtifactSummaries = (plan, stagedOperations) => stagedOperations.flatMap(({ artifacts }) => artifacts.map(({ id }) => artifactSummary(plan.artifacts.find((artifact2) => artifact2.id === id))));
 
-// ../../src/engine/render.ts
+// ../../src/render/render.ts
 var commandLine = (command2) => [command2.executable, ...command2.args].join(" ");
 var commandArgv = (command2) => [
   command2.executable,
@@ -102954,7 +102958,7 @@ var verify = fn2("engine.summary.verify")(function* (options = {}) {
   };
 });
 
-// ../../src/workflows/doctor.ts
+// ../../src/doctor/doctor.ts
 var ReleaseDiagnosticsFormat = Literals(["json", "text", "markdown"]);
 var ReleaseDiagnosticStatus = Literals(["ok", "warn", "fail", "info"]);
 var ReleaseDiagnosticConfidence = Literals(["confirmed", "inferred", "not-checked"]);
@@ -103135,7 +103139,7 @@ var renderReleaseDiagnostics = (report, format3 = "text") => {
   }
 };
 
-// ../../src/internal/error-message.ts
+// ../../src/api/error-message.ts
 var taggedReason = (value2) => {
   if (typeof value2 !== "object" || value2 === null || !("_tag" in value2) || typeof value2._tag !== "string") {
     return;

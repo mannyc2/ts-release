@@ -7,7 +7,7 @@ import {
   isInsidePathBoundary,
   resolveWorkspacePath,
   validateWorkspaceWritePath
-} from "../src/internal/workspace-path.js"
+} from "../src/host/workspace-path.js"
 
 const withPath = <A>(layer: Layer.Layer<Path.Path>, body: (path: Path.Path) => A) =>
   Effect.runSync(

@@ -10,10 +10,10 @@ import {
   planReleaseInit,
   ReleaseInitOptions
 } from "../apps/release-ts/src/cli/init.js"
-import { doctorRelease } from "../src/workflows/doctor.js"
+import { doctorRelease } from "../src/doctor/doctor.js"
 import { planRelease, renderReleasePlan } from "../src/engine/engine.js"
 import { cli } from "../apps/release-ts/src/cli/command.js"
-import { CommandSpec } from "../src/pipeline/operation.js"
+import { CommandSpec } from "../src/grammar/operation.js"
 import { BunExecutableBuild, makeArtifactStagerLayer, makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { commandKey } from "./host-fakes.js"
 import {

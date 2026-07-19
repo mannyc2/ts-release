@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { stdin, stderr, stdout, argv, exit } from "node:process"
-import { decodeReleasePlanSync, type ReleasePlan } from "../src/pipeline/plan.js"
+import { decodeReleasePlanSync, type ReleasePlan } from "../src/grammar/plan.js"
 
 export const planOperationSnapshotLines = (plan: ReleasePlan): ReadonlyArray<string> =>
   plan.operations.map((operation) => `${operation.id}\t${operation.risk}`).sort()

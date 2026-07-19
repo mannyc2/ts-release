@@ -110,9 +110,6 @@ const isEffectImport = (specifier: string): boolean =>
 const isNodeImport = (specifier: string): boolean =>
   specifier.startsWith("node:")
 
-const isUnder = (path: string, directory: string): boolean =>
-  path === directory || path.startsWith(`${directory}/`)
-
 const allowlisted = (reference: ImportReference): boolean => {
   const file = toDisplayPath(reference.file)
   return temporaryAllowlist.some((entry) =>
@@ -129,136 +126,68 @@ const failure = (
 ): string =>
   `${location(source, reference.position)} imports ${JSON.stringify(reference.specifier)}: ${reason}`
 
-const isIdentityCommandCapabilityImport = (reference: ImportReference): boolean => {
-  const file = toDisplayPath(reference.file)
-  const target = relativeTarget(reference)
-  return isUnder(file, "src/pipeline/identity") && target === "src/host/host.js"
+const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
+  grammar: ["grammar", "assets"],
+  features: ["features", "grammar", "host"],
+  config: ["config", "features", "grammar", "assets"],
+  resolve: ["resolve", "config", "features", "grammar", "host"],
+  pack: ["pack", "grammar", "host", "assets"],
+  github: ["github", "grammar", "host"],
+  run: ["run", "grammar", "host", "pack", "github"],
+  engine: [
+    "engine", "config", "resolve", "features", "grammar", "pack", "github",
+    "run", "render", "doctor", "host", "assets"
+  ],
+  render: ["render", "grammar", "run", "pack"],
+  // Stage C removes config/engine/grammar/render; until then doctor retains its moved dependencies byte-for-byte.
+  doctor: ["doctor", "config", "engine", "grammar", "render", "host"],
+  host: ["host", "grammar", "assets"],
+  api: ["api", "engine", "pack", "github", "host"]
 }
 
-const checkPipelineImport = (
+const sourceDirectory = (file: string): string | undefined => {
+  const [rootDirectory, directory] = file.split("/")
+  return rootDirectory === "src" && directory?.includes(".") === false ? directory : undefined
+}
+
+const targetDirectory = (target: string): string | undefined => {
+  const [rootDirectory, directory] = target.split("/")
+  return rootDirectory === "src" ? directory : undefined
+}
+
+const checkConceptImport = (
   source: ts.SourceFile,
   reference: ImportReference
 ): string | undefined => {
-  if (isEffectImport(reference.specifier)) {
-    return undefined
-  }
-  if (allowlisted(reference)) {
-    return undefined
-  }
-  if (isIdentityCommandCapabilityImport(reference)) {
+  if (isEffectImport(reference.specifier) || isNodeImport(reference.specifier) || allowlisted(reference)) {
     return undefined
   }
   const target = relativeTarget(reference)
-  if (target !== undefined && (isUnder(target, "src/pipeline") || isUnder(target, "src/assets"))) {
+  if (target === undefined) {
     return undefined
   }
-  return failure(source, reference, "pipeline/ may import only effect/*, pipeline-local modules, and data assets.")
-}
-
-const checkPipeImport = (
-  source: ts.SourceFile,
-  reference: ImportReference
-): string | undefined => {
-  const target = relativeTarget(reference)
-  if (target !== undefined && (isUnder(target, "src/engine") || isUnder(target, "src/host"))) {
-    return failure(source, reference, "pipes/ must never import engine/ or host/.")
-  }
-  if (isEffectImport(reference.specifier)) {
+  const directory = sourceDirectory(toDisplayPath(reference.file))
+  const dependency = targetDirectory(target)
+  if (directory === undefined || dependency === undefined) {
     return undefined
   }
-  if (allowlisted(reference)) {
-    return undefined
+  const allowed = directoryDependencies[directory]
+  if (allowed === undefined || !allowed.includes(dependency)) {
+    return failure(source, reference, `${directory}/ may import only ${allowed?.join(", ") ?? "its declared concept dependencies"}.`)
   }
-  if (target !== undefined && isUnder(target, "src/pipeline")) {
-    return undefined
+  if (directory === "features" && dependency === "host" && !reference.typeOnly) {
+    return failure(source, reference, "features/ may import host/ types only.")
   }
-  if (target !== undefined && isUnder(target, "src/pipes")) {
-    return undefined
+  if (directory === "render" && (dependency === "run" || dependency === "pack") && !reference.typeOnly) {
+    return failure(source, reference, "render/ may import run/ and pack/ summary types only.")
   }
-  if (
-    toDisplayPath(reference.file) === "src/pipes/build.ts" &&
-    target !== undefined &&
-    isUnder(target, "src/builders")
-  ) {
-    return undefined
-  }
-  return failure(source, reference, "pipes/ may import only effect/*, pipeline modules, pipe-local modules, and the build pipe's builder registry.")
-}
-
-const checkBuilderImport = (
-  source: ts.SourceFile,
-  reference: ImportReference
-): string | undefined => {
-  const target = relativeTarget(reference)
-  if (target !== undefined && (isUnder(target, "src/engine") || isUnder(target, "src/host"))) {
-    return failure(source, reference, "builders/ must never import engine/ or host/.")
-  }
-  if (isEffectImport(reference.specifier)) {
-    return undefined
-  }
-  if (allowlisted(reference)) {
-    return undefined
-  }
-  if (target !== undefined && (isUnder(target, "src/pipeline") || isUnder(target, "src/builders"))) {
-    return undefined
-  }
-  return failure(source, reference, "builders/ may import only effect/*, pipeline modules, and builder-local modules outside documented allowlist entries.")
-}
-
-const checkEngineImport = (
-  source: ts.SourceFile,
-  reference: ImportReference
-): string | undefined => {
-  if (isEffectImport(reference.specifier) || isNodeImport(reference.specifier)) {
-    return undefined
-  }
-  const target = relativeTarget(reference)
-  const file = toDisplayPath(reference.file)
-  if (
-    target !== undefined
-    && isUnder(target, "src/pipes")
-    && (file === "src/engine/resolved-release.ts" || file === "src/engine/engine.ts")
-  ) {
-    return undefined
-  }
-  if (
-    target !== undefined &&
-    (
-      isUnder(target, "src/engine") ||
-      isUnder(target, "src/pipeline") ||
-      isUnder(target, "src/host") ||
-      isUnder(target, "src/config") ||
-      isUnder(target, "src/internal") || isUnder(target, "src/assets")
-    )
-  ) {
-    return undefined
-  }
-  return failure(
-    source,
-    reference,
-    "engine/ may import only effect/*, node:*, engine-local modules, pipeline/, host/, config/, internal/, and data assets."
-  )
+  return undefined
 }
 
 const checkReference = (
   source: ts.SourceFile,
   reference: ImportReference
-): string | undefined => {
-  const file = toDisplayPath(reference.file)
-  if (isUnder(file, "src/pipeline")) {
-    return checkPipelineImport(source, reference)
-  }
-  if (isUnder(file, "src/pipes")) {
-    return checkPipeImport(source, reference)
-  }
-  if (isUnder(file, "src/builders")) {
-    return checkBuilderImport(source, reference)
-  }
-  if (isUnder(file, "src/engine")) {
-    return checkEngineImport(source, reference)
-  }
-  return undefined
-}
+): string | undefined => checkConceptImport(source, reference)
 
 const checkFile = (file: string): Array<string> => {
   const source = ts.createSourceFile(
@@ -326,7 +255,7 @@ const hardCutViolations = (file: string): Array<string> => {
 }
 
 const forbiddenCarrierFiles = [
-  "src/pipeline/catalog.ts",
+  "src/grammar/catalog.ts",
   "src/engine/plan-document.ts"
 ]
 

@@ -3,9 +3,9 @@ import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as Schema from "effect/Schema"
 import { ReleaseIntent } from "../../../src/config/schema.js"
-import { platformTargetVariant } from "../../../src/pipeline/platform.js"
-import { ReleaseIdentity } from "../../../src/pipeline/state.js"
-import { normalizedName, renderTemplate } from "../../../src/pipeline/template.js"
+import { platformTargetVariant } from "../../../src/grammar/platform.js"
+import { ReleaseIdentity } from "../../../src/grammar/state.js"
+import { normalizedName, renderTemplate } from "../../../src/grammar/template.js"
 import { disposeReleaseRuntime, plan, type ReleasePlanSummary } from "../../../src/index.js"
 
 const root = cwd()

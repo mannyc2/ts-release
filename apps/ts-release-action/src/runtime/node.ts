@@ -2,10 +2,10 @@
 import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Layer from "effect/Layer"
-import { UnsupportedArtifactStagerLayer } from "../../../../src/engine/stager.js"
+import { UnsupportedArtifactStagerLayer } from "../../../../src/pack/stager.js"
 import { LiveReleaseHttpLayer } from "../../../../src/host/http-live.js"
 import { makePlatformCommandRunnerLayer, type PlatformCommandRunnerOptions } from "../../../../src/host/platform.js"
-import { GitHubApiLiveLayer } from "../../../../src/engine/github.js"
+import { GitHubApiLiveLayer } from "../../../../src/github/github.js"
 
 export const makeNodeReleaseWorkflowRuntimeLayer = (
   options: PlatformCommandRunnerOptions = {}

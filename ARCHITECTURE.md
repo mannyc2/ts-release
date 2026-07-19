@@ -10,17 +10,17 @@ GitHub Action all use the same engine.
 | # | Concept | Representation and owner |
 |---:|---|---|
 | 1 | Release intent | Strict wire Schema in `src/config/`; it also derives the JSON Schema. |
-| 2 | Release identity | One `ReleaseIdentity`, resolved from manifest or git tag in `engine/resolved-release.ts`. |
+| 2 | Release identity | One `ReleaseIdentity`, resolved from manifest or git tag in `src/resolve/resolved-release.ts`. |
 | 3 | Resolved release | Totalized feature sections in `ResolvedRelease`; planners do not re-resolve config. |
-| 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/pipes/`. |
-| 5 | Artifact | One Schema class in `pipeline/artifact.ts`, including platform and typed extra data. |
-| 6 | Operation / Action | One operation class and seven live action tags in `pipeline/operation.ts`. |
-| 7 | Release plan | The sole durable `release-plan/v3` Schema in `pipeline/plan.ts`. |
-| 8 | Accumulator | One private transient fold in `pipeline/runner.ts`; never encoded or exported. |
+| 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/features/`. |
+| 5 | Artifact | One Schema class in `src/grammar/artifact.ts`, including platform and typed extra data. |
+| 6 | Operation / Action | One operation class and seven live action tags in `src/grammar/operation.ts`. |
+| 7 | Release plan | The sole durable `release-plan/v3` Schema in `src/grammar/plan.ts`. |
+| 8 | Accumulator | One private transient fold in `src/grammar/runner.ts`; never encoded or exported. |
 | 9 | Approval | One risk derivation plus whole-pass preflight in operation/executor code. |
-| 10 | Evidence | Records and the sole durable `release-evidence/v2` bundle in `engine/evidence.ts`. |
-| 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `engine/content.ts`. |
-| 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/builders/`. |
+| 10 | Evidence | Records and the sole durable `release-evidence/v2` bundle in `src/run/evidence.ts`. |
+| 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `src/run/content.ts`. |
+| 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/features/`. |
 | 13 | Services | Command, HTTP, staging, and GitHub capabilities injected at runtime boundaries. |
 | 14 | Errors | One tagged-error policy; distinct tags remain where retry and exact failure contracts differ. |
 
@@ -47,7 +47,7 @@ operations, and notices but execute nothing. The accumulator is the uniqueness
 boundary for artifact ids, operation ids, paths, and names. Finalization creates
 the durable plan without an intermediate document DTO.
 
-The planner schedule is explicit in `engine/engine.ts`. Its order is contract:
+The planner schedule is explicit in `src/engine/engine.ts`. Its order is contract:
 builds and imports, processing and catalogs, then publication surfaces. Adding a
 surface requires a Schema composition entry, one feature module, and one
 schedule entry. It does not require dynamic registration or a new kernel.
@@ -56,32 +56,33 @@ schedule entry. It does not require dynamic registration or a new kernel.
 
 - `src/config/` owns location, JSON parsing, migration hints, strict decode, and
   JSON-Schema derivation.
-- `src/pipeline/` owns durable grammar, pure platform/template/semver helpers,
+- `src/grammar/` owns durable grammar, pure platform/template/semver helpers,
   approval derivation, and the private planning fold.
-- `src/builders/` maps resolved build targets to artifacts and planned actions.
-- `src/pipes/` owns one resolver/planner per build, artifact transformation,
+- `src/features/` maps resolved build targets to artifacts and planned actions.
+- `src/features/` owns one resolver/planner per build, artifact transformation,
   catalog, or publication feature. Selection and rendered product content stay
   with the feature that specifies them.
-- `engine/resolved-release.ts` owns identity plus feature totalization.
-- `engine/stager.ts` and `archive-bytes.ts` turn stage intents into deterministic
+- `src/resolve/resolved-release.ts` owns identity plus feature totalization.
+- `src/pack/stager.ts` and `src/pack/archive-bytes.ts` turn stage intents into deterministic
   bytes inside the workspace boundary.
-- `engine/github.ts` is the Schema-decoded GitHub Releases API client. Its
+- `src/github/github.ts` is the Schema-decoded GitHub Releases API client. Its
   `Effect.whileLoop` pagination is deliberate.
-- `engine/executor.ts` owns pass selection, approval preflight, action
+- `src/run/executor.ts` owns pass selection, approval preflight, action
   interpretation, retry, and sequential evidence recording.
-- `engine/evidence.ts` owns durable evidence and redaction; `engine/content.ts`
+- `src/run/evidence.ts` owns durable evidence and redaction; `src/run/content.ts`
   resolves deferred content from artifacts.
-- `engine/engine.ts` composes planning and the evidence-finalized workflows.
-- `engine/render.ts` and `engine/summary.ts` project the same canonical plan;
+- `src/engine/engine.ts` composes planning and the evidence-finalized workflows.
+- `src/render/render.ts` and `src/render/summary.ts` project the same canonical plan;
   they do not reconstruct plan facts.
 - `src/host/` defines command and HTTP services plus live adapters. Concrete
   filesystem/path/HTTP/process layers are not provided inside library workflows.
-- `src/workflows/doctor.ts` derives diagnostics from decoded config and the plan
+- `src/doctor/doctor.ts` derives diagnostics from decoded config and the plan
   without executing publish operations.
 - `src/api/` is the Promise/plain-data boundary backed by one lazily shared
   managed runtime. `src/index.ts` is the only public TypeScript entrypoint.
-- `src/internal/`, `src/assets/`, and `src/types/` contain single-owner boundary
-  helpers, reviewed static facts/templates, and declaration-only compatibility.
+- `src/host/workspace-path.ts`, `src/api/error-message.ts`, `src/assets/`, and
+  `src/types/` contain single-owner boundary helpers, reviewed static
+  facts/templates, and declaration-only compatibility.
 - `apps/release-ts/src/` owns Effect CLI parsing, terminal and `--out` behavior,
   template-based init, and the Bun runtime layer.
 - `apps/ts-release-action/src/` owns Action input decode, outputs, summaries,

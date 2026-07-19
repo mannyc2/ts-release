@@ -6,7 +6,7 @@ import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
 import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
-import { CommandSpec } from "../pipeline/operation.js"
+import { CommandSpec } from "../grammar/operation.js"
 import { CommandRunnerError, ReleaseCommandRunner, type CommandResult } from "./host.js"
 import inheritedEnvNames from "../assets/inherited-env.json" with { type: "json" }
 

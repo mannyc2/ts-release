@@ -3,7 +3,7 @@ import * as BunServices from "@effect/platform-bun/BunServices"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { CommandSpec } from "../src/pipeline/operation.js"
+import { CommandSpec } from "../src/grammar/operation.js"
 import { makePlatformCommandRunnerLayer } from "../src/host/platform.js"
 import { ReleaseCommandRunner } from "../src/host/host.js"
 

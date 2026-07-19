@@ -14,16 +14,16 @@ import {
   RetryPolicy,
   StageAction,
   WriteFileAction
-} from "../src/pipeline/operation.js"
+} from "../src/grammar/operation.js"
 import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
 import {
   runOperationEvidence
-} from "../src/engine/executor.js"
+} from "../src/run/executor.js"
 import { runEvidenceWorkflow } from "./plan-helpers.js"
 import { planRelease } from "../src/engine/engine.js"
-import { ArtifactStageError, ArtifactStager, UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { ArtifactStageError, ArtifactStager, UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { expectTaggedError, minimalConfig, runOperation, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 
 const releaseIdentity = makePipelineIdentity({ versionSource: "test" })

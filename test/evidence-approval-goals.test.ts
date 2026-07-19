@@ -10,13 +10,13 @@ import {
   CommandSpec,
   ExecutionApproval,
   operationApprovalRequirements
-} from "../src/pipeline/operation.js"
+} from "../src/grammar/operation.js"
 import {
   planRelease,
   writeReleaseEvidence
 } from "../src/engine/engine.js"
-import type { ReleasePlan } from "../src/pipeline/plan.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import type { ReleasePlan } from "../src/grammar/plan.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { commandKey } from "./host-fakes.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import {

@@ -2,7 +2,7 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import type { CommandSpec } from "../pipeline/operation.js"
+import type { CommandSpec } from "../grammar/operation.js"
 
 
 export class CommandRunnerError extends Schema.TaggedErrorClass<CommandRunnerError>()("CommandRunnerError", {

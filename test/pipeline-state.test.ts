@@ -1,9 +1,9 @@
 import { describe, expect, it, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import * as A from "../src/pipeline/artifact.js"
-import * as O from "../src/pipeline/operation.js"
-import { decodeReleasePlan, decodeReleasePlanSync, ReleasePlan, SourceMetadata } from "../src/pipeline/plan.js"
+import * as A from "../src/grammar/artifact.js"
+import * as O from "../src/grammar/operation.js"
+import { decodeReleasePlan, decodeReleasePlanSync, ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const extraArtifact = (id: string, kind: A.ArtifactKind, path: string, extra: A.ArtifactExtra): A.Artifact =>

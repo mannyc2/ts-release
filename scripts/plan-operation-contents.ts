@@ -5,9 +5,9 @@ import { stdin, stderr, stdout, argv, exit } from "node:process"
 import {
   deferredContentArtifactIds,
   renderDeferredContent
-} from "../src/engine/content.js"
-import type { DeferredFileContent } from "../src/pipeline/operation.js"
-import { decodeReleasePlanSync, type ReleasePlan } from "../src/pipeline/plan.js"
+} from "../src/run/content.js"
+import type { DeferredFileContent } from "../src/grammar/operation.js"
+import { decodeReleasePlanSync, type ReleasePlan } from "../src/grammar/plan.js"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)

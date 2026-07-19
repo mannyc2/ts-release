@@ -8,7 +8,7 @@ import * as Option from "effect/Option"
 import * as Path from "effect/Path"
 import * as PlatformError from "effect/PlatformError"
 import * as Schema from "effect/Schema"
-import { CommandSpec } from "../src/pipeline/operation.js"
+import { CommandSpec } from "../src/grammar/operation.js"
 import {
   CommandRunnerError,
   ReleaseCommandRunner,

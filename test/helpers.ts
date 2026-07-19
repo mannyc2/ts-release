@@ -8,16 +8,16 @@ import * as Effect from "effect/Effect"
 import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
-import { runOperations, type OperationRunContext } from "../src/engine/executor.js"
-import type { CommandSpec, ExecutionApproval, Operation } from "../src/pipeline/operation.js"
-import { GitHubApi } from "../src/engine/github.js"
+import { runOperations, type OperationRunContext } from "../src/run/executor.js"
+import type { CommandSpec, ExecutionApproval, Operation } from "../src/grammar/operation.js"
+import { GitHubApi } from "../src/github/github.js"
 import { ApiError } from "../src/host/http.js"
 import {
   ArtifactStager,
   type ArtifactStageContext,
   type StageOperation
-} from "../src/engine/stager.js"
-import { ReleaseIdentity } from "../src/pipeline/state.js"
+} from "../src/pack/stager.js"
+import { ReleaseIdentity } from "../src/grammar/state.js"
 import {
   commandKey,
   makeCommandRunnerLayer,

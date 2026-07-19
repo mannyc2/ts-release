@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { GitHubApi, GitHubApiLiveLayer } from "../src/engine/github.js"
+import { GitHubApi, GitHubApiLiveLayer } from "../src/github/github.js"
 import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
 import { makeTestCommandRunnerLayer, makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { minimalConfig, releaseConfig, releaseIdentity, runEffect } from "./helpers.js"

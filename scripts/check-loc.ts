@@ -8,10 +8,23 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src", 6245],
+  ["src/config", 207],
+  ["src/resolve", 312],
+  ["src/grammar", 762],
+  ["src/features", 1804],
+  ["src/pack", 499],
+  ["src/github", 267],
+  ["src/run", 726],
+  ["src/engine", 368],
+  ["src/render", 380],
+  ["src/doctor", 237],
+  ["src/host", 417],
+  ["src/api", 216],
+  ["src/types", 13],
   ["apps/release-ts/src", 586],
   ["apps/ts-release-action/src", 500],
   ["test", 8747],
-  ["scripts", 2293],
+  ["scripts", 2235],
   ["apps/release-ts/scripts", 878]
 ]
 

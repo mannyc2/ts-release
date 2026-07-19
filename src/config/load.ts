@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { parseJsonAs } from "../pipeline/json.js"
+import { parseJsonAs } from "../grammar/json.js"
 import { ConfigError } from "./errors.js"
 import { decodeReleaseConfig, DEFAULT_CONFIG_PATH, type ReleaseIntent } from "./schema.js"
 import migrations from "../assets/config-migrations.json" with { type: "json" }

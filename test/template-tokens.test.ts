@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import { platformTargetVariant } from "../src/pipeline/platform.js"
-import { renderArtifactNameEffect } from "../src/pipeline/template.js"
+import { platformTargetVariant } from "../src/grammar/platform.js"
+import { renderArtifactNameEffect } from "../src/grammar/template.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()

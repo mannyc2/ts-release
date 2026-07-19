@@ -15,8 +15,8 @@ import {
 import { ActionOptions } from "../apps/ts-release-action/src/input.js"
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
 import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
-import { CommandSpec } from "../src/pipeline/operation.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { CommandSpec } from "../src/grammar/operation.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey } from "./host-fakes.js"
 import {

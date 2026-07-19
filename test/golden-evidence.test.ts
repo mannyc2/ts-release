@@ -4,19 +4,19 @@ import * as Layer from "effect/Layer"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { CommandSpec, ExecutionApproval } from "../src/pipeline/operation.js"
-import { type EvidenceBundle, EvidenceRecord } from "../src/engine/evidence.js"
+import { CommandSpec, ExecutionApproval } from "../src/grammar/operation.js"
+import { type EvidenceBundle, EvidenceRecord } from "../src/run/evidence.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
-import { OperationFailedError } from "../src/engine/errors.js"
+import { OperationFailedError } from "../src/run/errors.js"
 import { runEvidenceWorkflow } from "./plan-helpers.js"
 import { planRelease } from "../src/engine/engine.js"
-import type { ReleasePlan } from "../src/pipeline/plan.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import type { ReleasePlan } from "../src/grammar/plan.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import {
   GitHubApi,
   GitHubReleaseApiResponse
-} from "../src/engine/github.js"
+} from "../src/github/github.js"
 import {
   releaseConfig,
   runEffect

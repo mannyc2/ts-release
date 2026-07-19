@@ -11,28 +11,28 @@ import type { ReleaseIntent } from "../config/schema.js"
 import {
   ExecutionApproval,
   Operation
-} from "../pipeline/operation.js"
-import { ReleasePlan, SourceMetadata } from "../pipeline/plan.js"
-import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../pipeline/runner.js"
-import { ReleaseIdentity } from "../pipeline/state.js"
-import { schedule } from "../pipeline/pipe.js"
-import { archivePlanner } from "../pipes/archive.js"
-import { buildPlanner } from "../pipes/build.js"
-import { catalogGenericPlanner } from "../pipes/catalog-generic.js"
-import { catalogHomebrewPlanner } from "../pipes/catalog-homebrew.js"
-import { catalogScoopPlanner } from "../pipes/catalog-scoop.js"
-import { checksumPlanner } from "../pipes/checksum.js"
-import { importArtifactsPlanner } from "../pipes/import-artifacts.js"
-import { npmPackPlanner } from "../pipes/npm-pack.js"
-import { publishCatalogGenericPlanner } from "../pipes/publish-catalog-generic.js"
-import { publishGitHubPlanner } from "../pipes/publish-github.js"
+} from "../grammar/operation.js"
+import { ReleasePlan, SourceMetadata } from "../grammar/plan.js"
+import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../grammar/runner.js"
+import { ReleaseIdentity } from "../grammar/state.js"
+import { schedule } from "../grammar/pipe.js"
+import { archivePlanner } from "../features/archive.js"
+import { buildPlanner } from "../features/build.js"
+import { catalogGenericPlanner } from "../features/catalog-generic.js"
+import { catalogHomebrewPlanner } from "../features/catalog-homebrew.js"
+import { catalogScoopPlanner } from "../features/catalog-scoop.js"
+import { checksumPlanner } from "../features/checksum.js"
+import { importArtifactsPlanner } from "../features/import-artifacts.js"
+import { npmPackPlanner } from "../features/npm-pack.js"
+import { publishCatalogGenericPlanner } from "../features/publish-catalog-generic.js"
+import { publishGitHubPlanner } from "../features/publish-github.js"
 import {
   publishHomebrewPlanner,
   publishScoopPlanner
-} from "../pipes/publish-catalog-git.js"
-import { publishNpmPlanner } from "../pipes/publish-npm.js"
-import { publishPyPiPlanner } from "../pipes/publish-pypi.js"
-import { pypiWheelPlanner } from "../pipes/pypi-wheel.js"
+} from "../features/publish-catalog-git.js"
+import { publishNpmPlanner } from "../features/publish-npm.js"
+import { publishPyPiPlanner } from "../features/publish-pypi.js"
+import { pypiWheelPlanner } from "../features/pypi-wheel.js"
 import {
   makeEvidenceRef,
   operationsForPass,
@@ -42,16 +42,16 @@ import {
   type EvidenceWorkflow,
   type EvidenceRef,
   type OperationRunContext
-} from "./executor.js"
+} from "../run/executor.js"
 import {
   EvidenceBundle,
   renderEvidenceJson
-} from "./evidence.js"
+} from "../run/evidence.js"
 import {
   EvidenceWriteError
-} from "./errors.js"
-import { resolveReleaseWorkflow, type ResolvedRelease } from "./resolved-release.js"
-import { renderReleasePlan } from "./render.js"
+} from "../run/errors.js"
+import { resolveReleaseWorkflow, type ResolvedRelease } from "../resolve/resolved-release.js"
+import { renderReleasePlan } from "../render/render.js"
 import {
   evidenceOperationStatuses,
   plannedSummary,
@@ -61,15 +61,15 @@ import {
   type ReleasePlanSummary,
   type ReleaseSummary,
   type VerifySummary
-} from "./summary.js"
+} from "../render/summary.js"
 import {
   ArtifactStager,
   type StagedArtifactOperationResult,
   type StageOperation
-} from "./stager.js"
+} from "../pack/stager.js"
 import {
   writeWorkspaceFile
-} from "../internal/workspace-path.js"
+} from "../host/workspace-path.js"
 
 
 export { renderEvidenceJson, renderReleasePlan }

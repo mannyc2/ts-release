@@ -1,8 +1,8 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import { Artifact } from "../src/pipeline/artifact.js"
+import { Artifact } from "../src/grammar/artifact.js"
 import { catalogGenericPlanner, ReleaseConfigCatalogEntry, ReleaseConfigCatalogFactHole,
-  resolveCatalogs, type ResolvedCatalogEntry } from "../src/pipes/catalog-generic.js"
+  resolveCatalogs, type ResolvedCatalogEntry } from "../src/features/catalog-generic.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()

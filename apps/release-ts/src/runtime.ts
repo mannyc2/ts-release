@@ -2,8 +2,8 @@
 import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Layer from "effect/Layer"
-import { makeArtifactStagerLayer, liveBunExecutableBuild } from "../../../src/engine/stager.js"
-import { GitHubApiLiveLayer } from "../../../src/engine/github.js"
+import { makeArtifactStagerLayer, liveBunExecutableBuild } from "../../../src/pack/stager.js"
+import { GitHubApiLiveLayer } from "../../../src/github/github.js"
 import { LiveReleaseHttpLayer } from "../../../src/host/http-live.js"
 import { makePlatformCommandRunnerLayer, type PlatformCommandRunnerOptions } from "../../../src/host/platform.js"
 
@@ -22,4 +22,4 @@ export const makeBunReleaseWorkflowRuntimeLayer = (options: PlatformCommandRunne
 
 export const BunReleaseWorkflowRuntimeLayer = makeBunReleaseWorkflowRuntimeLayer()
 export { liveBunExecutableBuild, makeArtifactStagerLayer }
-export type { BunExecutableBuild, BunExecutableBuildInput } from "../../../src/engine/stager.js"
+export type { BunExecutableBuild, BunExecutableBuildInput } from "../../../src/pack/stager.js"

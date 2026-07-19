@@ -1,11 +1,11 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import { catalogGenericPlanner, type ResolvedCatalogEntry } from "../src/pipes/catalog-generic.js"
-import { publishCatalogGenericPlanner } from "../src/pipes/publish-catalog-generic.js"
-import type { Operation } from "../src/pipeline/operation.js"
-import { schedule } from "../src/pipeline/pipe.js"
-import { emptyPlanAccumulator, runPipeline } from "../src/pipeline/runner.js"
+import { catalogGenericPlanner, type ResolvedCatalogEntry } from "../src/features/catalog-generic.js"
+import { publishCatalogGenericPlanner } from "../src/features/publish-catalog-generic.js"
+import type { Operation } from "../src/grammar/operation.js"
+import { schedule } from "../src/grammar/pipe.js"
+import { emptyPlanAccumulator, runPipeline } from "../src/grammar/runner.js"
 import { makePipelineIdentity } from "./helpers.js"
 const identity = makePipelineIdentity()
 const context = { identity, artifacts: [] }

@@ -3,7 +3,7 @@ import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant } from "../src/pipeline/artifact.js"
+import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant } from "../src/grammar/artifact.js"
 import {
   ArchiveIntent,
   CommandAction,
@@ -16,26 +16,26 @@ import {
   Operation,
   StageAction,
   WriteFileAction
-} from "../src/pipeline/operation.js"
+} from "../src/grammar/operation.js"
 import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
-import { ReleasePlan, SourceMetadata } from "../src/pipeline/plan.js"
-import { PipeNotice, ReleaseIdentity } from "../src/pipeline/state.js"
+import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
+import { PipeNotice, ReleaseIdentity } from "../src/grammar/state.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
   EvidenceBundle,
   EvidenceRecord,
   redactText
-} from "../src/engine/evidence.js"
+} from "../src/run/evidence.js"
 import { writeEvidenceBundle } from "../src/engine/engine.js"
-import { runOperationEvidence } from "../src/engine/executor.js"
-import { artifactSummary, evidenceOperationStatuses, stagedArtifactSummaries, type ArtifactSummary } from "../src/engine/summary.js"
+import { runOperationEvidence } from "../src/run/executor.js"
+import { artifactSummary, evidenceOperationStatuses, stagedArtifactSummaries, type ArtifactSummary } from "../src/render/summary.js"
 import {
   UnsupportedArtifactStagerLayer,
   type StagedArtifact,
   type StagedArtifactOperationResult
-} from "../src/engine/stager.js"
-import { GitHubApiLiveLayer } from "../src/engine/github.js"
+} from "../src/pack/stager.js"
+import { GitHubApiLiveLayer } from "../src/github/github.js"
 import { runOperation, TestGitHubApiLayer } from "./helpers.js"
 
 const makeWorkspaceTestCommandRunnerLayer = (

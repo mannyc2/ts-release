@@ -1,0 +1,108 @@
+// Invariant: public summaries are JSON-safe projections of canonical artifacts, operations, and evidence.
+import * as Schema from "effect/Schema"
+import { Artifact } from "../grammar/artifact.js"
+import type { Operation, OperationRisk } from "../grammar/operation.js"
+import type { ReleasePlan } from "../grammar/plan.js"
+import type { ReleaseIdentity } from "../grammar/state.js"
+import type { EvidenceBundle } from "../run/evidence.js"
+import type { StagedArtifactOperationResult } from "../pack/stager.js"
+
+
+export type ReleaseIdentitySummary = Pick<ReleaseIdentity, "name" | "version" | "commit" | "tag">
+
+export type ArtifactSummary = Schema.Codec.Encoded<typeof Artifact>
+
+export type OperationSummary = Pick<Operation, "id" | "pipeId" | "description" | "risk"> & {
+  readonly status: "planned" | "executed" | "skipped" | "failed" | "refused"
+  readonly evidencePath?: string | undefined
+}
+
+export interface ReleasePlanSummary {
+  readonly identity: ReleaseIdentitySummary
+  readonly artifacts: ReadonlyArray<ArtifactSummary>
+  readonly operations: ReadonlyArray<OperationSummary>
+  readonly notices: ReleasePlan["notices"]
+}
+
+export interface BuildSummary extends ReleasePlanSummary {
+  readonly stagedArtifacts: ReadonlyArray<ArtifactSummary>
+}
+
+export interface ReleaseSummary extends ReleasePlanSummary {
+  readonly executed: ReadonlyArray<OperationSummary>
+  readonly refused: ReadonlyArray<OperationSummary>
+}
+
+export interface VerifySummary {
+  readonly identity: ReleaseIdentitySummary
+  readonly checks: ReadonlyArray<OperationSummary>
+}
+
+export const operationSurfaceId = (operation: Pick<Operation, "pipeId">): string | undefined => {
+  const parts = operation.pipeId.split(":")
+  const surface = parts[1]
+  return (operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:")) &&
+      surface !== undefined
+    ? surface
+    : undefined
+}
+
+export const operationSurfaceIds = (plan: Pick<ReleasePlan, "operations">): ReadonlyArray<string> =>
+  [...new Set(plan.operations.flatMap((operation) => {
+    const surface = operationSurfaceId(operation)
+    return surface === undefined ? [] : [surface]
+  }))].sort()
+
+export const identitySummary = (identity: ReleaseIdentity): ReleaseIdentitySummary => ({
+  name: identity.name,
+  version: identity.version,
+  commit: identity.commit,
+  tag: identity.tag
+})
+
+export const artifactSummary = Schema.encodeSync(Artifact)
+
+export const operationSummary = (
+  operation: Pick<Operation, "id" | "pipeId" | "description" | "risk">,
+  status: OperationSummary["status"] = "planned",
+  evidencePath?: string | undefined
+): OperationSummary => ({
+  id: operation.id,
+  pipeId: operation.pipeId,
+  description: operation.description,
+  risk: operation.risk,
+  status,
+  ...(evidencePath === undefined ? {} : { evidencePath })
+})
+
+export const plannedSummary = (plan: ReleasePlan): ReleasePlanSummary => ({
+  identity: identitySummary(plan.identity),
+  artifacts: plan.artifacts.map((artifact) => artifactSummary(artifact)),
+  operations: plan.operations.map((operation) => operationSummary(operation)),
+  notices: plan.notices
+})
+
+export const evidenceOperationStatuses = (
+  plan: ReleasePlan,
+  evidence: EvidenceBundle,
+  evidencePath?: string | undefined
+): ReadonlyArray<OperationSummary> => evidence.records.map((record) => {
+    const operation = plan.operations.find(({ id }) => id === record.operationId)!
+    return operationSummary(
+      operation,
+      record.status === "failed"
+        ? "failed"
+        : record.status === "refused"
+        ? "refused"
+        : record.status === "skipped"
+        ? "skipped"
+        : "executed",
+      evidencePath
+    )
+})
+
+export const stagedArtifactSummaries = (
+  plan: ReleasePlan,
+  stagedOperations: ReadonlyArray<StagedArtifactOperationResult>
+): ReadonlyArray<ArtifactSummary> => stagedOperations.flatMap(({ artifacts }) => artifacts.map(({ id }) =>
+  artifactSummary(plan.artifacts.find((artifact) => artifact.id === id)!)))

@@ -9,9 +9,9 @@ import {
   setReleaseRuntimeLayerFactoryForTesting,
   type ReleaseRuntimeLayer
 } from "../src/api/api.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { commandKey, makeTestCommandRunnerLayer, makeTestReleaseHttpLayer } from "./host-fakes.js"
-import { CommandSpec } from "../src/pipeline/operation.js"
+import { CommandSpec } from "../src/grammar/operation.js"
 import { TestGitHubApiLayer } from "./helpers.js"
 
 const project = { name: "release", version: "0.1.0", commit: "abc123", tag: "v0.1.0" } as const

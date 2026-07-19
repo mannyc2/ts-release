@@ -3,8 +3,8 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { runApprovedRelease, planRelease, release } from "../src/engine/engine.js"
-import { renderPlanText } from "../src/engine/render.js"
-import { runOperationEvidence } from "../src/engine/executor.js"
+import { renderPlanText } from "../src/render/render.js"
+import { runOperationEvidence } from "../src/run/executor.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
@@ -12,8 +12,8 @@ import {
   CommandSpec,
   ExecutionApproval,
   Operation
-} from "../src/pipeline/operation.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+} from "../src/grammar/operation.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { releaseConfig, runEffect, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 const snapshotConfig = JSON.stringify({
   project: {

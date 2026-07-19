@@ -4,8 +4,8 @@ import type * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import type * as Path from "effect/Path"
-import type { ArtifactStager } from "../engine/stager.js"
-import type { GitHubApi } from "../engine/github.js"
+import type { ArtifactStager } from "../pack/stager.js"
+import type { GitHubApi } from "../github/github.js"
 import type { ReleaseCommandRunner } from "../host/host.js"
 import type { ReleaseHttp } from "../host/http.js"
 import { ReleaseApiError, type ReleaseApiPhase } from "./errors.js"
@@ -36,8 +36,8 @@ const makeDefaultReleaseRuntimeLayer = async (): Promise<ReleaseRuntimeLayer> =>
     import("@effect/platform-bun/BunServices"),
     import("../host/http-live.js"),
     import("../host/platform.js"),
-    import("../engine/stager.js"),
-    import("../engine/github.js")
+    import("../pack/stager.js"),
+    import("../github/github.js")
   ])
 
   const commandLayer = makePlatformCommandRunnerLayer().pipe(

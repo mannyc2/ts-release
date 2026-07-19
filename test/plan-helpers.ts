@@ -3,23 +3,23 @@ import * as Layer from "effect/Layer"
 import * as Ref from "effect/Ref"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { planRelease } from "../src/engine/engine.js"
-import { ReleasePlan } from "../src/pipeline/plan.js"
+import { ReleasePlan } from "../src/grammar/plan.js"
 import {
   renderPlanJson,
   renderPlanMarkdown,
   renderPlanSummary,
   renderPlanText
-} from "../src/engine/render.js"
+} from "../src/render/render.js"
 import {
   makeEvidenceRef,
   preflightEvidenceWorkflow,
   runEvidenceWorkflowInto,
   type EvidenceWorkflow,
   type OperationRunContext
-} from "../src/engine/executor.js"
-import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
+} from "../src/run/executor.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
-import { ExecutionApproval, type Operation } from "../src/pipeline/operation.js"
+import { ExecutionApproval, type Operation } from "../src/grammar/operation.js"
 import { TestGitHubApiLayer } from "./helpers.js"
 const OperationArmTestLayer = Layer.mergeAll(
   makeTestReleaseHttpLayer(),

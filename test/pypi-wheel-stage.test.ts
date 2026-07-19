@@ -9,9 +9,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { pypiWheelPlanner, resolvePyPiWheels } from "../src/pipes/pypi-wheel.js"
-import type { Operation, StageAction } from "../src/pipeline/operation.js"
-import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
+import { pypiWheelPlanner, resolvePyPiWheels } from "../src/features/pypi-wheel.js"
+import type { Operation, StageAction } from "../src/grammar/operation.js"
+import { emptyPlanAccumulator } from "../src/grammar/runner.js"
 
 const identity = makePipelineIdentity({ name: "@mannyc1/ts-release", normalizedName: "mannyc1-ts-release", version: "1.2.3", tag: "v1.2.3" })
 

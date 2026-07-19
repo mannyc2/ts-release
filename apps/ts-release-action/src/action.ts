@@ -7,19 +7,19 @@ import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import type { ArtifactStager } from "../../../src/engine/stager.js"
-import { ReleasePlan } from "../../../src/pipeline/plan.js"
+import type { ArtifactStager } from "../../../src/pack/stager.js"
+import { ReleasePlan } from "../../../src/grammar/plan.js"
 import * as Release from "../../../src/engine/engine.js"
-import { operationSurfaceIds } from "../../../src/engine/summary.js"
+import { operationSurfaceIds } from "../../../src/render/summary.js"
 import type { ReleaseCommandRunner } from "../../../src/host/host.js"
 import type { ReleaseHttp } from "../../../src/host/http.js"
-import type { GitHubApi } from "../../../src/engine/github.js"
-import * as Doctor from "../../../src/workflows/doctor.js"
-import { formatTaggedReason } from "../../../src/internal/error-message.js"
+import type { GitHubApi } from "../../../src/github/github.js"
+import * as Doctor from "../../../src/doctor/doctor.js"
+import { formatTaggedReason } from "../../../src/api/error-message.js"
 import {
   resolveWorkspacePath,
   validateWorkspaceWritePath
-} from "../../../src/internal/workspace-path.js"
+} from "../../../src/host/workspace-path.js"
 import { ActionOptions } from "./input.js"
 type ReleaseDiagnosticReport = Doctor.ReleaseDiagnosticReport
 

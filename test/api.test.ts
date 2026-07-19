@@ -91,7 +91,7 @@ const withRuntime = async <A>(
   use: () => Promise<A>,
   factory: () => ReleaseRuntimeLayer = testRuntimeLayer
 ): Promise<A> => {
-  await setReleaseRuntimeLayerFactoryForTesting(factory)
+  await setReleaseRuntimeLayerFactoryForTesting(factory())
   try {
     return await use()
   } finally {

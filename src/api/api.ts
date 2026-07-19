@@ -1,4 +1,4 @@
-// Invariant: the Promise API owns one lazily shared runtime and exposes only plain-data summaries or ReleaseApiError.
+// Invariant: the Promise API owns one module-scope runtime behind a single swap and exposes only plain-data summaries or ReleaseApiError.
 import * as Effect from "effect/Effect"
 import type * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
@@ -21,9 +21,10 @@ export type ReleaseRuntimeServices =
 
 export type ReleaseRuntimeLayer = Layer.Layer<ReleaseRuntimeServices, unknown, never>
 
-export type ReleaseRuntimeLayerFactory = () => ReleaseRuntimeLayer | Promise<ReleaseRuntimeLayer>
-
-const makeDefaultReleaseRuntimeLayer = async (): Promise<ReleaseRuntimeLayer> => {
+// Layer.unwrap moves the dynamic imports inside the layer, so ManagedRuntime
+// can be constructed synchronously at module scope; a failed import stays in
+// the layer's unknown error channel (an error, not a defect).
+const defaultLayer: ReleaseRuntimeLayer = Layer.unwrap(Effect.tryPromise(async () => {
   const [
     BunHttpClient,
     BunServices,
@@ -54,61 +55,39 @@ const makeDefaultReleaseRuntimeLayer = async (): Promise<ReleaseRuntimeLayer> =>
       Layer.provideMerge(BunServices.layer)
     )
   )
+}))
+
+let currentLayer = defaultLayer
+let runtime = ManagedRuntime.make(defaultLayer)
+
+const swap = async (layer: ReleaseRuntimeLayer): Promise<void> => {
+  const previous = runtime
+  currentLayer = layer
+  runtime = ManagedRuntime.make(layer)
+  await previous.dispose()
 }
 
-let runtimeLayerFactory: ReleaseRuntimeLayerFactory = makeDefaultReleaseRuntimeLayer
-
-let runtimePromise:
-  | Promise<ManagedRuntime.ManagedRuntime<ReleaseRuntimeServices, unknown>>
-  | undefined
-
-const getReleaseRuntime = (): Promise<ManagedRuntime.ManagedRuntime<ReleaseRuntimeServices, unknown>> => {
-  runtimePromise ??= Promise.resolve(runtimeLayerFactory()).then(
-    (layer) => ManagedRuntime.make(layer),
-    (error) => {
-      runtimePromise = undefined
-      throw error
-    }
-  )
-  return runtimePromise
-}
-
-const runApiEffect = async <A, E>(
+const runApiEffect = <A, E>(
   phase: ReleaseApiPhase,
   effect: Effect.Effect<A, E, ReleaseRuntimeServices>
-): Promise<A> => {
-  try {
-    const runtime = await getReleaseRuntime()
-    return await runtime.runPromise(effect)
-  } catch (cause) {
+): Promise<A> =>
+  runtime.runPromise(effect).catch((cause) => {
     throw ReleaseApiError.fromCause(phase, cause)
-  }
-}
+  })
 
 export const disposeReleaseRuntime = async (): Promise<void> => {
-  const pending = runtimePromise
-  runtimePromise = undefined
-  if (pending === undefined) {
-    return
-  }
   try {
-    await (await pending).dispose()
+    await swap(currentLayer)
   } catch (cause) {
     throw ReleaseApiError.fromCause("dispose", cause)
   }
 }
 
-export const setReleaseRuntimeLayerFactoryForTesting = async (
-  factory: ReleaseRuntimeLayerFactory
-): Promise<void> => {
-  await disposeReleaseRuntime()
-  runtimeLayerFactory = factory
-}
+export const setReleaseRuntimeLayerFactoryForTesting = (layer: ReleaseRuntimeLayer): Promise<void> =>
+  swap(layer)
 
-export const resetReleaseRuntimeLayerFactoryForTesting = async (): Promise<void> => {
-  await disposeReleaseRuntime()
-  runtimeLayerFactory = makeDefaultReleaseRuntimeLayer
-}
+export const resetReleaseRuntimeLayerFactoryForTesting = (): Promise<void> =>
+  swap(defaultLayer)
 
 const verb = <A, B>(
   phase: Exclude<ReleaseApiPhase, "dispose">,

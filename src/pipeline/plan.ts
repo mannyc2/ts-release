@@ -1,3 +1,4 @@
+// Invariant: release-plan/v3 is the sole strict durable plan; transient accumulator state is never encoded here.
 import * as Schema from "effect/Schema"
 import { Artifact } from "./artifact.js"
 import { Operation } from "./operation.js"

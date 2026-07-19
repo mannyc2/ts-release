@@ -1,3 +1,4 @@
+// Invariant: release-evidence/v2 is the only durable evidence shape and secrets are redacted before persistence.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { readEnvironment } from "../host/platform.js"

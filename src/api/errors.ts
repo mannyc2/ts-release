@@ -1,3 +1,4 @@
+// Invariant: foreign failures are normalized once at the public boundary without discarding their original cause.
 import { formatTaggedReason } from "../internal/error-message.js"
 
 export type ReleaseApiPhase = "plan" | "build" | "release" | "verify" | "dispose"

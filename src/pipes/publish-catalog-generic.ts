@@ -1,3 +1,4 @@
+// Invariant: generic catalog publication derives its git operations solely from the resolved catalog policy.
 import * as Effect from "effect/Effect"
 import { PlanError } from "../pipeline/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../pipeline/operation.js"

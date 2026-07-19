@@ -1,3 +1,4 @@
+// Invariant: Action inputs are Schema-decoded exactly once into the only options representation accepted by dispatch.
 import * as Schema from "effect/Schema"
 
 export const ActionCommand = Schema.Literals(["plan", "doctor", "build", "release", "verify"])

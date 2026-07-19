@@ -122,6 +122,34 @@ const baseEngineLayer = (
     TestGitHubApiLayer,
     UnsupportedArtifactStagerLayer
   )
+const githubCreateOperation = (
+  overrides: Partial<ConstructorParameters<typeof GitHubReleaseCreateAction>[0]> = {}
+) => Operation.make({
+  id: "github:github-release-create",
+  pipeId: "publish:github",
+  phase: "publish",
+  risk: "externally-visible",
+  description: "Create GitHub release.",
+  action: GitHubReleaseCreateAction.make({
+    repository: "owner/repo",
+    tokenEnv: "TOKEN",
+    tag: "v0.1.0",
+    title: "release 0.1.0",
+    draft: false,
+    prerelease: false,
+    assets: [],
+    ...overrides
+  })
+})
+const githubLayer = (
+  httpLayer: ReturnType<typeof makeTestReleaseHttpLayer>,
+  commandOptions: Parameters<typeof makeWorkspaceTestCommandRunnerLayer>[0] = {}
+) => Layer.mergeAll(
+  makeWorkspaceTestCommandRunnerLayer(commandOptions),
+  httpLayer,
+  Layer.provide(GitHubApiLiveLayer, httpLayer),
+  UnsupportedArtifactStagerLayer
+)
 
 describe("evidence recorder", () => {
   layer(baseEngineLayer())((it) => {
@@ -179,29 +207,15 @@ describe("evidence recorder", () => {
   }
 
   {
-    const operation = Operation.make({
-      id: "github:github-release-create",
-      pipeId: "publish:github",
-      phase: "publish",
-      risk: "externally-visible",
-      description: "Create GitHub release.",
-      action: GitHubReleaseCreateAction.make({
-        repository: "owner/repo",
-        tokenEnv: "TOKEN",
-        tag: "v0.1.0",
-        title: "release 0.1.0",
-        notes: "ship it",
-        draft: true,
-        prerelease: false,
-        assets: [
-          GitHubReleaseAssetSpec.make({
-            artifactId: "package",
-            path: "dist/package.tgz",
-            name: "package.tgz",
-            contentType: "application/octet-stream"
-          })
-        ]
-      })
+    const operation = githubCreateOperation({
+      notes: "ship it",
+      draft: true,
+      assets: [GitHubReleaseAssetSpec.make({
+        artifactId: "package",
+        path: "dist/package.tgz",
+        name: "package.tgz",
+        contentType: "application/octet-stream"
+      })]
     })
     const createUrl = "https://api.github.com/repos/owner/repo/releases"
     const uploadUrl = "https://uploads.github.com/repos/owner/repo/releases/123/assets?name=package.tgz"
@@ -234,15 +248,10 @@ describe("evidence recorder", () => {
       ])
     })
 
-    layer(Layer.mergeAll(
-      makeWorkspaceTestCommandRunnerLayer({
+    layer(githubLayer(httpLayer, {
         files: new Map([["dist/package.tgz", "package bytes"]]),
         env: new Map([["TOKEN", "super_secret"]])
-      }),
-      httpLayer,
-      Layer.provide(GitHubApiLiveLayer, httpLayer),
-      UnsupportedArtifactStagerLayer
-    ))((it) => {
+      }))((it) => {
       it.effect("records successful GitHub API create evidence without request bodies", () =>
         Effect.gen(function*() {
           const evidence = yield* runOperation(
@@ -274,22 +283,7 @@ describe("evidence recorder", () => {
   }
 
   {
-    const operation = Operation.make({
-      id: "github:github-release-create",
-      pipeId: "publish:github",
-      phase: "publish",
-      risk: "externally-visible",
-      description: "Create GitHub release.",
-      action: GitHubReleaseCreateAction.make({
-        repository: "owner/repo",
-        tokenEnv: "TOKEN",
-        tag: "v0.1.0",
-        title: "release 0.1.0",
-        draft: false,
-        prerelease: false,
-        assets: []
-      })
-    })
+    const operation = githubCreateOperation()
     const createUrl = "https://api.github.com/repos/owner/repo/releases"
     const httpLayer = makeTestReleaseHttpLayer({
       responses: new Map([
@@ -302,12 +296,7 @@ describe("evidence recorder", () => {
       ])
     })
 
-    layer(Layer.mergeAll(
-      makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
-      httpLayer,
-      Layer.provide(GitHubApiLiveLayer, httpLayer),
-      UnsupportedArtifactStagerLayer
-    ))((it) => {
+    layer(githubLayer(httpLayer, { env: new Map([["TOKEN", "super_secret"]]) }))((it) => {
       it.effect("records failed GitHub API create evidence with status only", () =>
         Effect.gen(function*() {
           const evidence = yield* runOperationEvidence(
@@ -363,12 +352,7 @@ describe("evidence recorder", () => {
       ])
     })
 
-    layer(Layer.mergeAll(
-      makeWorkspaceTestCommandRunnerLayer({ env: new Map([["TOKEN", "super_secret"]]) }),
-      httpLayer,
-      Layer.provide(GitHubApiLiveLayer, httpLayer),
-      UnsupportedArtifactStagerLayer
-    ))((it) => {
+    layer(githubLayer(httpLayer, { env: new Map([["TOKEN", "super_secret"]]) }))((it) => {
       it.effect("records GitHub API verification mismatches", () =>
         Effect.gen(function*() {
           const evidence = yield* runOperationEvidence(operation, ExecutionApproval.none, context())

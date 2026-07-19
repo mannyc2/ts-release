@@ -1,3 +1,4 @@
+// Invariant: one parser owns release-version validity, normalization, and prerelease detection.
 import * as Schema from "effect/Schema"
 
 const numericIdentifier = "(?:0|[1-9]\\d*)"

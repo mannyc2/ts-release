@@ -1,15 +1,13 @@
 import { expect } from "@effect/bun-test"
 import { mkdtempSync, rmSync } from "node:fs"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
-import * as ConfigProvider from "effect/ConfigProvider"
 import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
-import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
 import { runOperations, type OperationRunContext } from "../src/engine/executor.js"
 import type { CommandSpec, ExecutionApproval, Operation } from "../src/pipeline/operation.js"
 import { GitHubApi } from "../src/engine/github.js"
@@ -20,7 +18,12 @@ import {
   type StageOperation
 } from "../src/engine/stager.js"
 import { ReleaseIdentity } from "../src/pipeline/state.js"
-import { commandKey, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
+import {
+  commandKey,
+  makeCommandRunnerLayer,
+  ReleaseCommandRunnerTestLayer,
+  type TestCommandResponse
+} from "./host-fakes.js"
 
 export {
   commandKey,
@@ -65,6 +68,31 @@ export const makePipelineIdentity = (
 export const makeTempDirectory = (prefix: string): Promise<string> => mkdtemp(join(tmpdir(), prefix))
 
 export const makeTempDirectorySync = (prefix: string): string => mkdtempSync(join(tmpdir(), prefix))
+
+export const writeJsonFile = (path: string, value: unknown): Promise<void> =>
+  writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
+
+export const runBunProcess = async (
+  args: ReadonlyArray<string>,
+  options: {
+    readonly cwd: string
+    readonly env?: Readonly<Record<string, string | undefined>>
+  }
+) => {
+  const subprocess = Bun.spawn([...args], {
+    cwd: options.cwd,
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    ...(options.env === undefined ? {} : { env: options.env })
+  })
+  const read = (stream: ReadableStream<Uint8Array> | null) =>
+    stream === null ? Promise.resolve("") : new Response(stream).text()
+  const [stdout, stderr, exitCode] = await Promise.all([
+    read(subprocess.stdout), read(subprocess.stderr), subprocess.exited
+  ])
+  return { exitCode, stdout, stderr }
+}
 
 export const withTempDirectory = <A, E, R>(
   prefix: string,
@@ -207,72 +235,18 @@ export const partialWorkflowConfig = JSON.stringify({
   evidence: ".release/evidence"
 })
 
-export interface CliCommandResponse {
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
-}
+type CliCommandResponse = TestCommandResponse
 
 export const makeObservableCommandRunnerLayer = (options: {
   readonly env: ReadonlyMap<string, string>
   readonly commands: ReadonlyMap<string, CliCommandResponse>
   readonly timestamps?: ReadonlyArray<string> | undefined
-}) => {
-  const timestamps = [...(options.timestamps ?? [
-    "2026-06-17T00:00:00.000Z",
-    "2026-06-17T00:00:00.001Z"
-  ])]
-  let timestampIndex = 0
-  const nextTimestamp = (): string => {
-    const value = timestamps[timestampIndex] ?? timestamps[timestamps.length - 1] ?? "2026-06-17T00:00:00.000Z"
-    timestampIndex += 1
-    return value
-  }
-
-  const envRecord: Record<string, string> = {}
-  for (const [name, value] of options.env) {
-    envRecord[name] = value
-  }
-
-  return Layer.mergeAll(
-    ReleaseCommandRunnerTestLayer({
-      runCommand: (command: CommandSpec) =>
-        Effect.gen(function*() {
-          const missing: Array<string> = []
-          for (const name of command.requiredEnv) {
-            if (!options.env.has(name)) {
-              missing.push(name)
-            }
-          }
-          if (missing.length > 0) {
-            return yield* Effect.fail(
-              CommandRunnerError.make({
-                operation: "runCommand",
-                reason: `Missing required environment variables: ${missing.join(", ")}`
-              })
-            )
-          }
-          const startedAt = nextTimestamp()
-          const endedAt = nextTimestamp()
-          const response = options.commands.get(commandKey(command)) ?? {
-            exitCode: 0,
-            stdout: "",
-            stderr: ""
-          }
-          return {
-            command,
-            exitCode: response.exitCode,
-            stdout: response.stdout,
-            stderr: response.stderr,
-            startedAt,
-            endedAt,
-            durationMillis: 1
-          } satisfies CommandResult
-        })
-    }),
-    ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
-  )
-}
+}) => makeCommandRunnerLayer({
+  env: options.env,
+  commands: options.commands,
+  timestamps: options.timestamps ?? ["2026-06-17T00:00:00.000Z", "2026-06-17T00:00:00.001Z"],
+  durationMillis: 1
+})
 
 export const releaseIdentity = (overrides: Record<string, unknown> = {}) => ({
   name: "release",

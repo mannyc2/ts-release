@@ -1,3 +1,4 @@
+// Invariant: ReleaseHttp carries ephemeral request/response facts only; durable evidence remains engine-owned.
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"

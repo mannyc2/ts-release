@@ -1,3 +1,4 @@
+// Invariant: archive entries are normalized once and encoded into deterministic ZIP or tar.gz bytes.
 export interface ArchiveByteEntry {
   readonly path: string
   readonly data: Uint8Array

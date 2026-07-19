@@ -1,3 +1,4 @@
+// Invariant: one live adapter resolves request headers and maps each ReleaseHttp request to one platform HTTP exchange.
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"

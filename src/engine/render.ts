@@ -1,3 +1,4 @@
+// Invariant: every text, Markdown, summary, and JSON projection reads the same immutable canonical plan.
 import {
   CommandSpec,
   Operation,

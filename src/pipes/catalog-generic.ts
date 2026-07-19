@@ -1,3 +1,4 @@
+// Invariant: each generic catalog entry produces one deterministic file and its declared validation/publish operations.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, CatalogFileExtra, SafeRelativePath } from "../pipeline/artifact.js"

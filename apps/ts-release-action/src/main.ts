@@ -1,3 +1,4 @@
+// Invariant: SDK inputs are read once, decoded once, and passed unchanged to the Action dispatcher.
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"
 import {
@@ -8,7 +9,6 @@ import {
   type ActionRuntimeServices
 } from "./action.js"
 import { readActionOptions, type ActionInputReader } from "./input.js"
-
 export const runActionFromInputs = async (
   reader: ActionInputReader,
   io: ActionIo,

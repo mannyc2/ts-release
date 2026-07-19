@@ -1,3 +1,4 @@
+// Invariant: concrete Node services are assembled only at the bundled Action runtime boundary.
 import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Layer from "effect/Layer"

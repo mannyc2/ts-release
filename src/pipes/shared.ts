@@ -1,3 +1,4 @@
+// Invariant: feature-level defaults and operation constructors have one owner below the planner boundary.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import type { Artifact } from "../pipeline/artifact.js"
@@ -5,8 +6,6 @@ import { artifactPathBaseName, WorkflowFileName } from "../pipeline/artifact.js"
 import { PlanError } from "../pipeline/errors.js"
 import { CommandAction, CommandSpec, NoteAction, Operation } from "../pipeline/operation.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
-
-// Invariant: feature-level defaults and operation constructors have one owner below the planner boundary.
 
 export const noAuthCommand = (executable: string, args: ReadonlyArray<string>): CommandSpec =>
   CommandSpec.make({ executable, args: [...args], requiredEnv: [], redactedEnv: [] })

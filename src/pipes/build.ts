@@ -1,3 +1,4 @@
+// Invariant: each resolved build target is delegated to exactly one builder adapter in declared order.
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import type { BuilderPlan } from "../builders/builder.js"

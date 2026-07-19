@@ -1,192 +1,141 @@
 # Architecture
 
-`@mannyc1/ts-release` is artifact-first and TypeScript-native, with one public
-root TypeScript API and one official `ts-release` executable.
+`@mannyc1/ts-release` is a deterministic release planner and an explicitly
+approved operation runner. Release intent becomes one canonical plan; the plan
+can be reviewed, rendered, staged, verified, or executed. The library, CLI, and
+GitHub Action all use the same engine.
 
-The package turns release intent into staged canonical artifacts, installable
-platform metadata, a complete canonical plan, evidence, and approved operations.
-The CLI and GitHub Action are adapters over the same private release engine.
+## The 14 concepts
 
-## Target Boundary
+| # | Concept | Representation and owner |
+|---:|---|---|
+| 1 | Release intent | Strict wire Schema in `src/config/`; it also derives the JSON Schema. |
+| 2 | Release identity | One `ReleaseIdentity`, resolved from manifest or git tag in `engine/resolved-release.ts`. |
+| 3 | Resolved release | Totalized feature sections in `ResolvedRelease`; planners do not re-resolve config. |
+| 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/pipes/`. |
+| 5 | Artifact | One Schema class in `pipeline/artifact.ts`, including platform and typed extra data. |
+| 6 | Operation / Action | One operation class and seven live action tags in `pipeline/operation.ts`. |
+| 7 | Release plan | The sole durable `release-plan/v3` Schema in `pipeline/plan.ts`. |
+| 8 | Accumulator | One private transient fold in `pipeline/runner.ts`; never encoded or exported. |
+| 9 | Approval | One risk derivation plus whole-pass preflight in operation/executor code. |
+| 10 | Evidence | Records and the sole durable `release-evidence/v2` bundle in `engine/evidence.ts`. |
+| 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `engine/content.ts`. |
+| 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/builders/`. |
+| 13 | Services | Command, HTTP, staging, and GitHub capabilities injected at runtime boundaries. |
+| 14 | Errors | One tagged-error policy; distinct tags remain where retry and exact failure contracts differ. |
 
-The intended repository shape separates reusable library code from the
-first-party release application:
+Every product TypeScript module opens with the invariant it owns. A module may
+split implementation detail, but it must not introduce a second representation
+of one of these concepts.
 
-```text
-src/                 reusable TypeScript release library
-apps/release-ts/     official CLI app, Bun runtime shell, and self-release dogfood
-apps/ts-release-action/
-                     official JavaScript action app and Node runtime shell
-scripts/             repo-wide maintenance gates only
-examples/            reusable release config examples
-templates/           shipped starter configs and CI workflow text
-```
-
-`src/` contains generic library code only. It may require platform services
-such as `FileSystem`, `Path`, `ReleaseCommandRunner`, `ReleaseHttp`, or
-`HttpClient`, but it must not provide the concrete Bun runtime for the official
-CLI.
-
-`apps/release-ts/` owns argv parsing, terminal output, Bun runtime assembly,
-standalone CLI compilation, and self-release policy/config. A module consumed
-only by the official CLI or self-release dogfood belongs in `apps/release-ts/`
-unless it is made generic and documented as public library API.
-
-`apps/ts-release-action/` owns GitHub Action input parsing, GitHub step-summary
-and output adapters, evidence artifact upload, and the Node runtime assembly
-used by the bundled action. Action code may import private root source modules,
-but it must not reach into CLI modules.
-
-## Current Module Taxonomy
-
-- `pipeline/` contains planner contracts, the private transient accumulator,
-  the canonical `release-plan/v3` Schema, canonical Artifact and Operation
-  grammars, template helpers, and identity helpers. It never imports config or
-  concrete features.
-- `pipes/` owns wire section Schemas, pure once-per-release resolvers, and typed planning for build, imported artifacts, catalog files, and publish surfaces. Feature modules emit grammar operations and artifacts, but never execute them.
-- `builders/` contains language/toolchain build adapters. The current adapters are Bun, command, and prebuilt; they consume pipeline types and produce build-stage operations.
-- `config/` parses JSON release config, composes pipe-owned section schemas, and reports named removed-field migration errors.
-- `engine/` decodes config once, resolves identity and feature sections, binds the static planner schedule, renders plans, resolves deferred file content, executes approved operations through injected services, and records evidence.
-- `host/` defines injectable command and HTTP services plus live implementations. Test fakes live under `test/`.
-- `workflows/` contains internal reusable workflows that remain outside the public package subpaths, currently doctor diagnostics.
-- `apps/release-ts/src/runtime/` contains the Bun runtime shell for the official CLI app.
-- `apps/release-ts/src/cli/` parses command-line flags, calls the engine/workflows, owns init scaffolding over shipped templates, prints terminal output, and writes user-requested CLI output files.
-- `apps/ts-release-action/src/runtime/` contains the Node runtime shell for the bundled GitHub Action.
-- `apps/ts-release-action/src/` adapts GitHub Action inputs, outputs, step summaries, and artifact uploads to engine calls.
-- `scripts/` contains repository maintenance checks. Scripts may use app runtime layers, but they are not package library code.
-
-## Dependency Direction
-
-Library modules must not import from `cli/`.
-
-The normal flow is:
+## Data flow
 
 ```text
-config -> builders/pipes/pipeline
-builders -> pipeline
-pipes -> pipeline
-pipeline -> pipeline-local modules
-engine composition -> config/pipes/pipeline/host/internal
-workflows -> config/engine/host
-apps/release-ts runtime -> host/platform layers
-apps/release-ts cli -> engine/workflows/templates/runtime boundary
-apps/ts-release-action runtime -> host/platform layers
-apps/ts-release-action action -> engine/workflows/runtime boundary
+JSON/object config
+  -> strict ReleaseIntent decode
+  -> ReleaseIdentity + ResolvedRelease
+  -> fixed ordered feature schedule
+  -> private accumulator
+  -> canonical ReleasePlan v3
+  -> render / build / verify / approved release
+  -> EvidenceBundle v2
 ```
 
-`src/index.ts` is the only public TypeScript API entrypoint. `package.json`
-also exposes the `ts-release` executable. Public API policy is checked by
-`scripts/check-package-exports.ts` and `scripts/check-tree-shaking.ts`.
+Config is decoded once. Identity and defaults are resolved once. Feature
+planners are pure with respect to release state: they contribute artifacts,
+operations, and notices but execute nothing. The accumulator is the uniqueness
+boundary for artifact ids, operation ids, paths, and names. Finalization creates
+the durable plan without an intermediate document DTO.
 
-## Public Package Surface
+The planner schedule is explicit in `engine/engine.ts`. Its order is contract:
+builds and imports, processing and catalogs, then publication surfaces. Adding a
+surface requires a Schema composition entry, one feature module, and one
+schedule entry. It does not require dynamic registration or a new kernel.
 
-There is no public `./api` facade and no public internal taxonomy. The package
-does not export `pipeline/`, `pipes/`, `builders/`, `config/`, `engine/`, `host/`,
-`artifacts/`, or `workflows/` subpaths.
+## Module ownership
 
-The root export is for config authoring plus the Promise/plain-data API:
-`plan`, `build`, `release`, and `verify`. Bare `release()` is plan-only; callers
-must pass execution approvals before operations run. The `ts-release`
-executable remains the public command surface for terminal workflows.
+- `src/config/` owns location, JSON parsing, migration hints, strict decode, and
+  JSON-Schema derivation.
+- `src/pipeline/` owns durable grammar, pure platform/template/semver helpers,
+  approval derivation, and the private planning fold.
+- `src/builders/` maps resolved build targets to artifacts and planned actions.
+- `src/pipes/` owns one resolver/planner per build, artifact transformation,
+  catalog, or publication feature. Selection and rendered product content stay
+  with the feature that specifies them.
+- `engine/resolved-release.ts` owns identity plus feature totalization.
+- `engine/stager.ts` and `archive-bytes.ts` turn stage intents into deterministic
+  bytes inside the workspace boundary.
+- `engine/github.ts` is the Schema-decoded GitHub Releases API client. Its
+  `Effect.whileLoop` pagination is deliberate.
+- `engine/executor.ts` owns pass selection, approval preflight, action
+  interpretation, retry, and sequential evidence recording.
+- `engine/evidence.ts` owns durable evidence and redaction; `engine/content.ts`
+  resolves deferred content from artifacts.
+- `engine/engine.ts` composes planning and the evidence-finalized workflows.
+- `engine/render.ts` and `engine/summary.ts` project the same canonical plan;
+  they do not reconstruct plan facts.
+- `src/host/` defines command and HTTP services plus live adapters. Concrete
+  filesystem/path/HTTP/process layers are not provided inside library workflows.
+- `src/workflows/doctor.ts` derives diagnostics from decoded config and the plan
+  without executing publish operations.
+- `src/api/` is the Promise/plain-data boundary backed by one lazily shared
+  managed runtime. `src/index.ts` is the only public TypeScript entrypoint.
+- `src/internal/`, `src/assets/`, and `src/types/` contain single-owner boundary
+  helpers, reviewed static facts/templates, and declaration-only compatibility.
+- `apps/release-ts/src/` owns Effect CLI parsing, terminal and `--out` behavior,
+  template-based init, and the Bun runtime layer.
+- `apps/ts-release-action/src/` owns Action input decode, outputs, summaries,
+  evidence upload, and the Node runtime layer.
 
-## Direction: 0.1
+`scripts/` contains repository gates, not product behavior. `templates/` holds
+the shipped init bases. `.repos/` and `vendor/` are outside the product tree.
 
-The 0.1 tree is role-based: `pipeline/` for typed planner contracts,
-deterministic transient folding, the canonical durable plan, and pure helpers; `pipes/` for one
-feature resolver/planner per config section or surface; `builders/` for
-build tool adapters, and `engine/` for planning, rendering, evidence, and the
-only operation executor.
+## Durable and public boundaries
 
-Import direction is structural: pipes and builders may import pipeline types
-only, never engine or host; only the named engine resolution/schedule
-composition modules import concrete features; apps assemble
-runtime layers and run engine entry points. The stable public Promise API is a
-thin root wrapper around engine summaries with a lazily shared runtime.
+`ReleasePlan` v3 contains identity, artifacts, operations, notices, source, and
+evidence directory. Every planned operation remains visible. There is no older
+plan reader, hidden-stage projection, artifact inventory DTO, or output alias.
+Evidence v2 is independent and contains each operation's final status/outcome.
 
-A Winget-style surface therefore adds one feature module, one config Schema
-composition entry, and one ordered scheduling entry. It does not change the
-pipeline runner, canonical plan model, or executor; this is a small explicit
-central schedule touch, not dynamic registration.
+The package root exposes config authoring plus `plan`, `build`, `verify`, and
+`release`. It does not export internal directory subpaths. Bare `release()` is
+plan-only. The `ts-release` executable and bundled Action are public adapters,
+not alternate engines.
 
-The build phase uses canonical `<os>-<arch>[-musl]` targets and pure builder
-adapters. The 0.1 builder set is Bun, command, and prebuilt; Bun stages
-artifacts in-process through structured `StageArtifactOperation` data, while
-command and prebuilt make the build axis language-agnostic without changing
-the kernel.
+## Execution boundary
 
-## Canonical Plan Boundary
+Operations remain Schema data until the selected workflow preflights all
+required approvals. `writes-local` and externally visible operations require
+execute approval; irreversible operations additionally require publish
+approval. Snapshot policy refuses publish-class mutations but still records
+their normal refused evidence.
 
-Planning folds contributions through one private, non-Schema accumulator. It
-contains identity, canonical artifacts, operations, and notices only while the
-workflow is running. The accumulator is never encoded, exported, or used as a
-split/merge checkpoint.
+Execution is sequential in four safety passes: render, validation, publish,
+verify. `RetryPolicy` is visible operation data interpreted with an Effect
+`Schedule`. Only `ActionAttemptFailed` is retryable; service failures, typed
+terminal errors, defects, interruption, and `ActionAttemptFailed`'s final
+mapping remain distinct.
 
-The completed durable value is the flat Schema-backed `ReleasePlan` with
-`schemaVersion: "release-plan/v3"`, `identity`, `artifacts`, `operations`,
-`notices`, `source`, and `evidenceDirectory`. Artifact is single-homed: no
-inventory projection invents formats, consumers, downloads, variants, or byte
-sizes. Every planned operation remains visible; build/release selectors choose
-execution work without rewriting the plan.
+One workflow-local `Ref` accumulates final evidence records. Approval preflight
+happens before the Ref and before side effects. Once execution begins, one
+on-exit finalizer writes evidence exactly once on success, typed failure,
+defect, or interruption. If workflow and evidence writes both fail, the write
+failure remains primary and the workflow cause remains attached.
 
-Synchronous repository scripts and Effect workflows decode through the same
-strict v3 Schema. There is no older-plan reader, document DTO, output alias, or
-hidden-stage projection. Evidence remains the independent sole
-`release-evidence/v2` contract.
+## Dependency and safety rules
 
-## Execution and Runtime Boundary
-
-Planning, pass selection, artifact selection, approval analysis, and content
-rendering remain deterministic plain functions. Effect begins at reusable
-effectful workflows and owns typed failures, interruption, retry, finalization,
-service acquisition, and runtime composition. Planned publish operations remain
-Schema data until the execution boundary has accepted the required approvals.
-
-`RetryPolicy` stays visible in operation data and is interpreted as an Effect
-`Schedule`. Only the typed failed-attempt channel is retryable; native service
-failures, defects, and interruption retain their own channels. Execution keeps
-one workflow-local `Ref` of evidence and appends only each operation's final
-outcome while preserving the sequential four-pass safety order.
-
-Approval is preflighted before the evidence `Ref` or finalizer is created and
-before any render, validation, command, HTTP, staging, or mutation side effect.
-Publish-class operations refused by snapshot policy are excluded from that
-preflight and later produce their normal refused records; snapshot-local writes
-still require execute approval.
-
-Once a workflow starts, one on-exit finalizer reads its local state and invokes
-the evidence writer exactly once on success, typed failure, defect, or
-interruption. If workflow and evidence writes both fail, their causes are kept
-in explicit write-first order with
-`Cause.combine(writeCause, workflowCause)`: the write failure remains primary
-while the workflow failure remains available for diagnostics. The durable wire
-format is still the sole, unchanged `release-evidence/v2` contract.
-
-Live capability layers acquire native filesystem, path, HTTP, and process
-services once, then expose methods with closed environments. Product workflow
-layers are composed at the Bun CLI runtime, the Node Action runtime, and the
-lazily shared `ManagedRuntime` Promise API boundary; tests replace those layers
-at their own boundary. Engine workflows neither assemble a catch-all host bag
-nor provide concrete layers internally.
-
-## Boundary Rules
-
-- Publish operations are data until execution is explicitly approved.
-- `Effect.run*` belongs at true runtime boundaries.
-- Reusable effectful operations use `Effect.fn`; inline orchestration bodies use `Effect.gen`.
-- Pure planning, selection, approval analysis, and rendering helpers remain
-  deterministic plain code.
-- Durable models, options, target variants, and typed errors use `Schema.Class`, `Schema.TaggedClass`, and `Schema.TaggedErrorClass`.
-- The durable plan is `release-plan/v3`; planning state is private and transient.
-- Action plan outputs are `operation_count`, `irreversible_operation_count`,
-  and `surface_count`, all derived from the complete plan.
-- Product workflow layers are provided only at the Bun CLI, Node Action, lazy
-  Promise API runtime, and test boundaries. Repository maintenance scripts
-  provide only their narrow script-local platform layers at their entrypoints.
-- Config parsing, artifact staging, distribution planning, evidence persistence, API-backed publishing, and approved execution are library workflows, not CLI behavior.
-- Terminal formatting, argv parsing, and `--out` file writing belong in
-  `apps/release-ts/src/cli/`.
-- Init/scaffolding belongs in `apps/release-ts/src/cli/` and reads package
-  templates from `templates/`; the template files are the gallery and the source
-  of truth.
-- GitHub Action input parsing, output names, step summaries, and evidence artifact
-  uploads belong in `apps/ts-release-action/src/`.
+- Publish actions are data until execution is explicitly approved.
+- `Effect.run*` appears only at CLI, Action, Promise API, script, or test runtime
+  boundaries; reusable workflows use typed Effect environments.
+- `src/` never imports application code. Pipes/builders depend on pipeline
+  grammar, while engine composition may depend on config, features, and hosts.
+- Concrete layers are provided by the Bun CLI runtime, Node Action runtime,
+  lazy Promise runtime, maintenance scripts, or tests.
+- Paths are non-empty safe relative paths and are rechecked at the workspace
+  I/O boundary; no planned read or write may escape its root.
+- Operation ids, order, risks, messages, rendered catalogs, plan/evidence bytes,
+  and public error text are compatibility contracts.
+- Config fields are product surface. Removing one requires a separately
+  announced schema change and migration hint.
+- The npm existence retry and GitHub `Effect.whileLoop` pagination are retained
+  features, not fallback debt.

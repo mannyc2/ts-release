@@ -7,8 +7,7 @@ import { makeTestCommandRunnerLayer, makeTestReleaseHttpLayer } from "./host-fak
 import { minimalConfig, releaseConfig, releaseIdentity, runEffect } from "./helpers.js"
 import { createTestPlan, renderTestPlanText, validateTestPlan } from "./plan-helpers.js"
 
-const TestLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
+const TestLayer = makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     files: new Map([
       ["artifacts/release-0.1.0.tgz", "fake archive"]
@@ -17,8 +16,7 @@ const TestLayer = Layer.mergeAll(
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]
     ])
-  }),
-)
+  })
 
 const createPlan = (config: string = minimalConfig) =>
   createTestPlan(config)
@@ -36,6 +34,48 @@ const releaseResponse = (input: {
   upload_url: `https://uploads.github.com/repos/owner/repo/releases/${input.id}/assets{?name,label}`,
   assets: []
 })
+const githubConfig = ({
+  identity,
+  format = "tarball",
+  draft = true,
+  prerelease = false
+}: {
+  readonly identity?: Record<string, unknown>
+  readonly format?: string
+  readonly draft?: boolean
+  readonly prerelease?: boolean | "auto"
+} = {}) => releaseConfig({
+  ...(identity === undefined ? {} : { identity }),
+  artifacts: [{
+    id: "github-asset",
+    path: format === "directory" ? "." : "artifacts/release-0.1.0.tgz",
+    format
+  }],
+  publish: {
+    github: { repository: "owner/repo", tokenEnv: "GH_TOKEN", draft, prerelease }
+  }
+})
+const fallbackFixture = (tag: string, requests: Array<HttpRequestSpec>) => {
+  const inspectUrl = `https://api.github.com/repos/owner/repo/releases/tags/${tag}`
+  const listUrl = "https://api.github.com/repos/owner/repo/releases?per_page=100"
+  const nextUrl = `${listUrl}&page=2`
+  const httpLayer = makeTestReleaseHttpLayer({
+    onRequest: (request) => { requests.push(request) },
+    responses: new Map([
+      [`GET\u0000${inspectUrl}`, { status: 404, json: { message: "Not Found" } }],
+      [`GET\u0000${listUrl}`, {
+        status: 200,
+        responseHeaders: [{ name: "Link", value: `<${nextUrl}>; rel="next"` }],
+        json: [releaseResponse({ id: 1, tag: "v1.0.0" })]
+      }],
+      [`GET\u0000${nextUrl}`, {
+        status: 200,
+        json: [releaseResponse({ id: 2, tag: "v2.0.0" })]
+      }]
+    ])
+  })
+  return { httpLayer, urls: [inspectUrl, listUrl, nextUrl] }
+}
 
 const expectValidationRecord = (
   records: ReadonlyArray<{ readonly operationId: string; readonly status: string }>,
@@ -64,26 +104,9 @@ describe("GitHub target", () => {
   })
 
   test("covers GitHub API release operation data for flags and assets", async () => {
-    const githubConfig = releaseConfig({
-      identity: releaseIdentity({ notes: "ship it" }),
-      artifacts: [
-        {
-          id: "github-asset",
-          path: "artifacts/release-0.1.0.tgz",
-          format: "tarball"
-        }
-      ],
-      publish: {
-        github: {
-          repository: "owner/repo",
-          tokenEnv: "GH_TOKEN",
-          draft: true,
-          prerelease: true
-        }
-      }
-    })
+    const config = githubConfig({ identity: releaseIdentity({ notes: "ship it" }), prerelease: true })
 
-    const plan = await runEffect(createPlan(githubConfig), TestLayer)
+    const plan = await runEffect(createPlan(config), TestLayer)
     const publish = plan.operations.find((operation) => operation.id === "github:github-release-create")
     const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-api")
     const text = renderTestPlanText(plan)
@@ -122,25 +145,7 @@ describe("GitHub target", () => {
   })
 
   test("uses API verification for non-draft GitHub releases", async () => {
-    const githubConfig = releaseConfig({
-      artifacts: [
-        {
-          id: "github-asset",
-          path: "artifacts/release-0.1.0.tgz",
-          format: "tarball"
-        }
-      ],
-      publish: {
-        github: {
-          repository: "owner/repo",
-          tokenEnv: "GH_TOKEN",
-          draft: false,
-          prerelease: true
-        }
-      }
-    })
-
-    const plan = await runEffect(createPlan(githubConfig), TestLayer)
+    const plan = await runEffect(createPlan(githubConfig({ draft: false, prerelease: true })), TestLayer)
     const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-api")
     const text = renderTestPlanText(plan)
 
@@ -158,37 +163,8 @@ describe("GitHub target", () => {
   })
 
   test("GitHub API fallback finds a release on the second list page", async () => {
-    const inspectUrl = "https://api.github.com/repos/owner/repo/releases/tags/v2.0.0"
-    const listUrl = "https://api.github.com/repos/owner/repo/releases?per_page=100"
-    const nextUrl = "https://api.github.com/repos/owner/repo/releases?per_page=100&page=2"
     const requests: Array<HttpRequestSpec> = []
-    const httpLayer = makeTestReleaseHttpLayer({
-      onRequest: (request) => {
-        requests.push(request)
-      },
-      responses: new Map([
-        [`GET\u0000${inspectUrl}`, {
-          status: 404,
-          json: {
-            message: "Not Found"
-          }
-        }],
-        [`GET\u0000${listUrl}`, {
-          status: 200,
-          responseHeaders: [
-            {
-              name: "Link",
-              value: `<${nextUrl}>; rel="next"`
-            }
-          ],
-          json: [releaseResponse({ id: 1, tag: "v1.0.0" })]
-        }],
-        [`GET\u0000${nextUrl}`, {
-          status: 200,
-          json: [releaseResponse({ id: 2, tag: "v2.0.0" })]
-        }]
-      ])
-    })
+    const { httpLayer, urls } = fallbackFixture("v2.0.0", requests)
 
     const release = await runEffect(
       Effect.gen(function*() {
@@ -203,41 +179,12 @@ describe("GitHub target", () => {
     )
 
     expect(release.id).toBe(2)
-    expect(requests.map((request) => request.url)).toEqual([inspectUrl, listUrl, nextUrl])
+    expect(requests.map((request) => request.url)).toEqual(urls)
   })
 
   test("GitHub API fallback walks list pages before reporting a missing release", async () => {
-    const inspectUrl = "https://api.github.com/repos/owner/repo/releases/tags/v3.0.0"
-    const listUrl = "https://api.github.com/repos/owner/repo/releases?per_page=100"
-    const nextUrl = "https://api.github.com/repos/owner/repo/releases?per_page=100&page=2"
     const requests: Array<HttpRequestSpec> = []
-    const httpLayer = makeTestReleaseHttpLayer({
-      onRequest: (request) => {
-        requests.push(request)
-      },
-      responses: new Map([
-        [`GET\u0000${inspectUrl}`, {
-          status: 404,
-          json: {
-            message: "Not Found"
-          }
-        }],
-        [`GET\u0000${listUrl}`, {
-          status: 200,
-          responseHeaders: [
-            {
-              name: "Link",
-              value: `<${nextUrl}>; rel="next"`
-            }
-          ],
-          json: [releaseResponse({ id: 1, tag: "v1.0.0" })]
-        }],
-        [`GET\u0000${nextUrl}`, {
-          status: 200,
-          json: [releaseResponse({ id: 2, tag: "v2.0.0" })]
-        }]
-      ])
-    })
+    const { httpLayer, urls } = fallbackFixture("v3.0.0", requests)
 
     const error = await runEffect(
       Effect.gen(function*() {
@@ -256,99 +203,31 @@ describe("GitHub target", () => {
       expect(error.status).toBe(404)
       expect(error.reason).toBe("GitHub release v3.0.0 was not found.")
     }
-    expect(requests.map((request) => request.url)).toEqual([inspectUrl, listUrl, nextUrl])
+    expect(requests.map((request) => request.url)).toEqual(urls)
   })
 
-  test("resolves prerelease auto from semver prerelease versions", async () => {
-    const githubConfig = releaseConfig({
-      identity: releaseIdentity({
-        version: "0.2.0-beta.1",
-        tag: "v0.2.0-beta.1"
-      }),
-      artifacts: [
-        {
-          id: "github-asset",
-          path: "artifacts/release-0.1.0.tgz",
-          format: "tarball"
-        }
-      ],
-      publish: {
-        github: {
-          repository: "owner/repo",
-          tokenEnv: "GH_TOKEN",
-          draft: true,
-          prerelease: "auto"
+  for (const [label, identity, expected] of [
+    ["resolves prerelease auto from semver prerelease versions",
+      releaseIdentity({ version: "0.2.0-beta.1", tag: "v0.2.0-beta.1" }), true],
+    ["resolves prerelease auto to false for stable semver versions", undefined, false]
+  ] as const) {
+    test(label, async () => {
+      const plan = await runEffect(createPlan(githubConfig({
+        ...(identity === undefined ? {} : { identity }),
+        prerelease: "auto"
+      })), TestLayer)
+      for (const operationId of ["github:github-release-create", "github:github-release-verify-api"]) {
+        const action = plan.operations.find(({ id }) => id === operationId)?.action
+        expect(action?._tag).toBe(operationId.endsWith("create") ? "github-release-create" : "github-release-verify")
+        if (action?._tag === "github-release-create" || action?._tag === "github-release-verify") {
+          expect(action.prerelease).toBe(expected)
         }
       }
     })
-
-    const plan = await runEffect(createPlan(githubConfig), TestLayer)
-    const publish = plan.operations.find((operation) => operation.id === "github:github-release-create")
-    const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-api")
-
-    expect(publish?.action._tag).toBe("github-release-create")
-    if (publish?.action._tag === "github-release-create") {
-      expect(publish.action.prerelease).toBe(true)
-    }
-    expect(verify?.action._tag).toBe("github-release-verify")
-    if (verify?.action._tag === "github-release-verify") {
-      expect(verify.action.prerelease).toBe(true)
-    }
-  })
-
-  test("resolves prerelease auto to false for stable semver versions", async () => {
-    const githubConfig = releaseConfig({
-      artifacts: [
-        {
-          id: "github-asset",
-          path: "artifacts/release-0.1.0.tgz",
-          format: "tarball"
-        }
-      ],
-      publish: {
-        github: {
-          repository: "owner/repo",
-          tokenEnv: "GH_TOKEN",
-          draft: true,
-          prerelease: "auto"
-        }
-      }
-    })
-
-    const plan = await runEffect(createPlan(githubConfig), TestLayer)
-    const publish = plan.operations.find((operation) => operation.id === "github:github-release-create")
-    const verify = plan.operations.find((operation) => operation.id === "github:github-release-verify-api")
-
-    expect(publish?.action._tag).toBe("github-release-create")
-    if (publish?.action._tag === "github-release-create") {
-      expect(publish.action.prerelease).toBe(false)
-    }
-    expect(verify?.action._tag).toBe("github-release-verify")
-    if (verify?.action._tag === "github-release-verify") {
-      expect(verify.action.prerelease).toBe(false)
-    }
-  })
+  }
 
   test("rejects directory artifacts consumed by GitHub releases", async () => {
-    const githubConfig = releaseConfig({
-      artifacts: [
-        {
-          id: "github-asset",
-          path: ".",
-          format: "directory"
-        }
-      ],
-      publish: {
-        github: {
-          repository: "owner/repo",
-          tokenEnv: "GH_TOKEN",
-          draft: true,
-          prerelease: false
-        }
-      }
-    })
-
-    const error = await runEffect(createPlan(githubConfig).pipe(Effect.flip), TestLayer)
+    const error = await runEffect(createPlan(githubConfig({ format: "directory" })).pipe(Effect.flip), TestLayer)
 
     expect(error._tag).toBe("PlanError")
     if (error._tag === "PlanError") {

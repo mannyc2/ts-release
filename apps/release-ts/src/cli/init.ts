@@ -1,3 +1,4 @@
+// Invariant: shipped templates are the sole scaffolding base, and filesystem writes require explicit approval.
 import { fileURLToPath } from "node:url"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"

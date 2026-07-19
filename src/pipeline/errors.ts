@@ -1,3 +1,4 @@
+// Invariant: planning and identity failures keep distinct tags and their exact contract messages.
 import * as Schema from "effect/Schema"
 
 

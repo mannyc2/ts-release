@@ -1,3 +1,4 @@
+// Invariant: the bundled entrypoint invokes the Action once and reports every uncaught failure through the Action failure sink.
 import { DefaultArtifactClient } from "@actions/artifact"
 import * as core from "@actions/core"
 import * as Effect from "effect/Effect"
@@ -6,7 +7,6 @@ import * as Path from "node:path"
 import { ActionArtifactUploadError, type ActionArtifactClient, type ActionIo } from "./action.js"
 import { runActionFromInputs } from "./main.js"
 import { makeNodeReleaseWorkflowRuntimeLayer } from "./runtime/node.js"
-
 const root = process.env.GITHUB_WORKSPACE ?? process.cwd()
 
 const CoreInputReader = {

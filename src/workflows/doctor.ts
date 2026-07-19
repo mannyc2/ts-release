@@ -1,3 +1,4 @@
+// Invariant: diagnostics derive from the same decoded plan and declared capabilities without executing publish operations.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { configPath } from "../config/load.js"

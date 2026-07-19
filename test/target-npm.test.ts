@@ -1,19 +1,16 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { minimalConfig, runEffect } from "./helpers.js"
 import { createTestPlan, renderTestPlanText } from "./plan-helpers.js"
 
-const TestLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
+const TestLayer = makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]
     ])
-  }),
-)
+  })
 
 const createPlan = (config: string = minimalConfig) =>
   createTestPlan(config)
@@ -149,29 +146,18 @@ describe("npm target", () => {
     }
   })
 
-  test("rejects trusted publishing workflow paths", async () => {
-    const error = await runEffect(
-      createPlan(trustedPublishingConfig({ workflow: ".github/workflows/release.yml" })).pipe(Effect.flip),
-      TestLayer
-    )
-
-    expect(error._tag).toBe("ConfigError")
-    if (error._tag === "ConfigError") {
-      expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
-    }
-  })
-
-  test("rejects trusted publishing workflow without yaml extension", async () => {
-    const error = await runEffect(
-      createPlan(trustedPublishingConfig({ workflow: "release.txt" })).pipe(Effect.flip),
-      TestLayer
-    )
-
-    expect(error._tag).toBe("ConfigError")
-    if (error._tag === "ConfigError") {
-      expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
-    }
-  })
+  for (const [label, workflow] of [
+    ["rejects trusted publishing workflow paths", ".github/workflows/release.yml"],
+    ["rejects trusted publishing workflow without yaml extension", "release.txt"]
+  ] as const) {
+    test(label, async () => {
+      const error = await runEffect(createPlan(trustedPublishingConfig({ workflow })).pipe(Effect.flip), TestLayer)
+      expect(error._tag).toBe("ConfigError")
+      if (error._tag === "ConfigError") {
+        expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
+      }
+    })
+  }
 
   test("rejects empty npm package name", async () => {
     const invalidConfig = minimalConfig.replace("\"packageName\":\"release\",\"packagePath\"", "\"packageName\":\"\",\"packagePath\"")
@@ -180,56 +166,26 @@ describe("npm target", () => {
     expect(error._tag).toBe("ConfigError")
   })
 
-  test("adds npm provenance only when target policy enables it", async () => {
-    const provenanceConfig = minimalConfig.replace(
-      "\"tokenEnv\":\"NPM_TOKEN\"",
-      "\"tokenEnv\":\"NPM_TOKEN\",\"provenance\":true"
-    )
-    const provenancePlan = await runEffect(createPlan(provenanceConfig), TestLayer)
-    const defaultPlan = await runEffect(createPlan(), TestLayer)
-
-    const provenancePublish = provenancePlan.operations.find((operation) => operation.id === "npm:npm-publish")
-    const defaultPublish = defaultPlan.operations.find((operation) => operation.id === "npm:npm-publish")
-
-    expect(provenancePublish?.action._tag).toBe("command")
-    expect(defaultPublish?.action._tag).toBe("command")
-    if (provenancePublish?.action._tag === "command") {
-      expect(provenancePublish.action.command.args).toContain("--provenance")
-    }
-    if (defaultPublish?.action._tag === "command") {
-      expect(defaultPublish.action.command.args).not.toContain("--provenance")
-    }
-    expect(renderTestPlanText(provenancePlan)).toContain("npm publish . --registry https://registry.npmjs.org --provenance")
-  })
-
-  test("adds npm access only when target policy enables it", async () => {
-    const publicAccessConfig = minimalConfig.replace(
-      "\"tokenEnv\":\"NPM_TOKEN\"",
-      "\"tokenEnv\":\"NPM_TOKEN\",\"access\":\"public\""
-    )
-    const publicAccessPlan = await runEffect(createPlan(publicAccessConfig), TestLayer)
-    const defaultPlan = await runEffect(createPlan(), TestLayer)
-
-    const publicAccessPublish = publicAccessPlan.operations.find((operation) => operation.id === "npm:npm-publish")
-    const defaultPublish = defaultPlan.operations.find((operation) => operation.id === "npm:npm-publish")
-
-    expect(publicAccessPublish?.action._tag).toBe("command")
-    expect(defaultPublish?.action._tag).toBe("command")
-    if (publicAccessPublish?.action._tag === "command") {
-      expect(publicAccessPublish.action.command.args).toEqual([
-        "publish",
-        ".",
-        "--registry",
-        "https://registry.npmjs.org",
-        "--access",
-        "public"
+  for (const [label, policy, argv, flag, rendered] of [
+    ["adds npm provenance only when target policy enables it", "\"provenance\":true",
+      ["publish", ".", "--registry", "https://registry.npmjs.org", "--provenance"], "--provenance",
+      "npm publish . --registry https://registry.npmjs.org --provenance"],
+    ["adds npm access only when target policy enables it", "\"access\":\"public\"",
+      ["publish", ".", "--registry", "https://registry.npmjs.org", "--access", "public"], "--access",
+      "npm publish . --registry https://registry.npmjs.org --access public"]
+  ] as const) {
+    test(label, async () => {
+      const configured = minimalConfig.replace("\"tokenEnv\":\"NPM_TOKEN\"", `"tokenEnv":"NPM_TOKEN",${policy}`)
+      const [configuredPlan, defaultPlan] = await Promise.all([
+        runEffect(createPlan(configured), TestLayer), runEffect(createPlan(), TestLayer)
       ])
-    }
-    if (defaultPublish?.action._tag === "command") {
-      expect(defaultPublish.action.command.args).not.toContain("--access")
-    }
-    expect(renderTestPlanText(publicAccessPlan)).toContain(
-      "npm publish . --registry https://registry.npmjs.org --access public"
-    )
-  })
+      const publish = configuredPlan.operations.find(({ id }) => id === "npm:npm-publish")
+      const defaultPublish = defaultPlan.operations.find(({ id }) => id === "npm:npm-publish")
+      expect(publish?.action._tag).toBe("command")
+      expect(defaultPublish?.action._tag).toBe("command")
+      if (publish?.action._tag === "command") expect(publish.action.command.args).toEqual(argv)
+      if (defaultPublish?.action._tag === "command") expect(defaultPublish.action.command.args).not.toContain(flag)
+      expect(renderTestPlanText(configuredPlan)).toContain(rendered)
+    })
+  }
 })

@@ -1,3 +1,4 @@
+// Invariant: one decoded Action request delegates once and derives every output, summary, and upload from that result.
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
@@ -20,7 +21,6 @@ import {
   validateWorkspaceWritePath
 } from "../../../src/internal/workspace-path.js"
 import { ActionOptions } from "./input.js"
-
 type ReleaseDiagnosticReport = Doctor.ReleaseDiagnosticReport
 
 export interface ActionIo {

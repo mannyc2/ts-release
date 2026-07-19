@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+// Invariant: this executable provides the Bun layer once and runs exactly one decoded CLI command.
 
 import * as BunRuntime from "@effect/platform-bun/BunRuntime"
 import * as Effect from "effect/Effect"

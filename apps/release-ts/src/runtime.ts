@@ -1,3 +1,4 @@
+// Invariant: concrete Bun services are assembled only at the CLI runtime boundary.
 import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Layer from "effect/Layer"

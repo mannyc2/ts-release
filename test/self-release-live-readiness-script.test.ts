@@ -1,8 +1,8 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { mkdir, rm, writeFile } from "node:fs/promises"
-import { makeTempDirectory } from "./helpers.js"
-import { tmpdir } from "node:os"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { makeTempDirectory, runBunProcess, writeJsonFile } from "./helpers.js"
 import { join, resolve } from "node:path"
+import selfReleaseConfig from "../apps/release-ts/release.config.json" with { type: "json" }
 
 const scriptPath = resolve(
   import.meta.dir,
@@ -13,22 +13,8 @@ const scriptPath = resolve(
   "check-self-release-live-readiness.ts"
 )
 
-const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
-  stream === null ? "" : await new Response(stream).text()
-
-const run = async (
-  cwd: string,
-  apiBase: string
-): Promise<{
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
-}> => {
-  const subprocess = Bun.spawn(["bun", scriptPath], {
+const run = (cwd: string, apiBase: string) => runBunProcess(["bun", scriptPath], {
     cwd,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
     env: {
       ...process.env,
       SELF_RELEASE_GITHUB_API_BASE: apiBase,
@@ -37,102 +23,22 @@ const run = async (
       SELF_RELEASE_SKIP_GITHUB_SECRET_CHECK: "1"
     }
   })
-  const stdout = streamText(subprocess.stdout)
-  const stderr = streamText(subprocess.stderr)
-  const exitCode = await subprocess.exited
-  return {
-    exitCode,
-    stdout: await stdout,
-    stderr: await stderr
-  }
-}
-
-const writeJson = (path: string, value: unknown): Promise<void> =>
-  writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 
 const releaseConfig = () => ({
   project: {},
-  pypiWheel: [
-    {
-      id: "pypi-wheel-linux-x64",
-      path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-      wheelTag: "py3-none-manylinux2014_x86_64",
-      packageName: "ts-release",
-      moduleName: "ts_release",
-      consoleScript: "ts-release",
-      summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      homepage: "https://github.com/mannyc2/ts-release",
-      license: "MIT",
-      requiresPython: ">=3.8",
-      binaries: []
-    }
-  ],
+  pypiWheel: [{ ...selfReleaseConfig.pypiWheel[0]!, binaries: [] }],
   publish: {
-    github: {
-      repository: "mannyc2/ts-release"
-    },
-    homebrew: {
-      repository: "mannyc2/homebrew-ts-release"
-    },
-    scoop: {
-      repository: "mannyc2/scoop-ts-release"
-    },
-    pypi: {
-      trustedPublishing: {
-        provider: "github-actions",
-        workflow: "release.yml",
-        publisherConfigured: true
-      }
-    }
+    github: { repository: selfReleaseConfig.publish.github.repository },
+    homebrew: { repository: selfReleaseConfig.publish.homebrew.repository },
+    scoop: { repository: selfReleaseConfig.publish.scoop.repository },
+    pypi: { trustedPublishing: selfReleaseConfig.publish.pypi.trustedPublishing }
   }
 })
 
-const workflow = `name: Release
-jobs:
-  execute:
-    environment: release
-    permissions:
-      id-token: write
-    env:
-      GH_TOKEN: \${{ github.token }}
-    steps:
-      - run: python3 -m pip install --upgrade "twine>=6.2.0"
-      - run: bun run release:catalogs
-      - run: bun run check:self-release-artifacts
-      - uses: actions/checkout@v4
-        with:
-          token: \${{ secrets.TS_RELEASE_CATALOG_TOKEN }}
-	      - uses: ./apps/ts-release-action
-	`
-
-const installSmokeWorkflow = `name: Install Smoke
-on:
-  workflow_dispatch:
-permissions:
-  contents: read
-jobs:
-  npm-package:
-    steps:
-      - run: npm install "@mannyc1/ts-release@$VERSION"
-  github-release-assets:
-    steps:
-      - run: curl -fsSLO "https://github.com/mannyc2/ts-release/releases/download/$RELEASE_TAG/ts-release-$VERSION-linux-x64"
-      - run: curl -fsSLO "https://github.com/mannyc2/ts-release/releases/download/$RELEASE_TAG/ts-release-$VERSION-linux-arm64"
-      - run: curl -fsSLO "https://github.com/mannyc2/ts-release/releases/download/$RELEASE_TAG/ts-release-$VERSION-darwin-x64"
-      - run: curl -fsSLO "https://github.com/mannyc2/ts-release/releases/download/$RELEASE_TAG/ts-release-$VERSION-darwin-arm64"
-      - run: curl -fsSLO "https://github.com/mannyc2/ts-release/releases/download/$RELEASE_TAG/ts-release-$VERSION-windows-x64.exe"
-      - run: grep -F "v$VERSION" version.txt
-  pypi:
-    steps:
-      - run: python -m pip install "ts-release==$VERSION"
-  homebrew:
-    steps:
-      - run: brew tap mannyc2/ts-release https://github.com/mannyc2/homebrew-ts-release
-      - run: brew trust mannyc2/ts-release
-  scoop:
-    steps:
-      - run: scoop bucket add ts-release https://github.com/mannyc2/scoop-ts-release
-`
+const [workflow, installSmokeWorkflow] = await Promise.all([
+  readFile(resolve(import.meta.dir, "../.github/workflows/release.yml"), "utf8"),
+  readFile(resolve(import.meta.dir, "../.github/workflows/install-smoke.yml"), "utf8")
+])
 
 const prepareWorkspace = async (
   options: { readonly installSmokeWorkflow?: boolean } = {}
@@ -140,11 +46,11 @@ const prepareWorkspace = async (
   const root = await makeTempDirectory("ts-release-live-readiness-")
   await mkdir(join(root, "apps", "release-ts"), { recursive: true })
   await mkdir(join(root, ".github", "workflows"), { recursive: true })
-  await writeJson(join(root, "package.json"), {
+  await writeJsonFile(join(root, "package.json"), {
     name: "@mannyc1/ts-release",
     version: "1.2.3"
   })
-  await writeJson(join(root, "apps", "release-ts", "release.config.json"), releaseConfig())
+  await writeJsonFile(join(root, "apps", "release-ts", "release.config.json"), releaseConfig())
   await writeFile(join(root, ".github", "workflows", "release.yml"), workflow)
   if (options.installSmokeWorkflow !== false) {
     await writeFile(join(root, ".github", "workflows", "install-smoke.yml"), installSmokeWorkflow)
@@ -173,67 +79,46 @@ const makeServer = (options: { readonly emptyHomebrew?: boolean; readonly missin
       return new Response("not found", { status: 404 })
     }
   })
+const checkReadiness = async (
+  workspace: { readonly installSmokeWorkflow?: boolean } = {},
+  serverOptions: { readonly emptyHomebrew?: boolean; readonly missingHomebrew?: boolean } = {}
+) => {
+  const root = await prepareWorkspace(workspace)
+  const server = makeServer(serverOptions)
+  try {
+    return await run(root, server.url.origin)
+  } finally {
+    server.stop(true)
+    await rm(root, { recursive: true, force: true })
+  }
+}
 
 describe("self-release live readiness script", () => {
   test("passes when live release prerequisites are reachable and versions are unused", async () => {
-    const root = await prepareWorkspace()
-    const server = makeServer()
-    try {
-      const result = await run(root, server.url.origin)
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("ok   npm:version-available")
-      expect(result.stdout).toContain("ok   github:release-tag-available")
-      expect(result.stdout).toContain("ok   smoke:workflow-file")
-      expect(result.stdout).toContain("ok   smoke:github-asset-windows-x64")
-      expect(result.stdout).toContain("ok   smoke:scoop-bucket")
-      expect(result.stdout).toContain("ok   pypi:trusted-publisher-configured")
-      expect(result.stdout).toContain("ok   pypi:version-available")
-    } finally {
-      server.stop(true)
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkReadiness()
+    expect(result.exitCode).toBe(0)
+    for (const check of [
+      "npm:version-available", "github:release-tag-available", "smoke:workflow-file",
+      "smoke:github-asset-windows-x64", "smoke:scoop-bucket",
+      "pypi:trusted-publisher-configured", "pypi:version-available"
+    ]) expect(result.stdout).toContain(`ok   ${check}`)
   })
 
   test("fails when the post-release install smoke workflow is missing", async () => {
-    const root = await prepareWorkspace({ installSmokeWorkflow: false })
-    const server = makeServer()
-    try {
-      const result = await run(root, server.url.origin)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stdout).toContain("fail smoke:workflow-file")
-    } finally {
-      server.stop(true)
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkReadiness({ installSmokeWorkflow: false })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stdout).toContain("fail smoke:workflow-file")
   })
 
   test("fails when a catalog repository is not reachable", async () => {
-    const root = await prepareWorkspace()
-    const server = makeServer({ missingHomebrew: true })
-    try {
-      const result = await run(root, server.url.origin)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stdout).toContain("fail homebrew:tap:public")
-    } finally {
-      server.stop(true)
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkReadiness({}, { missingHomebrew: true })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stdout).toContain("fail homebrew:tap:public")
   })
 
   test("fails when a catalog repository has no default branch", async () => {
-    const root = await prepareWorkspace()
-    const server = makeServer({ emptyHomebrew: true })
-    try {
-      const result = await run(root, server.url.origin)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stdout).toContain("fail homebrew:tap:default-branch")
-    } finally {
-      server.stop(true)
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkReadiness({}, { emptyHomebrew: true })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stdout).toContain("fail homebrew:tap:default-branch")
   })
 })

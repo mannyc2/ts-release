@@ -1,3 +1,4 @@
+// Invariant: a feature planner contributes canonical data once or emits its single explicit skip notice.
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import type { Artifact } from "./artifact.js"

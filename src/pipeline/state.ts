@@ -1,3 +1,4 @@
+// Invariant: release identity and planner notices each have one canonical Schema-backed representation.
 import * as Schema from "effect/Schema"
 import { SemverVersion } from "./semver.js"
 

@@ -1,3 +1,4 @@
+// Invariant: the CLI only decodes argv, delegates to workflows, and renders requested output; release policy stays in the engine.
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"

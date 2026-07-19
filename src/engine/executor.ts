@@ -1,3 +1,4 @@
+// Invariant: operations execute sequentially in pass order, each producing exactly one final evidence record.
 import { createHash } from "node:crypto"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"

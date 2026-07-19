@@ -1,3 +1,4 @@
+// Invariant: catalog git adapters preserve surface-specific ids and messages while sharing one operation sequence.
 import * as Effect from "effect/Effect"
 import { PlanError } from "../pipeline/errors.js"
 import { emptyContribution, featurePlanner, type PipeContribution } from "../pipeline/pipe.js"

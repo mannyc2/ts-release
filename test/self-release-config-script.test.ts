@@ -1,8 +1,8 @@
 import { describe, expect, test } from "@effect/bun-test"
 import { mkdir, rm, writeFile } from "node:fs/promises"
-import { makeTempDirectory } from "./helpers.js"
-import { tmpdir } from "node:os"
+import { makeTempDirectory, runBunProcess, writeJsonFile } from "./helpers.js"
 import { join, resolve } from "node:path"
+import selfReleaseConfig from "../apps/release-ts/release.config.json" with { type: "json" }
 
 const scriptPath = resolve(
   import.meta.dir,
@@ -13,32 +13,7 @@ const scriptPath = resolve(
   "check-self-release-config.ts"
 )
 
-const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
-  stream === null ? "" : await new Response(stream).text()
-
-const run = async (args: ReadonlyArray<string>, cwd: string): Promise<{
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
-}> => {
-  const subprocess = Bun.spawn([...args], {
-    cwd,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe"
-  })
-  const stdout = streamText(subprocess.stdout)
-  const stderr = streamText(subprocess.stderr)
-  const exitCode = await subprocess.exited
-  return {
-    exitCode,
-    stdout: await stdout,
-    stderr: await stderr
-  }
-}
-
-const writeJson = (path: string, value: unknown): Promise<void> =>
-  writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
+const run = (args: ReadonlyArray<string>, cwd: string) => runBunProcess(args, { cwd })
 
 const baseManifest = (version: string = "0.0.0") => ({
   name: "@mannyc1/ts-release",
@@ -51,176 +26,9 @@ const baseAppManifest = (version: string = "0.0.0") => ({
   private: true
 })
 
-const releaseArtifacts = () => [
-  {
-    path: "."
-  }
-]
+const baseConfig = () => structuredClone(selfReleaseConfig)
 
-interface StaticArtifactFixture {
-  readonly id: string
-  readonly path: string
-  readonly format: string
-}
-
-const releaseStaticArtifacts = (): Array<StaticArtifactFixture> => []
-
-const pypiWheelConfig = (input: {
-  readonly id: string
-  readonly path: string
-  readonly wheelTag: string
-  readonly os: string
-  readonly arch: string
-  readonly sourcePath: string
-  readonly wheelPath: string
-}) => ({
-  id: input.id,
-  path: input.path,
-  wheelTag: input.wheelTag,
-  packageName: "ts-release",
-  moduleName: "ts_release",
-  consoleScript: "ts-release",
-  summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-  homepage: "https://github.com/mannyc2/ts-release",
-  license: "MIT",
-  requiresPython: ">=3.8",
-  binaries: [
-    {
-      os: input.os,
-      arch: input.arch,
-      sourcePath: input.sourcePath,
-      wheelPath: input.wheelPath
-    }
-  ]
-})
-
-const releasePyPiWheelConfigs = () => [
-  pypiWheelConfig({
-    id: "pypi-wheel-linux-x64",
-    path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-    wheelTag: "py3-none-manylinux2014_x86_64",
-    os: "linux",
-    arch: "x64",
-    sourcePath: ".release/artifacts/ts-release-{version}-linux-x64",
-    wheelPath: "ts_release/bin/ts-release-linux-x64"
-  }),
-  pypiWheelConfig({
-    id: "pypi-wheel-linux-arm64",
-    path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_aarch64.whl",
-    wheelTag: "py3-none-manylinux2014_aarch64",
-    os: "linux",
-    arch: "arm64",
-    sourcePath: ".release/artifacts/ts-release-{version}-linux-arm64",
-    wheelPath: "ts_release/bin/ts-release-linux-arm64"
-  }),
-  pypiWheelConfig({
-    id: "pypi-wheel-darwin-x64",
-    path: ".release/artifacts/ts_release-{version}-py3-none-macosx_10_15_x86_64.whl",
-    wheelTag: "py3-none-macosx_10_15_x86_64",
-    os: "darwin",
-    arch: "x64",
-    sourcePath: ".release/artifacts/ts-release-{version}-darwin-x64",
-    wheelPath: "ts_release/bin/ts-release-darwin-x64"
-  }),
-  pypiWheelConfig({
-    id: "pypi-wheel-darwin-arm64",
-    path: ".release/artifacts/ts_release-{version}-py3-none-macosx_11_0_arm64.whl",
-    wheelTag: "py3-none-macosx_11_0_arm64",
-    os: "darwin",
-    arch: "arm64",
-    sourcePath: ".release/artifacts/ts-release-{version}-darwin-arm64",
-    wheelPath: "ts_release/bin/ts-release-darwin-arm64"
-  }),
-  pypiWheelConfig({
-    id: "pypi-wheel-windows-x64",
-    path: ".release/artifacts/ts_release-{version}-py3-none-win_amd64.whl",
-    wheelTag: "py3-none-win_amd64",
-    os: "windows",
-    arch: "x64",
-    sourcePath: ".release/artifacts/ts-release-{version}-windows-x64.exe",
-    wheelPath: "ts_release/bin/ts-release-windows-x64.exe"
-  })
-]
-
-const releaseBunBuild = () => ({
-  builder: "bun",
-  id: "cli",
-  entry: "apps/release-ts/src/cli/main.ts",
-  targets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"],
-  output: ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
-  binaryName: "ts-release",
-  installPath: "bin/ts-release"
-})
-
-const baseConfig = (version: string = "0.0.0") => ({
-  project: {
-    commit: "HEAD",
-    tagTemplate: "v{version}"
-  },
-  artifacts: releaseStaticArtifacts(),
-  npmPackage: releaseArtifacts()[0],
-  builds: [releaseBunBuild()],
-  pypiWheel: releasePyPiWheelConfigs(),
-  publish: {
-    npm: {
-      registry: "https://registry.npmjs.org",
-      packageName: "@mannyc1/ts-release",
-      packagePath: ".",
-      trustedPublishing: {
-        provider: "github-actions",
-        workflow: "release.yml",
-        verifyPackageExists: true
-      },
-      access: "public",
-      provenance: true
-    },
-    github: {
-      repository: "mannyc2/ts-release",
-      tokenEnv: "GH_TOKEN",
-      draft: false,
-      prerelease: false
-    },
-    homebrew: {
-      repository: "mannyc2/homebrew-ts-release",
-      formulaName: "ts-release",
-      formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
-      artifactIds: ["cli-darwin-arm64", "cli-darwin-x64"],
-      homepage: "https://github.com/mannyc2/ts-release",
-      description: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      tapDirectory: ".release/catalogs/homebrew-ts-release"
-    },
-    scoop: {
-      repository: "mannyc2/scoop-ts-release",
-      manifestName: "ts-release",
-      manifestPath: ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
-      artifactId: "cli-windows-x64",
-      homepage: "https://github.com/mannyc2/ts-release",
-      description: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      license: "MIT",
-      bucketDirectory: ".release/catalogs/scoop-ts-release"
-    },
-    pypi: {
-      repositoryUrl: "https://upload.pypi.org/legacy/",
-      pythonExecutable: "python3",
-      trustedPublishing: {
-        provider: "github-actions",
-        workflow: "release.yml",
-        publisherConfigured: true
-      }
-    }
-  },
-  evidence: ".release/evidence"
-})
-
-interface MutableReleaseCliBuildFixture {
-  readonly id: string
-  output: string
-  targets: Array<string>
-}
-
-const releaseCliBuildFixture = (
-  config: ReturnType<typeof baseConfig>
-): MutableReleaseCliBuildFixture => {
+const releaseCliBuildFixture = (config: ReturnType<typeof baseConfig>) => {
   const build = config.builds[0]
   if (build === undefined) {
     throw new Error("expected self-release CLI build fixture")
@@ -240,13 +48,13 @@ const prepareWorkspace = async (
   const root = await makeTempDirectory("ts-release-self-config-")
   const manifest = options.manifest ?? baseManifest()
   const packageVersion = typeof manifest.version === "string" ? manifest.version : "0.0.0"
-  await writeJson(join(root, "package.json"), manifest)
+  await writeJsonFile(join(root, "package.json"), manifest)
   await mkdir(join(root, "apps", "release-ts"), { recursive: true })
-  await writeJson(
+  await writeJsonFile(
     join(root, "apps", "release-ts", "package.json"),
     options.appManifest ?? baseAppManifest(packageVersion)
   )
-  await writeJson(join(root, "apps", "release-ts", "release.config.json"), options.config ?? baseConfig(packageVersion))
+  await writeJsonFile(join(root, "apps", "release-ts", "release.config.json"), options.config ?? baseConfig())
   await writeFile(join(root, "README.md"), "clean\n")
   if (options.envExample !== undefined) {
     await writeFile(join(root, ".env.example"), options.envExample)
@@ -265,146 +73,95 @@ const prepareWorkspace = async (
   return root
 }
 
+const checkWorkspace = async (options: Parameters<typeof prepareWorkspace>[0] = {}) => {
+  const root = await prepareWorkspace(options)
+  try {
+    return await run(["bun", scriptPath], root)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
 describe("self-release config script", () => {
   test("passes when configured token env is documented", async () => {
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n" })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).toBe(0)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n" })
+    expect(result.exitCode).toBe(0)
   })
 
   test("fails when token env is missing from .env.example", async () => {
-    const root = await prepareWorkspace()
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain(".env.example must document")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace()
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain(".env.example must document")
   })
 
   test("allows HEAD release with dirty tracked files", async () => {
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", dirty: true })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).toBe(0)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", dirty: true })
+    expect(result.exitCode).toBe(0)
   })
 
   test("fails when package and app package versions disagree", async () => {
-    const root = await prepareWorkspace({
+    const result = await checkWorkspace({
       envExample: "GH_TOKEN=\n",
       manifest: baseManifest("1.0.0"),
       appManifest: baseAppManifest("2.0.0")
     })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("apps/release-ts/package.json version 2.0.0 must match package version 1.0.0")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("apps/release-ts/package.json version 2.0.0 must match package version 1.0.0")
   })
 
   test("fails when generated artifact paths drift", async () => {
     const config = baseConfig()
     const build = releaseCliBuildFixture(config)
     build.output = ".release/artifacts/wrong-{version}-{targetTriple}{ext}"
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("build cli output for linux-x64 expands")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", config })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("build cli output for linux-x64 expands")
   })
 
   test("fails when expected CLI build targets are missing", async () => {
     const config = baseConfig()
     const build = releaseCliBuildFixture(config)
     build.targets = build.targets.filter((target) => target !== "windows-x64")
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("build cli targets must equal")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", config })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("build cli targets must equal")
   })
 
   test("fails when CLI artifacts are declared statically", async () => {
-    const config = baseConfig()
-    config.artifacts = [
-      {
+    const config = {
+      ...baseConfig(),
+      artifacts: [{
         id: "cli-linux-x64",
         path: ".release/artifacts/ts-release-{version}-linux-x64",
         format: "file"
-      }
-    ]
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by builds")
-    } finally {
-      await rm(root, { recursive: true, force: true })
+      }]
     }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", config })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("artifact cli-linux-x64 must be declared by builds")
   })
 
   test("fails when npm provenance is disabled", async () => {
     const config = baseConfig()
     config.publish.npm.provenance = false
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("npm self-release target must enable provenance")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", config })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("npm self-release target must enable provenance")
   })
 
   test("fails when npm package verification is disabled", async () => {
     const config = baseConfig()
     config.publish.npm.trustedPublishing.verifyPackageExists = false
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("npm self-release target must use GitHub Actions trusted publishing")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", config })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("npm self-release target must use GitHub Actions trusted publishing")
   })
 
   test("fails when npm package name drifts from package manifest", async () => {
     const config = baseConfig()
     config.publish.npm.packageName = "@mannyc1/other-package"
-    const root = await prepareWorkspace({ envExample: "GH_TOKEN=\n", config })
-    try {
-      const result = await run(["bun", scriptPath], root)
-
-      expect(result.exitCode).not.toBe(0)
-      expect(result.stderr).toContain("npm self-release target packageName")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
+    const result = await checkWorkspace({ envExample: "GH_TOKEN=\n", config })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr).toContain("npm self-release target packageName")
   })
 })

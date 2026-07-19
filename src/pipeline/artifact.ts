@@ -1,3 +1,4 @@
+// Invariant: Artifact is the only artifact representation and every stored path is a validated safe relative path.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { PlanError } from "./errors.js"

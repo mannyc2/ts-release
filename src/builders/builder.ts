@@ -1,11 +1,10 @@
+// Invariant: every builder adapter maps one resolved build target to canonical artifacts and operations without executing them.
 import type * as Effect from "effect/Effect"
 import { Artifact, ExecutableExtra, type InstallableArtifactVariant } from "../pipeline/artifact.js"
 import type { PlanError } from "../pipeline/errors.js"
 import type { Operation } from "../pipeline/operation.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import type { PlatformTarget } from "../pipeline/platform.js"
-
-// Invariant: builders only translate one decoded build section and target into artifacts plus operations.
 
 export interface BuilderPlan {
   readonly operations: ReadonlyArray<Operation>

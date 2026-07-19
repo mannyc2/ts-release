@@ -1,3 +1,4 @@
+// Invariant: the Promise API owns one lazily shared runtime and exposes only plain-data summaries or ReleaseApiError.
 import * as Effect from "effect/Effect"
 import type * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"

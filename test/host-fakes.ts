@@ -57,6 +57,41 @@ export const ReleaseCommandRunnerTestLayer = (
 ): Layer.Layer<ReleaseCommandRunner> =>
   Layer.succeed(ReleaseCommandRunner)(commandRunner)
 
+export const makeCommandRunnerLayer = (options: {
+  readonly env?: ReadonlyMap<string, string>
+  readonly commands?: ReadonlyMap<string, TestCommandResponse>
+  readonly timestamps?: ReadonlyArray<string>
+  readonly durationMillis?: number
+} = {}) => {
+  const env = new Map(options.env ?? [])
+  const commands = new Map(options.commands ?? [])
+  const timestamps = [...(options.timestamps ?? ["2026-06-16T00:00:00.000Z"])]
+  let timestampIndex = 0
+  const nextTimestamp = () => timestamps[timestampIndex++] ?? timestamps.at(-1) ?? "2026-06-16T00:00:00.000Z"
+  return Layer.mergeAll(
+    ReleaseCommandRunnerTestLayer({
+      runCommand: (command) => Effect.gen(function*() {
+        const missing = command.requiredEnv.filter((name) => !env.has(name))
+        if (missing.length > 0) {
+          return yield* Effect.fail(CommandRunnerError.make({
+            operation: "runCommand",
+            reason: `Missing required environment variables: ${missing.join(", ")}`
+          }))
+        }
+        const response = commands.get(commandKey(command)) ?? { exitCode: 0, stdout: "", stderr: "" }
+        return {
+          command,
+          ...response,
+          startedAt: nextTimestamp(),
+          endedAt: nextTimestamp(),
+          durationMillis: options.durationMillis ?? 0
+        } satisfies CommandResult
+      })
+    }),
+    ConfigProvider.layer(ConfigProvider.fromEnv({ env: Object.fromEntries(env) }))
+  )
+}
+
 const notFound = (method: string, path: string): PlatformError.PlatformError =>
   PlatformError.systemError({
     _tag: "NotFound",
@@ -216,21 +251,6 @@ export const makeTestCommandRunnerLayer = (
 ) => {
   const files = new Map(options.files ?? [])
   const directories = new Set(options.directories ?? [])
-  const env = new Map(options.env ?? [])
-  const commands = new Map(options.commands ?? [])
-  const timestamps = [...(options.timestamps ?? ["2026-06-16T00:00:00.000Z"])]
-  let timestampIndex = 0
-
-  const nextTimestamp = (): string => {
-    const value = timestamps[timestampIndex] ?? timestamps[timestamps.length - 1] ?? "2026-06-16T00:00:00.000Z"
-    timestampIndex += 1
-    return value
-  }
-
-  const envRecord: Record<string, string> = {}
-  for (const [name, value] of env) {
-    envRecord[name] = value
-  }
 
   return Layer.mergeAll(
     FileSystem.layerNoop({
@@ -309,42 +329,11 @@ export const makeTestCommandRunnerLayer = (
         digest: (_algorithm, data) => Effect.succeed(data)
       })
     ),
-    Layer.succeed(ReleaseCommandRunner)({
-      runCommand: (command) =>
-        Effect.gen(function*() {
-          const missing: Array<string> = []
-          for (const name of command.requiredEnv) {
-            if (!env.has(name)) {
-              missing.push(name)
-            }
-          }
-          if (missing.length > 0) {
-            return yield* Effect.fail(
-              CommandRunnerError.make({
-                operation: "runCommand",
-                reason: `Missing required environment variables: ${missing.join(", ")}`
-              })
-            )
-          }
-          const startedAt = nextTimestamp()
-          const endedAt = nextTimestamp()
-          const response = commands.get(commandKey(command)) ?? {
-            exitCode: 0,
-            stdout: "",
-            stderr: ""
-          }
-          return {
-            command,
-            exitCode: response.exitCode,
-            stdout: response.stdout,
-            stderr: response.stderr,
-            startedAt,
-            endedAt,
-            durationMillis: 0
-          } satisfies CommandResult
-        })
-    }),
-    ConfigProvider.layer(ConfigProvider.fromEnv({ env: envRecord }))
+    makeCommandRunnerLayer({
+      ...(options.env === undefined ? {} : { env: options.env }),
+      ...(options.commands === undefined ? {} : { commands: options.commands }),
+      ...(options.timestamps === undefined ? {} : { timestamps: options.timestamps })
+    })
   )
 }
 

@@ -1,3 +1,4 @@
+// Invariant: all release placeholders share one renderer and unknown or unsafe expansions fail explicitly.
 import * as Effect from "effect/Effect"
 import {
   type InstallableArtifactVariant,

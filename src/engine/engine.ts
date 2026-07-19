@@ -1,3 +1,4 @@
+// Invariant: each workflow decodes, resolves, folds the fixed schedule, and finalizes evidence exactly once.
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"

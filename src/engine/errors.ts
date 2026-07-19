@@ -1,3 +1,4 @@
+// Invariant: failure tags preserve their boundary, and ActionAttemptFailed remains the only retryable execution channel.
 import * as Schema from "effect/Schema"
 import { OperationId } from "../pipeline/operation.js"
 import { EvidenceBundle, EvidenceRecord } from "./evidence.js"

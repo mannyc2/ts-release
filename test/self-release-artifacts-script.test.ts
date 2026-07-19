@@ -1,8 +1,8 @@
 import { describe, expect, test } from "@effect/bun-test"
 import { mkdir, rm, writeFile } from "node:fs/promises"
-import { makeTempDirectory } from "./helpers.js"
-import { tmpdir } from "node:os"
+import { makeTempDirectory, runBunProcess, writeJsonFile } from "./helpers.js"
 import { join, resolve } from "node:path"
+import selfReleaseConfig from "../apps/release-ts/release.config.json" with { type: "json" }
 
 const scriptPath = resolve(
   import.meta.dir,
@@ -13,36 +13,13 @@ const scriptPath = resolve(
   "check-self-release-artifacts.ts"
 )
 
-const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
-  stream === null ? "" : await new Response(stream).text()
-
-const run = async (cwd: string): Promise<{
-  readonly exitCode: number
-  readonly stdout: string
-  readonly stderr: string
-}> => {
-  const subprocess = Bun.spawn(["bun", scriptPath], {
+const run = (cwd: string) => runBunProcess(["bun", scriptPath], {
     cwd,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
     env: {
       ...process.env,
       SELF_RELEASE_SKIP_TWINE_CHECK: "1"
     }
   })
-  const stdout = streamText(subprocess.stdout)
-  const stderr = streamText(subprocess.stderr)
-  const exitCode = await subprocess.exited
-  return {
-    exitCode,
-    stdout: await stdout,
-    stderr: await stderr
-  }
-}
-
-const writeJson = (path: string, value: unknown): Promise<void> =>
-  writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 
 const fakeWheel = (wheelTag: string): string => [
   "Wheel-Version: 1.0",
@@ -54,44 +31,18 @@ const fakeWheel = (wheelTag: string): string => [
 
 const releaseConfig = () => ({
   project: {},
-  builds: [
-    {
-      builder: "bun",
-      id: "cli",
-      entry: "apps/release-ts/src/cli/main.ts",
-      targets: ["darwin-arm64", "windows-x64"],
-      output: ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
-      binaryName: "ts-release",
-      installPath: "bin/ts-release"
-    },
-  ],
-  pypiWheel: [
-    {
-      id: "pypi-wheel-linux-x64",
-      path: ".release/artifacts/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-      wheelTag: "py3-none-manylinux2014_x86_64",
-      packageName: "ts-release",
-      moduleName: "ts_release",
-      consoleScript: "ts-release",
-      summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-      homepage: "https://github.com/mannyc2/ts-release",
-      license: "MIT",
-      requiresPython: ">=3.8",
-      binaries: []
-    }
-  ],
+  builds: [{ ...selfReleaseConfig.builds[0]!, targets: ["darwin-arm64", "windows-x64"] }],
+  pypiWheel: [{ ...selfReleaseConfig.pypiWheel[0]!, binaries: [] }],
   publish: {
     homebrew: {
-      repository: "mannyc2/homebrew-ts-release",
-      formulaPath: ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb"
+      repository: selfReleaseConfig.publish.homebrew.repository,
+      formulaPath: selfReleaseConfig.publish.homebrew.formulaPath
     },
     scoop: {
-      repository: "mannyc2/scoop-ts-release",
-      manifestPath: ".release/catalogs/scoop-ts-release/bucket/ts-release.json"
+      repository: selfReleaseConfig.publish.scoop.repository,
+      manifestPath: selfReleaseConfig.publish.scoop.manifestPath
     },
-    pypi: {
-      pythonExecutable: "python3"
-    }
+    pypi: { pythonExecutable: selfReleaseConfig.publish.pypi.pythonExecutable }
   }
 })
 
@@ -101,11 +52,11 @@ const prepareWorkspace = async (): Promise<string> => {
   await mkdir(join(root, ".release", "artifacts"), { recursive: true })
   await mkdir(join(root, ".release", "catalogs", "homebrew-ts-release", "Formula"), { recursive: true })
   await mkdir(join(root, ".release", "catalogs", "scoop-ts-release", "bucket"), { recursive: true })
-  await writeJson(join(root, "package.json"), {
+  await writeJsonFile(join(root, "package.json"), {
     name: "@mannyc1/ts-release",
     version: "1.2.3"
   })
-  await writeJson(join(root, "apps", "release-ts", "release.config.json"), releaseConfig())
+  await writeJsonFile(join(root, "apps", "release-ts", "release.config.json"), releaseConfig())
   await writeFile(join(root, ".release", "artifacts", "ts-release-1.2.3-darwin-arm64"), "darwin")
   await writeFile(join(root, ".release", "artifacts", "ts-release-1.2.3-windows-x64.exe"), "windows")
   await writeFile(
@@ -129,7 +80,7 @@ const prepareWorkspace = async (): Promise<string> => {
       ""
     ].join("\n")
   )
-  await writeJson(join(root, ".release", "catalogs", "scoop-ts-release", "bucket", "ts-release.json"), {
+  await writeJsonFile(join(root, ".release", "catalogs", "scoop-ts-release", "bucket", "ts-release.json"), {
     version: "1.2.3",
     url: "https://github.com/mannyc2/ts-release/releases/download/v1.2.3/ts-release-1.2.3-windows-x64.exe",
     hash: "a".repeat(64)

@@ -1,3 +1,4 @@
+// Invariant: every workspace-relative read or write is validated before joining and can never escape its root.
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"

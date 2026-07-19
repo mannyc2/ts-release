@@ -1,3 +1,4 @@
+// Invariant: public summaries are JSON-safe projections of canonical artifacts, operations, and evidence.
 import * as Schema from "effect/Schema"
 import { Artifact } from "../pipeline/artifact.js"
 import type { Operation, OperationRisk } from "../pipeline/operation.js"

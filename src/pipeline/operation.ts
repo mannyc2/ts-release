@@ -1,11 +1,10 @@
+// Invariant: every durable operation has one action representation and one approval derivation.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { PyPiWheelBinaryArtifact } from "./artifact.js"
 import { PlatformTarget } from "./platform.js"
 import { ArtifactId, Checksum } from "./artifact.js"
 import bunCompileTargets from "../assets/bun-compile-targets.json" with { type: "json" }
-
-// Invariant: every durable operation has one action representation and one approval derivation.
 
 export const OperationId = Schema.NonEmptyString
 export type OperationId = typeof OperationId.Type

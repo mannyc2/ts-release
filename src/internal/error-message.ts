@@ -1,3 +1,4 @@
+// Invariant: tagged reasons and compact foreign causes have one byte-stable formatter across API and Action boundaries.
 export interface TaggedReason {
   readonly tag: string
   readonly reason?: string | undefined

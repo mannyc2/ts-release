@@ -1,3 +1,4 @@
+// Invariant: ReleaseIntent is the sole wire representation and source of its JSON Schema.
 import * as Schema from "effect/Schema"
 import type * as JsonSchema from "effect/JsonSchema"
 import { ReleaseConfigBunExecutableBuild } from "../builders/bun.js"
@@ -15,8 +16,6 @@ import { ReleaseConfigNpmPublish } from "../pipes/publish-npm.js"
 import { ReleaseConfigPyPiPublish } from "../pipes/publish-pypi.js"
 import { ReleaseConfigPyPiWheelBuild } from "../pipes/pypi-wheel.js"
 import { SafeRelativePath } from "../pipeline/artifact.js"
-
-// Invariant: ReleaseIntent is the sole wire representation and source of its JSON Schema.
 
 export const DEFAULT_CONFIG_PATH = "release.config.json"
 export const RELEASE_CONFIG_SCHEMA_ID = "https://mannyc2.github.io/ts-release/schema/release-config.schema.json"

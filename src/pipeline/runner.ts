@@ -1,3 +1,4 @@
+// Invariant: the accumulator is the sole uniqueness boundary for plan ids, paths, and names.
 import * as Effect from "effect/Effect"
 import { artifactPathBaseName, type Artifact } from "./artifact.js"
 import { PlanError } from "./errors.js"
@@ -5,8 +6,6 @@ import type { Operation } from "./operation.js"
 import { emptyContribution, type FeatureSchedule, type PipeContribution } from "./pipe.js"
 import * as Option from "effect/Option"
 import { PipeNotice, type ReleaseIdentity } from "./state.js"
-
-// Invariant: the accumulator is the sole uniqueness boundary for plan ids, paths, and names.
 
 export interface PlanAccumulator {
   readonly identity: ReleaseIdentity

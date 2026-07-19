@@ -12,7 +12,7 @@ import {
   NoopActionArtifactClient,
   runAction
 } from "../apps/ts-release-action/src/action.js"
-import { ActionOptions, type ActionCommand, type ActionFormat, type ActionRuntime } from "../apps/ts-release-action/src/input.js"
+import { ActionOptions } from "../apps/ts-release-action/src/input.js"
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
 import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
 import { CommandSpec } from "../src/pipeline/operation.js"
@@ -28,22 +28,8 @@ import {
   TestGitHubApiLayer,
   withTempDirectoryPromise,
 } from "./helpers.js"
-interface ActionOptionsOverrides {
-  readonly command?: ActionCommand
-  readonly config?: string
-  readonly format?: ActionFormat
-  readonly writeStepSummary?: boolean
-  readonly planPath?: string
-  readonly failOnWarnings?: boolean
-  readonly target?: string
-  readonly runtime?: ActionRuntime
-  readonly snapshot?: boolean
-  readonly execute?: boolean
-  readonly approvePublish?: boolean
-  readonly uploadEvidence?: boolean
-  readonly evidenceArtifactName?: string
-}
-interface FakeActionIo extends ActionIo {
+type ActionOptionsOverrides = Partial<Omit<ActionOptions, "root">>
+type FakeActionIo = ActionIo & {
   readonly outputs: Map<string, string>
   readonly summaries: Array<string>
   readonly files: Map<string, string>
@@ -109,6 +95,25 @@ const makeArtifactClient = () => {
       })
   }
   return { client, uploads }
+}
+const doctorLayer = (env: ReadonlyMap<string, string> = new Map()) => Layer.mergeAll(
+  makeObservableCommandRunnerLayer({ env, commands: new Map() }),
+  UnsupportedArtifactStagerLayer,
+  TestGitHubApiLayer,
+  makeTestReleaseHttpLayer({ responses: new Map() }),
+  BunServices.layer
+)
+const runInputCase = async (name: string, value: string) => {
+  const root = process.cwd()
+  const io = makeFakeActionIo()
+  await runActionFromInputs(
+    { getInput: (input) => input === name ? value : "" },
+    io,
+    root,
+    makeNodeReleaseWorkflowRuntimeLayer({ root }),
+    NoopActionArtifactClient
+  )
+  return io
 }
 describe("ts-release action", () => {
   test("declares Node action metadata inputs and outputs", async () => {
@@ -260,20 +265,10 @@ describe("ts-release action", () => {
     await withTempDirectoryPromise("ts-release-action-diagnostics-", async (root) => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const io = makeFakeActionIo()
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map([["NPM_TOKEN", "npm_secret"]]),
-          commands: new Map()
-        }),
-        UnsupportedArtifactStagerLayer,
-        TestGitHubApiLayer,
-        makeTestReleaseHttpLayer({ responses: new Map() }),
-        BunServices.layer
-      )
       await runAction(
         actionOptions(root, { command: "doctor", format: "markdown" }),
         io,
-        layer
+        doctorLayer(new Map([["NPM_TOKEN", "npm_secret"]]))
       )
       expect(io.outputs.get("status")).toBe("failed")
       expect(io.failures.join("\n")).toContain("Diagnostics reported failing checks")
@@ -288,16 +283,6 @@ describe("ts-release action", () => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, noOpConfig)
       const io = makeFakeActionIo()
-      const layer = Layer.mergeAll(
-        makeObservableCommandRunnerLayer({
-          env: new Map(),
-          commands: new Map()
-        }),
-        UnsupportedArtifactStagerLayer,
-        TestGitHubApiLayer,
-        makeTestReleaseHttpLayer({ responses: new Map() }),
-        BunServices.layer
-      )
       await runAction(
         actionOptions(root, {
           command: "doctor",
@@ -305,7 +290,7 @@ describe("ts-release action", () => {
           failOnWarnings: true
         }),
         io,
-        layer
+        doctorLayer()
       )
       expect(io.outputs.get("status")).toBe("passed")
       expect(io.summaries.join("\n")).toContain("info")
@@ -326,51 +311,18 @@ describe("ts-release action", () => {
       expect(io.failures.join("\n")).toContain("Use runtime: bundled")
     })
   })
-  test("invalid action inputs fail through action outputs", async () => {
-    const io = makeFakeActionIo()
-    await runActionFromInputs(
-      {
-        getInput: (name) => name === "execute" ? "yes" : ""
-      },
-      io,
-      process.cwd(),
-      makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
-      NoopActionArtifactClient
-    )
-    expect(io.outputs.get("status")).toBe("failed")
-    expect(io.failures.join("\n")).toContain("ActionInputError")
-    expect(io.failures.join("\n")).toContain("Expected true or false")
-  })
-  test("unsupported runtime input fails with the exact reason", async () => {
-    const io = makeFakeActionIo()
-    await runActionFromInputs(
-      {
-        getInput: (name) => name === "runtime" ? "container" : ""
-      },
-      io,
-      process.cwd(),
-      makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
-      NoopActionArtifactClient
-    )
-    expect(io.outputs.get("status")).toBe("failed")
-    expect(io.failures.join("\n")).toContain("ActionInputError")
-    expect(io.failures.join("\n")).toContain("Unsupported runtime container.")
-  })
-  test("whitespace-only config input fails through action outputs", async () => {
-    const io = makeFakeActionIo()
-    await runActionFromInputs(
-      {
-        getInput: (name) => name === "config" ? "   " : ""
-      },
-      io,
-      process.cwd(),
-      makeNodeReleaseWorkflowRuntimeLayer({ root: process.cwd() }),
-      NoopActionArtifactClient
-    )
-    expect(io.outputs.get("status")).toBe("failed")
-    expect(io.failures.join("\n")).toContain("ActionInputError")
-    expect(io.failures.join("\n")).toContain("config")
-  })
+  for (const [label, name, value, reason] of [
+    ["invalid action inputs fail through action outputs", "execute", "yes", "Expected true or false"],
+    ["unsupported runtime input fails with the exact reason", "runtime", "container", "Unsupported runtime container."],
+    ["whitespace-only config input fails through action outputs", "config", "   ", "config"]
+  ] as const) {
+    test(label, async () => {
+      const io = await runInputCase(name, value)
+      expect(io.outputs.get("status")).toBe("failed")
+      expect(io.failures.join("\n")).toContain("ActionInputError")
+      expect(io.failures.join("\n")).toContain(reason)
+    })
+  }
   test("artifact upload errors preserve compact foreign causes", () => {
     const cause = new Error("artifact service unavailable")
     const error = ActionArtifactUploadError.make({

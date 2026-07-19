@@ -1,3 +1,4 @@
+// Invariant: JSON boundaries accept only Schema JSON values and return no alternate document representation.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 

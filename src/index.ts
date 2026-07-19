@@ -1,3 +1,4 @@
+// Invariant: this root is the package's only public TypeScript surface; internal taxonomy never leaks as subpaths.
 import type { ReleaseIntent } from "./config/schema.js"
 
 export type * from "./types/effect-internal.js"

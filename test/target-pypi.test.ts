@@ -1,12 +1,10 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { pypiConfig, releaseConfig, runEffect } from "./helpers.js"
 import { createTestPlan } from "./plan-helpers.js"
 
-const PyPiLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
+const PyPiLayer = makeTestCommandRunnerLayer({
     files: new Map([["dist/release-0.1.0-py3-none-any.whl", "pypi wheel"]]),
     directories: new Set(["."]),
     env: new Map([
@@ -15,11 +13,15 @@ const PyPiLayer = Layer.mergeAll(
       ["ACTIONS_ID_TOKEN_REQUEST_URL", "https://token.actions.githubusercontent.com"],
       ["ACTIONS_ID_TOKEN_REQUEST_TOKEN", "oidc_request_token"]
     ])
-  }),
-)
+  })
 
 const createPlan = (config: string) =>
   createTestPlan(config)
+const trustedConfig = (workflow = "release.yml") => pypiConfig({
+  usernameEnv: undefined,
+  passwordEnv: undefined,
+  trustedPublishing: { provider: "github-actions", workflow, publisherConfigured: true }
+})
 
 describe("PyPI target", () => {
   test("plans PyPI registry capabilities and Twine commands", async () => {
@@ -63,15 +65,7 @@ describe("PyPI target", () => {
 
   test("models PyPI trusted publishing without Twine token secrets", async () => {
     const plan = await runEffect(
-      createPlan(pypiConfig({
-        usernameEnv: undefined,
-        passwordEnv: undefined,
-        trustedPublishing: {
-          provider: "github-actions",
-          workflow: "release.yml",
-          publisherConfigured: true
-        }
-      })),
+      createPlan(trustedConfig()),
       PyPiLayer
     )
     const authNote = plan.operations.find((operation) => operation.id === "pypi:twine-trusted-publishing-auth")
@@ -116,44 +110,8 @@ describe("PyPI target", () => {
   })
 
   test("rejects unsafe PyPI target shapes", async () => {
-    const halfAuth = await runEffect(
-      createPlan(pypiConfig({ passwordEnv: undefined })).pipe(Effect.flip),
-      PyPiLayer
-    )
-    const customAuth = await runEffect(
-      createPlan(pypiConfig({ usernameEnv: "PYPI_USERNAME", passwordEnv: "PYPI_PASSWORD" })).pipe(Effect.flip),
-      PyPiLayer
-    )
-    const trustedWithToken = await runEffect(
-      createPlan(pypiConfig({
-        trustedPublishing: {
-          provider: "github-actions",
-          workflow: "release.yml",
-          publisherConfigured: true
-        }
-      })).pipe(Effect.flip),
-      PyPiLayer
-    )
-    const trustedWorkflowPath = await runEffect(
-      createPlan(pypiConfig({
-        usernameEnv: undefined,
-        passwordEnv: undefined,
-        trustedPublishing: {
-          provider: "github-actions",
-          workflow: ".github/workflows/release.yml",
-          publisherConfigured: true
-        }
-      })).pipe(Effect.flip),
-      PyPiLayer
-    )
     const directoryConfig = releaseConfig({
-      artifacts: [
-        {
-          id: "wheel",
-          path: ".",
-          format: "directory"
-        }
-      ],
+      artifacts: [{ id: "wheel", path: ".", format: "directory" }],
       publish: {
         pypi: {
           repositoryUrl: "https://test.pypi.org/legacy/",
@@ -161,29 +119,33 @@ describe("PyPI target", () => {
         }
       }
     })
-    const directoryArtifact = await runEffect(createPlan(directoryConfig).pipe(Effect.flip), PyPiLayer)
-    const noArtifact = await runEffect(
-      createPlan(pypiConfig().replace("\"id\":\"wheel\"", "\"id\":\"other\"")).pipe(Effect.flip),
-      PyPiLayer
-    )
+    const errors = await Promise.all([
+      pypiConfig({ passwordEnv: undefined }),
+      pypiConfig({ usernameEnv: "PYPI_USERNAME", passwordEnv: "PYPI_PASSWORD" }),
+      pypiConfig({ trustedPublishing: { provider: "github-actions", workflow: "release.yml", publisherConfigured: true } }),
+      trustedConfig(".github/workflows/release.yml"),
+      directoryConfig,
+      pypiConfig().replace("\"id\":\"wheel\"", "\"id\":\"other\"")
+    ].map((config) => runEffect(createPlan(config).pipe(Effect.flip), PyPiLayer)))
+    const [halfAuth, customAuth, trustedWithToken, trustedWorkflowPath, directoryArtifact, noArtifact] = errors
 
-    expect(halfAuth._tag).toBe("PlanError")
-    expect(customAuth._tag).toBe("PlanError")
-    expect(trustedWithToken._tag).toBe("PlanError")
-    expect(trustedWorkflowPath._tag).toBe("ConfigError")
-    if (customAuth._tag === "PlanError") {
+    expect(halfAuth?._tag).toBe("PlanError")
+    expect(customAuth?._tag).toBe("PlanError")
+    expect(trustedWithToken?._tag).toBe("PlanError")
+    expect(trustedWorkflowPath?._tag).toBe("ConfigError")
+    if (customAuth?._tag === "PlanError") {
       expect(customAuth.reason).toContain("TWINE_USERNAME")
       expect(customAuth.reason).toContain("TWINE_PASSWORD")
     }
-    if (trustedWithToken._tag === "PlanError") {
+    if (trustedWithToken?._tag === "PlanError") {
       expect(trustedWithToken.reason).toContain("trusted publishing")
     }
-    if (trustedWorkflowPath._tag === "ConfigError") {
+    if (trustedWorkflowPath?._tag === "ConfigError") {
       expect(trustedWorkflowPath.reason).toContain(`["publish"]["pypi"]["trustedPublishing"]["workflow"]`)
     }
-    expect(directoryArtifact._tag).toBe("PlanError")
-    expect(noArtifact._tag).toBe("PlanError")
-    if (noArtifact._tag === "PlanError") {
+    expect(directoryArtifact?._tag).toBe("PlanError")
+    expect(noArtifact?._tag).toBe("PlanError")
+    if (noArtifact?._tag === "PlanError") {
       expect(noArtifact.field).toBe("publish.pypi.artifactIds")
       expect(noArtifact.reason).toBe("PyPI target references missing artifact wheel.")
     }

@@ -1,3 +1,4 @@
+// Invariant: deferred content holes resolve only from canonical artifact facts and never invent another artifact representation.
 import type { DeferredFileContent } from "../pipeline/operation.js"
 
 export interface ResolvedArtifactHash {

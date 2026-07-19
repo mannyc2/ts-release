@@ -1,6 +1,5 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import { readFileSync } from "node:fs"
 import { deferredContentArtifactIds } from "../src/engine/content.js"
 import { CommandSpec } from "../src/pipeline/operation.js"
@@ -34,8 +33,7 @@ const gitHeadCommand = CommandSpec.make({
   redactedEnv: []
 })
 
-const TestLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
+const TestLayer = makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     files: new Map([
       ["package.json", JSON.stringify({ name: "@mannyc1/ts-release", version: "0.0.3" })],
@@ -56,8 +54,12 @@ const TestLayer = Layer.mergeAll(
         stderr: ""
       }]
     ])
-  }),
-)
+  })
+const rejectConfigMutation = (mutate: (value: ReturnType<typeof JSON.parse>) => void) => {
+  const value = JSON.parse(config)
+  mutate(value)
+  return runEffect(createTestPlan(JSON.stringify(value), ".", selfReleaseConfigPath).pipe(Effect.flip), TestLayer)
+}
 
 describe("repository release config", () => {
   test("plans npm and GitHub publication as approval-required operations", async () => {
@@ -172,92 +174,40 @@ describe("repository release config", () => {
 
   test("rejects unsafe evidence directories after placeholder normalization", async () => {
     const unsafeConfig = config.replace("\".release/evidence/{version}\"", "\"../evidence/{version}\"")
-    const error = await runEffect(
-      Effect.gen(function*() {
-        return yield* createTestPlan(unsafeConfig, ".", selfReleaseConfigPath)
-      }).pipe(Effect.flip),
-      TestLayer
-    )
+    const error = await runEffect(createTestPlan(unsafeConfig, ".", selfReleaseConfigPath).pipe(Effect.flip), TestLayer)
 
     expect(error._tag).toBe("ConfigError")
   })
 
-  test("rejects absolute catalog paths at config decode", async () => {
-    const withFormula = JSON.parse(config)
-    withFormula.publish.homebrew = {
-      ...withFormula.publish.homebrew,
-      formulaPath: "/etc/formula.rb"
-    }
-    const error = await runEffect(
-      Effect.gen(function*() {
-        return yield* createTestPlan(JSON.stringify(withFormula), ".", selfReleaseConfigPath)
-      }).pipe(Effect.flip),
-      TestLayer
-    )
+  for (const [label, formulaPath] of [
+    ["rejects absolute catalog paths at config decode", "/etc/formula.rb"],
+    ["rejects traversal catalog paths at config decode", "../outside/formula.rb"]
+  ] as const) {
+    test(label, async () => {
+      const error = await rejectConfigMutation((value) => {
+        value.publish.homebrew.formulaPath = formulaPath
+      })
+      expect(error._tag).toBe("ConfigError")
+      if (error._tag === "ConfigError") {
+        expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
+        expect(error.reason).toContain(`["publish"]["homebrew"]["formulaPath"]`)
+      }
+    })
+  }
 
-    expect(error._tag).toBe("ConfigError")
-    if (error._tag === "ConfigError") {
-      expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
-      expect(error.reason).toContain(`["publish"]["homebrew"]["formulaPath"]`)
-    }
-  })
-
-  test("rejects traversal catalog paths at config decode", async () => {
-    const withFormula = JSON.parse(config)
-    withFormula.publish.homebrew = {
-      ...withFormula.publish.homebrew,
-      formulaPath: "../outside/formula.rb"
-    }
-    const error = await runEffect(
-      Effect.gen(function*() {
-        return yield* createTestPlan(JSON.stringify(withFormula), ".", selfReleaseConfigPath)
-      }).pipe(Effect.flip),
-      TestLayer
-    )
-
-    expect(error._tag).toBe("ConfigError")
-    if (error._tag === "ConfigError") {
-      expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
-    }
-  })
-
-  test("rejects trusted-publishing workflow names with separators at config decode", async () => {
-    const withWorkflow = JSON.parse(config)
-    withWorkflow.publish.npm = {
-      ...withWorkflow.publish.npm,
-      tokenEnv: undefined,
-      trustedPublishing: { workflow: ".github/workflows/release.yml" }
-    }
-    const error = await runEffect(
-      Effect.gen(function*() {
-        return yield* createTestPlan(JSON.stringify(withWorkflow), ".", selfReleaseConfigPath)
-      }).pipe(Effect.flip),
-      TestLayer
-    )
-
-    expect(error._tag).toBe("ConfigError")
-    if (error._tag === "ConfigError") {
-      expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
-    }
-  })
-
-  test("rejects trusted-publishing workflow names without a yaml extension at config decode", async () => {
-    const withWorkflow = JSON.parse(config)
-    withWorkflow.publish.npm = {
-      ...withWorkflow.publish.npm,
-      tokenEnv: undefined,
-      trustedPublishing: { workflow: "release.txt" }
-    }
-    const error = await runEffect(
-      Effect.gen(function*() {
-        return yield* createTestPlan(JSON.stringify(withWorkflow), ".", selfReleaseConfigPath)
-      }).pipe(Effect.flip),
-      TestLayer
-    )
-
-    expect(error._tag).toBe("ConfigError")
-    if (error._tag === "ConfigError") {
-      expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
-    }
-  })
+  for (const [label, workflow] of [
+    ["rejects trusted-publishing workflow names with separators at config decode", ".github/workflows/release.yml"],
+    ["rejects trusted-publishing workflow names without a yaml extension at config decode", "release.txt"]
+  ] as const) {
+    test(label, async () => {
+      const error = await rejectConfigMutation((value) => {
+        value.publish.npm.tokenEnv = undefined
+        value.publish.npm.trustedPublishing = { workflow }
+      })
+      expect(error._tag).toBe("ConfigError")
+      if (error._tag === "ConfigError") {
+        expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
+      }
+    })
+  }
 })

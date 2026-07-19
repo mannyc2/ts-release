@@ -1,6 +1,5 @@
 import { describe, expect, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/pipeline/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { PlanError } from "../src/pipeline/errors.js"
@@ -52,15 +51,13 @@ const findRequiredArtifactVariant = (
     }))
 }
 
-const TestLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
+const TestLayer = makeTestCommandRunnerLayer({
     directories: new Set(["."]),
     env: new Map([
       ["NPM_TOKEN", "npm_secret"],
       ["GH_TOKEN", "gh_secret"]
     ])
-  }),
-)
+  })
 
 const gitHeadCommand = CommandSpec.make({
   executable: "git",
@@ -99,12 +96,10 @@ const bunExecutableBuild = (overrides: Record<string, unknown> = {}) => ({
   ...overrides
 })
 
-const ChecksumLayer = Layer.mergeAll(
-  makeTestCommandRunnerLayer({
+const ChecksumLayer = makeTestCommandRunnerLayer({
     files: new Map([["artifacts/archive.tgz", "manual archive"]]),
     directories: new Set(["."])
-  }),
-)
+  })
 
 const createPlan = (config: string) =>
   createTestPlan(config)
@@ -287,8 +282,7 @@ describe("planner", () => {
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
+  layer(makeTestCommandRunnerLayer({
       directories: new Set(["."]),
       env: new Map([
         ["NPM_TOKEN", "npm_secret"],
@@ -301,8 +295,7 @@ describe("planner", () => {
           stderr: ""
         }]
       ])
-    }),
-  ))((it) => {
+    }))((it) => {
     it.effect("resolves HEAD release identity through the host git command", () =>
       Effect.gen(function*() {
         const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
@@ -312,8 +305,7 @@ describe("planner", () => {
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
+  layer(makeTestCommandRunnerLayer({
       files: new Map([
         ["package.json", JSON.stringify({ name: "@scope/pkg", version: "1.2.3" })],
         ["artifacts/scope-pkg-1.2.3.tgz", "archive"]
@@ -325,8 +317,7 @@ describe("planner", () => {
           stderr: ""
         }]
       ])
-    }),
-  ))((it) => {
+    }))((it) => {
     it.effect("resolves package manifest identity during normalization", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
@@ -355,11 +346,9 @@ describe("planner", () => {
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
+  layer(makeTestCommandRunnerLayer({
       files: new Map([["artifacts/release-0.1.0-release.tgz", "archive"]])
-    }),
-  ))((it) => {
+    }))((it) => {
     it.effect("expands artifact path templates before inventory", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
@@ -378,11 +367,9 @@ describe("planner", () => {
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
+  layer(makeTestCommandRunnerLayer({
       files: new Map([["dist/release-0.1.0-linux-x64", "compiled binary"]])
-    }),
-  ))((it) => {
+    }))((it) => {
     it.effect("adds build artifacts to the canonical plan", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
@@ -459,74 +446,34 @@ describe("planner", () => {
         }
       }))
 
-    it.effect("rejects unsafe build entry paths", () =>
-      Effect.gen(function*() {
-        const config = releaseConfig({
-          artifacts: [],
-          builds: [bunExecutableBuild({ entry: "../cli.ts" })],
-          publish: {}
-        })
-        const error = yield* createPlan(config).pipe(Effect.flip)
-
-        expect(error._tag).toBe("ConfigError")
-        if (error._tag === "ConfigError") {
-          expect(error.reason).toContain(`["builds"][0]["entry"]`)
-        }
-      }))
-
-    it.effect("rejects unsafe build output paths", () =>
-      Effect.gen(function*() {
-        const config = releaseConfig({
-          artifacts: [],
-          builds: [
-            bunExecutableBuild({
-              output: "../dist/release-{version}"
-            })
-          ],
-          publish: {}
-        })
-        const error = yield* createPlan(config).pipe(Effect.flip)
-
-        expect(error._tag).toBe("ConfigError")
-        if (error._tag === "ConfigError") {
-          expect(error.reason).toContain(`["builds"][0]["output"]`)
-        }
-      }))
-
-    it.effect("rejects removed build output override arrays", () =>
-      Effect.gen(function*() {
-        const config = releaseConfig({
-          artifacts: [],
-          builds: [
-            bunExecutableBuild({
-              outputs: [
-                {
-                  id: "cli-linux-x64",
-                  target: "linux-x64",
-                  path: "dist/release-{version}",
-                  variant: {
-                    os: "windows"
-                  }
-                }
-              ]
-            })
-          ],
-          publish: {}
-        })
-        const error = yield* createPlan(config).pipe(Effect.flip)
-
-        expect(error._tag).toBe("ConfigError")
-        if (error._tag === "ConfigError") {
-          expect(error.reason).toContain("builds[0].outputs")
-        }
-      }))
+    for (const [label, overrides, reason] of [
+      ["rejects unsafe build entry paths", { entry: "../cli.ts" }, `["builds"][0]["entry"]`],
+      ["rejects unsafe build output paths", { output: "../dist/release-{version}" }, `["builds"][0]["output"]`],
+      ["rejects removed build output override arrays", {
+        outputs: [{
+          id: "cli-linux-x64",
+          target: "linux-x64",
+          path: "dist/release-{version}",
+          variant: { os: "windows" }
+        }]
+      }, "builds[0].outputs"]
+    ] as const) {
+      it.effect(label, () =>
+        Effect.gen(function*() {
+          const error = yield* createPlan(releaseConfig({
+            artifacts: [],
+            builds: [bunExecutableBuild(overrides)],
+            publish: {}
+          })).pipe(Effect.flip)
+          expect(error._tag).toBe("ConfigError")
+          if (error._tag === "ConfigError") expect(error.reason).toContain(reason)
+        }))
+    }
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
+  layer(makeTestCommandRunnerLayer({
       files: new Map([["dist/release-darwin-arm64", "compiled binary"]])
-    }),
-  ))((it) => {
+    }))((it) => {
     it.effect("preserves direct artifact platform metadata", () =>
       Effect.gen(function*() {
         const config = releaseConfig({
@@ -586,8 +533,7 @@ describe("planner", () => {
       }))
   })
 
-  layer(Layer.mergeAll(
-    makeTestCommandRunnerLayer({
+  layer(makeTestCommandRunnerLayer({
       directories: new Set(["."]),
       env: new Map([
         ["NPM_TOKEN", "npm_secret"],
@@ -600,8 +546,7 @@ describe("planner", () => {
           stderr: "not a git checkout"
         }]
       ])
-    }),
-  ))((it) => {
+    }))((it) => {
     it.effect("reports git HEAD resolution failures as identity errors", () =>
       Effect.gen(function*() {
         const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
@@ -612,26 +557,15 @@ describe("planner", () => {
   })
 
   layer(ChecksumLayer)((it) => {
-    it.effect("preserves matching manual sha256 checksums", () =>
-      Effect.gen(function*() {
-        const checksum = "6d616e75616c2061726368697665"
-        const plan = yield* createPlan(manualChecksumConfig({ algorithm: "sha256", value: checksum }))
-
-        expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: checksum })
+    for (const [label, checksum] of [
+      ["preserves matching manual sha256 checksums", { algorithm: "sha256", value: "6d616e75616c2061726368697665" }],
+      ["carries manual checksum data into imported artifacts", { algorithm: "sha256", value: "00" }],
+      ["preserves manual sha512 checksums on imported artifacts", { algorithm: "sha512", value: "sha512:manual" }]
+    ] as const) {
+      it.effect(label, () => Effect.gen(function*() {
+        const plan = yield* createPlan(manualChecksumConfig(checksum))
+        expect(plan.artifacts[0]?.checksum).toEqual(checksum)
       }))
-
-    it.effect("carries manual checksum data into imported artifacts", () =>
-      Effect.gen(function*() {
-        const plan = yield* createPlan(manualChecksumConfig({ algorithm: "sha256", value: "00" }))
-
-        expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha256", value: "00" })
-      }))
-
-    it.effect("preserves manual sha512 checksums on imported artifacts", () =>
-      Effect.gen(function*() {
-        const plan = yield* createPlan(manualChecksumConfig({ algorithm: "sha512", value: "sha512:manual" }))
-
-        expect(plan.artifacts[0]?.checksum).toEqual({ algorithm: "sha512", value: "sha512:manual" })
-      }))
+    }
   })
 })

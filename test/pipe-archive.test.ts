@@ -7,8 +7,8 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { archivePlanner, resolveArchives } from "../src/features/archive.js"
-import { checksumPlanner, resolveChecksum } from "../src/features/checksum.js"
+import { archivePlanner } from "../src/features/archive.js"
+import { checksumPlanner } from "../src/features/checksum.js"
 import { Artifact, ExecutableExtra } from "../src/grammar/artifact.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
 import { schedule } from "../src/grammar/pipe.js"
@@ -35,7 +35,7 @@ const stageOperations = (operations: ReadonlyArray<Operation>): ReadonlyArray<St
 const planArchives = (archives: ReadonlyArray<Record<string, unknown>>, state: PlanAccumulator) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(releaseConfig({ artifacts: [], archives }))
-    return yield* Option.match(resolveArchives(intent.archives), {
+    return yield* Option.match(Option.fromUndefinedOr(intent.archives), {
       onNone: () => Effect.die("Expected a resolved archive section."),
       onSome: (section) => archivePlanner(section, state)
     })
@@ -45,7 +45,7 @@ describe("archive pipe", () => {
     Effect.gen(function*() {
       const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [] }))
       const state = yield* runPipeline(emptyPlanAccumulator(identity), [
-        schedule(archivePlanner, resolveArchives(config.archives))
+        schedule(archivePlanner, Option.fromUndefinedOr(config.archives))
       ])
       expect(state.operations).toHaveLength(0)
       expect(state.notices).toEqual([{ pipeId: "archive", severity: "info", reason: "Config section is absent; pipe skipped." }])
@@ -155,8 +155,8 @@ describe("archive pipe", () => {
     Effect.gen(function*() {
       const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [], archives: [{}], checksum: {} }))
       const state = yield* runPipeline(stateWith([linuxMusl]), [
-        schedule(archivePlanner, resolveArchives(config.archives)),
-        schedule(checksumPlanner, resolveChecksum(config.checksum))
+        schedule(archivePlanner, Option.fromUndefinedOr(config.archives)),
+        schedule(checksumPlanner, Option.fromUndefinedOr(config.checksum))
       ])
       const checksum = state.artifacts.find((artifact) => artifact.kind === "checksum-file")
       expect(checksum?.extra).toMatchObject({ _tag: "checksum-file",

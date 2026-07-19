@@ -2,10 +2,9 @@ import { describe, expect, it, layer } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Option from "effect/Option"
 import { makeArtifactStagerLayer, type BunExecutableBuildInput } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPlanner, resolveBuilds } from "../src/features/build.js"
+import { buildPlanner } from "../src/features/build.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
 import { emptyPlanAccumulator } from "../src/grammar/runner.js"
 import { makePipelineIdentity, releaseConfig, stageArtifactOperations } from "./helpers.js"
@@ -25,10 +24,7 @@ const isStageArtifactOperation = (operation: Operation): operation is StageOpera
 const planBuild = (build: Record<string, unknown>) =>
   Effect.gen(function*() {
     const intent = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
-    return yield* Option.match(resolveBuilds(intent.builds), {
-      onNone: () => Effect.die("Expected a resolved build section."),
-      onSome: (section) => buildPlanner(section, state)
-    })
+    return yield* buildPlanner(intent.builds!, state)
   })
 
 describe("build pipe", () => {

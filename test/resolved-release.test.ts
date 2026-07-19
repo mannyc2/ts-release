@@ -40,7 +40,7 @@ describe("resolved release", () => {
       expect([empty.builds, empty.npmPackage, empty.npm, empty.pypi, empty.github].map(isNone))
         .toEqual(Array(5).fill(true))
       expect([some(empty.pypiWheels), some(empty.artifacts), some(empty.archives), some(empty.catalogs)]).toEqual([[], [], [], []])
-      expect(some(shorthand.npmPackage)).toEqual({ path: ".", packageName: "manifest-name" })
+      expect(some(shorthand.npmPackage)).toEqual({ path: "." })
       expect(some(shorthand.pypiWheels)?.map(({ id }) => id)).toEqual(["wheel-a"])
       expect(some(pair.pypiWheels)?.map(({ id }) => id)).toEqual(["wheel-a", "wheel-b"])
       expect(some(shorthand.checksum))
@@ -76,7 +76,7 @@ describe("resolved release", () => {
           outfile: ".release/artifacts/manifest-name_1.2.3_linux_amd64" } }
       })
       expect(plannedBuild.operations[0]?.action).not.toHaveProperty("intent.minify")
-      expect(some(release.npmPackage)).toEqual({ path: ".", packageName: "manifest-name" })
+      expect(some(release.npmPackage)).toEqual({ path: "." })
       expect(some(release.archives)?.[0]).toMatchObject({
         id: "archive", formats: ["tar.gz"], files: ["license*", "LICENSE*", "readme*", "README*", "changelog*", "CHANGELOG*"]
       })

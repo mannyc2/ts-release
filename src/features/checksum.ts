@@ -1,24 +1,18 @@
 // Invariant: checksum input order is basename-sorted and excludes every directory-shaped or prior checksum artifact.
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, ChecksumFileExtra } from "../grammar/artifact.js"
 import { FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../grammar/operation.js"
 import { featurePlanner } from "../grammar/pipe.js"
 import { renderArtifactNameEffect } from "../grammar/template.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("ReleaseConfigChecksum")({
-  algorithm: Schema.optionalKey(Schema.Literals(["sha256", "sha512"])),
-  nameTemplate: Schema.optionalKey(Schema.NonEmptyString)
+  algorithm: defaulted(Schema.Literals(["sha256", "sha512"]), "sha256"),
+  nameTemplate: defaulted(Schema.NonEmptyString, "{name}_{version}_checksums.txt")
 }) {}
-export interface ResolvedChecksum { readonly algorithm: "sha256" | "sha512"; readonly nameTemplate: string }
-export const resolveChecksum = (raw: ReleaseConfigChecksum | undefined): Option.Option<ResolvedChecksum> =>
-  raw === undefined ? Option.none() : Option.some({
-    algorithm: raw.algorithm ?? "sha256",
-    nameTemplate: raw.nameTemplate ?? "{name}_{version}_checksums.txt"
-  })
 
-export const checksumPlanner = featurePlanner<ResolvedChecksum>("checksum", (section, state) => Effect.gen(function*() {
+export const checksumPlanner = featurePlanner<ReleaseConfigChecksum>("checksum", (section, state) => Effect.gen(function*() {
     const inputs = state.artifacts.filter((artifact) =>
       artifact.kind !== "package" && artifact.kind !== "checksum-file"
       && !(artifact.extra?._tag === "file" && artifact.extra.format === "directory")

@@ -8,10 +8,10 @@ import type { ReleaseIdentity } from "../grammar/state.js"
 import {
   compactTrustedPublishing,
   publishingAuthEnvNames,
-  trustedPublishingConfigFields,
-  type TrustedPublishingSection
+  trustedPublishingConfigFields
 } from "./trusted-publishing.js"
 import { readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export const NpmAccess = Schema.Literals(["public", "restricted"])
 export type NpmAccess = typeof NpmAccess.Type
@@ -24,7 +24,7 @@ export class ReleaseConfigNpmTrustedPublishing extends Schema.Class<ReleaseConfi
 }) {}
 
 export class ReleaseConfigNpmPublish extends Schema.Class<ReleaseConfigNpmPublish>("ReleaseConfigNpmPublish")({
-  registry: Schema.optionalKey(Schema.String),
+  registry: defaulted(Schema.String, "https://registry.npmjs.org"),
   packageName: Schema.optionalKey(Schema.NonEmptyString),
   packagePath: Schema.optionalKey(SafeRelativePath),
   tokenEnv: Schema.optionalKey(Schema.String),
@@ -33,23 +33,10 @@ export class ReleaseConfigNpmPublish extends Schema.Class<ReleaseConfigNpmPublis
   provenance: Schema.optionalKey(Schema.Boolean)
 }) {}
 
-interface NpmTrustedPublishing extends TrustedPublishingSection {
-  readonly verifyPackageExists?: boolean | undefined
-}
-export interface ResolvedNpmPublish {
-  readonly registry: string
-  readonly packageName: string
-  readonly packagePath: string
-  readonly tokenEnv?: string | undefined
-  readonly trustedPublishing?: NpmTrustedPublishing | undefined
-  readonly access?: NpmAccess | undefined
-  readonly provenance?: boolean | undefined
-}
-
 export const resolveNpmPublish = (config: {
   readonly project: { readonly packageName?: string; readonly packagePath?: string }
   readonly publish: { readonly npm?: boolean | ReleaseConfigNpmPublish }
-}, identity: ReleaseIdentity): ResolvedNpmPublish | undefined => {
+}, identity: ReleaseIdentity) => {
   const publish = config.publish.npm
   if (publish === undefined || publish === false) return undefined
   const section = publish === true ? undefined : publish
@@ -66,9 +53,10 @@ export const resolveNpmPublish = (config: {
     provenance: section?.provenance
   }
 }
+export type NpmPublishSection = NonNullable<ReturnType<typeof resolveNpmPublish>>
 
 const npmCommand = (
-  section: ResolvedNpmPublish,
+  section: NpmPublishSection,
   args: ReadonlyArray<string>,
   authenticated: boolean = false
 ): CommandSpec => {
@@ -76,17 +64,17 @@ const npmCommand = (
   return CommandSpec.make({ executable: "npm", args: [...args], requiredEnv: env, redactedEnv: env })
 }
 
-const npmCheck = (id: string, description: string, section: ResolvedNpmPublish, args: ReadonlyArray<string>) =>
+const npmCheck = (id: string, description: string, section: NpmPublishSection, args: ReadonlyArray<string>) =>
   readOnlyCommandValidationOperation({ id, pipeId: "publish:npm", description, command: npmCommand(section, args) })
 
-const publishArgs = (section: ResolvedNpmPublish): ReadonlyArray<string> => {
+const publishArgs = (section: NpmPublishSection): ReadonlyArray<string> => {
   const args = ["publish", section.packagePath, "--registry", section.registry]
   if (section.access !== undefined) args.push("--access", section.access)
   if (section.provenance === true) args.push("--provenance")
   return args
 }
 
-export const publishNpmPlanner = featurePlanner<ResolvedNpmPublish>("publish:npm", (section, state) => {
+export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm", (section, state) => {
     const auth = section.trustedPublishing === undefined
       ? readOnlyCommandValidationOperation({
         id: "npm:npm-whoami",
@@ -105,7 +93,8 @@ export const publishNpmPlanner = featurePlanner<ResolvedNpmPublish>("publish:npm
       npmCheck("npm:npm-version", "Check npm CLI availability.", section, ["--version"]),
       auth
     ]
-    if (section.trustedPublishing?.verifyPackageExists === true) operations.push(npmCheck(
+    if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing
+      && section.trustedPublishing.verifyPackageExists === true) operations.push(npmCheck(
       "npm:npm-package-exists",
       "Verify npm package exists before trusted publishing.",
       section,

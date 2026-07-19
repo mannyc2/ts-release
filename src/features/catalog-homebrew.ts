@@ -10,11 +10,13 @@ import {
   catalogArtifactUrl,
   catalogPathBaseName,
   compactPackageShortName,
+  type CatalogResolutionConfig,
   findCatalogArtifact,
   githubRepository,
   projectPackageName,
   rejectInvalidCatalogArtifact
 } from "./catalog-shared.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHomebrewPublish>(
   "ReleaseConfigHomebrewPublish"
@@ -26,36 +28,22 @@ export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHome
   homepage: Schema.optionalKey(Schema.String),
   description: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
-  tapDirectory: Schema.optionalKey(SafeRelativePath),
+  tapDirectory: defaulted(SafeRelativePath, "."),
   installPath: Schema.optionalKey(Schema.String),
   tokenEnv: Schema.optionalKey(Schema.String)
 }) {}
 
-export interface ResolvedHomebrew extends ReleaseConfigHomebrewPublish {
-  readonly formulaName: string
-  readonly formulaPath: string
-  readonly tapDirectory: string
-  readonly githubRepository?: string | undefined
-}
-
-export const resolveHomebrew = (config: {
-  readonly project: { readonly name?: string; readonly packageName?: string; readonly repository?: string }
-  readonly publish: {
-    readonly github?: boolean | { readonly repository?: string }
-    readonly homebrew?: ReleaseConfigHomebrewPublish
-  }
-}): ResolvedHomebrew | undefined => {
-  const section = config.publish.homebrew
+export const resolveHomebrew = (section: ReleaseConfigHomebrewPublish | undefined, config: CatalogResolutionConfig) => {
   if (section === undefined) return undefined
   const formulaName = section.formulaName ?? compactPackageShortName(projectPackageName(config.project) ?? "release")
   return {
     ...section,
-    formulaName,
-    formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
-    tapDirectory: section.tapDirectory ?? ".",
+    formulaName, formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
+    tapDirectory: section.tapDirectory,
     githubRepository: githubRepository(config)
   }
 }
+export type HomebrewSection = NonNullable<ReturnType<typeof resolveHomebrew>>
 
 const source = {
   pipeId: "catalog:homebrew", field: "publish.homebrew.ids", target: "Homebrew", label: "Homebrew formula"
@@ -69,7 +57,7 @@ const formulaClassName = (name: string): string => {
 }
 
 const selectArtifacts = Effect.fn("catalog.homebrew.selectArtifacts")(function*(
-  section: ResolvedHomebrew,
+  section: HomebrewSection,
   available: ReadonlyArray<Artifact>
 ) {
   if (section.artifactIds !== undefined) return yield* Effect.forEach(
@@ -105,7 +93,7 @@ const variantArtifacts = Effect.fn("catalog.homebrew.variantArtifacts")(function
 })
 
 const installLines = (
-  section: ResolvedHomebrew,
+  section: HomebrewSection,
   artifacts: ReadonlyArray<Artifact>
 ): { readonly binary: string | undefined; readonly lines: ReadonlyArray<string> } => {
   if (section.installPath !== undefined) return {
@@ -143,7 +131,7 @@ const testLines = (binary: string | undefined): ReadonlyArray<string> => binary 
 ]
 
 const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
-  section: ResolvedHomebrew,
+  section: HomebrewSection,
   identity: ReleaseIdentity,
   available: ReadonlyArray<Artifact>
 ) {
@@ -179,7 +167,7 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
   ] })
 })
 
-export const catalogHomebrewPlanner = featurePlanner<ResolvedHomebrew>("catalog:homebrew", (section, state) => Effect.gen(function*() {
+export const catalogHomebrewPlanner = featurePlanner<HomebrewSection>("catalog:homebrew", (section, state) => Effect.gen(function*() {
     const path = section.formulaPath
     const contents = yield* formulaContent(section, state.identity, state.artifacts)
     return {

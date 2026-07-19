@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { Artifact } from "../src/grammar/artifact.js"
 import { catalogGenericPlanner, ReleaseConfigCatalogEntry, ReleaseConfigCatalogFactHole,
-  resolveCatalogs, type ResolvedCatalogEntry } from "../src/features/catalog-generic.js"
+  type CatalogEntry } from "../src/features/catalog-generic.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()
@@ -10,11 +10,12 @@ const asset = Artifact.make({ id: "asset", kind: "archive", path: "dist/tool.zip
 const hole = (fact: "sha256" | "downloadUrl" | "assetName", artifact = "asset") =>
   ReleaseConfigCatalogFactHole.make({ fact, artifact })
 const raw = (values: Partial<ReleaseConfigCatalogEntry> = {}) => ReleaseConfigCatalogEntry.make({
-  id: "market", repository: "owner/catalog", file: "catalog.json", content: "{name}", ...values
+  id: "market", repository: "owner/catalog", file: "catalog.json", content: "{name}",
+  commitMessage: "Update {name} to {version}", submit: "push", ...values
 })
 const entry = (values: Partial<ReleaseConfigCatalogEntry> = {}, github: string | undefined = "owner/source") =>
-  resolveCatalogs([raw(values)], github)?.[0] as ResolvedCatalogEntry
-const plan = (entries: ReadonlyArray<ResolvedCatalogEntry>, artifacts = [asset]) =>
+  ({ ...raw(values), githubRepository: github }) satisfies CatalogEntry
+const plan = (entries: ReadonlyArray<CatalogEntry>, artifacts = [asset]) =>
   catalogGenericPlanner(entries, { identity, artifacts })
 
 describe("generic catalog pipe", () => {

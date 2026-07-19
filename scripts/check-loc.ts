@@ -7,11 +7,11 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6245],
+  ["src", 6119],
   ["src/config", 207],
-  ["src/resolve", 312],
-  ["src/grammar", 762],
-  ["src/features", 1804],
+  ["src/resolve", 316],
+  ["src/grammar", 770],
+  ["src/features", 1666],
   ["src/pack", 499],
   ["src/github", 267],
   ["src/run", 726],
@@ -23,7 +23,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 586],
   ["apps/ts-release-action/src", 500],
-  ["test", 8747],
+  ["test", 8728],
   ["scripts", 2235],
   ["apps/release-ts/scripts", 878]
 ]

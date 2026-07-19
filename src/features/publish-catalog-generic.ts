@@ -5,11 +5,11 @@ import { CommandAction, CommandSpec, Operation } from "../grammar/operation.js"
 import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "./operations.js"
 import { featurePlanner } from "../grammar/pipe.js"
 import { renderTemplate } from "../grammar/template.js"
-import { catalogWritePath, type ResolvedCatalogEntry } from "./catalog-generic.js"
+import { catalogWritePath, type CatalogEntry } from "./catalog-generic.js"
 const argv = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
   typeof value === "string" ? value.trim().split(/\s+/).filter(Boolean) : value
 const validation = Effect.fn("catalog.publish.validation")(function*(
-  entry: ResolvedCatalogEntry, identity: Parameters<typeof renderTemplate>[1]["identity"]
+  entry: CatalogEntry, identity: Parameters<typeof renderTemplate>[1]["identity"]
 ) {
   if (entry.validate === undefined) return []
   const rendered = argv(entry.validate).map((part) => renderTemplate(part, { identity }))
@@ -34,7 +34,7 @@ const command = (
     CommandSpec.make({ ...noAuthCommand(executable, args), cwd }) })
 })
 const publishOperations = (
-  entry: ResolvedCatalogEntry, identity: Parameters<typeof renderTemplate>[1]["identity"]
+  entry: CatalogEntry, identity: Parameters<typeof renderTemplate>[1]["identity"]
 ): ReadonlyArray<Operation> => {
   const id = `catalog:${entry.id}:push`
   const directory = entry.directory
@@ -55,7 +55,7 @@ const publishOperations = (
       directory ?? ".")
   ]
 }
-export const publishCatalogGenericPlanner = featurePlanner<ReadonlyArray<ResolvedCatalogEntry>>(
+export const publishCatalogGenericPlanner = featurePlanner<ReadonlyArray<CatalogEntry>>(
   "publish:catalog", (entries, state) => Effect.gen(function*() {
     const operations = yield* Effect.forEach(entries, (entry) => validation(entry, state.identity).pipe(
       Effect.map((checks) => [...checks, ...publishOperations(entry, state.identity)])))

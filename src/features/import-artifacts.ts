@@ -1,6 +1,5 @@
 // Invariant: each manual artifact is decoded once, rendered once, and paired with one existence check.
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import {
   Artifact,
@@ -27,9 +26,6 @@ export class ReleaseConfigManualArtifact extends Schema.Class<ReleaseConfigManua
   checksum: Schema.optionalKey(Checksum),
   variant: Schema.optionalKey(InstallableArtifactVariant)
 }) {}
-
-export const resolveManualArtifacts = (raw: ReadonlyArray<ReleaseConfigManualArtifact> | undefined) =>
-  raw === undefined ? Option.none<ReadonlyArray<ReleaseConfigManualArtifact>>() : Option.some(raw)
 
 const kinds: Record<ReleaseConfigManualArtifact["format"], Artifact["kind"]> = {
   tarball: "archive", zip: "archive", directory: "file",

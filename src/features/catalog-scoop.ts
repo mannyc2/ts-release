@@ -10,11 +10,13 @@ import {
   catalogArtifactUrl,
   catalogPathBaseName,
   compactPackageShortName,
+  type CatalogResolutionConfig,
   findCatalogArtifact,
   githubRepository,
   projectPackageName,
   rejectInvalidCatalogArtifact
 } from "./catalog-shared.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPublish>(
   "ReleaseConfigScoopPublish"
@@ -28,42 +30,28 @@ export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPu
   license: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
   bin: Schema.optionalKey(Schema.String),
-  bucketDirectory: Schema.optionalKey(SafeRelativePath),
+  bucketDirectory: defaulted(SafeRelativePath, "."),
   tokenEnv: Schema.optionalKey(Schema.String)
 }) {}
 
-export interface ResolvedScoop extends ReleaseConfigScoopPublish {
-  readonly manifestName: string
-  readonly manifestPath: string
-  readonly bucketDirectory: string
-  readonly githubRepository?: string | undefined
-}
-
-export const resolveScoop = (config: {
-  readonly project: { readonly name?: string; readonly packageName?: string; readonly repository?: string }
-  readonly publish: {
-    readonly github?: boolean | { readonly repository?: string }
-    readonly scoop?: ReleaseConfigScoopPublish
-  }
-}): ResolvedScoop | undefined => {
-  const section = config.publish.scoop
+export const resolveScoop = (section: ReleaseConfigScoopPublish | undefined, config: CatalogResolutionConfig) => {
   if (section === undefined) return undefined
   const manifestName = section.manifestName ?? compactPackageShortName(projectPackageName(config.project) ?? "release")
   return {
     ...section,
-    manifestName,
-    manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
-    bucketDirectory: section.bucketDirectory ?? ".",
+    manifestName, manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
+    bucketDirectory: section.bucketDirectory,
     githubRepository: githubRepository(config)
   }
 }
+export type ScoopSection = NonNullable<ReturnType<typeof resolveScoop>>
 
 const source = {
   pipeId: "catalog:scoop", field: "publish.scoop.artifactId", target: "Scoop", label: "Scoop manifest"
 }
 
 const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
-  section: ResolvedScoop,
+  section: ScoopSection,
   identity: ReleaseIdentity,
   artifacts: ReadonlyArray<Artifact>
 ) {
@@ -93,7 +81,7 @@ const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
   })
 })
 
-export const catalogScoopPlanner = featurePlanner<ResolvedScoop>("catalog:scoop", (section, state) => Effect.gen(function*() {
+export const catalogScoopPlanner = featurePlanner<ScoopSection>("catalog:scoop", (section, state) => Effect.gen(function*() {
     const path = section.manifestPath
     const contents = yield* manifestContent(section, state.identity, state.artifacts)
     return {

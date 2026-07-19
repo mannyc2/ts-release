@@ -9,7 +9,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { pypiWheelPlanner, resolvePyPiWheels } from "../src/features/pypi-wheel.js"
+import { pypiWheelPlanner } from "../src/features/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
 import { emptyPlanAccumulator } from "../src/grammar/runner.js"
 
@@ -56,10 +56,10 @@ describe("PyPI wheel build pipe", () => {
               ]
             }
           }))
-          const contribution = yield* Option.match(resolvePyPiWheels(intent.pypiWheel), {
-            onNone: () => Effect.die("Expected a resolved PyPI wheel section."),
-            onSome: (section) => pypiWheelPlanner(section, emptyPlanAccumulator(identity))
-          })
+          const contribution = yield* pypiWheelPlanner(
+            Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel!],
+            emptyPlanAccumulator(identity)
+          )
           expect(contribution.artifacts[0]).toMatchObject({
             id: "pypi-wheel-linux-x64",
             kind: "wheel",

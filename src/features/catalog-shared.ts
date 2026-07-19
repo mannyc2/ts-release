@@ -6,6 +6,11 @@ import { PlanError } from "../grammar/errors.js"
 import type { ReleaseIdentity } from "../grammar/state.js"
 export const catalogPathBaseName = artifactPathBaseName
 
+export interface CatalogResolutionConfig {
+  readonly project: { readonly name?: string; readonly packageName?: string; readonly repository?: string }
+  readonly publish: { readonly github?: boolean | { readonly repository?: string } }
+}
+
 export const compactPackageShortName = (packageName: string): string => {
   const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName
   const normalized = withoutScope.replace(/^@/, "").replace(/[^A-Za-z0-9-]+/g, "-")
@@ -18,10 +23,7 @@ export const projectPackageName = (project: {
 }): string | undefined =>
   project.packageName ?? project.name
 
-export const githubRepository = (config: {
-  readonly project: { readonly repository?: string | undefined }
-  readonly publish: { readonly github?: boolean | { readonly repository?: string | undefined } | undefined }
-}): string | undefined => {
+export const githubRepository = (config: CatalogResolutionConfig): string | undefined => {
   const github = config.publish.github
   if (github === undefined || github === false) {
     return undefined

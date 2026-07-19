@@ -1,12 +1,12 @@
 // Invariant: each archive section is either neutral or platform-grouped, never both, with deterministic group/id order.
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, ArchiveExtra, type InstallableArtifactVariant } from "../grammar/artifact.js"
 import { PlanError } from "../grammar/errors.js"
 import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent, Operation, StageAction } from "../grammar/operation.js"
 import { featurePlanner } from "../grammar/pipe.js"
 import { defaultArtifactBaseName, renderArtifactNameEffect } from "../grammar/template.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export class ReleaseConfigArchiveFormatOverrides extends Schema.Class<ReleaseConfigArchiveFormatOverrides>(
   "ReleaseConfigArchiveFormatOverrides"
@@ -16,26 +16,16 @@ export class ReleaseConfigArchiveFormatOverrides extends Schema.Class<ReleaseCon
   windows: Schema.optionalKey(Schema.Array(ArchiveFormat))
 }) {}
 export class ReleaseConfigArchive extends Schema.Class<ReleaseConfigArchive>("ReleaseConfigArchive")({
-  id: Schema.optionalKey(Schema.NonEmptyString),
+  id: defaulted(Schema.NonEmptyString, "archive"),
   ids: Schema.optionalKey(Schema.Array(Schema.NonEmptyString)),
   nameTemplate: Schema.optionalKey(Schema.NonEmptyString),
-  formats: Schema.optionalKey(Schema.Array(ArchiveFormat)),
+  formats: defaulted(Schema.Array(ArchiveFormat), ["tar.gz"]),
   formatOverrides: Schema.optionalKey(ReleaseConfigArchiveFormatOverrides),
-  files: Schema.optionalKey(Schema.Array(Schema.NonEmptyString)),
+  files: defaulted(Schema.Array(Schema.NonEmptyString), [
+    "license*", "LICENSE*", "readme*", "README*", "changelog*", "CHANGELOG*"
+  ]),
   wrapInDirectory: Schema.optionalKey(Schema.Union([Schema.Boolean, Schema.String]))
 }) {}
-
-export interface ResolvedArchive extends ReleaseConfigArchive {
-  readonly id: string
-  readonly formats: ReadonlyArray<ArchiveFormat>
-  readonly files: ReadonlyArray<string>
-}
-const defaultFiles = ["license*", "LICENSE*", "readme*", "README*", "changelog*", "CHANGELOG*"]
-export const resolveArchives = (raw: ReadonlyArray<ReleaseConfigArchive> | undefined) => raw === undefined
-  ? Option.none<ReadonlyArray<ResolvedArchive>>()
-  : Option.some(raw.map((section) => ({
-    ...section, id: section.id ?? "archive", formats: section.formats ?? ["tar.gz"], files: section.files ?? defaultFiles
-  })))
 
 const platformKey = (platform: InstallableArtifactVariant): string =>
   `${platform.os}-${platform.arch}${platform.libc === "musl" ? "-musl" : ""}`
@@ -66,7 +56,7 @@ const entries = (artifacts: ReadonlyArray<Artifact>) => artifacts.map((artifact)
     }`
   }))
 
-export const archivePlanner = featurePlanner<ReadonlyArray<ResolvedArchive>>("archive", (sections, state) => Effect.gen(function*() {
+export const archivePlanner = featurePlanner<ReadonlyArray<ReleaseConfigArchive>>("archive", (sections, state) => Effect.gen(function*() {
     const artifacts: Array<Artifact> = []
     const operations: Array<Operation> = []
     for (const section of sections) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import { catalogGenericPlanner, type ResolvedCatalogEntry } from "../src/features/catalog-generic.js"
+import { catalogGenericPlanner, type CatalogEntry } from "../src/features/catalog-generic.js"
 import { publishCatalogGenericPlanner } from "../src/features/publish-catalog-generic.js"
 import type { Operation } from "../src/grammar/operation.js"
 import { schedule } from "../src/grammar/pipe.js"
@@ -9,7 +9,7 @@ import { emptyPlanAccumulator, runPipeline } from "../src/grammar/runner.js"
 import { makePipelineIdentity } from "./helpers.js"
 const identity = makePipelineIdentity()
 const context = { identity, artifacts: [] }
-const entry: ResolvedCatalogEntry = { id: "index", repository: "owner/catalog", directory: "catalog",
+const entry: CatalogEntry = { id: "index", repository: "owner/catalog", directory: "catalog",
   file: "file.json", content: "{}", commitMessage: "Update {name} to {version}", submit: "push" }
 const commands = (operations: ReadonlyArray<Operation>) =>
   operations.map(({ action }) => action._tag === "command" ? action.command : undefined)

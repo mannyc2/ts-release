@@ -18,7 +18,7 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import { runOperations } from "../src/run/executor.js"
 import type { CommandResult } from "../src/host/host.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
-import { checksumPlanner, resolveChecksum } from "../src/features/checksum.js"
+import { checksumPlanner } from "../src/features/checksum.js"
 import { Artifact, ChecksumFileExtra, ImportedFileExtra, PackageExtra } from "../src/grammar/artifact.js"
 import { ExecutionApproval, FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../src/grammar/operation.js"
 import { schedule } from "../src/grammar/pipe.js"
@@ -85,7 +85,7 @@ describe("checksum pipe", () => {
     Effect.gen(function*() {
       const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [] }))
       const state = yield* runPipeline(emptyPlanAccumulator(identity), [
-        schedule(checksumPlanner, resolveChecksum(config.checksum))
+        schedule(checksumPlanner, Option.fromUndefinedOr(config.checksum))
       ])
       expect(state.operations).toHaveLength(0)
       expect(state.notices).toEqual([
@@ -102,7 +102,7 @@ describe("checksum pipe", () => {
         artifacts: [],
         checksum: {},
       }))
-      const contribution = yield* Option.match(resolveChecksum(config.checksum), {
+      const contribution = yield* Option.match(Option.fromUndefinedOr(config.checksum), {
         onNone: () => Effect.die("Expected a resolved checksum section."),
         onSome: (section) => checksumPlanner(section, stateWithArtifact)
       })
@@ -178,7 +178,7 @@ describe("checksum pipe", () => {
       const config = yield* parseReleaseIntent(releaseConfig({
         artifacts: [], checksum: { nameTemplate: "../escape" }
       }))
-      const error = yield* Option.match(resolveChecksum(config.checksum), {
+      const error = yield* Option.match(Option.fromUndefinedOr(config.checksum), {
         onNone: () => Effect.die("Expected a resolved checksum section."),
         onSome: (section) => checksumPlanner(section, stateWithArtifact)
       }).pipe(Effect.flip)

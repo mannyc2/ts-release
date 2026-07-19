@@ -1,8 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPlanner, resolveBuilds } from "../src/features/build.js"
+import { buildPlanner } from "../src/features/build.js"
 import { emptyPlanAccumulator } from "../src/grammar/runner.js"
 import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
@@ -11,10 +10,7 @@ const identity = makePipelineIdentity()
 const planBuild = (build: Record<string, unknown>) =>
   Effect.gen(function*() {
     const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
-    return yield* Option.match(resolveBuilds(config.builds), {
-      onNone: () => Effect.die("Expected a resolved build section."),
-      onSome: (section) => buildPlanner(section, emptyPlanAccumulator(identity))
-    })
+    return yield* buildPlanner(config.builds!, emptyPlanAccumulator(identity))
   })
 
 describe("command build pipe", () => {

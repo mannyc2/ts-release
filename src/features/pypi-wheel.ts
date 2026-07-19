@@ -1,6 +1,5 @@
 // Invariant: each decoded wheel section emits exactly one wheel artifact and one staging intent.
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import { Artifact, PyPiWheelBinaryArtifact, SafeRelativePath, WheelExtra } from "../grammar/artifact.js"
 import { Operation, PyPiWheelIntent, StageAction } from "../grammar/operation.js"
@@ -22,11 +21,6 @@ export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiW
   requiresPython: Schema.String,
   binaries: Schema.Array(PyPiWheelBinaryArtifact)
 }) {}
-
-export type PyPiWheelSection = ReleaseConfigPyPiWheelBuild | ReadonlyArray<ReleaseConfigPyPiWheelBuild>
-export const resolvePyPiWheels = (raw: PyPiWheelSection | undefined) => raw === undefined
-  ? Option.none<ReadonlyArray<ReleaseConfigPyPiWheelBuild>>()
-  : Option.some(Array.isArray(raw) ? raw : [raw as ReleaseConfigPyPiWheelBuild])
 
 export const pypiWheelPlanner = featurePlanner<ReadonlyArray<ReleaseConfigPyPiWheelBuild>>(
   "build:pypi-wheel", (wheels, state) => Effect.forEach(wheels, (wheel) => Effect.gen(function*() {

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPlanner, resolveBuilds } from "../src/features/build.js"
+import { buildPlanner } from "../src/features/build.js"
 import { emptyPlanAccumulator } from "../src/grammar/runner.js"
 import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
@@ -20,10 +19,7 @@ describe("prebuilt build pipe", () => {
           binary: "release"
         }]
       }))
-      const contribution = yield* Option.match(resolveBuilds(config.builds), {
-        onNone: () => Effect.die("Expected a resolved build section."),
-        onSome: (section) => buildPlanner(section, emptyPlanAccumulator(identity))
-      })
+      const contribution = yield* buildPlanner(config.builds!, emptyPlanAccumulator(identity))
 
       expect(contribution.artifacts[0]?.path).toBe("dist/release-windows-x64.exe")
       expect(contribution.operations[0]).toMatchObject({

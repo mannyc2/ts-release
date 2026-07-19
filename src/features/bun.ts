@@ -11,6 +11,7 @@ import {
 } from "../grammar/platform.js"
 import type { ReleaseIdentity } from "../grammar/state.js"
 import { defaultArtifactBaseName, renderArtifactNameEffect } from "../grammar/template.js"
+import { defaulted } from "../grammar/defaulted.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
 export class ReleaseConfigBunExecutableBuild extends Schema.Class<ReleaseConfigBunExecutableBuild>(
@@ -19,7 +20,9 @@ export class ReleaseConfigBunExecutableBuild extends Schema.Class<ReleaseConfigB
   id: Schema.optionalKey(Schema.String),
   builder: Schema.Literal("bun"),
   entry: SafeRelativePath,
-  targets: Schema.optionalKey(Schema.Array(PlatformTarget)),
+  targets: defaulted(Schema.Array(PlatformTarget), [
+    "linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"
+  ]),
   output: Schema.optionalKey(SafeRelativePath),
   binary: Schema.optionalKey(Schema.String),
   binaryName: Schema.optionalKey(Schema.String),

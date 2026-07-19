@@ -1,8 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPlanner, resolveBuilds } from "../src/features/build.js"
+import { buildPlanner } from "../src/features/build.js"
 import type { BunCompileTarget, Operation, StageAction } from "../src/grammar/operation.js"
 import type { PlatformTarget } from "../src/grammar/platform.js"
 import { emptyPlanAccumulator } from "../src/grammar/runner.js"
@@ -15,10 +14,7 @@ type StageOperation = Operation & { readonly action: StageAction }
 const planBuild = (build: Record<string, unknown>) =>
   Effect.gen(function*() {
     const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
-    return yield* Option.match(resolveBuilds(config.builds), {
-      onNone: () => Effect.die("Expected a resolved build section."),
-      onSome: (section) => buildPlanner(section, emptyPlanAccumulator(identity))
-    })
+    return yield* buildPlanner(config.builds!, emptyPlanAccumulator(identity))
   })
 
 const plannedCompileTarget = Effect.fn("pipe-build-bun-test.plannedCompileTarget")(function*(

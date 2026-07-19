@@ -99491,6 +99491,12 @@ var normalizedName = (name) => {
   return withoutScopePrefix.replaceAll("/", "-");
 };
 
+// ../../src/grammar/defaulted.ts
+var defaulted = (schema, value2) => optionalKey2(schema).pipe(decodeTo2(schema, {
+  decode: withDefault(succeed6(value2)),
+  encode: passthrough2()
+}));
+
 // ../../src/features/builder.ts
 var executableArtifact = (input) => Artifact.make({
   id: input.id,
@@ -99515,7 +99521,13 @@ class ReleaseConfigBunExecutableBuild extends Class4("ReleaseConfigBunExecutable
   id: optionalKey2(String4),
   builder: Literal2("bun"),
   entry: SafeRelativePath,
-  targets: optionalKey2(ArraySchema(PlatformTarget)),
+  targets: defaulted(ArraySchema(PlatformTarget), [
+    "linux-x64",
+    "linux-arm64",
+    "darwin-x64",
+    "darwin-arm64",
+    "windows-x64"
+  ]),
   output: optionalKey2(SafeRelativePath),
   binary: optionalKey2(String4),
   binaryName: optionalKey2(String4),
@@ -99680,22 +99692,22 @@ class ReleaseConfigArchiveFormatOverrides extends Class4("ReleaseConfigArchiveFo
 }
 
 class ReleaseConfigArchive extends Class4("ReleaseConfigArchive")({
-  id: optionalKey2(NonEmptyString),
+  id: defaulted(NonEmptyString, "archive"),
   ids: optionalKey2(ArraySchema(NonEmptyString)),
   nameTemplate: optionalKey2(NonEmptyString),
-  formats: optionalKey2(ArraySchema(ArchiveFormat)),
+  formats: defaulted(ArraySchema(ArchiveFormat), ["tar.gz"]),
   formatOverrides: optionalKey2(ReleaseConfigArchiveFormatOverrides),
-  files: optionalKey2(ArraySchema(NonEmptyString)),
+  files: defaulted(ArraySchema(NonEmptyString), [
+    "license*",
+    "LICENSE*",
+    "readme*",
+    "README*",
+    "changelog*",
+    "CHANGELOG*"
+  ]),
   wrapInDirectory: optionalKey2(Union2([Boolean3, String4]))
 }) {
 }
-var defaultFiles = ["license*", "LICENSE*", "readme*", "README*", "changelog*", "CHANGELOG*"];
-var resolveArchives = (raw) => raw === undefined ? none2() : some2(raw.map((section) => ({
-  ...section,
-  id: section.id ?? "archive",
-  formats: section.formats ?? ["tar.gz"],
-  files: section.files ?? defaultFiles
-})));
 var platformKey = (platform2) => `${platform2.os}-${platform2.arch}${platform2.libc === "musl" ? "-musl" : ""}`;
 var platformGroups = (artifacts) => {
   const grouped = new Map;
@@ -99847,13 +99859,12 @@ class ReleaseConfigHomebrewPublish extends Class4("ReleaseConfigHomebrewPublish"
   homepage: optionalKey2(String4),
   description: optionalKey2(String4),
   url: optionalKey2(String4),
-  tapDirectory: optionalKey2(SafeRelativePath),
+  tapDirectory: defaulted(SafeRelativePath, "."),
   installPath: optionalKey2(String4),
   tokenEnv: optionalKey2(String4)
 }) {
 }
-var resolveHomebrew = (config) => {
-  const section = config.publish.homebrew;
+var resolveHomebrew = (section, config) => {
   if (section === undefined)
     return;
   const formulaName = section.formulaName ?? compactPackageShortName(projectPackageName(config.project) ?? "release");
@@ -99861,7 +99872,7 @@ var resolveHomebrew = (config) => {
     ...section,
     formulaName,
     formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
-    tapDirectory: section.tapDirectory ?? ".",
+    tapDirectory: section.tapDirectory,
     githubRepository: githubRepository(config)
   };
 };
@@ -100024,12 +100035,11 @@ class ReleaseConfigScoopPublish extends Class4("ReleaseConfigScoopPublish")({
   license: optionalKey2(String4),
   url: optionalKey2(String4),
   bin: optionalKey2(String4),
-  bucketDirectory: optionalKey2(SafeRelativePath),
+  bucketDirectory: defaulted(SafeRelativePath, "."),
   tokenEnv: optionalKey2(String4)
 }) {
 }
-var resolveScoop = (config) => {
-  const section = config.publish.scoop;
+var resolveScoop = (section, config) => {
   if (section === undefined)
     return;
   const manifestName = section.manifestName ?? compactPackageShortName(projectPackageName(config.project) ?? "release");
@@ -100037,7 +100047,7 @@ var resolveScoop = (config) => {
     ...section,
     manifestName,
     manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
-    bucketDirectory: section.bucketDirectory ?? ".",
+    bucketDirectory: section.bucketDirectory,
     githubRepository: githubRepository(config)
   };
 };
@@ -100111,17 +100121,11 @@ class ReleaseConfigCatalogEntry extends Class4("ReleaseConfigCatalogEntry")({
   file: SafeRelativePath,
   directory: optionalKey2(SafeRelativePath),
   content: Union2([String4, ArraySchema(Union2([String4, ReleaseConfigCatalogFactHole]))]),
-  commitMessage: optionalKey2(String4),
-  submit: optionalKey2(Literals(["push", "pull-request"])),
+  commitMessage: defaulted(String4, "Update {name} to {version}"),
+  submit: defaulted(Literals(["push", "pull-request"]), "push"),
   validate: optionalKey2(Union2([String4, ArraySchema(String4)]))
 }) {
 }
-var resolveCatalogs = (raw, githubRepository2) => raw?.map((entry) => ({
-  ...entry,
-  commitMessage: entry.commitMessage ?? "Update {name} to {version}",
-  submit: entry.submit ?? "push",
-  githubRepository: githubRepository2
-}));
 var catalogWritePath = (entry) => entry.directory === undefined ? entry.file : `${entry.directory}/${entry.file}`;
 var appendText = (parts, text) => {
   const previous = parts[parts.length - 1];
@@ -100198,7 +100202,6 @@ class ReleaseConfigManualArtifact extends Class4("ReleaseConfigManualArtifact")(
   variant: optionalKey2(InstallableArtifactVariant)
 }) {
 }
-var resolveManualArtifacts = (raw) => raw === undefined ? none2() : some2(raw);
 var kinds = {
   tarball: "archive",
   zip: "archive",
@@ -100253,14 +100256,10 @@ var importArtifactsPlanner = featurePlanner("import-artifacts", (section, state3
 
 // ../../src/features/checksum.ts
 class ReleaseConfigChecksum extends Class4("ReleaseConfigChecksum")({
-  algorithm: optionalKey2(Literals(["sha256", "sha512"])),
-  nameTemplate: optionalKey2(NonEmptyString)
+  algorithm: defaulted(Literals(["sha256", "sha512"]), "sha256"),
+  nameTemplate: defaulted(NonEmptyString, "{name}_{version}_checksums.txt")
 }) {
 }
-var resolveChecksum = (raw) => raw === undefined ? none2() : some2({
-  algorithm: raw.algorithm ?? "sha256",
-  nameTemplate: raw.nameTemplate ?? "{name}_{version}_checksums.txt"
-});
 var checksumPlanner = featurePlanner("checksum", (section, state3) => gen2(function* () {
   const inputs = state3.artifacts.filter((artifact2) => artifact2.kind !== "package" && artifact2.kind !== "checksum-file" && !(artifact2.extra?._tag === "file" && artifact2.extra.format === "directory")).sort((left, right) => artifactPathBaseName(left.path).localeCompare(artifactPathBaseName(right.path)));
   const fileName = yield* renderArtifactNameEffect(section.nameTemplate, { identity: state3.identity }, {
@@ -100298,9 +100297,8 @@ var checksumPlanner = featurePlanner("checksum", (section, state3) => gen2(funct
 }));
 
 // ../../src/features/npm-pack.ts
-class ReleaseConfigNpmPackageBuild extends Class4("ReleaseConfigNpmPackageBuild")({ path: optionalKey2(SafeRelativePath) }) {
+class ReleaseConfigNpmPackageBuild extends Class4("ReleaseConfigNpmPackageBuild")({ path: defaulted(SafeRelativePath, ".") }) {
 }
-var resolveNpmPackage = (raw, packageName) => raw === undefined || raw === false ? none2() : some2({ path: raw === true ? "." : raw.path ?? ".", packageName });
 var npmPackPlanner = featurePlanner("build:npm-pack", (section, state3) => renderArtifactNameEffect(section.path, { identity: state3.identity }, {
   pipeId: "build:npm-pack",
   field: "npmPackage.path"
@@ -100310,7 +100308,7 @@ var npmPackPlanner = featurePlanner("build:npm-pack", (section, state3) => rende
     kind: "package",
     path: path4,
     producedBy: "build:npm-pack",
-    extra: PackageExtra.make({ packageManager: "npm", packageName: section.packageName })
+    extra: PackageExtra.make({ packageManager: "npm", packageName: state3.identity.name })
   })]
 }))));
 
@@ -100388,8 +100386,8 @@ var catalogGitPublishOperations = (options) => {
 class ReleaseConfigGitHubPublish extends Class4("ReleaseConfigGitHubPublish")({
   repository: optionalKey2(String4),
   tokenEnv: optionalKey2(String4),
-  draft: optionalKey2(Boolean3),
-  prerelease: optionalKey2(Union2([Boolean3, Literal2("auto")]))
+  draft: defaulted(Boolean3, true),
+  prerelease: defaulted(Union2([Boolean3, Literal2("auto")]), false)
 }) {
 }
 var resolveGitHubPublish = (config) => {
@@ -100475,20 +100473,13 @@ var trustedPublishingAuthEnvNames = [
 ];
 var TrustedPublishingProvider = Literals(["github-actions"]);
 var trustedPublishingConfigFields = {
-  provider: optionalKey2(TrustedPublishingProvider),
-  workflow: optionalKey2(WorkflowFileName)
+  provider: defaulted(TrustedPublishingProvider, "github-actions"),
+  workflow: defaulted(WorkflowFileName, "release.yml")
 };
 var compactTrustedPublishing = (config) => {
-  if (config === undefined || config === false) {
+  if (config === undefined || config === false)
     return;
-  }
-  if (config === true) {
-    return { provider: "github-actions", workflow: "release.yml" };
-  }
-  return {
-    provider: config.provider ?? "github-actions",
-    workflow: config.workflow ?? "release.yml"
-  };
+  return config === true ? { provider: "github-actions", workflow: "release.yml" } : config;
 };
 var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing === undefined ? credentialEnvNames.filter((name) => name !== undefined) : trustedPublishingAuthEnvNames;
 
@@ -100502,7 +100493,7 @@ class ReleaseConfigNpmTrustedPublishing extends Class4("ReleaseConfigNpmTrustedP
 }
 
 class ReleaseConfigNpmPublish extends Class4("ReleaseConfigNpmPublish")({
-  registry: optionalKey2(String4),
+  registry: defaulted(String4, "https://registry.npmjs.org"),
   packageName: optionalKey2(NonEmptyString),
   packagePath: optionalKey2(SafeRelativePath),
   tokenEnv: optionalKey2(String4),
@@ -100556,7 +100547,7 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
     npmCheck("npm:npm-version", "Check npm CLI availability.", section, ["--version"]),
     auth2
   ];
-  if (section.trustedPublishing?.verifyPackageExists === true)
+  if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing && section.trustedPublishing.verifyPackageExists === true)
     operations.push(npmCheck("npm:npm-package-exists", "Verify npm package exists before trusted publishing.", section, ["view", section.packageName, "name", "--registry", section.registry]));
   operations.push(npmCheck("npm:npm-pack-dry-run", "Validate npm package contents with npm pack dry-run.", section, ["pack", "--dry-run", "--json", section.packagePath]), Operation.make({
     id: "npm:npm-publish",
@@ -100585,27 +100576,14 @@ class ReleaseConfigPyPiTrustedPublishing extends Class4("ReleaseConfigPyPiTruste
 }
 
 class ReleaseConfigPyPiPublish extends Class4("ReleaseConfigPyPiPublish")({
-  repositoryUrl: optionalKey2(String4),
-  pythonExecutable: optionalKey2(String4),
+  repositoryUrl: defaulted(String4, "https://upload.pypi.org/legacy/"),
+  pythonExecutable: defaulted(String4, "python"),
   usernameEnv: optionalKey2(String4),
   passwordEnv: optionalKey2(String4),
   trustedPublishing: optionalKey2(Union2([Boolean3, ReleaseConfigPyPiTrustedPublishing])),
   artifactIds: optionalKey2(NonEmptyArray(NonEmptyString))
 }) {
 }
-var resolvePyPiPublish = (publish) => {
-  if (publish === undefined || publish === false)
-    return;
-  const section = publish === true ? undefined : publish;
-  return {
-    repositoryUrl: section?.repositoryUrl ?? "https://upload.pypi.org/legacy/",
-    pythonExecutable: section?.pythonExecutable ?? "python",
-    usernameEnv: section?.usernameEnv,
-    passwordEnv: section?.passwordEnv,
-    trustedPublishing: compactTrustedPublishing(section?.trustedPublishing),
-    artifactIds: section?.artifactIds
-  };
-};
 var selectArtifacts2 = fn2("publish.pypi.selectArtifacts")(function* (section, available) {
   const artifacts = section.artifactIds === undefined ? available.filter((artifact2) => artifact2.kind === "wheel") : yield* forEach2(section.artifactIds, (id) => findCatalogArtifact({
     pipeId: "publish:pypi",
@@ -100685,7 +100663,6 @@ class ReleaseConfigPyPiWheelBuild extends Class4("ReleaseConfigPyPiWheelBuild")(
   binaries: ArraySchema(PyPiWheelBinaryArtifact)
 }) {
 }
-var resolvePyPiWheels = (raw) => raw === undefined ? none2() : some2(Array.isArray(raw) ? raw : [raw]);
 var pypiWheelPlanner = featurePlanner("build:pypi-wheel", (wheels, state3) => forEach2(wheels, (wheel) => gen2(function* () {
   const path4 = yield* renderArtifactNameEffect(wheel.path, { identity: state3.identity }, {
     pipeId: "build:pypi-wheel",
@@ -100982,16 +100959,6 @@ var runPipeline = fn2("pipeline.runPipeline")(function* (initialState, planners)
 });
 
 // ../../src/features/build.ts
-var defaultBunTargets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"];
-var resolveBuilds = (raw) => {
-  if (raw === undefined || raw.length === 0) {
-    return none2();
-  }
-  return some2(raw.map((build) => build.builder === "bun" ? {
-    ...build,
-    targets: build.targets ?? defaultBunTargets
-  } : build));
-};
 var planSection = (section, identity2, target) => {
   switch (section.builder) {
     case "bun":
@@ -102485,18 +102452,32 @@ var evidenceDirectory = (intent, identity2) => {
 };
 var resolveRelease = (intent, identity2) => ({
   identity: identity2,
-  builds: resolveBuilds(intent.builds),
-  npmPackage: resolveNpmPackage(intent.npmPackage, identity2.name),
-  pypiWheels: resolvePyPiWheels(intent.pypiWheel),
-  artifacts: resolveManualArtifacts(intent.artifacts),
-  archives: resolveArchives(intent.archives),
-  checksum: resolveChecksum(intent.checksum),
+  builds: intent.builds === undefined || intent.builds.length === 0 ? none2() : some2(intent.builds),
+  npmPackage: intent.npmPackage === undefined || intent.npmPackage === false ? none2() : some2(intent.npmPackage === true ? { path: "." } : intent.npmPackage),
+  pypiWheels: intent.pypiWheel === undefined ? none2() : some2(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
+  artifacts: fromUndefinedOr(intent.artifacts),
+  archives: fromUndefinedOr(intent.archives),
+  checksum: fromUndefinedOr(intent.checksum),
   npm: fromUndefinedOr(resolveNpmPublish(intent, identity2)),
-  pypi: fromUndefinedOr(resolvePyPiPublish(intent.publish.pypi)),
+  pypi: fromUndefinedOr((() => {
+    const publish = intent.publish.pypi;
+    if (publish === undefined || publish === false)
+      return;
+    if (publish === true)
+      return {
+        repositoryUrl: "https://upload.pypi.org/legacy/",
+        pythonExecutable: "python",
+        usernameEnv: undefined,
+        passwordEnv: undefined,
+        trustedPublishing: undefined,
+        artifactIds: undefined
+      };
+    return { ...publish, trustedPublishing: compactTrustedPublishing(publish.trustedPublishing) };
+  })()),
   github: fromUndefinedOr(resolveGitHubPublish(intent)),
-  homebrew: fromUndefinedOr(resolveHomebrew(intent)),
-  scoop: fromUndefinedOr(resolveScoop(intent)),
-  catalogs: fromUndefinedOr(resolveCatalogs(intent.catalogs, githubRepository(intent))),
+  homebrew: fromUndefinedOr(resolveHomebrew(intent.publish.homebrew, intent)),
+  scoop: fromUndefinedOr(resolveScoop(intent.publish.scoop, intent)),
+  catalogs: fromUndefinedOr(intent.catalogs?.map((entry) => ({ ...entry, githubRepository: githubRepository(intent) }))),
   evidenceDirectory: evidenceDirectory(intent, identity2)
 });
 var validateResolvedRelease = (release) => {

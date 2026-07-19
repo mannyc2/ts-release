@@ -7,12 +7,12 @@ import { CommandAction, CommandSpec, Operation } from "../grammar/operation.js"
 import { featurePlanner } from "../grammar/pipe.js"
 import { findCatalogArtifact } from "./catalog-shared.js"
 import {
-  compactTrustedPublishing,
   publishingAuthEnvNames,
   trustedPublishingConfigFields,
   type TrustedPublishingSection
 } from "./trusted-publishing.js"
 import { noAuthCommand, readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export class ReleaseConfigPyPiTrustedPublishing extends Schema.Class<ReleaseConfigPyPiTrustedPublishing>(
   "ReleaseConfigPyPiTrustedPublishing"
@@ -22,40 +22,22 @@ export class ReleaseConfigPyPiTrustedPublishing extends Schema.Class<ReleaseConf
 }) {}
 
 export class ReleaseConfigPyPiPublish extends Schema.Class<ReleaseConfigPyPiPublish>("ReleaseConfigPyPiPublish")({
-  repositoryUrl: Schema.optionalKey(Schema.String),
-  pythonExecutable: Schema.optionalKey(Schema.String),
+  repositoryUrl: defaulted(Schema.String, "https://upload.pypi.org/legacy/"),
+  pythonExecutable: defaulted(Schema.String, "python"),
   usernameEnv: Schema.optionalKey(Schema.String),
   passwordEnv: Schema.optionalKey(Schema.String),
   trustedPublishing: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigPyPiTrustedPublishing])),
   artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
 }) {}
 
-export interface ResolvedPyPiPublish {
-  readonly repositoryUrl: string
-  readonly pythonExecutable: string
-  readonly usernameEnv?: string | undefined
-  readonly passwordEnv?: string | undefined
-  readonly trustedPublishing?: TrustedPublishingSection | undefined
-  readonly artifactIds?: readonly [string, ...Array<string>] | undefined
-}
-
-export const resolvePyPiPublish = (
-  publish: boolean | ReleaseConfigPyPiPublish | undefined
-): ResolvedPyPiPublish | undefined => {
-  if (publish === undefined || publish === false) return undefined
-  const section = publish === true ? undefined : publish
-  return {
-    repositoryUrl: section?.repositoryUrl ?? "https://upload.pypi.org/legacy/",
-    pythonExecutable: section?.pythonExecutable ?? "python",
-    usernameEnv: section?.usernameEnv,
-    passwordEnv: section?.passwordEnv,
-    trustedPublishing: compactTrustedPublishing(section?.trustedPublishing),
-    artifactIds: section?.artifactIds
-  }
+export interface PyPiPublishSection {
+  readonly repositoryUrl: string; readonly pythonExecutable: string
+  readonly usernameEnv?: string | undefined; readonly passwordEnv?: string | undefined
+  readonly trustedPublishing?: TrustedPublishingSection | undefined; readonly artifactIds?: ReadonlyArray<string> | undefined
 }
 
 const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
-  section: ResolvedPyPiPublish,
+  section: PyPiPublishSection,
   available: ReadonlyArray<Artifact>
 ) {
   const artifacts = section.artifactIds === undefined
@@ -76,13 +58,13 @@ const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
   return artifacts
 })
 
-const check = (id: string, description: string, section: ResolvedPyPiPublish, args: ReadonlyArray<string>) =>
+const check = (id: string, description: string, section: PyPiPublishSection, args: ReadonlyArray<string>) =>
   readOnlyCommandValidationOperation({
     id, pipeId: "publish:pypi", description,
     command: noAuthCommand(section.pythonExecutable, args)
   })
 
-export const publishPyPiPlanner = featurePlanner<ResolvedPyPiPublish>("publish:pypi", (section, state) => Effect.gen(function*() {
+export const publishPyPiPlanner = featurePlanner<PyPiPublishSection>("publish:pypi", (section, state) => Effect.gen(function*() {
     const paths = (yield* selectArtifacts(section, state.artifacts)).map(({ path }) => path)
     const operations: Array<Operation> = [
       check("pypi:python-version", "Check Python CLI availability.", section, ["--version"]),

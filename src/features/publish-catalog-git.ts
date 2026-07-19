@@ -3,8 +3,8 @@ import * as Effect from "effect/Effect"
 import { PlanError } from "../grammar/errors.js"
 import { emptyContribution, featurePlanner, type PipeContribution } from "../grammar/pipe.js"
 import type { ReleaseIdentity } from "../grammar/state.js"
-import type { ResolvedHomebrew } from "./catalog-homebrew.js"
-import type { ResolvedScoop } from "./catalog-scoop.js"
+import type { HomebrewSection } from "./catalog-homebrew.js"
+import type { ScoopSection } from "./catalog-scoop.js"
 import {
   catalogGitPublishOperations,
   validationNoteOperation,
@@ -29,7 +29,7 @@ const catalogGitPublish = Effect.fn("publish.catalogGit")(function*(
 const identityDescription = (catalog: "Homebrew tap" | "Scoop bucket", identity: ReleaseIdentity): string =>
   `Push ${catalog} update for ${identity.name}@${identity.version}.`
 
-export const publishHomebrewPlanner = featurePlanner<ResolvedHomebrew>("publish:homebrew", (section, state) => catalogGitPublish(
+export const publishHomebrewPlanner = featurePlanner<HomebrewSection>("publish:homebrew", (section, state) => catalogGitPublish(
     section.tokenEnv,
     {
       pipeId: "publish:homebrew",
@@ -53,7 +53,7 @@ export const publishHomebrewPlanner = featurePlanner<ResolvedHomebrew>("publish:
     }
   ))
 
-export const publishScoopPlanner = featurePlanner<ResolvedScoop>("publish:scoop", (section, state) => catalogGitPublish(
+export const publishScoopPlanner = featurePlanner<ScoopSection>("publish:scoop", (section, state) => catalogGitPublish(
     section.tokenEnv,
     {
       pipeId: "publish:scoop",

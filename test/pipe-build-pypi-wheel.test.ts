@@ -1,8 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { pypiWheelPlanner, resolvePyPiWheels } from "../src/features/pypi-wheel.js"
+import { pypiWheelPlanner } from "../src/features/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
 import { emptyPlanAccumulator } from "../src/grammar/runner.js"
 import { makePipelineIdentity, releaseConfig } from "./helpers.js"
@@ -33,10 +32,10 @@ describe("PyPI wheel build pipe", () => {
           binaries: []
         }
       }))
-      const contribution = yield* Option.match(resolvePyPiWheels(config.pypiWheel), {
-        onNone: () => Effect.die("Expected a resolved PyPI wheel section."),
-        onSome: (section) => pypiWheelPlanner(section, emptyPlanAccumulator(identity))
-      })
+      const contribution = yield* pypiWheelPlanner(
+        Array.isArray(config.pypiWheel) ? config.pypiWheel : [config.pypiWheel!],
+        emptyPlanAccumulator(identity)
+      )
       const operation = contribution.operations.find(isStageArtifactOperation)
 
       expect(contribution.artifacts[0]).toMatchObject({

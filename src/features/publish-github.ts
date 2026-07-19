@@ -13,27 +13,21 @@ import {
 import { featurePlanner } from "../grammar/pipe.js"
 import { hasSemverPrerelease } from "../grammar/semver.js"
 import { validationNoteOperation } from "./operations.js"
+import { defaulted } from "../grammar/defaulted.js"
 
 export class ReleaseConfigGitHubPublish extends Schema.Class<ReleaseConfigGitHubPublish>(
   "ReleaseConfigGitHubPublish"
 )({
   repository: Schema.optionalKey(Schema.String),
   tokenEnv: Schema.optionalKey(Schema.String),
-  draft: Schema.optionalKey(Schema.Boolean),
-  prerelease: Schema.optionalKey(Schema.Union([Schema.Boolean, Schema.Literal("auto")]))
+  draft: defaulted(Schema.Boolean, true),
+  prerelease: defaulted(Schema.Union([Schema.Boolean, Schema.Literal("auto")]), false)
 }) {}
-
-export interface ResolvedGitHubPublish {
-  readonly repository: string
-  readonly tokenEnv?: string | undefined
-  readonly draft: boolean
-  readonly prerelease: boolean | "auto"
-}
 
 export const resolveGitHubPublish = (config: {
   readonly project: { readonly repository?: string }
   readonly publish: { readonly github?: boolean | ReleaseConfigGitHubPublish }
-}): ResolvedGitHubPublish | undefined => {
+}) => {
   const publish = config.publish.github
   if (publish === undefined || publish === false) return undefined
   const section = publish === true ? undefined : publish
@@ -44,11 +38,12 @@ export const resolveGitHubPublish = (config: {
     prerelease: section?.prerelease ?? false
   }
 }
+export type GitHubPublishSection = NonNullable<ReturnType<typeof resolveGitHubPublish>>
 
 const assetsForRelease = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Artifact> =>
   artifacts.filter(({ kind }) => kind !== "package" && kind !== "wheel" && kind !== "catalog-file")
 
-export const publishGitHubPlanner = featurePlanner<ResolvedGitHubPublish>("publish:github", (section, state) => Effect.gen(function*() {
+export const publishGitHubPlanner = featurePlanner<GitHubPublishSection>("publish:github", (section, state) => Effect.gen(function*() {
     const repository = section.repository
     const artifacts = assetsForRelease(state.artifacts)
     if (artifacts.some(({ extra }) => extra?._tag === "file" && extra.format === "directory")) {

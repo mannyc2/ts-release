@@ -23,14 +23,14 @@ const some = Option.getOrUndefined
 const isNone = (option: Option.Option<unknown>) => Option.isNone(option)
 const isSome = (option: Option.Option<unknown>) => Option.isSome(option)
 describe("resolved release", () => {
-  it.effect("preserves every absence, empty array, and boolean shorthand", () =>
+  it.effect("preserves every absence, empty array, and empty-section enable", () =>
     Effect.gen(function*() {
       const absent = yield* resolved({ project: {}, publish: {} })
-      const empty = yield* resolved({ project: {}, builds: [], npmPackage: false, pypiWheel: [],
-        artifacts: [], archives: [], catalogs: [], publish: { npm: false, pypi: false, github: false } })
+      const empty = yield* resolved({ project: {}, builds: [], pypiWheel: [],
+        artifacts: [], archives: [], catalogs: [], publish: {} })
       const shorthand = yield* resolved({
-        project: {}, npmPackage: true, pypiWheel: wheel, checksum: {},
-        publish: { npm: true, pypi: true, github: true }, evidence: "proof/{version}"
+        project: {}, npmPackage: {}, pypiWheel: wheel, checksum: {},
+        publish: { npm: {}, pypi: {}, github: {} }, evidence: "proof/{version}"
       })
       const pair = yield* resolved({ project: {},
         pypiWheel: [wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }], publish: {} })
@@ -53,10 +53,10 @@ describe("resolved release", () => {
       const release = yield* resolved({
         project: { name: "wire-name", packageName: "@scope/wire-name", repository: "owner/release" },
         builds: [{ builder: "bun", entry: "src/cli.ts" }],
-        npmPackage: true, archives: [{}], checksum: {},
+        npmPackage: {}, archives: [{}], checksum: {},
         catalogs: [{ id: "index", repository: "owner/catalog", file: "index.json", content: "{version}" }],
         publish: {
-          npm: true, pypi: true, github: true,
+          npm: {}, pypi: {}, github: {},
           homebrew: { repository: "owner/homebrew-tap", artifactIds: ["darwin"] },
           scoop: { repository: "owner/scoop-bucket", artifactId: "windows" }
         }
@@ -83,9 +83,8 @@ describe("resolved release", () => {
       expect(some(release.npm)).toMatchObject({
         registry: "https://registry.npmjs.org", packageName: "@scope/wire-name", packagePath: ".",
         tokenEnv: undefined, trustedPublishing: undefined, access: undefined, provenance: undefined })
-      expect(some(release.pypi)).toMatchObject({
-        repositoryUrl: "https://upload.pypi.org/legacy/", pythonExecutable: "python",
-        usernameEnv: undefined, passwordEnv: undefined, trustedPublishing: undefined, artifactIds: undefined })
+      expect(some(release.pypi)).toEqual({
+        repositoryUrl: "https://upload.pypi.org/legacy/", pythonExecutable: "python" })
       expect(some(release.github)).toEqual(
         { repository: "owner/release", tokenEnv: undefined, draft: true, prerelease: false })
       expect(some(release.homebrew)).toMatchObject({
@@ -117,7 +116,7 @@ describe("resolved release", () => {
         checksum: { algorithm: "sha512", nameTemplate: "SUMS-{version}" },
         publish: {
           npm: { registry: "https://registry.example", packageName: "explicit-npm", packagePath: "npm-pkg",
-            tokenEnv: "NPM_TOKEN", trustedPublishing: false, access: "restricted", provenance: true },
+            tokenEnv: "NPM_TOKEN", access: "restricted", provenance: true },
           pypi: { repositoryUrl: "https://pypi.example", pythonExecutable: "python3",
             usernameEnv: "TWINE_USERNAME", passwordEnv: "TWINE_PASSWORD", artifactIds: ["wheel-b"] },
           github: { repository: "owner/explicit", tokenEnv: "GH_TOKEN", draft: false, prerelease: "auto" },
@@ -131,7 +130,7 @@ describe("resolved release", () => {
         evidence: { directory: ".proof/{version}" }
       })
       const trusted = yield* resolved({ project: {}, publish: {
-        npm: { trustedPublishing: { verifyPackageExists: true } }, pypi: { trustedPublishing: true } } })
+        npm: { trustedPublishing: { verifyPackageExists: true } }, pypi: { trustedPublishing: {} } } })
       expect(some(release.npm)).toMatchObject({
         registry: "https://registry.example", packageName: "explicit-npm", packagePath: "npm-pkg",
         tokenEnv: "NPM_TOKEN", trustedPublishing: undefined, access: "restricted", provenance: true })

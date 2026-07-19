@@ -26,16 +26,15 @@ export class ReleaseConfigGitHubPublish extends Schema.Class<ReleaseConfigGitHub
 
 export const resolveGitHubPublish = (config: {
   readonly project: { readonly repository?: string }
-  readonly publish: { readonly github?: boolean | ReleaseConfigGitHubPublish }
+  readonly publish: { readonly github?: ReleaseConfigGitHubPublish }
 }) => {
-  const publish = config.publish.github
-  if (publish === undefined || publish === false) return undefined
-  const section = publish === true ? undefined : publish
+  const section = config.publish.github
+  if (section === undefined) return undefined
   return {
-    repository: section?.repository ?? config.project.repository ?? "",
-    tokenEnv: section?.tokenEnv,
-    draft: section?.draft ?? true,
-    prerelease: section?.prerelease ?? false
+    repository: section.repository ?? config.project.repository ?? "",
+    tokenEnv: section.tokenEnv,
+    draft: section.draft,
+    prerelease: section.prerelease
   }
 }
 export type GitHubPublishSection = NonNullable<ReturnType<typeof resolveGitHubPublish>>

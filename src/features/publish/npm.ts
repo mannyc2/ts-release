@@ -6,7 +6,6 @@ import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../../gramma
 import { featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
-  compactTrustedPublishing,
   publishingAuthEnvNames,
   trustedPublishingConfigFields
 } from "./trusted-publishing.js"
@@ -28,29 +27,25 @@ export class ReleaseConfigNpmPublish extends Schema.Class<ReleaseConfigNpmPublis
   packageName: Schema.optionalKey(Schema.NonEmptyString),
   packagePath: Schema.optionalKey(SafeRelativePath),
   tokenEnv: Schema.optionalKey(Schema.String),
-  trustedPublishing: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigNpmTrustedPublishing])),
+  trustedPublishing: Schema.optionalKey(ReleaseConfigNpmTrustedPublishing),
   access: Schema.optionalKey(NpmAccess),
   provenance: Schema.optionalKey(Schema.Boolean)
 }) {}
 
 export const resolveNpmPublish = (config: {
   readonly project: { readonly packageName?: string; readonly packagePath?: string }
-  readonly publish: { readonly npm?: boolean | ReleaseConfigNpmPublish }
+  readonly publish: { readonly npm?: ReleaseConfigNpmPublish }
 }, identity: ReleaseIdentity) => {
-  const publish = config.publish.npm
-  if (publish === undefined || publish === false) return undefined
-  const section = publish === true ? undefined : publish
-  const trusted = compactTrustedPublishing(section?.trustedPublishing)
+  const section = config.publish.npm
+  if (section === undefined) return undefined
   return {
-    registry: section?.registry ?? "https://registry.npmjs.org",
-    packageName: section?.packageName ?? config.project.packageName ?? identity.name,
-    packagePath: section?.packagePath ?? config.project.packagePath ?? ".",
-    tokenEnv: section?.tokenEnv,
-    trustedPublishing: trusted === undefined || typeof section?.trustedPublishing !== "object"
-      ? trusted
-      : { ...trusted, verifyPackageExists: section.trustedPublishing.verifyPackageExists },
-    access: section?.access,
-    provenance: section?.provenance
+    registry: section.registry,
+    packageName: section.packageName ?? config.project.packageName ?? identity.name,
+    packagePath: section.packagePath ?? config.project.packagePath ?? ".",
+    tokenEnv: section.tokenEnv,
+    trustedPublishing: section.trustedPublishing,
+    access: section.access,
+    provenance: section.provenance
   }
 }
 export type NpmPublishSection = NonNullable<ReturnType<typeof resolveNpmPublish>>
@@ -60,7 +55,7 @@ const npmCommand = (
   args: ReadonlyArray<string>,
   authenticated: boolean = false
 ): CommandSpec => {
-  const env = authenticated ? publishingAuthEnvNames(section.trustedPublishing, [section.tokenEnv]) : []
+  const env = authenticated ? publishingAuthEnvNames(section.trustedPublishing !== undefined, [section.tokenEnv]) : []
   return CommandSpec.make({ executable: "npm", args: [...args], requiredEnv: env, redactedEnv: env })
 }
 

@@ -42,11 +42,11 @@ export const ReleaseConfigBuildItem = Schema.Union([
 export type ReleaseConfigBuildItem = typeof ReleaseConfigBuildItem.Type
 
 export class ReleaseConfigPublish extends Schema.Class<ReleaseConfigPublish>("ReleaseConfigPublish")({
-  npm: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigNpmPublish])),
-  github: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigGitHubPublish])),
+  npm: Schema.optionalKey(ReleaseConfigNpmPublish),
+  github: Schema.optionalKey(ReleaseConfigGitHubPublish),
   homebrew: Schema.optionalKey(ReleaseConfigHomebrewPublish),
   scoop: Schema.optionalKey(ReleaseConfigScoopPublish),
-  pypi: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigPyPiPublish]))
+  pypi: Schema.optionalKey(ReleaseConfigPyPiPublish)
 }) {}
 
 export class ReleaseConfigEvidence extends Schema.Class<ReleaseConfigEvidence>("ReleaseConfigEvidence")({
@@ -58,7 +58,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   project: ReleaseConfigProject,
   versionFrom: Schema.optionalKey(ReleaseVersionSource),
   builds: Schema.optionalKey(Schema.Array(ReleaseConfigBuildItem)),
-  npmPackage: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigNpmPackageBuild])),
+  npmPackage: Schema.optionalKey(ReleaseConfigNpmPackageBuild),
   pypiWheel: Schema.optionalKey(Schema.Union([ReleaseConfigPyPiWheelBuild, Schema.Array(ReleaseConfigPyPiWheelBuild)])),
   artifacts: Schema.optionalKey(Schema.Array(ReleaseConfigManualArtifact)),
   archives: Schema.optionalKey(Schema.Array(ReleaseConfigArchive)),

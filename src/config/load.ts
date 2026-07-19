@@ -23,13 +23,14 @@ const configRoot = (path: Path.Path, source: ConfigSource): string =>
 const migrationHints: Readonly<Record<string, string>> = migrations.hints
 const forbiddenFields = new Set(migrations.forbiddenFields)
 const forbiddenRootFields = new Set(migrations.forbiddenRootFields)
+const removedBooleanValues = new Set(migrations.removedBooleanValues)
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
 const findRemovedField = (
   value: unknown,
   parent: string = "$"
-): { readonly field: string; readonly hint: string } | undefined => {
+): { readonly reason: string } | undefined => {
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
       const found = findRemovedField(item, `${parent}[${index}]`)
@@ -42,9 +43,12 @@ const findRemovedField = (
     const path = `${parent}.${key}`
     const field = parent === "$" ? key : path
     const hint = migrationHints[path] ?? migrationHints[key]
-    if (hint !== undefined) return { field, hint }
+    if (hint !== undefined) return { reason: `Release config uses removed field ${field}. ${hint}` }
     if (forbiddenFields.has(key) || (parent === "$" && forbiddenRootFields.has(key))) {
-      return { field, hint: "Use the compact project/build/publish config shape." }
+      return { reason: `Release config uses removed field ${field}. Use the compact project/build/publish config shape.` }
+    }
+    if (typeof item === "boolean" && removedBooleanValues.has(path.slice(2))) {
+      return { reason: `Release config no longer accepts booleans at ${path.slice(2)}. Use {} to enable with defaults, or remove the key to disable.` }
     }
     const found = findRemovedField(item, path)
     if (found !== undefined) return found
@@ -60,7 +64,7 @@ export const decodeReleaseIntent = Effect.fn("config.decode")(function*(
   if (removed !== undefined) return yield* Effect.fail(ConfigError.make({
     kind: "validation",
     path: pathName,
-    reason: `Release config uses removed field ${removed.field}. ${removed.hint}`
+    reason: removed.reason
   }))
   return yield* decodeReleaseConfig(input).pipe(Effect.mapError((error) => ConfigError.make({
     kind: "validation", path: pathName, reason: error.message

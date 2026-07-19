@@ -67,14 +67,29 @@ describe("config schema", () => {
       expect(intent.publish.npm).toMatchObject({ trustedPublishing: {
         provider: "github-actions", workflow: "release.yml", verifyPackageExists: true } })
     }))
-  it.effect("decodes bare trusted publishing boolean", () =>
+  it.effect("decodes empty trusted publishing section to defaults", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(minimalConfig.replace(
         "\"tokenEnv\":\"NPM_TOKEN\"",
-        "\"trustedPublishing\":true"
+        "\"trustedPublishing\":{}"
       ))
-      expect(intent.publish.npm).toMatchObject({ trustedPublishing: true })
+      expect(intent.publish.npm).toMatchObject({ trustedPublishing: {
+        provider: "github-actions", workflow: "release.yml" } })
     }))
+  for (const [path, config] of [
+    ["npmPackage", { project: {}, npmPackage: true, publish: {} }],
+    ["publish.npm", { project: {}, publish: { npm: true } }],
+    ["publish.github", { project: {}, publish: { github: true } }],
+    ["publish.pypi", { project: {}, publish: { pypi: true } }],
+    ["publish.npm.trustedPublishing", { project: {}, publish: { npm: { trustedPublishing: true } } }],
+    ["publish.pypi.trustedPublishing", { project: {}, publish: { pypi: { trustedPublishing: true } } }]
+  ] as ReadonlyArray<readonly [string, unknown]>)
+    it.effect(`rejects the removed boolean spelling at ${path}`, () =>
+      expectValidationFailure(
+        decodeReleaseIntent(config),
+        [`Release config no longer accepts booleans at ${path}.`,
+          "Use {} to enable with defaults, or remove the key to disable."]
+      ))
   it.effect("rejects removed npm trusted publishing packageExists", () =>
     expectValidationFailure(
       parseReleaseIntent(minimalConfig.replace(

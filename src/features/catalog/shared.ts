@@ -8,7 +8,7 @@ export const catalogPathBaseName = artifactPathBaseName
 
 export interface CatalogResolutionConfig {
   readonly project: { readonly name?: string; readonly packageName?: string; readonly repository?: string }
-  readonly publish: { readonly github?: boolean | { readonly repository?: string } }
+  readonly publish: { readonly github?: { readonly repository?: string } }
 }
 
 export const compactPackageShortName = (packageName: string): string => {
@@ -25,10 +25,10 @@ export const projectPackageName = (project: {
 
 export const githubRepository = (config: CatalogResolutionConfig): string | undefined => {
   const github = config.publish.github
-  if (github === undefined || github === false) {
+  if (github === undefined) {
     return undefined
   }
-  return github === true ? config.project.repository : github.repository ?? config.project.repository
+  return github.repository ?? config.project.repository
 }
 
 export const catalogArtifactUrl = (

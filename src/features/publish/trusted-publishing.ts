@@ -12,22 +12,10 @@ export const trustedPublishingConfigFields = {
   provider: defaulted(TrustedPublishingProvider, "github-actions"),
   workflow: defaulted(WorkflowFileName, "release.yml")
 }
-export interface TrustedPublishingSection {
-  readonly provider: "github-actions"
-  readonly workflow: string
-}
-
-export const compactTrustedPublishing = (
-  config: boolean | TrustedPublishingSection | undefined
-): TrustedPublishingSection | undefined => {
-  if (config === undefined || config === false) return undefined
-  return config === true ? { provider: "github-actions", workflow: "release.yml" } : config
-}
-
 export const publishingAuthEnvNames = (
-  trustedPublishing: TrustedPublishingSection | undefined,
+  trustedPublishing: boolean,
   credentialEnvNames: ReadonlyArray<string | undefined>
 ): ReadonlyArray<string> =>
-  trustedPublishing === undefined
-    ? credentialEnvNames.filter((name): name is string => name !== undefined)
-    : trustedPublishingAuthEnvNames
+  trustedPublishing
+    ? trustedPublishingAuthEnvNames
+    : credentialEnvNames.filter((name): name is string => name !== undefined)

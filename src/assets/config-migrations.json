@@ -10,5 +10,6 @@
     "$.publish.homebrew.artifactId": "Use artifactIds with one or more artifact IDs."
   },
   "forbiddenFields": ["_tag", "dryRunSupport", "mutability", "recovery"],
-  "forbiddenRootFields": ["identity", "targets", "artifactRecipes", "build", "evidenceDirectory", "strict"]
+  "forbiddenRootFields": ["identity", "targets", "artifactRecipes", "build", "evidenceDirectory", "strict"],
+  "removedBooleanValues": ["npmPackage", "publish.npm", "publish.github", "publish.pypi", "publish.npm.trustedPublishing", "publish.pypi.trustedPublishing"]
 }

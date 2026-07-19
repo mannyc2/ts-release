@@ -55,7 +55,7 @@ const invalidInlineConfigs: ReadonlyArray<
     "unknown nested publish field",
     {
       ...inlineConfig,
-      publish: { ...inlineConfig.publish, github: false as const, unexpectedPublishField: true }
+      publish: { ...inlineConfig.publish, unexpectedPublishField: true }
     },
     [`["publish"]["unexpectedPublishField"]`]
   ],

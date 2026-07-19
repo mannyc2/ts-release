@@ -99758,10 +99758,10 @@ var compactPackageShortName = (packageName) => {
 var projectPackageName = (project) => project.packageName ?? project.name;
 var githubRepository = (config) => {
   const github = config.publish.github;
-  if (github === undefined || github === false) {
+  if (github === undefined) {
     return;
   }
-  return github === true ? config.project.repository : github.repository ?? config.project.repository;
+  return github.repository ?? config.project.repository;
 };
 var catalogArtifactUrl = (section, identity2, artifact2) => section.url ?? (section.githubRepository === undefined ? artifact2.path : `https://github.com/${section.githubRepository}/releases/download/${identity2.tag}/${artifactPathBaseName(artifact2.path)}`);
 var findCatalogArtifact = (source, artifacts, artifactId) => {
@@ -100334,15 +100334,14 @@ class ReleaseConfigGitHubPublish extends Class4("ReleaseConfigGitHubPublish")({
 }) {
 }
 var resolveGitHubPublish = (config) => {
-  const publish = config.publish.github;
-  if (publish === undefined || publish === false)
+  const section = config.publish.github;
+  if (section === undefined)
     return;
-  const section = publish === true ? undefined : publish;
   return {
-    repository: section?.repository ?? config.project.repository ?? "",
-    tokenEnv: section?.tokenEnv,
-    draft: section?.draft ?? true,
-    prerelease: section?.prerelease ?? false
+    repository: section.repository ?? config.project.repository ?? "",
+    tokenEnv: section.tokenEnv,
+    draft: section.draft,
+    prerelease: section.prerelease
   };
 };
 var assetsForRelease = (artifacts) => artifacts.filter(({ kind }) => kind !== "package" && kind !== "wheel" && kind !== "catalog-file");
@@ -100419,12 +100418,7 @@ var trustedPublishingConfigFields = {
   provider: defaulted(TrustedPublishingProvider, "github-actions"),
   workflow: defaulted(WorkflowFileName, "release.yml")
 };
-var compactTrustedPublishing = (config) => {
-  if (config === undefined || config === false)
-    return;
-  return config === true ? { provider: "github-actions", workflow: "release.yml" } : config;
-};
-var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing === undefined ? credentialEnvNames.filter((name) => name !== undefined) : trustedPublishingAuthEnvNames;
+var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing ? trustedPublishingAuthEnvNames : credentialEnvNames.filter((name) => name !== undefined);
 
 // ../../src/features/publish/npm.ts
 var NpmAccess = Literals(["public", "restricted"]);
@@ -100440,29 +100434,27 @@ class ReleaseConfigNpmPublish extends Class4("ReleaseConfigNpmPublish")({
   packageName: optionalKey2(NonEmptyString),
   packagePath: optionalKey2(SafeRelativePath),
   tokenEnv: optionalKey2(String4),
-  trustedPublishing: optionalKey2(Union2([Boolean3, ReleaseConfigNpmTrustedPublishing])),
+  trustedPublishing: optionalKey2(ReleaseConfigNpmTrustedPublishing),
   access: optionalKey2(NpmAccess),
   provenance: optionalKey2(Boolean3)
 }) {
 }
 var resolveNpmPublish = (config, identity2) => {
-  const publish = config.publish.npm;
-  if (publish === undefined || publish === false)
+  const section = config.publish.npm;
+  if (section === undefined)
     return;
-  const section = publish === true ? undefined : publish;
-  const trusted = compactTrustedPublishing(section?.trustedPublishing);
   return {
-    registry: section?.registry ?? "https://registry.npmjs.org",
-    packageName: section?.packageName ?? config.project.packageName ?? identity2.name,
-    packagePath: section?.packagePath ?? config.project.packagePath ?? ".",
-    tokenEnv: section?.tokenEnv,
-    trustedPublishing: trusted === undefined || typeof section?.trustedPublishing !== "object" ? trusted : { ...trusted, verifyPackageExists: section.trustedPublishing.verifyPackageExists },
-    access: section?.access,
-    provenance: section?.provenance
+    registry: section.registry,
+    packageName: section.packageName ?? config.project.packageName ?? identity2.name,
+    packagePath: section.packagePath ?? config.project.packagePath ?? ".",
+    tokenEnv: section.tokenEnv,
+    trustedPublishing: section.trustedPublishing,
+    access: section.access,
+    provenance: section.provenance
   };
 };
 var npmCommand = (section, args2, authenticated = false) => {
-  const env = authenticated ? publishingAuthEnvNames(section.trustedPublishing, [section.tokenEnv]) : [];
+  const env = authenticated ? publishingAuthEnvNames(section.trustedPublishing !== undefined, [section.tokenEnv]) : [];
   return CommandSpec.make({ executable: "npm", args: [...args2], requiredEnv: env, redactedEnv: env });
 };
 var npmCheck = (id, description, section, args2) => readOnlyCommandValidationOperation({ id, pipeId: "publish:npm", description, command: npmCommand(section, args2) });
@@ -100523,7 +100515,7 @@ class ReleaseConfigPyPiPublish extends Class4("ReleaseConfigPyPiPublish")({
   pythonExecutable: defaulted(String4, "python"),
   usernameEnv: optionalKey2(String4),
   passwordEnv: optionalKey2(String4),
-  trustedPublishing: optionalKey2(Union2([Boolean3, ReleaseConfigPyPiTrustedPublishing])),
+  trustedPublishing: optionalKey2(ReleaseConfigPyPiTrustedPublishing),
   artifactIds: optionalKey2(NonEmptyArray(NonEmptyString))
 }) {
 }
@@ -100579,7 +100571,7 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
     risk: "irreversible",
     description: `Publish ${state3.identity.name}@${state3.identity.version} to PyPI-compatible registry.`,
     action: CommandAction.make({ command: (() => {
-      const env = publishingAuthEnvNames(section.trustedPublishing, [section.usernameEnv, section.passwordEnv]);
+      const env = publishingAuthEnvNames(section.trustedPublishing !== undefined, [section.usernameEnv, section.passwordEnv]);
       return CommandSpec.make({
         executable: section.pythonExecutable,
         args: ["-m", "twine", "upload", "--non-interactive", "--repository-url", section.repositoryUrl, ...paths],
@@ -100663,11 +100655,11 @@ var ReleaseConfigBuildItem = Union2([
 ]);
 
 class ReleaseConfigPublish extends Class4("ReleaseConfigPublish")({
-  npm: optionalKey2(Union2([Boolean3, ReleaseConfigNpmPublish])),
-  github: optionalKey2(Union2([Boolean3, ReleaseConfigGitHubPublish])),
+  npm: optionalKey2(ReleaseConfigNpmPublish),
+  github: optionalKey2(ReleaseConfigGitHubPublish),
   homebrew: optionalKey2(ReleaseConfigHomebrewPublish),
   scoop: optionalKey2(ReleaseConfigScoopPublish),
-  pypi: optionalKey2(Union2([Boolean3, ReleaseConfigPyPiPublish]))
+  pypi: optionalKey2(ReleaseConfigPyPiPublish)
 }) {
 }
 
@@ -100681,7 +100673,7 @@ class ReleaseIntent extends Class4("ReleaseIntent")({
   project: ReleaseConfigProject,
   versionFrom: optionalKey2(ReleaseVersionSource),
   builds: optionalKey2(ArraySchema(ReleaseConfigBuildItem)),
-  npmPackage: optionalKey2(Union2([Boolean3, ReleaseConfigNpmPackageBuild])),
+  npmPackage: optionalKey2(ReleaseConfigNpmPackageBuild),
   pypiWheel: optionalKey2(Union2([ReleaseConfigPyPiWheelBuild, ArraySchema(ReleaseConfigPyPiWheelBuild)])),
   artifacts: optionalKey2(ArraySchema(ReleaseConfigManualArtifact)),
   archives: optionalKey2(ArraySchema(ReleaseConfigArchive)),
@@ -100705,7 +100697,8 @@ var config_migrations_default = {
     "$.publish.homebrew.artifactId": "Use artifactIds with one or more artifact IDs."
   },
   forbiddenFields: ["_tag", "dryRunSupport", "mutability", "recovery"],
-  forbiddenRootFields: ["identity", "targets", "artifactRecipes", "build", "evidenceDirectory", "strict"]
+  forbiddenRootFields: ["identity", "targets", "artifactRecipes", "build", "evidenceDirectory", "strict"],
+  removedBooleanValues: ["npmPackage", "publish.npm", "publish.github", "publish.pypi", "publish.npm.trustedPublishing", "publish.pypi.trustedPublishing"]
 };
 
 // ../../src/config/load.ts
@@ -100714,6 +100707,7 @@ var configRoot = (path4, source3) => source3.root ?? (source3.configPath !== und
 var migrationHints = config_migrations_default.hints;
 var forbiddenFields = new Set(config_migrations_default.forbiddenFields);
 var forbiddenRootFields = new Set(config_migrations_default.forbiddenRootFields);
+var removedBooleanValues = new Set(config_migrations_default.removedBooleanValues);
 var isRecord = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2);
 var findRemovedField = (value2, parent = "$") => {
   if (Array.isArray(value2)) {
@@ -100731,9 +100725,12 @@ var findRemovedField = (value2, parent = "$") => {
     const field = parent === "$" ? key : path4;
     const hint = migrationHints[path4] ?? migrationHints[key];
     if (hint !== undefined)
-      return { field, hint };
+      return { reason: `Release config uses removed field ${field}. ${hint}` };
     if (forbiddenFields.has(key) || parent === "$" && forbiddenRootFields.has(key)) {
-      return { field, hint: "Use the compact project/build/publish config shape." };
+      return { reason: `Release config uses removed field ${field}. Use the compact project/build/publish config shape.` };
+    }
+    if (typeof item === "boolean" && removedBooleanValues.has(path4.slice(2))) {
+      return { reason: `Release config no longer accepts booleans at ${path4.slice(2)}. Use {} to enable with defaults, or remove the key to disable.` };
     }
     const found = findRemovedField(item, path4);
     if (found !== undefined)
@@ -100747,7 +100744,7 @@ var decodeReleaseIntent = fn2("config.decode")(function* (input, pathName = DEFA
     return yield* fail6(ConfigError.make({
       kind: "validation",
       path: pathName,
-      reason: `Release config uses removed field ${removed.field}. ${removed.hint}`
+      reason: removed.reason
     }));
   return yield* decodeReleaseConfig(input).pipe(mapError3((error2) => ConfigError.make({
     kind: "validation",
@@ -102456,27 +102453,13 @@ var evidenceDirectory = (intent, identity2) => {
 var resolveRelease = (intent, identity2) => ({
   identity: identity2,
   builds: intent.builds === undefined || intent.builds.length === 0 ? none2() : some2(intent.builds),
-  npmPackage: intent.npmPackage === undefined || intent.npmPackage === false ? none2() : some2(intent.npmPackage === true ? { path: "." } : intent.npmPackage),
+  npmPackage: fromUndefinedOr(intent.npmPackage),
   pypiWheels: intent.pypiWheel === undefined ? none2() : some2(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
   artifacts: fromUndefinedOr(intent.artifacts),
   archives: fromUndefinedOr(intent.archives),
   checksum: fromUndefinedOr(intent.checksum),
   npm: fromUndefinedOr(resolveNpmPublish(intent, identity2)),
-  pypi: fromUndefinedOr((() => {
-    const publish = intent.publish.pypi;
-    if (publish === undefined || publish === false)
-      return;
-    if (publish === true)
-      return {
-        repositoryUrl: "https://upload.pypi.org/legacy/",
-        pythonExecutable: "python",
-        usernameEnv: undefined,
-        passwordEnv: undefined,
-        trustedPublishing: undefined,
-        artifactIds: undefined
-      };
-    return { ...publish, trustedPublishing: compactTrustedPublishing(publish.trustedPublishing) };
-  })()),
+  pypi: fromUndefinedOr(intent.publish.pypi),
   github: fromUndefinedOr(resolveGitHubPublish(intent)),
   homebrew: fromUndefinedOr(resolveHomebrew(intent.publish.homebrew, intent)),
   scoop: fromUndefinedOr(resolveScoop(intent.publish.scoop, intent)),

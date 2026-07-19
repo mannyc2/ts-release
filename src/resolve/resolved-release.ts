@@ -14,13 +14,11 @@ import { CommandSpec } from "../grammar/operation.js"
 import { parseSemverVersion } from "../grammar/semver.js"
 import { ReleaseIdentity } from "../grammar/state.js"
 import { normalizedName } from "../grammar/template.js"
-import type { PyPiPublishSection } from "../features/publish/pypi.js"
 import { resolveHomebrew } from "../features/catalog/homebrew.js"
 import { resolveScoop } from "../features/catalog/scoop.js"
 import { resolveGitHubPublish } from "../features/publish/github.js"
 import { resolveNpmPublish } from "../features/publish/npm.js"
 import { githubRepository, projectPackageName } from "../features/catalog/shared.js"
-import { compactTrustedPublishing } from "../features/publish/trusted-publishing.js"
 
 interface IdentitySeed {
   readonly name: string
@@ -246,23 +244,14 @@ const evidenceDirectory = (intent: ReleaseIntent, identity: ReleaseIdentity): st
 export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity) => ({
   identity,
   builds: intent.builds === undefined || intent.builds.length === 0 ? Option.none() : Option.some(intent.builds),
-  npmPackage: intent.npmPackage === undefined || intent.npmPackage === false ? Option.none()
-    : Option.some(intent.npmPackage === true ? { path: "." } : intent.npmPackage),
+  npmPackage: Option.fromUndefinedOr(intent.npmPackage),
   pypiWheels: intent.pypiWheel === undefined ? Option.none()
     : Option.some(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
   artifacts: Option.fromUndefinedOr(intent.artifacts),
   archives: Option.fromUndefinedOr(intent.archives),
   checksum: Option.fromUndefinedOr(intent.checksum),
   npm: Option.fromUndefinedOr(resolveNpmPublish(intent, identity)),
-  pypi: Option.fromUndefinedOr(((): PyPiPublishSection | undefined => {
-    const publish = intent.publish.pypi
-    if (publish === undefined || publish === false) return undefined
-    if (publish === true) return {
-      repositoryUrl: "https://upload.pypi.org/legacy/", pythonExecutable: "python",
-      usernameEnv: undefined, passwordEnv: undefined, trustedPublishing: undefined, artifactIds: undefined
-    }
-    return { ...publish, trustedPublishing: compactTrustedPublishing(publish.trustedPublishing) }
-  })()),
+  pypi: Option.fromUndefinedOr(intent.publish.pypi),
   github: Option.fromUndefinedOr(resolveGitHubPublish(intent)),
   homebrew: Option.fromUndefinedOr(resolveHomebrew(intent.publish.homebrew, intent)),
   scoop: Option.fromUndefinedOr(resolveScoop(intent.publish.scoop, intent)),

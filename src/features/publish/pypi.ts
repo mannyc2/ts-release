@@ -8,8 +8,7 @@ import { featurePlanner } from "../../grammar/planner.js"
 import { findCatalogArtifact } from "../catalog/shared.js"
 import {
   publishingAuthEnvNames,
-  trustedPublishingConfigFields,
-  type TrustedPublishingSection
+  trustedPublishingConfigFields
 } from "./trusted-publishing.js"
 import { noAuthCommand, readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
 import { defaulted } from "../../grammar/defaulted.js"
@@ -26,18 +25,12 @@ export class ReleaseConfigPyPiPublish extends Schema.Class<ReleaseConfigPyPiPubl
   pythonExecutable: defaulted(Schema.String, "python"),
   usernameEnv: Schema.optionalKey(Schema.String),
   passwordEnv: Schema.optionalKey(Schema.String),
-  trustedPublishing: Schema.optionalKey(Schema.Union([Schema.Boolean, ReleaseConfigPyPiTrustedPublishing])),
+  trustedPublishing: Schema.optionalKey(ReleaseConfigPyPiTrustedPublishing),
   artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
 }) {}
 
-export interface PyPiPublishSection {
-  readonly repositoryUrl: string; readonly pythonExecutable: string
-  readonly usernameEnv?: string | undefined; readonly passwordEnv?: string | undefined
-  readonly trustedPublishing?: TrustedPublishingSection | undefined; readonly artifactIds?: ReadonlyArray<string> | undefined
-}
-
 const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
-  section: PyPiPublishSection,
+  section: ReleaseConfigPyPiPublish,
   available: ReadonlyArray<Artifact>
 ) {
   const artifacts = section.artifactIds === undefined
@@ -58,13 +51,13 @@ const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
   return artifacts
 })
 
-const check = (id: string, description: string, section: PyPiPublishSection, args: ReadonlyArray<string>) =>
+const check = (id: string, description: string, section: ReleaseConfigPyPiPublish, args: ReadonlyArray<string>) =>
   readOnlyCommandValidationOperation({
     id, pipeId: "publish:pypi", description,
     command: noAuthCommand(section.pythonExecutable, args)
   })
 
-export const publishPyPiPlanner = featurePlanner<PyPiPublishSection>("publish:pypi", (section, state) => Effect.gen(function*() {
+export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publish:pypi", (section, state) => Effect.gen(function*() {
     const paths = (yield* selectArtifacts(section, state.artifacts)).map(({ path }) => path)
     const operations: Array<Operation> = [
       check("pypi:python-version", "Check Python CLI availability.", section, ["--version"]),
@@ -88,7 +81,7 @@ export const publishPyPiPlanner = featurePlanner<PyPiPublishSection>("publish:py
         risk: "irreversible",
         description: `Publish ${state.identity.name}@${state.identity.version} to PyPI-compatible registry.`,
         action: CommandAction.make({ command: (() => {
-          const env = publishingAuthEnvNames(section.trustedPublishing, [section.usernameEnv, section.passwordEnv])
+          const env = publishingAuthEnvNames(section.trustedPublishing !== undefined, [section.usernameEnv, section.passwordEnv])
           return CommandSpec.make({
             executable: section.pythonExecutable,
             args: ["-m", "twine", "upload", "--non-interactive", "--repository-url", section.repositoryUrl, ...paths],

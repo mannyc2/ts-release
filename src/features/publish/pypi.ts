@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema"
 import type { Artifact } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { findCatalogArtifact } from "../catalog/shared.js"
 import {
   publishingAuthEnvNames,
@@ -53,7 +53,7 @@ const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
 
 const check = (id: string, description: string, section: ReleaseConfigPyPiPublish, args: ReadonlyArray<string>) =>
   readOnlyCommandValidationOperation({
-    id, pipeId: "publish:pypi", description,
+    id, description,
     command: noAuthCommand(section.pythonExecutable, args)
   })
 
@@ -65,7 +65,6 @@ export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publ
     ]
     if (section.trustedPublishing !== undefined) operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",
-      pipeId: "publish:pypi",
       description: "Record PyPI trusted publishing authentication mode.",
       message:
         `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`
@@ -74,9 +73,8 @@ export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publ
       check("pypi:twine-check", "Validate Python distribution metadata with twine check.", section, [
         "-m", "twine", "check", ...paths
       ]),
-      Operation.make({
+      featureOperation({
         id: "pypi:twine-upload",
-        pipeId: "publish:pypi",
         phase: "publish",
         risk: "irreversible",
         description: `Publish ${state.identity.name}@${state.identity.version} to PyPI-compatible registry.`,

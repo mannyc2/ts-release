@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
 import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "./operations.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { renderTemplate } from "../../grammar/template.js"
 import { catalogWritePath, type CatalogEntry } from "../catalog/file.js"
 const argv = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
@@ -20,7 +20,7 @@ const validation = Effect.fn("catalog.publish.validation")(function*(
     }))
   }
   return [readOnlyCommandValidationOperation({
-    id: `catalog:${entry.id}:validate`, pipeId: "publish:catalog",
+    id: `catalog:${entry.id}:validate`,
     description: `Validate ${entry.id} catalog update.`,
     command: noAuthCommand(executable, rendered.slice(1))
   })]
@@ -28,8 +28,8 @@ const validation = Effect.fn("catalog.publish.validation")(function*(
 const command = (
   id: string, risk: "writes-local" | "externally-visible", description: string,
   executable: string, args: ReadonlyArray<string>, cwd?: string
-): Operation => Operation.make({
-  id, pipeId: "publish:catalog", phase: "publish", risk, description,
+): Operation => featureOperation({
+  id, phase: "publish", risk, description,
   action: CommandAction.make({ command: cwd === undefined ? noAuthCommand(executable, args) :
     CommandSpec.make({ ...noAuthCommand(executable, args), cwd }) })
 })

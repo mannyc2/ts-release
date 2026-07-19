@@ -3,9 +3,9 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, CatalogFileExtra, SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { Operation, WriteFileAction } from "../../grammar/operation.js"
+import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
   catalogArtifactUrl,
@@ -93,9 +93,8 @@ export const catalogScoopPlanner = featurePlanner<ScoopSection>("catalog:scoop",
         producedBy: "catalog:scoop",
         extra: CatalogFileExtra.make({ catalog: "scoop", repository: section.repository })
       })],
-      operations: [Operation.make({
+      operations: [featureOperation({
         id: "scoop:scoop-render-manifest",
-        pipeId: "catalog:scoop",
         phase: "catalog",
         risk: "writes-local",
         description: `Render Scoop manifest ${catalogPathBaseName(path)}.`,

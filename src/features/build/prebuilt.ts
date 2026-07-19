@@ -2,8 +2,9 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../../grammar/artifact.js"
-import { CheckFileAction, Operation } from "../../grammar/operation.js"
+import { CheckFileAction } from "../../grammar/operation.js"
 import { PlatformTarget, platformTargetVariant } from "../../grammar/platform.js"
+import { featureOperation } from "../../grammar/planner.js"
 import { renderArtifactNameEffect } from "../../grammar/template.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
@@ -28,9 +29,8 @@ export const prebuiltBuilder: Builder<PrebuiltBuildOptions> = (options, identity
     const id = `${options.id ?? "prebuilt"}-${target}`
     return {
       artifacts: [executableArtifact({ id, builder: "prebuilt", binary, path, platform, targetTriple: target })],
-      operations: [Operation.make({
+      operations: [featureOperation({
         id: `build:prebuilt:${id}:exists`,
-        pipeId: "build",
         phase: "build",
         description: `Verify prebuilt artifact exists for ${target}.`,
         risk: "read-only",

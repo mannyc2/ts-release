@@ -7,10 +7,9 @@ import { PlanError } from "../../grammar/errors.js"
 import {
   GitHubReleaseAssetSpec,
   GitHubReleaseCreateAction,
-  GitHubReleaseVerifyAction,
-  Operation
+  GitHubReleaseVerifyAction
 } from "../../grammar/operation.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { hasSemverPrerelease } from "../../grammar/semver.js"
 import { validationNoteOperation } from "./operations.js"
 import { defaulted } from "../../grammar/defaulted.js"
@@ -66,14 +65,12 @@ export const publishGitHubPlanner = featurePlanner<GitHubPublishSection>("publis
       operations: [
         validationNoteOperation({
           id: "github:github-release-dry-run",
-          pipeId: "publish:github",
           description: "Record simulated GitHub release dry-run validation.",
           message:
             "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation."
         }),
-        Operation.make({
+        featureOperation({
           id: "github:github-release-create",
-          pipeId: "publish:github",
           phase: "publish",
           risk: "externally-visible",
           description: `Create GitHub release for ${state.identity.name}@${state.identity.version}.`,
@@ -82,9 +79,8 @@ export const publishGitHubPlanner = featurePlanner<GitHubPublishSection>("publis
             notes: state.identity.notes, draft: section.draft, prerelease, assets
           })
         }),
-        Operation.make({
+        featureOperation({
           id: "github:github-release-verify-api",
-          pipeId: "publish:github",
           phase: "verify",
           risk: "read-only",
           description: "Verify the GitHub release through the GitHub API.",

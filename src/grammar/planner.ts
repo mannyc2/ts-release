@@ -1,8 +1,8 @@
-// Invariant: a feature planner contributes canonical data once or emits its single explicit skip notice.
+// Invariant: a feature planner contributes canonical data once, stamps its pipeId onto every operation, or emits its single explicit skip notice.
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import type { Artifact } from "./artifact.js"
-import type { Operation } from "./operation.js"
+import { Operation } from "./operation.js"
 import type { PlanError } from "./errors.js"
 import { PipeNotice, type ReleaseIdentity } from "./state.js"
 
@@ -34,12 +34,24 @@ export const emptyContribution: PipeContribution = {
   notices: []
 }
 
+// pipeId is owned by the featurePlanner binding and stamped onto every
+// contributed operation; feature code never spells its own pipe id.
+export const featureOperation = (fields: Omit<Operation, "pipeId">): Operation =>
+  Operation.make({ ...fields, pipeId: "" })
+
 export const featurePlanner = <Section>(
   id: string,
   plan: (section: Section, context: PlannerContext) => Effect.Effect<PipeContributionInput, PlanError>
 ): FeaturePlanner<Section> => Object.assign(
   (section: Section, context: PlannerContext) => plan(section, context).pipe(
-    Effect.map((contribution) => ({ ...emptyContribution, ...contribution }))
+    Effect.map((contribution) => {
+      const merged = { ...emptyContribution, ...contribution }
+      return {
+        ...merged,
+        operations: merged.operations.map((operation) =>
+          operation.pipeId === id ? operation : Operation.make({ ...operation, pipeId: id }))
+      }
+    })
   ),
   { id }
 )

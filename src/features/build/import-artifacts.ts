@@ -13,8 +13,8 @@ import {
   type ArtifactExtra
 } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { CheckFileAction, Operation } from "../../grammar/operation.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { CheckFileAction } from "../../grammar/operation.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { renderArtifactNameEffect } from "../../grammar/template.js"
 
 export class ReleaseConfigManualArtifact extends Schema.Class<ReleaseConfigManualArtifact>(
@@ -64,9 +64,8 @@ export const importArtifactsPlanner = featurePlanner<ReadonlyArray<ReleaseConfig
         ...(input.variant === undefined ? {} : { platform: input.variant }),
         extra: extra(input, kind)
       }),
-      operation: Operation.make({
+      operation: featureOperation({
         id: `import-artifacts:${input.id}:exists`,
-        pipeId: "import-artifacts",
         phase: "build",
         risk: "read-only",
         description: `Verify imported artifact ${input.id} exists.`,

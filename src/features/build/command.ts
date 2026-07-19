@@ -3,8 +3,9 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { CheckFileAction, CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
+import { CheckFileAction, CommandAction, CommandSpec } from "../../grammar/operation.js"
 import { PlatformTarget, platformTargetVariant } from "../../grammar/platform.js"
+import { featureOperation } from "../../grammar/planner.js"
 import { renderArtifactNameEffect, renderTemplate } from "../../grammar/template.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
@@ -39,9 +40,8 @@ export const commandBuilder: Builder<CommandBuildOptions> = (options, identity, 
     return {
       artifacts: [executableArtifact({ id, builder: "command", binary, path, platform, targetTriple: target })],
       operations: [
-        Operation.make({
+        featureOperation({
           id: `build:command:${id}`,
-          pipeId: "build",
           phase: "build",
           description: `Run configured build command for ${target}.`,
           risk: "writes-local",
@@ -49,9 +49,8 @@ export const commandBuilder: Builder<CommandBuildOptions> = (options, identity, 
             executable: command[0] ?? "", args: command.slice(1), requiredEnv: [], redactedEnv: []
           }) })
         }),
-        Operation.make({
+        featureOperation({
           id: `build:command:${id}:exists`,
-          pipeId: "build",
           phase: "build",
           description: `Verify command build output exists for ${target}.`,
           risk: "read-only",

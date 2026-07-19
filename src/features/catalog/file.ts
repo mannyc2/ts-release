@@ -5,7 +5,7 @@ import { Artifact, artifactPathBaseName, CatalogFileExtra, SafeRelativePath } fr
 import { PlanError } from "../../grammar/errors.js"
 import { Operation, WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featurePlanner, type PlannerContext } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner, type PlannerContext } from "../../grammar/planner.js"
 import { renderTemplate } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
 export class ReleaseConfigCatalogFactHole extends Schema.Class<ReleaseConfigCatalogFactHole>("ReleaseConfigCatalogFactHole")({
@@ -60,7 +60,7 @@ export const catalogGenericPlanner = featurePlanner<ReadonlyArray<CatalogEntry>>
       const contents = yield* planContent(entry, context)
       artifacts.push(Artifact.make({ id: `catalog-file-${entry.id}`, kind: "catalog-file", path,
         producedBy: "catalog:file", extra: CatalogFileExtra.make({ catalog: entry.id, repository: entry.repository }) }))
-      operations.push(Operation.make({ id: `catalog:${entry.id}:render`, pipeId: "catalog:file", phase: "catalog",
+      operations.push(featureOperation({ id: `catalog:${entry.id}:render`, phase: "catalog",
         risk: "writes-local", description: `Render ${entry.id} catalog file ${path}.`,
         action: WriteFileAction.make({ path, contents }) }))
     }

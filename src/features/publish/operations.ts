@@ -1,29 +1,29 @@
-// Invariant: shared feature operation constructors preserve phase, risk, and action data exactly.
+// Invariant: shared feature operation constructors preserve phase, risk, and action data exactly; pipeId is stamped by the planner.
 import { artifactPathBaseName } from "../../grammar/artifact.js"
 import { CommandAction, CommandSpec, NoteAction, Operation } from "../../grammar/operation.js"
+import { featureOperation } from "../../grammar/planner.js"
+
 export const noAuthCommand = (executable: string, args: ReadonlyArray<string>): CommandSpec =>
   CommandSpec.make({ executable, args: [...args], requiredEnv: [], redactedEnv: [] })
 
 export const readOnlyCommandValidationOperation = (options: {
   readonly id: string
-  readonly pipeId: string
   readonly description: string
   readonly command: CommandSpec
-}): Operation => Operation.make({
-  ...options,
+}): Operation => featureOperation({
+  id: options.id,
   phase: "publish",
   risk: "read-only",
+  description: options.description,
   action: CommandAction.make({ command: options.command })
 })
 
 export const validationNoteOperation = (options: {
   readonly id: string
-  readonly pipeId: string
   readonly description: string
   readonly message: string
-}): Operation => Operation.make({
+}): Operation => featureOperation({
   id: options.id,
-  pipeId: options.pipeId,
   phase: "publish",
   risk: "read-only",
   description: options.description,

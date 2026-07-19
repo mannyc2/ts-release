@@ -2,9 +2,9 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, PyPiWheelBinaryArtifact, SafeRelativePath, WheelExtra } from "../../grammar/artifact.js"
-import { Operation, StageAction } from "../../grammar/operation.js"
+import { StageAction } from "../../grammar/operation.js"
 import { PyPiWheelIntent } from "../../grammar/intent.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { renderArtifactNameEffect } from "../../grammar/template.js"
 
 export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiWheelBuild>(
@@ -40,9 +40,8 @@ export const pypiWheelPlanner = featurePlanner<ReadonlyArray<ReleaseConfigPyPiWh
           binaries: wheel.binaries.map(({ wheelPath }) => wheelPath)
         })
       }),
-      operation: Operation.make({
+      operation: featureOperation({
         id: `build:pypi-wheel:${wheel.id}`,
-        pipeId: "build:pypi-wheel",
         phase: "build",
         description: `Assemble PyPI wheel ${wheel.id}.`,
         risk: "writes-local",

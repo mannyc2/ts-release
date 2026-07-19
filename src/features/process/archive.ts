@@ -5,7 +5,7 @@ import { Artifact, artifactPathBaseName, ArchiveExtra, type InstallableArtifactV
 import { PlanError } from "../../grammar/errors.js"
 import { Operation, StageAction } from "../../grammar/operation.js"
 import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent } from "../../grammar/intent.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { defaultArtifactBaseName, renderArtifactNameEffect } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
@@ -116,9 +116,8 @@ export const archivePlanner = featurePlanner<ReadonlyArray<ReleaseConfigArchive>
               binaries: archiveEntries.map(({ archivePath }) => archivePath), files: section.files
             })
           }))
-          operations.push(Operation.make({
+          operations.push(featureOperation({
             id: `archive:${id}`,
-            pipeId: "archive",
             phase: "process",
             risk: "writes-local",
             description: `Create ${format} archive ${fileName}.`,

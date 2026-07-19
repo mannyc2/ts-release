@@ -3,9 +3,9 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, CatalogFileExtra, SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { Operation, WriteFileAction } from "../../grammar/operation.js"
+import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
   catalogArtifactUrl,
@@ -176,9 +176,8 @@ export const catalogHomebrewPlanner = featurePlanner<HomebrewSection>("catalog:h
         id: "homebrew-formula", kind: "catalog-file", path, producedBy: "catalog:homebrew",
         extra: CatalogFileExtra.make({ catalog: "homebrew", repository: section.repository })
       })],
-      operations: [Operation.make({
+      operations: [featureOperation({
         id: "homebrew:homebrew-render-formula",
-        pipeId: "catalog:homebrew",
         phase: "catalog",
         risk: "writes-local",
         description: `Render Homebrew formula ${catalogPathBaseName(path)}.`,

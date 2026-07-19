@@ -39,7 +39,6 @@ export const publishHomebrewPlanner = featurePlanner<HomebrewSection>("publish:h
     },
     {
       id: "homebrew:brew-audit",
-      pipeId: "publish:homebrew",
       description: "Record simulated Homebrew formula validation.",
       message: "Homebrew formula validation is simulated by the deterministic release plan."
     },
@@ -63,7 +62,6 @@ export const publishScoopPlanner = featurePlanner<ScoopSection>("publish:scoop",
     },
     {
       id: "scoop:scoop-manifest-validation",
-      pipeId: "publish:scoop",
       description: "Record simulated Scoop manifest validation.",
       message: "Scoop manifest validation is simulated by the deterministic release plan."
     },

@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../../grammar/artifact.js"
 import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../../grammar/operation.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
   publishingAuthEnvNames,
@@ -60,7 +60,7 @@ const npmCommand = (
 }
 
 const npmCheck = (id: string, description: string, section: NpmPublishSection, args: ReadonlyArray<string>) =>
-  readOnlyCommandValidationOperation({ id, pipeId: "publish:npm", description, command: npmCommand(section, args) })
+  readOnlyCommandValidationOperation({ id, description, command: npmCommand(section, args) })
 
 const publishArgs = (section: NpmPublishSection): ReadonlyArray<string> => {
   const args = ["publish", section.packagePath, "--registry", section.registry]
@@ -73,13 +73,11 @@ export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm"
     const auth = section.trustedPublishing === undefined
       ? readOnlyCommandValidationOperation({
         id: "npm:npm-whoami",
-        pipeId: "publish:npm",
         description: "Validate npm CLI authentication.",
         command: npmCommand(section, ["whoami", "--registry", section.registry], true)
       })
       : validationNoteOperation({
         id: "npm:npm-trusted-publishing-auth",
-        pipeId: "publish:npm",
         description: "Record npm trusted publishing authentication mode.",
         message:
           `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
@@ -102,17 +100,15 @@ export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm"
         section,
         ["pack", "--dry-run", "--json", section.packagePath]
       ),
-      Operation.make({
+      featureOperation({
         id: "npm:npm-publish",
-        pipeId: "publish:npm",
         phase: "publish",
         risk: "irreversible",
         description: `Publish ${section.packageName}@${state.identity.version} to npm.`,
         action: CommandAction.make({ command: npmCommand(section, publishArgs(section), true) })
       }),
-      Operation.make({
+      featureOperation({
         id: "npm:npm-version-verify",
-        pipeId: "publish:npm",
         phase: "verify",
         risk: "read-only",
         description: `Verify ${section.packageName}@${state.identity.version} exists on npm.`,

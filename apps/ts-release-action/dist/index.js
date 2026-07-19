@@ -99383,6 +99383,22 @@ class Operation extends Class4("Operation")({
 }) {
 }
 
+// ../../src/grammar/planner.ts
+var emptyContribution = {
+  artifacts: [],
+  operations: [],
+  notices: []
+};
+var featureOperation = (fields) => Operation.make({ ...fields, pipeId: "" });
+var featurePlanner = (id, plan) => Object.assign((section, context7) => plan(section, context7).pipe(map5((contribution) => {
+  const merged = { ...emptyContribution, ...contribution };
+  return {
+    ...merged,
+    operations: merged.operations.map((operation) => operation.pipeId === id ? operation : Operation.make({ ...operation, pipeId: id }))
+  };
+})), { id });
+var schedule2 = (planner, section) => [planner, section];
+
 // ../../src/grammar/template.ts
 var distributionArchToken = (arch2) => arch2 === "x64" ? "amd64" : "arm64";
 var defaultArtifactBaseName = (binary, platform2) => {
@@ -99511,9 +99527,8 @@ var bunBuilder = (options, identity2, target) => gen2(function* () {
       binaryName: options.binaryName,
       installPath: options.installPath
     })],
-    operations: [Operation.make({
+    operations: [featureOperation({
       id: `build:bun:${id}`,
-      pipeId: "build",
       phase: "build",
       description: `Compile ${binary} for ${target} with Bun.`,
       risk: "writes-local",
@@ -99560,9 +99575,8 @@ var commandBuilder = (options, identity2, target) => gen2(function* () {
   return {
     artifacts: [executableArtifact({ id, builder: "command", binary, path: path4, platform: platform2, targetTriple: target })],
     operations: [
-      Operation.make({
+      featureOperation({
         id: `build:command:${id}`,
-        pipeId: "build",
         phase: "build",
         description: `Run configured build command for ${target}.`,
         risk: "writes-local",
@@ -99573,9 +99587,8 @@ var commandBuilder = (options, identity2, target) => gen2(function* () {
           redactedEnv: []
         }) })
       }),
-      Operation.make({
+      featureOperation({
         id: `build:command:${id}:exists`,
-        pipeId: "build",
         phase: "build",
         description: `Verify command build output exists for ${target}.`,
         risk: "read-only",
@@ -99606,9 +99619,8 @@ var prebuiltBuilder = (options, identity2, target) => gen2(function* () {
   const id = `${options.id ?? "prebuilt"}-${target}`;
   return {
     artifacts: [executableArtifact({ id, builder: "prebuilt", binary, path: path4, platform: platform2, targetTriple: target })],
-    operations: [Operation.make({
+    operations: [featureOperation({
       id: `build:prebuilt:${id}:exists`,
-      pipeId: "build",
       phase: "build",
       description: `Verify prebuilt artifact exists for ${target}.`,
       risk: "read-only",
@@ -99616,15 +99628,6 @@ var prebuiltBuilder = (options, identity2, target) => gen2(function* () {
     })]
   };
 });
-
-// ../../src/grammar/planner.ts
-var emptyContribution = {
-  artifacts: [],
-  operations: [],
-  notices: []
-};
-var featurePlanner = (id, plan) => Object.assign((section, context7) => plan(section, context7).pipe(map5((contribution) => ({ ...emptyContribution, ...contribution }))), { id });
-var schedule2 = (planner, section) => [planner, section];
 
 // ../../src/features/process/archive.ts
 class ReleaseConfigArchiveFormatOverrides extends Class4("ReleaseConfigArchiveFormatOverrides")({
@@ -99725,9 +99728,8 @@ var archivePlanner = featurePlanner("archive", (sections, state3) => gen2(functi
             files: section.files
           })
         }));
-        operations.push(Operation.make({
+        operations.push(featureOperation({
           id: `archive:${id}`,
-          pipeId: "archive",
           phase: "process",
           risk: "writes-local",
           description: `Create ${format3} archive ${fileName}.`,
@@ -99956,9 +99958,8 @@ var catalogHomebrewPlanner = featurePlanner("catalog:homebrew", (section, state3
       producedBy: "catalog:homebrew",
       extra: CatalogFileExtra.make({ catalog: "homebrew", repository: section.repository })
     })],
-    operations: [Operation.make({
+    operations: [featureOperation({
       id: "homebrew:homebrew-render-formula",
-      pipeId: "catalog:homebrew",
       phase: "catalog",
       risk: "writes-local",
       description: `Render Homebrew formula ${catalogPathBaseName(path4)}.`,
@@ -100040,9 +100041,8 @@ var catalogScoopPlanner = featurePlanner("catalog:scoop", (section, state3) => g
       producedBy: "catalog:scoop",
       extra: CatalogFileExtra.make({ catalog: "scoop", repository: section.repository })
     })],
-    operations: [Operation.make({
+    operations: [featureOperation({
       id: "scoop:scoop-render-manifest",
-      pipeId: "catalog:scoop",
       phase: "catalog",
       risk: "writes-local",
       description: `Render Scoop manifest ${catalogPathBaseName(path4)}.`,
@@ -100124,9 +100124,8 @@ var catalogGenericPlanner = featurePlanner("catalog:file", (entries2, context7) 
       producedBy: "catalog:file",
       extra: CatalogFileExtra.make({ catalog: entry.id, repository: entry.repository })
     }));
-    operations.push(Operation.make({
+    operations.push(featureOperation({
       id: `catalog:${entry.id}:render`,
-      pipeId: "catalog:file",
       phase: "catalog",
       risk: "writes-local",
       description: `Render ${entry.id} catalog file ${path4}.`,
@@ -100180,9 +100179,8 @@ var importArtifactsPlanner = featurePlanner("import-artifacts", (section, state3
       ...input.variant === undefined ? {} : { platform: input.variant },
       extra: extra(input, kind)
     }),
-    operation: Operation.make({
+    operation: featureOperation({
       id: `import-artifacts:${input.id}:exists`,
-      pipeId: "import-artifacts",
       phase: "build",
       risk: "read-only",
       description: `Verify imported artifact ${input.id} exists.`,
@@ -100221,9 +100219,8 @@ var checksumPlanner = featurePlanner("checksum", (section, state3) => gen2(funct
         coversArtifactIds: inputs.map(({ id }) => id)
       })
     })],
-    operations: [Operation.make({
+    operations: [featureOperation({
       id: "checksum:write",
-      pipeId: "checksum",
       phase: "process",
       risk: "writes-local",
       description: `Write ${section.algorithm} checksum file ${fileName}.`,
@@ -100269,15 +100266,15 @@ var hasSemverPrerelease = (value2) => {
 
 // ../../src/features/publish/operations.ts
 var noAuthCommand = (executable, args2) => CommandSpec.make({ executable, args: [...args2], requiredEnv: [], redactedEnv: [] });
-var readOnlyCommandValidationOperation = (options) => Operation.make({
-  ...options,
+var readOnlyCommandValidationOperation = (options) => featureOperation({
+  id: options.id,
   phase: "publish",
   risk: "read-only",
+  description: options.description,
   action: CommandAction.make({ command: options.command })
 });
-var validationNoteOperation = (options) => Operation.make({
+var validationNoteOperation = (options) => featureOperation({
   id: options.id,
-  pipeId: options.pipeId,
   phase: "publish",
   risk: "read-only",
   description: options.description,
@@ -100367,13 +100364,11 @@ var publishGitHubPlanner = featurePlanner("publish:github", (section, state3) =>
     operations: [
       validationNoteOperation({
         id: "github:github-release-dry-run",
-        pipeId: "publish:github",
         description: "Record simulated GitHub release dry-run validation.",
         message: "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation."
       }),
-      Operation.make({
+      featureOperation({
         id: "github:github-release-create",
-        pipeId: "publish:github",
         phase: "publish",
         risk: "externally-visible",
         description: `Create GitHub release for ${state3.identity.name}@${state3.identity.version}.`,
@@ -100388,9 +100383,8 @@ var publishGitHubPlanner = featurePlanner("publish:github", (section, state3) =>
           assets
         })
       }),
-      Operation.make({
+      featureOperation({
         id: "github:github-release-verify-api",
-        pipeId: "publish:github",
         phase: "verify",
         risk: "read-only",
         description: "Verify the GitHub release through the GitHub API.",
@@ -100457,7 +100451,7 @@ var npmCommand = (section, args2, authenticated = false) => {
   const env = authenticated ? publishingAuthEnvNames(section.trustedPublishing !== undefined, [section.tokenEnv]) : [];
   return CommandSpec.make({ executable: "npm", args: [...args2], requiredEnv: env, redactedEnv: env });
 };
-var npmCheck = (id, description, section, args2) => readOnlyCommandValidationOperation({ id, pipeId: "publish:npm", description, command: npmCommand(section, args2) });
+var npmCheck = (id, description, section, args2) => readOnlyCommandValidationOperation({ id, description, command: npmCommand(section, args2) });
 var publishArgs = (section) => {
   const args2 = ["publish", section.packagePath, "--registry", section.registry];
   if (section.access !== undefined)
@@ -100469,12 +100463,10 @@ var publishArgs = (section) => {
 var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
   const auth2 = section.trustedPublishing === undefined ? readOnlyCommandValidationOperation({
     id: "npm:npm-whoami",
-    pipeId: "publish:npm",
     description: "Validate npm CLI authentication.",
     command: npmCommand(section, ["whoami", "--registry", section.registry], true)
   }) : validationNoteOperation({
     id: "npm:npm-trusted-publishing-auth",
-    pipeId: "publish:npm",
     description: "Record npm trusted publishing authentication mode.",
     message: `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
   });
@@ -100484,16 +100476,14 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
   ];
   if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing && section.trustedPublishing.verifyPackageExists === true)
     operations.push(npmCheck("npm:npm-package-exists", "Verify npm package exists before trusted publishing.", section, ["view", section.packageName, "name", "--registry", section.registry]));
-  operations.push(npmCheck("npm:npm-pack-dry-run", "Validate npm package contents with npm pack dry-run.", section, ["pack", "--dry-run", "--json", section.packagePath]), Operation.make({
+  operations.push(npmCheck("npm:npm-pack-dry-run", "Validate npm package contents with npm pack dry-run.", section, ["pack", "--dry-run", "--json", section.packagePath]), featureOperation({
     id: "npm:npm-publish",
-    pipeId: "publish:npm",
     phase: "publish",
     risk: "irreversible",
     description: `Publish ${section.packageName}@${state3.identity.version} to npm.`,
     action: CommandAction.make({ command: npmCommand(section, publishArgs(section), true) })
-  }), Operation.make({
+  }), featureOperation({
     id: "npm:npm-version-verify",
-    pipeId: "publish:npm",
     phase: "verify",
     risk: "read-only",
     description: `Verify ${section.packageName}@${state3.identity.version} exists on npm.`,
@@ -100542,7 +100532,6 @@ var selectArtifacts2 = fn2("publish.pypi.selectArtifacts")(function* (section, a
 });
 var check = (id, description, section, args2) => readOnlyCommandValidationOperation({
   id,
-  pipeId: "publish:pypi",
   description,
   command: noAuthCommand(section.pythonExecutable, args2)
 });
@@ -100555,7 +100544,6 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
   if (section.trustedPublishing !== undefined)
     operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",
-      pipeId: "publish:pypi",
       description: "Record PyPI trusted publishing authentication mode.",
       message: `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`
     }));
@@ -100564,9 +100552,8 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
     "twine",
     "check",
     ...paths
-  ]), Operation.make({
+  ]), featureOperation({
     id: "pypi:twine-upload",
-    pipeId: "publish:pypi",
     phase: "publish",
     risk: "irreversible",
     description: `Publish ${state3.identity.name}@${state3.identity.version} to PyPI-compatible registry.`,
@@ -100615,9 +100602,8 @@ var pypiWheelPlanner = featurePlanner("build:pypi-wheel", (wheels, state3) => fo
         binaries: wheel.binaries.map(({ wheelPath }) => wheelPath)
       })
     }),
-    operation: Operation.make({
+    operation: featureOperation({
       id: `build:pypi-wheel:${wheel.id}`,
-      pipeId: "build:pypi-wheel",
       phase: "build",
       description: `Assemble PyPI wheel ${wheel.id}.`,
       risk: "writes-local",
@@ -100977,14 +100963,12 @@ var validation = fn2("catalog.publish.validation")(function* (entry, identity2) 
   }
   return [readOnlyCommandValidationOperation({
     id: `catalog:${entry.id}:validate`,
-    pipeId: "publish:catalog",
     description: `Validate ${entry.id} catalog update.`,
     command: noAuthCommand(executable, rendered.slice(1))
   })];
 });
-var command = (id, risk, description, executable, args2, cwd) => Operation.make({
+var command = (id, risk, description, executable, args2, cwd) => featureOperation({
   id,
-  pipeId: "publish:catalog",
   phase: "publish",
   risk,
   description,
@@ -101036,7 +101020,6 @@ var publishHomebrewPlanner = featurePlanner("publish:homebrew", (section, state3
   reason: "Homebrew tap targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
 }, {
   id: "homebrew:brew-audit",
-  pipeId: "publish:homebrew",
   description: "Record simulated Homebrew formula validation.",
   message: "Homebrew formula validation is simulated by the deterministic release plan."
 }, {
@@ -101053,7 +101036,6 @@ var publishScoopPlanner = featurePlanner("publish:scoop", (section, state3) => c
   reason: "Scoop bucket targets currently publish with plain git push and require Git credentials to be configured outside the release plan; tokenEnv is not supported yet."
 }, {
   id: "scoop:scoop-manifest-validation",
-  pipeId: "publish:scoop",
   description: "Record simulated Scoop manifest validation.",
   message: "Scoop manifest validation is simulated by the deterministic release plan."
 }, {

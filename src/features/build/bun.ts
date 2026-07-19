@@ -3,8 +3,9 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { Operation, StageAction } from "../../grammar/operation.js"
+import { StageAction } from "../../grammar/operation.js"
 import { BunCompileIntent, type BunCompileTarget } from "../../grammar/intent.js"
+import { featureOperation } from "../../grammar/planner.js"
 import {
   PlatformTarget,
   platformTargetVariant,
@@ -68,9 +69,8 @@ export const bunBuilder: Builder<BunBuildOptions> = (options, identity: ReleaseI
         id, builder: "bun", binary, path, platform, targetTriple: compile,
         binaryName: options.binaryName, installPath: options.installPath
       })],
-      operations: [Operation.make({
+      operations: [featureOperation({
         id: `build:bun:${id}`,
-        pipeId: "build",
         phase: "build",
         description: `Compile ${binary} for ${target} with Bun.`,
         risk: "writes-local",

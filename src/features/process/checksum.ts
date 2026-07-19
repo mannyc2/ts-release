@@ -2,9 +2,9 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, ChecksumFileExtra } from "../../grammar/artifact.js"
-import { Operation, WriteFileAction } from "../../grammar/operation.js"
+import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { renderArtifactNameEffect } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
@@ -32,9 +32,8 @@ export const checksumPlanner = featurePlanner<ReleaseConfigChecksum>("checksum",
           algorithm: section.algorithm, coversArtifactIds: inputs.map(({ id }) => id)
         })
       })],
-      operations: [Operation.make({
+      operations: [featureOperation({
         id: "checksum:write",
-        pipeId: "checksum",
         phase: "process",
         risk: "writes-local",
         description: `Write ${section.algorithm} checksum file ${fileName}.`,

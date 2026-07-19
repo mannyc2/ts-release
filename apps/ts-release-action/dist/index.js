@@ -99030,31 +99030,6 @@ function onSerializerEnsureArray(ast) {
 }
 var Json2 = /* @__PURE__ */ make17(Json);
 
-// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Ref.js
-var TypeId25 = "~effect/Ref";
-var RefProto = {
-  [TypeId25]: {
-    _A: identity
-  },
-  ...PipeInspectableProto,
-  toJSON() {
-    return {
-      _id: "Ref",
-      ref: this.ref
-    };
-  }
-};
-var makeUnsafe6 = (value2) => {
-  const self2 = Object.create(RefProto);
-  self2.ref = make10(value2);
-  return self2;
-};
-var make18 = (value2) => sync2(() => makeUnsafe6(value2));
-var get4 = (self2) => sync2(() => self2.ref.current);
-var update3 = /* @__PURE__ */ dual(2, (self2, f) => sync2(() => {
-  self2.ref.current = f(self2.ref.current);
-}));
-
 // ../../src/grammar/json.ts
 var parseJsonAs = (schema, input, makeError) => decodeUnknownEffect2(fromJsonString2(schema))(input).pipe(mapError3(makeError));
 
@@ -101092,6 +101067,31 @@ var publishScoopPlanner = featurePlanner("publish:scoop", (section, state3) => c
 // ../../src/run/executor.ts
 import { createHash as createHash3 } from "node:crypto";
 
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Ref.js
+var TypeId25 = "~effect/Ref";
+var RefProto = {
+  [TypeId25]: {
+    _A: identity
+  },
+  ...PipeInspectableProto,
+  toJSON() {
+    return {
+      _id: "Ref",
+      ref: this.ref
+    };
+  }
+};
+var makeUnsafe6 = (value2) => {
+  const self2 = Object.create(RefProto);
+  self2.ref = make10(value2);
+  return self2;
+};
+var make18 = (value2) => sync2(() => makeUnsafe6(value2));
+var get4 = (self2) => sync2(() => self2.ref.current);
+var update3 = /* @__PURE__ */ dual(2, (self2, f) => sync2(() => {
+  self2.ref.current = f(self2.ref.current);
+}));
+
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
 function makeValue(value2) {
   return {
@@ -101626,7 +101626,7 @@ class GitHubReleaseEvidence extends Class4("GitHubReleaseEvidence")({
 }) {
 }
 
-class HttpCheckEvidence extends Class4("HttpCheckEvidence")({
+class VerifyCheckEvidence extends Class4("VerifyCheckEvidence")({
   description: String4,
   passed: Boolean3
 }) {
@@ -101657,7 +101657,7 @@ class FileOutcome extends TaggedClass()("file", {
 class GitHubReleaseOutcome extends TaggedClass()("github-release", {
   release: GitHubReleaseEvidence,
   responseStatus: optional(Number5),
-  checks: optional(ArraySchema(HttpCheckEvidence))
+  checks: optional(ArraySchema(VerifyCheckEvidence))
 }) {
 }
 var ActionOutcome = Union2([CommandOutcome, FileOutcome, GitHubReleaseOutcome]);
@@ -102188,14 +102188,14 @@ var githubVerifyEvidence = fn2("engine.githubVerifyEvidence")(function* (operati
     onSuccess: (release) => gen2(function* () {
       const assetNames = release.assets.map((asset) => asset.name);
       const checks = [
-        HttpCheckEvidence.make({ description: `tag is ${action5.tag}`, passed: release.tag_name === action5.tag }),
-        HttpCheckEvidence.make({ description: `title is ${action5.title}`, passed: release.name === action5.title }),
-        HttpCheckEvidence.make({ description: `draft is ${action5.draft}`, passed: release.draft === action5.draft }),
-        HttpCheckEvidence.make({
+        VerifyCheckEvidence.make({ description: `tag is ${action5.tag}`, passed: release.tag_name === action5.tag }),
+        VerifyCheckEvidence.make({ description: `title is ${action5.title}`, passed: release.name === action5.title }),
+        VerifyCheckEvidence.make({ description: `draft is ${action5.draft}`, passed: release.draft === action5.draft }),
+        VerifyCheckEvidence.make({
           description: `prerelease is ${action5.prerelease}`,
           passed: release.prerelease === action5.prerelease
         }),
-        HttpCheckEvidence.make({
+        VerifyCheckEvidence.make({
           description: `assets are ${sortedStrings(action5.assetNames).join(", ")}`,
           passed: sameStringSet(assetNames, action5.assetNames)
         })
@@ -102309,10 +102309,13 @@ var operationMatchesPass = {
 var operationsForPass = (operations, pass) => operations.filter(operationMatchesPass[pass]);
 var operationsForWorkflow = (operations, workflow) => (workflow === "release" ? ["render", "validation", "publish", "verification"] : [workflow]).flatMap((pass) => operationsForPass(operations, pass));
 var preflightEvidenceWorkflow = fn2("engine.preflightEvidenceWorkflow")(function* (operations, workflow, approval, context7) {
-  yield* forEach2(operationsForWorkflow(operations, workflow).filter((operation) => !shouldRefuseForSnapshot(operation, context7)), (operation) => requireExecutionApproval(operation, approval), { discard: true });
+  yield* preflightOperations(operationsForWorkflow(operations, workflow), approval, context7);
+});
+var preflightOperations = fn2("engine.preflightOperations")(function* (operations, approval, context7) {
+  yield* forEach2(operations.filter((operation) => !shouldRefuseForSnapshot(operation, context7)), (operation) => requireExecutionApproval(operation, approval), { discard: true });
 });
 var runOperations = fn2("engine.runOperations")(function* (operations, approval, context7) {
-  yield* forEach2(operations.filter((operation) => !shouldRefuseForSnapshot(operation, context7)), (operation) => requireExecutionApproval(operation, approval), { discard: true });
+  yield* preflightOperations(operations, approval, context7);
   const ref = yield* makeEvidenceRef(context7);
   yield* runOperationsInto(ref, operations, approval, context7);
   return yield* get4(ref);
@@ -102381,6 +102384,7 @@ var resolveManifestCommit = fn2("resolve.manifestCommit")(function* (seed, root)
     return { ...seed, commit };
   return yield* fail6(identityError("manifest", "identity.commit", result2.exitCode === 0 ? "Git HEAD resolved to an empty commit." : "Unable to resolve Git HEAD."));
 });
+var manifestTag = (template, version4, field) => template.includes("{name}") || template.includes("{normalizedName}") ? fail6(identityError("manifest", field, "Only the {version} placeholder is supported here.")) : succeed6(template.split("{version}").join(version4));
 var resolveManifestIdentity = fn2("resolve.manifest")(function* (options) {
   const project = options.project;
   let seed;
@@ -102388,14 +102392,11 @@ var resolveManifestIdentity = fn2("resolve.manifest")(function* (options) {
     const manifest = yield* readManifest(project, options.root, decodeUnknownEffect2(ManifestIdentity), "manifest", "identity.packagePath", "name and version");
     const version4 = yield* semver("manifest", "identity.version", manifest.version);
     const template = project.tagTemplate ?? "v{version}";
-    if (template.includes("{name}") || template.includes("{normalizedName}")) {
-      return yield* fail6(identityError("manifest", "identity.tagTemplate", "Only the {version} placeholder is supported here."));
-    }
     seed = {
       name: manifest.name,
       version: version4,
       commit: project.commit ?? "HEAD",
-      tag: template.split("{version}").join(version4),
+      tag: yield* manifestTag(template, version4, "identity.tagTemplate"),
       notes: project.notes,
       source: "manifest"
     };
@@ -102406,14 +102407,12 @@ var resolveManifestIdentity = fn2("resolve.manifest")(function* (options) {
       return yield* fail6(identityError("manifest", "project.name", "Static project identity requires project.name or project.packageName."));
     }
     const template = project.tagTemplate ?? "v{version}";
-    if (template.includes("{name}") || template.includes("{normalizedName}")) {
-      return yield* fail6(identityError("manifest", "project.tagTemplate", "Only the {version} placeholder is supported here."));
-    }
+    const renderedTag = yield* manifestTag(template, version4, "project.tagTemplate");
     seed = {
       name,
       version: version4,
       commit: project.commit ?? "HEAD",
-      tag: project.tag ?? template.split("{version}").join(version4),
+      tag: project.tag ?? renderedTag,
       notes: project.notes,
       source: "manifest"
     };
@@ -102549,6 +102548,25 @@ var evidenceOperationStatuses = (plan, evidence, evidencePath) => evidence.recor
 var stagedArtifactSummaries = (plan, stagedOperations) => stagedOperations.flatMap(({ artifacts }) => artifacts.map(({ id }) => artifactSummary(plan.artifacts.find((artifact2) => artifact2.id === id))));
 
 // ../../src/render/render.ts
+var renderBuildArtifacts = (result2, format3 = "text") => {
+  if (format3 === "json")
+    return `${JSON.stringify({
+      schemaVersion: "artifact-stage/v1",
+      identity: result2.plan.identity,
+      configPath: result2.plan.source.configPath ?? "inline config",
+      operations: result2.stagedOperations,
+      plan: result2.plan
+    }, null, 2)}
+`;
+  const artifacts = result2.stagedOperations.flatMap((operation) => operation.artifacts);
+  return `${[
+    `staged artifact operations: ${result2.stagedOperations.length}`,
+    "artifacts:",
+    ...artifacts.length === 0 ? ["  none"] : artifacts.map((artifact2) => `  ${artifact2.id} ${artifact2.path}`)
+  ].join(`
+`)}
+`;
+};
 var commandLine = (command2) => [command2.executable, ...command2.args].join(" ");
 var commandArgv = (command2) => [
   command2.executable,
@@ -102767,178 +102785,6 @@ var renderReleasePlan = (plan, format3 = "text") => {
   }
 };
 
-// ../../src/engine/engine.ts
-var resolveReleaseBuild = fn2("engine.resolveReleaseBuild")(function* (intent, root, snapshot2) {
-  const release = yield* resolveReleaseWorkflow(intent, root, snapshot2);
-  const buildState = yield* runPipeline(emptyPlanAccumulator(release.identity), [
-    schedule2(buildPlanner, release.builds),
-    schedule2(npmPackPlanner, release.npmPackage),
-    schedule2(pypiWheelPlanner, release.pypiWheels),
-    schedule2(importArtifactsPlanner, release.artifacts),
-    schedule2(archivePlanner, release.archives),
-    schedule2(checksumPlanner, release.checksum)
-  ]);
-  return { release, buildState };
-});
-var resolveReleasePlan = (build) => runPipeline(build.buildState, [
-  schedule2(catalogHomebrewPlanner, build.release.homebrew),
-  schedule2(catalogScoopPlanner, build.release.scoop),
-  ...isSome2(build.release.catalogs) ? [schedule2(catalogGenericPlanner, build.release.catalogs)] : [],
-  schedule2(publishNpmPlanner, build.release.npm),
-  schedule2(publishPyPiPlanner, build.release.pypi),
-  schedule2(publishGitHubPlanner, build.release.github),
-  schedule2(publishHomebrewPlanner, build.release.homebrew),
-  schedule2(publishScoopPlanner, build.release.scoop),
-  ...isSome2(build.release.catalogs) ? [schedule2(publishCatalogGenericPlanner, build.release.catalogs)] : []
-]);
-var loadReleaseBuild = fn2("engine.loadReleaseBuild")(function* (options) {
-  const source3 = yield* loadReleaseIntent(options.config, { root: options.workspace, configPath: options.configPath });
-  return { source: source3, build: yield* resolveReleaseBuild(source3.intent, source3.root, options.snapshot ?? false) };
-});
-var releasePlanFromAccumulator = (release, root, configPathName, state3) => ReleasePlan.make({
-  schemaVersion: "release-plan/v3",
-  identity: state3.identity,
-  artifacts: state3.artifacts,
-  operations: state3.operations,
-  notices: state3.notices,
-  source: SourceMetadata.make({
-    root,
-    configPath: configPathName
-  }),
-  evidenceDirectory: release.evidenceDirectory
-});
-var planRelease = fn2("engine.planRelease")(function* (options = {}) {
-  const { build, source: source3 } = yield* loadReleaseBuild(options);
-  const state3 = yield* resolveReleasePlan(build);
-  return releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, state3);
-});
-var isStageOperation = (operation) => operation.action._tag === "stage";
-var operationContext = (state3, root, configPathName) => ({
-  root,
-  identity: state3.identity,
-  artifacts: state3.artifacts,
-  notices: state3.notices,
-  configPath: configPathName
-});
-var planContext = (plan) => operationContext(plan, plan.source.root, plan.source.configPath);
-var buildReleaseArtifacts = fn2("engine.buildReleaseArtifacts")(function* (options = {}) {
-  const { build, source: source3 } = yield* loadReleaseBuild(options);
-  const pathName = source3.sourcePath ?? "inline config";
-  const staged = [];
-  for (const operation of operationsForPass(build.buildState.operations, "build")) {
-    if (isStageOperation(operation)) {
-      staged.push(yield* (yield* ArtifactStager).stage(operation, {
-        root: source3.root,
-        identity: build.buildState.identity,
-        configPath: pathName
-      }));
-    } else {
-      yield* runOperations([operation], ExecutionApproval.make({ execute: true, approveIrreversible: false }), operationContext(build.buildState, source3.root, pathName));
-    }
-  }
-  const planState = yield* resolveReleasePlan(build);
-  const plan = releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, planState);
-  return {
-    schemaVersion: "artifact-stage/v1",
-    identity: build.buildState.identity,
-    configPath: pathName,
-    operations: staged,
-    plan
-  };
-});
-var renderBuildArtifacts = (result2, format3 = "text") => {
-  if (format3 === "json") {
-    return `${JSON.stringify(result2, null, 2)}
-`;
-  }
-  const artifacts = result2.operations.flatMap((operation) => operation.artifacts);
-  const lines = [
-    `staged artifact operations: ${result2.operations.length}`,
-    "artifacts:",
-    ...artifacts.length === 0 ? ["  none"] : artifacts.map((artifact2) => `  ${artifact2.id} ${artifact2.path}`)
-  ];
-  return `${lines.join(`
-`)}
-`;
-};
-var releaseEvidencePath = (plan, name) => `${plan.evidenceDirectory}/${name}.json`;
-var writeEvidenceBundle = fn2("engine.writeEvidenceBundle")(function* (pathName, bundle, root = ".") {
-  yield* writeWorkspaceFile(root, pathName, renderEvidenceJson(bundle), (path4, reason, cause) => EvidenceWriteError.make({ path: path4, reason, ...cause === undefined ? {} : { cause } }));
-});
-var finalizeEvidenceOnExit = (plan, name, ref, workflowExit) => get4(ref).pipe(flatMap3((evidence) => writeEvidenceBundle(releaseEvidencePath(plan, name), evidence, plan.source.root)), catchCause2((writeCause) => isFailure3(workflowExit) ? failCause3(combine2(writeCause, workflowExit.cause)) : failCause3(writeCause)));
-var runEvidenceWorkflowWithFinalizer = fn2("engine.runEvidenceWorkflowWithFinalizer")(function* (plan, name, ref, workflow) {
-  return yield* workflow.pipe(onExit2((exit3) => finalizeEvidenceOnExit(plan, name, ref, exit3)));
-});
-var writeWorkflowEvidence = fn2("engine.writeWorkflowEvidence")(function* (plan, name, workflow, approval) {
-  const context7 = planContext(plan);
-  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context7);
-  const ref = yield* makeEvidenceRef(context7);
-  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7).pipe(andThen2(get4(ref))));
-});
-var writeVerificationEvidence = fn2("engine.writeVerificationEvidence")(function* (plan) {
-  return yield* writeWorkflowEvidence(plan, "verification", "verification", ExecutionApproval.none);
-});
-var writeReleaseEvidence = fn2("engine.writeReleaseEvidence")(function* (plan, options = {}) {
-  const approval = ExecutionApproval.make({
-    execute: options.execute ?? false,
-    approveIrreversible: options.approvePublish ?? false
-  });
-  return yield* writeWorkflowEvidence(plan, "evidence", "release", approval);
-});
-var planWithEvidence = fn2("engine.planWithEvidence")(function* (options, write) {
-  const plan = yield* planRelease(options);
-  return { plan, evidence: yield* write(plan) };
-});
-var verifyRelease = fn2("engine.verifyRelease")(function* (options = {}) {
-  return yield* planWithEvidence(options, writeVerificationEvidence);
-});
-var renderReleaseFiles = fn2("engine.renderReleaseFiles")(function* (options = {}) {
-  const approval = ExecutionApproval.make({
-    execute: options.execute ?? false,
-    approveIrreversible: false
-  });
-  return yield* planWithEvidence(options, (plan) => writeWorkflowEvidence(plan, "render", "render", approval));
-});
-var runApprovedRelease = fn2("engine.runApprovedRelease")(function* (options = {}) {
-  return yield* planWithEvidence(options, (plan) => writeReleaseEvidence(plan, options));
-});
-var plan = fn2("engine.summary.plan")(function* (options = {}) {
-  const document2 = yield* planRelease(options);
-  return plannedSummary(document2);
-});
-var build = fn2("engine.summary.build")(function* (options = {}) {
-  const result2 = yield* buildReleaseArtifacts(options);
-  return {
-    ...plannedSummary(result2.plan),
-    stagedArtifacts: stagedArtifactSummaries(result2.plan, result2.operations)
-  };
-});
-var release = fn2("engine.summary.release")(function* (options = {}) {
-  if (options.execute !== true) {
-    const document2 = yield* planRelease(options);
-    return {
-      ...plannedSummary(document2),
-      executed: [],
-      refused: []
-    };
-  }
-  const result2 = yield* runApprovedRelease(options);
-  const summary2 = plannedSummary(result2.plan);
-  const executed = evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "evidence"));
-  return {
-    ...summary2,
-    executed,
-    refused: executed.filter((operation) => operation.status === "refused")
-  };
-});
-var verify = fn2("engine.summary.verify")(function* (options = {}) {
-  const result2 = yield* verifyRelease(options);
-  return {
-    identity: plannedSummary(result2.plan).identity,
-    checks: evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "verification"))
-  };
-});
-
 // ../../src/doctor/doctor.ts
 var ReleaseDiagnosticsFormat = Literals(["json", "text", "markdown"]);
 var ReleaseDiagnosticStatus = Literals(["ok", "warn", "fail", "info"]);
@@ -102961,19 +102807,61 @@ class ReleaseDiagnosticReport extends Class4("ReleaseDiagnosticReport")({
 }) {
 }
 var check2 = (input) => ReleaseDiagnosticCheck.make(input);
-var targetsForPlan = (plan2) => operationSurfaceIds(plan2).map((targetId) => ({
-  targetId,
-  operations: plan2.operations.filter((operation) => operationSurfaceId(operation) === targetId)
-}));
-var targetNeeds = (targetId, operations) => ({
-  envNames: [...new Set(operations.flatMap(({ action: action5 }) => action5._tag === "command" ? action5.command.requiredEnv : action5._tag === "github-release-create" || action5._tag === "github-release-verify" ? action5.tokenEnv === undefined ? [] : [action5.tokenEnv] : []))].sort(),
-  executables: [...new Set(operations.flatMap((operation) => operation.action._tag === "command" ? [operation.action.command.executable] : []))].sort(),
-  trustedPublishing: operations.some((operation) => operation.id === `${targetId}:${targetId}-trusted-publishing-auth` || operation.action._tag === "note" && operation.action.message.toLowerCase().includes("trusted publishing"))
-});
+var targetsForRelease = (planned) => {
+  const release = planned.release;
+  const targets = [];
+  const add2 = (target) => {
+    if (target !== undefined)
+      targets.push(target);
+  };
+  add2(getOrUndefined(map(release.npm, (section) => ({
+    targetId: "npm",
+    envNames: section.trustedPublishing === undefined && section.tokenEnv !== undefined ? [section.tokenEnv] : [],
+    executables: ["npm"],
+    trustedPublishing: section.trustedPublishing !== undefined
+  }))));
+  add2(getOrUndefined(map(release.pypi, (section) => ({
+    targetId: "pypi",
+    envNames: section.trustedPublishing === undefined ? [section.usernameEnv, section.passwordEnv].filter((name) => name !== undefined) : [],
+    executables: [section.pythonExecutable],
+    trustedPublishing: section.trustedPublishing !== undefined
+  }))));
+  add2(getOrUndefined(map(release.github, (section) => ({
+    targetId: "github",
+    envNames: section.tokenEnv === undefined ? [] : [section.tokenEnv],
+    executables: [],
+    trustedPublishing: false
+  }))));
+  add2(isSome2(release.homebrew) ? {
+    targetId: "homebrew",
+    envNames: [],
+    executables: ["git"],
+    trustedPublishing: false
+  } : undefined);
+  add2(isSome2(release.scoop) ? {
+    targetId: "scoop",
+    envNames: [],
+    executables: ["git"],
+    trustedPublishing: false
+  } : undefined);
+  if (isSome2(release.catalogs) && release.catalogs.value.length > 0) {
+    const entries2 = release.catalogs.value;
+    const executables = entries2.flatMap((entry) => [
+      "git",
+      ...entry.submit === "pull-request" ? ["gh"] : [],
+      ...entry.validate === undefined ? [] : planned.catalogExecutables
+    ]).filter((name) => name !== undefined);
+    add2({ targetId: "catalog", envNames: [], executables: [...new Set(executables)].sort(), trustedPublishing: false });
+  }
+  return targets.filter(({ targetId }) => (planned.operationCounts[targetId] ?? 0) > 0).sort((left, right) => left.targetId.localeCompare(right.targetId)).map((target) => ({
+    ...target,
+    envNames: [...new Set(target.envNames)].sort(),
+    executables: [...new Set(target.executables)].sort()
+  }));
+};
 var authChecksForPlan = fn2("workflows.doctor.authChecksForPlan")(function* (targets, targetFilter) {
   const checks = [];
-  for (const { targetId, operations } of targets.filter(({ targetId: targetId2 }) => targetFilter === undefined || targetId2 === targetFilter || targetId2.toLowerCase().includes(targetFilter.toLowerCase()))) {
-    const { envNames, executables, trustedPublishing } = targetNeeds(targetId, operations);
+  for (const { envNames, executables, targetId, trustedPublishing } of targets.filter(({ targetId: targetId2 }) => targetFilter === undefined || targetId2 === targetFilter || targetId2.toLowerCase().includes(targetFilter.toLowerCase()))) {
     for (const name of envNames) {
       const present = (yield* readOptionalEnv(name)) !== undefined;
       checks.push(check2({
@@ -103036,13 +102924,12 @@ var capabilityChecksForPlan = (targets) => {
     message: `${targetId} has grammar operations in the release plan.`
   }));
 };
-var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {}) {
-  const pathName = configPath(input);
-  const planned = yield* planRelease({ workspace: input.root, configPath: input.configPath }).pipe(match5({
+var diagnoseRelease = fn2("doctor.diagnoseRelease")(function* (input, pathName, plannedEffect) {
+  const planned = yield* plannedEffect.pipe(match5({
     onFailure: (error2) => ({ _tag: "Failed", error: error2 }),
-    onSuccess: (plan2) => ({ _tag: "Ok", plan: plan2 })
+    onSuccess: (plan) => ({ _tag: "Ok", plan })
   }));
-  const configFailed = planned._tag === "Failed" && planned.error instanceof ConfigError;
+  const configFailed = planned._tag === "Failed" && planned.error.configFailed;
   const validation2 = configFailed ? check2({
     id: "config:validation",
     status: "fail",
@@ -103070,12 +102957,12 @@ var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {})
       ]
     });
   }
-  const targets = targetsForPlan(planned.plan);
+  const targets = targetsForRelease(planned.plan);
   const authChecks = yield* authChecksForPlan(targets, input.target);
   return ReleaseDiagnosticReport.make({
     schemaVersion: "release-diagnostics/v1",
-    releaseName: planned.plan.identity.name,
-    releaseVersion: planned.plan.identity.version,
+    releaseName: planned.plan.release.identity.name,
+    releaseVersion: planned.plan.release.identity.version,
     checks: [
       validation2,
       check2({
@@ -103089,7 +102976,7 @@ var doctorRelease = fn2("workflows.doctor.doctorRelease")(function* (input = {})
         id: "evidence:directory",
         status: "ok",
         confidence: "confirmed",
-        message: `Evidence directory ${planned.plan.evidenceDirectory} is valid.`
+        message: `Evidence directory ${planned.plan.release.evidenceDirectory} is valid.`
       }),
       ...authChecks
     ]
@@ -103119,6 +103006,180 @@ var renderReleaseDiagnostics = (report, format3 = "text") => {
     }
   }
 };
+
+// ../../src/run/workflow.ts
+var releaseEvidencePath = (plan, name) => `${plan.evidenceDirectory}/${name}.json`;
+var writeEvidenceBundle = fn2("run.writeEvidenceBundle")(function* (pathName, bundle, root = ".") {
+  yield* writeWorkspaceFile(root, pathName, renderEvidenceJson(bundle), (path4, reason, cause) => EvidenceWriteError.make({ path: path4, reason, ...cause === undefined ? {} : { cause } }));
+});
+var finalizeEvidenceOnExit = (plan, name, ref, workflowExit) => get4(ref).pipe(flatMap3((evidence) => writeEvidenceBundle(releaseEvidencePath(plan, name), evidence, plan.source.root)), catchCause2((writeCause) => isFailure3(workflowExit) ? failCause3(combine2(writeCause, workflowExit.cause)) : failCause3(writeCause)));
+var runEvidenceWorkflowWithFinalizer = fn2("run.workflowWithFinalizer")(function* (plan, name, ref, workflow) {
+  return yield* workflow.pipe(onExit2((exit3) => finalizeEvidenceOnExit(plan, name, ref, exit3)));
+});
+var planContext = (plan) => ({
+  root: plan.source.root,
+  identity: plan.identity,
+  artifacts: plan.artifacts,
+  notices: plan.notices,
+  configPath: plan.source.configPath
+});
+var writeWorkflowEvidence = fn2("run.writeWorkflowEvidence")(function* (plan, name, workflow, approval) {
+  const context7 = planContext(plan);
+  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context7);
+  const ref = yield* makeEvidenceRef(context7);
+  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7).pipe(andThen2(get4(ref))));
+});
+
+// ../../src/engine/engine.ts
+var resolveReleaseBuild = fn2("engine.resolveReleaseBuild")(function* (intent, root, snapshot2) {
+  const release = yield* resolveReleaseWorkflow(intent, root, snapshot2);
+  const buildState = yield* runPipeline(emptyPlanAccumulator(release.identity), [
+    schedule2(buildPlanner, release.builds),
+    schedule2(npmPackPlanner, release.npmPackage),
+    schedule2(pypiWheelPlanner, release.pypiWheels),
+    schedule2(importArtifactsPlanner, release.artifacts),
+    schedule2(archivePlanner, release.archives),
+    schedule2(checksumPlanner, release.checksum)
+  ]);
+  return { release, buildState };
+});
+var resolveReleasePlan = (build) => runPipeline(build.buildState, [
+  schedule2(catalogHomebrewPlanner, build.release.homebrew),
+  schedule2(catalogScoopPlanner, build.release.scoop),
+  ...isSome2(build.release.catalogs) ? [schedule2(catalogGenericPlanner, build.release.catalogs)] : [],
+  schedule2(publishNpmPlanner, build.release.npm),
+  schedule2(publishPyPiPlanner, build.release.pypi),
+  schedule2(publishGitHubPlanner, build.release.github),
+  schedule2(publishHomebrewPlanner, build.release.homebrew),
+  schedule2(publishScoopPlanner, build.release.scoop),
+  ...isSome2(build.release.catalogs) ? [schedule2(publishCatalogGenericPlanner, build.release.catalogs)] : []
+]);
+var loadReleaseBuild = fn2("engine.loadReleaseBuild")(function* (options) {
+  const source3 = yield* loadReleaseIntent(options.config, { root: options.workspace, configPath: options.configPath });
+  return { source: source3, build: yield* resolveReleaseBuild(source3.intent, source3.root, options.snapshot ?? false) };
+});
+var releasePlanFromAccumulator = (release, root, configPathName, state3) => ReleasePlan.make({
+  schemaVersion: "release-plan/v3",
+  identity: state3.identity,
+  artifacts: state3.artifacts,
+  operations: state3.operations,
+  notices: state3.notices,
+  source: SourceMetadata.make({
+    root,
+    configPath: configPathName
+  }),
+  evidenceDirectory: release.evidenceDirectory
+});
+var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
+  const { build, source: source3 } = yield* loadReleaseBuild(options);
+  const state3 = yield* resolveReleasePlan(build);
+  return { release: build.release, plan: releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, state3) };
+});
+var planRelease = fn2("engine.planRelease")(function* (options = {}) {
+  return (yield* loadReleasePlan(options)).plan;
+});
+var doctorRelease = fn2("engine.doctorRelease")(function* (input = {}) {
+  const planned = loadReleasePlan({ workspace: input.root, configPath: input.configPath }).pipe(map5(({ plan, release }) => ({
+    release,
+    operationCounts: Object.fromEntries(operationSurfaceIds(plan).map((targetId) => [
+      targetId,
+      plan.operations.filter((operation) => operationSurfaceId(operation) === targetId).length
+    ])),
+    catalogExecutables: isNone2(release.catalogs) ? [] : release.catalogs.value.flatMap((entry) => {
+      if (entry.validate === undefined)
+        return [];
+      const argv2 = typeof entry.validate === "string" ? entry.validate.trim().split(/\s+/).filter(Boolean) : entry.validate;
+      const executable = argv2[0];
+      return executable === undefined ? [] : [renderTemplate(executable, { identity: release.identity })];
+    })
+  })), mapError3((error2) => ({ configFailed: error2 instanceof ConfigError, message: error2.message })));
+  return yield* diagnoseRelease(input, configPath(input), planned);
+});
+var isStageOperation = (operation) => operation.action._tag === "stage";
+var operationContext = (state3, root, configPathName) => ({
+  root,
+  identity: state3.identity,
+  artifacts: state3.artifacts,
+  notices: state3.notices,
+  configPath: configPathName
+});
+var stageReleaseArtifacts = fn2("engine.stageReleaseArtifacts")(function* (options = {}) {
+  const { build, source: source3 } = yield* loadReleaseBuild(options);
+  const pathName = source3.sourcePath ?? "inline config";
+  const staged = [];
+  for (const operation of operationsForPass(build.buildState.operations, "build")) {
+    if (isStageOperation(operation)) {
+      staged.push(yield* (yield* ArtifactStager).stage(operation, {
+        root: source3.root,
+        identity: build.buildState.identity,
+        configPath: pathName
+      }));
+    } else {
+      yield* runOperations([operation], ExecutionApproval.make({ execute: true, approveIrreversible: false }), operationContext(build.buildState, source3.root, pathName));
+    }
+  }
+  const planState = yield* resolveReleasePlan(build);
+  const plan = releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, planState);
+  return {
+    schemaVersion: "artifact-stage/v1",
+    identity: build.buildState.identity,
+    configPath: pathName,
+    operations: staged,
+    plan
+  };
+});
+var planWithEvidence = fn2("engine.planWithEvidence")(function* (options, write) {
+  const plan = yield* planRelease(options);
+  return { plan, evidence: yield* write(plan) };
+});
+var plan = fn2("engine.summary.plan")(function* (options = {}) {
+  const document2 = yield* planRelease(options);
+  return plannedSummary(document2);
+});
+var build = fn2("engine.summary.build")(function* (options = {}) {
+  const result2 = yield* stageReleaseArtifacts(options);
+  return {
+    ...plannedSummary(result2.plan),
+    stagedArtifacts: stagedArtifactSummaries(result2.plan, result2.operations),
+    plan: result2.plan,
+    stagedOperations: result2.operations
+  };
+});
+var release = fn2("engine.summary.release")(function* (options = {}) {
+  if (options.execute !== true) {
+    const document2 = yield* planRelease(options);
+    return {
+      ...plannedSummary(document2),
+      executed: [],
+      refused: [],
+      plan: document2,
+      evidence: undefined
+    };
+  }
+  const approval = ExecutionApproval.make({
+    execute: options.execute ?? false,
+    approveIrreversible: options.approvePublish ?? false
+  });
+  const result2 = yield* planWithEvidence(options, (document2) => writeWorkflowEvidence(document2, "evidence", "release", approval));
+  const summary2 = plannedSummary(result2.plan);
+  const executed = evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "evidence"));
+  return {
+    ...summary2,
+    executed,
+    refused: executed.filter((operation) => operation.status === "refused"),
+    plan: result2.plan,
+    evidence: result2.evidence
+  };
+});
+var verify = fn2("engine.summary.verify")(function* (options = {}) {
+  const result2 = yield* planWithEvidence(options, (document2) => writeWorkflowEvidence(document2, "verification", "verification", ExecutionApproval.none));
+  return {
+    identity: plannedSummary(result2.plan).identity,
+    checks: evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "verification")),
+    plan: result2.plan,
+    evidence: result2.evidence
+  };
+});
 
 // ../../src/api/error-message.ts
 var taggedReason = (value2) => {
@@ -103350,7 +103411,7 @@ var runActionEffect = fn2("action.runActionEffect")(function* (options, io, arti
         return;
       case "build":
         {
-          const staged = yield* buildReleaseArtifacts(releaseInput(safeOptions));
+          const staged = yield* build(releaseInput(safeOptions));
           rememberPlan(staged.plan);
           const rendered = renderBuildArtifacts(staged, safeOptions.format === "json" ? "json" : "text");
           if (safeOptions.writeStepSummary) {
@@ -103379,7 +103440,7 @@ release planned only; set execute: true to run approved operations.
 `);
             return;
           }
-          yield* command2 === "verify" ? writeVerificationEvidence(plan2) : writeReleaseEvidence(plan2, releaseInput(safeOptions));
+          yield* command2 === "verify" ? verify(releaseInput(safeOptions)) : release(releaseInput(safeOptions));
           if (safeOptions.writeStepSummary) {
             const evidenceName = command2 === "verify" ? "verification" : "evidence";
             yield* io.appendSummary(`## ts-release ${command2}

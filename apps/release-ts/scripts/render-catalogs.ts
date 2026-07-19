@@ -7,7 +7,9 @@ import * as Option from "effect/Option"
 import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
 import packageManifest from "../../../package.json" with { type: "json" }
-import { renderEvidenceJson, renderReleaseFiles } from "../../../src/engine/engine.js"
+import { planRelease, renderEvidenceJson } from "../../../src/engine/engine.js"
+import { ExecutionApproval } from "../../../src/grammar/operation.js"
+import { writeWorkflowEvidence } from "../../../src/run/workflow.js"
 import { optionalField } from "../../../src/grammar/optional-field.js"
 import { BunReleaseWorkflowRuntimeLayer } from "../src/runtime.js"
 
@@ -15,12 +17,14 @@ const renderCatalogs = Command.make("render-catalogs", {
   config: Flag.string("config").pipe(Flag.withDefault("apps/release-ts/release.config.json")),
   root: Flag.string("root").pipe(Flag.optional)
 }, Effect.fn("scripts.renderCatalogs")(function*({ config, root }) {
-  const result = yield* renderReleaseFiles({
+  const plan = yield* planRelease({
     config,
-    ...optionalField(Option.getOrUndefined(root), (workspace) => ({ workspace })),
-    execute: true
+    ...optionalField(Option.getOrUndefined(root), (workspace) => ({ workspace }))
   })
-  yield* Console.log(renderEvidenceJson(result.evidence).trimEnd())
+  const evidence = yield* writeWorkflowEvidence(
+    plan, "render", "render", ExecutionApproval.make({ execute: true, approveIrreversible: false })
+  )
+  yield* Console.log(renderEvidenceJson(evidence).trimEnd())
 }))
 
 Command.run(renderCatalogs, { version: packageManifest.version }).pipe(

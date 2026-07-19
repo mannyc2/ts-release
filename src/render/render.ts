@@ -8,6 +8,31 @@ import {
 import * as Schema from "effect/Schema"
 import { ReleasePlan } from "../grammar/plan.js"
 import { operationSurfaceId, operationSurfaceIds } from "./summary.js"
+import type { StagedArtifactOperationResult } from "../pack/stager.js"
+
+export interface BuildArtifactsProjection {
+  readonly plan: ReleasePlan
+  readonly stagedOperations: ReadonlyArray<StagedArtifactOperationResult>
+}
+
+export const renderBuildArtifacts = (
+  result: BuildArtifactsProjection,
+  format: "json" | "text" = "text"
+): string => {
+  if (format === "json") return `${JSON.stringify({
+    schemaVersion: "artifact-stage/v1",
+    identity: result.plan.identity,
+    configPath: result.plan.source.configPath ?? "inline config",
+    operations: result.stagedOperations,
+    plan: result.plan
+  }, null, 2)}\n`
+  const artifacts = result.stagedOperations.flatMap((operation) => operation.artifacts)
+  return `${[
+    `staged artifact operations: ${result.stagedOperations.length}`,
+    "artifacts:",
+    ...(artifacts.length === 0 ? ["  none"] : artifacts.map((artifact) => `  ${artifact.id} ${artifact.path}`))
+  ].join("\n")}\n`
+}
 
 const commandLine = (command: CommandSpec): string =>
   [command.executable, ...command.args].join(" ")

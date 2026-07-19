@@ -13,7 +13,7 @@ import {
 } from "../src/grammar/operation.js"
 import {
   planRelease,
-  writeReleaseEvidence
+  release
 } from "../src/engine/engine.js"
 import type { ReleasePlan } from "../src/grammar/plan.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
@@ -138,13 +138,8 @@ describe("minimal evidence and approval goals", () => {
       )
 
       const exit = await Effect.runPromiseExit(
-        Effect.gen(function*() {
-          const plan = yield* planRelease({ workspace: root, config: configPath })
-          return yield* writeReleaseEvidence(plan, {
-            execute: true,
-            approvePublish: true
-          })
-        }).pipe(Effect.provide(layer))
+        release({ workspace: root, config: configPath, execute: true, approvePublish: true })
+          .pipe(Effect.provide(layer))
       )
 
       expect(exit._tag).toBe("Failure")

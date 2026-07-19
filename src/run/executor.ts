@@ -13,7 +13,7 @@ import {
   FileOutcome,
   GitHubReleaseEvidence,
   GitHubReleaseOutcome,
-  HttpCheckEvidence,
+  VerifyCheckEvidence,
   readRedactionSecrets,
   redactText,
   sameStringSet,
@@ -319,14 +319,14 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
         Effect.gen(function*() {
           const assetNames = release.assets.map((asset) => asset.name)
           const checks = [
-            HttpCheckEvidence.make({ description: `tag is ${action.tag}`, passed: release.tag_name === action.tag }),
-            HttpCheckEvidence.make({ description: `title is ${action.title}`, passed: release.name === action.title }),
-            HttpCheckEvidence.make({ description: `draft is ${action.draft}`, passed: release.draft === action.draft }),
-            HttpCheckEvidence.make({
+            VerifyCheckEvidence.make({ description: `tag is ${action.tag}`, passed: release.tag_name === action.tag }),
+            VerifyCheckEvidence.make({ description: `title is ${action.title}`, passed: release.name === action.title }),
+            VerifyCheckEvidence.make({ description: `draft is ${action.draft}`, passed: release.draft === action.draft }),
+            VerifyCheckEvidence.make({
               description: `prerelease is ${action.prerelease}`,
               passed: release.prerelease === action.prerelease
             }),
-            HttpCheckEvidence.make({
+            VerifyCheckEvidence.make({
               description: `assets are ${sortedStrings(action.assetNames).join(", ")}`,
               passed: sameStringSet(assetNames, action.assetNames)
             })
@@ -497,8 +497,16 @@ export const preflightEvidenceWorkflow = Effect.fn("engine.preflightEvidenceWork
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
+  yield* preflightOperations(operationsForWorkflow(operations, workflow), approval, context)
+})
+
+const preflightOperations = Effect.fn("engine.preflightOperations")(function*(
+  operations: ReadonlyArray<Operation>,
+  approval: ExecutionApproval,
+  context: OperationRunContext
+) {
   yield* Effect.forEach(
-    operationsForWorkflow(operations, workflow).filter((operation) => !shouldRefuseForSnapshot(operation, context)),
+    operations.filter((operation) => !shouldRefuseForSnapshot(operation, context)),
     (operation) => requireExecutionApproval(operation, approval),
     { discard: true }
   )
@@ -509,11 +517,7 @@ export const runOperations = Effect.fn("engine.runOperations")(function*(
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  yield* Effect.forEach(
-    operations.filter((operation) => !shouldRefuseForSnapshot(operation, context)),
-    (operation) => requireExecutionApproval(operation, approval),
-    { discard: true }
-  )
+  yield* preflightOperations(operations, approval, context)
   const ref = yield* makeEvidenceRef(context)
   yield* runOperationsInto(ref, operations, approval, context)
   return yield* Ref.get(ref)

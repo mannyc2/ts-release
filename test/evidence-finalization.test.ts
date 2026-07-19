@@ -2,10 +2,10 @@ import { expect, it } from "@effect/bun-test"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { runEvidenceWorkflowWithFinalizer, writeReleaseEvidence } from "../src/engine/engine.js"
+import { runEvidenceWorkflowWithFinalizer } from "../src/run/workflow.js"
 import { OperationFailedError, WorkspaceWriteError } from "../src/run/errors.js"
 import type { EvidenceBundle } from "../src/run/evidence.js"
-import { makeEvidenceRef, runEvidenceWorkflowInto, runOperationsInto } from "../src/run/executor.js"
+import { makeEvidenceRef, preflightEvidenceWorkflow, runEvidenceWorkflowInto, runOperationsInto } from "../src/run/executor.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { CheckFileAction, ExecutionApproval, NoteAction, Operation } from "../src/grammar/operation.js"
 import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
@@ -83,7 +83,8 @@ it.effect("finalizes partial evidence exactly once for every workflow exit", () 
     }
   }
   const writes: Array<string> = []
-  const denied = yield* writeReleaseEvidence(plan([operation("denied", "publish", "irreversible")])).pipe(
+  const deniedPlan = plan([operation("denied", "publish", "irreversible")])
+  const denied = yield* preflightEvidenceWorkflow(deniedPlan.operations, "release", ExecutionApproval.none, context).pipe(
     Effect.exit, Effect.provide(testLayer(writes))
   )
   expect(writes).toEqual([])

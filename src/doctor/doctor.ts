@@ -1,13 +1,9 @@
 // Invariant: diagnostics derive from the same decoded plan and declared capabilities without executing publish operations.
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
-import { configPath } from "../config/load.js"
-import { ConfigError } from "../config/errors.js"
-import { planRelease } from "../engine/engine.js"
 import { readOptionalEnv } from "../host/platform.js"
-import type { Operation } from "../grammar/operation.js"
-import type { ReleasePlan } from "../grammar/plan.js"
-import { operationSurfaceId, operationSurfaceIds } from "../render/summary.js"
+import type { ResolvedRelease } from "../resolve/resolved-release.js"
 
 
 export const ReleaseDiagnosticsFormat = Schema.Literals(["json", "text", "markdown"])
@@ -42,35 +38,55 @@ export class ReleaseDiagnosticReport extends Schema.Class<ReleaseDiagnosticRepor
 
 const check = (input: Parameters<typeof ReleaseDiagnosticCheck.make>[0]) => ReleaseDiagnosticCheck.make(input)
 
-const targetsForPlan = (plan: ReleasePlan) =>
-  operationSurfaceIds(plan)
-    .map((targetId) => ({
-      targetId,
-      operations: plan.operations.filter((operation) => operationSurfaceId(operation) === targetId)
-    }))
+interface SurfaceNeeds {
+  readonly targetId: string
+  readonly envNames: ReadonlyArray<string>
+  readonly executables: ReadonlyArray<string>
+  readonly trustedPublishing: boolean
+}
 
-const targetNeeds = (targetId: string, operations: ReadonlyArray<Operation>) => ({
-  envNames: [...new Set(operations.flatMap(({ action }) => action._tag === "command"
-    ? action.command.requiredEnv
-    : action._tag === "github-release-create" || action._tag === "github-release-verify"
-    ? action.tokenEnv === undefined ? [] : [action.tokenEnv]
-    : []))].sort(),
-  executables: [...new Set(operations.flatMap((operation) =>
-    operation.action._tag === "command" ? [operation.action.command.executable] : []
-  ))].sort(),
-  trustedPublishing: operations.some((operation) =>
-    operation.id === `${targetId}:${targetId}-trusted-publishing-auth` ||
-    (operation.action._tag === "note" && operation.action.message.toLowerCase().includes("trusted publishing")))
-})
+const targetsForRelease = (planned: DoctorReleasePlan): ReadonlyArray<SurfaceNeeds> => {
+  const release = planned.release
+  const targets: Array<SurfaceNeeds> = []
+  const add = (target: SurfaceNeeds | undefined) => {
+    if (target !== undefined) targets.push(target)
+  }
+  add(Option.getOrUndefined(Option.map(release.npm, (section) => ({ targetId: "npm",
+    envNames: section.trustedPublishing === undefined && section.tokenEnv !== undefined ? [section.tokenEnv] : [],
+    executables: ["npm"], trustedPublishing: section.trustedPublishing !== undefined }))))
+  add(Option.getOrUndefined(Option.map(release.pypi, (section) => ({ targetId: "pypi",
+    envNames: section.trustedPublishing === undefined
+      ? [section.usernameEnv, section.passwordEnv].filter((name): name is string => name !== undefined) : [],
+    executables: [section.pythonExecutable], trustedPublishing: section.trustedPublishing !== undefined }))))
+  add(Option.getOrUndefined(Option.map(release.github, (section) => ({ targetId: "github",
+    envNames: section.tokenEnv === undefined ? [] : [section.tokenEnv], executables: [], trustedPublishing: false }))))
+  add(Option.isSome(release.homebrew) ? { targetId: "homebrew", envNames: [], executables: ["git"],
+    trustedPublishing: false } : undefined)
+  add(Option.isSome(release.scoop) ? { targetId: "scoop", envNames: [], executables: ["git"],
+    trustedPublishing: false } : undefined)
+  if (Option.isSome(release.catalogs) && release.catalogs.value.length > 0) {
+    const entries = release.catalogs.value
+    const executables = entries.flatMap((entry) => [
+      "git", ...(entry.submit === "pull-request" ? ["gh"] : []),
+      ...(entry.validate === undefined ? [] : planned.catalogExecutables)
+    ]).filter((name): name is string => name !== undefined)
+    add({ targetId: "catalog", envNames: [], executables: [...new Set(executables)].sort(), trustedPublishing: false })
+  }
+  return targets.filter(({ targetId }) => (planned.operationCounts[targetId] ?? 0) > 0)
+    .sort((left, right) => left.targetId.localeCompare(right.targetId)).map((target) => ({
+    ...target,
+    envNames: [...new Set(target.envNames)].sort(),
+    executables: [...new Set(target.executables)].sort()
+  }))
+}
 
 const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(function*(
-  targets: ReturnType<typeof targetsForPlan>,
+  targets: ReadonlyArray<SurfaceNeeds>,
   targetFilter: string | undefined
 ) {
   const checks: Array<ReleaseDiagnosticCheck> = []
-  for (const { targetId, operations } of targets.filter(({ targetId }) => targetFilter === undefined
+  for (const { envNames, executables, targetId, trustedPublishing } of targets.filter(({ targetId }) => targetFilter === undefined
     || targetId === targetFilter || targetId.toLowerCase().includes(targetFilter.toLowerCase()))) {
-    const { envNames, executables, trustedPublishing } = targetNeeds(targetId, operations)
     for (const name of envNames) {
       const present = (yield* readOptionalEnv(name)) !== undefined
       checks.push(check({
@@ -126,7 +142,7 @@ const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(functi
 })
 
 const capabilityChecksForPlan = (
-  targets: ReturnType<typeof targetsForPlan>
+  targets: ReadonlyArray<SurfaceNeeds>
 ): ReadonlyArray<ReleaseDiagnosticCheck> => {
   if (targets.length === 0) {
     return [
@@ -149,17 +165,24 @@ const capabilityChecksForPlan = (
   )
 }
 
-export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(function*(
-  input: DoctorReleaseInput = {}
+export interface DoctorReleasePlan {
+  readonly release: ResolvedRelease
+  readonly operationCounts: Readonly<Record<string, number>>
+  readonly catalogExecutables: ReadonlyArray<string>
+}
+
+export const diagnoseRelease = Effect.fn("doctor.diagnoseRelease")(function*<R>(
+  input: DoctorReleaseInput,
+  pathName: string,
+  plannedEffect: Effect.Effect<DoctorReleasePlan, { readonly configFailed: boolean; readonly message: string }, R>
 ) {
-  const pathName = configPath(input)
-  const planned = yield* planRelease({ workspace: input.root, configPath: input.configPath }).pipe(
+  const planned = yield* plannedEffect.pipe(
     Effect.match({
       onFailure: (error) => ({ _tag: "Failed" as const, error }),
       onSuccess: (plan) => ({ _tag: "Ok" as const, plan })
     })
   )
-  const configFailed = planned._tag === "Failed" && planned.error instanceof ConfigError
+  const configFailed = planned._tag === "Failed" && planned.error.configFailed
   const validation = configFailed
     ? check({
         id: "config:validation",
@@ -191,12 +214,12 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
     })
   }
 
-  const targets = targetsForPlan(planned.plan)
+  const targets = targetsForRelease(planned.plan)
   const authChecks = yield* authChecksForPlan(targets, input.target)
   return ReleaseDiagnosticReport.make({
     schemaVersion: "release-diagnostics/v1",
-    releaseName: planned.plan.identity.name,
-    releaseVersion: planned.plan.identity.version,
+    releaseName: planned.plan.release.identity.name,
+    releaseVersion: planned.plan.release.identity.version,
     checks: [validation, check({
       id: "plan:construction",
       status: "ok",
@@ -208,7 +231,7 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
       id: "evidence:directory",
       status: "ok",
       confidence: "confirmed",
-      message: `Evidence directory ${planned.plan.evidenceDirectory} is valid.`
+      message: `Evidence directory ${planned.plan.release.evidenceDirectory} is valid.`
     }),
     ...authChecks]
   })

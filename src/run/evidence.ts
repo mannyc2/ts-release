@@ -30,7 +30,7 @@ export class GitHubReleaseEvidence extends Schema.Class<GitHubReleaseEvidence>("
   assets: Schema.Array(Schema.String)
 }) {}
 
-export class HttpCheckEvidence extends Schema.Class<HttpCheckEvidence>("HttpCheckEvidence")({
+export class VerifyCheckEvidence extends Schema.Class<VerifyCheckEvidence>("VerifyCheckEvidence")({
   description: Schema.String,
   passed: Schema.Boolean
 }) {}
@@ -57,7 +57,7 @@ export class FileOutcome extends Schema.TaggedClass<FileOutcome>()("file", {
 export class GitHubReleaseOutcome extends Schema.TaggedClass<GitHubReleaseOutcome>()("github-release", {
   release: GitHubReleaseEvidence,
   responseStatus: Schema.optional(Schema.Number),
-  checks: Schema.optional(Schema.Array(HttpCheckEvidence))
+  checks: Schema.optional(Schema.Array(VerifyCheckEvidence))
 }) {}
 
 export const ActionOutcome = Schema.Union([CommandOutcome, FileOutcome, GitHubReleaseOutcome])

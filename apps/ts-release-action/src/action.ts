@@ -232,7 +232,7 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
         return
       case "doctor":
         {
-          const report = yield* Doctor.doctorRelease(diagnosticsInput(safeOptions))
+          const report = yield* Release.doctorRelease(diagnosticsInput(safeOptions))
           if (safeOptions.writeStepSummary) {
             yield* io.appendSummary(Doctor.renderReleaseDiagnostics(report, diagnosticsFormat(safeOptions)))
           }
@@ -243,7 +243,7 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
         return
       case "build":
         {
-          const staged = yield* Release.buildReleaseArtifacts(releaseInput(safeOptions))
+          const staged = yield* Release.build(releaseInput(safeOptions))
           rememberPlan(staged.plan)
           const rendered = Release.renderBuildArtifacts(staged, safeOptions.format === "json" ? "json" : "text")
           if (safeOptions.writeStepSummary) {
@@ -265,8 +265,8 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
             return
           }
           yield* (command === "verify"
-            ? Release.writeVerificationEvidence(plan)
-            : Release.writeReleaseEvidence(plan, releaseInput(safeOptions)))
+            ? Release.verify(releaseInput(safeOptions))
+            : Release.release(releaseInput(safeOptions)))
           if (safeOptions.writeStepSummary) {
             const evidenceName = command === "verify" ? "verification" : "evidence"
             yield* io.appendSummary(

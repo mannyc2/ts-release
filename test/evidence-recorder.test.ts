@@ -27,7 +27,7 @@ import {
   EvidenceRecord,
   redactText
 } from "../src/run/evidence.js"
-import { writeEvidenceBundle } from "../src/engine/engine.js"
+import { writeEvidenceBundle } from "../src/run/workflow.js"
 import { runOperationEvidence } from "../src/run/executor.js"
 import { artifactSummary, evidenceOperationStatuses, stagedArtifactSummaries, type ArtifactSummary } from "../src/render/summary.js"
 import {

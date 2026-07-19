@@ -136,6 +136,11 @@ const resolveManifestCommit = Effect.fn("resolve.manifestCommit")(function*(seed
   ))
 })
 
+const manifestTag = (template: string, version: string, field: string): Effect.Effect<string, IdentityError> =>
+  template.includes("{name}") || template.includes("{normalizedName}")
+    ? Effect.fail(identityError("manifest", field, "Only the {version} placeholder is supported here."))
+    : Effect.succeed(template.split("{version}").join(version))
+
 export const resolveManifestIdentity = Effect.fn("resolve.manifest")(function*(options: {
   readonly project: IdentityProject
   readonly root: string
@@ -150,14 +155,9 @@ export const resolveManifestIdentity = Effect.fn("resolve.manifest")(function*(o
     )
     const version = yield* semver("manifest", "identity.version", manifest.version)
     const template = project.tagTemplate ?? "v{version}"
-    if (template.includes("{name}") || template.includes("{normalizedName}")) {
-      return yield* Effect.fail(identityError(
-        "manifest", "identity.tagTemplate", "Only the {version} placeholder is supported here."
-      ))
-    }
     seed = {
       name: manifest.name, version, commit: project.commit ?? "HEAD",
-      tag: template.split("{version}").join(version), notes: project.notes, source: "manifest"
+      tag: yield* manifestTag(template, version, "identity.tagTemplate"), notes: project.notes, source: "manifest"
     }
   } else {
     const version = yield* semver("manifest", "project.version", project.version)
@@ -168,14 +168,11 @@ export const resolveManifestIdentity = Effect.fn("resolve.manifest")(function*(o
       ))
     }
     const template = project.tagTemplate ?? "v{version}"
-    if (template.includes("{name}") || template.includes("{normalizedName}")) {
-      return yield* Effect.fail(identityError(
-        "manifest", "project.tagTemplate", "Only the {version} placeholder is supported here."
-      ))
-    }
+    const renderedTag = yield* manifestTag(template, version, "project.tagTemplate")
     seed = {
       name, version, commit: project.commit ?? "HEAD",
-      tag: project.tag ?? template.split("{version}").join(version), notes: project.notes, source: "manifest"
+      tag: project.tag ?? renderedTag,
+      notes: project.notes, source: "manifest"
     }
   }
   return makeIdentity(yield* resolveManifestCommit(seed, options.root), options.snapshot ?? false)

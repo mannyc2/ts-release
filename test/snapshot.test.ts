@@ -2,7 +2,7 @@ import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { runApprovedRelease, planRelease, release } from "../src/engine/engine.js"
+import { planRelease, release } from "../src/engine/engine.js"
 import { renderPlanText } from "../src/render/render.js"
 import { runOperationEvidence } from "../src/run/executor.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
@@ -127,14 +127,14 @@ describe("snapshot mode", () => {
   layer(EngineLayer)((it) => {
     it.effect("records snapshot refusals in workflow evidence", () =>
       Effect.gen(function*() {
-        const result = yield* runApprovedRelease({
+      const result = yield* release({
           snapshot: true,
           execute: true,
           approvePublish: true
         })
-        const refusal = result.evidence.records.find((record) => record.operationId === "npm:npm-publish")
+        const refusal = result.evidence!.records.find((record) => record.operationId === "npm:npm-publish")
         expect(refusal?.status).toBe("refused")
-        expect(result.evidence.records.some((record) => record.message === "Refused by snapshot policy.")).toBe(true)
+        expect(result.evidence!.records.some((record) => record.message === "Refused by snapshot policy.")).toBe(true)
       }))
 
     it.effect("exposes snapshot refusals in the public release summary", () =>

@@ -6,7 +6,7 @@ import { dirname, join } from "node:path"
 import { makeBunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.js"
 import { formatPlanOperationSnapshot } from "../scripts/plan-operations-snapshot.js"
 import { deferredContentArtifactIds, renderDeferredContent } from "../src/run/content.js"
-import { buildReleaseArtifacts, planRelease, renderReleasePlan } from "../src/engine/engine.js"
+import { build, planRelease, renderReleasePlan } from "../src/engine/engine.js"
 import type { ReleasePlan } from "../src/grammar/plan.js"
 import type { DeferredFileContent } from "../src/grammar/operation.js"
 import { runEffect, withTempDirectoryPromise } from "./helpers.js"
@@ -95,7 +95,7 @@ const stagedExampleArchiveHash = (exampleName: ExampleName, artifactPath: string
   withTempDirectoryPromise("ts-release-golden-archive-", async (scratchRoot) => {
     const exampleRoot = join(root, "examples", exampleName)
     cpSync(join(exampleRoot, "plugin"), join(scratchRoot, "plugin"), { recursive: true })
-    await runEffect(buildReleaseArtifacts({ workspace: scratchRoot, config: join(exampleRoot, "release.config.json") }),
+    await runEffect(build({ workspace: scratchRoot, config: join(exampleRoot, "release.config.json") }),
       makeBunReleaseWorkflowRuntimeLayer({ root: scratchRoot })
     )
     return sha256File(join(scratchRoot, artifactPath))

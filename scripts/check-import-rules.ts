@@ -139,8 +139,7 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
     "run", "render", "doctor", "host", "assets"
   ],
   render: ["render", "grammar", "run", "pack"],
-  // Stage C removes config/engine/grammar/render; until then doctor retains its moved dependencies byte-for-byte.
-  doctor: ["doctor", "config", "engine", "grammar", "render", "host"],
+  doctor: ["doctor", "resolve", "host"],
   host: ["host", "grammar", "assets"],
   api: ["api", "engine", "pack", "github", "host"]
 }

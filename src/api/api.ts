@@ -110,24 +110,24 @@ export const resetReleaseRuntimeLayerFactoryForTesting = async (): Promise<void>
   runtimeLayerFactory = makeDefaultReleaseRuntimeLayer
 }
 
-const runEngine = async <A>(
+const verb = <A, B>(
   phase: Exclude<ReleaseApiPhase, "dispose">,
-  options: Engine.RunOptions,
   operation: (engine: typeof import("../engine/engine.js"), options: Engine.RunOptions) =>
-    Effect.Effect<A, unknown, ReleaseRuntimeServices>
-): Promise<A> => {
+    Effect.Effect<A, unknown, ReleaseRuntimeServices>,
+  project: (value: A) => B
+) => async (options: Engine.RunOptions = {}): Promise<B> => {
   const engine = await import("../engine/engine.js")
-  return runApiEffect(phase, operation(engine, options))
+  return project(await runApiEffect(phase, operation(engine, options)))
 }
 
-export const plan = (options: Engine.RunOptions = {}): Promise<Engine.ReleasePlanSummary> =>
-  runEngine("plan", options, (engine, input) => engine.plan(input))
+const verbs = {
+  plan: verb("plan", (engine, input) => engine.plan(input), (summary): Engine.ReleasePlanSummary => summary),
+  build: verb("build", (engine, input) => engine.build(input),
+    ({ plan: _plan, stagedOperations: _staged, ...summary }): Engine.BuildSummary => summary),
+  release: verb("release", (engine, input) => engine.release(input),
+    ({ plan: _plan, evidence: _evidence, ...summary }): Engine.ReleaseSummary => summary),
+  verify: verb("verify", (engine, input) => engine.verify(input),
+    ({ plan: _plan, evidence: _evidence, ...summary }): Engine.VerifySummary => summary)
+}
 
-export const build = (options: Engine.RunOptions = {}): Promise<Engine.BuildSummary> =>
-  runEngine("build", options, (engine, input) => engine.build(input))
-
-export const release = (options: Engine.RunOptions = {}): Promise<Engine.ReleaseSummary> =>
-  runEngine("release", options, (engine, input) => engine.release(input))
-
-export const verify = (options: Engine.RunOptions = {}): Promise<Engine.VerifySummary> =>
-  runEngine("verify", options, (engine, input) => engine.verify(input))
+export const { build, plan, release, verify } = verbs

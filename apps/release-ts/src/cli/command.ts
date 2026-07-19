@@ -91,7 +91,7 @@ const buildCommand = Command.make(
   "build",
   { ...sharedFlags, format: textJsonFormatFlag, out: outputFlag },
   Effect.fn("cli.build")(function*({ root, config, snapshot, format, out }) {
-    const result = yield* Release.buildReleaseArtifacts(configInput({ root, config, snapshot }))
+    const result = yield* Release.build(configInput({ root, config, snapshot }))
     yield* writeOrPrint(out, Release.renderBuildArtifacts(result, format))
   })
 )
@@ -134,7 +134,7 @@ const doctorCommand = Command.make(
   "doctor",
   { root: rootFlag, config: configFlag, target: targetFlag, format: diagnosticsFormatFlag },
   Effect.fn("cli.doctor")(function*({ root, config, target, format }) {
-    const report = yield* Doctor.doctorRelease({
+    const report = yield* Release.doctorRelease({
       ...configInput({ root, config }),
       target: Option.getOrUndefined(target)
     })
@@ -146,8 +146,8 @@ const verifyCommand = Command.make(
   "verify",
   sharedFlags,
   Effect.fn("cli.verify")(function*({ root, config, snapshot }) {
-    const result = yield* Release.verifyRelease(configInput({ root, config, snapshot }))
-    yield* printEvidence(result.evidence)
+    const result = yield* Release.verify(configInput({ root, config, snapshot }))
+    yield* printEvidence(result.evidence!)
   })
 )
 
@@ -162,12 +162,12 @@ const releaseCommand = Command.make(
       )
       return
     }
-    const result = yield* Release.runApprovedRelease({
+    const result = yield* Release.release({
       ...configInput({ root, config, snapshot }),
       execute,
       approvePublish
     })
-    yield* printEvidence(result.evidence)
+    yield* printEvidence(result.evidence!)
   })
 )
 

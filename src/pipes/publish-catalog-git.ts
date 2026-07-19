@@ -1,22 +1,20 @@
 import * as Effect from "effect/Effect"
 import { PlanError } from "../pipeline/errors.js"
-import {
-  catalogGitPublishOperations,
-  validationNoteOperation,
-  type CatalogGitPublishOperationOptions,
-  type ValidationNoteOptions
-} from "../pipeline/operation-helpers.js"
-import type { FeaturePlanner, PipeContribution } from "../pipeline/pipe.js"
-import { emptyContribution } from "../pipeline/pipe.js"
+import { emptyContribution, featurePlanner, type PipeContribution } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import type { ResolvedHomebrew } from "./catalog-homebrew.js"
 import type { ResolvedScoop } from "./catalog-scoop.js"
+import {
+  catalogGitPublishOperations,
+  validationNoteOperation,
+  type CatalogGitPublishOptions
+} from "./shared.js"
 
 const catalogGitPublish = Effect.fn("publish.catalogGit")(function*(
   tokenEnv: string | undefined,
   error: { readonly pipeId: string; readonly field: string; readonly reason: string },
-  validation: ValidationNoteOptions,
-  publish: CatalogGitPublishOperationOptions
+  validation: Parameters<typeof validationNoteOperation>[0],
+  publish: CatalogGitPublishOptions
 ): Effect.fn.Return<PipeContribution, PlanError> {
   if (tokenEnv !== undefined) {
     return yield* Effect.fail(PlanError.make(error))
@@ -30,9 +28,7 @@ const catalogGitPublish = Effect.fn("publish.catalogGit")(function*(
 const identityDescription = (catalog: "Homebrew tap" | "Scoop bucket", identity: ReleaseIdentity): string =>
   `Push ${catalog} update for ${identity.name}@${identity.version}.`
 
-export const publishHomebrewPlanner: FeaturePlanner<ResolvedHomebrew> = {
-  id: "publish:homebrew",
-  plan: (section, state) => catalogGitPublish(
+export const publishHomebrewPlanner = featurePlanner<ResolvedHomebrew>("publish:homebrew", (section, state) => catalogGitPublish(
     section.tokenEnv,
     {
       pipeId: "publish:homebrew",
@@ -54,12 +50,9 @@ export const publishHomebrewPlanner: FeaturePlanner<ResolvedHomebrew> = {
       filePath: section.formulaPath,
       commitMessage: `Update ${section.formulaName} to ${state.identity.version}`
     }
-  )
-}
+  ))
 
-export const publishScoopPlanner: FeaturePlanner<ResolvedScoop> = {
-  id: "publish:scoop",
-  plan: (section, state) => catalogGitPublish(
+export const publishScoopPlanner = featurePlanner<ResolvedScoop>("publish:scoop", (section, state) => catalogGitPublish(
     section.tokenEnv,
     {
       pipeId: "publish:scoop",
@@ -81,5 +74,4 @@ export const publishScoopPlanner: FeaturePlanner<ResolvedScoop> = {
       filePath: section.manifestPath,
       commitMessage: `Update ${section.manifestName} to ${state.identity.version}`
     }
-  )
-}
+  ))

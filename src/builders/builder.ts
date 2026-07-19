@@ -1,22 +1,46 @@
 import type * as Effect from "effect/Effect"
-import type { Artifact } from "../pipeline/artifact.js"
+import { Artifact, ExecutableExtra, type InstallableArtifactVariant } from "../pipeline/artifact.js"
 import type { PlanError } from "../pipeline/errors.js"
-import type { PipelineOperation } from "../pipeline/operation.js"
+import type { Operation } from "../pipeline/operation.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import type { PlatformTarget } from "../pipeline/platform.js"
 
+// Invariant: builders only translate one decoded build section and target into artifacts plus operations.
 
 export interface BuilderPlan {
-  readonly operations: ReadonlyArray<PipelineOperation>
+  readonly operations: ReadonlyArray<Operation>
   readonly artifacts: ReadonlyArray<Artifact>
 }
 
-export interface Builder<Options extends { readonly builder: string }> {
-  readonly id: Options["builder"]
-  readonly supportedTargets: ReadonlyArray<PlatformTarget>
-  readonly plan: (
-    options: Options,
-    identity: ReleaseIdentity,
-    target: PlatformTarget
-  ) => Effect.Effect<BuilderPlan, PlanError>
-}
+export const executableArtifact = (input: {
+  readonly id: string
+  readonly builder: "bun" | "command" | "prebuilt"
+  readonly binary: string
+  readonly path: string
+  readonly platform: InstallableArtifactVariant
+  readonly targetTriple: string
+  readonly binaryName?: string | undefined
+  readonly installPath?: string | undefined
+}): Artifact => Artifact.make({
+  id: input.id,
+  kind: "executable",
+  path: input.path,
+  producedBy: `build:${input.builder}`,
+  platform: {
+    ...input.platform,
+    binaryName: input.binaryName ?? input.binary,
+    ...(input.installPath === undefined ? {} : { installPath: input.installPath }),
+    targetTriple: input.targetTriple
+  },
+  extra: ExecutableExtra.make({
+    binary: input.binary,
+    extension: input.platform.executableExtension ?? "",
+    builderId: input.builder
+  })
+})
+
+export type Builder<Options extends { readonly builder: string }> = (
+  options: Options,
+  identity: ReleaseIdentity,
+  target: PlatformTarget
+) => Effect.Effect<BuilderPlan, PlanError>

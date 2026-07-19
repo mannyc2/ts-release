@@ -109,30 +109,24 @@ export const resetReleaseRuntimeLayerFactoryForTesting = async (): Promise<void>
   runtimeLayerFactory = makeDefaultReleaseRuntimeLayer
 }
 
-export const plan = async (
-  options: Engine.RunOptions = {}
-): Promise<Engine.ReleasePlanSummary> => {
+const runEngine = async <A>(
+  phase: Exclude<ReleaseApiPhase, "dispose">,
+  options: Engine.RunOptions,
+  operation: (engine: typeof import("../engine/engine.js"), options: Engine.RunOptions) =>
+    Effect.Effect<A, unknown, ReleaseRuntimeServices>
+): Promise<A> => {
   const engine = await import("../engine/engine.js")
-  return runApiEffect("plan", engine.plan(options))
+  return runApiEffect(phase, operation(engine, options))
 }
 
-export const build = async (
-  options: Engine.RunOptions = {}
-): Promise<Engine.BuildSummary> => {
-  const engine = await import("../engine/engine.js")
-  return runApiEffect("build", engine.build(options))
-}
+export const plan = (options: Engine.RunOptions = {}): Promise<Engine.ReleasePlanSummary> =>
+  runEngine("plan", options, (engine, input) => engine.plan(input))
 
-export const release = async (
-  options: Engine.RunOptions = {}
-): Promise<Engine.ReleaseSummary> => {
-  const engine = await import("../engine/engine.js")
-  return runApiEffect("release", engine.release(options))
-}
+export const build = (options: Engine.RunOptions = {}): Promise<Engine.BuildSummary> =>
+  runEngine("build", options, (engine, input) => engine.build(input))
 
-export const verify = async (
-  options: Engine.RunOptions = {}
-): Promise<Engine.VerifySummary> => {
-  const engine = await import("../engine/engine.js")
-  return runApiEffect("verify", engine.verify(options))
-}
+export const release = (options: Engine.RunOptions = {}): Promise<Engine.ReleaseSummary> =>
+  runEngine("release", options, (engine, input) => engine.release(input))
+
+export const verify = (options: Engine.RunOptions = {}): Promise<Engine.VerifySummary> =>
+  runEngine("verify", options, (engine, input) => engine.verify(input))

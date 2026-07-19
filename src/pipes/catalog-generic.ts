@@ -3,8 +3,7 @@ import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, CatalogFileExtra, SafeRelativePath } from "../pipeline/artifact.js"
 import { PlanError } from "../pipeline/errors.js"
 import { FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../pipeline/operation.js"
-import type { FeaturePlanner } from "../pipeline/pipe.js"
-import { emptyContribution } from "../pipeline/pipe.js"
+import { featurePlanner, type PlannerContext } from "../pipeline/pipe.js"
 import { renderTemplate } from "../pipeline/template.js"
 export class ReleaseConfigCatalogFactHole extends Schema.Class<ReleaseConfigCatalogFactHole>("ReleaseConfigCatalogFactHole")({
   fact: Schema.Literals(["sha256", "downloadUrl", "assetName"]), artifact: Schema.NonEmptyString
@@ -37,7 +36,7 @@ const appendText = (parts: Array<RenderedPart>, text: string): void => {
 const contentError = (entry: ResolvedCatalogEntry, reason: string) => PlanError.make({ pipeId: "catalog:file",
   field: `catalogs.${entry.id}.content`, reason })
 const planContent = Effect.fn("catalog.file.planContent")(function*(entry: ResolvedCatalogEntry,
-  context: Parameters<FeaturePlanner<ReadonlyArray<ResolvedCatalogEntry>>["plan"]>[1]) {
+  context: PlannerContext) {
   const parts: Array<RenderedPart> = []
   for (const part of typeof entry.content === "string" ? [entry.content] : entry.content) {
     if (typeof part === "string") { appendText(parts, renderTemplate(part, { identity: context.identity })); continue }
@@ -55,9 +54,8 @@ const planContent = Effect.fn("catalog.file.planContent")(function*(entry: Resol
   }
   return parts.some((part) => typeof part !== "string") ? FilePartsContent.make({ parts }) : parts.join("")
 })
-export const catalogGenericPlanner: FeaturePlanner<ReadonlyArray<ResolvedCatalogEntry>> = {
-  id: "catalog:file",
-  plan: (entries, context) => Effect.gen(function*() {
+export const catalogGenericPlanner = featurePlanner<ReadonlyArray<ResolvedCatalogEntry>>(
+  "catalog:file", (entries, context) => Effect.gen(function*() {
     const duplicate = entries.find((entry, index) => entries.findIndex(({ id }) => id === entry.id) !== index)
     if (duplicate !== undefined) return yield* Effect.fail(PlanError.make({
       pipeId: "catalog:file", field: "catalogs[].id", reason: `Duplicate catalog id: ${duplicate.id}`
@@ -72,6 +70,5 @@ export const catalogGenericPlanner: FeaturePlanner<ReadonlyArray<ResolvedCatalog
         risk: "writes-local", description: `Render ${entry.id} catalog file ${path}.`,
         action: WriteFileAction.make({ path, contents }) }))
     }
-    return { ...emptyContribution, artifacts, operations }
-  })
-}
+    return { artifacts, operations }
+  }))

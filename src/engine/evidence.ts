@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { readOptionalEnv } from "../host/platform.js"
+import { readEnvironment } from "../host/platform.js"
 import {
   CommandSpec,
   GitHubReleaseCreateAction,
@@ -83,31 +83,6 @@ export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundle
   records: Schema.Array(EvidenceRecord)
 }) {}
 
-export const emptyEvidenceBundle = (input: {
-  readonly releaseName: string
-  readonly releaseVersion: string
-  readonly notices?: ReadonlyArray<PipeNotice> | undefined
-}): EvidenceBundle =>
-  EvidenceBundle.make({
-    schemaVersion: "release-evidence/v2",
-    releaseName: input.releaseName,
-    releaseVersion: input.releaseVersion,
-    notices: [...(input.notices ?? [])],
-    records: []
-  })
-
-export const appendEvidenceRecord = (
-  bundle: EvidenceBundle,
-  record: EvidenceRecord
-): EvidenceBundle =>
-  EvidenceBundle.make({
-    schemaVersion: bundle.schemaVersion,
-    releaseName: bundle.releaseName,
-    releaseVersion: bundle.releaseVersion,
-    notices: [...bundle.notices],
-    records: [...bundle.records, record]
-  })
-
 export const renderEvidenceJson = (bundle: EvidenceBundle): string =>
   `${JSON.stringify(bundle, null, 2)}\n`
 
@@ -137,34 +112,9 @@ const redactedEnvNames = (operation: Operation): ReadonlyArray<string> => {
 }
 
 export const readRedactionSecrets = Effect.fn("engine.evidence.readRedactionSecrets")(function*(operation: Operation) {
-  const secrets: Array<string> = []
-  for (const name of redactedEnvNames(operation)) {
-    const value = yield* readOptionalEnv(name)
-    if (value !== undefined) {
-      secrets.push(value)
-    }
-  }
-  return secrets
+  return [...(yield* readEnvironment(redactedEnvNames(operation))).values()]
+    .filter((value): value is string => value !== undefined)
 })
-
-export const githubReleaseEvidence = (input: {
-  readonly repository: string
-  readonly tag: string
-  readonly releaseId?: number | undefined
-  readonly title?: string | undefined
-  readonly draft?: boolean | undefined
-  readonly prerelease?: boolean | undefined
-  readonly assets: ReadonlyArray<string>
-}): GitHubReleaseEvidence =>
-  GitHubReleaseEvidence.make({
-    repository: input.repository,
-    tag: input.tag,
-    releaseId: input.releaseId,
-    title: input.title,
-    draft: input.draft,
-    prerelease: input.prerelease,
-    assets: [...input.assets]
-  })
 
 export const sortedStrings = (values: ReadonlyArray<string>): ReadonlyArray<string> =>
   [...values].sort()
@@ -174,20 +124,3 @@ export const sameStringSet = (left: ReadonlyArray<string>, right: ReadonlyArray<
   const sortedRight = sortedStrings(right)
   return sortedLeft.length === sortedRight.length && sortedLeft.every((value, index) => sortedRight[index] === value)
 }
-
-export const githubCreateRequestFromAction = (action: GitHubReleaseCreateAction) => ({
-  repository: action.repository,
-  tokenEnv: action.tokenEnv,
-  tag: action.tag,
-  title: action.title,
-  notes: action.notes,
-  draft: action.draft,
-  prerelease: action.prerelease,
-  assets: [...action.assets]
-})
-
-export const githubInspectRequestFromAction = (action: GitHubReleaseVerifyAction) => ({
-  repository: action.repository,
-  tokenEnv: action.tokenEnv,
-  tag: action.tag
-})

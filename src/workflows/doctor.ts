@@ -1,16 +1,13 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { loadReleaseIntent } from "../config/load.js"
-import { configPath } from "../config/resolve.js"
-import { envExists, planRelease } from "../engine/engine.js"
+import { configPath } from "../config/load.js"
+import { ConfigError } from "../config/errors.js"
+import { planRelease } from "../engine/engine.js"
+import { readOptionalEnv } from "../host/platform.js"
 import type { Operation } from "../pipeline/operation.js"
 import type { ReleasePlan } from "../pipeline/plan.js"
 import { operationSurfaceId, operationSurfaceIds } from "../engine/summary.js"
 
-
-const ReleaseName = Schema.NonEmptyString
-const ReleaseVersion = Schema.NonEmptyString
-const TargetId = Schema.NonEmptyString
 
 export const ReleaseDiagnosticsFormat = Schema.Literals(["json", "text", "markdown"])
 export type ReleaseDiagnosticsFormat = typeof ReleaseDiagnosticsFormat.Type
@@ -25,12 +22,11 @@ export interface DoctorReleaseInput {
   readonly root?: string | undefined
   readonly configPath?: string | undefined
   readonly target?: string | undefined
-  readonly format?: ReleaseDiagnosticsFormat | undefined
 }
 
 export class ReleaseDiagnosticCheck extends Schema.Class<ReleaseDiagnosticCheck>("ReleaseDiagnosticCheck")({
   id: Schema.NonEmptyString,
-  targetId: Schema.optional(TargetId),
+  targetId: Schema.optional(Schema.NonEmptyString),
   status: ReleaseDiagnosticStatus,
   confidence: ReleaseDiagnosticConfidence,
   message: Schema.String
@@ -38,79 +34,44 @@ export class ReleaseDiagnosticCheck extends Schema.Class<ReleaseDiagnosticCheck>
 
 export class ReleaseDiagnosticReport extends Schema.Class<ReleaseDiagnosticReport>("ReleaseDiagnosticReport")({
   schemaVersion: Schema.Literal("release-diagnostics/v1"),
-  releaseName: ReleaseName,
-  releaseVersion: ReleaseVersion,
+  releaseName: Schema.NonEmptyString,
+  releaseVersion: Schema.NonEmptyString,
   checks: Schema.Array(ReleaseDiagnosticCheck)
 }) {}
 
-const check = (input: {
-  readonly id: string
-  readonly targetId?: string | undefined
-  readonly status: ReleaseDiagnosticStatus
-  readonly confidence: ReleaseDiagnosticConfidence
-  readonly message: string
-}): ReleaseDiagnosticCheck =>
-  ReleaseDiagnosticCheck.make({
-    id: input.id,
-    targetId: input.targetId,
-    status: input.status,
-    confidence: input.confidence,
-    message: input.message
-  })
+const check = (input: Parameters<typeof ReleaseDiagnosticCheck.make>[0]) => ReleaseDiagnosticCheck.make(input)
 
-const reportForIdentity = (
-  identity: Pick<ReleasePlan["identity"], "name" | "version">,
-  checks: ReadonlyArray<ReleaseDiagnosticCheck>
-): ReleaseDiagnosticReport =>
-  ReleaseDiagnosticReport.make({
-    schemaVersion: "release-diagnostics/v1",
-    releaseName: identity.name,
-    releaseVersion: identity.version,
-    checks: [...checks]
-  })
+const targetsForPlan = (plan: ReleasePlan) =>
+  operationSurfaceIds(plan)
+    .map((targetId) => ({
+      targetId,
+      operations: plan.operations.filter((operation) => operationSurfaceId(operation) === targetId)
+    }))
 
-const operationsForTarget = (plan: ReleasePlan, targetId: string): ReadonlyArray<Operation> =>
-  plan.operations.filter((operation) => operationSurfaceId(operation) === targetId)
-
-const targetMatches = (targetId: string, filter: string | undefined): boolean =>
-  filter === undefined || targetId === filter || targetId.toLowerCase().includes(filter.toLowerCase())
-
-const targetIdsForPlan = (plan: ReleasePlan, filter: string | undefined): ReadonlyArray<string> =>
-  operationSurfaceIds(plan).filter((targetId) => targetMatches(targetId, filter))
-
-const operationEnvNames = (operation: Operation): ReadonlyArray<string> => {
-  switch (operation.action._tag) {
-    case "command": return operation.action.command.requiredEnv
-    case "github-release-create":
-    case "github-release-verify": return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
-    default: return []
-  }
-}
-
-const commandEnvNames = (operations: ReadonlyArray<Operation>): ReadonlyArray<string> =>
-  [...new Set(operations.flatMap(operationEnvNames))].sort()
-
-const commandExecutables = (operations: ReadonlyArray<Operation>): ReadonlyArray<string> =>
-  [...new Set(operations.flatMap((operation) =>
+const targetNeeds = (targetId: string, operations: ReadonlyArray<Operation>) => ({
+  envNames: [...new Set(operations.flatMap(({ action }) => action._tag === "command"
+    ? action.command.requiredEnv
+    : action._tag === "github-release-create" || action._tag === "github-release-verify"
+    ? action.tokenEnv === undefined ? [] : [action.tokenEnv]
+    : []))].sort(),
+  executables: [...new Set(operations.flatMap((operation) =>
     operation.action._tag === "command" ? [operation.action.command.executable] : []
-  ))].sort()
-
-const hasTrustedPublishingNote = (targetId: string, operations: ReadonlyArray<Operation>): boolean =>
-  operations.some((operation) =>
+  ))].sort(),
+  trustedPublishing: operations.some((operation) =>
     operation.id === `${targetId}:${targetId}-trusted-publishing-auth` ||
-    (operation.action._tag === "note" && operation.action.message.toLowerCase().includes("trusted publishing"))
-  )
+    (operation.action._tag === "note" && operation.action.message.toLowerCase().includes("trusted publishing")))
+})
 
 const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(function*(
-  plan: ReleasePlan,
+  targets: ReturnType<typeof targetsForPlan>,
   targetFilter: string | undefined
 ) {
   const checks: Array<ReleaseDiagnosticCheck> = []
-  for (const targetId of targetIdsForPlan(plan, targetFilter)) {
-    const operations = operationsForTarget(plan, targetId)
-    const envNames = commandEnvNames(operations)
+  for (const { targetId, operations } of targets.filter(({ targetId }) => targetFilter === undefined
+    || targetId === targetFilter || targetId.toLowerCase().includes(targetFilter.toLowerCase()))) {
+    const { envNames, executables, trustedPublishing } = targetNeeds(targetId, operations)
     for (const name of envNames) {
-      const present = yield* envExists(name)
+      const present = (yield* readOptionalEnv(name)) !== undefined
       checks.push(check({
         id: `${targetId}:env:${name}`,
         targetId,
@@ -125,9 +86,9 @@ const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(functi
       continue
     }
 
-    if (hasTrustedPublishingNote(targetId, operations)) {
-      const hasOidcUrl = yield* envExists("ACTIONS_ID_TOKEN_REQUEST_URL")
-      const hasOidcToken = yield* envExists("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+    if (trustedPublishing) {
+      const hasOidcUrl = (yield* readOptionalEnv("ACTIONS_ID_TOKEN_REQUEST_URL")) !== undefined
+      const hasOidcToken = (yield* readOptionalEnv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")) !== undefined
       checks.push(check({
         id: `${targetId}:trusted-publishing`,
         targetId,
@@ -140,7 +101,6 @@ const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(functi
       continue
     }
 
-    const executables = commandExecutables(operations)
     checks.push(check({
       id: `${targetId}:cli-auth`,
       targetId,
@@ -164,9 +124,10 @@ const authChecksForPlan = Effect.fn("workflows.doctor.authChecksForPlan")(functi
   return checks
 })
 
-const capabilityChecksForPlan = (plan: ReleasePlan): ReadonlyArray<ReleaseDiagnosticCheck> => {
-  const targetIds = targetIdsForPlan(plan, undefined)
-  if (targetIds.length === 0) {
+const capabilityChecksForPlan = (
+  targets: ReturnType<typeof targetsForPlan>
+): ReadonlyArray<ReleaseDiagnosticCheck> => {
+  if (targets.length === 0) {
     return [
       check({
         id: "plan:operations",
@@ -176,53 +137,34 @@ const capabilityChecksForPlan = (plan: ReleasePlan): ReadonlyArray<ReleaseDiagno
       })
     ]
   }
-  return targetIds.map((targetId) =>
+  return targets.map(({ targetId }) =>
     check({
       id: `${targetId}:operations`,
       targetId,
-      status: operationsForTarget(plan, targetId).length === 0 ? "fail" : "ok",
+      status: "ok",
       confidence: "confirmed",
       message: `${targetId} has grammar operations in the release plan.`
     })
   )
 }
 
-type PlannedRelease =
-  | {
-    readonly _tag: "Failed"
-    readonly message: string
-  }
-  | {
-    readonly _tag: "Ok"
-    readonly plan: ReleasePlan
-  }
-
-const plannedFailure = (message: string): PlannedRelease => ({
-  _tag: "Failed",
-  message
-})
-
-const plannedSuccess = (plan: ReleasePlan): PlannedRelease => ({
-  _tag: "Ok",
-  plan
-})
-
 export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(function*(
   input: DoctorReleaseInput = {}
 ) {
   const pathName = configPath(input)
-  const loaded = yield* loadReleaseIntent(undefined, input).pipe(
+  const planned = yield* planRelease({ workspace: input.root, configPath: input.configPath }).pipe(
     Effect.match({
       onFailure: (error) => ({ _tag: "Failed" as const, error }),
-      onSuccess: (value) => ({ _tag: "Ok" as const, value })
+      onSuccess: (plan) => ({ _tag: "Ok" as const, plan })
     })
   )
-  const validation = loaded._tag === "Failed"
+  const configFailed = planned._tag === "Failed" && planned.error instanceof ConfigError
+  const validation = configFailed
     ? check({
         id: "config:validation",
         status: "fail",
         confidence: "confirmed",
-        message: `Config validation failed: ${loaded.error.message}`
+        message: `Config validation failed: ${planned.error.message}`
       })
     : check({
         id: "config:validation",
@@ -230,19 +172,6 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
         confidence: "confirmed",
         message: `Config ${pathName} is valid.`
       })
-
-  const planned = loaded._tag === "Failed"
-    ? plannedFailure(loaded.error.message)
-    : yield* planRelease({
-      workspace: input.root,
-      config: loaded.value.intent,
-      configPath: pathName
-    }).pipe(
-      Effect.match({
-        onFailure: (error) => plannedFailure(error.message),
-        onSuccess: plannedSuccess
-      })
-    )
 
   if (planned._tag === "Failed") {
     return ReleaseDiagnosticReport.make({
@@ -255,55 +184,34 @@ export const doctorRelease = Effect.fn("workflows.doctor.doctorRelease")(functio
           id: "plan:construction",
           status: "fail",
           confidence: "confirmed",
-          message: `Plan construction failed: ${planned.message}`
+          message: `Plan construction failed: ${planned.error.message}`
         })
       ]
     })
   }
 
-  const authChecks = yield* authChecksForPlan(planned.plan, input.target)
-  return reportForIdentity(planned.plan.identity, [
-    validation,
-    check({
+  const targets = targetsForPlan(planned.plan)
+  const authChecks = yield* authChecksForPlan(targets, input.target)
+  return ReleaseDiagnosticReport.make({
+    schemaVersion: "release-diagnostics/v1",
+    releaseName: planned.plan.identity.name,
+    releaseVersion: planned.plan.identity.version,
+    checks: [validation, check({
       id: "plan:construction",
       status: "ok",
       confidence: "confirmed",
       message: "Release plan can be constructed."
     }),
-    ...capabilityChecksForPlan(planned.plan),
+    ...capabilityChecksForPlan(targets),
     check({
       id: "evidence:directory",
       status: "ok",
       confidence: "confirmed",
       message: `Evidence directory ${planned.plan.evidenceDirectory} is valid.`
     }),
-    ...authChecks
-  ])
+    ...authChecks]
+  })
 })
-
-export const renderReleaseDiagnosticsJson = (report: ReleaseDiagnosticReport): string =>
-  `${JSON.stringify(report, null, 2)}\n`
-
-export const renderReleaseDiagnosticsText = (report: ReleaseDiagnosticReport): string => {
-  const lines = report.checks.map((item) =>
-    `${item.status.padEnd(4)} ${item.confidence.padEnd(11)} ${item.id}: ${item.message}`
-  )
-  lines.unshift(`diagnostics: ${report.releaseName}@${report.releaseVersion}`)
-  return `${lines.join("\n")}\n`
-}
-
-export const renderReleaseDiagnosticsMarkdown = (report: ReleaseDiagnosticReport): string => {
-  const lines = [
-    `# Release Diagnostics ${report.releaseName}@${report.releaseVersion}`,
-    "",
-    "| Status | Confidence | Check | Message |",
-    "| --- | --- | --- | --- |",
-    ...report.checks.map((item) =>
-      `| ${item.status} | ${item.confidence} | ${item.id} | ${item.message.replaceAll("|", "\\|")} |`
-    )
-  ]
-  return `${lines.join("\n")}\n`
-}
 
 export const renderReleaseDiagnostics = (
   report: ReleaseDiagnosticReport,
@@ -311,10 +219,17 @@ export const renderReleaseDiagnostics = (
 ): string => {
   switch (format) {
     case "json":
-      return renderReleaseDiagnosticsJson(report)
-    case "markdown":
-      return renderReleaseDiagnosticsMarkdown(report)
-    case "text":
-      return renderReleaseDiagnosticsText(report)
+      return `${JSON.stringify(report, null, 2)}\n`
+    case "markdown": {
+      const rows = report.checks.map((item) =>
+        `| ${item.status} | ${item.confidence} | ${item.id} | ${item.message.replaceAll("|", "\\|")} |`)
+      return [`# Release Diagnostics ${report.releaseName}@${report.releaseVersion}`, "",
+        "| Status | Confidence | Check | Message |", "| --- | --- | --- | --- |", ...rows, ""].join("\n")
+    }
+    case "text": {
+      const rows = report.checks.map((item) =>
+        `${item.status.padEnd(4)} ${item.confidence.padEnd(11)} ${item.id}: ${item.message}`)
+      return [`diagnostics: ${report.releaseName}@${report.releaseVersion}`, ...rows, ""].join("\n")
+    }
   }
 }

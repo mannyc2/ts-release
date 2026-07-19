@@ -5,11 +5,10 @@ import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import { makeArtifactStagerLayer, type BunExecutableBuildInput } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { stageArtifactOperations } from "../src/engine/stager.js"
 import { buildPlanner, resolveBuilds } from "../src/pipes/build.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
 import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
-import { makePipelineIdentity, releaseConfig } from "./helpers.js"
+import { makePipelineIdentity, releaseConfig, stageArtifactOperations } from "./helpers.js"
 
 const identity = makePipelineIdentity()
 
@@ -28,7 +27,7 @@ const planBuild = (build: Record<string, unknown>) =>
     const intent = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
     return yield* Option.match(resolveBuilds(intent.builds), {
       onNone: () => Effect.die("Expected a resolved build section."),
-      onSome: (section) => buildPlanner.plan(section, state)
+      onSome: (section) => buildPlanner(section, state)
     })
   })
 
@@ -109,8 +108,8 @@ describe("build pipe", () => {
           output: "../dist/release-{targetTriple}"
         }).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ConfigValidationError")
-        if (error._tag === "ConfigValidationError") {
+        expect(error._tag).toBe("ConfigError")
+        if (error._tag === "ConfigError") {
           expect(error.reason).toContain(`["builds"][0]["output"]`)
         }
         expect(calls).toHaveLength(0)

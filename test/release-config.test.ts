@@ -179,10 +179,7 @@ describe("repository release config", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ReleaseNormalizationError") {
-      expect(error.field).toBe("evidenceDirectory")
-    }
+    expect(error._tag).toBe("ConfigError")
   })
 
   test("rejects absolute catalog paths at config decode", async () => {
@@ -198,8 +195,8 @@ describe("repository release config", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ConfigValidationError") {
+    expect(error._tag).toBe("ConfigError")
+    if (error._tag === "ConfigError") {
       expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
       expect(error.reason).toContain(`["publish"]["homebrew"]["formulaPath"]`)
     }
@@ -218,8 +215,8 @@ describe("repository release config", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ConfigValidationError") {
+    expect(error._tag).toBe("ConfigError")
+    if (error._tag === "ConfigError") {
       expect(error.reason).toContain("Path must be non-empty, relative, and must not contain parent traversal.")
     }
   })
@@ -238,8 +235,8 @@ describe("repository release config", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ConfigValidationError") {
+    expect(error._tag).toBe("ConfigError")
+    if (error._tag === "ConfigError") {
       expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
     }
   })
@@ -258,8 +255,8 @@ describe("repository release config", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ConfigValidationError") {
+    expect(error._tag).toBe("ConfigError")
+    if (error._tag === "ConfigError") {
       expect(error.reason).toContain("Workflow must be a .yml or .yaml filename without path separators.")
     }
   })

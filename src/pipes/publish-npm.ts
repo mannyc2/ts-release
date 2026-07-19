@@ -1,24 +1,16 @@
+// Invariant: the resolved npm section owns defaults/auth mode; the planner only emits the frozen operation sequence.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../pipeline/artifact.js"
-import { PlanError } from "../pipeline/errors.js"
-import {
-  CommandAction,
-  CommandSpec,
-  Operation,
-  RetryPolicy
-} from "../pipeline/operation.js"
-import {
-  readOnlyCommandValidationOperation,
-  validationNoteOperation
-} from "../pipeline/operation-helpers.js"
-import type { FeaturePlanner } from "../pipeline/pipe.js"
-import { emptyContribution } from "../pipeline/pipe.js"
+import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../pipeline/operation.js"
+import { featurePlanner } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 import {
   compactTrustedPublishing,
   publishingAuthEnvNames,
+  readOnlyCommandValidationOperation,
   trustedPublishingConfigFields,
+  validationNoteOperation,
   type TrustedPublishingSection
 } from "./shared.js"
 
@@ -42,173 +34,111 @@ export class ReleaseConfigNpmPublish extends Schema.Class<ReleaseConfigNpmPublis
   provenance: Schema.optionalKey(Schema.Boolean)
 }) {}
 
-interface NpmTrustedPublishingSection extends TrustedPublishingSection {
+interface NpmTrustedPublishing extends TrustedPublishingSection {
   readonly verifyPackageExists?: boolean | undefined
 }
-
 export interface ResolvedNpmPublish {
   readonly registry: string
   readonly packageName: string
   readonly packagePath: string
   readonly tokenEnv?: string | undefined
-  readonly trustedPublishing?: NpmTrustedPublishingSection | undefined
+  readonly trustedPublishing?: NpmTrustedPublishing | undefined
   readonly access?: NpmAccess | undefined
   readonly provenance?: boolean | undefined
 }
 
-const compactNpmTrustedPublishing = (
-  config: boolean | ReleaseConfigNpmTrustedPublishing | undefined
-): NpmTrustedPublishingSection | undefined => {
-  const base = compactTrustedPublishing(config)
-  return base === undefined || typeof config !== "object"
-    ? base
-    : {
-      ...base,
-      verifyPackageExists: config.verifyPackageExists
-    }
-}
-
 export const resolveNpmPublish = (config: {
-  readonly project: {
-    readonly packageName?: string | undefined
-    readonly packagePath?: string | undefined
-  }
-  readonly publish: {
-    readonly npm?: boolean | ReleaseConfigNpmPublish | undefined
-  }
+  readonly project: { readonly packageName?: string; readonly packagePath?: string }
+  readonly publish: { readonly npm?: boolean | ReleaseConfigNpmPublish }
 }, identity: ReleaseIdentity): ResolvedNpmPublish | undefined => {
   const publish = config.publish.npm
-  if (publish === undefined || publish === false) {
-    return undefined
-  }
-  const object = publish === true ? undefined : publish
+  if (publish === undefined || publish === false) return undefined
+  const section = publish === true ? undefined : publish
+  const trusted = compactTrustedPublishing(section?.trustedPublishing)
   return {
-    registry: object?.registry ?? "https://registry.npmjs.org",
-    packageName: object?.packageName ?? config.project.packageName ?? identity.name,
-    packagePath: object?.packagePath ?? config.project.packagePath ?? ".",
-    tokenEnv: object?.tokenEnv,
-    trustedPublishing: compactNpmTrustedPublishing(object?.trustedPublishing),
-    access: object?.access,
-    provenance: object?.provenance
+    registry: section?.registry ?? "https://registry.npmjs.org",
+    packageName: section?.packageName ?? config.project.packageName ?? identity.name,
+    packagePath: section?.packagePath ?? config.project.packagePath ?? ".",
+    tokenEnv: section?.tokenEnv,
+    trustedPublishing: trusted === undefined || typeof section?.trustedPublishing !== "object"
+      ? trusted
+      : { ...trusted, verifyPackageExists: section.trustedPublishing.verifyPackageExists },
+    access: section?.access,
+    provenance: section?.provenance
   }
 }
-
-const authEnvNames = (section: ResolvedNpmPublish): ReadonlyArray<string> =>
-  publishingAuthEnvNames(section.trustedPublishing, [section.tokenEnv])
 
 const npmCommand = (
   section: ResolvedNpmPublish,
   args: ReadonlyArray<string>,
-  includeAuth: boolean
-): CommandSpec =>
-  CommandSpec.make({
-    executable: "npm",
-    args: [...args],
-    requiredEnv: includeAuth ? authEnvNames(section) : [],
-    redactedEnv: includeAuth ? authEnvNames(section) : []
-  })
+  authenticated: boolean = false
+): CommandSpec => {
+  const env = authenticated ? publishingAuthEnvNames(section.trustedPublishing, [section.tokenEnv]) : []
+  return CommandSpec.make({ executable: "npm", args: [...args], requiredEnv: env, redactedEnv: env })
+}
 
-const npmAuthOperation = (section: ResolvedNpmPublish): Operation =>
-  section.trustedPublishing !== undefined
-    ? validationNoteOperation({
-      id: "npm:npm-trusted-publishing-auth",
-      pipeId: "publish:npm",
-      description: "Record npm trusted publishing authentication mode.",
-      message:
-        `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
-    })
-    : readOnlyCommandValidationOperation({
-      id: "npm:npm-whoami",
-      pipeId: "publish:npm",
-      description: "Validate npm CLI authentication.",
-      command: npmCommand(section, ["whoami", "--registry", section.registry], true)
-    })
+const npmCheck = (id: string, description: string, section: ResolvedNpmPublish, args: ReadonlyArray<string>) =>
+  readOnlyCommandValidationOperation({ id, pipeId: "publish:npm", description, command: npmCommand(section, args) })
 
-const npmPackageExistsOperation = (section: ResolvedNpmPublish): Operation =>
-  readOnlyCommandValidationOperation({
-    id: "npm:npm-package-exists",
-    pipeId: "publish:npm",
-    description: "Verify npm package exists before trusted publishing.",
-    command: npmCommand(section, ["view", section.packageName, "name", "--registry", section.registry], false)
-  })
-
-const npmPublishArgs = (section: ResolvedNpmPublish): ReadonlyArray<string> => {
+const publishArgs = (section: ResolvedNpmPublish): ReadonlyArray<string> => {
   const args = ["publish", section.packagePath, "--registry", section.registry]
-  if (section.access !== undefined) {
-    args.push("--access", section.access)
-  }
-  if (section.provenance === true) {
-    args.push("--provenance")
-  }
+  if (section.access !== undefined) args.push("--access", section.access)
+  if (section.provenance === true) args.push("--provenance")
   return args
 }
 
-const validateNpmPublish = (
-  section: ResolvedNpmPublish
-): Effect.Effect<ResolvedNpmPublish, PlanError> => {
-  if (section.packageName.trim().length === 0) {
-    return Effect.fail(PlanError.make({
-      pipeId: "publish:npm",
-      field: "publish.npm.packageName",
-      reason: "NPM publishing requires a package name."
-    }))
-  }
-  if (section.trustedPublishing !== undefined && section.tokenEnv !== undefined) {
-    return Effect.fail(PlanError.make({
-      pipeId: "publish:npm",
-      field: "publish.npm.tokenEnv",
-      reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
-    }))
-  }
-  return Effect.succeed(section)
-}
-
-export const publishNpmPlanner: FeaturePlanner<ResolvedNpmPublish> = {
-  id: "publish:npm",
-  plan: (resolved, state) =>
-    Effect.gen(function*() {
-      const section = yield* validateNpmPublish(resolved)
-      return {
-        ...emptyContribution,
-        operations: [
-          readOnlyCommandValidationOperation({
-            id: "npm:npm-version",
-            pipeId: "publish:npm",
-            description: "Check npm CLI availability.",
-            command: npmCommand(section, ["--version"], false)
-          }),
-          npmAuthOperation(section),
-          ...(section.trustedPublishing?.verifyPackageExists === true ? [npmPackageExistsOperation(section)] : []),
-          readOnlyCommandValidationOperation({
-            id: "npm:npm-pack-dry-run",
-            pipeId: "publish:npm",
-            description: "Validate npm package contents with npm pack dry-run.",
-            command: npmCommand(section, ["pack", "--dry-run", "--json", section.packagePath], false)
-          }),
-          Operation.make({
-            id: "npm:npm-publish",
-            pipeId: "publish:npm",
-            phase: "publish",
-            risk: "irreversible",
-            description: `Publish ${section.packageName}@${state.identity.version} to npm.`,
-            action: CommandAction.make({ command: npmCommand(section, npmPublishArgs(section), true) })
-          }),
-          Operation.make({
-            id: "npm:npm-version-verify",
-            pipeId: "publish:npm",
-            phase: "verify",
-            risk: "read-only",
-            description: `Verify ${section.packageName}@${state.identity.version} exists on npm.`,
-            action: CommandAction.make({
-              command: npmCommand(
-                section,
-                ["view", `${section.packageName}@${state.identity.version}`, "version", "--registry", section.registry],
-                false
-              )
-            }),
-            retry: RetryPolicy.make({ attempts: 11, delayMillis: 500 })
-          })
-        ]
-      }
-    })
-}
+export const publishNpmPlanner = featurePlanner<ResolvedNpmPublish>("publish:npm", (section, state) => {
+    const auth = section.trustedPublishing === undefined
+      ? readOnlyCommandValidationOperation({
+        id: "npm:npm-whoami",
+        pipeId: "publish:npm",
+        description: "Validate npm CLI authentication.",
+        command: npmCommand(section, ["whoami", "--registry", section.registry], true)
+      })
+      : validationNoteOperation({
+        id: "npm:npm-trusted-publishing-auth",
+        pipeId: "publish:npm",
+        description: "Record npm trusted publishing authentication mode.",
+        message:
+          `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
+      })
+    const operations: Array<Operation> = [
+      npmCheck("npm:npm-version", "Check npm CLI availability.", section, ["--version"]),
+      auth
+    ]
+    if (section.trustedPublishing?.verifyPackageExists === true) operations.push(npmCheck(
+      "npm:npm-package-exists",
+      "Verify npm package exists before trusted publishing.",
+      section,
+      ["view", section.packageName, "name", "--registry", section.registry]
+    ))
+    operations.push(
+      npmCheck(
+        "npm:npm-pack-dry-run",
+        "Validate npm package contents with npm pack dry-run.",
+        section,
+        ["pack", "--dry-run", "--json", section.packagePath]
+      ),
+      Operation.make({
+        id: "npm:npm-publish",
+        pipeId: "publish:npm",
+        phase: "publish",
+        risk: "irreversible",
+        description: `Publish ${section.packageName}@${state.identity.version} to npm.`,
+        action: CommandAction.make({ command: npmCommand(section, publishArgs(section), true) })
+      }),
+      Operation.make({
+        id: "npm:npm-version-verify",
+        pipeId: "publish:npm",
+        phase: "verify",
+        risk: "read-only",
+        description: `Verify ${section.packageName}@${state.identity.version} exists on npm.`,
+        action: CommandAction.make({ command: npmCommand(
+          section,
+          ["view", `${section.packageName}@${state.identity.version}`, "version", "--registry", section.registry]
+        ) }),
+        retry: RetryPolicy.make({ attempts: 11, delayMillis: 500 })
+      })
+    )
+    return Effect.succeed({ operations })
+  })

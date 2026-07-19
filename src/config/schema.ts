@@ -1,46 +1,22 @@
 import * as Schema from "effect/Schema"
 import type * as JsonSchema from "effect/JsonSchema"
-import {
-  ReleaseConfigBunExecutableBuild
-} from "../builders/bun.js"
-import {
-  ReleaseConfigCommandBuild
-} from "../builders/command.js"
-import {
-  ReleaseConfigPrebuiltBuild
-} from "../builders/prebuilt.js"
-import {
-  ReleaseConfigArchive
-} from "../pipes/archive.js"
-import {
-  ReleaseConfigHomebrewPublish
-} from "../pipes/catalog-homebrew.js"
-import {
-  ReleaseConfigScoopPublish
-} from "../pipes/catalog-scoop.js"
+import { ReleaseConfigBunExecutableBuild } from "../builders/bun.js"
+import { ReleaseConfigCommandBuild } from "../builders/command.js"
+import { ReleaseConfigPrebuiltBuild } from "../builders/prebuilt.js"
+import { ReleaseConfigArchive } from "../pipes/archive.js"
+import { ReleaseConfigHomebrewPublish } from "../pipes/catalog-homebrew.js"
+import { ReleaseConfigScoopPublish } from "../pipes/catalog-scoop.js"
 import { ReleaseConfigCatalogEntry } from "../pipes/catalog-generic.js"
-import {
-  ReleaseConfigManualArtifact
-} from "../pipes/import-artifacts.js"
-import {
-  ReleaseConfigChecksum
-} from "../pipes/checksum.js"
-import {
-  ReleaseConfigNpmPackageBuild
-} from "../pipes/npm-pack.js"
-import {
-  ReleaseConfigGitHubPublish
-} from "../pipes/publish-github.js"
-import {
-  ReleaseConfigNpmPublish
-} from "../pipes/publish-npm.js"
-import {
-  ReleaseConfigPyPiPublish
-} from "../pipes/publish-pypi.js"
-import {
-  ReleaseConfigPyPiWheelBuild
-} from "../pipes/pypi-wheel.js"
+import { ReleaseConfigManualArtifact } from "../pipes/import-artifacts.js"
+import { ReleaseConfigChecksum } from "../pipes/checksum.js"
+import { ReleaseConfigNpmPackageBuild } from "../pipes/npm-pack.js"
+import { ReleaseConfigGitHubPublish } from "../pipes/publish-github.js"
+import { ReleaseConfigNpmPublish } from "../pipes/publish-npm.js"
+import { ReleaseConfigPyPiPublish } from "../pipes/publish-pypi.js"
+import { ReleaseConfigPyPiWheelBuild } from "../pipes/pypi-wheel.js"
 import { SafeRelativePath } from "../pipeline/artifact.js"
+
+// Invariant: ReleaseIntent is the sole wire representation and source of its JSON Schema.
 
 export const DEFAULT_CONFIG_PATH = "release.config.json"
 export const RELEASE_CONFIG_SCHEMA_ID = "https://mannyc2.github.io/ts-release/schema/release-config.schema.json"
@@ -93,13 +69,10 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   evidence: Schema.optionalKey(Schema.Union([SafeRelativePath, ReleaseConfigEvidence]))
 }) {}
 
-export const ReleaseConfig = ReleaseIntent
-export type ReleaseConfig = typeof ReleaseConfig.Type
-
-export const decodeReleaseConfig = Schema.decodeUnknownEffect(ReleaseConfig, { onExcessProperty: "error" })
+export const decodeReleaseConfig = Schema.decodeUnknownEffect(ReleaseIntent, { onExcessProperty: "error" })
 
 export const releaseConfigJsonSchemaDocument = (): JsonSchema.JsonSchema => {
-  const document = Schema.toJsonSchemaDocument(ReleaseConfig)
+  const document = Schema.toJsonSchemaDocument(ReleaseIntent)
   return {
     ...document.schema,
     $schema: "https://json-schema.org/draft/2020-12/schema",

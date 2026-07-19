@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Ref from "effect/Ref"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { planRelease } from "../src/engine/engine.js"
 import { ReleasePlan } from "../src/pipeline/plan.js"
@@ -10,7 +11,11 @@ import {
   renderPlanText
 } from "../src/engine/render.js"
 import {
-  runEvidenceWorkflow
+  makeEvidenceRef,
+  preflightEvidenceWorkflow,
+  runEvidenceWorkflowInto,
+  type EvidenceWorkflow,
+  type OperationRunContext
 } from "../src/engine/executor.js"
 import { UnsupportedArtifactStagerLayer } from "../src/engine/stager.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
@@ -64,6 +69,15 @@ const operationContext = (plan: TestPlan) => ({
   artifacts: plan.document.artifacts,
   notices: plan.document.notices,
   configPath: plan.document.source.configPath
+})
+export const runEvidenceWorkflow = Effect.fn("test.runEvidenceWorkflow")(function*(
+  operations: ReadonlyArray<Operation>, workflow: EvidenceWorkflow,
+  approval: ExecutionApproval, context: OperationRunContext
+) {
+  yield* preflightEvidenceWorkflow(operations, workflow, approval, context)
+  const ref = yield* makeEvidenceRef(context)
+  yield* runEvidenceWorkflowInto(ref, operations, workflow, approval, context)
+  return yield* Ref.get(ref)
 })
 export const validateTestPlan = (plan: TestPlan) =>
   runEvidenceWorkflow(

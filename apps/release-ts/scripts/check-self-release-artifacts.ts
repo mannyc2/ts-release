@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as Schema from "effect/Schema"
-import { ReleaseConfig } from "../../../src/config/schema.js"
+import { ReleaseIntent } from "../../../src/config/schema.js"
 import { platformTargetVariant } from "../../../src/pipeline/platform.js"
 import { ReleaseIdentity } from "../../../src/pipeline/state.js"
 import { normalizedName, renderTemplate } from "../../../src/pipeline/template.js"
@@ -28,7 +28,7 @@ interface WheelArtifact {
   readonly wheelTag: string
 }
 
-const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig)
+const decodeReleaseIntent = Schema.decodeUnknownSync(ReleaseIntent)
 
 // Only for JSON the tool does not own a schema for (package.json, generated Scoop manifest).
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
@@ -81,7 +81,7 @@ const identityFor = (packageName: string, packageVersion: string): ReleaseIdenti
   })
 
 const collectArtifactPaths = (
-  config: ReleaseConfig,
+  config: ReleaseIntent,
   identity: ReleaseIdentity
 ): { readonly binaries: ReadonlyArray<string>; readonly wheels: ReadonlyArray<WheelArtifact> } => {
   const binaries: Array<string> = []
@@ -198,9 +198,9 @@ const printChecks = (checks: ReadonlyArray<Check>): void => {
   for (const item of checks) console.log(`${item.ok ? "ok  " : "fail"} ${item.id}: ${item.message}`)
 }
 
-const decodedConfig = (): { readonly config?: ReleaseConfig; readonly error?: string } => {
+const decodedConfig = (): { readonly config?: ReleaseIntent; readonly error?: string } => {
   try {
-    return { config: decodeReleaseConfig(readJson(releaseConfigPath)) }
+    return { config: decodeReleaseIntent(readJson(releaseConfigPath)) }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return { error: message.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join(" | ") }

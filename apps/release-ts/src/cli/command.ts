@@ -8,7 +8,6 @@ import * as Flag from "effect/unstable/cli/Flag"
 import { DEFAULT_CONFIG_PATH } from "../../../../src/config/schema.js"
 import { EvidenceBundle } from "../../../../src/engine/evidence.js"
 import * as Release from "../../../../src/engine/engine.js"
-import { optionalField } from "../../../../src/pipeline/optional-field.js"
 import * as Doctor from "../../../../src/workflows/doctor.js"
 import * as Init from "./init.js"
 
@@ -73,6 +72,10 @@ const configInput = (input: {
   snapshot: input.snapshot
 })
 
+const unwrapOptionalFlags = (input: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(input).flatMap(([name, value]) =>
+    Option.isOption(value) ? Option.isSome(value) ? [[name, value.value]] : [] : [[name, value]]))
+
 const planCommand = Command.make(
   "plan",
   { ...sharedFlags, out: outputFlag, format: formatFlag },
@@ -119,49 +122,10 @@ const initCommand = Command.make(
     overwrite: overwriteFlag,
     format: textJsonFormatFlag
   },
-  Effect.fn("cli.init")(function*({
-    template,
-    config,
-    package: packageName,
-    repo,
-    workflow,
-    tap,
-    bucket,
-    binaryName,
-    entrypoint,
-    pypiPackage,
-    pypiModule,
-    consoleScript,
-    githubActions,
-    packageManager,
-    installCommand,
-    buildCommand,
-    write,
-    overwrite,
-    format
-  }) {
-    const plan = yield* Init.run({
-      template,
-      configPath: config,
-      package: packageName,
-      repo,
-      workflow,
-      tap,
-      bucket,
-      ...optionalField(Option.getOrUndefined(binaryName), (binaryName) => ({ binaryName })),
-      ...optionalField(Option.getOrUndefined(entrypoint), (entrypoint) => ({ entrypoint })),
-      ...optionalField(Option.getOrUndefined(pypiPackage), (pypiPackage) => ({ pypiPackage })),
-      ...optionalField(Option.getOrUndefined(pypiModule), (pypiModule) => ({ pypiModule })),
-      ...optionalField(Option.getOrUndefined(consoleScript), (consoleScript) => ({ consoleScript })),
-      githubActions,
-      packageManager,
-      ...optionalField(Option.getOrUndefined(installCommand), (installCommand) => ({ installCommand })),
-      ...optionalField(Option.getOrUndefined(buildCommand), (buildCommand) => ({ buildCommand })),
-      write,
-      overwrite,
-      format
-    })
-    yield* Console.log(Init.renderPlan(plan, format).trimEnd())
+  Effect.fn("cli.init")(function*(input) {
+    const { config, ...options } = unwrapOptionalFlags(input)
+    const plan = yield* Init.runReleaseInit({ ...options, configPath: config } as Init.ReleaseInitOptionsInput)
+    yield* Console.log(Init.renderReleaseInitPlan(plan, input.format).trimEnd())
   })
 )
 
@@ -171,7 +135,6 @@ const doctorCommand = Command.make(
   Effect.fn("cli.doctor")(function*({ root, config, target, format }) {
     const report = yield* Doctor.doctorRelease({
       ...configInput({ root, config }),
-      format,
       target: Option.getOrUndefined(target)
     })
     yield* Console.log(Doctor.renderReleaseDiagnostics(report, format).trimEnd())

@@ -267,7 +267,7 @@ describe("cli command", () => {
       const stderr = streamText(subprocess.stderr)
       const exitCode = await subprocess.exited
       expect(await stdout).toContain("release@")
-      expect(await stderr).not.toContain("ConfigReadError")
+      expect(await stderr).not.toContain("ConfigError")
       expect(exitCode).toBe(0)
     })
   })
@@ -295,7 +295,7 @@ describe("cli command", () => {
       const stderr = streamText(subprocess.stderr)
       const exitCode = await subprocess.exited
       expect(await stdout).toContain("0.1.0-SNAPSHOT-abc123")
-      expect(await stderr).not.toContain("ConfigReadError")
+      expect(await stderr).not.toContain("ConfigError")
       expect(exitCode).toBe(0)
     })
   })

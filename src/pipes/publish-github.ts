@@ -1,19 +1,18 @@
+// Invariant: the GitHub planner receives one resolved release policy and emits only file-like assets.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import type { Artifact } from "../pipeline/artifact.js"
 import { artifactPathBaseName } from "../pipeline/artifact.js"
+import { PlanError } from "../pipeline/errors.js"
 import {
   GitHubReleaseAssetSpec,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
   Operation
 } from "../pipeline/operation.js"
-import { validationNoteOperation } from "../pipeline/operation-helpers.js"
-import type { FeaturePlanner } from "../pipeline/pipe.js"
-import { emptyContribution } from "../pipeline/pipe.js"
-import type { ReleaseIdentity } from "../pipeline/state.js"
-import { PlanError } from "../pipeline/errors.js"
+import { featurePlanner } from "../pipeline/pipe.js"
 import { hasSemverPrerelease } from "../pipeline/semver.js"
+import { validationNoteOperation } from "./shared.js"
 
 export class ReleaseConfigGitHubPublish extends Schema.Class<ReleaseConfigGitHubPublish>(
   "ReleaseConfigGitHubPublish"
@@ -25,144 +24,81 @@ export class ReleaseConfigGitHubPublish extends Schema.Class<ReleaseConfigGitHub
 }) {}
 
 export interface ResolvedGitHubPublish {
-  readonly repository?: string | undefined
+  readonly repository: string
   readonly tokenEnv?: string | undefined
   readonly draft: boolean
   readonly prerelease: boolean | "auto"
 }
 
 export const resolveGitHubPublish = (config: {
-  readonly project: {
-    readonly repository?: string | undefined
-  }
-  readonly publish: {
-    readonly github?: boolean | ReleaseConfigGitHubPublish | undefined
-  }
+  readonly project: { readonly repository?: string }
+  readonly publish: { readonly github?: boolean | ReleaseConfigGitHubPublish }
 }): ResolvedGitHubPublish | undefined => {
   const publish = config.publish.github
-  if (publish === undefined || publish === false) {
-    return undefined
-  }
-  const object = publish === true ? undefined : publish
+  if (publish === undefined || publish === false) return undefined
+  const section = publish === true ? undefined : publish
   return {
-    repository: object?.repository ?? config.project.repository,
-    tokenEnv: object?.tokenEnv,
-    draft: object?.draft ?? true,
-    prerelease: object?.prerelease ?? false
+    repository: section?.repository ?? config.project.repository ?? "",
+    tokenEnv: section?.tokenEnv,
+    draft: section?.draft ?? true,
+    prerelease: section?.prerelease ?? false
   }
 }
 
-const requireRepository = (
-  section: ResolvedGitHubPublish
-): Effect.Effect<ResolvedGitHubPublish & { readonly repository: string }, PlanError> => {
-  if (section.repository !== undefined && section.repository.trim().length > 0) {
-    return Effect.succeed({ ...section, repository: section.repository })
-  }
-  return Effect.fail(PlanError.make({
-    pipeId: "publish:github",
-    field: "publish.github.repository",
-    reason: "GitHub publishing requires publish.github.repository or project.repository."
-  }))
-}
+const assetsForRelease = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Artifact> =>
+  artifacts.filter(({ kind }) => kind !== "package" && kind !== "wheel" && kind !== "catalog-file")
 
-const releaseAssets = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Artifact> =>
-  artifacts.filter((artifact) =>
-    artifact.kind !== "package" &&
-    artifact.kind !== "wheel" &&
-    artifact.kind !== "catalog-file"
-  )
-
-const rejectInvalidAssets = (artifacts: ReadonlyArray<Artifact>): Effect.Effect<void, PlanError> => {
-  const directory = artifacts.find((artifact) =>
-    artifact.kind === "package" || (artifact.extra?._tag === "file" && artifact.extra.format === "directory")
-  )
-  if (directory !== undefined) {
-    return Effect.fail(PlanError.make({
-      pipeId: "publish:github",
-      field: "publish.github.assets",
-      reason: "GitHub release assets must be file-like, not directories."
-    }))
-  }
-  return Effect.void
-}
-
-const githubReleaseAssetName = (pathName: string): string =>
-  artifactPathBaseName(pathName)
-
-const githubReleaseTitle = (identity: ReleaseIdentity): string =>
-  `${identity.name} ${identity.version}`
-
-const githubPrerelease = (
-  prerelease: boolean | "auto",
-  identity: ReleaseIdentity
-): boolean =>
-  prerelease === "auto"
-    ? hasSemverPrerelease(identity.version)
-    : prerelease
-
-const githubReleaseAssets = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<GitHubReleaseAssetSpec> =>
-  artifacts.map((artifact) =>
-    GitHubReleaseAssetSpec.make({
+export const publishGitHubPlanner = featurePlanner<ResolvedGitHubPublish>("publish:github", (section, state) => Effect.gen(function*() {
+    const repository = section.repository
+    const artifacts = assetsForRelease(state.artifacts)
+    if (artifacts.some(({ extra }) => extra?._tag === "file" && extra.format === "directory")) {
+      return yield* Effect.fail(PlanError.make({
+        pipeId: "publish:github",
+        field: "publish.github.assets",
+        reason: "GitHub release assets must be file-like, not directories."
+      }))
+    }
+    const title = `${state.identity.name} ${state.identity.version}`
+    const prerelease = section.prerelease === "auto"
+      ? hasSemverPrerelease(state.identity.version)
+      : section.prerelease
+    const assets = artifacts.map((artifact) => GitHubReleaseAssetSpec.make({
       artifactId: artifact.id,
       path: artifact.path,
-      name: githubReleaseAssetName(artifact.path),
+      name: artifactPathBaseName(artifact.path),
       contentType: "application/octet-stream"
-    })
-  )
-
-export const publishGitHubPlanner: FeaturePlanner<ResolvedGitHubPublish> = {
-  id: "publish:github",
-  plan: (resolved, state) =>
-    Effect.gen(function*() {
-      const section = yield* requireRepository(resolved)
-      const assets = releaseAssets(state.artifacts)
-      yield* rejectInvalidAssets(assets)
-      const title = githubReleaseTitle(state.identity)
-      const prerelease = githubPrerelease(section.prerelease, state.identity)
-      return {
-        ...emptyContribution,
-        operations: [
-          validationNoteOperation({
-            id: "github:github-release-dry-run",
-            pipeId: "publish:github",
-            description: "Record simulated GitHub release dry-run validation.",
-            message:
-              "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation."
-          }),
-          Operation.make({
-            id: "github:github-release-create",
-            pipeId: "publish:github",
-            phase: "publish",
-            risk: "externally-visible",
-            description: `Create GitHub release for ${state.identity.name}@${state.identity.version}.`,
-            action: GitHubReleaseCreateAction.make({
-              repository: section.repository,
-              tokenEnv: section.tokenEnv,
-              tag: state.identity.tag,
-              title,
-              notes: state.identity.notes,
-              draft: section.draft,
-              prerelease,
-              assets: githubReleaseAssets(assets)
-            })
-          }),
-          Operation.make({
-            id: "github:github-release-verify-api",
-            pipeId: "publish:github",
-            phase: "verify",
-            risk: "read-only",
-            description: "Verify the GitHub release through the GitHub API.",
-            action: GitHubReleaseVerifyAction.make({
-              repository: section.repository,
-              tokenEnv: section.tokenEnv,
-              tag: state.identity.tag,
-              title,
-              draft: section.draft,
-              prerelease,
-              assetNames: assets.map((artifact) => githubReleaseAssetName(artifact.path))
-            })
+    }))
+    return {
+      operations: [
+        validationNoteOperation({
+          id: "github:github-release-dry-run",
+          pipeId: "publish:github",
+          description: "Record simulated GitHub release dry-run validation.",
+          message:
+            "GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation."
+        }),
+        Operation.make({
+          id: "github:github-release-create",
+          pipeId: "publish:github",
+          phase: "publish",
+          risk: "externally-visible",
+          description: `Create GitHub release for ${state.identity.name}@${state.identity.version}.`,
+          action: GitHubReleaseCreateAction.make({
+            repository, tokenEnv: section.tokenEnv, tag: state.identity.tag, title,
+            notes: state.identity.notes, draft: section.draft, prerelease, assets
           })
-        ]
-      }
-    })
-}
+        }),
+        Operation.make({
+          id: "github:github-release-verify-api",
+          pipeId: "publish:github",
+          phase: "verify",
+          risk: "read-only",
+          description: "Verify the GitHub release through the GitHub API.",
+          action: GitHubReleaseVerifyAction.make({
+            repository, tokenEnv: section.tokenEnv, tag: state.identity.tag, title,
+            draft: section.draft, prerelease, assetNames: assets.map(({ name }) => name)
+          })
+        })
+      ]
+    }
+  }))

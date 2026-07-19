@@ -1,0 +1,14 @@
+{
+  "hints": {
+    "outputs": "Use builds[].targets plus a build-level output template; include {ext} for platform executable extensions.",
+    "consumers": "Consumer wiring was removed; publish sections select artifacts with catalog filters and optional ids.",
+    "downloadUrl": "Download URLs are derived from publish.github.repository or supplied as a section-level catalog URL.",
+    "$.project.package": "Use project.packageName for package identity, or publish.npm.packageName for npm publishing.",
+    "$.strict": "Strict mode was removed; reviewable operations now encode validation behavior directly.",
+    "$.npmPackage.id": "The npm package artifact id is fixed as npm-package.",
+    "$.publish.npm.trustedPublishing.packageExists": "Use verifyPackageExists for the optional read-only npm package existence check.",
+    "$.publish.homebrew.artifactId": "Use artifactIds with one or more artifact IDs."
+  },
+  "forbiddenFields": ["_tag", "dryRunSupport", "mutability", "recovery"],
+  "forbiddenRootFields": ["identity", "targets", "artifactRecipes", "build", "evidenceDirectory", "strict"]
+}

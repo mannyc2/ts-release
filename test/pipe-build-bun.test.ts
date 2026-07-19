@@ -17,7 +17,7 @@ const planBuild = (build: Record<string, unknown>) =>
     const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [], builds: [build] }))
     return yield* Option.match(resolveBuilds(config.builds), {
       onNone: () => Effect.die("Expected a resolved build section."),
-      onSome: (section) => buildPlanner.plan(section, emptyPlanAccumulator(identity))
+      onSome: (section) => buildPlanner(section, emptyPlanAccumulator(identity))
     })
   })
 

@@ -15,7 +15,7 @@ const raw = (values: Partial<ReleaseConfigCatalogEntry> = {}) => ReleaseConfigCa
 const entry = (values: Partial<ReleaseConfigCatalogEntry> = {}, github: string | undefined = "owner/source") =>
   resolveCatalogs([raw(values)], github)?.[0] as ResolvedCatalogEntry
 const plan = (entries: ReadonlyArray<ResolvedCatalogEntry>, artifacts = [asset]) =>
-  catalogGenericPlanner.plan(entries, { identity, artifacts })
+  catalogGenericPlanner(entries, { identity, artifacts })
 
 describe("generic catalog pipe", () => {
   it.effect("resolves defaults and plans plain literal content without a directory", () => Effect.gen(function*() {

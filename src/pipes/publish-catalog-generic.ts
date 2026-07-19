@@ -1,9 +1,8 @@
 import * as Effect from "effect/Effect"
 import { PlanError } from "../pipeline/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../pipeline/operation.js"
-import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "../pipeline/operation-helpers.js"
-import type { FeaturePlanner } from "../pipeline/pipe.js"
-import { emptyContribution } from "../pipeline/pipe.js"
+import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "./shared.js"
+import { featurePlanner } from "../pipeline/pipe.js"
 import { renderTemplate } from "../pipeline/template.js"
 import { catalogWritePath, type ResolvedCatalogEntry } from "./catalog-generic.js"
 const argv = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
@@ -55,11 +54,9 @@ const publishOperations = (
       directory ?? ".")
   ]
 }
-export const publishCatalogGenericPlanner: FeaturePlanner<ReadonlyArray<ResolvedCatalogEntry>> = {
-  id: "publish:catalog",
-  plan: (entries, state) => Effect.gen(function*() {
+export const publishCatalogGenericPlanner = featurePlanner<ReadonlyArray<ResolvedCatalogEntry>>(
+  "publish:catalog", (entries, state) => Effect.gen(function*() {
     const operations = yield* Effect.forEach(entries, (entry) => validation(entry, state.identity).pipe(
       Effect.map((checks) => [...checks, ...publishOperations(entry, state.identity)])))
-    return { ...emptyContribution, operations: operations.flat() }
-  })
-}
+    return { operations: operations.flat() }
+  }))

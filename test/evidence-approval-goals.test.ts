@@ -5,9 +5,7 @@ import * as Layer from "effect/Layer"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
-import {
-  runEvidenceWorkflow
-} from "../src/engine/executor.js"
+import { runEvidenceWorkflow } from "./plan-helpers.js"
 import {
   CommandSpec,
   ExecutionApproval,

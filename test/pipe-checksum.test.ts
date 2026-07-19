@@ -104,7 +104,7 @@ describe("checksum pipe", () => {
       }))
       const contribution = yield* Option.match(resolveChecksum(config.checksum), {
         onNone: () => Effect.die("Expected a resolved checksum section."),
-        onSome: (section) => checksumPlanner.plan(section, stateWithArtifact)
+        onSome: (section) => checksumPlanner(section, stateWithArtifact)
       })
       expect(contribution.artifacts[0]).toMatchObject({
         id: "checksum",
@@ -134,7 +134,7 @@ describe("checksum pipe", () => {
     }))
   it.effect("excludes directory inputs while preserving eligible file-like order", () =>
     Effect.gen(function*() {
-      const contribution = yield* checksumPlanner.plan(
+      const contribution = yield* checksumPlanner(
         { algorithm: "sha256", nameTemplate: "checksums.txt" },
         { ...emptyPlanAccumulator(identity), artifacts: checksumFilterArtifacts }
       )
@@ -154,7 +154,7 @@ describe("checksum pipe", () => {
     }))
   it.effect("never reads package or imported directory paths for deferred checksums", () =>
     Effect.gen(function*() {
-      const contribution = yield* checksumPlanner.plan(
+      const contribution = yield* checksumPlanner(
         { algorithm: "sha256", nameTemplate: "checksums.txt" },
         { ...emptyPlanAccumulator(identity), artifacts: checksumFilterArtifacts }
       )
@@ -180,7 +180,7 @@ describe("checksum pipe", () => {
       }))
       const error = yield* Option.match(resolveChecksum(config.checksum), {
         onNone: () => Effect.die("Expected a resolved checksum section."),
-        onSome: (section) => checksumPlanner.plan(section, stateWithArtifact)
+        onSome: (section) => checksumPlanner(section, stateWithArtifact)
       }).pipe(Effect.flip)
       expect(error).toMatchObject({ _tag: "PlanError", field: "checksum.nameTemplate" })
     }))

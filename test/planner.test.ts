@@ -146,8 +146,8 @@ describe("planner", () => {
 
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ConfigValidationError")
-        if (error._tag === "ConfigValidationError") {
+        expect(error._tag).toBe("ConfigError")
+        if (error._tag === "ConfigError") {
           expect(error.reason).toContain(`["project"]["packagePath"]`)
         }
       }))
@@ -185,7 +185,7 @@ describe("planner", () => {
         )
         const error = yield* createPlan(unsafeConfig).pipe(Effect.flip)
 
-        expectTaggedError(error, "ConfigValidationError")
+        expectTaggedError(error, "ConfigError")
       }))
 
     it.effect("rejects empty path fields during normalization", () =>
@@ -234,8 +234,8 @@ describe("planner", () => {
         for (const item of cases) {
           const error = yield* createPlan(item.config).pipe(Effect.flip)
 
-          expect(error._tag, item.label).toBe("ConfigValidationError")
-          if (error._tag === "ConfigValidationError") {
+          expect(error._tag, item.label).toBe("ConfigError")
+          if (error._tag === "ConfigError") {
             expect(error.reason).toContain(item.field)
           }
         }
@@ -453,8 +453,8 @@ describe("planner", () => {
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
+        expect(error._tag).toBe("PlanError")
+        if (error._tag === "PlanError") {
           expect(error.field).toBe("artifacts.id")
         }
       }))
@@ -468,8 +468,8 @@ describe("planner", () => {
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ConfigValidationError")
-        if (error._tag === "ConfigValidationError") {
+        expect(error._tag).toBe("ConfigError")
+        if (error._tag === "ConfigError") {
           expect(error.reason).toContain(`["builds"][0]["entry"]`)
         }
       }))
@@ -487,8 +487,8 @@ describe("planner", () => {
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ConfigValidationError")
-        if (error._tag === "ConfigValidationError") {
+        expect(error._tag).toBe("ConfigError")
+        if (error._tag === "ConfigError") {
           expect(error.reason).toContain(`["builds"][0]["output"]`)
         }
       }))
@@ -515,8 +515,8 @@ describe("planner", () => {
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ConfigValidationError")
-        if (error._tag === "ConfigValidationError") {
+        expect(error._tag).toBe("ConfigError")
+        if (error._tag === "ConfigError") {
           expect(error.reason).toContain("builds[0].outputs")
         }
       }))
@@ -579,8 +579,8 @@ describe("planner", () => {
         })
         const error = yield* createPlan(config).pipe(Effect.flip)
 
-        expect(error._tag).toBe("ReleaseNormalizationError")
-        if (error._tag === "ReleaseNormalizationError") {
+        expect(error._tag).toBe("PlanError")
+        if (error._tag === "PlanError") {
           expect(error.field).toBe("artifacts.cli-darwin-arm64.variant.libc")
         }
       }))
@@ -602,12 +602,12 @@ describe("planner", () => {
       ])
     }),
   ))((it) => {
-    it.effect("reports git HEAD resolution failures as normalization errors", () =>
+    it.effect("reports git HEAD resolution failures as identity errors", () =>
       Effect.gen(function*() {
         const headConfig = minimalConfig.replace("\"commit\":\"abc123\"", "\"commit\":\"HEAD\"")
         const error = yield* createPlan(headConfig).pipe(Effect.flip)
 
-        expectTaggedError(error, "ReleaseNormalizationError")
+        expectTaggedError(error, "IdentityError")
       }))
   })
 

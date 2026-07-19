@@ -7,7 +7,7 @@ import { expectTaggedError, minimalConfig, pypiConfig } from "./helpers.js"
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 const expectValidationReason = (error: unknown, ...fragments: ReadonlyArray<string>): Record<string, unknown> => {
-  expectTaggedError(error, "ConfigValidationError")
+  expectTaggedError(error, "ConfigError")
   const record = isRecord(error) ? error : {}
   expect(typeof record.reason).toBe("string")
   const reason = typeof record.reason === "string" ? record.reason : ""
@@ -179,7 +179,7 @@ describe("config schema", () => {
   it.effect("reports invalid JSON as a typed parse error", () =>
     Effect.gen(function*() {
       const error = yield* parseReleaseIntent("{").pipe(Effect.flip)
-      expect(isRecord(error) ? error._tag : undefined).toBe("ConfigParseError")
+      expect(isRecord(error) ? error._tag : undefined).toBe("ConfigError")
       if (isRecord(error)) {
         expect(error.reason).toBe("Release config is not valid JSON.")
         expect(error.cause).toBeDefined()

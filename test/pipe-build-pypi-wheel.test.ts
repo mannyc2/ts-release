@@ -35,7 +35,7 @@ describe("PyPI wheel build pipe", () => {
       }))
       const contribution = yield* Option.match(resolvePyPiWheels(config.pypiWheel), {
         onNone: () => Effect.die("Expected a resolved PyPI wheel section."),
-        onSome: (section) => pypiWheelPlanner.plan(section, emptyPlanAccumulator(identity))
+        onSome: (section) => pypiWheelPlanner(section, emptyPlanAccumulator(identity))
       })
       const operation = contribution.operations.find(isStageArtifactOperation)
 

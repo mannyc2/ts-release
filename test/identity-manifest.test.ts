@@ -1,8 +1,7 @@
 import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { CommandSpec } from "../src/pipeline/operation.js"
-import { manifestSource } from "../src/pipeline/identity/manifest.js"
-import { completeIdentity, ResolvedIdentity } from "../src/pipeline/identity/source.js"
+import { resolveManifestIdentity } from "../src/engine/resolved-release.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 
 const gitHeadCommand = (root: string): CommandSpec =>
@@ -16,7 +15,6 @@ const gitHeadCommand = (root: string): CommandSpec =>
 
 const resolveManifest = (project: {
   readonly name?: string | undefined
-  readonly package?: string | undefined
   readonly packageName?: string | undefined
   readonly version?: string | undefined
   readonly packagePath?: string | undefined
@@ -25,7 +23,7 @@ const resolveManifest = (project: {
   readonly tagTemplate?: string | undefined
   readonly notes?: string | undefined
 }) =>
-  manifestSource.resolve({ project, root: "." })
+  resolveManifestIdentity({ project, root: "." })
 
 describe("manifest identity source", () => {
   layer(
@@ -59,7 +57,7 @@ describe("manifest identity source", () => {
           commit: "abc123",
           tag: "release-2.0.0",
           notes: "notes",
-          sourceId: "manifest"
+          versionSource: "manifest"
         })
       }))
 
@@ -75,7 +73,7 @@ describe("manifest identity source", () => {
           version: "1.2.3",
           commit: "abc123",
           tag: "v1.2.3",
-          sourceId: "manifest"
+          versionSource: "manifest"
         })
       }))
 
@@ -122,7 +120,7 @@ describe("manifest identity source", () => {
           version: "2.0.0",
           commit: "81587b5",
           tag: "v2.0.0",
-          sourceId: "manifest"
+          versionSource: "manifest"
         })
       }))
   })
@@ -170,26 +168,4 @@ describe("manifest identity source", () => {
       }))
   })
 
-  it("completes resolved identity with normalized name, defaults, and source id", () => {
-    const identity = completeIdentity(
-      ResolvedIdentity.make({
-        name: "@scope/pkg",
-        version: "1.2.3",
-        commit: "abcdef123",
-        sourceId: "manifest"
-      }),
-      { snapshot: false }
-    )
-
-    expect(identity).toMatchObject({
-      name: "@scope/pkg",
-      normalizedName: "scope-pkg",
-      version: "1.2.3",
-      tag: "1.2.3",
-      commit: "abcdef123",
-      shortCommit: "abcdef1",
-      versionSource: "manifest",
-      snapshot: false
-    })
-  })
 })

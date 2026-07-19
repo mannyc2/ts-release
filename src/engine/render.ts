@@ -106,6 +106,9 @@ const markdownCodeBlock = (language: string, contents: string): ReadonlyArray<st
   "```"
 ]
 
+const surfaceLines = (plan: ReleasePlan): ReadonlyArray<string> => operationSurfaceIds(plan).map((surface) =>
+  `  - ${surface} operations=${plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length}`)
+
 export const renderPlanJson = (plan: ReleasePlan): string =>
   `${JSON.stringify(Schema.encodeSync(ReleasePlan)(plan), null, 2)}\n`
 
@@ -128,10 +131,7 @@ export const renderPlanText = (plan: ReleasePlan): string => {
   lines.push("")
 
   lines.push("surfaces:")
-  for (const surface of operationSurfaceIds(plan)) {
-    const count = plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length
-    lines.push(`  - ${surface} operations=${count}`)
-  }
+  lines.push(...surfaceLines(plan))
   lines.push("")
 
   lines.push("operations by risk:")
@@ -162,12 +162,6 @@ export const renderPlanText = (plan: ReleasePlan): string => {
 }
 
 export const renderPlanSummary = (plan: ReleasePlan): string => {
-  const risks = [
-    "read-only",
-    "writes-local",
-    "externally-visible",
-    "irreversible"
-  ]
   const lines: Array<string> = [
     `summary: ${plan.identity.name}@${plan.identity.version}`,
     `commit: ${plan.identity.commit}`,
@@ -177,7 +171,7 @@ export const renderPlanSummary = (plan: ReleasePlan): string => {
     "risk:"
   ]
 
-  for (const risk of risks) {
+  for (const risk of riskOrder) {
     lines.push(`  ${risk}: ${plan.operations.filter((operation) => operation.risk === risk).length}`)
   }
 
@@ -191,10 +185,7 @@ export const renderPlanSummary = (plan: ReleasePlan): string => {
   lines.push(`irreversible approval required: ${irreversibleOperations.length}`)
   lines.push("")
   lines.push("surfaces:")
-  for (const surface of operationSurfaceIds(plan)) {
-    const count = plan.operations.filter((operation) => operationSurfaceId(operation) === surface).length
-    lines.push(`  - ${surface} operations=${count}`)
-  }
+  lines.push(...surfaceLines(plan))
   lines.push("")
   lines.push("approval-required operations:")
   for (const operation of executeOperations) {

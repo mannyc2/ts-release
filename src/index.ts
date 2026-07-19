@@ -1,4 +1,4 @@
-import type { ReleaseConfig } from "./config/schema.js"
+import type { ReleaseIntent } from "./config/schema.js"
 
 export type * from "./types/effect-internal.js"
 
@@ -20,7 +20,7 @@ export {
   renderReleaseConfigJsonSchema
 } from "./config/schema.js"
 
-export type { ReleaseConfig } from "./config/schema.js"
+export type { ReleaseIntent } from "./config/schema.js"
 
 export type {
   ArtifactSummary,
@@ -31,5 +31,5 @@ export type {
   VerifySummary
 } from "./engine/engine.js"
 
-export const defineRelease = <const Config extends ReleaseConfig>(config: Config): Config =>
+export const defineRelease = <const Config extends ReleaseIntent>(config: Config): Config =>
   config

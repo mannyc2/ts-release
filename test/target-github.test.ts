@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { GitHubApi, GitHubApiLiveLayer } from "../src/engine/github.js"
-import { HttpHeader, type HttpRequestSpec } from "../src/pipeline/operation.js"
+import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
 import { makeTestCommandRunnerLayer, makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { minimalConfig, releaseConfig, releaseIdentity, runEffect } from "./helpers.js"
 import { createTestPlan, renderTestPlanText, validateTestPlan } from "./plan-helpers.js"
@@ -176,10 +176,10 @@ describe("GitHub target", () => {
         [`GET\u0000${listUrl}`, {
           status: 200,
           responseHeaders: [
-            HttpHeader.make({
+            {
               name: "Link",
               value: `<${nextUrl}>; rel="next"`
-            })
+            }
           ],
           json: [releaseResponse({ id: 1, tag: "v1.0.0" })]
         }],
@@ -225,10 +225,10 @@ describe("GitHub target", () => {
         [`GET\u0000${listUrl}`, {
           status: 200,
           responseHeaders: [
-            HttpHeader.make({
+            {
               name: "Link",
               value: `<${nextUrl}>; rel="next"`
-            })
+            }
           ],
           json: [releaseResponse({ id: 1, tag: "v1.0.0" })]
         }],

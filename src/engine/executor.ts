@@ -6,16 +6,12 @@ import * as Path from "effect/Path"
 import * as Ref from "effect/Ref"
 import * as Schedule from "effect/Schedule"
 import {
-  appendEvidenceRecord,
   CommandOutcome,
-  emptyEvidenceBundle,
   EvidenceBundle,
   EvidenceRecord,
   FileOutcome,
+  GitHubReleaseEvidence,
   GitHubReleaseOutcome,
-  githubCreateRequestFromAction,
-  githubInspectRequestFromAction,
-  githubReleaseEvidence,
   HttpCheckEvidence,
   readRedactionSecrets,
   redactText,
@@ -30,10 +26,10 @@ import {
 } from "./content.js"
 import { ActionAttemptFailed, OperationFailedError, WorkspaceWriteError } from "./errors.js"
 import { ReleaseCommandRunner } from "../host/host.js"
-import { nowIso } from "../host/platform.js"
+import { endTiming, nowIso, startTiming } from "../host/platform.js"
 import {
   resolveWorkspacePath,
-  resolveWorkspaceWritePathEffect
+  writeWorkspaceFile
 } from "../internal/workspace-path.js"
 import {
   type CheckFileAction,
@@ -53,13 +49,13 @@ import { optionalField } from "../pipeline/optional-field.js"
 import type { Artifact } from "../pipeline/artifact.js"
 import type { PipeNotice, ReleaseIdentity } from "../pipeline/state.js"
 import {
-  stageArtifactOperation,
+  ArtifactStager,
   type StageOperation
 } from "./stager.js"
 import {
   GitHubApi,
-  GitHubApiError
 } from "./github.js"
+import type { ApiError } from "../host/http.js"
 
 
 export interface OperationRunContext {
@@ -72,13 +68,7 @@ export interface OperationRunContext {
 
 export type EvidenceRef = Ref.Ref<EvidenceBundle>
 
-interface RecordTiming {
-  readonly startedAt: string
-  readonly endedAt: string
-  readonly durationMillis: number
-}
-
-interface RecordFields extends RecordTiming {
+interface RecordFields extends Effect.Success<ReturnType<typeof endTiming>> {
   readonly status: EvidenceStatus
   readonly message: string
   readonly outcome?: ActionOutcome | undefined
@@ -115,27 +105,13 @@ const instantRecord = Effect.fn("engine.instantRecord")(function*(
   })
 })
 
-const startTiming = Effect.fn("engine.startTiming")(function*() {
-  const startedAt = yield* nowIso()
-  const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-  return {
-    end: Effect.fn("engine.endTiming")(function*() {
-      const endedAt = yield* nowIso()
-      const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-      return {
-        startedAt,
-        endedAt,
-        durationMillis: Math.max(0, ended - started)
-      } satisfies RecordTiming
-    })
-  }
-})
-
 export const bundleForContext = (context: OperationRunContext): EvidenceBundle =>
-  emptyEvidenceBundle({
+  EvidenceBundle.make({
+    schemaVersion: "release-evidence/v2",
     releaseName: context.identity.name,
     releaseVersion: context.identity.version,
-    notices: context.notices
+    notices: [...(context.notices ?? [])],
+    records: []
   })
 
 export const makeEvidenceRef = Effect.fn("engine.makeEvidenceRef")(function*(context: OperationRunContext) {
@@ -145,66 +121,8 @@ export const makeEvidenceRef = Effect.fn("engine.makeEvidenceRef")(function*(con
 const failAttempt = (failedRecord: EvidenceRecord): Effect.Effect<never, ActionAttemptFailed> =>
   Effect.fail(ActionAttemptFailed.make({ record: failedRecord }))
 
-const writeWorkspaceFile = Effect.fn("engine.writeWorkspaceFile")(function*(
-  root: string,
-  pathName: string,
-  contents: string
-) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const targetPath = yield* resolveWorkspaceWritePathEffect(
-    path,
-    root,
-    pathName,
-    (errorPath, reason) => WorkspaceWriteError.make({ path: errorPath, reason })
-  )
-  yield* Effect.gen(function*() {
-    yield* fs.makeDirectory(path.dirname(targetPath), { recursive: true })
-    yield* fs.writeFileString(targetPath, contents)
-  }).pipe(
-    Effect.mapError((error) =>
-      WorkspaceWriteError.make({
-        path: pathName,
-        reason: error.message
-      })
-    )
-  )
-})
-
 const digestHex = (bytes: Uint8Array, algorithm: "sha256" | "sha512"): string =>
   createHash(algorithm).update(bytes).digest("hex")
-
-const resolveDeferredContentHashes = Effect.fn("engine.resolveDeferredContentHashes")(function*(
-  content: DeferredFileContent,
-  context: OperationRunContext,
-  outputPath: string,
-  algorithm: "sha256" | "sha512"
-) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const hashes = new Map<string, string>()
-  for (const artifactId of deferredContentArtifactIds(content)) {
-    const artifact = context.artifacts.find((candidate) => candidate.id === artifactId)
-    if (artifact === undefined) {
-      return yield* Effect.fail(
-        WorkspaceWriteError.make({
-          path: outputPath,
-          reason: `Deferred file content references missing artifact ${artifactId}.`
-        })
-      )
-    }
-    const bytes = yield* fs.readFile(resolveWorkspacePath(path, context.root, artifact.path)).pipe(
-      Effect.mapError((error) =>
-        WorkspaceWriteError.make({
-          path: artifact.path,
-          reason: error.message
-        })
-      )
-    )
-    hashes.set(artifactId, digestHex(bytes, algorithm))
-  }
-  return hashes
-})
 
 const resolveWriteFileContents = Effect.fn("engine.resolveWriteFileContents")(function*(
   contents: string | DeferredFileContent,
@@ -220,7 +138,19 @@ const resolveWriteFileContents = Effect.fn("engine.resolveWriteFileContents")(fu
   const checksumAlgorithm = outputArtifact?.extra?._tag === "checksum-file"
     ? outputArtifact.extra.algorithm
     : undefined
-  const hashes = yield* resolveDeferredContentHashes(contents, context, outputPath, checksumAlgorithm ?? "sha256")
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const hashes = new Map<string, string>()
+  for (const artifactId of deferredContentArtifactIds(contents)) {
+    const artifact = context.artifacts.find((candidate) => candidate.id === artifactId)
+    if (artifact === undefined) return yield* Effect.fail(WorkspaceWriteError.make({
+      path: outputPath, reason: `Deferred file content references missing artifact ${artifactId}.`
+    }))
+    const data = yield* fs.readFile(resolveWorkspacePath(path, context.root, artifact.path)).pipe(
+      Effect.mapError((error) => WorkspaceWriteError.make({ path: artifact.path, reason: error.message }))
+    )
+    hashes.set(artifactId, digestHex(data, checksumAlgorithm ?? "sha256"))
+  }
   try {
     const resolved = renderDeferredContent(contents, hashes)
     const resolvedValues = checksumAlgorithm === undefined
@@ -309,7 +239,8 @@ const writeFileEvidence = Effect.fn("engine.writeFileEvidence")(function*(
   context: OperationRunContext
 ) {
   const resolved = yield* resolveWriteFileContents(action.contents, context, action.path)
-  yield* writeWorkspaceFile(context.root, action.path, resolved.contents)
+  yield* writeWorkspaceFile(context.root, action.path, resolved.contents,
+    (path, reason) => WorkspaceWriteError.make({ path, reason }))
   return yield* instantRecord(operation, {
     status: "passed",
     message: `Rendered ${action.path}`,
@@ -323,13 +254,13 @@ const writeFileEvidence = Effect.fn("engine.writeFileEvidence")(function*(
 const githubApiFailureEvidence = Effect.fn("engine.githubApiFailureEvidence")(function*(
   operation: Operation,
   action: GitHubReleaseCreateAction | GitHubReleaseVerifyAction,
-  error: GitHubApiError
+  error: ApiError
 ) {
   const failedRecord = yield* instantRecord(operation, {
     status: "failed",
     message: error.reason,
     outcome: GitHubReleaseOutcome.make({
-      release: githubReleaseEvidence({
+      release: GitHubReleaseEvidence.make({
         repository: action.repository,
         tag: action.tag,
         assets: action._tag === "github-release-create"
@@ -348,7 +279,7 @@ const githubCreateEvidence = Effect.fn("engine.githubCreateEvidence")(function*(
 ) {
   const api = yield* GitHubApi
   const timing = yield* startTiming()
-  return yield* api.createRelease(githubCreateRequestFromAction(action)).pipe(
+  return yield* api.createRelease(action).pipe(
     Effect.matchEffect({
       onFailure: (error) => githubApiFailureEvidence(operation, action, error),
       onSuccess: (release) =>
@@ -356,9 +287,9 @@ const githubCreateEvidence = Effect.fn("engine.githubCreateEvidence")(function*(
           return record(operation, {
             status: "passed",
             message: "GitHub release created through the GitHub API.",
-            ...(yield* timing.end()),
+            ...(yield* endTiming(timing)),
             outcome: GitHubReleaseOutcome.make({
-              release: githubReleaseEvidence({
+              release: GitHubReleaseEvidence.make({
                 repository: action.repository,
                 tag: release.tag_name,
                 releaseId: release.id,
@@ -380,7 +311,7 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
 ) {
   const api = yield* GitHubApi
   const timing = yield* startTiming()
-  return yield* api.inspectRelease(githubInspectRequestFromAction(action)).pipe(
+  return yield* api.inspectRelease(action).pipe(
     Effect.matchEffect({
       onFailure: (error) => githubApiFailureEvidence(operation, action, error),
       onSuccess: (release) =>
@@ -405,9 +336,9 @@ const githubVerifyEvidence = Effect.fn("engine.githubVerifyEvidence")(function*(
             message: failed.length === 0
               ? "GitHub release verification passed."
               : `GitHub release verification failed: ${failed.map((check) => check.description).join("; ")}`,
-            ...(yield* timing.end()),
+            ...(yield* endTiming(timing)),
             outcome: GitHubReleaseOutcome.make({
-              release: githubReleaseEvidence({
+              release: GitHubReleaseEvidence.make({
                 repository: action.repository,
                 tag: release.tag_name,
                 releaseId: release.id,
@@ -438,7 +369,7 @@ const stageEvidence = Effect.fn("engine.stageEvidence")(function*(
   context: OperationRunContext
 ) {
   const stageOperation: StageOperation = { ...operation, action }
-  const result = yield* stageArtifactOperation(stageOperation, {
+  const result = yield* (yield* ArtifactStager).stage(stageOperation, {
     root: context.root,
     identity: context.identity,
     configPath: context.configPath
@@ -473,62 +404,27 @@ const runOperationActionEvidence = Effect.fn("engine.runOperationActionEvidence"
   }
 })
 
-const operationFailureFields = (
-  record: EvidenceRecord
-): {
-  readonly exitCode?: number | undefined
-  readonly responseStatus?: number | undefined
-} => {
-  const outcome = record.outcome
-  if (outcome?._tag === "command") {
-    return { exitCode: outcome.exitCode }
-  }
-  if (outcome?._tag === "github-release") {
-    return { responseStatus: outcome.responseStatus }
-  }
-  return {}
-}
-
 const failOperationEvidence = (
   record: EvidenceRecord,
   bundle: EvidenceBundle | undefined
 ): Effect.Effect<never, OperationFailedError> => {
-  const fields = operationFailureFields(record)
+  const outcome = record.outcome
   return Effect.fail(
     OperationFailedError.make({
       operationId: record.operationId,
-      exitCode: fields.exitCode,
-      responseStatus: fields.responseStatus,
+      exitCode: outcome?._tag === "command" ? outcome.exitCode : undefined,
+      responseStatus: outcome?._tag === "github-release" ? outcome.responseStatus : undefined,
       reason: record.message,
       evidence: bundle
     })
   )
 }
 
-const runOperationEvidenceWithRetry = Effect.fn("engine.runOperationEvidenceWithRetry")(function*(
-  operation: Operation,
-  context: OperationRunContext
-) {
-  return yield* runOperationActionEvidence(operation, context).pipe(
-    Effect.retry({
-      schedule: scheduleFromRetryPolicy(operation.retry),
-      while: isActionAttemptFailed
-    }),
-    Effect.catchTag("ActionAttemptFailed", (error) => Effect.succeed(error.record))
-  )
-})
-
 const shouldRefuseForSnapshot = (operation: Operation, context: OperationRunContext): boolean =>
   context.identity.snapshot &&
   (operation.risk === "externally-visible" || operation.risk === "irreversible")
 
-const isActionAttemptFailed = (error: unknown): boolean =>
-  typeof error === "object" &&
-  error !== null &&
-  "_tag" in error &&
-  error._tag === "ActionAttemptFailed"
-
-export const scheduleFromRetryPolicy = (policy: RetryPolicy | undefined) => {
+const retrySchedule = (policy: RetryPolicy | undefined) => {
   const attempts = Math.max(1, policy?.attempts ?? 1)
   const delay = Duration.millis(Math.max(0, policy?.delayMillis ?? 0))
   return Schedule.spaced(delay).pipe(
@@ -548,26 +444,11 @@ export const runOperationEvidence = Effect.fn("engine.runOperationEvidence")(fun
     })
   }
   yield* requireExecutionApproval(operation, approval)
-  return yield* runOperationEvidenceWithRetry(operation, context)
+  return yield* runOperationActionEvidence(operation, context).pipe(
+    Effect.retry({ schedule: retrySchedule(operation.retry), while: (error) => error instanceof ActionAttemptFailed }),
+    Effect.catchTag("ActionAttemptFailed", (error) => Effect.succeed(error.record))
+  )
 })
-
-export const runOperation = Effect.fn("engine.runOperation")(function*(
-  operation: Operation,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  const evidence = yield* runOperationEvidence(operation, approval, context)
-  if (evidence.status === "failed") {
-    return yield* failOperationEvidence(
-      evidence,
-      appendEvidenceRecord(bundleForContext(context), evidence)
-    )
-  }
-  return evidence
-})
-
-const appendEvidenceRecordInto = (ref: EvidenceRef, evidence: EvidenceRecord): Effect.Effect<void> =>
-  Ref.update(ref, (bundle) => appendEvidenceRecord(bundle, evidence))
 
 export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*(
   ref: EvidenceRef,
@@ -577,7 +458,11 @@ export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*
 ) {
   for (const operation of operations) {
     const evidence = yield* runOperationEvidence(operation, approval, context)
-    yield* appendEvidenceRecordInto(ref, evidence)
+    yield* Ref.update(ref, (bundle) => EvidenceBundle.make({
+      ...bundle,
+      notices: [...bundle.notices],
+      records: [...bundle.records, evidence]
+    }))
     if (evidence.status === "failed") {
       return yield* failOperationEvidence(evidence, yield* Ref.get(ref))
     }
@@ -601,33 +486,9 @@ export const operationsForPass = (
 ): ReadonlyArray<Operation> =>
   operations.filter(operationMatchesPass[pass])
 
-const workflowPasses = (workflow: EvidenceWorkflow): ReadonlyArray<OperationPass> =>
-  workflow === "release"
-    ? ["render", "validation", "publish", "verification"]
-    : [workflow]
-
-const operationsForWorkflow = (
-  operations: ReadonlyArray<Operation>,
-  workflow: EvidenceWorkflow
-): ReadonlyArray<Operation> =>
-  workflowPasses(workflow).flatMap((pass) => operationsForPass(operations, pass))
-
-const approvalForPass = (
-  pass: OperationPass,
-  approval: ExecutionApproval
-): ExecutionApproval =>
-  pass === "validation" || pass === "verification"
-    ? ExecutionApproval.none
-    : approval
-
-const preflightOperations = Effect.fn("engine.preflightOperations")(function*(
-  operations: ReadonlyArray<Operation>,
-  approval: ExecutionApproval
-) {
-  for (const operation of operations) {
-    yield* requireExecutionApproval(operation, approval)
-  }
-})
+const operationsForWorkflow = (operations: ReadonlyArray<Operation>, workflow: EvidenceWorkflow) =>
+  (workflow === "release" ? ["render", "validation", "publish", "verification"] as const : [workflow])
+    .flatMap((pass) => operationsForPass(operations, pass))
 
 export const preflightEvidenceWorkflow = Effect.fn("engine.preflightEvidenceWorkflow")(function*(
   operations: ReadonlyArray<Operation>,
@@ -635,10 +496,10 @@ export const preflightEvidenceWorkflow = Effect.fn("engine.preflightEvidenceWork
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  yield* preflightOperations(
-    operationsForWorkflow(operations, workflow)
-      .filter((operation) => !shouldRefuseForSnapshot(operation, context)),
-    approval
+  yield* Effect.forEach(
+    operationsForWorkflow(operations, workflow).filter((operation) => !shouldRefuseForSnapshot(operation, context)),
+    (operation) => requireExecutionApproval(operation, approval),
+    { discard: true }
   )
 })
 
@@ -647,9 +508,10 @@ export const runOperations = Effect.fn("engine.runOperations")(function*(
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  yield* preflightOperations(
+  yield* Effect.forEach(
     operations.filter((operation) => !shouldRefuseForSnapshot(operation, context)),
-    approval
+    (operation) => requireExecutionApproval(operation, approval),
+    { discard: true }
   )
   const ref = yield* makeEvidenceRef(context)
   yield* runOperationsInto(ref, operations, approval, context)
@@ -663,19 +525,5 @@ export const runEvidenceWorkflowInto = Effect.fn("engine.runEvidenceWorkflowInto
   approval: ExecutionApproval,
   context: OperationRunContext
 ) {
-  for (const pass of workflowPasses(workflow)) {
-    yield* runOperationsInto(ref, operationsForPass(operations, pass), approvalForPass(pass, approval), context)
-  }
-})
-
-export const runEvidenceWorkflow = Effect.fn("engine.runEvidenceWorkflow")(function*(
-  operations: ReadonlyArray<Operation>,
-  workflow: EvidenceWorkflow,
-  approval: ExecutionApproval,
-  context: OperationRunContext
-) {
-  yield* preflightEvidenceWorkflow(operations, workflow, approval, context)
-  const ref = yield* makeEvidenceRef(context)
-  yield* runEvidenceWorkflowInto(ref, operations, workflow, approval, context)
-  return yield* Ref.get(ref)
+  yield* runOperationsInto(ref, operationsForWorkflow(operations, workflow), approval, context)
 })

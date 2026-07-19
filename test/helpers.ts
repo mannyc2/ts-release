@@ -10,8 +10,15 @@ import type * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
 import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
-import type { CommandSpec } from "../src/pipeline/operation.js"
-import { GitHubApi, GitHubApiError } from "../src/engine/github.js"
+import { runOperations, type OperationRunContext } from "../src/engine/executor.js"
+import type { CommandSpec, ExecutionApproval, Operation } from "../src/pipeline/operation.js"
+import { GitHubApi } from "../src/engine/github.js"
+import { ApiError } from "../src/host/http.js"
+import {
+  ArtifactStager,
+  type ArtifactStageContext,
+  type StageOperation
+} from "../src/engine/stager.js"
 import { ReleaseIdentity } from "../src/pipeline/state.js"
 import { commandKey, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
 
@@ -28,6 +35,17 @@ export type {
   TestHttpResponse,
   TestReleaseHttpOptions
 } from "./host-fakes.js"
+
+export const stageArtifactOperations = (
+  operations: ReadonlyArray<StageOperation>, context: ArtifactStageContext
+) => Effect.forEach(operations, (operation) => Effect.flatMap(ArtifactStager, (stager) => stager.stage(operation, context)))
+
+export const runOperation = Effect.fn("test.runOperation")(function*(
+  operation: Operation, approval: ExecutionApproval, context: OperationRunContext
+) {
+  const bundle = yield* runOperations([operation], approval, context)
+  return bundle.records[0]!
+})
 
 export const makePipelineIdentity = (
   overrides: Partial<ConstructorParameters<typeof ReleaseIdentity>[0]> = {}
@@ -100,7 +118,7 @@ export const expectExitFailureTag = <A, E>(exit: Exit.Exit<A, E>, tag: string): 
 export const TestGitHubApiLayer = Layer.succeed(GitHubApi)({
   createRelease: (request) =>
     Effect.fail(
-      GitHubApiError.make({
+      ApiError.make({
         operation: "createRelease",
         url: request.repository,
         reason: "No test GitHub API response configured."
@@ -108,7 +126,7 @@ export const TestGitHubApiLayer = Layer.succeed(GitHubApi)({
     ),
   inspectRelease: (request) =>
     Effect.fail(
-      GitHubApiError.make({
+      ApiError.make({
         operation: "inspectRelease",
         url: request.repository,
         reason: "No test GitHub API response configured."

@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import {
-  defineRelease, disposeReleaseRuntime, plan, release, ReleaseApiError, type ReleaseConfig
+  defineRelease, disposeReleaseRuntime, plan, release, ReleaseApiError, type ReleaseIntent
 } from "../src/index.js"
 import {
   resetReleaseRuntimeLayerFactoryForTesting,
@@ -103,11 +103,11 @@ const expectInlinePlanFailure = async (
   config: unknown,
   reasonFragments: ReadonlyArray<string>
 ): Promise<void> => {
-  const caught = await plan({ config: config as ReleaseConfig }).then(() => undefined, (error: unknown) => error)
+  const caught = await plan({ config: config as ReleaseIntent }).then(() => undefined, (error: unknown) => error)
   expect(caught).toBeInstanceOf(ReleaseApiError)
   if (!(caught instanceof ReleaseApiError)) return
   expect(caught.phase).toBe("plan")
-  expect(caught.cause).toMatchObject({ _tag: "ConfigValidationError" })
+  expect(caught.cause).toMatchObject({ _tag: "ConfigError" })
   const cause = caught.cause
   const reason = typeof cause === "object" && cause !== null && "reason" in cause ? cause.reason : undefined
   expect(typeof reason).toBe("string")

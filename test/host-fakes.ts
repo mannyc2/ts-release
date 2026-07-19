@@ -8,14 +8,14 @@ import * as Option from "effect/Option"
 import * as Path from "effect/Path"
 import * as PlatformError from "effect/PlatformError"
 import * as Schema from "effect/Schema"
-import { CommandSpec, HttpHeader, HttpRequestSpec } from "../src/pipeline/operation.js"
+import { CommandSpec } from "../src/pipeline/operation.js"
 import {
   CommandRunnerError,
   ReleaseCommandRunner,
   type CommandResult,
   type ReleaseCommandRunnerShape
 } from "../src/host/host.js"
-import { HttpError, ReleaseHttp, type HttpResult } from "../src/host/http.js"
+import { ApiError, ReleaseHttp, type HttpHeader, type HttpRequestSpec, type HttpResult } from "../src/host/http.js"
 
 export interface TestCommandResponse {
   readonly exitCode: number
@@ -369,7 +369,7 @@ export const makeTestReleaseHttpLayer = (
         const response = responses.get(httpRequestKey(request))
         if (response === undefined) {
           return yield* Effect.fail(
-            HttpError.make({
+            ApiError.make({
               operation: "runJson",
               url: request.url,
               reason: "No test HTTP response configured"

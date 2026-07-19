@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as Schema from "effect/Schema"
-import { ReleaseConfig } from "../../../src/config/schema.js"
+import { ReleaseIntent } from "../../../src/config/schema.js"
 
 const root = cwd()
 const packagePath = "package.json"
@@ -207,7 +207,7 @@ const githubRepoChecks = (
   ]
 }
 
-const pypiTrustedPublishingChecks = (target: ReleaseConfig["publish"]["pypi"]): ReadonlyArray<Check> => {
+const pypiTrustedPublishingChecks = (target: ReleaseIntent["publish"]["pypi"]): ReadonlyArray<Check> => {
   const pypi = typeof target === "object" ? target : undefined
   const trustedPublishing = typeof pypi?.trustedPublishing === "object" ? pypi.trustedPublishing : undefined
   if (pypi === undefined || trustedPublishing === undefined) {
@@ -224,11 +224,11 @@ const printChecks = (checks: ReadonlyArray<Check>): void => {
   for (const item of checks) console.log(`${item.ok ? "ok  " : "fail"} ${item.id}: ${item.message}`)
 }
 
-const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig)
+const decodeReleaseIntent = Schema.decodeUnknownSync(ReleaseIntent)
 
-const decodedConfig = (): { readonly config?: ReleaseConfig; readonly error?: string } => {
+const decodedConfig = (): { readonly config?: ReleaseIntent; readonly error?: string } => {
   try {
-    return { config: decodeReleaseConfig(readJson(releaseConfigPath)) }
+    return { config: decodeReleaseIntent(readJson(releaseConfigPath)) }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return { error: message.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join(" | ") }

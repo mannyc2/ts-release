@@ -1,14 +1,17 @@
 import * as Effect from "effect/Effect"
 import { artifactPathBaseName, type Artifact } from "./artifact.js"
 import { PlanError } from "./errors.js"
-import type { PipelineOperation } from "./operation.js"
-import type { PipeContribution, ScheduledPlanner } from "./pipe.js"
-import type { PipeNotice, ReleaseIdentity } from "./state.js"
+import type { Operation } from "./operation.js"
+import { emptyContribution, type FeatureSchedule, type PipeContribution } from "./pipe.js"
+import * as Option from "effect/Option"
+import { PipeNotice, type ReleaseIdentity } from "./state.js"
+
+// Invariant: the accumulator is the sole uniqueness boundary for plan ids, paths, and names.
 
 export interface PlanAccumulator {
   readonly identity: ReleaseIdentity
   readonly artifacts: ReadonlyArray<Artifact>
-  readonly operations: ReadonlyArray<PipelineOperation>
+  readonly operations: ReadonlyArray<Operation>
   readonly notices: ReadonlyArray<PipeNotice>
 }
 
@@ -29,13 +32,6 @@ const duplicateValues = (
   return [...duplicates].sort()
 }
 
-const collision = (
-  pipeId: string,
-  field: string,
-  reason: string
-): Effect.Effect<void, PlanError> =>
-  Effect.fail(PlanError.make({ pipeId, field, reason }))
-
 const requireUnique = (
   pipeId: string,
   field: string,
@@ -46,7 +42,11 @@ const requireUnique = (
   const duplicates = duplicateValues(existing, incoming)
   return duplicates.length === 0
     ? Effect.void
-    : collision(pipeId, field, `Duplicate ${label}: ${duplicates.join(", ")}`)
+    : Effect.fail(PlanError.make({
+      pipeId,
+      field,
+      reason: `Duplicate ${label}: ${duplicates.join(", ")}`
+    }))
 }
 
 const requireUniqueArtifactNames = (
@@ -65,7 +65,11 @@ const requireUniqueArtifactNames = (
   }
   return collisions.length === 0
     ? Effect.void
-    : collision(pipeId, "artifacts.name", `Duplicate artifact names: ${collisions.join(", ")}`)
+    : Effect.fail(PlanError.make({
+      pipeId,
+      field: "artifacts.name",
+      reason: `Duplicate artifact names: ${collisions.join(", ")}`
+    }))
 }
 
 const appendContribution = Effect.fn("pipeline.appendContribution")(function*(
@@ -88,19 +92,19 @@ const appendContribution = Effect.fn("pipeline.appendContribution")(function*(
   } satisfies PlanAccumulator
 })
 
-const runPlanner = Effect.fn("pipeline.runPlanner")(function*(
-  state: PlanAccumulator,
-  planner: ScheduledPlanner
-) {
-  const contribution = yield* planner.run({ identity: state.identity, artifacts: state.artifacts })
-  return yield* appendContribution(state, planner.id, contribution)
-})
-
 export const runPipeline = Effect.fn("pipeline.runPipeline")(function*(
   initialState: PlanAccumulator,
-  planners: ReadonlyArray<ScheduledPlanner>
+  planners: ReadonlyArray<FeatureSchedule>
 ) {
   let state = initialState
-  for (const planner of planners) state = yield* runPlanner(state, planner)
+  for (const [planner, section] of planners) {
+    const contribution = yield* Option.match(section, {
+      onNone: () => Effect.succeed({ ...emptyContribution, notices: [PipeNotice.make({
+        pipeId: planner.id, severity: "info", reason: "Config section is absent; pipe skipped."
+      })] }),
+      onSome: (value) => planner(value, { identity: state.identity, artifacts: state.artifacts })
+    })
+    state = yield* appendContribution(state, planner.id, contribution)
+  }
   return state
 })

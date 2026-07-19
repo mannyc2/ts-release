@@ -4,12 +4,12 @@ import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { CommandSpec } from "../src/pipeline/operation.js"
-import { PlatformCommandRunnerLayer } from "../src/host/platform.js"
+import { makePlatformCommandRunnerLayer } from "../src/host/platform.js"
 import { ReleaseCommandRunner } from "../src/host/host.js"
 
 const testLayer = (env: Record<string, string> = {}) =>
   Layer.mergeAll(
-    PlatformCommandRunnerLayer.pipe(Layer.provide(BunServices.layer)),
+    makePlatformCommandRunnerLayer().pipe(Layer.provide(BunServices.layer)),
     ConfigProvider.layer(ConfigProvider.fromEnv({ env }))
   )
 

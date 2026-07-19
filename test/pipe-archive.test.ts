@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { makePipelineIdentity, makeTempDirectorySync, releaseConfig, runEffect } from "./helpers.js"
+import { makePipelineIdentity, makeTempDirectorySync, releaseConfig, runEffect, stageArtifactOperations } from "./helpers.js"
 import { join } from "node:path"
 import { describe, expect, it } from "@effect/bun-test"
 import * as BunServices from "@effect/platform-bun/BunServices"
@@ -9,13 +9,12 @@ import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { archivePlanner, resolveArchives } from "../src/pipes/archive.js"
 import { checksumPlanner, resolveChecksum } from "../src/pipes/checksum.js"
-import { stageArtifactOperations } from "../src/engine/stager.js"
 import { Artifact, ExecutableExtra } from "../src/pipeline/artifact.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
 import { schedule } from "../src/pipeline/pipe.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../src/pipeline/runner.js"
 import { platformTargetVariant } from "../src/pipeline/platform.js"
-import { LiveArtifactStagerLayer } from "../src/engine/stager.js"
+import { makeArtifactStagerLayer } from "../src/engine/stager.js"
 const identity = makePipelineIdentity()
 const executable = (id: string, path: string, target: Parameters<typeof platformTargetVariant>[0]) => {
   const platform = platformTargetVariant(target)
@@ -38,7 +37,7 @@ const planArchives = (archives: ReadonlyArray<Record<string, unknown>>, state: P
     const intent = yield* parseReleaseIntent(releaseConfig({ artifacts: [], archives }))
     return yield* Option.match(resolveArchives(intent.archives), {
       onNone: () => Effect.die("Expected a resolved archive section."),
-      onSome: (section) => archivePlanner.plan(section, state)
+      onSome: (section) => archivePlanner(section, state)
     })
   })
 describe("archive pipe", () => {
@@ -128,7 +127,7 @@ describe("archive pipe", () => {
     )
     const staged = await runEffect(
       stageArtifactOperations(stageOperations(contribution.operations), { root, identity }),
-      LiveArtifactStagerLayer.pipe(Layer.provideMerge(BunServices.layer))
+      makeArtifactStagerLayer().pipe(Layer.provideMerge(BunServices.layer))
     )
     expect(staged[0]?.artifacts[0]?.path).toBe(".release/artifacts/release_0.1.0.zip")
     const archive = readFileSync(join(root, ".release/artifacts/release_0.1.0.zip"))
@@ -144,7 +143,7 @@ describe("archive pipe", () => {
       stateWith([executable("cli-linux-x64", "release", "linux-x64")])), Layer.empty)
     const staged = await runEffect(
       stageArtifactOperations(stageOperations(contribution.operations), { root, identity }),
-      LiveArtifactStagerLayer.pipe(Layer.provideMerge(BunServices.layer))
+      makeArtifactStagerLayer().pipe(Layer.provideMerge(BunServices.layer))
     )
     expect(staged[0]?.artifacts[0]).toMatchObject({ id: "archive-linux-x64",
       path: ".release/artifacts/release_0.1.0_linux_amd64.tar.gz" })

@@ -61,8 +61,8 @@ describe("resolved release", () => {
           scoop: { repository: "owner/scoop-bucket", artifactId: "windows" }
         }
       })
-      const plannedBuild = yield* buildPlanner.plan(some(release.builds)!, emptyPlanAccumulator(identity))
-      const plannedChecksum = yield* checksumPlanner.plan(some(release.checksum)!, emptyPlanAccumulator(identity))
+      const plannedBuild = yield* buildPlanner(some(release.builds)!, emptyPlanAccumulator(identity))
+      const plannedChecksum = yield* checksumPlanner(some(release.checksum)!, emptyPlanAccumulator(identity))
       expect(some(release.builds)?.[0]).toEqual({
         builder: "bun", entry: "src/cli.ts", targets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"]
       })
@@ -193,8 +193,8 @@ describe("resolved release", () => {
         }
       })
       for (const effect of [
-        catalogHomebrewPlanner.plan(some(release.homebrew)!, emptyPlanAccumulator(identity)),
-        catalogScoopPlanner.plan(some(release.scoop)!, emptyPlanAccumulator(identity))
+        catalogHomebrewPlanner(some(release.homebrew)!, emptyPlanAccumulator(identity)),
+        catalogScoopPlanner(some(release.scoop)!, emptyPlanAccumulator(identity))
       ]) {
         const error = yield* effect.pipe(Effect.flip)
         expect(error).toMatchObject({ _tag: "PlanError" })

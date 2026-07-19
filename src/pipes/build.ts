@@ -1,13 +1,12 @@
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import type { Builder, BuilderPlan } from "../builders/builder.js"
+import type { BuilderPlan } from "../builders/builder.js"
 import { bunBuilder, type BunBuildOptions } from "../builders/bun.js"
 import { commandBuilder, type CommandBuildOptions } from "../builders/command.js"
 import { prebuiltBuilder, type PrebuiltBuildOptions } from "../builders/prebuilt.js"
 import type { PlatformTarget } from "../pipeline/platform.js"
 import { PlanError } from "../pipeline/errors.js"
-import type { FeaturePlanner } from "../pipeline/pipe.js"
-import { emptyContribution } from "../pipeline/pipe.js"
+import { featurePlanner } from "../pipeline/pipe.js"
 import type { ReleaseIdentity } from "../pipeline/state.js"
 
 export type BuildOptions = BunBuildOptions | CommandBuildOptions | PrebuiltBuildOptions
@@ -40,21 +39,6 @@ export const resolveBuilds = (
   ))
 }
 
-const checkAndPlan = <Options extends { readonly builder: string }>(
-  builder: Builder<Options>,
-  options: Options,
-  identity: ReleaseIdentity,
-  target: PlatformTarget
-): Effect.Effect<BuilderPlan, PlanError> =>
-  builder.supportedTargets.includes(target)
-    ? builder.plan(options, identity, target)
-    : Effect.fail(PlanError.make({
-      pipeId: "build",
-      field: "builds[].targets",
-      reason:
-        `Builder ${builder.id} does not support target ${target}. Supported targets: ${builder.supportedTargets.join(", ")}.`
-    }))
-
 const planSection = (
   section: ResolvedBuild,
   identity: ReleaseIdentity,
@@ -62,17 +46,15 @@ const planSection = (
 ): Effect.Effect<BuilderPlan, PlanError> => {
   switch (section.builder) {
     case "bun":
-      return checkAndPlan(bunBuilder, section, identity, target)
+      return bunBuilder(section, identity, target)
     case "command":
-      return checkAndPlan(commandBuilder, section, identity, target)
+      return commandBuilder(section, identity, target)
     case "prebuilt":
-      return checkAndPlan(prebuiltBuilder, section, identity, target)
+      return prebuiltBuilder(section, identity, target)
   }
 }
 
-export const buildPlanner: FeaturePlanner<ReadonlyArray<ResolvedBuild>> = {
-  id: "build",
-  plan: (sections, state) =>
+export const buildPlanner = featurePlanner<ReadonlyArray<ResolvedBuild>>("build", (sections, state) =>
     Effect.gen(function*() {
       const artifacts = []
       const operations = []
@@ -84,9 +66,7 @@ export const buildPlanner: FeaturePlanner<ReadonlyArray<ResolvedBuild>> = {
         }
       }
       return {
-        ...emptyContribution,
         artifacts,
         operations
       }
-    })
-}
+    }))

@@ -149,10 +149,10 @@ const checkPipelineImport = (
     return undefined
   }
   const target = relativeTarget(reference)
-  if (target !== undefined && isUnder(target, "src/pipeline")) {
+  if (target !== undefined && (isUnder(target, "src/pipeline") || isUnder(target, "src/assets"))) {
     return undefined
   }
-  return failure(source, reference, "pipeline/ may import only effect/* and pipeline-local modules.")
+  return failure(source, reference, "pipeline/ may import only effect/*, pipeline-local modules, and data assets.")
 }
 
 const checkPipeImport = (
@@ -228,7 +228,7 @@ const checkEngineImport = (
       isUnder(target, "src/pipeline") ||
       isUnder(target, "src/host") ||
       isUnder(target, "src/config") ||
-      isUnder(target, "src/internal")
+      isUnder(target, "src/internal") || isUnder(target, "src/assets")
     )
   ) {
     return undefined
@@ -236,7 +236,7 @@ const checkEngineImport = (
   return failure(
     source,
     reference,
-    "engine/ may import only effect/*, node:*, engine-local modules, pipeline/, host/, config/, and internal/."
+    "engine/ may import only effect/*, node:*, engine-local modules, pipeline/, host/, config/, internal/, and data assets."
   )
 }
 

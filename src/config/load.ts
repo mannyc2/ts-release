@@ -1,135 +1,80 @@
+// Invariant: config is located, parsed, migration-checked, and Schema-decoded exactly once.
 import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
 import { parseJsonAs } from "../pipeline/json.js"
-import { ConfigParseError, ConfigValidationError } from "./errors.js"
+import { ConfigError } from "./errors.js"
 import { decodeReleaseConfig, DEFAULT_CONFIG_PATH, type ReleaseIntent } from "./schema.js"
-import {
-  configPath,
-  configRoot,
-  readReleaseConfig,
-  type ConfigSource
-} from "./resolve.js"
+import migrations from "../assets/config-migrations.json" with { type: "json" }
 
-
-const forbiddenConfigFields = new Set(["_tag", "dryRunSupport", "mutability", "recovery"])
-const forbiddenTopLevelConfigFields = new Set([
-  "identity",
-  "targets",
-  "artifactRecipes",
-  "build",
-  "evidenceDirectory",
-  "strict"
-])
-const isRecord = (value: unknown): value is { readonly [key: string]: unknown } =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-
-const removedFieldHint = (parentPath: string, key: string): string | undefined => {
-  if (key === "outputs") {
-    return "Use builds[].targets plus a build-level output template; include {ext} for platform executable extensions."
-  }
-  if (key === "consumers") {
-    return "Consumer wiring was removed; publish sections select artifacts with catalog filters and optional ids."
-  }
-  if (key === "downloadUrl") {
-    return "Download URLs are derived from publish.github.repository or supplied as a section-level catalog URL."
-  }
-  if (parentPath === "$.project" && key === "package") {
-    return "Use project.packageName for package identity, or publish.npm.packageName for npm publishing."
-  }
-  if (parentPath === "$" && key === "strict") {
-    return "Strict mode was removed; reviewable operations now encode validation behavior directly."
-  }
-  if (parentPath === "$.npmPackage" && key === "id") {
-    return "The npm package artifact id is fixed as npm-package."
-  }
-  if (parentPath === "$.publish.npm.trustedPublishing" && key === "packageExists") {
-    return "Use verifyPackageExists for the optional read-only npm package existence check."
-  }
-  if (parentPath === "$.publish.homebrew" && key === "artifactId") {
-    return "Use artifactIds with one or more artifact IDs."
-  }
-  return undefined
+export interface ConfigSource {
+  readonly root?: string | undefined
+  readonly configPath?: string | undefined
 }
 
-const findForbiddenConfigField = (
+export const configPath = (source: ConfigSource): string => source.configPath ?? DEFAULT_CONFIG_PATH
+
+const configRoot = (path: Path.Path, source: ConfigSource): string =>
+  source.root ?? (source.configPath !== undefined && path.isAbsolute(source.configPath)
+    ? path.dirname(source.configPath)
+    : ".")
+
+const migrationHints: Readonly<Record<string, string>> = migrations.hints
+const forbiddenFields = new Set(migrations.forbiddenFields)
+const forbiddenRootFields = new Set(migrations.forbiddenRootFields)
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const findRemovedField = (
   value: unknown,
-  fieldPath: string = "$"
+  parent: string = "$"
 ): { readonly field: string; readonly hint: string } | undefined => {
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
-      const nested = findForbiddenConfigField(item, `${fieldPath}[${index}]`)
-      if (nested !== undefined) {
-        return nested
-      }
+      const found = findRemovedField(item, `${parent}[${index}]`)
+      if (found !== undefined) return found
     }
     return undefined
   }
-  if (!isRecord(value)) {
-    return undefined
-  }
+  if (!isRecord(value)) return undefined
   for (const [key, item] of Object.entries(value)) {
-    const removedHint = removedFieldHint(fieldPath, key)
-    if (removedHint !== undefined) {
-      return {
-        field: fieldPath === "$" ? key : `${fieldPath}.${key}`,
-        hint: removedHint
-      }
+    const path = `${parent}.${key}`
+    const field = parent === "$" ? key : path
+    const hint = migrationHints[path] ?? migrationHints[key]
+    if (hint !== undefined) return { field, hint }
+    if (forbiddenFields.has(key) || (parent === "$" && forbiddenRootFields.has(key))) {
+      return { field, hint: "Use the compact project/build/publish config shape." }
     }
-    if (forbiddenConfigFields.has(key) || (fieldPath === "$" && forbiddenTopLevelConfigFields.has(key))) {
-      return {
-        field: fieldPath === "$" ? key : `${fieldPath}.${key}`,
-        hint: "Use the compact project/build/publish config shape."
-      }
-    }
-    const nested = findForbiddenConfigField(item, `${fieldPath}.${key}`)
-    if (nested !== undefined) {
-      return nested
-    }
+    const found = findRemovedField(item, path)
+    if (found !== undefined) return found
   }
   return undefined
 }
 
-export const decodeReleaseIntent = Effect.fn("decodeReleaseIntent")(function*(
+export const decodeReleaseIntent = Effect.fn("config.decode")(function*(
   input: unknown,
-  path: string = DEFAULT_CONFIG_PATH
+  pathName: string = DEFAULT_CONFIG_PATH
 ) {
-  const forbiddenField = findForbiddenConfigField(input)
-  if (forbiddenField !== undefined) {
-    return yield* Effect.fail(
-      ConfigValidationError.make({
-        path,
-        reason: `Release config uses removed field ${forbiddenField.field}. ${forbiddenField.hint}`
-      })
-    )
-  }
-
-  return yield* decodeReleaseConfig(input).pipe(
-    Effect.mapError((error) =>
-      ConfigValidationError.make({
-        path,
-        reason: error.message
-      })
-    )
-  )
+  const removed = findRemovedField(input)
+  if (removed !== undefined) return yield* Effect.fail(ConfigError.make({
+    kind: "validation",
+    path: pathName,
+    reason: `Release config uses removed field ${removed.field}. ${removed.hint}`
+  }))
+  return yield* decodeReleaseConfig(input).pipe(Effect.mapError((error) => ConfigError.make({
+    kind: "validation", path: pathName, reason: error.message
+  })))
 })
 
-export const parseReleaseIntent = Effect.fn("parseReleaseIntent")(function*(
+export const parseReleaseIntent = Effect.fn("config.parse")(function*(
   input: string,
-  path: string = DEFAULT_CONFIG_PATH
+  pathName: string = DEFAULT_CONFIG_PATH
 ) {
-  const parsed = yield* parseJsonAs(
-    Schema.Unknown,
-    input,
-    (cause) =>
-      ConfigParseError.make({
-        path,
-        reason: "Release config is not valid JSON.",
-        cause
-      })
-  )
-
-  return yield* decodeReleaseIntent(parsed, path)
+  const parsed = yield* parseJsonAs(Schema.Unknown, input, (cause) => ConfigError.make({
+    kind: "parse", path: pathName, reason: "Release config is not valid JSON.", cause
+  }))
+  return yield* decodeReleaseIntent(parsed, pathName)
 })
 
 export interface LoadedReleaseIntent {
@@ -138,19 +83,27 @@ export interface LoadedReleaseIntent {
   readonly sourcePath?: string | undefined
 }
 
-export const loadReleaseIntent = Effect.fn("config.loadReleaseIntent")(function*(
+export const loadReleaseIntent = Effect.fn("config.load")(function*(
   config: string | ReleaseIntent | undefined,
   source: ConfigSource = {}
 ) {
   const path = yield* Path.Path
-  const diskSource = typeof config === "string" ? { ...source, configPath: config } : source
-  const pathName = configPath(diskSource)
-  const intent = typeof config === "object" && config !== null
-    ? yield* decodeReleaseIntent(config, source.configPath ?? "inline config")
-    : yield* parseReleaseIntent(yield* readReleaseConfig(diskSource), pathName)
+  if (typeof config === "object" && config !== null) return {
+    intent: yield* decodeReleaseIntent(config, source.configPath ?? "inline config"),
+    root: configRoot(path, source),
+    sourcePath: source.configPath
+  } satisfies LoadedReleaseIntent
+  const disk = typeof config === "string" ? { ...source, configPath: config } : source
+  const pathName = configPath(disk)
+  const root = configRoot(path, disk)
+  const readPath = path.isAbsolute(pathName) ? pathName : path.resolve(root, pathName)
+  const fs = yield* FileSystem.FileSystem
+  const contents = yield* fs.readFileString(readPath).pipe(Effect.mapError((error) => ConfigError.make({
+    kind: "read", path: pathName, reason: error.message
+  })))
   return {
-    intent,
-    root: configRoot(path, diskSource),
-    sourcePath: typeof config === "object" && config !== null ? source.configPath : pathName
+    intent: yield* parseReleaseIntent(contents, pathName),
+    root,
+    sourcePath: pathName
   } satisfies LoadedReleaseIntent
 })

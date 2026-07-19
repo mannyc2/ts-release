@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Schema from "effect/Schema"
-import { parseReleaseIntent } from "../../../../src/config/load.js"
+import { decodeReleaseIntent, parseReleaseIntent } from "../../../../src/config/load.js"
 import { DEFAULT_CONFIG_PATH } from "../../../../src/config/schema.js"
 import {
   hasParentTraversal,
@@ -12,12 +12,7 @@ import {
 } from "../../../../src/internal/workspace-path.js"
 
 export const ReleaseInitTemplateName = Schema.Literals([
-  "npm-only",
-  "npm-github",
-  "bun-cli-github",
-  "portable-cli",
-  "multi-target-homebrew",
-  "multi-target-scoop"
+  "npm-only", "npm-github", "bun-cli-github", "portable-cli", "multi-target-homebrew", "multi-target-scoop"
 ])
 export type ReleaseInitTemplateName = typeof ReleaseInitTemplateName.Type
 
@@ -74,37 +69,6 @@ type JsonRecord = Record<string, unknown>
 
 const packageRoot = fileURLToPath(new URL("../../../../", import.meta.url))
 
-interface NormalizedInitOptions {
-  readonly root: string
-  readonly configPath: string
-  readonly template: ReleaseInitTemplateName
-  readonly packageName: string
-  readonly repository: string
-  readonly workflow: string
-  readonly tap: string
-  readonly bucket: string
-  readonly binaryName: string
-  readonly entrypoint: string
-  readonly pypiPackage?: string | undefined
-  readonly pypiModule?: string | undefined
-  readonly consoleScript: string
-  readonly githubActions: boolean
-  readonly packageManager: ReleaseInitPackageManager
-  readonly installCommand: string
-  readonly buildCommand: string
-}
-
-interface ProposedFileSpec {
-  readonly path: string
-  readonly contents: string
-}
-
-interface GithubActionsWorkflowSetup {
-  readonly packageManager: ReleaseInitPackageManager
-  readonly installCommand: string
-  readonly buildCommand: string
-}
-
 const initRoot = (path: Path.Path, options: ReleaseInitOptionsInput): string => {
   if (options.root !== undefined) {
     return options.root
@@ -148,7 +112,7 @@ const pythonModuleName = (value: string): string => {
 const pythonDistributionName = (value: string): string =>
   value.replace(/[-.]+/g, "_")
 
-const normalizeOptions = (options: ReleaseInitOptionsInput, root: string): NormalizedInitOptions => {
+const normalizeOptions = (options: ReleaseInitOptionsInput, root: string) => {
   const packageManager = options.packageManager ?? "bun"
   const packageName = options["package"] ?? "@scope/pkg"
   const binaryName = nonEmpty(options.binaryName) ?? packageShortName(packageName)
@@ -177,265 +141,65 @@ const normalizeOptions = (options: ReleaseInitOptionsInput, root: string): Norma
   }
 }
 
+type NormalizedInitOptions = ReturnType<typeof normalizeOptions>
+
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
 const requireRecord = (
   value: unknown,
   pathName: string
-): Effect.Effect<JsonRecord, ReleaseInitWriteError> =>
-  isRecord(value)
-    ? Effect.succeed(value)
-    : Effect.fail(
-      ReleaseInitWriteError.make({
-        path: pathName,
-        reason: "Template config did not contain the expected object shape."
-      })
-    )
-
-const optionalRecord = (value: unknown): JsonRecord | undefined =>
-  isRecord(value) ? value : undefined
-
-const firstRecord = (value: unknown): JsonRecord | undefined =>
-  Array.isArray(value) && isRecord(value[0]) ? value[0] : undefined
+): Effect.Effect<JsonRecord, ReleaseInitWriteError> => isRecord(value)
+  ? Effect.succeed(value)
+  : Effect.fail(ReleaseInitWriteError.make({
+    path: pathName, reason: "Template config did not contain the expected object shape."
+  }))
 
 const templatePath = (path: Path.Path, ...segments: ReadonlyArray<string>): string =>
   path.join(packageRoot, "templates", ...segments)
 
-const portableCliArtifactPath = (binaryName: string, suffix: string): string =>
-  `artifacts/${binaryName}-{version}-${suffix}`
+const initWritePath = (path: Path.Path, root: string, pathName: string) =>
+  resolveWorkspaceWritePathEffect(path, root, pathName,
+    (errorPath, reason) => ReleaseInitWriteError.make({ path: errorPath, reason }))
 
-const portablePyPiWheel = (
-  options: NormalizedInitOptions,
-  input: {
-    readonly id: string
-    readonly suffix: string
-    readonly wheelTag: string
-    readonly os: string
-    readonly arch: string
+const substituteTemplate = (value: unknown, replacements: ReadonlyMap<string, string>): unknown => {
+  if (typeof value === "string") {
+    const tokens = [...replacements.keys()].sort((left, right) => right.length - left.length)
+    const pattern = new RegExp(tokens.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "g")
+    return value.replace(pattern, (token) => replacements.get(token) ?? token)
   }
-): JsonRecord => {
-  const pypiPackage = options.pypiPackage ?? options.binaryName
-  const moduleName = options.pypiModule ?? pythonModuleName(pypiPackage)
-  const distributionName = pythonDistributionName(pypiPackage)
-  return {
-    id: input.id,
-    path: `artifacts/${distributionName}-{version}-${input.wheelTag}.whl`,
-    wheelTag: input.wheelTag,
-    packageName: pypiPackage,
-    moduleName,
-    consoleScript: options.consoleScript,
-    summary: `Portable CLI wrapper for ${options.packageName}.`,
-    homepage: `https://github.com/${options.repository}`,
-    license: "MIT",
-    requiresPython: ">=3.8",
-    binaries: [
-      {
-        os: input.os,
-        arch: input.arch,
-        sourcePath: portableCliArtifactPath(options.binaryName, input.suffix),
-        wheelPath: `${moduleName}/bin/${options.binaryName}-${input.suffix}`
-      }
-    ]
-  }
-}
-
-const portablePyPiWheels = (options: NormalizedInitOptions): ReadonlyArray<JsonRecord> => [
-  portablePyPiWheel(options, {
-    id: "pypi-wheel-linux-x64",
-    suffix: "linux-x64",
-    wheelTag: "py3-none-manylinux2014_x86_64",
-    os: "linux",
-    arch: "x64"
-  }),
-  portablePyPiWheel(options, {
-    id: "pypi-wheel-linux-arm64",
-    suffix: "linux-arm64",
-    wheelTag: "py3-none-manylinux2014_aarch64",
-    os: "linux",
-    arch: "arm64"
-  }),
-  portablePyPiWheel(options, {
-    id: "pypi-wheel-darwin-x64",
-    suffix: "darwin-x64",
-    wheelTag: "py3-none-macosx_10_15_x86_64",
-    os: "darwin",
-    arch: "x64"
-  }),
-  portablePyPiWheel(options, {
-    id: "pypi-wheel-darwin-arm64",
-    suffix: "darwin-arm64",
-    wheelTag: "py3-none-macosx_11_0_arm64",
-    os: "darwin",
-    arch: "arm64"
-  }),
-  portablePyPiWheel(options, {
-    id: "pypi-wheel-windows-x64",
-    suffix: "windows-x64.exe",
-    wheelTag: "py3-none-win_amd64",
-    os: "windows",
-    arch: "x64"
-  })
-]
-
-const patchNpmTarget = (publish: JsonRecord, options: NormalizedInitOptions): void => {
-  const npm = optionalRecord(publish.npm)
-  if (npm === undefined) {
-    return
-  }
-  npm.packageName = options.packageName
-  const trustedPublishing = optionalRecord(npm.trustedPublishing)
-  if (trustedPublishing !== undefined) {
-    trustedPublishing.workflow = options.workflow
-  }
-}
-
-const patchGitHubTarget = (publish: JsonRecord, options: NormalizedInitOptions): void => {
-  const github = optionalRecord(publish.github)
-  if (github !== undefined) {
-    github.repository = options.repository
-  }
-}
-
-const patchBunCliBuild = (config: JsonRecord, options: NormalizedInitOptions): void => {
-  const build = firstRecord(config.builds)
-  if (build === undefined) {
-    return
-  }
-  const name = packageShortName(options.packageName)
-  build.entry = options.entrypoint
-  build.output = `artifacts/${name}-{version}-{targetTriple}{ext}`
-}
-
-const patchPortableBuild = (config: JsonRecord, options: NormalizedInitOptions): void => {
-  const build = firstRecord(config.builds)
-  if (build === undefined) {
-    return
-  }
-  build.entry = options.entrypoint
-  build.output = portableCliArtifactPath(options.binaryName, "{targetTriple}{ext}")
-  build.binaryName = options.binaryName
-  build.installPath = `bin/${options.binaryName}`
-}
-
-const patchPortablePyPi = (config: JsonRecord, publish: JsonRecord, options: NormalizedInitOptions): void => {
-  if (Array.isArray(config.pypiWheel)) {
-    config.pypiWheel = portablePyPiWheels(options)
-  }
-  const pypi = optionalRecord(publish.pypi)
-  const trustedPublishing = optionalRecord(pypi?.trustedPublishing)
-  if (trustedPublishing !== undefined) {
-    trustedPublishing.workflow = options.workflow
-  }
-}
-
-const patchPortableCatalogs = (publish: JsonRecord, options: NormalizedInitOptions): void => {
-  const homebrew = optionalRecord(publish.homebrew)
-  if (homebrew !== undefined) {
-    homebrew.repository = options.tap
-    homebrew.formulaName = options.binaryName
-    homebrew.formulaPath = `.release/generated/${options.binaryName}.rb`
-    homebrew.homepage = `https://github.com/${options.repository}`
-    homebrew.description = `Portable CLI distribution for ${options.packageName}`
-  }
-  const scoop = optionalRecord(publish.scoop)
-  if (scoop !== undefined) {
-    scoop.repository = options.bucket
-    scoop.manifestName = options.binaryName
-    scoop.manifestPath = `.release/generated/${options.binaryName}.json`
-    scoop.homepage = `https://github.com/${options.repository}`
-    scoop.description = `Portable CLI distribution for ${options.packageName}`
-  }
-}
-
-const patchHomebrewTemplate = (config: JsonRecord, publish: JsonRecord, options: NormalizedInitOptions): void => {
-  const name = packageShortName(options.packageName)
-  const archive = firstRecord(config.artifacts)
-  if (archive !== undefined) {
-    archive.path = `artifacts/${name}-0.1.0.tgz`
-  }
-  const homebrew = optionalRecord(publish.homebrew)
-  if (homebrew !== undefined) {
-    homebrew.repository = options.tap
-    homebrew.formulaName = name
-    homebrew.formulaPath = `.release/generated/${name}.rb`
-    homebrew.homepage = `https://github.com/${options.repository}`
-    homebrew.url = `https://github.com/${options.repository}/releases/download/v0.1.0/${name}-0.1.0.tgz`
-    homebrew.installPath = `bin/${name}`
-  }
-}
-
-const patchScoopTemplate = (config: JsonRecord, publish: JsonRecord, options: NormalizedInitOptions): void => {
-  const name = packageShortName(options.packageName)
-  const archive = firstRecord(config.artifacts)
-  if (archive !== undefined) {
-    archive.path = `artifacts/${name}-0.1.0.zip`
-  }
-  const scoop = optionalRecord(publish.scoop)
-  if (scoop !== undefined) {
-    scoop.repository = options.bucket
-    scoop.manifestName = name
-    scoop.manifestPath = `.release/generated/${name}.json`
-    scoop.homepage = `https://github.com/${options.repository}`
-    scoop.description = `Example Scoop manifest for ${name}`
-    scoop.url = `https://github.com/${options.repository}/releases/download/v0.1.0/${name}-0.1.0.zip`
-    scoop.bin = `${name}.exe`
-  }
+  if (Array.isArray(value)) return value.map((item) => substituteTemplate(item, replacements))
+  if (isRecord(value)) return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, substituteTemplate(item, replacements)])
+  )
+  return value
 }
 
 const patchReleaseConfig = Effect.fn("cli.init.patchReleaseConfig")(function*(
   templateConfig: JsonRecord,
   options: NormalizedInitOptions
 ) {
-  const config = structuredClone(templateConfig)
-  const project = yield* requireRecord(config.project, "template.project")
-  const publish = yield* requireRecord(config.publish, "template.publish")
-
-  project.name = options.packageName
-  project.packageName = options.packageName
-  if (Object.hasOwn(project, "repository")) {
-    project.repository = options.repository
+  const name = options.template === "portable-cli" ? options.binaryName : packageShortName(options.packageName)
+  const config = yield* requireRecord(substituteTemplate(templateConfig, new Map([
+    ["@scope/pkg", options.packageName], ["owner/homebrew-tap", options.tap],
+    ["owner/scoop-bucket", options.bucket], ["owner/repo", options.repository],
+    ["release.yml", options.workflow], ["src/cli.ts", options.entrypoint], ["pkg", name]
+  ])), "template")
+  if (options.template === "portable-cli" && Array.isArray(config.pypiWheel)) {
+    const packageName = options.pypiPackage ?? options.binaryName
+    const moduleName = options.pypiModule ?? pythonModuleName(packageName)
+    for (const value of config.pypiWheel) {
+      const wheel = yield* requireRecord(value, "template.pypiWheel")
+      const binary = yield* requireRecord(Array.isArray(wheel.binaries) ? wheel.binaries[0] : undefined, "template.pypiWheel.binaries")
+      wheel.packageName = packageName
+      wheel.moduleName = moduleName
+      wheel.consoleScript = options.consoleScript
+      wheel.path = `artifacts/${pythonDistributionName(packageName)}-{version}-${wheel.wheelTag}.whl`
+      binary.wheelPath = `${moduleName}/bin/${options.binaryName}-${binary.os}-${binary.arch}${binary.os === "windows" ? ".exe" : ""}`
+    }
   }
-  patchNpmTarget(publish, options)
-  patchGitHubTarget(publish, options)
-
-  switch (options.template) {
-    case "bun-cli-github":
-      patchBunCliBuild(config, options)
-      break
-    case "portable-cli":
-      patchPortableBuild(config, options)
-      patchPortableCatalogs(publish, options)
-      patchPortablePyPi(config, publish, options)
-      break
-    case "multi-target-homebrew":
-      patchHomebrewTemplate(config, publish, options)
-      break
-    case "multi-target-scoop":
-      patchScoopTemplate(config, publish, options)
-      break
-    case "npm-github":
-    case "npm-only":
-      break
-  }
-
   return config
 })
-
-const parseTemplateObject = (
-  contents: string,
-  pathName: string
-): Effect.Effect<JsonRecord, ReleaseInitWriteError> =>
-  Effect.try({
-    try: () => JSON.parse(contents) as unknown,
-    catch: () =>
-      ReleaseInitWriteError.make({
-        path: pathName,
-        reason: "Template config is not valid JSON."
-      })
-  }).pipe(
-    Effect.flatMap((parsed) => requireRecord(parsed, pathName))
-  )
 
 const renderReleaseConfigFromTemplate = Effect.fn("cli.init.renderReleaseConfigFromTemplate")(function*(
   options: NormalizedInitOptions
@@ -444,8 +208,11 @@ const renderReleaseConfigFromTemplate = Effect.fn("cli.init.renderReleaseConfigF
   const path = yield* Path.Path
   const pathName = templatePath(path, options.template, DEFAULT_CONFIG_PATH)
   const contents = yield* fs.readFileString(pathName)
-  yield* parseReleaseIntent(contents, pathName)
-  const templateConfig = yield* parseTemplateObject(contents, pathName)
+  const templateConfig = yield* Effect.try({
+    try: () => JSON.parse(contents) as unknown,
+    catch: () => ReleaseInitWriteError.make({ path: pathName, reason: "Template config is not valid JSON." })
+  }).pipe(Effect.flatMap((parsed) => requireRecord(parsed, pathName)))
+  yield* decodeReleaseIntent(templateConfig, pathName)
   const config = yield* patchReleaseConfig(templateConfig, options)
   const rendered = `${JSON.stringify(config, null, 2)}\n`
   yield* parseReleaseIntent(rendered, options.configPath)
@@ -454,7 +221,7 @@ const renderReleaseConfigFromTemplate = Effect.fn("cli.init.renderReleaseConfigF
 
 export const renderGithubActionsTrustedPublishingWorkflow = Effect.fn(
   "cli.init.renderGithubActionsTrustedPublishingWorkflow"
-)(function*(configPath: string, setup: GithubActionsWorkflowSetup) {
+)(function*(configPath: string, setup: Pick<NormalizedInitOptions, "packageManager" | "installCommand" | "buildCommand">) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const template = yield* fs.readFileString(templatePath(path, "github-actions", "release.yml"))
@@ -482,83 +249,24 @@ const workflowConfigPath = (path: Path.Path, options: NormalizedInitOptions): st
   return relative
 }
 
-const proposedFileSpecs = Effect.fn("cli.init.proposedFileSpecs")(function*(
-  path: Path.Path,
-  options: NormalizedInitOptions
-) {
-  const files: Array<ProposedFileSpec> = [
-    {
-      path: options.configPath,
-      contents: yield* renderReleaseConfigFromTemplate(options)
-    }
-  ]
-  if (options.githubActions) {
-    files.push({
-      path: `.github/workflows/${options.workflow}`,
-      contents: yield* renderGithubActionsTrustedPublishingWorkflow(workflowConfigPath(path, options), {
-        packageManager: options.packageManager,
-        installCommand: options.installCommand,
-        buildCommand: options.buildCommand
-      })
-    })
-  }
-  return files
-})
+const validateInitField = (valid: boolean, path: string, reason: string): Effect.Effect<void, ReleaseInitWriteError> =>
+  valid ? Effect.void : Effect.fail(ReleaseInitWriteError.make({ path, reason }))
 
-const validateWorkflowFileName = (
-  workflow: string
-): Effect.Effect<void, ReleaseInitWriteError> => {
+const validateWorkflowFileName = (workflow: string): Effect.Effect<void, ReleaseInitWriteError> => {
   const hasPathSeparator = workflow.includes("/") || workflow.includes("\\")
   const hasWorkflowExtension = workflow.endsWith(".yml") || workflow.endsWith(".yaml")
-  if (workflow.trim().length > 0 && !hasPathSeparator && !hasParentTraversal(workflow) && hasWorkflowExtension) {
-    return Effect.void
-  }
-  return Effect.fail(
-    ReleaseInitWriteError.make({
-      path: workflow,
-      reason: "Workflow must be a .yml or .yaml filename without path separators."
-    })
-  )
+  return validateInitField(workflow.trim().length > 0 && !hasPathSeparator &&
+    !hasParentTraversal(workflow) && hasWorkflowExtension, workflow,
+    "Workflow must be a .yml or .yaml filename without path separators.")
 }
 
 const validateWorkflowCommand = (
   field: string,
   command: string
 ): Effect.Effect<void, ReleaseInitWriteError> => {
-  if (command.trim().length > 0 && !command.includes("\n") && !command.includes("\r")) {
-    return Effect.void
-  }
-  return Effect.fail(
-    ReleaseInitWriteError.make({
-      path: field,
-      reason: "Command overrides must be single non-empty lines."
-    })
-  )
+  return validateInitField(command.trim().length > 0 && !command.includes("\n") && !command.includes("\r"),
+    field, "Command overrides must be single non-empty lines.")
 }
-
-const validateInitOptions = Effect.fn("cli.init.validateInitOptions")(function*(
-  path: Path.Path,
-  options: NormalizedInitOptions
-) {
-  yield* resolveWorkspaceWritePathEffect(
-    path,
-    options.root,
-    options.configPath,
-    (errorPath, reason) => ReleaseInitWriteError.make({ path: errorPath, reason })
-  )
-  yield* validateWorkflowCommand("install-command", options.installCommand)
-  yield* validateWorkflowCommand("build-command", options.buildCommand)
-  if (!options.githubActions) {
-    return
-  }
-  yield* validateWorkflowFileName(options.workflow)
-  yield* resolveWorkspaceWritePathEffect(
-    path,
-    options.root,
-    `.github/workflows/${options.workflow}`,
-    (errorPath, reason) => ReleaseInitWriteError.make({ path: errorPath, reason })
-  )
-})
 
 export const planReleaseInit = Effect.fn("cli.init.planReleaseInit")(function*(
   input: ReleaseInitOptionsInput = {}
@@ -566,17 +274,26 @@ export const planReleaseInit = Effect.fn("cli.init.planReleaseInit")(function*(
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
   const normalized = normalizeOptions(input, initRoot(path, input))
-  yield* validateInitOptions(path, normalized)
-  const specs = yield* proposedFileSpecs(path, normalized)
+  yield* initWritePath(path, normalized.root, normalized.configPath)
+  yield* validateWorkflowCommand("install-command", normalized.installCommand)
+  yield* validateWorkflowCommand("build-command", normalized.buildCommand)
+  if (normalized.githubActions) {
+    yield* validateWorkflowFileName(normalized.workflow)
+    yield* initWritePath(path, normalized.root, `.github/workflows/${normalized.workflow}`)
+  }
+  const specs = [{ path: normalized.configPath, contents: yield* renderReleaseConfigFromTemplate(normalized) }]
+  if (normalized.githubActions) specs.push({
+    path: `.github/workflows/${normalized.workflow}`,
+    contents: yield* renderGithubActionsTrustedPublishingWorkflow(workflowConfigPath(path, normalized), {
+      packageManager: normalized.packageManager,
+      installCommand: normalized.installCommand,
+      buildCommand: normalized.buildCommand
+    })
+  })
   const files = yield* Effect.forEach(
     specs,
     (file) =>
-      resolveWorkspaceWritePathEffect(
-        path,
-        normalized.root,
-        file.path,
-        (errorPath, reason) => ReleaseInitWriteError.make({ path: errorPath, reason })
-      ).pipe(
+      initWritePath(path, normalized.root, file.path).pipe(
         Effect.flatMap((targetPath) =>
           fs.exists(targetPath).pipe(
             Effect.map((alreadyExists) =>
@@ -599,31 +316,6 @@ export const planReleaseInit = Effect.fn("cli.init.planReleaseInit")(function*(
   })
 })
 
-const writeInitFile = Effect.fn("cli.init.writeInitFile")(function*(
-  root: string,
-  file: ReleaseInitProposedFile,
-  overwrite: boolean
-) {
-  if (file.alreadyExists && !overwrite) {
-    return yield* Effect.fail(
-      ReleaseInitWriteError.make({
-        path: file.path,
-        reason: "File already exists. Pass --overwrite to replace it."
-      })
-    )
-  }
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const outputPath = yield* resolveWorkspaceWritePathEffect(
-    path,
-    root,
-    file.path,
-    (errorPath, reason) => ReleaseInitWriteError.make({ path: errorPath, reason })
-  )
-  yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true })
-  yield* fs.writeFileString(outputPath, file.contents)
-})
-
 export const runReleaseInit = Effect.fn("cli.init.runReleaseInit")(function*(
   input: ReleaseInitOptionsInput = {}
 ) {
@@ -633,16 +325,21 @@ export const runReleaseInit = Effect.fn("cli.init.runReleaseInit")(function*(
   if (input.write !== true) {
     return plan
   }
+  const fs = yield* FileSystem.FileSystem
   yield* Effect.forEach(
     plan.files,
-    (file) => writeInitFile(normalized.root, file, input.overwrite === true),
+    (file) => Effect.gen(function*() {
+      if (file.alreadyExists && input.overwrite !== true) return yield* Effect.fail(ReleaseInitWriteError.make({
+        path: file.path, reason: "File already exists. Pass --overwrite to replace it."
+      }))
+      const outputPath = yield* initWritePath(path, normalized.root, file.path)
+      yield* fs.makeDirectory(path.dirname(outputPath), { recursive: true })
+      yield* fs.writeFileString(outputPath, file.contents)
+    }),
     { discard: true }
   )
   return plan
 })
-
-export const renderReleaseInitJson = (plan: ReleaseInitPlan): string =>
-  `${JSON.stringify(plan, null, 2)}\n`
 
 export const renderReleaseInitText = (plan: ReleaseInitPlan): string => {
   const lines: Array<string> = [
@@ -659,8 +356,4 @@ export const renderReleaseInitText = (plan: ReleaseInitPlan): string => {
 }
 
 export const renderReleaseInitPlan = (plan: ReleaseInitPlan, format: ReleaseInitFormat = "text"): string =>
-  format === "json" ? renderReleaseInitJson(plan) : renderReleaseInitText(plan)
-
-export const plan = planReleaseInit
-export const run = runReleaseInit
-export const renderPlan = renderReleaseInitPlan
+  format === "json" ? `${JSON.stringify(plan, null, 2)}\n` : renderReleaseInitText(plan)

@@ -155,8 +155,8 @@ describe("npm target", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ConfigValidationError") {
+    expect(error._tag).toBe("ConfigError")
+    if (error._tag === "ConfigError") {
       expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
     }
   })
@@ -167,8 +167,8 @@ describe("npm target", () => {
       TestLayer
     )
 
-    expect(error._tag).toBe("ConfigValidationError")
-    if (error._tag === "ConfigValidationError") {
+    expect(error._tag).toBe("ConfigError")
+    if (error._tag === "ConfigError") {
       expect(error.reason).toContain(`["publish"]["npm"]["trustedPublishing"]["workflow"]`)
     }
   })
@@ -177,7 +177,7 @@ describe("npm target", () => {
     const invalidConfig = minimalConfig.replace("\"packageName\":\"release\",\"packagePath\"", "\"packageName\":\"\",\"packagePath\"")
     const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
 
-    expect(error._tag).toBe("ConfigValidationError")
+    expect(error._tag).toBe("ConfigError")
   })
 
   test("adds npm provenance only when target policy enables it", async () => {

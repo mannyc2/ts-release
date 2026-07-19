@@ -12,13 +12,12 @@ import {
   GitHubReleaseAssetSpec,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
-  HttpHeader,
-  HttpRequestSpec,
   NoteAction,
   Operation,
   StageAction,
   WriteFileAction
 } from "../src/pipeline/operation.js"
+import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
 import { ReleasePlan, SourceMetadata } from "../src/pipeline/plan.js"
 import { PipeNotice, ReleaseIdentity } from "../src/pipeline/state.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
@@ -29,7 +28,7 @@ import {
   redactText
 } from "../src/engine/evidence.js"
 import { writeEvidenceBundle } from "../src/engine/engine.js"
-import { runOperation, runOperationEvidence } from "../src/engine/executor.js"
+import { runOperationEvidence } from "../src/engine/executor.js"
 import { artifactSummary, evidenceOperationStatuses, stagedArtifactSummaries, type ArtifactSummary } from "../src/engine/summary.js"
 import {
   UnsupportedArtifactStagerLayer,
@@ -37,7 +36,7 @@ import {
   type StagedArtifactOperationResult
 } from "../src/engine/stager.js"
 import { GitHubApiLiveLayer } from "../src/engine/github.js"
-import { TestGitHubApiLayer } from "./helpers.js"
+import { runOperation, TestGitHubApiLayer } from "./helpers.js"
 
 const makeWorkspaceTestCommandRunnerLayer = (
   options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}
@@ -78,19 +77,6 @@ const makePlan = (name: string = "release", version: string = "0.1.0"): ReleaseP
     evidenceDirectory: ".release/evidence"
   })
 }
-
-const evidenceRecord = (operationId: string): EvidenceRecord =>
-  EvidenceRecord.make({
-    operationId,
-    pipeId: "test",
-    phase: "publish",
-    risk: "writes-local",
-    status: "passed",
-    message: "ok",
-    startedAt: "2026-06-17T00:00:00.000Z",
-    endedAt: "2026-06-17T00:00:00.000Z",
-    durationMillis: 0
-  })
 
 const evidenceBundle = (
   plan: ReleasePlan,
@@ -480,46 +466,11 @@ describe("evidence recorder", () => {
     expect(encoded).not.toHaveProperty("format"); expect(encoded).not.toHaveProperty("sizeBytes")
   })
 
-  it.effect("rejects orphan, duplicate, and metadata-mismatched evidence", () => Effect.gen(function*() {
-    const planned = summaryOperation("planned"), releasePlan = summaryPlan([], [planned])
-    const cases = [
-      ["orphan", [evidenceRecord("missing")]], ["duplicate", [evidenceRecord("planned"), evidenceRecord("planned")]],
-      ["pipeId", [EvidenceRecord.make({ ...evidenceRecord("planned"), pipeId: "other" })]],
-      ["phase", [EvidenceRecord.make({ ...evidenceRecord("planned"), phase: "verify" })]],
-      ["risk", [EvidenceRecord.make({ ...evidenceRecord("planned"), risk: "irreversible" })]]
-    ] as const
-    for (const [label, records] of cases) {
-      const error = yield* evidenceOperationStatuses(releasePlan, evidenceBundle(releasePlan, records)).pipe(Effect.flip)
-      expect([error._tag, error.source], label).toEqual(["PlanReferenceMismatchError", "evidence"])
-    }
-  }))
-
-  it.effect("joins staged artifacts in result order", () => Effect.gen(function*() {
+  it("joins staged artifacts in result order", () => {
     const first = summaryArtifact("first", "dist/first"), second = summaryArtifact("second", "dist/second")
-    const summaries = yield* stagedArtifactSummaries(
+    const summaries = stagedArtifactSummaries(
       summaryPlan([first, second], [summaryOperation("stage-second", ["second"]), summaryOperation("stage-first", ["first"])]),
       [staged("stage-second", "second", "dist/second"), staged("stage-first", "first", "dist/first")])
     expect(summaries).toEqual([artifactSummary(second), artifactSummary(first)])
-  }))
-
-  it.effect("rejects staged artifact and operation reference mismatches", () => Effect.gen(function*() {
-    const cli = summaryArtifact("cli", "dist/cli"), other = summaryArtifact("other", "dist/other")
-    const stage = summaryOperation("stage", ["cli"]), result = staged("stage", "cli", "dist/cli")
-    const cases = [
-      ["missing artifact", summaryPlan([], [stage]), [result]],
-      ["duplicate plan artifact", summaryPlan([cli, summaryArtifact("cli", "dist/duplicate")], [stage]), [result]],
-      ["path", summaryPlan([cli], [stage]), [staged("stage", "cli", "dist/wrong")]],
-      ["missing operation", summaryPlan([cli]), [result]],
-      ["non-stage", summaryPlan([cli], [summaryOperation("stage")]), [result]],
-      ["intent", summaryPlan([cli], [stage]), [staged("stage", "cli", "dist/cli", "pypi-wheel")]],
-      ["produced IDs", summaryPlan([cli, other], [stage]), [staged("stage", "other", "dist/other")]],
-      ["duplicate artifacts", summaryPlan([cli], [summaryOperation("one", ["cli"]), summaryOperation("two", ["cli"])]),
-        [staged("one", "cli", "dist/cli"), staged("two", "cli", "dist/cli")]],
-      ["duplicate operations", summaryPlan([cli], [stage]), [result, result]]
-    ] as const
-    for (const [label, releasePlan, results] of cases) {
-      const error = yield* stagedArtifactSummaries(releasePlan, results).pipe(Effect.flip)
-      expect([error._tag, error.source], label).toEqual(["PlanReferenceMismatchError", "staged-artifact"])
-    }
-  }))
+  })
 })

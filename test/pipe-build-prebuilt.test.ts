@@ -22,7 +22,7 @@ describe("prebuilt build pipe", () => {
       }))
       const contribution = yield* Option.match(resolveBuilds(config.builds), {
         onNone: () => Effect.die("Expected a resolved build section."),
-        onSome: (section) => buildPlanner.plan(section, emptyPlanAccumulator(identity))
+        onSome: (section) => buildPlanner(section, emptyPlanAccumulator(identity))
       })
 
       expect(contribution.artifacts[0]?.path).toBe("dist/release-windows-x64.exe")

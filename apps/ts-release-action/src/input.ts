@@ -1,12 +1,6 @@
 import * as Schema from "effect/Schema"
 
-export const ActionCommand = Schema.Literals([
-  "plan",
-  "doctor",
-  "build",
-  "release",
-  "verify"
-])
+export const ActionCommand = Schema.Literals(["plan", "doctor", "build", "release", "verify"])
 export type ActionCommand = typeof ActionCommand.Type
 
 export const ActionFormat = Schema.Literals(["json", "text", "summary", "markdown"])
@@ -46,33 +40,22 @@ const parseChoice = <const L extends ReadonlyArray<string>>(
   name: string,
   value: string
 ): L[number] => {
-  if (schema.literals.includes(value)) {
-    return value as L[number]
-  }
-  throw ActionInputError.make({
-    input: name,
-    reason: `Unsupported ${name} ${value}.`
-  })
+  if (schema.literals.includes(value)) return value as L[number]
+  throw ActionInputError.make({ input: name, reason: `Unsupported ${name} ${value}.` })
 }
 
-const inputOrDefault = (reader: ActionInputReader, name: string, fallback: string): string => {
-  const value = reader.getInput(name).trim()
-  return value.length === 0 ? fallback : value
-}
-
-const configInputOrDefault = (reader: ActionInputReader, fallback: string): string => {
-  const raw = reader.getInput("config")
-  if (raw.length === 0) {
-    return fallback
-  }
+const inputOrDefault = (
+  reader: ActionInputReader,
+  name: string,
+  fallback: string,
+  rejectWhitespace: boolean = false
+): string => {
+  const raw = reader.getInput(name)
+  if (raw.length === 0) return fallback
   const value = raw.trim()
-  if (value.length === 0) {
-    throw ActionInputError.make({
-      input: "config",
-      reason: "config must be a non-empty path."
-    })
-  }
-  return value
+  if (value.length > 0) return value
+  if (!rejectWhitespace) return fallback
+  throw ActionInputError.make({ input: name, reason: `${name} must be a non-empty path.` })
 }
 
 const optionalInput = (reader: ActionInputReader, name: string): string | undefined => {
@@ -82,19 +65,9 @@ const optionalInput = (reader: ActionInputReader, name: string): string | undefi
 
 const parseBooleanInput = (reader: ActionInputReader, name: string, fallback: boolean): boolean => {
   const value = reader.getInput(name).trim()
-  if (value.length === 0) {
-    return fallback
-  }
-  if (value === "true") {
-    return true
-  }
-  if (value === "false") {
-    return false
-  }
-  throw ActionInputError.make({
-    input: name,
-    reason: "Expected true or false."
-  })
+  if (value.length === 0) return fallback
+  if (value === "true" || value === "false") return value === "true"
+  throw ActionInputError.make({ input: name, reason: "Expected true or false." })
 }
 
 export const readActionOptions = (reader: ActionInputReader, root: string): ActionOptions => {
@@ -102,7 +75,7 @@ export const readActionOptions = (reader: ActionInputReader, root: string): Acti
   return ActionOptions.make({
     root,
     command: parseChoice(ActionCommand, "command", inputOrDefault(reader, "command", "plan")),
-    config: configInputOrDefault(reader, "release.config.json"),
+    config: inputOrDefault(reader, "config", "release.config.json", true),
     format: parseChoice(ActionFormat, "format", inputOrDefault(reader, "format", "markdown")),
     writeStepSummary: parseBooleanInput(reader, "write-step-summary", true),
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),

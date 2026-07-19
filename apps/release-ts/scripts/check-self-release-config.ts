@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import * as Schema from "effect/Schema"
-import { ReleaseConfig } from "../../../src/config/schema.js"
+import { ReleaseIntent } from "../../../src/config/schema.js"
 import { platformTargetVariant } from "../../../src/pipeline/platform.js"
 import { ReleaseIdentity } from "../../../src/pipeline/state.js"
 import { normalizedName, renderTemplate } from "../../../src/pipeline/template.js"
@@ -15,7 +15,7 @@ const expectedPackageName = "@mannyc1/ts-release"
 const description = "Portable artifact and package-manager distribution planning for TypeScript projects."
 const targets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"] as const
 
-const decodeReleaseConfig = Schema.decodeUnknownSync(ReleaseConfig, { onExcessProperty: "error" })
+const decodeReleaseIntent = Schema.decodeUnknownSync(ReleaseIntent, { onExcessProperty: "error" })
 
 // Only for JSON the tool does not own a schema for (package manifests).
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
@@ -81,9 +81,9 @@ const failures: Array<string> = []
 const manifest = readJson("package.json")
 const appManifest = readJson(appPackagePath)
 
-const decodedConfig = (): { readonly config?: ReleaseConfig; readonly error?: string } => {
+const decodedConfig = (): { readonly config?: ReleaseIntent; readonly error?: string } => {
   try {
-    return { config: decodeReleaseConfig(readJson(releaseConfigPath)) }
+    return { config: decodeReleaseIntent(readJson(releaseConfigPath)) }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return { error: message.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join(" | ") }

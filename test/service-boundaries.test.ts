@@ -6,19 +6,16 @@ import * as Path from "effect/Path"
 import {
   ArtifactStager,
   type ArtifactStagerShape,
-  LiveArtifactStagerLayer,
+  makeArtifactStagerLayer,
   StagedArtifact,
   StagedArtifactOperationResult,
   type StageOperation,
-  UnsupportedArtifactStagerLayer,
-  stageArtifactOperation
+  UnsupportedArtifactStagerLayer
 } from "../src/engine/stager.js"
 import { type GitHubApiShape } from "../src/engine/github.js"
 import { type ReleaseCommandRunnerShape } from "../src/host/host.js"
 import { type ReleaseHttpShape } from "../src/host/http.js"
-import { gitTagSource } from "../src/pipeline/identity/git-tag.js"
-import { manifestSource } from "../src/pipeline/identity/manifest.js"
-import { type VersionSourceServices } from "../src/pipeline/identity/source.js"
+import { resolveGitTagIdentity, resolveManifestIdentity } from "../src/engine/resolved-release.js"
 import { ArchiveIntent, Operation, StageAction } from "../src/pipeline/operation.js"
 import { makePipelineIdentity } from "./helpers.js"
 
@@ -46,7 +43,7 @@ const githubInspectMethodIsClosed: Equal<
   never
 > = true
 const liveStagerRequiresNativeServices: Equal<
-  Layer.Services<typeof LiveArtifactStagerLayer>,
+  Layer.Services<ReturnType<typeof makeArtifactStagerLayer>>,
   FileSystem.FileSystem | Path.Path
 > = true
 const unsupportedStagerIsDependencyFree: Equal<
@@ -54,12 +51,12 @@ const unsupportedStagerIsDependencyFree: Equal<
   never
 > = true
 const manifestSourceUsesEffectServices: Equal<
-  Effect.Services<ReturnType<typeof manifestSource.resolve>>,
-  VersionSourceServices
+  Effect.Services<ReturnType<typeof resolveManifestIdentity>>,
+  FileSystem.FileSystem | Path.Path | import("../src/host/host.js").ReleaseCommandRunner
 > = true
 const gitTagSourceUsesEffectServices: Equal<
-  Effect.Services<ReturnType<typeof gitTagSource.resolve>>,
-  VersionSourceServices
+  Effect.Services<ReturnType<typeof resolveGitTagIdentity>>,
+  FileSystem.FileSystem | Path.Path | import("../src/host/host.js").ReleaseCommandRunner
 > = true
 
 const action = StageAction.make({
@@ -110,7 +107,7 @@ describe("custom service boundaries", () => {
 
   it.effect("substitutes an ArtifactStager layer without native service leakage", () =>
     Effect.gen(function*() {
-      const result = yield* stageArtifactOperation(operation, {
+      const result = yield* (yield* ArtifactStager).stage(operation, {
         root: "/workspace",
         identity: makePipelineIdentity()
       })
@@ -121,7 +118,7 @@ describe("custom service boundaries", () => {
 
   it.effect("keeps unsupported staging typed and dependency-free", () =>
     Effect.gen(function*() {
-      const error = yield* stageArtifactOperation(operation, {
+      const error = yield* (yield* ArtifactStager).stage(operation, {
         root: "/workspace",
         identity: makePipelineIdentity()
       }).pipe(Effect.flip)

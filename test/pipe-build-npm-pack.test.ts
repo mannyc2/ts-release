@@ -18,7 +18,7 @@ describe("npm pack build pipe", () => {
       }))
       const contribution = yield* Option.match(resolveNpmPackage(config.npmPackage, identity.name), {
         onNone: () => Effect.die("Expected a resolved npm package section."),
-        onSome: (section) => npmPackPlanner.plan(section, emptyPlanAccumulator(identity))
+        onSome: (section) => npmPackPlanner(section, emptyPlanAccumulator(identity))
       })
 
       expect(contribution.artifacts[0]).toMatchObject({

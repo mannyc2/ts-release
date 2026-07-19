@@ -170,7 +170,7 @@ describe("PyPI target", () => {
     expect(halfAuth._tag).toBe("PlanError")
     expect(customAuth._tag).toBe("PlanError")
     expect(trustedWithToken._tag).toBe("PlanError")
-    expect(trustedWorkflowPath._tag).toBe("ConfigValidationError")
+    expect(trustedWorkflowPath._tag).toBe("ConfigError")
     if (customAuth._tag === "PlanError") {
       expect(customAuth.reason).toContain("TWINE_USERNAME")
       expect(customAuth.reason).toContain("TWINE_PASSWORD")
@@ -178,7 +178,7 @@ describe("PyPI target", () => {
     if (trustedWithToken._tag === "PlanError") {
       expect(trustedWithToken.reason).toContain("trusted publishing")
     }
-    if (trustedWorkflowPath._tag === "ConfigValidationError") {
+    if (trustedWorkflowPath._tag === "ConfigError") {
       expect(trustedWorkflowPath.reason).toContain(`["publish"]["pypi"]["trustedPublishing"]["workflow"]`)
     }
     expect(directoryArtifact._tag).toBe("PlanError")

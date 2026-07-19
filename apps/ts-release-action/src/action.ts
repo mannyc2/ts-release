@@ -40,7 +40,6 @@ export interface ActionArtifactClient {
 }
 
 export class ActionCommandError extends Schema.TaggedErrorClass<ActionCommandError>()("ActionCommandError", {
-  command: Schema.String,
   reason: Schema.String
 }) {}
 
@@ -65,10 +64,6 @@ export type ActionRuntimeServices =
   | GitHubApi
   | ArtifactStager
 
-type PlanObserver = (plan: ReleasePlan) => void
-
-const NoopPlanObserver: PlanObserver = () => {}
-
 const renderActionCause = (cause: unknown): string => {
   if (Cause.isCause(cause)) {
     return Cause.pretty(cause)
@@ -85,49 +80,27 @@ export const formatActionError = (cause: unknown): string =>
     renderActionCause
   ) ?? renderActionCause(cause)
 
-const workspaceOutputPath = (
+const workspaceActionPath = (
   path: Path.Path,
   options: ActionOptions,
-  pathName: string
-): Effect.Effect<string, ActionCommandError> => {
-  const result = validateWorkspaceWritePath(path, options.root, pathName)
-  return result._tag === "Ok"
-    ? Effect.succeed(result.path)
-    : Effect.fail(
-      ActionCommandError.make({
-        command: options.command,
-        reason: result.reason === "empty-or-parent-traversal"
-          ? "plan-path must be non-empty and must not contain parent traversal."
-          : "plan-path must resolve inside the action root."
-      })
-    )
-}
-
-const workspaceConfigPath = (
-  path: Path.Path,
-  options: ActionOptions,
-  pathName: string
+  pathName: string,
+  field: "plan-path" | "config"
 ): Effect.Effect<string, ActionCommandError> => {
   const rootPath = path.resolve(options.root)
-  const result = validateWorkspaceWritePath(path, rootPath, pathName)
+  const result = validateWorkspaceWritePath(path, field === "config" ? rootPath : options.root, pathName)
   if (result._tag === "Invalid") {
     return Effect.fail(
       ActionCommandError.make({
-        command: options.command,
         reason: result.reason === "empty-or-parent-traversal"
-          ? "config must be non-empty and must not contain parent traversal."
-          : "config must resolve inside the action root."
+          ? `${field} must be non-empty and must not contain parent traversal.`
+          : `${field} must resolve inside the action root.`
       })
     )
   }
-  return Effect.succeed(path.isAbsolute(pathName) ? path.relative(rootPath, result.path) : pathName)
+  return Effect.succeed(field === "config" && path.isAbsolute(pathName)
+    ? path.relative(rootPath, result.path)
+    : field === "config" ? pathName : result.path)
 }
-
-const actionOptionsWithConfig = (
-  options: ActionOptions,
-  config: string
-): ActionOptions =>
-  ActionOptions.make({ ...options, config })
 
 const releaseInput = (options: ActionOptions) => ({
   workspace: options.root,
@@ -137,93 +110,46 @@ const releaseInput = (options: ActionOptions) => ({
   approvePublish: options.approvePublish
 })
 
-const textOutputFormat = (options: ActionOptions): "json" | "text" =>
-  options.format === "json" ? "json" : "text"
-
 const diagnosticsFormat = (options: ActionOptions): "json" | "text" | "markdown" =>
   options.format === "json" || options.format === "markdown" ? options.format : "text"
 
 const diagnosticsInput = (options: ActionOptions) => ({
   root: options.root,
   configPath: options.config,
-  format: diagnosticsFormat(options),
   target: options.target
 })
 
-const surfaceCount = (plan: ReleasePlan): number =>
-  operationSurfaceIds(plan).length
-
-const outputPlan = Effect.fn("action.outputPlan")(function*(io: ActionIo, plan: ReleasePlan, planPath: string) {
-  yield* io.setOutput("release_name", plan.identity.name)
-  yield* io.setOutput("release_version", plan.identity.version)
-  yield* io.setOutput("operation_count", String(plan.operations.length))
-  yield* io.setOutput(
-    "irreversible_operation_count",
-    String(plan.operations.filter((operation) => operation.risk === "irreversible").length)
-  )
-  yield* io.setOutput("surface_count", String(surfaceCount(plan)))
-  yield* io.setOutput("evidence_directory", plan.evidenceDirectory)
-  yield* io.setOutput("plan_path", planPath)
-})
-
-const outputEvidenceDirectory = Effect.fn("action.outputEvidenceDirectory")(function*(
+const outputPlan = Effect.fn("action.outputPlan")(function*(
   io: ActionIo,
-  plan: ReleasePlan
+  plan: ReleasePlan,
+  planPath?: string
 ) {
-  yield* io.setOutput("release_name", plan.identity.name)
-  yield* io.setOutput("release_version", plan.identity.version)
-  yield* io.setOutput("evidence_directory", plan.evidenceDirectory)
+  const outputs = planPath === undefined ? {} : {
+    operation_count: String(plan.operations.length),
+    irreversible_operation_count: String(plan.operations.filter((operation) => operation.risk === "irreversible").length),
+    surface_count: String(operationSurfaceIds(plan).length),
+    plan_path: planPath
+  }
+  yield* Effect.forEach(Object.entries({
+    release_name: plan.identity.name,
+    release_version: plan.identity.version,
+    evidence_directory: plan.evidenceDirectory,
+    ...outputs
+  }), ([name, value]) => io.setOutput(name, value), { discard: true })
 })
-
-const hasDiagnosticFailure = (report: ReleaseDiagnosticReport): boolean =>
-  report.checks.some((check) => check.status === "fail")
-
-const hasDiagnosticWarning = (report: ReleaseDiagnosticReport): boolean =>
-  report.checks.some((check) => check.status === "warn")
 
 const failForDiagnostics = (
-  command: string,
   report: ReleaseDiagnosticReport,
   failOnWarnings: boolean
 ): Effect.Effect<void, ActionCommandError> => {
-  if (hasDiagnosticFailure(report)) {
-    return Effect.fail(ActionCommandError.make({
-      command,
-      reason: "Diagnostics reported failing checks."
-    }))
-  }
-  if (failOnWarnings && hasDiagnosticWarning(report)) {
-    return Effect.fail(ActionCommandError.make({
-      command,
-      reason: "Diagnostics reported warnings and fail-on-warnings is true."
-    }))
-  }
-  return Effect.void
+  const failed = report.checks.some((check) => check.status === "fail")
+  const warned = failOnWarnings && report.checks.some((check) => check.status === "warn")
+  return failed || warned
+    ? Effect.fail(ActionCommandError.make({ reason: failed
+      ? "Diagnostics reported failing checks."
+      : "Diagnostics reported warnings and fail-on-warnings is true." }))
+    : Effect.void
 }
-
-const collectEvidenceFiles = Effect.fn("action.collectEvidenceFiles")(function*(
-  root: string,
-  evidenceDirectory: string
-) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const absoluteDirectory = resolveWorkspacePath(path, root, evidenceDirectory)
-  const exists = yield* fs.exists(absoluteDirectory)
-  if (!exists) {
-    return {
-      directory: absoluteDirectory,
-      files: []
-    }
-  }
-  const entries = yield* fs.readDirectory(absoluteDirectory, { recursive: true })
-  return {
-    directory: absoluteDirectory,
-    files: entries
-      .filter((entry) => entry.endsWith(".json"))
-      .map((entry) => path.resolve(absoluteDirectory, entry))
-      .sort()
-  }
-})
 
 const uploadEvidence = Effect.fn("action.uploadEvidence")(function*(
   options: ActionOptions,
@@ -238,24 +164,20 @@ const uploadEvidence = Effect.fn("action.uploadEvidence")(function*(
     yield* io.info("No release plan was available; evidence upload skipped.")
     return
   }
-  const evidence = yield* collectEvidenceFiles(plan.source.root, plan.evidenceDirectory)
-  if (evidence.files.length === 0) {
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const directory = resolveWorkspacePath(path, plan.source.root, plan.evidenceDirectory)
+  const files = (yield* fs.exists(directory))
+    ? (yield* fs.readDirectory(directory, { recursive: true }))
+      .filter((entry) => entry.endsWith(".json"))
+      .map((entry) => path.resolve(directory, entry)).sort()
+    : []
+  if (files.length === 0) {
     yield* io.info(`No evidence files found in ${plan.evidenceDirectory}; evidence upload skipped.`)
     return
   }
-  yield* artifactClient.uploadArtifact(options.evidenceArtifactName, evidence.files, evidence.directory)
+  yield* artifactClient.uploadArtifact(options.evidenceArtifactName, files, directory)
 })
-
-const ignoreUploadFailure = <R>(
-  upload: Effect.Effect<void, unknown, R>,
-  io: ActionIo
-) =>
-  upload.pipe(
-    Effect.matchEffect({
-      onFailure: (uploadError) => io.info(`Evidence upload failed: ${formatActionError(uploadError)}`),
-      onSuccess: () => Effect.void
-    })
-  )
 
 const withEvidenceUpload = <A, E, R>(
   options: ActionOptions,
@@ -263,119 +185,22 @@ const withEvidenceUpload = <A, E, R>(
   artifactClient: ActionArtifactClient,
   planRef: () => ReleasePlan | undefined,
   effect: Effect.Effect<A, E, R>
-) =>
-  effect.pipe(
-    Effect.matchEffect({
-      onFailure: (error) =>
-        ignoreUploadFailure(uploadEvidence(options, io, artifactClient, planRef()), io).pipe(
-          Effect.flatMap(() => Effect.fail(error))
-        ),
-      onSuccess: (result) =>
-        uploadEvidence(options, io, artifactClient, planRef()).pipe(
-          Effect.map(() => result)
-        )
-    })
-  )
+) => effect.pipe(Effect.onExit((exit) => {
+  const upload = uploadEvidence(options, io, artifactClient, planRef())
+  return exit._tag === "Failure"
+    ? upload.pipe(Effect.catch((error) => io.info(`Evidence upload failed: ${formatActionError(error)}`)))
+    : upload
+}))
 
 const ensureRuntime = (options: ActionOptions): Effect.Effect<void, ActionCommandError> => {
   if (options.runtime === "bundled") {
     return Effect.void
   }
   return Effect.fail(ActionCommandError.make({
-    command: options.command,
     reason:
       "runtime: workspace is deferred because a safe same-module-graph Node runtime requires the workspace to provide @mannyc1/ts-release, effect, and the aligned @effect/platform-node package. Use runtime: bundled."
   }))
 }
-
-const runPlan = Effect.fn("action.runPlan")(function*(options: ActionOptions, io: ActionIo) {
-  const path = yield* Path.Path
-  const plan = yield* Release.planRelease(releaseInput(options))
-  const contents = Release.renderReleasePlan(plan, options.format)
-  const outputPath = yield* workspaceOutputPath(path, options, options.planPath)
-  yield* io.writeFile(outputPath, contents)
-  if (options.writeStepSummary) {
-    const markdown = options.format === "markdown"
-      ? contents
-      : Release.renderReleasePlan(plan, "markdown")
-    yield* io.appendSummary(markdown)
-  }
-  yield* outputPlan(io, plan, options.planPath)
-  yield* io.setOutput("status", "passed")
-  return plan
-})
-
-const runBuild = Effect.fn("action.runBuild")(function*(
-  options: ActionOptions,
-  io: ActionIo,
-  observePlan: PlanObserver = NoopPlanObserver
-) {
-  const staged = yield* Release.buildReleaseArtifacts(releaseInput(options))
-  observePlan(staged.plan)
-  const rendered = Release.renderBuildArtifacts(staged, textOutputFormat(options))
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release build\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
-  }
-  yield* outputEvidenceDirectory(io, staged.plan)
-  yield* io.setOutput("status", "passed")
-  return staged.plan
-})
-
-const runDiagnostics = Effect.fn("action.runDiagnostics")(function*(
-  options: ActionOptions,
-  io: ActionIo
-) {
-  const report = yield* Doctor.doctorRelease(diagnosticsInput(options))
-  const rendered = Doctor.renderReleaseDiagnostics(report, diagnosticsFormat(options))
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(rendered)
-  }
-  yield* io.setOutput("release_name", report.releaseName)
-  yield* io.setOutput("release_version", report.releaseVersion)
-  yield* failForDiagnostics("doctor", report, options.failOnWarnings)
-  yield* io.setOutput("status", "passed")
-})
-
-const runVerify = Effect.fn("action.runVerify")(function*(
-  options: ActionOptions,
-  io: ActionIo,
-  observePlan: PlanObserver = NoopPlanObserver
-) {
-  const plan = yield* Release.planRelease(releaseInput(options))
-  observePlan(plan)
-  yield* outputEvidenceDirectory(io, plan)
-  yield* Release.writeVerificationEvidence(plan)
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release verify\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/verification.json\n`)
-  }
-  yield* io.setOutput("status", "passed")
-  return plan
-})
-
-const runRelease = Effect.fn("action.runRelease")(function*(
-  options: ActionOptions,
-  io: ActionIo,
-  observePlan: PlanObserver = NoopPlanObserver
-) {
-  const plan = yield* Release.planRelease(releaseInput(options))
-  observePlan(plan)
-  yield* outputEvidenceDirectory(io, plan)
-  if (!options.execute) {
-    if (options.writeStepSummary) {
-      yield* io.appendSummary(
-        `${Release.renderReleasePlan(plan, "markdown").trimEnd()}\n\nrelease planned only; set execute: true to run approved operations.\n`
-      )
-    }
-    yield* io.setOutput("status", "passed")
-    return plan
-  }
-  yield* Release.writeReleaseEvidence(plan, releaseInput(options))
-  if (options.writeStepSummary) {
-    yield* io.appendSummary(`## ts-release release\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/evidence.json\n`)
-  }
-  yield* io.setOutput("status", "passed")
-  return plan
-})
 
 export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   options: ActionOptions,
@@ -383,8 +208,8 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   artifactClient: ActionArtifactClient = NoopActionArtifactClient
 ) {
   const path = yield* Path.Path
-  const config = yield* workspaceConfigPath(path, options, options.config)
-  const safeOptions = actionOptionsWithConfig(options, config)
+  const config = yield* workspaceActionPath(path, options, options.config, "config")
+  const safeOptions = ActionOptions.make({ ...options, config })
   yield* ensureRuntime(safeOptions)
   let planForUpload: ReleasePlan | undefined
   const rememberPlan = (plan: ReleasePlan): ReleasePlan => {
@@ -394,22 +219,64 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   yield* withEvidenceUpload(safeOptions, io, artifactClient, () => planForUpload, Effect.gen(function*() {
     switch (safeOptions.command) {
       case "plan":
-        rememberPlan(yield* runPlan(safeOptions, io))
+        {
+          const plan = yield* Release.planRelease(releaseInput(safeOptions))
+          const contents = Release.renderReleasePlan(plan, safeOptions.format)
+          const outputPath = yield* workspaceActionPath(path, safeOptions, safeOptions.planPath, "plan-path")
+          yield* io.writeFile(outputPath, contents)
+          if (safeOptions.writeStepSummary) yield* io.appendSummary(safeOptions.format === "markdown"
+            ? contents : Release.renderReleasePlan(plan, "markdown"))
+          yield* outputPlan(io, plan, safeOptions.planPath)
+          rememberPlan(plan)
+        }
         return
       case "doctor":
-        yield* runDiagnostics(safeOptions, io)
+        {
+          const report = yield* Doctor.doctorRelease(diagnosticsInput(safeOptions))
+          if (safeOptions.writeStepSummary) {
+            yield* io.appendSummary(Doctor.renderReleaseDiagnostics(report, diagnosticsFormat(safeOptions)))
+          }
+          yield* io.setOutput("release_name", report.releaseName)
+          yield* io.setOutput("release_version", report.releaseVersion)
+          yield* failForDiagnostics(report, safeOptions.failOnWarnings)
+        }
         return
       case "build":
-        rememberPlan(yield* runBuild(safeOptions, io))
+        {
+          const staged = yield* Release.buildReleaseArtifacts(releaseInput(safeOptions))
+          rememberPlan(staged.plan)
+          const rendered = Release.renderBuildArtifacts(staged, safeOptions.format === "json" ? "json" : "text")
+          if (safeOptions.writeStepSummary) {
+            yield* io.appendSummary(`## ts-release build\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
+          }
+          yield* outputPlan(io, staged.plan)
+        }
         return
       case "release":
-        yield* runRelease(safeOptions, io, rememberPlan)
-        return
       case "verify":
-        yield* runVerify(safeOptions, io, rememberPlan)
+        {
+          const command = safeOptions.command
+          const plan = yield* Release.planRelease(releaseInput(safeOptions))
+          rememberPlan(plan)
+          yield* outputPlan(io, plan)
+          if (command === "release" && !safeOptions.execute) {
+            if (safeOptions.writeStepSummary) yield* io.appendSummary(
+              `${Release.renderReleasePlan(plan, "markdown").trimEnd()}\n\nrelease planned only; set execute: true to run approved operations.\n`)
+            return
+          }
+          yield* (command === "verify"
+            ? Release.writeVerificationEvidence(plan)
+            : Release.writeReleaseEvidence(plan, releaseInput(safeOptions)))
+          if (safeOptions.writeStepSummary) {
+            const evidenceName = command === "verify" ? "verification" : "evidence"
+            yield* io.appendSummary(
+              `## ts-release ${command}\n\nstatus: passed\n\nevidence: ${plan.evidenceDirectory}/${evidenceName}.json\n`)
+          }
+        }
         return
     }
   }))
+  yield* io.setOutput("status", "passed")
 })
 
 export const runAction = async <R>(

@@ -3,6 +3,9 @@ import * as Schema from "effect/Schema"
 import { PyPiWheelBinaryArtifact } from "./artifact.js"
 import { PlatformTarget } from "./platform.js"
 import { ArtifactId, Checksum } from "./artifact.js"
+import bunCompileTargets from "../assets/bun-compile-targets.json" with { type: "json" }
+
+// Invariant: every durable operation has one action representation and one approval derivation.
 
 export const OperationId = Schema.NonEmptyString
 export type OperationId = typeof OperationId.Type
@@ -21,42 +24,6 @@ export class CommandSpec extends Schema.Class<CommandSpec>("CommandSpec")({
   redactedEnv: Schema.Array(Schema.String)
 }) {}
 
-export const HttpMethod = Schema.Literals(["GET", "HEAD", "POST", "PATCH"])
-export type HttpMethod = typeof HttpMethod.Type
-
-export class HttpHeader extends Schema.Class<HttpHeader>("HttpHeader")({
-  name: Schema.String,
-  value: Schema.String
-}) {}
-
-export class HttpEnvHeader extends Schema.Class<HttpEnvHeader>("HttpEnvHeader")({
-  name: Schema.String,
-  valueEnv: Schema.String,
-  prefix: Schema.optional(Schema.String)
-}) {}
-
-export class HttpJsonRequestBody extends Schema.TaggedClass<HttpJsonRequestBody>()("HttpJsonRequestBody", {
-  json: Schema.Json
-}) {}
-
-export class HttpFileRequestBody extends Schema.TaggedClass<HttpFileRequestBody>()("HttpFileRequestBody", {
-  path: Schema.String,
-  contentType: Schema.String
-}) {}
-
-export const HttpRequestBody = Schema.Union([HttpJsonRequestBody, HttpFileRequestBody])
-export type HttpRequestBody = typeof HttpRequestBody.Type
-
-export class HttpRequestSpec extends Schema.Class<HttpRequestSpec>("HttpRequestSpec")({
-  method: HttpMethod,
-  url: Schema.String,
-  headers: Schema.Array(HttpHeader),
-  envHeaders: Schema.Array(HttpEnvHeader),
-  requiredEnv: Schema.Array(Schema.String),
-  redactedEnv: Schema.Array(Schema.String),
-  body: Schema.optional(HttpRequestBody)
-}) {}
-
 export class GitHubReleaseAssetSpec extends Schema.Class<GitHubReleaseAssetSpec>("GitHubReleaseAssetSpec")({
   artifactId: Schema.String,
   path: Schema.String,
@@ -64,31 +31,11 @@ export class GitHubReleaseAssetSpec extends Schema.Class<GitHubReleaseAssetSpec>
   contentType: Schema.String
 }) {}
 
-export const BunCompileTarget = Schema.Literals([
-  "bun-linux-x64",
-  "bun-linux-x64-baseline",
-  "bun-linux-x64-modern",
-  "bun-linux-x64-musl",
-  "bun-linux-x64-baseline-musl",
-  "bun-linux-x64-modern-musl",
-  "bun-linux-arm64",
-  "bun-linux-arm64-baseline",
-  "bun-linux-arm64-modern",
-  "bun-linux-arm64-musl",
-  "bun-linux-arm64-baseline-musl",
-  "bun-linux-arm64-modern-musl",
-  "bun-darwin-x64",
-  "bun-darwin-x64-baseline",
-  "bun-darwin-x64-modern",
-  "bun-darwin-arm64",
-  "bun-darwin-arm64-baseline",
-  "bun-darwin-arm64-modern",
-  "bun-windows-x64",
-  "bun-windows-x64-baseline",
-  "bun-windows-x64-modern",
-  "bun-windows-arm64"
-])
-export type BunCompileTarget = typeof BunCompileTarget.Type
+type BunCpu = "baseline" | "modern"
+export type BunCompileTarget = `bun-${PlatformTarget}`
+  | `bun-linux-${"x64" | "arm64"}-${BunCpu}${"" | "-musl"}`
+  | `bun-darwin-${"x64" | "arm64"}-${BunCpu}` | `bun-windows-x64-${BunCpu}`
+export const BunCompileTarget = Schema.Literals(bunCompileTargets as ReadonlyArray<BunCompileTarget>)
 
 export class BunCompileIntent extends Schema.TaggedClass<BunCompileIntent>()("bun-compile", {
   entry: Schema.String,
@@ -256,14 +203,8 @@ export const operationApprovalRequirements = (operation: Operation) => {
 
 export const canExecuteOperation = (operation: Operation, approval: ExecutionApproval): boolean => {
   const requirements = operationApprovalRequirements(operation)
-
-  if (requirements.requiresExecute && !approval.execute) {
-    return false
-  }
-  if (requirements.requiresIrreversibleApproval && !approval.approveIrreversible) {
-    return false
-  }
-  return true
+  return (!requirements.requiresExecute || approval.execute)
+    && (!requirements.requiresIrreversibleApproval || approval.approveIrreversible)
 }
 
 export const requireExecutionApproval = Effect.fn("requireExecutionApproval")(function*(
@@ -271,12 +212,8 @@ export const requireExecutionApproval = Effect.fn("requireExecutionApproval")(fu
   approval: ExecutionApproval
 ) {
   const requirements = operationApprovalRequirements(operation)
-  if (
-    (!requirements.requiresExecute || approval.execute) &&
-    (!requirements.requiresIrreversibleApproval || approval.approveIrreversible)
-  ) {
-    return
-  }
+  if ((!requirements.requiresExecute || approval.execute)
+    && (!requirements.requiresIrreversibleApproval || approval.approveIrreversible)) return
 
   const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible
     ? "Operation requires irreversible approval."
@@ -289,5 +226,3 @@ export const requireExecutionApproval = Effect.fn("requireExecutionApproval")(fu
     })
   )
 })
-
-export type PipelineOperation = Operation

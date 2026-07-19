@@ -1,47 +1,25 @@
+// Invariant: every GitHub URL is repository-bound, every response is Schema-decoded, and pagination alone uses whileLoop.
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import {
-  GitHubReleaseAssetSpec,
-  HttpEnvHeader,
-  HttpFileRequestBody,
-  HttpHeader,
-  HttpJsonRequestBody,
-  HttpRequestBody,
-  HttpRequestSpec
+  ReleaseHttp,
+  ApiError,
+  type HttpHeader,
+  type HttpRequestBody,
+  type HttpRequestSpec,
+  type HttpResult,
+  type ReleaseHttpShape
+} from "../host/http.js"
+import {
+  type GitHubReleaseCreateAction,
+  type GitHubReleaseAssetSpec
 } from "../pipeline/operation.js"
-import { ReleaseHttp, type HttpResult, type ReleaseHttpShape } from "../host/http.js"
-
-const githubApiHeaders: ReadonlyArray<HttpHeader> = [
-  HttpHeader.make({ name: "Accept", value: "application/vnd.github+json" }),
-  HttpHeader.make({ name: "X-GitHub-Api-Version", value: "2022-11-28" })
-]
-
-
-export class GitHubApiError extends Schema.TaggedErrorClass<GitHubApiError>()("GitHubApiError", {
-  operation: Schema.String,
-  url: Schema.String,
-  reason: Schema.String,
-  status: Schema.optionalKey(Schema.Number),
-  cause: Schema.optionalKey(Schema.Defect())
-}) {}
-
-export class GitHubRepositoryCoordinates extends Schema.Class<GitHubRepositoryCoordinates>(
-  "GitHubRepositoryCoordinates"
-)({
-  owner: Schema.String,
-  repo: Schema.String
-}) {}
 
 export class GitHubReleaseApiAssetResponse extends Schema.Class<GitHubReleaseApiAssetResponse>(
   "GitHubReleaseApiAssetResponse"
-)({
-  id: Schema.Number,
-  name: Schema.String,
-  state: Schema.optionalKey(Schema.String)
-}) {}
-
+)({ id: Schema.Number, name: Schema.String, state: Schema.optionalKey(Schema.String) }) {}
 export class GitHubReleaseApiResponse extends Schema.Class<GitHubReleaseApiResponse>(
   "GitHubReleaseApiResponse"
 )({
@@ -54,428 +32,235 @@ export class GitHubReleaseApiResponse extends Schema.Class<GitHubReleaseApiRespo
   assets: Schema.Array(GitHubReleaseApiAssetResponse)
 }) {}
 
-export interface GitHubReleaseCreateRequest {
-  readonly repository: string
-  readonly tokenEnv?: string | undefined
-  readonly tag: string
-  readonly title: string
-  readonly notes?: string | undefined
-  readonly draft: boolean
-  readonly prerelease: boolean
-  readonly assets: ReadonlyArray<GitHubReleaseAssetSpec>
-}
-
-export interface GitHubReleaseInspectRequest {
+interface InspectRequest {
   readonly repository: string
   readonly tokenEnv?: string | undefined
   readonly tag: string
 }
-
 export interface GitHubApiShape {
   readonly createRelease: (
-    request: GitHubReleaseCreateRequest
-  ) => Effect.Effect<GitHubReleaseApiResponse, GitHubApiError>
+    request: GitHubReleaseCreateAction
+  ) => Effect.Effect<GitHubReleaseApiResponse, ApiError>
   readonly inspectRelease: (
-    request: GitHubReleaseInspectRequest
-  ) => Effect.Effect<GitHubReleaseApiResponse, GitHubApiError>
+    request: InspectRequest
+  ) => Effect.Effect<GitHubReleaseApiResponse, ApiError>
 }
-
 export class GitHubApi extends Context.Service<GitHubApi, GitHubApiShape>()("GitHubApi") {}
 
-const decodeGitHubRelease = Schema.decodeUnknownEffect(GitHubReleaseApiResponse)
-const decodeGitHubReleaseList = Schema.decodeUnknownEffect(Schema.Array(GitHubReleaseApiResponse))
-const decodeGitHubAsset = Schema.decodeUnknownEffect(GitHubReleaseApiAssetResponse)
-
-const runGithubJson = (
-  http: ReleaseHttpShape,
+interface Coordinates { readonly owner: string; readonly repo: string }
+const apiError = (
   operation: string,
-  request: HttpRequestSpec
-): Effect.Effect<HttpResult, GitHubApiError> =>
-  http.runJson(request).pipe(
-    Effect.mapError((error) =>
-      GitHubApiError.make({
-        operation,
-        url: error.url,
-        reason: error.reason,
-        cause: error
-      })
-    )
-  )
+  url: string,
+  reason: string,
+  fields: { readonly status?: number; readonly cause?: unknown } = {}
+): ApiError => ApiError.make({ operation, url, reason, ...fields })
 
-const parseRepository = Effect.fn("githubApi.parseRepository")(function*(repository: string) {
-  const parts = repository.split("/")
-  const owner = parts[0]
-  const repo = parts[1]
-  if (
-    parts.length === 2 &&
-    owner !== undefined &&
-    repo !== undefined &&
-    owner.length > 0 &&
-    repo.length > 0
-  ) {
-    return GitHubRepositoryCoordinates.make({ owner, repo })
-  }
-  return yield* Effect.fail(
-    GitHubApiError.make({
-      operation: "parseRepository",
-      url: repository,
-      reason: "GitHub repository must use owner/repo syntax."
-    })
-  )
-})
+const coordinates = (repository: string): Effect.Effect<Coordinates, ApiError> => {
+  const [owner, repo, extra] = repository.split("/")
+  return owner !== undefined && owner.length > 0 && repo !== undefined && repo.length > 0 && extra === undefined
+    ? Effect.succeed({ owner, repo })
+    : Effect.fail(apiError("parseRepository", repository, "GitHub repository must use owner/repo syntax."))
+}
+const repositoryPath = (value: Coordinates): string =>
+  encodeURIComponent(value.owner) + "/" + encodeURIComponent(value.repo)
+const apiUrl = (value: Coordinates, path: string): string =>
+  "https://api.github.com/repos/" + repositoryPath(value) + path
+const releasesUrl = (value: Coordinates): string => apiUrl(value, "/releases")
+const releaseByTagUrl = (value: Coordinates, tag: string): string =>
+  apiUrl(value, "/releases/tags/" + encodeURIComponent(tag))
 
-const encodedRepositoryPath = (coordinates: GitHubRepositoryCoordinates): string =>
-  `${encodeURIComponent(coordinates.owner)}/${encodeURIComponent(coordinates.repo)}`
-
-const githubApiUrl = (coordinates: GitHubRepositoryCoordinates, path: string): string =>
-  `https://api.github.com/repos/${encodedRepositoryPath(coordinates)}${path}`
-
-const githubReleasesUrl = (coordinates: GitHubRepositoryCoordinates): string =>
-  githubApiUrl(coordinates, "/releases")
-
-const githubReleaseByTagUrl = (coordinates: GitHubRepositoryCoordinates, tag: string): string =>
-  githubApiUrl(coordinates, `/releases/tags/${encodeURIComponent(tag)}`)
-
-const githubRequest = (input: {
+const apiHeaders = [
+  { name: "Accept", value: "application/vnd.github+json" },
+  { name: "X-GitHub-Api-Version", value: "2022-11-28" }
+] satisfies ReadonlyArray<HttpHeader>
+const request = (input: {
   readonly method: "GET" | "POST" | "PATCH"
   readonly url: string
   readonly tokenEnv?: string | undefined
   readonly body?: HttpRequestBody | undefined
-  readonly headers?: ReadonlyArray<HttpHeader> | undefined
 }): HttpRequestSpec => {
-  const authEnvNames = input.tokenEnv === undefined ? [] : [input.tokenEnv]
-  return HttpRequestSpec.make({
+  return {
     method: input.method,
     url: input.url,
-    headers: [...(input.headers ?? githubApiHeaders)],
-    envHeaders: input.tokenEnv === undefined
-      ? []
-      : [HttpEnvHeader.make({ name: "Authorization", valueEnv: input.tokenEnv, prefix: "Bearer " })],
-    requiredEnv: authEnvNames,
-    redactedEnv: authEnvNames,
+    headers: apiHeaders,
+    envHeaders: input.tokenEnv === undefined ? [] : [
+      { name: "Authorization", valueEnv: input.tokenEnv, prefix: "Bearer " }
+    ],
     ...(input.body === undefined ? {} : { body: input.body })
-  })
+  }
 }
 
-const statusOk = (status: number): boolean =>
-  status >= 200 && status < 300
-
-const ensureSuccessStatus = (
+const run = (
+  http: ReleaseHttpShape,
+  operation: string,
+  specification: HttpRequestSpec
+): Effect.Effect<HttpResult, ApiError> => http.runJson(specification).pipe(
+  Effect.mapError((error) => apiError(operation, error.url, error.reason, { cause: error }))
+)
+const successful = (operation: string, result: HttpResult): Effect.Effect<HttpResult, ApiError> =>
+  result.status >= 200 && result.status < 300
+    ? Effect.succeed(result)
+    : Effect.fail(apiError(
+      operation, result.request.url, "GitHub API returned HTTP " + result.status + ".", { status: result.status }
+    ))
+const decode = <S extends Schema.Top>(
+  schema: S,
+  what: string,
   operation: string,
   result: HttpResult
-): Effect.Effect<void, GitHubApiError> =>
-  statusOk(result.status)
-    ? Effect.void
-    : Effect.fail(
-      GitHubApiError.make({
-        operation,
-        url: result.request.url,
-        status: result.status,
-        reason: `GitHub API returned HTTP ${result.status}.`
-      })
-    )
+): Effect.Effect<S["Type"], ApiError, S["DecodingServices"]> => Schema.decodeUnknownEffect(schema)(result.json).pipe(
+  Effect.mapError((cause) => apiError(
+    operation,
+    result.request.url,
+    "GitHub " + what + " response did not match the expected schema.",
+    { status: result.status, cause }
+  ))
+)
 
-const decodeGithubResult = <A>(
-  decoder: (input: unknown) => Effect.Effect<A, Schema.SchemaError>,
-  what: string
-) =>
-(
+const validateUrl = (
   operation: string,
-  result: HttpResult
-): Effect.Effect<A, GitHubApiError> =>
-  decoder(result.json).pipe(
-    Effect.mapError((error) =>
-      GitHubApiError.make({
-        operation,
-        url: result.request.url,
-        status: result.status,
-        reason: `GitHub ${what} response did not match the expected schema.`,
-        cause: error
-      })
-    )
-  )
-
-const decodeReleaseResult = decodeGithubResult(decodeGitHubRelease, "release")
-const decodeReleaseListResult = decodeGithubResult(decodeGitHubReleaseList, "release list")
-const decodeAssetResult = decodeGithubResult(decodeGitHubAsset, "release asset")
-
-const releaseBody = (request: GitHubReleaseCreateRequest): HttpJsonRequestBody => {
-  const json: Record<string, Schema.Json> = {
-    tag_name: request.tag,
-    name: request.title,
-    draft: request.draft,
-    prerelease: request.prerelease
-  }
-  if (request.notes !== undefined) {
-    json.body = request.notes
-  }
-  return HttpJsonRequestBody.make({ json })
-}
-
-const responseLinkHeader = (result: HttpResult): string | undefined =>
-  result.responseHeaders.find((header) => header.name.toLowerCase() === "link")?.value
-
-const validateGitHubUrl = (
-  input: {
-    readonly operation: string
-    readonly url: string
-    readonly candidate?: string | undefined
-    readonly hostname: "api.github.com" | "uploads.github.com"
-    readonly invalidReason: string
-    readonly endpointReason: string
-  },
+  original: string,
+  candidate: string,
+  hostname: "api.github.com" | "uploads.github.com",
+  invalidReason: string,
+  endpointReason: string,
   validPath: (path: string) => boolean
-): Effect.Effect<URL, GitHubApiError> =>
-  Effect.try({
-    try: () => new URL(input.candidate ?? input.url),
-    catch: (cause) =>
-      GitHubApiError.make({
-        operation: input.operation,
-        url: input.url,
-        reason: input.invalidReason,
-        cause
-      })
-  }).pipe(
-    Effect.flatMap((parsed) => {
-      if (parsed.protocol === "https:" && parsed.hostname === input.hostname && validPath(parsed.pathname)) {
-        return Effect.succeed(parsed)
-      }
-      return Effect.fail(
-        GitHubApiError.make({
-          operation: input.operation,
-          url: input.url,
-          reason: input.endpointReason
-        })
-      )
-    })
-  )
+): Effect.Effect<URL, ApiError> => Effect.try({
+  try: () => new URL(candidate),
+  catch: (cause) => apiError(operation, original, invalidReason, { cause })
+}).pipe(Effect.flatMap((parsed) =>
+  parsed.protocol === "https:" && parsed.hostname === hostname && validPath(parsed.pathname)
+    ? Effect.succeed(parsed)
+    : Effect.fail(apiError(operation, original, endpointReason))
+))
 
-const validateReleaseListUrl = (
-  coordinates: GitHubRepositoryCoordinates,
-  url: string
-): Effect.Effect<string, GitHubApiError> =>
-  validateGitHubUrl({
-    operation: "validateReleaseListUrl",
-    url,
-    hostname: "api.github.com",
-    invalidReason: "GitHub pagination URL is not valid.",
-    endpointReason: "GitHub pagination URL does not point to the expected releases endpoint."
-  }, (path) => path === `/repos/${encodedRepositoryPath(coordinates)}/releases`).pipe(
-    Effect.map((parsed) => parsed.toString())
-  )
-
-const nextReleaseListUrl = (
-  coordinates: GitHubRepositoryCoordinates,
+const nextUrl = (
+  value: Coordinates,
   result: HttpResult
-): Effect.Effect<string | undefined, GitHubApiError> => {
-  const link = responseLinkHeader(result)
-  if (link === undefined) {
-    return Effect.succeed(undefined)
-  }
-  const next = link
-    .split(",")
-    .map((part) => part.trim())
-    .find((part) => part.includes("rel=\"next\""))
-  if (next === undefined) {
-    return Effect.succeed(undefined)
-  }
+): Effect.Effect<string | undefined, ApiError> => {
+  const link = result.responseHeaders.find(({ name }) => name.toLowerCase() === "link")?.value
+  const next = link?.split(",").map((part) => part.trim()).find((part) => part.includes("rel=\"next\""))
+  if (next === undefined) return Effect.succeed(undefined)
   const start = next.indexOf("<")
   const end = next.indexOf(">")
-  if (start < 0 || end <= start + 1) {
-    return Effect.fail(
-      GitHubApiError.make({
-        operation: "nextReleaseListUrl",
-        url: result.request.url,
-        reason: "GitHub pagination Link header has an invalid next URL."
-      })
-    )
-  }
-  return validateReleaseListUrl(coordinates, next.slice(start + 1, end))
+  if (start < 0 || end <= start + 1) return Effect.fail(apiError(
+    "nextReleaseListUrl", result.request.url, "GitHub pagination Link header has an invalid next URL."
+  ))
+  const candidate = next.slice(start + 1, end)
+  return validateUrl(
+    "validateReleaseListUrl",
+    candidate,
+    candidate,
+    "api.github.com",
+    "GitHub pagination URL is not valid.",
+    "GitHub pagination URL does not point to the expected releases endpoint.",
+    (path) => path === "/repos/" + repositoryPath(value) + "/releases"
+  ).pipe(Effect.map(String))
 }
 
-interface ReleaseListPaginationState {
-  readonly url: string | undefined
-  readonly match: GitHubReleaseApiResponse | undefined
-}
-
-interface ActiveReleaseListPaginationState extends ReleaseListPaginationState {
-  readonly url: string
-  readonly match: undefined
-}
-
-const hasReleaseListPage = (
-  state: ReleaseListPaginationState
-): state is ActiveReleaseListPaginationState =>
-  state.url !== undefined && state.match === undefined
-
-const releaseListPage = Effect.fn("githubApi.releaseListPage")(function*(
+const inspectByList = Effect.fn("githubApi.inspectByList")(function*(
   http: ReleaseHttpShape,
-  coordinates: GitHubRepositoryCoordinates,
-  tokenEnv: string | undefined,
-  tag: string,
-  url: string
+  value: Coordinates,
+  input: InspectRequest
 ) {
-  const result: HttpResult = yield* runGithubJson(
-    http,
-    "inspectRelease",
-    githubRequest({
-      method: "GET",
-      url,
-      tokenEnv
-    })
-  )
-  yield* ensureSuccessStatus("inspectRelease", result)
-  const releases = yield* decodeReleaseListResult("inspectRelease", result)
-  const match = releases.find((release) => release.tag_name === tag)
-  if (match !== undefined) {
-    return { url: undefined, match }
-  }
-  return {
-    url: yield* nextReleaseListUrl(coordinates, result),
-    match: undefined
-  }
-})
-
-const paginateReleaseList = Effect.fn("githubApi.paginateReleaseList")(function*(
-  http: ReleaseHttpShape,
-  coordinates: GitHubRepositoryCoordinates,
-  request: GitHubReleaseInspectRequest
-) {
-  let state: ReleaseListPaginationState = {
-    url: `${githubReleasesUrl(coordinates)}?per_page=100`,
-    match: undefined
-  }
+  let next: string | undefined = releasesUrl(value) + "?per_page=100"
+  let match: GitHubReleaseApiResponse | undefined
   yield* Effect.whileLoop({
-    while: () => hasReleaseListPage(state),
-    body: () => {
-      const url = state.url
-      return url === undefined
-        ? Effect.succeed(state)
-        : releaseListPage(http, coordinates, request.tokenEnv, request.tag, url)
-    },
-    step: (nextState) => {
-      state = nextState
+    while: () => next !== undefined && match === undefined,
+    body: () => Effect.gen(function*() {
+      const result = yield* run(http, "inspectRelease", request({
+        method: "GET", url: next!, tokenEnv: input.tokenEnv
+      })).pipe(Effect.flatMap((result) => successful("inspectRelease", result)))
+      const releases = yield* decode(
+        Schema.Array(GitHubReleaseApiResponse), "release list", "inspectRelease", result
+      )
+      return {
+        match: releases.find(({ tag_name }) => tag_name === input.tag),
+        next: yield* nextUrl(value, result)
+      }
+    }),
+    step: (state) => {
+      match = state.match
+      next = match === undefined ? state.next : undefined
     }
   })
-  return state.match
+  return match !== undefined ? match : yield* Effect.fail(apiError(
+    "inspectRelease",
+    releaseByTagUrl(value, input.tag),
+    "GitHub release " + input.tag + " was not found.",
+    { status: 404 }
+  ))
 })
 
-const validateUploadUrl = (
-  coordinates: GitHubRepositoryCoordinates,
-  uploadUrl: string,
-  assetName: string
-): Effect.Effect<string, GitHubApiError> => {
-  const expectedPrefix = `/repos/${encodedRepositoryPath(coordinates)}/releases/`
-  return validateGitHubUrl({
-    operation: "validateUploadUrl",
-    url: uploadUrl,
-    candidate: uploadUrl.split("{")[0] ?? uploadUrl,
-    hostname: "uploads.github.com",
-    invalidReason: "GitHub upload URL is not valid.",
-    endpointReason: "GitHub upload URL does not point to the expected uploads endpoint."
-  }, (path) => path.startsWith(expectedPrefix) && path.endsWith("/assets")).pipe(
-    Effect.map((parsed) => {
-      parsed.searchParams.set("name", assetName)
-      return parsed.toString()
-    })
-  )
-}
-
-const uploadAsset = Effect.fn("githubApi.uploadAsset")(function*(
+const upload = Effect.fn("githubApi.upload")(function*(
   http: ReleaseHttpShape,
-  coordinates: GitHubRepositoryCoordinates,
+  value: Coordinates,
   tokenEnv: string | undefined,
   uploadUrl: string,
   asset: GitHubReleaseAssetSpec
 ) {
-  const url = yield* validateUploadUrl(coordinates, uploadUrl, asset.name)
-  const result = yield* runGithubJson(
-    http,
-    "uploadAsset",
-    githubRequest({
-      method: "POST",
-      url,
-      tokenEnv,
-      body: HttpFileRequestBody.make({
-        path: asset.path,
-        contentType: asset.contentType
-      })
-    })
+  const original = uploadUrl
+  const parsed = yield* validateUrl(
+    "validateUploadUrl",
+    original,
+    uploadUrl.split("{")[0] ?? uploadUrl,
+    "uploads.github.com",
+    "GitHub upload URL is not valid.",
+    "GitHub upload URL does not point to the expected uploads endpoint.",
+    (path) => path.startsWith("/repos/" + repositoryPath(value) + "/releases/") && path.endsWith("/assets")
   )
-  yield* ensureSuccessStatus("uploadAsset", result)
-  return yield* decodeAssetResult("uploadAsset", result)
+  parsed.searchParams.set("name", asset.name)
+  const result = yield* run(http, "uploadAsset", request({
+    method: "POST",
+    url: parsed.toString(),
+    tokenEnv,
+    body: { _tag: "HttpFileRequestBody", path: asset.path, contentType: asset.contentType }
+  })).pipe(Effect.flatMap((result) => successful("uploadAsset", result)))
+  return yield* decode(GitHubReleaseApiAssetResponse, "release asset", "uploadAsset", result)
 })
 
-const inspectReleaseByList = Effect.fn("githubApi.inspectReleaseByList")(function*(
-  http: ReleaseHttpShape,
-  coordinates: GitHubRepositoryCoordinates,
-  request: GitHubReleaseInspectRequest
-) {
-  const match = yield* paginateReleaseList(http, coordinates, request)
-  if (match !== undefined) {
-    return match
-  }
-  return yield* Effect.fail(
-    GitHubApiError.make({
-      operation: "inspectRelease",
-      url: githubReleaseByTagUrl(coordinates, request.tag),
-      status: 404,
-      reason: `GitHub release ${request.tag} was not found.`
-    })
-  )
-})
-
-export const GitHubApiLiveLayer: Layer.Layer<GitHubApi, never, ReleaseHttp> =
-  Layer.effect(GitHubApi)(
-    Effect.gen(function*() {
-      const http = yield* ReleaseHttp
-      return {
-        createRelease: Effect.fn("githubApi.createRelease")(function*(request: GitHubReleaseCreateRequest) {
-          const coordinates = yield* parseRepository(request.repository)
-          const result = yield* runGithubJson(
-            http,
-            "createRelease",
-            githubRequest({
-              method: "POST",
-              url: githubReleasesUrl(coordinates),
-              tokenEnv: request.tokenEnv,
-              body: releaseBody(request)
-            })
-          )
-          yield* ensureSuccessStatus("createRelease", result)
-          const release = yield* decodeReleaseResult("createRelease", result)
-          const uploadedAssets: Array<GitHubReleaseApiAssetResponse> = []
-          for (const asset of request.assets) {
-            uploadedAssets.push(yield* uploadAsset(http, coordinates, request.tokenEnv, release.upload_url, asset))
-          }
-          return GitHubReleaseApiResponse.make({
-            id: release.id,
-            tag_name: release.tag_name,
-            name: release.name,
-            draft: release.draft,
-            prerelease: release.prerelease,
-            upload_url: release.upload_url,
-            assets: uploadedAssets.length === 0 ? release.assets : uploadedAssets
-          })
-        }),
-        inspectRelease: Effect.fn("githubApi.inspectRelease")(function*(request: GitHubReleaseInspectRequest) {
-          const coordinates = yield* parseRepository(request.repository)
-          const url = githubReleaseByTagUrl(coordinates, request.tag)
-          const result = yield* runGithubJson(
-            http,
-            "inspectRelease",
-            githubRequest({
-              method: "GET",
-              url,
-              tokenEnv: request.tokenEnv
-            })
-          )
-          if (result.status === 404) {
-            return yield* inspectReleaseByList(http, coordinates, request)
-          }
-          yield* ensureSuccessStatus("inspectRelease", result)
-          return yield* decodeReleaseResult("inspectRelease", result)
+export const GitHubApiLiveLayer: Layer.Layer<GitHubApi, never, ReleaseHttp> = Layer.effect(GitHubApi)(
+  Effect.gen(function*() {
+    const http = yield* ReleaseHttp
+    return {
+      createRelease: Effect.fn("githubApi.createRelease")(function*(input) {
+        const value = yield* coordinates(input.repository)
+        const json: Record<string, Schema.Json> = {
+          tag_name: input.tag,
+          name: input.title,
+          draft: input.draft,
+          prerelease: input.prerelease,
+          ...(input.notes === undefined ? {} : { body: input.notes })
+        }
+        const result = yield* run(http, "createRelease", request({
+          method: "POST",
+          url: releasesUrl(value),
+          tokenEnv: input.tokenEnv,
+          body: { _tag: "HttpJsonRequestBody", json }
+        })).pipe(Effect.flatMap((result) => successful("createRelease", result)))
+        const release = yield* decode(GitHubReleaseApiResponse, "release", "createRelease", result)
+        const uploaded = yield* Effect.forEach(input.assets, (asset) =>
+          upload(http, value, input.tokenEnv, release.upload_url, asset))
+        return GitHubReleaseApiResponse.make({
+          id: release.id,
+          tag_name: release.tag_name,
+          name: release.name,
+          draft: release.draft,
+          prerelease: release.prerelease,
+          upload_url: release.upload_url,
+          assets: uploaded.length === 0 ? release.assets : uploaded
         })
-      }
-    })
-  )
+      }),
+      inspectRelease: Effect.fn("githubApi.inspectRelease")(function*(input) {
+        const value = yield* coordinates(input.repository)
+        const url = releaseByTagUrl(value, input.tag)
+        const result = yield* run(http, "inspectRelease", request({
+          method: "GET", url, tokenEnv: input.tokenEnv
+        }))
+        if (result.status === 404) return yield* inspectByList(http, value, input)
+        yield* successful("inspectRelease", result)
+        return yield* decode(GitHubReleaseApiResponse, "release", "inspectRelease", result)
+      })
+    }
+  })
+)

@@ -9,6 +9,6 @@
       "@mannyc1/ts-release": ["../../src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "../../src/types/effect-internal.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "../../src/types/*.ts", "../../src/types/*.d.ts"],
   "exclude": ["dist", "node_modules"]
 }

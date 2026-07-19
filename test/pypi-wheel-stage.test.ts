@@ -4,12 +4,11 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import { mkdir, writeFile } from "node:fs/promises"
-import { makePipelineIdentity, releaseConfig, releaseIdentity, withTempDirectoryPromise } from "./helpers.js"
+import { makePipelineIdentity, releaseConfig, releaseIdentity, stageArtifactOperations, withTempDirectoryPromise } from "./helpers.js"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { stageArtifactOperations } from "../src/engine/stager.js"
 import { pypiWheelPlanner, resolvePyPiWheels } from "../src/pipes/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/pipeline/operation.js"
 import { emptyPlanAccumulator } from "../src/pipeline/runner.js"
@@ -59,7 +58,7 @@ describe("PyPI wheel build pipe", () => {
           }))
           const contribution = yield* Option.match(resolvePyPiWheels(intent.pypiWheel), {
             onNone: () => Effect.die("Expected a resolved PyPI wheel section."),
-            onSome: (section) => pypiWheelPlanner.plan(section, emptyPlanAccumulator(identity))
+            onSome: (section) => pypiWheelPlanner(section, emptyPlanAccumulator(identity))
           })
           expect(contribution.artifacts[0]).toMatchObject({
             id: "pypi-wheel-linux-x64",

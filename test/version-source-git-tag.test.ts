@@ -1,7 +1,7 @@
 import { describe, expect, it, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { makeTestCommandRunnerLayer, commandKey } from "./host-fakes.js"
-import { gitTagSource } from "../src/pipeline/identity/git-tag.js"
+import { resolveGitTagIdentity } from "../src/engine/resolved-release.js"
 import { CommandSpec } from "../src/pipeline/operation.js"
 
 const gitCommand = (args: ReadonlyArray<string>): CommandSpec =>
@@ -27,7 +27,7 @@ const resolveGitTag = (input: {
   } | undefined
   readonly snapshot?: boolean | undefined
 } = {}) =>
-  gitTagSource.resolve({
+  resolveGitTagIdentity({
     project: {
       name: "release",
       ...(input.project ?? {})
@@ -55,7 +55,7 @@ describe("git-tag identity source", () => {
           version: "1.2.3",
           commit: "abcdef1",
           tag: "v1.2.3",
-          sourceId: "git-tag"
+          versionSource: "git-tag"
         })
       }))
 
@@ -177,7 +177,7 @@ describe("git-tag identity source", () => {
         }))
       )
 
-      expect(identity.version).toBe("0.0.0")
+      expect(identity.version).toBe("0.0.0-SNAPSHOT-abc123")
       expect(identity.tag).toBe("v0.0.0")
     }))
 })

@@ -3,21 +3,17 @@ import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
-import { HttpHeader, HttpRequestSpec } from "../pipeline/operation.js"
-import { HttpError, ReleaseHttp, type HttpResult } from "./http.js"
-import { nowIso, readEnvironment } from "./platform.js"
+import { ApiError, ReleaseHttp, type HttpHeader, type HttpRequestSpec, type HttpResult } from "./http.js"
+import { endTiming, readEnvironment, startTiming } from "./platform.js"
 
 
 const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpRequestSpec) {
-  const envNames = new Set([
-    ...request.requiredEnv,
-    ...request.envHeaders.map((header) => header.valueEnv)
-  ])
+  const envNames = new Set(request.envHeaders.map((header) => header.valueEnv))
   const env = yield* readEnvironment(envNames)
   const missing = [...envNames].filter((name) => env.get(name) === undefined)
   if (missing.length > 0) {
     return yield* Effect.fail(
-      HttpError.make({
+      ApiError.make({
         operation: "resolveHeaders",
         url: request.url,
         reason: `Missing required environment variables: ${missing.join(", ")}`
@@ -39,7 +35,7 @@ const resolveHeaders = Effect.fn("resolveHeaders")(function*(request: HttpReques
 })
 
 const responseHeaders = (headers: Readonly<Record<string, string>>): ReadonlyArray<HttpHeader> =>
-  Object.entries(headers).map(([name, value]) => HttpHeader.make({ name, value }))
+  Object.entries(headers).map(([name, value]) => ({ name, value }))
 
 const requestWithBody = Effect.fn("http.requestWithBody")(function*(
   request: HttpRequestSpec,
@@ -55,7 +51,7 @@ const requestWithBody = Effect.fn("http.requestWithBody")(function*(
     case "HttpJsonRequestBody":
       return yield* HttpClientRequest.bodyJson(httpRequest, body.json).pipe(
         Effect.mapError((error) =>
-          HttpError.make({
+          ApiError.make({
             operation: "bodyJson",
             url: request.url,
             reason: "HTTP request JSON body encoding failed.",
@@ -67,7 +63,7 @@ const requestWithBody = Effect.fn("http.requestWithBody")(function*(
       return yield* fileSystem.readFile(body.path).pipe(
         Effect.map((bytes) => HttpClientRequest.bodyUint8Array(httpRequest, bytes, body.contentType)),
         Effect.mapError((error) =>
-          HttpError.make({
+          ApiError.make({
             operation: "bodyFile",
             url: request.url,
             reason: "HTTP request file body preparation failed.",
@@ -87,12 +83,11 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
         runJson: (request: HttpRequestSpec) =>
           Effect.gen(function*() {
             const headers = yield* resolveHeaders(request)
-            const startedAt = yield* nowIso()
-            const started = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+            const timing = yield* startTiming()
             const httpRequest = yield* requestWithBody(request, headers, fileSystem)
             const response = yield* client.execute(httpRequest).pipe(
               Effect.mapError((error) =>
-                HttpError.make({
+                ApiError.make({
                   operation: "execute",
                   url: request.url,
                   reason: "HTTP request failed.",
@@ -104,7 +99,7 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
               ? null
               : yield* response.json.pipe(
                 Effect.mapError((error) =>
-                  HttpError.make({
+                  ApiError.make({
                     operation: "json",
                     url: request.url,
                     reason: "HTTP response JSON decoding failed.",
@@ -112,16 +107,12 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
                   })
                 )
               )
-            const endedAt = yield* nowIso()
-            const ended = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
             return {
               request,
               status: response.status,
               json,
               responseHeaders: responseHeaders(response.headers),
-              startedAt,
-              endedAt,
-              durationMillis: Math.max(0, ended - started)
+              ...(yield* endTiming(timing))
             } satisfies HttpResult
           })
       }

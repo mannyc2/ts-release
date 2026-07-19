@@ -3,8 +3,7 @@ import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as Layer from "effect/Layer"
 import { UnsupportedArtifactStagerLayer } from "../../../../src/engine/stager.js"
 import { LiveReleaseHttpLayer } from "../../../../src/host/http-live.js"
-import { makePlatformCommandRunnerLayer } from "../../../../src/host/platform.js"
-import type { PlatformCommandRunnerOptions } from "../../../../src/host/platform.js"
+import { makePlatformCommandRunnerLayer, type PlatformCommandRunnerOptions } from "../../../../src/host/platform.js"
 import { GitHubApiLiveLayer } from "../../../../src/engine/github.js"
 
 export const makeNodeReleaseWorkflowRuntimeLayer = (
@@ -21,5 +20,3 @@ export const makeNodeReleaseWorkflowRuntimeLayer = (
     UnsupportedArtifactStagerLayer,
     NodeServices.layer
   )
-
-export const NodeReleaseWorkflowRuntimeLayer = makeNodeReleaseWorkflowRuntimeLayer()

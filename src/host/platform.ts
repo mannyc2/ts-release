@@ -7,42 +7,12 @@ import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { CommandSpec } from "../pipeline/operation.js"
 import { CommandRunnerError, ReleaseCommandRunner, type CommandResult } from "./host.js"
+import inheritedEnvNames from "../assets/inherited-env.json" with { type: "json" }
 
 
 export interface PlatformCommandRunnerOptions {
   readonly root?: string | undefined
 }
-
-const inheritedEnvNames = [
-  "PATH",
-  "HOME",
-  "USERPROFILE",
-  "SystemRoot",
-  "TEMP",
-  "TMP",
-  "CI",
-  "GITHUB_ACTIONS",
-  "GITHUB_API_URL",
-  "GITHUB_EVENT_NAME",
-  "GITHUB_GRAPHQL_URL",
-  "GITHUB_REF",
-  "GITHUB_REF_NAME",
-  "GITHUB_REF_TYPE",
-  "GITHUB_REPOSITORY",
-  "GITHUB_REPOSITORY_ID",
-  "GITHUB_REPOSITORY_OWNER",
-  "GITHUB_REPOSITORY_OWNER_ID",
-  "GITHUB_RUN_ATTEMPT",
-  "GITHUB_RUN_ID",
-  "GITHUB_RUN_NUMBER",
-  "GITHUB_SERVER_URL",
-  "GITHUB_SHA",
-  "GITHUB_WORKFLOW",
-  "GITHUB_WORKFLOW_REF",
-  "GITHUB_WORKFLOW_SHA",
-  "RUNNER_ENVIRONMENT",
-  "RUNNER_OS"
-]
 
 export const readOptionalEnv = (name: string): Effect.Effect<string | undefined> =>
   Config.string(name).pipe(
@@ -91,6 +61,19 @@ export const nowIso = Effect.fn("platform.nowIso")(function*() {
   return new Date(millis).toISOString()
 })
 
+export const startTiming = Effect.fn("platform.startTiming")(function*() {
+  return {
+    startedAt: yield* nowIso(),
+    startedMillis: yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  }
+})
+
+export const endTiming = Effect.fn("platform.endTiming")(function*(start: Effect.Success<ReturnType<typeof startTiming>>) {
+  const endedAt = yield* nowIso()
+  const endedMillis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+  return { startedAt: start.startedAt, endedAt, durationMillis: Math.max(0, endedMillis - start.startedMillis) }
+})
+
 const commandOutput = (stream: Stream.Stream<Uint8Array, unknown>) =>
   Stream.mkString(Stream.decodeText(stream))
 
@@ -109,8 +92,7 @@ export const makePlatformCommandRunnerLayer = (
       return {
         runCommand: (command) =>
           Effect.gen(function*() {
-            const startedAt = yield* nowIso()
-            const startedMillis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+            const timing = yield* startTiming()
             const env = yield* commandEnv(command)
             const cwd = commandCwd(command)
             const childCommand = ChildProcess.make(command.executable, command.args, {
@@ -139,24 +121,14 @@ export const makePlatformCommandRunnerLayer = (
                 })
               )
             )
-            const endedAt = yield* nowIso()
-            const endedMillis = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
             return {
               command,
               exitCode: Number(output.exitCode),
               stdout: output.stdout,
               stderr: output.stderr,
-              startedAt,
-              endedAt,
-              durationMillis: Math.max(0, endedMillis - startedMillis)
+              ...(yield* endTiming(timing))
             } satisfies CommandResult
           })
       }
     })
   )
-
-export const PlatformCommandRunnerLayer: Layer.Layer<
-  ReleaseCommandRunner,
-  never,
-  ChildProcessSpawner
-> = makePlatformCommandRunnerLayer()

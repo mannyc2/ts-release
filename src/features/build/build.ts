@@ -4,10 +4,10 @@ import type { BuilderPlan } from "./builder.js"
 import { bunBuilder, type BunBuildOptions } from "./bun.js"
 import { commandBuilder, type CommandBuildOptions } from "./command.js"
 import { prebuiltBuilder, type PrebuiltBuildOptions } from "./prebuilt.js"
-import type { PlatformTarget } from "../grammar/platform.js"
-import { PlanError } from "../grammar/errors.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
+import type { PlatformTarget } from "../../grammar/platform.js"
+import { PlanError } from "../../grammar/errors.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
 
 export type BuildOptions = BunBuildOptions | CommandBuildOptions | PrebuiltBuildOptions
 

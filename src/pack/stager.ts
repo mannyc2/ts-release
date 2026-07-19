@@ -10,7 +10,8 @@ import launcherTemplate from "../assets/launcher.py" with { type: "text" }
 import wheelTemplates from "../assets/wheel-templates.json" with { type: "json" }
 import { validateWorkspaceWritePath } from "../host/workspace-path.js"
 import { artifactPathBaseName } from "../grammar/artifact.js"
-import type { ArchiveIntent, BunCompileIntent, Operation, PyPiWheelIntent, StageAction } from "../grammar/operation.js"
+import type { Operation, StageAction } from "../grammar/operation.js"
+import type { ArchiveIntent, BunCompileIntent, PyPiWheelIntent } from "../grammar/intent.js"
 import type { ReleaseIdentity } from "../grammar/state.js"
 import { renderTemplate } from "../grammar/template.js"
 import { type ArchiveByteEntry, buildTarGzArchive, buildZipArchive, bytes } from "./archive-bytes.js"

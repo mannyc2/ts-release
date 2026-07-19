@@ -6,9 +6,9 @@ import { ReleaseIntent } from "../../../src/config/schema.js"
 import { platformTargetVariant } from "../../../src/grammar/platform.js"
 import { ReleaseIdentity } from "../../../src/grammar/state.js"
 import { normalizedName, renderTemplate } from "../../../src/grammar/template.js"
-import type { ReleaseConfigHomebrewPublish } from "../../../src/features/catalog-homebrew.js"
-import type { ReleaseConfigScoopPublish } from "../../../src/features/catalog-scoop.js"
-import type { ReleaseConfigPyPiPublish } from "../../../src/features/publish-pypi.js"
+import type { ReleaseConfigHomebrewPublish } from "../../../src/features/catalog/homebrew.js"
+import type { ReleaseConfigScoopPublish } from "../../../src/features/catalog/scoop.js"
+import type { ReleaseConfigPyPiPublish } from "../../../src/features/publish/pypi.js"
 
 const root = cwd()
 const packagePath = "package.json"

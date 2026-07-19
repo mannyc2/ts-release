@@ -1,6 +1,7 @@
 import { describe, expect, layer } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import { canExecuteOperation, CommandSpec, ExecutionApproval } from "../src/grammar/operation.js"
+import { CommandSpec } from "../src/grammar/operation.js"
+import { canExecuteOperation, ExecutionApproval } from "../src/grammar/approval.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { PlanError } from "../src/grammar/errors.js"
 import { expectTaggedError, homebrewConfig, minimalConfig, releaseConfig, scoopConfig } from "./helpers.js"

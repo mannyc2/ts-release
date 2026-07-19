@@ -1,6 +1,6 @@
 // Invariant: shared feature operation constructors preserve phase, risk, and action data exactly.
-import { artifactPathBaseName } from "../grammar/artifact.js"
-import { CommandAction, CommandSpec, NoteAction, Operation } from "../grammar/operation.js"
+import { artifactPathBaseName } from "../../grammar/artifact.js"
+import { CommandAction, CommandSpec, NoteAction, Operation } from "../../grammar/operation.js"
 export const noAuthCommand = (executable: string, args: ReadonlyArray<string>): CommandSpec =>
   CommandSpec.make({ executable, args: [...args], requiredEnv: [], redactedEnv: [] })
 

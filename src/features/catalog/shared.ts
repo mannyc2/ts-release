@@ -1,9 +1,9 @@
 // Invariant: catalog identity, artifact lookup, validation, and URL derivation have one shared owner.
 import * as Effect from "effect/Effect"
-import type { Artifact } from "../grammar/artifact.js"
-import { artifactPathBaseName } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
+import type { Artifact } from "../../grammar/artifact.js"
+import { artifactPathBaseName } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
 export const catalogPathBaseName = artifactPathBaseName
 
 export interface CatalogResolutionConfig {

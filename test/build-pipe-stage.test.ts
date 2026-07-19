@@ -4,9 +4,9 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { makeArtifactStagerLayer, type BunExecutableBuildInput } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPlanner } from "../src/features/build.js"
+import { buildPlanner } from "../src/features/build/build.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
-import { emptyPlanAccumulator } from "../src/grammar/runner.js"
+import { emptyPlanAccumulator } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity, releaseConfig, stageArtifactOperations } from "./helpers.js"
 
 const identity = makePipelineIdentity()

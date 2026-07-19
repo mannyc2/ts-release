@@ -5,10 +5,8 @@ import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant } from "../src/grammar/artifact.js"
 import {
-  ArchiveIntent,
   CommandAction,
   CommandSpec,
-  ExecutionApproval,
   GitHubReleaseAssetSpec,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
@@ -17,6 +15,8 @@ import {
   StageAction,
   WriteFileAction
 } from "../src/grammar/operation.js"
+import { ArchiveIntent } from "../src/grammar/intent.js"
+import { ExecutionApproval } from "../src/grammar/approval.js"
 import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
 import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
 import { PipeNotice, ReleaseIdentity } from "../src/grammar/state.js"

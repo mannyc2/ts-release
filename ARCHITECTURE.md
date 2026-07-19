@@ -16,8 +16,8 @@ GitHub Action all use the same engine.
 | 5 | Artifact | One Schema class in `src/grammar/artifact.ts`, including platform and typed extra data. |
 | 6 | Operation / Action | One operation class and seven live action tags in `src/grammar/operation.ts`. |
 | 7 | Release plan | The sole durable `release-plan/v3` Schema in `src/grammar/plan.ts`. |
-| 8 | Accumulator | One private transient fold in `src/grammar/runner.ts`; never encoded or exported. |
-| 9 | Approval | One risk derivation plus whole-pass preflight in operation/executor code. |
+| 8 | Accumulator | One private transient fold in `src/grammar/accumulator.ts`; never encoded or exported. |
+| 9 | Approval | One risk derivation in `src/grammar/approval.ts` plus whole-pass preflight in the executor. |
 | 10 | Evidence | Records and the sole durable `release-evidence/v2` bundle in `src/run/evidence.ts`. |
 | 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `src/run/content.ts`. |
 | 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/features/`. |

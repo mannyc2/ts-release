@@ -8,7 +8,7 @@ import { formatPlanOperationSnapshot } from "../scripts/plan-operations-snapshot
 import { deferredContentArtifactIds, renderDeferredContent } from "../src/run/content.js"
 import { build, planRelease, renderReleasePlan } from "../src/engine/engine.js"
 import type { ReleasePlan } from "../src/grammar/plan.js"
-import type { DeferredFileContent } from "../src/grammar/operation.js"
+import type { DeferredFileContent } from "../src/grammar/content.js"
 import { runEffect, withTempDirectoryPromise } from "./helpers.js"
 const root = process.cwd()
 const exampleNames = [

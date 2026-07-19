@@ -1,18 +1,18 @@
 // Invariant: resolved PyPI auth is validated once and only selected distribution files reach Twine.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import type { Artifact } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import { CommandAction, CommandSpec, Operation } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { findCatalogArtifact } from "./catalog-shared.js"
+import type { Artifact } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { findCatalogArtifact } from "../catalog/shared.js"
 import {
   publishingAuthEnvNames,
   trustedPublishingConfigFields,
   type TrustedPublishingSection
 } from "./trusted-publishing.js"
 import { noAuthCommand, readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigPyPiTrustedPublishing extends Schema.Class<ReleaseConfigPyPiTrustedPublishing>(
   "ReleaseConfigPyPiTrustedPublishing"

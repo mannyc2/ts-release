@@ -1,7 +1,7 @@
 // Invariant: trusted-publishing config compaction and credential environment derivation have one owner.
 import * as Schema from "effect/Schema"
-import { WorkflowFileName } from "../grammar/artifact.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { WorkflowFileName } from "../../grammar/artifact.js"
+import { defaulted } from "../../grammar/defaulted.js"
 export const trustedPublishingAuthEnvNames = [
   "ACTIONS_ID_TOKEN_REQUEST_URL",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN"

@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import { artifactPathBaseName, type Artifact } from "./artifact.js"
 import { PlanError } from "./errors.js"
 import type { Operation } from "./operation.js"
-import { emptyContribution, type FeatureSchedule, type PipeContribution } from "./pipe.js"
+import { emptyContribution, type FeatureSchedule, type PipeContribution } from "./planner.js"
 import * as Option from "effect/Option"
 import { PipeNotice, type ReleaseIdentity } from "./state.js"
 

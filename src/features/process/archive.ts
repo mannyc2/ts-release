@@ -1,12 +1,13 @@
 // Invariant: each archive section is either neutral or platform-grouped, never both, with deterministic group/id order.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, artifactPathBaseName, ArchiveExtra, type InstallableArtifactVariant } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent, Operation, StageAction } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { defaultArtifactBaseName, renderArtifactNameEffect } from "../grammar/template.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { Artifact, artifactPathBaseName, ArchiveExtra, type InstallableArtifactVariant } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import { Operation, StageAction } from "../../grammar/operation.js"
+import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent } from "../../grammar/intent.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { defaultArtifactBaseName, renderArtifactNameEffect } from "../../grammar/template.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigArchiveFormatOverrides extends Schema.Class<ReleaseConfigArchiveFormatOverrides>(
   "ReleaseConfigArchiveFormatOverrides"

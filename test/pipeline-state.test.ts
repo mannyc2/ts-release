@@ -3,6 +3,8 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import * as A from "../src/grammar/artifact.js"
 import * as O from "../src/grammar/operation.js"
+import * as Content from "../src/grammar/content.js"
+import * as Intent from "../src/grammar/intent.js"
 import { decodeReleasePlan, decodeReleasePlanSync, ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
 import { makePipelineIdentity } from "./helpers.js"
 
@@ -32,8 +34,8 @@ const operations = [
     { executable: "bun", args: ["build"], requiredEnv: [], redactedEnv: [] }
   ) }), "build", "writes-local", O.RetryPolicy.make({ attempts: 2, delayMillis: 1 })),
   op("check-file", O.CheckFileAction.make({ path: "dist/tool" })),
-  op("write-file", O.WriteFileAction.make({ path: "dist/catalog", contents: O.FilePartsContent.make({
-    parts: ["sha256=", O.Sha256Hole.make({ artifactId: "archive" })]
+  op("write-file", O.WriteFileAction.make({ path: "dist/catalog", contents: Content.FilePartsContent.make({
+    parts: ["sha256=", Content.Sha256Hole.make({ artifactId: "archive" })]
   }) }),
     "catalog", "writes-local"),
   op("github-create", O.GitHubReleaseCreateAction.make({ repository: "owner/repo", tag: "v0.1.0",
@@ -41,7 +43,7 @@ const operations = [
   op("github-verify", O.GitHubReleaseVerifyAction.make({ repository: "owner/repo", tag: "v0.1.0",
     title: "v0.1.0", draft: true, prerelease: false, assetNames: [] })),
   op("note", O.NoteAction.make({ message: "note", severity: "info", skipped: false }), "publish"),
-  op("stage", O.StageAction.make({ intent: O.BunCompileIntent.make({ entry: "src/cli.ts",
+  op("stage", O.StageAction.make({ intent: Intent.BunCompileIntent.make({ entry: "src/cli.ts",
     target: "linux-x64", compileTarget: "bun-linux-x64", outfile: "dist/tool" }),
   producesArtifactIds: ["executable"] }), "build", "writes-local")
 ]

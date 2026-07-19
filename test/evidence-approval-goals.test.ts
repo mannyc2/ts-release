@@ -7,10 +7,9 @@ import { join } from "node:path"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { runEvidenceWorkflow } from "./plan-helpers.js"
 import {
-  CommandSpec,
-  ExecutionApproval,
-  operationApprovalRequirements
+  CommandSpec
 } from "../src/grammar/operation.js"
+import { ExecutionApproval, operationApprovalRequirements } from "../src/grammar/approval.js"
 import {
   planRelease,
   release

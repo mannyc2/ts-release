@@ -1,11 +1,11 @@
 // Invariant: a command build emits one executable artifact, its command, then its existence check.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { SafeRelativePath } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import { CheckFileAction, CommandAction, CommandSpec, Operation } from "../grammar/operation.js"
-import { PlatformTarget, platformTargetVariant } from "../grammar/platform.js"
-import { renderArtifactNameEffect, renderTemplate } from "../grammar/template.js"
+import { SafeRelativePath } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import { CheckFileAction, CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
+import { PlatformTarget, platformTargetVariant } from "../../grammar/platform.js"
+import { renderArtifactNameEffect, renderTemplate } from "../../grammar/template.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
 export class ReleaseConfigCommandBuild extends Schema.Class<ReleaseConfigCommandBuild>(

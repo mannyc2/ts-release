@@ -1,17 +1,18 @@
 // Invariant: Bun compile targets are derived from platform/cpu tokens and each target emits one artifact plus one stage.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { SafeRelativePath } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import { BunCompileIntent, Operation, StageAction, type BunCompileTarget } from "../grammar/operation.js"
+import { SafeRelativePath } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import { Operation, StageAction } from "../../grammar/operation.js"
+import { BunCompileIntent, type BunCompileTarget } from "../../grammar/intent.js"
 import {
   PlatformTarget,
   platformTargetVariant,
   type PlatformTarget as PlatformTargetName
-} from "../grammar/platform.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
-import { defaultArtifactBaseName, renderArtifactNameEffect } from "../grammar/template.js"
-import { defaulted } from "../grammar/defaulted.js"
+} from "../../grammar/platform.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
+import { defaultArtifactBaseName, renderArtifactNameEffect } from "../../grammar/template.js"
+import { defaulted } from "../../grammar/defaulted.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
 export class ReleaseConfigBunExecutableBuild extends Schema.Class<ReleaseConfigBunExecutableBuild>(

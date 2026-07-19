@@ -2,9 +2,9 @@
 import {
   CommandSpec,
   Operation,
-  type OperationRisk,
-  operationApprovalRequirements
+  type OperationRisk
 } from "../grammar/operation.js"
+import { operationApprovalRequirements } from "../grammar/approval.js"
 import * as Schema from "effect/Schema"
 import { ReleasePlan } from "../grammar/plan.js"
 import { operationSurfaceId, operationSurfaceIds } from "./summary.js"

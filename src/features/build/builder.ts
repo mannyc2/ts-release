@@ -1,10 +1,10 @@
 // Invariant: every builder adapter maps one resolved build target to canonical artifacts and operations without executing them.
 import type * as Effect from "effect/Effect"
-import { Artifact, ExecutableExtra, type InstallableArtifactVariant } from "../grammar/artifact.js"
-import type { PlanError } from "../grammar/errors.js"
-import type { Operation } from "../grammar/operation.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
-import type { PlatformTarget } from "../grammar/platform.js"
+import { Artifact, ExecutableExtra, type InstallableArtifactVariant } from "../../grammar/artifact.js"
+import type { PlanError } from "../../grammar/errors.js"
+import type { Operation } from "../../grammar/operation.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
+import type { PlatformTarget } from "../../grammar/platform.js"
 
 export interface BuilderPlan {
   readonly operations: ReadonlyArray<Operation>

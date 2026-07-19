@@ -10,9 +10,9 @@ import { makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
   CommandAction,
   CommandSpec,
-  ExecutionApproval,
   Operation
 } from "../src/grammar/operation.js"
+import { ExecutionApproval } from "../src/grammar/approval.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { releaseConfig, runEffect, TestGitHubApiLayer, makePipelineIdentity } from "./helpers.js"
 const snapshotConfig = JSON.stringify({

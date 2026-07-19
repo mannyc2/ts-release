@@ -1,9 +1,9 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { pypiWheelPlanner } from "../src/features/pypi-wheel.js"
+import { pypiWheelPlanner } from "../src/features/build/pypi-wheel.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
-import { emptyPlanAccumulator } from "../src/grammar/runner.js"
+import { emptyPlanAccumulator } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
 const identity = makePipelineIdentity()

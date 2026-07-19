@@ -1,5 +1,5 @@
 // Invariant: deferred content holes resolve only from canonical artifact facts and never invent another artifact representation.
-import type { DeferredFileContent } from "../grammar/operation.js"
+import type { DeferredFileContent } from "../grammar/content.js"
 
 export interface ResolvedArtifactHash {
   readonly artifactId: string

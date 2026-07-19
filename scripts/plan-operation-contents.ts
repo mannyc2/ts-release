@@ -6,7 +6,7 @@ import {
   deferredContentArtifactIds,
   renderDeferredContent
 } from "../src/run/content.js"
-import type { DeferredFileContent } from "../src/grammar/operation.js"
+import type { DeferredFileContent } from "../src/grammar/content.js"
 import { decodeReleasePlanSync, type ReleasePlan } from "../src/grammar/plan.js"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

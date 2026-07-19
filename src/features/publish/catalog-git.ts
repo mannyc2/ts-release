@@ -1,10 +1,10 @@
 // Invariant: catalog git adapters preserve surface-specific ids and messages while sharing one operation sequence.
 import * as Effect from "effect/Effect"
-import { PlanError } from "../grammar/errors.js"
-import { emptyContribution, featurePlanner, type PipeContribution } from "../grammar/pipe.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
-import type { HomebrewSection } from "./catalog-homebrew.js"
-import type { ScoopSection } from "./catalog-scoop.js"
+import { PlanError } from "../../grammar/errors.js"
+import { emptyContribution, featurePlanner, type PipeContribution } from "../../grammar/planner.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
+import type { HomebrewSection } from "../catalog/homebrew.js"
+import type { ScoopSection } from "../catalog/scoop.js"
 import {
   catalogGitPublishOperations,
   validationNoteOperation,

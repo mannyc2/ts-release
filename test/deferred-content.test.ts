@@ -1,6 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
 import { deferredContentArtifactIds, renderDeferredContent } from "../src/run/content.js"
-import { FilePartsContent, Sha256Hole } from "../src/grammar/operation.js"
+import { FilePartsContent, Sha256Hole } from "../src/grammar/content.js"
 
 const hole = Sha256Hole.make({ artifactId: "archive" })
 

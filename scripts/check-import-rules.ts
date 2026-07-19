@@ -144,6 +144,45 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   api: ["api", "engine", "pack", "github", "host"]
 }
 
+// Plan 153 Stage A: within features/, later phases may import earlier ones,
+// never the reverse. build -> process -> catalog -> publish.
+const featureFamilyRank: Readonly<Record<string, number>> = {
+  build: 0,
+  process: 1,
+  catalog: 2,
+  publish: 3
+}
+
+const featureFamily = (displayPath: string): string | undefined => {
+  const parts = displayPath.split("/")
+  return parts[0] === "src" && parts[1] === "features" ? parts[2] : undefined
+}
+
+const checkFeaturePhaseImport = (
+  source: ts.SourceFile,
+  reference: ImportReference
+): string | undefined => {
+  const target = relativeTarget(reference)
+  if (target === undefined) {
+    return undefined
+  }
+  const from = featureFamily(toDisplayPath(reference.file))
+  const to = featureFamily(target)
+  if (from === undefined || to === undefined) {
+    return undefined
+  }
+  const fromRank = featureFamilyRank[from]
+  const toRank = featureFamilyRank[to]
+  if (fromRank === undefined || toRank === undefined || toRank <= fromRank) {
+    return undefined
+  }
+  return failure(
+    source,
+    reference,
+    `features/${from}/ may not import the later phase features/${to}/ (build -> process -> catalog -> publish).`
+  )
+}
+
 const sourceDirectory = (file: string): string | undefined => {
   const [rootDirectory, directory] = file.split("/")
   return rootDirectory === "src" && directory?.includes(".") === false ? directory : undefined
@@ -186,7 +225,7 @@ const checkConceptImport = (
 const checkReference = (
   source: ts.SourceFile,
   reference: ImportReference
-): string | undefined => checkConceptImport(source, reference)
+): string | undefined => checkConceptImport(source, reference) ?? checkFeaturePhaseImport(source, reference)
 
 const checkFile = (file: string): Array<string> => {
   const source = ts.createSourceFile(

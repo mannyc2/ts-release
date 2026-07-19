@@ -1,8 +1,8 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { npmPackPlanner } from "../src/features/npm-pack.js"
-import { emptyPlanAccumulator } from "../src/grammar/runner.js"
+import { npmPackPlanner } from "../src/features/build/npm-pack.js"
+import { emptyPlanAccumulator } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity, releaseConfig, releaseIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity({ name: "@scope/release", normalizedName: "scope-release" })

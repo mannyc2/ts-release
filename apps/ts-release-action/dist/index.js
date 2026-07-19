@@ -99183,6 +99183,18 @@ var artifactPathBaseName = (pathName) => {
   return parts[parts.length - 1] ?? pathName;
 };
 
+// ../../src/grammar/content.ts
+class Sha256Hole extends Class4("Sha256Hole")({
+  artifactId: ArtifactId
+}) {
+}
+
+class FilePartsContent extends TaggedClass()("file-parts", {
+  parts: ArraySchema(Union2([String4, Sha256Hole]))
+}) {
+}
+var DeferredFileContent = Union2([FilePartsContent]);
+
 // ../../src/assets/platform-variants.json
 var platform_variants_default = {
   "linux-x64": { os: "linux", arch: "x64", libc: "glibc" },
@@ -99226,27 +99238,7 @@ var bun_compile_targets_default = [
   "bun-windows-arm64"
 ];
 
-// ../../src/grammar/operation.ts
-var OperationId = NonEmptyString;
-var OperationRisk = Literals(["read-only", "writes-local", "externally-visible", "irreversible"]);
-var OperationPhase = Literals(["build", "process", "catalog", "publish", "verify"]);
-
-class CommandSpec extends Class4("CommandSpec")({
-  executable: String4,
-  args: ArraySchema(String4),
-  cwd: optional(String4),
-  requiredEnv: ArraySchema(String4),
-  redactedEnv: ArraySchema(String4)
-}) {
-}
-
-class GitHubReleaseAssetSpec extends Class4("GitHubReleaseAssetSpec")({
-  artifactId: String4,
-  path: String4,
-  name: String4,
-  contentType: String4
-}) {
-}
+// ../../src/grammar/intent.ts
 var BunCompileTarget = Literals(bun_compile_targets_default);
 
 class BunCompileIntent extends TaggedClass()("bun-compile", {
@@ -99290,6 +99282,28 @@ class ArchiveIntent extends TaggedClass()("archive", {
 }
 var StageArtifactIntent = Union2([BunCompileIntent, PyPiWheelIntent, ArchiveIntent]);
 
+// ../../src/grammar/operation.ts
+var OperationId = NonEmptyString;
+var OperationRisk = Literals(["read-only", "writes-local", "externally-visible", "irreversible"]);
+var OperationPhase = Literals(["build", "process", "catalog", "publish", "verify"]);
+
+class CommandSpec extends Class4("CommandSpec")({
+  executable: String4,
+  args: ArraySchema(String4),
+  cwd: optional(String4),
+  requiredEnv: ArraySchema(String4),
+  redactedEnv: ArraySchema(String4)
+}) {
+}
+
+class GitHubReleaseAssetSpec extends Class4("GitHubReleaseAssetSpec")({
+  artifactId: String4,
+  path: String4,
+  name: String4,
+  contentType: String4
+}) {
+}
+
 class CommandAction extends TaggedClass()("command", {
   command: CommandSpec
 }) {
@@ -99300,17 +99314,6 @@ class CheckFileAction extends TaggedClass()("check-file", {
   checksum: optional(Checksum)
 }) {
 }
-
-class Sha256Hole extends Class4("Sha256Hole")({
-  artifactId: ArtifactId
-}) {
-}
-
-class FilePartsContent extends TaggedClass()("file-parts", {
-  parts: ArraySchema(Union2([String4, Sha256Hole]))
-}) {
-}
-var DeferredFileContent = Union2([FilePartsContent]);
 
 class WriteFileAction extends TaggedClass()("write-file", {
   path: String4,
@@ -99380,41 +99383,6 @@ class Operation extends Class4("Operation")({
 }) {
 }
 
-class ExecutionApproval extends Class4("ExecutionApproval")({
-  execute: Boolean3,
-  approveIrreversible: Boolean3
-}) {
-  static none = ExecutionApproval.make({
-    execute: false,
-    approveIrreversible: false
-  });
-}
-
-class ExecutionApprovalError extends TaggedErrorClass()("ExecutionApprovalError", {
-  operationId: OperationId,
-  reason: String4
-}) {
-}
-var operationApprovalRequirements = (operation) => {
-  const requiresExecute = operation.risk !== "read-only";
-  const requiresIrreversibleApproval = operation.risk === "irreversible";
-  return {
-    requiresExecute,
-    requiresIrreversibleApproval,
-    label: !requiresExecute ? "none" : requiresIrreversibleApproval ? "--execute + --approve-publish" : "--execute"
-  };
-};
-var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operation, approval) {
-  const requirements = operationApprovalRequirements(operation);
-  if ((!requirements.requiresExecute || approval.execute) && (!requirements.requiresIrreversibleApproval || approval.approveIrreversible))
-    return;
-  const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible ? "Operation requires irreversible approval." : "Operation requires execute approval.";
-  return yield* fail6(ExecutionApprovalError.make({
-    operationId: operation.id,
-    reason
-  }));
-});
-
 // ../../src/grammar/template.ts
 var distributionArchToken = (arch2) => arch2 === "x64" ? "amd64" : "arm64";
 var defaultArtifactBaseName = (binary, platform2) => {
@@ -99472,7 +99440,7 @@ var defaulted = (schema, value2) => optionalKey2(schema).pipe(decodeTo2(schema, 
   encode: passthrough2()
 }));
 
-// ../../src/features/builder.ts
+// ../../src/features/build/builder.ts
 var executableArtifact = (input) => Artifact.make({
   id: input.id,
   kind: "executable",
@@ -99491,7 +99459,7 @@ var executableArtifact = (input) => Artifact.make({
   })
 });
 
-// ../../src/features/bun.ts
+// ../../src/features/build/bun.ts
 class ReleaseConfigBunExecutableBuild extends Class4("ReleaseConfigBunExecutableBuild")({
   id: optionalKey2(String4),
   builder: Literal2("bun"),
@@ -99563,7 +99531,7 @@ var bunBuilder = (options, identity2, target) => gen2(function* () {
   };
 });
 
-// ../../src/features/command.ts
+// ../../src/features/build/command.ts
 class ReleaseConfigCommandBuild extends Class4("ReleaseConfigCommandBuild")({
   builder: Literal2("command"),
   id: optionalKey2(String4),
@@ -99617,7 +99585,7 @@ var commandBuilder = (options, identity2, target) => gen2(function* () {
   };
 });
 
-// ../../src/features/prebuilt.ts
+// ../../src/features/build/prebuilt.ts
 class ReleaseConfigPrebuiltBuild extends Class4("ReleaseConfigPrebuiltBuild")({
   builder: Literal2("prebuilt"),
   id: optionalKey2(String4),
@@ -99649,7 +99617,7 @@ var prebuiltBuilder = (options, identity2, target) => gen2(function* () {
   };
 });
 
-// ../../src/grammar/pipe.ts
+// ../../src/grammar/planner.ts
 var emptyContribution = {
   artifacts: [],
   operations: [],
@@ -99658,7 +99626,7 @@ var emptyContribution = {
 var featurePlanner = (id, plan) => Object.assign((section, context7) => plan(section, context7).pipe(map5((contribution) => ({ ...emptyContribution, ...contribution }))), { id });
 var schedule2 = (planner, section) => [planner, section];
 
-// ../../src/features/archive.ts
+// ../../src/features/process/archive.ts
 class ReleaseConfigArchiveFormatOverrides extends Class4("ReleaseConfigArchiveFormatOverrides")({
   linux: optionalKey2(ArraySchema(ArchiveFormat)),
   darwin: optionalKey2(ArraySchema(ArchiveFormat)),
@@ -99780,7 +99748,7 @@ var archivePlanner = featurePlanner("archive", (sections, state3) => gen2(functi
   return { artifacts, operations };
 }));
 
-// ../../src/features/catalog-shared.ts
+// ../../src/features/catalog/shared.ts
 var catalogPathBaseName = artifactPathBaseName;
 var compactPackageShortName = (packageName) => {
   const withoutScope = packageName.includes("/") ? packageName.split("/").at(-1) ?? packageName : packageName;
@@ -99825,7 +99793,7 @@ var rejectInvalidCatalogArtifact = (source, artifact2) => {
   return void_3;
 };
 
-// ../../src/features/catalog-homebrew.ts
+// ../../src/features/catalog/homebrew.ts
 class ReleaseConfigHomebrewPublish extends Class4("ReleaseConfigHomebrewPublish")({
   repository: String4,
   formulaName: optionalKey2(String4),
@@ -99999,7 +99967,7 @@ var catalogHomebrewPlanner = featurePlanner("catalog:homebrew", (section, state3
   };
 }));
 
-// ../../src/features/catalog-scoop.ts
+// ../../src/features/catalog/scoop.ts
 class ReleaseConfigScoopPublish extends Class4("ReleaseConfigScoopPublish")({
   repository: String4,
   manifestName: optionalKey2(String4),
@@ -100083,7 +100051,7 @@ var catalogScoopPlanner = featurePlanner("catalog:scoop", (section, state3) => g
   };
 }));
 
-// ../../src/features/catalog-generic.ts
+// ../../src/features/catalog/file.ts
 class ReleaseConfigCatalogFactHole extends Class4("ReleaseConfigCatalogFactHole")({
   fact: Literals(["sha256", "downloadUrl", "assetName"]),
   artifact: NonEmptyString
@@ -100168,7 +100136,7 @@ var catalogGenericPlanner = featurePlanner("catalog:file", (entries2, context7) 
   return { artifacts, operations };
 }));
 
-// ../../src/features/import-artifacts.ts
+// ../../src/features/build/import-artifacts.ts
 class ReleaseConfigManualArtifact extends Class4("ReleaseConfigManualArtifact")({
   id: NonEmptyString,
   path: SafeRelativePath,
@@ -100229,7 +100197,7 @@ var importArtifactsPlanner = featurePlanner("import-artifacts", (section, state3
   operations: planned.map(({ operation }) => operation)
 }))));
 
-// ../../src/features/checksum.ts
+// ../../src/features/process/checksum.ts
 class ReleaseConfigChecksum extends Class4("ReleaseConfigChecksum")({
   algorithm: defaulted(Literals(["sha256", "sha512"]), "sha256"),
   nameTemplate: defaulted(NonEmptyString, "{name}_{version}_checksums.txt")
@@ -100271,7 +100239,7 @@ var checksumPlanner = featurePlanner("checksum", (section, state3) => gen2(funct
   };
 }));
 
-// ../../src/features/npm-pack.ts
+// ../../src/features/build/npm-pack.ts
 class ReleaseConfigNpmPackageBuild extends Class4("ReleaseConfigNpmPackageBuild")({ path: defaulted(SafeRelativePath, ".") }) {
 }
 var npmPackPlanner = featurePlanner("build:npm-pack", (section, state3) => renderArtifactNameEffect(section.path, { identity: state3.identity }, {
@@ -100299,7 +100267,7 @@ var hasSemverPrerelease = (value2) => {
   return match6?.[4] !== undefined;
 };
 
-// ../../src/features/operations.ts
+// ../../src/features/publish/operations.ts
 var noAuthCommand = (executable, args2) => CommandSpec.make({ executable, args: [...args2], requiredEnv: [], redactedEnv: [] });
 var readOnlyCommandValidationOperation = (options) => Operation.make({
   ...options,
@@ -100357,7 +100325,7 @@ var catalogGitPublishOperations = (options) => {
   ];
 };
 
-// ../../src/features/publish-github.ts
+// ../../src/features/publish/github.ts
 class ReleaseConfigGitHubPublish extends Class4("ReleaseConfigGitHubPublish")({
   repository: optionalKey2(String4),
   tokenEnv: optionalKey2(String4),
@@ -100441,7 +100409,7 @@ var publishGitHubPlanner = featurePlanner("publish:github", (section, state3) =>
   };
 }));
 
-// ../../src/features/trusted-publishing.ts
+// ../../src/features/publish/trusted-publishing.ts
 var trustedPublishingAuthEnvNames = [
   "ACTIONS_ID_TOKEN_REQUEST_URL",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
@@ -100458,7 +100426,7 @@ var compactTrustedPublishing = (config) => {
 };
 var publishingAuthEnvNames = (trustedPublishing, credentialEnvNames) => trustedPublishing === undefined ? credentialEnvNames.filter((name) => name !== undefined) : trustedPublishingAuthEnvNames;
 
-// ../../src/features/publish-npm.ts
+// ../../src/features/publish/npm.ts
 var NpmAccess = Literals(["public", "restricted"]);
 
 class ReleaseConfigNpmTrustedPublishing extends Class4("ReleaseConfigNpmTrustedPublishing")({
@@ -100543,7 +100511,7 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
   return succeed6({ operations });
 });
 
-// ../../src/features/publish-pypi.ts
+// ../../src/features/publish/pypi.ts
 class ReleaseConfigPyPiTrustedPublishing extends Class4("ReleaseConfigPyPiTrustedPublishing")({
   ...trustedPublishingConfigFields,
   publisherConfigured: optionalKey2(Literal2(true))
@@ -100623,7 +100591,7 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
   return { operations };
 }));
 
-// ../../src/features/pypi-wheel.ts
+// ../../src/features/build/pypi-wheel.ts
 class ReleaseConfigPyPiWheelBuild extends Class4("ReleaseConfigPyPiWheelBuild")({
   id: NonEmptyString,
   path: SafeRelativePath,
@@ -100821,6 +100789,42 @@ var loadReleaseIntent = fn2("config.load")(function* (config, source3 = {}) {
   };
 });
 
+// ../../src/grammar/approval.ts
+class ExecutionApproval extends Class4("ExecutionApproval")({
+  execute: Boolean3,
+  approveIrreversible: Boolean3
+}) {
+  static none = ExecutionApproval.make({
+    execute: false,
+    approveIrreversible: false
+  });
+}
+
+class ExecutionApprovalError extends TaggedErrorClass()("ExecutionApprovalError", {
+  operationId: OperationId,
+  reason: String4
+}) {
+}
+var operationApprovalRequirements = (operation) => {
+  const requiresExecute = operation.risk !== "read-only";
+  const requiresIrreversibleApproval = operation.risk === "irreversible";
+  return {
+    requiresExecute,
+    requiresIrreversibleApproval,
+    label: !requiresExecute ? "none" : requiresIrreversibleApproval ? "--execute + --approve-publish" : "--execute"
+  };
+};
+var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operation, approval) {
+  const requirements = operationApprovalRequirements(operation);
+  if ((!requirements.requiresExecute || approval.execute) && (!requirements.requiresIrreversibleApproval || approval.approveIrreversible))
+    return;
+  const reason = requirements.requiresIrreversibleApproval && !approval.approveIrreversible ? "Operation requires irreversible approval." : "Operation requires execute approval.";
+  return yield* fail6(ExecutionApprovalError.make({
+    operationId: operation.id,
+    reason
+  }));
+});
+
 // ../../src/grammar/state.ts
 class ReleaseIdentity extends Class4("PipelineReleaseIdentity")({
   name: String4,
@@ -100863,7 +100867,7 @@ var releasePlanDecodeOptions = { onExcessProperty: "error" };
 var decodeReleasePlan = decodeUnknownEffect2(ReleasePlan, releasePlanDecodeOptions);
 var decodeReleasePlanSync = decodeUnknownSync(ReleasePlan, releasePlanDecodeOptions);
 
-// ../../src/grammar/runner.ts
+// ../../src/grammar/accumulator.ts
 var emptyPlanAccumulator = (identity2) => ({
   identity: identity2,
   artifacts: [],
@@ -100933,7 +100937,7 @@ var runPipeline = fn2("pipeline.runPipeline")(function* (initialState, planners)
   return state3;
 });
 
-// ../../src/features/build.ts
+// ../../src/features/build/build.ts
 var planSection = (section, identity2, target) => {
   switch (section.builder) {
     case "bun":
@@ -100960,7 +100964,7 @@ var buildPlanner = featurePlanner("build", (sections, state3) => gen2(function* 
   };
 }));
 
-// ../../src/features/publish-catalog-generic.ts
+// ../../src/features/publish/catalog-file.ts
 var argv = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/).filter(Boolean) : value2;
 var validation = fn2("catalog.publish.validation")(function* (entry, identity2) {
   if (entry.validate === undefined)
@@ -101018,7 +101022,7 @@ var publishCatalogGenericPlanner = featurePlanner("publish:catalog", (entries2, 
   return { operations: operations.flat() };
 }));
 
-// ../../src/features/publish-catalog-git.ts
+// ../../src/features/publish/catalog-git.ts
 var catalogGitPublish = fn2("publish.catalogGit")(function* (tokenEnv, error2, validation2, publish) {
   if (tokenEnv !== undefined) {
     return yield* fail6(PlanError.make(error2));

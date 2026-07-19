@@ -19,7 +19,8 @@ import {
 } from "../src/run/executor.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
-import { ExecutionApproval, type Operation } from "../src/grammar/operation.js"
+import { type Operation } from "../src/grammar/operation.js"
+import { ExecutionApproval } from "../src/grammar/approval.js"
 import { TestGitHubApiLayer } from "./helpers.js"
 const OperationArmTestLayer = Layer.mergeAll(
   makeTestReleaseHttpLayer(),

@@ -5,7 +5,7 @@ import * as Exit from "effect/Exit"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Ref from "effect/Ref"
-import type { ExecutionApproval } from "../grammar/operation.js"
+import type { ExecutionApproval } from "../grammar/approval.js"
 import type { ReleasePlan } from "../grammar/plan.js"
 import { writeWorkspaceFile } from "../host/workspace-path.js"
 import {

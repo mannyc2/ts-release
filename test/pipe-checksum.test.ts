@@ -18,11 +18,13 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import { runOperations } from "../src/run/executor.js"
 import type { CommandResult } from "../src/host/host.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
-import { checksumPlanner } from "../src/features/checksum.js"
+import { checksumPlanner } from "../src/features/process/checksum.js"
 import { Artifact, ChecksumFileExtra, ImportedFileExtra, PackageExtra } from "../src/grammar/artifact.js"
-import { ExecutionApproval, FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../src/grammar/operation.js"
-import { schedule } from "../src/grammar/pipe.js"
-import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../src/grammar/runner.js"
+import { Operation, WriteFileAction } from "../src/grammar/operation.js"
+import { FilePartsContent, Sha256Hole } from "../src/grammar/content.js"
+import { ExecutionApproval } from "../src/grammar/approval.js"
+import { schedule } from "../src/grammar/planner.js"
+import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../src/grammar/accumulator.js"
 import {
   makeTestCommandRunnerLayer,
   makeTestReleaseHttpLayer,

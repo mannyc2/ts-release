@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { Artifact } from "../src/grammar/artifact.js"
 import { catalogGenericPlanner, ReleaseConfigCatalogEntry, ReleaseConfigCatalogFactHole,
-  type CatalogEntry } from "../src/features/catalog-generic.js"
+  type CatalogEntry } from "../src/features/catalog/file.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()

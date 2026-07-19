@@ -3,8 +3,8 @@ import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import { Artifact } from "../src/grammar/artifact.js"
 import { CheckFileAction, Operation } from "../src/grammar/operation.js"
-import { emptyContribution, featurePlanner, schedule, type FeatureSchedule } from "../src/grammar/pipe.js"
-import { emptyPlanAccumulator, runPipeline } from "../src/grammar/runner.js"
+import { emptyContribution, featurePlanner, schedule, type FeatureSchedule } from "../src/grammar/planner.js"
+import { emptyPlanAccumulator, runPipeline } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()

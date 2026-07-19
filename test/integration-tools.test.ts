@@ -7,7 +7,8 @@ import { BunReleaseWorkflowRuntimeLayer } from "../apps/release-ts/src/runtime.j
 import { runOperations } from "../src/run/executor.js"
 import { planRelease } from "../src/engine/engine.js"
 import type { ReleasePlan } from "../src/grammar/plan.js"
-import { ExecutionApproval, type Operation } from "../src/grammar/operation.js"
+import { type Operation } from "../src/grammar/operation.js"
+import { ExecutionApproval } from "../src/grammar/approval.js"
 import { runEffect } from "./helpers.js"
 
 const integrationEnabled = Bun.env.RELEASE_INTEGRATION_TOOLS === "1"

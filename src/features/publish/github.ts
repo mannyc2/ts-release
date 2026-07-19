@@ -1,19 +1,19 @@
 // Invariant: the GitHub planner receives one resolved release policy and emits only file-like assets.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import type { Artifact } from "../grammar/artifact.js"
-import { artifactPathBaseName } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
+import type { Artifact } from "../../grammar/artifact.js"
+import { artifactPathBaseName } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
 import {
   GitHubReleaseAssetSpec,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
   Operation
-} from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { hasSemverPrerelease } from "../grammar/semver.js"
+} from "../../grammar/operation.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { hasSemverPrerelease } from "../../grammar/semver.js"
 import { validationNoteOperation } from "./operations.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigGitHubPublish extends Schema.Class<ReleaseConfigGitHubPublish>(
   "ReleaseConfigGitHubPublish"

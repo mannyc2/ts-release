@@ -1,11 +1,12 @@
 // Invariant: checksum input order is basename-sorted and excludes every directory-shaped or prior checksum artifact.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, artifactPathBaseName, ChecksumFileExtra } from "../grammar/artifact.js"
-import { FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { renderArtifactNameEffect } from "../grammar/template.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { Artifact, artifactPathBaseName, ChecksumFileExtra } from "../../grammar/artifact.js"
+import { Operation, WriteFileAction } from "../../grammar/operation.js"
+import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { renderArtifactNameEffect } from "../../grammar/template.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("ReleaseConfigChecksum")({
   algorithm: defaulted(Schema.Literals(["sha256", "sha512"]), "sha256"),

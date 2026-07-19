@@ -16,7 +16,8 @@ import { type GitHubApiShape } from "../src/github/github.js"
 import { type ReleaseCommandRunnerShape } from "../src/host/host.js"
 import { type ReleaseHttpShape } from "../src/host/http.js"
 import { resolveGitTagIdentity, resolveManifestIdentity } from "../src/resolve/resolved-release.js"
-import { ArchiveIntent, Operation, StageAction } from "../src/grammar/operation.js"
+import { Operation, StageAction } from "../src/grammar/operation.js"
+import { ArchiveIntent } from "../src/grammar/intent.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ?

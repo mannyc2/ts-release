@@ -1,10 +1,10 @@
 // Invariant: a prebuilt target is one executable artifact guarded by one read-only existence check.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { SafeRelativePath } from "../grammar/artifact.js"
-import { CheckFileAction, Operation } from "../grammar/operation.js"
-import { PlatformTarget, platformTargetVariant } from "../grammar/platform.js"
-import { renderArtifactNameEffect } from "../grammar/template.js"
+import { SafeRelativePath } from "../../grammar/artifact.js"
+import { CheckFileAction, Operation } from "../../grammar/operation.js"
+import { PlatformTarget, platformTargetVariant } from "../../grammar/platform.js"
+import { renderArtifactNameEffect } from "../../grammar/template.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
 export class ReleaseConfigPrebuiltBuild extends Schema.Class<ReleaseConfigPrebuiltBuild>(

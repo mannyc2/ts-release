@@ -6,15 +6,15 @@ import * as Layer from "effect/Layer"
 import * as TestClock from "effect/testing/TestClock"
 import { parseReleaseIntent } from "../src/config/load.js"
 import {
-  ArchiveIntent,
   CommandAction,
   CommandSpec,
-  ExecutionApproval,
   Operation,
   RetryPolicy,
   StageAction,
   WriteFileAction
 } from "../src/grammar/operation.js"
+import { ArchiveIntent } from "../src/grammar/intent.js"
+import { ExecutionApproval } from "../src/grammar/approval.js"
 import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"

@@ -1,11 +1,11 @@
 // Invariant: generic catalog publication derives its git operations solely from the resolved catalog policy.
 import * as Effect from "effect/Effect"
-import { PlanError } from "../grammar/errors.js"
-import { CommandAction, CommandSpec, Operation } from "../grammar/operation.js"
+import { PlanError } from "../../grammar/errors.js"
+import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
 import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "./operations.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { renderTemplate } from "../grammar/template.js"
-import { catalogWritePath, type CatalogEntry } from "./catalog-generic.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { renderTemplate } from "../../grammar/template.js"
+import { catalogWritePath, type CatalogEntry } from "../catalog/file.js"
 const argv = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
   typeof value === "string" ? value.trim().split(/\s+/).filter(Boolean) : value
 const validation = Effect.fn("catalog.publish.validation")(function*(

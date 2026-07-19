@@ -11,11 +11,11 @@ import {
   InstallableArtifactVariant,
   SafeRelativePath,
   type ArtifactExtra
-} from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import { CheckFileAction, Operation } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { renderArtifactNameEffect } from "../grammar/template.js"
+} from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import { CheckFileAction, Operation } from "../../grammar/operation.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { renderArtifactNameEffect } from "../../grammar/template.js"
 
 export class ReleaseConfigManualArtifact extends Schema.Class<ReleaseConfigManualArtifact>(
   "ReleaseConfigManualArtifact"

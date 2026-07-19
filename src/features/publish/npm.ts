@@ -1,17 +1,17 @@
 // Invariant: the resolved npm section owns defaults/auth mode; the planner only emits the frozen operation sequence.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { SafeRelativePath } from "../grammar/artifact.js"
-import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
+import { SafeRelativePath } from "../../grammar/artifact.js"
+import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../../grammar/operation.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
   compactTrustedPublishing,
   publishingAuthEnvNames,
   trustedPublishingConfigFields
 } from "./trusted-publishing.js"
 import { readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export const NpmAccess = Schema.Literals(["public", "restricted"])
 export type NpmAccess = typeof NpmAccess.Type

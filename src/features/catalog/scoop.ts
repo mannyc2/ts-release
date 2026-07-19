@@ -1,11 +1,12 @@
 // Invariant: one selected file-like Windows artifact determines the entire deterministic Scoop manifest.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, CatalogFileExtra, SafeRelativePath } from "../grammar/artifact.js"
-import { PlanError } from "../grammar/errors.js"
-import { FilePartsContent, Operation, Sha256Hole, WriteFileAction } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import type { ReleaseIdentity } from "../grammar/state.js"
+import { Artifact, CatalogFileExtra, SafeRelativePath } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
+import { Operation, WriteFileAction } from "../../grammar/operation.js"
+import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
   catalogArtifactUrl,
   catalogPathBaseName,
@@ -15,8 +16,8 @@ import {
   githubRepository,
   projectPackageName,
   rejectInvalidCatalogArtifact
-} from "./catalog-shared.js"
-import { defaulted } from "../grammar/defaulted.js"
+} from "./shared.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPublish>(
   "ReleaseConfigScoopPublish"

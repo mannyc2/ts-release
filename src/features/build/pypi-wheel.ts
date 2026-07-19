@@ -1,10 +1,11 @@
 // Invariant: each decoded wheel section emits exactly one wheel artifact and one staging intent.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, PyPiWheelBinaryArtifact, SafeRelativePath, WheelExtra } from "../grammar/artifact.js"
-import { Operation, PyPiWheelIntent, StageAction } from "../grammar/operation.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { renderArtifactNameEffect } from "../grammar/template.js"
+import { Artifact, PyPiWheelBinaryArtifact, SafeRelativePath, WheelExtra } from "../../grammar/artifact.js"
+import { Operation, StageAction } from "../../grammar/operation.js"
+import { PyPiWheelIntent } from "../../grammar/intent.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { renderArtifactNameEffect } from "../../grammar/template.js"
 
 export class ReleaseConfigPyPiWheelBuild extends Schema.Class<ReleaseConfigPyPiWheelBuild>(
   "ReleaseConfigPyPiWheelBuild"

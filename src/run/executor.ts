@@ -35,17 +35,16 @@ import {
 import {
   type CheckFileAction,
   type CommandAction,
-  type DeferredFileContent,
-  ExecutionApproval,
   type GitHubReleaseCreateAction,
   type GitHubReleaseVerifyAction,
   type NoteAction,
   Operation,
-  requireExecutionApproval,
   type RetryPolicy,
   type StageAction,
   type WriteFileAction
 } from "../grammar/operation.js"
+import { type DeferredFileContent } from "../grammar/content.js"
+import { ExecutionApproval, requireExecutionApproval } from "../grammar/approval.js"
 import { optionalField } from "../grammar/optional-field.js"
 import type { Artifact } from "../grammar/artifact.js"
 import type { PipeNotice, ReleaseIdentity } from "../grammar/state.js"

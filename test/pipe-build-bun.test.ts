@@ -1,10 +1,11 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { parseReleaseIntent } from "../src/config/load.js"
-import { buildPlanner } from "../src/features/build.js"
-import type { BunCompileTarget, Operation, StageAction } from "../src/grammar/operation.js"
+import { buildPlanner } from "../src/features/build/build.js"
+import type { Operation, StageAction } from "../src/grammar/operation.js"
+import type { BunCompileTarget } from "../src/grammar/intent.js"
 import type { PlatformTarget } from "../src/grammar/platform.js"
-import { emptyPlanAccumulator } from "../src/grammar/runner.js"
+import { emptyPlanAccumulator } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity, releaseConfig } from "./helpers.js"
 
 const identity = makePipelineIdentity()

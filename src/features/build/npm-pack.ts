@@ -1,10 +1,10 @@
 // Invariant: npmPackage contributes one directory-shaped package artifact and no operations.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, PackageExtra, SafeRelativePath } from "../grammar/artifact.js"
-import { featurePlanner } from "../grammar/pipe.js"
-import { renderArtifactNameEffect } from "../grammar/template.js"
-import { defaulted } from "../grammar/defaulted.js"
+import { Artifact, PackageExtra, SafeRelativePath } from "../../grammar/artifact.js"
+import { featurePlanner } from "../../grammar/planner.js"
+import { renderArtifactNameEffect } from "../../grammar/template.js"
+import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigNpmPackageBuild extends Schema.Class<ReleaseConfigNpmPackageBuild>(
   "ReleaseConfigNpmPackageBuild"

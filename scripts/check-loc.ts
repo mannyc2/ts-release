@@ -7,11 +7,11 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6277], // raised by plan 167 (strict templates plus total stale-evidence projections)
+  ["src", 6279], // raised by plan 167 (strict templates, total joins, and unbound operation input types)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
-  ["src/grammar", 859], // raised by plan 167 (typed strict command-template renderer)
-  ["src/features", 1780], // raised by plan 167 (all argv sites traverse the strict Effect renderer)
+  ["src/grammar", 862], // raised by plan 167 (strict templates and single-stamp planner input type)
+  ["src/features", 1779], // ratcheted by plan 167 (feature operations remain unbound until planning)
   ["src/pack", 500],
   ["src/github", 267],
   ["src/run", 810], // raised by plan 159 (hooks feature)
@@ -23,7 +23,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
   ["apps/ts-release-action/src", 486], // ratcheted by plan 166 (removed the dead runtime input and rejection path)
-  ["test", 9656], // raised by plan 167 (strict argv and stale evidence/artifact regressions)
+  ["test", 9663], // raised by plan 167 (strict argv, stale joins, and unbound planner regressions)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
 ]

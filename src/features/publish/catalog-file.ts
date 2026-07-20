@@ -1,9 +1,9 @@
 // Invariant: generic catalog publication derives its git operations solely from the resolved catalog policy.
 import * as Effect from "effect/Effect"
 import { PlanError } from "../../grammar/errors.js"
-import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
+import { CommandAction, CommandSpec } from "../../grammar/operation.js"
 import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "./operations.js"
-import { featureOperation, featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner, type UnboundOperation } from "../../grammar/planner.js"
 import { renderCommandTemplateEffect, renderTemplate } from "../../grammar/template.js"
 import { catalogWritePath, type CatalogEntry } from "../catalog/file.js"
 const argv = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
@@ -32,19 +32,19 @@ const validation = Effect.fn("catalog.publish.validation")(function*(
 const command = (
   id: string, risk: "writes-local" | "externally-visible", description: string,
   executable: string, args: ReadonlyArray<string>, cwd?: string
-): Operation => featureOperation({
+): UnboundOperation => featureOperation({
   id, phase: "publish", risk, description,
   action: CommandAction.make({ command: cwd === undefined ? noAuthCommand(executable, args) :
     CommandSpec.make({ ...noAuthCommand(executable, args), cwd }) })
 })
 const publishOperations = (
   entry: CatalogEntry, identity: Parameters<typeof renderTemplate>[1]["identity"]
-): ReadonlyArray<Operation> => {
+): ReadonlyArray<UnboundOperation> => {
   const id = `catalog:${entry.id}:push`
   const directory = entry.directory
   const commitMessage = renderTemplate(entry.commitMessage, { identity })
   const description = `Push ${entry.id} catalog update for ${identity.name}@${identity.version}.`
-  const common = { id, pipeId: "publish:catalog", description, directory,
+  const common = { id, description, directory,
     filePath: catalogWritePath(entry), commitMessage }
   if (entry.submit === "push") return catalogGitPublishOperations(common)
   const branch = `ts-release/${identity.normalizedName}-${identity.version}`

@@ -1,7 +1,7 @@
 // Invariant: shared feature operation constructors preserve phase, risk, and action data exactly; pipeId is stamped by the planner.
 import { artifactPathBaseName } from "../../grammar/artifact.js"
-import { CommandAction, CommandSpec, NoteAction, Operation } from "../../grammar/operation.js"
-import { featureOperation } from "../../grammar/planner.js"
+import { CommandAction, CommandSpec, NoteAction } from "../../grammar/operation.js"
+import { featureOperation, type UnboundOperation } from "../../grammar/planner.js"
 
 export const noAuthCommand = (executable: string, args: ReadonlyArray<string>): CommandSpec =>
   CommandSpec.make({ executable, args: [...args], requiredEnv: [], redactedEnv: [] })
@@ -10,7 +10,7 @@ export const readOnlyCommandValidationOperation = (options: {
   readonly id: string
   readonly description: string
   readonly command: CommandSpec
-}): Operation => featureOperation({
+}): UnboundOperation => featureOperation({
   id: options.id,
   phase: "publish",
   risk: "read-only",
@@ -22,7 +22,7 @@ export const validationNoteOperation = (options: {
   readonly id: string
   readonly description: string
   readonly message: string
-}): Operation => featureOperation({
+}): UnboundOperation => featureOperation({
   id: options.id,
   phase: "publish",
   risk: "read-only",
@@ -42,7 +42,6 @@ export const trustedPublishingMessage = (options: {
 
 export interface CatalogGitPublishOptions {
   readonly id: string
-  readonly pipeId: string
   readonly description: string
   readonly directory?: string | undefined
   readonly filePath: string
@@ -57,25 +56,25 @@ const catalogFilePath = (filePath: string, directory: string | undefined): strin
   return normalizedPath.startsWith(prefix) ? normalizedPath.slice(prefix.length) : filePath
 }
 
-export const catalogGitPublishOperations = (options: CatalogGitPublishOptions): ReadonlyArray<Operation> => {
+export const catalogGitPublishOperations = (options: CatalogGitPublishOptions): ReadonlyArray<UnboundOperation> => {
   const command = (args: ReadonlyArray<string>) => CommandAction.make({
     command: noAuthCommand("git", ["-C", options.directory ?? ".", ...args])
   })
-  const catalog = options.pipeId.replace(/^publish:/, "")
+  const catalog = "catalog"
   const name = artifactPathBaseName(options.filePath)
   return [
-    Operation.make({
-      id: `${options.id}:add`, pipeId: options.pipeId, phase: "publish", risk: "writes-local",
+    featureOperation({
+      id: `${options.id}:add`, phase: "publish", risk: "writes-local",
       description: `Stage ${name} for ${catalog}.`,
       action: command(["add", catalogFilePath(options.filePath, options.directory)])
     }),
-    Operation.make({
-      id: `${options.id}:commit`, pipeId: options.pipeId, phase: "publish", risk: "writes-local",
+    featureOperation({
+      id: `${options.id}:commit`, phase: "publish", risk: "writes-local",
       description: `Commit ${name} for ${catalog}.`,
       action: command(["commit", "-m", options.commitMessage])
     }),
-    Operation.make({
-      id: options.id, pipeId: options.pipeId, phase: "publish", risk: "externally-visible",
+    featureOperation({
+      id: options.id, phase: "publish", risk: "externally-visible",
       description: options.description,
       action: command(["push"])
     })

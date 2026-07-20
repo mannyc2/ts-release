@@ -4,8 +4,8 @@ import * as Schema from "effect/Schema"
 import type { Artifact } from "../../grammar/artifact.js"
 import { artifactIsDirectoryLike } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
-import { featureOperation, featurePlanner } from "../../grammar/planner.js"
+import { CommandAction, CommandSpec } from "../../grammar/operation.js"
+import { featureOperation, featurePlanner, type UnboundOperation } from "../../grammar/planner.js"
 import { selectByIdsOrDefault } from "../shared.js"
 import {
   publishingAuthEnvNames,
@@ -64,7 +64,7 @@ const check = (id: string, description: string, section: ReleaseConfigPyPiPublis
 
 export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publish:pypi", (section, state) => Effect.gen(function*() {
     const paths = (yield* selectArtifacts(section, state.artifacts)).map(({ path }) => path)
-    const operations: Array<Operation> = []
+    const operations: Array<UnboundOperation> = []
     if (section.trustedPublishing !== undefined) operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",
       description: "Record PyPI trusted publishing authentication mode.",

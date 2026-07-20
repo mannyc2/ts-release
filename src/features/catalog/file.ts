@@ -3,9 +3,9 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, CatalogFileExtra, makeArtifact, SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { Operation, WriteFileAction } from "../../grammar/operation.js"
+import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featureOperation, featurePlanner, type PlannerContext } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner, type PlannerContext, type UnboundOperation } from "../../grammar/planner.js"
 import { renderTemplate } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
 export class ReleaseConfigCatalogFactHole extends Schema.Class<ReleaseConfigCatalogFactHole>("ReleaseConfigCatalogFactHole")({
@@ -61,7 +61,7 @@ export const catalogGenericPlanner = featurePlanner<ReadonlyArray<CatalogEntry>>
     if (duplicate !== undefined) return yield* Effect.fail(PlanError.make({
       pipeId: "catalog:file", field: "catalogs[].id", reason: `Duplicate catalog id: ${duplicate.id}`
     }))
-    const artifacts: Array<Artifact> = [], operations: Array<Operation> = []
+    const artifacts: Array<Artifact> = [], operations: Array<UnboundOperation> = []
     for (const entry of entries) {
       const path = catalogWritePath(entry)
       const contents = yield* planContent(entry, context)

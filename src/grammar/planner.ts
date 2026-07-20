@@ -15,7 +15,11 @@ export interface PipeContribution {
   readonly artifacts: ReadonlyArray<Artifact>
   readonly operations: ReadonlyArray<Operation>
 }
-type PipeContributionInput = Partial<PipeContribution>
+export interface UnboundOperation extends Omit<Operation, "pipeId"> {}
+interface PipeContributionInput {
+  readonly artifacts?: ReadonlyArray<Artifact> | undefined
+  readonly operations?: ReadonlyArray<UnboundOperation> | undefined
+}
 
 export interface FeaturePlanner<Section> {
   (
@@ -37,8 +41,7 @@ export const emptyContribution: PipeContribution = {
 
 // pipeId is owned by the featurePlanner binding and stamped onto every
 // contributed operation; feature code never spells its own pipe id.
-export const featureOperation = (fields: Omit<Operation, "pipeId">): Operation =>
-  Operation.make({ ...fields, pipeId: "" })
+export const featureOperation = (fields: UnboundOperation): UnboundOperation => fields
 
 export const featurePlanner = <Section>(
   id: string,
@@ -46,11 +49,11 @@ export const featurePlanner = <Section>(
 ): FeaturePlanner<Section> => Object.assign(
   (section: Section, context: PlannerContext) => plan(section, context).pipe(
     Effect.map((contribution) => {
-      const merged = { ...emptyContribution, ...contribution }
+      const artifacts = contribution.artifacts ?? []
+      const operations = contribution.operations ?? []
       return {
-        ...merged,
-        operations: merged.operations.map((operation) =>
-          operation.pipeId === id ? operation : Operation.make({ ...operation, pipeId: id }))
+        artifacts,
+        operations: operations.map((operation) => Operation.make({ ...operation, pipeId: id }))
       }
     })
   ),

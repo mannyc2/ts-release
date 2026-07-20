@@ -3,9 +3,9 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Artifact, artifactPathBaseName, ArchiveExtra, makeArtifact, type InstallableArtifactVariant } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { Operation, StageAction } from "../../grammar/operation.js"
+import { StageAction } from "../../grammar/operation.js"
 import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent } from "../../grammar/intent.js"
-import { featureOperation, featurePlanner } from "../../grammar/planner.js"
+import { featureOperation, featurePlanner, type UnboundOperation } from "../../grammar/planner.js"
 import { defaultArtifactBaseName, renderArtifactNameEffect } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
 import { selectByIdsOrDefault } from "../shared.js"
@@ -60,7 +60,7 @@ const entries = (artifacts: ReadonlyArray<Artifact>) => artifacts.map((artifact)
 
 export const archivePlanner = featurePlanner<ReadonlyArray<ReleaseConfigArchive>>("archive", (sections, state) => Effect.gen(function*() {
     const artifacts: Array<Artifact> = []
-    const operations: Array<Operation> = []
+    const operations: Array<UnboundOperation> = []
     for (const section of sections) {
       const selected = yield* selectByIdsOrDefault(section.ids, state.artifacts, () => true)
       const platform = selected.filter((artifact) => artifact.platform !== undefined)

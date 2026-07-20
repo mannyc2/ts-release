@@ -3,8 +3,8 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../../grammar/operation.js"
-import { featureOperation, featurePlanner } from "../../grammar/planner.js"
+import { CommandAction, CommandSpec, RetryPolicy } from "../../grammar/operation.js"
+import { featureOperation, featurePlanner, type UnboundOperation } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
 import {
   publishingAuthEnvNames,
@@ -91,7 +91,7 @@ export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm"
           expectation: `package ${section.packageName} to already exist on the registry`
         })
       })
-    const operations: Array<Operation> = [auth]
+    const operations: Array<UnboundOperation> = [auth]
     if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing
       && section.trustedPublishing.verifyPackageExists === true) operations.push(npmCheck(
       "npm:npm-package-exists",

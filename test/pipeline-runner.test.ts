@@ -2,22 +2,29 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import { Artifact, ImportedFileExtra, makeArtifact } from "../src/grammar/artifact.js"
-import { CheckFileAction, Operation } from "../src/grammar/operation.js"
-import { emptyContribution, featurePlanner, scheduled, type FeatureSchedule } from "../src/grammar/planner.js"
+import { CheckFileAction } from "../src/grammar/operation.js"
+import {
+  emptyContribution,
+  featureOperation,
+  featurePlanner,
+  scheduled,
+  type FeatureSchedule,
+  type UnboundOperation
+} from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()
 const artifact = (id: string, path: string) => makeArtifact({ id, path, producedBy: "planned",
   extra: ImportedFileExtra.make({ format: "file" }) })
-const operation = (id: string) => Operation.make({
-  id, pipeId: "planned", phase: "build", risk: "read-only", description: id,
+const operation = (id: string) => featureOperation({
+  id, phase: "build", risk: "read-only", description: id,
   action: CheckFileAction.make({ path: "dist/file" })
 })
 const planner = (
   id: string,
   artifacts: ReadonlyArray<Artifact> = [],
-  operations: ReadonlyArray<Operation> = []
+  operations: ReadonlyArray<UnboundOperation> = []
 ): FeatureSchedule => scheduled(featurePlanner(id,
   () => Effect.succeed({ ...emptyContribution, artifacts, operations })), Option.some(undefined))[0]!
 

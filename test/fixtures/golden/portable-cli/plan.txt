@@ -3,7 +3,7 @@ commit: abc123
 evidence: .release/evidence/0.1.0
 artifacts: 13
 surfaces: 5
-operations: 32
+operations: 29
 
 artifacts:
   - cli-linux-x64 artifacts/portable-example-0.1.0-linux-x64 [executable] produced-by=build:bun platform=linux-x64-glibc checksum=none
@@ -24,14 +24,11 @@ surfaces:
   - catalog operations=6
   - file operations=2
   - github operations=3
-  - npm operations=6
-  - pypi operations=5
+  - npm operations=5
+  - pypi operations=3
 
 operations by risk:
   read-only:
-    - npm:npm-version Check npm CLI availability.
-    command: npm --version
-    argv: ["npm","--version"]
     - npm:npm-trusted-publishing-auth Record npm trusted publishing authentication mode.
     note: NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and package @scope/portable-example to already exist on the registry.
     - npm:npm-package-exists Verify npm package exists before trusted publishing.
@@ -43,12 +40,6 @@ operations by risk:
     - npm:npm-version-verify Verify @scope/portable-example@0.1.0 exists on npm.
     command: npm view @scope/portable-example@0.1.0 version --registry https://registry.npmjs.org
     argv: ["npm","view","@scope/portable-example@0.1.0","version","--registry","https://registry.npmjs.org"]
-    - pypi:python-version Check Python CLI availability.
-    command: python --version
-    argv: ["python","--version"]
-    - pypi:twine-version Check Twine CLI availability.
-    command: python -m twine --version
-    argv: ["python","-m","twine","--version"]
     - pypi:twine-trusted-publishing-auth Record PyPI trusted publishing authentication mode.
     note: PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.
     - pypi:twine-check Validate Python distribution metadata with twine check.

@@ -5,9 +5,9 @@
 summary: release-example-multi-target@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 14
+operations: 13
 risk:
-  read-only: 8
+  read-only: 7
   writes-local: 3
   externally-visible: 2
   irreversible: 1
@@ -18,7 +18,7 @@ surfaces:
   - catalog operations=3
   - file operations=1
   - github operations=3
-  - npm operations=6
+  - npm operations=5
 
 approval-required operations:
   - catalog:homebrew:render: --execute (writes-local)
@@ -44,22 +44,6 @@ approval-required operations:
 - risk: read-only
 - approval: none
 - why: Verify imported artifact archive exists.
-
-#### npm:npm-version
-
-- target: npm
-- risk: read-only
-- approval: none
-- why: Check npm CLI availability.
-
-Command argv:
-
-```json
-[
-  "npm",
-  "--version"
-]
-```
 
 #### npm:npm-trusted-publishing-auth
 

@@ -88,10 +88,7 @@ export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm"
         message:
           `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
       })
-    const operations: Array<Operation> = [
-      npmCheck("npm:npm-version", "Check npm CLI availability.", section, ["--version"]),
-      auth
-    ]
+    const operations: Array<Operation> = [auth]
     if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing
       && section.trustedPublishing.verifyPackageExists === true) operations.push(npmCheck(
       "npm:npm-package-exists",

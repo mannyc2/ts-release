@@ -5,9 +5,9 @@
 summary: @scope/portable-example@0.1.0
 commit: abc123
 evidence: .release/evidence/0.1.0
-operations: 32
+operations: 29
 risk:
-  read-only: 11
+  read-only: 8
   writes-local: 16
   externally-visible: 3
   irreversible: 2
@@ -18,8 +18,8 @@ surfaces:
   - catalog operations=6
   - file operations=2
   - github operations=3
-  - npm operations=6
-  - pypi operations=5
+  - npm operations=5
+  - pypi operations=3
 
 approval-required operations:
   - build:bun:cli-linux-x64: --execute (writes-local)
@@ -63,22 +63,6 @@ approval-required operations:
 ## Operations By Risk
 
 ### read-only
-
-#### npm:npm-version
-
-- target: npm
-- risk: read-only
-- approval: none
-- why: Check npm CLI availability.
-
-Command argv:
-
-```json
-[
-  "npm",
-  "--version"
-]
-```
 
 #### npm:npm-trusted-publishing-auth
 
@@ -144,40 +128,6 @@ Command argv:
   "version",
   "--registry",
   "https://registry.npmjs.org"
-]
-```
-
-#### pypi:python-version
-
-- target: pypi
-- risk: read-only
-- approval: none
-- why: Check Python CLI availability.
-
-Command argv:
-
-```json
-[
-  "python",
-  "--version"
-]
-```
-
-#### pypi:twine-version
-
-- target: pypi
-- risk: read-only
-- approval: none
-- why: Check Twine CLI availability.
-
-Command argv:
-
-```json
-[
-  "python",
-  "-m",
-  "twine",
-  "--version"
 ]
 ```
 

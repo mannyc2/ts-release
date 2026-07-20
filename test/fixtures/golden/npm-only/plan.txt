@@ -3,19 +3,16 @@ commit: example
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1
-operations: 6
+operations: 5
 
 artifacts:
   - npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
 
 surfaces:
-  - npm operations=6
+  - npm operations=5
 
 operations by risk:
   read-only:
-    - npm:npm-version Check npm CLI availability.
-    command: npm --version
-    argv: ["npm","--version"]
     - npm:npm-trusted-publishing-auth Record npm trusted publishing authentication mode.
     note: NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider github-actions, workflow release.yml, GitHub Actions permission id-token: write, and package release-example-npm-only to already exist on the registry.
     - npm:npm-package-exists Verify npm package exists before trusted publishing.

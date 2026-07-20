@@ -3,19 +3,16 @@ commit: example
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1
-operations: 5
+operations: 4
 
 artifacts:
   - npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
 
 surfaces:
-  - npm operations=5
+  - npm operations=4
 
 operations by risk:
   read-only:
-    - npm:npm-version Check npm CLI availability.
-    command: npm --version
-    argv: ["npm","--version"]
     - npm:npm-whoami Validate npm CLI authentication.
     command: npm whoami --registry https://registry.npmjs.org
     argv: ["npm","whoami","--registry","https://registry.npmjs.org"]

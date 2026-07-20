@@ -5,9 +5,9 @@
 summary: release-example-pypi@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 5
+operations: 3
 risk:
-  read-only: 4
+  read-only: 2
   writes-local: 0
   externally-visible: 0
   irreversible: 1
@@ -15,7 +15,7 @@ execute required: 1
 irreversible approval required: 1
 
 surfaces:
-  - pypi operations=4
+  - pypi operations=2
 
 approval-required operations:
   - pypi:twine-upload: --execute + --approve-publish (irreversible)
@@ -34,40 +34,6 @@ approval-required operations:
 - risk: read-only
 - approval: none
 - why: Verify imported artifact wheel exists.
-
-#### pypi:python-version
-
-- target: pypi
-- risk: read-only
-- approval: none
-- why: Check Python CLI availability.
-
-Command argv:
-
-```json
-[
-  "python",
-  "--version"
-]
-```
-
-#### pypi:twine-version
-
-- target: pypi
-- risk: read-only
-- approval: none
-- why: Check Twine CLI availability.
-
-Command argv:
-
-```json
-[
-  "python",
-  "-m",
-  "twine",
-  "--version"
-]
-```
 
 #### pypi:twine-check
 

@@ -3,24 +3,18 @@ commit: example
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1
-operations: 5
+operations: 3
 
 artifacts:
   - wheel artifacts/release_example_pypi-0.1.0-py3-none-any.whl [file] produced-by=import-artifacts platform=none checksum=none
 
 surfaces:
-  - pypi operations=4
+  - pypi operations=2
 
 operations by risk:
   read-only:
     - import-artifacts:wheel:exists Verify imported artifact wheel exists.
     check-file: artifacts/release_example_pypi-0.1.0-py3-none-any.whl
-    - pypi:python-version Check Python CLI availability.
-    command: python --version
-    argv: ["python","--version"]
-    - pypi:twine-version Check Twine CLI availability.
-    command: python -m twine --version
-    argv: ["python","-m","twine","--version"]
     - pypi:twine-check Validate Python distribution metadata with twine check.
     command: python -m twine check artifacts/release_example_pypi-0.1.0-py3-none-any.whl
     argv: ["python","-m","twine","check","artifacts/release_example_pypi-0.1.0-py3-none-any.whl"]

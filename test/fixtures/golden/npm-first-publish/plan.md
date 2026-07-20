@@ -5,9 +5,9 @@
 summary: @scope/release-example-first@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 5
+operations: 4
 risk:
-  read-only: 4
+  read-only: 3
   writes-local: 0
   externally-visible: 0
   irreversible: 1
@@ -15,7 +15,7 @@ execute required: 1
 irreversible approval required: 1
 
 surfaces:
-  - npm operations=5
+  - npm operations=4
 
 approval-required operations:
   - npm:npm-publish: --execute + --approve-publish (irreversible)
@@ -27,22 +27,6 @@ approval-required operations:
 ## Operations By Risk
 
 ### read-only
-
-#### npm:npm-version
-
-- target: npm
-- risk: read-only
-- approval: none
-- why: Check npm CLI availability.
-
-Command argv:
-
-```json
-[
-  "npm",
-  "--version"
-]
-```
 
 #### npm:npm-whoami
 

@@ -4,31 +4,6 @@
   "releaseVersion": "0.1.0",
   "records": [
     {
-      "operationId": "npm:npm-version",
-      "pipeId": "publish:npm",
-      "phase": "publish",
-      "risk": "read-only",
-      "status": "passed",
-      "message": "Command completed successfully.",
-      "startedAt": "1970-01-01T00:00:00.000Z",
-      "endedAt": "1970-01-01T00:00:00.000Z",
-      "durationMillis": 0,
-      "outcome": {
-        "command": {
-          "executable": "npm",
-          "args": [
-            "--version"
-          ],
-          "requiredEnv": [],
-          "redactedEnv": []
-        },
-        "exitCode": 0,
-        "stdout": "",
-        "stderr": "",
-        "_tag": "command"
-      }
-    },
-    {
       "operationId": "npm:npm-whoami",
       "pipeId": "publish:npm",
       "phase": "publish",

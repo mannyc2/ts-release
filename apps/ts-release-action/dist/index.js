@@ -100529,10 +100529,7 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
     description: "Record npm trusted publishing authentication mode.",
     message: `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
   });
-  const operations = [
-    npmCheck("npm:npm-version", "Check npm CLI availability.", section, ["--version"]),
-    auth2
-  ];
+  const operations = [auth2];
   if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing && section.trustedPublishing.verifyPackageExists === true)
     operations.push(npmCheck("npm:npm-package-exists", "Verify npm package exists before trusted publishing.", section, ["view", section.packageName, "name", "--registry", section.registry]));
   operations.push(npmCheck("npm:npm-pack-dry-run", "Validate npm package contents with npm pack dry-run.", section, ["pack", "--dry-run", "--json", section.packagePath]), featureOperation({
@@ -100595,10 +100592,7 @@ var check = (id, description, section, args2) => readOnlyCommandValidationOperat
 });
 var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen2(function* () {
   const paths = (yield* selectArtifacts2(section, state3.artifacts)).map(({ path: path4 }) => path4);
-  const operations = [
-    check("pypi:python-version", "Check Python CLI availability.", section, ["--version"]),
-    check("pypi:twine-version", "Check Twine CLI availability.", section, ["-m", "twine", "--version"])
-  ];
+  const operations = [];
   if (section.trustedPublishing !== undefined)
     operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",

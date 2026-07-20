@@ -135,7 +135,8 @@ const doctorCommand = Command.make(
   { root: rootFlag, config: configFlag, target: targetFlag, format: diagnosticsFormatFlag },
   Effect.fn("cli.doctor")(function*({ root, config, target, format }) {
     const report = yield* Release.doctorRelease({
-      ...configInput({ root, config }),
+      root: Option.getOrUndefined(root),
+      configPath: config,
       target: Option.getOrUndefined(target)
     })
     yield* Console.log(Doctor.renderReleaseDiagnostics(report, format).trimEnd())

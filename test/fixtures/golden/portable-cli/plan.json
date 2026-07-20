@@ -529,24 +529,6 @@
       }
     },
     {
-      "id": "npm:npm-version",
-      "pipeId": "publish:npm",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Check npm CLI availability.",
-      "action": {
-        "_tag": "command",
-        "command": {
-          "executable": "npm",
-          "args": [
-            "--version"
-          ],
-          "requiredEnv": [],
-          "redactedEnv": []
-        }
-      }
-    },
-    {
       "id": "npm:npm-trusted-publishing-auth",
       "pipeId": "publish:npm",
       "phase": "publish",
@@ -656,44 +638,6 @@
       "retry": {
         "attempts": 11,
         "delayMillis": 500
-      }
-    },
-    {
-      "id": "pypi:python-version",
-      "pipeId": "publish:pypi",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Check Python CLI availability.",
-      "action": {
-        "_tag": "command",
-        "command": {
-          "executable": "python",
-          "args": [
-            "--version"
-          ],
-          "requiredEnv": [],
-          "redactedEnv": []
-        }
-      }
-    },
-    {
-      "id": "pypi:twine-version",
-      "pipeId": "publish:pypi",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Check Twine CLI availability.",
-      "action": {
-        "_tag": "command",
-        "command": {
-          "executable": "python",
-          "args": [
-            "-m",
-            "twine",
-            "--version"
-          ],
-          "requiredEnv": [],
-          "redactedEnv": []
-        }
       }
     },
     {

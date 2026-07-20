@@ -109,11 +109,11 @@ describe("minimal evidence and approval goals", () => {
       await mkdir(join(root, "artifacts"), { recursive: true })
       await writeFile(join(root, "artifacts", "release-0.1.0.tgz"), "fake archive text")
 
-      const npmVersionCommand = CommandSpec.make({
+      const npmWhoamiCommand = CommandSpec.make({
         executable: "npm",
-        args: ["--version"],
-        requiredEnv: [],
-        redactedEnv: []
+        args: ["whoami", "--registry", "https://registry.npmjs.org"],
+        requiredEnv: ["NPM_TOKEN"],
+        redactedEnv: ["NPM_TOKEN"]
       })
       const layer = Layer.mergeAll(
         makeObservableCommandRunnerLayer({
@@ -122,7 +122,7 @@ describe("minimal evidence and approval goals", () => {
             ["GH_TOKEN", "gh_secret"]
           ]),
           commands: new Map([
-            [commandKey(npmVersionCommand), {
+            [commandKey(npmWhoamiCommand), {
               exitCode: 1,
               stdout: "",
               stderr: "npm unavailable"
@@ -148,7 +148,7 @@ describe("minimal evidence and approval goals", () => {
       }
       const records = parsed.records ?? []
       expect(records.map((record) => record.operationId)).toContain("catalog:homebrew:render")
-      expect(records.map((record) => record.operationId)).toContain("npm:npm-version")
+      expect(records.map((record) => record.operationId)).toContain("npm:npm-whoami")
       expect(records.some((record) => record.operationId === "npm:npm-publish")).toBe(false)
       expect(records.some((record) => record.phase === "catalog")).toBe(true)
       expect(records.some((record) => record.phase === "publish" && record.status === "failed")).toBe(true)

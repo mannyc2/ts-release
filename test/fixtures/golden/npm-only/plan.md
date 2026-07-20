@@ -5,9 +5,9 @@
 summary: release-example-npm-only@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 6
+operations: 5
 risk:
-  read-only: 5
+  read-only: 4
   writes-local: 0
   externally-visible: 0
   irreversible: 1
@@ -15,7 +15,7 @@ execute required: 1
 irreversible approval required: 1
 
 surfaces:
-  - npm operations=6
+  - npm operations=5
 
 approval-required operations:
   - npm:npm-publish: --execute + --approve-publish (irreversible)
@@ -27,22 +27,6 @@ approval-required operations:
 ## Operations By Risk
 
 ### read-only
-
-#### npm:npm-version
-
-- target: npm
-- risk: read-only
-- approval: none
-- why: Check npm CLI availability.
-
-Command argv:
-
-```json
-[
-  "npm",
-  "--version"
-]
-```
 
 #### npm:npm-trusted-publishing-auth
 

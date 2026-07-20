@@ -603,17 +603,27 @@ describe("cli command", () => {
       expect(serialized).not.toContain("npm_secret")
       expect(report.checks.some((item) => item.status === "fail" && item.message.includes("GH_TOKEN"))).toBe(true)
     }))
-  test("doctor command composes static diagnostics", () =>
+  test("doctor command resolves a relative config under the explicit release root", () =>
     withTempDirectoryPromise("ts-release-cli-doctor-", async (root) => {
-      const configPath = join(root, "release.config.json")
-      await writeFile(configPath, minimalConfig)
-      await runWorkflow(root, [
+      await mkdir(join(root, "app"), { recursive: true })
+      await writeFile(join(root, "app", "release.config.json"), minimalConfig)
+      const result = await runBun([
+          "bun",
+          "run",
+          "cli",
           "doctor",
+          "--root",
+          root,
           "--config",
-          configPath,
+          "app/release.config.json",
           "--format",
           "json"
       ])
+      expect(result.exitCode).toBe(0)
+      expect(result.stderr).not.toContain("ConfigError")
+      expect(result.stdout).toContain("\"releaseName\": \"release\"")
+      expect(result.stdout).toContain("Config app/release.config.json is valid.")
+      expect(result.stdout).not.toContain("\"releaseName\": \"unknown\"")
     }))
   test("plans release configs programmatically", () =>
     withTempDirectoryPromise("ts-release-plan-root-", async (root) => {
@@ -661,11 +671,11 @@ describe("cli command", () => {
       await writeFile(configPath, partialWorkflowConfig)
       await mkdir(join(root, "artifacts"), { recursive: true })
       await writeFile(join(root, "artifacts", "release-0.1.0.tgz"), "fake archive text")
-      const npmVersionCommand = CommandSpec.make({
+      const npmWhoamiCommand = CommandSpec.make({
         executable: "npm",
-        args: ["--version"],
-        requiredEnv: [],
-        redactedEnv: []
+        args: ["whoami", "--registry", "https://registry.npmjs.org"],
+        requiredEnv: ["NPM_TOKEN"],
+        redactedEnv: ["NPM_TOKEN"]
       })
       const layer = Layer.mergeAll(
         makeObservableCommandRunnerLayer({
@@ -674,7 +684,7 @@ describe("cli command", () => {
             ["GH_TOKEN", "gh_secret"]
           ]),
           commands: new Map([
-            [commandKey(npmVersionCommand), {
+            [commandKey(npmWhoamiCommand), {
               exitCode: 1,
               stdout: "",
               stderr: "npm unavailable"
@@ -695,7 +705,7 @@ describe("cli command", () => {
       expectExitFailureTag(exit, "OperationFailedError")
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
       expect(evidence).toContain("\"operationId\": \"catalog:homebrew:render\"")
-      expect(evidence).toContain("\"operationId\": \"npm:npm-version\"")
+      expect(evidence).toContain("\"operationId\": \"npm:npm-whoami\"")
       expect(evidence).toContain("\"phase\": \"catalog\"")
       expect(evidence).toContain("\"phase\": \"publish\"")
     }))

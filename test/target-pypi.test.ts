@@ -24,29 +24,20 @@ const trustedConfig = (workflow = "release.yml") => pypiConfig({
 describe("PyPI target", () => {
   test("plans PyPI registry capabilities and Twine commands", async () => {
     const plan = await runEffect(createPlan(pypiConfig()), PyPiLayer)
-    const pythonVersion = plan.operations.find((operation) => operation.id === "pypi:python-version")
-    const twineVersion = plan.operations.find((operation) => operation.id === "pypi:twine-version")
     const twineCheck = plan.operations.find((operation) => operation.id === "pypi:twine-check")
     const publish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
 
     expect(plan.surfaceIds).toEqual(["pypi"])
-    expect(pythonVersion?.action._tag).toBe("command")
-    expect(twineVersion?.action._tag).toBe("command")
     expect(twineCheck?.action._tag).toBe("command")
     expect(publish?.action._tag).toBe("command")
-    if (pythonVersion?.action._tag === "command") {
-      expect(pythonVersion.action.command.executable).toBe("python")
-      expect(pythonVersion.action.command.args).toEqual(["--version"])
-    }
-    if (twineVersion?.action._tag === "command") {
-      expect(twineVersion.action.command.args).toEqual(["-m", "twine", "--version"])
-    }
     if (twineCheck?.action._tag === "command") {
+      expect(twineCheck.action.command.executable).toBe("python")
       expect(twineCheck.action.command.args).toEqual(["-m", "twine", "check", "dist/release-0.1.0-py3-none-any.whl"])
       expect(twineCheck.action.command.requiredEnv).toEqual([])
     }
     if (publish?.action._tag === "command") {
       expect(publish.risk).toBe("irreversible")
+      expect(publish.action.command.executable).toBe("python")
       expect(publish.action.command.args).toEqual([
         "-m",
         "twine",
@@ -88,17 +79,9 @@ describe("PyPI target", () => {
 
   test("uses a configured Python executable for Twine commands", async () => {
     const plan = await runEffect(createPlan(pypiConfig({ pythonExecutable: "python3" })), PyPiLayer)
-    const pythonVersion = plan.operations.find((operation) => operation.id === "pypi:python-version")
-    const twineVersion = plan.operations.find((operation) => operation.id === "pypi:twine-version")
     const twineCheck = plan.operations.find((operation) => operation.id === "pypi:twine-check")
     const publish = plan.operations.find((operation) => operation.id === "pypi:twine-upload")
 
-    if (pythonVersion?.action._tag === "command") {
-      expect(pythonVersion.action.command.executable).toBe("python3")
-    }
-    if (twineVersion?.action._tag === "command") {
-      expect(twineVersion.action.command.executable).toBe("python3")
-    }
     if (twineCheck?.action._tag === "command") {
       expect(twineCheck.action.command.executable).toBe("python3")
     }

@@ -110,15 +110,10 @@ describe("real tool integrations", () => {
       IntegrationLayer
     )
 
-    const operations = plan.operations.filter((operation) =>
-      operation.id === "npm:npm-version" || operation.id === "npm:npm-pack-dry-run"
-    )
+    const operations = plan.operations.filter((operation) => operation.id === "npm:npm-pack-dry-run")
     const evidence = await runEffect(runSelectedOperations(plan, operations), IntegrationLayer)
 
-    expect(evidence.records.map((record) => record.operationId).sort()).toEqual([
-      "npm:npm-pack-dry-run",
-      "npm:npm-version"
-    ])
+    expect(evidence.records.map((record) => record.operationId)).toEqual(["npm:npm-pack-dry-run"])
     expect(evidence.records.every((record) => record.status === "passed")).toBe(true)
   })
 

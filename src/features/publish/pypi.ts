@@ -60,10 +60,7 @@ const check = (id: string, description: string, section: ReleaseConfigPyPiPublis
 
 export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publish:pypi", (section, state) => Effect.gen(function*() {
     const paths = (yield* selectArtifacts(section, state.artifacts)).map(({ path }) => path)
-    const operations: Array<Operation> = [
-      check("pypi:python-version", "Check Python CLI availability.", section, ["--version"]),
-      check("pypi:twine-version", "Check Twine CLI availability.", section, ["-m", "twine", "--version"])
-    ]
+    const operations: Array<Operation> = []
     if (section.trustedPublishing !== undefined) operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",
       description: "Record PyPI trusted publishing authentication mode.",

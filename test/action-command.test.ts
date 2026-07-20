@@ -164,7 +164,7 @@ describe("ts-release action", () => {
       )
       expect(io.outputs.get("release_name")).toBe("release")
       expect(io.outputs.get("release_version")).toBe("0.1.0")
-      expect(io.outputs.get("operation_count")).toBe("8")
+      expect(io.outputs.get("operation_count")).toBe("7")
       expect(io.outputs.get("irreversible_operation_count")).toBe("1")
       expect(io.outputs.get("surface_count")).toBe("2")
       expect(io.outputs.get("evidence_directory")).toBe(".release/evidence")
@@ -197,7 +197,7 @@ describe("ts-release action", () => {
         io,
         makeNodeReleaseWorkflowRuntimeLayer({ root })
       )
-      expect(io.outputs.get("operation_count")).toBe("10")
+      expect(io.outputs.get("operation_count")).toBe("9")
       expect(io.outputs.get("surface_count")).toBe("3")
       expect(io.summaries.join("\n")).toContain("import-artifacts:archive:exists")
     })
@@ -451,11 +451,11 @@ describe("ts-release action", () => {
       await writeFile(join(root, "release.config.json"), partialWorkflowConfig)
       await mkdir(join(root, "artifacts"), { recursive: true })
       await writeFile(join(root, "artifacts", "release-0.1.0.tgz"), "fake archive")
-      const npmVersionCommand = CommandSpec.make({
+      const npmWhoamiCommand = CommandSpec.make({
         executable: "npm",
-        args: ["--version"],
-        requiredEnv: [],
-        redactedEnv: []
+        args: ["whoami", "--registry", "https://registry.npmjs.org"],
+        requiredEnv: ["NPM_TOKEN"],
+        redactedEnv: ["NPM_TOKEN"]
       })
       const layer = Layer.mergeAll(
         makeObservableCommandRunnerLayer({
@@ -464,7 +464,7 @@ describe("ts-release action", () => {
             ["GH_TOKEN", "gh_secret"]
           ]),
           commands: new Map([
-            [commandKey(npmVersionCommand), {
+            [commandKey(npmWhoamiCommand), {
               exitCode: 1,
               stdout: "",
               stderr: "npm unavailable"
@@ -495,7 +495,7 @@ describe("ts-release action", () => {
       expect(artifact.uploads[0]?.files.some((file) => file.endsWith("evidence.json"))).toBe(true)
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
       expect(evidence).toContain("\"operationId\": \"catalog:homebrew:render\"")
-      expect(evidence).toContain("\"operationId\": \"npm:npm-version\"")
+      expect(evidence).toContain("\"operationId\": \"npm:npm-whoami\"")
       expect(evidence).toContain("\"phase\": \"catalog\"")
       expect(evidence).toContain("\"phase\": \"publish\"")
     })

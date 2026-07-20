@@ -152,7 +152,6 @@ describe("config schema", () => {
   it.effect("decodes structured PyPI trusted publishing config", () =>
     Effect.gen(function*() {
       const intent = yield* parseReleaseIntent(pypiConfig({
-        usernameEnv: undefined, passwordEnv: undefined,
         trustedPublishing: { provider: "github-actions", workflow: "release.yml", publisherConfigured: true }
       }))
       expect(intent.publish.pypi).toMatchObject({ trustedPublishing: {
@@ -161,7 +160,6 @@ describe("config schema", () => {
   it.effect("requires PyPI trusted publisher setup acknowledgement", () =>
     expectValidationFailure(
       parseReleaseIntent(pypiConfig({
-        usernameEnv: undefined, passwordEnv: undefined,
         trustedPublishing: { provider: "github-actions", workflow: "release.yml", publisherConfigured: false }
       }))
     ))

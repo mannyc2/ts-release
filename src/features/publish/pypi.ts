@@ -23,11 +23,12 @@ export class ReleaseConfigPyPiTrustedPublishing extends Schema.Class<ReleaseConf
 export class ReleaseConfigPyPiPublish extends Schema.Class<ReleaseConfigPyPiPublish>("ReleaseConfigPyPiPublish")({
   repositoryUrl: defaulted(Schema.String, "https://upload.pypi.org/legacy/"),
   pythonExecutable: defaulted(Schema.String, "python"),
-  usernameEnv: Schema.optionalKey(Schema.String),
-  passwordEnv: Schema.optionalKey(Schema.String),
   trustedPublishing: Schema.optionalKey(ReleaseConfigPyPiTrustedPublishing),
   artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
 }) {}
+
+// Twine reads these environment variable names directly.
+const twineAuthEnvNames = ["TWINE_USERNAME", "TWINE_PASSWORD"] as const
 
 const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
   section: ReleaseConfigPyPiPublish,
@@ -79,7 +80,7 @@ export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publ
         risk: "irreversible",
         description: `Publish ${state.identity.name}@${state.identity.version} to PyPI-compatible registry.`,
         action: CommandAction.make({ command: (() => {
-          const env = publishingAuthEnvNames(section.trustedPublishing !== undefined, [section.usernameEnv, section.passwordEnv])
+          const env = publishingAuthEnvNames(section.trustedPublishing !== undefined, twineAuthEnvNames)
           return CommandSpec.make({
             executable: section.pythonExecutable,
             args: ["-m", "twine", "upload", "--non-interactive", "--repository-url", section.repositoryUrl, ...paths],

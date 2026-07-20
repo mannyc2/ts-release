@@ -142,7 +142,7 @@ describe("npm target", () => {
     expect(error._tag).toBe("PlanError")
     if (error._tag === "PlanError") {
       expect(error.field).toBe("publish.npm.tokenEnv")
-      expect(error.reason).toContain("trusted publishing")
+      expect(error.reason).toBe("NPM trusted publishing uses CI OIDC and must not also declare tokenEnv.")
     }
   })
 

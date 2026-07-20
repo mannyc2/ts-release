@@ -9,7 +9,9 @@
     "$.publish.npm.trustedPublishing.packageExists": "Use verifyPackageExists for the optional read-only npm package existence check.",
     "$.publish.homebrew.artifactId": "Use artifactIds with one or more artifact IDs.",
     "$.publish.homebrew.tokenEnv": "Homebrew tap publishing uses ambient git credentials; tokenEnv was removed.",
-    "$.publish.scoop.tokenEnv": "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed."
+    "$.publish.scoop.tokenEnv": "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.pypi.usernameEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed.",
+    "$.publish.pypi.passwordEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed."
   },
   "forbiddenFields": ["_tag", "dryRunSupport", "mutability", "recovery"],
   "forbiddenRootFields": ["identity", "targets", "artifactRecipes", "build", "evidenceDirectory", "strict"],

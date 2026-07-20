@@ -8,7 +8,6 @@ import * as Schema from "effect/Schema"
 import type { ReleaseIntent } from "../config/schema.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { IdentityError } from "../grammar/errors.js"
-import { PlanError } from "../grammar/errors.js"
 import { parseJsonAs } from "../grammar/json.js"
 import { CommandSpec } from "../grammar/operation.js"
 import { parseSemverVersion } from "../grammar/semver.js"
@@ -271,34 +270,6 @@ export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity)
 
 export type ResolvedRelease = Readonly<ReturnType<typeof resolveRelease>>
 
-const validateResolvedRelease = (release: ResolvedRelease): Effect.Effect<ResolvedRelease, PlanError> => {
-  if (Option.isSome(release.npm) && release.npm.value.trustedPublishing !== undefined
-    && release.npm.value.tokenEnv !== undefined) return Effect.fail(PlanError.make({
-      pipeId: "publish:npm", field: "publish.npm.tokenEnv",
-      reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
-    }))
-  if (Option.isSome(release.pypi)) {
-    const { passwordEnv, trustedPublishing, usernameEnv } = release.pypi.value
-    const reason = trustedPublishing !== undefined && (usernameEnv !== undefined || passwordEnv !== undefined)
-      ? "PyPI trusted publishing uses CI OIDC and must not also declare usernameEnv or passwordEnv."
-      : (usernameEnv === undefined) !== (passwordEnv === undefined)
-      ? "PyPI token auth must configure both usernameEnv and passwordEnv, or neither."
-      : usernameEnv !== undefined && (usernameEnv !== "TWINE_USERNAME" || passwordEnv !== "TWINE_PASSWORD")
-      ? "PyPI token auth only supports usernameEnv TWINE_USERNAME and passwordEnv TWINE_PASSWORD because Twine reads those environment variables directly; this adapter keeps secrets out of argv and does not remap env names."
-      : undefined
-    if (reason !== undefined) return Effect.fail(PlanError.make({
-      pipeId: "publish:pypi", field: "publish.pypi", reason
-    }))
-  }
-  if (Option.isSome(release.github) && release.github.value.repository.trim().length === 0) {
-    return Effect.fail(PlanError.make({
-      pipeId: "publish:github", field: "publish.github.repository",
-      reason: "GitHub publishing requires publish.github.repository or project.repository."
-    }))
-  }
-  return Effect.succeed(release)
-}
-
 export const resolveReleaseWorkflow = Effect.fn("release.resolve")(function*(
   intent: ReleaseIntent,
   root: string,
@@ -307,5 +278,5 @@ export const resolveReleaseWorkflow = Effect.fn("release.resolve")(function*(
   const identity = intent.versionFrom === "git-tag"
     ? yield* resolveGitTagIdentity({ project: intent.project, root, snapshot })
     : yield* resolveManifestIdentity({ project: intent.project, root, snapshot })
-  return yield* validateResolvedRelease(resolveRelease(intent, identity))
+  return resolveRelease(intent, identity)
 })

@@ -280,7 +280,6 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
 
   if (pypi?.repositoryUrl !== "https://upload.pypi.org/legacy/") failures.push("self-release target pypi repositoryUrl must equal https://upload.pypi.org/legacy/")
   if (pypi?.pythonExecutable !== "python3") failures.push("self-release target pypi pythonExecutable must equal python3")
-  if (pypi?.usernameEnv !== undefined || pypi?.passwordEnv !== undefined) failures.push("pypi self-release target must use trusted publishing instead of TWINE_USERNAME/TWINE_PASSWORD")
   const pypiTrusted = typeof pypi?.trustedPublishing === "object" ? pypi.trustedPublishing : undefined
   if (pypiTrusted?.provider !== "github-actions" || pypiTrusted.workflow !== "release.yml" || pypiTrusted.publisherConfigured !== true) {
     failures.push("pypi trustedPublishing.publisherConfigured must equal true")

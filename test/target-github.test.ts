@@ -235,4 +235,18 @@ describe("GitHub target", () => {
     }
   })
 
+  test("rejects GitHub publishing without a repository", async () => {
+    const config = releaseConfig({
+      artifacts: [],
+      publish: { github: {} }
+    })
+    const error = await runEffect(createPlan(config).pipe(Effect.flip), TestLayer)
+
+    expect(error._tag).toBe("PlanError")
+    if (error._tag === "PlanError") {
+      expect(error.field).toBe("publish.github.repository")
+      expect(error.reason).toBe("GitHub publishing requires publish.github.repository or project.repository.")
+    }
+  })
+
 })

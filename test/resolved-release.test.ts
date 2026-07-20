@@ -120,7 +120,7 @@ describe("resolved release", () => {
           npm: { registry: "https://registry.example", packageName: "explicit-npm", packagePath: "npm-pkg",
             tokenEnv: "NPM_TOKEN", access: "restricted", provenance: true },
           pypi: { repositoryUrl: "https://pypi.example", pythonExecutable: "python3",
-            usernameEnv: "TWINE_USERNAME", passwordEnv: "TWINE_PASSWORD", artifactIds: ["wheel-b"] },
+            artifactIds: ["wheel-b"] },
           github: { repository: "owner/explicit", tokenEnv: "GH_TOKEN", draft: false, prerelease: "auto" },
           homebrew: { repository: "owner/tap", formulaName: "brew-alias", formulaPath: "Formula/tool.rb",
             artifactIds: ["manual"], homepage: "https://brew.example", description: "brew", url: "https://cdn/brew",
@@ -141,7 +141,7 @@ describe("resolved release", () => {
           provider: "github-actions", workflow: "release.yml", verifyPackageExists: true } })
       expect(some(release.pypi)).toMatchObject({
         repositoryUrl: "https://pypi.example", pythonExecutable: "python3",
-        usernameEnv: "TWINE_USERNAME", passwordEnv: "TWINE_PASSWORD", artifactIds: ["wheel-b"] })
+        artifactIds: ["wheel-b"] })
       expect(some(trusted.pypi)?.trustedPublishing)
         .toEqual({ provider: "github-actions", workflow: "release.yml" })
       expect(some(release.github))

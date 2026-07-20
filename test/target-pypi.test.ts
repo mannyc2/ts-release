@@ -18,8 +18,6 @@ const PyPiLayer = makeTestCommandRunnerLayer({
 const createPlan = (config: string) =>
   createTestPlan(config)
 const trustedConfig = (workflow = "release.yml") => pypiConfig({
-  usernameEnv: undefined,
-  passwordEnv: undefined,
   trustedPublishing: { provider: "github-actions", workflow, publisherConfigured: true }
 })
 
@@ -120,26 +118,13 @@ describe("PyPI target", () => {
       }
     })
     const errors = await Promise.all([
-      pypiConfig({ passwordEnv: undefined }),
-      pypiConfig({ usernameEnv: "PYPI_USERNAME", passwordEnv: "PYPI_PASSWORD" }),
-      pypiConfig({ trustedPublishing: { provider: "github-actions", workflow: "release.yml", publisherConfigured: true } }),
       trustedConfig(".github/workflows/release.yml"),
       directoryConfig,
       pypiConfig().replace("\"id\":\"wheel\"", "\"id\":\"other\"")
     ].map((config) => runEffect(createPlan(config).pipe(Effect.flip), PyPiLayer)))
-    const [halfAuth, customAuth, trustedWithToken, trustedWorkflowPath, directoryArtifact, noArtifact] = errors
+    const [trustedWorkflowPath, directoryArtifact, noArtifact] = errors
 
-    expect(halfAuth?._tag).toBe("PlanError")
-    expect(customAuth?._tag).toBe("PlanError")
-    expect(trustedWithToken?._tag).toBe("PlanError")
     expect(trustedWorkflowPath?._tag).toBe("ConfigError")
-    if (customAuth?._tag === "PlanError") {
-      expect(customAuth.reason).toContain("TWINE_USERNAME")
-      expect(customAuth.reason).toContain("TWINE_PASSWORD")
-    }
-    if (trustedWithToken?._tag === "PlanError") {
-      expect(trustedWithToken.reason).toContain("trusted publishing")
-    }
     if (trustedWorkflowPath?._tag === "ConfigError") {
       expect(trustedWorkflowPath.reason).toContain(`["publish"]["pypi"]["trustedPublishing"]["workflow"]`)
     }
@@ -150,6 +135,20 @@ describe("PyPI target", () => {
       expect(noArtifact.reason).toBe("PyPI target references missing artifact wheel.")
     }
   })
+
+  for (const field of ["usernameEnv", "passwordEnv"] as const) {
+    test(`rejects removed PyPI ${field} with its migration hint`, async () => {
+      const error = await runEffect(createPlan(pypiConfig({ [field]: field === "usernameEnv"
+        ? "TWINE_USERNAME"
+        : "TWINE_PASSWORD" })).pipe(Effect.flip), PyPiLayer)
+
+      expect(error._tag).toBe("ConfigError")
+      if (error._tag === "ConfigError") {
+        expect(error.reason).toContain(`removed field $.publish.pypi.${field}`)
+        expect(error.reason).toContain("Twine reads TWINE_USERNAME/TWINE_PASSWORD directly")
+      }
+    })
+  }
 
   test("does not select a generic file solely because its id is wheel", async () => {
     const config = releaseConfig({

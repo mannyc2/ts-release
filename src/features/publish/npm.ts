@@ -2,6 +2,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { SafeRelativePath } from "../../grammar/artifact.js"
+import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation, RetryPolicy } from "../../grammar/operation.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
@@ -70,6 +71,11 @@ const publishArgs = (section: NpmPublishSection): ReadonlyArray<string> => {
 }
 
 export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm", (section, state) => {
+    if (section.trustedPublishing !== undefined && section.tokenEnv !== undefined) return Effect.fail(PlanError.make({
+      pipeId: "publish:npm",
+      field: "publish.npm.tokenEnv",
+      reason: "NPM trusted publishing uses CI OIDC and must not also declare tokenEnv."
+    }))
     const auth = section.trustedPublishing === undefined
       ? readOnlyCommandValidationOperation({
         id: "npm:npm-whoami",

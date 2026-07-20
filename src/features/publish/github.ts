@@ -30,7 +30,7 @@ export const resolveGitHubPublish = (config: {
   const section = config.publish.github
   if (section === undefined) return undefined
   return {
-    repository: section.repository ?? config.project.repository ?? "",
+    repository: section.repository ?? config.project.repository,
     tokenEnv: section.tokenEnv,
     draft: section.draft,
     prerelease: section.prerelease
@@ -43,6 +43,11 @@ const assetsForRelease = (artifacts: ReadonlyArray<Artifact>): ReadonlyArray<Art
 
 export const publishGitHubPlanner = featurePlanner<GitHubPublishSection>("publish:github", (section, state) => Effect.gen(function*() {
     const repository = section.repository
+    if (repository === undefined || repository.trim().length === 0) return yield* Effect.fail(PlanError.make({
+      pipeId: "publish:github",
+      field: "publish.github.repository",
+      reason: "GitHub publishing requires publish.github.repository or project.repository."
+    }))
     const artifacts = assetsForRelease(state.artifacts)
     if (artifacts.some(({ extra }) => extra?._tag === "file" && extra.format === "directory")) {
       return yield* Effect.fail(PlanError.make({

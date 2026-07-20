@@ -369,8 +369,6 @@ export const pypiConfig = (overrides: Record<string, unknown> = {}) =>
     publish: {
       pypi: {
         repositoryUrl: "https://test.pypi.org/legacy/",
-        usernameEnv: "TWINE_USERNAME",
-        passwordEnv: "TWINE_PASSWORD",
         artifactIds: ["wheel"],
         ...overrides
       }

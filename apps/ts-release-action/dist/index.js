@@ -100722,6 +100722,7 @@ class ReleaseIntent extends Class4("ReleaseIntent")({
   catalogs: optionalKey2(ArraySchema(ReleaseConfigCatalogEntry)),
   hooks: optionalKey2(ReleaseConfigHooks),
   publish: ReleaseConfigPublish,
+  retry: optionalKey2(RetryPolicy),
   evidence: optionalKey2(Union2([SafeRelativePath, ReleaseConfigEvidence]))
 }) {
 }
@@ -102491,6 +102492,7 @@ var resolveRelease = (intent, identity2) => {
     custom: optionFromNonEmpty(intent.publish.custom),
     catalogs: catalogs.length === 0 ? none2() : some2(catalogs),
     hooksAfter: optionFromNonEmpty(intent.hooks?.after),
+    retry: intent.retry,
     evidenceDirectory: evidenceDirectory(intent, identity2)
   };
 };
@@ -103019,11 +103021,12 @@ var loadReleaseBuild = fn2("engine.loadReleaseBuild")(function* (options) {
   const source3 = yield* loadReleaseIntent(options.config, { root: options.workspace, configPath: options.configPath });
   return { source: source3, build: yield* resolveReleaseBuild(source3.intent, source3.root, options.snapshot ?? false) };
 });
+var withDefaultVerifyRetry = (operations, retry5) => retry5 === undefined ? operations : operations.map((operation) => operation.phase === "verify" && operation.retry === undefined ? Operation.make({ ...operation, retry: retry5 }) : operation);
 var releasePlanFromAccumulator = (release, root, configPathName, state3) => ReleasePlan.make({
   schemaVersion: "release-plan/v3",
   identity: state3.identity,
   artifacts: state3.artifacts,
-  operations: state3.operations,
+  operations: withDefaultVerifyRetry(state3.operations, release.retry),
   notices: state3.notices,
   source: SourceMetadata.make({
     root,

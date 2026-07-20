@@ -269,6 +269,7 @@ export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity)
     custom: optionFromNonEmpty(intent.publish.custom),
     catalogs: catalogs.length === 0 ? Option.none() : Option.some(catalogs),
     hooksAfter: optionFromNonEmpty(intent.hooks?.after),
+    retry: intent.retry,
     evidenceDirectory: evidenceDirectory(intent, identity)
   }
 }

@@ -21,6 +21,7 @@ import { ReleaseConfigNpmPublish } from "../features/publish/npm.js"
 import { ReleaseConfigPyPiPublish } from "../features/publish/pypi.js"
 import { ReleaseConfigPyPiWheelBuild } from "../features/build/pypi-wheel.js"
 import { SafeRelativePath } from "../grammar/artifact.js"
+import { RetryPolicy } from "../grammar/operation.js"
 
 export const DEFAULT_CONFIG_PATH = "release.config.json"
 export const RELEASE_CONFIG_SCHEMA_ID = "https://mannyc2.github.io/ts-release/schema/release-config.schema.json"
@@ -77,6 +78,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   catalogs: Schema.optionalKey(Schema.Array(ReleaseConfigCatalogEntry)),
   hooks: Schema.optionalKey(ReleaseConfigHooks),
   publish: ReleaseConfigPublish,
+  retry: Schema.optionalKey(RetryPolicy),
   evidence: Schema.optionalKey(Schema.Union([SafeRelativePath, ReleaseConfigEvidence]))
 }) {}
 

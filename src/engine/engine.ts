@@ -4,7 +4,7 @@ import * as Option from "effect/Option"
 import { configPath, loadReleaseIntent } from "../config/load.js"
 import { ConfigError } from "../config/errors.js"
 import type { ReleaseIntent } from "../config/schema.js"
-import { Operation } from "../grammar/operation.js"
+import { Operation, RetryPolicy } from "../grammar/operation.js"
 import { ExecutionApproval } from "../grammar/approval.js"
 import { ReleasePlan, SourceMetadata } from "../grammar/plan.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../grammar/accumulator.js"
@@ -101,6 +101,15 @@ const loadReleaseBuild = Effect.fn("engine.loadReleaseBuild")(function*(options:
   return { source, build: yield* resolveReleaseBuild(source.intent, source.root, options.snapshot ?? false) }
 })
 
+const withDefaultVerifyRetry = (
+  operations: ReadonlyArray<Operation>,
+  retry: RetryPolicy | undefined
+): ReadonlyArray<Operation> =>
+  retry === undefined ? operations : operations.map((operation) =>
+    operation.phase === "verify" && operation.retry === undefined
+      ? Operation.make({ ...operation, retry })
+      : operation)
+
 const releasePlanFromAccumulator = (
   release: ResolvedRelease,
   root: string,
@@ -111,7 +120,7 @@ const releasePlanFromAccumulator = (
     schemaVersion: "release-plan/v3",
     identity: state.identity,
     artifacts: state.artifacts,
-    operations: state.operations,
+    operations: withDefaultVerifyRetry(state.operations, release.retry),
     notices: state.notices,
     source: SourceMetadata.make({
       root,

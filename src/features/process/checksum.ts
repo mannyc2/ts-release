@@ -1,7 +1,7 @@
 // Invariant: checksum input order is basename-sorted and excludes every directory-shaped or prior checksum artifact.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, artifactPathBaseName, ChecksumFileExtra } from "../../grammar/artifact.js"
+import { artifactIsDirectoryLike, artifactPathBaseName, ChecksumFileExtra, makeArtifact } from "../../grammar/artifact.js"
 import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
@@ -15,17 +15,15 @@ export class ReleaseConfigChecksum extends Schema.Class<ReleaseConfigChecksum>("
 
 export const checksumPlanner = featurePlanner<ReleaseConfigChecksum>("checksum", (section, state) => Effect.gen(function*() {
     const inputs = state.artifacts.filter((artifact) =>
-      artifact.kind !== "package" && artifact.kind !== "checksum-file"
-      && !(artifact.extra?._tag === "file" && artifact.extra.format === "directory")
+      artifact.kind !== "checksum-file" && !artifactIsDirectoryLike(artifact)
     ).sort((left, right) => artifactPathBaseName(left.path).localeCompare(artifactPathBaseName(right.path)))
     const fileName = yield* renderArtifactNameEffect(section.nameTemplate, { identity: state.identity }, {
       pipeId: "checksum", field: "checksum.nameTemplate"
     })
     const path = `.release/artifacts/${fileName}`
     return {
-      artifacts: [Artifact.make({
+      artifacts: [makeArtifact({
         id: "checksum",
-        kind: "checksum-file",
         path,
         producedBy: "checksum",
         extra: ChecksumFileExtra.make({

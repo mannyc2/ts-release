@@ -2,13 +2,13 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import {
-  Artifact,
   ArtifactFormat,
   ArchiveExtra,
   Checksum,
   ExecutableExtra,
   ImportedFileExtra,
   InstallableArtifactVariant,
+  makeArtifact,
   SafeRelativePath,
   type ArtifactExtra
 } from "../../grammar/artifact.js"
@@ -27,15 +27,10 @@ export class ReleaseConfigManualArtifact extends Schema.Class<ReleaseConfigManua
   variant: Schema.optionalKey(InstallableArtifactVariant)
 }) {}
 
-const kinds: Record<ReleaseConfigManualArtifact["format"], Artifact["kind"]> = {
-  tarball: "archive", zip: "archive", directory: "file",
-  executable: "executable", file: "file", "oci-image": "file"
-}
-
-const extra = (artifact: ReleaseConfigManualArtifact, kind: Artifact["kind"]): ArtifactExtra =>
-  kind === "archive"
+const extra = (artifact: ReleaseConfigManualArtifact): ArtifactExtra =>
+  artifact.format === "tarball" || artifact.format === "zip"
     ? ArchiveExtra.make({ format: artifact.format, binaries: [], files: [] })
-    : kind === "executable"
+    : artifact.format === "executable"
     ? ExecutableExtra.make({
       binary: artifact.variant?.binaryName ?? artifact.id,
       extension: artifact.variant?.executableExtension ?? "",
@@ -53,16 +48,14 @@ export const importArtifactsPlanner = featurePlanner<ReadonlyArray<ReleaseConfig
     const path = yield* renderArtifactNameEffect(input.path, { identity: state.identity }, {
       pipeId: "import-artifacts", field: `artifacts.${input.id}.path`
     })
-    const kind = kinds[input.format]
     return {
-      artifact: Artifact.make({
+      artifact: makeArtifact({
         id: input.id,
-        kind,
         path,
         producedBy: "import-artifacts",
         ...(input.checksum === undefined ? {} : { checksum: input.checksum }),
         ...(input.variant === undefined ? {} : { platform: input.variant }),
-        extra: extra(input, kind)
+        extra: extra(input)
       }),
       operation: featureOperation({
         id: `import-artifacts:${input.id}:exists`,

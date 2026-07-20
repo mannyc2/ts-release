@@ -2,7 +2,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import type { Artifact } from "../../grammar/artifact.js"
-import { artifactPathBaseName } from "../../grammar/artifact.js"
+import { artifactIsDirectoryLike, artifactPathBaseName } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import {
   GitHubReleaseAssetSpec,
@@ -49,7 +49,7 @@ export const publishGitHubPlanner = featurePlanner<GitHubPublishSection>("publis
       reason: "GitHub publishing requires publish.github.repository or project.repository."
     }))
     const artifacts = assetsForRelease(state.artifacts)
-    if (artifacts.some(({ extra }) => extra?._tag === "file" && extra.format === "directory")) {
+    if (artifacts.some(artifactIsDirectoryLike)) {
       return yield* Effect.fail(PlanError.make({
         pipeId: "publish:github",
         field: "publish.github.assets",

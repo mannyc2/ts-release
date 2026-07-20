@@ -3,7 +3,7 @@ import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant } from "../src/grammar/artifact.js"
+import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant, makeArtifact } from "../src/grammar/artifact.js"
 import {
   CommandAction,
   CommandSpec,
@@ -93,8 +93,8 @@ const evidenceBundle = (
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ?
   (<T>() => T extends B ? 1 : 2) extends (<T>() => T extends A ? 1 : 2) ? true : false : false
 const summaryIsEncoded: Equal<ArtifactSummary, Schema.Codec.Encoded<typeof Artifact>> = true
-const summaryArtifact = (id: string, path: string) => Artifact.make({
-  id, kind: "executable", path, producedBy: "build:test",
+const summaryArtifact = (id: string, path: string) => makeArtifact({
+  id, path, producedBy: "build:test",
   platform: InstallableArtifactVariant.make({ os: "linux", arch: "x64", libc: "glibc", binaryName: id }),
   checksum: Checksum.make({ algorithm: "sha256", value: `${id}-digest` }),
   extra: ExecutableExtra.make({ binary: id, extension: "", builderId: "test" })

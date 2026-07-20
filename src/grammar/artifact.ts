@@ -1,4 +1,4 @@
-// Invariant: Artifact is the only artifact representation and every stored path is a validated safe relative path.
+// Invariant: Artifact is the only artifact representation; kind derives from required extra and every path is safe.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { PlanError } from "./errors.js"
@@ -150,8 +150,16 @@ export class Artifact extends Schema.Class<Artifact>("Artifact")({
   producedBy: Schema.String,
   platform: Schema.optionalKey(InstallableArtifactVariant),
   checksum: Schema.optionalKey(Checksum),
-  extra: Schema.optionalKey(ArtifactExtra)
+  extra: ArtifactExtra
 }) {}
+
+export const makeArtifact = (
+  fields: Omit<Parameters<typeof Artifact.make>[0], "kind">
+): Artifact => Artifact.make({ ...fields, kind: fields.extra._tag })
+
+export const artifactIsDirectoryLike = (artifact: Artifact): boolean =>
+  artifact.kind === "package" ||
+  (artifact.extra._tag === "file" && artifact.extra.format === "directory")
 
 export const artifactPathBaseName = (pathName: string): string => {
   const parts = pathName.replaceAll("\\", "/").split("/")

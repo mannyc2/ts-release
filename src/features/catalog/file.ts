@@ -1,7 +1,7 @@
 // Invariant: each generic catalog entry produces one deterministic file and its declared validation/publish operations.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, artifactPathBaseName, CatalogFileExtra, SafeRelativePath } from "../../grammar/artifact.js"
+import { Artifact, artifactPathBaseName, CatalogFileExtra, makeArtifact, SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import { Operation, WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
@@ -65,7 +65,7 @@ export const catalogGenericPlanner = featurePlanner<ReadonlyArray<CatalogEntry>>
     for (const entry of entries) {
       const path = catalogWritePath(entry)
       const contents = yield* planContent(entry, context)
-      artifacts.push(Artifact.make({ id: `catalog-file-${entry.id}`, kind: "catalog-file", path,
+      artifacts.push(makeArtifact({ id: `catalog-file-${entry.id}`, path,
         producedBy: "catalog:file", extra: CatalogFileExtra.make({ catalog: entry.id, repository: entry.repository }) }))
       operations.push(featureOperation({ id: `catalog:${entry.id}:render`, phase: "catalog",
         risk: "writes-local", description: `Render ${entry.id} catalog file ${path}.`,

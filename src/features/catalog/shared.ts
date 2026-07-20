@@ -1,7 +1,7 @@
 // Invariant: catalog identity, artifact lookup, validation, and URL derivation have one shared owner.
 import * as Effect from "effect/Effect"
 import type { Artifact } from "../../grammar/artifact.js"
-import { artifactPathBaseName } from "../../grammar/artifact.js"
+import { artifactIsDirectoryLike, artifactPathBaseName } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
 export const catalogPathBaseName = artifactPathBaseName
@@ -64,7 +64,7 @@ export const rejectInvalidCatalogArtifact = (
   source: { readonly pipeId: string; readonly field: string; readonly label: string },
   artifact: Artifact
 ): Effect.Effect<void, PlanError> => {
-  if (artifact.kind === "package" || (artifact.extra?._tag === "file" && artifact.extra.format === "directory")) {
+  if (artifactIsDirectoryLike(artifact)) {
     return Effect.fail(PlanError.make({
       pipeId: source.pipeId,
       field: source.field,

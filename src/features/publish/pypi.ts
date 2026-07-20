@@ -2,6 +2,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import type { Artifact } from "../../grammar/artifact.js"
+import { artifactIsDirectoryLike } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
@@ -42,8 +43,7 @@ const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
   if (artifacts.length === 0) return yield* Effect.fail(PlanError.make({
     pipeId: "publish:pypi", field: "artifacts", reason: "PyPI target must have at least one artifact consumer."
   }))
-  const directory = artifacts.find((artifact) =>
-    artifact.kind === "package" || (artifact.extra?._tag === "file" && artifact.extra.format === "directory"))
+  const directory = artifacts.find(artifactIsDirectoryLike)
   if (directory !== undefined) return yield* Effect.fail(PlanError.make({
     pipeId: "publish:pypi",
     field: "artifacts",

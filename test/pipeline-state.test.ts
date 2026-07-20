@@ -8,21 +8,21 @@ import * as Intent from "../src/grammar/intent.js"
 import { decodeReleasePlan, decodeReleasePlanSync, ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
 import { makePipelineIdentity } from "./helpers.js"
 
-const extraArtifact = (id: string, kind: A.ArtifactKind, path: string, extra: A.ArtifactExtra): A.Artifact =>
-  A.Artifact.make({ id, kind, path, producedBy: "test", extra })
+const extraArtifact = (id: string, path: string, extra: A.ArtifactExtra): A.Artifact =>
+  A.makeArtifact({ id, path, producedBy: "test", extra })
 const artifacts = [
-  A.Artifact.make({
-    id: "executable", kind: "executable", path: "dist/tool", producedBy: "build:bun",
+  A.makeArtifact({
+    id: "executable", path: "dist/tool", producedBy: "build:bun",
     platform: { os: "linux", arch: "x64", libc: "glibc", binaryName: "tool" },
     checksum: { algorithm: "sha256", value: "abc" },
     extra: A.ExecutableExtra.make({ binary: "tool", extension: "", builderId: "bun" })
   }),
-  extraArtifact("archive", "archive", "dist/tool.tar.gz", A.ArchiveExtra.make({ format: "tar.gz", binaries: ["tool"], files: ["README.md"] })),
-  extraArtifact("checksums", "checksum-file", "dist/checksums.txt", A.ChecksumFileExtra.make({ algorithm: "sha256", coversArtifactIds: ["archive"] })),
-  extraArtifact("catalog", "catalog-file", "dist/tool.rb", A.CatalogFileExtra.make({ catalog: "claude-marketplace", repository: "owner/tap" })),
-  extraArtifact("package", "package", "packages/tool", A.PackageExtra.make({ packageManager: "jsr", packageName: "tool" })),
-  extraArtifact("wheel", "wheel", "dist/tool.whl", A.WheelExtra.make({ packageName: "tool", wheelTag: "py3-none-any", binaries: [] })),
-  extraArtifact("imported", "file", "dist/imported.bin", A.ImportedFileExtra.make({ format: "file" }))
+  extraArtifact("archive", "dist/tool.tar.gz", A.ArchiveExtra.make({ format: "tar.gz", binaries: ["tool"], files: ["README.md"] })),
+  extraArtifact("checksums", "dist/checksums.txt", A.ChecksumFileExtra.make({ algorithm: "sha256", coversArtifactIds: ["archive"] })),
+  extraArtifact("catalog", "dist/tool.rb", A.CatalogFileExtra.make({ catalog: "claude-marketplace", repository: "owner/tap" })),
+  extraArtifact("package", "packages/tool", A.PackageExtra.make({ packageManager: "jsr", packageName: "tool" })),
+  extraArtifact("wheel", "dist/tool.whl", A.WheelExtra.make({ packageName: "tool", wheelTag: "py3-none-any", binaries: [] })),
+  extraArtifact("imported", "dist/imported.bin", A.ImportedFileExtra.make({ format: "file" }))
 ]
 const op = (id: string, action: O.Action, phase: O.OperationPhase = "verify",
   risk: O.OperationRisk = "read-only", retry?: O.RetryPolicy): O.Operation => O.Operation.make({
@@ -59,7 +59,7 @@ describe("release plan", () => {
     const encoded = Schema.encodeSync(ReleasePlan)(plan)
     const decoded = decodeReleasePlanSync(encoded)
     expect(Schema.encodeSync(ReleasePlan)(decoded)).toEqual(encoded)
-    expect(decoded.artifacts.map((artifact) => artifact.extra?._tag)).toEqual([
+    expect(decoded.artifacts.map((artifact) => artifact.extra._tag)).toEqual([
       "executable", "archive", "checksum-file", "catalog-file", "package", "wheel", "file"
     ])
     expect(decoded.operations.map((operation) => operation.action._tag)).toEqual([

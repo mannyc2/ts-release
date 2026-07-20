@@ -1,13 +1,14 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
-import { Artifact } from "../src/grammar/artifact.js"
+import { ArchiveExtra, makeArtifact } from "../src/grammar/artifact.js"
 import { FilePartsContent, Sha256Hole } from "../src/grammar/content.js"
 import { catalogGenericPlanner, ReleaseConfigCatalogEntry, ReleaseConfigCatalogFactHole,
   type CatalogEntry } from "../src/features/catalog/file.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()
-const asset = Artifact.make({ id: "asset", kind: "archive", path: "dist/tool.zip", producedBy: "archive" })
+const asset = makeArtifact({ id: "asset", path: "dist/tool.zip", producedBy: "archive",
+  extra: ArchiveExtra.make({ format: "zip", binaries: [], files: [] }) })
 const hole = (fact: "sha256" | "downloadUrl" | "assetName", artifact = "asset") =>
   ReleaseConfigCatalogFactHole.make({ fact, artifact })
 const raw = (values: Partial<ReleaseConfigCatalogEntry> = {}) => ReleaseConfigCatalogEntry.make({

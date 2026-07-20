@@ -1,14 +1,15 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import { Artifact } from "../src/grammar/artifact.js"
+import { Artifact, ImportedFileExtra, makeArtifact } from "../src/grammar/artifact.js"
 import { CheckFileAction, Operation } from "../src/grammar/operation.js"
 import { emptyContribution, featurePlanner, schedule, type FeatureSchedule } from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const identity = makePipelineIdentity()
-const artifact = (id: string, path: string) => Artifact.make({ id, kind: "file", path, producedBy: "planned" })
+const artifact = (id: string, path: string) => makeArtifact({ id, path, producedBy: "planned",
+  extra: ImportedFileExtra.make({ format: "file" }) })
 const operation = (id: string) => Operation.make({
   id, pipeId: "planned", phase: "build", risk: "read-only", description: id,
   action: CheckFileAction.make({ path: "dist/file" })

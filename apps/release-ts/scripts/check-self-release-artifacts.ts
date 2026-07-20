@@ -97,11 +97,7 @@ const collectArtifactPaths = (
     }
   }
   const wheelSection = config.pypiWheel
-  const wheelItems = wheelSection === undefined
-    ? []
-    : Array.isArray(wheelSection)
-    ? wheelSection
-    : [wheelSection]
+  const wheelItems = wheelSection === undefined ? [] : wheelSection.wheels
   const wheels = wheelItems.map((wheel): WheelArtifact => ({
     path: renderTemplate(wheel.path, { identity }),
     wheelTag: wheel.wheelTag

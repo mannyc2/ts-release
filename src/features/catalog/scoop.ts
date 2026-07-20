@@ -13,8 +13,10 @@ import {
   type CatalogResolutionConfig,
   findCatalogArtifact,
   githubRepository,
+  projectHomepage,
   projectPackageName,
-  rejectInvalidCatalogArtifact
+  rejectInvalidCatalogArtifact,
+  requireProjectFact
 } from "./shared.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
@@ -25,9 +27,6 @@ export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPu
   manifestName: Schema.optionalKey(Schema.String),
   manifestPath: Schema.optionalKey(SafeRelativePath),
   ids: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString)),
-  homepage: Schema.optionalKey(Schema.String),
-  description: Schema.optionalKey(Schema.String),
-  license: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
   bin: Schema.optionalKey(Schema.String),
   bucketDirectory: defaulted(SafeRelativePath, "."),
@@ -47,6 +46,9 @@ export const resolveScoop = (
     manifestName,
     manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
     bucketDirectory: section.bucketDirectory,
+    description: config.project.description,
+    homepage: projectHomepage(config),
+    license: config.project.license,
     ...(repository === undefined ? {} : { githubRepository: repository })
   } satisfies ScoopSection
   return {
@@ -64,6 +66,9 @@ export const resolveScoop = (
 type ScoopSection = ReleaseConfigScoopPublish & {
   readonly manifestName: string
   readonly manifestPath: string
+  readonly description?: string | undefined
+  readonly homepage?: string | undefined
+  readonly license?: string | undefined
   readonly githubRepository?: string | undefined
 }
 
@@ -91,14 +96,16 @@ const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
     reason: "Scoop publishing requires ids or a windows executable artifact."
   }))
   yield* rejectInvalidCatalogArtifact(source, artifact)
+  const description = yield* requireProjectFact(source, "project.description", section.description)
+  const homepage = yield* requireProjectFact(source, "project.homepage", section.homepage)
   const binaryName = artifact.platform?.binaryName
   const bin = section.bin ?? (binaryName === undefined
     ? undefined
     : [[catalogPathBaseName(artifact.path), binaryName]])
   const prefix = JSON.stringify({
     version: identity.version,
-    description: section.description ?? `${identity.name} ${identity.version} release artifact`,
-    homepage: section.homepage ?? `https://github.com/${section.repository}`,
+    description,
+    homepage,
     ...(section.license === undefined ? {} : { license: section.license }),
     url: catalogArtifactUrl(section, identity, artifact)
   }, null, 2).slice(0, -2)

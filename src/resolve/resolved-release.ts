@@ -18,7 +18,8 @@ import { resolveScoop } from "../features/catalog/scoop.js"
 import type { CatalogEntry } from "../features/catalog/file.js"
 import { resolveGitHubPublish } from "../features/publish/github.js"
 import { resolveNpmPublish } from "../features/publish/npm.js"
-import { githubRepository, projectPackageName } from "../features/catalog/shared.js"
+import { githubRepository, projectHomepage, projectPackageName } from "../features/catalog/shared.js"
+import type { PyPiWheelBuild } from "../features/build/pypi-wheel.js"
 
 interface IdentitySeed {
   readonly name: string
@@ -234,6 +235,24 @@ export const resolveGitTagIdentity = Effect.fn("resolve.gitTag")(function*(optio
   return makeIdentity({ name, version, commit, tag, notes: project.notes, source: "git-tag" }, options.snapshot)
 })
 
+const pypiWheelBuilds = (intent: ReleaseIntent): ReadonlyArray<PyPiWheelBuild> | undefined => {
+  const family = intent.pypiWheel
+  if (family === undefined) return undefined
+  const summary = intent.project.summary ?? intent.project.description
+  const homepage = projectHomepage(intent)
+  const license = intent.project.license
+  return family.wheels.map((wheel) => ({
+    ...wheel,
+    packageName: family.packageName,
+    moduleName: family.moduleName,
+    consoleScript: family.consoleScript,
+    requiresPython: family.requiresPython,
+    summary,
+    homepage,
+    license
+  }))
+}
+
 const evidenceDirectory = (intent: ReleaseIntent, identity: ReleaseIdentity): string => {
   const template = typeof intent.evidence === "string"
     ? intent.evidence
@@ -258,8 +277,7 @@ export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity)
     hooksBefore: optionFromNonEmpty(intent.hooks?.before),
     builds: intent.builds === undefined || intent.builds.length === 0 ? Option.none() : Option.some(intent.builds),
     npmPackage: Option.fromUndefinedOr(intent.npmPackage),
-    pypiWheels: intent.pypiWheel === undefined ? Option.none()
-      : Option.some(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
+    pypiWheels: Option.fromUndefinedOr(pypiWheelBuilds(intent)),
     artifacts: Option.fromUndefinedOr(intent.artifacts),
     archives: Option.fromUndefinedOr(intent.archives),
     checksum: Option.fromUndefinedOr(intent.checksum),

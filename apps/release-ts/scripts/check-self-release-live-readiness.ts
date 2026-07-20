@@ -258,9 +258,7 @@ if (isRecord(manifest) && config !== undefined) {
     const githubRepository = github?.repository
     const homebrewRepository = publish.homebrew?.repository
     const scoopRepository = publish.scoop?.repository
-    const wheelSection = config.pypiWheel
-    const wheelItems = wheelSection === undefined ? [] : Array.isArray(wheelSection) ? wheelSection : [wheelSection]
-    const pypiPackageName = wheelItems[0]?.packageName
+    const pypiPackageName = config.pypiWheel?.packageName
 
     checks.push(
       ...workflowNeedles.map(([id, needle, message]) => contains(workflowPath, workflow, id, needle, message)),

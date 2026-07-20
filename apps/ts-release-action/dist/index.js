@@ -99834,6 +99834,15 @@ var githubRepository = (config) => {
   }
   return github.repository ?? config.project.repository;
 };
+var projectHomepage = (config) => {
+  const repository = githubRepository(config);
+  return config.project.homepage ?? (repository === undefined ? undefined : `https://github.com/${repository}`);
+};
+var requireProjectFact = (source, field, value2) => value2 === undefined ? fail6(PlanError.make({
+  pipeId: source.pipeId,
+  field,
+  reason: field === "project.description" ? `${source.target} publishing requires project.description.` : `${source.target} publishing requires project.homepage or publish.github.repository.`
+})) : succeed6(value2);
 var catalogArtifactUrl = (section, identity2, artifact2) => section.url ?? (section.githubRepository === undefined ? artifact2.path : `https://github.com/${section.githubRepository}/releases/download/${identity2.tag}/${artifactPathBaseName(artifact2.path)}`);
 var findCatalogArtifact = (source, artifacts, artifactId) => {
   const artifact2 = artifacts.find((candidate) => candidate.id === artifactId);
@@ -99870,8 +99879,6 @@ class ReleaseConfigHomebrewPublish extends Class4("ReleaseConfigHomebrewPublish"
   formulaName: optionalKey2(String4),
   formulaPath: optionalKey2(SafeRelativePath),
   ids: optionalKey2(NonEmptyArray(NonEmptyString)),
-  homepage: optionalKey2(String4),
-  description: optionalKey2(String4),
   url: optionalKey2(String4),
   tapDirectory: defaulted(SafeRelativePath, "."),
   installPath: optionalKey2(String4),
@@ -99889,6 +99896,8 @@ var resolveHomebrew = (section, config) => {
     formulaName,
     formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
     tapDirectory: section.tapDirectory,
+    description: config.project.description,
+    homepage: projectHomepage(config),
     ...repository === undefined ? {} : { githubRepository: repository }
   };
   return {
@@ -99982,10 +99991,12 @@ var testLines = (binary) => binary === undefined ? [] : [
 var formulaContent = fn2("catalog.homebrew.formulaContent")(function* (section, identity2, available) {
   const selected = yield* selectArtifacts(section, available);
   yield* forEach2(selected, (artifact2) => rejectInvalidCatalogArtifact(source, artifact2));
+  const description = yield* requireProjectFact(source, "project.description", section.description);
+  const homepage = yield* requireProjectFact(source, "project.homepage", section.homepage);
   const common = [
     `class ${formulaClassName(section.formulaName)} < Formula`,
-    `  desc ${ruby(section.description ?? `${identity2.name} ${identity2.version} release artifact`)}`,
-    `  homepage ${ruby(section.homepage ?? `https://github.com/${section.repository}`)}`
+    `  desc ${ruby(description)}`,
+    `  homepage ${ruby(homepage)}`
   ];
   if (selected.length === 1) {
     const artifact2 = selected[0];
@@ -100036,9 +100047,6 @@ class ReleaseConfigScoopPublish extends Class4("ReleaseConfigScoopPublish")({
   manifestName: optionalKey2(String4),
   manifestPath: optionalKey2(SafeRelativePath),
   ids: optionalKey2(NonEmptyArray(NonEmptyString)),
-  homepage: optionalKey2(String4),
-  description: optionalKey2(String4),
-  license: optionalKey2(String4),
   url: optionalKey2(String4),
   bin: optionalKey2(String4),
   bucketDirectory: defaulted(SafeRelativePath, "."),
@@ -100056,6 +100064,9 @@ var resolveScoop = (section, config) => {
     manifestName,
     manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
     bucketDirectory: section.bucketDirectory,
+    description: config.project.description,
+    homepage: projectHomepage(config),
+    license: config.project.license,
     ...repository === undefined ? {} : { githubRepository: repository }
   };
   return {
@@ -100092,12 +100103,14 @@ var manifestContent = fn2("catalog.scoop.manifestContent")(function* (section, i
       reason: "Scoop publishing requires ids or a windows executable artifact."
     }));
   yield* rejectInvalidCatalogArtifact(source2, artifact2);
+  const description = yield* requireProjectFact(source2, "project.description", section.description);
+  const homepage = yield* requireProjectFact(source2, "project.homepage", section.homepage);
   const binaryName = artifact2.platform?.binaryName;
   const bin = section.bin ?? (binaryName === undefined ? undefined : [[catalogPathBaseName(artifact2.path), binaryName]]);
   const prefix2 = JSON.stringify({
     version: identity2.version,
-    description: section.description ?? `${identity2.name} ${identity2.version} release artifact`,
-    homepage: section.homepage ?? `https://github.com/${section.repository}`,
+    description,
+    homepage,
     ...section.license === undefined ? {} : { license: section.license },
     url: catalogArtifactUrl(section, identity2, artifact2)
   }, null, 2).slice(0, -2);
@@ -100623,25 +100636,31 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
 }));
 
 // ../../src/features/build/pypi-wheel.ts
-class ReleaseConfigPyPiWheelBuild extends Class4("ReleaseConfigPyPiWheelBuild")({
+class ReleaseConfigPyPiWheel extends Class4("ReleaseConfigPyPiWheel")({
   id: NonEmptyString,
   path: SafeRelativePath,
   wheelTag: String4,
-  packageName: String4,
-  moduleName: String4,
-  consoleScript: String4,
-  summary: String4,
-  homepage: String4,
-  license: String4,
-  requiresPython: String4,
   binaries: ArraySchema(PyPiWheelBinaryArtifact)
 }) {
 }
+
+class ReleaseConfigPyPiWheelBuild extends Class4("ReleaseConfigPyPiWheelBuild")({
+  packageName: String4,
+  moduleName: String4,
+  consoleScript: String4,
+  requiresPython: String4,
+  wheels: NonEmptyArray(ReleaseConfigPyPiWheel)
+}) {
+}
+var requireProjectFact2 = (value2, field, reason) => value2 === undefined ? fail6(PlanError.make({ pipeId: "build:pypi-wheel", field, reason })) : succeed6(value2);
 var pypiWheelPlanner = featurePlanner("build:pypi-wheel", (wheels, state3) => forEach2(wheels, (wheel) => gen2(function* () {
   const path4 = yield* renderArtifactNameEffect(wheel.path, { identity: state3.identity }, {
     pipeId: "build:pypi-wheel",
-    field: `pypiWheel.${wheel.id}.path`
+    field: `pypiWheel.wheels.${wheel.id}.path`
   });
+  const summary2 = yield* requireProjectFact2(wheel.summary, "project.summary", "PyPI wheels require project.summary or project.description.");
+  const homepage = yield* requireProjectFact2(wheel.homepage, "project.homepage", "PyPI wheels require project.homepage or publish.github.repository.");
+  const license = yield* requireProjectFact2(wheel.license, "project.license", "PyPI wheels require project.license.");
   return {
     artifact: makeArtifact({
       id: wheel.id,
@@ -100659,7 +100678,14 @@ var pypiWheelPlanner = featurePlanner("build:pypi-wheel", (wheels, state3) => fo
       description: `Assemble PyPI wheel ${wheel.id}.`,
       risk: "writes-local",
       action: StageAction.make({
-        intent: PyPiWheelIntent.make({ ...wheel, outfile: path4, binaries: [...wheel.binaries] }),
+        intent: PyPiWheelIntent.make({
+          ...wheel,
+          summary: summary2,
+          homepage,
+          license,
+          outfile: path4,
+          binaries: [...wheel.binaries]
+        }),
         producesArtifactIds: [wheel.id]
       })
     })
@@ -100682,7 +100708,11 @@ class ReleaseConfigProject extends Class4("ReleaseConfigProject")({
   commit: optionalKey2(NonEmptyString),
   tag: optionalKey2(NonEmptyString),
   tagTemplate: optionalKey2(NonEmptyString),
-  notes: optionalKey2(String4)
+  notes: optionalKey2(String4),
+  description: optionalKey2(NonEmptyString),
+  summary: optionalKey2(NonEmptyString),
+  homepage: optionalKey2(NonEmptyString),
+  license: optionalKey2(NonEmptyString)
 }) {
 }
 var ReleaseConfigBuildItem = Union2([
@@ -100718,7 +100748,7 @@ class ReleaseIntent extends Class4("ReleaseIntent")({
   versionFrom: optionalKey2(ReleaseVersionSource),
   builds: optionalKey2(ArraySchema(ReleaseConfigBuildItem)),
   npmPackage: optionalKey2(ReleaseConfigNpmPackageBuild),
-  pypiWheel: optionalKey2(Union2([ReleaseConfigPyPiWheelBuild, ArraySchema(ReleaseConfigPyPiWheelBuild)])),
+  pypiWheel: optionalKey2(ReleaseConfigPyPiWheelBuild),
   artifacts: optionalKey2(ArraySchema(ReleaseConfigManualArtifact)),
   archives: optionalKey2(ArraySchema(ReleaseConfigArchive)),
   checksum: optionalKey2(ReleaseConfigChecksum),
@@ -100740,11 +100770,23 @@ var config_migrations_default = {
     "$.strict": "Strict mode was removed; reviewable operations now encode validation behavior directly.",
     "$.npmPackage.id": "The npm package artifact id is fixed as npm-package.",
     "$.publish.npm.trustedPublishing.packageExists": "Use verifyPackageExists for the optional read-only npm package existence check.",
+    "$.pypiWheel.id": "pypiWheel is one wheel family: state packageName/moduleName/consoleScript/requiresPython once at the top level, move wheel entries to pypiWheel.wheels, and move summary/homepage/license to project.",
+    "$.pypiWheel.path": "pypiWheel is one wheel family: state packageName/moduleName/consoleScript/requiresPython once at the top level, move wheel entries to pypiWheel.wheels, and move summary/homepage/license to project.",
+    "$.pypiWheel.wheelTag": "pypiWheel is one wheel family: state packageName/moduleName/consoleScript/requiresPython once at the top level, move wheel entries to pypiWheel.wheels, and move summary/homepage/license to project.",
+    "$.pypiWheel.binaries": "pypiWheel is one wheel family: state packageName/moduleName/consoleScript/requiresPython once at the top level, move wheel entries to pypiWheel.wheels, and move summary/homepage/license to project.",
+    "$.pypiWheel.summary": "Use project.summary (project.description also serves as the wheel summary); the per-wheel field was removed.",
+    "$.pypiWheel.homepage": "Use project.homepage; the per-wheel field was removed.",
+    "$.pypiWheel.license": "Use project.license; the per-wheel field was removed.",
     "$.publish.homebrew.artifactId": "Use ids with one or more artifact IDs.",
     "$.publish.homebrew.artifactIds": "Use ids with one or more artifact IDs.",
     "$.publish.homebrew.tokenEnv": "Homebrew tap publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.homebrew.homepage": "Use project.homepage; the Homebrew field was removed.",
+    "$.publish.homebrew.description": "Use project.description; the Homebrew field was removed.",
     "$.publish.scoop.artifactId": "Use ids with exactly one artifact ID.",
     "$.publish.scoop.tokenEnv": "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.scoop.homepage": "Use project.homepage; the Scoop field was removed.",
+    "$.publish.scoop.description": "Use project.description; the Scoop field was removed.",
+    "$.publish.scoop.license": "Use project.license; the Scoop field was removed.",
     "$.publish.pypi.artifactIds": "Use ids with one or more artifact IDs.",
     "$.publish.pypi.usernameEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed.",
     "$.publish.pypi.passwordEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed."
@@ -100776,7 +100818,7 @@ var findRemovedField = (value2, parent = "$") => {
   for (const [key, item] of Object.entries(value2)) {
     const path4 = `${parent}.${key}`;
     const field = parent === "$" ? key : path4;
-    const hint = migrationHints[path4] ?? migrationHints[key];
+    const hint = migrationHints[path4.replace(/\[\d+\]/g, "")] ?? migrationHints[key];
     if (hint !== undefined)
       return { reason: `Release config uses removed field ${field}. ${hint}` };
     if (forbiddenFields.has(key) || parent === "$" && forbiddenRootFields.has(key)) {
@@ -101813,6 +101855,24 @@ var resolveGitTagIdentity = fn2("resolve.gitTag")(function* (options) {
   const version4 = yield* semver("git-tag", "versionFrom", tag2.startsWith("v") ? tag2.slice(1) : tag2).pipe(mapError3(() => identityError("git-tag", "versionFrom", `Git tag ${tag2} is not a valid semver version.`)));
   return makeIdentity({ name, version: version4, commit, tag: tag2, notes: project.notes, source: "git-tag" }, options.snapshot);
 });
+var pypiWheelBuilds = (intent) => {
+  const family = intent.pypiWheel;
+  if (family === undefined)
+    return;
+  const summary2 = intent.project.summary ?? intent.project.description;
+  const homepage = projectHomepage(intent);
+  const license = intent.project.license;
+  return family.wheels.map((wheel) => ({
+    ...wheel,
+    packageName: family.packageName,
+    moduleName: family.moduleName,
+    consoleScript: family.consoleScript,
+    requiresPython: family.requiresPython,
+    summary: summary2,
+    homepage,
+    license
+  }));
+};
 var evidenceDirectory = (intent, identity2) => {
   const template = typeof intent.evidence === "string" ? intent.evidence : intent.evidence?.directory ?? ".release/evidence";
   return template.split("{version}").join(identity2.version);
@@ -101831,7 +101891,7 @@ var resolveRelease = (intent, identity2) => {
     hooksBefore: optionFromNonEmpty(intent.hooks?.before),
     builds: intent.builds === undefined || intent.builds.length === 0 ? none2() : some2(intent.builds),
     npmPackage: fromUndefinedOr(intent.npmPackage),
-    pypiWheels: intent.pypiWheel === undefined ? none2() : some2(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
+    pypiWheels: fromUndefinedOr(pypiWheelBuilds(intent)),
     artifacts: fromUndefinedOr(intent.artifacts),
     archives: fromUndefinedOr(intent.archives),
     checksum: fromUndefinedOr(intent.checksum),

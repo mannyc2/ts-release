@@ -32,7 +32,10 @@ const fakeWheel = (wheelTag: string): string => [
 const releaseConfig = () => ({
   project: {},
   builds: [{ ...selfReleaseConfig.builds[0]!, targets: ["darwin-arm64", "windows-x64"] }],
-  pypiWheel: [{ ...selfReleaseConfig.pypiWheel[0]!, binaries: [] }],
+  pypiWheel: {
+    ...selfReleaseConfig.pypiWheel,
+    wheels: [{ ...selfReleaseConfig.pypiWheel.wheels[0]!, binaries: [] }]
+  },
   publish: {
     homebrew: {
       repository: selfReleaseConfig.publish.homebrew.repository,

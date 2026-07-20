@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { ExecutionApproval } from "../src/grammar/approval.js"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
-import { releaseConfig, runEffect, scoopConfig } from "./helpers.js"
+import { releaseConfig, releaseIdentity, runEffect, scoopConfig } from "./helpers.js"
 import { createTestPlan, renderTestPlan, validateTestPlan } from "./plan-helpers.js"
 
 const ScoopLayer = Layer.mergeAll(makeTestCommandRunnerLayer({
@@ -31,6 +31,8 @@ describe("Scoop target", () => {
       )).toEqual(["archive"])
       const literals = render.action.contents.parts.filter((part) => typeof part === "string").join("")
       expect(literals).toContain('"version": "0.1.0"')
+      expect(literals).toContain('"description": "Example Scoop release"')
+      expect(literals).toContain('"license": "MIT"')
       expect(literals).toContain('"bin": "release.exe"')
     }
     expect(publish).toMatchObject({ risk: "externally-visible", action: { _tag: "command", command: {
@@ -43,6 +45,35 @@ describe("Scoop target", () => {
     const error = await runEffect(plan(scoopConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), ScoopLayer)
     expect(error).toMatchObject({ _tag: "ConfigError", kind: "validation" })
     if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
+  })
+
+  test("requires project.description and omits the license key when project.license is absent", async () => {
+    const config = releaseConfig({
+      identity: releaseIdentity({
+        description: "Example Scoop release",
+        homepage: "https://github.com/owner/release"
+      }),
+      artifacts: [{ id: "archive", path: "artifacts/release-0.1.0.zip", format: "zip" }],
+      publish: { scoop: { repository: "owner/scoop-bucket", manifestName: "release",
+        manifestPath: ".release/generated/release.json", ids: ["archive"], bin: "release.exe" } }
+    })
+    const release = await runEffect(plan(config), ScoopLayer)
+    const render = release.operations.find(({ id }) => id === "catalog:scoop:render")
+    if (render?.action._tag === "write-file" && typeof render.action.contents !== "string") {
+      const literals = render.action.contents.parts.filter((part) => typeof part === "string").join("")
+      expect(literals).toContain('"description": "Example Scoop release"')
+      expect(literals).not.toContain("license")
+    } else {
+      throw new Error("expected rendered manifest parts")
+    }
+    const missingDescription = await runEffect(plan(releaseConfig({
+      identity: releaseIdentity({ homepage: "https://github.com/owner/release" }),
+      artifacts: [{ id: "archive", path: "artifacts/release-0.1.0.zip", format: "zip" }],
+      publish: { scoop: { repository: "owner/scoop-bucket", manifestName: "release",
+        manifestPath: ".release/generated/release.json", ids: ["archive"] } }
+    })).pipe(Effect.flip), ScoopLayer)
+    expect(missingDescription).toMatchObject({ _tag: "PlanError", pipeId: "catalog:scoop",
+      field: "project.description", reason: "Scoop publishing requires project.description." })
   })
 
   test("rejects more than one explicit artifact id", async () => {

@@ -7,11 +7,11 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6168], // ratcheted by plan 165 (availability-probe deletion)
-  ["src/config", 225], // raised by plan 160 (root retry config)
-  ["src/resolve", 302],
+  ["src", 6189], // raised by plan 163 (project-owned metadata: required-fact errors cost more than the field deletions return)
+  ["src/config", 229], // raised by plan 163 (four project metadata fields)
+  ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
   ["src/grammar", 825], // raised by plan 159 (hooks feature)
-  ["src/features", 1668], // ratcheted by plan 165 (availability-probe deletion)
+  ["src/features", 1736], // raised by plan 163 (wheel family classes + typed required-metadata PlanErrors)
   ["src/pack", 500],
   ["src/github", 267],
   ["src/run", 810], // raised by plan 159 (hooks feature)
@@ -21,9 +21,9 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/host", 417],
   ["src/api", 195],
   ["src/types", 13],
-  ["apps/release-ts/src", 587], // raised by plan 165 (doctor CLI boundary regression)
+  ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
   ["apps/ts-release-action/src", 502], // raised by plan 162 (failed-build evidence upload)
-  ["test", 9365], // ratcheted by plan 165 (probe assertions deleted; doctor regression added)
+  ["test", 9566], // raised by plan 163 (metadata requirement, derivation, and hint coverage)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 882]
 ]

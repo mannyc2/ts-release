@@ -37,7 +37,11 @@ export class ReleaseConfigProject extends Schema.Class<ReleaseConfigProject>("Re
   commit: Schema.optionalKey(Schema.NonEmptyString),
   tag: Schema.optionalKey(Schema.NonEmptyString),
   tagTemplate: Schema.optionalKey(Schema.NonEmptyString),
-  notes: Schema.optionalKey(Schema.String)
+  notes: Schema.optionalKey(Schema.String),
+  description: Schema.optionalKey(Schema.NonEmptyString),
+  summary: Schema.optionalKey(Schema.NonEmptyString),
+  homepage: Schema.optionalKey(Schema.NonEmptyString),
+  license: Schema.optionalKey(Schema.NonEmptyString)
 }) {}
 
 export const ReleaseConfigBuildItem = Schema.Union([
@@ -71,7 +75,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   versionFrom: Schema.optionalKey(ReleaseVersionSource),
   builds: Schema.optionalKey(Schema.Array(ReleaseConfigBuildItem)),
   npmPackage: Schema.optionalKey(ReleaseConfigNpmPackageBuild),
-  pypiWheel: Schema.optionalKey(Schema.Union([ReleaseConfigPyPiWheelBuild, Schema.Array(ReleaseConfigPyPiWheelBuild)])),
+  pypiWheel: Schema.optionalKey(ReleaseConfigPyPiWheelBuild),
   artifacts: Schema.optionalKey(Schema.Array(ReleaseConfigManualArtifact)),
   archives: Schema.optionalKey(Schema.Array(ReleaseConfigArchive)),
   checksum: Schema.optionalKey(ReleaseConfigChecksum),

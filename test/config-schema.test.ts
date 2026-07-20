@@ -120,6 +120,52 @@ describe("config schema", () => {
         [`$.publish.${target}.tokenEnv`, hint]
       ))
   }
+  for (const [target, field, hint] of [
+    ["homebrew", "homepage", "Use project.homepage; the Homebrew field was removed."],
+    ["homebrew", "description", "Use project.description; the Homebrew field was removed."],
+    ["scoop", "homepage", "Use project.homepage; the Scoop field was removed."],
+    ["scoop", "description", "Use project.description; the Scoop field was removed."],
+    ["scoop", "license", "Use project.license; the Scoop field was removed."]
+  ] as const) {
+    it.effect(`rejects removed ${target} ${field} with a migration hint`, () =>
+      expectValidationFailure(
+        decodeReleaseIntent({ project: {}, publish: { [target]: { [field]: "value" } } }),
+        [`$.publish.${target}.${field}`, hint]
+      ))
+  }
+  it.effect("decodes the pypiWheel family shape with project metadata", () =>
+    Effect.gen(function*() {
+      const intent = yield* decodeReleaseIntent({
+        project: { description: "Release CLI.", summary: "Release CLI wrapper.",
+          homepage: "https://example.com", license: "MIT" },
+        pypiWheel: { packageName: "release", moduleName: "release", consoleScript: "release",
+          requiresPython: ">=3.8",
+          wheels: [{ id: "wheel", path: "dist/release-{version}.whl", wheelTag: "py3-none-any", binaries: [] }] },
+        publish: {}
+      })
+      expect(intent.project).toMatchObject({ description: "Release CLI.", summary: "Release CLI wrapper." })
+      expect(intent.pypiWheel?.wheels[0]).toMatchObject({ id: "wheel", wheelTag: "py3-none-any" })
+    }))
+  it.effect("rejects the removed pypiWheel array form with a migration hint", () =>
+    expectValidationFailure(
+      decodeReleaseIntent({ project: {}, publish: {},
+        pypiWheel: [{ id: "wheel", path: "dist/w.whl", wheelTag: "py3-none-any", binaries: [] }] }),
+      ["$.pypiWheel[0].id", "pypiWheel is one wheel family"]
+    ))
+  it.effect("rejects the removed single-entry pypiWheel form with a migration hint", () =>
+    expectValidationFailure(
+      decodeReleaseIntent({ project: {}, publish: {},
+        pypiWheel: { id: "wheel", path: "dist/w.whl", wheelTag: "py3-none-any", binaries: [] } }),
+      ["$.pypiWheel.id", "pypiWheel is one wheel family"]
+    ))
+  it.effect("rejects removed per-wheel metadata with a migration hint", () =>
+    expectValidationFailure(
+      decodeReleaseIntent({ project: {}, publish: {},
+        pypiWheel: { packageName: "p", moduleName: "m", consoleScript: "c", requiresPython: ">=3.8",
+          summary: "Release CLI.",
+          wheels: [{ id: "wheel", path: "dist/w.whl", wheelTag: "py3-none-any", binaries: [] }] } }),
+      ["$.pypiWheel.summary", "Use project.summary"]
+    ))
   const unknownFieldInputs: ReadonlyArray<readonly [string, unknown, string]> = [
     ["top-level", { project: {}, publish: {}, unexpectedTopLevel: true }, `["unexpectedTopLevel"]`],
     ["nested object", { project: { unexpectedProjectField: true }, publish: {} }, `["project"]["unexpectedProjectField"]`],
@@ -154,6 +200,9 @@ describe("config schema", () => {
     ["PyPI ids", { project: {}, publish: { pypi: { ids: [] } } }, `["publish"]["pypi"]["ids"]`],
     ["Scoop ids", { project: {}, publish: {
       scoop: { repository: "owner/scoop-bucket", ids: [] } } }, `["publish"]["scoop"]["ids"]`],
+    ["pypiWheel wheels", { project: {}, publish: {},
+      pypiWheel: { packageName: "p", moduleName: "m", consoleScript: "c", requiresPython: ">=3.8",
+        wheels: [] } }, `["pypiWheel"]["wheels"]`],
     ["catalog directory", { project: {}, catalogs: [{ id: "index", repository: "owner/catalog",
       directory: "../checkout", file: "index.json", content: "{}" }], publish: {} }, `["catalogs"][0]["directory"]`]
   ]

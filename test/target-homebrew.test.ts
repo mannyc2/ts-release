@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { ExecutionApproval } from "../src/grammar/approval.js"
 import { makeTestCommandRunnerLayer } from "./host-fakes.js"
-import { homebrewConfig, releaseConfig, runEffect } from "./helpers.js"
+import { homebrewConfig, releaseConfig, releaseIdentity, runEffect } from "./helpers.js"
 import { createTestPlan, renderTestPlan, validateTestPlan } from "./plan-helpers.js"
 
 const HomebrewLayer = Layer.mergeAll(makeTestCommandRunnerLayer({
@@ -42,6 +42,47 @@ describe("Homebrew target", () => {
     const error = await runEffect(plan(homebrewConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), HomebrewLayer)
     expect(error).toMatchObject({ _tag: "ConfigError", kind: "validation" })
     if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
+  })
+
+  test("requires project.description and project.homepage for the formula", async () => {
+    const section = {
+      repository: "owner/homebrew-tap", formulaName: "release",
+      formulaPath: ".release/generated/release.rb", ids: ["archive"]
+    }
+    const archive = [{ id: "archive", path: "artifacts/release-0.1.0.tgz", format: "tarball" }]
+    const [missingDescription, missingHomepage] = await Promise.all([
+      runEffect(plan(releaseConfig({
+        identity: releaseIdentity({ homepage: "https://github.com/owner/release" }),
+        artifacts: archive, publish: { homebrew: section }
+      })).pipe(Effect.flip), HomebrewLayer),
+      runEffect(plan(releaseConfig({
+        identity: releaseIdentity({ description: "Example Homebrew release" }),
+        artifacts: archive, publish: { homebrew: section }
+      })).pipe(Effect.flip), HomebrewLayer)
+    ])
+    expect(missingDescription).toMatchObject({ _tag: "PlanError", pipeId: "catalog:homebrew",
+      field: "project.description", reason: "Homebrew publishing requires project.description." })
+    expect(missingHomepage).toMatchObject({ _tag: "PlanError", pipeId: "catalog:homebrew",
+      field: "project.homepage", reason: "Homebrew publishing requires project.homepage or publish.github.repository." })
+  })
+
+  test("derives the formula homepage from the GitHub repository", async () => {
+    const release = await runEffect(plan(releaseConfig({
+      identity: releaseIdentity({ description: "Example Homebrew release" }),
+      artifacts: [{ id: "archive", path: "artifacts/release-0.1.0.tgz", format: "tarball" }],
+      publish: {
+        github: { repository: "owner/derived" },
+        homebrew: { repository: "owner/homebrew-tap", formulaName: "release",
+          formulaPath: ".release/generated/release.rb", ids: ["archive"] }
+      }
+    })), HomebrewLayer)
+    const render = release.operations.find(({ id }) => id === "catalog:homebrew:render")
+    if (render?.action._tag === "write-file" && typeof render.action.contents !== "string") {
+      expect(render.action.contents.parts.filter((part) => typeof part === "string").join(""))
+        .toContain("homepage \"https://github.com/owner/derived\"")
+    } else {
+      throw new Error("expected rendered formula parts")
+    }
   })
 
   test("keeps configured validation and render workflows visible", async () => {

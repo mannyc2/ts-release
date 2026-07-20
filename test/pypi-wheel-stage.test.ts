@@ -10,6 +10,7 @@ import { join } from "node:path"
 import { makeArtifactStagerLayer } from "../apps/release-ts/src/runtime.js"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { pypiWheelPlanner } from "../src/features/build/pypi-wheel.js"
+import { resolveRelease } from "../src/resolve/resolved-release.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
 import { emptyPlanAccumulator } from "../src/grammar/accumulator.js"
 
@@ -32,32 +33,36 @@ describe("PyPI wheel build pipe", () => {
             identity: releaseIdentity({
               name: "@mannyc1/ts-release",
               version: "1.2.3",
-              tag: "v1.2.3"
+              tag: "v1.2.3",
+              description: "Portable artifact and package-manager distribution planning for TypeScript projects.",
+              homepage: "https://github.com/mannyc2/ts-release",
+              license: "MIT"
             }),
             artifacts: [],
             pypiWheel: {
-              id: "pypi-wheel-linux-x64",
-              path: "dist/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
-              wheelTag: "py3-none-manylinux2014_x86_64",
               packageName: "ts-release",
               moduleName: "ts_release",
               consoleScript: "ts-release",
-              summary: "Portable artifact and package-manager distribution planning for TypeScript projects.",
-              homepage: "https://github.com/mannyc2/ts-release",
-              license: "MIT",
               requiresPython: ">=3.8",
-              binaries: [
+              wheels: [
                 {
-                  os: "linux",
-                  arch: "x64",
-                  sourcePath: "artifacts/ts-release-{version}-linux-x64",
-                  wheelPath: "ts_release/bin/ts-release-linux-x64"
+                  id: "pypi-wheel-linux-x64",
+                  path: "dist/ts_release-{version}-py3-none-manylinux2014_x86_64.whl",
+                  wheelTag: "py3-none-manylinux2014_x86_64",
+                  binaries: [
+                    {
+                      os: "linux",
+                      arch: "x64",
+                      sourcePath: "artifacts/ts-release-{version}-linux-x64",
+                      wheelPath: "ts_release/bin/ts-release-linux-x64"
+                    }
+                  ]
                 }
               ]
             }
           }))
           const contribution = yield* pypiWheelPlanner(
-            Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel!],
+            Option.getOrThrow(resolveRelease(intent, identity).pypiWheels),
             emptyPlanAccumulator(identity)
           )
           expect(contribution.artifacts[0]).toMatchObject({

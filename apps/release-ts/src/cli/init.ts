@@ -186,15 +186,16 @@ const patchReleaseConfig = Effect.fn("cli.init.patchReleaseConfig")(function*(
     ["owner/scoop-bucket", options.bucket], ["owner/repo", options.repository],
     ["release.yml", options.workflow], ["src/cli.ts", options.entrypoint], ["pkg", name]
   ])), "template")
-  if (options.template === "portable-cli" && Array.isArray(config.pypiWheel)) {
+  if (options.template === "portable-cli" && isRecord(config.pypiWheel)) {
     const packageName = options.pypiPackage ?? options.binaryName
     const moduleName = options.pypiModule ?? pythonModuleName(packageName)
-    for (const value of config.pypiWheel) {
-      const wheel = yield* requireRecord(value, "template.pypiWheel")
-      const binary = yield* requireRecord(Array.isArray(wheel.binaries) ? wheel.binaries[0] : undefined, "template.pypiWheel.binaries")
-      wheel.packageName = packageName
-      wheel.moduleName = moduleName
-      wheel.consoleScript = options.consoleScript
+    const family = config.pypiWheel
+    family.packageName = packageName
+    family.moduleName = moduleName
+    family.consoleScript = options.consoleScript
+    for (const value of Array.isArray(family.wheels) ? family.wheels : []) {
+      const wheel = yield* requireRecord(value, "template.pypiWheel.wheels")
+      const binary = yield* requireRecord(Array.isArray(wheel.binaries) ? wheel.binaries[0] : undefined, "template.pypiWheel.wheels.binaries")
       wheel.path = `artifacts/${pythonDistributionName(packageName)}-{version}-${wheel.wheelTag}.whl`
       binary.wheelPath = `${moduleName}/bin/${options.binaryName}-${binary.os}-${binary.arch}${binary.os === "windows" ? ".exe" : ""}`
     }

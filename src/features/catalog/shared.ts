@@ -1,4 +1,4 @@
-// Invariant: catalog identity, artifact lookup, validation, and URL derivation have one shared owner.
+// Invariant: catalog identity, artifact lookup, validation, and URL/metadata derivation have one shared owner.
 import * as Effect from "effect/Effect"
 import type { Artifact } from "../../grammar/artifact.js"
 import { artifactIsDirectoryLike, artifactPathBaseName } from "../../grammar/artifact.js"
@@ -7,7 +7,14 @@ import type { ReleaseIdentity } from "../../grammar/state.js"
 export const catalogPathBaseName = artifactPathBaseName
 
 export interface CatalogResolutionConfig {
-  readonly project: { readonly name?: string; readonly packageName?: string; readonly repository?: string }
+  readonly project: {
+    readonly name?: string
+    readonly packageName?: string
+    readonly repository?: string
+    readonly description?: string
+    readonly homepage?: string
+    readonly license?: string
+  }
   readonly publish: { readonly github?: { readonly repository?: string } }
 }
 
@@ -30,6 +37,25 @@ export const githubRepository = (config: CatalogResolutionConfig): string | unde
   }
   return github.repository ?? config.project.repository
 }
+
+export const projectHomepage = (config: CatalogResolutionConfig): string | undefined => {
+  const repository = githubRepository(config)
+  return config.project.homepage ?? (repository === undefined ? undefined : `https://github.com/${repository}`)
+}
+
+export const requireProjectFact = (
+  source: { readonly pipeId: string; readonly target: string },
+  field: "project.description" | "project.homepage",
+  value: string | undefined
+): Effect.Effect<string, PlanError> => value === undefined
+  ? Effect.fail(PlanError.make({
+    pipeId: source.pipeId,
+    field,
+    reason: field === "project.description"
+      ? `${source.target} publishing requires project.description.`
+      : `${source.target} publishing requires project.homepage or publish.github.repository.`
+  }))
+  : Effect.succeed(value)
 
 export const catalogArtifactUrl = (
   section: {

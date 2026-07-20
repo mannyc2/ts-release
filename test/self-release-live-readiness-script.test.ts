@@ -26,7 +26,10 @@ const run = (cwd: string, apiBase: string) => runBunProcess(["bun", scriptPath],
 
 const releaseConfig = () => ({
   project: {},
-  pypiWheel: [{ ...selfReleaseConfig.pypiWheel[0]!, binaries: [] }],
+  pypiWheel: {
+    ...selfReleaseConfig.pypiWheel,
+    wheels: [{ ...selfReleaseConfig.pypiWheel.wheels[0]!, binaries: [] }]
+  },
   publish: {
     github: { repository: selfReleaseConfig.publish.github.repository },
     homebrew: { repository: selfReleaseConfig.publish.homebrew.repository },

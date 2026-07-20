@@ -11,11 +11,10 @@ import { makePipelineIdentity } from "./helpers.js"
 const identity = makePipelineIdentity({
   name: "manifest-name", normalizedName: "manifest-name", version: "1.2.3", tag: "v1.2.3"
 })
-const wheel = {
-  id: "wheel-a", path: "dist/a.whl", wheelTag: "py3-none-any", packageName: "pkg",
-  moduleName: "pkg", consoleScript: "pkg", summary: "pkg", homepage: "https://example.test", license: "MIT",
-  requiresPython: ">=3.9", binaries: []
-}
+const wheel = { id: "wheel-a", path: "dist/a.whl", wheelTag: "py3-none-any", binaries: [] }
+const wheelFamily = (...wheels: ReadonlyArray<Record<string, unknown>>) => ({
+  packageName: "pkg", moduleName: "pkg", consoleScript: "pkg", requiresPython: ">=3.9", wheels
+})
 const resolved = (input: unknown) =>
   decodeReleaseIntent(input).pipe(Effect.map((intent) => resolveRelease(intent, identity)))
 const some = Option.getOrUndefined
@@ -25,24 +24,27 @@ describe("resolved release", () => {
   it.effect("preserves every absence, empty array, and empty-section enable", () =>
     Effect.gen(function*() {
       const absent = yield* resolved({ project: {}, publish: {} })
-      const empty = yield* resolved({ project: {}, builds: [], pypiWheel: [],
+      const empty = yield* resolved({ project: {}, builds: [],
         artifacts: [], archives: [], catalogs: [], hooks: { before: [], after: [] }, publish: { custom: [] } })
       const shorthand = yield* resolved({
-        project: {}, npmPackage: {}, pypiWheel: wheel, checksum: {},
+        project: {}, npmPackage: {}, pypiWheel: wheelFamily(wheel), checksum: {},
         publish: { npm: {}, pypi: {}, github: {} }, evidence: "proof/{version}"
       })
       const pair = yield* resolved({ project: {},
-        pypiWheel: [wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }], publish: {} })
+        pypiWheel: wheelFamily(wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }), publish: {} })
       expect([absent.builds, absent.npmPackage, absent.pypiWheels, absent.artifacts, absent.archives,
         absent.checksum, absent.npm, absent.pypi, absent.github, absent.catalogs,
         absent.hooksBefore, absent.custom, absent.hooksAfter].map(isNone)).toEqual(Array(13).fill(true))
-      expect([empty.builds, empty.npmPackage, empty.npm, empty.pypi, empty.github,
-        empty.hooksBefore, empty.custom, empty.hooksAfter].map(isNone)).toEqual(Array(8).fill(true))
-      expect([some(empty.pypiWheels), some(empty.artifacts), some(empty.archives)]).toEqual([[], [], []])
+      expect([empty.builds, empty.npmPackage, empty.pypiWheels, empty.npm, empty.pypi, empty.github,
+        empty.hooksBefore, empty.custom, empty.hooksAfter].map(isNone)).toEqual(Array(9).fill(true))
+      expect([some(empty.artifacts), some(empty.archives)]).toEqual([[], []])
       expect(empty.catalogs.pipe(Option.isNone)).toBe(true)
       expect(some(shorthand.npmPackage)).toEqual({ path: "." })
       expect(some(shorthand.pypiWheels)?.map(({ id }) => id)).toEqual(["wheel-a"])
       expect(some(pair.pypiWheels)?.map(({ id }) => id)).toEqual(["wheel-a", "wheel-b"])
+      expect(some(pair.pypiWheels)?.[1]).toMatchObject({
+        packageName: "pkg", moduleName: "pkg", consoleScript: "pkg", requiresPython: ">=3.9", path: "dist/b.whl"
+      })
       expect(some(shorthand.checksum))
         .toEqual({ algorithm: "sha256", nameTemplate: "{name}_{version}_checksums.txt" })
       expect([shorthand.npm, shorthand.pypi, shorthand.github].map(isSome)).toEqual([true, true, true])
@@ -109,7 +111,7 @@ describe("resolved release", () => {
       const release = yield* resolved({
         project: { name: "project-name", packageName: "@scope/project", packagePath: "project-pkg",
           repository: "owner/project" },
-        pypiWheel: [wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }],
+        pypiWheel: wheelFamily(wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }),
         artifacts: [{ id: "manual", path: "dist/manual", format: "executable",
           checksum: { algorithm: "sha256", value: "abc" },
           variant: { os: "linux", arch: "x64", libc: "glibc", binaryName: "tool", executableExtension: ".bin" } }],
@@ -123,11 +125,10 @@ describe("resolved release", () => {
             ids: ["wheel-b"] },
           github: { repository: "owner/explicit", tokenEnv: "GH_TOKEN", draft: false, prerelease: "auto" },
           homebrew: { repository: "owner/tap", formulaName: "brew-alias", formulaPath: "Formula/tool.rb",
-            ids: ["manual"], homepage: "https://brew.example", description: "brew", url: "https://cdn/brew",
+            ids: ["manual"], url: "https://cdn/brew",
             tapDirectory: "tap", installPath: "bin/tool", submit: "pull-request", validate: ["brew", "audit"] },
           scoop: { repository: "owner/bucket", manifestName: "scoop-alias", manifestPath: "bucket/tool.json",
-            ids: ["manual"], homepage: "https://scoop.example", description: "scoop", license: "MIT",
-            url: "https://cdn/scoop", bin: "tool.exe", bucketDirectory: "bucket", validate: "scoop-check" }
+            ids: ["manual"], url: "https://cdn/scoop", bin: "tool.exe", bucketDirectory: "bucket", validate: "scoop-check" }
         },
         evidence: { directory: ".proof/{version}" }
       })

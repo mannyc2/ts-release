@@ -42,7 +42,7 @@ const findRemovedField = (
   for (const [key, item] of Object.entries(value)) {
     const path = `${parent}.${key}`
     const field = parent === "$" ? key : path
-    const hint = migrationHints[path] ?? migrationHints[key]
+    const hint = migrationHints[path.replace(/\[\d+\]/g, "")] ?? migrationHints[key]
     if (hint !== undefined) return { reason: `Release config uses removed field ${field}. ${hint}` }
     if (forbiddenFields.has(key) || (parent === "$" && forbiddenRootFields.has(key))) {
       return { reason: `Release config uses removed field ${field}. Use the compact project/build/publish config shape.` }

@@ -183,7 +183,18 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
     }
 
     const wheelSection = config.pypiWheel
-    const wheelItems = wheelSection === undefined ? [] : Array.isArray(wheelSection) ? wheelSection : [wheelSection]
+    if (wheelSection !== undefined) {
+      const familyExpectations = [
+        ["packageName", wheelSection.packageName, "ts-release"],
+        ["moduleName", wheelSection.moduleName, "ts_release"],
+        ["consoleScript", wheelSection.consoleScript, "ts-release"],
+        ["requiresPython", wheelSection.requiresPython, ">=3.8"]
+      ] as const
+      for (const [field, actual, expected] of familyExpectations) {
+        if (actual !== expected) failures.push(`pypiWheel ${field} must equal ${expected}`)
+      }
+    }
+    const wheelItems = wheelSection === undefined ? [] : wheelSection.wheels
     const wheels = new Map(wheelItems.map((wheel) => [wheel.id, wheel]))
     for (const [id, wheelTag, os, arch, wheelPath, expectedPath] of wheelFacts(version)) {
       const wheel = wheels.get(id)
@@ -196,18 +207,6 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
         failures.push(`PyPI wheel ${id} path ${wheel.path} expands to ${expandedPath}; expected ${expectedPath}`)
       }
       if (wheel.wheelTag !== wheelTag) failures.push(`PyPI wheel ${id} wheelTag ${String(wheel.wheelTag)} must equal ${wheelTag}`)
-      const wheelExpectations = [
-        ["packageName", wheel.packageName, "ts-release"],
-        ["moduleName", wheel.moduleName, "ts_release"],
-        ["consoleScript", wheel.consoleScript, "ts-release"],
-        ["summary", wheel.summary, description],
-        ["homepage", wheel.homepage, "https://github.com/mannyc2/ts-release"],
-        ["license", wheel.license, "MIT"],
-        ["requiresPython", wheel.requiresPython, ">=3.8"]
-      ] as const
-      for (const [field, actual, expected] of wheelExpectations) {
-        if (actual !== expected) failures.push(`PyPI wheel ${id} ${field} must equal ${expected}`)
-      }
       const binary = wheel.binaries[0]
       if (binary === undefined) {
         failures.push(`PyPI wheel ${id} must include binary ${os}-${arch}`)
@@ -265,8 +264,11 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
 
   if (github?.repository === "owner/repo") failures.push("GitHub release target repository must not use owner/repo placeholder")
 
+  if (config.project.description !== description) failures.push("self-release project.description must match the package description")
+  if (config.project.homepage !== "https://github.com/mannyc2/ts-release") failures.push("self-release project.homepage must equal https://github.com/mannyc2/ts-release")
+  if (config.project.license !== "MIT") failures.push("self-release project.license must equal MIT")
+
   if (homebrew?.repository !== "mannyc2/homebrew-ts-release") failures.push("self-release target homebrew repository must equal mannyc2/homebrew-ts-release")
-  if (homebrew?.description !== description) failures.push("self-release target homebrew description must match package description")
   if (homebrew?.formulaPath !== ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb") failures.push("self-release target homebrew formulaPath must equal .release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
   if (homebrew?.tapDirectory !== ".release/catalogs/homebrew-ts-release") failures.push("self-release target homebrew tapDirectory must equal .release/catalogs/homebrew-ts-release")
   if (JSON.stringify(homebrew?.ids) !== JSON.stringify(["cli-darwin-arm64", "cli-darwin-x64"])) {

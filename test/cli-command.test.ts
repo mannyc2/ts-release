@@ -213,7 +213,9 @@ describe("cli command", () => {
           name: "release",
           version: "0.1.0",
           commit: "abc123",
-          tag: "v0.1.0"
+          tag: "v0.1.0",
+          description: "Example Homebrew release",
+          homepage: "https://github.com/owner/release"
         },
         artifacts: [
           {
@@ -438,8 +440,7 @@ describe("cli command", () => {
               expect(build.targets).toContain("windows-x64")
               expect(build.binaryName).toBe("pkg")
             }
-            const wheels = intent.pypiWheel
-            expect(Array.isArray(wheels) ? wheels.length : 0).toBe(5)
+            expect(intent.pypiWheel?.wheels.length ?? 0).toBe(5)
           }
         }
       })
@@ -476,7 +477,6 @@ describe("cli command", () => {
       const config = await readFile(configPath, "utf8")
       const intent = await Effect.runPromise(parseReleaseIntent(config))
       const build = intent.builds?.[0]
-      const wheels = intent.pypiWheel
       expect(build?.builder).toBe("bun")
       if (build?.builder === "bun") {
         expect(build.entry).toBe("src/main.ts")
@@ -490,7 +490,7 @@ describe("cli command", () => {
       expect(config).toContain("owner/scoop-rocket")
       expect(config).toContain("\"packageName\": \"rocket-cli\"")
       expect(config).toContain("\"moduleName\": \"rocket_cli\"")
-      expect(Array.isArray(wheels) ? wheels.length : 0).toBe(5)
+      expect(intent.pypiWheel?.wheels.length ?? 0).toBe(5)
     }))
   test("init can include the GitHub Actions trusted-publishing template", () =>
     withTempDirectoryPromise("ts-release-cli-init-actions-", async (root) => {

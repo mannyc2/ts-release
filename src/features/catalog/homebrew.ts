@@ -13,8 +13,10 @@ import {
   type CatalogResolutionConfig,
   findCatalogArtifact,
   githubRepository,
+  projectHomepage,
   projectPackageName,
-  rejectInvalidCatalogArtifact
+  rejectInvalidCatalogArtifact,
+  requireProjectFact
 } from "./shared.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
@@ -25,8 +27,6 @@ export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHome
   formulaName: Schema.optionalKey(Schema.String),
   formulaPath: Schema.optionalKey(SafeRelativePath),
   ids: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString)),
-  homepage: Schema.optionalKey(Schema.String),
-  description: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
   tapDirectory: defaulted(SafeRelativePath, "."),
   installPath: Schema.optionalKey(Schema.String),
@@ -46,6 +46,8 @@ export const resolveHomebrew = (
     formulaName,
     formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
     tapDirectory: section.tapDirectory,
+    description: config.project.description,
+    homepage: projectHomepage(config),
     ...(repository === undefined ? {} : { githubRepository: repository })
   } satisfies HomebrewSection
   return {
@@ -63,6 +65,8 @@ export const resolveHomebrew = (
 type HomebrewSection = ReleaseConfigHomebrewPublish & {
   readonly formulaName: string
   readonly formulaPath: string
+  readonly description?: string | undefined
+  readonly homepage?: string | undefined
   readonly githubRepository?: string | undefined
 }
 
@@ -158,10 +162,12 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
 ) {
   const selected = yield* selectArtifacts(section, available)
   yield* Effect.forEach(selected, (artifact) => rejectInvalidCatalogArtifact(source, artifact))
+  const description = yield* requireProjectFact(source, "project.description", section.description)
+  const homepage = yield* requireProjectFact(source, "project.homepage", section.homepage)
   const common = [
     `class ${formulaClassName(section.formulaName)} < Formula`,
-    `  desc ${ruby(section.description ?? `${identity.name} ${identity.version} release artifact`)}`,
-    `  homepage ${ruby(section.homepage ?? `https://github.com/${section.repository}`)}`
+    `  desc ${ruby(description)}`,
+    `  homepage ${ruby(homepage)}`
   ]
   if (selected.length === 1) {
     const artifact = selected[0]!

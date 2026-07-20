@@ -207,7 +207,9 @@ export const partialWorkflowConfig = JSON.stringify({
     packageName: "release",
     version: "0.1.0",
     commit: "abc123",
-    tag: "v0.1.0"
+    tag: "v0.1.0",
+    description: "Example Homebrew release",
+    homepage: "https://github.com/owner/release"
   },
   npmPackage: {
     path: "."
@@ -266,7 +268,11 @@ const compactProjectFromIdentity = (identity: Record<string, unknown>): Record<s
     ...(typeof identity.commit === "string" ? { commit: identity.commit } : {}),
     ...(typeof identity.tag === "string" ? { tag: identity.tag } : {}),
     ...(typeof identity.tagTemplate === "string" ? { tagTemplate: identity.tagTemplate } : {}),
-    ...(typeof identity.notes === "string" ? { notes: identity.notes } : {})
+    ...(typeof identity.notes === "string" ? { notes: identity.notes } : {}),
+    ...(typeof identity.description === "string" ? { description: identity.description } : {}),
+    ...(typeof identity.summary === "string" ? { summary: identity.summary } : {}),
+    ...(typeof identity.homepage === "string" ? { homepage: identity.homepage } : {}),
+    ...(typeof identity.license === "string" ? { license: identity.license } : {})
   }
 }
 
@@ -282,11 +288,6 @@ const copyFields = (
   }
   return copied
 }
-
-const isRecordArray = (
-  value: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>
-): value is ReadonlyArray<Record<string, unknown>> =>
-  Array.isArray(value)
 
 export const releaseConfig = ({
   identity = releaseIdentity(),
@@ -305,7 +306,7 @@ export const releaseConfig = ({
   readonly artifacts: ReadonlyArray<Record<string, unknown>>
   readonly builds?: ReadonlyArray<Record<string, unknown>>
   readonly npmPackage?: boolean | Record<string, unknown>
-  readonly pypiWheel?: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>
+  readonly pypiWheel?: Record<string, unknown>
   readonly archives?: ReadonlyArray<Record<string, unknown>>
   readonly checksum?: Record<string, unknown>
   readonly publish?: Record<string, unknown>
@@ -320,11 +321,7 @@ export const releaseConfig = ({
         : npmPackage
     }),
     ...(builds === undefined || builds.length === 0 ? {} : { builds }),
-    ...(pypiWheel === undefined ? {} : {
-      pypiWheel: isRecordArray(pypiWheel)
-        ? pypiWheel
-        : pypiWheel
-    }),
+    ...(pypiWheel === undefined ? {} : { pypiWheel }),
     ...(artifacts.length === 0 ? {} : {
       artifacts
     }),
@@ -336,6 +333,10 @@ export const releaseConfig = ({
 
 export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>
   releaseConfig({
+    identity: releaseIdentity({
+      description: "Example Homebrew release",
+      homepage: "https://github.com/owner/release"
+    }),
     artifacts: [
       {
         id: "archive",
@@ -349,7 +350,6 @@ export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>
         formulaName: "release",
         formulaPath: ".release/generated/release.rb",
         ids: ["archive"],
-        homepage: "https://github.com/owner/release",
         url: "https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.tgz",
         installPath: "bin/release",
         ...overrides
@@ -377,6 +377,11 @@ export const pypiConfig = (overrides: Record<string, unknown> = {}) =>
 
 export const scoopConfig = (overrides: Record<string, unknown> = {}) =>
   releaseConfig({
+    identity: releaseIdentity({
+      description: "Example Scoop release",
+      homepage: "https://github.com/owner/release",
+      license: "MIT"
+    }),
     artifacts: [
       {
         id: "archive",
@@ -390,9 +395,6 @@ export const scoopConfig = (overrides: Record<string, unknown> = {}) =>
         manifestName: "release",
         manifestPath: ".release/generated/release.json",
         ids: ["archive"],
-        homepage: "https://github.com/owner/release",
-        description: "Example Scoop release",
-        license: "MIT",
         url: "https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.zip",
         bin: "release.exe",
         ...overrides

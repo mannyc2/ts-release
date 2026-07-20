@@ -29,10 +29,6 @@ inputs:
   target:
     description: Optional target filter for command doctor.
     required: false
-  runtime:
-    description: Runtime module source. bundled is the default; workspace is deferred until same-graph Node platform loading is safe.
-    required: false
-    default: bundled
   snapshot:
     description: Plan a snapshot release version and refuse externally visible or irreversible operations during execution.
     required: false

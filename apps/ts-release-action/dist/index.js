@@ -99376,6 +99376,26 @@ class Operation extends Class4("Operation")({
   retry: optional(RetryPolicy)
 }) {
 }
+var operationRequirements = (operation) => {
+  switch (operation.action._tag) {
+    case "command":
+      return {
+        executables: [operation.action.command.executable],
+        envNames: operation.action.command.requiredEnv
+      };
+    case "github-release-create":
+    case "github-release-verify":
+      return {
+        executables: [],
+        envNames: operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
+      };
+    case "check-file":
+    case "write-file":
+    case "note":
+    case "stage":
+      return { executables: [], envNames: [] };
+  }
+};
 var operationSurfaceId = (operation) => {
   const parts = operation.pipeId.split(":");
   const surface = parts[1];
@@ -99699,6 +99719,22 @@ var hooksBeforePlanner = featurePlanner("hooks:before", (entries, state3) => for
   description: `Run ${entry.id} hook.`
 })).pipe(map5((operations) => ({ operations }))));
 
+// ../../src/features/shared.ts
+var selectByIdsOrDefault = fn2("features.selectByIdsOrDefault")(function* (ids, artifacts, defaultPredicate, options = {}) {
+  const source = options.source;
+  if (ids !== undefined)
+    return source === undefined ? artifacts.filter(({ id }) => ids.includes(id)) : yield* forEach2(ids, (id) => {
+      const artifact2 = artifacts.find((candidate) => candidate.id === id);
+      return artifact2 === undefined ? fail6(PlanError.make({
+        pipeId: source.pipeId,
+        field: source.field,
+        reason: `${source.target} target references missing artifact ${id}.`
+      })) : succeed6(artifact2);
+    });
+  const selected = artifacts.filter(defaultPredicate);
+  return options.limit === undefined ? selected : selected.slice(0, options.limit);
+});
+
 // ../../src/features/process/archive.ts
 class ReleaseConfigArchiveFormatOverrides extends Class4("ReleaseConfigArchiveFormatOverrides")({
   linux: optionalKey2(ArraySchema(ArchiveFormat)),
@@ -99752,7 +99788,7 @@ var archivePlanner = featurePlanner("archive", (sections, state3) => gen2(functi
   const artifacts = [];
   const operations = [];
   for (const section of sections) {
-    const selected = state3.artifacts.filter(({ id }) => section.ids === undefined || section.ids.includes(id));
+    const selected = yield* selectByIdsOrDefault(section.ids, state3.artifacts, () => true);
     const platform2 = selected.filter((artifact2) => artifact2.platform !== undefined);
     const neutral = selected.filter((artifact2) => artifact2.platform === undefined);
     if (platform2.length > 0 && neutral.length > 0)
@@ -99844,17 +99880,6 @@ var requireProjectFact = (source, field, value2) => value2 === undefined ? fail6
   reason: field === "project.description" ? `${source.target} publishing requires project.description.` : `${source.target} publishing requires project.homepage or publish.github.repository.`
 })) : succeed6(value2);
 var catalogArtifactUrl = (section, identity2, artifact2) => section.url ?? (section.githubRepository === undefined ? artifact2.path : `https://github.com/${section.githubRepository}/releases/download/${identity2.tag}/${artifactPathBaseName(artifact2.path)}`);
-var findCatalogArtifact = (source, artifacts, artifactId) => {
-  const artifact2 = artifacts.find((candidate) => candidate.id === artifactId);
-  if (artifact2 !== undefined) {
-    return succeed6(artifact2);
-  }
-  return fail6(PlanError.make({
-    pipeId: source.pipeId,
-    field: source.field,
-    reason: `${source.target} target references missing artifact ${artifactId}.`
-  }));
-};
 var rejectInvalidCatalogArtifact = (source, artifact2) => {
   if (artifactIsDirectoryLike(artifact2)) {
     return fail6(PlanError.make({
@@ -99924,9 +99949,7 @@ var formulaClassName = (name) => {
   return result2 || "GeneratedFormula";
 };
 var selectArtifacts = fn2("catalog.homebrew.selectArtifacts")(function* (section, available) {
-  if (section.ids !== undefined)
-    return yield* forEach2(section.ids, (id) => findCatalogArtifact(source, available, id));
-  const selected = available.filter(({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "darwin");
+  const selected = yield* selectByIdsOrDefault(section.ids, available, ({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "darwin", { source });
   return selected.length > 0 ? selected : yield* fail6(PlanError.make({
     pipeId: source.pipeId,
     field: source.field,
@@ -99998,47 +100021,44 @@ var formulaContent = fn2("catalog.homebrew.formulaContent")(function* (section, 
     `  desc ${ruby(description)}`,
     `  homepage ${ruby(homepage)}`
   ];
-  if (selected.length === 1) {
+  const artifacts = selected.length === 1 ? selected : yield* variantArtifacts(selected);
+  const install = installLines(section, artifacts);
+  const formulaTail = (leading) => [
+    ...leading,
+    "",
+    "  def install",
+    ...install.lines,
+    "  end",
+    ...testLines(install.binary),
+    "end",
+    ""
+  ].join(`
+`);
+  const sourceParts = selected.length === 1 ? (() => {
     const artifact2 = selected[0];
-    const install2 = installLines(section, selected);
-    return FilePartsContent.make({ parts: [
+    return [
       [...common, `  url ${ruby(catalogArtifactUrl(section, identity2, artifact2))}`, '  sha256 "'].join(`
 `),
       Sha256Hole.make({ artifactId: artifact2.id }),
-      [
-        '"',
-        `  version ${ruby(identity2.version)}`,
-        "",
-        "  def install",
-        ...install2.lines,
-        "  end",
-        ...testLines(install2.binary),
-        "end",
-        ""
-      ].join(`
-`)
-    ] });
-  }
-  const variants = yield* variantArtifacts(selected);
-  const variantParts = variants.flatMap((artifact2) => [
-    [
-      `    ${artifact2.platform?.arch === "arm64" ? "on_arm" : "on_intel"} do`,
-      `      url ${ruby(catalogArtifactUrl(section, identity2, artifact2))}`,
-      '      sha256 "'
-    ].join(`
-`),
-    Sha256Hole.make({ artifactId: artifact2.id }),
-    ['"', "    end", "", ""].join(`
-`)
-  ]);
-  const install = installLines(section, variants);
-  return FilePartsContent.make({ parts: [
+      formulaTail(['"', `  version ${ruby(identity2.version)}`])
+    ];
+  })() : [
     [...common, `  version ${ruby(identity2.version)}`, "", "  on_macos do", ""].join(`
 `),
-    ...variantParts,
-    ["  end", "", "  def install", ...install.lines, "  end", ...testLines(install.binary), "end", ""].join(`
+    ...artifacts.flatMap((artifact2) => [
+      [
+        `    ${artifact2.platform?.arch === "arm64" ? "on_arm" : "on_intel"} do`,
+        `      url ${ruby(catalogArtifactUrl(section, identity2, artifact2))}`,
+        '      sha256 "'
+      ].join(`
+`),
+      Sha256Hole.make({ artifactId: artifact2.id }),
+      ['"', "    end", "", ""].join(`
 `)
-  ] });
+    ]),
+    formulaTail(["  end"])
+  ];
+  return FilePartsContent.make({ parts: sourceParts });
 });
 
 // ../../src/features/catalog/scoop.ts
@@ -100088,7 +100108,7 @@ var source2 = {
   label: "Scoop manifest"
 };
 var manifestContent = fn2("catalog.scoop.manifestContent")(function* (section, identity2, artifacts) {
-  const selected = section.ids === undefined ? artifacts.filter(({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "windows").slice(0, 1) : yield* forEach2(section.ids, (id) => findCatalogArtifact(source2, artifacts, id));
+  const selected = yield* selectByIdsOrDefault(section.ids, artifacts, ({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "windows", { source: source2, limit: 1 });
   if (selected.length > 1)
     return yield* fail6(PlanError.make({
       pipeId: source2.pipeId,
@@ -100344,6 +100364,7 @@ var validationNoteOperation = (options) => featureOperation({
   description: options.description,
   action: NoteAction.make({ message: options.message, skipped: false, severity: "info" })
 });
+var trustedPublishingMessage = (options) => `${options.target} trusted publishing authenticates during ${options.publishCommand} with CI OIDC; ${options.validationCommand} does not validate this mode. This target expects provider ${options.provider}, workflow ${options.workflow}, GitHub Actions permission id-token: write, and ${options.expectation}.`;
 var catalogFilePath = (filePath, directory) => {
   if (directory === undefined)
     return filePath;
@@ -100540,7 +100561,14 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
   }) : validationNoteOperation({
     id: "npm:npm-trusted-publishing-auth",
     description: "Record npm trusted publishing authentication mode.",
-    message: `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
+    message: trustedPublishingMessage({
+      target: "NPM",
+      publishCommand: "npm publish",
+      validationCommand: "npm whoami",
+      provider: section.trustedPublishing.provider,
+      workflow: section.trustedPublishing.workflow,
+      expectation: `package ${section.packageName} to already exist on the registry`
+    })
   });
   const operations = [auth2];
   if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing && section.trustedPublishing.verifyPackageExists === true)
@@ -100578,11 +100606,9 @@ class ReleaseConfigPyPiPublish extends Class4("ReleaseConfigPyPiPublish")({
 }
 var twineAuthEnvNames = ["TWINE_USERNAME", "TWINE_PASSWORD"];
 var selectArtifacts2 = fn2("publish.pypi.selectArtifacts")(function* (section, available) {
-  const artifacts = section.ids === undefined ? available.filter((artifact2) => artifact2.kind === "wheel") : yield* forEach2(section.ids, (id) => findCatalogArtifact({
-    pipeId: "publish:pypi",
-    field: "publish.pypi.ids",
-    target: "PyPI"
-  }, available, id));
+  const artifacts = yield* selectByIdsOrDefault(section.ids, available, (artifact2) => artifact2.kind === "wheel", {
+    source: { pipeId: "publish:pypi", field: "publish.pypi.ids", target: "PyPI" }
+  });
   if (artifacts.length === 0)
     return yield* fail6(PlanError.make({
       pipeId: "publish:pypi",
@@ -100610,7 +100636,14 @@ var publishPyPiPlanner = featurePlanner("publish:pypi", (section, state3) => gen
     operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",
       description: "Record PyPI trusted publishing authentication mode.",
-      message: `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`
+      message: trustedPublishingMessage({
+        target: "PyPI",
+        publishCommand: "twine upload",
+        validationCommand: "twine check",
+        provider: section.trustedPublishing.provider,
+        workflow: section.trustedPublishing.workflow,
+        expectation: "a trusted publisher configured on PyPI"
+      })
     }));
   operations.push(check("pypi:twine-check", "Validate Python distribution metadata with twine check.", section, [
     "-m",
@@ -102212,18 +102245,11 @@ var targetsForRelease = (planned) => {
     const targetId = surfaceId === "file" ? "catalog" : surfaceId;
     const target = targets.get(targetId) ?? { envNames: new Set, executables: new Set };
     targets.set(targetId, target);
-    switch (operation.action._tag) {
-      case "command":
-        target.executables.add(operation.action.command.executable);
-        for (const name of operation.action.command.requiredEnv)
-          target.envNames.add(name);
-        break;
-      case "github-release-create":
-      case "github-release-verify":
-        if (operation.action.tokenEnv !== undefined)
-          target.envNames.add(operation.action.tokenEnv);
-        break;
-    }
+    const requirements = operationRequirements(operation);
+    for (const executable of requirements.executables)
+      target.executables.add(executable);
+    for (const name of requirements.envNames)
+      target.envNames.add(name);
   }
   return [...targets.entries()].map(([targetId, target]) => {
     const trustedPublishing = trustedPublishingAuthEnvNames.every((name) => target.envNames.has(name));
@@ -103181,7 +103207,6 @@ var formatTaggedReason = (value2, renderCause) => {
 // src/input.ts
 var ActionCommand = Literals(["plan", "doctor", "build", "release", "verify"]);
 var ActionFormat = Literals(["json", "text", "summary", "markdown"]);
-var ActionRuntime = Literals(["bundled", "workspace"]);
 
 class ActionOptions extends Class4("ActionOptions")({
   root: String4,
@@ -103192,7 +103217,6 @@ class ActionOptions extends Class4("ActionOptions")({
   planPath: String4,
   failOnWarnings: Boolean3,
   target: optionalKey2(String4),
-  runtime: ActionRuntime,
   snapshot: Boolean3,
   execute: Boolean3,
   approvePublish: Boolean3,
@@ -103245,7 +103269,6 @@ var readActionOptions = (reader, root) => {
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
     failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
     ...target === undefined ? {} : { target },
-    runtime: parseChoice(ActionRuntime, "runtime", inputOrDefault(reader, "runtime", "bundled")),
     snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),
@@ -103342,19 +103365,10 @@ var withEvidenceUpload = (options, io, artifactClient, planRef, effect2) => effe
   const upload2 = uploadEvidence(options, io, artifactClient, planRef());
   return exit3._tag === "Failure" ? upload2.pipe(catch_2((error2) => io.info(`Evidence upload failed: ${formatActionError(error2)}`))) : upload2;
 }));
-var ensureRuntime = (options) => {
-  if (options.runtime === "bundled") {
-    return void_3;
-  }
-  return fail6(ActionCommandError.make({
-    reason: "runtime: workspace is deferred because a safe same-module-graph Node runtime requires the workspace to provide @mannyc1/ts-release, effect, and the aligned @effect/platform-node package. Use runtime: bundled."
-  }));
-};
 var runActionEffect = fn2("action.runActionEffect")(function* (options, io, artifactClient = NoopActionArtifactClient) {
   const path4 = yield* Path;
   const config = yield* workspaceActionPath(path4, options, options.config, "config");
   const safeOptions = ActionOptions.make({ ...options, config });
-  yield* ensureRuntime(safeOptions);
   let planForUpload;
   const rememberPlan = (plan2) => {
     planForUpload = plan2;

@@ -12,7 +12,7 @@ import {
   NoopActionArtifactClient,
   runAction
 } from "../apps/ts-release-action/src/action.js"
-import { ActionOptions } from "../apps/ts-release-action/src/input.js"
+import { ActionOptions, readActionOptions } from "../apps/ts-release-action/src/input.js"
 import { runActionFromInputs } from "../apps/ts-release-action/src/main.js"
 import { makeNodeReleaseWorkflowRuntimeLayer } from "../apps/ts-release-action/src/runtime/node.js"
 import { CommandSpec } from "../src/grammar/operation.js"
@@ -46,7 +46,6 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
     planPath: overrides.planPath ?? "release-plan.md",
     failOnWarnings: overrides.failOnWarnings ?? false,
     ...(overrides.target === undefined ? {} : { target: overrides.target }),
-    runtime: overrides.runtime ?? "bundled",
     snapshot: overrides.snapshot ?? false,
     execute: overrides.execute ?? false,
     approvePublish: overrides.approvePublish ?? false,
@@ -131,7 +130,6 @@ describe("ts-release action", () => {
       "plan-path:",
       "fail-on-warnings:",
       "target:",
-      "runtime:",
       "snapshot:",
       "execute:",
       "approve-publish:",
@@ -140,6 +138,7 @@ describe("ts-release action", () => {
     ]) {
       expect(metadata).toContain(input)
     }
+    expect(metadata).not.toContain("\n  runtime:")
     for (const output of [
       "release_name:",
       "release_version:",
@@ -297,23 +296,20 @@ describe("ts-release action", () => {
       expect(io.failures).toEqual([])
     })
   })
-  test("workspace runtime mode is rejected with the documented bundled fallback", async () => {
-    await withTempDirectoryPromise("ts-release-action-runtime-", async (root) => {
-      await writeFile(join(root, "release.config.json"), minimalConfig)
-      const io = makeFakeActionIo()
-      await runAction(
-        actionOptions(root, { runtime: "workspace" }),
-        io,
-        makeNodeReleaseWorkflowRuntimeLayer({ root })
-      )
-      expect(io.outputs.get("status")).toBe("failed")
-      expect(io.failures.join("\n")).toContain("runtime: workspace is deferred")
-      expect(io.failures.join("\n")).toContain("Use runtime: bundled")
-    })
+  test("does not read the removed runtime input", () => {
+    const reads: Array<string> = []
+    const options = readActionOptions({
+      getInput: (name) => {
+        reads.push(name)
+        return name === "runtime" ? "workspace" : ""
+      }
+    }, process.cwd())
+
+    expect(reads).not.toContain("runtime")
+    expect("runtime" in options).toBe(false)
   })
   for (const [label, name, value, reason] of [
     ["invalid action inputs fail through action outputs", "execute", "yes", "Expected true or false"],
-    ["unsupported runtime input fails with the exact reason", "runtime", "container", "Unsupported runtime container."],
     ["whitespace-only config input fails through action outputs", "config", "   ", "config"]
   ] as const) {
     test(label, async () => {

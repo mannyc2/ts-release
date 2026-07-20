@@ -22,8 +22,8 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/api", 195],
   ["src/types", 13],
   ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
-  ["apps/ts-release-action/src", 502], // raised by plan 162 (failed-build evidence upload)
-  ["test", 9572], // raised by plan 166 (required self-release derivation regression after Stage C deletion was declined)
+  ["apps/ts-release-action/src", 486], // ratcheted by plan 166 (removed the dead runtime input and rejection path)
+  ["test", 9568], // ratcheted by plan 166 after replacing the dead runtime-input cases
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
 ]

@@ -7,9 +7,6 @@ export type ActionCommand = typeof ActionCommand.Type
 export const ActionFormat = Schema.Literals(["json", "text", "summary", "markdown"])
 export type ActionFormat = typeof ActionFormat.Type
 
-export const ActionRuntime = Schema.Literals(["bundled", "workspace"])
-export type ActionRuntime = typeof ActionRuntime.Type
-
 export class ActionOptions extends Schema.Class<ActionOptions>("ActionOptions")({
   root: Schema.String,
   command: ActionCommand,
@@ -19,7 +16,6 @@ export class ActionOptions extends Schema.Class<ActionOptions>("ActionOptions")(
   planPath: Schema.String,
   failOnWarnings: Schema.Boolean,
   target: Schema.optionalKey(Schema.String),
-  runtime: ActionRuntime,
   snapshot: Schema.Boolean,
   execute: Schema.Boolean,
   approvePublish: Schema.Boolean,
@@ -82,7 +78,6 @@ export const readActionOptions = (reader: ActionInputReader, root: string): Acti
     planPath: inputOrDefault(reader, "plan-path", "release-plan.md"),
     failOnWarnings: parseBooleanInput(reader, "fail-on-warnings", false),
     ...(target === undefined ? {} : { target }),
-    runtime: parseChoice(ActionRuntime, "runtime", inputOrDefault(reader, "runtime", "bundled")),
     snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),

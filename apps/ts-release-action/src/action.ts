@@ -192,16 +192,6 @@ const withEvidenceUpload = <A, E, R>(
     : upload
 }))
 
-const ensureRuntime = (options: ActionOptions): Effect.Effect<void, ActionCommandError> => {
-  if (options.runtime === "bundled") {
-    return Effect.void
-  }
-  return Effect.fail(ActionCommandError.make({
-    reason:
-      "runtime: workspace is deferred because a safe same-module-graph Node runtime requires the workspace to provide @mannyc1/ts-release, effect, and the aligned @effect/platform-node package. Use runtime: bundled."
-  }))
-}
-
 export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   options: ActionOptions,
   io: ActionIo,
@@ -210,7 +200,6 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   const path = yield* Path.Path
   const config = yield* workspaceActionPath(path, options, options.config, "config")
   const safeOptions = ActionOptions.make({ ...options, config })
-  yield* ensureRuntime(safeOptions)
   let planForUpload: ReleasePlan | undefined
   const rememberPlan = (plan: ReleasePlan): ReleasePlan => {
     planForUpload = plan

@@ -72,8 +72,7 @@ describe("command build pipe", () => {
           builder: "command", targets: ["linux-x64"], run: ["true"], output: "{binary}", binary
         }).pipe(Effect.flip)
         expect(error).toMatchObject({
-          _tag: "PlanError", field: "builds[].output",
-          reason: "Path must be non-empty, relative, and must not contain parent traversal."
+          _tag: "PlanError", pipeId: "build", field: "builds[].output"
         })
       }
     }))

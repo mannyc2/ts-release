@@ -114,8 +114,9 @@ describe("Bun build pipe", () => {
       const error = yield* plannedCompileTarget("windows-arm64", "baseline").pipe(Effect.flip)
 
       expect(error).toMatchObject({
-        field: "builds[].cpu",
-        reason: "Bun windows-arm64 does not support baseline or modern CPU suffixes."
+        _tag: "PlanError",
+        pipeId: "build",
+        field: "builds[].cpu"
       })
     }))
 })

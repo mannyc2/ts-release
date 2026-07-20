@@ -229,10 +229,9 @@ describe("GitHub target", () => {
   test("rejects directory artifacts consumed by GitHub releases", async () => {
     const error = await runEffect(createPlan(githubConfig({ format: "directory" })).pipe(Effect.flip), TestLayer)
 
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.reason).toBe("GitHub release assets must be file-like, not directories.")
-    }
+    expect(error).toMatchObject({
+      _tag: "PlanError", pipeId: "publish:github", field: "publish.github.assets"
+    })
   })
 
   test("rejects GitHub publishing without a repository", async () => {
@@ -242,11 +241,9 @@ describe("GitHub target", () => {
     })
     const error = await runEffect(createPlan(config).pipe(Effect.flip), TestLayer)
 
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.field).toBe("publish.github.repository")
-      expect(error.reason).toBe("GitHub publishing requires publish.github.repository or project.repository.")
-    }
+    expect(error).toMatchObject({
+      _tag: "PlanError", pipeId: "publish:github", field: "publish.github.repository"
+    })
   })
 
 })

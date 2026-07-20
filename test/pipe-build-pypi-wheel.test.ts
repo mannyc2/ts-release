@@ -97,21 +97,21 @@ describe("PyPI wheel build pipe", () => {
       const summaryError = yield* planWheels({ homepage: "https://example.com", license: "MIT" }).pipe(Effect.flip)
       expect(summaryError).toMatchObject({
         _tag: "PlanError",
-        field: "project.summary",
-        reason: "PyPI wheels require project.summary or project.description."
+        pipeId: "build:pypi-wheel",
+        field: "project.summary"
       })
       const homepageError = yield* planWheels({ description: "Release CLI.", license: "MIT" }).pipe(Effect.flip)
       expect(homepageError).toMatchObject({
         _tag: "PlanError",
-        field: "project.homepage",
-        reason: "PyPI wheels require project.homepage or publish.github.repository."
+        pipeId: "build:pypi-wheel",
+        field: "project.homepage"
       })
       const licenseError = yield* planWheels({ description: "Release CLI.", homepage: "https://example.com" })
         .pipe(Effect.flip)
       expect(licenseError).toMatchObject({
         _tag: "PlanError",
-        field: "project.license",
-        reason: "PyPI wheels require project.license."
+        pipeId: "build:pypi-wheel",
+        field: "project.license"
       })
     }))
 })

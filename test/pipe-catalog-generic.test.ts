@@ -61,8 +61,12 @@ describe("generic catalog pipe", () => {
       plan([entry({ content: [hole("downloadUrl")] }, "")]).pipe(Effect.flip),
       plan([entry(), entry()]).pipe(Effect.flip)
     ])
-    expect(errors.map((error) => error._tag)).toEqual(["PlanError", "PlanError", "PlanError"])
-    expect(errors.map((error) => error.reason)).toEqual(["Catalog entry market references missing artifact missing.",
-      "Catalog entry market downloadUrl requires publish.github.repository or project.repository.", "Duplicate catalog id: market"])
+    expect(errors).toEqual([
+      expect.objectContaining({ _tag: "PlanError", pipeId: "catalog:file", field: "catalogs.market.content" }),
+      expect.objectContaining({ _tag: "PlanError", pipeId: "catalog:file", field: "catalogs.market.content" }),
+      expect.objectContaining({ _tag: "PlanError", pipeId: "catalog:file", field: "catalogs[].id" })
+    ])
+    expect(errors[0]?.reason).toContain("missing artifact")
+    expect(errors[1]?.reason).toContain("repository")
   }))
 })

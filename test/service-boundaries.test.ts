@@ -116,8 +116,7 @@ describe("custom service boundaries", () => {
       expect(error).toMatchObject({
         _tag: "ArtifactStageError",
         operationId: "build:test",
-        intentTag: "archive",
-        reason: "Artifact staging is not supported by this runtime."
+        intentTag: "archive"
       })
     }).pipe(Effect.provide(UnsupportedArtifactStagerLayer)))
 })

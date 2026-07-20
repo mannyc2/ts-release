@@ -27,9 +27,9 @@ describe("artifact-name template tokens", () => {
       ).pipe(Effect.flip)
 
       expect(rendered).toEqual(["linux_amd64", "release_0.1.0", "{weird}"])
-      expect([missingOs.reason, missingLibc.reason]).toEqual([
-        "Template {os} cannot be resolved here; remove it or provide a platform context.",
-        "Template {libc} cannot be resolved here; remove it or provide a platform context."
-      ])
+      expect(missingOs).toMatchObject({ _tag: "PlanError", pipeId: "test", field: "path" })
+      expect(missingLibc).toMatchObject({ _tag: "PlanError", pipeId: "test", field: "path" })
+      expect(missingOs.reason).toContain("{os}")
+      expect(missingLibc.reason).toContain("{libc}")
     }))
 })

@@ -98,13 +98,13 @@ describe("archive pipe", () => {
   it.effect("rejects mixed, neutral overrides, and unresolved neutral platform tokens", () =>
     Effect.gen(function*() {
       const cases = [
-        [{ id: "mixed", ids: [linuxMusl.id, windows.id, neutral.id], files: [] }, stateWith([linuxMusl, windows, neutral]), "archives.mixed", "split it into two entries"],
-        [{ id: "neutral", ids: [neutral.id], files: [], formatOverrides: { linux: ["zip"] } }, stateWith([neutral]), "archives.neutral.formatOverrides", "platform-neutral"],
-        [{ id: "neutral", ids: [neutral.id], files: [], nameTemplate: "{name}_{version}_{os}" }, stateWith([neutral]), "archives.neutral.nameTemplate", "{os}"]
+        [{ id: "mixed", ids: [linuxMusl.id, windows.id, neutral.id], files: [] }, stateWith([linuxMusl, windows, neutral]), "archives.mixed"],
+        [{ id: "neutral", ids: [neutral.id], files: [], formatOverrides: { linux: ["zip"] } }, stateWith([neutral]), "archives.neutral.formatOverrides"],
+        [{ id: "neutral", ids: [neutral.id], files: [], nameTemplate: "{name}_{version}_{os}" }, stateWith([neutral]), "archives.neutral.nameTemplate"]
       ] as const
-      for (const [section, state, field, reason] of cases) {
+      for (const [section, state, field] of cases) {
         const error = yield* planArchives([section], state).pipe(Effect.flip)
-        expect(error).toMatchObject({ _tag: "PlanError", field, reason: expect.stringContaining(reason) })
+        expect(error).toMatchObject({ _tag: "PlanError", pipeId: "archive", field })
       }
     }))
   it.effect("allows separate platform and neutral entries over the same catalog", () =>

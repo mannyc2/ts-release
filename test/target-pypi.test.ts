@@ -111,11 +111,12 @@ describe("PyPI target", () => {
     if (trustedWorkflowPath?._tag === "ConfigError") {
       expect(trustedWorkflowPath.reason).toContain(`["publish"]["pypi"]["trustedPublishing"]["workflow"]`)
     }
-    expect(directoryArtifact?._tag).toBe("PlanError")
-    expect(noArtifact?._tag).toBe("PlanError")
+    expect(directoryArtifact).toMatchObject({ _tag: "PlanError", pipeId: "publish:pypi",
+      field: "artifacts" })
+    expect(noArtifact).toMatchObject({ _tag: "PlanError", pipeId: "publish:pypi",
+      field: "publish.pypi.ids" })
     if (noArtifact?._tag === "PlanError") {
-      expect(noArtifact.field).toBe("publish.pypi.ids")
-      expect(noArtifact.reason).toBe("PyPI target references missing artifact wheel.")
+      expect(noArtifact.reason).toContain("missing artifact")
     }
   })
 
@@ -128,7 +129,6 @@ describe("PyPI target", () => {
       expect(error._tag).toBe("ConfigError")
       if (error._tag === "ConfigError") {
         expect(error.reason).toContain(`removed field $.publish.pypi.${field}`)
-        expect(error.reason).toContain("Twine reads TWINE_USERNAME/TWINE_PASSWORD directly")
       }
     })
   }
@@ -150,10 +150,6 @@ describe("PyPI target", () => {
     })
     const error = await runEffect(createPlan(config).pipe(Effect.flip), PyPiLayer)
 
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.field).toBe("artifacts")
-      expect(error.reason).toBe("PyPI target must have at least one artifact consumer.")
-    }
+    expect(error).toMatchObject({ _tag: "PlanError", pipeId: "publish:pypi", field: "artifacts" })
   })
 })

@@ -111,8 +111,8 @@ describe("command hooks", () => {
 
     expect(error).toMatchObject({
       _tag: "PlanError",
-      field: "operations.id",
-      reason: "Duplicate operation ids: hook:before:generate"
+      pipeId: "hooks:before",
+      field: "operations.id"
     })
   })
 
@@ -137,8 +137,7 @@ describe("command hooks", () => {
 
     expect(error).toMatchObject({
       _tag: "ExecutionApprovalError",
-      operationId: "custom:deploy",
-      reason: "Operation requires irreversible approval."
+      operationId: "custom:deploy"
     })
   })
 
@@ -151,8 +150,7 @@ describe("command hooks", () => {
     expect(error).toMatchObject({
       _tag: "PlanError",
       pipeId: "hooks:before",
-      field: "hooks.before[].run",
-      reason: "Hook run must render to at least one non-empty argv entry."
+      field: "hooks.before[].run"
     })
   })
 })

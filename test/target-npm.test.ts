@@ -139,11 +139,9 @@ describe("npm target", () => {
     )
     const error = await runEffect(createPlan(invalidConfig).pipe(Effect.flip), TestLayer)
 
-    expect(error._tag).toBe("PlanError")
-    if (error._tag === "PlanError") {
-      expect(error.field).toBe("publish.npm.tokenEnv")
-      expect(error.reason).toBe("NPM trusted publishing uses CI OIDC and must not also declare tokenEnv.")
-    }
+    expect(error).toMatchObject({
+      _tag: "PlanError", pipeId: "publish:npm", field: "publish.npm.tokenEnv"
+    })
   })
 
   for (const [label, workflow] of [

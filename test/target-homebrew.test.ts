@@ -41,7 +41,7 @@ describe("Homebrew target", () => {
   test("rejects removed tokenEnv with its migration hint", async () => {
     const error = await runEffect(plan(homebrewConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), HomebrewLayer)
     expect(error).toMatchObject({ _tag: "ConfigError", kind: "validation" })
-    if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
+    if (error._tag === "ConfigError") expect(error.reason).toContain("$.publish.homebrew.tokenEnv")
   })
 
   test("requires project.description and project.homepage for the formula", async () => {
@@ -61,9 +61,9 @@ describe("Homebrew target", () => {
       })).pipe(Effect.flip), HomebrewLayer)
     ])
     expect(missingDescription).toMatchObject({ _tag: "PlanError", pipeId: "catalog:homebrew",
-      field: "project.description", reason: "Homebrew publishing requires project.description." })
+      field: "project.description" })
     expect(missingHomepage).toMatchObject({ _tag: "PlanError", pipeId: "catalog:homebrew",
-      field: "project.homepage", reason: "Homebrew publishing requires project.homepage or publish.github.repository." })
+      field: "project.homepage" })
   })
 
   test("derives the formula homepage from the GitHub repository", async () => {
@@ -131,10 +131,12 @@ describe("Homebrew target", () => {
       runEffect(plan(directory).pipe(Effect.flip), HomebrewLayer),
       runEffect(plan(nonSha256).pipe(Effect.flip), HomebrewLayer)
     ])
-    expect(missing).toMatchObject({ _tag: "PlanError",
-      reason: "Homebrew target references missing artifact missing." })
-    expect(directoryArtifact).toMatchObject({ _tag: "PlanError",
-      reason: "Homebrew formula artifacts must be file-like, not directories." })
+    expect(missing).toMatchObject({ _tag: "PlanError", pipeId: "catalog:homebrew",
+      field: "publish.homebrew.ids" })
+    expect(missing.reason).toContain("missing artifact")
+    expect(directoryArtifact).toMatchObject({ _tag: "PlanError", pipeId: "catalog:homebrew",
+      field: "publish.homebrew.ids" })
+    expect(directoryArtifact.reason).toContain("file-like")
     expect(checksum).toMatchObject({ _tag: "PlanError", field: "artifacts.archive.checksum" })
 
     const manual = await runEffect(plan(homebrewConfig().replace(

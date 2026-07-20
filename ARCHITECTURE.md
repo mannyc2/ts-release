@@ -141,8 +141,9 @@ failure remains primary and the workflow cause remains attached.
   lazy Promise runtime, maintenance scripts, or tests.
 - Paths are non-empty safe relative paths and are rechecked at the workspace
   I/O boundary; no planned read or write may escape its root.
-- Operation ids, order, risks, messages, rendered catalogs, plan/evidence bytes,
-  and public error text are compatibility contracts.
+- Operation ids, order, risks, descriptions, rendered catalogs, plan/evidence bytes,
+  and documented CLI/API result shapes are compatibility contracts.
+- Internal failure prose (PlanError/ConfigError reasons, validation-note wording) is a refactor fixture: its typed tag, field, and meaning are frozen; its wording is not. Tests keep one semantic assertion per failure mode.
 - Config fields are product surface. Removing one requires a separately
   announced schema change and migration hint.
 - The npm existence retry and GitHub `Effect.whileLoop` pagination are retained

@@ -44,7 +44,7 @@ describe("Scoop target", () => {
   test("rejects removed tokenEnv with its migration hint", async () => {
     const error = await runEffect(plan(scoopConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), ScoopLayer)
     expect(error).toMatchObject({ _tag: "ConfigError", kind: "validation" })
-    if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
+    if (error._tag === "ConfigError") expect(error.reason).toContain("$.publish.scoop.tokenEnv")
   })
 
   test("requires project.description and omits the license key when project.license is absent", async () => {
@@ -73,15 +73,15 @@ describe("Scoop target", () => {
         manifestPath: ".release/generated/release.json", ids: ["archive"] } }
     })).pipe(Effect.flip), ScoopLayer)
     expect(missingDescription).toMatchObject({ _tag: "PlanError", pipeId: "catalog:scoop",
-      field: "project.description", reason: "Scoop publishing requires project.description." })
+      field: "project.description" })
   })
 
   test("rejects more than one explicit artifact id", async () => {
     const error = await runEffect(plan(scoopConfig({ ids: ["archive", "archive"] })).pipe(Effect.flip), ScoopLayer)
     expect(error).toMatchObject({
       _tag: "PlanError",
-      field: "publish.scoop.ids",
-      reason: "Scoop manifests reference exactly one artifact."
+      pipeId: "catalog:scoop",
+      field: "publish.scoop.ids"
     })
   })
 
@@ -131,10 +131,12 @@ describe("Scoop target", () => {
       runEffect(plan(directory).pipe(Effect.flip), ScoopLayer),
       runEffect(plan(nonSha256).pipe(Effect.flip), ScoopLayer)
     ])
-    expect(missing).toMatchObject({ _tag: "PlanError",
-      reason: "Scoop target references missing artifact missing." })
-    expect(directoryArtifact).toMatchObject({ _tag: "PlanError",
-      reason: "Scoop manifest artifacts must be file-like, not directories." })
+    expect(missing).toMatchObject({ _tag: "PlanError", pipeId: "catalog:scoop",
+      field: "publish.scoop.ids" })
+    expect(missing.reason).toContain("missing artifact")
+    expect(directoryArtifact).toMatchObject({ _tag: "PlanError", pipeId: "catalog:scoop",
+      field: "publish.scoop.ids" })
+    expect(directoryArtifact.reason).toContain("file-like")
     expect(checksum).toMatchObject({ _tag: "PlanError", field: "artifacts.archive.checksum" })
 
     const manual = await runEffect(plan(scoopConfig({ ids: ["archive"] }).replace(

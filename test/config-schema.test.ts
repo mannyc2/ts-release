@@ -263,9 +263,8 @@ describe("config schema", () => {
   it.effect("reports invalid JSON as a typed parse error", () =>
     Effect.gen(function*() {
       const error = yield* parseReleaseIntent("{").pipe(Effect.flip)
-      expect(isRecord(error) ? error._tag : undefined).toBe("ConfigError")
+      expect(error).toMatchObject({ _tag: "ConfigError", kind: "parse" })
       if (isRecord(error)) {
-        expect(error.reason).toBe("Release config is not valid JSON.")
         expect(error.cause).toBeDefined()
       }
     }))

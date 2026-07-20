@@ -12,6 +12,7 @@ import { ReleaseIdentity } from "../grammar/state.js"
 import { schedule } from "../grammar/planner.js"
 import { archivePlanner } from "../features/process/archive.js"
 import { buildPlanner } from "../features/build/build.js"
+import { hooksBeforePlanner } from "../features/build/hooks.js"
 import { catalogGenericPlanner } from "../features/catalog/file.js"
 import { checksumPlanner } from "../features/process/checksum.js"
 import { importArtifactsPlanner } from "../features/build/import-artifacts.js"
@@ -20,6 +21,7 @@ import { publishCatalogGenericPlanner } from "../features/publish/catalog-file.j
 import { publishGitHubPlanner } from "../features/publish/github.js"
 import { publishNpmPlanner } from "../features/publish/npm.js"
 import { publishPyPiPlanner } from "../features/publish/pypi.js"
+import { hooksAfterPlanner, publishCustomPlanner } from "../features/publish/hooks.js"
 import { pypiWheelPlanner } from "../features/build/pypi-wheel.js"
 import {
   operationsForPass,
@@ -71,6 +73,7 @@ const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
   const buildState = yield* runPipeline(
     emptyPlanAccumulator(release.identity),
     [
+      ...(Option.isSome(release.hooksBefore) ? [schedule(hooksBeforePlanner, release.hooksBefore)] : []),
       schedule(buildPlanner, release.builds),
       schedule(npmPackPlanner, release.npmPackage),
       schedule(pypiWheelPlanner, release.pypiWheels),
@@ -88,7 +91,9 @@ const resolveReleasePlan = (build: { readonly release: ResolvedRelease; readonly
     schedule(publishNpmPlanner, build.release.npm),
     schedule(publishPyPiPlanner, build.release.pypi),
     schedule(publishGitHubPlanner, build.release.github),
-    ...(Option.isSome(build.release.catalogs) ? [schedule(publishCatalogGenericPlanner, build.release.catalogs)] : [])
+    ...(Option.isSome(build.release.custom) ? [schedule(publishCustomPlanner, build.release.custom)] : []),
+    ...(Option.isSome(build.release.catalogs) ? [schedule(publishCatalogGenericPlanner, build.release.catalogs)] : []),
+    ...(Option.isSome(build.release.hooksAfter) ? [schedule(hooksAfterPlanner, build.release.hooksAfter)] : [])
   ])
 
 const loadReleaseBuild = Effect.fn("engine.loadReleaseBuild")(function*(options: RunOptions) {

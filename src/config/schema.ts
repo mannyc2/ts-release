@@ -4,6 +4,11 @@ import type * as JsonSchema from "effect/JsonSchema"
 import { ReleaseConfigBunExecutableBuild } from "../features/build/bun.js"
 import { ReleaseConfigCommandBuild } from "../features/build/command.js"
 import { ReleaseConfigPrebuiltBuild } from "../features/build/prebuilt.js"
+import {
+  ReleaseConfigAfterHook,
+  ReleaseConfigCustomPublish,
+  ReleaseConfigHook
+} from "../features/build/hooks.js"
 import { ReleaseConfigArchive } from "../features/process/archive.js"
 import { ReleaseConfigHomebrewPublish } from "../features/catalog/homebrew.js"
 import { ReleaseConfigScoopPublish } from "../features/catalog/scoop.js"
@@ -41,12 +46,18 @@ export const ReleaseConfigBuildItem = Schema.Union([
 ])
 export type ReleaseConfigBuildItem = typeof ReleaseConfigBuildItem.Type
 
+export class ReleaseConfigHooks extends Schema.Class<ReleaseConfigHooks>("ReleaseConfigHooks")({
+  before: Schema.optionalKey(Schema.Array(ReleaseConfigHook)),
+  after: Schema.optionalKey(Schema.Array(ReleaseConfigAfterHook))
+}) {}
+
 export class ReleaseConfigPublish extends Schema.Class<ReleaseConfigPublish>("ReleaseConfigPublish")({
   npm: Schema.optionalKey(ReleaseConfigNpmPublish),
   github: Schema.optionalKey(ReleaseConfigGitHubPublish),
   homebrew: Schema.optionalKey(ReleaseConfigHomebrewPublish),
   scoop: Schema.optionalKey(ReleaseConfigScoopPublish),
-  pypi: Schema.optionalKey(ReleaseConfigPyPiPublish)
+  pypi: Schema.optionalKey(ReleaseConfigPyPiPublish),
+  custom: Schema.optionalKey(Schema.Array(ReleaseConfigCustomPublish))
 }) {}
 
 export class ReleaseConfigEvidence extends Schema.Class<ReleaseConfigEvidence>("ReleaseConfigEvidence")({
@@ -64,6 +75,7 @@ export class ReleaseIntent extends Schema.Class<ReleaseIntent>("ReleaseIntent")(
   archives: Schema.optionalKey(Schema.Array(ReleaseConfigArchive)),
   checksum: Schema.optionalKey(ReleaseConfigChecksum),
   catalogs: Schema.optionalKey(Schema.Array(ReleaseConfigCatalogEntry)),
+  hooks: Schema.optionalKey(ReleaseConfigHooks),
   publish: ReleaseConfigPublish,
   evidence: Schema.optionalKey(Schema.Union([SafeRelativePath, ReleaseConfigEvidence]))
 }) {}

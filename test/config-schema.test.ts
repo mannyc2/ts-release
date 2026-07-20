@@ -222,14 +222,15 @@ describe("config schema", () => {
     const properties = isRecord(releaseIntent) ? releaseIntent.properties : undefined
     expect(isRecord(properties)).toBe(true)
     for (const property of [
-      "project", "versionFrom", "builds", "npmPackage", "archives", "checksum", "catalogs", "publish", "$schema"
+      "project", "versionFrom", "builds", "npmPackage", "archives", "checksum", "catalogs", "hooks", "publish", "$schema"
     ]) {
       expect(isRecord(properties) ? properties[property] : undefined).toBeDefined()
     }
 
     const serialized = JSON.stringify(schema)
     for (const name of [
-      "ReleaseConfigArchive", "ReleaseConfigChecksum", "ReleaseConfigCatalogEntry", "ReleaseConfigNpmPublish", "ReleaseConfigGitHubPublish"
+      "ReleaseConfigArchive", "ReleaseConfigChecksum", "ReleaseConfigCatalogEntry", "ReleaseConfigHooks", "ReleaseConfigHook",
+      "ReleaseConfigAfterHook", "ReleaseConfigCustomPublish", "ReleaseConfigNpmPublish", "ReleaseConfigGitHubPublish"
     ]) expect(serialized).toContain(name)
     for (const name of ["NpmRegistryTarget", "GitHubReleaseTarget"]) {
       expect(serialized).not.toContain(name)

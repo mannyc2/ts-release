@@ -26,7 +26,7 @@ describe("resolved release", () => {
     Effect.gen(function*() {
       const absent = yield* resolved({ project: {}, publish: {} })
       const empty = yield* resolved({ project: {}, builds: [], pypiWheel: [],
-        artifacts: [], archives: [], catalogs: [], publish: {} })
+        artifacts: [], archives: [], catalogs: [], hooks: { before: [], after: [] }, publish: { custom: [] } })
       const shorthand = yield* resolved({
         project: {}, npmPackage: {}, pypiWheel: wheel, checksum: {},
         publish: { npm: {}, pypi: {}, github: {} }, evidence: "proof/{version}"
@@ -34,10 +34,10 @@ describe("resolved release", () => {
       const pair = yield* resolved({ project: {},
         pypiWheel: [wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }], publish: {} })
       expect([absent.builds, absent.npmPackage, absent.pypiWheels, absent.artifacts, absent.archives,
-        absent.checksum, absent.npm, absent.pypi, absent.github, absent.catalogs]
-        .map(isNone)).toEqual(Array(10).fill(true))
-      expect([empty.builds, empty.npmPackage, empty.npm, empty.pypi, empty.github].map(isNone))
-        .toEqual(Array(5).fill(true))
+        absent.checksum, absent.npm, absent.pypi, absent.github, absent.catalogs,
+        absent.hooksBefore, absent.custom, absent.hooksAfter].map(isNone)).toEqual(Array(13).fill(true))
+      expect([empty.builds, empty.npmPackage, empty.npm, empty.pypi, empty.github,
+        empty.hooksBefore, empty.custom, empty.hooksAfter].map(isNone)).toEqual(Array(8).fill(true))
       expect([some(empty.pypiWheels), some(empty.artifacts), some(empty.archives)]).toEqual([[], [], []])
       expect(empty.catalogs.pipe(Option.isNone)).toBe(true)
       expect(some(shorthand.npmPackage)).toEqual({ path: "." })

@@ -251,8 +251,11 @@ export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity)
     ? entry
     : { ...entry, githubRepository: repository })
   const catalogs = [...vendorEntries, ...userEntries]
+  const optionFromNonEmpty = <A>(value: ReadonlyArray<A> | undefined): Option.Option<ReadonlyArray<A>> =>
+    value === undefined || value.length === 0 ? Option.none() : Option.some(value)
   return {
     identity,
+    hooksBefore: optionFromNonEmpty(intent.hooks?.before),
     builds: intent.builds === undefined || intent.builds.length === 0 ? Option.none() : Option.some(intent.builds),
     npmPackage: Option.fromUndefinedOr(intent.npmPackage),
     pypiWheels: intent.pypiWheel === undefined ? Option.none()
@@ -263,7 +266,9 @@ export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity)
     npm: Option.fromUndefinedOr(resolveNpmPublish(intent, identity)),
     pypi: Option.fromUndefinedOr(intent.publish.pypi),
     github: Option.fromUndefinedOr(resolveGitHubPublish(intent)),
+    custom: optionFromNonEmpty(intent.publish.custom),
     catalogs: catalogs.length === 0 ? Option.none() : Option.some(catalogs),
+    hooksAfter: optionFromNonEmpty(intent.hooks?.after),
     evidenceDirectory: evidenceDirectory(intent, identity)
   }
 }

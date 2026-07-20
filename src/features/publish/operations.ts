@@ -30,6 +30,16 @@ export const validationNoteOperation = (options: {
   action: NoteAction.make({ message: options.message, skipped: false, severity: "info" })
 })
 
+export const trustedPublishingMessage = (options: {
+  readonly target: string
+  readonly publishCommand: string
+  readonly validationCommand: string
+  readonly provider: string
+  readonly workflow: string
+  readonly expectation: string
+}): string =>
+  `${options.target} trusted publishing authenticates during ${options.publishCommand} with CI OIDC; ${options.validationCommand} does not validate this mode. This target expects provider ${options.provider}, workflow ${options.workflow}, GitHub Actions permission id-token: write, and ${options.expectation}.`
+
 export interface CatalogGitPublishOptions {
   readonly id: string
   readonly pipeId: string

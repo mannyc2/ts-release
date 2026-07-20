@@ -11,12 +11,12 @@ import {
   catalogPathBaseName,
   compactPackageShortName,
   type CatalogResolutionConfig,
-  findCatalogArtifact,
   githubRepository,
   projectHomepage,
   projectPackageName,
   rejectInvalidCatalogArtifact,
-  requireProjectFact
+  requireProjectFact,
+  selectByIdsOrDefault
 } from "./shared.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
@@ -85,11 +85,8 @@ const selectArtifacts = Effect.fn("catalog.homebrew.selectArtifacts")(function*(
   section: HomebrewSection,
   available: ReadonlyArray<Artifact>
 ) {
-  if (section.ids !== undefined) return yield* Effect.forEach(
-    section.ids,
-    (id) => findCatalogArtifact(source, available, id)
-  )
-  const selected = available.filter(({ kind, platform }) => kind === "executable" && platform?.os === "darwin")
+  const selected = yield* selectByIdsOrDefault(section.ids, available,
+    ({ kind, platform }) => kind === "executable" && platform?.os === "darwin", { source })
   return selected.length > 0 ? selected : yield* Effect.fail(PlanError.make({
     pipeId: source.pipeId,
     field: source.field,
@@ -169,27 +166,28 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
     `  desc ${ruby(description)}`,
     `  homepage ${ruby(homepage)}`
   ]
-  if (selected.length === 1) {
+  const artifacts = selected.length === 1 ? selected : yield* variantArtifacts(selected)
+  const install = installLines(section, artifacts)
+  const formulaTail = (leading: ReadonlyArray<string>): string => [
+    ...leading, "", "  def install", ...install.lines, "  end",
+    ...testLines(install.binary), "end", ""
+  ].join("\n")
+  const sourceParts: Array<string | Sha256Hole> = selected.length === 1 ? (() => {
     const artifact = selected[0]!
-    const install = installLines(section, selected)
-    return FilePartsContent.make({ parts: [
+    return [
       [...common, `  url ${ruby(catalogArtifactUrl(section, identity, artifact))}`, "  sha256 \""].join("\n"),
       Sha256Hole.make({ artifactId: artifact.id }),
-      ["\"", `  version ${ruby(identity.version)}`, "", "  def install", ...install.lines, "  end",
-        ...testLines(install.binary), "end", ""].join("\n")
-    ] })
-  }
-  const variants = yield* variantArtifacts(selected)
-  const variantParts = variants.flatMap((artifact): Array<string | Sha256Hole> => [
-    [`    ${artifact.platform?.arch === "arm64" ? "on_arm" : "on_intel"} do`,
-      `      url ${ruby(catalogArtifactUrl(section, identity, artifact))}`, "      sha256 \""].join("\n"),
-    Sha256Hole.make({ artifactId: artifact.id }),
-    ["\"", "    end", "", ""].join("\n")
-  ])
-  const install = installLines(section, variants)
-  return FilePartsContent.make({ parts: [
+      formulaTail(["\"", `  version ${ruby(identity.version)}`])
+    ]
+  })() : [
     [...common, `  version ${ruby(identity.version)}`, "", "  on_macos do", ""].join("\n"),
-    ...variantParts,
-    ["  end", "", "  def install", ...install.lines, "  end", ...testLines(install.binary), "end", ""].join("\n")
-  ] })
+    ...artifacts.flatMap((artifact): Array<string | Sha256Hole> => [
+      [`    ${artifact.platform?.arch === "arm64" ? "on_arm" : "on_intel"} do`,
+        `      url ${ruby(catalogArtifactUrl(section, identity, artifact))}`, "      sha256 \""].join("\n"),
+      Sha256Hole.make({ artifactId: artifact.id }),
+      ["\"", "    end", "", ""].join("\n")
+    ]),
+    formulaTail(["  end"])
+  ]
+  return FilePartsContent.make({ parts: sourceParts })
 })

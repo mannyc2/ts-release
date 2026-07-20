@@ -11,12 +11,12 @@ import {
   catalogPathBaseName,
   compactPackageShortName,
   type CatalogResolutionConfig,
-  findCatalogArtifact,
   githubRepository,
   projectHomepage,
   projectPackageName,
   rejectInvalidCatalogArtifact,
-  requireProjectFact
+  requireProjectFact,
+  selectByIdsOrDefault
 } from "./shared.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
@@ -81,9 +81,8 @@ const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
   identity: ReleaseIdentity,
   artifacts: ReadonlyArray<Artifact>
 ) {
-  const selected = section.ids === undefined
-    ? artifacts.filter(({ kind, platform }) => kind === "executable" && platform?.os === "windows").slice(0, 1)
-    : yield* Effect.forEach(section.ids, (id) => findCatalogArtifact(source, artifacts, id))
+  const selected = yield* selectByIdsOrDefault(section.ids, artifacts,
+    ({ kind, platform }) => kind === "executable" && platform?.os === "windows", { source, limit: 1 })
   if (selected.length > 1) return yield* Effect.fail(PlanError.make({
     pipeId: source.pipeId,
     field: source.field,

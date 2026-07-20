@@ -114,6 +114,32 @@ export class Operation extends Schema.Class<Operation>("Operation")({
   retry: Schema.optional(RetryPolicy)
 }) {}
 
+export interface OperationRequirements {
+  readonly executables: ReadonlyArray<string>
+  readonly envNames: ReadonlyArray<string>
+}
+
+export const operationRequirements = (operation: Pick<Operation, "action">): OperationRequirements => {
+  switch (operation.action._tag) {
+    case "command":
+      return {
+        executables: [operation.action.command.executable],
+        envNames: operation.action.command.requiredEnv
+      }
+    case "github-release-create":
+    case "github-release-verify":
+      return {
+        executables: [],
+        envNames: operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
+      }
+    case "check-file":
+    case "write-file":
+    case "note":
+    case "stage":
+      return { executables: [], envNames: [] }
+  }
+}
+
 export const operationSurfaceId = (operation: Pick<Operation, "pipeId">): string | undefined => {
   const parts = operation.pipeId.split(":")
   const surface = parts[1]

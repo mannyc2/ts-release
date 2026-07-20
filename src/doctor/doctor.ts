@@ -2,6 +2,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import {
+  operationRequirements,
   operationSurfaceId,
   trustedPublishingAuthEnvNames,
   type Operation
@@ -59,16 +60,9 @@ const targetsForRelease = (planned: DoctorReleasePlan): ReadonlyArray<SurfaceNee
     const targetId = surfaceId === "file" ? "catalog" : surfaceId
     const target = targets.get(targetId) ?? { envNames: new Set<string>(), executables: new Set<string>() }
     targets.set(targetId, target)
-    switch (operation.action._tag) {
-      case "command":
-        target.executables.add(operation.action.command.executable)
-        for (const name of operation.action.command.requiredEnv) target.envNames.add(name)
-        break
-      case "github-release-create":
-      case "github-release-verify":
-        if (operation.action.tokenEnv !== undefined) target.envNames.add(operation.action.tokenEnv)
-        break
-    }
+    const requirements = operationRequirements(operation)
+    for (const executable of requirements.executables) target.executables.add(executable)
+    for (const name of requirements.envNames) target.envNames.add(name)
   }
   return [...targets.entries()].map(([targetId, target]) => {
     const trustedPublishing = trustedPublishingAuthEnvNames.every((name) => target.envNames.has(name))

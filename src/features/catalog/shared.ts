@@ -86,6 +86,23 @@ export const findCatalogArtifact = (
   }))
 }
 
+export const selectByIdsOrDefault = Effect.fn("catalog.selectByIdsOrDefault")(function*(
+  ids: ReadonlyArray<string> | undefined,
+  artifacts: ReadonlyArray<Artifact>,
+  defaultPredicate: (artifact: Artifact) => boolean,
+  options: {
+    readonly source?: { readonly pipeId: string; readonly field: string; readonly target: string } | undefined
+    readonly limit?: number | undefined
+  } = {}
+) {
+  const source = options.source
+  if (ids !== undefined) return source === undefined
+    ? artifacts.filter(({ id }) => ids.includes(id))
+    : yield* Effect.forEach(ids, (id) => findCatalogArtifact(source, artifacts, id))
+  const selected = artifacts.filter(defaultPredicate)
+  return options.limit === undefined ? selected : selected.slice(0, options.limit)
+})
+
 export const rejectInvalidCatalogArtifact = (
   source: { readonly pipeId: string; readonly field: string; readonly label: string },
   artifact: Artifact

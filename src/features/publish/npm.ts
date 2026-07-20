@@ -10,7 +10,7 @@ import {
   publishingAuthEnvNames,
   trustedPublishingConfigFields
 } from "./trusted-publishing.js"
-import { readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
+import { readOnlyCommandValidationOperation, trustedPublishingMessage, validationNoteOperation } from "./operations.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
 export const NpmAccess = Schema.Literals(["public", "restricted"])
@@ -85,8 +85,11 @@ export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm"
       : validationNoteOperation({
         id: "npm:npm-trusted-publishing-auth",
         description: "Record npm trusted publishing authentication mode.",
-        message:
-          `NPM trusted publishing authenticates during npm publish with CI OIDC; npm whoami does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and package ${section.packageName} to already exist on the registry.`
+        message: trustedPublishingMessage({
+          target: "NPM", publishCommand: "npm publish", validationCommand: "npm whoami",
+          provider: section.trustedPublishing.provider, workflow: section.trustedPublishing.workflow,
+          expectation: `package ${section.packageName} to already exist on the registry`
+        })
       })
     const operations: Array<Operation> = [auth]
     if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing

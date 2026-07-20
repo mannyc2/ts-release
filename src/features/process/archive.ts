@@ -8,6 +8,7 @@ import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent } from "../../gramma
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { defaultArtifactBaseName, renderArtifactNameEffect } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
+import { selectByIdsOrDefault } from "../catalog/shared.js"
 
 export class ReleaseConfigArchiveFormatOverrides extends Schema.Class<ReleaseConfigArchiveFormatOverrides>(
   "ReleaseConfigArchiveFormatOverrides"
@@ -61,7 +62,7 @@ export const archivePlanner = featurePlanner<ReadonlyArray<ReleaseConfigArchive>
     const artifacts: Array<Artifact> = []
     const operations: Array<Operation> = []
     for (const section of sections) {
-      const selected = state.artifacts.filter(({ id }) => section.ids === undefined || section.ids.includes(id))
+      const selected = yield* selectByIdsOrDefault(section.ids, state.artifacts, () => true)
       const platform = selected.filter((artifact) => artifact.platform !== undefined)
       const neutral = selected.filter((artifact) => artifact.platform === undefined)
       if (platform.length > 0 && neutral.length > 0) return yield* Effect.fail(PlanError.make({

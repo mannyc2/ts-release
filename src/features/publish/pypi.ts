@@ -6,12 +6,17 @@ import { artifactIsDirectoryLike } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
-import { findCatalogArtifact } from "../catalog/shared.js"
+import { selectByIdsOrDefault } from "../catalog/shared.js"
 import {
   publishingAuthEnvNames,
   trustedPublishingConfigFields
 } from "./trusted-publishing.js"
-import { noAuthCommand, readOnlyCommandValidationOperation, validationNoteOperation } from "./operations.js"
+import {
+  noAuthCommand,
+  readOnlyCommandValidationOperation,
+  trustedPublishingMessage,
+  validationNoteOperation
+} from "./operations.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigPyPiTrustedPublishing extends Schema.Class<ReleaseConfigPyPiTrustedPublishing>(
@@ -35,11 +40,10 @@ const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
   section: ReleaseConfigPyPiPublish,
   available: ReadonlyArray<Artifact>
 ) {
-  const artifacts = section.ids === undefined
-    ? available.filter((artifact) => artifact.kind === "wheel")
-    : yield* Effect.forEach(section.ids, (id) => findCatalogArtifact({
-      pipeId: "publish:pypi", field: "publish.pypi.ids", target: "PyPI"
-    }, available, id))
+  const artifacts = yield* selectByIdsOrDefault(section.ids, available,
+    (artifact) => artifact.kind === "wheel", {
+      source: { pipeId: "publish:pypi", field: "publish.pypi.ids", target: "PyPI" }
+    })
   if (artifacts.length === 0) return yield* Effect.fail(PlanError.make({
     pipeId: "publish:pypi", field: "artifacts", reason: "PyPI target must have at least one artifact consumer."
   }))
@@ -64,8 +68,11 @@ export const publishPyPiPlanner = featurePlanner<ReleaseConfigPyPiPublish>("publ
     if (section.trustedPublishing !== undefined) operations.push(validationNoteOperation({
       id: "pypi:twine-trusted-publishing-auth",
       description: "Record PyPI trusted publishing authentication mode.",
-      message:
-        `PyPI trusted publishing authenticates during twine upload with CI OIDC; twine check does not validate this mode. This target expects provider ${section.trustedPublishing.provider}, workflow ${section.trustedPublishing.workflow}, GitHub Actions permission id-token: write, and a trusted publisher configured on PyPI.`
+      message: trustedPublishingMessage({
+        target: "PyPI", publishCommand: "twine upload", validationCommand: "twine check",
+        provider: section.trustedPublishing.provider, workflow: section.trustedPublishing.workflow,
+        expectation: "a trusted publisher configured on PyPI"
+      })
     }))
     operations.push(
       check("pypi:twine-check", "Validate Python distribution metadata with twine check.", section, [

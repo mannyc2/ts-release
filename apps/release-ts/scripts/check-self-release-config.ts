@@ -1,95 +1,41 @@
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
-import { cwd, exit } from "node:process"
-import * as Schema from "effect/Schema"
-import { ReleaseIntent } from "../../../src/config/schema.js"
-import { platformTargetVariant } from "../../../src/grammar/platform.js"
-import { ReleaseIdentity } from "../../../src/grammar/state.js"
-import { normalizedName, renderTemplate } from "../../../src/grammar/template.js"
+import { exit } from "node:process"
 import { disposeReleaseRuntime, plan, type ReleasePlanSummary } from "../../../src/index.js"
+import {
+  appPackagePath,
+  binaryArtifactFacts,
+  configuredCliBuild,
+  decodeReleaseConfig,
+  expectedCliOutput,
+  expectedCliTargets,
+  expectedPackageName,
+  expectedRepositories,
+  identityFor,
+  isJsonObject,
+  packagePath,
+  readJson,
+  readOptionalText,
+  releaseConfigPath,
+  releaseWorkflowFileName,
+  runCommand,
+  stringField,
+  wheelArtifactFacts
+} from "./self-release-facts.js"
 
-const root = cwd()
-const appPackagePath = "apps/release-ts/package.json"
-const releaseConfigPath = "apps/release-ts/release.config.json"
-const expectedPackageName = "@mannyc1/ts-release"
 const description = "Portable artifact and package-manager distribution planning for TypeScript projects."
-const targets = ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64"] as const
-
-const decodeReleaseIntent = Schema.decodeUnknownSync(ReleaseIntent, { onExcessProperty: "error" })
-
-// Only for JSON the tool does not own a schema for (package manifests).
-const isJsonObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-
-const stringField = (record: Record<string, unknown>, key: string): string | undefined => {
-  const value = record[key]
-  return typeof value === "string" && value.length > 0 ? value : undefined
-}
-
-const readJson = (path: string): unknown =>
-  JSON.parse(readFileSync(resolve(root, path), "utf8"))
-
-const readText = (path: string): string | undefined => {
-  try {
-    return readFileSync(resolve(root, path), "utf8")
-  } catch {
-    return undefined
-  }
-}
-
-const identityFor = (packageName: string, packageVersion: string): ReleaseIdentity =>
-  ReleaseIdentity.make({
-    name: packageName,
-    normalizedName: normalizedName(packageName),
-    version: packageVersion,
-    tag: "",
-    commit: "",
-    shortCommit: "",
-    versionSource: "manifest",
-    snapshot: false
-  })
-
-const expectedBinaryPath = (version: string, target: string): string =>
-  `.release/artifacts/ts-release-${version}-${target}${target === "windows-x64" ? ".exe" : ""}`
-
-const wheelFacts = (version: string) => [
-  ["pypi-wheel-linux-x64", "py3-none-manylinux2014_x86_64", "linux", "x64", `ts_release/bin/ts-release-linux-x64`, `.release/artifacts/ts_release-${version}-py3-none-manylinux2014_x86_64.whl`],
-  ["pypi-wheel-linux-arm64", "py3-none-manylinux2014_aarch64", "linux", "arm64", `ts_release/bin/ts-release-linux-arm64`, `.release/artifacts/ts_release-${version}-py3-none-manylinux2014_aarch64.whl`],
-  ["pypi-wheel-darwin-x64", "py3-none-macosx_10_15_x86_64", "darwin", "x64", `ts_release/bin/ts-release-darwin-x64`, `.release/artifacts/ts_release-${version}-py3-none-macosx_10_15_x86_64.whl`],
-  ["pypi-wheel-darwin-arm64", "py3-none-macosx_11_0_arm64", "darwin", "arm64", `ts_release/bin/ts-release-darwin-arm64`, `.release/artifacts/ts_release-${version}-py3-none-macosx_11_0_arm64.whl`],
-  ["pypi-wheel-windows-x64", "py3-none-win_amd64", "windows", "x64", `ts_release/bin/ts-release-windows-x64.exe`, `.release/artifacts/ts_release-${version}-py3-none-win_amd64.whl`]
-] as const
-
-const streamText = async (stream: ReadableStream<Uint8Array> | null): Promise<string> =>
-  stream === null ? "" : await new Response(stream).text()
 
 const currentGitCommit = async (): Promise<string | undefined> => {
-  const subprocess = Bun.spawn(["git", "rev-parse", "--short", "HEAD"], {
-    cwd: root,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "ignore"
-  })
-  const stdout = await streamText(subprocess.stdout)
-  return await subprocess.exited === 0 ? stdout.trim() : undefined
+  const result = await runCommand(["git", "rev-parse", "--short", "HEAD"])
+  return result.exitCode === 0 ? result.stdout.trim() : undefined
 }
 
 const envExampleDocuments = (contents: string, name: string): boolean =>
   contents.split(/\r?\n/).some((line) => line.trim() === name || line.trim().startsWith(`${name}=`))
 
 const failures: Array<string> = []
-const manifest = readJson("package.json")
+const manifest = readJson(packagePath)
 const appManifest = readJson(appPackagePath)
 
-const decodedConfig = (): { readonly config?: ReleaseIntent; readonly error?: string } => {
-  try {
-    return { config: decodeReleaseIntent(readJson(releaseConfigPath)) }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return { error: message.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join(" | ") }
-  }
-}
-const { config, error: configError } = decodedConfig()
+const { config, error: configError } = decodeReleaseConfig(true)
 
 let summary: ReleasePlanSummary | undefined
 
@@ -120,8 +66,8 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
   if (project.name !== undefined || project.version !== undefined || project.tag !== undefined) {
     failures.push("release project must derive name, version, and tag from package manifest data")
   }
-  if (project.packagePath !== undefined && project.packagePath !== "package.json") {
-    failures.push(`release project packagePath ${String(project.packagePath)} must be package.json or omitted`)
+  if (project.packagePath !== undefined && project.packagePath !== packagePath) {
+    failures.push(`release project packagePath ${String(project.packagePath)} must be ${packagePath} or omitted`)
   }
   if (project.tagTemplate !== "v{version}") {
     failures.push(`release project tagTemplate ${String(project.tagTemplate)} must equal v{version}`)
@@ -137,52 +83,46 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
 
   if (version !== undefined && packageName !== undefined) {
     const identity = identityFor(packageName, version)
-    const build = (config.builds ?? []).find((item) => item.id === "cli")
+    const build = configuredCliBuild(config)
     if (build === undefined) {
       failures.push(`${releaseConfigPath} builds must include cli`)
-    } else if (build.builder !== "bun") {
-      failures.push("build cli builder must equal bun")
     } else {
       if (build.entry !== "apps/release-ts/src/cli/main.ts") failures.push("build cli entry must equal apps/release-ts/src/cli/main.ts")
       if (build.binaryName !== "ts-release") failures.push("build cli binaryName must equal ts-release")
       if (build.installPath !== "bin/ts-release") failures.push("build cli installPath must equal bin/ts-release")
       const configuredTargets = build.targets ?? []
-      if (configuredTargets.length !== targets.length || targets.some((target, index) => configuredTargets[index] !== target)) {
-        failures.push(`build cli targets must equal ${targets.join(", ")}`)
+      if (configuredTargets.length !== expectedCliTargets.length || expectedCliTargets.some((target, index) => configuredTargets[index] !== target)) {
+        failures.push(`build cli targets must equal ${expectedCliTargets.join(", ")}`)
       }
       const output = build.output
       if (output === undefined || !output.includes("{version}") || !output.includes("{targetTriple}") || !output.includes("{ext}")) {
         failures.push("build cli output must include {version}, {targetTriple}, and {ext}")
       } else {
-        for (const target of targets) {
-          const expanded = renderTemplate(output, {
-            identity,
-            platform: platformTargetVariant(target),
-            targetTriple: target
-          })
-          const expected = expectedBinaryPath(version, target)
-          if (expanded !== expected) {
-            failures.push(`build cli output for ${target} expands to ${expanded}; expected ${expected}`)
+        const expectedPaths = new Map(binaryArtifactFacts(build, identity, expectedCliOutput).map((fact) => [fact.target, fact.path]))
+        for (const fact of binaryArtifactFacts(build, identity)) {
+          const expected = expectedPaths.get(fact.target)
+          if (expected !== undefined && fact.path !== expected) {
+            failures.push(`build cli output for ${fact.target} expands to ${fact.path}; expected ${expected}`)
           }
         }
       }
     }
 
-    const artifactIds = new Set(summary?.artifacts.map((artifact) => artifact.id) ?? [])
     const artifactPaths = new Map(summary?.artifacts.map((artifact) => [artifact.id, artifact.path]) ?? [])
-    for (const target of targets) {
-      const id = `cli-${target}`
-      if (!artifactIds.has(id) || artifactPaths.get(id) !== expectedBinaryPath(version, target)) {
-        failures.push(`planned artifact ${id} must come from the CLI build at ${expectedBinaryPath(version, target)}`)
+    const binaries = build === undefined ? [] : binaryArtifactFacts(build, identity)
+    for (const fact of binaries) {
+      if (artifactPaths.get(fact.id) !== fact.path) {
+        failures.push(`planned artifact ${fact.id} must come from the CLI build at ${fact.path}`)
       }
     }
 
+    const wheelSection = config.pypiWheel
+    const wheels = wheelArtifactFacts(config, identity)
     const staticArtifacts = new Set((config.artifacts ?? []).map((artifact) => artifact.id))
-    for (const id of [...targets.map((target) => `cli-${target}`), ...wheelFacts(version).map(([id]) => id)]) {
+    for (const id of [...binaries.map(({ id }) => id), ...wheels.map(({ id }) => id)]) {
       if (staticArtifacts.has(id)) failures.push(`artifact ${id} must be declared by builds, not artifacts`)
     }
 
-    const wheelSection = config.pypiWheel
     if (wheelSection !== undefined) {
       const familyExpectations = [
         ["packageName", wheelSection.packageName, "ts-release"],
@@ -194,31 +134,34 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
         if (actual !== expected) failures.push(`pypiWheel ${field} must equal ${expected}`)
       }
     }
-    const wheelItems = wheelSection === undefined ? [] : wheelSection.wheels
-    const wheels = new Map(wheelItems.map((wheel) => [wheel.id, wheel]))
-    for (const [id, wheelTag, os, arch, wheelPath, expectedPath] of wheelFacts(version)) {
-      const wheel = wheels.get(id)
-      if (wheel === undefined) {
-        failures.push(`${releaseConfigPath} pypiWheel must include ${id}`)
+    const wheelById = new Map(wheels.map((wheel) => [wheel.id, wheel]))
+    for (const target of build?.targets ?? []) {
+      const expectedId = `pypi-wheel-${target}`
+      if (!wheelById.has(expectedId)) failures.push(`${releaseConfigPath} pypiWheel must include ${expectedId}`)
+    }
+    const binaryByTarget = new Map<string, string>(binaries.map((binary) => [binary.target, binary.path]))
+    for (const wheel of wheels) {
+      const binary = wheel.binary
+      if (binary === undefined) {
+        failures.push(`PyPI wheel ${wheel.id} must include one platform binary`)
         continue
       }
-      const expandedPath = renderTemplate(wheel.path, { identity })
-      if (expandedPath !== expectedPath) {
-        failures.push(`PyPI wheel ${id} path ${wheel.path} expands to ${expandedPath}; expected ${expectedPath}`)
+      const target = `${binary.os}-${binary.arch}`
+      const expectedId = `pypi-wheel-${target}`
+      if (wheel.id !== expectedId) failures.push(`PyPI wheel ${wheel.id} id must equal ${expectedId}`)
+      if (!wheel.path.endsWith(`-${wheel.wheelTag}.whl`)) {
+        failures.push(`PyPI wheel ${wheel.id} path ${wheel.path} must end with its configured wheelTag ${wheel.wheelTag}`)
       }
-      if (wheel.wheelTag !== wheelTag) failures.push(`PyPI wheel ${id} wheelTag ${String(wheel.wheelTag)} must equal ${wheelTag}`)
-      const binary = wheel.binaries[0]
-      if (binary === undefined) {
-        failures.push(`PyPI wheel ${id} must include binary ${os}-${arch}`)
-      } else {
-        if (binary.os !== os) failures.push(`PyPI wheel ${id} binary ${os}-${arch} os ${String(binary.os)} must equal ${os}`)
-        if (binary.arch !== arch) failures.push(`PyPI wheel ${id} binary ${os}-${arch} arch ${String(binary.arch)} must equal ${arch}`)
-        if (binary.wheelPath !== wheelPath) failures.push(`PyPI wheel ${id} binary ${os}-${arch} wheelPath ${String(binary.wheelPath)} must equal ${wheelPath}`)
-        const expandedSource = renderTemplate(binary.sourcePath, { identity })
-        const expectedSource = expectedBinaryPath(version, `${os}-${arch}`)
-        if (expandedSource !== expectedSource) {
-          failures.push(`PyPI wheel ${id} binary ${os}-${arch} sourcePath ${binary.sourcePath} expands incorrectly; expected ${expectedSource}`)
-        }
+      const expectedWheelPath = `${wheelSection?.moduleName}/bin/${wheelSection?.consoleScript}-${target}${binary.os === "windows" ? ".exe" : ""}`
+      if (binary.wheelPath !== expectedWheelPath) {
+        failures.push(`PyPI wheel ${wheel.id} binary ${target} wheelPath ${binary.wheelPath} must equal ${expectedWheelPath}`)
+      }
+      const expectedSource = binaryByTarget.get(target)
+      if (expectedSource === undefined || binary.sourcePath !== expectedSource) {
+        failures.push(`PyPI wheel ${wheel.id} binary ${target} sourcePath ${binary.sourcePath} must equal configured build path ${String(expectedSource)}`)
+      }
+      if (artifactPaths.get(wheel.id) !== wheel.path) {
+        failures.push(`planned artifact ${wheel.id} must come from the PyPI wheel build at ${wheel.path}`)
       }
     }
   }
@@ -241,7 +184,7 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
     if (typeof section !== "object" || section === null) failures.push(`self-release publish must include ${id}`)
   }
 
-  const envExample = readText(".env.example")
+  const envExample = readOptionalText(".env.example")
   const tokenNames = [npm?.tokenEnv, github?.tokenEnv]
     .filter((name): name is string => typeof name === "string")
   if (tokenNames.length > 0 && envExample === undefined) failures.push(".env.example must document release token environment variables")
@@ -256,7 +199,7 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
   const npmTrusted = typeof npm?.trustedPublishing === "object" ? npm.trustedPublishing : undefined
   if (
     npmTrusted?.provider !== "github-actions" ||
-    npmTrusted.workflow !== "release.yml" ||
+    npmTrusted.workflow !== releaseWorkflowFileName ||
     npmTrusted.verifyPackageExists !== true
   ) {
     failures.push("npm self-release target must use GitHub Actions trusted publishing")
@@ -265,25 +208,32 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
   if (github?.repository === "owner/repo") failures.push("GitHub release target repository must not use owner/repo placeholder")
 
   if (config.project.description !== description) failures.push("self-release project.description must match the package description")
-  if (config.project.homepage !== "https://github.com/mannyc2/ts-release") failures.push("self-release project.homepage must equal https://github.com/mannyc2/ts-release")
+  if (config.project.homepage !== `https://github.com/${expectedRepositories.github}`) failures.push(`self-release project.homepage must equal https://github.com/${expectedRepositories.github}`)
   if (config.project.license !== "MIT") failures.push("self-release project.license must equal MIT")
 
-  if (homebrew?.repository !== "mannyc2/homebrew-ts-release") failures.push("self-release target homebrew repository must equal mannyc2/homebrew-ts-release")
+  if (homebrew?.repository !== expectedRepositories.homebrew) failures.push(`self-release target homebrew repository must equal ${expectedRepositories.homebrew}`)
   if (homebrew?.formulaPath !== ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb") failures.push("self-release target homebrew formulaPath must equal .release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
   if (homebrew?.tapDirectory !== ".release/catalogs/homebrew-ts-release") failures.push("self-release target homebrew tapDirectory must equal .release/catalogs/homebrew-ts-release")
-  if (JSON.stringify(homebrew?.ids) !== JSON.stringify(["cli-darwin-arm64", "cli-darwin-x64"])) {
-    failures.push("self-release target homebrew ids must equal cli-darwin-arm64, cli-darwin-x64")
+  const configuredBinaries = version === undefined || packageName === undefined
+    ? []
+    : configuredCliBuild(config) === undefined
+    ? []
+    : binaryArtifactFacts(configuredCliBuild(config)!, identityFor(packageName, version))
+  const homebrewIds = configuredBinaries.filter(({ target }) => target.startsWith("darwin-")).map(({ id }) => id).sort()
+  if (JSON.stringify(homebrew?.ids) !== JSON.stringify(homebrewIds)) {
+    failures.push(`self-release target homebrew ids must equal ${homebrewIds.join(", ")}`)
   }
 
-  if (scoop?.repository !== "mannyc2/scoop-ts-release") failures.push("self-release target scoop repository must equal mannyc2/scoop-ts-release")
+  if (scoop?.repository !== expectedRepositories.scoop) failures.push(`self-release target scoop repository must equal ${expectedRepositories.scoop}`)
   if (scoop?.manifestPath !== ".release/catalogs/scoop-ts-release/bucket/ts-release.json") failures.push("self-release target scoop manifestPath must equal .release/catalogs/scoop-ts-release/bucket/ts-release.json")
   if (scoop?.bucketDirectory !== ".release/catalogs/scoop-ts-release") failures.push("self-release target scoop bucketDirectory must equal .release/catalogs/scoop-ts-release")
-  if (JSON.stringify(scoop?.ids) !== JSON.stringify(["cli-windows-x64"])) failures.push("self-release target scoop ids must equal cli-windows-x64")
+  const scoopIds = configuredBinaries.filter(({ target }) => target.startsWith("windows-")).map(({ id }) => id)
+  if (JSON.stringify(scoop?.ids) !== JSON.stringify(scoopIds)) failures.push(`self-release target scoop ids must equal ${scoopIds.join(", ")}`)
 
   if (pypi?.repositoryUrl !== "https://upload.pypi.org/legacy/") failures.push("self-release target pypi repositoryUrl must equal https://upload.pypi.org/legacy/")
   if (pypi?.pythonExecutable !== "python3") failures.push("self-release target pypi pythonExecutable must equal python3")
   const pypiTrusted = typeof pypi?.trustedPublishing === "object" ? pypi.trustedPublishing : undefined
-  if (pypiTrusted?.provider !== "github-actions" || pypiTrusted.workflow !== "release.yml" || pypiTrusted.publisherConfigured !== true) {
+  if (pypiTrusted?.provider !== "github-actions" || pypiTrusted.workflow !== releaseWorkflowFileName || pypiTrusted.publisherConfigured !== true) {
     failures.push("pypi trustedPublishing.publisherConfigured must equal true")
   }
 }

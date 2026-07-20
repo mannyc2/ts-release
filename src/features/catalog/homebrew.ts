@@ -16,8 +16,8 @@ import {
   projectPackageName,
   rejectInvalidCatalogArtifact,
   requireProjectFact,
-  selectByIdsOrDefault
 } from "./shared.js"
+import { selectByIdsOrDefault } from "../shared.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
 export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHomebrewPublish>(

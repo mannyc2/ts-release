@@ -26,6 +26,7 @@ const run = (cwd: string, apiBase: string) => runBunProcess(["bun", scriptPath],
 
 const releaseConfig = () => ({
   project: {},
+  builds: selfReleaseConfig.builds,
   pypiWheel: {
     ...selfReleaseConfig.pypiWheel,
     wheels: [{ ...selfReleaseConfig.pypiWheel.wheels[0]!, binaries: [] }]

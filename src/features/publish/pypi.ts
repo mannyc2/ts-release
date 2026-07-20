@@ -6,7 +6,7 @@ import { artifactIsDirectoryLike } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
-import { selectByIdsOrDefault } from "../catalog/shared.js"
+import { selectByIdsOrDefault } from "../shared.js"
 import {
   publishingAuthEnvNames,
   trustedPublishingConfigFields

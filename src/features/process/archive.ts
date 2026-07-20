@@ -8,7 +8,7 @@ import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent } from "../../gramma
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import { defaultArtifactBaseName, renderArtifactNameEffect } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
-import { selectByIdsOrDefault } from "../catalog/shared.js"
+import { selectByIdsOrDefault } from "../shared.js"
 
 export class ReleaseConfigArchiveFormatOverrides extends Schema.Class<ReleaseConfigArchiveFormatOverrides>(
   "ReleaseConfigArchiveFormatOverrides"

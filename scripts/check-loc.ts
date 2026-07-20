@@ -7,25 +7,25 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6189], // raised by plan 163 (project-owned metadata: required-fact errors cost more than the field deletions return)
+  ["src", 6242], // raised by plan 166 (maintainer accepted the abstraction-seam result after its LOC STOP)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
-  ["src/grammar", 825], // raised by plan 159 (hooks feature)
-  ["src/features", 1736], // raised by plan 163 (wheel family classes + typed required-metadata PlanErrors)
+  ["src/grammar", 842], // raised by plan 166 (shared operation requirement derivation)
+  ["src/features", 1769], // raised by plan 166 (shared selectors, formula assembly, and trusted-publishing notes)
   ["src/pack", 500],
   ["src/github", 267],
   ["src/run", 810], // raised by plan 159 (hooks feature)
   ["src/engine", 281],
   ["src/render", 405],
-  ["src/doctor", 262], // raised by plan 159 (hooks feature)
+  ["src/doctor", 256], // ratcheted by plan 166 (operation requirements derive from operation data)
   ["src/host", 417],
   ["src/api", 195],
   ["src/types", 13],
   ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
   ["apps/ts-release-action/src", 502], // raised by plan 162 (failed-build evidence upload)
-  ["test", 9566], // raised by plan 163 (metadata requirement, derivation, and hint coverage)
+  ["test", 9572], // raised by plan 166 (required self-release derivation regression after Stage C deletion was declined)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
-  ["apps/release-ts/scripts", 882]
+  ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
 ]
 
 const root = cwd()

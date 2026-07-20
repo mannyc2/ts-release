@@ -70,39 +70,6 @@ export const catalogArtifactUrl = (
       ? artifact.path
       : `https://github.com/${section.githubRepository}/releases/download/${identity.tag}/${artifactPathBaseName(artifact.path)}`)
 
-export const findCatalogArtifact = (
-  source: { readonly pipeId: string; readonly field: string; readonly target: string },
-  artifacts: ReadonlyArray<Artifact>,
-  artifactId: string
-): Effect.Effect<Artifact, PlanError> => {
-  const artifact = artifacts.find((candidate) => candidate.id === artifactId)
-  if (artifact !== undefined) {
-    return Effect.succeed(artifact)
-  }
-  return Effect.fail(PlanError.make({
-    pipeId: source.pipeId,
-    field: source.field,
-    reason: `${source.target} target references missing artifact ${artifactId}.`
-  }))
-}
-
-export const selectByIdsOrDefault = Effect.fn("catalog.selectByIdsOrDefault")(function*(
-  ids: ReadonlyArray<string> | undefined,
-  artifacts: ReadonlyArray<Artifact>,
-  defaultPredicate: (artifact: Artifact) => boolean,
-  options: {
-    readonly source?: { readonly pipeId: string; readonly field: string; readonly target: string } | undefined
-    readonly limit?: number | undefined
-  } = {}
-) {
-  const source = options.source
-  if (ids !== undefined) return source === undefined
-    ? artifacts.filter(({ id }) => ids.includes(id))
-    : yield* Effect.forEach(ids, (id) => findCatalogArtifact(source, artifacts, id))
-  const selected = artifacts.filter(defaultPredicate)
-  return options.limit === undefined ? selected : selected.slice(0, options.limit)
-})
-
 export const rejectInvalidCatalogArtifact = (
   source: { readonly pipeId: string; readonly field: string; readonly label: string },
   artifact: Artifact

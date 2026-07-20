@@ -1,5 +1,8 @@
 import { describe, expect, test } from "@effect/bun-test"
 import { mkdir, rm, writeFile } from "node:fs/promises"
+import * as Schema from "effect/Schema"
+import { ReleaseIntent } from "../src/config/schema.js"
+import { identityFor, wheelArtifactFacts } from "../apps/release-ts/scripts/self-release-facts.js"
 import { makeTempDirectory, runBunProcess, writeJsonFile } from "./helpers.js"
 import { join, resolve } from "node:path"
 import selfReleaseConfig from "../apps/release-ts/release.config.json" with { type: "json" }
@@ -92,6 +95,13 @@ const prepareWorkspace = async (): Promise<string> => {
 }
 
 describe("self-release artifact script", () => {
+  test("derives wheel expectations from the configured wheel ids", () => {
+    const config = Schema.decodeUnknownSync(ReleaseIntent)(selfReleaseConfig)
+    const facts = wheelArtifactFacts(config, identityFor("@mannyc1/ts-release", "1.2.3"))
+
+    expect(facts.map(({ id }) => id)).toEqual(config.pypiWheel?.wheels.map(({ id }) => id) ?? [])
+  })
+
   test("passes for staged binaries, wheels, and catalog metadata", async () => {
     const root = await prepareWorkspace()
     try {

@@ -275,8 +275,8 @@ const hardCutTerms = [
   ["ArtifactCatalog", "Artifact is the sole artifact vocabulary"],
   ["ArtifactInventoryItem", "the projected artifact inventory is forbidden"],
   ["ReleasePlanDocument", "ReleasePlan is the sole plan type"],
-  ["plan.state", "release-plan/v3 is flat"],
-  ["release-plan/v2", "v2 plan readers and encoders are forbidden"],
+  ["plan.state", "release-plan/v4 is flat"],
+  ["release-plan/v3", "v3 plan readers and encoders are forbidden"], ["release-plan/v2", "v2 plan readers and encoders are forbidden"],
   [["target", "count"].join("_"), "the Action emits surface_count only"]
 ] as const
 

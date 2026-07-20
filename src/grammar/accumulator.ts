@@ -3,19 +3,17 @@ import * as Effect from "effect/Effect"
 import { artifactPathBaseName, type Artifact } from "./artifact.js"
 import { PlanError } from "./errors.js"
 import type { Operation } from "./operation.js"
-import { emptyContribution, type FeatureSchedule, type PipeContribution } from "./planner.js"
-import * as Option from "effect/Option"
-import { PipeNotice, type ReleaseIdentity } from "./state.js"
+import type { FeatureSchedule, PipeContribution } from "./planner.js"
+import type { ReleaseIdentity } from "./state.js"
 
 export interface PlanAccumulator {
   readonly identity: ReleaseIdentity
   readonly artifacts: ReadonlyArray<Artifact>
   readonly operations: ReadonlyArray<Operation>
-  readonly notices: ReadonlyArray<PipeNotice>
 }
 
 export const emptyPlanAccumulator = (identity: ReleaseIdentity): PlanAccumulator => ({
-  identity, artifacts: [], operations: [], notices: []
+  identity, artifacts: [], operations: []
 })
 
 const duplicateValues = (
@@ -86,8 +84,7 @@ const appendContribution = Effect.fn("pipeline.appendContribution")(function*(
   return {
     identity: state.identity,
     artifacts: [...state.artifacts, ...contribution.artifacts],
-    operations: [...state.operations, ...contribution.operations],
-    notices: [...state.notices, ...contribution.notices]
+    operations: [...state.operations, ...contribution.operations]
   } satisfies PlanAccumulator
 })
 
@@ -96,14 +93,9 @@ export const runPipeline = Effect.fn("pipeline.runPipeline")(function*(
   planners: ReadonlyArray<FeatureSchedule>
 ) {
   let state = initialState
-  for (const [planner, section] of planners) {
-    const contribution = yield* Option.match(section, {
-      onNone: () => Effect.succeed({ ...emptyContribution, notices: [PipeNotice.make({
-        pipeId: planner.id, severity: "info", reason: "Config section is absent; pipe skipped."
-      })] }),
-      onSome: (value) => planner(value, { identity: state.identity, artifacts: state.artifacts })
-    })
-    state = yield* appendContribution(state, planner.id, contribution)
+  for (const schedule of planners) {
+    const contribution = yield* schedule.run({ identity: state.identity, artifacts: state.artifacts })
+    state = yield* appendContribution(state, schedule.id, contribution)
   }
   return state
 })

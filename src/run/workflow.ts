@@ -54,7 +54,6 @@ const planContext = (plan: ReleasePlan): OperationRunContext => ({
   root: plan.source.root,
   identity: plan.identity,
   artifacts: plan.artifacts,
-  notices: plan.notices,
   configPath: plan.source.configPath
 })
 

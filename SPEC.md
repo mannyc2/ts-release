@@ -145,7 +145,7 @@ returned. If the workflow and evidence persistence both fail, the full Effect
 Cause preserves both in explicit write-first order as
 `Cause.combine(writeCause, workflowCause)`; the write failure is primary when
 collapsed without discarding the workflow failure. Evidence remains the sole,
-unchanged `release-evidence/v2` wire contract.
+sole `release-evidence/v3` wire contract.
 
 Capability services capture native filesystem, path, HTTP, and process
 dependencies once in their live layers, and their methods have closed
@@ -243,20 +243,20 @@ The model should be deterministic and independent of terminal formatting or CLI 
 
 ### Release Plan
 
-A Schema-backed flat `release-plan/v3` value derived once from the release
+A Schema-backed flat `release-plan/v4` value derived once from the release
 model and transient planner accumulator. It contains identity, one canonical
-Artifact array, the complete ordered Operation array, notices, source metadata,
+Artifact array, the complete ordered Operation array, source metadata,
 and the evidence directory.
 
 The plan is the contract between planning, validation, execution, and CI review. It should be stable enough to diff in tests and inspect in logs.
 No durable fold carrier, duplicate inventory, hidden-operation projection, or
 older plan reader is part of this contract. Evidence is independently versioned
-and remains `release-evidence/v2`.
+and remains `release-evidence/v3`.
 
 ### Feature Planner
 
 A module that owns one config section or publish surface, resolves its wire
-shape into a narrow total input, and emits artifacts, notices, and operation
+shape into a narrow total input, and emits artifacts and operation
 data from that typed input.
 
 Planners should expose behavior through operation data: required credentials, validation commands, generated files, publish commands, risk grades, setup notes, and expected evidence.
@@ -275,7 +275,7 @@ Evidence should survive outside the process as JSON or another stable format. It
 For every workflow that starts, evidence persistence is finalized exactly once
 from workflow-local state on every exit, including typed failure, defect, and
 interruption. The sole durable evidence contract is
-`release-evidence/v2`.
+`release-evidence/v3`.
 
 ## Expected Public Surface
 
@@ -387,7 +387,7 @@ The implementation should stay narrow but honest:
 1. Load config.
 2. Stage declared artifact recipes when requested.
 3. Resolve into a release model with canonical artifacts and platform metadata.
-4. Fold transient planner contributions into the sole flat `release-plan/v3`.
+4. Fold transient planner contributions into the sole flat `release-plan/v4`.
 5. Render generated files only through explicit render operations.
 6. Validate with structured evidence.
 7. Print executable operations.

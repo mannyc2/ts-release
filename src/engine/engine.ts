@@ -1,6 +1,5 @@
 // Invariant: each workflow decodes, resolves, folds the fixed schedule, and finalizes evidence exactly once.
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import { configPath, loadReleaseIntent } from "../config/load.js"
 import { ConfigError } from "../config/errors.js"
 import type { ReleaseIntent } from "../config/schema.js"
@@ -9,7 +8,7 @@ import { ExecutionApproval } from "../grammar/approval.js"
 import { ReleasePlan, SourceMetadata } from "../grammar/plan.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../grammar/accumulator.js"
 import { ReleaseIdentity } from "../grammar/state.js"
-import { schedule } from "../grammar/planner.js"
+import { scheduled } from "../grammar/planner.js"
 import { archivePlanner } from "../features/process/archive.js"
 import { buildPlanner } from "../features/build/build.js"
 import { hooksBeforePlanner } from "../features/build/hooks.js"
@@ -73,13 +72,13 @@ const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
   const buildState = yield* runPipeline(
     emptyPlanAccumulator(release.identity),
     [
-      ...(Option.isSome(release.hooksBefore) ? [schedule(hooksBeforePlanner, release.hooksBefore)] : []),
-      schedule(buildPlanner, release.builds),
-      schedule(npmPackPlanner, release.npmPackage),
-      schedule(pypiWheelPlanner, release.pypiWheels),
-      schedule(importArtifactsPlanner, release.artifacts),
-      schedule(archivePlanner, release.archives),
-      schedule(checksumPlanner, release.checksum)
+      ...scheduled(hooksBeforePlanner, release.hooksBefore),
+      ...scheduled(buildPlanner, release.builds),
+      ...scheduled(npmPackPlanner, release.npmPackage),
+      ...scheduled(pypiWheelPlanner, release.pypiWheels),
+      ...scheduled(importArtifactsPlanner, release.artifacts),
+      ...scheduled(archivePlanner, release.archives),
+      ...scheduled(checksumPlanner, release.checksum)
     ]
   )
   return { release, buildState }
@@ -87,13 +86,13 @@ const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
 
 const resolveReleasePlan = (build: { readonly release: ResolvedRelease; readonly buildState: PlanAccumulator }) =>
   runPipeline(build.buildState, [
-    ...(Option.isSome(build.release.catalogs) ? [schedule(catalogGenericPlanner, build.release.catalogs)] : []),
-    schedule(publishNpmPlanner, build.release.npm),
-    schedule(publishPyPiPlanner, build.release.pypi),
-    schedule(publishGitHubPlanner, build.release.github),
-    ...(Option.isSome(build.release.custom) ? [schedule(publishCustomPlanner, build.release.custom)] : []),
-    ...(Option.isSome(build.release.catalogs) ? [schedule(publishCatalogGenericPlanner, build.release.catalogs)] : []),
-    ...(Option.isSome(build.release.hooksAfter) ? [schedule(hooksAfterPlanner, build.release.hooksAfter)] : [])
+    ...scheduled(catalogGenericPlanner, build.release.catalogs),
+    ...scheduled(publishNpmPlanner, build.release.npm),
+    ...scheduled(publishPyPiPlanner, build.release.pypi),
+    ...scheduled(publishGitHubPlanner, build.release.github),
+    ...scheduled(publishCustomPlanner, build.release.custom),
+    ...scheduled(publishCatalogGenericPlanner, build.release.catalogs),
+    ...scheduled(hooksAfterPlanner, build.release.hooksAfter)
   ])
 
 const loadReleaseBuild = Effect.fn("engine.loadReleaseBuild")(function*(options: RunOptions) {
@@ -117,11 +116,10 @@ const releasePlanFromAccumulator = (
   state: PlanAccumulator
 ): ReleasePlan =>
   ReleasePlan.make({
-    schemaVersion: "release-plan/v3",
+    schemaVersion: "release-plan/v4",
     identity: state.identity,
     artifacts: state.artifacts,
     operations: withDefaultVerifyRetry(state.operations, release.retry),
-    notices: state.notices,
     source: SourceMetadata.make({
       root,
       configPath: configPathName
@@ -155,14 +153,13 @@ const isStageOperation = (operation: Operation): operation is StageOperation =>
   operation.action._tag === "stage"
 
 const operationContext = (
-  state: Pick<PlanAccumulator, "identity" | "artifacts" | "notices">,
+  state: Pick<PlanAccumulator, "identity" | "artifacts">,
   root: string,
   configPathName: string | undefined
 ): OperationRunContext => ({
   root,
   identity: state.identity,
   artifacts: state.artifacts,
-  notices: state.notices,
   configPath: configPathName
 })
 

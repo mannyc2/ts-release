@@ -15,10 +15,10 @@ GitHub Action all use the same engine.
 | 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/features/`. |
 | 5 | Artifact | One Schema class in `src/grammar/artifact.ts`, including platform and typed extra data. |
 | 6 | Operation / Action | One operation class and seven live action tags in `src/grammar/operation.ts`. |
-| 7 | Release plan | The sole durable `release-plan/v3` Schema in `src/grammar/plan.ts`. |
+| 7 | Release plan | The sole durable `release-plan/v4` Schema in `src/grammar/plan.ts`. |
 | 8 | Accumulator | One private transient fold in `src/grammar/accumulator.ts`; never encoded or exported. |
 | 9 | Approval | One risk derivation in `src/grammar/approval.ts` plus whole-pass preflight in the executor. |
-| 10 | Evidence | Records and the sole durable `release-evidence/v2` bundle in `src/run/evidence.ts`. |
+| 10 | Evidence | Records and the sole durable `release-evidence/v3` bundle in `src/run/evidence.ts`. |
 | 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `src/run/content.ts`. |
 | 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/features/`. |
 | 13 | Services | Command, HTTP, staging, and GitHub capabilities injected at runtime boundaries. |
@@ -36,14 +36,15 @@ JSON/object config
   -> ReleaseIdentity + ResolvedRelease
   -> fixed ordered feature schedule
   -> private accumulator
-  -> canonical ReleasePlan v3
+  -> canonical ReleasePlan v4
   -> render / build / verify / approved release
-  -> EvidenceBundle v2
+  -> EvidenceBundle v3
 ```
 
 Config is decoded once. Identity and defaults are resolved once. Feature
-planners are pure with respect to release state: they contribute artifacts,
-operations, and notices but execute nothing. The accumulator is the uniqueness
+planners are pure with respect to release state: configured features contribute
+artifacts and operations but execute nothing. An absent feature contributes
+nothing. The accumulator is the uniqueness
 boundary for artifact ids, operation ids, paths, and names. Finalization creates
 the durable plan without an intermediate document DTO.
 
@@ -95,10 +96,10 @@ the shipped init bases. `.repos/` and `vendor/` are outside the product tree.
 
 ## Durable and public boundaries
 
-`ReleasePlan` v3 contains identity, artifacts, operations, notices, source, and
+`ReleasePlan` v4 contains identity, artifacts, operations, source, and
 evidence directory. Every planned operation remains visible. There is no older
 plan reader, hidden-stage projection, artifact inventory DTO, or output alias.
-Evidence v2 is independent and contains each operation's final status/outcome.
+Evidence v3 is independent and contains each operation's final status/outcome.
 
 The package root exposes config authoring plus `plan`, `build`, `verify`, and
 `release`. It does not export internal directory subpaths. Bare `release()` is

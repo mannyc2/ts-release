@@ -14,7 +14,7 @@ import { makePipelineIdentity, TestGitHubApiLayer } from "./helpers.js"
 import { makeTestCommandRunnerLayer, makeTestReleaseHttpLayer } from "./host-fakes.js"
 
 const identity = makePipelineIdentity()
-const context = { root: ".", identity, artifacts: [], notices: [] }
+const context = { root: ".", identity, artifacts: [] }
 const approval = ExecutionApproval.make({ execute: true, approveIrreversible: true })
 const operation = (id: string, phase: Operation["phase"], risk: Operation["risk"], fail = false) =>
   Operation.make({
@@ -24,7 +24,7 @@ const operation = (id: string, phase: Operation["phase"], risk: Operation["risk"
       : NoteAction.make({ message: id, severity: "info", skipped: false })
   })
 const plan = (operations: ReadonlyArray<Operation> = []) => ReleasePlan.make({
-  schemaVersion: "release-plan/v3", identity, artifacts: [], operations, notices: [],
+  schemaVersion: "release-plan/v4", identity, artifacts: [], operations,
   source: SourceMetadata.make({ root: "." }), evidenceDirectory: ".release/evidence"
 })
 const testLayer = (writes: Array<string>, failWrite = false) => Layer.mergeAll(
@@ -66,8 +66,8 @@ it.effect("finalizes partial evidence exactly once for every workflow exit", () 
     )
     expect(writes).toHaveLength(1)
     const written = JSON.parse(writes[0]!) as EvidenceBundle
-    expect(Object.keys(written)).toEqual(["schemaVersion", "releaseName", "releaseVersion", "notices", "records"])
-    expect([written.schemaVersion, written.releaseName, written.releaseVersion, written.notices]).toEqual(["release-evidence/v2", "release", "0.1.0", []])
+    expect(Object.keys(written)).toEqual(["schemaVersion", "releaseName", "releaseVersion", "records"])
+    expect([written.schemaVersion, written.releaseName, written.releaseVersion]).toEqual(["release-evidence/v3", "release", "0.1.0"])
     expect(written.records.map((record) => [record.operationId, record.status])).toEqual(
       testCase.ids.map((id) => [id, id.endsWith("-fail") ? "failed" : "passed"])
     )

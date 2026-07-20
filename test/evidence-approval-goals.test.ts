@@ -51,7 +51,6 @@ const operationContext = (plan: ReleasePlan) => ({
   root: plan.source.root,
   identity: plan.identity,
   artifacts: plan.artifacts,
-  notices: plan.notices,
   ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
 })
 

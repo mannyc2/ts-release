@@ -46,7 +46,6 @@ const runSelectedOperations = (
     root: plan.source.root,
     identity: plan.identity,
     artifacts: plan.artifacts,
-    notices: plan.notices,
     ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
   })
 
@@ -59,7 +58,6 @@ const runSelectedOperationsWithApproval = (
     root: plan.source.root,
     identity: plan.identity,
     artifacts: plan.artifacts,
-    notices: plan.notices,
     ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
   })
 

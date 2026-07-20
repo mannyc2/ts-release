@@ -47,7 +47,7 @@ import { type DeferredFileContent } from "../grammar/content.js"
 import { ExecutionApproval, requireExecutionApproval } from "../grammar/approval.js"
 import { optionalField } from "../grammar/optional-field.js"
 import type { Artifact } from "../grammar/artifact.js"
-import type { PipeNotice, ReleaseIdentity } from "../grammar/state.js"
+import type { ReleaseIdentity } from "../grammar/state.js"
 import {
   ArtifactStager,
   type StageOperation
@@ -62,7 +62,6 @@ export interface OperationRunContext {
   readonly root: string
   readonly identity: ReleaseIdentity
   readonly artifacts: ReadonlyArray<Artifact>
-  readonly notices?: ReadonlyArray<PipeNotice> | undefined
   readonly configPath?: string | undefined
 }
 
@@ -107,10 +106,9 @@ const instantRecord = Effect.fn("engine.instantRecord")(function*(
 
 export const bundleForContext = (context: OperationRunContext): EvidenceBundle =>
   EvidenceBundle.make({
-    schemaVersion: "release-evidence/v2",
+    schemaVersion: "release-evidence/v3",
     releaseName: context.identity.name,
     releaseVersion: context.identity.version,
-    notices: [...(context.notices ?? [])],
     records: []
   })
 
@@ -460,7 +458,6 @@ export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*
     const evidence = yield* runOperationEvidence(operation, approval, context)
     yield* Ref.update(ref, (bundle) => EvidenceBundle.make({
       ...bundle,
-      notices: [...bundle.notices],
       records: [...bundle.records, evidence]
     }))
     if (evidence.status === "failed") {

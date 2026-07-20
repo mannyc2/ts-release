@@ -1,39 +1,7 @@
 {
-  "schemaVersion": "release-evidence/v2",
+  "schemaVersion": "release-evidence/v3",
   "releaseName": "release",
   "releaseVersion": "0.1.0",
-  "notices": [
-    {
-      "pipeId": "build",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "build:pypi-wheel",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "import-artifacts",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "archive",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "checksum",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "publish:pypi",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    }
-  ],
   "records": [
     {
       "operationId": "npm:npm-version",

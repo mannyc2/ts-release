@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "release-plan/v3",
+  "schemaVersion": "release-plan/v4",
   "identity": {
     "name": "release-example-multi-target",
     "normalizedName": "release-example-multi-target",
@@ -329,33 +329,6 @@
           "redactedEnv": []
         }
       }
-    }
-  ],
-  "notices": [
-    {
-      "pipeId": "build",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "build:pypi-wheel",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "archive",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "checksum",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "publish:pypi",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
     }
   ],
   "source": {

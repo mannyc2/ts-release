@@ -1,4 +1,4 @@
-// Invariant: release-evidence/v2 is the only durable evidence shape and secrets are redacted before persistence.
+// Invariant: release-evidence/v3 is the only durable evidence shape and secrets are redacted before persistence.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { readEnvironment } from "../host/platform.js"
@@ -11,7 +11,6 @@ import {
   OperationPhase,
   OperationRisk
 } from "../grammar/operation.js"
-import { PipeNotice } from "../grammar/state.js"
 
 const ReleaseName = Schema.NonEmptyString
 const ReleaseVersion = Schema.NonEmptyString
@@ -76,11 +75,10 @@ export class EvidenceRecord extends Schema.Class<EvidenceRecord>("EvidenceRecord
   outcome: Schema.optional(ActionOutcome)
 }) {}
 
-export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundleV2")({
-  schemaVersion: Schema.Literal("release-evidence/v2"),
+export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundleV3")({
+  schemaVersion: Schema.Literal("release-evidence/v3"),
   releaseName: ReleaseName,
   releaseVersion: ReleaseVersion,
-  notices: Schema.Array(PipeNotice),
   records: Schema.Array(EvidenceRecord)
 }) {}
 

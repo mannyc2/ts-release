@@ -11,7 +11,7 @@ import { archivePlanner } from "../src/features/process/archive.js"
 import { checksumPlanner } from "../src/features/process/checksum.js"
 import { Artifact, ExecutableExtra, ImportedFileExtra, makeArtifact } from "../src/grammar/artifact.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
-import { schedule } from "../src/grammar/planner.js"
+import { scheduled } from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../src/grammar/accumulator.js"
 import { platformTargetVariant } from "../src/grammar/platform.js"
 import { makeArtifactStagerLayer } from "../src/pack/stager.js"
@@ -42,14 +42,13 @@ const planArchives = (archives: ReadonlyArray<Record<string, unknown>>, state: P
     })
   })
 describe("archive pipe", () => {
-  it.effect("records a skip notice when the archives section is absent", () =>
+  it.effect("contributes nothing when the archives section is absent", () =>
     Effect.gen(function*() {
       const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [] }))
       const state = yield* runPipeline(emptyPlanAccumulator(identity), [
-        schedule(archivePlanner, Option.fromUndefinedOr(config.archives))
+        ...scheduled(archivePlanner, Option.fromUndefinedOr(config.archives))
       ])
-      expect(state.operations).toHaveLength(0)
-      expect(state.notices).toEqual([{ pipeId: "archive", severity: "info", reason: "Config section is absent; pipe skipped." }])
+      expect(state).toEqual(emptyPlanAccumulator(identity))
     }))
   it.effect("groups executables by platform and renders GoReleaser-style default tarball names", () =>
     Effect.gen(function*() {
@@ -156,8 +155,8 @@ describe("archive pipe", () => {
     Effect.gen(function*() {
       const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [], archives: [{}], checksum: {} }))
       const state = yield* runPipeline(stateWith([linuxMusl]), [
-        schedule(archivePlanner, Option.fromUndefinedOr(config.archives)),
-        schedule(checksumPlanner, Option.fromUndefinedOr(config.checksum))
+        ...scheduled(archivePlanner, Option.fromUndefinedOr(config.archives)),
+        ...scheduled(checksumPlanner, Option.fromUndefinedOr(config.checksum))
       ])
       const checksum = state.artifacts.find((artifact) => artifact.kind === "checksum-file")
       expect(checksum?.extra).toMatchObject({ _tag: "checksum-file",

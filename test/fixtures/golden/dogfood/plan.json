@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "release-plan/v3",
+  "schemaVersion": "release-plan/v4",
   "identity": {
     "name": "@mannyc1/ts-release",
     "normalizedName": "mannyc1-ts-release",
@@ -979,23 +979,6 @@
           "redactedEnv": []
         }
       }
-    }
-  ],
-  "notices": [
-    {
-      "pipeId": "import-artifacts",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "archive",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "checksum",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
     }
   ],
   "source": {

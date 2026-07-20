@@ -32,7 +32,7 @@ import {
 import { Operation, WriteFileAction } from "../src/grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../src/grammar/content.js"
 import { ExecutionApproval } from "../src/grammar/approval.js"
-import { schedule } from "../src/grammar/planner.js"
+import { scheduled } from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../src/grammar/accumulator.js"
 import {
   makeTestCommandRunnerLayer,
@@ -97,20 +97,13 @@ const ExecutorLayer = Layer.mergeAll(
   })
 )
 describe("checksum pipe", () => {
-  it.effect("records a skip notice when the checksum section is absent", () =>
+  it.effect("contributes nothing when the checksum section is absent", () =>
     Effect.gen(function*() {
       const config = yield* parseReleaseIntent(releaseConfig({ artifacts: [] }))
       const state = yield* runPipeline(emptyPlanAccumulator(identity), [
-        schedule(checksumPlanner, Option.fromUndefinedOr(config.checksum))
+        ...scheduled(checksumPlanner, Option.fromUndefinedOr(config.checksum))
       ])
-      expect(state.operations).toHaveLength(0)
-      expect(state.notices).toEqual([
-        {
-          pipeId: "checksum",
-          severity: "info",
-          reason: "Config section is absent; pipe skipped."
-        }
-      ])
+      expect(state).toEqual(emptyPlanAccumulator(identity))
     }))
   it.effect("plans the default checksum artifact and deferred write operation", () =>
     Effect.gen(function*() {

@@ -116,8 +116,7 @@ describe("snapshot mode", () => {
         {
           root: ".",
           identity: snapshotIdentity,
-          artifacts: [],
-          notices: []
+          artifacts: []
         }
       )
       expect(evidence.status).toBe("refused")

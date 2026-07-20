@@ -159,7 +159,7 @@ describe("golden plan corpus", () => {
     })
   }
 
-  test("dogfood plan has an exact canonical v3 JSON fixture", async () => {
+  test("dogfood plan has an exact canonical v4 JSON fixture", async () => {
     const plan = await runEffect(planDogfood(), makeBunReleaseWorkflowRuntimeLayer({ root }))
     writeOrExpectFixture(fixturePath("dogfood", "plan.json"), stablePlanJson(plan, "dogfood", false))
   })

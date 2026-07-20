@@ -34,8 +34,7 @@ const releaseIdentity = makePipelineIdentity({ versionSource: "test" })
 const context = {
   root: ".",
   identity: releaseIdentity,
-  artifacts: [],
-  notices: []
+  artifacts: []
 }
 
 const baseLayer = (options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}) =>
@@ -247,8 +246,7 @@ describe("execution approval", () => {
         const evidence = yield* runEvidenceWorkflow(plan.operations, "validation", ExecutionApproval.none, {
           root: plan.source.root,
           identity: plan.identity,
-          artifacts: plan.artifacts,
-          notices: plan.notices
+          artifacts: plan.artifacts
         })
 
         expect(evidence.records.length).toBeGreaterThan(0)
@@ -261,8 +259,7 @@ describe("execution approval", () => {
         const planContext = {
           root: plan.source.root,
           identity: plan.identity,
-          artifacts: plan.artifacts,
-          notices: plan.notices
+          artifacts: plan.artifacts
         }
         for (const approval of [
           ExecutionApproval.none,

@@ -19,7 +19,7 @@ import { ArchiveIntent } from "../src/grammar/intent.js"
 import { ExecutionApproval } from "../src/grammar/approval.js"
 import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
 import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
-import { PipeNotice, ReleaseIdentity } from "../src/grammar/state.js"
+import { ReleaseIdentity } from "../src/grammar/state.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import {
@@ -61,18 +61,16 @@ const identity = (name: string = "release", version: string = "0.1.0"): ReleaseI
 const context = (releaseIdentity: ReleaseIdentity = identity()) => ({
   root: ".",
   identity: releaseIdentity,
-  artifacts: [],
-  notices: [] satisfies ReadonlyArray<PipeNotice>
+  artifacts: []
 })
 
 const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlan => {
   const releaseIdentity = identity(name, version)
   return ReleasePlan.make({
-    schemaVersion: "release-plan/v3",
+    schemaVersion: "release-plan/v4",
     identity: releaseIdentity,
     artifacts: [],
     operations: [],
-    notices: [],
     source: SourceMetadata.make({ root: "." }),
     evidenceDirectory: ".release/evidence"
   })
@@ -83,10 +81,9 @@ const evidenceBundle = (
   records: EvidenceBundle["records"] = []
 ): EvidenceBundle =>
   EvidenceBundle.make({
-    schemaVersion: "release-evidence/v2",
+    schemaVersion: "release-evidence/v3",
     releaseName: plan.identity.name,
     releaseVersion: plan.identity.version,
-    notices: [],
     records
   })
 

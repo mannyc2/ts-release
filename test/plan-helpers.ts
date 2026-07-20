@@ -68,7 +68,6 @@ const operationContext = (plan: TestPlan) => ({
   root: plan.document.source.root,
   identity: plan.document.identity,
   artifacts: plan.document.artifacts,
-  notices: plan.document.notices,
   configPath: plan.document.source.configPath
 })
 export const runEvidenceWorkflow = Effect.fn("test.runEvidenceWorkflow")(function*(

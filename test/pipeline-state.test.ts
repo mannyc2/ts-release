@@ -47,15 +47,14 @@ const operations = [
     target: "linux-x64", compileTarget: "bun-linux-x64", outfile: "dist/tool" }),
   producesArtifactIds: ["executable"] }), "build", "writes-local")
 ]
-const plan = ReleasePlan.make({ schemaVersion: "release-plan/v3",
+const plan = ReleasePlan.make({ schemaVersion: "release-plan/v4",
   identity: makePipelineIdentity(), artifacts, operations,
-  notices: [{ pipeId: "test", severity: "info", reason: "planned" }],
   source: SourceMetadata.make({ root: ".", configPath: "release.config.json" }),
   evidenceDirectory: ".release/evidence"
 })
 
 describe("release plan", () => {
-  test("round-trips every canonical artifact extra and operation action through v3", () => {
+  test("round-trips every canonical artifact extra and operation action through v4", () => {
     const encoded = Schema.encodeSync(ReleasePlan)(plan)
     const decoded = decodeReleasePlanSync(encoded)
     expect(Schema.encodeSync(ReleasePlan)(decoded)).toEqual(encoded)
@@ -70,17 +69,17 @@ describe("release plan", () => {
       expect(encoded.artifacts[0]).not.toHaveProperty(field)
   })
 
-  it.effect("uses the same strict v3 Schema for the effect decoder", () =>
+  it.effect("uses the same strict v4 Schema for the effect decoder", () =>
     Effect.gen(function*() {
       const decoded = yield* decodeReleasePlan(Schema.encodeSync(ReleasePlan)(plan))
-      expect(decoded.schemaVersion).toBe("release-plan/v3")
+      expect(decoded.schemaVersion).toBe("release-plan/v4")
       expect(decoded.operations).toHaveLength(7)
     }))
 
-  test("rejects v2, excess fields, removed grammar, and unsafe artifact paths", () => {
+  test("rejects v3, excess fields, removed grammar, and unsafe artifact paths", () => {
     const encoded = Schema.encodeSync(ReleasePlan)(plan)
     for (const invalid of [
-      { ...encoded, schemaVersion: "release-plan/v2" },
+      { ...encoded, schemaVersion: "release-plan/v3" },
       { ...encoded, legacy: true },
       { ...encoded, operations: [{ ...encoded.operations[0], action: { _tag: "http-check" } }] },
       { ...encoded, artifacts: [{ ...encoded.artifacts[0], kind: "signature" }] },
@@ -89,7 +88,7 @@ describe("release plan", () => {
         artifacts: [{ ...encoded.artifacts[0], path }, ...encoded.artifacts.slice(1)]
       }))
     ]) expect(() => decodeReleasePlanSync(invalid)).toThrow()
-    expect(() => decodeReleasePlanSync({ ...encoded, schemaVersion: "release-plan/v2" }))
-      .toThrow(/release-plan\/v3/)
+    expect(() => decodeReleasePlanSync({ ...encoded, schemaVersion: "release-plan/v3" }))
+      .toThrow(/release-plan\/v4/)
   })
 })

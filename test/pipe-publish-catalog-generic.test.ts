@@ -4,7 +4,7 @@ import * as Option from "effect/Option"
 import { catalogGenericPlanner, type CatalogEntry } from "../src/features/catalog/file.js"
 import { publishCatalogGenericPlanner } from "../src/features/publish/catalog-file.js"
 import type { Operation } from "../src/grammar/operation.js"
-import { schedule } from "../src/grammar/planner.js"
+import { scheduled } from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity } from "./helpers.js"
 const identity = makePipelineIdentity()
@@ -15,10 +15,10 @@ const commands = (operations: ReadonlyArray<Operation>) =>
   operations.map(({ action }) => action._tag === "command" ? action.command : undefined)
 
 describe("generic catalog publishing", () => {
-  it.effect("reports both absent-section notices", () => Effect.gen(function*() {
+  it.effect("contributes nothing for both absent catalog sections", () => Effect.gen(function*() {
     for (const planner of [catalogGenericPlanner, publishCatalogGenericPlanner]) {
-      const result = yield* runPipeline(emptyPlanAccumulator(identity), [schedule(planner, Option.none())])
-      expect(result.notices).toEqual([{ pipeId: planner.id, severity: "info", reason: "Config section is absent; pipe skipped." }])
+      const result = yield* runPipeline(emptyPlanAccumulator(identity), scheduled(planner, Option.none()))
+      expect(result).toEqual(emptyPlanAccumulator(identity))
     }
   }))
 

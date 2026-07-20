@@ -199,7 +199,7 @@ release config
   -> normalized release identity
   -> canonical build and imported artifacts
   -> installable artifact variants
-  -> one complete release-plan/v3 operation sequence
+  -> one complete release-plan/v4 operation sequence
   -> generated package-manager files
   -> explicit execution evidence
   -> post-publish verification
@@ -364,7 +364,7 @@ interpolate `{version}`.
 
 ## Plan Contract
 
-`release-plan/v3` is the sole plan document. It is flat, contains one
+`release-plan/v4` is the sole plan document. It is flat, contains one
 canonical artifact array, and exposes every planned build, wheel, import,
 archive, checksum, catalog, publish, and verification operation in contribution
 order. Phase selection is execution policy; it does not hide work from JSON,
@@ -372,7 +372,7 @@ text, Markdown, summaries, scripts, doctor, or Action counts.
 
 ```json
 {
-  "schemaVersion": "release-plan/v3",
+  "schemaVersion": "release-plan/v4",
   "identity": {
     "name": "pkg",
     "normalizedName": "pkg",
@@ -392,7 +392,6 @@ text, Markdown, summaries, scripts, doctor, or Action counts.
     }
   ],
   "operations": [],
-  "notices": [],
   "source": {
     "root": ".",
     "configPath": "release.config.json"
@@ -404,7 +403,7 @@ text, Markdown, summaries, scripts, doctor, or Action counts.
 The Action reports `operation_count` from this complete array and reports
 unique catalog/publish surfaces as `surface_count`.
 
-This is a hard cut: `release-plan/v2` documents are unsupported and there is
+This is a hard cut: `release-plan/v3` documents are unsupported and there is
 no fallback reader. The former Action `target_count` output was removed in
 favor of `surface_count`; config `packageExists` was replaced by
 `verifyPackageExists`; Homebrew `artifactId` was replaced by non-empty
@@ -493,10 +492,9 @@ Release and verification commands write JSON evidence bundles. The full
 
 ```json
 {
-  "schemaVersion": "release-evidence/v2",
+  "schemaVersion": "release-evidence/v3",
   "releaseName": "release",
   "releaseVersion": "0.1.0",
-  "notices": [],
   "records": [
     {
       "operationId": "npm:npm-pack-dry-run",

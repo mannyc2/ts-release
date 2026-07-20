@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import { Artifact, ImportedFileExtra, makeArtifact } from "../src/grammar/artifact.js"
 import { CheckFileAction, Operation } from "../src/grammar/operation.js"
-import { emptyContribution, featurePlanner, schedule, type FeatureSchedule } from "../src/grammar/planner.js"
+import { emptyContribution, featurePlanner, scheduled, type FeatureSchedule } from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity } from "./helpers.js"
 
@@ -18,11 +18,11 @@ const planner = (
   id: string,
   artifacts: ReadonlyArray<Artifact> = [],
   operations: ReadonlyArray<Operation> = []
-): FeatureSchedule => schedule(featurePlanner(id,
-  () => Effect.succeed({ ...emptyContribution, artifacts, operations })), Option.some(undefined))
+): FeatureSchedule => scheduled(featurePlanner(id,
+  () => Effect.succeed({ ...emptyContribution, artifacts, operations })), Option.some(undefined))[0]!
 
 describe("pipeline runner", () => {
-  it.effect("merges contributions in order, exposes earlier artifacts, and records skipped planners", () =>
+  it.effect("merges configured contributions in order and ignores absent features", () =>
     Effect.gen(function*() {
       const skipped = featurePlanner<string>("skipped", () => Effect.succeed(emptyContribution))
       const second = featurePlanner<string>("second", (_section, context) => {
@@ -34,13 +34,10 @@ describe("pipeline runner", () => {
           })
         })
       const state = yield* runPipeline(emptyPlanAccumulator(identity), [
-        schedule(skipped, Option.none()),
+        ...scheduled(skipped, Option.none()),
         planner("first", [artifact("first", "dist/first")], [operation("first:check")]),
-        schedule(second, Option.some("resolved"))
+        ...scheduled(second, Option.some("resolved"))
       ])
-      expect(state.notices).toEqual([{
-        pipeId: "skipped", severity: "info", reason: "Config section is absent; pipe skipped."
-      }])
       expect(state.artifacts.map(({ id }) => id)).toEqual(["first", "second"])
       expect(state.operations.map(({ id }) => id)).toEqual(["first:check", "second:check"])
     }))

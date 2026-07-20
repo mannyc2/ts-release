@@ -21,7 +21,6 @@ export interface ReleasePlanSummary {
   readonly identity: ReleaseIdentitySummary
   readonly artifacts: ReadonlyArray<ArtifactSummary>
   readonly operations: ReadonlyArray<OperationSummary>
-  readonly notices: ReleasePlan["notices"]
 }
 
 export interface BuildSummary extends ReleasePlanSummary {
@@ -63,8 +62,7 @@ export const operationSummary = (
 export const plannedSummary = (plan: ReleasePlan): ReleasePlanSummary => ({
   identity: identitySummary(plan.identity),
   artifacts: plan.artifacts.map((artifact) => artifactSummary(artifact)),
-  operations: plan.operations.map((operation) => operationSummary(operation)),
-  notices: plan.notices
+  operations: plan.operations.map((operation) => operationSummary(operation))
 })
 
 export const evidenceOperationStatuses = (

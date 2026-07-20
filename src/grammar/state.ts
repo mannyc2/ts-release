@@ -1,4 +1,4 @@
-// Invariant: release identity and planner notices each have one canonical Schema-backed representation.
+// Invariant: release identity has one canonical Schema-backed representation.
 import * as Schema from "effect/Schema"
 import { SemverVersion } from "./semver.js"
 
@@ -13,10 +13,4 @@ export class ReleaseIdentity extends Schema.Class<ReleaseIdentity>("PipelineRele
   notes: Schema.optional(Schema.String),
   versionSource: Schema.String,
   snapshot: Schema.Boolean
-}) {}
-
-export class PipeNotice extends Schema.Class<PipeNotice>("PipeNotice")({
-  pipeId: Schema.String,
-  severity: Schema.Literals(["info", "warning"]),
-  reason: Schema.String
 }) {}

@@ -1,10 +1,10 @@
-// Invariant: a feature planner contributes canonical data once, stamps its pipeId onto every operation, or emits its single explicit skip notice.
+// Invariant: a configured feature contributes canonical data once and stamps its pipeId onto every operation.
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import type { Artifact } from "./artifact.js"
 import { Operation } from "./operation.js"
 import type { PlanError } from "./errors.js"
-import { PipeNotice, type ReleaseIdentity } from "./state.js"
+import type { ReleaseIdentity } from "./state.js"
 
 export interface PlannerContext {
   readonly identity: ReleaseIdentity
@@ -14,7 +14,6 @@ export interface PlannerContext {
 export interface PipeContribution {
   readonly artifacts: ReadonlyArray<Artifact>
   readonly operations: ReadonlyArray<Operation>
-  readonly notices: ReadonlyArray<PipeNotice>
 }
 type PipeContributionInput = Partial<PipeContribution>
 
@@ -26,12 +25,14 @@ export interface FeaturePlanner<Section> {
   readonly id: string
 }
 
-export type FeatureSchedule = readonly [FeaturePlanner<unknown>, Option.Option<unknown>]
+export interface FeatureSchedule {
+  readonly id: string
+  readonly run: (context: PlannerContext) => Effect.Effect<PipeContribution, PlanError>
+}
 
 export const emptyContribution: PipeContribution = {
   artifacts: [],
-  operations: [],
-  notices: []
+  operations: []
 }
 
 // pipeId is owned by the featurePlanner binding and stamped onto every
@@ -56,5 +57,10 @@ export const featurePlanner = <Section>(
   { id }
 )
 
-export const schedule = <Section>(planner: FeaturePlanner<Section>, section: Option.Option<Section>): FeatureSchedule =>
-  [planner as FeaturePlanner<unknown>, section as Option.Option<unknown>]
+export const scheduled = <Section>(
+  planner: FeaturePlanner<Section>,
+  section: Option.Option<Section>
+): ReadonlyArray<FeatureSchedule> => Option.match(section, {
+  onNone: () => [],
+  onSome: (value) => [{ id: planner.id, run: (context) => planner(value, context) }]
+})

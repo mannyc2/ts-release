@@ -1,6 +1,5 @@
-homebrew:brew-audit	read-only
-homebrew:homebrew-push	externally-visible
-homebrew:homebrew-push:add	writes-local
-homebrew:homebrew-push:commit	writes-local
-homebrew:homebrew-render-formula	writes-local
+catalog:homebrew:push	externally-visible
+catalog:homebrew:push:add	writes-local
+catalog:homebrew:push:commit	writes-local
+catalog:homebrew:render	writes-local
 import-artifacts:archive:exists	read-only

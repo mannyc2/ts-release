@@ -13,17 +13,11 @@ import { schedule } from "../grammar/planner.js"
 import { archivePlanner } from "../features/process/archive.js"
 import { buildPlanner } from "../features/build/build.js"
 import { catalogGenericPlanner } from "../features/catalog/file.js"
-import { catalogHomebrewPlanner } from "../features/catalog/homebrew.js"
-import { catalogScoopPlanner } from "../features/catalog/scoop.js"
 import { checksumPlanner } from "../features/process/checksum.js"
 import { importArtifactsPlanner } from "../features/build/import-artifacts.js"
 import { npmPackPlanner } from "../features/build/npm-pack.js"
 import { publishCatalogGenericPlanner } from "../features/publish/catalog-file.js"
 import { publishGitHubPlanner } from "../features/publish/github.js"
-import {
-  publishHomebrewPlanner,
-  publishScoopPlanner
-} from "../features/publish/catalog-git.js"
 import { publishNpmPlanner } from "../features/publish/npm.js"
 import { publishPyPiPlanner } from "../features/publish/pypi.js"
 import { pypiWheelPlanner } from "../features/build/pypi-wheel.js"
@@ -90,14 +84,10 @@ const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
 
 const resolveReleasePlan = (build: { readonly release: ResolvedRelease; readonly buildState: PlanAccumulator }) =>
   runPipeline(build.buildState, [
-    schedule(catalogHomebrewPlanner, build.release.homebrew),
-    schedule(catalogScoopPlanner, build.release.scoop),
     ...(Option.isSome(build.release.catalogs) ? [schedule(catalogGenericPlanner, build.release.catalogs)] : []),
     schedule(publishNpmPlanner, build.release.npm),
     schedule(publishPyPiPlanner, build.release.pypi),
     schedule(publishGitHubPlanner, build.release.github),
-    schedule(publishHomebrewPlanner, build.release.homebrew),
-    schedule(publishScoopPlanner, build.release.scoop),
     ...(Option.isSome(build.release.catalogs) ? [schedule(publishCatalogGenericPlanner, build.release.catalogs)] : [])
   ])
 

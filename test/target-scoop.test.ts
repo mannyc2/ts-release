@@ -15,12 +15,16 @@ const plan = (config: string) => createTestPlan(config)
 describe("Scoop target", () => {
   test("plans the bucket, manifest parts, and git push", async () => {
     const release = await runEffect(plan(scoopConfig({ bucketDirectory: "bucket" })), ScoopLayer)
-    const render = release.operations.find(({ id }) => id === "scoop:scoop-render-manifest")
-    const publish = release.operations.find(({ id }) => id === "scoop:scoop-push")
-    expect(release.surfaceIds).toEqual(["scoop"])
+    const render = release.operations.find(({ id }) => id === "catalog:scoop:render")
+    const publish = release.operations.find(({ id }) => id === "catalog:scoop:push")
+    expect(release.surfaceIds).toEqual(["catalog", "file"])
+    expect(release.artifacts).toContainEqual(expect.objectContaining({
+      id: "catalog-file-scoop", producedBy: "catalog:file"
+    }))
     expect(render).toMatchObject({ description: expect.stringContaining("release.json"), action: {
-      _tag: "write-file", path: ".release/generated/release.json", contents: { _tag: "file-parts" }
+      _tag: "write-file", path: "bucket/.release/generated/release.json", contents: { _tag: "file-parts" }
     } })
+    expect(render?.pipeId).toBe("catalog:file")
     if (render?.action._tag === "write-file" && typeof render.action.contents !== "string") {
       expect(render.action.contents.parts.flatMap((part) =>
         typeof part === "string" ? [] : [part.artifactId]
@@ -32,20 +36,18 @@ describe("Scoop target", () => {
     expect(publish).toMatchObject({ risk: "externally-visible", action: { _tag: "command", command: {
       args: ["-C", "bucket", "push"], requiredEnv: [], redactedEnv: []
     } } })
+    expect(publish?.pipeId).toBe("publish:catalog")
   })
 
-  test("rejects tokenEnv because bucket pushes use Git credentials", async () => {
+  test("rejects removed tokenEnv with its migration hint", async () => {
     const error = await runEffect(plan(scoopConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), ScoopLayer)
-    expect(error).toMatchObject({ _tag: "PlanError" })
-    if (error._tag === "PlanError") {
-      for (const text of ["Scoop bucket targets", "plain git push", "Git credentials"])
-        expect(error.reason).toContain(text)
-    }
+    expect(error).toMatchObject({ _tag: "ConfigError", kind: "validation" })
+    if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
   })
 
-  test("keeps validation and render workflows visible", async () => {
+  test("keeps configured validation and render workflows visible", async () => {
     const result = await runEffect(Effect.gen(function*() {
-      const release = yield* plan(scoopConfig())
+      const release = yield* plan(scoopConfig({ validate: ["scoop-check", "--version", "{version}"] }))
       const validation = yield* validateTestPlan(release)
       const rendered = yield* renderTestPlan(
         release,
@@ -54,9 +56,26 @@ describe("Scoop target", () => {
       return { validation, rendered }
     }), ScoopLayer)
     expect(result.validation.records.find(({ operationId }) =>
-      operationId === "scoop:scoop-manifest-validation")?.status).toBe("passed")
+      operationId === "catalog:scoop:validate")?.status).toBe("passed")
     expect(result.rendered.records.map(({ operationId }) => operationId))
-      .toEqual(["scoop:scoop-render-manifest"])
+      .toEqual(["catalog:scoop:render"])
+  })
+
+  test("supports pull-request submission", async () => {
+    const release = await runEffect(plan(scoopConfig({ submit: "pull-request" })), ScoopLayer)
+    expect(release.operations.filter(({ id }) => id.startsWith("catalog:scoop:"))
+      .map(({ id }) => id)).toEqual([
+      "catalog:scoop:render",
+      "catalog:scoop:checkout",
+      "catalog:scoop:push:add",
+      "catalog:scoop:push:commit",
+      "catalog:scoop:push",
+      "catalog:scoop:pull-request"
+    ])
+    expect(release.operations.find(({ id }) => id === "catalog:scoop:pull-request")?.action)
+      .toMatchObject({ _tag: "command", command: { executable: "gh", args: expect.arrayContaining([
+        "pr", "create", "--repo", "owner/scoop-bucket", "--title", "Update release to 0.1.0"
+      ]) } })
   })
 
   test("preserves reference, file-shape, and checksum safeguards", async () => {
@@ -82,6 +101,6 @@ describe("Scoop target", () => {
       "\"format\":\"zip\"",
       "\"format\":\"zip\",\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
     )), ScoopLayer)
-    expect(manual.operations.map(({ id }) => id).includes("scoop:scoop-render-manifest")).toBe(true)
+    expect(manual.operations.map(({ id }) => id).includes("catalog:scoop:render")).toBe(true)
   })
 })

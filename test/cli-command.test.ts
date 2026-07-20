@@ -218,7 +218,7 @@ describe("cli command", () => {
         configPath
       ])
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")
+      expect(result.stdout).toContain("\"operationId\": \"catalog:homebrew:render\"")
       expect(result.stderr).toBe("")
       const contents = await readFile(formulaPath, "utf8")
       expect(contents).toContain("class Release < Formula")
@@ -672,7 +672,7 @@ describe("cli command", () => {
       )
       expectExitFailureTag(exit, "OperationFailedError")
       const evidence = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
-      expect(evidence).toContain("\"operationId\": \"homebrew:homebrew-render-formula\"")
+      expect(evidence).toContain("\"operationId\": \"catalog:homebrew:render\"")
       expect(evidence).toContain("\"operationId\": \"npm:npm-version\"")
       expect(evidence).toContain("\"phase\": \"catalog\"")
       expect(evidence).toContain("\"phase\": \"publish\"")

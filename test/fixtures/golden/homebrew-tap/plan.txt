@@ -2,37 +2,36 @@ release-example-homebrew@0.1.0
 commit: example
 evidence: .release/evidence
 artifacts: 2
-surfaces: 1
-operations: 6
+surfaces: 2
+operations: 5
 
 artifacts:
   - archive artifacts/release-example-homebrew-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
-  - homebrew-formula .release/generated/release-example-homebrew.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
+  - catalog-file-homebrew .release/generated/release-example-homebrew.rb [catalog-file] produced-by=catalog:file platform=none checksum=none
 
 surfaces:
-  - homebrew operations=5
+  - catalog operations=3
+  - file operations=1
 
 operations by risk:
   read-only:
     - import-artifacts:archive:exists Verify imported artifact archive exists.
     check-file: artifacts/release-example-homebrew-0.1.0.tgz
-    - homebrew:brew-audit Record simulated Homebrew formula validation.
-    note: Homebrew formula validation is simulated by the deterministic release plan.
   writes-local:
-    - homebrew:homebrew-render-formula Render Homebrew formula release-example-homebrew.rb.
+    - catalog:homebrew:render Render homebrew catalog file .release/generated/release-example-homebrew.rb.
     write: .release/generated/release-example-homebrew.rb
     approval: execute
-    - homebrew:homebrew-push:add Stage release-example-homebrew.rb for homebrew.
+    - catalog:homebrew:push:add Stage release-example-homebrew.rb for catalog.
     command: git -C . add .release/generated/release-example-homebrew.rb
     argv: ["git","-C",".","add",".release/generated/release-example-homebrew.rb"]
     approval: execute
-    - homebrew:homebrew-push:commit Commit release-example-homebrew.rb for homebrew.
+    - catalog:homebrew:push:commit Commit release-example-homebrew.rb for catalog.
     command: git -C . commit -m Update release-example-homebrew to 0.1.0
     argv: ["git","-C",".","commit","-m","Update release-example-homebrew to 0.1.0"]
     approval: execute
   -- approval boundary: externally visible and irreversible operations require explicit approval --
   externally-visible:
-    - homebrew:homebrew-push Push Homebrew tap update for release-example-homebrew@0.1.0.
+    - catalog:homebrew:push Push homebrew catalog update for release-example-homebrew@0.1.0.
     command: git -C . push
     argv: ["git","-C",".","push"]
     approval: execute

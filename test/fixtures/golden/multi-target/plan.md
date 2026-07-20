@@ -5,9 +5,9 @@
 summary: release-example-multi-target@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 15
+operations: 14
 risk:
-  read-only: 9
+  read-only: 8
   writes-local: 3
   externally-visible: 2
   irreversible: 1
@@ -15,23 +15,24 @@ execute required: 6
 irreversible approval required: 1
 
 surfaces:
+  - catalog operations=3
+  - file operations=1
   - github operations=3
-  - homebrew operations=5
   - npm operations=6
 
 approval-required operations:
-  - homebrew:homebrew-render-formula: --execute (writes-local)
+  - catalog:homebrew:render: --execute (writes-local)
   - npm:npm-publish: --execute + --approve-publish (irreversible)
   - github:github-release-create: --execute (externally-visible)
-  - homebrew:homebrew-push:add: --execute (writes-local)
-  - homebrew:homebrew-push:commit: --execute (writes-local)
-  - homebrew:homebrew-push: --execute (externally-visible)
+  - catalog:homebrew:push:add: --execute (writes-local)
+  - catalog:homebrew:push:commit: --execute (writes-local)
+  - catalog:homebrew:push: --execute (externally-visible)
 
 ## Artifacts
 
 - npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
 - archive artifacts/release-example-multi-target-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
-- homebrew-formula .release/generated/release-example-multi-target.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
+- catalog-file-homebrew .release/generated/release-example-multi-target.rb [catalog-file] produced-by=catalog:file platform=none checksum=none
 
 ## Operations By Risk
 
@@ -144,30 +145,22 @@ Command argv:
 - github-api: verify release owner/release-example-multi-target v0.1.0
 - assets: 1
 
-#### homebrew:brew-audit
-
-- target: homebrew
-- risk: read-only
-- approval: none
-- why: Record simulated Homebrew formula validation.
-- note: Homebrew formula validation is simulated by the deterministic release plan.
-
 ### writes-local
 
-#### homebrew:homebrew-render-formula
+#### catalog:homebrew:render
 
-- target: homebrew
+- target: file
 - risk: writes-local
 - approval: --execute
-- why: Render Homebrew formula release-example-multi-target.rb.
+- why: Render homebrew catalog file .release/generated/release-example-multi-target.rb.
 - write path: .release/generated/release-example-multi-target.rb
 
-#### homebrew:homebrew-push:add
+#### catalog:homebrew:push:add
 
-- target: homebrew
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Stage release-example-multi-target.rb for homebrew.
+- why: Stage release-example-multi-target.rb for catalog.
 
 Command argv:
 
@@ -181,12 +174,12 @@ Command argv:
 ]
 ```
 
-#### homebrew:homebrew-push:commit
+#### catalog:homebrew:push:commit
 
-- target: homebrew
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Commit release-example-multi-target.rb for homebrew.
+- why: Commit release-example-multi-target.rb for catalog.
 
 Command argv:
 
@@ -214,12 +207,12 @@ Command argv:
 - github-api: create release owner/release-example-multi-target v0.1.0
 - assets: 1
 
-#### homebrew:homebrew-push
+#### catalog:homebrew:push
 
-- target: homebrew
+- target: catalog
 - risk: externally-visible
 - approval: --execute
-- why: Push Homebrew tap update for release-example-multi-target@0.1.0.
+- why: Push homebrew catalog update for release-example-multi-target@0.1.0.
 
 Command argv:
 

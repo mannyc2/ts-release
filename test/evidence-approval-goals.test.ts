@@ -148,7 +148,7 @@ describe("minimal evidence and approval goals", () => {
         readonly records?: ReadonlyArray<{ readonly operationId?: string; readonly phase?: string; readonly status?: string }>
       }
       const records = parsed.records ?? []
-      expect(records.map((record) => record.operationId)).toContain("homebrew:homebrew-render-formula")
+      expect(records.map((record) => record.operationId)).toContain("catalog:homebrew:render")
       expect(records.map((record) => record.operationId)).toContain("npm:npm-version")
       expect(records.some((record) => record.operationId === "npm:npm-publish")).toBe(false)
       expect(records.some((record) => record.phase === "catalog")).toBe(true)

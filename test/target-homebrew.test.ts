@@ -15,9 +15,13 @@ const plan = (config: string) => createTestPlan(config)
 describe("Homebrew target", () => {
   test("plans the tap, formula parts, and git push", async () => {
     const release = await runEffect(plan(homebrewConfig()), HomebrewLayer)
-    const render = release.operations.find(({ id }) => id === "homebrew:homebrew-render-formula")
-    const publish = release.operations.find(({ id }) => id === "homebrew:homebrew-push")
-    expect(release.surfaceIds).toEqual(["homebrew"])
+    const render = release.operations.find(({ id }) => id === "catalog:homebrew:render")
+    const publish = release.operations.find(({ id }) => id === "catalog:homebrew:push")
+    expect(release.surfaceIds).toEqual(["catalog", "file"])
+    expect(release.artifacts).toContainEqual(expect.objectContaining({
+      id: "catalog-file-homebrew", producedBy: "catalog:file"
+    }))
+    expect(render?.pipeId).toBe("catalog:file")
     expect(render).toMatchObject({ description: expect.stringContaining("release.rb"), action: {
       _tag: "write-file", path: ".release/generated/release.rb", contents: { _tag: "file-parts" }
     } })
@@ -31,20 +35,18 @@ describe("Homebrew target", () => {
     expect(publish).toMatchObject({ risk: "externally-visible", action: { _tag: "command", command: {
       args: ["-C", ".", "push"], requiredEnv: [], redactedEnv: []
     } } })
+    expect(publish?.pipeId).toBe("publish:catalog")
   })
 
-  test("rejects tokenEnv because tap pushes use Git credentials", async () => {
+  test("rejects removed tokenEnv with its migration hint", async () => {
     const error = await runEffect(plan(homebrewConfig({ tokenEnv: "GH_TOKEN" })).pipe(Effect.flip), HomebrewLayer)
-    expect(error).toMatchObject({ _tag: "PlanError" })
-    if (error._tag === "PlanError") {
-      for (const text of ["Homebrew tap targets", "plain git push", "Git credentials"])
-        expect(error.reason).toContain(text)
-    }
+    expect(error).toMatchObject({ _tag: "ConfigError", kind: "validation" })
+    if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
   })
 
-  test("keeps validation and render workflows visible", async () => {
+  test("keeps configured validation and render workflows visible", async () => {
     const result = await runEffect(Effect.gen(function*() {
-      const release = yield* plan(homebrewConfig())
+      const release = yield* plan(homebrewConfig({ validate: ["brew", "audit", "--version", "{version}"] }))
       const validation = yield* validateTestPlan(release)
       const rendered = yield* renderTestPlan(
         release,
@@ -52,10 +54,27 @@ describe("Homebrew target", () => {
       )
       return { validation, rendered }
     }), HomebrewLayer)
-    expect(result.validation.records.find(({ operationId }) => operationId === "homebrew:brew-audit")?.status)
+    expect(result.validation.records.find(({ operationId }) => operationId === "catalog:homebrew:validate")?.status)
       .toBe("passed")
     expect(result.rendered.records.map(({ operationId }) => operationId))
-      .toEqual(["homebrew:homebrew-render-formula"])
+      .toEqual(["catalog:homebrew:render"])
+  })
+
+  test("supports pull-request submission", async () => {
+    const release = await runEffect(plan(homebrewConfig({ submit: "pull-request" })), HomebrewLayer)
+    expect(release.operations.filter(({ id }) => id.startsWith("catalog:homebrew:"))
+      .map(({ id }) => id)).toEqual([
+      "catalog:homebrew:render",
+      "catalog:homebrew:checkout",
+      "catalog:homebrew:push:add",
+      "catalog:homebrew:push:commit",
+      "catalog:homebrew:push",
+      "catalog:homebrew:pull-request"
+    ])
+    expect(release.operations.find(({ id }) => id === "catalog:homebrew:pull-request")?.action)
+      .toMatchObject({ _tag: "command", command: { executable: "gh", args: expect.arrayContaining([
+        "pr", "create", "--repo", "owner/homebrew-tap", "--title", "Update release to 0.1.0"
+      ]) } })
   })
 
   test("preserves reference, file-shape, and checksum safeguards", async () => {
@@ -81,6 +100,6 @@ describe("Homebrew target", () => {
       "\"format\":\"tarball\"",
       "\"format\":\"tarball\",\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
     )), HomebrewLayer)
-    expect(manual.operations.map(({ id }) => id).includes("homebrew:homebrew-render-formula")).toBe(true)
+    expect(manual.operations.map(({ id }) => id).includes("catalog:homebrew:render")).toBe(true)
   })
 })

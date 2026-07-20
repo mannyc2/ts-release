@@ -192,10 +192,10 @@
       }
     },
     {
-      "id": "homebrew-formula",
+      "id": "catalog-file-homebrew",
       "kind": "catalog-file",
-      "path": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
-      "producedBy": "catalog:homebrew",
+      "path": ".release/catalogs/homebrew-ts-release/.release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
+      "producedBy": "catalog:file",
       "extra": {
         "_tag": "catalog-file",
         "catalog": "homebrew",
@@ -203,10 +203,10 @@
       }
     },
     {
-      "id": "scoop-manifest",
+      "id": "catalog-file-scoop",
       "kind": "catalog-file",
-      "path": ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
-      "producedBy": "catalog:scoop",
+      "path": ".release/catalogs/scoop-ts-release/.release/catalogs/scoop-ts-release/bucket/ts-release.json",
+      "producedBy": "catalog:file",
       "extra": {
         "_tag": "catalog-file",
         "catalog": "scoop",
@@ -481,14 +481,14 @@
       }
     },
     {
-      "id": "homebrew:homebrew-render-formula",
-      "pipeId": "catalog:homebrew",
+      "id": "catalog:homebrew:render",
+      "pipeId": "catalog:file",
       "phase": "catalog",
       "risk": "writes-local",
-      "description": "Render Homebrew formula ts-release.rb.",
+      "description": "Render homebrew catalog file .release/catalogs/homebrew-ts-release/.release/catalogs/homebrew-ts-release/Formula/ts-release.rb.",
       "action": {
         "_tag": "write-file",
-        "path": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
+        "path": ".release/catalogs/homebrew-ts-release/.release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
         "contents": {
           "_tag": "file-parts",
           "parts": [
@@ -509,14 +509,14 @@
       }
     },
     {
-      "id": "scoop:scoop-render-manifest",
-      "pipeId": "catalog:scoop",
+      "id": "catalog:scoop:render",
+      "pipeId": "catalog:file",
       "phase": "catalog",
       "risk": "writes-local",
-      "description": "Render Scoop manifest ts-release.json.",
+      "description": "Render scoop catalog file .release/catalogs/scoop-ts-release/.release/catalogs/scoop-ts-release/bucket/ts-release.json.",
       "action": {
         "_tag": "write-file",
-        "path": ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
+        "path": ".release/catalogs/scoop-ts-release/.release/catalogs/scoop-ts-release/bucket/ts-release.json",
         "contents": {
           "_tag": "file-parts",
           "parts": [
@@ -855,24 +855,11 @@
       }
     },
     {
-      "id": "homebrew:brew-audit",
-      "pipeId": "publish:homebrew",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Record simulated Homebrew formula validation.",
-      "action": {
-        "_tag": "note",
-        "message": "Homebrew formula validation is simulated by the deterministic release plan.",
-        "severity": "info",
-        "skipped": false
-      }
-    },
-    {
-      "id": "homebrew:homebrew-push:add",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push:add",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Stage ts-release.rb for homebrew.",
+      "description": "Stage ts-release.rb for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -881,7 +868,7 @@
             "-C",
             ".release/catalogs/homebrew-ts-release",
             "add",
-            "Formula/ts-release.rb"
+            ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb"
           ],
           "requiredEnv": [],
           "redactedEnv": []
@@ -889,11 +876,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-push:commit",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push:commit",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Commit ts-release.rb for homebrew.",
+      "description": "Commit ts-release.rb for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -911,11 +898,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-push",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "externally-visible",
-      "description": "Push Homebrew tap update for @mannyc1/ts-release@0.1.0.",
+      "description": "Push homebrew catalog update for @mannyc1/ts-release@0.1.0.",
       "action": {
         "_tag": "command",
         "command": {
@@ -931,24 +918,11 @@
       }
     },
     {
-      "id": "scoop:scoop-manifest-validation",
-      "pipeId": "publish:scoop",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Record simulated Scoop manifest validation.",
-      "action": {
-        "_tag": "note",
-        "message": "Scoop manifest validation is simulated by the deterministic release plan.",
-        "severity": "info",
-        "skipped": false
-      }
-    },
-    {
-      "id": "scoop:scoop-push:add",
-      "pipeId": "publish:scoop",
+      "id": "catalog:scoop:push:add",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Stage ts-release.json for scoop.",
+      "description": "Stage ts-release.json for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -957,7 +931,7 @@
             "-C",
             ".release/catalogs/scoop-ts-release",
             "add",
-            "bucket/ts-release.json"
+            ".release/catalogs/scoop-ts-release/bucket/ts-release.json"
           ],
           "requiredEnv": [],
           "redactedEnv": []
@@ -965,11 +939,11 @@
       }
     },
     {
-      "id": "scoop:scoop-push:commit",
-      "pipeId": "publish:scoop",
+      "id": "catalog:scoop:push:commit",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Commit ts-release.json for scoop.",
+      "description": "Commit ts-release.json for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -987,11 +961,11 @@
       }
     },
     {
-      "id": "scoop:scoop-push",
-      "pipeId": "publish:scoop",
+      "id": "catalog:scoop:push",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "externally-visible",
-      "description": "Push Scoop bucket update for @mannyc1/ts-release@0.1.0.",
+      "description": "Push scoop catalog update for @mannyc1/ts-release@0.1.0.",
       "action": {
         "_tag": "command",
         "command": {

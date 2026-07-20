@@ -29,27 +29,7 @@
       "reason": "Config section is absent; pipe skipped."
     },
     {
-      "pipeId": "catalog:homebrew",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "catalog:scoop",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
       "pipeId": "publish:pypi",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "publish:homebrew",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "publish:scoop",
       "severity": "info",
       "reason": "Config section is absent; pipe skipped."
     }

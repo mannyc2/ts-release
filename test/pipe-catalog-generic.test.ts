@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { Artifact } from "../src/grammar/artifact.js"
+import { FilePartsContent, Sha256Hole } from "../src/grammar/content.js"
 import { catalogGenericPlanner, ReleaseConfigCatalogEntry, ReleaseConfigCatalogFactHole,
   type CatalogEntry } from "../src/features/catalog/file.js"
 import { makePipelineIdentity } from "./helpers.js"
@@ -40,6 +41,18 @@ describe("generic catalog pipe", () => {
     expect(contribution.operations[0]?.action).toMatchObject({ contents: {
       _tag: "file-parts", parts: ["ab", { artifactId: "asset" }, "cd"]
     } })
+  }))
+  it.effect("accepts resolved content builders", () => Effect.gen(function*() {
+    const contribution = yield* plan([{
+      ...entry(),
+      content: () => Effect.succeed(FilePartsContent.make({
+        parts: ["hash=", Sha256Hole.make({ artifactId: "asset" })]
+      }))
+    }])
+    expect(contribution.operations[0]?.action).toMatchObject({
+      _tag: "write-file",
+      contents: { _tag: "file-parts", parts: ["hash=", { artifactId: "asset" }] }
+    })
   }))
   it.effect("rejects missing artifacts, repositories, and duplicate ids", () => Effect.gen(function*() {
     const errors = yield* Effect.all([

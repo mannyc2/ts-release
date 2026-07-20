@@ -243,7 +243,7 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
   }
 
   const envExample = readText(".env.example")
-  const tokenNames = [npm?.tokenEnv, github?.tokenEnv, homebrew?.tokenEnv, scoop?.tokenEnv]
+  const tokenNames = [npm?.tokenEnv, github?.tokenEnv]
     .filter((name): name is string => typeof name === "string")
   if (tokenNames.length > 0 && envExample === undefined) failures.push(".env.example must document release token environment variables")
   for (const name of tokenNames) {

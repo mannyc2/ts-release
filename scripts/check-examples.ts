@@ -28,15 +28,17 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
     "github:github-release-create"
   ]],
   ["homebrew-tap", [
-    "surfaces: 1",
-    "  - homebrew operations=",
-    "homebrew:homebrew-render-formula",
+    "surfaces: 2",
+    "  - catalog operations=",
+    "  - file operations=",
+    "catalog:homebrew:render",
     "write: .release/generated/"
   ]],
   ["multi-target", [
-    "surfaces: 3",
+    "surfaces: 4",
+    "  - catalog operations=",
+    "  - file operations=",
     "  - github operations=",
-    "  - homebrew operations=",
     "  - npm operations=",
     "approval: execute"
   ]],
@@ -61,21 +63,22 @@ const expectedSnippets = new Map<string, ReadonlyArray<string>>([
   ]],
   ["portable-cli", [
     "surfaces: 5",
+    "  - catalog operations=",
+    "  - file operations=",
     "  - github operations=",
-    "  - homebrew operations=",
     "  - npm operations=",
     "  - pypi operations=",
-    "  - scoop operations=",
     "github:github-release-create",
-    "homebrew:homebrew-render-formula",
-    "scoop:scoop-render-manifest",
+    "catalog:homebrew:render",
+    "catalog:scoop:render",
     "pypi:twine-upload"
   ]],
   ["scoop-bucket", [
-    "surfaces: 1",
-    "  - scoop operations=",
-    "scoop:scoop-render-manifest",
-    "scoop:scoop-push",
+    "surfaces: 2",
+    "  - catalog operations=",
+    "  - file operations=",
+    "catalog:scoop:render",
+    "catalog:scoop:push",
     "write: .release/generated/"
   ]]
 ])

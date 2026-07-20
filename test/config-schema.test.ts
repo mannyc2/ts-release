@@ -106,6 +106,16 @@ describe("config schema", () => {
       }),
       ["$.publish.homebrew.artifactId", "artifactIds"]
     ))
+  for (const [target, hint] of [
+    ["homebrew", "Homebrew tap publishing uses ambient git credentials; tokenEnv was removed."],
+    ["scoop", "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed."]
+  ] as const) {
+    it.effect(`rejects removed ${target} tokenEnv with a migration hint`, () =>
+      expectValidationFailure(
+        decodeReleaseIntent({ project: {}, publish: { [target]: { tokenEnv: "TOKEN" } } }),
+        [`$.publish.${target}.tokenEnv`, hint]
+      ))
+  }
   const unknownFieldInputs: ReadonlyArray<readonly [string, unknown, string]> = [
     ["top-level", { project: {}, publish: {}, unexpectedTopLevel: true }, `["unexpectedTopLevel"]`],
     ["nested object", { project: { unexpectedProjectField: true }, publish: {} }, `["project"]["unexpectedProjectField"]`],

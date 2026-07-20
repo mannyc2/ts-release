@@ -5,9 +5,9 @@
 summary: @scope/portable-example@0.1.0
 commit: abc123
 evidence: .release/evidence/0.1.0
-operations: 34
+operations: 32
 risk:
-  read-only: 13
+  read-only: 11
   writes-local: 16
   externally-visible: 3
   irreversible: 2
@@ -15,11 +15,11 @@ execute required: 21
 irreversible approval required: 2
 
 surfaces:
+  - catalog operations=6
+  - file operations=2
   - github operations=3
-  - homebrew operations=5
   - npm operations=6
   - pypi operations=5
-  - scoop operations=5
 
 approval-required operations:
   - build:bun:cli-linux-x64: --execute (writes-local)
@@ -32,17 +32,17 @@ approval-required operations:
   - build:pypi-wheel:pypi-wheel-darwin-x64: --execute (writes-local)
   - build:pypi-wheel:pypi-wheel-darwin-arm64: --execute (writes-local)
   - build:pypi-wheel:pypi-wheel-windows-x64: --execute (writes-local)
-  - homebrew:homebrew-render-formula: --execute (writes-local)
-  - scoop:scoop-render-manifest: --execute (writes-local)
+  - catalog:homebrew:render: --execute (writes-local)
+  - catalog:scoop:render: --execute (writes-local)
   - npm:npm-publish: --execute + --approve-publish (irreversible)
   - pypi:twine-upload: --execute + --approve-publish (irreversible)
   - github:github-release-create: --execute (externally-visible)
-  - homebrew:homebrew-push:add: --execute (writes-local)
-  - homebrew:homebrew-push:commit: --execute (writes-local)
-  - homebrew:homebrew-push: --execute (externally-visible)
-  - scoop:scoop-push:add: --execute (writes-local)
-  - scoop:scoop-push:commit: --execute (writes-local)
-  - scoop:scoop-push: --execute (externally-visible)
+  - catalog:homebrew:push:add: --execute (writes-local)
+  - catalog:homebrew:push:commit: --execute (writes-local)
+  - catalog:homebrew:push: --execute (externally-visible)
+  - catalog:scoop:push:add: --execute (writes-local)
+  - catalog:scoop:push:commit: --execute (writes-local)
+  - catalog:scoop:push: --execute (externally-visible)
 
 ## Artifacts
 
@@ -57,8 +57,8 @@ approval-required operations:
 - pypi-wheel-darwin-x64 artifacts/portable_example-0.1.0-py3-none-macosx_10_15_x86_64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
 - pypi-wheel-darwin-arm64 artifacts/portable_example-0.1.0-py3-none-macosx_11_0_arm64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
 - pypi-wheel-windows-x64 artifacts/portable_example-0.1.0-py3-none-win_amd64.whl [wheel] produced-by=build:pypi-wheel platform=none checksum=none
-- homebrew-formula .release/generated/portable-example.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
-- scoop-manifest .release/generated/portable-example.json [catalog-file] produced-by=catalog:scoop platform=none checksum=none
+- catalog-file-homebrew .release/generated/portable-example.rb [catalog-file] produced-by=catalog:file platform=none checksum=none
+- catalog-file-scoop .release/generated/portable-example.json [catalog-file] produced-by=catalog:file platform=none checksum=none
 
 ## Operations By Risk
 
@@ -229,22 +229,6 @@ Command argv:
 - github-api: verify release owner/portable-example v0.1.0
 - assets: 5
 
-#### homebrew:brew-audit
-
-- target: homebrew
-- risk: read-only
-- approval: none
-- why: Record simulated Homebrew formula validation.
-- note: Homebrew formula validation is simulated by the deterministic release plan.
-
-#### scoop:scoop-manifest-validation
-
-- target: scoop
-- risk: read-only
-- approval: none
-- why: Record simulated Scoop manifest validation.
-- note: Scoop manifest validation is simulated by the deterministic release plan.
-
 ### writes-local
 
 #### build:bun:cli-linux-x64
@@ -317,28 +301,28 @@ Command argv:
 - approval: --execute
 - why: Assemble PyPI wheel pypi-wheel-windows-x64.
 
-#### homebrew:homebrew-render-formula
+#### catalog:homebrew:render
 
-- target: homebrew
+- target: file
 - risk: writes-local
 - approval: --execute
-- why: Render Homebrew formula portable-example.rb.
+- why: Render homebrew catalog file .release/generated/portable-example.rb.
 - write path: .release/generated/portable-example.rb
 
-#### scoop:scoop-render-manifest
+#### catalog:scoop:render
 
-- target: scoop
+- target: file
 - risk: writes-local
 - approval: --execute
-- why: Render Scoop manifest portable-example.json.
+- why: Render scoop catalog file .release/generated/portable-example.json.
 - write path: .release/generated/portable-example.json
 
-#### homebrew:homebrew-push:add
+#### catalog:homebrew:push:add
 
-- target: homebrew
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Stage portable-example.rb for homebrew.
+- why: Stage portable-example.rb for catalog.
 
 Command argv:
 
@@ -352,12 +336,12 @@ Command argv:
 ]
 ```
 
-#### homebrew:homebrew-push:commit
+#### catalog:homebrew:push:commit
 
-- target: homebrew
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Commit portable-example.rb for homebrew.
+- why: Commit portable-example.rb for catalog.
 
 Command argv:
 
@@ -372,12 +356,12 @@ Command argv:
 ]
 ```
 
-#### scoop:scoop-push:add
+#### catalog:scoop:push:add
 
-- target: scoop
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Stage portable-example.json for scoop.
+- why: Stage portable-example.json for catalog.
 
 Command argv:
 
@@ -391,12 +375,12 @@ Command argv:
 ]
 ```
 
-#### scoop:scoop-push:commit
+#### catalog:scoop:push:commit
 
-- target: scoop
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Commit portable-example.json for scoop.
+- why: Commit portable-example.json for catalog.
 
 Command argv:
 
@@ -424,12 +408,12 @@ Command argv:
 - github-api: create release owner/portable-example v0.1.0
 - assets: 5
 
-#### homebrew:homebrew-push
+#### catalog:homebrew:push
 
-- target: homebrew
+- target: catalog
 - risk: externally-visible
 - approval: --execute
-- why: Push Homebrew tap update for @scope/portable-example@0.1.0.
+- why: Push homebrew catalog update for @scope/portable-example@0.1.0.
 
 Command argv:
 
@@ -442,12 +426,12 @@ Command argv:
 ]
 ```
 
-#### scoop:scoop-push
+#### catalog:scoop:push
 
-- target: scoop
+- target: catalog
 - risk: externally-visible
 - approval: --execute
-- why: Push Scoop bucket update for @scope/portable-example@0.1.0.
+- why: Push scoop catalog update for @scope/portable-example@0.1.0.
 
 Command argv:
 

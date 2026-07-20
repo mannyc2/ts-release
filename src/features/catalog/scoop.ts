@@ -1,12 +1,11 @@
 // Invariant: one selected file-like Windows artifact determines the entire deterministic Scoop manifest.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, CatalogFileExtra, SafeRelativePath } from "../../grammar/artifact.js"
+import { Artifact, SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
+import type { CatalogEntry } from "./file.js"
 import {
   catalogArtifactUrl,
   catalogPathBaseName,
@@ -32,20 +31,41 @@ export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPu
   url: Schema.optionalKey(Schema.String),
   bin: Schema.optionalKey(Schema.String),
   bucketDirectory: defaulted(SafeRelativePath, "."),
-  tokenEnv: Schema.optionalKey(Schema.String)
+  submit: Schema.optionalKey(Schema.Literals(["push", "pull-request"])),
+  validate: Schema.optionalKey(Schema.Union([Schema.String, Schema.Array(Schema.String)]))
 }) {}
 
-export const resolveScoop = (section: ReleaseConfigScoopPublish | undefined, config: CatalogResolutionConfig) => {
+export const resolveScoop = (
+  section: ReleaseConfigScoopPublish | undefined,
+  config: CatalogResolutionConfig
+): CatalogEntry | undefined => {
   if (section === undefined) return undefined
   const manifestName = section.manifestName ?? compactPackageShortName(projectPackageName(config.project) ?? "release")
-  return {
+  const repository = githubRepository(config)
+  const resolved = {
     ...section,
-    manifestName, manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
+    manifestName,
+    manifestPath: section.manifestPath ?? `.release/generated/${manifestName}.json`,
     bucketDirectory: section.bucketDirectory,
-    githubRepository: githubRepository(config)
+    ...(repository === undefined ? {} : { githubRepository: repository })
+  } satisfies ScoopSection
+  return {
+    id: "scoop",
+    repository: section.repository,
+    file: resolved.manifestPath,
+    ...(resolved.bucketDirectory === "." ? {} : { directory: resolved.bucketDirectory }),
+    content: (context) => manifestContent(resolved, context.identity, context.artifacts),
+    commitMessage: `Update ${manifestName} to {version}`,
+    submit: section.submit ?? "push",
+    ...(section.validate === undefined ? {} : { validate: section.validate }),
+    ...(resolved.githubRepository === undefined ? {} : { githubRepository: resolved.githubRepository })
   }
 }
-export type ScoopSection = NonNullable<ReturnType<typeof resolveScoop>>
+type ScoopSection = ReleaseConfigScoopPublish & {
+  readonly manifestName: string
+  readonly manifestPath: string
+  readonly githubRepository?: string | undefined
+}
 
 const source = {
   pipeId: "catalog:scoop", field: "publish.scoop.artifactId", target: "Scoop", label: "Scoop manifest"
@@ -81,24 +101,3 @@ const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
     parts: [`${prefix},\n  "hash": "`, Sha256Hole.make({ artifactId: artifact.id }), suffix]
   })
 })
-
-export const catalogScoopPlanner = featurePlanner<ScoopSection>("catalog:scoop", (section, state) => Effect.gen(function*() {
-    const path = section.manifestPath
-    const contents = yield* manifestContent(section, state.identity, state.artifacts)
-    return {
-      artifacts: [Artifact.make({
-        id: "scoop-manifest",
-        kind: "catalog-file",
-        path,
-        producedBy: "catalog:scoop",
-        extra: CatalogFileExtra.make({ catalog: "scoop", repository: section.repository })
-      })],
-      operations: [featureOperation({
-        id: "scoop:scoop-render-manifest",
-        phase: "catalog",
-        risk: "writes-local",
-        description: `Render Scoop manifest ${catalogPathBaseName(path)}.`,
-        action: WriteFileAction.make({ path, contents })
-      })]
-    }
-  }))

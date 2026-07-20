@@ -16,6 +16,7 @@ import { ReleaseIdentity } from "../grammar/state.js"
 import { normalizedName } from "../grammar/template.js"
 import { resolveHomebrew } from "../features/catalog/homebrew.js"
 import { resolveScoop } from "../features/catalog/scoop.js"
+import type { CatalogEntry } from "../features/catalog/file.js"
 import { resolveGitHubPublish } from "../features/publish/github.js"
 import { resolveNpmPublish } from "../features/publish/npm.js"
 import { githubRepository, projectPackageName } from "../features/catalog/shared.js"
@@ -241,23 +242,32 @@ const evidenceDirectory = (intent: ReleaseIntent, identity: ReleaseIdentity): st
   return template.split("{version}").join(identity.version)
 }
 
-export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity) => ({
-  identity,
-  builds: intent.builds === undefined || intent.builds.length === 0 ? Option.none() : Option.some(intent.builds),
-  npmPackage: Option.fromUndefinedOr(intent.npmPackage),
-  pypiWheels: intent.pypiWheel === undefined ? Option.none()
-    : Option.some(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
-  artifacts: Option.fromUndefinedOr(intent.artifacts),
-  archives: Option.fromUndefinedOr(intent.archives),
-  checksum: Option.fromUndefinedOr(intent.checksum),
-  npm: Option.fromUndefinedOr(resolveNpmPublish(intent, identity)),
-  pypi: Option.fromUndefinedOr(intent.publish.pypi),
-  github: Option.fromUndefinedOr(resolveGitHubPublish(intent)),
-  homebrew: Option.fromUndefinedOr(resolveHomebrew(intent.publish.homebrew, intent)),
-  scoop: Option.fromUndefinedOr(resolveScoop(intent.publish.scoop, intent)),
-  catalogs: Option.fromUndefinedOr(intent.catalogs?.map((entry) => ({ ...entry, githubRepository: githubRepository(intent) }))),
-  evidenceDirectory: evidenceDirectory(intent, identity)
-})
+export const resolveRelease = (intent: ReleaseIntent, identity: ReleaseIdentity) => {
+  const vendorEntries = [
+    resolveHomebrew(intent.publish.homebrew, intent),
+    resolveScoop(intent.publish.scoop, intent)
+  ].filter((entry): entry is CatalogEntry => entry !== undefined)
+  const repository = githubRepository(intent)
+  const userEntries: ReadonlyArray<CatalogEntry> = (intent.catalogs ?? []).map((entry) => repository === undefined
+    ? entry
+    : { ...entry, githubRepository: repository })
+  const catalogs = [...vendorEntries, ...userEntries]
+  return {
+    identity,
+    builds: intent.builds === undefined || intent.builds.length === 0 ? Option.none() : Option.some(intent.builds),
+    npmPackage: Option.fromUndefinedOr(intent.npmPackage),
+    pypiWheels: intent.pypiWheel === undefined ? Option.none()
+      : Option.some(Array.isArray(intent.pypiWheel) ? intent.pypiWheel : [intent.pypiWheel]),
+    artifacts: Option.fromUndefinedOr(intent.artifacts),
+    archives: Option.fromUndefinedOr(intent.archives),
+    checksum: Option.fromUndefinedOr(intent.checksum),
+    npm: Option.fromUndefinedOr(resolveNpmPublish(intent, identity)),
+    pypi: Option.fromUndefinedOr(intent.publish.pypi),
+    github: Option.fromUndefinedOr(resolveGitHubPublish(intent)),
+    catalogs: catalogs.length === 0 ? Option.none() : Option.some(catalogs),
+    evidenceDirectory: evidenceDirectory(intent, identity)
+  }
+}
 
 export type ResolvedRelease = Readonly<ReturnType<typeof resolveRelease>>
 

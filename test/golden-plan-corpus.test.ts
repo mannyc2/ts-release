@@ -30,17 +30,17 @@ interface RenderFixture {
 const renderFixtures = new Map<ExampleName, ReadonlyArray<RenderFixture>>([
   ["agent-plugin", [{ operationId: "catalog:claude-marketplace:render", fileName: "marketplace.json" }]],
   ["homebrew-tap", [
-    { operationId: "homebrew:homebrew-render-formula", fileName: "formula.rb" }
+    { operationId: "catalog:homebrew:render", fileName: "formula.rb" }
   ]],
   ["multi-target", [
-    { operationId: "homebrew:homebrew-render-formula", fileName: "formula.rb" }
+    { operationId: "catalog:homebrew:render", fileName: "formula.rb" }
   ]],
   ["portable-cli", [
-    { operationId: "homebrew:homebrew-render-formula", fileName: "formula.rb" },
-    { operationId: "scoop:scoop-render-manifest", fileName: "manifest.json" }
+    { operationId: "catalog:homebrew:render", fileName: "formula.rb" },
+    { operationId: "catalog:scoop:render", fileName: "manifest.json" }
   ]],
   ["scoop-bucket", [
-    { operationId: "scoop:scoop-render-manifest", fileName: "manifest.json" }
+    { operationId: "catalog:scoop:render", fileName: "manifest.json" }
   ]]
 ])
 const updateGolden = process.env.UPDATE_GOLDEN === "1"

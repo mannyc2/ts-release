@@ -19,7 +19,13 @@ export class ReleaseConfigCatalogEntry extends Schema.Class<ReleaseConfigCatalog
   submit: defaulted(Schema.Literals(["push", "pull-request"]), "push"),
   validate: Schema.optionalKey(Schema.Union([Schema.String, Schema.Array(Schema.String)]))
 }) {}
-export type CatalogEntry = ReleaseConfigCatalogEntry & { readonly githubRepository?: string | undefined }
+export type CatalogContentBuilder = (
+  context: PlannerContext
+) => Effect.Effect<FilePartsContent | string, PlanError>
+export type CatalogEntry = Omit<ReleaseConfigCatalogEntry, "content"> & {
+  readonly content: ReleaseConfigCatalogEntry["content"] | CatalogContentBuilder
+  readonly githubRepository?: string | undefined
+}
 export const catalogWritePath = (entry: Pick<CatalogEntry, "directory" | "file">): string => entry.directory === undefined ? entry.file : `${entry.directory}/${entry.file}`
 type RenderedPart = string | Sha256Hole
 const appendText = (parts: Array<RenderedPart>, text: string): void => {
@@ -31,6 +37,7 @@ const contentError = (entry: CatalogEntry, reason: string) => PlanError.make({ p
   field: `catalogs.${entry.id}.content`, reason })
 const planContent = Effect.fn("catalog.file.planContent")(function*(entry: CatalogEntry,
   context: PlannerContext) {
+  if (typeof entry.content === "function") return yield* entry.content(context)
   const parts: Array<RenderedPart> = []
   for (const part of typeof entry.content === "string" ? [entry.content] : entry.content) {
     if (typeof part === "string") { appendText(parts, renderTemplate(part, { identity: context.identity })); continue }

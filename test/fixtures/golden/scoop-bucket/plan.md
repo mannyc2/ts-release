@@ -5,9 +5,9 @@
 summary: release-example-scoop@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 6
+operations: 5
 risk:
-  read-only: 2
+  read-only: 1
   writes-local: 3
   externally-visible: 1
   irreversible: 0
@@ -15,18 +15,19 @@ execute required: 4
 irreversible approval required: 0
 
 surfaces:
-  - scoop operations=5
+  - catalog operations=3
+  - file operations=1
 
 approval-required operations:
-  - scoop:scoop-render-manifest: --execute (writes-local)
-  - scoop:scoop-push:add: --execute (writes-local)
-  - scoop:scoop-push:commit: --execute (writes-local)
-  - scoop:scoop-push: --execute (externally-visible)
+  - catalog:scoop:render: --execute (writes-local)
+  - catalog:scoop:push:add: --execute (writes-local)
+  - catalog:scoop:push:commit: --execute (writes-local)
+  - catalog:scoop:push: --execute (externally-visible)
 
 ## Artifacts
 
 - archive artifacts/release-example-scoop-0.1.0.zip [archive] produced-by=import-artifacts platform=none checksum=none
-- scoop-manifest .release/generated/release-example-scoop.json [catalog-file] produced-by=catalog:scoop platform=none checksum=none
+- catalog-file-scoop .release/generated/release-example-scoop.json [catalog-file] produced-by=catalog:file platform=none checksum=none
 
 ## Operations By Risk
 
@@ -39,30 +40,22 @@ approval-required operations:
 - approval: none
 - why: Verify imported artifact archive exists.
 
-#### scoop:scoop-manifest-validation
-
-- target: scoop
-- risk: read-only
-- approval: none
-- why: Record simulated Scoop manifest validation.
-- note: Scoop manifest validation is simulated by the deterministic release plan.
-
 ### writes-local
 
-#### scoop:scoop-render-manifest
+#### catalog:scoop:render
 
-- target: scoop
+- target: file
 - risk: writes-local
 - approval: --execute
-- why: Render Scoop manifest release-example-scoop.json.
+- why: Render scoop catalog file .release/generated/release-example-scoop.json.
 - write path: .release/generated/release-example-scoop.json
 
-#### scoop:scoop-push:add
+#### catalog:scoop:push:add
 
-- target: scoop
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Stage release-example-scoop.json for scoop.
+- why: Stage release-example-scoop.json for catalog.
 
 Command argv:
 
@@ -76,12 +69,12 @@ Command argv:
 ]
 ```
 
-#### scoop:scoop-push:commit
+#### catalog:scoop:push:commit
 
-- target: scoop
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Commit release-example-scoop.json for scoop.
+- why: Commit release-example-scoop.json for catalog.
 
 Command argv:
 
@@ -100,12 +93,12 @@ Command argv:
 
 ### externally-visible
 
-#### scoop:scoop-push
+#### catalog:scoop:push
 
-- target: scoop
+- target: catalog
 - risk: externally-visible
 - approval: --execute
-- why: Push Scoop bucket update for release-example-scoop@0.1.0.
+- why: Push scoop catalog update for release-example-scoop@0.1.0.
 
 Command argv:
 

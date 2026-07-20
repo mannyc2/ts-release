@@ -36,10 +36,10 @@
       }
     },
     {
-      "id": "homebrew-formula",
+      "id": "catalog-file-homebrew",
       "kind": "catalog-file",
       "path": ".release/generated/release-example-multi-target.rb",
-      "producedBy": "catalog:homebrew",
+      "producedBy": "catalog:file",
       "extra": {
         "_tag": "catalog-file",
         "catalog": "homebrew",
@@ -60,11 +60,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-render-formula",
-      "pipeId": "catalog:homebrew",
+      "id": "catalog:homebrew:render",
+      "pipeId": "catalog:file",
       "phase": "catalog",
       "risk": "writes-local",
-      "description": "Render Homebrew formula release-example-multi-target.rb.",
+      "description": "Render homebrew catalog file .release/generated/release-example-multi-target.rb.",
       "action": {
         "_tag": "write-file",
         "path": ".release/generated/release-example-multi-target.rb",
@@ -268,24 +268,11 @@
       }
     },
     {
-      "id": "homebrew:brew-audit",
-      "pipeId": "publish:homebrew",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Record simulated Homebrew formula validation.",
-      "action": {
-        "_tag": "note",
-        "message": "Homebrew formula validation is simulated by the deterministic release plan.",
-        "severity": "info",
-        "skipped": false
-      }
-    },
-    {
-      "id": "homebrew:homebrew-push:add",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push:add",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Stage release-example-multi-target.rb for homebrew.",
+      "description": "Stage release-example-multi-target.rb for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -302,11 +289,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-push:commit",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push:commit",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Commit release-example-multi-target.rb for homebrew.",
+      "description": "Commit release-example-multi-target.rb for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -324,11 +311,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-push",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "externally-visible",
-      "description": "Push Homebrew tap update for release-example-multi-target@0.1.0.",
+      "description": "Push homebrew catalog update for release-example-multi-target@0.1.0.",
       "action": {
         "_tag": "command",
         "command": {
@@ -366,17 +353,7 @@
       "reason": "Config section is absent; pipe skipped."
     },
     {
-      "pipeId": "catalog:scoop",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
       "pipeId": "publish:pypi",
-      "severity": "info",
-      "reason": "Config section is absent; pipe skipped."
-    },
-    {
-      "pipeId": "publish:scoop",
       "severity": "info",
       "reason": "Config section is absent; pipe skipped."
     }

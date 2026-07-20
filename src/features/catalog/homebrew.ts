@@ -1,12 +1,11 @@
 // Invariant: selected artifacts determine one byte-stable Homebrew formula; single and multi-arch forms stay explicit.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, CatalogFileExtra, SafeRelativePath } from "../../grammar/artifact.js"
+import { Artifact, SafeRelativePath } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
-import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
-import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
+import type { CatalogEntry } from "./file.js"
 import {
   catalogArtifactUrl,
   catalogPathBaseName,
@@ -31,20 +30,41 @@ export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHome
   url: Schema.optionalKey(Schema.String),
   tapDirectory: defaulted(SafeRelativePath, "."),
   installPath: Schema.optionalKey(Schema.String),
-  tokenEnv: Schema.optionalKey(Schema.String)
+  submit: Schema.optionalKey(Schema.Literals(["push", "pull-request"])),
+  validate: Schema.optionalKey(Schema.Union([Schema.String, Schema.Array(Schema.String)]))
 }) {}
 
-export const resolveHomebrew = (section: ReleaseConfigHomebrewPublish | undefined, config: CatalogResolutionConfig) => {
+export const resolveHomebrew = (
+  section: ReleaseConfigHomebrewPublish | undefined,
+  config: CatalogResolutionConfig
+): CatalogEntry | undefined => {
   if (section === undefined) return undefined
   const formulaName = section.formulaName ?? compactPackageShortName(projectPackageName(config.project) ?? "release")
-  return {
+  const repository = githubRepository(config)
+  const resolved = {
     ...section,
-    formulaName, formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
+    formulaName,
+    formulaPath: section.formulaPath ?? `.release/generated/${formulaName}.rb`,
     tapDirectory: section.tapDirectory,
-    githubRepository: githubRepository(config)
+    ...(repository === undefined ? {} : { githubRepository: repository })
+  } satisfies HomebrewSection
+  return {
+    id: "homebrew",
+    repository: section.repository,
+    file: resolved.formulaPath,
+    ...(resolved.tapDirectory === "." ? {} : { directory: resolved.tapDirectory }),
+    content: (context) => formulaContent(resolved, context.identity, context.artifacts),
+    commitMessage: `Update ${formulaName} to {version}`,
+    submit: section.submit ?? "push",
+    ...(section.validate === undefined ? {} : { validate: section.validate }),
+    ...(resolved.githubRepository === undefined ? {} : { githubRepository: resolved.githubRepository })
   }
 }
-export type HomebrewSection = NonNullable<ReturnType<typeof resolveHomebrew>>
+type HomebrewSection = ReleaseConfigHomebrewPublish & {
+  readonly formulaName: string
+  readonly formulaPath: string
+  readonly githubRepository?: string | undefined
+}
 
 const source = {
   pipeId: "catalog:homebrew", field: "publish.homebrew.ids", target: "Homebrew", label: "Homebrew formula"
@@ -167,21 +187,3 @@ const formulaContent = Effect.fn("catalog.homebrew.formulaContent")(function*(
     ["  end", "", "  def install", ...install.lines, "  end", ...testLines(install.binary), "end", ""].join("\n")
   ] })
 })
-
-export const catalogHomebrewPlanner = featurePlanner<HomebrewSection>("catalog:homebrew", (section, state) => Effect.gen(function*() {
-    const path = section.formulaPath
-    const contents = yield* formulaContent(section, state.identity, state.artifacts)
-    return {
-      artifacts: [Artifact.make({
-        id: "homebrew-formula", kind: "catalog-file", path, producedBy: "catalog:homebrew",
-        extra: CatalogFileExtra.make({ catalog: "homebrew", repository: section.repository })
-      })],
-      operations: [featureOperation({
-        id: "homebrew:homebrew-render-formula",
-        phase: "catalog",
-        risk: "writes-local",
-        description: `Render Homebrew formula ${catalogPathBaseName(path)}.`,
-        action: WriteFileAction.make({ path, contents })
-      })]
-    }
-  }))

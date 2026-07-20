@@ -2,17 +2,18 @@ release-example-multi-target@0.1.0
 commit: example
 evidence: .release/evidence
 artifacts: 3
-surfaces: 3
-operations: 15
+surfaces: 4
+operations: 14
 
 artifacts:
   - npm-package . [package] produced-by=build:npm-pack platform=none checksum=none
   - archive artifacts/release-example-multi-target-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
-  - homebrew-formula .release/generated/release-example-multi-target.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
+  - catalog-file-homebrew .release/generated/release-example-multi-target.rb [catalog-file] produced-by=catalog:file platform=none checksum=none
 
 surfaces:
+  - catalog operations=3
+  - file operations=1
   - github operations=3
-  - homebrew operations=5
   - npm operations=6
 
 operations by risk:
@@ -37,17 +38,15 @@ operations by risk:
     note: GitHub release dry-run validation is simulated by the deterministic release plan; GitHub Releases API creation is not called during validation.
     - github:github-release-verify-api Verify the GitHub release through the GitHub API.
     github-api: verify release owner/release-example-multi-target v0.1.0 assets=1
-    - homebrew:brew-audit Record simulated Homebrew formula validation.
-    note: Homebrew formula validation is simulated by the deterministic release plan.
   writes-local:
-    - homebrew:homebrew-render-formula Render Homebrew formula release-example-multi-target.rb.
+    - catalog:homebrew:render Render homebrew catalog file .release/generated/release-example-multi-target.rb.
     write: .release/generated/release-example-multi-target.rb
     approval: execute
-    - homebrew:homebrew-push:add Stage release-example-multi-target.rb for homebrew.
+    - catalog:homebrew:push:add Stage release-example-multi-target.rb for catalog.
     command: git -C . add .release/generated/release-example-multi-target.rb
     argv: ["git","-C",".","add",".release/generated/release-example-multi-target.rb"]
     approval: execute
-    - homebrew:homebrew-push:commit Commit release-example-multi-target.rb for homebrew.
+    - catalog:homebrew:push:commit Commit release-example-multi-target.rb for catalog.
     command: git -C . commit -m Update release-example-multi-target to 0.1.0
     argv: ["git","-C",".","commit","-m","Update release-example-multi-target to 0.1.0"]
     approval: execute
@@ -56,7 +55,7 @@ operations by risk:
     - github:github-release-create Create GitHub release for release-example-multi-target@0.1.0.
     github-api: create release owner/release-example-multi-target v0.1.0 assets=1
     approval: execute
-    - homebrew:homebrew-push Push Homebrew tap update for release-example-multi-target@0.1.0.
+    - catalog:homebrew:push Push homebrew catalog update for release-example-multi-target@0.1.0.
     command: git -C . push
     argv: ["git","-C",".","push"]
     approval: execute

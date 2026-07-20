@@ -5,8 +5,7 @@ import { decodeReleaseIntent } from "../src/config/load.js"
 import { resolveRelease } from "../src/resolve/resolved-release.js"
 import { buildPlanner } from "../src/features/build/build.js"
 import { checksumPlanner } from "../src/features/process/checksum.js"
-import { catalogHomebrewPlanner } from "../src/features/catalog/homebrew.js"
-import { catalogScoopPlanner } from "../src/features/catalog/scoop.js"
+import { catalogGenericPlanner } from "../src/features/catalog/file.js"
 import { emptyPlanAccumulator } from "../src/grammar/accumulator.js"
 import { makePipelineIdentity } from "./helpers.js"
 const identity = makePipelineIdentity({
@@ -35,11 +34,12 @@ describe("resolved release", () => {
       const pair = yield* resolved({ project: {},
         pypiWheel: [wheel, { ...wheel, id: "wheel-b", path: "dist/b.whl" }], publish: {} })
       expect([absent.builds, absent.npmPackage, absent.pypiWheels, absent.artifacts, absent.archives,
-        absent.checksum, absent.npm, absent.pypi, absent.github, absent.homebrew, absent.scoop, absent.catalogs]
-        .map(isNone)).toEqual(Array(12).fill(true))
+        absent.checksum, absent.npm, absent.pypi, absent.github, absent.catalogs]
+        .map(isNone)).toEqual(Array(10).fill(true))
       expect([empty.builds, empty.npmPackage, empty.npm, empty.pypi, empty.github].map(isNone))
         .toEqual(Array(5).fill(true))
-      expect([some(empty.pypiWheels), some(empty.artifacts), some(empty.archives), some(empty.catalogs)]).toEqual([[], [], [], []])
+      expect([some(empty.pypiWheels), some(empty.artifacts), some(empty.archives)]).toEqual([[], [], []])
+      expect(empty.catalogs.pipe(Option.isNone)).toBe(true)
       expect(some(shorthand.npmPackage)).toEqual({ path: "." })
       expect(some(shorthand.pypiWheels)?.map(({ id }) => id)).toEqual(["wheel-a"])
       expect(some(pair.pypiWheels)?.map(({ id }) => id)).toEqual(["wheel-a", "wheel-b"])
@@ -87,13 +87,15 @@ describe("resolved release", () => {
         repositoryUrl: "https://upload.pypi.org/legacy/", pythonExecutable: "python" })
       expect(some(release.github)).toEqual(
         { repository: "owner/release", tokenEnv: undefined, draft: true, prerelease: false })
-      expect(some(release.homebrew)).toMatchObject({
-        formulaName: "wire-name", formulaPath: ".release/generated/wire-name.rb",
-        tapDirectory: ".", githubRepository: "owner/release" })
-      expect(some(release.scoop)).toMatchObject({
-        manifestName: "wire-name", manifestPath: ".release/generated/wire-name.json",
-        bucketDirectory: ".", githubRepository: "owner/release" })
-      expect(some(release.catalogs)?.[0]).toEqual({ id: "index", repository: "owner/catalog",
+      expect(some(release.catalogs)?.[0]).toMatchObject({
+        id: "homebrew", repository: "owner/homebrew-tap", file: ".release/generated/wire-name.rb",
+        commitMessage: "Update wire-name to {version}", submit: "push", githubRepository: "owner/release" })
+      expect(typeof some(release.catalogs)?.[0]?.content).toBe("function")
+      expect(some(release.catalogs)?.[1]).toMatchObject({
+        id: "scoop", repository: "owner/scoop-bucket", file: ".release/generated/wire-name.json",
+        commitMessage: "Update wire-name to {version}", submit: "push", githubRepository: "owner/release" })
+      expect(typeof some(release.catalogs)?.[1]?.content).toBe("function")
+      expect(some(release.catalogs)?.[2]).toEqual({ id: "index", repository: "owner/catalog",
         file: "index.json", content: "{version}", commitMessage: "Update {name} to {version}",
         submit: "push", githubRepository: "owner/release" })
       expect(plannedChecksum.artifacts.map(({ id }) => id)).toEqual(["checksum"])
@@ -122,10 +124,10 @@ describe("resolved release", () => {
           github: { repository: "owner/explicit", tokenEnv: "GH_TOKEN", draft: false, prerelease: "auto" },
           homebrew: { repository: "owner/tap", formulaName: "brew-alias", formulaPath: "Formula/tool.rb",
             artifactIds: ["manual"], homepage: "https://brew.example", description: "brew", url: "https://cdn/brew",
-            tapDirectory: "tap", installPath: "bin/tool", tokenEnv: "TAP_TOKEN" },
+            tapDirectory: "tap", installPath: "bin/tool", submit: "pull-request", validate: ["brew", "audit"] },
           scoop: { repository: "owner/bucket", manifestName: "scoop-alias", manifestPath: "bucket/tool.json",
             artifactId: "manual", homepage: "https://scoop.example", description: "scoop", license: "MIT",
-            url: "https://cdn/scoop", bin: "tool.exe", bucketDirectory: "bucket", tokenEnv: "BUCKET_TOKEN" }
+            url: "https://cdn/scoop", bin: "tool.exe", bucketDirectory: "bucket", validate: "scoop-check" }
         },
         evidence: { directory: ".proof/{version}" }
       })
@@ -144,15 +146,15 @@ describe("resolved release", () => {
         .toEqual({ provider: "github-actions", workflow: "release.yml" })
       expect(some(release.github))
         .toEqual({ repository: "owner/explicit", tokenEnv: "GH_TOKEN", draft: false, prerelease: "auto" })
-      expect(some(release.homebrew)).toMatchObject({
-        repository: "owner/tap", formulaName: "brew-alias", formulaPath: "Formula/tool.rb",
-        artifactIds: ["manual"], url: "https://cdn/brew", tapDirectory: "tap", installPath: "bin/tool",
-        tokenEnv: "TAP_TOKEN", githubRepository: "owner/explicit"
+      expect(some(release.catalogs)?.[0]).toMatchObject({
+        id: "homebrew", repository: "owner/tap", file: "Formula/tool.rb", directory: "tap",
+        commitMessage: "Update brew-alias to {version}", submit: "pull-request", validate: ["brew", "audit"],
+        githubRepository: "owner/explicit"
       })
-      expect(some(release.scoop)).toMatchObject({
-        repository: "owner/bucket", manifestName: "scoop-alias", manifestPath: "bucket/tool.json",
-        artifactId: "manual", url: "https://cdn/scoop", bin: "tool.exe", bucketDirectory: "bucket",
-        tokenEnv: "BUCKET_TOKEN", githubRepository: "owner/explicit"
+      expect(some(release.catalogs)?.[1]).toMatchObject({
+        id: "scoop", repository: "owner/bucket", file: "bucket/tool.json", directory: "bucket",
+        commitMessage: "Update scoop-alias to {version}", submit: "push", validate: "scoop-check",
+        githubRepository: "owner/explicit"
       })
       expect(some(release.artifacts)?.[0]).toMatchObject({
         id: "manual", format: "executable", checksum: { algorithm: "sha256", value: "abc" },
@@ -175,11 +177,11 @@ describe("resolved release", () => {
           scoop: { repository: "owner/bucket", artifactId: "windows" }
         }
       })
-      expect(some(release.homebrew)).toMatchObject({
-        formulaName: "release", formulaPath: ".release/generated/release.rb"
+      expect(some(release.catalogs)?.[0]).toMatchObject({
+        id: "homebrew", file: ".release/generated/release.rb", commitMessage: "Update release to {version}"
       })
-      expect(some(release.scoop)).toMatchObject({
-        manifestName: "release", manifestPath: ".release/generated/release.json"
+      expect(some(release.catalogs)?.[1]).toMatchObject({
+        id: "scoop", file: ".release/generated/release.json", commitMessage: "Update release to {version}"
       })
     }))
   it.effect("rejects unsafe default catalog paths derived from explicit catalog names", () =>
@@ -191,12 +193,10 @@ describe("resolved release", () => {
           scoop: { repository: "owner/bucket", manifestName: "../escape", artifactId: "windows" }
         }
       })
-      for (const effect of [
-        catalogHomebrewPlanner(some(release.homebrew)!, emptyPlanAccumulator(identity)),
-        catalogScoopPlanner(some(release.scoop)!, emptyPlanAccumulator(identity))
-      ]) {
-        const error = yield* effect.pipe(Effect.flip)
-        expect(error).toMatchObject({ _tag: "PlanError" })
-      }
+      const error = yield* catalogGenericPlanner(
+        some(release.catalogs)!,
+        emptyPlanAccumulator(identity)
+      ).pipe(Effect.flip)
+      expect(error).toMatchObject({ _tag: "PlanError" })
     }))
 })

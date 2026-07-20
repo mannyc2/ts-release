@@ -5,9 +5,9 @@
 summary: release-example-homebrew@0.1.0
 commit: example
 evidence: .release/evidence
-operations: 6
+operations: 5
 risk:
-  read-only: 2
+  read-only: 1
   writes-local: 3
   externally-visible: 1
   irreversible: 0
@@ -15,18 +15,19 @@ execute required: 4
 irreversible approval required: 0
 
 surfaces:
-  - homebrew operations=5
+  - catalog operations=3
+  - file operations=1
 
 approval-required operations:
-  - homebrew:homebrew-render-formula: --execute (writes-local)
-  - homebrew:homebrew-push:add: --execute (writes-local)
-  - homebrew:homebrew-push:commit: --execute (writes-local)
-  - homebrew:homebrew-push: --execute (externally-visible)
+  - catalog:homebrew:render: --execute (writes-local)
+  - catalog:homebrew:push:add: --execute (writes-local)
+  - catalog:homebrew:push:commit: --execute (writes-local)
+  - catalog:homebrew:push: --execute (externally-visible)
 
 ## Artifacts
 
 - archive artifacts/release-example-homebrew-0.1.0.tgz [archive] produced-by=import-artifacts platform=none checksum=none
-- homebrew-formula .release/generated/release-example-homebrew.rb [catalog-file] produced-by=catalog:homebrew platform=none checksum=none
+- catalog-file-homebrew .release/generated/release-example-homebrew.rb [catalog-file] produced-by=catalog:file platform=none checksum=none
 
 ## Operations By Risk
 
@@ -39,30 +40,22 @@ approval-required operations:
 - approval: none
 - why: Verify imported artifact archive exists.
 
-#### homebrew:brew-audit
-
-- target: homebrew
-- risk: read-only
-- approval: none
-- why: Record simulated Homebrew formula validation.
-- note: Homebrew formula validation is simulated by the deterministic release plan.
-
 ### writes-local
 
-#### homebrew:homebrew-render-formula
+#### catalog:homebrew:render
 
-- target: homebrew
+- target: file
 - risk: writes-local
 - approval: --execute
-- why: Render Homebrew formula release-example-homebrew.rb.
+- why: Render homebrew catalog file .release/generated/release-example-homebrew.rb.
 - write path: .release/generated/release-example-homebrew.rb
 
-#### homebrew:homebrew-push:add
+#### catalog:homebrew:push:add
 
-- target: homebrew
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Stage release-example-homebrew.rb for homebrew.
+- why: Stage release-example-homebrew.rb for catalog.
 
 Command argv:
 
@@ -76,12 +69,12 @@ Command argv:
 ]
 ```
 
-#### homebrew:homebrew-push:commit
+#### catalog:homebrew:push:commit
 
-- target: homebrew
+- target: catalog
 - risk: writes-local
 - approval: --execute
-- why: Commit release-example-homebrew.rb for homebrew.
+- why: Commit release-example-homebrew.rb for catalog.
 
 Command argv:
 
@@ -100,12 +93,12 @@ Command argv:
 
 ### externally-visible
 
-#### homebrew:homebrew-push
+#### catalog:homebrew:push
 
-- target: homebrew
+- target: catalog
 - risk: externally-visible
 - approval: --execute
-- why: Push Homebrew tap update for release-example-homebrew@0.1.0.
+- why: Push homebrew catalog update for release-example-homebrew@0.1.0.
 
 Command argv:
 

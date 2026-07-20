@@ -191,10 +191,10 @@
       }
     },
     {
-      "id": "homebrew-formula",
+      "id": "catalog-file-homebrew",
       "kind": "catalog-file",
       "path": ".release/generated/portable-example.rb",
-      "producedBy": "catalog:homebrew",
+      "producedBy": "catalog:file",
       "extra": {
         "_tag": "catalog-file",
         "catalog": "homebrew",
@@ -202,10 +202,10 @@
       }
     },
     {
-      "id": "scoop-manifest",
+      "id": "catalog-file-scoop",
       "kind": "catalog-file",
       "path": ".release/generated/portable-example.json",
-      "producedBy": "catalog:scoop",
+      "producedBy": "catalog:file",
       "extra": {
         "_tag": "catalog-file",
         "catalog": "scoop",
@@ -480,11 +480,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-render-formula",
-      "pipeId": "catalog:homebrew",
+      "id": "catalog:homebrew:render",
+      "pipeId": "catalog:file",
       "phase": "catalog",
       "risk": "writes-local",
-      "description": "Render Homebrew formula portable-example.rb.",
+      "description": "Render homebrew catalog file .release/generated/portable-example.rb.",
       "action": {
         "_tag": "write-file",
         "path": ".release/generated/portable-example.rb",
@@ -508,11 +508,11 @@
       }
     },
     {
-      "id": "scoop:scoop-render-manifest",
-      "pipeId": "catalog:scoop",
+      "id": "catalog:scoop:render",
+      "pipeId": "catalog:file",
       "phase": "catalog",
       "risk": "writes-local",
-      "description": "Render Scoop manifest portable-example.json.",
+      "description": "Render scoop catalog file .release/generated/portable-example.json.",
       "action": {
         "_tag": "write-file",
         "path": ".release/generated/portable-example.json",
@@ -853,24 +853,11 @@
       }
     },
     {
-      "id": "homebrew:brew-audit",
-      "pipeId": "publish:homebrew",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Record simulated Homebrew formula validation.",
-      "action": {
-        "_tag": "note",
-        "message": "Homebrew formula validation is simulated by the deterministic release plan.",
-        "severity": "info",
-        "skipped": false
-      }
-    },
-    {
-      "id": "homebrew:homebrew-push:add",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push:add",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Stage portable-example.rb for homebrew.",
+      "description": "Stage portable-example.rb for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -887,11 +874,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-push:commit",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push:commit",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Commit portable-example.rb for homebrew.",
+      "description": "Commit portable-example.rb for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -909,11 +896,11 @@
       }
     },
     {
-      "id": "homebrew:homebrew-push",
-      "pipeId": "publish:homebrew",
+      "id": "catalog:homebrew:push",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "externally-visible",
-      "description": "Push Homebrew tap update for @scope/portable-example@0.1.0.",
+      "description": "Push homebrew catalog update for @scope/portable-example@0.1.0.",
       "action": {
         "_tag": "command",
         "command": {
@@ -929,24 +916,11 @@
       }
     },
     {
-      "id": "scoop:scoop-manifest-validation",
-      "pipeId": "publish:scoop",
-      "phase": "publish",
-      "risk": "read-only",
-      "description": "Record simulated Scoop manifest validation.",
-      "action": {
-        "_tag": "note",
-        "message": "Scoop manifest validation is simulated by the deterministic release plan.",
-        "severity": "info",
-        "skipped": false
-      }
-    },
-    {
-      "id": "scoop:scoop-push:add",
-      "pipeId": "publish:scoop",
+      "id": "catalog:scoop:push:add",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Stage portable-example.json for scoop.",
+      "description": "Stage portable-example.json for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -963,11 +937,11 @@
       }
     },
     {
-      "id": "scoop:scoop-push:commit",
-      "pipeId": "publish:scoop",
+      "id": "catalog:scoop:push:commit",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "writes-local",
-      "description": "Commit portable-example.json for scoop.",
+      "description": "Commit portable-example.json for catalog.",
       "action": {
         "_tag": "command",
         "command": {
@@ -985,11 +959,11 @@
       }
     },
     {
-      "id": "scoop:scoop-push",
-      "pipeId": "publish:scoop",
+      "id": "catalog:scoop:push",
+      "pipeId": "publish:catalog",
       "phase": "publish",
       "risk": "externally-visible",
-      "description": "Push Scoop bucket update for @scope/portable-example@0.1.0.",
+      "description": "Push scoop catalog update for @scope/portable-example@0.1.0.",
       "action": {
         "_tag": "command",
         "command": {

@@ -73,21 +73,20 @@ describe("repository release config", () => {
     expect(plan.identity.name).toBe("@mannyc1/ts-release")
     expect(plan.identity.commit).toBe("81587b5")
     expect(plan.evidenceDirectory).toBe(".release/evidence/0.0.3")
-    expect(plan.surfaceIds).toEqual(["github", "homebrew", "npm", "pypi", "scoop"])
+    expect(plan.surfaceIds).toEqual(["catalog", "file", "github", "npm", "pypi"])
     expect(plan.operations.map((operation) => operation.id)).toEqual([
       "build:bun:cli-linux-x64", "build:bun:cli-linux-arm64", "build:bun:cli-darwin-x64",
       "build:bun:cli-darwin-arm64", "build:bun:cli-windows-x64",
       "build:pypi-wheel:pypi-wheel-linux-x64", "build:pypi-wheel:pypi-wheel-linux-arm64",
       "build:pypi-wheel:pypi-wheel-darwin-x64", "build:pypi-wheel:pypi-wheel-darwin-arm64",
-      "build:pypi-wheel:pypi-wheel-windows-x64", "homebrew:homebrew-render-formula",
-      "scoop:scoop-render-manifest", "npm:npm-version", "npm:npm-trusted-publishing-auth",
+      "build:pypi-wheel:pypi-wheel-windows-x64", "catalog:homebrew:render",
+      "catalog:scoop:render", "npm:npm-version", "npm:npm-trusted-publishing-auth",
       "npm:npm-package-exists", "npm:npm-pack-dry-run", "npm:npm-publish", "npm:npm-version-verify",
       "pypi:python-version", "pypi:twine-version", "pypi:twine-trusted-publishing-auth", "pypi:twine-check",
       "pypi:twine-upload", "github:github-release-dry-run", "github:github-release-create",
-      "github:github-release-verify-api", "homebrew:brew-audit", "homebrew:homebrew-push:add",
-      "homebrew:homebrew-push:commit", "homebrew:homebrew-push", "scoop:scoop-manifest-validation",
-      "scoop:scoop-push:add",
-      "scoop:scoop-push:commit", "scoop:scoop-push"
+      "github:github-release-verify-api", "catalog:homebrew:push:add",
+      "catalog:homebrew:push:commit", "catalog:homebrew:push", "catalog:scoop:push:add",
+      "catalog:scoop:push:commit", "catalog:scoop:push"
     ])
     const npmAuth = plan.operations.find((operation) => operation.id === "npm:npm-trusted-publishing-auth")
     const pypiAuth = plan.operations.find((operation) => operation.id === "pypi:twine-trusted-publishing-auth")
@@ -143,10 +142,11 @@ describe("repository release config", () => {
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ])
     }
-    const homebrewRender = plan.operations.find((operation) => operation.id === "homebrew:homebrew-render-formula")
+    const homebrewRender = plan.operations.find((operation) => operation.id === "catalog:homebrew:render")
     expect(homebrewRender?.action._tag).toBe("write-file")
     if (homebrewRender?.action._tag === "write-file") {
-      expect(homebrewRender.action.path).toBe(".release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
+      expect(homebrewRender.action.path)
+        .toBe(".release/catalogs/homebrew-ts-release/.release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
       expect(typeof homebrewRender.action.contents).toBe("object")
       if (typeof homebrewRender.action.contents === "object") {
         expect(homebrewRender.action.contents._tag).toBe("file-parts")
@@ -158,10 +158,11 @@ describe("repository release config", () => {
         ])
       }
     }
-    const scoopRender = plan.operations.find((operation) => operation.id === "scoop:scoop-render-manifest")
+    const scoopRender = plan.operations.find((operation) => operation.id === "catalog:scoop:render")
     expect(scoopRender?.action._tag).toBe("write-file")
     if (scoopRender?.action._tag === "write-file") {
-      expect(scoopRender.action.path).toBe(".release/catalogs/scoop-ts-release/bucket/ts-release.json")
+      expect(scoopRender.action.path)
+        .toBe(".release/catalogs/scoop-ts-release/.release/catalogs/scoop-ts-release/bucket/ts-release.json")
       expect(typeof scoopRender.action.contents).toBe("object")
       if (typeof scoopRender.action.contents === "object") {
         expect(scoopRender.action.contents._tag).toBe("file-parts")

@@ -139,7 +139,7 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
     "run", "render", "doctor", "host", "assets"
   ],
   render: ["render", "grammar", "run", "pack"],
-  doctor: ["doctor", "resolve", "host"],
+  doctor: ["doctor", "grammar", "host"],
   host: ["host", "grammar", "assets"],
   api: ["api", "engine", "pack", "github", "host"]
 }

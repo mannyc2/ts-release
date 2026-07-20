@@ -40,8 +40,6 @@ import { resolveReleaseWorkflow, type ResolvedRelease } from "../resolve/resolve
 import { renderBuildArtifacts, renderReleasePlan } from "../render/render.js"
 import {
   evidenceOperationStatuses,
-  operationSurfaceId,
-  operationSurfaceIds,
   plannedSummary,
   stagedArtifactSummaries,
   type ArtifactSummary,
@@ -50,7 +48,6 @@ import {
   type ReleaseSummary,
   type VerifySummary
 } from "../render/summary.js"
-import { renderTemplate } from "../grammar/template.js"
 import {
   ArtifactStager,
   type StagedArtifactOperationResult,
@@ -140,17 +137,10 @@ export const planRelease = Effect.fn("engine.planRelease")(function*(options: Ru
 
 export const doctorRelease = Effect.fn("engine.doctorRelease")(function*(input: DoctorReleaseInput = {}) {
   const planned = loadReleasePlan({ workspace: input.root, configPath: input.configPath }).pipe(
-    Effect.map(({ plan, release }) => ({
-      release,
-      operationCounts: Object.fromEntries(operationSurfaceIds(plan).map((targetId) => [targetId,
-        plan.operations.filter((operation) => operationSurfaceId(operation) === targetId).length])),
-      catalogExecutables: Option.isNone(release.catalogs) ? [] : release.catalogs.value.flatMap((entry) => {
-        if (entry.validate === undefined) return []
-        const argv = typeof entry.validate === "string"
-          ? entry.validate.trim().split(/\s+/).filter(Boolean) : entry.validate
-        const executable = argv[0]
-        return executable === undefined ? [] : [renderTemplate(executable, { identity: release.identity })]
-      })
+    Effect.map(({ plan }) => ({
+      identity: plan.identity,
+      operations: plan.operations,
+      evidenceDirectory: plan.evidenceDirectory
     })),
     Effect.mapError((error) => ({ configFailed: error instanceof ConfigError, message: error.message }))
   )

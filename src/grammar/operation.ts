@@ -3,6 +3,7 @@ import * as Schema from "effect/Schema"
 import { ArtifactId, Checksum } from "./artifact.js"
 import { DeferredFileContent } from "./content.js"
 import { StageArtifactIntent } from "./intent.js"
+import type { ReleasePlan } from "./plan.js"
 
 export const OperationId = Schema.NonEmptyString
 export type OperationId = typeof OperationId.Type
@@ -12,6 +13,11 @@ export type OperationRisk = typeof OperationRisk.Type
 
 export const OperationPhase = Schema.Literals(["build", "process", "catalog", "publish", "verify"])
 export type OperationPhase = typeof OperationPhase.Type
+
+export const trustedPublishingAuthEnvNames = [
+  "ACTIONS_ID_TOKEN_REQUEST_URL",
+  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+]
 
 export class CommandSpec extends Schema.Class<CommandSpec>("CommandSpec")({
   executable: Schema.String,
@@ -107,3 +113,18 @@ export class Operation extends Schema.Class<Operation>("Operation")({
   action: Action,
   retry: Schema.optional(RetryPolicy)
 }) {}
+
+export const operationSurfaceId = (operation: Pick<Operation, "pipeId">): string | undefined => {
+  const parts = operation.pipeId.split(":")
+  const surface = parts[1]
+  return (operation.pipeId.startsWith("publish:") || operation.pipeId.startsWith("catalog:")) &&
+      surface !== undefined
+    ? surface
+    : undefined
+}
+
+export const operationSurfaceIds = (plan: Pick<ReleasePlan, "operations">): ReadonlyArray<string> =>
+  [...new Set(plan.operations.flatMap((operation) => {
+    const surface = operationSurfaceId(operation)
+    return surface === undefined ? [] : [surface]
+  }))].sort()

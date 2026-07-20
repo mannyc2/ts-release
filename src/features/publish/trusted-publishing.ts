@@ -2,10 +2,7 @@
 import * as Schema from "effect/Schema"
 import { WorkflowFileName } from "../../grammar/artifact.js"
 import { defaulted } from "../../grammar/defaulted.js"
-export const trustedPublishingAuthEnvNames = [
-  "ACTIONS_ID_TOKEN_REQUEST_URL",
-  "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-]
+import { trustedPublishingAuthEnvNames } from "../../grammar/operation.js"
 
 export const TrustedPublishingProvider = Schema.Literals(["github-actions"])
 export const trustedPublishingConfigFields = {

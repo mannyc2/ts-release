@@ -2,12 +2,13 @@
 import {
   CommandSpec,
   Operation,
+  operationSurfaceId,
+  operationSurfaceIds,
   type OperationRisk
 } from "../grammar/operation.js"
 import { operationApprovalRequirements } from "../grammar/approval.js"
 import * as Schema from "effect/Schema"
 import { ReleasePlan } from "../grammar/plan.js"
-import { operationSurfaceId, operationSurfaceIds } from "./summary.js"
 import type { StagedArtifactOperationResult } from "../pack/stager.js"
 
 export interface BuildArtifactsProjection {

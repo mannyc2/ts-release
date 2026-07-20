@@ -8,6 +8,7 @@ import { parseReleaseIntent } from "../src/config/load.js"
 import {
   CommandAction,
   CommandSpec,
+  NoteAction,
   Operation,
   RetryPolicy,
   StageAction,
@@ -19,7 +20,9 @@ import { CommandRunnerError, type CommandResult } from "../src/host/host.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer, ReleaseCommandRunnerTestLayer } from "./host-fakes.js"
 import {
-  runOperationEvidence
+  operationsForPass,
+  runOperationEvidence,
+  type OperationPass
 } from "../src/run/executor.js"
 import { runEvidenceWorkflow } from "./plan-helpers.js"
 import { planRelease } from "../src/engine/engine.js"
@@ -193,6 +196,48 @@ const runRetryProbe = (operation: Operation, succeedAt: number, advanceMillis: n
     yield* TestClock.adjust(advanceMillis)
     return { evidence: yield* Fiber.join(fiber), times }
   })
+
+const passPartitionOperation = (
+  id: string,
+  phase: Operation["phase"],
+  risk: Operation["risk"]
+): Operation =>
+  Operation.make({
+    id,
+    pipeId: "test:pass-partition",
+    phase,
+    risk,
+    description: `${id} operation.`,
+    action: NoteAction.make({ message: id, severity: "info", skipped: false })
+  })
+
+describe("operation pass partition", () => {
+  const passes: ReadonlyArray<OperationPass> = ["build", "render", "validation", "publish", "verification"]
+
+  it("partitions every feature-produced phase and risk combination", () => {
+    const operations = [
+      passPartitionOperation("partition-build-read-only", "build", "read-only"),
+      passPartitionOperation("partition-process-writes-local", "process", "writes-local"),
+      passPartitionOperation("partition-catalog-writes-local", "catalog", "writes-local"),
+      passPartitionOperation("partition-publish-read-only", "publish", "read-only"),
+      passPartitionOperation("partition-publish-writes-local", "publish", "writes-local"),
+      passPartitionOperation("partition-publish-externally-visible", "publish", "externally-visible"),
+      passPartitionOperation("partition-publish-irreversible", "publish", "irreversible"),
+      passPartitionOperation("partition-verify-read-only", "verify", "read-only")
+    ]
+    const selected = passes.flatMap((pass) => operationsForPass(operations, pass))
+
+    expect(new Set(selected.map(({ id }) => id)).size).toBe(selected.length)
+    expect(selected.map(({ id }) => id).sort()).toEqual(operations.map(({ id }) => id).sort())
+  })
+
+  it("classifies a catalog note into the render pass", () => {
+    const operation = passPartitionOperation("partition-catalog-note", "catalog", "writes-local")
+
+    expect(operationsForPass([operation], "render")).toEqual([operation])
+    expect(passes.filter((pass) => operationsForPass([operation], pass).length > 0)).toEqual(["render"])
+  })
+})
 
 describe("execution approval", () => {
   layer(TestLayer)((it) => {

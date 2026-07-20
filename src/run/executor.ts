@@ -1,4 +1,4 @@
-// Invariant: operations execute sequentially in pass order, each producing exactly one final evidence record.
+// Invariant: every operation belongs to one phase/risk-derived pass and produces exactly one final evidence record.
 import { createHash } from "node:crypto"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
@@ -133,9 +133,9 @@ const resolveWriteFileContents = Effect.fn("engine.resolveWriteFileContents")(fu
     return { contents }
   }
   const outputArtifact = context.artifacts.find((artifact) =>
-    artifact.path === outputPath && artifact.extra?._tag === "checksum-file"
+    artifact.path === outputPath && artifact.extra._tag === "checksum-file"
   )
-  const checksumAlgorithm = outputArtifact?.extra?._tag === "checksum-file"
+  const checksumAlgorithm = outputArtifact?.extra._tag === "checksum-file"
     ? outputArtifact.extra.algorithm
     : undefined
   const fs = yield* FileSystem.FileSystem
@@ -472,19 +472,25 @@ export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*
 export type OperationPass = "build" | "render" | "validation" | "publish" | "verification"
 export type EvidenceWorkflow = Exclude<OperationPass, "build"> | "release"
 
-const operationMatchesPass: Record<OperationPass, (operation: Operation) => boolean> = {
-  build: (operation) => operation.phase === "build" || operation.phase === "process",
-  render: (operation) => operation.phase === "catalog" && operation.action._tag === "write-file",
-  validation: (operation) => operation.phase === "publish" && operation.risk === "read-only",
-  publish: (operation) => operation.phase === "publish" && operation.risk !== "read-only",
-  verification: (operation) => operation.phase === "verify"
+const passForOperation = (operation: Operation): OperationPass => {
+  switch (operation.phase) {
+    case "build":
+    case "process":
+      return "build"
+    case "catalog":
+      return "render"
+    case "publish":
+      return operation.risk === "read-only" ? "validation" : "publish"
+    case "verify":
+      return "verification"
+  }
 }
 
 export const operationsForPass = (
   operations: ReadonlyArray<Operation>,
   pass: OperationPass
 ): ReadonlyArray<Operation> =>
-  operations.filter(operationMatchesPass[pass])
+  operations.filter((operation) => passForOperation(operation) === pass)
 
 const operationsForWorkflow = (operations: ReadonlyArray<Operation>, workflow: EvidenceWorkflow) =>
   (workflow === "release" ? ["render", "validation", "publish", "verification"] as const : [workflow])

@@ -58,10 +58,12 @@ schedule entry. It does not require dynamic registration or a new kernel.
   JSON-Schema derivation.
 - `src/grammar/` owns durable grammar, pure platform/template/semver helpers,
   approval derivation, and the private planning fold.
-- `src/features/` maps resolved build targets to artifacts and planned actions.
-- `src/features/` owns one resolver/planner per build, artifact transformation,
-  catalog, or publication feature. Selection and rendered product content stay
-  with the feature that specifies them.
+- `src/features/` maps resolved build targets and catalog presets to artifacts
+  and planned actions.
+- `src/features/` owns one resolver/planner per build or artifact
+  transformation and generic machinery for catalog-shaped publication.
+  Selection and rendered product content stay with the feature that specifies
+  them; Homebrew and Scoop are content builders over the generic catalog pair.
 - `src/resolve/resolved-release.ts` owns identity plus feature totalization.
 - `src/pack/stager.ts` and `src/pack/archive-bytes.ts` turn stage intents into deterministic
   bytes inside the workspace boundary.
@@ -112,10 +114,13 @@ approval. Snapshot policy refuses publish-class mutations but still records
 their normal refused evidence.
 
 Execution is sequential in four safety passes: render, validation, publish,
-verify. `RetryPolicy` is visible operation data interpreted with an Effect
-`Schedule`. Only `ActionAttemptFailed` is retryable; service failures, typed
-terminal errors, defects, interruption, and `ActionAttemptFailed`'s final
-mapping remain distinct.
+verify. Each operation's pass is a total function of its phase and risk:
+build/process maps to build, catalog to render, publish splits on read-only into
+validation or publish, and verify maps to verification. No operation can fall
+outside this pass partition. `RetryPolicy` is visible operation data interpreted
+with an Effect `Schedule`. Only `ActionAttemptFailed` is retryable; service
+failures, typed terminal errors, defects, interruption, and
+`ActionAttemptFailed`'s final mapping remain distinct.
 
 One workflow-local `Ref` accumulates final evidence records. Approval preflight
 happens before the Ref and before side effects. Once execution begins, one

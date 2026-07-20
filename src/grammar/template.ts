@@ -47,6 +47,15 @@ const tokenValues = (context: TemplateContext): ReadonlyArray<readonly [string, 
   ]
 }
 
+const unresolvedTemplateError = (
+  token: string,
+  source: { readonly pipeId: string; readonly field: string }
+): PlanError => PlanError.make({
+  pipeId: source.pipeId,
+  field: source.field,
+  reason: `Template ${token} cannot be resolved here; remove it or provide a platform context.`
+})
+
 export const renderTemplate = (
   value: string,
   context: TemplateContext,
@@ -70,13 +79,21 @@ export const renderArtifactNameEffect = (
   const rendered = renderTemplate(value, context, "preserve")
   const unresolved = substitutions.find(([token]) => rendered.includes(token))
   if (unresolved !== undefined) {
-    return Effect.fail(PlanError.make({
-      pipeId: source.pipeId,
-      field: source.field,
-      reason: `Template ${unresolved[0]} cannot be resolved here; remove it or provide a platform context.`
-    }))
+    return Effect.fail(unresolvedTemplateError(unresolved[0], source))
   }
   return validateSafeRelativePathEffect(rendered, source)
+}
+
+export const renderCommandTemplateEffect = (
+  value: string,
+  context: TemplateContext,
+  source: { readonly pipeId: string; readonly field: string }
+): Effect.Effect<string, PlanError> => {
+  const rendered = renderTemplate(value, context, "preserve")
+  const unresolved = tokenValues(context).find(([token]) => rendered.includes(token))
+  return unresolved === undefined
+    ? Effect.succeed(rendered)
+    : Effect.fail(unresolvedTemplateError(unresolved[0], source))
 }
 
 export const normalizedName = (name: string): string => {

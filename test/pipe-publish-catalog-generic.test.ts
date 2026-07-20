@@ -53,4 +53,13 @@ describe("generic catalog publishing", () => {
         "Update release to 0.1.0", "--body", "Push index catalog update for release@0.1.0.", "--head", "ts-release/release-0.1.0"] }
     ])
   }))
+
+  it.effect("rejects an unresolvable validation argv token", () => Effect.gen(function*() {
+    const error = yield* publishCatalogGenericPlanner([
+      { ...entry, validate: ["catalog-lint", "{os}"] }
+    ], context).pipe(Effect.flip)
+    expect(error).toMatchObject({
+      _tag: "PlanError", pipeId: "publish:catalog", field: "catalogs.index.validate"
+    })
+  }))
 })

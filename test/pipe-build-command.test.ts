@@ -19,7 +19,7 @@ describe("command build pipe", () => {
       const contribution = yield* planBuild({
         builder: "command",
         targets: ["darwin-arm64"],
-        run: ["make", "build-{os}-{arch}"],
+        run: ["make", "build-{os}-{arch}", "{unknown}"],
         output: "dist/{binary}-{targetTriple}",
         binary: "release"
       })
@@ -34,7 +34,7 @@ describe("command build pipe", () => {
           _tag: "command",
           command: {
             executable: "make",
-            args: ["build-darwin-arm64"]
+            args: ["build-darwin-arm64", "{unknown}"]
           }
         }
       })
@@ -63,6 +63,21 @@ describe("command build pipe", () => {
       if (error._tag === "PlanError") {
         expect(error.field).toBe("builds[].run")
       }
+    }))
+
+  it.effect("rejects a recognized token without target context", () =>
+    Effect.gen(function*() {
+      const error = yield* planBuild({
+        builder: "command",
+        targets: ["darwin-arm64"],
+        run: ["echo", "{libc}"],
+        output: "dist/{binary}-{targetTriple}",
+        binary: "release"
+      }).pipe(Effect.flip)
+
+      expect(error).toMatchObject({
+        _tag: "PlanError", pipeId: "build", field: "builds[].run"
+      })
     }))
 
   it.effect("rejects traversal and Windows-rooted output paths introduced by template values", () =>

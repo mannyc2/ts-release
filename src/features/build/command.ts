@@ -6,7 +6,7 @@ import { PlanError } from "../../grammar/errors.js"
 import { CheckFileAction, CommandAction, CommandSpec } from "../../grammar/operation.js"
 import { PlatformTarget, platformTargetVariant } from "../../grammar/platform.js"
 import { featureOperation } from "../../grammar/planner.js"
-import { renderArtifactNameEffect, renderTemplate } from "../../grammar/template.js"
+import { renderArtifactNameEffect, renderCommandTemplateEffect } from "../../grammar/template.js"
 import { executableArtifact, type Builder } from "./builder.js"
 
 export class ReleaseConfigCommandBuild extends Schema.Class<ReleaseConfigCommandBuild>(
@@ -29,9 +29,12 @@ export const commandBuilder: Builder<CommandBuildOptions> = (options, identity, 
     const path = yield* renderArtifactNameEffect(options.output, context, {
       pipeId: "build", field: "builds[].output"
     })
-    const command = (typeof options.run === "string"
+    const commandParts = typeof options.run === "string"
       ? options.run.trim().split(/\s+/).filter(Boolean)
-      : options.run).map((part) => renderTemplate(part, context))
+      : options.run
+    const command = yield* Effect.forEach(commandParts, (part) => renderCommandTemplateEffect(part, context, {
+      pipeId: "build", field: "builds[].run"
+    }))
     if (command.length === 0) return yield* Effect.fail(PlanError.make({
       pipeId: "build", field: "builds[].run",
       reason: "Command build run must render to at least one argv entry."

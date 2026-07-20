@@ -4,7 +4,7 @@ import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, Operation } from "../../grammar/operation.js"
 import { catalogGitPublishOperations, noAuthCommand, readOnlyCommandValidationOperation } from "./operations.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
-import { renderTemplate } from "../../grammar/template.js"
+import { renderCommandTemplateEffect, renderTemplate } from "../../grammar/template.js"
 import { catalogWritePath, type CatalogEntry } from "../catalog/file.js"
 const argv = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
   typeof value === "string" ? value.trim().split(/\s+/).filter(Boolean) : value
@@ -12,7 +12,11 @@ const validation = Effect.fn("catalog.publish.validation")(function*(
   entry: CatalogEntry, identity: Parameters<typeof renderTemplate>[1]["identity"]
 ) {
   if (entry.validate === undefined) return []
-  const rendered = argv(entry.validate).map((part) => renderTemplate(part, { identity }))
+  const rendered = yield* Effect.forEach(argv(entry.validate), (part) => renderCommandTemplateEffect(
+    part,
+    { identity },
+    { pipeId: "publish:catalog", field: `catalogs.${entry.id}.validate` }
+  ))
   const executable = rendered[0]
   if (executable === undefined || executable.length === 0) {
     return yield* Effect.fail(PlanError.make({ pipeId: "publish:catalog", field: `catalogs.${entry.id}.validate`,

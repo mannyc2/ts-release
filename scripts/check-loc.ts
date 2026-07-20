@@ -7,11 +7,11 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6242], // raised by plan 166 (maintainer accepted the abstraction-seam result after its LOC STOP)
+  ["src", 6270], // raised by plan 167 (strict command-template errors replace silent token erasure)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
-  ["src/grammar", 842], // raised by plan 166 (shared operation requirement derivation)
-  ["src/features", 1769], // raised by plan 166 (shared selectors, formula assembly, and trusted-publishing notes)
+  ["src/grammar", 859], // raised by plan 167 (typed strict command-template renderer)
+  ["src/features", 1780], // raised by plan 167 (all argv sites traverse the strict Effect renderer)
   ["src/pack", 500],
   ["src/github", 267],
   ["src/run", 810], // raised by plan 159 (hooks feature)
@@ -23,7 +23,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
   ["apps/ts-release-action/src", 486], // ratcheted by plan 166 (removed the dead runtime input and rejection path)
-  ["test", 9568], // ratcheted by plan 166 after replacing the dead runtime-input cases
+  ["test", 9589], // raised by plan 167 (all command argv families cover unresolvable tokens)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
 ]

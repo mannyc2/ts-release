@@ -141,16 +141,13 @@ describe("command hooks", () => {
     })
   })
 
-  test("rejects a hook whose executable renders empty", async () => {
-    const error = await runEffect(plan({ hooks: { before: [{
-      id: "empty",
-      run: ["{os}"]
-    }] } }).pipe(Effect.flip), TestLayer)
-
-    expect(error).toMatchObject({
-      _tag: "PlanError",
-      pipeId: "hooks:before",
-      field: "hooks.before[].run"
-    })
+  test("rejects unresolvable tokens in before hooks and custom publishers", async () => {
+    for (const [input, pipeId, field] of [
+      [{ hooks: { before: [{ id: "invalid", run: ["echo", "{os}"] }] } }, "hooks:before", "hooks.before[].run"],
+      [{ publish: { custom: [{ id: "invalid", run: ["echo", "{os}"] }] } }, "publish:custom", "publish.custom[].run"]
+    ] as const) {
+      const error = await runEffect(plan(input).pipe(Effect.flip), TestLayer)
+      expect(error).toMatchObject({ _tag: "PlanError", pipeId, field })
+    }
   })
 })

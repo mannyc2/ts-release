@@ -6,7 +6,7 @@ import { PlanError } from "../../grammar/errors.js"
 import { CommandAction, CommandSpec, type OperationPhase } from "../../grammar/operation.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
 import type { ReleaseIdentity } from "../../grammar/state.js"
-import { renderTemplate } from "../../grammar/template.js"
+import { renderCommandTemplateEffect } from "../../grammar/template.js"
 import { defaulted } from "../../grammar/defaulted.js"
 
 const hookFields = {
@@ -44,7 +44,11 @@ export const hookOperation = Effect.fn("hooks.operation")(function*(
     readonly description: string
   }
 ) {
-  const rendered = entry.run.map((part) => renderTemplate(part, { identity: options.identity }))
+  const rendered = yield* Effect.forEach(entry.run, (part) => renderCommandTemplateEffect(
+    part,
+    { identity: options.identity },
+    { pipeId: options.pipeId, field: options.field }
+  ))
   const executable = rendered[0]
   if (executable === undefined || executable.length === 0) return yield* Effect.fail(PlanError.make({
     pipeId: options.pipeId,

@@ -1,4 +1,4 @@
-// Invariant: public summaries are JSON-safe projections of canonical artifacts, operations, and evidence.
+// Invariant: public summaries are JSON-safe projections total over stale evidence and artifact references.
 import * as Schema from "effect/Schema"
 import { Artifact } from "../grammar/artifact.js"
 import type { Operation, OperationRisk, StageAction } from "../grammar/operation.js"
@@ -69,7 +69,12 @@ export const evidenceOperationStatuses = (
   evidence: EvidenceBundle,
   evidencePath?: string | undefined
 ): ReadonlyArray<OperationSummary> => evidence.records.map((record) => {
-    const operation = plan.operations.find(({ id }) => id === record.operationId)!
+    const operation = plan.operations.find(({ id }) => id === record.operationId) ?? {
+      id: record.operationId,
+      pipeId: record.pipeId,
+      description: "(not in current plan)",
+      risk: record.risk
+    }
     return operationSummary(
       operation,
       record.status === "failed"
@@ -90,5 +95,7 @@ export const stagedOperationsForPlan = (plan: ReleasePlan): ReadonlyArray<StageO
     (operation.phase === "build" || operation.phase === "process") && operation.action._tag === "stage")
 
 export const stagedArtifactSummaries = (plan: ReleasePlan): ReadonlyArray<ArtifactSummary> =>
-  stagedOperationsForPlan(plan).flatMap((operation) => operation.action.producesArtifactIds.map((id) =>
-    artifactSummary(plan.artifacts.find((artifact) => artifact.id === id)!)))
+  stagedOperationsForPlan(plan).flatMap((operation) => operation.action.producesArtifactIds.flatMap((id) => {
+    const artifact = plan.artifacts.find((artifact) => artifact.id === id)
+    return artifact === undefined ? [] : [artifactSummary(artifact)]
+  }))

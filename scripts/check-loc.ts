@@ -7,7 +7,7 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6270], // raised by plan 167 (strict command-template errors replace silent token erasure)
+  ["src", 6277], // raised by plan 167 (strict templates plus total stale-evidence projections)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
   ["src/grammar", 859], // raised by plan 167 (typed strict command-template renderer)
@@ -23,7 +23,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
   ["apps/ts-release-action/src", 486], // ratcheted by plan 166 (removed the dead runtime input and rejection path)
-  ["test", 9589], // raised by plan 167 (all command argv families cover unresolvable tokens)
+  ["test", 9656], // raised by plan 167 (strict argv and stale evidence/artifact regressions)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
 ]

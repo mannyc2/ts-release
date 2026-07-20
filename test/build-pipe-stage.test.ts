@@ -70,14 +70,11 @@ describe("build pipe", () => {
           outfile: "dist/release-0.1.0-linux-x64"
         })
 
-        const staged = yield* stageArtifactOperations(operations, {
+        yield* stageArtifactOperations(operations, {
           root: "/workspace",
           identity,
           configPath: "release.config.json"
         })
-        expect(staged[0]?.artifacts.map((artifact) => artifact.path)).toEqual([
-          "dist/release-0.1.0-linux-x64"
-        ])
         expect(calls.map((call) => ({
           entrypoint: portablePath(call.entrypoint),
           target: call.target,

@@ -243,9 +243,11 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
         return
       case "build":
         {
-          const staged = yield* Release.build(releaseInput(safeOptions))
+          const input = releaseInput(safeOptions)
+          rememberPlan(yield* Release.planRelease(input))
+          const staged = yield* Release.build(input)
           rememberPlan(staged.plan)
-          const rendered = Release.renderBuildArtifacts(staged, safeOptions.format === "json" ? "json" : "text")
+          const rendered = Release.renderBuildArtifacts(staged.plan, safeOptions.format === "json" ? "json" : "text")
           if (safeOptions.writeStepSummary) {
             yield* io.appendSummary(`## ts-release build\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
           }

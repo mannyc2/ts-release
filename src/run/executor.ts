@@ -367,15 +367,20 @@ const stageEvidence = Effect.fn("engine.stageEvidence")(function*(
   context: OperationRunContext
 ) {
   const stageOperation: StageOperation = { ...operation, action }
-  const result = yield* (yield* ArtifactStager).stage(stageOperation, {
+  yield* (yield* ArtifactStager).stage(stageOperation, {
     root: context.root,
     identity: context.identity,
     configPath: context.configPath
-  })
+  }).pipe(Effect.catchTag("ArtifactStageError", (error) =>
+    instantRecord(operation, {
+      status: "failed",
+      message: error.reason,
+      outcome: FileOutcome.make({ path: error.path ?? action.intent.outfile })
+    }).pipe(Effect.flatMap(failAttempt))))
   return yield* instantRecord(operation, {
     status: "passed",
     message: "Artifact staging completed.",
-    outcome: FileOutcome.make({ path: result.artifacts[0]?.path ?? "" })
+    outcome: FileOutcome.make({ path: action.intent.outfile })
   })
 })
 
@@ -467,7 +472,7 @@ export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*
 })
 
 export type OperationPass = "build" | "render" | "validation" | "publish" | "verification"
-export type EvidenceWorkflow = Exclude<OperationPass, "build"> | "release"
+export type EvidenceWorkflow = OperationPass | "release"
 
 const passForOperation = (operation: Operation): OperationPass => {
   switch (operation.phase) {

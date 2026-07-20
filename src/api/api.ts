@@ -102,7 +102,7 @@ const verb = <A, B>(
 const verbs = {
   plan: verb("plan", (engine, input) => engine.plan(input), (summary): Engine.ReleasePlanSummary => summary),
   build: verb("build", (engine, input) => engine.build(input),
-    ({ plan: _plan, stagedOperations: _staged, ...summary }): Engine.BuildSummary => summary),
+    ({ plan: _plan, evidence: _evidence, ...summary }): Engine.BuildSummary => summary),
   release: verb("release", (engine, input) => engine.release(input),
     ({ plan: _plan, evidence: _evidence, ...summary }): Engine.ReleaseSummary => summary),
   verify: verb("verify", (engine, input) => engine.verify(input),

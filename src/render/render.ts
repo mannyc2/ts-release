@@ -9,27 +9,27 @@ import {
 import { operationApprovalRequirements } from "../grammar/approval.js"
 import * as Schema from "effect/Schema"
 import { ReleasePlan } from "../grammar/plan.js"
-import type { StagedArtifactOperationResult } from "../pack/stager.js"
-
-export interface BuildArtifactsProjection {
-  readonly plan: ReleasePlan
-  readonly stagedOperations: ReadonlyArray<StagedArtifactOperationResult>
-}
+import { stagedOperationsForPlan } from "./summary.js"
 
 export const renderBuildArtifacts = (
-  result: BuildArtifactsProjection,
+  plan: ReleasePlan,
   format: "json" | "text" = "text"
 ): string => {
+  const operations = stagedOperationsForPlan(plan).map((operation) => ({
+    operationId: operation.id,
+    intentTag: operation.action.intent._tag,
+    artifacts: operation.action.producesArtifactIds.map((id) => ({ id, path: operation.action.intent.outfile }))
+  }))
   if (format === "json") return `${JSON.stringify({
     schemaVersion: "artifact-stage/v1",
-    identity: result.plan.identity,
-    configPath: result.plan.source.configPath ?? "inline config",
-    operations: result.stagedOperations,
-    plan: result.plan
+    identity: plan.identity,
+    configPath: plan.source.configPath ?? "inline config",
+    operations,
+    plan
   }, null, 2)}\n`
-  const artifacts = result.stagedOperations.flatMap((operation) => operation.artifacts)
+  const artifacts = operations.flatMap((operation) => operation.artifacts)
   return `${[
-    `staged artifact operations: ${result.stagedOperations.length}`,
+    `staged artifact operations: ${operations.length}`,
     "artifacts:",
     ...(artifacts.length === 0 ? ["  none"] : artifacts.map((artifact) => `  ${artifact.id} ${artifact.path}`))
   ].join("\n")}\n`

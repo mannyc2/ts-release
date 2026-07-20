@@ -21,12 +21,6 @@ export interface ArtifactStageContext {
   readonly identity: ReleaseIdentity
   readonly configPath?: string | undefined
 }
-export interface StagedArtifact { readonly id: string; readonly path: string }
-export interface StagedArtifactOperationResult {
-  readonly operationId: string
-  readonly intentTag: string
-  readonly artifacts: ReadonlyArray<StagedArtifact>
-}
 export class ArtifactStageError extends Schema.TaggedErrorClass<ArtifactStageError>()("ArtifactStageError", {
   operationId: Schema.NonEmptyString,
   intentTag: Schema.String,
@@ -56,7 +50,7 @@ export interface ArtifactStagerShape {
   readonly stage: (
     operation: StageOperation,
     context: ArtifactStageContext
-  ) => Effect.Effect<StagedArtifactOperationResult, ArtifactStageError>
+  ) => Effect.Effect<void, ArtifactStageError>
 }
 export class ArtifactStager extends Context.Service<ArtifactStager, ArtifactStagerShape>()("ArtifactStager") {}
 
@@ -75,12 +69,6 @@ const stageError = (
   ...(fields.path === undefined ? {} : { path: fields.path }),
   reason: fields.reason,
   ...(fields.cause === undefined ? {} : { cause: fields.cause })
-})
-
-const staged = (operation: StageOperation, outfile: string): StagedArtifactOperationResult => ({
-  operationId: operation.id,
-  intentTag: operation.action.intent._tag,
-  artifacts: operation.action.producesArtifactIds.map((id) => ({ id, path: outfile }))
 })
 
 const stagePath = (
@@ -132,7 +120,7 @@ const stageBun = (
       reason: logs || "Bun.build failed for " + (artifactId ?? operation.id) + "."
     }))
   }
-  return staged(operation, intent.outfile)
+  return
 })
 
 interface EntryInput {
@@ -269,7 +257,6 @@ const writeOutput = (
   yield* fs.writeFile(outputPath, data).pipe(Effect.mapError((cause) => stageError(operation, {
     artifactId, path: outfile, reason: "Unable to write " + label + " artifact.", cause
   })))
-  return staged(operation, outfile)
 })
 
 export const makeArtifactStagerLayer = (

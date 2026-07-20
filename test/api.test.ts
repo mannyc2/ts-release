@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import {
-  defineRelease, disposeReleaseRuntime, plan, release, ReleaseApiError, type ReleaseIntent
+  build, defineRelease, disposeReleaseRuntime, plan, release, ReleaseApiError, type ReleaseIntent
 } from "../src/index.js"
 import {
   resetReleaseRuntimeLayerFactoryForTesting,
@@ -147,6 +147,14 @@ describe("public API", () => {
       expect(summary.executed).toEqual([])
       expect(summary.refused).toEqual([])
       expect(summary.identity.version).toBe("0.1.0")
+    }))
+
+  it("keeps internal build plan and evidence out of the public summary", () =>
+    withRuntime(async () => {
+      const summary = await build({ config: inlineConfig })
+      expect(summary.stagedArtifacts).toEqual([])
+      expect(summary).not.toHaveProperty("plan")
+      expect(summary).not.toHaveProperty("evidence")
     }))
 
   it("records snapshot publish refusals", () =>

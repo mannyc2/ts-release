@@ -114,8 +114,9 @@ execute approval; irreversible operations additionally require publish
 approval. Snapshot policy refuses publish-class mutations but still records
 their normal refused evidence.
 
-Execution is sequential in four safety passes: render, validation, publish,
-verify. Each operation's pass is a total function of its phase and risk:
+`build` executes the build pass independently. The release workflow is
+sequential in four safety passes: render, validation, publish, and verification.
+Each operation's pass is a total function of its phase and risk:
 build/process maps to build, catalog to render, publish splits on read-only into
 validation or publish, and verify maps to verification. No operation can fall
 outside this pass partition. `RetryPolicy` is visible operation data interpreted

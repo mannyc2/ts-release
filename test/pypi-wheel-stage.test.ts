@@ -26,7 +26,7 @@ describe("PyPI wheel build pipe", () => {
       await mkdir(join(root, "artifacts"), { recursive: true })
       await writeFile(join(root, "artifacts", "ts-release-1.2.3-linux-x64"), "linux binary\n")
 
-      const results = await Effect.runPromise(
+      await Effect.runPromise(
         Effect.gen(function*() {
           const intent = yield* parseReleaseIntent(releaseConfig({
             identity: releaseIdentity({
@@ -76,7 +76,6 @@ describe("PyPI wheel build pipe", () => {
         ))
       )
 
-      expect(results[0]?.artifacts[0]?.path).toBe("dist/ts_release-1.2.3-py3-none-manylinux2014_x86_64.whl")
       const wheelPath = join(root, "dist", "ts_release-1.2.3-py3-none-manylinux2014_x86_64.whl")
       expect(await Bun.file(wheelPath).exists()).toBe(true)
       const wheelText = await Bun.file(wheelPath).text()

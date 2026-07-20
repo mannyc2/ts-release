@@ -30,11 +30,7 @@ import {
 import { writeEvidenceBundle } from "../src/run/workflow.js"
 import { runOperationEvidence } from "../src/run/executor.js"
 import { artifactSummary, evidenceOperationStatuses, stagedArtifactSummaries, type ArtifactSummary } from "../src/render/summary.js"
-import {
-  UnsupportedArtifactStagerLayer,
-  type StagedArtifact,
-  type StagedArtifactOperationResult
-} from "../src/pack/stager.js"
+import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { GitHubApiLiveLayer } from "../src/github/github.js"
 import { runOperation, TestGitHubApiLayer } from "./helpers.js"
 
@@ -103,12 +99,6 @@ const summaryOperation = (id: string, produces?: ReadonlyArray<string>) => Opera
 })
 const summaryPlan = (artifacts: ReadonlyArray<Artifact> = [], operations: ReadonlyArray<Operation> = []) =>
   ReleasePlan.make({ ...makePlan(), artifacts, operations })
-const staged = (operationId: string, id: string, path: string, intentTag = "archive") =>
-  ({
-    operationId,
-    intentTag,
-    artifacts: [{ id, path } satisfies StagedArtifact]
-  }) satisfies StagedArtifactOperationResult
 
 const baseEngineLayer = (
   commandOptions: Parameters<typeof makeWorkspaceTestCommandRunnerLayer>[0] = {}
@@ -447,11 +437,12 @@ describe("evidence recorder", () => {
     expect(encoded).not.toHaveProperty("format"); expect(encoded).not.toHaveProperty("sizeBytes")
   })
 
-  it("joins staged artifacts in result order", () => {
+  it("projects staged artifacts in plan order", () => {
     const first = summaryArtifact("first", "dist/first"), second = summaryArtifact("second", "dist/second")
-    const summaries = stagedArtifactSummaries(
-      summaryPlan([first, second], [summaryOperation("stage-second", ["second"]), summaryOperation("stage-first", ["first"])]),
-      [staged("stage-second", "second", "dist/second"), staged("stage-first", "first", "dist/first")])
+    const summaries = stagedArtifactSummaries(summaryPlan(
+      [first, second],
+      [summaryOperation("stage-second", ["second"]), summaryOperation("stage-first", ["first"])]
+    ))
     expect(summaries).toEqual([artifactSummary(second), artifactSummary(first)])
   })
 })

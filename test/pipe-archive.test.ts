@@ -125,11 +125,10 @@ describe("archive pipe", () => {
       planArchives([{ files: ["plugin/**"], formats: ["zip"] }], stateWith([])),
       Layer.empty
     )
-    const staged = await runEffect(
+    await runEffect(
       stageArtifactOperations(stageOperations(contribution.operations), { root, identity }),
       makeArtifactStagerLayer().pipe(Layer.provideMerge(BunServices.layer))
     )
-    expect(staged[0]?.artifacts[0]?.path).toBe(".release/artifacts/release_0.1.0.zip")
     const archive = readFileSync(join(root, ".release/artifacts/release_0.1.0.zip"))
     expect(archive.includes("plugin/plugin.json")).toBe(true)
     expect(archive.includes("plugin/skills/SKILL.md")).toBe(true)
@@ -141,12 +140,10 @@ describe("archive pipe", () => {
     writeFileSync(join(root, "LICENSE"), "license")
     const contribution = await runEffect(planArchives([{ wrapInDirectory: true }],
       stateWith([executable("cli-linux-x64", "release", "linux-x64")])), Layer.empty)
-    const staged = await runEffect(
+    await runEffect(
       stageArtifactOperations(stageOperations(contribution.operations), { root, identity }),
       makeArtifactStagerLayer().pipe(Layer.provideMerge(BunServices.layer))
     )
-    expect(staged[0]?.artifacts[0]).toMatchObject({ id: "archive-linux-x64",
-      path: ".release/artifacts/release_0.1.0_linux_amd64.tar.gz" })
     const bytes = readFileSync(join(root, ".release/artifacts/release_0.1.0_linux_amd64.tar.gz"))
     expect(bytes[0]).toBe(0x1f)
     expect(bytes[1]).toBe(0x8b)

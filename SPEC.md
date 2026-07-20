@@ -98,9 +98,10 @@ Examples:
 
 Each surface pipe should emit operation data that declares required inputs, auth requirements, validation strategy, risk, and setup prerequisites. When auth cannot be proven locally, the operation should model the expected execution context and provider-specific setup.
 
-### Evidence-driven validation
+### Evidence-driven workflows
 
-Validation should produce structured evidence, not just console output.
+Build, validation, publishing, and verification workflows should produce
+structured evidence, not just console output.
 
 Evidence should be machine-readable enough for CI and human-readable enough for debugging. It should include command invocations, tool versions where practical, exit statuses, important paths, skipped checks, warnings, failures, and timestamps.
 
@@ -134,9 +135,10 @@ effectful side of that boundary: typed failure channels, retry
 `Schedule` interpretation, interruption, workflow finalization, service
 acquisition, and runtime composition.
 
-Each started execution or verification workflow owns one local
-`Ref<EvidenceBundle>`. It preserves the sequential four-pass safety order and
-records only the final outcome of each operation, never every retry attempt.
+Each started build, release-execution, or verification workflow owns one local
+`Ref<EvidenceBundle>`. The build workflow executes its build pass independently;
+release execution preserves the sequential four-pass safety order. Both record
+only the final outcome of each operation, never every retry attempt.
 One on-exit finalizer invokes the evidence writer exactly once from that local
 state on success, typed failure, defect, or interruption.
 
@@ -269,7 +271,7 @@ Operations should carry enough metadata to explain their risk level, inputs, out
 
 ### Evidence
 
-Structured records produced by validation, rendering, execution, and verification.
+Structured records produced by staging, rendering, validation, execution, and verification.
 
 Evidence should survive outside the process as JSON or another stable format. It should be useful for CI summaries, release audits, and debugging failed publishes.
 For every workflow that starts, evidence persistence is finalized exactly once

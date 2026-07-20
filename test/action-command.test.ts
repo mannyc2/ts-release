@@ -338,17 +338,52 @@ describe("ts-release action", () => {
     await withTempDirectoryPromise("ts-release-action-build-", async (root) => {
       await writeFile(join(root, "release.config.json"), noOpConfig)
       const io = makeFakeActionIo()
+      const artifact = makeArtifactClient()
       await runAction(
         actionOptions(root, {
           command: "build",
-          format: "text"
+          format: "text",
+          uploadEvidence: true
         }),
         io,
-        makeNodeReleaseWorkflowRuntimeLayer({ root })
+        makeNodeReleaseWorkflowRuntimeLayer({ root }),
+        artifact.client
       )
+      const evidence = await readFile(join(root, ".release", "evidence", "build.json"), "utf8")
       expect(io.outputs.get("status")).toBe("passed")
       expect(io.outputs.get("release_name")).toBe("release")
       expect(io.summaries.join("\n")).toContain("staged artifact operations: 0")
+      expect(evidence).toContain('"records": []')
+      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("build.json"))).toBe(true)
+    })
+  })
+  test("failed build uploads its persisted evidence", async () => {
+    await withTempDirectoryPromise("ts-release-action-build-failure-", async (root) => {
+      await writeFile(join(root, "release.config.json"), JSON.stringify({
+        project: { name: "release", version: "0.1.0", commit: "abc123", tag: "v0.1.0" },
+        builds: [{
+          builder: "bun",
+          id: "release-cli",
+          entry: "src/cli.ts",
+          targets: ["linux-x64"],
+          output: "dist/release-{version}-{targetTriple}"
+        }],
+        publish: {},
+        evidence: ".release/evidence"
+      }))
+      const io = makeFakeActionIo()
+      const artifact = makeArtifactClient()
+      await runAction(
+        actionOptions(root, { command: "build", uploadEvidence: true }),
+        io,
+        makeNodeReleaseWorkflowRuntimeLayer({ root }),
+        artifact.client
+      )
+      const evidence = await readFile(join(root, ".release", "evidence", "build.json"), "utf8")
+      expect(io.outputs.get("status")).toBe("failed")
+      expect(io.failures.join("\n")).toContain("OperationFailedError")
+      expect(evidence).toContain('"status": "failed"')
+      expect(artifact.uploads[0]?.files.some((file) => file.endsWith("build.json"))).toBe(true)
     })
   })
   test("verify writes verification evidence and can upload it through a fake artifact client", async () => {

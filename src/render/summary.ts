@@ -1,11 +1,10 @@
 // Invariant: public summaries are JSON-safe projections of canonical artifacts, operations, and evidence.
 import * as Schema from "effect/Schema"
 import { Artifact } from "../grammar/artifact.js"
-import type { Operation, OperationRisk } from "../grammar/operation.js"
+import type { Operation, OperationRisk, StageAction } from "../grammar/operation.js"
 import type { ReleasePlan } from "../grammar/plan.js"
 import type { ReleaseIdentity } from "../grammar/state.js"
 import type { EvidenceBundle } from "../run/evidence.js"
-import type { StagedArtifactOperationResult } from "../pack/stager.js"
 
 
 export type ReleaseIdentitySummary = Pick<ReleaseIdentity, "name" | "version" | "commit" | "tag">
@@ -84,8 +83,12 @@ export const evidenceOperationStatuses = (
     )
 })
 
-export const stagedArtifactSummaries = (
-  plan: ReleasePlan,
-  stagedOperations: ReadonlyArray<StagedArtifactOperationResult>
-): ReadonlyArray<ArtifactSummary> => stagedOperations.flatMap(({ artifacts }) => artifacts.map(({ id }) =>
-  artifactSummary(plan.artifacts.find((artifact) => artifact.id === id)!)))
+type StageOperation = Operation & { readonly action: StageAction }
+
+export const stagedOperationsForPlan = (plan: ReleasePlan): ReadonlyArray<StageOperation> =>
+  plan.operations.filter((operation): operation is StageOperation =>
+    (operation.phase === "build" || operation.phase === "process") && operation.action._tag === "stage")
+
+export const stagedArtifactSummaries = (plan: ReleasePlan): ReadonlyArray<ArtifactSummary> =>
+  stagedOperationsForPlan(plan).flatMap((operation) => operation.action.producesArtifactIds.map((id) =>
+    artifactSummary(plan.artifacts.find((artifact) => artifact.id === id)!)))

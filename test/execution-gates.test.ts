@@ -37,12 +37,15 @@ const context = {
   artifacts: []
 }
 
-const baseLayer = (options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {}) =>
+const baseLayer = (
+  options: Parameters<typeof makeTestCommandRunnerLayer>[0] = {},
+  artifactStagerLayer = UnsupportedArtifactStagerLayer
+) =>
   Layer.mergeAll(
     makeTestCommandRunnerLayer(options),
     makeTestReleaseHttpLayer(),
     TestGitHubApiLayer,
-    UnsupportedArtifactStagerLayer
+    artifactStagerLayer
   )
 
 const TestLayer = baseLayer({
@@ -192,6 +195,32 @@ const runRetryProbe = (operation: Operation, succeedAt: number, advanceMillis: n
       Effect.provide(retryProbeLayer(times, succeedAt)),
       Effect.forkChild({ startImmediately: true })
     )
+    yield* TestClock.adjust(advanceMillis)
+    return { evidence: yield* Fiber.join(fiber), times }
+  })
+
+const runStageRetryProbe = (succeedAt: number, advanceMillis: number) =>
+  Effect.gen(function*() {
+    const times: Array<number> = []
+    const layer = Layer.succeed(ArtifactStager)({
+      stage: (operation) => Effect.gen(function*() {
+        const now = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
+        times.push(now)
+        if (times.length < succeedAt) {
+          return yield* Effect.fail(ArtifactStageError.make({
+            operationId: operation.id,
+            intentTag: operation.action.intent._tag,
+            path: operation.action.intent.outfile,
+            reason: "typed failure"
+          }))
+        }
+      })
+    })
+    const fiber = yield* runOperationEvidence(
+      retryStageOperation,
+      ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+      context
+    ).pipe(Effect.provide(baseLayer({}, layer)), Effect.forkChild({ startImmediately: true }))
     yield* TestClock.adjust(advanceMillis)
     return { evidence: yield* Fiber.join(fiber), times }
   })
@@ -351,7 +380,7 @@ describe("execution approval", () => {
   })
 
   layer(baseLayer())((it) => {
-    it.effect("never retries typed command, filesystem, or stager failures", () =>
+    it.effect("never retries typed command or filesystem failures", () =>
       Effect.gen(function*() {
         let attempts = 0
         const error = yield* runOperationEvidence(npmVersionVerifyOperation(11), ExecutionApproval.none, context).pipe(
@@ -374,20 +403,25 @@ describe("execution approval", () => {
         ).pipe(Effect.provide(baseLayer({ directories: new Set(["."]), failWriteFileString: true, onWriteFileString: () => { writes += 1 } })), Effect.flip)
         expectTaggedError(writeError, "WorkspaceWriteError")
         expect(writes).toBe(1)
-
-        let stages = 0
-        const stageError = yield* runOperationEvidence(
-          retryStageOperation,
-          ExecutionApproval.make({ execute: true, approveIrreversible: false }),
-          context
-        ).pipe(Effect.provide(Layer.succeed(ArtifactStager)({ stage: (operation) => Effect.gen(function*() {
-          stages += 1
-          return yield* Effect.fail(ArtifactStageError.make({ operationId: operation.id, intentTag: "archive", reason: "typed failure" }))
-        }) })), Effect.flip)
-        expectTaggedError(stageError, "ArtifactStageError")
-        expect(stages).toBe(1)
       }))
   })
+
+  it.effect("retries stage failures and returns one final evidence record", () =>
+    Effect.gen(function*() {
+      const recovered = yield* runStageRetryProbe(3, 5_000)
+      expect(recovered.times).toHaveLength(3)
+      expect(recovered.evidence.status).toBe("passed")
+      expect(recovered.evidence.outcome).toMatchObject({ _tag: "file", path: "dist/probe.zip" })
+
+      const failed = yield* runStageRetryProbe(Infinity, 5_000)
+      expect(failed.times).toHaveLength(11)
+      expect(failed.evidence).toMatchObject({
+        operationId: "stage:retry-probe",
+        status: "failed",
+        message: "typed failure",
+        outcome: { _tag: "file", path: "dist/probe.zip" }
+      })
+    }))
 
   it.effect("maps a final failed attempt to OperationFailedError", () =>
     Effect.gen(function*() {

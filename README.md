@@ -487,8 +487,10 @@ ts-release build --config release.config.json --format text
 
 ## Evidence
 
-Release and verification commands write JSON evidence bundles. The full
-`release` workflow writes `evidence.json`.
+Build, release, and verification commands write JSON evidence bundles. `build`
+writes `build.json`, the full `release` workflow writes `evidence.json`, and
+`verify` writes `verification.json`. When Action evidence upload is enabled,
+its build bundle is included in the uploaded artifact.
 
 ```json
 {

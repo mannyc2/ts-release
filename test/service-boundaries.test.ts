@@ -7,8 +7,6 @@ import {
   ArtifactStager,
   type ArtifactStagerShape,
   makeArtifactStagerLayer,
-  StagedArtifact,
-  StagedArtifactOperationResult,
   type StageOperation,
   UnsupportedArtifactStagerLayer
 } from "../src/pack/stager.js"
@@ -82,13 +80,7 @@ const operation = {
 } satisfies StageOperation
 
 const TestArtifactStagerLayer: Layer.Layer<ArtifactStager> = Layer.succeed(ArtifactStager)({
-  stage: (input) => Effect.succeed(
-    {
-      operationId: input.id,
-      intentTag: input.action.intent._tag,
-      artifacts: [{ id: "test-artifact", path: "dist/test.zip" } satisfies StagedArtifact]
-    } satisfies StagedArtifactOperationResult
-  )
+  stage: () => Effect.void
 })
 
 describe("custom service boundaries", () => {
@@ -112,9 +104,7 @@ describe("custom service boundaries", () => {
         root: "/workspace",
         identity: makePipelineIdentity()
       })
-      expect(result.artifacts).toEqual([
-        { id: "test-artifact", path: "dist/test.zip" }
-      ])
+      expect(result).toBeUndefined()
     }).pipe(Effect.provide(TestArtifactStagerLayer)))
 
   it.effect("keeps unsupported staging typed and dependency-free", () =>

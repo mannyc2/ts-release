@@ -92,7 +92,7 @@ const buildCommand = Command.make(
   { ...sharedFlags, format: textJsonFormatFlag, out: outputFlag },
   Effect.fn("cli.build")(function*({ root, config, snapshot, format, out }) {
     const result = yield* Release.build(configInput({ root, config, snapshot }))
-    yield* writeOrPrint(out, Release.renderBuildArtifacts(result, format))
+    yield* writeOrPrint(out, Release.renderBuildArtifacts(result.plan, format))
   })
 )
 

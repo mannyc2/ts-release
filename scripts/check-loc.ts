@@ -22,8 +22,8 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/api", 195],
   ["src/types", 13],
   ["apps/release-ts/src", 586],
-  ["apps/ts-release-action/src", 500],
-  ["test", 9307], // raised by plan 160 (root retry config)
+  ["apps/ts-release-action/src", 502], // raised by plan 162 (failed-build evidence upload)
+  ["test", 9356], // raised by plan 162 (build evidence + retry regressions)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 882]
 ]

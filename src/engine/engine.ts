@@ -23,11 +23,6 @@ import { publishPyPiPlanner } from "../features/publish/pypi.js"
 import { hooksAfterPlanner, publishCustomPlanner } from "../features/publish/hooks.js"
 import { pypiWheelPlanner } from "../features/build/pypi-wheel.js"
 import {
-  operationsForPass,
-  runOperations,
-  type OperationRunContext
-} from "../run/executor.js"
-import {
   EvidenceBundle,
   renderEvidenceJson
 } from "../run/evidence.js"
@@ -43,11 +38,6 @@ import {
   type ReleaseSummary,
   type VerifySummary
 } from "../render/summary.js"
-import {
-  ArtifactStager,
-  type StagedArtifactOperationResult,
-  type StageOperation
-} from "../pack/stager.js"
 import { diagnoseRelease, type DoctorReleaseInput } from "../doctor/doctor.js"
 import { releaseEvidencePath, writeWorkflowEvidence } from "../run/workflow.js"
 
@@ -149,52 +139,6 @@ export const doctorRelease = Effect.fn("engine.doctorRelease")(function*(input: 
   return yield* diagnoseRelease(input, configPath(input), planned)
 })
 
-const isStageOperation = (operation: Operation): operation is StageOperation =>
-  operation.action._tag === "stage"
-
-const operationContext = (
-  state: Pick<PlanAccumulator, "identity" | "artifacts">,
-  root: string,
-  configPathName: string | undefined
-): OperationRunContext => ({
-  root,
-  identity: state.identity,
-  artifacts: state.artifacts,
-  configPath: configPathName
-})
-
-const stageReleaseArtifacts = Effect.fn("engine.stageReleaseArtifacts")(function*(
-  options: RunOptions = {}
-) {
-  const { build, source } = yield* loadReleaseBuild(options)
-  const pathName = source.sourcePath ?? "inline config"
-  const staged: Array<StagedArtifactOperationResult> = []
-  for (const operation of operationsForPass(build.buildState.operations, "build")) {
-    if (isStageOperation(operation)) {
-      staged.push(yield* (yield* ArtifactStager).stage(operation, {
-        root: source.root,
-        identity: build.buildState.identity,
-        configPath: pathName
-      }))
-    } else {
-      yield* runOperations(
-        [operation],
-        ExecutionApproval.make({ execute: true, approveIrreversible: false }),
-        operationContext(build.buildState, source.root, pathName)
-      )
-    }
-  }
-  const planState = yield* resolveReleasePlan(build)
-  const plan = releasePlanFromAccumulator(build.release, source.root, source.sourcePath, planState)
-  return {
-    schemaVersion: "artifact-stage/v1",
-    identity: build.buildState.identity,
-    configPath: pathName,
-    operations: staged,
-    plan
-  }
-})
-
 const planWithEvidence = Effect.fn("engine.planWithEvidence")(function*<E, R>(
   options: RunOptions,
   write: (plan: ReleasePlan) => Effect.Effect<EvidenceBundle, E, R>
@@ -209,15 +153,21 @@ export const plan = Effect.fn("engine.summary.plan")(function*(options: RunOptio
 })
 
 export const build = Effect.fn("engine.summary.build")(function*(options: RunOptions = {}) {
-  const result = yield* stageReleaseArtifacts(options)
+  const plan = yield* planRelease(options)
+  const evidence = yield* writeWorkflowEvidence(
+    plan,
+    "build",
+    "build",
+    ExecutionApproval.make({ execute: true, approveIrreversible: false })
+  )
   return {
-    ...plannedSummary(result.plan),
-    stagedArtifacts: stagedArtifactSummaries(result.plan, result.operations),
-    plan: result.plan,
-    stagedOperations: result.operations
+    ...plannedSummary(plan),
+    stagedArtifacts: stagedArtifactSummaries(plan),
+    plan,
+    evidence
   } satisfies BuildSummary & {
     readonly plan: ReleasePlan
-    readonly stagedOperations: ReadonlyArray<StagedArtifactOperationResult>
+    readonly evidence: EvidenceBundle
   }
 })
 

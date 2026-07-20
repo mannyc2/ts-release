@@ -45,7 +45,7 @@ const npmGitHubInitArgs = (config: string, extra: ReadonlyArray<string> = []) =>
   "--config", config,
   ...extra
 ]
-const buildConfig = JSON.stringify({
+const buildConfigInput = {
   project: { name: "release", version: "0.1.0", commit: "abc123", tag: "v0.1.0" },
   builds: [{
     builder: "bun",
@@ -55,6 +55,11 @@ const buildConfig = JSON.stringify({
     output: "dist/release-{version}-{targetTriple}"
   }],
   publish: {}
+}
+const buildConfig = JSON.stringify(buildConfigInput)
+const buildWithHookConfig = JSON.stringify({
+  ...buildConfigInput,
+  hooks: { before: [{ id: "prepare", run: ["prepare"] }] }
 })
 // The remaining direct Effect.provide calls in this file exercise CLI entrypoints
 // around one-off temp-directory setup.
@@ -98,7 +103,7 @@ describe("cli command", () => {
     withTempDirectoryPromise("ts-release-cli-build-", async (root) => {
       const configPath = join(root, "release.config.json")
       const out = join(root, "stage.txt")
-      await writeFile(configPath, buildConfig)
+      await writeFile(configPath, buildWithHookConfig)
       const build: BunExecutableBuild = async (input) => {
         await mkdir(join(root, "dist"), { recursive: true })
         await writeFile(input.outfile, "compiled binary")
@@ -122,8 +127,15 @@ describe("cli command", () => {
         ]).pipe(Effect.provide(layer))
       )
       const contents = await readFile(out, "utf8")
+      const evidence = JSON.parse(await readFile(join(root, ".release", "evidence", "build.json"), "utf8")) as {
+        readonly records: ReadonlyArray<{ readonly operationId: string; readonly status: string }>
+      }
       expect(contents).toContain("staged artifact operations: 1")
       expect(contents).toContain("cli-linux-x64 dist/release-0.1.0-linux-x64")
+      expect(evidence.records.map(({ operationId, status }) => ({ operationId, status }))).toEqual([
+        { operationId: "hook:before:prepare", status: "passed" },
+        { operationId: "build:bun:release-cli-linux-x64", status: "passed" }
+      ])
     }))
   test("build command succeeds with no staged operations", () =>
     withTempDirectoryPromise("ts-release-cli-build-empty-", async (root) => {
@@ -155,7 +167,7 @@ describe("cli command", () => {
       expect(JSON.stringify(parsed)).toContain("\"schemaVersion\":\"artifact-stage/v1\"")
       expect(JSON.stringify(parsed)).toContain("\"operations\":[]")
     }))
-  test("build command reports build failures", () =>
+  test("build command persists failed operation evidence", () =>
     withTempDirectoryPromise("ts-release-cli-build-failure-", async (root) => {
       const configPath = join(root, "release.config.json")
       await writeFile(configPath, buildConfig)
@@ -177,7 +189,17 @@ describe("cli command", () => {
           configPath
         ]).pipe(Effect.provide(layer))
       )
-      expectExitFailureTag(exit, "ArtifactStageError")
+      expectExitFailureTag(exit, "OperationFailedError")
+      const evidence = JSON.parse(await readFile(join(root, ".release", "evidence", "build.json"), "utf8")) as {
+        readonly records: ReadonlyArray<{ readonly operationId: string; readonly status: string; readonly message: string }>
+      }
+      expect(evidence.records).toEqual([
+        expect.objectContaining({
+          operationId: "build:bun:release-cli-linux-x64",
+          status: "failed",
+          message: "compile failed"
+        })
+      ])
     }))
   test("internal catalog render script writes planned files without publishing", () =>
     withTempDirectoryPromise("ts-release-catalog-render-", async (root) => {

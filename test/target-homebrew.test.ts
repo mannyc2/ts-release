@@ -80,13 +80,13 @@ describe("Homebrew target", () => {
   test("preserves reference, file-shape, and checksum safeguards", async () => {
     const directory = releaseConfig({ artifacts: [{ id: "archive", path: ".", format: "directory" }],
       publish: { homebrew: { repository: "owner/homebrew-tap", formulaName: "release",
-        formulaPath: ".release/generated/release.rb", artifactIds: ["archive"] } } })
+        formulaPath: ".release/generated/release.rb", ids: ["archive"] } } })
     const nonSha256 = homebrewConfig().replace(
       "\"format\":\"tarball\"",
       "\"format\":\"tarball\",\"checksum\":{\"algorithm\":\"sha512\",\"value\":\"sha512:manual\"}"
     )
     const [missing, directoryArtifact, checksum] = await Promise.all([
-      runEffect(plan(homebrewConfig({ artifactIds: ["missing"] })).pipe(Effect.flip), HomebrewLayer),
+      runEffect(plan(homebrewConfig({ ids: ["missing"] })).pipe(Effect.flip), HomebrewLayer),
       runEffect(plan(directory).pipe(Effect.flip), HomebrewLayer),
       runEffect(plan(nonSha256).pipe(Effect.flip), HomebrewLayer)
     ])

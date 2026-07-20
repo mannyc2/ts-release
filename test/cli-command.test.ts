@@ -227,7 +227,7 @@ describe("cli command", () => {
             repository: "owner/homebrew-tap",
             formulaName: "release",
             formulaPath: ".release/generated/release.rb",
-            artifactIds: ["archive"]
+            ids: ["archive"]
           }
         },
         evidence: ".release/evidence"

@@ -98,14 +98,18 @@ describe("config schema", () => {
       )),
       ["$.publish.npm.trustedPublishing.packageExists", "verifyPackageExists"]
     ))
-  it.effect("rejects removed Homebrew artifactId without rejecting Scoop artifactId", () =>
-    expectValidationFailure(
-      decodeReleaseIntent({
-        project: {},
-        publish: { homebrew: { artifactId: "archive" }, scoop: { artifactId: "archive" } }
-      }),
-      ["$.publish.homebrew.artifactId", "artifactIds"]
-    ))
+  for (const [target, field, value, hint] of [
+    ["homebrew", "artifactId", "archive", "Use ids with one or more artifact IDs."],
+    ["homebrew", "artifactIds", ["archive"], "Use ids with one or more artifact IDs."],
+    ["pypi", "artifactIds", ["wheel"], "Use ids with one or more artifact IDs."],
+    ["scoop", "artifactId", "archive", "Use ids with exactly one artifact ID."]
+  ] as const) {
+    it.effect(`rejects removed ${target} ${field} with a migration hint`, () =>
+      expectValidationFailure(
+        decodeReleaseIntent({ project: {}, publish: { [target]: { [field]: value } } }),
+        [`$.publish.${target}.${field}`, hint]
+      ))
+  }
   for (const [target, hint] of [
     ["homebrew", "Homebrew tap publishing uses ambient git credentials; tokenEnv was removed."],
     ["scoop", "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed."]
@@ -133,15 +137,23 @@ describe("config schema", () => {
     it.effect(`rejects an unknown ${label} config field`, () =>
       expectValidationFailure(decodeReleaseIntent(input, "inline-release-config"), [expectedPath], "inline-release-config"))
   }
-  it.effect("decodes explicit non-empty PyPI artifactIds", () =>
+  it.effect("decodes the shared explicit ids spelling", () =>
     Effect.gen(function*() {
-      const intent = yield* decodeReleaseIntent({ project: {}, publish: { pypi: { artifactIds: ["wheel-artifact"] } } })
-      expect(intent.publish.pypi).toMatchObject({ artifactIds: ["wheel-artifact"] })
+      const intent = yield* decodeReleaseIntent({ project: {}, publish: {
+        homebrew: { repository: "owner/homebrew-tap", ids: ["darwin"] },
+        pypi: { ids: ["wheel"] },
+        scoop: { repository: "owner/scoop-bucket", ids: ["windows"] }
+      } })
+      expect(intent.publish.homebrew).toMatchObject({ ids: ["darwin"] })
+      expect(intent.publish.pypi).toMatchObject({ ids: ["wheel"] })
+      expect(intent.publish.scoop).toMatchObject({ ids: ["windows"] })
     }))
   const invalidConfigInputs: ReadonlyArray<readonly [string, unknown, string]> = [
-    ["Homebrew artifactIds", { project: {}, publish: {
-      homebrew: { repository: "owner/homebrew-tap", artifactIds: [] } } }, `["publish"]["homebrew"]["artifactIds"]`],
-    ["PyPI artifactIds", { project: {}, publish: { pypi: { artifactIds: [] } } }, `["publish"]["pypi"]["artifactIds"]`],
+    ["Homebrew ids", { project: {}, publish: {
+      homebrew: { repository: "owner/homebrew-tap", ids: [] } } }, `["publish"]["homebrew"]["ids"]`],
+    ["PyPI ids", { project: {}, publish: { pypi: { ids: [] } } }, `["publish"]["pypi"]["ids"]`],
+    ["Scoop ids", { project: {}, publish: {
+      scoop: { repository: "owner/scoop-bucket", ids: [] } } }, `["publish"]["scoop"]["ids"]`],
     ["catalog directory", { project: {}, catalogs: [{ id: "index", repository: "owner/catalog",
       directory: "../checkout", file: "index.json", content: "{}" }], publish: {} }, `["catalogs"][0]["directory"]`]
   ]

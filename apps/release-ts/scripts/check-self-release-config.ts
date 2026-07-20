@@ -269,14 +269,14 @@ if (isJsonObject(manifest) && isJsonObject(appManifest) && config !== undefined)
   if (homebrew?.description !== description) failures.push("self-release target homebrew description must match package description")
   if (homebrew?.formulaPath !== ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb") failures.push("self-release target homebrew formulaPath must equal .release/catalogs/homebrew-ts-release/Formula/ts-release.rb")
   if (homebrew?.tapDirectory !== ".release/catalogs/homebrew-ts-release") failures.push("self-release target homebrew tapDirectory must equal .release/catalogs/homebrew-ts-release")
-  if (JSON.stringify(homebrew?.artifactIds) !== JSON.stringify(["cli-darwin-arm64", "cli-darwin-x64"])) {
-    failures.push("self-release target homebrew artifactIds must equal cli-darwin-arm64, cli-darwin-x64")
+  if (JSON.stringify(homebrew?.ids) !== JSON.stringify(["cli-darwin-arm64", "cli-darwin-x64"])) {
+    failures.push("self-release target homebrew ids must equal cli-darwin-arm64, cli-darwin-x64")
   }
 
   if (scoop?.repository !== "mannyc2/scoop-ts-release") failures.push("self-release target scoop repository must equal mannyc2/scoop-ts-release")
   if (scoop?.manifestPath !== ".release/catalogs/scoop-ts-release/bucket/ts-release.json") failures.push("self-release target scoop manifestPath must equal .release/catalogs/scoop-ts-release/bucket/ts-release.json")
   if (scoop?.bucketDirectory !== ".release/catalogs/scoop-ts-release") failures.push("self-release target scoop bucketDirectory must equal .release/catalogs/scoop-ts-release")
-  if (scoop?.artifactId !== "cli-windows-x64") failures.push("self-release target scoop artifactId must equal cli-windows-x64")
+  if (JSON.stringify(scoop?.ids) !== JSON.stringify(["cli-windows-x64"])) failures.push("self-release target scoop ids must equal cli-windows-x64")
 
   if (pypi?.repositoryUrl !== "https://upload.pypi.org/legacy/") failures.push("self-release target pypi repositoryUrl must equal https://upload.pypi.org/legacy/")
   if (pypi?.pythonExecutable !== "python3") failures.push("self-release target pypi pythonExecutable must equal python3")

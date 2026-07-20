@@ -41,7 +41,7 @@
       "repository": "owner/homebrew-tap",
       "formulaName": "release-example-multi-target",
       "formulaPath": ".release/generated/release-example-multi-target.rb",
-      "artifactIds": ["archive"],
+      "ids": ["archive"],
       "homepage": "https://github.com/owner/release-example-multi-target",
       "url": "https://github.com/owner/release-example-multi-target/releases/download/v0.1.0/release-example-multi-target-0.1.0.tgz",
       "installPath": "bin/release-example-multi-target"

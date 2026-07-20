@@ -150,7 +150,7 @@
       "repository": "mannyc2/homebrew-ts-release",
       "formulaName": "ts-release",
       "formulaPath": ".release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
-      "artifactIds": [
+      "ids": [
         "cli-darwin-arm64",
         "cli-darwin-x64"
       ],
@@ -162,7 +162,7 @@
       "repository": "mannyc2/scoop-ts-release",
       "manifestName": "ts-release",
       "manifestPath": ".release/catalogs/scoop-ts-release/bucket/ts-release.json",
-      "artifactId": "cli-windows-x64",
+      "ids": ["cli-windows-x64"],
       "homepage": "https://github.com/mannyc2/ts-release",
       "description": "Portable artifact and package-manager distribution planning for TypeScript projects.",
       "license": "MIT",

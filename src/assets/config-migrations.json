@@ -7,9 +7,12 @@
     "$.strict": "Strict mode was removed; reviewable operations now encode validation behavior directly.",
     "$.npmPackage.id": "The npm package artifact id is fixed as npm-package.",
     "$.publish.npm.trustedPublishing.packageExists": "Use verifyPackageExists for the optional read-only npm package existence check.",
-    "$.publish.homebrew.artifactId": "Use artifactIds with one or more artifact IDs.",
+    "$.publish.homebrew.artifactId": "Use ids with one or more artifact IDs.",
+    "$.publish.homebrew.artifactIds": "Use ids with one or more artifact IDs.",
     "$.publish.homebrew.tokenEnv": "Homebrew tap publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.scoop.artifactId": "Use ids with exactly one artifact ID.",
     "$.publish.scoop.tokenEnv": "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.pypi.artifactIds": "Use ids with one or more artifact IDs.",
     "$.publish.pypi.usernameEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed.",
     "$.publish.pypi.passwordEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed."
   },

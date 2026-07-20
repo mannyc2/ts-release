@@ -152,7 +152,7 @@
       "repository": "owner/homebrew-tap",
       "formulaName": "pkg",
       "formulaPath": ".release/generated/pkg.rb",
-      "artifactIds": [
+      "ids": [
         "cli-darwin-arm64",
         "cli-darwin-x64"
       ],
@@ -163,7 +163,9 @@
       "repository": "owner/scoop-bucket",
       "manifestName": "pkg",
       "manifestPath": ".release/generated/pkg.json",
-      "artifactId": "cli-windows-x64",
+      "ids": [
+        "cli-windows-x64"
+      ],
       "homepage": "https://github.com/owner/repo",
       "description": "Portable CLI distribution for @scope/pkg",
       "license": "MIT"

@@ -19,7 +19,7 @@
       "repository": "owner/scoop-bucket",
       "manifestName": "release-example-scoop",
       "manifestPath": ".release/generated/release-example-scoop.json",
-      "artifactId": "archive",
+      "ids": ["archive"],
       "homepage": "https://github.com/owner/release-example-scoop",
       "description": "Example Scoop manifest for a release artifact",
       "license": "MIT",

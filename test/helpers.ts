@@ -224,7 +224,7 @@ export const partialWorkflowConfig = JSON.stringify({
       repository: "owner/homebrew-tap",
       formulaName: "release",
       formulaPath: ".release/generated/release.rb",
-      artifactIds: ["archive"]
+      ids: ["archive"]
     },
     npm: {
       registry: "https://registry.npmjs.org",
@@ -348,7 +348,7 @@ export const homebrewConfig = (overrides: Record<string, unknown> = {}) =>
         repository: "owner/homebrew-tap",
         formulaName: "release",
         formulaPath: ".release/generated/release.rb",
-        artifactIds: ["archive"],
+        ids: ["archive"],
         homepage: "https://github.com/owner/release",
         url: "https://github.com/owner/release/releases/download/v0.1.0/release-0.1.0.tgz",
         installPath: "bin/release",
@@ -369,7 +369,7 @@ export const pypiConfig = (overrides: Record<string, unknown> = {}) =>
     publish: {
       pypi: {
         repositoryUrl: "https://test.pypi.org/legacy/",
-        artifactIds: ["wheel"],
+        ids: ["wheel"],
         ...overrides
       }
     }
@@ -389,7 +389,7 @@ export const scoopConfig = (overrides: Record<string, unknown> = {}) =>
         repository: "owner/scoop-bucket",
         manifestName: "release",
         manifestPath: ".release/generated/release.json",
-        artifactId: "archive",
+        ids: ["archive"],
         homepage: "https://github.com/owner/release",
         description: "Example Scoop release",
         license: "MIT",

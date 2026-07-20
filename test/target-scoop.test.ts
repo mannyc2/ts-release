@@ -45,6 +45,15 @@ describe("Scoop target", () => {
     if (error._tag === "ConfigError") expect(error.reason).toContain("ambient git credentials; tokenEnv was removed")
   })
 
+  test("rejects more than one explicit artifact id", async () => {
+    const error = await runEffect(plan(scoopConfig({ ids: ["archive", "archive"] })).pipe(Effect.flip), ScoopLayer)
+    expect(error).toMatchObject({
+      _tag: "PlanError",
+      field: "publish.scoop.ids",
+      reason: "Scoop manifests reference exactly one artifact."
+    })
+  })
+
   test("keeps configured validation and render workflows visible", async () => {
     const result = await runEffect(Effect.gen(function*() {
       const release = yield* plan(scoopConfig({ validate: ["scoop-check", "--version", "{version}"] }))
@@ -81,13 +90,13 @@ describe("Scoop target", () => {
   test("preserves reference, file-shape, and checksum safeguards", async () => {
     const directory = releaseConfig({ artifacts: [{ id: "archive", path: ".", format: "directory" }],
       publish: { scoop: { repository: "owner/scoop-bucket", manifestName: "release",
-        manifestPath: ".release/generated/release.json", artifactId: "archive" } } })
-    const nonSha256 = scoopConfig({ artifactId: "archive" }).replace(
+        manifestPath: ".release/generated/release.json", ids: ["archive"] } } })
+    const nonSha256 = scoopConfig({ ids: ["archive"] }).replace(
       "\"format\":\"zip\"",
       "\"format\":\"zip\",\"checksum\":{\"algorithm\":\"sha512\",\"value\":\"sha512:manual\"}"
     )
     const [missing, directoryArtifact, checksum] = await Promise.all([
-      runEffect(plan(scoopConfig({ artifactId: "missing" })).pipe(Effect.flip), ScoopLayer),
+      runEffect(plan(scoopConfig({ ids: ["missing"] })).pipe(Effect.flip), ScoopLayer),
       runEffect(plan(directory).pipe(Effect.flip), ScoopLayer),
       runEffect(plan(nonSha256).pipe(Effect.flip), ScoopLayer)
     ])
@@ -97,7 +106,7 @@ describe("Scoop target", () => {
       reason: "Scoop manifest artifacts must be file-like, not directories." })
     expect(checksum).toMatchObject({ _tag: "PlanError", field: "artifacts.archive.checksum" })
 
-    const manual = await runEffect(plan(scoopConfig({ artifactId: "archive" }).replace(
+    const manual = await runEffect(plan(scoopConfig({ ids: ["archive"] }).replace(
       "\"format\":\"zip\"",
       "\"format\":\"zip\",\"checksum\":{\"algorithm\":\"sha256\",\"value\":\"00\"}"
     )), ScoopLayer)

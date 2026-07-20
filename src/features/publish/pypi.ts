@@ -25,7 +25,7 @@ export class ReleaseConfigPyPiPublish extends Schema.Class<ReleaseConfigPyPiPubl
   repositoryUrl: defaulted(Schema.String, "https://upload.pypi.org/legacy/"),
   pythonExecutable: defaulted(Schema.String, "python"),
   trustedPublishing: Schema.optionalKey(ReleaseConfigPyPiTrustedPublishing),
-  artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
+  ids: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString))
 }) {}
 
 // Twine reads these environment variable names directly.
@@ -35,10 +35,10 @@ const selectArtifacts = Effect.fn("publish.pypi.selectArtifacts")(function*(
   section: ReleaseConfigPyPiPublish,
   available: ReadonlyArray<Artifact>
 ) {
-  const artifacts = section.artifactIds === undefined
+  const artifacts = section.ids === undefined
     ? available.filter((artifact) => artifact.kind === "wheel")
-    : yield* Effect.forEach(section.artifactIds, (id) => findCatalogArtifact({
-      pipeId: "publish:pypi", field: "publish.pypi.artifactIds", target: "PyPI"
+    : yield* Effect.forEach(section.ids, (id) => findCatalogArtifact({
+      pipeId: "publish:pypi", field: "publish.pypi.ids", target: "PyPI"
     }, available, id))
   if (artifacts.length === 0) return yield* Effect.fail(PlanError.make({
     pipeId: "publish:pypi", field: "artifacts", reason: "PyPI target must have at least one artifact consumer."

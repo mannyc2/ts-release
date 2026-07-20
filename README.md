@@ -346,10 +346,10 @@ and evidence location.
 
 Runtime config decoding is strict: unknown keys are rejected instead of
 silently stripped. npm trusted publishing accepts only
-`verifyPackageExists`; Homebrew accepts a non-empty `artifactIds` array while
-Scoop retains its singular `artifactId`. PyPI can optionally select an
-explicit non-empty `artifactIds` array and otherwise selects wheel artifacts
-by kind.
+`verifyPackageExists`. Archives, Homebrew, Scoop, and PyPI all use a non-empty
+`ids` array for explicit artifact selection. Scoop requires exactly one id;
+when `ids` is absent, Homebrew selects Darwin executables, Scoop selects a
+Windows executable, and PyPI selects wheel artifacts.
 
 Useful config commands:
 
@@ -406,9 +406,9 @@ unique catalog/publish surfaces as `surface_count`.
 This is a hard cut: `release-plan/v3` documents are unsupported and there is
 no fallback reader. The former Action `target_count` output was removed in
 favor of `surface_count`; config `packageExists` was replaced by
-`verifyPackageExists`; Homebrew `artifactId` was replaced by non-empty
-`artifactIds`; and PyPI now uses explicit optional `artifactIds` or canonical
-`kind: "wheel"` selection. These are removals, not deprecations.
+`verifyPackageExists`; Homebrew `artifactId`/`artifactIds`, Scoop `artifactId`,
+and PyPI `artifactIds` were replaced by the shared non-empty `ids` spelling.
+These are removals, not deprecations.
 
 ## Artifact Variants
 

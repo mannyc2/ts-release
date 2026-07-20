@@ -57,8 +57,8 @@ describe("resolved release", () => {
         catalogs: [{ id: "index", repository: "owner/catalog", file: "index.json", content: "{version}" }],
         publish: {
           npm: {}, pypi: {}, github: {},
-          homebrew: { repository: "owner/homebrew-tap", artifactIds: ["darwin"] },
-          scoop: { repository: "owner/scoop-bucket", artifactId: "windows" }
+          homebrew: { repository: "owner/homebrew-tap", ids: ["darwin"] },
+          scoop: { repository: "owner/scoop-bucket", ids: ["windows"] }
         }
       })
       const plannedBuild = yield* buildPlanner(some(release.builds)!, emptyPlanAccumulator(identity))
@@ -120,13 +120,13 @@ describe("resolved release", () => {
           npm: { registry: "https://registry.example", packageName: "explicit-npm", packagePath: "npm-pkg",
             tokenEnv: "NPM_TOKEN", access: "restricted", provenance: true },
           pypi: { repositoryUrl: "https://pypi.example", pythonExecutable: "python3",
-            artifactIds: ["wheel-b"] },
+            ids: ["wheel-b"] },
           github: { repository: "owner/explicit", tokenEnv: "GH_TOKEN", draft: false, prerelease: "auto" },
           homebrew: { repository: "owner/tap", formulaName: "brew-alias", formulaPath: "Formula/tool.rb",
-            artifactIds: ["manual"], homepage: "https://brew.example", description: "brew", url: "https://cdn/brew",
+            ids: ["manual"], homepage: "https://brew.example", description: "brew", url: "https://cdn/brew",
             tapDirectory: "tap", installPath: "bin/tool", submit: "pull-request", validate: ["brew", "audit"] },
           scoop: { repository: "owner/bucket", manifestName: "scoop-alias", manifestPath: "bucket/tool.json",
-            artifactId: "manual", homepage: "https://scoop.example", description: "scoop", license: "MIT",
+            ids: ["manual"], homepage: "https://scoop.example", description: "scoop", license: "MIT",
             url: "https://cdn/scoop", bin: "tool.exe", bucketDirectory: "bucket", validate: "scoop-check" }
         },
         evidence: { directory: ".proof/{version}" }
@@ -141,7 +141,7 @@ describe("resolved release", () => {
           provider: "github-actions", workflow: "release.yml", verifyPackageExists: true } })
       expect(some(release.pypi)).toMatchObject({
         repositoryUrl: "https://pypi.example", pythonExecutable: "python3",
-        artifactIds: ["wheel-b"] })
+        ids: ["wheel-b"] })
       expect(some(trusted.pypi)?.trustedPublishing)
         .toEqual({ provider: "github-actions", workflow: "release.yml" })
       expect(some(release.github))
@@ -173,8 +173,8 @@ describe("resolved release", () => {
       const release = yield* resolved({
         project: {},
         publish: {
-          homebrew: { repository: "owner/tap", artifactIds: ["darwin"] },
-          scoop: { repository: "owner/bucket", artifactId: "windows" }
+          homebrew: { repository: "owner/tap", ids: ["darwin"] },
+          scoop: { repository: "owner/bucket", ids: ["windows"] }
         }
       })
       expect(some(release.catalogs)?.[0]).toMatchObject({
@@ -189,8 +189,8 @@ describe("resolved release", () => {
       const release = yield* resolved({
         project: {},
         publish: {
-          homebrew: { repository: "owner/tap", formulaName: "../escape", artifactIds: ["darwin"] },
-          scoop: { repository: "owner/bucket", manifestName: "../escape", artifactId: "windows" }
+          homebrew: { repository: "owner/tap", formulaName: "../escape", ids: ["darwin"] },
+          scoop: { repository: "owner/bucket", manifestName: "../escape", ids: ["windows"] }
         }
       })
       const error = yield* catalogGenericPlanner(

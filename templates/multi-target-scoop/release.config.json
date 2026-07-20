@@ -40,7 +40,9 @@
       "repository": "owner/scoop-bucket",
       "manifestName": "pkg",
       "manifestPath": ".release/generated/pkg.json",
-      "artifactId": "archive",
+      "ids": [
+        "archive"
+      ],
       "homepage": "https://github.com/owner/repo",
       "description": "Example Scoop manifest for pkg",
       "license": "MIT",

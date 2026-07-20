@@ -16,7 +16,7 @@
   ],
   "publish": {
     "pypi": {
-      "artifactIds": ["wheel"],
+      "ids": ["wheel"],
       "repositoryUrl": "https://test.pypi.org/legacy/"
     }
   },

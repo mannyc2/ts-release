@@ -40,7 +40,7 @@
       "repository": "owner/homebrew-tap",
       "formulaName": "pkg",
       "formulaPath": ".release/generated/pkg.rb",
-      "artifactIds": [
+      "ids": [
         "archive"
       ],
       "homepage": "https://github.com/owner/repo",

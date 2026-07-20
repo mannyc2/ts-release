@@ -152,7 +152,7 @@
       "repository": "owner/homebrew-portable-example",
       "formulaName": "portable-example",
       "formulaPath": ".release/generated/portable-example.rb",
-      "artifactIds": [
+      "ids": [
         "cli-darwin-arm64",
         "cli-darwin-x64"
       ],
@@ -163,7 +163,7 @@
       "repository": "owner/scoop-portable-example",
       "manifestName": "portable-example",
       "manifestPath": ".release/generated/portable-example.json",
-      "artifactId": "cli-windows-x64",
+      "ids": ["cli-windows-x64"],
       "homepage": "https://github.com/owner/portable-example",
       "description": "Portable CLI distribution for @scope/portable-example",
       "license": "MIT"

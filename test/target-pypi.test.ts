@@ -113,7 +113,7 @@ describe("PyPI target", () => {
       publish: {
         pypi: {
           repositoryUrl: "https://test.pypi.org/legacy/",
-          artifactIds: ["wheel"]
+          ids: ["wheel"]
         }
       }
     })
@@ -131,7 +131,7 @@ describe("PyPI target", () => {
     expect(directoryArtifact?._tag).toBe("PlanError")
     expect(noArtifact?._tag).toBe("PlanError")
     if (noArtifact?._tag === "PlanError") {
-      expect(noArtifact.field).toBe("publish.pypi.artifactIds")
+      expect(noArtifact.field).toBe("publish.pypi.ids")
       expect(noArtifact.reason).toBe("PyPI target references missing artifact wheel.")
     }
   })

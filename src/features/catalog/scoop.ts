@@ -24,7 +24,7 @@ export class ReleaseConfigScoopPublish extends Schema.Class<ReleaseConfigScoopPu
   repository: Schema.String,
   manifestName: Schema.optionalKey(Schema.String),
   manifestPath: Schema.optionalKey(SafeRelativePath),
-  artifactId: Schema.optionalKey(Schema.String),
+  ids: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString)),
   homepage: Schema.optionalKey(Schema.String),
   description: Schema.optionalKey(Schema.String),
   license: Schema.optionalKey(Schema.String),
@@ -68,7 +68,7 @@ type ScoopSection = ReleaseConfigScoopPublish & {
 }
 
 const source = {
-  pipeId: "catalog:scoop", field: "publish.scoop.artifactId", target: "Scoop", label: "Scoop manifest"
+  pipeId: "catalog:scoop", field: "publish.scoop.ids", target: "Scoop", label: "Scoop manifest"
 }
 
 const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
@@ -76,13 +76,19 @@ const manifestContent = Effect.fn("catalog.scoop.manifestContent")(function*(
   identity: ReleaseIdentity,
   artifacts: ReadonlyArray<Artifact>
 ) {
-  const artifact = section.artifactId === undefined
-    ? artifacts.find(({ kind, platform }) => kind === "executable" && platform?.os === "windows")
-    : yield* findCatalogArtifact(source, artifacts, section.artifactId)
+  const selected = section.ids === undefined
+    ? artifacts.filter(({ kind, platform }) => kind === "executable" && platform?.os === "windows").slice(0, 1)
+    : yield* Effect.forEach(section.ids, (id) => findCatalogArtifact(source, artifacts, id))
+  if (selected.length > 1) return yield* Effect.fail(PlanError.make({
+    pipeId: source.pipeId,
+    field: source.field,
+    reason: "Scoop manifests reference exactly one artifact."
+  }))
+  const artifact = selected[0]
   if (artifact === undefined) return yield* Effect.fail(PlanError.make({
     pipeId: source.pipeId,
     field: source.field,
-    reason: "Scoop publishing requires artifactId or a windows executable artifact."
+    reason: "Scoop publishing requires ids or a windows executable artifact."
   }))
   yield* rejectInvalidCatalogArtifact(source, artifact)
   const binaryName = artifact.platform?.binaryName

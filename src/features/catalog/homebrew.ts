@@ -24,7 +24,7 @@ export class ReleaseConfigHomebrewPublish extends Schema.Class<ReleaseConfigHome
   repository: Schema.String,
   formulaName: Schema.optionalKey(Schema.String),
   formulaPath: Schema.optionalKey(SafeRelativePath),
-  artifactIds: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString)),
+  ids: Schema.optionalKey(Schema.NonEmptyArray(Schema.NonEmptyString)),
   homepage: Schema.optionalKey(Schema.String),
   description: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
@@ -81,8 +81,8 @@ const selectArtifacts = Effect.fn("catalog.homebrew.selectArtifacts")(function*(
   section: HomebrewSection,
   available: ReadonlyArray<Artifact>
 ) {
-  if (section.artifactIds !== undefined) return yield* Effect.forEach(
-    section.artifactIds,
+  if (section.ids !== undefined) return yield* Effect.forEach(
+    section.ids,
     (id) => findCatalogArtifact(source, available, id)
   )
   const selected = available.filter(({ kind, platform }) => kind === "executable" && platform?.os === "darwin")

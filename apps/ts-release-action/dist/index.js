@@ -99869,7 +99869,7 @@ class ReleaseConfigHomebrewPublish extends Class4("ReleaseConfigHomebrewPublish"
   repository: String4,
   formulaName: optionalKey2(String4),
   formulaPath: optionalKey2(SafeRelativePath),
-  artifactIds: optionalKey2(NonEmptyArray(NonEmptyString)),
+  ids: optionalKey2(NonEmptyArray(NonEmptyString)),
   homepage: optionalKey2(String4),
   description: optionalKey2(String4),
   url: optionalKey2(String4),
@@ -99915,8 +99915,8 @@ var formulaClassName = (name) => {
   return result2 || "GeneratedFormula";
 };
 var selectArtifacts = fn2("catalog.homebrew.selectArtifacts")(function* (section, available) {
-  if (section.artifactIds !== undefined)
-    return yield* forEach2(section.artifactIds, (id) => findCatalogArtifact(source, available, id));
+  if (section.ids !== undefined)
+    return yield* forEach2(section.ids, (id) => findCatalogArtifact(source, available, id));
   const selected = available.filter(({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "darwin");
   return selected.length > 0 ? selected : yield* fail6(PlanError.make({
     pipeId: source.pipeId,
@@ -100035,7 +100035,7 @@ class ReleaseConfigScoopPublish extends Class4("ReleaseConfigScoopPublish")({
   repository: String4,
   manifestName: optionalKey2(String4),
   manifestPath: optionalKey2(SafeRelativePath),
-  artifactId: optionalKey2(String4),
+  ids: optionalKey2(NonEmptyArray(NonEmptyString)),
   homepage: optionalKey2(String4),
   description: optionalKey2(String4),
   license: optionalKey2(String4),
@@ -100072,17 +100072,24 @@ var resolveScoop = (section, config) => {
 };
 var source2 = {
   pipeId: "catalog:scoop",
-  field: "publish.scoop.artifactId",
+  field: "publish.scoop.ids",
   target: "Scoop",
   label: "Scoop manifest"
 };
 var manifestContent = fn2("catalog.scoop.manifestContent")(function* (section, identity2, artifacts) {
-  const artifact2 = section.artifactId === undefined ? artifacts.find(({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "windows") : yield* findCatalogArtifact(source2, artifacts, section.artifactId);
+  const selected = section.ids === undefined ? artifacts.filter(({ kind, platform: platform2 }) => kind === "executable" && platform2?.os === "windows").slice(0, 1) : yield* forEach2(section.ids, (id) => findCatalogArtifact(source2, artifacts, id));
+  if (selected.length > 1)
+    return yield* fail6(PlanError.make({
+      pipeId: source2.pipeId,
+      field: source2.field,
+      reason: "Scoop manifests reference exactly one artifact."
+    }));
+  const artifact2 = selected[0];
   if (artifact2 === undefined)
     return yield* fail6(PlanError.make({
       pipeId: source2.pipeId,
       field: source2.field,
-      reason: "Scoop publishing requires artifactId or a windows executable artifact."
+      reason: "Scoop publishing requires ids or a windows executable artifact."
     }));
   yield* rejectInvalidCatalogArtifact(source2, artifact2);
   const binaryName = artifact2.platform?.binaryName;
@@ -100556,14 +100563,14 @@ class ReleaseConfigPyPiPublish extends Class4("ReleaseConfigPyPiPublish")({
   repositoryUrl: defaulted(String4, "https://upload.pypi.org/legacy/"),
   pythonExecutable: defaulted(String4, "python"),
   trustedPublishing: optionalKey2(ReleaseConfigPyPiTrustedPublishing),
-  artifactIds: optionalKey2(NonEmptyArray(NonEmptyString))
+  ids: optionalKey2(NonEmptyArray(NonEmptyString))
 }) {
 }
 var twineAuthEnvNames = ["TWINE_USERNAME", "TWINE_PASSWORD"];
 var selectArtifacts2 = fn2("publish.pypi.selectArtifacts")(function* (section, available) {
-  const artifacts = section.artifactIds === undefined ? available.filter((artifact2) => artifact2.kind === "wheel") : yield* forEach2(section.artifactIds, (id) => findCatalogArtifact({
+  const artifacts = section.ids === undefined ? available.filter((artifact2) => artifact2.kind === "wheel") : yield* forEach2(section.ids, (id) => findCatalogArtifact({
     pipeId: "publish:pypi",
-    field: "publish.pypi.artifactIds",
+    field: "publish.pypi.ids",
     target: "PyPI"
   }, available, id));
   if (artifacts.length === 0)
@@ -100739,9 +100746,12 @@ var config_migrations_default = {
     "$.strict": "Strict mode was removed; reviewable operations now encode validation behavior directly.",
     "$.npmPackage.id": "The npm package artifact id is fixed as npm-package.",
     "$.publish.npm.trustedPublishing.packageExists": "Use verifyPackageExists for the optional read-only npm package existence check.",
-    "$.publish.homebrew.artifactId": "Use artifactIds with one or more artifact IDs.",
+    "$.publish.homebrew.artifactId": "Use ids with one or more artifact IDs.",
+    "$.publish.homebrew.artifactIds": "Use ids with one or more artifact IDs.",
     "$.publish.homebrew.tokenEnv": "Homebrew tap publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.scoop.artifactId": "Use ids with exactly one artifact ID.",
     "$.publish.scoop.tokenEnv": "Scoop bucket publishing uses ambient git credentials; tokenEnv was removed.",
+    "$.publish.pypi.artifactIds": "Use ids with one or more artifact IDs.",
     "$.publish.pypi.usernameEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed.",
     "$.publish.pypi.passwordEnv": "Twine reads TWINE_USERNAME/TWINE_PASSWORD directly; the field was removed and the names are fixed."
   },

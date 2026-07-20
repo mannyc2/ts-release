@@ -7,11 +7,11 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6279], // raised by plan 167 (strict templates, total joins, and unbound operation input types)
+  ["src", 6278], // raised by plan 167 (strict templates, total joins, and unbound operation input types)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
   ["src/grammar", 862], // raised by plan 167 (strict templates and single-stamp planner input type)
-  ["src/features", 1779], // ratcheted by plan 167 (feature operations remain unbound until planning)
+  ["src/features", 1778], // ratcheted by plan 167 (unbound operations and direct typed npm access)
   ["src/pack", 500],
   ["src/github", 267],
   ["src/run", 810], // raised by plan 159 (hooks feature)

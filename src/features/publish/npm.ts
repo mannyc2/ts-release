@@ -92,8 +92,7 @@ export const publishNpmPlanner = featurePlanner<NpmPublishSection>("publish:npm"
         })
       })
     const operations: Array<UnboundOperation> = [auth]
-    if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing
-      && section.trustedPublishing.verifyPackageExists === true) operations.push(npmCheck(
+    if (section.trustedPublishing?.verifyPackageExists === true) operations.push(npmCheck(
       "npm:npm-package-exists",
       "Verify npm package exists before trusted publishing.",
       section,

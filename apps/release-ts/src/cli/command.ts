@@ -47,6 +47,7 @@ const executeFlag = Flag.boolean("execute").pipe(Flag.withDefault(false))
 const continueFlag = Flag.boolean("continue").pipe(Flag.withDefault(false))
 const approvePublishFlag = Flag.boolean("approve-publish").pipe(Flag.withDefault(false))
 const snapshotFlag = Flag.boolean("snapshot").pipe(Flag.withDefault(false))
+const publishedFlag = Flag.boolean("published").pipe(Flag.withDefault(false))
 
 const sharedFlags = { root: rootFlag, config: configFlag, snapshot: snapshotFlag }
 
@@ -146,9 +147,12 @@ const doctorCommand = Command.make(
 
 const verifyCommand = Command.make(
   "verify",
-  sharedFlags,
-  Effect.fn("cli.verify")(function*({ root, config, snapshot }) {
-    const result = yield* Release.verify(configInput({ root, config, snapshot }))
+  { ...sharedFlags, published: publishedFlag },
+  Effect.fn("cli.verify")(function*({ root, config, snapshot, published }) {
+    const result = yield* Release.verify({
+      ...configInput({ root, config, snapshot }),
+      verifyPublished: published
+    })
     yield* printEvidence(result.evidence!)
   })
 )

@@ -117,6 +117,16 @@ const operationDetails = (
           `- assets: ${operation.action.assetNames.length}`
         ]
       }
+    case "published-assets-verify":
+      return {
+        text: [
+          `github-assets: verify ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assetNames.length}`
+        ],
+        markdown: [
+          `- github-assets: verify ${operation.action.repository} ${operation.action.tag}`,
+          `- assets: ${operation.action.assetNames.length}`
+        ]
+      }
     case "check-file":
       return { text: [`check-file: ${operation.action.path}`], markdown: [] }
     case "stage":

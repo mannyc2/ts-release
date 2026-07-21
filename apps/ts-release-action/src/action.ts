@@ -108,6 +108,7 @@ const releaseInput = (options: ActionOptions) => ({
   snapshot: options.snapshot,
   execute: options.execute,
   continueRun: options.continueRun,
+  verifyPublished: options.verifyPublished,
   approvePublish: options.approvePublish
 })
 
@@ -125,11 +126,11 @@ const outputPlan = Effect.fn("action.outputPlan")(function*(
   plan: ReleasePlan,
   planPath?: string
 ) {
-  const outputs = planPath === undefined ? {} : {
+  const outputs = {
     operation_count: String(plan.operations.length),
     irreversible_operation_count: String(plan.operations.filter((operation) => operation.risk === "irreversible").length),
     surface_count: String(operationSurfaceIds(plan).length),
-    plan_path: planPath
+    ...(planPath === undefined ? {} : { plan_path: planPath })
   }
   yield* Effect.forEach(Object.entries({
     release_name: plan.identity.name,

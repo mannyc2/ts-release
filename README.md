@@ -271,6 +271,7 @@ ts-release plan --config release.config.json --format markdown
 ts-release release --config release.config.json --execute --approve-publish
 ts-release release --config release.config.json --execute --approve-publish --continue
 ts-release verify --config release.config.json
+ts-release verify --config release.config.json --published
 ```
 
 ## GitHub Actions
@@ -303,6 +304,8 @@ Publishing still needs explicit approval:
 
 Set `continue: "true"` alongside both approval inputs to resume a matching
 release from fingerprinted evidence; only prior passed operations are skipped.
+Set `published: "true"` on command `verify` to re-download GitHub release
+assets and check their bytes against the uploaded checksum manifest.
 
 For npm trusted publishing, configure npmjs for the GitHub repository and
 workflow, grant `id-token: write`, and keep `trustedPublishing` in the npm

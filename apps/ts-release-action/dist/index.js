@@ -99337,6 +99337,16 @@ class GitHubReleaseVerifyAction extends TaggedClass()("github-release-verify", {
   assetNames: ArraySchema(String4)
 }) {
 }
+var PublishedAssetName = String4.check(makeFilter2((value2) => value2.length > 0 && !value2.includes("/") && !value2.includes("\\") ? undefined : "Published asset names must be non-empty basenames."));
+
+class PublishedAssetsVerifyAction extends TaggedClass()("published-assets-verify", {
+  repository: String4,
+  tag: String4,
+  checksumAssetName: PublishedAssetName,
+  algorithm: ChecksumAlgorithm,
+  assetNames: ArraySchema(PublishedAssetName)
+}) {
+}
 
 class NoteAction extends TaggedClass()("note", {
   message: String4,
@@ -99356,6 +99366,7 @@ var Action = Union2([
   WriteFileAction,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
+  PublishedAssetsVerifyAction,
   NoteAction,
   StageAction
 ]);
@@ -99389,6 +99400,7 @@ var operationRequirements = (operation) => {
         executables: [],
         envNames: operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
       };
+    case "published-assets-verify":
     case "check-file":
     case "write-file":
     case "note":
@@ -101712,7 +101724,20 @@ class GitHubReleaseOutcome extends TaggedClass()("github-release", {
   checks: optional(ArraySchema(VerifyCheckEvidence))
 }) {
 }
-var ActionOutcome = Union2([CommandOutcome, FileOutcome, GitHubReleaseOutcome]);
+
+class PublishedAssetsOutcome extends TaggedClass()("published-assets", {
+  repository: String4,
+  tag: String4,
+  checksumAssetName: String4,
+  checks: ArraySchema(VerifyCheckEvidence)
+}) {
+}
+var ActionOutcome = Union2([
+  CommandOutcome,
+  FileOutcome,
+  GitHubReleaseOutcome,
+  PublishedAssetsOutcome
+]);
 
 class EvidenceRecord extends Class4("EvidenceRecordV2")({
   operationId: OperationId,
@@ -101757,6 +101782,7 @@ var redactedEnvNames = (operation) => {
     case "github-release-create":
     case "github-release-verify":
       return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv];
+    case "published-assets-verify":
     case "check-file":
     case "write-file":
     case "note":
@@ -102069,6 +102095,16 @@ var operationDetails = (operation) => {
         ],
         markdown: [
           `- github-api: verify release ${operation.action.repository} ${operation.action.tag}`,
+          `- assets: ${operation.action.assetNames.length}`
+        ]
+      };
+    case "published-assets-verify":
+      return {
+        text: [
+          `github-assets: verify ${operation.action.repository} ${operation.action.tag} assets=${operation.action.assetNames.length}`
+        ],
+        markdown: [
+          `- github-assets: verify ${operation.action.repository} ${operation.action.tag}`,
           `- assets: ${operation.action.assetNames.length}`
         ]
       };
@@ -102427,7 +102463,7 @@ var renderReleaseDiagnostics = (report, format3 = "text") => {
 };
 
 // ../../src/run/workflow.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Ref.js
 var TypeId27 = "~effect/Ref";
@@ -102499,7 +102535,7 @@ var writeWorkspaceFile = (root, pathName, contents, makeError) => gen2(function*
 });
 
 // ../../src/run/executor.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 
 // ../../src/run/content.ts
 var hashFor = (hashes, artifactId) => {
@@ -102768,6 +102804,58 @@ var GitHubApiLiveLayer = effect(GitHubApi)(gen2(function* () {
   };
 }));
 
+// ../../src/run/published.ts
+import { createHash as createHash3 } from "node:crypto";
+var textDecoder = new TextDecoder;
+var publishedAssetUrl = (repository, tag2, name) => `https://github.com/${repository}/releases/download/${tag2}/${name}`;
+var checksumLength = (algorithm) => algorithm === "sha256" ? 64 : 128;
+var expectedChecksums = (bytes2, algorithm, assetNames) => {
+  const expected = new Set(assetNames);
+  const values = new Map;
+  const lines = textDecoder.decode(bytes2).split(/\r?\n/);
+  if (lines.at(-1) === "")
+    lines.pop();
+  let valid = true;
+  for (const line of lines) {
+    const match6 = /^([0-9a-fA-F]+)  ([^/\\\r\n]+)$/.exec(line);
+    if (match6 === null) {
+      if ([...expected].some((name2) => line.endsWith(`  ${name2}`) || line.includes(name2)))
+        valid = false;
+      continue;
+    }
+    const [, digest, name] = match6;
+    if (name === undefined || digest === undefined || !expected.has(name))
+      continue;
+    if (digest.length !== checksumLength(algorithm) || values.has(name)) {
+      valid = false;
+      continue;
+    }
+    values.set(name, digest.toLowerCase());
+  }
+  return { valid, values };
+};
+var getBytes = fn2("run.published.getBytes")(function* (url2) {
+  const http3 = yield* ReleaseHttp;
+  return yield* http3.runBytes({ method: "GET", url: url2, headers: [], envHeaders: [] }).pipe(map5((result2) => result2.status >= 200 && result2.status < 300 ? result2.bytes : undefined), catch_2(() => succeed6(undefined)));
+});
+var verifyPublishedAssets = fn2("run.verifyPublishedAssets")(function* (action5) {
+  const checksumBytes = yield* getBytes(publishedAssetUrl(action5.repository, action5.tag, action5.checksumAssetName));
+  const parsed = checksumBytes === undefined ? { valid: false, values: new Map } : expectedChecksums(checksumBytes, action5.algorithm, action5.assetNames);
+  const checks = [VerifyCheckEvidence.make({
+    description: `checksum asset ${action5.checksumAssetName} is reachable and valid`,
+    passed: checksumBytes !== undefined && parsed.valid
+  })];
+  for (const name of action5.assetNames) {
+    const expected = parsed.values.get(name);
+    const bytes2 = expected === undefined ? undefined : yield* getBytes(publishedAssetUrl(action5.repository, action5.tag, name));
+    checks.push(VerifyCheckEvidence.make({
+      description: `${name} matches ${action5.algorithm} checksum`,
+      passed: bytes2 !== undefined && expected !== undefined && createHash3(action5.algorithm).update(bytes2).digest("hex") === expected
+    }));
+  }
+  return checks;
+});
+
 // ../../src/run/executor.ts
 var record2 = (operation, fields) => EvidenceRecord.make({
   operationId: operation.id,
@@ -102801,7 +102889,7 @@ var makeEvidenceRef = fn2("engine.makeEvidenceRef")(function* (context7, planFin
   return yield* make23(bundleForContext(context7, planFingerprint));
 });
 var failAttempt = (failedRecord) => fail6(ActionAttemptFailed.make({ record: failedRecord }));
-var digestHex = (bytes2, algorithm) => createHash3(algorithm).update(bytes2).digest("hex");
+var digestHex = (bytes2, algorithm) => createHash4(algorithm).update(bytes2).digest("hex");
 var resolveWriteFileContents = fn2("engine.resolveWriteFileContents")(function* (contents, context7, outputPath) {
   if (typeof contents === "string") {
     return { contents };
@@ -102987,6 +103075,23 @@ var noteEvidence = fn2("engine.noteEvidence")(function* (operation, action5) {
     message: action5.message
   });
 });
+var publishedAssetsEvidence = fn2("engine.publishedAssetsEvidence")(function* (operation, action5) {
+  const timing = yield* startTiming();
+  const checks = yield* verifyPublishedAssets(action5);
+  const failed = checks.filter((check3) => !check3.passed);
+  const attemptRecord = record2(operation, {
+    status: failed.length === 0 ? "passed" : "failed",
+    message: failed.length === 0 ? "Published GitHub asset checksum verification passed." : `Published GitHub asset checksum verification failed: ${failed.map(({ description }) => description).join("; ")}`,
+    ...yield* endTiming(timing),
+    outcome: PublishedAssetsOutcome.make({
+      repository: action5.repository,
+      tag: action5.tag,
+      checksumAssetName: action5.checksumAssetName,
+      checks
+    })
+  });
+  return failed.length === 0 ? attemptRecord : yield* failAttempt(attemptRecord);
+});
 var stageEvidence = fn2("engine.stageEvidence")(function* (operation, action5, context7) {
   const stageOperation = { ...operation, action: action5 };
   yield* (yield* ArtifactStager).stage(stageOperation, {
@@ -103017,6 +103122,8 @@ var runOperationActionEvidence = fn2("engine.runOperationActionEvidence")(functi
       return yield* githubCreateEvidence(operation, action5);
     case "github-release-verify":
       return yield* githubVerifyEvidence(operation, action5);
+    case "published-assets-verify":
+      return yield* publishedAssetsEvidence(operation, action5);
     case "note":
       return yield* noteEvidence(operation, action5);
     case "stage":
@@ -103099,7 +103206,7 @@ var runEvidenceWorkflowInto = fn2("engine.runEvidenceWorkflowInto")(function* (r
 var releaseEvidencePath = (plan, name) => `${plan.evidenceDirectory}/${name}.json`;
 var planFingerprint = (plan) => {
   const { source: _source, ...durable } = encodeSync2(ReleasePlan)(plan);
-  return createHash4("sha256").update(JSON.stringify(durable)).digest("hex");
+  return createHash5("sha256").update(JSON.stringify(durable)).digest("hex");
 };
 var errorReason = (error2) => error2 instanceof Error ? error2.message : String(error2);
 var continueSkipSet = fn2("run.continueSkipSet")(function* (plan) {
@@ -103188,7 +103295,39 @@ var releasePlanFromAccumulator = (release, root, configPathName, state3) => Rele
 var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
   const { build, source: source3 } = yield* loadReleaseBuild(options);
   const state3 = yield* resolveReleasePlan(build);
-  return { release: build.release, plan: releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, state3) };
+  const plan = releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, state3);
+  if (options.verifyPublished !== true)
+    return { release: build.release, plan };
+  const github = plan.operations.find(({ action: action5 }) => action5._tag === "github-release-create");
+  if (github?.action._tag !== "github-release-create")
+    return { release: build.release, plan };
+  const githubAction = github.action;
+  const checksum = plan.artifacts.find((artifact2) => artifact2.extra._tag === "checksum-file" && githubAction.assets.some(({ artifactId }) => artifactId === artifact2.id));
+  if (checksum?.extra._tag !== "checksum-file")
+    return { release: build.release, plan };
+  const checksumAsset = githubAction.assets.find(({ artifactId }) => artifactId === checksum.id);
+  if (checksumAsset === undefined)
+    return { release: build.release, plan };
+  const covered = new Set(checksum.extra.coversArtifactIds);
+  const operation = Operation.make({
+    id: "published:github-assets-verify",
+    pipeId: "publish:github",
+    description: "Verify published GitHub assets against the release checksum file.",
+    phase: "verify",
+    risk: "read-only",
+    action: PublishedAssetsVerifyAction.make({
+      repository: githubAction.repository,
+      tag: githubAction.tag,
+      checksumAssetName: checksumAsset.name,
+      algorithm: checksum.extra.algorithm,
+      assetNames: githubAction.assets.filter(({ artifactId }) => covered.has(artifactId)).map(({ name }) => name)
+    }),
+    ...build.release.retry === undefined ? {} : { retry: build.release.retry }
+  });
+  return {
+    release: build.release,
+    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] })
+  };
 });
 var planRelease = fn2("engine.planRelease")(function* (options = {}) {
   return (yield* loadReleasePlan(options)).plan;
@@ -103298,6 +103437,7 @@ class ActionOptions extends Class4("ActionOptions")({
   snapshot: Boolean3,
   execute: Boolean3,
   continueRun: Boolean3,
+  verifyPublished: Boolean3,
   approvePublish: Boolean3,
   uploadEvidence: Boolean3,
   evidenceArtifactName: String4
@@ -103351,6 +103491,7 @@ var readActionOptions = (reader, root) => {
     snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
     continueRun: parseBooleanInput(reader, "continue", false),
+    verifyPublished: parseBooleanInput(reader, "published", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),
     uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),
     evidenceArtifactName: inputOrDefault(reader, "evidence-artifact-name", "release-evidence")
@@ -103397,6 +103538,7 @@ var releaseInput = (options) => ({
   snapshot: options.snapshot,
   execute: options.execute,
   continueRun: options.continueRun,
+  verifyPublished: options.verifyPublished,
   approvePublish: options.approvePublish
 });
 var diagnosticsFormat = (options) => options.format === "json" || options.format === "markdown" ? options.format : "text";
@@ -103406,11 +103548,11 @@ var diagnosticsInput = (options) => ({
   target: options.target
 });
 var outputPlan = fn2("action.outputPlan")(function* (io, plan2, planPath) {
-  const outputs = planPath === undefined ? {} : {
+  const outputs = {
     operation_count: String(plan2.operations.length),
     irreversible_operation_count: String(plan2.operations.filter((operation) => operation.risk === "irreversible").length),
     surface_count: String(operationSurfaceIds(plan2).length),
-    plan_path: planPath
+    ...planPath === undefined ? {} : { plan_path: planPath }
   };
   yield* forEach2(Object.entries({
     release_name: plan2.identity.name,
@@ -105916,17 +106058,21 @@ var requestWithBody = fn2("http.requestWithBody")(function* (request3, headers, 
 var LiveReleaseHttpLayer = effect(ReleaseHttp)(gen2(function* () {
   const client3 = yield* HttpClient3;
   const fileSystem = yield* FileSystem;
+  const runRequest = fn2("http.runRequest")(function* (request3) {
+    const headers = yield* resolveHeaders(request3);
+    const timing = yield* startTiming();
+    const httpRequest = yield* requestWithBody(request3, headers, fileSystem);
+    const response = yield* client3.execute(httpRequest).pipe(mapError3((error2) => ApiError.make({
+      operation: "execute",
+      url: request3.url,
+      reason: "HTTP request failed.",
+      cause: error2
+    })));
+    return { response, timing };
+  });
   return {
     runJson: (request3) => gen2(function* () {
-      const headers = yield* resolveHeaders(request3);
-      const timing = yield* startTiming();
-      const httpRequest = yield* requestWithBody(request3, headers, fileSystem);
-      const response = yield* client3.execute(httpRequest).pipe(mapError3((error2) => ApiError.make({
-        operation: "execute",
-        url: request3.url,
-        reason: "HTTP request failed.",
-        cause: error2
-      })));
+      const { response, timing } = yield* runRequest(request3);
       const json2 = request3.method === "HEAD" ? null : yield* response.json.pipe(mapError3((error2) => ApiError.make({
         operation: "json",
         url: request3.url,
@@ -105937,6 +106083,22 @@ var LiveReleaseHttpLayer = effect(ReleaseHttp)(gen2(function* () {
         request: request3,
         status: response.status,
         json: json2,
+        responseHeaders: responseHeaders(response.headers),
+        ...yield* endTiming(timing)
+      };
+    }),
+    runBytes: (request3) => gen2(function* () {
+      const { response, timing } = yield* runRequest(request3);
+      const bytes2 = yield* response.arrayBuffer.pipe(map5((buffer3) => new Uint8Array(buffer3)), mapError3((error2) => ApiError.make({
+        operation: "bytes",
+        url: request3.url,
+        reason: "HTTP response byte decoding failed.",
+        cause: error2
+      })));
+      return {
+        request: request3,
+        status: response.status,
+        bytes: bytes2,
         responseHeaders: responseHeaders(response.headers),
         ...yield* endTiming(timing)
       };

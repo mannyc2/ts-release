@@ -42,6 +42,8 @@ const operations = [
     title: "v0.1.0", draft: true, prerelease: false, assets: [] }), "publish", "irreversible"),
   op("github-verify", O.GitHubReleaseVerifyAction.make({ repository: "owner/repo", tag: "v0.1.0",
     title: "v0.1.0", draft: true, prerelease: false, assetNames: [] })),
+  op("published-verify", O.PublishedAssetsVerifyAction.make({ repository: "owner/repo", tag: "v0.1.0",
+    checksumAssetName: "checksums.txt", algorithm: "sha256", assetNames: ["tool"] })),
   op("note", O.NoteAction.make({ message: "note", severity: "info", skipped: false }), "publish"),
   op("stage", O.StageAction.make({ intent: Intent.BunCompileIntent.make({ entry: "src/cli.ts",
     target: "linux-x64", compileTarget: "bun-linux-x64", outfile: "dist/tool" }),
@@ -62,7 +64,8 @@ describe("release plan", () => {
       "executable", "archive", "checksum-file", "catalog-file", "package", "wheel", "file"
     ])
     expect(decoded.operations.map((operation) => operation.action._tag)).toEqual([
-      "command", "check-file", "write-file", "github-release-create", "github-release-verify", "note", "stage"
+      "command", "check-file", "write-file", "github-release-create", "github-release-verify",
+      "published-assets-verify", "note", "stage"
     ])
     expect(encoded).not.toHaveProperty("state")
     for (const field of ["consumers", "sizeBytes", "downloadUrl", "variant"])
@@ -73,7 +76,7 @@ describe("release plan", () => {
     Effect.gen(function*() {
       const decoded = yield* decodeReleasePlan(Schema.encodeSync(ReleasePlan)(plan))
       expect(decoded.schemaVersion).toBe("release-plan/v4")
-      expect(decoded.operations).toHaveLength(7)
+      expect(decoded.operations).toHaveLength(8)
     }))
 
   test("rejects v3, excess fields, removed grammar, and unsafe artifact paths", () => {

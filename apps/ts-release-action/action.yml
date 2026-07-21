@@ -41,6 +41,10 @@ inputs:
     description: Continue an executed release by skipping operations that passed in matching prior evidence.
     required: false
     default: "false"
+  published:
+    description: Re-download published GitHub assets and verify them against the uploaded checksum file for command verify.
+    required: false
+    default: "false"
   approve-publish:
     description: Allow publish operations when execute is also true.
     required: false

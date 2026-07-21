@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import { configPath, loadReleaseIntent } from "../config/load.js"
 import { ConfigError } from "../config/errors.js"
 import type { ReleaseIntent } from "../config/schema.js"
-import { Operation, RetryPolicy } from "../grammar/operation.js"
+import { Operation, PublishedAssetsVerifyAction, RetryPolicy } from "../grammar/operation.js"
 import { ExecutionApproval } from "../grammar/approval.js"
 import { ReleasePlan, SourceMetadata } from "../grammar/plan.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../grammar/accumulator.js"
@@ -54,6 +54,7 @@ export interface RunOptions {
   readonly execute?: boolean | undefined
   readonly approvePublish?: boolean | undefined
   readonly continueRun?: boolean | undefined
+  readonly verifyPublished?: boolean | undefined
 }
 
 const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
@@ -123,7 +124,37 @@ const releasePlanFromAccumulator = (
 const loadReleasePlan = Effect.fn("engine.loadReleasePlan")(function*(options: RunOptions) {
   const { build, source } = yield* loadReleaseBuild(options)
   const state = yield* resolveReleasePlan(build)
-  return { release: build.release, plan: releasePlanFromAccumulator(build.release, source.root, source.sourcePath, state) }
+  const plan = releasePlanFromAccumulator(build.release, source.root, source.sourcePath, state)
+  if (options.verifyPublished !== true) return { release: build.release, plan }
+  const github = plan.operations.find(({ action }) => action._tag === "github-release-create")
+  if (github?.action._tag !== "github-release-create") return { release: build.release, plan }
+  const githubAction = github.action
+  const checksum = plan.artifacts.find((artifact) =>
+    artifact.extra._tag === "checksum-file" &&
+    githubAction.assets.some(({ artifactId }) => artifactId === artifact.id))
+  if (checksum?.extra._tag !== "checksum-file") return { release: build.release, plan }
+  const checksumAsset = githubAction.assets.find(({ artifactId }) => artifactId === checksum.id)
+  if (checksumAsset === undefined) return { release: build.release, plan }
+  const covered = new Set(checksum.extra.coversArtifactIds)
+  const operation = Operation.make({
+    id: "published:github-assets-verify",
+    pipeId: "publish:github",
+    description: "Verify published GitHub assets against the release checksum file.",
+    phase: "verify",
+    risk: "read-only",
+    action: PublishedAssetsVerifyAction.make({
+      repository: githubAction.repository,
+      tag: githubAction.tag,
+      checksumAssetName: checksumAsset.name,
+      algorithm: checksum.extra.algorithm,
+      assetNames: githubAction.assets.filter(({ artifactId }) => covered.has(artifactId)).map(({ name }) => name)
+    }),
+    ...(build.release.retry === undefined ? {} : { retry: build.release.retry })
+  })
+  return {
+    release: build.release,
+    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] })
+  }
 })
 
 export const planRelease = Effect.fn("engine.planRelease")(function*(options: RunOptions = {}) {

@@ -38,8 +38,19 @@ export interface HttpResult {
   readonly durationMillis: number
 }
 
+export interface HttpBytesResult {
+  readonly request: HttpRequestSpec
+  readonly status: number
+  readonly bytes: Uint8Array
+  readonly responseHeaders: ReadonlyArray<HttpHeader>
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly durationMillis: number
+}
+
 export interface ReleaseHttpShape {
   readonly runJson: (request: HttpRequestSpec) => Effect.Effect<HttpResult, ApiError>
+  readonly runBytes: (request: HttpRequestSpec) => Effect.Effect<HttpBytesResult, ApiError>
 }
 
 export class ReleaseHttp extends Context.Service<ReleaseHttp, ReleaseHttpShape>()("ReleaseHttp") {}

@@ -15,7 +15,14 @@ import {
   type CommandResult,
   type ReleaseCommandRunnerShape
 } from "../src/host/host.js"
-import { ApiError, ReleaseHttp, type HttpHeader, type HttpRequestSpec, type HttpResult } from "../src/host/http.js"
+import {
+  ApiError,
+  ReleaseHttp,
+  type HttpBytesResult,
+  type HttpHeader,
+  type HttpRequestSpec,
+  type HttpResult
+} from "../src/host/http.js"
 
 export { CommandSpec, ReleaseCommandRunner, ReleaseHttp }
 export { NoteAction, Operation } from "../src/grammar/operation.js"
@@ -41,7 +48,8 @@ export interface TestCommandRunnerOptions {
 
 export interface TestHttpResponse {
   readonly status: number
-  readonly json: Schema.Json
+  readonly json?: Schema.Json | undefined
+  readonly bytes?: Uint8Array | undefined
   readonly responseHeaders?: ReadonlyArray<HttpHeader> | undefined
 }
 
@@ -382,6 +390,11 @@ export const makeTestReleaseHttpLayer = (
             })
           )
         }
+        if (response.json === undefined) return yield* Effect.fail(ApiError.make({
+          operation: "runJson",
+          url: request.url,
+          reason: "Test HTTP response has no JSON body"
+        }))
         const endedAt = nextTimestamp()
         return {
           request,
@@ -392,6 +405,31 @@ export const makeTestReleaseHttpLayer = (
           endedAt,
           durationMillis: 0
         } satisfies HttpResult
+      }),
+    runBytes: (request) =>
+      Effect.gen(function*() {
+        options.onRequest?.(request)
+        const startedAt = nextTimestamp()
+        const response = responses.get(httpRequestKey(request))
+        if (response === undefined) return yield* Effect.fail(ApiError.make({
+          operation: "runBytes",
+          url: request.url,
+          reason: "No test HTTP response configured"
+        }))
+        if (response.bytes === undefined) return yield* Effect.fail(ApiError.make({
+          operation: "runBytes",
+          url: request.url,
+          reason: "Test HTTP response has no byte body"
+        }))
+        return {
+          request,
+          status: response.status,
+          bytes: response.bytes,
+          responseHeaders: response.responseHeaders === undefined ? [] : [...response.responseHeaders],
+          startedAt,
+          endedAt: nextTimestamp(),
+          durationMillis: 0
+        } satisfies HttpBytesResult
       })
   })
 }

@@ -29,5 +29,7 @@ Use `upload-evidence: true` when a workflow should upload collected
 publication still requires `execute: true` and `approve-publish: true`.
 Use `continue: true` with `execute: true` to resume a matching release from
 its prior evidence; only operations recorded as passed are skipped.
+Use `published: true` with command `verify` to re-download GitHub release
+assets and check them against the uploaded checksum manifest.
 Use `snapshot: true` to plan a snapshot version; snapshot execution refuses
 externally visible and irreversible operations.

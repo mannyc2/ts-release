@@ -59,7 +59,19 @@ export class GitHubReleaseOutcome extends Schema.TaggedClass<GitHubReleaseOutcom
   checks: Schema.optional(Schema.Array(VerifyCheckEvidence))
 }) {}
 
-export const ActionOutcome = Schema.Union([CommandOutcome, FileOutcome, GitHubReleaseOutcome])
+export class PublishedAssetsOutcome extends Schema.TaggedClass<PublishedAssetsOutcome>()("published-assets", {
+  repository: Schema.String,
+  tag: Schema.String,
+  checksumAssetName: Schema.String,
+  checks: Schema.Array(VerifyCheckEvidence)
+}) {}
+
+export const ActionOutcome = Schema.Union([
+  CommandOutcome,
+  FileOutcome,
+  GitHubReleaseOutcome,
+  PublishedAssetsOutcome
+])
 export type ActionOutcome = typeof ActionOutcome.Type
 
 export class EvidenceRecord extends Schema.Class<EvidenceRecord>("EvidenceRecordV2")({
@@ -107,6 +119,7 @@ const redactedEnvNames = (operation: Operation): ReadonlyArray<string> => {
     case "github-release-create":
     case "github-release-verify":
       return operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
+    case "published-assets-verify":
     case "check-file":
     case "write-file":
     case "note":

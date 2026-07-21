@@ -25,6 +25,7 @@ import {
   minimalConfig,
   noOpConfig,
   partialWorkflowConfig,
+  releaseConfig,
   TestGitHubApiLayer,
   withTempDirectoryPromise,
 } from "./helpers.js"
@@ -49,6 +50,7 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
     snapshot: overrides.snapshot ?? false,
     execute: overrides.execute ?? false,
     continueRun: overrides.continueRun ?? false,
+    verifyPublished: overrides.verifyPublished ?? false,
     approvePublish: overrides.approvePublish ?? false,
     uploadEvidence: overrides.uploadEvidence ?? false,
     evidenceArtifactName: overrides.evidenceArtifactName ?? "release-evidence"
@@ -134,6 +136,7 @@ describe("ts-release action", () => {
       "snapshot:",
       "execute:",
       "continue:",
+      "published:",
       "approve-publish:",
       "upload-evidence:",
       "evidence-artifact-name:"
@@ -310,12 +313,13 @@ describe("ts-release action", () => {
     expect(reads).not.toContain("runtime")
     expect("runtime" in options).toBe(false)
   })
-  test("decodes the continue input to the internal continueRun option", () => {
+  test("decodes continue and published inputs to internal option names", () => {
     const options = readActionOptions({
-      getInput: (name) => name === "continue" ? "true" : ""
+      getInput: (name) => name === "continue" || name === "published" ? "true" : ""
     }, process.cwd())
 
     expect(options.continueRun).toBe(true)
+    expect(options.verifyPublished).toBe(true)
   })
   for (const [label, name, value, reason] of [
     ["invalid action inputs fail through action outputs", "execute", "yes", "Expected true or false"],
@@ -413,6 +417,30 @@ describe("ts-release action", () => {
       expect(artifact.uploads).toHaveLength(1)
       expect(artifact.uploads[0]?.name).toBe("audit-evidence")
       expect(artifact.uploads[0]?.files.some((file) => file.endsWith("verification.json"))).toBe(true)
+    })
+  })
+  test("published verify outputs the augmented operation count before execution", async () => {
+    await withTempDirectoryPromise("ts-release-action-published-count-", async (root) => {
+      await writeFile(join(root, "release.config.json"), releaseConfig({
+        artifacts: [{ id: "cli", path: "artifacts/release", format: "executable" }],
+        checksum: {},
+        publish: { github: { repository: "owner/repo" } }
+      }))
+      const io = makeFakeActionIo()
+      const layer = Layer.mergeAll(
+        BunServices.layer,
+        makeObservableCommandRunnerLayer({ env: new Map(), commands: new Map() }),
+        makeTestReleaseHttpLayer(),
+        TestGitHubApiLayer,
+        UnsupportedArtifactStagerLayer
+      )
+      await runAction(actionOptions(root, {
+        command: "verify",
+        verifyPublished: true
+      }), io, layer)
+
+      expect(io.outputs.get("operation_count")).toBe("6")
+      expect(io.failures.join("\n")).toContain("OperationFailedError")
     })
   })
   test("release without execute plans without workflow evidence", async () => {

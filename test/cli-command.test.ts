@@ -662,6 +662,14 @@ describe("cli command", () => {
       ]).pipe(Effect.exit))
       expectExitFailureTag(exit, "ContinueRequiresExecuteError")
     }))
+  test("verify accepts the published flag when no published seam is planned", () =>
+    withTempDirectoryPromise("ts-release-cli-published-empty-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, noOpConfig)
+      await runWorkflow(root, ["verify", "--config", configPath, "--published"])
+      const evidence = await readFile(join(root, ".release", "evidence", "verification.json"), "utf8")
+      expect(evidence).toContain("\"records\": []")
+    }))
   test("release command writes one workflow evidence file", () =>
     withTempDirectoryPromise("ts-release-release-root-", async (root) => {
       const configPath = join(root, "release.config.json")

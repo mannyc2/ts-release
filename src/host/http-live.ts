@@ -4,7 +4,14 @@ import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
-import { ApiError, ReleaseHttp, type HttpHeader, type HttpRequestSpec, type HttpResult } from "./http.js"
+import {
+  ApiError,
+  ReleaseHttp,
+  type HttpBytesResult,
+  type HttpHeader,
+  type HttpRequestSpec,
+  type HttpResult
+} from "./http.js"
 import { endTiming, readEnvironment, startTiming } from "./platform.js"
 
 
@@ -80,22 +87,26 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
     Effect.gen(function*() {
       const client = yield* HttpClient.HttpClient
       const fileSystem = yield* FileSystem.FileSystem
+      const runRequest = Effect.fn("http.runRequest")(function*(request: HttpRequestSpec) {
+        const headers = yield* resolveHeaders(request)
+        const timing = yield* startTiming()
+        const httpRequest = yield* requestWithBody(request, headers, fileSystem)
+        const response = yield* client.execute(httpRequest).pipe(
+          Effect.mapError((error) =>
+            ApiError.make({
+              operation: "execute",
+              url: request.url,
+              reason: "HTTP request failed.",
+              cause: error
+            })
+          )
+        )
+        return { response, timing }
+      })
       return {
         runJson: (request: HttpRequestSpec) =>
           Effect.gen(function*() {
-            const headers = yield* resolveHeaders(request)
-            const timing = yield* startTiming()
-            const httpRequest = yield* requestWithBody(request, headers, fileSystem)
-            const response = yield* client.execute(httpRequest).pipe(
-              Effect.mapError((error) =>
-                ApiError.make({
-                  operation: "execute",
-                  url: request.url,
-                  reason: "HTTP request failed.",
-                  cause: error
-                })
-              )
-            )
+            const { response, timing } = yield* runRequest(request)
             const json = request.method === "HEAD"
               ? null
               : yield* response.json.pipe(
@@ -115,6 +126,26 @@ export const LiveReleaseHttpLayer: Layer.Layer<ReleaseHttp, never, HttpClient.Ht
               responseHeaders: responseHeaders(response.headers),
               ...(yield* endTiming(timing))
             } satisfies HttpResult
+          }),
+        runBytes: (request: HttpRequestSpec) =>
+          Effect.gen(function*() {
+            const { response, timing } = yield* runRequest(request)
+            const bytes = yield* response.arrayBuffer.pipe(
+              Effect.map((buffer) => new Uint8Array(buffer)),
+              Effect.mapError((error) => ApiError.make({
+                operation: "bytes",
+                url: request.url,
+                reason: "HTTP response byte decoding failed.",
+                cause: error
+              }))
+            )
+            return {
+              request,
+              status: response.status,
+              bytes,
+              responseHeaders: responseHeaders(response.headers),
+              ...(yield* endTiming(timing))
+            } satisfies HttpBytesResult
           })
       }
     })

@@ -13,6 +13,7 @@ import {
   FileOutcome,
   GitHubReleaseEvidence,
   GitHubReleaseOutcome,
+  PublishedAssetsOutcome,
   VerifyCheckEvidence,
   readRedactionSecrets,
   redactText,
@@ -39,6 +40,7 @@ import {
   type GitHubReleaseVerifyAction,
   type NoteAction,
   Operation,
+  type PublishedAssetsVerifyAction,
   type RetryPolicy,
   type StageAction,
   type WriteFileAction
@@ -56,6 +58,7 @@ import {
   GitHubApi,
 } from "../github/github.js"
 import type { ApiError } from "../host/http.js"
+import { verifyPublishedAssets } from "./published.js"
 
 
 export interface OperationRunContext {
@@ -368,6 +371,29 @@ const noteEvidence = Effect.fn("engine.noteEvidence")(function*(operation: Opera
   })
 })
 
+const publishedAssetsEvidence = Effect.fn("engine.publishedAssetsEvidence")(function*(
+  operation: Operation,
+  action: PublishedAssetsVerifyAction
+) {
+  const timing = yield* startTiming()
+  const checks = yield* verifyPublishedAssets(action)
+  const failed = checks.filter((check) => !check.passed)
+  const attemptRecord = record(operation, {
+    status: failed.length === 0 ? "passed" : "failed",
+    message: failed.length === 0
+      ? "Published GitHub asset checksum verification passed."
+      : `Published GitHub asset checksum verification failed: ${failed.map(({ description }) => description).join("; ")}`,
+    ...(yield* endTiming(timing)),
+    outcome: PublishedAssetsOutcome.make({
+      repository: action.repository,
+      tag: action.tag,
+      checksumAssetName: action.checksumAssetName,
+      checks
+    })
+  })
+  return failed.length === 0 ? attemptRecord : yield* failAttempt(attemptRecord)
+})
+
 const stageEvidence = Effect.fn("engine.stageEvidence")(function*(
   operation: Operation,
   action: StageAction,
@@ -407,6 +433,8 @@ const runOperationActionEvidence = Effect.fn("engine.runOperationActionEvidence"
       return yield* githubCreateEvidence(operation, action)
     case "github-release-verify":
       return yield* githubVerifyEvidence(operation, action)
+    case "published-assets-verify":
+      return yield* publishedAssetsEvidence(operation, action)
     case "note":
       return yield* noteEvidence(operation, action)
     case "stage":

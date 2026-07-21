@@ -10,6 +10,9 @@
 - Added `release --continue` and the Action `continue` input. A continued
   executed release requires matching fingerprinted evidence and skips only
   operations that previously passed; snapshot continuation is refused.
+- Added `verify --published` and the Action `published` input. Under the flag,
+  verification derives a read-only operation that re-downloads GitHub release
+  assets and checks their bytes against the uploaded sha256/sha512 manifest.
 - Internal plan/config validation wording is no longer a compatibility surface;
   typed error tags, fields, and meanings are. No current message changed in
   this release.

@@ -1,6 +1,6 @@
 // Invariant: every durable operation has one action representation over a closed algebra.
 import * as Schema from "effect/Schema"
-import { ArtifactId, Checksum } from "./artifact.js"
+import { ArtifactId, Checksum, ChecksumAlgorithm } from "./artifact.js"
 import { DeferredFileContent } from "./content.js"
 import { StageArtifactIntent } from "./intent.js"
 import type { ReleasePlan } from "./plan.js"
@@ -75,6 +75,23 @@ export class GitHubReleaseVerifyAction extends Schema.TaggedClass<GitHubReleaseV
   }
 ) {}
 
+const PublishedAssetName = Schema.String.check(
+  Schema.makeFilter((value: string) => value.length > 0 && !value.includes("/") && !value.includes("\\")
+    ? undefined
+    : "Published asset names must be non-empty basenames.")
+)
+
+export class PublishedAssetsVerifyAction extends Schema.TaggedClass<PublishedAssetsVerifyAction>()(
+  "published-assets-verify",
+  {
+    repository: Schema.String,
+    tag: Schema.String,
+    checksumAssetName: PublishedAssetName,
+    algorithm: ChecksumAlgorithm,
+    assetNames: Schema.Array(PublishedAssetName)
+  }
+) {}
+
 // NoteAction intentionally remains an operation. These notes are reachable
 // operator-visible plan output; Plan 131 only deletes unreachable note branches.
 export class NoteAction extends Schema.TaggedClass<NoteAction>()("note", {
@@ -94,6 +111,7 @@ export const Action = Schema.Union([
   WriteFileAction,
   GitHubReleaseCreateAction,
   GitHubReleaseVerifyAction,
+  PublishedAssetsVerifyAction,
   NoteAction,
   StageAction
 ])
@@ -132,6 +150,7 @@ export const operationRequirements = (operation: Pick<Operation, "action">): Ope
         executables: [],
         envNames: operation.action.tokenEnv === undefined ? [] : [operation.action.tokenEnv]
       }
+    case "published-assets-verify":
     case "check-file":
     case "write-file":
     case "note":

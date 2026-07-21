@@ -19,6 +19,7 @@ export class ActionOptions extends Schema.Class<ActionOptions>("ActionOptions")(
   snapshot: Schema.Boolean,
   execute: Schema.Boolean,
   continueRun: Schema.Boolean,
+  verifyPublished: Schema.Boolean,
   approvePublish: Schema.Boolean,
   uploadEvidence: Schema.Boolean,
   evidenceArtifactName: Schema.String
@@ -82,6 +83,7 @@ export const readActionOptions = (reader: ActionInputReader, root: string): Acti
     snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
     continueRun: parseBooleanInput(reader, "continue", false),
+    verifyPublished: parseBooleanInput(reader, "published", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),
     uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),
     evidenceArtifactName: inputOrDefault(reader, "evidence-artifact-name", "release-evidence")

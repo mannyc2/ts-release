@@ -123,6 +123,39 @@ describe("test doubles", () => {
     })
   })
 
+  test("keeps fake JSON and byte response bodies distinct", async () => {
+    const request = {
+      method: "GET" as const,
+      url: "https://example.test/asset",
+      headers: [],
+      envHeaders: []
+    }
+    const byteLayer = makeTestReleaseHttpLayer({
+      responses: new Map([[httpRequestKey(request), { status: 200, bytes: new Uint8Array([1, 2, 3]) }]])
+    })
+    const readJson = Effect.flatMap(
+      ReleaseHttp,
+      (http) => http.runJson(request)
+    )
+    const readBytes = Effect.flatMap(
+      ReleaseHttp,
+      (http) => http.runBytes(request)
+    )
+
+    expect((await runEffect(readBytes, byteLayer)).bytes).toEqual(new Uint8Array([1, 2, 3]))
+    expect(await runEffect(readJson.pipe(Effect.flip), byteLayer)).toMatchObject({
+      _tag: "GitHubApiError",
+      operation: "runJson"
+    })
+    const jsonLayer = makeTestReleaseHttpLayer({
+      responses: new Map([[httpRequestKey(request), { status: 200, json: { ok: true } }]])
+    })
+    expect(await runEffect(readBytes.pipe(Effect.flip), jsonLayer)).toMatchObject({
+      _tag: "GitHubApiError",
+      operation: "runBytes"
+    })
+  })
+
   test("isolates sequential plans from different configs", async () => {
     const config = (name: string, artifactId: string) => releaseConfig({
       identity: releaseIdentity({ name, packageName: name }),
@@ -219,6 +252,7 @@ describe("test doubles", () => {
     const context = { root: ".", identity: makePipelineIdentity(), artifacts: [] }
     const layer = Layer.mergeAll(
       makeTestCommandRunnerLayer(),
+      makeTestReleaseHttpLayer(),
       TestGitHubApiLayer,
       UnsupportedArtifactStagerLayer
     )

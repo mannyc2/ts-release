@@ -35,6 +35,7 @@ export interface TestCommandRunnerOptions {
   readonly timestamps?: ReadonlyArray<string> | undefined
   readonly pathLayer?: Layer.Layer<Path.Path> | undefined
   readonly onWriteFileString?: ((path: string, contents: string) => void) | undefined
+  readonly failReadFileString?: boolean | ((path: string) => boolean) | undefined
   readonly failWriteFileString?: boolean | undefined
 }
 
@@ -262,6 +263,9 @@ export const makeTestCommandRunnerLayer = (
 
   return Layer.mergeAll(
     FileSystem.layerNoop({
+      exists: (path) => Effect.sync(() =>
+        getFixtureFile(files, path) !== undefined || hasFixtureDirectory(directories, path)),
+
       stat: (path) =>
         Effect.sync(() => {
           const contents = getFixtureFile(files, path)
@@ -290,7 +294,12 @@ export const makeTestCommandRunnerLayer = (
         ),
 
       readFileString: (path) =>
-        Effect.sync(() => getFixtureFile(files, path)).pipe(
+        Effect.sync(() => typeof options.failReadFileString === "function"
+          ? options.failReadFileString(path)
+          : options.failReadFileString === true).pipe(
+          Effect.flatMap((fail) => fail
+            ? Effect.fail(permissionDenied("readFileString", path))
+            : Effect.succeed(getFixtureFile(files, path))),
           Effect.flatMap((contents) =>
             contents === undefined
               ? Effect.fail(notFound("readFileString", path))

@@ -11,6 +11,7 @@ import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { OperationFailedError } from "../src/run/errors.js"
 import { runEvidenceWorkflow } from "./plan-helpers.js"
+import { planFingerprint } from "../src/run/workflow.js"
 import { planRelease } from "../src/engine/engine.js"
 import type { ReleasePlan } from "../src/grammar/plan.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
@@ -140,7 +141,8 @@ const runFixtureRelease = Effect.fn("goldenEvidence.runFixtureRelease")(function
     plan.operations,
     "release",
     ExecutionApproval.make({ execute: true, approveIrreversible: true }),
-    operationContext(plan)
+    operationContext(plan),
+    planFingerprint(plan)
   )
 })
 

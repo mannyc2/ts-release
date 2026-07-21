@@ -104,16 +104,23 @@ const instantRecord = Effect.fn("engine.instantRecord")(function*(
   })
 })
 
-export const bundleForContext = (context: OperationRunContext): EvidenceBundle =>
+export const bundleForContext = (
+  context: OperationRunContext,
+  planFingerprint?: string
+): EvidenceBundle =>
   EvidenceBundle.make({
     schemaVersion: "release-evidence/v3",
     releaseName: context.identity.name,
     releaseVersion: context.identity.version,
+    ...(planFingerprint === undefined ? {} : { planFingerprint }),
     records: []
   })
 
-export const makeEvidenceRef = Effect.fn("engine.makeEvidenceRef")(function*(context: OperationRunContext) {
-  return yield* Ref.make(bundleForContext(context))
+export const makeEvidenceRef = Effect.fn("engine.makeEvidenceRef")(function*(
+  context: OperationRunContext,
+  planFingerprint?: string
+) {
+  return yield* Ref.make(bundleForContext(context, planFingerprint))
 })
 
 const failAttempt = (failedRecord: EvidenceRecord): Effect.Effect<never, ActionAttemptFailed> =>
@@ -457,10 +464,16 @@ export const runOperationsInto = Effect.fn("engine.runOperationsInto")(function*
   ref: EvidenceRef,
   operations: ReadonlyArray<Operation>,
   approval: ExecutionApproval,
-  context: OperationRunContext
+  context: OperationRunContext,
+  skip: ReadonlySet<string> = new Set()
 ) {
   for (const operation of operations) {
-    const evidence = yield* runOperationEvidence(operation, approval, context)
+    const evidence = skip.has(operation.id)
+      ? yield* instantRecord(operation, {
+        status: "skipped",
+        message: "Skipped: passed in prior evidence."
+      })
+      : yield* runOperationEvidence(operation, approval, context)
     yield* Ref.update(ref, (bundle) => EvidenceBundle.make({
       ...bundle,
       records: [...bundle.records, evidence]
@@ -502,9 +515,14 @@ export const preflightEvidenceWorkflow = Effect.fn("engine.preflightEvidenceWork
   operations: ReadonlyArray<Operation>,
   workflow: EvidenceWorkflow,
   approval: ExecutionApproval,
-  context: OperationRunContext
+  context: OperationRunContext,
+  skip: ReadonlySet<string> = new Set()
 ) {
-  yield* preflightOperations(operationsForWorkflow(operations, workflow), approval, context)
+  yield* preflightOperations(
+    operationsForWorkflow(operations, workflow).filter((operation) => !skip.has(operation.id)),
+    approval,
+    context
+  )
 })
 
 const preflightOperations = Effect.fn("engine.preflightOperations")(function*(
@@ -535,7 +553,8 @@ export const runEvidenceWorkflowInto = Effect.fn("engine.runEvidenceWorkflowInto
   operations: ReadonlyArray<Operation>,
   workflow: EvidenceWorkflow,
   approval: ExecutionApproval,
-  context: OperationRunContext
+  context: OperationRunContext,
+  skip: ReadonlySet<string> = new Set()
 ) {
-  yield* runOperationsInto(ref, operationsForWorkflow(operations, workflow), approval, context)
+  yield* runOperationsInto(ref, operationsForWorkflow(operations, workflow), approval, context, skip)
 })

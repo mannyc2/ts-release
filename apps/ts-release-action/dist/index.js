@@ -99419,16 +99419,13 @@ class ConfigError extends TaggedErrorClass()("ConfigError", {
 }
 
 // ../../src/grammar/planner.ts
-var emptyContribution = {
-  artifacts: [],
-  operations: []
-};
-var featureOperation = (fields) => Operation.make({ ...fields, pipeId: "" });
+var featureOperation = (fields) => fields;
 var featurePlanner = (id, plan) => Object.assign((section, context7) => plan(section, context7).pipe(map5((contribution) => {
-  const merged = { ...emptyContribution, ...contribution };
+  const artifacts = contribution.artifacts ?? [];
+  const operations = contribution.operations ?? [];
   return {
-    ...merged,
-    operations: merged.operations.map((operation) => operation.pipeId === id ? operation : Operation.make({ ...operation, pipeId: id }))
+    artifacts,
+    operations: operations.map((operation) => Operation.make({ ...operation, pipeId: id }))
   };
 })), { id });
 var scheduled = (planner, section) => match(section, {
@@ -99460,6 +99457,11 @@ var tokenValues = (context7) => {
     ["{binary}", context7.binary]
   ];
 };
+var unresolvedTemplateError = (token, source) => PlanError.make({
+  pipeId: source.pipeId,
+  field: source.field,
+  reason: `Template ${token} cannot be resolved here; remove it or provide a platform context.`
+});
 var renderTemplate = (value2, context7, unresolved = "empty") => {
   let rendered = value2;
   for (const [token, substitution] of tokenValues(context7)) {
@@ -99474,13 +99476,14 @@ var renderArtifactNameEffect = (value2, context7, source) => {
   const rendered = renderTemplate(value2, context7, "preserve");
   const unresolved = substitutions.find(([token]) => rendered.includes(token));
   if (unresolved !== undefined) {
-    return fail6(PlanError.make({
-      pipeId: source.pipeId,
-      field: source.field,
-      reason: `Template ${unresolved[0]} cannot be resolved here; remove it or provide a platform context.`
-    }));
+    return fail6(unresolvedTemplateError(unresolved[0], source));
   }
   return validateSafeRelativePathEffect(rendered, source);
+};
+var renderCommandTemplateEffect = (value2, context7, source) => {
+  const rendered = renderTemplate(value2, context7, "preserve");
+  const unresolved = tokenValues(context7).find(([token]) => rendered.includes(token));
+  return unresolved === undefined ? succeed6(rendered) : fail6(unresolvedTemplateError(unresolved[0], source));
 };
 var normalizedName = (name) => {
   const withoutScopePrefix = name.startsWith("@") ? name.slice(1) : name;
@@ -99600,7 +99603,11 @@ var commandBuilder = (options, identity2, target) => gen2(function* () {
     pipeId: "build",
     field: "builds[].output"
   });
-  const command = (typeof options.run === "string" ? options.run.trim().split(/\s+/).filter(Boolean) : options.run).map((part) => renderTemplate(part, context7));
+  const commandParts = typeof options.run === "string" ? options.run.trim().split(/\s+/).filter(Boolean) : options.run;
+  const command = yield* forEach2(commandParts, (part) => renderCommandTemplateEffect(part, context7, {
+    pipeId: "build",
+    field: "builds[].run"
+  }));
   if (command.length === 0)
     return yield* fail6(PlanError.make({
       pipeId: "build",
@@ -99686,7 +99693,7 @@ class ReleaseConfigAfterHook extends Class4("ReleaseConfigAfterHook")({
 class ReleaseConfigCustomPublish extends Class4("ReleaseConfigCustomPublish")({ ...hookFields, risk: defaulted(HookRisk, "externally-visible") }) {
 }
 var hookOperation = fn2("hooks.operation")(function* (entry, options) {
-  const rendered = entry.run.map((part) => renderTemplate(part, { identity: options.identity }));
+  const rendered = yield* forEach2(entry.run, (part) => renderCommandTemplateEffect(part, { identity: options.identity }, { pipeId: options.pipeId, field: options.field }));
   const executable = rendered[0];
   if (executable === undefined || executable.length === 0)
     return yield* fail6(PlanError.make({
@@ -100377,28 +100384,25 @@ var catalogGitPublishOperations = (options) => {
   const command = (args2) => CommandAction.make({
     command: noAuthCommand("git", ["-C", options.directory ?? ".", ...args2])
   });
-  const catalog = options.pipeId.replace(/^publish:/, "");
+  const catalog = "catalog";
   const name = artifactPathBaseName(options.filePath);
   return [
-    Operation.make({
+    featureOperation({
       id: `${options.id}:add`,
-      pipeId: options.pipeId,
       phase: "publish",
       risk: "writes-local",
       description: `Stage ${name} for ${catalog}.`,
       action: command(["add", catalogFilePath(options.filePath, options.directory)])
     }),
-    Operation.make({
+    featureOperation({
       id: `${options.id}:commit`,
-      pipeId: options.pipeId,
       phase: "publish",
       risk: "writes-local",
       description: `Commit ${name} for ${catalog}.`,
       action: command(["commit", "-m", options.commitMessage])
     }),
-    Operation.make({
+    featureOperation({
       id: options.id,
-      pipeId: options.pipeId,
       phase: "publish",
       risk: "externally-visible",
       description: options.description,
@@ -100571,7 +100575,7 @@ var publishNpmPlanner = featurePlanner("publish:npm", (section, state3) => {
     })
   });
   const operations = [auth2];
-  if (section.trustedPublishing !== undefined && "verifyPackageExists" in section.trustedPublishing && section.trustedPublishing.verifyPackageExists === true)
+  if (section.trustedPublishing?.verifyPackageExists === true)
     operations.push(npmCheck("npm:npm-package-exists", "Verify npm package exists before trusted publishing.", section, ["view", section.packageName, "name", "--registry", section.registry]));
   operations.push(npmCheck("npm:npm-pack-dry-run", "Validate npm package contents with npm pack dry-run.", section, ["pack", "--dry-run", "--json", section.packagePath]), featureOperation({
     id: "npm:npm-publish",
@@ -101077,7 +101081,7 @@ var argv = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/).f
 var validation = fn2("catalog.publish.validation")(function* (entry, identity2) {
   if (entry.validate === undefined)
     return [];
-  const rendered = argv(entry.validate).map((part) => renderTemplate(part, { identity: identity2 }));
+  const rendered = yield* forEach2(argv(entry.validate), (part) => renderCommandTemplateEffect(part, { identity: identity2 }, { pipeId: "publish:catalog", field: `catalogs.${entry.id}.validate` }));
   const executable = rendered[0];
   if (executable === undefined || executable.length === 0) {
     return yield* fail6(PlanError.make({
@@ -101106,7 +101110,6 @@ var publishOperations = (entry, identity2) => {
   const description = `Push ${entry.id} catalog update for ${identity2.name}@${identity2.version}.`;
   const common = {
     id,
-    pipeId: "publish:catalog",
     description,
     directory,
     filePath: catalogWritePath(entry),
@@ -101729,9 +101732,13 @@ class EvidenceBundle extends Class4("EvidenceBundleV3")({
   schemaVersion: Literal2("release-evidence/v3"),
   releaseName: ReleaseName,
   releaseVersion: ReleaseVersion,
+  planFingerprint: optionalKey2(String4),
   records: ArraySchema(EvidenceRecord)
 }) {
 }
+var decodeEvidenceBundle = decodeUnknownEffect2(EvidenceBundle, {
+  onExcessProperty: "error"
+});
 var renderEvidenceJson = (bundle) => `${JSON.stringify(bundle, null, 2)}
 `;
 var redactText = (input, secrets) => {
@@ -101965,11 +101972,19 @@ var plannedSummary = (plan) => ({
   operations: plan.operations.map((operation) => operationSummary(operation))
 });
 var evidenceOperationStatuses = (plan, evidence, evidencePath) => evidence.records.map((record2) => {
-  const operation = plan.operations.find(({ id }) => id === record2.operationId);
+  const operation = plan.operations.find(({ id }) => id === record2.operationId) ?? {
+    id: record2.operationId,
+    pipeId: record2.pipeId,
+    description: "(not in current plan)",
+    risk: record2.risk
+  };
   return operationSummary(operation, record2.status === "failed" ? "failed" : record2.status === "refused" ? "refused" : record2.status === "skipped" ? "skipped" : "executed", evidencePath);
 });
 var stagedOperationsForPlan = (plan) => plan.operations.filter((operation) => (operation.phase === "build" || operation.phase === "process") && operation.action._tag === "stage");
-var stagedArtifactSummaries = (plan) => stagedOperationsForPlan(plan).flatMap((operation) => operation.action.producesArtifactIds.map((id) => artifactSummary(plan.artifacts.find((artifact2) => artifact2.id === id))));
+var stagedArtifactSummaries = (plan) => stagedOperationsForPlan(plan).flatMap((operation) => operation.action.producesArtifactIds.flatMap((id) => {
+  const artifact2 = plan.artifacts.find((artifact3) => artifact3.id === id);
+  return artifact2 === undefined ? [] : [artifactSummary(artifact2)];
+}));
 
 // ../../src/render/render.ts
 var renderBuildArtifacts = (plan, format3 = "text") => {
@@ -102411,6 +102426,9 @@ var renderReleaseDiagnostics = (report, format3 = "text") => {
   }
 };
 
+// ../../src/run/workflow.ts
+import { createHash as createHash4 } from "node:crypto";
+
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Ref.js
 var TypeId27 = "~effect/Ref";
 var RefProto = {
@@ -102525,6 +102543,27 @@ class OperationFailedError extends TaggedErrorClass()("OperationFailedError", {
   reason: String4,
   evidence: optional(EvidenceBundle)
 }) {
+}
+
+class ContinueRequiresExecuteError extends TaggedErrorClass()("ContinueRequiresExecuteError", {}) {
+}
+
+class ContinueSnapshotRefusedError extends TaggedErrorClass()("ContinueSnapshotRefusedError", {}) {
+}
+
+class ContinueEvidenceMissingError extends TaggedErrorClass()("ContinueEvidenceMissingError", { path: String4 }) {
+}
+
+class ContinueEvidenceReadError extends TaggedErrorClass()("ContinueEvidenceReadError", { path: String4, reason: String4 }) {
+}
+
+class ContinueEvidenceInvalidError extends TaggedErrorClass()("ContinueEvidenceInvalidError", { path: String4, reason: String4 }) {
+}
+
+class ContinueFingerprintMissingError extends TaggedErrorClass()("ContinueFingerprintMissingError", { path: String4 }) {
+}
+
+class ContinueMismatchError extends TaggedErrorClass()("ContinueMismatchError", { path: String4, expected: String4, actual: String4 }) {
 }
 
 // ../../src/grammar/optional-field.ts
@@ -102751,14 +102790,15 @@ var instantRecord = fn2("engine.instantRecord")(function* (operation, fields) {
     durationMillis: 0
   });
 });
-var bundleForContext = (context7) => EvidenceBundle.make({
+var bundleForContext = (context7, planFingerprint) => EvidenceBundle.make({
   schemaVersion: "release-evidence/v3",
   releaseName: context7.identity.name,
   releaseVersion: context7.identity.version,
+  ...planFingerprint === undefined ? {} : { planFingerprint },
   records: []
 });
-var makeEvidenceRef = fn2("engine.makeEvidenceRef")(function* (context7) {
-  return yield* make23(bundleForContext(context7));
+var makeEvidenceRef = fn2("engine.makeEvidenceRef")(function* (context7, planFingerprint) {
+  return yield* make23(bundleForContext(context7, planFingerprint));
 });
 var failAttempt = (failedRecord) => fail6(ActionAttemptFailed.make({ record: failedRecord }));
 var digestHex = (bytes2, algorithm) => createHash3(algorithm).update(bytes2).digest("hex");
@@ -103009,9 +103049,12 @@ var runOperationEvidence = fn2("engine.runOperationEvidence")(function* (operati
   yield* requireExecutionApproval(operation, approval);
   return yield* runOperationActionEvidence(operation, context7).pipe(retry3({ schedule: retrySchedule(operation.retry), while: (error2) => error2 instanceof ActionAttemptFailed }), catchTag2("ActionAttemptFailed", (error2) => succeed6(error2.record)));
 });
-var runOperationsInto = fn2("engine.runOperationsInto")(function* (ref, operations, approval, context7) {
+var runOperationsInto = fn2("engine.runOperationsInto")(function* (ref, operations, approval, context7, skip = new Set) {
   for (const operation of operations) {
-    const evidence = yield* runOperationEvidence(operation, approval, context7);
+    const evidence = skip.has(operation.id) ? yield* instantRecord(operation, {
+      status: "skipped",
+      message: "Skipped: passed in prior evidence."
+    }) : yield* runOperationEvidence(operation, approval, context7);
     yield* update3(ref, (bundle) => EvidenceBundle.make({
       ...bundle,
       records: [...bundle.records, evidence]
@@ -103036,8 +103079,8 @@ var passForOperation = (operation) => {
 };
 var operationsForPass = (operations, pass) => operations.filter((operation) => passForOperation(operation) === pass);
 var operationsForWorkflow = (operations, workflow) => (workflow === "release" ? ["render", "validation", "publish", "verification"] : [workflow]).flatMap((pass) => operationsForPass(operations, pass));
-var preflightEvidenceWorkflow = fn2("engine.preflightEvidenceWorkflow")(function* (operations, workflow, approval, context7) {
-  yield* preflightOperations(operationsForWorkflow(operations, workflow), approval, context7);
+var preflightEvidenceWorkflow = fn2("engine.preflightEvidenceWorkflow")(function* (operations, workflow, approval, context7, skip = new Set) {
+  yield* preflightOperations(operationsForWorkflow(operations, workflow).filter((operation) => !skip.has(operation.id)), approval, context7);
 });
 var preflightOperations = fn2("engine.preflightOperations")(function* (operations, approval, context7) {
   yield* forEach2(operations.filter((operation) => !shouldRefuseForSnapshot(operation, context7)), (operation) => requireExecutionApproval(operation, approval), { discard: true });
@@ -103048,12 +103091,41 @@ var runOperations = fn2("engine.runOperations")(function* (operations, approval,
   yield* runOperationsInto(ref, operations, approval, context7);
   return yield* get4(ref);
 });
-var runEvidenceWorkflowInto = fn2("engine.runEvidenceWorkflowInto")(function* (ref, operations, workflow, approval, context7) {
-  yield* runOperationsInto(ref, operationsForWorkflow(operations, workflow), approval, context7);
+var runEvidenceWorkflowInto = fn2("engine.runEvidenceWorkflowInto")(function* (ref, operations, workflow, approval, context7, skip = new Set) {
+  yield* runOperationsInto(ref, operationsForWorkflow(operations, workflow), approval, context7, skip);
 });
 
 // ../../src/run/workflow.ts
 var releaseEvidencePath = (plan, name) => `${plan.evidenceDirectory}/${name}.json`;
+var planFingerprint = (plan) => {
+  const { source: _source, ...durable } = encodeSync2(ReleasePlan)(plan);
+  return createHash4("sha256").update(JSON.stringify(durable)).digest("hex");
+};
+var errorReason = (error2) => error2 instanceof Error ? error2.message : String(error2);
+var continueSkipSet = fn2("run.continueSkipSet")(function* (plan) {
+  const pathName = releaseEvidencePath(plan, "evidence");
+  const fs8 = yield* FileSystem;
+  const path4 = yield* Path;
+  const resolved = resolveWorkspacePath(path4, plan.source.root, pathName);
+  const exists3 = yield* fs8.exists(resolved).pipe(mapError3((error2) => ContinueEvidenceReadError.make({ path: pathName, reason: error2.message })));
+  if (!exists3)
+    return yield* fail6(ContinueEvidenceMissingError.make({ path: pathName }));
+  const contents = yield* fs8.readFileString(resolved).pipe(mapError3((error2) => ContinueEvidenceReadError.make({ path: pathName, reason: error2.message })));
+  const parsed = yield* parseJsonAs(Unknown2, contents, (error2) => ContinueEvidenceInvalidError.make({ path: pathName, reason: errorReason(error2) }));
+  const prior = yield* decodeEvidenceBundle(parsed).pipe(mapError3((error2) => ContinueEvidenceInvalidError.make({ path: pathName, reason: error2.message })));
+  if (prior.planFingerprint === undefined) {
+    return yield* fail6(ContinueFingerprintMissingError.make({ path: pathName }));
+  }
+  const expected = planFingerprint(plan);
+  if (prior.planFingerprint !== expected) {
+    return yield* fail6(ContinueMismatchError.make({
+      path: pathName,
+      expected,
+      actual: prior.planFingerprint
+    }));
+  }
+  return new Set(prior.records.filter(({ status }) => status === "passed").map(({ operationId }) => operationId));
+});
 var writeEvidenceBundle = fn2("run.writeEvidenceBundle")(function* (pathName, bundle, root = ".") {
   yield* writeWorkspaceFile(root, pathName, renderEvidenceJson(bundle), (path4, reason, cause) => EvidenceWriteError.make({ path: path4, reason, ...cause === undefined ? {} : { cause } }));
 });
@@ -103067,11 +103139,11 @@ var planContext = (plan) => ({
   artifacts: plan.artifacts,
   configPath: plan.source.configPath
 });
-var writeWorkflowEvidence = fn2("run.writeWorkflowEvidence")(function* (plan, name, workflow, approval) {
+var writeWorkflowEvidence = fn2("run.writeWorkflowEvidence")(function* (plan, name, workflow, approval, skip = new Set) {
   const context7 = planContext(plan);
-  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context7);
-  const ref = yield* makeEvidenceRef(context7);
-  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7).pipe(andThen2(get4(ref))));
+  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context7, skip);
+  const ref = yield* makeEvidenceRef(context7, planFingerprint(plan));
+  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7, skip).pipe(andThen2(get4(ref))));
 });
 
 // ../../src/engine/engine.ts
@@ -103148,6 +103220,12 @@ var build = fn2("engine.summary.build")(function* (options = {}) {
   };
 });
 var release = fn2("engine.summary.release")(function* (options = {}) {
+  if (options.continueRun === true && options.execute !== true) {
+    return yield* fail6(ContinueRequiresExecuteError.make());
+  }
+  if (options.continueRun === true && options.snapshot === true) {
+    return yield* fail6(ContinueSnapshotRefusedError.make());
+  }
   if (options.execute !== true) {
     const document2 = yield* planRelease(options);
     return {
@@ -103162,7 +103240,7 @@ var release = fn2("engine.summary.release")(function* (options = {}) {
     execute: options.execute ?? false,
     approveIrreversible: options.approvePublish ?? false
   });
-  const result2 = yield* planWithEvidence(options, (document2) => writeWorkflowEvidence(document2, "evidence", "release", approval));
+  const result2 = yield* planWithEvidence(options, (document2) => flatMap3(options.continueRun === true ? continueSkipSet(document2) : succeed6(new Set), (skip) => writeWorkflowEvidence(document2, "evidence", "release", approval, skip)));
   const summary2 = plannedSummary(result2.plan);
   const executed = evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "evidence"));
   return {
@@ -103219,6 +103297,7 @@ class ActionOptions extends Class4("ActionOptions")({
   target: optionalKey2(String4),
   snapshot: Boolean3,
   execute: Boolean3,
+  continueRun: Boolean3,
   approvePublish: Boolean3,
   uploadEvidence: Boolean3,
   evidenceArtifactName: String4
@@ -103271,6 +103350,7 @@ var readActionOptions = (reader, root) => {
     ...target === undefined ? {} : { target },
     snapshot: parseBooleanInput(reader, "snapshot", false),
     execute: parseBooleanInput(reader, "execute", false),
+    continueRun: parseBooleanInput(reader, "continue", false),
     approvePublish: parseBooleanInput(reader, "approve-publish", false),
     uploadEvidence: parseBooleanInput(reader, "upload-evidence", false),
     evidenceArtifactName: inputOrDefault(reader, "evidence-artifact-name", "release-evidence")
@@ -103316,6 +103396,7 @@ var releaseInput = (options) => ({
   config: options.config,
   snapshot: options.snapshot,
   execute: options.execute,
+  continueRun: options.continueRun,
   approvePublish: options.approvePublish
 });
 var diagnosticsFormat = (options) => options.format === "json" || options.format === "markdown" ? options.format : "text";
@@ -103424,7 +103505,7 @@ ${rendered.trimEnd()}
           const plan2 = yield* planRelease(releaseInput(safeOptions));
           rememberPlan(plan2);
           yield* outputPlan(io, plan2);
-          if (command2 === "release" && !safeOptions.execute) {
+          if (command2 === "release" && !safeOptions.execute && !safeOptions.continueRun) {
             if (safeOptions.writeStepSummary)
               yield* io.appendSummary(`${renderReleasePlan(plan2, "markdown").trimEnd()}
 

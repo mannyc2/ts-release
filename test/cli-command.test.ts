@@ -650,6 +650,18 @@ describe("cli command", () => {
       ])
       await expect(access(join(root, ".release", "evidence", "evidence.json"))).rejects.toThrow()
     }))
+  test("release --continue delegates its execute refusal to the engine", () =>
+    withTempDirectoryPromise("ts-release-cli-continue-refusal-", async (root) => {
+      const configPath = join(root, "release.config.json")
+      await writeFile(configPath, noOpConfig)
+      const exit = await Effect.runPromise(workflowEffect(root, [
+        "release",
+        "--config",
+        configPath,
+        "--continue"
+      ]).pipe(Effect.exit))
+      expectExitFailureTag(exit, "ContinueRequiresExecuteError")
+    }))
   test("release command writes one workflow evidence file", () =>
     withTempDirectoryPromise("ts-release-release-root-", async (root) => {
       const configPath = join(root, "release.config.json")
@@ -663,6 +675,7 @@ describe("cli command", () => {
       ])
       const output = await readFile(join(root, ".release", "evidence", "evidence.json"), "utf8")
       expect(output).toContain("\"releaseName\": \"release\"")
+      expect(output).toContain("\"planFingerprint\":")
       expect(output).toContain("\"records\": []")
     }))
   test("release command writes partial workflow evidence on validation failure", () =>

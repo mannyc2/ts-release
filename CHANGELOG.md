@@ -4,6 +4,12 @@
 
 ### Changed
 
+- Newly persisted build, release, and verification evidence records the
+  SHA-256 fingerprint of its source-independent canonical release plan.
+  Legacy evidence still decodes, but cannot be used to continue a release.
+- Added `release --continue` and the Action `continue` input. A continued
+  executed release requires matching fingerprinted evidence and skips only
+  operations that previously passed; snapshot continuation is refused.
 - Internal plan/config validation wording is no longer a compatibility surface;
   typed error tags, fields, and meanings are. No current message changed in
   this release.

@@ -107,6 +107,7 @@ const releaseInput = (options: ActionOptions) => ({
   config: options.config,
   snapshot: options.snapshot,
   execute: options.execute,
+  continueRun: options.continueRun,
   approvePublish: options.approvePublish
 })
 
@@ -250,7 +251,7 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
           const plan = yield* Release.planRelease(releaseInput(safeOptions))
           rememberPlan(plan)
           yield* outputPlan(io, plan)
-          if (command === "release" && !safeOptions.execute) {
+          if (command === "release" && !safeOptions.execute && !safeOptions.continueRun) {
             if (safeOptions.writeStepSummary) yield* io.appendSummary(
               `${Release.renderReleasePlan(plan, "markdown").trimEnd()}\n\nrelease planned only; set execute: true to run approved operations.\n`)
             return

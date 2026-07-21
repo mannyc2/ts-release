@@ -269,6 +269,7 @@ ts-release doctor --config release.config.json
 ts-release build --config release.config.json --format text
 ts-release plan --config release.config.json --format markdown
 ts-release release --config release.config.json --execute --approve-publish
+ts-release release --config release.config.json --execute --approve-publish --continue
 ts-release verify --config release.config.json
 ```
 
@@ -299,6 +300,9 @@ Publishing still needs explicit approval:
     approve-publish: "true"
     upload-evidence: true
 ```
+
+Set `continue: "true"` alongside both approval inputs to resume a matching
+release from fingerprinted evidence; only prior passed operations are skipped.
 
 For npm trusted publishing, configure npmjs for the GitHub repository and
 workflow, grant `id-token: write`, and keep `trustedPublishing` in the npm

@@ -48,6 +48,7 @@ const actionOptions = (root: string, overrides: ActionOptionsOverrides = {}): Ac
     ...(overrides.target === undefined ? {} : { target: overrides.target }),
     snapshot: overrides.snapshot ?? false,
     execute: overrides.execute ?? false,
+    continueRun: overrides.continueRun ?? false,
     approvePublish: overrides.approvePublish ?? false,
     uploadEvidence: overrides.uploadEvidence ?? false,
     evidenceArtifactName: overrides.evidenceArtifactName ?? "release-evidence"
@@ -132,6 +133,7 @@ describe("ts-release action", () => {
       "target:",
       "snapshot:",
       "execute:",
+      "continue:",
       "approve-publish:",
       "upload-evidence:",
       "evidence-artifact-name:"
@@ -308,6 +310,13 @@ describe("ts-release action", () => {
     expect(reads).not.toContain("runtime")
     expect("runtime" in options).toBe(false)
   })
+  test("decodes the continue input to the internal continueRun option", () => {
+    const options = readActionOptions({
+      getInput: (name) => name === "continue" ? "true" : ""
+    }, process.cwd())
+
+    expect(options.continueRun).toBe(true)
+  })
   for (const [label, name, value, reason] of [
     ["invalid action inputs fail through action outputs", "execute", "yes", "Expected true or false"],
     ["whitespace-only config input fails through action outputs", "config", "   ", "config"]
@@ -399,6 +408,7 @@ describe("ts-release action", () => {
       )
       const evidence = await readFile(join(root, ".release", "evidence", "verification.json"), "utf8")
       expect(evidence).toContain("\"releaseName\": \"release\"")
+      expect(evidence).toContain("\"planFingerprint\":")
       expect(io.outputs.get("status")).toBe("passed")
       expect(artifact.uploads).toHaveLength(1)
       expect(artifact.uploads[0]?.name).toBe("audit-evidence")

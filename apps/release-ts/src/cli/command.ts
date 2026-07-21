@@ -44,6 +44,7 @@ const overwriteFlag = Flag.boolean("overwrite").pipe(Flag.withDefault(false))
 const githubActionsFlag = Flag.boolean("github-actions").pipe(Flag.withDefault(false))
 const targetFlag = Flag.string("target").pipe(Flag.optional)
 const executeFlag = Flag.boolean("execute").pipe(Flag.withDefault(false))
+const continueFlag = Flag.boolean("continue").pipe(Flag.withDefault(false))
 const approvePublishFlag = Flag.boolean("approve-publish").pipe(Flag.withDefault(false))
 const snapshotFlag = Flag.boolean("snapshot").pipe(Flag.withDefault(false))
 
@@ -154,9 +155,9 @@ const verifyCommand = Command.make(
 
 const releaseCommand = Command.make(
   "release",
-  { ...sharedFlags, execute: executeFlag, approvePublish: approvePublishFlag },
-  Effect.fn("cli.release")(function*({ root, config, snapshot, execute, approvePublish }) {
-    if (!execute) {
+  { ...sharedFlags, execute: executeFlag, continueRun: continueFlag, approvePublish: approvePublishFlag },
+  Effect.fn("cli.release")(function*({ root, config, snapshot, execute, continueRun, approvePublish }) {
+    if (!execute && !continueRun) {
       const plan = yield* Release.planRelease(configInput({ root, config, snapshot }))
       yield* Console.log(
         `${Release.renderReleasePlan(plan, "text").trimEnd()}\nrelease planned only; pass --execute to run approved operations.`
@@ -166,6 +167,7 @@ const releaseCommand = Command.make(
     const result = yield* Release.release({
       ...configInput({ root, config, snapshot }),
       execute,
+      continueRun,
       approvePublish
     })
     yield* printEvidence(result.evidence!)

@@ -37,6 +37,10 @@ inputs:
     description: Allow approved execution commands to run operations requiring execute approval.
     required: false
     default: "false"
+  continue:
+    description: Continue an executed release by skipping operations that passed in matching prior evidence.
+    required: false
+    default: "false"
   approve-publish:
     description: Allow publish operations when execute is also true.
     required: false

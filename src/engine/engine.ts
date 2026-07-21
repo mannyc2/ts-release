@@ -40,6 +40,8 @@ import {
 } from "../render/summary.js"
 import { diagnoseRelease, type DoctorReleaseInput } from "../doctor/doctor.js"
 import { releaseEvidencePath, writeWorkflowEvidence } from "../run/workflow.js"
+import { continueSkipSet } from "../run/workflow.js"
+import { ContinueRequiresExecuteError, ContinueSnapshotRefusedError } from "../run/errors.js"
 
 
 export { renderBuildArtifacts, renderEvidenceJson, renderReleasePlan }
@@ -51,6 +53,7 @@ export interface RunOptions {
   readonly snapshot?: boolean | undefined
   readonly execute?: boolean | undefined
   readonly approvePublish?: boolean | undefined
+  readonly continueRun?: boolean | undefined
 }
 
 const resolveReleaseBuild = Effect.fn("engine.resolveReleaseBuild")(function*(
@@ -172,6 +175,12 @@ export const build = Effect.fn("engine.summary.build")(function*(options: RunOpt
 })
 
 export const release = Effect.fn("engine.summary.release")(function*(options: RunOptions = {}) {
+  if (options.continueRun === true && options.execute !== true) {
+    return yield* Effect.fail(ContinueRequiresExecuteError.make())
+  }
+  if (options.continueRun === true && options.snapshot === true) {
+    return yield* Effect.fail(ContinueSnapshotRefusedError.make())
+  }
   if (options.execute !== true) {
     const document = yield* planRelease(options)
     return {
@@ -186,8 +195,11 @@ export const release = Effect.fn("engine.summary.release")(function*(options: Ru
     execute: options.execute ?? false,
     approveIrreversible: options.approvePublish ?? false
   })
-  const result = yield* planWithEvidence(options,
-    (document) => writeWorkflowEvidence(document, "evidence", "release", approval))
+  const result = yield* planWithEvidence(options, (document) =>
+    Effect.flatMap(
+      options.continueRun === true ? continueSkipSet(document) : Effect.succeed(new Set<string>()),
+      (skip) => writeWorkflowEvidence(document, "evidence", "release", approval, skip)
+    ))
   const summary = plannedSummary(result.plan)
   const executed = evidenceOperationStatuses(
     result.plan,

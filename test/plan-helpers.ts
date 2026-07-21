@@ -72,10 +72,11 @@ const operationContext = (plan: TestPlan) => ({
 })
 export const runEvidenceWorkflow = Effect.fn("test.runEvidenceWorkflow")(function*(
   operations: ReadonlyArray<Operation>, workflow: EvidenceWorkflow,
-  approval: ExecutionApproval, context: OperationRunContext
+  approval: ExecutionApproval, context: OperationRunContext,
+  planFingerprint?: string
 ) {
   yield* preflightEvidenceWorkflow(operations, workflow, approval, context)
-  const ref = yield* makeEvidenceRef(context)
+  const ref = yield* makeEvidenceRef(context, planFingerprint)
   yield* runEvidenceWorkflowInto(ref, operations, workflow, approval, context)
   return yield* Ref.get(ref)
 })

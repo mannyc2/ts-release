@@ -1,13 +1,16 @@
 // Invariant: each evidence workflow preflights once, records into one ref, and persists exactly once on every exit.
+import { createHash } from "node:crypto"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as FileSystem from "effect/FileSystem"
 import * as Path from "effect/Path"
 import * as Ref from "effect/Ref"
+import * as Schema from "effect/Schema"
 import type { ExecutionApproval } from "../grammar/approval.js"
-import type { ReleasePlan } from "../grammar/plan.js"
-import { writeWorkspaceFile } from "../host/workspace-path.js"
+import { ReleasePlan } from "../grammar/plan.js"
+import { parseJsonAs } from "../grammar/json.js"
+import { resolveWorkspacePath, writeWorkspaceFile } from "../host/workspace-path.js"
 import {
   makeEvidenceRef,
   preflightEvidenceWorkflow,
@@ -16,11 +19,54 @@ import {
   type EvidenceWorkflow,
   type OperationRunContext
 } from "./executor.js"
-import { type EvidenceBundle, renderEvidenceJson } from "./evidence.js"
-import { EvidenceWriteError } from "./errors.js"
+import { decodeEvidenceBundle, type EvidenceBundle, renderEvidenceJson } from "./evidence.js"
+import {
+  ContinueEvidenceInvalidError,
+  ContinueEvidenceMissingError,
+  ContinueEvidenceReadError,
+  ContinueFingerprintMissingError,
+  ContinueMismatchError,
+  EvidenceWriteError
+} from "./errors.js"
 
 export const releaseEvidencePath = (plan: ReleasePlan, name: string): string =>
   `${plan.evidenceDirectory}/${name}.json`
+
+export const planFingerprint = (plan: ReleasePlan): string => {
+  const { source: _source, ...durable } = Schema.encodeSync(ReleasePlan)(plan)
+  return createHash("sha256").update(JSON.stringify(durable)).digest("hex")
+}
+
+const errorReason = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
+export const continueSkipSet = Effect.fn("run.continueSkipSet")(function*(plan: ReleasePlan) {
+  const pathName = releaseEvidencePath(plan, "evidence")
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const resolved = resolveWorkspacePath(path, plan.source.root, pathName)
+  const exists = yield* fs.exists(resolved).pipe(Effect.mapError((error) =>
+    ContinueEvidenceReadError.make({ path: pathName, reason: error.message })))
+  if (!exists) return yield* Effect.fail(ContinueEvidenceMissingError.make({ path: pathName }))
+  const contents = yield* fs.readFileString(resolved).pipe(Effect.mapError((error) =>
+    ContinueEvidenceReadError.make({ path: pathName, reason: error.message })))
+  const parsed = yield* parseJsonAs(Schema.Unknown, contents, (error) =>
+    ContinueEvidenceInvalidError.make({ path: pathName, reason: errorReason(error) }))
+  const prior = yield* decodeEvidenceBundle(parsed).pipe(Effect.mapError((error) =>
+    ContinueEvidenceInvalidError.make({ path: pathName, reason: error.message })))
+  if (prior.planFingerprint === undefined) {
+    return yield* Effect.fail(ContinueFingerprintMissingError.make({ path: pathName }))
+  }
+  const expected = planFingerprint(plan)
+  if (prior.planFingerprint !== expected) {
+    return yield* Effect.fail(ContinueMismatchError.make({
+      path: pathName,
+      expected,
+      actual: prior.planFingerprint
+    }))
+  }
+  return new Set(prior.records.filter(({ status }) => status === "passed").map(({ operationId }) => operationId))
+})
 
 export const writeEvidenceBundle = Effect.fn("run.writeEvidenceBundle")(function*(
   pathName: string,
@@ -61,13 +107,14 @@ export const writeWorkflowEvidence = Effect.fn("run.writeWorkflowEvidence")(func
   plan: ReleasePlan,
   name: string,
   workflow: EvidenceWorkflow,
-  approval: ExecutionApproval
+  approval: ExecutionApproval,
+  skip: ReadonlySet<string> = new Set()
 ) {
   const context = planContext(plan)
-  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context)
-  const ref = yield* makeEvidenceRef(context)
+  yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context, skip)
+  const ref = yield* makeEvidenceRef(context, planFingerprint(plan))
   return yield* runEvidenceWorkflowWithFinalizer(
     plan, name, ref,
-    runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context).pipe(Effect.andThen(Ref.get(ref)))
+    runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context, skip).pipe(Effect.andThen(Ref.get(ref)))
   )
 })

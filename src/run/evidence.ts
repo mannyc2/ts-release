@@ -79,8 +79,13 @@ export class EvidenceBundle extends Schema.Class<EvidenceBundle>("EvidenceBundle
   schemaVersion: Schema.Literal("release-evidence/v3"),
   releaseName: ReleaseName,
   releaseVersion: ReleaseVersion,
+  planFingerprint: Schema.optionalKey(Schema.String),
   records: Schema.Array(EvidenceRecord)
 }) {}
+
+export const decodeEvidenceBundle = Schema.decodeUnknownEffect(EvidenceBundle, {
+  onExcessProperty: "error"
+})
 
 export const renderEvidenceJson = (bundle: EvidenceBundle): string =>
   `${JSON.stringify(bundle, null, 2)}\n`

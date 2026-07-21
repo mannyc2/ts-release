@@ -17,6 +17,10 @@ import {
 } from "../src/host/host.js"
 import { ApiError, ReleaseHttp, type HttpHeader, type HttpRequestSpec, type HttpResult } from "../src/host/http.js"
 
+export { CommandSpec, ReleaseCommandRunner, ReleaseHttp }
+export { NoteAction, Operation } from "../src/grammar/operation.js"
+export { ExecutionApproval } from "../src/grammar/approval.js"
+
 export interface TestCommandResponse {
   readonly exitCode: number
   readonly stdout: string
@@ -152,7 +156,11 @@ const normalizedSeparators = (path: string): string =>
 
 const addVariant = (variants: Set<string>, path: string): void => {
   variants.add(path)
-  variants.add(normalizedSeparators(path))
+  const normalized = normalizedSeparators(path)
+  variants.add(normalized)
+  if (normalized.startsWith("./")) {
+    variants.add(normalized.replace(/^\.\/+/, ""))
+  }
 }
 
 const addRelativePathVariants = (variants: Set<string>, cwd: string, path: string): void => {

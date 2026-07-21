@@ -16,7 +16,8 @@ import { ApiError } from "../src/host/http.js"
 import {
   ArtifactStager,
   type ArtifactStageContext,
-  type StageOperation
+  type StageOperation,
+  UnsupportedArtifactStagerLayer
 } from "../src/pack/stager.js"
 import { ReleaseIdentity } from "../src/grammar/state.js"
 import {
@@ -39,6 +40,8 @@ export type {
   TestHttpResponse,
   TestReleaseHttpOptions
 } from "./host-fakes.js"
+
+export { UnsupportedArtifactStagerLayer }
 
 export const stageArtifactOperations = (
   operations: ReadonlyArray<StageOperation>, context: ArtifactStageContext

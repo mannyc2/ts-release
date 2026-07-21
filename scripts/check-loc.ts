@@ -23,7 +23,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 588], // raised by plan 163 (family-aware init template patch)
   ["apps/ts-release-action/src", 486], // ratcheted by plan 166 (removed the dead runtime input and rejection path)
-  ["test", 9663], // raised by plan 167 (strict argv, stale joins, and unbound planner regressions)
+  ["test", 9906], // raised by plan 167 (strict argv, stale joins, unbound operations, and test-double characterization)
   ["scripts", 2276], // raised by plan 159 (hooks feature)
   ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
 ]

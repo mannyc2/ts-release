@@ -6,6 +6,7 @@ import type { ReleaseIntent } from "../config/schema.js"
 import { Operation, PublishedAssetsVerifyAction, RetryPolicy } from "../grammar/operation.js"
 import { ExecutionApproval } from "../grammar/approval.js"
 import { ReleasePlan } from "../grammar/plan.js"
+import { validateReleasePlan } from "../grammar/plan-rules.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../grammar/accumulator.js"
 import { ReleaseIdentity } from "../grammar/state.js"
 import { scheduled } from "../grammar/planner.js"
@@ -115,21 +116,16 @@ const releasePlanFromAccumulator = (
     evidenceDirectory: release.evidenceDirectory
   })
 
-const loadReleasePlan = Effect.fn("engine.loadReleasePlan")(function*(options: RunOptions) {
-  const { build, source } = yield* loadReleaseBuild(options)
-  const state = yield* resolveReleasePlan(build)
-  const plan = releasePlanFromAccumulator(build.release, state)
-  const invocation: Invocation = { root: source.root, configPath: source.sourcePath }
-  if (options.verifyPublished !== true) return { release: build.release, plan, invocation }
+const withPublishedAssetsVerify = (release: ResolvedRelease, plan: ReleasePlan): ReleasePlan => {
   const github = plan.operations.find(({ action }) => action._tag === "github-release-create")
-  if (github?.action._tag !== "github-release-create") return { release: build.release, plan, invocation }
+  if (github?.action._tag !== "github-release-create") return plan
   const githubAction = github.action
   const checksum = plan.artifacts.find((artifact) =>
     artifact.extra._tag === "checksum-file" &&
     githubAction.assets.some(({ artifactId }) => artifactId === artifact.id))
-  if (checksum?.extra._tag !== "checksum-file") return { release: build.release, plan, invocation }
+  if (checksum?.extra._tag !== "checksum-file") return plan
   const checksumAsset = githubAction.assets.find(({ artifactId }) => artifactId === checksum.id)
-  if (checksumAsset === undefined) return { release: build.release, plan, invocation }
+  if (checksumAsset === undefined) return plan
   const covered = new Set(checksum.extra.coversArtifactIds)
   const operation = Operation.make({
     id: "published:github-assets-verify",
@@ -144,13 +140,21 @@ const loadReleasePlan = Effect.fn("engine.loadReleasePlan")(function*(options: R
       algorithm: checksum.extra.algorithm,
       assetNames: githubAction.assets.filter(({ artifactId }) => covered.has(artifactId)).map(({ name }) => name)
     }),
-    ...(build.release.retry === undefined ? {} : { retry: build.release.retry })
+    ...(release.retry === undefined ? {} : { retry: release.retry })
   })
-  return {
-    release: build.release,
-    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] }),
-    invocation
-  }
+  return ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] })
+}
+
+const loadReleasePlan = Effect.fn("engine.loadReleasePlan")(function*(options: RunOptions) {
+  const { build, source } = yield* loadReleaseBuild(options)
+  const state = yield* resolveReleasePlan(build)
+  const planned = releasePlanFromAccumulator(build.release, state)
+  // Constructed plans pass the same integrity gate durable plans face on decode (D4).
+  const plan = yield* validateReleasePlan(
+    options.verifyPublished === true ? withPublishedAssetsVerify(build.release, planned) : planned
+  )
+  const invocation: Invocation = { root: source.root, configPath: source.sourcePath }
+  return { release: build.release, plan, invocation }
 })
 
 export const planRelease = Effect.fn("engine.planRelease")(function*(options: RunOptions = {}) {

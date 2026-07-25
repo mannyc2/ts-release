@@ -2,11 +2,8 @@ import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { stdin, stderr, stdout, argv, exit } from "node:process"
-import {
-  deferredContentArtifactIds,
-  renderDeferredContent
-} from "../src/run/content.js"
-import type { DeferredFileContent } from "../src/grammar/content.js"
+import { renderDeferredContent } from "../src/run/content.js"
+import { deferredContentArtifactIds, type DeferredFileContent } from "../src/grammar/content.js"
 import { decodeReleasePlanSync, type ReleasePlan } from "../src/grammar/plan.js"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

@@ -15,11 +15,11 @@ GitHub Action all use the same engine.
 | 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/features/`. |
 | 5 | Artifact | One Schema class in `src/grammar/artifact.ts`, including platform and typed extra data. |
 | 6 | Operation / Action | One operation class and seven live action tags in `src/grammar/operation.ts`. |
-| 7 | Release plan | The sole durable `release-plan/v5` Schema in `src/grammar/plan.ts`. |
+| 7 | Release plan | The sole durable `release-plan/v5` Schema in `src/grammar/plan.ts`, gated by `src/grammar/plan-rules.ts` on construction and on decode. |
 | 8 | Accumulator | One private transient fold in `src/grammar/accumulator.ts`; never encoded or exported. |
 | 9 | Approval | One risk derivation in `src/grammar/approval.ts` plus whole-pass preflight in the executor. |
 | 10 | Evidence | Records and the sole durable `release-evidence/v3` bundle in `src/run/evidence.ts`. |
-| 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `src/run/content.ts`. |
+| 11 | Deferred content | Typed text and checksum holes declared in `src/grammar/content.ts` and resolved from canonical artifacts by `src/run/content.ts`. |
 | 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/features/`. |
 | 13 | Services | Command, HTTP, staging, and GitHub capabilities injected at runtime boundaries. |
 | 14 | Errors | One tagged-error policy; distinct tags remain where retry and exact failure contracts differ. |
@@ -36,7 +36,7 @@ JSON/object config
   -> ReleaseIdentity + ResolvedRelease
   -> fixed ordered feature schedule
   -> private accumulator
-  -> canonical ReleasePlan v4
+  -> canonical ReleasePlan v5
   -> render / build / verify / approved release
   -> EvidenceBundle v3
 ```
@@ -44,9 +44,11 @@ JSON/object config
 Config is decoded once. Identity and defaults are resolved once. Feature
 planners are pure with respect to release state: configured features contribute
 artifacts and operations but execute nothing. An absent feature contributes
-nothing. The accumulator is the uniqueness
-boundary for artifact ids, operation ids, paths, and names. Finalization creates
-the durable plan without an intermediate document DTO.
+nothing. `src/grammar/plan-rules.ts` holds the one spelling of uniqueness for
+artifact ids, operation ids, paths, and names; the accumulator applies it per
+contribution so a duplicate names the pipe that introduced it. Finalization
+creates the durable plan without an intermediate document DTO, then passes it
+through the same integrity gate a decoded plan faces.
 
 The planner schedule is explicit in `src/engine/engine.ts`. Its order is contract:
 builds and imports, processing and catalogs, then publication surfaces. Adding a
@@ -57,8 +59,9 @@ schedule entry. It does not require dynamic registration or a new kernel.
 
 - `src/config/` owns location, JSON parsing, migration hints, strict decode, and
   JSON-Schema derivation.
-- `src/grammar/` owns durable grammar, pure platform/template/semver helpers,
-  approval derivation, and the private planning fold.
+- `src/grammar/` owns durable grammar, its integrity rules, pure
+  platform/template/semver helpers, approval derivation, and the private
+  planning fold.
 - `src/features/` maps resolved build targets and catalog presets to artifacts
   and planned actions.
 - `src/features/` owns one resolver/planner per build or artifact
@@ -104,6 +107,13 @@ its required `extra` tag instead of being stored twice. Every planned operation
 remains visible. There is no older
 plan reader, hidden-stage projection, artifact inventory DTO, or output alias.
 Evidence v3 is independent and contains each operation's final status/outcome.
+
+One integrity boundary in `src/grammar/plan-rules.ts` gates every plan, whether
+just constructed or just decoded. A closed action-policy table rejects any
+operation whose declared phase or risk understates what its action does, every
+artifact reference must resolve to a declared artifact, no two stages may claim
+one artifact, and ids, paths, and basenames must be unique. `readReleasePlan`
+is the only durable read entry, so no caller reaches an unvalidated plan.
 
 The package root exposes config authoring plus `plan`, `build`, `verify`, and
 `release`. It does not export internal directory subpaths. Bare `release()` is

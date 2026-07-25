@@ -12,3 +12,6 @@ export class FilePartsContent extends Schema.TaggedClass<FilePartsContent>()("fi
 
 export const DeferredFileContent = Schema.Union([FilePartsContent])
 export type DeferredFileContent = typeof DeferredFileContent.Type
+
+export const deferredContentArtifactIds = (content: DeferredFileContent): ReadonlyArray<string> =>
+  content.parts.flatMap((part) => typeof part === "string" ? [] : [part.artifactId])

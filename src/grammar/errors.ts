@@ -8,6 +8,11 @@ export class PlanError extends Schema.TaggedErrorClass<PlanError>()("PlanError",
   reason: Schema.String
 }) {}
 
+export class PlanIntegrityError extends Schema.TaggedErrorClass<PlanIntegrityError>()("PlanIntegrityError", {
+  rule: Schema.String,
+  reason: Schema.String
+}) {}
+
 export class IdentityError extends Schema.TaggedErrorClass<IdentityError>()("IdentityError", {
   source: Schema.String,
   field: Schema.optional(Schema.String),

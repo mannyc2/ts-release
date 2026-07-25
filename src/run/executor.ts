@@ -22,10 +22,8 @@ import {
   type ActionOutcome,
   type EvidenceStatus
 } from "./evidence.js"
-import {
-  deferredContentArtifactIds,
-  renderDeferredContent
-} from "./content.js"
+import { deferredContentArtifactIds } from "../grammar/content.js"
+import { renderDeferredContent } from "./content.js"
 import { ActionAttemptFailed, OperationFailedError, WorkspaceWriteError } from "./errors.js"
 import { ReleaseCommandRunner } from "../host/host.js"
 import { endTiming, nowIso, startTiming } from "../host/platform.js"

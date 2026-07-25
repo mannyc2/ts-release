@@ -19,9 +19,6 @@ const hashFor = (hashes: ReadonlyMap<string, string>, artifactId: string): strin
   return hash
 }
 
-export const deferredContentArtifactIds = (content: DeferredFileContent): ReadonlyArray<string> =>
-  content.parts.flatMap((part) => typeof part === "string" ? [] : [part.artifactId])
-
 export const renderDeferredContent = (
   content: DeferredFileContent,
   hashes: ReadonlyMap<string, string>

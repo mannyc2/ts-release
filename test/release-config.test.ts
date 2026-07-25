@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
-import { deferredContentArtifactIds } from "../src/run/content.js"
+import { deferredContentArtifactIds } from "../src/grammar/content.js"
 import { CommandSpec } from "../src/grammar/operation.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
 import { runEffect } from "./helpers.js"

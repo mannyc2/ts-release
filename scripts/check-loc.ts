@@ -7,10 +7,10 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6650], // raised by plan 169.1 (v5 seal: derived kind, invocation threading, fingerprint renders)
+  ["src", 6807], // raised by plan 169.2 (the plan integrity boundary: policy table, reference totality, readReleasePlan)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
-  ["src/grammar", 881], // raised by plan 168 (published-asset verification action)
+  ["src/grammar", 1039], // raised by plan 169.2 (plan-rules.ts owns the action policy table, reference totality, and uniqueness)
   ["src/features", 1778], // ratcheted by plan 167 (unbound operations and direct typed npm access)
   ["src/pack", 500],
   ["src/github", 267],
@@ -23,7 +23,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 594], // raised by plan 168 (continue and published flags)
   ["apps/ts-release-action/src", 507], // raised by plan 169.1 (PlannedRun remembers the run invocation for evidence upload)
-  ["test", 10520], // raised by plan 169.1 (v5 rejection rows for the deleted source block and stored kind)
+  ["test", 10784], // raised by plan 169.2 (the fourteen-case plan rejection matrix)
   ["scripts", 2278], // raised by plan 169.1 (deferred content resolves against the cwd, not a plan-carried root)
   ["apps/release-ts/scripts", 827] // raised by plan 169.1 (render-catalogs threads the invocation)
 ]

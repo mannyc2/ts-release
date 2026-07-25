@@ -1,8 +1,9 @@
-// Invariant: the accumulator is the sole uniqueness boundary for plan ids, paths, and names.
+// Invariant: the accumulator reports pipe-attributed duplicates using plan-rules' single uniqueness spelling.
 import * as Effect from "effect/Effect"
-import { artifactPathBaseName, type Artifact } from "./artifact.js"
+import type { Artifact } from "./artifact.js"
 import { PlanError } from "./errors.js"
 import type { Operation } from "./operation.js"
+import { duplicateArtifactBaseNames, duplicateValues } from "./plan-rules.js"
 import type { FeatureSchedule, PipeContribution } from "./planner.js"
 import type { ReleaseIdentity } from "./state.js"
 
@@ -15,19 +16,6 @@ export interface PlanAccumulator {
 export const emptyPlanAccumulator = (identity: ReleaseIdentity): PlanAccumulator => ({
   identity, artifacts: [], operations: []
 })
-
-const duplicateValues = (
-  existing: Iterable<string>,
-  incoming: Iterable<string>
-): ReadonlyArray<string> => {
-  const seen = new Set(existing)
-  const duplicates = new Set<string>()
-  for (const value of incoming) {
-    if (seen.has(value)) duplicates.add(value)
-    seen.add(value)
-  }
-  return [...duplicates].sort()
-}
 
 const requireUnique = (
   pipeId: string,
@@ -51,15 +39,7 @@ const requireUniqueArtifactNames = (
   state: PlanAccumulator,
   artifacts: ReadonlyArray<Artifact>
 ): Effect.Effect<void, PlanError> => {
-  const seen = new Map(state.artifacts.map((artifact) =>
-    [artifactPathBaseName(artifact.path), artifact.id] as const))
-  const collisions: Array<string> = []
-  for (const artifact of artifacts) {
-    const name = artifactPathBaseName(artifact.path)
-    const firstId = seen.get(name)
-    if (firstId === undefined) seen.set(name, artifact.id)
-    else collisions.push(`${name} (${firstId}, ${artifact.id})`)
-  }
+  const collisions = duplicateArtifactBaseNames(state.artifacts, artifacts)
   return collisions.length === 0
     ? Effect.void
     : Effect.fail(PlanError.make({

@@ -99038,6 +99038,12 @@ class PlanError extends TaggedErrorClass()("PlanError", {
 }) {
 }
 
+class PlanIntegrityError extends TaggedErrorClass()("PlanIntegrityError", {
+  rule: String4,
+  reason: String4
+}) {
+}
+
 class IdentityError extends TaggedErrorClass()("IdentityError", {
   source: String4,
   field: optional(String4),
@@ -99185,6 +99191,7 @@ class FilePartsContent extends TaggedClass()("file-parts", {
 }) {
 }
 var DeferredFileContent = Union2([FilePartsContent]);
+var deferredContentArtifactIds = (content) => content.parts.flatMap((part) => typeof part === "string" ? [] : [part.artifactId]);
 
 // ../../src/assets/platform-variants.json
 var platform_variants_default = {
@@ -100970,6 +100977,118 @@ var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operat
 // ../../src/grammar/plan.ts
 import { createHash as createHash3 } from "node:crypto";
 
+// ../../src/grammar/plan-rules.ts
+var duplicateValues = (existing, incoming) => {
+  const seen = new Set(existing);
+  const duplicates = new Set;
+  for (const value2 of incoming) {
+    if (seen.has(value2))
+      duplicates.add(value2);
+    seen.add(value2);
+  }
+  return [...duplicates].sort();
+};
+var duplicateArtifactBaseNames = (existing, incoming) => {
+  const seen = new Map(existing.map((artifact2) => [artifactPathBaseName(artifact2.path), artifact2.id]));
+  const collisions = [];
+  for (const artifact2 of incoming) {
+    const name = artifactPathBaseName(artifact2.path);
+    const firstId = seen.get(name);
+    if (firstId === undefined)
+      seen.set(name, artifact2.id);
+    else
+      collisions.push(`${name} (${firstId}, ${artifact2.id})`);
+  }
+  return collisions;
+};
+var allPhases = new Set(OperationPhase.literals);
+var allRisks = new Set(OperationRisk.literals);
+var actionPolicy = {
+  command: { phases: allPhases, risks: allRisks },
+  stage: { phases: new Set(["build", "process"]), risks: new Set(["writes-local"]) },
+  "check-file": { phases: new Set(["build", "verify"]), risks: new Set(["read-only"]) },
+  "write-file": { phases: new Set(["process", "catalog"]), risks: new Set(["writes-local"]) },
+  note: { phases: allPhases, risks: new Set(["read-only"]) },
+  "github-release-create": { phases: new Set(["publish"]), risks: new Set(["externally-visible", "irreversible"]) },
+  "github-release-verify": { phases: new Set(["verify"]), risks: new Set(["read-only"]) },
+  "published-assets-verify": { phases: new Set(["verify"]), risks: new Set(["read-only"]) }
+};
+var reject = (rule, reason) => fail6(PlanIntegrityError.make({ rule, reason }));
+var validateActionPolicy = (operations) => {
+  for (const operation of operations) {
+    const policy = actionPolicy[operation.action._tag];
+    const label = `Operation ${operation.id} (${operation.action._tag})`;
+    if (!policy.phases.has(operation.phase)) {
+      return reject("operation.phase", `${label} may not run in phase ${operation.phase}.`);
+    }
+    if (!policy.risks.has(operation.risk)) {
+      return reject("operation.risk", `${label} may not declare risk ${operation.risk}.`);
+    }
+  }
+  return void_3;
+};
+var validateUniqueness = (plan) => {
+  const checks = [
+    ["artifacts.id", "artifact ids", duplicateValues([], plan.artifacts.map(({ id }) => id))],
+    ["artifacts.path", "artifact paths", duplicateValues([], plan.artifacts.map(({ path: path4 }) => path4))],
+    ["artifacts.name", "artifact names", duplicateArtifactBaseNames([], plan.artifacts)],
+    ["operations.id", "operation ids", duplicateValues([], plan.operations.map(({ id }) => id))]
+  ];
+  for (const [rule, label, duplicates] of checks) {
+    if (duplicates.length > 0)
+      return reject(rule, `Duplicate ${label}: ${duplicates.join(", ")}`);
+  }
+  return void_3;
+};
+var validateReferences = (plan) => {
+  const artifactIds = new Set(plan.artifacts.map(({ id }) => id));
+  const missing = (ids) => [...new Set([...ids].filter((id) => !artifactIds.has(id)))].sort();
+  const unresolved = (rule, owner, ids) => {
+    const absent = missing(ids);
+    return absent.length === 0 ? undefined : reject(rule, `${owner} names unknown artifacts: ${absent.join(", ")}`);
+  };
+  const stagedBy = new Map;
+  for (const operation of plan.operations) {
+    const action5 = operation.action;
+    if (action5._tag === "stage") {
+      const failure = unresolved("stage.producesArtifactIds", `Operation ${operation.id}`, action5.producesArtifactIds);
+      if (failure !== undefined)
+        return failure;
+      for (const artifactId of action5.producesArtifactIds) {
+        const owner = stagedBy.get(artifactId);
+        if (owner !== undefined) {
+          return reject("stage.producesArtifactIds", `Artifact ${artifactId} is staged by both ${owner} and ${operation.id}.`);
+        }
+        stagedBy.set(artifactId, operation.id);
+      }
+    }
+    if (action5._tag === "github-release-create") {
+      const failure = unresolved("github-release-create.assets", `Operation ${operation.id}`, action5.assets.map(({ artifactId }) => artifactId));
+      if (failure !== undefined)
+        return failure;
+    }
+    if (action5._tag === "write-file" && typeof action5.contents !== "string") {
+      const failure = unresolved("write-file.contents", `Operation ${operation.id}`, deferredContentArtifactIds(action5.contents));
+      if (failure !== undefined)
+        return failure;
+    }
+  }
+  for (const artifact2 of plan.artifacts) {
+    if (artifact2.extra._tag === "checksum-file") {
+      const failure = unresolved("checksum-file.coversArtifactIds", `Artifact ${artifact2.id}`, artifact2.extra.coversArtifactIds);
+      if (failure !== undefined)
+        return failure;
+    }
+  }
+  return void_3;
+};
+var validateReleasePlan = fn2("plan.validateReleasePlan")(function* (plan) {
+  yield* validateActionPolicy(plan.operations);
+  yield* validateUniqueness(plan);
+  yield* validateReferences(plan);
+  return plan;
+});
+
 // ../../src/grammar/state.ts
 class ReleaseIdentity extends Class4("PipelineReleaseIdentity")({
   name: String4,
@@ -101004,16 +101123,6 @@ var emptyPlanAccumulator = (identity2) => ({
   artifacts: [],
   operations: []
 });
-var duplicateValues = (existing, incoming) => {
-  const seen = new Set(existing);
-  const duplicates = new Set;
-  for (const value2 of incoming) {
-    if (seen.has(value2))
-      duplicates.add(value2);
-    seen.add(value2);
-  }
-  return [...duplicates].sort();
-};
 var requireUnique = (pipeId, field, label, existing, incoming) => {
   const duplicates = duplicateValues(existing, incoming);
   return duplicates.length === 0 ? void_3 : fail6(PlanError.make({
@@ -101023,16 +101132,7 @@ var requireUnique = (pipeId, field, label, existing, incoming) => {
   }));
 };
 var requireUniqueArtifactNames = (pipeId, state3, artifacts) => {
-  const seen = new Map(state3.artifacts.map((artifact2) => [artifactPathBaseName(artifact2.path), artifact2.id]));
-  const collisions = [];
-  for (const artifact2 of artifacts) {
-    const name = artifactPathBaseName(artifact2.path);
-    const firstId = seen.get(name);
-    if (firstId === undefined)
-      seen.set(name, artifact2.id);
-    else
-      collisions.push(`${name} (${firstId}, ${artifact2.id})`);
-  }
+  const collisions = duplicateArtifactBaseNames(state3.artifacts, artifacts);
   return collisions.length === 0 ? void_3 : fail6(PlanError.make({
     pipeId,
     field: "artifacts.name",
@@ -102545,7 +102645,6 @@ var hashFor = (hashes, artifactId) => {
     throw new Error(`Missing resolved hash for artifact ${artifactId}.`);
   return hash2;
 };
-var deferredContentArtifactIds = (content) => content.parts.flatMap((part) => typeof part === "string" ? [] : [part.artifactId]);
 var renderDeferredContent = (content, hashes) => {
   const holes = content.parts.filter((part) => typeof part !== "string");
   return {
@@ -103285,23 +103384,17 @@ var releasePlanFromAccumulator = (release, state3) => ReleasePlan.make({
   operations: withDefaultVerifyRetry(state3.operations, release.retry),
   evidenceDirectory: release.evidenceDirectory
 });
-var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
-  const { build, source: source3 } = yield* loadReleaseBuild(options);
-  const state3 = yield* resolveReleasePlan(build);
-  const plan = releasePlanFromAccumulator(build.release, state3);
-  const invocation = { root: source3.root, configPath: source3.sourcePath };
-  if (options.verifyPublished !== true)
-    return { release: build.release, plan, invocation };
+var withPublishedAssetsVerify = (release, plan) => {
   const github = plan.operations.find(({ action: action5 }) => action5._tag === "github-release-create");
   if (github?.action._tag !== "github-release-create")
-    return { release: build.release, plan, invocation };
+    return plan;
   const githubAction = github.action;
   const checksum = plan.artifacts.find((artifact2) => artifact2.extra._tag === "checksum-file" && githubAction.assets.some(({ artifactId }) => artifactId === artifact2.id));
   if (checksum?.extra._tag !== "checksum-file")
-    return { release: build.release, plan, invocation };
+    return plan;
   const checksumAsset = githubAction.assets.find(({ artifactId }) => artifactId === checksum.id);
   if (checksumAsset === undefined)
-    return { release: build.release, plan, invocation };
+    return plan;
   const covered = new Set(checksum.extra.coversArtifactIds);
   const operation = Operation.make({
     id: "published:github-assets-verify",
@@ -103316,13 +103409,17 @@ var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
       algorithm: checksum.extra.algorithm,
       assetNames: githubAction.assets.filter(({ artifactId }) => covered.has(artifactId)).map(({ name }) => name)
     }),
-    ...build.release.retry === undefined ? {} : { retry: build.release.retry }
+    ...release.retry === undefined ? {} : { retry: release.retry }
   });
-  return {
-    release: build.release,
-    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] }),
-    invocation
-  };
+  return ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] });
+};
+var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
+  const { build, source: source3 } = yield* loadReleaseBuild(options);
+  const state3 = yield* resolveReleasePlan(build);
+  const planned = releasePlanFromAccumulator(build.release, state3);
+  const plan = yield* validateReleasePlan(options.verifyPublished === true ? withPublishedAssetsVerify(build.release, planned) : planned);
+  const invocation = { root: source3.root, configPath: source3.sourcePath };
+  return { release: build.release, plan, invocation };
 });
 var planRelease = fn2("engine.planRelease")(function* (options = {}) {
   return (yield* loadReleasePlan(options)).plan;

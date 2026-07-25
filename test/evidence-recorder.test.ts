@@ -3,7 +3,7 @@ import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant, makeArtifact } from "../src/grammar/artifact.js"
+import { Artifact, Checksum, ExecutableExtra, InstallableArtifactVariant, type ArtifactKind } from "../src/grammar/artifact.js"
 import {
   CommandAction,
   CommandSpec,
@@ -18,7 +18,7 @@ import {
 import { ArchiveIntent } from "../src/grammar/intent.js"
 import { ExecutionApproval } from "../src/grammar/approval.js"
 import type { HttpHeader, HttpRequestSpec } from "../src/host/http.js"
-import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
+import { ReleasePlan } from "../src/grammar/plan.js"
 import { ReleaseIdentity } from "../src/grammar/state.js"
 import { makeTestReleaseHttpLayer } from "./host-fakes.js"
 import { commandKey, makeTestCommandRunnerLayer } from "./host-fakes.js"
@@ -63,11 +63,10 @@ const context = (releaseIdentity: ReleaseIdentity = identity()) => ({
 const makePlan = (name: string = "release", version: string = "0.1.0"): ReleasePlan => {
   const releaseIdentity = identity(name, version)
   return ReleasePlan.make({
-    schemaVersion: "release-plan/v4",
+    schemaVersion: "release-plan/v5",
     identity: releaseIdentity,
     artifacts: [],
     operations: [],
-    source: SourceMetadata.make({ root: "." }),
     evidenceDirectory: ".release/evidence"
   })
 }
@@ -85,8 +84,12 @@ const evidenceBundle = (
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ?
   (<T>() => T extends B ? 1 : 2) extends (<T>() => T extends A ? 1 : 2) ? true : false : false
-const summaryIsEncoded: Equal<ArtifactSummary, Schema.Codec.Encoded<typeof Artifact>> = true
-const summaryArtifact = (id: string, path: string) => makeArtifact({
+// Plan 169.1 deleted `kind` from the durable artifact wire, so the public summary is no
+// longer identical to the encoded artifact: it is the encoded artifact PLUS the derived
+// `kind`, which D7 keeps in the API because summaries are additive-only projections.
+// The equality stays typed rather than deleted so the projection cannot silently drift.
+const summaryIsEncoded: Equal<ArtifactSummary, Schema.Codec.Encoded<typeof Artifact> & { readonly kind: ArtifactKind }> = true
+const summaryArtifact = (id: string, path: string) => Artifact.make({
   id, path, producedBy: "build:test",
   platform: InstallableArtifactVariant.make({ os: "linux", arch: "x64", libc: "glibc", binaryName: id }),
   checksum: Checksum.make({ algorithm: "sha256", value: `${id}-digest` }),

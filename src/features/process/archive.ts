@@ -1,7 +1,7 @@
 // Invariant: each archive section is either neutral or platform-grouped, never both, with deterministic group/id order.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { Artifact, artifactPathBaseName, ArchiveExtra, makeArtifact, type InstallableArtifactVariant } from "../../grammar/artifact.js"
+import { Artifact, artifactPathBaseName, ArchiveExtra, type InstallableArtifactVariant } from "../../grammar/artifact.js"
 import { PlanError } from "../../grammar/errors.js"
 import { StageAction } from "../../grammar/operation.js"
 import { ArchiveArtifactEntry, ArchiveFormat, ArchiveIntent } from "../../grammar/intent.js"
@@ -106,7 +106,7 @@ export const archivePlanner = featurePlanner<ReadonlyArray<ReleaseConfigArchive>
             ? section.wrapInDirectory
             : undefined
           const archiveEntries = entries(group.artifacts)
-          artifacts.push(makeArtifact({
+          artifacts.push(Artifact.make({
             id,
             path,
             producedBy: "archive",

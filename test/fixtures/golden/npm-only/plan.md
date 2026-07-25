@@ -4,6 +4,7 @@
 
 summary: release-example-npm-only@0.1.0
 commit: example
+fingerprint: 34e9911cce3d3f82f59bd3fd29787c62983bfa7f3154957c2d6c43fb5e60e84a
 evidence: .release/evidence
 operations: 5
 risk:

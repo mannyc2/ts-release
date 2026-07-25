@@ -630,8 +630,10 @@ describe("cli command", () => {
       await writeFile(join(root, "release.config.json"), minimalConfig)
       const plan = await planWithRuntime(root)
       expect(plan.identity.name).toBe("release")
-      expect(plan.source.root).toBe(root)
-      expect(plan.source.configPath).toBe("release.config.json")
+      // v5 plans carry no machine-local facts (plan 169.1, D1/D3): root and configPath
+      // are supplied per run through the invocation, not encoded in the durable plan.
+      expect(plan).not.toHaveProperty("source")
+      expect(plan.schemaVersion).toBe("release-plan/v5")
     }))
   test("supports named Bun workflow runtime layer composition", () =>
     withTempDirectoryPromise("ts-release-workflow-runtime-", async (root) => {

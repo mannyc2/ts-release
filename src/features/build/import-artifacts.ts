@@ -2,13 +2,13 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import {
+  Artifact,
   ArtifactFormat,
   ArchiveExtra,
   Checksum,
   ExecutableExtra,
   ImportedFileExtra,
   InstallableArtifactVariant,
-  makeArtifact,
   SafeRelativePath,
   type ArtifactExtra
 } from "../../grammar/artifact.js"
@@ -49,7 +49,7 @@ export const importArtifactsPlanner = featurePlanner<ReadonlyArray<ReleaseConfig
       pipeId: "import-artifacts", field: `artifacts.${input.id}.path`
     })
     return {
-      artifact: makeArtifact({
+      artifact: Artifact.make({
         id: input.id,
         path,
         producedBy: "import-artifacts",

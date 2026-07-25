@@ -4,6 +4,7 @@
 
 summary: release-example-scoop@0.1.0
 commit: example
+fingerprint: 13ed92ffdc01e715a3a7a49df27d558fa5cc546e1d5ec4aa917718776243f3b1
 evidence: .release/evidence
 operations: 5
 risk:

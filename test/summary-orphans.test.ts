@@ -1,17 +1,16 @@
 import { describe, expect, test } from "@effect/bun-test"
 import { ArchiveIntent } from "../src/grammar/intent.js"
 import { Operation, StageAction } from "../src/grammar/operation.js"
-import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
+import { ReleasePlan } from "../src/grammar/plan.js"
 import { evidenceOperationStatuses, stagedArtifactSummaries } from "../src/render/summary.js"
 import { EvidenceBundle, EvidenceRecord } from "../src/run/evidence.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const plan = (operations: ReadonlyArray<Operation> = []) => ReleasePlan.make({
-  schemaVersion: "release-plan/v4",
+  schemaVersion: "release-plan/v5",
   identity: makePipelineIdentity(),
   artifacts: [],
   operations,
-  source: SourceMetadata.make({ root: "." }),
   evidenceDirectory: ".release/evidence"
 })
 

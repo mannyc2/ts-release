@@ -5,13 +5,13 @@ import * as A from "../src/grammar/artifact.js"
 import * as O from "../src/grammar/operation.js"
 import * as Content from "../src/grammar/content.js"
 import * as Intent from "../src/grammar/intent.js"
-import { decodeReleasePlan, decodeReleasePlanSync, ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
+import { decodeReleasePlan, decodeReleasePlanSync, ReleasePlan } from "../src/grammar/plan.js"
 import { makePipelineIdentity } from "./helpers.js"
 
 const extraArtifact = (id: string, path: string, extra: A.ArtifactExtra): A.Artifact =>
-  A.makeArtifact({ id, path, producedBy: "test", extra })
+  A.Artifact.make({ id, path, producedBy: "test", extra })
 const artifacts = [
-  A.makeArtifact({
+  A.Artifact.make({
     id: "executable", path: "dist/tool", producedBy: "build:bun",
     platform: { os: "linux", arch: "x64", libc: "glibc", binaryName: "tool" },
     checksum: { algorithm: "sha256", value: "abc" },
@@ -49,14 +49,13 @@ const operations = [
     target: "linux-x64", compileTarget: "bun-linux-x64", outfile: "dist/tool" }),
   producesArtifactIds: ["executable"] }), "build", "writes-local")
 ]
-const plan = ReleasePlan.make({ schemaVersion: "release-plan/v4",
+const plan = ReleasePlan.make({ schemaVersion: "release-plan/v5",
   identity: makePipelineIdentity(), artifacts, operations,
-  source: SourceMetadata.make({ root: ".", configPath: "release.config.json" }),
   evidenceDirectory: ".release/evidence"
 })
 
 describe("release plan", () => {
-  test("round-trips every canonical artifact extra and operation action through v4", () => {
+  test("round-trips every canonical artifact extra and operation action through v5", () => {
     const encoded = Schema.encodeSync(ReleasePlan)(plan)
     const decoded = decodeReleasePlanSync(encoded)
     expect(Schema.encodeSync(ReleasePlan)(decoded)).toEqual(encoded)
@@ -72,17 +71,21 @@ describe("release plan", () => {
       expect(encoded.artifacts[0]).not.toHaveProperty(field)
   })
 
-  it.effect("uses the same strict v4 Schema for the effect decoder", () =>
+  it.effect("uses the same strict v5 Schema for the effect decoder", () =>
     Effect.gen(function*() {
       const decoded = yield* decodeReleasePlan(Schema.encodeSync(ReleasePlan)(plan))
-      expect(decoded.schemaVersion).toBe("release-plan/v4")
+      expect(decoded.schemaVersion).toBe("release-plan/v5")
       expect(decoded.operations).toHaveLength(8)
     }))
 
-  test("rejects v3, excess fields, removed grammar, and unsafe artifact paths", () => {
+  test("rejects superseded versions, excess fields, removed grammar, and unsafe artifact paths", () => {
     const encoded = Schema.encodeSync(ReleasePlan)(plan)
     for (const invalid of [
       { ...encoded, schemaVersion: "release-plan/v3" },
+      // v5 deleted the machine-local `source` block and the stored `kind`; a v4 document
+      // carries both, so strict decode rejects it on the literal and on excess properties.
+      { ...encoded, schemaVersion: "release-plan/v4" },
+      { ...encoded, source: { root: ".", configPath: "release.config.json" } },
       { ...encoded, legacy: true },
       { ...encoded, operations: [{ ...encoded.operations[0], action: { _tag: "http-check" } }] },
       { ...encoded, artifacts: [{ ...encoded.artifacts[0], kind: "signature" }] },
@@ -92,6 +95,6 @@ describe("release plan", () => {
       }))
     ]) expect(() => decodeReleasePlanSync(invalid)).toThrow()
     expect(() => decodeReleasePlanSync({ ...encoded, schemaVersion: "release-plan/v3" }))
-      .toThrow(/release-plan\/v4/)
+      .toThrow(/release-plan\/v5/)
   })
 })

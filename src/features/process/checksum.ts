@@ -1,7 +1,7 @@
 // Invariant: checksum input order is basename-sorted and excludes every directory-shaped or prior checksum artifact.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { artifactIsDirectoryLike, artifactPathBaseName, ChecksumFileExtra, makeArtifact } from "../../grammar/artifact.js"
+import { Artifact, artifactIsDirectoryLike, artifactPathBaseName, ChecksumFileExtra } from "../../grammar/artifact.js"
 import { WriteFileAction } from "../../grammar/operation.js"
 import { FilePartsContent, Sha256Hole } from "../../grammar/content.js"
 import { featureOperation, featurePlanner } from "../../grammar/planner.js"
@@ -22,7 +22,7 @@ export const checksumPlanner = featurePlanner<ReleaseConfigChecksum>("checksum",
     })
     const path = `.release/artifacts/${fileName}`
     return {
-      artifacts: [makeArtifact({
+      artifacts: [Artifact.make({
         id: "checksum",
         path,
         producedBy: "checksum",

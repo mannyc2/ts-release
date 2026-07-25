@@ -1,24 +1,25 @@
-// Invariant: release-plan/v4 is the sole strict durable plan; transient accumulator state is never encoded here.
+// Invariant: release-plan/v5 is the sole strict durable plan; machine-local facts and transient accumulator state are never encoded here.
+import { createHash } from "node:crypto"
 import * as Schema from "effect/Schema"
-import { Artifact } from "./artifact.js"
+import { Artifact, SafeRelativePath } from "./artifact.js"
 import { Operation } from "./operation.js"
 import { ReleaseIdentity } from "./state.js"
 
-export class SourceMetadata extends Schema.Class<SourceMetadata>("SourceMetadata")({
-  root: Schema.String,
-  configPath: Schema.optional(Schema.String)
-}) {}
-
 export class ReleasePlan extends Schema.Class<ReleasePlan>("ReleasePlan")({
-  schemaVersion: Schema.Literal("release-plan/v4"),
+  schemaVersion: Schema.Literal("release-plan/v5"),
   identity: ReleaseIdentity,
   artifacts: Schema.Array(Artifact),
   operations: Schema.Array(Operation),
-  source: SourceMetadata,
-  evidenceDirectory: Schema.String
+  evidenceDirectory: SafeRelativePath
 }) {}
 
 const releasePlanDecodeOptions = { onExcessProperty: "error" } as const
 
 export const decodeReleasePlan = Schema.decodeUnknownEffect(ReleasePlan, releasePlanDecodeOptions)
 export const decodeReleasePlanSync = Schema.decodeUnknownSync(ReleasePlan, releasePlanDecodeOptions)
+
+// v5 has no machine-local fields left, so the fingerprint covers the whole canonical
+// document with no stripping (plan 169, D2). It lives here rather than in run/ so that
+// render/ can import it as a value without crossing the render -> run layering rule.
+export const planFingerprint = (plan: ReleasePlan): string =>
+  createHash("sha256").update(JSON.stringify(Schema.encodeSync(ReleasePlan)(plan))).digest("hex")

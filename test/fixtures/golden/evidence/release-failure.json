@@ -2,7 +2,7 @@
   "schemaVersion": "release-evidence/v3",
   "releaseName": "release",
   "releaseVersion": "0.1.0",
-  "planFingerprint": "6e7f6850475faeadd8f8269704ad6aec61e5d83aa97273e4fedc512316296e4f",
+  "planFingerprint": "20f8c3bf6b5b708a479cf0df86afd0c6cc01f9c2476c96cb0be8d0b9d84085e2",
   "records": [
     {
       "operationId": "npm:npm-whoami",

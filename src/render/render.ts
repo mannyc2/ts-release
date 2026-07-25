@@ -8,12 +8,13 @@ import {
 } from "../grammar/operation.js"
 import { operationApprovalRequirements } from "../grammar/approval.js"
 import * as Schema from "effect/Schema"
-import { ReleasePlan } from "../grammar/plan.js"
+import { planFingerprint, ReleasePlan } from "../grammar/plan.js"
 import { stagedOperationsForPlan } from "./summary.js"
 
 export const renderBuildArtifacts = (
   plan: ReleasePlan,
-  format: "json" | "text" = "text"
+  format: "json" | "text" = "text",
+  configPath?: string | undefined
 ): string => {
   const operations = stagedOperationsForPlan(plan).map((operation) => ({
     operationId: operation.id,
@@ -23,7 +24,7 @@ export const renderBuildArtifacts = (
   if (format === "json") return `${JSON.stringify({
     schemaVersion: "artifact-stage/v1",
     identity: plan.identity,
-    configPath: plan.source.configPath ?? "inline config",
+    configPath: configPath ?? "inline config",
     operations,
     plan
   }, null, 2)}\n`
@@ -153,6 +154,7 @@ export const renderPlanText = (plan: ReleasePlan): string => {
   const lines: Array<string> = [
     `${plan.identity.name}@${plan.identity.version}`,
     `commit: ${plan.identity.commit}`,
+    `fingerprint: ${planFingerprint(plan)}`,
     ...(plan.identity.snapshot ? ["snapshot: true"] : []),
     `evidence: ${plan.evidenceDirectory}`,
     `artifacts: ${plan.artifacts.length}`,
@@ -202,6 +204,7 @@ export const renderPlanSummary = (plan: ReleasePlan): string => {
   const lines: Array<string> = [
     `summary: ${plan.identity.name}@${plan.identity.version}`,
     `commit: ${plan.identity.commit}`,
+    `fingerprint: ${planFingerprint(plan)}`,
     ...(plan.identity.snapshot ? ["snapshot: true"] : []),
     `evidence: ${plan.evidenceDirectory}`,
     `operations: ${plan.operations.length}`,

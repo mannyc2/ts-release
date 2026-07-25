@@ -4,6 +4,7 @@
 
 summary: @scope/portable-example@0.1.0
 commit: abc123
+fingerprint: d93527b69518cb7fb45fd49ec337020939cb9b5ad8fd6ff7fc63bc9ae0743367
 evidence: .release/evidence/0.1.0
 operations: 29
 risk:

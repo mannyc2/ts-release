@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "release-plan/v4",
+  "schemaVersion": "release-plan/v5",
   "identity": {
     "name": "release-example-multi-target",
     "normalizedName": "release-example-multi-target",
@@ -14,7 +14,6 @@
   "artifacts": [
     {
       "id": "npm-package",
-      "kind": "package",
       "path": ".",
       "producedBy": "build:npm-pack",
       "extra": {
@@ -25,7 +24,6 @@
     },
     {
       "id": "archive",
-      "kind": "archive",
       "path": "artifacts/release-example-multi-target-0.1.0.tgz",
       "producedBy": "import-artifacts",
       "extra": {
@@ -37,7 +35,6 @@
     },
     {
       "id": "catalog-file-homebrew",
-      "kind": "catalog-file",
       "path": ".release/generated/release-example-multi-target.rb",
       "producedBy": "catalog:file",
       "extra": {
@@ -313,9 +310,5 @@
       }
     }
   ],
-  "source": {
-    "root": "<multi-target-root>",
-    "configPath": "release.config.json"
-  },
   "evidenceDirectory": ".release/evidence"
 }

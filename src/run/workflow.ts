@@ -1,5 +1,4 @@
 // Invariant: each evidence workflow preflights once, records into one ref, and persists exactly once on every exit.
-import { createHash } from "node:crypto"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -8,7 +7,7 @@ import * as Path from "effect/Path"
 import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import type { ExecutionApproval } from "../grammar/approval.js"
-import { ReleasePlan } from "../grammar/plan.js"
+import { planFingerprint, ReleasePlan } from "../grammar/plan.js"
 import { parseJsonAs } from "../grammar/json.js"
 import { resolveWorkspacePath, writeWorkspaceFile } from "../host/workspace-path.js"
 import {
@@ -29,22 +28,26 @@ import {
   EvidenceWriteError
 } from "./errors.js"
 
+// Invocation carries the machine-local facts that left the durable plan in v5 (plan 169.1,
+// D3): they are supplied per run by the caller, never encoded, and never fingerprinted.
+export interface Invocation {
+  readonly root: string
+  readonly configPath?: string | undefined
+}
+
 export const releaseEvidencePath = (plan: ReleasePlan, name: string): string =>
   `${plan.evidenceDirectory}/${name}.json`
 
-export const planFingerprint = (plan: ReleasePlan): string => {
-  const { source: _source, ...durable } = Schema.encodeSync(ReleasePlan)(plan)
-  return createHash("sha256").update(JSON.stringify(durable)).digest("hex")
-}
+export { planFingerprint }
 
 const errorReason = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
-export const continueSkipSet = Effect.fn("run.continueSkipSet")(function*(plan: ReleasePlan) {
+export const continueSkipSet = Effect.fn("run.continueSkipSet")(function*(plan: ReleasePlan, root: string) {
   const pathName = releaseEvidencePath(plan, "evidence")
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const resolved = resolveWorkspacePath(path, plan.source.root, pathName)
+  const resolved = resolveWorkspacePath(path, root, pathName)
   const exists = yield* fs.exists(resolved).pipe(Effect.mapError((error) =>
     ContinueEvidenceReadError.make({ path: pathName, reason: error.message })))
   if (!exists) return yield* Effect.fail(ContinueEvidenceMissingError.make({ path: pathName }))
@@ -81,26 +84,33 @@ const finalizeEvidenceOnExit = <A, E>(
   plan: ReleasePlan,
   name: string,
   ref: EvidenceRef,
+  root: string,
   workflowExit: Exit.Exit<A, E>
 ): Effect.Effect<void, E | EvidenceWriteError, FileSystem.FileSystem | Path.Path> =>
   Ref.get(ref).pipe(
-    Effect.flatMap((evidence) => writeEvidenceBundle(releaseEvidencePath(plan, name), evidence, plan.source.root)),
+    Effect.flatMap((evidence) => writeEvidenceBundle(releaseEvidencePath(plan, name), evidence, root)),
     Effect.catchCause((writeCause) => Exit.isFailure(workflowExit)
       ? Effect.failCause(Cause.combine(writeCause, workflowExit.cause))
       : Effect.failCause(writeCause))
   )
 
 export const runEvidenceWorkflowWithFinalizer = Effect.fn("run.workflowWithFinalizer")(
-  function*<A, E, R>(plan: ReleasePlan, name: string, ref: EvidenceRef, workflow: Effect.Effect<A, E, R>) {
-    return yield* workflow.pipe(Effect.onExit((exit) => finalizeEvidenceOnExit(plan, name, ref, exit)))
+  function*<A, E, R>(
+    plan: ReleasePlan,
+    name: string,
+    ref: EvidenceRef,
+    root: string,
+    workflow: Effect.Effect<A, E, R>
+  ) {
+    return yield* workflow.pipe(Effect.onExit((exit) => finalizeEvidenceOnExit(plan, name, ref, root, exit)))
   }
 )
 
-const planContext = (plan: ReleasePlan): OperationRunContext => ({
-  root: plan.source.root,
+const planContext = (plan: ReleasePlan, invocation: Invocation): OperationRunContext => ({
+  root: invocation.root,
   identity: plan.identity,
   artifacts: plan.artifacts,
-  configPath: plan.source.configPath
+  configPath: invocation.configPath
 })
 
 export const writeWorkflowEvidence = Effect.fn("run.writeWorkflowEvidence")(function*(
@@ -108,13 +118,14 @@ export const writeWorkflowEvidence = Effect.fn("run.writeWorkflowEvidence")(func
   name: string,
   workflow: EvidenceWorkflow,
   approval: ExecutionApproval,
-  skip: ReadonlySet<string> = new Set()
+  skip: ReadonlySet<string> = new Set(),
+  invocation: Invocation
 ) {
-  const context = planContext(plan)
+  const context = planContext(plan, invocation)
   yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context, skip)
   const ref = yield* makeEvidenceRef(context, planFingerprint(plan))
   return yield* runEvidenceWorkflowWithFinalizer(
-    plan, name, ref,
+    plan, name, ref, invocation.root,
     runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context, skip).pipe(Effect.andThen(Ref.get(ref)))
   )
 })

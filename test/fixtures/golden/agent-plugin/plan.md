@@ -4,6 +4,7 @@
 
 summary: release-example-agent-plugin@0.1.0
 commit: example
+fingerprint: 5d403749998a79742e0159e6f7ef8a0e20e109aa37d62e235fceac41538a3103
 evidence: .release/evidence
 operations: 11
 risk:

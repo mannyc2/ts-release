@@ -20,12 +20,12 @@ import type { CommandResult } from "../src/host/host.js"
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { checksumPlanner } from "../src/features/process/checksum.js"
 import {
+  Artifact,
   ArchiveExtra,
   CatalogFileExtra,
   ChecksumFileExtra,
   ExecutableExtra,
   ImportedFileExtra,
-  makeArtifact,
   PackageExtra,
   WheelExtra
 } from "../src/grammar/artifact.js"
@@ -41,7 +41,7 @@ import {
 } from "./host-fakes.js"
 import { createTestPlan } from "./plan-helpers.js"
 const identity = makePipelineIdentity()
-const artifact = makeArtifact({
+const artifact = Artifact.make({
   id: "cli-linux-x64",
   path: "dist/release",
   producedBy: "build:bun",
@@ -52,21 +52,21 @@ const stateWithArtifact = {
   artifacts: [artifact]
 } satisfies PlanAccumulator
 const checksumFilterArtifacts = [
-  makeArtifact({ id: "catalog", path: "out/e-catalog.rb", producedBy: "catalog-homebrew",
+  Artifact.make({ id: "catalog", path: "out/e-catalog.rb", producedBy: "catalog-homebrew",
     extra: CatalogFileExtra.make({ catalog: "homebrew", repository: "owner/tap" }) }),
-  makeArtifact({ id: "package", path: "package-dir", producedBy: "build:npm-pack",
+  Artifact.make({ id: "package", path: "package-dir", producedBy: "build:npm-pack",
     extra: PackageExtra.make({ packageManager: "npm", packageName: "release" }) }),
-  makeArtifact({ id: "wheel", path: "out/d-wheel.whl", producedBy: "build:pypi-wheel",
+  Artifact.make({ id: "wheel", path: "out/d-wheel.whl", producedBy: "build:pypi-wheel",
     extra: WheelExtra.make({ packageName: "release", wheelTag: "py3-none-any", binaries: [] }) }),
-  makeArtifact({ id: "executable", path: "out/b-executable", producedBy: "build:bun",
+  Artifact.make({ id: "executable", path: "out/b-executable", producedBy: "build:bun",
     extra: ExecutableExtra.make({ binary: "release", extension: "", builderId: "bun" }) }),
-  makeArtifact({ id: "archive", path: "out/c-archive.tgz", producedBy: "archive",
+  Artifact.make({ id: "archive", path: "out/c-archive.tgz", producedBy: "archive",
     extra: ArchiveExtra.make({ format: "tar.gz", binaries: [], files: [] }) }),
-  makeArtifact({ id: "file", path: "out/a-file", producedBy: "import-artifacts",
+  Artifact.make({ id: "file", path: "out/a-file", producedBy: "import-artifacts",
     extra: ImportedFileExtra.make({ format: "file" }) }),
-  makeArtifact({ id: "directory", path: "import-dir", producedBy: "import-artifacts",
+  Artifact.make({ id: "directory", path: "import-dir", producedBy: "import-artifacts",
     extra: ImportedFileExtra.make({ format: "directory" }) }),
-  makeArtifact({ id: "existing-checksum", path: "out/f-checksums", producedBy: "other",
+  Artifact.make({ id: "existing-checksum", path: "out/f-checksums", producedBy: "other",
     extra: ChecksumFileExtra.make({ algorithm: "sha256", coversArtifactIds: [] }) })
 ]
 const expectedChecksumEntries = [
@@ -196,11 +196,11 @@ describe("checksum pipe", () => {
   it("preserves sha256/sha512 checksum bytes and resolvedValues evidence", async () => {
     const root = makeTempDirectorySync("ts-release-checksum-")
     writeFileSync(join(root, "release"), "hello")
-    const input = makeArtifact({ id: "cli", path: "release", producedBy: "build:bun",
+    const input = Artifact.make({ id: "cli", path: "release", producedBy: "build:bun",
       extra: ExecutableExtra.make({ binary: "release", extension: "", builderId: "bun" }) })
     for (const algorithm of ["sha256", "sha512"] as const) {
       const outputPath = `${algorithm}.txt`
-      const output = makeArtifact({ id: `${algorithm}-checksums`,
+      const output = Artifact.make({ id: `${algorithm}-checksums`,
         path: outputPath, producedBy: "checksum", extra: ChecksumFileExtra.make({
           algorithm, coversArtifactIds: ["cli"]
         }) })

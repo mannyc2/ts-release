@@ -245,7 +245,7 @@ The model should be deterministic and independent of terminal formatting or CLI 
 
 ### Release Plan
 
-A Schema-backed flat `release-plan/v4` value derived once from the release
+A Schema-backed flat `release-plan/v5` value derived once from the release
 model and transient planner accumulator. It contains identity, one canonical
 Artifact array, the complete ordered Operation array, source metadata,
 and the evidence directory.
@@ -389,7 +389,7 @@ The implementation should stay narrow but honest:
 1. Load config.
 2. Stage declared artifact recipes when requested.
 3. Resolve into a release model with canonical artifacts and platform metadata.
-4. Fold transient planner contributions into the sole flat `release-plan/v4`.
+4. Fold transient planner contributions into the sole flat `release-plan/v5`.
 5. Render generated files only through explicit render operations.
 6. Validate with structured evidence.
 7. Print executable operations.

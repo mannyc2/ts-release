@@ -199,7 +199,7 @@ release config
   -> normalized release identity
   -> canonical build and imported artifacts
   -> installable artifact variants
-  -> one complete release-plan/v4 operation sequence
+  -> one complete release-plan/v5 operation sequence
   -> generated package-manager files
   -> explicit execution evidence
   -> post-publish verification
@@ -371,7 +371,8 @@ interpolate `{version}`.
 
 ## Plan Contract
 
-`release-plan/v4` is the sole plan document. It is flat, contains one
+`release-plan/v5` is the sole plan document. It is flat, machine-independent
+(it carries no workspace root or config path), contains one
 canonical artifact array, and exposes every planned build, wheel, import,
 archive, checksum, catalog, publish, and verification operation in contribution
 order. Phase selection is execution policy; it does not hide work from JSON,
@@ -379,7 +380,7 @@ text, Markdown, summaries, scripts, doctor, or Action counts.
 
 ```json
 {
-  "schemaVersion": "release-plan/v4",
+  "schemaVersion": "release-plan/v5",
   "identity": {
     "name": "pkg",
     "normalizedName": "pkg",
@@ -393,16 +394,12 @@ text, Markdown, summaries, scripts, doctor, or Action counts.
   "artifacts": [
     {
       "id": "cli-linux-x64",
-      "kind": "executable",
       "path": "artifacts/pkg-0.1.0-linux-x64",
-      "producedBy": "build:bun"
+      "producedBy": "build:bun",
+      "extra": { "_tag": "executable", "binary": "pkg", "extension": "", "builderId": "build:bun" }
     }
   ],
   "operations": [],
-  "source": {
-    "root": ".",
-    "configPath": "release.config.json"
-  },
   "evidenceDirectory": ".release/evidence/0.1.0"
 }
 ```

@@ -35,7 +35,9 @@ export const planOperationContents = (plan: ReleasePlan, operationId: string): s
     return `${JSON.stringify(contents, null, 2)}\n`
   }
 
-  const root = plan.source.root
+  // v5 plans no longer carry a root (plan 169.1, D3). This script is invoked from the
+  // workspace whose plan it was handed, so deferred content resolves against the cwd.
+  const root = "."
   const hashes = new Map<string, string>()
   const outputPath = operation.action.path
   const outputArtifact = plan.artifacts.find((artifact) =>

@@ -4,6 +4,7 @@
 
 summary: release-example-github@0.1.0
 commit: example
+fingerprint: de22eb667736efb8551d85ab3b122b7b532e5d5fb8c74a5ff02114212303d890
 evidence: .release/evidence
 operations: 4
 risk:

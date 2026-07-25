@@ -15,7 +15,7 @@ GitHub Action all use the same engine.
 | 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/features/`. |
 | 5 | Artifact | One Schema class in `src/grammar/artifact.ts`, including platform and typed extra data. |
 | 6 | Operation / Action | One operation class and seven live action tags in `src/grammar/operation.ts`. |
-| 7 | Release plan | The sole durable `release-plan/v4` Schema in `src/grammar/plan.ts`. |
+| 7 | Release plan | The sole durable `release-plan/v5` Schema in `src/grammar/plan.ts`. |
 | 8 | Accumulator | One private transient fold in `src/grammar/accumulator.ts`; never encoded or exported. |
 | 9 | Approval | One risk derivation in `src/grammar/approval.ts` plus whole-pass preflight in the executor. |
 | 10 | Evidence | Records and the sole durable `release-evidence/v3` bundle in `src/run/evidence.ts`. |
@@ -96,8 +96,12 @@ the shipped init bases. `.repos/` and `vendor/` are outside the product tree.
 
 ## Durable and public boundaries
 
-`ReleasePlan` v4 contains identity, artifacts, operations, source, and
-evidence directory. Every planned operation remains visible. There is no older
+`ReleasePlan` v5 contains identity, artifacts, operations, and evidence
+directory — and nothing machine-local. The workspace root and config path
+travel beside the plan as a per-run `Invocation`, so the same durable document
+fingerprints identically on any machine, and an artifact's `kind` derives from
+its required `extra` tag instead of being stored twice. Every planned operation
+remains visible. There is no older
 plan reader, hidden-stage projection, artifact inventory DTO, or output alias.
 Evidence v3 is independent and contains each operation's final status/outcome.
 

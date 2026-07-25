@@ -129,10 +129,9 @@ const planFixtureRelease = Effect.gen(function*() {
 })
 
 const operationContext = (plan: ReleasePlan) => ({
-  root: plan.source.root,
+  root: ".",
   identity: plan.identity,
-  artifacts: plan.artifacts,
-  ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
+  artifacts: plan.artifacts
 })
 
 const runFixtureRelease = Effect.fn("goldenEvidence.runFixtureRelease")(function*() {

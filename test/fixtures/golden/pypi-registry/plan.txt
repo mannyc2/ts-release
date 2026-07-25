@@ -1,5 +1,6 @@
 release-example-pypi@0.1.0
 commit: example
+fingerprint: b27fe15bb73b2d81af28d6232c8b8558aee27cd2b2f160db68f35ebda366227f
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1

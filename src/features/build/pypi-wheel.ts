@@ -1,7 +1,7 @@
 // Invariant: one wheel family emits exactly one wheel artifact and one staging intent per entry; package metadata comes from project facts resolved before planning.
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { makeArtifact, PyPiWheelBinaryArtifact, SafeRelativePath, WheelExtra } from "../../grammar/artifact.js"
+import { Artifact, PyPiWheelBinaryArtifact, SafeRelativePath, WheelExtra } from "../../grammar/artifact.js"
 import { StageAction } from "../../grammar/operation.js"
 import { PyPiWheelIntent } from "../../grammar/intent.js"
 import { PlanError } from "../../grammar/errors.js"
@@ -56,7 +56,7 @@ export const pypiWheelPlanner = featurePlanner<ReadonlyArray<PyPiWheelBuild>>(
     const license = yield* requireProjectFact(wheel.license, "project.license",
       "PyPI wheels require project.license.")
     return {
-      artifact: makeArtifact({
+      artifact: Artifact.make({
         id: wheel.id,
         path,
         producedBy: "build:pypi-wheel",

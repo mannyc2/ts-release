@@ -4,6 +4,7 @@
 
 summary: release-example-homebrew@0.1.0
 commit: example
+fingerprint: 5f5407c0c13c52d0ee9529f2897c03bebf5dd67ab72c2c364698a67fb616fb82
 evidence: .release/evidence
 operations: 5
 risk:

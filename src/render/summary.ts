@@ -1,6 +1,6 @@
 // Invariant: public summaries are JSON-safe projections total over stale evidence and artifact references.
 import * as Schema from "effect/Schema"
-import { Artifact } from "../grammar/artifact.js"
+import { Artifact, type ArtifactKind } from "../grammar/artifact.js"
 import type { Operation, OperationRisk, StageAction } from "../grammar/operation.js"
 import type { ReleasePlan } from "../grammar/plan.js"
 import type { ReleaseIdentity } from "../grammar/state.js"
@@ -9,7 +9,10 @@ import type { EvidenceBundle } from "../run/evidence.js"
 
 export type ReleaseIdentitySummary = Pick<ReleaseIdentity, "name" | "version" | "commit" | "tag">
 
-export type ArtifactSummary = Schema.Codec.Encoded<typeof Artifact>
+// `kind` left the durable plan wire in plan 169.1 (it is derivable from `extra._tag`),
+// but the public summary is a projection, not the durable document: D7 keeps the API
+// additive-only, so the field is re-attached here from the instance getter.
+export type ArtifactSummary = Schema.Codec.Encoded<typeof Artifact> & { readonly kind: ArtifactKind }
 
 export type OperationSummary = Pick<Operation, "id" | "pipeId" | "description" | "risk"> & {
   readonly status: "planned" | "executed" | "skipped" | "failed" | "refused"
@@ -43,7 +46,12 @@ export const identitySummary = (identity: ReleaseIdentity): ReleaseIdentitySumma
   tag: identity.tag
 })
 
-export const artifactSummary = Schema.encodeSync(Artifact)
+const encodeArtifact = Schema.encodeSync(Artifact)
+
+export const artifactSummary = (artifact: Artifact): ArtifactSummary => ({
+  ...encodeArtifact(artifact),
+  kind: artifact.kind
+})
 
 export const operationSummary = (
   operation: Pick<Operation, "id" | "pipeId" | "description" | "risk">,

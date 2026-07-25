@@ -5,7 +5,7 @@ import { ConfigError } from "../config/errors.js"
 import type { ReleaseIntent } from "../config/schema.js"
 import { Operation, PublishedAssetsVerifyAction, RetryPolicy } from "../grammar/operation.js"
 import { ExecutionApproval } from "../grammar/approval.js"
-import { ReleasePlan, SourceMetadata } from "../grammar/plan.js"
+import { ReleasePlan } from "../grammar/plan.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../grammar/accumulator.js"
 import { ReleaseIdentity } from "../grammar/state.js"
 import { scheduled } from "../grammar/planner.js"
@@ -39,7 +39,7 @@ import {
   type VerifySummary
 } from "../render/summary.js"
 import { diagnoseRelease, type DoctorReleaseInput } from "../doctor/doctor.js"
-import { releaseEvidencePath, writeWorkflowEvidence } from "../run/workflow.js"
+import { releaseEvidencePath, writeWorkflowEvidence, type Invocation } from "../run/workflow.js"
 import { continueSkipSet } from "../run/workflow.js"
 import { ContinueRequiresExecuteError, ContinueSnapshotRefusedError } from "../run/errors.js"
 
@@ -105,36 +105,31 @@ const withDefaultVerifyRetry = (
 
 const releasePlanFromAccumulator = (
   release: ResolvedRelease,
-  root: string,
-  configPathName: string | undefined,
   state: PlanAccumulator
 ): ReleasePlan =>
   ReleasePlan.make({
-    schemaVersion: "release-plan/v4",
+    schemaVersion: "release-plan/v5",
     identity: state.identity,
     artifacts: state.artifacts,
     operations: withDefaultVerifyRetry(state.operations, release.retry),
-    source: SourceMetadata.make({
-      root,
-      configPath: configPathName
-    }),
     evidenceDirectory: release.evidenceDirectory
   })
 
 const loadReleasePlan = Effect.fn("engine.loadReleasePlan")(function*(options: RunOptions) {
   const { build, source } = yield* loadReleaseBuild(options)
   const state = yield* resolveReleasePlan(build)
-  const plan = releasePlanFromAccumulator(build.release, source.root, source.sourcePath, state)
-  if (options.verifyPublished !== true) return { release: build.release, plan }
+  const plan = releasePlanFromAccumulator(build.release, state)
+  const invocation: Invocation = { root: source.root, configPath: source.sourcePath }
+  if (options.verifyPublished !== true) return { release: build.release, plan, invocation }
   const github = plan.operations.find(({ action }) => action._tag === "github-release-create")
-  if (github?.action._tag !== "github-release-create") return { release: build.release, plan }
+  if (github?.action._tag !== "github-release-create") return { release: build.release, plan, invocation }
   const githubAction = github.action
   const checksum = plan.artifacts.find((artifact) =>
     artifact.extra._tag === "checksum-file" &&
     githubAction.assets.some(({ artifactId }) => artifactId === artifact.id))
-  if (checksum?.extra._tag !== "checksum-file") return { release: build.release, plan }
+  if (checksum?.extra._tag !== "checksum-file") return { release: build.release, plan, invocation }
   const checksumAsset = githubAction.assets.find(({ artifactId }) => artifactId === checksum.id)
-  if (checksumAsset === undefined) return { release: build.release, plan }
+  if (checksumAsset === undefined) return { release: build.release, plan, invocation }
   const covered = new Set(checksum.extra.coversArtifactIds)
   const operation = Operation.make({
     id: "published:github-assets-verify",
@@ -153,13 +148,23 @@ const loadReleasePlan = Effect.fn("engine.loadReleasePlan")(function*(options: R
   })
   return {
     release: build.release,
-    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] })
+    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] }),
+    invocation
   }
 })
 
 export const planRelease = Effect.fn("engine.planRelease")(function*(options: RunOptions = {}) {
   return (yield* loadReleasePlan(options)).plan
 })
+
+// v5 moved root/configPath out of the durable plan (D3), so surfaces that need those
+// machine-local facts take them from the invocation the same run produced.
+export const planReleaseWithInvocation = Effect.fn("engine.planReleaseWithInvocation")(
+  function*(options: RunOptions = {}) {
+    const { plan, invocation } = yield* loadReleasePlan(options)
+    return { plan, invocation }
+  }
+)
 
 export const doctorRelease = Effect.fn("engine.doctorRelease")(function*(input: DoctorReleaseInput = {}) {
   const planned = loadReleasePlan({ workspace: input.root, configPath: input.configPath }).pipe(
@@ -175,10 +180,10 @@ export const doctorRelease = Effect.fn("engine.doctorRelease")(function*(input: 
 
 const planWithEvidence = Effect.fn("engine.planWithEvidence")(function*<E, R>(
   options: RunOptions,
-  write: (plan: ReleasePlan) => Effect.Effect<EvidenceBundle, E, R>
+  write: (plan: ReleasePlan, invocation: Invocation) => Effect.Effect<EvidenceBundle, E, R>
 ) {
-  const plan = yield* planRelease(options)
-  return { plan, evidence: yield* write(plan) }
+  const { plan, invocation } = yield* loadReleasePlan(options)
+  return { plan, evidence: yield* write(plan, invocation) }
 })
 
 export const plan = Effect.fn("engine.summary.plan")(function*(options: RunOptions = {}) {
@@ -187,21 +192,25 @@ export const plan = Effect.fn("engine.summary.plan")(function*(options: RunOptio
 })
 
 export const build = Effect.fn("engine.summary.build")(function*(options: RunOptions = {}) {
-  const plan = yield* planRelease(options)
+  const { plan, invocation } = yield* loadReleasePlan(options)
   const evidence = yield* writeWorkflowEvidence(
     plan,
     "build",
     "build",
-    ExecutionApproval.make({ execute: true, approveIrreversible: false })
+    ExecutionApproval.make({ execute: true, approveIrreversible: false }),
+    new Set(),
+    invocation
   )
   return {
     ...plannedSummary(plan),
     stagedArtifacts: stagedArtifactSummaries(plan),
     plan,
-    evidence
+    evidence,
+    invocation
   } satisfies BuildSummary & {
     readonly plan: ReleasePlan
     readonly evidence: EvidenceBundle
+    readonly invocation: Invocation
   }
 })
 
@@ -226,10 +235,12 @@ export const release = Effect.fn("engine.summary.release")(function*(options: Ru
     execute: options.execute ?? false,
     approveIrreversible: options.approvePublish ?? false
   })
-  const result = yield* planWithEvidence(options, (document) =>
+  const result = yield* planWithEvidence(options, (document, invocation) =>
     Effect.flatMap(
-      options.continueRun === true ? continueSkipSet(document) : Effect.succeed(new Set<string>()),
-      (skip) => writeWorkflowEvidence(document, "evidence", "release", approval, skip)
+      options.continueRun === true
+        ? continueSkipSet(document, invocation.root)
+        : Effect.succeed(new Set<string>()),
+      (skip) => writeWorkflowEvidence(document, "evidence", "release", approval, skip, invocation)
     ))
   const summary = plannedSummary(result.plan)
   const executed = evidenceOperationStatuses(
@@ -248,7 +259,8 @@ export const release = Effect.fn("engine.summary.release")(function*(options: Ru
 
 export const verify = Effect.fn("engine.summary.verify")(function*(options: RunOptions = {}) {
   const result = yield* planWithEvidence(options,
-    (document) => writeWorkflowEvidence(document, "verification", "verification", ExecutionApproval.none))
+    (document, invocation) =>
+      writeWorkflowEvidence(document, "verification", "verification", ExecutionApproval.none, new Set(), invocation))
   return {
     identity: plannedSummary(result.plan).identity,
     checks: evidenceOperationStatuses(

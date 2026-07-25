@@ -9,7 +9,7 @@ import { makeEvidenceRef, preflightEvidenceWorkflow, runEvidenceWorkflowInto, ru
 import { UnsupportedArtifactStagerLayer } from "../src/pack/stager.js"
 import { CheckFileAction, NoteAction, Operation } from "../src/grammar/operation.js"
 import { ExecutionApproval } from "../src/grammar/approval.js"
-import { ReleasePlan, SourceMetadata } from "../src/grammar/plan.js"
+import { ReleasePlan } from "../src/grammar/plan.js"
 import { makePipelineIdentity, TestGitHubApiLayer } from "./helpers.js"
 import { makeTestCommandRunnerLayer, makeTestReleaseHttpLayer } from "./host-fakes.js"
 
@@ -24,8 +24,7 @@ const operation = (id: string, phase: Operation["phase"], risk: Operation["risk"
       : NoteAction.make({ message: id, severity: "info", skipped: false })
   })
 const plan = (operations: ReadonlyArray<Operation> = []) => ReleasePlan.make({
-  schemaVersion: "release-plan/v4", identity, artifacts: [], operations,
-  source: SourceMetadata.make({ root: "." }), evidenceDirectory: ".release/evidence"
+  schemaVersion: "release-plan/v5", identity, artifacts: [], operations, evidenceDirectory: ".release/evidence"
 })
 const testLayer = (writes: Array<string>, failWrite = false) => Layer.mergeAll(
   makeTestCommandRunnerLayer({
@@ -61,7 +60,7 @@ it.effect("finalizes partial evidence exactly once for every workflow exit", () 
       : runOperationsInto(ref, [operation(`${testCase.name}-prior`, "publish", "read-only")], ExecutionApproval.none, context).pipe(
         Effect.andThen(testCase.mode === "tail" ? Effect.failCause(testCase.cause) : Effect.void)
       )
-    const exit = yield* runEvidenceWorkflowWithFinalizer(plan(), testCase.name, ref, workflow).pipe(
+    const exit = yield* runEvidenceWorkflowWithFinalizer(plan(), testCase.name, ref, ".", workflow).pipe(
       Effect.exit, Effect.provide(testLayer(writes, "failWrite" in testCase && testCase.failWrite === true))
     )
     expect(writes).toHaveLength(1)

@@ -9,7 +9,7 @@ import * as Option from "effect/Option"
 import { parseReleaseIntent } from "../src/config/load.js"
 import { archivePlanner } from "../src/features/process/archive.js"
 import { checksumPlanner } from "../src/features/process/checksum.js"
-import { Artifact, ExecutableExtra, ImportedFileExtra, makeArtifact } from "../src/grammar/artifact.js"
+import { Artifact, ExecutableExtra, ImportedFileExtra } from "../src/grammar/artifact.js"
 import type { Operation, StageAction } from "../src/grammar/operation.js"
 import { scheduled } from "../src/grammar/planner.js"
 import { emptyPlanAccumulator, runPipeline, type PlanAccumulator } from "../src/grammar/accumulator.js"
@@ -18,7 +18,7 @@ import { makeArtifactStagerLayer } from "../src/pack/stager.js"
 const identity = makePipelineIdentity()
 const executable = (id: string, path: string, target: Parameters<typeof platformTargetVariant>[0]) => {
   const platform = platformTargetVariant(target)
-  return makeArtifact({
+  return Artifact.make({
     id, path, producedBy: "build:bun",
     platform: { ...platform, binaryName: "release" },
     extra: ExecutableExtra.make({ binary: "release", extension: platform.executableExtension ?? "", builderId: "bun" })
@@ -26,7 +26,7 @@ const executable = (id: string, path: string, target: Parameters<typeof platform
 }
 const linuxMusl = executable("cli-linux-x64-musl", "dist/release-linux-musl", "linux-x64-musl")
 const windows = executable("cli-windows-x64", "dist/release.exe", "windows-x64")
-const neutral = makeArtifact({ id: "docs", path: "dist/docs.txt", producedBy: "import-artifacts",
+const neutral = Artifact.make({ id: "docs", path: "dist/docs.txt", producedBy: "import-artifacts",
   extra: ImportedFileExtra.make({ format: "file" }) })
 const stateWith = (artifacts: ReadonlyArray<Artifact>) =>
   ({ ...emptyPlanAccumulator(identity), artifacts } satisfies PlanAccumulator)

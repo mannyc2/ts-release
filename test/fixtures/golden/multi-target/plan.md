@@ -4,6 +4,7 @@
 
 summary: release-example-multi-target@0.1.0
 commit: example
+fingerprint: 075f4cdf735d302094653204b749f8f520dd6c408a47171a63c7a2e58c832a00
 evidence: .release/evidence
 operations: 13
 risk:

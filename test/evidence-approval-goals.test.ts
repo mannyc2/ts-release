@@ -48,10 +48,9 @@ const planFromConfig = (config: string) =>
   })
 
 const operationContext = (plan: ReleasePlan) => ({
-  root: plan.source.root,
+  root: ".",
   identity: plan.identity,
-  artifacts: plan.artifacts,
-  ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
+  artifacts: plan.artifacts
 })
 
 describe("minimal evidence and approval goals", () => {

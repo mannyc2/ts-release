@@ -157,18 +157,19 @@ const uploadEvidence = Effect.fn("action.uploadEvidence")(function*(
   options: ActionOptions,
   io: ActionIo,
   artifactClient: ActionArtifactClient,
-  plan: ReleasePlan | undefined
+  planned: PlannedRun | undefined
 ) {
   if (!options.uploadEvidence) {
     return
   }
-  if (plan === undefined) {
+  if (planned === undefined) {
     yield* io.info("No release plan was available; evidence upload skipped.")
     return
   }
+  const { plan, root } = planned
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const directory = resolveWorkspacePath(path, plan.source.root, plan.evidenceDirectory)
+  const directory = resolveWorkspacePath(path, root, plan.evidenceDirectory)
   const files = (yield* fs.exists(directory))
     ? (yield* fs.readDirectory(directory, { recursive: true }))
       .filter((entry) => entry.endsWith(".json"))
@@ -181,11 +182,18 @@ const uploadEvidence = Effect.fn("action.uploadEvidence")(function*(
   yield* artifactClient.uploadArtifact(options.evidenceArtifactName, files, directory)
 })
 
+// v5 plans no longer carry root/configPath, so the Action remembers the run's
+// invocation next to the plan it produced (plan 169.1, D3).
+interface PlannedRun {
+  readonly plan: ReleasePlan
+  readonly root: string
+}
+
 const withEvidenceUpload = <A, E, R>(
   options: ActionOptions,
   io: ActionIo,
   artifactClient: ActionArtifactClient,
-  planRef: () => ReleasePlan | undefined,
+  planRef: () => PlannedRun | undefined,
   effect: Effect.Effect<A, E, R>
 ) => effect.pipe(Effect.onExit((exit) => {
   const upload = uploadEvidence(options, io, artifactClient, planRef())
@@ -202,23 +210,23 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
   const path = yield* Path.Path
   const config = yield* workspaceActionPath(path, options, options.config, "config")
   const safeOptions = ActionOptions.make({ ...options, config })
-  let planForUpload: ReleasePlan | undefined
-  const rememberPlan = (plan: ReleasePlan): ReleasePlan => {
-    planForUpload = plan
+  let planForUpload: PlannedRun | undefined
+  const rememberPlan = (plan: ReleasePlan, root: string): ReleasePlan => {
+    planForUpload = { plan, root }
     return plan
   }
   yield* withEvidenceUpload(safeOptions, io, artifactClient, () => planForUpload, Effect.gen(function*() {
     switch (safeOptions.command) {
       case "plan":
         {
-          const plan = yield* Release.planRelease(releaseInput(safeOptions))
+          const { plan, invocation } = yield* Release.planReleaseWithInvocation(releaseInput(safeOptions))
           const contents = Release.renderReleasePlan(plan, safeOptions.format)
           const outputPath = yield* workspaceActionPath(path, safeOptions, safeOptions.planPath, "plan-path")
           yield* io.writeFile(outputPath, contents)
           if (safeOptions.writeStepSummary) yield* io.appendSummary(safeOptions.format === "markdown"
             ? contents : Release.renderReleasePlan(plan, "markdown"))
           yield* outputPlan(io, plan, safeOptions.planPath)
-          rememberPlan(plan)
+          rememberPlan(plan, invocation.root)
         }
         return
       case "doctor":
@@ -235,10 +243,17 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
       case "build":
         {
           const input = releaseInput(safeOptions)
-          rememberPlan(yield* Release.planRelease(input))
+          // planned first so a failing build still has a plan to upload evidence for;
+          // 169.4 (D6) removes the double-plan by threading one plan object through.
+          const preplanned = yield* Release.planReleaseWithInvocation(input)
+          rememberPlan(preplanned.plan, preplanned.invocation.root)
           const staged = yield* Release.build(input)
-          rememberPlan(staged.plan)
-          const rendered = Release.renderBuildArtifacts(staged.plan, safeOptions.format === "json" ? "json" : "text")
+          rememberPlan(staged.plan, staged.invocation.root)
+          const rendered = Release.renderBuildArtifacts(
+            staged.plan,
+            safeOptions.format === "json" ? "json" : "text",
+            staged.invocation.configPath
+          )
           if (safeOptions.writeStepSummary) {
             yield* io.appendSummary(`## ts-release build\n\n\`\`\`text\n${rendered.trimEnd()}\n\`\`\`\n`)
           }
@@ -249,8 +264,8 @@ export const runActionEffect = Effect.fn("action.runActionEffect")(function*(
       case "verify":
         {
           const command = safeOptions.command
-          const plan = yield* Release.planRelease(releaseInput(safeOptions))
-          rememberPlan(plan)
+          const { plan, invocation } = yield* Release.planReleaseWithInvocation(releaseInput(safeOptions))
+          rememberPlan(plan, invocation.root)
           yield* outputPlan(io, plan)
           if (command === "release" && !safeOptions.execute && !safeOptions.continueRun) {
             if (safeOptions.writeStepSummary) yield* io.appendSummary(

@@ -7,25 +7,25 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // Budgets are ceilings and only ratchet DOWN. Raising one requires a
 // plans/ entry explaining which feature paid for it.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6616], // raised by plan 168 (fingerprinted continuation and published-asset verification)
+  ["src", 6650], // raised by plan 169.1 (v5 seal: derived kind, invocation threading, fingerprint renders)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
   ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
   ["src/grammar", 881], // raised by plan 168 (published-asset verification action)
   ["src/features", 1778], // ratcheted by plan 167 (unbound operations and direct typed npm access)
   ["src/pack", 500],
   ["src/github", 267],
-  ["src/run", 1033], // raised by plan 168 (continuation plus published-asset download and evidence)
+  ["src/run", 1044], // raised by plan 169.1 (Invocation type and root threading through the evidence workflow)
   ["src/engine", 281],
-  ["src/render", 409], // raised by plan 168 (published-asset operation detail)
+  ["src/render", 420], // raised by plan 169.1 (fingerprint render line and the summary kind projection)
   ["src/doctor", 256], // ratcheted by plan 166 (operation requirements derive from operation data)
   ["src/host", 459], // raised by plan 168 (typed binary HTTP response seam)
   ["src/api", 195],
   ["src/types", 13],
   ["apps/release-ts/src", 594], // raised by plan 168 (continue and published flags)
-  ["apps/ts-release-action/src", 492], // raised by plan 168 (continue/published inputs and dispatch)
-  ["test", 10514], // raised by plan 168 (continuation matrix and published verification boundaries)
-  ["scripts", 2276], // raised by plan 159 (hooks feature)
-  ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
+  ["apps/ts-release-action/src", 507], // raised by plan 169.1 (PlannedRun remembers the run invocation for evidence upload)
+  ["test", 10520], // raised by plan 169.1 (v5 rejection rows for the deleted source block and stored kind)
+  ["scripts", 2278], // raised by plan 169.1 (deferred content resolves against the cwd, not a plan-carried root)
+  ["apps/release-ts/scripts", 827] // raised by plan 169.1 (render-catalogs threads the invocation)
 ]
 
 const root = cwd()

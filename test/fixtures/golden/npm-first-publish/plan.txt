@@ -1,5 +1,6 @@
 @scope/release-example-first@0.1.0
 commit: example
+fingerprint: ed4ec2505d24c5c754a64d886290b5cecd3f619a712a78f1ed83179d4461fd30
 evidence: .release/evidence
 artifacts: 1
 surfaces: 1

@@ -43,10 +43,9 @@ const runSelectedOperations = (
   operations: ReadonlyArray<Operation>
 ) =>
   runOperations(operations, ExecutionApproval.none, {
-    root: plan.source.root,
+    root: ".",
     identity: plan.identity,
-    artifacts: plan.artifacts,
-    ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
+    artifacts: plan.artifacts
   })
 
 const runSelectedOperationsWithApproval = (
@@ -55,10 +54,9 @@ const runSelectedOperationsWithApproval = (
   approval: ExecutionApproval
 ) =>
   runOperations(operations, approval, {
-    root: plan.source.root,
+    root: ".",
     identity: plan.identity,
-    artifacts: plan.artifacts,
-    ...(plan.source.configPath === undefined ? {} : { configPath: plan.source.configPath })
+    artifacts: plan.artifacts
   })
 
 describe("real tool integrations", () => {

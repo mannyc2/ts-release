@@ -273,7 +273,7 @@ describe("execution approval", () => {
       Effect.gen(function*() {
         const plan = yield* planFromConfig(minimalConfig)
         const evidence = yield* runEvidenceWorkflow(plan.operations, "validation", ExecutionApproval.none, {
-          root: plan.source.root,
+          root: ".",
           identity: plan.identity,
           artifacts: plan.artifacts
         })
@@ -286,7 +286,7 @@ describe("execution approval", () => {
       Effect.gen(function*() {
         const plan = yield* planFromConfig(minimalConfig)
         const planContext = {
-          root: plan.source.root,
+          root: ".",
           identity: plan.identity,
           artifacts: plan.artifacts
         }

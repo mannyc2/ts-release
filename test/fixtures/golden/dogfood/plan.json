@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "release-plan/v4",
+  "schemaVersion": "release-plan/v5",
   "identity": {
     "name": "@mannyc1/ts-release",
     "normalizedName": "mannyc1-ts-release",
@@ -14,7 +14,6 @@
   "artifacts": [
     {
       "id": "cli-linux-x64",
-      "kind": "executable",
       "path": ".release/artifacts/ts-release-0.1.0-linux-x64",
       "producedBy": "build:bun",
       "platform": {
@@ -34,7 +33,6 @@
     },
     {
       "id": "cli-linux-arm64",
-      "kind": "executable",
       "path": ".release/artifacts/ts-release-0.1.0-linux-arm64",
       "producedBy": "build:bun",
       "platform": {
@@ -54,7 +52,6 @@
     },
     {
       "id": "cli-darwin-x64",
-      "kind": "executable",
       "path": ".release/artifacts/ts-release-0.1.0-darwin-x64",
       "producedBy": "build:bun",
       "platform": {
@@ -73,7 +70,6 @@
     },
     {
       "id": "cli-darwin-arm64",
-      "kind": "executable",
       "path": ".release/artifacts/ts-release-0.1.0-darwin-arm64",
       "producedBy": "build:bun",
       "platform": {
@@ -92,7 +88,6 @@
     },
     {
       "id": "cli-windows-x64",
-      "kind": "executable",
       "path": ".release/artifacts/ts-release-0.1.0-windows-x64.exe",
       "producedBy": "build:bun",
       "platform": {
@@ -112,7 +107,6 @@
     },
     {
       "id": "npm-package",
-      "kind": "package",
       "path": ".",
       "producedBy": "build:npm-pack",
       "extra": {
@@ -123,7 +117,6 @@
     },
     {
       "id": "pypi-wheel-linux-x64",
-      "kind": "wheel",
       "path": ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_x86_64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -137,7 +130,6 @@
     },
     {
       "id": "pypi-wheel-linux-arm64",
-      "kind": "wheel",
       "path": ".release/artifacts/ts_release-0.1.0-py3-none-manylinux2014_aarch64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -151,7 +143,6 @@
     },
     {
       "id": "pypi-wheel-darwin-x64",
-      "kind": "wheel",
       "path": ".release/artifacts/ts_release-0.1.0-py3-none-macosx_10_15_x86_64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -165,7 +156,6 @@
     },
     {
       "id": "pypi-wheel-darwin-arm64",
-      "kind": "wheel",
       "path": ".release/artifacts/ts_release-0.1.0-py3-none-macosx_11_0_arm64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -179,7 +169,6 @@
     },
     {
       "id": "pypi-wheel-windows-x64",
-      "kind": "wheel",
       "path": ".release/artifacts/ts_release-0.1.0-py3-none-win_amd64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -193,7 +182,6 @@
     },
     {
       "id": "catalog-file-homebrew",
-      "kind": "catalog-file",
       "path": ".release/catalogs/homebrew-ts-release/.release/catalogs/homebrew-ts-release/Formula/ts-release.rb",
       "producedBy": "catalog:file",
       "extra": {
@@ -204,7 +192,6 @@
     },
     {
       "id": "catalog-file-scoop",
-      "kind": "catalog-file",
       "path": ".release/catalogs/scoop-ts-release/.release/catalogs/scoop-ts-release/bucket/ts-release.json",
       "producedBy": "catalog:file",
       "extra": {
@@ -925,9 +912,5 @@
       }
     }
   ],
-  "source": {
-    "root": "<dogfood-root>",
-    "configPath": "apps/release-ts/release.config.json"
-  },
   "evidenceDirectory": ".release/evidence/0.1.0"
 }

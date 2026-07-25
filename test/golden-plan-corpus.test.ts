@@ -75,9 +75,10 @@ const planDogfood = () =>
   }).pipe(
     Effect.provide(makeBunReleaseWorkflowRuntimeLayer({ root }))
   )
-const stablePlanJson = (plan: ReleasePlan, rootLabel: string, stableCommit: boolean = true): string => {
+// v5 plans carry no machine-local facts (plan 169.1, D1/D3), so the durable document is
+// already stable across machines and needs no root scrubbing — only the commit varies.
+const stablePlanJson = (plan: ReleasePlan, stableCommit: boolean = true): string => {
   const encoded = JSON.parse(renderReleasePlan(plan, "json"))
-  encoded.source.root = `<${rootLabel}-root>`
   if (!stableCommit) {
     encoded.identity.commit = "<commit>"
     encoded.identity.shortCommit = "<short-commit>"
@@ -148,7 +149,7 @@ describe("golden plan corpus", () => {
       writeOrExpectFixture(fixturePath(exampleName, "plan.txt"), renderReleasePlan(plan, "text"))
       writeOrExpectFixture(fixturePath(exampleName, "plan.md"), renderReleasePlan(plan, "markdown"))
       if (exampleName === "portable-cli" || exampleName === "multi-target") {
-        writeOrExpectFixture(fixturePath(exampleName, "plan.json"), stablePlanJson(plan, exampleName))
+        writeOrExpectFixture(fixturePath(exampleName, "plan.json"), stablePlanJson(plan))
       }
       for (const fixture of renderFixtures.get(exampleName) ?? []) {
         writeOrExpectFixture(
@@ -161,6 +162,6 @@ describe("golden plan corpus", () => {
 
   test("dogfood plan has an exact canonical v4 JSON fixture", async () => {
     const plan = await runEffect(planDogfood(), makeBunReleaseWorkflowRuntimeLayer({ root }))
-    writeOrExpectFixture(fixturePath("dogfood", "plan.json"), stablePlanJson(plan, "dogfood", false))
+    writeOrExpectFixture(fixturePath("dogfood", "plan.json"), stablePlanJson(plan, false))
   })
 })

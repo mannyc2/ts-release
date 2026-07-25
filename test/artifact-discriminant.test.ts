@@ -7,19 +7,18 @@ import {
   artifactIsDirectoryLike,
   ExecutableExtra,
   ImportedFileExtra,
-  makeArtifact,
   PackageExtra
 } from "../src/grammar/artifact.js"
 
 describe("artifact discriminant", () => {
   it("derives kind from each artifact extra tag", () => {
-    const executable = makeArtifact({
+    const executable = Artifact.make({
       id: "cli",
       path: "dist/cli",
       producedBy: "build:bun",
       extra: ExecutableExtra.make({ binary: "cli", extension: "", builderId: "bun" })
     })
-    const archive = makeArtifact({
+    const archive = Artifact.make({
       id: "archive",
       path: "dist/cli.zip",
       producedBy: "archive",
@@ -43,25 +42,25 @@ describe("artifact discriminant", () => {
     }))
 
   it("classifies only package and imported-directory artifacts as directory-like", () => {
-    const packageArtifact = makeArtifact({
+    const packageArtifact = Artifact.make({
       id: "package",
       path: "package",
       producedBy: "build:npm-pack",
       extra: PackageExtra.make({ packageManager: "npm", packageName: "pkg" })
     })
-    const directory = makeArtifact({
+    const directory = Artifact.make({
       id: "directory",
       path: "dist/directory",
       producedBy: "import-artifacts",
       extra: ImportedFileExtra.make({ format: "directory" })
     })
-    const file = makeArtifact({
+    const file = Artifact.make({
       id: "file",
       path: "dist/file",
       producedBy: "import-artifacts",
       extra: ImportedFileExtra.make({ format: "file" })
     })
-    const executable = makeArtifact({
+    const executable = Artifact.make({
       id: "executable",
       path: "dist/executable",
       producedBy: "build:bun",

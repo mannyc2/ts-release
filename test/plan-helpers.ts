@@ -34,6 +34,8 @@ export interface TestPlan {
   readonly artifacts: ReleasePlan["artifacts"]
   readonly surfaceIds: ReadonlyArray<string>
   readonly operations: ReadonlyArray<Operation>
+  readonly root: string
+  readonly configPath?: string | undefined
 }
 const operationSurfaceId = (operation: Operation): string | undefined => {
   const parts = operation.pipeId.split(":")
@@ -61,14 +63,16 @@ export const createTestPlan = (config: string, root = ".", configPath?: string |
       evidenceDirectory: document.evidenceDirectory,
       artifacts: document.artifacts,
       surfaceIds: plannedSurfaceIds(document.operations),
-      operations: document.operations
+      operations: document.operations,
+      root,
+      configPath
     }
   })
 const operationContext = (plan: TestPlan) => ({
-  root: plan.document.source.root,
+  root: plan.root,
   identity: plan.document.identity,
   artifacts: plan.document.artifacts,
-  configPath: plan.document.source.configPath
+  configPath: plan.configPath
 })
 export const runEvidenceWorkflow = Effect.fn("test.runEvidenceWorkflow")(function*(
   operations: ReadonlyArray<Operation>, workflow: EvidenceWorkflow,

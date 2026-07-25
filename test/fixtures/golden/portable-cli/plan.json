@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "release-plan/v4",
+  "schemaVersion": "release-plan/v5",
   "identity": {
     "name": "@scope/portable-example",
     "normalizedName": "scope-portable-example",
@@ -13,7 +13,6 @@
   "artifacts": [
     {
       "id": "cli-linux-x64",
-      "kind": "executable",
       "path": "artifacts/portable-example-0.1.0-linux-x64",
       "producedBy": "build:bun",
       "platform": {
@@ -33,7 +32,6 @@
     },
     {
       "id": "cli-linux-arm64",
-      "kind": "executable",
       "path": "artifacts/portable-example-0.1.0-linux-arm64",
       "producedBy": "build:bun",
       "platform": {
@@ -53,7 +51,6 @@
     },
     {
       "id": "cli-darwin-x64",
-      "kind": "executable",
       "path": "artifacts/portable-example-0.1.0-darwin-x64",
       "producedBy": "build:bun",
       "platform": {
@@ -72,7 +69,6 @@
     },
     {
       "id": "cli-darwin-arm64",
-      "kind": "executable",
       "path": "artifacts/portable-example-0.1.0-darwin-arm64",
       "producedBy": "build:bun",
       "platform": {
@@ -91,7 +87,6 @@
     },
     {
       "id": "cli-windows-x64",
-      "kind": "executable",
       "path": "artifacts/portable-example-0.1.0-windows-x64.exe",
       "producedBy": "build:bun",
       "platform": {
@@ -111,7 +106,6 @@
     },
     {
       "id": "npm-package",
-      "kind": "package",
       "path": ".",
       "producedBy": "build:npm-pack",
       "extra": {
@@ -122,7 +116,6 @@
     },
     {
       "id": "pypi-wheel-linux-x64",
-      "kind": "wheel",
       "path": "artifacts/portable_example-0.1.0-py3-none-manylinux2014_x86_64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -136,7 +129,6 @@
     },
     {
       "id": "pypi-wheel-linux-arm64",
-      "kind": "wheel",
       "path": "artifacts/portable_example-0.1.0-py3-none-manylinux2014_aarch64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -150,7 +142,6 @@
     },
     {
       "id": "pypi-wheel-darwin-x64",
-      "kind": "wheel",
       "path": "artifacts/portable_example-0.1.0-py3-none-macosx_10_15_x86_64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -164,7 +155,6 @@
     },
     {
       "id": "pypi-wheel-darwin-arm64",
-      "kind": "wheel",
       "path": "artifacts/portable_example-0.1.0-py3-none-macosx_11_0_arm64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -178,7 +168,6 @@
     },
     {
       "id": "pypi-wheel-windows-x64",
-      "kind": "wheel",
       "path": "artifacts/portable_example-0.1.0-py3-none-win_amd64.whl",
       "producedBy": "build:pypi-wheel",
       "extra": {
@@ -192,7 +181,6 @@
     },
     {
       "id": "catalog-file-homebrew",
-      "kind": "catalog-file",
       "path": ".release/generated/portable-example.rb",
       "producedBy": "catalog:file",
       "extra": {
@@ -203,7 +191,6 @@
     },
     {
       "id": "catalog-file-scoop",
-      "kind": "catalog-file",
       "path": ".release/generated/portable-example.json",
       "producedBy": "catalog:file",
       "extra": {
@@ -923,9 +910,5 @@
       }
     }
   ],
-  "source": {
-    "root": "<portable-cli-root>",
-    "configPath": "release.config.json"
-  },
   "evidenceDirectory": ".release/evidence/0.1.0"
 }

@@ -145,17 +145,16 @@ export type ArtifactExtra = typeof ArtifactExtra.Type
 
 export class Artifact extends Schema.Class<Artifact>("Artifact")({
   id: ArtifactId,
-  kind: ArtifactKind,
   path: SafeRelativePath,
   producedBy: Schema.String,
   platform: Schema.optionalKey(InstallableArtifactVariant),
   checksum: Schema.optionalKey(Checksum),
   extra: ArtifactExtra
-}) {}
-
-export const makeArtifact = (
-  fields: Omit<Parameters<typeof Artifact.make>[0], "kind">
-): Artifact => Artifact.make({ ...fields, kind: fields.extra._tag })
+}) {
+  get kind(): ArtifactKind {
+    return this.extra._tag
+  }
+}
 
 export const artifactIsDirectoryLike = (artifact: Artifact): boolean =>
   artifact.kind === "package" ||

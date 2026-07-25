@@ -99158,15 +99158,16 @@ var ArtifactExtra = Union2([
 
 class Artifact extends Class4("Artifact")({
   id: ArtifactId,
-  kind: ArtifactKind,
   path: SafeRelativePath,
   producedBy: String4,
   platform: optionalKey2(InstallableArtifactVariant),
   checksum: optionalKey2(Checksum),
   extra: ArtifactExtra
 }) {
+  get kind() {
+    return this.extra._tag;
+  }
 }
-var makeArtifact = (fields) => Artifact.make({ ...fields, kind: fields.extra._tag });
 var artifactIsDirectoryLike = (artifact2) => artifact2.kind === "package" || artifact2.extra._tag === "file" && artifact2.extra.format === "directory";
 var artifactPathBaseName = (pathName) => {
   const parts = pathName.replaceAll("\\", "/").split("/");
@@ -99509,7 +99510,7 @@ var defaulted = (schema, value2) => optionalKey2(schema).pipe(decodeTo2(schema, 
 }));
 
 // ../../src/features/build/builder.ts
-var executableArtifact = (input) => makeArtifact({
+var executableArtifact = (input) => Artifact.make({
   id: input.id,
   path: input.path,
   producedBy: `build:${input.builder}`,
@@ -99840,7 +99841,7 @@ var archivePlanner = featurePlanner("archive", (sections, state3) => gen2(functi
         const path4 = `.release/artifacts/${fileName}`;
         const wrapDirectory = section.wrapInDirectory === true ? name : typeof section.wrapInDirectory === "string" && section.wrapInDirectory.length > 0 ? section.wrapInDirectory : undefined;
         const archiveEntries = entries(group.artifacts);
-        artifacts.push(makeArtifact({
+        artifacts.push(Artifact.make({
           id,
           path: path4,
           producedBy: "archive",
@@ -100233,7 +100234,7 @@ var catalogGenericPlanner = featurePlanner("catalog:file", (entries2, context7) 
   for (const entry of entries2) {
     const path4 = catalogWritePath(entry);
     const contents = yield* planContent(entry, context7);
-    artifacts.push(makeArtifact({
+    artifacts.push(Artifact.make({
       id: `catalog-file-${entry.id}`,
       path: path4,
       producedBy: "catalog:file",
@@ -100276,7 +100277,7 @@ var importArtifactsPlanner = featurePlanner("import-artifacts", (section, state3
     field: `artifacts.${input.id}.path`
   });
   return {
-    artifact: makeArtifact({
+    artifact: Artifact.make({
       id: input.id,
       path: path4,
       producedBy: "import-artifacts",
@@ -100314,7 +100315,7 @@ var checksumPlanner = featurePlanner("checksum", (section, state3) => gen2(funct
   });
   const path4 = `.release/artifacts/${fileName}`;
   return {
-    artifacts: [makeArtifact({
+    artifacts: [Artifact.make({
       id: "checksum",
       path: path4,
       producedBy: "checksum",
@@ -100347,7 +100348,7 @@ var npmPackPlanner = featurePlanner("build:npm-pack", (section, state3) => rende
   pipeId: "build:npm-pack",
   field: "npmPackage.path"
 }).pipe(map5((path4) => ({
-  artifacts: [makeArtifact({
+  artifacts: [Artifact.make({
     id: "npm-package",
     path: path4,
     producedBy: "build:npm-pack",
@@ -100711,7 +100712,7 @@ var pypiWheelPlanner = featurePlanner("build:pypi-wheel", (wheels, state3) => fo
   const homepage = yield* requireProjectFact2(wheel.homepage, "project.homepage", "PyPI wheels require project.homepage or publish.github.repository.");
   const license = yield* requireProjectFact2(wheel.license, "project.license", "PyPI wheels require project.license.");
   return {
-    artifact: makeArtifact({
+    artifact: Artifact.make({
       id: wheel.id,
       path: path4,
       producedBy: "build:pypi-wheel",
@@ -100966,6 +100967,9 @@ var requireExecutionApproval = fn2("requireExecutionApproval")(function* (operat
   }));
 });
 
+// ../../src/grammar/plan.ts
+import { createHash as createHash3 } from "node:crypto";
+
 // ../../src/grammar/state.ts
 class ReleaseIdentity extends Class4("PipelineReleaseIdentity")({
   name: String4,
@@ -100981,24 +100985,18 @@ class ReleaseIdentity extends Class4("PipelineReleaseIdentity")({
 }
 
 // ../../src/grammar/plan.ts
-class SourceMetadata extends Class4("SourceMetadata")({
-  root: String4,
-  configPath: optional(String4)
-}) {
-}
-
 class ReleasePlan extends Class4("ReleasePlan")({
-  schemaVersion: Literal2("release-plan/v4"),
+  schemaVersion: Literal2("release-plan/v5"),
   identity: ReleaseIdentity,
   artifacts: ArraySchema(Artifact),
   operations: ArraySchema(Operation),
-  source: SourceMetadata,
-  evidenceDirectory: String4
+  evidenceDirectory: SafeRelativePath
 }) {
 }
 var releasePlanDecodeOptions = { onExcessProperty: "error" };
 var decodeReleasePlan = decodeUnknownEffect2(ReleasePlan, releasePlanDecodeOptions);
 var decodeReleasePlanSync = decodeUnknownSync(ReleasePlan, releasePlanDecodeOptions);
+var planFingerprint = (plan) => createHash3("sha256").update(JSON.stringify(encodeSync2(ReleasePlan)(plan))).digest("hex");
 
 // ../../src/grammar/accumulator.ts
 var emptyPlanAccumulator = (identity2) => ({
@@ -101983,7 +101981,11 @@ var identitySummary = (identity2) => ({
   commit: identity2.commit,
   tag: identity2.tag
 });
-var artifactSummary = encodeSync2(Artifact);
+var encodeArtifact = encodeSync2(Artifact);
+var artifactSummary = (artifact2) => ({
+  ...encodeArtifact(artifact2),
+  kind: artifact2.kind
+});
 var operationSummary = (operation, status = "planned", evidencePath) => ({
   id: operation.id,
   pipeId: operation.pipeId,
@@ -102013,7 +102015,7 @@ var stagedArtifactSummaries = (plan) => stagedOperationsForPlan(plan).flatMap((o
 }));
 
 // ../../src/render/render.ts
-var renderBuildArtifacts = (plan, format3 = "text") => {
+var renderBuildArtifacts = (plan, format3 = "text", configPath2) => {
   const operations = stagedOperationsForPlan(plan).map((operation) => ({
     operationId: operation.id,
     intentTag: operation.action.intent._tag,
@@ -102023,7 +102025,7 @@ var renderBuildArtifacts = (plan, format3 = "text") => {
     return `${JSON.stringify({
       schemaVersion: "artifact-stage/v1",
       identity: plan.identity,
-      configPath: plan.source.configPath ?? "inline config",
+      configPath: configPath2 ?? "inline config",
       operations,
       plan
     }, null, 2)}
@@ -102129,6 +102131,7 @@ var renderPlanText = (plan) => {
   const lines = [
     `${plan.identity.name}@${plan.identity.version}`,
     `commit: ${plan.identity.commit}`,
+    `fingerprint: ${planFingerprint(plan)}`,
     ...plan.identity.snapshot ? ["snapshot: true"] : [],
     `evidence: ${plan.evidenceDirectory}`,
     `artifacts: ${plan.artifacts.length}`,
@@ -102175,6 +102178,7 @@ var renderPlanSummary = (plan) => {
   const lines = [
     `summary: ${plan.identity.name}@${plan.identity.version}`,
     `commit: ${plan.identity.commit}`,
+    `fingerprint: ${planFingerprint(plan)}`,
     ...plan.identity.snapshot ? ["snapshot: true"] : [],
     `evidence: ${plan.evidenceDirectory}`,
     `operations: ${plan.operations.length}`,
@@ -102462,9 +102466,6 @@ var renderReleaseDiagnostics = (report, format3 = "text") => {
   }
 };
 
-// ../../src/run/workflow.ts
-import { createHash as createHash5 } from "node:crypto";
-
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Ref.js
 var TypeId27 = "~effect/Ref";
 var RefProto = {
@@ -102535,7 +102536,7 @@ var writeWorkspaceFile = (root, pathName, contents, makeError) => gen2(function*
 });
 
 // ../../src/run/executor.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 
 // ../../src/run/content.ts
 var hashFor = (hashes, artifactId) => {
@@ -102805,7 +102806,7 @@ var GitHubApiLiveLayer = effect(GitHubApi)(gen2(function* () {
 }));
 
 // ../../src/run/published.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 var textDecoder = new TextDecoder;
 var publishedAssetUrl = (repository, tag2, name) => `https://github.com/${repository}/releases/download/${tag2}/${name}`;
 var checksumLength = (algorithm) => algorithm === "sha256" ? 64 : 128;
@@ -102850,7 +102851,7 @@ var verifyPublishedAssets = fn2("run.verifyPublishedAssets")(function* (action5)
     const bytes2 = expected === undefined ? undefined : yield* getBytes(publishedAssetUrl(action5.repository, action5.tag, name));
     checks.push(VerifyCheckEvidence.make({
       description: `${name} matches ${action5.algorithm} checksum`,
-      passed: bytes2 !== undefined && expected !== undefined && createHash3(action5.algorithm).update(bytes2).digest("hex") === expected
+      passed: bytes2 !== undefined && expected !== undefined && createHash4(action5.algorithm).update(bytes2).digest("hex") === expected
     }));
   }
   return checks;
@@ -102878,18 +102879,18 @@ var instantRecord = fn2("engine.instantRecord")(function* (operation, fields) {
     durationMillis: 0
   });
 });
-var bundleForContext = (context7, planFingerprint) => EvidenceBundle.make({
+var bundleForContext = (context7, planFingerprint2) => EvidenceBundle.make({
   schemaVersion: "release-evidence/v3",
   releaseName: context7.identity.name,
   releaseVersion: context7.identity.version,
-  ...planFingerprint === undefined ? {} : { planFingerprint },
+  ...planFingerprint2 === undefined ? {} : { planFingerprint: planFingerprint2 },
   records: []
 });
-var makeEvidenceRef = fn2("engine.makeEvidenceRef")(function* (context7, planFingerprint) {
-  return yield* make23(bundleForContext(context7, planFingerprint));
+var makeEvidenceRef = fn2("engine.makeEvidenceRef")(function* (context7, planFingerprint2) {
+  return yield* make23(bundleForContext(context7, planFingerprint2));
 });
 var failAttempt = (failedRecord) => fail6(ActionAttemptFailed.make({ record: failedRecord }));
-var digestHex = (bytes2, algorithm) => createHash4(algorithm).update(bytes2).digest("hex");
+var digestHex = (bytes2, algorithm) => createHash5(algorithm).update(bytes2).digest("hex");
 var resolveWriteFileContents = fn2("engine.resolveWriteFileContents")(function* (contents, context7, outputPath) {
   if (typeof contents === "string") {
     return { contents };
@@ -103204,16 +103205,12 @@ var runEvidenceWorkflowInto = fn2("engine.runEvidenceWorkflowInto")(function* (r
 
 // ../../src/run/workflow.ts
 var releaseEvidencePath = (plan, name) => `${plan.evidenceDirectory}/${name}.json`;
-var planFingerprint = (plan) => {
-  const { source: _source, ...durable } = encodeSync2(ReleasePlan)(plan);
-  return createHash5("sha256").update(JSON.stringify(durable)).digest("hex");
-};
 var errorReason = (error2) => error2 instanceof Error ? error2.message : String(error2);
-var continueSkipSet = fn2("run.continueSkipSet")(function* (plan) {
+var continueSkipSet = fn2("run.continueSkipSet")(function* (plan, root) {
   const pathName = releaseEvidencePath(plan, "evidence");
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const resolved = resolveWorkspacePath(path4, plan.source.root, pathName);
+  const resolved = resolveWorkspacePath(path4, root, pathName);
   const exists3 = yield* fs8.exists(resolved).pipe(mapError3((error2) => ContinueEvidenceReadError.make({ path: pathName, reason: error2.message })));
   if (!exists3)
     return yield* fail6(ContinueEvidenceMissingError.make({ path: pathName }));
@@ -103236,21 +103233,21 @@ var continueSkipSet = fn2("run.continueSkipSet")(function* (plan) {
 var writeEvidenceBundle = fn2("run.writeEvidenceBundle")(function* (pathName, bundle, root = ".") {
   yield* writeWorkspaceFile(root, pathName, renderEvidenceJson(bundle), (path4, reason, cause) => EvidenceWriteError.make({ path: path4, reason, ...cause === undefined ? {} : { cause } }));
 });
-var finalizeEvidenceOnExit = (plan, name, ref, workflowExit) => get4(ref).pipe(flatMap3((evidence) => writeEvidenceBundle(releaseEvidencePath(plan, name), evidence, plan.source.root)), catchCause2((writeCause) => isFailure3(workflowExit) ? failCause3(combine2(writeCause, workflowExit.cause)) : failCause3(writeCause)));
-var runEvidenceWorkflowWithFinalizer = fn2("run.workflowWithFinalizer")(function* (plan, name, ref, workflow) {
-  return yield* workflow.pipe(onExit2((exit3) => finalizeEvidenceOnExit(plan, name, ref, exit3)));
+var finalizeEvidenceOnExit = (plan, name, ref, root, workflowExit) => get4(ref).pipe(flatMap3((evidence) => writeEvidenceBundle(releaseEvidencePath(plan, name), evidence, root)), catchCause2((writeCause) => isFailure3(workflowExit) ? failCause3(combine2(writeCause, workflowExit.cause)) : failCause3(writeCause)));
+var runEvidenceWorkflowWithFinalizer = fn2("run.workflowWithFinalizer")(function* (plan, name, ref, root, workflow) {
+  return yield* workflow.pipe(onExit2((exit3) => finalizeEvidenceOnExit(plan, name, ref, root, exit3)));
 });
-var planContext = (plan) => ({
-  root: plan.source.root,
+var planContext = (plan, invocation) => ({
+  root: invocation.root,
   identity: plan.identity,
   artifacts: plan.artifacts,
-  configPath: plan.source.configPath
+  configPath: invocation.configPath
 });
-var writeWorkflowEvidence = fn2("run.writeWorkflowEvidence")(function* (plan, name, workflow, approval, skip = new Set) {
-  const context7 = planContext(plan);
+var writeWorkflowEvidence = fn2("run.writeWorkflowEvidence")(function* (plan, name, workflow, approval, skip = new Set, invocation) {
+  const context7 = planContext(plan, invocation);
   yield* preflightEvidenceWorkflow(plan.operations, workflow, approval, context7, skip);
   const ref = yield* makeEvidenceRef(context7, planFingerprint(plan));
-  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7, skip).pipe(andThen2(get4(ref))));
+  return yield* runEvidenceWorkflowWithFinalizer(plan, name, ref, invocation.root, runEvidenceWorkflowInto(ref, plan.operations, workflow, approval, context7, skip).pipe(andThen2(get4(ref))));
 });
 
 // ../../src/engine/engine.ts
@@ -103281,33 +103278,30 @@ var loadReleaseBuild = fn2("engine.loadReleaseBuild")(function* (options) {
   return { source: source3, build: yield* resolveReleaseBuild(source3.intent, source3.root, options.snapshot ?? false) };
 });
 var withDefaultVerifyRetry = (operations, retry5) => retry5 === undefined ? operations : operations.map((operation) => operation.phase === "verify" && operation.retry === undefined ? Operation.make({ ...operation, retry: retry5 }) : operation);
-var releasePlanFromAccumulator = (release, root, configPathName, state3) => ReleasePlan.make({
-  schemaVersion: "release-plan/v4",
+var releasePlanFromAccumulator = (release, state3) => ReleasePlan.make({
+  schemaVersion: "release-plan/v5",
   identity: state3.identity,
   artifacts: state3.artifacts,
   operations: withDefaultVerifyRetry(state3.operations, release.retry),
-  source: SourceMetadata.make({
-    root,
-    configPath: configPathName
-  }),
   evidenceDirectory: release.evidenceDirectory
 });
 var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
   const { build, source: source3 } = yield* loadReleaseBuild(options);
   const state3 = yield* resolveReleasePlan(build);
-  const plan = releasePlanFromAccumulator(build.release, source3.root, source3.sourcePath, state3);
+  const plan = releasePlanFromAccumulator(build.release, state3);
+  const invocation = { root: source3.root, configPath: source3.sourcePath };
   if (options.verifyPublished !== true)
-    return { release: build.release, plan };
+    return { release: build.release, plan, invocation };
   const github = plan.operations.find(({ action: action5 }) => action5._tag === "github-release-create");
   if (github?.action._tag !== "github-release-create")
-    return { release: build.release, plan };
+    return { release: build.release, plan, invocation };
   const githubAction = github.action;
   const checksum = plan.artifacts.find((artifact2) => artifact2.extra._tag === "checksum-file" && githubAction.assets.some(({ artifactId }) => artifactId === artifact2.id));
   if (checksum?.extra._tag !== "checksum-file")
-    return { release: build.release, plan };
+    return { release: build.release, plan, invocation };
   const checksumAsset = githubAction.assets.find(({ artifactId }) => artifactId === checksum.id);
   if (checksumAsset === undefined)
-    return { release: build.release, plan };
+    return { release: build.release, plan, invocation };
   const covered = new Set(checksum.extra.coversArtifactIds);
   const operation = Operation.make({
     id: "published:github-assets-verify",
@@ -103326,11 +103320,16 @@ var loadReleasePlan = fn2("engine.loadReleasePlan")(function* (options) {
   });
   return {
     release: build.release,
-    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] })
+    plan: ReleasePlan.make({ ...plan, operations: [...plan.operations, operation] }),
+    invocation
   };
 });
 var planRelease = fn2("engine.planRelease")(function* (options = {}) {
   return (yield* loadReleasePlan(options)).plan;
+});
+var planReleaseWithInvocation = fn2("engine.planReleaseWithInvocation")(function* (options = {}) {
+  const { plan, invocation } = yield* loadReleasePlan(options);
+  return { plan, invocation };
 });
 var doctorRelease = fn2("engine.doctorRelease")(function* (input = {}) {
   const planned = loadReleasePlan({ workspace: input.root, configPath: input.configPath }).pipe(map5(({ plan }) => ({
@@ -103341,21 +103340,22 @@ var doctorRelease = fn2("engine.doctorRelease")(function* (input = {}) {
   return yield* diagnoseRelease(input, configPath(input), planned);
 });
 var planWithEvidence = fn2("engine.planWithEvidence")(function* (options, write) {
-  const plan = yield* planRelease(options);
-  return { plan, evidence: yield* write(plan) };
+  const { plan, invocation } = yield* loadReleasePlan(options);
+  return { plan, evidence: yield* write(plan, invocation) };
 });
 var plan = fn2("engine.summary.plan")(function* (options = {}) {
   const document2 = yield* planRelease(options);
   return plannedSummary(document2);
 });
 var build = fn2("engine.summary.build")(function* (options = {}) {
-  const plan2 = yield* planRelease(options);
-  const evidence = yield* writeWorkflowEvidence(plan2, "build", "build", ExecutionApproval.make({ execute: true, approveIrreversible: false }));
+  const { plan: plan2, invocation } = yield* loadReleasePlan(options);
+  const evidence = yield* writeWorkflowEvidence(plan2, "build", "build", ExecutionApproval.make({ execute: true, approveIrreversible: false }), new Set, invocation);
   return {
     ...plannedSummary(plan2),
     stagedArtifacts: stagedArtifactSummaries(plan2),
     plan: plan2,
-    evidence
+    evidence,
+    invocation
   };
 });
 var release = fn2("engine.summary.release")(function* (options = {}) {
@@ -103379,7 +103379,7 @@ var release = fn2("engine.summary.release")(function* (options = {}) {
     execute: options.execute ?? false,
     approveIrreversible: options.approvePublish ?? false
   });
-  const result2 = yield* planWithEvidence(options, (document2) => flatMap3(options.continueRun === true ? continueSkipSet(document2) : succeed6(new Set), (skip) => writeWorkflowEvidence(document2, "evidence", "release", approval, skip)));
+  const result2 = yield* planWithEvidence(options, (document2, invocation) => flatMap3(options.continueRun === true ? continueSkipSet(document2, invocation.root) : succeed6(new Set), (skip) => writeWorkflowEvidence(document2, "evidence", "release", approval, skip, invocation)));
   const summary2 = plannedSummary(result2.plan);
   const executed = evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "evidence"));
   return {
@@ -103391,7 +103391,7 @@ var release = fn2("engine.summary.release")(function* (options = {}) {
   };
 });
 var verify = fn2("engine.summary.verify")(function* (options = {}) {
-  const result2 = yield* planWithEvidence(options, (document2) => writeWorkflowEvidence(document2, "verification", "verification", ExecutionApproval.none));
+  const result2 = yield* planWithEvidence(options, (document2, invocation) => writeWorkflowEvidence(document2, "verification", "verification", ExecutionApproval.none, new Set, invocation));
   return {
     identity: plannedSummary(result2.plan).identity,
     checks: evidenceOperationStatuses(result2.plan, result2.evidence, releaseEvidencePath(result2.plan, "verification")),
@@ -103566,17 +103566,18 @@ var failForDiagnostics = (report, failOnWarnings) => {
   const warned = failOnWarnings && report.checks.some((check3) => check3.status === "warn");
   return failed || warned ? fail6(ActionCommandError.make({ reason: failed ? "Diagnostics reported failing checks." : "Diagnostics reported warnings and fail-on-warnings is true." })) : void_3;
 };
-var uploadEvidence = fn2("action.uploadEvidence")(function* (options, io, artifactClient, plan2) {
+var uploadEvidence = fn2("action.uploadEvidence")(function* (options, io, artifactClient, planned) {
   if (!options.uploadEvidence) {
     return;
   }
-  if (plan2 === undefined) {
+  if (planned === undefined) {
     yield* io.info("No release plan was available; evidence upload skipped.");
     return;
   }
+  const { plan: plan2, root } = planned;
   const fs8 = yield* FileSystem;
   const path4 = yield* Path;
-  const directory = resolveWorkspacePath(path4, plan2.source.root, plan2.evidenceDirectory);
+  const directory = resolveWorkspacePath(path4, root, plan2.evidenceDirectory);
   const files = (yield* fs8.exists(directory)) ? (yield* fs8.readDirectory(directory, { recursive: true })).filter((entry) => entry.endsWith(".json")).map((entry) => path4.resolve(directory, entry)).sort() : [];
   if (files.length === 0) {
     yield* io.info(`No evidence files found in ${plan2.evidenceDirectory}; evidence upload skipped.`);
@@ -103593,22 +103594,22 @@ var runActionEffect = fn2("action.runActionEffect")(function* (options, io, arti
   const config = yield* workspaceActionPath(path4, options, options.config, "config");
   const safeOptions = ActionOptions.make({ ...options, config });
   let planForUpload;
-  const rememberPlan = (plan2) => {
-    planForUpload = plan2;
+  const rememberPlan = (plan2, root) => {
+    planForUpload = { plan: plan2, root };
     return plan2;
   };
   yield* withEvidenceUpload(safeOptions, io, artifactClient, () => planForUpload, gen2(function* () {
     switch (safeOptions.command) {
       case "plan":
         {
-          const plan2 = yield* planRelease(releaseInput(safeOptions));
+          const { plan: plan2, invocation } = yield* planReleaseWithInvocation(releaseInput(safeOptions));
           const contents = renderReleasePlan(plan2, safeOptions.format);
           const outputPath = yield* workspaceActionPath(path4, safeOptions, safeOptions.planPath, "plan-path");
           yield* io.writeFile(outputPath, contents);
           if (safeOptions.writeStepSummary)
             yield* io.appendSummary(safeOptions.format === "markdown" ? contents : renderReleasePlan(plan2, "markdown"));
           yield* outputPlan(io, plan2, safeOptions.planPath);
-          rememberPlan(plan2);
+          rememberPlan(plan2, invocation.root);
         }
         return;
       case "doctor":
@@ -103625,10 +103626,11 @@ var runActionEffect = fn2("action.runActionEffect")(function* (options, io, arti
       case "build":
         {
           const input = releaseInput(safeOptions);
-          rememberPlan(yield* planRelease(input));
+          const preplanned = yield* planReleaseWithInvocation(input);
+          rememberPlan(preplanned.plan, preplanned.invocation.root);
           const staged = yield* build(input);
-          rememberPlan(staged.plan);
-          const rendered = renderBuildArtifacts(staged.plan, safeOptions.format === "json" ? "json" : "text");
+          rememberPlan(staged.plan, staged.invocation.root);
+          const rendered = renderBuildArtifacts(staged.plan, safeOptions.format === "json" ? "json" : "text", staged.invocation.configPath);
           if (safeOptions.writeStepSummary) {
             yield* io.appendSummary(`## ts-release build
 
@@ -103644,8 +103646,8 @@ ${rendered.trimEnd()}
       case "verify":
         {
           const command2 = safeOptions.command;
-          const plan2 = yield* planRelease(releaseInput(safeOptions));
-          rememberPlan(plan2);
+          const { plan: plan2, invocation } = yield* planReleaseWithInvocation(releaseInput(safeOptions));
+          rememberPlan(plan2, invocation.root);
           yield* outputPlan(io, plan2);
           if (command2 === "release" && !safeOptions.execute && !safeOptions.continueRun) {
             if (safeOptions.writeStepSummary)

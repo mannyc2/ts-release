@@ -1,0 +1,109 @@
+import { describe, expect, test } from "@effect/bun-test"
+import * as Effect from "effect/Effect"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import type { ContentValue, Operation } from "../../src/rewrite/model/operation.js"
+import {
+  NonEmptyName,
+  WorkspaceRoot
+} from "../../src/rewrite/model/primitives.js"
+import {
+  Invocation,
+  compilePlan
+} from "../../src/rewrite/plan/compiler.js"
+import { operationEntries } from "../../src/rewrite/model/validate.js"
+
+const root = process.cwd()
+const compile = (name: string) => Effect.runPromise(compilePlan(
+  JSON.parse(readFileSync(join(root, "examples", name, "release.config.json"), "utf8")),
+  Invocation.make({
+    workspace: WorkspaceRoot.make(root),
+    commit: NonEmptyName.make("abc123"),
+    snapshot: false
+  })
+))
+const render = (content: ContentValue, facts: Readonly<Record<string, string>>): string =>
+  typeof content === "string"
+    ? content
+    : content.map((part) => typeof part === "string" ? part : facts[part.outputId]!).join("")
+
+describe("Plan 176 current recipe port", () => {
+  for (const item of [
+    ["homebrew-tap", "homebrew", "formula.rb", {
+      archive: "6a6d5a6e19c74024a6cbe11ed33dc1dec5ff47acc863599137a97cd3fee1871e"
+    }],
+    ["scoop-bucket", "scoop", "manifest.json", {
+      archive: "821233f5d40c1df83d54dcbd403e4cec109d4a5c7f055160b0c88833f272ba22"
+    }],
+    ["portable-cli", "homebrew", "formula.rb", {
+      "cli-darwin-arm64": "420c09ffefd15b0ab90134aa1149b76b46933145c19f1335bde9d8960e84ff9e",
+      "cli-darwin-x64": "6244805d219cc43ebe6693ee3b5aff6a56bfe6671846120a7adf8a57f360d52f"
+    }],
+    ["portable-cli", "scoop", "manifest.json", {
+      "cli-windows-x64": "94dd0a9016b5e3b0c12a1bccb74ca3bab8fef50540548228a9fca8b25284c782"
+    }]
+  ] as const) {
+    test(`${item[0]} ${item[1]} preset renders immutable public bytes`, async () => {
+      const accepted = await compile(item[0])
+      const operation = accepted.plan.stages.catalog.find((candidate) =>
+        candidate._tag === "Write" && candidate.id === `catalog:${item[1]}:render`)
+      if (operation?._tag !== "Write") throw new Error("Missing catalog preset write.")
+      expect(render(operation.content, item[3])).toBe(readFileSync(
+        join(root, "test", "fixtures", "golden", item[0], item[2]),
+        "utf8"
+      ))
+    })
+  }
+
+  test("publication uses only closed composites with explicit verification", async () => {
+    const accepted = await compile("portable-cli")
+    const operations = operationEntries(accepted.plan).map(({ operation }) => operation)
+    expect(operations.some((operation) =>
+      operation._tag === "PackageRegistryRelease" &&
+      operation.registryKind === "pypi" &&
+      operation.verifyPublished)).toBe(true)
+    expect(operations.some((operation) => operation._tag === "ForgeRelease")).toBe(true)
+    expect(operations.filter((operation) => operation._tag === "OpaquePublish").every((operation) =>
+      operation.reconciliation === "manual-only")).toBe(true)
+  })
+
+  test("custom publishers cannot masquerade as local Exec", async () => {
+    const input = JSON.parse(readFileSync(
+      join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),
+      "utf8"
+    ))
+    input.publish.custom = [{
+      id: "marketplace",
+      run: ["tool", "publish", "{version}"],
+      risk: "externally-visible"
+    }]
+    const accepted = await Effect.runPromise(compilePlan(input, Invocation.make({
+      workspace: WorkspaceRoot.make(root),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    })))
+    const custom = operationEntries(accepted.plan).map(({ operation }) => operation)
+      .find((operation): operation is Extract<Operation, { readonly _tag: "OpaquePublish" }> =>
+        operation.id === "publish:custom:marketplace")
+    expect(custom?._tag).toBe("OpaquePublish")
+    expect(custom?.reconciliation).toBe("manual-only")
+    expect(custom?.argv.length).toBeGreaterThan(0)
+  })
+
+  test("typed variables are substituted as value tokens without evaluation", async () => {
+    const config = JSON.parse(readFileSync(
+      join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),
+      "utf8"
+    ))
+    config.builds[0].run = ["tool", "{name}", "{version}", "{target}", "{binary}", "{ext}"]
+    const accepted = await Effect.runPromise(compilePlan(config, Invocation.make({
+      workspace: WorkspaceRoot.make(root),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    })))
+    const operation = accepted.plan.stages.build.find((candidate) => candidate._tag === "Exec")
+    expect(operation?._tag === "Exec" ? operation.argv : []).toEqual([
+      "tool", "fixture", "1.0.0", "linux-x64", "fixture", ""
+    ])
+  })
+})

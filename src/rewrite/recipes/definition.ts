@@ -40,10 +40,21 @@ const genericUploadProfile = WireContract.make({
   reconciliation: "get-same-resource"
 })
 
+const productProfile = (kind: string, contractFixtureId: string) =>
+  Object.freeze({ kind, contractFixtureId, registration: "product-immutable" as const })
 export const profileRegistry = Object.freeze({
-  "http.generic-upload/v1": Object.freeze(genericUploadProfile)
+  "http.generic-upload/v1": Object.freeze(genericUploadProfile),
+  "build.bun-compile/v1": productProfile("process", "contract.build.bun-compile/v1"),
+  "build.command/v1": productProfile("process", "contract.build.command/v1"),
+  "build.pypi-wheel/v1": productProfile("process", "contract.build.pypi-wheel/v1"),
+  "process.hook/v1": productProfile("process", "contract.process.hook/v1"),
+  "catalog.git-publish/v1": productProfile("opaque-publish", "contract.catalog.git/v1"),
+  "registry.npm-publish/v1": productProfile("package-release", "contract.registry.npm/v1"),
+  "registry.pypi-publish/v1": productProfile("package-release", "contract.registry.pypi/v1"),
+  "forge.github-release/v1": productProfile("forge-release", "contract.forge.github/v1"),
+  "opaque.publish-command/v1": productProfile("opaque-publish", "contract.opaque.publish/v1")
 })
-export type RegisteredProfileId = keyof typeof profileRegistry
+export type RegisteredProfileId = "http.generic-upload/v1"
 
 export const lowerProfile = (id: RegisteredProfileId): WireContract =>
-  WireContract.make({ ...profileRegistry[id] })
+  WireContract.make({ ...profileRegistry[id] as WireContract })

@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { CandidateConfig, decodeConfig } from "../config/config.js"
+import { lowerCurrentConfig } from "../current/lower.js"
 import { PlanningFactsError } from "../model/errors.js"
 import {
   Check,
@@ -49,11 +50,19 @@ export const recipeDefinitions = (config: CandidateConfig): ReadonlyArray<Recipe
       output: OutputDeclaration.make({
         id: artifact.id,
         path: artifact.path,
-        kind: artifact.format
+        kind: artifact.format === "tarball" || artifact.format === "zip"
+          ? "archive"
+          : artifact.format === "oci-image"
+          ? "file"
+          : artifact.format,
+        provenance: "import",
+        ...(artifact.variant === undefined ? {} : { platform: artifact.variant })
       })
     }))
   if (config.checksum === undefined || staticRecipes.length === 0) return staticRecipes
-  const path = config.checksum.nameTemplate.replaceAll("{version}", config.project.version)
+  const path = (config.checksum.nameTemplate ?? "checksums-{version}.txt")
+    .replaceAll("{name}", config.project.name)
+    .replaceAll("{version}", config.project.version)
   return [
     ...staticRecipes,
     DigestRecipe.make({
@@ -67,7 +76,7 @@ export const recipeDefinitions = (config: CandidateConfig): ReadonlyArray<Recipe
         path: SafeRelativePath.make(path),
         kind: "digest"
       }),
-      algorithm: config.checksum.algorithm
+      algorithm: config.checksum.algorithm ?? "sha256"
     })
   ]
 }
@@ -115,7 +124,7 @@ export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
       name: config.project.name,
       version: config.project.version,
       tag: config.project.tag,
-      commit: invocation.commit,
+      commit: NonEmptyName.make(config.project.commit ?? invocation.commit),
       snapshot: invocation.snapshot
     }),
     stages,
@@ -123,13 +132,31 @@ export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
   })
 })
 
+const minimalConfig = (config: CandidateConfig): boolean =>
+  config.builds === undefined &&
+  config.npmPackage === undefined &&
+  config.pypiWheel === undefined &&
+  config.archives === undefined &&
+  config.catalogs === undefined &&
+  config.hooks === undefined &&
+  config.retry === undefined &&
+  config.evidence === undefined &&
+  Object.keys(config.publish).length === 0 &&
+  Object.keys(config.project).every((key) => ["name", "version", "tag"].includes(key)) &&
+  (config.artifacts ?? []).every((artifact) =>
+    ["file", "directory", "executable"].includes(artifact.format) &&
+    artifact.checksum === undefined &&
+    artifact.variant === undefined)
+
 export const compilePlan = Effect.fn("rewrite.compilePlan")(function*(
   input: unknown,
   invocation: Invocation
 ) {
   const config = yield* decodeConfig(input)
   const facts = yield* validatePlanningFacts(invocation)
-  const stages = yield* lowerRecipes(recipeDefinitions(config))
+  const stages = minimalConfig(config)
+    ? yield* lowerRecipes(recipeDefinitions(config))
+    : yield* lowerCurrentConfig(config)
   const plan = yield* finalizePlan(config, facts, stages)
   return yield* acceptPlan(encodePlanBytes(plan))
 })

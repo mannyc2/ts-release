@@ -97,7 +97,19 @@ describe("pure v6 recipe compiler", () => {
 
   test("profile registry is closed Product data and lowering copies the complete value", () => {
     expect(Object.isFrozen(profileRegistry)).toBe(true)
-    expect(Object.keys(profileRegistry)).toEqual(["http.generic-upload/v1"])
+    expect(Object.keys(profileRegistry)).toEqual([
+      "http.generic-upload/v1",
+      "build.bun-compile/v1",
+      "build.command/v1",
+      "build.pypi-wheel/v1",
+      "process.hook/v1",
+      "catalog.git-publish/v1",
+      "registry.npm-publish/v1",
+      "registry.pypi-publish/v1",
+      "forge.github-release/v1",
+      "opaque.publish-command/v1"
+    ])
+    expect(Object.values(profileRegistry).every(Object.isFrozen)).toBe(true)
     const first = lowerProfile("http.generic-upload/v1")
     const second = lowerProfile("http.generic-upload/v1")
     expect(first).toEqual(second)

@@ -4,46 +4,14 @@ import {
   ConfigDecodeError,
   ConfigValueError
 } from "../model/errors.js"
-import {
-  NonEmptyName,
-  OutputId,
-  SafeRelativePath,
-  Version
-} from "../model/primitives.js"
+import { CandidateConfig } from "../current/config.js"
 
-export class CandidateProject extends Schema.Class<CandidateProject>("CandidateProject")({
-  name: NonEmptyName,
-  version: Version,
-  tag: NonEmptyName
-}) {}
-
-export class CandidateArtifact extends Schema.Class<CandidateArtifact>("CandidateArtifact")({
-  id: OutputId,
-  path: SafeRelativePath,
-  format: Schema.Literals(["file", "directory", "executable"])
-}) {}
-
-const ChecksumName = SafeRelativePath.check(
-  Schema.makeFilter((value: string) => {
-    const literal = value.replaceAll("{version}", "")
-    return literal.includes("{") || literal.includes("}")
-      ? "Checksum name supports only the {version} token."
-      : undefined
-  })
-)
-
-export class CandidateChecksum extends Schema.Class<CandidateChecksum>("CandidateChecksum")({
-  algorithm: Schema.Literals(["sha256", "sha512"]),
-  nameTemplate: ChecksumName
-}) {}
-
-export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({
-  "$schema": Schema.optionalKey(Schema.String),
-  project: CandidateProject,
-  artifacts: Schema.optionalKey(Schema.Array(CandidateArtifact)),
-  checksum: Schema.optionalKey(CandidateChecksum),
-  publish: Schema.optionalKey(Schema.Struct({}))
-}) {}
+export {
+  CandidateArtifact,
+  CandidateChecksum,
+  CandidateConfig,
+  CandidateProject
+} from "../current/config.js"
 
 const jsonFailure = (value: unknown, parents: Set<object>): string | undefined => {
   if (value === null || typeof value === "boolean" || typeof value === "string") return undefined

@@ -14,6 +14,14 @@ import {
   parseStrictJson
 } from "../../scripts/lib/strict-json.js"
 import { decodeConfig as decodeCandidateConfig } from "../../src/rewrite/config/config.js"
+import {
+  NonEmptyName,
+  WorkspaceRoot
+} from "../../src/rewrite/model/primitives.js"
+import {
+  Invocation,
+  compilePlan
+} from "../../src/rewrite/plan/compiler.js"
 import { decodeReleaseIntent } from "../../src/config/load.js"
 import { withTempDirectoryPromise } from "../helpers.js"
 
@@ -160,7 +168,7 @@ describe("frozen v6 configuration boundary", () => {
     for (const value of values) expect(() => assertJsonValue(value)).toThrow()
   })
 
-  test("Plan 174 activates the private value-only candidate decoder", async () => {
+  test("candidate value API accepts every canonical fixture without path identity", async () => {
     const input = {
       project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
       artifacts: [{ id: "fixture", path: "dist/fixture", format: "executable" }],
@@ -169,6 +177,15 @@ describe("frozen v6 configuration boundary", () => {
     expect(await Effect.runPromise(decodeCandidateConfig(input))).toEqual(
       await Effect.runPromise(decodeCandidateConfig(JSON.parse(JSON.stringify(input))))
     )
+    for (const path of fixturePaths) {
+      const value = parseStrictJson(readFileSync(join(root, path), "utf8"))
+      const accepted = await Effect.runPromise(compilePlan(value, Invocation.make({
+        workspace: WorkspaceRoot.make(root),
+        commit: NonEmptyName.make("ignored-in-favor-of-config"),
+        snapshot: false
+      })))
+      expect(String(accepted.plan.identity.commit)).toBe("0123456789abcdef")
+    }
     for (const value of [
       "release.json",
       { ...input, configPath: "release.json" },
@@ -204,5 +221,31 @@ describe("frozen v6 configuration boundary", () => {
     }
     const generic = readFileSync(join(root, fixturePaths[2]!), "utf8")
     expect(generic).toContain("\"content\"")
+  })
+
+  test("candidate rejects injected preset machinery but retains generic typed content", async () => {
+    for (const path of fixturePaths.filter((item) => /homebrew|scoop/u.test(item))) {
+      const value = parseStrictJson(readFileSync(join(root, path), "utf8")) as {
+        readonly publish: Record<string, object>
+      }
+      const preset = path.includes("homebrew") ? "homebrew" : "scoop"
+      for (const key of ["renderer", "template", "adapter", "authority"]) {
+        const altered = {
+          ...value,
+          publish: {
+            ...value.publish,
+            [preset]: { ...value.publish[preset], [key]: "injected" }
+          }
+        }
+        expect((await Effect.runPromise(
+          decodeCandidateConfig(altered).pipe(Effect.flip)
+        ))._tag).toBe("ConfigDecodeError")
+      }
+    }
+    const generic = parseStrictJson(readFileSync(join(root, fixturePaths[2]!), "utf8"))
+    const decoded = await Effect.runPromise(decodeCandidateConfig(generic))
+    expect(decoded.catalogs?.[0]?.content).toEqual([
+      "{\"name\":\"fixture\",\"version\":\"{version}\"}\n"
+    ])
   })
 })

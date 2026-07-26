@@ -50,9 +50,25 @@
       "commands": [
         ["bun", "run", "check"],
         ["bun", "test"],
+        ["bun", "run", "check:import-rules"],
+        ["bun", "run", "check:loc"],
         ["bun", "run", "check:source-budget", "--", "--milestone", "PORT"],
         ["bun", "run", "check:architecture", "--", "--milestone", "PORT"],
-        ["bun", "run", "check:parity", "--", "--bootstrap"]
+        ["bun", "run", "check:tree-shaking"],
+        ["bun", "run", "build"],
+        ["bun", "run", "check:examples"],
+        ["bun", "run", "check:readme"],
+        ["bun", "run", "check:package-exports"],
+        ["bun", "run", "check:app"],
+        ["bun", "run", "check:action"],
+        ["bun", "run", "check:self-release-config"],
+        ["bun", "run", "check:self-release-doctor"],
+        ["bun", "run", "test:oracle:current"],
+        ["bun", "run", "test:oracle:candidate"],
+        ["bun", "run", "test:driver-conformance"],
+        ["bun", "run", "test:fault-matrix"],
+        ["bun", "run", "check:deletion-map"],
+        ["bun", "run", "check:parity", "--", "--family", "baseline"]
       ]
     },
     "177": {

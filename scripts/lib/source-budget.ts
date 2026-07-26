@@ -417,7 +417,7 @@ const temporarySlices = (
       path.startsWith("src/rewrite/drivers/"))
   }
   if (milestone === "PORT") return {
-    "candidate-current-surface": selected((path) => !path.startsWith("src/rewrite/"))
+    "candidate-current-surface": selected((path) => path.startsWith("src/rewrite/current/"))
   }
   return {}
 }

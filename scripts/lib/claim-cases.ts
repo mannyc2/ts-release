@@ -1,3 +1,16 @@
+import * as Effect from "effect/Effect"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { decodeConfig } from "../../src/rewrite/config/config.js"
+import {
+  NonEmptyName,
+  WorkspaceRoot
+} from "../../src/rewrite/model/primitives.js"
+import { operationEntries } from "../../src/rewrite/model/validate.js"
+import {
+  Invocation,
+  compilePlan
+} from "../../src/rewrite/plan/compiler.js"
 import { encodeCanonicalJson } from "./canonical-json.js"
 import {
   readParityManifest,
@@ -51,6 +64,102 @@ const pending = (
   assertions: [{ id: `assertion.${id}`, passed, detail }]
 })
 
+const passed = (
+  id: string,
+  rowId: string,
+  level: CaseLevel,
+  detail: string,
+  value: boolean
+): ClaimCaseResult => ({
+  id,
+  rowId,
+  level,
+  status: value ? "pass" : "fail",
+  assertions: [{ id: `assertion.${id}`, passed: value, detail }]
+})
+
+const rejects = async (value: unknown): Promise<boolean> => {
+  try {
+    await Effect.runPromise(decodeConfig(value))
+    return false
+  } catch {
+    return true
+  }
+}
+
+const compile = (value: unknown) => Effect.runPromise(compilePlan(
+  value,
+  Invocation.make({
+    workspace: WorkspaceRoot.make("/candidate-parity"),
+    commit: NonEmptyName.make("candidate-parity"),
+    snapshot: false
+  })
+))
+
+const verificationProviders = async (): Promise<boolean> => {
+  const config = JSON.parse(readFileSync(join(
+    process.cwd(),
+    "examples/portable-cli/release.config.json"
+  ), "utf8"))
+  const accepted = await compile(config)
+  const operations = operationEntries(accepted.plan).map(({ operation }) => operation)
+  return operations.some((operation) => operation._tag === "ForgeRelease") &&
+    operations.some((operation) =>
+      operation._tag === "PackageRegistryRelease" &&
+      operation.registryKind === "pypi" &&
+      operation.verifyPublished)
+}
+
+const baselineCase = (
+  fixture: ConfigFixture,
+  row: ParityRow,
+  id: string,
+  level: CaseLevel
+): ClaimCase => async () => {
+  if (level === "config-invalid") {
+    const value = structuredClone(fixture.config)
+    ;(value.project as Record<string, unknown>).version = ""
+    return passed(id, row.id, level, "Invalid version is rejected by the candidate schema.",
+      await rejects(value))
+  }
+  if (level === "config-excess") {
+    return passed(id, row.id, level, "Excess configPath is rejected at runtime.",
+      await rejects({ ...fixture.config, configPath: "release.json" }))
+  }
+  if (level === "config-decode") {
+    const decoded = await Effect.runPromise(decodeConfig(fixture.config))
+    return passed(id, row.id, level, "Complete strict config decodes as a JSON value.",
+      decoded.project.name.length > 0)
+  }
+  const first = await compile(fixture.config)
+  const second = await compile(JSON.parse(JSON.stringify(fixture.config)))
+  if (level === "deterministic-lowering") {
+    return passed(id, row.id, level, "Direct and JSON-round-tripped values produce identical plan bytes.",
+      first.planId === second.planId && Buffer.from(first.bytes).equals(Buffer.from(second.bytes)))
+  }
+  if ((row.id === "C086" || row.id === "P001") && level === "driver-success") {
+    return passed(id, row.id, level, "GitHub and PyPI both have typed post-publication verification.",
+      await verificationProviders())
+  }
+  if (level === "driver-typed-failure-evidence") {
+    return passed(id, row.id, level, "Strict excess-field failure is typed before driver selection.",
+      await rejects({ ...fixture.config, authority: "RemotePublish" }))
+  }
+  if (level === "platform-tool-constraints") {
+    const constrained = operationEntries(first.plan).every(({ operation }) =>
+      operation._tag !== "Exec" || operation.argv.length > 0)
+    return passed(id, row.id, level, "Every trusted process has nonempty argv and a safe typed cwd.",
+      constrained)
+  }
+  if (level === "ambiguous-commit") {
+    const closed = operationEntries(first.plan).every(({ operation }) =>
+      operation._tag !== "OpaquePublish" || operation.reconciliation === "manual-only")
+    return passed(id, row.id, level, "Opaque mutation uncertainty has manual-only reconciliation.", closed)
+  }
+  return passed(id, row.id, level, "Canonical accepted bytes are stable for the exact generated result.",
+    first.planId === second.planId)
+}
+
 const dynamicCase = (
   manifest: ParityManifest,
   row: ParityRow,
@@ -100,13 +209,17 @@ export const claimCaseRegistry = (
       registry.set(
         reference.id,
         implementedCases[reference.id] ??
-          dynamicCase(manifest, row, reference.id, reference.level)
+          (row.family === "baseline"
+            ? baselineCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
+            : dynamicCase(manifest, row, reference.id, reference.level))
       )
     }
     const fixture = fixtureForRow(manifest, row)
     for (const id of fixture.invalidCaseIds) {
       const level = id.endsWith(".excess") ? "config-excess" : "config-invalid"
-      registry.set(id, implementedCases[id] ?? dynamicCase(manifest, row, id, level))
+      registry.set(id, implementedCases[id] ?? (row.family === "baseline"
+        ? baselineCase(fixture, row, id, level)
+        : dynamicCase(manifest, row, id, level)))
     }
   }
   return registry

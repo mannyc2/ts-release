@@ -336,6 +336,9 @@ const verifyReport = (
   const expectedHashes = {
     architecture: jsonHashAt(commit, "contracts/rewrite/architecture.json"),
     configBoundary: jsonHashAt(commit, "contracts/rewrite/config-boundary.json"),
+    ...(gates.order.indexOf(plan) < gates.order.indexOf("176") ? {} : {
+      deletionMap: jsonHashAt(commit, "contracts/rewrite/deletion-map.json")
+    }),
     manifest: jsonHashAt(commit, "parity/goreleaser-v2.17.0/manifest.json"),
     oracle: jsonHashAt(commit, "contracts/rewrite/oracle.json"),
     planGates: jsonHashAt(commit, gatePath),
@@ -387,8 +390,26 @@ const buildReport = async (
   gates: GateContract,
   commands: ReadonlyArray<CommandResult>
 ): Promise<Readonly<Record<string, JsonValue>>> => {
-  const sourceMilestone = plan === "173" ? "M0" : plan === "174" ? "M1" : plan === "175" ? "M2" : "PARITY"
-  const propertyMilestone = ["173", "174"].includes(plan) ? "contract" : plan === "175" ? "runner" : "PARITY"
+  const sourceMilestone = plan === "173"
+    ? "M0"
+    : plan === "174"
+    ? "M1"
+    : plan === "175"
+    ? "M2"
+    : plan === "176"
+    ? "PORT"
+    : plan === "177"
+    ? "M6"
+    : "PARITY"
+  const propertyMilestone = ["173", "174"].includes(plan)
+    ? "contract"
+    : ["175", "176"].includes(plan)
+    ? "runner"
+    : plan === "177"
+    ? "cutover"
+    : plan === "183"
+    ? "distributed"
+    : "PARITY"
   const commit = git(["rev-parse", "HEAD"])
   const tree = git(["rev-parse", "HEAD^{tree}"])
   const claimRun = await runClaimCases(root)
@@ -418,6 +439,9 @@ const buildReport = async (
     contractHashes: {
       architecture: jsonHash("contracts/rewrite/architecture.json"),
       configBoundary: jsonHash("contracts/rewrite/config-boundary.json"),
+      ...(gates.order.indexOf(plan) < gates.order.indexOf("176") ? {} : {
+        deletionMap: jsonHash("contracts/rewrite/deletion-map.json")
+      }),
       manifest: jsonHash("parity/goreleaser-v2.17.0/manifest.json"),
       oracle: jsonHash("contracts/rewrite/oracle.json"),
       planGates: jsonHash(gatePath),

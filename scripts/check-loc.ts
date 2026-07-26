@@ -3,9 +3,10 @@ import { join } from "node:path"
 import { cwd, exit } from "node:process"
 import { collectTypeScriptFiles } from "./lib/walk.js"
 
-// Plan 143 Stage A.6: the enforcement the LOC metric never had.
-// Budgets are ceilings and only ratchet DOWN. Raising one requires a
-// plans/ entry explaining which feature paid for it.
+// Plan 143's legacy physical ruler remains frozen over incumbent surfaces.
+// The rewrite program is measured by contracts/rewrite/source-budget.json,
+// which classifies semantic Product/Oracle/Tooling lines and has milestone
+// ceilings. Counting it here as well would mix two incompatible rulers.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src", 6807], // raised by plan 169.2 (the plan integrity boundary: policy table, reference totality, readReleasePlan)
   ["src/config", 229], // raised by plan 163 (four project metadata fields)
@@ -29,13 +30,33 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
 ]
 
 const root = cwd()
+const rewriteScripts = new Set([
+  "check-architecture.ts", "check-cutover.ts", "check-deletion-map.ts",
+  "check-parity.ts", "check-rewrite-plan.ts", "check-source-budget.ts",
+  "check-superiority.ts", "run-claim-cases.ts", "run-driver-conformance.ts",
+  "run-fault-matrix.ts", "run-oracle.ts"
+])
 
 const directoryLines = (directory: string): number => {
   const path = join(root, directory)
   if (!existsSync(path)) {
     return 0
   }
-  return collectTypeScriptFiles(path)
+  return collectTypeScriptFiles(path).filter((file) => {
+    if (directory === "src" && file.startsWith(join(path, "rewrite"))) return false
+    if (directory === "test" && file.startsWith(join(path, "rewrite"))) return false
+    if (directory !== "scripts") return true
+    const relative = file.slice(path.length + 1)
+    return !rewriteScripts.has(relative) &&
+      !relative.startsWith("lib/architecture.") &&
+      !relative.startsWith("lib/canonical-json.") &&
+      !relative.startsWith("lib/claim-cases.") &&
+      !relative.startsWith("lib/parity.") &&
+      !relative.startsWith("lib/repository-snapshot.") &&
+      !relative.startsWith("lib/source-budget.") &&
+      !relative.startsWith("lib/strict-json.") &&
+      !relative.startsWith("lib/superiority.")
+  })
     .reduce((sum, file) => sum + readFileSync(file, "utf8").split("\n").length, 0)
 }
 

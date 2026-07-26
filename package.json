@@ -69,6 +69,7 @@
     "check:superiority": "bun run scripts/check-superiority.ts",
     "check:parity": "bun run scripts/check-parity.ts",
     "check:cutover": "bun run scripts/check-cutover.ts",
+    "check:deletion-map": "bun run scripts/check-deletion-map.ts",
     "check:rewrite-plan": "bun run scripts/check-rewrite-plan.ts",
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",

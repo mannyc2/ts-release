@@ -201,8 +201,9 @@ const rewriteConcept = (path: string): string | undefined => {
 const rewriteDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   model: ["model"],
   recipes: ["recipes", "model"],
-  config: ["config", "model", "recipes"],
-  plan: ["plan", "model", "config", "recipes"],
+  current: ["current", "model"],
+  config: ["config", "model", "recipes", "current"],
+  plan: ["plan", "model", "config", "recipes", "current"],
   drivers: ["drivers", "model"],
   apply: ["apply", "model", "plan", "drivers"]
 }

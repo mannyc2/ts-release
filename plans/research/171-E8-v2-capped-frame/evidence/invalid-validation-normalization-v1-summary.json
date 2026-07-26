@@ -1,0 +1,14 @@
+{
+  "normalizedAt": "2026-07-26T14:38:24.065Z",
+  "rows": 14186,
+  "eligibleRows": 8832,
+  "excludedRows": 5354,
+  "invocationsBefore": 16520,
+  "invocationsAfter": 12250,
+  "exclusions": {
+    "NO_VISIBLE_INVOCATION": 5322,
+    "PARSE_FAILURE": 32
+  },
+  "sourceSha256": "26e6548fa9d49f1898c4c165ffae1fcb57c24ff94c8a18381da170ff839d0b91",
+  "outputSha256": "f8e483006f2881e270da18af7c56aef6d20ca289096201cdd7389848669f67cf"
+}

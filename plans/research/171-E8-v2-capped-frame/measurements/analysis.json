@@ -1,0 +1,3615 @@
+{
+  "generatedAt": "2026-07-26T14:47:20.092Z",
+  "frame": {
+    "queries": 28,
+    "usablePages": 157,
+    "failedPages": 0,
+    "rawSearchRows": 14432,
+    "distinctRepoPaths": 14186,
+    "cappedQueries": 13,
+    "queryCoverage": [
+      {
+        "queryId": "Q001",
+        "tool": "goreleaser",
+        "exactQ": "goreleaser path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 5656,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q002",
+        "tool": "goreleaser",
+        "exactQ": "goreleaser path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 3332,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q003",
+        "tool": "semantic-release",
+        "exactQ": "semantic-release path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 16464,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q004",
+        "tool": "semantic-release",
+        "exactQ": "semantic-release path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1940,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q005",
+        "tool": "changesets",
+        "exactQ": "changeset path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 5120,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q006",
+        "tool": "changesets",
+        "exactQ": "changeset path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1416,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q007",
+        "tool": "release-please",
+        "exactQ": "release-please path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 13584,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q008",
+        "tool": "release-please",
+        "exactQ": "release-please path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1196,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q009",
+        "tool": "release-it",
+        "exactQ": "release-it path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1082,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q010",
+        "tool": "release-it",
+        "exactQ": "release-it path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2
+        ],
+        "usablePages": 2,
+        "failedPages": 0,
+        "accessibleResults": 130,
+        "reportedTotalCount": 119,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q011",
+        "tool": "jreleaser",
+        "exactQ": "jreleaser path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1248,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q012",
+        "tool": "jreleaser",
+        "exactQ": "jreleaser path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2
+        ],
+        "usablePages": 2,
+        "failedPages": 0,
+        "accessibleResults": 111,
+        "reportedTotalCount": 109,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q013",
+        "tool": "cargo-dist",
+        "exactQ": "cargo-dist path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1352,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q014",
+        "tool": "cargo-dist",
+        "exactQ": "cargo-dist path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 17,
+        "reportedTotalCount": 17,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q015",
+        "tool": "cargo-dist",
+        "exactQ": "\"cargo dist\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "usablePages": 6,
+        "failedPages": 0,
+        "accessibleResults": 509,
+        "reportedTotalCount": 316,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q016",
+        "tool": "cargo-dist",
+        "exactQ": "\"cargo dist\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 5,
+        "reportedTotalCount": 5,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q017",
+        "tool": "release-plz",
+        "exactQ": "release-plz path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 1228,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q018",
+        "tool": "release-plz",
+        "exactQ": "release-plz path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3
+        ],
+        "usablePages": 3,
+        "failedPages": 0,
+        "accessibleResults": 224,
+        "reportedTotalCount": 203,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q019",
+        "tool": "np",
+        "exactQ": "\"npx np\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "usablePages": 10,
+        "failedPages": 0,
+        "accessibleResults": 1000,
+        "reportedTotalCount": 874,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q020",
+        "tool": "np",
+        "exactQ": "\"npx np\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2
+        ],
+        "usablePages": 2,
+        "failedPages": 0,
+        "accessibleResults": 143,
+        "reportedTotalCount": 143,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q021",
+        "tool": "np",
+        "exactQ": "\"bunx np\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1,
+          2,
+          3
+        ],
+        "usablePages": 3,
+        "failedPages": 0,
+        "accessibleResults": 237,
+        "reportedTotalCount": 184,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q022",
+        "tool": "np",
+        "exactQ": "\"bunx np\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 22,
+        "reportedTotalCount": 22,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q023",
+        "tool": "np",
+        "exactQ": "\"pnpm exec np\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 32,
+        "reportedTotalCount": 32,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q024",
+        "tool": "np",
+        "exactQ": "\"pnpm exec np\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": false,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 2,
+        "reportedTotalCount": 2,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q025",
+        "tool": "ts-release",
+        "exactQ": "\"@mannyc1/ts-release\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q026",
+        "tool": "ts-release",
+        "exactQ": "\"@mannyc1/ts-release\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q027",
+        "tool": "ts-release",
+        "exactQ": "\"mannyc2/ts-release-action\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q028",
+        "tool": "ts-release",
+        "exactQ": "\"mannyc2/ts-release-action\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      }
+    ]
+  },
+  "achieved": {
+    "total": 517,
+    "target": 600,
+    "byBand": [
+      {
+        "band": "B1",
+        "target": 150,
+        "achieved": 150,
+        "shortfall": 0
+      },
+      {
+        "band": "B2",
+        "target": 150,
+        "achieved": 150,
+        "shortfall": 0
+      },
+      {
+        "band": "B3",
+        "target": 150,
+        "achieved": 150,
+        "shortfall": 0
+      },
+      {
+        "band": "B4",
+        "target": 150,
+        "achieved": 67,
+        "shortfall": 83
+      }
+    ],
+    "representedTools": [
+      "cargo-dist",
+      "changesets",
+      "goreleaser",
+      "jreleaser",
+      "release-it",
+      "release-please",
+      "release-plz",
+      "semantic-release"
+    ],
+    "representedToolCount": 8,
+    "byTool": [
+      {
+        "tool": "cargo-dist",
+        "workflows": 63
+      },
+      {
+        "tool": "changesets",
+        "workflows": 90
+      },
+      {
+        "tool": "goreleaser",
+        "workflows": 103
+      },
+      {
+        "tool": "jreleaser",
+        "workflows": 53
+      },
+      {
+        "tool": "release-it",
+        "workflows": 44
+      },
+      {
+        "tool": "release-please",
+        "workflows": 43
+      },
+      {
+        "tool": "release-plz",
+        "workflows": 42
+      },
+      {
+        "tool": "semantic-release",
+        "workflows": 80
+      }
+    ],
+    "byToolBand": [
+      {
+        "tool": "cargo-dist",
+        "band": "B1",
+        "workflows": 17
+      },
+      {
+        "tool": "cargo-dist",
+        "band": "B2",
+        "workflows": 19
+      },
+      {
+        "tool": "cargo-dist",
+        "band": "B3",
+        "workflows": 17
+      },
+      {
+        "tool": "cargo-dist",
+        "band": "B4",
+        "workflows": 10
+      },
+      {
+        "tool": "changesets",
+        "band": "B1",
+        "workflows": 20
+      },
+      {
+        "tool": "changesets",
+        "band": "B2",
+        "workflows": 25
+      },
+      {
+        "tool": "changesets",
+        "band": "B3",
+        "workflows": 24
+      },
+      {
+        "tool": "changesets",
+        "band": "B4",
+        "workflows": 21
+      },
+      {
+        "tool": "goreleaser",
+        "band": "B1",
+        "workflows": 23
+      },
+      {
+        "tool": "goreleaser",
+        "band": "B2",
+        "workflows": 30
+      },
+      {
+        "tool": "goreleaser",
+        "band": "B3",
+        "workflows": 37
+      },
+      {
+        "tool": "goreleaser",
+        "band": "B4",
+        "workflows": 13
+      },
+      {
+        "tool": "jreleaser",
+        "band": "B1",
+        "workflows": 16
+      },
+      {
+        "tool": "jreleaser",
+        "band": "B2",
+        "workflows": 15
+      },
+      {
+        "tool": "jreleaser",
+        "band": "B3",
+        "workflows": 15
+      },
+      {
+        "tool": "jreleaser",
+        "band": "B4",
+        "workflows": 7
+      },
+      {
+        "tool": "release-it",
+        "band": "B1",
+        "workflows": 12
+      },
+      {
+        "tool": "release-it",
+        "band": "B2",
+        "workflows": 14
+      },
+      {
+        "tool": "release-it",
+        "band": "B3",
+        "workflows": 13
+      },
+      {
+        "tool": "release-it",
+        "band": "B4",
+        "workflows": 5
+      },
+      {
+        "tool": "release-please",
+        "band": "B1",
+        "workflows": 18
+      },
+      {
+        "tool": "release-please",
+        "band": "B2",
+        "workflows": 11
+      },
+      {
+        "tool": "release-please",
+        "band": "B3",
+        "workflows": 11
+      },
+      {
+        "tool": "release-please",
+        "band": "B4",
+        "workflows": 3
+      },
+      {
+        "tool": "release-plz",
+        "band": "B1",
+        "workflows": 13
+      },
+      {
+        "tool": "release-plz",
+        "band": "B2",
+        "workflows": 14
+      },
+      {
+        "tool": "release-plz",
+        "band": "B3",
+        "workflows": 12
+      },
+      {
+        "tool": "release-plz",
+        "band": "B4",
+        "workflows": 3
+      },
+      {
+        "tool": "semantic-release",
+        "band": "B1",
+        "workflows": 31
+      },
+      {
+        "tool": "semantic-release",
+        "band": "B2",
+        "workflows": 23
+      },
+      {
+        "tool": "semantic-release",
+        "band": "B3",
+        "workflows": 21
+      },
+      {
+        "tool": "semantic-release",
+        "band": "B4",
+        "workflows": 5
+      }
+    ]
+  },
+  "thresholds": {
+    "eligible": true,
+    "eligibilityRule": "n>=200 and at least five fixed tools represented",
+    "independentVerbs": {
+      "count": 1,
+      "denominator": 517,
+      "share": 0.0019342359767891683,
+      "threshold": 0.35,
+      "decision": "DOES_NOT_EXCEED_HEURISTIC"
+    },
+    "strictConfirmedManual": {
+      "count": 71,
+      "denominator": 517,
+      "share": 0.13733075435203096,
+      "threshold": 0.1,
+      "decision": "NOT_BELOW_HEURISTIC"
+    },
+    "confirmedPlusPotential": {
+      "count": 103,
+      "denominator": 517,
+      "share": 0.19922630560928434
+    }
+  },
+  "shapes": {
+    "overall": [
+      {
+        "dimension": "overall",
+        "value": "all",
+        "shape": "SINGLE_VERB",
+        "count": 430,
+        "denominator": 517,
+        "share": 0.8317214700193424
+      },
+      {
+        "dimension": "overall",
+        "value": "all",
+        "shape": "PLAN_THEN_ACT",
+        "count": 69,
+        "denominator": 517,
+        "share": 0.13346228239845262
+      },
+      {
+        "dimension": "overall",
+        "value": "all",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 1,
+        "denominator": 517,
+        "share": 0.0019342359767891683
+      },
+      {
+        "dimension": "overall",
+        "value": "all",
+        "shape": "OTHER",
+        "count": 17,
+        "denominator": 517,
+        "share": 0.03288201160541586
+      }
+    ],
+    "byTool": [
+      {
+        "dimension": "tool",
+        "value": "cargo-dist",
+        "shape": "SINGLE_VERB",
+        "count": 2,
+        "denominator": 63,
+        "share": 0.031746031746031744
+      },
+      {
+        "dimension": "tool",
+        "value": "cargo-dist",
+        "shape": "PLAN_THEN_ACT",
+        "count": 57,
+        "denominator": 63,
+        "share": 0.9047619047619048
+      },
+      {
+        "dimension": "tool",
+        "value": "cargo-dist",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 63,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "cargo-dist",
+        "shape": "OTHER",
+        "count": 4,
+        "denominator": 63,
+        "share": 0.06349206349206349
+      },
+      {
+        "dimension": "tool",
+        "value": "changesets",
+        "shape": "SINGLE_VERB",
+        "count": 75,
+        "denominator": 90,
+        "share": 0.8333333333333334
+      },
+      {
+        "dimension": "tool",
+        "value": "changesets",
+        "shape": "PLAN_THEN_ACT",
+        "count": 10,
+        "denominator": 90,
+        "share": 0.1111111111111111
+      },
+      {
+        "dimension": "tool",
+        "value": "changesets",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 1,
+        "denominator": 90,
+        "share": 0.011111111111111112
+      },
+      {
+        "dimension": "tool",
+        "value": "changesets",
+        "shape": "OTHER",
+        "count": 4,
+        "denominator": 90,
+        "share": 0.044444444444444446
+      },
+      {
+        "dimension": "tool",
+        "value": "goreleaser",
+        "shape": "SINGLE_VERB",
+        "count": 101,
+        "denominator": 103,
+        "share": 0.9805825242718447
+      },
+      {
+        "dimension": "tool",
+        "value": "goreleaser",
+        "shape": "PLAN_THEN_ACT",
+        "count": 0,
+        "denominator": 103,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "goreleaser",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 103,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "goreleaser",
+        "shape": "OTHER",
+        "count": 2,
+        "denominator": 103,
+        "share": 0.019417475728155338
+      },
+      {
+        "dimension": "tool",
+        "value": "jreleaser",
+        "shape": "SINGLE_VERB",
+        "count": 45,
+        "denominator": 53,
+        "share": 0.8490566037735849
+      },
+      {
+        "dimension": "tool",
+        "value": "jreleaser",
+        "shape": "PLAN_THEN_ACT",
+        "count": 2,
+        "denominator": 53,
+        "share": 0.03773584905660377
+      },
+      {
+        "dimension": "tool",
+        "value": "jreleaser",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 53,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "jreleaser",
+        "shape": "OTHER",
+        "count": 6,
+        "denominator": 53,
+        "share": 0.11320754716981132
+      },
+      {
+        "dimension": "tool",
+        "value": "release-it",
+        "shape": "SINGLE_VERB",
+        "count": 44,
+        "denominator": 44,
+        "share": 1
+      },
+      {
+        "dimension": "tool",
+        "value": "release-it",
+        "shape": "PLAN_THEN_ACT",
+        "count": 0,
+        "denominator": 44,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-it",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 44,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-it",
+        "shape": "OTHER",
+        "count": 0,
+        "denominator": 44,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-please",
+        "shape": "SINGLE_VERB",
+        "count": 41,
+        "denominator": 43,
+        "share": 0.9534883720930233
+      },
+      {
+        "dimension": "tool",
+        "value": "release-please",
+        "shape": "PLAN_THEN_ACT",
+        "count": 0,
+        "denominator": 43,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-please",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 43,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-please",
+        "shape": "OTHER",
+        "count": 2,
+        "denominator": 43,
+        "share": 0.046511627906976744
+      },
+      {
+        "dimension": "tool",
+        "value": "release-plz",
+        "shape": "SINGLE_VERB",
+        "count": 42,
+        "denominator": 42,
+        "share": 1
+      },
+      {
+        "dimension": "tool",
+        "value": "release-plz",
+        "shape": "PLAN_THEN_ACT",
+        "count": 0,
+        "denominator": 42,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-plz",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 42,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "release-plz",
+        "shape": "OTHER",
+        "count": 0,
+        "denominator": 42,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "semantic-release",
+        "shape": "SINGLE_VERB",
+        "count": 80,
+        "denominator": 80,
+        "share": 1
+      },
+      {
+        "dimension": "tool",
+        "value": "semantic-release",
+        "shape": "PLAN_THEN_ACT",
+        "count": 0,
+        "denominator": 80,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "semantic-release",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 80,
+        "share": 0
+      },
+      {
+        "dimension": "tool",
+        "value": "semantic-release",
+        "shape": "OTHER",
+        "count": 0,
+        "denominator": 80,
+        "share": 0
+      }
+    ],
+    "byBand": [
+      {
+        "dimension": "band",
+        "value": "B1",
+        "shape": "SINGLE_VERB",
+        "count": 128,
+        "denominator": 150,
+        "share": 0.8533333333333334
+      },
+      {
+        "dimension": "band",
+        "value": "B1",
+        "shape": "PLAN_THEN_ACT",
+        "count": 18,
+        "denominator": 150,
+        "share": 0.12
+      },
+      {
+        "dimension": "band",
+        "value": "B1",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 150,
+        "share": 0
+      },
+      {
+        "dimension": "band",
+        "value": "B1",
+        "shape": "OTHER",
+        "count": 4,
+        "denominator": 150,
+        "share": 0.02666666666666667
+      },
+      {
+        "dimension": "band",
+        "value": "B2",
+        "shape": "SINGLE_VERB",
+        "count": 121,
+        "denominator": 150,
+        "share": 0.8066666666666666
+      },
+      {
+        "dimension": "band",
+        "value": "B2",
+        "shape": "PLAN_THEN_ACT",
+        "count": 23,
+        "denominator": 150,
+        "share": 0.15333333333333332
+      },
+      {
+        "dimension": "band",
+        "value": "B2",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 150,
+        "share": 0
+      },
+      {
+        "dimension": "band",
+        "value": "B2",
+        "shape": "OTHER",
+        "count": 6,
+        "denominator": 150,
+        "share": 0.04
+      },
+      {
+        "dimension": "band",
+        "value": "B3",
+        "shape": "SINGLE_VERB",
+        "count": 127,
+        "denominator": 150,
+        "share": 0.8466666666666667
+      },
+      {
+        "dimension": "band",
+        "value": "B3",
+        "shape": "PLAN_THEN_ACT",
+        "count": 18,
+        "denominator": 150,
+        "share": 0.12
+      },
+      {
+        "dimension": "band",
+        "value": "B3",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 1,
+        "denominator": 150,
+        "share": 0.006666666666666667
+      },
+      {
+        "dimension": "band",
+        "value": "B3",
+        "shape": "OTHER",
+        "count": 4,
+        "denominator": 150,
+        "share": 0.02666666666666667
+      },
+      {
+        "dimension": "band",
+        "value": "B4",
+        "shape": "SINGLE_VERB",
+        "count": 54,
+        "denominator": 67,
+        "share": 0.8059701492537313
+      },
+      {
+        "dimension": "band",
+        "value": "B4",
+        "shape": "PLAN_THEN_ACT",
+        "count": 10,
+        "denominator": 67,
+        "share": 0.14925373134328357
+      },
+      {
+        "dimension": "band",
+        "value": "B4",
+        "shape": "INDEPENDENT_VERBS",
+        "count": 0,
+        "denominator": 67,
+        "share": 0
+      },
+      {
+        "dimension": "band",
+        "value": "B4",
+        "shape": "OTHER",
+        "count": 3,
+        "denominator": 67,
+        "share": 0.04477611940298507
+      }
+    ]
+  },
+  "gates": [
+    {
+      "dimension": "overall",
+      "value": "all",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 71,
+      "denominator": 517,
+      "share": 0.13733075435203096
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 32,
+      "denominator": 517,
+      "share": 0.061895551257253385
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "gate": "AUTOMATIC_GATED",
+      "count": 414,
+      "denominator": 517,
+      "share": 0.8007736943907157
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 517,
+      "share": 0
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 517,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 3,
+      "denominator": 63,
+      "share": 0.047619047619047616
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 0,
+      "denominator": 63,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "gate": "AUTOMATIC_GATED",
+      "count": 60,
+      "denominator": 63,
+      "share": 0.9523809523809523
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 63,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 63,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 5,
+      "denominator": 90,
+      "share": 0.05555555555555555
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 7,
+      "denominator": 90,
+      "share": 0.07777777777777778
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "gate": "AUTOMATIC_GATED",
+      "count": 78,
+      "denominator": 90,
+      "share": 0.8666666666666667
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 90,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 90,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 6,
+      "denominator": 103,
+      "share": 0.05825242718446602
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "gate": "AUTOMATIC_GATED",
+      "count": 97,
+      "denominator": 103,
+      "share": 0.941747572815534
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 26,
+      "denominator": 53,
+      "share": 0.49056603773584906
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 1,
+      "denominator": 53,
+      "share": 0.018867924528301886
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "gate": "AUTOMATIC_GATED",
+      "count": 26,
+      "denominator": 53,
+      "share": 0.49056603773584906
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 53,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 53,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 25,
+      "denominator": 44,
+      "share": 0.5681818181818182
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "gate": "AUTOMATIC_GATED",
+      "count": 19,
+      "denominator": 44,
+      "share": 0.4318181818181818
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "gate": "AUTOMATIC_GATED",
+      "count": 41,
+      "denominator": 43,
+      "share": 0.9534883720930233
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 43,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 43,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 1,
+      "denominator": 42,
+      "share": 0.023809523809523808
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 8,
+      "denominator": 42,
+      "share": 0.19047619047619047
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "gate": "AUTOMATIC_GATED",
+      "count": 33,
+      "denominator": 42,
+      "share": 0.7857142857142857
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 10,
+      "denominator": 80,
+      "share": 0.125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 9,
+      "denominator": 80,
+      "share": 0.1125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "gate": "AUTOMATIC_GATED",
+      "count": 61,
+      "denominator": 80,
+      "share": 0.7625
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 80,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 80,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 13,
+      "denominator": 150,
+      "share": 0.08666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 6,
+      "denominator": 150,
+      "share": 0.04
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "gate": "AUTOMATIC_GATED",
+      "count": 131,
+      "denominator": 150,
+      "share": 0.8733333333333333
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 21,
+      "denominator": 150,
+      "share": 0.14
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 10,
+      "denominator": 150,
+      "share": 0.06666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "gate": "AUTOMATIC_GATED",
+      "count": 119,
+      "denominator": 150,
+      "share": 0.7933333333333333
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 25,
+      "denominator": 150,
+      "share": 0.16666666666666666
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 12,
+      "denominator": 150,
+      "share": 0.08
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "gate": "AUTOMATIC_GATED",
+      "count": 113,
+      "denominator": 150,
+      "share": 0.7533333333333333
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "gate": "CONFIRMED_MANUAL",
+      "count": 12,
+      "denominator": 67,
+      "share": 0.1791044776119403
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "gate": "POTENTIAL_ENVIRONMENT_GATE",
+      "count": 4,
+      "denominator": 67,
+      "share": 0.05970149253731343
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "gate": "AUTOMATIC_GATED",
+      "count": 51,
+      "denominator": 67,
+      "share": 0.7611940298507462
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "gate": "NO_OBSERVED_GATE",
+      "count": 0,
+      "denominator": 67,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "gate": "UNRESOLVED_GATE",
+      "count": 0,
+      "denominator": 67,
+      "share": 0
+    }
+  ],
+  "gateSubtypes": [
+    {
+      "dimension": "overall",
+      "value": "all",
+      "subtype": "EXPLICIT_APPROVAL_ACTION_OR_JOB",
+      "count": 1,
+      "denominator": 517,
+      "share": 0.0019342359767891683
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 6,
+      "denominator": 517,
+      "share": 0.01160541586073501
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 37,
+      "denominator": 517,
+      "share": 0.07156673114119923
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 65,
+      "denominator": 517,
+      "share": 0.12572533849129594
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 3,
+      "denominator": 63,
+      "share": 0.047619047619047616
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 8,
+      "denominator": 90,
+      "share": 0.08888888888888889
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 5,
+      "denominator": 90,
+      "share": 0.05555555555555555
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 6,
+      "denominator": 103,
+      "share": 0.05825242718446602
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 3,
+      "denominator": 53,
+      "share": 0.05660377358490566
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 2,
+      "denominator": 53,
+      "share": 0.03773584905660377
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 23,
+      "denominator": 53,
+      "share": 0.4339622641509434
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 1,
+      "denominator": 44,
+      "share": 0.022727272727272728
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 2,
+      "denominator": 44,
+      "share": 0.045454545454545456
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 24,
+      "denominator": 44,
+      "share": 0.5454545454545454
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 1,
+      "denominator": 42,
+      "share": 0.023809523809523808
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 8,
+      "denominator": 42,
+      "share": 0.19047619047619047
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "subtype": "EXPLICIT_APPROVAL_ACTION_OR_JOB",
+      "count": 1,
+      "denominator": 80,
+      "share": 0.0125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 1,
+      "denominator": 80,
+      "share": 0.0125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 10,
+      "denominator": 80,
+      "share": 0.125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 9,
+      "denominator": 80,
+      "share": 0.1125
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "subtype": "EXPLICIT_APPROVAL_ACTION_OR_JOB",
+      "count": 1,
+      "denominator": 150,
+      "share": 0.006666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 3,
+      "denominator": 150,
+      "share": 0.02
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 8,
+      "denominator": 150,
+      "share": 0.05333333333333334
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 10,
+      "denominator": 150,
+      "share": 0.06666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 2,
+      "denominator": 150,
+      "share": 0.013333333333333334
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 12,
+      "denominator": 150,
+      "share": 0.08
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 19,
+      "denominator": 150,
+      "share": 0.12666666666666668
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "subtype": "PUBLISH_JOB_DISPATCH_CONDITION",
+      "count": 1,
+      "denominator": 150,
+      "share": 0.006666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 12,
+      "denominator": 150,
+      "share": 0.08
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 24,
+      "denominator": 150,
+      "share": 0.16
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "subtype": "UNVERIFIED_ENVIRONMENT",
+      "count": 5,
+      "denominator": 67,
+      "share": 0.07462686567164178
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "subtype": "WORKFLOW_DISPATCH_ONLY",
+      "count": 12,
+      "denominator": 67,
+      "share": 0.1791044776119403
+    }
+  ],
+  "recovery": [
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "concurrency",
+      "count": 134,
+      "denominator": 517,
+      "share": 0.25918762088974856
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "retry",
+      "count": 6,
+      "denominator": 517,
+      "share": 0.01160541586073501
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 13,
+      "denominator": 517,
+      "share": 0.025145067698259187
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 5,
+      "denominator": 517,
+      "share": 0.009671179883945842
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 517,
+      "share": 0
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "skipIfPublished",
+      "count": 20,
+      "denominator": 517,
+      "share": 0.03868471953578337
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "persistedArtifactOrEvidence",
+      "count": 136,
+      "denominator": 517,
+      "share": 0.26305609284332687
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "manualRerunOnly",
+      "count": 65,
+      "denominator": 517,
+      "share": 0.12572533849129594
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "noVisibleGuard",
+      "count": 228,
+      "denominator": 517,
+      "share": 0.4410058027079304
+    },
+    {
+      "dimension": "overall",
+      "value": "all",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 517,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "concurrency",
+      "count": 3,
+      "denominator": 63,
+      "share": 0.047619047619047616
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "retry",
+      "count": 1,
+      "denominator": 63,
+      "share": 0.015873015873015872
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 1,
+      "denominator": 63,
+      "share": 0.015873015873015872
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 63,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 63,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "skipIfPublished",
+      "count": 1,
+      "denominator": 63,
+      "share": 0.015873015873015872
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "persistedArtifactOrEvidence",
+      "count": 54,
+      "denominator": 63,
+      "share": 0.8571428571428571
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "manualRerunOnly",
+      "count": 3,
+      "denominator": 63,
+      "share": 0.047619047619047616
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "noVisibleGuard",
+      "count": 8,
+      "denominator": 63,
+      "share": 0.12698412698412698
+    },
+    {
+      "dimension": "tool",
+      "value": "cargo-dist",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 63,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "concurrency",
+      "count": 59,
+      "denominator": 90,
+      "share": 0.6555555555555556
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "retry",
+      "count": 2,
+      "denominator": 90,
+      "share": 0.022222222222222223
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 2,
+      "denominator": 90,
+      "share": 0.022222222222222223
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 2,
+      "denominator": 90,
+      "share": 0.022222222222222223
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 90,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "skipIfPublished",
+      "count": 6,
+      "denominator": 90,
+      "share": 0.06666666666666667
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "persistedArtifactOrEvidence",
+      "count": 7,
+      "denominator": 90,
+      "share": 0.07777777777777778
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "manualRerunOnly",
+      "count": 5,
+      "denominator": 90,
+      "share": 0.05555555555555555
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "noVisibleGuard",
+      "count": 27,
+      "denominator": 90,
+      "share": 0.3
+    },
+    {
+      "dimension": "tool",
+      "value": "changesets",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 90,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "concurrency",
+      "count": 8,
+      "denominator": 103,
+      "share": 0.07766990291262135
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "retry",
+      "count": 2,
+      "denominator": 103,
+      "share": 0.019417475728155338
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 5,
+      "denominator": 103,
+      "share": 0.04854368932038835
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "skipIfPublished",
+      "count": 1,
+      "denominator": 103,
+      "share": 0.009708737864077669
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "persistedArtifactOrEvidence",
+      "count": 18,
+      "denominator": 103,
+      "share": 0.17475728155339806
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "manualRerunOnly",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "noVisibleGuard",
+      "count": 78,
+      "denominator": 103,
+      "share": 0.7572815533980582
+    },
+    {
+      "dimension": "tool",
+      "value": "goreleaser",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 103,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "concurrency",
+      "count": 2,
+      "denominator": 53,
+      "share": 0.03773584905660377
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "retry",
+      "count": 0,
+      "denominator": 53,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 2,
+      "denominator": 53,
+      "share": 0.03773584905660377
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 53,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 53,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "skipIfPublished",
+      "count": 3,
+      "denominator": 53,
+      "share": 0.05660377358490566
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "persistedArtifactOrEvidence",
+      "count": 31,
+      "denominator": 53,
+      "share": 0.5849056603773585
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "manualRerunOnly",
+      "count": 23,
+      "denominator": 53,
+      "share": 0.4339622641509434
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "noVisibleGuard",
+      "count": 16,
+      "denominator": 53,
+      "share": 0.3018867924528302
+    },
+    {
+      "dimension": "tool",
+      "value": "jreleaser",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 53,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "concurrency",
+      "count": 6,
+      "denominator": 44,
+      "share": 0.13636363636363635
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "retry",
+      "count": 1,
+      "denominator": 44,
+      "share": 0.022727272727272728
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "skipIfPublished",
+      "count": 1,
+      "denominator": 44,
+      "share": 0.022727272727272728
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "persistedArtifactOrEvidence",
+      "count": 4,
+      "denominator": 44,
+      "share": 0.09090909090909091
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "manualRerunOnly",
+      "count": 24,
+      "denominator": 44,
+      "share": 0.5454545454545454
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "noVisibleGuard",
+      "count": 13,
+      "denominator": 44,
+      "share": 0.29545454545454547
+    },
+    {
+      "dimension": "tool",
+      "value": "release-it",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 44,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "concurrency",
+      "count": 6,
+      "denominator": 43,
+      "share": 0.13953488372093023
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "retry",
+      "count": 0,
+      "denominator": 43,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 43,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 43,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "skipIfPublished",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "persistedArtifactOrEvidence",
+      "count": 6,
+      "denominator": 43,
+      "share": 0.13953488372093023
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "manualRerunOnly",
+      "count": 1,
+      "denominator": 43,
+      "share": 0.023255813953488372
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "noVisibleGuard",
+      "count": 31,
+      "denominator": 43,
+      "share": 0.7209302325581395
+    },
+    {
+      "dimension": "tool",
+      "value": "release-please",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 43,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "concurrency",
+      "count": 36,
+      "denominator": 42,
+      "share": 0.8571428571428571
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "retry",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 1,
+      "denominator": 42,
+      "share": 0.023809523809523808
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "skipIfPublished",
+      "count": 2,
+      "denominator": 42,
+      "share": 0.047619047619047616
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "persistedArtifactOrEvidence",
+      "count": 1,
+      "denominator": 42,
+      "share": 0.023809523809523808
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "manualRerunOnly",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "noVisibleGuard",
+      "count": 6,
+      "denominator": 42,
+      "share": 0.14285714285714285
+    },
+    {
+      "dimension": "tool",
+      "value": "release-plz",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 42,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "concurrency",
+      "count": 14,
+      "denominator": 80,
+      "share": 0.175
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "retry",
+      "count": 0,
+      "denominator": 80,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 1,
+      "denominator": 80,
+      "share": 0.0125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 3,
+      "denominator": 80,
+      "share": 0.0375
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 80,
+      "share": 0
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "skipIfPublished",
+      "count": 5,
+      "denominator": 80,
+      "share": 0.0625
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "persistedArtifactOrEvidence",
+      "count": 16,
+      "denominator": 80,
+      "share": 0.2
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "manualRerunOnly",
+      "count": 9,
+      "denominator": 80,
+      "share": 0.1125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "noVisibleGuard",
+      "count": 49,
+      "denominator": 80,
+      "share": 0.6125
+    },
+    {
+      "dimension": "tool",
+      "value": "semantic-release",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 80,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "concurrency",
+      "count": 37,
+      "denominator": 150,
+      "share": 0.24666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "retry",
+      "count": 1,
+      "denominator": 150,
+      "share": 0.006666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 2,
+      "denominator": 150,
+      "share": 0.013333333333333334
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "skipIfPublished",
+      "count": 5,
+      "denominator": 150,
+      "share": 0.03333333333333333
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "persistedArtifactOrEvidence",
+      "count": 28,
+      "denominator": 150,
+      "share": 0.18666666666666668
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "manualRerunOnly",
+      "count": 10,
+      "denominator": 150,
+      "share": 0.06666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "noVisibleGuard",
+      "count": 82,
+      "denominator": 150,
+      "share": 0.5466666666666666
+    },
+    {
+      "dimension": "band",
+      "value": "B1",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "concurrency",
+      "count": 33,
+      "denominator": 150,
+      "share": 0.22
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "retry",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 2,
+      "denominator": 150,
+      "share": 0.013333333333333334
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 2,
+      "denominator": 150,
+      "share": 0.013333333333333334
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "skipIfPublished",
+      "count": 7,
+      "denominator": 150,
+      "share": 0.04666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "persistedArtifactOrEvidence",
+      "count": 43,
+      "denominator": 150,
+      "share": 0.2866666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "manualRerunOnly",
+      "count": 19,
+      "denominator": 150,
+      "share": 0.12666666666666668
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "noVisibleGuard",
+      "count": 66,
+      "denominator": 150,
+      "share": 0.44
+    },
+    {
+      "dimension": "band",
+      "value": "B2",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "concurrency",
+      "count": 43,
+      "denominator": 150,
+      "share": 0.2866666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "retry",
+      "count": 4,
+      "denominator": 150,
+      "share": 0.02666666666666667
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 6,
+      "denominator": 150,
+      "share": 0.04
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 2,
+      "denominator": 150,
+      "share": 0.013333333333333334
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "skipIfPublished",
+      "count": 5,
+      "denominator": 150,
+      "share": 0.03333333333333333
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "persistedArtifactOrEvidence",
+      "count": 46,
+      "denominator": 150,
+      "share": 0.30666666666666664
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "manualRerunOnly",
+      "count": 24,
+      "denominator": 150,
+      "share": 0.16
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "noVisibleGuard",
+      "count": 58,
+      "denominator": 150,
+      "share": 0.38666666666666666
+    },
+    {
+      "dimension": "band",
+      "value": "B3",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 150,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "concurrency",
+      "count": 21,
+      "denominator": 67,
+      "share": 0.31343283582089554
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "retry",
+      "count": 1,
+      "denominator": 67,
+      "share": 0.014925373134328358
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "releaseOrTagExistenceCheck",
+      "count": 3,
+      "denominator": 67,
+      "share": 0.04477611940298507
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "registryOrVersionExistenceCheck",
+      "count": 1,
+      "denominator": 67,
+      "share": 0.014925373134328358
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "idempotencyOrImmutable",
+      "count": 0,
+      "denominator": 67,
+      "share": 0
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "skipIfPublished",
+      "count": 3,
+      "denominator": 67,
+      "share": 0.04477611940298507
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "persistedArtifactOrEvidence",
+      "count": 19,
+      "denominator": 67,
+      "share": 0.2835820895522388
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "manualRerunOnly",
+      "count": 12,
+      "denominator": 67,
+      "share": 0.1791044776119403
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "noVisibleGuard",
+      "count": 22,
+      "denominator": 67,
+      "share": 0.3283582089552239
+    },
+    {
+      "dimension": "band",
+      "value": "B4",
+      "field": "unresolved",
+      "count": 0,
+      "denominator": 67,
+      "share": 0
+    }
+  ],
+  "rubricStability": {
+    "subsetN": 51,
+    "agreements": 51,
+    "disagreements": 0,
+    "disagreementShare": 0,
+    "rawAgreement": 1,
+    "expectedAgreement": 0.6662821991541714,
+    "cohensKappa": 1,
+    "labels": [
+      "OTHER",
+      "PLAN_THEN_ACT",
+      "SINGLE_VERB"
+    ],
+    "unresolvedRows": 0
+  },
+  "tsRelease": {
+    "accessibleRawSearchRows": 0,
+    "eligibleInvocationMatches": 0,
+    "queryCoverage": [
+      {
+        "queryId": "Q025",
+        "tool": "ts-release",
+        "exactQ": "\"@mannyc1/ts-release\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q026",
+        "tool": "ts-release",
+        "exactQ": "\"@mannyc1/ts-release\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q027",
+        "tool": "ts-release",
+        "exactQ": "\"mannyc2/ts-release-action\" path:.github/workflows extension:yml",
+        "extension": "yml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      },
+      {
+        "queryId": "Q028",
+        "tool": "ts-release",
+        "exactQ": "\"mannyc2/ts-release-action\" path:.github/workflows extension:yaml",
+        "extension": "yaml",
+        "tsReleaseExact": true,
+        "pagesAcquired": [
+          1
+        ],
+        "usablePages": 1,
+        "failedPages": 0,
+        "accessibleResults": 0,
+        "reportedTotalCount": 0,
+        "incompleteResults": false
+      }
+    ],
+    "absenceClaim": "accessible-frame-only"
+  },
+  "validation": {
+    "candidates": 14186,
+    "eligible": 8829,
+    "excluded": 5357,
+    "exclusions": {
+      "NO_VISIBLE_INVOCATION": 5325,
+      "PARSE_FAILURE": 32
+    },
+    "metadataRaces": 13
+  },
+  "tsReleaseExactNameComparison": {
+    "method": "exact spelling only; no undocumented semantic-equivalence normalization",
+    "baselineCliFlagsWithNoExactObservedUpstreamName": [
+      "--root",
+      "--out",
+      "--execute",
+      "--approve-publish",
+      "--continue",
+      "--published"
+    ],
+    "baselineActionInputsWithNoExactObservedUpstreamName": [
+      "format",
+      "write-step-summary",
+      "plan-path",
+      "fail-on-warnings",
+      "target",
+      "snapshot",
+      "execute",
+      "continue",
+      "published",
+      "approve-publish",
+      "upload-evidence",
+      "evidence-artifact-name"
+    ],
+    "commonUpstreamNamesWithoutExactTsReleaseCounterpart": [
+      {
+        "tool": "goreleaser",
+        "kind": "action-input",
+        "raw": "args",
+        "normalized": "args",
+        "occurrences": 108,
+        "workflows": 100
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "action-input",
+        "raw": "version",
+        "normalized": "version",
+        "occurrences": 102,
+        "workflows": 95
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--clean",
+        "normalized": "--clean",
+        "occurrences": 83,
+        "workflows": 77
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "publish",
+        "normalized": "publish",
+        "occurrences": 70,
+        "workflows": 69
+      },
+      {
+        "tool": "cargo-dist",
+        "kind": "cli-flag",
+        "raw": "--output-format",
+        "normalized": "--output-format",
+        "occurrences": 176,
+        "workflows": 62
+      },
+      {
+        "tool": "cargo-dist",
+        "kind": "cli-flag",
+        "raw": "--artifacts",
+        "normalized": "--artifacts",
+        "occurrences": 57,
+        "workflows": 56
+      },
+      {
+        "tool": "cargo-dist",
+        "kind": "cli-flag",
+        "raw": "--steps",
+        "normalized": "--steps",
+        "occurrences": 102,
+        "workflows": 51
+      },
+      {
+        "tool": "cargo-dist",
+        "kind": "cli-flag",
+        "raw": "--print",
+        "normalized": "--print",
+        "occurrences": 52,
+        "workflows": 51
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "action-input",
+        "raw": "distribution",
+        "normalized": "distribution",
+        "occurrences": 48,
+        "workflows": 43
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "title",
+        "normalized": "title",
+        "occurrences": 43,
+        "workflows": 43
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "commit",
+        "normalized": "commit",
+        "occurrences": 40,
+        "workflows": 40
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "version",
+        "normalized": "version",
+        "occurrences": 39,
+        "workflows": 38
+      },
+      {
+        "tool": "release-please",
+        "kind": "action-input",
+        "raw": "token",
+        "normalized": "token",
+        "occurrences": 27,
+        "workflows": 27
+      },
+      {
+        "tool": "release-it",
+        "kind": "cli-flag",
+        "raw": "--ci",
+        "normalized": "--ci",
+        "occurrences": 29,
+        "workflows": 22
+      },
+      {
+        "tool": "release-please",
+        "kind": "action-input",
+        "raw": "config-file",
+        "normalized": "config-file",
+        "occurrences": 20,
+        "workflows": 20
+      },
+      {
+        "tool": "release-please",
+        "kind": "action-input",
+        "raw": "manifest-file",
+        "normalized": "manifest-file",
+        "occurrences": 18,
+        "workflows": 18
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--skip",
+        "normalized": "--skip",
+        "occurrences": 24,
+        "workflows": 16
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--rm-dist",
+        "normalized": "--rm-dist",
+        "occurrences": 16,
+        "workflows": 16
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "action-input",
+        "raw": "extra_plugins",
+        "normalized": "extra_plugins",
+        "occurrences": 19,
+        "workflows": 15
+      },
+      {
+        "tool": "release-please",
+        "kind": "action-input",
+        "raw": "release-type",
+        "normalized": "release-type",
+        "occurrences": 13,
+        "workflows": 13
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "createGithubReleases",
+        "normalized": "createGithubReleases",
+        "occurrences": 11,
+        "workflows": 11
+      },
+      {
+        "tool": "cargo-dist",
+        "kind": "cli-flag",
+        "raw": "--tag",
+        "normalized": "--tag",
+        "occurrences": 20,
+        "workflows": 10
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "action-input",
+        "raw": "arguments",
+        "normalized": "arguments",
+        "occurrences": 12,
+        "workflows": 9
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "action-input",
+        "raw": "semantic_version",
+        "normalized": "semantic_version",
+        "occurrences": 11,
+        "workflows": 9
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "cli-flag",
+        "raw": "--file",
+        "normalized": "--file",
+        "occurrences": 8,
+        "workflows": 8
+      },
+      {
+        "tool": "release-please",
+        "kind": "action-input",
+        "raw": "target-branch",
+        "normalized": "target-branch",
+        "occurrences": 8,
+        "workflows": 8
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "action-input",
+        "raw": "dry_run",
+        "normalized": "dry_run",
+        "occurrences": 9,
+        "workflows": 6
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "action-input",
+        "raw": "version",
+        "normalized": "version",
+        "occurrences": 9,
+        "workflows": 6
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "action-input",
+        "raw": "workdir",
+        "normalized": "workdir",
+        "occurrences": 9,
+        "workflows": 6
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--timeout",
+        "normalized": "--timeout",
+        "occurrences": 8,
+        "workflows": 6
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "cli-flag",
+        "raw": "--dry-run",
+        "normalized": "--dry-run",
+        "occurrences": 6,
+        "workflows": 6
+      },
+      {
+        "tool": "cargo-dist",
+        "kind": "cli-flag",
+        "raw": "--no-local-paths",
+        "normalized": "--no-local-paths",
+        "occurrences": 6,
+        "workflows": 6
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--release-notes",
+        "normalized": "--release-notes",
+        "occurrences": 6,
+        "workflows": 6
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "cli-flag",
+        "raw": "--no-daemon",
+        "normalized": "--no-daemon",
+        "occurrences": 8,
+        "workflows": 5
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "cwd",
+        "normalized": "cwd",
+        "occurrences": 5,
+        "workflows": 5
+      },
+      {
+        "tool": "changesets",
+        "kind": "cli-flag",
+        "raw": "--tag",
+        "normalized": "--tag",
+        "occurrences": 5,
+        "workflows": 4
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "cli-flag",
+        "raw": "--branches",
+        "normalized": "--branches",
+        "occurrences": 4,
+        "workflows": 4
+      },
+      {
+        "tool": "changesets",
+        "kind": "cli-flag",
+        "raw": "--since",
+        "normalized": "--since",
+        "occurrences": 4,
+        "workflows": 4
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "cli-flag",
+        "raw": "--stacktrace",
+        "normalized": "--stacktrace",
+        "occurrences": 4,
+        "workflows": 4
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "action-input",
+        "raw": "branch",
+        "normalized": "branch",
+        "occurrences": 4,
+        "workflows": 4
+      },
+      {
+        "tool": "changesets",
+        "kind": "action-input",
+        "raw": "setupGitUser",
+        "normalized": "setupGitUser",
+        "occurrences": 4,
+        "workflows": 4
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "action-input",
+        "raw": "branches",
+        "normalized": "branches",
+        "occurrences": 5,
+        "workflows": 3
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "action-input",
+        "raw": "working_directory",
+        "normalized": "working_directory",
+        "occurrences": 5,
+        "workflows": 3
+      },
+      {
+        "tool": "semantic-release",
+        "kind": "cli-flag",
+        "raw": "--dryRun",
+        "normalized": "--dryRun",
+        "occurrences": 3,
+        "workflows": 3
+      },
+      {
+        "tool": "release-it",
+        "kind": "cli-flag",
+        "raw": "--increment",
+        "normalized": "--increment",
+        "occurrences": 3,
+        "workflows": 3
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "cli-flag",
+        "raw": "--no-configuration-cache",
+        "normalized": "--no-configuration-cache",
+        "occurrences": 3,
+        "workflows": 3
+      },
+      {
+        "tool": "jreleaser",
+        "kind": "cli-flag",
+        "raw": "--no-transfer-progress",
+        "normalized": "--no-transfer-progress",
+        "occurrences": 3,
+        "workflows": 3
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--parallelism",
+        "normalized": "--parallelism",
+        "occurrences": 3,
+        "workflows": 3
+      },
+      {
+        "tool": "release-it",
+        "kind": "cli-flag",
+        "raw": "--release-version",
+        "normalized": "--release-version",
+        "occurrences": 3,
+        "workflows": 3
+      },
+      {
+        "tool": "goreleaser",
+        "kind": "cli-flag",
+        "raw": "--skip-publish",
+        "normalized": "--skip-publish",
+        "occurrences": 3,
+        "workflows": 3
+      }
+    ]
+  },
+  "limitations": [
+    "The frame is GitHub REST code search's relevance-ranked first 1,000 accessible results per fixed query, not a representative GitHub sample.",
+    "Search totals and rankings changed during pagination; raw pages and rank observations are retained.",
+    "Stars are current values at per-repository metadata retrieval, not a simultaneous or historical snapshot.",
+    "Only publicly visible workflow structure was used; environment reviewer settings were not inferred from names.",
+    "Root package.json scripts were resolved; non-root package-script and hidden private-wrapper semantics may remain unresolved.",
+    "Invocation and gate coding used a frozen deterministic extractor followed by the preregistered blinded recode."
+  ],
+  "protocolNotes": [
+    "A pre-manifest detector overmatch was caught during validation; its 890 invalid rows and ledger are retained, and validation restarted from the unchanged raw frame.",
+    "Twenty-three search pages required one rate-limit retry. The successful page record preserves attempt=1, but the rejected response body was not separately persisted."
+  ]
+}

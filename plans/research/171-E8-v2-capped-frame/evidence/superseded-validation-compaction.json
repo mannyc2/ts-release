@@ -1,0 +1,24 @@
+{
+  "compactedAt": "2026-07-26T14:50:34.398Z",
+  "reason": "Superseded full-row copies duplicated the final structural extraction; compact correction evidence is retained instead.",
+  "deleted": [
+    {
+      "path": "derived/candidate-validation-pre-normalization.jsonl",
+      "bytes": 64996346,
+      "sha256": "26e6548fa9d49f1898c4c165ffae1fcb57c24ff94c8a18381da170ff839d0b91"
+    },
+    {
+      "path": "evidence/invalid-validation-normalization-v1.jsonl",
+      "bytes": 63260231,
+      "sha256": "f8e483006f2881e270da18af7c56aef6d20ca289096201cdd7389848669f67cf"
+    }
+  ],
+  "retainedFinal": {
+    "path": "derived/candidate-validation.jsonl",
+    "bytes": 63243702,
+    "sha256": "8e3e89e1a0f29f9410135971ee6c0e554ce64974f8f5722fd8087a2d9fbc47d5"
+  },
+  "v1ChangedRows": 46,
+  "deltaPath": "evidence/validation-normalization-v1-delta.jsonl",
+  "deltaSha256": "84c442213ecf0d38af896da2bcc6ea74aa6a12b4f7fbe62f4ca1a09cdedc87d8"
+}

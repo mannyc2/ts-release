@@ -1,0 +1,15 @@
+{
+  "subsetN": 51,
+  "agreements": 51,
+  "disagreements": 0,
+  "disagreementShare": 0,
+  "rawAgreement": 1,
+  "expectedAgreement": 0.6662821991541714,
+  "cohensKappa": 1,
+  "labels": [
+    "OTHER",
+    "PLAN_THEN_ACT",
+    "SINGLE_VERB"
+  ],
+  "unresolvedRows": 0
+}

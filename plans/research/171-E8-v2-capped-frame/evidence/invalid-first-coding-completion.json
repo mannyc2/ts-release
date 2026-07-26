@@ -1,0 +1,11 @@
+{
+  "completedAt": "2026-07-26T14:39:59.366Z",
+  "codedRows": 517,
+  "invocationRows": 770,
+  "flagInputRows": 2088,
+  "checksums": {
+    "derived/workflow-coding-first.jsonl": "5b8fa118089cdecb95c50bb6070244b8e1470820f4d43aa1dcae5f282a4110a2",
+    "derived/invocations.jsonl": "900785dcbb5621a1ff5670bb2fa4824579a59afc098159dc658a26945b7a52f2",
+    "derived/flags-inputs.jsonl": "4c34f585323e62330afd48fe1d04c8956010889e682541c6283eabec784b2b25"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "completedAt": "2026-07-26T14:38:24.065Z",
+  "candidateRows": 14186,
+  "expectedCandidateRows": 14186,
+  "eligibleRows": 8832,
+  "excludedRows": 5354,
+  "exclusions": {
+    "NO_VISIBLE_INVOCATION": 5322,
+    "PARSE_FAILURE": 32
+  },
+  "normalizationApplied": true,
+  "outputSha256": "f8e483006f2881e270da18af7c56aef6d20ca289096201cdd7389848669f67cf"
+}

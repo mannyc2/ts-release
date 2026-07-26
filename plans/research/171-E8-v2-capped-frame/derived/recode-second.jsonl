@@ -1,0 +1,51 @@
+{"subsetIndex":1,"repo":"actions-marketplace-validations/openedx-actions_tutor-k8s-deploy-tools","path":".github/workflows/testRelease.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":2,"repo":"Aleph-Alpha/pharia-inference-sdk","path":".github/workflows/release-please.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":3,"repo":"amitsaha/gitbackup","path":".github/workflows/ci.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":4,"repo":"Arize-ai/phoenix","path":".github/workflows/typescript-packages-publish.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":5,"repo":"atlassian/better-ajv-errors","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":6,"repo":"basecamp/hey-cli","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":7,"repo":"bipa-app/agent-sdk","path":".github/workflows/release-plz.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":8,"repo":"CBenoit/file-server","path":".github/workflows/release.yml","headlineClass":"PLAN_THEN_ACT","otherReason":null,"rationale":"Every distinct phase pair is explicitly ordered"}
+{"subsetIndex":9,"repo":"Clete2/zfs_space_visualizer","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":10,"repo":"conda/rattler","path":".github/workflows/release-rust.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":11,"repo":"davidB/kubectl-view-allocations","path":".github/workflows/release-plz.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":12,"repo":"dlsc-software-consulting-gmbh/FxmlKit","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":13,"repo":"dunglas/mercure","path":".github/workflows/cd.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":14,"repo":"eds2002/react-native-screen-transitions","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":15,"repo":"epam/hub-state","path":".github/workflows/cli-release.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":16,"repo":"Extra-Chill/homeboy","path":".github/workflows/release.yml","headlineClass":"OTHER","otherReason":"OTHER_MIXED","rationale":"Ordered and unordered phase pairs coexist"}
+{"subsetIndex":17,"repo":"FlyinPancake/yoink","path":".github/workflows/release-please.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":18,"repo":"gajus/lightship","path":".github/workflows/main.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":19,"repo":"godot-escoria/escoria-demo-game","path":".github/workflows/release-prepare.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":20,"repo":"GreyGunG/grokbuild-proxy","path":".github/workflows/ci.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":21,"repo":"internettrans/i18next","path":".github/workflows/build-and-test.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":22,"repo":"jakkku/monorepo-template","path":".github/workflows/tag.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":23,"repo":"jetstreamapp/jetstream","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":24,"repo":"jsxstyle/jsxstyle","path":".github/workflows/release.yml","headlineClass":"PLAN_THEN_ACT","otherReason":null,"rationale":"Every distinct phase pair is explicitly ordered"}
+{"subsetIndex":25,"repo":"kobaltedev/kobalte","path":".github/workflows/version.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":26,"repo":"ksdme/ut","path":".github/workflows/release.yml","headlineClass":"PLAN_THEN_ACT","otherReason":null,"rationale":"Every distinct phase pair is explicitly ordered"}
+{"subsetIndex":27,"repo":"leg100/pug","path":".github/workflows/build.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":28,"repo":"LorisSigrist/zocker","path":".github/workflows/versioning.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":29,"repo":"major/fez","path":".github/workflows/release-plz.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":30,"repo":"mcp-use/mcp-use","path":".github/workflows/ci.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":31,"repo":"mitsuhiko/teetty","path":".github/workflows/release.yml","headlineClass":"PLAN_THEN_ACT","otherReason":null,"rationale":"Every distinct phase pair is explicitly ordered"}
+{"subsetIndex":32,"repo":"Mr-Mappie/mappie","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":33,"repo":"nesquikm/mcp-rubber-duck","path":".github/workflows/semantic-release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":34,"repo":"objz/rmcl","path":".github/workflows/build-release.yml","headlineClass":"OTHER","otherReason":"OTHER_MIXED","rationale":"Ordered and unordered phase pairs coexist"}
+{"subsetIndex":35,"repo":"orhun/daktilo","path":".github/workflows/release.yml","headlineClass":"PLAN_THEN_ACT","otherReason":null,"rationale":"Every distinct phase pair is explicitly ordered"}
+{"subsetIndex":36,"repo":"phun-ky/frameport","path":".github/workflows/publish.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":37,"repo":"powerpaul17/nc_money","path":".github/workflows/create-release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":38,"repo":"raydak-labs/configarr","path":".github/workflows/release-it.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":39,"repo":"reshaprio/reshapr","path":".github/workflows/release.yml","headlineClass":"PLAN_THEN_ACT","otherReason":null,"rationale":"Every distinct phase pair is explicitly ordered"}
+{"subsetIndex":40,"repo":"rust-codegen-group/openapi-nexus","path":".github/workflows/nightly.yml","headlineClass":"OTHER","otherReason":"OTHER_AMBIGUOUS","rationale":"Same-path operations do not prove a durable handoff"}
+{"subsetIndex":41,"repo":"scop/bash-completion","path":".github/workflows/release-please.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":42,"repo":"SigmaGmbH/cometbft","path":".github/workflows/pre-release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":43,"repo":"SolidAlloy/UnityDropdown","path":".github/workflows/ci.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":44,"repo":"strmprivacy/rust-driver","path":".github/workflows/release.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":45,"repo":"tamcore/kadence","path":".github/workflows/release.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":46,"repo":"ThiagoPVLima/Cybis-Cafe-Page","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":47,"repo":"trufflesecurity/trufflehog","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":48,"repo":"uk-gov-mirror/nhsdigital.ftrs-directory-of-services","path":".github/workflows/pipeline-build-release.yaml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":49,"repo":"vyfor/cord.nvim","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":50,"repo":"wppconnect-team/wppconnect-server","path":".github/workflows/release.yml","headlineClass":"SINGLE_VERB","otherReason":null,"rationale":"One semantic tool operation"}
+{"subsetIndex":51,"repo":"yschimke/emulator-tools","path":".github/workflows/release.yml","headlineClass":"OTHER","otherReason":"OTHER_MIXED","rationale":"Ordered and unordered phase pairs coexist"}

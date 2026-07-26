@@ -1,0 +1,9 @@
+{
+  "normalizedAt": "2026-07-26T14:46:06.936Z",
+  "invocationLocations": 728,
+  "coarseRows": 2088,
+  "normalizedRows": 1536,
+  "method": "CLI flags are extracted only from the in-scope command segment or action-input values; action-input keys are retained separately.",
+  "coarseSha256": "4c34f585323e62330afd48fe1d04c8956010889e682541c6283eabec784b2b25",
+  "outputSha256": "e8822bc8f036bd532e38b0344f7fb74fee3ce1422d1c7b5bee545edf02629ae9"
+}

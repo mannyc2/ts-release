@@ -1,0 +1,5 @@
+dimension,value,shape,count,denominator,share
+"overall","all","SINGLE_VERB","430","517","0.8317214700193424"
+"overall","all","PLAN_THEN_ACT","69","517","0.13346228239845262"
+"overall","all","INDEPENDENT_VERBS","1","517","0.0019342359767891683"
+"overall","all","OTHER","17","517","0.03288201160541586"

@@ -1,0 +1,210 @@
+{
+  "protocol": "plans/171-E8-v2-capped-frame-preregistration.md@0f64e85",
+  "protocolSha256": "5ce226afc05c947817a360de047e2b81619e6390d0cc5f5a598caa3182f2efa7",
+  "acquisitionStartedAt": "2026-07-26T13:39:11.444Z",
+  "acquisitionEndedAt": "2026-07-26T14:03:13.659Z",
+  "endpoint": "https://api.github.com/search/code",
+  "perPage": 100,
+  "maximumPagesPerQuery": 10,
+  "pacingMilliseconds": 6500,
+  "queries": [
+    {
+      "queryId": "Q001",
+      "tool": "goreleaser",
+      "exactQ": "goreleaser path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q002",
+      "tool": "goreleaser",
+      "exactQ": "goreleaser path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q003",
+      "tool": "semantic-release",
+      "exactQ": "semantic-release path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q004",
+      "tool": "semantic-release",
+      "exactQ": "semantic-release path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q005",
+      "tool": "changesets",
+      "exactQ": "changeset path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q006",
+      "tool": "changesets",
+      "exactQ": "changeset path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q007",
+      "tool": "release-please",
+      "exactQ": "release-please path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q008",
+      "tool": "release-please",
+      "exactQ": "release-please path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q009",
+      "tool": "release-it",
+      "exactQ": "release-it path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q010",
+      "tool": "release-it",
+      "exactQ": "release-it path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q011",
+      "tool": "jreleaser",
+      "exactQ": "jreleaser path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q012",
+      "tool": "jreleaser",
+      "exactQ": "jreleaser path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q013",
+      "tool": "cargo-dist",
+      "exactQ": "cargo-dist path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q014",
+      "tool": "cargo-dist",
+      "exactQ": "cargo-dist path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q015",
+      "tool": "cargo-dist",
+      "exactQ": "\"cargo dist\" path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q016",
+      "tool": "cargo-dist",
+      "exactQ": "\"cargo dist\" path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q017",
+      "tool": "release-plz",
+      "exactQ": "release-plz path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q018",
+      "tool": "release-plz",
+      "exactQ": "release-plz path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q019",
+      "tool": "np",
+      "exactQ": "\"npx np\" path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q020",
+      "tool": "np",
+      "exactQ": "\"npx np\" path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q021",
+      "tool": "np",
+      "exactQ": "\"bunx np\" path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q022",
+      "tool": "np",
+      "exactQ": "\"bunx np\" path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q023",
+      "tool": "np",
+      "exactQ": "\"pnpm exec np\" path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q024",
+      "tool": "np",
+      "exactQ": "\"pnpm exec np\" path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": false
+    },
+    {
+      "queryId": "Q025",
+      "tool": "ts-release",
+      "exactQ": "\"@mannyc1/ts-release\" path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": true
+    },
+    {
+      "queryId": "Q026",
+      "tool": "ts-release",
+      "exactQ": "\"@mannyc1/ts-release\" path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": true
+    },
+    {
+      "queryId": "Q027",
+      "tool": "ts-release",
+      "exactQ": "\"mannyc2/ts-release-action\" path:.github/workflows extension:yml",
+      "extension": "yml",
+      "tsReleaseExact": true
+    },
+    {
+      "queryId": "Q028",
+      "tool": "ts-release",
+      "exactQ": "\"mannyc2/ts-release-action\" path:.github/workflows extension:yaml",
+      "extension": "yaml",
+      "tsReleaseExact": true
+    }
+  ],
+  "usablePages": 157,
+  "failedPages": 0
+}

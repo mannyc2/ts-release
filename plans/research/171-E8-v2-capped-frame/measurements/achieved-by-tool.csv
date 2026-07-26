@@ -1,0 +1,9 @@
+tool,workflows
+"cargo-dist","63"
+"changesets","90"
+"goreleaser","103"
+"jreleaser","53"
+"release-it","44"
+"release-please","43"
+"release-plz","42"
+"semantic-release","80"

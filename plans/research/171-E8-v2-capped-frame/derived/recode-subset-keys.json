@@ -1,0 +1,415 @@
+{
+  "method": "every tenth row beginning with row 10 after repo:path sort",
+  "achievedN": 517,
+  "subsetN": 51,
+  "rows": [
+    {
+      "subsetIndex": 1,
+      "manifestSortRow": 10,
+      "repo": "actions-marketplace-validations/openedx-actions_tutor-k8s-deploy-tools",
+      "path": ".github/workflows/testRelease.yml",
+      "immutableUrl": "https://github.com/actions-marketplace-validations/openedx-actions_tutor-k8s-deploy-tools/blob/eab87cfd4c65ff172844f732c199b1780cea26e6/.github/workflows/testRelease.yml",
+      "contentSha256": "6d5d3f3c44b6f6bc7c7abd573e33323099206ee1e52d58fea0ff2a6d64fc97f9"
+    },
+    {
+      "subsetIndex": 2,
+      "manifestSortRow": 20,
+      "repo": "Aleph-Alpha/pharia-inference-sdk",
+      "path": ".github/workflows/release-please.yml",
+      "immutableUrl": "https://github.com/Aleph-Alpha/pharia-inference-sdk/blob/2ba0464231e4e8c936902a8618aa829109f7cfb7/.github/workflows/release-please.yml",
+      "contentSha256": "b4c91d171f9b9f9ca619f8af1e396052af883075a61335b7c866b63c2ddee361"
+    },
+    {
+      "subsetIndex": 3,
+      "manifestSortRow": 30,
+      "repo": "amitsaha/gitbackup",
+      "path": ".github/workflows/ci.yml",
+      "immutableUrl": "https://github.com/amitsaha/gitbackup/blob/c7c1d75bf231295ae374c4d0cae1b56bbdd5ee13/.github/workflows/ci.yml",
+      "contentSha256": "92d5401742aa5df6799223a461e5026f7ec87ffc8707f9710e6280e7f158ea35"
+    },
+    {
+      "subsetIndex": 4,
+      "manifestSortRow": 40,
+      "repo": "Arize-ai/phoenix",
+      "path": ".github/workflows/typescript-packages-publish.yml",
+      "immutableUrl": "https://github.com/Arize-ai/phoenix/blob/4bfd95a4e9abe6a9f846a08406e48138414815d1/.github/workflows/typescript-packages-publish.yml",
+      "contentSha256": "f4311c9d3b8967851c3bc748eccbda1d77fc114c4f37e29bea1ef32ff31ebf49"
+    },
+    {
+      "subsetIndex": 5,
+      "manifestSortRow": 50,
+      "repo": "atlassian/better-ajv-errors",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/atlassian/better-ajv-errors/blob/c6d311972f12437c539e7836b9a8fcbde25d6dde/.github/workflows/release.yml",
+      "contentSha256": "78ea351607a63a27c9a0ec9393965f320f2fccedab07ab8f4739cb433e4b020d"
+    },
+    {
+      "subsetIndex": 6,
+      "manifestSortRow": 60,
+      "repo": "basecamp/hey-cli",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/basecamp/hey-cli/blob/a3cf885fc80b906e887af3eb753b13f8ffcdae24/.github/workflows/release.yml",
+      "contentSha256": "9999b7950fd7ec7ce09982cec98c9e49ee415f58baa501537a7fe1508fdfc3c5"
+    },
+    {
+      "subsetIndex": 7,
+      "manifestSortRow": 70,
+      "repo": "bipa-app/agent-sdk",
+      "path": ".github/workflows/release-plz.yml",
+      "immutableUrl": "https://github.com/bipa-app/agent-sdk/blob/3350362e90cb51aae1b59d383db350697a70e850/.github/workflows/release-plz.yml",
+      "contentSha256": "2482d7825bb98443a5805813588a6bf51699c25259789cc0de290a8ebbfbe8b4"
+    },
+    {
+      "subsetIndex": 8,
+      "manifestSortRow": 80,
+      "repo": "CBenoit/file-server",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/CBenoit/file-server/blob/11f7f8891ac8c4e8fe0ca309be2722ac4f8affe4/.github/workflows/release.yml",
+      "contentSha256": "3ea544f332d0a8fa451e9ddfbf3e35a6600e82e88a7aacf378d1c310b808e10c"
+    },
+    {
+      "subsetIndex": 9,
+      "manifestSortRow": 90,
+      "repo": "Clete2/zfs_space_visualizer",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/Clete2/zfs_space_visualizer/blob/3f5c9e9e62dabb623d9d69bdbdc607ea0c6dfde2/.github/workflows/release.yml",
+      "contentSha256": "11772dbde331d0ca48979c32a1c9b6e746703ac5502970278b4a28f2d46d7f41"
+    },
+    {
+      "subsetIndex": 10,
+      "manifestSortRow": 100,
+      "repo": "conda/rattler",
+      "path": ".github/workflows/release-rust.yaml",
+      "immutableUrl": "https://github.com/conda/rattler/blob/e4ed482797defe592a27037565a205e4e52fd4a8/.github/workflows/release-rust.yaml",
+      "contentSha256": "3f4eb015cc0a4706adde14a1cee657075da00f6a513c73ee04784288c611e187"
+    },
+    {
+      "subsetIndex": 11,
+      "manifestSortRow": 110,
+      "repo": "davidB/kubectl-view-allocations",
+      "path": ".github/workflows/release-plz.yaml",
+      "immutableUrl": "https://github.com/davidB/kubectl-view-allocations/blob/d2cc0903730cbf65d38a8925e6d1d01df3420e5f/.github/workflows/release-plz.yaml",
+      "contentSha256": "66a0b49616ac32c0cdb945e8914d4a369ff2cfc17709d32c65e90b47ef11f7b8"
+    },
+    {
+      "subsetIndex": 12,
+      "manifestSortRow": 120,
+      "repo": "dlsc-software-consulting-gmbh/FxmlKit",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/dlsc-software-consulting-gmbh/FxmlKit/blob/576fa640e2b8193d5e7ddc65723970e2236f8f8a/.github/workflows/release.yml",
+      "contentSha256": "41869ada311d9f8023eb676fbd5321a0ef34d6a85d8e84dd4b67772eb975d4fa"
+    },
+    {
+      "subsetIndex": 13,
+      "manifestSortRow": 130,
+      "repo": "dunglas/mercure",
+      "path": ".github/workflows/cd.yml",
+      "immutableUrl": "https://github.com/dunglas/mercure/blob/621070ac0ceb8af470cd30a6c360abc65546479b/.github/workflows/cd.yml",
+      "contentSha256": "982f4dc8ba855b8a3e2dd31c936d55029ca017fe7eabc7a23a972b0910c2f474"
+    },
+    {
+      "subsetIndex": 14,
+      "manifestSortRow": 140,
+      "repo": "eds2002/react-native-screen-transitions",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/eds2002/react-native-screen-transitions/blob/d08b04bd76a5ece875ee9779aa451672ffd595e2/.github/workflows/release.yml",
+      "contentSha256": "6c0f8e22a7746d8f6f0f3fe83f412b888c019c0b21ed67322f5858a34ed432cf"
+    },
+    {
+      "subsetIndex": 15,
+      "manifestSortRow": 150,
+      "repo": "epam/hub-state",
+      "path": ".github/workflows/cli-release.yaml",
+      "immutableUrl": "https://github.com/epam/hub-state/blob/a8f1ea760e5c326fab4d0d1622d241fed94abae0/.github/workflows/cli-release.yaml",
+      "contentSha256": "06ddeffc67d9d6893219965c674d566d47333fd970d871f480a315481a9c4761"
+    },
+    {
+      "subsetIndex": 16,
+      "manifestSortRow": 160,
+      "repo": "Extra-Chill/homeboy",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/Extra-Chill/homeboy/blob/24f2d8bc12073ed3004be748f76f35d0797ddd85/.github/workflows/release.yml",
+      "contentSha256": "fc1abf1bd2ea85e8b35476bb90ba123993e6f85c7ef9accb033d04964448e8fa"
+    },
+    {
+      "subsetIndex": 17,
+      "manifestSortRow": 170,
+      "repo": "FlyinPancake/yoink",
+      "path": ".github/workflows/release-please.yaml",
+      "immutableUrl": "https://github.com/FlyinPancake/yoink/blob/576068a36673e69732cedec22e99d28008308f66/.github/workflows/release-please.yaml",
+      "contentSha256": "203b84ec79e71401891e4d87b2876f857fe3fced61705f8f147421bced5b40b6"
+    },
+    {
+      "subsetIndex": 18,
+      "manifestSortRow": 180,
+      "repo": "gajus/lightship",
+      "path": ".github/workflows/main.yaml",
+      "immutableUrl": "https://github.com/gajus/lightship/blob/003b34eccdd9b679637a587b67d0618557ee7139/.github/workflows/main.yaml",
+      "contentSha256": "65c0b7198e46dcae07c375c0ce3ee094d9490fe7c0ed01ce22601bbfe2ab36e0"
+    },
+    {
+      "subsetIndex": 19,
+      "manifestSortRow": 190,
+      "repo": "godot-escoria/escoria-demo-game",
+      "path": ".github/workflows/release-prepare.yml",
+      "immutableUrl": "https://github.com/godot-escoria/escoria-demo-game/blob/73e865c13653fcc1b9bbe5875a40318cbf5f36ee/.github/workflows/release-prepare.yml",
+      "contentSha256": "97b7cd1aab5cb8ef5b5e82a64b41f9108e7ab81cadec4ea78677a4dc5ea2bc79"
+    },
+    {
+      "subsetIndex": 20,
+      "manifestSortRow": 200,
+      "repo": "GreyGunG/grokbuild-proxy",
+      "path": ".github/workflows/ci.yml",
+      "immutableUrl": "https://github.com/GreyGunG/grokbuild-proxy/blob/45a5a5a11f4312d407cb401f0190297b7822ee41/.github/workflows/ci.yml",
+      "contentSha256": "98166d03ffa4ec6a9eaadc3fdd7aa8f540dc94914c7530c0ac9c910ae1db7ac8"
+    },
+    {
+      "subsetIndex": 21,
+      "manifestSortRow": 210,
+      "repo": "internettrans/i18next",
+      "path": ".github/workflows/build-and-test.yml",
+      "immutableUrl": "https://github.com/internettrans/i18next/blob/b3505ca3272094a197175c798c3762b697a004d0/.github/workflows/build-and-test.yml",
+      "contentSha256": "d56e48ffe04ef16cad7d3b4da91bcfde78b9387b2cbfc0ec2108e543f162dbc4"
+    },
+    {
+      "subsetIndex": 22,
+      "manifestSortRow": 220,
+      "repo": "jakkku/monorepo-template",
+      "path": ".github/workflows/tag.yml",
+      "immutableUrl": "https://github.com/jakkku/monorepo-template/blob/c254c5bddd9dcedab8f3e86d66331e1f63c464e5/.github/workflows/tag.yml",
+      "contentSha256": "c3087b49946d606fcf7b9e667ddabf07330de598edd50250d2be1f820e72defa"
+    },
+    {
+      "subsetIndex": 23,
+      "manifestSortRow": 230,
+      "repo": "jetstreamapp/jetstream",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/jetstreamapp/jetstream/blob/2c2734ad7e54e85b3a4c227849361eea12279ff5/.github/workflows/release.yml",
+      "contentSha256": "1b78b3bfc6f10b935b8cae65fc5d4ef31216d75690b74c14328a74da145b5797"
+    },
+    {
+      "subsetIndex": 24,
+      "manifestSortRow": 240,
+      "repo": "jsxstyle/jsxstyle",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/jsxstyle/jsxstyle/blob/7c1112f7151343e5dd33ac5fb852f313e676f1aa/.github/workflows/release.yml",
+      "contentSha256": "4bfdff82221a01803208991e084803b542155ab6cf5788035520f5b24703a847"
+    },
+    {
+      "subsetIndex": 25,
+      "manifestSortRow": 250,
+      "repo": "kobaltedev/kobalte",
+      "path": ".github/workflows/version.yml",
+      "immutableUrl": "https://github.com/kobaltedev/kobalte/blob/46505dd3cc805eccb95f9fa0e22105d992efee22/.github/workflows/version.yml",
+      "contentSha256": "34baf47a72b64285308018e8d7e53501a129b9dc0bbc300e57c9e0f3d3674866"
+    },
+    {
+      "subsetIndex": 26,
+      "manifestSortRow": 260,
+      "repo": "ksdme/ut",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/ksdme/ut/blob/0e19819cf148ae60ae7b1e279ef2e5646bb40f6d/.github/workflows/release.yml",
+      "contentSha256": "4dc7f59cd270394c28af7bc4daa1c7d3f98b21c200ce8adc83c3a380c3589e20"
+    },
+    {
+      "subsetIndex": 27,
+      "manifestSortRow": 270,
+      "repo": "leg100/pug",
+      "path": ".github/workflows/build.yml",
+      "immutableUrl": "https://github.com/leg100/pug/blob/869d0414ab090adbd2bff96250595511b5938468/.github/workflows/build.yml",
+      "contentSha256": "610fc2c1206361b2d4ebf044f13ddcfbed220f5afba9518b07292900b92b231d"
+    },
+    {
+      "subsetIndex": 28,
+      "manifestSortRow": 280,
+      "repo": "LorisSigrist/zocker",
+      "path": ".github/workflows/versioning.yaml",
+      "immutableUrl": "https://github.com/LorisSigrist/zocker/blob/c8cfb2d67ec1096e2bb3f26523d1d3aac19866db/.github/workflows/versioning.yaml",
+      "contentSha256": "d0a924b7b95dc3b275e68e16a295dcbc8c45524ca10da09d48c28a241816de05"
+    },
+    {
+      "subsetIndex": 29,
+      "manifestSortRow": 290,
+      "repo": "major/fez",
+      "path": ".github/workflows/release-plz.yml",
+      "immutableUrl": "https://github.com/major/fez/blob/45043caeb09fdd8065ed2c2176d488b6ede4ea3c/.github/workflows/release-plz.yml",
+      "contentSha256": "d2fe8ed0fe4a66ed290fbb34c8bdd369c69c5ee2e8c13ca2deddbe06ea48a890"
+    },
+    {
+      "subsetIndex": 30,
+      "manifestSortRow": 300,
+      "repo": "mcp-use/mcp-use",
+      "path": ".github/workflows/ci.yml",
+      "immutableUrl": "https://github.com/mcp-use/mcp-use/blob/feda006831b6019eb65025d379db5074f4205096/.github/workflows/ci.yml",
+      "contentSha256": "212ccbb15af9e8cc805c1cbd1c460899464bd18a67fbb392a9370b79bf8d7e47"
+    },
+    {
+      "subsetIndex": 31,
+      "manifestSortRow": 310,
+      "repo": "mitsuhiko/teetty",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/mitsuhiko/teetty/blob/b3954e2360c8dc27cc1d8441771d5253c40be564/.github/workflows/release.yml",
+      "contentSha256": "a0003d021b22c33747d5867ea38200419d21d9dd206b650adc43002e98eb0393"
+    },
+    {
+      "subsetIndex": 32,
+      "manifestSortRow": 320,
+      "repo": "Mr-Mappie/mappie",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/Mr-Mappie/mappie/blob/3da6ca1fd8279fbcf67f81e527cc2454b9d37150/.github/workflows/release.yml",
+      "contentSha256": "68293e87a3835a66803a89888270077e92084da448c46eeeac2abf4dd74b211f"
+    },
+    {
+      "subsetIndex": 33,
+      "manifestSortRow": 330,
+      "repo": "nesquikm/mcp-rubber-duck",
+      "path": ".github/workflows/semantic-release.yml",
+      "immutableUrl": "https://github.com/nesquikm/mcp-rubber-duck/blob/0e61648257405517fa28347e1c6874e5a3103736/.github/workflows/semantic-release.yml",
+      "contentSha256": "5a5b684fcb5cbf3f1d2df53735ab5bc3b56b2fec5b83d1ee461095fcb551c979"
+    },
+    {
+      "subsetIndex": 34,
+      "manifestSortRow": 340,
+      "repo": "objz/rmcl",
+      "path": ".github/workflows/build-release.yml",
+      "immutableUrl": "https://github.com/objz/rmcl/blob/ddfe0e26b20fe617d4a87b303a5f14c5e8cd32bf/.github/workflows/build-release.yml",
+      "contentSha256": "86ab07691d823ade30ffb87df9ca047bf69a53a03b8b35eaa7e89dd023a8b01f"
+    },
+    {
+      "subsetIndex": 35,
+      "manifestSortRow": 350,
+      "repo": "orhun/daktilo",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/orhun/daktilo/blob/8ac7666eb64c91dc1eef86ee752f547ad90c2b6c/.github/workflows/release.yml",
+      "contentSha256": "c8e90fb72ec3da5ed29b5f4541aaf8a02be3849ba50559921edcbabf213cb949"
+    },
+    {
+      "subsetIndex": 36,
+      "manifestSortRow": 360,
+      "repo": "phun-ky/frameport",
+      "path": ".github/workflows/publish.yml",
+      "immutableUrl": "https://github.com/phun-ky/frameport/blob/6113cf6e028e9c3f2b6d4f14f07babf6d4d06a88/.github/workflows/publish.yml",
+      "contentSha256": "4ae359791ccb4821f3096ae3f6d5d62b971baaa67019c7786c55685040ae9e39"
+    },
+    {
+      "subsetIndex": 37,
+      "manifestSortRow": 370,
+      "repo": "powerpaul17/nc_money",
+      "path": ".github/workflows/create-release.yml",
+      "immutableUrl": "https://github.com/powerpaul17/nc_money/blob/9cfea1c287f2ce773f3b9eab881c11098ffa0898/.github/workflows/create-release.yml",
+      "contentSha256": "9b8739d99f588dd29e8771cfa5584384cd359daee480eb74994d027abdc68f37"
+    },
+    {
+      "subsetIndex": 38,
+      "manifestSortRow": 380,
+      "repo": "raydak-labs/configarr",
+      "path": ".github/workflows/release-it.yml",
+      "immutableUrl": "https://github.com/raydak-labs/configarr/blob/b5b0f1a1b2c4520530141740a4531df32a23186a/.github/workflows/release-it.yml",
+      "contentSha256": "7920521ae98ae0694db7a4d9c68a551536c277a92699dcf909f2e5de61aedae1"
+    },
+    {
+      "subsetIndex": 39,
+      "manifestSortRow": 390,
+      "repo": "reshaprio/reshapr",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/reshaprio/reshapr/blob/793ea7ffc3fccac4c958ed8541e5e636f43746a5/.github/workflows/release.yml",
+      "contentSha256": "c14830d5152cd90967ae6e7a5f72ff902c4782f59aca4afbacbb044b3cca8d0c"
+    },
+    {
+      "subsetIndex": 40,
+      "manifestSortRow": 400,
+      "repo": "rust-codegen-group/openapi-nexus",
+      "path": ".github/workflows/nightly.yml",
+      "immutableUrl": "https://github.com/rust-codegen-group/openapi-nexus/blob/086078594bafbad58b8f48a2469f424647c8087d/.github/workflows/nightly.yml",
+      "contentSha256": "3d16d626d017a88b713820e62aa22774b472d612913de1c83936f19449490162"
+    },
+    {
+      "subsetIndex": 41,
+      "manifestSortRow": 410,
+      "repo": "scop/bash-completion",
+      "path": ".github/workflows/release-please.yaml",
+      "immutableUrl": "https://github.com/scop/bash-completion/blob/1f9c27e0076c8d8c88675b8c80cb0272a8cb0b56/.github/workflows/release-please.yaml",
+      "contentSha256": "10ac030e3d403b77ee254a46f43767660eb237756d36872123722ab50f1ff057"
+    },
+    {
+      "subsetIndex": 42,
+      "manifestSortRow": 420,
+      "repo": "SigmaGmbH/cometbft",
+      "path": ".github/workflows/pre-release.yml",
+      "immutableUrl": "https://github.com/SigmaGmbH/cometbft/blob/b23ef56f8e6d8a7015a7f816a61f2e53b0b07b0d/.github/workflows/pre-release.yml",
+      "contentSha256": "76aa6d7b3682e96b9f44fac4ea8128dfc41a66612dd6e15b6ced6798204b9a77"
+    },
+    {
+      "subsetIndex": 43,
+      "manifestSortRow": 430,
+      "repo": "SolidAlloy/UnityDropdown",
+      "path": ".github/workflows/ci.yml",
+      "immutableUrl": "https://github.com/SolidAlloy/UnityDropdown/blob/4763c945aecc67b88519b4395fe5b55749258257/.github/workflows/ci.yml",
+      "contentSha256": "f8dc34730c423887ddfc2f9371c3730f1cfe913ee63278d3c16be316eb97b4ea"
+    },
+    {
+      "subsetIndex": 44,
+      "manifestSortRow": 440,
+      "repo": "strmprivacy/rust-driver",
+      "path": ".github/workflows/release.yaml",
+      "immutableUrl": "https://github.com/strmprivacy/rust-driver/blob/4bdfbd785cba53df48f6dc8adf0a3720ebf96807/.github/workflows/release.yaml",
+      "contentSha256": "972d108d531bfb2d511d4016958673bfd708d938fbd040d8f20dee139e70dbca"
+    },
+    {
+      "subsetIndex": 45,
+      "manifestSortRow": 450,
+      "repo": "tamcore/kadence",
+      "path": ".github/workflows/release.yaml",
+      "immutableUrl": "https://github.com/tamcore/kadence/blob/62d2069790d1960239ac6c3eaebf14f7037af86a/.github/workflows/release.yaml",
+      "contentSha256": "d9abfbb156e48eebba509d151389c1140e76e8ab02c0f02a77e8341ee3d684df"
+    },
+    {
+      "subsetIndex": 46,
+      "manifestSortRow": 460,
+      "repo": "ThiagoPVLima/Cybis-Cafe-Page",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/ThiagoPVLima/Cybis-Cafe-Page/blob/319b113999de88d0175d178215b8ef2304828796/.github/workflows/release.yml",
+      "contentSha256": "52f754a73f0bf90262132359e27b547b04ef084a032c78d015349d07d7772ea1"
+    },
+    {
+      "subsetIndex": 47,
+      "manifestSortRow": 470,
+      "repo": "trufflesecurity/trufflehog",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/trufflesecurity/trufflehog/blob/6f3c981e7b77f235fd2702dd74af25fc4b72bf11/.github/workflows/release.yml",
+      "contentSha256": "df964a564f511b280590c3572ab3714d700fb54b89255d9f5bd8de256a869f50"
+    },
+    {
+      "subsetIndex": 48,
+      "manifestSortRow": 480,
+      "repo": "uk-gov-mirror/nhsdigital.ftrs-directory-of-services",
+      "path": ".github/workflows/pipeline-build-release.yaml",
+      "immutableUrl": "https://github.com/uk-gov-mirror/nhsdigital.ftrs-directory-of-services/blob/16e89c0ab44582e31d182848c524654d7f9a7357/.github/workflows/pipeline-build-release.yaml",
+      "contentSha256": "da79fdbc3b2a215d8295c199b7de8c18cc7131fa82f487e40b2c4cd6afa29f2e"
+    },
+    {
+      "subsetIndex": 49,
+      "manifestSortRow": 490,
+      "repo": "vyfor/cord.nvim",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/vyfor/cord.nvim/blob/8f081613c1314a0d6f38839c2788216621efb4d9/.github/workflows/release.yml",
+      "contentSha256": "ce5542f15ca916d12818eda7b3fc3b41bab9f46dcb2d8630e952477c0dbbded6"
+    },
+    {
+      "subsetIndex": 50,
+      "manifestSortRow": 500,
+      "repo": "wppconnect-team/wppconnect-server",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/wppconnect-team/wppconnect-server/blob/f09e2fedd904571d39afeca68e26f8fcc2f6d7dc/.github/workflows/release.yml",
+      "contentSha256": "f0fa94eceab759ac93301bf231b8bcbdc9fd8692b09b586e562ce676ca85b192"
+    },
+    {
+      "subsetIndex": 51,
+      "manifestSortRow": 510,
+      "repo": "yschimke/emulator-tools",
+      "path": ".github/workflows/release.yml",
+      "immutableUrl": "https://github.com/yschimke/emulator-tools/blob/d798129dca9a40f4f0930a3f4c3e30cc1e0257ea/.github/workflows/release.yml",
+      "contentSha256": "3d30eae0b6ac6fe13088f3c656012c5ff9a248a55ada401b9078168676124d74"
+    }
+  ]
+}

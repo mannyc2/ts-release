@@ -1,0 +1,54 @@
+{
+  "frozenAt": "2026-07-26T14:39:28.307Z",
+  "protocolCommit": "0f64e85",
+  "seed": "E8-v2|capped-github-code-search|selection-v1",
+  "validatedCandidates": 14186,
+  "eligibleCandidates": 8829,
+  "eligibleRepositories": 8521,
+  "selectedRows": 517,
+  "bandSummary": {
+    "B1": {
+      "eligibleRepositoryWinners": 7369,
+      "selected": 150,
+      "quota": 150,
+      "shortfall": 0
+    },
+    "B2": {
+      "eligibleRepositoryWinners": 777,
+      "selected": 150,
+      "quota": 150,
+      "shortfall": 0
+    },
+    "B3": {
+      "eligibleRepositoryWinners": 308,
+      "selected": 150,
+      "quota": 150,
+      "shortfall": 0
+    },
+    "B4": {
+      "eligibleRepositoryWinners": 67,
+      "selected": 67,
+      "quota": 150,
+      "shortfall": 83
+    }
+  },
+  "representedTools": [
+    "cargo-dist",
+    "changesets",
+    "goreleaser",
+    "jreleaser",
+    "release-it",
+    "release-please",
+    "release-plz",
+    "semantic-release"
+  ],
+  "recodeSubsetRows": 51,
+  "checksums": {
+    "derived/candidate-validation.jsonl": "8e3e89e1a0f29f9410135971ee6c0e554ce64974f8f5722fd8087a2d9fbc47d5",
+    "derived/repository-winners.jsonl": "145a5ed24c6cca37680a2b150aefbf2f09f54d1d278129924ff1d86cf8670970",
+    "derived/within-repo-selection.jsonl": "92d26a66dbb334373ada04fd8fef1f5b8168a0e176f31108f32f64d30796492f",
+    "derived/manifest.jsonl": "ea21b1fac6ccbc55371e6f5684f360c7606b2094883eb623f05dd441485d1cd0",
+    "derived/manifest.csv": "63ea48d6f977f21340462c2b6a53b1d57a7f559d80e5cd0b60412432e4fbff66",
+    "derived/recode-subset-keys.json": "6d23fc3ec5c64ef48aa1ae0574c53b8f959a10cdeec9b36b52076c3910ef20c9"
+  }
+}

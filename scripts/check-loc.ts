@@ -23,8 +23,8 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/types", 13],
   ["apps/release-ts/src", 594], // raised by plan 168 (continue and published flags)
   ["apps/ts-release-action/src", 507], // raised by plan 169.1 (PlannedRun remembers the run invocation for evidence upload)
-  ["test", 10784], // raised by plan 169.2 (the fourteen-case plan rejection matrix)
-  ["scripts", 2278], // raised by plan 169.1 (deferred content resolves against the cwd, not a plan-carried root)
+  ["test", 11768], // raised by plan 173 (strict parity/oracle/fault/report contract harnesses)
+  ["scripts", 5293], // raised by plan 173 (permanent rewrite counters, gates, and report verifier)
   ["apps/release-ts/scripts", 827] // raised by plan 169.1 (render-catalogs threads the invocation)
 ]
 

@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "rewrite-plan-gates/v1",
+  "rootRevision": "0e416e15d149ff9528687a22d3e6e00a073ac6dc",
+  "order": ["173", "174", "175", "176", "177", "183", "178", "179", "180", "181", "182", "184"],
+  "plans": {
+    "173": {
+      "predecessor": null,
+      "report": "contracts/rewrite/reports/plan-173.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:import-rules"],
+        ["bun", "run", "check:loc"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "M0"],
+        ["bun", "run", "check:architecture"],
+        ["bun", "run", "check:parity", "--", "--bootstrap"],
+        ["bun", "run", "check:superiority", "--", "--milestone", "contract"],
+        ["bun", "run", "test:oracle:current"],
+        ["bun", "test", "test/rewrite/config-boundary-contract.test.ts"],
+        ["bun", "run", "test:fault-matrix"],
+        ["bun", "run", "test:driver-conformance"],
+        ["bun", "run", "check:cutover"]
+      ]
+    },
+    "174": {
+      "predecessor": "173",
+      "report": "contracts/rewrite/reports/plan-174.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "M1"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "M1"],
+        ["bun", "run", "check:parity", "--", "--bootstrap"]
+      ]
+    },
+    "175": {
+      "predecessor": "174",
+      "report": "contracts/rewrite/reports/plan-175.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "M2"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "M2"],
+        ["bun", "run", "check:superiority", "--", "--milestone", "runner"]
+      ]
+    },
+    "176": {
+      "predecessor": "175",
+      "report": "contracts/rewrite/reports/plan-176.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "PORT"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "PORT"],
+        ["bun", "run", "check:parity", "--", "--bootstrap"]
+      ]
+    },
+    "177": {
+      "predecessor": "176",
+      "report": "contracts/rewrite/reports/plan-177.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "M6"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "M6"],
+        ["bun", "run", "check:superiority", "--", "--milestone", "cutover"],
+        ["bun", "run", "check:cutover"]
+      ]
+    },
+    "183": {
+      "predecessor": "177",
+      "report": "contracts/rewrite/reports/plan-183.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:parity", "--", "--family", "distributed"],
+        ["bun", "run", "check:superiority", "--", "--milestone", "distributed"]
+      ]
+    },
+    "178": {
+      "predecessor": "183",
+      "report": "contracts/rewrite/reports/plan-178.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:parity", "--", "--family", "shared"]
+      ]
+    },
+    "179": {
+      "predecessor": "178",
+      "report": "contracts/rewrite/reports/plan-179.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:parity", "--", "--family", "packages"]
+      ]
+    },
+    "180": {
+      "predecessor": "179",
+      "report": "contracts/rewrite/reports/plan-180.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:parity", "--", "--family", "supply-chain"]
+      ]
+    },
+    "181": {
+      "predecessor": "180",
+      "report": "contracts/rewrite/reports/plan-181.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:parity", "--", "--family", "providers"]
+      ]
+    },
+    "182": {
+      "predecessor": "181",
+      "report": "contracts/rewrite/reports/plan-182.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:parity", "--", "--family", "changelog"],
+        ["bun", "run", "check:parity", "--", "--family", "announce"]
+      ]
+    },
+    "184": {
+      "predecessor": "182",
+      "report": "contracts/rewrite/reports/plan-184.json",
+      "commands": [
+        ["bun", "run", "check"],
+        ["bun", "test"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:parity"],
+        ["bun", "run", "check:superiority", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:cutover"]
+      ]
+    }
+  }
+}

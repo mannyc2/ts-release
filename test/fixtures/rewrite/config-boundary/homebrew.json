@@ -1,0 +1,32 @@
+{
+  "project": {
+    "name": "fixture",
+    "packageName": "fixture",
+    "version": "1.0.0",
+    "commit": "0123456789abcdef",
+    "tag": "v1.0.0",
+    "description": "Fixture release",
+    "homepage": "https://example.invalid/fixture"
+  },
+  "artifacts": [
+    {
+      "id": "darwin-arm64",
+      "path": "dist/fixture-darwin-arm64",
+      "format": "executable",
+      "variant": {
+        "os": "darwin",
+        "arch": "arm64",
+        "binaryName": "fixture"
+      }
+    }
+  ],
+  "publish": {
+    "homebrew": {
+      "repository": "owner/homebrew-tap",
+      "formulaName": "fixture",
+      "ids": ["darwin-arm64"],
+      "submit": "pull-request",
+      "validate": ["brew", "audit", "--strict", "fixture"]
+    }
+  }
+}

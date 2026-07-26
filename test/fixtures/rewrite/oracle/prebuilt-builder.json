@@ -1,0 +1,18 @@
+{
+  "project": {
+    "name": "fixture",
+    "version": "1.0.0",
+    "commit": "0123456789abcdef",
+    "tag": "v1.0.0"
+  },
+  "builds": [
+    {
+      "builder": "prebuilt",
+      "id": "prebuilt",
+      "targets": ["windows-x64"],
+      "output": "dist/fixture-windows-x64.exe",
+      "binary": "fixture"
+    }
+  ],
+  "publish": {}
+}

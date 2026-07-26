@@ -1,0 +1,33 @@
+{
+  "project": {
+    "name": "fixture",
+    "packageName": "fixture",
+    "version": "1.0.0",
+    "commit": "0123456789abcdef",
+    "tag": "v1.0.0",
+    "description": "Fixture release",
+    "homepage": "https://example.invalid/fixture",
+    "license": "MIT"
+  },
+  "artifacts": [
+    {
+      "id": "windows-x64",
+      "path": "dist/fixture-windows-x64.exe",
+      "format": "executable",
+      "variant": {
+        "os": "windows",
+        "arch": "x64",
+        "binaryName": "fixture.exe"
+      }
+    }
+  ],
+  "publish": {
+    "scoop": {
+      "repository": "owner/scoop-bucket",
+      "manifestName": "fixture",
+      "ids": ["windows-x64"],
+      "submit": "pull-request",
+      "validate": ["pwsh", "-File", "scripts/check-manifest.ps1"]
+    }
+  }
+}

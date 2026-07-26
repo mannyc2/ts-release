@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "rewrite-architecture/v1",
+  "permanentDirectories": [
+    "src/model",
+    "src/recipes",
+    "src/config",
+    "src/plan",
+    "src/drivers",
+    "src/apply",
+    "src/view",
+    "src/api",
+    "apps/release-ts/src",
+    "apps/ts-release-action/src"
+  ],
+  "concepts": ["Config", "Identity", "Recipe", "Op", "Plan", "Evidence", "Driver", "Invocation"],
+  "nodes": [
+    { "id": "model", "paths": ["src/model"], "imports": [] },
+    { "id": "recipes", "paths": ["src/recipes"], "imports": ["model"] },
+    { "id": "config", "paths": ["src/config"], "imports": ["model", "recipes"] },
+    { "id": "plan/accepted", "paths": ["src/plan/accepted.ts", "src/plan/accepted"], "imports": ["model"] },
+    {
+      "id": "plan",
+      "paths": ["src/plan"],
+      "imports": ["model", "config", "recipes", "plan/accepted"]
+    },
+    { "id": "drivers", "paths": ["src/drivers"], "imports": ["model"] },
+    { "id": "apply", "paths": ["src/apply"], "imports": ["model", "plan/accepted", "drivers"] },
+    { "id": "view", "paths": ["src/view"], "imports": ["model", "plan/accepted"] },
+    { "id": "api", "paths": ["src/api"], "imports": ["model", "plan", "apply", "view", "drivers"] },
+    { "id": "apps", "paths": ["apps/release-ts/src", "apps/ts-release-action/src"], "imports": ["root-api"] }
+  ],
+  "temporaryNamespace": {
+    "root": "src/rewrite",
+    "allowedFrom": "M1",
+    "allowedThrough": "PORT",
+    "mirrorsPermanentNodes": true
+  },
+  "legacyExceptions": [
+    { "path": "apps/release-ts/src", "allowedThrough": "M3" },
+    { "path": "apps/ts-release-action/src", "allowedThrough": "M3" },
+    { "path": "src/api/api.ts", "allowedThrough": "M3" },
+    { "path": "src/api/error-message.ts", "allowedThrough": "M3" },
+    { "path": "src/api/errors.ts", "allowedThrough": "M3" },
+    { "path": "src/config/errors.ts", "allowedThrough": "M3" },
+    { "path": "src/config/load.ts", "allowedThrough": "M3" },
+    { "path": "src/config/schema.ts", "allowedThrough": "M3" },
+    { "path": "src/doctor", "allowedThrough": "M3" },
+    { "path": "src/engine", "allowedThrough": "M3" },
+    { "path": "src/features", "allowedThrough": "PORT" },
+    { "path": "src/github", "allowedThrough": "M3" },
+    { "path": "src/grammar", "allowedThrough": "M3" },
+    { "path": "src/host", "allowedThrough": "M3" },
+    { "path": "src/pack", "allowedThrough": "M3" },
+    { "path": "src/render", "allowedThrough": "M3" },
+    { "path": "src/resolve", "allowedThrough": "M3" },
+    { "path": "src/run", "allowedThrough": "M3" },
+    { "path": "src/types", "allowedThrough": "M3" }
+  ],
+  "deletionConditions": {
+    "PORT": {
+      "required": ["src/rewrite"],
+      "forbidden": []
+    },
+    "M3": {
+      "required": ["src/rewrite"],
+      "forbidden": ["src/features"]
+    },
+    "M4": {
+      "required": ["src/model", "src/recipes", "src/plan", "src/drivers", "src/apply", "src/view"],
+      "forbidden": [
+        "src/rewrite",
+        "src/doctor",
+        "src/engine",
+        "src/github",
+        "src/grammar",
+        "src/host",
+        "src/pack",
+        "src/render",
+        "src/resolve",
+        "src/run",
+        "src/types"
+      ]
+    },
+    "M6": {
+      "required": [
+        "src/model",
+        "src/recipes",
+        "src/config",
+        "src/plan",
+        "src/drivers",
+        "src/apply",
+        "src/view",
+        "src/api"
+      ],
+      "forbidden": ["src/rewrite", "src/features"]
+    }
+  },
+  "providerNames": [
+    "github",
+    "gitlab",
+    "gitea",
+    "npm",
+    "pypi",
+    "homebrew",
+    "scoop",
+    "cloudsmith",
+    "gemfury",
+    "dockerhub",
+    "s3",
+    "gcs",
+    "azure",
+    "bluesky",
+    "discord",
+    "slack",
+    "teams",
+    "telegram"
+  ],
+  "forbiddenRuntimePatterns": [
+    "\\bregister(?:Profile|Adapter)\\b",
+    "\\b(?:eval|Function)\\s*\\(",
+    "\\bEffect\\.run(?:Sync|Promise|Fork|Callback)\\b"
+  ],
+  "boundaryRunPaths": [
+    "src/api",
+    "apps/release-ts/src",
+    "apps/ts-release-action/src"
+  ],
+  "excludedLaneRoots": ["test", "fixtures", "examples", "scripts", "plans"]
+}

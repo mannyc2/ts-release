@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "rewrite-superiority/v1",
+  "properties": [
+    {
+      "id": "review-equals-execution",
+      "statement": "The reviewed plan, immutable execution scope, and artifact bytes equal execution.",
+      "requiredTestIds": [
+        "property.review-execution.plan-scope",
+        "property.review-execution.artifact-bytes"
+      ]
+    },
+    {
+      "id": "reject-before-capabilities",
+      "statement": "Invalid plans are rejected before services, credentials, or effects.",
+      "requiredTestIds": [
+        "property.pre-effect.invalid-plan",
+        "property.pre-effect.no-capabilities"
+      ]
+    },
+    {
+      "id": "structural-authority",
+      "statement": "Remote mutation authority and credential access are structural.",
+      "requiredTestIds": [
+        "property.authority.remote-permit",
+        "property.authority.credentials"
+      ]
+    },
+    {
+      "id": "durable-uncertainty",
+      "statement": "Uncertainty is durable and never silently replayed.",
+      "requiredTestIds": [
+        "property.uncertainty.persist-before-dispatch",
+        "property.uncertainty.no-replay"
+      ]
+    },
+    {
+      "id": "portable-split-merge",
+      "statement": "Split and merge execution remains bound to one plan and content inventory.",
+      "requiredTestIds": [
+        "property.distributed.single-plan",
+        "property.distributed.content-inventory"
+      ]
+    }
+  ],
+  "milestones": {
+    "contract": {
+      "requiredCandidateProven": [],
+      "requiredPublicPassing": []
+    },
+    "runner": {
+      "requiredCandidateProven": [
+        "review-equals-execution",
+        "reject-before-capabilities",
+        "structural-authority",
+        "durable-uncertainty"
+      ],
+      "requiredPublicPassing": []
+    },
+    "cutover": {
+      "requiredCandidateProven": [],
+      "requiredPublicPassing": [
+        "review-equals-execution",
+        "reject-before-capabilities",
+        "structural-authority",
+        "durable-uncertainty"
+      ]
+    },
+    "distributed": {
+      "requiredCandidateProven": [],
+      "requiredPublicPassing": [
+        "review-equals-execution",
+        "reject-before-capabilities",
+        "structural-authority",
+        "durable-uncertainty",
+        "portable-split-merge"
+      ]
+    },
+    "PARITY": {
+      "requiredCandidateProven": [],
+      "requiredPublicPassing": [
+        "review-equals-execution",
+        "reject-before-capabilities",
+        "structural-authority",
+        "durable-uncertainty",
+        "portable-split-merge"
+      ]
+    }
+  },
+  "forbiddenComparativeClaims": [
+    "technically superior to GoReleaser",
+    "more reliable than GoReleaser",
+    "safer than GoReleaser"
+  ]
+}

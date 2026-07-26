@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "rewrite-source-budget/v1",
+  "policyVersion": "semantic-source/v2",
+  "plannedCommit": "0e416e15d149ff9528687a22d3e6e00a073ac6dc",
+  "opening": {
+    "product": 8031,
+    "oracle": 14441,
+    "roles": {
+      "contract-model": 1603,
+      "recipes-data-templates": 2442,
+      "runtime-drivers": 1814,
+      "orchestration-projection": 858,
+      "public-boundaries": 1314
+    }
+  },
+  "milestones": {
+    "M0": { "product": 8031, "productMode": "exact", "oracle": 18000 },
+    "M1": { "product": 9231, "productMode": "ceiling", "oracle": 18800 },
+    "M2": { "product": 10131, "productMode": "ceiling", "oracle": 20500 },
+    "PORT": { "product": 11031, "productMode": "ceiling", "oracle": 21500 },
+    "M3": { "product": 9500, "productMode": "ceiling", "oracle": 21000 },
+    "M4": { "product": 7200, "productMode": "ceiling", "oracle": 20500 },
+    "M5": { "product": 6000, "productMode": "ceiling", "oracle": 20000 },
+    "M6": { "product": 5200, "productMode": "ceiling", "oracle": 19500 },
+    "PARITY": { "product": 7800, "productMode": "ceiling", "oracle": 25000 }
+  },
+  "m6RoleCeilings": {
+    "contract-model": 1000,
+    "recipes-data-templates": 900,
+    "runtime-drivers": 1700,
+    "orchestration-projection": 650,
+    "public-boundaries": 950
+  },
+  "temporarySliceCeilings": {
+    "M1": { "candidate-model-config-recipes-plan": 1200 },
+    "M2": { "candidate-executor-drivers": 900 },
+    "PORT": { "candidate-current-surface": 900 }
+  },
+  "familyBanks": {
+    "announce": 450,
+    "packages": 600,
+    "providers": 550,
+    "shared": 250,
+    "supply-chain": 400,
+    "distributed": 350
+  },
+  "oracleFamilyBanks": {
+    "announce-changelog": 1050,
+    "distributed": 700,
+    "packages": 1300,
+    "providers": 1200,
+    "shared": 350,
+    "supply-chain": 900
+  },
+  "waves": [
+    { "name": "M6", "product": 5200, "oracle": 19500 },
+    { "name": "distributed", "product": 5550, "oracle": 20200 },
+    { "name": "shared", "product": 5700, "oracle": 20550 },
+    { "name": "packages", "product": 6300, "oracle": 21850 },
+    { "name": "supply-chain", "product": 6700, "oracle": 22750 },
+    { "name": "providers", "product": 7250, "oracle": 23950 },
+    { "name": "announce-changelog", "product": 7800, "oracle": 25000 }
+  ],
+  "marginalKeyCeilings": {
+    "median": 30,
+    "p90": 60,
+    "maximum": 150
+  },
+  "antiGolf": {
+    "lineLength": 120,
+    "functionSemanticLines": 60,
+    "branchCount": 10,
+    "nesting": 3,
+    "fileSemanticLines": 300,
+    "forbidden": ["any", "@ts-ignore", "as unknown as"],
+    "scopeBeforeM6": ["src/rewrite"],
+    "scopeAtM6": ["src", "apps/release-ts/src", "apps/ts-release-action/src"]
+  },
+  "generatedWitnesses": [
+    {
+      "output": "apps/ts-release-action/dist/index.js",
+      "generator": "scripts/check-action-bundle.ts",
+      "generatedMarker": "import { createRequire } from \"node:module\";",
+      "checkCommand": "bun run check:action-bundle"
+    }
+  ],
+  "shippedRoots": [
+    "src",
+    "templates",
+    "apps/release-ts/src",
+    "apps/ts-release-action/src",
+    "apps/ts-release-action/action.yml",
+    "apps/release-ts/release.config.json"
+  ],
+  "excludedImportRoots": ["test", "fixtures", "examples", "scripts", "plans"]
+}

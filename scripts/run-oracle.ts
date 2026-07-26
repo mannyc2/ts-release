@@ -1,5 +1,7 @@
 import { parseArgs } from "node:util"
+import * as Effect from "effect/Effect"
 import { encodeCanonicalJson } from "./lib/canonical-json.js"
+import { runCandidateOracle } from "../test/rewrite/candidate-adapter.js"
 
 const { values } = parseArgs({
   args: process.argv.slice(2),
@@ -13,13 +15,4 @@ if (!values.candidate) {
   throw new Error("run-oracle only hosts the candidate roster; use test:oracle:current")
 }
 
-process.stdout.write(encodeCanonicalJson({
-  schemaVersion: 1,
-  adapter: "candidate",
-  status: "candidate-pending",
-  supportedRoster: [
-    "incumbent-example-corpus",
-    "command-builder",
-    "prebuilt-builder"
-  ]
-}))
+process.stdout.write(encodeCanonicalJson(await Effect.runPromise(runCandidateOracle())))

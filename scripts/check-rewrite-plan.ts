@@ -387,6 +387,8 @@ const buildReport = async (
   gates: GateContract,
   commands: ReadonlyArray<CommandResult>
 ): Promise<Readonly<Record<string, JsonValue>>> => {
+  const sourceMilestone = plan === "173" ? "M0" : plan === "174" ? "M1" : "PARITY"
+  const propertyMilestone = ["173", "174"].includes(plan) ? "contract" : "PARITY"
   const commit = git(["rev-parse", "HEAD"])
   const tree = git(["rev-parse", "HEAD^{tree}"])
   const claimRun = await runClaimCases(root)
@@ -395,9 +397,9 @@ const buildReport = async (
     "parity/goreleaser-v2.17.0/manifest.json",
     "utf8"
   ))
-  const source = await countSourceTree(root, plan === "173" ? "M0" : "PARITY")
+  const source = await countSourceTree(root, sourceMilestone)
   if (source.warnings.length > 0) throw new Error("Source report contains warnings.")
-  const properties = checkSuperiority(root, plan === "173" ? "contract" : "PARITY")
+  const properties = checkSuperiority(root, propertyMilestone)
   const prior = gate.predecessor === null
     ? null
     : verifyReport(gates.plans[gate.predecessor]!.report, gates, false)

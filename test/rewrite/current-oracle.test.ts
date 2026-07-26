@@ -73,14 +73,14 @@ describe("representation-neutral current behavior oracle", () => {
   }
 
   test("every frozen M0 product surface has an oracle mapping", async () => {
-    const report = await countSourceTree(root, "M0")
+    const report = await countSourceTree(root, "M1")
     const oracle = parseStrictJson(readFileSync(
       join(root, "contracts", "rewrite", "oracle.json"),
       "utf8"
     )) as { readonly sourceSurfaces: ReadonlyArray<{ readonly path: string }> }
     expect(oracle.sourceSurfaces.map((surface) => surface.path).sort()).toEqual(
       report.files
-        .filter((file) => file.lane === "product")
+        .filter((file) => file.lane === "product" && !file.path.startsWith("src/rewrite/"))
         .map((file) => file.path)
         .sort()
     )

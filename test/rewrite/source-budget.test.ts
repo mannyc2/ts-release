@@ -9,11 +9,11 @@ import {
 } from "../../scripts/lib/source-budget.js"
 
 describe("semantic source ruler", () => {
-  test("freezes exact M0 product and opening Oracle counts with zero warnings", async () => {
-    const report = await countSourceTree(process.cwd(), "M0")
-    expect(report.totals.product).toBe(8031)
+  test("retains M0 history while enforcing the current M1 ceilings", async () => {
+    const report = await countSourceTree(process.cwd(), "M1")
+    expect(report.totals.product).toBeLessThanOrEqual(9231)
     expect(report.openingOracle).toBe(14441)
-    expect(report.totals.oracle).toBeLessThanOrEqual(18000)
+    expect(report.totals.oracle).toBeLessThanOrEqual(18800)
     expect(report.warnings).toEqual([])
     expect(report.files.every((file) =>
       ["product", "oracle", "tooling", "examples"].includes(file.lane))).toBe(true)

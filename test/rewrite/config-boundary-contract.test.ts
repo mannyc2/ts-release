@@ -13,6 +13,7 @@ import {
   expectObject,
   parseStrictJson
 } from "../../scripts/lib/strict-json.js"
+import { decodeConfig as decodeCandidateConfig } from "../../src/rewrite/config/config.js"
 import { decodeReleaseIntent } from "../../src/config/load.js"
 import { withTempDirectoryPromise } from "../helpers.js"
 
@@ -157,6 +158,27 @@ describe("frozen v6 configuration boundary", () => {
       cycle
     ]
     for (const value of values) expect(() => assertJsonValue(value)).toThrow()
+  })
+
+  test("Plan 174 activates the private value-only candidate decoder", async () => {
+    const input = {
+      project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
+      artifacts: [{ id: "fixture", path: "dist/fixture", format: "executable" }],
+      publish: {}
+    }
+    expect(await Effect.runPromise(decodeCandidateConfig(input))).toEqual(
+      await Effect.runPromise(decodeCandidateConfig(JSON.parse(JSON.stringify(input))))
+    )
+    for (const value of [
+      "release.json",
+      { ...input, configPath: "release.json" },
+      { ...input, profiles: {} },
+      { ...input, adapters: {} }
+    ]) {
+      expect((await Effect.runPromise(
+        decodeCandidateConfig(value).pipe(Effect.flip)
+      ))._tag).toMatch(/Config(?:Value|Decode)Error/u)
+    }
   })
 
   test("product-owned presets expose no injected renderer, schema, authority, or credentials", () => {

@@ -12,15 +12,26 @@ const scriptPath = resolve(
   "scripts",
   "check-self-release-live-readiness.ts"
 )
+const fetchPreloadPath = resolve(
+  import.meta.dir,
+  "fixtures",
+  "rewrite",
+  "self-release-readiness-fetch.ts"
+)
 
-const run = (cwd: string, apiBase: string) => runBunProcess(["bun", scriptPath], {
+const run = (
+  cwd: string,
+  options: { readonly emptyHomebrew?: boolean; readonly missingHomebrew?: boolean }
+) => runBunProcess(["bun", "--preload", fetchPreloadPath, scriptPath], {
     cwd,
     env: {
       ...process.env,
-      SELF_RELEASE_GITHUB_API_BASE: apiBase,
-      SELF_RELEASE_NPM_REGISTRY: apiBase,
-      SELF_RELEASE_PYPI_API_BASE: apiBase,
-      SELF_RELEASE_SKIP_GITHUB_SECRET_CHECK: "1"
+      SELF_RELEASE_GITHUB_API_BASE: "https://readiness.invalid",
+      SELF_RELEASE_NPM_REGISTRY: "https://readiness.invalid",
+      SELF_RELEASE_PYPI_API_BASE: "https://readiness.invalid",
+      SELF_RELEASE_SKIP_GITHUB_SECRET_CHECK: "1",
+      SELF_RELEASE_TEST_EMPTY_HOMEBREW: options.emptyHomebrew === true ? "1" : "0",
+      SELF_RELEASE_TEST_MISSING_HOMEBREW: options.missingHomebrew === true ? "1" : "0"
     }
   })
 
@@ -62,37 +73,14 @@ const prepareWorkspace = async (
   return root
 }
 
-const makeServer = (options: { readonly emptyHomebrew?: boolean; readonly missingHomebrew?: boolean } = {}) =>
-  Bun.serve({
-    port: 0,
-    fetch: (request) => {
-      const path = decodeURIComponent(new URL(request.url).pathname)
-      if (path === "/repos/mannyc2/homebrew-ts-release" && options.emptyHomebrew === true) {
-        return Response.json({ default_branch: "" })
-      }
-      const okPaths = new Set([
-        "/repos/mannyc2/ts-release",
-        "/repos/mannyc2/scoop-ts-release"
-      ])
-      if (options.missingHomebrew !== true) {
-        okPaths.add("/repos/mannyc2/homebrew-ts-release")
-      }
-      if (okPaths.has(path)) {
-        return Response.json({ default_branch: "main" })
-      }
-      return new Response("not found", { status: 404 })
-    }
-  })
 const checkReadiness = async (
   workspace: { readonly installSmokeWorkflow?: boolean } = {},
   serverOptions: { readonly emptyHomebrew?: boolean; readonly missingHomebrew?: boolean } = {}
 ) => {
   const root = await prepareWorkspace(workspace)
-  const server = makeServer(serverOptions)
   try {
-    return await run(root, server.url.origin)
+    return await run(root, serverOptions)
   } finally {
-    server.stop(true)
     await rm(root, { recursive: true, force: true })
   }
 }

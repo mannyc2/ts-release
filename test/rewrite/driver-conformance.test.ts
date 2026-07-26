@@ -29,14 +29,22 @@ import {
 import {
   CheckpointId,
   Digest,
+  NonEmptyName,
   OutputId,
   SafeRelativePath,
   SnapshotId,
   WorkspaceRoot
 } from "../../src/rewrite/model/primitives.js"
 import {
+  Operation
+} from "../../src/rewrite/model/operation.js"
+import {
   MaterializedOutput
 } from "../../src/rewrite/model/run.js"
+import {
+  Invocation,
+  compilePlan
+} from "../../src/rewrite/plan/compiler.js"
 import { acceptedRunPlan } from "./run-fixture.js"
 
 const failure = <A, E>(effect: Effect.Effect<A, E>) =>
@@ -154,15 +162,40 @@ describe("candidate driver conformance", () => {
     }
   })
 
-  test("catalog publish parameters are limited to the closed HTTP/forge union", async () => {
+  test("publish parameters are limited to the closed remote composite union", async () => {
     const accepted = await acceptedRunPlan()
+    const operation = accepted.plan.stages.publish[0]!
+    if (operation._tag !== "HttpPublish") throw new Error("Expected HTTP publish fixture.")
     const request = CatalogPublishRequest.make({
-      operation: accepted.plan.stages.publish[0]!,
+      operation,
       checkpointId: CheckpointId.make("dispatch"),
       clientReconciliationKey: "stable-key"
     })
     expect(request.operation._tag).toBe("HttpPublish")
     expect(request.clientReconciliationKey).toBe("stable-key")
     expect(VerifiedContentHandle).not.toHaveProperty("make")
+  })
+
+  test("package, forge, and opaque composites reject injected execution policy", async () => {
+    for (const name of ["portable-cli", "agent-plugin"]) {
+      const config = JSON.parse(readFileSync(
+        join(process.cwd(), "examples", name, "release.config.json"),
+        "utf8"
+      ))
+      const accepted = await Effect.runPromise(compilePlan(config, Invocation.make({
+        workspace: WorkspaceRoot.make(process.cwd()),
+        commit: NonEmptyName.make("abc123"),
+        snapshot: false
+      })))
+      for (const operation of accepted.plan.stages.publish.filter((candidate) =>
+        ["PackageRegistryRelease", "ForgeRelease", "OpaquePublish"].includes(candidate._tag))) {
+        expect(Schema.decodeUnknownSync(Operation, {
+          onExcessProperty: "error"
+        })(operation)._tag).toBe(operation._tag)
+        expect(() => Schema.decodeUnknownSync(Operation, {
+          onExcessProperty: "error"
+        })({ ...operation, autoRetry: true })).toThrow()
+      }
+    }
   })
 })

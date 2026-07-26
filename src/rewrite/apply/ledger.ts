@@ -28,6 +28,9 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
     case "ForgeRelease":
       return [CheckpointId.make("release"),
         ...operation.inputs.map((id) => CheckpointId.make(`asset:${id}`))]
+    case "PackageRegistryRelease":
+    case "OpaquePublish":
+      return [CheckpointId.make("dispatch")]
     default:
       return []
   }

@@ -90,7 +90,25 @@ type PublishServices = {
   readonly store: RunStoreShape, readonly catalog: DriverCatalogShape,
   readonly workspace: WorkspaceStoreShape, readonly credential: typeof CredentialStore.Service
 }
-type PublishOperation = Extract<Operation, { readonly _tag: "HttpPublish" | "ForgeRelease" }>
+type PublishOperation = Extract<Operation, {
+  readonly _tag:
+    | "HttpPublish"
+    | "ForgeRelease"
+    | "PackageRegistryRelease"
+    | "OpaquePublish"
+}>
+const publishTarget = (operation: PublishOperation): string => {
+  switch (operation._tag) {
+    case "HttpPublish":
+      return operation.wire.baseUrl
+    case "ForgeRelease":
+      return operation.repository
+    case "PackageRegistryRelease":
+      return operation.registryUrl
+    case "OpaquePublish":
+      return `${operation.contractFixtureId}:${operation.argv[0]}`
+  }
+}
 const checkpointCommand = (
   result: MutationResult, operationId: Operation["id"], checkpointId: CheckpointId
 ): TransitionCommand => {
@@ -120,7 +138,7 @@ const publishOperation = (
     if (checkpoint._tag !== "CheckpointPending") continue
     const operationHash = accepted.operationHashes.find((item) =>
       item.operationId === operation.id)!.hash
-    const target = operation._tag === "ForgeRelease" ? operation.repository : operation.wire.baseUrl
+    const target = publishTarget(operation)
     const key = reconciliationKey(accepted.planId, next.logicalRunId,
       next.scope, next.executionTopologyHash,
       OperationHash.make(operationHash), checkpoint.checkpointId,

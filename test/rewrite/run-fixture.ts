@@ -102,6 +102,17 @@ export const acceptedRunPlan = (): Promise<AcceptedPlan> => {
           outputs: [],
           repository: "owner/repository",
           tag: "v1.0.0",
+          title: "fixture 1.0.0",
+          draft: true,
+          prerelease: false,
+          assets: [
+            {
+              outputId: source.id,
+              path: source.path,
+              name: "source",
+              contentType: "application/octet-stream"
+            }
+          ],
           credential,
           contractFixtureId: "contract.publish.github/v1"
         })

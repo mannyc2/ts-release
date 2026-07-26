@@ -71,7 +71,12 @@ export const mintExecutionReceipt = (accepted: AcceptedPlan, scope: ExecutionSco
 export const publishReviewId = (accepted: AcceptedPlan, executionReview: ExecutionReviewId,
   scope: ExecutionScope, materials: ReadonlyArray<MaterializedOutput>): PublishReviewId => {
   const publishIds = new Set(operationEntries(accepted.plan).filter(({ operation }) =>
-    ["HttpPublish", "ForgeRelease"].includes(operation._tag))
+    [
+      "HttpPublish",
+      "ForgeRelease",
+      "PackageRegistryRelease",
+      "OpaquePublish"
+    ].includes(operation._tag))
     .map(({ operation }) => String(operation.id)))
   const operations = selected(accepted, scope)
     .filter(({ operationId }) => publishIds.has(operationId))

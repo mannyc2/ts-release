@@ -82,7 +82,12 @@ const credentialFailure = (
     if (operation._tag === "HttpRead" && operation.credential !== undefined) {
       read.add(operation.credential.name)
     }
-    if (operation._tag === "HttpPublish" || operation._tag === "ForgeRelease") {
+    if (
+      operation._tag === "HttpPublish" ||
+      operation._tag === "ForgeRelease" ||
+      operation._tag === "PackageRegistryRelease" ||
+      operation._tag === "OpaquePublish"
+    ) {
       publish.add(operation.credential.name)
     }
   }

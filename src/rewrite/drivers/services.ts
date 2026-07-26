@@ -2,7 +2,15 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
-import { ForgeRelease, HttpPublish, Operation, PublishCredential, ReadCredential } from "../model/operation.js"
+import {
+  ForgeRelease,
+  HttpPublish,
+  OpaquePublish,
+  Operation,
+  PackageRegistryRelease,
+  PublishCredential,
+  ReadCredential
+} from "../model/operation.js"
 import { CheckpointId, Digest, OutputId, SafeRelativePath, WorkspaceRoot } from "../model/primitives.js"
 import { DriverError, MaterializedOutput } from "../model/run.js"
 import type { ExecutionPermit, PublishPermit } from "../model/permit.js"
@@ -16,7 +24,13 @@ export class ReadRequest extends Schema.TaggedClass<ReadRequest>()("ReadRequest"
 }) {}
 export class CatalogPublishRequest
   extends Schema.TaggedClass<CatalogPublishRequest>()("CatalogPublishRequest", {
-    operation: Schema.Union([HttpPublish, ForgeRelease]), checkpointId: CheckpointId,
+    operation: Schema.Union([
+      HttpPublish,
+      ForgeRelease,
+      PackageRegistryRelease,
+      OpaquePublish
+    ]),
+    checkpointId: CheckpointId,
     clientReconciliationKey: Schema.NonEmptyString
   }) {}
 export class CatalogStructuredRequest

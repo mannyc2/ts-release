@@ -10,13 +10,32 @@ import {
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
   id: OutputId,
   path: SafeRelativePath,
-  kind: Schema.Literals(["file", "directory", "executable", "archive", "digest"])
+  kind: Schema.Literals([
+    "file",
+    "directory",
+    "executable",
+    "archive",
+    "digest",
+    "package",
+    "wheel",
+    "checksum-file",
+    "catalog-file"
+  ]),
+  provenance: Schema.optionalKey(Schema.Literals(["build", "import", "process", "catalog", "internal"])),
+  platform: Schema.optionalKey(Schema.Struct({
+    os: Schema.Literals(["linux", "darwin", "windows"]),
+    arch: Schema.Literals(["x64", "arm64"]),
+    libc: Schema.optionalKey(Schema.Literals(["glibc", "musl"])),
+    binaryName: Schema.optionalKey(Schema.NonEmptyString),
+    targetTriple: Schema.optionalKey(Schema.NonEmptyString)
+  }))
 }) {}
 
 const row = {
   id: OperationId,
   inputs: Schema.Array(OutputId),
-  outputs: Schema.Array(OutputDeclaration)
+  outputs: Schema.Array(OutputDeclaration),
+  description: Schema.optionalKey(Schema.NonEmptyString)
 }
 
 export class ReadCredential extends Schema.Class<ReadCredential>("ReadCredential")({
@@ -37,6 +56,16 @@ export class WireContract extends Schema.Class<WireContract>("WireContract")({
   reconciliation: Schema.Literals(["none", "get-same-resource"])
 }) {}
 
+export class ContentHole extends Schema.Class<ContentHole>("ContentHole")({
+  fact: Schema.Literals(["sha256", "downloadUrl", "assetName"]),
+  outputId: OutputId
+}) {}
+export const ContentValue = Schema.Union([
+  Schema.String,
+  Schema.Array(Schema.Union([Schema.String, ContentHole]))
+])
+export type ContentValue = typeof ContentValue.Type
+
 export class Check extends Schema.TaggedClass<Check>()("Check", {
   ...row,
   path: SafeRelativePath
@@ -44,7 +73,7 @@ export class Check extends Schema.TaggedClass<Check>()("Check", {
 export class Write extends Schema.TaggedClass<Write>()("Write", {
   ...row,
   path: SafeRelativePath,
-  content: Schema.String
+  content: ContentValue
 }) {}
 export class Pack extends Schema.TaggedClass<Pack>()("Pack", {
   ...row,
@@ -77,8 +106,51 @@ export class ForgeRelease extends Schema.TaggedClass<ForgeRelease>()("ForgeRelea
   ...row,
   repository: Schema.NonEmptyString,
   tag: Schema.NonEmptyString,
+  title: Schema.NonEmptyString,
+  draft: Schema.Boolean,
+  prerelease: Schema.Boolean,
+  assets: Schema.Array(Schema.Struct({
+    outputId: OutputId,
+    path: SafeRelativePath,
+    name: Schema.NonEmptyString,
+    contentType: Schema.NonEmptyString
+  })),
   credential: PublishCredential,
+  readCredential: Schema.optionalKey(ReadCredential),
   contractFixtureId: Schema.NonEmptyString
+}) {}
+export class PackageRegistryRelease
+  extends Schema.TaggedClass<PackageRegistryRelease>()("PackageRegistryRelease", {
+    ...row,
+    registryKind: Schema.Literals(["npm", "pypi"]),
+    packageName: Schema.NonEmptyString,
+    version: Schema.NonEmptyString,
+    registryUrl: Schema.NonEmptyString,
+    packagePath: SafeRelativePath,
+    artifactPaths: Schema.Array(SafeRelativePath),
+    clientExecutable: Schema.NonEmptyString,
+    trustedPublishing: Schema.Boolean,
+    trustedProvider: Schema.optionalKey(Schema.Literal("github-actions")),
+    trustedWorkflow: Schema.optionalKey(Schema.NonEmptyString),
+    verifyPackageExists: Schema.Boolean,
+    verifyPublished: Schema.Boolean,
+    access: Schema.optionalKey(Schema.Literals(["public", "restricted"])),
+    provenance: Schema.optionalKey(Schema.Boolean),
+    environmentNames: Schema.Array(Schema.NonEmptyString),
+    credential: PublishCredential,
+    readCredential: Schema.optionalKey(ReadCredential),
+    contractFixtureId: Schema.NonEmptyString
+  })
+{}
+export class OpaquePublish extends Schema.TaggedClass<OpaquePublish>()("OpaquePublish", {
+  ...row,
+  argv: Schema.NonEmptyArray(Schema.String),
+  cwd: SafeRelativePath,
+  environmentNames: Schema.Array(Schema.NonEmptyString),
+  credential: PublishCredential,
+  contractFixtureId: Schema.NonEmptyString,
+  reconciliation: Schema.Literal("manual-only"),
+  irreversible: Schema.Boolean
 }) {}
 
 export const BuildOp = Schema.Union([Check, Write, Exec])
@@ -89,7 +161,13 @@ export const CatalogOp = Schema.Union([Check, Write, Exec])
 export type CatalogOp = typeof CatalogOp.Type
 export const ValidateOp = Schema.Union([Check, Exec, HttpRead])
 export type ValidateOp = typeof ValidateOp.Type
-export const PublishOp = Schema.Union([HttpPublish, ForgeRelease])
+export const PublishOp = Schema.Union([
+  Exec,
+  HttpPublish,
+  ForgeRelease,
+  PackageRegistryRelease,
+  OpaquePublish
+])
 export type PublishOp = typeof PublishOp.Type
 export const AnnounceOp = Schema.Union([HttpPublish])
 export type AnnounceOp = typeof AnnounceOp.Type
@@ -104,7 +182,9 @@ export const Operation = Schema.Union([
   Exec,
   HttpRead,
   HttpPublish,
-  ForgeRelease
+  ForgeRelease,
+  PackageRegistryRelease,
+  OpaquePublish
 ])
 export type Operation = typeof Operation.Type
 export const mechanismTags = [
@@ -115,7 +195,9 @@ export const mechanismTags = [
   "Exec",
   "HttpRead",
   "HttpPublish",
-  "ForgeRelease"
+  "ForgeRelease",
+  "PackageRegistryRelease",
+  "OpaquePublish"
 ] as const
 export type Authority =
   | "LocalRead"
@@ -138,6 +220,8 @@ export const operationAuthority = (operation: Operation): Authority => {
       return "RemoteRead"
     case "HttpPublish":
     case "ForgeRelease":
+    case "PackageRegistryRelease":
+    case "OpaquePublish":
       return "RemotePublish"
   }
 }

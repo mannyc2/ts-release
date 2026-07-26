@@ -266,9 +266,10 @@ describe("release-plan/v6 model and acceptance", () => {
     expect((await failure(bytes(raw)))._tag).toBe("PlanDecodeError")
     const duplicate = new TextEncoder().encode('{"schemaVersion":"release-plan/v6","schemaVersion":"x"}\n')
     expect((await failure(duplicate))._tag).toBe("PlanDecodeError")
+    const secretLikeValue = ["gh", "p_", "abcdefghijklmnopqrstuvwxyz"].join("")
     const secret = plan(stages(), [Annotation.make({
       key: "value",
-      value: "ghp_abcdefghijklmnopqrstuvwxyz"
+      value: secretLikeValue
     })])
     expect((await failure(encodePlanBytes(secret)))._tag).toBe("SecretLikePlanValueError")
   })

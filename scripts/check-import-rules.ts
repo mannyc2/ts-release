@@ -193,10 +193,45 @@ const targetDirectory = (target: string): string | undefined => {
   return rootDirectory === "src" ? directory : undefined
 }
 
+const rewriteConcept = (path: string): string | undefined => {
+  const parts = path.split("/")
+  return parts[0] === "src" && parts[1] === "rewrite" ? parts[2] : undefined
+}
+
+const rewriteDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
+  model: ["model"],
+  recipes: ["recipes", "model"],
+  config: ["config", "model", "recipes"],
+  plan: ["plan", "model", "config", "recipes"]
+}
+
+const checkRewriteImport = (
+  source: ts.SourceFile,
+  reference: ImportReference
+): string | undefined => {
+  const target = relativeTarget(reference)
+  if (target === undefined) return undefined
+  const from = rewriteConcept(toDisplayPath(reference.file))
+  const to = rewriteConcept(target)
+  if (from === undefined && to === undefined) return undefined
+  if (from === undefined) {
+    return failure(source, reference, "incumbent product code may not import the shadow candidate.")
+  }
+  if (to === undefined || !rewriteDependencies[from]?.includes(to)) {
+    return failure(
+      source,
+      reference,
+      `rewrite/${from}/ may import only ${rewriteDependencies[from]?.join(", ") ?? "its DAG dependencies"}.`
+    )
+  }
+  return undefined
+}
+
 const checkConceptImport = (
   source: ts.SourceFile,
   reference: ImportReference
 ): string | undefined => {
+  if (rewriteConcept(toDisplayPath(reference.file)) !== undefined) return undefined
   if (isEffectImport(reference.specifier) || isNodeImport(reference.specifier) || allowlisted(reference)) {
     return undefined
   }
@@ -225,7 +260,10 @@ const checkConceptImport = (
 const checkReference = (
   source: ts.SourceFile,
   reference: ImportReference
-): string | undefined => checkConceptImport(source, reference) ?? checkFeaturePhaseImport(source, reference)
+): string | undefined =>
+  checkRewriteImport(source, reference) ??
+  checkConceptImport(source, reference) ??
+  checkFeaturePhaseImport(source, reference)
 
 const checkFile = (file: string): Array<string> => {
   const source = ts.createSourceFile(

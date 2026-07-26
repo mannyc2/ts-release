@@ -387,8 +387,8 @@ const buildReport = async (
   gates: GateContract,
   commands: ReadonlyArray<CommandResult>
 ): Promise<Readonly<Record<string, JsonValue>>> => {
-  const sourceMilestone = plan === "173" ? "M0" : plan === "174" ? "M1" : "PARITY"
-  const propertyMilestone = ["173", "174"].includes(plan) ? "contract" : "PARITY"
+  const sourceMilestone = plan === "173" ? "M0" : plan === "174" ? "M1" : plan === "175" ? "M2" : "PARITY"
+  const propertyMilestone = ["173", "174"].includes(plan) ? "contract" : plan === "175" ? "runner" : "PARITY"
   const commit = git(["rev-parse", "HEAD"])
   const tree = git(["rev-parse", "HEAD^{tree}"])
   const claimRun = await runClaimCases(root)

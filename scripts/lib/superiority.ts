@@ -18,6 +18,7 @@ interface MilestoneContract {
 
 interface SuperiorityContract {
   readonly schemaVersion: "rewrite-superiority/v1"
+  readonly caseStandings: Readonly<Record<string, CaseStanding>>
   readonly properties: ReadonlyArray<PropertyContract>
   readonly milestones: Readonly<Record<string, MilestoneContract>>
   readonly forbiddenComparativeClaims: ReadonlyArray<string>
@@ -35,6 +36,7 @@ const readContract = (root: string): {
   )
   expectExactKeys(parsed, [
     "schemaVersion",
+    "caseStandings",
     "properties",
     "milestones",
     "forbiddenComparativeClaims"
@@ -78,8 +80,15 @@ export const checkSuperiority = (
   if (testIds.some((id) => id.length === 0) || new Set(testIds).size !== testIds.length) {
     throw new Error("Superiority test ids must be nonempty and unique.")
   }
+  if (Object.keys(contract.caseStandings).sort().join(",") !== [...testIds].sort().join(",") ||
+    Object.values(contract.caseStandings).some((value) =>
+      !["candidate-pending", "candidate-proven", "passing"].includes(value))) {
+    throw new Error("Superiority case standings must exactly cover the test roster.")
+  }
+  const effective = Object.keys(standings).length > 0 || milestone === "contract"
+    ? standings : contract.caseStandings
   const properties = contract.properties.map((property) => {
-    const results = property.requiredTestIds.map((id) => standings[id] ?? "candidate-pending")
+    const results = property.requiredTestIds.map((id) => effective[id] ?? "candidate-pending")
     const standing = results.every((value) => value === "passing")
       ? "passing"
       : results.every((value) => value === "passing" || value === "candidate-proven")

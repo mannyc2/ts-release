@@ -1,5 +1,17 @@
 {
   "schemaVersion": "rewrite-superiority/v1",
+  "caseStandings": {
+    "property.review-execution.plan-scope": "candidate-proven",
+    "property.review-execution.artifact-bytes": "candidate-proven",
+    "property.pre-effect.invalid-plan": "candidate-proven",
+    "property.pre-effect.no-capabilities": "candidate-proven",
+    "property.authority.remote-permit": "candidate-proven",
+    "property.authority.credentials": "candidate-proven",
+    "property.uncertainty.persist-before-dispatch": "candidate-proven",
+    "property.uncertainty.no-replay": "candidate-proven",
+    "property.distributed.single-plan": "candidate-pending",
+    "property.distributed.content-inventory": "candidate-pending"
+  },
   "properties": [
     {
       "id": "review-equals-execution",

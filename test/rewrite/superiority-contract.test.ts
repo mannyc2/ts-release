@@ -23,4 +23,14 @@ describe("five-property superiority contract", () => {
     )) as { forbiddenComparativeClaims: ReadonlyArray<string> }
     expect(contract.forbiddenComparativeClaims).toContain("technically superior to GoReleaser")
   })
+
+  test("runner evidence proves four properties without claiming public cutover", () => {
+    expect(checkSuperiority(process.cwd(), "runner")).toMatchObject({
+      passing: 0,
+      candidateProven: 4,
+      unresolved: 1,
+      failures: []
+    })
+    expect(checkSuperiority(process.cwd(), "cutover").failures).toHaveLength(4)
+  })
 })

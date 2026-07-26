@@ -29,6 +29,7 @@ interface SourceBudgetContract {
     Record<string, { readonly product: number; readonly productMode: string; readonly oracle: number }>
   >
   readonly m6RoleCeilings: Readonly<Record<ProductRole, number>>
+  readonly temporarySliceCeilings: Readonly<Record<string, Readonly<Record<string, number>>>>
   readonly familyBanks: Readonly<Record<string, number>>
   readonly oracleFamilyBanks: Readonly<Record<string, number>>
   readonly waves: ReadonlyArray<{
@@ -81,6 +82,8 @@ export interface SourceBudgetReport {
   readonly byKind: Readonly<Record<string, number>>
   readonly byRole: Readonly<Record<string, number>>
   readonly byModule: Readonly<Record<string, number>>
+  readonly temporarySlices: Readonly<Record<string, number>>
+  readonly publicBridges: ReadonlyArray<string>
   readonly files: ReadonlyArray<CountedSourceFile>
   readonly exclusions: ReadonlyArray<{ readonly path: string; readonly reason: string }>
   readonly warnings: ReadonlyArray<string>
@@ -380,6 +383,45 @@ const importWarnings = (
   return warnings
 }
 
+const rewritePublicBridges = (
+  root: string,
+  files: ReadonlyArray<CountedSourceFile>
+): ReadonlyArray<string> => files.filter((file) =>
+  file.lane === "product" && !file.path.startsWith("src/rewrite/") &&
+  ["typescript", "javascript"].includes(file.kind)
+).filter((file) => {
+  const text = readFileSync(resolve(root, file.path), "utf8")
+  return [...text.matchAll(/\b(?:from|import)\s*\(?\s*["']([^"']+)["']/gu)]
+    .some((match) => {
+      const specifier = match[1]
+      if (specifier === undefined || !specifier.startsWith(".")) return false
+      const target = toPosix(relative(root, resolve(root, file.path, "..", specifier)))
+      return target === "src/rewrite" || target.startsWith("src/rewrite/")
+    })
+}).map((file) => file.path)
+
+const temporarySlices = (
+  files: ReadonlyArray<CountedSourceFile>,
+  milestone: string
+): Readonly<Record<string, number>> => {
+  const selected = (include: (path: string) => boolean): number => files
+    .filter((file) => file.lane === "product" && include(file.path))
+    .reduce((total, file) => total + file.lines, 0)
+  if (milestone === "M1") return {
+    "candidate-model-config-recipes-plan": selected((path) =>
+      ["model", "config", "recipes", "plan"].some((name) => path.startsWith(`src/rewrite/${name}/`)))
+  }
+  if (milestone === "M2") return {
+    "candidate-executor-drivers": selected((path) =>
+      ["src/rewrite/apply/apply.ts", "src/rewrite/apply/store.ts"].includes(path) ||
+      path.startsWith("src/rewrite/drivers/"))
+  }
+  if (milestone === "PORT") return {
+    "candidate-current-surface": selected((path) => !path.startsWith("src/rewrite/"))
+  }
+  return {}
+}
+
 const antiGolfWarnings = (
   root: string,
   files: ReadonlyArray<CountedSourceFile>,
@@ -580,6 +622,14 @@ export const countSourceTree = async (
   }
   if (oracle > budget.oracle) warnings.push(`Oracle is ${oracle}; ${milestone} ceiling is ${budget.oracle}`)
   const byRole = aggregate(files, (file) => file.role)
+  const slices = temporarySlices(files, milestone)
+  for (const [name, ceiling] of Object.entries(contract.temporarySliceCeilings[milestone] ?? {})) {
+    if ((slices[name] ?? 0) > ceiling) warnings.push(`${milestone} slice ${name} exceeds ${ceiling}`)
+  }
+  const publicBridges = rewritePublicBridges(root, files)
+  if (milestone === "M2" && publicBridges.length > 0) {
+    warnings.push(`M2 requires zero public bridges; found ${publicBridges.length}`)
+  }
   if (milestone === "M0") {
     for (const [role, expected] of Object.entries(contract.opening.roles)) {
       if (byRole[role] !== expected) {
@@ -610,6 +660,8 @@ export const countSourceTree = async (
     byKind: aggregate(files, (file) => `${file.lane}/${file.kind}`),
     byRole,
     byModule: aggregate(files, (file) => `${file.lane}/${file.module}`),
+    temporarySlices: slices,
+    publicBridges,
     files,
     exclusions: exclusions.sort((left, right) => left.path.localeCompare(right.path)),
     warnings: [...new Set(warnings)].sort()

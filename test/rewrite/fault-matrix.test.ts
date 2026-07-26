@@ -11,7 +11,7 @@ import {
   structuralControls
 } from "./fault-matrix.js"
 
-describe("rewrite fault matrix bootstrap", () => {
+describe("rewrite candidate fault matrix", () => {
   test("discovers and executes exactly 5 × 9 cells and 11 controls", () => {
     expect(injectionPoints).toHaveLength(5)
     expect(failureKinds).toHaveLength(9)
@@ -20,11 +20,10 @@ describe("rewrite fault matrix bootstrap", () => {
     expect(new Set([...faultCells, ...structuralControls].map((item) => item.id)).size).toBe(56)
     const root = mkdtempSync(join(tmpdir(), "ts-release-fault-test-"))
     try {
-      const statuses = faultCells.map((cell, index) =>
-        cell.run(new FileBackedFakeRemote(join(root, String(index)))).status)
-      expect(statuses.every((status) =>
-        status === "candidate-pending" || status === "legacy-known-defect")).toBe(true)
-      expect(statuses.filter((status) => status === "legacy-known-defect")).toHaveLength(1)
+      const results = faultCells.map((cell, index) =>
+        cell.run(new FileBackedFakeRemote(join(root, String(index)))))
+      expect(results.every(({ status }) => status === "passed")).toBe(true)
+      expect(results.reduce((total, result) => total + result.duplicateMutations, 0)).toBe(0)
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

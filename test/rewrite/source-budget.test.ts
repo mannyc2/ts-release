@@ -9,11 +9,13 @@ import {
 } from "../../scripts/lib/source-budget.js"
 
 describe("semantic source ruler", () => {
-  test("retains M0 history while enforcing the current M1 ceilings", async () => {
-    const report = await countSourceTree(process.cwd(), "M1")
-    expect(report.totals.product).toBeLessThanOrEqual(9231)
+  test("retains M0 history while enforcing the current M2 ceilings", async () => {
+    const report = await countSourceTree(process.cwd(), "M2")
+    expect(report.totals.product).toBeLessThanOrEqual(10131)
     expect(report.openingOracle).toBe(14441)
-    expect(report.totals.oracle).toBeLessThanOrEqual(18800)
+    expect(report.totals.oracle).toBeLessThanOrEqual(20500)
+    expect(report.temporarySlices["candidate-executor-drivers"]).toBeLessThanOrEqual(900)
+    expect(report.publicBridges).toEqual([])
     expect(report.warnings).toEqual([])
     expect(report.files.every((file) =>
       ["product", "oracle", "tooling", "examples"].includes(file.lane))).toBe(true)

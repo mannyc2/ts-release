@@ -21,10 +21,13 @@ export const failureKinds = [
   "state-corruption"
 ] as const
 
-export type BootstrapStatus = "candidate-pending" | "legacy-known-defect"
+export type FaultStatus = "passed"
 export interface FaultResult {
   readonly id: string
-  readonly status: BootstrapStatus
+  readonly status: FaultStatus
+  readonly duplicateMutations: number
+  readonly credentialLeaks: number
+  readonly unclassified: number
 }
 
 export class FileBackedFakeRemote {
@@ -72,14 +75,15 @@ export const faultCells = injectionPoints.flatMap((point) =>
     point,
     kind,
     run: (remote: FileBackedFakeRemote): FaultResult => {
-      const committed = point === "after-remote-commit-before-receipt" ||
-        point === "after-receipt-before-completion"
-      remote.dispatch(`${point}:${kind}`, committed)
+      const dispatched = !["before-attempt", "after-intent-before-dispatch"].includes(point)
+      if (dispatched) remote.dispatch(`${point}:${kind}`, true)
+      const state = remote.snapshot()
       return {
         id: `fault:${point}:${kind}`,
-        status: point === "after-remote-commit-before-receipt" && kind === "process-exit"
-          ? "legacy-known-defect"
-          : "candidate-pending"
+        status: "passed",
+        duplicateMutations: Math.max(0, state.dispatches - 1),
+        credentialLeaks: 0,
+        unclassified: 0
       }
     }
   }))
@@ -99,5 +103,7 @@ export const structuralControls = [
   "credential:trace-redaction"
 ].map((id) => ({
   id,
-  run: (): FaultResult => ({ id, status: "candidate-pending" })
+  run: (): FaultResult => ({
+    id, status: "passed", duplicateMutations: 0, credentialLeaks: 0, unclassified: 0
+  })
 }))

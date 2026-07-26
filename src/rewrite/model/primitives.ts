@@ -21,6 +21,28 @@ export const NonEmptyName = identifier("NonEmptyName")
 export type NonEmptyName = typeof NonEmptyName.Type
 export const Version = identifier("Version")
 export type Version = typeof Version.Type
+export const RunId = identifier("RunId")
+export type RunId = typeof RunId.Type
+export const LogicalRunId = identifier("LogicalRunId")
+export type LogicalRunId = typeof LogicalRunId.Type
+export const AttemptId = identifier("AttemptId")
+export type AttemptId = typeof AttemptId.Type
+export const OperationHash = identifier("OperationHash")
+export type OperationHash = typeof OperationHash.Type
+export const ExecutionTopologyHash = identifier("ExecutionTopologyHash")
+export type ExecutionTopologyHash = typeof ExecutionTopologyHash.Type
+export const ExecutionReviewId = identifier("ExecutionReviewId")
+export type ExecutionReviewId = typeof ExecutionReviewId.Type
+export const PublishReviewId = identifier("PublishReviewId")
+export type PublishReviewId = typeof PublishReviewId.Type
+export const ReceiptId = identifier("ReceiptId")
+export type ReceiptId = typeof ReceiptId.Type
+export const ApprovalNonce = identifier("ApprovalNonce")
+export type ApprovalNonce = typeof ApprovalNonce.Type
+export const SnapshotId = identifier("SnapshotId")
+export type SnapshotId = typeof SnapshotId.Type
+export const CheckpointId = identifier("CheckpointId")
+export type CheckpointId = typeof CheckpointId.Type
 
 export const isSafeRelativePath = (value: string): boolean =>
   value.trim().length > 0 &&

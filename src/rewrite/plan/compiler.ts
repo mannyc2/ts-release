@@ -25,7 +25,7 @@ import {
   StaticOutputRecipe,
   type RecipeDefinition
 } from "../recipes/definition.js"
-import { acceptPlan, encodePlanBytes } from "./accept.js"
+import { acceptPlan, encodePlanBytes } from "./accepted.js"
 
 export class Invocation extends Schema.Class<Invocation>("Invocation")({
   workspace: WorkspaceRoot,

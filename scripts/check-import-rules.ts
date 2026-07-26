@@ -202,7 +202,9 @@ const rewriteDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   model: ["model"],
   recipes: ["recipes", "model"],
   config: ["config", "model", "recipes"],
-  plan: ["plan", "model", "config", "recipes"]
+  plan: ["plan", "model", "config", "recipes"],
+  drivers: ["drivers", "model"],
+  apply: ["apply", "model", "plan", "drivers"]
 }
 
 const checkRewriteImport = (

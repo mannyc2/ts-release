@@ -12,7 +12,7 @@ import type {
   RecipeId,
   SafeRelativePath
 } from "../../src/rewrite/model/primitives.js"
-import { AcceptedPlan } from "../../src/rewrite/plan/accept.js"
+import { AcceptedPlan } from "../../src/rewrite/plan/accepted.js"
 
 declare const operationId: OperationId
 declare const outputId: OutputId

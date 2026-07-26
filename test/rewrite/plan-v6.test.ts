@@ -34,7 +34,7 @@ import {
 import {
   acceptPlan,
   encodePlanBytes
-} from "../../src/rewrite/plan/accept.js"
+} from "../../src/rewrite/plan/accepted.js"
 
 const output = (id: string, path: string) => OutputDeclaration.make({
   id: OutputId.make(id),

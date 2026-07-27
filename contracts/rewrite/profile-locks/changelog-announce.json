@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "changelog-announcement-profile-lock/v1",
+  "fixtures": {
+    "parity/goreleaser-v2.17.0/contracts/changelog/profiles.json": "aeaae514dfc30403ca9af99f063ba9b884d3fe4c7bdc93517306266cae7cd419",
+    "parity/goreleaser-v2.17.0/contracts/announce/profiles.json": "9b9283e575c8a6baa64f5346b4cacfefa6ed8a17de9555d92c4ccc99e9a0712c",
+    "test/fixtures/parity/configs/changelog-announce/configs.json": "2f42bb92e4f136c42e69153b529ddd8b0aac46f9f493e3d7c3906139fc75b173"
+  },
+  "profiles": {
+    "changelog.reviewed-transform/v1": "6b578703281847210fa5397654cb2677cdb8a3414f6444b8d92eee76b19882b1",
+    "announce.bluesky/v1": "f01448c4b7c4dff24690136d8a3e5c2670aba35147117fb5efba1e0943992fc4",
+    "announce.discord/v1": "0bc1582fb178f12efce230717b1ae280f542f3b59c5cb26ceab6b5c8f038e9b0",
+    "announce.discourse/v1": "2dbca9b5bb080605a804560b2fa739118ce7e065b59231250a628dec7e55e5c9",
+    "announce.linkedin/v1": "49b63df1c019302c64bf1b91cb03a3dff7abb6960d8fcc1790bdc53e10f32e49",
+    "announce.mastodon/v1": "b2968f9e910f7d652f668e1802ecbbc2397e9495ddeae58b7958b4b55daceb27",
+    "announce.mattermost/v1": "118a6812fb1c3120a1b7ec7c3e4310bdda84e4e57bffa661b81b801eaef4fc7c",
+    "announce.opencollective/v1": "2f904acc26472b6037d767b54c53fbd2bd26fa23a2071c364d26d50309709c23",
+    "announce.reddit/v1": "72eb919f27f0ae0f8305929ef5bf1351c22e113ccff181a82585d326ce7a914d",
+    "announce.slack/v1": "085f2024b8cbd57939df73dee73d6a628eceb50980c64ff6b0d7e7fb2a770c33",
+    "announce.smtp/v1": "e0d86253a3f7d0646a60c39fe342edadcb8347ab677986015566a4987fb17dec",
+    "announce.teams/v1": "565a222e3e0f05bc3606cfe3527bb2cf9272f7c7427a93119e1bce639eb1221e",
+    "announce.telegram/v1": "43a57766867d7467e972e1a020295fe7fe35fb5b76c9eaa569978c74634e8cff",
+    "announce.x/v1": "f2305759b13fe9583a1a2edcaa67bc7a468eb07f43fc7cdf0e5fd5fcdb2f9c0b",
+    "announce.webhook/v1": "0d46b0a61b7a286eec9358705686c766fca7e548c86a2d3e56efdaf260ae0c18"
+  }
+}

@@ -5,6 +5,7 @@ import { NonEmptyName, WorkspaceRoot } from "../../src/model/primitives.js"
 import { operationEntries } from "../../src/model/validate.js"
 import { findLocalToolProfile } from "../../src/recipes/packages/profiles.js"
 import { pythonBuilderProfiles } from "../../src/recipes/packages/python.js"
+import { universalMachoProfile } from "../../src/recipes/packages/universal-macho.js"
 
 describe("immutable package recipe lowering", () => {
   test("matches and lowers the frozen Node SEA decision", async () => {
@@ -34,5 +35,12 @@ describe("immutable package recipe lowering", () => {
       expect(profile.contract).toEqual(frozen.contract)
       expect(findLocalToolProfile(profile.profileId)).toBe(profile)
     }
+  })
+
+  test("registers the frozen universal Mach-O decision", async () => {
+    const contracts = await Bun.file("test/fixtures/parity/contracts/packages/profiles.json").json()
+    const frozen = contracts.profiles.find((item: any) => item.profileId === universalMachoProfile.profileId)
+    expect(universalMachoProfile.contract).toEqual(frozen.contract)
+    expect(findLocalToolProfile(universalMachoProfile.profileId)).toBe(universalMachoProfile)
   })
 })

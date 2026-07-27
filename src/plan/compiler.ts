@@ -3,6 +3,7 @@ import * as Schema from "effect/Schema"
 import { CandidateConfig, decodeConfig } from "../config/config.js"
 import { lowerCurrentConfig } from "../recipes/current.js"
 import { lowerProjects } from "../recipes/projects.js"
+import { renderEnvironment } from "../recipes/environment.js"
 import { PlanningFactsError } from "../model/errors.js"
 import { Check, DigestOp, OutputDeclaration } from "../model/operation.js"
 import { ReleaseIdentityV6, ReleasePlanV6, ReleaseStages } from "../model/plan.js"
@@ -114,10 +115,14 @@ export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
       snapshot: invocation.snapshot
     }),
     stages,
-    annotations: (config.projects ?? []).map((project) => ({
+    annotations: [
+      ...Object.entries(config.environment ?? {}).sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, value]) => ({ key: `environment.${name}`, value: renderEnvironment(value) })),
+      ...(config.projects ?? []).map((project) => ({
       key: `project.${project.id}`,
       value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`
-    }))
+      }))
+    ]
   })
 })
 

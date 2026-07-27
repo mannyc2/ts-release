@@ -2,6 +2,7 @@ import * as Schema from "effect/Schema"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 import { ProjectScope } from "./projects.js"
 import { CandidateSelection } from "./selection.js"
+import { CandidateEnvironment } from "./environment.js"
 
 const optional = Schema.optionalKey
 const nonempty = Schema.NonEmptyString
@@ -124,6 +125,7 @@ export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidateP
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({
   "$schema": optional(Schema.String), project: CandidateProject,
+  environment: optional(CandidateEnvironment),
   projects: optional(Schema.NonEmptyArray(ProjectScope)),
   versionFrom: optional(Schema.Literals(["manifest", "git-tag"])),
   builds: optional(Schema.Array(CandidateBuild)), npmPackage: optional(Schema.Struct({

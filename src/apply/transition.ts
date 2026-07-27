@@ -241,6 +241,10 @@ export const transition = (accepted: AcceptedPlan, ledger: RunLedger,
 }
 export const operationStatus = (ledger: RunLedger, operationId: OperationId): AttemptState | undefined =>
   ledger.operations.find((item) => item.operationId === operationId)?.attempts.at(-1)?.state
+export type StagedOutcome = "prepare" | "publish" | "announce" | "continue"
+export const stagedOutcome = (frontier: Stage): StagedOutcome =>
+  stageOrder.indexOf(frontier) <= stageOrder.indexOf("validate") ? "prepare"
+    : frontier === "publish" ? "publish" : frontier === "announce" ? "announce" : "continue"
 export const ledgerEvidence = (ledger: RunLedger) => ({
   planId: ledger.planId, runId: ledger.runId, logicalRunId: ledger.logicalRunId,
   revision: ledger.revision, operations: ledger.operations.map((record) => ({

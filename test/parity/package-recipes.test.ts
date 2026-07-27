@@ -10,6 +10,7 @@ import { archiveGeneratorProfiles } from "../../src/recipes/packages/archive-gen
 import { storePackageProfiles } from "../../src/recipes/packages/store-packages.js"
 import { appleInstallerProfiles } from "../../src/recipes/packages/apple.js"
 import { windowsInstallerProfiles } from "../../src/recipes/packages/windows.js"
+import { packageStoreProfiles } from "../../src/recipes/packages/store-profiles.js"
 
 describe("immutable package recipe lowering", () => {
   test("matches and lowers the frozen Node SEA decision", async () => {
@@ -81,6 +82,14 @@ describe("immutable package recipe lowering", () => {
       const frozen = contracts.profiles.find((item: any) => item.profileId === profile.profileId)
       expect(profile.contract).toEqual(frozen.contract)
       expect(findLocalToolProfile(profile.profileId)).toBe(profile)
+    }
+  })
+
+  test("registers the frozen package store decisions", async () => {
+    const contracts = await Bun.file("test/fixtures/parity/contracts/packages/profiles.json").json()
+    for (const profile of packageStoreProfiles) {
+      const frozen = contracts.profiles.find((item: any) => item.profileId === profile.profileId)
+      expect(profile.contract).toEqual(frozen.contract)
     }
   })
 })

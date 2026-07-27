@@ -10,7 +10,7 @@ import {
 type Build = NonNullable<CandidateConfig["builds"]>[number]
 const importedKinds = {
   tarball: "archive", zip: "archive", file: "file", directory: "directory",
-  "oci-image": "file", executable: "executable"
+  "oci-image": "file", executable: "executable", binary: "executable"
 } as const
 const declare = (
   rows: CurrentRows, id: string, location: string, kind: OutputDeclaration["kind"],

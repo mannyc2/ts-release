@@ -38,6 +38,8 @@ export const recipeDefinitions = (config: CandidateConfig): ReadonlyArray<Recipe
           ? "archive"
           : artifact.format === "oci-image"
           ? "file"
+          : artifact.format === "binary"
+          ? "executable"
           : artifact.format,
         provenance: "import",
         ...(artifact.variant === undefined ? {} : { platform: artifact.variant })

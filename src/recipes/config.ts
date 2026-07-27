@@ -1,6 +1,7 @@
 import * as Schema from "effect/Schema"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 import { ProjectScope } from "./projects.js"
+import { CandidateSelection } from "./selection.js"
 
 const optional = Schema.optionalKey
 const nonempty = Schema.NonEmptyString
@@ -27,7 +28,7 @@ export class CandidatePlatform extends Schema.Class<CandidatePlatform>("Candidat
   installPath: optional(nonempty), targetTriple: optional(nonempty) }) {}
 export class CandidateArtifact extends Schema.Class<CandidateArtifact>("CandidateArtifact")({
   id: OutputId, path: SafeRelativePath,
-  format: Schema.Literals(["tarball", "zip", "file", "directory", "oci-image", "executable"]),
+  format: Schema.Literals(["tarball", "zip", "file", "directory", "oci-image", "executable", "binary"]),
   checksum: optional(Schema.Struct({
     algorithm: Schema.Literals(["sha256", "sha512"]), value: Schema.String })),
   variant: optional(CandidatePlatform)
@@ -118,7 +119,8 @@ export class CandidateScoop extends Schema.Class<CandidateScoop>("CandidateScoop
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
-  pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)) }) {}
+  pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)),
+  selection: optional(CandidateSelection) }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({
   "$schema": optional(Schema.String), project: CandidateProject,

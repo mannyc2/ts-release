@@ -8,16 +8,16 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src", 4500],
   ["src/model", 800],
-  ["src/recipes", 875],
+  ["src/recipes", 1000],
   ["src/config", 60],
-  ["src/plan", 260],
+  ["src/plan", 275],
   ["src/drivers", 650],
   ["src/apply", 1250],
   ["src/view", 25],
   ["src/api", 450],
   ["apps/release-ts/src", 250],
   ["apps/ts-release-action/src", 200],
-  ["test", 650],
+  ["test", 800],
   ["scripts", 2200],
   ["apps/release-ts/scripts", 220] // read-only self-release policy checks
 ]

@@ -52,7 +52,12 @@ if (
   expectObject(fault.structuralControls ?? null, "structuralControls").confirmed !== 11
 ) throw new Error("Plan 176 did not certify the replacement behavior.")
 
-const tracked = Bun.spawnSync(["git", "ls-tree", "-r", "--name-only", "HEAD", "test"], {
+if (typeof report.implementationCommit !== "string") {
+  throw new Error("Plan 176 implementation commit is absent.")
+}
+const tracked = Bun.spawnSync([
+  "git", "ls-tree", "-r", "--name-only", report.implementationCommit, "test"
+], {
   cwd: root, stdin: "ignore", stdout: "pipe", stderr: "pipe"
 })
 if (tracked.exitCode !== 0) throw new Error("Unable to enumerate the incumbent test tree.")

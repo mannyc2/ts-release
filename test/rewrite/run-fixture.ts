@@ -50,6 +50,7 @@ const credential = PublishCredential.make({
 export const acceptedRunPlan = (): Promise<AcceptedPlan> => {
   const source = output("source")
   const second = output("second")
+  const processed = output("processed")
   const plan = ReleasePlanV6.make({
     schemaVersion: "release-plan/v6",
     identity: ReleaseIdentityV6.make({
@@ -80,7 +81,7 @@ export const acceptedRunPlan = (): Promise<AcceptedPlan> => {
         Exec.make({
           id: OperationId.make("trusted"),
           inputs: [source.id],
-          outputs: [],
+          outputs: [processed],
           contractFixtureId: "contract.build.command/v1",
           argv: ["verify"],
           cwd: SafeRelativePath.make("."),

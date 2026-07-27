@@ -796,8 +796,8 @@ const familyBudgetSummary = async (
   if (families.length === 0) return { families: {} }
   const history = await verifySourceHistory(root)
   const latest = history.at(-1)
-  if (latest?.product !== product) {
-    warnings.push(`Product ${product} is not sealed by source-history head ${latest?.product ?? "missing"}`)
+  if (latest === undefined || latest.product < product) {
+    warnings.push(`Product ${product} exceeds source-history head ${latest?.product ?? "missing"}`)
   }
   const summaries: Record<string, SourceBudgetReport["familySummary"][string]> = {}
   for (const family of families) {

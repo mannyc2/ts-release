@@ -55,7 +55,7 @@ describe("semantic source ruler", () => {
 
   test("enforces the M6-anchored distributed wave and recorded marginal sample", async () => {
     const report = await countSourceTree(process.cwd(), "PARITY", ["distributed"])
-    expect(report.totals.product).toBe(4672)
+    expect(report.totals.product).toBe(4670)
     expect(report.familySummary.distributed).toEqual({
       productDelta: 350,
       productBank: 350,

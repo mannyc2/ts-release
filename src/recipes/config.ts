@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
-import { ProjectScope } from "../config/projects.js"
+import { ProjectScope } from "./projects.js"
 
 const optional = Schema.optionalKey
 const nonempty = Schema.NonEmptyString

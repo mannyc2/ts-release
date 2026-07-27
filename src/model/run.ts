@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema"
 import {
   ApprovalNonce, AttemptId, CheckpointId, Digest, ExecutionReviewId,
   ExecutionScopeHash, ExecutionTopologyHash, LogicalRunId, OperationHash, OperationId, OutputId,
-  PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId, WorkerId
+  PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId, WorkerId, WorkerKeyFingerprint
 } from "./primitives.js"
 
 const Reason = { reason: Schema.String }
@@ -22,6 +22,15 @@ export class ExecutionScope extends Schema.Class<ExecutionScope>("ExecutionScope
   scopeHash: Schema.optionalKey(ExecutionScopeHash),
   ownedOperationHashes: Schema.optionalKey(Schema.Array(OperationHash)),
   prerequisiteFactHashes: Schema.optionalKey(Schema.Array(OperationHash))
+}) {}
+export class WorkerRegistration extends Schema.Class<WorkerRegistration>("WorkerRegistration")({
+  workerId: WorkerId, publicKey: Schema.NonEmptyString,
+  workerKeyFingerprint: WorkerKeyFingerprint, scopeHash: ExecutionScopeHash,
+  ownedOperationHashes: Schema.Array(OperationHash),
+  prerequisiteFactHashes: Schema.Array(OperationHash)
+}) {}
+export class ExecutionTopology extends Schema.Class<ExecutionTopology>("ExecutionTopology")({
+  planId: PlanId, partitions: Schema.Array(WorkerRegistration)
 }) {}
 export class ExecutionApprovalReceipt extends Schema.Class<ExecutionApprovalReceipt>("ExecutionApprovalReceipt")({
   ...approval, reviewId: ExecutionReviewId, newRunReason: Schema.optionalKey(Schema.NonEmptyString)

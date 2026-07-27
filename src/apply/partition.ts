@@ -3,13 +3,18 @@ import { operationAuthority } from "../model/operation.js"
 import {
   ExecutionScopeHash, OperationHash, OperationId, WorkerId
 } from "../model/primitives.js"
-import { ExecutionScope, TransitionError } from "../model/run.js"
+import { ExecutionTopologyHash, WorkerKeyFingerprint } from "../model/primitives.js"
+import {
+  ExecutionScope, ExecutionTopology, TransitionError, WorkerRegistration
+} from "../model/run.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 
 const hash = (domain: string, value: unknown): string =>
   hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value))])
 const fail = (reason: string): never => { throw TransitionError.make({ reason }) }
+const required = <A>(value: A | undefined): A =>
+  value === undefined ? fail("Topology registration is incomplete.") : value
 const effectful = (plan: AcceptedPlan): ReadonlySet<string> => new Set(
   operationEntries(plan.plan).filter(({ operation }) =>
     !["LocalRead", "RemoteRead"].includes(operationAuthority(operation)))
@@ -26,6 +31,38 @@ export const executionScopeHash = (
   planId, ownedOperationHashes: [...ownedOperationHashes].sort(),
   prerequisiteFactHashes: [...prerequisiteFactHashes].sort()
 }))
+export const workerKeyFingerprint = (bytes: Uint8Array): WorkerKeyFingerprint =>
+  WorkerKeyFingerprint.make(hashFramed("ts-release/worker-key/v1", [bytes]))
+export const executionTopologyHash = (topology: ExecutionTopology): ExecutionTopologyHash =>
+  ExecutionTopologyHash.make(hash("ts-release/topology/v1", {
+    planId: topology.planId,
+    partitions: topology.partitions.map((item) => ({
+      workerId: item.workerId, publicKey: item.publicKey,
+      workerKeyFingerprint: item.workerKeyFingerprint, scopeHash: item.scopeHash,
+      ownedOperationHashes: item.ownedOperationHashes,
+      prerequisiteFactHashes: item.prerequisiteFactHashes
+    }))
+  }))
+export const registerTopology = (
+  plan: AcceptedPlan, scopes: ReadonlyArray<ExecutionScope>,
+  publicKeys: Readonly<Record<string, Uint8Array>>
+): ExecutionTopology => {
+  const partitions = scopes.map((scope) => {
+    const workerId = required(scope.workerId)
+    const scopeHash = required(scope.scopeHash)
+    const ownedOperationHashes = required(scope.ownedOperationHashes)
+    const prerequisiteFactHashes = required(scope.prerequisiteFactHashes)
+    const bytes = required(publicKeys[String(workerId)])
+    return WorkerRegistration.make({
+      workerId, publicKey: Buffer.from(bytes).toString("base64"),
+      workerKeyFingerprint: workerKeyFingerprint(bytes), scopeHash,
+      ownedOperationHashes, prerequisiteFactHashes
+    })
+  }).sort((left, right) => String(left.workerId).localeCompare(String(right.workerId)))
+  if (new Set(partitions.map((item) => item.workerKeyFingerprint)).size !== partitions.length)
+    fail("Worker keys must be unique.")
+  return ExecutionTopology.make({ planId: plan.planId, partitions })
+}
 export const partition = (
   plan: AcceptedPlan, requests: ReadonlyArray<PartitionRequest>
 ): ReadonlyArray<ExecutionScope> => {

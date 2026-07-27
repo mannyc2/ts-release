@@ -182,12 +182,20 @@ export class CandidateChangelog extends Schema.Class<CandidateChangelog>("Candid
   mode: Schema.Literals(["deterministic", "reviewed-transform"]),
   profileId: Schema.Literals(["changelog.local/v1", "changelog.reviewed-transform/v1"]),
   pathFilters: Schema.Array(SafeRelativePath), groups: Schema.Array(CandidateChangelogGroup) }) {}
+const announcementId = Schema.Literals([
+  "announce.index/v1", "announce.bluesky/v1", "announce.discord/v1", "announce.discourse/v1",
+  "announce.linkedin/v1", "announce.mastodon/v1", "announce.mattermost/v1",
+  "announce.opencollective/v1", "announce.reddit/v1", "announce.slack/v1", "announce.smtp/v1",
+  "announce.teams/v1", "announce.telegram/v1", "announce.x/v1", "announce.webhook/v1"])
+export class CandidateAnnouncement extends Schema.Class<CandidateAnnouncement>("CandidateAnnouncement")({
+  id: nonempty, profileId: announcementId, destination: nonempty, credentialEnv: nonempty }) {}
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
   pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)),
   packageStores: optional(Schema.Array(CandidatePackageStore)), providers: optional(Schema.Array(CandidateProvider)),
   changelog: optional(CandidateChangelog),
+  announce: optional(Schema.Array(CandidateAnnouncement)),
   selection: optional(CandidateSelection), nightly: optional(CandidateNightly) }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({

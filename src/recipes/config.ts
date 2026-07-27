@@ -176,9 +176,11 @@ const CandidateGenericProvider = Schema.Struct({
 export const CandidateProvider = Schema.Union([CandidateNamedProvider, CandidateGenericProvider, Schema.Struct({
   id: nonempty, profileId: Schema.Literal("policy.catalog-checkbox/v1"), ids: Schema.Array(OutputId),
   destination: Schema.Struct({ file: SafeRelativePath }), options: Schema.Struct({ checkboxPolicy: checkbox }) })])
+export class CandidateChangelogGroup extends Schema.Class<CandidateChangelogGroup>("CandidateChangelogGroup")({
+  title: nonempty, prefix: SafeRelativePath, subgroup: optional(nonempty), divider: optional(Schema.Boolean) }) {}
 export class CandidateChangelog extends Schema.Class<CandidateChangelog>("CandidateChangelog")({
   mode: Schema.Literal("deterministic"), profileId: Schema.Literal("changelog.local/v1"),
-  pathFilters: Schema.Array(SafeRelativePath), groups: Schema.Array(Schema.String) }) {}
+  pathFilters: Schema.Array(SafeRelativePath), groups: Schema.Array(CandidateChangelogGroup) }) {}
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),

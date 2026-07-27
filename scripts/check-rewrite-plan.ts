@@ -229,7 +229,11 @@ const historyHeadAt = (revision: string): string | null => {
   if (result.exitCode !== 0) throw new Error("Unable to enumerate source history.")
   const paths = result.stdout.toString().trim().split("\n")
     .filter((path) => path.endsWith(".json"))
-    .sort()
+    .sort((left, right) => {
+      const rank = (path: string): number =>
+        path.endsWith("/m0.json") ? 0 : path.endsWith("/m6.json") ? 1 : 2
+      return rank(left) - rank(right) || left.localeCompare(right)
+    })
   let prior: string | null = null
   for (const path of paths) {
     const entry = expectObject(parseStrictJson(blob(revision, path)), path)

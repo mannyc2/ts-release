@@ -194,8 +194,20 @@
       "commands": [
         ["bun", "run", "check"],
         ["bun", "test"],
+        ["bun", "run", "check:import-rules"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:loc"],
+        ["bun", "run", "check:parity", "--", "--family", "baseline"],
+        ["bun", "run", "check:parity", "--", "--family", "shared"],
+        ["bun", "run", "check:parity", "--", "--family", "distributed"],
+        ["bun", "run", "check:parity", "--", "--family", "packages"],
+        ["bun", "run", "check:parity", "--", "--family", "supply-chain"],
+        ["bun", "run", "check:parity", "--", "--family", "providers"],
         ["bun", "run", "check:parity", "--", "--family", "changelog"],
-        ["bun", "run", "check:parity", "--", "--family", "announce"]
+        ["bun", "run", "check:parity", "--", "--family", "announce"],
+        ["bun", "run", "check:superiority"],
+        ["bun", "run", "test:fault-matrix"],
+        ["bun", "run", "check:source-budget", "--", "--family", "changelog,announce"]
       ]
     },
     "184": {

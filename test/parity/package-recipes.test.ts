@@ -6,6 +6,7 @@ import { operationEntries } from "../../src/model/validate.js"
 import { findLocalToolProfile } from "../../src/recipes/packages/profiles.js"
 import { pythonBuilderProfiles } from "../../src/recipes/packages/python.js"
 import { universalMachoProfile } from "../../src/recipes/packages/universal-macho.js"
+import { archiveGeneratorProfiles } from "../../src/recipes/packages/archive-generators.js"
 
 describe("immutable package recipe lowering", () => {
   test("matches and lowers the frozen Node SEA decision", async () => {
@@ -42,5 +43,14 @@ describe("immutable package recipe lowering", () => {
     const frozen = contracts.profiles.find((item: any) => item.profileId === universalMachoProfile.profileId)
     expect(universalMachoProfile.contract).toEqual(frozen.contract)
     expect(findLocalToolProfile(universalMachoProfile.profileId)).toBe(universalMachoProfile)
+  })
+
+  test("registers the frozen archive generator decisions", async () => {
+    const contracts = await Bun.file("test/fixtures/parity/contracts/packages/profiles.json").json()
+    for (const profile of archiveGeneratorProfiles) {
+      const frozen = contracts.profiles.find((item: any) => item.profileId === profile.profileId)
+      expect(profile.contract).toEqual(frozen.contract)
+      expect(findLocalToolProfile(profile.profileId)).toBe(profile)
+    }
   })
 })

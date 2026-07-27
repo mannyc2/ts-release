@@ -78,7 +78,7 @@ export const publishReviewId = (accepted: AcceptedPlan, executionReview: Executi
       "PackageStorePublish",
       "SupplyChainPublish",
       "ProviderPublish",
-      "AnnouncementPublish",
+      "AnnouncementPublish", "SmtpPublish",
       "OpaquePublish"
     ].includes(operation._tag))
     .map(({ operation }) => String(operation.id)))

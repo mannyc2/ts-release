@@ -13,7 +13,7 @@ import {
   PackageStorePublish, ProviderPublish,
   PublishCredential,
   ReadCredential,
-  SupplyChainPublish
+  SupplyChainPublish, SmtpPublish
 } from "../model/operation.js"
 import { CheckpointId, Digest, OutputId, SafeRelativePath, WorkspaceRoot } from "../model/primitives.js"
 import { DriverError, MaterializedOutput } from "../model/run.js"
@@ -33,7 +33,7 @@ export class CatalogPublishRequest
       ForgeRelease,
       PackageRegistryRelease,
       PackageStorePublish,
-      SupplyChainPublish, ProviderPublish, AnnouncementPublish,
+      SupplyChainPublish, ProviderPublish, AnnouncementPublish, SmtpPublish,
       OpaquePublish
     ]),
     checkpointId: CheckpointId,

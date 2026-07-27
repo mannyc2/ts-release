@@ -87,7 +87,8 @@ describe("release-plan/v6 model and acceptance", () => {
     expect(mechanismTags).toEqual([
       "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
       "HttpPublish", "ForgeRelease",
-      "PackageRegistryRelease", "AnnouncementPublish", "PackageStorePublish", "SupplyChainPublish", "ProviderPublish",
+      "PackageRegistryRelease", "AnnouncementPublish", "SmtpPublish",
+      "PackageStorePublish", "SupplyChainPublish", "ProviderPublish",
       "OpaquePublish"
     ])
     const sample = [

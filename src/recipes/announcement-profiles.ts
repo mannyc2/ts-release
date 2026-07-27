@@ -20,3 +20,17 @@ const httpProfile = (channel: string) => Object.freeze({
 const channels = ["bluesky", "discord", "discourse", "linkedin", "mastodon", "mattermost",
   "opencollective", "reddit", "slack", "teams", "telegram", "x", "webhook"] as const
 export const announcementHttpProfiles = channels.map(httpProfile)
+export const smtpAnnouncementProfile = Object.freeze({
+  profileId: "announce.smtp/v1", contractFixtureId: "contract.announce.smtp/v1",
+  provenance: "maintainer-product-decision" as const, checkpoints: ["message"] as const,
+  contract: Object.freeze({
+    transport: "smtp", protocolVersion: "smtp-envelope/v1", channel: "smtp",
+    authentication: { variant: "username-password-slot", credentialSlotPattern: "^[A-Z][A-Z0-9_]*$" },
+    request: { method: "SEND", baseUrl: "smtp://smtp.example.invalid",
+      pathTemplate: "envelope/{destination}", headers: ["message-id", "subject", "to", "x-ts-release-key"],
+      bodySchema: "reviewed-note-email/v1", reconciliationKeyLocation: "message-id" },
+    response: { successSchema: "smtp-accepted/v1", errorSchema: "smtp-error/v1", successStatuses: [250] },
+    commitmentPoint: "accepted-response", classification,
+    reconciliation: { supported: false, method: "NONE", pathTemplate: "none", equality: "manual-only" },
+    rateLimit: "definite-before-commit", redirects: "disabled", maximumPayloadBytes: 65_536,
+    redaction: ["authorization"], messageId: "ts-release/reconciliation-key", tls: "required" }) })

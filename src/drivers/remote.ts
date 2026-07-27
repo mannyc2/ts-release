@@ -132,7 +132,7 @@ const reconcile = (
   try: async () => {
     const operation = request.operation
     if (operation._tag === "OpaquePublish") throw failure("Opaque publication is manual-only.")
-    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish"]
+    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"]
       .includes(operation._tag))
       throw failure("No live closed-profile reconciliation transport is installed.")
     if (operation._tag === "ForgeRelease") {
@@ -170,7 +170,7 @@ export const makeNodeCatalog = (
 ): DriverCatalogShape => ({
   structured,
   publish: (request, handle, credential) => {
-    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish"]
+    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"]
       .includes(request.operation._tag)) {
       return Effect.fail(failure("No live closed-profile publish transport is installed."))
     }

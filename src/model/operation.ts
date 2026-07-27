@@ -128,6 +128,9 @@ export class ProviderPublish extends Schema.TaggedClass<ProviderPublish>()("Prov
 export class AnnouncementPublish extends Schema.TaggedClass<AnnouncementPublish>()("AnnouncementPublish", {
   ...row, profileId: ProfileId, target: Schema.Struct({ destination: Schema.NonEmptyString }),
   credential: PublishCredential, contractFixtureId: Schema.NonEmptyString }) {}
+export class SmtpPublish extends Schema.TaggedClass<SmtpPublish>()("SmtpPublish", {
+  ...row, profileId: Schema.Literal("announce.smtp/v1"), target: Schema.Struct({ destination: Schema.NonEmptyString }),
+  credential: PublishCredential, contractFixtureId: Schema.Literal("contract.announce.smtp/v1") }) {}
 export class OpaquePublish extends Schema.TaggedClass<OpaquePublish>()("OpaquePublish", {
   ...row, argv: Schema.NonEmptyArray(Schema.String), cwd: SafeRelativePath,
   environmentNames: Schema.Array(Schema.NonEmptyString),
@@ -149,20 +152,20 @@ export const PublishOp = Schema.Union([
   PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type PublishOp = typeof PublishOp.Type
-export const AnnounceOp = Schema.Union([HttpPublish, AnnouncementPublish])
+export const AnnounceOp = Schema.Union([HttpPublish, AnnouncementPublish, SmtpPublish])
 export type AnnounceOp = typeof AnnounceOp.Type
 export const VerifyOp = Schema.Union([Check, HttpRead])
 export type VerifyOp = typeof VerifyOp.Type
 
 export const Operation = Schema.Union([
   Check, Write, Pack, DigestOp, Exec, HttpRead, ReviewedNoteTransform,
-  HttpPublish, ForgeRelease, PackageRegistryRelease, AnnouncementPublish,
+  HttpPublish, ForgeRelease, PackageRegistryRelease, AnnouncementPublish, SmtpPublish,
   PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type Operation = typeof Operation.Type
 export const mechanismTags = [
   "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
-  "HttpPublish", "ForgeRelease", "PackageRegistryRelease", "AnnouncementPublish",
+  "HttpPublish", "ForgeRelease", "PackageRegistryRelease", "AnnouncementPublish", "SmtpPublish",
   "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
 ] as const
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
@@ -187,6 +190,7 @@ export const operationAuthority = (operation: Operation): Authority => {
     case "SupplyChainPublish":
     case "ProviderPublish":
     case "AnnouncementPublish":
+    case "SmtpPublish":
     case "OpaquePublish":
       return "RemotePublish"
   }

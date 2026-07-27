@@ -43,7 +43,7 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
         .map((id) => CheckpointId.make(id))
     case "SupplyChainPublish": return (supplyCheckpoints[operation.profileId]??[]).map((id)=>CheckpointId.make(id))
     case "ProviderPublish": return operation.checkpoints
-    case "AnnouncementPublish": return [CheckpointId.make("message")]
+    case "AnnouncementPublish": case "SmtpPublish": return [CheckpointId.make("message")]
     default:
       return []
   }

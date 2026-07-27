@@ -4,11 +4,10 @@ type Input = {
   readonly protocol: string, readonly target: readonly [string, ...string[]],
   readonly options: ReadonlyArray<string>, readonly auth: "bearer" | "signed-request" | "shared-key",
   readonly method: "CONFIGURED" | "PATCH" | "POST" | "PUT", readonly base: string, readonly path: string,
-  readonly headers: readonly [string, ...string[]], readonly body: string, readonly success: string,
+  readonly headers?: readonly [string, ...string[]], readonly body: string, readonly success: string,
   readonly statuses: readonly [number, ...number[]], readonly reconcile: "GET" | "HEAD" | "NONE",
   readonly reconcilePath: string, readonly equality: string, readonly checkpoints: readonly [string, ...string[]],
-  readonly pagination?: "none" | "link-header", readonly selfHosted?: boolean
-}
+  readonly pagination?: "none" | "link-header", readonly selfHosted?: boolean }
 const classification = { beforeDispatch: "DefinitelyNotCommitted", success: "DefinitelyCommitted",
   rejection: "DefinitelyNotCommitted", responseLoss: "PossiblyCommitted", malformed: "Unclassifiable" } as const
 export const providerProfile = <const I extends Input>(i: I) => Object.freeze({
@@ -17,7 +16,8 @@ export const providerProfile = <const I extends Input>(i: I) => Object.freeze({
     kind: i.kind, variant: i.variant, protocolVersion: i.protocol,
     targetCoordinates: i.target, allowedOptions: i.options,
     authentication: { variant: i.auth, credentialSlotPattern: "^[A-Z][A-Z0-9_]*$" },
-    request: { method: i.method, baseUrl: i.base, pathTemplate: i.path, headers: i.headers,
+    request: { method: i.method, baseUrl: i.base, pathTemplate: i.path,
+      headers: i.headers ?? ["authorization", "content-type", "x-ts-release-key"],
       bodySchema: i.body, reconciliationKeyLocation: "x-ts-release-key" },
     response: { successSchema: i.success, errorSchema: "provider-error/v1", successStatuses: i.statuses },
     commitmentPoint: "decoded-success-response" as const,

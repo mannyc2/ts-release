@@ -4,10 +4,11 @@ import { universalMachoProfile } from "./universal-macho.js"
 import { archiveGeneratorProfiles } from "./archive-generators.js"
 import { storePackageProfiles } from "./store-packages.js"
 import { appleInstallerProfiles } from "./apple.js"
+import { windowsInstallerProfiles } from "./windows.js"
 
 export const localToolProfiles: ReadonlyArray<LocalToolProfile> = [
   ...pythonBuilderProfiles, universalMachoProfile, ...archiveGeneratorProfiles, ...storePackageProfiles,
-  ...appleInstallerProfiles, localToolProfile({
+  ...appleInstallerProfiles, ...windowsInstallerProfiles, localToolProfile({
     profileId: "package.node-sea.v1",
     contractFixtureId: "contract.package.node-sea.v1",
     hosts: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"],

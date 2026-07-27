@@ -38,6 +38,14 @@ export const localToolProfile = (input: LocalToolProfileInput) => Object.freeze(
   })
 })
 export type LocalToolProfile = ReturnType<typeof localToolProfile>
+export const compactLocalToolProfile = (
+  id: string, hosts: ReadonlyArray<PackageHost>, executable: LocalToolProfileInput["executable"],
+  argv: ReadonlyArray<string>, inputs: ReadonlyArray<string>,
+  output: LocalToolProfileInput["outputs"][number], validationOperation: string
+) => localToolProfile({
+  profileId: `package.${id}.v1`, contractFixtureId: `contract.package.${id}.v1`,
+  hosts, executable, argv, inputSelectors: inputs, outputs: [output], validationOperation
+})
 
 const triple = (value: string): ReadonlyArray<number> =>
   (value.match(/[0-9]+(?:\.[0-9]+){1,2}/u)?.[0] ?? "").split(".").map(Number)

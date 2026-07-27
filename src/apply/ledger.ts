@@ -7,6 +7,13 @@ import type { Operation } from "../model/operation.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 
+const supplyCheckpoints: Readonly<Record<string, ReadonlyArray<string>>> = {
+  "supply.registry-image.v1": ["blobs", "manifest"],
+  "supply.registry-manifest.v1": ["manifest"], "supply.registry-signature.v1": ["signature"],
+  "supply.credentialed-artifact-sign.v1": ["sign"], "supply.quill-notarization.v1": ["sign", "submit", "staple"],
+  "supply.apple-native-notarization.v1": ["codesign", "submit", "staple"],
+  "supply.remote-attestation.v1": ["attest"]
+}
 export const fail = (reason: string): TransitionError => TransitionError.make({ reason })
 export const attemptId = (index: number): AttemptId => AttemptId.make(`attempt-${index + 1}`)
 export const current = (record: OperationRunRecord): AttemptRecord => {
@@ -34,6 +41,8 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
     case "PackageStorePublish":
       return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"])
         .map((id) => CheckpointId.make(id))
+    case "SupplyChainPublish":
+      return (supplyCheckpoints[operation.profileId] ?? []).map((id) => CheckpointId.make(id))
     default:
       return []
   }

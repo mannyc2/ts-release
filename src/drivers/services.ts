@@ -11,7 +11,8 @@ import {
   PackageRegistryRelease,
   PackageStorePublish,
   PublishCredential,
-  ReadCredential
+  ReadCredential,
+  SupplyChainPublish
 } from "../model/operation.js"
 import { CheckpointId, Digest, OutputId, SafeRelativePath, WorkspaceRoot } from "../model/primitives.js"
 import { DriverError, MaterializedOutput } from "../model/run.js"
@@ -31,6 +32,7 @@ export class CatalogPublishRequest
       ForgeRelease,
       PackageRegistryRelease,
       PackageStorePublish,
+      SupplyChainPublish,
       OpaquePublish
     ]),
     checkpointId: CheckpointId,

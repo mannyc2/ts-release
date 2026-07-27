@@ -78,6 +78,7 @@ export const publishReviewId = (accepted: AcceptedPlan, executionReview: Executi
       "ForgeRelease",
       "PackageRegistryRelease",
       "PackageStorePublish",
+      "SupplyChainPublish",
       "OpaquePublish"
     ].includes(operation._tag))
     .map(({ operation }) => String(operation.id)))
@@ -152,5 +153,18 @@ export const packageStoreReconciliationKey = (
     ...(targetCoordinates.channel === undefined ? {} : { channel: targetCoordinates.channel }),
     ...(targetCoordinates.version === undefined ? {} : { version: targetCoordinates.version })
   },
+  materialBindingHashes: materials.map((item) => item.digest).sort()
+})
+export const supplyChainReconciliationKey = (
+  planId: string, logicalRunId: string, scope: ExecutionScope, topologyHash: string,
+  operationHash: OperationHash, checkpointId: CheckpointId, profileId: string,
+  targetCoordinates: Readonly<Record<string, string>>, materials: ReadonlyArray<MaterializedOutput>
+): string => hash("ts-release/supply-chain-reconcile/v1", {
+  planId, logicalRunId,
+  scopeHash: scope.scopeHash ?? hash("ts-release/execution-scope/v1", {
+    planId, operationIds: [...scope.operationIds].map(String).sort()
+  }),
+  executionTopologyHash: topologyHash, operationHash, checkpointId, profileId,
+  immutableTargetCoordinates: targetCoordinates,
   materialBindingHashes: materials.map((item) => item.digest).sort()
 })

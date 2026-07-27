@@ -304,6 +304,11 @@ const projectEntry = ({ operation, stage }: OperationEntry): ReadonlyArray<Proje
       return [effect(operation, stage, "remote-publish", "package-store-publish", {
         profileId: operation.profileId, target: operation.target, inputIds: operation.inputs
       })]
+    case "SupplyChainPublish":
+      return [effect(operation, stage, "remote-publish", "supply-chain-publish", {
+        variant: operation.variant, profileId: operation.profileId,
+        target: operation.target, inputIds: operation.inputs
+      })]
     case "ForgeRelease":
       return forgeEffects(operation)
     case "OpaquePublish":

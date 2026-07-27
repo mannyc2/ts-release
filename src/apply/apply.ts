@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 import {
-  ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId, reconciliationKey
+  ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId,
+  reconciliationKey, supplyChainReconciliationKey
 } from "./approval.js"
 import { operationStatus, transition, type TransitionCommand } from "./transition.js"
 import { RunStore, type ExpectedLedger, type RunStoreShape } from "./store.js"
@@ -102,6 +103,7 @@ type PublishOperation = Extract<Operation, {
     | "ForgeRelease"
     | "PackageRegistryRelease"
     | "PackageStorePublish"
+    | "SupplyChainPublish"
     | "OpaquePublish"
 }>
 const publishTarget = (operation: PublishOperation): string => {
@@ -115,6 +117,10 @@ const publishTarget = (operation: PublishOperation): string => {
     case "PackageStorePublish":
       return `${operation.profileId}:${operation.target.name}:${
         operation.target.channel ?? operation.target.version ?? ""}`
+    case "SupplyChainPublish":
+      return `${operation.profileId}:${Object.entries(operation.target)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, value]) => `${key}=${value}`).join(",")}`
     case "OpaquePublish":
       return `${operation.contractFixtureId}:${operation.argv[0]}`
   }
@@ -134,6 +140,20 @@ const checkpointCommand = (
           ? {} : { remoteId: result.observedRemoteId }) }
   }
 }
+const keyFor = (
+  accepted: AcceptedPlan, ledger: RunLedger, hash: string, checkpointId: CheckpointId,
+  operation: PublishOperation, target: string, materials: ReadonlyArray<MaterializedOutput>,
+  bindings: ReadonlyArray<MaterializedOutput>
+): string => operation._tag === "PackageStorePublish"
+  ? packageStoreReconciliationKey(
+      accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
+      OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings)
+  : operation._tag === "SupplyChainPublish"
+  ? supplyChainReconciliationKey(
+      accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
+      OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings)
+  : reconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope,
+      ledger.executionTopologyHash, OperationHash.make(hash), checkpointId, target, materials)
 const publishOperation = (
   accepted: AcceptedPlan, services: PublishServices, request: ApplyRequest, ledger: RunLedger,
   operation: PublishOperation, materials: ReadonlyArray<MaterializedOutput>, permit: PublishPermit
@@ -150,23 +170,18 @@ const publishOperation = (
       item.operationId === operation.id)!.hash
     const bindings = materials.filter((item) => operation.inputs.includes(item.outputId))
     const target = publishTarget(operation)
-    const key = operation._tag === "PackageStorePublish"
-      ? packageStoreReconciliationKey(
-          accepted.planId, next.logicalRunId, next.scope, next.executionTopologyHash,
-          OperationHash.make(operationHash), checkpoint.checkpointId,
-          operation.profileId, operation.target, bindings)
-      : reconciliationKey(accepted.planId, next.logicalRunId,
-          next.scope, next.executionTopologyHash,
-          OperationHash.make(operationHash), checkpoint.checkpointId, target, materials)
+    const key = keyFor(accepted, next, operationHash, checkpoint.checkpointId,
+      operation, target, materials, bindings)
     const subject = bindings[0]
     next = yield* moved(accepted, services.store, request.run.path, next,
       { _tag: "DispatchCheckpoint", operationId: operation.id,
         checkpointId: checkpoint.checkpointId, key,
-        ...(operation._tag === "PackageStorePublish" ? {
+        ...(["PackageStorePublish", "SupplyChainPublish"].includes(operation._tag) ? {
           targetCoordinates: target,
           ...(subject === undefined ? {} : { subjectDigest: subject.digest })
         } : {}) })
-    const outputId = checkpoint.checkpointId === "dispatch" ? String(operation.inputs[0] ?? "")
+    const outputId = checkpoint.checkpointId === "dispatch" ||
+      operation._tag === "SupplyChainPublish" ? String(operation.inputs[0] ?? "")
       : String(checkpoint.checkpointId).replace(/^asset:/u, "")
     const facts = materials.find((item) => item.outputId === outputId)
     const handle = facts === undefined ? undefined

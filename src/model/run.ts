@@ -1,8 +1,8 @@
 import * as Schema from "effect/Schema"
 import {
   ApprovalNonce, AttemptId, CheckpointId, Digest, ExecutionReviewId,
-  ExecutionTopologyHash, LogicalRunId, OperationHash, OperationId, OutputId,
-  PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId
+  ExecutionScopeHash, ExecutionTopologyHash, LogicalRunId, OperationHash, OperationId, OutputId,
+  PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId, WorkerId
 } from "./primitives.js"
 
 const Reason = { reason: Schema.String }
@@ -18,7 +18,10 @@ const resolution = {
 }
 
 export class ExecutionScope extends Schema.Class<ExecutionScope>("ExecutionScope")({
-  operationIds: Schema.Array(OperationId)
+  operationIds: Schema.Array(OperationId), workerId: Schema.optionalKey(WorkerId),
+  scopeHash: Schema.optionalKey(ExecutionScopeHash),
+  ownedOperationHashes: Schema.optionalKey(Schema.Array(OperationHash)),
+  prerequisiteFactHashes: Schema.optionalKey(Schema.Array(OperationHash))
 }) {}
 export class ExecutionApprovalReceipt extends Schema.Class<ExecutionApprovalReceipt>("ExecutionApprovalReceipt")({
   ...approval, reviewId: ExecutionReviewId, newRunReason: Schema.optionalKey(Schema.NonEmptyString)

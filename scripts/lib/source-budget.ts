@@ -119,6 +119,7 @@ export interface SourceBudgetReport {
 const CONTRACT_PATH = "contracts/rewrite/source-budget.json"
 const HISTORY_ROOT = "contracts/rewrite/source-history"
 const MANIFEST_PATH = "parity/goreleaser-v2.17.0/manifest.json"
+const PACKAGE_PROFILE_LOCK_PATH = "contracts/rewrite/profile-locks/packages.json"
 const M6_REPORT_PATH = "contracts/rewrite/reports/plan-177.json"
 const textDecoder = new TextDecoder("utf-8", { fatal: true })
 
@@ -742,6 +743,7 @@ interface HistoryEntry {
   readonly tree: string
   readonly manifestHash: string
   readonly policyHash: string
+  readonly profileLockHash?: string | undefined
   readonly family: string | null
   readonly implementationKey: string | null
   readonly ownerRowId: string | null
@@ -752,6 +754,21 @@ interface HistoryEntry {
   readonly grossDeleted: number
   readonly moves: ReadonlyArray<{ readonly from: string; readonly to: string; readonly lines: number }>
   readonly net: number
+}
+
+const packageProfileLockHash = async (root: string): Promise<string> => {
+  const lock = expectObject(parseStrictJson(await readFile(
+    resolve(root, PACKAGE_PROFILE_LOCK_PATH),
+    "utf8"
+  )), "package profile lock")
+  if (typeof lock.fixture !== "string" || typeof lock.fixtureHash !== "string") {
+    throw new Error("Package profile lock is incomplete.")
+  }
+  const fixture = parseStrictJson(await readFile(resolve(root, lock.fixture), "utf8"))
+  if (canonicalJsonHash(fixture) !== lock.fixtureHash) {
+    throw new Error("Package contract fixture changed after its profile lock.")
+  }
+  return canonicalJsonHash(lock)
 }
 
 interface MarginalCeilings {
@@ -902,6 +919,21 @@ export const verifySourceHistory = async (
       if (seenKeys.has(entry.implementationKey)) throw new Error(`${path}: reused implementation key.`)
       seenKeys.add(entry.implementationKey)
     }
+    if (entry.family === "packages") {
+      const currentLockHash = await packageProfileLockHash(root)
+      if (entry.profileLockHash !== currentLockHash) {
+        throw new Error(`${path}: package profile lock changed after product implementation.`)
+      }
+      const committedLock = run(root, [
+        "git", "show", `${entry.commit}:${PACKAGE_PROFILE_LOCK_PATH}`
+      ])
+      if (committedLock.exitCode !== 0) {
+        throw new Error(`${path}: package profile lock does not predate implementation.`)
+      }
+      if (canonicalJsonHash(parseStrictJson(committedLock.stdout)) !== entry.profileLockHash) {
+        throw new Error(`${path}: package profile lock was not frozen at the implementation commit.`)
+      }
+    }
     prior = entry.reportHash
     entries.push(entry)
   }
@@ -1013,6 +1045,9 @@ export const recordImplementationKey = async (
     owner === undefined ? [] : [owner.family]
   )
   const delta = await sourceDelta(root, prior.commit, currentCommit)
+  const profileLockHash = owner?.family === "packages"
+    ? await packageProfileLockHash(root)
+    : undefined
   const entryWithoutHash = {
     schemaVersion: "semantic-source-history/v1",
     kind: isM6 ? "milestone" as const : "implementation-key" as const,
@@ -1021,6 +1056,7 @@ export const recordImplementationKey = async (
     tree: currentTree,
     manifestHash: canonicalJsonHash(manifest),
     policyHash: report.policyHash,
+    ...(profileLockHash === undefined ? {} : { profileLockHash }),
     family: owner?.family ?? null,
     implementationKey: isM6 ? null : key,
     ownerRowId: owner?.ownerRowId ?? null,

@@ -77,5 +77,6 @@ describe("semantic source ruler", () => {
     expect(report.warnings).toEqual([])
     const history = await verifySourceHistory(process.cwd())
     expect(history.filter((entry) => entry.family === "distributed")).toHaveLength(8)
+    expect(history.filter((entry) => entry.family === "packages")).toHaveLength(0)
   })
 })

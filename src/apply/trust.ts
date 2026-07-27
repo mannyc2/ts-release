@@ -29,6 +29,8 @@ export const generateWorkerKey = (): Promise<CryptoKeyPair> =>
   crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])
 export const exportWorkerKey = async (key: CryptoKey): Promise<Uint8Array> =>
   new Uint8Array(await crypto.subtle.exportKey("raw", key))
+export const importWorkerKey = (value: string): Promise<CryptoKey> =>
+  crypto.subtle.importKey("raw", bytes(value), "Ed25519", false, ["verify"])
 const signature = async (key: CryptoKey, digest: string): Promise<string> =>
   Buffer.from(await crypto.subtle.sign("Ed25519", key, encoder.encode(digest))).toString("base64")
 const verify = (key: CryptoKey, digest: string, value: string): Promise<boolean> =>
@@ -87,3 +89,8 @@ export const verifyLedgerAttestation = async (ledger: RunLedger): Promise<void> 
     fail("Ledger attestation signature is invalid.")
 }
 export const authorizationNonce = (value: string) => ApprovalNonce.make(value)
+export const materialBindingHash = (
+  outputId: string, relativePath: string, size: number, sha256OfBytes: string
+): Digest => Digest.make(hash("ts-release/material-binding/v1", {
+  outputId, relativePath, size, sha256OfBytes
+}))

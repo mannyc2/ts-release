@@ -49,6 +49,9 @@ export class SignedAuthorizationReceipt
     signature: Schema.NonEmptyString
   })
 {}
+export class ImportedFact extends Schema.Class<ImportedFact>("ImportedFact")({
+  workerId: WorkerId, revision: Schema.Number, attestationDigest: Digest
+}) {}
 export class MaterializedOutput extends Schema.Class<MaterializedOutput>("MaterializedOutput")({
   outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number, inode: Schema.Number,
   transmittedDigest: Schema.optionalKey(Digest)
@@ -109,7 +112,8 @@ export type AttemptState = typeof AttemptState.Type
 export class AttemptRecord extends Schema.Class<AttemptRecord>("AttemptRecord")({
   attemptId: AttemptId, executionReceipt: ExecutionApprovalReceipt,
   publishReceipt: Schema.optionalKey(PublishApprovalReceipt),
-  authorizationReceipt: Schema.optionalKey(SignedAuthorizationReceipt), state: AttemptState }) {}
+  authorizationReceipt: Schema.optionalKey(SignedAuthorizationReceipt),
+  importedFrom: Schema.optionalKey(ImportedFact), state: AttemptState }) {}
 export class OperationRunRecord extends Schema.Class<OperationRunRecord>("OperationRunRecord")({
   operationId: OperationId, operationHash: OperationHash, attempts: Schema.Array(AttemptRecord)
 }) {}

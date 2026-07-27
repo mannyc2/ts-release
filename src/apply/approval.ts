@@ -49,7 +49,8 @@ export const executionReviewId = (
 export type ExecutionConfirmation = {
   readonly reviewId: ExecutionReviewId, readonly runId: RunId,
   readonly reviewer: string, readonly approvalNonce: ApprovalNonce,
-  readonly approvedAt: string, readonly newRunReason?: string
+  readonly approvedAt: string, readonly newRunReason?: string,
+  readonly logicalRunId?: LogicalRunId
 }
 export const mintExecutionReceipt = (accepted: AcceptedPlan, scope: ExecutionScope,
   topologyHash: ExecutionTopologyHash, confirmation: ExecutionConfirmation): ExecutionApprovalReceipt => {
@@ -57,7 +58,7 @@ export const mintExecutionReceipt = (accepted: AcceptedPlan, scope: ExecutionSco
   if (confirmation.reviewId !== reviewId) fail("Execution confirmation does not match review.")
   if (confirmation.reviewer.length === 0 || confirmation.approvedAt.length === 0)
     fail("Execution confirmation lacks reviewer or time.")
-  const logicalRunId = deriveLogicalRunId(accepted, scope, topologyHash,
+  const logicalRunId = confirmation.logicalRunId ?? deriveLogicalRunId(accepted, scope, topologyHash,
     confirmation.newRunReason === undefined ? undefined : confirmation.approvalNonce)
   const body = {
     reviewId, runId: confirmation.runId, logicalRunId,

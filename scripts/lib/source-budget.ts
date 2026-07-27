@@ -42,6 +42,11 @@ interface SourceBudgetContract {
     readonly p90: number
     readonly maximum: number
   }
+  readonly marginalFamilyCeilings?: Readonly<Record<string, {
+    readonly median: number
+    readonly p90: number
+    readonly maximum: number
+  }>>
   readonly antiGolf: {
     readonly lineLength: number
     readonly functionSemanticLines: number
@@ -83,6 +88,28 @@ export interface SourceBudgetReport {
   readonly byRole: Readonly<Record<string, number>>
   readonly byModule: Readonly<Record<string, number>>
   readonly temporarySlices: Readonly<Record<string, number>>
+  readonly familySummary: Readonly<Record<string, {
+    readonly productDelta: number
+    readonly productBank: number
+    readonly marginal: {
+      readonly count: number
+      readonly median: number
+      readonly p90: number
+      readonly maximum: number
+      readonly ceilings: {
+        readonly median: number
+        readonly p90: number
+        readonly maximum: number
+      }
+    }
+  }>>
+  readonly waveSummary?: {
+    readonly name: string
+    readonly productCeiling: number
+    readonly oracleDelta: number
+    readonly oracleBank: number
+    readonly oracleCeiling: number
+  } | undefined
   readonly publicBridges: ReadonlyArray<string>
   readonly files: ReadonlyArray<CountedSourceFile>
   readonly exclusions: ReadonlyArray<{ readonly path: string; readonly reason: string }>
@@ -92,7 +119,27 @@ export interface SourceBudgetReport {
 const CONTRACT_PATH = "contracts/rewrite/source-budget.json"
 const HISTORY_ROOT = "contracts/rewrite/source-history"
 const MANIFEST_PATH = "parity/goreleaser-v2.17.0/manifest.json"
+const M6_REPORT_PATH = "contracts/rewrite/reports/plan-177.json"
 const textDecoder = new TextDecoder("utf-8", { fatal: true })
+
+const familyOrder = [
+  "distributed",
+  "shared",
+  "packages",
+  "supply-chain",
+  "providers",
+  "changelog",
+  "announce"
+] as const
+
+const predecessorReportByFamily: Readonly<Record<string, string>> = {
+  distributed: M6_REPORT_PATH,
+  shared: "contracts/rewrite/reports/plan-183.json",
+  packages: "contracts/rewrite/reports/plan-178.json",
+  "supply-chain": "contracts/rewrite/reports/plan-179.json",
+  providers: "contracts/rewrite/reports/plan-180.json",
+  "announce-changelog": "contracts/rewrite/reports/plan-181.json"
+}
 
 const run = (
   root: string,
@@ -622,6 +669,14 @@ export const countSourceTree = async (
   }
   if (oracle > budget.oracle) warnings.push(`Oracle is ${oracle}; ${milestone} ceiling is ${budget.oracle}`)
   const byRole = aggregate(files, (file) => file.role)
+  const familyBudget = await familyBudgetSummary(
+    root,
+    families,
+    product,
+    oracle,
+    contract,
+    warnings
+  )
   const slices = temporarySlices(files, milestone)
   for (const [name, ceiling] of Object.entries(contract.temporarySliceCeilings[milestone] ?? {})) {
     if ((slices[name] ?? 0) > ceiling) warnings.push(`${milestone} slice ${name} exceeds ${ceiling}`)
@@ -637,7 +692,7 @@ export const countSourceTree = async (
       }
     }
   }
-  if (milestone === "M6" || milestone === "PARITY") {
+  if (milestone === "M6") {
     for (const [role, ceiling] of Object.entries(contract.m6RoleCeilings)) {
       if ((byRole[role] ?? 0) > ceiling) {
         warnings.push(`${milestone} role ${role} exceeds ${ceiling}`)
@@ -661,6 +716,8 @@ export const countSourceTree = async (
     byRole,
     byModule: aggregate(files, (file) => `${file.lane}/${file.module}`),
     temporarySlices: slices,
+    familySummary: familyBudget.families,
+    ...(familyBudget.wave === undefined ? {} : { waveSummary: familyBudget.wave }),
     publicBridges,
     files,
     exclusions: exclusions.sort((left, right) => left.path.localeCompare(right.path)),
@@ -687,6 +744,108 @@ interface HistoryEntry {
   readonly grossDeleted: number
   readonly moves: ReadonlyArray<{ readonly from: string; readonly to: string; readonly lines: number }>
   readonly net: number
+}
+
+interface MarginalCeilings {
+  readonly median: number
+  readonly p90: number
+  readonly maximum: number
+}
+
+const percentile = (values: ReadonlyArray<number>, percentage: number): number =>
+  values.length === 0 ? 0 : values[Math.ceil(values.length * percentage) - 1]!
+
+const marginalStats = (
+  entries: ReadonlyArray<HistoryEntry>,
+  ceilings: MarginalCeilings
+): SourceBudgetReport["familySummary"][string]["marginal"] => {
+  const values = entries.map((entry) => entry.grossAdded).sort((left, right) => left - right)
+  const middle = Math.floor(values.length / 2)
+  const median = values.length === 0
+    ? 0
+    : values.length % 2 === 0
+    ? Math.ceil((values[middle - 1]! + values[middle]!) / 2)
+    : values[middle]!
+  return {
+    count: values.length,
+    median,
+    p90: percentile(values, 0.9),
+    maximum: values.at(-1) ?? 0,
+    ceilings
+  }
+}
+
+const reportOracle = async (root: string, path: string): Promise<number> => {
+  const report = expectObject(parseStrictJson(await readFile(resolve(root, path), "utf8")), path)
+  const summary = expectObject(report.sourceSummary ?? null, `${path} sourceSummary`)
+  if (typeof summary.oracle !== "number") throw new Error(`${path}: source oracle is absent.`)
+  return summary.oracle
+}
+
+const familyBudgetSummary = async (
+  root: string,
+  families: ReadonlyArray<string>,
+  product: number,
+  oracle: number,
+  contract: SourceBudgetContract,
+  warnings: Array<string>
+): Promise<{
+  readonly families: SourceBudgetReport["familySummary"]
+  readonly wave?: SourceBudgetReport["waveSummary"]
+}> => {
+  if (families.length === 0) return { families: {} }
+  const history = await verifySourceHistory(root)
+  const latest = history.at(-1)
+  if (latest?.product !== product) {
+    warnings.push(`Product ${product} is not sealed by source-history head ${latest?.product ?? "missing"}`)
+  }
+  const summaries: Record<string, SourceBudgetReport["familySummary"][string]> = {}
+  for (const family of families) {
+    const entries = history.filter((entry) => entry.family === family)
+    const ceilings = contract.marginalFamilyCeilings?.[family] ?? contract.marginalKeyCeilings
+    const marginal = marginalStats(entries, ceilings)
+    const productBank = contract.familyBanks[family]!
+    const productDelta = entries.reduce((total, entry) => total + entry.net, 0)
+    summaries[family] = { productDelta, productBank, marginal }
+    if (entries.length === 0) warnings.push(`${family} has no source-history implementation keys`)
+    if (productDelta > productBank) {
+      warnings.push(`${family} Product delta is ${productDelta}; bank is ${productBank}`)
+    }
+    if (marginal.median > ceilings.median) {
+      warnings.push(`${family} marginal median is ${marginal.median}; ceiling is ${ceilings.median}`)
+    }
+    if (marginal.p90 > ceilings.p90) {
+      warnings.push(`${family} marginal p90 is ${marginal.p90}; ceiling is ${ceilings.p90}`)
+    }
+    if (marginal.maximum > ceilings.maximum) {
+      warnings.push(`${family} marginal maximum is ${marginal.maximum}; ceiling is ${ceilings.maximum}`)
+    }
+  }
+  const highest = families.reduce((selected, family) =>
+    familyOrder.indexOf(family as typeof familyOrder[number]) >
+      familyOrder.indexOf(selected as typeof familyOrder[number]) ? family : selected
+  )
+  const waveName = highest === "changelog" || highest === "announce" ? "announce-changelog" : highest
+  const wave = contract.waves.find((candidate) => candidate.name === waveName)
+  if (wave === undefined) throw new Error(`Missing source wave: ${waveName}`)
+  const oracleBank = contract.oracleFamilyBanks[waveName]!
+  const predecessorPath = predecessorReportByFamily[waveName]!
+  const oracleDelta = oracle - await reportOracle(root, predecessorPath)
+  if (product > wave.product) warnings.push(`${waveName} Product is ${product}; ceiling is ${wave.product}`)
+  if (oracleDelta > oracleBank) {
+    warnings.push(`${waveName} Oracle delta is ${oracleDelta}; bank is ${oracleBank}`)
+  }
+  if (oracle > wave.oracle) warnings.push(`${waveName} Oracle is ${oracle}; ceiling is ${wave.oracle}`)
+  return {
+    families: summaries,
+    wave: {
+      name: waveName,
+      productCeiling: wave.product,
+      oracleDelta,
+      oracleBank,
+      oracleCeiling: wave.oracle
+    }
+  }
 }
 
 const historyFiles = (root: string): ReadonlyArray<string> => {

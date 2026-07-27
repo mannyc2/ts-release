@@ -12,6 +12,7 @@ interface Options {
 
 const parseOptions = (args: ReadonlyArray<string>): Options => {
   let milestone = "M0"
+  let milestoneExplicit = false
   const families: Array<string> = []
   let recordKey: string | undefined
   for (let index = 0; index < args.length; index += 1) {
@@ -19,6 +20,7 @@ const parseOptions = (args: ReadonlyArray<string>): Options => {
     if (argument === "--") continue
     if (argument === "--milestone") {
       milestone = args[++index] ?? ""
+      milestoneExplicit = true
       continue
     }
     if (argument === "--family") {
@@ -34,6 +36,7 @@ const parseOptions = (args: ReadonlyArray<string>): Options => {
   }
   if (milestone.length === 0) throw new Error("--milestone requires a value.")
   if (recordKey === "") throw new Error("--record-key requires a value.")
+  if (!milestoneExplicit && families.length > 0) milestone = "PARITY"
   return { milestone, families, ...(recordKey === undefined ? {} : { recordKey }) }
 }
 

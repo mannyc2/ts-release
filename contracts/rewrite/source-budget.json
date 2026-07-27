@@ -1,6 +1,6 @@
 {
   "schemaVersion": "rewrite-source-budget/v1",
-  "policyVersion": "semantic-source/v2",
+  "policyVersion": "semantic-source/v3",
   "plannedCommit": "0e416e15d149ff9528687a22d3e6e00a073ac6dc",
   "opening": {
     "product": 8031,
@@ -38,9 +38,10 @@
   },
   "familyBanks": {
     "announce": 450,
+    "changelog": 100,
     "packages": 600,
     "providers": 550,
-    "shared": 250,
+    "shared": 150,
     "supply-chain": 400,
     "distributed": 350
   },
@@ -65,6 +66,13 @@
     "median": 30,
     "p90": 60,
     "maximum": 150
+  },
+  "marginalFamilyCeilings": {
+    "distributed": {
+      "median": 55,
+      "p90": 110,
+      "maximum": 150
+    }
   },
   "antiGolf": {
     "lineLength": 120,

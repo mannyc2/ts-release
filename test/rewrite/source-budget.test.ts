@@ -5,7 +5,8 @@ import { canonicalJsonHash } from "../../scripts/lib/canonical-json.js"
 import { expectObject, parseStrictJson } from "../../scripts/lib/strict-json.js"
 import {
   countSemanticLines,
-  countSourceTree
+  countSourceTree,
+  verifySourceHistory
 } from "../../scripts/lib/source-budget.js"
 
 describe("semantic source ruler", () => {
@@ -31,7 +32,7 @@ describe("semantic source ruler", () => {
     await expect(countSourceTree(process.cwd(), "MISSING")).rejects.toThrow("Unknown source milestone")
   })
 
-  test("M0 history is a hash-linked root and marginal ceilings are immutable", () => {
+  test("M0 history is a hash-linked root and marginal ceilings are explicit", () => {
     const history = expectObject(parseStrictJson(readFileSync(join(
       process.cwd(),
       "contracts/rewrite/source-history/m0.json"
@@ -46,5 +47,35 @@ describe("semantic source ruler", () => {
       "contracts/rewrite/source-budget.json"
     ), "utf8")), "source policy")
     expect(policy.marginalKeyCeilings).toEqual({ median: 30, p90: 60, maximum: 150 })
+    expect(policy.marginalFamilyCeilings).toEqual({
+      distributed: { median: 55, p90: 110, maximum: 150 }
+    })
+    expect(policy.familyBanks).toMatchObject({ shared: 150, changelog: 100, announce: 450 })
+  })
+
+  test("enforces the M6-anchored distributed wave and recorded marginal sample", async () => {
+    const report = await countSourceTree(process.cwd(), "PARITY", ["distributed"])
+    expect(report.totals.product).toBe(4672)
+    expect(report.familySummary.distributed).toEqual({
+      productDelta: 350,
+      productBank: 350,
+      marginal: {
+        count: 8,
+        median: 52,
+        p90: 106,
+        maximum: 106,
+        ceilings: { median: 55, p90: 110, maximum: 150 }
+      }
+    })
+    expect(report.waveSummary).toEqual({
+      name: "distributed",
+      productCeiling: 5550,
+      oracleDelta: report.totals.oracle - 4374,
+      oracleBank: 700,
+      oracleCeiling: 20200
+    })
+    expect(report.warnings).toEqual([])
+    const history = await verifySourceHistory(process.cwd())
+    expect(history.filter((entry) => entry.family === "distributed")).toHaveLength(8)
   })
 })

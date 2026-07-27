@@ -176,11 +176,15 @@ const CandidateGenericProvider = Schema.Struct({
 export const CandidateProvider = Schema.Union([CandidateNamedProvider, CandidateGenericProvider, Schema.Struct({
   id: nonempty, profileId: Schema.Literal("policy.catalog-checkbox/v1"), ids: Schema.Array(OutputId),
   destination: Schema.Struct({ file: SafeRelativePath }), options: Schema.Struct({ checkboxPolicy: checkbox }) })])
+export class CandidateChangelog extends Schema.Class<CandidateChangelog>("CandidateChangelog")({
+  mode: Schema.Literal("deterministic"), profileId: Schema.Literal("changelog.local/v1"),
+  pathFilters: Schema.Array(SafeRelativePath), groups: Schema.Array(Schema.String) }) {}
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
   pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)),
   packageStores: optional(Schema.Array(CandidatePackageStore)), providers: optional(Schema.Array(CandidateProvider)),
+  changelog: optional(CandidateChangelog),
   selection: optional(CandidateSelection), nightly: optional(CandidateNightly) }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({

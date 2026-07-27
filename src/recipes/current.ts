@@ -4,6 +4,7 @@ import { ReleaseStages } from "../model/plan.js"
 import type { CandidateConfig } from "./config.js"
 import { lowerCurrentBuild } from "./current-build.js"
 import { lowerCurrentCatalogs } from "./current-catalog.js"
+import { lowerCurrentChangelog } from "./current-changelog.js"
 import { lowerCurrentProviders } from "./current-providers.js"
 import { lowerCurrentPublish } from "./current-publish.js"
 import { lowerCurrentSupplyChain } from "./current-supply-chain.js"
@@ -16,7 +17,7 @@ export const lowerCurrentConfig = Effect.fn("rewrite.lowerCurrentConfig")(functi
     try: () => {
       const current = emptyRows()
       lowerCurrentBuild(config, current)
-      lowerCurrentCatalogs(config, current)
+      lowerCurrentCatalogs(config, current); lowerCurrentChangelog(config, current)
       lowerCurrentSupplyChain(config, current)
       lowerCurrentPublish(config, current); lowerCurrentProviders(config, current)
       return current

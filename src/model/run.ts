@@ -1,11 +1,12 @@
 import * as Schema from "effect/Schema"
 import {
-  ApprovalNonce, AttemptId, CheckpointId, Digest, ExecutionReviewId,
-  ExecutionScopeHash, ExecutionTopologyHash, LogicalRunId, OperationHash, OperationId, OutputId,
+  ApprovalNonce, AttemptId, CheckpointId, Digest, ExecutionReviewId, ExecutionScopeHash,
+  ExecutionTopologyHash, LogicalRunId, OperationHash, OperationId, OutputId,
   PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId, WorkerId, WorkerKeyFingerprint
 } from "./primitives.js"
 
 const Reason = { reason: Schema.String }
+const optional = Schema.optionalKey
 const run = { runId: RunId, logicalRunId: LogicalRunId }
 const approval = {
   ...run, receiptId: ReceiptId, reviewer: Schema.NonEmptyString,
@@ -19,15 +20,13 @@ const resolution = {
 
 export class ExecutionScope extends Schema.Class<ExecutionScope>("ExecutionScope")({
   operationIds: Schema.Array(OperationId), workerId: Schema.optionalKey(WorkerId),
-  scopeHash: Schema.optionalKey(ExecutionScopeHash),
-  ownedOperationHashes: Schema.optionalKey(Schema.Array(OperationHash)),
-  prerequisiteFactHashes: Schema.optionalKey(Schema.Array(OperationHash))
+  scopeHash: optional(ExecutionScopeHash), ownedOperationHashes: optional(Schema.Array(OperationHash)),
+  prerequisiteFactHashes: optional(Schema.Array(OperationHash))
 }) {}
 export class WorkerRegistration extends Schema.Class<WorkerRegistration>("WorkerRegistration")({
   workerId: WorkerId, publicKey: Schema.NonEmptyString,
   workerKeyFingerprint: WorkerKeyFingerprint, scopeHash: ExecutionScopeHash,
-  ownedOperationHashes: Schema.Array(OperationHash),
-  prerequisiteFactHashes: Schema.Array(OperationHash)
+  ownedOperationHashes: Schema.Array(OperationHash), prerequisiteFactHashes: Schema.Array(OperationHash)
 }) {}
 export class ExecutionTopology extends Schema.Class<ExecutionTopology>("ExecutionTopology")({
   planId: PlanId, partitions: Schema.Array(WorkerRegistration) }) {}
@@ -39,9 +38,8 @@ export class SignedAuthorizationReceipt
   extends Schema.Class<SignedAuthorizationReceipt>("SignedAuthorizationReceipt")({
     signerWorkerId: WorkerId, planId: PlanId, logicalRunId: LogicalRunId,
     scopeHash: ExecutionScopeHash, topologyHash: ExecutionTopologyHash,
-    operationHash: OperationHash, attemptId: AttemptId,
-    purpose: Schema.Literals(["execute", "publish"]), reviewer: Schema.NonEmptyString,
-    reviewChallengeId: Schema.NonEmptyString, nonce: ApprovalNonce,
+    operationHash: OperationHash, attemptId: AttemptId, purpose: Schema.Literals(["execute", "publish"]),
+    reviewer: Schema.NonEmptyString, reviewChallengeId: Schema.NonEmptyString, nonce: ApprovalNonce,
     issuedAt: Schema.NonEmptyString, materialBindingHashes: Schema.Array(Digest),
     signature: Schema.NonEmptyString
   })
@@ -50,14 +48,12 @@ export class ImportedFact extends Schema.Class<ImportedFact>("ImportedFact")({
   workerId: WorkerId, revision: Schema.Number, attestationDigest: Digest }) {}
 export class MaterializedOutput extends Schema.Class<MaterializedOutput>("MaterializedOutput")({
   outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number, inode: Schema.Number,
-  transmittedDigest: Schema.optionalKey(Digest)
-}) {}
+  transmittedDigest: Schema.optionalKey(Digest) }) {}
 
 export class CheckpointPending extends Schema.TaggedClass<CheckpointPending>()("CheckpointPending", checkpoint) {}
 export class CheckpointDispatching extends Schema.TaggedClass<CheckpointDispatching>()(
   "CheckpointDispatching", { ...checkpoint, attemptId: AttemptId,
-    clientReconciliationKey: Schema.NonEmptyString }
-) {}
+    clientReconciliationKey: Schema.NonEmptyString }) {}
 export class CheckpointPassed extends Schema.TaggedClass<CheckpointPassed>()(
   "CheckpointPassed", { ...checkpoint, observedOutcome: Schema.String }) {}
 export class CheckpointFailedBeforeCommit extends Schema.TaggedClass<CheckpointFailedBeforeCommit>()(
@@ -70,8 +66,7 @@ export class CheckpointManualReview extends Schema.TaggedClass<CheckpointManualR
   "CheckpointManualReview", { ...checkpoint, reason: Schema.String }) {}
 export const CheckpointState = Schema.Union([
   CheckpointPending, CheckpointDispatching, CheckpointPassed,
-  CheckpointFailedBeforeCommit, CheckpointUnknown, CheckpointManualReview
-])
+  CheckpointFailedBeforeCommit, CheckpointUnknown, CheckpointManualReview ])
 export type CheckpointState = typeof CheckpointState.Type
 
 export class Pending extends Schema.TaggedClass<Pending>()("Pending", {}) {}
@@ -82,8 +77,7 @@ export class RunningTrustedExec extends Schema.TaggedClass<RunningTrustedExec>()
 export class DispatchingPublish extends Schema.TaggedClass<DispatchingPublish>()(
   "DispatchingPublish", { attemptId: AttemptId, ...progress }) {}
 export class Passed extends Schema.TaggedClass<Passed>()("Passed", {
-  ...progress, outcome: Schema.String,
-  materializedOutputs: Schema.Array(MaterializedOutput)
+  ...progress, outcome: Schema.String, materializedOutputs: Schema.Array(MaterializedOutput)
 }) {}
 export class FailedBeforeCommit extends Schema.TaggedClass<FailedBeforeCommit>()(
   "FailedBeforeCommit", { ...progress, failure: Schema.String, retryable: Schema.Boolean }) {}
@@ -94,31 +88,27 @@ export class AssumedCommitted extends Schema.TaggedClass<AssumedCommitted>()("As
 export class AssumedAbsent extends Schema.TaggedClass<AssumedAbsent>()("AssumedAbsent", resolution) {}
 export const AttemptState = Schema.Union([
   Pending, RunningStructured, RunningTrustedExec, DispatchingPublish, Passed,
-  FailedBeforeCommit, CommitUnknown, ManualReview, AssumedCommitted, AssumedAbsent
-])
+  FailedBeforeCommit, CommitUnknown, ManualReview, AssumedCommitted, AssumedAbsent ])
 export type AttemptState = typeof AttemptState.Type
 
 export class AttemptRecord extends Schema.Class<AttemptRecord>("AttemptRecord")({
   attemptId: AttemptId, executionReceipt: ExecutionApprovalReceipt,
-  publishReceipt: Schema.optionalKey(PublishApprovalReceipt),
-  authorizationReceipt: Schema.optionalKey(SignedAuthorizationReceipt),
-  importedFrom: Schema.optionalKey(ImportedFact), state: AttemptState }) {}
+  publishReceipt: optional(PublishApprovalReceipt), authorizationReceipt: optional(SignedAuthorizationReceipt),
+  importedFrom: optional(ImportedFact), state: AttemptState }) {}
 export class OperationRunRecord extends Schema.Class<OperationRunRecord>("OperationRunRecord")({
   operationId: OperationId, operationHash: OperationHash, attempts: Schema.Array(AttemptRecord) }) {}
 export class LedgerAttestation extends Schema.Class<LedgerAttestation>("LedgerAttestation")({
   workerId: WorkerId, topologyHash: ExecutionTopologyHash,
-  signerFingerprint: WorkerKeyFingerprint, digest: Digest, signature: Schema.NonEmptyString
-}) {}
+  signerFingerprint: WorkerKeyFingerprint, digest: Digest, signature: Schema.NonEmptyString }) {}
 export const Stage = Schema.Literals(
   ["build", "process", "catalog", "validate", "publish", "announce", "verify"])
 export type Stage = typeof Stage.Type
 export class RunLedger extends Schema.Class<RunLedger>("RunLedger")({
   schemaVersion: Schema.Literal("run-ledger/v1"), ...run, planId: PlanId,
-  operationHashes: Schema.Array(OperationHash), scope: ExecutionScope,
-  frontier: Stage, executionTopologyHash: ExecutionTopologyHash,
-  revision: Schema.Number, operations: Schema.Array(OperationRunRecord),
-  topology: Schema.optionalKey(ExecutionTopology),
-  attestation: Schema.optionalKey(LedgerAttestation)
+  operationHashes: Schema.Array(OperationHash), scope: ExecutionScope, frontier: Stage,
+  executionTopologyHash: ExecutionTopologyHash, revision: Schema.Number,
+  operations: Schema.Array(OperationRunRecord), topology: optional(ExecutionTopology),
+  attestation: optional(LedgerAttestation)
 }) {}
 
 export class TransitionError extends Schema.TaggedErrorClass<TransitionError>()("TransitionError", Reason) {}

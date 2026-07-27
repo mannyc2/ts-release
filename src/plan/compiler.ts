@@ -2,6 +2,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { CandidateConfig, decodeConfig } from "../config/config.js"
 import { lowerCurrentConfig } from "../recipes/current.js"
+import { lowerProjects } from "../recipes/projects.js"
 import { PlanningFactsError } from "../model/errors.js"
 import { Check, DigestOp, OutputDeclaration } from "../model/operation.js"
 import { ReleaseIdentityV6, ReleasePlanV6, ReleaseStages } from "../model/plan.js"
@@ -111,7 +112,10 @@ export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
       snapshot: invocation.snapshot
     }),
     stages,
-    annotations: []
+    annotations: (config.projects ?? []).map((project) => ({
+      key: `project.${project.id}`,
+      value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`
+    }))
   })
 })
 
@@ -137,9 +141,14 @@ export const compilePlan = Effect.fn("rewrite.compilePlan")(function*(
 ) {
   const config = yield* decodeConfig(input)
   const facts = yield* validatePlanningFacts(invocation)
-  const stages = minimalConfig(config)
+  const baseStages = minimalConfig(config)
     ? yield* lowerRecipes(recipeDefinitions(config))
     : yield* lowerCurrentConfig(config)
+  const stages = config.projects === undefined ? baseStages
+    : yield* Effect.try({
+        try: () => lowerProjects(baseStages, config.projects!),
+        catch: (cause) => PlanningFactsError.make({ reason: String(cause) })
+      })
   const plan = yield* finalizePlan(config, facts, stages)
   return yield* acceptPlan(encodePlanBytes(plan))
 })

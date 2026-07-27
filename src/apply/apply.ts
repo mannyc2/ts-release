@@ -109,6 +109,7 @@ type PublishOperation = Extract<Operation, {
     | "PackageStorePublish"
     | "SupplyChainPublish"
     | "ProviderPublish"
+    | "AnnouncementPublish"
     | "OpaquePublish"
 }>
 const publishTarget = (operation: PublishOperation): string => {
@@ -126,6 +127,8 @@ const publishTarget = (operation: PublishOperation): string => {
       return `${operation.profileId}:${Object.entries(operation.target)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([key, value]) => `${key}=${value}`).join(",")}`
+    case "AnnouncementPublish":
+      return `${operation.profileId}:${operation.target.destination}`
     case "OpaquePublish":
       return `${operation.contractFixtureId}:${operation.argv[0]}`
   }
@@ -153,11 +156,13 @@ const keyFor = (
   ? packageStoreReconciliationKey(
       accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
       OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings)
-  : operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish"
+  : operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" ||
+    operation._tag === "AnnouncementPublish"
   ? supplyChainReconciliationKey(
       accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
       OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings,
-      operation._tag === "ProviderPublish" ? "provider" : "supply-chain")
+      ({ AnnouncementPublish: "announcement", ProviderPublish: "provider",
+        SupplyChainPublish: "supply-chain" } as const)[operation._tag])
   : reconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope,
       ledger.executionTopologyHash, OperationHash.make(hash), checkpointId, target, materials)
 const publishOperation = (
@@ -182,12 +187,14 @@ const publishOperation = (
     next = yield* moved(accepted, services.store, request.run.path, next,
       { _tag: "DispatchCheckpoint", operationId: operation.id,
         checkpointId: checkpoint.checkpointId, key,
-        ...(["PackageStorePublish", "SupplyChainPublish", "ProviderPublish"].includes(operation._tag) ? {
+        ...(["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish"]
+          .includes(operation._tag) ? {
           targetCoordinates: target,
           ...(subject === undefined ? {} : { subjectDigest: subject.digest })
         } : {}) })
     const outputId = checkpoint.checkpointId === "dispatch" ||
-      ["SupplyChainPublish", "ProviderPublish"].includes(operation._tag) ? String(operation.inputs[0] ?? "")
+      ["SupplyChainPublish", "ProviderPublish", "AnnouncementPublish"]
+        .includes(operation._tag) ? String(operation.inputs[0] ?? "")
       : String(checkpoint.checkpointId).replace(/^asset:/u, "")
     const facts = materials.find((item) => item.outputId === outputId)
     const handle = facts === undefined ? undefined

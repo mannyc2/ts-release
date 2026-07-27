@@ -125,6 +125,9 @@ export class ProviderPublish extends Schema.TaggedClass<ProviderPublish>()("Prov
   dnsScope: Schema.Literals(["PublicOnly", "PrivateNetwork"]),
   checkpoints: Schema.NonEmptyArray(CheckpointId), credential: PublishCredential,
   contractFixtureId: Schema.NonEmptyString }) {}
+export class AnnouncementPublish extends Schema.TaggedClass<AnnouncementPublish>()("AnnouncementPublish", {
+  ...row, profileId: ProfileId, target: Schema.Struct({ destination: Schema.NonEmptyString }),
+  credential: PublishCredential, contractFixtureId: Schema.NonEmptyString }) {}
 export class OpaquePublish extends Schema.TaggedClass<OpaquePublish>()("OpaquePublish", {
   ...row, argv: Schema.NonEmptyArray(Schema.String), cwd: SafeRelativePath,
   environmentNames: Schema.Array(Schema.NonEmptyString),
@@ -146,20 +149,20 @@ export const PublishOp = Schema.Union([
   PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type PublishOp = typeof PublishOp.Type
-export const AnnounceOp = Schema.Union([HttpPublish])
+export const AnnounceOp = Schema.Union([HttpPublish, AnnouncementPublish])
 export type AnnounceOp = typeof AnnounceOp.Type
 export const VerifyOp = Schema.Union([Check, HttpRead])
 export type VerifyOp = typeof VerifyOp.Type
 
 export const Operation = Schema.Union([
   Check, Write, Pack, DigestOp, Exec, HttpRead, ReviewedNoteTransform,
-  HttpPublish, ForgeRelease, PackageRegistryRelease,
+  HttpPublish, ForgeRelease, PackageRegistryRelease, AnnouncementPublish,
   PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type Operation = typeof Operation.Type
 export const mechanismTags = [
   "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
-  "HttpPublish", "ForgeRelease", "PackageRegistryRelease",
+  "HttpPublish", "ForgeRelease", "PackageRegistryRelease", "AnnouncementPublish",
   "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
 ] as const
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
@@ -183,6 +186,7 @@ export const operationAuthority = (operation: Operation): Authority => {
     case "PackageStorePublish":
     case "SupplyChainPublish":
     case "ProviderPublish":
+    case "AnnouncementPublish":
     case "OpaquePublish":
       return "RemotePublish"
   }

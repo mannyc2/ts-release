@@ -2,6 +2,7 @@ import * as Effect from "effect/Effect"
 import { PlanningFactsError } from "../model/errors.js"
 import { ReleaseStages } from "../model/plan.js"
 import type { CandidateConfig } from "./config.js"
+import { lowerCurrentAnnouncements } from "./current-announcement.js"
 import { lowerCurrentBuild } from "./current-build.js"
 import { lowerCurrentCatalogs } from "./current-catalog.js"
 import { lowerCurrentChangelog } from "./current-changelog.js"
@@ -20,6 +21,7 @@ export const lowerCurrentConfig = Effect.fn("rewrite.lowerCurrentConfig")(functi
       lowerCurrentCatalogs(config, current); lowerCurrentChangelog(config, current)
       lowerCurrentSupplyChain(config, current)
       lowerCurrentPublish(config, current); lowerCurrentProviders(config, current)
+      lowerCurrentAnnouncements(config, current)
       return current
     },
     catch: (cause) => PlanningFactsError.make({
@@ -28,6 +30,6 @@ export const lowerCurrentConfig = Effect.fn("rewrite.lowerCurrentConfig")(functi
   })
   return ReleaseStages.make({
     build: rows.build, process: rows.process, catalog: rows.catalog,
-    validate: rows.validate, publish: rows.publish, announce: [], verify: rows.verify
+    validate: rows.validate, publish: rows.publish, announce: rows.announce, verify: rows.verify
   })
 })

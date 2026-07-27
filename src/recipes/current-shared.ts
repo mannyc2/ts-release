@@ -10,11 +10,12 @@ export interface CurrentRows {
   readonly catalog: Array<CatalogOp>
   readonly validate: Array<ValidateOp>
   readonly publish: Array<PublishOp>
+  readonly announce: Array<import("../model/operation.js").AnnounceOp>
   readonly verify: Array<VerifyOp>
   readonly outputs: Map<string, OutputDeclaration>
 }
 export const emptyRows = (): CurrentRows => ({
-  build: [], process: [], catalog: [], validate: [], publish: [], verify: [], outputs: new Map()
+  build: [], process: [], catalog: [], validate: [], publish: [], announce: [], verify: [], outputs: new Map()
 })
 export const operationId = (value: string): OperationId => OperationId.make(value)
 export const outputId = (value: string): OutputId => OutputId.make(value)

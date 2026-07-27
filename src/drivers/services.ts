@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
 import {
+  AnnouncementPublish,
   ForgeRelease,
   HttpPublish,
   OpaquePublish,
@@ -32,7 +33,7 @@ export class CatalogPublishRequest
       ForgeRelease,
       PackageRegistryRelease,
       PackageStorePublish,
-      SupplyChainPublish, ProviderPublish,
+      SupplyChainPublish, ProviderPublish, AnnouncementPublish,
       OpaquePublish
     ]),
     checkpointId: CheckpointId,

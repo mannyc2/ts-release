@@ -78,6 +78,7 @@ export const publishReviewId = (accepted: AcceptedPlan, executionReview: Executi
       "PackageStorePublish",
       "SupplyChainPublish",
       "ProviderPublish",
+      "AnnouncementPublish",
       "OpaquePublish"
     ].includes(operation._tag))
     .map(({ operation }) => String(operation.id)))
@@ -158,7 +159,7 @@ export const supplyChainReconciliationKey = (
   planId: string, logicalRunId: string, scope: ExecutionScope, topologyHash: string,
   operationHash: OperationHash, checkpointId: CheckpointId, profileId: string,
   targetCoordinates: Readonly<Record<string, string>>, materials: ReadonlyArray<MaterializedOutput>,
-  domain: "supply-chain" | "provider" = "supply-chain"
+  domain: "supply-chain" | "provider" | "announcement" = "supply-chain"
 ): string => hash(`ts-release/${domain}-reconcile/v1`, {
   planId, logicalRunId,
   scopeHash: scope.scopeHash ?? hash("ts-release/execution-scope/v1", {

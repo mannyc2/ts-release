@@ -13,13 +13,11 @@ import { attestationProfile } from "./supply-chain/attestation-profile.js"
 const kinds: Readonly<Record<string, OutputDeclaration["kind"]>> = {
   "container-metadata": "container-metadata", sbom: "sbom", signature: "signature",
   "observed-container-digest": "digest", "observed-signature-digest": "digest",
-  "detached-signature": "signature", "notarized-artifact": "notarized",
-  "attestation-id": "attestation"
+  "detached-signature": "signature", "notarized-artifact": "notarized", "attestation-id": "attestation"
 }
 const declared = (rows: CurrentRows, id: string, location: string,
   type: string): OutputDeclaration => recordOutput(rows, OutputDeclaration.make({
-  id: outputId(id), path: path(location), kind: kinds[type] ?? "file", provenance: "process"
-}))
+  id: outputId(id), path: path(location), kind: kinds[type] ?? "file", provenance: "process" }))
 export const lowerCurrentSupplyChain = (config: CandidateConfig, rows: CurrentRows): void => {
   for (const action of config.supplyChain ?? []) {
     const inputs = action.inputs.map((id) => {
@@ -35,12 +33,13 @@ export const lowerCurrentSupplyChain = (config: CandidateConfig, rows: CurrentRo
       continue
     }
     const local = supplyLocalProfiles.find((item) => item.profileId === action.profileId)
-    const remote = [
-      ...registryProfiles, credentialedSigningProfile, ...notarizationProfiles, attestationProfile
-    ]
-      .find((item) => item.profileId === action.profileId)
+    const remote = [...registryProfiles, credentialedSigningProfile,
+      ...notarizationProfiles, attestationProfile].find((item) => item.profileId === action.profileId)
     const outputType = local?.contract.outputs[0]!.type ?? remote?.contract.outputs[0]!.type
     if (outputType === undefined) throw new Error(`Unknown supply-chain profile ${action.profileId}.`)
+    const targetKeys = Object.keys(action.target).sort()
+    const expectedKeys = remote?.contract.targetCoordinates.slice().sort() ?? []
+    if (JSON.stringify(targetKeys) !== JSON.stringify(expectedKeys)) throw new Error("Profile target mismatch.")
     const outputs = action.outputs.map((item) => declared(rows, item.id, item.path, outputType))
     if (local !== undefined) {
       const argv = local.contract.invocation.argv.map((token) => token

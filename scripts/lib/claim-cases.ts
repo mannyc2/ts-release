@@ -18,6 +18,11 @@ import { encodeCanonicalJson } from "./canonical-json.js"
 import { findLocalToolProfile } from "../../src/recipes/packages/profiles.js"
 import { findPackageStoreProfile } from "../../src/recipes/packages/store-profiles.js"
 import { localToolOutcome, preflightTool } from "../../src/recipes/packages/tool.js"
+import { supplyLocalProfiles } from "../../src/recipes/supply-chain/local-profiles.js"
+import { registryProfiles } from "../../src/recipes/supply-chain/registry-profiles.js"
+import { credentialedSigningProfile } from "../../src/recipes/supply-chain/signing-profiles.js"
+import { notarizationProfiles } from "../../src/recipes/supply-chain/notarization-profiles.js"
+import { attestationProfile } from "../../src/recipes/supply-chain/attestation-profile.js"
 import {
   readParityManifest,
   requiredCaseIds,
@@ -317,6 +322,63 @@ const packageCase = (
       output.id === expectedOutput.id && output.path === expectedOutput.path))
 }
 
+const supplyFixtures = JSON.parse(readFileSync(join(
+  process.cwd(), "test/fixtures/parity/configs/supply-chain/configs.json"
+), "utf8")) as { readonly fixtures: ReadonlyArray<PackageConfigFixture> }
+const supplyProfiles = [...registryProfiles, credentialedSigningProfile,
+  ...notarizationProfiles, attestationProfile]
+const supplyCase = (row: ParityRow, id: string, level: CaseLevel): ClaimCase => async () => {
+  const fixture = supplyFixtures.fixtures.find((item) => item.rowId === row.id)
+  if (fixture === undefined) throw new Error(`${row.id}: supply-chain config fixture is absent.`)
+  if (level === "config-invalid") {
+    const value = structuredClone(fixture.config)
+    ;(value.project as Record<string, unknown>).version = ""
+    return passed(id, row.id, level, "Invalid supply-chain config values are rejected.", await rejects(value))
+  }
+  if (level === "config-excess") return passed(id, row.id, level,
+    "Runtime decoding rejects excess configPath.", await rejects({ ...fixture.config, configPath: "x" }))
+  const decoded = await Effect.runPromise(decodeConfig(fixture.config))
+  if (level === "config-decode") return passed(id, row.id, level,
+    "The complete value-only supply-chain config decodes.", (decoded.supplyChain?.length ?? 0) > 0)
+  const first = await compile(fixture.config)
+  const second = await compile(JSON.parse(JSON.stringify(fixture.config)))
+  const stable = first.planId === second.planId &&
+    Buffer.from(first.bytes).equals(Buffer.from(second.bytes))
+  if (level === "deterministic-lowering") return passed(id, row.id, level,
+    "Direct and one-read JSON values lower identically.", stable)
+  const operations = operationEntries(first.plan).map(({ operation }) => operation)
+  const local = supplyLocalProfiles.filter((profile) => fixture.profileIds.includes(profile.profileId))
+  const remote = supplyProfiles.filter((profile) => fixture.profileIds.includes(profile.profileId))
+  if (level === "driver-success") return passed(id, row.id, level,
+    "Frozen local and closed publish profiles have executable topology.",
+    local.every((profile) => preflightTool(profile, profile.contract.hosts[0]!,
+      profile.contract.executable.supportedRange.match(/[0-9]+(?:\.[0-9]+){1,2}/u)![0]) === "ready") &&
+    remote.every((profile) => operations.some((operation) =>
+      operation._tag === "SupplyChainPublish" && operation.profileId === profile.profileId &&
+      checkpointIds(operation).length > 0)) &&
+    (fixture.profileIds.length > 0 || operations.some((operation) => operation._tag === "Check")))
+  if (level === "driver-typed-failure-evidence") {
+    const invalid = structuredClone(fixture.config) as any
+    invalid.supplyChain[0].kind = "unowned"
+    return passed(id, row.id, level, "Unowned supply operations fail strict decoding.", await rejects(invalid))
+  }
+  if (level === "platform-tool-constraints") return passed(id, row.id, level,
+    "Local profiles are uncredentialed and remote profiles remain closed.",
+    local.every((profile) => profile.contract.invocation.authenticationClass === "none" &&
+      profile.contract.remoteMutation === false) &&
+    remote.every((profile) => profile.contract.authenticationClass.startsWith("credential-reference:")))
+  if (level === "ambiguous-commit") return passed(id, row.id, level,
+    "Every remote response-loss and malformed result stays ambiguous.",
+    remote.every((profile) => Object.values(profile.contract.commitmentClassifier)
+      .includes("PossiblyCommitted") && Object.values(profile.contract.commitmentClassifier)
+      .includes("Unclassifiable")))
+  const profiledOutputs = (decoded.supplyChain ?? []).filter((action) => action.kind === "profile")
+    .flatMap((action) => action.outputs.map((output) => output.id))
+  return passed(id, row.id, level, "Canonical bytes and declared subjects are exact.",
+    stable && profiledOutputs.every((outputId) =>
+      first.outputs.some(({ output }) => output.id === outputId)))
+}
+
 const dynamicCase = (
   manifest: ParityManifest,
   row: ParityRow,
@@ -372,6 +434,8 @@ export const claimCaseRegistry = (
             ? distributedCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
             : row.family === "packages"
             ? packageCase(row, reference.id, reference.level)
+            : row.family === "supply-chain"
+            ? supplyCase(row, reference.id, reference.level)
             : dynamicCase(manifest, row, reference.id, reference.level))
       )
     }
@@ -384,6 +448,8 @@ export const claimCaseRegistry = (
         ? distributedCase(fixture, row, id, level)
         : row.family === "packages"
         ? packageCase(row, id, level)
+        : row.family === "supply-chain"
+        ? supplyCase(row, id, level)
         : dynamicCase(manifest, row, id, level)))
     }
   }

@@ -30,14 +30,11 @@ export class WorkerRegistration extends Schema.Class<WorkerRegistration>("Worker
   prerequisiteFactHashes: Schema.Array(OperationHash)
 }) {}
 export class ExecutionTopology extends Schema.Class<ExecutionTopology>("ExecutionTopology")({
-  planId: PlanId, partitions: Schema.Array(WorkerRegistration)
-}) {}
+  planId: PlanId, partitions: Schema.Array(WorkerRegistration) }) {}
 export class ExecutionApprovalReceipt extends Schema.Class<ExecutionApprovalReceipt>("ExecutionApprovalReceipt")({
-  ...approval, reviewId: ExecutionReviewId, newRunReason: Schema.optionalKey(Schema.NonEmptyString)
-}) {}
+  ...approval, reviewId: ExecutionReviewId, newRunReason: Schema.optionalKey(Schema.NonEmptyString) }) {}
 export class PublishApprovalReceipt extends Schema.Class<PublishApprovalReceipt>("PublishApprovalReceipt")({
-  ...approval, reviewId: PublishReviewId, executionReceiptId: ReceiptId
-}) {}
+  ...approval, reviewId: PublishReviewId, executionReceiptId: ReceiptId }) {}
 export class SignedAuthorizationReceipt
   extends Schema.Class<SignedAuthorizationReceipt>("SignedAuthorizationReceipt")({
     signerWorkerId: WorkerId, planId: PlanId, logicalRunId: LogicalRunId,
@@ -50,8 +47,7 @@ export class SignedAuthorizationReceipt
   })
 {}
 export class ImportedFact extends Schema.Class<ImportedFact>("ImportedFact")({
-  workerId: WorkerId, revision: Schema.Number, attestationDigest: Digest
-}) {}
+  workerId: WorkerId, revision: Schema.Number, attestationDigest: Digest }) {}
 export class MaterializedOutput extends Schema.Class<MaterializedOutput>("MaterializedOutput")({
   outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number, inode: Schema.Number,
   transmittedDigest: Schema.optionalKey(Digest)
@@ -63,8 +59,7 @@ export class CheckpointDispatching extends Schema.TaggedClass<CheckpointDispatch
     clientReconciliationKey: Schema.NonEmptyString }
 ) {}
 export class CheckpointPassed extends Schema.TaggedClass<CheckpointPassed>()(
-  "CheckpointPassed", { ...checkpoint, observedOutcome: Schema.String }
-) {}
+  "CheckpointPassed", { ...checkpoint, observedOutcome: Schema.String }) {}
 export class CheckpointFailedBeforeCommit extends Schema.TaggedClass<CheckpointFailedBeforeCommit>()(
     "CheckpointFailedBeforeCommit", { ...checkpoint, failure: Schema.String,
       retryable: Schema.Boolean }) {}
@@ -72,8 +67,7 @@ export class CheckpointUnknown extends Schema.TaggedClass<CheckpointUnknown>()(
   "CheckpointUnknown", { ...checkpoint, clientReconciliationKey: Schema.NonEmptyString,
     observedRemoteId: Schema.optionalKey(Schema.NonEmptyString), failure: Schema.String }) {}
 export class CheckpointManualReview extends Schema.TaggedClass<CheckpointManualReview>()(
-  "CheckpointManualReview", { ...checkpoint, reason: Schema.String }
-) {}
+  "CheckpointManualReview", { ...checkpoint, reason: Schema.String }) {}
 export const CheckpointState = Schema.Union([
   CheckpointPending, CheckpointDispatching, CheckpointPassed,
   CheckpointFailedBeforeCommit, CheckpointUnknown, CheckpointManualReview
@@ -82,24 +76,19 @@ export type CheckpointState = typeof CheckpointState.Type
 
 export class Pending extends Schema.TaggedClass<Pending>()("Pending", {}) {}
 export class RunningStructured extends Schema.TaggedClass<RunningStructured>()(
-  "RunningStructured", { startedAt: Schema.NonEmptyString }
-) {}
+  "RunningStructured", { startedAt: Schema.NonEmptyString }) {}
 export class RunningTrustedExec extends Schema.TaggedClass<RunningTrustedExec>()(
-  "RunningTrustedExec", { startedAt: Schema.NonEmptyString }
-) {}
+  "RunningTrustedExec", { startedAt: Schema.NonEmptyString }) {}
 export class DispatchingPublish extends Schema.TaggedClass<DispatchingPublish>()(
-  "DispatchingPublish", { attemptId: AttemptId, ...progress }
-) {}
+  "DispatchingPublish", { attemptId: AttemptId, ...progress }) {}
 export class Passed extends Schema.TaggedClass<Passed>()("Passed", {
   ...progress, outcome: Schema.String,
   materializedOutputs: Schema.Array(MaterializedOutput)
 }) {}
 export class FailedBeforeCommit extends Schema.TaggedClass<FailedBeforeCommit>()(
-  "FailedBeforeCommit", { ...progress, failure: Schema.String, retryable: Schema.Boolean }
-) {}
+  "FailedBeforeCommit", { ...progress, failure: Schema.String, retryable: Schema.Boolean }) {}
 export class CommitUnknown extends Schema.TaggedClass<CommitUnknown>()(
-  "CommitUnknown", { ...progress, failure: Schema.String }
-) {}
+  "CommitUnknown", { ...progress, failure: Schema.String }) {}
 export class ManualReview extends Schema.TaggedClass<ManualReview>()("ManualReview", Reason) {}
 export class AssumedCommitted extends Schema.TaggedClass<AssumedCommitted>()("AssumedCommitted", resolution) {}
 export class AssumedAbsent extends Schema.TaggedClass<AssumedAbsent>()("AssumedAbsent", resolution) {}
@@ -115,8 +104,7 @@ export class AttemptRecord extends Schema.Class<AttemptRecord>("AttemptRecord")(
   authorizationReceipt: Schema.optionalKey(SignedAuthorizationReceipt),
   importedFrom: Schema.optionalKey(ImportedFact), state: AttemptState }) {}
 export class OperationRunRecord extends Schema.Class<OperationRunRecord>("OperationRunRecord")({
-  operationId: OperationId, operationHash: OperationHash, attempts: Schema.Array(AttemptRecord)
-}) {}
+  operationId: OperationId, operationHash: OperationHash, attempts: Schema.Array(AttemptRecord) }) {}
 export class LedgerAttestation extends Schema.Class<LedgerAttestation>("LedgerAttestation")({
   workerId: WorkerId, topologyHash: ExecutionTopologyHash,
   signerFingerprint: WorkerKeyFingerprint, digest: Digest, signature: Schema.NonEmptyString

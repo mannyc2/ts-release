@@ -4,6 +4,7 @@ import { compilePlan, Invocation } from "../../src/plan/compiler.js"
 import { NonEmptyName, WorkspaceRoot } from "../../src/model/primitives.js"
 import { operationEntries } from "../../src/model/validate.js"
 import { findLocalToolProfile } from "../../src/recipes/packages/profiles.js"
+import { pythonBuilderProfiles } from "../../src/recipes/packages/python.js"
 
 describe("immutable package recipe lowering", () => {
   test("matches and lowers the frozen Node SEA decision", async () => {
@@ -24,5 +25,14 @@ describe("immutable package recipe lowering", () => {
     expect(operation.contractFixtureId).toBe("contract.package.node-sea.v1")
     expect(operation.inputs.map(String)).toEqual(["input"])
     expect(operation.outputs.map(({ id }) => String(id))).toEqual(["c019-package"])
+  })
+
+  test("registers the frozen Python builder decisions", async () => {
+    const contracts = await Bun.file("test/fixtures/parity/contracts/packages/profiles.json").json()
+    for (const profile of pythonBuilderProfiles) {
+      const frozen = contracts.profiles.find((item: any) => item.profileId === profile.profileId)
+      expect(profile.contract).toEqual(frozen.contract)
+      expect(findLocalToolProfile(profile.profileId)).toBe(profile)
+    }
   })
 })

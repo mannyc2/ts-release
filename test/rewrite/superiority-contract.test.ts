@@ -24,13 +24,20 @@ describe("five-property superiority contract", () => {
     expect(contract.forbiddenComparativeClaims).toContain("technically superior to GoReleaser")
   })
 
-  test("public cutover promotes four proven properties", () => {
+  test("public cutover remains green after distributed promotion", () => {
     expect(checkSuperiority(process.cwd(), "runner")).toMatchObject({
-      passing: 4,
+      passing: 5,
       candidateProven: 0,
-      unresolved: 1,
+      unresolved: 0,
       failures: []
     })
     expect(checkSuperiority(process.cwd(), "cutover").failures).toHaveLength(0)
+  })
+
+  test("distributed execution promotes portable split and merge", () => {
+    const report = checkSuperiority(process.cwd(), "distributed")
+    expect(report.passing).toBe(5)
+    expect(report.unresolved).toBe(0)
+    expect(report.failures).toEqual([])
   })
 })

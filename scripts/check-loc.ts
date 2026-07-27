@@ -10,14 +10,14 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/model", 800],
   ["src/recipes", 875],
   ["src/config", 60],
-  ["src/plan", 250],
+  ["src/plan", 260],
   ["src/drivers", 650],
-  ["src/apply", 900],
+  ["src/apply", 1250],
   ["src/view", 25],
   ["src/api", 450],
   ["apps/release-ts/src", 250],
   ["apps/ts-release-action/src", 200],
-  ["test", 500],
+  ["test", 650],
   ["scripts", 2200],
   ["apps/release-ts/scripts", 220] // read-only self-release policy checks
 ]

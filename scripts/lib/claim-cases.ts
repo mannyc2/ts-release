@@ -2,6 +2,9 @@ import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { decodeConfig } from "../../src/config/config.js"
+import { partition } from "../../src/apply/partition.js"
+import { stagedOutcome } from "../../src/apply/transition.js"
+import { operationAuthority } from "../../src/model/operation.js"
 import {
   NonEmptyName,
   WorkspaceRoot
@@ -160,6 +163,65 @@ const baselineCase = (
     first.planId === second.planId)
 }
 
+const distributedCase = (
+  fixture: ConfigFixture,
+  row: ParityRow,
+  id: string,
+  level: CaseLevel
+): ClaimCase => async () => {
+  if (level === "config-invalid") {
+    const value = structuredClone(fixture.config)
+    ;((value.projects as Array<Record<string, unknown>>)[0]!).root = "../escape"
+    return passed(id, row.id, level, "Unsafe project roots are rejected.", await rejects(value))
+  }
+  if (level === "config-excess") {
+    const value = structuredClone(fixture.config)
+    ;((value.projects as Array<Record<string, unknown>>)[0]!).extra = true
+    return passed(id, row.id, level, "Excess project fields are rejected.", await rejects(value))
+  }
+  const decoded = await Effect.runPromise(decodeConfig(fixture.config))
+  if (level === "config-decode") {
+    return passed(id, row.id, level, "The closed project execution scope decodes.",
+      decoded.projects?.length === 1 && decoded.projects[0]!.execution.workers.length > 0)
+  }
+  const first = await compile(fixture.config)
+  const second = await compile(JSON.parse(JSON.stringify(fixture.config)))
+  const stable = first.planId === second.planId &&
+    Buffer.from(first.bytes).equals(Buffer.from(second.bytes))
+  if (level === "deterministic-lowering" || level === "exact-generated-bytes") {
+    return passed(id, row.id, level, "Project lowering has stable plan identity and exact bytes.", stable)
+  }
+  if (level === "driver-success") {
+    const value = structuredClone(fixture.config) as Record<string, unknown>
+    value.hooks = { before: [{ id: "probe", run: ["bun", "--version"] }] }
+    const accepted = await compile(value)
+    const owned = operationEntries(accepted.plan)
+      .filter(({ operation }) => !["LocalRead", "RemoteRead"].includes(operationAuthority(operation)))
+      .map(({ operation }) => operation.id)
+    const scopes = partition(accepted, [{ workerId: "linux", operationIds: owned }])
+    return passed(id, row.id, level, "Effectful work has one exact-cover worker scope.",
+      owned.length > 0 && scopes.length === 1 && scopes[0]!.operationIds.length === owned.length)
+  }
+  if (level === "driver-typed-failure-evidence") {
+    let typed = false
+    try {
+      partition(first, [])
+    } catch (error) {
+      typed = typeof error === "object" && error !== null &&
+        "_tag" in error && error._tag === "TransitionError"
+    }
+    return passed(id, row.id, level, "Invalid partitioning returns typed transition evidence.", typed)
+  }
+  if (level === "platform-tool-constraints") {
+    return passed(id, row.id, level, "Workers and project roots remain explicit typed values.",
+      decoded.projects!.every((project) =>
+        project.execution.workers.every((worker) => worker.length > 0) && !project.root.startsWith("..")))
+  }
+  return passed(id, row.id, level, "Staged execution never guesses an intermediate outcome.",
+    ["prepare", "publish", "announce", "continue"].join(",") ===
+      (["validate", "publish", "announce", "verify"] as const).map(stagedOutcome).join(","))
+}
+
 const dynamicCase = (
   manifest: ParityManifest,
   row: ParityRow,
@@ -211,6 +273,8 @@ export const claimCaseRegistry = (
         implementedCases[reference.id] ??
           (row.family === "baseline"
             ? baselineCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
+            : row.family === "distributed"
+            ? distributedCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
             : dynamicCase(manifest, row, reference.id, reference.level))
       )
     }
@@ -219,6 +283,8 @@ export const claimCaseRegistry = (
       const level = id.endsWith(".excess") ? "config-excess" : "config-invalid"
       registry.set(id, implementedCases[id] ?? (row.family === "baseline"
         ? baselineCase(fixture, row, id, level)
+        : row.family === "distributed"
+        ? distributedCase(fixture, row, id, level)
         : dynamicCase(manifest, row, id, level)))
     }
   }

@@ -9,8 +9,8 @@
     "property.authority.credentials": "passing",
     "property.uncertainty.persist-before-dispatch": "passing",
     "property.uncertainty.no-replay": "passing",
-    "property.distributed.single-plan": "candidate-pending",
-    "property.distributed.content-inventory": "candidate-pending"
+    "property.distributed.single-plan": "passing",
+    "property.distributed.content-inventory": "passing"
   },
   "properties": [
     {

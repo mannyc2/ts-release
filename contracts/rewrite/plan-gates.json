@@ -110,8 +110,13 @@
       "commands": [
         ["bun", "run", "check"],
         ["bun", "test"],
+        ["bun", "run", "check:import-rules"],
+        ["bun", "run", "check:architecture", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:loc"],
+        ["bun", "run", "test:fault-matrix"],
         ["bun", "run", "check:parity", "--", "--family", "distributed"],
-        ["bun", "run", "check:superiority", "--", "--milestone", "distributed"]
+        ["bun", "run", "check:superiority", "--", "--milestone", "distributed"],
+        ["bun", "run", "check:source-budget", "--", "--family", "distributed"]
       ]
     },
     "178": {

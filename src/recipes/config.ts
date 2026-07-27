@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import { NonEmptyName, OutputId, ProfileId, SafeRelativePath, Version } from "../model/primitives.js"
 import { ProjectScope } from "./projects.js"
 import { CandidateSelection } from "./selection.js"
 import { CandidateEnvironment } from "./environment.js"
@@ -58,7 +58,15 @@ export class CandidateCommandBuild extends Schema.Class<CandidateCommandBuild>("
   ...build, builder: Schema.Literal("command"), output: SafeRelativePath, run: command }) {}
 export class CandidatePrebuiltBuild extends Schema.Class<CandidatePrebuiltBuild>("CandidatePrebuiltBuild")({
   ...build, builder: Schema.Literal("prebuilt"), output: SafeRelativePath }) {}
-export const CandidateBuild = Schema.Union([CandidateBunBuild, CandidateCommandBuild, CandidatePrebuiltBuild])
+export class CandidateProfileOutput
+  extends Schema.Class<CandidateProfileOutput>("CandidateProfileOutput")({ id: OutputId, path: SafeRelativePath }) {}
+export class CandidateProfileBuild extends Schema.Class<CandidateProfileBuild>("CandidateProfileBuild")({
+  builder: Schema.Literal("profile"), id: nonempty, profileId: ProfileId,
+  inputs: Schema.Array(OutputId), outputs: Schema.NonEmptyArray(CandidateProfileOutput),
+  options: Schema.Record(Schema.String, Schema.Union([Schema.String, Schema.Number, Schema.Boolean]))
+}) {}
+export const CandidateBuild = Schema.Union(
+  [CandidateBunBuild, CandidateCommandBuild, CandidatePrebuiltBuild, CandidateProfileBuild])
 
 export class CandidateWheelBinary extends Schema.Class<CandidateWheelBinary>("CandidateWheelBinary")({
   os, arch, sourcePath: SafeRelativePath, wheelPath: Schema.String }) {}

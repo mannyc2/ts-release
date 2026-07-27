@@ -6,8 +6,10 @@ import {
   basename, command, compactName, nonEmptyCommand, operationId, outputId, path,
   recordOutput, render, selectedOutputs, targetPlatform, type CurrentRows
 } from "./current-shared.js"
+import { findLocalToolProfile } from "./packages/profiles.js"
 
 type Build = NonNullable<CandidateConfig["builds"]>[number]
+type TargetBuild = Extract<Build, { readonly builder: "bun" | "command" | "prebuilt" }>
 const importedKinds = {
   tarball: "archive", zip: "archive", file: "file", directory: "directory",
   "oci-image": "file", executable: "executable", binary: "executable"
@@ -34,7 +36,7 @@ const lowerHooks = (config: CandidateConfig, rows: CurrentRows): void => {
   }))
 }
 const lowerBuildTarget = (
-  config: CandidateConfig, rows: CurrentRows, build: Build, target: string
+  config: CandidateConfig, rows: CurrentRows, build: TargetBuild, target: string
 ): void => {
   const binary = build.binary ?? compactName(config.project.name)
   const outputBinary = build.builder === "bun" ? build.binaryName ?? binary : binary
@@ -73,6 +75,28 @@ const lowerBuildTarget = (
 }
 const lowerBuilds = (config: CandidateConfig, rows: CurrentRows): void => {
   for (const build of config.builds ?? []) {
+    if (build.builder === "profile") {
+      const profile = findLocalToolProfile(build.profileId)
+      const inputs = build.inputs.map((id) => {
+        const found = rows.outputs.get(id)
+        if (found === undefined) throw new Error(`Profile input ${id} is absent.`)
+        return found
+      })
+      const outputs = build.outputs.map((item) => declare(rows, item.id, item.path,
+        item.path.endsWith(".whl") ? "wheel" : item.path.endsWith(".app") ? "directory"
+          : /\.(?:bin|exe|run)$/u.test(item.path) ? "executable" : "package", "build"))
+      const argv = profile.contract.invocation.argv.map((token) => token
+        .replaceAll("{input}", inputs[0]?.path ?? ".")
+        .replaceAll("{inputDir}", inputs[0]?.path ?? ".")
+        .replaceAll("{output}", outputs[0]!.path)
+        .replaceAll("{outputDir}", outputs[0]!.path))
+      rows.build.push(Exec.make({
+        id: operationId(`build:profile:${build.id}`), inputs: inputs.map((item) => item.id), outputs,
+        contractFixtureId: profile.id, argv: nonEmptyCommand(argv), cwd: path("."),
+        environmentNames: [], description: `Run immutable package profile ${profile.profileId}.`
+      }))
+      continue
+    }
     for (const target of build.targets) lowerBuildTarget(config, rows, build, target)
   }
 }
@@ -154,10 +178,10 @@ const lowerChecksum = (config: CandidateConfig, rows: CurrentRows): void => {
 }
 export const lowerCurrentBuild = (config: CandidateConfig, rows: CurrentRows): void => {
   lowerHooks(config, rows)
+  lowerImports(config, rows)
   lowerBuilds(config, rows)
   lowerNpm(config, rows)
   lowerWheels(config, rows)
-  lowerImports(config, rows)
   lowerArchives(config, rows)
   lowerChecksum(config, rows)
 }

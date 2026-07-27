@@ -57,8 +57,6 @@
     "test:integration:github": "RELEASE_INTEGRATION_TOOLS=1 RELEASE_INTEGRATION_GITHUB=1 bun test integration-tools.test.ts",
     "test:coverage": "bun test --coverage",
     "test:claim-cases": "bun run scripts/run-claim-cases.ts",
-    "test:oracle:current": "bun test test/rewrite/current-oracle.test.ts",
-    "test:oracle:candidate": "bun run scripts/run-oracle.ts --candidate",
     "test:driver-conformance": "bun run scripts/run-driver-conformance.ts",
     "test:fault-matrix": "bun run scripts/run-fault-matrix.ts",
     "check:package-exports": "bun run scripts/check-package-exports.ts",

@@ -5,7 +5,7 @@ import { encodeCanonicalJson } from "./lib/canonical-json.js"
 import { checkSuperiority } from "./lib/superiority.js"
 
 const args = process.argv.slice(2).filter((argument) => argument !== "--")
-let milestone = "contract"
+let milestone = "PARITY"
 for (let index = 0; index < args.length; index += 1) {
   if (args[index] !== "--milestone") {
     console.error(`Unknown argument: ${args[index]}`)

@@ -35,27 +35,7 @@
     "allowedThrough": "PORT",
     "mirrorsPermanentNodes": true
   },
-  "legacyExceptions": [
-    { "path": "apps/release-ts/src", "allowedThrough": "M3" },
-    { "path": "apps/ts-release-action/src", "allowedThrough": "M3" },
-    { "path": "src/api/api.ts", "allowedThrough": "M3" },
-    { "path": "src/api/error-message.ts", "allowedThrough": "M3" },
-    { "path": "src/api/errors.ts", "allowedThrough": "M3" },
-    { "path": "src/config/errors.ts", "allowedThrough": "M3" },
-    { "path": "src/config/load.ts", "allowedThrough": "M3" },
-    { "path": "src/config/schema.ts", "allowedThrough": "M3" },
-    { "path": "src/doctor", "allowedThrough": "M3" },
-    { "path": "src/engine", "allowedThrough": "M3" },
-    { "path": "src/features", "allowedThrough": "PORT" },
-    { "path": "src/github", "allowedThrough": "M3" },
-    { "path": "src/grammar", "allowedThrough": "M3" },
-    { "path": "src/host", "allowedThrough": "M3" },
-    { "path": "src/pack", "allowedThrough": "M3" },
-    { "path": "src/render", "allowedThrough": "M3" },
-    { "path": "src/resolve", "allowedThrough": "M3" },
-    { "path": "src/run", "allowedThrough": "M3" },
-    { "path": "src/types", "allowedThrough": "M3" }
-  ],
+  "legacyExceptions": [],
   "deletionConditions": {
     "PORT": {
       "required": ["src/rewrite"],

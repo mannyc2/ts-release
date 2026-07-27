@@ -70,8 +70,6 @@
         "test/target-scoop.test.ts"
       ],
       "replacements": [
-        "test/rewrite/candidate-adapter.test.ts",
-        "test/rewrite/current-oracle.test.ts",
         "test/rewrite/current-recipes.test.ts",
         "test/rewrite/driver-conformance.test.ts"
       ]
@@ -121,5 +119,9 @@
   ],
   "supportFiles": ["test/helpers.ts", "test/host-fakes.ts", "test/plan-helpers.ts"],
   "fixtureRoots": ["test/fixtures/golden"],
+  "retiredReplacements": [
+    "test/rewrite/candidate-adapter.test.ts",
+    "test/rewrite/current-oracle.test.ts"
+  ],
   "unresolved": false
 }

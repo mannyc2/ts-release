@@ -11,7 +11,7 @@ const contract = expectObject(parseStrictJson(
 ), "test retirement")
 expectExactKeys(contract, [
   "schemaVersion", "plan", "predecessorReport", "predecessorReportHash",
-  "groups", "supportFiles", "fixtureRoots", "unresolved"
+  "groups", "supportFiles", "fixtureRoots", "retiredReplacements", "unresolved"
 ])
 if (
   contract.schemaVersion !== "rewrite-test-retirement/v1" ||
@@ -78,14 +78,20 @@ for (const [index, value] of groups.entries()) {
   }
 }
 const sorted = (items: ReadonlyArray<string>) => [...items].sort()
-const replacementTopLevel = [...replacements].filter((path) => /^test\/[^/]+\.test\.ts$/u.test(path))
+const retiredReplacements = strings(contract.retiredReplacements, "retiredReplacements")
+if (retiredReplacements.some((path) => existsSync(resolve(root, path)))) {
+  throw new Error("Retired migration replacement still exists.")
+}
+const replacementTopLevel = [...replacements, ...retiredReplacements]
+  .filter((path) => /^test\/[^/]+\.test\.ts$/u.test(path))
 const incumbentTopLevel = trackedTopLevel.filter((path) => !replacementTopLevel.includes(path))
 if (JSON.stringify(sorted(legacy)) !== JSON.stringify(sorted(incumbentTopLevel))) {
   throw new Error("Test retirement does not exactly own every legacy top-level test.")
 }
 const support = strings(contract.supportFiles, "supportFiles")
 const fixtures = strings(contract.fixtureRoots, "fixtureRoots")
-const consumed = [...legacy, ...support, ...fixtures].every((path) => !existsSync(resolve(root, path)))
+const consumed = [...legacy, ...support, ...fixtures, ...retiredReplacements]
+  .every((path) => !existsSync(resolve(root, path)))
 process.stdout.write(encodeCanonicalJson({
   schemaVersion: "rewrite-test-retirement-report/v1",
   status: consumed ? "consumed" : "mapped",
@@ -93,6 +99,7 @@ process.stdout.write(encodeCanonicalJson({
   supportFiles: support.length,
   fixtureRoots: fixtures.length,
   replacements: replacements.size,
+  retiredReplacements: retiredReplacements.length,
   predecessorReportHash: contract.predecessorReportHash,
   unresolved: 0
 }))

@@ -40,4 +40,13 @@ describe("five-property superiority contract", () => {
     expect(report.unresolved).toBe(0)
     expect(report.failures).toEqual([])
   })
+
+  test("PARITY requires all five public properties", () => {
+    expect(checkSuperiority(process.cwd(), "PARITY")).toMatchObject({
+      passing: 5,
+      candidateProven: 0,
+      unresolved: 0,
+      failures: []
+    })
+  })
 })

@@ -27,7 +27,7 @@ const rewriteScripts = new Set([
   "check-architecture.ts", "check-cutover.ts", "check-deletion-map.ts",
   "check-parity.ts", "check-rewrite-plan.ts", "check-source-budget.ts",
   "check-superiority.ts", "run-claim-cases.ts", "run-driver-conformance.ts",
-  "run-fault-matrix.ts", "run-oracle.ts"
+  "run-fault-matrix.ts"
 ])
 
 const directoryLines = (directory: string): number => {

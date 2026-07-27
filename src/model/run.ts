@@ -38,6 +38,17 @@ export class ExecutionApprovalReceipt extends Schema.Class<ExecutionApprovalRece
 export class PublishApprovalReceipt extends Schema.Class<PublishApprovalReceipt>("PublishApprovalReceipt")({
   ...approval, reviewId: PublishReviewId, executionReceiptId: ReceiptId
 }) {}
+export class SignedAuthorizationReceipt
+  extends Schema.Class<SignedAuthorizationReceipt>("SignedAuthorizationReceipt")({
+    signerWorkerId: WorkerId, planId: PlanId, logicalRunId: LogicalRunId,
+    scopeHash: ExecutionScopeHash, topologyHash: ExecutionTopologyHash,
+    operationHash: OperationHash, attemptId: AttemptId,
+    purpose: Schema.Literals(["execute", "publish"]), reviewer: Schema.NonEmptyString,
+    reviewChallengeId: Schema.NonEmptyString, nonce: ApprovalNonce,
+    issuedAt: Schema.NonEmptyString, materialBindingHashes: Schema.Array(Digest),
+    signature: Schema.NonEmptyString
+  })
+{}
 export class MaterializedOutput extends Schema.Class<MaterializedOutput>("MaterializedOutput")({
   outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number, inode: Schema.Number,
   transmittedDigest: Schema.optionalKey(Digest)
@@ -97,13 +108,14 @@ export type AttemptState = typeof AttemptState.Type
 
 export class AttemptRecord extends Schema.Class<AttemptRecord>("AttemptRecord")({
   attemptId: AttemptId, executionReceipt: ExecutionApprovalReceipt,
-  publishReceipt: Schema.optionalKey(PublishApprovalReceipt), state: AttemptState }) {}
+  publishReceipt: Schema.optionalKey(PublishApprovalReceipt),
+  authorizationReceipt: Schema.optionalKey(SignedAuthorizationReceipt), state: AttemptState }) {}
 export class OperationRunRecord extends Schema.Class<OperationRunRecord>("OperationRunRecord")({
   operationId: OperationId, operationHash: OperationHash, attempts: Schema.Array(AttemptRecord)
 }) {}
 export class LedgerAttestation extends Schema.Class<LedgerAttestation>("LedgerAttestation")({
-  topologyHash: ExecutionTopologyHash, signerFingerprint: Schema.NonEmptyString,
-  signature: Schema.NonEmptyString
+  workerId: WorkerId, topologyHash: ExecutionTopologyHash,
+  signerFingerprint: WorkerKeyFingerprint, digest: Digest, signature: Schema.NonEmptyString
 }) {}
 export const Stage = Schema.Literals(
   ["build", "process", "catalog", "validate", "publish", "announce", "verify"])
@@ -113,6 +125,7 @@ export class RunLedger extends Schema.Class<RunLedger>("RunLedger")({
   operationHashes: Schema.Array(OperationHash), scope: ExecutionScope,
   frontier: Stage, executionTopologyHash: ExecutionTopologyHash,
   revision: Schema.Number, operations: Schema.Array(OperationRunRecord),
+  topology: Schema.optionalKey(ExecutionTopology),
   attestation: Schema.optionalKey(LedgerAttestation)
 }) {}
 

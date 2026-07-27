@@ -48,7 +48,10 @@ const assertScope = (accepted: AcceptedPlan, scope: ExecutionScope): void => {
     throw fail("Execution scope is duplicate or unknown.")
   const selected = new Set(ids)
   if (accepted.dependencies.some((edge) =>
-    selected.has(edge.operationId) && !selected.has(edge.producerId)))
+    selected.has(edge.operationId) && !selected.has(edge.producerId) &&
+    !scope.prerequisiteFactHashes?.includes(OperationHash.make(
+      accepted.operationHashes.find((item) => item.operationId === edge.producerId)?.hash ?? ""
+    ))))
     throw fail("Execution scope omits a dependency.")
 }
 const assertProgress = (operation: Operation, state: AttemptState): void => {
@@ -93,6 +96,7 @@ export type NewLedger = {
   readonly runId: RunLedger["runId"], readonly logicalRunId: RunLedger["logicalRunId"],
   readonly scope: ExecutionScope, readonly frontier: Stage,
   readonly topologyHash: RunLedger["executionTopologyHash"],
+  readonly topology?: RunLedger["topology"],
   readonly receipt: ExecutionApprovalReceipt
 }
 export const createLedger = (accepted: AcceptedPlan, request: NewLedger): RunLedger => {
@@ -102,6 +106,7 @@ export const createLedger = (accepted: AcceptedPlan, request: NewLedger): RunLed
     operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash)),
     scope: request.scope, frontier: request.frontier,
     executionTopologyHash: request.topologyHash, revision: 0,
+    ...(request.topology === undefined ? {} : { topology: request.topology }),
     operations: accepted.operationHashes.map(({ operationId, hash }) => OperationRunRecord.make({
       operationId: OperationId.make(operationId), operationHash: OperationHash.make(hash),
       attempts: [AttemptRecord.make({

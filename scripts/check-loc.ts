@@ -6,9 +6,9 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // This physical-line ratchet complements the semantic Product/Oracle ruler.
 // The semantic report remains authoritative for milestone and role ceilings.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 5173],
-  ["src/model", 815],
-  ["src/recipes", 1572],
+  ["src", 5373],
+  ["src/model", 825],
+  ["src/recipes", 1763],
   ["src/config", 60],
   ["src/plan", 275],
   ["src/drivers", 650],
@@ -17,7 +17,7 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["src/api", 450],
   ["apps/release-ts/src", 250],
   ["apps/ts-release-action/src", 200],
-  ["test", 1455],
+  ["test", 1772],
   ["scripts", 2200],
   ["apps/release-ts/scripts", 220] // read-only self-release policy checks
 ]

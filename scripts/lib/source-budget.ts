@@ -119,7 +119,10 @@ export interface SourceBudgetReport {
 const CONTRACT_PATH = "contracts/rewrite/source-budget.json"
 const HISTORY_ROOT = "contracts/rewrite/source-history"
 const MANIFEST_PATH = "parity/goreleaser-v2.17.0/manifest.json"
-const PACKAGE_PROFILE_LOCK_PATH = "contracts/rewrite/profile-locks/packages.json"
+const PROFILE_LOCK_PATH_BY_FAMILY: Readonly<Record<string, string>> = {
+  packages: "contracts/rewrite/profile-locks/packages.json",
+  "supply-chain": "contracts/rewrite/profile-locks/supply-chain.json"
+}
 const M6_REPORT_PATH = "contracts/rewrite/reports/plan-177.json"
 const textDecoder = new TextDecoder("utf-8", { fatal: true })
 
@@ -756,24 +759,26 @@ interface HistoryEntry {
   readonly net: number
 }
 
-const packageProfileLockHash = async (root: string): Promise<string> => {
+const profileLockHash = async (root: string, family: string): Promise<string> => {
+  const lockPath = PROFILE_LOCK_PATH_BY_FAMILY[family]
+  if (lockPath === undefined) throw new Error(`${family}: no profile lock is registered.`)
   const lock = expectObject(parseStrictJson(await readFile(
-    resolve(root, PACKAGE_PROFILE_LOCK_PATH),
+    resolve(root, lockPath),
     "utf8"
-  )), "package profile lock")
+  )), `${family} profile lock`)
   if (
     typeof lock.fixture !== "string" || typeof lock.fixtureHash !== "string" ||
     typeof lock.configFixture !== "string" || typeof lock.configFixtureHash !== "string"
   ) {
-    throw new Error("Package profile lock is incomplete.")
+    throw new Error(`${family} profile lock is incomplete.`)
   }
   const fixture = parseStrictJson(await readFile(resolve(root, lock.fixture), "utf8"))
   if (canonicalJsonHash(fixture) !== lock.fixtureHash) {
-    throw new Error("Package contract fixture changed after its profile lock.")
+    throw new Error(`${family} contract fixture changed after its profile lock.`)
   }
   const configFixture = parseStrictJson(await readFile(resolve(root, lock.configFixture), "utf8"))
   if (canonicalJsonHash(configFixture) !== lock.configFixtureHash) {
-    throw new Error("Package config fixture changed after its profile lock.")
+    throw new Error(`${family} config fixture changed after its profile lock.`)
   }
   return canonicalJsonHash(lock)
 }
@@ -926,19 +931,20 @@ export const verifySourceHistory = async (
       if (seenKeys.has(entry.implementationKey)) throw new Error(`${path}: reused implementation key.`)
       seenKeys.add(entry.implementationKey)
     }
-    if (entry.family === "packages") {
-      const currentLockHash = await packageProfileLockHash(root)
+    const lockPath = entry.family === null ? undefined : PROFILE_LOCK_PATH_BY_FAMILY[entry.family]
+    if (entry.family !== null && lockPath !== undefined) {
+      const currentLockHash = await profileLockHash(root, entry.family)
       if (entry.profileLockHash !== currentLockHash) {
-        throw new Error(`${path}: package profile lock changed after product implementation.`)
+        throw new Error(`${path}: ${entry.family} profile lock changed after product implementation.`)
       }
       const committedLock = run(root, [
-        "git", "show", `${entry.commit}:${PACKAGE_PROFILE_LOCK_PATH}`
+        "git", "show", `${entry.commit}:${lockPath}`
       ])
       if (committedLock.exitCode !== 0) {
-        throw new Error(`${path}: package profile lock does not predate implementation.`)
+        throw new Error(`${path}: ${entry.family} profile lock does not predate implementation.`)
       }
       if (canonicalJsonHash(parseStrictJson(committedLock.stdout)) !== entry.profileLockHash) {
-        throw new Error(`${path}: package profile lock was not frozen at the implementation commit.`)
+        throw new Error(`${path}: ${entry.family} profile lock was not frozen at the implementation commit.`)
       }
     }
     prior = entry.reportHash
@@ -1052,9 +1058,12 @@ export const recordImplementationKey = async (
     owner === undefined ? [] : [owner.family]
   )
   const delta = await sourceDelta(root, prior.commit, currentCommit)
-  const profileLockHash = owner?.family === "packages"
-    ? await packageProfileLockHash(root)
-    : undefined
+  const lockedFamily = owner?.family === undefined
+    ? undefined
+    : PROFILE_LOCK_PATH_BY_FAMILY[owner.family]
+  const lockedProfileHash = lockedFamily === undefined || owner === undefined
+    ? undefined
+    : await profileLockHash(root, owner.family)
   const entryWithoutHash = {
     schemaVersion: "semantic-source-history/v1",
     kind: isM6 ? "milestone" as const : "implementation-key" as const,
@@ -1063,7 +1072,7 @@ export const recordImplementationKey = async (
     tree: currentTree,
     manifestHash: canonicalJsonHash(manifest),
     policyHash: report.policyHash,
-    ...(profileLockHash === undefined ? {} : { profileLockHash }),
+    ...(lockedProfileHash === undefined ? {} : { profileLockHash: lockedProfileHash }),
     family: owner?.family ?? null,
     implementationKey: isM6 ? null : key,
     ownerRowId: owner?.ownerRowId ?? null,

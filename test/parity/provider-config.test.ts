@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test"
+import * as Effect from "effect/Effect"
+import { decodeConfig } from "../../src/config/config.js"
 
 const forbidden = new Set([
   "adapter", "adapterDefinition", "argv", "authority", "configPath", "credentialValue",
@@ -32,6 +34,15 @@ describe("complete provider config fixtures", () => {
           expect(action.bodyMapping).toBeUndefined()
         }
       }
+    }
+  })
+
+  test("decodes every complete fixture and rejects excess root fields", async () => {
+    const fixture = await Bun.file("test/fixtures/parity/configs/providers/configs.json").json()
+    for (const item of fixture.fixtures) {
+      expect(String((await Effect.runPromise(decodeConfig(item.config))).project.name)).toBe("fixture")
+      await expect(Effect.runPromise(decodeConfig({ ...item.config, configPath: "provider.json" })))
+        .rejects.toBeDefined()
     }
   })
 })

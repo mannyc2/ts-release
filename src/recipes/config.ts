@@ -157,11 +157,30 @@ export class CandidateSupplyMeasure
     ...supply, kind: Schema.Literal("measure-size")
   }) {}
 export const CandidateSupplyAction = Schema.Union([CandidateSupplyProfile, CandidateSupplyMeasure])
+const providerId = Schema.Literals(["forge.gitlab-release/v1","forge.gitea-release/v1","forge.gitlab-catalog-pr/v1",
+  "forge.gitea-catalog-pr/v1", "forge.milestone-close/v1", "object.s3-put/v1", "object.gcs-put/v1",
+  "object.azure-blob-put/v1", "repository.artifactory-upload/v1", "repository.cloudsmith-upload/v1",
+  "repository.gemfury-upload/v1", "registry.dockerhub-description/v1", "registry.npm-publish/v1"])
+const scope = Schema.Literals(["PublicOnly", "PrivateNetwork"]), checkbox = Schema.Literals(["preserve", "check"])
+const providerOptions = Schema.Struct({ baseUrl: optional(nonempty), dnsScope: optional(scope),
+  contentType: optional(nonempty), draft: optional(Schema.Boolean), prerelease: optional(Schema.Boolean),
+  title: optional(nonempty), checkboxPolicy: optional(checkbox),
+  summary: optional(nonempty), description: optional(nonempty), wrapper: optional(Schema.Literal(true)),
+  access: optional(Schema.Literals(["public", "restricted"])), provenance: optional(Schema.Boolean) })
+const CandidateNamedProvider = Schema.Struct({ id: nonempty, profileId: providerId, ids: Schema.Array(OutputId),
+  destination: Schema.Record(Schema.String, nonempty), credential: nonempty, options: providerOptions })
+const CandidateGenericProvider = Schema.Struct({
+  id: nonempty, profileId: Schema.Literal("http.generic-upload/v1"), ids: Schema.NonEmptyArray(OutputId),
+  endpoint: nonempty, method: Schema.Literals(["PATCH", "POST", "PUT"]), headerNames: Schema.Array(nonempty),
+  bodyMapping: Schema.Literal("raw-artifact"), credential: nonempty, dnsScope: scope })
+export const CandidateProvider = Schema.Union([CandidateNamedProvider, CandidateGenericProvider, Schema.Struct({
+  id: nonempty, profileId: Schema.Literal("policy.catalog-checkbox/v1"), ids: Schema.Array(OutputId),
+  destination: Schema.Struct({ file: SafeRelativePath }), options: Schema.Struct({ checkboxPolicy: checkbox }) })])
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
   pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)),
-  packageStores: optional(Schema.Array(CandidatePackageStore)),
+  packageStores: optional(Schema.Array(CandidatePackageStore)), providers: optional(Schema.Array(CandidateProvider)),
   selection: optional(CandidateSelection), nightly: optional(CandidateNightly) }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({

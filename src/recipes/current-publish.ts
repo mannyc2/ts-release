@@ -1,5 +1,6 @@
 import {
-  Exec, ForgeRelease, OpaquePublish, PackageRegistryRelease, PublishCredential, ReadCredential
+  Exec, ForgeRelease, OpaquePublish, PackageRegistryRelease, PublishCredential, ReadCredential,
+  type OutputDeclaration
 } from "../model/operation.js"
 import type { CandidateConfig, CandidateRiskHook } from "./config.js"
 import {
@@ -104,11 +105,13 @@ const lowerGitHub = (config: CandidateConfig, rows: CurrentRows) => {
   })
 }
 const opaque = (
-  config: CandidateConfig, hook: CandidateRiskHook, prefix: string, description: string
+  config: CandidateConfig, hook: CandidateRiskHook, prefix: string, description: string,
+  output?: OutputDeclaration
 ): OpaquePublish => {
   const environmentNames = hook.env ?? []
   return OpaquePublish.make({
-    id: operationId(`${prefix}:${hook.id}`), inputs: [], outputs: [], description,
+    id: operationId(`${prefix}:${hook.id}${output === undefined ? "" : `:${output.id}`}`),
+    inputs: output === undefined ? [] : [output.id], outputs: [], description,
     argv: nonEmptyCommand(hook.run.map((part) => render(part, config))),
     cwd: path(hook.cwd ?? "."), environmentNames,
     credential: publishCredential(environmentNames[0] ?? "OPAQUE_PUBLISH"),
@@ -136,8 +139,10 @@ export const lowerCurrentPublish = (config: CandidateConfig, rows: CurrentRows):
   }
   const prefix = [
     lowerNpm(config, rows), lowerPyPi(config, rows), lowerGitHub(config, rows),
-    ...(config.publish.custom ?? []).map((hook) =>
-      opaque(config, hook, "publish:custom", `Run custom publisher ${hook.id}.`))
+    ...(config.publish.custom ?? []).flatMap((hook) => hook.ids === undefined
+      ? [opaque(config, hook, "publish:custom", `Run custom publisher ${hook.id}.`)]
+      : selectedOutputs(rows, hook.ids, () => false).map((output) =>
+          opaque(config, hook, "publish:custom", `Publish ${output.id} with ${hook.id}.`, output)))
   ].filter((item): item is PackageRegistryRelease | ForgeRelease | OpaquePublish =>
     item !== undefined)
   rows.publish.splice(0, 0, ...prefix)

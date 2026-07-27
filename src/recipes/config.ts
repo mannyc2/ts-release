@@ -90,7 +90,7 @@ const hook = { id: nonempty, run: Schema.NonEmptyArray(nonempty),
   cwd: optional(SafeRelativePath), env: optional(Schema.Array(nonempty)) }
 export class CandidateBeforeHook extends Schema.Class<CandidateBeforeHook>("CandidateBeforeHook")(hook) {}
 export class CandidateRiskHook extends Schema.Class<CandidateRiskHook>("CandidateRiskHook")({
-  ...hook, risk: optional(risk) }) {}
+  ...hook, risk: optional(risk), ids: optional(Schema.NonEmptyArray(OutputId)) }) {}
 export class CandidateBeforePublish extends Schema.Class<CandidateBeforePublish>("CandidateBeforePublish")({
   kind: Schema.Literals(["check", "transform"]), run: Schema.NonEmptyArray(nonempty)
 }) {}

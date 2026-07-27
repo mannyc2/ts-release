@@ -118,6 +118,10 @@ export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
     annotations: [
       ...Object.entries(config.environment ?? {}).sort(([left], [right]) => left.localeCompare(right))
         .map(([name, value]) => ({ key: `environment.${name}`, value: renderEnvironment(value) })),
+      ...(config.publish.nightly === undefined ? [] : [{
+        key: "publish.nightly",
+        value: `${config.publish.nightly.tag}|replace`
+      }]),
       ...(config.projects ?? []).map((project) => ({
       key: `project.${project.id}`,
       value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`

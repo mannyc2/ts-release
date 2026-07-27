@@ -4,6 +4,7 @@ import { ProjectScope } from "./projects.js"
 import { CandidateSelection } from "./selection.js"
 import { CandidateEnvironment } from "./environment.js"
 import { CandidateGitPolicy } from "./git-policy.js"
+import { CandidateNightly } from "./nightly.js"
 
 const optional = Schema.optionalKey
 const nonempty = Schema.NonEmptyString
@@ -126,7 +127,7 @@ export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidateP
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
   pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)),
-  selection: optional(CandidateSelection) }) {}
+  selection: optional(CandidateSelection), nightly: optional(CandidateNightly) }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({
   "$schema": optional(Schema.String), project: CandidateProject,

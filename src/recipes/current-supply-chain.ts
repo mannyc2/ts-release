@@ -7,11 +7,12 @@ import { credentialName, nonEmptyCommand, operationId, outputId, path,
 import { supplyLocalProfiles } from "./supply-chain/local-profiles.js"
 import { registryProfiles } from "./supply-chain/registry-profiles.js"
 import { credentialedSigningProfile } from "./supply-chain/signing-profiles.js"
+import { notarizationProfiles } from "./supply-chain/notarization-profiles.js"
 
 const kinds: Readonly<Record<string, OutputDeclaration["kind"]>> = {
   "container-metadata": "container-metadata", sbom: "sbom", signature: "signature",
   "observed-container-digest": "digest", "observed-signature-digest": "digest",
-  "detached-signature": "signature"
+  "detached-signature": "signature", "notarized-artifact": "notarized"
 }
 const declared = (rows: CurrentRows, id: string, location: string,
   type: string): OutputDeclaration => recordOutput(rows, OutputDeclaration.make({
@@ -32,7 +33,7 @@ export const lowerCurrentSupplyChain = (config: CandidateConfig, rows: CurrentRo
       continue
     }
     const local = supplyLocalProfiles.find((item) => item.profileId === action.profileId)
-    const remote = [...registryProfiles, credentialedSigningProfile]
+    const remote = [...registryProfiles, credentialedSigningProfile, ...notarizationProfiles]
       .find((item) => item.profileId === action.profileId)
     const outputType = local?.contract.outputs[0]!.type ?? remote?.contract.outputs[0]!.type
     if (outputType === undefined) throw new Error(`Unknown supply-chain profile ${action.profileId}.`)

@@ -132,10 +132,8 @@ const reconcile = (
   try: async () => {
     const operation = request.operation
     if (operation._tag === "OpaquePublish") throw failure("Opaque publication is manual-only.")
-    if (operation._tag === "PackageStorePublish")
-      throw failure("No live package store reconciliation transport is installed.")
-    if (operation._tag === "SupplyChainPublish")
-      throw failure("No live supply-chain reconciliation transport is installed.")
+    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish"].includes(operation._tag))
+      throw failure("No live closed-profile reconciliation transport is installed.")
     if (operation._tag === "ForgeRelease") {
       const response = await fetch(
         `https://api.github.com/repos/${operation.repository}/releases/tags/${
@@ -160,6 +158,7 @@ const reconcile = (
       })
       return ReadResult.make({ found: response.ok })
     }
+    if (operation._tag !== "PackageRegistryRelease") throw failure("Closed profile transport is unavailable.")
     return ReadResult.make({ found: (await fetch(operation.probeUrl)).ok })
   },
   catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
@@ -170,8 +169,8 @@ export const makeNodeCatalog = (
 ): DriverCatalogShape => ({
   structured,
   publish: (request, handle, credential) => {
-    if (request.operation._tag === "PackageStorePublish" ||
-      request.operation._tag === "SupplyChainPublish") {
+    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish"]
+      .includes(request.operation._tag)) {
       return Effect.fail(failure("No live closed-profile publish transport is installed."))
     }
     if (request.operation._tag === "OpaquePublish") {

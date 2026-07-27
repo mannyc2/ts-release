@@ -4,6 +4,7 @@ import { ReleaseStages } from "../model/plan.js"
 import type { CandidateConfig } from "./config.js"
 import { lowerCurrentBuild } from "./current-build.js"
 import { lowerCurrentCatalogs } from "./current-catalog.js"
+import { lowerCurrentProviders } from "./current-providers.js"
 import { lowerCurrentPublish } from "./current-publish.js"
 import { lowerCurrentSupplyChain } from "./current-supply-chain.js"
 import { emptyRows } from "./current-shared.js"
@@ -17,7 +18,7 @@ export const lowerCurrentConfig = Effect.fn("rewrite.lowerCurrentConfig")(functi
       lowerCurrentBuild(config, current)
       lowerCurrentCatalogs(config, current)
       lowerCurrentSupplyChain(config, current)
-      lowerCurrentPublish(config, current)
+      lowerCurrentPublish(config, current); lowerCurrentProviders(config, current)
       return current
     },
     catch: (cause) => PlanningFactsError.make({

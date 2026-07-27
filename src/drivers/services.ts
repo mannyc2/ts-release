@@ -9,7 +9,7 @@ import {
   Operation,
   OutputDeclaration,
   PackageRegistryRelease,
-  PackageStorePublish,
+  PackageStorePublish, ProviderPublish,
   PublishCredential,
   ReadCredential,
   SupplyChainPublish
@@ -32,7 +32,7 @@ export class CatalogPublishRequest
       ForgeRelease,
       PackageRegistryRelease,
       PackageStorePublish,
-      SupplyChainPublish,
+      SupplyChainPublish, ProviderPublish,
       OpaquePublish
     ]),
     checkpointId: CheckpointId,

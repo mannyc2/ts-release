@@ -41,8 +41,8 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
     case "PackageStorePublish":
       return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"])
         .map((id) => CheckpointId.make(id))
-    case "SupplyChainPublish":
-      return (supplyCheckpoints[operation.profileId] ?? []).map((id) => CheckpointId.make(id))
+    case "SupplyChainPublish": return (supplyCheckpoints[operation.profileId]??[]).map((id)=>CheckpointId.make(id))
+    case "ProviderPublish": return operation.checkpoints
     default:
       return []
   }

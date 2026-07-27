@@ -27,8 +27,7 @@ export const deriveLogicalRunId = (accepted: AcceptedPlan, scope: ExecutionScope
   topologyHash: ExecutionTopologyHash, nonce?: string): LogicalRunId =>
   LogicalRunId.make(hash("ts-release/logical-run/v1", {
   planId: accepted.planId, operationIds: [...scope.operationIds].map(String).sort(),
-  topologyHash, ...(nonce === undefined ? {} : { nonce })
-}))
+  topologyHash, ...(nonce === undefined ? {} : { nonce }) }))
 export const executionReviewId = (
   accepted: AcceptedPlan, scope: ExecutionScope, topologyHash: ExecutionTopologyHash
 ): ExecutionReviewId => {
@@ -44,8 +43,7 @@ export const executionReviewId = (
   return ExecutionReviewId.make(hash("ts-release/execution-review/v1", {
     planId: accepted.planId, scopeOperationIdsAndHashes: operations,
     dependencyClosure, trustedExecReviewSet,
-    executionTopologyHash: topologyHash
-  }))
+    executionTopologyHash: topologyHash }))
 }
 export type ExecutionConfirmation = {
   readonly reviewId: ExecutionReviewId, readonly runId: RunId,
@@ -79,6 +77,7 @@ export const publishReviewId = (accepted: AcceptedPlan, executionReview: Executi
       "PackageRegistryRelease",
       "PackageStorePublish",
       "SupplyChainPublish",
+      "ProviderPublish",
       "OpaquePublish"
     ].includes(operation._tag))
     .map(({ operation }) => String(operation.id)))
@@ -158,8 +157,9 @@ export const packageStoreReconciliationKey = (
 export const supplyChainReconciliationKey = (
   planId: string, logicalRunId: string, scope: ExecutionScope, topologyHash: string,
   operationHash: OperationHash, checkpointId: CheckpointId, profileId: string,
-  targetCoordinates: Readonly<Record<string, string>>, materials: ReadonlyArray<MaterializedOutput>
-): string => hash("ts-release/supply-chain-reconcile/v1", {
+  targetCoordinates: Readonly<Record<string, string>>, materials: ReadonlyArray<MaterializedOutput>,
+  domain: "supply-chain" | "provider" = "supply-chain"
+): string => hash(`ts-release/${domain}-reconcile/v1`, {
   planId, logicalRunId,
   scopeHash: scope.scopeHash ?? hash("ts-release/execution-scope/v1", {
     planId, operationIds: [...scope.operationIds].map(String).sort()

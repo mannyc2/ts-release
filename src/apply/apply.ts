@@ -95,15 +95,14 @@ const mutation = (effect: ReturnType<DriverCatalogShape["publish"]>) =>
     : NotDispatched.make({ reason: cause.reason, retryable: false }))))
 type PublishServices = {
   readonly store: RunStoreShape, readonly catalog: DriverCatalogShape,
-  readonly workspace: WorkspaceStoreShape, readonly credential: typeof CredentialStore.Service
-}
+  readonly workspace: WorkspaceStoreShape, readonly credential: typeof CredentialStore.Service }
 type PublishOperation = Extract<Operation, {
   readonly _tag:
-    | "HttpPublish"
-    | "ForgeRelease"
+    | "HttpPublish" | "ForgeRelease"
     | "PackageRegistryRelease"
     | "PackageStorePublish"
     | "SupplyChainPublish"
+    | "ProviderPublish"
     | "OpaquePublish"
 }>
 const publishTarget = (operation: PublishOperation): string => {
@@ -115,9 +114,9 @@ const publishTarget = (operation: PublishOperation): string => {
     case "PackageRegistryRelease":
       return operation.registryUrl
     case "PackageStorePublish":
-      return `${operation.profileId}:${operation.target.name}:${
-        operation.target.channel ?? operation.target.version ?? ""}`
+      return `${operation.profileId}:${operation.target.name}:${operation.target.channel??operation.target.version??""}`
     case "SupplyChainPublish":
+    case "ProviderPublish":
       return `${operation.profileId}:${Object.entries(operation.target)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([key, value]) => `${key}=${value}`).join(",")}`
@@ -148,10 +147,11 @@ const keyFor = (
   ? packageStoreReconciliationKey(
       accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
       OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings)
-  : operation._tag === "SupplyChainPublish"
+  : operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish"
   ? supplyChainReconciliationKey(
       accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
-      OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings)
+      OperationHash.make(hash), checkpointId, operation.profileId, operation.target, bindings,
+      operation._tag === "ProviderPublish" ? "provider" : "supply-chain")
   : reconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope,
       ledger.executionTopologyHash, OperationHash.make(hash), checkpointId, target, materials)
 const publishOperation = (
@@ -176,12 +176,12 @@ const publishOperation = (
     next = yield* moved(accepted, services.store, request.run.path, next,
       { _tag: "DispatchCheckpoint", operationId: operation.id,
         checkpointId: checkpoint.checkpointId, key,
-        ...(["PackageStorePublish", "SupplyChainPublish"].includes(operation._tag) ? {
+        ...(["PackageStorePublish", "SupplyChainPublish", "ProviderPublish"].includes(operation._tag) ? {
           targetCoordinates: target,
           ...(subject === undefined ? {} : { subjectDigest: subject.digest })
         } : {}) })
     const outputId = checkpoint.checkpointId === "dispatch" ||
-      operation._tag === "SupplyChainPublish" ? String(operation.inputs[0] ?? "")
+      ["SupplyChainPublish", "ProviderPublish"].includes(operation._tag) ? String(operation.inputs[0] ?? "")
       : String(checkpoint.checkpointId).replace(/^asset:/u, "")
     const facts = materials.find((item) => item.outputId === outputId)
     const handle = facts === undefined ? undefined

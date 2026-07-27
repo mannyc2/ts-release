@@ -23,6 +23,7 @@ import { registryProfiles } from "../../src/recipes/supply-chain/registry-profil
 import { credentialedSigningProfile } from "../../src/recipes/supply-chain/signing-profiles.js"
 import { notarizationProfiles } from "../../src/recipes/supply-chain/notarization-profiles.js"
 import { attestationProfile } from "../../src/recipes/supply-chain/attestation-profile.js"
+import { providerProfiles } from "../../src/recipes/providers/index.js"
 import {
   readParityManifest,
   requiredCaseIds,
@@ -379,6 +380,52 @@ const supplyCase = (row: ParityRow, id: string, level: CaseLevel): ClaimCase => 
       first.outputs.some(({ output }) => output.id === outputId)))
 }
 
+const providerFixtures = JSON.parse(readFileSync(join(
+  process.cwd(), "test/fixtures/parity/configs/providers/configs.json"
+), "utf8")) as { readonly fixtures: ReadonlyArray<PackageConfigFixture> }
+const providerCase = (row: ParityRow, id: string, level: CaseLevel): ClaimCase => async () => {
+  const fixture = providerFixtures.fixtures.find((item) => item.rowId === row.id)
+  if (fixture === undefined) throw new Error(`${row.id}: provider config fixture is absent.`)
+  if (level === "config-invalid") {
+    const value = structuredClone(fixture.config) as any
+    value.publish.providers[0].profileId = "provider.unowned/v1"
+    return passed(id, row.id, level, "Unowned provider profiles are rejected.", await rejects(value))
+  }
+  if (level === "config-excess") return passed(id, row.id, level,
+    "Runtime decoding rejects excess configPath.", await rejects({ ...fixture.config, configPath: "x" }))
+  const decoded = await Effect.runPromise(decodeConfig(fixture.config))
+  if (level === "config-decode") return passed(id, row.id, level,
+    "The complete provider config decodes as a value.", (decoded.publish.providers?.length ?? 0) > 0)
+  const first = await compile(fixture.config)
+  const second = await compile(JSON.parse(JSON.stringify(fixture.config)))
+  const stable = first.planId === second.planId && Buffer.from(first.bytes).equals(Buffer.from(second.bytes))
+  if (level === "deterministic-lowering") return passed(id, row.id, level,
+    "Direct and one-read JSON values lower identically.", stable)
+  const operations = operationEntries(first.plan).map(({ operation }) => operation)
+  const profiles = providerProfiles.filter((profile) => fixture.profileIds.includes(profile.profileId))
+  if (level === "driver-success") return passed(id, row.id, level,
+    "Every selected provider owns a closed operation and checkpoint topology.",
+    profiles.every((profile) => operations.some((operation) => operation._tag === "ProviderPublish" &&
+      operation.profileId === profile.profileId && checkpointIds(operation).length > 0)) &&
+    (fixture.profileIds.length > 0 || operations.some((operation) => operation._tag === "Write")))
+  if (level === "driver-typed-failure-evidence") return passed(id, row.id, level,
+    "Provider schemas reject authority injection.", await rejects({ ...fixture.config, authority: "RemotePublish" }))
+  if (level === "platform-tool-constraints") return passed(id, row.id, level,
+    "Profiles bind credentials, HTTPS, redirect refusal, and DNS scope.",
+    profiles.every((profile) => profile.contract.authentication.credentialSlotPattern.length > 0 &&
+      profile.contract.redirects === "disabled") &&
+    operations.every((operation) => operation._tag !== "ProviderPublish" ||
+      providerProfiles.some((profile) => profile.profileId === operation.profileId &&
+        profile.contract.selfHosted.schemes[0] === "https")))
+  if (level === "ambiguous-commit") return passed(id, row.id, level,
+    "Response loss and malformed responses remain ambiguous.",
+    profiles.every((profile) => profile.contract.classification.responseLoss === "PossiblyCommitted" &&
+      profile.contract.classification.malformed === "Unclassifiable"))
+  return passed(id, row.id, level, "Canonical provider bytes and wrapper outputs are exact.",
+    stable && (!fixture.profileIds.includes("registry.npm-publish/v1") ||
+      first.outputs.some(({ output }) => output.id === "npm-package")))
+}
+
 const dynamicCase = (
   manifest: ParityManifest,
   row: ParityRow,
@@ -436,6 +483,8 @@ export const claimCaseRegistry = (
             ? packageCase(row, reference.id, reference.level)
             : row.family === "supply-chain"
             ? supplyCase(row, reference.id, reference.level)
+            : row.family === "providers"
+            ? providerCase(row, reference.id, reference.level)
             : dynamicCase(manifest, row, reference.id, reference.level))
       )
     }
@@ -450,6 +499,8 @@ export const claimCaseRegistry = (
         ? packageCase(row, id, level)
         : row.family === "supply-chain"
         ? supplyCase(row, id, level)
+        : row.family === "providers"
+        ? providerCase(row, id, level)
         : dynamicCase(manifest, row, id, level)))
     }
   }

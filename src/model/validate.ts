@@ -87,7 +87,7 @@ const credentialFailure = (
       operation._tag === "ForgeRelease" ||
       operation._tag === "PackageRegistryRelease" ||
       operation._tag === "PackageStorePublish" ||
-      operation._tag === "SupplyChainPublish" ||
+      operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" ||
       operation._tag === "OpaquePublish"
     ) {
       publish.add(operation.credential.name)

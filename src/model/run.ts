@@ -53,6 +53,14 @@ export class ImportedFact extends Schema.Class<ImportedFact>("ImportedFact")({
 export class MaterializedOutput extends Schema.Class<MaterializedOutput>("MaterializedOutput")({
   outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number, inode: Schema.Number,
   transmittedDigest: Schema.optionalKey(Digest) }) {}
+export class ObservedSubject extends Schema.Class<ObservedSubject>("ObservedSubject")({
+  outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number
+}) {}
+export const observedSubject = (output: MaterializedOutput): ObservedSubject =>
+  ObservedSubject.make({
+    outputId: output.outputId, snapshotId: output.snapshotId,
+    digest: output.digest, size: output.size
+  })
 
 export class CheckpointPending extends Schema.TaggedClass<CheckpointPending>()("CheckpointPending", checkpoint) {}
 export class CheckpointDispatching extends Schema.TaggedClass<CheckpointDispatching>()(

@@ -139,6 +139,24 @@ export class CandidatePackageStore
     })
   })
 {}
+export class CandidateSupplyOutput
+  extends Schema.Class<CandidateSupplyOutput>("CandidateSupplyOutput")({
+    id: OutputId, path: SafeRelativePath
+  }) {}
+const supply = {
+  id: nonempty, inputs: Schema.NonEmptyArray(OutputId),
+  outputs: Schema.NonEmptyArray(CandidateSupplyOutput)
+}
+export class CandidateSupplyProfile
+  extends Schema.Class<CandidateSupplyProfile>("CandidateSupplyProfile")({
+    ...supply, kind: Schema.Literal("profile"), profileId: ProfileId,
+    target: Schema.Record(Schema.String, nonempty)
+  }) {}
+export class CandidateSupplyMeasure
+  extends Schema.Class<CandidateSupplyMeasure>("CandidateSupplyMeasure")({
+    ...supply, kind: Schema.Literal("measure-size")
+  }) {}
+export const CandidateSupplyAction = Schema.Union([CandidateSupplyProfile, CandidateSupplyMeasure])
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
@@ -157,6 +175,7 @@ export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateCon
   pypiWheel: optional(CandidateWheelBuild), artifacts: optional(Schema.Array(CandidateArtifact)),
   archives: optional(Schema.Array(CandidateArchive)), checksum: optional(CandidateChecksum),
   catalogs: optional(Schema.Array(CandidateCatalog)), hooks: optional(CandidateHooks),
+  supplyChain: optional(Schema.Array(CandidateSupplyAction)),
   publish: CandidatePublish, retry: optional(Schema.Struct({
     attempts: Schema.Number, delayMillis: Schema.Number })),
   evidence: optional(Schema.Union([SafeRelativePath, Schema.Struct({ directory: SafeRelativePath })]))

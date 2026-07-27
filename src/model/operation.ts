@@ -5,7 +5,8 @@ export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDe
   id: OutputId, path: SafeRelativePath,
   kind: Schema.Literals([
     "file", "directory", "executable", "archive", "digest",
-    "package", "wheel", "checksum-file", "catalog-file"
+    "package", "wheel", "checksum-file", "catalog-file",
+    "container-metadata", "sbom", "signature", "notarized", "attestation"
   ]),
   provenance: Schema.optionalKey(Schema.Literals(["build", "import", "process", "catalog", "internal"])),
   platform: Schema.optionalKey(Schema.Struct({

@@ -53,7 +53,7 @@ describe("semantic source ruler", () => {
     expect(policy.familyBanks).toMatchObject({ shared: 150, changelog: 100, announce: 450 })
   })
 
-  test("enforces the M6-anchored distributed wave and recorded marginal sample", async () => {
+  test("enforces the M6-anchored distributed and package waves", async () => {
     const report = await countSourceTree(process.cwd(), "PARITY", ["distributed"])
     expect(report.totals.product).toBeGreaterThanOrEqual(4670)
     expect(report.familySummary.distributed).toEqual({
@@ -77,6 +77,26 @@ describe("semantic source ruler", () => {
     expect(report.warnings).toEqual([])
     const history = await verifySourceHistory(process.cwd())
     expect(history.filter((entry) => entry.family === "distributed")).toHaveLength(8)
-    expect(history.filter((entry) => entry.family === "packages")).toHaveLength(0)
+    expect(history.filter((entry) => entry.family === "packages")).toHaveLength(10)
+    const packages = await countSourceTree(process.cwd(), "PARITY", ["packages"])
+    expect(packages.familySummary.packages).toEqual({
+      productDelta: 402,
+      productBank: 600,
+      marginal: {
+        count: 10,
+        median: 27,
+        p90: 59,
+        maximum: 114,
+        ceilings: { median: 30, p90: 60, maximum: 150 }
+      }
+    })
+    expect(packages.waveSummary).toEqual({
+      name: "packages",
+      productCeiling: 6300,
+      oracleDelta: 622,
+      oracleBank: 1300,
+      oracleCeiling: 21850
+    })
+    expect(packages.warnings).toEqual([])
   })
 })

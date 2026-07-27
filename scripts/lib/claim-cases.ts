@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { decodeConfig } from "../../src/config/config.js"
 import { partition } from "../../src/apply/partition.js"
-import { stagedOutcome } from "../../src/apply/transition.js"
+import { checkpointIds, stagedOutcome } from "../../src/apply/transition.js"
 import { operationAuthority } from "../../src/model/operation.js"
 import {
   NonEmptyName,
@@ -15,6 +15,9 @@ import {
   compilePlan
 } from "../../src/plan/compiler.js"
 import { encodeCanonicalJson } from "./canonical-json.js"
+import { findLocalToolProfile } from "../../src/recipes/packages/profiles.js"
+import { findPackageStoreProfile } from "../../src/recipes/packages/store-profiles.js"
+import { localToolOutcome, preflightTool } from "../../src/recipes/packages/tool.js"
 import {
   readParityManifest,
   requiredCaseIds,
@@ -222,6 +225,98 @@ const distributedCase = (
       (["validate", "publish", "announce", "verify"] as const).map(stagedOutcome).join(","))
 }
 
+interface PackageConfigFixture {
+  readonly rowId: string
+  readonly profileIds: ReadonlyArray<string>
+  readonly config: ConfigFixture["config"]
+}
+const packageFixtures = JSON.parse(readFileSync(join(
+  process.cwd(), "test/fixtures/parity/configs/packages/configs.json"
+), "utf8")) as { readonly fixtures: ReadonlyArray<PackageConfigFixture> }
+const packageFixture = (rowId: string): PackageConfigFixture => {
+  const fixture = packageFixtures.fixtures.find((candidate) => candidate.rowId === rowId)
+  if (fixture === undefined) throw new Error(`${rowId}: complete package config fixture is absent.`)
+  return fixture
+}
+const packageCase = (
+  row: ParityRow,
+  id: string,
+  level: CaseLevel
+): ClaimCase => async () => {
+  const fixture = packageFixture(row.id)
+  if (level === "config-invalid") {
+    const value = structuredClone(fixture.config)
+    ;(value.project as Record<string, unknown>).version = ""
+    return passed(id, row.id, level, "Invalid package config values are rejected.", await rejects(value))
+  }
+  if (level === "config-excess") {
+    return passed(id, row.id, level, "Runtime decoding rejects excess configPath.",
+      await rejects({ ...fixture.config, configPath: "release.json" }))
+  }
+  const decoded = await Effect.runPromise(decodeConfig(fixture.config))
+  if (level === "config-decode") {
+    return passed(id, row.id, level, "The complete value-only package config decodes.",
+      decoded.builds?.[0]?.builder === "profile")
+  }
+  const first = await compile(fixture.config)
+  const second = await compile(JSON.parse(JSON.stringify(fixture.config)))
+  const stable = first.planId === second.planId &&
+    Buffer.from(first.bytes).equals(Buffer.from(second.bytes))
+  if (level === "deterministic-lowering") {
+    return passed(id, row.id, level, "Direct and one-read JSON values lower identically.", stable)
+  }
+  const operations = operationEntries(first.plan).map(({ operation }) => operation)
+  const profileId = fixture.profileIds[0]!
+  if (level === "driver-success") {
+    const local = profileId === "lifecycle.archive-hooks.v1" ? undefined : findLocalToolProfile(profileId)
+    const observed = local?.contract.executable.supportedRange.match(/[0-9]+(?:\.[0-9]+){1,2}/u)?.[0]
+    const localReady = local === undefined
+      ? operations.some((operation) => operation._tag === "Pack")
+      : observed !== undefined &&
+        preflightTool(local, local.contract.hosts[0]!, observed) === "ready" &&
+        localToolOutcome(0, local.contract.outputs.length, local.contract.outputs.length, true) === "materialized"
+    const storeReady = fixture.profileIds.slice(1).every((storeId) => operations.some((operation) =>
+      operation._tag === "PackageStorePublish" &&
+      operation.profileId === storeId &&
+      checkpointIds(operation).length > 0))
+    return passed(id, row.id, level, "The frozen local profile and optional closed store path are executable.",
+      localReady && storeReady)
+  }
+  if (level === "driver-typed-failure-evidence") {
+    const local = profileId === "lifecycle.archive-hooks.v1" ? undefined : findLocalToolProfile(profileId)
+    const invalid = structuredClone(fixture.config)
+    ;(invalid.project as Record<string, unknown>).version = ""
+    return passed(id, row.id, level, "Unsupported tools or malformed configs fail before successful work.",
+      local === undefined
+        ? await rejects(invalid)
+        : preflightTool(local, local.contract.hosts[0]!, "0.0.0") === "unsupported-version" &&
+          localToolOutcome(1, 1, 1, true) === "exit-failure")
+  }
+  if (level === "platform-tool-constraints") {
+    const local = profileId === "lifecycle.archive-hooks.v1" ? undefined : findLocalToolProfile(profileId)
+    return passed(id, row.id, level, "Host, executable, argv, cwd, and authority stay profile-owned.",
+      local === undefined || (
+        local.contract.hosts.length > 0 &&
+        local.contract.invocation.cwd === "workspace-root" &&
+        local.contract.invocation.authenticationClass === "none" &&
+        local.contract.remoteMutation === false
+      ))
+  }
+  if (level === "ambiguous-commit") {
+    const safe = fixture.profileIds.slice(1).every((storeId) => {
+      const classifier = findPackageStoreProfile(storeId).contract.commitmentClassifier
+      return classifier["response-loss"] === "PossiblyCommitted" &&
+        classifier["malformed-response"] === "Unclassifiable"
+    })
+    return passed(id, row.id, level, "Ambiguous store results remain explicitly classified.", safe)
+  }
+  const expectedOutput = (decoded.builds?.[0]?.builder === "profile")
+    ? decoded.builds[0].outputs[0] : undefined
+  return passed(id, row.id, level, "Canonical bytes and declared output identity are exact.",
+    stable && expectedOutput !== undefined && first.outputs.some(({ output }) =>
+      output.id === expectedOutput.id && output.path === expectedOutput.path))
+}
+
 const dynamicCase = (
   manifest: ParityManifest,
   row: ParityRow,
@@ -275,6 +370,8 @@ export const claimCaseRegistry = (
             ? baselineCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
             : row.family === "distributed"
             ? distributedCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
+            : row.family === "packages"
+            ? packageCase(row, reference.id, reference.level)
             : dynamicCase(manifest, row, reference.id, reference.level))
       )
     }
@@ -285,6 +382,8 @@ export const claimCaseRegistry = (
         ? baselineCase(fixture, row, id, level)
         : row.family === "distributed"
         ? distributedCase(fixture, row, id, level)
+        : row.family === "packages"
+        ? packageCase(row, id, level)
         : dynamicCase(manifest, row, id, level)))
     }
   }

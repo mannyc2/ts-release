@@ -12,7 +12,7 @@ import {
   ExecutionApprovalReceipt,
   ExecutionScope,
   RunLedger
-} from "../../src/rewrite/model/run.js"
+} from "../../src/model/run.js"
 import {
   ApprovalNonce,
   ExecutionReviewId,
@@ -22,15 +22,15 @@ import {
   OperationId,
   ReceiptId,
   RunId
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   createLedger,
   transition
-} from "../../src/rewrite/apply/transition.js"
+} from "../../src/apply/transition.js"
 import {
   ledgerPath,
   makeFileRunStore
-} from "../../src/rewrite/apply/store.js"
+} from "../../src/apply/store.js"
 import { acceptedRunPlan } from "./run-fixture.js"
 
 const root = () => mkdtempSync(join(tmpdir(), "ts-release-run-store-"))

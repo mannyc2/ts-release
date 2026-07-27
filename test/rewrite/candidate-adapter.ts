@@ -11,20 +11,20 @@ import { canonicalJsonHash } from "../../scripts/lib/canonical-json.js"
 import type {
   Operation,
   PackageRegistryRelease
-} from "../../src/rewrite/model/operation.js"
+} from "../../src/model/operation.js"
 import {
   NonEmptyName,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
-import type { AcceptedPlan } from "../../src/rewrite/plan/accepted.js"
+} from "../../src/model/primitives.js"
+import type { AcceptedPlan } from "../../src/plan/accepted.js"
 import {
   Invocation,
   compilePlan
-} from "../../src/rewrite/plan/compiler.js"
+} from "../../src/plan/compiler.js"
 import {
   operationEntries,
   type OperationEntry
-} from "../../src/rewrite/model/validate.js"
+} from "../../src/model/validate.js"
 import {
   BehaviorApproval,
   BehaviorContract,

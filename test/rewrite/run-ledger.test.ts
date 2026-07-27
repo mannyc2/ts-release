@@ -6,7 +6,7 @@ import {
   MaterializedOutput,
   PublishApprovalReceipt,
   RunLedger
-} from "../../src/rewrite/model/run.js"
+} from "../../src/model/run.js"
 import {
   ApprovalNonce,
   CheckpointId,
@@ -20,7 +20,7 @@ import {
   ReceiptId,
   RunId,
   SnapshotId
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   checkpointIds,
   createLedger,
@@ -28,7 +28,7 @@ import {
   transition,
   validateLedger,
   type TransitionCommand
-} from "../../src/rewrite/apply/transition.js"
+} from "../../src/apply/transition.js"
 import { acceptedRunPlan } from "./run-fixture.js"
 
 const topology = ExecutionTopologyHash.make("single-machine/v1")

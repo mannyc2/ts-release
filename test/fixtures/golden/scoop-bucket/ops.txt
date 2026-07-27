@@ -1,5 +1,0 @@
-catalog:scoop:push	externally-visible
-catalog:scoop:push:add	writes-local
-catalog:scoop:push:commit	writes-local
-catalog:scoop:render	writes-local
-import-artifacts:archive:exists	read-only

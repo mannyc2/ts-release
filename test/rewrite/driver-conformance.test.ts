@@ -22,10 +22,10 @@ import {
   ReadResult,
   SnapshotRequest,
   VerifiedContentHandle
-} from "../../src/rewrite/drivers/services.js"
+} from "../../src/drivers/services.js"
 import {
   makeNodeWorkspaceStore
-} from "../../src/rewrite/drivers/workspace.js"
+} from "../../src/drivers/workspace.js"
 import {
   CheckpointId,
   Digest,
@@ -34,17 +34,17 @@ import {
   SafeRelativePath,
   SnapshotId,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   Operation
-} from "../../src/rewrite/model/operation.js"
+} from "../../src/model/operation.js"
 import {
   MaterializedOutput
-} from "../../src/rewrite/model/run.js"
+} from "../../src/model/run.js"
 import {
   Invocation,
   compilePlan
-} from "../../src/rewrite/plan/compiler.js"
+} from "../../src/plan/compiler.js"
 import { acceptedRunPlan } from "./run-fixture.js"
 
 const failure = <A, E>(effect: Effect.Effect<A, E>) =>

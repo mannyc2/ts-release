@@ -2,8 +2,8 @@ import { describe, expect, test } from "@effect/bun-test"
 import type {
   BuildOp,
   HttpPublish
-} from "../../src/rewrite/model/operation.js"
-import type { ReleasePlanV6 } from "../../src/rewrite/model/plan.js"
+} from "../../src/model/operation.js"
+import type { ReleasePlanV6 } from "../../src/model/plan.js"
 import type {
   CredentialName,
   OperationId,
@@ -11,8 +11,8 @@ import type {
   PlanId,
   RecipeId,
   SafeRelativePath
-} from "../../src/rewrite/model/primitives.js"
-import { AcceptedPlan } from "../../src/rewrite/plan/accepted.js"
+} from "../../src/model/primitives.js"
+import { AcceptedPlan } from "../../src/plan/accepted.js"
 
 declare const operationId: OperationId
 declare const outputId: OutputId

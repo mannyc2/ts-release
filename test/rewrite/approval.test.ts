@@ -6,15 +6,15 @@ import {
   mintPublishReceipt,
   publishReviewId,
   reconciliationKey
-} from "../../src/rewrite/apply/approval.js"
+} from "../../src/apply/approval.js"
 import {
   ExecutionPermit,
   PublishPermit
-} from "../../src/rewrite/model/permit.js"
+} from "../../src/model/permit.js"
 import {
   ExecutionScope,
   MaterializedOutput
-} from "../../src/rewrite/model/run.js"
+} from "../../src/model/run.js"
 import {
   ApprovalNonce,
   CheckpointId,
@@ -25,7 +25,7 @@ import {
   OutputId,
   RunId,
   SnapshotId
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import { acceptedRunPlan } from "./run-fixture.js"
 
 const topology = ExecutionTopologyHash.make("single-machine/v1")

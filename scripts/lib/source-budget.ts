@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { readFile, writeFile } from "node:fs/promises"
 import { basename, extname, isAbsolute, relative, resolve, sep } from "node:path"
 import ts from "typescript"
@@ -692,7 +692,10 @@ interface HistoryEntry {
 const historyFiles = (root: string): ReadonlyArray<string> => {
   const result = run(root, ["git", "ls-files", "-z", `${HISTORY_ROOT}/*.json`])
   if (result.exitCode !== 0) return []
-  return result.stdout.split("\0").filter((path) => path.length > 0).sort()
+  const rank = (path: string): number =>
+    path.endsWith("/m0.json") ? 0 : path.endsWith("/m6.json") ? 1 : 2
+  return result.stdout.split("\0").filter((path) => path.length > 0).sort((left, right) =>
+    rank(left) - rank(right) || left.localeCompare(right))
 }
 
 const withoutReportHash = (entry: HistoryEntry): Omit<HistoryEntry, "reportHash"> => {
@@ -812,27 +815,32 @@ export const recordImplementationKey = async (
   const history = await verifySourceHistory(root)
   const prior = history.at(-1)
   if (prior === undefined) throw new Error("--record-key requires a prior source-history report.")
-  if (history.some((entry) => entry.implementationKey === key)) {
+  const isM6 = key === "M6"
+  if (!isM6 && history.some((entry) => entry.implementationKey === key)) {
     throw new Error(`Implementation key already recorded: ${key}`)
   }
-  const owner = await manifestOwnership(root, key)
+  const owner = isM6 ? undefined : await manifestOwnership(root, key)
   const currentCommit = git(root, ["rev-parse", "HEAD"]).trim()
   const currentTree = git(root, ["rev-parse", "HEAD^{tree}"]).trim()
   if (currentCommit === prior.commit) throw new Error("--record-key requires a new clean commit.")
   const manifest = parseStrictJson(await readFile(resolve(root, MANIFEST_PATH), "utf8"))
-  const report = await countSourceTree(root, "PARITY", [owner.family])
+  const report = await countSourceTree(
+    root,
+    isM6 ? "M6" : "PARITY",
+    owner === undefined ? [] : [owner.family]
+  )
   const delta = await sourceDelta(root, prior.commit, currentCommit)
   const entryWithoutHash = {
     schemaVersion: "semantic-source-history/v1",
-    kind: "implementation-key" as const,
+    kind: isM6 ? "milestone" as const : "implementation-key" as const,
     priorReportHash: prior.reportHash,
     commit: currentCommit,
     tree: currentTree,
     manifestHash: canonicalJsonHash(manifest),
     policyHash: report.policyHash,
-    family: owner.family,
-    implementationKey: key,
-    ownerRowId: owner.ownerRowId,
+    family: owner?.family ?? null,
+    implementationKey: isM6 ? null : key,
+    ownerRowId: owner?.ownerRowId ?? null,
     product: report.totals.product,
     roles: report.byRole,
     files: Object.fromEntries(
@@ -848,7 +856,9 @@ export const recordImplementationKey = async (
     reportHash: canonicalJsonHash(entryWithoutHash)
   }
   const name = key.replaceAll("/", "__")
-  const target = resolve(root, HISTORY_ROOT, `${String(history.length).padStart(3, "0")}-${name}.json`)
+  const target = resolve(root, HISTORY_ROOT,
+    isM6 ? "m6.json" : `${String(history.length).padStart(3, "0")}-${name}.json`)
+  if (existsSync(target)) throw new Error(`Source-history target already exists: ${target}`)
   await writeFile(target, encodeCanonicalJson(entry))
   return toPosix(relative(root, target))
 }

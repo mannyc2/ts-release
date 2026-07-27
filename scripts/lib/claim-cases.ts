@@ -1,16 +1,16 @@
 import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { decodeConfig } from "../../src/rewrite/config/config.js"
+import { decodeConfig } from "../../src/config/config.js"
 import {
   NonEmptyName,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
-import { operationEntries } from "../../src/rewrite/model/validate.js"
+} from "../../src/model/primitives.js"
+import { operationEntries } from "../../src/model/validate.js"
 import {
   Invocation,
   compilePlan
-} from "../../src/rewrite/plan/compiler.js"
+} from "../../src/plan/compiler.js"
 import { encodeCanonicalJson } from "./canonical-json.js"
 import {
   readParityManifest,

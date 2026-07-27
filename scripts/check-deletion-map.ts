@@ -6,6 +6,7 @@ import { encodeCanonicalJson } from "./lib/canonical-json.js"
 import { expectExactKeys, expectObject, parseStrictJson } from "./lib/strict-json.js"
 
 const root = process.cwd()
+const consumed = !existsSync(resolve(root, "src/features"))
 const contract = expectObject(parseStrictJson(readFileSync(
   resolve(root, "contracts/rewrite/deletion-map.json"),
   "utf8"
@@ -51,7 +52,11 @@ const groupParity = new Set<string>()
 for (const name of groupNames) {
   const group = expectObject(groups[name]!, `groups.${name}`)
   expectExactKeys(group, ["candidateOwner", "candidateCaseIds", "parityRows"])
-  if (typeof group.candidateOwner !== "string" || !existsSync(resolve(root, group.candidateOwner))) {
+  const owner = typeof group.candidateOwner === "string" && consumed
+    ? group.candidateOwner
+        .replace("src/rewrite/current/lower-", "src/recipes/current-")
+    : group.candidateOwner
+  if (typeof owner !== "string" || !existsSync(resolve(root, owner))) {
     throw new Error(`${name}: candidate owner is absent.`)
   }
   for (const id of strings(group.candidateCaseIds, `${name}.candidateCaseIds`)) {
@@ -76,7 +81,8 @@ const tracked = Bun.spawnSync(["git", "ls-files", "src/features"], {
   cwd: root, stdin: "ignore", stdout: "pipe", stderr: "pipe"
 })
 if (tracked.exitCode !== 0) throw new Error("Unable to enumerate incumbent feature files.")
-const featureFiles = tracked.stdout.toString().trim().split("\n").filter(Boolean)
+const trackedFeatureFiles = tracked.stdout.toString().trim().split("\n").filter(Boolean)
+const oracleFeatureFiles = [...oracleSurfaces].filter((path) => path.startsWith("src/features/"))
 const entries = contract.entries
 if (!Array.isArray(entries)) throw new Error("entries must be an array.")
 const mappedPaths: Array<string> = []
@@ -87,16 +93,24 @@ for (const [index, value] of entries.entries()) {
     "path", "symbols", "currentOracleAssertionIds", "focusedTests", "candidateGroup",
     "requiredCandidateResult", "plan177DeletionGroup", "unresolved"
   ])
-  if (typeof entry.path !== "string" || !featureFiles.includes(entry.path)) {
-    throw new Error(`entries[${index}] names an absent incumbent file.`)
+  if (
+    typeof entry.path !== "string" ||
+    !(consumed ? oracleFeatureFiles : trackedFeatureFiles).includes(entry.path)
+  ) {
+    throw new Error(`entries[${index}] names an unknown incumbent file.`)
   }
   mappedPaths.push(entry.path)
   if (!oracleSurfaces.has(entry.path)) throw new Error(`${entry.path}: absent from current oracle.`)
-  const source = readFileSync(resolve(root, entry.path), "utf8")
-  const exported = [...source.matchAll(
-    /^export\s+(?:class|const|type|interface)\s+([A-Za-z0-9_]+)/gmu
-  )].flatMap((match) => match[1] === undefined ? [] : [match[1]])
-  exactSet(strings(entry.symbols, `${entry.path}.symbols`), [...new Set(exported)], `${entry.path} symbols`)
+  const symbols = strings(entry.symbols, `${entry.path}.symbols`)
+  if (!consumed) {
+    const source = readFileSync(resolve(root, entry.path), "utf8")
+    const exported = [...source.matchAll(
+      /^export\s+(?:class|const|type|interface)\s+([A-Za-z0-9_]+)/gmu
+    )].flatMap((match) => match[1] === undefined ? [] : [match[1]])
+    exactSet(symbols, [...new Set(exported)], `${entry.path} symbols`)
+  } else if (existsSync(resolve(root, entry.path))) {
+    throw new Error(`${entry.path}: deletion-map entry was not consumed.`)
+  }
   for (const assertion of strings(
     entry.currentOracleAssertionIds,
     `${entry.path}.currentOracleAssertionIds`
@@ -105,7 +119,9 @@ for (const [index, value] of entries.entries()) {
     assertionIds.add(assertion)
   }
   for (const test of strings(entry.focusedTests, `${entry.path}.focusedTests`)) {
-    if (!existsSync(resolve(root, test))) throw new Error(`${entry.path}: missing focused test ${test}.`)
+    if (!consumed && !existsSync(resolve(root, test))) {
+      throw new Error(`${entry.path}: missing focused test ${test}.`)
+    }
   }
   if (typeof entry.candidateGroup !== "string" || !groupNames.includes(entry.candidateGroup)) {
     throw new Error(`${entry.path}: invalid candidate group.`)
@@ -117,11 +133,12 @@ for (const [index, value] of entries.entries()) {
     entry.unresolved !== false
   ) throw new Error(`${entry.path}: unresolved or invalid deletion contract.`)
 }
-exactSet(mappedPaths, featureFiles, "incumbent feature ownership")
+exactSet(mappedPaths, consumed ? oracleFeatureFiles : trackedFeatureFiles, "incumbent feature ownership")
 
 process.stdout.write(encodeCanonicalJson({
   schemaVersion: "rewrite-deletion-map-report/v1",
-  status: "candidate-proven",
+  status: consumed ? "consumed" : "candidate-proven",
+  consumed,
   files: mappedPaths.length,
   symbols: entries.reduce((total, value) =>
     total + strings(expectObject(value, "entry").symbols, "entry.symbols").length, 0),

@@ -7,12 +7,12 @@ import {
   OutputDeclaration,
   PublishCredential,
   WireContract
-} from "../../src/rewrite/model/operation.js"
+} from "../../src/model/operation.js"
 import {
   ReleaseIdentityV6,
   ReleasePlanV6,
   ReleaseStages
-} from "../../src/rewrite/model/plan.js"
+} from "../../src/model/plan.js"
 import {
   CredentialName,
   NonEmptyName,
@@ -21,12 +21,12 @@ import {
   ProfileId,
   SafeRelativePath,
   Version
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   acceptPlan,
   encodePlanBytes,
   type AcceptedPlan
-} from "../../src/rewrite/plan/accepted.js"
+} from "../../src/plan/accepted.js"
 
 const output = (id: string) => OutputDeclaration.make({
   id: OutputId.make(id),

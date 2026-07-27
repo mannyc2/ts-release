@@ -2,20 +2,20 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { decodeConfig } from "../../src/rewrite/config/config.js"
+import { decodeConfig } from "../../src/config/config.js"
 import {
   NonEmptyName,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   Invocation,
   compilePlan,
   recipeDefinitions
-} from "../../src/rewrite/plan/compiler.js"
+} from "../../src/plan/compiler.js"
 import {
   lowerProfile,
   profileRegistry
-} from "../../src/rewrite/recipes/definition.js"
+} from "../../src/recipes/definition.js"
 
 const root = process.cwd()
 const fixture = JSON.parse(readFileSync(join(

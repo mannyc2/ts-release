@@ -1,41 +1,23 @@
-# release examples
+# Release examples
 
-Start with the coordinated distribution example:
+These are runnable planning fixtures. They never publish during repository
+checks.
 
 ```sh
 cd examples/multi-target
-bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --format text
+bun ../../apps/release-ts/src/cli/main.ts plan \
+  --config release.config.json \
+  --out release-plan.json
 ```
 
-That plan shows one release split across GitHub Releases, npm, and a Homebrew
-tap. Inspect the artifact inventory, target capabilities, `argv` lines,
-approval requirements, and generated catalog-file operations. `plan` is safe:
-publish operations stay data until a caller passes explicit execution approval.
+The examples cover agent plugin packaging, GitHub Releases, Homebrew, Scoop,
+npm, first-publish npm configuration, portable CLI distribution, PyPI, and a
+coordinated multi-target release. Every config supplies a complete public
+project and provider shape.
 
-Templates live in `../templates/` and are copyable starting points for new
-repositories. These examples are runnable fixtures for this repository's
-checks.
+Plans keep publication as data. Applying one requires the exact `PlanId`,
+immutable reviewed scope, run-bound execution receipt, and—after local
+materialization—the observed publish confirmation.
 
-Focused distribution examples:
-
-- `agent-plugin`: platform-neutral plugin zip, checksum, GitHub release, and a generic file-catalog pull request.
-- `multi-target`: one release coordinated across GitHub Releases, npm, and Homebrew.
-- `npm-only`: npm package directory with native npm dry-run validation.
-- `npm-first-publish`: token-based npm bootstrap config for the first version before switching to trusted publishing.
-- `github-release`: GitHub release asset with simulated GitHub dry-run validation.
-- `homebrew-tap`: Homebrew tap formula rendering with simulated formula validation.
-- `portable-cli`: one CLI distributed through GitHub Release assets, npm, Homebrew, Scoop, and PyPI wrapper wheels.
-- `pypi-registry`: prebuilt Python distribution planned for TestPyPI with Twine.
-- `scoop-bucket`: Scoop bucket manifest rendering with simulated validation.
-
-The marketplace JSON in `agent-plugin` is illustrative user-owned data, not a
-vendor schema contract. Vendor schemas drift; the example proves that a whole
-file can be derived from release facts without vendor-specific core code.
-
-Trusted-publishing npm examples use `provenance` and
-`verifyPackageExists`. `npm-first-publish` demonstrates only the bootstrap shape
-for a package that does not exist on npm yet, so it stays token-based and omits
-`trustedPublishing`. Replace it with trusted publishing after the first version
-exists. TestPyPI is still a real registry publish target, not a dry-run. The
-examples only render plans; do not run publish operations without intentional
-credentials and approval flags.
+The named baseline behaviors exercised by these fixtures are covered by the
+repository parity contract. No broader provider-parity claim is implied.

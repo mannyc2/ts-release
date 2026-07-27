@@ -7,28 +7,39 @@ import {
   symlinkSync,
   writeFileSync
 } from "node:fs"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import {
   expectExactKeys,
   expectObject,
   parseStrictJson
 } from "../../scripts/lib/strict-json.js"
-import { decodeConfig as decodeCandidateConfig } from "../../src/rewrite/config/config.js"
+import { decodeConfig as decodeCandidateConfig } from "../../src/config/config.js"
 import {
   NonEmptyName,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   Invocation,
   compilePlan
-} from "../../src/rewrite/plan/compiler.js"
-import { decodeReleaseIntent } from "../../src/config/load.js"
-import { withTempDirectoryPromise } from "../helpers.js"
+} from "../../src/plan/compiler.js"
 
 const root = process.cwd()
 const contractPath = join(root, "contracts", "rewrite", "config-boundary.json")
 const contract = expectObject(parseStrictJson(readFileSync(contractPath, "utf8")), "config boundary")
 const fixturePaths = contract.fixtures as ReadonlyArray<string>
+const withTempDirectoryPromise = async <A>(
+  prefix: string,
+  use: (path: string) => Promise<A>
+): Promise<A> => {
+  const path = mkdtempSync(join(tmpdir(), prefix))
+  try {
+    return await use(path)
+  } finally {
+    rmSync(path, { recursive: true, force: true })
+  }
+}
 
 const assertJsonValue = (value: unknown, ancestors: Set<object> = new Set()): void => {
   if (value === null || typeof value === "boolean" || typeof value === "string") return
@@ -99,7 +110,7 @@ describe("frozen v6 configuration boundary", () => {
     for (const path of fixturePaths) {
       const value = parseStrictJson(readFileSync(join(root, path), "utf8"))
       assertJsonValue(value)
-      const decoded = await Effect.runPromise(decodeReleaseIntent(value, path))
+      const decoded = await Effect.runPromise(decodeCandidateConfig(value))
       expect(decoded).toBeDefined()
     }
   })
@@ -108,8 +119,8 @@ describe("frozen v6 configuration boundary", () => {
     const text = readFileSync(join(root, fixturePaths[0]!), "utf8")
     const inline = parseStrictJson(text)
     const parsed = JSON.parse(JSON.stringify(inline))
-    expect(await Effect.runPromise(decodeReleaseIntent(inline, "inline"))).toEqual(
-      await Effect.runPromise(decodeReleaseIntent(parsed, "different-source.json"))
+    expect(await Effect.runPromise(decodeCandidateConfig(inline))).toEqual(
+      await Effect.runPromise(decodeCandidateConfig(parsed))
     )
   })
 

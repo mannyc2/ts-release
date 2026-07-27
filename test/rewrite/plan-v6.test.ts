@@ -2,7 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import {
   encodeCanonicalJson
-} from "../../src/rewrite/model/canonical.js"
+} from "../../src/model/canonical.js"
 import {
   Check,
   DigestOp,
@@ -15,13 +15,13 @@ import {
   Write,
   mechanismTags,
   operationAuthority
-} from "../../src/rewrite/model/operation.js"
+} from "../../src/model/operation.js"
 import {
   Annotation,
   ReleaseIdentityV6,
   ReleasePlanV6,
   ReleaseStages
-} from "../../src/rewrite/model/plan.js"
+} from "../../src/model/plan.js"
 import {
   CredentialName,
   NonEmptyName,
@@ -30,11 +30,11 @@ import {
   ProfileId,
   SafeRelativePath,
   Version
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   acceptPlan,
   encodePlanBytes
-} from "../../src/rewrite/plan/accepted.js"
+} from "../../src/plan/accepted.js"
 
 const output = (id: string, path: string) => OutputDeclaration.make({
   id: OutputId.make(id),

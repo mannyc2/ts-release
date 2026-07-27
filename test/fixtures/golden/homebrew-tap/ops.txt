@@ -1,5 +1,0 @@
-catalog:homebrew:push	externally-visible
-catalog:homebrew:push:add	writes-local
-catalog:homebrew:push:commit	writes-local
-catalog:homebrew:render	writes-local
-import-artifacts:archive:exists	read-only

@@ -2,16 +2,16 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import type { ContentValue, Operation } from "../../src/rewrite/model/operation.js"
+import type { ContentValue, Operation } from "../../src/model/operation.js"
 import {
   NonEmptyName,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import {
   Invocation,
   compilePlan
-} from "../../src/rewrite/plan/compiler.js"
-import { operationEntries } from "../../src/rewrite/model/validate.js"
+} from "../../src/plan/compiler.js"
+import { operationEntries } from "../../src/model/validate.js"
 
 const root = process.cwd()
 const compile = (name: string) => Effect.runPromise(compilePlan(
@@ -49,7 +49,7 @@ describe("Plan 176 current recipe port", () => {
         candidate._tag === "Write" && candidate.id === `catalog:${item[1]}:render`)
       if (operation?._tag !== "Write") throw new Error("Missing catalog preset write.")
       expect(render(operation.content, item[3])).toBe(readFileSync(
-        join(root, "test", "fixtures", "golden", item[0], item[2]),
+        join(root, "test", "fixtures", "rewrite", "public", item[0], item[2]),
         "utf8"
       ))
     })

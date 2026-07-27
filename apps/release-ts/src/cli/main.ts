@@ -1,14 +1,30 @@
 #!/usr/bin/env bun
-// Invariant: this executable provides the Bun layer once and runs exactly one decoded CLI command.
+import {
+  apply,
+  plan,
+  reviewExecution
+} from "@mannyc1/ts-release"
+import {
+  mkdirSync,
+  readFileSync,
+  writeFileSync
+} from "node:fs"
+import { dirname } from "node:path"
+import { runCutoverCli } from "./cutover.js"
 
-import * as BunRuntime from "@effect/platform-bun/BunRuntime"
-import * as Effect from "effect/Effect"
-import * as Command from "effect/unstable/cli/Command"
-import packageManifest from "../../../../package.json" with { type: "json" }
-import { BunReleaseWorkflowRuntimeLayer } from "../runtime.js"
-import { cli } from "./command.js"
-
-Command.run(cli, { version: packageManifest.version }).pipe(
-  Effect.provide(BunReleaseWorkflowRuntimeLayer),
-  BunRuntime.runMain
-)
+await runCutoverCli(
+  { plan, reviewExecution, apply },
+  process.argv.slice(2),
+  process.cwd(),
+  {
+    read: (path) => readFileSync(path, "utf8"),
+    write: (path, value) => {
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, value)
+    },
+    log: console.log
+  }
+).catch((cause) => {
+  console.error(cause instanceof Error ? cause.message : String(cause))
+  process.exitCode = 1
+})

@@ -1,13 +1,13 @@
-# Portable CLI Example
+# Portable CLI example
 
-This fixture shows one CLI distributed through GitHub Release assets, npm,
-Homebrew, Scoop, and PyPI wrapper wheels.
-
-Preview the non-publishing plan:
+This fixture plans one CLI for GitHub Release assets, npm, Homebrew, Scoop,
+and PyPI wrapper wheels.
 
 ```sh
-bun ../../apps/release-ts/src/cli/main.ts plan --config release.config.json --format text
+bun ../../apps/release-ts/src/cli/main.ts plan \
+  --config release.config.json \
+  --out release-plan.json
 ```
 
-The files under `artifacts/` are tiny placeholders for repository checks. A real
-project would create them with `ts-release build`.
+Files under `artifacts/` are tiny checked fixtures. The reviewed plan owns any
+real build and materialization operations.

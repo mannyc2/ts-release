@@ -1,79 +1,76 @@
 name: ts-release
-description: Plan, diagnose, build, release, and verify ts-release workflows from GitHub Actions.
+description: Plan, review, and apply canonical ts-release plans.
 author: mannyc2
 inputs:
   command:
-    description: plan, doctor, build, release, or verify.
+    description: plan, apply, or doctor.
     required: false
     default: plan
   config:
-    description: Workspace-contained path to the release config file.
+    description: Workspace-contained JSON config path used only by plan.
     required: false
     default: release.config.json
-  format:
-    description: "Output format where supported: text, markdown, json, or summary."
-    required: false
-    default: markdown
-  write-step-summary:
-    description: Write a compact command result to the GitHub step summary.
-    required: false
-    default: "true"
   plan-path:
-    description: Path where command plan writes the rendered distribution plan.
+    description: Workspace-contained canonical release plan path.
     required: false
-    default: release-plan.md
-  fail-on-warnings:
-    description: Fail diagnostic commands when any warning is reported.
+    default: release-plan.json
+  plan-id:
+    description: Expected PlanId for apply or doctor.
     required: false
-    default: "false"
-  target:
-    description: Optional target filter for command doctor.
-    required: false
-  snapshot:
-    description: Plan a snapshot release version and refuse externally visible or irreversible operations during execution.
+  review-only:
+    description: Derive the execution review challenge without applying.
     required: false
     default: "false"
-  execute:
-    description: Allow approved execution commands to run operations requiring execute approval.
+  scope:
+    description: all or a comma-separated immutable operation-id subset.
     required: false
-    default: "false"
-  continue:
-    description: Continue an executed release by skipping operations that passed in matching prior evidence.
+    default: all
+  new-run:
+    description: Workspace-contained path for a new run ledger.
     required: false
-    default: "false"
-  published:
-    description: Re-download published GitHub assets and verify them against the uploaded checksum file for command verify.
+  resume:
+    description: Workspace-contained existing run ledger path.
     required: false
-    default: "false"
-  approve-publish:
-    description: Allow publish operations when execute is also true.
+  through:
+    description: Monotonic apply frontier.
     required: false
-    default: "false"
-  upload-evidence:
-    description: Upload the release evidence directory as an artifact after command completion or failure.
+  confirm-execution:
+    description: Exact execution review id echoed for a new run.
     required: false
-    default: "false"
-  evidence-artifact-name:
-    description: Artifact name used when upload-evidence is true.
+  confirm-publish:
+    description: Exact publish review id echoed after artifact observation.
     required: false
-    default: release-evidence
+  reviewer:
+    description: Human or automation identity approving the run.
+    required: false
+  reason:
+    description: Explicit reason for a new logical run.
+    required: false
+  reconcile:
+    description: Comma-separated unknown operation ids for read-only reconciliation.
+    required: false
+  resolutions:
+    description: JSON operator resolutions with operation id, outcome, operator, and reason.
+    required: false
 outputs:
-  release_name:
-    description: Planned release name.
-  release_version:
-    description: Planned release version.
-  operation_count:
-    description: Number of operations in the distribution plan.
-  irreversible_operation_count:
-    description: Number of irreversible operations in the distribution plan.
-  surface_count:
-    description: Number of unique publish/catalog surfaces in the release plan.
-  evidence_directory:
-    description: Evidence directory for the distribution plan.
-  plan_path:
-    description: Path written by command plan.
+  plan_id:
+    description: Canonical plan identity.
+  execution_review_id:
+    description: Pure execution review challenge.
+  execution_receipt_id:
+    description: Run-bound execution approval receipt.
+  publish_review_id:
+    description: Observed-input publish review challenge.
+  publish_receipt_id:
+    description: Run-bound publish approval receipt.
+  run_id:
+    description: Durable run identity.
+  run_path:
+    description: Durable run-ledger path.
   status:
-    description: Final action command status.
+    description: planned, valid, review-required, complete, stopped, or failed.
+  evidence_path:
+    description: Evidence projection path.
 runs:
   using: node20
   main: dist/index.js

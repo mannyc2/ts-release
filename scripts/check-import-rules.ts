@@ -127,21 +127,14 @@ const failure = (
   `${location(source, reference.position)} imports ${JSON.stringify(reference.specifier)}: ${reason}`
 
 const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
-  grammar: ["grammar", "assets"],
-  features: ["features", "grammar", "host"],
-  config: ["config", "features", "grammar", "assets"],
-  resolve: ["resolve", "config", "features", "grammar", "host"],
-  pack: ["pack", "grammar", "host", "assets"],
-  github: ["github", "grammar", "host"],
-  run: ["run", "grammar", "host", "pack", "github"],
-  engine: [
-    "engine", "config", "resolve", "features", "grammar", "pack", "github",
-    "run", "render", "doctor", "host", "assets"
-  ],
-  render: ["render", "grammar", "run", "pack"],
-  doctor: ["doctor", "grammar", "host"],
-  host: ["host", "grammar", "assets"],
-  api: ["api", "engine", "pack", "github", "host"]
+  model: ["model"],
+  recipes: ["recipes", "model"],
+  config: ["config", "model", "recipes"],
+  plan: ["plan", "model", "config", "recipes"],
+  drivers: ["drivers", "model"],
+  apply: ["apply", "model", "plan", "drivers"],
+  view: ["view", "model", "plan"],
+  api: ["api", "model", "plan", "apply", "view", "drivers"]
 }
 
 // Plan 153 Stage A: within features/, later phases may import earlier ones,

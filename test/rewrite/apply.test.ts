@@ -13,21 +13,21 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
   applyAcceptedPlan
-} from "../../src/rewrite/apply/apply.js"
+} from "../../src/apply/apply.js"
 import {
   executionReviewId,
   LocalApprovalSignerLayer,
   mintExecutionReceipt,
   mintPublishReceipt
-} from "../../src/rewrite/apply/approval.js"
+} from "../../src/apply/approval.js"
 import {
   createLedger,
   operationStatus
-} from "../../src/rewrite/apply/transition.js"
+} from "../../src/apply/transition.js"
 import {
   RunStore,
   makeFileRunStore
-} from "../../src/rewrite/apply/store.js"
+} from "../../src/apply/store.js"
 import {
   Committed,
   CommitmentUnknown,
@@ -36,14 +36,14 @@ import {
   ReadResult,
   WorkspaceStore,
   type DriverCatalogShape
-} from "../../src/rewrite/drivers/services.js"
+} from "../../src/drivers/services.js"
 import {
   makeNodeWorkspaceStore
-} from "../../src/rewrite/drivers/workspace.js"
+} from "../../src/drivers/workspace.js"
 import {
   ExecutionApprovalReceipt,
   ExecutionScope
-} from "../../src/rewrite/model/run.js"
+} from "../../src/model/run.js"
 import {
   ApprovalNonce,
   CheckpointId,
@@ -53,7 +53,7 @@ import {
   OperationId,
   RunId,
   WorkspaceRoot
-} from "../../src/rewrite/model/primitives.js"
+} from "../../src/model/primitives.js"
 import { acceptedRunPlan } from "./run-fixture.js"
 
 interface Calls {

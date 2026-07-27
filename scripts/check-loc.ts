@@ -3,30 +3,23 @@ import { join } from "node:path"
 import { cwd, exit } from "node:process"
 import { collectTypeScriptFiles } from "./lib/walk.js"
 
-// Plan 143's legacy physical ruler remains frozen over incumbent surfaces.
-// The rewrite program is measured by contracts/rewrite/source-budget.json,
-// which classifies semantic Product/Oracle/Tooling lines and has milestone
-// ceilings. Counting it here as well would mix two incompatible rulers.
+// This physical-line ratchet complements the semantic Product/Oracle ruler.
+// The semantic report remains authoritative for milestone and role ceilings.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6807], // raised by plan 169.2 (the plan integrity boundary: policy table, reference totality, readReleasePlan)
-  ["src/config", 229], // raised by plan 163 (four project metadata fields)
-  ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
-  ["src/grammar", 1039], // raised by plan 169.2 (plan-rules.ts owns the action policy table, reference totality, and uniqueness)
-  ["src/features", 1778], // ratcheted by plan 167 (unbound operations and direct typed npm access)
-  ["src/pack", 500],
-  ["src/github", 267],
-  ["src/run", 1044], // raised by plan 169.1 (Invocation type and root threading through the evidence workflow)
-  ["src/engine", 281],
-  ["src/render", 420], // raised by plan 169.1 (fingerprint render line and the summary kind projection)
-  ["src/doctor", 256], // ratcheted by plan 166 (operation requirements derive from operation data)
-  ["src/host", 459], // raised by plan 168 (typed binary HTTP response seam)
-  ["src/api", 195],
-  ["src/types", 13],
-  ["apps/release-ts/src", 594], // raised by plan 168 (continue and published flags)
-  ["apps/ts-release-action/src", 507], // raised by plan 169.1 (PlannedRun remembers the run invocation for evidence upload)
-  ["test", 11768], // raised by plan 173 (strict parity/oracle/fault/report contract harnesses)
-  ["scripts", 5293], // raised by plan 173 (permanent rewrite counters, gates, and report verifier)
-  ["apps/release-ts/scripts", 827] // raised by plan 169.1 (render-catalogs threads the invocation)
+  ["src", 4500],
+  ["src/model", 800],
+  ["src/recipes", 875],
+  ["src/config", 60],
+  ["src/plan", 250],
+  ["src/drivers", 650],
+  ["src/apply", 900],
+  ["src/view", 25],
+  ["src/api", 450],
+  ["apps/release-ts/src", 250],
+  ["apps/ts-release-action/src", 200],
+  ["test", 500],
+  ["scripts", 2200],
+  ["apps/release-ts/scripts", 220] // read-only self-release policy checks
 ]
 
 const root = cwd()

@@ -8,6 +8,7 @@ import { pythonBuilderProfiles } from "../../src/recipes/packages/python.js"
 import { universalMachoProfile } from "../../src/recipes/packages/universal-macho.js"
 import { archiveGeneratorProfiles } from "../../src/recipes/packages/archive-generators.js"
 import { storePackageProfiles } from "../../src/recipes/packages/store-packages.js"
+import { appleInstallerProfiles } from "../../src/recipes/packages/apple.js"
 
 describe("immutable package recipe lowering", () => {
   test("matches and lowers the frozen Node SEA decision", async () => {
@@ -58,6 +59,15 @@ describe("immutable package recipe lowering", () => {
   test("registers the frozen local store package decisions", async () => {
     const contracts = await Bun.file("test/fixtures/parity/contracts/packages/profiles.json").json()
     for (const profile of storePackageProfiles) {
+      const frozen = contracts.profiles.find((item: any) => item.profileId === profile.profileId)
+      expect(profile.contract).toEqual(frozen.contract)
+      expect(findLocalToolProfile(profile.profileId)).toBe(profile)
+    }
+  })
+
+  test("registers the frozen Apple installer decisions", async () => {
+    const contracts = await Bun.file("test/fixtures/parity/contracts/packages/profiles.json").json()
+    for (const profile of appleInstallerProfiles) {
       const frozen = contracts.profiles.find((item: any) => item.profileId === profile.profileId)
       expect(profile.contract).toEqual(frozen.contract)
       expect(findLocalToolProfile(profile.profileId)).toBe(profile)

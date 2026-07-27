@@ -121,7 +121,8 @@ const HISTORY_ROOT = "contracts/rewrite/source-history"
 const MANIFEST_PATH = "parity/goreleaser-v2.17.0/manifest.json"
 const PROFILE_LOCK_PATH_BY_FAMILY: Readonly<Record<string, string>> = {
   packages: "contracts/rewrite/profile-locks/packages.json",
-  "supply-chain": "contracts/rewrite/profile-locks/supply-chain.json"
+  "supply-chain": "contracts/rewrite/profile-locks/supply-chain.json",
+  providers: "contracts/rewrite/profile-locks/providers.json"
 }
 const M6_REPORT_PATH = "contracts/rewrite/reports/plan-177.json"
 const textDecoder = new TextDecoder("utf-8", { fatal: true })

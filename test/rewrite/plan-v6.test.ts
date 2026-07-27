@@ -79,13 +79,14 @@ const json = (document: ReleasePlanV6) =>
   JSON.parse(new TextDecoder().decode(encodePlanBytes(document))) as Record<string, unknown>
 
 describe("release-plan/v6 model and acceptance", () => {
-  test("has seven fixed stages, twelve closed mechanisms, and structural authority", () => {
+  test("has seven fixed stages, fourteen closed mechanisms, and structural authority", () => {
     const document = plan(stages())
     expect(Object.keys(document.stages)).toEqual([
       "build", "process", "catalog", "validate", "publish", "announce", "verify"
     ])
     expect(mechanismTags).toEqual([
-      "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "HttpPublish", "ForgeRelease",
+      "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
+      "HttpPublish", "ForgeRelease",
       "PackageRegistryRelease", "PackageStorePublish", "SupplyChainPublish", "ProviderPublish",
       "OpaquePublish"
     ])

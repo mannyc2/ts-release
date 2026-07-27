@@ -99,7 +99,7 @@ export type CredentialStoreShape = {
 }
 type StructuredResult = { readonly outcome: string, readonly outputs: ReadonlyArray<MaterializedOutput> }
 export type DriverCatalogShape = {
-  readonly structured: (request: CatalogStructuredRequest) =>
+  readonly structured: (request: CatalogStructuredRequest, credential?: string) =>
     Effect.Effect<StructuredResult, DriverError>,
   readonly publish: PublishTransportShape["publish"],
   readonly reconcile: PublishTransportShape["reconcile"]

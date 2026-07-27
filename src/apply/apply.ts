@@ -11,6 +11,7 @@ import {
   WorkspaceStore, type DriverCatalogShape, type MutationResult, type WorkspaceStoreShape
 } from "../drivers/services.js"
 import type { PublishPermit } from "../model/permit.js"
+import type { ExecutionPermit } from "../model/permit.js"
 import {
   TransitionError, type ExecutionApprovalReceipt, type MaterializedOutput, type PublishApprovalReceipt,
   type RunLedger, type Stage
@@ -43,17 +44,20 @@ const moved = (
 })
 const structured = (
   accepted: AcceptedPlan, catalog: DriverCatalogShape, store: RunStoreShape,
+  credential: typeof CredentialStore.Service, permit: ExecutionPermit,
   path: string, root: WorkspaceRoot, ledger: RunLedger, operation: Operation
 ) => Effect.gen(function*() {
   const start = operation._tag === "Exec" ? "BeginTrustedExec" : "BeginStructured"
   let next = yield* moved(accepted, store, path, ledger, {
     _tag: start, operationId: operation.id, at: new Date().toISOString()
   })
+  const secret = operation._tag === "ReviewedNoteTransform"
+    ? yield* credential.getRead(operation.credential, permit) : undefined
   const result = yield* catalog.structured(CatalogStructuredRequest.make({
     operation,
     root,
     availableOutputs: accepted.outputs.map(({ output }) => output)
-  })).pipe(
+  }), secret).pipe(
     Effect.map((value) => ({ success: true as const, value })),
     Effect.catch((cause) => Effect.succeed({ success: false as const, cause }))
   )
@@ -66,12 +70,14 @@ const structured = (
 })
 const localOperations = (
   accepted: AcceptedPlan, catalog: DriverCatalogShape, store: RunStoreShape,
+  credential: typeof CredentialStore.Service, permit: ExecutionPermit,
   request: ApplyRequest, ledger: RunLedger, operations: ReadonlyArray<Operation>
 ) => Effect.gen(function*() {
   let next = ledger
   for (const operation of operations.filter((item) => operationAuthority(item) !== "RemotePublish")) {
     if (operationStatus(next, operation.id)?._tag === "Pending")
-      next = yield* structured(accepted, catalog, store, request.run.path, request.root, next, operation)
+      next = yield* structured(accepted, catalog, store, credential, permit,
+        request.run.path, request.root, next, operation)
     if (!["Passed", "AssumedCommitted"].includes(operationStatus(next, operation.id)!._tag)) return next
   }
   return next
@@ -250,7 +256,7 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
   const entries = operationEntries(accepted.plan).filter(({ stage, operation }) =>
     selected.has(operation.id) &&
     stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through))
-  ledger = yield* localOperations(accepted, catalog, store, request, ledger,
+  ledger = yield* localOperations(accepted, catalog, store, credential, executionPermit, request, ledger,
     entries.map(({ operation }) => operation))
   if (entries.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" &&
     !["Passed", "AssumedCommitted"].includes(operationStatus(ledger, operation.id)!._tag))) return ledger

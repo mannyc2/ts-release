@@ -179,7 +179,8 @@ export const CandidateProvider = Schema.Union([CandidateNamedProvider, Candidate
 export class CandidateChangelogGroup extends Schema.Class<CandidateChangelogGroup>("CandidateChangelogGroup")({
   title: nonempty, prefix: SafeRelativePath, subgroup: optional(nonempty), divider: optional(Schema.Boolean) }) {}
 export class CandidateChangelog extends Schema.Class<CandidateChangelog>("CandidateChangelog")({
-  mode: Schema.Literal("deterministic"), profileId: Schema.Literal("changelog.local/v1"),
+  mode: Schema.Literals(["deterministic", "reviewed-transform"]),
+  profileId: Schema.Literals(["changelog.local/v1", "changelog.reviewed-transform/v1"]),
   pathFilters: Schema.Array(SafeRelativePath), groups: Schema.Array(CandidateChangelogGroup) }) {}
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),

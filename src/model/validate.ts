@@ -79,9 +79,9 @@ const credentialFailure = (
   const read = new Set<string>()
   const publish = new Set<string>()
   for (const { operation } of entries) {
-    if (operation._tag === "HttpRead" && operation.credential !== undefined) {
+    if (operation._tag === "ReviewedNoteTransform") read.add(operation.credential.name)
+    else if (operation._tag === "HttpRead" && operation.credential !== undefined)
       read.add(operation.credential.name)
-    }
     if (
       operation._tag === "HttpPublish" ||
       operation._tag === "ForgeRelease" ||

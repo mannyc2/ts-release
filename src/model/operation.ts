@@ -58,6 +58,11 @@ export class HttpRead extends Schema.TaggedClass<HttpRead>()("HttpRead", {
   ...row, method: Schema.Literals(["GET", "HEAD"]), wire: WireContract,
   credential: Schema.optionalKey(ReadCredential)
 }) {}
+export class ReviewedNoteTransform extends Schema.TaggedClass<ReviewedNoteTransform>()("ReviewedNoteTransform", {
+  ...row, profileId: Schema.Literal("changelog.reviewed-transform/v1"),
+  policyDigest: Schema.NonEmptyString, maximumOutputBytes: Schema.Number,
+  credential: ReadCredential, contractFixtureId: Schema.Literal("contract.changelog.reviewed-transform/v1")
+}) {}
 export class HttpPublish extends Schema.TaggedClass<HttpPublish>()("HttpPublish", {
   ...row, method: Schema.Literals(["POST", "PUT", "PATCH", "DELETE"]), wire: WireContract,
   credential: PublishCredential
@@ -134,7 +139,7 @@ export const ProcessOp = Schema.Union([Check, Write, Pack, DigestOp, Exec])
 export type ProcessOp = typeof ProcessOp.Type
 export const CatalogOp = Schema.Union([Check, Write, Exec])
 export type CatalogOp = typeof CatalogOp.Type
-export const ValidateOp = Schema.Union([Check, Exec, HttpRead])
+export const ValidateOp = Schema.Union([Check, Exec, HttpRead, ReviewedNoteTransform])
 export type ValidateOp = typeof ValidateOp.Type
 export const PublishOp = Schema.Union([
   Exec, HttpPublish, ForgeRelease, PackageRegistryRelease,
@@ -147,13 +152,13 @@ export const VerifyOp = Schema.Union([Check, HttpRead])
 export type VerifyOp = typeof VerifyOp.Type
 
 export const Operation = Schema.Union([
-  Check, Write, Pack, DigestOp, Exec, HttpRead,
+  Check, Write, Pack, DigestOp, Exec, HttpRead, ReviewedNoteTransform,
   HttpPublish, ForgeRelease, PackageRegistryRelease,
   PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type Operation = typeof Operation.Type
 export const mechanismTags = [
-  "Check", "Write", "Pack", "Digest", "Exec", "HttpRead",
+  "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
   "HttpPublish", "ForgeRelease", "PackageRegistryRelease",
   "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
 ] as const
@@ -170,6 +175,7 @@ export const operationAuthority = (operation: Operation): Authority => {
     case "Exec":
       return "LocalExec"
     case "HttpRead":
+    case "ReviewedNoteTransform":
       return "RemoteRead"
     case "HttpPublish":
     case "ForgeRelease":

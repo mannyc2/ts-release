@@ -113,6 +113,7 @@ const structured = (request: CatalogStructuredRequest) => Effect.try({
         break
       }
       case "HttpRead":
+      case "ReviewedNoteTransform":
         throw failure("Remote reads are not structured local operations.")
       default:
         throw failure(`Unsupported structured operation ${operation._tag}.`)

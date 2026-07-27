@@ -322,6 +322,10 @@ const projectEntry = ({ operation, stage }: OperationEntry): ReadonlyArray<Proje
         method: operation.method,
         profileId: operation.wire.profileId
       })]
+    case "ReviewedNoteTransform":
+      return [effect(operation, stage, "remote-read", "reviewed-note-transform", {
+        profileId: operation.profileId, inputIds: operation.inputs
+      })]
     case "HttpPublish":
       return [effect(operation, stage, "remote-publish", "http-publish", {
         method: operation.method,

@@ -90,8 +90,12 @@ const hook = { id: nonempty, run: Schema.NonEmptyArray(nonempty),
 export class CandidateBeforeHook extends Schema.Class<CandidateBeforeHook>("CandidateBeforeHook")(hook) {}
 export class CandidateRiskHook extends Schema.Class<CandidateRiskHook>("CandidateRiskHook")({
   ...hook, risk: optional(risk) }) {}
+export class CandidateBeforePublish extends Schema.Class<CandidateBeforePublish>("CandidateBeforePublish")({
+  kind: Schema.Literals(["check", "transform"]), run: Schema.NonEmptyArray(nonempty)
+}) {}
 export class CandidateHooks extends Schema.Class<CandidateHooks>("CandidateHooks")({
-  before: optional(Schema.Array(CandidateBeforeHook)), after: optional(Schema.Array(CandidateRiskHook)) }) {}
+  before: optional(Schema.Array(CandidateBeforeHook)), after: optional(Schema.Array(CandidateRiskHook)),
+  beforePublish: optional(Schema.Array(CandidateBeforePublish)) }) {}
 
 const trusted = { provider: optional(Schema.Literal("github-actions")), workflow: optional(nonempty) }
 export class CandidateNpmPublish extends Schema.Class<CandidateNpmPublish>("CandidateNpmPublish")({

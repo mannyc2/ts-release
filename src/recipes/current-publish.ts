@@ -127,6 +127,13 @@ const after = (config: CandidateConfig, hook: CandidateRiskHook): Exec | OpaqueP
       })
 
 export const lowerCurrentPublish = (config: CandidateConfig, rows: CurrentRows): void => {
+  for (const [index, hook] of (config.hooks?.beforePublish ?? []).entries()) {
+    rows.validate.push(Exec.make({
+      id: operationId(`hook:before-publish:${index}`), inputs: [], outputs: [],
+      description: `${hook.kind} before publish review.`, contractFixtureId: "process.before-publish/v1",
+      argv: nonEmptyCommand(hook.run), cwd: path("."), environmentNames: []
+    }))
+  }
   const prefix = [
     lowerNpm(config, rows), lowerPyPi(config, rows), lowerGitHub(config, rows),
     ...(config.publish.custom ?? []).map((hook) =>

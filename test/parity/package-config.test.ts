@@ -25,6 +25,8 @@ describe("complete package public config fixtures", () => {
       expect(item.config.builds[0].inputs.length).toBeGreaterThan(0)
       expect(item.config.builds[0].outputs.length).toBeGreaterThan(0)
       expect(item.config.builds[0].options).toEqual({})
+      const artifacts = new Set(item.config.artifacts.map((artifact: any) => artifact.id))
+      expect(item.config.builds[0].inputs.every((id: string) => artifacts.has(id))).toBeTrue()
       expect(scan(item.config)).toBeTrue()
     }
   })

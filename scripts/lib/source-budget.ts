@@ -761,12 +761,19 @@ const packageProfileLockHash = async (root: string): Promise<string> => {
     resolve(root, PACKAGE_PROFILE_LOCK_PATH),
     "utf8"
   )), "package profile lock")
-  if (typeof lock.fixture !== "string" || typeof lock.fixtureHash !== "string") {
+  if (
+    typeof lock.fixture !== "string" || typeof lock.fixtureHash !== "string" ||
+    typeof lock.configFixture !== "string" || typeof lock.configFixtureHash !== "string"
+  ) {
     throw new Error("Package profile lock is incomplete.")
   }
   const fixture = parseStrictJson(await readFile(resolve(root, lock.fixture), "utf8"))
   if (canonicalJsonHash(fixture) !== lock.fixtureHash) {
     throw new Error("Package contract fixture changed after its profile lock.")
+  }
+  const configFixture = parseStrictJson(await readFile(resolve(root, lock.configFixture), "utf8"))
+  if (canonicalJsonHash(configFixture) !== lock.configFixtureHash) {
+    throw new Error("Package config fixture changed after its profile lock.")
   }
   return canonicalJsonHash(lock)
 }

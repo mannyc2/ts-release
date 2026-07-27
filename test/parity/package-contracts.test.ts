@@ -20,6 +20,8 @@ describe("frozen package profile contracts", () => {
     expect(fixture.profiles.map((profile: any) => profile.profileId)).toEqual(required)
     expect(lock.fixture).toBe(contractPath)
     expect(lock.fixtureHash).toBe(canonicalJsonHash(fixture))
+    expect(lock.configFixture).toBe("test/fixtures/parity/configs/packages/configs.json")
+    expect(lock.configFixtureHash).toBe(canonicalJsonHash(await Bun.file(lock.configFixture).json()))
     expect(Object.keys(lock.profiles)).toEqual(required)
     for (const profile of fixture.profiles) {
       expect(profile.provenance).toBe("maintainer-product-decision")

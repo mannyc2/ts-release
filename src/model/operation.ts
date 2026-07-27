@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { CredentialName, OperationId, OutputId, ProfileId, SafeRelativePath } from "./primitives.js"
+import { CheckpointId, CredentialName, OperationId, OutputId, ProfileId, SafeRelativePath } from "./primitives.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
   id: OutputId, path: SafeRelativePath,
@@ -111,6 +111,15 @@ export class SupplyChainPublish
     credential: PublishCredential, contractFixtureId: Schema.NonEmptyString
   })
 {}
+const ProviderVariant = Schema.Literals(["ForgeRelease", "ForgeCatalogPullRequest", "MilestoneClose",
+  "ObjectStorePublish", "GenericHttp", "RepositoryPublish", "RegistryMetadata"])
+export class ProviderPublish extends Schema.TaggedClass<ProviderPublish>()("ProviderPublish", {
+  ...row, profileId: ProfileId, variant: ProviderVariant,
+  target: Schema.Record(Schema.String, Schema.NonEmptyString),
+  options: Schema.Record(Schema.String, Schema.Union([Schema.String, Schema.Boolean])),
+  dnsScope: Schema.Literals(["PublicOnly", "PrivateNetwork"]),
+  checkpoints: Schema.NonEmptyArray(CheckpointId), credential: PublishCredential,
+  contractFixtureId: Schema.NonEmptyString }) {}
 export class OpaquePublish extends Schema.TaggedClass<OpaquePublish>()("OpaquePublish", {
   ...row, argv: Schema.NonEmptyArray(Schema.String), cwd: SafeRelativePath,
   environmentNames: Schema.Array(Schema.NonEmptyString),
@@ -129,7 +138,7 @@ export const ValidateOp = Schema.Union([Check, Exec, HttpRead])
 export type ValidateOp = typeof ValidateOp.Type
 export const PublishOp = Schema.Union([
   Exec, HttpPublish, ForgeRelease, PackageRegistryRelease,
-  PackageStorePublish, SupplyChainPublish, OpaquePublish
+  PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type PublishOp = typeof PublishOp.Type
 export const AnnounceOp = Schema.Union([HttpPublish])
@@ -140,13 +149,13 @@ export type VerifyOp = typeof VerifyOp.Type
 export const Operation = Schema.Union([
   Check, Write, Pack, DigestOp, Exec, HttpRead,
   HttpPublish, ForgeRelease, PackageRegistryRelease,
-  PackageStorePublish, SupplyChainPublish, OpaquePublish
+  PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
 ])
 export type Operation = typeof Operation.Type
 export const mechanismTags = [
   "Check", "Write", "Pack", "Digest", "Exec", "HttpRead",
   "HttpPublish", "ForgeRelease", "PackageRegistryRelease",
-  "PackageStorePublish", "SupplyChainPublish", "OpaquePublish"
+  "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
 ] as const
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
 
@@ -167,6 +176,7 @@ export const operationAuthority = (operation: Operation): Authority => {
     case "PackageRegistryRelease":
     case "PackageStorePublish":
     case "SupplyChainPublish":
+    case "ProviderPublish":
     case "OpaquePublish":
       return "RemotePublish"
   }

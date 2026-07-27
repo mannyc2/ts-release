@@ -271,7 +271,7 @@ export const claimCaseRegistry = (
       registry.set(
         reference.id,
         implementedCases[reference.id] ??
-          (row.family === "baseline"
+          (row.family === "baseline" || row.family === "shared"
             ? baselineCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
             : row.family === "distributed"
             ? distributedCase(fixtureForRow(manifest, row), row, reference.id, reference.level)
@@ -281,7 +281,7 @@ export const claimCaseRegistry = (
     const fixture = fixtureForRow(manifest, row)
     for (const id of fixture.invalidCaseIds) {
       const level = id.endsWith(".excess") ? "config-excess" : "config-invalid"
-      registry.set(id, implementedCases[id] ?? (row.family === "baseline"
+      registry.set(id, implementedCases[id] ?? (row.family === "baseline" || row.family === "shared"
         ? baselineCase(fixture, row, id, level)
         : row.family === "distributed"
         ? distributedCase(fixture, row, id, level)

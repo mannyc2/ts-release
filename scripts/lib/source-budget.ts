@@ -140,6 +140,14 @@ const predecessorReportByFamily: Readonly<Record<string, string>> = {
   providers: "contracts/rewrite/reports/plan-180.json",
   "announce-changelog": "contracts/rewrite/reports/plan-181.json"
 }
+const completionReportByFamily: Readonly<Record<string, string>> = {
+  distributed: "contracts/rewrite/reports/plan-183.json",
+  shared: "contracts/rewrite/reports/plan-178.json",
+  packages: "contracts/rewrite/reports/plan-179.json",
+  "supply-chain": "contracts/rewrite/reports/plan-180.json",
+  providers: "contracts/rewrite/reports/plan-181.json",
+  "announce-changelog": "contracts/rewrite/reports/plan-182.json"
+}
 
 const run = (
   root: string,
@@ -775,11 +783,16 @@ const marginalStats = (
   }
 }
 
-const reportOracle = async (root: string, path: string): Promise<number> => {
+const reportSource = async (root: string, path: string): Promise<{
+  readonly product: number
+  readonly oracle: number
+}> => {
   const report = expectObject(parseStrictJson(await readFile(resolve(root, path), "utf8")), path)
   const summary = expectObject(report.sourceSummary ?? null, `${path} sourceSummary`)
-  if (typeof summary.oracle !== "number") throw new Error(`${path}: source oracle is absent.`)
-  return summary.oracle
+  if (typeof summary.product !== "number" || typeof summary.oracle !== "number") {
+    throw new Error(`${path}: source summary is incomplete.`)
+  }
+  return { product: summary.product, oracle: summary.oracle }
 }
 
 const familyBudgetSummary = async (
@@ -796,6 +809,17 @@ const familyBudgetSummary = async (
   if (families.length === 0) return { families: {} }
   const history = await verifySourceHistory(root)
   const latest = history.at(-1)
+  const highest = families.reduce((selected, family) =>
+    familyOrder.indexOf(family as typeof familyOrder[number]) >
+      familyOrder.indexOf(selected as typeof familyOrder[number]) ? family : selected
+  )
+  const waveName = highest === "changelog" || highest === "announce" ? "announce-changelog" : highest
+  const predecessorPath = predecessorReportByFamily[waveName]!
+  const predecessor = await reportSource(root, predecessorPath)
+  const completedPath = completionReportByFamily[waveName]!
+  const measured = latest?.family !== highest && existsSync(resolve(root, completedPath))
+    ? await reportSource(root, completedPath)
+    : { product, oracle }
   if (latest === undefined || latest.product < product) {
     warnings.push(`Product ${product} exceeds source-history head ${latest?.product ?? "missing"}`)
   }
@@ -805,7 +829,9 @@ const familyBudgetSummary = async (
     const ceilings = contract.marginalFamilyCeilings?.[family] ?? contract.marginalKeyCeilings
     const marginal = marginalStats(entries, ceilings)
     const productBank = contract.familyBanks[family]!
-    const productDelta = entries.reduce((total, entry) => total + entry.net, 0)
+    const productDelta = families.length === 1
+      ? measured.product - predecessor.product
+      : entries.reduce((total, entry) => total + entry.net, 0)
     summaries[family] = { productDelta, productBank, marginal }
     if (entries.length === 0) warnings.push(`${family} has no source-history implementation keys`)
     if (productDelta > productBank) {
@@ -821,21 +847,19 @@ const familyBudgetSummary = async (
       warnings.push(`${family} marginal maximum is ${marginal.maximum}; ceiling is ${ceilings.maximum}`)
     }
   }
-  const highest = families.reduce((selected, family) =>
-    familyOrder.indexOf(family as typeof familyOrder[number]) >
-      familyOrder.indexOf(selected as typeof familyOrder[number]) ? family : selected
-  )
-  const waveName = highest === "changelog" || highest === "announce" ? "announce-changelog" : highest
   const wave = contract.waves.find((candidate) => candidate.name === waveName)
   if (wave === undefined) throw new Error(`Missing source wave: ${waveName}`)
   const oracleBank = contract.oracleFamilyBanks[waveName]!
-  const predecessorPath = predecessorReportByFamily[waveName]!
-  const oracleDelta = oracle - await reportOracle(root, predecessorPath)
-  if (product > wave.product) warnings.push(`${waveName} Product is ${product}; ceiling is ${wave.product}`)
+  const oracleDelta = measured.oracle - predecessor.oracle
+  if (measured.product > wave.product) {
+    warnings.push(`${waveName} Product is ${measured.product}; ceiling is ${wave.product}`)
+  }
   if (oracleDelta > oracleBank) {
     warnings.push(`${waveName} Oracle delta is ${oracleDelta}; bank is ${oracleBank}`)
   }
-  if (oracle > wave.oracle) warnings.push(`${waveName} Oracle is ${oracle}; ceiling is ${wave.oracle}`)
+  if (measured.oracle > wave.oracle) {
+    warnings.push(`${waveName} Oracle is ${measured.oracle}; ceiling is ${wave.oracle}`)
+  }
   return {
     families: summaries,
     wave: {

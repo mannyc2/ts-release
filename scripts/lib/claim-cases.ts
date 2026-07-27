@@ -24,6 +24,8 @@ import { credentialedSigningProfile } from "../../src/recipes/supply-chain/signi
 import { notarizationProfiles } from "../../src/recipes/supply-chain/notarization-profiles.js"
 import { attestationProfile } from "../../src/recipes/supply-chain/attestation-profile.js"
 import { providerProfiles } from "../../src/recipes/providers/index.js"
+import { reviewedTransformProfile } from "../../src/recipes/changelog-profile.js"
+import { announcementHttpProfiles, smtpAnnouncementProfile } from "../../src/recipes/announcement-profiles.js"
 import {
   readParityManifest,
   requiredCaseIds,
@@ -426,6 +428,51 @@ const providerCase = (row: ParityRow, id: string, level: CaseLevel): ClaimCase =
       first.outputs.some(({ output }) => output.id === "npm-package")))
 }
 
+const communicationFixtures = JSON.parse(readFileSync(join(
+  process.cwd(), "test/fixtures/parity/configs/changelog-announce/configs.json"
+), "utf8")) as { readonly fixtures: ReadonlyArray<PackageConfigFixture> }
+const communicationCase = (row: ParityRow, id: string, level: CaseLevel): ClaimCase => async () => {
+  const fixture = communicationFixtures.fixtures.find((item) => item.rowId === row.id)
+  if (fixture === undefined) throw new Error(`${row.id}: communication config fixture is absent.`)
+  if (level === "config-invalid") {
+    const value = structuredClone(fixture.config) as any
+    if (row.family === "changelog") value.publish.changelog.mode = "unowned"
+    else value.publish.announce[0].profileId = "announce.unowned/v1"
+    return passed(id, row.id, level, "Unowned communication policy is rejected.", await rejects(value))
+  }
+  if (level === "config-excess") return passed(id, row.id, level,
+    "Runtime decoding rejects excess configPath.", await rejects({ ...fixture.config, configPath: "x" }))
+  const decoded = await Effect.runPromise(decodeConfig(fixture.config))
+  if (level === "config-decode") return passed(id, row.id, level,
+    "Complete communication config decodes as a value.",
+    decoded.publish.changelog !== undefined || (decoded.publish.announce?.length ?? 0) > 0)
+  const first = await compile(fixture.config), second = await compile(JSON.parse(JSON.stringify(fixture.config)))
+  const stable = first.planId === second.planId && Buffer.from(first.bytes).equals(Buffer.from(second.bytes))
+  if (level === "deterministic-lowering") return passed(id, row.id, level,
+    "Direct and one-read JSON values lower identically.", stable)
+  const operations = operationEntries(first.plan).map(({ operation }) => operation)
+  const profiles = [...announcementHttpProfiles, smtpAnnouncementProfile, reviewedTransformProfile]
+    .filter((profile) => fixture.profileIds.includes(profile.profileId))
+  if (level === "driver-success") return passed(id, row.id, level,
+    "Reviewed note lineage and closed channel topology are executable.",
+    operations.some((operation) => operation._tag === "Write" && operation.id === "changelog:base") &&
+    (fixture.profileIds.length === 0 || fixture.profileIds.every((profileId) => operations.some((operation) =>
+      ("profileId" in operation && operation.profileId === profileId)))))
+  if (level === "driver-typed-failure-evidence") return passed(id, row.id, level,
+    "Communication schemas reject authority injection.",
+    await rejects({ ...fixture.config, authority: "RemotePublish" }))
+  if (level === "platform-tool-constraints") return passed(id, row.id, level,
+    "Profiles bind credential class, redaction, and retry/redirect policy.",
+    profiles.every((profile) => profile.contract.authentication.credentialSlotPattern.length > 0 &&
+      profile.contract.redaction.length > 0))
+  if (level === "ambiguous-commit") return passed(id, row.id, level,
+    "Loss and malformed responses never become success.", profiles.every((profile) =>
+      ["PossiblyCommitted", "Unclassifiable"].includes(profile.contract.classification.responseLoss) &&
+      profile.contract.classification.malformed === "Unclassifiable"))
+  return passed(id, row.id, level, "Canonical reviewed-note and announcement bytes are exact.",
+    stable && first.outputs.some(({ output }) => output.id === "release-notes"))
+}
+
 const dynamicCase = (
   manifest: ParityManifest,
   row: ParityRow,
@@ -485,6 +532,8 @@ export const claimCaseRegistry = (
             ? supplyCase(row, reference.id, reference.level)
             : row.family === "providers"
             ? providerCase(row, reference.id, reference.level)
+            : row.family === "changelog" || row.family === "announce"
+            ? communicationCase(row, reference.id, reference.level)
             : dynamicCase(manifest, row, reference.id, reference.level))
       )
     }
@@ -501,6 +550,8 @@ export const claimCaseRegistry = (
         ? supplyCase(row, id, level)
         : row.family === "providers"
         ? providerCase(row, id, level)
+        : row.family === "changelog" || row.family === "announce"
+        ? communicationCase(row, id, level)
         : dynamicCase(manifest, row, id, level)))
     }
   }

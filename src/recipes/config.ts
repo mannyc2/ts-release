@@ -131,10 +131,19 @@ export class CandidateHomebrew extends Schema.Class<CandidateHomebrew>("Candidat
 export class CandidateScoop extends Schema.Class<CandidateScoop>("CandidateScoop")({
   ...preset, manifestName: optional(Schema.String), manifestPath: optional(SafeRelativePath),
   bucketDirectory: optional(SafeRelativePath), bin: optional(Schema.String) }) {}
+export class CandidatePackageStore
+  extends Schema.Class<CandidatePackageStore>("CandidatePackageStore")({
+    profileId: Schema.Literals(["package.store-snap.v1", "package.store-chocolatey.v1"]),
+    input: OutputId, target: Schema.Struct({
+      name: nonempty, channel: optional(nonempty), version: optional(nonempty)
+    })
+  })
+{}
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish), github: optional(CandidateGitHubPublish),
   homebrew: optional(CandidateHomebrew), scoop: optional(CandidateScoop),
   pypi: optional(CandidatePyPiPublish), custom: optional(Schema.Array(CandidateRiskHook)),
+  packageStores: optional(Schema.Array(CandidatePackageStore)),
   selection: optional(CandidateSelection), nightly: optional(CandidateNightly) }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({

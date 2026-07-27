@@ -14,6 +14,13 @@ const importedKinds = {
   tarball: "archive", zip: "archive", file: "file", directory: "directory",
   "oci-image": "file", executable: "executable", binary: "executable"
 } as const
+const profileOutputKind = (value: string): OutputDeclaration["kind"] => {
+  if (value.endsWith(".whl")) return "wheel"
+  if (value.endsWith(".tar.gz") || value.endsWith(".zip")) return "archive"
+  if (value.endsWith(".app")) return "directory"
+  if (/\.(?:bin|exe|run)$/u.test(value)) return "executable"
+  return "package"
+}
 const declare = (
   rows: CurrentRows, id: string, location: string, kind: OutputDeclaration["kind"],
   provenance: NonNullable<OutputDeclaration["provenance"]>, platform?: CandidatePlatform
@@ -76,15 +83,21 @@ const lowerBuildTarget = (
 const lowerBuilds = (config: CandidateConfig, rows: CurrentRows): void => {
   for (const build of config.builds ?? []) {
     if (build.builder === "profile") {
-      const profile = findLocalToolProfile(build.profileId)
       const inputs = build.inputs.map((id) => {
         const found = rows.outputs.get(id)
         if (found === undefined) throw new Error(`Profile input ${id} is absent.`)
         return found
       })
-      const outputs = build.outputs.map((item) => declare(rows, item.id, item.path,
-        item.path.endsWith(".whl") ? "wheel" : item.path.endsWith(".app") ? "directory"
-          : /\.(?:bin|exe|run)$/u.test(item.path) ? "executable" : "package", "build"))
+      const outputs = build.outputs.map((item) =>
+        declare(rows, item.id, item.path, profileOutputKind(item.path), "build"))
+      if (build.profileId === "lifecycle.archive-hooks.v1") {
+        rows.process.push(Pack.make({
+          id: operationId(`archive:profile:${build.id}`), inputs: inputs.map((item) => item.id),
+          outputs, format: "tar.gz", description: "Materialize the lifecycle archive."
+        }))
+        continue
+      }
+      const profile = findLocalToolProfile(build.profileId)
       const argv = profile.contract.invocation.argv.map((token) => token
         .replaceAll("{input}", inputs[0]?.path ?? ".")
         .replaceAll("{inputDir}", inputs[0]?.path ?? ".")

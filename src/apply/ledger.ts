@@ -31,6 +31,9 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
     case "PackageRegistryRelease":
     case "OpaquePublish":
       return [CheckpointId.make("dispatch")]
+    case "PackageStorePublish":
+      return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"])
+        .map((id) => CheckpointId.make(id))
     default:
       return []
   }

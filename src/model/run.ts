@@ -13,6 +13,10 @@ const approval = {
   approvalNonce: ApprovalNonce, approvedAt: Schema.NonEmptyString, topologyHash: ExecutionTopologyHash
 }
 const checkpoint = { checkpointId: CheckpointId }
+const dispatchEvidence = {
+  clientReconciliationKey: optional(Schema.NonEmptyString),
+  targetCoordinates: optional(Schema.NonEmptyString), subjectDigest: optional(Digest)
+}
 const progress = { progress: Schema.Array(Schema.suspend(() => CheckpointState)) }
 const resolution = {
   operator: Schema.NonEmptyString, reason: Schema.NonEmptyString, timestamp: Schema.NonEmptyString
@@ -53,14 +57,15 @@ export class MaterializedOutput extends Schema.Class<MaterializedOutput>("Materi
 export class CheckpointPending extends Schema.TaggedClass<CheckpointPending>()("CheckpointPending", checkpoint) {}
 export class CheckpointDispatching extends Schema.TaggedClass<CheckpointDispatching>()(
   "CheckpointDispatching", { ...checkpoint, attemptId: AttemptId,
-    clientReconciliationKey: Schema.NonEmptyString }) {}
+    ...dispatchEvidence, clientReconciliationKey: Schema.NonEmptyString }) {}
 export class CheckpointPassed extends Schema.TaggedClass<CheckpointPassed>()(
-  "CheckpointPassed", { ...checkpoint, observedOutcome: Schema.String }) {}
+  "CheckpointPassed", { ...checkpoint, ...dispatchEvidence, observedOutcome: Schema.String }) {}
 export class CheckpointFailedBeforeCommit extends Schema.TaggedClass<CheckpointFailedBeforeCommit>()(
-    "CheckpointFailedBeforeCommit", { ...checkpoint, failure: Schema.String,
+    "CheckpointFailedBeforeCommit", { ...checkpoint, ...dispatchEvidence, failure: Schema.String,
       retryable: Schema.Boolean }) {}
 export class CheckpointUnknown extends Schema.TaggedClass<CheckpointUnknown>()(
-  "CheckpointUnknown", { ...checkpoint, clientReconciliationKey: Schema.NonEmptyString,
+  "CheckpointUnknown", { ...checkpoint, ...dispatchEvidence,
+    clientReconciliationKey: Schema.NonEmptyString,
     observedRemoteId: Schema.optionalKey(Schema.NonEmptyString), failure: Schema.String }) {}
 export class CheckpointManualReview extends Schema.TaggedClass<CheckpointManualReview>()(
   "CheckpointManualReview", { ...checkpoint, reason: Schema.String }) {}

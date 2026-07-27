@@ -23,7 +23,8 @@ type Start = {
 type CheckpointCommand = {
   readonly _tag: "DispatchCheckpoint" | "PassCheckpoint" | "FailCheckpoint" | "UnknownCheckpoint",
   readonly operationId: OperationId, readonly checkpointId: CheckpointId, readonly detail?: string,
-  readonly key?: string, readonly retryable?: boolean, readonly remoteId?: string
+  readonly key?: string, readonly retryable?: boolean, readonly remoteId?: string,
+  readonly targetCoordinates?: string, readonly subjectDigest?: MaterializedOutput["digest"]
 }
 type Settle = {
   readonly _tag: "Pass" | "FailBeforeCommit" | "CommitUnknown",
@@ -60,6 +61,14 @@ const mapCheckpoint = (record: OperationRunRecord, id: CheckpointId,
   if (before.filter((item) => item.checkpointId === id).length !== 1) throw fail(`Unknown checkpoint ${id}.`)
   return before.map((item) => item.checkpointId === id ? update(item) : item)
 }
+const evidence = (state: CheckpointState) => ({
+  ...("clientReconciliationKey" in state && state.clientReconciliationKey !== undefined
+    ? { clientReconciliationKey: state.clientReconciliationKey } : {}),
+  ...("targetCoordinates" in state && state.targetCoordinates !== undefined
+    ? { targetCoordinates: state.targetCoordinates } : {}),
+  ...("subjectDigest" in state && state.subjectDigest !== undefined
+    ? { subjectDigest: state.subjectDigest } : {})
+})
 
 const start = (record: OperationRunRecord, operation: Operation, command: Start): OperationRunRecord => {
   if (current(record).state._tag !== "Pending") throw fail("Operation is not pending.")
@@ -102,19 +111,23 @@ const checkpoint = (record: OperationRunRecord, command: CheckpointCommand): Ope
         if (state._tag !== "CheckpointPending" || command.key === undefined)
           throw fail("Checkpoint is not pending or has no key.")
         return CheckpointDispatching.make({ checkpointId: state.checkpointId, attemptId: attempt.attemptId,
-          clientReconciliationKey: command.key })
+          clientReconciliationKey: command.key,
+          ...(command.targetCoordinates === undefined ? {} : {
+            targetCoordinates: command.targetCoordinates
+          }),
+          ...(command.subjectDigest === undefined ? {} : { subjectDigest: command.subjectDigest }) })
       case "PassCheckpoint":
         if (state._tag !== "CheckpointDispatching") throw fail("Checkpoint was not dispatching.")
         return CheckpointPassed.make(
-          { checkpointId: state.checkpointId, observedOutcome: command.detail ?? "" })
+          { checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command.detail ?? "" })
       case "FailCheckpoint":
         if (state._tag !== "CheckpointDispatching") throw fail("Checkpoint was not dispatching.")
         return CheckpointFailedBeforeCommit.make({ checkpointId: state.checkpointId,
-          failure: command.detail ?? "", retryable: command.retryable ?? false })
+          ...evidence(state), failure: command.detail ?? "", retryable: command.retryable ?? false })
       case "UnknownCheckpoint":
         if (state._tag !== "CheckpointDispatching") throw fail("Checkpoint was not dispatching.")
         return CheckpointUnknown.make({ checkpointId: state.checkpointId,
-          clientReconciliationKey: state.clientReconciliationKey,
+          ...evidence(state), clientReconciliationKey: state.clientReconciliationKey,
           ...(command.remoteId === undefined ? {} : { observedRemoteId: command.remoteId }),
           failure: command.detail ?? "" })
     }
@@ -155,9 +168,10 @@ const resolve = (ledger: RunLedger, record: OperationRunRecord,
       const states = mapCheckpoint(record, command.checkpointId, (state) => {
         if (state._tag !== "CheckpointUnknown") throw fail("Checkpoint is not unknown.")
         return command.result === "committed" ? CheckpointPassed.make(
-          { checkpointId: state.checkpointId, observedOutcome: command.detail })
+          { checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command.detail })
           : CheckpointFailedBeforeCommit.make(
-            { checkpointId: state.checkpointId, failure: command.detail, retryable: true })
+            { checkpointId: state.checkpointId, ...evidence(state),
+              failure: command.detail, retryable: true })
       })
       return setState(record, command.result === "committed"
         ? DispatchingPublish.make({ attemptId: attempt.attemptId, progress: states })
@@ -202,7 +216,7 @@ const recovered = (record: OperationRunRecord): OperationRunRecord => {
     case "DispatchingPublish": {
       const states = state.progress.map((item) => item._tag === "CheckpointDispatching"
         ? CheckpointUnknown.make({ checkpointId: item.checkpointId,
-            clientReconciliationKey: item.clientReconciliationKey,
+            ...evidence(item), clientReconciliationKey: item.clientReconciliationKey,
             failure: "Recovered after durable dispatch intent." }) : item)
       return setState(record, CommitUnknown.make(
         { progress: states, failure: "Recovered in-flight publication." }))

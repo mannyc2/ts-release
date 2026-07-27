@@ -11,7 +11,7 @@ const common = {
     "http-4xx": "DefinitelyNotCommitted", "http-5xx": "PossiblyCommitted",
     "response-loss": "PossiblyCommitted", "malformed-response": "Unclassifiable" }
 }
-const profile = (id: string, contract: object) =>
+const profile = <const Contract extends object>(id: string, contract: Contract) =>
   Object.freeze({ profileId: `package.store-${id}.v1`, contract: Object.freeze(contract) })
 export const packageStoreProfiles = [
   profile("snap", {

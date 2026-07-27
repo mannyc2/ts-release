@@ -10,6 +10,7 @@ import { encodeCanonicalJson, hashFramed } from "../model/canonical.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 import { ExecutionPermit, PublishPermit } from "../model/permit.js"
+import type { PackageStoreTarget } from "../model/operation.js"
 export { ExecutionPermit, PublishPermit }
 
 const hash = (domain: string, value: unknown): string =>
@@ -76,6 +77,7 @@ export const publishReviewId = (accepted: AcceptedPlan, executionReview: Executi
       "HttpPublish",
       "ForgeRelease",
       "PackageRegistryRelease",
+      "PackageStorePublish",
       "OpaquePublish"
     ].includes(operation._tag))
     .map(({ operation }) => String(operation.id)))
@@ -133,4 +135,22 @@ export const reconciliationKey = (
   planId, logicalRunId, operationIds: [...scope.operationIds].map(String).sort(),
   topologyHash, operationHash, checkpointId, target,
   materials: materials.map((item) => [item.outputId, item.digest, item.size])
+})
+export const packageStoreReconciliationKey = (
+  planId: string, logicalRunId: string, scope: ExecutionScope, topologyHash: string,
+  operationHash: OperationHash, checkpointId: CheckpointId, profileId: string,
+  targetCoordinates: PackageStoreTarget,
+  materials: ReadonlyArray<MaterializedOutput>
+): string => hash("ts-release/package-store-reconcile/v1", {
+  planId, logicalRunId,
+  scopeHash: scope.scopeHash ?? hash("ts-release/execution-scope/v1", {
+    planId, operationIds: [...scope.operationIds].map(String).sort()
+  }),
+  executionTopologyHash: topologyHash, operationHash, checkpointId, profileId,
+  targetCoordinates: {
+    name: targetCoordinates.name,
+    ...(targetCoordinates.channel === undefined ? {} : { channel: targetCoordinates.channel }),
+    ...(targetCoordinates.version === undefined ? {} : { version: targetCoordinates.version })
+  },
+  materialBindingHashes: materials.map((item) => item.digest).sort()
 })

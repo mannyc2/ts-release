@@ -92,4 +92,16 @@ describe("immutable package recipe lowering", () => {
       expect(profile.contract).toEqual(frozen.contract)
     }
   })
+
+  test("reuses the closed archive mechanism for lifecycle archive hooks", async () => {
+    const configs = await Bun.file("test/fixtures/parity/configs/packages/configs.json").json()
+    const config = configs.fixtures.find((item: any) => item.rowId === "P024").config
+    const accepted = await Effect.runPromise(compilePlan(config, Invocation.make({
+      workspace: WorkspaceRoot.make("/package-fixture"),
+      commit: NonEmptyName.make("0123456789abcdef"), snapshot: false
+    })))
+    const operation = operationEntries(accepted.plan).find(({ operation }) =>
+      operation.id === "archive:profile:p024")?.operation
+    expect(operation?._tag).toBe("Pack")
+  })
 })

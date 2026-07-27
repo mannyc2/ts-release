@@ -132,6 +132,8 @@ const reconcile = (
   try: async () => {
     const operation = request.operation
     if (operation._tag === "OpaquePublish") throw failure("Opaque publication is manual-only.")
+    if (operation._tag === "PackageStorePublish")
+      throw failure("No live package store reconciliation transport is installed.")
     if (operation._tag === "ForgeRelease") {
       const response = await fetch(
         `https://api.github.com/repos/${operation.repository}/releases/tags/${
@@ -166,6 +168,9 @@ export const makeNodeCatalog = (
 ): DriverCatalogShape => ({
   structured,
   publish: (request, handle, credential) => {
+    if (request.operation._tag === "PackageStorePublish") {
+      return Effect.fail(failure("No live package store transport is installed."))
+    }
     if (request.operation._tag === "OpaquePublish") {
       return commandPublish(request, request.operation.argv)
     }

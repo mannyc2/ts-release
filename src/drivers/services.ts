@@ -9,6 +9,7 @@ import {
   Operation,
   OutputDeclaration,
   PackageRegistryRelease,
+  PackageStorePublish,
   PublishCredential,
   ReadCredential
 } from "../model/operation.js"
@@ -29,6 +30,7 @@ export class CatalogPublishRequest
       HttpPublish,
       ForgeRelease,
       PackageRegistryRelease,
+      PackageStorePublish,
       OpaquePublish
     ]),
     checkpointId: CheckpointId,

@@ -1,5 +1,7 @@
 import * as Effect from "effect/Effect"
-import { ApprovalSigner, executionReviewId, publishReviewId, reconciliationKey } from "./approval.js"
+import {
+  ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId, reconciliationKey
+} from "./approval.js"
 import { operationStatus, transition, type TransitionCommand } from "./transition.js"
 import { RunStore, type ExpectedLedger, type RunStoreShape } from "./store.js"
 import {
@@ -99,6 +101,7 @@ type PublishOperation = Extract<Operation, {
     | "HttpPublish"
     | "ForgeRelease"
     | "PackageRegistryRelease"
+    | "PackageStorePublish"
     | "OpaquePublish"
 }>
 const publishTarget = (operation: PublishOperation): string => {
@@ -109,6 +112,9 @@ const publishTarget = (operation: PublishOperation): string => {
       return operation.repository
     case "PackageRegistryRelease":
       return operation.registryUrl
+    case "PackageStorePublish":
+      return `${operation.profileId}:${operation.target.name}:${
+        operation.target.channel ?? operation.target.version ?? ""}`
     case "OpaquePublish":
       return `${operation.contractFixtureId}:${operation.argv[0]}`
   }
@@ -142,14 +148,24 @@ const publishOperation = (
     if (checkpoint._tag !== "CheckpointPending") continue
     const operationHash = accepted.operationHashes.find((item) =>
       item.operationId === operation.id)!.hash
+    const bindings = materials.filter((item) => operation.inputs.includes(item.outputId))
     const target = publishTarget(operation)
-    const key = reconciliationKey(accepted.planId, next.logicalRunId,
-      next.scope, next.executionTopologyHash,
-      OperationHash.make(operationHash), checkpoint.checkpointId,
-      target, materials)
+    const key = operation._tag === "PackageStorePublish"
+      ? packageStoreReconciliationKey(
+          accepted.planId, next.logicalRunId, next.scope, next.executionTopologyHash,
+          OperationHash.make(operationHash), checkpoint.checkpointId,
+          operation.profileId, operation.target, bindings)
+      : reconciliationKey(accepted.planId, next.logicalRunId,
+          next.scope, next.executionTopologyHash,
+          OperationHash.make(operationHash), checkpoint.checkpointId, target, materials)
+    const subject = bindings[0]
     next = yield* moved(accepted, services.store, request.run.path, next,
       { _tag: "DispatchCheckpoint", operationId: operation.id,
-        checkpointId: checkpoint.checkpointId, key })
+        checkpointId: checkpoint.checkpointId, key,
+        ...(operation._tag === "PackageStorePublish" ? {
+          targetCoordinates: target,
+          ...(subject === undefined ? {} : { subjectDigest: subject.digest })
+        } : {}) })
     const outputId = checkpoint.checkpointId === "dispatch" ? String(operation.inputs[0] ?? "")
       : String(checkpoint.checkpointId).replace(/^asset:/u, "")
     const facts = materials.find((item) => item.outputId === outputId)

@@ -1,6 +1,6 @@
 import {
-  Exec, ForgeRelease, OpaquePublish, PackageRegistryRelease, PublishCredential, ReadCredential,
-  type OutputDeclaration
+  Exec, ForgeRelease, OpaquePublish, PackageRegistryRelease, PackageStorePublish,
+  PackageStoreTarget, PublishCredential, ReadCredential, type OutputDeclaration
 } from "../model/operation.js"
 import type { CandidateConfig, CandidateRiskHook } from "./config.js"
 import {
@@ -146,5 +146,16 @@ export const lowerCurrentPublish = (config: CandidateConfig, rows: CurrentRows):
   ].filter((item): item is PackageRegistryRelease | ForgeRelease | OpaquePublish =>
     item !== undefined)
   rows.publish.splice(0, 0, ...prefix)
+  for (const item of config.publish.packageStores ?? []) {
+    const input = rows.outputs.get(item.input)
+    if (input === undefined) throw new Error(`Package store input ${item.input} is absent.`)
+    rows.publish.push(PackageStorePublish.make({
+      id: operationId(`package-store:${item.profileId}:${item.input}`),
+      inputs: [input.id], outputs: [], profileId: item.profileId,
+      target: PackageStoreTarget.make(item.target),
+      credential: publishCredential(item.profileId.endsWith("snap.v1") ? "SNAP_STORE" : "CHOCOLATEY_STORE"),
+      contractFixtureId: `contract.${item.profileId}`
+    }))
+  }
   rows.publish.push(...(config.hooks?.after ?? []).map((hook) => after(config, hook)))
 }

@@ -300,6 +300,10 @@ const projectEntry = ({ operation, stage }: OperationEntry): ReadonlyArray<Proje
       })]
     case "PackageRegistryRelease":
       return packageEffects(operation)
+    case "PackageStorePublish":
+      return [effect(operation, stage, "remote-publish", "package-store-publish", {
+        profileId: operation.profileId, target: operation.target, inputIds: operation.inputs
+      })]
     case "ForgeRelease":
       return forgeEffects(operation)
     case "OpaquePublish":

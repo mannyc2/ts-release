@@ -159,7 +159,7 @@ an accepted plan.
 Product code is measured separately from Oracle code. Contract fixtures,
 permanent parity cases, fault injection, driver conformance, architecture
 rules, source budgets, public package checks, and CLI/Action tests certify the
-release. The PARITY state is 5,871 Product semantic lines and 6,045 Oracle
+release. The PARITY state is 5,871 Product semantic lines and 6,040 Oracle
 semantic lines, compared with 4,322 and 4,374 respectively at M6.
 
 Certification proves five properties, 107/107 scoped customization rows,

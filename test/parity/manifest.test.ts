@@ -1,11 +1,7 @@
 import { describe, expect, test } from "@effect/bun-test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import {
-  caseLevels,
-  decodeParityManifest,
-  requiredCaseIds
-} from "../../scripts/lib/parity.js"
+import { caseLevels, decodeParityManifest, requiredCaseIds } from "../../scripts/lib/parity.js"
 
 const manifest = decodeParityManifest(readFileSync(join(
   process.cwd(),
@@ -17,8 +13,7 @@ describe("strict GoReleaser parity manifest", () => {
     expect(manifest.rows.filter((row) => row.population === "customization")).toHaveLength(115)
     expect(manifest.rows.filter((row) => row.population === "pro")).toHaveLength(36)
     expect(manifest.rows.filter((row) => row.population === "deprecation")).toHaveLength(40)
-    expect(manifest.rows.filter((row) =>
-      row.population === "customization" && row.scope === "included")).toHaveLength(107)
+    expect(manifest.rows.filter((row) => row.population === "customization" && row.scope === "included")).toHaveLength(107)
     expect(manifest.rows.filter((row) =>
       row.population === "pro" && row.scope === "included")).toHaveLength(33)
     expect(manifest.populations.excluded.customization).toHaveLength(8)

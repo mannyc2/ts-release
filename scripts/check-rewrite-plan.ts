@@ -8,6 +8,7 @@ import {
   sha256Hex,
   type JsonValue
 } from "./lib/canonical-json.js"
+import { runAudit, validateAuditSummary } from "./lib/audit.js"
 import { runClaimCases } from "./lib/claim-cases.js"
 import {
   decodeParityManifest,
@@ -284,6 +285,7 @@ const verifyReport = (
   requireCurrent: boolean
 ): Readonly<Record<string, JsonValue>> => {
   const report = readReport(path)
+  const reportedPlan = String(report.plan)
   expectExactKeys(report, [
     "schemaVersion",
     "plan",
@@ -302,10 +304,11 @@ const verifyReport = (
     "paritySummary",
     "propertySummary",
     "sourceSummary",
-    "zeroSecretScan"
+    "zeroSecretScan",
+    ...(reportedPlan === "184" ? ["auditSummary"] : [])
   ])
   if (report.schemaVersion !== "rewrite-plan-report/v1") throw new Error(`${path}: schema drift.`)
-  const plan = String(report.plan)
+  const plan = reportedPlan
   const gate = gates.plans[plan]
   if (gate === undefined || report.reportPath !== gate.report || path !== gate.report) {
     throw new Error(`${path}: report is not its configured target.`)
@@ -338,6 +341,7 @@ const verifyReport = (
   }
   const hashes = expectObject(report.contractHashes!, "contractHashes")
   const expectedHashes = {
+    ...(plan === "184" ? { audit: jsonHashAt(commit, "contracts/rewrite/audit.json") } : {}),
     architecture: jsonHashAt(commit, "contracts/rewrite/architecture.json"),
     configBoundary: jsonHashAt(commit, "contracts/rewrite/config-boundary.json"),
     ...(gates.order.indexOf(plan) < gates.order.indexOf("176") ? {} : {
@@ -352,6 +356,7 @@ const verifyReport = (
   if (JSON.stringify(hashes) !== JSON.stringify(expectedHashes)) {
     throw new Error(`${path}: stale contract hash.`)
   }
+  if (plan === "184") validateAuditSummary(root, report.auditSummary!)
   if (report.sourceHistoryHeadHash !== historyHeadAt(commit)) {
     throw new Error(`${path}: source-history head mismatch.`)
   }
@@ -441,6 +446,7 @@ const buildReport = async (
     commandVectorHash: canonicalJsonHash(gate.commands),
     commands: commands as unknown as JsonValue,
     contractHashes: {
+      ...(plan === "184" ? { audit: jsonHash("contracts/rewrite/audit.json") } : {}),
       architecture: jsonHash("contracts/rewrite/architecture.json"),
       configBoundary: jsonHash("contracts/rewrite/config-boundary.json"),
       ...(gates.order.indexOf(plan) < gates.order.indexOf("176") ? {} : {
@@ -477,7 +483,8 @@ const buildReport = async (
       oracle: source.totals.oracle,
       warnings: source.warnings.length
     },
-    zeroSecretScan: secretScan()
+    zeroSecretScan: secretScan(),
+    ...(plan === "184" ? { auditSummary: runAudit(root) as unknown as JsonValue } : {})
   }
   return { ...body, reportHash: canonicalJsonHash(body) }
 }
@@ -520,7 +527,12 @@ const main = async (): Promise<void> => {
   }
   const commands = runCommands(gate.commands)
   if (options.check) {
-    process.stdout.write(encodeCanonicalJson({ plan, checked: commands.length }))
+    const audit = plan === "184" ? runAudit(root) : undefined
+    process.stdout.write(encodeCanonicalJson({
+      plan,
+      checked: commands.length,
+      ...(audit === undefined ? {} : { audit })
+    }))
     return
   }
   const report = await buildReport(plan, gate, gates, commands)

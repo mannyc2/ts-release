@@ -230,7 +230,7 @@ one plan and content inventory. The final fault matrix covers 45/45 cells and
 | Certified state | Product semantic lines | Oracle semantic lines |
 |---|---:|---:|
 | M6 / Plan 177 | 4,322 | 4,374 |
-| PARITY / Plan 184 readiness | 5,871 | 6,045 |
+| PARITY / Plan 184 readiness | 5,871 | 6,040 |
 
 Product source remains below the 8,031-line opening implementation while
 covering the complete in-scope parity surface.

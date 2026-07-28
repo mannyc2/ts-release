@@ -34,7 +34,7 @@
   and 33/33 Pro rows, with the eleven manifest exclusions.
 - Certified all five technical properties, 45/45 fault cells, and 11/11
   structural controls with zero credential leaks and duplicate mutations.
-- Closed at 5,871 Product semantic lines and 6,045 Oracle semantic lines.
+- Closed at 5,871 Product semantic lines and 6,040 Oracle semantic lines.
 - Removed mutable runtime swapping, runtime profile registration, old
   lifecycle aliases, fallback durable readers, and config translation DTOs.
 

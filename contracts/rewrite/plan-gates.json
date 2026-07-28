@@ -216,11 +216,23 @@
       "commands": [
         ["bun", "run", "check"],
         ["bun", "test"],
-        ["bun", "run", "check:source-budget", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:import-rules"],
         ["bun", "run", "check:architecture", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:source-budget", "--", "--milestone", "PARITY"],
+        ["bun", "run", "check:cutover"],
         ["bun", "run", "check:parity"],
         ["bun", "run", "check:superiority", "--", "--milestone", "PARITY"],
-        ["bun", "run", "check:cutover"]
+        ["bun", "run", "test:driver-conformance"],
+        ["bun", "run", "test:fault-matrix"],
+        ["bun", "run", "check:tree-shaking"],
+        ["bun", "run", "build"],
+        ["bun", "run", "check:examples"],
+        ["bun", "run", "check:readme"],
+        ["bun", "run", "check:package-exports"],
+        ["bun", "run", "check:app"],
+        ["bun", "run", "check:action"],
+        ["bun", "run", "check:self-release-config"],
+        ["bun", "run", "check:self-release-doctor"]
       ]
     }
   }

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "rewrite-audit-contract/v1",
+  "expectedExit": 1,
+  "package": "brace-expansion",
+  "affectedRange": ">=2.0.0 <2.1.2",
+  "severity": "high",
+  "vulnerabilities": 2,
+  "advisoryIds": [
+    "GHSA-3jxr-9vmj-r5cp",
+    "GHSA-mh99-v99m-4gvg"
+  ]
+}

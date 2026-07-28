@@ -360,7 +360,10 @@ const verifyReport = (
   if (report.sourceHistoryHeadHash !== historyHeadAt(commit)) {
     throw new Error(`${path}: source-history head mismatch.`)
   }
-  const manifest = decodeParityManifest(blob(commit, "parity/goreleaser-v2.17.0/manifest.json"))
+  const manifest = decodeParityManifest(
+    blob(commit, "parity/goreleaser-v2.17.0/manifest.json"),
+    { allowHistoricalReadiness: true }
+  )
   const expectedCases = manifest.rows
     .filter((row) => row.scope === "included")
     .flatMap((row) => requiredCaseIds(manifest, row))

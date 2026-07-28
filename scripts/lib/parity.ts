@@ -64,7 +64,10 @@ export interface ExternalContractFixture {
   readonly profileId: string
   readonly provenance: "maintainer-product-decision" | "recorded-evidence"
   readonly decisionId: string
-  readonly readiness: "frozen"
+  readonly readiness:
+    | "frozen"
+    | "maintainer-decision-required"
+    | "recorded-contract-to-elaborate"
   readonly requiredFields: ReadonlyArray<string>
 }
 
@@ -226,7 +229,11 @@ const decodeConfigFixture = (value: JsonValue, index: number): ConfigFixture => 
   }
 }
 
-const decodeExternalFixture = (value: JsonValue, index: number): ExternalContractFixture => {
+const decodeExternalFixture = (
+  value: JsonValue,
+  index: number,
+  allowHistoricalReadiness: boolean
+): ExternalContractFixture => {
   const fixture = expectObject(value, `externalContractFixtures[${index}]`)
   expectExactKeys(fixture, [
     "id", "profileId", "provenance", "decisionId", "readiness", "requiredFields"
@@ -236,7 +243,13 @@ const decodeExternalFixture = (value: JsonValue, index: number): ExternalContrac
   if (provenance !== "recorded-evidence" && provenance !== "maintainer-product-decision") {
     throw new Error(`externalContractFixtures[${index}] has invalid provenance.`)
   }
-  if (readiness !== "frozen") {
+  if (
+    readiness !== "frozen" &&
+    !(allowHistoricalReadiness && (
+      readiness === "maintainer-decision-required" ||
+      readiness === "recorded-contract-to-elaborate"
+    ))
+  ) {
     throw new Error(`externalContractFixtures[${index}] has invalid readiness.`)
   }
   const requiredFields = stringArray(fixture.requiredFields, `externalContractFixtures[${index}].requiredFields`)
@@ -260,7 +273,10 @@ const decodeExternalFixture = (value: JsonValue, index: number): ExternalContrac
 const expectedIds = (prefix: string, count: number): ReadonlyArray<string> =>
   Array.from({ length: count }, (_, index) => `${prefix}${String(index + 1).padStart(3, "0")}`)
 
-export const decodeParityManifest = (text: string): ParityManifest => {
+export const decodeParityManifest = (
+  text: string,
+  options: { readonly allowHistoricalReadiness?: boolean } = {}
+): ParityManifest => {
   const parsed = expectObject(parseStrictJson(text), "parity manifest")
   expectExactKeys(parsed, [
     "schemaVersion", "pin", "populations", "claim", "implementationKeyOwners", "rows",
@@ -321,7 +337,8 @@ export const decodeParityManifest = (text: string): ParityManifest => {
   }
   const configFixtures = array(parsed.configFixtures, "configFixtures").map(decodeConfigFixture)
   const externalContractFixtures = array(parsed.externalContractFixtures, "externalContractFixtures")
-    .map(decodeExternalFixture)
+    .map((fixture, index) =>
+      decodeExternalFixture(fixture, index, options.allowHistoricalReadiness === true))
   unique(configFixtures.map((fixture) => fixture.id), "config fixture ids")
   unique(externalContractFixtures.map((fixture) => fixture.id), "external fixture ids")
   const configById = new Map(configFixtures.map((fixture) => [fixture.id, fixture]))

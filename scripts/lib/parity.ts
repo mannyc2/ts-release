@@ -64,7 +64,7 @@ export interface ExternalContractFixture {
   readonly profileId: string
   readonly provenance: "maintainer-product-decision" | "recorded-evidence"
   readonly decisionId: string
-  readonly readiness: "maintainer-decision-required" | "recorded-contract-to-elaborate"
+  readonly readiness: "frozen"
   readonly requiredFields: ReadonlyArray<string>
 }
 
@@ -236,7 +236,7 @@ const decodeExternalFixture = (value: JsonValue, index: number): ExternalContrac
   if (provenance !== "recorded-evidence" && provenance !== "maintainer-product-decision") {
     throw new Error(`externalContractFixtures[${index}] has invalid provenance.`)
   }
-  if (readiness !== "maintainer-decision-required" && readiness !== "recorded-contract-to-elaborate") {
+  if (readiness !== "frozen") {
     throw new Error(`externalContractFixtures[${index}] has invalid readiness.`)
   }
   const requiredFields = stringArray(fixture.requiredFields, `externalContractFixtures[${index}].requiredFields`)

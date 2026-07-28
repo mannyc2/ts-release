@@ -23,6 +23,11 @@ describe("strict GoReleaser parity manifest", () => {
       row.population === "pro" && row.scope === "included")).toHaveLength(33)
     expect(manifest.populations.excluded.customization).toHaveLength(8)
     expect(manifest.populations.excluded.pro).toHaveLength(3)
+    expect(manifest.externalContractFixtures.every((fixture) => fixture.readiness === "frozen")).toBeTrue()
+    expect(manifest.rows.some((row) =>
+      row.historicalDisposition.includes("OPEN-QUESTION") ||
+      row.scopeRationale.includes("OPEN-QUESTION")
+    )).toBeFalse()
   })
 
   test("every included row has independent cases and exactly frozen key ownership", () => {

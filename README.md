@@ -5,9 +5,14 @@ reviewable plan bytes, then applies only those accepted bytes. It is a Bun
 and TypeScript release tool built around explicit authority, staged
 publication, and a durable run ledger.
 
-The current release preserves the frozen baseline package and provider
-behaviors covered by this repository's parity contracts. Later parity plans
-add explicitly named families; no unqualified full-parity claim is made.
+Full in-scope outcome parity for TypeScript/Bun distribution against the
+pinned GoReleaser v2.17.0 ledger: 107/107 customization rows and 33/33 Pro
+rows, excluding C005, C008, C017, C023, C028, C047, C050, C051, P029, P035,
+and P036.
+
+That claim is scoped to the frozen outcome ledger. It does not claim parity
+for Go-specific toolchains, deprecated implementation mechanics, or vendor
+licensing behavior.
 
 ## Install
 
@@ -213,6 +218,22 @@ run-bound publish receipt.
 
 Unknown publication outcomes stop for reconciliation or an explicit
 operator resolution with operation id, identity, reason, and timestamp.
+
+## Certification
+
+The repository proves five technical properties: review equals execution,
+invalid plans stop before capabilities, authority is structural, uncertainty
+is durable and replay-safe, and staged split/merge execution remains bound to
+one plan and content inventory. The final fault matrix covers 45/45 cells and
+11/11 structural controls with zero credential leaks or duplicate mutations.
+
+| Certified state | Product semantic lines | Oracle semantic lines |
+|---|---:|---:|
+| M6 / Plan 177 | 4,322 | 4,374 |
+| PARITY / Plan 184 readiness | 5,871 | 6,045 |
+
+Product source remains below the 8,031-line opening implementation while
+covering the complete in-scope parity surface.
 
 ## Migration
 

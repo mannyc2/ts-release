@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2026-07-27
 
 ### Breaking: sealed plan/apply core
 
@@ -24,6 +24,17 @@
 - Required absolute existing realpath-normalized workspaces.
 - Made Homebrew, Scoop, package, and provider profiles product-owned and
   immutable.
+- Added deterministic changelog generation, reviewed validation-time note
+  transformation, and closed announcement operations for thirteen HTTP-like
+  channels plus SMTP.
+- Added typed package, supply-chain, provider, distributed-execution, and
+  announcement profiles with immutable contract fixtures.
+- Certified full in-scope outcome parity for TypeScript/Bun distribution
+  against the pinned GoReleaser v2.17.0 ledger: 107/107 customization rows
+  and 33/33 Pro rows, with the eleven manifest exclusions.
+- Certified all five technical properties, 45/45 fault cells, and 11/11
+  structural controls with zero credential leaks and duplicate mutations.
+- Closed at 5,871 Product semantic lines and 6,045 Oracle semantic lines.
 - Removed mutable runtime swapping, runtime profile registration, old
   lifecycle aliases, fallback durable readers, and config translation DTOs.
 

@@ -25,11 +25,10 @@ Every eligible row freezes:
 - pre-implementation external contract fixture ids where a tool or wire
   boundary exists.
 
-Current-surface fixture provenance is `recorded-evidence`. Later closed-profile
-surfaces carry the accepted plan decision and remain
-`maintainer-decision-required` until the exact version/argv/wire contract is
-frozen before that key's first source-history record. That marker cannot pass
-a case and does not authorize research or an implementation-derived fixture.
+Current-surface fixture provenance is `recorded-evidence`; closed-profile
+surfaces carry their accepted maintainer product decision. Every external
+fixture is now `frozen` and each implementation key is bound to its
+hash-linked source-history record.
 
 The only permitted final claim is:
 
@@ -37,7 +36,6 @@ The only permitted final claim is:
 > pinned GoReleaser v2.17.0 ledger: 107/107 customization rows and 33/33 Pro
 > rows.
 
-`bun run check:parity -- --bootstrap` derives the denominators from the
-manifest and executes the registered case code for the current source
-snapshot. At this contract milestone every eligible row is unverified, so
-the expected numerator is 0/107 customization and 0/33 Pro.
+`bun run check:parity` derives the denominators from the manifest and executes
+all 1,260 registered cases for the current source snapshot. It refuses unless
+the result is exactly 107/107 customization rows and 33/33 Pro rows.

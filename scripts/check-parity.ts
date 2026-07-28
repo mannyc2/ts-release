@@ -1,17 +1,23 @@
 #!/usr/bin/env bun
 
+import { readFileSync } from "node:fs"
 import { cwd, exit } from "node:process"
 import { runClaimCases } from "./lib/claim-cases.js"
 import { encodeCanonicalJson } from "./lib/canonical-json.js"
-import { readParityManifest, requiredCaseIds } from "./lib/parity.js"
+import {
+  FINAL_PARITY_CLAIM,
+  readParityManifest,
+  requiredCaseIds,
+  validateParityClaim
+} from "./lib/parity.js"
 
 const args = process.argv.slice(2).filter((argument) => argument !== "--")
-let bootstrap = false
 let family: string | undefined
+let checkClaims = false
 for (let index = 0; index < args.length; index += 1) {
   const argument = args[index]
-  if (argument === "--bootstrap") bootstrap = true
-  else if (argument === "--family") family = args[++index]
+  if (argument === "--family") family = args[++index]
+  else if (argument === "--check-claims") checkClaims = true
   else {
     console.error(`Unknown argument: ${argument}`)
     exit(1)
@@ -33,6 +39,16 @@ try {
   const passingPro = passingRows.filter((row) => row.population === "pro").length
   const eligibleCustomization = selected.filter((row) => row.population === "customization").length
   const eligiblePro = selected.filter((row) => row.population === "pro").length
+  if (checkClaims) {
+    if (family !== undefined) throw new Error("--check-claims requires the complete parity run.")
+    validateParityClaim(manifest.claim, passingCustomization, passingPro)
+    const docs = ["README.md", "SPEC.md", "ARCHITECTURE.md", "CHANGELOG.md"]
+      .map((path) => readFileSync(path, "utf8")).join("\n").replace(/\s+/gu, " ")
+    if (!docs.includes(FINAL_PARITY_CLAIM)) throw new Error("Public docs omit the frozen parity claim.")
+    if (/\bfull parity\b|\bparity is full\b/iu.test(docs)) {
+      throw new Error("Public docs contain an unqualified full-parity claim.")
+    }
+  }
   const report = {
     schemaVersion: "rewrite-parity-report/v1",
     pin: manifest.pin,
@@ -63,10 +79,8 @@ try {
   console.log(encodeCanonicalJson(report).trimEnd())
   if (
     run.failed > 0 ||
-    !bootstrap && (
-      passingCustomization !== eligibleCustomization ||
-      passingPro !== eligiblePro
-    )
+    passingCustomization !== eligibleCustomization ||
+    passingPro !== eligiblePro
   ) {
     exit(1)
   }

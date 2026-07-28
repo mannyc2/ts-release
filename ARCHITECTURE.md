@@ -103,9 +103,12 @@ Mechanism determines authority:
 Check                                      LocalRead
 Write, Pack, Digest                        LocalWrite
 Exec                                       LocalExec
-HttpRead                                   RemoteRead
+HttpRead, ReviewedNoteTransform            RemoteRead
 HttpPublish, ForgeRelease,
-PackageRegistryRelease, OpaquePublish      RemotePublish
+PackageRegistryRelease, PackageStorePublish,
+SupplyChainPublish, ProviderPublish,
+AnnouncementPublish, SmtpPublish,
+OpaquePublish                              RemotePublish
 ```
 
 Recipes select mechanisms but cannot redefine their authority. Runtime
@@ -153,10 +156,12 @@ an accepted plan.
 
 ## Verification lanes
 
-Product code is measured separately from oracle code. Contract fixtures,
-candidate/current behavior checks, fault injection, driver conformance,
-deletion maps, architecture rules, source budgets, public package checks,
-CLI/Action tests, and named parity families certify the cutover.
+Product code is measured separately from Oracle code. Contract fixtures,
+permanent parity cases, fault injection, driver conformance, architecture
+rules, source budgets, public package checks, and CLI/Action tests certify the
+release. The PARITY state is 5,871 Product semantic lines and 6,045 Oracle
+semantic lines, compared with 4,322 and 4,374 respectively at M6.
 
-Certification does not dispatch publication. Comparative claims remain
-qualified to the properties and frozen behavior families actually tested.
+Certification proves five properties, 107/107 scoped customization rows,
+33/33 scoped Pro rows, 45/45 fault cells, and 11/11 structural controls.
+Certification does not dispatch publication.

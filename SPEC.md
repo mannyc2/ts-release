@@ -59,9 +59,10 @@ annotations
 ```
 
 Each operation has an `id`, typed inputs, typed output declarations, and one
-mechanism tag. Supported current mechanisms are `Check`, `Write`, `Pack`,
-`Digest`, `Exec`, `HttpRead`, `HttpPublish`, `ForgeRelease`,
-`PackageRegistryRelease`, and `OpaquePublish`.
+mechanism tag. The sixteen mechanisms are `Check`, `Write`, `Pack`, `Digest`,
+`Exec`, `HttpRead`, `ReviewedNoteTransform`, `HttpPublish`, `ForgeRelease`,
+`PackageRegistryRelease`, `PackageStorePublish`, `SupplyChainPublish`,
+`ProviderPublish`, `AnnouncementPublish`, `SmtpPublish`, and `OpaquePublish`.
 
 The stage order is fixed:
 
@@ -141,8 +142,8 @@ Operation authority is derived from mechanism:
 | LocalRead | `Check` |
 | LocalWrite | `Write`, `Pack`, `Digest` |
 | LocalExec | `Exec` |
-| RemoteRead | `HttpRead` |
-| RemotePublish | `HttpPublish`, `ForgeRelease`, `PackageRegistryRelease`, `OpaquePublish` |
+| RemoteRead | `HttpRead`, `ReviewedNoteTransform` |
+| RemotePublish | `HttpPublish`, `ForgeRelease`, `PackageRegistryRelease`, `PackageStorePublish`, `SupplyChainPublish`, `ProviderPublish`, `AnnouncementPublish`, `SmtpPublish`, `OpaquePublish` |
 
 Configuration cannot promote authority. Credentials are accessed through
 read or publish capability stores and MUST NOT enter a plan, ledger, receipt,
@@ -230,7 +231,12 @@ boundary.
 Conformance requires canonical round trips, strict excess-field rejection,
 one-read app loading, workspace realpath equivalence, challenge/receipt drift
 refusal, ledger transition coverage, driver fault cells, package boundary
-checks, app bundle checks, architecture checks, and the named frozen baseline
-parity families.
+checks, app bundle checks, architecture checks, and all permanent parity
+cases.
+
+The certified scoped result is 107/107 customization rows and 33/33 Pro rows
+against the pinned GoReleaser v2.17.0 ledger, with the exact exclusions named
+in the manifest. Five technical-property suites, 45/45 fault cells, and 11/11
+structural controls must pass with no unresolved cases.
 
 Repository certification is read-only with respect to external publication.

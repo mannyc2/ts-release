@@ -55,40 +55,7 @@
     }
   ],
   "milestones": {
-    "contract": {
-      "requiredCandidateProven": [],
-      "requiredPublicPassing": []
-    },
-    "runner": {
-      "requiredCandidateProven": [
-        "review-equals-execution",
-        "reject-before-capabilities",
-        "structural-authority",
-        "durable-uncertainty"
-      ],
-      "requiredPublicPassing": []
-    },
-    "cutover": {
-      "requiredCandidateProven": [],
-      "requiredPublicPassing": [
-        "review-equals-execution",
-        "reject-before-capabilities",
-        "structural-authority",
-        "durable-uncertainty"
-      ]
-    },
-    "distributed": {
-      "requiredCandidateProven": [],
-      "requiredPublicPassing": [
-        "review-equals-execution",
-        "reject-before-capabilities",
-        "structural-authority",
-        "durable-uncertainty",
-        "portable-split-merge"
-      ]
-    },
     "PARITY": {
-      "requiredCandidateProven": [],
       "requiredPublicPassing": [
         "review-equals-execution",
         "reject-before-capabilities",

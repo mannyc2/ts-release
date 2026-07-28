@@ -37,9 +37,7 @@ import {
 import { repositorySnapshotHash } from "./repository-snapshot.js"
 
 export type ClaimCaseStatus =
-  | "candidate-pending"
   | "fail"
-  | "legacy-known-defect"
   | "pass"
 
 export interface ClaimAssertionResult {
@@ -63,20 +61,6 @@ const fixtureForRow = (manifest: ParityManifest, row: ParityRow): ConfigFixture 
   if (fixture === undefined) throw new Error(`${row.id}: config fixture is absent.`)
   return fixture
 }
-
-const pending = (
-  id: string,
-  rowId: string,
-  level: CaseLevel,
-  detail: string,
-  passed: boolean = true
-): ClaimCaseResult => ({
-  id,
-  rowId,
-  level,
-  status: passed ? "candidate-pending" : "fail",
-  assertions: [{ id: `assertion.${id}`, passed, detail }]
-})
 
 const passed = (
   id: string,
@@ -473,42 +457,8 @@ const communicationCase = (row: ParityRow, id: string, level: CaseLevel): ClaimC
     stable && first.outputs.some(({ output }) => output.id === "release-notes"))
 }
 
-const dynamicCase = (
-  manifest: ParityManifest,
-  row: ParityRow,
-  id: string,
-  level: CaseLevel
-): ClaimCase => async () => {
-  const fixture = fixtureForRow(manifest, row)
-  if (level === "config-decode") {
-    const equivalent = encodeCanonicalJson(fixture.config) ===
-      encodeCanonicalJson(JSON.parse(JSON.stringify(fixture.config)))
-    return pending(
-      id,
-      row.id,
-      level,
-      "Frozen config is strict JSON-compatible and round-trips canonically.",
-      equivalent
-    )
-  }
-  if (level === "config-invalid") {
-    return pending(id, row.id, level, "Named invalid-value case is frozen for candidate decoding.")
-  }
-  if (level === "config-excess") {
-    return pending(id, row.id, level, "Named excess-field case is frozen for strict candidate decoding.")
-  }
-  if (level === "deterministic-lowering") {
-    return pending(id, row.id, level, `Expected lowering is frozen for ${fixture.enclosingSection}.`)
-  }
-  const hasExternal = row.contractFixtureIds.length > 0
-  return pending(
-    id,
-    row.id,
-    level,
-    hasExternal
-      ? "Executable candidate conformance is pending its frozen profile contract."
-      : "Executable candidate behavior is pending implementation."
-  )
+const unsupportedFamily = (row: ParityRow): never => {
+  throw new Error(`${row.id}: included family ${row.family} has no permanent case runner.`)
 }
 
 const implementedCases: Readonly<Record<string, ClaimCase>> = {}
@@ -534,7 +484,7 @@ export const claimCaseRegistry = (
             ? providerCase(row, reference.id, reference.level)
             : row.family === "changelog" || row.family === "announce"
             ? communicationCase(row, reference.id, reference.level)
-            : dynamicCase(manifest, row, reference.id, reference.level))
+            : unsupportedFamily(row))
       )
     }
     const fixture = fixtureForRow(manifest, row)
@@ -552,7 +502,7 @@ export const claimCaseRegistry = (
         ? providerCase(row, id, level)
         : row.family === "changelog" || row.family === "announce"
         ? communicationCase(row, id, level)
-        : dynamicCase(manifest, row, id, level)))
+        : unsupportedFamily(row)))
     }
   }
   return registry
@@ -596,9 +546,7 @@ export const runClaimCases = async (
     sourceSnapshotHash: repositorySnapshotHash(root),
     selected: results.length,
     passed: results.filter((result) => result.status === "pass").length,
-    pending: results.filter((result) =>
-      result.status === "candidate-pending" || result.status === "legacy-known-defect"
-    ).length,
+    pending: 0,
     failed: results.filter((result) => result.status === "fail").length,
     results
   }

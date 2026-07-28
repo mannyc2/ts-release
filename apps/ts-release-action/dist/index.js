@@ -17799,6 +17799,12 @@ function isNumber(input) {
 function isBoolean(input) {
   return typeof input === "boolean";
 }
+function isSymbol(input) {
+  return typeof input === "symbol";
+}
+function isPropertyKey(u) {
+  return isString(u) || isNumber(u) || isSymbol(u);
+}
 function isFunction(input) {
   return typeof input === "function";
 }
@@ -21965,6 +21971,19 @@ class PropertySignature {
     this.type = type;
   }
 }
+
+class KeyValueCombiner {
+  decode;
+  encode;
+  constructor(decode, encode) {
+    this.decode = decode;
+    this.encode = encode;
+  }
+  flip() {
+    return new KeyValueCombiner(this.encode, this.decode);
+  }
+}
+
 class IndexSignature {
   parameter;
   type;
@@ -22652,6 +22671,51 @@ function withConstructorDefault(ast, defaultValue) {
 function decodeTo(from, to, transformation) {
   return appendTransformation(from, transformation, to);
 }
+function parseParameter(ast) {
+  switch (ast._tag) {
+    case "Literal":
+      return {
+        literals: isPropertyKey(ast.literal) ? [ast.literal] : [],
+        parameters: []
+      };
+    case "UniqueSymbol":
+      return {
+        literals: [ast.symbol],
+        parameters: []
+      };
+    case "String":
+    case "Number":
+    case "Symbol":
+    case "TemplateLiteral":
+      return {
+        literals: [],
+        parameters: [ast]
+      };
+    case "Union": {
+      const out = {
+        literals: [],
+        parameters: []
+      };
+      for (let i = 0;i < ast.types.length; i++) {
+        const parsed = parseParameter(ast.types[i]);
+        out.literals = out.literals.concat(parsed.literals);
+        out.parameters = out.parameters.concat(parsed.parameters);
+      }
+      return out;
+    }
+  }
+  return {
+    literals: [],
+    parameters: []
+  };
+}
+function record(key, value, keyValueCombiner) {
+  const {
+    literals,
+    parameters: indexSignatures
+  } = parseParameter(key);
+  return new Objects(literals.map((literal) => new PropertySignature(literal, value)), indexSignatures.map((parameter) => new IndexSignature(parameter, value, keyValueCombiner)));
+}
 function isOptional(ast) {
   return ast.context?.isOptional ?? false;
 }
@@ -23082,6 +23146,13 @@ function makeStruct(ast, fields) {
 }
 function Struct(fields) {
   return makeStruct(struct(fields, undefined), fields);
+}
+function Record(key, value, options) {
+  const keyValueCombiner = options?.keyValueCombiner?.decode || options?.keyValueCombiner?.encode ? new KeyValueCombiner(options.keyValueCombiner.decode, options.keyValueCombiner.encode) : undefined;
+  return make10(record(key.ast, value.ast, keyValueCombiner), {
+    key,
+    value
+  });
 }
 function makeTuple(ast, elements) {
   return make10(ast, {
@@ -23562,6 +23633,10 @@ var LogicalRunId = identifier2("LogicalRunId");
 var AttemptId = identifier2("AttemptId");
 var OperationHash = identifier2("OperationHash");
 var ExecutionTopologyHash = identifier2("ExecutionTopologyHash");
+var ExecutionScopeHash = identifier2("ExecutionScopeHash");
+var WorkerId = identifier2("WorkerId");
+var WorkerKeyFingerprint = identifier2("WorkerKeyFingerprint");
+var ProjectId = identifier2("ProjectId");
 var ExecutionReviewId = identifier2("ExecutionReviewId");
 var PublishReviewId = identifier2("PublishReviewId");
 var ReceiptId = identifier2("ReceiptId");
@@ -23574,6 +23649,7 @@ var WorkspaceRoot = String4.check(makeFilter2((value) => value.startsWith("/") ?
 
 // ../../src/model/run.ts
 var Reason = { reason: String4 };
+var optional = optionalKey2;
 var run2 = { runId: RunId, logicalRunId: LogicalRunId };
 var approval = {
   ...run2,
@@ -23584,6 +23660,11 @@ var approval = {
   topologyHash: ExecutionTopologyHash
 };
 var checkpoint = { checkpointId: CheckpointId };
+var dispatchEvidence = {
+  clientReconciliationKey: optional(NonEmptyString),
+  targetCoordinates: optional(NonEmptyString),
+  subjectDigest: optional(Digest)
+};
 var progress = { progress: ArraySchema(suspend3(() => CheckpointState)) };
 var resolution = {
   operator: NonEmptyString,
@@ -23592,7 +23673,27 @@ var resolution = {
 };
 
 class ExecutionScope extends Class3("ExecutionScope")({
-  operationIds: ArraySchema(OperationId)
+  operationIds: ArraySchema(OperationId),
+  workerId: optionalKey2(WorkerId),
+  scopeHash: optional(ExecutionScopeHash),
+  ownedOperationHashes: optional(ArraySchema(OperationHash)),
+  prerequisiteFactHashes: optional(ArraySchema(OperationHash))
+}) {
+}
+
+class WorkerRegistration extends Class3("WorkerRegistration")({
+  workerId: WorkerId,
+  publicKey: NonEmptyString,
+  workerKeyFingerprint: WorkerKeyFingerprint,
+  scopeHash: ExecutionScopeHash,
+  ownedOperationHashes: ArraySchema(OperationHash),
+  prerequisiteFactHashes: ArraySchema(OperationHash)
+}) {
+}
+
+class ExecutionTopology extends Class3("ExecutionTopology")({
+  planId: PlanId,
+  partitions: ArraySchema(WorkerRegistration)
 }) {
 }
 
@@ -23610,6 +23711,31 @@ class PublishApprovalReceipt extends Class3("PublishApprovalReceipt")({
 }) {
 }
 
+class SignedAuthorizationReceipt extends Class3("SignedAuthorizationReceipt")({
+  signerWorkerId: WorkerId,
+  planId: PlanId,
+  logicalRunId: LogicalRunId,
+  scopeHash: ExecutionScopeHash,
+  topologyHash: ExecutionTopologyHash,
+  operationHash: OperationHash,
+  attemptId: AttemptId,
+  purpose: Literals(["execute", "publish"]),
+  reviewer: NonEmptyString,
+  reviewChallengeId: NonEmptyString,
+  nonce: ApprovalNonce,
+  issuedAt: NonEmptyString,
+  materialBindingHashes: ArraySchema(Digest),
+  signature: NonEmptyString
+}) {
+}
+
+class ImportedFact extends Class3("ImportedFact")({
+  workerId: WorkerId,
+  revision: Number5,
+  attestationDigest: Digest
+}) {
+}
+
 class MaterializedOutput extends Class3("MaterializedOutput")({
   outputId: OutputId,
   snapshotId: SnapshotId,
@@ -23620,21 +23746,30 @@ class MaterializedOutput extends Class3("MaterializedOutput")({
 }) {
 }
 
+class ObservedSubject extends Class3("ObservedSubject")({
+  outputId: OutputId,
+  snapshotId: SnapshotId,
+  digest: Digest,
+  size: Number5
+}) {
+}
 class CheckpointPending extends TaggedClass()("CheckpointPending", checkpoint) {
 }
 
 class CheckpointDispatching extends TaggedClass()("CheckpointDispatching", {
   ...checkpoint,
   attemptId: AttemptId,
+  ...dispatchEvidence,
   clientReconciliationKey: NonEmptyString
 }) {
 }
 
-class CheckpointPassed extends TaggedClass()("CheckpointPassed", { ...checkpoint, observedOutcome: String4 }) {
+class CheckpointPassed extends TaggedClass()("CheckpointPassed", { ...checkpoint, ...dispatchEvidence, observedOutcome: String4 }) {
 }
 
 class CheckpointFailedBeforeCommit extends TaggedClass()("CheckpointFailedBeforeCommit", {
   ...checkpoint,
+  ...dispatchEvidence,
   failure: String4,
   retryable: Boolean3
 }) {
@@ -23642,6 +23777,7 @@ class CheckpointFailedBeforeCommit extends TaggedClass()("CheckpointFailedBefore
 
 class CheckpointUnknown extends TaggedClass()("CheckpointUnknown", {
   ...checkpoint,
+  ...dispatchEvidence,
   clientReconciliationKey: NonEmptyString,
   observedRemoteId: optionalKey2(NonEmptyString),
   failure: String4
@@ -23708,7 +23844,9 @@ var AttemptState = Union2([
 class AttemptRecord extends Class3("AttemptRecord")({
   attemptId: AttemptId,
   executionReceipt: ExecutionApprovalReceipt,
-  publishReceipt: optionalKey2(PublishApprovalReceipt),
+  publishReceipt: optional(PublishApprovalReceipt),
+  authorizationReceipt: optional(SignedAuthorizationReceipt),
+  importedFrom: optional(ImportedFact),
   state: AttemptState
 }) {
 }
@@ -23721,8 +23859,10 @@ class OperationRunRecord extends Class3("OperationRunRecord")({
 }
 
 class LedgerAttestation extends Class3("LedgerAttestation")({
+  workerId: WorkerId,
   topologyHash: ExecutionTopologyHash,
-  signerFingerprint: NonEmptyString,
+  signerFingerprint: WorkerKeyFingerprint,
+  digest: Digest,
   signature: NonEmptyString
 }) {
 }
@@ -23738,7 +23878,8 @@ class RunLedger extends Class3("RunLedger")({
   executionTopologyHash: ExecutionTopologyHash,
   revision: Number5,
   operations: ArraySchema(OperationRunRecord),
-  attestation: optionalKey2(LedgerAttestation)
+  topology: optional(ExecutionTopology),
+  attestation: optional(LedgerAttestation)
 }) {
 }
 
@@ -24017,7 +24158,12 @@ class OutputDeclaration extends Class3("OutputDeclaration")({
     "package",
     "wheel",
     "checksum-file",
-    "catalog-file"
+    "catalog-file",
+    "container-metadata",
+    "sbom",
+    "signature",
+    "notarized",
+    "attestation"
   ]),
   provenance: optionalKey2(Literals(["build", "import", "process", "catalog", "internal"])),
   platform: optionalKey2(Struct({
@@ -24100,6 +24246,16 @@ class HttpRead extends TaggedClass()("HttpRead", {
 }) {
 }
 
+class ReviewedNoteTransform extends TaggedClass()("ReviewedNoteTransform", {
+  ...row,
+  profileId: Literal2("changelog.reviewed-transform/v1"),
+  policyDigest: NonEmptyString,
+  maximumOutputBytes: Number5,
+  credential: ReadCredential,
+  contractFixtureId: Literal2("contract.changelog.reviewed-transform/v1")
+}) {
+}
+
 class HttpPublish extends TaggedClass()("HttpPublish", {
   ...row,
   method: Literals(["POST", "PUT", "PATCH", "DELETE"]),
@@ -24152,6 +24308,80 @@ class PackageRegistryRelease extends TaggedClass()("PackageRegistryRelease", {
 }) {
 }
 
+class PackageStoreTarget extends Class3("PackageStoreTarget")({
+  name: NonEmptyString,
+  channel: optionalKey2(NonEmptyString),
+  version: optionalKey2(NonEmptyString)
+}) {
+}
+
+class PackageStorePublish extends TaggedClass()("PackageStorePublish", {
+  ...row,
+  profileId: Literals(["package.store-snap.v1", "package.store-chocolatey.v1"]),
+  target: PackageStoreTarget,
+  credential: PublishCredential,
+  contractFixtureId: NonEmptyString
+}) {
+}
+var SupplyChainVariant = Literals([
+  "RegistryImage",
+  "RegistryManifest",
+  "RegistrySignature",
+  "CredentialedArtifactSignature",
+  "AppleNotarization",
+  "RemoteAttestation"
+]);
+
+class SupplyChainPublish extends TaggedClass()("SupplyChainPublish", {
+  ...row,
+  variant: SupplyChainVariant,
+  profileId: ProfileId,
+  target: Record(String4, NonEmptyString),
+  credential: PublishCredential,
+  contractFixtureId: NonEmptyString
+}) {
+}
+var ProviderVariant = Literals([
+  "ForgeRelease",
+  "ForgeCatalogPullRequest",
+  "MilestoneClose",
+  "ObjectStorePublish",
+  "GenericHttp",
+  "RepositoryPublish",
+  "RegistryMetadata"
+]);
+
+class ProviderPublish extends TaggedClass()("ProviderPublish", {
+  ...row,
+  profileId: ProfileId,
+  variant: ProviderVariant,
+  target: Record(String4, NonEmptyString),
+  options: Record(String4, Union2([String4, Boolean3])),
+  dnsScope: Literals(["PublicOnly", "PrivateNetwork"]),
+  checkpoints: NonEmptyArray(CheckpointId),
+  credential: PublishCredential,
+  contractFixtureId: NonEmptyString
+}) {
+}
+
+class AnnouncementPublish extends TaggedClass()("AnnouncementPublish", {
+  ...row,
+  profileId: ProfileId,
+  target: Struct({ destination: NonEmptyString }),
+  credential: PublishCredential,
+  contractFixtureId: NonEmptyString
+}) {
+}
+
+class SmtpPublish extends TaggedClass()("SmtpPublish", {
+  ...row,
+  profileId: Literal2("announce.smtp/v1"),
+  target: Struct({ destination: NonEmptyString }),
+  credential: PublishCredential,
+  contractFixtureId: Literal2("contract.announce.smtp/v1")
+}) {
+}
+
 class OpaquePublish extends TaggedClass()("OpaquePublish", {
   ...row,
   argv: NonEmptyArray(String4),
@@ -24166,9 +24396,18 @@ class OpaquePublish extends TaggedClass()("OpaquePublish", {
 var BuildOp = Union2([Check, Write, Exec]);
 var ProcessOp = Union2([Check, Write, Pack, DigestOp, Exec]);
 var CatalogOp = Union2([Check, Write, Exec]);
-var ValidateOp = Union2([Check, Exec, HttpRead]);
-var PublishOp = Union2([Exec, HttpPublish, ForgeRelease, PackageRegistryRelease, OpaquePublish]);
-var AnnounceOp = Union2([HttpPublish]);
+var ValidateOp = Union2([Check, Exec, HttpRead, ReviewedNoteTransform]);
+var PublishOp = Union2([
+  Exec,
+  HttpPublish,
+  ForgeRelease,
+  PackageRegistryRelease,
+  PackageStorePublish,
+  SupplyChainPublish,
+  ProviderPublish,
+  OpaquePublish
+]);
+var AnnounceOp = Union2([HttpPublish, AnnouncementPublish, SmtpPublish]);
 var VerifyOp = Union2([Check, HttpRead]);
 var Operation = Union2([
   Check,
@@ -24177,9 +24416,15 @@ var Operation = Union2([
   DigestOp,
   Exec,
   HttpRead,
+  ReviewedNoteTransform,
   HttpPublish,
   ForgeRelease,
   PackageRegistryRelease,
+  AnnouncementPublish,
+  SmtpPublish,
+  PackageStorePublish,
+  SupplyChainPublish,
+  ProviderPublish,
   OpaquePublish
 ]);
 var operationAuthority = (operation) => {
@@ -24193,10 +24438,16 @@ var operationAuthority = (operation) => {
     case "Exec":
       return "LocalExec";
     case "HttpRead":
+    case "ReviewedNoteTransform":
       return "RemoteRead";
     case "HttpPublish":
     case "ForgeRelease":
     case "PackageRegistryRelease":
+    case "PackageStorePublish":
+    case "SupplyChainPublish":
+    case "ProviderPublish":
+    case "AnnouncementPublish":
+    case "SmtpPublish":
     case "OpaquePublish":
       return "RemotePublish";
   }
@@ -24270,10 +24521,11 @@ var credentialFailure = (entries) => {
   const read = new Set;
   const publish = new Set;
   for (const { operation } of entries) {
-    if (operation._tag === "HttpRead" && operation.credential !== undefined) {
+    if (operation._tag === "ReviewedNoteTransform")
       read.add(operation.credential.name);
-    }
-    if (operation._tag === "HttpPublish" || operation._tag === "ForgeRelease" || operation._tag === "PackageRegistryRelease" || operation._tag === "OpaquePublish") {
+    else if (operation._tag === "HttpRead" && operation.credential !== undefined)
+      read.add(operation.credential.name);
+    if (operation._tag === "HttpPublish" || operation._tag === "ForgeRelease" || operation._tag === "PackageRegistryRelease" || operation._tag === "PackageStorePublish" || operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" || operation._tag === "AnnouncementPublish" || operation._tag === "SmtpPublish" || operation._tag === "OpaquePublish") {
       publish.add(operation.credential.name);
     }
   }
@@ -24399,7 +24651,7 @@ var mintExecutionReceipt = (accepted, scope2, topologyHash, confirmation) => {
     fail7("Execution confirmation does not match review.");
   if (confirmation.reviewer.length === 0 || confirmation.approvedAt.length === 0)
     fail7("Execution confirmation lacks reviewer or time.");
-  const logicalRunId = deriveLogicalRunId(accepted, scope2, topologyHash, confirmation.newRunReason === undefined ? undefined : confirmation.approvalNonce);
+  const logicalRunId = confirmation.logicalRunId ?? deriveLogicalRunId(accepted, scope2, topologyHash, confirmation.newRunReason === undefined ? undefined : confirmation.approvalNonce);
   const body = {
     reviewId,
     runId: confirmation.runId,
@@ -24420,6 +24672,11 @@ var publishReviewId = (accepted, executionReview, scope2, materials) => {
     "HttpPublish",
     "ForgeRelease",
     "PackageRegistryRelease",
+    "PackageStorePublish",
+    "SupplyChainPublish",
+    "ProviderPublish",
+    "AnnouncementPublish",
+    "SmtpPublish",
     "OpaquePublish"
   ].includes(operation._tag)).map(({ operation }) => String(operation.id)));
   const operations = selected(accepted, scope2).filter(({ operationId }) => publishIds.has(operationId));
@@ -24481,6 +24738,38 @@ var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHa
   checkpointId,
   target,
   materials: materials.map((item) => [item.outputId, item.digest, item.size])
+});
+var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials) => hash2("ts-release/package-store-reconcile/v1", {
+  planId,
+  logicalRunId,
+  scopeHash: scope2.scopeHash ?? hash2("ts-release/execution-scope/v1", {
+    planId,
+    operationIds: [...scope2.operationIds].map(String).sort()
+  }),
+  executionTopologyHash: topologyHash,
+  operationHash,
+  checkpointId,
+  profileId,
+  targetCoordinates: {
+    name: targetCoordinates.name,
+    ...targetCoordinates.channel === undefined ? {} : { channel: targetCoordinates.channel },
+    ...targetCoordinates.version === undefined ? {} : { version: targetCoordinates.version }
+  },
+  materialBindingHashes: materials.map((item) => item.digest).sort()
+});
+var supplyChainReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials, domain = "supply-chain") => hash2(`ts-release/${domain}-reconcile/v1`, {
+  planId,
+  logicalRunId,
+  scopeHash: scope2.scopeHash ?? hash2("ts-release/execution-scope/v1", {
+    planId,
+    operationIds: [...scope2.operationIds].map(String).sort()
+  }),
+  executionTopologyHash: topologyHash,
+  operationHash,
+  checkpointId,
+  profileId,
+  immutableTargetCoordinates: targetCoordinates,
+  materialBindingHashes: materials.map((item) => item.digest).sort()
 });
 
 // ../../src/apply/store.ts
@@ -24606,8 +24895,91 @@ var makeFileRunStore = () => ({
 });
 var FileRunStoreLayer = succeed4(RunStore)({ ...makeFileRunStore() });
 
+// ../../src/recipes/projects.ts
+class ProjectExecution extends Class3("ProjectExecution")({
+  workers: NonEmptyArray(NonEmptyString),
+  through: Stage
+}) {
+}
+
+class ProjectScope extends Class3("ProjectScope")({
+  id: ProjectId,
+  root: SafeRelativePath,
+  tagPrefix: NonEmptyString,
+  changelogScope: optionalKey2(SafeRelativePath),
+  execution: ProjectExecution
+}) {
+}
+var qualify = (value, key, project) => {
+  if (typeof value === "string") {
+    if (key === "id" || key === "outputId" || key === "inputs")
+      return `${project.id}:${value}`;
+    if (key === "tag")
+      return `${project.tagPrefix}${value}`;
+    if (["path", "cwd", "packagePath", "artifactPaths"].includes(key) && project.root !== ".")
+      return value === "." ? project.root : `${project.root}/${value}`;
+    return value;
+  }
+  if (Array.isArray(value))
+    return value.map((item) => qualify(item, key, project));
+  if (typeof value !== "object" || value === null)
+    return value;
+  return Object.fromEntries(Object.entries(value).map(([childKey, item]) => [childKey, qualify(item, childKey, project)]));
+};
+var lowerProjects = (stages, projects) => {
+  const roots = projects.map((project) => String(project.root));
+  if (new Set(projects.map((project) => String(project.id))).size !== projects.length || roots.some((root, index) => roots.some((other, otherIndex) => index !== otherIndex && (root === other || root.startsWith(`${other}/`) || other.startsWith(`${root}/`)))))
+    throw new Error("Project ids and roots must be unique and nonoverlapping.");
+  const encoded = encodeSync2(ReleaseStages)(stages);
+  return decodeUnknownSync(ReleaseStages)(Object.fromEntries(Object.entries(encoded).map(([stage, operations]) => [
+    stage,
+    projects.flatMap((project) => operations.map((operation) => qualify(operation, "", project)))
+  ])));
+};
+
+// ../../src/recipes/selection.ts
+var formats = Literals(["archive", "file", "directory", "oci-image", "executable", "binary"]);
+
+class CandidateSelection extends Class3("CandidateSelection")({
+  ids: optionalKey2(NonEmptyArray(OutputId)),
+  formats: optionalKey2(NonEmptyArray(formats)),
+  pathPrefixes: optionalKey2(NonEmptyArray(SafeRelativePath))
+}) {
+}
+
+// ../../src/recipes/environment.ts
+var PublicEnvironmentName = NonEmptyString.check(makeFilter2((value) => /(?:token|secret|password|private|credential)/iu.test(value) ? "Inherited environment names must be explicitly non-secret." : undefined));
+var EnvironmentValue = Union2([
+  String4,
+  Struct({ inherit: PublicEnvironmentName })
+]);
+var CandidateEnvironment = Record(NonEmptyString, EnvironmentValue);
+var renderEnvironment = (value) => typeof value === "string" ? value : `$${value.inherit}`;
+
+// ../../src/recipes/git-policy.ts
+class GitPlanningFacts extends Class3("GitPlanningFacts")({
+  head: NonEmptyString,
+  tags: ArraySchema(NonEmptyString)
+}) {
+}
+
+class CandidateGitPolicy extends Class3("CandidateGitPolicy")({
+  tagPrefix: optionalKey2(String4),
+  tagSort: optionalKey2(Literal2("smart-semver")),
+  include: optionalKey2(ArraySchema(NonEmptyString)),
+  exclude: optionalKey2(ArraySchema(NonEmptyString))
+}) {
+}
+
+// ../../src/recipes/nightly.ts
+class CandidateNightly extends Class3("CandidateNightly")({
+  replace: Literal2(true),
+  tag: NonEmptyString
+}) {
+}
+
 // ../../src/recipes/config.ts
-var optional = optionalKey2;
+var optional2 = optionalKey2;
 var nonempty = NonEmptyString;
 var target = Literals([
   "linux-x64",
@@ -24627,41 +24999,41 @@ var arch2 = Literals(["x64", "arm64"]);
 
 class CandidateProject extends Class3("CandidateProject")({
   name: NonEmptyName,
-  packageName: optional(nonempty),
+  packageName: optional2(nonempty),
   version: Version,
-  repository: optional(nonempty),
-  packagePath: optional(SafeRelativePath),
-  commit: optional(nonempty),
+  repository: optional2(nonempty),
+  packagePath: optional2(SafeRelativePath),
+  commit: optional2(nonempty),
   tag: NonEmptyName,
-  tagTemplate: optional(nonempty),
-  notes: optional(String4),
-  description: optional(nonempty),
-  summary: optional(nonempty),
-  homepage: optional(nonempty),
-  license: optional(nonempty)
+  tagTemplate: optional2(nonempty),
+  notes: optional2(String4),
+  description: optional2(nonempty),
+  summary: optional2(nonempty),
+  homepage: optional2(nonempty),
+  license: optional2(nonempty)
 }) {
 }
 
 class CandidatePlatform extends Class3("CandidatePlatform")({
   os: os5,
   arch: arch2,
-  libc: optional(Literals(["glibc", "musl"])),
-  binaryName: optional(nonempty),
-  executableExtension: optional(nonempty),
-  installPath: optional(nonempty),
-  targetTriple: optional(nonempty)
+  libc: optional2(Literals(["glibc", "musl"])),
+  binaryName: optional2(nonempty),
+  executableExtension: optional2(nonempty),
+  installPath: optional2(nonempty),
+  targetTriple: optional2(nonempty)
 }) {
 }
 
 class CandidateArtifact extends Class3("CandidateArtifact")({
   id: OutputId,
   path: SafeRelativePath,
-  format: Literals(["tarball", "zip", "file", "directory", "oci-image", "executable"]),
-  checksum: optional(Struct({
+  format: Literals(["tarball", "zip", "file", "directory", "oci-image", "executable", "binary"]),
+  checksum: optional2(Struct({
     algorithm: Literals(["sha256", "sha512"]),
     value: String4
   })),
-  variant: optional(CandidatePlatform)
+  variant: optional2(CandidatePlatform)
 }) {
 }
 var checksumName = SafeRelativePath.check(makeFilter2((value) => {
@@ -24670,25 +25042,25 @@ var checksumName = SafeRelativePath.check(makeFilter2((value) => {
 }));
 
 class CandidateChecksum extends Class3("CandidateChecksum")({
-  algorithm: optional(Literals(["sha256", "sha512"])),
-  nameTemplate: optional(checksumName)
+  algorithm: optional2(Literals(["sha256", "sha512"])),
+  nameTemplate: optional2(checksumName)
 }) {
 }
 var build = {
-  id: optional(String4),
+  id: optional2(String4),
   targets: ArraySchema(target),
-  output: optional(SafeRelativePath),
-  binary: optional(String4)
+  output: optional2(SafeRelativePath),
+  binary: optional2(String4)
 };
 
 class CandidateBunBuild extends Class3("CandidateBunBuild")({
   ...build,
   builder: Literal2("bun"),
   entry: SafeRelativePath,
-  binaryName: optional(String4),
-  installPath: optional(String4),
-  cpu: optional(Literals(["baseline", "modern"])),
-  minify: optional(Boolean3)
+  binaryName: optional2(String4),
+  installPath: optional2(String4),
+  cpu: optional2(Literals(["baseline", "modern"])),
+  minify: optional2(Boolean3)
 }) {
 }
 
@@ -24706,11 +25078,20 @@ class CandidatePrebuiltBuild extends Class3("CandidatePrebuiltBuild")({
   output: SafeRelativePath
 }) {
 }
-var CandidateBuild = Union2([
-  CandidateBunBuild,
-  CandidateCommandBuild,
-  CandidatePrebuiltBuild
-]);
+
+class CandidateProfileOutput extends Class3("CandidateProfileOutput")({ id: OutputId, path: SafeRelativePath }) {
+}
+
+class CandidateProfileBuild extends Class3("CandidateProfileBuild")({
+  builder: Literal2("profile"),
+  id: nonempty,
+  profileId: ProfileId,
+  inputs: ArraySchema(OutputId),
+  outputs: NonEmptyArray(CandidateProfileOutput),
+  options: Record(String4, Union2([String4, Number5, Boolean3]))
+}) {
+}
+var CandidateBuild = Union2([CandidateBunBuild, CandidateCommandBuild, CandidatePrebuiltBuild, CandidateProfileBuild]);
 
 class CandidateWheelBinary extends Class3("CandidateWheelBinary")({
   os: os5,
@@ -24739,17 +25120,17 @@ class CandidateWheelBuild extends Class3("CandidateWheelBuild")({
 var format2 = Literals(["tar.gz", "zip"]);
 
 class CandidateArchive extends Class3("CandidateArchive")({
-  id: optional(nonempty),
-  ids: optional(ArraySchema(nonempty)),
-  nameTemplate: optional(nonempty),
-  formats: optional(ArraySchema(format2)),
-  formatOverrides: optional(Struct({
-    linux: optional(ArraySchema(format2)),
-    darwin: optional(ArraySchema(format2)),
-    windows: optional(ArraySchema(format2))
+  id: optional2(nonempty),
+  ids: optional2(ArraySchema(nonempty)),
+  nameTemplate: optional2(nonempty),
+  formats: optional2(ArraySchema(format2)),
+  formatOverrides: optional2(Struct({
+    linux: optional2(ArraySchema(format2)),
+    darwin: optional2(ArraySchema(format2)),
+    windows: optional2(ArraySchema(format2))
   })),
-  files: optional(ArraySchema(nonempty)),
-  wrapInDirectory: optional(Union2([Boolean3, String4]))
+  files: optional2(ArraySchema(nonempty)),
+  wrapInDirectory: optional2(Union2([Boolean3, String4]))
 }) {
 }
 
@@ -24763,21 +25144,21 @@ class CandidateCatalog extends Class3("CandidateCatalog")({
   id: nonempty,
   repository: String4,
   file: SafeRelativePath,
-  directory: optional(SafeRelativePath),
+  directory: optional2(SafeRelativePath),
   content: Union2([
     String4,
     ArraySchema(Union2([String4, CandidateContentHole]))
   ]),
-  commitMessage: optional(String4),
-  submit: optional(submit),
-  validate: optional(command)
+  commitMessage: optional2(String4),
+  submit: optional2(submit),
+  validate: optional2(command)
 }) {
 }
 var hook = {
   id: nonempty,
   run: NonEmptyArray(nonempty),
-  cwd: optional(SafeRelativePath),
-  env: optional(ArraySchema(nonempty))
+  cwd: optional2(SafeRelativePath),
+  env: optional2(ArraySchema(nonempty))
 };
 
 class CandidateBeforeHook extends Class3("CandidateBeforeHook")(hook) {
@@ -24785,106 +25166,252 @@ class CandidateBeforeHook extends Class3("CandidateBeforeHook")(hook) {
 
 class CandidateRiskHook extends Class3("CandidateRiskHook")({
   ...hook,
-  risk: optional(risk)
+  risk: optional2(risk),
+  ids: optional2(NonEmptyArray(OutputId))
+}) {
+}
+
+class CandidateBeforePublish extends Class3("CandidateBeforePublish")({
+  kind: Literals(["check", "transform"]),
+  run: NonEmptyArray(nonempty)
 }) {
 }
 
 class CandidateHooks extends Class3("CandidateHooks")({
-  before: optional(ArraySchema(CandidateBeforeHook)),
-  after: optional(ArraySchema(CandidateRiskHook))
+  before: optional2(ArraySchema(CandidateBeforeHook)),
+  after: optional2(ArraySchema(CandidateRiskHook)),
+  beforePublish: optional2(ArraySchema(CandidateBeforePublish))
 }) {
 }
-var trusted = {
-  provider: optional(Literal2("github-actions")),
-  workflow: optional(nonempty)
-};
+var trusted = { provider: optional2(Literal2("github-actions")), workflow: optional2(nonempty) };
 
 class CandidateNpmPublish extends Class3("CandidateNpmPublish")({
-  registry: optional(String4),
-  packageName: optional(nonempty),
-  packagePath: optional(SafeRelativePath),
-  tokenEnv: optional(String4),
-  trustedPublishing: optional(Struct({
-    ...trusted,
-    verifyPackageExists: optional(Boolean3)
-  })),
-  access: optional(Literals(["public", "restricted"])),
-  provenance: optional(Boolean3)
+  registry: optional2(String4),
+  packageName: optional2(nonempty),
+  packagePath: optional2(SafeRelativePath),
+  tokenEnv: optional2(String4),
+  trustedPublishing: optional2(Struct({ ...trusted, verifyPackageExists: optional2(Boolean3) })),
+  access: optional2(Literals(["public", "restricted"])),
+  provenance: optional2(Boolean3)
 }) {
 }
 
 class CandidatePyPiPublish extends Class3("CandidatePyPiPublish")({
-  repositoryUrl: optional(String4),
-  pythonExecutable: optional(String4),
-  trustedPublishing: optional(Struct({
-    ...trusted,
-    publisherConfigured: optional(Literal2(true))
-  })),
-  ids: optional(NonEmptyArray(OutputId))
+  repositoryUrl: optional2(String4),
+  pythonExecutable: optional2(String4),
+  trustedPublishing: optional2(Struct({ ...trusted, publisherConfigured: optional2(Literal2(true)) })),
+  ids: optional2(NonEmptyArray(OutputId))
 }) {
 }
 
 class CandidateGitHubPublish extends Class3("CandidateGitHubPublish")({
-  repository: optional(String4),
-  tokenEnv: optional(String4),
-  draft: optional(Boolean3),
-  prerelease: optional(Union2([Boolean3, Literal2("auto")]))
+  repository: optional2(String4),
+  tokenEnv: optional2(String4),
+  draft: optional2(Boolean3),
+  prerelease: optional2(Union2([Boolean3, Literal2("auto")]))
 }) {
 }
 var preset = {
   repository: String4,
-  ids: optional(NonEmptyArray(OutputId)),
-  url: optional(String4),
-  submit: optional(submit),
-  validate: optional(command)
+  ids: optional2(NonEmptyArray(OutputId)),
+  url: optional2(String4),
+  submit: optional2(submit),
+  validate: optional2(command)
 };
 
 class CandidateHomebrew extends Class3("CandidateHomebrew")({
   ...preset,
-  formulaName: optional(String4),
-  formulaPath: optional(SafeRelativePath),
-  tapDirectory: optional(SafeRelativePath),
-  installPath: optional(String4)
+  formulaName: optional2(String4),
+  formulaPath: optional2(SafeRelativePath),
+  tapDirectory: optional2(SafeRelativePath),
+  installPath: optional2(String4)
 }) {
 }
 
 class CandidateScoop extends Class3("CandidateScoop")({
   ...preset,
-  manifestName: optional(String4),
-  manifestPath: optional(SafeRelativePath),
-  bucketDirectory: optional(SafeRelativePath),
-  bin: optional(String4)
+  manifestName: optional2(String4),
+  manifestPath: optional2(SafeRelativePath),
+  bucketDirectory: optional2(SafeRelativePath),
+  bin: optional2(String4)
+}) {
+}
+
+class CandidatePackageStore extends Class3("CandidatePackageStore")({
+  profileId: Literals(["package.store-snap.v1", "package.store-chocolatey.v1"]),
+  input: OutputId,
+  target: Struct({
+    name: nonempty,
+    channel: optional2(nonempty),
+    version: optional2(nonempty)
+  })
+}) {
+}
+
+class CandidateSupplyOutput extends Class3("CandidateSupplyOutput")({
+  id: OutputId,
+  path: SafeRelativePath
+}) {
+}
+var supply = {
+  id: nonempty,
+  inputs: NonEmptyArray(OutputId),
+  outputs: NonEmptyArray(CandidateSupplyOutput)
+};
+
+class CandidateSupplyProfile extends Class3("CandidateSupplyProfile")({
+  ...supply,
+  kind: Literal2("profile"),
+  profileId: ProfileId,
+  target: Record(String4, nonempty)
+}) {
+}
+
+class CandidateSupplyMeasure extends Class3("CandidateSupplyMeasure")({
+  ...supply,
+  kind: Literal2("measure-size")
+}) {
+}
+var CandidateSupplyAction = Union2([CandidateSupplyProfile, CandidateSupplyMeasure]);
+var providerId = Literals([
+  "forge.gitlab-release/v1",
+  "forge.gitea-release/v1",
+  "forge.gitlab-catalog-pr/v1",
+  "forge.gitea-catalog-pr/v1",
+  "forge.milestone-close/v1",
+  "object.s3-put/v1",
+  "object.gcs-put/v1",
+  "object.azure-blob-put/v1",
+  "repository.artifactory-upload/v1",
+  "repository.cloudsmith-upload/v1",
+  "repository.gemfury-upload/v1",
+  "registry.dockerhub-description/v1",
+  "registry.npm-publish/v1"
+]);
+var scope2 = Literals(["PublicOnly", "PrivateNetwork"]);
+var checkbox = Literals(["preserve", "check"]);
+var providerOptions = Struct({
+  baseUrl: optional2(nonempty),
+  dnsScope: optional2(scope2),
+  contentType: optional2(nonempty),
+  draft: optional2(Boolean3),
+  prerelease: optional2(Boolean3),
+  title: optional2(nonempty),
+  checkboxPolicy: optional2(checkbox),
+  summary: optional2(nonempty),
+  description: optional2(nonempty),
+  wrapper: optional2(Literal2(true)),
+  access: optional2(Literals(["public", "restricted"])),
+  provenance: optional2(Boolean3)
+});
+var CandidateNamedProvider = Struct({
+  id: nonempty,
+  profileId: providerId,
+  ids: ArraySchema(OutputId),
+  destination: Record(String4, nonempty),
+  credential: nonempty,
+  options: providerOptions
+});
+var CandidateGenericProvider = Struct({
+  id: nonempty,
+  profileId: Literal2("http.generic-upload/v1"),
+  ids: NonEmptyArray(OutputId),
+  endpoint: nonempty,
+  method: Literals(["PATCH", "POST", "PUT"]),
+  headerNames: ArraySchema(nonempty),
+  bodyMapping: Literal2("raw-artifact"),
+  credential: nonempty,
+  dnsScope: scope2
+});
+var CandidateProvider = Union2([CandidateNamedProvider, CandidateGenericProvider, Struct({
+  id: nonempty,
+  profileId: Literal2("policy.catalog-checkbox/v1"),
+  ids: ArraySchema(OutputId),
+  destination: Struct({ file: SafeRelativePath }),
+  options: Struct({ checkboxPolicy: checkbox })
+})]);
+
+class CandidateChangelogGroup extends Class3("CandidateChangelogGroup")({
+  title: nonempty,
+  prefix: SafeRelativePath,
+  subgroup: optional2(nonempty),
+  divider: optional2(Boolean3)
+}) {
+}
+
+class CandidateChangelog extends Class3("CandidateChangelog")({
+  mode: Literals(["deterministic", "reviewed-transform"]),
+  profileId: Literals(["changelog.local/v1", "changelog.reviewed-transform/v1"]),
+  pathFilters: ArraySchema(SafeRelativePath),
+  groups: ArraySchema(CandidateChangelogGroup)
+}) {
+}
+var announcementId = Literals([
+  "announce.index/v1",
+  "announce.bluesky/v1",
+  "announce.discord/v1",
+  "announce.discourse/v1",
+  "announce.linkedin/v1",
+  "announce.mastodon/v1",
+  "announce.mattermost/v1",
+  "announce.opencollective/v1",
+  "announce.reddit/v1",
+  "announce.slack/v1",
+  "announce.smtp/v1",
+  "announce.teams/v1",
+  "announce.telegram/v1",
+  "announce.x/v1",
+  "announce.webhook/v1"
+]);
+
+class CandidateAnnouncement extends Class3("CandidateAnnouncement")({
+  id: nonempty,
+  profileId: announcementId,
+  destination: nonempty,
+  credentialEnv: nonempty
 }) {
 }
 
 class CandidatePublish extends Class3("CandidatePublish")({
-  npm: optional(CandidateNpmPublish),
-  github: optional(CandidateGitHubPublish),
-  homebrew: optional(CandidateHomebrew),
-  scoop: optional(CandidateScoop),
-  pypi: optional(CandidatePyPiPublish),
-  custom: optional(ArraySchema(CandidateRiskHook))
+  npm: optional2(CandidateNpmPublish),
+  github: optional2(CandidateGitHubPublish),
+  homebrew: optional2(CandidateHomebrew),
+  scoop: optional2(CandidateScoop),
+  pypi: optional2(CandidatePyPiPublish),
+  custom: optional2(ArraySchema(CandidateRiskHook)),
+  packageStores: optional2(ArraySchema(CandidatePackageStore)),
+  providers: optional2(ArraySchema(CandidateProvider)),
+  changelog: optional2(CandidateChangelog),
+  announce: optional2(ArraySchema(CandidateAnnouncement)),
+  selection: optional2(CandidateSelection),
+  nightly: optional2(CandidateNightly)
 }) {
 }
 
 class CandidateConfig extends Class3("CandidateConfig")({
-  $schema: optional(String4),
+  $schema: optional2(String4),
   project: CandidateProject,
-  versionFrom: optional(Literals(["manifest", "git-tag"])),
-  builds: optional(ArraySchema(CandidateBuild)),
-  npmPackage: optional(Struct({ path: optional(SafeRelativePath) })),
-  pypiWheel: optional(CandidateWheelBuild),
-  artifacts: optional(ArraySchema(CandidateArtifact)),
-  archives: optional(ArraySchema(CandidateArchive)),
-  checksum: optional(CandidateChecksum),
-  catalogs: optional(ArraySchema(CandidateCatalog)),
-  hooks: optional(CandidateHooks),
+  environment: optional2(CandidateEnvironment),
+  git: optional2(CandidateGitPolicy),
+  projects: optional2(NonEmptyArray(ProjectScope)),
+  versionFrom: optional2(Literals(["manifest", "git-tag"])),
+  builds: optional2(ArraySchema(CandidateBuild)),
+  npmPackage: optional2(Struct({
+    path: optional2(SafeRelativePath)
+  })),
+  pypiWheel: optional2(CandidateWheelBuild),
+  artifacts: optional2(ArraySchema(CandidateArtifact)),
+  archives: optional2(ArraySchema(CandidateArchive)),
+  checksum: optional2(CandidateChecksum),
+  catalogs: optional2(ArraySchema(CandidateCatalog)),
+  hooks: optional2(CandidateHooks),
+  supplyChain: optional2(ArraySchema(CandidateSupplyAction)),
   publish: CandidatePublish,
-  retry: optional(Struct({ attempts: Number5, delayMillis: Number5 })),
-  evidence: optional(Union2([
-    SafeRelativePath,
-    Struct({ directory: SafeRelativePath })
-  ]))
+  retry: optional2(Struct({
+    attempts: Number5,
+    delayMillis: Number5
+  })),
+  evidence: optional2(Union2([SafeRelativePath, Struct({ directory: SafeRelativePath })]))
 }) {
 }
 
@@ -24933,6 +25460,7 @@ var emptyRows = () => ({
   catalog: [],
   validate: [],
   publish: [],
+  announce: [],
   verify: [],
   outputs: new Map
 });
@@ -24979,6 +25507,314 @@ var nonEmptyCommand = (value) => {
   return [first, ...rest];
 };
 
+// ../../src/recipes/announcement-profiles.ts
+var classification = {
+  beforeDispatch: "DefinitelyNotCommitted",
+  success: "DefinitelyCommitted",
+  rejection: "DefinitelyNotCommitted",
+  responseLoss: "PossiblyCommitted",
+  malformed: "Unclassifiable"
+};
+var httpProfile = (channel) => Object.freeze({
+  profileId: `announce.${channel}/v1`,
+  contractFixtureId: `contract.announce.${channel}/v1`,
+  provenance: "maintainer-product-decision",
+  checkpoints: ["message"],
+  contract: Object.freeze({
+    transport: "http",
+    protocolVersion: "ts-release-announcement-envelope/v1",
+    channel,
+    authentication: { variant: "bearer", credentialSlotPattern: "^[A-Z][A-Z0-9_]*$" },
+    request: {
+      method: "POST",
+      baseUrl: `https://${channel}.example.invalid`,
+      pathTemplate: "/v1/messages/{destination}",
+      headers: ["authorization", "content-type", "x-ts-release-key"],
+      bodySchema: "reviewed-note/v1",
+      reconciliationKeyLocation: "x-ts-release-key"
+    },
+    response: {
+      successSchema: "message-receipt/v1",
+      errorSchema: "announcement-error/v1",
+      successStatuses: [200, 201, 202, 204]
+    },
+    commitmentPoint: "decoded-success-response",
+    classification,
+    reconciliation: { supported: false, method: "NONE", pathTemplate: "none", equality: "manual-only" },
+    rateLimit: "definite-before-commit",
+    redirects: "disabled",
+    maximumPayloadBytes: 65536,
+    redaction: ["authorization"],
+    messageId: "ts-release/reconciliation-key"
+  })
+});
+var channels = [
+  "bluesky",
+  "discord",
+  "discourse",
+  "linkedin",
+  "mastodon",
+  "mattermost",
+  "opencollective",
+  "reddit",
+  "slack",
+  "teams",
+  "telegram",
+  "x",
+  "webhook"
+];
+var announcementHttpProfiles = channels.map(httpProfile);
+var smtpAnnouncementProfile = Object.freeze({
+  profileId: "announce.smtp/v1",
+  contractFixtureId: "contract.announce.smtp/v1",
+  provenance: "maintainer-product-decision",
+  checkpoints: ["message"],
+  contract: Object.freeze({
+    transport: "smtp",
+    protocolVersion: "smtp-envelope/v1",
+    channel: "smtp",
+    authentication: { variant: "username-password-slot", credentialSlotPattern: "^[A-Z][A-Z0-9_]*$" },
+    request: {
+      method: "SEND",
+      baseUrl: "smtp://smtp.example.invalid",
+      pathTemplate: "envelope/{destination}",
+      headers: ["message-id", "subject", "to", "x-ts-release-key"],
+      bodySchema: "reviewed-note-email/v1",
+      reconciliationKeyLocation: "message-id"
+    },
+    response: { successSchema: "smtp-accepted/v1", errorSchema: "smtp-error/v1", successStatuses: [250] },
+    commitmentPoint: "accepted-response",
+    classification,
+    reconciliation: { supported: false, method: "NONE", pathTemplate: "none", equality: "manual-only" },
+    rateLimit: "definite-before-commit",
+    redirects: "disabled",
+    maximumPayloadBytes: 65536,
+    redaction: ["authorization"],
+    messageId: "ts-release/reconciliation-key",
+    tls: "required"
+  })
+});
+
+// ../../src/recipes/current-announcement.ts
+var lowerCurrentAnnouncements = (config, rows) => {
+  const notes = rows.outputs.get("final-notes") ?? rows.outputs.get("release-notes");
+  for (const action of config.publish.announce ?? []) {
+    if (action.profileId === "announce.index/v1")
+      continue;
+    if (action.profileId === "announce.smtp/v1") {
+      if (notes === undefined)
+        throw new Error("Reviewed announcement notes are absent.");
+      rows.announce.push(SmtpPublish.make({
+        id: operationId(`announce:${action.id}`),
+        inputs: [notes.id],
+        outputs: [],
+        profileId: "announce.smtp/v1",
+        target: { destination: action.destination },
+        credential: PublishCredential.make({ name: credentialName(action.credentialEnv) }),
+        contractFixtureId: smtpAnnouncementProfile.contractFixtureId
+      }));
+      continue;
+    }
+    const profile = announcementHttpProfiles.find((item) => item.profileId === action.profileId);
+    if (profile === undefined || notes === undefined)
+      throw new Error("Announcement profile or reviewed notes are absent.");
+    rows.announce.push(AnnouncementPublish.make({
+      id: operationId(`announce:${action.id}`),
+      inputs: [notes.id],
+      outputs: [],
+      profileId: ProfileId.make(profile.profileId),
+      target: { destination: action.destination },
+      credential: PublishCredential.make({ name: credentialName(action.credentialEnv) }),
+      contractFixtureId: profile.contractFixtureId
+    }));
+  }
+};
+
+// ../../src/recipes/packages/tool.ts
+var localToolProfile = (input) => Object.freeze({
+  id: input.contractFixtureId,
+  profileId: input.profileId,
+  contract: Object.freeze({
+    kind: "local-tool",
+    hosts: input.hosts,
+    executable: input.executable,
+    invocation: Object.freeze({
+      argv: input.argv,
+      cwd: "workspace-root",
+      stdin: "none",
+      environmentNames: [],
+      authenticationClass: "none",
+      authorityClass: "local-only"
+    }),
+    inputSelectors: input.inputSelectors,
+    outputs: input.outputs,
+    validationOperation: input.validationOperation,
+    success: "exit-zero-and-all-declared-outputs-valid",
+    failureDecoding: "typed-local-tool-evidence/v1",
+    remoteMutation: false
+  })
+});
+var compactLocalToolProfile = (id, hosts, executable, argv, inputs, output, validationOperation) => localToolProfile({
+  profileId: `package.${id}.v1`,
+  contractFixtureId: `contract.package.${id}.v1`,
+  hosts,
+  executable,
+  argv,
+  inputSelectors: inputs,
+  outputs: [output],
+  validationOperation
+});
+
+// ../../src/recipes/packages/python.ts
+var hosts = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"];
+var outputs = [
+  { pathTemplate: "{outputDir}/{name}-{version}.tar.gz", type: "archive" },
+  { pathTemplate: "{outputDir}/{name}-{version}-py3-none-" + "an" + "y.whl", type: "wheel" }
+];
+var profile = (name, versionOutput, supportedRange, flag) => localToolProfile({
+  profileId: `package.${name}-build.v1`,
+  contractFixtureId: `contract.package.${name}-build.v1`,
+  hosts,
+  executable: { name, versionProbe: ["--version"], versionOutput, supportedRange },
+  argv: ["build", flag, "{outputDir}"],
+  inputSelectors: ["python-project"],
+  outputs,
+  validationOperation: "python-distribution-and-sha256/v1"
+});
+var pythonBuilderProfiles = [
+  profile("uv", "semver-second-token", ">=0.8.0 <0.9.0", "--out-dir"),
+  profile("poetry", "semver-parenthesized", ">=2.0.0 <3.0.0", "--output")
+];
+
+// ../../src/recipes/packages/universal-macho.ts
+var universalMachoProfile = localToolProfile({
+  profileId: "package.universal-macho.v1",
+  contractFixtureId: "contract.package.universal-macho.v1",
+  hosts: ["darwin-arm64", "darwin-x64"],
+  executable: {
+    name: "lipo",
+    versionProbe: ["-version"],
+    versionOutput: "apple-tool-version",
+    supportedRange: ">=1000.0.0 <2000.0.0"
+  },
+  argv: ["-create", "{input:arm64}", "{input:amd64}", "-output", "{output}"],
+  inputSelectors: ["macho-arm64", "macho-amd64"],
+  outputs: [{ pathTemplate: "{output}", type: "executable" }],
+  validationOperation: "universal-macho-two-architectures-and-sha256/v1"
+});
+
+// ../../src/recipes/packages/archive-generators.ts
+var unix = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64"];
+var profile2 = (id, tool, versionOutput, range, argv, inputs, type, validation, hosts2 = unix) => localToolProfile({
+  profileId: `package.${id}.v1`,
+  contractFixtureId: `contract.package.${id}.v1`,
+  hosts: hosts2,
+  executable: { name: tool, versionProbe: ["--version"], versionOutput, supportedRange: range },
+  argv,
+  inputSelectors: inputs,
+  outputs: [{ pathTemplate: "{output}", type }],
+  validationOperation: validation
+});
+var archiveGeneratorProfiles = [
+  profile2("nfpm", "nfpm", "semver-first-token", ">=2.40.0 <3.0.0", ["package", "--config", "{configPath}", "--packager", "{format}", "--target", "{output}"], ["package-root", "package-config"], "package", "package-container-and-sha256/v1"),
+  profile2("makeself", "makeself", "semver-first-token", ">=2.5.0 <3.0.0", ["--nox11", "{inputDir}", "{output}", "{label}", "./{entrypoint}"], ["package-root"], "executable", "nonempty-executable-and-sha256/v1"),
+  profile2("source-rpm", "rpmbuild", "semver-last-token", ">=4.18.0 <5.0.0", ["-bs", "{specPath}", "--define", "_topdir {topDir}"], ["source-archive", "rpm-spec"], "package", "source-rpm-and-sha256/v1", ["linux-arm64", "linux-x64"])
+];
+
+// ../../src/recipes/packages/store-packages.ts
+var linux = ["linux-arm64", "linux-x64"];
+var storePackageProfiles = [
+  compactLocalToolProfile("snap-build", linux, {
+    name: "snapcraft",
+    versionProbe: ["version"],
+    versionOutput: "semver-second-token",
+    supportedRange: ">=8.0.0 <9.0.0"
+  }, ["pack", "{inputDir}", "--output", "{output}"], ["snap-project"], { pathTemplate: "{output}.snap", type: "package" }, "squashfs-package-and-sha256/v1"),
+  compactLocalToolProfile("flatpak-build", linux, {
+    name: "flatpak-builder",
+    versionProbe: ["--version"],
+    versionOutput: "semver-second-token",
+    supportedRange: ">=1.4.0 <2.0.0"
+  }, ["--force-clean", "{buildDir}", "{manifestPath}"], ["flatpak-manifest", "package-root"], { pathTemplate: "{output}", type: "directory" }, "flatpak-repository-and-sha256/v1"),
+  compactLocalToolProfile("chocolatey-pack", ["windows-x64"], {
+    name: "choco",
+    versionProbe: ["--version"],
+    versionOutput: "semver-first-token",
+    supportedRange: ">=2.4.0 <3.0.0"
+  }, ["pack", "{specPath}", "--outputdirectory", "{outputDir}"], ["chocolatey-spec", "package-root"], { pathTemplate: "{outputDir}/{name}.{version}.nupkg", type: "package" }, "zip-nupkg-and-sha256/v1")
+];
+
+// ../../src/recipes/packages/apple.ts
+var hosts2 = ["darwin-arm64", "darwin-x64"];
+var appleInstallerProfiles = [
+  compactLocalToolProfile("macos-app", hosts2, {
+    name: "ditto",
+    versionProbe: ["--version"],
+    versionOutput: "apple-tool-version",
+    supportedRange: ">=1.0.0 <2.0.0"
+  }, ["--rsrc", "{inputDir}", "{output}"], ["application-root"], { pathTemplate: "{output}.app", type: "directory" }, "macos-app-bundle-and-sha256/v1"),
+  compactLocalToolProfile("dmg", hosts2, {
+    name: "hdiutil",
+    versionProbe: ["help"],
+    versionOutput: "apple-tool-version",
+    supportedRange: ">=1.0.0 <2.0.0"
+  }, ["create", "-srcfolder", "{inputDir}", "-format", "UDZO", "{output}"], ["application-root"], { pathTemplate: "{output}.dmg", type: "package" }, "udif-image-and-sha256/v1"),
+  compactLocalToolProfile("macos-pkg", hosts2, {
+    name: "pkgbuild",
+    versionProbe: ["--version"],
+    versionOutput: "apple-tool-version",
+    supportedRange: ">=1.0.0 <2.0.0"
+  }, ["--root", "{inputDir}", "--identifier", "{bundleId}", "--version", "{version}", "{output}"], ["package-root"], { pathTemplate: "{output}.pkg", type: "package" }, "xar-package-and-sha256/v1")
+];
+
+// ../../src/recipes/packages/windows.ts
+var hosts3 = ["windows-x64"];
+var windowsInstallerProfiles = [
+  compactLocalToolProfile("msi", hosts3, {
+    name: "wix",
+    versionProbe: ["--version"],
+    versionOutput: "semver-first-token",
+    supportedRange: ">=5.0.0 <6.0.0"
+  }, ["build", "{sourcePath}", "-o", "{output}"], ["wix-source", "package-root"], { pathTemplate: "{output}.msi", type: "package" }, "msi-database-and-sha256/v1"),
+  compactLocalToolProfile("nsis", hosts3, {
+    name: "makensis",
+    versionProbe: ["/VERSION"],
+    versionOutput: "semver-first-token",
+    supportedRange: ">=3.10.0 <4.0.0"
+  }, ["/V2", "/DOUTPUT={output}", "{scriptPath}"], ["nsis-script", "package-root"], { pathTemplate: "{output}.exe", type: "executable" }, "pe-installer-and-sha256/v1")
+];
+
+// ../../src/recipes/packages/profiles.ts
+var localToolProfiles = [
+  ...pythonBuilderProfiles,
+  universalMachoProfile,
+  ...archiveGeneratorProfiles,
+  ...storePackageProfiles,
+  ...appleInstallerProfiles,
+  ...windowsInstallerProfiles,
+  localToolProfile({
+    profileId: "package.node-sea.v1",
+    contractFixtureId: "contract.package.node-sea.v1",
+    hosts: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"],
+    executable: {
+      name: "node",
+      versionProbe: ["--version"],
+      versionOutput: "semver-first-token",
+      supportedRange: ">=22.0.0 <23.0.0"
+    },
+    argv: ["--experimental-sea-config", "{configPath}"],
+    inputSelectors: ["javascript-entry", "sea-config"],
+    outputs: [{ pathTemplate: "{output}", type: "executable" }],
+    validationOperation: "nonempty-executable-and-sha256/v1"
+  })
+];
+var findLocalToolProfile = (id) => {
+  const found = localToolProfiles.find((profile3) => profile3.profileId === id);
+  if (found === undefined)
+    throw new Error(`Unknown immutable package profile ${id}.`);
+  return found;
+};
+
 // ../../src/recipes/current-build.ts
 var importedKinds = {
   tarball: "archive",
@@ -24986,7 +25822,19 @@ var importedKinds = {
   file: "file",
   directory: "directory",
   "oci-image": "file",
-  executable: "executable"
+  executable: "executable",
+  binary: "executable"
+};
+var profileOutputKind = (value) => {
+  if (value.endsWith(".whl"))
+    return "wheel";
+  if (value.endsWith(".tar.gz") || value.endsWith(".zip"))
+    return "archive";
+  if (value.endsWith(".app"))
+    return "directory";
+  if (/\.(?:bin|exe|run)$/u.test(value))
+    return "executable";
+  return "package";
 };
 var declare2 = (rows, id, location, kind, provenance, platform2) => recordOutput(rows, OutputDeclaration.make({
   id: outputId(id),
@@ -25052,6 +25900,38 @@ var lowerBuildTarget = (config, rows, build2, target2) => {
 };
 var lowerBuilds = (config, rows) => {
   for (const build2 of config.builds ?? []) {
+    if (build2.builder === "profile") {
+      const inputs = build2.inputs.map((id) => {
+        const found = rows.outputs.get(id);
+        if (found === undefined)
+          throw new Error(`Profile input ${id} is absent.`);
+        return found;
+      });
+      const outputs2 = build2.outputs.map((item) => declare2(rows, item.id, item.path, profileOutputKind(item.path), "build"));
+      if (build2.profileId === "lifecycle.archive-hooks.v1") {
+        rows.process.push(Pack.make({
+          id: operationId(`archive:profile:${build2.id}`),
+          inputs: inputs.map((item) => item.id),
+          outputs: outputs2,
+          format: "tar.gz",
+          description: "Materialize the lifecycle archive."
+        }));
+        continue;
+      }
+      const profile3 = findLocalToolProfile(build2.profileId);
+      const argv = profile3.contract.invocation.argv.map((token) => token.replaceAll("{input}", inputs[0]?.path ?? ".").replaceAll("{inputDir}", inputs[0]?.path ?? ".").replaceAll("{output}", outputs2[0].path).replaceAll("{outputDir}", outputs2[0].path));
+      rows.build.push(Exec.make({
+        id: operationId(`build:profile:${build2.id}`),
+        inputs: inputs.map((item) => item.id),
+        outputs: outputs2,
+        contractFixtureId: profile3.id,
+        argv: nonEmptyCommand(argv),
+        cwd: path("."),
+        environmentNames: [],
+        description: `Run immutable package profile ${profile3.profileId}.`
+      }));
+      continue;
+    }
     for (const target2 of build2.targets)
       lowerBuildTarget(config, rows, build2, target2);
   }
@@ -25093,10 +25973,10 @@ var lowerImports = (config, rows) => {
 var lowerArchives = (config, rows) => {
   for (const archive of config.archives ?? []) {
     const selected2 = selectedOutputs(rows, archive.ids, () => true);
-    const formats = archive.formats ?? ["tar.gz"];
-    for (const format3 of formats) {
+    const formats2 = archive.formats ?? ["tar.gz"];
+    for (const format3 of formats2) {
       const base = render(archive.nameTemplate ?? `${compactName(config.project.name)}_{version}`, config);
-      const id = `${archive.id ?? "archive"}${formats.length > 1 ? `-${format3.replaceAll(".", "-")}` : ""}`;
+      const id = `${archive.id ?? "archive"}${formats2.length > 1 ? `-${format3.replaceAll(".", "-")}` : ""}`;
       const declared = declare2(rows, id, `.release/artifacts/${base}.${format3}`, "archive", "process");
       rows.process.push(Pack.make({
         id: operationId(`archive:${id}`),
@@ -25138,10 +26018,10 @@ var lowerChecksum = (config, rows) => {
 };
 var lowerCurrentBuild = (config, rows) => {
   lowerHooks(config, rows);
+  lowerImports(config, rows);
   lowerBuilds(config, rows);
   lowerNpm(config, rows);
   lowerWheels(config, rows);
-  lowerImports(config, rows);
   lowerArchives(config, rows);
   lowerChecksum(config, rows);
 };
@@ -25363,19 +26243,404 @@ var lowerCurrentCatalogs = (config, rows) => {
   }
 };
 
+// ../../src/recipes/changelog-policy.ts
+var renderGroupedNotes = (entries, filters, groups) => groups.flatMap((group) => {
+  const selected2 = entries.filter((entry) => entry.path.startsWith(group.prefix) && !filters.some((prefix) => entry.path.startsWith(prefix))).sort((left, right) => left.summary.localeCompare(right.summary) || left.path.localeCompare(right.path));
+  if (selected2.length === 0)
+    return [];
+  return [
+    `## ${group.title}`,
+    ...group.subgroup === undefined ? [] : [`### ${group.subgroup}`],
+    ...selected2.map((entry) => `- ${entry.summary}`),
+    ...group.divider === true ? ["---"] : []
+  ];
+}).join(`
+`);
+
+// ../../src/recipes/current-changelog.ts
+var lowerCurrentChangelog = (config, rows) => {
+  const section = config.publish.changelog;
+  if (section === undefined && (config.publish.announce?.length ?? 0) === 0)
+    return;
+  const output = recordOutput(rows, OutputDeclaration.make({
+    id: outputId("release-notes"),
+    path: path(".release/notes.md"),
+    kind: "file",
+    provenance: "process"
+  }));
+  const grouped = renderGroupedNotes([{ path: ".", summary: `Release ${config.project.tag}.` }], section?.pathFilters ?? [], section?.groups ?? []);
+  const content = `# ${config.project.name} ${config.project.version}
+
+${grouped === "" ? `Release ${config.project.tag}.` : grouped}
+`;
+  rows.process.push(Write.make({
+    id: operationId("changelog:base"),
+    inputs: [],
+    outputs: [output],
+    path: output.path,
+    content
+  }));
+  if (section?.mode !== "reviewed-transform")
+    return;
+  if (section.profileId !== "changelog.reviewed-transform/v1")
+    throw new Error("Reviewed transform mode requires its immutable profile.");
+  const final = recordOutput(rows, OutputDeclaration.make({
+    id: outputId("final-notes"),
+    path: path(".release/final-notes.md"),
+    kind: "file",
+    provenance: "process"
+  }));
+  rows.validate.push(ReviewedNoteTransform.make({
+    id: operationId("changelog:reviewed-transform"),
+    inputs: [output.id],
+    outputs: [final],
+    profileId: section.profileId,
+    maximumOutputBytes: 65536,
+    policyDigest: hashFramed("ts-release/reviewed-note-policy/v1", [new TextEncoder().encode("normalize-markdown")]),
+    credential: ReadCredential.make({ name: CredentialName.make("NOTE_TRANSFORM_READ") }),
+    contractFixtureId: "contract.changelog.reviewed-transform/v1"
+  }));
+};
+
+// ../../src/recipes/providers/profile.ts
+var classification2 = {
+  beforeDispatch: "DefinitelyNotCommitted",
+  success: "DefinitelyCommitted",
+  rejection: "DefinitelyNotCommitted",
+  responseLoss: "PossiblyCommitted",
+  malformed: "Unclassifiable"
+};
+var providerProfile = (i) => Object.freeze({
+  profileId: i.id,
+  contractFixtureId: `contract.${i.id}`,
+  provenance: "maintainer-product-decision",
+  checkpoints: i.checkpoints ?? ["upload"],
+  contract: Object.freeze({
+    kind: i.kind ?? "repository-publish",
+    variant: i.variant ?? "RepositoryPublish",
+    protocolVersion: i.protocol,
+    targetCoordinates: i.target,
+    allowedOptions: i.options ?? ["contentType"],
+    authentication: { variant: i.auth ?? "bearer", credentialSlotPattern: "^[A-Z][A-Z0-9_]*$" },
+    request: {
+      method: i.method,
+      baseUrl: i.base,
+      pathTemplate: i.path,
+      headers: i.headers ?? ["authorization", "content-type", "x-ts-release-key"],
+      bodySchema: i.body ?? "verified-content-stream/v1",
+      reconciliationKeyLocation: "x-ts-release-key"
+    },
+    response: {
+      successSchema: i.success ?? "repository-item/v1",
+      errorSchema: "provider-error/v1",
+      successStatuses: i.statuses
+    },
+    commitmentPoint: "decoded-success-response",
+    clientReconciliationKey: {
+      construction: "ts-release/provider-reconcile/v1",
+      transmitted: "x-ts-release-key"
+    },
+    classification: classification2,
+    reconciliation: {
+      supported: i.reconcile !== "NONE",
+      method: i.reconcile,
+      pathTemplate: i.reconcilePath ?? i.path,
+      equality: i.equality
+    },
+    pagination: i.pagination ?? "none",
+    rateLimit: "definite-before-commit",
+    redirects: "disabled",
+    redaction: ["authorization"],
+    selfHosted: {
+      allowed: i.selfHosted ?? false,
+      schemes: ["https"],
+      dnsScopes: i.selfHosted ? ["PublicOnly", "PrivateNetwork"] : ["PublicOnly"],
+      bindResolvedAddresses: true
+    }
+  })
+});
+
+// ../../src/recipes/providers/forge-profiles.ts
+var [gl, gt] = ["https://gitlab.com/api/v4", "https://gitea.com/api/v1"];
+var release = (name, base, path2, reconcilePath) => providerProfile({
+  id: `forge.${name}-release/v1`,
+  kind: "forge-release",
+  variant: "ForgeRelease",
+  protocol: `${name}-compatible/v1`,
+  target: ["repository", "tag"],
+  options: ["baseUrl", "dnsScope", "draft", "prerelease"],
+  auth: "bearer",
+  method: "POST",
+  base,
+  path: path2,
+  body: "forge-release/v1",
+  success: "forge-release-response/v1",
+  statuses: [200, 201],
+  reconcile: "GET",
+  reconcilePath,
+  checkpoints: ["release", "assets"],
+  equality: "tag-and-asset-name-digest",
+  pagination: "link-header",
+  selfHosted: true
+});
+var catalog = (name, base, path2) => providerProfile({
+  id: `forge.${name}-catalog-pr/v1`,
+  kind: "forge-catalog-pr",
+  variant: "ForgeCatalogPullRequest",
+  protocol: `${name}-compatible/v1`,
+  target: ["repository", "branch", "file"],
+  options: ["baseUrl", "dnsScope", "title", "checkboxPolicy"],
+  auth: "bearer",
+  method: "POST",
+  base,
+  path: path2,
+  body: "catalog-pr/v1",
+  success: "catalog-pr-response/v1",
+  statuses: [200, 201],
+  reconcile: "GET",
+  reconcilePath: path2,
+  equality: "branch-file-content-digest",
+  pagination: "link-header",
+  selfHosted: true,
+  checkpoints: ["branch", "file", "pull-request"]
+});
+var forgeProfiles = [
+  release("gitlab", gl, "/projects/{repository}/releases", "/projects/{repository}/releases/{tag}"),
+  release("gitea", gt, "/repos/{repository}/releases", "/repos/{repository}/releases/tags/{tag}"),
+  catalog("gitlab", gl, "/projects/{repository}/merge_requests"),
+  catalog("gitea", gt, "/repos/{repository}/pulls"),
+  providerProfile({
+    id: "forge.milestone-close/v1",
+    kind: "forge-milestone",
+    variant: "MilestoneClose",
+    protocol: "forge-neutral/v1",
+    target: ["repository", "milestone"],
+    options: [],
+    auth: "bearer",
+    method: "PATCH",
+    base: "https://api.github.com",
+    path: "/repos/{repository}/milestones/{milestone}",
+    body: "milestone-close/v1",
+    success: "milestone-response/v1",
+    statuses: [200],
+    reconcile: "GET",
+    checkpoints: ["close"],
+    reconcilePath: "/repos/{repository}/milestones/{milestone}",
+    equality: "state-closed"
+  })
+];
+
+// ../../src/recipes/providers/http-profiles.ts
+var stream = ["authorization", "content-type", "digest", "x-ts-release-key"];
+var repositories = [
+  [
+    "artifactory",
+    ["repository", "path"],
+    "PUT",
+    "https://artifactory.example.invalid",
+    "/{repository}/{path}",
+    [200, 201],
+    "HEAD",
+    "/{repository}/{path}",
+    "content-length-and-digest",
+    true,
+    false
+  ],
+  [
+    "cloudsmith",
+    ["owner", "repository", "path"],
+    "POST",
+    "https://api.cloudsmith.io",
+    "/v1/packages/{owner}/{repository}/upload/{path}",
+    [200, 201, 202],
+    "GET",
+    "/v1/packages/{owner}/{repository}/{path}",
+    "size-and-digest",
+    false,
+    true
+  ],
+  [
+    "gemfury",
+    ["account", "repository", "path"],
+    "POST",
+    "https://push.fury.io",
+    "/{account}/{repository}/{path}",
+    [200, 201],
+    "GET",
+    "/{account}/{repository}/{path}",
+    "size-and-digest",
+    false,
+    false
+  ]
+];
+var repositoryProfiles = repositories.map(([
+  name,
+  target2,
+  method,
+  base,
+  path2,
+  statuses,
+  reconcile,
+  reconcilePath,
+  equality,
+  selfHosted,
+  paged
+]) => providerProfile({
+  id: `repository.${name}-upload/v1`,
+  protocol: `${name}-compatible/v1`,
+  target: target2,
+  method,
+  base,
+  path: path2,
+  statuses,
+  reconcile,
+  reconcilePath,
+  equality,
+  headers: stream,
+  ...paged ? { pagination: "link-header" } : {},
+  ...selfHosted ? { selfHosted: true, options: ["baseUrl", "dnsScope", "contentType"] } : {}
+}));
+var httpProfiles = [
+  providerProfile({
+    id: "http.generic-upload/v1",
+    kind: "http-publish",
+    variant: "GenericHttp",
+    protocol: "versionless-reviewed-http/v1",
+    target: ["endpoint"],
+    options: ["method", "headerNames", "bodyMapping"],
+    method: "CONFIGURED",
+    base: "configured-reviewed-endpoint",
+    path: "configured-reviewed-path",
+    headers: stream,
+    body: "configured-raw-artifact/v1",
+    success: "empty/v1",
+    statuses: [200, 201, 202, 204],
+    reconcile: "NONE",
+    reconcilePath: "none",
+    equality: "manual-only",
+    selfHosted: true
+  }),
+  ...repositoryProfiles,
+  providerProfile({
+    id: "registry.dockerhub-description/v1",
+    kind: "registry-metadata",
+    variant: "RegistryMetadata",
+    protocol: "dockerhub-compatible/v1",
+    target: ["repository"],
+    options: ["summary", "description"],
+    method: "PATCH",
+    base: "https://hub.docker.com",
+    path: "/v2/repositories/{repository}/",
+    body: "registry-description/v1",
+    success: "registry-description/v1",
+    statuses: [200],
+    reconcile: "GET",
+    equality: "summary-and-description",
+    checkpoints: ["update"]
+  })
+];
+
+// ../../src/recipes/providers/object-store-profiles.ts
+var rows = [
+  [
+    "object.s3-put/v1",
+    "s3-signed-put/v1",
+    ["bucket", "key"],
+    "signed-request",
+    "https://s3.amazonaws.com",
+    "/{bucket}/{key}",
+    "empty/v1",
+    [200, 201, 204],
+    "HEAD",
+    "/{bucket}/{key}",
+    "content-length-and-digest",
+    []
+  ],
+  [
+    "object.gcs-put/v1",
+    "gcs-json-upload/v1",
+    ["bucket", "key"],
+    "bearer",
+    "https://storage.googleapis.com",
+    "/upload/storage/v1/b/{bucket}/o/{key}",
+    "object-metadata/v1",
+    [200, 201],
+    "GET",
+    "/storage/v1/b/{bucket}/o/{key}",
+    "size-and-digest",
+    []
+  ],
+  [
+    "object.azure-blob-put/v1",
+    "azure-blob-put/v1",
+    ["account", "container", "blob"],
+    "shared-key",
+    "https://{account}.blob.core.windows.net",
+    "/{container}/{blob}",
+    "empty/v1",
+    [201],
+    "HEAD",
+    "/{container}/{blob}",
+    "content-length-and-digest",
+    ["x-ms-blob-type"]
+  ]
+];
+var objectStoreProfiles = rows.map(([
+  id,
+  protocol,
+  target2,
+  auth,
+  base,
+  path2,
+  success,
+  statuses,
+  reconcile,
+  reconcilePath,
+  equality,
+  extra
+]) => providerProfile({
+  id,
+  kind: "object-store-publish",
+  variant: "ObjectStorePublish",
+  protocol,
+  target: target2,
+  options: ["contentType"],
+  auth,
+  method: "PUT",
+  base,
+  path: path2,
+  headers: ["authorization", "content-type", "digest", ...extra, "x-ts-release-key"],
+  body: "verified-content-stream/v1",
+  success,
+  statuses,
+  reconcile,
+  reconcilePath,
+  equality,
+  checkpoints: ["put"]
+}));
+
+// ../../src/recipes/providers/index.ts
+var providerProfiles = [
+  ...forgeProfiles,
+  ...httpProfiles,
+  ...objectStoreProfiles
+];
+
 // ../../src/recipes/current-publish.ts
 var publishCredential = (name) => PublishCredential.make({ name: credentialName(name) });
 var readCredential = (name) => ReadCredential.make({ name: credentialName(name) });
-var trusted2 = (value) => value === undefined ? {} : { trustedProvider: "github-actions", trustedWorkflow: value.workflow ?? "release.yml" };
-var lowerNpm2 = (config, rows) => {
-  const section = config.publish.npm;
+var trusted2 = (value) => value === undefined ? {} : {
+  trustedProvider: "github-actions",
+  trustedWorkflow: value.workflow ?? "release.yml"
+};
+var lowerNpm2 = (config, rows2, section = config.publish.npm) => {
   if (section === undefined)
     return;
   const packageName = section.packageName ?? config.project.packageName ?? config.project.name;
   const packagePath = section.packagePath ?? config.project.packagePath ?? ".";
   const oidc = section.trustedPublishing !== undefined;
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : [section.tokenEnv ?? "NPM_TOKEN"];
-  const packageOutput = rows.outputs.get("npm-package");
+  const packageOutput = rows2.outputs.get("npm-package");
   const registryUrl = section.registry ?? "https://registry.npmjs.org";
   const publishArgv = [
     "npm",
@@ -25412,11 +26677,47 @@ var lowerNpm2 = (config, rows) => {
     contractFixtureId: "registry.npm-publish/v1"
   });
 };
-var lowerPyPi = (config, rows) => {
+var normalizeProviderEndpoint = (value) => {
+  const url = new URL(value), host = url.hostname;
+  if (/(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/iu.test(value) || url.protocol !== "https:" || url.username !== "" || url.password !== "" || url.search !== "" || url.hash !== "" || ["localhost", "::", "::1", "0.0.0.0"].includes(host) || ["127.", "169.254.", "224.", "255."].some((prefix) => host.startsWith(prefix)))
+    throw new Error("Provider URL violates the closed HTTPS/DNS policy.");
+  return `${url.origin}${url.pathname.replace(/\/+$/u, "") || "/"}`;
+};
+var lowerProvider = (rows2, action) => {
+  const profile3 = providerProfiles.find((item) => item.profileId === action.profileId);
+  if (profile3 === undefined)
+    throw new Error(`Unknown provider profile ${action.profileId}.`);
+  const inputs = selectedOutputs(rows2, action.ids, () => false);
+  const target2 = "endpoint" in action ? { endpoint: normalizeProviderEndpoint(action.endpoint) } : action.destination;
+  const options = "endpoint" in action ? {
+    method: action.method,
+    headerNames: [...action.headerNames].sort().join(","),
+    bodyMapping: action.bodyMapping
+  } : Object.fromEntries(Object.entries(action.options).filter(([, value]) => value !== undefined));
+  if (Object.keys(target2).sort().join() !== [...profile3.contract.targetCoordinates].sort().join() || Object.keys(options).some((key) => !profile3.contract.allowedOptions.includes(key)))
+    throw new Error("Provider data does not match its immutable profile.");
+  if (typeof options.baseUrl === "string")
+    options.baseUrl = normalizeProviderEndpoint(options.baseUrl);
+  const checkpoints = profile3.checkpoints.flatMap((id) => id === "assets" ? inputs.map((input) => `asset:${input.id}`) : [id]);
+  rows2.publish.push(ProviderPublish.make({
+    id: operationId(`provider:${action.id}`),
+    inputs: inputs.map((input) => input.id),
+    outputs: [],
+    profileId: ProfileId.make(profile3.profileId),
+    variant: profile3.contract.variant,
+    target: target2,
+    options,
+    dnsScope: "endpoint" in action ? action.dnsScope : action.options.dnsScope ?? "PublicOnly",
+    checkpoints: [CheckpointId.make(checkpoints[0]), ...checkpoints.slice(1).map((id) => CheckpointId.make(id))],
+    credential: publishCredential(action.credential),
+    contractFixtureId: profile3.contractFixtureId
+  }));
+};
+var lowerPyPi = (config, rows2) => {
   const section = config.publish.pypi;
   if (section === undefined)
     return;
-  const artifacts = selectedOutputs(rows, section.ids, (item) => item.kind === "wheel");
+  const artifacts = selectedOutputs(rows2, section.ids, (item) => item.kind === "wheel");
   if (artifacts.length === 0)
     throw new Error("PyPI requires at least one distribution artifact.");
   const oidc = section.trustedPublishing !== undefined;
@@ -25457,14 +26758,21 @@ var lowerPyPi = (config, rows) => {
     contractFixtureId: "registry.pypi-publish/v1"
   });
 };
-var lowerGitHub = (config, rows) => {
+var lowerGitHub = (config, rows2) => {
   const section = config.publish.github;
   if (section === undefined)
     return;
   const repository = section.repository ?? config.project.repository;
   if (repository === undefined)
     throw new Error("GitHub publishing requires a repository.");
-  const assets = [...rows.outputs.values()].filter((item) => !["package", "wheel", "catalog-file", "directory", "internal", "digest"].includes(item.kind));
+  const assets = [...rows2.outputs.values()].filter((item) => ![
+    "package",
+    "wheel",
+    "catalog-file",
+    "directory",
+    "internal",
+    "digest"
+  ].includes(item.kind));
   const credential = section.tokenEnv ?? "NO_CREDENTIAL";
   return ForgeRelease.make({
     id: operationId("github:github-release"),
@@ -25487,11 +26795,11 @@ var lowerGitHub = (config, rows) => {
     contractFixtureId: "forge.github-release/v1"
   });
 };
-var opaque = (config, hook2, prefix, description) => {
+var opaque = (config, hook2, prefix, description, output) => {
   const environmentNames = hook2.env ?? [];
   return OpaquePublish.make({
-    id: operationId(`${prefix}:${hook2.id}`),
-    inputs: [],
+    id: operationId(`${prefix}:${hook2.id}${output === undefined ? "" : `:${output.id}`}`),
+    inputs: output === undefined ? [] : [output.id],
     outputs: [],
     description,
     argv: nonEmptyCommand(hook2.run.map((part) => render(part, config))),
@@ -25513,25 +26821,423 @@ var after = (config, hook2) => (hook2.risk ?? "writes-local") !== "writes-local"
   cwd: path(hook2.cwd ?? "."),
   environmentNames: hook2.env ?? []
 });
-var lowerCurrentPublish = (config, rows) => {
+var lowerCurrentPublish = (config, rows2) => {
+  for (const [index, hook2] of (config.hooks?.beforePublish ?? []).entries()) {
+    rows2.validate.push(Exec.make({
+      id: operationId(`hook:before-publish:${index}`),
+      inputs: [],
+      outputs: [],
+      description: `${hook2.kind} before publish review.`,
+      contractFixtureId: "process.before-publish/v1",
+      argv: nonEmptyCommand(hook2.run),
+      cwd: path("."),
+      environmentNames: []
+    }));
+  }
   const prefix = [
-    lowerNpm2(config, rows),
-    lowerPyPi(config, rows),
-    lowerGitHub(config, rows),
-    ...(config.publish.custom ?? []).map((hook2) => opaque(config, hook2, "publish:custom", `Run custom publisher ${hook2.id}.`))
+    lowerNpm2(config, rows2),
+    lowerPyPi(config, rows2),
+    lowerGitHub(config, rows2),
+    ...(config.publish.custom ?? []).flatMap((hook2) => hook2.ids === undefined ? [opaque(config, hook2, "publish:custom", `Run custom publisher ${hook2.id}.`)] : selectedOutputs(rows2, hook2.ids, () => false).map((output) => opaque(config, hook2, "publish:custom", `Publish ${output.id} with ${hook2.id}.`, output)))
   ].filter((item) => item !== undefined);
-  rows.publish.splice(0, 0, ...prefix);
-  rows.publish.push(...(config.hooks?.after ?? []).map((hook2) => after(config, hook2)));
+  rows2.publish.splice(0, 0, ...prefix);
+  for (const item of config.publish.packageStores ?? []) {
+    const input = rows2.outputs.get(item.input);
+    if (input === undefined)
+      throw new Error(`Package store input ${item.input} is absent.`);
+    rows2.publish.push(PackageStorePublish.make({
+      id: operationId(`package-store:${item.profileId}:${item.input}`),
+      inputs: [input.id],
+      outputs: [],
+      profileId: item.profileId,
+      target: PackageStoreTarget.make(item.target),
+      contractFixtureId: `contract.${item.profileId}`,
+      credential: publishCredential(item.profileId.endsWith("snap.v1") ? "SNAP_STORE" : "CHOCOLATEY_STORE")
+    }));
+  }
+  rows2.publish.push(...(config.hooks?.after ?? []).map((hook2) => after(config, hook2)));
+};
+
+// ../../src/recipes/providers/catalog-policy.ts
+var applyCatalogCheckboxPolicy = (content, policy) => policy === "preserve" ? content : content.split(`
+`).map((line) => line.replace(/^(\s*-\s*)\[ \]/u, "$1[x]")).join(`
+`);
+
+// ../../src/recipes/current-providers.ts
+var lowerWrapper = (config, rows2, action) => {
+  const inputs = selectedOutputs(rows2, action.ids, () => false);
+  const output = recordOutput(rows2, OutputDeclaration.make({
+    id: outputId("npm-package"),
+    path: path(`.release/npm/${config.project.name}-wrapper.json`),
+    kind: "package",
+    provenance: "process"
+  }));
+  rows2.process.push(Write.make({
+    id: operationId(`provider:${action.id}:wrapper`),
+    inputs: inputs.map((input) => input.id),
+    outputs: [output],
+    path: output.path,
+    content: `${JSON.stringify({
+      name: action.destination.packageName,
+      version: config.project.version,
+      artifacts: inputs.map((input) => input.path).sort()
+    })}
+`
+  }));
+  rows2.publish.push(lowerNpm2(config, rows2, {
+    registry: action.destination.registryUrl ?? "https://registry.npmjs.org",
+    packageName: action.destination.packageName ?? config.project.name,
+    packagePath: output.path,
+    tokenEnv: action.credential,
+    access: action.options.access ?? "public",
+    provenance: action.options.provenance ?? false
+  }));
+};
+var lowerCurrentProviders = (config, rows2) => {
+  for (const action of config.publish.providers ?? []) {
+    if (action.profileId === "registry.npm-publish/v1") {
+      lowerWrapper(config, rows2, action);
+      continue;
+    }
+    if (action.profileId !== "policy.catalog-checkbox/v1") {
+      lowerProvider(rows2, action);
+      continue;
+    }
+    const index = rows2.catalog.findIndex((item) => item._tag === "Write" && item.path === action.destination.file);
+    const operation = rows2.catalog[index];
+    if (operation?._tag !== "Write" || typeof operation.content !== "string")
+      throw new Error("Catalog policy target is absent.");
+    rows2.catalog[index] = Write.make({
+      ...operation,
+      content: applyCatalogCheckboxPolicy(operation.content, action.options.checkboxPolicy)
+    });
+  }
+};
+
+// ../../src/recipes/supply-chain/local-profiles.ts
+var hosts4 = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"];
+var profile3 = (id, executable, argv, inputs, type, validation) => localToolProfile({
+  profileId: `supply.${id}.v1`,
+  contractFixtureId: `contract.supply.${id}.v1`,
+  hosts: hosts4,
+  executable,
+  argv,
+  inputSelectors: inputs,
+  outputs: [{ pathTemplate: "{output}", type }],
+  validationOperation: validation
+});
+var supplyLocalProfiles = [
+  profile3("local-container-build", {
+    name: "docker",
+    versionProbe: ["version", "--format", "{{.Client.Version}}"],
+    versionOutput: "semver-first-token",
+    supportedRange: ">=27.0.0 <28.0.0"
+  }, ["buildx", "build", "--metadata-file", "{output}", "{input}"], ["container-context"], "container-metadata", "observed-container-digest-and-sha256/v1"),
+  profile3("local-sbom", {
+    name: "syft",
+    versionProbe: ["version", "-o", "json"],
+    versionOutput: "json-version-field",
+    supportedRange: ">=1.0.0 <2.0.0"
+  }, ["scan", "{input}", "-o", "spdx-json={output}"], ["verified-artifact"], "sbom", "spdx-subject-digest-and-sha256/v1"),
+  profile3("local-detached-sign", {
+    name: "minisign",
+    versionProbe: ["-v"],
+    versionOutput: "semver-first-token",
+    supportedRange: ">=0.12.0 <0.13.0"
+  }, ["-S", "-s", "{keyFile}", "-m", "{input}", "-x", "{output}"], ["verified-artifact", "public-key-file"], "signature", "detached-signature-subject-digest/v1")
+];
+
+// ../../src/recipes/supply-chain/registry-profiles.ts
+var hosts5 = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"];
+var classifier = {
+  "before-dispatch": "DefinitelyNotCommitted",
+  "http-2xx-valid-digest": "DefinitelyCommitted",
+  "http-4xx": "DefinitelyNotCommitted",
+  "http-5xx": "PossiblyCommitted",
+  "response-loss": "PossiblyCommitted",
+  "malformed-response": "Unclassifiable"
+};
+var profile4 = (input) => Object.freeze({
+  profileId: `supply.${input.id}.v1`,
+  contract: Object.freeze({
+    kind: "supply-chain-publish",
+    variant: input.variant,
+    hosts: hosts5,
+    authenticationClass: input.authenticationClass,
+    authorityClass: "remote-publish",
+    inputSelectors: [input.inputSelector],
+    outputs: [{ type: input.output }],
+    targetCoordinates: input.targetCoordinates,
+    request: {
+      method: input.method,
+      endpointTemplate: input.endpointTemplate,
+      headers: ["authorization", "content-type", "x-reconciliation-key"],
+      bodyShape: input.bodyShape
+    },
+    response: { successShape: input.successShape, failureShape: "registry-error/v1" },
+    transmittedStreamRule: input.transmittedStreamRule,
+    checkpoints: input.checkpoints,
+    commitmentClassifier: classifier,
+    reconciliation: {
+      method: input.reconcileMethod,
+      endpointTemplate: input.endpointTemplate,
+      responseShape: input.successShape,
+      outcomes: ["MatchingCommit", "ProvenAbsent", "Inconclusive"]
+    }
+  })
+});
+var registryProfiles = [
+  profile4({
+    id: "registry-image",
+    variant: "RegistryImage",
+    authenticationClass: "credential-reference:oci-registry",
+    inputSelector: "verified-oci-layout",
+    output: "observed-container-digest",
+    targetCoordinates: ["repository", "tag"],
+    method: "PUT",
+    endpointTemplate: "https://registry.invalid/v2/{repository}/manifests/{tag}",
+    bodyShape: "verified-oci-manifest-stream/v1",
+    successShape: "registry-digest-header/v1",
+    transmittedStreamRule: "sha256-equals-reviewed-subject",
+    checkpoints: ["blobs", "manifest"],
+    reconcileMethod: "HEAD"
+  }),
+  profile4({
+    id: "registry-manifest",
+    variant: "RegistryManifest",
+    authenticationClass: "credential-reference:oci-registry",
+    inputSelector: "verified-manifest-list",
+    output: "observed-container-digest",
+    targetCoordinates: ["repository", "tag"],
+    method: "PUT",
+    endpointTemplate: "https://registry.invalid/v2/{repository}/manifests/{tag}",
+    bodyShape: "verified-oci-index-stream/v1",
+    successShape: "registry-digest-header/v1",
+    transmittedStreamRule: "sha256-equals-reviewed-subject",
+    checkpoints: ["manifest"],
+    reconcileMethod: "HEAD"
+  }),
+  profile4({
+    id: "registry-signature",
+    variant: "RegistrySignature",
+    authenticationClass: "credential-reference:cosign",
+    inputSelector: "observed-container-digest",
+    output: "observed-signature-digest",
+    targetCoordinates: ["repository", "digest"],
+    method: "POST",
+    endpointTemplate: "https://registry.invalid/v2/{repository}/signatures/{digest}",
+    bodyShape: "digest-bound-signature-envelope/v1",
+    successShape: "signature-digest-response/v1",
+    transmittedStreamRule: "subject-digest-equals-reviewed-observed-digest",
+    checkpoints: ["signature"],
+    reconcileMethod: "GET"
+  })
+];
+
+// ../../src/recipes/supply-chain/signing-profiles.ts
+var credentialedSigningProfile = Object.freeze({
+  profileId: "supply.credentialed-artifact-sign.v1",
+  contract: Object.freeze({
+    kind: "supply-chain-publish",
+    variant: "CredentialedArtifactSignature",
+    hosts: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"],
+    authenticationClass: "credential-reference:artifact-signing",
+    authorityClass: "credentialed-local",
+    inputSelectors: ["verified-artifact"],
+    outputs: [{ type: "detached-signature" }],
+    targetCoordinates: ["artifactName"],
+    request: {
+      method: "LOCAL",
+      executable: "internal:credentialed-signer",
+      argv: ["sign", "--subject-digest", "{digest}", "--output", "{stagingOutput}"],
+      environmentNames: []
+    },
+    response: {
+      successShape: "validated-detached-signature/v1",
+      failureShape: "typed-credentialed-tool-evidence/v1"
+    },
+    transmittedStreamRule: "sha256-equals-reviewed-subject",
+    checkpoints: ["sign"],
+    commitmentClassifier: {
+      "before-dispatch": "DefinitelyNotCommitted",
+      "validated-output": "DefinitelyCommitted",
+      "tool-refusal": "DefinitelyNotCommitted",
+      "process-loss": "PossiblyCommitted",
+      "invalid-output": "Unclassifiable",
+      "staging-loss": "Unclassifiable"
+    },
+    reconciliation: {
+      method: "LOCAL_STAT",
+      responseShape: "signature-subject-digest/v1",
+      outcomes: ["MatchingCommit", "ProvenAbsent", "Inconclusive"]
+    }
+  })
+});
+
+// ../../src/recipes/supply-chain/notarization-profiles.ts
+var profile5 = (id, executable, argv, successShape) => Object.freeze({
+  profileId: `supply.${id}-notarization.v1`,
+  contract: Object.freeze({
+    kind: "supply-chain-publish",
+    variant: "AppleNotarization",
+    hosts: ["darwin-arm64", "darwin-x64"],
+    authenticationClass: "credential-reference:apple-notary",
+    authorityClass: "credentialed-remote-publish",
+    inputSelectors: ["verified-apple-artifact"],
+    outputs: [{ type: "notarized-artifact" }],
+    targetCoordinates: ["bundleId", "version"],
+    request: { method: "LOCAL_REMOTE", executable, argv, environmentNames: [] },
+    response: { successShape, failureShape: "typed-notarization-evidence/v1" },
+    transmittedStreamRule: "sha256-equals-reviewed-subject",
+    checkpoints: id === "quill" ? ["sign", "submit", "staple"] : ["codesign", "submit", "staple"],
+    commitmentClassifier: {
+      "before-dispatch": "DefinitelyNotCommitted",
+      "validated-output": "DefinitelyCommitted",
+      "service-refusal": "DefinitelyNotCommitted",
+      "response-loss": "PossiblyCommitted",
+      "invalid-output": "Unclassifiable",
+      "malformed-response": "Unclassifiable"
+    },
+    reconciliation: {
+      method: "READ_ONLY_STATUS",
+      responseShape: "apple-notary-status/v1",
+      outcomes: ["MatchingCommit", "ProvenAbsent", "Inconclusive"]
+    }
+  })
+});
+var notarizationProfiles = [
+  profile5("quill", "quill", ["sign-and-notarize", "--input", "{input}", "--output", "{stagingOutput}"], "quill-notarization-result/v1"),
+  profile5("apple-native", "internal:apple-native-notary", ["codesign", "notarytool", "stapler"], "apple-native-notarization-result/v1")
+];
+
+// ../../src/recipes/supply-chain/attestation-profile.ts
+var attestationProfile = Object.freeze({
+  profileId: "supply.remote-attestation.v1",
+  contract: Object.freeze({
+    kind: "supply-chain-publish",
+    variant: "RemoteAttestation",
+    hosts: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"],
+    authenticationClass: "credential-reference:github-oidc",
+    authorityClass: "remote-publish",
+    inputSelectors: ["verified-subject-set"],
+    outputs: [{ type: "attestation-id" }],
+    targetCoordinates: ["repository", "workflow"],
+    request: {
+      method: "POST",
+      endpointTemplate: "https://api.github.com/repos/{repository}/attestations",
+      headers: ["authorization", "content-type", "x-reconciliation-key"],
+      bodyShape: "digest-bound-attestation/v1"
+    },
+    response: { successShape: "attestation-response/v1", failureShape: "attestation-error/v1" },
+    transmittedStreamRule: "subject-set-equals-reviewed-material-bindings",
+    checkpoints: ["attest"],
+    commitmentClassifier: {
+      "before-dispatch": "DefinitelyNotCommitted",
+      "http-2xx-valid-id": "DefinitelyCommitted",
+      "http-4xx": "DefinitelyNotCommitted",
+      "http-5xx": "PossiblyCommitted",
+      "response-loss": "PossiblyCommitted",
+      "malformed-response": "Unclassifiable"
+    },
+    reconciliation: {
+      method: "GET",
+      endpointTemplate: "https://api.github.com/repos/{repository}/attestations/{key}",
+      responseShape: "attestation-response/v1",
+      outcomes: ["MatchingCommit", "ProvenAbsent", "Inconclusive"]
+    }
+  })
+});
+
+// ../../src/recipes/current-supply-chain.ts
+var kinds = {
+  "container-metadata": "container-metadata",
+  sbom: "sbom",
+  signature: "signature",
+  "observed-container-digest": "digest",
+  "observed-signature-digest": "digest",
+  "detached-signature": "signature",
+  "notarized-artifact": "notarized",
+  "attestation-id": "attestation"
+};
+var declared = (rows2, id, location, type) => recordOutput(rows2, OutputDeclaration.make({
+  id: outputId(id),
+  path: path(location),
+  kind: kinds[type] ?? "file",
+  provenance: "process"
+}));
+var lowerCurrentSupplyChain = (config, rows2) => {
+  for (const action of config.supplyChain ?? []) {
+    const inputs = action.inputs.map((id) => {
+      const value = rows2.outputs.get(id);
+      if (value === undefined)
+        throw new Error(`Supply-chain input ${id} is absent.`);
+      return value;
+    });
+    if (action.kind === "measure-size") {
+      rows2.process.push(Check.make({
+        id: operationId(`supply:size:${action.id}`),
+        inputs: inputs.map((item) => item.id),
+        outputs: [],
+        path: inputs[0].path,
+        description: "Observe materialized artifact size."
+      }));
+      continue;
+    }
+    const local2 = supplyLocalProfiles.find((item) => item.profileId === action.profileId);
+    const remote2 = [
+      ...registryProfiles,
+      credentialedSigningProfile,
+      ...notarizationProfiles,
+      attestationProfile
+    ].find((item) => item.profileId === action.profileId);
+    const outputType = local2?.contract.outputs[0].type ?? remote2?.contract.outputs[0].type;
+    if (outputType === undefined)
+      throw new Error(`Unknown supply-chain profile ${action.profileId}.`);
+    const targetKeys = Object.keys(action.target).sort();
+    const expectedKeys = remote2?.contract.targetCoordinates.slice().sort() ?? [];
+    if (JSON.stringify(targetKeys) !== JSON.stringify(expectedKeys))
+      throw new Error("Profile target mismatch.");
+    const outputs2 = action.outputs.map((item) => declared(rows2, item.id, item.path, outputType));
+    if (local2 !== undefined) {
+      const argv = local2.contract.invocation.argv.map((token) => token.replaceAll("{input}", inputs[0].path).replaceAll("{output}", outputs2[0].path));
+      rows2.process.push(Exec.make({
+        id: operationId(`supply:local:${action.id}`),
+        inputs: inputs.map((item) => item.id),
+        outputs: outputs2,
+        contractFixtureId: local2.id,
+        argv: nonEmptyCommand(argv),
+        cwd: path("."),
+        environmentNames: [],
+        description: `Run immutable supply profile ${local2.profileId}.`
+      }));
+      continue;
+    }
+    rows2.publish.push(SupplyChainPublish.make({
+      id: operationId(`supply:publish:${action.id}`),
+      inputs: inputs.map((item) => item.id),
+      outputs: outputs2,
+      variant: remote2.contract.variant,
+      profileId: action.profileId,
+      target: action.target,
+      credential: PublishCredential.make({ name: credentialName(remote2.contract.authenticationClass.split(":").at(-1).toUpperCase().replaceAll("-", "_")) }),
+      contractFixtureId: `contract.${action.profileId}`,
+      description: `Run immutable supply publication ${action.profileId}.`
+    }));
+  }
 };
 
 // ../../src/recipes/current.ts
 var lowerCurrentConfig = fn2("rewrite.lowerCurrentConfig")(function* (config) {
-  const rows = yield* try_2({
+  const rows2 = yield* try_2({
     try: () => {
       const current = emptyRows();
       lowerCurrentBuild(config, current);
       lowerCurrentCatalogs(config, current);
+      lowerCurrentChangelog(config, current);
+      lowerCurrentSupplyChain(config, current);
       lowerCurrentPublish(config, current);
+      lowerCurrentProviders(config, current);
+      lowerCurrentAnnouncements(config, current);
       return current;
     },
     catch: (cause) => PlanningFactsError.make({
@@ -25539,13 +27245,13 @@ var lowerCurrentConfig = fn2("rewrite.lowerCurrentConfig")(function* (config) {
     })
   });
   return ReleaseStages.make({
-    build: rows.build,
-    process: rows.process,
-    catalog: rows.catalog,
-    validate: rows.validate,
-    publish: rows.publish,
-    announce: [],
-    verify: rows.verify
+    build: rows2.build,
+    process: rows2.process,
+    catalog: rows2.catalog,
+    validate: rows2.validate,
+    publish: rows2.publish,
+    announce: rows2.announce,
+    verify: rows2.verify
   });
 });
 
@@ -25667,7 +27373,7 @@ var recipeDefinitions = (config) => {
     output: OutputDeclaration.make({
       id: artifact.id,
       path: artifact.path,
-      kind: artifact.format === "tarball" || artifact.format === "zip" ? "archive" : artifact.format === "oci-image" ? "file" : artifact.format,
+      kind: artifact.format === "tarball" || artifact.format === "zip" ? "archive" : artifact.format === "oci-image" ? "file" : artifact.format === "binary" ? "executable" : artifact.format,
       provenance: "import",
       ...artifact.variant === undefined ? {} : { platform: artifact.variant }
     })
@@ -25726,14 +27432,28 @@ var finalizePlan = fn2("rewrite.finalizePlan")(function* (config, invocation, st
       snapshot: invocation.snapshot
     }),
     stages,
-    annotations: []
+    annotations: [
+      ...Object.entries(config.environment ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([name, value]) => ({ key: `environment.${name}`, value: renderEnvironment(value) })),
+      ...config.publish.nightly === undefined ? [] : [{
+        key: "publish.nightly",
+        value: `${config.publish.nightly.tag}|replace`
+      }],
+      ...(config.projects ?? []).map((project) => ({
+        key: `project.${project.id}`,
+        value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`
+      }))
+    ]
   });
 });
 var minimalConfig = (config) => config.builds === undefined && config.npmPackage === undefined && config.pypiWheel === undefined && config.archives === undefined && config.catalogs === undefined && config.hooks === undefined && config.retry === undefined && config.evidence === undefined && Object.keys(config.publish).length === 0 && Object.keys(config.project).every((key) => ["name", "version", "tag"].includes(key)) && (config.artifacts ?? []).every((artifact) => ["file", "directory", "executable"].includes(artifact.format) && artifact.checksum === undefined && artifact.variant === undefined);
 var compilePlan = fn2("rewrite.compilePlan")(function* (input, invocation) {
   const config = yield* decodeConfig(input);
   const facts = yield* validatePlanningFacts(invocation);
-  const stages = minimalConfig(config) ? yield* lowerRecipes(recipeDefinitions(config)) : yield* lowerCurrentConfig(config);
+  const baseStages = minimalConfig(config) ? yield* lowerRecipes(recipeDefinitions(config)) : yield* lowerCurrentConfig(config);
+  const stages = config.projects === undefined ? baseStages : yield* try_2({
+    try: () => lowerProjects(baseStages, config.projects),
+    catch: (cause) => PlanningFactsError.make({ reason: String(cause) })
+  });
   const plan = yield* finalizePlan(config, facts, stages);
   return yield* acceptPlan(encodePlanBytes(plan));
 });
@@ -25769,6 +27489,11 @@ class CatalogPublishRequest extends TaggedClass()("CatalogPublishRequest", {
     HttpPublish,
     ForgeRelease,
     PackageRegistryRelease,
+    PackageStorePublish,
+    SupplyChainPublish,
+    ProviderPublish,
+    AnnouncementPublish,
+    SmtpPublish,
     OpaquePublish
   ]),
   checkpointId: CheckpointId,
@@ -26125,14 +27850,14 @@ var forgeAsset = async (request, bytes, credential) => {
     authorization: `Bearer ${credential}`,
     accept: "application/vnd.github+json"
   };
-  const release = await fetch(`https://api.github.com/repos/${request.operation.repository}/releases/tags/${encodeURIComponent(request.operation.tag)}`, { headers });
-  if (!release.ok) {
+  const release2 = await fetch(`https://api.github.com/repos/${request.operation.repository}/releases/tags/${encodeURIComponent(request.operation.tag)}`, { headers });
+  if (!release2.ok) {
     return NotDispatched.make({
-      reason: `GitHub release lookup HTTP ${release.status}`,
+      reason: `GitHub release lookup HTTP ${release2.status}`,
       retryable: false
     });
   }
-  const value = await release.json();
+  const value = await release2.json();
   const outputId2 = String(request.checkpointId).replace(/^asset:/u, "");
   const asset = request.operation.assets.find((item) => item.outputId === outputId2);
   if (asset === undefined || bytes === undefined) {
@@ -26157,6 +27882,8 @@ var reconcile = (request, credential) => tryPromise2({
     const operation = request.operation;
     if (operation._tag === "OpaquePublish")
       throw failure("Opaque publication is manual-only.");
+    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag))
+      throw failure("No live closed-profile reconciliation transport is installed.");
     if (operation._tag === "ForgeRelease") {
       const response = await fetch(`https://api.github.com/repos/${operation.repository}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } });
       if (!response.ok)
@@ -26176,6 +27903,8 @@ var reconcile = (request, credential) => tryPromise2({
       });
       return ReadResult.make({ found: response.ok });
     }
+    if (operation._tag !== "PackageRegistryRelease")
+      throw failure("Closed profile transport is unavailable.");
     return ReadResult.make({ found: (await fetch(operation.probeUrl)).ok });
   },
   catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
@@ -26183,6 +27912,9 @@ var reconcile = (request, credential) => tryPromise2({
 var makeNodeCatalog = (structured) => ({
   structured,
   publish: (request, handle, credential) => {
+    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(request.operation._tag)) {
+      return fail5(failure("No live closed-profile publish transport is installed."));
+    }
     if (request.operation._tag === "OpaquePublish") {
       return commandPublish(request, request.operation.argv);
     }
@@ -26286,6 +28018,7 @@ var structured = (request) => try_2({
         break;
       }
       case "HttpRead":
+      case "ReviewedNoteTransform":
         throw failure("Remote reads are not structured local operations.");
       default:
         throw failure(`Unsupported structured operation ${operation._tag}.`);
@@ -26297,7 +28030,7 @@ var structured = (request) => try_2({
   },
   catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
 });
-var catalog = makeNodeCatalog(structured);
+var catalog2 = makeNodeCatalog(structured);
 var credentials = {
   getRead: (slot) => try_2({
     try: () => process.env[slot.name] ?? "",
@@ -26313,13 +28046,22 @@ var credentials = {
     catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
   })
 };
-var NodeDriverLayer = mergeAll2(succeed4(WorkspaceStore)(makeNodeWorkspaceStore()), succeed4(DriverCatalog)(catalog), succeed4(CredentialStore)(credentials));
+var NodeDriverLayer = mergeAll2(succeed4(WorkspaceStore)(makeNodeWorkspaceStore()), succeed4(DriverCatalog)(catalog2), succeed4(CredentialStore)(credentials));
 
 // ../../src/api/apply-boundary.ts
 import { randomUUID as randomUUID4 } from "node:crypto";
 import { readFileSync as readFileSync4 } from "node:fs";
 
 // ../../src/apply/ledger.ts
+var supplyCheckpoints = {
+  "supply.registry-image.v1": ["blobs", "manifest"],
+  "supply.registry-manifest.v1": ["manifest"],
+  "supply.registry-signature.v1": ["signature"],
+  "supply.credentialed-artifact-sign.v1": ["sign"],
+  "supply.quill-notarization.v1": ["sign", "submit", "staple"],
+  "supply.apple-native-notarization.v1": ["codesign", "submit", "staple"],
+  "supply.remote-attestation.v1": ["attest"]
+};
 var fail9 = (reason) => TransitionError.make({ reason });
 var attemptId = (index) => AttemptId.make(`attempt-${index + 1}`);
 var current = (record2) => {
@@ -26347,6 +28089,15 @@ var checkpointIds = (operation) => {
     case "PackageRegistryRelease":
     case "OpaquePublish":
       return [CheckpointId.make("dispatch")];
+    case "PackageStorePublish":
+      return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"]).map((id) => CheckpointId.make(id));
+    case "SupplyChainPublish":
+      return (supplyCheckpoints[operation.profileId] ?? []).map((id) => CheckpointId.make(id));
+    case "ProviderPublish":
+      return operation.checkpoints;
+    case "AnnouncementPublish":
+    case "SmtpPublish":
+      return [CheckpointId.make("message")];
     default:
       return [];
   }
@@ -26356,13 +28107,13 @@ var assertReceipt = (ledger, receipt) => {
     throw fail9("Execution receipt is foreign to this run.");
   }
 };
-var assertScope = (accepted, scope2) => {
-  const ids = scope2.operationIds.map(String);
+var assertScope = (accepted, scope3) => {
+  const ids = scope3.operationIds.map(String);
   const known = new Set(operationEntries(accepted.plan).map(({ operation }) => String(operation.id)));
   if (new Set(ids).size !== ids.length || ids.some((id) => !known.has(id)))
     throw fail9("Execution scope is duplicate or unknown.");
   const selected2 = new Set(ids);
-  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId)))
+  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId) && !scope3.prerequisiteFactHashes?.includes(OperationHash.make(accepted.operationHashes.find((item) => item.operationId === edge.producerId)?.hash ?? ""))))
     throw fail9("Execution scope omits a dependency.");
 };
 var assertProgress = (operation, state) => {
@@ -26377,9 +28128,9 @@ var assertProgress = (operation, state) => {
 var assertOutputs = (operation, state) => {
   if (state._tag !== "Passed")
     return;
-  const declared = new Set(operation.outputs.map((output) => String(output.id)));
+  const declared2 = new Set(operation.outputs.map((output) => String(output.id)));
   const ids = state.materializedOutputs.map((output) => String(output.outputId));
-  if (new Set(ids).size !== ids.length || ids.some((id) => !declared.has(id)))
+  if (new Set(ids).size !== ids.length || ids.some((id) => !declared2.has(id)))
     throw fail9("Materialized outputs do not match the operation.");
 };
 var assertRecord = (accepted, ledger, record2, index) => {
@@ -26415,6 +28166,7 @@ var createLedger = (accepted, request) => {
     frontier: request.frontier,
     executionTopologyHash: request.topologyHash,
     revision: 0,
+    ...request.topology === undefined ? {} : { topology: request.topology },
     operations: accepted.operationHashes.map(({ operationId: operationId2, hash: hash3 }) => OperationRunRecord.make({
       operationId: OperationId.make(operationId2),
       operationHash: OperationHash.make(hash3),
@@ -26450,6 +28202,11 @@ var mapCheckpoint = (record2, id, update) => {
     throw fail9(`Unknown checkpoint ${id}.`);
   return before.map((item) => item.checkpointId === id ? update(item) : item);
 };
+var evidence = (state) => ({
+  ..."clientReconciliationKey" in state && state.clientReconciliationKey !== undefined ? { clientReconciliationKey: state.clientReconciliationKey } : {},
+  ..."targetCoordinates" in state && state.targetCoordinates !== undefined ? { targetCoordinates: state.targetCoordinates } : {},
+  ..."subjectDigest" in state && state.subjectDigest !== undefined ? { subjectDigest: state.subjectDigest } : {}
+});
 var start = (record2, operation, command3) => {
   if (current(record2).state._tag !== "Pending")
     throw fail9("Operation is not pending.");
@@ -26491,17 +28248,22 @@ var checkpoint2 = (record2, command3) => {
         return CheckpointDispatching.make({
           checkpointId: state.checkpointId,
           attemptId: attempt2.attemptId,
-          clientReconciliationKey: command3.key
+          clientReconciliationKey: command3.key,
+          ...command3.targetCoordinates === undefined ? {} : {
+            targetCoordinates: command3.targetCoordinates
+          },
+          ...command3.subjectDigest === undefined ? {} : { subjectDigest: command3.subjectDigest }
         });
       case "PassCheckpoint":
         if (state._tag !== "CheckpointDispatching")
           throw fail9("Checkpoint was not dispatching.");
-        return CheckpointPassed.make({ checkpointId: state.checkpointId, observedOutcome: command3.detail ?? "" });
+        return CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command3.detail ?? "" });
       case "FailCheckpoint":
         if (state._tag !== "CheckpointDispatching")
           throw fail9("Checkpoint was not dispatching.");
         return CheckpointFailedBeforeCommit.make({
           checkpointId: state.checkpointId,
+          ...evidence(state),
           failure: command3.detail ?? "",
           retryable: command3.retryable ?? false
         });
@@ -26510,6 +28272,7 @@ var checkpoint2 = (record2, command3) => {
           throw fail9("Checkpoint was not dispatching.");
         return CheckpointUnknown.make({
           checkpointId: state.checkpointId,
+          ...evidence(state),
           clientReconciliationKey: state.clientReconciliationKey,
           ...command3.remoteId === undefined ? {} : { observedRemoteId: command3.remoteId },
           failure: command3.detail ?? ""
@@ -26556,7 +28319,12 @@ var resolve3 = (ledger, record2, command3) => {
       const states = mapCheckpoint(record2, command3.checkpointId, (state) => {
         if (state._tag !== "CheckpointUnknown")
           throw fail9("Checkpoint is not unknown.");
-        return command3.result === "committed" ? CheckpointPassed.make({ checkpointId: state.checkpointId, observedOutcome: command3.detail }) : CheckpointFailedBeforeCommit.make({ checkpointId: state.checkpointId, failure: command3.detail, retryable: true });
+        return command3.result === "committed" ? CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command3.detail }) : CheckpointFailedBeforeCommit.make({
+          checkpointId: state.checkpointId,
+          ...evidence(state),
+          failure: command3.detail,
+          retryable: true
+        });
       });
       return setState(record2, command3.result === "committed" ? DispatchingPublish.make({ attemptId: attempt2.attemptId, progress: states }) : FailedBeforeCommit.make({ progress: states, failure: command3.detail, retryable: true }));
     }
@@ -26612,6 +28380,7 @@ var recovered = (record2) => {
     case "DispatchingPublish": {
       const states = state.progress.map((item) => item._tag === "CheckpointDispatching" ? CheckpointUnknown.make({
         checkpointId: item.checkpointId,
+        ...evidence(item),
         clientReconciliationKey: item.clientReconciliationKey,
         failure: "Recovered after durable dispatch intent."
       }) : item);
@@ -26651,18 +28420,19 @@ var moved = (accepted, store, path2, ledger, command3) => gen2(function* () {
   yield* store.save(path2, ledger.revision, next);
   return next;
 });
-var structured2 = (accepted, catalog2, store, path2, root, ledger, operation) => gen2(function* () {
+var structured2 = (accepted, catalog3, store, credential, permit, path2, root, ledger, operation) => gen2(function* () {
   const start2 = operation._tag === "Exec" ? "BeginTrustedExec" : "BeginStructured";
   let next = yield* moved(accepted, store, path2, ledger, {
     _tag: start2,
     operationId: operation.id,
     at: new Date().toISOString()
   });
-  const result2 = yield* catalog2.structured(CatalogStructuredRequest.make({
+  const secret = operation._tag === "ReviewedNoteTransform" ? yield* credential.getRead(operation.credential, permit) : undefined;
+  const result2 = yield* catalog3.structured(CatalogStructuredRequest.make({
     operation,
     root,
     availableOutputs: accepted.outputs.map(({ output }) => output)
-  })).pipe(map4((value) => ({ success: true, value })), catch_2((cause) => succeed5({ success: false, cause })));
+  }), secret).pipe(map4((value) => ({ success: true, value })), catch_2((cause) => succeed5({ success: false, cause })));
   const command3 = result2.success ? {
     _tag: "Pass",
     operationId: operation.id,
@@ -26676,11 +28446,11 @@ var structured2 = (accepted, catalog2, store, path2, root, ledger, operation) =>
   };
   return yield* moved(accepted, store, path2, next, command3);
 });
-var localOperations = (accepted, catalog2, store, request, ledger, operations) => gen2(function* () {
+var localOperations = (accepted, catalog3, store, credential, permit, request, ledger, operations) => gen2(function* () {
   let next = ledger;
   for (const operation of operations.filter((item) => operationAuthority(item) !== "RemotePublish")) {
     if (operationStatus(next, operation.id)?._tag === "Pending")
-      next = yield* structured2(accepted, catalog2, store, request.run.path, request.root, next, operation);
+      next = yield* structured2(accepted, catalog3, store, credential, permit, request.run.path, request.root, next, operation);
     if (!["Passed", "AssumedCommitted"].includes(operationStatus(next, operation.id)._tag))
       return next;
   }
@@ -26704,6 +28474,14 @@ var publishTarget = (operation) => {
       return operation.repository;
     case "PackageRegistryRelease":
       return operation.registryUrl;
+    case "PackageStorePublish":
+      return `${operation.profileId}:${operation.target.name}:${operation.target.channel ?? operation.target.version ?? ""}`;
+    case "SupplyChainPublish":
+    case "ProviderPublish":
+      return `${operation.profileId}:${Object.entries(operation.target).sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => `${key}=${value}`).join(",")}`;
+    case "AnnouncementPublish":
+    case "SmtpPublish":
+      return `${operation.profileId}:${operation.target.destination}`;
     case "OpaquePublish":
       return `${operation.contractFixtureId}:${operation.argv[0]}`;
   }
@@ -26730,6 +28508,12 @@ var checkpointCommand = (result2, operationId2, checkpointId) => {
       };
   }
 };
+var keyFor = (accepted, ledger, hash3, checkpointId, operation, target2, materials, bindings) => operation._tag === "PackageStorePublish" ? packageStoreReconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, OperationHash.make(hash3), checkpointId, operation.profileId, operation.target, bindings) : operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" || operation._tag === "AnnouncementPublish" || operation._tag === "SmtpPublish" ? supplyChainReconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, OperationHash.make(hash3), checkpointId, operation.profileId, operation.target, bindings, {
+  AnnouncementPublish: "announcement",
+  SmtpPublish: "announcement",
+  ProviderPublish: "provider",
+  SupplyChainPublish: "supply-chain"
+}[operation._tag]) : reconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, OperationHash.make(hash3), checkpointId, target2, materials);
 var publishOperation = (accepted, services, request, ledger, operation, materials, permit) => gen2(function* () {
   let next = operationStatus(ledger, operation.id)?._tag === "Pending" ? yield* moved(accepted, services.store, request.run.path, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
   const status = operationStatus(next, operation.id);
@@ -26738,15 +28522,21 @@ var publishOperation = (accepted, services, request, ledger, operation, material
     if (checkpoint3._tag !== "CheckpointPending")
       continue;
     const operationHash = accepted.operationHashes.find((item) => item.operationId === operation.id).hash;
+    const bindings = materials.filter((item) => operation.inputs.includes(item.outputId));
     const target2 = publishTarget(operation);
-    const key = reconciliationKey(accepted.planId, next.logicalRunId, next.scope, next.executionTopologyHash, OperationHash.make(operationHash), checkpoint3.checkpointId, target2, materials);
+    const key = keyFor(accepted, next, operationHash, checkpoint3.checkpointId, operation, target2, materials, bindings);
+    const subject = bindings[0];
     next = yield* moved(accepted, services.store, request.run.path, next, {
       _tag: "DispatchCheckpoint",
       operationId: operation.id,
       checkpointId: checkpoint3.checkpointId,
-      key
+      key,
+      ...["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag) ? {
+        targetCoordinates: target2,
+        ...subject === undefined ? {} : { subjectDigest: subject.digest }
+      } : {}
     });
-    const outputId2 = checkpoint3.checkpointId === "dispatch" ? String(operation.inputs[0] ?? "") : String(checkpoint3.checkpointId).replace(/^asset:/u, "");
+    const outputId2 = checkpoint3.checkpointId === "dispatch" || ["SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag) ? String(operation.inputs[0] ?? "") : String(checkpoint3.checkpointId).replace(/^asset:/u, "");
     const facts = materials.find((item) => item.outputId === outputId2);
     const handle = facts === undefined ? undefined : yield* services.workspace.verify(request.snapshotDirectory, facts);
     const credential = yield* services.credential.getPublish(operation.credential, permit);
@@ -26792,7 +28582,7 @@ var openLedger = (accepted, request, store) => gen2(function* () {
 });
 var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   const store = yield* RunStore;
-  const catalog2 = yield* DriverCatalog;
+  const catalog3 = yield* DriverCatalog;
   const workspace = yield* WorkspaceStore;
   const credential = yield* CredentialStore;
   const signer = yield* ApprovalSigner;
@@ -26802,7 +28592,7 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
     ledger = yield* moved(accepted, store, request.run.path, ledger, recovery);
   const selected2 = new Set(ledger.scope.operationIds.map(String));
   const entries2 = operationEntries(accepted.plan).filter(({ stage, operation }) => selected2.has(operation.id) && stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through));
-  ledger = yield* localOperations(accepted, catalog2, store, request, ledger, entries2.map(({ operation }) => operation));
+  ledger = yield* localOperations(accepted, catalog3, store, credential, executionPermit, request, ledger, entries2.map(({ operation }) => operation));
   if (entries2.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !["Passed", "AssumedCommitted"].includes(operationStatus(ledger, operation.id)._tag)))
     return ledger;
   const publishEntries = entries2.map(({ operation }) => operation).filter((operation) => operationAuthority(operation) === "RemotePublish");
@@ -26816,13 +28606,13 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
     return { _tag: "PublishReviewRequired", reviewId: review, ledger };
   const permit = yield* signer.publish(request.publish.receipt, executionPermit, review);
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
-    ledger = yield* reconcile2(accepted, { store, catalog: catalog2, workspace, credential }, request, ledger, recovery, permit);
+    ledger = yield* reconcile2(accepted, { store, catalog: catalog3, workspace, credential }, request, ledger, recovery, permit);
   if (blocksApply(ledger))
     return ledger;
   for (const operation of publishEntries) {
     const state = operationStatus(ledger, operation.id);
     if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
-      ledger = yield* publishOperation(accepted, { store, catalog: catalog2, workspace, credential }, request, ledger, operation, materials, permit);
+      ledger = yield* publishOperation(accepted, { store, catalog: catalog3, workspace, credential }, request, ledger, operation, materials, permit);
     if (!["Passed", "AssumedCommitted"].includes(operationStatus(ledger, operation.id)._tag))
       return ledger;
   }
@@ -27103,10 +28893,10 @@ var makeReleaseApi = (layer) => {
   const reviewExecution = async (input2) => {
     exact("review", input2, ["planBytes", "expectedPlanId", "scope", "topology"], "review input");
     const accepted = await run3("review", acceptExpected(input2.planBytes, input2.expectedPlanId));
-    const scope2 = selectScope(accepted, input2.scope);
+    const scope3 = selectScope(accepted, input2.scope);
     return {
-      scope: scope2,
-      executionReviewId: executionReviewId(accepted, scope2, topology(input2.topology))
+      scope: scope3,
+      executionReviewId: executionReviewId(accepted, scope3, topology(input2.topology))
     };
   };
   return Object.freeze({
@@ -27132,7 +28922,7 @@ import { dirname as dirname4 } from "node:path";
 import { realpathSync as realpathSync4 } from "node:fs";
 import { basename as basename3, dirname as dirname3, isAbsolute as isAbsolute2, relative as relative3, resolve as resolve5 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
-var optional2 = (runtime, name) => {
+var optional3 = (runtime, name) => {
   const value = runtime.input(name).trim();
   return value.length === 0 ? undefined : value;
 };
@@ -27148,7 +28938,7 @@ var containedOutput = (root, path2) => {
   const candidate = isAbsolute2(path2) ? resolve5(path2) : resolve5(root, path2);
   return inside(root, resolve5(realpathSync4(dirname3(candidate)), basename3(candidate)));
 };
-var scope2 = (value) => value === undefined || value === "all" ? "all" : { operationIds: value.split(",").filter(Boolean).map((id) => id) };
+var scope3 = (value) => value === undefined || value === "all" ? "all" : { operationIds: value.split(",").filter(Boolean).map((id) => id) };
 var resolutions = (value) => {
   if (value === undefined)
     return;
@@ -27158,8 +28948,8 @@ var resolutions = (value) => {
   return parsed;
 };
 var accepted = (runtime, root) => {
-  const path2 = optional2(runtime, "plan-path");
-  const planId = optional2(runtime, "plan-id");
+  const path2 = optional3(runtime, "plan-path");
+  const planId = optional3(runtime, "plan-id");
   if (path2 === undefined)
     throw new Error("plan-path is required.");
   if (planId === undefined)
@@ -27170,9 +28960,9 @@ var accepted = (runtime, root) => {
   };
 };
 var planAction = async (api2, runtime, root) => {
-  const source = contained(root, optional2(runtime, "config") ?? "release.config.json");
+  const source = contained(root, optional3(runtime, "config") ?? "release.config.json");
   const result2 = await api2.plan({ config: JSON.parse(runtime.read(source)), workspace: root });
-  const output = containedOutput(root, optional2(runtime, "plan-path") ?? "release-plan.json");
+  const output = containedOutput(root, optional3(runtime, "plan-path") ?? "release-plan.json");
   runtime.write(output, result2.bytes);
   runtime.output("plan_id", result2.planId);
   runtime.output("status", "planned");
@@ -27180,36 +28970,36 @@ var planAction = async (api2, runtime, root) => {
 var reviewAction = async (api2, runtime, root, command3) => {
   const review = await api2.reviewExecution({
     ...accepted(runtime, root),
-    scope: scope2(optional2(runtime, "scope"))
+    scope: scope3(optional3(runtime, "scope"))
   });
   runtime.output("execution_review_id", review.executionReviewId);
   runtime.output("status", command3 === "doctor" ? "valid" : "review-required");
 };
 var applyInput = (runtime, root) => {
-  const reviewer = optional2(runtime, "reviewer");
+  const reviewer = optional3(runtime, "reviewer");
   if (reviewer === undefined)
     throw new Error("reviewer is required.");
-  const newRunPath = optional2(runtime, "new-run");
-  const resumeRunPath = optional2(runtime, "resume");
+  const newRunPath = optional3(runtime, "new-run");
+  const resumeRunPath = optional3(runtime, "resume");
   if (newRunPath === undefined === (resumeRunPath === undefined)) {
     throw new Error("Choose exactly one of new-run or resume.");
   }
-  const review = optional2(runtime, "confirm-execution");
+  const review = optional3(runtime, "confirm-execution");
   if (newRunPath !== undefined && review === undefined) {
     throw new Error("confirm-execution is required for a new run.");
   }
-  const publish = optional2(runtime, "confirm-publish");
-  const through = optional2(runtime, "through");
-  const reconcile3 = optional2(runtime, "reconcile");
-  const resolutionItems = resolutions(optional2(runtime, "resolutions"));
-  const reason = optional2(runtime, "reason");
+  const publish = optional3(runtime, "confirm-publish");
+  const through = optional3(runtime, "through");
+  const reconcile3 = optional3(runtime, "reconcile");
+  const resolutionItems = resolutions(optional3(runtime, "resolutions"));
+  const reason = optional3(runtime, "reason");
   return {
     ...accepted(runtime, root),
     workspace: root,
     ...newRunPath === undefined ? { resumeRunPath } : {
       newRun: {
         path: newRunPath,
-        scope: scope2(optional2(runtime, "scope")),
+        scope: scope3(optional3(runtime, "scope")),
         executionReviewId: review,
         reviewer,
         ...reason === undefined ? {} : { reason }
@@ -27242,12 +29032,12 @@ var applyAction = async (api2, runtime, root) => {
 };
 var runCutoverAction = async (api2, runtime) => {
   const root = realpathSync4(runtime.workspace);
-  const command3 = optional2(runtime, "command") ?? "plan";
+  const command3 = optional3(runtime, "command") ?? "plan";
   if (!actionCommands.includes(command3))
     throw new Error("command must be plan, apply, or doctor.");
   if (command3 === "plan")
     return planAction(api2, runtime, root);
-  if (command3 === "doctor" || optional2(runtime, "review-only") === "true") {
+  if (command3 === "doctor" || optional3(runtime, "review-only") === "true") {
     return reviewAction(api2, runtime, root, command3);
   }
   return applyAction(api2, runtime, root);

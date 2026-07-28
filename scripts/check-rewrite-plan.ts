@@ -341,8 +341,8 @@ const verifyReport = (
   }
   const hashes = expectObject(report.contractHashes!, "contractHashes")
   const expectedHashes = {
-    ...(plan === "184" ? { audit: jsonHashAt(commit, "contracts/rewrite/audit.json") } : {}),
     architecture: jsonHashAt(commit, "contracts/rewrite/architecture.json"),
+    ...(plan === "184" ? { audit: jsonHashAt(commit, "contracts/rewrite/audit.json") } : {}),
     configBoundary: jsonHashAt(commit, "contracts/rewrite/config-boundary.json"),
     ...(gates.order.indexOf(plan) < gates.order.indexOf("176") ? {} : {
       deletionMap: jsonHashAt(commit, "contracts/rewrite/deletion-map.json")
@@ -449,8 +449,8 @@ const buildReport = async (
     commandVectorHash: canonicalJsonHash(gate.commands),
     commands: commands as unknown as JsonValue,
     contractHashes: {
-      ...(plan === "184" ? { audit: jsonHash("contracts/rewrite/audit.json") } : {}),
       architecture: jsonHash("contracts/rewrite/architecture.json"),
+      ...(plan === "184" ? { audit: jsonHash("contracts/rewrite/audit.json") } : {}),
       configBoundary: jsonHash("contracts/rewrite/config-boundary.json"),
       ...(gates.order.indexOf(plan) < gates.order.indexOf("176") ? {} : {
         deletionMap: jsonHash("contracts/rewrite/deletion-map.json")

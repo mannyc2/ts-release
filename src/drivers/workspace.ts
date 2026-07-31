@@ -22,9 +22,12 @@ const secureBytes = (root: string, path: string): { bytes: Uint8Array; inode: nu
   }
   const descriptor = openSync(current, constants.O_RDONLY | constants.O_NOFOLLOW)
   try {
-    const resolved = realpathSync(`/proc/self/fd/${descriptor}`)
+    const opened = fstatSync(descriptor)
+    const resolved = realpathSync(current)
     if (!beneath(root, resolved)) throw fail("Opened file escaped the workspace root.")
-    return { bytes: readFileSync(descriptor), inode: fstatSync(descriptor).ino }
+    const landed = lstatSync(resolved)
+    if (landed.ino !== opened.ino || landed.dev !== opened.dev) throw fail("Opened file changed identity.")
+    return { bytes: readFileSync(descriptor), inode: opened.ino }
   } finally {
     closeSync(descriptor)
   }

@@ -17,6 +17,9 @@
   assets. Public directory submission stays a manual operator action
   (docs/skill-distribution.md).
 
+- Made workspace snapshot reads portable to macOS: the containment check now
+  proves the realpath-resolved location is the exact opened file by device
+  and inode instead of resolving the descriptor through Linux-only procfs.
 - Internal readability refactor with identical public behavior: one authority
   predicate for remote-publish operations, shared canonical-JSON hashing, an
   `ApplyContext` for the apply orchestrator, and removal of dead driver

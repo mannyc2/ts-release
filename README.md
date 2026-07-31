@@ -1,542 +1,291 @@
-# @mannyc1/ts-release
+# ts-release
 
-GoReleaser-grade distribution for TypeScript/Bun CLI authors, with typed
-config and a reviewable publish plan.
+`ts-release` turns an in-memory release configuration into canonical,
+reviewable plan bytes, then applies only those accepted bytes. It is a Bun
+and TypeScript release tool built around explicit authority, staged
+publication, and a durable run ledger.
 
-`ts-release` is plan-first: produce a reviewable distribution plan, rehearse it
-as a snapshot, then execute only after explicit approval. Snapshot releases use
-the resolved version plus `-SNAPSHOT-{shortCommit}` and refuse externally
-visible or irreversible operations even when execution flags are present.
+Full in-scope outcome parity for TypeScript/Bun distribution against the
+pinned GoReleaser v2.17.0 ledger: 107/107 customization rows and 33/33 Pro
+rows, excluding C005, C008, C017, C023, C028, C047, C050, C051, P029, P035,
+and P036.
 
-The package keeps the useful GoReleaser shape without a Pro boundary: artifact
-inventory, package-manager catalog files, publish operations, and evidence
-artifacts all stay visible as data. Typed config keeps repeated distribution
-metadata in one place. npm and PyPI support are first-party surfaces, not the
-whole product.
+That claim is scoped to the frozen outcome ledger. It does not claim parity
+for Go-specific toolchains, deprecated implementation mechanics, or vendor
+licensing behavior.
 
-Compared with semantic-release, `ts-release` starts from distribution artifacts
-and approval gates rather than commit-message versioning. They meet naturally at
-a future conventional-commits version source; today, version identity is explicit
-or read from the package manifest/git tag.
-
-## How To Install
-
-Choose the install surface that matches how you want to use `ts-release`.
-
-### Homebrew
-
-Installs the macOS CLI from the published Homebrew tap:
+## Install
 
 ```sh
-brew install mannyc2/ts-release/ts-release
-ts-release --version
+bun add -d @mannyc1/ts-release
 ```
 
-### uv
+The supported runtime is Bun 1.3.14 or newer.
 
-Installs the CLI wrapper from PyPI into an isolated tool environment:
+## Configuration
 
-```sh
-uv tool install ts-release
-ts-release --version
-```
-
-### pipx
-
-Installs the CLI wrapper from PyPI with pipx:
-
-```sh
-pipx install ts-release
-ts-release --version
-```
-
-### pip
-
-Installs the PyPI package into the active Python environment:
-
-```sh
-python -m pip install ts-release
-ts-release --version
-```
-
-### Scoop
-
-Installs the Windows CLI from the published Scoop bucket:
-
-```powershell
-scoop bucket add ts-release https://github.com/mannyc2/scoop-ts-release
-scoop install ts-release
-ts-release --version
-```
-
-### npm
-
-Installs the TypeScript library/API package:
-
-```sh
-npm install @mannyc1/ts-release
-```
-
-### Bun
-
-Installs the TypeScript library/API package with Bun:
-
-```sh
-bun add @mannyc1/ts-release effect@beta @effect/platform-bun@beta
-```
-
-### GitHub Releases
-
-Downloads a raw platform binary from the GitHub Release:
-
-```sh
-curl -fsSLO https://github.com/mannyc2/ts-release/releases/download/v0.1.0/ts-release-0.1.0-linux-x64
-chmod +x ts-release-0.1.0-linux-x64
-./ts-release-0.1.0-linux-x64 --version
-```
-
-The CLI is currently distributed through Homebrew, Scoop, PyPI, and GitHub
-Release binaries. The npm package is the reusable TypeScript library surface.
-
-## TypeScript API
-
-Use the root import for typed config authoring, Promise-based planning, and
-stable summary data:
-
-```ts
-import {
-  defineRelease,
-  disposeReleaseRuntime,
-  plan,
-  release,
-  renderReleaseConfigJsonSchema
-} from "@mannyc1/ts-release"
-
-const config = defineRelease({
-  project: {
-    name: "release",
-    packageName: "@scope/pkg",
-    repository: "owner/repo",
-    version: "0.1.0",
-    commit: "abc123",
-    tag: "v0.1.0"
-  },
-  npmPackage: {
-    path: "."
-  },
-  publish: {
-    npm: {
-      registry: "https://registry.npmjs.org",
-      packageName: "@scope/pkg",
-      packagePath: ".",
-      access: "public",
-      provenance: true
-    }
-  },
-  evidence: ".release/evidence/{version}"
-})
-
-const rehearsal = await plan({ config, snapshot: true })
-console.log(rehearsal.identity.version)
-
-const dryRun = await release({ config })
-console.log(dryRun.executed.length)
-
-console.log(renderReleaseConfigJsonSchema())
-await disposeReleaseRuntime()
-```
-
-## Use The CLI
-
-Use the installed CLI to scaffold, inspect, build, plan, release, and verify:
-
-```sh
-ts-release init --template portable-cli --package @scope/pkg --repo owner/repo --tap owner/homebrew-pkg --bucket owner/scoop-pkg --pypi-package pkg --github-actions --write
-ts-release doctor --config release.config.json
-ts-release build --config release.config.json --format text
-ts-release plan --config release.config.json --format text
-ts-release plan --config release.config.json --snapshot --format text
-```
-
-`release` is plan-only by default and ends with an explicit reminder that
-nothing was executed:
-
-```sh
-ts-release release --config release.config.json
-```
-
-To publish through the full ordered workflow, pass both execution approvals:
-
-```sh
-ts-release release --config release.config.json --execute --approve-publish
-```
-
-`@mannyc1/ts-release` helps you declare the thing you want to distribute, stage
-platform-specific artifacts when needed, and feed those artifacts into
-target-specific package managers, catalogs, release hosts, and install surfaces.
-Publish operations still stay reviewable and approval-gated, but the product
-center is portable distribution data.
-
-Use it when you need to answer:
-
-- Which binaries, archives, packages, or generated files make up this release?
-- Which package managers or install channels consume each artifact variant?
-- What target-specific files or commands will be generated?
-- Which operations are only rendering data, and which ones publish externally?
-- What evidence proves what was staged, rendered, validated, or executed?
-
-The npm package ships both public surfaces: a small root TypeScript API for
-typed config authoring and schema helpers, and the `ts-release` executable for
-planning, staging, publishing, verification, and diagnostics. They use the same
-release model; the CLI is not a separate product direction.
-
-## What It Does
-
-`ts-release` models distribution as data:
-
-```text
-release config
-  -> normalized release identity
-  -> canonical build and imported artifacts
-  -> installable artifact variants
-  -> one complete release-plan/v4 operation sequence
-  -> generated package-manager files
-  -> explicit execution evidence
-  -> post-publish verification
-```
-
-The library currently plans, stages, and validates these distribution surfaces:
-
-| Surface | What ts-release models |
-|---|---|
-| npm | package publish, native dry-run validation, provenance, trusted publishing |
-| GitHub Releases | release creation, asset uploads, and REST API verification |
-| Homebrew taps | generated formula files, macOS artifact variants, and approved tap pushes |
-| PyPI | already-built distributions and platform CLI wrapper wheels published through Twine |
-| Scoop buckets | generated manifest files, Windows binary shims, and approved bucket pushes |
-| File-based catalogs | user-owned whole files with artifact facts and approved git push or pull-request flows |
-| Bun executables | optional Bun compile staging before target planning |
-
-### Publish to any file-based catalog
-
-Use `catalogs[]` when a distribution surface is a file maintained in a git
-repository. Literal content and predictable asset facts resolve in the plan;
-typed checksum holes resolve only after the referenced artifact exists.
+Core configuration is a JSON-compatible value, never a file path or encoded
+document. The CLI and GitHub Action own JSON loading and pass the parsed value
+to the library once.
 
 ```json
 {
-  "catalogs": [
-    {
-      "id": "marketplace",
-      "repository": "owner/catalog",
-      "directory": "catalog-checkout",
-      "file": "plugins/release.json",
-      "submit": "pull-request",
-      "content": [
-        "{\"name\":\"{name}\",\"sha256\":\"",
-        { "fact": "sha256", "artifact": "plugin" },
-        "\"}\n"
-      ]
-    }
-  ]
-}
-```
-
-The `examples/agent-plugin` fixture shows the complete generic path: a
-platform-neutral zip, checksum, GitHub release assets, catalog rendering, and
-an approval-gated pull request. Catalog content is whole-file, user-owned data;
-the generic surface does not claim that illustrative marketplace JSON is a
-stable vendor contract. `downloadUrl` and `assetName` facts are also available
-for values that can be fixed during planning.
-
-It is not a fake universal package manager and does not hide each ecosystem's
-manifest rules. It can stage declared artifacts through adapters, but it does
-not replace full build pipelines, compilers, signing, or installer toolchains.
-The job is to keep canonical artifact data and target-specific distribution
-data in one typed plan.
-
-## CLI Workflow
-
-The first useful path is artifact-first: write or scaffold a config, stage any
-declared build outputs, plan the target distribution work, then run the
-approved release workflow.
-
-The CLI intentionally has six top-level verbs:
-
-```sh
-ts-release init --config release.config.json
-ts-release doctor --config release.config.json
-ts-release build --config release.config.json --format text
-ts-release plan --config release.config.json --format markdown
-ts-release release --config release.config.json --execute --approve-publish
-ts-release release --config release.config.json --execute --approve-publish --continue
-ts-release verify --config release.config.json
-ts-release verify --config release.config.json --published
-```
-
-## GitHub Actions
-
-The bundled action is the intended CI adapter:
-
-```yaml
-- uses: mannyc2/ts-release-action@v1
-  with:
-    command: plan
-    config: release.config.json
-    format: markdown
-    upload-evidence: true
-```
-
-Supported action commands are `plan`, `doctor`, `build`, `release`, and
-`verify`.
-
-Publishing still needs explicit approval:
-
-```yaml
-- uses: mannyc2/ts-release-action@v1
-  with:
-    command: release
-    config: release.config.json
-    execute: "true"
-    approve-publish: "true"
-    upload-evidence: true
-```
-
-Set `continue: "true"` alongside both approval inputs to resume a matching
-release from fingerprinted evidence; only prior passed operations are skipped.
-Set `published: "true"` on command `verify` to re-download GitHub release
-assets and check their bytes against the uploaded checksum manifest.
-
-For npm trusted publishing, configure npmjs for the GitHub repository and
-workflow, grant `id-token: write`, and keep `trustedPublishing` in the npm
-target. Trusted publishing uses OIDC during `npm publish`; it does not use
-`NPM_TOKEN`.
-
-For PyPI trusted publishing, configure a pending or existing PyPI Trusted
-Publisher for the GitHub repository, workflow, and release environment, then
-keep `trustedPublishing` in the PyPI target. Twine uses OIDC during
-`twine upload`; it does not require `TWINE_USERNAME` or `TWINE_PASSWORD` in CI.
-
-## Config
-
-A release config declares project identity, build outputs, publish surfaces,
-and evidence location.
-
-```json
-{
-  "$schema": "https://mannyc2.github.io/ts-release/schema/release-config.schema.json",
   "project": {
-    "packageName": "@scope/pkg",
-    "repository": "owner/repo",
-    "commit": "HEAD",
-    "tagTemplate": "v{version}"
-  },
-  "npmPackage": {
-    "path": "."
-  },
-  "publish": {
-    "npm": {
-      "registry": "https://registry.npmjs.org",
-      "packageName": "@scope/pkg",
-      "packagePath": ".",
-      "trustedPublishing": {
-        "workflow": "release.yml",
-        "verifyPackageExists": true
-      },
-      "access": "public",
-      "provenance": true
-    }
-  },
-  "evidence": ".release/evidence/{version}"
-}
-```
-
-Runtime config decoding is strict: unknown keys are rejected instead of
-silently stripped. npm trusted publishing accepts only
-`verifyPackageExists`. Archives, Homebrew, Scoop, and PyPI all use a non-empty
-`ids` array for explicit artifact selection. Scoop requires exactly one id;
-when `ids` is absent, Homebrew selects Darwin executables, Scoop selects a
-Windows executable, and PyPI selects wheel artifacts.
-
-Useful config commands:
-
-```sh
-ts-release doctor --config release.config.json --format text
-ts-release plan --config release.config.json --format summary
-```
-
-Paths are release-workspace relative. Artifact paths can interpolate
-`{version}`, `{name}`, and `{normalizedName}`. Evidence directories can
-interpolate `{version}`.
-
-## Plan Contract
-
-`release-plan/v4` is the sole plan document. It is flat, contains one
-canonical artifact array, and exposes every planned build, wheel, import,
-archive, checksum, catalog, publish, and verification operation in contribution
-order. Phase selection is execution policy; it does not hide work from JSON,
-text, Markdown, summaries, scripts, doctor, or Action counts.
-
-```json
-{
-  "schemaVersion": "release-plan/v4",
-  "identity": {
-    "name": "pkg",
-    "normalizedName": "pkg",
-    "version": "0.1.0",
-    "commit": "abc123",
-    "shortCommit": "abc123",
-    "tag": "v0.1.0",
-    "versionSource": "manifest",
-    "snapshot": false
+    "name": "@scope/example",
+    "version": "1.2.3",
+    "tag": "v1.2.3",
+    "commit": "abc123"
   },
   "artifacts": [
     {
-      "id": "cli-linux-x64",
-      "kind": "executable",
-      "path": "artifacts/pkg-0.1.0-linux-x64",
-      "producedBy": "build:bun"
+      "id": "cli",
+      "path": "dist/example",
+      "format": "executable"
     }
   ],
-  "operations": [],
-  "source": {
-    "root": ".",
-    "configPath": "release.config.json"
+  "publish": {}
+}
+```
+
+Every public fixture contains the complete fields required by its package or
+provider surface. Homebrew and Scoop lowering use product-owned immutable
+presets; applications cannot register or replace profiles.
+
+## Promise API
+
+```ts
+import {
+  apply,
+  plan,
+  reviewExecution,
+  type PlanId
+} from "@mannyc1/ts-release"
+
+const config = {
+  project: {
+    name: "@scope/example",
+    version: "1.2.3",
+    tag: "v1.2.3",
+    commit: "abc123"
   },
-  "evidenceDirectory": ".release/evidence/0.1.0"
+  artifacts: [
+    { id: "cli", path: "dist/example", format: "executable" }
+  ],
+  publish: {}
 }
-```
 
-The Action reports `operation_count` from this complete array and reports
-unique catalog/publish surfaces as `surface_count`.
+const planned = await plan({
+  config,
+  workspace: "/absolute/real/workspace"
+})
 
-This is a hard cut: `release-plan/v3` documents are unsupported and there is
-no fallback reader. The former Action `target_count` output was removed in
-favor of `surface_count`; config `packageExists` was replaced by
-`verifyPackageExists`; Homebrew `artifactId`/`artifactIds`, Scoop `artifactId`,
-and PyPI `artifactIds` were replaced by the shared non-empty `ids` spelling.
-These are removals, not deprecations.
+const review = await reviewExecution({
+  planBytes: planned.bytes,
+  expectedPlanId: planned.planId,
+  scope: "all"
+})
 
-## Artifact Variants
-
-Bun builds can produce installable variants for different operating systems
-and architectures. The Bun builder derives variant metadata from each canonical
-target, so the release plan can carry facts such as `linux`/`x64` or
-`windows`/`x64` before any package-manager adapter consumes the artifact.
-
-```json
-{
-  "id": "cli-linux-x64",
-  "kind": "executable",
-  "path": "artifacts/pkg-0.1.0-linux-x64",
-  "producedBy": "build:bun",
-  "platform": {
-    "os": "linux",
-    "arch": "x64",
-    "libc": "glibc",
-    "targetTriple": "bun-linux-x64-baseline"
+const materialized = await apply({
+  planBytes: planned.bytes,
+  expectedPlanId: planned.planId,
+  workspace: "/absolute/real/workspace",
+  through: "validate",
+  newRun: {
+    path: ".release/run.json",
+    scope: "all",
+    executionReviewId: review.executionReviewId,
+    reviewer: "release-team"
   }
-}
-```
+})
 
-Direct artifact declarations can also include `variant` when an artifact was
-built outside `ts-release`. Homebrew formulas can consume macOS `darwin` x64
-and arm64 variants from one target, and Scoop manifests can derive a stable shim
-from a Windows executable variant. Future package-manager adapters should follow
-that pattern instead of guessing platform support from filenames.
-
-## Diagnostics
-
-Static diagnostics help catch missing auth and unsafe workflow setup before an
-approved run:
-
-```sh
-ts-release doctor --config release.config.json --format text
-ts-release doctor --config release.config.json --target npm --format text
-ts-release doctor --config release.config.json --format markdown
-```
-
-Diagnostics report confidence levels instead of pretending local checks can
-prove provider-side setup. For example, npm trusted publishing can only be fully
-confirmed inside the configured GitHub Actions environment.
-
-## Public Root Import
-
-The package does not expose internal `pipeline/`, `pipes/`, `builders/`,
-`engine/`, `host/`, `artifacts/`, or `workflows/` subpaths. Use the root import
-for `defineRelease`, schema helpers, `plan`, `build`, `release`, `verify`,
-summary types, and `ReleaseApiError`.
-
-## Templates And Examples
-
-Create a starter config with `init --template`:
-
-```sh
-ts-release init --template npm-github --package @scope/pkg --repo owner/repo --github-actions --write
-ts-release init --template portable-cli --package @scope/pkg --repo owner/repo --tap owner/homebrew-pkg --bucket owner/scoop-pkg --pypi-package pkg --write
-```
-
-Available templates:
-
-- `npm-only`
-- `npm-github`
-- `bun-cli-github`
-- `portable-cli`
-- `multi-target-homebrew`
-- `multi-target-scoop`
-
-Templates with build sections need an explicit staging step before publish
-planning expects the generated files to exist:
-
-```sh
-ts-release build --config release.config.json --format text
-```
-
-## Evidence
-
-Build, release, and verification commands write JSON evidence bundles. `build`
-writes `build.json`, the full `release` workflow writes `evidence.json`, and
-`verify` writes `verification.json`. When Action evidence upload is enabled,
-its build bundle is included in the uploaded artifact.
-
-```json
-{
-  "schemaVersion": "release-evidence/v3",
-  "releaseName": "release",
-  "releaseVersion": "0.1.0",
-  "records": [
-    {
-      "operationId": "npm:npm-pack-dry-run",
-      "pipeId": "publish:npm",
-      "phase": "publish",
-      "risk": "read-only",
-      "status": "passed",
-      "message": "npm pack dry run passed.",
-      "startedAt": "2026-01-01T00:00:00.000Z",
-      "endedAt": "2026-01-01T00:00:00.100Z",
-      "durationMillis": 100,
-      "outcome": {
-        "command": {
-          "executable": "npm",
-          "args": ["pack", "--dry-run", "--json"],
-          "requiredEnv": [],
-          "redactedEnv": []
-        },
-        "exitCode": 0,
-        "stdout": "",
-        "stderr": "",
-        "_tag": "command"
-      }
+if (materialized.nextPublishReviewId !== undefined) {
+  await apply({
+    planBytes: planned.bytes,
+    expectedPlanId: planned.planId as PlanId,
+    workspace: "/absolute/real/workspace",
+    through: "verify",
+    resumeRunPath: ".release/run.json",
+    publishConfirmation: {
+      publishReviewId: materialized.nextPublishReviewId,
+      reviewer: "release-team"
     }
-  ]
+  })
 }
 ```
 
-Failed commands preserve partial evidence when possible. Non-strict mode records
-missing validators as visible skipped evidence instead of silently dropping them.
+`plan` rejects strings, `configPath`, non-JSON values, excess configuration
+fields, and empty or relative workspaces. Existing absolute workspaces are
+realpath-normalized, so a symlink spelling and its canonical spelling produce
+the same plan identity. Workspace paths never enter plan bytes.
 
-## More Docs
+`apply` has no configuration input and never replans. It accepts canonical
+`release-plan/v6` bytes plus the expected `PlanId`, then verifies the plan,
+scope, topology, ledger, operation hashes, materialized bytes, and receipts
+before exercising a driver.
 
-See `ARCHITECTURE.md` for module boundaries, `SPEC.md` for the design contract,
-`templates/README.md` for starter configs, and `examples/README.md` for runnable
-fixtures.
+Use `makeReleaseApi(layer)` when a test or alternate host needs explicit
+services. The default functions are bound to one immutable live layer.
+
+## CLI
+
+The installed CLI has exactly four commands:
+
+```text
+ts-release init
+ts-release doctor
+ts-release plan
+ts-release apply
+```
+
+The canonical staged flow is:
+
+```sh
+ts-release plan \
+  --config release.config.json \
+  --out release-plan.json
+
+ts-release apply release-plan.json \
+  --plan-id PLAN_ID \
+  --review-only \
+  --scope all
+
+ts-release apply release-plan.json \
+  --plan-id PLAN_ID \
+  --through validate \
+  --new-run .release/run.json \
+  --scope all \
+  --confirm-execution EXECUTION_REVIEW_ID \
+  --reviewer release-team
+
+ts-release apply release-plan.json \
+  --plan-id PLAN_ID \
+  --through verify \
+  --resume .release/run.json \
+  --confirm-publish PUBLISH_REVIEW_ID \
+  --reviewer release-team
+```
+
+`doctor` consumes a plan file and `--plan-id`; it performs read-only review
+and does not load configuration or publish. `apply --review-only` also
+derives the immutable execution challenge without minting authority.
+
+The CLI reads its JSON configuration exactly once. A relative config path
+uses the current working directory as the workspace, an absolute config path
+uses its containing directory, and `--root` overrides both. The selected
+workspace must exist and is normalized with `realpath`.
+
+## GitHub Action
+
+```yaml
+- id: plan
+  uses: mannyc2/ts-release/apps/ts-release-action@main
+  with:
+    command: plan
+    config: release.config.json
+    plan-path: .release/release-plan.json
+
+- id: review
+  uses: mannyc2/ts-release/apps/ts-release-action@main
+  with:
+    command: apply
+    review-only: "true"
+    plan-path: .release/release-plan.json
+    plan-id: ${{ steps.plan.outputs.plan_id }}
+    scope: all
+```
+
+Action commands are `plan`, `apply`, and `doctor`. Configuration and output
+paths must remain inside the realpath-normalized `GITHUB_WORKSPACE`. The
+Action exposes plan, review, receipt, run, status, and evidence outputs named
+in `action.yml`; it never plans during `apply`.
+
+## Agent skill/plugin
+
+The repository doubles as a plugin marketplace for one shared `release`
+skill that teaches agent hosts to drive ts-release without bypassing its
+review gates. The same `ts-release-plugin/` tree carries native manifests
+for OpenAI/Codex and Claude Code:
+
+```sh
+codex plugin marketplace add mannyc2/ts-release
+codex plugin add ts-release@mannyc2-ts-release
+
+claude plugin marketplace add mannyc2/ts-release
+claude plugin install ts-release@mannyc2-ts-release
+```
+
+Claude Code exposes the skill as `/ts-release:release`. Each tagged release
+also ships `ts-release-plugin-{version}.zip` with a checksum as a GitHub
+release asset, produced by this repository's own dogfood release plan. The
+plugin version always equals the package version; `bun run
+check:skill-plugin` fails on any drift.
+
+Public directory submission (OpenAI Plugins Directory, Anthropic's
+community marketplace) is a manual operator action documented in
+[docs/skill-distribution.md](docs/skill-distribution.md); third-party skill
+registries are explicitly out of scope. The skill grants no publication
+authority: releases still flow through ts-release's execution and publish
+reviews.
+
+## Durable documents and approvals
+
+There are two durable documents:
+
+- `release-plan/v6` is canonical immutable intent. `PlanId` is derived from
+  its exact accepted bytes.
+- `run-ledger/v1` records immutable scope, operation hashes, monotonic
+  frontier, attempts, receipts, materialized-output snapshots, and recovery
+  decisions.
+
+Evidence is a derived projection of the ledger, not a third authority source.
+An execution review challenge is deterministic for a plan, scope, and
+topology, but it is not permission. Starting a run mints a nonce- and
+run-bound execution receipt. Publication requires a second review after local
+outputs and remote facts have been observed; confirmation mints a
+run-bound publish receipt.
+
+Unknown publication outcomes stop for reconciliation or an explicit
+operator resolution with operation id, identity, reason, and timestamp.
+
+## Certification
+
+The repository proves five technical properties: review equals execution,
+invalid plans stop before capabilities, authority is structural, uncertainty
+is durable and replay-safe, and staged split/merge execution remains bound to
+one plan and content inventory. The final fault matrix covers 45/45 cells and
+11/11 structural controls with zero credential leaks or duplicate mutations.
+
+| Certified state | Product semantic lines | Oracle semantic lines |
+|---|---:|---:|
+| M6 / Plan 177 | 4,322 | 4,374 |
+| PARITY / Plan 184 readiness | 5,871 | 6,040 |
+
+Product source remains below the 8,031-line opening implementation while
+covering the complete in-scope parity surface.
+
+## Migration
+
+| Removed surface | v6 replacement |
+|---|---|
+| `build` API/command | Review a scope and `apply --through process` |
+| `plan` from a config path | Load once in the CLI/Action, then call value-only `plan` |
+| `release` API/command | Full-scope staged `apply` through validate, review, then verify |
+| `verify` API/command | Resume the same ledger with `apply --through verify` |
+| Mutable runtime configuration | `makeReleaseApi(layer)` or the immutable default API |
+| `release-plan/v5` | Canonical `release-plan/v6`; there is no fallback reader |
+| `release-evidence/v3` | Durable `run-ledger/v1` plus a derived evidence projection |
+
+This is a hard cut. Old verbs, readers, aliases, mutable registries, and
+translation DTOs are intentionally absent.
+
+## Development
+
+```sh
+bun install
+bun run check
+bun test
+bun run check:portable
+```
+
+Publication operations are treated as plan data during repository
+verification. The checks and rewrite certification do not dispatch a release.

@@ -1,0 +1,19 @@
+{
+  "project": {
+    "name": "fixture",
+    "version": "1.0.0",
+    "commit": "0123456789abcdef",
+    "tag": "v1.0.0"
+  },
+  "builds": [
+    {
+      "builder": "command",
+      "id": "command",
+      "targets": ["linux-x64"],
+      "run": ["bun", "build", "src/cli.ts", "--outfile", "dist/fixture-linux-x64"],
+      "output": "dist/fixture-{targetTriple}",
+      "binary": "fixture"
+    }
+  ],
+  "publish": {}
+}

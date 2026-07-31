@@ -1,0 +1,53 @@
+{
+  "project": {
+    "name": "fixture",
+    "packageName": "@scope/fixture",
+    "version": "1.0.0",
+    "commit": "0123456789abcdef",
+    "tag": "v1.0.0",
+    "description": "Portable fixture",
+    "homepage": "https://example.invalid/fixture",
+    "license": "MIT"
+  },
+  "builds": [
+    {
+      "builder": "bun",
+      "id": "cli",
+      "entry": "src/cli.ts",
+      "targets": ["linux-x64", "darwin-arm64", "windows-x64"],
+      "binary": "fixture"
+    }
+  ],
+  "archives": [
+    {
+      "id": "archive",
+      "ids": ["cli-linux-x64", "cli-darwin-arm64", "cli-windows-x64"],
+      "formats": ["tar.gz"],
+      "formatOverrides": {
+        "windows": ["zip"]
+      }
+    }
+  ],
+  "checksum": {
+    "algorithm": "sha256",
+    "nameTemplate": "fixture_{version}_checksums.txt"
+  },
+  "publish": {
+    "github": {
+      "repository": "owner/fixture",
+      "tokenEnv": "GITHUB_TOKEN",
+      "draft": true
+    },
+    "homebrew": {
+      "repository": "owner/homebrew-tap",
+      "formulaName": "fixture",
+      "ids": ["cli-darwin-arm64"]
+    },
+    "scoop": {
+      "repository": "owner/scoop-bucket",
+      "manifestName": "fixture",
+      "ids": ["cli-windows-x64"]
+    }
+  },
+  "evidence": ".release/evidence"
+}

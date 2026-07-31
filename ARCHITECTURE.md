@@ -1,150 +1,167 @@
 # Architecture
 
-`@mannyc1/ts-release` is a deterministic release planner and an explicitly
-approved operation runner. Release intent becomes one canonical plan; the plan
-can be reviewed, rendered, staged, verified, or executed. The library, CLI, and
-GitHub Action all use the same engine.
+`ts-release` has one deterministic planning core and one receipt-gated apply
+machine. Applications translate files or CI inputs into public value calls;
+they do not own release semantics.
 
-## The 14 concepts
+## Eight concepts
 
-| # | Concept | Representation and owner |
-|---:|---|---|
-| 1 | Release intent | Strict wire Schema in `src/config/`; it also derives the JSON Schema. |
-| 2 | Release identity | One `ReleaseIdentity`, resolved from manifest or git tag in `src/resolve/resolved-release.ts`. |
-| 3 | Resolved release | Totalized feature sections in `ResolvedRelease`; planners do not re-resolve config. |
-| 4 | Feature planner | One `(section, accumulator) -> contribution` shape in `src/features/`. |
-| 5 | Artifact | One Schema class in `src/grammar/artifact.ts`, including platform and typed extra data. |
-| 6 | Operation / Action | One operation class and seven live action tags in `src/grammar/operation.ts`. |
-| 7 | Release plan | The sole durable `release-plan/v4` Schema in `src/grammar/plan.ts`. |
-| 8 | Accumulator | One private transient fold in `src/grammar/accumulator.ts`; never encoded or exported. |
-| 9 | Approval | One risk derivation in `src/grammar/approval.ts` plus whole-pass preflight in the executor. |
-| 10 | Evidence | Records and the sole durable `release-evidence/v3` bundle in `src/run/evidence.ts`. |
-| 11 | Deferred content | Typed text and checksum holes resolved from canonical artifacts by `src/run/content.ts`. |
-| 12 | Builder | One contract with Bun, command, and prebuilt adapters in `src/features/`. |
-| 13 | Services | Command, HTTP, staging, and GitHub capabilities injected at runtime boundaries. |
-| 14 | Errors | One tagged-error policy; distinct tags remain where retry and exact failure contracts differ. |
+1. Config — strict JSON-compatible intent supplied as an in-memory value.
+2. Identity — name, version, tag, commit, and snapshot marker.
+3. Recipe — immutable product-owned lowering data.
+4. Op — a typed mechanism row with declared inputs and outputs.
+5. Plan — accepted canonical intent and its identity.
+6. Evidence — a derived, non-authoritative run projection.
+7. Driver — mechanism capability for local or remote effects.
+8. Invocation — canonical workspace and observed planning facts.
 
-Every product TypeScript module opens with the invariant it owns. A module may
-split implementation detail, but it must not introduce a second representation
-of one of these concepts.
+## Permanent ownership
+
+```text
+src/model     schemas, primitives, operations, state, canonical encoding
+src/recipes   deterministic feature/profile lowering
+src/config    strict value decoding
+src/plan      compilation, validation, canonical acceptance, review
+src/drivers   capability interfaces and live mechanism implementations
+src/apply     approvals, ledger, transitions, orchestration
+src/view      projections from accepted plans and ledgers
+src/api       Promise boundary, exact inputs, immutable layer binding
+src/index.ts  sole package entrypoint
+apps/release-ts
+apps/ts-release-action
+```
+
+There is no rewrite, legacy, compatibility, v5, mutable runtime, or
+translation namespace.
+
+## Dependency DAG
+
+```text
+model
+├── recipes
+│   └── config
+├── plan/accepted
+│   ├── plan ← config + recipes
+│   ├── apply ← drivers
+│   └── view
+└── api ← plan + apply + view + drivers
+    └── public root
+        ├── CLI
+        └── Action
+```
+
+Model imports no product owner. Recipes depend only on model. Config decodes
+recipe configuration. Accepted-plan code depends only on model. Planning may
+use model, config, recipes, and acceptance. Drivers depend only on model.
+Apply uses model, accepted plans, and drivers. Views use model and accepted
+plans. The API is the composition boundary. Apps import only the public root.
+
+Architecture checks enforce this graph and reject runtime registration,
+dynamic evaluation, workflow-level Effect execution, provider-name branches
+inside generic drivers, temporary namespaces, and excluded test/oracle
+imports.
 
 ## Data flow
 
 ```text
-JSON/object config
-  -> strict ReleaseIntent decode
-  -> ReleaseIdentity + ResolvedRelease
-  -> fixed ordered feature schedule
-  -> private accumulator
-  -> canonical ReleasePlan v4
-  -> render / build / verify / approved release
-  -> EvidenceBundle v3
+config value
+  → validate and lower
+  → canonical release-plan/v6 bytes + PlanId
+  → select immutable scope
+  → execution review challenge
+  → new run-bound execution receipt
+  → apply through validate
+  → observe materialized outputs and read facts
+  → publish review challenge
+  → run-bound publish receipt
+  → apply through verify
+  → run-ledger/v1
+  → evidence projection
 ```
 
-Config is decoded once. Identity and defaults are resolved once. Feature
-planners are pure with respect to release state: configured features contribute
-artifacts and operations but execute nothing. An absent feature contributes
-nothing. The accumulator is the uniqueness
-boundary for artifact ids, operation ids, paths, and names. Finalization creates
-the durable plan without an intermediate document DTO.
+Planning never calls a driver. Apply never accepts configuration or calls the
+planner.
 
-The planner schedule is explicit in `src/engine/engine.ts`. Its order is contract:
-builds and imports, processing and catalogs, then publication surfaces. Adding a
-surface requires a Schema composition entry, one feature module, and one
-schedule entry. It does not require dynamic registration or a new kernel.
+## Durable documents
 
-## Module ownership
+Exactly two protocol documents persist:
 
-- `src/config/` owns location, JSON parsing, migration hints, strict decode, and
-  JSON-Schema derivation.
-- `src/grammar/` owns durable grammar, pure platform/template/semver helpers,
-  approval derivation, and the private planning fold.
-- `src/features/` maps resolved build targets and catalog presets to artifacts
-  and planned actions.
-- `src/features/` owns one resolver/planner per build or artifact
-  transformation and generic machinery for catalog-shaped publication.
-  Selection and rendered product content stay with the feature that specifies
-  them; Homebrew and Scoop are content builders over the generic catalog pair.
-- `src/resolve/resolved-release.ts` owns identity plus feature totalization.
-- `src/pack/stager.ts` and `src/pack/archive-bytes.ts` turn stage intents into deterministic
-  bytes inside the workspace boundary.
-- `src/github/github.ts` is the Schema-decoded GitHub Releases API client. Its
-  `Effect.whileLoop` pagination is deliberate.
-- `src/run/executor.ts` owns pass selection, approval preflight, action
-  interpretation, retry, and sequential evidence recording.
-- `src/run/evidence.ts` owns durable evidence and redaction; `src/run/content.ts`
-  resolves deferred content from artifacts.
-- `src/engine/engine.ts` composes planning and the evidence-finalized workflows.
-- `src/render/render.ts` and `src/render/summary.ts` project the same canonical plan;
-  they do not reconstruct plan facts.
-- `src/host/` defines command and HTTP services plus live adapters. Concrete
-  filesystem/path/HTTP/process layers are not provided inside library workflows.
-- `src/doctor/doctor.ts` derives diagnostics from decoded config and the plan
-  without executing publish operations.
-- `src/api/` is the Promise/plain-data boundary backed by one lazily shared
-  managed runtime. `src/index.ts` is the only public TypeScript entrypoint.
-- `src/host/workspace-path.ts`, `src/api/error-message.ts`, `src/assets/`, and
-  `src/types/` contain single-owner boundary helpers, reviewed static
-  facts/templates, and declaration-only compatibility.
-- `apps/release-ts/src/` owns Effect CLI parsing, terminal and `--out` behavior,
-  template-based init, and the Bun runtime layer.
-- `apps/ts-release-action/src/` owns Action input decode, outputs, summaries,
-  evidence upload, and the Node runtime layer.
+- `release-plan/v6` is immutable intent. Strict acceptance re-encodes and
+  compares exact canonical bytes before deriving `PlanId`.
+- `run-ledger/v1` is execution state. It binds plan id, operation hashes,
+  immutable scope, topology, monotonic frontier, receipts, attempts,
+  checkpoints, and materialized-output snapshots.
 
-`scripts/` contains repository gates, not product behavior. `templates/` holds
-the shipped init bases. `.repos/` and `vendor/` are outside the product tree.
+Evidence is derived from the ledger and cannot authorize or resume work.
+There is no fallback reader for earlier plan or evidence formats.
 
-## Durable and public boundaries
+## Authority
 
-`ReleasePlan` v4 contains identity, artifacts, operations, source, and
-evidence directory. Every planned operation remains visible. There is no older
-plan reader, hidden-stage projection, artifact inventory DTO, or output alias.
-Evidence v3 is independent and contains each operation's final status/outcome.
+Mechanism determines authority:
 
-The package root exposes config authoring plus `plan`, `build`, `verify`, and
-`release`. It does not export internal directory subpaths. Bare `release()` is
-plan-only. The `ts-release` executable and bundled Action are public adapters,
-not alternate engines.
+```text
+Check                                      LocalRead
+Write, Pack, Digest                        LocalWrite
+Exec                                       LocalExec
+HttpRead, ReviewedNoteTransform            RemoteRead
+HttpPublish, ForgeRelease,
+PackageRegistryRelease, PackageStorePublish,
+SupplyChainPublish, ProviderPublish,
+AnnouncementPublish, SmtpPublish,
+OpaquePublish                              RemotePublish
+```
 
-## Execution boundary
+Recipes select mechanisms but cannot redefine their authority. Runtime
+configuration cannot register profiles. Homebrew, Scoop, package registry,
+and provider data is immutable and product-owned.
 
-Operations remain Schema data until the selected workflow preflights all
-required approvals. `writes-local` and externally visible operations require
-execute approval; irreversible operations additionally require publish
-approval. Snapshot policy refuses publish-class mutations but still records
-their normal refused evidence.
+The execution review challenge proves only what was reviewed. A nonce,
+reviewer, timestamp, topology, and run identity mint the execution receipt.
+Publication is separately authorized only after materialized inputs are
+observed. Credentials remain capability values and never enter durable data.
 
-`build` executes the build pass independently. The release workflow is
-sequential in four safety passes: render, validation, publish, and verification.
-Each operation's pass is a total function of its phase and risk:
-build/process maps to build, catalog to render, publish splits on read-only into
-validation or publish, and verify maps to verification. No operation can fall
-outside this pass partition. `RetryPolicy` is visible operation data interpreted
-with an Effect `Schedule`. Only `ActionAttemptFailed` is retryable; service
-failures, typed terminal errors, defects, interruption, and
-`ActionAttemptFailed`'s final mapping remain distinct.
+## State and recovery
 
-One workflow-local `Ref` accumulates final evidence records. Approval preflight
-happens before the Ref and before side effects. Once execution begins, one
-on-exit finalizer writes evidence exactly once on success, typed failure,
-defect, or interruption. If workflow and evidence writes both fail, the write
-failure remains primary and the workflow cause remains attached.
+The ledger frontier advances in fixed stage order:
 
-## Dependency and safety rules
+```text
+build → process → catalog → validate → publish → announce → verify
+```
 
-- Publish actions are data until execution is explicitly approved.
-- `Effect.run*` appears only at CLI, Action, Promise API, script, or test runtime
-  boundaries; reusable workflows use typed Effect environments.
-- `src/` never imports application code. Pipes/builders depend on pipeline
-  grammar, while engine composition may depend on config, features, and hosts.
-- Concrete layers are provided by the Bun CLI runtime, Node Action runtime,
-  lazy Promise runtime, maintenance scripts, or tests.
-- Paths are non-empty safe relative paths and are rechecked at the workspace
-  I/O boundary; no planned read or write may escape its root.
-- Operation ids, order, risks, descriptions, rendered catalogs, plan/evidence bytes,
-  and documented CLI/API result shapes are compatibility contracts.
-- Internal failure prose (PlanError/ConfigError reasons, validation-note wording) is a refactor fixture: its typed tag, field, and meaning are frozen; its wording is not. Tests keep one semantic assertion per failure mode.
-- Config fields are product surface. Removing one requires a separately
-  announced schema change and migration hint.
-- The npm existence retry and GitHub `Effect.whileLoop` pagination are retained
-  features, not fallback debt.
+Structured local work is replay-aware. Trusted execution stops for manual
+review after interruption. Remote publication records durable dispatch
+intent and checkpoint reconciliation keys before network dispatch. An
+ambiguous outcome becomes `CommitUnknown`; read-only reconciliation or an
+explicit operator resolution is required before progress.
+
+Every resume revalidates the plan, ledger, scope, topology, operation hashes,
+receipts, and recorded output snapshots before reaching a driver.
+
+## Boundaries
+
+The library accepts only values and absolute existing workspaces. The API
+realpath-normalizes workspace roots and maps internal failures to stable
+plain errors. Its default functions share one immutable live layer;
+`makeReleaseApi(layer)` supplies explicit alternate services.
+
+The CLI owns one-read JSON loading and workspace selection. Its commands are
+`init`, `doctor`, `plan`, and `apply`.
+
+The Action owns one-read, workspace-contained JSON loading. Its commands are
+`plan`, `doctor`, and `apply`; its bundle is checked against source.
+
+Both apps pass canonical plan bytes to apply. Neither can inject
+configuration, authority, credentials, scope changes, or risk changes into
+an accepted plan.
+
+## Verification lanes
+
+Product code is measured separately from Oracle code. Contract fixtures,
+permanent parity cases, fault injection, driver conformance, architecture
+rules, source budgets, public package checks, and CLI/Action tests certify the
+release. Plan 184 certified the PARITY state at 5,871 Product semantic lines
+and 6,040 Oracle semantic lines, compared with 4,322 and 4,374 at M6.
+
+Certification proves five properties, 107/107 scoped customization rows,
+33/33 scoped Pro rows, 45/45 fault cells, and 11/11 structural controls.
+Certification does not dispatch publication.

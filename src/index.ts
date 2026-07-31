@@ -1,36 +1,38 @@
-// Invariant: this root is the package's only public TypeScript surface; internal taxonomy never leaks as subpaths.
-import type { ReleaseIntent } from "./config/schema.js"
-
-export type * from "./types/effect-internal.js"
-
+// The root is the package's sole public TypeScript surface.
+declare global {
+  const SchemaErrorTypeId: unique symbol
+}
 export {
-  build,
-  disposeReleaseRuntime,
+  apply,
+  makeReleaseApi,
   plan,
-  release,
-  verify
+  reviewExecution
 } from "./api/api.js"
-
 export {
   ReleaseApiError
 } from "./api/errors.js"
-
-export {
-  RELEASE_CONFIG_SCHEMA_ID,
-  releaseConfigJsonSchemaDocument as releaseConfigJsonSchema,
-  renderReleaseConfigJsonSchema
-} from "./config/schema.js"
-
-export type { ReleaseIntent } from "./config/schema.js"
-
 export type {
-  ArtifactSummary,
-  BuildSummary,
-  ReleasePlanSummary,
-  ReleaseSummary,
-  RunOptions,
-  VerifySummary
-} from "./engine/engine.js"
-
-export const defineRelease = <const Config extends ReleaseIntent>(config: Config): Config =>
-  config
+  ApplyInput,
+  ApplyOutput,
+  ApplyStatus,
+  EvidenceProjection,
+  ExecutionScopeInput,
+  ExecutionTopology,
+  OperatorResolution,
+  PlanInput,
+  ReleaseApi,
+  ReleaseApiLayer,
+  ReviewerIdentity,
+  ReviewExecutionInput
+} from "./api/api.js"
+export type {
+  ReleasePlanV6
+} from "./model/plan.js"
+export type {
+  ExecutionReviewId,
+  OperationId,
+  PlanId,
+  PublishReviewId
+} from "./model/primitives.js"
+export type { Stage } from "./model/run.js"
+export const defineRelease = <const Config>(config: Config): Config => config

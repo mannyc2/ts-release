@@ -2,35 +2,69 @@
 
 ## Unreleased
 
-### Changed
+- Restored the files-only archive contract: `archives[].files` now decodes
+  strictly as safe workspace-relative patterns, flows into the durable plan
+  as optional `Pack.files`, and materializes deterministic recursive archive
+  entries (sorted, deduplicated, symlink-contained, never self-including).
+  Plans without file patterns keep their exact `release-plan/v6` bytes and
+  operation hashes.
+- Added the `ts-release` agent plugin: one shared `release` skill with five
+  self-contained references and eight behavioral eval cases, packaged with
+  native OpenAI/Codex and Claude Code manifests, repo marketplace catalogs
+  (`.agents/plugins/marketplace.json`, `.claude-plugin/marketplace.json`),
+  and a `check:skill-plugin` structural gate. The dogfood release now ships
+  `ts-release-plugin-{version}.zip` plus a checksums file as GitHub release
+  assets. Public directory submission stays a manual operator action
+  (docs/skill-distribution.md).
 
-- Newly persisted build, release, and verification evidence records the
-  SHA-256 fingerprint of its source-independent canonical release plan.
-  Legacy evidence still decodes, but cannot be used to continue a release.
-- Added `release --continue` and the Action `continue` input. A continued
-  executed release requires matching fingerprinted evidence and skips only
-  operations that previously passed; snapshot continuation is refused.
-- Added `verify --published` and the Action `published` input. Under the flag,
-  verification derives a read-only operation that re-downloads GitHub release
-  assets and checks their bytes against the uploaded sha256/sha512 manifest.
-- Internal plan/config validation wording is no longer a compatibility surface;
-  typed error tags, fields, and meanings are. No current message changed in
-  this release.
-- Removed the unimplemented `runtime` Action input; the Action always runs its
-  bundled engine.
-- Unresolvable template tokens in `builds[].run`, `hooks.*[].run`,
-  `publish.custom[].run`, and `catalogs[].validate` now fail the plan with a
-  typed error instead of silently rendering as empty strings.
-- Made `project` the sole owner of release metadata. New optional `project.description`, `project.summary`, `project.homepage`, and `project.license` fields feed every consumer: PyPI wheels take their METADATA summary from `project.summary` (defaulting to `project.description`), Homebrew and Scoop take their description from `project.description`, and the homepage falls back to the GitHub repository URL when unset. `pypiWheel` is now one wheel family — `packageName`/`moduleName`/`consoleScript`/`requiresPython` stated once with entries under `wheels[]` — and the array/single-entry forms, the per-wheel metadata fields, `publish.homebrew.homepage`/`.description`, and `publish.scoop.homepage`/`.description`/`.license` were removed with targeted migration hints. The silent `"<name> <version> release artifact"` catalog fallback is replaced by precise required-field plan errors naming the missing project fact. Shipped formula/manifest/plan bytes are unchanged by the value-verbatim config migration. The generated config schema changed from 28,493 to 28,796 bytes (SHA-256 `542a47bc35464fd9118bc8bd4e0ae0e3764a26a87adfd30e93556271d5b4133d`).
-- Removed the standalone `npm --version`, `python --version`, and `python -m twine --version` validation operations. Surviving npm and Twine work commands remain the plan's executable source of truth, while `doctor` is the single owner of derived toolchain readiness; affected plan and evidence fixtures intentionally lose only those three probe records. The CLI doctor adapter now forwards `--root` and `--config` through the engine's `root`/`configPath` boundary, so explicit relative configs diagnose the requested project.
-- Unified explicit artifact selection on `ids` for Homebrew, Scoop, PyPI, and archives. The removed `publish.homebrew.artifactIds`, `publish.pypi.artifactIds`, and `publish.scoop.artifactId` fields have targeted migration hints; Scoop accepts the shared non-empty array shape and then enforces exactly one selected artifact. Selection results and generated catalog bytes are unchanged. The generated config schema changed from 28,118 to 28,493 bytes (SHA-256 `7ace66dfc888fc07d182e144d56c4a3ae06b322cba6074a06dda1c950ac09b54`).
-- Routed `build` through the shared evidence executor. Each build now persists `build.json`, including a final failed record when staging fails, and stage actions honor operation retry policies. CLI and Action build stdout remain byte-identical, and the public root `BuildSummary` remains unchanged. The internal engine result replaces plan-derived `stagedOperations` with `evidence`; executor-routed staging failures now surface as `OperationFailedError`, while direct `ArtifactStager` calls retain `ArtifactStageError`.
-- Removed the planner `notices` channel from serialized plans/evidence and from public plan, build, and release summaries. Absent config sections now schedule nothing and leave no trace; `NoteAction` operations are the sole informational channel. The structural cut bumps the durable contracts to `release-plan/v4` and `release-evidence/v3` with no compatibility reader.
-- Added an optional root `retry: { attempts, delayMillis }` policy. It defaults only verify-phase operations that lack an explicit policy, so npm's built-in version-check retry remains authoritative and publish/build/catalog actions are never retried by this default: mutating commands may have half-succeeded and are not safe to replay generically. The generated config schema changed from 26,846 to 28,118 bytes.
-- Added argv-only `hooks.before`, `hooks.after`, and `publish.custom` commands. Before hooks are execute-gated local writes; after hooks default to local writes; custom publishers default to externally visible; after/custom may opt into irreversible approval, and no hook can declare ungated risk. Declared env names are required and redacted. Before hooks run with the build workflow, while after hooks run at the end of publication before verification. The generated config schema changed from 22,688 to 26,846 bytes.
-- Removed `publish.pypi.usernameEnv` and `publish.pypi.passwordEnv`; Twine's fixed `TWINE_USERNAME`/`TWINE_PASSWORD` contract is now represented directly, with migration hints for both removed fields. The npm trusted-publishing exclusivity rule and GitHub repository requirement now live with their owning planners without changing their errors; the generated config schema changed from 22,814 to 22,688 bytes.
-- Rebased Homebrew and Scoop publication onto the generic catalog render/publish pair. Their generated formula and manifest bytes are unchanged, while operation/artifact ids now use `catalog:*`, simulated validation operations were removed, and both presets support real `validate` commands plus pull-request submission.
-- Removed the unsupported `publish.homebrew.tokenEnv` and `publish.scoop.tokenEnv` fields with migration hints. Vendor file paths now use the generic `directory/file` derivation (`tapDirectory`/`bucketDirectory` plus `formulaPath`/`manifestPath`); the generated config schema changed from 22,140 to 22,814 bytes.
-- Narrowed the durable `release-plan/v3` action union by removing the producerless `http-check` action and its JSON-check grammar.
-- Narrowed `release-evidence/v2` by removing the unreachable HTTP request/outcome variants; GitHub release evidence and the `ReleaseHttp` service remain supported.
-- Removed the producerless `sbom` and `signature` artifact kinds from the durable artifact union.
+- Made workspace snapshot reads portable to macOS: the containment check now
+  proves the realpath-resolved location is the exact opened file by device
+  and inode instead of resolving the descriptor through Linux-only procfs.
+- Internal readability refactor with identical public behavior: one authority
+  predicate for remote-publish operations, shared canonical-JSON hashing, an
+  `ApplyContext` for the apply orchestrator, and removal of dead driver
+  service seams and `rewrite`-era names (trace spans, service keys, and the
+  app `cutover` modules, now `commands`).
+- Pointed `check:core` at the certified dependency-audit gate (`check:audit`)
+  instead of the environment-dependent raw `bun audit`.
+
+## 0.2.0 - 2026-07-27
+
+### Breaking: sealed plan/apply core
+
+- Replaced the former lifecycle API with value-only `plan` and
+  canonical-bytes-only `apply`; `reviewExecution` is a pure review helper.
+- Replaced the six-command CLI with exactly `init`, `doctor`, `plan`, and
+  `apply`.
+- Replaced Action commands with exactly `plan`, `doctor`, and `apply`, and
+  added explicit plan, review, receipt, run, status, and evidence outputs.
+- Moved all product code into its permanent model, config, recipe, plan,
+  driver, apply, view, and API owners; removed the legacy engine and
+  compatibility spine.
+- Replaced `release-plan/v5` with canonical `release-plan/v6`.
+- Replaced durable `release-evidence/v3` with `run-ledger/v1`; evidence is now
+  a derived projection.
+- Added immutable execution scope, run-bound execution receipts, observed
+  publish review, run-bound publish receipts, monotonic staged apply,
+  reconciliation, and explicit operator resolutions.
+- Made configuration file loading app-owned and one-read. Core configuration
+  is a strict JSON-compatible value with no path or encoding parser.
+- Required absolute existing realpath-normalized workspaces.
+- Made Homebrew, Scoop, package, and provider profiles product-owned and
+  immutable.
+- Added deterministic changelog generation, reviewed validation-time note
+  transformation, and closed announcement operations for thirteen HTTP-like
+  channels plus SMTP.
+- Added typed package, supply-chain, provider, distributed-execution, and
+  announcement profiles with immutable contract fixtures.
+- Certified full in-scope outcome parity for TypeScript/Bun distribution
+  against the pinned GoReleaser v2.17.0 ledger: 107/107 customization rows
+  and 33/33 Pro rows, with the eleven manifest exclusions.
+- Certified all five technical properties, 45/45 fault cells, and 11/11
+  structural controls with zero credential leaks and duplicate mutations.
+- Closed at 5,871 Product semantic lines and 6,040 Oracle semantic lines.
+- Removed mutable runtime swapping, runtime profile registration, old
+  lifecycle aliases, fallback durable readers, and config translation DTOs.
+
+Migration is documented in `README.md`. This is an intentional hard cut; old
+verbs and document formats are not accepted.

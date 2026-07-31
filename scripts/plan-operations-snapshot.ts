@@ -1,42 +1,19 @@
+#!/usr/bin/env bun
+
+import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
-import { stdin, stderr, stdout, argv, exit } from "node:process"
-import { decodeReleasePlanSync, type ReleasePlan } from "../src/grammar/plan.js"
+import { acceptPlan } from "../src/plan/accepted.js"
+import { operationEntries } from "../src/model/validate.js"
 
-export const planOperationSnapshotLines = (plan: ReleasePlan): ReadonlyArray<string> =>
-  plan.operations.map((operation) => `${operation.id}\t${operation.risk}`).sort()
-
-export const formatPlanOperationSnapshot = (plan: ReleasePlan): string => {
-  const lines = planOperationSnapshotLines(plan)
-  return lines.length === 0 ? "" : `${lines.join("\n")}\n`
-}
-
-const readStdin = async (): Promise<string> => {
-  const chunks: Array<Buffer> = []
-  for await (const chunk of stdin) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-  }
-  return Buffer.concat(chunks).toString("utf8")
-}
-
-const readInput = async (path: string): Promise<string> =>
-  path === "-" ? readStdin() : readFileSync(path, "utf8")
-
-const main = async (): Promise<void> => {
-  const planPath = argv[2]
-  if (planPath === undefined) {
-    stderr.write("usage: bun run scripts/plan-operations-snapshot.ts <plan.json>\n")
-    exit(1)
-  }
-
-  try {
-    const plan = decodeReleasePlanSync(JSON.parse(await readInput(planPath)))
-    stdout.write(formatPlanOperationSnapshot(plan))
-  } catch (error) {
-    stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
-    exit(1)
-  }
-}
-
-if (import.meta.main) {
-  await main()
-}
+const path = process.argv[2]
+if (path === undefined) throw new Error("usage: plan-operations-snapshot <plan.json>")
+const accepted = await Effect.runPromise(
+  acceptPlan(new TextEncoder().encode(readFileSync(path, "utf8")))
+)
+process.stdout.write(JSON.stringify(operationEntries(accepted.plan).map(({ stage, operation }) => ({
+  id: operation.id,
+  stage,
+  mechanism: operation._tag,
+  inputs: operation.inputs,
+  outputs: operation.outputs.map((output) => output.id)
+})), null, 2))

@@ -1,35 +1,28 @@
-# ts-release Action App
+# ts-release Action app
 
-This private first-party app builds the `mannyc2/ts-release-action` JavaScript
-action. It adapts GitHub Action inputs, outputs, step summaries, and optional
-evidence artifact uploads to the private `@mannyc1/ts-release` release engine.
+This private first-party app owns GitHub Action input parsing, contained file
+I/O, outputs, and the bundled Node entrypoint. It imports only the public
+`@mannyc1/ts-release` root.
 
-The bundled action runtime composes Node platform services, the platform command
-runner, and the library live target/HTTP workflow layer at the action boundary.
-`runtime: bundled` is the supported mode. `runtime: workspace` is intentionally
-blocked until a same-module-graph Node platform setup can be required safely.
+Commands are exactly `plan`, `doctor`, and `apply`.
 
-Supported action commands are:
+- `plan` reads a workspace-contained JSON config once and writes canonical
+  plan bytes.
+- `doctor` consumes a plan and performs read-only review.
+- `apply` consumes a plan plus a new-run or resume ledger path and never
+  replans.
 
-- `plan`
-- `doctor`
-- `build`
-- `release`
-- `verify`
-
-Useful app-local commands:
+The Action emits `plan_id`, `execution_review_id`, `execution_receipt_id`,
+`publish_review_id`, `publish_receipt_id`, `run_id`, `run_path`, `status`, and
+`evidence_path`.
 
 ```sh
 bun run --cwd apps/ts-release-action check
 bun run --cwd apps/ts-release-action build
+bun run check:action-bundle
 ```
 
-Use `upload-evidence: true` when a workflow should upload collected
-`.release/evidence` JSON bundles after command completion or failure. Approved
-publication still requires `execute: true` and `approve-publish: true`.
-Use `continue: true` with `execute: true` to resume a matching release from
-its prior evidence; only operations recorded as passed are skipped.
-Use `published: true` with command `verify` to re-download GitHub release
-assets and check them against the uploaded checksum manifest.
-Use `snapshot: true` to plan a snapshot version; snapshot execution refuses
-externally visible and irreversible operations.
+The bundle freshness check rebuilds to a temporary path and compares bytes.
+Plan and run artifacts are uploaded by the workflow, not by hidden Action
+behavior. Publication requires a confirmed observed publish challenge and a
+protected workflow environment.

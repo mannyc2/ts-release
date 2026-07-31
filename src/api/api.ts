@@ -1,112 +1,76 @@
-// Invariant: the Promise API owns one module-scope runtime behind a single swap and exposes only plain-data summaries or ReleaseApiError.
 import * as Effect from "effect/Effect"
-import type * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as ManagedRuntime from "effect/ManagedRuntime"
-import type * as Path from "effect/Path"
-import type { ArtifactStager } from "../pack/stager.js"
-import type { GitHubApi } from "../github/github.js"
-import type { ReleaseCommandRunner } from "../host/host.js"
-import type { ReleaseHttp } from "../host/http.js"
+import { LocalApprovalSignerLayer } from "../apply/approval.js"
+import { FileRunStoreLayer } from "../apply/store.js"
+import { executionReviewId } from "../apply/approval.js"
+import { NonEmptyName } from "../model/primitives.js"
+import { compilePlan, decodePlanningConfig, Invocation } from "../plan/compiler.js"
+import { NodeDriverLayer } from "../drivers/node.js"
+import { makeApply } from "./apply-boundary.js"
+import {
+  exact,
+  selectScope,
+  topology,
+  workspace,
+  type ApiRun
+} from "./input.js"
+import { acceptExpected } from "../plan/review.js"
 import { ReleaseApiError, type ReleaseApiPhase } from "./errors.js"
-import type * as Engine from "../engine/engine.js"
+import type {
+  PlanInput,
+  ReleaseApi,
+  ReleaseApiLayer,
+  ReleaseApiServices,
+  ReviewExecutionInput
+} from "./types.js"
 
-export type ReleaseRuntimeServices =
-  | ReleaseCommandRunner
-  | ReleaseHttp
-  | GitHubApi
-  | ArtifactStager
-  | FileSystem.FileSystem
-  | Path.Path
+export type {
+  ApplyInput, ApplyOutput, ApplyStatus, EvidenceProjection, ExecutionScopeInput, ExecutionTopology,
+  OperatorResolution, PlanInput, ReleaseApi, ReleaseApiLayer, ReleaseApiServices, ReviewerIdentity,
+  ReviewExecutionInput
+} from "./types.js"
 
-export type ReleaseRuntimeLayer = Layer.Layer<ReleaseRuntimeServices, unknown, never>
-
-// Layer.unwrap moves the dynamic imports inside the layer, so ManagedRuntime
-// can be constructed synchronously at module scope; a failed import stays in
-// the layer's unknown error channel (an error, not a defect).
-const defaultLayer: ReleaseRuntimeLayer = Layer.unwrap(Effect.tryPromise(async () => {
-  const [
-    BunHttpClient,
-    BunServices,
-    { LiveReleaseHttpLayer },
-    { makePlatformCommandRunnerLayer },
-    { makeArtifactStagerLayer },
-    { GitHubApiLiveLayer }
-  ] = await Promise.all([
-    import("@effect/platform-bun/BunHttpClient"),
-    import("@effect/platform-bun/BunServices"),
-    import("../host/http-live.js"),
-    import("../host/platform.js"),
-    import("../pack/stager.js"),
-    import("../github/github.js")
-  ])
-
-  const commandLayer = makePlatformCommandRunnerLayer().pipe(
-    Layer.provideMerge(BunServices.layer)
-  )
-
-  return Layer.mergeAll(
-    commandLayer,
-    Layer.provideMerge(GitHubApiLiveLayer, LiveReleaseHttpLayer).pipe(
-      Layer.provideMerge(BunHttpClient.layer),
-      Layer.provideMerge(BunServices.layer)
-    ),
-    makeArtifactStagerLayer().pipe(
-      Layer.provideMerge(BunServices.layer)
-    )
-  )
-}))
-
-let currentLayer = defaultLayer
-let runtime = ManagedRuntime.make(defaultLayer)
-
-const swap = async (layer: ReleaseRuntimeLayer): Promise<void> => {
-  const previous = runtime
-  currentLayer = layer
-  runtime = ManagedRuntime.make(layer)
-  await previous.dispose()
-}
-
-const runApiEffect = <A, E>(
-  phase: ReleaseApiPhase,
-  effect: Effect.Effect<A, E, ReleaseRuntimeServices>
-): Promise<A> =>
-  runtime.runPromise(effect).catch((cause) => {
-    throw ReleaseApiError.fromCause(phase, cause)
+const decoder = new TextDecoder()
+export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
+  const runtime = ManagedRuntime.make(layer)
+  const run: ApiRun = <A, E>(
+    phase: ReleaseApiPhase,
+    effect: Effect.Effect<A, E, ReleaseApiServices>
+  ) => runtime.runPromise(effect).catch((cause) => {
+    throw ReleaseApiError.from(phase, cause)
   })
-
-export const disposeReleaseRuntime = async (): Promise<void> => {
-  try {
-    await swap(currentLayer)
-  } catch (cause) {
-    throw ReleaseApiError.fromCause("dispose", cause)
+  const plan = async (input: PlanInput) => {
+    exact("plan", input, ["config", "workspace"], "plan input")
+    const config = await run("plan", decodePlanningConfig(input.config))
+    const root = workspace("plan", input.workspace)
+    const result = await run("plan", compilePlan(input.config, Invocation.make({
+      workspace: root,
+      commit: NonEmptyName.make(config.project.commit ?? "unknown"),
+      snapshot: false
+    })))
+    return { plan: result.plan, bytes: decoder.decode(result.bytes), planId: result.planId }
   }
+  const reviewExecution = async (input: ReviewExecutionInput) => {
+    exact("review", input, ["planBytes", "expectedPlanId", "scope", "topology"], "review input")
+    const accepted = await run("review", acceptExpected(input.planBytes, input.expectedPlanId))
+    const scope = selectScope(accepted, input.scope)
+    return {
+      scope,
+      executionReviewId: executionReviewId(accepted, scope, topology(input.topology))
+    }
+  }
+  return Object.freeze({
+    plan,
+    reviewExecution,
+    apply: makeApply(run),
+    dispose: () => runtime.dispose()
+  })
 }
 
-export const setReleaseRuntimeLayerFactoryForTesting = (layer: ReleaseRuntimeLayer): Promise<void> =>
-  swap(layer)
-
-export const resetReleaseRuntimeLayerFactoryForTesting = (): Promise<void> =>
-  swap(defaultLayer)
-
-const verb = <A, B>(
-  phase: Exclude<ReleaseApiPhase, "dispose">,
-  operation: (engine: typeof import("../engine/engine.js"), options: Engine.RunOptions) =>
-    Effect.Effect<A, unknown, ReleaseRuntimeServices>,
-  project: (value: A) => B
-) => async (options: Engine.RunOptions = {}): Promise<B> => {
-  const engine = await import("../engine/engine.js")
-  return project(await runApiEffect(phase, operation(engine, options)))
-}
-
-const verbs = {
-  plan: verb("plan", (engine, input) => engine.plan(input), (summary): Engine.ReleasePlanSummary => summary),
-  build: verb("build", (engine, input) => engine.build(input),
-    ({ plan: _plan, evidence: _evidence, ...summary }): Engine.BuildSummary => summary),
-  release: verb("release", (engine, input) => engine.release(input),
-    ({ plan: _plan, evidence: _evidence, ...summary }): Engine.ReleaseSummary => summary),
-  verify: verb("verify", (engine, input) => engine.verify(input),
-    ({ plan: _plan, evidence: _evidence, ...summary }): Engine.VerifySummary => summary)
-}
-
-export const { build, plan, release, verify } = verbs
+const defaultApi = makeReleaseApi(
+  Layer.mergeAll(FileRunStoreLayer, NodeDriverLayer, LocalApprovalSignerLayer)
+)
+export const plan = defaultApi.plan
+export const reviewExecution = defaultApi.reviewExecution
+export const apply = defaultApi.apply

@@ -1,155 +1,68 @@
-import { existsSync, readFileSync, statSync } from "node:fs"
-import { resolve } from "node:path"
-import { exit } from "node:process"
-import type { ReleaseConfigHomebrewPublish } from "../../../src/features/catalog/homebrew.js"
-import type { ReleaseConfigScoopPublish } from "../../../src/features/catalog/scoop.js"
-import type { ReleaseConfigPyPiPublish } from "../../../src/features/publish/pypi.js"
+import { plan } from "@mannyc1/ts-release"
 import {
-  binaryArtifactFacts,
-  check,
-  configuredCliBuild,
-  decodeReleaseConfig,
-  identityFor,
-  isJsonObject,
-  packagePath,
-  printChecks,
-  readJson,
-  readText,
-  releaseConfigPath,
-  root,
-  runCommand,
-  stringField,
-  wheelArtifactFacts,
-  type Check,
-  type WheelArtifactFact
+  packagePath, readJson, releaseConfigPath, report, root, stringField
 } from "./self-release-facts.js"
 
-const defaultTwinePython = ".release/twine-venv/bin/python"
-const maxPyPiArtifactBytes = 100 * 1024 * 1024
-const skipTwineCheck = process.env.SELF_RELEASE_SKIP_TWINE_CHECK === "1"
+const failures: Array<string> = []
+const planned = await plan({ config: readJson(releaseConfigPath), workspace: root })
+const stages = planned.plan.stages
+const operations = [
+  ...stages.build, ...stages.process, ...stages.catalog, ...stages.validate,
+  ...stages.publish, ...stages.announce, ...stages.verify
+]
+const outputs = operations.flatMap((operation) => operation.outputs)
+const outputIds = outputs.map((output) => output.id)
+const outputPaths = outputs.map((output) => output.path)
+const tags = new Set(operations.map((operation) => operation._tag))
+const registryKinds = new Set(stages.publish.flatMap((operation) =>
+  operation._tag === "PackageRegistryRelease" ? [operation.registryKind] : []))
 
-const fileBytes = (path: string): number | undefined => {
-  const resolved = resolve(root, path)
-  if (!existsSync(resolved)) return undefined
-  const stat = statSync(resolved)
-  return stat.isFile() ? stat.size : undefined
+if (outputs.length === 0) failures.push("The self-release plan declares no materialized outputs.")
+if (new Set(outputIds).size !== outputIds.length) failures.push("The self-release plan declares duplicate output ids.")
+if (!tags.has("ForgeRelease")) failures.push("The self-release plan has no forge release operation.")
+if (!registryKinds.has("npm")) failures.push("The self-release plan has no npm registry operation.")
+if (!registryKinds.has("pypi")) failures.push("The self-release plan has no PyPI registry operation.")
+if (stages.catalog.length === 0) failures.push("The self-release plan has no product-owned catalog operations.")
+if (outputPaths.some((path) => path.startsWith("/") || path.includes("../"))) {
+  failures.push("The self-release plan contains a non-contained output path.")
 }
 
-const fileCheck = (id: string, path: string, label: string): Check =>
-  check(id, fileBytes(path) !== undefined, `${label} exists at ${path}.`, `${label} must exist at ${path}.`)
-
-const fileSizeCheck = (id: string, path: string, maxBytes: number, label: string): Check => {
-  const bytes = fileBytes(path)
-  return bytes === undefined
-    ? check(id, false, "", `${label} must exist at ${path} before size can be checked.`)
-    : check(id, bytes <= maxBytes, `${label} is ${bytes} bytes, within the ${maxBytes} byte limit.`, `${label} is ${bytes} bytes, above the ${maxBytes} byte limit.`)
+const version = stringField(readJson(packagePath), "version") ?? ""
+const pluginZip = `ts-release-plugin-${version}.zip`
+const packs = stages.process.filter((operation) =>
+  operation._tag === "Pack" && operation.outputs.some((output) => output.id === "ts-release-plugin"))
+const pack = packs[0]
+if (packs.length !== 1 || pack?._tag !== "Pack") {
+  failures.push("Exactly one Pack must produce the ts-release-plugin output.")
+} else {
+  if ([...(pack.files ?? [])].map(String).join(",") !== "ts-release-plugin/**") {
+    failures.push("The plugin Pack must carry exactly the ts-release-plugin/** file pattern.")
+  }
+  if (pack.inputs.length !== 0) failures.push("The plugin Pack must be files-only.")
+  if (pack.outputs[0]?.path !== `.release/artifacts/${pluginZip}`) {
+    failures.push(`The plugin archive path must be .release/artifacts/${pluginZip}.`)
+  }
 }
-
-const pythonExecutable = (pypiTarget: ReleaseConfigPyPiPublish | undefined): string => {
-  const explicit = process.env.SELF_RELEASE_PYTHON
-  if (explicit !== undefined && explicit.length > 0) return explicit
-  if (existsSync(resolve(root, defaultTwinePython))) return defaultTwinePython
-  const configured = pypiTarget?.pythonExecutable
-  return configured !== undefined && configured.length > 0 ? configured : "python3"
+const digest = stages.process.find((operation) => operation._tag === "Digest")
+if (digest?._tag !== "Digest" || !digest.inputs.some((input) => input === "ts-release-plugin")) {
+  failures.push("The checksum digest must cover the plugin archive.")
 }
-
-const twineCheck = async (pypiTarget: ReleaseConfigPyPiPublish | undefined, wheels: ReadonlyArray<WheelArtifactFact>): Promise<Check> => {
-  if (skipTwineCheck) return check("pypi:twine-check", true, "Twine metadata check skipped by SELF_RELEASE_SKIP_TWINE_CHECK=1.")
-  if (wheels.length === 0) return check("pypi:twine-check", false, "", "No PyPI wheel artifacts were found to check with Twine.")
-  const result = await runCommand([pythonExecutable(pypiTarget), "-m", "twine", "check", ...wheels.map((wheel) => wheel.path)])
-  return check(
-    "pypi:twine-check",
-    result.exitCode === 0,
-    "Twine accepted all generated PyPI wheel metadata.",
-    `Twine rejected generated PyPI wheel metadata: ${(result.stderr || result.stdout).trim()}`
-  )
+const forge = stages.publish.find((operation) => operation._tag === "ForgeRelease")
+const assetNames = forge?._tag === "ForgeRelease" ? forge.assets.map((asset) => asset.name) : []
+if (!assetNames.includes(pluginZip)) failures.push("ForgeRelease assets must include the plugin ZIP.")
+if (!assetNames.some((asset) => asset.endsWith("checksums.txt"))) {
+  failures.push("ForgeRelease assets must include the checksum file.")
 }
-
-const wheelMetadataChecks = (index: number, wheel: WheelArtifactFact): ReadonlyArray<Check> => {
-  if (fileBytes(wheel.path) === undefined) return []
-  const contents = readFileSync(resolve(root, wheel.path), "utf8")
-  return [
-    check("pypi:wheel-root-is-purelib:" + index, contents.includes("Root-Is-Purelib: false"), "PyPI wheel declares platform-library installation metadata.", "PyPI wheel must declare Root-Is-Purelib: false because it bundles a platform-specific CLI binary."),
-    check("pypi:wheel-tag:" + index, wheel.wheelTag.length > 0 && contents.includes(`Tag: ${wheel.wheelTag}`), `PyPI wheel metadata declares tag ${wheel.wheelTag}.`, "PyPI wheel metadata must declare the configured wheelTag.")
-  ]
-}
-
-const contentChecks = (checks: ReadonlyArray<readonly [string, boolean, string, string]>): ReadonlyArray<Check> =>
-  checks.map(([id, ok, okMessage, failMessage]) => check(id, ok, okMessage, failMessage))
-
-const homebrewChecks = (target: ReleaseConfigHomebrewPublish | undefined, packageVersion: string): ReadonlyArray<Check> => {
-  const formulaPath = target?.formulaPath
-  if (formulaPath === undefined) return [check("homebrew:formula-path", false, "", "Homebrew formulaPath must be configured.")]
-  const exists = fileCheck("homebrew:formula-file", formulaPath, "Homebrew formula")
-  if (!exists.ok) return [exists]
-  const contents = readText(formulaPath)
-  return [
-    exists,
-    ...contentChecks([
-      ["homebrew:formula-version", contents.includes(`version "${packageVersion}"`), `Homebrew formula references version ${packageVersion}.`, `Homebrew formula must reference version ${packageVersion}.`],
-      ["homebrew:formula-downloads", contents.includes(`/download/v${packageVersion}/`), `Homebrew formula URLs reference GitHub release v${packageVersion}.`, `Homebrew formula URLs must reference GitHub release v${packageVersion}.`],
-      ["homebrew:formula-executable-bit", contents.includes("chmod 0755"), "Homebrew formula ensures the installed CLI is executable.", "Homebrew formula must ensure the installed CLI is executable."],
-      ["homebrew:formula-test", contents.includes("test do") && contents.includes("File.executable?"), "Homebrew formula includes an install smoke test for the CLI.", "Homebrew formula must include an install smoke test for the CLI."]
-    ])
-  ]
-}
-
-const scoopChecks = (target: ReleaseConfigScoopPublish | undefined, packageVersion: string): ReadonlyArray<Check> => {
-  const manifestPath = target?.manifestPath
-  if (manifestPath === undefined) return [check("scoop:manifest-path", false, "", "Scoop manifestPath must be configured.")]
-  const exists = fileCheck("scoop:manifest-file", manifestPath, "Scoop manifest")
-  if (!exists.ok) return [exists]
-  const parsed = readJson(manifestPath)
-  if (!isJsonObject(parsed)) return [exists, check("scoop:manifest-json", false, "", "Scoop manifest must be a JSON object.")]
-  const version = stringField(parsed, "version")
-  const url = stringField(parsed, "url")
-  const hash = stringField(parsed, "hash")
-  return [
-    exists,
-    ...contentChecks([
-      ["scoop:manifest-version", version === packageVersion, `Scoop manifest references version ${packageVersion}.`, `Scoop manifest version must be ${packageVersion}.`],
-      ["scoop:manifest-download", url !== undefined && url.includes(`/download/v${packageVersion}/`), `Scoop manifest URL references GitHub release v${packageVersion}.`, `Scoop manifest URL must reference GitHub release v${packageVersion}.`],
-      ["scoop:manifest-sha256", hash !== undefined && /^[a-f0-9]{64}$/.test(hash), "Scoop manifest has a sha256 hash.", "Scoop manifest must have a 64-character sha256 hash."]
-    ])
-  ]
-}
-
-const checks: Array<Check> = []
-const manifest = readJson(packagePath)
-const { config, error: configError } = decodeReleaseConfig()
-
-if (!isJsonObject(manifest)) checks.push(check("manifest:shape", false, "", `${packagePath} must be a JSON object.`))
-if (config === undefined) {
-  checks.push(check("config:schema", false, "", `${releaseConfigPath} failed release config schema validation: ${configError ?? "unknown decode error"}`))
-}
-
-if (isJsonObject(manifest) && config !== undefined) {
-  const packageName = stringField(manifest, "name")
-  const packageVersion = stringField(manifest, "version")
-  if (packageName === undefined) checks.push(check("manifest:name", false, "", `${packagePath} name must be configured.`))
-  if (packageVersion === undefined) checks.push(check("manifest:version", false, "", `${packagePath} version must be configured.`))
-
-  if (packageName !== undefined && packageVersion !== undefined) {
-    const identity = identityFor(packageName, packageVersion)
-    const build = configuredCliBuild(config)
-    const binaries = build === undefined ? [] : binaryArtifactFacts(build, identity)
-    const wheels = wheelArtifactFacts(config, identity)
-    for (const [index, { path }] of binaries.entries()) checks.push(fileCheck(`github:binary:${index}`, path, "CLI binary artifact"))
-    for (const [index, wheel] of wheels.entries()) {
-      checks.push(
-        fileCheck(`pypi:wheel:${index}`, wheel.path, "PyPI wheel artifact"),
-        fileSizeCheck(`pypi:wheel-size:${index}`, wheel.path, maxPyPiArtifactBytes, "PyPI wheel artifact"),
-        ...wheelMetadataChecks(index, wheel)
-      )
-    }
-    const pypiTarget = typeof config.publish.pypi === "object" ? config.publish.pypi : undefined
-    checks.push(
-      ...homebrewChecks(config.publish.homebrew, packageVersion),
-      ...scoopChecks(config.publish.scoop, packageVersion),
-      await twineCheck(pypiTarget, wheels)
-    )
+for (const manifestPath of [
+  "ts-release-plugin/.codex-plugin/plugin.json", "ts-release-plugin/.claude-plugin/plugin.json"
+]) {
+  if (stringField(readJson(manifestPath), "version") !== version) {
+    failures.push(`${manifestPath} version must equal the root package version.`)
   }
 }
 
-printChecks(checks)
-if (checks.some((item) => !item.ok)) exit(1)
+report("self-release-artifacts-report/v2", failures, {
+  planId: planned.planId,
+  operations: operations.length,
+  outputs: outputs.length
+})

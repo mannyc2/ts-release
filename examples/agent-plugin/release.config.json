@@ -11,8 +11,12 @@
   "archives": [
     {
       "id": "plugin",
-      "files": ["plugin/**"],
-      "formats": ["zip"]
+      "files": [
+        "plugin/**"
+      ],
+      "formats": [
+        "zip"
+      ]
     }
   ],
   "checksum": {},
@@ -23,13 +27,28 @@
   },
   "catalogs": [
     {
+      "id": "codex-marketplace",
+      "repository": "owner/codex-marketplace",
+      "directory": "codex-marketplace-checkout",
+      "file": ".agents/plugins/marketplace.json",
+      "submit": "pull-request",
+      "content": [
+        "{\n  \"name\": \"example-marketplace\",\n  \"interface\": {\n    \"displayName\": \"Example Marketplace\"\n  },\n  \"plugins\": [\n    {\n      \"name\": \"{name}\",\n      \"version\": \"{version}\",\n      \"source\": {\n        \"source\": \"git-subdir\",\n        \"url\": \"https://github.com/owner/agent-plugin\",\n        \"path\": \"./plugin\"\n      },\n      \"policy\": {\n        \"installation\": \"AVAILABLE\",\n        \"authentication\": \"ON_INSTALL\"\n      },\n      \"category\": \"Developer Tools\",\n      \"archiveSha256\": \"",
+        {
+          "fact": "sha256",
+          "artifact": "plugin"
+        },
+        "\"\n    }\n  ]\n}\n"
+      ]
+    },
+    {
       "id": "claude-marketplace",
       "repository": "owner/claude-marketplace",
-      "directory": "marketplace-checkout",
+      "directory": "claude-marketplace-checkout",
       "file": ".claude-plugin/marketplace.json",
       "submit": "pull-request",
       "content": [
-        "{\n  \"name\": \"example-marketplace\",\n  \"owner\": { \"name\": \"owner\" },\n  \"plugins\": [\n    {\n      \"name\": \"{name}\",\n      \"version\": \"{version}\",\n      \"source\": \"owner/agent-plugin\",\n      \"archiveUrl\": \"",
+        "{\n  \"name\": \"example-marketplace\",\n  \"owner\": {\n    \"name\": \"owner\"\n  },\n  \"plugins\": [\n    {\n      \"name\": \"{name}\",\n      \"version\": \"{version}\",\n      \"source\": {\n        \"source\": \"git-subdir\",\n        \"url\": \"https://github.com/owner/agent-plugin\",\n        \"path\": \"./plugin\"\n      },\n      \"archiveUrl\": \"",
         {
           "fact": "downloadUrl",
           "artifact": "plugin"

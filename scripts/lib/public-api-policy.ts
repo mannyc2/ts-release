@@ -18,15 +18,16 @@ export const aggregateSourcePaths: ReadonlyArray<string> = [
 ]
 
 export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
-  "host/http-live.ts",
-  "host/platform.ts",
-  "host/test.ts",
-  "targets/live.ts",
-  "targets/npm.ts",
-  "targets/github.ts",
-  "targets/homebrew.ts",
-  "targets/pypi.ts",
-  "targets/scoop.ts"
+  "api/input.ts",
+  "api/apply-boundary.ts",
+  "apply/store.ts",
+  "drivers/archive.ts",
+  "drivers/node.ts",
+  "drivers/remote.ts",
+  "drivers/services.ts",
+  "drivers/utils.ts",
+  "drivers/workspace.ts",
+  "model/canonical.ts"
 ]
 
 export const bannedExternalPrefixes: ReadonlyArray<string> = [
@@ -36,7 +37,12 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
 ]
 
 export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
-  { subpath: ".", allowedRuntimeSourcePaths: [], allowedExternalPrefixes: [], allowsBunGlobal: false }
+  {
+    subpath: ".",
+    allowedRuntimeSourcePaths: runtimeBearingSourcePaths,
+    allowedExternalPrefixes: ["node:"],
+    allowsBunGlobal: true
+  }
 ]
 
 export const expectedPublicExports: ReadonlyArray<string> =

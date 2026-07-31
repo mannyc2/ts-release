@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "provider-profile-lock/v1",
+  "fixture": "parity/goreleaser-v2.17.0/contracts/providers/profiles.json",
+  "fixtureHash": "68e07f9c680b9bc2d18053d01efbbc50301011a4d6e54e3c20b4c95bb304611f",
+  "profiles": {
+    "forge.gitlab-release/v1": "c38afb5bc9d0d00bb90564d4e8066f5dfe384459849b5ff5e95a6c6d6972a11c",
+    "forge.gitea-release/v1": "57833ac0937508c725745d326e6e7dd15b5a15deca0833dd48c1abe5c4bac7eb",
+    "forge.gitlab-catalog-pr/v1": "ac00e90b7e0a8eb5db8fcf6f1746b02ba7d6af566545c99e6f00aeaa781c7350",
+    "forge.gitea-catalog-pr/v1": "c57ce89689729c6b5edd966ab18063757de6d2206a5166a6886ec587bcc6357c",
+    "forge.milestone-close/v1": "b5debbc8138748560bbb226261623fb90907908d9eab1f7114e968cd78dd5701",
+    "object.s3-put/v1": "1bd469c4ed958315a5b29dd4b3d411767b593a80058214c5dffb8a8cbe802a07",
+    "object.gcs-put/v1": "d7f673acbceed2c9da6b1ec0de0a71a49fcee57632b3ea7a2c5be2a2ab5c1ba6",
+    "object.azure-blob-put/v1": "a5bf96924328ed468534cb68a55b3d30615c8205d891bcabfe6a8332da059b77",
+    "http.generic-upload/v1": "ce3490ac3cb42cacc2778a0bee2ab60a23b26659da5abfd21313e0810b698e7b",
+    "repository.artifactory-upload/v1": "abc22eeba0f31d05a2e2604bb6a36aa20b6ffb8b7c1dc2b5d7d635eebbb4f9f3",
+    "repository.cloudsmith-upload/v1": "9132ba7accf79ef973624b8261b8db16c41edf80b76365d85e8483df9af92018",
+    "repository.gemfury-upload/v1": "5634609f1348ee48bc3ae464280b2b6504f0a7a69530dfd260977ffebed9063f",
+    "registry.dockerhub-description/v1": "27b8556f4fbf5decbd696ba501ae3a6c462788688f32d73000bfb1631d79d53a",
+    "registry.npm-publish/v1": "08a80969b3353ab67f61f8d261b3fe6a1dd69b0a6f0812da9806d1c93a7c55b6"
+  },
+  "configFixture": "test/fixtures/parity/configs/providers/configs.json",
+  "configFixtureHash": "8c4a59dd820cc9c283bdabff1456386b4928759e7f9aa399c4b04cb7a219012a"
+}

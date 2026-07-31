@@ -1,4 +1,0 @@
-npm:npm-pack-dry-run	read-only
-npm:npm-publish	irreversible
-npm:npm-version-verify	read-only
-npm:npm-whoami	read-only

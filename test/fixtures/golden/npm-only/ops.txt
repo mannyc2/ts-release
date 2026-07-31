@@ -1,5 +1,0 @@
-npm:npm-pack-dry-run	read-only
-npm:npm-package-exists	read-only
-npm:npm-publish	irreversible
-npm:npm-trusted-publishing-auth	read-only
-npm:npm-version-verify	read-only

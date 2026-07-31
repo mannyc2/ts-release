@@ -1,58 +1,32 @@
-// Invariant: the bundled entrypoint invokes the Action once and reports every uncaught failure through the Action failure sink.
-import { DefaultArtifactClient } from "@actions/artifact"
 import * as core from "@actions/core"
-import * as Effect from "effect/Effect"
-import * as FileSystem from "node:fs/promises"
-import * as Path from "node:path"
-import { ActionArtifactUploadError, type ActionArtifactClient, type ActionIo } from "./action.js"
-import { runActionFromInputs } from "./main.js"
-import { makeNodeReleaseWorkflowRuntimeLayer } from "./runtime/node.js"
-const root = process.env.GITHUB_WORKSPACE ?? process.cwd()
+import {
+  apply,
+  plan,
+  reviewExecution
+} from "@mannyc1/ts-release"
+import {
+  mkdirSync,
+  readFileSync,
+  writeFileSync
+} from "node:fs"
+import { dirname } from "node:path"
+import { runAction } from "./commands.js"
 
-const CoreInputReader = {
-  getInput: (name: string): string => core.getInput(name)
+try {
+  await runAction(
+    { plan, reviewExecution, apply },
+    {
+      workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
+      input: core.getInput,
+      output: core.setOutput,
+      read: (path) => readFileSync(path, "utf8"),
+      write: (path, value) => {
+        mkdirSync(dirname(path), { recursive: true })
+        writeFileSync(path, value)
+      }
+    }
+  )
+} catch (cause) {
+  core.setOutput("status", "failed")
+  core.setFailed(cause instanceof Error ? cause.message : String(cause))
 }
-
-const CoreActionIo: ActionIo = {
-  setOutput: (name, value) => Effect.sync(() => core.setOutput(name, value)),
-  setFailed: (message) => Effect.sync(() => core.setFailed(message)),
-  appendSummary: (markdown) =>
-    Effect.tryPromise({
-      try: () => core.summary.addRaw(markdown, true).write(),
-      catch: (cause) => cause
-    }).pipe(Effect.asVoid),
-  writeFile: (pathName, contents) =>
-    Effect.tryPromise({
-      try: async () => {
-        await FileSystem.mkdir(Path.dirname(pathName), { recursive: true })
-        await FileSystem.writeFile(pathName, contents)
-      },
-      catch: (cause) => cause
-    }),
-  info: (message) => Effect.sync(() => core.info(message))
-}
-
-const actionsArtifactClient = (): ActionArtifactClient => {
-  const client = new DefaultArtifactClient()
-  return {
-    uploadArtifact: (name, files, rootDirectory) =>
-      Effect.tryPromise({
-        try: async () => {
-          await client.uploadArtifact(name, [...files], rootDirectory)
-        },
-        catch: (cause) =>
-          ActionArtifactUploadError.make({
-            reason: "Artifact upload failed.",
-            cause
-          })
-      })
-  }
-}
-
-await runActionFromInputs(
-  CoreInputReader,
-  CoreActionIo,
-  root,
-  makeNodeReleaseWorkflowRuntimeLayer({ root }),
-  actionsArtifactClient()
-)

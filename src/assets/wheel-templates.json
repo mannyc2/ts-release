@@ -1,7 +1,0 @@
-{
-  "init": "__version__ = \"{{version}}\"\n",
-  "metadata": "Metadata-Version: 2.1\nName: {{packageName}}\nVersion: {{version}}\nSummary: {{summary}}\nHome-page: {{homepage}}\nLicense: {{license}}\nRequires-Python: {{requiresPython}}\nDescription-Content-Type: text/plain\n\n{{summary}}\n",
-  "wheel": "Wheel-Version: 1.0\nGenerator: ts-release\nRoot-Is-Purelib: false\nTag: {{wheelTag}}\n",
-  "entryPoints": "[console_scripts]\n{{consoleScript}} = {{moduleName}}.cli:main\n",
-  "topLevel": "{{moduleName}}\n"
-}

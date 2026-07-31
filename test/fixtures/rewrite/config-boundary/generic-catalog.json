@@ -1,0 +1,21 @@
+{
+  "project": {
+    "name": "fixture",
+    "version": "1.0.0",
+    "commit": "0123456789abcdef",
+    "tag": "v1.0.0"
+  },
+  "catalogs": [
+    {
+      "id": "registry",
+      "repository": "owner/registry",
+      "file": "packages/fixture.json",
+      "content": [
+        "{\"name\":\"fixture\",\"version\":\"{version}\"}\n"
+      ],
+      "submit": "pull-request",
+      "validate": ["bun", "scripts/validate-registry.ts"]
+    }
+  ],
+  "publish": {}
+}

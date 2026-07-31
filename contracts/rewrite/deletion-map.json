@@ -1,0 +1,325 @@
+{
+  "schemaVersion": "rewrite-deletion-map/v1",
+  "plan": "176",
+  "candidateRoster": [
+    "agent-plugin",
+    "github-release",
+    "homebrew-tap",
+    "multi-target",
+    "npm-first-publish",
+    "npm-only",
+    "portable-cli",
+    "pypi-registry",
+    "scoop-bucket",
+    "command-builder",
+    "prebuilt-builder"
+  ],
+  "baselineParity": [
+    "C001", "C002", "C003", "C004", "C006", "C007", "C009", "C011", "C014", "C015",
+    "C016", "C018", "C020", "C021", "C022", "C026", "C027", "C030", "C032", "C033",
+    "C034", "C048", "C058", "C060", "C061", "C064", "C070", "C072", "C073", "C074",
+    "C075", "C076", "C077", "C078", "C085", "C086", "C102", "C103", "C104", "C105",
+    "C106", "C107", "C108", "C109", "C110", "C111", "C112", "C113", "C114", "C115",
+    "P001", "P011", "P014", "P018", "P020", "P028", "P031", "P032", "P034"
+  ],
+  "groups": {
+    "build": {
+      "candidateOwner": "src/rewrite/current/lower-build.ts",
+      "candidateCaseIds": ["portable-cli", "command-builder", "prebuilt-builder"],
+      "parityRows": [
+        "C001", "C002", "C003", "C004", "C006", "C007", "C009", "C011", "C014", "C015",
+        "C016", "C018", "C020", "C021", "C022", "C026", "C027", "C030", "C032", "C033",
+        "C034", "P011", "P014", "P018", "P020", "P028", "P034"
+      ]
+    },
+    "process": {
+      "candidateOwner": "src/rewrite/current/lower-build.ts",
+      "candidateCaseIds": ["agent-plugin", "portable-cli"],
+      "parityRows": [
+        "C048", "C058", "C060", "C061", "C064", "C070", "C072", "C073", "C074",
+        "C075", "C076", "C077", "C078", "P031"
+      ]
+    },
+    "catalog": {
+      "candidateOwner": "src/rewrite/current/lower-catalog.ts",
+      "candidateCaseIds": [
+        "agent-plugin", "homebrew-tap", "multi-target", "portable-cli", "scoop-bucket"
+      ],
+      "parityRows": [
+        "C085", "C086", "C102", "C103", "C104", "C105", "C106", "C107", "C108",
+        "C109", "P001"
+      ]
+    },
+    "package-publish": {
+      "candidateOwner": "src/rewrite/current/lower-publish.ts",
+      "candidateCaseIds": [
+        "multi-target", "npm-first-publish", "npm-only", "portable-cli", "pypi-registry"
+      ],
+      "parityRows": ["C110", "C111", "C112", "C113", "C114", "P032"]
+    },
+    "forge": {
+      "candidateOwner": "src/rewrite/current/lower-publish.ts",
+      "candidateCaseIds": ["agent-plugin", "github-release", "multi-target", "portable-cli"],
+      "parityRows": ["C115"]
+    }
+  },
+  "entries": [
+    {
+      "path": "src/features/build/build.ts",
+      "symbols": ["BuildOptions", "buildPlanner"],
+      "currentOracleAssertionIds": ["current.build.schedule"],
+      "focusedTests": ["test/build-pipe-stage.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/builder.ts",
+      "symbols": ["Builder", "BuilderPlan", "executableArtifact"],
+      "currentOracleAssertionIds": ["current.build.output-declaration"],
+      "focusedTests": ["test/build-pipe-stage.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/bun.ts",
+      "symbols": ["BunBuildOptions", "ReleaseConfigBunExecutableBuild", "bunBuilder"],
+      "currentOracleAssertionIds": ["current.build.bun"],
+      "focusedTests": ["test/pipe-build-bun.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/command.ts",
+      "symbols": ["CommandBuildOptions", "ReleaseConfigCommandBuild", "commandBuilder"],
+      "currentOracleAssertionIds": ["current.build.command"],
+      "focusedTests": ["test/pipe-build-command.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/hooks.ts",
+      "symbols": [
+        "HookRisk", "ReleaseConfigAfterHook", "ReleaseConfigCustomPublish", "ReleaseConfigHook",
+        "ReleaseConfigRiskHook", "hookOperation", "hooksBeforePlanner"
+      ],
+      "currentOracleAssertionIds": ["current.build.hooks-before"],
+      "focusedTests": ["test/pipe-hooks.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/import-artifacts.ts",
+      "symbols": ["ReleaseConfigManualArtifact", "importArtifactsPlanner"],
+      "currentOracleAssertionIds": ["current.build.import"],
+      "focusedTests": ["test/golden-plan-corpus.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/npm-pack.ts",
+      "symbols": ["ReleaseConfigNpmPackageBuild", "npmPackPlanner"],
+      "currentOracleAssertionIds": ["current.build.npm-package"],
+      "focusedTests": ["test/pipe-build-npm-pack.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/prebuilt.ts",
+      "symbols": ["PrebuiltBuildOptions", "ReleaseConfigPrebuiltBuild", "prebuiltBuilder"],
+      "currentOracleAssertionIds": ["current.build.prebuilt"],
+      "focusedTests": ["test/pipe-build-prebuilt.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/build/pypi-wheel.ts",
+      "symbols": [
+        "PyPiWheelBuild", "ReleaseConfigPyPiWheel", "ReleaseConfigPyPiWheelBuild",
+        "pypiWheelPlanner"
+      ],
+      "currentOracleAssertionIds": ["current.build.pypi-wheel"],
+      "focusedTests": ["test/pipe-build-pypi-wheel.test.ts", "test/pypi-wheel-stage.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-build",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/catalog/file.ts",
+      "symbols": [
+        "CatalogContentBuilder", "CatalogEntry", "ReleaseConfigCatalogEntry",
+        "ReleaseConfigCatalogFactHole", "catalogGenericPlanner", "catalogWritePath"
+      ],
+      "currentOracleAssertionIds": ["current.catalog.generic"],
+      "focusedTests": ["test/pipe-catalog-generic.test.ts"],
+      "candidateGroup": "catalog",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-catalog",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/catalog/homebrew.ts",
+      "symbols": ["ReleaseConfigHomebrewPublish", "resolveHomebrew"],
+      "currentOracleAssertionIds": ["current.catalog.homebrew"],
+      "focusedTests": ["test/target-homebrew.test.ts"],
+      "candidateGroup": "catalog",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-catalog",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/catalog/scoop.ts",
+      "symbols": ["ReleaseConfigScoopPublish", "resolveScoop"],
+      "currentOracleAssertionIds": ["current.catalog.scoop"],
+      "focusedTests": ["test/target-scoop.test.ts"],
+      "candidateGroup": "catalog",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-catalog",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/catalog/shared.ts",
+      "symbols": [
+        "CatalogResolutionConfig", "catalogArtifactUrl", "catalogPathBaseName",
+        "compactPackageShortName", "githubRepository", "projectHomepage", "projectPackageName",
+        "rejectInvalidCatalogArtifact", "requireProjectFact"
+      ],
+      "currentOracleAssertionIds": ["current.catalog.shared"],
+      "focusedTests": ["test/target-homebrew.test.ts", "test/target-scoop.test.ts"],
+      "candidateGroup": "catalog",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-catalog",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/process/archive.ts",
+      "symbols": ["ReleaseConfigArchive", "ReleaseConfigArchiveFormatOverrides", "archivePlanner"],
+      "currentOracleAssertionIds": ["current.process.archive"],
+      "focusedTests": ["test/pipe-archive.test.ts"],
+      "candidateGroup": "process",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-process",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/process/checksum.ts",
+      "symbols": ["ReleaseConfigChecksum", "checksumPlanner"],
+      "currentOracleAssertionIds": ["current.process.checksum"],
+      "focusedTests": ["test/pipe-checksum.test.ts"],
+      "candidateGroup": "process",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-process",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/catalog-file.ts",
+      "symbols": ["publishCatalogGenericPlanner"],
+      "currentOracleAssertionIds": ["current.publish.catalog"],
+      "focusedTests": ["test/pipe-publish-catalog-generic.test.ts"],
+      "candidateGroup": "catalog",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/github.ts",
+      "symbols": [
+        "GitHubPublishSection", "ReleaseConfigGitHubPublish", "publishGitHubPlanner",
+        "resolveGitHubPublish"
+      ],
+      "currentOracleAssertionIds": ["current.publish.github"],
+      "focusedTests": ["test/target-github.test.ts", "test/published-verify.test.ts"],
+      "candidateGroup": "forge",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/hooks.ts",
+      "symbols": ["hooksAfterPlanner", "publishCustomPlanner"],
+      "currentOracleAssertionIds": ["current.publish.hooks"],
+      "focusedTests": ["test/pipe-hooks.test.ts"],
+      "candidateGroup": "package-publish",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/npm.ts",
+      "symbols": [
+        "NpmAccess", "NpmPublishSection", "ReleaseConfigNpmPublish",
+        "ReleaseConfigNpmTrustedPublishing", "publishNpmPlanner", "resolveNpmPublish"
+      ],
+      "currentOracleAssertionIds": ["current.publish.npm"],
+      "focusedTests": ["test/target-npm.test.ts", "test/published-verify.test.ts"],
+      "candidateGroup": "package-publish",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/operations.ts",
+      "symbols": [
+        "CatalogGitPublishOptions", "catalogGitPublishOperations", "noAuthCommand",
+        "readOnlyCommandValidationOperation", "trustedPublishingMessage", "validationNoteOperation"
+      ],
+      "currentOracleAssertionIds": ["current.publish.shared-operations"],
+      "focusedTests": ["test/pipe-publish-catalog-generic.test.ts", "test/target-npm.test.ts"],
+      "candidateGroup": "package-publish",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/pypi.ts",
+      "symbols": [
+        "ReleaseConfigPyPiPublish", "ReleaseConfigPyPiTrustedPublishing",
+        "publishPyPiPlanner"
+      ],
+      "currentOracleAssertionIds": ["current.publish.pypi"],
+      "focusedTests": ["test/target-pypi.test.ts", "test/published-verify.test.ts"],
+      "candidateGroup": "package-publish",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/publish/trusted-publishing.ts",
+      "symbols": [
+        "TrustedPublishingProvider", "publishingAuthEnvNames", "trustedPublishingConfigFields"
+      ],
+      "currentOracleAssertionIds": ["current.publish.trusted-auth"],
+      "focusedTests": ["test/target-npm.test.ts", "test/target-pypi.test.ts"],
+      "candidateGroup": "package-publish",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-publish",
+      "unresolved": false
+    },
+    {
+      "path": "src/features/shared.ts",
+      "symbols": ["selectByIdsOrDefault"],
+      "currentOracleAssertionIds": ["current.features.selection"],
+      "focusedTests": ["test/planner.test.ts"],
+      "candidateGroup": "build",
+      "requiredCandidateResult": "behavior-equal-or-stronger",
+      "plan177DeletionGroup": "features-shared",
+      "unresolved": false
+    }
+  ]
+}

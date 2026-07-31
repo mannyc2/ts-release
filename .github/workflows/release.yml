@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -15,83 +12,71 @@ concurrency:
 
 jobs:
   plan:
-    name: Plan release
     if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-
+    outputs:
+      plan_id: ${{ steps.plan.outputs.plan_id }}
+      execution_review_id: ${{ steps.review.outputs.execution_review_id }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Upgrade npm
-        run: npm install -g npm@latest
-
-      - name: Install Twine
-        run: python3 -m pip install --upgrade "twine>=6.2.0"
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Run release checks
-        run: bun run check:release
-
-      - name: Build release artifacts
-        run: bun run release:artifacts
-
-      - name: Render package manager catalogs
-        run: bun run release:catalogs
-
-      - name: Validate release artifacts
-        run: bun run check:self-release-artifacts
-
-      - name: Record release plan
+      - run: bun install --frozen-lockfile
+      - run: bun run check:release
+      - id: plan
         uses: ./apps/ts-release-action
         with:
           command: plan
           config: apps/release-ts/release.config.json
-          format: markdown
-          write-step-summary: "true"
-          plan-path: .release/evidence/release-plan.md
-
-      - name: Upload release evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+          plan-path: .release/release-plan.json
+      - id: review
+        uses: ./apps/ts-release-action
         with:
-          name: release-evidence
-          path: .release/evidence/**
-          if-no-files-found: ignore
-
-      - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+          command: apply
+          review-only: "true"
+          plan-path: .release/release-plan.json
+          plan-id: ${{ steps.plan.outputs.plan_id }}
+          scope: all
+      - uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts
-          path: .release/artifacts/**
-          if-no-files-found: error
+          name: release-plan
+          path: .release/release-plan.json
 
-  execute:
-    name: Execute release
+  materialize:
     needs: plan
-    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      publish_review_id: ${{ steps.apply.outputs.publish_review_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-plan
+          path: .release
+      - id: apply
+        uses: ./apps/ts-release-action
+        with:
+          command: apply
+          plan-path: .release/release-plan.json
+          plan-id: ${{ needs.plan.outputs.plan_id }}
+          through: validate
+          new-run: .release/run.json
+          scope: all
+          confirm-execution: ${{ needs.plan.outputs.execution_review_id }}
+          reviewer: ${{ github.actor }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: materialized-release
+          path: .release
+
+  publish:
+    needs: [plan, materialize]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -99,86 +84,22 @@ jobs:
       id-token: write
     env:
       GH_TOKEN: ${{ github.token }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
         with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+          name: materialized-release
+          path: .release
+      - uses: ./apps/ts-release-action
         with:
-          python-version: "3.12"
-
-      - name: Upgrade npm
-        run: npm install -g npm@latest
-
-      - name: Install Twine
-        run: python3 -m pip install --upgrade "twine>=6.2.0"
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Build package
-        run: bun run build
-
-      - name: Download release artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: release-artifacts
-          path: .release/artifacts
-
-      - name: Checkout Homebrew tap
-        uses: actions/checkout@v4
-        with:
-          repository: mannyc2/homebrew-ts-release
-          path: .release/catalogs/homebrew-ts-release
-          token: ${{ secrets.TS_RELEASE_CATALOG_TOKEN }}
-
-      - name: Checkout Scoop bucket
-        uses: actions/checkout@v4
-        with:
-          repository: mannyc2/scoop-ts-release
-          path: .release/catalogs/scoop-ts-release
-          token: ${{ secrets.TS_RELEASE_CATALOG_TOKEN }}
-
-      - name: Configure catalog git identity
-        run: |
-          git -C .release/catalogs/homebrew-ts-release config user.name "github-actions[bot]"
-          git -C .release/catalogs/homebrew-ts-release config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -C .release/catalogs/scoop-ts-release config user.name "github-actions[bot]"
-          git -C .release/catalogs/scoop-ts-release config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Render package manager catalogs
-        run: bun run release:catalogs
-
-      - name: Validate release artifacts
-        run: bun run check:self-release-artifacts
-
-      - name: Run approved release
-        uses: ./apps/ts-release-action
-        with:
-          command: release
-          config: apps/release-ts/release.config.json
-          execute: "true"
-          approve-publish: "true"
-
-      - name: Upload release evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-execution-evidence
-          path: .release/evidence/**
-          if-no-files-found: ignore
+          command: apply
+          plan-path: .release/release-plan.json
+          plan-id: ${{ needs.plan.outputs.plan_id }}
+          through: verify
+          resume: .release/run.json
+          confirm-publish: ${{ needs.materialize.outputs.publish_review_id }}
+          reviewer: ${{ github.actor }}

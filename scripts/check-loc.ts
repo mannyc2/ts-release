@@ -3,39 +3,53 @@ import { join } from "node:path"
 import { cwd, exit } from "node:process"
 import { collectTypeScriptFiles } from "./lib/walk.js"
 
-// Plan 143 Stage A.6: the enforcement the LOC metric never had.
-// Budgets are ceilings and only ratchet DOWN. Raising one requires a
-// plans/ entry explaining which feature paid for it.
+// This physical-line ratchet complements the semantic Product/Oracle ruler.
+// The semantic report remains authoritative for milestone and role ceilings.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 6616], // raised by plan 168 (fingerprinted continuation and published-asset verification)
-  ["src/config", 229], // raised by plan 163 (four project metadata fields)
-  ["src/resolve", 307], // raised by plan 163 (wheel family + metadata merge)
-  ["src/grammar", 881], // raised by plan 168 (published-asset verification action)
-  ["src/features", 1778], // ratcheted by plan 167 (unbound operations and direct typed npm access)
-  ["src/pack", 500],
-  ["src/github", 267],
-  ["src/run", 1033], // raised by plan 168 (continuation plus published-asset download and evidence)
-  ["src/engine", 281],
-  ["src/render", 409], // raised by plan 168 (published-asset operation detail)
-  ["src/doctor", 256], // ratcheted by plan 166 (operation requirements derive from operation data)
-  ["src/host", 459], // raised by plan 168 (typed binary HTTP response seam)
-  ["src/api", 195],
-  ["src/types", 13],
-  ["apps/release-ts/src", 594], // raised by plan 168 (continue and published flags)
-  ["apps/ts-release-action/src", 492], // raised by plan 168 (continue/published inputs and dispatch)
-  ["test", 10514], // raised by plan 168 (continuation matrix and published verification boundaries)
-  ["scripts", 2276], // raised by plan 159 (hooks feature)
-  ["apps/release-ts/scripts", 826] // ratcheted by plan 166 (shared guard facts and script infrastructure)
+  ["src", 5560],
+  ["src/model", 845],
+  ["src/recipes", 1920],
+  ["src/config", 60],
+  ["src/plan", 260],
+  ["src/drivers", 698],
+  ["src/apply", 1302],
+  ["src/view", 25],
+  ["src/api", 444],
+  ["apps/release-ts/src", 250],
+  ["apps/ts-release-action/src", 200],
+  ["test", 2013],
+  ["scripts", 2371],
+  ["apps/release-ts/scripts", 233] // read-only self-release policy checks
 ]
 
 const root = cwd()
+const rewriteScripts = new Set([
+  "check-architecture.ts", "check-cutover.ts", "check-deletion-map.ts",
+  "check-parity.ts", "check-rewrite-plan.ts", "check-source-budget.ts",
+  "check-superiority.ts", "run-claim-cases.ts", "run-driver-conformance.ts",
+  "run-fault-matrix.ts"
+])
 
 const directoryLines = (directory: string): number => {
   const path = join(root, directory)
   if (!existsSync(path)) {
     return 0
   }
-  return collectTypeScriptFiles(path)
+  return collectTypeScriptFiles(path).filter((file) => {
+    if (directory === "src" && file.startsWith(join(path, "rewrite"))) return false
+    if (directory === "test" && file.startsWith(join(path, "rewrite"))) return false
+    if (directory !== "scripts") return true
+    const relative = file.slice(path.length + 1)
+    return !rewriteScripts.has(relative) &&
+      !relative.startsWith("lib/architecture.") &&
+      !relative.startsWith("lib/canonical-json.") &&
+      !relative.startsWith("lib/claim-cases.") &&
+      !relative.startsWith("lib/parity.") &&
+      !relative.startsWith("lib/repository-snapshot.") &&
+      !relative.startsWith("lib/source-budget.") &&
+      !relative.startsWith("lib/strict-json.") &&
+      !relative.startsWith("lib/superiority.")
+  })
     .reduce((sum, file) => sum + readFileSync(file, "utf8").split("\n").length, 0)
 }
 

@@ -20,16 +20,12 @@ const expectedRootBin = {
   "ts-release": "./apps/release-ts/src/cli/main.ts"
 } as const
 const expectedRootRuntimeExports = new Set([
-  "RELEASE_CONFIG_SCHEMA_ID",
   "ReleaseApiError",
-  "build",
+  "apply",
   "defineRelease",
-  "disposeReleaseRuntime",
+  "makeReleaseApi",
   "plan",
-  "release",
-  "releaseConfigJsonSchema",
-  "renderReleaseConfigJsonSchema",
-  "verify"
+  "reviewExecution"
 ])
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

@@ -1,0 +1,21 @@
+{
+  "name": "mannyc2-ts-release",
+  "owner": {
+    "name": "mannyc2",
+    "url": "https://github.com/mannyc2/ts-release"
+  },
+  "metadata": {
+    "description": "Repository marketplace for the ts-release agent plugin."
+  },
+  "plugins": [
+    {
+      "name": "ts-release",
+      "source": "./ts-release-plugin",
+      "version": "0.2.0",
+      "description": "Agent skill for driving ts-release: configure, plan, review, diagnose, materialize, and resume staged releases without bypassing its review gates.",
+      "category": "Developer Tools",
+      "license": "MIT",
+      "repository": "https://github.com/mannyc2/ts-release"
+    }
+  ]
+}

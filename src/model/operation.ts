@@ -1,7 +1,6 @@
 import * as Schema from "effect/Schema"
-import {
-  CheckpointId, CredentialName, OperationId, OutputId, ProfileId, SafeArchivePattern, SafeRelativePath
-} from "./primitives.js"
+import { CheckpointId, CredentialName, OperationId, OutputId, ProfileId, SafeRelativePath } from "./primitives.js"
+import { SafeArchivePattern } from "./primitives.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
   id: OutputId, path: SafeRelativePath,

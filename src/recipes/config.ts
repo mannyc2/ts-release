@@ -1,7 +1,6 @@
 import * as Schema from "effect/Schema"
-import {
-  NonEmptyName, OutputId, ProfileId, SafeArchivePattern, SafeRelativePath, Version
-} from "../model/primitives.js"
+import { NonEmptyName, OutputId, ProfileId, SafeRelativePath, Version } from "../model/primitives.js"
+import { SafeArchivePattern } from "../model/primitives.js"
 import { ProjectScope } from "./projects.js"
 import { CandidateSelection } from "./selection.js"
 import { CandidateEnvironment } from "./environment.js"

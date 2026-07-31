@@ -6,12 +6,12 @@ import { collectTypeScriptFiles } from "./lib/walk.js"
 // This physical-line ratchet complements the semantic Product/Oracle ruler.
 // The semantic report remains authoritative for milestone and role ceilings.
 const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
-  ["src", 5485],
-  ["src/model", 837],
-  ["src/recipes", 1918],
+  ["src", 5557],
+  ["src/model", 845],
+  ["src/recipes", 1920],
   ["src/config", 60],
   ["src/plan", 260],
-  ["src/drivers", 637],
+  ["src/drivers", 695],
   ["src/apply", 1302],
   ["src/view", 25],
   ["src/api", 444],

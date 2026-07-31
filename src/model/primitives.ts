@@ -49,9 +49,7 @@ export type SafeRelativePath = typeof SafeRelativePath.Type
 
 export const SafeArchivePattern = Schema.String.check(
   Schema.makeFilter((value: string) =>
-    isSafeRelativePath(value)
-      ? undefined
-      : "Archive pattern must be nonempty, relative, and contain no parent traversal.")
+    isSafeRelativePath(value) ? undefined : "Archive pattern must be relative and contain no parent traversal.")
 ).pipe(Schema.brand("SafeArchivePattern"))
 export type SafeArchivePattern = typeof SafeArchivePattern.Type
 

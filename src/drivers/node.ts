@@ -63,39 +63,30 @@ const entries = (request: CatalogStructuredRequest): ReadonlyArray<ArchiveEntry>
 const normalizeSlashes = (value: string): string => value.replaceAll("\\", "/")
 const containedRealPath = (realRoot: string, child: string, relative: string): string => {
   const real = realpathSync(child)
-  if (real !== realRoot && !real.startsWith(realRoot + sep)) {
-    throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative}.`)
-  }
-  return real
+  if (real === realRoot || real.startsWith(realRoot + sep)) return real
+  throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative}.`)
 }
-type WalkKind = "file" | "directory" | "skip"
-const statKind = (stats: { isDirectory(): boolean; isFile(): boolean }): WalkKind =>
-  stats.isDirectory() ? "directory" : stats.isFile() ? "file" : "skip"
-const entryKind = (realRoot: string, entry: Dirent, relative: string, visited: Set<string>): WalkKind => {
-  if (!entry.isSymbolicLink()) return statKind(entry)
+const entryKind = (realRoot: string, entry: Dirent, relative: string, visited: Set<string>) => {
+  if (!entry.isSymbolicLink()) return entry
   const real = containedRealPath(realRoot, join(realRoot, relative), relative)
-  if (visited.has(real)) return "skip"
+  if (visited.has(real)) return undefined
   visited.add(real)
-  return statKind(statSync(join(realRoot, relative)))
+  return statSync(join(realRoot, relative))
 }
-const walkFiles = (realRoot: string, directory: string, collect: Array<string>, visited: Set<string>): void => {
+const walkFiles = (realRoot: string, directory: string, visited: Set<string>): Array<string> => {
   const absolute = directory === "" ? realRoot : join(realRoot, directory)
-  if (!existsSync(absolute)) return
-  for (const entry of readdirSync(absolute, { withFileTypes: true })) {
+  if (!existsSync(absolute)) return []
+  return readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
     const relative = directory === "" ? entry.name : `${directory}/${entry.name}`
     const kind = entryKind(realRoot, entry, relative, visited)
-    if (kind === "directory") walkFiles(realRoot, relative, collect, visited)
-    if (kind === "file") collect.push(relative)
-  }
+    if (kind?.isDirectory() === true) return walkFiles(realRoot, relative, visited)
+    return kind?.isFile() === true ? [relative] : []
+  })
 }
 const patternCandidates = (realRoot: string, pattern: string): ReadonlyArray<string> => {
   const segments = pattern.split("/").filter((segment) => segment.length > 0)
   const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment))
-  if (wildcard >= 0) {
-    const collect: Array<string> = []
-    walkFiles(realRoot, segments.slice(0, wildcard).join("/"), collect, new Set())
-    return collect
-  }
+  if (wildcard >= 0) return walkFiles(realRoot, segments.slice(0, wildcard).join("/"), new Set())
   const absolute = join(realRoot, pattern)
   if (!existsSync(absolute)) return []
   containedRealPath(realRoot, absolute, pattern)
@@ -103,18 +94,12 @@ const patternCandidates = (realRoot: string, pattern: string): ReadonlyArray<str
 }
 const matchedWorkspaceFiles = (
   realRoot: string, patterns: ReadonlyArray<string>, excluded: ReadonlySet<string>
-): ReadonlyArray<string> => {
-  const matched = new Set<string>()
-  for (const raw of patterns) {
-    const pattern = normalizeSlashes(raw)
-    if (!isSafeRelativePath(pattern)) throw failure(`Archive pattern must stay inside the workspace: ${raw}.`)
-    const glob = new Bun.Glob(pattern)
-    for (const candidate of patternCandidates(realRoot, pattern)) {
-      if (glob.match(candidate) && !excluded.has(candidate)) matched.add(candidate)
-    }
-  }
-  return [...matched]
-}
+): ReadonlyArray<string> => [...new Set(patterns.flatMap((raw) => {
+  const pattern = normalizeSlashes(raw)
+  if (!isSafeRelativePath(pattern)) throw failure(`Archive pattern must stay inside the workspace: ${raw}.`)
+  const glob = new Bun.Glob(pattern)
+  return patternCandidates(realRoot, pattern).filter((path) => glob.match(path) && !excluded.has(path))
+}))]
 const packEntries = (request: CatalogStructuredRequest, operation: Pack): ReadonlyArray<ArchiveEntry> => {
   const patterns = operation.files ?? []
   const declared = entries(request)
@@ -129,11 +114,8 @@ const packEntries = (request: CatalogStructuredRequest, operation: Pack): Readon
   const combined = [...declared, ...matched.map((path) => ({
     path, data: new Uint8Array(readFileSync(join(realRoot, path))), mode: 0o100644
   }))]
-  const seen = new Set<string>()
-  for (const entry of combined) {
-    if (seen.has(entry.path)) throw failure(`Archive ${operation.id} has duplicate entry ${entry.path}.`)
-    seen.add(entry.path)
-  }
+  const duplicate = combined.map((entry) => entry.path).find((path, index, all) => all.indexOf(path) !== index)
+  if (duplicate !== undefined) throw failure(`Archive ${operation.id} has duplicate entry ${duplicate}.`)
   return combined.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0)
 }
 const content = (request: CatalogStructuredRequest): string => {

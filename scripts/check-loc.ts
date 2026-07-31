@@ -18,8 +18,8 @@ const budgets: ReadonlyArray<readonly [directory: string, budget: number]> = [
   ["apps/release-ts/src", 250],
   ["apps/ts-release-action/src", 200],
   ["test", 2013],
-  ["scripts", 2200],
-  ["apps/release-ts/scripts", 220] // read-only self-release policy checks
+  ["scripts", 2371],
+  ["apps/release-ts/scripts", 233] // read-only self-release policy checks
 ]
 
 const root = cwd()

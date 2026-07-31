@@ -23645,6 +23645,7 @@ var SnapshotId = identifier2("SnapshotId");
 var CheckpointId = identifier2("CheckpointId");
 var isSafeRelativePath = (value) => value.trim().length > 0 && !value.startsWith("/") && !value.startsWith("\\") && !/^[A-Za-z]:[\\/]/u.test(value) && !value.split(/[\\/]+/u).includes("..");
 var SafeRelativePath = String4.check(makeFilter2((value) => isSafeRelativePath(value) ? undefined : "Path must be nonempty, relative, and contain no parent traversal.")).pipe(brand2("SafeRelativePath"));
+var SafeArchivePattern = String4.check(makeFilter2((value) => isSafeRelativePath(value) ? undefined : "Archive pattern must be relative and contain no parent traversal.")).pipe(brand2("SafeArchivePattern"));
 var WorkspaceRoot = String4.check(makeFilter2((value) => value.startsWith("/") ? undefined : "WorkspaceRoot must be absolute.")).pipe(brand2("WorkspaceRoot"));
 
 // ../../src/model/run.ts
@@ -24220,7 +24221,8 @@ class Write extends TaggedClass()("Write", {
 
 class Pack extends TaggedClass()("Pack", {
   ...row,
-  format: Literals(["tar.gz", "zip"])
+  format: Literals(["tar.gz", "zip"]),
+  files: optionalKey2(NonEmptyArray(SafeArchivePattern))
 }) {
 }
 
@@ -25116,7 +25118,7 @@ class CandidateArchive extends Class3("CandidateArchive")({
     darwin: optional2(ArraySchema(format2)),
     windows: optional2(ArraySchema(format2))
   })),
-  files: optional2(ArraySchema(nonempty)),
+  files: optional2(NonEmptyArray(SafeArchivePattern)),
   wrapInDirectory: optional2(Union2([Boolean3, String4]))
 }) {
 }
@@ -25970,7 +25972,8 @@ var lowerArchives = (config, rows) => {
         inputs: selected2.map((item) => item.id),
         outputs: [declared],
         description: `Create ${format3} archive ${basename(declared.path)}.`,
-        format: format3
+        format: format3,
+        ...archive.files === undefined ? {} : { files: archive.files }
       }));
     }
   }
@@ -27442,11 +27445,12 @@ import {
   existsSync as existsSync4,
   mkdirSync as mkdirSync3,
   readFileSync as readFileSync3,
+  readdirSync,
   realpathSync as realpathSync2,
   statSync,
   writeFileSync as writeFileSync3
 } from "node:fs";
-import { basename as basename2, dirname as dirname2, resolve as resolve2 } from "node:path";
+import { basename as basename2, dirname as dirname2, join as join3, resolve as resolve2, sep as sep2 } from "node:path";
 
 // ../../src/drivers/services.ts
 import { createHash as createHash2 } from "node:crypto";
@@ -27920,6 +27924,75 @@ var entries = (request) => request.operation.inputs.map((id) => {
   const mode = output.kind === "executable" ? 33261 : 33188;
   return { path: basename2(output.path), data: readFileSync3(path2), mode };
 }).sort((left, right) => left.path.localeCompare(right.path));
+var normalizeSlashes = (value) => value.replaceAll("\\", "/");
+var containedRealPath = (realRoot, child, relative2) => {
+  const real = realpathSync2(child);
+  if (real === realRoot || real.startsWith(realRoot + sep2))
+    return real;
+  throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative2}.`);
+};
+var entryKind = (realRoot, entry, relative2, visited) => {
+  if (!entry.isSymbolicLink())
+    return entry;
+  const real = containedRealPath(realRoot, join3(realRoot, relative2), relative2);
+  if (visited.has(real))
+    return;
+  visited.add(real);
+  return statSync(join3(realRoot, relative2));
+};
+var walkFiles = (realRoot, directory, visited) => {
+  const absolute = directory === "" ? realRoot : join3(realRoot, directory);
+  if (!existsSync4(absolute))
+    return [];
+  return readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
+    const relative2 = directory === "" ? entry.name : `${directory}/${entry.name}`;
+    const kind = entryKind(realRoot, entry, relative2, visited);
+    if (kind?.isDirectory() === true)
+      return walkFiles(realRoot, relative2, visited);
+    return kind?.isFile() === true ? [relative2] : [];
+  });
+};
+var patternCandidates = (realRoot, pattern) => {
+  const segments = pattern.split("/").filter((segment) => segment.length > 0);
+  const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment));
+  if (wildcard >= 0)
+    return walkFiles(realRoot, segments.slice(0, wildcard).join("/"), new Set);
+  const absolute = join3(realRoot, pattern);
+  if (!existsSync4(absolute))
+    return [];
+  containedRealPath(realRoot, absolute, pattern);
+  return statSync(absolute).isFile() ? [pattern] : [];
+};
+var matchedWorkspaceFiles = (realRoot, patterns, excluded) => [...new Set(patterns.flatMap((raw) => {
+  const pattern = normalizeSlashes(raw);
+  if (!isSafeRelativePath(pattern))
+    throw failure(`Archive pattern must stay inside the workspace: ${raw}.`);
+  const glob = new Bun.Glob(pattern);
+  return patternCandidates(realRoot, pattern).filter((path2) => glob.match(path2) && !excluded.has(path2));
+}))];
+var packEntries = (request, operation) => {
+  const patterns = operation.files ?? [];
+  const declared2 = entries(request);
+  if (patterns.length === 0) {
+    if (declared2.length === 0)
+      throw failure(`Archive ${operation.id} has zero entries.`);
+    return declared2;
+  }
+  const realRoot = realpathSync2(request.root);
+  const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)));
+  const matched = matchedWorkspaceFiles(realRoot, patterns, excluded);
+  if (matched.length === 0)
+    throw failure(`Archive ${operation.id} patterns matched no workspace files.`);
+  const combined = [...declared2, ...matched.map((path2) => ({
+    path: path2,
+    data: new Uint8Array(readFileSync3(join3(realRoot, path2))),
+    mode: 33188
+  }))];
+  const duplicate2 = combined.map((entry) => entry.path).find((path2, index, all2) => all2.indexOf(path2) !== index);
+  if (duplicate2 !== undefined)
+    throw failure(`Archive ${operation.id} has duplicate entry ${duplicate2}.`);
+  return combined.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+};
 var content = (request) => {
   const operation = request.operation;
   if (operation._tag !== "Write")
@@ -27967,8 +28040,9 @@ var structured = (request) => try_2({
       }
       case "Pack": {
         const path2 = pathOf(request.root, operation.outputs[0].path);
+        const archive = packEntries(request, operation);
         mkdirSync3(dirname2(path2), { recursive: true });
-        writeFileSync3(path2, operation.format === "zip" ? zip2(entries(request)) : tarGz(entries(request)));
+        writeFileSync3(path2, operation.format === "zip" ? zip2(archive) : tarGz(archive));
         break;
       }
       case "Digest": {
@@ -28648,7 +28722,7 @@ class ReleaseApiError extends Error {
 
 // ../../src/api/input.ts
 import { realpathSync as realpathSync3, statSync as statSync2 } from "node:fs";
-import { isAbsolute, relative as relative2, resolve as resolve4, sep as sep2 } from "node:path";
+import { isAbsolute, relative as relative2, resolve as resolve4, sep as sep3 } from "node:path";
 var exact = (phase, value, keys, label) => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new ReleaseApiError(phase, `${label} must be an object.`);
@@ -28673,7 +28747,7 @@ var workspace = (phase, value) => {
 var within = (root, value) => {
   const path2 = isAbsolute(value) ? resolve4(value) : resolve4(root, value);
   const child = relative2(root, path2);
-  if (child === ".." || child.startsWith(`..${sep2}`)) {
+  if (child === ".." || child.startsWith(`..${sep3}`)) {
     throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
   }
   return path2;

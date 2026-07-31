@@ -7,16 +7,16 @@ import {
   FileBackedFakeRemote,
   faultCells,
   structuralControls
-} from "../test/rewrite/fault-matrix.js"
+} from "../test/core/fault-matrix.js"
 
 const directory = mkdtempSync(join(tmpdir(), "ts-release-fault-matrix-"))
 try {
   const fakeCredential = randomBytes(32).toString("hex")
   const tests = Bun.spawnSync(["bun", "test",
-    "test/rewrite/fault-matrix.test.ts",
-    "test/rewrite/run-ledger.test.ts",
-    "test/rewrite/run-store.test.ts",
-    "test/rewrite/apply.test.ts"
+    "test/core/fault-matrix.test.ts",
+    "test/core/run-ledger.test.ts",
+    "test/core/run-store.test.ts",
+    "test/core/apply.test.ts"
   ], {
     cwd: process.cwd(), stdin: "ignore", stdout: "pipe", stderr: "pipe",
     env: { ...process.env, REWRITE_FAKE_CREDENTIAL: fakeCredential }

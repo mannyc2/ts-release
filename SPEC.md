@@ -231,12 +231,6 @@ boundary.
 Conformance requires canonical round trips, strict excess-field rejection,
 one-read app loading, workspace realpath equivalence, challenge/receipt drift
 refusal, ledger transition coverage, driver fault cells, package boundary
-checks, app bundle checks, architecture checks, and all permanent parity
-cases.
+checks, and app bundle checks.
 
-The certified scoped result is 107/107 customization rows and 33/33 Pro rows
-against the pinned GoReleaser v2.17.0 ledger, with the exact exclusions named
-in the manifest. Five technical-property suites, 45/45 fault cells, and 11/11
-structural controls must pass with no unresolved cases.
-
-Repository certification is read-only with respect to external publication.
+Repository verification is read-only with respect to external publication.

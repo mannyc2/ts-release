@@ -5,15 +5,6 @@ reviewable plan bytes, then applies only those accepted bytes. It is a Bun
 and TypeScript release tool built around explicit authority, staged
 publication, and a durable run ledger.
 
-Full in-scope outcome parity for TypeScript/Bun distribution against the
-pinned GoReleaser v2.17.0 ledger: 107/107 customization rows and 33/33 Pro
-rows, excluding C005, C008, C017, C023, C028, C047, C050, C051, P029, P035,
-and P036.
-
-That claim is scoped to the frozen outcome ledger. It does not claim parity
-for Go-specific toolchains, deprecated implementation mechanics, or vendor
-licensing behavior.
-
 ## Install
 
 ```sh
@@ -247,37 +238,6 @@ run-bound publish receipt.
 Unknown publication outcomes stop for reconciliation or an explicit
 operator resolution with operation id, identity, reason, and timestamp.
 
-## Certification
-
-The repository proves five technical properties: review equals execution,
-invalid plans stop before capabilities, authority is structural, uncertainty
-is durable and replay-safe, and staged split/merge execution remains bound to
-one plan and content inventory. The final fault matrix covers 45/45 cells and
-11/11 structural controls with zero credential leaks or duplicate mutations.
-
-| Certified state | Product semantic lines | Oracle semantic lines |
-|---|---:|---:|
-| M6 / Plan 177 | 4,322 | 4,374 |
-| PARITY / Plan 184 readiness | 5,871 | 6,040 |
-
-Product source remains below the 8,031-line opening implementation while
-covering the complete in-scope parity surface.
-
-## Migration
-
-| Removed surface | v6 replacement |
-|---|---|
-| `build` API/command | Review a scope and `apply --through process` |
-| `plan` from a config path | Load once in the CLI/Action, then call value-only `plan` |
-| `release` API/command | Full-scope staged `apply` through validate, review, then verify |
-| `verify` API/command | Resume the same ledger with `apply --through verify` |
-| Mutable runtime configuration | `makeReleaseApi(layer)` or the immutable default API |
-| `release-plan/v5` | Canonical `release-plan/v6`; there is no fallback reader |
-| `release-evidence/v3` | Durable `run-ledger/v1` plus a derived evidence projection |
-
-This is a hard cut. Old verbs, readers, aliases, mutable registries, and
-translation DTOs are intentionally absent.
-
 ## Development
 
 ```sh
@@ -288,4 +248,4 @@ bun run check:portable
 ```
 
 Publication operations are treated as plan data during repository
-verification. The checks and rewrite certification do not dispatch a release.
+verification. The checks do not dispatch a release.

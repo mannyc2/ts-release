@@ -24,10 +24,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # The semantic source ruler verifies source-history entries against
-          # their recorded commits; a shallow clone cannot resolve them.
-          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

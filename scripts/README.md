@@ -8,8 +8,7 @@ distribution logic belongs in `src/`.
 
 ## Durable Gates
 
-- `clean-dist.ts` removes the build output through Effect Platform path and filesystem services.
-- `check-effect-imports.ts` rejects broad root `effect` imports.
+- `check-import-rules.ts` enforces the source import layering rules.
 - `check-tree-shaking.ts` checks public export graphs against the shared public API policy.
 - `check-package-exports.ts` validates package exports, declarations, side effects, and consumer type resolution.
 - `check-examples.ts` verifies every example can produce a text release plan through Effect Platform path/filesystem services, trusted-publishing npm examples/templates keep provenance and package-exists verification enabled, and every template stays schema/checker compatible.

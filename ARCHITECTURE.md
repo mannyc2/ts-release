@@ -156,12 +156,6 @@ an accepted plan.
 
 ## Verification lanes
 
-Product code is measured separately from Oracle code. Contract fixtures,
-permanent parity cases, fault injection, driver conformance, architecture
-rules, source budgets, public package checks, and CLI/Action tests certify the
-release. Plan 184 certified the PARITY state at 5,871 Product semantic lines
-and 6,040 Oracle semantic lines, compared with 4,322 and 4,374 at M6.
-
-Certification proves five properties, 107/107 scoped customization rows,
-33/33 scoped Pro rows, 45/45 fault cells, and 11/11 structural controls.
-Certification does not dispatch publication.
+Behavior tests, fault injection, driver conformance, import rules, public
+package checks, and CLI/Action tests verify the release machinery.
+Verification does not dispatch publication.

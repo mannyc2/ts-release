@@ -303,6 +303,43 @@ describe("files-only archive materialization", () => {
       ])
     }))
 
+  test("the dogfood plugin ZIP holds one plugin root and no unrelated repo files", () =>
+    withWorkspace(async (root) => {
+      cpSync(join(process.cwd(), "ts-release-plugin"), join(root, "ts-release-plugin"), { recursive: true })
+      write(root, ".env", "SECRET=value\n")
+      write(root, ".git/config", "[core]\n")
+      write(root, "node_modules/pkg/index.js", "module.exports = 1\n")
+      write(root, "plans/999-secret-plan.md", "plan\n")
+      const version = String(
+        (JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { version: string }).version
+      )
+      const operation = pack(["ts-release-plugin/**"], {
+        output: `.release/artifacts/ts-release-plugin-${version}.zip`
+      })
+      await materialize(root, operation)
+      const entries = readZip(new Uint8Array(readFileSync(
+        join(root, `.release/artifacts/ts-release-plugin-${version}.zip`)
+      )))
+      expect(entries.length).toBeGreaterThanOrEqual(11)
+      expect(entries.every((entry) => entry.path.startsWith("ts-release-plugin/"))).toBe(true)
+      const required = [
+        "ts-release-plugin/.codex-plugin/plugin.json",
+        "ts-release-plugin/.claude-plugin/plugin.json",
+        "ts-release-plugin/README.md",
+        "ts-release-plugin/LICENSE",
+        "ts-release-plugin/evals/cases.json",
+        "ts-release-plugin/skills/release/SKILL.md",
+        "ts-release-plugin/skills/release/references/configuration.md",
+        "ts-release-plugin/skills/release/references/staged-workflow.md",
+        "ts-release-plugin/skills/release/references/target-selection.md",
+        "ts-release-plugin/skills/release/references/recovery.md",
+        "ts-release-plugin/skills/release/references/verification.md"
+      ]
+      const paths = entries.map((entry) => entry.path)
+      for (const path of required) expect(paths).toContain(path)
+      expect(paths.some((path) => /\.env|\.git\/|node_modules|plans\//u.test(path))).toBe(false)
+    }))
+
   test("the declared output archive can never include itself", () =>
     withWorkspace(async (root) => {
       write(root, ".release/artifacts/out.zip", "stale-previous-archive")

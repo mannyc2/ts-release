@@ -66,7 +66,7 @@ interface Calls {
   }>
 }
 const setup = async (unknownFirst = false, reconcileFound = false) => {
-  const directory = mkdtempSync(join(tmpdir(), "ts-release-apply-"))
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-apply-")))
   const root = join(directory, "workspace")
   const snapshots = join(directory, "snapshots")
   const runs = join(directory, "runs")

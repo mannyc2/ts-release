@@ -83,7 +83,7 @@ describe("candidate driver conformance", () => {
   })
 
   test("workspace snapshots exact bytes and verified handles ignore original-path swaps", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "ts-release-workspace-"))
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-workspace-")))
     try {
       const root = join(directory, "workspace")
       const snapshotDirectory = join(directory, "snapshots")

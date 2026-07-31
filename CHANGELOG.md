@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Restored the files-only archive contract: `archives[].files` now decodes
+  strictly as safe workspace-relative patterns, flows into the durable plan
+  as optional `Pack.files`, and materializes deterministic recursive archive
+  entries (sorted, deduplicated, symlink-contained, never self-including).
+  Plans without file patterns keep their exact `release-plan/v6` bytes and
+  operation hashes.
+- Added the `ts-release` agent plugin: one shared `release` skill with five
+  self-contained references and eight behavioral eval cases, packaged with
+  native OpenAI/Codex and Claude Code manifests, repo marketplace catalogs
+  (`.agents/plugins/marketplace.json`, `.claude-plugin/marketplace.json`),
+  and a `check:skill-plugin` structural gate. The dogfood release now ships
+  `ts-release-plugin-{version}.zip` plus a checksums file as GitHub release
+  assets. Public directory submission stays a manual operator action
+  (docs/skill-distribution.md).
+
 - Internal readability refactor with identical public behavior: one authority
   predicate for remote-publish operations, shared canonical-JSON hashing, an
   `ApplyContext` for the apply orchestrator, and removal of dead driver

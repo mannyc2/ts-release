@@ -199,6 +199,34 @@ paths must remain inside the realpath-normalized `GITHUB_WORKSPACE`. The
 Action exposes plan, review, receipt, run, status, and evidence outputs named
 in `action.yml`; it never plans during `apply`.
 
+## Agent skill/plugin
+
+The repository doubles as a plugin marketplace for one shared `release`
+skill that teaches agent hosts to drive ts-release without bypassing its
+review gates. The same `ts-release-plugin/` tree carries native manifests
+for OpenAI/Codex and Claude Code:
+
+```sh
+codex plugin marketplace add mannyc2/ts-release
+codex plugin add ts-release@mannyc2-ts-release
+
+claude plugin marketplace add mannyc2/ts-release
+claude plugin install ts-release@mannyc2-ts-release
+```
+
+Claude Code exposes the skill as `/ts-release:release`. Each tagged release
+also ships `ts-release-plugin-{version}.zip` with a checksum as a GitHub
+release asset, produced by this repository's own dogfood release plan. The
+plugin version always equals the package version; `bun run
+check:skill-plugin` fails on any drift.
+
+Public directory submission (OpenAI Plugins Directory, Anthropic's
+community marketplace) is a manual operator action documented in
+[docs/skill-distribution.md](docs/skill-distribution.md); third-party skill
+registries are explicitly out of scope. The skill grants no publication
+authority: releases still flow through ts-release's execution and publish
+reviews.
+
 ## Durable documents and approvals
 
 There are two durable documents:

@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 import {
-  Committed, CommitmentUnknown, NotDispatched, ReadResult,
+  Committed, CommitmentUnknown, isClosedProfilePublish, NotDispatched, ReadResult,
   type CatalogPublishRequest, type DriverCatalogShape
 } from "./services.js"
 import { Digest } from "../model/primitives.js"
@@ -126,14 +126,13 @@ const remotePublish = (
   catch: (cause) => failure(String(cause), "unknown")
 })
 const reconcile = (
-  request: Parameters<DriverCatalogShape["reconcile"]>[0],
+  request: CatalogPublishRequest,
   credential: string
 ) => Effect.tryPromise({
   try: async () => {
     const operation = request.operation
     if (operation._tag === "OpaquePublish") throw failure("Opaque publication is manual-only.")
-    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"]
-      .includes(operation._tag))
+    if (isClosedProfilePublish(operation))
       throw failure("No live closed-profile reconciliation transport is installed.")
     if (operation._tag === "ForgeRelease") {
       const response = await fetch(
@@ -170,8 +169,7 @@ export const makeNodeCatalog = (
 ): DriverCatalogShape => ({
   structured,
   publish: (request, handle, credential) => {
-    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"]
-      .includes(request.operation._tag)) {
+    if (isClosedProfilePublish(request.operation)) {
       return Effect.fail(failure("No live closed-profile publish transport is installed."))
     }
     if (request.operation._tag === "OpaquePublish") {

@@ -24101,6 +24101,7 @@ var hashFramed = (domain, parts) => {
   });
   return hash2.digest("hex");
 };
+var hashCanonical = (domain, value) => hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value))]);
 
 // ../../src/model/errors.ts
 var Reason2 = { reason: String4 };
@@ -24427,6 +24428,7 @@ var Operation = Union2([
   ProviderPublish,
   OpaquePublish
 ]);
+var isRemotePublish = (operation) => operationAuthority(operation) === "RemotePublish";
 var operationAuthority = (operation) => {
   switch (operation._tag) {
     case "Check":
@@ -24525,9 +24527,8 @@ var credentialFailure = (entries) => {
       read.add(operation.credential.name);
     else if (operation._tag === "HttpRead" && operation.credential !== undefined)
       read.add(operation.credential.name);
-    if (operation._tag === "HttpPublish" || operation._tag === "ForgeRelease" || operation._tag === "PackageRegistryRelease" || operation._tag === "PackageStorePublish" || operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" || operation._tag === "AnnouncementPublish" || operation._tag === "SmtpPublish" || operation._tag === "OpaquePublish") {
+    if (isRemotePublish(operation))
       publish.add(operation.credential.name);
-    }
   }
   const dual2 = [...read].find((name) => publish.has(name));
   return dual2 === undefined ? undefined : CredentialConfinementError.make({
@@ -24573,12 +24574,9 @@ var validatePlan = (plan) => {
       outputs.push({ output, producerId: operation.id, stage });
     }
   }
-  const encoder2 = new TextEncoder;
   const operationHashes = entries.map(({ operation }) => ({
     operationId: operation.id,
-    hash: hashFramed("ts-release/operation/v1", [
-      encoder2.encode(encodeCanonicalJson(encodeSync2(Operation)(operation)))
-    ])
+    hash: hashCanonical("ts-release/operation/v1", encodeSync2(Operation)(operation))
   }));
   return { entries, outputs, dependencies, operationHashes };
 };
@@ -24614,7 +24612,6 @@ class PublishPermit {
 }
 
 // ../../src/apply/approval.ts
-var hash2 = (domain, value) => hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value))]);
 var fail7 = (reason) => {
   throw ApprovalError.make({ reason });
 };
@@ -24626,7 +24623,7 @@ var selected = (accepted, scope2) => {
   const ids = new Set(scope2.operationIds.map(String));
   return accepted.operationHashes.filter(({ operationId }) => ids.has(operationId));
 };
-var deriveLogicalRunId = (accepted, scope2, topologyHash, nonce) => LogicalRunId.make(hash2("ts-release/logical-run/v1", {
+var deriveLogicalRunId = (accepted, scope2, topologyHash, nonce) => LogicalRunId.make(hashCanonical("ts-release/logical-run/v1", {
   planId: accepted.planId,
   operationIds: [...scope2.operationIds].map(String).sort(),
   topologyHash,
@@ -24637,7 +24634,7 @@ var executionReviewId = (accepted, scope2, topologyHash) => {
   const ids = new Set(operations.map(({ operationId }) => operationId));
   const trustedExecReviewSet = operationEntries(accepted.plan).filter(({ operation }) => ids.has(operation.id) && operation._tag === "Exec").map(({ operation }) => operation.id).sort();
   const dependencyClosure = accepted.dependencies.filter((edge) => ids.has(edge.operationId)).map((edge) => edge.producerId).filter((id, index, all2) => all2.indexOf(id) === index).sort();
-  return ExecutionReviewId.make(hash2("ts-release/execution-review/v1", {
+  return ExecutionReviewId.make(hashCanonical("ts-release/execution-review/v1", {
     planId: accepted.planId,
     scopeOperationIdsAndHashes: operations,
     dependencyClosure,
@@ -24664,21 +24661,11 @@ var mintExecutionReceipt = (accepted, scope2, topologyHash, confirmation) => {
   };
   return ExecutionApprovalReceipt.make({
     ...body,
-    receiptId: ReceiptId.make(hash2("ts-release/execution-receipt/v1", body))
+    receiptId: ReceiptId.make(hashCanonical("ts-release/execution-receipt/v1", body))
   });
 };
 var publishReviewId = (accepted, executionReview, scope2, materials) => {
-  const publishIds = new Set(operationEntries(accepted.plan).filter(({ operation }) => [
-    "HttpPublish",
-    "ForgeRelease",
-    "PackageRegistryRelease",
-    "PackageStorePublish",
-    "SupplyChainPublish",
-    "ProviderPublish",
-    "AnnouncementPublish",
-    "SmtpPublish",
-    "OpaquePublish"
-  ].includes(operation._tag)).map(({ operation }) => String(operation.id)));
+  const publishIds = new Set(operationEntries(accepted.plan).filter(({ operation }) => isRemotePublish(operation)).map(({ operation }) => String(operation.id)));
   const operations = selected(accepted, scope2).filter(({ operationId }) => publishIds.has(operationId));
   const facts = materials.map((item) => ({
     outputId: item.outputId,
@@ -24686,7 +24673,7 @@ var publishReviewId = (accepted, executionReview, scope2, materials) => {
     digest: item.digest,
     size: item.size
   })).sort((left, right) => String(left.outputId).localeCompare(String(right.outputId)));
-  return PublishReviewId.make(hash2("ts-release/publish-review/v1", {
+  return PublishReviewId.make(hashCanonical("ts-release/publish-review/v1", {
     executionReviewId: executionReview,
     sortedPublishInputFacts: facts,
     selectedPublishOperationIdsAndHashes: operations
@@ -24709,27 +24696,27 @@ var mintPublishReceipt = (receipt, expectedReviewId, confirmation) => {
   };
   return PublishApprovalReceipt.make({
     ...body,
-    receiptId: ReceiptId.make(hash2("ts-release/publish-receipt/v1", body))
+    receiptId: ReceiptId.make(hashCanonical("ts-release/publish-receipt/v1", body))
   });
 };
 
-class ApprovalSigner extends Service()("RewriteApprovalSigner") {
+class ApprovalSigner extends Service()("ApprovalSigner") {
 }
 var LocalApprovalSignerLayer = succeed4(ApprovalSigner)({
   execution: (receipt, runId, reviewId) => checked(() => {
     const { receiptId, ...body } = receipt;
-    if (receiptId !== hash2("ts-release/execution-receipt/v1", body))
+    if (receiptId !== hashCanonical("ts-release/execution-receipt/v1", body))
       fail7("Execution receipt identity is invalid.");
     return ExecutionPermit.from(receipt, runId, reviewId);
   }),
   publish: (receipt, execution, reviewId) => checked(() => {
     const { receiptId, ...body } = receipt;
-    if (receiptId !== hash2("ts-release/publish-receipt/v1", body))
+    if (receiptId !== hashCanonical("ts-release/publish-receipt/v1", body))
       fail7("Publish receipt identity is invalid.");
     return PublishPermit.from(receipt, execution, reviewId);
   })
 });
-var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, target, materials) => hash2("ts-release/reconciliation/v1", {
+var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, target, materials) => hashCanonical("ts-release/reconciliation/v1", {
   planId,
   logicalRunId,
   operationIds: [...scope2.operationIds].map(String).sort(),
@@ -24739,10 +24726,10 @@ var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHa
   target,
   materials: materials.map((item) => [item.outputId, item.digest, item.size])
 });
-var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials) => hash2("ts-release/package-store-reconcile/v1", {
+var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials) => hashCanonical("ts-release/package-store-reconcile/v1", {
   planId,
   logicalRunId,
-  scopeHash: scope2.scopeHash ?? hash2("ts-release/execution-scope/v1", {
+  scopeHash: scope2.scopeHash ?? hashCanonical("ts-release/execution-scope/v1", {
     planId,
     operationIds: [...scope2.operationIds].map(String).sort()
   }),
@@ -24757,10 +24744,10 @@ var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash,
   },
   materialBindingHashes: materials.map((item) => item.digest).sort()
 });
-var supplyChainReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials, domain = "supply-chain") => hash2(`ts-release/${domain}-reconcile/v1`, {
+var supplyChainReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials, domain = "supply-chain") => hashCanonical(`ts-release/${domain}-reconcile/v1`, {
   planId,
   logicalRunId,
-  scopeHash: scope2.scopeHash ?? hash2("ts-release/execution-scope/v1", {
+  scopeHash: scope2.scopeHash ?? hashCanonical("ts-release/execution-scope/v1", {
     planId,
     operationIds: [...scope2.operationIds].map(String).sort()
   }),
@@ -24787,7 +24774,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { randomUUID as randomUUID2 } from "node:crypto";
-class RunStore extends Service()("RewriteRunStore") {
+class RunStore extends Service()("RunStore") {
 }
 var error2 = (reason) => RunStoreError.make({ reason });
 var exclusiveFlags = constants3.O_WRONLY | constants3.O_CREAT | constants3.O_EXCL | constants3.O_NOFOLLOW;
@@ -25441,7 +25428,7 @@ var jsonFailure = (value, parents) => {
   parents.delete(value);
   return;
 };
-var decodeConfig = fn2("rewrite.decodeConfig")(function* (input) {
+var decodeConfig = fn2("decodeConfig")(function* (input) {
   if (typeof input === "string") {
     return yield* ConfigValueError.make({ reason: "Core config must be a value, not text or path." });
   }
@@ -27227,7 +27214,7 @@ var lowerCurrentSupplyChain = (config, rows2) => {
 };
 
 // ../../src/recipes/current.ts
-var lowerCurrentConfig = fn2("rewrite.lowerCurrentConfig")(function* (config) {
+var lowerCurrentConfig = fn2("lowerCurrentConfig")(function* (config) {
   const rows2 = yield* try_2({
     try: () => {
       const current = emptyRows();
@@ -27326,7 +27313,7 @@ class AcceptedPlan {
   get bytes() {
     return new Uint8Array(this.#bytes);
   }
-  static accept = fn2("rewrite.acceptPlan")(function* (bytes) {
+  static accept = fn2("acceptPlan")(function* (bytes) {
     const plan = yield* try_2({
       try: () => {
         const value = parseStrictJson(decoder.decode(bytes));
@@ -27361,12 +27348,6 @@ class Invocation extends Class3("Invocation")({
   snapshot: Boolean3
 }) {
 }
-var validatePlanningFacts = fn2("rewrite.validatePlanningFacts")(function* (invocation) {
-  if (!invocation.workspace.startsWith("/")) {
-    return yield* PlanningFactsError.make({ reason: "Workspace must be canonical and absolute." });
-  }
-  return invocation;
-});
 var recipeDefinitions = (config) => {
   const staticRecipes = (config.artifacts ?? []).map((artifact) => StaticOutputRecipe.make({
     id: RecipeId.make(`artifact:${artifact.id}`),
@@ -27398,7 +27379,7 @@ var recipeDefinitions = (config) => {
     })
   ];
 };
-var lowerRecipes = fn2("rewrite.lowerRecipes")(function* (definitions) {
+var lowerRecipes = (definitions) => {
   const build2 = definitions.flatMap((definition) => definition._tag === "StaticOutputRecipe" ? [Check.make({
     id: OperationId.make(`check:${definition.id}`),
     inputs: [],
@@ -27420,8 +27401,8 @@ var lowerRecipes = fn2("rewrite.lowerRecipes")(function* (definitions) {
     announce: [],
     verify: []
   });
-});
-var finalizePlan = fn2("rewrite.finalizePlan")(function* (config, invocation, stages) {
+};
+var finalizePlan = (config, invocation, stages) => {
   return ReleasePlanV6.make({
     schemaVersion: "release-plan/v6",
     identity: ReleaseIdentityV6.make({
@@ -27444,18 +27425,16 @@ var finalizePlan = fn2("rewrite.finalizePlan")(function* (config, invocation, st
       }))
     ]
   });
-});
+};
 var minimalConfig = (config) => config.builds === undefined && config.npmPackage === undefined && config.pypiWheel === undefined && config.archives === undefined && config.catalogs === undefined && config.hooks === undefined && config.retry === undefined && config.evidence === undefined && Object.keys(config.publish).length === 0 && Object.keys(config.project).every((key) => ["name", "version", "tag"].includes(key)) && (config.artifacts ?? []).every((artifact) => ["file", "directory", "executable"].includes(artifact.format) && artifact.checksum === undefined && artifact.variant === undefined);
-var compilePlan = fn2("rewrite.compilePlan")(function* (input, invocation) {
+var compilePlan = fn2("compilePlan")(function* (input, invocation) {
   const config = yield* decodeConfig(input);
-  const facts = yield* validatePlanningFacts(invocation);
-  const baseStages = minimalConfig(config) ? yield* lowerRecipes(recipeDefinitions(config)) : yield* lowerCurrentConfig(config);
+  const baseStages = minimalConfig(config) ? lowerRecipes(recipeDefinitions(config)) : yield* lowerCurrentConfig(config);
   const stages = config.projects === undefined ? baseStages : yield* try_2({
     try: () => lowerProjects(baseStages, config.projects),
     catch: (cause) => PlanningFactsError.make({ reason: String(cause) })
   });
-  const plan = yield* finalizePlan(config, facts, stages);
-  return yield* acceptPlan(encodePlanBytes(plan));
+  return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, stages)));
 });
 
 // ../../src/drivers/node.ts
@@ -27475,12 +27454,6 @@ class ProcessRequest extends TaggedClass()("ProcessRequest", {
   argv: NonEmptyArray(String4),
   cwd: SafeRelativePath,
   environmentNames: ArraySchema(NonEmptyString)
-}) {
-}
-
-class ReadRequest extends TaggedClass()("ReadRequest", {
-  method: Literals(["GET", "HEAD"]),
-  url: NonEmptyString
 }) {
 }
 
@@ -27549,23 +27522,15 @@ class VerifiedContentHandle {
     return new VerifiedContentHandle(facts, new Uint8Array(bytes));
   }
 }
+var isClosedProfilePublish = (operation) => ["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag);
 
-class ProcessRunner extends Service()("RewriteProcessRunner") {
+class WorkspaceStore extends Service()("WorkspaceStore") {
 }
 
-class WorkspaceStore extends Service()("RewriteWorkspaceStore") {
+class CredentialStore extends Service()("CredentialStore") {
 }
 
-class ReadTransport extends Service()("RewriteReadTransport") {
-}
-
-class PublishTransport extends Service()("RewritePublishTransport") {
-}
-
-class CredentialStore extends Service()("RewriteCredentialStore") {
-}
-
-class DriverCatalog extends Service()("RewriteDriverCatalog") {
+class DriverCatalog extends Service()("DriverCatalog") {
 }
 
 // ../../src/drivers/workspace.ts
@@ -27882,7 +27847,7 @@ var reconcile = (request, credential) => tryPromise2({
     const operation = request.operation;
     if (operation._tag === "OpaquePublish")
       throw failure("Opaque publication is manual-only.");
-    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag))
+    if (isClosedProfilePublish(operation))
       throw failure("No live closed-profile reconciliation transport is installed.");
     if (operation._tag === "ForgeRelease") {
       const response = await fetch(`https://api.github.com/repos/${operation.repository}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } });
@@ -27912,7 +27877,7 @@ var reconcile = (request, credential) => tryPromise2({
 var makeNodeCatalog = (structured) => ({
   structured,
   publish: (request, handle, credential) => {
-    if (["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(request.operation._tag)) {
+    if (isClosedProfilePublish(request.operation)) {
       return fail5(failure("No live closed-profile publish transport is installed."));
     }
     if (request.operation._tag === "OpaquePublish") {
@@ -28150,7 +28115,7 @@ var validateLedger = (accepted, ledger) => {
   if (ledger.planId !== accepted.planId || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0)
     throw fail9("Ledger identity or revision mismatch.");
   assertScope(accepted, ledger.scope);
-  const hashes = accepted.operationHashes.map(({ hash: hash3 }) => hash3);
+  const hashes = accepted.operationHashes.map(({ hash: hash2 }) => hash2);
   if (JSON.stringify(ledger.operationHashes) !== JSON.stringify(hashes) || ledger.operations.length !== hashes.length)
     throw fail9("Ledger hash vector mismatch.");
   ledger.operations.forEach((record2, index) => assertRecord(accepted, ledger, record2, index));
@@ -28161,15 +28126,15 @@ var createLedger = (accepted, request) => {
     runId: request.runId,
     logicalRunId: request.logicalRunId,
     planId: accepted.planId,
-    operationHashes: accepted.operationHashes.map(({ hash: hash3 }) => OperationHash.make(hash3)),
+    operationHashes: accepted.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2)),
     scope: request.scope,
     frontier: request.frontier,
     executionTopologyHash: request.topologyHash,
     revision: 0,
     ...request.topology === undefined ? {} : { topology: request.topology },
-    operations: accepted.operationHashes.map(({ operationId: operationId2, hash: hash3 }) => OperationRunRecord.make({
+    operations: accepted.operationHashes.map(({ operationId: operationId2, hash: hash2 }) => OperationRunRecord.make({
       operationId: OperationId.make(operationId2),
-      operationHash: OperationHash.make(hash3),
+      operationHash: OperationHash.make(hash2),
       attempts: [AttemptRecord.make({
         attemptId: attemptId(0),
         executionReceipt: request.receipt,
@@ -28411,27 +28376,28 @@ var transition = (accepted, ledger, command3) => {
   }
 };
 var operationStatus = (ledger, operationId2) => ledger.operations.find((item) => item.operationId === operationId2)?.attempts.at(-1)?.state;
+var settled = (state) => state?._tag === "Passed" || state?._tag === "AssumedCommitted";
 
 // ../../src/apply/apply.ts
-var moved = (accepted, store, path2, ledger, command3) => gen2(function* () {
-  const next = transition(accepted, ledger, command3);
+var moved = (ctx, ledger, command3) => gen2(function* () {
+  const next = transition(ctx.accepted, ledger, command3);
   if ("_tag" in next)
     return yield* next;
-  yield* store.save(path2, ledger.revision, next);
+  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next);
   return next;
 });
-var structured2 = (accepted, catalog3, store, credential, permit, path2, root, ledger, operation) => gen2(function* () {
+var structured2 = (ctx, permit, ledger, operation) => gen2(function* () {
   const start2 = operation._tag === "Exec" ? "BeginTrustedExec" : "BeginStructured";
-  let next = yield* moved(accepted, store, path2, ledger, {
+  const next = yield* moved(ctx, ledger, {
     _tag: start2,
     operationId: operation.id,
     at: new Date().toISOString()
   });
-  const secret = operation._tag === "ReviewedNoteTransform" ? yield* credential.getRead(operation.credential, permit) : undefined;
-  const result2 = yield* catalog3.structured(CatalogStructuredRequest.make({
+  const secret = operation._tag === "ReviewedNoteTransform" ? yield* ctx.credential.getRead(operation.credential, permit) : undefined;
+  const result2 = yield* ctx.catalog.structured(CatalogStructuredRequest.make({
     operation,
-    root,
-    availableOutputs: accepted.outputs.map(({ output }) => output)
+    root: ctx.request.root,
+    availableOutputs: ctx.accepted.outputs.map(({ output }) => output)
   }), secret).pipe(map4((value) => ({ success: true, value })), catch_2((cause) => succeed5({ success: false, cause })));
   const command3 = result2.success ? {
     _tag: "Pass",
@@ -28444,28 +28410,28 @@ var structured2 = (accepted, catalog3, store, credential, permit, path2, root, l
     detail: result2.cause.reason,
     retryable: false
   };
-  return yield* moved(accepted, store, path2, next, command3);
+  return yield* moved(ctx, next, command3);
 });
-var localOperations = (accepted, catalog3, store, credential, permit, request, ledger, operations) => gen2(function* () {
+var localOperations = (ctx, permit, ledger, operations) => gen2(function* () {
   let next = ledger;
-  for (const operation of operations.filter((item) => operationAuthority(item) !== "RemotePublish")) {
+  for (const operation of operations.filter((item) => !isRemotePublish(item))) {
     if (operationStatus(next, operation.id)?._tag === "Pending")
-      next = yield* structured2(accepted, catalog3, store, credential, permit, request.run.path, request.root, next, operation);
-    if (!["Passed", "AssumedCommitted"].includes(operationStatus(next, operation.id)._tag))
+      next = yield* structured2(ctx, permit, next, operation);
+    if (!settled(operationStatus(next, operation.id)))
       return next;
   }
   return next;
 });
-var materialize = (accepted, workspace, request) => gen2(function* () {
-  const ids = new Set(operationEntries(accepted.plan).filter(({ operation }) => operationAuthority(operation) === "RemotePublish").flatMap(({ operation }) => operation.inputs).map(String));
-  return yield* forEach2(accepted.outputs.filter(({ output }) => ids.has(String(output.id))), ({ output }) => workspace.snapshot(SnapshotRequest.make({
-    root: request.root,
+var materialize = (ctx) => gen2(function* () {
+  const publishInputs = new Set(operationEntries(ctx.accepted.plan).filter(({ operation }) => isRemotePublish(operation)).flatMap(({ operation }) => operation.inputs).map(String));
+  return yield* forEach2(ctx.accepted.outputs.filter(({ output }) => publishInputs.has(String(output.id))), ({ output }) => ctx.workspace.snapshot(SnapshotRequest.make({
+    root: ctx.request.root,
     source: output.path,
-    snapshotDirectory: request.snapshotDirectory,
+    snapshotDirectory: ctx.request.snapshotDirectory,
     outputId: output.id
   })));
 });
-var mutation = (effect) => effect.pipe(catch_2((cause) => succeed5(cause.commitment === "unknown" ? CommitmentUnknown.make({ failure: cause.reason }) : NotDispatched.make({ reason: cause.reason, retryable: false }))));
+var dispatched = (effect) => effect.pipe(catch_2((cause) => succeed5(cause.commitment === "unknown" ? CommitmentUnknown.make({ failure: cause.reason }) : NotDispatched.make({ reason: cause.reason, retryable: false }))));
 var publishTarget = (operation) => {
   switch (operation._tag) {
     case "HttpPublish":
@@ -28508,112 +28474,130 @@ var checkpointCommand = (result2, operationId2, checkpointId) => {
       };
   }
 };
-var keyFor = (accepted, ledger, hash3, checkpointId, operation, target2, materials, bindings) => operation._tag === "PackageStorePublish" ? packageStoreReconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, OperationHash.make(hash3), checkpointId, operation.profileId, operation.target, bindings) : operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" || operation._tag === "AnnouncementPublish" || operation._tag === "SmtpPublish" ? supplyChainReconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, OperationHash.make(hash3), checkpointId, operation.profileId, operation.target, bindings, {
-  AnnouncementPublish: "announcement",
-  SmtpPublish: "announcement",
-  ProviderPublish: "provider",
-  SupplyChainPublish: "supply-chain"
-}[operation._tag]) : reconciliationKey(accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, OperationHash.make(hash3), checkpointId, target2, materials);
-var publishOperation = (accepted, services, request, ledger, operation, materials, permit) => gen2(function* () {
-  let next = operationStatus(ledger, operation.id)?._tag === "Pending" ? yield* moved(accepted, services.store, request.run.path, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
+var reconciliationKeyFor = (ctx, ledger, operation, operationHash, checkpointId, target2, materials, bindings) => {
+  switch (operation._tag) {
+    case "PackageStorePublish":
+      return packageStoreReconciliationKey(ctx.accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, operationHash, checkpointId, operation.profileId, operation.target, bindings);
+    case "SupplyChainPublish":
+    case "ProviderPublish":
+    case "AnnouncementPublish":
+    case "SmtpPublish":
+      return supplyChainReconciliationKey(ctx.accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, operationHash, checkpointId, operation.profileId, operation.target, bindings, {
+        SupplyChainPublish: "supply-chain",
+        ProviderPublish: "provider",
+        AnnouncementPublish: "announcement",
+        SmtpPublish: "announcement"
+      }[operation._tag]);
+    default:
+      return reconciliationKey(ctx.accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, operationHash, checkpointId, target2, materials);
+  }
+};
+var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(function* () {
+  let next = operationStatus(ledger, operation.id)?._tag === "Pending" ? yield* moved(ctx, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
   const status = operationStatus(next, operation.id);
   const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : [];
+  const operationHash = OperationHash.make(ctx.accepted.operationHashes.find((item) => item.operationId === operation.id).hash);
+  const bindings = materials.filter((item) => operation.inputs.includes(item.outputId));
+  const subject = bindings[0];
+  const target2 = publishTarget(operation);
   for (const checkpoint3 of checkpoints) {
     if (checkpoint3._tag !== "CheckpointPending")
       continue;
-    const operationHash = accepted.operationHashes.find((item) => item.operationId === operation.id).hash;
-    const bindings = materials.filter((item) => operation.inputs.includes(item.outputId));
-    const target2 = publishTarget(operation);
-    const key = keyFor(accepted, next, operationHash, checkpoint3.checkpointId, operation, target2, materials, bindings);
-    const subject = bindings[0];
-    next = yield* moved(accepted, services.store, request.run.path, next, {
+    const key = reconciliationKeyFor(ctx, next, operation, operationHash, checkpoint3.checkpointId, target2, materials, bindings);
+    next = yield* moved(ctx, next, {
       _tag: "DispatchCheckpoint",
       operationId: operation.id,
       checkpointId: checkpoint3.checkpointId,
       key,
-      ...["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag) ? {
+      ...isClosedProfilePublish(operation) ? {
         targetCoordinates: target2,
         ...subject === undefined ? {} : { subjectDigest: subject.digest }
       } : {}
     });
-    const outputId2 = checkpoint3.checkpointId === "dispatch" || ["SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag) ? String(operation.inputs[0] ?? "") : String(checkpoint3.checkpointId).replace(/^asset:/u, "");
+    const subjectFromInputs = checkpoint3.checkpointId === "dispatch" || isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish";
+    const outputId2 = subjectFromInputs ? String(operation.inputs[0] ?? "") : String(checkpoint3.checkpointId).replace(/^asset:/u, "");
     const facts = materials.find((item) => item.outputId === outputId2);
-    const handle = facts === undefined ? undefined : yield* services.workspace.verify(request.snapshotDirectory, facts);
-    const credential = yield* services.credential.getPublish(operation.credential, permit);
+    const handle = facts === undefined ? undefined : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts);
+    const credential = yield* ctx.credential.getPublish(operation.credential, permit);
     const publish = CatalogPublishRequest.make({
       operation,
-      checkpointId: CheckpointId.make(checkpoint3.checkpointId),
+      checkpointId: checkpoint3.checkpointId,
       clientReconciliationKey: key
     });
-    const result2 = yield* mutation(services.catalog.publish(publish, handle, credential));
-    next = yield* moved(accepted, services.store, request.run.path, next, checkpointCommand(result2, operation.id, checkpoint3.checkpointId));
+    const result2 = yield* dispatched(ctx.catalog.publish(publish, handle, credential));
+    next = yield* moved(ctx, next, checkpointCommand(result2, operation.id, checkpoint3.checkpointId));
     if (result2._tag !== "Committed")
       return next;
   }
-  return yield* moved(accepted, services.store, request.run.path, next, { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." });
+  return yield* moved(ctx, next, { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." });
 });
 var blocksApply = (ledger) => ledger.operations.some((record2) => ["CommitUnknown", "ManualReview"].includes(record2.attempts.at(-1).state._tag));
-var reconcile2 = (accepted, services, request, ledger, recovery, permit) => gen2(function* () {
-  const operation = operationEntries(accepted.plan).map(({ operation: operation2 }) => operation2).find((item) => item.id === recovery.operationId && operationAuthority(item) === "RemotePublish");
+var reconcile2 = (ctx, ledger, recovery, permit) => gen2(function* () {
+  const operation = operationEntries(ctx.accepted.plan).map(({ operation: operation2 }) => operation2).find((item) => item.id === recovery.operationId && isRemotePublish(item));
   const state = operationStatus(ledger, recovery.operationId);
   const checkpoint3 = state?._tag === "CommitUnknown" ? state.progress.find((item) => item.checkpointId === recovery.checkpointId) : undefined;
   if (operation === undefined || checkpoint3?._tag !== "CheckpointUnknown")
     return yield* TransitionError.make({ reason: "Reconciliation does not name an unknown checkpoint." });
-  const credential = yield* services.credential.getPublish(operation.credential, permit);
-  const result2 = yield* services.catalog.reconcile(CatalogPublishRequest.make({
+  const credential = yield* ctx.credential.getPublish(operation.credential, permit);
+  const result2 = yield* ctx.catalog.reconcile(CatalogPublishRequest.make({
     operation,
     checkpointId: recovery.checkpointId,
     clientReconciliationKey: checkpoint3.clientReconciliationKey
   }), credential);
-  return yield* moved(accepted, services.store, request.run.path, ledger, {
+  return yield* moved(ctx, ledger, {
     ...recovery,
     result: result2.found ? "committed" : "absent",
     detail: result2.remoteId ?? (result2.found ? "Observed committed." : "Observed absent.")
   });
 });
-var openLedger = (accepted, request, store) => gen2(function* () {
-  let ledger = request.run._tag === "NewRun" ? request.run.ledger : yield* store.load(request.run.path, request.run.expected);
-  if (request.run._tag === "NewRun")
-    yield* store.create(request.run.path, ledger);
-  ledger = yield* moved(accepted, store, request.run.path, ledger, { _tag: "Recover" });
-  if (stageOrder.indexOf(request.through) > stageOrder.indexOf(ledger.frontier))
-    ledger = yield* moved(accepted, store, request.run.path, ledger, { _tag: "AdvanceFrontier", frontier: request.through });
+var openLedger = (ctx) => gen2(function* () {
+  const run3 = ctx.request.run;
+  let ledger = run3._tag === "NewRun" ? run3.ledger : yield* ctx.store.load(run3.path, run3.expected);
+  if (run3._tag === "NewRun")
+    yield* ctx.store.create(run3.path, ledger);
+  ledger = yield* moved(ctx, ledger, { _tag: "Recover" });
+  if (stageOrder.indexOf(ctx.request.through) > stageOrder.indexOf(ledger.frontier))
+    ledger = yield* moved(ctx, ledger, { _tag: "AdvanceFrontier", frontier: ctx.request.through });
   return ledger;
 });
 var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
-  const store = yield* RunStore;
-  const catalog3 = yield* DriverCatalog;
-  const workspace = yield* WorkspaceStore;
-  const credential = yield* CredentialStore;
+  const ctx = {
+    accepted,
+    request,
+    store: yield* RunStore,
+    catalog: yield* DriverCatalog,
+    workspace: yield* WorkspaceStore,
+    credential: yield* CredentialStore
+  };
   const signer = yield* ApprovalSigner;
-  let ledger = yield* openLedger(accepted, request, store);
+  let ledger = yield* openLedger(ctx);
   const executionPermit = yield* signer.execution(request.executionReceipt, ledger.runId, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash));
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Resolve") ?? [])
-    ledger = yield* moved(accepted, store, request.run.path, ledger, recovery);
+    ledger = yield* moved(ctx, ledger, recovery);
   const selected2 = new Set(ledger.scope.operationIds.map(String));
   const entries2 = operationEntries(accepted.plan).filter(({ stage, operation }) => selected2.has(operation.id) && stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through));
-  ledger = yield* localOperations(accepted, catalog3, store, credential, executionPermit, request, ledger, entries2.map(({ operation }) => operation));
-  if (entries2.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !["Passed", "AssumedCommitted"].includes(operationStatus(ledger, operation.id)._tag)))
+  ledger = yield* localOperations(ctx, executionPermit, ledger, entries2.map(({ operation }) => operation));
+  if (entries2.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
     return ledger;
-  const publishEntries = entries2.map(({ operation }) => operation).filter((operation) => operationAuthority(operation) === "RemotePublish");
+  const publishEntries = entries2.map(({ operation }) => operation).filter(isRemotePublish);
   if (publishEntries.length === 0)
     return ledger;
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile"))
     return ledger;
-  const materials = yield* materialize(accepted, workspace, request);
+  const materials = yield* materialize(ctx);
   const review = publishReviewId(accepted, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash), ledger.scope, materials);
   if (request.publish === undefined)
     return { _tag: "PublishReviewRequired", reviewId: review, ledger };
   const permit = yield* signer.publish(request.publish.receipt, executionPermit, review);
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
-    ledger = yield* reconcile2(accepted, { store, catalog: catalog3, workspace, credential }, request, ledger, recovery, permit);
+    ledger = yield* reconcile2(ctx, ledger, recovery, permit);
   if (blocksApply(ledger))
     return ledger;
   for (const operation of publishEntries) {
     const state = operationStatus(ledger, operation.id);
     if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
-      ledger = yield* publishOperation(accepted, { store, catalog: catalog3, workspace, credential }, request, ledger, operation, materials, permit);
-    if (!["Passed", "AssumedCommitted"].includes(operationStatus(ledger, operation.id)._tag))
+      ledger = yield* publishOperation(ctx, ledger, operation, materials, permit);
+    if (!settled(operationStatus(ledger, operation.id)))
       return ledger;
   }
   return ledger;
@@ -28723,11 +28707,11 @@ var selectScope = (accepted, input2) => {
 };
 
 // ../../src/api/apply-boundary.ts
-var complete = (ledger) => ledger.operations.filter((record2) => ledger.scope.operationIds.includes(record2.operationId)).every((record2) => ["Passed", "AssumedCommitted"].includes(record2.attempts.at(-1).state._tag));
+var complete = (ledger) => ledger.operations.filter((record2) => ledger.scope.operationIds.includes(record2.operationId)).every((record2) => settled(record2.attempts.at(-1)?.state));
 var receipt = (ledger) => ledger.operations[0]?.attempts[0]?.executionReceipt;
 var expectedLedger = (plan, ledger) => ({
   planId: plan.planId,
-  operationHashes: plan.operationHashes.map(({ hash: hash3 }) => OperationHash.make(hash3)),
+  operationHashes: plan.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2)),
   scope: ledger.scope,
   topologyHash: ledger.executionTopologyHash
 });
@@ -28785,27 +28769,23 @@ var prepareResume = (plan, root, path2) => {
   }
   return { runPath, ledger, execution };
 };
+var output = (prepared, ledger, status, extra = {}) => ({
+  runId: ledger.runId,
+  runPath: prepared.runPath,
+  ledger,
+  evidence: projectEvidence(ledger),
+  executionReceiptId: prepared.execution.receiptId,
+  status,
+  ...extra
+});
 var publishOutput = async (run3, plan, input2, prepared, review) => {
   if (!("_tag" in review)) {
-    return {
-      runId: review.runId,
-      runPath: prepared.runPath,
-      ledger: review,
-      evidence: projectEvidence(review),
-      executionReceiptId: prepared.execution.receiptId,
-      status: complete(review) ? "complete" : "stopped"
-    };
+    return output(prepared, review, complete(review) ? "complete" : "stopped");
   }
   if (input2.publishConfirmation === undefined) {
-    return {
-      runId: review.ledger.runId,
-      runPath: prepared.runPath,
-      ledger: review.ledger,
-      evidence: projectEvidence(review.ledger),
-      executionReceiptId: prepared.execution.receiptId,
-      nextPublishReviewId: review.reviewId,
-      status: "publish-review-required"
-    };
+    return output(prepared, review.ledger, "publish-review-required", {
+      nextPublishReviewId: review.reviewId
+    });
   }
   exact("apply", input2.publishConfirmation, ["publishReviewId", "reviewer"], "publishConfirmation");
   const publish = mintPublishReceipt(prepared.execution, review.reviewId, {
@@ -28829,15 +28809,9 @@ var publishOutput = async (run3, plan, input2, prepared, review) => {
   }));
   if ("_tag" in second)
     throw new ReleaseApiError("apply", "Publish review did not advance.");
-  return {
-    runId: second.runId,
-    runPath: prepared.runPath,
-    ledger: second,
-    evidence: projectEvidence(second),
-    executionReceiptId: prepared.execution.receiptId,
-    publishReceiptId: publish.receiptId,
-    status: complete(second) ? "complete" : "stopped"
-  };
+  return output(prepared, second, complete(second) ? "complete" : "stopped", {
+    publishReceiptId: publish.receiptId
+  });
 };
 var makeApply = (run3) => async (input2) => {
   exact("apply", input2, [
@@ -28918,7 +28892,7 @@ import {
 } from "node:fs";
 import { dirname as dirname4 } from "node:path";
 
-// src/cutover.ts
+// src/commands.ts
 import { realpathSync as realpathSync4 } from "node:fs";
 import { basename as basename3, dirname as dirname3, isAbsolute as isAbsolute2, relative as relative3, resolve as resolve5 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
@@ -28962,8 +28936,8 @@ var accepted = (runtime, root) => {
 var planAction = async (api2, runtime, root) => {
   const source = contained(root, optional3(runtime, "config") ?? "release.config.json");
   const result2 = await api2.plan({ config: JSON.parse(runtime.read(source)), workspace: root });
-  const output = containedOutput(root, optional3(runtime, "plan-path") ?? "release-plan.json");
-  runtime.write(output, result2.bytes);
+  const output2 = containedOutput(root, optional3(runtime, "plan-path") ?? "release-plan.json");
+  runtime.write(output2, result2.bytes);
   runtime.output("plan_id", result2.planId);
   runtime.output("status", "planned");
 };
@@ -29030,7 +29004,7 @@ var applyAction = async (api2, runtime, root) => {
   }
   runtime.write(`${result2.runPath}.evidence.json`, JSON.stringify(result2.evidence, null, 2));
 };
-var runCutoverAction = async (api2, runtime) => {
+var runAction = async (api2, runtime) => {
   const root = realpathSync4(runtime.workspace);
   const command3 = optional3(runtime, "command") ?? "plan";
   if (!actionCommands.includes(command3))
@@ -29045,7 +29019,7 @@ var runCutoverAction = async (api2, runtime) => {
 
 // src/index.ts
 try {
-  await runCutoverAction({ plan, reviewExecution, apply }, {
+  await runAction({ plan, reviewExecution, apply }, {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
     input: getInput,
     output: setOutput,

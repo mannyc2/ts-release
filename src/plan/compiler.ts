@@ -19,15 +19,6 @@ export class Invocation extends Schema.Class<Invocation>("Invocation")({
   workspace: WorkspaceRoot, commit: NonEmptyName, snapshot: Schema.Boolean
 }) {}
 
-export const validatePlanningFacts = Effect.fn("rewrite.validatePlanningFacts")(
-  function*(invocation: Invocation) {
-    if (!invocation.workspace.startsWith("/")) {
-      return yield* PlanningFactsError.make({ reason: "Workspace must be canonical and absolute." })
-    }
-    return invocation
-  }
-)
-
 export const recipeDefinitions = (config: CandidateConfig): ReadonlyArray<RecipeDefinition> => {
   const staticRecipes = (config.artifacts ?? []).map((artifact) =>
     StaticOutputRecipe.make({
@@ -68,9 +59,7 @@ export const recipeDefinitions = (config: CandidateConfig): ReadonlyArray<Recipe
   ]
 }
 
-export const lowerRecipes = Effect.fn("rewrite.lowerRecipes")(function*(
-  definitions: ReadonlyArray<RecipeDefinition>
-) {
+const lowerRecipes = (definitions: ReadonlyArray<RecipeDefinition>): ReleaseStages => {
   const build = definitions.flatMap((definition) =>
     definition._tag === "StaticOutputRecipe"
       ? [Check.make({
@@ -98,13 +87,13 @@ export const lowerRecipes = Effect.fn("rewrite.lowerRecipes")(function*(
     announce: [],
     verify: []
   })
-})
+}
 
-export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
+const finalizePlan = (
   config: CandidateConfig,
   invocation: Invocation,
   stages: ReleaseStages
-) {
+): ReleasePlanV6 => {
   return ReleasePlanV6.make({
     schemaVersion: "release-plan/v6",
     identity: ReleaseIdentityV6.make({
@@ -123,12 +112,12 @@ export const finalizePlan = Effect.fn("rewrite.finalizePlan")(function*(
         value: `${config.publish.nightly.tag}|replace`
       }]),
       ...(config.projects ?? []).map((project) => ({
-      key: `project.${project.id}`,
-      value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`
+        key: `project.${project.id}`,
+        value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`
       }))
     ]
   })
-})
+}
 
 const minimalConfig = (config: CandidateConfig): boolean =>
   config.builds === undefined &&
@@ -146,20 +135,18 @@ const minimalConfig = (config: CandidateConfig): boolean =>
     artifact.checksum === undefined &&
     artifact.variant === undefined)
 
-export const compilePlan = Effect.fn("rewrite.compilePlan")(function*(
+export const compilePlan = Effect.fn("compilePlan")(function*(
   input: unknown,
   invocation: Invocation
 ) {
   const config = yield* decodeConfig(input)
-  const facts = yield* validatePlanningFacts(invocation)
   const baseStages = minimalConfig(config)
-    ? yield* lowerRecipes(recipeDefinitions(config))
+    ? lowerRecipes(recipeDefinitions(config))
     : yield* lowerCurrentConfig(config)
   const stages = config.projects === undefined ? baseStages
     : yield* Effect.try({
         try: () => lowerProjects(baseStages, config.projects!),
         catch: (cause) => PlanningFactsError.make({ reason: String(cause) })
       })
-  const plan = yield* finalizePlan(config, facts, stages)
-  return yield* acceptPlan(encodePlanBytes(plan))
+  return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, stages)))
 })

@@ -118,10 +118,10 @@ for (const path of sources) {
   visit(source)
 }
 
-const cli = await import("../apps/release-ts/src/cli/cutover.js") as {
+const cli = await import("../apps/release-ts/src/cli/commands.js") as {
   readonly commandNames: ReadonlyArray<string>
 }
-const action = await import("../apps/ts-release-action/src/cutover.js") as {
+const action = await import("../apps/ts-release-action/src/commands.js") as {
   readonly actionCommands: ReadonlyArray<string>
   readonly actionOutputs: ReadonlyArray<string>
 }

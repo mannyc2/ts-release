@@ -34,7 +34,7 @@ const jsonFailure = (value: unknown, parents: Set<object>): string | undefined =
   return undefined
 }
 
-export const decodeConfig = Effect.fn("rewrite.decodeConfig")(function*(input: unknown) {
+export const decodeConfig = Effect.fn("decodeConfig")(function*(input: unknown) {
   if (typeof input === "string") {
     return yield* ConfigValueError.make({ reason: "Core config must be a value, not text or path." })
   }

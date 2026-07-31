@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { plan } from "@mannyc1/ts-release"
-import { runCutoverCli } from "../src/cli/cutover.js"
+import { runCli } from "../src/cli/commands.js"
 import {
   readJson, releaseConfigPath, report, root
 } from "./self-release-facts.js"
@@ -14,7 +14,7 @@ writeFileSync(path, planned.bytes)
 const logs: Array<string> = []
 const failures: Array<string> = []
 try {
-  await runCutoverCli(
+  await runCli(
     {
       plan: async () => planned,
       reviewExecution: (input) => import("@mannyc1/ts-release")

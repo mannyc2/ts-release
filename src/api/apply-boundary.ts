@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import { applyAcceptedPlan, type ApplyRecovery } from "../apply/apply.js"
 import { mintExecutionReceipt, mintPublishReceipt } from "../apply/approval.js"
 import { createLedger, validateLedger } from "../apply/ledger.js"
+import { settled } from "../apply/transition.js"
 import { decodeLedger } from "../apply/store.js"
 import { acceptExpected, type AcceptedPlan } from "../plan/review.js"
 import {
@@ -14,11 +15,11 @@ import { ReleaseApiError } from "./errors.js"
 import {
   exact, selectScope, topology, within, workspace, type ApiRun
 } from "./input.js"
-import type { ApplyInput, ApplyOutput } from "./types.js"
+import type { ApplyInput, ApplyOutput, ApplyStatus } from "./types.js"
 
 const complete = (ledger: RunLedger): boolean => ledger.operations
   .filter((record) => ledger.scope.operationIds.includes(record.operationId))
-  .every((record) => ["Passed", "AssumedCommitted"].includes(record.attempts.at(-1)!.state._tag))
+  .every((record) => settled(record.attempts.at(-1)?.state))
 const receipt = (ledger: RunLedger) => ledger.operations[0]?.attempts[0]?.executionReceipt
 const expectedLedger = (plan: AcceptedPlan, ledger: RunLedger) => ({
   planId: plan.planId,
@@ -93,6 +94,18 @@ const prepareResume = (plan: AcceptedPlan, root: string, path: string): Prepared
   }
   return { runPath, ledger, execution }
 }
+const output = (
+  prepared: PreparedRun, ledger: RunLedger, status: ApplyStatus,
+  extra: Partial<ApplyOutput> = {}
+): ApplyOutput => ({
+  runId: ledger.runId,
+  runPath: prepared.runPath,
+  ledger,
+  evidence: projectEvidence(ledger),
+  executionReceiptId: prepared.execution.receiptId,
+  status,
+  ...extra
+})
 const publishOutput = async (
   run: ApiRun,
   plan: AcceptedPlan,
@@ -101,25 +114,12 @@ const publishOutput = async (
   review: ApplyResult
 ): Promise<ApplyOutput> => {
   if (!("_tag" in review)) {
-    return {
-      runId: review.runId,
-      runPath: prepared.runPath,
-      ledger: review,
-      evidence: projectEvidence(review),
-      executionReceiptId: prepared.execution.receiptId,
-      status: complete(review) ? "complete" : "stopped"
-    }
+    return output(prepared, review, complete(review) ? "complete" : "stopped")
   }
   if (input.publishConfirmation === undefined) {
-    return {
-      runId: review.ledger.runId,
-      runPath: prepared.runPath,
-      ledger: review.ledger,
-      evidence: projectEvidence(review.ledger),
-      executionReceiptId: prepared.execution.receiptId,
-      nextPublishReviewId: review.reviewId,
-      status: "publish-review-required"
-    }
+    return output(prepared, review.ledger, "publish-review-required", {
+      nextPublishReviewId: review.reviewId
+    })
   }
   exact("apply", input.publishConfirmation, ["publishReviewId", "reviewer"], "publishConfirmation")
   const publish = mintPublishReceipt(prepared.execution, review.reviewId, {
@@ -142,15 +142,9 @@ const publishOutput = async (
     publish: { receipt: publish }
   }))
   if ("_tag" in second) throw new ReleaseApiError("apply", "Publish review did not advance.")
-  return {
-    runId: second.runId,
-    runPath: prepared.runPath,
-    ledger: second,
-    evidence: projectEvidence(second),
-    executionReceiptId: prepared.execution.receiptId,
-    publishReceiptId: publish.receiptId,
-    status: complete(second) ? "complete" : "stopped"
-  }
+  return output(prepared, second, complete(second) ? "complete" : "stopped", {
+    publishReceiptId: publish.receiptId
+  })
 }
 
 export const makeApply = (run: ApiRun) => async (input: ApplyInput): Promise<ApplyOutput> => {

@@ -12,9 +12,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
   commandNames,
-  runCutoverCli,
+  runCli,
   selectCliWorkspace
-} from "../../apps/release-ts/src/cli/cutover.js"
+} from "../../apps/release-ts/src/cli/commands.js"
 import { makeReleaseApi } from "../../src/api/api.js"
 import { LocalApprovalSignerLayer } from "../../src/apply/approval.js"
 import { RunStore, makeFileRunStore } from "../../src/apply/store.js"
@@ -60,7 +60,7 @@ describe("candidate cutover CLI", () => {
     let reads = 0
     const logs: Array<string> = []
     try {
-      await runCutoverCli(
+      await runCli(
         api,
         ["plan", "--config", "release.config.json", "--out", "release-plan.json"],
         root,
@@ -92,7 +92,7 @@ describe("candidate cutover CLI", () => {
       const planned = await api.plan({ config, workspace: root })
       writeFileSync(join(root, "plan.json"), planned.bytes)
       const output: Array<string> = []
-      await runCutoverCli(
+      await runCli(
         api,
         ["apply", "plan.json", "--plan-id", planned.planId, "--review-only", "--scope", "all"],
         root,

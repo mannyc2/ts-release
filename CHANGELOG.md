@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Internal readability refactor with identical public behavior: one authority
+  predicate for remote-publish operations, shared canonical-JSON hashing, an
+  `ApplyContext` for the apply orchestrator, and removal of dead driver
+  service seams and `rewrite`-era names (trace spans, service keys, and the
+  app `cutover` modules, now `commands`).
+- Pointed `check:core` at the certified dependency-audit gate (`check:audit`)
+  instead of the environment-dependent raw `bun audit`.
+
 ## 0.2.0 - 2026-07-27
 
 ### Breaking: sealed plan/apply core

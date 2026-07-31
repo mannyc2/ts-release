@@ -137,7 +137,7 @@ const applyAction = async (
   runtime.write(`${result.runPath}.evidence.json`, JSON.stringify(result.evidence, null, 2))
 }
 
-export const runCutoverAction = async (
+export const runAction = async (
   api: ReleaseCommands,
   runtime: ActionRuntime
 ): Promise<void> => {

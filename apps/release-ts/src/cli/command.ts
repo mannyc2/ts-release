@@ -1,5 +1,5 @@
 export {
   commandNames,
-  runCutoverCli,
+  runCli,
   selectCliWorkspace
-} from "./cutover.js"
+} from "./commands.js"

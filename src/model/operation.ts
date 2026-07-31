@@ -170,6 +170,13 @@ export const mechanismTags = [
 ] as const
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
 
+export type RemotePublishOp =
+  | HttpPublish | ForgeRelease | PackageRegistryRelease | PackageStorePublish
+  | SupplyChainPublish | ProviderPublish | AnnouncementPublish | SmtpPublish | OpaquePublish
+
+export const isRemotePublish = (operation: Operation): operation is RemotePublishOp =>
+  operationAuthority(operation) === "RemotePublish"
+
 export const operationAuthority = (operation: Operation): Authority => {
   switch (operation._tag) {
     case "Check":

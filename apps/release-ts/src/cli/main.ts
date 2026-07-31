@@ -10,9 +10,9 @@ import {
   writeFileSync
 } from "node:fs"
 import { dirname } from "node:path"
-import { runCutoverCli } from "./cutover.js"
+import { runCli } from "./commands.js"
 
-await runCutoverCli(
+await runCli(
   { plan, reviewExecution, apply },
   process.argv.slice(2),
   process.cwd(),

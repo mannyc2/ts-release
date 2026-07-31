@@ -22,7 +22,7 @@ export type RunStoreShape = {
   readonly create: (path: string, ledger: RunLedger) => Effect.Effect<Durability, RunStoreError>,
   readonly save: (path: string, expectedRevision: number, ledger: RunLedger) => Effect.Effect<Durability, RunStoreError>
 }
-export class RunStore extends Context.Service<RunStore, RunStoreShape>()("RewriteRunStore") {}
+export class RunStore extends Context.Service<RunStore, RunStoreShape>()("RunStore") {}
 
 const error = (reason: string): RunStoreError => RunStoreError.make({ reason })
 const exclusiveFlags = constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW

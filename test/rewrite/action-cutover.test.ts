@@ -13,8 +13,8 @@ import { join } from "node:path"
 import {
   actionCommands,
   actionOutputs,
-  runCutoverAction
-} from "../../apps/ts-release-action/src/cutover.js"
+  runAction
+} from "../../apps/ts-release-action/src/commands.js"
 import { makeReleaseApi } from "../../src/api/api.js"
 import { LocalApprovalSignerLayer } from "../../src/apply/approval.js"
 import { RunStore, makeFileRunStore } from "../../src/apply/store.js"
@@ -64,7 +64,7 @@ describe("candidate Action cutover", () => {
     const outputs = new Map<string, string>()
     let reads = 0
     try {
-      await runCutoverAction(api, {
+      await runAction(api, {
         workspace: root,
         input: (name) => ({ command: "plan", config: "release.config.json" }[name] ?? ""),
         output: (name, value) => outputs.set(name, value),
@@ -94,7 +94,7 @@ describe("candidate Action cutover", () => {
     const api = makeReleaseApi(releaseLayer)
     let reads = 0
     try {
-      await expect(runCutoverAction(api, {
+      await expect(runAction(api, {
         workspace: root,
         input: (name) => name === "config" ? outside : "",
         output: () => undefined,

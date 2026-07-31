@@ -201,3 +201,5 @@ export const hashFramed = (domain: string, parts: ReadonlyArray<Uint8Array>): st
   })
   return hash.digest("hex")
 }
+export const hashCanonical = (domain: string, value: unknown): string =>
+  hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value))])

@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs"
 import {
   actionCommands,
   actionOutputs
-} from "../apps/ts-release-action/src/cutover.js"
+} from "../apps/ts-release-action/src/commands.js"
 
-describe("installed Action cutover", () => {
+describe("installed Action commands", () => {
   test("has exact commands and outputs", () => {
     expect(actionCommands).toEqual(["plan", "apply", "doctor"])
     expect(actionOutputs).toHaveLength(9)

@@ -11,7 +11,7 @@ import { lowerCurrentPublish } from "./current-publish.js"
 import { lowerCurrentSupplyChain } from "./current-supply-chain.js"
 import { emptyRows } from "./current-shared.js"
 
-export const lowerCurrentConfig = Effect.fn("rewrite.lowerCurrentConfig")(function*(
+export const lowerCurrentConfig = Effect.fn("lowerCurrentConfig")(function*(
   config: CandidateConfig
 ) {
   const rows = yield* Effect.try({

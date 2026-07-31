@@ -185,7 +185,7 @@ const applyCommand = async (
   }))
 }
 
-export const runCutoverCli = async (
+export const runCli = async (
   api: ReleaseCommands,
   argv: ReadonlyArray<string>,
   cwd: string,

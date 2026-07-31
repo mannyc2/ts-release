@@ -51,7 +51,7 @@ export class AcceptedPlan {
     return new Uint8Array(this.#bytes)
   }
 
-  static readonly accept = Effect.fn("rewrite.acceptPlan")(function*(bytes: Uint8Array) {
+  static readonly accept = Effect.fn("acceptPlan")(function*(bytes: Uint8Array) {
     const plan = yield* Effect.try({
       try: () => {
         const value = parseStrictJson(decoder.decode(bytes))

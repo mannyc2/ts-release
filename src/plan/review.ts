@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import { PlanningFactsError } from "../model/errors.js"
 import { type PlanId } from "../model/primitives.js"
-import { acceptPlan, type AcceptedPlan } from "./accepted.js"
+import { acceptPlan } from "./accepted.js"
 
 const encoder = new TextEncoder()
 export type { AcceptedPlan } from "./accepted.js"
@@ -15,5 +15,3 @@ export const acceptExpected = (bytes: string, expected: PlanId) => Effect.gen(fu
   }
   return value
 })
-
-export const acceptedIdentity = (plan: AcceptedPlan): PlanId => plan.planId

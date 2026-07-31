@@ -1,17 +1,15 @@
-import { encodeCanonicalJson, hashFramed } from "../model/canonical.js"
+import { hashCanonical as hash, hashFramed } from "../model/canonical.js"
 import { operationAuthority } from "../model/operation.js"
 import {
-  ExecutionScopeHash, OperationHash, OperationId, WorkerId
+  ExecutionScopeHash, ExecutionTopologyHash, OperationHash, OperationId,
+  WorkerId, WorkerKeyFingerprint
 } from "../model/primitives.js"
-import { ExecutionTopologyHash, WorkerKeyFingerprint } from "../model/primitives.js"
 import {
   ExecutionScope, ExecutionTopology, TransitionError, WorkerRegistration
 } from "../model/run.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 
-const hash = (domain: string, value: unknown): string =>
-  hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value))])
 const fail = (reason: string): never => { throw TransitionError.make({ reason }) }
 const required = <A>(value: A | undefined): A =>
   value === undefined ? fail("Topology registration is incomplete.") : value

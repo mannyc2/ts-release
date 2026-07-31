@@ -10,10 +10,10 @@ import {
   writeFileSync
 } from "node:fs"
 import { dirname } from "node:path"
-import { runCutoverAction } from "./cutover.js"
+import { runAction } from "./commands.js"
 
 try {
-  await runCutoverAction(
+  await runAction(
     { plan, reviewExecution, apply },
     {
       workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),

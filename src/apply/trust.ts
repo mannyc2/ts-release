@@ -1,13 +1,11 @@
 import * as Schema from "effect/Schema"
-import { encodeCanonicalJson, hashFramed } from "../model/canonical.js"
+import { hashCanonical as hash } from "../model/canonical.js"
 import { ApprovalNonce, Digest } from "../model/primitives.js"
 import {
   LedgerAttestation, RunLedger, SignedAuthorizationReceipt, TransitionError
 } from "../model/run.js"
 
 const encoder = new TextEncoder()
-const hash = (domain: string, value: unknown): string =>
-  hashFramed(domain, [encoder.encode(encodeCanonicalJson(value))])
 const fail = (reason: string): never => { throw TransitionError.make({ reason }) }
 const required = <A>(value: A | undefined, reason: string): A =>
   value === undefined ? fail(reason) : value

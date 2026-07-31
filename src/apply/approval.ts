@@ -6,15 +6,13 @@ import { ApprovalError, ExecutionApprovalReceipt, PublishApprovalReceipt,
 import {
   ApprovalNonce, ExecutionReviewId, ExecutionTopologyHash, LogicalRunId, PublishReviewId,
   ReceiptId, RunId, type CheckpointId, type OperationHash } from "../model/primitives.js"
-import { encodeCanonicalJson, hashFramed } from "../model/canonical.js"
+import { hashCanonical as hash } from "../model/canonical.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 import { ExecutionPermit, PublishPermit } from "../model/permit.js"
-import type { PackageStoreTarget } from "../model/operation.js"
+import { isRemotePublish, type PackageStoreTarget } from "../model/operation.js"
 export { ExecutionPermit, PublishPermit }
 
-const hash = (domain: string, value: unknown): string =>
-  hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value))])
 const fail = (reason: string): never => { throw ApprovalError.make({ reason }) }
 const checked = <A>(body: () => A) => Effect.try({
   try: body, catch: (cause) => cause instanceof ApprovalError ? cause : ApprovalError.make({ reason: String(cause) })
@@ -70,17 +68,8 @@ export const mintExecutionReceipt = (accepted: AcceptedPlan, scope: ExecutionSco
 }
 export const publishReviewId = (accepted: AcceptedPlan, executionReview: ExecutionReviewId,
   scope: ExecutionScope, materials: ReadonlyArray<MaterializedOutput>): PublishReviewId => {
-  const publishIds = new Set(operationEntries(accepted.plan).filter(({ operation }) =>
-    [
-      "HttpPublish",
-      "ForgeRelease",
-      "PackageRegistryRelease",
-      "PackageStorePublish",
-      "SupplyChainPublish",
-      "ProviderPublish",
-      "AnnouncementPublish", "SmtpPublish",
-      "OpaquePublish"
-    ].includes(operation._tag))
+  const publishIds = new Set(operationEntries(accepted.plan)
+    .filter(({ operation }) => isRemotePublish(operation))
     .map(({ operation }) => String(operation.id)))
   const operations = selected(accepted, scope)
     .filter(({ operationId }) => publishIds.has(operationId))
@@ -114,7 +103,7 @@ export type ApprovalSignerShape = {
   readonly publish: (receipt: PublishApprovalReceipt, execution: ExecutionPermit, reviewId: PublishReviewId) =>
     Effect.Effect<PublishPermit, ApprovalError>
 }
-export class ApprovalSigner extends Context.Service<ApprovalSigner, ApprovalSignerShape>()("RewriteApprovalSigner") {}
+export class ApprovalSigner extends Context.Service<ApprovalSigner, ApprovalSignerShape>()("ApprovalSigner") {}
 export const LocalApprovalSignerLayer = Layer.succeed(ApprovalSigner)({
   execution: (receipt, runId, reviewId) => checked(() => {
     const { receiptId, ...body } = receipt

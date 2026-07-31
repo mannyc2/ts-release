@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { encodeCanonicalJson, hashFramed } from "./canonical.js"
+import { encodeCanonicalJson, hashCanonical } from "./canonical.js"
 import {
   CredentialConfinementError,
   DuplicatePlanValueError,
@@ -7,6 +7,7 @@ import {
   SecretLikePlanValueError
 } from "./errors.js"
 import {
+  isRemotePublish,
   Operation,
   type Operation as OperationType,
   type OutputDeclaration
@@ -82,18 +83,7 @@ const credentialFailure = (
     if (operation._tag === "ReviewedNoteTransform") read.add(operation.credential.name)
     else if (operation._tag === "HttpRead" && operation.credential !== undefined)
       read.add(operation.credential.name)
-    if (
-      operation._tag === "HttpPublish" ||
-      operation._tag === "ForgeRelease" ||
-      operation._tag === "PackageRegistryRelease" ||
-      operation._tag === "PackageStorePublish" ||
-      operation._tag === "SupplyChainPublish" || operation._tag === "ProviderPublish" ||
-      operation._tag === "AnnouncementPublish" ||
-      operation._tag === "SmtpPublish" ||
-      operation._tag === "OpaquePublish"
-    ) {
-      publish.add(operation.credential.name)
-    }
+    if (isRemotePublish(operation)) publish.add(operation.credential.name)
   }
   const dual = [...read].find((name) => publish.has(name))
   return dual === undefined
@@ -152,12 +142,9 @@ export const validatePlan = (
       outputs.push({ output, producerId: operation.id, stage })
     }
   }
-  const encoder = new TextEncoder()
   const operationHashes = entries.map(({ operation }) => ({
     operationId: operation.id,
-    hash: hashFramed("ts-release/operation/v1", [
-      encoder.encode(encodeCanonicalJson(Schema.encodeSync(Operation)(operation)))
-    ])
+    hash: hashCanonical("ts-release/operation/v1", Schema.encodeSync(Operation)(operation))
   }))
   return { entries, outputs, dependencies, operationHashes }
 }

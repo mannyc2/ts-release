@@ -23,9 +23,6 @@ export class ProcessRequest extends Schema.TaggedClass<ProcessRequest>()("Proces
   argv: Schema.NonEmptyArray(Schema.String), cwd: SafeRelativePath,
   environmentNames: Schema.Array(Schema.NonEmptyString)
 }) {}
-export class ReadRequest extends Schema.TaggedClass<ReadRequest>()("ReadRequest", {
-  method: Schema.Literals(["GET", "HEAD"]), url: Schema.NonEmptyString
-}) {}
 export class CatalogPublishRequest
   extends Schema.TaggedClass<CatalogPublishRequest>()("CatalogPublishRequest", {
     operation: Schema.Union([
@@ -73,24 +70,11 @@ export class VerifiedContentHandle {
     return new VerifiedContentHandle(facts, new Uint8Array(bytes))
   }
 }
-export type ProcessRunnerShape = { readonly run: (request: ProcessRequest) => Effect.Effect<string, DriverError> }
 export type WorkspaceStoreShape = {
   readonly snapshot: (request: SnapshotRequest) =>
     Effect.Effect<MaterializedOutput, DriverError>,
   readonly verify: (directory: string, facts: MaterializedOutput) =>
     Effect.Effect<VerifiedContentHandle, DriverError>
-}
-export type ReadTransportShape = {
-  readonly read: (request: ReadRequest, credential?: string) => Effect.Effect<ReadResult, DriverError>
-}
-export type PublishTransportShape = {
-  readonly publish: (
-    request: CatalogPublishRequest, content: VerifiedContentHandle | undefined,
-    credential: string
-  ) => Effect.Effect<MutationResult, DriverError>,
-  readonly reconcile: (
-    request: CatalogPublishRequest, credential: string
-  ) => Effect.Effect<ReadResult, DriverError>
 }
 export type CredentialStoreShape = {
   readonly getRead: (slot: ReadCredential, permit: ExecutionPermit) =>
@@ -102,16 +86,21 @@ type StructuredResult = { readonly outcome: string, readonly outputs: ReadonlyAr
 export type DriverCatalogShape = {
   readonly structured: (request: CatalogStructuredRequest, credential?: string) =>
     Effect.Effect<StructuredResult, DriverError>,
-  readonly publish: PublishTransportShape["publish"],
-  readonly reconcile: PublishTransportShape["reconcile"]
+  readonly publish: (
+    request: CatalogPublishRequest, content: VerifiedContentHandle | undefined,
+    credential: string
+  ) => Effect.Effect<MutationResult, DriverError>,
+  readonly reconcile: (
+    request: CatalogPublishRequest, credential: string
+  ) => Effect.Effect<ReadResult, DriverError>
 }
-export class ProcessRunner extends Context.Service<ProcessRunner, ProcessRunnerShape>()("RewriteProcessRunner") {}
-export class WorkspaceStore extends Context.Service<WorkspaceStore, WorkspaceStoreShape>()("RewriteWorkspaceStore") {}
-export class ReadTransport extends Context.Service<ReadTransport, ReadTransportShape>()("RewriteReadTransport") {}
-export class PublishTransport extends Context.Service<
-  PublishTransport, PublishTransportShape
->()("RewritePublishTransport") {}
+// Package-store, supply-chain, provider, and announcement publications carry an
+// immutable profile and have no live transport in the node driver catalog.
+export const isClosedProfilePublish = (operation: { readonly _tag: string }): boolean =>
+  ["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"]
+    .includes(operation._tag)
+export class WorkspaceStore extends Context.Service<WorkspaceStore, WorkspaceStoreShape>()("WorkspaceStore") {}
 export class CredentialStore extends Context.Service<
   CredentialStore, CredentialStoreShape
->()("RewriteCredentialStore") {}
-export class DriverCatalog extends Context.Service<DriverCatalog, DriverCatalogShape>()("RewriteDriverCatalog") {}
+>()("CredentialStore") {}
+export class DriverCatalog extends Context.Service<DriverCatalog, DriverCatalogShape>()("DriverCatalog") {}

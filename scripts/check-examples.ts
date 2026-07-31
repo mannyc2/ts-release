@@ -1,7 +1,12 @@
 #!/usr/bin/env bun
 
-import { existsSync, readFileSync, readdirSync } from "node:fs"
+import * as Effect from "effect/Effect"
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
+import { NodeDriverLayer } from "../src/drivers/node.js"
+import { CatalogStructuredRequest, DriverCatalog } from "../src/drivers/services.js"
+import { WorkspaceRoot } from "../src/model/primitives.js"
 import { plan } from "../src/index.js"
 import { encodeCanonicalJson } from "./lib/canonical-json.js"
 
@@ -25,6 +30,24 @@ for (const path of configs) {
   const returnedPlan = JSON.parse(JSON.stringify(result.plan)) as unknown
   if (encodeCanonicalJson(returnedPlan) !== result.bytes) {
     throw new Error(`${path}: public plan bytes differ from the returned plan.`)
+  }
+  const filesOnlyPacks = result.plan.stages.process.filter((operation) =>
+    operation._tag === "Pack" && operation.files !== undefined && operation.inputs.length === 0)
+  for (const operation of filesOnlyPacks) {
+    const temp = mkdtempSync(join(tmpdir(), "ts-release-example-archive-"))
+    try {
+      cpSync(workspace, temp, { recursive: true })
+      await Effect.runPromise(Effect.gen(function*() {
+        const catalog = yield* DriverCatalog
+        return yield* catalog.structured(CatalogStructuredRequest.make({
+          operation, root: WorkspaceRoot.make(realpathSync(temp)), availableOutputs: []
+        }))
+      }).pipe(Effect.provide(NodeDriverLayer)))
+    } catch (cause) {
+      throw new Error(`${path}: files-only archive ${operation.id} failed to materialize: ${String(cause)}`)
+    } finally {
+      rmSync(temp, { recursive: true, force: true })
+    }
   }
 }
 

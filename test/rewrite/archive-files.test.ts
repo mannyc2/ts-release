@@ -2,6 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import {
+  cpSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -282,6 +283,24 @@ describe("files-only archive materialization", () => {
       })])
       expect(failed._tag).toBe("DriverError")
       expect(failed.reason).toContain("duplicate entry")
+    }))
+
+  test("the agent-plugin example ZIP carries both manifests and the shared skill", () =>
+    withWorkspace(async (root) => {
+      cpSync(join(process.cwd(), "examples", "agent-plugin"), root, { recursive: true })
+      const config = JSON.parse(readFileSync(join(root, "release.config.json"), "utf8")) as unknown
+      const accepted = await compile(config, root)
+      const operation = accepted.plan.stages.process.find((item) => item._tag === "Pack")
+      if (operation?._tag !== "Pack") throw new Error("Missing example Pack.")
+      await materialize(root, operation)
+      const entries = readZip(new Uint8Array(readFileSync(
+        join(root, ".release/artifacts/release-example-agent-plugin_0.1.0.zip")
+      )))
+      expect(entries.map((entry) => entry.path)).toEqual([
+        "plugin/.claude-plugin/plugin.json",
+        "plugin/.codex-plugin/plugin.json",
+        "plugin/skills/release-notes/SKILL.md"
+      ])
     }))
 
   test("the declared output archive can never include itself", () =>

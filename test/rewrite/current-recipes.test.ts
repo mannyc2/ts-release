@@ -90,6 +90,51 @@ describe("Plan 176 current recipe port", () => {
     expect(custom?.argv.length).toBeGreaterThan(0)
   })
 
+  test("agent-plugin renders both marketplace catalogs to exact public bytes", async () => {
+    const accepted = await compile("agent-plugin")
+    const facts: Readonly<Record<string, string>> = {
+      "sha256:plugin": "3f7c1c0e9d4b5a68721c3d0f8e5a9b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a",
+      "downloadUrl:plugin":
+        "https://github.com/owner/agent-plugin/releases/download/v0.1.0/release-example-agent-plugin_0.1.0.zip"
+    }
+    const renderFacts = (content: ContentValue): string => typeof content === "string"
+      ? content
+      : content.map((part) =>
+          typeof part === "string" ? part : facts[`${part.fact}:${part.outputId}`]!).join("")
+    for (const [id, fixture] of [
+      ["codex-marketplace", "codex-marketplace.json"],
+      ["claude-marketplace", "claude-marketplace.json"]
+    ] as const) {
+      const operation = accepted.plan.stages.catalog.find((candidate) =>
+        candidate._tag === "Write" && candidate.id === `catalog:${id}:render`)
+      if (operation?._tag !== "Write") throw new Error(`Missing ${id} catalog write.`)
+      expect(renderFacts(operation.content)).toBe(readFileSync(
+        join(root, "test", "fixtures", "rewrite", "public", "agent-plugin", fixture),
+        "utf8"
+      ))
+    }
+  })
+
+  test("agent-plugin keeps files-only archive, checksum, and forge asset flow connected", async () => {
+    const accepted = await compile("agent-plugin")
+    const operations = operationEntries(accepted.plan).map(({ operation }) => operation)
+    const pack = operations.find((operation) => operation._tag === "Pack")
+    if (pack?._tag !== "Pack") throw new Error("Missing files-only Pack.")
+    expect([...(pack.files ?? [])].map(String)).toEqual(["plugin/**"])
+    expect(pack.inputs).toEqual([])
+    expect(String(pack.outputs[0]?.path)).toBe(".release/artifacts/release-example-agent-plugin_0.1.0.zip")
+    const digest = operations.find((operation) => operation._tag === "Digest")
+    expect(digest?.inputs.map(String)).toContain("plugin")
+    const checksum = operations.find((operation) =>
+      operation._tag === "Write" && operation.id === "checksum:write")
+    expect(checksum?._tag).toBe("Write")
+    const forge = operations.find((operation) => operation._tag === "ForgeRelease")
+    if (forge?._tag !== "ForgeRelease") throw new Error("Missing ForgeRelease.")
+    const assets = forge.assets.map((asset) => asset.name)
+    expect(assets).toContain("release-example-agent-plugin_0.1.0.zip")
+    expect(assets.some((name) => name.endsWith("checksums.txt"))).toBe(true)
+  })
+
   test("typed variables are substituted as value tokens without evaluation", async () => {
     const config = JSON.parse(readFileSync(
       join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),

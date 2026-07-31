@@ -78,6 +78,7 @@
     "check:self-release-live": "bun run apps/release-ts/scripts/check-self-release-live-readiness.ts",
     "check:self-release-artifacts": "bun run apps/release-ts/scripts/check-self-release-artifacts.ts",
     "check:action-bundle": "bun run scripts/check-action-bundle.ts",
+    "check:skill-plugin": "bun run scripts/check-skill-plugin.ts",
     "check:audit": "bun run scripts/check-audit.ts",
     "check:core": "bun run check && bun test && bun run check:audit && bun run check:import-rules && bun run check:loc && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports",
     "check:app": "bun run --cwd apps/release-ts check && bun test test/cli-command.test.ts",

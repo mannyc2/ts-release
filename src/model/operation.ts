@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema"
-import { CheckpointId, CredentialName, OperationId, OutputId, ProfileId, SafeRelativePath } from "./primitives.js"
+import {
+  CheckpointId, CredentialName, OperationId, OutputId, ProfileId, SafeArchivePattern, SafeRelativePath
+} from "./primitives.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
   id: OutputId, path: SafeRelativePath,
@@ -44,7 +46,8 @@ export class Write extends Schema.TaggedClass<Write>()("Write", {
   ...row, path: SafeRelativePath, content: ContentValue
 }) {}
 export class Pack extends Schema.TaggedClass<Pack>()("Pack", {
-  ...row, format: Schema.Literals(["tar.gz", "zip"])
+  ...row, format: Schema.Literals(["tar.gz", "zip"]),
+  files: Schema.optionalKey(Schema.NonEmptyArray(SafeArchivePattern))
 }) {}
 export class DigestOp extends Schema.TaggedClass<DigestOp>()("Digest", {
   ...row, algorithm: Schema.Literals(["sha256", "sha512"])

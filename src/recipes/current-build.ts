@@ -160,7 +160,7 @@ const lowerArchives = (config: CandidateConfig, rows: CurrentRows): void => {
       rows.process.push(Pack.make({
         id: operationId(`archive:${id}`), inputs: selected.map((item) => item.id),
         outputs: [declared], description: `Create ${format} archive ${basename(declared.path)}.`,
-        format
+        format, ...(archive.files === undefined ? {} : { files: archive.files })
       }))
     }
   }

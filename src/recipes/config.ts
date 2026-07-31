@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema"
-import { NonEmptyName, OutputId, ProfileId, SafeRelativePath, Version } from "../model/primitives.js"
+import {
+  NonEmptyName, OutputId, ProfileId, SafeArchivePattern, SafeRelativePath, Version
+} from "../model/primitives.js"
 import { ProjectScope } from "./projects.js"
 import { CandidateSelection } from "./selection.js"
 import { CandidateEnvironment } from "./environment.js"
@@ -82,7 +84,8 @@ export class CandidateArchive extends Schema.Class<CandidateArchive>("CandidateA
   formats: optional(Schema.Array(format)), formatOverrides: optional(Schema.Struct({
     linux: optional(Schema.Array(format)), darwin: optional(Schema.Array(format)),
     windows: optional(Schema.Array(format)) })),
-  files: optional(Schema.Array(nonempty)), wrapInDirectory: optional(Schema.Union([Schema.Boolean, Schema.String]))
+  files: optional(Schema.NonEmptyArray(SafeArchivePattern)),
+  wrapInDirectory: optional(Schema.Union([Schema.Boolean, Schema.String]))
 }) {}
 
 export class CandidateContentHole extends Schema.Class<CandidateContentHole>("CandidateContentHole")({

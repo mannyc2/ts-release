@@ -47,6 +47,14 @@ export const SafeRelativePath = Schema.String.check(
 ).pipe(Schema.brand("SafeRelativePath"))
 export type SafeRelativePath = typeof SafeRelativePath.Type
 
+export const SafeArchivePattern = Schema.String.check(
+  Schema.makeFilter((value: string) =>
+    isSafeRelativePath(value)
+      ? undefined
+      : "Archive pattern must be nonempty, relative, and contain no parent traversal.")
+).pipe(Schema.brand("SafeArchivePattern"))
+export type SafeArchivePattern = typeof SafeArchivePattern.Type
+
 export const WorkspaceRoot = Schema.String.check(
   Schema.makeFilter((value: string) =>
     value.startsWith("/") ? undefined : "WorkspaceRoot must be absolute.")

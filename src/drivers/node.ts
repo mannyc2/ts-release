@@ -4,11 +4,13 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   statSync,
-  writeFileSync
+  writeFileSync,
+  type Dirent
 } from "node:fs"
-import { basename, dirname, join, resolve } from "node:path"
+import { basename, dirname, join, resolve, sep } from "node:path"
 import {
   CredentialStore,
   DriverCatalog,
@@ -17,13 +19,14 @@ import {
 } from "./services.js"
 import {
   Digest,
-  SnapshotId
+  SnapshotId,
+  isSafeRelativePath
 } from "../model/primitives.js"
 import {
   DriverError,
   MaterializedOutput
 } from "../model/run.js"
-import type { OutputDeclaration } from "../model/operation.js"
+import type { OutputDeclaration, Pack } from "../model/operation.js"
 import { makeNodeWorkspaceStore } from "./workspace.js"
 import { tarGz, zip, type ArchiveEntry } from "./archive.js"
 import { makeNodeCatalog } from "./remote.js"
@@ -57,6 +60,82 @@ const entries = (request: CatalogStructuredRequest): ReadonlyArray<ArchiveEntry>
     const mode = output.kind === "executable" ? 0o100755 : 0o100644
     return { path: basename(output.path), data: readFileSync(path), mode }
   }).sort((left, right) => left.path.localeCompare(right.path))
+const normalizeSlashes = (value: string): string => value.replaceAll("\\", "/")
+const containedRealPath = (realRoot: string, child: string, relative: string): string => {
+  const real = realpathSync(child)
+  if (real !== realRoot && !real.startsWith(realRoot + sep)) {
+    throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative}.`)
+  }
+  return real
+}
+type WalkKind = "file" | "directory" | "skip"
+const statKind = (stats: { isDirectory(): boolean; isFile(): boolean }): WalkKind =>
+  stats.isDirectory() ? "directory" : stats.isFile() ? "file" : "skip"
+const entryKind = (realRoot: string, entry: Dirent, relative: string, visited: Set<string>): WalkKind => {
+  if (!entry.isSymbolicLink()) return statKind(entry)
+  const real = containedRealPath(realRoot, join(realRoot, relative), relative)
+  if (visited.has(real)) return "skip"
+  visited.add(real)
+  return statKind(statSync(join(realRoot, relative)))
+}
+const walkFiles = (realRoot: string, directory: string, collect: Array<string>, visited: Set<string>): void => {
+  const absolute = directory === "" ? realRoot : join(realRoot, directory)
+  if (!existsSync(absolute)) return
+  for (const entry of readdirSync(absolute, { withFileTypes: true })) {
+    const relative = directory === "" ? entry.name : `${directory}/${entry.name}`
+    const kind = entryKind(realRoot, entry, relative, visited)
+    if (kind === "directory") walkFiles(realRoot, relative, collect, visited)
+    if (kind === "file") collect.push(relative)
+  }
+}
+const patternCandidates = (realRoot: string, pattern: string): ReadonlyArray<string> => {
+  const segments = pattern.split("/").filter((segment) => segment.length > 0)
+  const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment))
+  if (wildcard >= 0) {
+    const collect: Array<string> = []
+    walkFiles(realRoot, segments.slice(0, wildcard).join("/"), collect, new Set())
+    return collect
+  }
+  const absolute = join(realRoot, pattern)
+  if (!existsSync(absolute)) return []
+  containedRealPath(realRoot, absolute, pattern)
+  return statSync(absolute).isFile() ? [pattern] : []
+}
+const matchedWorkspaceFiles = (
+  realRoot: string, patterns: ReadonlyArray<string>, excluded: ReadonlySet<string>
+): ReadonlyArray<string> => {
+  const matched = new Set<string>()
+  for (const raw of patterns) {
+    const pattern = normalizeSlashes(raw)
+    if (!isSafeRelativePath(pattern)) throw failure(`Archive pattern must stay inside the workspace: ${raw}.`)
+    const glob = new Bun.Glob(pattern)
+    for (const candidate of patternCandidates(realRoot, pattern)) {
+      if (glob.match(candidate) && !excluded.has(candidate)) matched.add(candidate)
+    }
+  }
+  return [...matched]
+}
+const packEntries = (request: CatalogStructuredRequest, operation: Pack): ReadonlyArray<ArchiveEntry> => {
+  const patterns = operation.files ?? []
+  const declared = entries(request)
+  if (patterns.length === 0) {
+    if (declared.length === 0) throw failure(`Archive ${operation.id} has zero entries.`)
+    return declared
+  }
+  const realRoot = realpathSync(request.root)
+  const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)))
+  const matched = matchedWorkspaceFiles(realRoot, patterns, excluded)
+  if (matched.length === 0) throw failure(`Archive ${operation.id} patterns matched no workspace files.`)
+  const combined = [...declared, ...matched.map((path) => ({
+    path, data: new Uint8Array(readFileSync(join(realRoot, path))), mode: 0o100644
+  }))]
+  const seen = new Set<string>()
+  for (const entry of combined) {
+    if (seen.has(entry.path)) throw failure(`Archive ${operation.id} has duplicate entry ${entry.path}.`)
+    seen.add(entry.path)
+  }
+  return combined.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0)
+}
 const content = (request: CatalogStructuredRequest): string => {
   const operation = request.operation
   if (operation._tag !== "Write") throw failure("Expected Write operation.")
@@ -99,8 +178,9 @@ const structured = (request: CatalogStructuredRequest) => Effect.try({
       }
       case "Pack": {
         const path = pathOf(request.root, operation.outputs[0]!.path)
+        const archive = packEntries(request, operation)
         mkdirSync(dirname(path), { recursive: true })
-        writeFileSync(path, operation.format === "zip" ? zip(entries(request)) : tarGz(entries(request)))
+        writeFileSync(path, operation.format === "zip" ? zip(archive) : tarGz(archive))
         break
       }
       case "Digest": {

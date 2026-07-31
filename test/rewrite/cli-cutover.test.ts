@@ -101,7 +101,7 @@ describe("candidate cutover CLI", () => {
       )
       expect(JSON.parse(output[0]!).status).toBe("review-required")
       expect(selectCliWorkspace(root, "release.config.json")).toBe(root)
-      expect(selectCliWorkspace(root, "/tmp/config.json")).toBe("/tmp")
+      expect(selectCliWorkspace(root, "/tmp/config.json")).toBe(realpathSync("/tmp"))
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })

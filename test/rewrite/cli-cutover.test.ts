@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync
 } from "node:fs"
@@ -52,7 +53,7 @@ describe("candidate cutover CLI", () => {
   })
 
   test("plan reads JSON once and writes exact canonical API bytes", async () => {
-    const root = mkdtempSync(join(tmpdir(), "ts-release-cli-cutover-"))
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-cli-cutover-")))
     mkdirSync(join(root, "dist"))
     writeFileSync(join(root, "dist/fixture"), "fixture")
     writeFileSync(join(root, "release.config.json"), JSON.stringify(config, null, 2))
@@ -84,7 +85,7 @@ describe("candidate cutover CLI", () => {
   })
 
   test("review-only never applies and workspace selection follows the frozen table", async () => {
-    const root = mkdtempSync(join(tmpdir(), "ts-release-cli-review-"))
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-cli-review-")))
     mkdirSync(join(root, "dist"))
     writeFileSync(join(root, "dist/fixture"), "fixture")
     const api = makeReleaseApi(releaseLayer)

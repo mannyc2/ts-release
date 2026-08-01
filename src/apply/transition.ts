@@ -99,6 +99,7 @@ const beginPublish = (ledger: RunLedger, record: OperationRunRecord,
   const carried = resumeProgress(record)
   const initial = carried.length > 0 ? carried
     : checkpointIds(operation).map((id) => CheckpointPending.make({ checkpointId: id }))
+  if (initial.length === 0) throw fail("Publication has no checkpoints.")
   return setState(record, DispatchingPublish.make(
     { attemptId: attempt.attemptId, progress: initial }), receipt)
 }

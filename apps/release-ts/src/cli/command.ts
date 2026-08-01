@@ -67,8 +67,14 @@ const applyCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.m
   root: rootFlag,
   reviewOnly: Flag.boolean("review-only").pipe(Flag.withDefault(false)),
   reviewer: optionalText("reviewer"),
-  newRun: optionalText("new-run"),
-  resume: optionalText("resume"),
+  newRun: Flag.string("new-run").pipe(
+    Flag.withDescription("Directory that stores run ledgers; the file name is the derived logical-run id."),
+    Flag.optional
+  ),
+  resume: Flag.string("resume").pipe(
+    Flag.withDescription("Run-ledger file, or a runs directory holding exactly one."),
+    Flag.optional
+  ),
   confirmExecution: optionalText("confirm-execution"),
   confirmPublish: optionalText("confirm-publish"),
   through: optionalText("through"),

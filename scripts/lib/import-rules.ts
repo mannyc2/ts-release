@@ -150,7 +150,6 @@ const hostPlatformPackages: Readonly<Record<string, string>> = {
   "@effect/platform-node": "src/platform/node.ts"
 }
 const fileSystemFiles: ReadonlySet<string> = new Set([
-  "src/api/apply-boundary.ts",
   "src/api/input.ts",
   "src/apply/store.ts",
   "src/apply/transfer.ts",

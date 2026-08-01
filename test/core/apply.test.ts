@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { createHash, randomBytes } from "node:crypto"
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -45,7 +46,8 @@ import {
 import {
   DriverError,
   ExecutionApprovalReceipt,
-  ExecutionScope
+  ExecutionScope,
+  MaterializedOutput
 } from "../../src/model/run.js"
 import {
   ApprovalNonce,
@@ -55,6 +57,7 @@ import {
   OperationHash,
   OperationId,
   RunId,
+  SnapshotId,
   WorkspaceRoot
 } from "../../src/model/primitives.js"
 import { acceptedRunPlan } from "./run-fixture.js"
@@ -62,6 +65,7 @@ import { acceptedRunPlan } from "./run-fixture.js"
 interface Calls {
   structured: number
   credentials: number
+  readonly snapshots: Array<string>
   readonly mutations: Array<{
     readonly checkpoint: string
     readonly key: string
@@ -71,6 +75,7 @@ interface Calls {
 const setup = async (unknownFirst = false, reconcileFound = false, options?: {
   readonly credentialFailuresBeforeSuccess?: number
   readonly scope?: ReadonlyArray<string>
+  readonly recordOutputs?: boolean
 }) => {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-apply-")))
   const root = join(directory, "workspace")
@@ -103,13 +108,28 @@ const setup = async (unknownFirst = false, reconcileFound = false, options?: {
   })
   const store = makeFileRunStore()
   const path = store.path(runs, execution.logicalRunId)
-  const calls: Calls = { structured: 0, credentials: 0, mutations: [] }
+  const calls: Calls = { structured: 0, credentials: 0, snapshots: [], mutations: [] }
   const fakeCredential = randomBytes(32).toString("hex")
   let uncertain = unknownFirst
   const catalog: DriverCatalogShape = {
-    structured: () => Effect.sync(() => {
+    structured: (request) => Effect.sync(() => {
       calls.structured += 1
-      return { outcome: "observed", outputs: [] }
+      if (options?.recordOutputs !== true) return { outcome: "observed", outputs: [] }
+      return {
+        outcome: "observed",
+        outputs: request.operation.outputs.flatMap((output) => {
+          const path = join(request.root, output.path)
+          if (!existsSync(path)) return []
+          const bytes = readFileSync(path)
+          return [MaterializedOutput.make({
+            outputId: output.id,
+            snapshotId: SnapshotId.make("0".repeat(64)),
+            digest: Digest.make(createHash("sha256").update(bytes).digest("hex")),
+            size: bytes.length,
+            inode: 1
+          })]
+        })
+      }
     }),
     publish: (request, handle) => Effect.sync(() => {
       const content = handle === undefined
@@ -155,10 +175,17 @@ const setup = async (unknownFirst = false, reconcileFound = false, options?: {
       return Effect.succeed(fakeCredential)
     })
   }
+  const workspaceStore = makeNodeWorkspaceStore()
   const layer = Layer.mergeAll(
     Layer.succeed(RunStore)({ ...store }),
     Layer.succeed(DriverCatalog)(catalog),
-    Layer.succeed(WorkspaceStore)(makeNodeWorkspaceStore()),
+    Layer.succeed(WorkspaceStore)({
+      snapshot: (request) => {
+        calls.snapshots.push(String(request.outputId))
+        return workspaceStore.snapshot(request)
+      },
+      verify: workspaceStore.verify
+    }),
     Layer.succeed(CredentialStore)(credential),
     LocalApprovalSignerLayer
   )
@@ -170,9 +197,7 @@ const setup = async (unknownFirst = false, reconcileFound = false, options?: {
   }
   const expected = {
     planId: accepted.planId,
-    operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash)),
-    scope,
-    topologyHash: topology
+    operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash))
   }
   return {
     directory,
@@ -371,6 +396,48 @@ describe("applyAcceptedPlan", () => {
       if ("_tag" in second) throw new Error("Expected ledger.")
       expect(fixture.calls.mutations).toHaveLength(1)
       expect(operationStatus(second, OperationId.make("forge"))?._tag).toBe("Pending")
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("a scoped apply snapshots only in-scope publish inputs", async () => {
+    const fixture = await setup(false, false, { scope: ["source", "second", "trusted", "upload"] })
+    try {
+      const challenge = await Effect.runPromise(applyAcceptedPlan(
+        fixture.accepted,
+        { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
+      ).pipe(Effect.provide(fixture.layer)))
+      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      // Only upload is in scope; forge's `second` input must never be
+      // snapshotted or enter the publish review identity.
+      expect([...new Set(fixture.calls.snapshots)]).toEqual(["source"])
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("a changed artifact refuses on resume with the recorded-digest error", async () => {
+    const fixture = await setup(false, false, {
+      recordOutputs: true,
+      scope: ["source", "second", "trusted", "upload"]
+    })
+    try {
+      const challenge = await Effect.runPromise(applyAcceptedPlan(
+        fixture.accepted,
+        { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
+      ).pipe(Effect.provide(fixture.layer)))
+      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      writeFileSync(join(fixture.root, "dist/source"), "changed")
+      const refusal = await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
+        ...fixture.base,
+        run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected }
+      }).pipe(Effect.flip, Effect.provide(fixture.layer)))
+      expect(refusal).toMatchObject({ _tag: "TransitionError" })
+      expect(String((refusal as { reason: string }).reason))
+        .toContain("Output source no longer matches its recorded digest")
+      expect(fixture.calls.credentials).toBe(0)
+      expect(fixture.calls.mutations).toEqual([])
     } finally {
       rmSync(fixture.directory, { recursive: true, force: true })
     }

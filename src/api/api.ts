@@ -23,7 +23,7 @@ import type {
 } from "./types.js"
 
 export type {
-  ApplyInput, ApplyOutput, ApplyStatus, EvidenceProjection, ExecutionScopeInput, ExecutionTopology,
+  ApplyInput, ApplyOutput, ApplyStatus, EvidenceProjection, ExecutionScopeInput,
   OperatorResolution, PlanInput, ReleaseApi, ReleaseApiLayer, ReleaseApiServices, ReviewerIdentity,
   ReviewExecutionInput
 } from "./types.js"
@@ -49,12 +49,12 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
     return { plan: result.plan, bytes: decoder.decode(result.bytes), planId: result.planId }
   }
   const reviewExecution = async (input: ReviewExecutionInput) => {
-    exact("review", input, ["planBytes", "expectedPlanId", "scope", "topology"], "review input")
+    exact("review", input, ["planBytes", "expectedPlanId", "scope"], "review input")
     const accepted = await run("review", acceptExpected(input.planBytes, input.expectedPlanId))
     const scope = selectScope(accepted, input.scope)
     return {
       scope,
-      executionReviewId: executionReviewId(accepted, scope, topology(input.topology))
+      executionReviewId: executionReviewId(accepted, scope, topology())
     }
   }
   return Object.freeze({

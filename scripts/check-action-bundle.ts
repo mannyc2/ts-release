@@ -326,7 +326,7 @@ const executeUnderNode = Effect.fn("scripts.checkActionBundle.executeUnderNode")
     command: "apply",
     "plan-path": "release-plan.json",
     "plan-id": planned.outputs.plan_id!,
-    "new-run": ".release/run.json",
+    "new-run": ".release/runs",
     "confirm-execution": reviewId,
     reviewer: "action-bundle-gate",
     through: "validate",
@@ -337,9 +337,15 @@ const executeUnderNode = Effect.fn("scripts.checkActionBundle.executeUnderNode")
       `Action bundle apply reported status ${applied.outputs.status ?? "none"} under node, expected complete.`
     ))
   }
+  const runPath = applied.outputs.run_path ?? ""
+  if (!runPath.endsWith(".run-ledger.json")) {
+    return yield* Effect.fail(new Error(
+      `Action bundle run_path is ${runPath || "empty"}, expected a derived .run-ledger.json file.`
+    ))
+  }
+  yield* expectFile(runPath, "the run ledger")
+  yield* expectFile(`${runPath}.evidence.json`, "the evidence projection")
   for (const [label, relative] of [
-    ["the run ledger", ".release/run.json"],
-    ["the evidence projection", ".release/run.json.evidence.json"],
     ["the zip archive", ".release/artifacts/action-fixture_1.0.0.zip"],
     ["the files-pattern archive", ".release/artifacts/tree_1.0.0.zip"],
     ["the checksum file", ".release/artifacts/action-fixture_1.0.0_checksums.txt"],

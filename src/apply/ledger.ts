@@ -41,10 +41,17 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
     case "PackageStorePublish":
       return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"])
         .map((id) => CheckpointId.make(id))
-    case "SupplyChainPublish": return (supplyCheckpoints[operation.profileId]??[]).map((id)=>CheckpointId.make(id))
+    case "SupplyChainPublish": {
+      const ids = supplyCheckpoints[operation.profileId]
+      if (ids === undefined) throw fail(`Unknown supply-chain profile ${operation.profileId}.`)
+      return ids.map((id) => CheckpointId.make(id))
+    }
     case "ProviderPublish": return operation.checkpoints
     case "AnnouncementPublish": case "SmtpPublish": return [CheckpointId.make("message")]
-    default:
+    // Local operations carry no publish checkpoints; assertProgress
+    // early-returns on their empty progress before this list is compared.
+    case "Check": case "Write": case "Pack": case "Digest":
+    case "Exec": case "HttpRead": case "ReviewedNoteTransform":
       return []
   }
 }

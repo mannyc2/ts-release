@@ -6,6 +6,7 @@ import {
   HttpPublish,
   OutputDeclaration,
   PublishCredential,
+  SupplyChainPublish,
   WireContract
 } from "../../src/model/operation.js"
 import {
@@ -46,6 +47,41 @@ const wire = WireContract.make({
 const credential = PublishCredential.make({
   name: CredentialName.make("PUBLISH_CREDENTIAL")
 })
+
+export const supplyChainRunPlan = (profileId: string): Promise<AcceptedPlan> => {
+  const plan = ReleasePlanV6.make({
+    schemaVersion: "release-plan/v6",
+    identity: ReleaseIdentityV6.make({
+      name: NonEmptyName.make("supply-fixture"),
+      version: Version.make("1.0.0"),
+      tag: NonEmptyName.make("v1.0.0"),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    }),
+    stages: ReleaseStages.make({
+      build: [],
+      process: [],
+      catalog: [],
+      validate: [],
+      publish: [
+        SupplyChainPublish.make({
+          id: OperationId.make("supply"),
+          inputs: [],
+          outputs: [],
+          variant: "RemoteAttestation",
+          profileId: ProfileId.make(profileId),
+          target: { subject: "artifact" },
+          credential,
+          contractFixtureId: "contract.supply.remote-attestation/v1"
+        })
+      ],
+      announce: [],
+      verify: []
+    }),
+    annotations: []
+  })
+  return Effect.runPromise(acceptPlan(encodePlanBytes(plan)))
+}
 
 export const acceptedRunPlan = (): Promise<AcceptedPlan> => {
   const source = output("source")

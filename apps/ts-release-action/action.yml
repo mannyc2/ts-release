@@ -26,10 +26,10 @@ inputs:
     required: false
     default: all
   new-run:
-    description: Workspace-contained path for a new run ledger.
+    description: Workspace-contained directory that stores run ledgers; the file name is the derived logical-run id.
     required: false
   resume:
-    description: Workspace-contained existing run ledger path.
+    description: Workspace-contained run-ledger file, or a runs directory holding exactly one.
     required: false
   through:
     description: Monotonic apply frontier.

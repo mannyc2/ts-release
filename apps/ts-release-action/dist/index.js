@@ -31926,6 +31926,7 @@ import {
   fsyncSync,
   mkdirSync,
   openSync,
+  readdirSync,
   readFileSync,
   renameSync,
   statSync,
@@ -31947,10 +31948,10 @@ var decodeLedger = (bytes) => {
   return ledger;
 };
 var assertExpected = (ledger, expected) => {
-  if (ledger.planId !== expected.planId || ledger.executionTopologyHash !== expected.topologyHash || JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes) || JSON.stringify(ledger.scope.operationIds) !== JSON.stringify(expected.scope.operationIds))
-    throw error2("Ledger is foreign to the requested plan, scope, or topology.");
+  if (ledger.planId !== expected.planId || JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes))
+    throw error2("Ledger is foreign to the requested plan.");
 };
-var read2 = (path2) => {
+var readLedgerFile = (path2) => {
   try {
     return decodeLedger(readFileSync(path2, "utf8"));
   } catch (cause) {
@@ -31958,6 +31959,21 @@ var read2 = (path2) => {
       throw cause;
     throw error2(`Ledger read refused: ${String(cause)}`);
   }
+};
+var resolveLedgerPath = (path2) => {
+  let directory = false;
+  try {
+    directory = statSync(path2).isDirectory();
+  } catch {
+    return path2;
+  }
+  if (!directory)
+    return path2;
+  const ledgers = readdirSync(path2).filter((name) => name.endsWith(".run-ledger.json"));
+  if (ledgers.length !== 1) {
+    throw error2(`Runs directory ${path2} holds ${ledgers.length} run ledgers; name the ledger file to resume.`);
+  }
+  return join3(path2, ledgers[0]);
 };
 var staleLeaseMilliseconds = 3600000;
 var acquire = (path2) => {
@@ -32057,19 +32073,19 @@ var attempt = (body) => try_2({ try: body, catch: (cause) => cause instanceof Ru
 var makeFileRunStore = () => ({
   path: ledgerPath,
   load: fn2("RunStore.load")((path2, expected) => attempt(() => {
-    const ledger = read2(path2);
+    const ledger = readLedgerFile(path2);
     assertExpected(ledger, expected);
     return ledger;
   })),
   create: fn2("RunStore.create")((path2, ledger) => attempt(() => withLease(path2, () => {
     if (existsSync2(path2))
-      throw error2("Logical run already exists.");
+      throw error2(`Logical run already exists at ${path2}. Resume it, or pass a reason to derive a new logical run.`);
     if (ledger.revision !== 0)
       throw error2("New ledger must begin at revision zero.");
     return atomicWrite(path2, ledger);
   }))),
   save: fn2("RunStore.save")((path2, expectedRevision, ledger) => attempt(() => withLease(path2, () => {
-    const durable = read2(path2);
+    const durable = readLedgerFile(path2);
     if (durable.revision !== expectedRevision || ledger.revision !== expectedRevision + 1)
       throw error2("Ledger revision compare-and-swap failed.");
     if (durable.planId !== ledger.planId || durable.logicalRunId !== ledger.logicalRunId)
@@ -32084,7 +32100,7 @@ import {
   existsSync as existsSync4,
   mkdirSync as mkdirSync3,
   readFileSync as readFileSync3,
-  readdirSync,
+  readdirSync as readdirSync2,
   realpathSync as realpathSync2,
   statSync as statSync2,
   writeFileSync as writeFileSync3
@@ -33019,7 +33035,7 @@ var walkFiles = (realRoot, directory, visited) => {
   const absolute = directory === "" ? realRoot : join5(realRoot, directory);
   if (!existsSync4(absolute))
     return [];
-  return readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
+  return readdirSync2(absolute, { withFileTypes: true }).flatMap((entry) => {
     const relative2 = directory === "" ? entry.name : `${directory}/${entry.name}`;
     const kind = entryKind(realRoot, entry, relative2, visited);
     if (kind?.isDirectory() === true)
@@ -33157,7 +33173,6 @@ var NodeReleaseLayer = ReleaseServicesLive.pipe(provide2(mergeAll2(layer.pipe(pr
 
 // ../../src/api/apply-boundary.ts
 import { randomUUID as randomUUID4 } from "node:crypto";
-import { readFileSync as readFileSync4 } from "node:fs";
 
 // ../../src/apply/ledger.ts
 var supplyCheckpoints = {
@@ -33198,14 +33213,24 @@ var checkpointIds = (operation) => {
       return [CheckpointId.make("dispatch")];
     case "PackageStorePublish":
       return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"]).map((id) => CheckpointId.make(id));
-    case "SupplyChainPublish":
-      return (supplyCheckpoints[operation.profileId] ?? []).map((id) => CheckpointId.make(id));
+    case "SupplyChainPublish": {
+      const ids = supplyCheckpoints[operation.profileId];
+      if (ids === undefined)
+        throw fail14(`Unknown supply-chain profile ${operation.profileId}.`);
+      return ids.map((id) => CheckpointId.make(id));
+    }
     case "ProviderPublish":
       return operation.checkpoints;
     case "AnnouncementPublish":
     case "SmtpPublish":
       return [CheckpointId.make("message")];
-    default:
+    case "Check":
+    case "Write":
+    case "Pack":
+    case "Digest":
+    case "Exec":
+    case "HttpRead":
+    case "ReviewedNoteTransform":
       return [];
   }
 };
@@ -33341,6 +33366,8 @@ var beginPublish = (ledger, record2, operation, receipt) => {
   }
   const carried = resumeProgress(record2);
   const initial = carried.length > 0 ? carried : checkpointIds(operation).map((id) => CheckpointPending.make({ checkpointId: id }));
+  if (initial.length === 0)
+    throw fail14("Publication has no checkpoints.");
   return setState(record2, DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: initial }), receipt);
 };
 var checkpoint2 = (record2, command3) => {
@@ -33564,8 +33591,8 @@ var localOperations = (ctx, permit, ledger, operations) => gen2(function* () {
   }
   return next;
 });
-var materialize = (ctx) => gen2(function* () {
-  const publishInputs = new Set(operationEntries(ctx.accepted.plan).filter(({ operation }) => isRemotePublish(operation)).flatMap(({ operation }) => operation.inputs).map(String));
+var materialize = (ctx, selected2) => gen2(function* () {
+  const publishInputs = new Set(operationEntries(ctx.accepted.plan).filter(({ operation }) => selected2.has(operation.id) && isRemotePublish(operation)).flatMap(({ operation }) => operation.inputs).map(String));
   return yield* forEach2(ctx.accepted.outputs.filter(({ output }) => publishInputs.has(String(output.id))), ({ output }) => ctx.workspace.snapshot(SnapshotRequest.make({
     root: ctx.request.root,
     source: output.path,
@@ -33740,7 +33767,19 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
     return ledger;
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile"))
     return ledger;
-  const materials = yield* materialize(ctx);
+  const materials = yield* materialize(ctx, selected2);
+  for (const material of materials) {
+    const producer = entries2.map(({ operation }) => operation).find((operation) => operation.outputs.some((output) => String(output.id) === String(material.outputId)));
+    const state = producer === undefined ? undefined : operationStatus(ledger, producer.id);
+    if (state?._tag !== "Passed")
+      continue;
+    const recorded = state.materializedOutputs.find((output) => String(output.outputId) === String(material.outputId));
+    if (recorded !== undefined && (recorded.digest !== material.digest || recorded.size !== material.size)) {
+      return yield* TransitionError.make({
+        reason: `Output ${material.outputId} no longer matches its recorded digest; the workspace changed after it was built.`
+      });
+    }
+  }
   const review = publishReviewId(accepted, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash), ledger.scope, materials);
   if (request.publish === undefined)
     return { _tag: "PublishReviewRequired", reviewId: review, ledger };
@@ -33834,15 +33873,7 @@ var within = (root, value2) => {
   }
   return path2;
 };
-var topology = (value2) => {
-  if (value2 !== undefined) {
-    exact("review", value2, ["id"], "topology");
-    if (value2.id.length === 0) {
-      throw new ReleaseApiError("review", "Topology id must be nonempty.");
-    }
-  }
-  return ExecutionTopologyHash.make(value2?.id ?? "single-machine/v1");
-};
+var topology = () => ExecutionTopologyHash.make("single-machine/v1");
 var selectScope = (accepted, input2) => {
   const available = accepted.operationHashes.map(({ operationId: operationId2 }) => operationId2);
   const requested = input2 === "all" ? available : exact("review", input2, ["operationIds"], "scope").operationIds;
@@ -33865,11 +33896,9 @@ var selectScope = (accepted, input2) => {
 // ../../src/api/apply-boundary.ts
 var complete = (ledger) => ledger.operations.filter((record2) => ledger.scope.operationIds.includes(record2.operationId)).every((record2) => settled(record2.attempts.at(-1)?.state));
 var receipt = (ledger) => ledger.operations[0]?.attempts[0]?.executionReceipt;
-var expectedLedger = (plan, ledger) => ({
+var expectedLedger = (plan) => ({
   planId: plan.planId,
-  operationHashes: plan.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2)),
-  scope: ledger.scope,
-  topologyHash: ledger.executionTopologyHash
+  operationHashes: plan.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2))
 });
 var recoveries = (ledger, input2) => [
   ...(input2.resolutions ?? []).map((item) => ({
@@ -33908,7 +33937,7 @@ var prepareNew = (plan, root, input2) => {
   });
   return {
     execution,
-    runPath: within(root, request.path),
+    runPath: ledgerPath(within(root, request.path), execution.logicalRunId),
     ledger: createLedger(plan, {
       runId: execution.runId,
       logicalRunId: execution.logicalRunId,
@@ -33920,8 +33949,14 @@ var prepareNew = (plan, root, input2) => {
   };
 };
 var prepareResume = (plan, root, path2) => {
-  const runPath = within(root, path2);
-  const ledger = decodeLedger(readFileSync4(runPath, "utf8"));
+  const contained = within(root, path2);
+  let runPath;
+  try {
+    runPath = resolveLedgerPath(contained);
+  } catch (cause) {
+    throw new ReleaseApiError("apply", cause instanceof RunStoreError ? cause.reason : String(cause));
+  }
+  const ledger = readLedgerFile(runPath);
   validateLedger(plan, ledger);
   const execution = receipt(ledger);
   if (execution === undefined) {
@@ -33963,7 +33998,7 @@ var publishOutput = async (run4, plan, input2, prepared, review) => {
     run: {
       _tag: "ResumeRun",
       path: prepared.runPath,
-      expected: expectedLedger(plan, review.ledger)
+      expected: expectedLedger(plan)
     },
     publish: { receipt: publish }
   }));
@@ -34001,7 +34036,7 @@ var makeApply = (run4) => async (input2) => {
     run: input2.newRun === undefined ? {
       _tag: "ResumeRun",
       path: prepared.runPath,
-      expected: expectedLedger(plan, prepared.ledger)
+      expected: expectedLedger(plan)
     } : { _tag: "NewRun", path: prepared.runPath, ledger: prepared.ledger }
   }));
   return publishOutput(run4, plan, input2, prepared, first);
@@ -34026,12 +34061,12 @@ var makeReleaseApi = (layer7) => {
     return { plan: result2.plan, bytes: decoder2.decode(result2.bytes), planId: result2.planId };
   };
   const reviewExecution = async (input2) => {
-    exact("review", input2, ["planBytes", "expectedPlanId", "scope", "topology"], "review input");
+    exact("review", input2, ["planBytes", "expectedPlanId", "scope"], "review input");
     const accepted = await run4("review", acceptExpected(input2.planBytes, input2.expectedPlanId));
     const scope4 = selectScope(accepted, input2.scope);
     return {
       scope: scope4,
-      executionReviewId: executionReviewId(accepted, scope4, topology(input2.topology))
+      executionReviewId: executionReviewId(accepted, scope4, topology())
     };
   };
   return Object.freeze({
@@ -34048,7 +34083,7 @@ var apply = defaultApi.apply;
 // src/index.ts
 import {
   mkdirSync as mkdirSync4,
-  readFileSync as readFileSync5,
+  readFileSync as readFileSync4,
   writeFileSync as writeFileSync4
 } from "node:fs";
 import { dirname as dirname5 } from "node:path";
@@ -34189,7 +34224,7 @@ try {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
     input: getInput,
     output: setOutput,
-    read: (path2) => readFileSync5(path2, "utf8"),
+    read: (path2) => readFileSync4(path2, "utf8"),
     write: (path2, value2) => {
       mkdirSync4(dirname5(path2), { recursive: true });
       writeFileSync4(path2, value2);

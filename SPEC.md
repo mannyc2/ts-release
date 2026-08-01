@@ -101,9 +101,9 @@ Execution scope is either all operation ids or an explicit subset. Scope
 selection MUST validate ids and dependency closure, then store the exact
 expanded operation-id list.
 
-`reviewExecution` accepts canonical plan bytes, expected plan id, requested
-scope, and optional topology. It returns the immutable scope and a
-domain-separated execution review challenge.
+`reviewExecution` accepts canonical plan bytes, expected plan id, and the
+requested scope. It returns the immutable scope and a domain-separated
+execution review challenge.
 
 A review challenge is not authority. A new run requires the exact challenge,
 reviewer identity, fresh nonce, run identity, logical-run identity, timestamp,

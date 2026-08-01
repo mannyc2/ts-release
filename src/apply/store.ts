@@ -4,17 +4,19 @@ import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import {
   closeSync, constants, existsSync, fsyncSync, mkdirSync, openSync,
-  readFileSync, renameSync, statSync, unlinkSync, writeFileSync
+  readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync
 } from "node:fs"
 import { dirname, join } from "node:path"
 import { randomUUID } from "node:crypto"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
-import { RunLedger, RunStoreError, type ExecutionScope } from "../model/run.js"
-import type { ExecutionTopologyHash, LogicalRunId, OperationHash, PlanId } from "../model/primitives.js"
+import { RunLedger, RunStoreError } from "../model/run.js"
+import type { LogicalRunId, OperationHash, PlanId } from "../model/primitives.js"
 
+// Only the arms that are independent of the loaded file belong here: scope
+// and topology live inside the ledger and are validated against the plan by
+// validateLedger, so comparing them to themselves proves nothing.
 export type ExpectedLedger = {
-  readonly planId: PlanId, readonly operationHashes: ReadonlyArray<OperationHash>,
-  readonly scope: ExecutionScope, readonly topologyHash: ExecutionTopologyHash }
+  readonly planId: PlanId, readonly operationHashes: ReadonlyArray<OperationHash> }
 export type Durability = "file-rename-directory-sync" | "file-rename"
 export type RunStoreShape = {
   readonly path: (directory: string, logicalRunId: LogicalRunId) => string,
@@ -36,18 +38,32 @@ export const decodeLedger = (bytes: string): RunLedger => {
 }
 const assertExpected = (ledger: RunLedger, expected: ExpectedLedger): void => {
   if (ledger.planId !== expected.planId ||
-    ledger.executionTopologyHash !== expected.topologyHash ||
-    JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes) ||
-    JSON.stringify(ledger.scope.operationIds) !== JSON.stringify(expected.scope.operationIds)
-  ) throw error("Ledger is foreign to the requested plan, scope, or topology.")
+    JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes)
+  ) throw error("Ledger is foreign to the requested plan.")
 }
-const read = (path: string): RunLedger => {
+export const readLedgerFile = (path: string): RunLedger => {
   try {
     return decodeLedger(readFileSync(path, "utf8"))
   } catch (cause) {
     if (cause instanceof RunStoreError) throw cause
     throw error(`Ledger read refused: ${String(cause)}`)
   }
+}
+// Resume accepts the runs directory because later pipeline jobs cannot
+// statically know the derived ledger file name.
+export const resolveLedgerPath = (path: string): string => {
+  let directory = false
+  try {
+    directory = statSync(path).isDirectory()
+  } catch {
+    return path
+  }
+  if (!directory) return path
+  const ledgers = readdirSync(path).filter((name) => name.endsWith(".run-ledger.json"))
+  if (ledgers.length !== 1) {
+    throw error(`Runs directory ${path} holds ${ledgers.length} run ledgers; name the ledger file to resume.`)
+  }
+  return join(path, ledgers[0]!)
 }
 // Leases outlive their process only via SIGKILL/OOM; the revision CAS in
 // save remains the integrity backstop if a paused holder wakes up.
@@ -148,19 +164,19 @@ const attempt = <A>(body: () => A) => Effect.try(
 export const makeFileRunStore = (): RunStoreShape => ({
   path: ledgerPath,
   load: Effect.fn("RunStore.load")((path, expected) => attempt(() => {
-    const ledger = read(path)
+    const ledger = readLedgerFile(path)
     assertExpected(ledger, expected)
     return ledger
   })),
   create: Effect.fn("RunStore.create")((path, ledger) =>
     attempt(() => withLease(path, () => {
-      if (existsSync(path)) throw error("Logical run already exists.")
+      if (existsSync(path)) throw error(`Logical run already exists at ${path}. Resume it, or pass a reason to derive a new logical run.`)
       if (ledger.revision !== 0) throw error("New ledger must begin at revision zero.")
       return atomicWrite(path, ledger)
     }))),
   save: Effect.fn("RunStore.save")((path, expectedRevision, ledger) =>
     attempt(() => withLease(path, () => {
-      const durable = read(path)
+      const durable = readLedgerFile(path)
       if (durable.revision !== expectedRevision || ledger.revision !== expectedRevision + 1)
         throw error("Ledger revision compare-and-swap failed.")
       if (durable.planId !== ledger.planId ||

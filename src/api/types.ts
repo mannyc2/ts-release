@@ -10,7 +10,6 @@ import type { EvidenceProjection } from "../view/evidence.js"
 export type ExecutionScopeInput = "all" | {
   readonly operationIds: ReadonlyArray<OperationId | string>
 }
-export interface ExecutionTopology { readonly id: string }
 export type ReviewerIdentity = string
 export interface OperatorResolution {
   readonly operationId: OperationId | string, readonly outcome: "committed" | "absent"
@@ -24,7 +23,6 @@ export type ReleaseApiLayer = Layer.Layer<ReleaseApiServices>
 export interface PlanInput { readonly config: unknown, readonly workspace: string }
 export interface ReviewExecutionInput {
   readonly planBytes: string, readonly expectedPlanId: PlanId, readonly scope: ExecutionScopeInput
-  readonly topology?: ExecutionTopology
 }
 export interface ApplyInput {
   readonly planBytes: string, readonly expectedPlanId: PlanId, readonly workspace: string

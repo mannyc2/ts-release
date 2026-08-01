@@ -10,7 +10,7 @@ import {
   WorkspaceRoot
 } from "../model/primitives.js"
 import { ExecutionScope } from "../model/run.js"
-import type { ExecutionScopeInput, ExecutionTopology } from "./types.js"
+import type { ExecutionScopeInput } from "./types.js"
 
 export type ApiRun = <A, E>(
   phase: ReleaseApiPhase,
@@ -54,15 +54,9 @@ export const within = (root: string, value: string): string => {
   return path
 }
 
-export const topology = (value?: ExecutionTopology): ExecutionTopologyHash => {
-  if (value !== undefined) {
-    exact("review", value, ["id"], "topology")
-    if (value.id.length === 0) {
-      throw new ReleaseApiError("review", "Topology id must be nonempty.")
-    }
-  }
-  return ExecutionTopologyHash.make(value?.id ?? "single-machine/v1")
-}
+// The single-machine constant keeps one home; there is no topology input.
+export const topology = (): ExecutionTopologyHash =>
+  ExecutionTopologyHash.make("single-machine/v1")
 
 export const selectScope = (
   accepted: {

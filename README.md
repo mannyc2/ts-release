@@ -82,7 +82,7 @@ const materialized = await apply({
   workspace: "/absolute/real/workspace",
   through: "validate",
   newRun: {
-    path: ".release/run.json",
+    path: ".release/runs",
     scope: "all",
     executionReviewId: review.executionReviewId,
     reviewer: "release-team"
@@ -95,7 +95,7 @@ if (materialized.nextPublishReviewId !== undefined) {
     expectedPlanId: planned.planId as PlanId,
     workspace: "/absolute/real/workspace",
     through: "verify",
-    resumeRunPath: ".release/run.json",
+    resumeRunPath: ".release/runs",
     publishConfirmation: {
       publishReviewId: materialized.nextPublishReviewId,
       reviewer: "release-team"
@@ -168,7 +168,7 @@ ts-release apply release-plan.json \
 ts-release apply release-plan.json \
   --plan-id PLAN_ID \
   --through validate \
-  --new-run .release/run.json \
+  --new-run .release/runs \
   --scope all \
   --confirm-execution EXECUTION_REVIEW_ID \
   --reviewer release-team
@@ -176,7 +176,7 @@ ts-release apply release-plan.json \
 ts-release apply release-plan.json \
   --plan-id PLAN_ID \
   --through verify \
-  --resume .release/run.json \
+  --resume .release/runs \
   --confirm-publish PUBLISH_REVIEW_ID \
   --reviewer release-team
 ```

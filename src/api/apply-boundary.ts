@@ -1,15 +1,14 @@
 import { randomUUID } from "node:crypto"
-import { readFileSync } from "node:fs"
 import { applyAcceptedPlan, type ApplyRecovery } from "../apply/apply.js"
 import { mintExecutionReceipt, mintPublishReceipt } from "../apply/approval.js"
 import { createLedger, validateLedger } from "../apply/ledger.js"
 import { settled } from "../apply/transition.js"
-import { decodeLedger } from "../apply/store.js"
+import { ledgerPath, readLedgerFile, resolveLedgerPath } from "../apply/store.js"
 import { acceptExpected, type AcceptedPlan } from "../plan/review.js"
 import {
   ApprovalNonce, CheckpointId, OperationHash, OperationId, type PublishReviewId, RunId
 } from "../model/primitives.js"
-import type { RunLedger } from "../model/run.js"
+import { RunStoreError, type RunLedger } from "../model/run.js"
 import { projectEvidence } from "../view/evidence.js"
 import { ReleaseApiError } from "./errors.js"
 import {
@@ -21,11 +20,9 @@ const complete = (ledger: RunLedger): boolean => ledger.operations
   .filter((record) => ledger.scope.operationIds.includes(record.operationId))
   .every((record) => settled(record.attempts.at(-1)?.state))
 const receipt = (ledger: RunLedger) => ledger.operations[0]?.attempts[0]?.executionReceipt
-const expectedLedger = (plan: AcceptedPlan, ledger: RunLedger) => ({
+const expectedLedger = (plan: AcceptedPlan) => ({
   planId: plan.planId,
-  operationHashes: plan.operationHashes.map(({ hash }) => OperationHash.make(hash)),
-  scope: ledger.scope,
-  topologyHash: ledger.executionTopologyHash
+  operationHashes: plan.operationHashes.map(({ hash }) => OperationHash.make(hash))
 })
 const recoveries = (ledger: RunLedger, input: ApplyInput): ReadonlyArray<ApplyRecovery> => [
   ...(input.resolutions ?? []).map((item) => ({
@@ -77,7 +74,7 @@ const prepareNew = (plan: AcceptedPlan, root: string, input: ApplyInput): Prepar
   })
   return {
     execution,
-    runPath: within(root, request.path),
+    runPath: ledgerPath(within(root, request.path), execution.logicalRunId),
     ledger: createLedger(plan, {
       runId: execution.runId,
       logicalRunId: execution.logicalRunId,
@@ -89,8 +86,15 @@ const prepareNew = (plan: AcceptedPlan, root: string, input: ApplyInput): Prepar
   }
 }
 const prepareResume = (plan: AcceptedPlan, root: string, path: string): PreparedRun => {
-  const runPath = within(root, path)
-  const ledger = decodeLedger(readFileSync(runPath, "utf8"))
+  const contained = within(root, path)
+  let runPath: string
+  try {
+    runPath = resolveLedgerPath(contained)
+  } catch (cause) {
+    throw new ReleaseApiError("apply",
+      cause instanceof RunStoreError ? cause.reason : String(cause))
+  }
+  const ledger = readLedgerFile(runPath)
   validateLedger(plan, ledger)
   const execution = receipt(ledger)
   if (execution === undefined) {
@@ -141,7 +145,7 @@ const publishOutput = async (
     run: {
       _tag: "ResumeRun",
       path: prepared.runPath,
-      expected: expectedLedger(plan, review.ledger)
+      expected: expectedLedger(plan)
     },
     publish: { receipt: publish }
   }))
@@ -174,7 +178,7 @@ export const makeApply = (run: ApiRun) => async (input: ApplyInput): Promise<App
       ? {
           _tag: "ResumeRun",
           path: prepared.runPath,
-          expected: expectedLedger(plan, prepared.ledger)
+          expected: expectedLedger(plan)
         }
       : { _tag: "NewRun", path: prepared.runPath, ledger: prepared.ledger }
   }))

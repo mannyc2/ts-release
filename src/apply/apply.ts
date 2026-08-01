@@ -82,9 +82,9 @@ const localOperations = (
   }
   return next
 })
-const materialize = (ctx: ApplyContext) => Effect.gen(function*() {
+const materialize = (ctx: ApplyContext, selected: ReadonlySet<string>) => Effect.gen(function*() {
   const publishInputs = new Set(operationEntries(ctx.accepted.plan)
-    .filter(({ operation }) => isRemotePublish(operation))
+    .filter(({ operation }) => selected.has(operation.id) && isRemotePublish(operation))
     .flatMap(({ operation }) => operation.inputs).map(String))
   return yield* Effect.forEach(
     ctx.accepted.outputs.filter(({ output }) => publishInputs.has(String(output.id))),
@@ -282,7 +282,24 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
   const publishEntries = entries.map(({ operation }) => operation).filter(isRemotePublish)
   if (publishEntries.length === 0) return ledger
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile")) return ledger
-  const materials = yield* materialize(ctx)
+  const materials = yield* materialize(ctx, selected)
+  // Fresh snapshots must match what the build recorded — the code-level truth
+  // behind resume revalidation: publish inputs are compared against the
+  // digests their producing operations persisted when they passed.
+  for (const material of materials) {
+    const producer = entries.map(({ operation }) => operation).find((operation) =>
+      operation.outputs.some((output) => String(output.id) === String(material.outputId)))
+    const state = producer === undefined ? undefined : operationStatus(ledger, producer.id)
+    if (state?._tag !== "Passed") continue
+    const recorded = state.materializedOutputs.find((output) =>
+      String(output.outputId) === String(material.outputId))
+    if (recorded !== undefined &&
+      (recorded.digest !== material.digest || recorded.size !== material.size)) {
+      return yield* TransitionError.make({
+        reason: `Output ${material.outputId} no longer matches its recorded digest; the workspace changed after it was built.`
+      })
+    }
+  }
   const review = publishReviewId(accepted, executionReviewId(
     accepted, ledger.scope, ledger.executionTopologyHash
   ), ledger.scope, materials)

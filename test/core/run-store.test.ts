@@ -75,9 +75,7 @@ describe("file-backed RunStore", () => {
         .toMatch(/file-rename/)
       const expected = {
         planId: accepted.planId,
-        operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash)),
-        scope,
-        topologyHash: topology
+        operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash))
       }
       expect((await Effect.runPromise(store.load(path, expected))).revision).toBe(0)
       expect((await failure(store.create(path, ledger)))._tag).toBe("RunStoreError")
@@ -221,9 +219,7 @@ describe("file-backed RunStore", () => {
       writeFileSync(join(directory, ".deadbeef.run-ledger.tmp"), '{"torn":')
       const expected = {
         planId: accepted.planId,
-        operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash)),
-        scope,
-        topologyHash: topology
+        operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash))
       }
       expect((await Effect.runPromise(store.load(path, expected))).revision).toBe(0)
       expect(readFileSync(path, "utf8")).toBe(durable)

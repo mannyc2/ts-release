@@ -17,7 +17,6 @@ export type {
   ApplyStatus,
   EvidenceProjection,
   ExecutionScopeInput,
-  ExecutionTopology,
   OperatorResolution,
   PlanInput,
   ReleaseApi,

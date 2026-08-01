@@ -127,7 +127,7 @@ describe("public plan/review/apply API", () => {
         workspace: root,
         through: "build",
         newRun: {
-          path: ".release/run.json",
+          path: ".release/runs",
           scope: "all",
           executionReviewId: review.executionReviewId,
           reviewer: "maintainer"
@@ -135,8 +135,57 @@ describe("public plan/review/apply API", () => {
       })
       expect(output.status).toBe("complete")
       expect(output.ledger.schemaVersion).toBe("run-ledger/v1")
+      expect(output.runPath.endsWith(".run-ledger.json")).toBe(true)
       expect(readFileSync(output.runPath, "utf8")).toContain("\"run-ledger/v1\"")
       expect(calls.structured).toBe(1)
+      // The same logical run in the same runs directory must refuse, not fork.
+      await expect(api.apply({
+        planBytes: planned.bytes,
+        expectedPlanId: planned.planId,
+        workspace: root,
+        through: "build",
+        newRun: {
+          path: ".release/runs",
+          scope: "all",
+          executionReviewId: review.executionReviewId,
+          reviewer: "maintainer"
+        }
+      })).rejects.toThrow(/Logical run already exists/)
+      // Resume accepts the runs directory holding exactly one ledger.
+      const resumed = await api.apply({
+        planBytes: planned.bytes,
+        expectedPlanId: planned.planId,
+        workspace: root,
+        through: "build",
+        resumeRunPath: ".release/runs"
+      })
+      expect(resumed.runPath).toBe(output.runPath)
+    } finally {
+      await api.dispose()
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("directory resume refuses zero or several ledgers by count", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "ts-release-resume-dir-"))
+    const root = join(directory, "workspace")
+    mkdirSync(join(root, "dist"), { recursive: true })
+    writeFileSync(join(root, "dist/fixture"), "fixture")
+    mkdirSync(join(root, ".release/runs"), { recursive: true })
+    const api = makeReleaseApi(layer({ structured: 0 }))
+    try {
+      const planned = await api.plan({ config, workspace: root })
+      const resume = (path: string) => api.apply({
+        planBytes: planned.bytes,
+        expectedPlanId: planned.planId,
+        workspace: root,
+        through: "build",
+        resumeRunPath: path
+      })
+      await expect(resume(".release/runs")).rejects.toThrow(/holds 0 run ledgers/)
+      writeFileSync(join(root, ".release/runs/a.run-ledger.json"), "{}")
+      writeFileSync(join(root, ".release/runs/b.run-ledger.json"), "{}")
+      await expect(resume(".release/runs")).rejects.toThrow(/holds 2 run ledgers/)
     } finally {
       await api.dispose()
       rmSync(directory, { recursive: true, force: true })

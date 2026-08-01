@@ -18,6 +18,13 @@ import { dirname } from "node:path"
 import packageManifest from "../../../../package.json" with { type: "json" }
 import { makeCli } from "./command.js"
 
+// Windows is a supported release TARGET, not a host: the store and drivers
+// assume POSIX open flags (O_NOFOLLOW) and absolute-path branding.
+if (process.platform === "win32") {
+  console.error("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.")
+  process.exit(1)
+}
+
 const api = makeReleaseApi(BunReleaseLayer)
 const cli = makeCli(api, process.cwd(), {
   read: (path) => readFileSync(path, "utf8"),

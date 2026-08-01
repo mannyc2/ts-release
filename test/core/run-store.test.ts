@@ -31,6 +31,7 @@ import {
   transition
 } from "../../src/apply/transition.js"
 import {
+  classifyDirectorySyncFailure,
   ledgerPath,
   makeFileRunStore
 } from "../../src/apply/store.js"
@@ -130,6 +131,47 @@ describe("file-backed RunStore", () => {
       const newer = RunLedger.make({ ...next, revision: 2 })
       expect((await failure(store.save(path, 1, newer)))._tag).toBe("RunStoreError")
       expect(readFileSync(path, "utf8")).toBe(durable)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("directory-sync failures classify by errno; both durability outcomes are legal", async () => {
+    for (const code of ["EINVAL", "ENOTSUP", "EISDIR"]) {
+      expect(classifyDirectorySyncFailure(code)).toBe("degrade")
+    }
+    for (const code of ["EIO", "EACCES", ""]) {
+      expect(classifyDirectorySyncFailure(code)).toBe("raise")
+    }
+    // Characterization: tmpfs CI runners may produce either literal; both are
+    // successful durability outcomes and the ledger must exist afterwards.
+    const directory = root()
+    try {
+      const accepted = await acceptedRunPlan()
+      const logicalRunId = LogicalRunId.make("logical")
+      const receipt = ExecutionApprovalReceipt.make({
+        receiptId: ReceiptId.make("receipt"),
+        reviewId: ExecutionReviewId.make("review"),
+        runId: RunId.make("run"),
+        logicalRunId,
+        reviewer: "reviewer",
+        approvalNonce: ApprovalNonce.make("nonce"),
+        approvedAt: "now",
+        topologyHash: ExecutionTopologyHash.make("single-machine/v1")
+      })
+      const ledger = createLedger(accepted, {
+        runId: receipt.runId,
+        logicalRunId,
+        scope: ExecutionScope.make({ operationIds: [] }),
+        frontier: "build",
+        topologyHash: ExecutionTopologyHash.make("single-machine/v1"),
+        receipt
+      })
+      const store = makeFileRunStore()
+      const path = store.path(directory, logicalRunId)
+      const durability = await Effect.runPromise(store.create(path, ledger))
+      expect(["file-rename-directory-sync", "file-rename"]).toContain(durability)
+      expect(existsSync(path)).toBe(true)
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }

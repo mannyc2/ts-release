@@ -11,7 +11,9 @@ publication, and a durable run ledger.
 bun add -d @mannyc1/ts-release
 ```
 
-The supported runtime is Bun 1.3.14 or newer.
+The supported runtime is Bun 1.3.14 or newer. Hosts are Linux and macOS;
+Windows is a supported release target only (use WSL to run ts-release on a
+Windows machine).
 
 ## Configuration
 

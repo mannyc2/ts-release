@@ -33805,6 +33805,7 @@ var acquire = (path2) => {
     }
   }
 };
+var classifyDirectorySyncFailure = (code) => ["EINVAL", "ENOTSUP", "EISDIR"].includes(code) ? "degrade" : "raise";
 var syncDirectory = (directory) => {
   let descriptor;
   try {
@@ -33813,7 +33814,7 @@ var syncDirectory = (directory) => {
     return "file-rename-directory-sync";
   } catch (cause) {
     const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
-    if (!["EINVAL", "ENOTSUP", "EISDIR"].includes(code))
+    if (classifyDirectorySyncFailure(code) === "raise")
       throw cause;
     return "file-rename";
   } finally {
@@ -35610,16 +35611,17 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   const selected2 = new Set(ledger.scope.operationIds.map(String));
   const entries2 = operationEntries(accepted.plan).filter(({ stage, operation }) => selected2.has(operation.id) && stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through));
   ledger = yield* localOperations(ctx, executionPermit, ledger, entries2.map(({ operation }) => operation));
-  if (entries2.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
+  const scoped4 = operationEntries(accepted.plan).filter(({ operation }) => selected2.has(operation.id));
+  if (scoped4.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
     return ledger;
   const publishEntries = entries2.map(({ operation }) => operation).filter(isRemotePublish);
-  if (publishEntries.length === 0)
+  if (!scoped4.some(({ operation }) => isRemotePublish(operation)))
     return ledger;
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile"))
     return ledger;
   const materials = yield* materialize(ctx, selected2);
   for (const material of materials) {
-    const producer = entries2.map(({ operation }) => operation).find((operation) => operation.outputs.some((output) => String(output.id) === String(material.outputId)));
+    const producer = scoped4.map(({ operation }) => operation).find((operation) => operation.outputs.some((output) => String(output.id) === String(material.outputId)));
     const state = producer === undefined ? undefined : operationStatus(ledger, producer.id);
     if (state?._tag !== "Passed")
       continue;
@@ -36074,6 +36076,10 @@ var runAction = async (api2, runtime) => {
 };
 
 // src/index.ts
+if (process.platform === "win32") {
+  setFailed("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.");
+  process.exit(1);
+}
 var api2 = makeReleaseApi(NodeReleaseLayer);
 try {
   await runAction(api2, {

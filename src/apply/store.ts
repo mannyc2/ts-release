@@ -102,6 +102,10 @@ const acquire = (path: string): number => {
     }
   }
 }
+// Directory-fsync support varies by filesystem (tmpfs and containers refuse
+// with these codes); anything else is a real fault and must raise.
+export const classifyDirectorySyncFailure = (code: string): "degrade" | "raise" =>
+  ["EINVAL", "ENOTSUP", "EISDIR"].includes(code) ? "degrade" : "raise"
 const syncDirectory = (directory: string): Durability => {
   let descriptor: number | undefined
   try {
@@ -111,7 +115,7 @@ const syncDirectory = (directory: string): Durability => {
   } catch (cause) {
     const code = typeof cause === "object" && cause !== null && "code" in cause
       ? String(cause.code) : ""
-    if (!["EINVAL", "ENOTSUP", "EISDIR"].includes(code)) throw cause
+    if (classifyDirectorySyncFailure(code) === "raise") throw cause
     return "file-rename"
   } finally {
     if (descriptor !== undefined) closeSync(descriptor)

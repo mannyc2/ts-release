@@ -277,17 +277,23 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
     stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through))
   ledger = yield* localOperations(ctx, executionPermit, ledger,
     entries.map(({ operation }) => operation))
-  if (entries.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" &&
+  // The publish review derives from the SCOPE, not the requested frontier: a
+  // materialize-only apply (through: validate) must still emit the challenge
+  // its publish job will confirm — but only once every in-scope pre-publish
+  // operation is settled. Publish EXECUTION stays gated on `through`.
+  const scoped = operationEntries(accepted.plan)
+    .filter(({ operation }) => selected.has(operation.id))
+  if (scoped.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" &&
     !settled(operationStatus(ledger, operation.id)))) return ledger
   const publishEntries = entries.map(({ operation }) => operation).filter(isRemotePublish)
-  if (publishEntries.length === 0) return ledger
+  if (!scoped.some(({ operation }) => isRemotePublish(operation))) return ledger
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile")) return ledger
   const materials = yield* materialize(ctx, selected)
   // Fresh snapshots must match what the build recorded — the code-level truth
   // behind resume revalidation: publish inputs are compared against the
   // digests their producing operations persisted when they passed.
   for (const material of materials) {
-    const producer = entries.map(({ operation }) => operation).find((operation) =>
+    const producer = scoped.map(({ operation }) => operation).find((operation) =>
       operation.outputs.some((output) => String(output.id) === String(material.outputId)))
     const state = producer === undefined ? undefined : operationStatus(ledger, producer.id)
     if (state?._tag !== "Passed") continue

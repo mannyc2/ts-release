@@ -40,6 +40,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Cache bun installs
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install
         run: bun install --frozen-lockfile
 
@@ -61,8 +68,24 @@ jobs:
         with:
           bun-version: 1.3.14
 
+      - name: Cache bun installs
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install
         run: bun install --frozen-lockfile
 
       - name: Check self-release config
         run: bun run check:self-release-config
+
+      - name: Check self-release doctor
+        run: bun run check:self-release-doctor
+
+      - name: Check self-release live readiness
+        run: bun run check:self-release-live
+
+      - name: Check self-release artifacts
+        run: bun run check:self-release-artifacts

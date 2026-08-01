@@ -32,3 +32,10 @@ Temporary scripts should not be committed here unless they have:
 - a package command or documented owner,
 - a deletion condition,
 - and either focused tests or a clear reason they are intentionally manual.
+
+## Watch mode
+
+There is no bespoke watcher: use `bun test --watch` for tests and
+`bunx tsc --noEmit --watch` for types. `bun run check:summary` runs every
+`check:portable` gate sequentially and prints one pass/fail/seconds table
+instead of stopping at the first failure.

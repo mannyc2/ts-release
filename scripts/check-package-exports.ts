@@ -177,6 +177,27 @@ const checkDeclarationTarget = (target: FileTarget, failures: Array<string>): vo
   }
 }
 
+// The public ENTRY declarations must never name effect/unstable specifiers
+// directly — at Effect GA those paths move and every consumer breaks. (The
+// transitive ReleaseServicesLive requirement types are its documented
+// contract and are exempt; this guards the entry files.)
+const checkEntryDeclaration = (target: FileTarget, failures: Array<string>): void => {
+  if (!target.path.startsWith("./dist/") || !target.path.endsWith(".js")) {
+    return
+  }
+  const declaration = resolve(root, `${target.path.slice(0, -3)}.d.ts`)
+  if (!existsSync(declaration)) {
+    failures.push(`${target.label} has no built declaration ${target.path.slice(0, -3)}.d.ts`)
+    return
+  }
+  const contents = readFileSync(declaration, "utf8")
+  for (const prefix of ["effect/unstable/http", "effect/unstable/process", "effect/unstable/cli"]) {
+    if (contents.includes(`"${prefix}`)) {
+      failures.push(`${target.label} declaration names ${prefix}; alias the type behind a package path`)
+    }
+  }
+}
+
 const formatDiagnostic = (diagnostic: ts.Diagnostic): string => {
   const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
   if (diagnostic.file === undefined || diagnostic.start === undefined) {
@@ -278,6 +299,7 @@ const main = async (): Promise<void> => {
   }
   for (const target of exportTargets) {
     checkDeclarationTarget(target, failures)
+    checkEntryDeclaration(target, failures)
   }
 
   if (typeof packageName === "string") {

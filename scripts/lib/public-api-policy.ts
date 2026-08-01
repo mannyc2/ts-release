@@ -39,6 +39,8 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
   "@effect/platform-bun",
   "@effect/platform-node",
   "effect/unstable/cli",
+  "effect/unstable/http",
+  "effect/unstable/process",
   "node:"
 ]
 
@@ -48,23 +50,33 @@ export const bannedExternalPrefixes: ReadonlyArray<string> = [
 const withoutHost = (host: string): ReadonlyArray<string> =>
   runtimeBearingSourcePaths.filter((path) => path !== `platform/${host}.ts`)
 
+// effect/unstable/{http,process} are runtime necessities of the live driver
+// graph (every subpath today), allowed per-subpath; the declaration-side bite
+// is check-package-exports' entry-declaration grep. A future subpath does NOT
+// inherit these holes.
 export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
   {
     subpath: ".",
     allowedRuntimeSourcePaths: withoutHost("bun"),
-    allowedExternalPrefixes: ["node:", "@effect/platform-node"],
+    allowedExternalPrefixes: [
+      "node:", "@effect/platform-node", "effect/unstable/http", "effect/unstable/process"
+    ],
     allowsBunGlobal: false
   },
   {
     subpath: "./node",
     allowedRuntimeSourcePaths: withoutHost("bun"),
-    allowedExternalPrefixes: ["node:", "@effect/platform-node"],
+    allowedExternalPrefixes: [
+      "node:", "@effect/platform-node", "effect/unstable/http", "effect/unstable/process"
+    ],
     allowsBunGlobal: false
   },
   {
     subpath: "./bun",
     allowedRuntimeSourcePaths: withoutHost("node"),
-    allowedExternalPrefixes: ["node:", "@effect/platform-bun"],
+    allowedExternalPrefixes: [
+      "node:", "@effect/platform-bun", "effect/unstable/http", "effect/unstable/process"
+    ],
     allowsBunGlobal: false
   }
 ]

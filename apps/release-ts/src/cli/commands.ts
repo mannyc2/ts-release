@@ -1,9 +1,12 @@
+import * as Schema from "effect/Schema"
 import { realpathSync } from "node:fs"
 import { dirname, isAbsolute, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import {
+  ExecutionReviewId, OperationId, PlanId, PublishReviewId, Stage
+} from "@mannyc1/ts-release"
 import type {
-  ApplyInput, ExecutionReviewId, ExecutionScopeInput, OperationId,
-  OperatorResolution, PlanId, PublishReviewId, ReleaseApi, Stage
+  ApplyInput, ExecutionScopeInput, OperatorResolution, ReleaseApi
 } from "@mannyc1/ts-release"
 
 export const commandNames = ["init", "doctor", "plan", "apply"] as const
@@ -47,22 +50,19 @@ export const selectCliWorkspace = (
   : isAbsolute(configPath) ? dirname(configPath) : cwd)
 const scope = (value: string | undefined): ExecutionScopeInput => value === undefined || value === "all"
   ? "all"
-  : { operationIds: value.split(",").filter(Boolean).map((id) => id as OperationId) }
+  : { operationIds: value.split(",").filter(Boolean).map((id) => OperationId.make(id)) }
+// The api is the validator; the CLI only keeps JSON parse errors readable.
 const resolutions = (value: string | undefined): ReadonlyArray<OperatorResolution> | undefined => {
   if (value === undefined) return undefined
-  const parsed = JSON.parse(value) as unknown
-  if (!Array.isArray(parsed) || parsed.some((item) =>
-    typeof item !== "object" || item === null ||
-    !["committed", "absent"].includes(String(Reflect.get(item, "outcome"))) ||
-    ["operationId", "operator", "reason"].some((key) =>
-      typeof Reflect.get(item, key) !== "string" || Reflect.get(item, key).length === 0))) {
-    throw new Error("--resolutions must be a JSON array of operationId, outcome, operator, and reason.")
+  try {
+    return JSON.parse(value) as Array<OperatorResolution>
+  } catch {
+    throw new Error("--resolutions must be valid JSON.")
   }
-  return parsed as Array<OperatorResolution>
 }
 const accepted = (plan: string, planId: string, cwd: string, io: CliIo) => ({
   planBytes: io.read(realpathSync(resolve(cwd, plan))),
-  expectedPlanId: planId as PlanId
+  expectedPlanId: PlanId.make(planId)
 })
 
 export const runInit = (options: InitOptions, cwd: string, io: CliIo): void => {
@@ -129,23 +129,25 @@ const applyInput = (options: ApplyOptions, cwd: string, io: CliIo): ApplyInput =
       : {
           newRun: {
             path: options.newRun, scope: scope(options.scope),
-            executionReviewId: options.confirmExecution! as ExecutionReviewId,
+            executionReviewId: ExecutionReviewId.make(options.confirmExecution!),
             reviewer: options.reviewer,
             ...(options.reason === undefined ? {} : { reason: options.reason })
           }
         }),
-    ...(options.through === undefined ? {} : { through: options.through as Stage }),
+    ...(options.through === undefined ? {} : {
+      through: Schema.decodeUnknownSync(Stage)(options.through)
+    }),
     ...(options.confirmPublish === undefined ? {} : {
       publishConfirmation: {
-        publishReviewId: options.confirmPublish as PublishReviewId, reviewer: options.reviewer
+        publishReviewId: PublishReviewId.make(options.confirmPublish), reviewer: options.reviewer
       }
     }),
     ...(options.reconcile === undefined ? {} : {
-      reconcile: options.reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
+      reconcile: options.reconcile.split(",").filter(Boolean).map((id) => OperationId.make(id))
     }),
     ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems }),
     ...(options.retry === undefined ? {} : {
-      retry: options.retry.split(",").filter(Boolean).map((id) => id as OperationId)
+      retry: options.retry.split(",").filter(Boolean).map((id) => OperationId.make(id))
     })
   }
 }

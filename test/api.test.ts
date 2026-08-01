@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { mkdtempSync, realpathSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { plan } from "../src/index.js"
+import { apply, plan } from "../src/index.js"
 
 const config = {
   project: { name: "api-contract", version: "1.0.0", tag: "v1.0.0" },
@@ -24,5 +24,31 @@ describe("public plan API", () => {
       _tag: "ReleaseApiError",
       phase: "plan"
     })
+  })
+
+  test("the apply boundary decodes once: excess, malformed, and XOR refuse", async () => {
+    const base = {
+      planBytes: "{}",
+      expectedPlanId: "a".repeat(64),
+      workspace: "/tmp"
+    }
+    await expect(apply({ ...base, resumeRunPath: "runs", extra: 1 } as never))
+      .rejects.toThrow(/extra/)
+    // The case the Action previously admitted: a malformed operator override.
+    await expect(apply({
+      ...base,
+      resumeRunPath: "runs",
+      resolutions: [{ operationId: "x", outcome: "maybe", operator: "o", reason: "r" }]
+    } as never)).rejects.toMatchObject({ _tag: "ReleaseApiError", phase: "apply" })
+    await expect(apply({
+      ...base,
+      resumeRunPath: "runs",
+      newRun: {
+        path: "runs",
+        scope: "all",
+        executionReviewId: "e".repeat(64),
+        reviewer: "reviewer"
+      }
+    } as never)).rejects.toThrow(/Choose exactly one of newRun or resumeRunPath/)
   })
 })

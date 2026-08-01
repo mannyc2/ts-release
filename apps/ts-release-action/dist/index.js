@@ -25982,6 +25982,7 @@ function Literal2(literal) {
   });
   return out;
 }
+var Unknown2 = /* @__PURE__ */ make12(unknown);
 var String4 = /* @__PURE__ */ make12(string2);
 var Number5 = /* @__PURE__ */ make12(number2);
 var Boolean3 = /* @__PURE__ */ make12(boolean);
@@ -35696,16 +35697,56 @@ class ReleaseApiError extends Error {
 // ../../src/api/input.ts
 import { existsSync as existsSync5, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
 import { dirname as dirname3, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve6, sep as sep2 } from "node:path";
-var exact = (phase, value2, keys2, label) => {
-  if (typeof value2 !== "object" || value2 === null || Array.isArray(value2)) {
-    throw new ReleaseApiError(phase, `${label} must be an object.`);
+var ScopeInputSchema = Union2([
+  Literal2("all"),
+  Struct({ operationIds: NonEmptyArray(String4) })
+]);
+var PlanInputSchema = Struct({
+  config: Unknown2,
+  workspace: String4
+});
+var ReviewExecutionInputSchema = Struct({
+  planBytes: String4,
+  expectedPlanId: PlanId,
+  scope: ScopeInputSchema
+});
+var OperatorResolutionSchema = Struct({
+  operationId: String4,
+  outcome: Literals(["committed", "absent"]),
+  operator: NonEmptyString,
+  reason: NonEmptyString
+});
+var NewRunSchema = Struct({
+  path: String4,
+  scope: ScopeInputSchema,
+  executionReviewId: ExecutionReviewId,
+  reviewer: String4,
+  reason: optionalKey2(String4)
+});
+var PublishConfirmationSchema = Struct({
+  publishReviewId: PublishReviewId,
+  reviewer: String4
+});
+var ApplyInputSchema = Struct({
+  planBytes: String4,
+  expectedPlanId: PlanId,
+  workspace: String4,
+  newRun: optionalKey2(NewRunSchema),
+  resumeRunPath: optionalKey2(String4),
+  through: optionalKey2(Stage),
+  publishConfirmation: optionalKey2(PublishConfirmationSchema),
+  reconcile: optionalKey2(ArraySchema(String4)),
+  resolutions: optionalKey2(ArraySchema(OperatorResolutionSchema)),
+  retry: optionalKey2(ArraySchema(String4))
+}).check(makeFilter2((value2) => value2.newRun === undefined === (value2.resumeRunPath === undefined) ? "Choose exactly one of newRun or resumeRunPath." : undefined));
+var decodeInput = (phase, schema2, value2) => {
+  try {
+    return decodeUnknownSync(schema2, { onExcessProperty: "error" })(value2);
+  } catch (cause) {
+    throw new ReleaseApiError(phase, String(cause).split(`
+`).slice(0, 8).join(`
+`).slice(0, 500));
   }
-  const record2 = value2;
-  const excess = Object.keys(record2).filter((key) => !keys2.includes(key));
-  if (excess.length > 0) {
-    throw new ReleaseApiError(phase, `${label} has excess field ${excess[0]}.`);
-  }
-  return record2;
 };
 var workspace = (phase, value2) => {
   if (!isAbsolute2(value2) || value2.length === 0) {
@@ -35734,8 +35775,8 @@ var within = (root, value2) => {
 var topology = () => ExecutionTopologyHash.make("single-machine/v1");
 var selectScope = (accepted, input2) => {
   const available = accepted.operationHashes.map(({ operationId: operationId2 }) => operationId2);
-  const requested = input2 === "all" ? available : exact("review", input2, ["operationIds"], "scope").operationIds;
-  if (!Array.isArray(requested) || requested.length === 0) {
+  const requested = input2 === "all" ? available : input2.operationIds;
+  if (requested.length === 0) {
     throw new ReleaseApiError("review", "Execution scope must be nonempty.");
   }
   const ids = [...new Set(requested.map(String))];
@@ -35780,9 +35821,7 @@ var recoveries = (ledger, input2) => [
     operationId: OperationId.make(String(id))
   }))
 ];
-var prepareNew = (plan, root, input2) => {
-  const request = input2.newRun;
-  exact("apply", request, ["path", "scope", "executionReviewId", "reviewer", "reason"], "newRun");
+var prepareNew = (plan, root, request) => {
   const selected2 = selectScope(plan, request.scope);
   const topologyHash = topology();
   const execution = mintExecutionReceipt(plan, selected2, topologyHash, {
@@ -35840,7 +35879,6 @@ var publishOutput = async (run4, plan, input2, prepared, review) => {
       nextPublishReviewId: review.reviewId
     });
   }
-  exact("apply", input2.publishConfirmation, ["publishReviewId", "reviewer"], "publishConfirmation");
   const publish = mintPublishReceipt(prepared.execution, review.reviewId, {
     reviewId: input2.publishConfirmation.publishReviewId,
     reviewer: input2.publishConfirmation.reviewer,
@@ -35867,37 +35905,27 @@ var publishOutput = async (run4, plan, input2, prepared, review) => {
   });
 };
 var makeApply = (run4) => async (input2) => {
-  exact("apply", input2, [
-    "planBytes",
-    "expectedPlanId",
-    "workspace",
-    "newRun",
-    "resumeRunPath",
-    "through",
-    "publishConfirmation",
-    "reconcile",
-    "resolutions",
-    "retry"
-  ], "apply input");
-  if (input2.newRun === undefined === (input2.resumeRunPath === undefined)) {
+  const decoded = decodeInput("apply", ApplyInputSchema, input2);
+  const selector = decoded.newRun !== undefined ? { _tag: "New", request: decoded.newRun } : decoded.resumeRunPath !== undefined ? { _tag: "Resume", path: decoded.resumeRunPath } : undefined;
+  if (selector === undefined) {
     throw new ReleaseApiError("apply", "Choose exactly one of newRun or resumeRunPath.");
   }
-  const plan = await run4("apply", acceptExpected(input2.planBytes, input2.expectedPlanId));
-  const root = workspace("apply", input2.workspace);
-  const prepared = input2.newRun === undefined ? prepareResume(plan, root, input2.resumeRunPath) : prepareNew(plan, root, input2);
+  const plan = await run4("apply", acceptExpected(decoded.planBytes, decoded.expectedPlanId));
+  const root = workspace("apply", decoded.workspace);
+  const prepared = selector._tag === "New" ? prepareNew(plan, root, selector.request) : prepareResume(plan, root, selector.path);
   const first = await run4("apply", applyAcceptedPlan(plan, {
     root,
     snapshotDirectory: `${prepared.runPath}.snapshots`,
-    through: input2.through ?? "verify",
+    through: decoded.through ?? "verify",
     executionReceipt: prepared.execution,
-    recoveries: recoveries(prepared.ledger, input2),
-    run: input2.newRun === undefined ? {
+    recoveries: recoveries(prepared.ledger, decoded),
+    run: selector._tag === "Resume" ? {
       _tag: "ResumeRun",
       path: prepared.runPath,
       expected: expectedLedger(plan)
     } : { _tag: "NewRun", path: prepared.runPath, ledger: prepared.ledger }
   }));
-  return publishOutput(run4, plan, input2, prepared, first);
+  return publishOutput(run4, plan, decoded, prepared, first);
 };
 
 // ../../src/api/api.ts
@@ -35908,10 +35936,10 @@ var makeReleaseApi = (layer7) => {
     throw ReleaseApiError.from(phase, cause);
   });
   const plan = async (input2) => {
-    exact("plan", input2, ["config", "workspace"], "plan input");
-    const config = await run4("plan", decodePlanningConfig(input2.config));
-    const root = workspace("plan", input2.workspace);
-    const result2 = await run4("plan", compilePlan(input2.config, Invocation.make({
+    const decoded = decodeInput("plan", PlanInputSchema, input2);
+    const config = await run4("plan", decodePlanningConfig(decoded.config));
+    const root = workspace("plan", decoded.workspace);
+    const result2 = await run4("plan", compilePlan(decoded.config, Invocation.make({
       workspace: root,
       commit: NonEmptyName.make(config.project.commit ?? "unknown"),
       snapshot: false
@@ -35919,9 +35947,9 @@ var makeReleaseApi = (layer7) => {
     return { plan: result2.plan, bytes: decoder2.decode(result2.bytes), planId: result2.planId };
   };
   const reviewExecution = async (input2) => {
-    exact("review", input2, ["planBytes", "expectedPlanId", "scope"], "review input");
-    const accepted = await run4("review", acceptExpected(input2.planBytes, input2.expectedPlanId));
-    const scope4 = selectScope(accepted, input2.scope);
+    const decoded = decodeInput("review", ReviewExecutionInputSchema, input2);
+    const accepted = await run4("review", acceptExpected(decoded.planBytes, decoded.expectedPlanId));
+    const scope4 = selectScope(accepted, decoded.scope);
     return {
       scope: scope4,
       executionReviewId: executionReviewId(accepted, scope4, topology())
@@ -35966,14 +35994,15 @@ var containedOutput = (root, path2) => {
   const candidate = isAbsolute3(path2) ? resolve7(path2) : resolve7(root, path2);
   return inside(root, resolve7(realpathSync4(dirname4(candidate)), basename3(candidate)));
 };
-var scope4 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => id) };
+var scope4 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => OperationId.make(id)) };
 var resolutions = (value2) => {
   if (value2 === undefined)
     return;
-  const parsed = JSON.parse(value2);
-  if (!Array.isArray(parsed))
-    throw new Error("resolutions must be a JSON array.");
-  return parsed;
+  try {
+    return JSON.parse(value2);
+  } catch {
+    throw new Error("resolutions must be valid JSON.");
+  }
 };
 var accepted = (runtime, root) => {
   const path2 = optional3(runtime, "plan-path");
@@ -35984,7 +36013,7 @@ var accepted = (runtime, root) => {
     throw new Error("plan-id is required.");
   return {
     planBytes: runtime.read(contained2(root, path2)),
-    expectedPlanId: planId
+    expectedPlanId: PlanId.make(planId)
   };
 };
 var planAction = async (api2, runtime, root) => {
@@ -36017,7 +36046,8 @@ var applyInput = (runtime, root) => {
     throw new Error("confirm-execution is required for a new run.");
   }
   const publish = optional3(runtime, "confirm-publish");
-  const through = optional3(runtime, "through");
+  const throughInput = optional3(runtime, "through");
+  const through = throughInput === undefined ? undefined : decodeUnknownSync(Stage)(throughInput);
   const reconcile3 = optional3(runtime, "reconcile");
   const retry3 = optional3(runtime, "retry");
   const resolutionItems = resolutions(optional3(runtime, "resolutions"));
@@ -36029,21 +36059,21 @@ var applyInput = (runtime, root) => {
       newRun: {
         path: newRunPath,
         scope: scope4(optional3(runtime, "scope")),
-        executionReviewId: review,
+        executionReviewId: ExecutionReviewId.make(review),
         reviewer,
         ...reason === undefined ? {} : { reason }
       }
     },
     ...through === undefined ? {} : { through },
     ...publish === undefined ? {} : {
-      publishConfirmation: { publishReviewId: publish, reviewer }
+      publishConfirmation: { publishReviewId: PublishReviewId.make(publish), reviewer }
     },
     ...reconcile3 === undefined ? {} : {
-      reconcile: reconcile3.split(",").filter(Boolean).map((id) => id)
+      reconcile: reconcile3.split(",").filter(Boolean).map((id) => OperationId.make(id))
     },
     ...resolutionItems === undefined ? {} : { resolutions: resolutionItems },
     ...retry3 === undefined ? {} : {
-      retry: retry3.split(",").filter(Boolean).map((id) => id)
+      retry: retry3.split(",").filter(Boolean).map((id) => OperationId.make(id))
     }
   };
 };

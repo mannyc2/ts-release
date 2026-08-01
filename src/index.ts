@@ -27,13 +27,15 @@ export type {
 export type {
   ReleasePlanV6
 } from "./model/plan.js"
-export type {
+// Branded id constructors are values: apps and hosts construct ids through
+// their throwing schemas instead of as-casting raw strings.
+export {
   ExecutionReviewId,
   OperationId,
   PlanId,
   PublishReviewId
 } from "./model/primitives.js"
-export type { Stage } from "./model/run.js"
+export { Stage } from "./model/run.js"
 // The services makeReleaseApi composes. Exported as tags plus shapes so a host
 // or a test can build a ReleaseApiLayer from its own implementations, and as
 // ReleaseServicesLive for everything but the two host capabilities.

@@ -1,8 +1,11 @@
+import * as Schema from "effect/Schema"
 import { realpathSync } from "node:fs"
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path"
+import {
+  ExecutionReviewId, OperationId, PlanId, PublishReviewId, Stage
+} from "@mannyc1/ts-release"
 import type {
-  ApplyInput, ExecutionReviewId, ExecutionScopeInput, OperationId,
-  OperatorResolution, PlanId, PublishReviewId, ReleaseApi, Stage
+  ApplyInput, ExecutionScopeInput, OperatorResolution, ReleaseApi
 } from "@mannyc1/ts-release"
 
 export const actionCommands = ["plan", "apply", "doctor"] as const
@@ -38,12 +41,15 @@ const containedOutput = (root: string, path: string): string => {
 }
 const scope = (value: string | undefined): ExecutionScopeInput => value === undefined || value === "all"
   ? "all"
-  : { operationIds: value.split(",").filter(Boolean).map((id) => id as OperationId) }
+  : { operationIds: value.split(",").filter(Boolean).map((id) => OperationId.make(id)) }
+// The api is the validator; the Action only keeps JSON parse errors readable.
 const resolutions = (value: string | undefined): ReadonlyArray<OperatorResolution> | undefined => {
   if (value === undefined) return undefined
-  const parsed = JSON.parse(value) as unknown
-  if (!Array.isArray(parsed)) throw new Error("resolutions must be a JSON array.")
-  return parsed as Array<OperatorResolution>
+  try {
+    return JSON.parse(value) as Array<OperatorResolution>
+  } catch {
+    throw new Error("resolutions must be valid JSON.")
+  }
 }
 const accepted = (runtime: ActionRuntime, root: string) => {
   const path = optional(runtime, "plan-path")
@@ -52,7 +58,7 @@ const accepted = (runtime: ActionRuntime, root: string) => {
   if (planId === undefined) throw new Error("plan-id is required.")
   return {
     planBytes: runtime.read(contained(root, path)),
-    expectedPlanId: planId as PlanId
+    expectedPlanId: PlanId.make(planId)
   }
 }
 const planAction = async (
@@ -93,7 +99,10 @@ const applyInput = (runtime: ActionRuntime, root: string): ApplyInput => {
     throw new Error("confirm-execution is required for a new run.")
   }
   const publish = optional(runtime, "confirm-publish")
-  const through = optional(runtime, "through") as Stage | undefined
+  const throughInput = optional(runtime, "through")
+  const through = throughInput === undefined
+    ? undefined
+    : Schema.decodeUnknownSync(Stage)(throughInput)
   const reconcile = optional(runtime, "reconcile")
   const retry = optional(runtime, "retry")
   const resolutionItems = resolutions(optional(runtime, "resolutions"))
@@ -104,20 +113,20 @@ const applyInput = (runtime: ActionRuntime, root: string): ApplyInput => {
     ...(newRunPath === undefined ? { resumeRunPath: resumeRunPath! } : {
       newRun: {
         path: newRunPath, scope: scope(optional(runtime, "scope")),
-        executionReviewId: review! as ExecutionReviewId, reviewer,
+        executionReviewId: ExecutionReviewId.make(review!), reviewer,
         ...(reason === undefined ? {} : { reason })
       }
     }),
     ...(through === undefined ? {} : { through }),
     ...(publish === undefined ? {} : {
-      publishConfirmation: { publishReviewId: publish as PublishReviewId, reviewer }
+      publishConfirmation: { publishReviewId: PublishReviewId.make(publish), reviewer }
     }),
     ...(reconcile === undefined ? {} : {
-      reconcile: reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
+      reconcile: reconcile.split(",").filter(Boolean).map((id) => OperationId.make(id))
     }),
     ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems }),
     ...(retry === undefined ? {} : {
-      retry: retry.split(",").filter(Boolean).map((id) => id as OperationId)
+      retry: retry.split(",").filter(Boolean).map((id) => OperationId.make(id))
     })
   }
 }

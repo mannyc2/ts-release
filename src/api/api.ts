@@ -6,7 +6,9 @@ import { compilePlan, decodePlanningConfig, Invocation } from "../plan/compiler.
 import { NodeReleaseLayer } from "../platform/node.js"
 import { makeApply } from "./apply-boundary.js"
 import {
-  exact,
+  decodeInput,
+  PlanInputSchema,
+  ReviewExecutionInputSchema,
   selectScope,
   topology,
   workspace,
@@ -38,10 +40,10 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
     throw ReleaseApiError.from(phase, cause)
   })
   const plan = async (input: PlanInput) => {
-    exact("plan", input, ["config", "workspace"], "plan input")
-    const config = await run("plan", decodePlanningConfig(input.config))
-    const root = workspace("plan", input.workspace)
-    const result = await run("plan", compilePlan(input.config, Invocation.make({
+    const decoded = decodeInput("plan", PlanInputSchema, input)
+    const config = await run("plan", decodePlanningConfig(decoded.config))
+    const root = workspace("plan", decoded.workspace)
+    const result = await run("plan", compilePlan(decoded.config, Invocation.make({
       workspace: root,
       commit: NonEmptyName.make(config.project.commit ?? "unknown"),
       snapshot: false
@@ -49,9 +51,9 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
     return { plan: result.plan, bytes: decoder.decode(result.bytes), planId: result.planId }
   }
   const reviewExecution = async (input: ReviewExecutionInput) => {
-    exact("review", input, ["planBytes", "expectedPlanId", "scope"], "review input")
-    const accepted = await run("review", acceptExpected(input.planBytes, input.expectedPlanId))
-    const scope = selectScope(accepted, input.scope)
+    const decoded = decodeInput("review", ReviewExecutionInputSchema, input)
+    const accepted = await run("review", acceptExpected(decoded.planBytes, decoded.expectedPlanId))
+    const scope = selectScope(accepted, decoded.scope)
     return {
       scope,
       executionReviewId: executionReviewId(accepted, scope, topology())

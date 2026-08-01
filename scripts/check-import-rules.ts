@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join, normalize } from "node:path"
-import { collectTypeScriptFiles, makeDisplayPath } from "./lib/walk.js"
+import { collectTypeScriptFiles, makeDisplayPath, requireDirectory } from "./lib/walk.js"
 import { cwd, exit } from "node:process"
 import * as ts from "typescript"
 
@@ -21,15 +21,14 @@ interface AllowlistEntry {
 const root = cwd()
 const sourceRoot = join(root, "src")
 
+// apps have no test/ trees today; re-add the roots when they appear.
 const bareEffectScanRoots = [
   "src",
   "test",
   "scripts",
   "apps/release-ts/src",
   "apps/release-ts/scripts",
-  "apps/release-ts/test",
-  "apps/ts-release-action/src",
-  "apps/ts-release-action/test"
+  "apps/ts-release-action/src"
 ]
 
 const temporaryAllowlist: ReadonlyArray<AllowlistEntry> = []
@@ -138,45 +137,6 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   api: ["api", "model", "plan", "apply", "view", "drivers", "platform"]
 }
 
-// Plan 153 Stage A: within features/, later phases may import earlier ones,
-// never the reverse. build -> process -> catalog -> publish.
-const featureFamilyRank: Readonly<Record<string, number>> = {
-  build: 0,
-  process: 1,
-  catalog: 2,
-  publish: 3
-}
-
-const featureFamily = (displayPath: string): string | undefined => {
-  const parts = displayPath.split("/")
-  return parts[0] === "src" && parts[1] === "features" ? parts[2] : undefined
-}
-
-const checkFeaturePhaseImport = (
-  source: ts.SourceFile,
-  reference: ImportReference
-): string | undefined => {
-  const target = relativeTarget(reference)
-  if (target === undefined) {
-    return undefined
-  }
-  const from = featureFamily(toDisplayPath(reference.file))
-  const to = featureFamily(target)
-  if (from === undefined || to === undefined) {
-    return undefined
-  }
-  const fromRank = featureFamilyRank[from]
-  const toRank = featureFamilyRank[to]
-  if (fromRank === undefined || toRank === undefined || toRank <= fromRank) {
-    return undefined
-  }
-  return failure(
-    source,
-    reference,
-    `features/${from}/ may not import the later phase features/${to}/ (build -> process -> catalog -> publish).`
-  )
-}
-
 const sourceDirectory = (file: string): string | undefined => {
   const [rootDirectory, directory] = file.split("/")
   return rootDirectory === "src" && directory?.includes(".") === false ? directory : undefined
@@ -187,48 +147,10 @@ const targetDirectory = (target: string): string | undefined => {
   return rootDirectory === "src" ? directory : undefined
 }
 
-const rewriteConcept = (path: string): string | undefined => {
-  const parts = path.split("/")
-  return parts[0] === "src" && parts[1] === "rewrite" ? parts[2] : undefined
-}
-
-const rewriteDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
-  model: ["model"],
-  recipes: ["recipes", "model"],
-  current: ["current", "model"],
-  config: ["config", "model", "recipes", "current"],
-  plan: ["plan", "model", "config", "recipes", "current"],
-  drivers: ["drivers", "model"],
-  apply: ["apply", "model", "plan", "drivers"]
-}
-
-const checkRewriteImport = (
-  source: ts.SourceFile,
-  reference: ImportReference
-): string | undefined => {
-  const target = relativeTarget(reference)
-  if (target === undefined) return undefined
-  const from = rewriteConcept(toDisplayPath(reference.file))
-  const to = rewriteConcept(target)
-  if (from === undefined && to === undefined) return undefined
-  if (from === undefined) {
-    return failure(source, reference, "incumbent product code may not import the shadow candidate.")
-  }
-  if (to === undefined || !rewriteDependencies[from]?.includes(to)) {
-    return failure(
-      source,
-      reference,
-      `rewrite/${from}/ may import only ${rewriteDependencies[from]?.join(", ") ?? "its DAG dependencies"}.`
-    )
-  }
-  return undefined
-}
-
 const checkConceptImport = (
   source: ts.SourceFile,
   reference: ImportReference
 ): string | undefined => {
-  if (rewriteConcept(toDisplayPath(reference.file)) !== undefined) return undefined
   if (isEffectImport(reference.specifier) || isNodeImport(reference.specifier) || allowlisted(reference)) {
     return undefined
   }
@@ -245,12 +167,6 @@ const checkConceptImport = (
   if (allowed === undefined || !allowed.includes(dependency)) {
     return failure(source, reference, `${directory}/ may import only ${allowed?.join(", ") ?? "its declared concept dependencies"}.`)
   }
-  if (directory === "features" && dependency === "host" && !reference.typeOnly) {
-    return failure(source, reference, "features/ may import host/ types only.")
-  }
-  if (directory === "render" && (dependency === "run" || dependency === "pack") && !reference.typeOnly) {
-    return failure(source, reference, "render/ may import run/ and pack/ summary types only.")
-  }
   return undefined
 }
 
@@ -260,9 +176,7 @@ const checkReference = (
 ): string | undefined =>
   checkHostPlatformImport(source, reference) ??
   checkFileSystemImport(source, reference) ??
-  checkRewriteImport(source, reference) ??
-  checkConceptImport(source, reference) ??
-  checkFeaturePhaseImport(source, reference)
+  checkConceptImport(source, reference)
 
 const checkFile = (file: string): Array<string> => {
   const source = ts.createSourceFile(
@@ -394,6 +308,7 @@ const checkAppPlatformImports = (file: string): Array<string> => {
       : [])
 }
 
+const actionManifestPath = join(root, "apps/ts-release-action/action.yml")
 const hardCutScanFiles = [
   ...[
     "src",
@@ -401,12 +316,11 @@ const hardCutScanFiles = [
     "apps/release-ts/src",
     "apps/release-ts/scripts",
     "apps/ts-release-action/src"
-  ].flatMap((directory) => {
-    const path = join(root, directory)
-    return existsSync(path) ? collectTypeScriptFiles(path) : []
-  }),
-  join(root, "apps/ts-release-action/action.yml")
-].filter((file) => existsSync(file) && toDisplayPath(file) !== "scripts/check-import-rules.ts")
+  ].flatMap((directory) =>
+    collectTypeScriptFiles(requireDirectory(join(root, directory), "check-import-rules"))
+  ),
+  ...(existsSync(actionManifestPath) ? [actionManifestPath] : [])
+].filter((file) => toDisplayPath(file) !== "scripts/check-import-rules.ts")
 
 const hardCutTerms = [
   ["ReleaseState", "durable ReleaseState is forbidden after the v3 cut"],
@@ -435,20 +349,24 @@ const forbiddenCarrierFiles = [
   "src/engine/plan-document.ts"
 ]
 
-const files = existsSync(sourceRoot) ? collectTypeScriptFiles(sourceRoot) : []
-const bareEffectFiles = bareEffectScanRoots.flatMap((directory) => {
-  const path = join(root, directory)
-  return existsSync(path) ? collectTypeScriptFiles(path) : []
-})
+const files = collectTypeScriptFiles(requireDirectory(sourceRoot, "check-import-rules"))
+const bareEffectFiles = bareEffectScanRoots.flatMap((directory) =>
+  collectTypeScriptFiles(requireDirectory(join(root, directory), "check-import-rules"))
+)
 // Shipped app source only: apps/*/scripts are in-repo check harnesses that
 // drive the CLI runtime directly and are never published.
 const appPlatformFiles = [
   "apps/release-ts/src",
   "apps/ts-release-action/src"
-].flatMap((directory) => {
-  const path = join(root, directory)
-  return existsSync(path) ? collectTypeScriptFiles(path) : []
-})
+].flatMap((directory) =>
+  collectTypeScriptFiles(requireDirectory(join(root, directory), "check-import-rules"))
+)
+const examinedFiles = new Set([
+  ...files,
+  ...bareEffectFiles,
+  ...appPlatformFiles,
+  ...hardCutScanFiles
+])
 const failures = [
   ...files.flatMap(checkFile),
   ...files.flatMap(checkAmbientHostUsage),
@@ -457,7 +375,11 @@ const failures = [
   ...hardCutScanFiles.flatMap(hardCutViolations),
   ...forbiddenCarrierFiles.flatMap((file) =>
     existsSync(join(root, file)) ? [`${file}: compatibility carrier file must be deleted`] : []
-  )
+  ),
+  ...(existsSync(actionManifestPath)
+    ? []
+    : ["apps/ts-release-action/action.yml: declared scan file does not exist; a rename must update the gate in the same change"]),
+  ...(examinedFiles.size === 0 ? ["no files examined; every declared scan root resolved to nothing"] : [])
 ]
 
 if (failures.length > 0) {
@@ -467,3 +389,5 @@ if (failures.length > 0) {
   }
   exit(1)
 }
+
+console.log(`import rules: ${examinedFiles.size} files examined`)

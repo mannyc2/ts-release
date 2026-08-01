@@ -22,8 +22,9 @@
     },
     "types": ["bun-types"],
     "rootDir": ".",
-    "outDir": "dist"
+    "outDir": "dist",
+    "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts", "scripts/**/*.ts", "bunfig.toml"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["dist", ".repos", "node_modules"]
 }

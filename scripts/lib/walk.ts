@@ -26,5 +26,15 @@ export const collectTypeScriptFiles = (
   return files
 }
 
+export const requireDirectory = (directory: string, gate: string): string => {
+  if (!existsSync(directory)) {
+    throw new Error(
+      `${gate}: declared scan root ${directory} does not exist; ` +
+      `a rename or deletion must update the gate's root list in the same change.`
+    )
+  }
+  return directory
+}
+
 export const makeDisplayPath = (root: string) => (path: string): string =>
   relative(root, path).replaceAll("\\", "/")

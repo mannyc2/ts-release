@@ -8,7 +8,7 @@ import {
   publicExportPolicies,
   runtimeBearingSourcePaths
 } from "./lib/public-api-policy.js"
-import { collectTypeScriptFiles as walkTypeScriptFiles, makeDisplayPath } from "./lib/walk.js"
+import { collectTypeScriptFiles as walkTypeScriptFiles, makeDisplayPath, requireDirectory } from "./lib/walk.js"
 
 interface ModuleReference {
   readonly specifier: string
@@ -31,10 +31,10 @@ const sourcePath = (...segments: ReadonlyArray<string>): string =>
 const rootSourcePath = sourcePath("index.ts")
 const cliDirectory = sourcePath("cli")
 const appDirectory = resolve(root, "apps", "release-ts")
+// apps have no test/ trees today; re-add the roots when they appear.
 const appScanRoots = [
   resolve(appDirectory, "src"),
-  resolve(appDirectory, "scripts"),
-  resolve(appDirectory, "test")
+  resolve(appDirectory, "scripts")
 ]
 
 const policySourcePath = (path: string): string =>
@@ -211,10 +211,11 @@ const scanTypeScriptFiles = (directory: string): Array<string> =>
   walkTypeScriptFiles(directory, { skipDirectory: (name) => name === "dist" || name === "node_modules" })
 
 const sourceFiles = (): Array<string> =>
-  scanTypeScriptFiles(resolve(root, "src"))
+  scanTypeScriptFiles(requireDirectory(resolve(root, "src"), "check-tree-shaking"))
 
 const appFiles = (): Array<string> =>
-  appScanRoots.flatMap(scanTypeScriptFiles)
+  appScanRoots.flatMap((scanRoot) =>
+    scanTypeScriptFiles(requireDirectory(scanRoot, "check-tree-shaking")))
 
 const bunGlobalLocations = (source: ts.SourceFile): Array<string> => {
   const failures: Array<string> = []
@@ -439,6 +440,11 @@ for (const target of targets) {
 checkRootDoesNotImportApp(failures)
 checkAppDoesNotImportPackageSubpaths(failures)
 
+const examinedFiles = new Set([...sourceFiles(), ...appFiles()])
+if (examinedFiles.size === 0) {
+  failures.push("no files examined; every declared scan root resolved to nothing")
+}
+
 if (failures.length > 0) {
   console.error("Tree-shaking boundary checks failed:")
   for (const failure of failures) {
@@ -446,3 +452,5 @@ if (failures.length > 0) {
   }
   exit(1)
 }
+
+console.log(`tree shaking: ${examinedFiles.size} files examined`)

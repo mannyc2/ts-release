@@ -98,7 +98,7 @@ const setup = async (unknownFirst = false, reconcileFound = false) => {
   const store = makeFileRunStore()
   const path = store.path(runs, execution.logicalRunId)
   const calls: Calls = { structured: 0, credentials: 0, mutations: [] }
-  const fakeCredential = process.env.REWRITE_FAKE_CREDENTIAL ?? randomBytes(32).toString("hex")
+  const fakeCredential = randomBytes(32).toString("hex")
   let uncertain = unknownFirst
   const catalog: DriverCatalogShape = {
     structured: () => Effect.sync(() => {

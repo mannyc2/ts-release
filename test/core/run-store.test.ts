@@ -134,7 +134,7 @@ describe("file-backed RunStore", () => {
     }
   })
 
-  test("corrupt, stale, foreign, and killed temporary writes refuse without mutation", async () => {
+  test("corrupt, stale, foreign, and torn temporary writes refuse without mutation", async () => {
     const directory = root()
     try {
       const accepted = await acceptedRunPlan()
@@ -163,20 +163,17 @@ describe("file-backed RunStore", () => {
       const path = store.path(directory, logicalRunId)
       await Effect.runPromise(store.create(path, ledger))
       const durable = readFileSync(path, "utf8")
-      const child = Bun.spawn([
-        process.execPath,
-        "-e",
-        "await Bun.write(process.argv[1], '{\"truncated\":');process.kill(process.pid, 'SIGKILL')",
-        join(directory, ".killed.tmp")
-      ], { stdout: "pipe", stderr: "pipe" })
-      await child.exited
-      expect(readFileSync(path, "utf8")).toBe(durable)
+      // A torn temporary matching the atomic-write naming pattern must never
+      // become the ledger: load keeps serving the intact durable bytes.
+      writeFileSync(join(directory, ".deadbeef.run-ledger.tmp"), '{"torn":')
       const expected = {
         planId: accepted.planId,
-        operationHashes: [],
+        operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash)),
         scope,
         topologyHash: topology
       }
+      expect((await Effect.runPromise(store.load(path, expected))).revision).toBe(0)
+      expect(readFileSync(path, "utf8")).toBe(durable)
       expect((await failure(store.load(path, {
         ...expected,
         planId: "foreign" as typeof accepted.planId

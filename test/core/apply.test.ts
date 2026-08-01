@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "node:crypto"
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync
@@ -26,6 +27,7 @@ import {
 } from "../../src/apply/transition.js"
 import {
   RunStore,
+  decodeLedger,
   makeFileRunStore
 } from "../../src/apply/store.js"
 import {
@@ -41,6 +43,7 @@ import {
   makeNodeWorkspaceStore
 } from "../../src/drivers/workspace.js"
 import {
+  DriverError,
   ExecutionApprovalReceipt,
   ExecutionScope
 } from "../../src/model/run.js"
@@ -65,7 +68,10 @@ interface Calls {
     readonly content?: string | undefined
   }>
 }
-const setup = async (unknownFirst = false, reconcileFound = false) => {
+const setup = async (unknownFirst = false, reconcileFound = false, options?: {
+  readonly credentialFailuresBeforeSuccess?: number
+  readonly scope?: ReadonlyArray<string>
+}) => {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-apply-")))
   const root = join(directory, "workspace")
   const snapshots = join(directory, "snapshots")
@@ -75,8 +81,8 @@ const setup = async (unknownFirst = false, reconcileFound = false) => {
   writeFileSync(join(root, "dist/second"), "second")
   const accepted = await acceptedRunPlan()
   const scope = ExecutionScope.make({
-    operationIds: accepted.operationHashes.map(({ operationId }) =>
-      OperationId.make(operationId))
+    operationIds: options?.scope?.map((id) => OperationId.make(id)) ??
+      accepted.operationHashes.map(({ operationId }) => OperationId.make(operationId))
   })
   const topology = ExecutionTopologyHash.make("single-machine/v1")
   const reviewId = executionReviewId(accepted, scope, topology)
@@ -134,11 +140,19 @@ const setup = async (unknownFirst = false, reconcileFound = false) => {
       ...(reconcileFound ? { remoteId: "observed-upload" } : {})
     }))
   }
+  let credentialFailures = options?.credentialFailuresBeforeSuccess ?? 0
   const credential = {
     getRead: () => Effect.die("unused"),
-    getPublish: () => Effect.sync(() => {
+    getPublish: () => Effect.suspend(() => {
+      if (credentialFailures > 0) {
+        credentialFailures -= 1
+        return Effect.fail(DriverError.make({
+          reason: "Publish credential NPM_TOKEN is unset.",
+          commitment: "before-commit"
+        }))
+      }
       calls.credentials += 1
-      return fakeCredential
+      return Effect.succeed(fakeCredential)
     })
   }
   const layer = Layer.mergeAll(
@@ -231,7 +245,7 @@ describe("applyAcceptedPlan", () => {
       expect(operationStatus(result, OperationId.make("upload"))?._tag).toBe("Passed")
       expect(operationStatus(result, OperationId.make("forge"))?._tag).toBe("Passed")
       expect(fixture.calls.structured).toBe(3)
-      expect(fixture.calls.credentials).toBe(4)
+      expect(fixture.calls.credentials).toBe(2)
       expect(fixture.calls.mutations.map((call) => [
         call.checkpoint,
         call.content
@@ -275,6 +289,44 @@ describe("applyAcceptedPlan", () => {
       ).pipe(Effect.provide(fixture.layer)))).rejects.toBeDefined()
       expect(fixture.calls.credentials).toBe(0)
       expect(fixture.calls.mutations).toEqual([])
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("a missing credential before dispatch stays retryable and never turns unknown", async () => {
+    const fixture = await setup(false, false, {
+      credentialFailuresBeforeSuccess: 1,
+      scope: ["source", "second", "trusted", "upload"]
+    })
+    try {
+      const challenge = await Effect.runPromise(applyAcceptedPlan(
+        fixture.accepted,
+        { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
+      ).pipe(Effect.provide(fixture.layer)))
+      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
+        reviewId: challenge.reviewId,
+        reviewer: "reviewer",
+        approvalNonce: ApprovalNonce.make("publish-nonce"),
+        approvedAt: "later"
+      })
+      await expect(Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
+        ...fixture.base,
+        run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected },
+        publish: { receipt: publish }
+      }).pipe(Effect.provide(fixture.layer)))).rejects.toBeDefined()
+      const durable = decodeLedger(readFileSync(fixture.path, "utf8"))
+      expect(operationStatus(durable, OperationId.make("upload"))?._tag).toBe("Pending")
+      expect(fixture.calls.mutations).toEqual([])
+      const result = await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
+        ...fixture.base,
+        run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected },
+        publish: { receipt: publish }
+      }).pipe(Effect.provide(fixture.layer)))
+      if ("_tag" in result) throw new Error("Expected ledger.")
+      expect(operationStatus(result, OperationId.make("upload"))?._tag).toBe("Passed")
+      expect(fixture.calls.mutations).toHaveLength(1)
     } finally {
       rmSync(fixture.directory, { recursive: true, force: true })
     }

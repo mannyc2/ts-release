@@ -3,13 +3,13 @@ import {
   ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId,
   reconciliationKey, supplyChainReconciliationKey
 } from "./approval.js"
-import { operationStatus, settled, transition, type TransitionCommand } from "./transition.js"
+import { checkpointIds, operationStatus, settled, transition, type TransitionCommand } from "./transition.js"
 import { RunStore, type ExpectedLedger, type RunStoreShape } from "./store.js"
 import {
   CatalogPublishRequest, CatalogStructuredRequest, CommitmentUnknown, CredentialStore,
   DriverCatalog, isClosedProfilePublish, NotDispatched, SnapshotRequest,
   WorkspaceStore, type CredentialStoreShape, type DriverCatalogShape,
-  type MutationResult, type WorkspaceStoreShape
+  type MutationResult, type VerifiedContentHandle, type WorkspaceStoreShape
 } from "../drivers/services.js"
 import type { ExecutionPermit, PublishPermit } from "../model/permit.js"
 import {
@@ -163,17 +163,41 @@ const publishOperation = (
   ctx: ApplyContext, ledger: RunLedger, operation: RemotePublishOp,
   materials: ReadonlyArray<MaterializedOutput>, permit: PublishPermit
 ) => Effect.gen(function*() {
-  let next = operationStatus(ledger, operation.id)?._tag === "Pending"
-    ? yield* moved(ctx, ledger,
-        { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt })
-    : ledger
-  const status = operationStatus(next, operation.id)
-  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : []
+  const before = operationStatus(ledger, operation.id)
   const operationHash = OperationHash.make(ctx.accepted.operationHashes
     .find((item) => item.operationId === operation.id)!.hash)
   const bindings = materials.filter((item) => operation.inputs.includes(item.outputId))
   const subject = bindings[0]
   const target = publishTarget(operation)
+  const pendingIds = before?._tag === "DispatchingPublish"
+    ? before.progress.filter((item) => item._tag === "CheckpointPending")
+        .map((item) => item.checkpointId)
+    : checkpointIds(operation)
+  if (pendingIds.length === 0) {
+    return yield* moved(ctx, ledger,
+      { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." })
+  }
+  // Everything that can fail locally — snapshot verification and the
+  // credential fetch — happens BEFORE any durable publish intent, so a ledger
+  // that says "dispatching" always means the wire was actually reached.
+  const handles = new Map<string, VerifiedContentHandle | undefined>()
+  for (const checkpointId of pendingIds) {
+    const subjectFromInputs = checkpointId === "dispatch" ||
+      (isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish")
+    const outputId = subjectFromInputs
+      ? String(operation.inputs[0] ?? "")
+      : String(checkpointId).replace(/^asset:/u, "")
+    const facts = materials.find((item) => item.outputId === outputId)
+    handles.set(String(checkpointId), facts === undefined ? undefined
+      : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts))
+  }
+  const credential = yield* ctx.credential.getPublish(operation.credential, permit)
+  let next = before?._tag === "Pending"
+    ? yield* moved(ctx, ledger,
+        { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt })
+    : ledger
+  const status = operationStatus(next, operation.id)
+  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : []
   for (const checkpoint of checkpoints) {
     if (checkpoint._tag !== "CheckpointPending") continue
     const key = reconciliationKeyFor(ctx, next, operation, operationHash,
@@ -185,18 +209,10 @@ const publishOperation = (
           targetCoordinates: target,
           ...(subject === undefined ? {} : { subjectDigest: subject.digest })
         } : {}) })
-    const subjectFromInputs = checkpoint.checkpointId === "dispatch" ||
-      (isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish")
-    const outputId = subjectFromInputs
-      ? String(operation.inputs[0] ?? "")
-      : String(checkpoint.checkpointId).replace(/^asset:/u, "")
-    const facts = materials.find((item) => item.outputId === outputId)
-    const handle = facts === undefined ? undefined
-      : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts)
-    const credential = yield* ctx.credential.getPublish(operation.credential, permit)
     const publish = CatalogPublishRequest.make({ operation,
       checkpointId: checkpoint.checkpointId, clientReconciliationKey: key })
-    const result = yield* dispatched(ctx.catalog.publish(publish, handle, credential))
+    const result = yield* dispatched(
+      ctx.catalog.publish(publish, handles.get(String(checkpoint.checkpointId)), credential))
     next = yield* moved(ctx, next, checkpointCommand(result, operation.id, checkpoint.checkpointId))
     if (result._tag !== "Committed") return next
   }

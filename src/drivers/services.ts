@@ -34,6 +34,10 @@ export class CatalogPublishRequest
       OpaquePublish
     ]),
     checkpointId: CheckpointId,
+    // Recorded durably for operator reconciliation on every mechanism;
+    // transmitted as Idempotency-Key only on HttpPublish (command-line
+    // publishers have no generic idempotency channel — npm/twine dedupe by
+    // name+version server-side).
     clientReconciliationKey: Schema.NonEmptyString
   }) {}
 export class CatalogStructuredRequest

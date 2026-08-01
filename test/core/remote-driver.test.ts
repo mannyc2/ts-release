@@ -2,7 +2,9 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as HttpClient from "effect/unstable/http/HttpClient"
 import { LiveDriversLayer } from "../../src/drivers/local.js"
+import { makeCatalog } from "../../src/drivers/remote.js"
 import {
   CatalogPublishRequest,
   DriverCatalog,
@@ -25,7 +27,7 @@ import {
   SafeRelativePath,
   SnapshotId
 } from "../../src/model/primitives.js"
-import { MaterializedOutput, type DriverError } from "../../src/model/run.js"
+import { DriverError, MaterializedOutput } from "../../src/model/run.js"
 import {
   recordingHttpClient,
   recordingSpawner,
@@ -237,5 +239,34 @@ describe("remote driver transports", () => {
     expect(outcome).toMatchObject({
       _tag: "CommitmentUnknown", failure: "Publisher exited 7 after dispatch."
     })
+  })
+
+  test("a publisher that never starts resolves retryable, not dead or unknown", async () => {
+    const catalog = makeCatalog(() => Effect.die("structured is unused"), {
+      client: HttpClient.make(() => Effect.die("http is unused")),
+      run: () => Effect.fail(DriverError.make({
+        reason: "spawn ENOENT",
+        commitment: "before-commit"
+      }))
+    })
+    const outcome = await Effect.runPromise(
+      catalog.publish(request(opaque, "dispatch"), undefined, "token")
+    )
+    expect(outcome).toMatchObject({
+      _tag: "NotDispatched",
+      reason: "Publisher could not start: spawn ENOENT",
+      retryable: true
+    })
+  })
+
+  test("http publication transmits the reconciliation key as the idempotency key", async () => {
+    const result = await withCatalog(
+      () => ({ status: 204 }),
+      () => ({ exitCode: 0 }),
+      ({ exchanges }) => publish(request(http, "dispatch")).pipe(
+        Effect.map((outcome) => ({ outcome, exchanges: [...exchanges] })))
+    )
+    expect(result.outcome._tag).toBe("Committed")
+    expect(result.exchanges[0]?.headers["idempotency-key"]).toBe("stable-key")
   })
 })

@@ -30,13 +30,16 @@ const commandPublish = (
     operation._tag === "PackageRegistryRelease"
     ? operation.environmentNames
     : []
-  // A publisher that cannot be spawned at all is a defect, not a dispatch
-  // outcome: nothing reached the registry and no ledger state describes it.
+  // Durable dispatch intent already exists when this runs, so "the process
+  // never started" must stay retryable NotDispatched (nothing reached the
+  // registry), while any non-zero exit from a process that DID run stays
+  // CommitmentUnknown, because package managers can fail after committing.
   return transport.run({ argv, cwd: ".", environmentNames: names }).pipe(
-    Effect.orDie,
     Effect.map((result) => result.exitCode === 0
       ? Committed.make({ observedOutcome: result.stdout.trim() || "exit-0" })
-      : CommitmentUnknown.make({ failure: `Publisher exited ${result.exitCode} after dispatch.` }))
+      : CommitmentUnknown.make({ failure: `Publisher exited ${result.exitCode} after dispatch.` })),
+    Effect.catch((cause) => Effect.succeed(
+      NotDispatched.make({ reason: `Publisher could not start: ${cause.reason}`, retryable: true })))
   )
 }
 const httpRequest = (
@@ -50,7 +53,10 @@ const httpRequest = (
   const response = yield* transport.client.execute(HttpClientRequest.make(operation.method)(
     `${operation.wire.baseUrl}${operation.wire.pathTemplate}`,
     {
-      headers: { authorization: `Bearer ${credential}` },
+      headers: {
+        authorization: `Bearer ${credential}`,
+        "idempotency-key": request.clientReconciliationKey
+      },
       ...(bytes === undefined ? {} : { body: HttpBody.uint8Array(bytes) })
     }
   ))

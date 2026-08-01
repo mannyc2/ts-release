@@ -32827,14 +32827,17 @@ var ok = (response) => response.status >= 200 && response.status < 300;
 var commandPublish = (transport, request, argv) => {
   const operation = request.operation;
   const names = operation._tag === "OpaquePublish" || operation._tag === "PackageRegistryRelease" ? operation.environmentNames : [];
-  return transport.run({ argv, cwd: ".", environmentNames: names }).pipe(orDie2, map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })));
+  return transport.run({ argv, cwd: ".", environmentNames: names }).pipe(map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })), catch_2((cause) => succeed6(NotDispatched.make({ reason: `Publisher could not start: ${cause.reason}`, retryable: true }))));
 };
 var httpRequest = (transport, request, bytes, credential) => gen2(function* () {
   const operation = request.operation;
   if (operation._tag !== "HttpPublish")
     return yield* fail6(failure("Expected HTTP publication."));
   const response = yield* transport.client.execute(make23(operation.method)(`${operation.wire.baseUrl}${operation.wire.pathTemplate}`, {
-    headers: { authorization: `Bearer ${credential}` },
+    headers: {
+      authorization: `Bearer ${credential}`,
+      "idempotency-key": request.clientReconciliationKey
+    },
     ...bytes === undefined ? {} : { body: uint8Array(bytes) }
   }));
   return ok(response) ? Committed.make({ observedOutcome: String(response.status) }) : NotDispatched.make({ reason: `HTTP ${response.status}`, retryable: false });
@@ -33594,13 +33597,26 @@ var reconciliationKeyFor = (ctx, ledger, operation, operationHash, checkpointId,
   }
 };
 var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(function* () {
-  let next = operationStatus(ledger, operation.id)?._tag === "Pending" ? yield* moved(ctx, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
-  const status = operationStatus(next, operation.id);
-  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : [];
+  const before = operationStatus(ledger, operation.id);
   const operationHash = OperationHash.make(ctx.accepted.operationHashes.find((item) => item.operationId === operation.id).hash);
   const bindings = materials.filter((item) => operation.inputs.includes(item.outputId));
   const subject = bindings[0];
   const target2 = publishTarget(operation);
+  const pendingIds = before?._tag === "DispatchingPublish" ? before.progress.filter((item) => item._tag === "CheckpointPending").map((item) => item.checkpointId) : checkpointIds(operation);
+  if (pendingIds.length === 0) {
+    return yield* moved(ctx, ledger, { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." });
+  }
+  const handles = new Map;
+  for (const checkpointId of pendingIds) {
+    const subjectFromInputs = checkpointId === "dispatch" || isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish";
+    const outputId2 = subjectFromInputs ? String(operation.inputs[0] ?? "") : String(checkpointId).replace(/^asset:/u, "");
+    const facts = materials.find((item) => item.outputId === outputId2);
+    handles.set(String(checkpointId), facts === undefined ? undefined : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts));
+  }
+  const credential = yield* ctx.credential.getPublish(operation.credential, permit);
+  let next = before?._tag === "Pending" ? yield* moved(ctx, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
+  const status = operationStatus(next, operation.id);
+  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : [];
   for (const checkpoint3 of checkpoints) {
     if (checkpoint3._tag !== "CheckpointPending")
       continue;
@@ -33615,17 +33631,12 @@ var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(funct
         ...subject === undefined ? {} : { subjectDigest: subject.digest }
       } : {}
     });
-    const subjectFromInputs = checkpoint3.checkpointId === "dispatch" || isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish";
-    const outputId2 = subjectFromInputs ? String(operation.inputs[0] ?? "") : String(checkpoint3.checkpointId).replace(/^asset:/u, "");
-    const facts = materials.find((item) => item.outputId === outputId2);
-    const handle = facts === undefined ? undefined : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts);
-    const credential = yield* ctx.credential.getPublish(operation.credential, permit);
     const publish = CatalogPublishRequest.make({
       operation,
       checkpointId: checkpoint3.checkpointId,
       clientReconciliationKey: key
     });
-    const result2 = yield* dispatched(ctx.catalog.publish(publish, handle, credential));
+    const result2 = yield* dispatched(ctx.catalog.publish(publish, handles.get(String(checkpoint3.checkpointId)), credential));
     next = yield* moved(ctx, next, checkpointCommand(result2, operation.id, checkpoint3.checkpointId));
     if (result2._tag !== "Committed")
       return next;

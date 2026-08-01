@@ -358,7 +358,13 @@ const executeUnderNode = Effect.fn("scripts.checkActionBundle.executeUnderNode")
     ))
   }
   const dumped = yield* readText(path.join(realWorkspace, "env-dump.json"))
-  const names = Object.keys(JSON.parse(dumped) as Record<string, string>).sort()
+  // Darwin system libraries set __CF_USER_TEXT_ENCODING inside every process
+  // after the spawn environment is already closed, so the exactness proof
+  // exempts that one name on that one platform.
+  const hostInjected = process.platform === "darwin" ? ["__CF_USER_TEXT_ENCODING"] : []
+  const names = Object.keys(JSON.parse(dumped) as Record<string, string>)
+    .filter((name) => !hostInjected.includes(name))
+    .sort()
   if (names.join(",") !== "FIXTURE_DECLARED,PATH") {
     return yield* Effect.fail(new Error(
       `Exec ran with environment ${names.join(",")}, expected exactly FIXTURE_DECLARED,PATH.`

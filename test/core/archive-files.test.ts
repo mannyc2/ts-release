@@ -14,7 +14,7 @@ import {
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { decodeConfig } from "../../src/config/config.js"
-import { NodeDriverLayer } from "../../src/drivers/node.js"
+import { BunReleaseLayer } from "../../src/platform/bun.js"
 import { CatalogStructuredRequest, DriverCatalog } from "../../src/drivers/services.js"
 import { hashCanonical } from "../../src/model/canonical.js"
 import {
@@ -85,7 +85,7 @@ const materialize = (
     root: WorkspaceRoot.make(root),
     availableOutputs
   }))
-}).pipe(Effect.provide(NodeDriverLayer)))
+}).pipe(Effect.provide(BunReleaseLayer)))
 const materializeFailure = (
   root: string,
   operation: Pack,
@@ -97,7 +97,7 @@ const materializeFailure = (
     root: WorkspaceRoot.make(root),
     availableOutputs
   }))
-}).pipe(Effect.provide(NodeDriverLayer), Effect.flip))
+}).pipe(Effect.provide(BunReleaseLayer), Effect.flip))
 
 interface ZipEntry {
   readonly path: string

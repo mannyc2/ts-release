@@ -30,6 +30,14 @@ jobs:
         with:
           bun-version: 1.3.14
 
+      # check:action executes the built Action bundle under real node. Pinning
+      # node 20 makes that gate prove the runtime the Action declares, not
+      # whatever the runner image happens to ship.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Install
         run: bun install --frozen-lockfile
 

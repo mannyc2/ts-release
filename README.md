@@ -114,8 +114,30 @@ the same plan identity. Workspace paths never enter plan bytes.
 scope, topology, ledger, operation hashes, materialized bytes, and receipts
 before exercising a driver.
 
-Use `makeReleaseApi(layer)` when a test or alternate host needs explicit
-services. The default functions are bound to one immutable live layer.
+`plan`, `reviewExecution`, and `apply` are bound to one immutable live layer
+that closes the host capabilities with `@effect/platform-node`, which is
+correct under both Node and Bun. A host that wants its own platform, or a
+test that wants its own services, composes the api instead:
+
+```ts
+import { makeReleaseApi } from "@mannyc1/ts-release"
+import { BunReleaseLayer } from "@mannyc1/ts-release/bun"
+
+const release = makeReleaseApi(BunReleaseLayer)
+const planned = await release.plan({
+  config,
+  workspace: "/absolute/real/workspace"
+})
+await release.dispose()
+```
+
+`@mannyc1/ts-release/node` exports `NodeReleaseLayer` for the same purpose;
+importing the package root never loads a Bun module. For fully custom
+services the package also exports the five service tags (`RunStore`,
+`WorkspaceStore`, `CredentialStore`, `DriverCatalog`, `ApprovalSigner`) with
+their shapes, the permit classes an `ApprovalSigner` returns, and
+`ReleaseServicesLive`, the platform-generic live layer that still requires a
+`ChildProcessSpawner` and an `HttpClient`.
 
 ## CLI
 
@@ -246,6 +268,12 @@ bun run check
 bun test
 bun run check:portable
 ```
+
+`check:action` needs a `node` binary of version 20 or newer on `PATH`: it
+builds the Action bundle and then executes it under the runtime the Action
+actually uses (`node20`) against a fixture release. The gate fails loudly
+when `node` is absent rather than skipping, because a skipped run is exactly
+how a Bun-only call reached the Node host once before.
 
 Publication operations are treated as plan data during repository
 verification. The checks do not dispatch a release.

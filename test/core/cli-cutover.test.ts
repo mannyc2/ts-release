@@ -1,6 +1,8 @@
 import { describe, expect, test } from "@effect/bun-test"
+import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Command from "effect/unstable/cli/Command"
 import {
   mkdirSync,
   mkdtempSync,
@@ -13,9 +15,11 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
   commandNames,
-  runCli,
-  selectCliWorkspace
-} from "../../apps/release-ts/src/cli/commands.js"
+  makeCli,
+  selectCliWorkspace,
+  type CliIo
+} from "../../apps/release-ts/src/cli/command.js"
+import type { ReleaseApi } from "../../src/api/api.js"
 import { makeReleaseApi } from "../../src/api/api.js"
 import { LocalApprovalSignerLayer } from "../../src/apply/approval.js"
 import { RunStore, makeFileRunStore } from "../../src/apply/store.js"
@@ -46,6 +50,15 @@ const config = {
   artifacts: [{ id: "fixture", path: "dist/fixture", format: "file" }],
   publish: {}
 }
+// The front door under test is the shipped one: argv is decoded by the same
+// effect/unstable/cli declarations main.ts runs.
+const invoke = (
+  api: ReleaseApi, cwd: string, io: CliIo, argv: ReadonlyArray<string>
+): Promise<void> => Effect.runPromise(
+  Command.runWith(makeCli(api, cwd, io), { version: "0.0.0-test" })(argv).pipe(
+    Effect.provide(BunServices.layer)
+  )
+)
 
 describe("candidate cutover CLI", () => {
   test("has exactly four lifecycle commands", () => {
@@ -61,18 +74,18 @@ describe("candidate cutover CLI", () => {
     let reads = 0
     const logs: Array<string> = []
     try {
-      await runCli(
+      await invoke(
         api,
-        ["plan", "--config", "release.config.json", "--out", "release-plan.json"],
         root,
         {
-          read: (path) => {
+          read: (path: string) => {
             reads += 1
             return readFileSync(path, "utf8")
           },
           write: writeFileSync,
-          log: (value) => logs.push(value)
-        }
+          log: (value: string) => logs.push(value)
+        },
+        ["plan", "--config", "release.config.json", "--out", "release-plan.json"]
       )
       const direct = await api.plan({ config, workspace: root })
       expect(readFileSync(join(root, "release-plan.json"), "utf8")).toBe(direct.bytes)
@@ -93,11 +106,15 @@ describe("candidate cutover CLI", () => {
       const planned = await api.plan({ config, workspace: root })
       writeFileSync(join(root, "plan.json"), planned.bytes)
       const output: Array<string> = []
-      await runCli(
+      await invoke(
         api,
-        ["apply", "plan.json", "--plan-id", planned.planId, "--review-only", "--scope", "all"],
         root,
-        { read: (path) => readFileSync(path, "utf8"), write: writeFileSync, log: (value) => output.push(value) }
+        {
+          read: (path: string) => readFileSync(path, "utf8"),
+          write: writeFileSync,
+          log: (value: string) => output.push(value)
+        },
+        ["apply", "plan.json", "--plan-id", planned.planId, "--review-only", "--scope", "all"]
       )
       expect(JSON.parse(output[0]!).status).toBe("review-required")
       expect(selectCliWorkspace(root, "release.config.json")).toBe(root)

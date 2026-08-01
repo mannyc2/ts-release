@@ -1,5 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as HttpClient from "effect/unstable/http/HttpClient"
+import type { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import {
   existsSync,
   mkdirSync,
@@ -16,6 +18,8 @@ import {
   DriverCatalog,
   WorkspaceStore,
   type CatalogStructuredRequest,
+  type CredentialStoreShape,
+  type DriverCatalogShape
 } from "./services.js"
 import {
   Digest,
@@ -26,11 +30,14 @@ import {
   DriverError,
   MaterializedOutput
 } from "../model/run.js"
-import type { OutputDeclaration, Pack } from "../model/operation.js"
+import type { Exec, OutputDeclaration, Pack } from "../model/operation.js"
 import { makeNodeWorkspaceStore } from "./workspace.js"
 import { tarGz, zip, type ArchiveEntry } from "./archive.js"
-import { makeNodeCatalog } from "./remote.js"
-import { failure, selectedEnvironment, sha256 } from "./utils.js"
+import { matchGlob } from "./glob.js"
+import { readOptionalEnv } from "./environment.js"
+import { makeRunCommand, type RunCommand } from "./process.js"
+import { makeCatalog } from "./remote.js"
+import { failure, sha256 } from "./utils.js"
 
 const pathOf = (root: string, path: string): string => resolve(root, path)
 const outputFacts = (root: string, output: OutputDeclaration): MaterializedOutput => {
@@ -97,8 +104,8 @@ const matchedWorkspaceFiles = (
 ): ReadonlyArray<string> => [...new Set(patterns.flatMap((raw) => {
   const pattern = normalizeSlashes(raw)
   if (!isSafeRelativePath(pattern)) throw failure(`Archive pattern must stay inside the workspace: ${raw}.`)
-  const glob = new Bun.Glob(pattern)
-  return patternCandidates(realRoot, pattern).filter((path) => glob.match(path) && !excluded.has(path))
+  const matches = matchGlob(pattern)
+  return patternCandidates(realRoot, pattern).filter((path) => matches(path) && !excluded.has(path))
 }))]
 const packEntries = (request: CatalogStructuredRequest, operation: Pack): ReadonlyArray<ArchiveEntry> => {
   const patterns = operation.files ?? []
@@ -130,81 +137,86 @@ const content = (request: CatalogStructuredRequest): string => {
     throw failure("downloadUrl facts require a product-owned preset value.")
   }).join("")
 }
-const structured = (request: CatalogStructuredRequest) => Effect.try({
-  try: () => {
-    const operation = request.operation
-    switch (operation._tag) {
-      case "Check":
-        if (!existsSync(pathOf(request.root, operation.path))) {
-          throw failure(`Required path ${operation.path} is absent.`)
-        }
-        break
-      case "Exec": {
-        const result = Bun.spawnSync([...operation.argv], {
-          cwd: pathOf(request.root, operation.cwd),
-          env: selectedEnvironment(operation.environmentNames),
-          stdin: "ignore",
-          stdout: "pipe",
-          stderr: "pipe"
-        })
-        if (result.exitCode !== 0) {
-          throw failure(`Command exited ${result.exitCode}: ${result.stderr.toString().trim()}`)
-        }
-        break
-      }
-      case "Write": {
-        const path = pathOf(request.root, operation.path)
-        mkdirSync(dirname(path), { recursive: true })
-        writeFileSync(path, content(request))
-        break
-      }
-      case "Pack": {
-        const path = pathOf(request.root, operation.outputs[0]!.path)
-        const archive = packEntries(request, operation)
-        mkdirSync(dirname(path), { recursive: true })
-        writeFileSync(path, operation.format === "zip" ? zip(archive) : tarGz(archive))
-        break
-      }
-      case "Digest": {
-        const path = pathOf(request.root, operation.outputs[0]!.path)
-        mkdirSync(dirname(path), { recursive: true })
-        writeFileSync(path, operation.inputs.map((id) => {
-          const output = input(request, id)
-          return `${sha256(readFileSync(pathOf(request.root, output.path)))}  ${basename(output.path)}`
-        }).join("\n") + "\n")
-        break
-      }
-      case "HttpRead":
-      case "ReviewedNoteTransform":
-        throw failure("Remote reads are not structured local operations.")
-      default:
-        throw failure(`Unsupported structured operation ${operation._tag}.`)
-    }
-    return {
-      outcome: "observed",
-      outputs: operation.outputs.map((output) => outputFacts(request.root, output))
-    }
-  },
+const observed = (request: CatalogStructuredRequest) => ({
+  outcome: "observed",
+  outputs: request.operation.outputs.map((output) => outputFacts(request.root, output))
+})
+const attempt = <A>(body: () => A) => Effect.try({
+  try: body,
   catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
 })
-const catalog = makeNodeCatalog(structured)
-const credentials = {
-  getRead: (slot: { readonly name: string }) => Effect.try({
-    try: () => process.env[slot.name] ?? "",
-    catch: (cause) => failure(String(cause))
-  }),
-  getPublish: (slot: { readonly name: string }) => Effect.try({
-    try: () => {
-      const value = process.env[slot.name]
-      if (value === undefined || value.length === 0) throw failure(`Credential ${slot.name} is unavailable.`)
-      return value
-    },
-    catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
-  })
+const executed = (run: RunCommand, request: CatalogStructuredRequest, operation: Exec) =>
+  run({
+    argv: operation.argv,
+    cwd: pathOf(request.root, operation.cwd),
+    environmentNames: operation.environmentNames
+  }).pipe(Effect.flatMap((result) => result.exitCode === 0
+    ? attempt(() => observed(request))
+    : Effect.fail(failure(`Command exited ${result.exitCode}: ${result.stderr.trim()}`))))
+const materialized = (request: CatalogStructuredRequest) => attempt(() => {
+  const operation = request.operation
+  switch (operation._tag) {
+    case "Check":
+      if (!existsSync(pathOf(request.root, operation.path))) {
+        throw failure(`Required path ${operation.path} is absent.`)
+      }
+      break
+    case "Write": {
+      const path = pathOf(request.root, operation.path)
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, content(request))
+      break
+    }
+    case "Pack": {
+      const path = pathOf(request.root, operation.outputs[0]!.path)
+      const archive = packEntries(request, operation)
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, operation.format === "zip" ? zip(archive) : tarGz(archive))
+      break
+    }
+    case "Digest": {
+      const path = pathOf(request.root, operation.outputs[0]!.path)
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, operation.inputs.map((id) => {
+        const output = input(request, id)
+        return `${sha256(readFileSync(pathOf(request.root, output.path)))}  ${basename(output.path)}`
+      }).join("\n") + "\n")
+      break
+    }
+    case "HttpRead":
+    case "ReviewedNoteTransform":
+      throw failure("Remote reads are not structured local operations.")
+    default:
+      throw failure(`Unsupported structured operation ${operation._tag}.`)
+  }
+  return observed(request)
+})
+const structured = (run: RunCommand): DriverCatalogShape["structured"] => (request) =>
+  request.operation._tag === "Exec"
+    ? executed(run, request, request.operation)
+    : materialized(request)
+const credentials: CredentialStoreShape = {
+  getRead: (slot) => readOptionalEnv(slot.name).pipe(Effect.map((value) => value ?? "")),
+  getPublish: (slot) => readOptionalEnv(slot.name).pipe(Effect.flatMap((value) =>
+    value === undefined || value.length === 0
+      ? Effect.fail(failure(`Credential ${slot.name} is unavailable.`))
+      : Effect.succeed(value)))
 }
-export const NodeDriverLayer = Layer.mergeAll(
+// The live drivers are written once and parameterized by the two capabilities
+// that actually differ across hosts. Spawning and HTTP are acquired here, at
+// layer construction, so every DriverCatalog method keeps R = never and a fake
+// stays a plain shape behind Layer.succeed.
+export const LiveDriversLayer: Layer.Layer<
+  WorkspaceStore | DriverCatalog | CredentialStore,
+  never,
+  ChildProcessSpawner | HttpClient.HttpClient
+> = Layer.mergeAll(
   Layer.succeed(WorkspaceStore)(makeNodeWorkspaceStore()),
-  Layer.succeed(DriverCatalog)(catalog),
+  Layer.effect(DriverCatalog)(Effect.gen(function*() {
+    const run = yield* makeRunCommand
+    const client = yield* HttpClient.HttpClient
+    return makeCatalog(structured(run), { client, run })
+  })),
   Layer.succeed(CredentialStore)(credentials)
 )
-export const normalizeNodeWorkspace = (path: string): string => realpathSync(path)
+export const normalizeWorkspaceRoot = (path: string): string => realpathSync(path)

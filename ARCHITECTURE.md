@@ -25,6 +25,7 @@ src/plan      compilation, validation, canonical acceptance, review
 src/drivers   capability interfaces and live mechanism implementations
 src/apply     approvals, ledger, transitions, orchestration
 src/view      projections from accepted plans and ledgers
+src/platform  per-host layers closing the spawn and HTTP capabilities
 src/api       Promise boundary, exact inputs, immutable layer binding
 src/index.ts  sole package entrypoint
 apps/release-ts
@@ -43,23 +44,55 @@ model
 ├── plan/accepted
 │   ├── plan ← config + recipes
 │   ├── apply ← drivers
-│   └── view
-└── api ← plan + apply + view + drivers
-    └── public root
-        ├── CLI
-        └── Action
+│   ├── view
+│   └── platform ← drivers + apply
+└── api ← plan + apply + view + drivers + platform
+    └── public root + ./node + ./bun
+        ├── CLI    → ./bun
+        └── Action → ./node
 ```
 
 Model imports no product owner. Recipes depend only on model. Config decodes
 recipe configuration. Accepted-plan code depends only on model. Planning may
 use model, config, recipes, and acceptance. Drivers depend only on model.
 Apply uses model, accepted plans, and drivers. Views use model and accepted
-plans. The API is the composition boundary. Apps import only the public root.
+plans. Platform closes host capabilities. The API is the composition
+boundary. Apps import only published package entrypoints.
 
 Architecture checks enforce this graph and reject runtime registration,
 dynamic evaluation, workflow-level Effect execution, provider-name branches
 inside generic drivers, temporary namespaces, and excluded test/oracle
 imports.
+
+## Host boundaries
+
+The drivers are written once. Only three capabilities differ or carry ambient
+authority across hosts, so only those are injected:
+
+```text
+src/drivers            LiveDriversLayer
+                         provides WorkspaceStore, DriverCatalog, CredentialStore
+                         requires ChildProcessSpawner, HttpClient
+                         reads environment through effect/Config
+src/platform/services  ReleaseServicesLive = live drivers + run store + signer
+src/platform/node.ts   NodeReleaseLayer  ("@mannyc1/ts-release/node")
+src/platform/bun.ts    BunReleaseLayer   ("@mannyc1/ts-release/bun")
+```
+
+The layer acquires the two capabilities once at construction and closes over
+them, so every service method keeps `R = never` and a fake is a plain shape.
+The CLI composes the Bun layer, the Action composes the Node layer, and the
+root convenience functions bind the Node layer, which is correct under both
+runtimes. The Bun module is unreachable from the package root, so importing
+`@mannyc1/ts-release` under Node never loads a Bun module.
+
+File I/O deliberately stays direct `node:fs`: it is identical on both hosts,
+and the security discipline it carries — `O_NOFOLLOW` opens with fstat/lstat
+identity comparison, `O_EXCL` leases, fsync, atomic rename — is not
+expressible through `effect/FileSystem` string open flags. `node:crypto` and
+`node:zlib` are pure computation. Import rules confine `node:fs` to the named
+files that hold that discipline and ban the `Bun` global and global `fetch`
+from `src/` outright.
 
 ## Data flow
 
@@ -141,14 +174,19 @@ receipts, and recorded output snapshots before reaching a driver.
 
 The library accepts only values and absolute existing workspaces. The API
 realpath-normalizes workspace roots and maps internal failures to stable
-plain errors. Its default functions share one immutable live layer;
-`makeReleaseApi(layer)` supplies explicit alternate services.
+plain errors. Its default functions share one immutable live layer bound to
+the Node host; `makeReleaseApi(layer)` supplies explicit alternate services,
+built from the exported service tags and shapes, a published host layer, or
+`ReleaseServicesLive` plus a platform of the caller's choosing.
 
 The CLI owns one-read JSON loading and workspace selection. Its commands are
 `init`, `doctor`, `plan`, and `apply`.
 
 The Action owns one-read, workspace-contained JSON loading. Its commands are
-`plan`, `doctor`, and `apply`; its bundle is checked against source.
+`plan`, `doctor`, and `apply`. Its bundle is checked against source and then
+executed under real `node` against a fixture release covering every local
+mechanism, because the Action runs `node20` and a Bun-only call there fails
+mid-run rather than at load.
 
 Both apps pass canonical plan bytes to apply. Neither can inject
 configuration, authority, credentials, scope changes, or risk changes into
@@ -157,5 +195,7 @@ an accepted plan.
 ## Verification lanes
 
 Behavior tests, fault injection, driver conformance, import rules, public
-package checks, and CLI/Action tests verify the release machinery.
+package checks, and CLI/Action tests verify the release machinery. Driver
+conformance and the remote-driver suite run the live drivers under injected
+spawn and HTTP doubles; the action-bundle gate runs them for real under node.
 Verification does not dispatch publication.

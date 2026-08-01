@@ -8,9 +8,3 @@ export const failure = (
 
 export const sha256 = (bytes: Uint8Array): string =>
   createHash("sha256").update(bytes).digest("hex")
-
-export const selectedEnvironment = (names: ReadonlyArray<string>): Record<string, string> => ({
-  ...(process.env.PATH === undefined ? {} : { PATH: process.env.PATH }),
-  ...Object.fromEntries(names.flatMap((name) =>
-    process.env[name] === undefined ? [] : [[name, process.env[name]!]]))
-})

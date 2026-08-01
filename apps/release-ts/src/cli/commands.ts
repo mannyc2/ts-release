@@ -14,39 +14,29 @@ export interface CliIo {
   readonly log: (value: string) => void
 }
 type ReleaseCommands = Pick<ReleaseApi, "plan" | "reviewExecution" | "apply">
-interface Parsed {
-  readonly command: typeof commandNames[number]
-  readonly positional: ReadonlyArray<string>
-  readonly flags: Readonly<Record<string, string | true>>
+// The command bodies take decoded values; argv decoding belongs to the CLI
+// front door, and release policy belongs to the api.
+export interface InitOptions {
+  readonly template: string, readonly config: string, readonly root: string
+  readonly package: string, readonly repo: string, readonly tap: string
+  readonly bucket: string, readonly write: boolean
 }
-const parse = (argv: ReadonlyArray<string>): Parsed => {
-  const [command, ...rest] = argv
-  if (!commandNames.includes(command as typeof commandNames[number])) {
-    throw new Error(`Unknown command ${command ?? ""}. Expected ${commandNames.join(", ")}.`)
-  }
-  const positional: Array<string> = []
-  const flags: Record<string, string | true> = {}
-  let index = 0
-  while (index < rest.length) {
-    const value = rest[index]!
-    if (!value.startsWith("--")) positional.push(value)
-    else {
-      const name = value.slice(2)
-      const next = rest[index + 1]
-      if (next === undefined || next.startsWith("--")) flags[name] = true
-      else {
-        flags[name] = next
-        index += 1
-      }
-    }
-    index += 1
-  }
-  return { command: command as Parsed["command"], positional, flags }
+export interface PlanOptions {
+  readonly config: string, readonly root?: string | undefined, readonly out?: string | undefined
 }
-const flag = (parsed: Parsed, name: string): string | undefined => {
-  const value = parsed.flags[name]
-  return typeof value === "string" ? value : undefined
+export interface ReviewOptions {
+  readonly plan: string, readonly planId: string, readonly scope?: string | undefined
+  readonly doctor: boolean
 }
+export interface ApplyOptions {
+  readonly plan: string, readonly planId: string, readonly root: string
+  readonly reviewer?: string | undefined, readonly newRun?: string | undefined
+  readonly resume?: string | undefined, readonly confirmExecution?: string | undefined
+  readonly confirmPublish?: string | undefined, readonly scope?: string | undefined
+  readonly through?: string | undefined, readonly reason?: string | undefined
+  readonly reconcile?: string | undefined, readonly resolutions?: string | undefined
+}
+
 export const selectCliWorkspace = (
   cwd: string,
   configPath: string,
@@ -69,112 +59,99 @@ const resolutions = (value: string | undefined): ReadonlyArray<OperatorResolutio
   }
   return parsed as Array<OperatorResolution>
 }
-const accepted = (parsed: Parsed, cwd: string, io: CliIo) => {
-  const path = parsed.positional[0]
-  if (path === undefined) throw new Error(`${parsed.command} requires a plan file.`)
-  const planId = flag(parsed, "plan-id")
-  if (planId === undefined) throw new Error("--plan-id is required.")
-  return {
-    planBytes: io.read(realpathSync(resolve(cwd, path))),
-    expectedPlanId: planId as PlanId
-  }
-}
-const initialize = (parsed: Parsed, cwd: string, io: CliIo): void => {
-  const template = flag(parsed, "template") ?? "npm-only"
-  const configPath = flag(parsed, "config") ?? "release.config.json"
-  const root = realpathSync(resolve(cwd, flag(parsed, "root") ?? "."))
-  const source = resolve(packageRoot, "templates", template, "release.config.json")
+const accepted = (plan: string, planId: string, cwd: string, io: CliIo) => ({
+  planBytes: io.read(realpathSync(resolve(cwd, plan))),
+  expectedPlanId: planId as PlanId
+})
+
+export const runInit = (options: InitOptions, cwd: string, io: CliIo): void => {
+  const root = realpathSync(resolve(cwd, options.root))
+  const source = resolve(packageRoot, "templates", options.template, "release.config.json")
   const replacements = new Map([
-    ["@scope/pkg", flag(parsed, "package") ?? "@scope/pkg"],
-    ["owner/repo", flag(parsed, "repo") ?? "owner/repo"],
-    ["owner/homebrew-tap", flag(parsed, "tap") ?? "owner/homebrew-tap"],
-    ["owner/scoop-bucket", flag(parsed, "bucket") ?? "owner/scoop-bucket"]
+    ["@scope/pkg", options.package],
+    ["owner/repo", options.repo],
+    ["owner/homebrew-tap", options.tap],
+    ["owner/scoop-bucket", options.bucket]
   ])
   let contents = io.read(source)
   for (const [from, to] of replacements) contents = contents.replaceAll(from, to)
-  const output = resolve(root, configPath)
-  if (parsed.flags.write === true) io.write(output, contents)
-  io.log(JSON.stringify({ template, path: output, written: parsed.flags.write === true }))
+  const output = resolve(root, options.config)
+  if (options.write) io.write(output, contents)
+  io.log(JSON.stringify({ template: options.template, path: output, written: options.write }))
 }
-const planCommand = async (
+export const runPlan = async (
   api: ReleaseCommands,
-  parsed: Parsed,
+  options: PlanOptions,
   cwd: string,
   io: CliIo
 ): Promise<void> => {
-  const configPath = flag(parsed, "config") ?? "release.config.json"
-  const workspace = selectCliWorkspace(cwd, configPath, flag(parsed, "root"))
-  const source = isAbsolute(configPath) ? configPath : resolve(workspace, configPath)
+  const workspace = selectCliWorkspace(cwd, options.config, options.root)
+  const source = isAbsolute(options.config) ? options.config : resolve(workspace, options.config)
   const result = await api.plan({
     config: JSON.parse(io.read(realpathSync(source))) as unknown,
     workspace
   })
-  const out = flag(parsed, "out")
-  if (out === undefined) io.log(result.bytes)
-  else io.write(resolve(cwd, out), result.bytes)
+  if (options.out === undefined) io.log(result.bytes)
+  else io.write(resolve(cwd, options.out), result.bytes)
   io.log(JSON.stringify({ planId: result.planId }))
 }
-const reviewCommand = async (
+export const runReview = async (
   api: ReleaseCommands,
-  parsed: Parsed,
+  options: ReviewOptions,
   cwd: string,
   io: CliIo
 ): Promise<void> => {
   const review = await api.reviewExecution({
-    ...accepted(parsed, cwd, io),
-    scope: scope(flag(parsed, "scope"))
+    ...accepted(options.plan, options.planId, cwd, io),
+    scope: scope(options.scope)
   })
   io.log(JSON.stringify({
-    status: parsed.command === "doctor" ? "valid" : "review-required",
+    status: options.doctor ? "valid" : "review-required",
     executionReviewId: review.executionReviewId,
     operationIds: review.scope.operationIds
   }))
 }
-const applyInput = (parsed: Parsed, cwd: string, io: CliIo): ApplyInput => {
-  const reviewer = flag(parsed, "reviewer")
-  if (reviewer === undefined) throw new Error("--reviewer is required.")
-  const newRunPath = flag(parsed, "new-run")
-  const resumeRunPath = flag(parsed, "resume")
-  if ((newRunPath === undefined) === (resumeRunPath === undefined)) {
+const applyInput = (options: ApplyOptions, cwd: string, io: CliIo): ApplyInput => {
+  if (options.reviewer === undefined) throw new Error("--reviewer is required.")
+  if ((options.newRun === undefined) === (options.resume === undefined)) {
     throw new Error("Choose exactly one of --new-run or --resume.")
   }
-  const executionReview = flag(parsed, "confirm-execution")
-  if (newRunPath !== undefined && executionReview === undefined) {
+  if (options.newRun !== undefined && options.confirmExecution === undefined) {
     throw new Error("--confirm-execution is required for a new run.")
   }
-  const publish = flag(parsed, "confirm-publish")
-  const reconcile = flag(parsed, "reconcile")
-  const resolutionItems = resolutions(flag(parsed, "resolutions"))
-  const reason = flag(parsed, "reason")
+  const resolutionItems = resolutions(options.resolutions)
   return {
-    ...accepted(parsed, cwd, io),
-    workspace: realpathSync(resolve(cwd, flag(parsed, "root") ?? ".")),
-    ...(newRunPath === undefined
-      ? { resumeRunPath: resumeRunPath! }
+    ...accepted(options.plan, options.planId, cwd, io),
+    workspace: realpathSync(resolve(cwd, options.root)),
+    ...(options.newRun === undefined
+      ? { resumeRunPath: options.resume! }
       : {
           newRun: {
-            path: newRunPath, scope: scope(flag(parsed, "scope")),
-            executionReviewId: executionReview! as ExecutionReviewId, reviewer,
-            ...(reason === undefined ? {} : { reason })
+            path: options.newRun, scope: scope(options.scope),
+            executionReviewId: options.confirmExecution! as ExecutionReviewId,
+            reviewer: options.reviewer,
+            ...(options.reason === undefined ? {} : { reason: options.reason })
           }
         }),
-    ...(flag(parsed, "through") === undefined ? {} : { through: flag(parsed, "through") as Stage }),
-    ...(publish === undefined ? {} : {
-      publishConfirmation: { publishReviewId: publish as PublishReviewId, reviewer }
+    ...(options.through === undefined ? {} : { through: options.through as Stage }),
+    ...(options.confirmPublish === undefined ? {} : {
+      publishConfirmation: {
+        publishReviewId: options.confirmPublish as PublishReviewId, reviewer: options.reviewer
+      }
     }),
-    ...(reconcile === undefined ? {} : {
-      reconcile: reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
+    ...(options.reconcile === undefined ? {} : {
+      reconcile: options.reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
     }),
     ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems })
   }
 }
-const applyCommand = async (
+export const runApply = async (
   api: ReleaseCommands,
-  parsed: Parsed,
+  options: ApplyOptions,
   cwd: string,
   io: CliIo
 ): Promise<void> => {
-  const result = await api.apply(applyInput(parsed, cwd, io))
+  const result = await api.apply(applyInput(options, cwd, io))
   io.log(JSON.stringify({
     status: result.status, runId: result.runId, runPath: result.runPath,
     executionReceiptId: result.executionReceiptId,
@@ -183,19 +160,4 @@ const applyCommand = async (
     }),
     ...(result.publishReceiptId === undefined ? {} : { publishReceiptId: result.publishReceiptId })
   }))
-}
-
-export const runCli = async (
-  api: ReleaseCommands,
-  argv: ReadonlyArray<string>,
-  cwd: string,
-  io: CliIo
-): Promise<void> => {
-  const parsed = parse(argv)
-  if (parsed.command === "init") return initialize(parsed, cwd, io)
-  if (parsed.command === "plan") return planCommand(api, parsed, cwd, io)
-  if (parsed.command === "doctor" || parsed.flags["review-only"] === true) {
-    return reviewCommand(api, parsed, cwd, io)
-  }
-  return applyCommand(api, parsed, cwd, io)
 }

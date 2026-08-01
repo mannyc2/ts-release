@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Fixed the GitHub Action host: the live driver layer no longer uses Bun-only
+  APIs, so `Exec`, `Pack` (glob patterns and tar.gz), and command-based publish
+  operations run correctly under the Action's node20 runtime. The
+  action-bundle gate now executes the built bundle under real Node against a
+  fixture release covering those paths.
+- Made `makeReleaseApi` publicly usable: the package now exports the service
+  tags and shapes (`RunStore`, `WorkspaceStore`, `CredentialStore`,
+  `DriverCatalog`, `ApprovalSigner`), the permit classes an `ApprovalSigner`
+  returns, the platform-generic `ReleaseServicesLive` layer, and prebuilt host
+  layers at `@mannyc1/ts-release/node` and `@mannyc1/ts-release/bun`. The root
+  `plan`/`reviewExecution`/`apply` convenience functions now bind to the Node
+  platform layer and work under both runtimes. tar.gz archive bytes changed
+  once (explicit zlib level, canonicalized gzip header).
+- Gave the CLI a real front door: `init`, `doctor`, `plan`, and `apply` are
+  declared with `effect/unstable/cli`, so `--help`, `--version`, and typed
+  flag errors work. Every JSON output line is unchanged.
 - Restored the files-only archive contract: `archives[].files` now decodes
   strictly as safe workspace-relative patterns, flows into the durable plan
   as optional `Pack.files`, and materializes deterministic recursive archive

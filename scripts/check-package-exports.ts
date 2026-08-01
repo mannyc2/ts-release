@@ -20,13 +20,25 @@ const expectedRootBin = {
   "ts-release": "./apps/release-ts/src/cli/main.ts"
 } as const
 const expectedRootRuntimeExports = new Set([
+  "ApprovalSigner",
+  "CredentialStore",
+  "DriverCatalog",
+  "ExecutionPermit",
+  "PublishPermit",
   "ReleaseApiError",
+  "ReleaseServicesLive",
+  "RunStore",
+  "WorkspaceStore",
   "apply",
   "defineRelease",
   "makeReleaseApi",
   "plan",
   "reviewExecution"
 ])
+const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {
+  "./node": new Set(["NodeReleaseLayer"]),
+  "./bun": new Set(["BunReleaseLayer"])
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -292,16 +304,19 @@ const main = async (): Promise<void> => {
         const specifier = packageImportSpecifier(packageName, subpath)
         try {
           const module = await import(specifier)
-          if (subpath === ".") {
+          const expectedExports = subpath === "."
+            ? expectedRootRuntimeExports
+            : expectedHostRuntimeExports[subpath]
+          if (expectedExports !== undefined) {
             const actualRuntimeExports = new Set(Object.keys(module))
-            for (const expected of expectedRootRuntimeExports) {
+            for (const expected of expectedExports) {
               if (!actualRuntimeExports.has(expected)) {
-                failures.push(`package root ${specifier} is missing runtime export ${expected}`)
+                failures.push(`package export ${specifier} is missing runtime export ${expected}`)
               }
             }
             for (const actual of actualRuntimeExports) {
-              if (!expectedRootRuntimeExports.has(actual)) {
-                failures.push(`package root ${specifier} exposes unexpected runtime export ${actual}`)
+              if (!expectedExports.has(actual)) {
+                failures.push(`package export ${specifier} exposes unexpected runtime export ${actual}`)
               }
             }
           }

@@ -1,8 +1,11 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import * as BunServices from "@effect/platform-bun/BunServices"
+import * as Effect from "effect/Effect"
+import * as Command from "effect/unstable/cli/Command"
 import { plan } from "@mannyc1/ts-release"
-import { runCli } from "../src/cli/commands.js"
+import { makeCli } from "../src/cli/command.js"
 import {
   readJson, releaseConfigPath, report, root
 } from "./self-release-facts.js"
@@ -14,7 +17,7 @@ writeFileSync(path, planned.bytes)
 const logs: Array<string> = []
 const failures: Array<string> = []
 try {
-  await runCli(
+  const cli = makeCli(
     {
       plan: async () => planned,
       reviewExecution: (input) => import("@mannyc1/ts-release")
@@ -23,15 +26,19 @@ try {
         throw new Error("doctor must not apply")
       }
     },
-    ["doctor", path, "--plan-id", planned.planId],
     root,
     {
-      read: (source) => readFileSync(source, "utf8"),
+      read: (source: string) => readFileSync(source, "utf8"),
       write: () => {
         throw new Error("doctor must not write")
       },
-      log: (value) => logs.push(value)
+      log: (value: string) => logs.push(value)
     }
+  )
+  await Effect.runPromise(
+    Command.runWith(cli, { version: "self-release-doctor" })(
+      ["doctor", path, "--plan-id", planned.planId]
+    ).pipe(Effect.provide(BunServices.layer))
   )
   if (!logs.some((value) => value.includes("\"status\":\"valid\""))) {
     failures.push("Doctor did not report a valid canonical plan.")

@@ -1,9 +1,6 @@
 import * as core from "@actions/core"
-import {
-  apply,
-  plan,
-  reviewExecution
-} from "@mannyc1/ts-release"
+import { makeReleaseApi } from "@mannyc1/ts-release"
+import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 import {
   mkdirSync,
   readFileSync,
@@ -12,9 +9,12 @@ import {
 import { dirname } from "node:path"
 import { runAction } from "./commands.js"
 
+// The Action runs under node20, so it composes the Node platform layer itself
+// and disposes the runtime it created.
+const api = makeReleaseApi(NodeReleaseLayer)
 try {
   await runAction(
-    { plan, reviewExecution, apply },
+    api,
     {
       workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
       input: core.getInput,
@@ -29,4 +29,6 @@ try {
 } catch (cause) {
   core.setOutput("status", "failed")
   core.setFailed(cause instanceof Error ? cause.message : String(cause))
+} finally {
+  await api.dispose()
 }

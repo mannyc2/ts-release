@@ -400,6 +400,13 @@ const checkRootDoesNotImportApp = (failures: Array<string>): void => {
   }
 }
 
+// Apps may reach the published host entrypoints and nothing else: an app
+// importing an unpublished subpath would compile in-repo and break on install.
+const publishedSubpathSpecifiers = new Set(
+  publicExportPolicies
+    .filter((policy) => policy.subpath !== ".")
+    .map((policy) => `@mannyc1/ts-release/${policy.subpath.slice(2)}`)
+)
 const checkAppDoesNotImportPackageSubpaths = (failures: Array<string>): void => {
   const packageName = "@mannyc1/ts-release"
   for (const file of appFiles()) {
@@ -412,7 +419,10 @@ const checkAppDoesNotImportPackageSubpaths = (failures: Array<string>): void => 
     )
 
     for (const reference of allModuleReferences(source)) {
-      if (reference.specifier.startsWith(`${packageName}/`)) {
+      if (
+        reference.specifier.startsWith(`${packageName}/`) &&
+        !publishedSubpathSpecifiers.has(reference.specifier)
+      ) {
         failures.push(`${location(source, reference.position)} app code must not import unpublished package subpath ${reference.specifier}`)
       }
     }

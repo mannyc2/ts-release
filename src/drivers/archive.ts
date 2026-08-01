@@ -1,3 +1,5 @@
+import { gzipSync } from "node:zlib"
+
 export interface ArchiveEntry {
   readonly path: string
   readonly data: Uint8Array
@@ -86,8 +88,15 @@ const tarHeader = (entry: ArchiveEntry): Uint8Array => {
   octal(header, 148, 8, header.reduce((sum, byte) => sum + byte, 0))
   return header
 }
-export const tarGz = (entries: ReadonlyArray<ArchiveEntry>): Uint8Array =>
-  Bun.gzipSync(Buffer.from(concat(entries.flatMap((entry) => [
+// Level 9 is explicit because it is the level at which every zlib we ship on
+// emits identical deflate bytes; the 10-byte header is then overwritten so no
+// clock (MTIME) or platform (OS) leaks into an artifact.
+export const tarGz = (entries: ReadonlyArray<ArchiveEntry>): Uint8Array => {
+  const packed = new Uint8Array(gzipSync(concat(entries.flatMap((entry) => [
     tarHeader(entry), entry.data,
     new Uint8Array(entry.data.length % 512 === 0 ? 0 : 512 - entry.data.length % 512)
-  ]).concat([new Uint8Array(1024)]))))
+  ]).concat([new Uint8Array(1024)])), { level: 9 }))
+  packed.fill(0, 4, 8)
+  packed[9] = 0xff
+  return packed
+}

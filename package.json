@@ -37,6 +37,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/platform/node.d.ts",
+      "default": "./dist/platform/node.js"
+    },
+    "./bun": {
+      "types": "./dist/platform/bun.d.ts",
+      "default": "./dist/platform/bun.js"
     }
   },
   "files": [
@@ -78,6 +86,7 @@
   },
   "dependencies": {
     "@effect/platform-bun": "4.0.0-beta.83",
+    "@effect/platform-node": "4.0.0-beta.83",
     "effect": "4.0.0-beta.83",
     "semver": "^7.8.5"
   },

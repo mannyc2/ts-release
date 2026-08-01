@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect"
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
-import { NodeDriverLayer } from "../src/drivers/node.js"
+import { BunReleaseLayer } from "../src/platform/bun.js"
 import { CatalogStructuredRequest, DriverCatalog } from "../src/drivers/services.js"
 import { WorkspaceRoot } from "../src/model/primitives.js"
 import { plan } from "../src/index.js"
@@ -42,7 +42,7 @@ for (const path of configs) {
         return yield* catalog.structured(CatalogStructuredRequest.make({
           operation, root: WorkspaceRoot.make(realpathSync(temp)), availableOutputs: []
         }))
-      }).pipe(Effect.provide(NodeDriverLayer)))
+      }).pipe(Effect.provide(BunReleaseLayer)))
     } catch (cause) {
       throw new Error(`${path}: files-only archive ${operation.id} failed to materialize: ${String(cause)}`)
     } finally {

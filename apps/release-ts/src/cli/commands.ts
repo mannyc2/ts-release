@@ -35,6 +35,7 @@ export interface ApplyOptions {
   readonly confirmPublish?: string | undefined, readonly scope?: string | undefined
   readonly through?: string | undefined, readonly reason?: string | undefined
   readonly reconcile?: string | undefined, readonly resolutions?: string | undefined
+  readonly retry?: string | undefined
 }
 
 export const selectCliWorkspace = (
@@ -142,7 +143,10 @@ const applyInput = (options: ApplyOptions, cwd: string, io: CliIo): ApplyInput =
     ...(options.reconcile === undefined ? {} : {
       reconcile: options.reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
     }),
-    ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems })
+    ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems }),
+    ...(options.retry === undefined ? {} : {
+      retry: options.retry.split(",").filter(Boolean).map((id) => id as OperationId)
+    })
   }
 }
 export const runApply = async (

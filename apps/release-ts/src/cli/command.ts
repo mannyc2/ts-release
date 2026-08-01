@@ -74,7 +74,8 @@ const applyCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.m
   through: optionalText("through"),
   reason: optionalText("reason"),
   reconcile: optionalText("reconcile"),
-  resolutions: optionalText("resolutions")
+  resolutions: optionalText("resolutions"),
+  retry: optionalText("retry")
 }, (options) => Effect.promise(() => options.reviewOnly
   ? runReview(api, {
       plan: options.plan, planId: options.planId, scope: at(options.scope), doctor: false
@@ -85,7 +86,7 @@ const applyCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.m
       resume: at(options.resume), confirmExecution: at(options.confirmExecution),
       confirmPublish: at(options.confirmPublish), through: at(options.through),
       reason: at(options.reason), reconcile: at(options.reconcile),
-      resolutions: at(options.resolutions)
+      resolutions: at(options.resolutions), retry: at(options.retry)
     }, cwd, io))).pipe(
   Command.withDescription("Execute an approved plan against a durable run ledger.")
 )

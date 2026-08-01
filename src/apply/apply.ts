@@ -28,7 +28,8 @@ export type ApplyRunRequest = {
 } | { readonly _tag: "ResumeRun", readonly path: string, readonly expected: ExpectedLedger }
 export type PublishAuthorization = { readonly receipt: PublishApprovalReceipt }
 export type ApplyRecovery = Extract<TransitionCommand, { readonly _tag: "Resolve" }> |
-  { readonly _tag: "Reconcile", readonly operationId: OperationId, readonly checkpointId: CheckpointId }
+  { readonly _tag: "Reconcile", readonly operationId: OperationId, readonly checkpointId: CheckpointId } |
+  { readonly _tag: "Retry", readonly operationId: OperationId }
 export type ApplyRequest = {
   readonly run: ApplyRunRequest, readonly root: WorkspaceRoot, readonly snapshotDirectory: string,
   readonly through: Stage, readonly executionReceipt: ExecutionApprovalReceipt,
@@ -264,6 +265,12 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
     executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash))
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Resolve") ?? [])
     ledger = yield* moved(ctx, ledger, recovery)
+  // Resolve (operator judgment) first, then Retry — which may act on a
+  // just-created AssumedAbsent — then normal execution picks up the fresh
+  // Pending attempts. Eligibility lives in transition.ts alone.
+  for (const recovery of request.recoveries?.filter((item) => item._tag === "Retry") ?? [])
+    ledger = yield* moved(ctx, ledger, { _tag: "Retry",
+      operationId: recovery.operationId, receipt: request.executionReceipt })
   const selected = new Set(ledger.scope.operationIds.map(String))
   const entries = operationEntries(accepted.plan).filter(({ stage, operation }) =>
     selected.has(operation.id) &&

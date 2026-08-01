@@ -49,6 +49,9 @@ inputs:
   reconcile:
     description: Comma-separated unknown operation ids for read-only reconciliation.
     required: false
+  retry:
+    description: Comma-separated operation ids to retry after a failed-before-commit or assumed-absent outcome.
+    required: false
   resolutions:
     description: JSON operator resolutions with operation id, outcome, operator, and reason.
     required: false

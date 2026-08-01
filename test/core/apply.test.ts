@@ -376,6 +376,94 @@ describe("applyAcceptedPlan", () => {
     }
   })
 
+  test("reconcile-absent then retry re-dispatches exactly once and passes", async () => {
+    const fixture = await setup(true, false, { scope: ["source", "second", "trusted", "upload"] })
+    try {
+      const challenge = await Effect.runPromise(applyAcceptedPlan(
+        fixture.accepted,
+        { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
+      ).pipe(Effect.provide(fixture.layer)))
+      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
+        reviewId: challenge.reviewId,
+        reviewer: "reviewer",
+        approvalNonce: ApprovalNonce.make("publish-nonce"),
+        approvedAt: "later"
+      })
+      const resume = {
+        ...fixture.base,
+        run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected } as const,
+        publish: { receipt: publish }
+      }
+      const first = await Effect.runPromise(
+        applyAcceptedPlan(fixture.accepted, resume).pipe(Effect.provide(fixture.layer)))
+      if ("_tag" in first) throw new Error("Expected ledger.")
+      expect(operationStatus(first, OperationId.make("upload"))?._tag).toBe("CommitUnknown")
+      await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
+        ...resume,
+        recoveries: [{
+          _tag: "Reconcile",
+          operationId: OperationId.make("upload"),
+          checkpointId: CheckpointId.make("dispatch")
+        }]
+      }).pipe(Effect.provide(fixture.layer)))
+      const durable = decodeLedger(readFileSync(fixture.path, "utf8"))
+      const observed = operationStatus(durable, OperationId.make("upload"))
+      expect(observed?._tag).toBe("FailedBeforeCommit")
+      expect(observed?._tag === "FailedBeforeCommit" ? observed.retryable : undefined).toBe(true)
+      const third = await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
+        ...resume,
+        recoveries: [{ _tag: "Retry", operationId: OperationId.make("upload") }]
+      }).pipe(Effect.provide(fixture.layer)))
+      if ("_tag" in third) throw new Error("Expected ledger.")
+      expect(operationStatus(third, OperationId.make("upload"))?._tag).toBe("Passed")
+      const record = third.operations.find((item) => item.operationId === "upload")
+      expect(record?.attempts.map((attempt) => String(attempt.attemptId)))
+        .toEqual(["attempt-1", "attempt-2"])
+      expect(fixture.calls.mutations).toHaveLength(2)
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("retry refuses an unknown commitment and leaves the operations untouched", async () => {
+    const fixture = await setup(true, false, { scope: ["source", "second", "trusted", "upload"] })
+    try {
+      const challenge = await Effect.runPromise(applyAcceptedPlan(
+        fixture.accepted,
+        { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
+      ).pipe(Effect.provide(fixture.layer)))
+      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
+        reviewId: challenge.reviewId,
+        reviewer: "reviewer",
+        approvalNonce: ApprovalNonce.make("publish-nonce"),
+        approvedAt: "later"
+      })
+      const resume = {
+        ...fixture.base,
+        run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected } as const,
+        publish: { receipt: publish }
+      }
+      await Effect.runPromise(
+        applyAcceptedPlan(fixture.accepted, resume).pipe(Effect.provide(fixture.layer)))
+      const before = decodeLedger(readFileSync(fixture.path, "utf8"))
+      const refusal = await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
+        ...resume,
+        recoveries: [{ _tag: "Retry", operationId: OperationId.make("upload") }]
+      }).pipe(Effect.flip, Effect.provide(fixture.layer)))
+      expect(refusal).toMatchObject({
+        _tag: "TransitionError",
+        reason: "Operation is not eligible for retry."
+      })
+      const after = decodeLedger(readFileSync(fixture.path, "utf8"))
+      expect(JSON.stringify(after.operations)).toBe(JSON.stringify(before.operations))
+      expect(fixture.calls.mutations).toHaveLength(1)
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
   test("read-only reconciliation proves an unknown checkpoint without replaying it", async () => {
     const fixture = await setup(true, true)
     try {

@@ -47,7 +47,11 @@ const recoveries = (ledger: RunLedger, input: ApplyInput): ReadonlyArray<ApplyRe
           checkpointId: CheckpointId.make(item.checkpointId)
         }))
       : []
-  })
+  }),
+  ...(input.retry ?? []).map((id) => ({
+    _tag: "Retry" as const,
+    operationId: OperationId.make(String(id))
+  }))
 ]
 
 interface PreparedRun {
@@ -150,7 +154,7 @@ const publishOutput = async (
 export const makeApply = (run: ApiRun) => async (input: ApplyInput): Promise<ApplyOutput> => {
   exact("apply", input, [
     "planBytes", "expectedPlanId", "workspace", "newRun", "resumeRunPath", "through",
-    "publishConfirmation", "reconcile", "resolutions"
+    "publishConfirmation", "reconcile", "resolutions", "retry"
   ], "apply input")
   if ((input.newRun === undefined) === (input.resumeRunPath === undefined)) {
     throw new ReleaseApiError("apply", "Choose exactly one of newRun or resumeRunPath.")

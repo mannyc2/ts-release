@@ -4,7 +4,7 @@ import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import {
   closeSync, constants, existsSync, fsyncSync, mkdirSync, openSync,
-  readFileSync, renameSync, unlinkSync, writeFileSync
+  readFileSync, renameSync, statSync, unlinkSync, writeFileSync
 } from "node:fs"
 import { dirname, join } from "node:path"
 import { randomUUID } from "node:crypto"
@@ -49,15 +49,36 @@ const read = (path: string): RunLedger => {
     throw error(`Ledger read refused: ${String(cause)}`)
   }
 }
+// Leases outlive their process only via SIGKILL/OOM; the revision CAS in
+// save remains the integrity backstop if a paused holder wakes up.
+const staleLeaseMilliseconds = 3_600_000
 const acquire = (path: string): number => {
   const lock = `${path}.lease`
-  try {
+  const open = (): number => {
     const descriptor = openSync(lock, exclusiveFlags, 0o600)
     writeFileSync(descriptor, `${process.pid}\n`)
     fsyncSync(descriptor)
     return descriptor
+  }
+  try {
+    return open()
   } catch (cause) {
-    throw error(`Exclusive run lease refused: ${String(cause)}`)
+    const code = typeof cause === "object" && cause !== null && "code" in cause
+      ? String(cause.code) : ""
+    if (code !== "EEXIST") throw error(`Exclusive run lease refused: ${String(cause)}`)
+    try {
+      const age = Date.now() - statSync(lock).mtimeMs
+      if (age > staleLeaseMilliseconds) {
+        unlinkSync(lock)
+        return open()
+      }
+      const holder = readFileSync(lock, "utf8").trim()
+      throw error(`Exclusive run lease refused: held by pid ${holder} for ${
+        Math.round(age / 1000)}s (${lock}). Delete the file if that process is dead.`)
+    } catch (secondary) {
+      if (secondary instanceof RunStoreError) throw secondary
+      throw error(`Exclusive run lease refused: ${String(cause)}`)
+    }
   }
 }
 const syncDirectory = (directory: string): Durability => {
@@ -95,11 +116,31 @@ const atomicWrite = (path: string, ledger: RunLedger): Durability => {
 const withLease = <A>(path: string, body: () => A): A => {
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
   const descriptor = acquire(path)
+  let bodyFailed = false
   try {
     return body()
+  } catch (cause) {
+    bodyFailed = true
+    throw cause
   } finally {
-    closeSync(descriptor)
-    unlinkSync(`${path}.lease`)
+    // The body's error always wins: release problems surface only on an
+    // otherwise-successful run, and a stolen stale lease (ENOENT) is silent.
+    let releaseError: unknown
+    try {
+      closeSync(descriptor)
+    } catch (cause) {
+      releaseError = cause
+    }
+    try {
+      unlinkSync(`${path}.lease`)
+    } catch (cause) {
+      const code = typeof cause === "object" && cause !== null && "code" in cause
+        ? String(cause.code) : ""
+      if (code !== "ENOENT" && releaseError === undefined) releaseError = cause
+    }
+    if (!bodyFailed && releaseError !== undefined) {
+      throw error(`Run lease release failed: ${String(releaseError)}`)
+    }
   }
 }
 const attempt = <A>(body: () => A) => Effect.try(

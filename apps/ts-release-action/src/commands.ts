@@ -95,6 +95,7 @@ const applyInput = (runtime: ActionRuntime, root: string): ApplyInput => {
   const publish = optional(runtime, "confirm-publish")
   const through = optional(runtime, "through") as Stage | undefined
   const reconcile = optional(runtime, "reconcile")
+  const retry = optional(runtime, "retry")
   const resolutionItems = resolutions(optional(runtime, "resolutions"))
   const reason = optional(runtime, "reason")
   return {
@@ -114,7 +115,10 @@ const applyInput = (runtime: ActionRuntime, root: string): ApplyInput => {
     ...(reconcile === undefined ? {} : {
       reconcile: reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
     }),
-    ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems })
+    ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems }),
+    ...(retry === undefined ? {} : {
+      retry: retry.split(",").filter(Boolean).map((id) => id as OperationId)
+    })
   }
 }
 const applyAction = async (

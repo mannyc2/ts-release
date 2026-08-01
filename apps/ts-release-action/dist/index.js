@@ -31928,6 +31928,7 @@ import {
   openSync,
   readFileSync,
   renameSync,
+  statSync,
   unlinkSync,
   writeFileSync
 } from "node:fs";
@@ -31958,16 +31959,35 @@ var read2 = (path2) => {
     throw error2(`Ledger read refused: ${String(cause)}`);
   }
 };
+var staleLeaseMilliseconds = 3600000;
 var acquire = (path2) => {
   const lock = `${path2}.lease`;
-  try {
+  const open3 = () => {
     const descriptor = openSync(lock, exclusiveFlags, 384);
     writeFileSync(descriptor, `${process.pid}
 `);
     fsyncSync(descriptor);
     return descriptor;
+  };
+  try {
+    return open3();
   } catch (cause) {
-    throw error2(`Exclusive run lease refused: ${String(cause)}`);
+    const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
+    if (code !== "EEXIST")
+      throw error2(`Exclusive run lease refused: ${String(cause)}`);
+    try {
+      const age = Date.now() - statSync(lock).mtimeMs;
+      if (age > staleLeaseMilliseconds) {
+        unlinkSync(lock);
+        return open3();
+      }
+      const holder = readFileSync(lock, "utf8").trim();
+      throw error2(`Exclusive run lease refused: held by pid ${holder} for ${Math.round(age / 1000)}s (${lock}). Delete the file if that process is dead.`);
+    } catch (secondary) {
+      if (secondary instanceof RunStoreError)
+        throw secondary;
+      throw error2(`Exclusive run lease refused: ${String(cause)}`);
+    }
   }
 };
 var syncDirectory = (directory) => {
@@ -32008,11 +32028,29 @@ var atomicWrite = (path2, ledger) => {
 var withLease = (path2, body) => {
   mkdirSync(dirname2(path2), { recursive: true, mode: 448 });
   const descriptor = acquire(path2);
+  let bodyFailed = false;
   try {
     return body();
+  } catch (cause) {
+    bodyFailed = true;
+    throw cause;
   } finally {
-    closeSync(descriptor);
-    unlinkSync(`${path2}.lease`);
+    let releaseError;
+    try {
+      closeSync(descriptor);
+    } catch (cause) {
+      releaseError = cause;
+    }
+    try {
+      unlinkSync(`${path2}.lease`);
+    } catch (cause) {
+      const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
+      if (code !== "ENOENT" && releaseError === undefined)
+        releaseError = cause;
+    }
+    if (!bodyFailed && releaseError !== undefined) {
+      throw error2(`Run lease release failed: ${String(releaseError)}`);
+    }
   }
 };
 var attempt = (body) => try_2({ try: body, catch: (cause) => cause instanceof RunStoreError ? cause : error2(String(cause)) });
@@ -32048,7 +32086,7 @@ import {
   readFileSync as readFileSync3,
   readdirSync,
   realpathSync as realpathSync2,
-  statSync,
+  statSync as statSync2,
   writeFileSync as writeFileSync3
 } from "node:fs";
 import { basename as basename2, dirname as dirname3, join as join5, resolve as resolve4, sep as sep2 } from "node:path";
@@ -32936,7 +32974,7 @@ var makeCatalog = (structured, transport) => ({
 var pathOf = (root, path2) => resolve4(root, path2);
 var outputFacts = (root, output) => {
   const path2 = pathOf(root, output.path);
-  if (!existsSync4(path2) || !statSync(path2).isFile()) {
+  if (!existsSync4(path2) || !statSync2(path2).isFile()) {
     throw failure(`Declared output ${output.id} was not materialized.`);
   }
   const bytes = readFileSync3(path2);
@@ -32946,7 +32984,7 @@ var outputFacts = (root, output) => {
     snapshotId: SnapshotId.make(digest),
     digest: Digest.make(digest),
     size: bytes.length,
-    inode: statSync(path2).ino
+    inode: statSync2(path2).ino
   });
 };
 var input = (request, id) => {
@@ -32975,7 +33013,7 @@ var entryKind = (realRoot, entry, relative2, visited) => {
   if (visited.has(real))
     return;
   visited.add(real);
-  return statSync(join5(realRoot, relative2));
+  return statSync2(join5(realRoot, relative2));
 };
 var walkFiles = (realRoot, directory, visited) => {
   const absolute = directory === "" ? realRoot : join5(realRoot, directory);
@@ -32998,7 +33036,7 @@ var patternCandidates = (realRoot, pattern) => {
   if (!existsSync4(absolute))
     return [];
   containedRealPath(realRoot, absolute, pattern);
-  return statSync(absolute).isFile() ? [pattern] : [];
+  return statSync2(absolute).isFile() ? [pattern] : [];
 };
 var matchedWorkspaceFiles = (realRoot, patterns, excluded) => [...new Set(patterns.flatMap((raw2) => {
   const pattern = normalizeSlashes(raw2);
@@ -33686,6 +33724,12 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   const executionPermit = yield* signer.execution(request.executionReceipt, ledger.runId, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash));
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Resolve") ?? [])
     ledger = yield* moved(ctx, ledger, recovery);
+  for (const recovery of request.recoveries?.filter((item) => item._tag === "Retry") ?? [])
+    ledger = yield* moved(ctx, ledger, {
+      _tag: "Retry",
+      operationId: recovery.operationId,
+      receipt: request.executionReceipt
+    });
   const selected2 = new Set(ledger.scope.operationIds.map(String));
   const entries2 = operationEntries(accepted.plan).filter(({ stage, operation }) => selected2.has(operation.id) && stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through));
   ledger = yield* localOperations(ctx, executionPermit, ledger, entries2.map(({ operation }) => operation));
@@ -33759,7 +33803,7 @@ class ReleaseApiError extends Error {
 }
 
 // ../../src/api/input.ts
-import { realpathSync as realpathSync3, statSync as statSync2 } from "node:fs";
+import { realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
 import { isAbsolute, relative as relative2, resolve as resolve6, sep as sep3 } from "node:path";
 var exact = (phase, value2, keys2, label) => {
   if (typeof value2 !== "object" || value2 === null || Array.isArray(value2)) {
@@ -33777,7 +33821,7 @@ var workspace = (phase, value2) => {
     throw new ReleaseApiError(phase, "Workspace must be a nonempty absolute path.");
   }
   const canonical2 = realpathSync3(value2);
-  if (!statSync2(canonical2).isDirectory()) {
+  if (!statSync3(canonical2).isDirectory()) {
     throw new ReleaseApiError(phase, "Workspace must be a directory.");
   }
   return WorkspaceRoot.make(canonical2);
@@ -33843,7 +33887,11 @@ var recoveries = (ledger, input2) => [
       operationId: OperationId.make(String(id)),
       checkpointId: CheckpointId.make(item.checkpointId)
     })) : [];
-  })
+  }),
+  ...(input2.retry ?? []).map((id) => ({
+    _tag: "Retry",
+    operationId: OperationId.make(String(id))
+  }))
 ];
 var prepareNew = (plan, root, input2) => {
   const request = input2.newRun;
@@ -33935,7 +33983,8 @@ var makeApply = (run4) => async (input2) => {
     "through",
     "publishConfirmation",
     "reconcile",
-    "resolutions"
+    "resolutions",
+    "retry"
   ], "apply input");
   if (input2.newRun === undefined === (input2.resumeRunPath === undefined)) {
     throw new ReleaseApiError("apply", "Choose exactly one of newRun or resumeRunPath.");
@@ -34077,6 +34126,7 @@ var applyInput = (runtime, root) => {
   const publish = optional3(runtime, "confirm-publish");
   const through = optional3(runtime, "through");
   const reconcile3 = optional3(runtime, "reconcile");
+  const retry3 = optional3(runtime, "retry");
   const resolutionItems = resolutions(optional3(runtime, "resolutions"));
   const reason = optional3(runtime, "reason");
   return {
@@ -34098,7 +34148,10 @@ var applyInput = (runtime, root) => {
     ...reconcile3 === undefined ? {} : {
       reconcile: reconcile3.split(",").filter(Boolean).map((id) => id)
     },
-    ...resolutionItems === undefined ? {} : { resolutions: resolutionItems }
+    ...resolutionItems === undefined ? {} : { resolutions: resolutionItems },
+    ...retry3 === undefined ? {} : {
+      retry: retry3.split(",").filter(Boolean).map((id) => id)
+    }
   };
 };
 var applyAction = async (api2, runtime, root) => {

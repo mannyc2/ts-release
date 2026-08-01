@@ -38,6 +38,7 @@ export interface ApplyInput {
     readonly publishReviewId: PublishReviewId, readonly reviewer: ReviewerIdentity
   }
   readonly reconcile?: ReadonlyArray<OperationId | string>, readonly resolutions?: ReadonlyArray<OperatorResolution>
+  readonly retry?: ReadonlyArray<OperationId | string>
 }
 export interface ApplyOutput {
   readonly runId: RunId, readonly runPath: string, readonly ledger: RunLedger

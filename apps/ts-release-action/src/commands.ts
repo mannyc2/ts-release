@@ -1,5 +1,5 @@
 import { realpathSync } from "node:fs"
-import { basename, dirname, isAbsolute, relative, resolve } from "node:path"
+import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path"
 import type {
   ApplyInput, ExecutionReviewId, ExecutionScopeInput, OperationId,
   OperatorResolution, PlanId, PublishReviewId, ReleaseApi, Stage
@@ -23,9 +23,9 @@ const optional = (runtime: ActionRuntime, name: string): string | undefined => {
   const value = runtime.input(name).trim()
   return value.length === 0 ? undefined : value
 }
-const inside = (root: string, candidate: string): string => {
+export const inside = (root: string, candidate: string): string => {
   const fromRoot = relative(root, candidate)
-  if (fromRoot === ".." || fromRoot.startsWith("../") || isAbsolute(fromRoot)) {
+  if (fromRoot === ".." || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
     throw new Error("Action path is outside GITHUB_WORKSPACE.")
   }
   return candidate

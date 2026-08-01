@@ -31862,7 +31862,12 @@ var assertExpected = (ledger, expected) => {
 };
 var readLedgerFile = (path2) => {
   try {
-    return decodeLedger(readFileSync(path2, "utf8"));
+    const descriptor = openSync(path2, constants4.O_RDONLY | constants4.O_NOFOLLOW);
+    try {
+      return decodeLedger(readFileSync(descriptor, "utf8"));
+    } finally {
+      closeSync(descriptor);
+    }
   } catch (cause) {
     if (cause instanceof RunStoreError)
       throw cause;
@@ -32007,14 +32012,12 @@ var FileRunStoreLayer = succeed5(RunStore)({ ...makeFileRunStore() });
 // ../../src/drivers/local.ts
 import {
   existsSync as existsSync4,
-  mkdirSync as mkdirSync3,
-  readFileSync as readFileSync3,
+  lstatSync as lstatSync2,
   readdirSync as readdirSync2,
   realpathSync as realpathSync2,
-  statSync as statSync2,
-  writeFileSync as writeFileSync3
+  statSync as statSync2
 } from "node:fs";
-import { basename as basename2, dirname as dirname3, join as join5, resolve as resolve4, sep as sep2 } from "node:path";
+import { basename as basename2, join as join5, resolve as resolve4 } from "node:path";
 
 // ../../src/drivers/services.ts
 import { createHash as createHash2 } from "node:crypto";
@@ -32101,6 +32104,13 @@ class CredentialStore extends Service()("CredentialStore") {
 class DriverCatalog extends Service()("DriverCatalog") {
 }
 
+// ../../src/drivers/contain.ts
+import { isAbsolute, relative, sep } from "node:path";
+var contained = (root, path2) => {
+  const value2 = relative(root, path2);
+  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`) && !isAbsolute(value2);
+};
+
 // ../../src/drivers/workspace.ts
 import {
   chmodSync,
@@ -32119,13 +32129,9 @@ import {
   writeFileSync as writeFileSync2
 } from "node:fs";
 import { createHash as createHash3, randomUUID as randomUUID3 } from "node:crypto";
-import { join as join4, relative, sep } from "node:path";
+import { join as join4 } from "node:path";
 var fail12 = (reason) => DriverError.make({ reason, commitment: "before-commit" });
-var beneath = (root, path2) => {
-  const value2 = relative(root, path2);
-  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`);
-};
-var secureBytes = (root, path2) => {
+var secureRead = (root, path2) => {
   let current = root;
   for (const part of path2.split(/[\\/]+/u)) {
     current = join4(current, part);
@@ -32136,12 +32142,34 @@ var secureBytes = (root, path2) => {
   try {
     const opened = fstatSync(descriptor);
     const resolved = realpathSync(current);
-    if (!beneath(root, resolved))
+    if (!contained(root, resolved))
       throw fail12("Opened file escaped the workspace root.");
     const landed = lstatSync(resolved);
     if (landed.ino !== opened.ino || landed.dev !== opened.dev)
       throw fail12("Opened file changed identity.");
     return { bytes: readFileSync2(descriptor), inode: opened.ino };
+  } finally {
+    closeSync2(descriptor);
+  }
+};
+var secureWrite = (root, path2, bytes) => {
+  const parts = path2.split(/[\\/]+/u).filter((part) => part.length > 0);
+  let parent = root;
+  for (const part of parts.slice(0, -1)) {
+    parent = join4(parent, part);
+    mkdirSync2(parent, { recursive: true });
+    if (lstatSync(parent).isSymbolicLink())
+      throw fail12("Structured write encountered a symlink.");
+  }
+  const target2 = join4(parent, parts.at(-1));
+  if (existsSync3(target2) && lstatSync(target2).isSymbolicLink()) {
+    throw fail12("Structured write encountered a symlink.");
+  }
+  const flags = constants5.O_WRONLY | constants5.O_CREAT | constants5.O_TRUNC | constants5.O_NOFOLLOW;
+  const descriptor = openSync2(target2, flags, 420);
+  try {
+    writeFileSync2(descriptor, bytes);
+    fsyncSync2(descriptor);
   } finally {
     closeSync2(descriptor);
   }
@@ -32177,7 +32205,7 @@ var makeNodeWorkspaceStore = () => ({
       const root = realpathSync(request.root);
       if (root !== request.root)
         throw fail12("WorkspaceRoot was not realpath-normalized.");
-      const source = secureBytes(root, request.source);
+      const source = secureRead(root, request.source);
       const digest = createHash3("sha256").update(source.bytes).digest("hex");
       persist(request.snapshotDirectory, digest, source.bytes);
       return MaterializedOutput.make({
@@ -32899,17 +32927,17 @@ var makeCatalog = (structured, transport) => ({
 var pathOf = (root, path2) => resolve4(root, path2);
 var outputFacts = (root, output) => {
   const path2 = pathOf(root, output.path);
-  if (!existsSync4(path2) || !statSync2(path2).isFile()) {
+  if (!existsSync4(path2) || lstatSync2(path2).isSymbolicLink() || !statSync2(path2).isFile()) {
     throw failure(`Declared output ${output.id} was not materialized.`);
   }
-  const bytes = readFileSync3(path2);
-  const digest = sha256(bytes);
+  const source = secureRead(root, output.path);
+  const digest = sha256(source.bytes);
   return MaterializedOutput.make({
     outputId: output.id,
     snapshotId: SnapshotId.make(digest),
     digest: Digest.make(digest),
-    size: bytes.length,
-    inode: statSync2(path2).ino
+    size: source.bytes.length,
+    inode: source.inode
   });
 };
 var input = (request, id) => {
@@ -32918,16 +32946,16 @@ var input = (request, id) => {
     throw failure(`Operation references unavailable output ${id}.`);
   return found;
 };
+var byCodepoint = (left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0;
 var entries = (request) => request.operation.inputs.map((id) => {
   const output = input(request, id);
-  const path2 = pathOf(request.root, output.path);
   const mode = output.kind === "executable" ? 33261 : 33188;
-  return { path: basename2(output.path), data: readFileSync3(path2), mode };
-}).sort((left, right) => left.path.localeCompare(right.path));
+  return { path: basename2(output.path), data: secureRead(request.root, output.path).bytes, mode };
+}).sort(byCodepoint);
 var normalizeSlashes = (value2) => value2.replaceAll("\\", "/");
 var containedRealPath = (realRoot, child, relative2) => {
   const real = realpathSync2(child);
-  if (real === realRoot || real.startsWith(realRoot + sep2))
+  if (contained(realRoot, real))
     return real;
   throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative2}.`);
 };
@@ -32955,8 +32983,13 @@ var walkFiles = (realRoot, directory, visited) => {
 var patternCandidates = (realRoot, pattern) => {
   const segments = pattern.split("/").filter((segment) => segment.length > 0);
   const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment));
-  if (wildcard >= 0)
-    return walkFiles(realRoot, segments.slice(0, wildcard).join("/"), new Set);
+  if (wildcard >= 0) {
+    const prefix = segments.slice(0, wildcard).join("/");
+    if (prefix.length > 0 && existsSync4(join5(realRoot, prefix))) {
+      containedRealPath(realRoot, join5(realRoot, prefix), prefix);
+    }
+    return walkFiles(realRoot, prefix, new Set);
+  }
   const absolute = join5(realRoot, pattern);
   if (!existsSync4(absolute))
     return [];
@@ -32973,25 +33006,25 @@ var matchedWorkspaceFiles = (realRoot, patterns, excluded) => [...new Set(patter
 var packEntries = (request, operation) => {
   const patterns = operation.files ?? [];
   const declared2 = entries(request);
-  if (patterns.length === 0) {
-    if (declared2.length === 0)
-      throw failure(`Archive ${operation.id} has zero entries.`);
-    return declared2;
+  let combined = declared2;
+  if (patterns.length > 0) {
+    const realRoot = realpathSync2(request.root);
+    const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)));
+    const matched = matchedWorkspaceFiles(realRoot, patterns, excluded);
+    if (matched.length === 0)
+      throw failure(`Archive ${operation.id} patterns matched no workspace files.`);
+    combined = [...declared2, ...matched.map((path2) => ({
+      path: path2,
+      data: secureRead(realRoot, path2).bytes,
+      mode: 33188
+    }))];
   }
-  const realRoot = realpathSync2(request.root);
-  const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)));
-  const matched = matchedWorkspaceFiles(realRoot, patterns, excluded);
-  if (matched.length === 0)
-    throw failure(`Archive ${operation.id} patterns matched no workspace files.`);
-  const combined = [...declared2, ...matched.map((path2) => ({
-    path: path2,
-    data: new Uint8Array(readFileSync3(join5(realRoot, path2))),
-    mode: 33188
-  }))];
+  if (combined.length === 0)
+    throw failure(`Archive ${operation.id} has zero entries.`);
   const duplicate2 = combined.map((entry) => entry.path).find((path2, index, all3) => all3.indexOf(path2) !== index);
   if (duplicate2 !== undefined)
     throw failure(`Archive ${operation.id} has duplicate entry ${duplicate2}.`);
-  return combined.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+  return [...combined].sort(byCodepoint);
 };
 var content = (request) => {
   const operation = request.operation;
@@ -33006,7 +33039,7 @@ var content = (request) => {
     if (part.fact === "assetName")
       return basename2(output.path);
     if (part.fact === "sha256")
-      return sha256(readFileSync3(pathOf(request.root, output.path)));
+      return sha256(secureRead(request.root, output.path).bytes);
     throw failure("downloadUrl facts require a product-owned preset value.");
   }).join("");
 };
@@ -33026,30 +33059,31 @@ var executed = (run4, request, operation) => run4({
 var materialized = (request) => attempt2(() => {
   const operation = request.operation;
   switch (operation._tag) {
-    case "Check":
-      if (!existsSync4(pathOf(request.root, operation.path))) {
-        throw failure(`Required path ${operation.path} is absent.`);
-      }
-      break;
-    case "Write": {
+    case "Check": {
       const path2 = pathOf(request.root, operation.path);
-      mkdirSync3(dirname3(path2), { recursive: true });
-      writeFileSync3(path2, content(request));
+      let present = false;
+      try {
+        present = !lstatSync2(path2).isSymbolicLink();
+      } catch {
+        present = false;
+      }
+      if (!present)
+        throw failure(`Required path ${operation.path} is absent.`);
+      break;
+    }
+    case "Write": {
+      secureWrite(request.root, operation.path, content(request));
       break;
     }
     case "Pack": {
-      const path2 = pathOf(request.root, operation.outputs[0].path);
       const archive = packEntries(request, operation);
-      mkdirSync3(dirname3(path2), { recursive: true });
-      writeFileSync3(path2, operation.format === "zip" ? zip3(archive) : tarGz(archive));
+      secureWrite(request.root, operation.outputs[0].path, operation.format === "zip" ? zip3(archive) : tarGz(archive));
       break;
     }
     case "Digest": {
-      const path2 = pathOf(request.root, operation.outputs[0].path);
-      mkdirSync3(dirname3(path2), { recursive: true });
-      writeFileSync3(path2, operation.inputs.map((id) => {
+      secureWrite(request.root, operation.outputs[0].path, operation.inputs.map((id) => {
         const output = input(request, id);
-        return `${sha256(readFileSync3(pathOf(request.root, output.path)))}  ${basename2(output.path)}`;
+        return `${sha256(secureRead(request.root, output.path).bytes)}  ${basename2(output.path)}`;
       }).join(`
 `) + `
 `);
@@ -33750,8 +33784,8 @@ class ReleaseApiError extends Error {
 }
 
 // ../../src/api/input.ts
-import { realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
-import { isAbsolute, relative as relative2, resolve as resolve6, sep as sep3 } from "node:path";
+import { existsSync as existsSync5, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
+import { dirname as dirname3, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve6, sep as sep2 } from "node:path";
 var exact = (phase, value2, keys2, label) => {
   if (typeof value2 !== "object" || value2 === null || Array.isArray(value2)) {
     throw new ReleaseApiError(phase, `${label} must be an object.`);
@@ -33764,7 +33798,7 @@ var exact = (phase, value2, keys2, label) => {
   return record2;
 };
 var workspace = (phase, value2) => {
-  if (!isAbsolute(value2) || value2.length === 0) {
+  if (!isAbsolute2(value2) || value2.length === 0) {
     throw new ReleaseApiError(phase, "Workspace must be a nonempty absolute path.");
   }
   const canonical2 = realpathSync3(value2);
@@ -33774,9 +33808,15 @@ var workspace = (phase, value2) => {
   return WorkspaceRoot.make(canonical2);
 };
 var within = (root, value2) => {
-  const path2 = isAbsolute(value2) ? resolve6(value2) : resolve6(root, value2);
+  const path2 = isAbsolute2(value2) ? resolve6(value2) : resolve6(root, value2);
   const child = relative2(root, path2);
-  if (child === ".." || child.startsWith(`..${sep3}`)) {
+  if (child === ".." || child.startsWith(`..${sep2}`)) {
+    throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
+  }
+  let ancestor = dirname3(path2);
+  while (!existsSync5(ancestor))
+    ancestor = dirname3(ancestor);
+  if (!contained(root, realpathSync3(ancestor))) {
     throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
   }
   return path2;
@@ -33857,10 +33897,10 @@ var prepareNew = (plan, root, input2) => {
   };
 };
 var prepareResume = (plan, root, path2) => {
-  const contained = within(root, path2);
+  const contained2 = within(root, path2);
   let runPath;
   try {
-    runPath = resolveLedgerPath(contained);
+    runPath = resolveLedgerPath(contained2);
   } catch (cause) {
     throw new ReleaseApiError("apply", cause instanceof RunStoreError ? cause.reason : String(cause));
   }
@@ -33990,15 +34030,15 @@ var reviewExecution = defaultApi.reviewExecution;
 var apply = defaultApi.apply;
 // src/index.ts
 import {
-  mkdirSync as mkdirSync4,
-  readFileSync as readFileSync4,
-  writeFileSync as writeFileSync4
+  mkdirSync as mkdirSync3,
+  readFileSync as readFileSync3,
+  writeFileSync as writeFileSync3
 } from "node:fs";
 import { dirname as dirname5 } from "node:path";
 
 // src/commands.ts
 import { realpathSync as realpathSync4 } from "node:fs";
-import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute2, relative as relative3, resolve as resolve7 } from "node:path";
+import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve7, sep as sep3 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
 var optional3 = (runtime, name) => {
   const value2 = runtime.input(name).trim();
@@ -34006,14 +34046,14 @@ var optional3 = (runtime, name) => {
 };
 var inside = (root, candidate) => {
   const fromRoot = relative3(root, candidate);
-  if (fromRoot === ".." || fromRoot.startsWith("../") || isAbsolute2(fromRoot)) {
+  if (fromRoot === ".." || fromRoot.startsWith(`..${sep3}`) || isAbsolute3(fromRoot)) {
     throw new Error("Action path is outside GITHUB_WORKSPACE.");
   }
   return candidate;
 };
-var contained = (root, path2) => inside(root, realpathSync4(isAbsolute2(path2) ? path2 : resolve7(root, path2)));
+var contained2 = (root, path2) => inside(root, realpathSync4(isAbsolute3(path2) ? path2 : resolve7(root, path2)));
 var containedOutput = (root, path2) => {
-  const candidate = isAbsolute2(path2) ? resolve7(path2) : resolve7(root, path2);
+  const candidate = isAbsolute3(path2) ? resolve7(path2) : resolve7(root, path2);
   return inside(root, resolve7(realpathSync4(dirname4(candidate)), basename3(candidate)));
 };
 var scope4 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => id) };
@@ -34033,12 +34073,12 @@ var accepted = (runtime, root) => {
   if (planId === undefined)
     throw new Error("plan-id is required.");
   return {
-    planBytes: runtime.read(contained(root, path2)),
+    planBytes: runtime.read(contained2(root, path2)),
     expectedPlanId: planId
   };
 };
 var planAction = async (api2, runtime, root) => {
-  const source = contained(root, optional3(runtime, "config") ?? "release.config.json");
+  const source = contained2(root, optional3(runtime, "config") ?? "release.config.json");
   const result2 = await api2.plan({ config: JSON.parse(runtime.read(source)), workspace: root });
   const output2 = containedOutput(root, optional3(runtime, "plan-path") ?? "release-plan.json");
   runtime.write(output2, result2.bytes);
@@ -34132,10 +34172,10 @@ try {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
     input: getInput,
     output: setOutput,
-    read: (path2) => readFileSync4(path2, "utf8"),
+    read: (path2) => readFileSync3(path2, "utf8"),
     write: (path2, value2) => {
-      mkdirSync4(dirname5(path2), { recursive: true });
-      writeFileSync4(path2, value2);
+      mkdirSync3(dirname5(path2), { recursive: true });
+      writeFileSync3(path2, value2);
     }
   });
 } catch (cause) {

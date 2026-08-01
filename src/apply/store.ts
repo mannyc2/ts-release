@@ -43,7 +43,12 @@ const assertExpected = (ledger: RunLedger, expected: ExpectedLedger): void => {
 }
 export const readLedgerFile = (path: string): RunLedger => {
   try {
-    return decodeLedger(readFileSync(path, "utf8"))
+    const descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW)
+    try {
+      return decodeLedger(readFileSync(descriptor, "utf8"))
+    } finally {
+      closeSync(descriptor)
+    }
   } catch (cause) {
     if (cause instanceof RunStoreError) throw cause
     throw error(`Ledger read refused: ${String(cause)}`)

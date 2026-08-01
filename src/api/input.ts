@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
-import { realpathSync, statSync } from "node:fs"
-import { isAbsolute, relative, resolve, sep } from "node:path"
+import { existsSync, realpathSync, statSync } from "node:fs"
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path"
+import { contained } from "../drivers/contain.js"
 import type { ReleaseApiServices } from "./types.js"
 import type { ReleaseApiPhase } from "./errors.js"
 import { ReleaseApiError } from "./errors.js"
@@ -49,6 +50,14 @@ export const within = (root: string, value: string): string => {
   const path = isAbsolute(value) ? resolve(value) : resolve(root, value)
   const child = relative(root, path)
   if (child === ".." || child.startsWith(`..${sep}`)) {
+    throw new ReleaseApiError("apply", "Run path must remain inside the workspace.")
+  }
+  // A symlinked directory component must not relocate run state outside the
+  // workspace: canonicalize the nearest existing ancestor (the final
+  // components may not exist yet) and re-check against the realpathed root.
+  let ancestor = dirname(path)
+  while (!existsSync(ancestor)) ancestor = dirname(ancestor)
+  if (!contained(root, realpathSync(ancestor))) {
     throw new ReleaseApiError("apply", "Run path must remain inside the workspace.")
   }
   return path

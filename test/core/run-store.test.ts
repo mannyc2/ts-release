@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   utimesSync,
   writeFileSync
 } from "node:fs"
@@ -229,6 +230,14 @@ describe("file-backed RunStore", () => {
       })))._tag).toBe("RunStoreError")
       writeFileSync(path, '{"truncated":')
       expect((await failure(store.load(path, expected)))._tag).toBe("RunStoreError")
+      // A symlinked ledger path refuses: the durable read is O_NOFOLLOW.
+      const real = join(directory, "elsewhere.json")
+      writeFileSync(real, durable)
+      rmSync(path)
+      symlinkSync(real, path)
+      const linked = await failure(store.load(path, expected))
+      expect(linked._tag).toBe("RunStoreError")
+      expect(linked.reason).toContain("Ledger read refused")
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }

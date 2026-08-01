@@ -13,6 +13,7 @@ import { join } from "node:path"
 import {
   actionCommands,
   actionOutputs,
+  inside,
   runAction
 } from "../../apps/ts-release-action/src/commands.js"
 import { makeReleaseApi } from "../../src/api/api.js"
@@ -83,6 +84,15 @@ describe("candidate Action cutover", () => {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
+  })
+
+  test("inside refuses traversal and absolutes, accepts prefixes in-root", () => {
+    const root = "/workspace"
+    expect(() => inside(root, "/workspace/..")).toThrow("Action path is outside GITHUB_WORKSPACE.")
+    expect(() => inside(root, "/workspace/../x")).toThrow("Action path is outside GITHUB_WORKSPACE.")
+    expect(() => inside(root, "/elsewhere/file.json")).toThrow("Action path is outside GITHUB_WORKSPACE.")
+    expect(inside(root, "/workspace/..foo")).toBe("/workspace/..foo")
+    expect(inside(root, "/workspace/release-plan.json")).toBe("/workspace/release-plan.json")
   })
 
   test("outside config refuses before any read or core call", async () => {

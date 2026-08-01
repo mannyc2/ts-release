@@ -326,6 +326,52 @@ describe("candidate driver conformance", () => {
     }
   })
 
+  test("symlinks at write targets and declared outputs refuse", async () => {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-symlink-refuse-")))
+    try {
+      const spawner = recordingSpawner(() => ({ exitCode: 0 }))
+      const outside = join(directory, "outside.txt")
+      writeFileSync(outside, "outside")
+      const root = join(directory, "workspace")
+      mkdirSync(join(root, "dist"), { recursive: true })
+      symlinkSync(outside, join(root, "dist/notes.md"))
+      const write = CatalogStructuredRequest.make({
+        operation: Write.make({
+          id: OperationId.make("process:notes"), inputs: [],
+          outputs: [OutputDeclaration.make({
+            id: OutputId.make("notes"), path: SafeRelativePath.make("dist/notes.md"), kind: "file"
+          })],
+          path: SafeRelativePath.make("dist/notes.md"), content: "released\n"
+        }),
+        root: WorkspaceRoot.make(root),
+        availableOutputs: []
+      })
+      const refusal = await Effect.runPromise(
+        structuredEffect(write).pipe(liveLayers(spawner, {}), Effect.flip))
+      expect(refusal.reason).toBe("Structured write encountered a symlink.")
+      expect(readFileSync(outside, "utf8")).toBe("outside")
+      // A symlink at a declared output path refuses observation too: the
+      // digest must never attest a link target's bytes.
+      writeFileSync(join(root, "dist/real.md"), "real\n")
+      const observed = CatalogStructuredRequest.make({
+        operation: Check.make({
+          id: OperationId.make("validate:real"), inputs: [],
+          outputs: [OutputDeclaration.make({
+            id: OutputId.make("linked"), path: SafeRelativePath.make("dist/notes.md"), kind: "file"
+          })],
+          path: SafeRelativePath.make("dist/real.md")
+        }),
+        root: WorkspaceRoot.make(root),
+        availableOutputs: []
+      })
+      const observeRefusal = await Effect.runPromise(
+        structuredEffect(observed).pipe(liveLayers(spawner, {}), Effect.flip))
+      expect(observeRefusal.reason).toBe("Declared output linked was not materialized.")
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
   test("package, forge, and opaque composites reject injected execution policy", async () => {
     for (const name of ["portable-cli", "agent-plugin"]) {
       const config = JSON.parse(readFileSync(

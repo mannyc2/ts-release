@@ -24718,9 +24718,6 @@ var LogicalRunId = identifier2("LogicalRunId");
 var AttemptId = identifier2("AttemptId");
 var OperationHash = identifier2("OperationHash");
 var ExecutionTopologyHash = identifier2("ExecutionTopologyHash");
-var ExecutionScopeHash = identifier2("ExecutionScopeHash");
-var WorkerId = identifier2("WorkerId");
-var WorkerKeyFingerprint = identifier2("WorkerKeyFingerprint");
 var ProjectId = identifier2("ProjectId");
 var ExecutionReviewId = identifier2("ExecutionReviewId");
 var PublishReviewId = identifier2("PublishReviewId");
@@ -24759,27 +24756,7 @@ var resolution = {
 };
 
 class ExecutionScope extends Class4("ExecutionScope")({
-  operationIds: ArraySchema(OperationId),
-  workerId: optionalKey2(WorkerId),
-  scopeHash: optional(ExecutionScopeHash),
-  ownedOperationHashes: optional(ArraySchema(OperationHash)),
-  prerequisiteFactHashes: optional(ArraySchema(OperationHash))
-}) {
-}
-
-class WorkerRegistration extends Class4("WorkerRegistration")({
-  workerId: WorkerId,
-  publicKey: NonEmptyString,
-  workerKeyFingerprint: WorkerKeyFingerprint,
-  scopeHash: ExecutionScopeHash,
-  ownedOperationHashes: ArraySchema(OperationHash),
-  prerequisiteFactHashes: ArraySchema(OperationHash)
-}) {
-}
-
-class ExecutionTopology extends Class4("ExecutionTopology")({
-  planId: PlanId,
-  partitions: ArraySchema(WorkerRegistration)
+  operationIds: ArraySchema(OperationId)
 }) {
 }
 
@@ -24797,31 +24774,6 @@ class PublishApprovalReceipt extends Class4("PublishApprovalReceipt")({
 }) {
 }
 
-class SignedAuthorizationReceipt extends Class4("SignedAuthorizationReceipt")({
-  signerWorkerId: WorkerId,
-  planId: PlanId,
-  logicalRunId: LogicalRunId,
-  scopeHash: ExecutionScopeHash,
-  topologyHash: ExecutionTopologyHash,
-  operationHash: OperationHash,
-  attemptId: AttemptId,
-  purpose: Literals(["execute", "publish"]),
-  reviewer: NonEmptyString,
-  reviewChallengeId: NonEmptyString,
-  nonce: ApprovalNonce,
-  issuedAt: NonEmptyString,
-  materialBindingHashes: ArraySchema(Digest),
-  signature: NonEmptyString
-}) {
-}
-
-class ImportedFact extends Class4("ImportedFact")({
-  workerId: WorkerId,
-  revision: Number5,
-  attestationDigest: Digest
-}) {
-}
-
 class MaterializedOutput extends Class4("MaterializedOutput")({
   outputId: OutputId,
   snapshotId: SnapshotId,
@@ -24832,13 +24784,6 @@ class MaterializedOutput extends Class4("MaterializedOutput")({
 }) {
 }
 
-class ObservedSubject extends Class4("ObservedSubject")({
-  outputId: OutputId,
-  snapshotId: SnapshotId,
-  digest: Digest,
-  size: Number5
-}) {
-}
 class CheckpointPending extends TaggedClass()("CheckpointPending", checkpoint) {
 }
 
@@ -24931,8 +24876,6 @@ class AttemptRecord extends Class4("AttemptRecord")({
   attemptId: AttemptId,
   executionReceipt: ExecutionApprovalReceipt,
   publishReceipt: optional(PublishApprovalReceipt),
-  authorizationReceipt: optional(SignedAuthorizationReceipt),
-  importedFrom: optional(ImportedFact),
   state: AttemptState
 }) {
 }
@@ -24941,15 +24884,6 @@ class OperationRunRecord extends Class4("OperationRunRecord")({
   operationId: OperationId,
   operationHash: OperationHash,
   attempts: ArraySchema(AttemptRecord)
-}) {
-}
-
-class LedgerAttestation extends Class4("LedgerAttestation")({
-  workerId: WorkerId,
-  topologyHash: ExecutionTopologyHash,
-  signerFingerprint: WorkerKeyFingerprint,
-  digest: Digest,
-  signature: NonEmptyString
 }) {
 }
 var Stage = Literals(["build", "process", "catalog", "validate", "publish", "announce", "verify"]);
@@ -24963,9 +24897,7 @@ class RunLedger extends Class4("RunLedger")({
   frontier: Stage,
   executionTopologyHash: ExecutionTopologyHash,
   revision: Number5,
-  operations: ArraySchema(OperationRunRecord),
-  topology: optional(ExecutionTopology),
-  attestation: optional(LedgerAttestation)
+  operations: ArraySchema(OperationRunRecord)
 }) {
 }
 
@@ -25816,7 +25748,7 @@ var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHa
 var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials) => hashCanonical("ts-release/package-store-reconcile/v1", {
   planId,
   logicalRunId,
-  scopeHash: scope2.scopeHash ?? hashCanonical("ts-release/execution-scope/v1", {
+  scopeHash: hashCanonical("ts-release/execution-scope/v1", {
     planId,
     operationIds: [...scope2.operationIds].map(String).sort()
   }),
@@ -25834,7 +25766,7 @@ var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash,
 var supplyChainReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials, domain = "supply-chain") => hashCanonical(`ts-release/${domain}-reconcile/v1`, {
   planId,
   logicalRunId,
-  scopeHash: scope2.scopeHash ?? hashCanonical("ts-release/execution-scope/v1", {
+  scopeHash: hashCanonical("ts-release/execution-scope/v1", {
     planId,
     operationIds: [...scope2.operationIds].map(String).sort()
   }),
@@ -28222,29 +28154,6 @@ class DigestRecipe extends TaggedClass()("DigestRecipe", {
 }) {
 }
 var RecipeDefinition = Union2([StaticOutputRecipe, DigestRecipe]);
-var genericUploadProfile = WireContract.make({
-  profileId: ProfileId.make("http.generic-upload/v1"),
-  contractFixtureId: "contract.http.generic-upload/v1",
-  baseUrl: "https://uploads.example.invalid",
-  pathTemplate: "/artifacts/{name}",
-  responseShapeId: "empty-v1",
-  pagination: "none",
-  commitment: "status-2xx",
-  reconciliation: "get-same-resource"
-});
-var productProfile = (kind, contractFixtureId) => Object.freeze({ kind, contractFixtureId, registration: "product-immutable" });
-var profileRegistry = Object.freeze({
-  "http.generic-upload/v1": Object.freeze(genericUploadProfile),
-  "build.bun-compile/v1": productProfile("process", "contract.build.bun-compile/v1"),
-  "build.command/v1": productProfile("process", "contract.build.command/v1"),
-  "build.pypi-wheel/v1": productProfile("process", "contract.build.pypi-wheel/v1"),
-  "process.hook/v1": productProfile("process", "contract.process.hook/v1"),
-  "catalog.git-publish/v1": productProfile("opaque-publish", "contract.catalog.git/v1"),
-  "registry.npm-publish/v1": productProfile("package-release", "contract.registry.npm/v1"),
-  "registry.pypi-publish/v1": productProfile("package-release", "contract.registry.pypi/v1"),
-  "forge.github-release/v1": productProfile("forge-release", "contract.forge.github/v1"),
-  "opaque.publish-command/v1": productProfile("opaque-publish", "contract.opaque.publish/v1")
-});
 
 // ../../src/plan/accepted.ts
 var decoder = new TextDecoder("utf-8", { fatal: true });
@@ -33245,7 +33154,7 @@ var assertScope = (accepted, scope4) => {
   if (new Set(ids).size !== ids.length || ids.some((id) => !known.has(id)))
     throw fail14("Execution scope is duplicate or unknown.");
   const selected2 = new Set(ids);
-  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId) && !scope4.prerequisiteFactHashes?.includes(OperationHash.make(accepted.operationHashes.find((item) => item.operationId === edge.producerId)?.hash ?? ""))))
+  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId)))
     throw fail14("Execution scope omits a dependency.");
 };
 var assertProgress = (operation, state) => {
@@ -33298,7 +33207,6 @@ var createLedger = (accepted, request) => {
     frontier: request.frontier,
     executionTopologyHash: request.topologyHash,
     revision: 0,
-    ...request.topology === undefined ? {} : { topology: request.topology },
     operations: accepted.operationHashes.map(({ operationId: operationId2, hash: hash2 }) => OperationRunRecord.make({
       operationId: OperationId.make(operationId2),
       operationHash: OperationHash.make(hash2),

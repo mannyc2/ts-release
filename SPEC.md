@@ -178,7 +178,6 @@ monotonic stage frontier and revision
 per-operation attempts and checkpoint progress
 execution and optional publish receipts
 materialized-output snapshot identity, digest, size, and inode
-optional ledger attestation
 ```
 
 The ledger is written atomically. Every transition increments the revision.

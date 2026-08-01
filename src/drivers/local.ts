@@ -219,4 +219,3 @@ export const LiveDriversLayer: Layer.Layer<
   })),
   Layer.succeed(CredentialStore)(credentials)
 )
-export const normalizeWorkspaceRoot = (path: string): string => realpathSync(path)

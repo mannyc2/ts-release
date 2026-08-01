@@ -258,7 +258,3 @@ export const operationStatus = (ledger: RunLedger, operationId: OperationId): At
   ledger.operations.find((item) => item.operationId === operationId)?.attempts.at(-1)?.state
 export const settled = (state: AttemptState | undefined): boolean =>
   state?._tag === "Passed" || state?._tag === "AssumedCommitted"
-export type StagedOutcome = "prepare" | "publish" | "announce" | "continue"
-export const stagedOutcome = (frontier: Stage): StagedOutcome =>
-  stageOrder.indexOf(frontier) <= stageOrder.indexOf("validate") ? "prepare"
-    : frontier === "publish" ? "publish" : frontier === "announce" ? "announce" : "continue"

@@ -152,7 +152,6 @@ const hostPlatformPackages: Readonly<Record<string, string>> = {
 const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/api/input.ts",
   "src/apply/store.ts",
-  "src/apply/transfer.ts",
   "src/drivers/local.ts",
   "src/drivers/workspace.ts"
 ])

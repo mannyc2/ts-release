@@ -34,7 +34,7 @@ const commandPublish = (
   // never started" must stay retryable NotDispatched (nothing reached the
   // registry), while any non-zero exit from a process that DID run stays
   // CommitmentUnknown, because package managers can fail after committing.
-  return transport.run({ argv, cwd: ".", environmentNames: names }).pipe(
+  return transport.run({ argv, cwd: request.root, environmentNames: names }).pipe(
     Effect.map((result) => result.exitCode === 0
       ? Committed.make({ observedOutcome: result.stdout.trim() || "exit-0" })
       : CommitmentUnknown.make({ failure: `Publisher exited ${result.exitCode} after dispatch.` })),
@@ -71,8 +71,9 @@ const forgeRelease = (
 ) => Effect.gen(function*() {
   const operation = request.operation
   if (operation._tag !== "ForgeRelease") return yield* Effect.fail(failure("Expected forge release."))
+  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/")
   const response = yield* transport.client.execute(HttpClientRequest.post(
-    `https://api.github.com/repos/${operation.repository}/releases`,
+    `https://api.github.com/repos/${repoPath}/releases`,
     {
       headers: {
         authorization: `Bearer ${credential}`,
@@ -98,12 +99,13 @@ const forgeAsset = (
 ) => Effect.gen(function*() {
   const operation = request.operation
   if (operation._tag !== "ForgeRelease") return yield* Effect.fail(failure("Expected forge release."))
+  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/")
   const headers = {
     authorization: `Bearer ${credential}`,
     accept: "application/vnd.github+json"
   }
   const release = yield* transport.client.execute(HttpClientRequest.get(
-    `https://api.github.com/repos/${operation.repository}/releases/tags/${
+    `https://api.github.com/repos/${repoPath}/releases/tags/${
       encodeURIComponent(operation.tag)
     }`,
     { headers }
@@ -121,7 +123,7 @@ const forgeAsset = (
     return NotDispatched.make({ reason: "Forge asset bytes are unavailable.", retryable: false })
   }
   const uploaded = yield* transport.client.execute(HttpClientRequest.post(
-    `https://uploads.github.com/repos/${operation.repository}/releases/${
+    `https://uploads.github.com/repos/${repoPath}/releases/${
       value.id
     }/assets?name=${encodeURIComponent(asset.name)}`,
     { headers, body: HttpBody.uint8Array(bytes, asset.contentType) }
@@ -154,8 +156,9 @@ const reconcile = (transport: RemoteTransport): DriverCatalogShape["reconcile"] 
     if (isClosedProfilePublish(operation))
       return yield* Effect.fail(failure("No live closed-profile reconciliation transport is installed."))
     if (operation._tag === "ForgeRelease") {
+      const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/")
       const response = yield* transport.client.execute(HttpClientRequest.get(
-        `https://api.github.com/repos/${operation.repository}/releases/tags/${
+        `https://api.github.com/repos/${repoPath}/releases/tags/${
           encodeURIComponent(operation.tag)
         }`,
         { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } }

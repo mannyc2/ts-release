@@ -24,7 +24,7 @@ export const lowerNpm = (config: CandidateConfig, rows: CurrentRows, section = c
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
     : [section.tokenEnv ?? "NPM_TOKEN"]
   const packageOutput = rows.outputs.get("npm-package")
-  const registryUrl = section.registry ?? "https://registry.npmjs.org"
+  const registryUrl = assertRegistryUrl(section.registry ?? "https://registry.npmjs.org")
   const publishArgv = ["npm", "publish", packagePath, "--registry", registryUrl,
     ...(section.access === undefined ? [] : ["--access", section.access]),
     ...(section.provenance === true ? ["--provenance"] : [])] as [string, ...Array<string>]
@@ -42,6 +42,14 @@ export const lowerNpm = (config: CandidateConfig, rows: CurrentRows, section = c
     environmentNames, credential: publishCredential(environmentNames.at(-1)!),
     readCredential: readCredential("NPM_REGISTRY_READ"),
     contractFixtureId: "registry.npm-publish/v1" })
+}
+// npm and PyPI registry URLs pass the SAME closed HTTPS/DNS policy as
+// provider endpoints. The row keeps the caller's exact spelling: the policy's
+// canonical form would rewrite both shipped defaults (adding npm's root
+// slash, stripping PyPI's /legacy/ slash) and shipped plan bytes are frozen.
+export const assertRegistryUrl = (value: string): string => {
+  normalizeProviderEndpoint(value)
+  return value
 }
 export const normalizeProviderEndpoint = (value: string): string => {
   const url = new URL(value), host = url.hostname
@@ -80,7 +88,7 @@ const lowerPyPi = (config: CandidateConfig, rows: CurrentRows) => {
   const oidc = section.trustedPublishing !== undefined
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
     : ["TWINE_USERNAME", "TWINE_PASSWORD"]
-  const registryUrl = section.repositoryUrl ?? "https://upload.pypi.org/legacy/"
+  const registryUrl = assertRegistryUrl(section.repositoryUrl ?? "https://upload.pypi.org/legacy/")
   const python = section.pythonExecutable ?? "python"
   const artifactPaths = artifacts.map((item) => item.path)
   return PackageRegistryRelease.make({

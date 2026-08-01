@@ -25286,7 +25286,7 @@ class HttpPublish extends TaggedClass()("HttpPublish", {
 
 class ForgeRelease extends TaggedClass()("ForgeRelease", {
   ...row,
-  repository: NonEmptyString,
+  repository: String4.check(makeFilter2((value2) => /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value2) ? undefined : "Repository must be owner/name.")),
   tag: NonEmptyString,
   title: NonEmptyString,
   draft: Boolean3,
@@ -25509,6 +25509,17 @@ class ReleasePlanV6 extends Class4("ReleasePlanV6")({
 }) {
 }
 
+// ../../src/model/secret-patterns.ts
+var secretPatterns = [
+  /ghp_[A-Za-z0-9]{20,}/u,
+  /gho_[A-Za-z0-9]{20,}/u,
+  /github_pat_[A-Za-z0-9_]{20,}/u,
+  /xox[abps]-[A-Za-z0-9-]{10,}/u,
+  /AKIA[0-9A-Z]{16}/u,
+  /npm_[A-Za-z0-9]{30,}/u,
+  /-----BEGIN [A-Z ]*PRIVATE KEY/u
+];
+
 // ../../src/model/validate.ts
 var stageOrder = [
   "build",
@@ -25531,12 +25542,7 @@ var duplicate = (values, kind) => {
 };
 var secretLike = (plan) => {
   const text = encodeCanonicalJson(encodeSync2(ReleasePlanV6)(plan));
-  const patterns = [
-    /ghp_[A-Za-z0-9]{20,}/u,
-    /github_pat_[A-Za-z0-9_]{20,}/u,
-    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u
-  ];
-  return patterns.some((pattern) => pattern.test(text)) ? SecretLikePlanValueError.make({ field: "durable-plan" }) : undefined;
+  return secretPatterns.some((pattern) => pattern.test(text)) ? SecretLikePlanValueError.make({ field: "durable-plan" }) : undefined;
 };
 var credentialFailure = (entries) => {
   const read = new Set;
@@ -27525,7 +27531,7 @@ var lowerNpm2 = (config, rows2, section = config.publish.npm) => {
   const oidc = section.trustedPublishing !== undefined;
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : [section.tokenEnv ?? "NPM_TOKEN"];
   const packageOutput = rows2.outputs.get("npm-package");
-  const registryUrl = section.registry ?? "https://registry.npmjs.org";
+  const registryUrl = assertRegistryUrl(section.registry ?? "https://registry.npmjs.org");
   const publishArgv = [
     "npm",
     "publish",
@@ -27560,6 +27566,10 @@ var lowerNpm2 = (config, rows2, section = config.publish.npm) => {
     readCredential: readCredential("NPM_REGISTRY_READ"),
     contractFixtureId: "registry.npm-publish/v1"
   });
+};
+var assertRegistryUrl = (value2) => {
+  normalizeProviderEndpoint(value2);
+  return value2;
 };
 var normalizeProviderEndpoint = (value2) => {
   const url = new URL(value2), host = url.hostname;
@@ -27606,7 +27616,7 @@ var lowerPyPi = (config, rows2) => {
     throw new Error("PyPI requires at least one distribution artifact.");
   const oidc = section.trustedPublishing !== undefined;
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : ["TWINE_USERNAME", "TWINE_PASSWORD"];
-  const registryUrl = section.repositoryUrl ?? "https://upload.pypi.org/legacy/";
+  const registryUrl = assertRegistryUrl(section.repositoryUrl ?? "https://upload.pypi.org/legacy/");
   const python = section.pythonExecutable ?? "python";
   const artifactPaths = artifacts.map((item) => item.path);
   return PackageRegistryRelease.make({
@@ -32040,6 +32050,7 @@ class CatalogPublishRequest extends TaggedClass()("CatalogPublishRequest", {
     SmtpPublish,
     OpaquePublish
   ]),
+  root: WorkspaceRoot,
   checkpointId: CheckpointId,
   clientReconciliationKey: NonEmptyString
 }) {
@@ -32792,6 +32803,19 @@ var readOptionalEnv = (name) => option2(string3(name)).pipe(map5(getOrUndefined)
 }));
 var readEnvironment = (names) => forEach2(["PATH", ...names], (name) => readOptionalEnv(name).pipe(map5((value2) => [name, value2]))).pipe(map5((entries) => Object.fromEntries(entries.flatMap(([name, value2]) => value2 === undefined ? [] : [[name, value2]]))));
 
+// ../../src/drivers/redact.ts
+var EXCERPT_LIMIT = 2000;
+var redactOutput = (text3, env) => {
+  let out = text3;
+  for (const [name, value2] of Object.entries(env).filter(([name2, value3]) => name2 !== "PATH" && value3.length >= 6).sort((left, right) => right[1].length - left[1].length)) {
+    out = out.split(value2).join(`[redacted:${name}]`);
+  }
+  for (const pattern of secretPatterns) {
+    out = out.replace(new RegExp(pattern.source, `${pattern.flags.replace("u", "")}gu`), "[redacted:token]");
+  }
+  return out.length > EXCERPT_LIMIT ? `${out.slice(0, EXCERPT_LIMIT)}…[truncated]` : out;
+};
+
 // ../../src/drivers/utils.ts
 import { createHash as createHash4 } from "node:crypto";
 var failure = (reason, commitment = "before-commit") => DriverError.make({ reason, commitment });
@@ -32809,7 +32833,11 @@ var makeRunCommand = gen2(function* () {
       stderr: collect(handle.stderr),
       exitCode: handle.exitCode
     }, { concurrency: "unbounded" });
-    return { ...output, exitCode: Number(output.exitCode) };
+    return {
+      stdout: redactOutput(output.stdout, env),
+      stderr: redactOutput(output.stderr, env),
+      exitCode: Number(output.exitCode)
+    };
   }).pipe(scoped2, mapError3((cause) => failure(String(cause))));
 });
 
@@ -32818,7 +32846,7 @@ var ok = (response) => response.status >= 200 && response.status < 300;
 var commandPublish = (transport, request, argv) => {
   const operation = request.operation;
   const names = operation._tag === "OpaquePublish" || operation._tag === "PackageRegistryRelease" ? operation.environmentNames : [];
-  return transport.run({ argv, cwd: ".", environmentNames: names }).pipe(map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })), catch_2((cause) => succeed6(NotDispatched.make({ reason: `Publisher could not start: ${cause.reason}`, retryable: true }))));
+  return transport.run({ argv, cwd: request.root, environmentNames: names }).pipe(map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })), catch_2((cause) => succeed6(NotDispatched.make({ reason: `Publisher could not start: ${cause.reason}`, retryable: true }))));
 };
 var httpRequest = (transport, request, bytes, credential) => gen2(function* () {
   const operation = request.operation;
@@ -32837,7 +32865,8 @@ var forgeRelease = (transport, request, credential) => gen2(function* () {
   const operation = request.operation;
   if (operation._tag !== "ForgeRelease")
     return yield* fail6(failure("Expected forge release."));
-  const response = yield* transport.client.execute(post(`https://api.github.com/repos/${operation.repository}/releases`, {
+  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
+  const response = yield* transport.client.execute(post(`https://api.github.com/repos/${repoPath}/releases`, {
     headers: {
       authorization: `Bearer ${credential}`,
       accept: "application/vnd.github+json"
@@ -32855,11 +32884,12 @@ var forgeAsset = (transport, request, bytes, credential) => gen2(function* () {
   const operation = request.operation;
   if (operation._tag !== "ForgeRelease")
     return yield* fail6(failure("Expected forge release."));
+  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
   const headers = {
     authorization: `Bearer ${credential}`,
     accept: "application/vnd.github+json"
   };
-  const release2 = yield* transport.client.execute(get2(`https://api.github.com/repos/${operation.repository}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers }));
+  const release2 = yield* transport.client.execute(get2(`https://api.github.com/repos/${repoPath}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers }));
   if (!ok(release2)) {
     return NotDispatched.make({
       reason: `GitHub release lookup HTTP ${release2.status}`,
@@ -32872,7 +32902,7 @@ var forgeAsset = (transport, request, bytes, credential) => gen2(function* () {
   if (asset === undefined || bytes === undefined) {
     return NotDispatched.make({ reason: "Forge asset bytes are unavailable.", retryable: false });
   }
-  const uploaded = yield* transport.client.execute(post(`https://uploads.github.com/repos/${operation.repository}/releases/${value2.id}/assets?name=${encodeURIComponent(asset.name)}`, { headers, body: uint8Array(bytes, asset.contentType) }));
+  const uploaded = yield* transport.client.execute(post(`https://uploads.github.com/repos/${repoPath}/releases/${value2.id}/assets?name=${encodeURIComponent(asset.name)}`, { headers, body: uint8Array(bytes, asset.contentType) }));
   return ok(uploaded) ? Committed.make({
     observedOutcome: String(uploaded.status),
     transmittedDigest: Digest.make(sha256(bytes))
@@ -32886,7 +32916,8 @@ var reconcile = (transport) => (request, credential) => gen2(function* () {
   if (isClosedProfilePublish(operation))
     return yield* fail6(failure("No live closed-profile reconciliation transport is installed."));
   if (operation._tag === "ForgeRelease") {
-    const response = yield* transport.client.execute(get2(`https://api.github.com/repos/${operation.repository}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } }));
+    const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
+    const response = yield* transport.client.execute(get2(`https://api.github.com/repos/${repoPath}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } }));
     if (!ok(response))
       return ReadResult.make({ found: false });
     if (request.checkpointId === "release")
@@ -33640,6 +33671,7 @@ var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(funct
     });
     const publish = CatalogPublishRequest.make({
       operation,
+      root: ctx.request.root,
       checkpointId: checkpoint3.checkpointId,
       clientReconciliationKey: key
     });
@@ -33660,6 +33692,7 @@ var reconcile2 = (ctx, ledger, recovery, permit) => gen2(function* () {
   const credential = yield* ctx.credential.getPublish(operation.credential, permit);
   const result2 = yield* ctx.catalog.reconcile(CatalogPublishRequest.make({
     operation,
+    root: ctx.request.root,
     checkpointId: recovery.checkpointId,
     clientReconciliationKey: checkpoint3.clientReconciliationKey
   }), credential);

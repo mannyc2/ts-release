@@ -121,7 +121,7 @@ export const acceptedRunPlan = (): Promise<AcceptedPlan> => {
           contractFixtureId: "contract.build.command/v1",
           argv: ["verify"],
           cwd: SafeRelativePath.make("."),
-          environmentNames: []
+          environmentNames: ["FAKE_PUBLISH_TOKEN"]
         })
       ],
       publish: [

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
+import { secretPatterns } from "../../src/model/secret-patterns.js"
 import { parseStrictJson } from "./strict-json.js"
 
 const REQUIRED = [
@@ -18,10 +19,7 @@ const RESERVED_MARKETPLACE_NAMES = [
 const CASE_KEYS = [
   "id", "kind", "prompt", "expectedPhases", "expectedActions", "forbiddenActions", "requiredResultFields"
 ]
-const SECRET_PATTERNS = [
-  /ghp_[A-Za-z0-9]{20,}/u, /gho_[A-Za-z0-9]{20,}/u, /xox[abps]-[A-Za-z0-9-]{10,}/u,
-  /AKIA[0-9A-Z]{16}/u, /npm_[A-Za-z0-9]{30,}/u, /-----BEGIN [A-Z ]*PRIVATE KEY/u
-]
+const SECRET_PATTERNS = secretPatterns
 const THIRD_PARTY_INSTALLERS = [/npx +skills +add/iu, /smithery +(install|add)/iu, /skills\.sh\/install/iu]
 const INTERFACE_LIMITS: ReadonlyArray<readonly [field: string, limit: number]> = [
   ["displayName", 80], ["shortDescription", 240], ["longDescription", 4000], ["developerName", 120]

@@ -33,6 +33,9 @@ export class CatalogPublishRequest
       SupplyChainPublish, ProviderPublish, AnnouncementPublish, SmtpPublish,
       OpaquePublish
     ]),
+    // Command publishers run in the plan workspace, never the ambient cwd:
+    // .npmrc discovery walks up from here.
+    root: WorkspaceRoot,
     checkpointId: CheckpointId,
     // Recorded durably for operator reconciliation on every mechanism;
     // transmitted as Idempotency-Key only on HttpPublish (command-line

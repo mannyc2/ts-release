@@ -70,7 +70,14 @@ export class HttpPublish extends Schema.TaggedClass<HttpPublish>()("HttpPublish"
   credential: PublishCredential
 }) {}
 export class ForgeRelease extends Schema.TaggedClass<ForgeRelease>()("ForgeRelease", {
-  ...row, repository: Schema.NonEmptyString, tag: Schema.NonEmptyString,
+  ...row,
+  repository: Schema.String.check(
+    Schema.makeFilter((value: string) =>
+      /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value)
+        ? undefined
+        : "Repository must be owner/name.")
+  ),
+  tag: Schema.NonEmptyString,
   title: Schema.NonEmptyString, draft: Schema.Boolean, prerelease: Schema.Boolean,
   assets: Schema.Array(Schema.Struct({
     outputId: OutputId, path: SafeRelativePath, name: Schema.NonEmptyString,

@@ -13,6 +13,7 @@ import {
   type OutputDeclaration
 } from "./operation.js"
 import { ReleasePlanV6 } from "./plan.js"
+import { secretPatterns } from "./secret-patterns.js"
 
 export const stageOrder = [
   "build",
@@ -64,12 +65,7 @@ const duplicate = (
 
 const secretLike = (plan: ReleasePlanV6): SecretLikePlanValueError | undefined => {
   const text = encodeCanonicalJson(Schema.encodeSync(ReleasePlanV6)(plan))
-  const patterns = [
-    /ghp_[A-Za-z0-9]{20,}/u,
-    /github_pat_[A-Za-z0-9_]{20,}/u,
-    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u
-  ]
-  return patterns.some((pattern) => pattern.test(text))
+  return secretPatterns.some((pattern) => pattern.test(text))
     ? SecretLikePlanValueError.make({ field: "durable-plan" })
     : undefined
 }

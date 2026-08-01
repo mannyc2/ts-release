@@ -3,6 +3,7 @@ import * as Stream from "effect/Stream"
 import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { readEnvironment } from "./environment.js"
+import { redactOutput } from "./redact.js"
 import { failure } from "./utils.js"
 import type { DriverError } from "../model/run.js"
 
@@ -35,7 +36,14 @@ export const makeRunCommand: Effect.Effect<RunCommand, never, ChildProcessSpawne
         stderr: collect(handle.stderr),
         exitCode: handle.exitCode
       }, { concurrency: "unbounded" })
-      return { ...output, exitCode: Number(output.exitCode) }
+      // Redaction lives here, where the env values are in hand: every
+      // consumer of child output (Exec failures, publisher stdout/stderr)
+      // is covered at the source and no driver can forget.
+      return {
+        stdout: redactOutput(output.stdout, env),
+        stderr: redactOutput(output.stderr, env),
+        exitCode: Number(output.exitCode)
+      }
     }).pipe(
       Effect.scoped,
       Effect.mapError((cause) => failure(String(cause)))

@@ -2,6 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { PackageRegistryRelease } from "../../src/model/operation.js"
 import type { ContentValue, Operation } from "../../src/model/operation.js"
 import {
   NonEmptyName,
@@ -150,5 +151,33 @@ describe("Plan 176 current recipe port", () => {
     expect(operation?._tag === "Exec" ? operation.argv : []).toEqual([
       "tool", "fixture", "1.0.0", "linux-x64", "fixture", ""
     ])
+  })
+
+  test("registry URLs pass the provider HTTPS policy and keep their spelling", async () => {
+    const dogfood = JSON.parse(readFileSync(
+      join(root, "apps/release-ts/release.config.json"),
+      "utf8"
+    )) as { publish: { npm: { registry?: string } } }
+    const compileWith = (registry: string) => {
+      const mutated = structuredClone(dogfood)
+      mutated.publish.npm.registry = registry
+      return Effect.runPromise(compilePlan(mutated, Invocation.make({
+        workspace: WorkspaceRoot.make(root),
+        commit: NonEmptyName.make("abc123"),
+        snapshot: false
+      })))
+    }
+    await expect(compileWith("http://registry.example")).rejects.toThrow()
+    await expect(compileWith("https://localhost/registry")).rejects.toThrow()
+    const accepted = await compileWith("https://registry.npmjs.org/")
+    const npm = operationEntries(accepted.plan)
+      .map(({ operation }) => operation)
+      .find((candidate): candidate is PackageRegistryRelease =>
+        candidate._tag === "PackageRegistryRelease" && candidate.registryKind === "npm")
+    if (npm === undefined) throw new Error("Missing npm release operation.")
+    // The policy validates; the row keeps the caller's exact spelling so
+    // shipped plan bytes stay stable.
+    expect(npm.registryUrl).toBe("https://registry.npmjs.org/")
+    expect(npm.probeUrl.startsWith("https://registry.npmjs.org/")).toBe(true)
   })
 })

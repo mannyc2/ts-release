@@ -210,7 +210,7 @@ const publishOperation = (
           targetCoordinates: target,
           ...(subject === undefined ? {} : { subjectDigest: subject.digest })
         } : {}) })
-    const publish = CatalogPublishRequest.make({ operation,
+    const publish = CatalogPublishRequest.make({ operation, root: ctx.request.root,
       checkpointId: checkpoint.checkpointId, clientReconciliationKey: key })
     const result = yield* dispatched(
       ctx.catalog.publish(publish, handles.get(String(checkpoint.checkpointId)), credential))
@@ -235,7 +235,7 @@ const reconcile = (
     return yield* TransitionError.make({ reason: "Reconciliation does not name an unknown checkpoint." })
   const credential = yield* ctx.credential.getPublish(operation.credential, permit)
   const result = yield* ctx.catalog.reconcile(CatalogPublishRequest.make({
-    operation, checkpointId: recovery.checkpointId,
+    operation, root: ctx.request.root, checkpointId: recovery.checkpointId,
     clientReconciliationKey: checkpoint.clientReconciliationKey
   }), credential)
   return yield* moved(ctx, ledger, {

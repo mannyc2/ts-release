@@ -25,7 +25,8 @@ import {
   OutputId,
   ProfileId,
   SafeRelativePath,
-  SnapshotId
+  SnapshotId,
+  WorkspaceRoot
 } from "../../src/model/primitives.js"
 import { DriverError, MaterializedOutput } from "../../src/model/run.js"
 import {
@@ -77,7 +78,8 @@ const facts = MaterializedOutput.make({
 })
 const request = (operation: typeof forge | typeof http | typeof opaque, checkpointId: string) =>
   CatalogPublishRequest.make({
-    operation, checkpointId: CheckpointId.make(checkpointId),
+    operation, root: WorkspaceRoot.make("/workspace-root"),
+    checkpointId: CheckpointId.make(checkpointId),
     clientReconciliationKey: "stable-key"
   })
 const handle = () => VerifiedContentHandle.from(
@@ -228,6 +230,7 @@ describe("remote driver transports", () => {
     expect(result.commands).toHaveLength(1)
     expect(result.commands[0]?.argv).toEqual(["publisher", "--now"])
     expect(result.commands[0]?.env).toEqual({ PATH: "/usr/bin", OPAQUE_TOKEN: "secret" })
+    expect(result.commands[0]?.cwd).toBe("/workspace-root")
   })
 
   test("a nonzero publisher exit is a commitment the client cannot resolve", async () => {
@@ -257,6 +260,13 @@ describe("remote driver transports", () => {
       reason: "Publisher could not start: spawn ENOENT",
       retryable: true
     })
+  })
+
+  test("repository must be owner/name; other spellings refuse at construction", () => {
+    expect(() => ForgeRelease.make({ ...forge, repository: "owner/name/extra?x=1" })).toThrow()
+    expect(() => ForgeRelease.make({ ...forge, repository: "owner" })).toThrow()
+    expect(ForgeRelease.make({ ...forge, repository: "owner-2/repo.name_x" }).repository)
+      .toBe("owner-2/repo.name_x")
   })
 
   test("http publication transmits the reconciliation key as the idempotency key", async () => {

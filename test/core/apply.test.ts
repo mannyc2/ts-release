@@ -1,4 +1,5 @@
 import { describe, expect, test } from "@effect/bun-test"
+import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { createHash, randomBytes } from "node:crypto"
@@ -40,9 +41,12 @@ import {
   WorkspaceStore,
   type DriverCatalogShape
 } from "../../src/drivers/services.js"
+import { LiveDriversLayer } from "../../src/drivers/local.js"
 import {
   makeNodeWorkspaceStore
 } from "../../src/drivers/workspace.js"
+import { projectEvidence } from "../../src/view/evidence.js"
+import { recordingHttpClient, recordingSpawner } from "./host-doubles.js"
 import {
   DriverError,
   ExecutionApprovalReceipt,
@@ -398,6 +402,73 @@ describe("applyAcceptedPlan", () => {
       expect(operationStatus(second, OperationId.make("forge"))?._tag).toBe("Pending")
     } finally {
       rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("child output enters the durable ledger only redacted and bounded", async () => {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-redact-")))
+    try {
+      const root = join(directory, "workspace")
+      const runs = join(directory, "runs")
+      mkdirSync(join(root, "dist"), { recursive: true })
+      writeFileSync(join(root, "dist/source"), "first")
+      writeFileSync(join(root, "dist/second"), "second")
+      const accepted = await acceptedRunPlan()
+      const scope = ExecutionScope.make({
+        operationIds: accepted.operationHashes.map(({ operationId }) =>
+          OperationId.make(operationId))
+      })
+      const topology = ExecutionTopologyHash.make("single-machine/v1")
+      const execution = mintExecutionReceipt(accepted, scope, topology, {
+        reviewId: executionReviewId(accepted, scope, topology),
+        runId: RunId.make("run"),
+        reviewer: "reviewer",
+        approvalNonce: ApprovalNonce.make("execution-nonce"),
+        approvedAt: "2026-08-01T00:00:00.000Z"
+      })
+      const ledger = createLedger(accepted, {
+        runId: execution.runId,
+        logicalRunId: execution.logicalRunId,
+        scope,
+        frontier: "validate",
+        topologyHash: topology,
+        receipt: execution
+      })
+      const store = makeFileRunStore()
+      const path = store.path(runs, execution.logicalRunId)
+      const sentinel = "sentinel-3f9a51c2d6e8"
+      const spawner = recordingSpawner(() => ({
+        exitCode: 1,
+        stderr: `npm ERR! token ${sentinel} was rejected by the registry`
+      }))
+      const layer = Layer.mergeAll(
+        Layer.succeed(RunStore)({ ...store }),
+        LocalApprovalSignerLayer,
+        LiveDriversLayer.pipe(Layer.provide(Layer.mergeAll(
+          spawner.layer,
+          recordingHttpClient(() => ({ status: 500 })).layer
+        )))
+      )
+      const result = await Effect.runPromise(applyAcceptedPlan(accepted, {
+        root: WorkspaceRoot.make(realpathSync(root)),
+        snapshotDirectory: join(directory, "snapshots"),
+        through: "validate",
+        executionReceipt: execution,
+        run: { _tag: "NewRun", path, ledger }
+      }).pipe(
+        Effect.provide(layer),
+        Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env: {
+          PATH: "/usr/bin",
+          FAKE_PUBLISH_TOKEN: sentinel
+        } })))
+      ))
+      if ("_tag" in result) throw new Error("Expected ledger.")
+      const durable = readFileSync(path, "utf8")
+      expect(durable).not.toContain(sentinel)
+      expect(durable).toContain("[redacted:FAKE_PUBLISH_TOKEN]")
+      expect(JSON.stringify(projectEvidence(decodeLedger(durable)))).not.toContain(sentinel)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
     }
   })
 

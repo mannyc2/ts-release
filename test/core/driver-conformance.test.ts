@@ -201,6 +201,7 @@ describe("candidate driver conformance", () => {
     if (operation._tag !== "HttpPublish") throw new Error("Expected HTTP publish fixture.")
     const request = CatalogPublishRequest.make({
       operation,
+      root: WorkspaceRoot.make("/workspace-root"),
       checkpointId: CheckpointId.make("dispatch"),
       clientReconciliationKey: "stable-key"
     })

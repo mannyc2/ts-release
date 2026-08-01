@@ -124,6 +124,9 @@ import { makeReleaseApi } from "@mannyc1/ts-release"
 import { BunReleaseLayer } from "@mannyc1/ts-release/bun"
 
 const release = makeReleaseApi(BunReleaseLayer)
+const config = {
+  project: { name: "@scope/example", version: "1.2.3", tag: "v1.2.3", commit: "abc123" }
+}
 const planned = await release.plan({
   config,
   workspace: "/absolute/real/workspace"

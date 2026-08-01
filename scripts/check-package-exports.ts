@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { isAbsolute, normalize, resolve } from "node:path"
 import { cwd, exit } from "node:process"
+import { pathToFileURL } from "node:url"
 import * as ts from "typescript"
 import { bannedAggregateExports, expectedPublicExports } from "./lib/public-api-policy.js"
 import { makeRepoScratchDirectory, removeScratchDirectory } from "./lib/scratch-workspace.js"
@@ -302,8 +303,21 @@ const main = async (): Promise<void> => {
           failures.push(`package.json export ${subpath} is an aggregate entrypoint and must not be published`)
         }
         const specifier = packageImportSpecifier(packageName, subpath)
+        // Import the BUILT artifact, not the bare specifier: under `bun run`,
+        // tsconfig paths resolve the bare name to src/, so a dist/ regression
+        // would pass. The runtime proof must load what ships.
+        const exportValue = exportsField[subpath]
+        const builtTarget = typeof exportValue === "string"
+          ? exportValue
+          : isRecord(exportValue) && typeof exportValue.default === "string"
+          ? exportValue.default
+          : undefined
+        if (builtTarget === undefined) {
+          failures.push(`package export ${specifier} has no importable default target`)
+          continue
+        }
         try {
-          const module = await import(specifier)
+          const module = await import(pathToFileURL(resolve(root, builtTarget)).href)
           const expectedExports = subpath === "."
             ? expectedRootRuntimeExports
             : expectedHostRuntimeExports[subpath]

@@ -1,8 +1,10 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
+import { writeFileSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import * as ts from "typescript"
+import { makeRepoScratchDirectory, removeScratchDirectory } from "./lib/scratch-workspace.js"
 
 interface CodeBlock {
   readonly language: string
@@ -21,6 +23,8 @@ interface CheckResult {
   readonly blockCount: number
   readonly packageImportCount: number
   readonly failures: ReadonlyArray<string>
+  readonly blocks: ReadonlyArray<CodeBlock>
+  readonly packageMetadata: PackageMetadata
 }
 
 const root = process.cwd()
@@ -246,18 +250,101 @@ const checkReadme = Effect.fn("scripts.checkReadme")(function*() {
   return {
     blockCount: blocks.length,
     packageImportCount,
-    failures
+    failures,
+    blocks,
+    packageMetadata
   }
 })
 
-const result: CheckResult = await Effect.runPromise(checkReadme().pipe(Effect.provide(BunServices.layer)))
+// Every package-importing ts block is proven against the SHIPPED declarations
+// in dist/, so a public API change must update the README in the same commit.
+const typecheckPackageBlocks = async (
+  blocks: ReadonlyArray<CodeBlock>,
+  packageMetadata: PackageMetadata
+): Promise<{ readonly failures: ReadonlyArray<string>; readonly checkedBlocks: number }> => {
+  const candidates = blocks.filter((block) => {
+    if (block.language !== "ts" && block.language !== "typescript") {
+      return false
+    }
+    const sourceFile = ts.createSourceFile(
+      `block-${block.openingLine}.ts`,
+      block.content,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS
+    )
+    return collectPackageImports(sourceFile, packageMetadata.name).length > 0
+  })
+  if (candidates.length === 0) {
+    return { failures: [], checkedBlocks: 0 }
+  }
 
-if (result.failures.length > 0) {
+  const tempDir = await Effect.runPromise(
+    makeRepoScratchDirectory(".tmp-readme-types-", root).pipe(
+      Effect.provide(BunServices.layer)
+    )
+  )
+  try {
+    const fileForBlock = new Map<string, CodeBlock>()
+    for (const block of candidates) {
+      const path = join(tempDir, `block-${block.openingLine}.ts`)
+      writeFileSync(path, block.content)
+      fileForBlock.set(path, block)
+    }
+
+    const options: ts.CompilerOptions = {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.NodeNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      strict: true,
+      skipLibCheck: false,
+      noEmit: true,
+      types: ["bun-types"],
+      paths: {
+        "@mannyc1/ts-release": [join(root, "dist/index.d.ts")],
+        "@mannyc1/ts-release/node": [join(root, "dist/platform/node.d.ts")],
+        "@mannyc1/ts-release/bun": [join(root, "dist/platform/bun.d.ts")]
+      }
+    }
+    const program = ts.createProgram([...fileForBlock.keys()], options)
+    const failures: Array<string> = []
+    for (const diagnostic of program.getConfigFileParsingDiagnostics().concat(ts.getPreEmitDiagnostics(program))) {
+      const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
+      const block = diagnostic.file === undefined
+        ? undefined
+        : fileForBlock.get(diagnostic.file.fileName)
+      if (block === undefined || diagnostic.file === undefined || diagnostic.start === undefined) {
+        failures.push(`README.md typecheck failed: ${message}`)
+        continue
+      }
+      const position = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start)
+      failures.push(
+        `README.md:${block.contentStartLine + position.line}:${position.character + 1} ${message}`
+      )
+    }
+    return { failures, checkedBlocks: candidates.length }
+  } finally {
+    await Effect.runPromise(
+      removeScratchDirectory(tempDir, {
+        expectedParent: root,
+        allowedPrefixes: [".tmp-readme-types-"]
+      }).pipe(Effect.provide(BunServices.layer))
+    )
+  }
+}
+
+const result: CheckResult = await Effect.runPromise(checkReadme().pipe(Effect.provide(BunServices.layer)))
+const typechecked = await typecheckPackageBlocks(result.blocks, result.packageMetadata)
+const failures = [...result.failures, ...typechecked.failures]
+
+if (failures.length > 0) {
   console.error("README snippet checks failed:")
-  for (const failure of result.failures) {
+  for (const failure of failures) {
     console.error(`- ${failure}`)
   }
   process.exit(1)
 }
 
-console.log(`Checked README snippets: ${result.blockCount} fenced blocks, ${result.packageImportCount} package imports`)
+console.log(
+  `Checked README snippets: ${result.blockCount} fenced blocks, ${result.packageImportCount} package imports, ${typechecked.checkedBlocks} typechecked blocks`
+)

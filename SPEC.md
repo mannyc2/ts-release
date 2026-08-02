@@ -213,9 +213,20 @@ the only durable protocol documents.
 
 ## 13. Public surfaces
 
-The root runtime exports `plan`, `reviewExecution`, `apply`,
-`makeReleaseApi`, `ReleaseApiError`, and `defineRelease`. The lifecycle verbs
-are exactly `plan` and `apply`; review is a pure projection.
+The root runtime exports are exactly:
+
+- the lifecycle verbs and their boundary — `plan`, `reviewExecution`,
+  `apply`, `makeReleaseApi`, `ReleaseApiError`, `defineRelease`;
+- the service tags a caller composes a layer from — `ApprovalSigner`,
+  `RunStore`, `CredentialStore`, `DriverCatalog`, `WorkspaceStore`, plus
+  `ReleaseServicesLive` for everything but the two host capabilities;
+- the permits an `ApprovalSigner` returns — `ExecutionPermit`,
+  `PublishPermit`;
+- the branded id constructors public inputs are built from — `PlanId`,
+  `OperationId`, `ExecutionReviewId`, `PublishReviewId`, `Stage`.
+
+The lifecycle verbs are exactly `plan` and `apply`; review is a pure
+projection.
 
 The CLI commands are exactly `init`, `doctor`, `plan`, and `apply`.
 The Action commands are exactly `plan`, `doctor`, and `apply`.

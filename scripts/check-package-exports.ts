@@ -1,7 +1,7 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
-import { isAbsolute, normalize, resolve } from "node:path"
+import { isAbsolute, join, normalize, resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import { pathToFileURL } from "node:url"
 import * as ts from "typescript"
@@ -44,6 +44,44 @@ const expectedRootRuntimeExports = new Set([
 const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {
   "./node": new Set(["NodeReleaseLayer"]),
   "./bun": new Set(["BunReleaseLayer"])
+}
+
+// SPEC §13 is normative about the root surface, so it is asserted, not
+// trusted: the bullet list under "The root runtime exports are exactly:" must
+// name the same set this gate holds.
+const specRootExports = (failures: Array<string>): ReadonlySet<string> => {
+  const spec = join(root, "SPEC.md")
+  if (!existsSync(spec)) {
+    failures.push("SPEC.md must exist")
+    return new Set()
+  }
+  const section = readFileSync(spec, "utf8").split("## 14.")[0]?.split("## 13.")[1] ?? ""
+  const marker = "The root runtime exports are exactly:"
+  const lines = section.split("\n")
+  const start = lines.findIndex((line) => line.trim() === marker)
+  if (start < 0) {
+    failures.push(`SPEC.md section 13 must contain the line "${marker}"`)
+    return new Set()
+  }
+  const names = new Set<string>()
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() === "" && names.size > 0) break
+    if (line.trim() === "") continue
+    if (!line.startsWith("-") && !line.startsWith("  ")) break
+    for (const [, name] of line.matchAll(/`([A-Za-z][A-Za-z0-9]*)`/gu)) names.add(name!)
+  }
+  return names
+}
+const checkSpecSurface = (failures: Array<string>): void => {
+  const declared = specRootExports(failures)
+  for (const name of expectedRootRuntimeExports) {
+    if (!declared.has(name)) failures.push(`SPEC.md section 13 omits root export ${name}`)
+  }
+  for (const name of declared) {
+    if (!expectedRootRuntimeExports.has(name)) {
+      failures.push(`SPEC.md section 13 names ${name}, which the root does not export`)
+    }
+  }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -386,6 +424,8 @@ const main = async (): Promise<void> => {
       failures.push("apps/release-ts/package.json sideEffects must preserve ./dist/cli/main.js")
     }
   }
+
+  checkSpecSurface(failures)
 
   if (failures.length > 0) {
     console.error("Package export checks failed:")

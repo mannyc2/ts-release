@@ -3,6 +3,7 @@ import { CandidateProvider, type CandidateConfig } from "./config.js"
 import { operationId, outputId, path, recordOutput, selectedOutputs, type CurrentRows } from "./current-shared.js"
 import { lowerNpm, lowerProvider } from "./current-publish.js"
 import { applyCatalogCheckboxPolicy } from "./providers/catalog-policy.js"
+import { ConfigValueError } from "../model/errors.js"
 
 type Named = Extract<typeof CandidateProvider.Type, { readonly credential: string; readonly destination: object }>
 const lowerWrapper = (config: CandidateConfig, rows: CurrentRows, action: Named): void => {
@@ -24,7 +25,7 @@ export const lowerCurrentProviders = (config: CandidateConfig, rows: CurrentRows
     const index = rows.catalog.findIndex((item) => item._tag === "Write" && item.path === action.destination.file)
     const operation = rows.catalog[index]
     if (operation?._tag !== "Write" || typeof operation.content !== "string")
-      throw new Error("Catalog policy target is absent.")
+      throw ConfigValueError.make({ reason: "Catalog policy target is absent." })
     rows.catalog[index] = Write.make({ ...operation,
       content: applyCatalogCheckboxPolicy(operation.content, action.options.checkboxPolicy) })
   } }

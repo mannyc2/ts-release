@@ -2,6 +2,7 @@ import * as Schema from "effect/Schema"
 import { ReleaseStages } from "../model/plan.js"
 import { ProjectId, SafeRelativePath } from "../model/primitives.js"
 import { Stage } from "../model/run.js"
+import { ConfigValueError } from "../model/errors.js"
 
 export class ProjectExecution extends Schema.Class<ProjectExecution>("ProjectExecution")({
   workers: Schema.NonEmptyArray(Schema.NonEmptyString), through: Stage
@@ -32,7 +33,7 @@ export const lowerProjects = (
   if (new Set(projects.map((project) => String(project.id))).size !== projects.length ||
     roots.some((root, index) => roots.some((other, otherIndex) =>
       index !== otherIndex && (root === other || root.startsWith(`${other}/`) || other.startsWith(`${root}/`)))))
-    throw new Error("Project ids and roots must be unique and nonoverlapping.")
+    throw ConfigValueError.make({ reason: "Project ids and roots must be unique and nonoverlapping." })
   const encoded = Schema.encodeSync(ReleaseStages)(stages)
   return Schema.decodeUnknownSync(ReleaseStages)(Object.fromEntries(
     Object.entries(encoded).map(([stage, operations]) => [

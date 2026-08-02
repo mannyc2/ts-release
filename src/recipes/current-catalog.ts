@@ -7,6 +7,7 @@ import {
   basename, command, compactName, credentialName, nonEmptyCommand, operationId, outputId,
   path, recordOutput, render, selectedOutputs, type CurrentRows
 } from "./current-shared.js"
+import { ConfigValueError } from "../model/errors.js"
 
 interface CatalogRow {
   readonly id: string
@@ -78,7 +79,7 @@ const homebrewRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | u
     selected.length === 0 ||
     config.project.description === undefined ||
     config.project.homepage === undefined
-  ) throw new Error("Homebrew requires artifacts, project description, and homepage.")
+  ) throw ConfigValueError.make({ reason: "Homebrew requires artifacts, project description, and homepage." })
   return {
     id: "homebrew", repository: section.repository,
     file: section.formulaPath ?? `.release/generated/${name}.rb`,
@@ -100,7 +101,7 @@ const scoopRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | unde
     selected.length !== 1 ||
     config.project.description === undefined ||
     config.project.homepage === undefined
-  ) throw new Error("Scoop requires one artifact, project description, and homepage.")
+  ) throw ConfigValueError.make({ reason: "Scoop requires one artifact, project description, and homepage." })
   const artifact = selected[0]!
   const prefix = JSON.stringify({
     version: config.project.version, description: config.project.description,
@@ -141,7 +142,7 @@ const genericRow = (
     content,
     inputs: ids.map((id) => {
       const output = rows.outputs.get(id)
-      if (output === undefined) throw new Error(`Catalog ${entry.id} references missing output ${id}.`)
+      if (output === undefined) throw ConfigValueError.make({ reason: `Catalog ${entry.id} references missing output ${id}.` })
       return output
     }),
     commitMessage: render(entry.commitMessage ?? "Update {name} to {version}", config),

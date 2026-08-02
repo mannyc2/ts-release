@@ -1,4 +1,5 @@
 import { localToolProfile, type LocalToolProfile } from "../packages/tool.js"
+import { ConfigValueError } from "../../model/errors.js"
 
 const hosts = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"] as const
 const profile = (id: string, executable: LocalToolProfile["contract"]["executable"],
@@ -27,6 +28,6 @@ export const supplyLocalProfiles = [
 ]
 export const findSupplyLocalProfile = (id: string): LocalToolProfile => {
   const found = supplyLocalProfiles.find((candidate) => candidate.profileId === id)
-  if (found === undefined) throw new Error(`Unknown immutable supply-chain local profile ${id}.`)
+  if (found === undefined) throw ConfigValueError.make({ reason: `Unknown immutable supply-chain local profile ${id}.` })
   return found
 }

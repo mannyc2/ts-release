@@ -169,6 +169,12 @@ describe("Plan 176 current recipe port", () => {
     }
     await expect(compileWith("http://registry.example")).rejects.toThrow()
     await expect(compileWith("https://localhost/registry")).rejects.toThrow()
+    // The lowering failure keeps its TAG through the planning boundary; it
+    // used to arrive flattened into an untyped PlanningFactsError string.
+    await expect(compileWith("http://registry.example")).rejects.toMatchObject({
+      _tag: "ConfigValueError",
+      reason: "Provider URL violates the closed HTTPS/DNS policy."
+    })
     const accepted = await compileWith("https://registry.npmjs.org/")
     const npm = operationEntries(accepted.plan)
       .map(({ operation }) => operation)

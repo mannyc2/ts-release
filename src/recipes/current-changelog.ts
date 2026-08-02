@@ -4,6 +4,7 @@ import { CredentialName } from "../model/primitives.js"
 import type { CandidateConfig } from "./config.js"
 import { renderGroupedNotes } from "./changelog-policy.js"
 import { operationId, outputId, path, recordOutput, type CurrentRows } from "./current-shared.js"
+import { ConfigValueError } from "../model/errors.js"
 
 export const lowerCurrentChangelog = (config: CandidateConfig, rows: CurrentRows): void => {
   const section = config.publish.changelog
@@ -21,7 +22,7 @@ export const lowerCurrentChangelog = (config: CandidateConfig, rows: CurrentRows
   }))
   if (section?.mode !== "reviewed-transform") return
   if (section.profileId !== "changelog.reviewed-transform/v1")
-    throw new Error("Reviewed transform mode requires its immutable profile.")
+    throw ConfigValueError.make({ reason: "Reviewed transform mode requires its immutable profile." })
   const final = recordOutput(rows, OutputDeclaration.make({
     id: outputId("final-notes"), path: path(".release/final-notes.md"), kind: "file", provenance: "process"
   }))

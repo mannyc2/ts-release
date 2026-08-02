@@ -1,3 +1,4 @@
+import { ConfigValueError } from "../../model/errors.js"
 const common = {
   kind: "package-store" as const,
   hosts: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "windows-x64"],
@@ -51,6 +52,6 @@ export const packageStoreProfiles = [
 export type PackageStoreProfile = (typeof packageStoreProfiles)[number]
 export const findPackageStoreProfile = (id: string): PackageStoreProfile => {
   const found = packageStoreProfiles.find((candidate) => candidate.profileId === id)
-  if (found === undefined) throw new Error(`Unknown immutable package store profile ${id}.`)
+  if (found === undefined) throw ConfigValueError.make({ reason: `Unknown immutable package store profile ${id}.` })
   return found
 }

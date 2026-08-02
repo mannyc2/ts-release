@@ -1,5 +1,5 @@
 import * as Effect from "effect/Effect"
-import { PlanningFactsError } from "../model/errors.js"
+import { ConfigValueError, PlanningFactsError } from "../model/errors.js"
 import { ReleaseStages } from "../model/plan.js"
 import type { CandidateConfig } from "./config.js"
 import { lowerCurrentAnnouncements } from "./current-announcement.js"
@@ -24,9 +24,12 @@ export const lowerCurrentConfig = Effect.fn("lowerCurrentConfig")(function*(
       lowerCurrentAnnouncements(config, current)
       return current
     },
-    catch: (cause) => PlanningFactsError.make({
-      reason: cause instanceof Error ? cause.message : String(cause)
-    })
+    // A typed lowering failure keeps its identity instead of being flattened
+    // into an untyped string: planning is the layer users read most.
+    catch: (cause) => cause instanceof ConfigValueError ? cause
+      : PlanningFactsError.make({
+        reason: cause instanceof Error ? cause.message : String(cause)
+      })
   })
   return ReleaseStages.make({
     build: rows.build, process: rows.process, catalog: rows.catalog,

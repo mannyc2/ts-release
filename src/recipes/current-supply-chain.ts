@@ -9,6 +9,7 @@ import { registryProfiles } from "./supply-chain/registry-profiles.js"
 import { credentialedSigningProfile } from "./supply-chain/signing-profiles.js"
 import { notarizationProfiles } from "./supply-chain/notarization-profiles.js"
 import { attestationProfile } from "./supply-chain/attestation-profile.js"
+import { ConfigValueError } from "../model/errors.js"
 
 const kinds: Readonly<Record<string, OutputDeclaration["kind"]>> = {
   "container-metadata": "container-metadata", sbom: "sbom", signature: "signature",
@@ -22,7 +23,7 @@ export const lowerCurrentSupplyChain = (config: CandidateConfig, rows: CurrentRo
   for (const action of config.supplyChain ?? []) {
     const inputs = action.inputs.map((id) => {
       const value = rows.outputs.get(id)
-      if (value === undefined) throw new Error(`Supply-chain input ${id} is absent.`)
+      if (value === undefined) throw ConfigValueError.make({ reason: `Supply-chain input ${id} is absent.` })
       return value
     })
     if (action.kind === "measure-size") {
@@ -36,10 +37,10 @@ export const lowerCurrentSupplyChain = (config: CandidateConfig, rows: CurrentRo
     const remote = [...registryProfiles, credentialedSigningProfile,
       ...notarizationProfiles, attestationProfile].find((item) => item.profileId === action.profileId)
     const outputType = local?.contract.outputs[0]!.type ?? remote?.contract.outputs[0]!.type
-    if (outputType === undefined) throw new Error(`Unknown supply-chain profile ${action.profileId}.`)
+    if (outputType === undefined) throw ConfigValueError.make({ reason: `Unknown supply-chain profile ${action.profileId}.` })
     const targetKeys = Object.keys(action.target).sort()
     const expectedKeys = remote?.contract.targetCoordinates.slice().sort() ?? []
-    if (JSON.stringify(targetKeys) !== JSON.stringify(expectedKeys)) throw new Error("Profile target mismatch.")
+    if (JSON.stringify(targetKeys) !== JSON.stringify(expectedKeys)) throw ConfigValueError.make({ reason: "Profile target mismatch." })
     const outputs = action.outputs.map((item) => declared(rows, item.id, item.path, outputType))
     if (local !== undefined) {
       const argv = local.contract.invocation.argv.map((token) => token

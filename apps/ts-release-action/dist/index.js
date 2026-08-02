@@ -27440,20 +27440,20 @@ var validatePlan = (plan) => {
   const entries = operationEntries(plan);
   const operationDuplicate = duplicate(entries.map(({ operation }) => operation.id), "operation-id");
   if (operationDuplicate !== undefined)
-    return operationDuplicate;
+    return fail2(operationDuplicate);
   const declarations = entries.flatMap(({ operation }) => operation.outputs);
   const outputDuplicate = duplicate(declarations.map((output) => output.id), "output-id");
   if (outputDuplicate !== undefined)
-    return outputDuplicate;
+    return fail2(outputDuplicate);
   const pathDuplicate = duplicate(declarations.map((output) => output.path), "output-path");
   if (pathDuplicate !== undefined)
-    return pathDuplicate;
+    return fail2(pathDuplicate);
   const credential = credentialFailure(entries);
   if (credential !== undefined)
-    return credential;
+    return fail2(credential);
   const secret = secretLike(plan);
   if (secret !== undefined)
-    return secret;
+    return fail2(secret);
   const producer = new Map;
   const outputs = [];
   const dependencies = [];
@@ -27461,11 +27461,11 @@ var validatePlan = (plan) => {
     for (const input of operation.inputs) {
       const prior = producer.get(input);
       if (prior === undefined) {
-        return OutputReferenceError.make({
+        return fail2(OutputReferenceError.make({
           operationId: operation.id,
           outputId: input,
           reason: "Output reference is missing, same-operation, or forward."
-        });
+        }));
       }
       dependencies.push({ operationId: operation.id, inputId: input, producerId: prior.id });
     }
@@ -27478,9 +27478,8 @@ var validatePlan = (plan) => {
     operationId: operation.id,
     hash: hashCanonical("ts-release/operation/v1", encodeSync2(Operation)(operation))
   }));
-  return { entries, outputs, dependencies, operationHashes };
+  return succeed2({ entries, outputs, dependencies, operationHashes });
 };
-var isValidationFailure = (value2) => ("_tag" in value2);
 
 // ../../src/model/permit.ts
 var fail7 = (reason) => {
@@ -27693,7 +27692,7 @@ var qualify = (value2, key, project) => {
 var lowerProjects = (stages, projects) => {
   const roots = projects.map((project) => String(project.root));
   if (new Set(projects.map((project) => String(project.id))).size !== projects.length || roots.some((root, index) => roots.some((other, otherIndex) => index !== otherIndex && (root === other || root.startsWith(`${other}/`) || other.startsWith(`${root}/`)))))
-    throw new Error("Project ids and roots must be unique and nonoverlapping.");
+    throw ConfigValueError.make({ reason: "Project ids and roots must be unique and nonoverlapping." });
   const encoded = encodeSync2(ReleaseStages)(stages);
   return decodeUnknownSync(ReleaseStages)(Object.fromEntries(Object.entries(encoded).map(([stage, operations]) => [
     stage,
@@ -28241,7 +28240,7 @@ var render = (template, config, target2, binary) => {
 var targetPlatform = (target2, binary, compile) => {
   const [os6, arch3, libcToken] = target2.split("-");
   if (!["linux", "darwin", "windows"].includes(os6 ?? "") || !["x64", "arm64"].includes(arch3 ?? "")) {
-    throw new Error(`Unsupported platform target ${target2}.`);
+    throw ConfigValueError.make({ reason: `Unsupported platform target ${target2}.` });
   }
   return {
     os: os6,
@@ -28253,21 +28252,21 @@ var targetPlatform = (target2, binary, compile) => {
 };
 var recordOutput = (rows, output) => {
   if (rows.outputs.has(output.id))
-    throw new Error(`Duplicate output id ${output.id}.`);
+    throw ConfigValueError.make({ reason: `Duplicate output id ${output.id}.` });
   rows.outputs.set(output.id, output);
   return output;
 };
 var selectedOutputs = (rows, ids, fallback) => ids === undefined ? [...rows.outputs.values()].filter(fallback) : ids.map((id) => {
   const output = rows.outputs.get(id);
   if (output === undefined)
-    throw new Error(`Missing selected output ${id}.`);
+    throw ConfigValueError.make({ reason: `Missing selected output ${id}.` });
   return output;
 });
 var command2 = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/u).filter(Boolean) : value2;
 var nonEmptyCommand = (value2) => {
   const [first, ...rest] = value2;
   if (first === undefined || first.length === 0)
-    throw new Error("Command argv must be nonempty.");
+    throw ConfigValueError.make({ reason: "Command argv must be nonempty." });
   return [first, ...rest];
 };
 
@@ -28367,7 +28366,7 @@ var lowerCurrentAnnouncements = (config, rows) => {
       continue;
     if (action.profileId === "announce.smtp/v1") {
       if (notes === undefined)
-        throw new Error("Reviewed announcement notes are absent.");
+        throw ConfigValueError.make({ reason: "Reviewed announcement notes are absent." });
       rows.announce.push(SmtpPublish.make({
         id: operationId(`announce:${action.id}`),
         inputs: [notes.id],
@@ -28381,7 +28380,7 @@ var lowerCurrentAnnouncements = (config, rows) => {
     }
     const profile = announcementHttpProfiles.find((item) => item.profileId === action.profileId);
     if (profile === undefined || notes === undefined)
-      throw new Error("Announcement profile or reviewed notes are absent.");
+      throw ConfigValueError.make({ reason: "Announcement profile or reviewed notes are absent." });
     rows.announce.push(AnnouncementPublish.make({
       id: operationId(`announce:${action.id}`),
       inputs: [notes.id],
@@ -28576,7 +28575,7 @@ var localToolProfiles = [
 var findLocalToolProfile = (id) => {
   const found = localToolProfiles.find((profile3) => profile3.profileId === id);
   if (found === undefined)
-    throw new Error(`Unknown immutable package profile ${id}.`);
+    throw ConfigValueError.make({ reason: `Unknown immutable package profile ${id}.` });
   return found;
 };
 
@@ -28669,7 +28668,7 @@ var lowerBuilds = (config, rows) => {
       const inputs = build2.inputs.map((id) => {
         const found = rows.outputs.get(id);
         if (found === undefined)
-          throw new Error(`Profile input ${id} is absent.`);
+          throw ConfigValueError.make({ reason: `Profile input ${id} is absent.` });
         return found;
       });
       const outputs2 = build2.outputs.map((item) => declare2(rows, item.id, item.path, profileOutputKind(item.path), "build"));
@@ -28714,7 +28713,7 @@ var lowerWheels = (config, rows) => {
     const inputs = wheel.binaries.map((item) => {
       const source = [...rows.outputs.values()].find((candidate) => candidate.path === render(item.sourcePath, config));
       if (source === undefined)
-        throw new Error(`Wheel ${wheel.id} source ${item.sourcePath} is absent.`);
+        throw ConfigValueError.make({ reason: `Wheel ${wheel.id} source ${item.sourcePath} is absent.` });
       return source.id;
     });
     rows.build.push(Exec.make({
@@ -28861,7 +28860,7 @@ var homebrewRow = (config, rows) => {
   const name = section.formulaName ?? compactName(config.project.packageName ?? config.project.name);
   const selected2 = selectedOutputs(rows, section.ids, (item) => item.kind === "executable" && item.platform?.os === "darwin");
   if (selected2.length === 0 || config.project.description === undefined || config.project.homepage === undefined)
-    throw new Error("Homebrew requires artifacts, project description, and homepage.");
+    throw ConfigValueError.make({ reason: "Homebrew requires artifacts, project description, and homepage." });
   return {
     id: "homebrew",
     repository: section.repository,
@@ -28881,7 +28880,7 @@ var scoopRow = (config, rows) => {
   const name = section.manifestName ?? compactName(config.project.packageName ?? config.project.name);
   const selected2 = selectedOutputs(rows, section.ids, (item) => item.kind === "executable" && item.platform?.os === "windows");
   if (selected2.length !== 1 || config.project.description === undefined || config.project.homepage === undefined)
-    throw new Error("Scoop requires one artifact, project description, and homepage.");
+    throw ConfigValueError.make({ reason: "Scoop requires one artifact, project description, and homepage." });
   const artifact = selected2[0];
   const prefix = JSON.stringify({
     version: config.project.version,
@@ -28926,7 +28925,7 @@ var genericRow = (config, rows, entry) => {
     inputs: ids.map((id) => {
       const output = rows.outputs.get(id);
       if (output === undefined)
-        throw new Error(`Catalog ${entry.id} references missing output ${id}.`);
+        throw ConfigValueError.make({ reason: `Catalog ${entry.id} references missing output ${id}.` });
       return output;
     }),
     commitMessage: render(entry.commitMessage ?? "Update {name} to {version}", config),
@@ -29049,7 +29048,7 @@ ${grouped === "" ? `Release ${config.project.tag}.` : grouped}
   if (section?.mode !== "reviewed-transform")
     return;
   if (section.profileId !== "changelog.reviewed-transform/v1")
-    throw new Error("Reviewed transform mode requires its immutable profile.");
+    throw ConfigValueError.make({ reason: "Reviewed transform mode requires its immutable profile." });
   const final = recordOutput(rows, OutputDeclaration.make({
     id: outputId("final-notes"),
     path: path(".release/final-notes.md"),
@@ -29450,13 +29449,13 @@ var assertRegistryUrl = (value2) => {
 var normalizeProviderEndpoint = (value2) => {
   const url = new URL(value2), host = url.hostname;
   if (/(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/iu.test(value2) || url.protocol !== "https:" || url.username !== "" || url.password !== "" || url.search !== "" || url.hash !== "" || ["localhost", "::", "::1", "0.0.0.0"].includes(host) || ["127.", "169.254.", "224.", "255."].some((prefix) => host.startsWith(prefix)))
-    throw new Error("Provider URL violates the closed HTTPS/DNS policy.");
+    throw ConfigValueError.make({ reason: "Provider URL violates the closed HTTPS/DNS policy." });
   return `${url.origin}${url.pathname.replace(/\/+$/u, "") || "/"}`;
 };
 var lowerProvider = (rows2, action) => {
   const profile3 = providerProfiles.find((item) => item.profileId === action.profileId);
   if (profile3 === undefined)
-    throw new Error(`Unknown provider profile ${action.profileId}.`);
+    throw ConfigValueError.make({ reason: `Unknown provider profile ${action.profileId}.` });
   const inputs = selectedOutputs(rows2, action.ids, () => false);
   const target2 = "endpoint" in action ? { endpoint: normalizeProviderEndpoint(action.endpoint) } : action.destination;
   const options = "endpoint" in action ? {
@@ -29465,7 +29464,7 @@ var lowerProvider = (rows2, action) => {
     bodyMapping: action.bodyMapping
   } : Object.fromEntries(Object.entries(action.options).filter(([, value2]) => value2 !== undefined));
   if (Object.keys(target2).sort().join() !== [...profile3.contract.targetCoordinates].sort().join() || Object.keys(options).some((key) => !profile3.contract.allowedOptions.includes(key)))
-    throw new Error("Provider data does not match its immutable profile.");
+    throw ConfigValueError.make({ reason: "Provider data does not match its immutable profile." });
   if (typeof options.baseUrl === "string")
     options.baseUrl = normalizeProviderEndpoint(options.baseUrl);
   const checkpoints = profile3.checkpoints.flatMap((id) => id === "assets" ? inputs.map((input) => `asset:${input.id}`) : [id]);
@@ -29489,7 +29488,7 @@ var lowerPyPi = (config, rows2) => {
     return;
   const artifacts = selectedOutputs(rows2, section.ids, (item) => item.kind === "wheel");
   if (artifacts.length === 0)
-    throw new Error("PyPI requires at least one distribution artifact.");
+    throw ConfigValueError.make({ reason: "PyPI requires at least one distribution artifact." });
   const oidc = section.trustedPublishing !== undefined;
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : ["TWINE_USERNAME", "TWINE_PASSWORD"];
   const registryUrl = assertRegistryUrl(section.repositoryUrl ?? "https://upload.pypi.org/legacy/");
@@ -29534,7 +29533,7 @@ var lowerGitHub = (config, rows2) => {
     return;
   const repository = section.repository ?? config.project.repository;
   if (repository === undefined)
-    throw new Error("GitHub publishing requires a repository.");
+    throw ConfigValueError.make({ reason: "GitHub publishing requires a repository." });
   const assets = [...rows2.outputs.values()].filter((item) => ![
     "package",
     "wheel",
@@ -29614,7 +29613,7 @@ var lowerCurrentPublish = (config, rows2) => {
   for (const item of config.publish.packageStores ?? []) {
     const input = rows2.outputs.get(item.input);
     if (input === undefined)
-      throw new Error(`Package store input ${item.input} is absent.`);
+      throw ConfigValueError.make({ reason: `Package store input ${item.input} is absent.` });
     rows2.publish.push(PackageStorePublish.make({
       id: operationId(`package-store:${item.profileId}:${item.input}`),
       inputs: [input.id],
@@ -29676,7 +29675,7 @@ var lowerCurrentProviders = (config, rows2) => {
     const index = rows2.catalog.findIndex((item) => item._tag === "Write" && item.path === action.destination.file);
     const operation = rows2.catalog[index];
     if (operation?._tag !== "Write" || typeof operation.content !== "string")
-      throw new Error("Catalog policy target is absent.");
+      throw ConfigValueError.make({ reason: "Catalog policy target is absent." });
     rows2.catalog[index] = Write.make({
       ...operation,
       content: applyCatalogCheckboxPolicy(operation.content, action.options.checkboxPolicy)
@@ -29940,7 +29939,7 @@ var lowerCurrentSupplyChain = (config, rows2) => {
     const inputs = action.inputs.map((id) => {
       const value2 = rows2.outputs.get(id);
       if (value2 === undefined)
-        throw new Error(`Supply-chain input ${id} is absent.`);
+        throw ConfigValueError.make({ reason: `Supply-chain input ${id} is absent.` });
       return value2;
     });
     if (action.kind === "measure-size") {
@@ -29962,11 +29961,11 @@ var lowerCurrentSupplyChain = (config, rows2) => {
     ].find((item) => item.profileId === action.profileId);
     const outputType = local2?.contract.outputs[0].type ?? remote2?.contract.outputs[0].type;
     if (outputType === undefined)
-      throw new Error(`Unknown supply-chain profile ${action.profileId}.`);
+      throw ConfigValueError.make({ reason: `Unknown supply-chain profile ${action.profileId}.` });
     const targetKeys = Object.keys(action.target).sort();
     const expectedKeys = remote2?.contract.targetCoordinates.slice().sort() ?? [];
     if (JSON.stringify(targetKeys) !== JSON.stringify(expectedKeys))
-      throw new Error("Profile target mismatch.");
+      throw ConfigValueError.make({ reason: "Profile target mismatch." });
     const outputs2 = action.outputs.map((item) => declared(rows2, item.id, item.path, outputType));
     if (local2 !== undefined) {
       const argv = local2.contract.invocation.argv.map((token) => token.replaceAll("{input}", inputs[0].path).replaceAll("{output}", outputs2[0].path));
@@ -30010,7 +30009,7 @@ var lowerCurrentConfig = fn2("lowerCurrentConfig")(function* (config) {
       lowerCurrentAnnouncements(config, current);
       return current;
     },
-    catch: (cause) => PlanningFactsError.make({
+    catch: (cause) => cause instanceof ConfigValueError ? cause : PlanningFactsError.make({
       reason: cause instanceof Error ? cause.message : String(cause)
     })
   });
@@ -30090,10 +30089,10 @@ class AcceptedPlan {
       });
     }
     const projection = validatePlan(plan);
-    if (isValidationFailure(projection))
-      return yield* projection;
+    if (isFailure2(projection))
+      return yield* projection.failure;
     const digest = hashFramed("ts-release/plan-id/v1", [canonical2]);
-    return new AcceptedPlan(plan, canonical2, PlanId.make(digest), projection);
+    return new AcceptedPlan(plan, canonical2, PlanId.make(digest), projection.success);
   });
 }
 var acceptPlan = AcceptedPlan.accept;
@@ -33981,7 +33980,14 @@ class VerifiedContentHandle {
     return new VerifiedContentHandle(facts, new Uint8Array(bytes));
   }
 }
-var isClosedProfilePublish = (operation) => ["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag);
+var closedProfileTags = [
+  "PackageStorePublish",
+  "SupplyChainPublish",
+  "ProviderPublish",
+  "AnnouncementPublish",
+  "SmtpPublish"
+];
+var isClosedProfilePublish = (operation) => closedProfileTags.includes(operation._tag);
 
 class WorkspaceStore extends Service()("WorkspaceStore") {
 }
@@ -35382,28 +35388,29 @@ var transition = (accepted, ledger, command3) => {
         throw fail14("Frontier cannot move backward.");
       const advanced = RunLedger.make({ ...ledger, frontier: command3.frontier, revision: ledger.revision + 1 });
       validateLedger(accepted, advanced);
-      return advanced;
+      return succeed2(advanced);
     }
     const operations = command3._tag === "Recover" ? ledger.operations.map(recovered) : ledger.operations.map((record2) => record2.operationId === command3.operationId ? changeRecord(accepted, ledger, record2, command3) : record2);
     if (command3._tag !== "Recover" && !ledger.operations.some((record2) => record2.operationId === command3.operationId))
       throw fail14(`Unknown operation ${command3.operationId}.`);
     const next = RunLedger.make({ ...ledger, revision: ledger.revision + 1, operations });
     validateLedger(accepted, next);
-    return next;
+    return succeed2(next);
   } catch (error3) {
-    return error3 instanceof TransitionError ? error3 : fail14(String(error3));
+    return fail2(error3 instanceof TransitionError ? error3 : fail14(String(error3)));
   }
 };
 var operationStatus = (ledger, operationId2) => ledger.operations.find((item) => item.operationId === operationId2)?.attempts.at(-1)?.state;
 var settled = (state) => state?._tag === "Passed" || state?._tag === "AssumedCommitted";
 
 // ../../src/apply/apply.ts
+var applied = (ledger) => ({ _tag: "Applied", ledger });
 var moved = (ctx, ledger, command3) => gen2(function* () {
   const next = transition(ctx.accepted, ledger, command3);
-  if ("_tag" in next)
-    return yield* next;
-  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next);
-  return next;
+  if (isFailure2(next))
+    return yield* next.failure;
+  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next.success);
+  return next.success;
 });
 var structured2 = (ctx, permit, ledger, operation) => gen2(function* () {
   const start2 = operation._tag === "Exec" ? "BeginTrustedExec" : "BeginStructured";
@@ -35614,12 +35621,12 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   ledger = yield* localOperations(ctx, executionPermit, ledger, entries2.map(({ operation }) => operation));
   const scoped4 = operationEntries(accepted.plan).filter(({ operation }) => selected2.has(operation.id));
   if (scoped4.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
-    return ledger;
+    return applied(ledger);
   const publishEntries = entries2.map(({ operation }) => operation).filter(isRemotePublish);
   if (!scoped4.some(({ operation }) => isRemotePublish(operation)))
-    return ledger;
+    return applied(ledger);
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile"))
-    return ledger;
+    return applied(ledger);
   const materials = yield* materialize(ctx, selected2);
   for (const material of materials) {
     const producer = scoped4.map(({ operation }) => operation).find((operation) => operation.outputs.some((output) => String(output.id) === String(material.outputId)));
@@ -35640,15 +35647,15 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
     ledger = yield* reconcile2(ctx, ledger, recovery, permit);
   if (blocksApply(ledger))
-    return ledger;
+    return applied(ledger);
   for (const operation of publishEntries) {
     const state = operationStatus(ledger, operation.id);
     if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
       ledger = yield* publishOperation(ctx, ledger, operation, materials, permit);
     if (!settled(operationStatus(ledger, operation.id)))
-      return ledger;
+      return applied(ledger);
   }
-  return ledger;
+  return applied(ledger);
 });
 
 // ../../src/plan/review.ts
@@ -35871,8 +35878,9 @@ var output = (prepared, ledger, status, extra = {}) => ({
   ...extra
 });
 var publishOutput = async (run4, plan, input2, prepared, review) => {
-  if (!("_tag" in review)) {
-    return output(prepared, review, complete(review) ? "complete" : "stopped");
+  if (review._tag === "Applied") {
+    const ledger = review.ledger;
+    return output(prepared, ledger, complete(ledger) ? "complete" : "stopped");
   }
   if (input2.publishConfirmation === undefined) {
     return output(prepared, review.ledger, "publish-review-required", {
@@ -35898,9 +35906,10 @@ var publishOutput = async (run4, plan, input2, prepared, review) => {
     },
     publish: { receipt: publish }
   }));
-  if ("_tag" in second)
+  if (second._tag !== "Applied") {
     throw new ReleaseApiError("apply", "Publish review did not advance.");
-  return output(prepared, second, complete(second) ? "complete" : "stopped", {
+  }
+  return output(prepared, second.ledger, complete(second.ledger) ? "complete" : "stopped", {
     publishReceiptId: publish.receiptId
   });
 };

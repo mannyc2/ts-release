@@ -2,6 +2,19 @@
 
 ## 0.2.0 - pending
 
+- Configuration has an authored form: `version`, `tag`, `commit`, and `name`
+  may be omitted and observed instead. `plan --from-git` / `ship --from-git`
+  (CLI) and `resolve: github` (Action) observe the repository's facts, and
+  `resolveConfig` resolves them into the canonical value deterministically —
+  a fact that contradicts the config is refused, never silently preferred.
+  `schema/release-config.schema.json` is generated from that authored shape,
+  and shipped configs point `$schema` at it again.
+- Breaking: `versionFrom` and `project.tagTemplate` are no longer accepted by
+  the canonical config (they had no behavior); they are authoring directives
+  now. A config without `project.commit` is refused instead of planning the
+  identity `unknown`. Catalog download URLs are derived at plan time and
+  refuse when no repository is stated, instead of publishing a URL containing
+  the literal text `undefined`.
 - Added `ts-release ship`: plan, self-confirm, and apply in one command. The
   approval receipts it mints record the reviewer `self:one-shot`, so a
   one-shot run stays distinguishable from a reviewed one in the ledger. The

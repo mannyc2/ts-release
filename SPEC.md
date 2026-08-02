@@ -45,6 +45,17 @@ containing directory. `--root` selects the workspace explicitly. The Action
 always uses realpath-normalized `GITHUB_WORKSPACE` and requires its config
 path to remain contained.
 
+An authored configuration and observed facts resolve deterministically into the
+canonical value BEFORE `plan` is called, at the application boundary. The
+authored shape makes `version`, `tag`, `commit`, and `name` optional and adds
+the `versionFrom` and `project.tagTemplate` directives, which the resolver
+CONSUMES; facts are observed by an app (`plan --from-git`, the Action's
+`resolve: github`) and passed in as a value. Resolution is pure and total: a
+field is authored, observed, or refused, and a fact contradicting the author is
+always a refusal naming both values. Nothing in the core infers anything, and
+`resolveConfig` is exported so a host resolves exactly as the CLI and the Action
+do.
+
 ## 4. Plan document
 
 The sole plan schema is `release-plan/v6`:

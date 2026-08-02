@@ -21,6 +21,7 @@ they do not own release semantics.
 src/model     schemas, primitives, operations, state, canonical encoding
 src/recipes   deterministic feature/profile lowering
 src/config    strict value decoding
+src/resolve   authored configuration + observed facts → the canonical value
 src/plan      compilation, validation, canonical acceptance, review
 src/drivers   capability interfaces and live mechanism implementations
 src/apply     approvals, ledger, transitions, orchestration
@@ -40,20 +41,24 @@ translation namespace.
 ```text
 model
 ├── recipes
-│   └── config
+│   ├── config
+│   └── resolve
 ├── plan/accepted
 │   ├── plan ← config + recipes
 │   ├── apply ← drivers
 │   ├── view
 │   └── platform ← drivers + apply
 └── api ← plan + apply + view + drivers + platform
-    └── public root + ./node + ./bun
+    └── public root + ./node + ./bun + resolve
         ├── CLI    → ./bun
         └── Action → ./node
 ```
 
 Model imports no product owner. Recipes depend only on model. Config decodes
-recipe configuration. Accepted-plan code depends only on model. Planning may
+recipe configuration. Resolve turns an authored configuration plus observed
+facts into a canonical one; it depends on model and recipes, nothing in the
+library imports it, and it may not read the clock, the environment, or a random
+source — the gate enforces all of that. Accepted-plan code depends only on model. Planning may
 use model, config, recipes, and acceptance. Drivers depend only on model.
 Apply uses model, accepted plans, and drivers. Views use model and accepted
 plans. Platform closes host capabilities. The API is the composition
@@ -192,7 +197,12 @@ built from the exported service tags and shapes, a published host layer, or
 `ReleaseServicesLive` plus a platform of the caller's choosing.
 
 The CLI owns one-read JSON loading and workspace selection. Its commands are
-`init`, `doctor`, `plan`, `apply`, and `ship`. `ship` composes the other
+`init`, `doctor`, `plan`, `apply`, and `ship`. `plan --from-git` and
+`ship --from-git` observe the repository's own facts — HEAD commit, the single
+release-shaped tag at HEAD, the package manifest — and resolve them into the
+canonical configuration before planning; the Action does the same under
+`resolve: github` from `GITHUB_SHA`. Observation lives in the apps; the
+resolution both share is one pure library function. `ship` composes the other
 lifecycle commands in one process for ungated releases; it adds no authority
 and records `self:one-shot` as the reviewer of the approvals it echoes.
 

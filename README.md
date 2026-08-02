@@ -44,6 +44,43 @@ Every public fixture contains the complete fields required by its package or
 provider surface. Homebrew and Scoop lowering use product-owned immutable
 presets; applications cannot register or replace profiles.
 
+That value is what the library plans. What you WRITE can be terser: state a
+repository once and let the release facts be observed.
+
+```json
+{
+  "project": {
+    "name": "@scope/example"
+  },
+  "versionFrom": "manifest",
+  "artifacts": [
+    {
+      "id": "cli",
+      "path": "dist/example",
+      "format": "executable"
+    }
+  ],
+  "publish": {}
+}
+```
+
+```sh
+ts-release ship --config release.config.json --from-git
+```
+
+`--from-git` observes the HEAD commit, the single release-shaped tag at HEAD,
+and the package manifest's name and version, then resolves them into the
+canonical configuration above — writing it to `.release/resolved.config.json`
+for review. The GitHub Action does the same with `resolve: github`.
+
+Resolution never picks a side. A value you stated and a value the repository
+reports are either equal or a refusal naming both; a version that cannot be
+observed is a refusal naming how to state it; two release-shaped tags at HEAD
+are an ambiguity, not a coin flip. Without `--from-git` nothing is observed at
+all, and a config carrying `versionFrom` or `project.tagTemplate` is refused by
+the core — those are authoring directives, and the canonical world has never
+heard of them.
+
 ## Promise API
 
 ```ts

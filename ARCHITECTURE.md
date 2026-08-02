@@ -151,7 +151,15 @@ and provider data is immutable and product-owned.
 The execution review challenge proves only what was reviewed. A nonce,
 reviewer, timestamp, topology, and run identity mint the execution receipt.
 Publication is separately authorized only after materialized inputs are
-observed. Credentials remain capability values and never enter durable data.
+observed. Credential VALUES never enter durable data: child output is
+recorded only as a bounded excerpt with the operation's declared environment
+values and known token shapes redacted, and HTTP authorization headers are
+redacted by the client.
+
+Receipts are validated by hash self-consistency. Anyone who can write the
+run ledger can mint consistent receipts: the trust boundary is the channel
+that carries the ledger between jobs (artifact integrity plus the protected
+release environment), by design, single-machine.
 
 ## State and recovery
 
@@ -167,8 +175,12 @@ intent and checkpoint reconciliation keys before network dispatch. An
 ambiguous outcome becomes `CommitUnknown`; read-only reconciliation or an
 explicit operator resolution is required before progress.
 
-Every resume revalidates the plan, ledger, scope, topology, operation hashes,
-receipts, and recorded output snapshots before reaching a driver.
+Every resume revalidates, before reaching a driver: the plan identity and
+operation hashes the store expects, the ledger's operation roster and its
+receipt binding, the scope's dependency closure, and each publish input's
+digest against what its producing operation recorded when it passed. Scope
+and topology have no ledger-independent source on a single machine, so they
+are checked for internal consistency, not attested.
 
 ## Boundaries
 
@@ -199,3 +211,11 @@ package checks, and CLI/Action tests verify the release machinery. Driver
 conformance and the remote-driver suite run the live drivers under injected
 spawn and HTTP doubles; the action-bundle gate runs them for real under node.
 Verification does not dispatch publication.
+
+Gates compose in three layers. `check:core` runs the repo-wide checks
+(versions, import rules, tree shaking, types, tests, build, examples,
+README, package exports); `check:app` and `check:action` add each shipped
+surface's own typecheck and cutover suite; `check:portable` is the three
+together and is what CI runs. `check:release` adds the four offline
+self-release gates and runs before a tag. `check:summary` runs every gate
+without stopping at the first failure. `scripts/README.md` lists them all.

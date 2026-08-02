@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { realpathSync } from "node:fs"
+import { mkdirSync, realpathSync } from "node:fs"
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path"
 import {
   encodeResolvedConfig, ExecutionReviewId, OperationId, PlanId, PublishReviewId,
@@ -42,6 +42,11 @@ const contained = (root: string, path: string): string =>
   inside(root, realpathSync(isAbsolute(path) ? path : resolve(root, path)))
 const containedOutput = (root: string, path: string): string => {
   const candidate = isAbsolute(path) ? resolve(path) : resolve(root, path)
+  // Containment is decided on the parent's REALPATH, so the parent has to exist
+  // before it can be resolved — and on a fresh runner `.release/` does not. The
+  // write creates it moments later anyway; creating it here keeps the
+  // symlink-refusing resolution intact instead of trading it for an ENOENT.
+  mkdirSync(dirname(candidate), { recursive: true })
   return inside(root, resolve(realpathSync(dirname(candidate)), basename(candidate)))
 }
 const scope = (value: string | undefined): ExecutionScopeInput => value === undefined || value === "all"

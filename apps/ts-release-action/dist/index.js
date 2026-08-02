@@ -36118,14 +36118,14 @@ var resolveConfig = (authored, facts) => {
 };
 // src/index.ts
 import {
-  mkdirSync as mkdirSync3,
+  mkdirSync as mkdirSync4,
   readFileSync as readFileSync3,
   writeFileSync as writeFileSync3
 } from "node:fs";
 import { dirname as dirname5 } from "node:path";
 
 // src/commands.ts
-import { realpathSync as realpathSync4 } from "node:fs";
+import { mkdirSync as mkdirSync3, realpathSync as realpathSync4 } from "node:fs";
 import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve7, sep as sep3 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
 var optional5 = (runtime, name) => {
@@ -36142,6 +36142,7 @@ var inside = (root, candidate) => {
 var contained2 = (root, path2) => inside(root, realpathSync4(isAbsolute3(path2) ? path2 : resolve7(root, path2)));
 var containedOutput = (root, path2) => {
   const candidate = isAbsolute3(path2) ? resolve7(path2) : resolve7(root, path2);
+  mkdirSync3(dirname4(candidate), { recursive: true });
   return inside(root, resolve7(realpathSync4(dirname4(candidate)), basename3(candidate)));
 };
 var scope4 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => OperationId.make(id)) };
@@ -36298,7 +36299,7 @@ try {
     output: setOutput,
     read: (path2) => readFileSync3(path2, "utf8"),
     write: (path2, value2) => {
-      mkdirSync3(dirname5(path2), { recursive: true });
+      mkdirSync4(dirname5(path2), { recursive: true });
       writeFileSync3(path2, value2);
     }
   });

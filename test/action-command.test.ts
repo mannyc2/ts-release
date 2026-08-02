@@ -133,6 +133,22 @@ describe("installed Action commands", () => {
     }
   })
 
+  // A clean checkout has no `.release/`, and the containment check resolves the
+  // parent's realpath before anything writes it. This passed locally for months
+  // because the directory already existed; the first real dispatch hit ENOENT.
+  test("a plan-path whose directory does not exist yet is planned, not refused", async () => {
+    const fixture = planFixture({
+      command: "plan",
+      "plan-path": ".release/nested/release-plan.json"
+    })
+    try {
+      await fixture.run()
+      expect(fixture.writes[join(fixture.directory, ".release/nested/release-plan.json")]).toBe("{}")
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
   test("an unknown resolve value is refused by name", async () => {
     const fixture = planFixture({ command: "plan", resolve: "gitlab" })
     try {

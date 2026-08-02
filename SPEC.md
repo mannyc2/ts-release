@@ -223,7 +223,9 @@ The root runtime exports are exactly:
 - the permits an `ApprovalSigner` returns — `ExecutionPermit`,
   `PublishPermit`;
 - the branded id constructors public inputs are built from — `PlanId`,
-  `OperationId`, `ExecutionReviewId`, `PublishReviewId`, `Stage`.
+  `OperationId`, `ExecutionReviewId`, `PublishReviewId`, `Stage`;
+- the application-boundary config resolver — `resolveConfig`,
+  `encodeResolvedConfig`.
 
 The lifecycle verbs are exactly `plan` and `apply`; review is a pure
 projection.

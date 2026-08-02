@@ -128,6 +128,10 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   apply: ["apply", "model", "plan", "drivers"],
   view: ["view", "model", "plan"],
   platform: ["platform", "drivers", "apply"],
+  // The resolver is pure authored→canonical semantics: it may read the config
+  // vocabulary and the model, and nothing may read IT except the root export
+  // and the apps (enforced below).
+  resolve: ["resolve", "model", "recipes"],
   api: ["api", "model", "plan", "apply", "view", "drivers", "platform"]
 }
 
@@ -177,6 +181,15 @@ const hardCutTerms = [
   ["plan.state", "release-plan/v4 is flat"],
   ["release-plan/v3", "v3 plan readers and encoders are forbidden"], ["release-plan/v2", "v2 plan readers and encoders are forbidden"],
   [["target", "count"].join("_"), "the Action emits surface_count only"]
+] as const
+
+// src/resolve resolves authored configuration deterministically; anything the
+// clock, the environment, or a random source can change is banned there.
+const impureResolverTerms = [
+  ["process.env", "the resolver reads no environment; facts are observed by apps and passed in"],
+  ["Math.random", "the resolver is deterministic"],
+  ["Date.now", "the resolver is deterministic"],
+  ["new Date", "the resolver is deterministic"]
 ] as const
 
 const forbiddenCarrierFiles = [
@@ -353,6 +366,20 @@ export const checkImportRules = (
         : [])
   }
 
+  // The resolver's whole value is that (authored, facts) determines the output.
+  // Ambient reads are what would quietly break that, and they are the one class
+  // of impurity a type cannot forbid.
+  const impureResolverUsage = (file: string): Array<string> => {
+    if (!toDisplayPath(file).startsWith("src/resolve/")) return []
+    const source = readFileSync(file, "utf8")
+    return impureResolverTerms.flatMap(([term, reason]) => {
+      const position = source.indexOf(term)
+      if (position < 0) return []
+      const line = source.slice(0, position).split("\n").length
+      return [`${toDisplayPath(file)}:${line}: ${reason}; found ${JSON.stringify(term)}`]
+    })
+  }
+
   const hardCutViolations = (file: string): Array<string> => {
     const source = readFileSync(file, "utf8")
     return hardCutTerms.flatMap(([term, reason]) => {
@@ -393,6 +420,7 @@ export const checkImportRules = (
   const failures = [
     ...files.flatMap(checkFile),
     ...files.flatMap(checkAmbientHostUsage),
+    ...files.flatMap(impureResolverUsage),
     ...appPlatformFiles.flatMap(checkAppPlatformImports),
     ...bareEffectFiles.flatMap(checkBareEffectImports),
     ...hardCutScanFiles.flatMap(hardCutViolations),

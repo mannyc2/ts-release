@@ -39,8 +39,10 @@ const expectedRootRuntimeExports = new Set([
   "WorkspaceStore",
   "apply",
   "defineRelease",
+  "encodeResolvedConfig",
   "makeReleaseApi",
   "plan",
+  "resolveConfig",
   "reviewExecution"
 ])
 const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {

@@ -35975,6 +35975,39 @@ var defaultApi = makeReleaseApi(NodeReleaseLayer);
 var plan = defaultApi.plan;
 var reviewExecution = defaultApi.reviewExecution;
 var apply = defaultApi.apply;
+// ../../src/resolve/authored.ts
+var optional3 = optionalKey2;
+
+class AuthoredProject extends Class4("AuthoredProject")({
+  ...CandidateProject.fields,
+  name: optional3(NonEmptyName),
+  version: optional3(Version),
+  tag: optional3(NonEmptyName),
+  tagTemplate: optional3(NonEmptyString)
+}) {
+}
+
+class AuthoredConfig extends Class4("AuthoredConfig")({
+  ...CandidateConfig.fields,
+  project: AuthoredProject,
+  versionFrom: optional3(Literals(["manifest", "git-tag"]))
+}) {
+}
+
+// ../../src/resolve/facts.ts
+var optional4 = optionalKey2;
+
+class ObservedFacts extends Class4("ObservedFacts")({
+  commit: optional4(NonEmptyName),
+  manifestName: optional4(NonEmptyString),
+  manifestVersion: optional4(Version),
+  headTagVersion: optional4(Version)
+}) {
+}
+
+// ../../src/resolve/resolve.ts
+var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
+var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
 // src/index.ts
 import {
   mkdirSync as mkdirSync3,
@@ -35987,7 +36020,7 @@ import { dirname as dirname5 } from "node:path";
 import { realpathSync as realpathSync4 } from "node:fs";
 import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve7, sep as sep3 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
-var optional3 = (runtime, name) => {
+var optional5 = (runtime, name) => {
   const value2 = runtime.input(name).trim();
   return value2.length === 0 ? undefined : value2;
 };
@@ -36014,8 +36047,8 @@ var resolutions = (value2) => {
   }
 };
 var accepted = (runtime, root) => {
-  const path2 = optional3(runtime, "plan-path");
-  const planId = optional3(runtime, "plan-id");
+  const path2 = optional5(runtime, "plan-path");
+  const planId = optional5(runtime, "plan-id");
   if (path2 === undefined)
     throw new Error("plan-path is required.");
   if (planId === undefined)
@@ -36026,9 +36059,9 @@ var accepted = (runtime, root) => {
   };
 };
 var planAction = async (api2, runtime, root) => {
-  const source = contained2(root, optional3(runtime, "config") ?? "release.config.json");
+  const source = contained2(root, optional5(runtime, "config") ?? "release.config.json");
   const result2 = await api2.plan({ config: JSON.parse(runtime.read(source)), workspace: root });
-  const output2 = containedOutput(root, optional3(runtime, "plan-path") ?? "release-plan.json");
+  const output2 = containedOutput(root, optional5(runtime, "plan-path") ?? "release-plan.json");
   runtime.write(output2, result2.bytes);
   runtime.output("plan_id", result2.planId);
   runtime.output("status", "planned");
@@ -36036,38 +36069,38 @@ var planAction = async (api2, runtime, root) => {
 var reviewAction = async (api2, runtime, root, command3) => {
   const review = await api2.reviewExecution({
     ...accepted(runtime, root),
-    scope: scope4(optional3(runtime, "scope"))
+    scope: scope4(optional5(runtime, "scope"))
   });
   runtime.output("execution_review_id", review.executionReviewId);
   runtime.output("status", command3 === "doctor" ? "valid" : "review-required");
 };
 var applyInput = (runtime, root) => {
-  const reviewer = optional3(runtime, "reviewer");
+  const reviewer = optional5(runtime, "reviewer");
   if (reviewer === undefined)
     throw new Error("reviewer is required.");
-  const newRunPath = optional3(runtime, "new-run");
-  const resumeRunPath = optional3(runtime, "resume");
+  const newRunPath = optional5(runtime, "new-run");
+  const resumeRunPath = optional5(runtime, "resume");
   if (newRunPath === undefined === (resumeRunPath === undefined)) {
     throw new Error("Choose exactly one of new-run or resume.");
   }
-  const review = optional3(runtime, "confirm-execution");
+  const review = optional5(runtime, "confirm-execution");
   if (newRunPath !== undefined && review === undefined) {
     throw new Error("confirm-execution is required for a new run.");
   }
-  const publish = optional3(runtime, "confirm-publish");
-  const throughInput = optional3(runtime, "through");
+  const publish = optional5(runtime, "confirm-publish");
+  const throughInput = optional5(runtime, "through");
   const through = throughInput === undefined ? undefined : decodeUnknownSync(Stage)(throughInput);
-  const reconcile3 = optional3(runtime, "reconcile");
-  const retry3 = optional3(runtime, "retry");
-  const resolutionItems = resolutions(optional3(runtime, "resolutions"));
-  const reason = optional3(runtime, "reason");
+  const reconcile3 = optional5(runtime, "reconcile");
+  const retry3 = optional5(runtime, "retry");
+  const resolutionItems = resolutions(optional5(runtime, "resolutions"));
+  const reason = optional5(runtime, "reason");
   return {
     ...accepted(runtime, root),
     workspace: root,
     ...newRunPath === undefined ? { resumeRunPath } : {
       newRun: {
         path: newRunPath,
-        scope: scope4(optional3(runtime, "scope")),
+        scope: scope4(optional5(runtime, "scope")),
         executionReviewId: ExecutionReviewId.make(review),
         reviewer,
         ...reason === undefined ? {} : { reason }
@@ -36103,12 +36136,12 @@ var applyAction = async (api2, runtime, root) => {
 };
 var runAction = async (api2, runtime) => {
   const root = realpathSync4(runtime.workspace);
-  const command3 = optional3(runtime, "command") ?? "plan";
+  const command3 = optional5(runtime, "command") ?? "plan";
   if (!actionCommands.includes(command3))
     throw new Error("command must be plan, apply, or doctor.");
   if (command3 === "plan")
     return planAction(api2, runtime, root);
-  if (command3 === "doctor" || optional3(runtime, "review-only") === "true") {
+  if (command3 === "doctor" || optional5(runtime, "review-only") === "true") {
     return reviewAction(api2, runtime, root, command3);
   }
   return applyAction(api2, runtime, root);

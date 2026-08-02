@@ -53,4 +53,11 @@ export type {
 // these classes, so an implementable shape has to carry them.
 export { ExecutionPermit, PublishPermit } from "./model/permit.js"
 export { ReleaseServicesLive } from "./platform/services.js"
+// The application-boundary resolver: authored configuration plus observed facts
+// become the canonical value BEFORE plan() sees anything. Hosts share it so the
+// CLI and the Action resolve identically without sharing app code.
+export { encodeResolvedConfig } from "./resolve/encode.js"
+export { resolveConfig } from "./resolve/resolve.js"
+export type { AuthoredConfig, AuthoredProject } from "./resolve/authored.js"
+export type { ObservedFacts } from "./resolve/facts.js"
 export const defineRelease = <const Config>(config: Config): Config => config

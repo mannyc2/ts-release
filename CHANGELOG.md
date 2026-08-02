@@ -2,6 +2,11 @@
 
 ## 0.2.0 - pending
 
+- Added `docs/comparison.md` (per-axis, no headline verdict) and
+  `docs/recovery.md`, and rewrote the README to lead with outcomes. Every
+  comparative or coverage sentence carries a machine-checked annotation;
+  `check:docs-claims` fails on one that stops resolving, and on phrasing that
+  would assert an observation of a tool this project has never executed.
 - Added a reusable release workflow: a consumer calls
   `mannyc2/ts-release-action/.github/workflows/release.yml@v0` with a config
   and an environment, and gets the whole staged pipeline — plan ungated,

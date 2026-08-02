@@ -1,9 +1,33 @@
 # ts-release
 
-`ts-release` turns an in-memory release configuration into canonical,
-reviewable plan bytes, then applies only those accepted bytes. It is a Bun
-and TypeScript release tool built around explicit authority, staged
-publication, and a durable run ledger.
+Release a TypeScript or Bun project to npm, GitHub Releases, Homebrew, Scoop,
+and PyPI with one command — and get a durable record of what happened.
+
+```sh
+ts-release ship --from-git
+```
+
+What you get for that:
+
+- **A release that resumes.** Every run writes a ledger. If publishing dies
+  after npm and before the GitHub release, the next run continues from there
+  instead of starting over.
+- **Approvals that mean something.** What executes is the exact plan that was
+  reviewed, byte for byte. Approving names a `PlanId`, and the receipt in the
+  ledger says who approved it.
+- **Honest records when nobody reviewed.** Releasing unreviewed is fine and
+  common — the ledger just says so, so you can tell the two apart forever.
+- **A CI pipeline you do not write.** Ten lines call a reusable workflow that
+  stages plan, materialize, and publish behind your environment's approval
+  rules.
+
+### Is this GoReleaser for TypeScript?
+
+Not quite, in both directions. ts-release compiles your configuration into a
+reviewable plan and executes only those bytes, with a durable ledger for
+partial failures; its target matrix is smaller. If you release Go projects, use
+GoReleaser. The per-axis answer, with every row machine-checked against this
+repository's code, is in [docs/comparison.md](docs/comparison.md).
 
 ## Install
 
@@ -11,9 +35,60 @@ publication, and a durable run ledger.
 bun add -d @mannyc1/ts-release
 ```
 
-The supported runtime is Bun 1.3.14 or newer. Hosts are Linux and macOS;
-Windows is a supported release target only (use WSL to run ts-release on a
-Windows machine).
+```sh
+npm i -D @mannyc1/ts-release
+```
+
+`effect`, `@effect/platform-node`, and `@effect/platform-bun` are peer
+dependencies; npm 7+ and bun install them for you. The published executable is
+a Node bundle, so `npx ts-release` works without Bun. Hosts are Linux and
+macOS; Windows is a supported release target only (use WSL to run ts-release on
+a Windows machine).
+
+## Quickstart
+
+```sh
+ts-release init --template npm-only --write
+ts-release ship --from-git
+```
+
+`init` writes a configuration from a template. `ship` plans it, prints the
+review surface, confirms it itself, and applies through verification — one
+process, one command.
+
+When you want an independent approver, split the same release into the staged
+commands (see [CLI](#cli)) or call the composed workflow in CI (see
+[GitHub Action](#github-action)). Same configuration, same plan file, same run
+ledger; nothing to migrate.
+
+## Approvals and who approved
+
+Every run records an approver identity in its ledger receipts, and the identity
+tells you what kind of run it was:
+
+- `self:one-shot` — one process planned, confirmed, and applied. Nobody
+  independent looked.
+- `self:one-shot@github:<actor>` — the same, in CI, where the environment had
+  no protection rules. The workflow probes for them rather than assuming.
+- `environment:<name>@github:<actor>` — a protected environment gated the run,
+  and this actor approved it.
+- Any other string — a staged release, where whoever ran `apply` named
+  themselves.
+
+The carrier is the run ledger's approval receipts. Your run ledgers therefore
+prove which of your releases had an independent reviewer, long after everyone
+has forgotten.
+
+## When a release stops halfway
+
+A stopped run resumes; it does not restart. A publication whose outcome is
+genuinely unknown stops the run and stays unknown until a person observes the
+remote (`--reconcile`), judges it (`--resolutions`), or re-attempts something
+proven absent (`--retry`). Nothing recovers automatically, in CI or one-shot
+mode, because every one of those is a judgment about the outside world.
+
+The full map from state to command is in
+[docs/recovery.md](docs/recovery.md).
 
 ## Configuration
 
@@ -347,6 +422,12 @@ run-bound publish receipt.
 
 Unknown publication outcomes stop for reconciliation or an explicit
 operator resolution with operation id, identity, reason, and timestamp.
+
+## Releasing this repository
+
+The operator procedure — preconditions, what to read in the plan artifact
+before approving each environment, the mirror push, and the smoke checks — is
+[docs/release-runbook.md](docs/release-runbook.md).
 
 ## Development
 

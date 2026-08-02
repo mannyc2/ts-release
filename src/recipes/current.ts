@@ -16,6 +16,18 @@ export const lowerCurrentConfig = Effect.fn("lowerCurrentConfig")(function*(
 ) {
   const rows = yield* Effect.try({
     try: () => {
+      // THE ORDER OF THESE CALLS IS LOAD-BEARING. Every step mutates the one
+      // shared CurrentRows, and later steps read outputs earlier steps
+      // recorded — by id, as bare strings, with no declared dependency:
+      //   "npm-package"  — declared by lowerCurrentBuild (current-build.ts) or
+      //                    lowerCurrentProviders, read by lowerCurrentPublish.
+      //   "release-notes" / "final-notes"
+      //                  — declared by lowerCurrentChangelog, read by
+      //                    lowerCurrentAnnouncements (which prefers the final).
+      // Reordering silently changes plan BYTES (a missing output turns a
+      // publish row into a refusal, or flips announcements between the two
+      // notes). The dogfood planId assertion in current-recipes.test.ts is the
+      // pin; plans/README.md carries the design memo for fixing this properly.
       const current = emptyRows()
       lowerCurrentBuild(config, current)
       lowerCurrentCatalogs(config, current); lowerCurrentChangelog(config, current)

@@ -186,4 +186,39 @@ describe("Plan 176 current recipe port", () => {
     expect(npm.registryUrl).toBe("https://registry.npmjs.org/")
     expect(npm.probeUrl.startsWith("https://registry.npmjs.org/")).toBe(true)
   })
+
+  // The lowering steps share one mutable CurrentRows and read each other's
+  // outputs by bare id, so their CALL ORDER in current.ts decides plan bytes.
+  // These assertions are that order's pin: each one fails if the producing
+  // step stops running before its consumer.
+  test("the lowering order is load-bearing: later steps consume earlier outputs", async () => {
+    const config = {
+      project: { name: "ordering", version: "1.0.0", tag: "v1.0.0" },
+      publish: {
+        changelog: {
+          groups: [],
+          mode: "reviewed-transform",
+          pathFilters: [],
+          profileId: "changelog.reviewed-transform/v1"
+        },
+        announce: [{
+          id: "smtp", profileId: "announce.smtp/v1",
+          destination: "release@example.com", credentialEnv: "SMTP_TOKEN"
+        }]
+      }
+    }
+    const accepted = await Effect.runPromise(compilePlan(config, Invocation.make({
+      workspace: WorkspaceRoot.make(root),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    })))
+    const operations = operationEntries(accepted.plan).map(({ operation }) => operation)
+    const notes = operations.find((operation) => operation.outputs.some((output) =>
+      String(output.id) === "final-notes"))
+    expect(notes).toBeDefined()
+    // lowerCurrentChangelog runs BEFORE lowerCurrentAnnouncements, so the
+    // announcement binds the reviewed notes rather than refusing.
+    const announcement = operations.find((operation) => operation._tag === "SmtpPublish")
+    expect(announcement?.inputs.map(String)).toEqual(["final-notes"])
+  })
 })

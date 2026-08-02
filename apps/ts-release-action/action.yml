@@ -14,6 +14,9 @@ inputs:
     description: Workspace-contained canonical release plan path.
     required: false
     default: release-plan.json
+  resolve:
+    description: Empty (default) or "github" to fill omitted project facts from GITHUB_SHA and the workspace package manifest before planning.
+    required: false
   plan-id:
     description: Expected PlanId for apply or doctor.
     required: false

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
@@ -80,6 +80,77 @@ describe("installed Action commands", () => {
       expect(captured?.resumeRunPath).toBe("runs/run.json")
     } finally {
       rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  const planFixture = (inputs: Record<string, string>, commit?: string) => {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-action-resolve-")))
+    writeFileSync(join(directory, "release.config.json"), JSON.stringify({
+      project: { name: "@scope/fixture" },
+      versionFrom: "manifest",
+      publish: {}
+    }))
+    writeFileSync(join(directory, "package.json"), JSON.stringify({
+      name: "@scope/fixture", version: "2.3.4"
+    }))
+    const writes: Record<string, string> = {}
+    let planned: unknown
+    const api = {
+      plan: (input: { config: unknown }) => {
+        planned = input.config
+        return Promise.resolve({ bytes: "{}", planId: "p".repeat(64) } as never)
+      },
+      reviewExecution: () => Promise.reject(new Error("unused")),
+      apply: () => Promise.reject(new Error("unused"))
+    }
+    const run = () =>
+      runAction(api, {
+        workspace: directory,
+        ...(commit === undefined ? {} : { commit }),
+        input: (name) => inputs[name] ?? "",
+        output: () => {},
+        read: (path) => readFileSync(path, "utf8"),
+        write: (path, value) => {
+          writes[path] = value
+        }
+      })
+    return { directory, run, writes, planned: () => planned }
+  }
+
+  test("resolve: github fills omitted facts from the runner and emits the resolved config", async () => {
+    const fixture = planFixture({ command: "plan", resolve: "github" }, "c".repeat(40))
+    try {
+      await fixture.run()
+      const planned = fixture.planned() as { project: Record<string, string> }
+      // Observed, not invented: the runner's commit and the manifest's version.
+      expect(planned.project.commit).toBe("c".repeat(40))
+      expect(planned.project.version).toBe("2.3.4")
+      expect(planned.project.tag).toBe("v2.3.4")
+      const resolved = fixture.writes[join(fixture.directory, "release-plan.json.resolved.json")]
+      expect(JSON.parse(resolved!).project.version).toBe("2.3.4")
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("an unknown resolve value is refused by name", async () => {
+    const fixture = planFixture({ command: "plan", resolve: "gitlab" })
+    try {
+      await expect(fixture.run()).rejects.toThrow(/resolve must be empty or "github"/u)
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
+    }
+  })
+
+  test("without resolve the authored config reaches the api untouched", async () => {
+    const fixture = planFixture({ command: "plan" }, "c".repeat(40))
+    try {
+      await fixture.run()
+      expect(fixture.planned()).toEqual({
+        project: { name: "@scope/fixture" }, versionFrom: "manifest", publish: {}
+      })
+    } finally {
+      rmSync(fixture.directory, { recursive: true, force: true })
     }
   })
 })

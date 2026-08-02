@@ -24,6 +24,7 @@ try {
     api,
     {
       workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
+      ...(process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA }),
       input: core.getInput,
       output: core.setOutput,
       read: (path) => readFileSync(path, "utf8"),

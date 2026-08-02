@@ -2,7 +2,8 @@ import * as Schema from "effect/Schema"
 import { realpathSync } from "node:fs"
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path"
 import {
-  ExecutionReviewId, OperationId, PlanId, PublishReviewId, Stage
+  encodeResolvedConfig, ExecutionReviewId, OperationId, PlanId, PublishReviewId,
+  resolveConfig, Stage
 } from "@mannyc1/ts-release"
 import type {
   ApplyInput, ExecutionScopeInput, OperatorResolution, ReleaseApi
@@ -15,6 +16,10 @@ export const actionOutputs = [
 ] as const
 export interface ActionRuntime {
   readonly workspace: string
+  // The commit the workflow is running against, observed by the entry module
+  // from GITHUB_SHA — the same layer the workspace comes from. Absent outside a
+  // GitHub runner, which makes `resolve: github` refuse rather than invent one.
+  readonly commit?: string | undefined
   readonly input: (name: string) => string
   readonly output: (name: typeof actionOutputs[number], value: string) => void
   readonly read: (path: string) => string
@@ -61,14 +66,55 @@ const accepted = (runtime: ActionRuntime, root: string) => {
     expectedPlanId: PlanId.make(planId)
   }
 }
+// Facts the runner already knows. Read here and passed to the library's pure
+// resolver as a value; the Action observes, it never infers.
+const githubFacts = (runtime: ActionRuntime, root: string): Record<string, string> => {
+  const manifest = (() => {
+    try {
+      return JSON.parse(runtime.read(contained(root, "package.json"))) as {
+        name?: unknown, version?: unknown
+      }
+    } catch {
+      return {}
+    }
+  })()
+  return {
+    ...(runtime.commit === undefined || runtime.commit.length === 0
+      ? {}
+      : { commit: runtime.commit }),
+    ...(typeof manifest.name === "string" && manifest.name.length > 0
+      ? { manifestName: manifest.name }
+      : {}),
+    ...(typeof manifest.version === "string" && manifest.version.length > 0
+      ? { manifestVersion: manifest.version }
+      : {})
+  }
+}
+const planConfig = (
+  runtime: ActionRuntime, root: string, source: string, planPath: string
+): unknown => {
+  const authored = JSON.parse(runtime.read(source)) as unknown
+  const mode = optional(runtime, "resolve")
+  if (mode === undefined) return authored
+  if (mode !== "github") {
+    throw new Error(`resolve must be empty or "github", got ${JSON.stringify(mode)}.`)
+  }
+  const config = resolveConfig(authored, githubFacts(runtime, root))
+  // The reviewable IR beside the plan it produced. Advisory: nothing reads it.
+  runtime.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config))
+  return config
+}
 const planAction = async (
   api: ReleaseCommands,
   runtime: ActionRuntime,
   root: string
 ): Promise<void> => {
   const source = contained(root, optional(runtime, "config") ?? "release.config.json")
-  const result = await api.plan({ config: JSON.parse(runtime.read(source)) as unknown, workspace: root })
   const output = containedOutput(root, optional(runtime, "plan-path") ?? "release-plan.json")
+  const result = await api.plan({
+    config: planConfig(runtime, root, source, optional(runtime, "plan-path") ?? "release-plan.json"),
+    workspace: root
+  })
   runtime.write(output, result.bytes)
   runtime.output("plan_id", result.planId)
   runtime.output("status", "planned")

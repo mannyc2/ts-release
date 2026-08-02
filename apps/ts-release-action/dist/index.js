@@ -35976,6 +35976,16 @@ var defaultApi = makeReleaseApi(NodeReleaseLayer);
 var plan = defaultApi.plan;
 var reviewExecution = defaultApi.reviewExecution;
 var apply = defaultApi.apply;
+// ../../src/resolve/encode.ts
+var toPlainJson = (value2) => {
+  if (Array.isArray(value2))
+    return value2.map(toPlainJson);
+  if (typeof value2 !== "object" || value2 === null)
+    return value2;
+  return Object.fromEntries(Object.entries(value2).filter(([, entry]) => entry !== undefined).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([key, entry]) => [key, toPlainJson(entry)]));
+};
+var encodeResolvedConfig = (config) => `${JSON.stringify(toPlainJson(config), null, 2)}
+`;
 // ../../src/resolve/authored.ts
 var optional3 = optionalKey2;
 
@@ -35995,6 +36005,19 @@ class AuthoredConfig extends Class4("AuthoredConfig")({
 }) {
 }
 
+// ../../src/resolve/errors.ts
+class ResolveError extends Error {
+  field;
+  reason;
+  _tag = "ResolveError";
+  constructor(field, reason) {
+    super(reason);
+    this.field = field;
+    this.reason = reason;
+    this.name = "ResolveError";
+  }
+}
+
 // ../../src/resolve/facts.ts
 var optional4 = optionalKey2;
 
@@ -36007,8 +36030,80 @@ class ObservedFacts extends Class4("ObservedFacts")({
 }
 
 // ../../src/resolve/resolve.ts
+var refuse = (field, reason) => {
+  throw new ResolveError(field, reason);
+};
+var disagreement = (field, authored, observed2, source) => refuse(`project.${field}`, `project.${field} is ${JSON.stringify(authored)} in the config but ${JSON.stringify(observed2)} ${source}. Remove the authored value or correct the source; the resolver never picks.`);
 var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
 var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
+var version2 = (authored, facts) => {
+  const directive = authored.versionFrom;
+  const observed2 = directive === "manifest" ? facts.manifestVersion : directive === "git-tag" ? facts.headTagVersion : undefined;
+  const source = directive === "manifest" ? "in the package manifest" : "on the tag at HEAD";
+  if (authored.project.version !== undefined) {
+    if (observed2 !== undefined && observed2 !== authored.project.version) {
+      disagreement("version", authored.project.version, observed2, source);
+    }
+    return authored.project.version;
+  }
+  if (directive === undefined) {
+    return refuse("project.version", 'project.version is required. State it, or set versionFrom to "manifest" or "git-tag" so it can be observed.');
+  }
+  if (observed2 === undefined) {
+    return refuse("project.version", `versionFrom is ${JSON.stringify(directive)} but no version was observed ${source}.`);
+  }
+  return observed2;
+};
+var tag2 = (authored, resolved) => {
+  if (authored.project.tag !== undefined)
+    return authored.project.tag;
+  const template = authored.project.tagTemplate ?? "v{version}";
+  const rendered = template.replaceAll("{version}", resolved);
+  if (rendered.includes("{") || rendered.includes("}")) {
+    return refuse("project.tagTemplate", `project.tagTemplate supports only the {version} token, got ${JSON.stringify(template)}.`);
+  }
+  return NonEmptyName.make(rendered);
+};
+var commit = (authored, facts) => {
+  if (authored.project.commit !== undefined) {
+    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
+      disagreement("commit", authored.project.commit, facts.commit, "at HEAD");
+    }
+    return authored.project.commit;
+  }
+  if (facts.commit === undefined)
+    return refuse("project.commit", MISSING_COMMIT);
+  return facts.commit;
+};
+var names = (authored, facts) => {
+  const manifest = facts.manifestName;
+  if (manifest !== undefined && authored.project.packageName !== undefined && manifest !== authored.project.packageName) {
+    disagreement("packageName", authored.project.packageName, manifest, "in the package manifest");
+  }
+  const name = authored.project.name ?? manifest;
+  if (name === undefined) {
+    return refuse("project.name", "project.name is required when no package manifest is observed.");
+  }
+  const packageName = authored.project.packageName ?? manifest;
+  return { name, ...packageName === undefined ? {} : { packageName } };
+};
+var resolveConfig = (authored, facts) => {
+  const config = decodeAuthored(authored);
+  const observed2 = decodeFacts(facts);
+  const resolvedVersion = version2(config, observed2);
+  const { project, versionFrom: _directive, ...rest } = config;
+  const { tagTemplate: _template, ...projectRest } = project;
+  return toPlainJson({
+    ...rest,
+    project: {
+      ...projectRest,
+      ...names(config, observed2),
+      version: resolvedVersion,
+      tag: tag2(config, resolvedVersion),
+      commit: commit(config, observed2)
+    }
+  });
+};
 // src/index.ts
 import {
   mkdirSync as mkdirSync3,
@@ -36059,10 +36154,39 @@ var accepted = (runtime, root) => {
     expectedPlanId: PlanId.make(planId)
   };
 };
+var githubFacts = (runtime, root) => {
+  const manifest = (() => {
+    try {
+      return JSON.parse(runtime.read(contained2(root, "package.json")));
+    } catch {
+      return {};
+    }
+  })();
+  return {
+    ...runtime.commit === undefined || runtime.commit.length === 0 ? {} : { commit: runtime.commit },
+    ...typeof manifest.name === "string" && manifest.name.length > 0 ? { manifestName: manifest.name } : {},
+    ...typeof manifest.version === "string" && manifest.version.length > 0 ? { manifestVersion: manifest.version } : {}
+  };
+};
+var planConfig = (runtime, root, source, planPath) => {
+  const authored = JSON.parse(runtime.read(source));
+  const mode = optional5(runtime, "resolve");
+  if (mode === undefined)
+    return authored;
+  if (mode !== "github") {
+    throw new Error(`resolve must be empty or "github", got ${JSON.stringify(mode)}.`);
+  }
+  const config = resolveConfig(authored, githubFacts(runtime, root));
+  runtime.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config));
+  return config;
+};
 var planAction = async (api2, runtime, root) => {
   const source = contained2(root, optional5(runtime, "config") ?? "release.config.json");
-  const result2 = await api2.plan({ config: JSON.parse(runtime.read(source)), workspace: root });
   const output2 = containedOutput(root, optional5(runtime, "plan-path") ?? "release-plan.json");
+  const result2 = await api2.plan({
+    config: planConfig(runtime, root, source, optional5(runtime, "plan-path") ?? "release-plan.json"),
+    workspace: root
+  });
   runtime.write(output2, result2.bytes);
   runtime.output("plan_id", result2.planId);
   runtime.output("status", "planned");
@@ -36157,6 +36281,7 @@ var api2 = makeReleaseApi(NodeReleaseLayer);
 try {
   await runAction(api2, {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
+    ...process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA },
     input: getInput,
     output: setOutput,
     read: (path2) => readFileSync3(path2, "utf8"),

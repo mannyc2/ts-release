@@ -176,7 +176,12 @@ export const mechanismTags = [
   "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
   "HttpPublish", "ForgeRelease", "PackageRegistryRelease", "AnnouncementPublish", "SmtpPublish",
   "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
-] as const
+] as const satisfies ReadonlyArray<Operation["_tag"]>
+// `satisfies` only proves every listed tag is real. This proves the converse:
+// a 17th operation that never reaches the list fails the build here.
+type UnlistedMechanismTag = Exclude<Operation["_tag"], typeof mechanismTags[number]>
+const _mechanismTagsAreComplete: UnlistedMechanismTag extends never ? true : never = true
+void _mechanismTagsAreComplete
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
 
 export type RemotePublishOp =

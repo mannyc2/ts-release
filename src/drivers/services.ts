@@ -13,7 +13,8 @@ import {
   PackageStorePublish, ProviderPublish,
   PublishCredential,
   ReadCredential,
-  SupplyChainPublish, SmtpPublish
+  SupplyChainPublish, SmtpPublish,
+  type RemotePublishOp
 } from "../model/operation.js"
 import { CheckpointId, Digest, OutputId, SafeRelativePath, WorkspaceRoot } from "../model/primitives.js"
 import { DriverError, MaterializedOutput } from "../model/run.js"
@@ -103,9 +104,20 @@ export type DriverCatalogShape = {
 }
 // Package-store, supply-chain, provider, and announcement publications carry an
 // immutable profile and have no live transport in the node driver catalog.
-export const isClosedProfilePublish = (operation: { readonly _tag: string }): boolean =>
-  ["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"]
-    .includes(operation._tag)
+// The parameter is the publish union, not `{ _tag: string }`: this decides
+// whether a dispatch happens at all, so a tag that stops existing (or a value
+// that was never an operation) must fail the compiler, not the wire.
+export type ClosedProfilePublishOp = Extract<
+  RemotePublishOp,
+  { readonly _tag: typeof closedProfileTags[number] }
+>
+const closedProfileTags = [
+  "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"
+] as const satisfies ReadonlyArray<RemotePublishOp["_tag"]>
+export const isClosedProfilePublish = (
+  operation: RemotePublishOp
+): operation is ClosedProfilePublishOp =>
+  (closedProfileTags as ReadonlyArray<string>).includes(operation._tag)
 export class WorkspaceStore extends Context.Service<WorkspaceStore, WorkspaceStoreShape>()("WorkspaceStore") {}
 export class CredentialStore extends Context.Service<
   CredentialStore, CredentialStoreShape

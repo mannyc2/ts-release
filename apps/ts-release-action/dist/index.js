@@ -26998,6 +26998,7 @@ var hashCanonical = (domain, value2) => hashFramed(domain, [new TextEncoder().en
 
 // ../../src/model/errors.ts
 var Reason2 = { reason: String4 };
+var MISSING_COMMIT = "project.commit is required. State it, or observe it with `plan --from-git` (CLI) / `resolve: github` (Action).";
 
 class PlanDecodeError extends TaggedErrorClass()("PlanDecodeError", Reason2) {
 }
@@ -27768,7 +27769,6 @@ class CandidateProject extends Class4("CandidateProject")({
   packagePath: optional2(SafeRelativePath),
   commit: optional2(nonempty),
   tag: NonEmptyName,
-  tagTemplate: optional2(nonempty),
   notes: optional2(String4),
   description: optional2(nonempty),
   summary: optional2(nonempty),
@@ -28157,7 +28157,6 @@ class CandidateConfig extends Class4("CandidateConfig")({
   environment: optional2(CandidateEnvironment),
   git: optional2(CandidateGitPolicy),
   projects: optional2(NonEmptyArray(ProjectScope)),
-  versionFrom: optional2(Literals(["manifest", "git-tag"])),
   builds: optional2(ArraySchema(CandidateBuild)),
   npmPackage: optional2(Struct({
     path: optional2(SafeRelativePath)
@@ -35948,9 +35947,11 @@ var makeReleaseApi = (layer7) => {
     const decoded = decodeInput("plan", PlanInputSchema, input2);
     const config = await run4("plan", decodePlanningConfig(decoded.config));
     const root = workspace("plan", decoded.workspace);
+    if (config.project.commit === undefined)
+      throw new ReleaseApiError("plan", MISSING_COMMIT);
     const result2 = await run4("plan", compilePlan(decoded.config, Invocation.make({
       workspace: root,
-      commit: NonEmptyName.make(config.project.commit ?? "unknown"),
+      commit: NonEmptyName.make(config.project.commit),
       snapshot: false
     })));
     return { plan: result2.plan, bytes: decoder2.decode(result2.bytes), planId: result2.planId };

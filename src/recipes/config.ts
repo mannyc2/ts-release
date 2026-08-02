@@ -22,7 +22,7 @@ const arch = Schema.Literals(["x64", "arm64"])
 export class CandidateProject extends Schema.Class<CandidateProject>("CandidateProject")({
   name: NonEmptyName, packageName: optional(nonempty), version: Version,
   repository: optional(nonempty), packagePath: optional(SafeRelativePath),
-  commit: optional(nonempty), tag: NonEmptyName, tagTemplate: optional(nonempty),
+  commit: optional(nonempty), tag: NonEmptyName,
   notes: optional(Schema.String), description: optional(nonempty), summary: optional(nonempty),
   homepage: optional(nonempty), license: optional(nonempty)
 }) {}
@@ -205,7 +205,6 @@ export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateCon
   environment: optional(CandidateEnvironment),
   git: optional(CandidateGitPolicy),
   projects: optional(Schema.NonEmptyArray(ProjectScope)),
-  versionFrom: optional(Schema.Literals(["manifest", "git-tag"])),
   builds: optional(Schema.Array(CandidateBuild)), npmPackage: optional(Schema.Struct({
     path: optional(SafeRelativePath) })),
   pypiWheel: optional(CandidateWheelBuild), artifacts: optional(Schema.Array(CandidateArtifact)),

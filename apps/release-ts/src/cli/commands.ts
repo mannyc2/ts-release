@@ -2,8 +2,10 @@ import * as Schema from "effect/Schema"
 import { realpathSync } from "node:fs"
 import { dirname, isAbsolute, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { observeGitFacts } from "./facts.js"
 import {
-  ExecutionReviewId, OperationId, PlanId, PublishReviewId, Stage
+  encodeResolvedConfig, ExecutionReviewId, OperationId, PlanId, PublishReviewId,
+  resolveConfig, Stage
 } from "@mannyc1/ts-release"
 import type {
   ApplyInput, ExecutionScopeInput, OperatorResolution, ReleaseApi, ReleasePlanV6
@@ -32,14 +34,17 @@ export interface InitOptions {
   readonly package: string, readonly repo: string, readonly tap: string
   readonly bucket: string, readonly write: boolean
 }
-export interface PlanOptions {
+export interface ResolveOptions {
+  readonly fromGit: boolean, readonly emitResolved?: string | undefined
+}
+export interface PlanOptions extends ResolveOptions {
   readonly config: string, readonly root?: string | undefined, readonly out?: string | undefined
 }
 export interface ReviewOptions {
   readonly plan: string, readonly planId: string, readonly scope?: string | undefined
   readonly doctor: boolean
 }
-export interface ShipOptions {
+export interface ShipOptions extends ResolveOptions {
   readonly config: string, readonly root?: string | undefined
   readonly out: string, readonly runs: string
   readonly scope?: string | undefined, readonly reason?: string | undefined
@@ -78,6 +83,26 @@ const accepted = (plan: string, planId: string, cwd: string, io: CliIo) => ({
   expectedPlanId: PlanId.make(planId)
 })
 
+const RESOLVED_CONFIG = ".release/resolved.config.json"
+// One config read, then — only when asked — one observation and one pure
+// resolution. Without `--from-git` this is byte-for-byte the behavior the CLI
+// has always had: the parsed value goes to the api untouched, and a config
+// carrying authoring directives is refused by the core's excess-property error.
+const loadConfig = (
+  options: PlanOptions | ShipOptions, cwd: string, io: CliIo
+): { readonly workspace: string, readonly config: unknown } => {
+  const workspace = selectCliWorkspace(cwd, options.config, options.root)
+  const source = isAbsolute(options.config) ? options.config : resolve(workspace, options.config)
+  const authored = JSON.parse(io.read(realpathSync(source))) as unknown
+  if (!options.fromGit) return { workspace, config: authored }
+  const packagePath = (authored as { npmPackage?: { path?: string } } | null)?.npmPackage?.path ?? "."
+  const config = resolveConfig(authored, observeGitFacts(workspace, io, packagePath))
+  // Advisory output: the reviewable IR of what was actually planned. No command
+  // ever reads it back.
+  io.write(resolve(cwd, options.emitResolved ?? RESOLVED_CONFIG), encodeResolvedConfig(config))
+  return { workspace, config }
+}
+
 export const runInit = (options: InitOptions, cwd: string, io: CliIo): void => {
   const root = realpathSync(resolve(cwd, options.root))
   const source = resolve(packageRoot, "templates", options.template, "release.config.json")
@@ -99,12 +124,8 @@ export const runPlan = async (
   cwd: string,
   io: CliIo
 ): Promise<void> => {
-  const workspace = selectCliWorkspace(cwd, options.config, options.root)
-  const source = isAbsolute(options.config) ? options.config : resolve(workspace, options.config)
-  const result = await api.plan({
-    config: JSON.parse(io.read(realpathSync(source))) as unknown,
-    workspace
-  })
+  const { config, workspace } = loadConfig(options, cwd, io)
+  const result = await api.plan({ config, workspace })
   if (options.out === undefined) io.log(result.bytes)
   else io.write(resolve(cwd, options.out), result.bytes)
   io.log(JSON.stringify({ planId: result.planId }))
@@ -225,17 +246,13 @@ export const runShip = async (
   io: CliIo
 ): Promise<void> => {
   const workspace = selectCliWorkspace(cwd, options.config, options.root)
-  const source = isAbsolute(options.config) ? options.config : resolve(workspace, options.config)
   const runs = resolve(workspace, options.runs)
   const planPath = resolve(cwd, options.out)
   const executionScope = scope(options.scope)
   let planId = "<planId>"
   let publishSide = false
   try {
-    const planned = await api.plan({
-      config: JSON.parse(io.read(realpathSync(source))) as unknown,
-      workspace
-    })
+    const planned = await api.plan({ config: loadConfig(options, cwd, io).config, workspace })
     planId = planned.planId
     // Always written: it is the review artifact, and it is what a staged
     // `apply` continues from if anything below stops.

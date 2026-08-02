@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { apply, plan } from "../src/index.js"
 
 const config = {
-  project: { name: "api-contract", version: "1.0.0", tag: "v1.0.0" },
+  project: { name: "api-contract", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
   publish: {}
 }
 
@@ -15,6 +15,16 @@ describe("public plan API", () => {
     const result = await plan({ config, workspace })
     expect(JSON.parse(result.bytes)).toEqual(JSON.parse(JSON.stringify(result.plan)))
     expect(result.planId.length).toBe(64)
+  })
+
+  test("a config without a commit is refused instead of planning an invented identity", async () => {
+    const workspace = realpathSync(mkdtempSync(join(tmpdir(), "release-api-")))
+    const { commit: _observed, ...project } = config.project
+    await expect(plan({ config: { ...config, project }, workspace })).rejects.toMatchObject({
+      _tag: "ReleaseApiError",
+      phase: "plan",
+      reason: expect.stringContaining("--from-git")
+    })
   })
 
   test("runtime rejects configPath as an excess outer field", async () => {

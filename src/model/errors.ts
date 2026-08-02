@@ -2,6 +2,13 @@ import * as Schema from "effect/Schema"
 
 const Reason = { reason: Schema.String }
 
+// One wording for the one fact nothing can invent. Raised by the resolver when
+// no observation supplies it, and by the api when a canonical config reaches
+// `plan` without it — a release whose identity names a commit nobody chose is
+// the defect both refusals exist to prevent.
+export const MISSING_COMMIT =
+  "project.commit is required. State it, or observe it with `plan --from-git` (CLI) / `resolve: github` (Action)."
+
 export class PlanDecodeError
   extends Schema.TaggedErrorClass<PlanDecodeError>()("PlanDecodeError", Reason) {}
 export class NonCanonicalPlanError

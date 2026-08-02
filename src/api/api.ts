@@ -15,6 +15,7 @@ import {
   type ApiRun
 } from "./input.js"
 import { acceptExpected } from "../plan/review.js"
+import { MISSING_COMMIT } from "../model/errors.js"
 import { ReleaseApiError, type ReleaseApiPhase } from "./errors.js"
 import type {
   PlanInput,
@@ -43,9 +44,12 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
     const decoded = decodeInput("plan", PlanInputSchema, input)
     const config = await run("plan", decodePlanningConfig(decoded.config))
     const root = workspace("plan", decoded.workspace)
+    // No identity fallback: a plan whose commit was invented is a lie the
+    // ledger would carry forever.
+    if (config.project.commit === undefined) throw new ReleaseApiError("plan", MISSING_COMMIT)
     const result = await run("plan", compilePlan(decoded.config, Invocation.make({
       workspace: root,
-      commit: NonEmptyName.make(config.project.commit ?? "unknown"),
+      commit: NonEmptyName.make(config.project.commit),
       snapshot: false
     })))
     return { plan: result.plan, bytes: decoder.decode(result.bytes), planId: result.planId }

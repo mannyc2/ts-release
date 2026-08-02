@@ -8,17 +8,13 @@
 // where each came from. Silence is never an option — a release that guesses its
 // own identity is the defect this module exists to prevent.
 import * as Schema from "effect/Schema"
+import { MISSING_COMMIT } from "../model/errors.js"
 import { NonEmptyName, Version } from "../model/primitives.js"
 import type { CandidateConfig } from "../recipes/config.js"
 import { AuthoredConfig } from "./authored.js"
 import { toPlainJson } from "./encode.js"
 import { ResolveError } from "./errors.js"
 import { ObservedFacts } from "./facts.js"
-
-// The teaching refusal for an unobservable commit. Single source: the api
-// raises the same text when a canonical config reaches `plan` without one.
-export const MISSING_COMMIT =
-  "project.commit is required. State it, or observe it with `plan --from-git` (CLI) / `resolve: github` (Action)."
 
 const refuse = (field: string, reason: string): never => {
   throw new ResolveError(field, reason)
@@ -114,6 +110,8 @@ const names = (
  * configuration. Pure and total: the same inputs always produce the same value,
  * and every unfillable or contradicted field raises `ResolveError`.
  */
+export { MISSING_COMMIT }
+
 export const resolveConfig = (authored: unknown, facts: unknown): CandidateConfig => {
   const config = decodeAuthored(authored)
   const observed = decodeFacts(facts)

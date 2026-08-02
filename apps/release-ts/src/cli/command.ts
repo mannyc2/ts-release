@@ -28,6 +28,20 @@ const planIdFlag = Flag.string("plan-id").pipe(
   Flag.withDescription("Expected PlanId of the supplied plan bytes.")
 )
 const scopeFlag = optionalText("scope")
+// Observation is opt-in and explicit: without --from-git the CLI passes the
+// config through exactly as written.
+const fromGitFlag = Flag.boolean("from-git").pipe(
+  Flag.withDescription(
+    "Fill omitted project facts from the repository (HEAD commit, the release tag at HEAD, the package manifest) before planning."
+  ),
+  Flag.withDefault(false)
+)
+const emitResolvedFlag = Flag.string("emit-resolved").pipe(
+  Flag.withDescription(
+    "Where --from-git writes the resolved configuration for review; advisory output that no command reads back (default .release/resolved.config.json)."
+  ),
+  Flag.optional
+)
 const rootFlag = text("root", ".")
 const at = <A>(value: Option.Option<A>): A | undefined => Option.getOrUndefined(value)
 
@@ -46,9 +60,12 @@ const initCommand = (cwd: string, io: CliIo) => Command.make("init", {
 const planCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.make("plan", {
   config: text("config", "release.config.json"),
   root: optionalText("root"),
-  out: optionalText("out")
+  out: optionalText("out"),
+  fromGit: fromGitFlag,
+  emitResolved: emitResolvedFlag
 }, (options) => Effect.promise(() => runPlan(api, {
-  config: options.config, root: at(options.root), out: at(options.out)
+  config: options.config, root: at(options.root), out: at(options.out),
+  fromGit: options.fromGit, emitResolved: at(options.emitResolved)
 }, cwd, io))).pipe(
   Command.withDescription("Compile a config into canonical release plan bytes.")
 )
@@ -103,10 +120,13 @@ const shipCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.ma
   out: text("out", ".release/release-plan.json"),
   runs: text("runs", ".release/runs"),
   scope: scopeFlag,
-  reason: optionalText("reason")
+  reason: optionalText("reason"),
+  fromGit: fromGitFlag,
+  emitResolved: emitResolvedFlag
 }, (options) => Effect.promise(() => runShip(api, {
   config: options.config, root: at(options.root), out: options.out, runs: options.runs,
-  scope: at(options.scope), reason: at(options.reason)
+  scope: at(options.scope), reason: at(options.reason),
+  fromGit: options.fromGit, emitResolved: at(options.emitResolved)
 }, cwd, io))).pipe(
   Command.withDescription(
     "Plan, self-confirm, and apply in one process; records reviewer self:one-shot. Use plan/apply for independently reviewed releases."

@@ -77,3 +77,6 @@ outputs:
 runs:
   using: node20
   main: dist/index.js
+branding:
+  icon: package
+  color: blue

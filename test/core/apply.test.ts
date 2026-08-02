@@ -248,7 +248,7 @@ describe("applyAcceptedPlan", () => {
           run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger }
         }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       expect(challenge._tag).toBe("PublishReviewRequired")
       expect(fixture.calls.credentials).toBe(0)
       expect(fixture.calls.mutations).toEqual([])
@@ -270,9 +270,9 @@ describe("applyAcceptedPlan", () => {
           publish: { receipt: publish }
         }
       ).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in result) throw new Error("Expected completed ledger.")
-      expect(operationStatus(result, OperationId.make("upload"))?._tag).toBe("Passed")
-      expect(operationStatus(result, OperationId.make("forge"))?._tag).toBe("Passed")
+      if (result._tag !== "Applied") throw new Error("Expected completed ledger.")
+      expect(operationStatus(result.ledger, OperationId.make("upload"))?._tag).toBe("Passed")
+      expect(operationStatus(result.ledger, OperationId.make("forge"))?._tag).toBe("Passed")
       expect(fixture.calls.structured).toBe(3)
       expect(fixture.calls.credentials).toBe(2)
       expect(fixture.calls.mutations.map((call) => [
@@ -300,7 +300,7 @@ describe("applyAcceptedPlan", () => {
           run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger }
         }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
         reviewId: challenge.reviewId,
         reviewer: "reviewer",
@@ -333,7 +333,7 @@ describe("applyAcceptedPlan", () => {
         fixture.accepted,
         { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
         reviewId: challenge.reviewId,
         reviewer: "reviewer",
@@ -353,8 +353,8 @@ describe("applyAcceptedPlan", () => {
         run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected },
         publish: { receipt: publish }
       }).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in result) throw new Error("Expected ledger.")
-      expect(operationStatus(result, OperationId.make("upload"))?._tag).toBe("Passed")
+      if (result._tag !== "Applied") throw new Error("Expected ledger.")
+      expect(operationStatus(result.ledger, OperationId.make("upload"))?._tag).toBe("Passed")
       expect(fixture.calls.mutations).toHaveLength(1)
     } finally {
       rmSync(fixture.directory, { recursive: true, force: true })
@@ -371,7 +371,7 @@ describe("applyAcceptedPlan", () => {
           run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger }
         }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
         reviewId: challenge.reviewId,
         reviewer: "reviewer",
@@ -386,8 +386,8 @@ describe("applyAcceptedPlan", () => {
           publish: { receipt: publish }
         }
       ).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in first) throw new Error("Expected ledger.")
-      expect(operationStatus(first, OperationId.make("upload"))?._tag).toBe("CommitUnknown")
+      if (first._tag !== "Applied") throw new Error("Expected ledger.")
+      expect(operationStatus(first.ledger, OperationId.make("upload"))?._tag).toBe("CommitUnknown")
       expect(fixture.calls.mutations).toHaveLength(1)
       const second = await Effect.runPromise(applyAcceptedPlan(
         fixture.accepted,
@@ -397,9 +397,9 @@ describe("applyAcceptedPlan", () => {
           publish: { receipt: publish }
         }
       ).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in second) throw new Error("Expected ledger.")
+      if (second._tag !== "Applied") throw new Error("Expected ledger.")
       expect(fixture.calls.mutations).toHaveLength(1)
-      expect(operationStatus(second, OperationId.make("forge"))?._tag).toBe("Pending")
+      expect(operationStatus(second.ledger, OperationId.make("forge"))?._tag).toBe("Pending")
     } finally {
       rmSync(fixture.directory, { recursive: true, force: true })
     }
@@ -462,7 +462,7 @@ describe("applyAcceptedPlan", () => {
           FAKE_PUBLISH_TOKEN: sentinel
         } })))
       ))
-      if ("_tag" in result) throw new Error("Expected ledger.")
+      if (result._tag !== "Applied") throw new Error("Expected ledger.")
       const durable = readFileSync(path, "utf8")
       expect(durable).not.toContain(sentinel)
       expect(durable).toContain("[redacted:FAKE_PUBLISH_TOKEN]")
@@ -479,7 +479,7 @@ describe("applyAcceptedPlan", () => {
         fixture.accepted,
         { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       // Only upload is in scope; forge's `second` input must never be
       // snapshotted or enter the publish review identity.
       expect([...new Set(fixture.calls.snapshots)]).toEqual(["source"])
@@ -498,7 +498,7 @@ describe("applyAcceptedPlan", () => {
         fixture.accepted,
         { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       writeFileSync(join(fixture.root, "dist/source"), "changed")
       const refusal = await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
         ...fixture.base,
@@ -521,7 +521,7 @@ describe("applyAcceptedPlan", () => {
         fixture.accepted,
         { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
         reviewId: challenge.reviewId,
         reviewer: "reviewer",
@@ -535,8 +535,8 @@ describe("applyAcceptedPlan", () => {
       }
       const first = await Effect.runPromise(
         applyAcceptedPlan(fixture.accepted, resume).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in first) throw new Error("Expected ledger.")
-      expect(operationStatus(first, OperationId.make("upload"))?._tag).toBe("CommitUnknown")
+      if (first._tag !== "Applied") throw new Error("Expected ledger.")
+      expect(operationStatus(first.ledger, OperationId.make("upload"))?._tag).toBe("CommitUnknown")
       await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
         ...resume,
         recoveries: [{
@@ -553,9 +553,9 @@ describe("applyAcceptedPlan", () => {
         ...resume,
         recoveries: [{ _tag: "Retry", operationId: OperationId.make("upload") }]
       }).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in third) throw new Error("Expected ledger.")
-      expect(operationStatus(third, OperationId.make("upload"))?._tag).toBe("Passed")
-      const record = third.operations.find((item) => item.operationId === "upload")
+      if (third._tag !== "Applied") throw new Error("Expected ledger.")
+      expect(operationStatus(third.ledger, OperationId.make("upload"))?._tag).toBe("Passed")
+      const record = third.ledger.operations.find((item) => item.operationId === "upload")
       expect(record?.attempts.map((attempt) => String(attempt.attemptId)))
         .toEqual(["attempt-1", "attempt-2"])
       expect(fixture.calls.mutations).toHaveLength(2)
@@ -571,7 +571,7 @@ describe("applyAcceptedPlan", () => {
         fixture.accepted,
         { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
         reviewId: challenge.reviewId,
         reviewer: "reviewer",
@@ -609,7 +609,7 @@ describe("applyAcceptedPlan", () => {
         fixture.accepted,
         { ...fixture.base, run: { _tag: "NewRun", path: fixture.path, ledger: fixture.ledger } }
       ).pipe(Effect.provide(fixture.layer)))
-      if (!("_tag" in challenge)) throw new Error("Expected publish review.")
+      if (challenge._tag !== "PublishReviewRequired") throw new Error("Expected publish review.")
       const publish = mintPublishReceipt(fixture.execution, challenge.reviewId, {
         reviewId: challenge.reviewId,
         reviewer: "reviewer",
@@ -621,7 +621,7 @@ describe("applyAcceptedPlan", () => {
         run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected },
         publish: { receipt: publish }
       }).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in first) throw new Error("Expected ledger.")
+      if (first._tag !== "Applied") throw new Error("Expected ledger.")
       const result = await Effect.runPromise(applyAcceptedPlan(fixture.accepted, {
         ...fixture.base,
         run: { _tag: "ResumeRun", path: fixture.path, expected: fixture.expected },
@@ -632,9 +632,9 @@ describe("applyAcceptedPlan", () => {
           checkpointId: CheckpointId.make("dispatch")
         }]
       }).pipe(Effect.provide(fixture.layer)))
-      if ("_tag" in result) throw new Error("Expected ledger.")
-      expect(operationStatus(result, OperationId.make("upload"))?._tag).toBe("Passed")
-      expect(operationStatus(result, OperationId.make("forge"))?._tag).toBe("Passed")
+      if (result._tag !== "Applied") throw new Error("Expected ledger.")
+      expect(operationStatus(result.ledger, OperationId.make("upload"))?._tag).toBe("Passed")
+      expect(operationStatus(result.ledger, OperationId.make("forge"))?._tag).toBe("Passed")
       expect(fixture.calls.mutations.map(({ checkpoint }) => checkpoint)).toEqual([
         "dispatch", "release", "asset:source", "asset:second"
       ])

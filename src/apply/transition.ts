@@ -1,3 +1,4 @@
+import * as Result from "effect/Result"
 import {
   AssumedAbsent, AssumedCommitted, AttemptRecord, CheckpointDispatching,
   CheckpointFailedBeforeCommit, CheckpointPassed, CheckpointPending,
@@ -227,8 +228,11 @@ const recovered = (record: OperationRunRecord): OperationRunRecord => {
   }
 }
 
+// The outcome is discriminated by its own tag, not by whether a `_tag` field
+// happens to exist on the ledger: a RunLedger that ever gained one would have
+// silently inverted the old `"_tag" in next` sniff.
 export const transition = (accepted: AcceptedPlan, ledger: RunLedger,
-  command: TransitionCommand): RunLedger | TransitionError => {
+  command: TransitionCommand): Result.Result<RunLedger, TransitionError> => {
   try {
     validateLedger(accepted, ledger)
     if (command._tag === "AdvanceFrontier") {
@@ -237,7 +241,7 @@ export const transition = (accepted: AcceptedPlan, ledger: RunLedger,
       const advanced = RunLedger.make(
         { ...ledger, frontier: command.frontier, revision: ledger.revision + 1 })
       validateLedger(accepted, advanced)
-      return advanced
+      return Result.succeed(advanced)
     }
     const operations = command._tag === "Recover"
       ? ledger.operations.map(recovered)
@@ -249,9 +253,9 @@ export const transition = (accepted: AcceptedPlan, ledger: RunLedger,
       throw fail(`Unknown operation ${command.operationId}.`)
     const next = RunLedger.make({ ...ledger, revision: ledger.revision + 1, operations })
     validateLedger(accepted, next)
-    return next
+    return Result.succeed(next)
   } catch (error) {
-    return error instanceof TransitionError ? error : fail(String(error))
+    return Result.fail(error instanceof TransitionError ? error : fail(String(error)))
   }
 }
 export const operationStatus = (ledger: RunLedger, operationId: OperationId): AttemptState | undefined =>

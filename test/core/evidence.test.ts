@@ -1,4 +1,5 @@
 import { describe, expect, test } from "@effect/bun-test"
+import * as Result from "effect/Result"
 import {
   ExecutionApprovalReceipt,
   ExecutionScope,
@@ -29,8 +30,8 @@ const apply = (
   command: TransitionCommand
 ): RunLedger => {
   const result = transition(accepted, ledger, command)
-  if ("_tag" in result) throw result
-  return result
+  if (Result.isFailure(result)) throw result.failure
+  return result.success
 }
 const fresh = async () => {
   const accepted = await acceptedRunPlan()

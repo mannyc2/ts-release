@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Result from "effect/Result"
 import {
   ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId,
   reconciliationKey, supplyChainReconciliationKey
@@ -16,7 +17,9 @@ import {
   TransitionError, type ExecutionApprovalReceipt, type MaterializedOutput, type PublishApprovalReceipt,
   type RunLedger, type Stage
 } from "../model/run.js"
-import { OperationHash, type CheckpointId, type OperationId, type WorkspaceRoot } from "../model/primitives.js"
+import {
+  OperationHash, type CheckpointId, type OperationId, type PublishReviewId, type WorkspaceRoot
+} from "../model/primitives.js"
 import {
   isRemotePublish, operationAuthority, type Operation, type RemotePublishOp
 } from "../model/operation.js"
@@ -40,12 +43,22 @@ type ApplyContext = {
   readonly store: RunStoreShape, readonly catalog: DriverCatalogShape,
   readonly workspace: WorkspaceStoreShape, readonly credential: CredentialStoreShape
 }
+// Both arms carry a tag, so callers discriminate on a VALUE. The ledger arm
+// used to be a bare RunLedger, which forced every caller to ask whether a
+// `_tag` field was present — an accident of the ledger's shape, not a contract.
+export type ApplyOutcome =
+  | { readonly _tag: "Applied", readonly ledger: RunLedger }
+  | {
+    readonly _tag: "PublishReviewRequired", readonly reviewId: PublishReviewId
+    readonly ledger: RunLedger
+  }
+const applied = (ledger: RunLedger): ApplyOutcome => ({ _tag: "Applied", ledger })
 
 const moved = (ctx: ApplyContext, ledger: RunLedger, command: TransitionCommand) => Effect.gen(function*() {
   const next = transition(ctx.accepted, ledger, command)
-  if ("_tag" in next) return yield* next
-  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next)
-  return next
+  if (Result.isFailure(next)) return yield* next.failure
+  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next.success)
+  return next.success
 })
 const structured = (
   ctx: ApplyContext, permit: ExecutionPermit, ledger: RunLedger, operation: Operation
@@ -284,10 +297,10 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
   const scoped = operationEntries(accepted.plan)
     .filter(({ operation }) => selected.has(operation.id))
   if (scoped.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" &&
-    !settled(operationStatus(ledger, operation.id)))) return ledger
+    !settled(operationStatus(ledger, operation.id)))) return applied(ledger)
   const publishEntries = entries.map(({ operation }) => operation).filter(isRemotePublish)
-  if (!scoped.some(({ operation }) => isRemotePublish(operation))) return ledger
-  if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile")) return ledger
+  if (!scoped.some(({ operation }) => isRemotePublish(operation))) return applied(ledger)
+  if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile")) return applied(ledger)
   const materials = yield* materialize(ctx, selected)
   // Fresh snapshots must match what the build recorded — the code-level truth
   // behind resume revalidation: publish inputs are compared against the
@@ -314,12 +327,12 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
   const permit = yield* signer.publish(request.publish.receipt, executionPermit, review)
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
     ledger = yield* reconcile(ctx, ledger, recovery, permit)
-  if (blocksApply(ledger)) return ledger
+  if (blocksApply(ledger)) return applied(ledger)
   for (const operation of publishEntries) {
     const state = operationStatus(ledger, operation.id)
     if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
       ledger = yield* publishOperation(ctx, ledger, operation, materials, permit)
-    if (!settled(operationStatus(ledger, operation.id))) return ledger
+    if (!settled(operationStatus(ledger, operation.id))) return applied(ledger)
   }
-  return ledger
+  return applied(ledger)
 })

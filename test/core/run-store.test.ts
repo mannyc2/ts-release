@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
+import * as Result from "effect/Result"
 import {
   existsSync,
   mkdtempSync,
@@ -122,13 +123,13 @@ describe("file-backed RunStore", () => {
         _tag: "AdvanceFrontier",
         frontier: "validate"
       })
-      if ("_tag" in next) throw next
-      await Effect.runPromise(store.save(path, 0, next))
+      const advanced = Result.getOrThrow(next)
+      await Effect.runPromise(store.save(path, 0, advanced))
       const durable = readFileSync(path, "utf8")
-      expect((await failure(store.save(path, 0, next)))._tag).toBe("RunStoreError")
+      expect((await failure(store.save(path, 0, advanced)))._tag).toBe("RunStoreError")
       expect(readFileSync(path, "utf8")).toBe(durable)
       writeFileSync(`${path}.lease`, "held\n")
-      const newer = RunLedger.make({ ...next, revision: 2 })
+      const newer = RunLedger.make({ ...advanced, revision: 2 })
       expect((await failure(store.save(path, 1, newer)))._tag).toBe("RunStoreError")
       expect(readFileSync(path, "utf8")).toBe(durable)
     } finally {
@@ -213,15 +214,15 @@ describe("file-backed RunStore", () => {
         _tag: "AdvanceFrontier",
         frontier: "validate"
       })
-      if ("_tag" in next) throw next
+      const advanced = Result.getOrThrow(next)
       writeFileSync(`${path}.lease`, "4242\n")
-      const refusal = await failure(store.save(path, 0, next))
+      const refusal = await failure(store.save(path, 0, advanced))
       expect(refusal._tag).toBe("RunStoreError")
       expect(refusal.reason).toContain("held by pid 4242")
       expect(refusal.reason).toContain(`${path}.lease`)
       const past = new Date(Date.now() - 2 * 3_600_000)
       utimesSync(`${path}.lease`, past, past)
-      expect(await Effect.runPromise(store.save(path, 0, next))).toMatch(/file-rename/)
+      expect(await Effect.runPromise(store.save(path, 0, advanced))).toMatch(/file-rename/)
       expect(existsSync(`${path}.lease`)).toBe(false)
     } finally {
       rmSync(directory, { recursive: true, force: true })

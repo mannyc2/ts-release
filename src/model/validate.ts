@@ -1,3 +1,4 @@
+import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import { encodeCanonicalJson, hashCanonical } from "./canonical.js"
 import {
@@ -102,22 +103,22 @@ export interface ValidatedPlanProjection {
 
 export const validatePlan = (
   plan: ReleasePlanV6
-): PlanValidationFailure | ValidatedPlanProjection => {
+): Result.Result<ValidatedPlanProjection, PlanValidationFailure> => {
   const entries = operationEntries(plan)
   const operationDuplicate = duplicate(
     entries.map(({ operation }) => operation.id),
     "operation-id"
   )
-  if (operationDuplicate !== undefined) return operationDuplicate
+  if (operationDuplicate !== undefined) return Result.fail(operationDuplicate)
   const declarations = entries.flatMap(({ operation }) => operation.outputs)
   const outputDuplicate = duplicate(declarations.map((output) => output.id), "output-id")
-  if (outputDuplicate !== undefined) return outputDuplicate
+  if (outputDuplicate !== undefined) return Result.fail(outputDuplicate)
   const pathDuplicate = duplicate(declarations.map((output) => output.path), "output-path")
-  if (pathDuplicate !== undefined) return pathDuplicate
+  if (pathDuplicate !== undefined) return Result.fail(pathDuplicate)
   const credential = credentialFailure(entries)
-  if (credential !== undefined) return credential
+  if (credential !== undefined) return Result.fail(credential)
   const secret = secretLike(plan)
-  if (secret !== undefined) return secret
+  if (secret !== undefined) return Result.fail(secret)
   const producer = new Map<string, { readonly id: string; readonly stage: StageName }>()
   const outputs: Array<DerivedOutput> = []
   const dependencies: Array<Dependency> = []
@@ -125,11 +126,11 @@ export const validatePlan = (
     for (const input of operation.inputs) {
       const prior = producer.get(input)
       if (prior === undefined) {
-        return OutputReferenceError.make({
+        return Result.fail(OutputReferenceError.make({
           operationId: operation.id,
           outputId: input,
           reason: "Output reference is missing, same-operation, or forward."
-        })
+        }))
       }
       dependencies.push({ operationId: operation.id, inputId: input, producerId: prior.id })
     }
@@ -142,9 +143,5 @@ export const validatePlan = (
     operationId: operation.id,
     hash: hashCanonical("ts-release/operation/v1", Schema.encodeSync(Operation)(operation))
   }))
-  return { entries, outputs, dependencies, operationHashes }
+  return Result.succeed({ entries, outputs, dependencies, operationHashes })
 }
-
-export const isValidationFailure = (
-  value: PlanValidationFailure | ValidatedPlanProjection
-): value is PlanValidationFailure => "_tag" in value

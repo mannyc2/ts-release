@@ -1,4 +1,5 @@
 import { describe, expect, test } from "@effect/bun-test"
+import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import {
   ExecutionApprovalReceipt,
@@ -63,11 +64,11 @@ const apply = (
   command: TransitionCommand
 ): RunLedger => {
   const result = transition(accepted, ledger, command)
-  if ("_tag" in result) throw result
-  return result
+  if (Result.isFailure(result)) throw result.failure
+  return result.success
 }
-const transitionTag = (value: RunLedger | { readonly _tag: string }) =>
-  "_tag" in value ? value._tag : undefined
+const transitionTag = (value: Result.Result<RunLedger, { readonly _tag: string }>) =>
+  Result.isFailure(value) ? value.failure._tag : undefined
 const fresh = async () => {
   const accepted = await acceptedRunPlan()
   const ledger = createLedger(accepted, {
@@ -211,7 +212,7 @@ describe("run-ledger/v1 reducer", () => {
       receipt: publishReceipt
     })
     expect(transitionTag(result)).toBe("TransitionError")
-    expect("reason" in result ? result.reason : "")
+    expect(Result.isFailure(result) ? result.failure.reason : "")
       .toContain("Unknown supply-chain profile supply.not-a-profile.v1")
   })
 

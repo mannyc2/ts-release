@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { applyAcceptedPlan, type ApplyRecovery } from "../apply/apply.js"
+import { applyAcceptedPlan, type ApplyOutcome, type ApplyRecovery } from "../apply/apply.js"
 import { mintExecutionReceipt, mintPublishReceipt } from "../apply/approval.js"
 import { createLedger, validateLedger } from "../apply/ledger.js"
 import { settled } from "../apply/transition.js"
@@ -56,10 +56,7 @@ interface PreparedRun {
   readonly ledger: RunLedger, readonly runPath: string
   readonly execution: NonNullable<ReturnType<typeof receipt>>
 }
-type ApplyResult = RunLedger | {
-  readonly _tag: "PublishReviewRequired", readonly reviewId: PublishReviewId
-  readonly ledger: RunLedger
-}
+
 const prepareNew = (
   plan: AcceptedPlan,
   root: string,
@@ -122,10 +119,11 @@ const publishOutput = async (
   plan: AcceptedPlan,
   input: DecodedApplyInput,
   prepared: PreparedRun,
-  review: ApplyResult
+  review: ApplyOutcome
 ): Promise<ApplyOutput> => {
-  if (!("_tag" in review)) {
-    return output(prepared, review, complete(review) ? "complete" : "stopped")
+  if (review._tag === "Applied") {
+    const ledger = review.ledger
+    return output(prepared, ledger, complete(ledger) ? "complete" : "stopped")
   }
   if (input.publishConfirmation === undefined) {
     return output(prepared, review.ledger, "publish-review-required", {
@@ -151,8 +149,10 @@ const publishOutput = async (
     },
     publish: { receipt: publish }
   }))
-  if ("_tag" in second) throw new ReleaseApiError("apply", "Publish review did not advance.")
-  return output(prepared, second, complete(second) ? "complete" : "stopped", {
+  if (second._tag !== "Applied") {
+    throw new ReleaseApiError("apply", "Publish review did not advance.")
+  }
+  return output(prepared, second.ledger, complete(second.ledger) ? "complete" : "stopped", {
     publishReceiptId: publish.receiptId
   })
 }

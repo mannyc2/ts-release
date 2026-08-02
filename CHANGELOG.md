@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- Added `retry` to the apply input: a failed-before-commit operation can be
+  retried by id without editing the ledger by hand, and a run lease left
+  behind by a killed process is stolen once it is stale.
+- `newRun` now names the run DIRECTORY, and a resume accepts either that
+  directory or the ledger file. Run identity is anchored to the plan, so a
+  ledger from a different plan is refused instead of silently resumed.
+- Credential values no longer reach durable data: child output is recorded as
+  a bounded excerpt with declared environment values and known token shapes
+  redacted, and every registry URL passes one HTTPS policy.
+- `effect` is now a peer dependency — install it alongside this package.
+- Dispatch evidence distinguishes what reached the wire from what did not, so
+  an unknown commitment is never recorded as a failure to dispatch.
+- Deleted the distributed-execution subsystem, its operations, and its
+  profiles. Execution is single-machine; receipts are validated by hash
+  self-consistency.
+- Public inputs are decoded once with Schema at the API boundary: excess
+  properties and malformed values are refused, and the CLI and the Action
+  refuse the same input identically. Branded id constructors (`PlanId`,
+  `OperationId`, review ids, `Stage`) are exported.
+- Fixed the release handoff: a materialize-only apply now emits the publish
+  review its publish job confirms, which the three-job workflow needs.
+- ts-release runs on Linux and macOS hosts; Windows remains a supported
+  release target.
+
 - Fixed the GitHub Action host: the live driver layer no longer uses Bun-only
   APIs, so `Exec`, `Pack` (glob patterns and tar.gz), and command-based publish
   operations run correctly under the Action's node20 runtime. The
@@ -41,8 +65,10 @@
   `ApplyContext` for the apply orchestrator, and removal of dead driver
   service seams and `rewrite`-era names (trace spans, service keys, and the
   app `cutover` modules, now `commands`).
-- Pointed `check:core` at the certified dependency-audit gate (`check:audit`)
-  instead of the environment-dependent raw `bun audit`.
+- Reordered `check:core` so the cheap policy gates (`check:versions`,
+  `check:import-rules`, `check:tree-shaking`) run before the build, and added
+  `check:summary`, which runs every gate and prints a pass/fail table instead
+  of stopping at the first failure.
 
 ## 0.2.0 - 2026-07-27
 
@@ -73,12 +99,10 @@
   channels plus SMTP.
 - Added typed package, supply-chain, provider, distributed-execution, and
   announcement profiles with immutable contract fixtures.
-- Certified full in-scope outcome parity for TypeScript/Bun distribution
-  against the pinned GoReleaser v2.17.0 ledger: 107/107 customization rows
-  and 33/33 Pro rows, with the eleven manifest exclusions.
-- Certified all five technical properties, 45/45 fault cells, and 11/11
-  structural controls with zero credential leaks and duplicate mutations.
-- Closed at 5,871 Product semantic lines and 6,040 Oracle semantic lines.
+- Behavior is covered by the feature suites (`test/features/`) and driver
+  conformance (`test/core/`). The docs-derived GoReleaser parity ledger and
+  the semantic-line apparatus were removed in `e3a3a14`; the counts they
+  produced are withdrawn.
 - Removed mutable runtime swapping, runtime profile registration, old
   lifecycle aliases, fallback durable readers, and config translation DTOs.
 

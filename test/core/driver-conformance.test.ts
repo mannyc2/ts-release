@@ -43,6 +43,7 @@ import {
 } from "../../src/model/primitives.js"
 import {
   Check,
+  ContentHole,
   DigestOp,
   Exec,
   Operation,
@@ -201,6 +202,7 @@ describe("candidate driver conformance", () => {
     if (operation._tag !== "HttpPublish") throw new Error("Expected HTTP publish fixture.")
     const request = CatalogPublishRequest.make({
       operation,
+      root: WorkspaceRoot.make("/workspace-root"),
       checkpointId: CheckpointId.make("dispatch"),
       clientReconciliationKey: "stable-key"
     })
@@ -253,6 +255,34 @@ describe("candidate driver conformance", () => {
       })).pipe(liveLayers(spawner, {}), Effect.flip))
       expect(error._tag).toBe("DriverError")
       expect(error.reason).toBe("Command exited 3: compile error")
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("a raw downloadUrl hole in foreign plan bytes is refused at the driver", async () => {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-live-hole-")))
+    try {
+      // Lowering resolves this fact at plan time, so no plan this repo produces
+      // can carry the hole. The driver throw stays as defense against bytes
+      // produced somewhere else.
+      const declared = OutputDeclaration.make({
+        id: OutputId.make("asset"), path: SafeRelativePath.make("dist/asset.zip"), kind: "file"
+      })
+      const error = await Effect.runPromise(structuredEffect(CatalogStructuredRequest.make({
+        operation: Write.make({
+          id: OperationId.make("catalog:foreign:render"), inputs: [OutputId.make("asset")],
+          outputs: [OutputDeclaration.make({
+            id: OutputId.make("formula"), path: SafeRelativePath.make("dist/formula.rb"), kind: "file"
+          })],
+          path: SafeRelativePath.make("dist/formula.rb"),
+          content: ["url ", ContentHole.make({ fact: "downloadUrl", outputId: OutputId.make("asset") })]
+        }),
+        root: WorkspaceRoot.make(directory),
+        availableOutputs: [declared]
+      })).pipe(liveLayers(recordingSpawner(() => ({ exitCode: 0 })), {}), Effect.flip))
+      expect(error._tag).toBe("DriverError")
+      expect(error.reason).toContain("lowered plans resolve this at plan time")
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }
@@ -321,6 +351,52 @@ describe("candidate driver conformance", () => {
       })).pipe(liveLayers(spawner, {}), Effect.flip))
       expect(missing.reason).toBe("Required path dist/absent is absent.")
       expect(spawner.commands).toHaveLength(0)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("symlinks at write targets and declared outputs refuse", async () => {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-symlink-refuse-")))
+    try {
+      const spawner = recordingSpawner(() => ({ exitCode: 0 }))
+      const outside = join(directory, "outside.txt")
+      writeFileSync(outside, "outside")
+      const root = join(directory, "workspace")
+      mkdirSync(join(root, "dist"), { recursive: true })
+      symlinkSync(outside, join(root, "dist/notes.md"))
+      const write = CatalogStructuredRequest.make({
+        operation: Write.make({
+          id: OperationId.make("process:notes"), inputs: [],
+          outputs: [OutputDeclaration.make({
+            id: OutputId.make("notes"), path: SafeRelativePath.make("dist/notes.md"), kind: "file"
+          })],
+          path: SafeRelativePath.make("dist/notes.md"), content: "released\n"
+        }),
+        root: WorkspaceRoot.make(root),
+        availableOutputs: []
+      })
+      const refusal = await Effect.runPromise(
+        structuredEffect(write).pipe(liveLayers(spawner, {}), Effect.flip))
+      expect(refusal.reason).toBe("Structured write encountered a symlink.")
+      expect(readFileSync(outside, "utf8")).toBe("outside")
+      // A symlink at a declared output path refuses observation too: the
+      // digest must never attest a link target's bytes.
+      writeFileSync(join(root, "dist/real.md"), "real\n")
+      const observed = CatalogStructuredRequest.make({
+        operation: Check.make({
+          id: OperationId.make("validate:real"), inputs: [],
+          outputs: [OutputDeclaration.make({
+            id: OutputId.make("linked"), path: SafeRelativePath.make("dist/notes.md"), kind: "file"
+          })],
+          path: SafeRelativePath.make("dist/real.md")
+        }),
+        root: WorkspaceRoot.make(root),
+        availableOutputs: []
+      })
+      const observeRefusal = await Effect.runPromise(
+        structuredEffect(observed).pipe(liveLayers(spawner, {}), Effect.flip))
+      expect(observeRefusal.reason).toBe("Declared output linked was not materialized.")
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }

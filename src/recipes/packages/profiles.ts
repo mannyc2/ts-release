@@ -5,6 +5,7 @@ import { archiveGeneratorProfiles } from "./archive-generators.js"
 import { storePackageProfiles } from "./store-packages.js"
 import { appleInstallerProfiles } from "./apple.js"
 import { windowsInstallerProfiles } from "./windows.js"
+import { ConfigValueError } from "../../model/errors.js"
 
 export const localToolProfiles: ReadonlyArray<LocalToolProfile> = [
   ...pythonBuilderProfiles, universalMachoProfile, ...archiveGeneratorProfiles, ...storePackageProfiles,
@@ -23,6 +24,6 @@ export const localToolProfiles: ReadonlyArray<LocalToolProfile> = [
   })]
 export const findLocalToolProfile = (id: string): LocalToolProfile => {
   const found = localToolProfiles.find((profile) => profile.profileId === id)
-  if (found === undefined) throw new Error(`Unknown immutable package profile ${id}.`)
+  if (found === undefined) throw ConfigValueError.make({ reason: `Unknown immutable package profile ${id}.` })
   return found
 }

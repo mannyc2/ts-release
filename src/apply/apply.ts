@@ -1,22 +1,25 @@
 import * as Effect from "effect/Effect"
+import * as Result from "effect/Result"
 import {
   ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId,
   reconciliationKey, supplyChainReconciliationKey
 } from "./approval.js"
-import { operationStatus, settled, transition, type TransitionCommand } from "./transition.js"
+import { checkpointIds, operationStatus, settled, transition, type TransitionCommand } from "./transition.js"
 import { RunStore, type ExpectedLedger, type RunStoreShape } from "./store.js"
 import {
   CatalogPublishRequest, CatalogStructuredRequest, CommitmentUnknown, CredentialStore,
   DriverCatalog, isClosedProfilePublish, NotDispatched, SnapshotRequest,
   WorkspaceStore, type CredentialStoreShape, type DriverCatalogShape,
-  type MutationResult, type WorkspaceStoreShape
+  type MutationResult, type VerifiedContentHandle, type WorkspaceStoreShape
 } from "../drivers/services.js"
 import type { ExecutionPermit, PublishPermit } from "../model/permit.js"
 import {
   TransitionError, type ExecutionApprovalReceipt, type MaterializedOutput, type PublishApprovalReceipt,
   type RunLedger, type Stage
 } from "../model/run.js"
-import { OperationHash, type CheckpointId, type OperationId, type WorkspaceRoot } from "../model/primitives.js"
+import {
+  OperationHash, type CheckpointId, type OperationId, type PublishReviewId, type WorkspaceRoot
+} from "../model/primitives.js"
 import {
   isRemotePublish, operationAuthority, type Operation, type RemotePublishOp
 } from "../model/operation.js"
@@ -28,7 +31,8 @@ export type ApplyRunRequest = {
 } | { readonly _tag: "ResumeRun", readonly path: string, readonly expected: ExpectedLedger }
 export type PublishAuthorization = { readonly receipt: PublishApprovalReceipt }
 export type ApplyRecovery = Extract<TransitionCommand, { readonly _tag: "Resolve" }> |
-  { readonly _tag: "Reconcile", readonly operationId: OperationId, readonly checkpointId: CheckpointId }
+  { readonly _tag: "Reconcile", readonly operationId: OperationId, readonly checkpointId: CheckpointId } |
+  { readonly _tag: "Retry", readonly operationId: OperationId }
 export type ApplyRequest = {
   readonly run: ApplyRunRequest, readonly root: WorkspaceRoot, readonly snapshotDirectory: string,
   readonly through: Stage, readonly executionReceipt: ExecutionApprovalReceipt,
@@ -39,12 +43,22 @@ type ApplyContext = {
   readonly store: RunStoreShape, readonly catalog: DriverCatalogShape,
   readonly workspace: WorkspaceStoreShape, readonly credential: CredentialStoreShape
 }
+// Both arms carry a tag, so callers discriminate on a VALUE. The ledger arm
+// used to be a bare RunLedger, which forced every caller to ask whether a
+// `_tag` field was present — an accident of the ledger's shape, not a contract.
+export type ApplyOutcome =
+  | { readonly _tag: "Applied", readonly ledger: RunLedger }
+  | {
+    readonly _tag: "PublishReviewRequired", readonly reviewId: PublishReviewId
+    readonly ledger: RunLedger
+  }
+const applied = (ledger: RunLedger): ApplyOutcome => ({ _tag: "Applied", ledger })
 
 const moved = (ctx: ApplyContext, ledger: RunLedger, command: TransitionCommand) => Effect.gen(function*() {
   const next = transition(ctx.accepted, ledger, command)
-  if ("_tag" in next) return yield* next
-  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next)
-  return next
+  if (Result.isFailure(next)) return yield* next.failure
+  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next.success)
+  return next.success
 })
 const structured = (
   ctx: ApplyContext, permit: ExecutionPermit, ledger: RunLedger, operation: Operation
@@ -81,9 +95,9 @@ const localOperations = (
   }
   return next
 })
-const materialize = (ctx: ApplyContext) => Effect.gen(function*() {
+const materialize = (ctx: ApplyContext, selected: ReadonlySet<string>) => Effect.gen(function*() {
   const publishInputs = new Set(operationEntries(ctx.accepted.plan)
-    .filter(({ operation }) => isRemotePublish(operation))
+    .filter(({ operation }) => selected.has(operation.id) && isRemotePublish(operation))
     .flatMap(({ operation }) => operation.inputs).map(String))
   return yield* Effect.forEach(
     ctx.accepted.outputs.filter(({ output }) => publishInputs.has(String(output.id))),
@@ -163,17 +177,41 @@ const publishOperation = (
   ctx: ApplyContext, ledger: RunLedger, operation: RemotePublishOp,
   materials: ReadonlyArray<MaterializedOutput>, permit: PublishPermit
 ) => Effect.gen(function*() {
-  let next = operationStatus(ledger, operation.id)?._tag === "Pending"
-    ? yield* moved(ctx, ledger,
-        { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt })
-    : ledger
-  const status = operationStatus(next, operation.id)
-  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : []
+  const before = operationStatus(ledger, operation.id)
   const operationHash = OperationHash.make(ctx.accepted.operationHashes
     .find((item) => item.operationId === operation.id)!.hash)
   const bindings = materials.filter((item) => operation.inputs.includes(item.outputId))
   const subject = bindings[0]
   const target = publishTarget(operation)
+  const pendingIds = before?._tag === "DispatchingPublish"
+    ? before.progress.filter((item) => item._tag === "CheckpointPending")
+        .map((item) => item.checkpointId)
+    : checkpointIds(operation)
+  if (pendingIds.length === 0) {
+    return yield* moved(ctx, ledger,
+      { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." })
+  }
+  // Everything that can fail locally — snapshot verification and the
+  // credential fetch — happens BEFORE any durable publish intent, so a ledger
+  // that says "dispatching" always means the wire was actually reached.
+  const handles = new Map<string, VerifiedContentHandle | undefined>()
+  for (const checkpointId of pendingIds) {
+    const subjectFromInputs = checkpointId === "dispatch" ||
+      (isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish")
+    const outputId = subjectFromInputs
+      ? String(operation.inputs[0] ?? "")
+      : String(checkpointId).replace(/^asset:/u, "")
+    const facts = materials.find((item) => item.outputId === outputId)
+    handles.set(String(checkpointId), facts === undefined ? undefined
+      : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts))
+  }
+  const credential = yield* ctx.credential.getPublish(operation.credential, permit)
+  let next = before?._tag === "Pending"
+    ? yield* moved(ctx, ledger,
+        { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt })
+    : ledger
+  const status = operationStatus(next, operation.id)
+  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : []
   for (const checkpoint of checkpoints) {
     if (checkpoint._tag !== "CheckpointPending") continue
     const key = reconciliationKeyFor(ctx, next, operation, operationHash,
@@ -185,18 +223,10 @@ const publishOperation = (
           targetCoordinates: target,
           ...(subject === undefined ? {} : { subjectDigest: subject.digest })
         } : {}) })
-    const subjectFromInputs = checkpoint.checkpointId === "dispatch" ||
-      (isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish")
-    const outputId = subjectFromInputs
-      ? String(operation.inputs[0] ?? "")
-      : String(checkpoint.checkpointId).replace(/^asset:/u, "")
-    const facts = materials.find((item) => item.outputId === outputId)
-    const handle = facts === undefined ? undefined
-      : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts)
-    const credential = yield* ctx.credential.getPublish(operation.credential, permit)
-    const publish = CatalogPublishRequest.make({ operation,
+    const publish = CatalogPublishRequest.make({ operation, root: ctx.request.root,
       checkpointId: checkpoint.checkpointId, clientReconciliationKey: key })
-    const result = yield* dispatched(ctx.catalog.publish(publish, handle, credential))
+    const result = yield* dispatched(
+      ctx.catalog.publish(publish, handles.get(String(checkpoint.checkpointId)), credential))
     next = yield* moved(ctx, next, checkpointCommand(result, operation.id, checkpoint.checkpointId))
     if (result._tag !== "Committed") return next
   }
@@ -218,7 +248,7 @@ const reconcile = (
     return yield* TransitionError.make({ reason: "Reconciliation does not name an unknown checkpoint." })
   const credential = yield* ctx.credential.getPublish(operation.credential, permit)
   const result = yield* ctx.catalog.reconcile(CatalogPublishRequest.make({
-    operation, checkpointId: recovery.checkpointId,
+    operation, root: ctx.request.root, checkpointId: recovery.checkpointId,
     clientReconciliationKey: checkpoint.clientReconciliationKey
   }), credential)
   return yield* moved(ctx, ledger, {
@@ -248,18 +278,47 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
     executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash))
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Resolve") ?? [])
     ledger = yield* moved(ctx, ledger, recovery)
+  // Resolve (operator judgment) first, then Retry — which may act on a
+  // just-created AssumedAbsent — then normal execution picks up the fresh
+  // Pending attempts. Eligibility lives in transition.ts alone.
+  for (const recovery of request.recoveries?.filter((item) => item._tag === "Retry") ?? [])
+    ledger = yield* moved(ctx, ledger, { _tag: "Retry",
+      operationId: recovery.operationId, receipt: request.executionReceipt })
   const selected = new Set(ledger.scope.operationIds.map(String))
   const entries = operationEntries(accepted.plan).filter(({ stage, operation }) =>
     selected.has(operation.id) &&
     stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through))
   ledger = yield* localOperations(ctx, executionPermit, ledger,
     entries.map(({ operation }) => operation))
-  if (entries.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" &&
-    !settled(operationStatus(ledger, operation.id)))) return ledger
+  // The publish review derives from the SCOPE, not the requested frontier: a
+  // materialize-only apply (through: validate) must still emit the challenge
+  // its publish job will confirm — but only once every in-scope pre-publish
+  // operation is settled. Publish EXECUTION stays gated on `through`.
+  const scoped = operationEntries(accepted.plan)
+    .filter(({ operation }) => selected.has(operation.id))
+  if (scoped.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" &&
+    !settled(operationStatus(ledger, operation.id)))) return applied(ledger)
   const publishEntries = entries.map(({ operation }) => operation).filter(isRemotePublish)
-  if (publishEntries.length === 0) return ledger
-  if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile")) return ledger
-  const materials = yield* materialize(ctx)
+  if (!scoped.some(({ operation }) => isRemotePublish(operation))) return applied(ledger)
+  if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile")) return applied(ledger)
+  const materials = yield* materialize(ctx, selected)
+  // Fresh snapshots must match what the build recorded — the code-level truth
+  // behind resume revalidation: publish inputs are compared against the
+  // digests their producing operations persisted when they passed.
+  for (const material of materials) {
+    const producer = scoped.map(({ operation }) => operation).find((operation) =>
+      operation.outputs.some((output) => String(output.id) === String(material.outputId)))
+    const state = producer === undefined ? undefined : operationStatus(ledger, producer.id)
+    if (state?._tag !== "Passed") continue
+    const recorded = state.materializedOutputs.find((output) =>
+      String(output.outputId) === String(material.outputId))
+    if (recorded !== undefined &&
+      (recorded.digest !== material.digest || recorded.size !== material.size)) {
+      return yield* TransitionError.make({
+        reason: `Output ${material.outputId} no longer matches its recorded digest; the workspace changed after it was built.`
+      })
+    }
+  }
   const review = publishReviewId(accepted, executionReviewId(
     accepted, ledger.scope, ledger.executionTopologyHash
   ), ledger.scope, materials)
@@ -268,12 +327,12 @@ export const applyAcceptedPlan = Effect.fn("applyAcceptedPlan")(function*(
   const permit = yield* signer.publish(request.publish.receipt, executionPermit, review)
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
     ledger = yield* reconcile(ctx, ledger, recovery, permit)
-  if (blocksApply(ledger)) return ledger
+  if (blocksApply(ledger)) return applied(ledger)
   for (const operation of publishEntries) {
     const state = operationStatus(ledger, operation.id)
     if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
       ledger = yield* publishOperation(ctx, ledger, operation, materials, permit)
-    if (!settled(operationStatus(ledger, operation.id))) return ledger
+    if (!settled(operationStatus(ledger, operation.id))) return applied(ledger)
   }
-  return ledger
+  return applied(ledger)
 })

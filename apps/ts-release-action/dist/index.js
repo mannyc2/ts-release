@@ -1,4 +1,34 @@
 import { createRequire } from "node:module";
+var __create = Object.create;
+var __getProtoOf = Object.getPrototypeOf;
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+function __accessProp(key) {
+  return this[key];
+}
+var __toESMCache_node;
+var __toESMCache_esm;
+var __toESM = (mod, isNodeMode, target) => {
+  var canCache = mod != null && typeof mod === "object";
+  if (canCache) {
+    var cache = isNodeMode ? __toESMCache_node ??= new WeakMap : __toESMCache_esm ??= new WeakMap;
+    var cached = cache.get(mod);
+    if (cached)
+      return cached;
+  }
+  target = mod != null ? __create(__getProtoOf(mod)) : {};
+  const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
+  for (let key of __getOwnPropNames(mod))
+    if (!__hasOwnProp.call(to, key))
+      __defProp(to, key, {
+        get: __accessProp.bind(mod, key),
+        enumerable: true
+      });
+  if (canCache)
+    cache.set(mod, to);
+  return to;
+};
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
 var __require = /* @__PURE__ */ createRequire(import.meta.url);
 
@@ -16997,6 +17027,1850 @@ var require_eventsource = __commonJS((exports, module) => {
   };
 });
 
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/internal/constants.js
+var require_constants6 = __commonJS((exports, module) => {
+  var SEMVER_SPEC_VERSION = "2.0.0";
+  var MAX_LENGTH = 256;
+  var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || 9007199254740991;
+  var MAX_SAFE_COMPONENT_LENGTH = 16;
+  var MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6;
+  var RELEASE_TYPES = [
+    "major",
+    "premajor",
+    "minor",
+    "preminor",
+    "patch",
+    "prepatch",
+    "prerelease"
+  ];
+  module.exports = {
+    MAX_LENGTH,
+    MAX_SAFE_COMPONENT_LENGTH,
+    MAX_SAFE_BUILD_LENGTH,
+    MAX_SAFE_INTEGER,
+    RELEASE_TYPES,
+    SEMVER_SPEC_VERSION,
+    FLAG_INCLUDE_PRERELEASE: 1,
+    FLAG_LOOSE: 2
+  };
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/internal/debug.js
+var require_debug = __commonJS((exports, module) => {
+  var debug3 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args2) => console.error("SEMVER", ...args2) : () => {};
+  module.exports = debug3;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/internal/re.js
+var require_re = __commonJS((exports, module) => {
+  var {
+    MAX_SAFE_COMPONENT_LENGTH,
+    MAX_SAFE_BUILD_LENGTH,
+    MAX_LENGTH
+  } = require_constants6();
+  var debug3 = require_debug();
+  exports = module.exports = {};
+  var re = exports.re = [];
+  var safeRe = exports.safeRe = [];
+  var src = exports.src = [];
+  var safeSrc = exports.safeSrc = [];
+  var t = exports.t = {};
+  var R = 0;
+  var LETTERDASHNUMBER = "[a-zA-Z0-9-]";
+  var safeRegexReplacements = [
+    ["\\s", 1],
+    ["\\d", MAX_LENGTH],
+    [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH]
+  ];
+  var makeSafeRegex = (value2) => {
+    for (const [token, max] of safeRegexReplacements) {
+      value2 = value2.split(`${token}*`).join(`${token}{0,${max}}`).split(`${token}+`).join(`${token}{1,${max}}`);
+    }
+    return value2;
+  };
+  var createToken = (name, value2, isGlobal) => {
+    const safe = makeSafeRegex(value2);
+    const index = R++;
+    debug3(name, index, value2);
+    t[name] = index;
+    src[index] = value2;
+    safeSrc[index] = safe;
+    re[index] = new RegExp(value2, isGlobal ? "g" : undefined);
+    safeRe[index] = new RegExp(safe, isGlobal ? "g" : undefined);
+  };
+  createToken("NUMERICIDENTIFIER", "0|[1-9]\\d*");
+  createToken("NUMERICIDENTIFIERLOOSE", "\\d+");
+  createToken("NONNUMERICIDENTIFIER", `\\d*[a-zA-Z-]${LETTERDASHNUMBER}*`);
+  createToken("MAINVERSION", `(${src[t.NUMERICIDENTIFIER]})\\.` + `(${src[t.NUMERICIDENTIFIER]})\\.` + `(${src[t.NUMERICIDENTIFIER]})`);
+  createToken("MAINVERSIONLOOSE", `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` + `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` + `(${src[t.NUMERICIDENTIFIERLOOSE]})`);
+  createToken("PRERELEASEIDENTIFIER", `(?:${src[t.NONNUMERICIDENTIFIER]}|${src[t.NUMERICIDENTIFIER]})`);
+  createToken("PRERELEASEIDENTIFIERLOOSE", `(?:${src[t.NONNUMERICIDENTIFIER]}|${src[t.NUMERICIDENTIFIERLOOSE]})`);
+  createToken("PRERELEASE", `(?:-(${src[t.PRERELEASEIDENTIFIER]}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`);
+  createToken("PRERELEASELOOSE", `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`);
+  createToken("BUILDIDENTIFIER", `${LETTERDASHNUMBER}+`);
+  createToken("BUILD", `(?:\\+(${src[t.BUILDIDENTIFIER]}(?:\\.${src[t.BUILDIDENTIFIER]})*))`);
+  createToken("FULLPLAIN", `v?${src[t.MAINVERSION]}${src[t.PRERELEASE]}?${src[t.BUILD]}?`);
+  createToken("FULL", `^${src[t.FULLPLAIN]}$`);
+  createToken("LOOSEPLAIN", `[v=\\s]*${src[t.MAINVERSIONLOOSE]}${src[t.PRERELEASELOOSE]}?${src[t.BUILD]}?`);
+  createToken("LOOSE", `^${src[t.LOOSEPLAIN]}$`);
+  createToken("GTLT", "((?:<|>)?=?)");
+  createToken("XRANGEIDENTIFIERLOOSE", `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
+  createToken("XRANGEIDENTIFIER", `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`);
+  createToken("XRANGEPLAIN", `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` + `(?:\\.(${src[t.XRANGEIDENTIFIER]})` + `(?:\\.(${src[t.XRANGEIDENTIFIER]})` + `(?:${src[t.PRERELEASE]})?${src[t.BUILD]}?` + `)?)?`);
+  createToken("XRANGEPLAINLOOSE", `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` + `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` + `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` + `(?:${src[t.PRERELEASELOOSE]})?${src[t.BUILD]}?` + `)?)?`);
+  createToken("XRANGE", `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`);
+  createToken("XRANGELOOSE", `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`);
+  createToken("COERCEPLAIN", `${"(^|[^\\d])" + "(\\d{1,"}${MAX_SAFE_COMPONENT_LENGTH}})` + `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` + `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`);
+  createToken("COERCE", `${src[t.COERCEPLAIN]}(?:$|[^\\d])`);
+  createToken("COERCEFULL", src[t.COERCEPLAIN] + `(?:${src[t.PRERELEASE]})?` + `(?:${src[t.BUILD]})?` + `(?:$|[^\\d])`);
+  createToken("COERCERTL", src[t.COERCE], true);
+  createToken("COERCERTLFULL", src[t.COERCEFULL], true);
+  createToken("LONETILDE", "(?:~>?)");
+  createToken("TILDETRIM", `(\\s*)${src[t.LONETILDE]}\\s+`, true);
+  exports.tildeTrimReplace = "$1~";
+  createToken("TILDE", `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`);
+  createToken("TILDELOOSE", `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`);
+  createToken("LONECARET", "(?:\\^)");
+  createToken("CARETTRIM", `(\\s*)${src[t.LONECARET]}\\s+`, true);
+  exports.caretTrimReplace = "$1^";
+  createToken("CARET", `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`);
+  createToken("CARETLOOSE", `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`);
+  createToken("COMPARATORLOOSE", `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`);
+  createToken("COMPARATOR", `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`);
+  createToken("COMPARATORTRIM", `(\\s*)${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true);
+  exports.comparatorTrimReplace = "$1$2$3";
+  createToken("HYPHENRANGE", `^\\s*(${src[t.XRANGEPLAIN]})` + `\\s+-\\s+` + `(${src[t.XRANGEPLAIN]})` + `\\s*$`);
+  createToken("HYPHENRANGELOOSE", `^\\s*(${src[t.XRANGEPLAINLOOSE]})` + `\\s+-\\s+` + `(${src[t.XRANGEPLAINLOOSE]})` + `\\s*$`);
+  createToken("STAR", "(<|>)?=?\\s*\\*");
+  createToken("GTE0", "^\\s*>=\\s*0\\.0\\.0\\s*$");
+  createToken("GTE0PRE", "^\\s*>=\\s*0\\.0\\.0-0\\s*$");
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/internal/parse-options.js
+var require_parse_options = __commonJS((exports, module) => {
+  var looseOption = Object.freeze({ loose: true });
+  var emptyOpts = Object.freeze({});
+  var parseOptions = (options) => {
+    if (!options) {
+      return emptyOpts;
+    }
+    if (typeof options !== "object") {
+      return looseOption;
+    }
+    return options;
+  };
+  module.exports = parseOptions;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/internal/identifiers.js
+var require_identifiers = __commonJS((exports, module) => {
+  var numeric = /^[0-9]+$/;
+  var compareIdentifiers = (a, b) => {
+    if (typeof a === "number" && typeof b === "number") {
+      return a === b ? 0 : a < b ? -1 : 1;
+    }
+    const anum = numeric.test(a);
+    const bnum = numeric.test(b);
+    if (anum && bnum) {
+      a = +a;
+      b = +b;
+    }
+    return a === b ? 0 : anum && !bnum ? -1 : bnum && !anum ? 1 : a < b ? -1 : 1;
+  };
+  var rcompareIdentifiers = (a, b) => compareIdentifiers(b, a);
+  module.exports = {
+    compareIdentifiers,
+    rcompareIdentifiers
+  };
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/classes/semver.js
+var require_semver = __commonJS((exports, module) => {
+  var debug3 = require_debug();
+  var { MAX_LENGTH, MAX_SAFE_INTEGER } = require_constants6();
+  var { safeRe: re, t } = require_re();
+  var parseOptions = require_parse_options();
+  var { compareIdentifiers } = require_identifiers();
+  var isPrereleaseIdentifier = (prerelease, identifier3) => {
+    const identifiers = identifier3.split(".");
+    if (identifiers.length > prerelease.length) {
+      return false;
+    }
+    for (let i = 0;i < identifiers.length; i++) {
+      if (compareIdentifiers(prerelease[i], identifiers[i]) !== 0) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  class SemVer {
+    constructor(version2, options) {
+      options = parseOptions(options);
+      if (version2 instanceof SemVer) {
+        if (version2.loose === !!options.loose && version2.includePrerelease === !!options.includePrerelease) {
+          return version2;
+        } else {
+          version2 = version2.version;
+        }
+      } else if (typeof version2 !== "string") {
+        throw new TypeError(`Invalid version. Must be a string. Got type "${typeof version2}".`);
+      }
+      if (version2.length > MAX_LENGTH) {
+        throw new TypeError(`version is longer than ${MAX_LENGTH} characters`);
+      }
+      debug3("SemVer", version2, options);
+      this.options = options;
+      this.loose = !!options.loose;
+      this.includePrerelease = !!options.includePrerelease;
+      const m = version2.trim().match(options.loose ? re[t.LOOSE] : re[t.FULL]);
+      if (!m) {
+        throw new TypeError(`Invalid Version: ${version2}`);
+      }
+      this.raw = version2;
+      this.major = +m[1];
+      this.minor = +m[2];
+      this.patch = +m[3];
+      if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
+        throw new TypeError("Invalid major version");
+      }
+      if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
+        throw new TypeError("Invalid minor version");
+      }
+      if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
+        throw new TypeError("Invalid patch version");
+      }
+      if (!m[4]) {
+        this.prerelease = [];
+      } else {
+        this.prerelease = m[4].split(".").map((id) => {
+          if (/^[0-9]+$/.test(id)) {
+            const num = +id;
+            if (num >= 0 && num < MAX_SAFE_INTEGER) {
+              return num;
+            }
+          }
+          return id;
+        });
+      }
+      this.build = m[5] ? m[5].split(".") : [];
+      this.format();
+    }
+    format() {
+      this.version = `${this.major}.${this.minor}.${this.patch}`;
+      if (this.prerelease.length) {
+        this.version += `-${this.prerelease.join(".")}`;
+      }
+      return this.version;
+    }
+    toString() {
+      return this.version;
+    }
+    compare(other) {
+      debug3("SemVer.compare", this.version, this.options, other);
+      if (!(other instanceof SemVer)) {
+        if (typeof other === "string" && other === this.version) {
+          return 0;
+        }
+        other = new SemVer(other, this.options);
+      }
+      if (other.version === this.version) {
+        return 0;
+      }
+      return this.compareMain(other) || this.comparePre(other);
+    }
+    compareMain(other) {
+      if (!(other instanceof SemVer)) {
+        other = new SemVer(other, this.options);
+      }
+      if (this.major < other.major) {
+        return -1;
+      }
+      if (this.major > other.major) {
+        return 1;
+      }
+      if (this.minor < other.minor) {
+        return -1;
+      }
+      if (this.minor > other.minor) {
+        return 1;
+      }
+      if (this.patch < other.patch) {
+        return -1;
+      }
+      if (this.patch > other.patch) {
+        return 1;
+      }
+      return 0;
+    }
+    comparePre(other) {
+      if (!(other instanceof SemVer)) {
+        other = new SemVer(other, this.options);
+      }
+      if (this.prerelease.length && !other.prerelease.length) {
+        return -1;
+      } else if (!this.prerelease.length && other.prerelease.length) {
+        return 1;
+      } else if (!this.prerelease.length && !other.prerelease.length) {
+        return 0;
+      }
+      let i = 0;
+      do {
+        const a = this.prerelease[i];
+        const b = other.prerelease[i];
+        debug3("prerelease compare", i, a, b);
+        if (a === undefined && b === undefined) {
+          return 0;
+        } else if (b === undefined) {
+          return 1;
+        } else if (a === undefined) {
+          return -1;
+        } else if (a === b) {
+          continue;
+        } else {
+          return compareIdentifiers(a, b);
+        }
+      } while (++i);
+    }
+    compareBuild(other) {
+      if (!(other instanceof SemVer)) {
+        other = new SemVer(other, this.options);
+      }
+      let i = 0;
+      do {
+        const a = this.build[i];
+        const b = other.build[i];
+        debug3("build compare", i, a, b);
+        if (a === undefined && b === undefined) {
+          return 0;
+        } else if (b === undefined) {
+          return 1;
+        } else if (a === undefined) {
+          return -1;
+        } else if (a === b) {
+          continue;
+        } else {
+          return compareIdentifiers(a, b);
+        }
+      } while (++i);
+    }
+    inc(release, identifier3, identifierBase) {
+      if (release.startsWith("pre")) {
+        if (!identifier3 && identifierBase === false) {
+          throw new Error("invalid increment argument: identifier is empty");
+        }
+        if (identifier3) {
+          const match6 = `-${identifier3}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE]);
+          if (!match6 || match6[1] !== identifier3) {
+            throw new Error(`invalid identifier: ${identifier3}`);
+          }
+        }
+      }
+      switch (release) {
+        case "premajor":
+          this.prerelease.length = 0;
+          this.patch = 0;
+          this.minor = 0;
+          this.major++;
+          this.inc("pre", identifier3, identifierBase);
+          break;
+        case "preminor":
+          this.prerelease.length = 0;
+          this.patch = 0;
+          this.minor++;
+          this.inc("pre", identifier3, identifierBase);
+          break;
+        case "prepatch":
+          this.prerelease.length = 0;
+          this.inc("patch", identifier3, identifierBase);
+          this.inc("pre", identifier3, identifierBase);
+          break;
+        case "prerelease":
+          if (this.prerelease.length === 0) {
+            this.inc("patch", identifier3, identifierBase);
+          }
+          this.inc("pre", identifier3, identifierBase);
+          break;
+        case "release":
+          if (this.prerelease.length === 0) {
+            throw new Error(`version ${this.raw} is not a prerelease`);
+          }
+          this.prerelease.length = 0;
+          break;
+        case "major":
+          if (this.minor !== 0 || this.patch !== 0 || this.prerelease.length === 0) {
+            this.major++;
+          }
+          this.minor = 0;
+          this.patch = 0;
+          this.prerelease = [];
+          break;
+        case "minor":
+          if (this.patch !== 0 || this.prerelease.length === 0) {
+            this.minor++;
+          }
+          this.patch = 0;
+          this.prerelease = [];
+          break;
+        case "patch":
+          if (this.prerelease.length === 0) {
+            this.patch++;
+          }
+          this.prerelease = [];
+          break;
+        case "pre": {
+          const base = Number(identifierBase) ? 1 : 0;
+          if (this.prerelease.length === 0) {
+            this.prerelease = [base];
+          } else {
+            let i = this.prerelease.length;
+            while (--i >= 0) {
+              if (typeof this.prerelease[i] === "number") {
+                this.prerelease[i]++;
+                i = -2;
+              }
+            }
+            if (i === -1) {
+              if (identifier3 === this.prerelease.join(".") && identifierBase === false) {
+                throw new Error("invalid increment argument: identifier already exists");
+              }
+              this.prerelease.push(base);
+            }
+          }
+          if (identifier3) {
+            let prerelease = [identifier3, base];
+            if (identifierBase === false) {
+              prerelease = [identifier3];
+            }
+            if (isPrereleaseIdentifier(this.prerelease, identifier3)) {
+              const prereleaseBase = this.prerelease[identifier3.split(".").length];
+              if (isNaN(prereleaseBase)) {
+                this.prerelease = prerelease;
+              }
+            } else {
+              this.prerelease = prerelease;
+            }
+          }
+          break;
+        }
+        default:
+          throw new Error(`invalid increment argument: ${release}`);
+      }
+      this.raw = this.format();
+      if (this.build.length) {
+        this.raw += `+${this.build.join(".")}`;
+      }
+      return this;
+    }
+  }
+  module.exports = SemVer;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/parse.js
+var require_parse2 = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var parse = (version2, options, throwErrors = false) => {
+    if (version2 instanceof SemVer) {
+      return version2;
+    }
+    try {
+      return new SemVer(version2, options);
+    } catch (er) {
+      if (!throwErrors) {
+        return null;
+      }
+      throw er;
+    }
+  };
+  module.exports = parse;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/valid.js
+var require_valid = __commonJS((exports, module) => {
+  var parse = require_parse2();
+  var valid = (version2, options) => {
+    const v = parse(version2, options);
+    return v ? v.version : null;
+  };
+  module.exports = valid;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/clean.js
+var require_clean = __commonJS((exports, module) => {
+  var parse = require_parse2();
+  var clean = (version2, options) => {
+    const s = parse(version2.trim().replace(/^[=v]+/, ""), options);
+    return s ? s.version : null;
+  };
+  module.exports = clean;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/inc.js
+var require_inc = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var inc = (version2, release, options, identifier3, identifierBase) => {
+    if (typeof options === "string") {
+      identifierBase = identifier3;
+      identifier3 = options;
+      options = undefined;
+    }
+    try {
+      return new SemVer(version2 instanceof SemVer ? version2.version : version2, options).inc(release, identifier3, identifierBase).version;
+    } catch (er) {
+      return null;
+    }
+  };
+  module.exports = inc;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/diff.js
+var require_diff = __commonJS((exports, module) => {
+  var parse = require_parse2();
+  var diff = (version1, version2) => {
+    const v1 = parse(version1, null, true);
+    const v2 = parse(version2, null, true);
+    const comparison = v1.compare(v2);
+    if (comparison === 0) {
+      return null;
+    }
+    const v1Higher = comparison > 0;
+    const highVersion = v1Higher ? v1 : v2;
+    const lowVersion = v1Higher ? v2 : v1;
+    const highHasPre = !!highVersion.prerelease.length;
+    const lowHasPre = !!lowVersion.prerelease.length;
+    if (lowHasPre && !highHasPre) {
+      if (!lowVersion.patch && !lowVersion.minor) {
+        return "major";
+      }
+      if (lowVersion.compareMain(highVersion) === 0) {
+        if (lowVersion.minor && !lowVersion.patch) {
+          return "minor";
+        }
+        return "patch";
+      }
+    }
+    const prefix = highHasPre ? "pre" : "";
+    if (v1.major !== v2.major) {
+      return prefix + "major";
+    }
+    if (v1.minor !== v2.minor) {
+      return prefix + "minor";
+    }
+    if (v1.patch !== v2.patch) {
+      return prefix + "patch";
+    }
+    return "prerelease";
+  };
+  module.exports = diff;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/major.js
+var require_major = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var major = (a, loose) => new SemVer(a, loose).major;
+  module.exports = major;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/minor.js
+var require_minor = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var minor = (a, loose) => new SemVer(a, loose).minor;
+  module.exports = minor;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/patch.js
+var require_patch = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var patch = (a, loose) => new SemVer(a, loose).patch;
+  module.exports = patch;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/prerelease.js
+var require_prerelease = __commonJS((exports, module) => {
+  var parse = require_parse2();
+  var prerelease = (version2, options) => {
+    const parsed = parse(version2, options);
+    return parsed && parsed.prerelease.length ? parsed.prerelease : null;
+  };
+  module.exports = prerelease;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/compare.js
+var require_compare = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var compare = (a, b, loose) => new SemVer(a, loose).compare(new SemVer(b, loose));
+  module.exports = compare;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/rcompare.js
+var require_rcompare = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var rcompare = (a, b, loose) => compare(b, a, loose);
+  module.exports = rcompare;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/compare-loose.js
+var require_compare_loose = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var compareLoose = (a, b) => compare(a, b, true);
+  module.exports = compareLoose;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/compare-build.js
+var require_compare_build = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var compareBuild = (a, b, loose) => {
+    const versionA = new SemVer(a, loose);
+    const versionB = new SemVer(b, loose);
+    return versionA.compare(versionB) || versionA.compareBuild(versionB);
+  };
+  module.exports = compareBuild;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/sort.js
+var require_sort = __commonJS((exports, module) => {
+  var compareBuild = require_compare_build();
+  var sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose));
+  module.exports = sort;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/rsort.js
+var require_rsort = __commonJS((exports, module) => {
+  var compareBuild = require_compare_build();
+  var rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose));
+  module.exports = rsort;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/gt.js
+var require_gt = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var gt = (a, b, loose) => compare(a, b, loose) > 0;
+  module.exports = gt;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/lt.js
+var require_lt = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var lt = (a, b, loose) => compare(a, b, loose) < 0;
+  module.exports = lt;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/eq.js
+var require_eq = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var eq = (a, b, loose) => compare(a, b, loose) === 0;
+  module.exports = eq;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/neq.js
+var require_neq = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var neq = (a, b, loose) => compare(a, b, loose) !== 0;
+  module.exports = neq;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/gte.js
+var require_gte = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var gte = (a, b, loose) => compare(a, b, loose) >= 0;
+  module.exports = gte;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/lte.js
+var require_lte = __commonJS((exports, module) => {
+  var compare = require_compare();
+  var lte = (a, b, loose) => compare(a, b, loose) <= 0;
+  module.exports = lte;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/cmp.js
+var require_cmp = __commonJS((exports, module) => {
+  var eq = require_eq();
+  var neq = require_neq();
+  var gt = require_gt();
+  var gte = require_gte();
+  var lt = require_lt();
+  var lte = require_lte();
+  var cmp = (a, op, b, loose) => {
+    switch (op) {
+      case "===":
+        if (typeof a === "object") {
+          a = a.version;
+        }
+        if (typeof b === "object") {
+          b = b.version;
+        }
+        return a === b;
+      case "!==":
+        if (typeof a === "object") {
+          a = a.version;
+        }
+        if (typeof b === "object") {
+          b = b.version;
+        }
+        return a !== b;
+      case "":
+      case "=":
+      case "==":
+        return eq(a, b, loose);
+      case "!=":
+        return neq(a, b, loose);
+      case ">":
+        return gt(a, b, loose);
+      case ">=":
+        return gte(a, b, loose);
+      case "<":
+        return lt(a, b, loose);
+      case "<=":
+        return lte(a, b, loose);
+      default:
+        throw new TypeError(`Invalid operator: ${op}`);
+    }
+  };
+  module.exports = cmp;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/coerce.js
+var require_coerce = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var parse = require_parse2();
+  var { safeRe: re, t } = require_re();
+  var coerce = (version2, options) => {
+    if (version2 instanceof SemVer) {
+      return version2;
+    }
+    if (typeof version2 === "number") {
+      version2 = String(version2);
+    }
+    if (typeof version2 !== "string") {
+      return null;
+    }
+    options = options || {};
+    let match6 = null;
+    if (!options.rtl) {
+      match6 = version2.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE]);
+    } else {
+      const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL];
+      let next;
+      while ((next = coerceRtlRegex.exec(version2)) && (!match6 || match6.index + match6[0].length !== version2.length)) {
+        if (!match6 || next.index + next[0].length !== match6.index + match6[0].length) {
+          match6 = next;
+        }
+        coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length;
+      }
+      coerceRtlRegex.lastIndex = -1;
+    }
+    if (match6 === null) {
+      return null;
+    }
+    const major = match6[2];
+    const minor = match6[3] || "0";
+    const patch = match6[4] || "0";
+    const prerelease = options.includePrerelease && match6[5] ? `-${match6[5]}` : "";
+    const build2 = options.includePrerelease && match6[6] ? `+${match6[6]}` : "";
+    return parse(`${major}.${minor}.${patch}${prerelease}${build2}`, options);
+  };
+  module.exports = coerce;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/truncate.js
+var require_truncate = __commonJS((exports, module) => {
+  var parse = require_parse2();
+  var constants3 = require_constants6();
+  var SemVer = require_semver();
+  var truncate = (version2, truncation, options) => {
+    if (!constants3.RELEASE_TYPES.includes(truncation)) {
+      return null;
+    }
+    const clonedVersion = cloneInputVersion(version2, options);
+    return clonedVersion && doTruncation(clonedVersion, truncation);
+  };
+  var cloneInputVersion = (version2, options) => {
+    const versionStringToParse = version2 instanceof SemVer ? version2.version : version2;
+    return parse(versionStringToParse, options);
+  };
+  var doTruncation = (version2, truncation) => {
+    if (isPrerelease(truncation)) {
+      return version2.version;
+    }
+    version2.prerelease = [];
+    switch (truncation) {
+      case "major":
+        version2.minor = 0;
+        version2.patch = 0;
+        break;
+      case "minor":
+        version2.patch = 0;
+        break;
+    }
+    return version2.format();
+  };
+  var isPrerelease = (type) => {
+    return type.startsWith("pre");
+  };
+  module.exports = truncate;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/internal/lrucache.js
+var require_lrucache = __commonJS((exports, module) => {
+  class LRUCache {
+    constructor() {
+      this.max = 1000;
+      this.map = new Map;
+    }
+    get(key) {
+      const value2 = this.map.get(key);
+      if (value2 === undefined) {
+        return;
+      } else {
+        this.map.delete(key);
+        this.map.set(key, value2);
+        return value2;
+      }
+    }
+    delete(key) {
+      return this.map.delete(key);
+    }
+    set(key, value2) {
+      const deleted = this.delete(key);
+      if (!deleted && value2 !== undefined) {
+        if (this.map.size >= this.max) {
+          const firstKey = this.map.keys().next().value;
+          this.delete(firstKey);
+        }
+        this.map.set(key, value2);
+      }
+      return this;
+    }
+  }
+  module.exports = LRUCache;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/classes/range.js
+var require_range = __commonJS((exports, module) => {
+  var SPACE_CHARACTERS = /\s+/g;
+
+  class Range {
+    constructor(range, options) {
+      options = parseOptions(options);
+      if (range instanceof Range) {
+        if (range.loose === !!options.loose && range.includePrerelease === !!options.includePrerelease) {
+          return range;
+        } else {
+          return new Range(range.raw, options);
+        }
+      }
+      if (range instanceof Comparator) {
+        this.raw = range.value;
+        this.set = [[range]];
+        this.formatted = undefined;
+        return this;
+      }
+      this.options = options;
+      this.loose = !!options.loose;
+      this.includePrerelease = !!options.includePrerelease;
+      this.raw = range.trim().replace(SPACE_CHARACTERS, " ");
+      this.set = this.raw.split("||").map((r) => this.parseRange(r.trim())).filter((c) => c.length);
+      if (!this.set.length) {
+        throw new TypeError(`Invalid SemVer Range: ${this.raw}`);
+      }
+      if (this.set.length > 1) {
+        const first = this.set[0];
+        this.set = this.set.filter((c) => !isNullSet(c[0]));
+        if (this.set.length === 0) {
+          this.set = [first];
+        } else if (this.set.length > 1) {
+          for (const c of this.set) {
+            if (c.length === 1 && isAny(c[0])) {
+              this.set = [c];
+              break;
+            }
+          }
+        }
+      }
+      this.formatted = undefined;
+    }
+    get range() {
+      if (this.formatted === undefined) {
+        this.formatted = "";
+        for (let i = 0;i < this.set.length; i++) {
+          if (i > 0) {
+            this.formatted += "||";
+          }
+          const comps = this.set[i];
+          for (let k = 0;k < comps.length; k++) {
+            if (k > 0) {
+              this.formatted += " ";
+            }
+            this.formatted += comps[k].toString().trim();
+          }
+        }
+      }
+      return this.formatted;
+    }
+    format() {
+      return this.range;
+    }
+    toString() {
+      return this.range;
+    }
+    parseRange(range) {
+      range = range.replace(BUILDSTRIPRE, "");
+      const memoOpts = (this.options.includePrerelease && FLAG_INCLUDE_PRERELEASE) | (this.options.loose && FLAG_LOOSE);
+      const memoKey = memoOpts + ":" + range;
+      const cached3 = cache.get(memoKey);
+      if (cached3) {
+        return cached3;
+      }
+      const loose = this.options.loose;
+      const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE];
+      range = range.replace(hr, hyphenReplace(this.options.includePrerelease));
+      debug3("hyphen replace", range);
+      range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace);
+      debug3("comparator trim", range);
+      range = range.replace(re[t.TILDETRIM], tildeTrimReplace);
+      debug3("tilde trim", range);
+      range = range.replace(re[t.CARETTRIM], caretTrimReplace);
+      debug3("caret trim", range);
+      let rangeList = range.split(" ").map((comp) => parseComparator(comp, this.options)).join(" ").split(/\s+/).map((comp) => replaceGTE0(comp, this.options));
+      if (loose) {
+        rangeList = rangeList.filter((comp) => {
+          debug3("loose invalid filter", comp, this.options);
+          return !!comp.match(re[t.COMPARATORLOOSE]);
+        });
+      }
+      debug3("range list", rangeList);
+      const rangeMap = new Map;
+      const comparators = rangeList.map((comp) => new Comparator(comp, this.options));
+      for (const comp of comparators) {
+        if (isNullSet(comp)) {
+          return [comp];
+        }
+        rangeMap.set(comp.value, comp);
+      }
+      if (rangeMap.size > 1 && rangeMap.has("")) {
+        rangeMap.delete("");
+      }
+      const result2 = [...rangeMap.values()];
+      cache.set(memoKey, result2);
+      return result2;
+    }
+    intersects(range, options) {
+      if (!(range instanceof Range)) {
+        throw new TypeError("a Range is required");
+      }
+      return this.set.some((thisComparators) => {
+        return isSatisfiable(thisComparators, options) && range.set.some((rangeComparators) => {
+          return isSatisfiable(rangeComparators, options) && thisComparators.every((thisComparator) => {
+            return rangeComparators.every((rangeComparator) => {
+              return thisComparator.intersects(rangeComparator, options);
+            });
+          });
+        });
+      });
+    }
+    test(version2) {
+      if (!version2) {
+        return false;
+      }
+      if (typeof version2 === "string") {
+        try {
+          version2 = new SemVer(version2, this.options);
+        } catch (er) {
+          return false;
+        }
+      }
+      for (let i = 0;i < this.set.length; i++) {
+        if (testSet(this.set[i], version2, this.options)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+  module.exports = Range;
+  var LRU = require_lrucache();
+  var cache = new LRU;
+  var parseOptions = require_parse_options();
+  var Comparator = require_comparator();
+  var debug3 = require_debug();
+  var SemVer = require_semver();
+  var {
+    safeRe: re,
+    src,
+    t,
+    comparatorTrimReplace,
+    tildeTrimReplace,
+    caretTrimReplace
+  } = require_re();
+  var { FLAG_INCLUDE_PRERELEASE, FLAG_LOOSE } = require_constants6();
+  var BUILDSTRIPRE = new RegExp(src[t.BUILD], "g");
+  var isNullSet = (c) => c.value === "<0.0.0-0";
+  var isAny = (c) => c.value === "";
+  var isSatisfiable = (comparators, options) => {
+    let result2 = true;
+    const remainingComparators = comparators.slice();
+    let testComparator = remainingComparators.pop();
+    while (result2 && remainingComparators.length) {
+      result2 = remainingComparators.every((otherComparator) => {
+        return testComparator.intersects(otherComparator, options);
+      });
+      testComparator = remainingComparators.pop();
+    }
+    return result2;
+  };
+  var parseComparator = (comp, options) => {
+    comp = comp.replace(re[t.BUILD], "");
+    debug3("comp", comp, options);
+    comp = replaceCarets(comp, options);
+    debug3("caret", comp);
+    comp = replaceTildes(comp, options);
+    debug3("tildes", comp);
+    comp = replaceXRanges(comp, options);
+    debug3("xrange", comp);
+    comp = replaceStars(comp, options);
+    debug3("stars", comp);
+    return comp;
+  };
+  var isX = (id) => !id || id.toLowerCase() === "x" || id === "*";
+  var invalidXRangeOrder = (M, m, p) => isX(M) && !isX(m) || isX(m) && p && !isX(p);
+  var replaceTildes = (comp, options) => {
+    return comp.trim().split(/\s+/).map((c) => replaceTilde(c, options)).join(" ");
+  };
+  var replaceTilde = (comp, options) => {
+    const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE];
+    const z = options.includePrerelease ? "-0" : "";
+    return comp.replace(r, (_, M, m, p, pr) => {
+      debug3("tilde", comp, _, M, m, p, pr);
+      let ret;
+      if (isX(M)) {
+        ret = "";
+      } else if (isX(m)) {
+        ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+      } else if (isX(p)) {
+        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+      } else if (pr) {
+        debug3("replaceTilde pr", pr);
+        ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
+      } else {
+        ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
+      }
+      debug3("tilde return", ret);
+      return ret;
+    });
+  };
+  var replaceCarets = (comp, options) => {
+    return comp.trim().split(/\s+/).map((c) => replaceCaret(c, options)).join(" ");
+  };
+  var replaceCaret = (comp, options) => {
+    debug3("caret", comp, options);
+    const r = options.loose ? re[t.CARETLOOSE] : re[t.CARET];
+    const z = options.includePrerelease ? "-0" : "";
+    return comp.replace(r, (_, M, m, p, pr) => {
+      debug3("caret", comp, _, M, m, p, pr);
+      let ret;
+      if (isX(M)) {
+        ret = "";
+      } else if (isX(m)) {
+        ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+      } else if (isX(p)) {
+        if (M === "0") {
+          ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+        } else {
+          ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+        }
+      } else if (pr) {
+        debug3("replaceCaret pr", pr);
+        if (M === "0") {
+          if (m === "0") {
+            ret = `>=${M}.${m}.${p}-${pr} <${M}.${m}.${+p + 1}-0`;
+          } else {
+            ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
+          }
+        } else {
+          ret = `>=${M}.${m}.${p}-${pr} <${+M + 1}.0.0-0`;
+        }
+      } else {
+        debug3("no pr");
+        if (M === "0") {
+          if (m === "0") {
+            ret = `>=${M}.${m}.${p} <${M}.${m}.${+p + 1}-0`;
+          } else {
+            ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
+          }
+        } else {
+          ret = `>=${M}.${m}.${p} <${+M + 1}.0.0-0`;
+        }
+      }
+      debug3("caret return", ret);
+      return ret;
+    });
+  };
+  var replaceXRanges = (comp, options) => {
+    debug3("replaceXRanges", comp, options);
+    return comp.split(/\s+/).map((c) => replaceXRange(c, options)).join(" ");
+  };
+  var replaceXRange = (comp, options) => {
+    comp = comp.trim();
+    const r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE];
+    return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+      debug3("xRange", comp, ret, gtlt, M, m, p, pr);
+      if (invalidXRangeOrder(M, m, p)) {
+        return comp;
+      }
+      const xM = isX(M);
+      const xm = xM || isX(m);
+      const xp = xm || isX(p);
+      const anyX = xp;
+      if (gtlt === "=" && anyX) {
+        gtlt = "";
+      }
+      pr = options.includePrerelease ? "-0" : "";
+      if (xM) {
+        if (gtlt === ">" || gtlt === "<") {
+          ret = "<0.0.0-0";
+        } else {
+          ret = "*";
+        }
+      } else if (gtlt && anyX) {
+        if (xm) {
+          m = 0;
+        }
+        p = 0;
+        if (gtlt === ">") {
+          gtlt = ">=";
+          if (xm) {
+            M = +M + 1;
+            m = 0;
+            p = 0;
+          } else {
+            m = +m + 1;
+            p = 0;
+          }
+        } else if (gtlt === "<=") {
+          gtlt = "<";
+          if (xm) {
+            M = +M + 1;
+          } else {
+            m = +m + 1;
+          }
+        }
+        if (gtlt === "<") {
+          pr = "-0";
+        }
+        ret = `${gtlt + M}.${m}.${p}${pr}`;
+      } else if (xm) {
+        ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+      } else if (xp) {
+        ret = `>=${M}.${m}.0${pr} <${M}.${+m + 1}.0-0`;
+      }
+      debug3("xRange return", ret);
+      return ret;
+    });
+  };
+  var replaceStars = (comp, options) => {
+    debug3("replaceStars", comp, options);
+    return comp.trim().replace(re[t.STAR], "");
+  };
+  var replaceGTE0 = (comp, options) => {
+    debug3("replaceGTE0", comp, options);
+    return comp.trim().replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], "");
+  };
+  var hyphenReplace = (incPr) => ($0, from, fM, fm, fp, fpr, fb, to, tM, tm, tp, tpr) => {
+    if (isX(fM)) {
+      from = "";
+    } else if (isX(fm)) {
+      from = `>=${fM}.0.0${incPr ? "-0" : ""}`;
+    } else if (isX(fp)) {
+      from = `>=${fM}.${fm}.0${incPr ? "-0" : ""}`;
+    } else if (fpr) {
+      from = `>=${from}`;
+    } else {
+      from = `>=${from}${incPr ? "-0" : ""}`;
+    }
+    if (isX(tM)) {
+      to = "";
+    } else if (isX(tm)) {
+      to = `<${+tM + 1}.0.0-0`;
+    } else if (isX(tp)) {
+      to = `<${tM}.${+tm + 1}.0-0`;
+    } else if (tpr) {
+      to = `<=${tM}.${tm}.${tp}-${tpr}`;
+    } else if (incPr) {
+      to = `<${tM}.${tm}.${+tp + 1}-0`;
+    } else {
+      to = `<=${to}`;
+    }
+    return `${from} ${to}`.trim();
+  };
+  var testSet = (set2, version2, options) => {
+    for (let i = 0;i < set2.length; i++) {
+      if (!set2[i].test(version2)) {
+        return false;
+      }
+    }
+    if (version2.prerelease.length && !options.includePrerelease) {
+      for (let i = 0;i < set2.length; i++) {
+        debug3(set2[i].semver);
+        if (set2[i].semver === Comparator.ANY) {
+          continue;
+        }
+        if (set2[i].semver.prerelease.length > 0) {
+          const allowed = set2[i].semver;
+          if (allowed.major === version2.major && allowed.minor === version2.minor && allowed.patch === version2.patch) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    return true;
+  };
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/classes/comparator.js
+var require_comparator = __commonJS((exports, module) => {
+  var ANY = Symbol("SemVer ANY");
+
+  class Comparator {
+    static get ANY() {
+      return ANY;
+    }
+    constructor(comp, options) {
+      options = parseOptions(options);
+      if (comp instanceof Comparator) {
+        if (comp.loose === !!options.loose) {
+          return comp;
+        } else {
+          comp = comp.value;
+        }
+      }
+      comp = comp.trim().split(/\s+/).join(" ");
+      debug3("comparator", comp, options);
+      this.options = options;
+      this.loose = !!options.loose;
+      this.parse(comp);
+      if (this.semver === ANY) {
+        this.value = "";
+      } else {
+        this.value = this.operator + this.semver.version;
+      }
+      debug3("comp", this);
+    }
+    parse(comp) {
+      const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR];
+      const m = comp.match(r);
+      if (!m) {
+        throw new TypeError(`Invalid comparator: ${comp}`);
+      }
+      this.operator = m[1] !== undefined ? m[1] : "";
+      if (this.operator === "=") {
+        this.operator = "";
+      }
+      if (!m[2]) {
+        this.semver = ANY;
+      } else {
+        this.semver = new SemVer(m[2], this.options.loose);
+      }
+    }
+    toString() {
+      return this.value;
+    }
+    test(version2) {
+      debug3("Comparator.test", version2, this.options.loose);
+      if (this.semver === ANY || version2 === ANY) {
+        return true;
+      }
+      if (typeof version2 === "string") {
+        try {
+          version2 = new SemVer(version2, this.options);
+        } catch (er) {
+          return false;
+        }
+      }
+      return cmp(version2, this.operator, this.semver, this.options);
+    }
+    intersects(comp, options) {
+      if (!(comp instanceof Comparator)) {
+        throw new TypeError("a Comparator is required");
+      }
+      if (this.operator === "") {
+        if (this.value === "") {
+          return true;
+        }
+        return new Range(comp.value, options).test(this.value);
+      } else if (comp.operator === "") {
+        if (comp.value === "") {
+          return true;
+        }
+        return new Range(this.value, options).test(comp.semver);
+      }
+      options = parseOptions(options);
+      if (options.includePrerelease && (this.value === "<0.0.0-0" || comp.value === "<0.0.0-0")) {
+        return false;
+      }
+      if (!options.includePrerelease && (this.value.startsWith("<0.0.0") || comp.value.startsWith("<0.0.0"))) {
+        return false;
+      }
+      if (this.operator.startsWith(">") && comp.operator.startsWith(">")) {
+        return true;
+      }
+      if (this.operator.startsWith("<") && comp.operator.startsWith("<")) {
+        return true;
+      }
+      if (this.semver.version === comp.semver.version && this.operator.includes("=") && comp.operator.includes("=")) {
+        return true;
+      }
+      if (cmp(this.semver, "<", comp.semver, options) && this.operator.startsWith(">") && comp.operator.startsWith("<")) {
+        return true;
+      }
+      if (cmp(this.semver, ">", comp.semver, options) && this.operator.startsWith("<") && comp.operator.startsWith(">")) {
+        return true;
+      }
+      return false;
+    }
+  }
+  module.exports = Comparator;
+  var parseOptions = require_parse_options();
+  var { safeRe: re, t } = require_re();
+  var cmp = require_cmp();
+  var debug3 = require_debug();
+  var SemVer = require_semver();
+  var Range = require_range();
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/functions/satisfies.js
+var require_satisfies = __commonJS((exports, module) => {
+  var Range = require_range();
+  var satisfies = (version2, range, options) => {
+    try {
+      range = new Range(range, options);
+    } catch (er) {
+      return false;
+    }
+    return range.test(version2);
+  };
+  module.exports = satisfies;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/to-comparators.js
+var require_to_comparators = __commonJS((exports, module) => {
+  var Range = require_range();
+  var toComparators = (range, options) => new Range(range, options).set.map((comp) => comp.map((c) => c.value).join(" ").trim().split(" "));
+  module.exports = toComparators;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/max-satisfying.js
+var require_max_satisfying = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var Range = require_range();
+  var maxSatisfying = (versions, range, options) => {
+    let max = null;
+    let maxSV = null;
+    let rangeObj = null;
+    try {
+      rangeObj = new Range(range, options);
+    } catch (er) {
+      return null;
+    }
+    versions.forEach((v) => {
+      if (rangeObj.test(v)) {
+        if (!max || maxSV.compare(v) === -1) {
+          max = v;
+          maxSV = new SemVer(max, options);
+        }
+      }
+    });
+    return max;
+  };
+  module.exports = maxSatisfying;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/min-satisfying.js
+var require_min_satisfying = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var Range = require_range();
+  var minSatisfying = (versions, range, options) => {
+    let min = null;
+    let minSV = null;
+    let rangeObj = null;
+    try {
+      rangeObj = new Range(range, options);
+    } catch (er) {
+      return null;
+    }
+    versions.forEach((v) => {
+      if (rangeObj.test(v)) {
+        if (!min || minSV.compare(v) === 1) {
+          min = v;
+          minSV = new SemVer(min, options);
+        }
+      }
+    });
+    return min;
+  };
+  module.exports = minSatisfying;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/min-version.js
+var require_min_version = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var Range = require_range();
+  var gt = require_gt();
+  var minVersion = (range, loose) => {
+    range = new Range(range, loose);
+    let minver = new SemVer("0.0.0");
+    if (range.test(minver)) {
+      return minver;
+    }
+    minver = new SemVer("0.0.0-0");
+    if (range.test(minver)) {
+      return minver;
+    }
+    minver = null;
+    for (let i = 0;i < range.set.length; ++i) {
+      const comparators = range.set[i];
+      let setMin = null;
+      comparators.forEach((comparator) => {
+        const compver = new SemVer(comparator.semver.version);
+        switch (comparator.operator) {
+          case ">":
+            if (compver.prerelease.length === 0) {
+              compver.patch++;
+            } else {
+              compver.prerelease.push(0);
+            }
+            compver.raw = compver.format();
+          case "":
+          case ">=":
+            if (!setMin || gt(compver, setMin)) {
+              setMin = compver;
+            }
+            break;
+          case "<":
+          case "<=":
+            break;
+          default:
+            throw new Error(`Unexpected operation: ${comparator.operator}`);
+        }
+      });
+      if (setMin && (!minver || gt(minver, setMin))) {
+        minver = setMin;
+      }
+    }
+    if (minver && range.test(minver)) {
+      return minver;
+    }
+    return null;
+  };
+  module.exports = minVersion;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/valid.js
+var require_valid2 = __commonJS((exports, module) => {
+  var Range = require_range();
+  var validRange = (range, options) => {
+    try {
+      return new Range(range, options).range || "*";
+    } catch (er) {
+      return null;
+    }
+  };
+  module.exports = validRange;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/outside.js
+var require_outside = __commonJS((exports, module) => {
+  var SemVer = require_semver();
+  var Comparator = require_comparator();
+  var { ANY } = Comparator;
+  var Range = require_range();
+  var satisfies = require_satisfies();
+  var gt = require_gt();
+  var lt = require_lt();
+  var lte = require_lte();
+  var gte = require_gte();
+  var outside = (version2, range, hilo, options) => {
+    version2 = new SemVer(version2, options);
+    range = new Range(range, options);
+    let gtfn, ltefn, ltfn, comp, ecomp;
+    switch (hilo) {
+      case ">":
+        gtfn = gt;
+        ltefn = lte;
+        ltfn = lt;
+        comp = ">";
+        ecomp = ">=";
+        break;
+      case "<":
+        gtfn = lt;
+        ltefn = gte;
+        ltfn = gt;
+        comp = "<";
+        ecomp = "<=";
+        break;
+      default:
+        throw new TypeError('Must provide a hilo val of "<" or ">"');
+    }
+    if (satisfies(version2, range, options)) {
+      return false;
+    }
+    for (let i = 0;i < range.set.length; ++i) {
+      const comparators = range.set[i];
+      let high = null;
+      let low = null;
+      comparators.forEach((comparator) => {
+        if (comparator.semver === ANY) {
+          comparator = new Comparator(">=0.0.0");
+        }
+        high = high || comparator;
+        low = low || comparator;
+        if (gtfn(comparator.semver, high.semver, options)) {
+          high = comparator;
+        } else if (ltfn(comparator.semver, low.semver, options)) {
+          low = comparator;
+        }
+      });
+      if (high.operator === comp || high.operator === ecomp) {
+        return false;
+      }
+      if ((!low.operator || low.operator === comp) && ltefn(version2, low.semver)) {
+        return false;
+      } else if (low.operator === ecomp && ltfn(version2, low.semver)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  module.exports = outside;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/gtr.js
+var require_gtr = __commonJS((exports, module) => {
+  var outside = require_outside();
+  var gtr = (version2, range, options) => outside(version2, range, ">", options);
+  module.exports = gtr;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/ltr.js
+var require_ltr = __commonJS((exports, module) => {
+  var outside = require_outside();
+  var ltr = (version2, range, options) => outside(version2, range, "<", options);
+  module.exports = ltr;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/intersects.js
+var require_intersects = __commonJS((exports, module) => {
+  var Range = require_range();
+  var intersects = (r1, r2, options) => {
+    r1 = new Range(r1, options);
+    r2 = new Range(r2, options);
+    return r1.intersects(r2, options);
+  };
+  module.exports = intersects;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/simplify.js
+var require_simplify = __commonJS((exports, module) => {
+  var satisfies = require_satisfies();
+  var compare = require_compare();
+  module.exports = (versions, range, options) => {
+    const set2 = [];
+    let first = null;
+    let prev = null;
+    const v = versions.sort((a, b) => compare(a, b, options));
+    for (const version2 of v) {
+      const included = satisfies(version2, range, options);
+      if (included) {
+        prev = version2;
+        if (!first) {
+          first = version2;
+        }
+      } else {
+        if (prev) {
+          set2.push([first, prev]);
+        }
+        prev = null;
+        first = null;
+      }
+    }
+    if (first) {
+      set2.push([first, null]);
+    }
+    const ranges = [];
+    for (const [min, max] of set2) {
+      if (min === max) {
+        ranges.push(min);
+      } else if (!max && min === v[0]) {
+        ranges.push("*");
+      } else if (!max) {
+        ranges.push(`>=${min}`);
+      } else if (min === v[0]) {
+        ranges.push(`<=${max}`);
+      } else {
+        ranges.push(`${min} - ${max}`);
+      }
+    }
+    const simplified = ranges.join(" || ");
+    const original = typeof range.raw === "string" ? range.raw : String(range);
+    return simplified.length < original.length ? simplified : range;
+  };
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/ranges/subset.js
+var require_subset = __commonJS((exports, module) => {
+  var Range = require_range();
+  var Comparator = require_comparator();
+  var { ANY } = Comparator;
+  var satisfies = require_satisfies();
+  var compare = require_compare();
+  var subset = (sub, dom, options = {}) => {
+    if (sub === dom) {
+      return true;
+    }
+    sub = new Range(sub, options);
+    dom = new Range(dom, options);
+    let sawNonNull = false;
+    OUTER:
+      for (const simpleSub of sub.set) {
+        for (const simpleDom of dom.set) {
+          const isSub = simpleSubset(simpleSub, simpleDom, options);
+          sawNonNull = sawNonNull || isSub !== null;
+          if (isSub) {
+            continue OUTER;
+          }
+        }
+        if (sawNonNull) {
+          return false;
+        }
+      }
+    return true;
+  };
+  var minimumVersionWithPreRelease = [new Comparator(">=0.0.0-0")];
+  var minimumVersion = [new Comparator(">=0.0.0")];
+  var simpleSubset = (sub, dom, options) => {
+    if (sub === dom) {
+      return true;
+    }
+    if (sub.length === 1 && sub[0].semver === ANY) {
+      if (dom.length === 1 && dom[0].semver === ANY) {
+        return true;
+      } else if (options.includePrerelease) {
+        sub = minimumVersionWithPreRelease;
+      } else {
+        sub = minimumVersion;
+      }
+    }
+    if (dom.length === 1 && dom[0].semver === ANY) {
+      if (options.includePrerelease) {
+        return true;
+      } else {
+        dom = minimumVersion;
+      }
+    }
+    const eqSet = new Set;
+    let gt, lt;
+    for (const c of sub) {
+      if (c.operator === ">" || c.operator === ">=") {
+        gt = higherGT(gt, c, options);
+      } else if (c.operator === "<" || c.operator === "<=") {
+        lt = lowerLT(lt, c, options);
+      } else {
+        eqSet.add(c.semver);
+      }
+    }
+    if (eqSet.size > 1) {
+      return null;
+    }
+    let gtltComp;
+    if (gt && lt) {
+      gtltComp = compare(gt.semver, lt.semver, options);
+      if (gtltComp > 0) {
+        return null;
+      } else if (gtltComp === 0 && (gt.operator !== ">=" || lt.operator !== "<=")) {
+        return null;
+      }
+    }
+    for (const eq of eqSet) {
+      if (gt && !satisfies(eq, String(gt), options)) {
+        return null;
+      }
+      if (lt && !satisfies(eq, String(lt), options)) {
+        return null;
+      }
+      for (const c of dom) {
+        if (!satisfies(eq, String(c), options)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    let higher, lower;
+    let hasDomLT, hasDomGT;
+    let needDomLTPre = lt && !options.includePrerelease && lt.semver.prerelease.length ? lt.semver : false;
+    let needDomGTPre = gt && !options.includePrerelease && gt.semver.prerelease.length ? gt.semver : false;
+    if (needDomLTPre && needDomLTPre.prerelease.length === 1 && lt.operator === "<" && needDomLTPre.prerelease[0] === 0) {
+      needDomLTPre = false;
+    }
+    for (const c of dom) {
+      hasDomGT = hasDomGT || c.operator === ">" || c.operator === ">=";
+      hasDomLT = hasDomLT || c.operator === "<" || c.operator === "<=";
+      if (gt) {
+        if (needDomGTPre) {
+          if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomGTPre.major && c.semver.minor === needDomGTPre.minor && c.semver.patch === needDomGTPre.patch) {
+            needDomGTPre = false;
+          }
+        }
+        if (c.operator === ">" || c.operator === ">=") {
+          higher = higherGT(gt, c, options);
+          if (higher === c && higher !== gt) {
+            return false;
+          }
+        } else if (gt.operator === ">=" && !c.test(gt.semver)) {
+          return false;
+        }
+      }
+      if (lt) {
+        if (needDomLTPre) {
+          if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomLTPre.major && c.semver.minor === needDomLTPre.minor && c.semver.patch === needDomLTPre.patch) {
+            needDomLTPre = false;
+          }
+        }
+        if (c.operator === "<" || c.operator === "<=") {
+          lower = lowerLT(lt, c, options);
+          if (lower === c && lower !== lt) {
+            return false;
+          }
+        } else if (lt.operator === "<=" && !c.test(lt.semver)) {
+          return false;
+        }
+      }
+      if (!c.operator && (lt || gt) && gtltComp !== 0) {
+        return false;
+      }
+    }
+    if (gt && hasDomLT && !lt && gtltComp !== 0) {
+      return false;
+    }
+    if (lt && hasDomGT && !gt && gtltComp !== 0) {
+      return false;
+    }
+    if (needDomGTPre || needDomLTPre) {
+      return false;
+    }
+    return true;
+  };
+  var higherGT = (a, b, options) => {
+    if (!a) {
+      return b;
+    }
+    const comp = compare(a.semver, b.semver, options);
+    return comp > 0 ? a : comp < 0 ? b : b.operator === ">" && a.operator === ">=" ? b : a;
+  };
+  var lowerLT = (a, b, options) => {
+    if (!a) {
+      return b;
+    }
+    const comp = compare(a.semver, b.semver, options);
+    return comp < 0 ? a : comp > 0 ? b : b.operator === "<" && a.operator === "<=" ? b : a;
+  };
+  module.exports = subset;
+});
+
+// ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/semver@7.8.5/node_modules/semver/index.js
+var require_semver2 = __commonJS((exports, module) => {
+  var internalRe = require_re();
+  var constants3 = require_constants6();
+  var SemVer = require_semver();
+  var identifiers = require_identifiers();
+  var parse = require_parse2();
+  var valid = require_valid();
+  var clean = require_clean();
+  var inc = require_inc();
+  var diff = require_diff();
+  var major = require_major();
+  var minor = require_minor();
+  var patch = require_patch();
+  var prerelease = require_prerelease();
+  var compare = require_compare();
+  var rcompare = require_rcompare();
+  var compareLoose = require_compare_loose();
+  var compareBuild = require_compare_build();
+  var sort = require_sort();
+  var rsort = require_rsort();
+  var gt = require_gt();
+  var lt = require_lt();
+  var eq = require_eq();
+  var neq = require_neq();
+  var gte = require_gte();
+  var lte = require_lte();
+  var cmp = require_cmp();
+  var coerce = require_coerce();
+  var truncate = require_truncate();
+  var Comparator = require_comparator();
+  var Range = require_range();
+  var satisfies = require_satisfies();
+  var toComparators = require_to_comparators();
+  var maxSatisfying = require_max_satisfying();
+  var minSatisfying = require_min_satisfying();
+  var minVersion = require_min_version();
+  var validRange = require_valid2();
+  var outside = require_outside();
+  var gtr = require_gtr();
+  var ltr = require_ltr();
+  var intersects = require_intersects();
+  var simplifyRange = require_simplify();
+  var subset = require_subset();
+  module.exports = {
+    parse,
+    valid,
+    clean,
+    inc,
+    diff,
+    major,
+    minor,
+    patch,
+    prerelease,
+    compare,
+    rcompare,
+    compareLoose,
+    compareBuild,
+    sort,
+    rsort,
+    gt,
+    lt,
+    eq,
+    neq,
+    gte,
+    lte,
+    cmp,
+    coerce,
+    truncate,
+    Comparator,
+    Range,
+    satisfies,
+    toComparators,
+    maxSatisfying,
+    minSatisfying,
+    minVersion,
+    validRange,
+    outside,
+    gtr,
+    ltr,
+    intersects,
+    simplifyRange,
+    subset,
+    SemVer,
+    re: internalRe.re,
+    src: internalRe.src,
+    tokens: internalRe.t,
+    SEMVER_SPEC_VERSION: constants3.SEMVER_SPEC_VERSION,
+    RELEASE_TYPES: constants3.RELEASE_TYPES,
+    compareIdentifiers: identifiers.compareIdentifiers,
+    rcompareIdentifiers: identifiers.rcompareIdentifiers
+  };
+});
+
 // ../../../../../../tmp/ts-release-node_modules-codex-113/.bun/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
 import * as os from "os";
 
@@ -24108,6 +25982,7 @@ function Literal2(literal) {
   });
   return out;
 }
+var Unknown2 = /* @__PURE__ */ make12(unknown);
 var String4 = /* @__PURE__ */ make12(string2);
 var Number5 = /* @__PURE__ */ make12(number2);
 var Boolean3 = /* @__PURE__ */ make12(boolean);
@@ -24718,9 +26593,6 @@ var LogicalRunId = identifier2("LogicalRunId");
 var AttemptId = identifier2("AttemptId");
 var OperationHash = identifier2("OperationHash");
 var ExecutionTopologyHash = identifier2("ExecutionTopologyHash");
-var ExecutionScopeHash = identifier2("ExecutionScopeHash");
-var WorkerId = identifier2("WorkerId");
-var WorkerKeyFingerprint = identifier2("WorkerKeyFingerprint");
 var ProjectId = identifier2("ProjectId");
 var ExecutionReviewId = identifier2("ExecutionReviewId");
 var PublishReviewId = identifier2("PublishReviewId");
@@ -24759,27 +26631,7 @@ var resolution = {
 };
 
 class ExecutionScope extends Class4("ExecutionScope")({
-  operationIds: ArraySchema(OperationId),
-  workerId: optionalKey2(WorkerId),
-  scopeHash: optional(ExecutionScopeHash),
-  ownedOperationHashes: optional(ArraySchema(OperationHash)),
-  prerequisiteFactHashes: optional(ArraySchema(OperationHash))
-}) {
-}
-
-class WorkerRegistration extends Class4("WorkerRegistration")({
-  workerId: WorkerId,
-  publicKey: NonEmptyString,
-  workerKeyFingerprint: WorkerKeyFingerprint,
-  scopeHash: ExecutionScopeHash,
-  ownedOperationHashes: ArraySchema(OperationHash),
-  prerequisiteFactHashes: ArraySchema(OperationHash)
-}) {
-}
-
-class ExecutionTopology extends Class4("ExecutionTopology")({
-  planId: PlanId,
-  partitions: ArraySchema(WorkerRegistration)
+  operationIds: ArraySchema(OperationId)
 }) {
 }
 
@@ -24797,31 +26649,6 @@ class PublishApprovalReceipt extends Class4("PublishApprovalReceipt")({
 }) {
 }
 
-class SignedAuthorizationReceipt extends Class4("SignedAuthorizationReceipt")({
-  signerWorkerId: WorkerId,
-  planId: PlanId,
-  logicalRunId: LogicalRunId,
-  scopeHash: ExecutionScopeHash,
-  topologyHash: ExecutionTopologyHash,
-  operationHash: OperationHash,
-  attemptId: AttemptId,
-  purpose: Literals(["execute", "publish"]),
-  reviewer: NonEmptyString,
-  reviewChallengeId: NonEmptyString,
-  nonce: ApprovalNonce,
-  issuedAt: NonEmptyString,
-  materialBindingHashes: ArraySchema(Digest),
-  signature: NonEmptyString
-}) {
-}
-
-class ImportedFact extends Class4("ImportedFact")({
-  workerId: WorkerId,
-  revision: Number5,
-  attestationDigest: Digest
-}) {
-}
-
 class MaterializedOutput extends Class4("MaterializedOutput")({
   outputId: OutputId,
   snapshotId: SnapshotId,
@@ -24832,13 +26659,6 @@ class MaterializedOutput extends Class4("MaterializedOutput")({
 }) {
 }
 
-class ObservedSubject extends Class4("ObservedSubject")({
-  outputId: OutputId,
-  snapshotId: SnapshotId,
-  digest: Digest,
-  size: Number5
-}) {
-}
 class CheckpointPending extends TaggedClass()("CheckpointPending", checkpoint) {
 }
 
@@ -24931,8 +26751,6 @@ class AttemptRecord extends Class4("AttemptRecord")({
   attemptId: AttemptId,
   executionReceipt: ExecutionApprovalReceipt,
   publishReceipt: optional(PublishApprovalReceipt),
-  authorizationReceipt: optional(SignedAuthorizationReceipt),
-  importedFrom: optional(ImportedFact),
   state: AttemptState
 }) {
 }
@@ -24941,15 +26759,6 @@ class OperationRunRecord extends Class4("OperationRunRecord")({
   operationId: OperationId,
   operationHash: OperationHash,
   attempts: ArraySchema(AttemptRecord)
-}) {
-}
-
-class LedgerAttestation extends Class4("LedgerAttestation")({
-  workerId: WorkerId,
-  topologyHash: ExecutionTopologyHash,
-  signerFingerprint: WorkerKeyFingerprint,
-  digest: Digest,
-  signature: NonEmptyString
 }) {
 }
 var Stage = Literals(["build", "process", "catalog", "validate", "publish", "announce", "verify"]);
@@ -24963,9 +26772,7 @@ class RunLedger extends Class4("RunLedger")({
   frontier: Stage,
   executionTopologyHash: ExecutionTopologyHash,
   revision: Number5,
-  operations: ArraySchema(OperationRunRecord),
-  topology: optional(ExecutionTopology),
-  attestation: optional(LedgerAttestation)
+  operations: ArraySchema(OperationRunRecord)
 }) {
 }
 
@@ -25191,6 +26998,7 @@ var hashCanonical = (domain, value2) => hashFramed(domain, [new TextEncoder().en
 
 // ../../src/model/errors.ts
 var Reason2 = { reason: String4 };
+var MISSING_COMMIT = "project.commit is required. State it, or observe it with `plan --from-git` (CLI) / `resolve: github` (Action).";
 
 class PlanDecodeError extends TaggedErrorClass()("PlanDecodeError", Reason2) {
 }
@@ -25354,7 +27162,7 @@ class HttpPublish extends TaggedClass()("HttpPublish", {
 
 class ForgeRelease extends TaggedClass()("ForgeRelease", {
   ...row,
-  repository: NonEmptyString,
+  repository: String4.check(makeFilter2((value2) => /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value2) ? undefined : "Repository must be owner/name.")),
   tag: NonEmptyString,
   title: NonEmptyString,
   draft: Boolean3,
@@ -25577,6 +27385,17 @@ class ReleasePlanV6 extends Class4("ReleasePlanV6")({
 }) {
 }
 
+// ../../src/model/secret-patterns.ts
+var secretPatterns = [
+  /ghp_[A-Za-z0-9]{20,}/u,
+  /gho_[A-Za-z0-9]{20,}/u,
+  /github_pat_[A-Za-z0-9_]{20,}/u,
+  /xox[abps]-[A-Za-z0-9-]{10,}/u,
+  /AKIA[0-9A-Z]{16}/u,
+  /npm_[A-Za-z0-9]{30,}/u,
+  /-----BEGIN [A-Z ]*PRIVATE KEY/u
+];
+
 // ../../src/model/validate.ts
 var stageOrder = [
   "build",
@@ -25599,12 +27418,7 @@ var duplicate = (values, kind) => {
 };
 var secretLike = (plan) => {
   const text = encodeCanonicalJson(encodeSync2(ReleasePlanV6)(plan));
-  const patterns = [
-    /ghp_[A-Za-z0-9]{20,}/u,
-    /github_pat_[A-Za-z0-9_]{20,}/u,
-    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u
-  ];
-  return patterns.some((pattern) => pattern.test(text)) ? SecretLikePlanValueError.make({ field: "durable-plan" }) : undefined;
+  return secretPatterns.some((pattern) => pattern.test(text)) ? SecretLikePlanValueError.make({ field: "durable-plan" }) : undefined;
 };
 var credentialFailure = (entries) => {
   const read = new Set;
@@ -25627,20 +27441,20 @@ var validatePlan = (plan) => {
   const entries = operationEntries(plan);
   const operationDuplicate = duplicate(entries.map(({ operation }) => operation.id), "operation-id");
   if (operationDuplicate !== undefined)
-    return operationDuplicate;
+    return fail2(operationDuplicate);
   const declarations = entries.flatMap(({ operation }) => operation.outputs);
   const outputDuplicate = duplicate(declarations.map((output) => output.id), "output-id");
   if (outputDuplicate !== undefined)
-    return outputDuplicate;
+    return fail2(outputDuplicate);
   const pathDuplicate = duplicate(declarations.map((output) => output.path), "output-path");
   if (pathDuplicate !== undefined)
-    return pathDuplicate;
+    return fail2(pathDuplicate);
   const credential = credentialFailure(entries);
   if (credential !== undefined)
-    return credential;
+    return fail2(credential);
   const secret = secretLike(plan);
   if (secret !== undefined)
-    return secret;
+    return fail2(secret);
   const producer = new Map;
   const outputs = [];
   const dependencies = [];
@@ -25648,11 +27462,11 @@ var validatePlan = (plan) => {
     for (const input of operation.inputs) {
       const prior = producer.get(input);
       if (prior === undefined) {
-        return OutputReferenceError.make({
+        return fail2(OutputReferenceError.make({
           operationId: operation.id,
           outputId: input,
           reason: "Output reference is missing, same-operation, or forward."
-        });
+        }));
       }
       dependencies.push({ operationId: operation.id, inputId: input, producerId: prior.id });
     }
@@ -25665,9 +27479,8 @@ var validatePlan = (plan) => {
     operationId: operation.id,
     hash: hashCanonical("ts-release/operation/v1", encodeSync2(Operation)(operation))
   }));
-  return { entries, outputs, dependencies, operationHashes };
+  return succeed2({ entries, outputs, dependencies, operationHashes });
 };
-var isValidationFailure = (value2) => ("_tag" in value2);
 
 // ../../src/model/permit.ts
 var fail7 = (reason) => {
@@ -25816,7 +27629,7 @@ var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHa
 var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials) => hashCanonical("ts-release/package-store-reconcile/v1", {
   planId,
   logicalRunId,
-  scopeHash: scope2.scopeHash ?? hashCanonical("ts-release/execution-scope/v1", {
+  scopeHash: hashCanonical("ts-release/execution-scope/v1", {
     planId,
     operationIds: [...scope2.operationIds].map(String).sort()
   }),
@@ -25834,7 +27647,7 @@ var packageStoreReconciliationKey = (planId, logicalRunId, scope2, topologyHash,
 var supplyChainReconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, profileId, targetCoordinates, materials, domain = "supply-chain") => hashCanonical(`ts-release/${domain}-reconcile/v1`, {
   planId,
   logicalRunId,
-  scopeHash: scope2.scopeHash ?? hashCanonical("ts-release/execution-scope/v1", {
+  scopeHash: hashCanonical("ts-release/execution-scope/v1", {
     planId,
     operationIds: [...scope2.operationIds].map(String).sort()
   }),
@@ -25880,7 +27693,7 @@ var qualify = (value2, key, project) => {
 var lowerProjects = (stages, projects) => {
   const roots = projects.map((project) => String(project.root));
   if (new Set(projects.map((project) => String(project.id))).size !== projects.length || roots.some((root, index) => roots.some((other, otherIndex) => index !== otherIndex && (root === other || root.startsWith(`${other}/`) || other.startsWith(`${root}/`)))))
-    throw new Error("Project ids and roots must be unique and nonoverlapping.");
+    throw ConfigValueError.make({ reason: "Project ids and roots must be unique and nonoverlapping." });
   const encoded = encodeSync2(ReleaseStages)(stages);
   return decodeUnknownSync(ReleaseStages)(Object.fromEntries(Object.entries(encoded).map(([stage, operations]) => [
     stage,
@@ -25956,7 +27769,6 @@ class CandidateProject extends Class4("CandidateProject")({
   packagePath: optional2(SafeRelativePath),
   commit: optional2(nonempty),
   tag: NonEmptyName,
-  tagTemplate: optional2(nonempty),
   notes: optional2(String4),
   description: optional2(nonempty),
   summary: optional2(nonempty),
@@ -26345,7 +28157,6 @@ class CandidateConfig extends Class4("CandidateConfig")({
   environment: optional2(CandidateEnvironment),
   git: optional2(CandidateGitPolicy),
   projects: optional2(NonEmptyArray(ProjectScope)),
-  versionFrom: optional2(Literals(["manifest", "git-tag"])),
   builds: optional2(ArraySchema(CandidateBuild)),
   npmPackage: optional2(Struct({
     path: optional2(SafeRelativePath)
@@ -26428,7 +28239,7 @@ var render = (template, config, target2, binary) => {
 var targetPlatform = (target2, binary, compile) => {
   const [os6, arch3, libcToken] = target2.split("-");
   if (!["linux", "darwin", "windows"].includes(os6 ?? "") || !["x64", "arm64"].includes(arch3 ?? "")) {
-    throw new Error(`Unsupported platform target ${target2}.`);
+    throw ConfigValueError.make({ reason: `Unsupported platform target ${target2}.` });
   }
   return {
     os: os6,
@@ -26440,21 +28251,21 @@ var targetPlatform = (target2, binary, compile) => {
 };
 var recordOutput = (rows, output) => {
   if (rows.outputs.has(output.id))
-    throw new Error(`Duplicate output id ${output.id}.`);
+    throw ConfigValueError.make({ reason: `Duplicate output id ${output.id}.` });
   rows.outputs.set(output.id, output);
   return output;
 };
 var selectedOutputs = (rows, ids, fallback) => ids === undefined ? [...rows.outputs.values()].filter(fallback) : ids.map((id) => {
   const output = rows.outputs.get(id);
   if (output === undefined)
-    throw new Error(`Missing selected output ${id}.`);
+    throw ConfigValueError.make({ reason: `Missing selected output ${id}.` });
   return output;
 });
 var command2 = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/u).filter(Boolean) : value2;
 var nonEmptyCommand = (value2) => {
   const [first, ...rest] = value2;
   if (first === undefined || first.length === 0)
-    throw new Error("Command argv must be nonempty.");
+    throw ConfigValueError.make({ reason: "Command argv must be nonempty." });
   return [first, ...rest];
 };
 
@@ -26554,7 +28365,7 @@ var lowerCurrentAnnouncements = (config, rows) => {
       continue;
     if (action.profileId === "announce.smtp/v1") {
       if (notes === undefined)
-        throw new Error("Reviewed announcement notes are absent.");
+        throw ConfigValueError.make({ reason: "Reviewed announcement notes are absent." });
       rows.announce.push(SmtpPublish.make({
         id: operationId(`announce:${action.id}`),
         inputs: [notes.id],
@@ -26568,7 +28379,7 @@ var lowerCurrentAnnouncements = (config, rows) => {
     }
     const profile = announcementHttpProfiles.find((item) => item.profileId === action.profileId);
     if (profile === undefined || notes === undefined)
-      throw new Error("Announcement profile or reviewed notes are absent.");
+      throw ConfigValueError.make({ reason: "Announcement profile or reviewed notes are absent." });
     rows.announce.push(AnnouncementPublish.make({
       id: operationId(`announce:${action.id}`),
       inputs: [notes.id],
@@ -26582,6 +28393,7 @@ var lowerCurrentAnnouncements = (config, rows) => {
 };
 
 // ../../src/recipes/packages/tool.ts
+var import_semver = __toESM(require_semver2(), 1);
 var localToolProfile = (input) => Object.freeze({
   id: input.contractFixtureId,
   profileId: input.profileId,
@@ -26762,7 +28574,7 @@ var localToolProfiles = [
 var findLocalToolProfile = (id) => {
   const found = localToolProfiles.find((profile3) => profile3.profileId === id);
   if (found === undefined)
-    throw new Error(`Unknown immutable package profile ${id}.`);
+    throw ConfigValueError.make({ reason: `Unknown immutable package profile ${id}.` });
   return found;
 };
 
@@ -26855,7 +28667,7 @@ var lowerBuilds = (config, rows) => {
       const inputs = build2.inputs.map((id) => {
         const found = rows.outputs.get(id);
         if (found === undefined)
-          throw new Error(`Profile input ${id} is absent.`);
+          throw ConfigValueError.make({ reason: `Profile input ${id} is absent.` });
         return found;
       });
       const outputs2 = build2.outputs.map((item) => declare2(rows, item.id, item.path, profileOutputKind(item.path), "build"));
@@ -26900,7 +28712,7 @@ var lowerWheels = (config, rows) => {
     const inputs = wheel.binaries.map((item) => {
       const source = [...rows.outputs.values()].find((candidate) => candidate.path === render(item.sourcePath, config));
       if (source === undefined)
-        throw new Error(`Wheel ${wheel.id} source ${item.sourcePath} is absent.`);
+        throw ConfigValueError.make({ reason: `Wheel ${wheel.id} source ${item.sourcePath} is absent.` });
       return source.id;
     });
     rows.build.push(Exec.make({
@@ -26980,7 +28792,17 @@ var lowerCurrentBuild = (config, rows) => {
 
 // ../../src/recipes/current-catalog.ts
 var className = (value2) => value2.split(/[^A-Za-z0-9]+/u).filter(Boolean).map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("") || "GeneratedFormula";
-var downloadUrl = (config, output, explicit) => explicit ?? `https://github.com/${config.publish.github?.repository ?? config.project.repository}/releases/download/${config.project.tag}/${basename(output.path)}`;
+var downloadUrl = (config, output, explicit) => {
+  if (explicit !== undefined)
+    return explicit;
+  const repository = config.publish.github?.repository ?? config.project.repository;
+  if (repository === undefined) {
+    throw ConfigValueError.make({
+      reason: "Catalog download URLs need publish.github.repository, project.repository, or an explicit url."
+    });
+  }
+  return `https://github.com/${repository}/releases/download/${config.project.tag}/${basename(output.path)}`;
+};
 var formulaTail = (name, installPath) => [
   "",
   "  def install",
@@ -27047,7 +28869,7 @@ var homebrewRow = (config, rows) => {
   const name = section.formulaName ?? compactName(config.project.packageName ?? config.project.name);
   const selected2 = selectedOutputs(rows, section.ids, (item) => item.kind === "executable" && item.platform?.os === "darwin");
   if (selected2.length === 0 || config.project.description === undefined || config.project.homepage === undefined)
-    throw new Error("Homebrew requires artifacts, project description, and homepage.");
+    throw ConfigValueError.make({ reason: "Homebrew requires artifacts, project description, and homepage." });
   return {
     id: "homebrew",
     repository: section.repository,
@@ -27067,7 +28889,7 @@ var scoopRow = (config, rows) => {
   const name = section.manifestName ?? compactName(config.project.packageName ?? config.project.name);
   const selected2 = selectedOutputs(rows, section.ids, (item) => item.kind === "executable" && item.platform?.os === "windows");
   if (selected2.length !== 1 || config.project.description === undefined || config.project.homepage === undefined)
-    throw new Error("Scoop requires one artifact, project description, and homepage.");
+    throw ConfigValueError.make({ reason: "Scoop requires one artifact, project description, and homepage." });
   const artifact = selected2[0];
   const prefix = JSON.stringify({
     version: config.project.version,
@@ -27100,8 +28922,15 @@ ${JSON.stringify({ bin }, null, 2).slice(2, -2)}
     ...section.validate === undefined ? {} : { validate: section.validate }
   };
 };
+var requireOutput = (rows, catalogId, id) => {
+  const output = rows.outputs.get(id);
+  if (output === undefined) {
+    throw ConfigValueError.make({ reason: `Catalog ${catalogId} references missing output ${id}.` });
+  }
+  return output;
+};
 var genericRow = (config, rows, entry) => {
-  const content = typeof entry.content === "string" ? render(entry.content, config) : entry.content.map((part) => typeof part === "string" ? render(part, config) : ContentHole.make({ fact: part.fact, outputId: part.artifact }));
+  const content = typeof entry.content === "string" ? render(entry.content, config) : entry.content.map((part) => typeof part === "string" ? render(part, config) : part.fact === "downloadUrl" ? downloadUrl(config, requireOutput(rows, entry.id, part.artifact)) : ContentHole.make({ fact: part.fact, outputId: part.artifact }));
   const ids = typeof content === "string" ? [] : content.flatMap((part) => typeof part === "string" ? [] : [part.outputId]);
   return {
     id: entry.id,
@@ -27109,12 +28938,7 @@ var genericRow = (config, rows, entry) => {
     file: entry.file,
     ...entry.directory === undefined ? {} : { directory: entry.directory },
     content,
-    inputs: ids.map((id) => {
-      const output = rows.outputs.get(id);
-      if (output === undefined)
-        throw new Error(`Catalog ${entry.id} references missing output ${id}.`);
-      return output;
-    }),
+    inputs: ids.map((id) => requireOutput(rows, entry.id, id)),
     commitMessage: render(entry.commitMessage ?? "Update {name} to {version}", config),
     submit: entry.submit ?? "push",
     ...entry.validate === undefined ? {} : { validate: entry.validate }
@@ -27235,7 +29059,7 @@ ${grouped === "" ? `Release ${config.project.tag}.` : grouped}
   if (section?.mode !== "reviewed-transform")
     return;
   if (section.profileId !== "changelog.reviewed-transform/v1")
-    throw new Error("Reviewed transform mode requires its immutable profile.");
+    throw ConfigValueError.make({ reason: "Reviewed transform mode requires its immutable profile." });
   const final = recordOutput(rows, OutputDeclaration.make({
     id: outputId("final-notes"),
     path: path(".release/final-notes.md"),
@@ -27593,7 +29417,7 @@ var lowerNpm2 = (config, rows2, section = config.publish.npm) => {
   const oidc = section.trustedPublishing !== undefined;
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : [section.tokenEnv ?? "NPM_TOKEN"];
   const packageOutput = rows2.outputs.get("npm-package");
-  const registryUrl = section.registry ?? "https://registry.npmjs.org";
+  const registryUrl = assertRegistryUrl(section.registry ?? "https://registry.npmjs.org");
   const publishArgv = [
     "npm",
     "publish",
@@ -27629,16 +29453,20 @@ var lowerNpm2 = (config, rows2, section = config.publish.npm) => {
     contractFixtureId: "registry.npm-publish/v1"
   });
 };
+var assertRegistryUrl = (value2) => {
+  normalizeProviderEndpoint(value2);
+  return value2;
+};
 var normalizeProviderEndpoint = (value2) => {
   const url = new URL(value2), host = url.hostname;
   if (/(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/iu.test(value2) || url.protocol !== "https:" || url.username !== "" || url.password !== "" || url.search !== "" || url.hash !== "" || ["localhost", "::", "::1", "0.0.0.0"].includes(host) || ["127.", "169.254.", "224.", "255."].some((prefix) => host.startsWith(prefix)))
-    throw new Error("Provider URL violates the closed HTTPS/DNS policy.");
+    throw ConfigValueError.make({ reason: "Provider URL violates the closed HTTPS/DNS policy." });
   return `${url.origin}${url.pathname.replace(/\/+$/u, "") || "/"}`;
 };
 var lowerProvider = (rows2, action) => {
   const profile3 = providerProfiles.find((item) => item.profileId === action.profileId);
   if (profile3 === undefined)
-    throw new Error(`Unknown provider profile ${action.profileId}.`);
+    throw ConfigValueError.make({ reason: `Unknown provider profile ${action.profileId}.` });
   const inputs = selectedOutputs(rows2, action.ids, () => false);
   const target2 = "endpoint" in action ? { endpoint: normalizeProviderEndpoint(action.endpoint) } : action.destination;
   const options = "endpoint" in action ? {
@@ -27647,7 +29475,7 @@ var lowerProvider = (rows2, action) => {
     bodyMapping: action.bodyMapping
   } : Object.fromEntries(Object.entries(action.options).filter(([, value2]) => value2 !== undefined));
   if (Object.keys(target2).sort().join() !== [...profile3.contract.targetCoordinates].sort().join() || Object.keys(options).some((key) => !profile3.contract.allowedOptions.includes(key)))
-    throw new Error("Provider data does not match its immutable profile.");
+    throw ConfigValueError.make({ reason: "Provider data does not match its immutable profile." });
   if (typeof options.baseUrl === "string")
     options.baseUrl = normalizeProviderEndpoint(options.baseUrl);
   const checkpoints = profile3.checkpoints.flatMap((id) => id === "assets" ? inputs.map((input) => `asset:${input.id}`) : [id]);
@@ -27671,10 +29499,10 @@ var lowerPyPi = (config, rows2) => {
     return;
   const artifacts = selectedOutputs(rows2, section.ids, (item) => item.kind === "wheel");
   if (artifacts.length === 0)
-    throw new Error("PyPI requires at least one distribution artifact.");
+    throw ConfigValueError.make({ reason: "PyPI requires at least one distribution artifact." });
   const oidc = section.trustedPublishing !== undefined;
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : ["TWINE_USERNAME", "TWINE_PASSWORD"];
-  const registryUrl = section.repositoryUrl ?? "https://upload.pypi.org/legacy/";
+  const registryUrl = assertRegistryUrl(section.repositoryUrl ?? "https://upload.pypi.org/legacy/");
   const python = section.pythonExecutable ?? "python";
   const artifactPaths = artifacts.map((item) => item.path);
   return PackageRegistryRelease.make({
@@ -27716,7 +29544,7 @@ var lowerGitHub = (config, rows2) => {
     return;
   const repository = section.repository ?? config.project.repository;
   if (repository === undefined)
-    throw new Error("GitHub publishing requires a repository.");
+    throw ConfigValueError.make({ reason: "GitHub publishing requires a repository." });
   const assets = [...rows2.outputs.values()].filter((item) => ![
     "package",
     "wheel",
@@ -27796,7 +29624,7 @@ var lowerCurrentPublish = (config, rows2) => {
   for (const item of config.publish.packageStores ?? []) {
     const input = rows2.outputs.get(item.input);
     if (input === undefined)
-      throw new Error(`Package store input ${item.input} is absent.`);
+      throw ConfigValueError.make({ reason: `Package store input ${item.input} is absent.` });
     rows2.publish.push(PackageStorePublish.make({
       id: operationId(`package-store:${item.profileId}:${item.input}`),
       inputs: [input.id],
@@ -27858,7 +29686,7 @@ var lowerCurrentProviders = (config, rows2) => {
     const index = rows2.catalog.findIndex((item) => item._tag === "Write" && item.path === action.destination.file);
     const operation = rows2.catalog[index];
     if (operation?._tag !== "Write" || typeof operation.content !== "string")
-      throw new Error("Catalog policy target is absent.");
+      throw ConfigValueError.make({ reason: "Catalog policy target is absent." });
     rows2.catalog[index] = Write.make({
       ...operation,
       content: applyCatalogCheckboxPolicy(operation.content, action.options.checkboxPolicy)
@@ -28122,7 +29950,7 @@ var lowerCurrentSupplyChain = (config, rows2) => {
     const inputs = action.inputs.map((id) => {
       const value2 = rows2.outputs.get(id);
       if (value2 === undefined)
-        throw new Error(`Supply-chain input ${id} is absent.`);
+        throw ConfigValueError.make({ reason: `Supply-chain input ${id} is absent.` });
       return value2;
     });
     if (action.kind === "measure-size") {
@@ -28144,11 +29972,11 @@ var lowerCurrentSupplyChain = (config, rows2) => {
     ].find((item) => item.profileId === action.profileId);
     const outputType = local2?.contract.outputs[0].type ?? remote2?.contract.outputs[0].type;
     if (outputType === undefined)
-      throw new Error(`Unknown supply-chain profile ${action.profileId}.`);
+      throw ConfigValueError.make({ reason: `Unknown supply-chain profile ${action.profileId}.` });
     const targetKeys = Object.keys(action.target).sort();
     const expectedKeys = remote2?.contract.targetCoordinates.slice().sort() ?? [];
     if (JSON.stringify(targetKeys) !== JSON.stringify(expectedKeys))
-      throw new Error("Profile target mismatch.");
+      throw ConfigValueError.make({ reason: "Profile target mismatch." });
     const outputs2 = action.outputs.map((item) => declared(rows2, item.id, item.path, outputType));
     if (local2 !== undefined) {
       const argv = local2.contract.invocation.argv.map((token) => token.replaceAll("{input}", inputs[0].path).replaceAll("{output}", outputs2[0].path));
@@ -28192,7 +30020,7 @@ var lowerCurrentConfig = fn2("lowerCurrentConfig")(function* (config) {
       lowerCurrentAnnouncements(config, current);
       return current;
     },
-    catch: (cause) => PlanningFactsError.make({
+    catch: (cause) => cause instanceof ConfigValueError ? cause : PlanningFactsError.make({
       reason: cause instanceof Error ? cause.message : String(cause)
     })
   });
@@ -28222,29 +30050,6 @@ class DigestRecipe extends TaggedClass()("DigestRecipe", {
 }) {
 }
 var RecipeDefinition = Union2([StaticOutputRecipe, DigestRecipe]);
-var genericUploadProfile = WireContract.make({
-  profileId: ProfileId.make("http.generic-upload/v1"),
-  contractFixtureId: "contract.http.generic-upload/v1",
-  baseUrl: "https://uploads.example.invalid",
-  pathTemplate: "/artifacts/{name}",
-  responseShapeId: "empty-v1",
-  pagination: "none",
-  commitment: "status-2xx",
-  reconciliation: "get-same-resource"
-});
-var productProfile = (kind, contractFixtureId) => Object.freeze({ kind, contractFixtureId, registration: "product-immutable" });
-var profileRegistry = Object.freeze({
-  "http.generic-upload/v1": Object.freeze(genericUploadProfile),
-  "build.bun-compile/v1": productProfile("process", "contract.build.bun-compile/v1"),
-  "build.command/v1": productProfile("process", "contract.build.command/v1"),
-  "build.pypi-wheel/v1": productProfile("process", "contract.build.pypi-wheel/v1"),
-  "process.hook/v1": productProfile("process", "contract.process.hook/v1"),
-  "catalog.git-publish/v1": productProfile("opaque-publish", "contract.catalog.git/v1"),
-  "registry.npm-publish/v1": productProfile("package-release", "contract.registry.npm/v1"),
-  "registry.pypi-publish/v1": productProfile("package-release", "contract.registry.pypi/v1"),
-  "forge.github-release/v1": productProfile("forge-release", "contract.forge.github/v1"),
-  "opaque.publish-command/v1": productProfile("opaque-publish", "contract.opaque.publish/v1")
-});
 
 // ../../src/plan/accepted.ts
 var decoder = new TextDecoder("utf-8", { fatal: true });
@@ -28295,10 +30100,10 @@ class AcceptedPlan {
       });
     }
     const projection = validatePlan(plan);
-    if (isValidationFailure(projection))
-      return yield* projection;
+    if (isFailure2(projection))
+      return yield* projection.failure;
     const digest = hashFramed("ts-release/plan-id/v1", [canonical2]);
-    return new AcceptedPlan(plan, canonical2, PlanId.make(digest), projection);
+    return new AcceptedPlan(plan, canonical2, PlanId.make(digest), projection.success);
   });
 }
 var acceptPlan = AcceptedPlan.accept;
@@ -31926,8 +33731,10 @@ import {
   fsyncSync,
   mkdirSync,
   openSync,
+  readdirSync,
   readFileSync,
   renameSync,
+  statSync,
   unlinkSync,
   writeFileSync
 } from "node:fs";
@@ -31946,30 +33753,70 @@ var decodeLedger = (bytes) => {
   return ledger;
 };
 var assertExpected = (ledger, expected) => {
-  if (ledger.planId !== expected.planId || ledger.executionTopologyHash !== expected.topologyHash || JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes) || JSON.stringify(ledger.scope.operationIds) !== JSON.stringify(expected.scope.operationIds))
-    throw error2("Ledger is foreign to the requested plan, scope, or topology.");
+  if (ledger.planId !== expected.planId || JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes))
+    throw error2("Ledger is foreign to the requested plan.");
 };
-var read2 = (path2) => {
+var readLedgerFile = (path2) => {
   try {
-    return decodeLedger(readFileSync(path2, "utf8"));
+    const descriptor = openSync(path2, constants4.O_RDONLY | constants4.O_NOFOLLOW);
+    try {
+      return decodeLedger(readFileSync(descriptor, "utf8"));
+    } finally {
+      closeSync(descriptor);
+    }
   } catch (cause) {
     if (cause instanceof RunStoreError)
       throw cause;
     throw error2(`Ledger read refused: ${String(cause)}`);
   }
 };
+var resolveLedgerPath = (path2) => {
+  let directory = false;
+  try {
+    directory = statSync(path2).isDirectory();
+  } catch {
+    return path2;
+  }
+  if (!directory)
+    return path2;
+  const ledgers = readdirSync(path2).filter((name) => name.endsWith(".run-ledger.json"));
+  if (ledgers.length !== 1) {
+    throw error2(`Runs directory ${path2} holds ${ledgers.length} run ledgers; name the ledger file to resume.`);
+  }
+  return join3(path2, ledgers[0]);
+};
+var staleLeaseMilliseconds = 3600000;
 var acquire = (path2) => {
   const lock = `${path2}.lease`;
-  try {
+  const open3 = () => {
     const descriptor = openSync(lock, exclusiveFlags, 384);
     writeFileSync(descriptor, `${process.pid}
 `);
     fsyncSync(descriptor);
     return descriptor;
+  };
+  try {
+    return open3();
   } catch (cause) {
-    throw error2(`Exclusive run lease refused: ${String(cause)}`);
+    const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
+    if (code !== "EEXIST")
+      throw error2(`Exclusive run lease refused: ${String(cause)}`);
+    try {
+      const age = Date.now() - statSync(lock).mtimeMs;
+      if (age > staleLeaseMilliseconds) {
+        unlinkSync(lock);
+        return open3();
+      }
+      const holder = readFileSync(lock, "utf8").trim();
+      throw error2(`Exclusive run lease refused: held by pid ${holder} for ${Math.round(age / 1000)}s (${lock}). Delete the file if that process is dead.`);
+    } catch (secondary) {
+      if (secondary instanceof RunStoreError)
+        throw secondary;
+      throw error2(`Exclusive run lease refused: ${String(cause)}`);
+    }
   }
 };
+var classifyDirectorySyncFailure = (code) => ["EINVAL", "ENOTSUP", "EISDIR"].includes(code) ? "degrade" : "raise";
 var syncDirectory = (directory) => {
   let descriptor;
   try {
@@ -31978,7 +33825,7 @@ var syncDirectory = (directory) => {
     return "file-rename-directory-sync";
   } catch (cause) {
     const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
-    if (!["EINVAL", "ENOTSUP", "EISDIR"].includes(code))
+    if (classifyDirectorySyncFailure(code) === "raise")
       throw cause;
     return "file-rename";
   } finally {
@@ -32008,30 +33855,48 @@ var atomicWrite = (path2, ledger) => {
 var withLease = (path2, body) => {
   mkdirSync(dirname2(path2), { recursive: true, mode: 448 });
   const descriptor = acquire(path2);
+  let bodyFailed = false;
   try {
     return body();
+  } catch (cause) {
+    bodyFailed = true;
+    throw cause;
   } finally {
-    closeSync(descriptor);
-    unlinkSync(`${path2}.lease`);
+    let releaseError;
+    try {
+      closeSync(descriptor);
+    } catch (cause) {
+      releaseError = cause;
+    }
+    try {
+      unlinkSync(`${path2}.lease`);
+    } catch (cause) {
+      const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
+      if (code !== "ENOENT" && releaseError === undefined)
+        releaseError = cause;
+    }
+    if (!bodyFailed && releaseError !== undefined) {
+      throw error2(`Run lease release failed: ${String(releaseError)}`);
+    }
   }
 };
 var attempt = (body) => try_2({ try: body, catch: (cause) => cause instanceof RunStoreError ? cause : error2(String(cause)) });
 var makeFileRunStore = () => ({
   path: ledgerPath,
   load: fn2("RunStore.load")((path2, expected) => attempt(() => {
-    const ledger = read2(path2);
+    const ledger = readLedgerFile(path2);
     assertExpected(ledger, expected);
     return ledger;
   })),
   create: fn2("RunStore.create")((path2, ledger) => attempt(() => withLease(path2, () => {
     if (existsSync2(path2))
-      throw error2("Logical run already exists.");
+      throw error2(`Logical run already exists at ${path2}. Resume it, or pass a reason to derive a new logical run.`);
     if (ledger.revision !== 0)
       throw error2("New ledger must begin at revision zero.");
     return atomicWrite(path2, ledger);
   }))),
   save: fn2("RunStore.save")((path2, expectedRevision, ledger) => attempt(() => withLease(path2, () => {
-    const durable = read2(path2);
+    const durable = readLedgerFile(path2);
     if (durable.revision !== expectedRevision || ledger.revision !== expectedRevision + 1)
       throw error2("Ledger revision compare-and-swap failed.");
     if (durable.planId !== ledger.planId || durable.logicalRunId !== ledger.logicalRunId)
@@ -32044,14 +33909,12 @@ var FileRunStoreLayer = succeed5(RunStore)({ ...makeFileRunStore() });
 // ../../src/drivers/local.ts
 import {
   existsSync as existsSync4,
-  mkdirSync as mkdirSync3,
-  readFileSync as readFileSync3,
-  readdirSync,
+  lstatSync as lstatSync2,
+  readdirSync as readdirSync2,
   realpathSync as realpathSync2,
-  statSync,
-  writeFileSync as writeFileSync3
+  statSync as statSync2
 } from "node:fs";
-import { basename as basename2, dirname as dirname3, join as join5, resolve as resolve4, sep as sep2 } from "node:path";
+import { basename as basename2, join as join5, resolve as resolve4 } from "node:path";
 
 // ../../src/drivers/services.ts
 import { createHash as createHash2 } from "node:crypto";
@@ -32074,6 +33937,7 @@ class CatalogPublishRequest extends TaggedClass()("CatalogPublishRequest", {
     SmtpPublish,
     OpaquePublish
   ]),
+  root: WorkspaceRoot,
   checkpointId: CheckpointId,
   clientReconciliationKey: NonEmptyString
 }) {
@@ -32127,7 +33991,14 @@ class VerifiedContentHandle {
     return new VerifiedContentHandle(facts, new Uint8Array(bytes));
   }
 }
-var isClosedProfilePublish = (operation) => ["PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"].includes(operation._tag);
+var closedProfileTags = [
+  "PackageStorePublish",
+  "SupplyChainPublish",
+  "ProviderPublish",
+  "AnnouncementPublish",
+  "SmtpPublish"
+];
+var isClosedProfilePublish = (operation) => closedProfileTags.includes(operation._tag);
 
 class WorkspaceStore extends Service()("WorkspaceStore") {
 }
@@ -32137,6 +34008,13 @@ class CredentialStore extends Service()("CredentialStore") {
 
 class DriverCatalog extends Service()("DriverCatalog") {
 }
+
+// ../../src/drivers/contain.ts
+import { isAbsolute, relative, sep } from "node:path";
+var contained = (root, path2) => {
+  const value2 = relative(root, path2);
+  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`) && !isAbsolute(value2);
+};
 
 // ../../src/drivers/workspace.ts
 import {
@@ -32156,13 +34034,9 @@ import {
   writeFileSync as writeFileSync2
 } from "node:fs";
 import { createHash as createHash3, randomUUID as randomUUID3 } from "node:crypto";
-import { join as join4, relative, sep } from "node:path";
+import { join as join4 } from "node:path";
 var fail12 = (reason) => DriverError.make({ reason, commitment: "before-commit" });
-var beneath = (root, path2) => {
-  const value2 = relative(root, path2);
-  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`);
-};
-var secureBytes = (root, path2) => {
+var secureRead = (root, path2) => {
   let current = root;
   for (const part of path2.split(/[\\/]+/u)) {
     current = join4(current, part);
@@ -32173,12 +34047,34 @@ var secureBytes = (root, path2) => {
   try {
     const opened = fstatSync(descriptor);
     const resolved = realpathSync(current);
-    if (!beneath(root, resolved))
+    if (!contained(root, resolved))
       throw fail12("Opened file escaped the workspace root.");
     const landed = lstatSync(resolved);
     if (landed.ino !== opened.ino || landed.dev !== opened.dev)
       throw fail12("Opened file changed identity.");
     return { bytes: readFileSync2(descriptor), inode: opened.ino };
+  } finally {
+    closeSync2(descriptor);
+  }
+};
+var secureWrite = (root, path2, bytes) => {
+  const parts = path2.split(/[\\/]+/u).filter((part) => part.length > 0);
+  let parent = root;
+  for (const part of parts.slice(0, -1)) {
+    parent = join4(parent, part);
+    mkdirSync2(parent, { recursive: true });
+    if (lstatSync(parent).isSymbolicLink())
+      throw fail12("Structured write encountered a symlink.");
+  }
+  const target2 = join4(parent, parts.at(-1));
+  if (existsSync3(target2) && lstatSync(target2).isSymbolicLink()) {
+    throw fail12("Structured write encountered a symlink.");
+  }
+  const flags = constants5.O_WRONLY | constants5.O_CREAT | constants5.O_TRUNC | constants5.O_NOFOLLOW;
+  const descriptor = openSync2(target2, flags, 420);
+  try {
+    writeFileSync2(descriptor, bytes);
+    fsyncSync2(descriptor);
   } finally {
     closeSync2(descriptor);
   }
@@ -32214,7 +34110,7 @@ var makeNodeWorkspaceStore = () => ({
       const root = realpathSync(request.root);
       if (root !== request.root)
         throw fail12("WorkspaceRoot was not realpath-normalized.");
-      const source = secureBytes(root, request.source);
+      const source = secureRead(root, request.source);
       const digest = createHash3("sha256").update(source.bytes).digest("hex");
       persist(request.snapshotDirectory, digest, source.bytes);
       return MaterializedOutput.make({
@@ -32801,6 +34697,19 @@ var readOptionalEnv = (name) => option2(string3(name)).pipe(map5(getOrUndefined)
 }));
 var readEnvironment = (names) => forEach2(["PATH", ...names], (name) => readOptionalEnv(name).pipe(map5((value2) => [name, value2]))).pipe(map5((entries) => Object.fromEntries(entries.flatMap(([name, value2]) => value2 === undefined ? [] : [[name, value2]]))));
 
+// ../../src/drivers/redact.ts
+var EXCERPT_LIMIT = 2000;
+var redactOutput = (text3, env) => {
+  let out = text3;
+  for (const [name, value2] of Object.entries(env).filter(([name2, value3]) => name2 !== "PATH" && value3.length >= 6).sort((left, right) => right[1].length - left[1].length)) {
+    out = out.split(value2).join(`[redacted:${name}]`);
+  }
+  for (const pattern of secretPatterns) {
+    out = out.replace(new RegExp(pattern.source, `${pattern.flags.replace("u", "")}gu`), "[redacted:token]");
+  }
+  return out.length > EXCERPT_LIMIT ? `${out.slice(0, EXCERPT_LIMIT)}…[truncated]` : out;
+};
+
 // ../../src/drivers/utils.ts
 import { createHash as createHash4 } from "node:crypto";
 var failure = (reason, commitment = "before-commit") => DriverError.make({ reason, commitment });
@@ -32818,7 +34727,11 @@ var makeRunCommand = gen2(function* () {
       stderr: collect(handle.stderr),
       exitCode: handle.exitCode
     }, { concurrency: "unbounded" });
-    return { ...output, exitCode: Number(output.exitCode) };
+    return {
+      stdout: redactOutput(output.stdout, env),
+      stderr: redactOutput(output.stderr, env),
+      exitCode: Number(output.exitCode)
+    };
   }).pipe(scoped2, mapError3((cause) => failure(String(cause))));
 });
 
@@ -32827,14 +34740,17 @@ var ok = (response) => response.status >= 200 && response.status < 300;
 var commandPublish = (transport, request, argv) => {
   const operation = request.operation;
   const names = operation._tag === "OpaquePublish" || operation._tag === "PackageRegistryRelease" ? operation.environmentNames : [];
-  return transport.run({ argv, cwd: ".", environmentNames: names }).pipe(orDie2, map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })));
+  return transport.run({ argv, cwd: request.root, environmentNames: names }).pipe(map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })), catch_2((cause) => succeed6(NotDispatched.make({ reason: `Publisher could not start: ${cause.reason}`, retryable: true }))));
 };
 var httpRequest = (transport, request, bytes, credential) => gen2(function* () {
   const operation = request.operation;
   if (operation._tag !== "HttpPublish")
     return yield* fail6(failure("Expected HTTP publication."));
   const response = yield* transport.client.execute(make23(operation.method)(`${operation.wire.baseUrl}${operation.wire.pathTemplate}`, {
-    headers: { authorization: `Bearer ${credential}` },
+    headers: {
+      authorization: `Bearer ${credential}`,
+      "idempotency-key": request.clientReconciliationKey
+    },
     ...bytes === undefined ? {} : { body: uint8Array(bytes) }
   }));
   return ok(response) ? Committed.make({ observedOutcome: String(response.status) }) : NotDispatched.make({ reason: `HTTP ${response.status}`, retryable: false });
@@ -32843,7 +34759,8 @@ var forgeRelease = (transport, request, credential) => gen2(function* () {
   const operation = request.operation;
   if (operation._tag !== "ForgeRelease")
     return yield* fail6(failure("Expected forge release."));
-  const response = yield* transport.client.execute(post(`https://api.github.com/repos/${operation.repository}/releases`, {
+  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
+  const response = yield* transport.client.execute(post(`https://api.github.com/repos/${repoPath}/releases`, {
     headers: {
       authorization: `Bearer ${credential}`,
       accept: "application/vnd.github+json"
@@ -32861,11 +34778,12 @@ var forgeAsset = (transport, request, bytes, credential) => gen2(function* () {
   const operation = request.operation;
   if (operation._tag !== "ForgeRelease")
     return yield* fail6(failure("Expected forge release."));
+  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
   const headers = {
     authorization: `Bearer ${credential}`,
     accept: "application/vnd.github+json"
   };
-  const release2 = yield* transport.client.execute(get2(`https://api.github.com/repos/${operation.repository}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers }));
+  const release2 = yield* transport.client.execute(get2(`https://api.github.com/repos/${repoPath}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers }));
   if (!ok(release2)) {
     return NotDispatched.make({
       reason: `GitHub release lookup HTTP ${release2.status}`,
@@ -32878,7 +34796,7 @@ var forgeAsset = (transport, request, bytes, credential) => gen2(function* () {
   if (asset === undefined || bytes === undefined) {
     return NotDispatched.make({ reason: "Forge asset bytes are unavailable.", retryable: false });
   }
-  const uploaded = yield* transport.client.execute(post(`https://uploads.github.com/repos/${operation.repository}/releases/${value2.id}/assets?name=${encodeURIComponent(asset.name)}`, { headers, body: uint8Array(bytes, asset.contentType) }));
+  const uploaded = yield* transport.client.execute(post(`https://uploads.github.com/repos/${repoPath}/releases/${value2.id}/assets?name=${encodeURIComponent(asset.name)}`, { headers, body: uint8Array(bytes, asset.contentType) }));
   return ok(uploaded) ? Committed.make({
     observedOutcome: String(uploaded.status),
     transmittedDigest: Digest.make(sha256(bytes))
@@ -32892,7 +34810,8 @@ var reconcile = (transport) => (request, credential) => gen2(function* () {
   if (isClosedProfilePublish(operation))
     return yield* fail6(failure("No live closed-profile reconciliation transport is installed."));
   if (operation._tag === "ForgeRelease") {
-    const response = yield* transport.client.execute(get2(`https://api.github.com/repos/${operation.repository}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } }));
+    const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
+    const response = yield* transport.client.execute(get2(`https://api.github.com/repos/${repoPath}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } }));
     if (!ok(response))
       return ReadResult.make({ found: false });
     if (request.checkpointId === "release")
@@ -32933,17 +34852,17 @@ var makeCatalog = (structured, transport) => ({
 var pathOf = (root, path2) => resolve4(root, path2);
 var outputFacts = (root, output) => {
   const path2 = pathOf(root, output.path);
-  if (!existsSync4(path2) || !statSync(path2).isFile()) {
+  if (!existsSync4(path2) || lstatSync2(path2).isSymbolicLink() || !statSync2(path2).isFile()) {
     throw failure(`Declared output ${output.id} was not materialized.`);
   }
-  const bytes = readFileSync3(path2);
-  const digest = sha256(bytes);
+  const source = secureRead(root, output.path);
+  const digest = sha256(source.bytes);
   return MaterializedOutput.make({
     outputId: output.id,
     snapshotId: SnapshotId.make(digest),
     digest: Digest.make(digest),
-    size: bytes.length,
-    inode: statSync(path2).ino
+    size: source.bytes.length,
+    inode: source.inode
   });
 };
 var input = (request, id) => {
@@ -32952,16 +34871,16 @@ var input = (request, id) => {
     throw failure(`Operation references unavailable output ${id}.`);
   return found;
 };
+var byCodepoint = (left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0;
 var entries = (request) => request.operation.inputs.map((id) => {
   const output = input(request, id);
-  const path2 = pathOf(request.root, output.path);
   const mode = output.kind === "executable" ? 33261 : 33188;
-  return { path: basename2(output.path), data: readFileSync3(path2), mode };
-}).sort((left, right) => left.path.localeCompare(right.path));
+  return { path: basename2(output.path), data: secureRead(request.root, output.path).bytes, mode };
+}).sort(byCodepoint);
 var normalizeSlashes = (value2) => value2.replaceAll("\\", "/");
 var containedRealPath = (realRoot, child, relative2) => {
   const real = realpathSync2(child);
-  if (real === realRoot || real.startsWith(realRoot + sep2))
+  if (contained(realRoot, real))
     return real;
   throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative2}.`);
 };
@@ -32972,13 +34891,13 @@ var entryKind = (realRoot, entry, relative2, visited) => {
   if (visited.has(real))
     return;
   visited.add(real);
-  return statSync(join5(realRoot, relative2));
+  return statSync2(join5(realRoot, relative2));
 };
 var walkFiles = (realRoot, directory, visited) => {
   const absolute = directory === "" ? realRoot : join5(realRoot, directory);
   if (!existsSync4(absolute))
     return [];
-  return readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
+  return readdirSync2(absolute, { withFileTypes: true }).flatMap((entry) => {
     const relative2 = directory === "" ? entry.name : `${directory}/${entry.name}`;
     const kind = entryKind(realRoot, entry, relative2, visited);
     if (kind?.isDirectory() === true)
@@ -32989,13 +34908,18 @@ var walkFiles = (realRoot, directory, visited) => {
 var patternCandidates = (realRoot, pattern) => {
   const segments = pattern.split("/").filter((segment) => segment.length > 0);
   const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment));
-  if (wildcard >= 0)
-    return walkFiles(realRoot, segments.slice(0, wildcard).join("/"), new Set);
+  if (wildcard >= 0) {
+    const prefix = segments.slice(0, wildcard).join("/");
+    if (prefix.length > 0 && existsSync4(join5(realRoot, prefix))) {
+      containedRealPath(realRoot, join5(realRoot, prefix), prefix);
+    }
+    return walkFiles(realRoot, prefix, new Set);
+  }
   const absolute = join5(realRoot, pattern);
   if (!existsSync4(absolute))
     return [];
   containedRealPath(realRoot, absolute, pattern);
-  return statSync(absolute).isFile() ? [pattern] : [];
+  return statSync2(absolute).isFile() ? [pattern] : [];
 };
 var matchedWorkspaceFiles = (realRoot, patterns, excluded) => [...new Set(patterns.flatMap((raw2) => {
   const pattern = normalizeSlashes(raw2);
@@ -33007,25 +34931,25 @@ var matchedWorkspaceFiles = (realRoot, patterns, excluded) => [...new Set(patter
 var packEntries = (request, operation) => {
   const patterns = operation.files ?? [];
   const declared2 = entries(request);
-  if (patterns.length === 0) {
-    if (declared2.length === 0)
-      throw failure(`Archive ${operation.id} has zero entries.`);
-    return declared2;
+  let combined = declared2;
+  if (patterns.length > 0) {
+    const realRoot = realpathSync2(request.root);
+    const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)));
+    const matched = matchedWorkspaceFiles(realRoot, patterns, excluded);
+    if (matched.length === 0)
+      throw failure(`Archive ${operation.id} patterns matched no workspace files.`);
+    combined = [...declared2, ...matched.map((path2) => ({
+      path: path2,
+      data: secureRead(realRoot, path2).bytes,
+      mode: 33188
+    }))];
   }
-  const realRoot = realpathSync2(request.root);
-  const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)));
-  const matched = matchedWorkspaceFiles(realRoot, patterns, excluded);
-  if (matched.length === 0)
-    throw failure(`Archive ${operation.id} patterns matched no workspace files.`);
-  const combined = [...declared2, ...matched.map((path2) => ({
-    path: path2,
-    data: new Uint8Array(readFileSync3(join5(realRoot, path2))),
-    mode: 33188
-  }))];
+  if (combined.length === 0)
+    throw failure(`Archive ${operation.id} has zero entries.`);
   const duplicate2 = combined.map((entry) => entry.path).find((path2, index, all3) => all3.indexOf(path2) !== index);
   if (duplicate2 !== undefined)
     throw failure(`Archive ${operation.id} has duplicate entry ${duplicate2}.`);
-  return combined.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+  return [...combined].sort(byCodepoint);
 };
 var content = (request) => {
   const operation = request.operation;
@@ -33040,8 +34964,8 @@ var content = (request) => {
     if (part.fact === "assetName")
       return basename2(output.path);
     if (part.fact === "sha256")
-      return sha256(readFileSync3(pathOf(request.root, output.path)));
-    throw failure("downloadUrl facts require a product-owned preset value.");
+      return sha256(secureRead(request.root, output.path).bytes);
+    throw failure("downloadUrl facts require a product-owned preset value (lowered plans resolve this at plan time).");
   }).join("");
 };
 var observed = (request) => ({
@@ -33060,30 +34984,31 @@ var executed = (run4, request, operation) => run4({
 var materialized = (request) => attempt2(() => {
   const operation = request.operation;
   switch (operation._tag) {
-    case "Check":
-      if (!existsSync4(pathOf(request.root, operation.path))) {
-        throw failure(`Required path ${operation.path} is absent.`);
-      }
-      break;
-    case "Write": {
+    case "Check": {
       const path2 = pathOf(request.root, operation.path);
-      mkdirSync3(dirname3(path2), { recursive: true });
-      writeFileSync3(path2, content(request));
+      let present = false;
+      try {
+        present = !lstatSync2(path2).isSymbolicLink();
+      } catch {
+        present = false;
+      }
+      if (!present)
+        throw failure(`Required path ${operation.path} is absent.`);
+      break;
+    }
+    case "Write": {
+      secureWrite(request.root, operation.path, content(request));
       break;
     }
     case "Pack": {
-      const path2 = pathOf(request.root, operation.outputs[0].path);
       const archive = packEntries(request, operation);
-      mkdirSync3(dirname3(path2), { recursive: true });
-      writeFileSync3(path2, operation.format === "zip" ? zip3(archive) : tarGz(archive));
+      secureWrite(request.root, operation.outputs[0].path, operation.format === "zip" ? zip3(archive) : tarGz(archive));
       break;
     }
     case "Digest": {
-      const path2 = pathOf(request.root, operation.outputs[0].path);
-      mkdirSync3(dirname3(path2), { recursive: true });
-      writeFileSync3(path2, operation.inputs.map((id) => {
+      secureWrite(request.root, operation.outputs[0].path, operation.inputs.map((id) => {
         const output = input(request, id);
-        return `${sha256(readFileSync3(pathOf(request.root, output.path)))}  ${basename2(output.path)}`;
+        return `${sha256(secureRead(request.root, output.path).bytes)}  ${basename2(output.path)}`;
       }).join(`
 `) + `
 `);
@@ -33116,7 +35041,6 @@ var NodeReleaseLayer = ReleaseServicesLive.pipe(provide2(mergeAll2(layer.pipe(pr
 
 // ../../src/api/apply-boundary.ts
 import { randomUUID as randomUUID4 } from "node:crypto";
-import { readFileSync as readFileSync4 } from "node:fs";
 
 // ../../src/apply/ledger.ts
 var supplyCheckpoints = {
@@ -33157,14 +35081,24 @@ var checkpointIds = (operation) => {
       return [CheckpointId.make("dispatch")];
     case "PackageStorePublish":
       return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"]).map((id) => CheckpointId.make(id));
-    case "SupplyChainPublish":
-      return (supplyCheckpoints[operation.profileId] ?? []).map((id) => CheckpointId.make(id));
+    case "SupplyChainPublish": {
+      const ids = supplyCheckpoints[operation.profileId];
+      if (ids === undefined)
+        throw fail14(`Unknown supply-chain profile ${operation.profileId}.`);
+      return ids.map((id) => CheckpointId.make(id));
+    }
     case "ProviderPublish":
       return operation.checkpoints;
     case "AnnouncementPublish":
     case "SmtpPublish":
       return [CheckpointId.make("message")];
-    default:
+    case "Check":
+    case "Write":
+    case "Pack":
+    case "Digest":
+    case "Exec":
+    case "HttpRead":
+    case "ReviewedNoteTransform":
       return [];
   }
 };
@@ -33179,7 +35113,7 @@ var assertScope = (accepted, scope4) => {
   if (new Set(ids).size !== ids.length || ids.some((id) => !known.has(id)))
     throw fail14("Execution scope is duplicate or unknown.");
   const selected2 = new Set(ids);
-  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId) && !scope4.prerequisiteFactHashes?.includes(OperationHash.make(accepted.operationHashes.find((item) => item.operationId === edge.producerId)?.hash ?? ""))))
+  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId)))
     throw fail14("Execution scope omits a dependency.");
 };
 var assertProgress = (operation, state) => {
@@ -33232,7 +35166,6 @@ var createLedger = (accepted, request) => {
     frontier: request.frontier,
     executionTopologyHash: request.topologyHash,
     revision: 0,
-    ...request.topology === undefined ? {} : { topology: request.topology },
     operations: accepted.operationHashes.map(({ operationId: operationId2, hash: hash2 }) => OperationRunRecord.make({
       operationId: OperationId.make(operationId2),
       operationHash: OperationHash.make(hash2),
@@ -33300,6 +35233,8 @@ var beginPublish = (ledger, record2, operation, receipt) => {
   }
   const carried = resumeProgress(record2);
   const initial = carried.length > 0 ? carried : checkpointIds(operation).map((id) => CheckpointPending.make({ checkpointId: id }));
+  if (initial.length === 0)
+    throw fail14("Publication has no checkpoints.");
   return setState(record2, DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: initial }), receipt);
 };
 var checkpoint2 = (record2, command3) => {
@@ -33464,28 +35399,29 @@ var transition = (accepted, ledger, command3) => {
         throw fail14("Frontier cannot move backward.");
       const advanced = RunLedger.make({ ...ledger, frontier: command3.frontier, revision: ledger.revision + 1 });
       validateLedger(accepted, advanced);
-      return advanced;
+      return succeed2(advanced);
     }
     const operations = command3._tag === "Recover" ? ledger.operations.map(recovered) : ledger.operations.map((record2) => record2.operationId === command3.operationId ? changeRecord(accepted, ledger, record2, command3) : record2);
     if (command3._tag !== "Recover" && !ledger.operations.some((record2) => record2.operationId === command3.operationId))
       throw fail14(`Unknown operation ${command3.operationId}.`);
     const next = RunLedger.make({ ...ledger, revision: ledger.revision + 1, operations });
     validateLedger(accepted, next);
-    return next;
+    return succeed2(next);
   } catch (error3) {
-    return error3 instanceof TransitionError ? error3 : fail14(String(error3));
+    return fail2(error3 instanceof TransitionError ? error3 : fail14(String(error3)));
   }
 };
 var operationStatus = (ledger, operationId2) => ledger.operations.find((item) => item.operationId === operationId2)?.attempts.at(-1)?.state;
 var settled = (state) => state?._tag === "Passed" || state?._tag === "AssumedCommitted";
 
 // ../../src/apply/apply.ts
+var applied = (ledger) => ({ _tag: "Applied", ledger });
 var moved = (ctx, ledger, command3) => gen2(function* () {
   const next = transition(ctx.accepted, ledger, command3);
-  if ("_tag" in next)
-    return yield* next;
-  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next);
-  return next;
+  if (isFailure2(next))
+    return yield* next.failure;
+  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next.success);
+  return next.success;
 });
 var structured2 = (ctx, permit, ledger, operation) => gen2(function* () {
   const start2 = operation._tag === "Exec" ? "BeginTrustedExec" : "BeginStructured";
@@ -33523,8 +35459,8 @@ var localOperations = (ctx, permit, ledger, operations) => gen2(function* () {
   }
   return next;
 });
-var materialize = (ctx) => gen2(function* () {
-  const publishInputs = new Set(operationEntries(ctx.accepted.plan).filter(({ operation }) => isRemotePublish(operation)).flatMap(({ operation }) => operation.inputs).map(String));
+var materialize = (ctx, selected2) => gen2(function* () {
+  const publishInputs = new Set(operationEntries(ctx.accepted.plan).filter(({ operation }) => selected2.has(operation.id) && isRemotePublish(operation)).flatMap(({ operation }) => operation.inputs).map(String));
   return yield* forEach2(ctx.accepted.outputs.filter(({ output }) => publishInputs.has(String(output.id))), ({ output }) => ctx.workspace.snapshot(SnapshotRequest.make({
     root: ctx.request.root,
     source: output.path,
@@ -33594,13 +35530,26 @@ var reconciliationKeyFor = (ctx, ledger, operation, operationHash, checkpointId,
   }
 };
 var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(function* () {
-  let next = operationStatus(ledger, operation.id)?._tag === "Pending" ? yield* moved(ctx, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
-  const status = operationStatus(next, operation.id);
-  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : [];
+  const before = operationStatus(ledger, operation.id);
   const operationHash = OperationHash.make(ctx.accepted.operationHashes.find((item) => item.operationId === operation.id).hash);
   const bindings = materials.filter((item) => operation.inputs.includes(item.outputId));
   const subject = bindings[0];
   const target2 = publishTarget(operation);
+  const pendingIds = before?._tag === "DispatchingPublish" ? before.progress.filter((item) => item._tag === "CheckpointPending").map((item) => item.checkpointId) : checkpointIds(operation);
+  if (pendingIds.length === 0) {
+    return yield* moved(ctx, ledger, { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." });
+  }
+  const handles = new Map;
+  for (const checkpointId of pendingIds) {
+    const subjectFromInputs = checkpointId === "dispatch" || isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish";
+    const outputId2 = subjectFromInputs ? String(operation.inputs[0] ?? "") : String(checkpointId).replace(/^asset:/u, "");
+    const facts = materials.find((item) => item.outputId === outputId2);
+    handles.set(String(checkpointId), facts === undefined ? undefined : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts));
+  }
+  const credential = yield* ctx.credential.getPublish(operation.credential, permit);
+  let next = before?._tag === "Pending" ? yield* moved(ctx, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
+  const status = operationStatus(next, operation.id);
+  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : [];
   for (const checkpoint3 of checkpoints) {
     if (checkpoint3._tag !== "CheckpointPending")
       continue;
@@ -33615,17 +35564,13 @@ var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(funct
         ...subject === undefined ? {} : { subjectDigest: subject.digest }
       } : {}
     });
-    const subjectFromInputs = checkpoint3.checkpointId === "dispatch" || isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish";
-    const outputId2 = subjectFromInputs ? String(operation.inputs[0] ?? "") : String(checkpoint3.checkpointId).replace(/^asset:/u, "");
-    const facts = materials.find((item) => item.outputId === outputId2);
-    const handle = facts === undefined ? undefined : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts);
-    const credential = yield* ctx.credential.getPublish(operation.credential, permit);
     const publish = CatalogPublishRequest.make({
       operation,
+      root: ctx.request.root,
       checkpointId: checkpoint3.checkpointId,
       clientReconciliationKey: key
     });
-    const result2 = yield* dispatched(ctx.catalog.publish(publish, handle, credential));
+    const result2 = yield* dispatched(ctx.catalog.publish(publish, handles.get(String(checkpoint3.checkpointId)), credential));
     next = yield* moved(ctx, next, checkpointCommand(result2, operation.id, checkpoint3.checkpointId));
     if (result2._tag !== "Committed")
       return next;
@@ -33642,6 +35587,7 @@ var reconcile2 = (ctx, ledger, recovery, permit) => gen2(function* () {
   const credential = yield* ctx.credential.getPublish(operation.credential, permit);
   const result2 = yield* ctx.catalog.reconcile(CatalogPublishRequest.make({
     operation,
+    root: ctx.request.root,
     checkpointId: recovery.checkpointId,
     clientReconciliationKey: checkpoint3.clientReconciliationKey
   }), credential);
@@ -33675,17 +35621,36 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   const executionPermit = yield* signer.execution(request.executionReceipt, ledger.runId, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash));
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Resolve") ?? [])
     ledger = yield* moved(ctx, ledger, recovery);
+  for (const recovery of request.recoveries?.filter((item) => item._tag === "Retry") ?? [])
+    ledger = yield* moved(ctx, ledger, {
+      _tag: "Retry",
+      operationId: recovery.operationId,
+      receipt: request.executionReceipt
+    });
   const selected2 = new Set(ledger.scope.operationIds.map(String));
   const entries2 = operationEntries(accepted.plan).filter(({ stage, operation }) => selected2.has(operation.id) && stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through));
   ledger = yield* localOperations(ctx, executionPermit, ledger, entries2.map(({ operation }) => operation));
-  if (entries2.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
-    return ledger;
+  const scoped4 = operationEntries(accepted.plan).filter(({ operation }) => selected2.has(operation.id));
+  if (scoped4.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
+    return applied(ledger);
   const publishEntries = entries2.map(({ operation }) => operation).filter(isRemotePublish);
-  if (publishEntries.length === 0)
-    return ledger;
+  if (!scoped4.some(({ operation }) => isRemotePublish(operation)))
+    return applied(ledger);
   if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile"))
-    return ledger;
-  const materials = yield* materialize(ctx);
+    return applied(ledger);
+  const materials = yield* materialize(ctx, selected2);
+  for (const material of materials) {
+    const producer = scoped4.map(({ operation }) => operation).find((operation) => operation.outputs.some((output) => String(output.id) === String(material.outputId)));
+    const state = producer === undefined ? undefined : operationStatus(ledger, producer.id);
+    if (state?._tag !== "Passed")
+      continue;
+    const recorded = state.materializedOutputs.find((output) => String(output.outputId) === String(material.outputId));
+    if (recorded !== undefined && (recorded.digest !== material.digest || recorded.size !== material.size)) {
+      return yield* TransitionError.make({
+        reason: `Output ${material.outputId} no longer matches its recorded digest; the workspace changed after it was built.`
+      });
+    }
+  }
   const review = publishReviewId(accepted, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash), ledger.scope, materials);
   if (request.publish === undefined)
     return { _tag: "PublishReviewRequired", reviewId: review, ledger };
@@ -33693,15 +35658,15 @@ var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
   for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
     ledger = yield* reconcile2(ctx, ledger, recovery, permit);
   if (blocksApply(ledger))
-    return ledger;
+    return applied(ledger);
   for (const operation of publishEntries) {
     const state = operationStatus(ledger, operation.id);
     if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
       ledger = yield* publishOperation(ctx, ledger, operation, materials, permit);
     if (!settled(operationStatus(ledger, operation.id)))
-      return ledger;
+      return applied(ledger);
   }
-  return ledger;
+  return applied(ledger);
 });
 
 // ../../src/plan/review.ts
@@ -33748,50 +35713,88 @@ class ReleaseApiError extends Error {
 }
 
 // ../../src/api/input.ts
-import { realpathSync as realpathSync3, statSync as statSync2 } from "node:fs";
-import { isAbsolute, relative as relative2, resolve as resolve6, sep as sep3 } from "node:path";
-var exact = (phase, value2, keys2, label) => {
-  if (typeof value2 !== "object" || value2 === null || Array.isArray(value2)) {
-    throw new ReleaseApiError(phase, `${label} must be an object.`);
+import { existsSync as existsSync5, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
+import { dirname as dirname3, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve6, sep as sep2 } from "node:path";
+var ScopeInputSchema = Union2([
+  Literal2("all"),
+  Struct({ operationIds: NonEmptyArray(String4) })
+]);
+var PlanInputSchema = Struct({
+  config: Unknown2,
+  workspace: String4
+});
+var ReviewExecutionInputSchema = Struct({
+  planBytes: String4,
+  expectedPlanId: PlanId,
+  scope: ScopeInputSchema
+});
+var OperatorResolutionSchema = Struct({
+  operationId: String4,
+  outcome: Literals(["committed", "absent"]),
+  operator: NonEmptyString,
+  reason: NonEmptyString
+});
+var NewRunSchema = Struct({
+  path: String4,
+  scope: ScopeInputSchema,
+  executionReviewId: ExecutionReviewId,
+  reviewer: String4,
+  reason: optionalKey2(String4)
+});
+var PublishConfirmationSchema = Struct({
+  publishReviewId: PublishReviewId,
+  reviewer: String4
+});
+var ApplyInputSchema = Struct({
+  planBytes: String4,
+  expectedPlanId: PlanId,
+  workspace: String4,
+  newRun: optionalKey2(NewRunSchema),
+  resumeRunPath: optionalKey2(String4),
+  through: optionalKey2(Stage),
+  publishConfirmation: optionalKey2(PublishConfirmationSchema),
+  reconcile: optionalKey2(ArraySchema(String4)),
+  resolutions: optionalKey2(ArraySchema(OperatorResolutionSchema)),
+  retry: optionalKey2(ArraySchema(String4))
+}).check(makeFilter2((value2) => value2.newRun === undefined === (value2.resumeRunPath === undefined) ? "Choose exactly one of newRun or resumeRunPath." : undefined));
+var decodeInput = (phase, schema2, value2) => {
+  try {
+    return decodeUnknownSync(schema2, { onExcessProperty: "error" })(value2);
+  } catch (cause) {
+    throw new ReleaseApiError(phase, String(cause).split(`
+`).slice(0, 8).join(`
+`).slice(0, 500));
   }
-  const record2 = value2;
-  const excess = Object.keys(record2).filter((key) => !keys2.includes(key));
-  if (excess.length > 0) {
-    throw new ReleaseApiError(phase, `${label} has excess field ${excess[0]}.`);
-  }
-  return record2;
 };
 var workspace = (phase, value2) => {
-  if (!isAbsolute(value2) || value2.length === 0) {
+  if (!isAbsolute2(value2) || value2.length === 0) {
     throw new ReleaseApiError(phase, "Workspace must be a nonempty absolute path.");
   }
   const canonical2 = realpathSync3(value2);
-  if (!statSync2(canonical2).isDirectory()) {
+  if (!statSync3(canonical2).isDirectory()) {
     throw new ReleaseApiError(phase, "Workspace must be a directory.");
   }
   return WorkspaceRoot.make(canonical2);
 };
 var within = (root, value2) => {
-  const path2 = isAbsolute(value2) ? resolve6(value2) : resolve6(root, value2);
+  const path2 = isAbsolute2(value2) ? resolve6(value2) : resolve6(root, value2);
   const child = relative2(root, path2);
-  if (child === ".." || child.startsWith(`..${sep3}`)) {
+  if (child === ".." || child.startsWith(`..${sep2}`)) {
+    throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
+  }
+  let ancestor = dirname3(path2);
+  while (!existsSync5(ancestor))
+    ancestor = dirname3(ancestor);
+  if (!contained(root, realpathSync3(ancestor))) {
     throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
   }
   return path2;
 };
-var topology = (value2) => {
-  if (value2 !== undefined) {
-    exact("review", value2, ["id"], "topology");
-    if (value2.id.length === 0) {
-      throw new ReleaseApiError("review", "Topology id must be nonempty.");
-    }
-  }
-  return ExecutionTopologyHash.make(value2?.id ?? "single-machine/v1");
-};
+var topology = () => ExecutionTopologyHash.make("single-machine/v1");
 var selectScope = (accepted, input2) => {
   const available = accepted.operationHashes.map(({ operationId: operationId2 }) => operationId2);
-  const requested = input2 === "all" ? available : exact("review", input2, ["operationIds"], "scope").operationIds;
-  if (!Array.isArray(requested) || requested.length === 0) {
+  const requested = input2 === "all" ? available : input2.operationIds;
+  if (requested.length === 0) {
     throw new ReleaseApiError("review", "Execution scope must be nonempty.");
   }
   const ids = [...new Set(requested.map(String))];
@@ -33810,11 +35813,9 @@ var selectScope = (accepted, input2) => {
 // ../../src/api/apply-boundary.ts
 var complete = (ledger) => ledger.operations.filter((record2) => ledger.scope.operationIds.includes(record2.operationId)).every((record2) => settled(record2.attempts.at(-1)?.state));
 var receipt = (ledger) => ledger.operations[0]?.attempts[0]?.executionReceipt;
-var expectedLedger = (plan, ledger) => ({
+var expectedLedger = (plan) => ({
   planId: plan.planId,
-  operationHashes: plan.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2)),
-  scope: ledger.scope,
-  topologyHash: ledger.executionTopologyHash
+  operationHashes: plan.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2))
 });
 var recoveries = (ledger, input2) => [
   ...(input2.resolutions ?? []).map((item) => ({
@@ -33832,11 +35833,13 @@ var recoveries = (ledger, input2) => [
       operationId: OperationId.make(String(id)),
       checkpointId: CheckpointId.make(item.checkpointId)
     })) : [];
-  })
+  }),
+  ...(input2.retry ?? []).map((id) => ({
+    _tag: "Retry",
+    operationId: OperationId.make(String(id))
+  }))
 ];
-var prepareNew = (plan, root, input2) => {
-  const request = input2.newRun;
-  exact("apply", request, ["path", "scope", "executionReviewId", "reviewer", "reason"], "newRun");
+var prepareNew = (plan, root, request) => {
   const selected2 = selectScope(plan, request.scope);
   const topologyHash = topology();
   const execution = mintExecutionReceipt(plan, selected2, topologyHash, {
@@ -33849,7 +35852,7 @@ var prepareNew = (plan, root, input2) => {
   });
   return {
     execution,
-    runPath: within(root, request.path),
+    runPath: ledgerPath(within(root, request.path), execution.logicalRunId),
     ledger: createLedger(plan, {
       runId: execution.runId,
       logicalRunId: execution.logicalRunId,
@@ -33861,8 +35864,14 @@ var prepareNew = (plan, root, input2) => {
   };
 };
 var prepareResume = (plan, root, path2) => {
-  const runPath = within(root, path2);
-  const ledger = decodeLedger(readFileSync4(runPath, "utf8"));
+  const contained2 = within(root, path2);
+  let runPath;
+  try {
+    runPath = resolveLedgerPath(contained2);
+  } catch (cause) {
+    throw new ReleaseApiError("apply", cause instanceof RunStoreError ? cause.reason : String(cause));
+  }
+  const ledger = readLedgerFile(runPath);
   validateLedger(plan, ledger);
   const execution = receipt(ledger);
   if (execution === undefined) {
@@ -33880,15 +35889,15 @@ var output = (prepared, ledger, status, extra = {}) => ({
   ...extra
 });
 var publishOutput = async (run4, plan, input2, prepared, review) => {
-  if (!("_tag" in review)) {
-    return output(prepared, review, complete(review) ? "complete" : "stopped");
+  if (review._tag === "Applied") {
+    const ledger = review.ledger;
+    return output(prepared, ledger, complete(ledger) ? "complete" : "stopped");
   }
   if (input2.publishConfirmation === undefined) {
     return output(prepared, review.ledger, "publish-review-required", {
       nextPublishReviewId: review.reviewId
     });
   }
-  exact("apply", input2.publishConfirmation, ["publishReviewId", "reviewer"], "publishConfirmation");
   const publish = mintPublishReceipt(prepared.execution, review.reviewId, {
     reviewId: input2.publishConfirmation.publishReviewId,
     reviewer: input2.publishConfirmation.reviewer,
@@ -33904,47 +35913,39 @@ var publishOutput = async (run4, plan, input2, prepared, review) => {
     run: {
       _tag: "ResumeRun",
       path: prepared.runPath,
-      expected: expectedLedger(plan, review.ledger)
+      expected: expectedLedger(plan)
     },
     publish: { receipt: publish }
   }));
-  if ("_tag" in second)
+  if (second._tag !== "Applied") {
     throw new ReleaseApiError("apply", "Publish review did not advance.");
-  return output(prepared, second, complete(second) ? "complete" : "stopped", {
+  }
+  return output(prepared, second.ledger, complete(second.ledger) ? "complete" : "stopped", {
     publishReceiptId: publish.receiptId
   });
 };
 var makeApply = (run4) => async (input2) => {
-  exact("apply", input2, [
-    "planBytes",
-    "expectedPlanId",
-    "workspace",
-    "newRun",
-    "resumeRunPath",
-    "through",
-    "publishConfirmation",
-    "reconcile",
-    "resolutions"
-  ], "apply input");
-  if (input2.newRun === undefined === (input2.resumeRunPath === undefined)) {
+  const decoded = decodeInput("apply", ApplyInputSchema, input2);
+  const selector = decoded.newRun !== undefined ? { _tag: "New", request: decoded.newRun } : decoded.resumeRunPath !== undefined ? { _tag: "Resume", path: decoded.resumeRunPath } : undefined;
+  if (selector === undefined) {
     throw new ReleaseApiError("apply", "Choose exactly one of newRun or resumeRunPath.");
   }
-  const plan = await run4("apply", acceptExpected(input2.planBytes, input2.expectedPlanId));
-  const root = workspace("apply", input2.workspace);
-  const prepared = input2.newRun === undefined ? prepareResume(plan, root, input2.resumeRunPath) : prepareNew(plan, root, input2);
+  const plan = await run4("apply", acceptExpected(decoded.planBytes, decoded.expectedPlanId));
+  const root = workspace("apply", decoded.workspace);
+  const prepared = selector._tag === "New" ? prepareNew(plan, root, selector.request) : prepareResume(plan, root, selector.path);
   const first = await run4("apply", applyAcceptedPlan(plan, {
     root,
     snapshotDirectory: `${prepared.runPath}.snapshots`,
-    through: input2.through ?? "verify",
+    through: decoded.through ?? "verify",
     executionReceipt: prepared.execution,
-    recoveries: recoveries(prepared.ledger, input2),
-    run: input2.newRun === undefined ? {
+    recoveries: recoveries(prepared.ledger, decoded),
+    run: selector._tag === "Resume" ? {
       _tag: "ResumeRun",
       path: prepared.runPath,
-      expected: expectedLedger(plan, prepared.ledger)
+      expected: expectedLedger(plan)
     } : { _tag: "NewRun", path: prepared.runPath, ledger: prepared.ledger }
   }));
-  return publishOutput(run4, plan, input2, prepared, first);
+  return publishOutput(run4, plan, decoded, prepared, first);
 };
 
 // ../../src/api/api.ts
@@ -33955,23 +35956,25 @@ var makeReleaseApi = (layer7) => {
     throw ReleaseApiError.from(phase, cause);
   });
   const plan = async (input2) => {
-    exact("plan", input2, ["config", "workspace"], "plan input");
-    const config = await run4("plan", decodePlanningConfig(input2.config));
-    const root = workspace("plan", input2.workspace);
-    const result2 = await run4("plan", compilePlan(input2.config, Invocation.make({
+    const decoded = decodeInput("plan", PlanInputSchema, input2);
+    const config = await run4("plan", decodePlanningConfig(decoded.config));
+    const root = workspace("plan", decoded.workspace);
+    if (config.project.commit === undefined)
+      throw new ReleaseApiError("plan", MISSING_COMMIT);
+    const result2 = await run4("plan", compilePlan(decoded.config, Invocation.make({
       workspace: root,
-      commit: NonEmptyName.make(config.project.commit ?? "unknown"),
+      commit: NonEmptyName.make(config.project.commit),
       snapshot: false
     })));
     return { plan: result2.plan, bytes: decoder2.decode(result2.bytes), planId: result2.planId };
   };
   const reviewExecution = async (input2) => {
-    exact("review", input2, ["planBytes", "expectedPlanId", "scope", "topology"], "review input");
-    const accepted = await run4("review", acceptExpected(input2.planBytes, input2.expectedPlanId));
-    const scope4 = selectScope(accepted, input2.scope);
+    const decoded = decodeInput("review", ReviewExecutionInputSchema, input2);
+    const accepted = await run4("review", acceptExpected(decoded.planBytes, decoded.expectedPlanId));
+    const scope4 = selectScope(accepted, decoded.scope);
     return {
       scope: scope4,
-      executionReviewId: executionReviewId(accepted, scope4, topology(input2.topology))
+      executionReviewId: executionReviewId(accepted, scope4, topology())
     };
   };
   return Object.freeze({
@@ -33985,59 +35988,217 @@ var defaultApi = makeReleaseApi(NodeReleaseLayer);
 var plan = defaultApi.plan;
 var reviewExecution = defaultApi.reviewExecution;
 var apply = defaultApi.apply;
+// ../../src/resolve/encode.ts
+var toPlainJson = (value2) => {
+  if (Array.isArray(value2))
+    return value2.map(toPlainJson);
+  if (typeof value2 !== "object" || value2 === null)
+    return value2;
+  return Object.fromEntries(Object.entries(value2).filter(([, entry]) => entry !== undefined).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([key, entry]) => [key, toPlainJson(entry)]));
+};
+var encodeResolvedConfig = (config) => `${JSON.stringify(toPlainJson(config), null, 2)}
+`;
+// ../../src/resolve/authored.ts
+var optional3 = optionalKey2;
+
+class AuthoredProject extends Class4("AuthoredProject")({
+  ...CandidateProject.fields,
+  name: optional3(NonEmptyName),
+  version: optional3(Version),
+  tag: optional3(NonEmptyName),
+  tagTemplate: optional3(NonEmptyString)
+}) {
+}
+
+class AuthoredConfig extends Class4("AuthoredConfig")({
+  ...CandidateConfig.fields,
+  project: AuthoredProject,
+  versionFrom: optional3(Literals(["manifest", "git-tag"]))
+}) {
+}
+
+// ../../src/resolve/errors.ts
+class ResolveError extends Error {
+  field;
+  reason;
+  _tag = "ResolveError";
+  constructor(field, reason) {
+    super(reason);
+    this.field = field;
+    this.reason = reason;
+    this.name = "ResolveError";
+  }
+}
+
+// ../../src/resolve/facts.ts
+var optional4 = optionalKey2;
+
+class ObservedFacts extends Class4("ObservedFacts")({
+  commit: optional4(NonEmptyName),
+  manifestName: optional4(NonEmptyString),
+  manifestVersion: optional4(Version),
+  headTagVersion: optional4(Version)
+}) {
+}
+
+// ../../src/resolve/resolve.ts
+var refuse = (field, reason) => {
+  throw new ResolveError(field, reason);
+};
+var disagreement = (field, authored, observed2, source) => refuse(`project.${field}`, `project.${field} is ${JSON.stringify(authored)} in the config but ${JSON.stringify(observed2)} ${source}. Remove the authored value or correct the source; the resolver never picks.`);
+var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
+var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
+var version2 = (authored, facts) => {
+  const directive = authored.versionFrom;
+  const observed2 = directive === "manifest" ? facts.manifestVersion : directive === "git-tag" ? facts.headTagVersion : undefined;
+  const source = directive === "manifest" ? "in the package manifest" : "on the tag at HEAD";
+  if (authored.project.version !== undefined) {
+    if (observed2 !== undefined && observed2 !== authored.project.version) {
+      disagreement("version", authored.project.version, observed2, source);
+    }
+    return authored.project.version;
+  }
+  if (directive === undefined) {
+    return refuse("project.version", 'project.version is required. State it, or set versionFrom to "manifest" or "git-tag" so it can be observed.');
+  }
+  if (observed2 === undefined) {
+    return refuse("project.version", `versionFrom is ${JSON.stringify(directive)} but no version was observed ${source}.`);
+  }
+  return observed2;
+};
+var tag2 = (authored, resolved) => {
+  if (authored.project.tag !== undefined)
+    return authored.project.tag;
+  const template = authored.project.tagTemplate ?? "v{version}";
+  const rendered = template.replaceAll("{version}", resolved);
+  if (rendered.includes("{") || rendered.includes("}")) {
+    return refuse("project.tagTemplate", `project.tagTemplate supports only the {version} token, got ${JSON.stringify(template)}.`);
+  }
+  return NonEmptyName.make(rendered);
+};
+var commit = (authored, facts) => {
+  if (authored.project.commit !== undefined) {
+    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
+      disagreement("commit", authored.project.commit, facts.commit, "at HEAD");
+    }
+    return authored.project.commit;
+  }
+  if (facts.commit === undefined)
+    return refuse("project.commit", MISSING_COMMIT);
+  return facts.commit;
+};
+var names = (authored, facts) => {
+  const manifest = facts.manifestName;
+  if (manifest !== undefined && authored.project.packageName !== undefined && manifest !== authored.project.packageName) {
+    disagreement("packageName", authored.project.packageName, manifest, "in the package manifest");
+  }
+  const name = authored.project.name ?? manifest;
+  if (name === undefined) {
+    return refuse("project.name", "project.name is required when no package manifest is observed.");
+  }
+  const packageName = authored.project.packageName ?? manifest;
+  return { name, ...packageName === undefined ? {} : { packageName } };
+};
+var resolveConfig = (authored, facts) => {
+  const config = decodeAuthored(authored);
+  const observed2 = decodeFacts(facts);
+  const resolvedVersion = version2(config, observed2);
+  const { project, versionFrom: _directive, ...rest } = config;
+  const { tagTemplate: _template, ...projectRest } = project;
+  return toPlainJson({
+    ...rest,
+    project: {
+      ...projectRest,
+      ...names(config, observed2),
+      version: resolvedVersion,
+      tag: tag2(config, resolvedVersion),
+      commit: commit(config, observed2)
+    }
+  });
+};
 // src/index.ts
 import {
-  mkdirSync as mkdirSync4,
-  readFileSync as readFileSync5,
-  writeFileSync as writeFileSync4
+  mkdirSync as mkdirSync3,
+  readFileSync as readFileSync3,
+  writeFileSync as writeFileSync3
 } from "node:fs";
 import { dirname as dirname5 } from "node:path";
 
 // src/commands.ts
 import { realpathSync as realpathSync4 } from "node:fs";
-import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute2, relative as relative3, resolve as resolve7 } from "node:path";
+import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve7, sep as sep3 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
-var optional3 = (runtime, name) => {
+var optional5 = (runtime, name) => {
   const value2 = runtime.input(name).trim();
   return value2.length === 0 ? undefined : value2;
 };
 var inside = (root, candidate) => {
   const fromRoot = relative3(root, candidate);
-  if (fromRoot === ".." || fromRoot.startsWith("../") || isAbsolute2(fromRoot)) {
+  if (fromRoot === ".." || fromRoot.startsWith(`..${sep3}`) || isAbsolute3(fromRoot)) {
     throw new Error("Action path is outside GITHUB_WORKSPACE.");
   }
   return candidate;
 };
-var contained = (root, path2) => inside(root, realpathSync4(isAbsolute2(path2) ? path2 : resolve7(root, path2)));
+var contained2 = (root, path2) => inside(root, realpathSync4(isAbsolute3(path2) ? path2 : resolve7(root, path2)));
 var containedOutput = (root, path2) => {
-  const candidate = isAbsolute2(path2) ? resolve7(path2) : resolve7(root, path2);
+  const candidate = isAbsolute3(path2) ? resolve7(path2) : resolve7(root, path2);
   return inside(root, resolve7(realpathSync4(dirname4(candidate)), basename3(candidate)));
 };
-var scope4 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => id) };
+var scope4 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => OperationId.make(id)) };
 var resolutions = (value2) => {
   if (value2 === undefined)
     return;
-  const parsed = JSON.parse(value2);
-  if (!Array.isArray(parsed))
-    throw new Error("resolutions must be a JSON array.");
-  return parsed;
+  try {
+    return JSON.parse(value2);
+  } catch {
+    throw new Error("resolutions must be valid JSON.");
+  }
 };
 var accepted = (runtime, root) => {
-  const path2 = optional3(runtime, "plan-path");
-  const planId = optional3(runtime, "plan-id");
+  const path2 = optional5(runtime, "plan-path");
+  const planId = optional5(runtime, "plan-id");
   if (path2 === undefined)
     throw new Error("plan-path is required.");
   if (planId === undefined)
     throw new Error("plan-id is required.");
   return {
-    planBytes: runtime.read(contained(root, path2)),
-    expectedPlanId: planId
+    planBytes: runtime.read(contained2(root, path2)),
+    expectedPlanId: PlanId.make(planId)
   };
 };
+var githubFacts = (runtime, root) => {
+  const manifest = (() => {
+    try {
+      return JSON.parse(runtime.read(contained2(root, "package.json")));
+    } catch {
+      return {};
+    }
+  })();
+  return {
+    ...runtime.commit === undefined || runtime.commit.length === 0 ? {} : { commit: runtime.commit },
+    ...typeof manifest.name === "string" && manifest.name.length > 0 ? { manifestName: manifest.name } : {},
+    ...typeof manifest.version === "string" && manifest.version.length > 0 ? { manifestVersion: manifest.version } : {}
+  };
+};
+var planConfig = (runtime, root, source, planPath) => {
+  const authored = JSON.parse(runtime.read(source));
+  const mode = optional5(runtime, "resolve");
+  if (mode === undefined)
+    return authored;
+  if (mode !== "github") {
+    throw new Error(`resolve must be empty or "github", got ${JSON.stringify(mode)}.`);
+  }
+  const config = resolveConfig(authored, githubFacts(runtime, root));
+  runtime.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config));
+  return config;
+};
 var planAction = async (api2, runtime, root) => {
-  const source = contained(root, optional3(runtime, "config") ?? "release.config.json");
-  const result2 = await api2.plan({ config: JSON.parse(runtime.read(source)), workspace: root });
-  const output2 = containedOutput(root, optional3(runtime, "plan-path") ?? "release-plan.json");
+  const source = contained2(root, optional5(runtime, "config") ?? "release.config.json");
+  const output2 = containedOutput(root, optional5(runtime, "plan-path") ?? "release-plan.json");
+  const result2 = await api2.plan({
+    config: planConfig(runtime, root, source, optional5(runtime, "plan-path") ?? "release-plan.json"),
+    workspace: root
+  });
   runtime.write(output2, result2.bytes);
   runtime.output("plan_id", result2.planId);
   runtime.output("status", "planned");
@@ -34045,49 +36206,54 @@ var planAction = async (api2, runtime, root) => {
 var reviewAction = async (api2, runtime, root, command3) => {
   const review = await api2.reviewExecution({
     ...accepted(runtime, root),
-    scope: scope4(optional3(runtime, "scope"))
+    scope: scope4(optional5(runtime, "scope"))
   });
   runtime.output("execution_review_id", review.executionReviewId);
   runtime.output("status", command3 === "doctor" ? "valid" : "review-required");
 };
 var applyInput = (runtime, root) => {
-  const reviewer = optional3(runtime, "reviewer");
+  const reviewer = optional5(runtime, "reviewer");
   if (reviewer === undefined)
     throw new Error("reviewer is required.");
-  const newRunPath = optional3(runtime, "new-run");
-  const resumeRunPath = optional3(runtime, "resume");
+  const newRunPath = optional5(runtime, "new-run");
+  const resumeRunPath = optional5(runtime, "resume");
   if (newRunPath === undefined === (resumeRunPath === undefined)) {
     throw new Error("Choose exactly one of new-run or resume.");
   }
-  const review = optional3(runtime, "confirm-execution");
+  const review = optional5(runtime, "confirm-execution");
   if (newRunPath !== undefined && review === undefined) {
     throw new Error("confirm-execution is required for a new run.");
   }
-  const publish = optional3(runtime, "confirm-publish");
-  const through = optional3(runtime, "through");
-  const reconcile3 = optional3(runtime, "reconcile");
-  const resolutionItems = resolutions(optional3(runtime, "resolutions"));
-  const reason = optional3(runtime, "reason");
+  const publish = optional5(runtime, "confirm-publish");
+  const throughInput = optional5(runtime, "through");
+  const through = throughInput === undefined ? undefined : decodeUnknownSync(Stage)(throughInput);
+  const reconcile3 = optional5(runtime, "reconcile");
+  const retry3 = optional5(runtime, "retry");
+  const resolutionItems = resolutions(optional5(runtime, "resolutions"));
+  const reason = optional5(runtime, "reason");
   return {
     ...accepted(runtime, root),
     workspace: root,
     ...newRunPath === undefined ? { resumeRunPath } : {
       newRun: {
         path: newRunPath,
-        scope: scope4(optional3(runtime, "scope")),
-        executionReviewId: review,
+        scope: scope4(optional5(runtime, "scope")),
+        executionReviewId: ExecutionReviewId.make(review),
         reviewer,
         ...reason === undefined ? {} : { reason }
       }
     },
     ...through === undefined ? {} : { through },
     ...publish === undefined ? {} : {
-      publishConfirmation: { publishReviewId: publish, reviewer }
+      publishConfirmation: { publishReviewId: PublishReviewId.make(publish), reviewer }
     },
     ...reconcile3 === undefined ? {} : {
-      reconcile: reconcile3.split(",").filter(Boolean).map((id) => id)
+      reconcile: reconcile3.split(",").filter(Boolean).map((id) => OperationId.make(id))
     },
-    ...resolutionItems === undefined ? {} : { resolutions: resolutionItems }
+    ...resolutionItems === undefined ? {} : { resolutions: resolutionItems },
+    ...retry3 === undefined ? {} : {
+      retry: retry3.split(",").filter(Boolean).map((id) => OperationId.make(id))
+    }
   };
 };
 var applyAction = async (api2, runtime, root) => {
@@ -34107,28 +36273,33 @@ var applyAction = async (api2, runtime, root) => {
 };
 var runAction = async (api2, runtime) => {
   const root = realpathSync4(runtime.workspace);
-  const command3 = optional3(runtime, "command") ?? "plan";
+  const command3 = optional5(runtime, "command") ?? "plan";
   if (!actionCommands.includes(command3))
     throw new Error("command must be plan, apply, or doctor.");
   if (command3 === "plan")
     return planAction(api2, runtime, root);
-  if (command3 === "doctor" || optional3(runtime, "review-only") === "true") {
+  if (command3 === "doctor" || optional5(runtime, "review-only") === "true") {
     return reviewAction(api2, runtime, root, command3);
   }
   return applyAction(api2, runtime, root);
 };
 
 // src/index.ts
+if (process.platform === "win32") {
+  setFailed("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.");
+  process.exit(1);
+}
 var api2 = makeReleaseApi(NodeReleaseLayer);
 try {
   await runAction(api2, {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
+    ...process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA },
     input: getInput,
     output: setOutput,
-    read: (path2) => readFileSync5(path2, "utf8"),
+    read: (path2) => readFileSync3(path2, "utf8"),
     write: (path2, value2) => {
-      mkdirSync4(dirname5(path2), { recursive: true });
-      writeFileSync4(path2, value2);
+      mkdirSync3(dirname5(path2), { recursive: true });
+      writeFileSync3(path2, value2);
     }
   });
 } catch (cause) {

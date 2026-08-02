@@ -1,3 +1,5 @@
+import { satisfies } from "semver"
+
 export type PackageHost =
   | "darwin-arm64" | "darwin-x64"
   | "linux-arm64" | "linux-x64"
@@ -47,21 +49,22 @@ export const compactLocalToolProfile = (
   hosts, executable, argv, inputSelectors: inputs, outputs: [output], validationOperation
 })
 
-const triple = (value: string): ReadonlyArray<number> =>
-  (value.match(/[0-9]+(?:\.[0-9]+){1,2}/u)?.[0] ?? "").split(".").map(Number)
-const order = (left: ReadonlyArray<number>, right: ReadonlyArray<number>): number =>
-  (left[0] ?? 0) - (right[0] ?? 0) ||
-  (left[1] ?? 0) - (right[1] ?? 0) ||
-  (left[2] ?? 0) - (right[2] ?? 0)
+// Real semver with default options: prereleases are EXCLUDED from stable
+// ranges, so 10.0.0-rc.1 can never pass as a supported 10.x.
+const extractVersion = (value: string): string | undefined => {
+  const found = value.match(/[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?|[0-9]+\.[0-9]+/u)?.[0]
+  if (found === undefined) return undefined
+  return /^[0-9]+\.[0-9]+$/u.test(found) ? `${found}.0` : found
+}
 export const preflightTool = (
   profile: LocalToolProfile, host: PackageHost, observed: string
 ): "ready" | "unsupported-host" | "unsupported-version" => {
   if (!profile.contract.hosts.includes(host)) return "unsupported-host"
-  const [minimum = "", maximum = ""] = profile.contract.executable.supportedRange
+  const [minimum, maximum] = profile.contract.executable.supportedRange
     .match(/[0-9]+(?:\.[0-9]+){1,2}/gu) ?? []
-  const actual = triple(observed)
-  return actual.length > 1 && order(actual, triple(minimum)) >= 0 &&
-    order(actual, triple(maximum)) < 0 ? "ready" : "unsupported-version"
+  const actual = extractVersion(observed)
+  return actual !== undefined && minimum !== undefined && maximum !== undefined &&
+    satisfies(actual, `>=${minimum} <${maximum}`) ? "ready" : "unsupported-version"
 }
 export const localToolOutcome = (
   exitCode: number, declared: number, observed: number, valid: boolean

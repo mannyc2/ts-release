@@ -10,6 +10,10 @@ bun ../../apps/release-ts/src/cli/main.ts plan \
   --out release-plan.json
 ```
 
+Examples hand-state `commit`, `version`, and `tag` because they are decode
+fixtures that must plan without a git repository; in a real repository
+`--from-git` observes all three (see `templates/README.md`).
+
 The examples cover agent plugin packaging, GitHub Releases, Homebrew, Scoop,
 npm, first-publish npm configuration, portable CLI distribution, PyPI, and a
 coordinated multi-target release. Every config supplies a complete public

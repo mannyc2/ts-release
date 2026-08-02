@@ -1,11 +1,12 @@
 import * as Effect from "effect/Effect"
+import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import { encodeCanonicalJson, hashFramed, parseStrictJson } from "../model/canonical.js"
 import { NonCanonicalPlanError, PlanDecodeError } from "../model/errors.js"
 import { ReleasePlanV6 } from "../model/plan.js"
 import { PlanId } from "../model/primitives.js"
 import {
-  isValidationFailure, validatePlan, type Dependency, type DerivedOutput, type ValidatedPlanProjection
+  validatePlan, type Dependency, type DerivedOutput, type ValidatedPlanProjection
 } from "../model/validate.js"
 
 const decoder = new TextDecoder("utf-8", { fatal: true })
@@ -70,9 +71,9 @@ export class AcceptedPlan {
       })
     }
     const projection = validatePlan(plan)
-    if (isValidationFailure(projection)) return yield* projection
+    if (Result.isFailure(projection)) return yield* projection.failure
     const digest = hashFramed("ts-release/plan-id/v1", [canonical])
-    return new AcceptedPlan(plan, canonical, PlanId.make(digest), projection)
+    return new AcceptedPlan(plan, canonical, PlanId.make(digest), projection.success)
   })
 }
 

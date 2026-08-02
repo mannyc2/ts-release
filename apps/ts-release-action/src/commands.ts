@@ -1,8 +1,12 @@
+import * as Schema from "effect/Schema"
 import { realpathSync } from "node:fs"
-import { basename, dirname, isAbsolute, relative, resolve } from "node:path"
+import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path"
+import {
+  encodeResolvedConfig, ExecutionReviewId, OperationId, PlanId, PublishReviewId,
+  resolveConfig, Stage
+} from "@mannyc1/ts-release"
 import type {
-  ApplyInput, ExecutionReviewId, ExecutionScopeInput, OperationId,
-  OperatorResolution, PlanId, PublishReviewId, ReleaseApi, Stage
+  ApplyInput, ExecutionScopeInput, OperatorResolution, ReleaseApi
 } from "@mannyc1/ts-release"
 
 export const actionCommands = ["plan", "apply", "doctor"] as const
@@ -12,6 +16,10 @@ export const actionOutputs = [
 ] as const
 export interface ActionRuntime {
   readonly workspace: string
+  // The commit the workflow is running against, observed by the entry module
+  // from GITHUB_SHA — the same layer the workspace comes from. Absent outside a
+  // GitHub runner, which makes `resolve: github` refuse rather than invent one.
+  readonly commit?: string | undefined
   readonly input: (name: string) => string
   readonly output: (name: typeof actionOutputs[number], value: string) => void
   readonly read: (path: string) => string
@@ -23,9 +31,9 @@ const optional = (runtime: ActionRuntime, name: string): string | undefined => {
   const value = runtime.input(name).trim()
   return value.length === 0 ? undefined : value
 }
-const inside = (root: string, candidate: string): string => {
+export const inside = (root: string, candidate: string): string => {
   const fromRoot = relative(root, candidate)
-  if (fromRoot === ".." || fromRoot.startsWith("../") || isAbsolute(fromRoot)) {
+  if (fromRoot === ".." || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
     throw new Error("Action path is outside GITHUB_WORKSPACE.")
   }
   return candidate
@@ -38,12 +46,15 @@ const containedOutput = (root: string, path: string): string => {
 }
 const scope = (value: string | undefined): ExecutionScopeInput => value === undefined || value === "all"
   ? "all"
-  : { operationIds: value.split(",").filter(Boolean).map((id) => id as OperationId) }
+  : { operationIds: value.split(",").filter(Boolean).map((id) => OperationId.make(id)) }
+// The api is the validator; the Action only keeps JSON parse errors readable.
 const resolutions = (value: string | undefined): ReadonlyArray<OperatorResolution> | undefined => {
   if (value === undefined) return undefined
-  const parsed = JSON.parse(value) as unknown
-  if (!Array.isArray(parsed)) throw new Error("resolutions must be a JSON array.")
-  return parsed as Array<OperatorResolution>
+  try {
+    return JSON.parse(value) as Array<OperatorResolution>
+  } catch {
+    throw new Error("resolutions must be valid JSON.")
+  }
 }
 const accepted = (runtime: ActionRuntime, root: string) => {
   const path = optional(runtime, "plan-path")
@@ -52,8 +63,46 @@ const accepted = (runtime: ActionRuntime, root: string) => {
   if (planId === undefined) throw new Error("plan-id is required.")
   return {
     planBytes: runtime.read(contained(root, path)),
-    expectedPlanId: planId as PlanId
+    expectedPlanId: PlanId.make(planId)
   }
+}
+// Facts the runner already knows. Read here and passed to the library's pure
+// resolver as a value; the Action observes, it never infers.
+const githubFacts = (runtime: ActionRuntime, root: string): Record<string, string> => {
+  const manifest = (() => {
+    try {
+      return JSON.parse(runtime.read(contained(root, "package.json"))) as {
+        name?: unknown, version?: unknown
+      }
+    } catch {
+      return {}
+    }
+  })()
+  return {
+    ...(runtime.commit === undefined || runtime.commit.length === 0
+      ? {}
+      : { commit: runtime.commit }),
+    ...(typeof manifest.name === "string" && manifest.name.length > 0
+      ? { manifestName: manifest.name }
+      : {}),
+    ...(typeof manifest.version === "string" && manifest.version.length > 0
+      ? { manifestVersion: manifest.version }
+      : {})
+  }
+}
+const planConfig = (
+  runtime: ActionRuntime, root: string, source: string, planPath: string
+): unknown => {
+  const authored = JSON.parse(runtime.read(source)) as unknown
+  const mode = optional(runtime, "resolve")
+  if (mode === undefined) return authored
+  if (mode !== "github") {
+    throw new Error(`resolve must be empty or "github", got ${JSON.stringify(mode)}.`)
+  }
+  const config = resolveConfig(authored, githubFacts(runtime, root))
+  // The reviewable IR beside the plan it produced. Advisory: nothing reads it.
+  runtime.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config))
+  return config
 }
 const planAction = async (
   api: ReleaseCommands,
@@ -61,8 +110,11 @@ const planAction = async (
   root: string
 ): Promise<void> => {
   const source = contained(root, optional(runtime, "config") ?? "release.config.json")
-  const result = await api.plan({ config: JSON.parse(runtime.read(source)) as unknown, workspace: root })
   const output = containedOutput(root, optional(runtime, "plan-path") ?? "release-plan.json")
+  const result = await api.plan({
+    config: planConfig(runtime, root, source, optional(runtime, "plan-path") ?? "release-plan.json"),
+    workspace: root
+  })
   runtime.write(output, result.bytes)
   runtime.output("plan_id", result.planId)
   runtime.output("status", "planned")
@@ -93,8 +145,12 @@ const applyInput = (runtime: ActionRuntime, root: string): ApplyInput => {
     throw new Error("confirm-execution is required for a new run.")
   }
   const publish = optional(runtime, "confirm-publish")
-  const through = optional(runtime, "through") as Stage | undefined
+  const throughInput = optional(runtime, "through")
+  const through = throughInput === undefined
+    ? undefined
+    : Schema.decodeUnknownSync(Stage)(throughInput)
   const reconcile = optional(runtime, "reconcile")
+  const retry = optional(runtime, "retry")
   const resolutionItems = resolutions(optional(runtime, "resolutions"))
   const reason = optional(runtime, "reason")
   return {
@@ -103,18 +159,21 @@ const applyInput = (runtime: ActionRuntime, root: string): ApplyInput => {
     ...(newRunPath === undefined ? { resumeRunPath: resumeRunPath! } : {
       newRun: {
         path: newRunPath, scope: scope(optional(runtime, "scope")),
-        executionReviewId: review! as ExecutionReviewId, reviewer,
+        executionReviewId: ExecutionReviewId.make(review!), reviewer,
         ...(reason === undefined ? {} : { reason })
       }
     }),
     ...(through === undefined ? {} : { through }),
     ...(publish === undefined ? {} : {
-      publishConfirmation: { publishReviewId: publish as PublishReviewId, reviewer }
+      publishConfirmation: { publishReviewId: PublishReviewId.make(publish), reviewer }
     }),
     ...(reconcile === undefined ? {} : {
-      reconcile: reconcile.split(",").filter(Boolean).map((id) => id as OperationId)
+      reconcile: reconcile.split(",").filter(Boolean).map((id) => OperationId.make(id))
     }),
-    ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems })
+    ...(resolutionItems === undefined ? {} : { resolutions: resolutionItems }),
+    ...(retry === undefined ? {} : {
+      retry: retry.split(",").filter(Boolean).map((id) => OperationId.make(id))
+    })
   }
 }
 const applyAction = async (

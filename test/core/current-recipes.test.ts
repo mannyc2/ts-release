@@ -2,6 +2,7 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as Effect from "effect/Effect"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { PackageRegistryRelease } from "../../src/model/operation.js"
 import type { ContentValue, Operation } from "../../src/model/operation.js"
 import {
   NonEmptyName,
@@ -49,7 +50,7 @@ describe("Plan 176 current recipe port", () => {
         candidate._tag === "Write" && candidate.id === `catalog:${item[1]}:render`)
       if (operation?._tag !== "Write") throw new Error("Missing catalog preset write.")
       expect(render(operation.content, item[3])).toBe(readFileSync(
-        join(root, "test", "fixtures", "rewrite", "public", item[0], item[2]),
+        join(root, "test", "fixtures", "public", item[0], item[2]),
         "utf8"
       ))
     })
@@ -69,7 +70,7 @@ describe("Plan 176 current recipe port", () => {
 
   test("custom publishers cannot masquerade as local Exec", async () => {
     const input = JSON.parse(readFileSync(
-      join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),
+      join(root, "test", "fixtures", "oracle", "command-builder.json"),
       "utf8"
     ))
     input.publish.custom = [{
@@ -90,13 +91,42 @@ describe("Plan 176 current recipe port", () => {
     expect(custom?.argv.length).toBeGreaterThan(0)
   })
 
+  test("deriving a download URL without any repository refuses instead of interpolating undefined", async () => {
+    const config = {
+      project: {
+        name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123",
+        description: "fixture", homepage: "https://example.invalid"
+      },
+      artifacts: [{ id: "cli", path: "dist/cli", format: "executable" }],
+      publish: {
+        homebrew: {
+          repository: "owner/homebrew-tap", formulaName: "cli",
+          formulaPath: ".release/cli.rb", ids: ["cli"]
+        }
+      }
+    }
+    const failure = await Effect.runPromise(compilePlan(config, Invocation.make({
+      workspace: WorkspaceRoot.make(root),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    })).pipe(Effect.flip))
+    expect(failure._tag).toBe("ConfigValueError")
+    expect(String((failure as { reason?: unknown }).reason)).toContain(
+      "publish.github.repository, project.repository, or an explicit url"
+    )
+  })
+
   test("agent-plugin renders both marketplace catalogs to exact public bytes", async () => {
     const accepted = await compile("agent-plugin")
+    // Only sha256 is still a hole: the download URL is knowable at plan time and
+    // is lowered as a literal, so this table no longer stands in for it. That
+    // hand-fed entry was the blind spot — the driver THROWS on a downloadUrl
+    // hole, so the example planned cleanly and could never have applied.
     const facts: Readonly<Record<string, string>> = {
-      "sha256:plugin": "3f7c1c0e9d4b5a68721c3d0f8e5a9b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a",
-      "downloadUrl:plugin":
-        "https://github.com/owner/agent-plugin/releases/download/v0.1.0/release-example-agent-plugin_0.1.0.zip"
+      "sha256:plugin": "3f7c1c0e9d4b5a68721c3d0f8e5a9b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a"
     }
+    const downloadUrl =
+      "https://github.com/owner/agent-plugin/releases/download/v0.1.0/release-example-agent-plugin_0.1.0.zip"
     const renderFacts = (content: ContentValue): string => typeof content === "string"
       ? content
       : content.map((part) =>
@@ -108,8 +138,16 @@ describe("Plan 176 current recipe port", () => {
       const operation = accepted.plan.stages.catalog.find((candidate) =>
         candidate._tag === "Write" && candidate.id === `catalog:${id}:render`)
       if (operation?._tag !== "Write") throw new Error(`Missing ${id} catalog write.`)
+      // No downloadUrl hole survives to reach the driver, which would throw on
+      // one; the claude catalog carries the derived URL as a literal instead.
+      expect(typeof operation.content === "string" ? [] : operation.content.filter(
+        (part) => typeof part !== "string" && part.fact === "downloadUrl"
+      )).toEqual([])
+      if (id === "claude-marketplace") {
+        expect(renderFacts(operation.content)).toContain(downloadUrl)
+      }
       expect(renderFacts(operation.content)).toBe(readFileSync(
-        join(root, "test", "fixtures", "rewrite", "public", "agent-plugin", fixture),
+        join(root, "test", "fixtures", "public", "agent-plugin", fixture),
         "utf8"
       ))
     }
@@ -137,7 +175,7 @@ describe("Plan 176 current recipe port", () => {
 
   test("typed variables are substituted as value tokens without evaluation", async () => {
     const config = JSON.parse(readFileSync(
-      join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),
+      join(root, "test", "fixtures", "oracle", "command-builder.json"),
       "utf8"
     ))
     config.builds[0].run = ["tool", "{name}", "{version}", "{target}", "{binary}", "{ext}"]
@@ -150,5 +188,74 @@ describe("Plan 176 current recipe port", () => {
     expect(operation?._tag === "Exec" ? operation.argv : []).toEqual([
       "tool", "fixture", "1.0.0", "linux-x64", "fixture", ""
     ])
+  })
+
+  test("registry URLs pass the provider HTTPS policy and keep their spelling", async () => {
+    const dogfood = JSON.parse(readFileSync(
+      join(root, "apps/release-ts/release.config.json"),
+      "utf8"
+    )) as { publish: { npm: { registry?: string } } }
+    const compileWith = (registry: string) => {
+      const mutated = structuredClone(dogfood)
+      mutated.publish.npm.registry = registry
+      return Effect.runPromise(compilePlan(mutated, Invocation.make({
+        workspace: WorkspaceRoot.make(root),
+        commit: NonEmptyName.make("abc123"),
+        snapshot: false
+      })))
+    }
+    await expect(compileWith("http://registry.example")).rejects.toThrow()
+    await expect(compileWith("https://localhost/registry")).rejects.toThrow()
+    // The lowering failure keeps its TAG through the planning boundary; it
+    // used to arrive flattened into an untyped PlanningFactsError string.
+    await expect(compileWith("http://registry.example")).rejects.toMatchObject({
+      _tag: "ConfigValueError",
+      reason: "Provider URL violates the closed HTTPS/DNS policy."
+    })
+    const accepted = await compileWith("https://registry.npmjs.org/")
+    const npm = operationEntries(accepted.plan)
+      .map(({ operation }) => operation)
+      .find((candidate): candidate is PackageRegistryRelease =>
+        candidate._tag === "PackageRegistryRelease" && candidate.registryKind === "npm")
+    if (npm === undefined) throw new Error("Missing npm release operation.")
+    // The policy validates; the row keeps the caller's exact spelling so
+    // shipped plan bytes stay stable.
+    expect(npm.registryUrl).toBe("https://registry.npmjs.org/")
+    expect(npm.probeUrl.startsWith("https://registry.npmjs.org/")).toBe(true)
+  })
+
+  // The lowering steps share one mutable CurrentRows and read each other's
+  // outputs by bare id, so their CALL ORDER in current.ts decides plan bytes.
+  // These assertions are that order's pin: each one fails if the producing
+  // step stops running before its consumer.
+  test("the lowering order is load-bearing: later steps consume earlier outputs", async () => {
+    const config = {
+      project: { name: "ordering", version: "1.0.0", tag: "v1.0.0" },
+      publish: {
+        changelog: {
+          groups: [],
+          mode: "reviewed-transform",
+          pathFilters: [],
+          profileId: "changelog.reviewed-transform/v1"
+        },
+        announce: [{
+          id: "smtp", profileId: "announce.smtp/v1",
+          destination: "release@example.com", credentialEnv: "SMTP_TOKEN"
+        }]
+      }
+    }
+    const accepted = await Effect.runPromise(compilePlan(config, Invocation.make({
+      workspace: WorkspaceRoot.make(root),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    })))
+    const operations = operationEntries(accepted.plan).map(({ operation }) => operation)
+    const notes = operations.find((operation) => operation.outputs.some((output) =>
+      String(output.id) === "final-notes"))
+    expect(notes).toBeDefined()
+    // lowerCurrentChangelog runs BEFORE lowerCurrentAnnouncements, so the
+    // announcement binds the reviewed notes rather than refusing.
+    const announcement = operations.find((operation) => operation._tag === "SmtpPublish")
+    expect(announcement?.inputs.map(String)).toEqual(["final-notes"])
   })
 })

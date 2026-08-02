@@ -1,9 +1,33 @@
 # ts-release
 
-`ts-release` turns an in-memory release configuration into canonical,
-reviewable plan bytes, then applies only those accepted bytes. It is a Bun
-and TypeScript release tool built around explicit authority, staged
-publication, and a durable run ledger.
+Release a TypeScript or Bun project to npm, GitHub Releases, Homebrew, Scoop,
+and PyPI with one command — and get a durable record of what happened.
+
+```sh
+ts-release ship --from-git
+```
+
+What you get for that:
+
+- **A release that resumes.** Every run writes a ledger. If publishing dies
+  after npm and before the GitHub release, the next run continues from there
+  instead of starting over.
+- **Approvals that mean something.** What executes is the exact plan that was
+  reviewed, byte for byte. Approving names a `PlanId`, and the receipt in the
+  ledger says who approved it.
+- **Honest records when nobody reviewed.** Releasing unreviewed is fine and
+  common — the ledger just says so, so you can tell the two apart forever.
+- **A CI pipeline you do not write.** Ten lines call a reusable workflow that
+  stages plan, materialize, and publish behind your environment's approval
+  rules.
+
+### Is this GoReleaser for TypeScript?
+
+Not quite, in both directions. ts-release compiles your configuration into a
+reviewable plan and executes only those bytes, with a durable ledger for
+partial failures; its target matrix is smaller. If you release Go projects, use
+GoReleaser. The per-axis answer, with every row machine-checked against this
+repository's code, is in [docs/comparison.md](docs/comparison.md).
 
 ## Install
 
@@ -11,7 +35,60 @@ publication, and a durable run ledger.
 bun add -d @mannyc1/ts-release
 ```
 
-The supported runtime is Bun 1.3.14 or newer.
+```sh
+npm i -D @mannyc1/ts-release
+```
+
+`effect`, `@effect/platform-node`, and `@effect/platform-bun` are peer
+dependencies; npm 7+ and bun install them for you. The published executable is
+a Node bundle, so `npx ts-release` works without Bun. Hosts are Linux and
+macOS; Windows is a supported release target only (use WSL to run ts-release on
+a Windows machine).
+
+## Quickstart
+
+```sh
+ts-release init --template npm-only --write
+ts-release ship --from-git
+```
+
+`init` writes a configuration from a template. `ship` plans it, prints the
+review surface, confirms it itself, and applies through verification — one
+process, one command.
+
+When you want an independent approver, split the same release into the staged
+commands (see [CLI](#cli)) or call the composed workflow in CI (see
+[GitHub Action](#github-action)). Same configuration, same plan file, same run
+ledger; nothing to migrate.
+
+## Approvals and who approved
+
+Every run records an approver identity in its ledger receipts, and the identity
+tells you what kind of run it was:
+
+- `self:one-shot` — one process planned, confirmed, and applied. Nobody
+  independent looked.
+- `self:one-shot@github:<actor>` — the same, in CI, where the environment had
+  no protection rules. The workflow probes for them rather than assuming.
+- `environment:<name>@github:<actor>` — a protected environment gated the run,
+  and this actor approved it.
+- Any other string — a staged release, where whoever ran `apply` named
+  themselves.
+
+The carrier is the run ledger's approval receipts. Your run ledgers therefore
+prove which of your releases had an independent reviewer, long after everyone
+has forgotten.
+
+## When a release stops halfway
+
+A stopped run resumes; it does not restart. A publication whose outcome is
+genuinely unknown stops the run and stays unknown until a person observes the
+remote (`--reconcile`), judges it (`--resolutions`), or re-attempts something
+proven absent (`--retry`). Nothing recovers automatically, in CI or one-shot
+mode, because every one of those is a judgment about the outside world.
+
+The full map from state to command is in
+[docs/recovery.md](docs/recovery.md).
 
 ## Configuration
 
@@ -41,6 +118,43 @@ to the library once.
 Every public fixture contains the complete fields required by its package or
 provider surface. Homebrew and Scoop lowering use product-owned immutable
 presets; applications cannot register or replace profiles.
+
+That value is what the library plans. What you WRITE can be terser: state a
+repository once and let the release facts be observed.
+
+```json
+{
+  "project": {
+    "name": "@scope/example"
+  },
+  "versionFrom": "manifest",
+  "artifacts": [
+    {
+      "id": "cli",
+      "path": "dist/example",
+      "format": "executable"
+    }
+  ],
+  "publish": {}
+}
+```
+
+```sh
+ts-release ship --config release.config.json --from-git
+```
+
+`--from-git` observes the HEAD commit, the single release-shaped tag at HEAD,
+and the package manifest's name and version, then resolves them into the
+canonical configuration above — writing it to `.release/resolved.config.json`
+for review. The GitHub Action does the same with `resolve: github`.
+
+Resolution never picks a side. A value you stated and a value the repository
+reports are either equal or a refusal naming both; a version that cannot be
+observed is a refusal naming how to state it; two release-shaped tags at HEAD
+are an ambiguity, not a coin flip. Without `--from-git` nothing is observed at
+all, and a config carrying `versionFrom` or `project.tagTemplate` is refused by
+the core — those are authoring directives, and the canonical world has never
+heard of them.
 
 ## Promise API
 
@@ -82,7 +196,7 @@ const materialized = await apply({
   workspace: "/absolute/real/workspace",
   through: "validate",
   newRun: {
-    path: ".release/run.json",
+    path: ".release/runs",
     scope: "all",
     executionReviewId: review.executionReviewId,
     reviewer: "release-team"
@@ -95,7 +209,7 @@ if (materialized.nextPublishReviewId !== undefined) {
     expectedPlanId: planned.planId as PlanId,
     workspace: "/absolute/real/workspace",
     through: "verify",
-    resumeRunPath: ".release/run.json",
+    resumeRunPath: ".release/runs",
     publishConfirmation: {
       publishReviewId: materialized.nextPublishReviewId,
       reviewer: "release-team"
@@ -124,6 +238,9 @@ import { makeReleaseApi } from "@mannyc1/ts-release"
 import { BunReleaseLayer } from "@mannyc1/ts-release/bun"
 
 const release = makeReleaseApi(BunReleaseLayer)
+const config = {
+  project: { name: "@scope/example", version: "1.2.3", tag: "v1.2.3", commit: "abc123" }
+}
 const planned = await release.plan({
   config,
   workspace: "/absolute/real/workspace"
@@ -141,14 +258,27 @@ their shapes, the permit classes an `ApprovalSigner` returns, and
 
 ## CLI
 
-The installed CLI has exactly four commands:
+The installed CLI has exactly five commands:
 
 ```text
 ts-release init
 ts-release doctor
 ts-release plan
 ts-release apply
+ts-release ship
 ```
+
+One command releases everything a config describes:
+
+```sh
+ts-release ship --config release.config.json
+```
+
+`ship` plans, prints the review surface, confirms it itself, and applies
+through verify in one process. Because nobody independent approved, both
+approval receipts in the run ledger record the reviewer `self:one-shot`. When
+you want an independent approver between materialize and publish, split into
+the staged commands below — same plan file, same run ledger, no migration.
 
 The canonical staged flow is:
 
@@ -165,7 +295,7 @@ ts-release apply release-plan.json \
 ts-release apply release-plan.json \
   --plan-id PLAN_ID \
   --through validate \
-  --new-run .release/run.json \
+  --new-run .release/runs \
   --scope all \
   --confirm-execution EXECUTION_REVIEW_ID \
   --reviewer release-team
@@ -173,7 +303,7 @@ ts-release apply release-plan.json \
 ts-release apply release-plan.json \
   --plan-id PLAN_ID \
   --through verify \
-  --resume .release/run.json \
+  --resume .release/runs \
   --confirm-publish PUBLISH_REVIEW_ID \
   --reviewer release-team
 ```
@@ -189,16 +319,49 @@ workspace must exist and is normalized with `realpath`.
 
 ## GitHub Action
 
+The whole staged pipeline, in a workflow you do not have to write:
+
+```yaml
+name: Release
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  release:
+    uses: mannyc2/ts-release-action/.github/workflows/release.yml@v0
+    with:
+      config: release.config.json
+      environment: release
+      bun-version: "1.3.14"
+      setup: bun install --frozen-lockfile
+    secrets: inherit
+```
+
+Three jobs run: `plan` compiles and reviews with no gate, then `materialize`
+and `publish` sit behind the environment you named. The plan id and the review
+challenges thread between them, and the plan a human approves is byte-identical
+to the plan that is applied.
+
+Protect that environment in Settings → Environments to require an approval
+between the stages. Leave it unprotected and the same pipeline runs one-shot —
+which is a legitimate way to run it, and the durable receipts say so: the
+reviewer is probed from the environment's real protection rules, recording
+`environment:...` when they exist and `self:one-shot@...` when they do not.
+
+Composing it yourself is still first-class — this is what the reusable workflow
+does on your behalf:
+
 ```yaml
 - id: plan
-  uses: mannyc2/ts-release/apps/ts-release-action@main
+  uses: mannyc2/ts-release-action@v0
   with:
     command: plan
     config: release.config.json
     plan-path: .release/release-plan.json
 
 - id: review
-  uses: mannyc2/ts-release/apps/ts-release-action@main
+  uses: mannyc2/ts-release-action@v0
   with:
     command: apply
     review-only: "true"
@@ -259,6 +422,12 @@ run-bound publish receipt.
 
 Unknown publication outcomes stop for reconciliation or an explicit
 operator resolution with operation id, identity, reason, and timestamp.
+
+## Releasing this repository
+
+The operator procedure — preconditions, what to read in the plan artifact
+before approving each environment, the mirror push, and the smoke checks — is
+[docs/release-runbook.md](docs/release-runbook.md).
 
 ## Development
 

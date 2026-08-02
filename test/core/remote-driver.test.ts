@@ -2,7 +2,9 @@ import { describe, expect, test } from "@effect/bun-test"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as HttpClient from "effect/unstable/http/HttpClient"
 import { LiveDriversLayer } from "../../src/drivers/local.js"
+import { makeCatalog } from "../../src/drivers/remote.js"
 import {
   CatalogPublishRequest,
   DriverCatalog,
@@ -23,9 +25,10 @@ import {
   OutputId,
   ProfileId,
   SafeRelativePath,
-  SnapshotId
+  SnapshotId,
+  WorkspaceRoot
 } from "../../src/model/primitives.js"
-import { MaterializedOutput, type DriverError } from "../../src/model/run.js"
+import { DriverError, MaterializedOutput } from "../../src/model/run.js"
 import {
   recordingHttpClient,
   recordingSpawner,
@@ -75,7 +78,8 @@ const facts = MaterializedOutput.make({
 })
 const request = (operation: typeof forge | typeof http | typeof opaque, checkpointId: string) =>
   CatalogPublishRequest.make({
-    operation, checkpointId: CheckpointId.make(checkpointId),
+    operation, root: WorkspaceRoot.make("/workspace-root"),
+    checkpointId: CheckpointId.make(checkpointId),
     clientReconciliationKey: "stable-key"
   })
 const handle = () => VerifiedContentHandle.from(
@@ -226,6 +230,7 @@ describe("remote driver transports", () => {
     expect(result.commands).toHaveLength(1)
     expect(result.commands[0]?.argv).toEqual(["publisher", "--now"])
     expect(result.commands[0]?.env).toEqual({ PATH: "/usr/bin", OPAQUE_TOKEN: "secret" })
+    expect(result.commands[0]?.cwd).toBe("/workspace-root")
   })
 
   test("a nonzero publisher exit is a commitment the client cannot resolve", async () => {
@@ -237,5 +242,41 @@ describe("remote driver transports", () => {
     expect(outcome).toMatchObject({
       _tag: "CommitmentUnknown", failure: "Publisher exited 7 after dispatch."
     })
+  })
+
+  test("a publisher that never starts resolves retryable, not dead or unknown", async () => {
+    const catalog = makeCatalog(() => Effect.die("structured is unused"), {
+      client: HttpClient.make(() => Effect.die("http is unused")),
+      run: () => Effect.fail(DriverError.make({
+        reason: "spawn ENOENT",
+        commitment: "before-commit"
+      }))
+    })
+    const outcome = await Effect.runPromise(
+      catalog.publish(request(opaque, "dispatch"), undefined, "token")
+    )
+    expect(outcome).toMatchObject({
+      _tag: "NotDispatched",
+      reason: "Publisher could not start: spawn ENOENT",
+      retryable: true
+    })
+  })
+
+  test("repository must be owner/name; other spellings refuse at construction", () => {
+    expect(() => ForgeRelease.make({ ...forge, repository: "owner/name/extra?x=1" })).toThrow()
+    expect(() => ForgeRelease.make({ ...forge, repository: "owner" })).toThrow()
+    expect(ForgeRelease.make({ ...forge, repository: "owner-2/repo.name_x" }).repository)
+      .toBe("owner-2/repo.name_x")
+  })
+
+  test("http publication transmits the reconciliation key as the idempotency key", async () => {
+    const result = await withCatalog(
+      () => ({ status: 204 }),
+      () => ({ exitCode: 0 }),
+      ({ exchanges }) => publish(request(http, "dispatch")).pipe(
+        Effect.map((outcome) => ({ outcome, exchanges: [...exchanges] })))
+    )
+    expect(result.outcome._tag).toBe("Committed")
+    expect(result.exchanges[0]?.headers["idempotency-key"]).toBe("stable-key")
   })
 })

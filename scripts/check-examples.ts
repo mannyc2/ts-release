@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path"
 import { BunReleaseLayer } from "../src/platform/bun.js"
 import { CatalogStructuredRequest, DriverCatalog } from "../src/drivers/services.js"
 import { WorkspaceRoot } from "../src/model/primitives.js"
-import { plan } from "../src/index.js"
+import { plan, resolveConfig } from "../src/index.js"
 import { encodeCanonicalJson } from "./lib/canonical-json.js"
 
 const root = process.cwd()
@@ -23,9 +23,16 @@ const walk = (directory: string): void => {
 walk(resolve(root, "examples"))
 walk(resolve(root, "templates"))
 
+// Templates scaffold what a USER writes, so they state no commit — the CLI's
+// `--from-git` observes it. The gate therefore resolves them the same way, with
+// one fixed fact, instead of asking templates to carry a placeholder identity.
+const TEMPLATE_COMMIT = "0000000000000000000000000000000000000000"
 for (const path of configs) {
   const workspace = dirname(path)
-  const config = JSON.parse(readFileSync(path, "utf8")) as unknown
+  const authored = JSON.parse(readFileSync(path, "utf8")) as unknown
+  const config = path.includes("/templates/")
+    ? resolveConfig(authored, { commit: TEMPLATE_COMMIT })
+    : authored
   const result = await plan({ config, workspace })
   const returnedPlan = JSON.parse(JSON.stringify(result.plan)) as unknown
   if (encodeCanonicalJson(returnedPlan) !== result.bytes) {

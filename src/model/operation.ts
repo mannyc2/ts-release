@@ -70,7 +70,14 @@ export class HttpPublish extends Schema.TaggedClass<HttpPublish>()("HttpPublish"
   credential: PublishCredential
 }) {}
 export class ForgeRelease extends Schema.TaggedClass<ForgeRelease>()("ForgeRelease", {
-  ...row, repository: Schema.NonEmptyString, tag: Schema.NonEmptyString,
+  ...row,
+  repository: Schema.String.check(
+    Schema.makeFilter((value: string) =>
+      /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value)
+        ? undefined
+        : "Repository must be owner/name.")
+  ),
+  tag: Schema.NonEmptyString,
   title: Schema.NonEmptyString, draft: Schema.Boolean, prerelease: Schema.Boolean,
   assets: Schema.Array(Schema.Struct({
     outputId: OutputId, path: SafeRelativePath, name: Schema.NonEmptyString,
@@ -169,7 +176,12 @@ export const mechanismTags = [
   "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
   "HttpPublish", "ForgeRelease", "PackageRegistryRelease", "AnnouncementPublish", "SmtpPublish",
   "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
-] as const
+] as const satisfies ReadonlyArray<Operation["_tag"]>
+// `satisfies` only proves every listed tag is real. This proves the converse:
+// a 17th operation that never reaches the list fails the build here.
+type UnlistedMechanismTag = Exclude<Operation["_tag"], typeof mechanismTags[number]>
+const _mechanismTagsAreComplete: UnlistedMechanismTag extends never ? true : never = true
+void _mechanismTagsAreComplete
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
 
 export type RemotePublishOp =

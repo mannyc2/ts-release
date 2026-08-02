@@ -66,7 +66,7 @@ jobs:
           plan-path: .release/release-plan.json
           plan-id: ${{ needs.plan.outputs.plan_id }}
           through: validate
-          new-run: .release/run.json
+          new-run: .release/runs
           scope: all
           confirm-execution: ${{ needs.plan.outputs.execution_review_id }}
           reviewer: ${{ github.actor }}
@@ -100,6 +100,6 @@ jobs:
           plan-path: .release/release-plan.json
           plan-id: ${{ needs.plan.outputs.plan_id }}
           through: verify
-          resume: .release/run.json
+          resume: .release/runs
           confirm-publish: ${{ needs.materialize.outputs.publish_review_id }}
           reviewer: ${{ github.actor }}

@@ -1,0 +1,32 @@
+# Proof on real GitHub that the reusable workflow's three-job chain runs: the
+# structural tests pin its shape, but only a dispatch proves GitHub agrees.
+#
+# The fixture publishes NOTHING — one artifact and a checksum, `publish: {}` —
+# so the whole chain (plan → materialize through validate → resume through
+# verify) completes without a single remote operation. The environment is
+# deliberately unprotected, so the run also exercises the reviewer probe's
+# ungated arm: the receipts in the uploaded materialized artifact must carry the
+# `self:` prefix.
+#
+# Dispatch this after any change to ts-release-release.yml. See
+# docs/release-runbook.md.
+name: Workflow smoke
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/ts-release-release.yml
+    with:
+      config: test/fixtures/workflow-smoke/release.config.json
+      environment: workflow-smoke
+      plan-path: .release/release-plan.json
+      runs-path: .release/runs
+      bun-version: "1.3.14"
+      setup: bun install --frozen-lockfile
+      artifact-prefix: workflow-smoke
+    secrets: inherit

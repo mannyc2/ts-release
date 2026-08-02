@@ -1,0 +1,2453 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
+  "title": "ts-release configuration",
+  "description": "The authored configuration: the canonical shape with the facts a repository can observe made optional. `ts-release plan --from-git` resolves it into the canonical value before planning.",
+  "$ref": "#/$defs/AuthoredConfig",
+  "$defs": {
+    "AuthoredProject": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "packageName": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "version": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "packagePath": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "tag": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "homepage": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "license": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "tagTemplate": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateGitPolicy": {
+      "type": "object",
+      "properties": {
+        "tagPrefix": {
+          "type": "string"
+        },
+        "tagSort": {
+          "type": "string",
+          "enum": [
+            "smart-semver"
+          ]
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectExecution": {
+      "type": "object",
+      "properties": {
+        "workers": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "through": {
+          "type": "string",
+          "enum": [
+            "build",
+            "process",
+            "catalog",
+            "validate",
+            "publish",
+            "announce",
+            "verify"
+          ]
+        }
+      },
+      "required": [
+        "workers",
+        "through"
+      ],
+      "additionalProperties": false
+    },
+    "ProjectScope": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "root": {
+          "type": "string"
+        },
+        "tagPrefix": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "changelogScope": {
+          "type": "string"
+        },
+        "execution": {
+          "$ref": "#/$defs/ProjectExecution"
+        }
+      },
+      "required": [
+        "id",
+        "root",
+        "tagPrefix",
+        "execution"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateBunBuild": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "linux-x64",
+              "linux-arm64",
+              "linux-x64-musl",
+              "linux-arm64-musl",
+              "darwin-x64",
+              "darwin-arm64",
+              "windows-x64",
+              "windows-arm64"
+            ]
+          }
+        },
+        "output": {
+          "type": "string"
+        },
+        "binary": {
+          "type": "string"
+        },
+        "builder": {
+          "type": "string",
+          "enum": [
+            "bun"
+          ]
+        },
+        "entry": {
+          "type": "string"
+        },
+        "binaryName": {
+          "type": "string"
+        },
+        "installPath": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string",
+          "enum": [
+            "baseline",
+            "modern"
+          ]
+        },
+        "minify": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "targets",
+        "builder",
+        "entry"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateCommandBuild": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "linux-x64",
+              "linux-arm64",
+              "linux-x64-musl",
+              "linux-arm64-musl",
+              "darwin-x64",
+              "darwin-arm64",
+              "windows-x64",
+              "windows-arm64"
+            ]
+          }
+        },
+        "output": {
+          "type": "string"
+        },
+        "binary": {
+          "type": "string"
+        },
+        "builder": {
+          "type": "string",
+          "enum": [
+            "command"
+          ]
+        },
+        "run": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "targets",
+        "output",
+        "builder",
+        "run"
+      ],
+      "additionalProperties": false
+    },
+    "CandidatePrebuiltBuild": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "linux-x64",
+              "linux-arm64",
+              "linux-x64-musl",
+              "linux-arm64-musl",
+              "darwin-x64",
+              "darwin-arm64",
+              "windows-x64",
+              "windows-arm64"
+            ]
+          }
+        },
+        "output": {
+          "type": "string"
+        },
+        "binary": {
+          "type": "string"
+        },
+        "builder": {
+          "type": "string",
+          "enum": [
+            "prebuilt"
+          ]
+        }
+      },
+      "required": [
+        "targets",
+        "output",
+        "builder"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateProfileOutput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateProfileBuild": {
+      "type": "object",
+      "properties": {
+        "builder": {
+          "type": "string",
+          "enum": [
+            "profile"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "profileId": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateProfileOutput"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateProfileOutput"
+          }
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      "NaN"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      "Infinity"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      "-Infinity"
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "builder",
+        "id",
+        "profileId",
+        "inputs",
+        "outputs",
+        "options"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateWheelBinary": {
+      "type": "object",
+      "properties": {
+        "os": {
+          "type": "string",
+          "enum": [
+            "linux",
+            "darwin",
+            "windows"
+          ]
+        },
+        "arch": {
+          "type": "string",
+          "enum": [
+            "x64",
+            "arm64"
+          ]
+        },
+        "sourcePath": {
+          "type": "string"
+        },
+        "wheelPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "os",
+        "arch",
+        "sourcePath",
+        "wheelPath"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateWheel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "wheelTag": {
+          "type": "string"
+        },
+        "binaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateWheelBinary"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "wheelTag",
+        "binaries"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateWheelBuild": {
+      "type": "object",
+      "properties": {
+        "packageName": {
+          "type": "string"
+        },
+        "moduleName": {
+          "type": "string"
+        },
+        "consoleScript": {
+          "type": "string"
+        },
+        "requiresPython": {
+          "type": "string"
+        },
+        "wheels": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateWheel"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateWheel"
+          }
+        }
+      },
+      "required": [
+        "packageName",
+        "moduleName",
+        "consoleScript",
+        "requiresPython",
+        "wheels"
+      ],
+      "additionalProperties": false
+    },
+    "CandidatePlatform": {
+      "type": "object",
+      "properties": {
+        "os": {
+          "type": "string",
+          "enum": [
+            "linux",
+            "darwin",
+            "windows"
+          ]
+        },
+        "arch": {
+          "type": "string",
+          "enum": [
+            "x64",
+            "arm64"
+          ]
+        },
+        "libc": {
+          "type": "string",
+          "enum": [
+            "glibc",
+            "musl"
+          ]
+        },
+        "binaryName": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "executableExtension": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "installPath": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "targetTriple": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "os",
+        "arch"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateArtifact": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "tarball",
+            "zip",
+            "file",
+            "directory",
+            "oci-image",
+            "executable",
+            "binary"
+          ]
+        },
+        "checksum": {
+          "type": "object",
+          "properties": {
+            "algorithm": {
+              "type": "string",
+              "enum": [
+                "sha256",
+                "sha512"
+              ]
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "algorithm",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "variant": {
+          "$ref": "#/$defs/CandidatePlatform"
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "format"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateArchive": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "nameTemplate": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "tar.gz",
+              "zip"
+            ]
+          }
+        },
+        "formatOverrides": {
+          "type": "object",
+          "properties": {
+            "linux": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "tar.gz",
+                  "zip"
+                ]
+              }
+            },
+            "darwin": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "tar.gz",
+                  "zip"
+                ]
+              }
+            },
+            "windows": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "tar.gz",
+                  "zip"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "files": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "wrapInDirectory": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateChecksum": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": [
+            "sha256",
+            "sha512"
+          ]
+        },
+        "nameTemplate": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateContentHole": {
+      "type": "object",
+      "properties": {
+        "fact": {
+          "type": "string",
+          "enum": [
+            "sha256",
+            "downloadUrl",
+            "assetName"
+          ]
+        },
+        "artifact": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "fact",
+        "artifact"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateCatalog": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "string"
+        },
+        "content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/CandidateContentHole"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "commitMessage": {
+          "type": "string"
+        },
+        "submit": {
+          "type": "string",
+          "enum": [
+            "push",
+            "pull-request"
+          ]
+        },
+        "validate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "repository",
+        "file",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateBeforeHook": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "run": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "run"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateRiskHook": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "run": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "risk": {
+          "type": "string",
+          "enum": [
+            "writes-local",
+            "externally-visible",
+            "irreversible"
+          ]
+        },
+        "ids": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "run"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateBeforePublish": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "check",
+            "transform"
+          ]
+        },
+        "run": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "run"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateHooks": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateBeforeHook"
+          }
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateRiskHook"
+          }
+        },
+        "beforePublish": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateBeforePublish"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateSupplyOutput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateSupplyProfile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateSupplyOutput"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateSupplyOutput"
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "profile"
+          ]
+        },
+        "profileId": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "inputs",
+        "outputs",
+        "kind",
+        "profileId",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateSupplyMeasure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateSupplyOutput"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateSupplyOutput"
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "measure-size"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "inputs",
+        "outputs",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateNpmPublish": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "packageName": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "packagePath": {
+          "type": "string"
+        },
+        "tokenEnv": {
+          "type": "string"
+        },
+        "trustedPublishing": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": [
+                "github-actions"
+              ]
+            },
+            "workflow": {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            },
+            "verifyPackageExists": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "access": {
+          "type": "string",
+          "enum": [
+            "public",
+            "restricted"
+          ]
+        },
+        "provenance": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateGitHubPublish": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "tokenEnv": {
+          "type": "string"
+        },
+        "draft": {
+          "type": "boolean"
+        },
+        "prerelease": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "auto"
+              ]
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateHomebrew": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "ids": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "url": {
+          "type": "string"
+        },
+        "submit": {
+          "type": "string",
+          "enum": [
+            "push",
+            "pull-request"
+          ]
+        },
+        "validate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "formulaName": {
+          "type": "string"
+        },
+        "formulaPath": {
+          "type": "string"
+        },
+        "tapDirectory": {
+          "type": "string"
+        },
+        "installPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateScoop": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "ids": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "url": {
+          "type": "string"
+        },
+        "submit": {
+          "type": "string",
+          "enum": [
+            "push",
+            "pull-request"
+          ]
+        },
+        "validate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "manifestName": {
+          "type": "string"
+        },
+        "manifestPath": {
+          "type": "string"
+        },
+        "bucketDirectory": {
+          "type": "string"
+        },
+        "bin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository"
+      ],
+      "additionalProperties": false
+    },
+    "CandidatePyPiPublish": {
+      "type": "object",
+      "properties": {
+        "repositoryUrl": {
+          "type": "string"
+        },
+        "pythonExecutable": {
+          "type": "string"
+        },
+        "trustedPublishing": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": [
+                "github-actions"
+              ]
+            },
+            "workflow": {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            },
+            "publisherConfigured": {
+              "type": "boolean",
+              "enum": [
+                true
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "ids": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidatePackageStore": {
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "enum": [
+            "package.store-snap.v1",
+            "package.store-chocolatey.v1"
+          ]
+        },
+        "input": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            },
+            "channel": {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            },
+            "version": {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "profileId",
+        "input",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateChangelogGroup": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "subgroup": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "divider": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "title",
+        "prefix"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateChangelog": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "reviewed-transform"
+          ]
+        },
+        "profileId": {
+          "type": "string",
+          "enum": [
+            "changelog.local/v1",
+            "changelog.reviewed-transform/v1"
+          ]
+        },
+        "pathFilters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateChangelogGroup"
+          }
+        }
+      },
+      "required": [
+        "mode",
+        "profileId",
+        "pathFilters",
+        "groups"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateAnnouncement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "profileId": {
+          "type": "string",
+          "enum": [
+            "announce.index/v1",
+            "announce.bluesky/v1",
+            "announce.discord/v1",
+            "announce.discourse/v1",
+            "announce.linkedin/v1",
+            "announce.mastodon/v1",
+            "announce.mattermost/v1",
+            "announce.opencollective/v1",
+            "announce.reddit/v1",
+            "announce.slack/v1",
+            "announce.smtp/v1",
+            "announce.teams/v1",
+            "announce.telegram/v1",
+            "announce.x/v1",
+            "announce.webhook/v1"
+          ]
+        },
+        "destination": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "credentialEnv": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "profileId",
+        "destination",
+        "credentialEnv"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateSelection": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "formats": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "enum": [
+                "archive",
+                "file",
+                "directory",
+                "oci-image",
+                "executable",
+                "binary"
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "archive",
+              "file",
+              "directory",
+              "oci-image",
+              "executable",
+              "binary"
+            ]
+          }
+        },
+        "pathPrefixes": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CandidateNightly": {
+      "type": "object",
+      "properties": {
+        "replace": {
+          "type": "boolean",
+          "enum": [
+            true
+          ]
+        },
+        "tag": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "replace",
+        "tag"
+      ],
+      "additionalProperties": false
+    },
+    "CandidatePublish": {
+      "type": "object",
+      "properties": {
+        "npm": {
+          "$ref": "#/$defs/CandidateNpmPublish"
+        },
+        "github": {
+          "$ref": "#/$defs/CandidateGitHubPublish"
+        },
+        "homebrew": {
+          "$ref": "#/$defs/CandidateHomebrew"
+        },
+        "scoop": {
+          "$ref": "#/$defs/CandidateScoop"
+        },
+        "pypi": {
+          "$ref": "#/$defs/CandidatePyPiPublish"
+        },
+        "custom": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateRiskHook"
+          }
+        },
+        "packageStores": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidatePackageStore"
+          }
+        },
+        "providers": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "profileId": {
+                    "type": "string",
+                    "enum": [
+                      "forge.gitlab-release/v1",
+                      "forge.gitea-release/v1",
+                      "forge.gitlab-catalog-pr/v1",
+                      "forge.gitea-catalog-pr/v1",
+                      "forge.milestone-close/v1",
+                      "object.s3-put/v1",
+                      "object.gcs-put/v1",
+                      "object.azure-blob-put/v1",
+                      "repository.artifactory-upload/v1",
+                      "repository.cloudsmith-upload/v1",
+                      "repository.gemfury-upload/v1",
+                      "registry.dockerhub-description/v1",
+                      "registry.npm-publish/v1"
+                    ]
+                  },
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "allOf": [
+                        {
+                          "minLength": 1
+                        }
+                      ]
+                    }
+                  },
+                  "destination": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "allOf": [
+                        {
+                          "minLength": 1
+                        }
+                      ]
+                    }
+                  },
+                  "credential": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "baseUrl": {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "minLength": 1
+                          }
+                        ]
+                      },
+                      "dnsScope": {
+                        "type": "string",
+                        "enum": [
+                          "PublicOnly",
+                          "PrivateNetwork"
+                        ]
+                      },
+                      "contentType": {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "minLength": 1
+                          }
+                        ]
+                      },
+                      "draft": {
+                        "type": "boolean"
+                      },
+                      "prerelease": {
+                        "type": "boolean"
+                      },
+                      "title": {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "minLength": 1
+                          }
+                        ]
+                      },
+                      "checkboxPolicy": {
+                        "type": "string",
+                        "enum": [
+                          "preserve",
+                          "check"
+                        ]
+                      },
+                      "summary": {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "minLength": 1
+                          }
+                        ]
+                      },
+                      "description": {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "minLength": 1
+                          }
+                        ]
+                      },
+                      "wrapper": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "access": {
+                        "type": "string",
+                        "enum": [
+                          "public",
+                          "restricted"
+                        ]
+                      },
+                      "provenance": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "profileId",
+                  "ids",
+                  "destination",
+                  "credential",
+                  "options"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "profileId": {
+                    "type": "string",
+                    "enum": [
+                      "http.generic-upload/v1"
+                    ]
+                  },
+                  "ids": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "minLength": 1
+                          }
+                        ]
+                      }
+                    ],
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "allOf": [
+                        {
+                          "minLength": 1
+                        }
+                      ]
+                    }
+                  },
+                  "endpoint": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "PATCH",
+                      "POST",
+                      "PUT"
+                    ]
+                  },
+                  "headerNames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "allOf": [
+                        {
+                          "minLength": 1
+                        }
+                      ]
+                    }
+                  },
+                  "bodyMapping": {
+                    "type": "string",
+                    "enum": [
+                      "raw-artifact"
+                    ]
+                  },
+                  "credential": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "dnsScope": {
+                    "type": "string",
+                    "enum": [
+                      "PublicOnly",
+                      "PrivateNetwork"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "profileId",
+                  "ids",
+                  "endpoint",
+                  "method",
+                  "headerNames",
+                  "bodyMapping",
+                  "credential",
+                  "dnsScope"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "profileId": {
+                    "type": "string",
+                    "enum": [
+                      "policy.catalog-checkbox/v1"
+                    ]
+                  },
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "allOf": [
+                        {
+                          "minLength": 1
+                        }
+                      ]
+                    }
+                  },
+                  "destination": {
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "file"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "checkboxPolicy": {
+                        "type": "string",
+                        "enum": [
+                          "preserve",
+                          "check"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "checkboxPolicy"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "profileId",
+                  "ids",
+                  "destination",
+                  "options"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "changelog": {
+          "$ref": "#/$defs/CandidateChangelog"
+        },
+        "announce": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateAnnouncement"
+          }
+        },
+        "selection": {
+          "$ref": "#/$defs/CandidateSelection"
+        },
+        "nightly": {
+          "$ref": "#/$defs/CandidateNightly"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AuthoredConfig": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "project": {
+          "$ref": "#/$defs/AuthoredProject"
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "inherit": {
+                    "type": "string",
+                    "allOf": [
+                      {
+                        "minLength": 1
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "inherit"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "git": {
+          "$ref": "#/$defs/CandidateGitPolicy"
+        },
+        "projects": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/ProjectScope"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ProjectScope"
+          }
+        },
+        "builds": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/CandidateBunBuild"
+              },
+              {
+                "$ref": "#/$defs/CandidateCommandBuild"
+              },
+              {
+                "$ref": "#/$defs/CandidatePrebuiltBuild"
+              },
+              {
+                "$ref": "#/$defs/CandidateProfileBuild"
+              }
+            ]
+          }
+        },
+        "npmPackage": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "pypiWheel": {
+          "$ref": "#/$defs/CandidateWheelBuild"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateArtifact"
+          }
+        },
+        "archives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateArchive"
+          }
+        },
+        "checksum": {
+          "$ref": "#/$defs/CandidateChecksum"
+        },
+        "catalogs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateCatalog"
+          }
+        },
+        "hooks": {
+          "$ref": "#/$defs/CandidateHooks"
+        },
+        "supplyChain": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/CandidateSupplyProfile"
+              },
+              {
+                "$ref": "#/$defs/CandidateSupplyMeasure"
+              }
+            ]
+          }
+        },
+        "publish": {
+          "$ref": "#/$defs/CandidatePublish"
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "attempts": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "NaN"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "Infinity"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-Infinity"
+                  ]
+                }
+              ]
+            },
+            "delayMillis": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "NaN"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "Infinity"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "-Infinity"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "attempts",
+            "delayMillis"
+          ],
+          "additionalProperties": false
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "directory": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "directory"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "versionFrom": {
+          "type": "string",
+          "enum": [
+            "manifest",
+            "git-tag"
+          ]
+        }
+      },
+      "required": [
+        "project",
+        "publish"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

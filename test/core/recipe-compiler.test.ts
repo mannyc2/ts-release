@@ -12,15 +12,11 @@ import {
   compilePlan,
   recipeDefinitions
 } from "../../src/plan/compiler.js"
-import {
-  lowerProfile,
-  profileRegistry
-} from "../../src/recipes/definition.js"
 
 const root = process.cwd()
 const fixture = JSON.parse(readFileSync(join(
   root,
-  "test/fixtures/rewrite/plan-v6/minimal.json"
+  "test/fixtures/plan-v6/minimal.json"
 ), "utf8")) as unknown
 const invocation = (workspace: string) => Invocation.make({
   workspace: WorkspaceRoot.make(workspace),
@@ -95,32 +91,4 @@ describe("pure v6 recipe compiler", () => {
     expect(accepted.outputs).toEqual([])
   })
 
-  test("profile registry is closed Product data and lowering copies the complete value", () => {
-    expect(Object.isFrozen(profileRegistry)).toBe(true)
-    expect(Object.keys(profileRegistry)).toEqual([
-      "http.generic-upload/v1",
-      "build.bun-compile/v1",
-      "build.command/v1",
-      "build.pypi-wheel/v1",
-      "process.hook/v1",
-      "catalog.git-publish/v1",
-      "registry.npm-publish/v1",
-      "registry.pypi-publish/v1",
-      "forge.github-release/v1",
-      "opaque.publish-command/v1"
-    ])
-    expect(Object.values(profileRegistry).every(Object.isFrozen)).toBe(true)
-    const first = lowerProfile("http.generic-upload/v1")
-    const second = lowerProfile("http.generic-upload/v1")
-    expect(first).toEqual(second)
-    expect(first).not.toBe(second)
-    expect(first).toMatchObject({
-      profileId: "http.generic-upload/v1",
-      contractFixtureId: "contract.http.generic-upload/v1",
-      responseShapeId: "empty-v1",
-      commitment: "status-2xx",
-      reconciliation: "get-same-resource"
-    })
-    expect(profileRegistry).not.toHaveProperty("register")
-  })
 })

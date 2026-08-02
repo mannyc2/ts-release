@@ -3,6 +3,7 @@ import type {
 } from "../model/operation.js"
 import { CredentialName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
 import type { CandidateConfig, CandidatePlatform } from "./config.js"
+import { ConfigValueError } from "../model/errors.js"
 
 export interface CurrentRows {
   readonly build: Array<BuildOp>
@@ -42,7 +43,7 @@ export const targetPlatform = (
 ): CandidatePlatform => {
   const [os, arch, libcToken] = target.split("-")
   if (!["linux", "darwin", "windows"].includes(os ?? "") || !["x64", "arm64"].includes(arch ?? "")) {
-    throw new Error(`Unsupported platform target ${target}.`)
+    throw ConfigValueError.make({ reason: `Unsupported platform target ${target}.` })
   }
   return {
     os: os as CandidatePlatform["os"], arch: arch as CandidatePlatform["arch"],
@@ -55,7 +56,7 @@ export const targetPlatform = (
 export const recordOutput = (
   rows: CurrentRows, output: OutputDeclaration
 ): OutputDeclaration => {
-  if (rows.outputs.has(output.id)) throw new Error(`Duplicate output id ${output.id}.`)
+  if (rows.outputs.has(output.id)) throw ConfigValueError.make({ reason: `Duplicate output id ${output.id}.` })
   rows.outputs.set(output.id, output)
   return output
 }
@@ -66,13 +67,13 @@ export const selectedOutputs = (
   ? [...rows.outputs.values()].filter(fallback)
   : ids.map((id) => {
       const output = rows.outputs.get(id)
-      if (output === undefined) throw new Error(`Missing selected output ${id}.`)
+      if (output === undefined) throw ConfigValueError.make({ reason: `Missing selected output ${id}.` })
       return output
     })
 export const command = (value: string | ReadonlyArray<string>): ReadonlyArray<string> =>
   typeof value === "string" ? value.trim().split(/\s+/u).filter(Boolean) : value
 export const nonEmptyCommand = (value: ReadonlyArray<string>): readonly [string, ...string[]] => {
   const [first, ...rest] = value
-  if (first === undefined || first.length === 0) throw new Error("Command argv must be nonempty.")
+  if (first === undefined || first.length === 0) throw ConfigValueError.make({ reason: "Command argv must be nonempty." })
   return [first, ...rest]
 }

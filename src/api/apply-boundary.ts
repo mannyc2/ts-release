@@ -1,19 +1,19 @@
 import { randomUUID } from "node:crypto"
-import { readFileSync } from "node:fs"
-import { applyAcceptedPlan, type ApplyRecovery } from "../apply/apply.js"
+import { applyAcceptedPlan, type ApplyOutcome, type ApplyRecovery } from "../apply/apply.js"
 import { mintExecutionReceipt, mintPublishReceipt } from "../apply/approval.js"
 import { createLedger, validateLedger } from "../apply/ledger.js"
 import { settled } from "../apply/transition.js"
-import { decodeLedger } from "../apply/store.js"
+import { ledgerPath, readLedgerFile, resolveLedgerPath } from "../apply/store.js"
 import { acceptExpected, type AcceptedPlan } from "../plan/review.js"
 import {
   ApprovalNonce, CheckpointId, OperationHash, OperationId, type PublishReviewId, RunId
 } from "../model/primitives.js"
-import type { RunLedger } from "../model/run.js"
+import { RunStoreError, type RunLedger } from "../model/run.js"
 import { projectEvidence } from "../view/evidence.js"
 import { ReleaseApiError } from "./errors.js"
 import {
-  exact, selectScope, topology, within, workspace, type ApiRun
+  ApplyInputSchema, decodeInput, selectScope, topology, within, workspace,
+  type ApiRun, type DecodedApplyInput
 } from "./input.js"
 import type { ApplyInput, ApplyOutput, ApplyStatus } from "./types.js"
 
@@ -21,13 +21,11 @@ const complete = (ledger: RunLedger): boolean => ledger.operations
   .filter((record) => ledger.scope.operationIds.includes(record.operationId))
   .every((record) => settled(record.attempts.at(-1)?.state))
 const receipt = (ledger: RunLedger) => ledger.operations[0]?.attempts[0]?.executionReceipt
-const expectedLedger = (plan: AcceptedPlan, ledger: RunLedger) => ({
+const expectedLedger = (plan: AcceptedPlan) => ({
   planId: plan.planId,
-  operationHashes: plan.operationHashes.map(({ hash }) => OperationHash.make(hash)),
-  scope: ledger.scope,
-  topologyHash: ledger.executionTopologyHash
+  operationHashes: plan.operationHashes.map(({ hash }) => OperationHash.make(hash))
 })
-const recoveries = (ledger: RunLedger, input: ApplyInput): ReadonlyArray<ApplyRecovery> => [
+const recoveries = (ledger: RunLedger, input: DecodedApplyInput): ReadonlyArray<ApplyRecovery> => [
   ...(input.resolutions ?? []).map((item) => ({
     _tag: "Resolve" as const,
     operationId: OperationId.make(String(item.operationId)),
@@ -47,20 +45,23 @@ const recoveries = (ledger: RunLedger, input: ApplyInput): ReadonlyArray<ApplyRe
           checkpointId: CheckpointId.make(item.checkpointId)
         }))
       : []
-  })
+  }),
+  ...(input.retry ?? []).map((id) => ({
+    _tag: "Retry" as const,
+    operationId: OperationId.make(String(id))
+  }))
 ]
 
 interface PreparedRun {
   readonly ledger: RunLedger, readonly runPath: string
   readonly execution: NonNullable<ReturnType<typeof receipt>>
 }
-type ApplyResult = RunLedger | {
-  readonly _tag: "PublishReviewRequired", readonly reviewId: PublishReviewId
-  readonly ledger: RunLedger
-}
-const prepareNew = (plan: AcceptedPlan, root: string, input: ApplyInput): PreparedRun => {
-  const request = input.newRun!
-  exact("apply", request, ["path", "scope", "executionReviewId", "reviewer", "reason"], "newRun")
+
+const prepareNew = (
+  plan: AcceptedPlan,
+  root: string,
+  request: NonNullable<DecodedApplyInput["newRun"]>
+): PreparedRun => {
   const selected = selectScope(plan, request.scope)
   const topologyHash = topology()
   const execution = mintExecutionReceipt(plan, selected, topologyHash, {
@@ -73,7 +74,7 @@ const prepareNew = (plan: AcceptedPlan, root: string, input: ApplyInput): Prepar
   })
   return {
     execution,
-    runPath: within(root, request.path),
+    runPath: ledgerPath(within(root, request.path), execution.logicalRunId),
     ledger: createLedger(plan, {
       runId: execution.runId,
       logicalRunId: execution.logicalRunId,
@@ -85,8 +86,15 @@ const prepareNew = (plan: AcceptedPlan, root: string, input: ApplyInput): Prepar
   }
 }
 const prepareResume = (plan: AcceptedPlan, root: string, path: string): PreparedRun => {
-  const runPath = within(root, path)
-  const ledger = decodeLedger(readFileSync(runPath, "utf8"))
+  const contained = within(root, path)
+  let runPath: string
+  try {
+    runPath = resolveLedgerPath(contained)
+  } catch (cause) {
+    throw new ReleaseApiError("apply",
+      cause instanceof RunStoreError ? cause.reason : String(cause))
+  }
+  const ledger = readLedgerFile(runPath)
   validateLedger(plan, ledger)
   const execution = receipt(ledger)
   if (execution === undefined) {
@@ -109,19 +117,19 @@ const output = (
 const publishOutput = async (
   run: ApiRun,
   plan: AcceptedPlan,
-  input: ApplyInput,
+  input: DecodedApplyInput,
   prepared: PreparedRun,
-  review: ApplyResult
+  review: ApplyOutcome
 ): Promise<ApplyOutput> => {
-  if (!("_tag" in review)) {
-    return output(prepared, review, complete(review) ? "complete" : "stopped")
+  if (review._tag === "Applied") {
+    const ledger = review.ledger
+    return output(prepared, ledger, complete(ledger) ? "complete" : "stopped")
   }
   if (input.publishConfirmation === undefined) {
     return output(prepared, review.ledger, "publish-review-required", {
       nextPublishReviewId: review.reviewId
     })
   }
-  exact("apply", input.publishConfirmation, ["publishReviewId", "reviewer"], "publishConfirmation")
   const publish = mintPublishReceipt(prepared.execution, review.reviewId, {
     reviewId: input.publishConfirmation.publishReviewId,
     reviewer: input.publishConfirmation.reviewer,
@@ -137,42 +145,46 @@ const publishOutput = async (
     run: {
       _tag: "ResumeRun",
       path: prepared.runPath,
-      expected: expectedLedger(plan, review.ledger)
+      expected: expectedLedger(plan)
     },
     publish: { receipt: publish }
   }))
-  if ("_tag" in second) throw new ReleaseApiError("apply", "Publish review did not advance.")
-  return output(prepared, second, complete(second) ? "complete" : "stopped", {
+  if (second._tag !== "Applied") {
+    throw new ReleaseApiError("apply", "Publish review did not advance.")
+  }
+  return output(prepared, second.ledger, complete(second.ledger) ? "complete" : "stopped", {
     publishReceiptId: publish.receiptId
   })
 }
 
 export const makeApply = (run: ApiRun) => async (input: ApplyInput): Promise<ApplyOutput> => {
-  exact("apply", input, [
-    "planBytes", "expectedPlanId", "workspace", "newRun", "resumeRunPath", "through",
-    "publishConfirmation", "reconcile", "resolutions"
-  ], "apply input")
-  if ((input.newRun === undefined) === (input.resumeRunPath === undefined)) {
+  const decoded = decodeInput("apply", ApplyInputSchema, input)
+  const selector = decoded.newRun !== undefined
+    ? { _tag: "New" as const, request: decoded.newRun }
+    : decoded.resumeRunPath !== undefined
+    ? { _tag: "Resume" as const, path: decoded.resumeRunPath }
+    : undefined
+  if (selector === undefined) {
     throw new ReleaseApiError("apply", "Choose exactly one of newRun or resumeRunPath.")
   }
-  const plan = await run("apply", acceptExpected(input.planBytes, input.expectedPlanId))
-  const root = workspace("apply", input.workspace)
-  const prepared = input.newRun === undefined
-    ? prepareResume(plan, root, input.resumeRunPath!)
-    : prepareNew(plan, root, input)
+  const plan = await run("apply", acceptExpected(decoded.planBytes, decoded.expectedPlanId))
+  const root = workspace("apply", decoded.workspace)
+  const prepared = selector._tag === "New"
+    ? prepareNew(plan, root, selector.request)
+    : prepareResume(plan, root, selector.path)
   const first = await run("apply", applyAcceptedPlan(plan, {
     root,
     snapshotDirectory: `${prepared.runPath}.snapshots`,
-    through: input.through ?? "verify",
+    through: decoded.through ?? "verify",
     executionReceipt: prepared.execution,
-    recoveries: recoveries(prepared.ledger, input),
-    run: input.newRun === undefined
+    recoveries: recoveries(prepared.ledger, decoded),
+    run: selector._tag === "Resume"
       ? {
           _tag: "ResumeRun",
           path: prepared.runPath,
-          expected: expectedLedger(plan, prepared.ledger)
+          expected: expectedLedger(plan)
         }
       : { _tag: "NewRun", path: prepared.runPath, ledger: prepared.ledger }
   }))
-  return publishOutput(run, plan, input, prepared, first)
+  return publishOutput(run, plan, decoded, prepared, first)
 }

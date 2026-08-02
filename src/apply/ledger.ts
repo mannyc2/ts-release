@@ -41,10 +41,17 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
     case "PackageStorePublish":
       return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"])
         .map((id) => CheckpointId.make(id))
-    case "SupplyChainPublish": return (supplyCheckpoints[operation.profileId]??[]).map((id)=>CheckpointId.make(id))
+    case "SupplyChainPublish": {
+      const ids = supplyCheckpoints[operation.profileId]
+      if (ids === undefined) throw fail(`Unknown supply-chain profile ${operation.profileId}.`)
+      return ids.map((id) => CheckpointId.make(id))
+    }
     case "ProviderPublish": return operation.checkpoints
     case "AnnouncementPublish": case "SmtpPublish": return [CheckpointId.make("message")]
-    default:
+    // Local operations carry no publish checkpoints; assertProgress
+    // early-returns on their empty progress before this list is compared.
+    case "Check": case "Write": case "Pack": case "Digest":
+    case "Exec": case "HttpRead": case "ReviewedNoteTransform":
       return []
   }
 }
@@ -61,10 +68,7 @@ const assertScope = (accepted: AcceptedPlan, scope: ExecutionScope): void => {
     throw fail("Execution scope is duplicate or unknown.")
   const selected = new Set(ids)
   if (accepted.dependencies.some((edge) =>
-    selected.has(edge.operationId) && !selected.has(edge.producerId) &&
-    !scope.prerequisiteFactHashes?.includes(OperationHash.make(
-      accepted.operationHashes.find((item) => item.operationId === edge.producerId)?.hash ?? ""
-    ))))
+    selected.has(edge.operationId) && !selected.has(edge.producerId)))
     throw fail("Execution scope omits a dependency.")
 }
 const assertProgress = (operation: Operation, state: AttemptState): void => {
@@ -109,7 +113,6 @@ export type NewLedger = {
   readonly runId: RunLedger["runId"], readonly logicalRunId: RunLedger["logicalRunId"],
   readonly scope: ExecutionScope, readonly frontier: Stage,
   readonly topologyHash: RunLedger["executionTopologyHash"],
-  readonly topology?: RunLedger["topology"],
   readonly receipt: ExecutionApprovalReceipt
 }
 export const createLedger = (accepted: AcceptedPlan, request: NewLedger): RunLedger => {
@@ -119,7 +122,6 @@ export const createLedger = (accepted: AcceptedPlan, request: NewLedger): RunLed
     operationHashes: accepted.operationHashes.map(({ hash }) => OperationHash.make(hash)),
     scope: request.scope, frontier: request.frontier,
     executionTopologyHash: request.topologyHash, revision: 0,
-    ...(request.topology === undefined ? {} : { topology: request.topology }),
     operations: accepted.operationHashes.map(({ operationId, hash }) => OperationRunRecord.make({
       operationId: OperationId.make(operationId), operationHash: OperationHash.make(hash),
       attempts: [AttemptRecord.make({

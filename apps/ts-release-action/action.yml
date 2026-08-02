@@ -14,6 +14,9 @@ inputs:
     description: Workspace-contained canonical release plan path.
     required: false
     default: release-plan.json
+  resolve:
+    description: Empty (default) or "github" to fill omitted project facts from GITHUB_SHA and the workspace package manifest before planning.
+    required: false
   plan-id:
     description: Expected PlanId for apply or doctor.
     required: false
@@ -26,10 +29,10 @@ inputs:
     required: false
     default: all
   new-run:
-    description: Workspace-contained path for a new run ledger.
+    description: Workspace-contained directory that stores run ledgers; the file name is the derived logical-run id.
     required: false
   resume:
-    description: Workspace-contained existing run ledger path.
+    description: Workspace-contained run-ledger file, or a runs directory holding exactly one.
     required: false
   through:
     description: Monotonic apply frontier.
@@ -48,6 +51,9 @@ inputs:
     required: false
   reconcile:
     description: Comma-separated unknown operation ids for read-only reconciliation.
+    required: false
+  retry:
+    description: Comma-separated operation ids to retry after a failed-before-commit or assumed-absent outcome.
     required: false
   resolutions:
     description: JSON operator resolutions with operation id, outcome, operator, and reason.
@@ -74,3 +80,6 @@ outputs:
 runs:
   using: node20
   main: dist/index.js
+branding:
+  icon: package
+  color: blue

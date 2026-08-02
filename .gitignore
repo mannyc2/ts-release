@@ -13,3 +13,4 @@ AGENTS.md
 .npmrc
 *.log
 .DS_Store
+.agent-sources/

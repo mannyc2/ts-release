@@ -61,8 +61,8 @@ const invoke = (
 )
 
 describe("candidate cutover CLI", () => {
-  test("has exactly four lifecycle commands", () => {
-    expect(commandNames).toEqual(["init", "doctor", "plan", "apply"])
+  test("has exactly five commands", () => {
+    expect(commandNames).toEqual(["init", "doctor", "plan", "apply", "ship"])
   })
 
   test("plan reads JSON once and writes exact canonical API bytes", async () => {

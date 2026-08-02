@@ -7,6 +7,7 @@ import {
   recordOutput, render, selectedOutputs, targetPlatform, type CurrentRows
 } from "./current-shared.js"
 import { findLocalToolProfile } from "./packages/profiles.js"
+import { ConfigValueError } from "../model/errors.js"
 
 type Build = NonNullable<CandidateConfig["builds"]>[number]
 type TargetBuild = Extract<Build, { readonly builder: "bun" | "command" | "prebuilt" }>
@@ -85,7 +86,7 @@ const lowerBuilds = (config: CandidateConfig, rows: CurrentRows): void => {
     if (build.builder === "profile") {
       const inputs = build.inputs.map((id) => {
         const found = rows.outputs.get(id)
-        if (found === undefined) throw new Error(`Profile input ${id} is absent.`)
+        if (found === undefined) throw ConfigValueError.make({ reason: `Profile input ${id} is absent.` })
         return found
       })
       const outputs = build.outputs.map((item) =>
@@ -125,7 +126,7 @@ const lowerWheels = (config: CandidateConfig, rows: CurrentRows): void => {
     const inputs = wheel.binaries.map((item) => {
       const source = [...rows.outputs.values()].find((candidate) =>
         candidate.path === render(item.sourcePath, config))
-      if (source === undefined) throw new Error(`Wheel ${wheel.id} source ${item.sourcePath} is absent.`)
+      if (source === undefined) throw ConfigValueError.make({ reason: `Wheel ${wheel.id} source ${item.sourcePath} is absent.` })
       return source.id
     })
     rows.build.push(Exec.make({

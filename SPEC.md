@@ -45,6 +45,17 @@ containing directory. `--root` selects the workspace explicitly. The Action
 always uses realpath-normalized `GITHUB_WORKSPACE` and requires its config
 path to remain contained.
 
+An authored configuration and observed facts resolve deterministically into the
+canonical value BEFORE `plan` is called, at the application boundary. The
+authored shape makes `version`, `tag`, `commit`, and `name` optional and adds
+the `versionFrom` and `project.tagTemplate` directives, which the resolver
+CONSUMES; facts are observed by an app (`plan --from-git`, the Action's
+`resolve: github`) and passed in as a value. Resolution is pure and total: a
+field is authored, observed, or refused, and a fact contradicting the author is
+always a refusal naming both values. Nothing in the core infers anything, and
+`resolveConfig` is exported so a host resolves exactly as the CLI and the Action
+do.
+
 ## 4. Plan document
 
 The sole plan schema is `release-plan/v6`:
@@ -101,9 +112,9 @@ Execution scope is either all operation ids or an explicit subset. Scope
 selection MUST validate ids and dependency closure, then store the exact
 expanded operation-id list.
 
-`reviewExecution` accepts canonical plan bytes, expected plan id, requested
-scope, and optional topology. It returns the immutable scope and a
-domain-separated execution review challenge.
+`reviewExecution` accepts canonical plan bytes, expected plan id, and the
+requested scope. It returns the immutable scope and a domain-separated
+execution review challenge.
 
 A review challenge is not authority. A new run requires the exact challenge,
 reviewer identity, fresh nonce, run identity, logical-run identity, timestamp,
@@ -178,7 +189,6 @@ monotonic stage frontier and revision
 per-operation attempts and checkpoint progress
 execution and optional publish receipts
 materialized-output snapshot identity, digest, size, and inode
-optional ledger attestation
 ```
 
 The ledger is written atomically. Every transition increments the revision.
@@ -214,11 +224,28 @@ the only durable protocol documents.
 
 ## 13. Public surfaces
 
-The root runtime exports `plan`, `reviewExecution`, `apply`,
-`makeReleaseApi`, `ReleaseApiError`, and `defineRelease`. The lifecycle verbs
-are exactly `plan` and `apply`; review is a pure projection.
+The root runtime exports are exactly:
 
-The CLI commands are exactly `init`, `doctor`, `plan`, and `apply`.
+- the lifecycle verbs and their boundary — `plan`, `reviewExecution`,
+  `apply`, `makeReleaseApi`, `ReleaseApiError`, `defineRelease`;
+- the service tags a caller composes a layer from — `ApprovalSigner`,
+  `RunStore`, `CredentialStore`, `DriverCatalog`, `WorkspaceStore`, plus
+  `ReleaseServicesLive` for everything but the two host capabilities;
+- the permits an `ApprovalSigner` returns — `ExecutionPermit`,
+  `PublishPermit`;
+- the branded id constructors public inputs are built from — `PlanId`,
+  `OperationId`, `ExecutionReviewId`, `PublishReviewId`, `Stage`;
+- the application-boundary config resolver — `resolveConfig`,
+  `encodeResolvedConfig`.
+
+The lifecycle verbs are exactly `plan` and `apply`; review is a pure
+projection.
+
+The CLI commands are exactly `init`, `doctor`, `plan`, `apply`, and `ship`.
+`ship` is an application-boundary composition of `plan`, the review
+projection, and `apply`; it introduces no library verb, which is why the
+two-verb sentence above stays true and unchanged. A run `ship` confirms
+records the reviewer `self:one-shot` in its approval receipts.
 The Action commands are exactly `plan`, `doctor`, and `apply`.
 `doctor` and review-only apply consume a plan and perform no publication.
 

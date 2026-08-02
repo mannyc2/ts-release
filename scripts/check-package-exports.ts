@@ -1,8 +1,9 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
-import { isAbsolute, normalize, resolve } from "node:path"
+import { isAbsolute, join, normalize, resolve } from "node:path"
 import { cwd, exit } from "node:process"
+import { pathToFileURL } from "node:url"
 import * as ts from "typescript"
 import { bannedAggregateExports, expectedPublicExports } from "./lib/public-api-policy.js"
 import { makeRepoScratchDirectory, removeScratchDirectory } from "./lib/scratch-workspace.js"
@@ -16,28 +17,75 @@ const root = cwd()
 const bannedAggregateExportSet = new Set(bannedAggregateExports)
 const expectedPublicExportSet = new Set(expectedPublicExports)
 const ScriptLayer = BunServices.layer
+// The published bin is the node BUNDLE, not the Bun TypeScript entry: an npm
+// consumer has node and no bun (scripts/check-cli-bundle.ts runs it for real).
 const expectedRootBin = {
-  "ts-release": "./apps/release-ts/src/cli/main.ts"
+  "ts-release": "./dist/bin/ts-release.js"
 } as const
 const expectedRootRuntimeExports = new Set([
   "ApprovalSigner",
   "CredentialStore",
   "DriverCatalog",
   "ExecutionPermit",
+  "ExecutionReviewId",
+  "OperationId",
+  "PlanId",
   "PublishPermit",
+  "PublishReviewId",
   "ReleaseApiError",
   "ReleaseServicesLive",
   "RunStore",
+  "Stage",
   "WorkspaceStore",
   "apply",
   "defineRelease",
+  "encodeResolvedConfig",
   "makeReleaseApi",
   "plan",
+  "resolveConfig",
   "reviewExecution"
 ])
 const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {
   "./node": new Set(["NodeReleaseLayer"]),
   "./bun": new Set(["BunReleaseLayer"])
+}
+
+// SPEC §13 is normative about the root surface, so it is asserted, not
+// trusted: the bullet list under "The root runtime exports are exactly:" must
+// name the same set this gate holds.
+const specRootExports = (failures: Array<string>): ReadonlySet<string> => {
+  const spec = join(root, "SPEC.md")
+  if (!existsSync(spec)) {
+    failures.push("SPEC.md must exist")
+    return new Set()
+  }
+  const section = readFileSync(spec, "utf8").split("## 14.")[0]?.split("## 13.")[1] ?? ""
+  const marker = "The root runtime exports are exactly:"
+  const lines = section.split("\n")
+  const start = lines.findIndex((line) => line.trim() === marker)
+  if (start < 0) {
+    failures.push(`SPEC.md section 13 must contain the line "${marker}"`)
+    return new Set()
+  }
+  const names = new Set<string>()
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() === "" && names.size > 0) break
+    if (line.trim() === "") continue
+    if (!line.startsWith("-") && !line.startsWith("  ")) break
+    for (const [, name] of line.matchAll(/`([A-Za-z][A-Za-z0-9]*)`/gu)) names.add(name!)
+  }
+  return names
+}
+const checkSpecSurface = (failures: Array<string>): void => {
+  const declared = specRootExports(failures)
+  for (const name of expectedRootRuntimeExports) {
+    if (!declared.has(name)) failures.push(`SPEC.md section 13 omits root export ${name}`)
+  }
+  for (const name of declared) {
+    if (!expectedRootRuntimeExports.has(name)) {
+      failures.push(`SPEC.md section 13 names ${name}, which the root does not export`)
+    }
+  }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -176,6 +224,27 @@ const checkDeclarationTarget = (target: FileTarget, failures: Array<string>): vo
   }
 }
 
+// The public ENTRY declarations must never name effect/unstable specifiers
+// directly — at Effect GA those paths move and every consumer breaks. (The
+// transitive ReleaseServicesLive requirement types are its documented
+// contract and are exempt; this guards the entry files.)
+const checkEntryDeclaration = (target: FileTarget, failures: Array<string>): void => {
+  if (!target.path.startsWith("./dist/") || !target.path.endsWith(".js")) {
+    return
+  }
+  const declaration = resolve(root, `${target.path.slice(0, -3)}.d.ts`)
+  if (!existsSync(declaration)) {
+    failures.push(`${target.label} has no built declaration ${target.path.slice(0, -3)}.d.ts`)
+    return
+  }
+  const contents = readFileSync(declaration, "utf8")
+  for (const prefix of ["effect/unstable/http", "effect/unstable/process", "effect/unstable/cli"]) {
+    if (contents.includes(`"${prefix}`)) {
+      failures.push(`${target.label} declaration names ${prefix}; alias the type behind a package path`)
+    }
+  }
+}
+
 const formatDiagnostic = (diagnostic: ts.Diagnostic): string => {
   const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
   if (diagnostic.file === undefined || diagnostic.start === undefined) {
@@ -277,6 +346,7 @@ const main = async (): Promise<void> => {
   }
   for (const target of exportTargets) {
     checkDeclarationTarget(target, failures)
+    checkEntryDeclaration(target, failures)
   }
 
   if (typeof packageName === "string") {
@@ -302,8 +372,21 @@ const main = async (): Promise<void> => {
           failures.push(`package.json export ${subpath} is an aggregate entrypoint and must not be published`)
         }
         const specifier = packageImportSpecifier(packageName, subpath)
+        // Import the BUILT artifact, not the bare specifier: under `bun run`,
+        // tsconfig paths resolve the bare name to src/, so a dist/ regression
+        // would pass. The runtime proof must load what ships.
+        const exportValue = exportsField[subpath]
+        const builtTarget = typeof exportValue === "string"
+          ? exportValue
+          : isRecord(exportValue) && typeof exportValue.default === "string"
+          ? exportValue.default
+          : undefined
+        if (builtTarget === undefined) {
+          failures.push(`package export ${specifier} has no importable default target`)
+          continue
+        }
         try {
-          const module = await import(specifier)
+          const module = await import(pathToFileURL(resolve(root, builtTarget)).href)
           const expectedExports = subpath === "."
             ? expectedRootRuntimeExports
             : expectedHostRuntimeExports[subpath]
@@ -335,8 +418,10 @@ const main = async (): Promise<void> => {
     if (appManifest.exports !== undefined) {
       failures.push("apps/release-ts/package.json must not declare root library exports")
     }
-    if (!isRecord(appManifest.bin) || appManifest.bin.release !== "dist/cli/main.js") {
-      failures.push("apps/release-ts/package.json must own bin.release as dist/cli/main.js")
+    // The app declares NO bin: it is private, it has no build, and the only
+    // shipped executable is the root bundle above.
+    if (appManifest.bin !== undefined) {
+      failures.push("apps/release-ts/package.json must not declare a bin; the root bundle is the only executable")
     }
     if (
       !isReadonlyArray(appManifest.sideEffects) ||
@@ -345,6 +430,8 @@ const main = async (): Promise<void> => {
       failures.push("apps/release-ts/package.json sideEffects must preserve ./dist/cli/main.js")
     }
   }
+
+  checkSpecSurface(failures)
 
   if (failures.length > 0) {
     console.error("Package export checks failed:")

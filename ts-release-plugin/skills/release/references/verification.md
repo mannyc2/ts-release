@@ -12,9 +12,9 @@ root.
 | Install dependencies | `bun install --frozen-lockfile` | exit 0, lockfile unchanged |
 | Typecheck | `bun run check` | `tsc --noEmit` exits 0 with no output |
 | Full test suite | `bun test` | `0 fail` |
-| Focused archive tests | `bun test test/rewrite/archive-files.test.ts` | all pass |
-| Recipe integration tests | `bun test test/rewrite/current-recipes.test.ts` | all pass |
-| Driver conformance | `bun test test/rewrite/driver-conformance.test.ts` | all pass |
+| Focused archive tests | `bun test test/core/archive-files.test.ts` | all pass |
+| Recipe integration tests | `bun test test/core/current-recipes.test.ts` | all pass |
+| Driver conformance | `bun test test/core/driver-conformance.test.ts` | all pass |
 | Plugin structural contract | `bun run check:skill-plugin` | canonical JSON report with `"status":"ready"` |
 | Examples and templates | `bun run check:examples` | report with `"status":"current"` |
 | Portable gates (core + app + action) | `bun run check:portable` | exit 0 |

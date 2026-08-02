@@ -28,10 +28,11 @@
     "apps/*"
   ],
   "engines": {
-    "bun": ">=1.3.14"
+    "bun": ">=1.3.14",
+    "node": ">=20"
   },
   "bin": {
-    "ts-release": "./apps/release-ts/src/cli/main.ts"
+    "ts-release": "./dist/bin/ts-release.js"
   },
   "exports": {
     ".": {
@@ -59,12 +60,9 @@
   ],
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "bun -e \"await (await import('node:fs/promises')).rm('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
+    "build": "bun -e \"await (await import('node:fs/promises')).rm('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && bun run scripts/build-cli-bundle.ts",
     "test": "bun test",
-    "test:integration:tools": "RELEASE_INTEGRATION_TOOLS=1 bun test integration-tools.test.ts",
-    "test:integration:github": "RELEASE_INTEGRATION_TOOLS=1 RELEASE_INTEGRATION_GITHUB=1 bun test integration-tools.test.ts",
     "test:coverage": "bun test --coverage",
-    "test:fault-matrix": "bun run scripts/run-fault-matrix.ts",
     "check:package-exports": "bun run scripts/check-package-exports.ts",
     "check:import-rules": "bun run scripts/check-import-rules.ts",
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
@@ -75,25 +73,37 @@
     "check:self-release-live": "bun run apps/release-ts/scripts/check-self-release-live-readiness.ts",
     "check:self-release-artifacts": "bun run apps/release-ts/scripts/check-self-release-artifacts.ts",
     "check:action-bundle": "bun run scripts/check-action-bundle.ts",
+    "check:cli-bundle": "bun run scripts/check-cli-bundle.ts",
+    "check:config-schema": "bun run scripts/check-config-schema.ts",
+    "check:docs-claims": "bun run scripts/check-docs-claims.ts",
+    "generate:config-schema": "bun run scripts/generate-config-schema.ts",
     "check:skill-plugin": "bun run scripts/check-skill-plugin.ts",
-    "check:core": "bun run check && bun test && bun run check:import-rules && bun run check:tree-shaking && bun run build && bun run check:examples && bun run check:readme && bun run check:package-exports",
-    "check:app": "bun run --cwd apps/release-ts check && bun test test/cli-command.test.ts",
-    "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/action-command.test.ts",
+    "release:action-mirror": "bun run scripts/sync-action-mirror.ts",
+    "check:core": "bun run check:versions && bun run check:docs-claims && bun run check:import-rules && bun run check:tree-shaking && bun run check && bun test && bun run build && bun run check:cli-bundle && bun run check:config-schema && bun run check:examples && bun run check:readme && bun run check:package-exports",
+    "check:versions": "bun run scripts/check-versions.ts",
+    "check:summary": "bun run scripts/run-gates.ts",
+    "check:app": "bun run --cwd apps/release-ts check && bun test test/core/cli-cutover.test.ts test/cli-command.test.ts",
+    "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/core/action-cutover.test.ts test/action-command.test.ts",
     "check:portable": "bun run check:core && bun run check:app && bun run check:action",
     "check:release": "bun run check:self-release-config && bun run check:self-release-doctor && bun run check:self-release-live && bun run check:self-release-artifacts && bun run check:portable",
     "release:plan": "bun run cli plan --config apps/release-ts/release.config.json --out .release/release-plan.json",
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.0.0-beta.83",
-    "@effect/platform-node": "4.0.0-beta.83",
-    "effect": "4.0.0-beta.83",
     "semver": "^7.8.5"
+  },
+  "peerDependencies": {
+    "@effect/platform-bun": "^4.0.0-beta.83",
+    "@effect/platform-node": "^4.0.0-beta.83",
+    "effect": "^4.0.0-beta.83"
   },
   "devDependencies": {
     "@effect/bun-test": "file:vendor/effect-bun-test",
+    "@effect/platform-bun": "4.0.0-beta.83",
+    "@effect/platform-node": "4.0.0-beta.83",
     "@types/bun": "^1.3.14",
     "@types/semver": "^7.7.1",
+    "effect": "4.0.0-beta.83",
     "bun-types": "^1.3.14",
     "typescript": "^6.0.3"
   }

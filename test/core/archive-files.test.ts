@@ -349,4 +349,67 @@ describe("files-only archive materialization", () => {
       const entries = readZip(new Uint8Array(readFileSync(join(root, ".release/artifacts/out.zip"))))
       expect(entries.map((entry) => entry.path)).toEqual([".release/notes.txt"])
     }))
+
+  test("a symlinked pattern prefix escaping the workspace refuses", async () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-archive-outside-")))
+    try {
+      writeFileSync(join(outside, "leak.txt"), "leak\n")
+      await withWorkspace(async (root) => {
+        symlinkSync(outside, join(root, "linked"))
+        const refusal = await materializeFailure(root, pack(["linked/*.txt"]))
+        expect(refusal.reason).toContain("refused symlink escaping the workspace")
+        write(root, "real/kept.txt", "kept\n")
+        const result = await materialize(root, pack(["real/*.txt"]))
+        expect(result.outcome).toBe("observed")
+      })
+    } finally {
+      rmSync(outside, { recursive: true, force: true })
+    }
+  })
+
+  test("a no-files archive still refuses colliding entry basenames", () =>
+    withWorkspace(async (root) => {
+      write(root, "a/cli.txt", "left\n")
+      write(root, "b/cli.txt", "right\n")
+      const declared = [
+        OutputDeclaration.make({
+          id: OutputId.make("left"), path: SafeRelativePath.make("a/cli.txt"), kind: "file"
+        }),
+        OutputDeclaration.make({
+          id: OutputId.make("right"), path: SafeRelativePath.make("b/cli.txt"), kind: "file"
+        })
+      ]
+      const operation = Pack.make({
+        id: OperationId.make("archive:collide"),
+        inputs: [OutputId.make("left"), OutputId.make("right")],
+        outputs: [archiveOutput(".release/artifacts/collide.zip")],
+        format: "zip"
+      })
+      const refusal = await materializeFailure(root, operation, declared)
+      expect(refusal.reason).toBe("Archive archive:collide has duplicate entry cli.txt.")
+    }))
+
+  test("archive entry order is codepoint order, never locale order", () =>
+    withWorkspace(async (root) => {
+      write(root, "B.txt", "upper\n")
+      write(root, "a.txt", "lower\n")
+      const declared = [
+        OutputDeclaration.make({
+          id: OutputId.make("upper"), path: SafeRelativePath.make("B.txt"), kind: "file"
+        }),
+        OutputDeclaration.make({
+          id: OutputId.make("lower"), path: SafeRelativePath.make("a.txt"), kind: "file"
+        })
+      ]
+      const operation = Pack.make({
+        id: OperationId.make("archive:order"),
+        inputs: [OutputId.make("upper"), OutputId.make("lower")],
+        outputs: [archiveOutput(".release/artifacts/order.zip")],
+        format: "zip"
+      })
+      await materialize(root, operation, declared)
+      const entries = readZip(new Uint8Array(readFileSync(join(root, ".release/artifacts/order.zip"))))
+      // localeCompare in common locales puts a.txt first; codepoint puts B first.
+      expect(entries.map((entry) => entry.path)).toEqual(["B.txt", "a.txt"])
+    }))
 })

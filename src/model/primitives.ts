@@ -18,11 +18,6 @@ export const AttemptId = identifier("AttemptId"); export type AttemptId = typeof
 export const OperationHash = identifier("OperationHash"); export type OperationHash = typeof OperationHash.Type
 export const ExecutionTopologyHash = identifier("ExecutionTopologyHash")
 export type ExecutionTopologyHash = typeof ExecutionTopologyHash.Type
-export const ExecutionScopeHash = identifier("ExecutionScopeHash")
-export type ExecutionScopeHash = typeof ExecutionScopeHash.Type
-export const WorkerId = identifier("WorkerId"); export type WorkerId = typeof WorkerId.Type
-export const WorkerKeyFingerprint = identifier("WorkerKeyFingerprint")
-export type WorkerKeyFingerprint = typeof WorkerKeyFingerprint.Type
 export const ProjectId = identifier("ProjectId"); export type ProjectId = typeof ProjectId.Type
 export const ExecutionReviewId = identifier("ExecutionReviewId")
 export type ExecutionReviewId = typeof ExecutionReviewId.Type

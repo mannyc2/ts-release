@@ -1,37 +1,94 @@
 import * as Effect from "effect/Effect"
-import { realpathSync, statSync } from "node:fs"
-import { isAbsolute, relative, resolve, sep } from "node:path"
+import * as Schema from "effect/Schema"
+import { existsSync, realpathSync, statSync } from "node:fs"
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path"
+import { contained } from "../drivers/contain.js"
 import type { ReleaseApiServices } from "./types.js"
 import type { ReleaseApiPhase } from "./errors.js"
 import { ReleaseApiError } from "./errors.js"
 import {
+  ExecutionReviewId,
   ExecutionTopologyHash,
   OperationId,
+  PlanId,
+  PublishReviewId,
   WorkspaceRoot
 } from "../model/primitives.js"
-import { ExecutionScope } from "../model/run.js"
-import type { ExecutionScopeInput, ExecutionTopology } from "./types.js"
+import { ExecutionScope, Stage } from "../model/run.js"
+import type { ExecutionScopeInput } from "./types.js"
 
 export type ApiRun = <A, E>(
   phase: ReleaseApiPhase,
   effect: Effect.Effect<A, E, ReleaseApiServices>
 ) => Promise<A>
 
-export const exact = (
+// The one untrusted boundary decodes with the same dialect as durable data:
+// Effect Schema, excess properties rejected, values validated. There is no
+// hand-rolled key checker to drift from.
+const ScopeInputSchema = Schema.Union([
+  Schema.Literal("all"),
+  Schema.Struct({ operationIds: Schema.NonEmptyArray(Schema.String) })
+])
+export const PlanInputSchema = Schema.Struct({
+  config: Schema.Unknown,
+  workspace: Schema.String
+})
+export const ReviewExecutionInputSchema = Schema.Struct({
+  planBytes: Schema.String,
+  expectedPlanId: PlanId,
+  scope: ScopeInputSchema
+})
+const OperatorResolutionSchema = Schema.Struct({
+  operationId: Schema.String,
+  outcome: Schema.Literals(["committed", "absent"]),
+  operator: Schema.NonEmptyString,
+  reason: Schema.NonEmptyString
+})
+const NewRunSchema = Schema.Struct({
+  path: Schema.String,
+  scope: ScopeInputSchema,
+  executionReviewId: ExecutionReviewId,
+  reviewer: Schema.String,
+  reason: Schema.optionalKey(Schema.String)
+})
+const PublishConfirmationSchema = Schema.Struct({
+  publishReviewId: PublishReviewId,
+  reviewer: Schema.String
+})
+export const ApplyInputSchema = Schema.Struct({
+  planBytes: Schema.String,
+  expectedPlanId: PlanId,
+  workspace: Schema.String,
+  newRun: Schema.optionalKey(NewRunSchema),
+  resumeRunPath: Schema.optionalKey(Schema.String),
+  through: Schema.optionalKey(Stage),
+  publishConfirmation: Schema.optionalKey(PublishConfirmationSchema),
+  reconcile: Schema.optionalKey(Schema.Array(Schema.String)),
+  resolutions: Schema.optionalKey(Schema.Array(OperatorResolutionSchema)),
+  retry: Schema.optionalKey(Schema.Array(Schema.String))
+}).check(Schema.makeFilter((value: {
+  readonly newRun?: unknown
+  readonly resumeRunPath?: unknown
+}) =>
+  (value.newRun === undefined) === (value.resumeRunPath === undefined)
+    ? "Choose exactly one of newRun or resumeRunPath."
+    : undefined))
+export type DecodedApplyInput = typeof ApplyInputSchema.Type
+
+export const decodeInput = <S extends Schema.Top & Schema.Decoder<unknown>>(
   phase: ReleaseApiPhase,
-  value: unknown,
-  keys: ReadonlyArray<string>,
-  label: string
-): Record<string, unknown> => {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ReleaseApiError(phase, `${label} must be an object.`)
+  schema: S,
+  value: unknown
+): S["Type"] => {
+  try {
+    return Schema.decodeUnknownSync(schema, { onExcessProperty: "error" })(value) as S["Type"]
+  } catch (cause) {
+    // Bounded: decode errors echo offending values, never whole documents.
+    throw new ReleaseApiError(
+      phase,
+      String(cause).split("\n").slice(0, 8).join("\n").slice(0, 500)
+    )
   }
-  const record = value as Record<string, unknown>
-  const excess = Object.keys(record).filter((key) => !keys.includes(key))
-  if (excess.length > 0) {
-    throw new ReleaseApiError(phase, `${label} has excess field ${excess[0]}.`)
-  }
-  return record
 }
 
 export const workspace = (phase: ReleaseApiPhase, value: string): WorkspaceRoot => {
@@ -51,18 +108,20 @@ export const within = (root: string, value: string): string => {
   if (child === ".." || child.startsWith(`..${sep}`)) {
     throw new ReleaseApiError("apply", "Run path must remain inside the workspace.")
   }
+  // A symlinked directory component must not relocate run state outside the
+  // workspace: canonicalize the nearest existing ancestor (the final
+  // components may not exist yet) and re-check against the realpathed root.
+  let ancestor = dirname(path)
+  while (!existsSync(ancestor)) ancestor = dirname(ancestor)
+  if (!contained(root, realpathSync(ancestor))) {
+    throw new ReleaseApiError("apply", "Run path must remain inside the workspace.")
+  }
   return path
 }
 
-export const topology = (value?: ExecutionTopology): ExecutionTopologyHash => {
-  if (value !== undefined) {
-    exact("review", value, ["id"], "topology")
-    if (value.id.length === 0) {
-      throw new ReleaseApiError("review", "Topology id must be nonempty.")
-    }
-  }
-  return ExecutionTopologyHash.make(value?.id ?? "single-machine/v1")
-}
+// The single-machine constant keeps one home; there is no topology input.
+export const topology = (): ExecutionTopologyHash =>
+  ExecutionTopologyHash.make("single-machine/v1")
 
 export const selectScope = (
   accepted: {
@@ -75,10 +134,8 @@ export const selectScope = (
   input: ExecutionScopeInput
 ): ExecutionScope => {
   const available = accepted.operationHashes.map(({ operationId }) => operationId)
-  const requested = input === "all"
-    ? available
-    : exact("review", input, ["operationIds"], "scope").operationIds
-  if (!Array.isArray(requested) || requested.length === 0) {
+  const requested = input === "all" ? available : input.operationIds
+  if (requested.length === 0) {
     throw new ReleaseApiError("review", "Execution scope must be nonempty.")
   }
   const ids = [...new Set(requested.map(String))]

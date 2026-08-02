@@ -9,6 +9,13 @@ import {
 import { dirname } from "node:path"
 import { runAction } from "./commands.js"
 
+// Windows is a supported release TARGET, not a host: the store and drivers
+// assume POSIX open flags (O_NOFOLLOW) and absolute-path branding.
+if (process.platform === "win32") {
+  core.setFailed("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.")
+  process.exit(1)
+}
+
 // The Action runs under node20, so it composes the Node platform layer itself
 // and disposes the runtime it created.
 const api = makeReleaseApi(NodeReleaseLayer)
@@ -17,6 +24,7 @@ try {
     api,
     {
       workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
+      ...(process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA }),
       input: core.getInput,
       output: core.setOutput,
       read: (path) => readFileSync(path, "utf8"),

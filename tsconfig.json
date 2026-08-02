@@ -12,18 +12,17 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
-      "@mannyc1/ts-release": ["src/index.ts"],
-      "@mannyc1/ts-release/node": ["src/platform/node.ts"],
-      "@mannyc1/ts-release/bun": ["src/platform/bun.ts"],
-      "@mannyc1/ts-release/*": ["src/*.ts"]
+      "@mannyc1/ts-release": ["./src/index.ts"],
+      "@mannyc1/ts-release/node": ["./src/platform/node.ts"],
+      "@mannyc1/ts-release/bun": ["./src/platform/bun.ts"],
+      "@mannyc1/ts-release/*": ["./src/*.ts"]
     },
     "types": ["bun-types"],
     "rootDir": ".",
-    "outDir": "dist"
+    "outDir": "dist",
+    "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts", "scripts/**/*.ts", "bunfig.toml"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["dist", ".repos", "node_modules"]
 }

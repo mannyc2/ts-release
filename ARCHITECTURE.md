@@ -21,6 +21,7 @@ they do not own release semantics.
 src/model     schemas, primitives, operations, state, canonical encoding
 src/recipes   deterministic feature/profile lowering
 src/config    strict value decoding
+src/resolve   authored configuration + observed facts → the canonical value
 src/plan      compilation, validation, canonical acceptance, review
 src/drivers   capability interfaces and live mechanism implementations
 src/apply     approvals, ledger, transitions, orchestration
@@ -40,20 +41,24 @@ translation namespace.
 ```text
 model
 ├── recipes
-│   └── config
+│   ├── config
+│   └── resolve
 ├── plan/accepted
 │   ├── plan ← config + recipes
 │   ├── apply ← drivers
 │   ├── view
 │   └── platform ← drivers + apply
 └── api ← plan + apply + view + drivers + platform
-    └── public root + ./node + ./bun
+    └── public root + ./node + ./bun + resolve
         ├── CLI    → ./bun
         └── Action → ./node
 ```
 
 Model imports no product owner. Recipes depend only on model. Config decodes
-recipe configuration. Accepted-plan code depends only on model. Planning may
+recipe configuration. Resolve turns an authored configuration plus observed
+facts into a canonical one; it depends on model and recipes, nothing in the
+library imports it, and it may not read the clock, the environment, or a random
+source — the gate enforces all of that. Accepted-plan code depends only on model. Planning may
 use model, config, recipes, and acceptance. Drivers depend only on model.
 Apply uses model, accepted plans, and drivers. Views use model and accepted
 plans. Platform closes host capabilities. The API is the composition
@@ -151,7 +156,15 @@ and provider data is immutable and product-owned.
 The execution review challenge proves only what was reviewed. A nonce,
 reviewer, timestamp, topology, and run identity mint the execution receipt.
 Publication is separately authorized only after materialized inputs are
-observed. Credentials remain capability values and never enter durable data.
+observed. Credential VALUES never enter durable data: child output is
+recorded only as a bounded excerpt with the operation's declared environment
+values and known token shapes redacted, and HTTP authorization headers are
+redacted by the client.
+
+Receipts are validated by hash self-consistency. Anyone who can write the
+run ledger can mint consistent receipts: the trust boundary is the channel
+that carries the ledger between jobs (artifact integrity plus the protected
+release environment), by design, single-machine.
 
 ## State and recovery
 
@@ -167,8 +180,12 @@ intent and checkpoint reconciliation keys before network dispatch. An
 ambiguous outcome becomes `CommitUnknown`; read-only reconciliation or an
 explicit operator resolution is required before progress.
 
-Every resume revalidates the plan, ledger, scope, topology, operation hashes,
-receipts, and recorded output snapshots before reaching a driver.
+Every resume revalidates, before reaching a driver: the plan identity and
+operation hashes the store expects, the ledger's operation roster and its
+receipt binding, the scope's dependency closure, and each publish input's
+digest against what its producing operation recorded when it passed. Scope
+and topology have no ledger-independent source on a single machine, so they
+are checked for internal consistency, not attested.
 
 ## Boundaries
 
@@ -180,7 +197,14 @@ built from the exported service tags and shapes, a published host layer, or
 `ReleaseServicesLive` plus a platform of the caller's choosing.
 
 The CLI owns one-read JSON loading and workspace selection. Its commands are
-`init`, `doctor`, `plan`, and `apply`.
+`init`, `doctor`, `plan`, `apply`, and `ship`. `plan --from-git` and
+`ship --from-git` observe the repository's own facts — HEAD commit, the single
+release-shaped tag at HEAD, the package manifest — and resolve them into the
+canonical configuration before planning; the Action does the same under
+`resolve: github` from `GITHUB_SHA`. Observation lives in the apps; the
+resolution both share is one pure library function. `ship` composes the other
+lifecycle commands in one process for ungated releases; it adds no authority
+and records `self:one-shot` as the reviewer of the approvals it echoes.
 
 The Action owns one-read, workspace-contained JSON loading. Its commands are
 `plan`, `doctor`, and `apply`. Its bundle is checked against source and then
@@ -199,3 +223,11 @@ package checks, and CLI/Action tests verify the release machinery. Driver
 conformance and the remote-driver suite run the live drivers under injected
 spawn and HTTP doubles; the action-bundle gate runs them for real under node.
 Verification does not dispatch publication.
+
+Gates compose in three layers. `check:core` runs the repo-wide checks
+(versions, import rules, tree shaking, types, tests, build, examples,
+README, package exports); `check:app` and `check:action` add each shipped
+surface's own typecheck and cutover suite; `check:portable` is the three
+together and is what CI runs. `check:release` adds the four offline
+self-release gates and runs before a tag. `check:summary` runs every gate
+without stopping at the first failure. `scripts/README.md` lists them all.

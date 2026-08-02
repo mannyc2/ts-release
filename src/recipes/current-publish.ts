@@ -8,6 +8,7 @@ import {
   basename, credentialName, nonEmptyCommand, operationId, path, render, selectedOutputs, type CurrentRows
 } from "./current-shared.js"
 import { providerProfiles } from "./providers/index.js"
+import { ConfigValueError } from "../model/errors.js"
 
 const publishCredential = (name: string) => PublishCredential.make({ name: credentialName(name) })
 const readCredential = (name: string) => ReadCredential.make({ name: credentialName(name) })
@@ -24,7 +25,7 @@ export const lowerNpm = (config: CandidateConfig, rows: CurrentRows, section = c
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
     : [section.tokenEnv ?? "NPM_TOKEN"]
   const packageOutput = rows.outputs.get("npm-package")
-  const registryUrl = section.registry ?? "https://registry.npmjs.org"
+  const registryUrl = assertRegistryUrl(section.registry ?? "https://registry.npmjs.org")
   const publishArgv = ["npm", "publish", packagePath, "--registry", registryUrl,
     ...(section.access === undefined ? [] : ["--access", section.access]),
     ...(section.provenance === true ? ["--provenance"] : [])] as [string, ...Array<string>]
@@ -43,17 +44,25 @@ export const lowerNpm = (config: CandidateConfig, rows: CurrentRows, section = c
     readCredential: readCredential("NPM_REGISTRY_READ"),
     contractFixtureId: "registry.npm-publish/v1" })
 }
+// npm and PyPI registry URLs pass the SAME closed HTTPS/DNS policy as
+// provider endpoints. The row keeps the caller's exact spelling: the policy's
+// canonical form would rewrite both shipped defaults (adding npm's root
+// slash, stripping PyPI's /legacy/ slash) and shipped plan bytes are frozen.
+export const assertRegistryUrl = (value: string): string => {
+  normalizeProviderEndpoint(value)
+  return value
+}
 export const normalizeProviderEndpoint = (value: string): string => {
   const url = new URL(value), host = url.hostname
   if (/(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/iu.test(value) || url.protocol !== "https:" ||
     url.username !== "" || url.password !== "" || url.search !== "" || url.hash !== "" ||
     ["localhost", "::", "::1", "0.0.0.0"].includes(host) ||
     ["127.", "169.254.", "224.", "255."].some((prefix) => host.startsWith(prefix)))
-    throw new Error("Provider URL violates the closed HTTPS/DNS policy.")
+    throw ConfigValueError.make({ reason: "Provider URL violates the closed HTTPS/DNS policy." })
   return `${url.origin}${url.pathname.replace(/\/+$/u, "") || "/"}` }
 export const lowerProvider = (rows: CurrentRows, action: RemoteProvider): void => {
   const profile = providerProfiles.find((item) => item.profileId === action.profileId)
-  if (profile === undefined) throw new Error(`Unknown provider profile ${action.profileId}.`)
+  if (profile === undefined) throw ConfigValueError.make({ reason: `Unknown provider profile ${action.profileId}.` })
   const inputs = selectedOutputs(rows, action.ids, () => false)
   const target = "endpoint" in action ? { endpoint: normalizeProviderEndpoint(action.endpoint) } : action.destination
   const options: Record<string, string | boolean> = "endpoint" in action
@@ -62,7 +71,7 @@ export const lowerProvider = (rows: CurrentRows, action: RemoteProvider): void =
     : Object.fromEntries(Object.entries(action.options).filter(([, value]) => value !== undefined))
   if (Object.keys(target).sort().join() !== [...profile.contract.targetCoordinates].sort().join() ||
     Object.keys(options).some((key) => !profile.contract.allowedOptions.includes(key)))
-    throw new Error("Provider data does not match its immutable profile.")
+    throw ConfigValueError.make({ reason: "Provider data does not match its immutable profile." })
   if (typeof options.baseUrl === "string") options.baseUrl = normalizeProviderEndpoint(options.baseUrl)
   const checkpoints = profile.checkpoints.flatMap((id) =>
     id === "assets" ? inputs.map((input) => `asset:${input.id}`) : [id])
@@ -76,11 +85,11 @@ const lowerPyPi = (config: CandidateConfig, rows: CurrentRows) => {
   const section = config.publish.pypi
   if (section === undefined) return undefined
   const artifacts = selectedOutputs(rows, section.ids, (item) => item.kind === "wheel")
-  if (artifacts.length === 0) throw new Error("PyPI requires at least one distribution artifact.")
+  if (artifacts.length === 0) throw ConfigValueError.make({ reason: "PyPI requires at least one distribution artifact." })
   const oidc = section.trustedPublishing !== undefined
   const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
     : ["TWINE_USERNAME", "TWINE_PASSWORD"]
-  const registryUrl = section.repositoryUrl ?? "https://upload.pypi.org/legacy/"
+  const registryUrl = assertRegistryUrl(section.repositoryUrl ?? "https://upload.pypi.org/legacy/")
   const python = section.pythonExecutable ?? "python"
   const artifactPaths = artifacts.map((item) => item.path)
   return PackageRegistryRelease.make({
@@ -102,7 +111,7 @@ const lowerGitHub = (config: CandidateConfig, rows: CurrentRows) => {
   const section = config.publish.github
   if (section === undefined) return undefined
   const repository = section.repository ?? config.project.repository
-  if (repository === undefined) throw new Error("GitHub publishing requires a repository.")
+  if (repository === undefined) throw ConfigValueError.make({ reason: "GitHub publishing requires a repository." })
   const assets = [...rows.outputs.values()].filter((item) => ![
     "package", "wheel", "catalog-file", "directory", "internal", "digest"].includes(item.kind))
   const credential = section.tokenEnv ?? "NO_CREDENTIAL"
@@ -156,7 +165,7 @@ export const lowerCurrentPublish = (config: CandidateConfig, rows: CurrentRows):
   rows.publish.splice(0, 0, ...prefix)
   for (const item of config.publish.packageStores ?? []) {
     const input = rows.outputs.get(item.input)
-    if (input === undefined) throw new Error(`Package store input ${item.input} is absent.`)
+    if (input === undefined) throw ConfigValueError.make({ reason: `Package store input ${item.input} is absent.` })
     rows.publish.push(PackageStorePublish.make({
       id: operationId(`package-store:${item.profileId}:${item.input}`),
       inputs: [input.id], outputs: [], profileId: item.profileId,

@@ -4,15 +4,13 @@ import * as HttpClient from "effect/unstable/http/HttpClient"
 import type { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import {
   existsSync,
-  mkdirSync,
-  readFileSync,
+  lstatSync,
   readdirSync,
   realpathSync,
   statSync,
-  writeFileSync,
   type Dirent
 } from "node:fs"
-import { basename, dirname, join, resolve, sep } from "node:path"
+import { basename, join, resolve } from "node:path"
 import {
   CredentialStore,
   DriverCatalog,
@@ -31,7 +29,8 @@ import {
   MaterializedOutput
 } from "../model/run.js"
 import type { Exec, OutputDeclaration, Pack } from "../model/operation.js"
-import { makeNodeWorkspaceStore } from "./workspace.js"
+import { contained } from "./contain.js"
+import { makeNodeWorkspaceStore, secureRead, secureWrite } from "./workspace.js"
 import { tarGz, zip, type ArchiveEntry } from "./archive.js"
 import { matchGlob } from "./glob.js"
 import { readOptionalEnv } from "./environment.js"
@@ -42,17 +41,19 @@ import { failure, sha256 } from "./utils.js"
 const pathOf = (root: string, path: string): string => resolve(root, path)
 const outputFacts = (root: string, output: OutputDeclaration): MaterializedOutput => {
   const path = pathOf(root, output.path)
-  if (!existsSync(path) || !statSync(path).isFile()) {
+  // A symlink at a declared output path refuses: the recorded digest must
+  // attest the workspace file itself, never a link target.
+  if (!existsSync(path) || lstatSync(path).isSymbolicLink() || !statSync(path).isFile()) {
     throw failure(`Declared output ${output.id} was not materialized.`)
   }
-  const bytes = readFileSync(path)
-  const digest = sha256(bytes)
+  const source = secureRead(root, output.path)
+  const digest = sha256(source.bytes)
   return MaterializedOutput.make({
     outputId: output.id,
     snapshotId: SnapshotId.make(digest),
     digest: Digest.make(digest),
-    size: bytes.length,
-    inode: statSync(path).ino
+    size: source.bytes.length,
+    inode: source.inode
   })
 }
 const input = (request: CatalogStructuredRequest, id: string): OutputDeclaration => {
@@ -60,17 +61,20 @@ const input = (request: CatalogStructuredRequest, id: string): OutputDeclaration
   if (found === undefined) throw failure(`Operation references unavailable output ${id}.`)
   return found
 }
+// One byte ordering for every archive path: plain codepoint comparison, so
+// release bytes cannot depend on the host locale.
+const byCodepoint = (left: ArchiveEntry, right: ArchiveEntry): number =>
+  left.path < right.path ? -1 : left.path > right.path ? 1 : 0
 const entries = (request: CatalogStructuredRequest): ReadonlyArray<ArchiveEntry> =>
   request.operation.inputs.map((id) => {
     const output = input(request, id)
-    const path = pathOf(request.root, output.path)
     const mode = output.kind === "executable" ? 0o100755 : 0o100644
-    return { path: basename(output.path), data: readFileSync(path), mode }
-  }).sort((left, right) => left.path.localeCompare(right.path))
+    return { path: basename(output.path), data: secureRead(request.root, output.path).bytes, mode }
+  }).sort(byCodepoint)
 const normalizeSlashes = (value: string): string => value.replaceAll("\\", "/")
 const containedRealPath = (realRoot: string, child: string, relative: string): string => {
   const real = realpathSync(child)
-  if (real === realRoot || real.startsWith(realRoot + sep)) return real
+  if (contained(realRoot, real)) return real
   throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative}.`)
 }
 const entryKind = (realRoot: string, entry: Dirent, relative: string, visited: Set<string>) => {
@@ -93,7 +97,13 @@ const walkFiles = (realRoot: string, directory: string, visited: Set<string>): A
 const patternCandidates = (realRoot: string, pattern: string): ReadonlyArray<string> => {
   const segments = pattern.split("/").filter((segment) => segment.length > 0)
   const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment))
-  if (wildcard >= 0) return walkFiles(realRoot, segments.slice(0, wildcard).join("/"), new Set())
+  if (wildcard >= 0) {
+    const prefix = segments.slice(0, wildcard).join("/")
+    if (prefix.length > 0 && existsSync(join(realRoot, prefix))) {
+      containedRealPath(realRoot, join(realRoot, prefix), prefix)
+    }
+    return walkFiles(realRoot, prefix, new Set())
+  }
   const absolute = join(realRoot, pattern)
   if (!existsSync(absolute)) return []
   containedRealPath(realRoot, absolute, pattern)
@@ -110,20 +120,20 @@ const matchedWorkspaceFiles = (
 const packEntries = (request: CatalogStructuredRequest, operation: Pack): ReadonlyArray<ArchiveEntry> => {
   const patterns = operation.files ?? []
   const declared = entries(request)
-  if (patterns.length === 0) {
-    if (declared.length === 0) throw failure(`Archive ${operation.id} has zero entries.`)
-    return declared
+  let combined: ReadonlyArray<ArchiveEntry> = declared
+  if (patterns.length > 0) {
+    const realRoot = realpathSync(request.root)
+    const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)))
+    const matched = matchedWorkspaceFiles(realRoot, patterns, excluded)
+    if (matched.length === 0) throw failure(`Archive ${operation.id} patterns matched no workspace files.`)
+    combined = [...declared, ...matched.map((path) => ({
+      path, data: secureRead(realRoot, path).bytes, mode: 0o100644
+    }))]
   }
-  const realRoot = realpathSync(request.root)
-  const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)))
-  const matched = matchedWorkspaceFiles(realRoot, patterns, excluded)
-  if (matched.length === 0) throw failure(`Archive ${operation.id} patterns matched no workspace files.`)
-  const combined = [...declared, ...matched.map((path) => ({
-    path, data: new Uint8Array(readFileSync(join(realRoot, path))), mode: 0o100644
-  }))]
+  if (combined.length === 0) throw failure(`Archive ${operation.id} has zero entries.`)
   const duplicate = combined.map((entry) => entry.path).find((path, index, all) => all.indexOf(path) !== index)
   if (duplicate !== undefined) throw failure(`Archive ${operation.id} has duplicate entry ${duplicate}.`)
-  return combined.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0)
+  return [...combined].sort(byCodepoint)
 }
 const content = (request: CatalogStructuredRequest): string => {
   const operation = request.operation
@@ -133,8 +143,10 @@ const content = (request: CatalogStructuredRequest): string => {
     if (typeof part === "string") return part
     const output = input(request, part.outputId)
     if (part.fact === "assetName") return basename(output.path)
-    if (part.fact === "sha256") return sha256(readFileSync(pathOf(request.root, output.path)))
-    throw failure("downloadUrl facts require a product-owned preset value.")
+    if (part.fact === "sha256") return sha256(secureRead(request.root, output.path).bytes)
+    throw failure(
+      "downloadUrl facts require a product-owned preset value (lowered plans resolve this at plan time)."
+    )
   }).join("")
 }
 const observed = (request: CatalogStructuredRequest) => ({
@@ -156,30 +168,33 @@ const executed = (run: RunCommand, request: CatalogStructuredRequest, operation:
 const materialized = (request: CatalogStructuredRequest) => attempt(() => {
   const operation = request.operation
   switch (operation._tag) {
-    case "Check":
-      if (!existsSync(pathOf(request.root, operation.path))) {
-        throw failure(`Required path ${operation.path} is absent.`)
-      }
-      break
-    case "Write": {
+    case "Check": {
+      // lstat-based: a symlink (dangling or not) is never "present" — the
+      // required path must be the workspace entry itself.
       const path = pathOf(request.root, operation.path)
-      mkdirSync(dirname(path), { recursive: true })
-      writeFileSync(path, content(request))
+      let present = false
+      try {
+        present = !lstatSync(path).isSymbolicLink()
+      } catch {
+        present = false
+      }
+      if (!present) throw failure(`Required path ${operation.path} is absent.`)
+      break
+    }
+    case "Write": {
+      secureWrite(request.root, operation.path, content(request))
       break
     }
     case "Pack": {
-      const path = pathOf(request.root, operation.outputs[0]!.path)
       const archive = packEntries(request, operation)
-      mkdirSync(dirname(path), { recursive: true })
-      writeFileSync(path, operation.format === "zip" ? zip(archive) : tarGz(archive))
+      secureWrite(request.root, operation.outputs[0]!.path,
+        operation.format === "zip" ? zip(archive) : tarGz(archive))
       break
     }
     case "Digest": {
-      const path = pathOf(request.root, operation.outputs[0]!.path)
-      mkdirSync(dirname(path), { recursive: true })
-      writeFileSync(path, operation.inputs.map((id) => {
+      secureWrite(request.root, operation.outputs[0]!.path, operation.inputs.map((id) => {
         const output = input(request, id)
-        return `${sha256(readFileSync(pathOf(request.root, output.path)))}  ${basename(output.path)}`
+        return `${sha256(secureRead(request.root, output.path).bytes)}  ${basename(output.path)}`
       }).join("\n") + "\n")
       break
     }
@@ -219,4 +234,3 @@ export const LiveDriversLayer: Layer.Layer<
   })),
   Layer.succeed(CredentialStore)(credentials)
 )
-export const normalizeWorkspaceRoot = (path: string): string => realpathSync(path)

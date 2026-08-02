@@ -133,7 +133,7 @@ export const packageStoreReconciliationKey = (
   materials: ReadonlyArray<MaterializedOutput>
 ): string => hash("ts-release/package-store-reconcile/v1", {
   planId, logicalRunId,
-  scopeHash: scope.scopeHash ?? hash("ts-release/execution-scope/v1", {
+  scopeHash: hash("ts-release/execution-scope/v1", {
     planId, operationIds: [...scope.operationIds].map(String).sort()
   }),
   executionTopologyHash: topologyHash, operationHash, checkpointId, profileId,
@@ -151,7 +151,7 @@ export const supplyChainReconciliationKey = (
   domain: "supply-chain" | "provider" | "announcement" = "supply-chain"
 ): string => hash(`ts-release/${domain}-reconcile/v1`, {
   planId, logicalRunId,
-  scopeHash: scope.scopeHash ?? hash("ts-release/execution-scope/v1", {
+  scopeHash: hash("ts-release/execution-scope/v1", {
     planId, operationIds: [...scope.operationIds].map(String).sort()
   }),
   executionTopologyHash: topologyHash, operationHash, checkpointId, profileId,

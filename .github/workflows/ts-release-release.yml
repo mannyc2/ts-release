@@ -1,0 +1,223 @@
+# The composed ts-release pipeline, as a reusable workflow. A consumer writes:
+#
+#   jobs:
+#     release:
+#       uses: mannyc2/ts-release-action/.github/workflows/release.yml@v0
+#       with:
+#         config: release.config.json
+#         environment: release
+#         bun-version: "1.3.14"
+#         setup: bun install --frozen-lockfile
+#       secrets: inherit
+#
+# Three jobs, because the shape is the product: `plan` compiles and reviews
+# without any gate, `materialize` and `publish` sit behind an environment. The
+# ids thread as job outputs and the state travels as artifacts, so the plan a
+# human approved is byte-identical to the plan that is applied.
+#
+# Protect the environment in Settings → Environments to require an approval
+# between the stages. An UNPROTECTED environment makes this a one-shot
+# pipeline, which is a legitimate way to run it — and the run's receipts will
+# say so: the reviewer this workflow records is probed from the environment's
+# actual protection rules, not asserted. `self:` means nobody independent
+# approved; `environment:` means protection rules were observed. GitHub's own
+# deployment-approval log remains the authoritative approver record.
+#
+# Credentials are never named here. Publish operations read the environment
+# secrets the consumer configured (`secrets: inherit`), and the forge release
+# uses `${{ github.token }}` — adding secret inputs would open a second
+# credential channel.
+#
+# GENERATED COPY NOTICE: in the mannyc2/ts-release-action mirror this file is
+# rewritten from mannyc2/ts-release by scripts/sync-action-mirror.ts, which
+# repoints every local action reference at a pinned published one. Edit it in
+# the monorepo; the mirror copy is overwritten on the next sync.
+name: ts-release
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: Workspace-contained release configuration path.
+        type: string
+        default: release.config.json
+      environment:
+        description: Environment that gates materialize and publish. Protect it to require approvals.
+        type: string
+        default: release
+      resolve:
+        description: Empty, or "github" to observe omitted project facts from the runner before planning.
+        type: string
+        default: ""
+      scope:
+        description: all, or a comma-separated immutable operation-id subset.
+        type: string
+        default: all
+      plan-path:
+        description: Where the canonical plan is written and read.
+        type: string
+        default: .release/release-plan.json
+      runs-path:
+        description: Directory that stores run ledgers.
+        type: string
+        default: .release/runs
+      bun-version:
+        description: Bun version to install, or empty to skip setup-bun.
+        type: string
+        default: ""
+      setup:
+        description: Command run in every job before the action; your toolchain, your command.
+        type: string
+        default: ""
+      artifact-prefix:
+        description: Prefix for the plan and materialized artifacts.
+        type: string
+        default: ts-release
+    outputs:
+      plan_id:
+        description: Canonical plan identity.
+        value: ${{ jobs.plan.outputs.plan_id }}
+      run_path:
+        description: Durable run-ledger path.
+        value: ${{ jobs.publish.outputs.run_path }}
+      status:
+        description: Terminal apply status.
+        value: ${{ jobs.publish.outputs.status }}
+      evidence_path:
+        description: Evidence projection path.
+        value: ${{ jobs.publish.outputs.evidence_path }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      plan_id: ${{ steps.plan.outputs.plan_id }}
+      execution_review_id: ${{ steps.review.outputs.execution_review_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.bun-version != ''
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+      - if: inputs.setup != ''
+        run: ${{ inputs.setup }}
+      - id: plan
+        uses: ./apps/ts-release-action
+        with:
+          command: plan
+          config: ${{ inputs.config }}
+          plan-path: ${{ inputs.plan-path }}
+          resolve: ${{ inputs.resolve }}
+      - id: review
+        uses: ./apps/ts-release-action
+        with:
+          command: apply
+          review-only: "true"
+          plan-path: ${{ inputs.plan-path }}
+          plan-id: ${{ steps.plan.outputs.plan_id }}
+          scope: ${{ inputs.scope }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-plan
+          path: ${{ inputs.plan-path }}
+
+  materialize:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      publish_review_id: ${{ steps.apply.outputs.publish_review_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.bun-version != ''
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+      - if: inputs.setup != ''
+        run: ${{ inputs.setup }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-plan
+          path: .release
+      # Observed, not asserted: what the durable receipt claims about approval
+      # has to match what actually gates this job.
+      - id: reviewer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/${{ inputs.environment }}" --jq '.protection_rules | length' 2>/dev/null || echo "unknown")
+          if [ "$rules" = "unknown" ]; then
+            echo "::warning::could not verify environment protection; recording reviewer as self:one-shot"
+          fi
+          if [ "$rules" != "unknown" ] && [ "$rules" -gt 0 ] 2>/dev/null; then
+            echo "identity=environment:${{ inputs.environment }}@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "identity=self:one-shot@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          fi
+      - id: apply
+        uses: ./apps/ts-release-action
+        with:
+          command: apply
+          plan-path: ${{ inputs.plan-path }}
+          plan-id: ${{ needs.plan.outputs.plan_id }}
+          through: validate
+          new-run: ${{ inputs.runs-path }}
+          scope: ${{ inputs.scope }}
+          confirm-execution: ${{ needs.plan.outputs.execution_review_id }}
+          reviewer: ${{ steps.reviewer.outputs.identity }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-materialized
+          path: .release
+
+  publish:
+    needs: [plan, materialize]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: write
+      id-token: write
+    outputs:
+      run_path: ${{ steps.apply.outputs.run_path }}
+      status: ${{ steps.apply.outputs.status }}
+      evidence_path: ${{ steps.apply.outputs.evidence_path }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.bun-version != ''
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+      - if: inputs.setup != ''
+        run: ${{ inputs.setup }}
+      # Only the materialized artifact: the reviewed plan travels inside it, so
+      # there is no second copy that could differ.
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-materialized
+          path: .release
+      - id: reviewer
+        run: |
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/${{ inputs.environment }}" --jq '.protection_rules | length' 2>/dev/null || echo "unknown")
+          if [ "$rules" = "unknown" ]; then
+            echo "::warning::could not verify environment protection; recording reviewer as self:one-shot"
+          fi
+          if [ "$rules" != "unknown" ] && [ "$rules" -gt 0 ] 2>/dev/null; then
+            echo "identity=environment:${{ inputs.environment }}@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "identity=self:one-shot@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          fi
+      - id: apply
+        uses: ./apps/ts-release-action
+        with:
+          command: apply
+          plan-path: ${{ inputs.plan-path }}
+          plan-id: ${{ needs.plan.outputs.plan_id }}
+          through: verify
+          resume: ${{ inputs.runs-path }}
+          confirm-publish: ${{ needs.materialize.outputs.publish_review_id }}
+          reviewer: ${{ steps.reviewer.outputs.identity }}

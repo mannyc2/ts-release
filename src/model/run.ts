@@ -1,8 +1,8 @@
 import * as Schema from "effect/Schema"
 import {
-  ApprovalNonce, AttemptId, CheckpointId, Digest, ExecutionReviewId, ExecutionScopeHash,
+  ApprovalNonce, AttemptId, CheckpointId, Digest, ExecutionReviewId,
   ExecutionTopologyHash, LogicalRunId, OperationHash, OperationId, OutputId,
-  PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId, WorkerId, WorkerKeyFingerprint
+  PlanId, PublishReviewId, ReceiptId, RunId, SnapshotId
 } from "./primitives.js"
 
 const Reason = { reason: Schema.String }
@@ -23,44 +23,15 @@ const resolution = {
 }
 
 export class ExecutionScope extends Schema.Class<ExecutionScope>("ExecutionScope")({
-  operationIds: Schema.Array(OperationId), workerId: Schema.optionalKey(WorkerId),
-  scopeHash: optional(ExecutionScopeHash), ownedOperationHashes: optional(Schema.Array(OperationHash)),
-  prerequisiteFactHashes: optional(Schema.Array(OperationHash))
+  operationIds: Schema.Array(OperationId)
 }) {}
-export class WorkerRegistration extends Schema.Class<WorkerRegistration>("WorkerRegistration")({
-  workerId: WorkerId, publicKey: Schema.NonEmptyString,
-  workerKeyFingerprint: WorkerKeyFingerprint, scopeHash: ExecutionScopeHash,
-  ownedOperationHashes: Schema.Array(OperationHash), prerequisiteFactHashes: Schema.Array(OperationHash)
-}) {}
-export class ExecutionTopology extends Schema.Class<ExecutionTopology>("ExecutionTopology")({
-  planId: PlanId, partitions: Schema.Array(WorkerRegistration) }) {}
 export class ExecutionApprovalReceipt extends Schema.Class<ExecutionApprovalReceipt>("ExecutionApprovalReceipt")({
   ...approval, reviewId: ExecutionReviewId, newRunReason: Schema.optionalKey(Schema.NonEmptyString) }) {}
 export class PublishApprovalReceipt extends Schema.Class<PublishApprovalReceipt>("PublishApprovalReceipt")({
   ...approval, reviewId: PublishReviewId, executionReceiptId: ReceiptId }) {}
-export class SignedAuthorizationReceipt
-  extends Schema.Class<SignedAuthorizationReceipt>("SignedAuthorizationReceipt")({
-    signerWorkerId: WorkerId, planId: PlanId, logicalRunId: LogicalRunId,
-    scopeHash: ExecutionScopeHash, topologyHash: ExecutionTopologyHash,
-    operationHash: OperationHash, attemptId: AttemptId, purpose: Schema.Literals(["execute", "publish"]),
-    reviewer: Schema.NonEmptyString, reviewChallengeId: Schema.NonEmptyString, nonce: ApprovalNonce,
-    issuedAt: Schema.NonEmptyString, materialBindingHashes: Schema.Array(Digest),
-    signature: Schema.NonEmptyString
-  })
-{}
-export class ImportedFact extends Schema.Class<ImportedFact>("ImportedFact")({
-  workerId: WorkerId, revision: Schema.Number, attestationDigest: Digest }) {}
 export class MaterializedOutput extends Schema.Class<MaterializedOutput>("MaterializedOutput")({
   outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number, inode: Schema.Number,
   transmittedDigest: Schema.optionalKey(Digest) }) {}
-export class ObservedSubject extends Schema.Class<ObservedSubject>("ObservedSubject")({
-  outputId: OutputId, snapshotId: SnapshotId, digest: Digest, size: Schema.Number
-}) {}
-export const observedSubject = (output: MaterializedOutput): ObservedSubject =>
-  ObservedSubject.make({
-    outputId: output.outputId, snapshotId: output.snapshotId,
-    digest: output.digest, size: output.size
-  })
 
 export class CheckpointPending extends Schema.TaggedClass<CheckpointPending>()("CheckpointPending", checkpoint) {}
 export class CheckpointDispatching extends Schema.TaggedClass<CheckpointDispatching>()(
@@ -106,13 +77,9 @@ export type AttemptState = typeof AttemptState.Type
 
 export class AttemptRecord extends Schema.Class<AttemptRecord>("AttemptRecord")({
   attemptId: AttemptId, executionReceipt: ExecutionApprovalReceipt,
-  publishReceipt: optional(PublishApprovalReceipt), authorizationReceipt: optional(SignedAuthorizationReceipt),
-  importedFrom: optional(ImportedFact), state: AttemptState }) {}
+  publishReceipt: optional(PublishApprovalReceipt), state: AttemptState }) {}
 export class OperationRunRecord extends Schema.Class<OperationRunRecord>("OperationRunRecord")({
   operationId: OperationId, operationHash: OperationHash, attempts: Schema.Array(AttemptRecord) }) {}
-export class LedgerAttestation extends Schema.Class<LedgerAttestation>("LedgerAttestation")({
-  workerId: WorkerId, topologyHash: ExecutionTopologyHash,
-  signerFingerprint: WorkerKeyFingerprint, digest: Digest, signature: Schema.NonEmptyString }) {}
 export const Stage = Schema.Literals(
   ["build", "process", "catalog", "validate", "publish", "announce", "verify"])
 export type Stage = typeof Stage.Type
@@ -120,8 +87,7 @@ export class RunLedger extends Schema.Class<RunLedger>("RunLedger")({
   schemaVersion: Schema.Literal("run-ledger/v1"), ...run, planId: PlanId,
   operationHashes: Schema.Array(OperationHash), scope: ExecutionScope, frontier: Stage,
   executionTopologyHash: ExecutionTopologyHash, revision: Schema.Number,
-  operations: Schema.Array(OperationRunRecord), topology: optional(ExecutionTopology),
-  attestation: optional(LedgerAttestation)
+  operations: Schema.Array(OperationRunRecord)
 }) {}
 
 export class TransitionError extends Schema.TaggedErrorClass<TransitionError>()("TransitionError", Reason) {}

@@ -144,7 +144,9 @@ const content = (request: CatalogStructuredRequest): string => {
     const output = input(request, part.outputId)
     if (part.fact === "assetName") return basename(output.path)
     if (part.fact === "sha256") return sha256(secureRead(request.root, output.path).bytes)
-    throw failure("downloadUrl facts require a product-owned preset value.")
+    throw failure(
+      "downloadUrl facts require a product-owned preset value (lowered plans resolve this at plan time)."
+    )
   }).join("")
 }
 const observed = (request: CatalogStructuredRequest) => ({

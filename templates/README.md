@@ -3,10 +3,22 @@
 Templates are complete copyable configuration and workflow starting points.
 Replace package, repository, artifact, and provider values before use.
 
-Generate a canonical plan:
+These configs state no `commit`, `version`, or `tag` where the repository can
+answer for itself; `--from-git` observes the HEAD commit, the release-shaped tag
+at HEAD, and the package manifest's version. Write the fields back by hand if
+you would rather state them — the resolver refuses when the two disagree, and
+never picks a side.
+
+Release in one command:
 
 ```sh
-ts-release plan --config release.config.json --out release-plan.json
+ts-release ship --config release.config.json --from-git
+```
+
+Or generate a canonical plan for the staged flow:
+
+```sh
+ts-release plan --config release.config.json --from-git --out release-plan.json
 ```
 
 Review it using the `PlanId` printed by `plan`:

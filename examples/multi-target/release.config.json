@@ -45,7 +45,6 @@
       "ids": [
         "archive"
       ],
-      "url": "https://github.com/owner/release-example-multi-target/releases/download/v0.1.0/release-example-multi-target-0.1.0.tgz",
       "installPath": "bin/release-example-multi-target"
     }
   },

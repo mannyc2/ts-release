@@ -23,12 +23,25 @@ interface CatalogRow {
 const className = (value: string): string => value.split(/[^A-Za-z0-9]+/u).filter(Boolean)
   .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("")
   || "GeneratedFormula"
+// The release asset URL is DERIVED, so a config states it once (as a
+// repository) instead of three times. With neither repository source present
+// there is nothing to derive from, and the answer is a refusal — this used to
+// interpolate the literal string "undefined" into a published formula.
 const downloadUrl = (
   config: CandidateConfig, output: OutputDeclaration, explicit?: string
-): string => explicit ??
-  `https://github.com/${config.publish.github?.repository ?? config.project.repository}/releases/download/${
-    config.project.tag
-  }/${basename(output.path)}`
+): string => {
+  if (explicit !== undefined) return explicit
+  const repository = config.publish.github?.repository ?? config.project.repository
+  if (repository === undefined) {
+    throw ConfigValueError.make({
+      reason:
+        "Catalog download URLs need publish.github.repository, project.repository, or an explicit url."
+    })
+  }
+  return `https://github.com/${repository}/releases/download/${config.project.tag}/${
+    basename(output.path)
+  }`
+}
 const formulaTail = (name: string, installPath: string | undefined): string => [
   "", "  def install",
   installPath === undefined
@@ -126,6 +139,15 @@ const scoopRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | unde
     ...(section.validate === undefined ? {} : { validate: section.validate })
   }
 }
+const requireOutput = (
+  rows: CurrentRows, catalogId: string, id: string
+): OutputDeclaration => {
+  const output = rows.outputs.get(id)
+  if (output === undefined) {
+    throw ConfigValueError.make({ reason: `Catalog ${catalogId} references missing output ${id}.` })
+  }
+  return output
+}
 const genericRow = (
   config: CandidateConfig, rows: CurrentRows, entry: CandidateCatalog
 ): CatalogRow => {
@@ -133,6 +155,11 @@ const genericRow = (
     ? render(entry.content, config)
     : entry.content.map((part) => typeof part === "string"
       ? render(part, config)
+      // A downloadUrl is knowable at PLAN time, so it is resolved here and the
+      // lowered plan carries no such hole. sha256 and assetName stay holes:
+      // those bytes do not exist yet.
+      : part.fact === "downloadUrl"
+      ? downloadUrl(config, requireOutput(rows, entry.id, part.artifact))
       : ContentHole.make({ fact: part.fact, outputId: part.artifact }))
   const ids = typeof content === "string" ? [] : content.flatMap((part) =>
     typeof part === "string" ? [] : [part.outputId])
@@ -140,11 +167,7 @@ const genericRow = (
     id: entry.id, repository: entry.repository, file: entry.file,
     ...(entry.directory === undefined ? {} : { directory: entry.directory }),
     content,
-    inputs: ids.map((id) => {
-      const output = rows.outputs.get(id)
-      if (output === undefined) throw ConfigValueError.make({ reason: `Catalog ${entry.id} references missing output ${id}.` })
-      return output
-    }),
+    inputs: ids.map((id) => requireOutput(rows, entry.id, id)),
     commitMessage: render(entry.commitMessage ?? "Update {name} to {version}", config),
     submit: entry.submit ?? "push",
     ...(entry.validate === undefined ? {} : { validate: entry.validate })

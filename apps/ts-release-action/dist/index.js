@@ -28792,7 +28792,17 @@ var lowerCurrentBuild = (config, rows) => {
 
 // ../../src/recipes/current-catalog.ts
 var className = (value2) => value2.split(/[^A-Za-z0-9]+/u).filter(Boolean).map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("") || "GeneratedFormula";
-var downloadUrl = (config, output, explicit) => explicit ?? `https://github.com/${config.publish.github?.repository ?? config.project.repository}/releases/download/${config.project.tag}/${basename(output.path)}`;
+var downloadUrl = (config, output, explicit) => {
+  if (explicit !== undefined)
+    return explicit;
+  const repository = config.publish.github?.repository ?? config.project.repository;
+  if (repository === undefined) {
+    throw ConfigValueError.make({
+      reason: "Catalog download URLs need publish.github.repository, project.repository, or an explicit url."
+    });
+  }
+  return `https://github.com/${repository}/releases/download/${config.project.tag}/${basename(output.path)}`;
+};
 var formulaTail = (name, installPath) => [
   "",
   "  def install",
@@ -28912,8 +28922,15 @@ ${JSON.stringify({ bin }, null, 2).slice(2, -2)}
     ...section.validate === undefined ? {} : { validate: section.validate }
   };
 };
+var requireOutput = (rows, catalogId, id) => {
+  const output = rows.outputs.get(id);
+  if (output === undefined) {
+    throw ConfigValueError.make({ reason: `Catalog ${catalogId} references missing output ${id}.` });
+  }
+  return output;
+};
 var genericRow = (config, rows, entry) => {
-  const content = typeof entry.content === "string" ? render(entry.content, config) : entry.content.map((part) => typeof part === "string" ? render(part, config) : ContentHole.make({ fact: part.fact, outputId: part.artifact }));
+  const content = typeof entry.content === "string" ? render(entry.content, config) : entry.content.map((part) => typeof part === "string" ? render(part, config) : part.fact === "downloadUrl" ? downloadUrl(config, requireOutput(rows, entry.id, part.artifact)) : ContentHole.make({ fact: part.fact, outputId: part.artifact }));
   const ids = typeof content === "string" ? [] : content.flatMap((part) => typeof part === "string" ? [] : [part.outputId]);
   return {
     id: entry.id,
@@ -28921,12 +28938,7 @@ var genericRow = (config, rows, entry) => {
     file: entry.file,
     ...entry.directory === undefined ? {} : { directory: entry.directory },
     content,
-    inputs: ids.map((id) => {
-      const output = rows.outputs.get(id);
-      if (output === undefined)
-        throw ConfigValueError.make({ reason: `Catalog ${entry.id} references missing output ${id}.` });
-      return output;
-    }),
+    inputs: ids.map((id) => requireOutput(rows, entry.id, id)),
     commitMessage: render(entry.commitMessage ?? "Update {name} to {version}", config),
     submit: entry.submit ?? "push",
     ...entry.validate === undefined ? {} : { validate: entry.validate }
@@ -34953,7 +34965,7 @@ var content = (request) => {
       return basename2(output.path);
     if (part.fact === "sha256")
       return sha256(secureRead(request.root, output.path).bytes);
-    throw failure("downloadUrl facts require a product-owned preset value.");
+    throw failure("downloadUrl facts require a product-owned preset value (lowered plans resolve this at plan time).");
   }).join("");
 };
 var observed = (request) => ({

@@ -43,6 +43,7 @@ import {
 } from "../../src/model/primitives.js"
 import {
   Check,
+  ContentHole,
   DigestOp,
   Exec,
   Operation,
@@ -254,6 +255,34 @@ describe("candidate driver conformance", () => {
       })).pipe(liveLayers(spawner, {}), Effect.flip))
       expect(error._tag).toBe("DriverError")
       expect(error.reason).toBe("Command exited 3: compile error")
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("a raw downloadUrl hole in foreign plan bytes is refused at the driver", async () => {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), "ts-release-live-hole-")))
+    try {
+      // Lowering resolves this fact at plan time, so no plan this repo produces
+      // can carry the hole. The driver throw stays as defense against bytes
+      // produced somewhere else.
+      const declared = OutputDeclaration.make({
+        id: OutputId.make("asset"), path: SafeRelativePath.make("dist/asset.zip"), kind: "file"
+      })
+      const error = await Effect.runPromise(structuredEffect(CatalogStructuredRequest.make({
+        operation: Write.make({
+          id: OperationId.make("catalog:foreign:render"), inputs: [OutputId.make("asset")],
+          outputs: [OutputDeclaration.make({
+            id: OutputId.make("formula"), path: SafeRelativePath.make("dist/formula.rb"), kind: "file"
+          })],
+          path: SafeRelativePath.make("dist/formula.rb"),
+          content: ["url ", ContentHole.make({ fact: "downloadUrl", outputId: OutputId.make("asset") })]
+        }),
+        root: WorkspaceRoot.make(directory),
+        availableOutputs: [declared]
+      })).pipe(liveLayers(recordingSpawner(() => ({ exitCode: 0 })), {}), Effect.flip))
+      expect(error._tag).toBe("DriverError")
+      expect(error.reason).toContain("lowered plans resolve this at plan time")
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }

@@ -91,13 +91,42 @@ describe("Plan 176 current recipe port", () => {
     expect(custom?.argv.length).toBeGreaterThan(0)
   })
 
+  test("deriving a download URL without any repository refuses instead of interpolating undefined", async () => {
+    const config = {
+      project: {
+        name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123",
+        description: "fixture", homepage: "https://example.invalid"
+      },
+      artifacts: [{ id: "cli", path: "dist/cli", format: "executable" }],
+      publish: {
+        homebrew: {
+          repository: "owner/homebrew-tap", formulaName: "cli",
+          formulaPath: ".release/cli.rb", ids: ["cli"]
+        }
+      }
+    }
+    const failure = await Effect.runPromise(compilePlan(config, Invocation.make({
+      workspace: WorkspaceRoot.make(root),
+      commit: NonEmptyName.make("abc123"),
+      snapshot: false
+    })).pipe(Effect.flip))
+    expect(failure._tag).toBe("ConfigValueError")
+    expect(String((failure as { reason?: unknown }).reason)).toContain(
+      "publish.github.repository, project.repository, or an explicit url"
+    )
+  })
+
   test("agent-plugin renders both marketplace catalogs to exact public bytes", async () => {
     const accepted = await compile("agent-plugin")
+    // Only sha256 is still a hole: the download URL is knowable at plan time and
+    // is lowered as a literal, so this table no longer stands in for it. That
+    // hand-fed entry was the blind spot — the driver THROWS on a downloadUrl
+    // hole, so the example planned cleanly and could never have applied.
     const facts: Readonly<Record<string, string>> = {
-      "sha256:plugin": "3f7c1c0e9d4b5a68721c3d0f8e5a9b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a",
-      "downloadUrl:plugin":
-        "https://github.com/owner/agent-plugin/releases/download/v0.1.0/release-example-agent-plugin_0.1.0.zip"
+      "sha256:plugin": "3f7c1c0e9d4b5a68721c3d0f8e5a9b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a"
     }
+    const downloadUrl =
+      "https://github.com/owner/agent-plugin/releases/download/v0.1.0/release-example-agent-plugin_0.1.0.zip"
     const renderFacts = (content: ContentValue): string => typeof content === "string"
       ? content
       : content.map((part) =>
@@ -109,6 +138,14 @@ describe("Plan 176 current recipe port", () => {
       const operation = accepted.plan.stages.catalog.find((candidate) =>
         candidate._tag === "Write" && candidate.id === `catalog:${id}:render`)
       if (operation?._tag !== "Write") throw new Error(`Missing ${id} catalog write.`)
+      // No downloadUrl hole survives to reach the driver, which would throw on
+      // one; the claude catalog carries the derived URL as a literal instead.
+      expect(typeof operation.content === "string" ? [] : operation.content.filter(
+        (part) => typeof part !== "string" && part.fact === "downloadUrl"
+      )).toEqual([])
+      if (id === "claude-marketplace") {
+        expect(renderFacts(operation.content)).toContain(downloadUrl)
+      }
       expect(renderFacts(operation.content)).toBe(readFileSync(
         join(root, "test", "fixtures", "public", "agent-plugin", fixture),
         "utf8"

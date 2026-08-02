@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
   "project": {
     "name": "release-example-pypi",
     "packageName": "release-example-pypi",

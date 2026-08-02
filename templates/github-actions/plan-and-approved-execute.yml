@@ -7,7 +7,7 @@ jobs:
     environment: release
     steps:
       - uses: actions/checkout@v4
-      - { id: plan, uses: mannyc2/ts-release-action@v1, with: { command: plan, config: release.config.json, plan-path: release-plan.json } }
-      - { id: review, uses: mannyc2/ts-release-action@v1, with: { command: apply, review-only: "true", plan-path: release-plan.json, plan-id: "${{ steps.plan.outputs.plan_id }}", scope: all } }
-      - { id: materialize, uses: mannyc2/ts-release-action@v1, with: { command: apply, plan-path: release-plan.json, plan-id: "${{ steps.plan.outputs.plan_id }}", new-run: .release/runs, through: validate, scope: all, confirm-execution: "${{ steps.review.outputs.execution_review_id }}", reviewer: github-actions } }
-      - { uses: mannyc2/ts-release-action@v1, with: { command: apply, plan-path: release-plan.json, plan-id: "${{ steps.plan.outputs.plan_id }}", resume: .release/runs, through: verify, confirm-publish: "${{ steps.materialize.outputs.publish_review_id }}", reviewer: github-actions } }
+      - { id: plan, uses: mannyc2/ts-release-action@v0, with: { command: plan, config: release.config.json, plan-path: release-plan.json } }
+      - { id: review, uses: mannyc2/ts-release-action@v0, with: { command: apply, review-only: "true", plan-path: release-plan.json, plan-id: "${{ steps.plan.outputs.plan_id }}", scope: all } }
+      - { id: materialize, uses: mannyc2/ts-release-action@v0, with: { command: apply, plan-path: release-plan.json, plan-id: "${{ steps.plan.outputs.plan_id }}", new-run: .release/runs, through: validate, scope: all, confirm-execution: "${{ steps.review.outputs.execution_review_id }}", reviewer: ${{ github.actor }} } }
+      - { uses: mannyc2/ts-release-action@v0, with: { command: apply, plan-path: release-plan.json, plan-id: "${{ steps.plan.outputs.plan_id }}", resume: .release/runs, through: verify, confirm-publish: "${{ steps.materialize.outputs.publish_review_id }}", reviewer: ${{ github.actor }} } }

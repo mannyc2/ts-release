@@ -1,7 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - pending
 
+- The published `ts-release` executable is now a Node bundle, so `npx
+  ts-release` works on a machine without Bun. Bun remains a supported host.
+- Shipped configs no longer carry a `$schema` reference; the URL they named
+  was never published.
 - Added `retry` to the apply input: a failed-before-commit operation can be
   retried by id without editing the ledger by hand, and a run lease left
   behind by a killed process is stolen once it is stale.
@@ -11,7 +15,8 @@
 - Credential values no longer reach durable data: child output is recorded as
   a bounded excerpt with declared environment values and known token shapes
   redacted, and every registry URL passes one HTTPS policy.
-- `effect` is now a peer dependency — install it alongside this package.
+- `effect`, `@effect/platform-node`, and `@effect/platform-bun` are now
+  peerDependencies; npm 7+ and bun install them automatically.
 - Dispatch evidence distinguishes what reached the wire from what did not, so
   an unknown commitment is never recorded as a failure to dispatch.
 - Deleted the distributed-execution subsystem, its operations, and its
@@ -69,8 +74,6 @@
   `check:import-rules`, `check:tree-shaking`) run before the build, and added
   `check:summary`, which runs every gate and prints a pass/fail table instead
   of stopping at the first failure.
-
-## 0.2.0 - 2026-07-27
 
 ### Breaking: sealed plan/apply core
 

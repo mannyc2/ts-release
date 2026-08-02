@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: plan
-        uses: mannyc2/ts-release-action@v1
+        uses: mannyc2/ts-release-action@v0
         with: { command: plan, config: release.config.json, plan-path: release-plan.json }
       - uses: actions/upload-artifact@v4
         with: { name: release-plan, path: release-plan.json }

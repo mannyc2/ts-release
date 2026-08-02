@@ -158,6 +158,8 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
 ])
 const appEntryModules: ReadonlySet<string> = new Set([
   "apps/release-ts/src/cli/main.ts",
+  // The published bin's entry: same duties as main.ts on the Node host.
+  "apps/release-ts/src/cli/node-main.ts",
   "apps/ts-release-action/src/index.ts"
 ])
 const appPlatformSpecifiers = [

@@ -17,8 +17,10 @@ const root = cwd()
 const bannedAggregateExportSet = new Set(bannedAggregateExports)
 const expectedPublicExportSet = new Set(expectedPublicExports)
 const ScriptLayer = BunServices.layer
+// The published bin is the node BUNDLE, not the Bun TypeScript entry: an npm
+// consumer has node and no bun (scripts/check-cli-bundle.ts runs it for real).
 const expectedRootBin = {
-  "ts-release": "./apps/release-ts/src/cli/main.ts"
+  "ts-release": "./dist/bin/ts-release.js"
 } as const
 const expectedRootRuntimeExports = new Set([
   "ApprovalSigner",
@@ -414,8 +416,10 @@ const main = async (): Promise<void> => {
     if (appManifest.exports !== undefined) {
       failures.push("apps/release-ts/package.json must not declare root library exports")
     }
-    if (!isRecord(appManifest.bin) || appManifest.bin.release !== "dist/cli/main.js") {
-      failures.push("apps/release-ts/package.json must own bin.release as dist/cli/main.js")
+    // The app declares NO bin: it is private, it has no build, and the only
+    // shipped executable is the root bundle above.
+    if (appManifest.bin !== undefined) {
+      failures.push("apps/release-ts/package.json must not declare a bin; the root bundle is the only executable")
     }
     if (
       !isReadonlyArray(appManifest.sideEffects) ||

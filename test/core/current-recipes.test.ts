@@ -50,7 +50,7 @@ describe("Plan 176 current recipe port", () => {
         candidate._tag === "Write" && candidate.id === `catalog:${item[1]}:render`)
       if (operation?._tag !== "Write") throw new Error("Missing catalog preset write.")
       expect(render(operation.content, item[3])).toBe(readFileSync(
-        join(root, "test", "fixtures", "rewrite", "public", item[0], item[2]),
+        join(root, "test", "fixtures", "public", item[0], item[2]),
         "utf8"
       ))
     })
@@ -70,7 +70,7 @@ describe("Plan 176 current recipe port", () => {
 
   test("custom publishers cannot masquerade as local Exec", async () => {
     const input = JSON.parse(readFileSync(
-      join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),
+      join(root, "test", "fixtures", "oracle", "command-builder.json"),
       "utf8"
     ))
     input.publish.custom = [{
@@ -110,7 +110,7 @@ describe("Plan 176 current recipe port", () => {
         candidate._tag === "Write" && candidate.id === `catalog:${id}:render`)
       if (operation?._tag !== "Write") throw new Error(`Missing ${id} catalog write.`)
       expect(renderFacts(operation.content)).toBe(readFileSync(
-        join(root, "test", "fixtures", "rewrite", "public", "agent-plugin", fixture),
+        join(root, "test", "fixtures", "public", "agent-plugin", fixture),
         "utf8"
       ))
     }
@@ -138,7 +138,7 @@ describe("Plan 176 current recipe port", () => {
 
   test("typed variables are substituted as value tokens without evaluation", async () => {
     const config = JSON.parse(readFileSync(
-      join(root, "test", "fixtures", "rewrite", "oracle", "command-builder.json"),
+      join(root, "test", "fixtures", "oracle", "command-builder.json"),
       "utf8"
     ))
     config.builds[0].run = ["tool", "{name}", "{version}", "{target}", "{binary}", "{ext}"]

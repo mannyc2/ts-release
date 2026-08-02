@@ -6,11 +6,13 @@ on:
       version:
         description: Published version to install.
         required: true
-        default: "0.0.8"
+        # bump when a release ships; must name a published version
+        default: "0.0.7"
       release_tag:
         description: GitHub Release tag that owns the binary assets.
         required: true
-        default: "v0.0.8"
+        # bump when a release ships; must name a published version
+        default: "v0.0.7"
 
 permissions:
   contents: read

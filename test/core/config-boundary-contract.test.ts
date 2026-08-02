@@ -26,10 +26,10 @@ import {
 
 const root = process.cwd()
 const fixturePaths: ReadonlyArray<string> = [
-  "test/fixtures/rewrite/config-boundary/homebrew.json",
-  "test/fixtures/rewrite/config-boundary/scoop.json",
-  "test/fixtures/rewrite/config-boundary/generic-catalog.json",
-  "test/fixtures/rewrite/config-boundary/portable-multi-target.json"
+  "test/fixtures/config-boundary/homebrew.json",
+  "test/fixtures/config-boundary/scoop.json",
+  "test/fixtures/config-boundary/generic-catalog.json",
+  "test/fixtures/config-boundary/portable-multi-target.json"
 ]
 const cliWorkspaceSelection = [
   {

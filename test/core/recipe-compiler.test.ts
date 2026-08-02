@@ -16,7 +16,7 @@ import {
 const root = process.cwd()
 const fixture = JSON.parse(readFileSync(join(
   root,
-  "test/fixtures/rewrite/plan-v6/minimal.json"
+  "test/fixtures/plan-v6/minimal.json"
 ), "utf8")) as unknown
 const invocation = (workspace: string) => Invocation.make({
   workspace: WorkspaceRoot.make(workspace),

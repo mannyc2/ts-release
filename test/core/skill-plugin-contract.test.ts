@@ -17,7 +17,10 @@ const RESOURCES = [
   "apps/release-ts/release.config.json",
   ".agents/plugins/marketplace.json",
   ".claude-plugin/marketplace.json",
-  "ts-release-plugin"
+  "ts-release-plugin",
+  // The gate resolves every repo path the plugin markdown names, so the copy
+  // has to carry the suites it points agents at.
+  "test/core"
 ]
 const withPluginCopy = async <A>(
   use: (copy: string) => Promise<A> | A
@@ -151,6 +154,28 @@ describe("ts-release plugin structural contract", () => {
         const report = checkSkillPlugin(installer)
         expect(report.status).toBe("broken")
         expect(report.problems.some((item) => item.includes("third-party installer"))).toBe(true)
+      })
+    }))
+
+  // The failure this gate exists for: the shipped runbook named test/rewrite/*
+  // suites for months after the directory became test/core/.
+  test("a repo path or gate name the plugin names must resolve", () =>
+    withPluginCopy(async (copy) => {
+      const reference = join(copy, "ts-release-plugin/skills/release/references/verification.md")
+      writeFileSync(reference, readFileSync(reference, "utf8")
+        .replace("test/core/archive-files.test.ts", "test/rewrite/archive-files.test.ts"))
+      const moved = checkSkillPlugin(copy)
+      expect(moved.status).toBe("broken")
+      expect(moved.problems.some((item) =>
+        item.includes("verification.md") && item.includes("test/rewrite/archive-files.test.ts"))).toBe(true)
+      await withPluginCopy((renamed) => {
+        const path = join(renamed, "ts-release-plugin/skills/release/references/verification.md")
+        writeFileSync(path, readFileSync(path, "utf8")
+          .replace("bun run check:portable", "bun run check:portability"))
+        const report = checkSkillPlugin(renamed)
+        expect(report.status).toBe("broken")
+        expect(report.problems.some((item) =>
+          item.includes("missing package script check:portability"))).toBe(true)
       })
     }))
 })

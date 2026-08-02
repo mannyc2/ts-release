@@ -135,6 +135,34 @@ const checkContent = (pluginRoot: string, files: ReadonlyArray<string>, problems
     }
   }
 }
+// The plugin ships to agents that FOLLOW it literally, so a repo path or gate
+// name that stops existing breaks the runbook at step one inside a published
+// zip. Every reference the markdown makes is resolved here.
+const REPO_PATH = /^(test|src|scripts|apps|examples|templates)\/\S+\.(ts|md|json)$/u
+const checkRepositoryReferences = (
+  root: string, pluginRoot: string, files: ReadonlyArray<string>, problems: Array<string>
+): void => {
+  const scripts = record(
+    readJson(join(root, "package.json"), problems).scripts, problems, "package.json scripts"
+  )
+  for (const file of files.filter((path) => path.endsWith(".md"))) {
+    const text = readFileSync(join(pluginRoot, file), "utf8")
+    for (const [, quoted] of text.matchAll(/`([^`\n]+)`/gu)) {
+      const token = quoted!.trim()
+      const test = /^bun test\s+(.+)$/u.exec(token)
+      const script = /^bun run\s+([A-Za-z0-9:_-]+)/u.exec(token)
+      const paths = test !== undefined && test !== null
+        ? test[1]!.split(/\s+/u).filter((item) => !item.startsWith("-"))
+        : REPO_PATH.test(token) ? [token] : []
+      for (const path of paths) {
+        if (!existsSync(join(root, path))) problems.push(`${file} references missing path ${path}.`)
+      }
+      if (script !== null && !(script[1]! in scripts)) {
+        problems.push(`${file} references missing package script ${script[1]}.`)
+      }
+    }
+  }
+}
 const checkEvals = (pluginRoot: string, problems: Array<string>): { positive: number; negative: number } => {
   const document = readJson(join(pluginRoot, "evals/cases.json"), problems)
   const cases = Array.isArray(document.cases) ? document.cases : []
@@ -174,6 +202,7 @@ export const checkSkillPlugin = (root: string): SkillPluginReport => {
   }
   if (files.length > 0) {
     checkManifests(root, pluginRoot, version, problems)
+    checkRepositoryReferences(root, pluginRoot, files, problems)
     if (files.includes("skills/release/SKILL.md")) checkContent(pluginRoot, files, problems)
   }
   const counts = files.includes("evals/cases.json")

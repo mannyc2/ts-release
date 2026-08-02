@@ -113,9 +113,31 @@ ${table(["Output", "Description"], outputs.map((output) => [`\`${output.name}\``
 
 ## Usage
 
-The staged shape: plan on push, approve execution in a protected environment,
-approve publication in a second one. Each stage confirms the review id the
-previous stage produced, so an unreviewed plan cannot reach the wire.
+Call the reusable workflow and the staging is done for you:
+
+\`\`\`yaml
+jobs:
+  release:
+    uses: ${actionRepository}/.github/workflows/release.yml@v0
+    with:
+      config: release.config.json
+      environment: release
+      bun-version: "1.3.14"
+      setup: bun install --frozen-lockfile
+    secrets: inherit
+\`\`\`
+
+Protect that environment to require an approval between planning, materializing,
+and publishing; leave it unprotected and the same pipeline runs one-shot. The
+run's receipts record which happened, probed from the environment's real
+protection rules.
+
+### Composing the action yourself
+
+The staged shape the workflow above builds: plan on push, approve execution in a
+protected environment, approve publication in a second one. Each stage confirms
+the review id the previous stage produced, so an unreviewed plan cannot reach
+the wire.
 
 \`\`\`yaml
 name: Release
@@ -210,6 +232,26 @@ const copyInto = (from: string, to: string): void => {
   copyFileSync(from, to)
 }
 
+// The reusable workflow has ONE source, in the monorepo, where `uses:` points
+// at the local action so it stays testable here. The mirror copy is that file
+// with every local reference rewritten to a pinned published one — machine
+// rewritten, never maintained twice.
+const workflowSource = join(root, ".github", "workflows", "ts-release-release.yml")
+const mirrorWorkflow = (version: string, commit: string): string => {
+  if (!existsSync(workflowSource)) {
+    throw new Error(`Mirror source ${relative(root, workflowSource)} is missing.`)
+  }
+  const source = readFileSync(workflowSource, "utf8")
+  const rewritten = source.replaceAll(
+    "uses: ./apps/ts-release-action",
+    `uses: ${actionRepository}@v${version}`
+  )
+  if (rewritten.includes("./apps/")) {
+    throw new Error("Mirror workflow still references a monorepo path.")
+  }
+  return `# Mirrored from ${actionRepository.replace("-action", "")}@${commit} by scripts/sync-action-mirror.ts — do not edit here.\n${rewritten}`
+}
+
 export const syncActionMirror = (): { readonly version: string; readonly commit: string } => {
   // Writing outside a gitignored path would stage a second copy of the action
   // into THIS repository — the one thing a mirror must never do.
@@ -233,7 +275,6 @@ export const syncActionMirror = (): { readonly version: string; readonly commit:
 
   rmSync(mirrorRoot, { recursive: true, force: true })
   mkdirSync(mirrorRoot, { recursive: true })
-  // Table-driven so plan 205's reusable workflow is one more entry here.
   const files: ReadonlyArray<readonly [string, string]> = [
     [join(actionRoot, "action.yml"), join(mirrorRoot, "action.yml")],
     [join(actionRoot, "dist", "index.js"), join(mirrorRoot, "dist", "index.js")],
@@ -243,6 +284,9 @@ export const syncActionMirror = (): { readonly version: string; readonly commit:
     if (!existsSync(from)) throw new Error(`Mirror source ${relative(root, from)} is missing.`)
     copyInto(from, to)
   }
+  const workflowPath = join(mirrorRoot, ".github", "workflows", "release.yml")
+  mkdirSync(dirname(workflowPath), { recursive: true })
+  writeFileSync(workflowPath, mirrorWorkflow(version, commit))
   writeFileSync(join(mirrorRoot, "README.md"), mirrorReadme(manifest, version, commit))
   return { version, commit }
 }

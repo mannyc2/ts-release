@@ -111,6 +111,23 @@ installs and runs on a machine that did not build it.
 Follow [skill-distribution.md](./skill-distribution.md) States 1-2. Submission
 to any public directory is a separate decision and is never automatic.
 
+## After any change to the reusable workflow
+
+`.github/workflows/ts-release-release.yml` is what consumers execute. The
+structural tests pin its shape; only a dispatch proves GitHub agrees:
+
+```sh
+gh workflow run workflow-smoke.yml --ref main
+```
+
+It runs the full three-job chain against a publish-free fixture, so nothing
+reaches a registry. Pass means a green run AND, in the uploaded
+`workflow-smoke-materialized` artifact, the run-ledger file
+(`<logicalRunId>.run-ledger.json`) carrying receipts whose `reviewer` starts
+with `self:` — the `workflow-smoke` environment is unprotected, so that is the
+honest marker. Do not check the `.evidence.json` sidecar: it deliberately
+carries no reviewer field, so it would prove nothing.
+
 ## 8. Stamp the changelog
 
 Replace `## <version> - pending` in `CHANGELOG.md` with the date the release

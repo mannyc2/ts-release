@@ -157,4 +157,51 @@ describe("three-job release handoff", () => {
       }
     }
   })
+
+  test("an ungated run says so in its receipts", async () => {
+    // The in-process twin of the composed workflow's honesty claim: when the
+    // environment has no protection rules, the workflow records a `self:`
+    // reviewer, and that string has to survive into the durable receipts. This
+    // holds the property even when nobody dispatches the smoke workflow.
+    const ungated = "self:one-shot@github:tester"
+    const directories: Array<string> = []
+    try {
+      const runnerA = seedWorkspace()
+      directories.push(runnerA)
+      const planned = await invoke(runnerA, { command: "plan", "plan-path": "release-plan.json" })
+      const planId = planned.plan_id!
+      const planBytes = readFileSync(join(runnerA, "release-plan.json"), "utf8")
+      const reviewed = await invoke(runnerA, {
+        command: "apply",
+        "review-only": "true",
+        "plan-path": "release-plan.json",
+        "plan-id": planId,
+        scope: "all"
+      })
+
+      const runnerB = seedWorkspace()
+      directories.push(runnerB)
+      writeFileSync(join(runnerB, "release-plan.json"), planBytes)
+      const materialized = await invoke(runnerB, {
+        command: "apply",
+        "plan-path": "release-plan.json",
+        "plan-id": planId,
+        "new-run": ".release/runs",
+        through: "validate",
+        scope: "all",
+        "confirm-execution": reviewed.execution_review_id!,
+        reviewer: ungated
+      })
+      const ledger = decodeLedger(readFileSync(materialized.run_path!, "utf8"))
+      const reviewers = new Set(ledger.operations.flatMap((operation) =>
+        operation.attempts.map((attempt) => attempt.executionReceipt.reviewer)
+      ))
+      expect([...reviewers]).toEqual([ungated])
+      for (const reviewer of reviewers) expect(reviewer.startsWith("self:")).toBe(true)
+    } finally {
+      for (const directory of directories) {
+        rmSync(directory, { recursive: true, force: true })
+      }
+    }
+  })
 })

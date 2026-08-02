@@ -244,16 +244,49 @@ workspace must exist and is normalized with `realpath`.
 
 ## GitHub Action
 
+The whole staged pipeline, in a workflow you do not have to write:
+
+```yaml
+name: Release
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  release:
+    uses: mannyc2/ts-release-action/.github/workflows/release.yml@v0
+    with:
+      config: release.config.json
+      environment: release
+      bun-version: "1.3.14"
+      setup: bun install --frozen-lockfile
+    secrets: inherit
+```
+
+Three jobs run: `plan` compiles and reviews with no gate, then `materialize`
+and `publish` sit behind the environment you named. The plan id and the review
+challenges thread between them, and the plan a human approves is byte-identical
+to the plan that is applied.
+
+Protect that environment in Settings → Environments to require an approval
+between the stages. Leave it unprotected and the same pipeline runs one-shot —
+which is a legitimate way to run it, and the durable receipts say so: the
+reviewer is probed from the environment's real protection rules, recording
+`environment:...` when they exist and `self:one-shot@...` when they do not.
+
+Composing it yourself is still first-class — this is what the reusable workflow
+does on your behalf:
+
 ```yaml
 - id: plan
-  uses: mannyc2/ts-release/apps/ts-release-action@main
+  uses: mannyc2/ts-release-action@v0
   with:
     command: plan
     config: release.config.json
     plan-path: .release/release-plan.json
 
 - id: review
-  uses: mannyc2/ts-release/apps/ts-release-action@main
+  uses: mannyc2/ts-release-action@v0
   with:
     command: apply
     review-only: "true"

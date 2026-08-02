@@ -2,6 +2,14 @@
 
 ## 0.2.0 - pending
 
+- Added a reusable release workflow: a consumer calls
+  `mannyc2/ts-release-action/.github/workflows/release.yml@v0` with a config
+  and an environment, and gets the whole staged pipeline — plan ungated,
+  materialize and publish behind the environment, ids threaded, plan bytes
+  carried as artifacts. Protect the environment to require approvals; leave
+  it unprotected for a one-shot pipeline. The reviewer recorded in the run's
+  receipts is probed from the environment's actual protection rules. The three
+  hand-threaded workflow templates are replaced by one that calls it.
 - Configuration has an authored form: `version`, `tag`, `commit`, and `name`
   may be omitted and observed instead. `plan --from-git` / `ship --from-git`
   (CLI) and `resolve: github` (Action) observe the repository's facts, and

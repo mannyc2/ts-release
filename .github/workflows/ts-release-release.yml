@@ -123,6 +123,9 @@ jobs:
         with:
           name: ${{ inputs.artifact-prefix }}-plan
           path: ${{ inputs.plan-path }}
+          # `.release` is a dot-directory and upload-artifact skips hidden files by
+          # default, silently uploading nothing and still passing.
+          include-hidden-files: true
 
   materialize:
     needs: plan
@@ -172,6 +175,7 @@ jobs:
         with:
           name: ${{ inputs.artifact-prefix }}-materialized
           path: .release
+          include-hidden-files: true
 
   publish:
     needs: [plan, materialize]

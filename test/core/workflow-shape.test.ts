@@ -87,6 +87,15 @@ describe("the composed release workflow", () => {
     expect(workflow).toContain("resume: ${{ inputs.runs-path }}")
   })
 
+  // The run state lives under `.release`, a dot-directory. upload-artifact
+  // skips hidden files by default, uploads NOTHING, and still passes with a
+  // warning — so the failure surfaces one job later as a missing artifact.
+  test("every upload carries hidden files", () => {
+    const uploads = workflow.match(/uses: actions\/upload-artifact/gu) ?? []
+    const flags = workflow.match(/include-hidden-files: true/gu) ?? []
+    expect(flags).toHaveLength(uploads.length)
+  })
+
   test("recovery is never automated in CI", () => {
     // reconcile observes, resolutions judge, retry re-attempts — all three are
     // human acts, and a workflow that could perform them would be deciding.

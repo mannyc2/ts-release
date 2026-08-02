@@ -43,6 +43,9 @@ jobs:
         with:
           name: release-plan
           path: .release/release-plan.json
+          # `.release` is a dot-directory and upload-artifact skips hidden files by
+          # default, silently uploading nothing and still passing.
+          include-hidden-files: true
 
   materialize:
     needs: plan
@@ -90,6 +93,7 @@ jobs:
         with:
           name: materialized-release
           path: .release
+          include-hidden-files: true
 
   publish:
     needs: [plan, materialize]

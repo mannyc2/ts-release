@@ -192,7 +192,9 @@ built from the exported service tags and shapes, a published host layer, or
 `ReleaseServicesLive` plus a platform of the caller's choosing.
 
 The CLI owns one-read JSON loading and workspace selection. Its commands are
-`init`, `doctor`, `plan`, and `apply`.
+`init`, `doctor`, `plan`, `apply`, and `ship`. `ship` composes the other
+lifecycle commands in one process for ungated releases; it adds no authority
+and records `self:one-shot` as the reviewer of the approvals it echoes.
 
 The Action owns one-read, workspace-contained JSON loading. Its commands are
 `plan`, `doctor`, and `apply`. Its bundle is checked against source and then

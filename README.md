@@ -146,14 +146,27 @@ their shapes, the permit classes an `ApprovalSigner` returns, and
 
 ## CLI
 
-The installed CLI has exactly four commands:
+The installed CLI has exactly five commands:
 
 ```text
 ts-release init
 ts-release doctor
 ts-release plan
 ts-release apply
+ts-release ship
 ```
+
+One command releases everything a config describes:
+
+```sh
+ts-release ship --config release.config.json
+```
+
+`ship` plans, prints the review surface, confirms it itself, and applies
+through verify in one process. Because nobody independent approved, both
+approval receipts in the run ledger record the reviewer `self:one-shot`. When
+you want an independent approver between materialize and publish, split into
+the staged commands below — same plan file, same run ledger, no migration.
 
 The canonical staged flow is:
 

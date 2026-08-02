@@ -2,6 +2,10 @@
 
 ## 0.2.0 - pending
 
+- Added `ts-release ship`: plan, self-confirm, and apply in one command. The
+  approval receipts it mints record the reviewer `self:one-shot`, so a
+  one-shot run stays distinguishable from a reviewed one in the ledger. The
+  staged commands are unchanged.
 - The published `ts-release` executable is now a Node bundle, so `npx
   ts-release` works on a machine without Bun. Bun remains a supported host.
 - Shipped configs no longer carry a `$schema` reference; the URL they named

@@ -228,7 +228,11 @@ The root runtime exports are exactly:
 The lifecycle verbs are exactly `plan` and `apply`; review is a pure
 projection.
 
-The CLI commands are exactly `init`, `doctor`, `plan`, and `apply`.
+The CLI commands are exactly `init`, `doctor`, `plan`, `apply`, and `ship`.
+`ship` is an application-boundary composition of `plan`, the review
+projection, and `apply`; it introduces no library verb, which is why the
+two-verb sentence above stays true and unchanged. A run `ship` confirms
+records the reviewer `self:one-shot` in its approval receipts.
 The Action commands are exactly `plan`, `doctor`, and `apply`.
 `doctor` and review-only apply consume a plan and perform no publication.
 

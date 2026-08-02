@@ -75,6 +75,7 @@
     "check:action-bundle": "bun run scripts/check-action-bundle.ts",
     "check:cli-bundle": "bun run scripts/check-cli-bundle.ts",
     "check:skill-plugin": "bun run scripts/check-skill-plugin.ts",
+    "release:action-mirror": "bun run scripts/sync-action-mirror.ts",
     "check:core": "bun run check:versions && bun run check:import-rules && bun run check:tree-shaking && bun run check && bun test && bun run build && bun run check:cli-bundle && bun run check:examples && bun run check:readme && bun run check:package-exports",
     "check:versions": "bun run scripts/check-versions.ts",
     "check:summary": "bun run scripts/run-gates.ts",

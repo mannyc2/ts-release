@@ -1,7 +1,7 @@
 import { plan } from "@mannyc1/ts-release"
 import {
   appPackagePath, isJsonObject, packagePath, readJson, releaseConfigPath,
-  report, root, stringField
+  report, root, selfReleaseConfig, stringField
 } from "./self-release-facts.js"
 
 const failures: Array<string> = []
@@ -27,16 +27,19 @@ if (isJsonObject(config)) {
     if (stringField(project, "name") !== name) failures.push("config.project.name must equal package.json name.")
     if (stringField(project, "version") !== version) failures.push("config.project.version must equal package.json version.")
     if (stringField(project, "tag") !== `v${version ?? ""}`) failures.push("config.project.tag must equal v{version}.")
-    if (stringField(project, "commit") !== "HEAD") failures.push("config.project.commit must explicitly be HEAD.")
+    // The dogfood config states no commit: `release.yml` passes `resolve: github`
+    // so the identity is OBSERVED from the runner. The literal "HEAD" this gate
+    // used to demand was never a commit anyone could resolve after the fact.
+    if ("commit" in project) failures.push("config.project.commit must be omitted and observed.")
   }
   if (!isJsonObject(config.publish)) failures.push("config.publish must be a complete object.")
   else {
-    for (const provider of ["npm", "github", "homebrew", "scoop", "pypi"]) {
+    for (const provider of ["npm", "github"]) {
       if (!isJsonObject(config.publish[provider])) failures.push(`config.publish.${provider} must be configured.`)
     }
   }
   try {
-    const planned = await plan({ config, workspace: root })
+    const planned = await plan({ config: selfReleaseConfig(), workspace: root })
     planId = planned.planId
     if (planned.plan.identity.name !== name) failures.push("Planned name differs from package identity.")
     if (planned.plan.identity.version !== version) failures.push("Planned version differs from package identity.")

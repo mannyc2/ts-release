@@ -1,10 +1,11 @@
 import { plan } from "@mannyc1/ts-release"
 import {
-  packagePath, readJson, releaseConfigPath, report, root, stringField
+  packagePath, readJson, releaseConfigPath, report, root, selfReleaseConfig,
+  stringField
 } from "./self-release-facts.js"
 
 const failures: Array<string> = []
-const planned = await plan({ config: readJson(releaseConfigPath), workspace: root })
+const planned = await plan({ config: selfReleaseConfig(), workspace: root })
 const stages = planned.plan.stages
 const operations = [
   ...stages.build, ...stages.process, ...stages.catalog, ...stages.validate,
@@ -21,8 +22,13 @@ if (outputs.length === 0) failures.push("The self-release plan declares no mater
 if (new Set(outputIds).size !== outputIds.length) failures.push("The self-release plan declares duplicate output ids.")
 if (!tags.has("ForgeRelease")) failures.push("The self-release plan has no forge release operation.")
 if (!registryKinds.has("npm")) failures.push("The self-release plan has no npm registry operation.")
-if (!registryKinds.has("pypi")) failures.push("The self-release plan has no PyPI registry operation.")
-if (stages.catalog.length === 0) failures.push("The self-release plan has no product-owned catalog operations.")
+// PyPI and the Homebrew/Scoop catalogs are product features this repo does not
+// dogfood: there is no Python project here to build a wheel from, and the
+// catalog operations assume a tap working copy that nothing in the product
+// obtains (no clone operation exists). Asserting them here demanded a plan that
+// could never apply. See plans/207.
+if (registryKinds.has("pypi")) failures.push("The self-release plan publishes to PyPI, which this repo cannot build a wheel for.")
+if (stages.catalog.length !== 0) failures.push("The self-release plan has catalog operations, which cannot apply without a tap working copy.")
 if (outputPaths.some((path) => path.startsWith("/") || path.includes("../"))) {
   failures.push("The self-release plan contains a non-contained output path.")
 }

@@ -30,6 +30,7 @@ jobs:
           command: plan
           config: apps/release-ts/release.config.json
           plan-path: .release/release-plan.json
+          resolve: github
       - id: review
         uses: ./apps/ts-release-action
         with:
@@ -59,6 +60,21 @@ jobs:
         with:
           name: release-plan
           path: .release
+      # Observed, not asserted: what the durable receipt claims about approval
+      # has to match what actually gates this job.
+      - id: reviewer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/release" --jq '.protection_rules | length' 2>/dev/null || echo "unknown")
+          if [ "$rules" = "unknown" ]; then
+            echo "::warning::could not verify environment protection; recording reviewer as self:one-shot"
+          fi
+          if [ "$rules" != "unknown" ] && [ "$rules" -gt 0 ] 2>/dev/null; then
+            echo "identity=environment:release@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "identity=self:one-shot@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          fi
       - id: apply
         uses: ./apps/ts-release-action
         with:
@@ -69,7 +85,7 @@ jobs:
           new-run: .release/runs
           scope: all
           confirm-execution: ${{ needs.plan.outputs.execution_review_id }}
-          reviewer: ${{ github.actor }}
+          reviewer: ${{ steps.reviewer.outputs.identity }}
       - uses: actions/upload-artifact@v4
         with:
           name: materialized-release
@@ -94,6 +110,17 @@ jobs:
         with:
           name: materialized-release
           path: .release
+      - id: reviewer
+        run: |
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/release" --jq '.protection_rules | length' 2>/dev/null || echo "unknown")
+          if [ "$rules" = "unknown" ]; then
+            echo "::warning::could not verify environment protection; recording reviewer as self:one-shot"
+          fi
+          if [ "$rules" != "unknown" ] && [ "$rules" -gt 0 ] 2>/dev/null; then
+            echo "identity=environment:release@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "identity=self:one-shot@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          fi
       - uses: ./apps/ts-release-action
         with:
           command: apply
@@ -102,4 +129,4 @@ jobs:
           through: verify
           resume: .release/runs
           confirm-publish: ${{ needs.materialize.outputs.publish_review_id }}
-          reviewer: ${{ github.actor }}
+          reviewer: ${{ steps.reviewer.outputs.identity }}

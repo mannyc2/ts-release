@@ -1,10 +1,11 @@
 import { plan, reviewExecution } from "@mannyc1/ts-release"
 import {
-  readJson, readText, releaseConfigPath, releaseWorkflowPath, report, root
+  readJson, readText, releaseConfigPath, releaseWorkflowPath, report, root,
+  selfReleaseConfig
 } from "./self-release-facts.js"
 
 const failures: Array<string> = []
-const planned = await plan({ config: readJson(releaseConfigPath), workspace: root })
+const planned = await plan({ config: selfReleaseConfig(), workspace: root })
 const review = await reviewExecution({
   planBytes: planned.bytes,
   expectedPlanId: planned.planId,

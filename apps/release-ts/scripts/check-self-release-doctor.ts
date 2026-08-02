@@ -7,12 +7,12 @@ import * as Command from "effect/unstable/cli/Command"
 import { plan } from "@mannyc1/ts-release"
 import { makeCli } from "../src/cli/command.js"
 import {
-  readJson, releaseConfigPath, report, root
+  readJson, releaseConfigPath, report, root, selfReleaseConfig
 } from "./self-release-facts.js"
 
 const directory = mkdtempSync(join(tmpdir(), "ts-release-doctor-"))
 const path = join(directory, "plan.json")
-const planned = await plan({ config: readJson(releaseConfigPath), workspace: root })
+const planned = await plan({ config: selfReleaseConfig(), workspace: root })
 writeFileSync(path, planned.bytes)
 const logs: Array<string> = []
 const failures: Array<string> = []

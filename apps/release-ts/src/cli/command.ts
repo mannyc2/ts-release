@@ -11,10 +11,11 @@ import {
   runInit,
   runPlan,
   runReview,
+  runShip,
   type CliIo
 } from "./commands.js"
 
-export { commandNames, selectCliWorkspace, type CliIo } from "./commands.js"
+export { commandNames, selectCliWorkspace, SELF_REVIEWER, type CliIo } from "./commands.js"
 
 type ReleaseCommands = Pick<ReleaseApi, "plan" | "reviewExecution" | "apply">
 const optionalText = (name: string) => Flag.string(name).pipe(Flag.optional)
@@ -96,6 +97,21 @@ const applyCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.m
     }, cwd, io))).pipe(
   Command.withDescription("Execute an approved plan against a durable run ledger.")
 )
+const shipCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.make("ship", {
+  config: text("config", "release.config.json"),
+  root: optionalText("root"),
+  out: text("out", ".release/release-plan.json"),
+  runs: text("runs", ".release/runs"),
+  scope: scopeFlag,
+  reason: optionalText("reason")
+}, (options) => Effect.promise(() => runShip(api, {
+  config: options.config, root: at(options.root), out: options.out, runs: options.runs,
+  scope: at(options.scope), reason: at(options.reason)
+}, cwd, io))).pipe(
+  Command.withDescription(
+    "Plan, self-confirm, and apply in one process; records reviewer self:one-shot. Use plan/apply for independently reviewed releases."
+  )
+)
 
 export const makeCli = (api: ReleaseCommands, cwd: string, io: CliIo) =>
   Command.make("ts-release").pipe(
@@ -104,6 +120,7 @@ export const makeCli = (api: ReleaseCommands, cwd: string, io: CliIo) =>
       initCommand(cwd, io),
       doctorCommand(api, cwd, io),
       planCommand(api, cwd, io),
-      applyCommand(api, cwd, io)
+      applyCommand(api, cwd, io),
+      shipCommand(api, cwd, io)
     ])
   )

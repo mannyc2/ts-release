@@ -10,6 +10,7 @@ import { cwd, exit } from "node:process"
 import { NonEmptyName, WorkspaceRoot } from "../src/model/primitives.js"
 import { compilePlan, Invocation } from "../src/plan/compiler.js"
 import * as Effect from "effect/Effect"
+import { commandNames } from "../apps/release-ts/src/cli/commands.js"
 import { buildCliBundle, cliBundlePath } from "./build-cli-bundle.js"
 
 const root = cwd()
@@ -79,6 +80,14 @@ const checkCliBundle = async (): Promise<string> => {
         `CLI bundle --version printed ${JSON.stringify(printed.stdout.trim())} under node, expected ${manifestVersion}.`,
         printed.stderr.trim()
       ].filter((line) => line.length > 0).join("\n"))
+    }
+
+    // The bundle must expose the command surface the sources declare: a command
+    // that never reaches the published bin does not exist for an npm consumer.
+    const help = run("node", [cliBundlePath, "--help"], { cwd: workspace })
+    const missing = commandNames.filter((name) => !help.stdout.includes(name))
+    if (missing.length > 0) {
+      throw new Error(`CLI bundle --help omits ${missing.join(", ")}.`)
     }
 
     const planned = run("node", [

@@ -6,8 +6,8 @@ import { commandNames, runApply } from "../apps/release-ts/src/cli/commands.js"
 import type { ApplyInput, ApplyOutput } from "../src/api/types.js"
 
 describe("installed CLI commands", () => {
-  test("has exactly the four sealed commands", () => {
-    expect(commandNames).toEqual(["init", "doctor", "plan", "apply"])
+  test("has exactly the five sealed commands", () => {
+    expect(commandNames).toEqual(["init", "doctor", "plan", "apply", "ship"])
   })
 
   test("--retry reaches the api as a retry id list", async () => {

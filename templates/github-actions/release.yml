@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   release:
-    uses: mannyc2/ts-release-action/.github/workflows/release.yml@v0
+    uses: mannyc2/ts-release/.github/workflows/release.yml@__TS_RELEASE_ACTION_REF__
     with:
       config: release.config.json
       environment: release

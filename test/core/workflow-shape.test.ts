@@ -121,7 +121,7 @@ describe("the composed release workflow", () => {
   })
 
   test("the consumer template and the README tell the same story", () => {
-    expect(template).toContain("uses: mannyc2/ts-release-action/.github/workflows/release.yml@v0")
+    expect(template).toContain("uses: mannyc2/ts-release/.github/workflows/release.yml@__TS_RELEASE_ACTION_REF__")
     const snippet = template.split("\n").filter((line) => !line.startsWith("#")).join("\n").trim()
     expect(read("README.md")).toContain(snippet)
   })

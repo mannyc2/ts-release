@@ -329,7 +329,7 @@ permissions:
   contents: read
 jobs:
   release:
-    uses: mannyc2/ts-release-action/.github/workflows/release.yml@v0
+    uses: mannyc2/ts-release/.github/workflows/release.yml@__TS_RELEASE_ACTION_REF__
     with:
       config: release.config.json
       environment: release
@@ -354,14 +354,14 @@ does on your behalf:
 
 ```yaml
 - id: plan
-  uses: mannyc2/ts-release-action@v0
+  uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
   with:
     command: plan
     config: release.config.json
     plan-path: .release/release-plan.json
 
 - id: review
-  uses: mannyc2/ts-release-action@v0
+  uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
   with:
     command: apply
     review-only: "true"

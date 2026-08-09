@@ -77,12 +77,13 @@ bun run release:action-mirror
 ```
 
 It stages `.release/action-mirror/` and prints the `gh`/`git` commands it
-deliberately does not run — repo create, init, commit, tag `v<version>` and the
-floating `v0`, push. Run them, then confirm the reference the shipped templates
-use resolves:
+deliberately does not run — repo create, init, commit, and immutable tag
+publication. The mirror is not the canonical Action channel; Plan 219 owns its
+removal. Until Plan 221 binds the candidate, shipped examples use the explicit
+`__TS_RELEASE_ACTION_REF__` token. Do not substitute a floating major tag.
 
 ```sh
-gh api repos/mannyc2/ts-release-action/git/ref/tags/v0
+gh api repos/mannyc2/ts-release/git/ref/tags/__TS_RELEASE_ACTION_REF__
 ```
 
 The mirror README is GENERATED. Never edit it in the mirror repository; the

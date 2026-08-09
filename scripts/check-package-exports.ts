@@ -36,6 +36,7 @@ const expectedRootRuntimeExports = new Set([
   "ReleaseServicesLive",
   "RunStore",
   "Stage",
+  "unsupportedExecutionHost",
   "WorkspaceStore",
   "apply",
   "defineRelease",

@@ -231,6 +231,7 @@ The root runtime exports are exactly:
 - the service tags a caller composes a layer from — `ApprovalSigner`,
   `RunStore`, `CredentialStore`, `DriverCatalog`, `WorkspaceStore`, plus
   `ReleaseServicesLive` for everything but the two host capabilities;
+  the shared host refusal — `unsupportedExecutionHost`;
 - the permits an `ApprovalSigner` returns — `ExecutionPermit`,
   `PublishPermit`;
 - the branded id constructors public inputs are built from — `PlanId`,

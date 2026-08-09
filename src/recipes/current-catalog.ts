@@ -2,7 +2,7 @@ import { ContentHole, OutputDeclaration, Write, type ContentValue } from "../mod
 import type { CandidateCatalog, CandidateConfig } from "./config.js"
 import {
   basename, compactName, operationId, outputId,
-  path, recordOutput, render, selectedOutputs, type CurrentRows
+  path, recordOutput, render, selectedOutputs, type LegacyStageRows
 } from "./current-shared.js"
 import { ConfigValueError } from "../model/errors.js"
 
@@ -75,7 +75,7 @@ const formulaContent = (
     `  end\n${formulaTail(name, installPath)}`
   ]
 }
-const homebrewRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | undefined => {
+const homebrewRow = (config: CandidateConfig, rows: LegacyStageRows): CatalogRow | undefined => {
   const section = config.publish?.homebrew
   if (section === undefined) return undefined
   const name = section.formulaName ?? compactName(config.project.packageName ?? config.project.name)
@@ -93,7 +93,7 @@ const homebrewRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | u
     inputs: selected
   }
 }
-const scoopRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | undefined => {
+const scoopRow = (config: CandidateConfig, rows: LegacyStageRows): CatalogRow | undefined => {
   const section = config.publish?.scoop
   if (section === undefined) return undefined
   const name = section.manifestName ?? compactName(config.project.packageName ?? config.project.name)
@@ -125,7 +125,7 @@ const scoopRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | unde
   }
 }
 const requireOutput = (
-  rows: CurrentRows, catalogId: string, id: string
+  rows: LegacyStageRows, catalogId: string, id: string
 ): OutputDeclaration => {
   const output = rows.outputs.get(id)
   if (output === undefined) {
@@ -134,7 +134,7 @@ const requireOutput = (
   return output
 }
 const genericRow = (
-  config: CandidateConfig, rows: CurrentRows, entry: CandidateCatalog
+  config: CandidateConfig, rows: LegacyStageRows, entry: CandidateCatalog
 ): CatalogRow => {
   const content: ContentValue = typeof entry.content === "string"
     ? render(entry.content, config)
@@ -154,21 +154,24 @@ const genericRow = (
     inputs: ids.map((id) => requireOutput(rows, entry.id, id))
   }
 }
-export const lowerCurrentCatalogs = (config: CandidateConfig, rows: CurrentRows): void => {
+export const lowerLegacyCatalogs = (config: CandidateConfig, rows: LegacyStageRows): LegacyStageRows => {
   const candidates = [
     ...(config.catalogs ?? []).map((entry) => genericRow(config, rows, entry)),
     homebrewRow(config, rows), scoopRow(config, rows)
   ].filter((row): row is CatalogRow => row !== undefined)
+  let next = rows
   for (const row of candidates) {
     const location = row.file
-    const declared = recordOutput(rows, OutputDeclaration.make({
+    let declared: OutputDeclaration
+    ;[next, declared] = recordOutput(next, OutputDeclaration.make({
       id: outputId(`catalog-file-${row.id}`), path: path(location),
       kind: "catalog-file", provenance: "catalog"
     }))
-    rows.catalog.push(Write.make({
+    next = { ...next, catalog: [...next.catalog, Write.make({
       id: operationId(`catalog:${row.id}:render`), inputs: row.inputs.map((item) => item.id),
       outputs: [declared], description: `Render ${row.id} catalog file ${location}.`,
       path: declared.path, content: row.content
-    }))
+    })] }
   }
+  return next
 }

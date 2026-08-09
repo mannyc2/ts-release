@@ -1,0 +1,40 @@
+import * as Schema from "effect/Schema"
+import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
+import type { VerifiedReleaseContext } from "./context.js"
+import type { GraphPreparation, GraphPublication, ReleaseGraph } from "./graph.js"
+
+const optional = Schema.optionalKey
+
+export class ReleaseInspection extends Schema.Class<ReleaseInspection>("ReleaseInspection")({
+  source: Schema.Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Schema.Literal(true), repository: optional(Schema.NonEmptyString) }),
+  package: Schema.Struct({ name: NonEmptyName, version: Schema.NonEmptyString, path: SafeRelativePath }),
+  artifacts: Schema.Array(Schema.Struct({ id: OutputId, path: SafeRelativePath, kind: Schema.String })),
+  preparations: Schema.Array(Schema.Struct({ id: OperationId, kind: Schema.String, inputs: Schema.Array(OutputId) })),
+  publications: Schema.Array(Schema.Struct({ id: OperationId, destination: Schema.String, subject: Schema.NonEmptyString })),
+  requirements: Schema.Array(Schema.NonEmptyString),
+  capabilities: Schema.Array(Schema.NonEmptyString)
+}) {}
+
+const preparationKind = (value: GraphPreparation): string => value._tag.replace(/^Graph/u, "")
+const requirements = (preparations: ReadonlyArray<GraphPreparation>): ReadonlyArray<string> => [
+  ...new Set(preparations.flatMap((preparation) => preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact"
+    ? [`command:${preparation.argv[0]!}`, ...preparation.environmentNames.map((name) => `env:${name}`)] : []))
+].sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
+const publication = (value: GraphPublication) => value._tag === "GraphNpmPublication"
+  ? { id: value.id, destination: "npm", subject: `${value.packageName}@${value.version} (${value.registryUrl})` }
+  : { id: value.id, destination: "github", subject: `${value.repository}#${value.tag}` }
+
+/** Pure user projection. It does not encode, persist, approve, or execute the graph. */
+export const inspectRelease = (
+  context: VerifiedReleaseContext, graph: ReleaseGraph, capabilities: ReadonlyArray<string> = []
+): ReleaseInspection => ReleaseInspection.make({
+  source: {
+    commit: context.source.commit, tree: context.source.tree, clean: true,
+    ...(context.source.repository === undefined ? {} : { repository: context.source.repository })
+  },
+  package: { name: context.package.name, version: context.package.version, path: context.package.path },
+  artifacts: graph.artifacts.map(({ id, path, kind }) => ({ id, path, kind })),
+  preparations: graph.preparations.map((preparation) => ({ id: preparation.id, kind: preparationKind(preparation), inputs: preparation.inputs })),
+  publications: graph.publications.map(publication), requirements: requirements(graph.preparations),
+  capabilities: [...capabilities].sort((a, b) => a < b ? -1 : a > b ? 1 : 0).map((value) => NonEmptyName.make(value))
+})

@@ -127,12 +127,13 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   drivers: ["drivers", "model"],
   apply: ["apply", "model", "plan", "drivers"],
   view: ["view", "model", "plan"],
-  platform: ["platform", "drivers", "apply"],
+  platform: ["platform", "drivers", "apply", "release"],
   // The resolver is pure authored→canonical semantics: it may read the config
   // vocabulary and the model, and nothing may read IT except the root export
   // and the apps (enforced below).
   resolve: ["resolve", "model", "recipes"],
-  api: ["api", "model", "plan", "apply", "view", "drivers", "platform"]
+  api: ["api", "model", "plan", "apply", "view", "drivers", "platform"],
+  release: ["release", "model", "recipes"]
 }
 
 const sourceDirectory = (file: string): string | undefined => {
@@ -158,7 +159,8 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/apply/store.ts",
   "src/drivers/contain.ts",
   "src/drivers/local.ts",
-  "src/drivers/workspace.ts"
+  "src/drivers/workspace.ts",
+  "src/platform/source-observer.ts"
 ])
 const appEntryModules: ReadonlySet<string> = new Set([
   "apps/release-ts/src/cli/main.ts",

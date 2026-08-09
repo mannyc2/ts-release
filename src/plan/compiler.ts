@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { CandidateConfig, decodeConfig } from "../config/config.js"
-import { lowerCurrentConfig } from "../recipes/current.js"
+import { lowerLegacyConfig } from "../recipes/current.js"
 import { Check, DigestOp, OutputDeclaration } from "../model/operation.js"
 import { ReleaseIdentityV6, ReleasePlanV6, ReleaseStages } from "../model/plan.js"
 import {
@@ -122,6 +122,6 @@ export const compilePlan = Effect.fn("compilePlan")(function*(
   const config = yield* decodeConfig(input)
   const baseStages = minimalConfig(config)
     ? lowerRecipes(recipeDefinitions(config))
-    : yield* lowerCurrentConfig(config)
+    : yield* lowerLegacyConfig(config)
   return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, baseStages)))
 })

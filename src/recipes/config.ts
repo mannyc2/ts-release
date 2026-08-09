@@ -103,6 +103,29 @@ export class CandidateArchive extends Schema.Class<CandidateArchive>("CandidateA
   wrapInDirectory: optional(Schema.Union([Schema.Boolean, Schema.String]))
 }) {}
 
+const preparationBase = {
+  id: NonEmptyName,
+  run: Schema.NonEmptyArray(Schema.String),
+  cwd: optional(SafeRelativePath),
+  environmentNames: optional(Schema.Array(nonempty)),
+  inputs: optional(Schema.Array(OutputId))
+}
+
+export class CandidateCheckPreparation extends Schema.Class<CandidateCheckPreparation>("CandidateCheckPreparation")({
+  kind: Schema.Literal("check"), ...preparationBase
+}) {}
+
+export class CandidateArtifactPreparation extends Schema.Class<CandidateArtifactPreparation>("CandidateArtifactPreparation")({
+  kind: Schema.Literal("artifact"), ...preparationBase,
+  outputs: Schema.NonEmptyArray(Schema.Struct({
+    id: OutputId, path: SafeRelativePath, mediaType: optional(nonempty)
+  }))
+}) {}
+
+export const CandidatePreparation = Schema.Union([
+  CandidateCheckPreparation, CandidateArtifactPreparation
+])
+
 export class CandidateContentHole extends Schema.Class<CandidateContentHole>("CandidateContentHole")({
   fact: Schema.Literals(["sha256", "downloadUrl", "assetName"]),
   artifact: OutputId
@@ -150,7 +173,8 @@ export class CandidateGitHubPublish extends Schema.Class<CandidateGitHubPublish>
   repository: optional(Schema.String),
   tokenEnv: optional(Schema.String),
   draft: optional(Schema.Boolean),
-  prerelease: optional(Schema.Union([Schema.Boolean, Schema.Literal("auto")]))
+  prerelease: optional(Schema.Union([Schema.Boolean, Schema.Literal("auto")])),
+  bodyArtifact: optional(OutputId)
 }) {}
 
 const catalogPreset = {
@@ -184,6 +208,7 @@ export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateCon
   "$schema": optional(Schema.String),
   project: CandidateProject,
   builds: optional(Schema.Array(CandidateBuild)),
+  preparations: optional(Schema.Array(CandidatePreparation)),
   npmPackage: optional(Schema.Struct({ path: optional(SafeRelativePath) })),
   artifacts: optional(Schema.Array(CandidateArtifact)),
   archives: optional(Schema.Array(CandidateArchive)),

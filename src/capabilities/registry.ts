@@ -14,7 +14,7 @@ export interface ExecutableCapability {
 export const executableCapabilities = [
   {
     id: "build.bun-compile",
-    entrypoint: "src/recipes/current-build.ts:lowerBuildTarget",
+    entrypoint: "src/release/capabilities.ts:contributeBuild",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"],
     artifactTargets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64", "windows-arm64"],
@@ -22,37 +22,31 @@ export const executableCapabilities = [
   },
   {
     id: "artifact.archive",
-    entrypoint: "src/recipes/current-build.ts:lowerArchives",
+    entrypoint: "src/release/capabilities.ts:contributeArchives",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "artifact.checksum",
-    entrypoint: "src/recipes/current-build.ts:lowerChecksum",
+    entrypoint: "src/release/capabilities.ts:contributeArchives",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "publish.npm",
-    entrypoint: "src/recipes/current-publish.ts:lowerNpm",
+    entrypoint: "src/release/capabilities.ts:contributeNpm",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "publish.github",
-    entrypoint: "src/recipes/current-publish.ts:lowerGitHub",
-    verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
-  },
-  {
-    id: "publish.pypi-files",
-    entrypoint: "src/recipes/current-publish.ts:lowerPyPi",
+    entrypoint: "src/release/capabilities.ts:contributeGitHub",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "catalog.render",
-    entrypoint: "src/recipes/current-catalog.ts:lowerCurrentCatalogs",
+    entrypoint: "src/release/capabilities.ts:contributeCatalog",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   }

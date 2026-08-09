@@ -14,7 +14,6 @@ version `v2.16.0`; this project has not executed GoReleaser.
 | <!-- claim capability:artifact.checksum --> Checksums | sha256/sha512 preparation |
 | <!-- claim capability:publish.github --> GitHub releases | typed release publication path |
 | <!-- claim capability:publish.npm --> npm | typed package publication path |
-| <!-- claim capability:publish.pypi-files --> PyPI files | prepared imported files, subject to discovery proof |
 | <!-- claim capability:catalog.render --> Catalogs | local Homebrew/Scoop/generic file rendering |
 
 Catalog rendering deliberately does not submit Git changes in this wave.

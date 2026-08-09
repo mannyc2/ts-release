@@ -2,33 +2,21 @@ import * as Effect from "effect/Effect"
 import { ConfigValueError, PlanningFactsError } from "../model/errors.js"
 import { ReleaseStages } from "../model/plan.js"
 import type { CandidateConfig } from "./config.js"
-import { lowerCurrentBuild } from "./current-build.js"
-import { lowerCurrentCatalogs } from "./current-catalog.js"
-import { lowerCurrentPublish } from "./current-publish.js"
-import { emptyRows } from "./current-shared.js"
+import { lowerLegacyBuild } from "./current-build.js"
+import { lowerLegacyCatalogs } from "./current-catalog.js"
+import { lowerLegacyPublish } from "./current-publish.js"
+import { emptyLegacyRows } from "./current-shared.js"
 
-export const lowerCurrentConfig = Effect.fn("lowerCurrentConfig")(function*(
+// Temporary projection for the pre-217 release-plan/v6 boundary. It is an
+// immutable stage projection; the new release graph owns all new semantics.
+export const lowerLegacyConfig = Effect.fn("lowerLegacyConfig")(function*(
   config: CandidateConfig
 ) {
   const rows = yield* Effect.try({
     try: () => {
-      // THE ORDER OF THESE CALLS IS LOAD-BEARING. Every step mutates the one
-      // shared CurrentRows, and later steps read outputs earlier steps
-      // recorded — by id, as bare strings, with no declared dependency:
-      //   "npm-package"  — declared by lowerCurrentBuild (current-build.ts) or
-      //                    lowerCurrentProviders, read by lowerCurrentPublish.
-      //   "release-notes" / "final-notes"
-      //                  — declared by lowerCurrentChangelog, read by
-      //                    lowerCurrentAnnouncements (which prefers the final).
-      // Reordering silently changes plan BYTES (a missing output turns a
-      // publish row into a refusal, or flips announcements between the two
-      // notes). The dogfood planId assertion in current-recipes.test.ts is the
-      // pin; plans/README.md carries the design memo for fixing this properly.
-      const current = emptyRows()
-      lowerCurrentBuild(config, current)
-      lowerCurrentCatalogs(config, current)
-      lowerCurrentPublish(config, current)
-      return current
+      let rows = lowerLegacyBuild(config, emptyLegacyRows())
+      rows = lowerLegacyCatalogs(config, rows)
+      return lowerLegacyPublish(config, rows)
     },
     // A typed lowering failure keeps its identity instead of being flattened
     // into an untyped string: planning is the layer users read most.

@@ -10,6 +10,7 @@ export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDe
     "container-metadata", "sbom", "signature", "notarized", "attestation"
   ]),
   provenance: Schema.optionalKey(Schema.Literals(["build", "import", "process", "catalog", "internal"])),
+  mediaType: Schema.optionalKey(Schema.NonEmptyString),
   platform: Schema.optionalKey(Schema.Struct({
     os: Schema.Literals(["linux", "darwin", "windows"]), arch: Schema.Literals(["x64", "arm64"]),
     libc: Schema.optionalKey(Schema.Literals(["glibc", "musl"])),

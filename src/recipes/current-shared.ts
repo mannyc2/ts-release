@@ -5,17 +5,17 @@ import { CredentialName, OperationId, OutputId, SafeRelativePath } from "../mode
 import type { CandidateConfig, CandidatePlatform } from "./config.js"
 import { ConfigValueError } from "../model/errors.js"
 
-export interface CurrentRows {
-  readonly build: Array<BuildOp>
-  readonly process: Array<ProcessOp>
-  readonly catalog: Array<CatalogOp>
-  readonly validate: Array<ValidateOp>
-  readonly publish: Array<PublishOp>
-  readonly announce: Array<import("../model/operation.js").AnnounceOp>
-  readonly verify: Array<VerifyOp>
-  readonly outputs: Map<string, OutputDeclaration>
+export interface LegacyStageRows {
+  readonly build: ReadonlyArray<BuildOp>
+  readonly process: ReadonlyArray<ProcessOp>
+  readonly catalog: ReadonlyArray<CatalogOp>
+  readonly validate: ReadonlyArray<ValidateOp>
+  readonly publish: ReadonlyArray<PublishOp>
+  readonly announce: ReadonlyArray<import("../model/operation.js").AnnounceOp>
+  readonly verify: ReadonlyArray<VerifyOp>
+  readonly outputs: ReadonlyMap<string, OutputDeclaration>
 }
-export const emptyRows = (): CurrentRows => ({
+export const emptyLegacyRows = (): LegacyStageRows => ({
   build: [], process: [], catalog: [], validate: [], publish: [], announce: [], verify: [], outputs: new Map()
 })
 export const operationId = (value: string): OperationId => OperationId.make(value)
@@ -54,14 +54,13 @@ export const targetPlatform = (
   } as CandidatePlatform
 }
 export const recordOutput = (
-  rows: CurrentRows, output: OutputDeclaration
-): OutputDeclaration => {
+  rows: LegacyStageRows, output: OutputDeclaration
+): [LegacyStageRows, OutputDeclaration] => {
   if (rows.outputs.has(output.id)) throw ConfigValueError.make({ reason: `Duplicate output id ${output.id}.` })
-  rows.outputs.set(output.id, output)
-  return output
+  return [{ ...rows, outputs: new Map([...rows.outputs, [output.id, output]]) }, output]
 }
 export const selectedOutputs = (
-  rows: CurrentRows, ids: ReadonlyArray<string> | undefined,
+  rows: LegacyStageRows, ids: ReadonlyArray<string> | undefined,
   fallback: (output: OutputDeclaration) => boolean
 ): ReadonlyArray<OutputDeclaration> => ids === undefined
   ? [...rows.outputs.values()].filter(fallback)

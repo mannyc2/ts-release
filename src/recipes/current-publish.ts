@@ -3,7 +3,7 @@ import {
 } from "../model/operation.js"
 import type { CandidateConfig } from "./config.js"
 import {
-  basename, credentialName, operationId, path, selectedOutputs, type CurrentRows
+  basename, credentialName, operationId, path, selectedOutputs, type LegacyStageRows
 } from "./current-shared.js"
 import { ConfigValueError } from "../model/errors.js"
 
@@ -33,7 +33,7 @@ export const assertRegistryUrl = (value: string): string => {
 }
 
 export const lowerNpm = (
-  config: CandidateConfig, rows: CurrentRows
+  config: CandidateConfig, rows: LegacyStageRows
 ): PackageRegistryRelease | undefined => {
   const section = config.publish?.npm
   if (section === undefined) return undefined
@@ -78,7 +78,7 @@ export const lowerNpm = (
 }
 
 const lowerPyPi = (
-  config: CandidateConfig, rows: CurrentRows
+  config: CandidateConfig, rows: LegacyStageRows
 ): PackageRegistryRelease | undefined => {
   const section = config.publish?.pypi
   if (section === undefined) return undefined
@@ -121,7 +121,7 @@ const lowerPyPi = (
 }
 
 const lowerGitHub = (
-  config: CandidateConfig, rows: CurrentRows
+  config: CandidateConfig, rows: LegacyStageRows
 ): ForgeRelease | undefined => {
   const section = config.publish?.github
   if (section === undefined) return undefined
@@ -156,8 +156,8 @@ const lowerGitHub = (
   })
 }
 
-export const lowerCurrentPublish = (config: CandidateConfig, rows: CurrentRows): void => {
+export const lowerLegacyPublish = (config: CandidateConfig, rows: LegacyStageRows): LegacyStageRows => {
   const operations = [lowerNpm(config, rows), lowerPyPi(config, rows), lowerGitHub(config, rows)]
     .filter((item): item is PackageRegistryRelease | ForgeRelease => item !== undefined)
-  rows.publish.push(...operations)
+  return { ...rows, publish: [...rows.publish, ...operations] }
 }

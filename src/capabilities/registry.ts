@@ -34,14 +34,14 @@ export const executableCapabilities = [
   },
   {
     id: "publish.npm",
-    entrypoint: "src/release/capabilities.ts:contributeNpm",
-    verticalTest: "test/core/current-recipes.test.ts",
+    entrypoint: "src/publication/npm.ts:makeNpmSubject",
+    verticalTest: "test/publication/npm-adapter.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "publish.github",
-    entrypoint: "src/release/capabilities.ts:contributeGitHub",
-    verticalTest: "test/core/current-recipes.test.ts",
+    entrypoint: "src/publication/github.ts:makeGithubSubjects",
+    verticalTest: "test/publication/github-adapter.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {

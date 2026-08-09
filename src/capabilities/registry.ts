@@ -4,6 +4,7 @@ export interface ExecutableCapability {
   readonly verticalTest: string
   readonly executionHosts: ReadonlyArray<"linux" | "darwin" | "windows">
   readonly artifactTargets: ReadonlyArray<string>
+  readonly nativeToolHosts: ReadonlyArray<"linux" | "darwin" | "windows">
 }
 
 // This is executable composition evidence, not a documentation profile. An
@@ -16,43 +17,44 @@ export const executableCapabilities = [
     entrypoint: "src/recipes/current-build.ts:lowerBuildTarget",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"],
-    artifactTargets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64", "windows-arm64"]
+    artifactTargets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64", "windows-arm64"],
+    nativeToolHosts: ["linux", "darwin"]
   },
   {
     id: "artifact.archive",
     entrypoint: "src/recipes/current-build.ts:lowerArchives",
     verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: []
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "artifact.checksum",
     entrypoint: "src/recipes/current-build.ts:lowerChecksum",
     verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: []
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "publish.npm",
     entrypoint: "src/recipes/current-publish.ts:lowerNpm",
     verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: []
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "publish.github",
     entrypoint: "src/recipes/current-publish.ts:lowerGitHub",
     verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: []
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "publish.pypi-files",
     entrypoint: "src/recipes/current-publish.ts:lowerPyPi",
     verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: []
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "catalog.render",
     entrypoint: "src/recipes/current-catalog.ts:lowerCurrentCatalogs",
     verticalTest: "test/core/current-recipes.test.ts",
-    executionHosts: ["linux", "darwin"], artifactTargets: []
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   }
 ] as const satisfies ReadonlyArray<ExecutableCapability>
 

@@ -133,7 +133,7 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   // and the apps (enforced below).
   resolve: ["resolve", "model", "recipes"],
   api: ["api", "model", "plan", "apply", "view", "drivers", "platform"],
-  release: ["release", "model", "recipes"]
+  release: ["release", "model", "recipes", "drivers"]
 }
 
 const sourceDirectory = (file: string): string | undefined => {

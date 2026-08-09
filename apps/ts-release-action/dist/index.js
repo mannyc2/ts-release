@@ -21721,6 +21721,7 @@ var mergeAllEffect = (layers, memoMap, scope2) => {
   }).pipe(map4((context2) => mergeAll(...context2)));
 };
 var mergeAll2 = (...layers) => fromBuild((memoMap, scope2) => mergeAllEffect(layers, memoMap, scope2));
+var merge2 = /* @__PURE__ */ dual(2, (self, that) => mergeAll2(self, ...Array.isArray(that) ? that : [that]));
 var provideWith = (self, that, f) => fromBuild((memoMap, scope2) => flatMap2(Array.isArray(that) ? mergeAllEffect(that, memoMap, scope2) : that.build(memoMap, scope2), (context2) => self.build(memoMap, scope2).pipe(provideContext(context2), map4((merged) => f(merged, context2)))));
 var provide2 = /* @__PURE__ */ dual(2, (self, that) => provideWith(self, that, identity));
 
@@ -22887,10 +22888,10 @@ class IndexSignature {
   parameter;
   type;
   merge;
-  constructor(parameter, type, merge2) {
+  constructor(parameter, type, merge3) {
     this.parameter = parameter;
     this.type = type;
-    this.merge = merge2;
+    this.merge = merge3;
     if (isOptional(type) && !containsUndefined(type)) {
       throw new Error("Cannot use `Schema.optionalKey` with index signatures, use `Schema.optional` instead.");
     }
@@ -23053,8 +23054,8 @@ class Objects extends Base2 {
     const indexes = mapOrSame(this.indexSignatures, (is) => {
       const p = recur(is.parameter);
       const t = recur(is.type);
-      const merge2 = flipMerge ? is.merge?.flip() : is.merge;
-      return p === is.parameter && t === is.type && merge2 === is.merge ? is : new IndexSignature(p, t, merge2);
+      const merge3 = flipMerge ? is.merge?.flip() : is.merge;
+      return p === is.parameter && t === is.type && merge3 === is.merge ? is : new IndexSignature(p, t, merge3);
     });
     return props === this.propertySignatures && indexes === this.indexSignatures ? this : new Objects(props, indexes, this.annotations, checks, undefined, this.context, encodingChecks);
   }
@@ -25116,6 +25117,7 @@ class OutputDeclaration extends Class4("OutputDeclaration")({
     "attestation"
   ]),
   provenance: optionalKey2(Literals(["build", "import", "process", "catalog", "internal"])),
+  mediaType: optionalKey2(NonEmptyString),
   platform: optionalKey2(Struct({
     os: Literals(["linux", "darwin", "windows"]),
     arch: Literals(["x64", "arm64"]),
@@ -25691,6 +25693,34 @@ class CandidateArchive extends Class4("CandidateArchive")({
   wrapInDirectory: optional2(Union2([Boolean3, String4]))
 }) {
 }
+var preparationBase = {
+  id: NonEmptyName,
+  run: NonEmptyArray(String4),
+  cwd: optional2(SafeRelativePath),
+  environmentNames: optional2(ArraySchema(nonempty)),
+  inputs: optional2(ArraySchema(OutputId))
+};
+
+class CandidateCheckPreparation extends Class4("CandidateCheckPreparation")({
+  kind: Literal2("check"),
+  ...preparationBase
+}) {
+}
+
+class CandidateArtifactPreparation extends Class4("CandidateArtifactPreparation")({
+  kind: Literal2("artifact"),
+  ...preparationBase,
+  outputs: NonEmptyArray(Struct({
+    id: OutputId,
+    path: SafeRelativePath,
+    mediaType: optional2(nonempty)
+  }))
+}) {
+}
+var CandidatePreparation = Union2([
+  CandidateCheckPreparation,
+  CandidateArtifactPreparation
+]);
 
 class CandidateContentHole extends Class4("CandidateContentHole")({
   fact: Literals(["sha256", "downloadUrl", "assetName"]),
@@ -25742,7 +25772,8 @@ class CandidateGitHubPublish extends Class4("CandidateGitHubPublish")({
   repository: optional2(String4),
   tokenEnv: optional2(String4),
   draft: optional2(Boolean3),
-  prerelease: optional2(Union2([Boolean3, Literal2("auto")]))
+  prerelease: optional2(Union2([Boolean3, Literal2("auto")])),
+  bodyArtifact: optional2(OutputId)
 }) {
 }
 var catalogPreset = {
@@ -25776,6 +25807,7 @@ class CandidateConfig extends Class4("CandidateConfig")({
   $schema: optional2(String4),
   project: CandidateProject,
   builds: optional2(ArraySchema(CandidateBuild)),
+  preparations: optional2(ArraySchema(CandidatePreparation)),
   npmPackage: optional2(Struct({ path: optional2(SafeRelativePath) })),
   artifacts: optional2(ArraySchema(CandidateArtifact)),
   archives: optional2(ArraySchema(CandidateArchive)),
@@ -25838,7 +25870,7 @@ var decodeConfig = fn2("decodeConfig")(function* (input) {
 });
 
 // ../../src/recipes/current-shared.ts
-var emptyRows = () => ({
+var emptyLegacyRows = () => ({
   build: [],
   process: [],
   catalog: [],
@@ -25874,8 +25906,7 @@ var targetPlatform = (target2, binary, compile) => {
 var recordOutput = (rows, output) => {
   if (rows.outputs.has(output.id))
     throw ConfigValueError.make({ reason: `Duplicate output id ${output.id}.` });
-  rows.outputs.set(output.id, output);
-  return output;
+  return [{ ...rows, outputs: new Map([...rows.outputs, [output.id, output]]) }, output];
 };
 var selectedOutputs = (rows, ids, fallback) => ids === undefined ? [...rows.outputs.values()].filter(fallback) : ids.map((id) => {
   const output = rows.outputs.get(id);
@@ -25920,11 +25951,12 @@ var lowerBuildTarget = (config, rows, build2, target2) => {
   const id = `${build2.id ?? (build2.builder === "command" ? "command" : build2.builder)}-${target2}`;
   const fallback = `.release/artifacts/${binary}-${config.project.version}-${target2}${target2.startsWith("windows-") ? ".exe" : ""}`;
   const location2 = render(build2.output ?? fallback, config, target2, binary);
-  const declared = declare2(rows, id, location2, "executable", "build", targetPlatform(target2, outputBinary, build2.builder === "bun"));
-  if (build2.builder === "prebuilt") {
-    rows.build.push(check(`build:prebuilt:${id}:exists`, declared, `Verify prebuilt artifact exists for ${target2}.`));
-    return;
-  }
+  let [next, declared] = declare2(rows, id, location2, "executable", "build", targetPlatform(target2, outputBinary, build2.builder === "bun"));
+  if (build2.builder === "prebuilt")
+    return {
+      ...next,
+      build: [...next.build, check(`build:prebuilt:${id}:exists`, declared, `Verify prebuilt artifact exists for ${target2}.`)]
+    };
   const argv = build2.builder === "command" ? command(build2.run).map((part) => render(part, config, target2, binary)) : [
     "bun",
     "build",
@@ -25936,7 +25968,7 @@ var lowerBuildTarget = (config, rows, build2, target2) => {
     location2,
     ...build2.minify === true ? ["--minify"] : []
   ];
-  rows.build.push(Exec.make({
+  next = { ...next, build: [...next.build, Exec.make({
     id: operationId(`build:${build2.builder}:${id}`),
     inputs: [],
     outputs: [declared],
@@ -25945,63 +25977,71 @@ var lowerBuildTarget = (config, rows, build2, target2) => {
     argv: nonEmptyCommand(argv),
     cwd: path("."),
     environmentNames: []
-  }));
-  if (build2.builder === "command")
-    rows.build.push(check(`build:command:${id}:exists`, declared, `Verify command build output exists for ${target2}.`, true));
+  })] };
+  return build2.builder === "command" ? { ...next, build: [...next.build, check(`build:command:${id}:exists`, declared, `Verify command build output exists for ${target2}.`, true)] } : next;
 };
 var lowerBuilds = (config, rows) => {
+  let next = rows;
   for (const build2 of config.builds ?? []) {
     for (const target2 of build2.targets)
-      lowerBuildTarget(config, rows, build2, target2);
+      next = lowerBuildTarget(config, next, build2, target2);
   }
+  return next;
 };
 var lowerNpm = (config, rows) => {
   if (config.npmPackage === undefined)
-    return;
-  const declared = declare2(rows, "npm-package", config.npmPackage.path ?? ".", "package", "build");
-  rows.build.push(check("declare:npm-package", declared, "Declare npm package directory."));
+    return rows;
+  const [next, declared] = declare2(rows, "npm-package", config.npmPackage.path ?? ".", "package", "build");
+  return { ...next, build: [...next.build, check("declare:npm-package", declared, "Declare npm package directory.")] };
 };
 var lowerImports = (config, rows) => {
+  let next = rows;
   for (const artifact of config.artifacts ?? []) {
-    const declared = declare2(rows, artifact.id, render(artifact.path, config), importedKinds[artifact.format], "import", artifact.variant);
-    rows.build.push(check(`import-artifacts:${artifact.id}:exists`, declared, `Verify imported artifact ${artifact.id} exists.`));
+    let declared;
+    [next, declared] = declare2(next, artifact.id, render(artifact.path, config), importedKinds[artifact.format], "import", artifact.variant);
+    next = { ...next, build: [...next.build, check(`import-artifacts:${artifact.id}:exists`, declared, `Verify imported artifact ${artifact.id} exists.`)] };
   }
+  return next;
 };
 var lowerArchives = (config, rows) => {
+  let next = rows;
   for (const archive of config.archives ?? []) {
-    const selected2 = selectedOutputs(rows, archive.ids, () => true);
+    const selected2 = selectedOutputs(next, archive.ids, () => true);
     const formats = archive.formats ?? ["tar.gz"];
     for (const format2 of formats) {
       const base = render(archive.nameTemplate ?? `${compactName(config.project.name)}_{version}`, config);
       const id = `${archive.id ?? "archive"}${formats.length > 1 ? `-${format2.replaceAll(".", "-")}` : ""}`;
-      const declared = declare2(rows, id, `.release/artifacts/${base}.${format2}`, "archive", "process");
-      rows.process.push(Pack.make({
+      let declared;
+      [next, declared] = declare2(next, id, `.release/artifacts/${base}.${format2}`, "archive", "process");
+      next = { ...next, process: [...next.process, Pack.make({
         id: operationId(`archive:${id}`),
         inputs: selected2.map((item) => item.id),
         outputs: [declared],
         description: `Create ${format2} archive ${basename(declared.path)}.`,
         format: format2,
         ...archive.files === undefined ? {} : { files: archive.files }
-      }));
+      })] };
     }
   }
+  return next;
 };
 var lowerChecksum = (config, rows) => {
   if (config.checksum === undefined)
-    return;
+    return rows;
   const inputs = [...rows.outputs.values()].filter((item) => !["directory", "package", "digest", "checksum-file", "catalog-file"].includes(item.kind)).sort((left, right) => basename(left.path).localeCompare(basename(right.path)));
   const algorithm = config.checksum.algorithm ?? "sha256";
-  const digest = declare2(rows, "checksum-digests", `.release/facts/checksum-${algorithm}`, "digest", "internal");
-  rows.process.push(DigestOp.make({
+  let [next, digest] = declare2(rows, "checksum-digests", `.release/facts/checksum-${algorithm}`, "digest", "internal");
+  next = { ...next, process: [...next.process, DigestOp.make({
     id: operationId("checksum:digest"),
     inputs: inputs.map((item) => item.id),
     outputs: [digest],
     description: `Compute ${algorithm} release digests.`,
     algorithm
-  }));
+  })] };
   const fileName = render(config.checksum.nameTemplate ?? "{name}_{version}_checksums.txt", config);
-  const declared = declare2(rows, "checksum", `.release/artifacts/${fileName}`, "checksum-file", "process");
-  rows.process.push(Write.make({
+  let declared;
+  [next, declared] = declare2(next, "checksum", `.release/artifacts/${fileName}`, "checksum-file", "process");
+  next = { ...next, process: [...next.process, Write.make({
     id: operationId("checksum:write"),
     inputs: [digest.id],
     outputs: [declared],
@@ -26012,14 +26052,15 @@ var lowerChecksum = (config, rows) => {
       `  ${basename(item.path)}
 `
     ])
-  }));
+  })] };
+  return next;
 };
-var lowerCurrentBuild = (config, rows) => {
-  lowerImports(config, rows);
-  lowerBuilds(config, rows);
-  lowerNpm(config, rows);
-  lowerArchives(config, rows);
-  lowerChecksum(config, rows);
+var lowerLegacyBuild = (config, rows) => {
+  let next = lowerImports(config, rows);
+  next = lowerBuilds(config, next);
+  next = lowerNpm(config, next);
+  next = lowerArchives(config, next);
+  return lowerChecksum(config, next);
 };
 
 // ../../src/recipes/current-catalog.ts
@@ -26164,29 +26205,32 @@ var genericRow = (config, rows, entry) => {
     inputs: ids.map((id) => requireOutput(rows, entry.id, id))
   };
 };
-var lowerCurrentCatalogs = (config, rows) => {
+var lowerLegacyCatalogs = (config, rows) => {
   const candidates = [
     ...(config.catalogs ?? []).map((entry) => genericRow(config, rows, entry)),
     homebrewRow(config, rows),
     scoopRow(config, rows)
   ].filter((row2) => row2 !== undefined);
+  let next = rows;
   for (const row2 of candidates) {
     const location2 = row2.file;
-    const declared = recordOutput(rows, OutputDeclaration.make({
+    let declared;
+    [next, declared] = recordOutput(next, OutputDeclaration.make({
       id: outputId(`catalog-file-${row2.id}`),
       path: path(location2),
       kind: "catalog-file",
       provenance: "catalog"
     }));
-    rows.catalog.push(Write.make({
+    next = { ...next, catalog: [...next.catalog, Write.make({
       id: operationId(`catalog:${row2.id}:render`),
       inputs: row2.inputs.map((item) => item.id),
       outputs: [declared],
       description: `Render ${row2.id} catalog file ${location2}.`,
       path: declared.path,
       content: row2.content
-    }));
+    })] };
   }
+  return next;
 };
 
 // ../../src/recipes/current-publish.ts
@@ -26334,20 +26378,18 @@ var lowerGitHub = (config, rows) => {
     contractFixtureId: "forge.github-release/v1"
   });
 };
-var lowerCurrentPublish = (config, rows) => {
+var lowerLegacyPublish = (config, rows) => {
   const operations = [lowerNpm2(config, rows), lowerPyPi(config, rows), lowerGitHub(config, rows)].filter((item) => item !== undefined);
-  rows.publish.push(...operations);
+  return { ...rows, publish: [...rows.publish, ...operations] };
 };
 
 // ../../src/recipes/current.ts
-var lowerCurrentConfig = fn2("lowerCurrentConfig")(function* (config) {
+var lowerLegacyConfig = fn2("lowerLegacyConfig")(function* (config) {
   const rows = yield* try_2({
     try: () => {
-      const current = emptyRows();
-      lowerCurrentBuild(config, current);
-      lowerCurrentCatalogs(config, current);
-      lowerCurrentPublish(config, current);
-      return current;
+      let rows2 = lowerLegacyBuild(config, emptyLegacyRows());
+      rows2 = lowerLegacyCatalogs(config, rows2);
+      return lowerLegacyPublish(config, rows2);
     },
     catch: (cause) => cause instanceof ConfigValueError ? cause : PlanningFactsError.make({
       reason: cause instanceof Error ? cause.message : String(cause)
@@ -26518,7 +26560,7 @@ var finalizePlan = (config, invocation, stages) => {
 var minimalConfig = (config) => config.builds === undefined && config.npmPackage === undefined && config.archives === undefined && config.catalogs === undefined && Object.keys(config.publish ?? {}).length === 0 && Object.keys(config.project).every((key) => ["name", "version", "tag"].includes(key)) && (config.artifacts ?? []).every((artifact) => ["file", "directory", "executable"].includes(artifact.format) && artifact.checksum === undefined && artifact.variant === undefined);
 var compilePlan = fn2("compilePlan")(function* (input, invocation) {
   const config = yield* decodeConfig(input);
-  const baseStages = minimalConfig(config) ? lowerRecipes(recipeDefinitions(config)) : yield* lowerCurrentConfig(config);
+  const baseStages = minimalConfig(config) ? lowerRecipes(recipeDefinitions(config)) : yield* lowerLegacyConfig(config);
   return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, baseStages)));
 });
 
@@ -26973,7 +27015,7 @@ var map7 = /* @__PURE__ */ dual(2, (self, f) => transformPull(self, (pull) => sy
 })));
 var mapDone = /* @__PURE__ */ dual(2, (self, f) => mapDoneEffect(self, (o) => succeed6(f(o))));
 var mapDoneEffect = /* @__PURE__ */ dual(2, (self, f) => transformPull(self, (pull) => succeed6(catchDone(pull, (done4) => flatMap3(f(done4), done3)))));
-var merge2 = /* @__PURE__ */ dual((args2) => isChannel(args2[0]) && isChannel(args2[1]), (left, right, options) => fromTransformBracket(fnUntraced2(function* (upstream, _scope, forkedScope) {
+var merge3 = /* @__PURE__ */ dual((args2) => isChannel(args2[0]) && isChannel(args2[1]), (left, right, options) => fromTransformBracket(fnUntraced2(function* (upstream, _scope, forkedScope) {
   const strategy = options?.haltStrategy ?? "both";
   const queue = yield* bounded(0);
   yield* addFinalizer(forkedScope, shutdown(queue));
@@ -27196,7 +27238,7 @@ var map8 = /* @__PURE__ */ dual(2, (self, f) => suspend5(() => {
   let i = 0;
   return fromChannel3(map7(self.channel, map3((o) => f(o, i++))));
 }));
-var merge3 = /* @__PURE__ */ dual((args2) => isStream(args2[0]) && isStream(args2[1]), (self, that, options) => fromChannel3(merge2(toChannel2(self), toChannel2(that), options)));
+var merge4 = /* @__PURE__ */ dual((args2) => isStream(args2[0]) && isStream(args2[1]), (self, that, options) => fromChannel3(merge3(toChannel2(self), toChannel2(that), options)));
 var transduce = /* @__PURE__ */ dual(2, (self, sink) => transformPull2(self, (upstream, scope3) => sync2(() => {
   let done4;
   let leftover;
@@ -28305,7 +28347,7 @@ var make20 = /* @__PURE__ */ gen2(function* () {
     if (isSink(stderrConfig.stream)) {
       stderr = transduce(stderr, stderrConfig.stream);
     }
-    const all3 = merge3(stdout, stderr);
+    const all3 = merge4(stdout, stderr);
     return {
       stdout,
       stderr,
@@ -29213,7 +29255,7 @@ var setAll = /* @__PURE__ */ dual(2, (self, headers) => make21({
   ...self,
   ...fromInput(headers)
 }));
-var merge4 = /* @__PURE__ */ dual(2, (self, headers) => {
+var merge5 = /* @__PURE__ */ dual(2, (self, headers) => {
   const out = make21(self);
   Object.assign(out, headers);
   return out;
@@ -29965,7 +30007,7 @@ class RequestInit extends (/* @__PURE__ */ Service()("effect/http/FetchHttpClien
 var fetch = /* @__PURE__ */ make24((request, url, signal, fiber2) => {
   const fetch2 = fiber2.getRef(Fetch);
   const options = fiber2.context.mapUnsafe.get(RequestInit.key) ?? {};
-  let headers = options.headers ? merge4(fromInput(options.headers), request.headers) : request.headers;
+  let headers = options.headers ? merge5(fromInput(options.headers), request.headers) : request.headers;
   if (headers["content-length"]) {
     headers = remove3(headers, "content-length");
   }
@@ -31327,8 +31369,171 @@ var LiveDriversLayer = mergeAll2(succeed5(WorkspaceStore)(makeNodeWorkspaceStore
 // ../../src/platform/services.ts
 var ReleaseServicesLive = mergeAll2(LiveDriversLayer, FileRunStoreLayer, LocalApprovalSignerLayer);
 
+// ../../src/platform/source-observer.ts
+import { createHash as createHash5 } from "node:crypto";
+import { readFileSync as readFileSync3, realpathSync as realpathSync3 } from "node:fs";
+import { join as join6 } from "node:path";
+import { spawnSync } from "node:child_process";
+
+// ../../src/release/context.ts
+var optional3 = optionalKey2;
+
+class VerifiedSource extends Class4("VerifiedSource")({
+  commit: NonEmptyName,
+  tree: NonEmptyName,
+  clean: Literal2(true),
+  packageManifestPath: SafeRelativePath,
+  packageManifestDigest: NonEmptyName,
+  repository: optional3(NonEmptyString),
+  headTags: ArraySchema(NonEmptyName)
+}) {
+}
+
+class VerifiedPackage extends Class4("VerifiedPackage")({
+  name: NonEmptyName,
+  version: Version,
+  path: SafeRelativePath,
+  digest: NonEmptyName,
+  repository: optional3(NonEmptyString)
+}) {
+}
+
+class VerifiedReleaseContext extends Class4("VerifiedReleaseContext")({
+  workspace: WorkspaceRoot,
+  source: VerifiedSource,
+  package: VerifiedPackage
+}) {
+}
+
+class ReleaseContextError extends TaggedErrorClass()("ReleaseContextError", {
+  field: String4,
+  reason: String4
+}) {
+}
+
+class SourceObserver extends Service()("SourceObserver") {
+}
+var runtimeFailure = (field, cause) => ReleaseContextError.make({
+  field,
+  reason: cause instanceof Error ? cause.message : String(cause)
+});
+var command2 = (runtime, workspace, argv, field) => runtime.command(workspace, argv).pipe(mapError3((cause) => runtimeFailure(field, cause)));
+var repositoryCoordinate = (value2) => {
+  if (typeof value2 !== "string")
+    return;
+  const trimmed = value2.trim().replace(/\.git$/u, "");
+  const match6 = /(?:github\.com[/:]|^)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/u.exec(trimmed);
+  return match6?.[1];
+};
+var jsonObject = (bytes, path2) => {
+  try {
+    const value2 = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof value2 !== "object" || value2 === null || Array.isArray(value2))
+      throw new Error("manifest root must be an object");
+    return value2;
+  } catch (cause) {
+    throw new Error(`${path2} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+  }
+};
+var makeSourceObserver = (runtime) => ({
+  observe: fn2("observeVerifiedReleaseContext")(function* (workspace, packageManifestPath, expectedCommit) {
+    const canonical2 = yield* runtime.canonicalRoot(workspace).pipe(mapError3((cause) => runtimeFailure("workspace", cause)));
+    const root = WorkspaceRoot.make(canonical2);
+    const commit = yield* command2(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value2) => value2.trim()));
+    const tree = yield* command2(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value2) => value2.trim()));
+    const status = yield* command2(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=all"], "source.clean");
+    if (status.trim().length > 0)
+      return yield* new ReleaseContextError({
+        field: "source.clean",
+        reason: "Preparation requires a clean tracked and untracked source tree."
+      });
+    const bytes = yield* runtime.read(workspace, packageManifestPath).pipe(mapError3((cause) => runtimeFailure("package.manifest", cause)));
+    let manifest;
+    try {
+      manifest = jsonObject(bytes, packageManifestPath);
+    } catch (cause) {
+      return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) });
+    }
+    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined;
+    const version2 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
+    if (name === undefined)
+      return yield* new ReleaseContextError({ field: "package.name", reason: "Manifest name is missing or empty." });
+    if (version2 === undefined)
+      return yield* new ReleaseContextError({ field: "package.version", reason: "Manifest version is missing or empty." });
+    const digest = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
+    const tags = yield* command2(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value2) => value2.split(`
+`).map((tag2) => tag2.trim()).filter((tag2) => tag2.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
+    const remote = yield* command2(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value2) => repositoryCoordinate(value2))).pipe(orElseSucceed2(() => {
+      return;
+    }));
+    const manifestRepository = repositoryCoordinate(manifest.repository);
+    const repository = remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository ? undefined : remote ?? manifestRepository;
+    const source = VerifiedSource.make({
+      commit: NonEmptyName.make(commit),
+      tree: NonEmptyName.make(tree),
+      clean: true,
+      packageManifestPath,
+      packageManifestDigest: NonEmptyName.make(digest),
+      headTags: tags.map((tag2) => NonEmptyName.make(tag2)),
+      ...repository === undefined ? {} : { repository }
+    });
+    const context3 = VerifiedReleaseContext.make({
+      workspace: root,
+      source,
+      package: VerifiedPackage.make({
+        name: NonEmptyName.make(name),
+        version: Version.make(version2),
+        path: packageManifestPath,
+        digest: NonEmptyName.make(digest),
+        ...manifestRepository === undefined ? {} : { repository: manifestRepository }
+      })
+    });
+    return yield* verifySource(context3, expectedCommit);
+  })
+});
+var verifySource = fn2("verifySource")(function* (context3, expectedCommit) {
+  if (expectedCommit !== undefined && context3.source.commit !== expectedCommit) {
+    return yield* new ReleaseContextError({
+      field: "source.commit",
+      reason: `Expected ${expectedCommit}, observed ${context3.source.commit}.`
+    });
+  }
+  if (context3.source.clean !== true) {
+    return yield* new ReleaseContextError({
+      field: "source.clean",
+      reason: "Preparation requires a clean verified source."
+    });
+  }
+  return context3;
+});
+
+// ../../src/platform/source-observer.ts
+var runtime = {
+  canonicalRoot: (workspace) => try_2({
+    try: () => realpathSync3(workspace),
+    catch: (cause) => cause
+  }),
+  read: (workspace, path2) => try_2({
+    try: () => new Uint8Array(readFileSync3(join6(workspace, path2))),
+    catch: (cause) => cause
+  }),
+  command: (workspace, argv) => try_2({
+    try: () => {
+      const result2 = spawnSync(argv[0], argv.slice(1), { cwd: workspace, encoding: "utf8", stdio: "pipe" });
+      if (result2.error !== undefined)
+        throw result2.error;
+      if (result2.status !== 0)
+        throw new Error(result2.stderr.trim() || `Command exited ${result2.status}.`);
+      return result2.stdout;
+    },
+    catch: (cause) => cause
+  }),
+  digest: (bytes) => sync2(() => `sha256:${createHash5("sha256").update(bytes).digest("hex")}`)
+};
+var SourceObserverLive = succeed5(SourceObserver, makeSourceObserver(runtime));
+
 // ../../src/platform/node.ts
-var NodeReleaseLayer = ReleaseServicesLive.pipe(provide2(mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4)));
+var NodeReleaseLayer = merge2(ReleaseServicesLive.pipe(provide2(mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4))), SourceObserverLive);
 
 // ../../src/api/apply-boundary.ts
 import { randomUUID as randomUUID4 } from "node:crypto";
@@ -31474,18 +31679,18 @@ var evidence = (state) => ({
   ..."targetCoordinates" in state && state.targetCoordinates !== undefined ? { targetCoordinates: state.targetCoordinates } : {},
   ..."subjectDigest" in state && state.subjectDigest !== undefined ? { subjectDigest: state.subjectDigest } : {}
 });
-var start = (record2, operation, command2) => {
+var start = (record2, operation, command3) => {
   if (current(record2).state._tag !== "Pending")
     throw fail14("Operation is not pending.");
-  switch (command2._tag) {
+  switch (command3._tag) {
     case "BeginStructured":
       if (operation._tag === "Exec" || operationAuthority(operation) === "RemotePublish")
         throw fail14("Illegal structured start.");
-      return setState(record2, RunningStructured.make({ startedAt: command2.at }));
+      return setState(record2, RunningStructured.make({ startedAt: command3.at }));
     case "BeginTrustedExec":
       if (operation._tag !== "Exec")
         throw fail14("Only Exec is trusted execution.");
-      return setState(record2, RunningTrustedExec.make({ startedAt: command2.at }));
+      return setState(record2, RunningTrustedExec.make({ startedAt: command3.at }));
   }
 };
 var resumeProgress = (record2) => {
@@ -31505,36 +31710,36 @@ var beginPublish = (ledger, record2, operation, receipt) => {
     throw fail14("Publication has no checkpoints.");
   return setState(record2, DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: initial }), receipt);
 };
-var checkpoint2 = (record2, command2) => {
+var checkpoint2 = (record2, command3) => {
   const attempt3 = current(record2);
   if (attempt3.state._tag !== "DispatchingPublish")
     throw fail14("Publication is not dispatching.");
-  const states = mapCheckpoint(record2, command2.checkpointId, (state) => {
-    switch (command2._tag) {
+  const states = mapCheckpoint(record2, command3.checkpointId, (state) => {
+    switch (command3._tag) {
       case "DispatchCheckpoint":
-        if (state._tag !== "CheckpointPending" || command2.key === undefined)
+        if (state._tag !== "CheckpointPending" || command3.key === undefined)
           throw fail14("Checkpoint is not pending or has no key.");
         return CheckpointDispatching.make({
           checkpointId: state.checkpointId,
           attemptId: attempt3.attemptId,
-          clientReconciliationKey: command2.key,
-          ...command2.targetCoordinates === undefined ? {} : {
-            targetCoordinates: command2.targetCoordinates
+          clientReconciliationKey: command3.key,
+          ...command3.targetCoordinates === undefined ? {} : {
+            targetCoordinates: command3.targetCoordinates
           },
-          ...command2.subjectDigest === undefined ? {} : { subjectDigest: command2.subjectDigest }
+          ...command3.subjectDigest === undefined ? {} : { subjectDigest: command3.subjectDigest }
         });
       case "PassCheckpoint":
         if (state._tag !== "CheckpointDispatching")
           throw fail14("Checkpoint was not dispatching.");
-        return CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command2.detail ?? "" });
+        return CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command3.detail ?? "" });
       case "FailCheckpoint":
         if (state._tag !== "CheckpointDispatching")
           throw fail14("Checkpoint was not dispatching.");
         return CheckpointFailedBeforeCommit.make({
           checkpointId: state.checkpointId,
           ...evidence(state),
-          failure: command2.detail ?? "",
-          retryable: command2.retryable ?? false
+          failure: command3.detail ?? "",
+          retryable: command3.retryable ?? false
         });
       case "UnknownCheckpoint":
         if (state._tag !== "CheckpointDispatching")
@@ -31543,96 +31748,96 @@ var checkpoint2 = (record2, command2) => {
           checkpointId: state.checkpointId,
           ...evidence(state),
           clientReconciliationKey: state.clientReconciliationKey,
-          ...command2.remoteId === undefined ? {} : { observedRemoteId: command2.remoteId },
-          failure: command2.detail ?? ""
+          ...command3.remoteId === undefined ? {} : { observedRemoteId: command3.remoteId },
+          failure: command3.detail ?? ""
         });
     }
   });
-  return setState(record2, command2._tag === "UnknownCheckpoint" ? CommitUnknown.make({ progress: states, failure: command2.detail ?? "" }) : DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: states }));
+  return setState(record2, command3._tag === "UnknownCheckpoint" ? CommitUnknown.make({ progress: states, failure: command3.detail ?? "" }) : DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: states }));
 };
-var settle = (record2, command2) => {
+var settle = (record2, command3) => {
   const state = current(record2).state;
   if (!["RunningStructured", "RunningTrustedExec", "DispatchingPublish"].includes(state._tag))
     throw fail14("Operation is not running.");
-  switch (command2._tag) {
+  switch (command3._tag) {
     case "Pass":
       return setState(record2, Passed.make({
         progress: progress2(state),
-        outcome: command2.detail,
-        materializedOutputs: [...command2.outputs ?? []]
+        outcome: command3.detail,
+        materializedOutputs: [...command3.outputs ?? []]
       }));
     case "FailBeforeCommit":
       return setState(record2, FailedBeforeCommit.make({
         progress: progress2(state),
-        failure: command2.detail,
-        retryable: command2.retryable ?? false
+        failure: command3.detail,
+        retryable: command3.retryable ?? false
       }));
     case "CommitUnknown":
       if (state._tag !== "DispatchingPublish")
         throw fail14("No durable publication intent.");
-      return setState(record2, CommitUnknown.make({ progress: state.progress, failure: command2.detail }));
+      return setState(record2, CommitUnknown.make({ progress: state.progress, failure: command3.detail }));
   }
 };
-var resolve5 = (ledger, record2, command2) => {
+var resolve5 = (ledger, record2, command3) => {
   const attempt3 = current(record2);
-  switch (command2._tag) {
+  switch (command3._tag) {
     case "Resolve": {
       if (!["CommitUnknown", "ManualReview"].includes(attempt3.state._tag))
         throw fail14("Only unknown or manual work can be resolved.");
-      const value2 = { operator: command2.operator, reason: command2.reason, timestamp: command2.at };
-      return setState(record2, command2.resolution === "committed" ? AssumedCommitted.make(value2) : AssumedAbsent.make(value2));
+      const value2 = { operator: command3.operator, reason: command3.reason, timestamp: command3.at };
+      return setState(record2, command3.resolution === "committed" ? AssumedCommitted.make(value2) : AssumedAbsent.make(value2));
     }
     case "Reconcile": {
       if (attempt3.state._tag !== "CommitUnknown")
         throw fail14("Publication is not unknown.");
-      const states = mapCheckpoint(record2, command2.checkpointId, (state) => {
+      const states = mapCheckpoint(record2, command3.checkpointId, (state) => {
         if (state._tag !== "CheckpointUnknown")
           throw fail14("Checkpoint is not unknown.");
-        return command2.result === "committed" ? CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command2.detail }) : CheckpointFailedBeforeCommit.make({
+        return command3.result === "committed" ? CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command3.detail }) : CheckpointFailedBeforeCommit.make({
           checkpointId: state.checkpointId,
           ...evidence(state),
-          failure: command2.detail,
+          failure: command3.detail,
           retryable: true
         });
       });
-      return setState(record2, command2.result === "committed" ? DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: states }) : FailedBeforeCommit.make({ progress: states, failure: command2.detail, retryable: true }));
+      return setState(record2, command3.result === "committed" ? DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: states }) : FailedBeforeCommit.make({ progress: states, failure: command3.detail, retryable: true }));
     }
     case "Retry":
       if (attempt3.state._tag !== "AssumedAbsent" && !(attempt3.state._tag === "FailedBeforeCommit" && attempt3.state.retryable))
         throw fail14("Operation is not eligible for retry.");
-      assertReceipt(ledger, command2.receipt);
+      assertReceipt(ledger, command3.receipt);
       return OperationRunRecord.make({
         operationId: record2.operationId,
         operationHash: record2.operationHash,
         attempts: [...record2.attempts, AttemptRecord.make({
           attemptId: attemptId(record2.attempts.length),
-          executionReceipt: command2.receipt,
+          executionReceipt: command3.receipt,
           state: Pending.make()
         })]
       });
   }
 };
-var changeRecord = (accepted, ledger, record2, command2) => {
+var changeRecord = (accepted, ledger, record2, command3) => {
   const operation = operationFor(accepted, record2.operationId);
-  switch (command2._tag) {
+  switch (command3._tag) {
     case "BeginStructured":
     case "BeginTrustedExec":
-      return start(record2, operation, command2);
+      return start(record2, operation, command3);
     case "BeginPublish":
-      return beginPublish(ledger, record2, operation, command2.receipt);
+      return beginPublish(ledger, record2, operation, command3.receipt);
     case "DispatchCheckpoint":
     case "PassCheckpoint":
     case "FailCheckpoint":
     case "UnknownCheckpoint":
-      return checkpoint2(record2, command2);
+      return checkpoint2(record2, command3);
     case "Pass":
     case "FailBeforeCommit":
     case "CommitUnknown":
-      return settle(record2, command2);
+      return settle(record2, command3);
     case "Resolve":
     case "Reconcile":
     case "Retry":
-      return resolve5(ledger, record2, command2);
+      return resolve5(ledger, record2, command3);
   }
 };
 var recovered = (record2) => {
@@ -31659,19 +31864,19 @@ var recovered = (record2) => {
       return record2;
   }
 };
-var transition = (accepted, ledger, command2) => {
+var transition = (accepted, ledger, command3) => {
   try {
     validateLedger(accepted, ledger);
-    if (command2._tag === "AdvanceFrontier") {
-      if (stageOrder.indexOf(command2.frontier) < stageOrder.indexOf(ledger.frontier))
+    if (command3._tag === "AdvanceFrontier") {
+      if (stageOrder.indexOf(command3.frontier) < stageOrder.indexOf(ledger.frontier))
         throw fail14("Frontier cannot move backward.");
-      const advanced = RunLedger.make({ ...ledger, frontier: command2.frontier, revision: ledger.revision + 1 });
+      const advanced = RunLedger.make({ ...ledger, frontier: command3.frontier, revision: ledger.revision + 1 });
       validateLedger(accepted, advanced);
       return succeed2(advanced);
     }
-    const operations = command2._tag === "Recover" ? ledger.operations.map(recovered) : ledger.operations.map((record2) => record2.operationId === command2.operationId ? changeRecord(accepted, ledger, record2, command2) : record2);
-    if (command2._tag !== "Recover" && !ledger.operations.some((record2) => record2.operationId === command2.operationId))
-      throw fail14(`Unknown operation ${command2.operationId}.`);
+    const operations = command3._tag === "Recover" ? ledger.operations.map(recovered) : ledger.operations.map((record2) => record2.operationId === command3.operationId ? changeRecord(accepted, ledger, record2, command3) : record2);
+    if (command3._tag !== "Recover" && !ledger.operations.some((record2) => record2.operationId === command3.operationId))
+      throw fail14(`Unknown operation ${command3.operationId}.`);
     const next = RunLedger.make({ ...ledger, revision: ledger.revision + 1, operations });
     validateLedger(accepted, next);
     return succeed2(next);
@@ -31684,8 +31889,8 @@ var settled = (state) => state?._tag === "Passed" || state?._tag === "AssumedCom
 
 // ../../src/apply/apply.ts
 var applied = (ledger) => ({ _tag: "Applied", ledger });
-var moved = (ctx, ledger, command2) => gen2(function* () {
-  const next = transition(ctx.accepted, ledger, command2);
+var moved = (ctx, ledger, command3) => gen2(function* () {
+  const next = transition(ctx.accepted, ledger, command3);
   if (isFailure2(next))
     return yield* next.failure;
   yield* ctx.store.save(ctx.request.run.path, ledger.revision, next.success);
@@ -31704,7 +31909,7 @@ var structured2 = (ctx, permit, ledger, operation) => gen2(function* () {
     root: ctx.request.root,
     availableOutputs: ctx.accepted.outputs.map(({ output }) => output)
   }), secret).pipe(map5((value2) => ({ success: true, value: value2 })), catch_2((cause) => succeed6({ success: false, cause })));
-  const command2 = result2.success ? {
+  const command3 = result2.success ? {
     _tag: "Pass",
     operationId: operation.id,
     detail: result2.value.outcome,
@@ -31715,7 +31920,7 @@ var structured2 = (ctx, permit, ledger, operation) => gen2(function* () {
     detail: result2.cause.reason,
     retryable: false
   };
-  return yield* moved(ctx, next, command2);
+  return yield* moved(ctx, next, command3);
 });
 var localOperations = (ctx, permit, ledger, operations) => gen2(function* () {
   let next = ledger;
@@ -31951,7 +32156,7 @@ class ReleaseApiError extends Error {
 }
 
 // ../../src/api/input.ts
-import { existsSync as existsSync5, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
+import { existsSync as existsSync5, realpathSync as realpathSync4, statSync as statSync3 } from "node:fs";
 import { dirname as dirname3, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve6, sep as sep2 } from "node:path";
 var ScopeInputSchema = Union2([
   Literal2("all"),
@@ -32008,7 +32213,7 @@ var workspace = (phase, value2) => {
   if (!isAbsolute2(value2) || value2.length === 0) {
     throw new ReleaseApiError(phase, "Workspace must be a nonempty absolute path.");
   }
-  const canonical2 = realpathSync3(value2);
+  const canonical2 = realpathSync4(value2);
   if (!statSync3(canonical2).isDirectory()) {
     throw new ReleaseApiError(phase, "Workspace must be a directory.");
   }
@@ -32023,7 +32228,7 @@ var within = (root, value2) => {
   let ancestor = dirname3(path2);
   while (!existsSync5(ancestor))
     ancestor = dirname3(ancestor);
-  if (!contained(root, realpathSync3(ancestor))) {
+  if (!contained(root, realpathSync4(ancestor))) {
     throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
   }
   return path2;
@@ -32189,8 +32394,8 @@ var makeApply = (run4) => async (input2) => {
 // ../../src/api/api.ts
 var decoder2 = new TextDecoder;
 var makeReleaseApi = (layer7) => {
-  const runtime = make6(layer7);
-  const run4 = (phase, effect2) => runtime.runPromise(effect2).catch((cause) => {
+  const runtime2 = make6(layer7);
+  const run4 = (phase, effect2) => runtime2.runPromise(effect2).catch((cause) => {
     throw ReleaseApiError.from(phase, cause);
   });
   const plan = async (input2) => {
@@ -32219,7 +32424,7 @@ var makeReleaseApi = (layer7) => {
     plan,
     reviewExecution,
     apply: makeApply(run4),
-    dispose: () => runtime.dispose()
+    dispose: () => runtime2.dispose()
   });
 };
 var defaultApi = makeReleaseApi(NodeReleaseLayer);
@@ -32239,21 +32444,21 @@ var toPlainJson = (value2) => {
 var encodeResolvedConfig = (config) => `${JSON.stringify(toPlainJson(config), null, 2)}
 `;
 // ../../src/resolve/authored.ts
-var optional3 = optionalKey2;
+var optional4 = optionalKey2;
 
 class AuthoredProject extends Class4("AuthoredProject")({
   ...CandidateProject.fields,
-  name: optional3(NonEmptyName),
-  version: optional3(Version),
-  tag: optional3(NonEmptyName),
-  tagTemplate: optional3(NonEmptyString)
+  name: optional4(NonEmptyName),
+  version: optional4(Version),
+  tag: optional4(NonEmptyName),
+  tagTemplate: optional4(NonEmptyString)
 }) {
 }
 
 class AuthoredConfig extends Class4("AuthoredConfig")({
   ...CandidateConfig.fields,
   project: AuthoredProject,
-  versionFrom: optional3(Literals(["manifest", "git-tag"]))
+  versionFrom: optional4(Literals(["manifest", "git-tag"]))
 }) {
 }
 
@@ -32271,13 +32476,13 @@ class ResolveError extends Error {
 }
 
 // ../../src/resolve/facts.ts
-var optional4 = optionalKey2;
+var optional5 = optionalKey2;
 
 class ObservedFacts extends Class4("ObservedFacts")({
-  commit: optional4(NonEmptyName),
-  manifestName: optional4(NonEmptyString),
-  manifestVersion: optional4(Version),
-  headTagVersion: optional4(Version)
+  commit: optional5(NonEmptyName),
+  manifestName: optional5(NonEmptyString),
+  manifestVersion: optional5(Version),
+  headTagVersion: optional5(Version)
 }) {
 }
 
@@ -32359,17 +32564,17 @@ var resolveConfig = (authored, facts) => {
 // src/index.ts
 import {
   mkdirSync as mkdirSync4,
-  readFileSync as readFileSync3,
+  readFileSync as readFileSync4,
   writeFileSync as writeFileSync3
 } from "node:fs";
 import { dirname as dirname5 } from "node:path";
 
 // src/commands.ts
-import { mkdirSync as mkdirSync3, realpathSync as realpathSync4 } from "node:fs";
+import { mkdirSync as mkdirSync3, realpathSync as realpathSync5 } from "node:fs";
 import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve7, sep as sep3 } from "node:path";
 var actionCommands = ["plan", "apply", "doctor"];
-var optional5 = (runtime, name) => {
-  const value2 = runtime.input(name).trim();
+var optional6 = (runtime2, name) => {
+  const value2 = runtime2.input(name).trim();
   return value2.length === 0 ? undefined : value2;
 };
 var inside = (root, candidate) => {
@@ -32379,11 +32584,11 @@ var inside = (root, candidate) => {
   }
   return candidate;
 };
-var contained2 = (root, path2) => inside(root, realpathSync4(isAbsolute3(path2) ? path2 : resolve7(root, path2)));
+var contained2 = (root, path2) => inside(root, realpathSync5(isAbsolute3(path2) ? path2 : resolve7(root, path2)));
 var containedOutput = (root, path2) => {
   const candidate = isAbsolute3(path2) ? resolve7(path2) : resolve7(root, path2);
   mkdirSync3(dirname4(candidate), { recursive: true });
-  return inside(root, resolve7(realpathSync4(dirname4(candidate)), basename3(candidate)));
+  return inside(root, resolve7(realpathSync5(dirname4(candidate)), basename3(candidate)));
 };
 var scope3 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => OperationId.make(id)) };
 var resolutions = (value2) => {
@@ -32395,90 +32600,90 @@ var resolutions = (value2) => {
     throw new Error("resolutions must be valid JSON.");
   }
 };
-var accepted = (runtime, root) => {
-  const path2 = optional5(runtime, "plan-path");
-  const planId = optional5(runtime, "plan-id");
+var accepted = (runtime2, root) => {
+  const path2 = optional6(runtime2, "plan-path");
+  const planId = optional6(runtime2, "plan-id");
   if (path2 === undefined)
     throw new Error("plan-path is required.");
   if (planId === undefined)
     throw new Error("plan-id is required.");
   return {
-    planBytes: runtime.read(contained2(root, path2)),
+    planBytes: runtime2.read(contained2(root, path2)),
     expectedPlanId: PlanId.make(planId)
   };
 };
-var githubFacts = (runtime, root) => {
+var githubFacts = (runtime2, root) => {
   const manifest = (() => {
     try {
-      return JSON.parse(runtime.read(contained2(root, "package.json")));
+      return JSON.parse(runtime2.read(contained2(root, "package.json")));
     } catch {
       return {};
     }
   })();
   return {
-    ...runtime.commit === undefined || runtime.commit.length === 0 ? {} : { commit: runtime.commit },
+    ...runtime2.commit === undefined || runtime2.commit.length === 0 ? {} : { commit: runtime2.commit },
     ...typeof manifest.name === "string" && manifest.name.length > 0 ? { manifestName: manifest.name } : {},
     ...typeof manifest.version === "string" && manifest.version.length > 0 ? { manifestVersion: manifest.version } : {}
   };
 };
-var planConfig = (runtime, root, source, planPath) => {
-  const authored = JSON.parse(runtime.read(source));
-  const mode = optional5(runtime, "resolve");
+var planConfig = (runtime2, root, source, planPath) => {
+  const authored = JSON.parse(runtime2.read(source));
+  const mode = optional6(runtime2, "resolve");
   if (mode === undefined)
     return authored;
   if (mode !== "github") {
     throw new Error(`resolve must be empty or "github", got ${JSON.stringify(mode)}.`);
   }
-  const config = resolveConfig(authored, githubFacts(runtime, root));
-  runtime.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config));
+  const config = resolveConfig(authored, githubFacts(runtime2, root));
+  runtime2.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config));
   return config;
 };
-var planAction = async (api2, runtime, root) => {
-  const source = contained2(root, optional5(runtime, "config") ?? "release.config.json");
-  const output2 = containedOutput(root, optional5(runtime, "plan-path") ?? "release-plan.json");
+var planAction = async (api2, runtime2, root) => {
+  const source = contained2(root, optional6(runtime2, "config") ?? "release.config.json");
+  const output2 = containedOutput(root, optional6(runtime2, "plan-path") ?? "release-plan.json");
   const result2 = await api2.plan({
-    config: planConfig(runtime, root, source, optional5(runtime, "plan-path") ?? "release-plan.json"),
+    config: planConfig(runtime2, root, source, optional6(runtime2, "plan-path") ?? "release-plan.json"),
     workspace: root
   });
-  runtime.write(output2, result2.bytes);
-  runtime.output("plan_id", result2.planId);
-  runtime.output("status", "planned");
+  runtime2.write(output2, result2.bytes);
+  runtime2.output("plan_id", result2.planId);
+  runtime2.output("status", "planned");
 };
-var reviewAction = async (api2, runtime, root, command2) => {
+var reviewAction = async (api2, runtime2, root, command3) => {
   const review = await api2.reviewExecution({
-    ...accepted(runtime, root),
-    scope: scope3(optional5(runtime, "scope"))
+    ...accepted(runtime2, root),
+    scope: scope3(optional6(runtime2, "scope"))
   });
-  runtime.output("execution_review_id", review.executionReviewId);
-  runtime.output("status", command2 === "doctor" ? "valid" : "review-required");
+  runtime2.output("execution_review_id", review.executionReviewId);
+  runtime2.output("status", command3 === "doctor" ? "valid" : "review-required");
 };
-var applyInput = (runtime, root) => {
-  const reviewer = optional5(runtime, "reviewer");
+var applyInput = (runtime2, root) => {
+  const reviewer = optional6(runtime2, "reviewer");
   if (reviewer === undefined)
     throw new Error("reviewer is required.");
-  const newRunPath = optional5(runtime, "new-run");
-  const resumeRunPath = optional5(runtime, "resume");
+  const newRunPath = optional6(runtime2, "new-run");
+  const resumeRunPath = optional6(runtime2, "resume");
   if (newRunPath === undefined === (resumeRunPath === undefined)) {
     throw new Error("Choose exactly one of new-run or resume.");
   }
-  const review = optional5(runtime, "confirm-execution");
+  const review = optional6(runtime2, "confirm-execution");
   if (newRunPath !== undefined && review === undefined) {
     throw new Error("confirm-execution is required for a new run.");
   }
-  const publish = optional5(runtime, "confirm-publish");
-  const throughInput = optional5(runtime, "through");
+  const publish = optional6(runtime2, "confirm-publish");
+  const throughInput = optional6(runtime2, "through");
   const through = throughInput === undefined ? undefined : decodeUnknownSync(Stage)(throughInput);
-  const reconcile3 = optional5(runtime, "reconcile");
-  const retry3 = optional5(runtime, "retry");
-  const resolutionItems = resolutions(optional5(runtime, "resolutions"));
-  const reason = optional5(runtime, "reason");
+  const reconcile3 = optional6(runtime2, "reconcile");
+  const retry3 = optional6(runtime2, "retry");
+  const resolutionItems = resolutions(optional6(runtime2, "resolutions"));
+  const reason = optional6(runtime2, "reason");
   return {
-    ...accepted(runtime, root),
+    ...accepted(runtime2, root),
     workspace: root,
     ...newRunPath === undefined ? { resumeRunPath } : {
       newRun: {
         path: newRunPath,
-        scope: scope3(optional5(runtime, "scope")),
+        scope: scope3(optional6(runtime2, "scope")),
         executionReviewId: ExecutionReviewId.make(review),
         reviewer,
         ...reason === undefined ? {} : { reason }
@@ -32497,32 +32702,32 @@ var applyInput = (runtime, root) => {
     }
   };
 };
-var applyAction = async (api2, runtime, root) => {
-  const result2 = await api2.apply(applyInput(runtime, root));
-  runtime.output("execution_receipt_id", result2.executionReceiptId);
-  runtime.output("run_id", result2.runId);
-  runtime.output("run_path", result2.runPath);
-  runtime.output("status", result2.status);
-  runtime.output("evidence_path", `${result2.runPath}.evidence.json`);
+var applyAction = async (api2, runtime2, root) => {
+  const result2 = await api2.apply(applyInput(runtime2, root));
+  runtime2.output("execution_receipt_id", result2.executionReceiptId);
+  runtime2.output("run_id", result2.runId);
+  runtime2.output("run_path", result2.runPath);
+  runtime2.output("status", result2.status);
+  runtime2.output("evidence_path", `${result2.runPath}.evidence.json`);
   if (result2.nextPublishReviewId !== undefined) {
-    runtime.output("publish_review_id", result2.nextPublishReviewId);
+    runtime2.output("publish_review_id", result2.nextPublishReviewId);
   }
   if (result2.publishReceiptId !== undefined) {
-    runtime.output("publish_receipt_id", result2.publishReceiptId);
+    runtime2.output("publish_receipt_id", result2.publishReceiptId);
   }
-  runtime.write(`${result2.runPath}.evidence.json`, JSON.stringify(result2.evidence, null, 2));
+  runtime2.write(`${result2.runPath}.evidence.json`, JSON.stringify(result2.evidence, null, 2));
 };
-var runAction = async (api2, runtime) => {
-  const root = realpathSync4(runtime.workspace);
-  const command2 = optional5(runtime, "command") ?? "plan";
-  if (!actionCommands.includes(command2))
+var runAction = async (api2, runtime2) => {
+  const root = realpathSync5(runtime2.workspace);
+  const command3 = optional6(runtime2, "command") ?? "plan";
+  if (!actionCommands.includes(command3))
     throw new Error("command must be plan, apply, or doctor.");
-  if (command2 === "plan")
-    return planAction(api2, runtime, root);
-  if (command2 === "doctor" || optional5(runtime, "review-only") === "true") {
-    return reviewAction(api2, runtime, root, command2);
+  if (command3 === "plan")
+    return planAction(api2, runtime2, root);
+  if (command3 === "doctor" || optional6(runtime2, "review-only") === "true") {
+    return reviewAction(api2, runtime2, root, command3);
   }
-  return applyAction(api2, runtime, root);
+  return applyAction(api2, runtime2, root);
 };
 
 // src/index.ts
@@ -32538,7 +32743,7 @@ try {
     ...process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA },
     input: getInput,
     output: setOutput,
-    read: (path2) => readFileSync3(path2, "utf8"),
+    read: (path2) => readFileSync4(path2, "utf8"),
     write: (path2, value2) => {
       mkdirSync4(dirname5(path2), { recursive: true });
       writeFileSync3(path2, value2);

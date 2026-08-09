@@ -160,7 +160,9 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/drivers/contain.ts",
   "src/drivers/local.ts",
   "src/drivers/workspace.ts",
-  "src/platform/source-observer.ts"
+  "src/platform/source-observer.ts",
+  "src/release/prepare.ts",
+  "src/release/prepared-store.ts"
 ])
 const appEntryModules: ReadonlySet<string> = new Set([
   "apps/release-ts/src/cli/main.ts",

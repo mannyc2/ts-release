@@ -97,6 +97,15 @@ export const linkContributions = (
   const artifacts = [...declared, ...allPreparationOutputs.filter((item) =>
     !declared.some((declaredArtifact) => declaredArtifact.id === item.id)
   )].sort(byId)
+  const paths = new Map<string, string>()
+  for (const artifact of artifacts) {
+    const path = artifact.path.toString()
+    const previous = paths.get(path)
+    if (previous !== undefined && previous !== artifact.id.toString()) throw new GraphLinkError({
+      kind: "path", value: path, reason: `Artifacts ${previous} and ${artifact.id} share one output path.`
+    })
+    paths.set(path, artifact.id.toString())
+  }
   const preparations = contributions.flatMap((item) => item.preparations).sort(byId)
   const operationIds = new Set<string>()
   const producers = new Map<string, string>()
@@ -119,11 +128,15 @@ export const linkContributions = (
       if (producers.has(outputId)) throw new GraphLinkError({
         kind: "duplicate", value: outputId, reason: "Output has more than one producer."
       })
-      if (preparation._tag === "GraphCommandArtifact" && output.kind === "directory") throw new GraphLinkError({
+      if (preparation._tag === "GraphCommandArtifact" && ["directory", "package"].includes(output.kind)) throw new GraphLinkError({
         kind: "path", value: outputId, reason: "Generic command outputs must be regular files."
       })
       if (preparation._tag === "GraphCommandArtifact" && preparation.inputs.some((input) => input.toString() === outputId)) throw new GraphLinkError({
         kind: "reference", value: outputId, reason: "Command inputs and outputs must be disjoint."
+      })
+      if (preparation._tag === "GraphCommandArtifact" && preparation.inputs.some((input) =>
+        artifacts.find((artifact) => artifact.id.toString() === input.toString())?.path === output.path)) throw new GraphLinkError({
+        kind: "path", value: outputId, reason: "Command outputs must not overwrite input paths."
       })
       producers.set(outputId, id)
     }

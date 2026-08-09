@@ -92,6 +92,19 @@ describe("immutable release graph", () => {
     const body = GraphGitHubPublication.make({ id: OperationId.make("github"), repository: "owner/fixture", tag: NonEmptyName.make("v1"),
       title: NonEmptyName.make("fixture"), bodyArtifact: OutputId.make("plain"), assetIds: [] })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [{ ...artifact("plain", "plain.md") }], preparations: [], publications: [body] })])).toThrow(GraphLinkError)
+    const duplicatePath = CapabilityContribution.make({ artifacts: [artifact("first", "same.bin"), artifact("second", "same.bin")], preparations: [], publications: [] })
+    expect(() => linkContributions([duplicatePath])).toThrow(GraphLinkError)
+    const packageOutputArtifact = { ...artifact("package", "package"), kind: "package" as const }
+    const packageOutput = GraphCommandArtifact.make({
+      id: OperationId.make("package-output"), argv: ["tool"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [],
+      outputs: [packageOutputArtifact], sourceCommit: NonEmptyName.make("abc123")
+    })
+    expect(() => linkContributions([CapabilityContribution.make({ artifacts: [], preparations: [packageOutput], publications: [] })])).toThrow(GraphLinkError)
+    const overwrite = GraphCommandArtifact.make({
+      id: OperationId.make("overwrite"), argv: ["tool"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [OutputId.make("input")],
+      outputs: [artifact("output", "input.txt")], sourceCommit: NonEmptyName.make("abc123")
+    })
+    expect(() => linkContributions([CapabilityContribution.make({ artifacts: [artifact("input", "input.txt")], preparations: [overwrite], publications: [] })])).toThrow(GraphLinkError)
   })
 
   test("inspection is a pure stable projection of verified context and graph", () => {

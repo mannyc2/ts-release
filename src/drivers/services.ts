@@ -3,17 +3,13 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
 import {
-  AnnouncementPublish,
   ForgeRelease,
   HttpPublish,
-  OpaquePublish,
   Operation,
   OutputDeclaration,
   PackageRegistryRelease,
-  PackageStorePublish, ProviderPublish,
   PublishCredential,
   ReadCredential,
-  SupplyChainPublish, SmtpPublish,
   type RemotePublishOp
 } from "../model/operation.js"
 import { CheckpointId, Digest, OutputId, SafeRelativePath, WorkspaceRoot } from "../model/primitives.js"
@@ -29,10 +25,7 @@ export class CatalogPublishRequest
     operation: Schema.Union([
       HttpPublish,
       ForgeRelease,
-      PackageRegistryRelease,
-      PackageStorePublish,
-      SupplyChainPublish, ProviderPublish, AnnouncementPublish, SmtpPublish,
-      OpaquePublish
+      PackageRegistryRelease
     ]),
     // Command publishers run in the plan workspace, never the ambient cwd:
     // .npmrc discovery walks up from here.
@@ -102,22 +95,6 @@ export type DriverCatalogShape = {
     request: CatalogPublishRequest, credential: string
   ) => Effect.Effect<ReadResult, DriverError>
 }
-// Package-store, supply-chain, provider, and announcement publications carry an
-// immutable profile and have no live transport in the node driver catalog.
-// The parameter is the publish union, not `{ _tag: string }`: this decides
-// whether a dispatch happens at all, so a tag that stops existing (or a value
-// that was never an operation) must fail the compiler, not the wire.
-export type ClosedProfilePublishOp = Extract<
-  RemotePublishOp,
-  { readonly _tag: typeof closedProfileTags[number] }
->
-const closedProfileTags = [
-  "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "AnnouncementPublish", "SmtpPublish"
-] as const satisfies ReadonlyArray<RemotePublishOp["_tag"]>
-export const isClosedProfilePublish = (
-  operation: RemotePublishOp
-): operation is ClosedProfilePublishOp =>
-  (closedProfileTags as ReadonlyArray<string>).includes(operation._tag)
 export class WorkspaceStore extends Context.Service<WorkspaceStore, WorkspaceStoreShape>()("WorkspaceStore") {}
 export class CredentialStore extends Context.Service<
   CredentialStore, CredentialStoreShape

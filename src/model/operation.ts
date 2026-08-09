@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema"
-import { CheckpointId, CredentialName, OperationId, OutputId, ProfileId, SafeRelativePath } from "./primitives.js"
+import { CredentialName, OperationId, OutputId, ProfileId, SafeRelativePath } from "./primitives.js"
 import { SafeArchivePattern } from "./primitives.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
@@ -102,52 +102,6 @@ export class PackageRegistryRelease
     contractFixtureId: Schema.NonEmptyString
   })
 {}
-export class PackageStoreTarget extends Schema.Class<PackageStoreTarget>("PackageStoreTarget")({
-  name: Schema.NonEmptyString, channel: Schema.optionalKey(Schema.NonEmptyString),
-  version: Schema.optionalKey(Schema.NonEmptyString)
-}) {}
-export class PackageStorePublish
-  extends Schema.TaggedClass<PackageStorePublish>()("PackageStorePublish", {
-    ...row,
-    profileId: Schema.Literals(["package.store-snap.v1", "package.store-chocolatey.v1"]),
-    target: PackageStoreTarget, credential: PublishCredential,
-    contractFixtureId: Schema.NonEmptyString
-  })
-{}
-export const SupplyChainVariant = Schema.Literals([
-  "RegistryImage", "RegistryManifest", "RegistrySignature",
-  "CredentialedArtifactSignature", "AppleNotarization", "RemoteAttestation"
-])
-export class SupplyChainPublish
-  extends Schema.TaggedClass<SupplyChainPublish>()("SupplyChainPublish", {
-    ...row, variant: SupplyChainVariant, profileId: ProfileId,
-    target: Schema.Record(Schema.String, Schema.NonEmptyString),
-    credential: PublishCredential, contractFixtureId: Schema.NonEmptyString
-  })
-{}
-const ProviderVariant = Schema.Literals(["ForgeRelease", "ForgeCatalogPullRequest", "MilestoneClose",
-  "ObjectStorePublish", "GenericHttp", "RepositoryPublish", "RegistryMetadata"])
-export class ProviderPublish extends Schema.TaggedClass<ProviderPublish>()("ProviderPublish", {
-  ...row, profileId: ProfileId, variant: ProviderVariant,
-  target: Schema.Record(Schema.String, Schema.NonEmptyString),
-  options: Schema.Record(Schema.String, Schema.Union([Schema.String, Schema.Boolean])),
-  dnsScope: Schema.Literals(["PublicOnly", "PrivateNetwork"]),
-  checkpoints: Schema.NonEmptyArray(CheckpointId), credential: PublishCredential,
-  contractFixtureId: Schema.NonEmptyString }) {}
-export class AnnouncementPublish extends Schema.TaggedClass<AnnouncementPublish>()("AnnouncementPublish", {
-  ...row, profileId: ProfileId, target: Schema.Struct({ destination: Schema.NonEmptyString }),
-  credential: PublishCredential, contractFixtureId: Schema.NonEmptyString }) {}
-export class SmtpPublish extends Schema.TaggedClass<SmtpPublish>()("SmtpPublish", {
-  ...row, profileId: Schema.Literal("announce.smtp/v1"), target: Schema.Struct({ destination: Schema.NonEmptyString }),
-  credential: PublishCredential, contractFixtureId: Schema.Literal("contract.announce.smtp/v1") }) {}
-export class OpaquePublish extends Schema.TaggedClass<OpaquePublish>()("OpaquePublish", {
-  ...row, argv: Schema.NonEmptyArray(Schema.String), cwd: SafeRelativePath,
-  environmentNames: Schema.Array(Schema.NonEmptyString),
-  credential: PublishCredential, contractFixtureId: Schema.NonEmptyString,
-  reconciliation: Schema.Literal("manual-only"),
-  irreversible: Schema.Boolean
-}) {}
-
 export const BuildOp = Schema.Union([Check, Write, Exec])
 export type BuildOp = typeof BuildOp.Type
 export const ProcessOp = Schema.Union([Check, Write, Pack, DigestOp, Exec])
@@ -157,25 +111,22 @@ export type CatalogOp = typeof CatalogOp.Type
 export const ValidateOp = Schema.Union([Check, Exec, HttpRead, ReviewedNoteTransform])
 export type ValidateOp = typeof ValidateOp.Type
 export const PublishOp = Schema.Union([
-  Exec, HttpPublish, ForgeRelease, PackageRegistryRelease,
-  PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
+  Exec, HttpPublish, ForgeRelease, PackageRegistryRelease
 ])
 export type PublishOp = typeof PublishOp.Type
-export const AnnounceOp = Schema.Union([HttpPublish, AnnouncementPublish, SmtpPublish])
+export const AnnounceOp = Schema.Union([HttpPublish])
 export type AnnounceOp = typeof AnnounceOp.Type
 export const VerifyOp = Schema.Union([Check, HttpRead])
 export type VerifyOp = typeof VerifyOp.Type
 
 export const Operation = Schema.Union([
   Check, Write, Pack, DigestOp, Exec, HttpRead, ReviewedNoteTransform,
-  HttpPublish, ForgeRelease, PackageRegistryRelease, AnnouncementPublish, SmtpPublish,
-  PackageStorePublish, SupplyChainPublish, ProviderPublish, OpaquePublish
+  HttpPublish, ForgeRelease, PackageRegistryRelease
 ])
 export type Operation = typeof Operation.Type
 export const mechanismTags = [
   "Check", "Write", "Pack", "Digest", "Exec", "HttpRead", "ReviewedNoteTransform",
-  "HttpPublish", "ForgeRelease", "PackageRegistryRelease", "AnnouncementPublish", "SmtpPublish",
-  "PackageStorePublish", "SupplyChainPublish", "ProviderPublish", "OpaquePublish"
+  "HttpPublish", "ForgeRelease", "PackageRegistryRelease"
 ] as const satisfies ReadonlyArray<Operation["_tag"]>
 // `satisfies` only proves every listed tag is real. This proves the converse:
 // a 17th operation that never reaches the list fails the build here.
@@ -185,8 +136,7 @@ void _mechanismTagsAreComplete
 export type Authority = "LocalRead" | "LocalWrite" | "LocalExec" | "RemoteRead" | "RemotePublish"
 
 export type RemotePublishOp =
-  | HttpPublish | ForgeRelease | PackageRegistryRelease | PackageStorePublish
-  | SupplyChainPublish | ProviderPublish | AnnouncementPublish | SmtpPublish | OpaquePublish
+  | HttpPublish | ForgeRelease | PackageRegistryRelease
 
 export const isRemotePublish = (operation: Operation): operation is RemotePublishOp =>
   operationAuthority(operation) === "RemotePublish"
@@ -207,12 +157,6 @@ export const operationAuthority = (operation: Operation): Authority => {
     case "HttpPublish":
     case "ForgeRelease":
     case "PackageRegistryRelease":
-    case "PackageStorePublish":
-    case "SupplyChainPublish":
-    case "ProviderPublish":
-    case "AnnouncementPublish":
-    case "SmtpPublish":
-    case "OpaquePublish":
       return "RemotePublish"
   }
 }

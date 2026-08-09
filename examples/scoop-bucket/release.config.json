@@ -28,6 +28,5 @@
       "url": "https://github.com/owner/release-example-scoop/releases/download/v0.1.0/release-example-scoop-0.1.0.zip",
       "bin": "release-example-scoop.exe"
     }
-  },
-  "evidence": ".release/evidence"
+  }
 }

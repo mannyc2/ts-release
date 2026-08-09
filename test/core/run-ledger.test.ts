@@ -30,7 +30,7 @@ import {
   validateLedger,
   type TransitionCommand
 } from "../../src/apply/transition.js"
-import { acceptedRunPlan, supplyChainRunPlan } from "./run-fixture.js"
+import { acceptedRunPlan } from "./run-fixture.js"
 
 const topology = ExecutionTopologyHash.make("single-machine/v1")
 const runId = RunId.make("run-1")
@@ -193,27 +193,6 @@ describe("run-ledger/v1 reducer", () => {
       detail: "release and assets observed"
     })
     expect(operationStatus(ledger, forgeId)?._tag).toBe("Passed")
-  })
-
-  test("an unknown supply-chain profile refuses at publish begin, never passes", async () => {
-    const accepted = await supplyChainRunPlan("supply.not-a-profile.v1")
-    const supply = OperationId.make("supply")
-    const ledger = createLedger(accepted, {
-      runId,
-      logicalRunId,
-      scope: ExecutionScope.make({ operationIds: [supply] }),
-      frontier: "publish",
-      topologyHash: topology,
-      receipt: executionReceipt
-    })
-    const result = transition(accepted, ledger, {
-      _tag: "BeginPublish",
-      operationId: supply,
-      receipt: publishReceipt
-    })
-    expect(transitionTag(result)).toBe("TransitionError")
-    expect(Result.isFailure(result) ? result.failure.reason : "")
-      .toContain("Unknown supply-chain profile supply.not-a-profile.v1")
   })
 
   test("trusted exec recovery is manual and identity/frontier rewrites refuse", async () => {

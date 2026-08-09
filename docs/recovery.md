@@ -65,7 +65,6 @@ ts-release apply release-plan.json \
   --reviewer you
 ```
 
-<!-- claim section:retry -->
 The reason is recorded in the ledger with your name on it. That is the point:
 someone decided, and the record says who and why.
 

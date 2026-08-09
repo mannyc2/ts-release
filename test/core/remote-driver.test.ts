@@ -13,7 +13,6 @@ import {
 import {
   ForgeRelease,
   HttpPublish,
-  OpaquePublish,
   PublishCredential,
   WireContract
 } from "../../src/model/operation.js"
@@ -58,13 +57,6 @@ const http = HttpPublish.make({
   }),
   credential: PublishCredential.make({ name: CredentialName.make("HOOK_TOKEN") })
 })
-const opaque = OpaquePublish.make({
-  id: OperationId.make("publish:opaque"), inputs: [], outputs: [],
-  argv: ["publisher", "--now"], cwd: SafeRelativePath.make("."),
-  environmentNames: [CredentialName.make("OPAQUE_TOKEN")],
-  credential: PublishCredential.make({ name: CredentialName.make("OPAQUE_TOKEN") }),
-  contractFixtureId: "opaque/v1", reconciliation: "manual-only", irreversible: true
-})
 
 const bytes = new TextEncoder().encode("archive-bytes")
 const facts = MaterializedOutput.make({
@@ -76,7 +68,7 @@ const facts = MaterializedOutput.make({
   size: bytes.length,
   inode: 1
 })
-const request = (operation: typeof forge | typeof http | typeof opaque, checkpointId: string) =>
+const request = (operation: typeof forge | typeof http, checkpointId: string) =>
   CatalogPublishRequest.make({
     operation, root: WorkspaceRoot.make("/workspace-root"),
     checkpointId: CheckpointId.make(checkpointId),
@@ -216,50 +208,6 @@ describe("remote driver transports", () => {
       () => reconcile(request(forge, "asset:plugin"))
     )
     expect(other.found).toBe(false)
-  })
-
-  test("command publish spawns the argv with a closed environment", async () => {
-    const result = await withCatalog(
-      () => ({ status: 200 }),
-      () => ({ exitCode: 0, stdout: "published\n" }),
-      ({ commands }) => publish(request(opaque, "dispatch")).pipe(
-        Effect.map((outcome) => ({ outcome, commands: [...commands] }))),
-      { PATH: "/usr/bin", OPAQUE_TOKEN: "secret", UNRELATED_SECRET: "leak" }
-    )
-    expect(result.outcome).toMatchObject({ _tag: "Committed", observedOutcome: "published" })
-    expect(result.commands).toHaveLength(1)
-    expect(result.commands[0]?.argv).toEqual(["publisher", "--now"])
-    expect(result.commands[0]?.env).toEqual({ PATH: "/usr/bin", OPAQUE_TOKEN: "secret" })
-    expect(result.commands[0]?.cwd).toBe("/workspace-root")
-  })
-
-  test("a nonzero publisher exit is a commitment the client cannot resolve", async () => {
-    const outcome = await withCatalog(
-      () => ({ status: 200 }),
-      () => ({ exitCode: 7 }),
-      () => publish(request(opaque, "dispatch"))
-    )
-    expect(outcome).toMatchObject({
-      _tag: "CommitmentUnknown", failure: "Publisher exited 7 after dispatch."
-    })
-  })
-
-  test("a publisher that never starts resolves retryable, not dead or unknown", async () => {
-    const catalog = makeCatalog(() => Effect.die("structured is unused"), {
-      client: HttpClient.make(() => Effect.die("http is unused")),
-      run: () => Effect.fail(DriverError.make({
-        reason: "spawn ENOENT",
-        commitment: "before-commit"
-      }))
-    })
-    const outcome = await Effect.runPromise(
-      catalog.publish(request(opaque, "dispatch"), undefined, "token")
-    )
-    expect(outcome).toMatchObject({
-      _tag: "NotDispatched",
-      reason: "Publisher could not start: spawn ENOENT",
-      retryable: true
-    })
   })
 
   test("repository must be owner/name; other spellings refuse at construction", () => {

@@ -26,9 +26,9 @@
     "scoop": {
       "repository": "owner/scoop-bucket",
       "manifestName": "fixture",
-      "ids": ["windows-x64"],
-      "submit": "pull-request",
-      "validate": ["pwsh", "-File", "scripts/check-manifest.ps1"]
+      "ids": [
+        "windows-x64"
+      ]
     }
   }
 }

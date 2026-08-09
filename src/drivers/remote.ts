@@ -4,7 +4,7 @@ import * as HttpClient from "effect/unstable/http/HttpClient"
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
 import type * as HttpClientResponse from "effect/unstable/http/HttpClientResponse"
 import {
-  Committed, CommitmentUnknown, isClosedProfilePublish, NotDispatched, ReadResult,
+  Committed, CommitmentUnknown, NotDispatched, ReadResult,
   type CatalogPublishRequest, type DriverCatalogShape
 } from "./services.js"
 import { Digest } from "../model/primitives.js"
@@ -26,8 +26,7 @@ const commandPublish = (
   argv: ReadonlyArray<string>
 ) => {
   const operation = request.operation
-  const names = operation._tag === "OpaquePublish" ||
-    operation._tag === "PackageRegistryRelease"
+  const names = operation._tag === "PackageRegistryRelease"
     ? operation.environmentNames
     : []
   // Durable dispatch intent already exists when this runs, so "the process
@@ -151,10 +150,6 @@ const remotePublish = (
 const reconcile = (transport: RemoteTransport): DriverCatalogShape["reconcile"] =>
   (request, credential) => Effect.gen(function*() {
     const operation = request.operation
-    if (operation._tag === "OpaquePublish")
-      return yield* Effect.fail(failure("Opaque publication is manual-only."))
-    if (isClosedProfilePublish(operation))
-      return yield* Effect.fail(failure("No live closed-profile reconciliation transport is installed."))
     if (operation._tag === "ForgeRelease") {
       const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/")
       const response = yield* transport.client.execute(HttpClientRequest.get(
@@ -182,7 +177,7 @@ const reconcile = (transport: RemoteTransport): DriverCatalogShape["reconcile"] 
       return ReadResult.make({ found: ok(response) })
     }
     if (operation._tag !== "PackageRegistryRelease")
-      return yield* Effect.fail(failure("Closed profile transport is unavailable."))
+      return yield* Effect.fail(failure("Publication observation is unavailable for this operation."))
     return ReadResult.make({ found: ok(yield* transport.client.get(operation.probeUrl)) })
   }).pipe(Effect.mapError((cause) => cause instanceof DriverError ? cause : failure(String(cause))))
 
@@ -192,12 +187,6 @@ export const makeCatalog = (
 ): DriverCatalogShape => ({
   structured,
   publish: (request, handle, credential) => {
-    if (isClosedProfilePublish(request.operation)) {
-      return Effect.fail(failure("No live closed-profile publish transport is installed."))
-    }
-    if (request.operation._tag === "OpaquePublish") {
-      return commandPublish(transport, request, request.operation.argv)
-    }
     if (request.operation._tag === "PackageRegistryRelease") {
       return commandPublish(transport, request, request.operation.publishArgv)
     }

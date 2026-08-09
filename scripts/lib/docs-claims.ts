@@ -6,7 +6,7 @@
 //
 // The annotations are HTML comments, so they are invisible when rendered:
 //
-//   <!-- claim section:publish.homebrew -->   the config schema declares it
+//   <!-- claim capability:publish.npm -->   the executable registry exposes it
 //   <!-- claim absent:nfpm -->                the term appears nowhere in src/
 //   <!-- claim command:check:release -->      package.json declares the script
 //   <!-- claim test:test/core/resolve.test.ts --> the test file exists
@@ -19,6 +19,7 @@
 // observation back in.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
+import { executableCapabilities } from "../../src/capabilities/registry.js"
 
 export interface DocsClaimsReport {
   readonly failures: ReadonlyArray<string>
@@ -50,9 +51,6 @@ const attribution = ["documentation", "documented", "per goreleaser"]
 
 const claimPattern = /<!--\s*claim\s+([a-z-]+):([^\s]+)\s*-->/gu
 
-const configSchema = (root: string): string =>
-  readFileSync(join(root, "src", "recipes", "config.ts"), "utf8")
-
 // ALL of src/, not a chosen subset: a term that appears anywhere in the product
 // is covered somewhere, and a narrower scan would let a false "not supported"
 // row survive. (Verified during authoring: nfpm, msi, dmg, and chocolatey all
@@ -69,15 +67,14 @@ const sourceTerms = (root: string): string => {
 }
 
 const resolvers: Readonly<Record<string, (root: string, value: string, sentence: string) => string | undefined>> = {
-  // The last segment of a dotted path must be a declared schema field. This
-  // proves the surface EXISTS; the prose around it still has to be true.
-  section: (root, value) => {
-    const field = value.split(".").at(-1)!
-    // Fields are declared several to a line in the schema classes, so a
-    // start-of-line anchor would miss most of them.
-    return new RegExp(`(?:^|[{,\\s])(?:"|')?${field}(?:"|')?\\s*:`, "mu").test(configSchema(root))
-      ? undefined
-      : `section:${value} names no field the config schema declares`
+  capability: (_root, value) => {
+    const entry = executableCapabilities.find((candidate) => candidate.id === value)
+    if (entry === undefined) return `capability:${value} has no executable registry entry`
+    if (!existsSync(join(_root, entry.verticalTest)))
+      return `capability:${value} names no vertical test`
+    const source = entry.entrypoint.split(":", 1)[0]!
+    return existsSync(join(_root, source)) ? undefined
+      : `capability:${value} names no executable entrypoint`
   },
   // The honest-subset rows. A term that turns up in the product's own
   // vocabulary is COVERED, and claiming its absence is the exact error this

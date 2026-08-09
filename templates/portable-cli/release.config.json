@@ -1,1 +1,70 @@
-{"$schema":"https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json","project":{"name":"@scope/pkg","packageName":"@scope/pkg","repository":"owner/repo","version":"0.1.0","tag":"v0.1.0","description":"Portable CLI distribution for @scope/pkg","summary":"Portable CLI wrapper for @scope/pkg.","homepage":"https://github.com/owner/repo","license":"MIT"},"npmPackage":{"path":"."},"builds":[{"builder":"bun","id":"cli","entry":"src/cli.ts","targets":["linux-x64","linux-arm64","darwin-x64","darwin-arm64","windows-x64"],"output":"artifacts/pkg-{version}-{targetTriple}{ext}","binaryName":"pkg","installPath":"bin/pkg"}],"pypiWheel":{"packageName":"pkg","moduleName":"pkg","consoleScript":"pkg","requiresPython":">=3.8","wheels":[{"id":"pypi-wheel-linux-x64","path":"artifacts/pkg-{version}-py3-none-manylinux2014_x86_64.whl","wheelTag":"py3-none-manylinux2014_x86_64","binaries":[{"os":"linux","arch":"x64","sourcePath":"artifacts/pkg-{version}-linux-x64","wheelPath":"pkg/bin/pkg-linux-x64"}]},{"id":"pypi-wheel-linux-arm64","path":"artifacts/pkg-{version}-py3-none-manylinux2014_aarch64.whl","wheelTag":"py3-none-manylinux2014_aarch64","binaries":[{"os":"linux","arch":"arm64","sourcePath":"artifacts/pkg-{version}-linux-arm64","wheelPath":"pkg/bin/pkg-linux-arm64"}]},{"id":"pypi-wheel-darwin-x64","path":"artifacts/pkg-{version}-py3-none-macosx_10_15_x86_64.whl","wheelTag":"py3-none-macosx_10_15_x86_64","binaries":[{"os":"darwin","arch":"x64","sourcePath":"artifacts/pkg-{version}-darwin-x64","wheelPath":"pkg/bin/pkg-darwin-x64"}]},{"id":"pypi-wheel-darwin-arm64","path":"artifacts/pkg-{version}-py3-none-macosx_11_0_arm64.whl","wheelTag":"py3-none-macosx_11_0_arm64","binaries":[{"os":"darwin","arch":"arm64","sourcePath":"artifacts/pkg-{version}-darwin-arm64","wheelPath":"pkg/bin/pkg-darwin-arm64"}]},{"id":"pypi-wheel-windows-x64","path":"artifacts/pkg-{version}-py3-none-win_amd64.whl","wheelTag":"py3-none-win_amd64","binaries":[{"os":"windows","arch":"x64","sourcePath":"artifacts/pkg-{version}-windows-x64.exe","wheelPath":"pkg/bin/pkg-windows-x64.exe"}]}]},"publish":{"npm":{"registry":"https://registry.npmjs.org","packageName":"@scope/pkg","packagePath":".","trustedPublishing":{"workflow":"release.yml","verifyPackageExists":true},"access":"public","provenance":true},"github":{"repository":"owner/repo","tokenEnv":"GH_TOKEN","draft":true,"prerelease":false},"homebrew":{"repository":"owner/homebrew-tap","formulaName":"pkg","formulaPath":".release/generated/pkg.rb","ids":["cli-darwin-arm64","cli-darwin-x64"]},"scoop":{"repository":"owner/scoop-bucket","manifestName":"pkg","manifestPath":".release/generated/pkg.json","ids":["cli-windows-x64"]},"pypi":{"repositoryUrl":"https://upload.pypi.org/legacy/","trustedPublishing":{"provider":"github-actions","workflow":"release.yml","publisherConfigured":true}}},"evidence":".release/evidence/{version}"}
+{
+  "$schema": "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
+  "project": {
+    "name": "@scope/pkg",
+    "packageName": "@scope/pkg",
+    "repository": "owner/repo",
+    "version": "0.1.0",
+    "tag": "v0.1.0",
+    "description": "Portable CLI distribution for @scope/pkg",
+    "summary": "Portable CLI wrapper for @scope/pkg.",
+    "homepage": "https://github.com/owner/repo",
+    "license": "MIT"
+  },
+  "npmPackage": {
+    "path": "."
+  },
+  "builds": [
+    {
+      "builder": "bun",
+      "id": "cli",
+      "entry": "src/cli.ts",
+      "targets": [
+        "linux-x64",
+        "linux-arm64",
+        "darwin-x64",
+        "darwin-arm64",
+        "windows-x64"
+      ],
+      "output": "artifacts/pkg-{version}-{targetTriple}{ext}",
+      "binaryName": "pkg",
+      "installPath": "bin/pkg"
+    }
+  ],
+  "publish": {
+    "npm": {
+      "registry": "https://registry.npmjs.org",
+      "packageName": "@scope/pkg",
+      "packagePath": ".",
+      "trustedPublishing": {
+        "workflow": "release.yml",
+        "verifyPackageExists": true
+      },
+      "access": "public",
+      "provenance": true
+    },
+    "github": {
+      "repository": "owner/repo",
+      "tokenEnv": "GH_TOKEN",
+      "draft": true,
+      "prerelease": false
+    },
+    "homebrew": {
+      "repository": "owner/homebrew-tap",
+      "formulaName": "pkg",
+      "formulaPath": ".release/generated/pkg.rb",
+      "ids": [
+        "cli-darwin-arm64",
+        "cli-darwin-x64"
+      ]
+    },
+    "scoop": {
+      "repository": "owner/scoop-bucket",
+      "manifestName": "pkg",
+      "manifestPath": ".release/generated/pkg.json",
+      "ids": [
+        "cli-windows-x64"
+      ]
+    }
+  }
+}

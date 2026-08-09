@@ -14,18 +14,25 @@
       "builder": "bun",
       "id": "cli",
       "entry": "src/cli.ts",
-      "targets": ["linux-x64", "darwin-arm64", "windows-x64"],
+      "targets": [
+        "linux-x64",
+        "darwin-arm64",
+        "windows-x64"
+      ],
       "binary": "fixture"
     }
   ],
   "archives": [
     {
       "id": "archive",
-      "ids": ["cli-linux-x64", "cli-darwin-arm64", "cli-windows-x64"],
-      "formats": ["tar.gz"],
-      "formatOverrides": {
-        "windows": ["zip"]
-      }
+      "ids": [
+        "cli-linux-x64",
+        "cli-darwin-arm64",
+        "cli-windows-x64"
+      ],
+      "formats": [
+        "tar.gz"
+      ]
     }
   ],
   "checksum": {
@@ -41,13 +48,16 @@
     "homebrew": {
       "repository": "owner/homebrew-tap",
       "formulaName": "fixture",
-      "ids": ["cli-darwin-arm64"]
+      "ids": [
+        "cli-darwin-arm64"
+      ]
     },
     "scoop": {
       "repository": "owner/scoop-bucket",
       "manifestName": "fixture",
-      "ids": ["cli-windows-x64"]
+      "ids": [
+        "cli-windows-x64"
+      ]
     }
-  },
-  "evidence": ".release/evidence"
+  }
 }

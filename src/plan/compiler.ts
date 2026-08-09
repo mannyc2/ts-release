@@ -2,9 +2,6 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { CandidateConfig, decodeConfig } from "../config/config.js"
 import { lowerCurrentConfig } from "../recipes/current.js"
-import { lowerProjects } from "../recipes/projects.js"
-import { renderEnvironment } from "../recipes/environment.js"
-import { PlanningFactsError } from "../model/errors.js"
 import { Check, DigestOp, OutputDeclaration } from "../model/operation.js"
 import { ReleaseIdentityV6, ReleasePlanV6, ReleaseStages } from "../model/plan.js"
 import {
@@ -28,8 +25,6 @@ export const recipeDefinitions = (config: CandidateConfig): ReadonlyArray<Recipe
         path: artifact.path,
         kind: artifact.format === "tarball" || artifact.format === "zip"
           ? "archive"
-          : artifact.format === "oci-image"
-          ? "file"
           : artifact.format === "binary"
           ? "executable"
           : artifact.format,
@@ -104,31 +99,16 @@ const finalizePlan = (
       snapshot: invocation.snapshot
     }),
     stages,
-    annotations: [
-      ...Object.entries(config.environment ?? {}).sort(([left], [right]) => left.localeCompare(right))
-        .map(([name, value]) => ({ key: `environment.${name}`, value: renderEnvironment(value) })),
-      ...(config.publish.nightly === undefined ? [] : [{
-        key: "publish.nightly",
-        value: `${config.publish.nightly.tag}|replace`
-      }]),
-      ...(config.projects ?? []).map((project) => ({
-        key: `project.${project.id}`,
-        value: `${project.root}|${project.tagPrefix}|${project.changelogScope ?? project.root}`
-      }))
-    ]
+    annotations: []
   })
 }
 
 const minimalConfig = (config: CandidateConfig): boolean =>
   config.builds === undefined &&
   config.npmPackage === undefined &&
-  config.pypiWheel === undefined &&
   config.archives === undefined &&
   config.catalogs === undefined &&
-  config.hooks === undefined &&
-  config.retry === undefined &&
-  config.evidence === undefined &&
-  Object.keys(config.publish).length === 0 &&
+  Object.keys(config.publish ?? {}).length === 0 &&
   Object.keys(config.project).every((key) => ["name", "version", "tag"].includes(key)) &&
   (config.artifacts ?? []).every((artifact) =>
     ["file", "directory", "executable"].includes(artifact.format) &&
@@ -143,10 +123,5 @@ export const compilePlan = Effect.fn("compilePlan")(function*(
   const baseStages = minimalConfig(config)
     ? lowerRecipes(recipeDefinitions(config))
     : yield* lowerCurrentConfig(config)
-  const stages = config.projects === undefined ? baseStages
-    : yield* Effect.try({
-        try: () => lowerProjects(baseStages, config.projects!),
-        catch: (cause) => PlanningFactsError.make({ reason: String(cause) })
-      })
-  return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, stages)))
+  return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, baseStages)))
 })

@@ -25,9 +25,9 @@
     "homebrew": {
       "repository": "owner/homebrew-tap",
       "formulaName": "fixture",
-      "ids": ["darwin-arm64"],
-      "submit": "pull-request",
-      "validate": ["brew", "audit", "--strict", "fixture"]
+      "ids": [
+        "darwin-arm64"
+      ]
     }
   }
 }

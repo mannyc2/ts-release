@@ -18,6 +18,5 @@
       "tokenEnv": "NPM_TOKEN",
       "access": "public"
     }
-  },
-  "evidence": ".release/evidence"
+  }
 }

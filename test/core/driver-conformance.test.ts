@@ -402,7 +402,7 @@ describe("candidate driver conformance", () => {
     }
   })
 
-  test("package, forge, and opaque composites reject injected execution policy", async () => {
+  test("package and forge composites reject injected execution policy", async () => {
     for (const name of ["portable-cli", "agent-plugin"]) {
       const config = JSON.parse(readFileSync(
         join(process.cwd(), "examples", name, "release.config.json"),
@@ -414,7 +414,7 @@ describe("candidate driver conformance", () => {
         snapshot: false
       })))
       for (const operation of accepted.plan.stages.publish.filter((candidate) =>
-        ["PackageRegistryRelease", "ForgeRelease", "OpaquePublish"].includes(candidate._tag))) {
+        ["PackageRegistryRelease", "ForgeRelease"].includes(candidate._tag))) {
         expect(Schema.decodeUnknownSync(Operation, {
           onExcessProperty: "error"
         })(operation)._tag).toBe(operation._tag)

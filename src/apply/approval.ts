@@ -10,7 +10,7 @@ import { hashCanonical as hash } from "../model/canonical.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 import { ExecutionPermit, PublishPermit } from "../model/permit.js"
-import { isRemotePublish, type PackageStoreTarget } from "../model/operation.js"
+import { isRemotePublish } from "../model/operation.js"
 export { ExecutionPermit, PublishPermit }
 
 const fail = (reason: string): never => { throw ApprovalError.make({ reason }) }
@@ -125,36 +125,4 @@ export const reconciliationKey = (
   planId, logicalRunId, operationIds: [...scope.operationIds].map(String).sort(),
   topologyHash, operationHash, checkpointId, target,
   materials: materials.map((item) => [item.outputId, item.digest, item.size])
-})
-export const packageStoreReconciliationKey = (
-  planId: string, logicalRunId: string, scope: ExecutionScope, topologyHash: string,
-  operationHash: OperationHash, checkpointId: CheckpointId, profileId: string,
-  targetCoordinates: PackageStoreTarget,
-  materials: ReadonlyArray<MaterializedOutput>
-): string => hash("ts-release/package-store-reconcile/v1", {
-  planId, logicalRunId,
-  scopeHash: hash("ts-release/execution-scope/v1", {
-    planId, operationIds: [...scope.operationIds].map(String).sort()
-  }),
-  executionTopologyHash: topologyHash, operationHash, checkpointId, profileId,
-  targetCoordinates: {
-    name: targetCoordinates.name,
-    ...(targetCoordinates.channel === undefined ? {} : { channel: targetCoordinates.channel }),
-    ...(targetCoordinates.version === undefined ? {} : { version: targetCoordinates.version })
-  },
-  materialBindingHashes: materials.map((item) => item.digest).sort()
-})
-export const supplyChainReconciliationKey = (
-  planId: string, logicalRunId: string, scope: ExecutionScope, topologyHash: string,
-  operationHash: OperationHash, checkpointId: CheckpointId, profileId: string,
-  targetCoordinates: Readonly<Record<string, string>>, materials: ReadonlyArray<MaterializedOutput>,
-  domain: "supply-chain" | "provider" | "announcement" = "supply-chain"
-): string => hash(`ts-release/${domain}-reconcile/v1`, {
-  planId, logicalRunId,
-  scopeHash: hash("ts-release/execution-scope/v1", {
-    planId, operationIds: [...scope.operationIds].map(String).sort()
-  }),
-  executionTopologyHash: topologyHash, operationHash, checkpointId, profileId,
-  immutableTargetCoordinates: targetCoordinates,
-  materialBindingHashes: materials.map((item) => item.digest).sort()
 })

@@ -29,9 +29,7 @@
     {
       "id": "codex-marketplace",
       "repository": "owner/codex-marketplace",
-      "directory": "codex-marketplace-checkout",
       "file": ".agents/plugins/marketplace.json",
-      "submit": "pull-request",
       "content": [
         "{\n  \"name\": \"example-marketplace\",\n  \"interface\": {\n    \"displayName\": \"Example Marketplace\"\n  },\n  \"plugins\": [\n    {\n      \"name\": \"{name}\",\n      \"version\": \"{version}\",\n      \"source\": {\n        \"source\": \"git-subdir\",\n        \"url\": \"https://github.com/owner/agent-plugin\",\n        \"path\": \"./plugin\"\n      },\n      \"policy\": {\n        \"installation\": \"AVAILABLE\",\n        \"authentication\": \"ON_INSTALL\"\n      },\n      \"category\": \"Developer Tools\",\n      \"archiveSha256\": \"",
         {
@@ -44,9 +42,7 @@
     {
       "id": "claude-marketplace",
       "repository": "owner/claude-marketplace",
-      "directory": "claude-marketplace-checkout",
       "file": ".claude-plugin/marketplace.json",
-      "submit": "pull-request",
       "content": [
         "{\n  \"name\": \"example-marketplace\",\n  \"owner\": {\n    \"name\": \"owner\"\n  },\n  \"plugins\": [\n    {\n      \"name\": \"{name}\",\n      \"version\": \"{version}\",\n      \"source\": {\n        \"source\": \"git-subdir\",\n        \"url\": \"https://github.com/owner/agent-plugin\",\n        \"path\": \"./plugin\"\n      },\n      \"archiveUrl\": \"",
         {

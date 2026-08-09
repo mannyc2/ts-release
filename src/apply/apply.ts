@@ -1,14 +1,11 @@
 import * as Effect from "effect/Effect"
 import * as Result from "effect/Result"
-import {
-  ApprovalSigner, executionReviewId, packageStoreReconciliationKey, publishReviewId,
-  reconciliationKey, supplyChainReconciliationKey
-} from "./approval.js"
+import { ApprovalSigner, executionReviewId, publishReviewId, reconciliationKey } from "./approval.js"
 import { checkpointIds, operationStatus, settled, transition, type TransitionCommand } from "./transition.js"
 import { RunStore, type ExpectedLedger, type RunStoreShape } from "./store.js"
 import {
   CatalogPublishRequest, CatalogStructuredRequest, CommitmentUnknown, CredentialStore,
-  DriverCatalog, isClosedProfilePublish, NotDispatched, SnapshotRequest,
+  DriverCatalog, NotDispatched, SnapshotRequest,
   WorkspaceStore, type CredentialStoreShape, type DriverCatalogShape,
   type MutationResult, type VerifiedContentHandle, type WorkspaceStoreShape
 } from "../drivers/services.js"
@@ -119,19 +116,6 @@ const publishTarget = (operation: RemotePublishOp): string => {
       return operation.repository
     case "PackageRegistryRelease":
       return operation.registryUrl
-    case "PackageStorePublish":
-      return `${operation.profileId}:${operation.target.name}:${
-        operation.target.channel ?? operation.target.version ?? ""}`
-    case "SupplyChainPublish":
-    case "ProviderPublish":
-      return `${operation.profileId}:${Object.entries(operation.target)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, value]) => `${key}=${value}`).join(",")}`
-    case "AnnouncementPublish":
-    case "SmtpPublish":
-      return `${operation.profileId}:${operation.target.destination}`
-    case "OpaquePublish":
-      return `${operation.contractFixtureId}:${operation.argv[0]}`
   }
 }
 const checkpointCommand = (
@@ -154,24 +138,8 @@ const reconciliationKeyFor = (
   checkpointId: CheckpointId, target: string, materials: ReadonlyArray<MaterializedOutput>,
   bindings: ReadonlyArray<MaterializedOutput>
 ): string => {
-  switch (operation._tag) {
-    case "PackageStorePublish":
-      return packageStoreReconciliationKey(
-        ctx.accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
-        operationHash, checkpointId, operation.profileId, operation.target, bindings)
-    case "SupplyChainPublish":
-    case "ProviderPublish":
-    case "AnnouncementPublish":
-    case "SmtpPublish":
-      return supplyChainReconciliationKey(
-        ctx.accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash,
-        operationHash, checkpointId, operation.profileId, operation.target, bindings,
-        ({ SupplyChainPublish: "supply-chain", ProviderPublish: "provider",
-          AnnouncementPublish: "announcement", SmtpPublish: "announcement" } as const)[operation._tag])
-    default:
-      return reconciliationKey(ctx.accepted.planId, ledger.logicalRunId, ledger.scope,
-        ledger.executionTopologyHash, operationHash, checkpointId, target, materials)
-  }
+  return reconciliationKey(ctx.accepted.planId, ledger.logicalRunId, ledger.scope,
+    ledger.executionTopologyHash, operationHash, checkpointId, target, materials)
 }
 const publishOperation = (
   ctx: ApplyContext, ledger: RunLedger, operation: RemotePublishOp,
@@ -181,7 +149,6 @@ const publishOperation = (
   const operationHash = OperationHash.make(ctx.accepted.operationHashes
     .find((item) => item.operationId === operation.id)!.hash)
   const bindings = materials.filter((item) => operation.inputs.includes(item.outputId))
-  const subject = bindings[0]
   const target = publishTarget(operation)
   const pendingIds = before?._tag === "DispatchingPublish"
     ? before.progress.filter((item) => item._tag === "CheckpointPending")
@@ -196,8 +163,7 @@ const publishOperation = (
   // that says "dispatching" always means the wire was actually reached.
   const handles = new Map<string, VerifiedContentHandle | undefined>()
   for (const checkpointId of pendingIds) {
-    const subjectFromInputs = checkpointId === "dispatch" ||
-      (isClosedProfilePublish(operation) && operation._tag !== "PackageStorePublish")
+    const subjectFromInputs = checkpointId === "dispatch"
     const outputId = subjectFromInputs
       ? String(operation.inputs[0] ?? "")
       : String(checkpointId).replace(/^asset:/u, "")
@@ -219,10 +185,7 @@ const publishOperation = (
     next = yield* moved(ctx, next,
       { _tag: "DispatchCheckpoint", operationId: operation.id,
         checkpointId: checkpoint.checkpointId, key,
-        ...(isClosedProfilePublish(operation) ? {
-          targetCoordinates: target,
-          ...(subject === undefined ? {} : { subjectDigest: subject.digest })
-        } : {}) })
+        })
     const publish = CatalogPublishRequest.make({ operation, root: ctx.request.root,
       checkpointId: checkpoint.checkpointId, clientReconciliationKey: key })
     const result = yield* dispatched(

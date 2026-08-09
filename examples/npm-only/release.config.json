@@ -23,6 +23,5 @@
       "access": "public",
       "provenance": true
     }
-  },
-  "evidence": ".release/evidence"
+  }
 }

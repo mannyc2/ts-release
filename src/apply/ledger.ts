@@ -7,13 +7,6 @@ import type { Operation } from "../model/operation.js"
 import { operationEntries } from "../model/validate.js"
 import type { AcceptedPlan } from "../plan/accepted.js"
 
-const supplyCheckpoints: Readonly<Record<string, ReadonlyArray<string>>> = {
-  "supply.registry-image.v1": ["blobs", "manifest"],
-  "supply.registry-manifest.v1": ["manifest"], "supply.registry-signature.v1": ["signature"],
-  "supply.credentialed-artifact-sign.v1": ["sign"], "supply.quill-notarization.v1": ["sign", "submit", "staple"],
-  "supply.apple-native-notarization.v1": ["codesign", "submit", "staple"],
-  "supply.remote-attestation.v1": ["attest"]
-}
 export const fail = (reason: string): TransitionError => TransitionError.make({ reason })
 export const attemptId = (index: number): AttemptId => AttemptId.make(`attempt-${index + 1}`)
 export const current = (record: OperationRunRecord): AttemptRecord => {
@@ -36,18 +29,7 @@ export const checkpointIds = (operation: Operation): ReadonlyArray<CheckpointId>
       return [CheckpointId.make("release"),
         ...operation.inputs.map((id) => CheckpointId.make(`asset:${id}`))]
     case "PackageRegistryRelease":
-    case "OpaquePublish":
       return [CheckpointId.make("dispatch")]
-    case "PackageStorePublish":
-      return (operation.profileId === "package.store-snap.v1" ? ["upload", "release"] : ["push"])
-        .map((id) => CheckpointId.make(id))
-    case "SupplyChainPublish": {
-      const ids = supplyCheckpoints[operation.profileId]
-      if (ids === undefined) throw fail(`Unknown supply-chain profile ${operation.profileId}.`)
-      return ids.map((id) => CheckpointId.make(id))
-    }
-    case "ProviderPublish": return operation.checkpoints
-    case "AnnouncementPublish": case "SmtpPublish": return [CheckpointId.make("message")]
     // Local operations carry no publish checkpoints; assertProgress
     // early-returns on their empty progress before this list is compared.
     case "Check": case "Write": case "Pack": case "Digest":

@@ -1,10 +1,7 @@
-import {
-  ContentHole, Exec, OpaquePublish, OutputDeclaration, PublishCredential, Write,
-  type ContentValue
-} from "../model/operation.js"
+import { ContentHole, OutputDeclaration, Write, type ContentValue } from "../model/operation.js"
 import type { CandidateCatalog, CandidateConfig } from "./config.js"
 import {
-  basename, command, compactName, credentialName, nonEmptyCommand, operationId, outputId,
+  basename, compactName, operationId, outputId,
   path, recordOutput, render, selectedOutputs, type CurrentRows
 } from "./current-shared.js"
 import { ConfigValueError } from "../model/errors.js"
@@ -13,12 +10,8 @@ interface CatalogRow {
   readonly id: string
   readonly repository: string
   readonly file: string
-  readonly directory?: string | undefined
   readonly content: ContentValue
   readonly inputs: ReadonlyArray<OutputDeclaration>
-  readonly commitMessage: string
-  readonly submit: "push" | "pull-request"
-  readonly validate?: string | ReadonlyArray<string> | undefined
 }
 const className = (value: string): string => value.split(/[^A-Za-z0-9]+/u).filter(Boolean)
   .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("")
@@ -31,7 +24,7 @@ const downloadUrl = (
   config: CandidateConfig, output: OutputDeclaration, explicit?: string
 ): string => {
   if (explicit !== undefined) return explicit
-  const repository = config.publish.github?.repository ?? config.project.repository
+  const repository = config.publish?.github?.repository ?? config.project.repository
   if (repository === undefined) {
     throw ConfigValueError.make({
       reason:
@@ -83,7 +76,7 @@ const formulaContent = (
   ]
 }
 const homebrewRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | undefined => {
-  const section = config.publish.homebrew
+  const section = config.publish?.homebrew
   if (section === undefined) return undefined
   const name = section.formulaName ?? compactName(config.project.packageName ?? config.project.name)
   const selected = selectedOutputs(rows, section.ids, (item) =>
@@ -96,16 +89,12 @@ const homebrewRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | u
   return {
     id: "homebrew", repository: section.repository,
     file: section.formulaPath ?? `.release/generated/${name}.rb`,
-    ...(section.tapDirectory === undefined || section.tapDirectory === "."
-      ? {} : { directory: section.tapDirectory }),
     content: formulaContent(config, selected, name, section.url, section.installPath),
-    inputs: selected, commitMessage: `Update ${name} to ${config.project.version}`,
-    submit: section.submit ?? "push",
-    ...(section.validate === undefined ? {} : { validate: section.validate })
+    inputs: selected
   }
 }
 const scoopRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | undefined => {
-  const section = config.publish.scoop
+  const section = config.publish?.scoop
   if (section === undefined) return undefined
   const name = section.manifestName ?? compactName(config.project.packageName ?? config.project.name)
   const selected = selectedOutputs(rows, section.ids, (item) =>
@@ -129,14 +118,10 @@ const scoopRow = (config: CandidateConfig, rows: CurrentRows): CatalogRow | unde
   return {
     id: "scoop", repository: section.repository,
     file: section.manifestPath ?? `.release/generated/${name}.json`,
-    ...(section.bucketDirectory === undefined || section.bucketDirectory === "."
-      ? {} : { directory: section.bucketDirectory }),
     content: [
       `${prefix},\n  "hash": "`, ContentHole.make({ fact: "sha256", outputId: artifact.id }), suffix
     ],
-    inputs: selected, commitMessage: `Update ${name} to ${config.project.version}`,
-    submit: section.submit ?? "push",
-    ...(section.validate === undefined ? {} : { validate: section.validate })
+    inputs: selected
   }
 }
 const requireOutput = (
@@ -165,54 +150,9 @@ const genericRow = (
     typeof part === "string" ? [] : [part.outputId])
   return {
     id: entry.id, repository: entry.repository, file: entry.file,
-    ...(entry.directory === undefined ? {} : { directory: entry.directory }),
     content,
-    inputs: ids.map((id) => requireOutput(rows, entry.id, id)),
-    commitMessage: render(entry.commitMessage ?? "Update {name} to {version}", config),
-    submit: entry.submit ?? "push",
-    ...(entry.validate === undefined ? {} : { validate: entry.validate })
+    inputs: ids.map((id) => requireOutput(rows, entry.id, id))
   }
-}
-const local = (
-  id: string, description: string, argv: ReadonlyArray<string>, cwd = "."
-): Exec => Exec.make({
-  id: operationId(id), inputs: [], outputs: [], description,
-  contractFixtureId: "catalog.git-publish/v1", argv: nonEmptyCommand(argv),
-  cwd: path(cwd), environmentNames: []
-})
-const remote = (
-  row: CatalogRow, id: string, description: string, argv: ReadonlyArray<string>, cwd = "."
-): OpaquePublish => OpaquePublish.make({
-  id: operationId(id), inputs: row.inputs.map((item) => item.id), outputs: [], description,
-  argv: nonEmptyCommand(argv), cwd: path(cwd), environmentNames: [],
-  credential: PublishCredential.make({ name: credentialName("GIT_CREDENTIALS") }),
-  contractFixtureId: "catalog.git-publish/v1", reconciliation: "manual-only", irreversible: false
-})
-const lowerPublish = (row: CatalogRow, config: CandidateConfig, rows: CurrentRows): void => {
-  const directory = row.directory ?? "."
-  const writePath = row.directory === undefined ? row.file : `${row.directory}/${row.file}`
-  if (row.validate !== undefined) rows.publish.push(local(
-    `catalog:${row.id}:validate`, `Validate ${row.id} catalog update.`,
-    command(row.validate).map((part) => render(part, config))))
-  const branch = `ts-release/${compactName(config.project.name)}-${config.project.version}`
-  if (row.submit === "pull-request") rows.publish.push(local(
-    `catalog:${row.id}:checkout`, `Create ${branch}.`,
-    ["git", "-C", directory, "checkout", "-B", branch]))
-  rows.publish.push(
-    local(`catalog:${row.id}:push:add`, `Stage ${basename(writePath)} for catalog.`,
-      ["git", "-C", directory, "add", row.file]),
-    local(`catalog:${row.id}:push:commit`, `Commit ${basename(writePath)} for catalog.`,
-      ["git", "-C", directory, "commit", "-m", row.commitMessage])
-  )
-  const description = `Push ${row.id} catalog update for ${config.project.name}@${config.project.version}.`
-  rows.publish.push(remote(row, `catalog:${row.id}:push`, description,
-    row.submit === "push"
-      ? ["git", "-C", directory, "push"]
-      : ["git", "-C", directory, "push", "-u", "origin", branch]))
-  if (row.submit === "pull-request") rows.publish.push(remote(
-    row, `catalog:${row.id}:pull-request`, `Open ${row.id} catalog pull request.`,
-    ["gh", "pr", "create", "--repo", row.repository, "--title", row.commitMessage,
-      "--body", description, "--head", branch], directory))
 }
 export const lowerCurrentCatalogs = (config: CandidateConfig, rows: CurrentRows): void => {
   const candidates = [
@@ -220,7 +160,7 @@ export const lowerCurrentCatalogs = (config: CandidateConfig, rows: CurrentRows)
     homebrewRow(config, rows), scoopRow(config, rows)
   ].filter((row): row is CatalogRow => row !== undefined)
   for (const row of candidates) {
-    const location = row.directory === undefined ? row.file : `${row.directory}/${row.file}`
+    const location = row.file
     const declared = recordOutput(rows, OutputDeclaration.make({
       id: outputId(`catalog-file-${row.id}`), path: path(location),
       kind: "catalog-file", provenance: "catalog"
@@ -230,6 +170,5 @@ export const lowerCurrentCatalogs = (config: CandidateConfig, rows: CurrentRows)
       outputs: [declared], description: `Render ${row.id} catalog file ${location}.`,
       path: declared.path, content: row.content
     }))
-    lowerPublish(row, config, rows)
   }
 }

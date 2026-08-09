@@ -48,6 +48,5 @@
       ],
       "installPath": "bin/release-example-multi-target"
     }
-  },
-  "evidence": ".release/evidence"
+  }
 }

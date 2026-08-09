@@ -16,9 +16,10 @@
   ],
   "publish": {
     "pypi": {
-      "ids": ["wheel"],
+      "ids": [
+        "wheel"
+      ],
       "repositoryUrl": "https://test.pypi.org/legacy/"
     }
-  },
-  "evidence": ".release/evidence"
+  }
 }

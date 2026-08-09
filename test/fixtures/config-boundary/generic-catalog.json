@@ -12,9 +12,7 @@
       "file": "packages/fixture.json",
       "content": [
         "{\"name\":\"fixture\",\"version\":\"{version}\"}\n"
-      ],
-      "submit": "pull-request",
-      "validate": ["bun", "scripts/validate-registry.ts"]
+      ]
     }
   ],
   "publish": {}

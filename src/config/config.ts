@@ -40,6 +40,25 @@ export const decodeConfig = Effect.fn("decodeConfig")(function*(input: unknown) 
   }
   const failure = jsonFailure(input, new Set())
   if (failure !== undefined) return yield* ConfigValueError.make({ reason: failure })
+  const value = typeof input === "object" && input !== null && !Array.isArray(input)
+    ? input as { readonly catalogs?: ReadonlyArray<Record<string, unknown>> }
+    : {}
+  const catalog = value.catalogs?.find((entry) =>
+    ["directory", "submit", "commitMessage", "validate"].some((key) => key in entry))
+  if (catalog !== undefined) {
+    return yield* ConfigValueError.make({
+      reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
+    })
+  }
+  const publication = value as { readonly publish?: Record<string, unknown> }
+  const catalogPreset = ["homebrew", "scoop"].map((key) => publication.publish?.[key])
+    .find((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null &&
+      ["submit", "validate", "tapDirectory", "bucketDirectory"].some((key) => key in entry))
+  if (catalogPreset !== undefined) {
+    return yield* ConfigValueError.make({
+      reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
+    })
+  }
   return yield* Schema.decodeUnknownEffect(CandidateConfig, {
     onExcessProperty: "error"
   })(input).pipe(

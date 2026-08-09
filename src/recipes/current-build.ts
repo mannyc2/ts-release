@@ -6,22 +6,13 @@ import {
   basename, command, compactName, nonEmptyCommand, operationId, outputId, path,
   recordOutput, render, selectedOutputs, targetPlatform, type CurrentRows
 } from "./current-shared.js"
-import { findLocalToolProfile } from "./packages/profiles.js"
-import { ConfigValueError } from "../model/errors.js"
 
 type Build = NonNullable<CandidateConfig["builds"]>[number]
 type TargetBuild = Extract<Build, { readonly builder: "bun" | "command" | "prebuilt" }>
 const importedKinds = {
   tarball: "archive", zip: "archive", file: "file", directory: "directory",
-  "oci-image": "file", executable: "executable", binary: "executable"
+  executable: "executable", binary: "executable"
 } as const
-const profileOutputKind = (value: string): OutputDeclaration["kind"] => {
-  if (value.endsWith(".whl")) return "wheel"
-  if (value.endsWith(".tar.gz") || value.endsWith(".zip")) return "archive"
-  if (value.endsWith(".app")) return "directory"
-  if (/\.(?:bin|exe|run)$/u.test(value)) return "executable"
-  return "package"
-}
 const declare = (
   rows: CurrentRows, id: string, location: string, kind: OutputDeclaration["kind"],
   provenance: NonNullable<OutputDeclaration["provenance"]>, platform?: CandidatePlatform
@@ -35,14 +26,6 @@ const check = (
   id: operationId(id), inputs: inputs ? [declared.id] : [],
   outputs: inputs ? [] : [declared], description, path: declared.path
 })
-const lowerHooks = (config: CandidateConfig, rows: CurrentRows): void => {
-  for (const hook of config.hooks?.before ?? []) rows.build.push(Exec.make({
-    id: operationId(`hook:before:${hook.id}`), inputs: [], outputs: [],
-    description: `Run ${hook.id} hook.`, contractFixtureId: "process.hook/v1",
-    argv: nonEmptyCommand(hook.run.map((part) => render(part, config))),
-    cwd: path(hook.cwd ?? "."), environmentNames: hook.env ?? []
-  }))
-}
 const lowerBuildTarget = (
   config: CandidateConfig, rows: CurrentRows, build: TargetBuild, target: string
 ): void => {
@@ -83,34 +66,6 @@ const lowerBuildTarget = (
 }
 const lowerBuilds = (config: CandidateConfig, rows: CurrentRows): void => {
   for (const build of config.builds ?? []) {
-    if (build.builder === "profile") {
-      const inputs = build.inputs.map((id) => {
-        const found = rows.outputs.get(id)
-        if (found === undefined) throw ConfigValueError.make({ reason: `Profile input ${id} is absent.` })
-        return found
-      })
-      const outputs = build.outputs.map((item) =>
-        declare(rows, item.id, item.path, profileOutputKind(item.path), "build"))
-      if (build.profileId === "lifecycle.archive-hooks.v1") {
-        rows.process.push(Pack.make({
-          id: operationId(`archive:profile:${build.id}`), inputs: inputs.map((item) => item.id),
-          outputs, format: "tar.gz", description: "Materialize the lifecycle archive."
-        }))
-        continue
-      }
-      const profile = findLocalToolProfile(build.profileId)
-      const argv = profile.contract.invocation.argv.map((token) => token
-        .replaceAll("{input}", inputs[0]?.path ?? ".")
-        .replaceAll("{inputDir}", inputs[0]?.path ?? ".")
-        .replaceAll("{output}", outputs[0]!.path)
-        .replaceAll("{outputDir}", outputs[0]!.path))
-      rows.build.push(Exec.make({
-        id: operationId(`build:profile:${build.id}`), inputs: inputs.map((item) => item.id), outputs,
-        contractFixtureId: profile.id, argv: nonEmptyCommand(argv), cwd: path("."),
-        environmentNames: [], description: `Run immutable package profile ${profile.profileId}.`
-      }))
-      continue
-    }
     for (const target of build.targets) lowerBuildTarget(config, rows, build, target)
   }
 }
@@ -118,25 +73,6 @@ const lowerNpm = (config: CandidateConfig, rows: CurrentRows): void => {
   if (config.npmPackage === undefined) return
   const declared = declare(rows, "npm-package", config.npmPackage.path ?? ".", "package", "build")
   rows.build.push(check("declare:npm-package", declared, "Declare npm package directory."))
-}
-const lowerWheels = (config: CandidateConfig, rows: CurrentRows): void => {
-  for (const wheel of config.pypiWheel?.wheels ?? []) {
-    const location = render(wheel.path, config)
-    const declared = declare(rows, wheel.id, location, "wheel", "build")
-    const inputs = wheel.binaries.map((item) => {
-      const source = [...rows.outputs.values()].find((candidate) =>
-        candidate.path === render(item.sourcePath, config))
-      if (source === undefined) throw ConfigValueError.make({ reason: `Wheel ${wheel.id} source ${item.sourcePath} is absent.` })
-      return source.id
-    })
-    rows.build.push(Exec.make({
-      id: operationId(`build:pypi-wheel:${wheel.id}`), inputs, outputs: [declared],
-      description: `Assemble PyPI wheel ${wheel.id}.`,
-      contractFixtureId: "build.pypi-wheel/v1",
-      argv: ["python", "-m", "build", "--wheel", "--outdir", location],
-      cwd: path("."), environmentNames: []
-    }))
-  }
 }
 const lowerImports = (config: CandidateConfig, rows: CurrentRows): void => {
   for (const artifact of config.artifacts ?? []) {
@@ -191,11 +127,9 @@ const lowerChecksum = (config: CandidateConfig, rows: CurrentRows): void => {
   }))
 }
 export const lowerCurrentBuild = (config: CandidateConfig, rows: CurrentRows): void => {
-  lowerHooks(config, rows)
   lowerImports(config, rows)
   lowerBuilds(config, rows)
   lowerNpm(config, rows)
-  lowerWheels(config, rows)
   lowerArchives(config, rows)
   lowerChecksum(config, rows)
 }

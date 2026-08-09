@@ -1,7 +1,8 @@
 import * as Schema from "effect/Schema"
-import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
+import { Digest, NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
 import type { VerifiedReleaseContext } from "./context.js"
 import type { GraphPreparation, GraphPublication, ReleaseGraph } from "./graph.js"
+import type { PreparedBundle } from "./prepared-store.js"
 
 const optional = Schema.optionalKey
 
@@ -37,4 +38,22 @@ export const inspectRelease = (
   preparations: graph.preparations.map((preparation) => ({ id: preparation.id, kind: preparationKind(preparation), inputs: preparation.inputs })),
   publications: graph.publications.map(publication), requirements: requirements(graph.preparations),
   capabilities: [...capabilities].sort((a, b) => a < b ? -1 : a > b ? 1 : 0).map((value) => NonEmptyName.make(value))
+})
+
+export class PreparedReleaseInspection extends Schema.Class<PreparedReleaseInspection>("PreparedReleaseInspection")({
+  bundleDirectory: Schema.String,
+  source: Schema.Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Schema.Literal(true), packageManifestPath: SafeRelativePath, packageManifestDigest: Digest }),
+  project: Schema.Struct({ name: NonEmptyName, packageName: Schema.optionalKey(NonEmptyName), version: Schema.NonEmptyString, tag: NonEmptyName, repository: Schema.optionalKey(Schema.NonEmptyString) }),
+  artifacts: Schema.Array(Schema.Struct({ id: OutputId, path: SafeRelativePath, kind: Schema.String, size: Schema.Number, digest: Digest, mediaType: Schema.optionalKey(Schema.NonEmptyString) })),
+  publications: Schema.Array(Schema.Struct({ id: NonEmptyName, destination: Schema.Literals(["npm", "github"]), subject: Schema.NonEmptyString })),
+}) {}
+
+export const inspectPreparedRelease = (bundle: PreparedBundle): PreparedReleaseInspection => PreparedReleaseInspection.make({
+  bundleDirectory: bundle.directory,
+  source: bundle.manifest.source,
+  project: bundle.manifest.project,
+  artifacts: bundle.manifest.artifacts,
+  publications: bundle.manifest.publications.map((publication) => publication._tag === "PreparedNpmPublication"
+    ? { id: publication.id, destination: "npm", subject: `${publication.packageName}@${publication.version} (${publication.registryUrl})` }
+    : { id: publication.id, destination: "github", subject: `${publication.repository}#${publication.tag}` })
 })

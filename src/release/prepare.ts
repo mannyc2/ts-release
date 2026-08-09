@@ -294,7 +294,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         })
         const body = publication.bodyArtifact === undefined ? publication.body : new TextDecoder().decode(bytes.get(publication.bodyArtifact.toString()) ?? (() => { throw new Error(`GitHub body artifact ${publication.bodyArtifact} is unavailable.`) })())
         publications.push(PreparedGitHubPublication.make({ id: NonEmptyName.make(publication.id), repository: publication.repository,
-          tag: publication.tag, title: publication.title, targetCommit: context.source.commit,
+          tag: publication.tag, title: publication.title, draft: publication.draft, prerelease: publication.prerelease, targetCommit: context.source.commit,
           ...(body === undefined ? {} : { body }), assets }))
       }
     }

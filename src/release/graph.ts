@@ -45,7 +45,7 @@ export class GraphNpmPublication extends Schema.TaggedClass<GraphNpmPublication>
 
 export class GraphGitHubPublication extends Schema.TaggedClass<GraphGitHubPublication>()("GraphGitHubPublication", {
   id: OperationId, repository: Schema.NonEmptyString, tag: NonEmptyName, title: NonEmptyName,
-  body: optional(Schema.String), bodyArtifact: optional(OutputId), assetIds: Schema.Array(OutputId)
+  draft: Schema.Boolean, prerelease: Schema.Boolean, body: optional(Schema.String), bodyArtifact: optional(OutputId), assetIds: Schema.Array(OutputId)
 }) {}
 
 export const GraphPublication = Schema.Union([GraphNpmPublication, GraphGitHubPublication])

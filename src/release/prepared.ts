@@ -36,7 +36,7 @@ export class PreparedGitHubAsset extends Schema.Class<PreparedGitHubAsset>("Prep
 
 export class PreparedGitHubPublication extends Schema.TaggedClass<PreparedGitHubPublication>()("PreparedGitHubPublication", {
   id: NonEmptyName, repository: Schema.NonEmptyString, tag: NonEmptyName, title: NonEmptyName,
-  targetCommit: NonEmptyName, body: optional(Schema.String), assets: Schema.Array(PreparedGitHubAsset)
+  draft: Schema.Boolean, prerelease: Schema.Boolean, targetCommit: NonEmptyName, body: optional(Schema.String), assets: Schema.Array(PreparedGitHubAsset)
 }) {}
 
 export const PreparedPublication = Schema.Union([

@@ -89,7 +89,7 @@ describe("immutable release graph", () => {
       inputs: [OutputId.make("same")], outputs: [artifact("same", "same.txt")], sourceCommit: NonEmptyName.make("abc123")
     })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [], preparations: [alias], publications: [] })])).toThrow(GraphLinkError)
-    const body = GraphGitHubPublication.make({ id: OperationId.make("github"), repository: "owner/fixture", tag: NonEmptyName.make("v1"),
+    const body = GraphGitHubPublication.make({ id: OperationId.make("github"), repository: "owner/fixture", tag: NonEmptyName.make("v1"), draft: false, prerelease: false,
       title: NonEmptyName.make("fixture"), bodyArtifact: OutputId.make("plain"), assetIds: [] })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [{ ...artifact("plain", "plain.md") }], preparations: [], publications: [body] })])).toThrow(GraphLinkError)
     const duplicatePath = CapabilityContribution.make({ artifacts: [artifact("first", "same.bin"), artifact("second", "same.bin")], preparations: [], publications: [] })

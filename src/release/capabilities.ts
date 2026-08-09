@@ -125,6 +125,8 @@ export const contributeRelease = (config: CandidateConfig, context: VerifiedRele
     }),
     config.publish?.github === undefined || (config.publish.github.repository ?? config.project.repository) === undefined ? undefined : GraphGitHubPublication.make({
       id: OperationId.make("github:github-release"), repository: config.publish.github.repository ?? config.project.repository!, tag: config.project.tag,
+      draft: config.publish.github.draft ?? true,
+      prerelease: config.publish.github.prerelease === "auto" ? config.project.version.includes("-") : config.publish.github.prerelease ?? false,
       title: NonEmptyName.make(`${config.project.name} ${config.project.version}`),
       ...(config.publish.github.bodyArtifact === undefined && config.project.notes === undefined ? {} : {
         ...(config.publish.github.bodyArtifact === undefined ? { body: config.project.notes! } : { bodyArtifact: config.publish.github.bodyArtifact })

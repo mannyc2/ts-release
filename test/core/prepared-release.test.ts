@@ -10,6 +10,7 @@ import {
   decodePreparedRelease, encodePreparedRelease
 } from "../../src/release/prepared.js"
 import { loadPreparedRelease, PreparedStoreError, storePreparedRelease } from "../../src/release/prepared-store.js"
+import { inspectPreparedRelease } from "../../src/release/inspect.js"
 
 const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
 const fixture = () => {
@@ -22,7 +23,7 @@ const fixture = () => {
       packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make(hash) }),
     project: PreparedProject.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }),
     artifacts: [artifact], publications: [PreparedGitHubPublication.make({ id: NonEmptyName.make("github"), repository: "owner/fixture",
-      tag: NonEmptyName.make("v1.0.0"), title: NonEmptyName.make("fixture 1.0.0"), targetCommit: NonEmptyName.make("abc123"),
+      tag: NonEmptyName.make("v1.0.0"), title: NonEmptyName.make("fixture 1.0.0"), draft: false, prerelease: false, targetCommit: NonEmptyName.make("abc123"),
       assets: [{ artifactId: artifact.id, name: "cli.tgz", mediaType: "application/gzip" }] })] })
   return { manifest, bytes }
 }
@@ -50,6 +51,9 @@ describe("PreparedReleaseV1 manifest and store", () => {
       expect(loaded.manifest.project.version.toString()).toBe("1.0.0")
       expect(new TextDecoder().decode(loaded.blobs.get("cli")!)).toBe("release bytes\n")
       expect(existsSync(join(first.directory, "prepared-release.json"))).toBe(true)
+      const inspection = inspectPreparedRelease(loaded)
+      expect(inspection.bundleDirectory).toBe(first.directory)
+      expect(inspection.publications[0]?.subject).toContain("owner/fixture#v1.0.0")
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

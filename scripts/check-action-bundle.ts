@@ -155,10 +155,10 @@ const bunSurfaceViolations = (bundle: Uint8Array): ReadonlyArray<string> => {
   return [...new Set([...platformSpecifier, ...memberAccess])]
 }
 
-// Plan 186 C1. The fixture covers every path that was Bun-locked before this
-// plan: Exec (which also proves the closed environment), Pack as tar.gz, as
-// zip, and from a files pattern, plus Check, Write, and Digest. No publish
-// operation appears, so the gate never reaches a network.
+// The fixture covers the retained command-build path (which also proves the
+// closed environment), Pack as tar.gz, as zip, and from a files pattern, plus
+// Check, Write, and Digest. No publish operation appears, so the gate never
+// reaches a network.
 const fixtureConfig = {
   project: {
     name: "action-fixture",
@@ -166,14 +166,13 @@ const fixtureConfig = {
     tag: "v1.0.0",
     commit: "fixture"
   },
-  hooks: {
-    before: [{
-      id: "env-dump",
-      run: ["node", "tools/dump-env.mjs"],
-      cwd: ".",
-      env: ["FIXTURE_DECLARED"]
-    }]
-  },
+  builds: [{
+    id: "env-dump",
+    builder: "command",
+    targets: ["linux-x64"],
+    output: "env-dump.json",
+    run: ["node", "tools/dump-env.mjs"]
+  }],
   artifacts: [{ id: "payload", path: "dist/payload.txt", format: "file" }],
   archives: [
     { id: "bundle", ids: ["payload"], formats: ["tar.gz", "zip"] },
@@ -371,9 +370,9 @@ const executeUnderNode = Effect.fn("scripts.checkActionBundle.executeUnderNode")
   const names = Object.keys(JSON.parse(dumped) as Record<string, string>)
     .filter((name) => !hostInjected.includes(name))
     .sort()
-  if (names.join(",") !== "FIXTURE_DECLARED,PATH") {
+  if (names.join(",") !== "PATH") {
     return yield* Effect.fail(new Error(
-      `Exec ran with environment ${names.join(",")}, expected exactly FIXTURE_DECLARED,PATH.`
+      `Command build ran with environment ${names.join(",")}, expected exactly PATH.`
     ))
   }
   return version

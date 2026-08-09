@@ -42,8 +42,8 @@ npm i -D @mannyc1/ts-release
 `effect`, `@effect/platform-node`, and `@effect/platform-bun` are peer
 dependencies; npm 7+ and bun install them for you. The published executable is
 a Node bundle, so `npx ts-release` works without Bun. Hosts are Linux and
-macOS; Windows is a supported release target only (use WSL to run ts-release on
-a Windows machine).
+Linux and macOS. Its Bun builder can produce Windows artifacts; native Windows
+execution is not supported.
 
 ## Quickstart
 

@@ -4,7 +4,7 @@
 // has never heard of Bun. main.ts stays the Bun-optimal dev entry.
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeServices from "@effect/platform-node/NodeServices"
-import { makeReleaseApi } from "@mannyc1/ts-release"
+import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
 import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 import * as Effect from "effect/Effect"
 import * as Command from "effect/unstable/cli/Command"
@@ -24,10 +24,9 @@ import { makeCli } from "./command.js"
 declare const __TS_RELEASE_VERSION__: string | undefined
 const version = typeof __TS_RELEASE_VERSION__ === "string" ? __TS_RELEASE_VERSION__ : "0.0.0-unbundled"
 
-// Windows is a supported release TARGET, not a host: the store and drivers
-// assume POSIX open flags (O_NOFOLLOW) and absolute-path branding.
-if (process.platform === "win32") {
-  console.error("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.")
+const hostRefusal = unsupportedExecutionHost(process.platform)
+if (hostRefusal !== undefined) {
+  console.error(hostRefusal)
   process.exit(1)
 }
 

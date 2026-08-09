@@ -1,5 +1,5 @@
 import * as core from "@actions/core"
-import { makeReleaseApi } from "@mannyc1/ts-release"
+import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
 import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 import {
   mkdirSync,
@@ -9,10 +9,9 @@ import {
 import { dirname } from "node:path"
 import { runAction } from "./commands.js"
 
-// Windows is a supported release TARGET, not a host: the store and drivers
-// assume POSIX open flags (O_NOFOLLOW) and absolute-path branding.
-if (process.platform === "win32") {
-  core.setFailed("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.")
+const hostRefusal = unsupportedExecutionHost(process.platform)
+if (hostRefusal !== undefined) {
+  core.setFailed(hostRefusal)
   process.exit(1)
 }
 

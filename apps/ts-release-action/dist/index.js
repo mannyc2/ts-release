@@ -32226,6 +32226,8 @@ var defaultApi = makeReleaseApi(NodeReleaseLayer);
 var plan = defaultApi.plan;
 var reviewExecution = defaultApi.reviewExecution;
 var apply = defaultApi.apply;
+// ../../src/platform/host-support.ts
+var unsupportedExecutionHost = (platform2) => platform2 === "linux" || platform2 === "darwin" ? undefined : "ts-release runs on Linux and macOS. Its Bun builder can produce Windows artifacts.";
 // ../../src/resolve/encode.ts
 var toPlainJson = (value2) => {
   if (Array.isArray(value2))
@@ -32524,8 +32526,9 @@ var runAction = async (api2, runtime) => {
 };
 
 // src/index.ts
-if (process.platform === "win32") {
-  setFailed("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.");
+var hostRefusal = unsupportedExecutionHost(process.platform);
+if (hostRefusal !== undefined) {
+  setFailed(hostRefusal);
   process.exit(1);
 }
 var api2 = makeReleaseApi(NodeReleaseLayer);

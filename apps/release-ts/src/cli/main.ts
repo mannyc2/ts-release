@@ -5,7 +5,7 @@
 // ManagedRuntime owns the release services.
 import * as BunRuntime from "@effect/platform-bun/BunRuntime"
 import * as BunServices from "@effect/platform-bun/BunServices"
-import { makeReleaseApi } from "@mannyc1/ts-release"
+import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
 import { BunReleaseLayer } from "@mannyc1/ts-release/bun"
 import * as Effect from "effect/Effect"
 import * as Command from "effect/unstable/cli/Command"
@@ -18,10 +18,9 @@ import { dirname } from "node:path"
 import packageManifest from "../../../../package.json" with { type: "json" }
 import { makeCli } from "./command.js"
 
-// Windows is a supported release TARGET, not a host: the store and drivers
-// assume POSIX open flags (O_NOFOLLOW) and absolute-path branding.
-if (process.platform === "win32") {
-  console.error("ts-release runs on Linux and macOS hosts; Windows is a supported release TARGET only. Use WSL to run ts-release on Windows.")
+const hostRefusal = unsupportedExecutionHost(process.platform)
+if (hostRefusal !== undefined) {
+  console.error(hostRefusal)
   process.exit(1)
 }
 

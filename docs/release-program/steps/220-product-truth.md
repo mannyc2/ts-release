@@ -1,7 +1,7 @@
 # Plan 220 — Product documentation and executable capability truth
 
 Input-Commit: cde2449
-Result-Commit: PENDING
+Result-Commit: 142cfd0
 Evidence-Commit: SELF
 Status: DONE
 Outcome: AUTOMATION-FIRST-DOCS / REGISTRY-JOINED-CAPABILITIES
@@ -63,8 +63,8 @@ advertising unsupported remote publishers.
 - `bun run check:core` — PASS: versions, capability truth, import/tree-shaking
   policy, TypeScript, tests, build, CLI bundle, schema, examples, README, and
   package exports.
-- `bun run check:portable` — pending after the committed Plan 220 result; its
-  inherited core gate is covered by the passing `check:core` above.
+- `bun run check:portable` — PASS: the inherited core gate plus agent, app, and
+  Action surfaces all passed.
 - `bun run check:readme` — PASS: 6 fenced blocks, 2 package imports, 1
   typechecked package block.
 - `bun run check:examples` — PASS: 8 examples, 6 templates, 2 workflows.

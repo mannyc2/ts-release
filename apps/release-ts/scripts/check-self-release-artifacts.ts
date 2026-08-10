@@ -12,6 +12,7 @@ const run = (command: string, args: ReadonlyArray<string>, cwd: string) => spawn
   cwd, encoding: "utf8", stdio: "pipe",
   env: { ...process.env, BUN_TMPDIR: cwd, BUN_INSTALL: join(cwd, ".bun-install"), TMPDIR: cwd }
 })
+const outputText = (value: unknown): string => typeof value === "string" ? value : value instanceof Uint8Array ? new TextDecoder().decode(value) : String(value)
 const artifactBytes = (directory: string, artifact: Artifact): Uint8Array => new Uint8Array(readFileSync(join(directory, "blobs", artifact.digest)))
 const artifact = (manifest: Manifest, id: string): Artifact | undefined => manifest.artifacts.find((item) => item.id === id)
 
@@ -52,9 +53,9 @@ try {
     if (execution.status !== 0) failures.push(`Native Linux candidate did not execute: ${execution.stderr.trim()}`)
   }
   const cli = run("node", [join(root, "dist/bin/ts-release.js"), "--version"], root)
-  if (cli.status !== 0 || !/^ts-release v0\.2\.0\n?$/u.test(String(cli.stdout).trim())) failures.push("The Node CLI bundle did not report candidate version 0.2.0.")
+  if (cli.status !== 0 || !/^ts-release v0\.2\.0\n?$/u.test(outputText(cli.stdout).trim())) failures.push("The Node CLI bundle did not report candidate version 0.2.0.")
   const action = run("node", [join(root, "apps/ts-release-action/dist/index.js")], root)
-  if (action.status === 0 || !`${String(action.stdout)}\n${String(action.stderr)}`.includes("Action command must be one of")) failures.push("The Action bundle did not execute its parser under Node.")
+  if (action.status === 0 || `${outputText(action.stdout)}\n${outputText(action.stderr)}`.includes("Action command must be one of") === false) failures.push("The Action bundle did not execute its parser under Node.")
   for (const [id, value] of [["agents-codex-archive", codexArchive], ["agents-claude-archive", claudeArchive]] as const) {
     if (value === undefined) continue
     const archive = join(scratch, `${id}.zip`)

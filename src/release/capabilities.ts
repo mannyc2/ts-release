@@ -1,8 +1,7 @@
-import { OutputDeclaration } from "../model/operation.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
 import type { CandidateConfig } from "../recipes/config.js"
 import { CapabilityContribution, GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact,
-  GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication } from "./graph.js"
+  GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, OutputDeclaration } from "./graph.js"
 import type { VerifiedReleaseContext } from "./context.js"
 
 const output = (id: string | OutputId, location: string, kind: OutputDeclaration["kind"], provenance: "build" | "import" | "process" | "catalog", mediaType?: string) =>

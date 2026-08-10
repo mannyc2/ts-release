@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { DriverError } from "../model/run.js"
+import { DriverError } from "./errors.js"
 
 export const failure = (
   reason: string,

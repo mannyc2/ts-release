@@ -21721,7 +21721,6 @@ var mergeAllEffect = (layers, memoMap, scope2) => {
   }).pipe(map4((context2) => mergeAll(...context2)));
 };
 var mergeAll2 = (...layers) => fromBuild((memoMap, scope2) => mergeAllEffect(layers, memoMap, scope2));
-var merge2 = /* @__PURE__ */ dual(2, (self, that) => mergeAll2(self, ...Array.isArray(that) ? that : [that]));
 var provideWith = (self, that, f) => fromBuild((memoMap, scope2) => flatMap2(Array.isArray(that) ? mergeAllEffect(that, memoMap, scope2) : that.build(memoMap, scope2), (context2) => self.build(memoMap, scope2).pipe(provideContext(context2), map4((merged) => f(merged, context2)))));
 var provide2 = /* @__PURE__ */ dual(2, (self, that) => provideWith(self, that, identity));
 
@@ -21930,6 +21929,11 @@ var make6 = (layer, options) => {
 function provide3(managed, effect2) {
   return flatMap3(managed.contextEffect, (context3) => provideContext2(effect2, context3));
 }
+
+// ../../src/api/api.ts
+import { mkdtempSync as mkdtempSync2, readFileSync as readFileSync4, rmSync as rmSync3, writeFileSync as writeFileSync2 } from "node:fs";
+import { join as join8 } from "node:path";
+import { tmpdir as tmpdir3 } from "node:os";
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Encoding.js
 var EncodingErrorTypeId = "~effect/encoding/EncodingError";
@@ -22888,10 +22892,10 @@ class IndexSignature {
   parameter;
   type;
   merge;
-  constructor(parameter, type, merge3) {
+  constructor(parameter, type, merge2) {
     this.parameter = parameter;
     this.type = type;
-    this.merge = merge3;
+    this.merge = merge2;
     if (isOptional(type) && !containsUndefined(type)) {
       throw new Error("Cannot use `Schema.optionalKey` with index signatures, use `Schema.optional` instead.");
     }
@@ -23054,8 +23058,8 @@ class Objects extends Base2 {
     const indexes = mapOrSame(this.indexSignatures, (is) => {
       const p = recur(is.parameter);
       const t = recur(is.type);
-      const merge3 = flipMerge ? is.merge?.flip() : is.merge;
-      return p === is.parameter && t === is.type && merge3 === is.merge ? is : new IndexSignature(p, t, merge3);
+      const merge2 = flipMerge ? is.merge?.flip() : is.merge;
+      return p === is.parameter && t === is.type && merge2 === is.merge ? is : new IndexSignature(p, t, merge2);
     });
     return props === this.propertySignatures && indexes === this.indexSignatures ? this : new Objects(props, indexes, this.annotations, checks, undefined, this.context, encodingChecks);
   }
@@ -23358,39 +23362,6 @@ function formatIsMutable(isMutable) {
 }
 function formatIsOptional(isOptional) {
   return isOptional ? "?" : "";
-}
-function memoizeThunk(f) {
-  let done4 = false;
-  let a;
-  return () => {
-    if (done4) {
-      return a;
-    }
-    a = f();
-    done4 = true;
-    return a;
-  };
-}
-
-class Suspend extends Base2 {
-  _tag = "Suspend";
-  thunk;
-  constructor(thunk, annotations, checks, encoding, context3) {
-    if (checks !== undefined) {
-      throw new Error("Cannot add checks to Suspend");
-    }
-    super(annotations, undefined, encoding, context3);
-    this.thunk = memoizeThunk(thunk);
-  }
-  getParser(recur) {
-    return recur(this.thunk());
-  }
-  recur(recur) {
-    return new Suspend(() => recur(this.thunk()), this.annotations, undefined, undefined, this.context);
-  }
-  getExpected(getExpected2) {
-    return getExpected2(this.thunk());
-  }
 }
 function getEncodingChecks(ast) {
   switch (ast._tag) {
@@ -24107,8 +24078,8 @@ function Literals(literals) {
     }
   });
 }
-function suspend3(f) {
-  return make12(new Suspend(() => f().ast));
+function check(...checks) {
+  return (self) => self.check(...checks);
 }
 function brand2(identifier2) {
   return (schema) => make12(brand(schema.ast, identifier2), {
@@ -24633,223 +24604,338 @@ function onSerializerEnsureArray(ast) {
   }
 }
 
+// ../../src/model/errors.ts
+var reason = { reason: String4 };
+var MISSING_COMMIT = "project.commit is required. State it, or observe it from the repository.";
+
+class ConfigValueError extends TaggedErrorClass()("ConfigValueError", reason) {
+}
+
+class ConfigDecodeError extends TaggedErrorClass()("ConfigDecodeError", reason) {
+}
+
 // ../../src/model/primitives.ts
 var identifier2 = (name) => NonEmptyString.pipe(brand2(name));
-var PlanId = identifier2("PlanId");
 var OperationId = identifier2("OperationId");
 var OutputId = identifier2("OutputId");
-var RecipeId = identifier2("RecipeId");
-var ProfileId = identifier2("ProfileId");
 var Digest = identifier2("Digest");
-var CredentialName = identifier2("CredentialName");
 var NonEmptyName = identifier2("NonEmptyName");
 var Version = identifier2("Version");
-var RunId = identifier2("RunId");
-var LogicalRunId = identifier2("LogicalRunId");
-var AttemptId = identifier2("AttemptId");
-var OperationHash = identifier2("OperationHash");
-var ExecutionTopologyHash = identifier2("ExecutionTopologyHash");
-var ProjectId = identifier2("ProjectId");
-var ExecutionReviewId = identifier2("ExecutionReviewId");
-var PublishReviewId = identifier2("PublishReviewId");
-var ReceiptId = identifier2("ReceiptId");
-var ApprovalNonce = identifier2("ApprovalNonce");
-var SnapshotId = identifier2("SnapshotId");
-var CheckpointId = identifier2("CheckpointId");
 var isSafeRelativePath = (value2) => value2.trim().length > 0 && !value2.startsWith("/") && !value2.startsWith("\\") && !/^[A-Za-z]:[\\/]/u.test(value2) && !value2.split(/[\\/]+/u).includes("..");
 var SafeRelativePath = String4.check(makeFilter2((value2) => isSafeRelativePath(value2) ? undefined : "Path must be nonempty, relative, and contain no parent traversal.")).pipe(brand2("SafeRelativePath"));
 var SafeArchivePattern = String4.check(makeFilter2((value2) => isSafeRelativePath(value2) ? undefined : "Archive pattern must be relative and contain no parent traversal.")).pipe(brand2("SafeArchivePattern"));
 var WorkspaceRoot = String4.check(makeFilter2((value2) => value2.startsWith("/") ? undefined : "WorkspaceRoot must be absolute.")).pipe(brand2("WorkspaceRoot"));
 
-// ../../src/model/run.ts
-var Reason = { reason: String4 };
+// ../../src/recipes/config.ts
 var optional = optionalKey2;
-var run2 = { runId: RunId, logicalRunId: LogicalRunId };
-var approval = {
-  ...run2,
-  receiptId: ReceiptId,
-  reviewer: NonEmptyString,
-  approvalNonce: ApprovalNonce,
-  approvedAt: NonEmptyString,
-  topologyHash: ExecutionTopologyHash
+var nonempty = NonEmptyString;
+var target = Literals([
+  "linux-x64",
+  "linux-arm64",
+  "linux-x64-musl",
+  "linux-arm64-musl",
+  "darwin-x64",
+  "darwin-arm64",
+  "windows-x64",
+  "windows-arm64"
+]);
+var os5 = Literals(["linux", "darwin", "windows"]);
+var arch2 = Literals(["x64", "arm64"]);
+
+class CandidateProject extends Class4("CandidateProject")({
+  name: NonEmptyName,
+  packageName: optional(nonempty),
+  version: Version,
+  repository: optional(nonempty),
+  packagePath: optional(SafeRelativePath),
+  commit: optional(nonempty),
+  tag: NonEmptyName,
+  notes: optional(String4),
+  description: optional(nonempty),
+  summary: optional(nonempty),
+  homepage: optional(nonempty),
+  license: optional(nonempty)
+}) {
+}
+
+class CandidatePlatform extends Class4("CandidatePlatform")({
+  os: os5,
+  arch: arch2,
+  libc: optional(Literals(["glibc", "musl"])),
+  binaryName: optional(nonempty),
+  executableExtension: optional(nonempty),
+  installPath: optional(nonempty),
+  targetTriple: optional(nonempty)
+}) {
+}
+
+class CandidateArtifact extends Class4("CandidateArtifact")({
+  id: OutputId,
+  path: SafeRelativePath,
+  format: Literals(["tarball", "zip", "file", "directory", "executable", "binary"]),
+  checksum: optional(Struct({
+    algorithm: Literals(["sha256", "sha512"]),
+    value: String4
+  })),
+  variant: optional(CandidatePlatform)
+}) {
+}
+var checksumName = SafeRelativePath.check(makeFilter2((value2) => {
+  const literal = value2.replaceAll("{version}", "").replaceAll("{name}", "");
+  return literal.includes("{") || literal.includes("}") ? "Checksum name supports only the {name} and {version} tokens." : undefined;
+}));
+
+class CandidateChecksum extends Class4("CandidateChecksum")({
+  algorithm: optional(Literals(["sha256", "sha512"])),
+  nameTemplate: optional(checksumName)
+}) {
+}
+var build = {
+  id: optional(String4),
+  targets: ArraySchema(target),
+  output: optional(SafeRelativePath),
+  binary: optional(String4)
 };
-var checkpoint = { checkpointId: CheckpointId };
-var dispatchEvidence = {
-  clientReconciliationKey: optional(NonEmptyString),
-  targetCoordinates: optional(NonEmptyString),
-  subjectDigest: optional(Digest)
-};
-var progress = { progress: ArraySchema(suspend3(() => CheckpointState)) };
-var resolution = {
-  operator: NonEmptyString,
-  reason: NonEmptyString,
-  timestamp: NonEmptyString
-};
 
-class ExecutionScope extends Class4("ExecutionScope")({
-  operationIds: ArraySchema(OperationId)
+class CandidateBunBuild extends Class4("CandidateBunBuild")({
+  ...build,
+  builder: Literal2("bun"),
+  entry: SafeRelativePath,
+  binaryName: optional(String4),
+  installPath: optional(String4),
+  cpu: optional(Literals(["baseline", "modern"])),
+  minify: optional(Boolean3)
 }) {
 }
 
-class ExecutionApprovalReceipt extends Class4("ExecutionApprovalReceipt")({
-  ...approval,
-  reviewId: ExecutionReviewId,
-  newRunReason: optionalKey2(NonEmptyString)
+class CandidateCommandBuild extends Class4("CandidateCommandBuild")({
+  ...build,
+  builder: Literal2("command"),
+  output: SafeRelativePath,
+  run: NonEmptyArray(String4)
 }) {
 }
 
-class PublishApprovalReceipt extends Class4("PublishApprovalReceipt")({
-  ...approval,
-  reviewId: PublishReviewId,
-  executionReceiptId: ReceiptId
+class CandidatePrebuiltBuild extends Class4("CandidatePrebuiltBuild")({
+  ...build,
+  builder: Literal2("prebuilt"),
+  output: SafeRelativePath
 }) {
 }
-
-class MaterializedOutput extends Class4("MaterializedOutput")({
-  outputId: OutputId,
-  snapshotId: SnapshotId,
-  digest: Digest,
-  size: Number5,
-  inode: Number5,
-  transmittedDigest: optionalKey2(Digest)
-}) {
-}
-
-class CheckpointPending extends TaggedClass()("CheckpointPending", checkpoint) {
-}
-
-class CheckpointDispatching extends TaggedClass()("CheckpointDispatching", {
-  ...checkpoint,
-  attemptId: AttemptId,
-  ...dispatchEvidence,
-  clientReconciliationKey: NonEmptyString
-}) {
-}
-
-class CheckpointPassed extends TaggedClass()("CheckpointPassed", { ...checkpoint, ...dispatchEvidence, observedOutcome: String4 }) {
-}
-
-class CheckpointFailedBeforeCommit extends TaggedClass()("CheckpointFailedBeforeCommit", {
-  ...checkpoint,
-  ...dispatchEvidence,
-  failure: String4,
-  retryable: Boolean3
-}) {
-}
-
-class CheckpointUnknown extends TaggedClass()("CheckpointUnknown", {
-  ...checkpoint,
-  ...dispatchEvidence,
-  clientReconciliationKey: NonEmptyString,
-  observedRemoteId: optionalKey2(NonEmptyString),
-  failure: String4
-}) {
-}
-
-class CheckpointManualReview extends TaggedClass()("CheckpointManualReview", { ...checkpoint, reason: String4 }) {
-}
-var CheckpointState = Union2([
-  CheckpointPending,
-  CheckpointDispatching,
-  CheckpointPassed,
-  CheckpointFailedBeforeCommit,
-  CheckpointUnknown,
-  CheckpointManualReview
+var CandidateBuild = Union2([
+  CandidateBunBuild,
+  CandidateCommandBuild,
+  CandidatePrebuiltBuild
 ]);
 
-class Pending extends TaggedClass()("Pending", {}) {
+class CandidateArchive extends Class4("CandidateArchive")({
+  id: optional(nonempty),
+  ids: optional(ArraySchema(nonempty)),
+  nameTemplate: optional(nonempty),
+  formats: optional(ArraySchema(Literals(["tar.gz", "zip"]))),
+  files: optional(NonEmptyArray(SafeArchivePattern)),
+  wrapInDirectory: optional(Union2([Boolean3, String4]))
+}) {
 }
+var preparationBase = {
+  id: NonEmptyName,
+  run: NonEmptyArray(String4),
+  cwd: optional(SafeRelativePath),
+  environmentNames: optional(ArraySchema(nonempty)),
+  inputs: optional(ArraySchema(OutputId))
+};
 
-class RunningStructured extends TaggedClass()("RunningStructured", { startedAt: NonEmptyString }) {
-}
-
-class RunningTrustedExec extends TaggedClass()("RunningTrustedExec", { startedAt: NonEmptyString }) {
-}
-
-class DispatchingPublish extends TaggedClass()("DispatchingPublish", { attemptId: AttemptId, ...progress }) {
-}
-
-class Passed extends TaggedClass()("Passed", {
-  ...progress,
-  outcome: String4,
-  materializedOutputs: ArraySchema(MaterializedOutput)
+class CandidateCheckPreparation extends Class4("CandidateCheckPreparation")({
+  kind: Literal2("check"),
+  ...preparationBase
 }) {
 }
 
-class FailedBeforeCommit extends TaggedClass()("FailedBeforeCommit", { ...progress, failure: String4, retryable: Boolean3 }) {
+class CandidateArtifactPreparation extends Class4("CandidateArtifactPreparation")({
+  kind: Literal2("artifact"),
+  ...preparationBase,
+  outputs: NonEmptyArray(Struct({
+    id: OutputId,
+    path: SafeRelativePath,
+    mediaType: optional(nonempty)
+  }))
+}) {
 }
-
-class CommitUnknown extends TaggedClass()("CommitUnknown", { ...progress, failure: String4 }) {
-}
-
-class ManualReview extends TaggedClass()("ManualReview", Reason) {
-}
-
-class AssumedCommitted extends TaggedClass()("AssumedCommitted", resolution) {
-}
-
-class AssumedAbsent extends TaggedClass()("AssumedAbsent", resolution) {
-}
-var AttemptState = Union2([
-  Pending,
-  RunningStructured,
-  RunningTrustedExec,
-  DispatchingPublish,
-  Passed,
-  FailedBeforeCommit,
-  CommitUnknown,
-  ManualReview,
-  AssumedCommitted,
-  AssumedAbsent
+var CandidatePreparation = Union2([
+  CandidateCheckPreparation,
+  CandidateArtifactPreparation
 ]);
 
-class AttemptRecord extends Class4("AttemptRecord")({
-  attemptId: AttemptId,
-  executionReceipt: ExecutionApprovalReceipt,
-  publishReceipt: optional(PublishApprovalReceipt),
-  state: AttemptState
+class CandidateContentHole extends Class4("CandidateContentHole")({
+  fact: Literals(["sha256", "downloadUrl", "assetName"]),
+  artifact: OutputId
 }) {
 }
 
-class OperationRunRecord extends Class4("OperationRunRecord")({
-  operationId: OperationId,
-  operationHash: OperationHash,
-  attempts: ArraySchema(AttemptRecord)
+class CandidateCatalog extends Class4("CandidateCatalog")({
+  id: nonempty,
+  repository: String4,
+  file: SafeRelativePath,
+  content: Union2([
+    String4,
+    ArraySchema(Union2([String4, CandidateContentHole]))
+  ])
 }) {
 }
-var Stage = Literals(["build", "process", "catalog", "validate", "publish", "announce", "verify"]);
+var trusted = {
+  provider: optional(Literal2("github-actions")),
+  workflow: optional(nonempty)
+};
 
-class RunLedger extends Class4("RunLedger")({
-  schemaVersion: Literal2("run-ledger/v1"),
-  ...run2,
-  planId: PlanId,
-  operationHashes: ArraySchema(OperationHash),
-  scope: ExecutionScope,
-  frontier: Stage,
-  executionTopologyHash: ExecutionTopologyHash,
-  revision: Number5,
-  operations: ArraySchema(OperationRunRecord)
+class CandidateNpmPublish extends Class4("CandidateNpmPublish")({
+  registry: optional(String4),
+  packageName: optional(nonempty),
+  packagePath: optional(SafeRelativePath),
+  tokenEnv: optional(String4),
+  trustedPublishing: optional(Struct({
+    ...trusted,
+    verifyPackageExists: optional(Boolean3)
+  })),
+  access: optional(Literals(["public", "restricted"])),
+  provenance: optional(Boolean3)
 }) {
 }
 
-class TransitionError extends TaggedErrorClass()("TransitionError", Reason) {
-}
-
-class RunStoreError extends TaggedErrorClass()("RunStoreError", Reason) {
-}
-
-class ApprovalError extends TaggedErrorClass()("ApprovalError", Reason) {
-}
-
-class DriverError extends TaggedErrorClass()("DriverError", {
-  reason: String4,
-  commitment: Literals(["before-commit", "unknown"])
+class CandidatePyPiPublish extends Class4("CandidatePyPiPublish")({
+  repositoryUrl: optional(String4),
+  pythonExecutable: optional(String4),
+  trustedPublishing: optional(Struct({
+    ...trusted,
+    publisherConfigured: optional(Literal2(true))
+  })),
+  ids: optional(NonEmptyArray(OutputId))
 }) {
 }
+
+class CandidateGitHubPublish extends Class4("CandidateGitHubPublish")({
+  repository: optional(String4),
+  tokenEnv: optional(String4),
+  draft: optional(Boolean3),
+  prerelease: optional(Union2([Boolean3, Literal2("auto")])),
+  bodyArtifact: optional(OutputId)
+}) {
+}
+var catalogPreset = {
+  repository: String4,
+  ids: optional(NonEmptyArray(OutputId)),
+  url: optional(String4),
+  formulaName: optional(String4),
+  manifestName: optional(String4),
+  formulaPath: optional(SafeRelativePath),
+  manifestPath: optional(SafeRelativePath),
+  installPath: optional(String4),
+  bin: optional(Union2([String4, ArraySchema(String4)]))
+};
+
+class CandidateHomebrew extends Class4("CandidateHomebrew")(catalogPreset) {
+}
+
+class CandidateScoop extends Class4("CandidateScoop")(catalogPreset) {
+}
+
+class CandidatePublish extends Class4("CandidatePublish")({
+  npm: optional(CandidateNpmPublish),
+  github: optional(CandidateGitHubPublish),
+  homebrew: optional(CandidateHomebrew),
+  scoop: optional(CandidateScoop),
+  pypi: optional(CandidatePyPiPublish)
+}) {
+}
+
+class CandidateConfig extends Class4("CandidateConfig")({
+  $schema: optional(String4),
+  project: CandidateProject,
+  builds: optional(ArraySchema(CandidateBuild)),
+  preparations: optional(ArraySchema(CandidatePreparation)),
+  npmPackage: optional(Struct({ path: optional(SafeRelativePath) })),
+  artifacts: optional(ArraySchema(CandidateArtifact)),
+  archives: optional(ArraySchema(CandidateArchive)),
+  checksum: optional(CandidateChecksum),
+  catalogs: optional(ArraySchema(CandidateCatalog)),
+  publish: optional(CandidatePublish)
+}) {
+}
+
+// ../../src/resolve/authored.ts
+var optional2 = optionalKey2;
+
+class AuthoredProject extends Class4("AuthoredProject")({
+  ...CandidateProject.fields,
+  name: optional2(NonEmptyName),
+  version: optional2(Version),
+  tag: optional2(NonEmptyName),
+  tagTemplate: optional2(NonEmptyString)
+}) {
+}
+
+class AuthoredConfig extends Class4("AuthoredConfig")({
+  ...CandidateConfig.fields,
+  project: AuthoredProject,
+  versionFrom: optional2(Literals(["manifest", "git-tag"]))
+}) {
+}
+
+// ../../src/config/config.ts
+var jsonFailure = (value2, parents) => {
+  if (value2 === null || typeof value2 === "boolean" || typeof value2 === "string")
+    return;
+  if (typeof value2 === "number") {
+    return Number.isSafeInteger(value2) && !Object.is(value2, -0) ? undefined : "invalid number";
+  }
+  if (typeof value2 !== "object")
+    return `invalid ${typeof value2}`;
+  if (parents.has(value2))
+    return "cyclic value";
+  if (!Array.isArray(value2) && Object.getPrototypeOf(value2) !== Object.prototype) {
+    return "non-plain object";
+  }
+  parents.add(value2);
+  const items = Array.isArray(value2) ? value2 : Object.values(value2);
+  if (Array.isArray(value2) && items.length !== Object.keys(value2).length)
+    return "sparse array";
+  for (const item of items) {
+    const failure = jsonFailure(item, parents);
+    if (failure !== undefined)
+      return failure;
+  }
+  parents.delete(value2);
+  return;
+};
+var decodeConfig = fn2("decodeConfig")(function* (input) {
+  if (typeof input === "string") {
+    return yield* ConfigValueError.make({ reason: "Core config must be a value, not text or path." });
+  }
+  const failure = jsonFailure(input, new Set);
+  if (failure !== undefined)
+    return yield* ConfigValueError.make({ reason: failure });
+  const value2 = typeof input === "object" && input !== null && !Array.isArray(input) ? input : {};
+  const catalog = value2.catalogs?.find((entry) => ["directory", "submit", "commitMessage", "validate"].some((key) => (key in entry)));
+  if (catalog !== undefined) {
+    return yield* ConfigValueError.make({
+      reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
+    });
+  }
+  const publication = value2;
+  const catalogPreset2 = ["homebrew", "scoop"].map((key) => publication.publish?.[key]).find((entry) => typeof entry === "object" && entry !== null && ["submit", "validate", "tapDirectory", "bucketDirectory"].some((key) => (key in entry)));
+  if (catalogPreset2 !== undefined) {
+    return yield* ConfigValueError.make({
+      reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
+    });
+  }
+  return yield* decodeUnknownEffect2(AuthoredConfig, {
+    onExcessProperty: "error"
+  })(input).pipe(mapError3((error2) => ConfigDecodeError.make({ reason: error2.message })));
+});
+
+// ../../src/correction/coordinator.ts
+import { createHash as createHash2 } from "node:crypto";
 
 // ../../src/model/canonical.ts
-import { createHash } from "node:crypto";
-
 class StrictJsonParser {
   text;
   index = 0;
@@ -24864,8 +24950,8 @@ class StrictJsonParser {
       this.fail("trailing input");
     return value2;
   }
-  fail(reason) {
-    throw new Error(`Invalid strict JSON at ${this.index}: ${reason}`);
+  fail(reason2) {
+    throw new Error(`Invalid strict JSON at ${this.index}: ${reason2}`);
   }
   space() {
     while (/[\t\n\r ]/u.test(this.text[this.index] ?? ""))
@@ -25033,89 +25119,807 @@ var canonical = (value2, parents) => {
     parents.delete(value2);
   }
 };
-var frame = (value2) => {
-  const result2 = new Uint8Array(value2.length + 4);
-  new DataView(result2.buffer).setUint32(0, value2.length, false);
-  result2.set(value2, 4);
-  return result2;
-};
 var parseStrictJson = (text) => new StrictJsonParser(text).parse();
 var encodeCanonicalJson = (value2) => `${canonical(value2, new Set)}
 `;
-var hashFramed = (domain, parts) => {
-  const hash2 = createHash("sha256");
-  hash2.update(frame(new TextEncoder().encode(domain.normalize("NFC"))));
-  parts.forEach((part) => {
-    hash2.update(frame(part));
-  });
-  return hash2.digest("hex");
-};
-var hashCanonical = (domain, value2) => hashFramed(domain, [new TextEncoder().encode(encodeCanonicalJson(value2))]);
 
-// ../../src/model/errors.ts
-var Reason2 = { reason: String4 };
-var MISSING_COMMIT = "project.commit is required. State it, or observe it with `plan --from-git` (CLI) / `resolve: github` (Action).";
+// ../../src/release/prepared.ts
+var optional3 = optionalKey2;
+var artifactKind = Literals([
+  "file",
+  "executable",
+  "archive",
+  "package",
+  "wheel",
+  "checksum-file",
+  "catalog-file",
+  "digest",
+  "signature",
+  "attestation",
+  "sbom",
+  "container-metadata",
+  "notarized"
+]);
 
-class PlanDecodeError extends TaggedErrorClass()("PlanDecodeError", Reason2) {
-}
-
-class NonCanonicalPlanError extends TaggedErrorClass()("NonCanonicalPlanError", Reason2) {
-}
-
-class DuplicatePlanValueError extends TaggedErrorClass()("DuplicatePlanValueError", {
-  kind: Literals(["operation-id", "output-id", "output-path"]),
-  value: String4
+class PreparedSource extends Class4("PreparedSource")({
+  commit: NonEmptyName,
+  tree: NonEmptyName,
+  clean: Literal2(true),
+  packageManifestPath: SafeRelativePath,
+  packageManifestDigest: Digest
 }) {
 }
 
-class OutputReferenceError extends TaggedErrorClass()("OutputReferenceError", {
-  operationId: String4,
-  outputId: String4,
+class PreparedProject extends Class4("PreparedProject")({
+  name: NonEmptyName,
+  packageName: optional3(NonEmptyName),
+  version: Version,
+  tag: NonEmptyName,
+  repository: optional3(NonEmptyString)
+}) {
+}
+
+class PreparedArtifact extends Class4("PreparedArtifact")({
+  id: OutputId,
+  path: SafeRelativePath,
+  kind: artifactKind,
+  size: Number5.check(makeFilter2((value2) => Number.isSafeInteger(value2) && value2 >= 0 ? undefined : "Prepared artifact size must be a nonnegative safe integer.")),
+  digest: Digest,
+  blob: Digest,
+  mediaType: optional3(NonEmptyString)
+}) {
+}
+
+class PreparedNpmPublication extends TaggedClass()("PreparedNpmPublication", {
+  id: NonEmptyName,
+  packageName: NonEmptyName,
+  version: Version,
+  registryUrl: NonEmptyString,
+  artifactId: OutputId
+}) {
+}
+
+class PreparedGitHubAsset extends Class4("PreparedGitHubAsset")({
+  artifactId: OutputId,
+  name: NonEmptyString,
+  mediaType: NonEmptyString
+}) {
+}
+
+class PreparedGitHubPublication extends TaggedClass()("PreparedGitHubPublication", {
+  id: NonEmptyName,
+  repository: NonEmptyString,
+  tag: NonEmptyName,
+  title: NonEmptyName,
+  draft: Boolean3,
+  prerelease: Boolean3,
+  targetCommit: NonEmptyName,
+  body: optional3(String4),
+  assets: ArraySchema(PreparedGitHubAsset)
+}) {
+}
+var PreparedPublication = Union2([
+  PreparedNpmPublication,
+  PreparedGitHubPublication
+]);
+
+class PreparedReleaseV1 extends Class4("PreparedReleaseV1")({
+  schemaVersion: Literal2("prepared-release/v1"),
+  source: PreparedSource,
+  project: PreparedProject,
+  artifacts: ArraySchema(PreparedArtifact),
+  publications: ArraySchema(PreparedPublication)
+}) {
+}
+
+class PreparedManifestError extends TaggedErrorClass()("PreparedManifestError", {
+  reason: String4
+}) {
+}
+var encodePreparedRelease = (manifest) => new TextEncoder().encode(encodeCanonicalJson(encodeSync2(PreparedReleaseV1)(manifest)));
+var decodePreparedRelease = (bytes) => {
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const value2 = decodeUnknownSync(PreparedReleaseV1, { onExcessProperty: "error" })(parseStrictJson(text));
+    const canonical2 = encodePreparedRelease(value2);
+    if (canonical2.length !== bytes.length || canonical2.some((byte, index) => byte !== bytes[index])) {
+      throw new Error("manifest bytes are not canonical");
+    }
+    return value2;
+  } catch (cause) {
+    throw PreparedManifestError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
+  }
+};
+
+// ../../src/publication/observation.ts
+class PublicationError extends TaggedErrorClass()("PublicationError", {
+  phase: Literals(["decode", "observe", "mutate"]),
+  commitment: Literals(["before-dispatch", "unknown"]),
   reason: String4
 }) {
 }
 
-class UnsafePlanPathError extends TaggedErrorClass()("UnsafePlanPathError", { path: String4 }) {
+class ObservationDifference extends Class4("ObservationDifference")({
+  field: NonEmptyName,
+  expected: String4,
+  observed: String4
+}) {
 }
 
-class StageActionMismatchError extends TaggedErrorClass()("StageActionMismatchError", { stage: String4, action: String4 }) {
+class Equivalent extends TaggedClass()("Equivalent", {
+  subject: NonEmptyName
+}) {
 }
 
-class CredentialConfinementError extends TaggedErrorClass()("CredentialConfinementError", { credential: String4, reason: String4 }) {
+class NeedsMutation extends TaggedClass()("NeedsMutation", {
+  subject: NonEmptyName,
+  precondition: NonEmptyName
+}) {
 }
 
-class SecretLikePlanValueError extends TaggedErrorClass()("SecretLikePlanValueError", { field: String4 }) {
+class Conflict extends TaggedClass()("Conflict", {
+  subject: NonEmptyName,
+  differences: ArraySchema(ObservationDifference)
+}) {
 }
 
-class ConfigValueError extends TaggedErrorClass()("ConfigValueError", Reason2) {
+class Inconclusive extends TaggedClass()("Inconclusive", {
+  subject: NonEmptyName,
+  reason: String4
+}) {
+}
+var Observation = Union2([Equivalent, NeedsMutation, Conflict, Inconclusive]);
+
+class Applied extends TaggedClass()("Applied", {
+  subject: NonEmptyName,
+  detail: String4
+}) {
 }
 
-class ConfigDecodeError extends TaggedErrorClass()("ConfigDecodeError", Reason2) {
+class Rejected extends TaggedClass()("Rejected", {
+  subject: NonEmptyName,
+  phase: Literals(["before-dispatch", "provider"]),
+  reason: String4
+}) {
 }
 
-class PlanningFactsError extends TaggedErrorClass()("PlanningFactsError", Reason2) {
+class OutcomeUnknown extends TaggedClass()("OutcomeUnknown", {
+  subject: NonEmptyName,
+  reason: String4
+}) {
+}
+var MutationResult = Union2([Applied, Rejected, OutcomeUnknown]);
+
+class PublicationConverged extends TaggedClass()("PublicationConverged", {
+  subject: NonEmptyName,
+  mutation: MutationResult
+}) {
 }
 
-// ../../src/model/operation.ts
+class PublicationBlocked extends TaggedClass()("PublicationBlocked", {
+  subject: NonEmptyName,
+  observation: Union2([Conflict, Inconclusive])
+}) {
+}
+
+class PublicationObserved extends TaggedClass()("PublicationObserved", {
+  subject: NonEmptyName,
+  mutation: MutationResult,
+  observation: Union2([Equivalent, NeedsMutation, Conflict, Inconclusive])
+}) {
+}
+var PublicationOutcome = Union2([PublicationConverged, PublicationBlocked, PublicationObserved]);
+var publishSubject = fn2("publishSubject")(function* (subject) {
+  const first = yield* subject.observe();
+  switch (first._tag) {
+    case "Equivalent":
+      return PublicationConverged.make({ subject: subject.id, mutation: Applied.make({ subject: subject.id, detail: "Already equivalent." }) });
+    case "Conflict":
+    case "Inconclusive":
+      return PublicationBlocked.make({ subject: subject.id, observation: first });
+    case "NeedsMutation": {
+      const mutation = yield* subject.mutate(first);
+      const after = yield* subject.observe();
+      if (after._tag === "Equivalent")
+        return PublicationConverged.make({ subject: subject.id, mutation });
+      return PublicationObserved.make({ subject: subject.id, mutation, observation: after });
+    }
+  }
+});
+
+// ../../src/correction/intent.ts
+import { createHash } from "node:crypto";
+var optional4 = optionalKey2;
+var boundedText = String4.check(makeFilter2((value2) => [...value2].length <= 2048 && [...value2].every((character) => {
+  const codePoint = character.codePointAt(0) ?? 0;
+  return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32;
+}) ? undefined : "Correction text must be bounded and contain no control characters."));
+var publicMessage = boundedText.pipe(check(makeFilter2((value2) => value2.length > 0 ? undefined : "Correction message must be nonempty.")));
+var sha256Hex = /^[a-f0-9]{64}$/u;
+
+class ReplacementCoordinate extends Class4("ReplacementCoordinate")({
+  provider: Literals(["npm", "github", "catalog-git", "pypi"]),
+  coordinate: publicMessage
+}) {
+}
+
+class NpmDeprecationCorrection extends TaggedClass()("NpmDeprecationCorrection", {
+  provider: Literal2("npm"),
+  publicationId: NonEmptyName,
+  registryUrl: NonEmptyString,
+  packageName: NonEmptyName,
+  version: Version,
+  tarballIntegrity: NonEmptyString,
+  message: publicMessage,
+  replacement: optional4(ReplacementCoordinate)
+}) {
+}
+
+class GithubReleaseCorrection extends TaggedClass()("GithubReleaseCorrection", {
+  provider: Literal2("github"),
+  publicationId: NonEmptyName,
+  repository: NonEmptyString,
+  tag: NonEmptyName,
+  marker: publicMessage,
+  replacement: optional4(ReplacementCoordinate)
+}) {
+}
+
+class CatalogCorrection extends TaggedClass()("CatalogCorrection", {
+  provider: Literal2("catalog-git"),
+  publicationId: NonEmptyName,
+  repository: NonEmptyString,
+  branch: NonEmptyName,
+  targetPath: SafeRelativePath,
+  statePath: SafeRelativePath,
+  artifactId: OutputId,
+  stateArtifactId: OutputId,
+  version: Version,
+  status: Literals(["corrected", "withdrawn", "superseded"]),
+  reason: publicMessage,
+  replacement: optional4(ReplacementCoordinate)
+}) {
+}
+
+class PypiFileYankCorrection extends TaggedClass()("PypiFileYankCorrection", {
+  provider: Literal2("pypi"),
+  publicationId: NonEmptyName,
+  indexUrl: NonEmptyString,
+  project: NonEmptyName,
+  version: Version,
+  filename: NonEmptyName,
+  fileDigest: Digest,
+  reason: publicMessage,
+  replacement: optional4(ReplacementCoordinate)
+}) {
+}
+var CorrectionVariant = Union2([
+  NpmDeprecationCorrection,
+  GithubReleaseCorrection,
+  CatalogCorrection,
+  PypiFileYankCorrection
+]);
+
+class CorrectionIntentV1 extends Class4("CorrectionIntentV1")({
+  schemaVersion: Literal2("correction-intent/v1"),
+  preparedDigest: Digest,
+  correction: CorrectionVariant,
+  correctionId: Digest
+}) {
+}
+
+class CorrectionIntentError extends TaggedErrorClass()("CorrectionIntentError", {
+  reason: String4
+}) {
+}
+var digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+var normalizeCorrection = (value2) => decodeUnknownSync(CorrectionVariant)(value2);
+var encodedCorrection = (value2) => encodeSync2(CorrectionVariant)(normalizeCorrection(value2));
+var unsignedValue = (value2) => ({
+  schemaVersion: value2.schemaVersion,
+  preparedDigest: value2.preparedDigest,
+  correction: encodedCorrection(value2.correction)
+});
+var correctionIdFor = (value2) => Digest.make(digest(new TextEncoder().encode(encodeCanonicalJson(unsignedValue(value2)))));
+var equal = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
+var encodeCorrectionIntent = (value2) => {
+  try {
+    if (!sha256Hex.test(value2.preparedDigest) || !sha256Hex.test(value2.correctionId)) {
+      throw new Error("Correction intent digests must be lowercase SHA-256 values.");
+    }
+    const expected = correctionIdFor(value2);
+    if (expected !== value2.correctionId)
+      throw new Error("Correction id does not match canonical intent bytes.");
+    return new TextEncoder().encode(encodeCanonicalJson(encodeSync2(CorrectionIntentV1)(value2)));
+  } catch (cause) {
+    throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
+  }
+};
+var decodeCorrectionIntent = (bytes) => {
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const value2 = decodeUnknownSync(CorrectionIntentV1, { onExcessProperty: "error" })(parseStrictJson(text));
+    const canonical2 = encodeCorrectionIntent(value2);
+    if (!equal(canonical2, bytes))
+      throw new Error("Correction intent bytes are not canonical.");
+    return value2;
+  } catch (cause) {
+    if (cause instanceof CorrectionIntentError)
+      throw cause;
+    throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
+  }
+};
+
+// ../../src/correction/coordinator.ts
+class CorrectionValidationError extends TaggedErrorClass()("CorrectionValidationError", {
+  reason: String4
+}) {
+}
+
+class CorrectionUnsupported extends TaggedClass()("CorrectionUnsupported", {
+  provider: Literals(["github", "pypi"]),
+  reason: String4,
+  evidence: NonEmptyString
+}) {
+}
+var digest2 = (bytes) => createHash2("sha256").update(bytes).digest("hex");
+var preparedDigest = (bundle) => Digest.make(digest2(encodePreparedRelease(bundle.manifest)));
+var findPublication = (bundle, id) => bundle.manifest.publications.find((publication) => publication.id.toString() === id);
+var hasArtifact = (bundle, id) => bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === id);
+var verifyNpm = (bundle, correction) => {
+  const publication = findPublication(bundle, correction.publicationId.toString());
+  if (publication?._tag !== "PreparedNpmPublication" || publication.registryUrl !== correction.registryUrl || publication.packageName !== correction.packageName || publication.version !== correction.version) {
+    throw new Error("npm correction subject is not the exact npm publication in the prepared manifest.");
+  }
+  const artifact = bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId);
+  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
+  if (bytes === undefined)
+    throw new Error("npm correction subject has no verified prepared tarball.");
+  const integrity = `sha512-${createHash2("sha512").update(bytes).digest("base64")}`;
+  if (integrity !== correction.tarballIntegrity)
+    throw new Error("npm correction tarball integrity is not the prepared artifact integrity.");
+};
+var verifyGithub = (bundle, correction) => {
+  const publication = findPublication(bundle, correction.publicationId.toString());
+  if (publication?._tag !== "PreparedGitHubPublication" || publication.repository !== correction.repository || publication.tag !== correction.tag) {
+    throw new Error("GitHub correction subject is not the exact GitHub publication in the prepared manifest.");
+  }
+};
+var verifyCatalog = (bundle, correction) => {
+  if (!hasArtifact(bundle, correction.artifactId.toString()) || !hasArtifact(bundle, correction.stateArtifactId.toString())) {
+    throw new Error("Catalog correction subject does not reference two verified prepared artifacts.");
+  }
+};
+var verifyPypi = (_bundle, _correction) => {};
+var verifyCorrectionIntent = (bundle, intent) => {
+  encodeCorrectionIntent(intent);
+  if (preparedDigest(bundle) !== intent.preparedDigest)
+    throw new Error("Correction intent is bound to a different prepared release.");
+  switch (intent.correction._tag) {
+    case "NpmDeprecationCorrection":
+      return verifyNpm(bundle, intent.correction);
+    case "GithubReleaseCorrection":
+      return verifyGithub(bundle, intent.correction);
+    case "CatalogCorrection":
+      return verifyCatalog(bundle, intent.correction);
+    case "PypiFileYankCorrection":
+      return verifyPypi(bundle, intent.correction);
+  }
+};
+var providerOf = (intent) => intent.correction.provider;
+var correctPreparedRelease = fn2("correctPreparedRelease")(function* (input) {
+  try {
+    verifyCorrectionIntent(input.bundle, input.intent);
+  } catch (cause) {
+    return yield* fail6(new CorrectionValidationError({ reason: cause instanceof Error ? cause.message : String(cause) }));
+  }
+  if (input.intent.correction._tag === "GithubReleaseCorrection") {
+    return CorrectionUnsupported.make({ provider: "github", reason: "No durable, machine-readable GitHub withdrawal marker with a proven conditional update contract was admitted.", evidence: "docs/release-program/decisions/216-provider-correction.md" });
+  }
+  if (input.intent.correction._tag === "PypiFileYankCorrection") {
+    return CorrectionUnsupported.make({ provider: "pypi", reason: "Per-file yank observation and mutation are not proven for arbitrary configured indexes.", evidence: "docs/release-program/decisions/216-provider-correction.md" });
+  }
+  if (input.subject === undefined) {
+    return yield* fail6(new CorrectionValidationError({ reason: `No provider-bound correction subject was supplied for ${providerOf(input.intent)}.` }));
+  }
+  return yield* publishSubject(input.subject);
+});
+
+// ../../src/publication/catalog-git.ts
+var repositoryName = String4.check(makeFilter2((value2) => /^[A-Za-z0-9.-]+\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value2) ? undefined : "Repository must be host/owner/name."));
+var repositoryPath = String4.check(makeFilter2((value2) => value2.length > 0 && !value2.startsWith("/") && !value2.includes("\\") && !value2.split("/").includes("..") ? undefined : "Repository path must be a contained POSIX path."));
+
+class CatalogFileIntent extends Class4("CatalogFileIntent")({
+  id: NonEmptyName,
+  repository: repositoryName,
+  branch: NonEmptyName,
+  targetPath: repositoryPath,
+  statePath: repositoryPath,
+  artifactId: NonEmptyName,
+  stateArtifactId: NonEmptyName,
+  version: Version,
+  commitMessage: NonEmptyName
+}) {
+}
+
+class CatalogManagedState extends Class4("CatalogManagedState")({
+  schemaVersion: Literal2("ts-release/catalog-state/v1"),
+  version: Version,
+  manifestDigest: Digest,
+  status: Literals(["active", "corrected", "withdrawn", "superseded"]),
+  correctionId: optionalKey2(Digest),
+  reason: optionalKey2(String4),
+  replacement: optionalKey2(NonEmptyName)
+}) {
+}
+var encodeCatalogManagedState = (value2) => new TextEncoder().encode(encodeCanonicalJson(encodeSync2(CatalogManagedState)(value2)));
+var decodeCatalogManagedState = (bytes) => {
+  try {
+    const value2 = decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(parseStrictJson(new TextDecoder("utf-8", { fatal: true }).decode(bytes)));
+    const canonical2 = encodeCatalogManagedState(value2);
+    if (canonical2.length !== bytes.length || canonical2.some((byte, index) => byte !== bytes[index]))
+      return;
+    if (value2.status === "active" && (value2.correctionId !== undefined || value2.reason !== undefined || value2.replacement !== undefined))
+      return;
+    if (value2.status !== "active" && (value2.correctionId === undefined || value2.reason === undefined || value2.reason.length === 0))
+      return;
+    return value2;
+  } catch {
+    return;
+  }
+};
+
+// ../../src/correction/catalog.ts
+var equal2 = (left, right) => left !== undefined && left.length === right.length && left.every((byte, index) => byte === right[index]);
+var versionCompare = (left, right) => {
+  const parse = (value2) => {
+    const [core, suffix] = value2.replace(/^v/u, "").split("-", 2);
+    return [(core ?? "").split(".").map((part) => Number.parseInt(part, 10) || 0), suffix];
+  };
+  const [leftCore, leftSuffix] = parse(left), [rightCore, rightSuffix] = parse(right);
+  for (let index = 0;index < Math.max(leftCore.length, rightCore.length); index++) {
+    const difference = (leftCore[index] ?? 0) - (rightCore[index] ?? 0);
+    if (difference !== 0)
+      return difference;
+  }
+  if (leftSuffix === undefined && rightSuffix !== undefined)
+    return 1;
+  if (leftSuffix !== undefined && rightSuffix === undefined)
+    return -1;
+  return (leftSuffix ?? "") < (rightSuffix ?? "") ? -1 : (leftSuffix ?? "") > (rightSuffix ?? "") ? 1 : 0;
+};
+var revision = (value2) => NonEmptyName.make(`revision:${value2}`);
+var revisionValue = (value2) => value2.toString().slice("revision:".length);
+var makeCatalogCorrectionSubject = (bundle, intent, transport) => {
+  const correction = intent.correction;
+  const target2 = bundle.blobs.get(correction.artifactId.toString());
+  const originalState = bundle.blobs.get(correction.stateArtifactId.toString());
+  const correctedState = encodeCatalogManagedState(CatalogManagedState.make({
+    schemaVersion: "ts-release/catalog-state/v1",
+    version: correction.version,
+    manifestDigest: intent.preparedDigest,
+    status: correction.status,
+    correctionId: intent.correctionId,
+    reason: correction.reason,
+    ...correction.replacement === undefined ? {} : { replacement: NonEmptyName.make(correction.replacement.coordinate) }
+  }));
+  const subject = NonEmptyName.make(`catalog:correct:${correction.repository}:${correction.branch}:${correction.targetPath}`);
+  const observe = () => gen2(function* () {
+    if (intent.correction._tag !== "CatalogCorrection" || target2 === undefined || originalState === undefined) {
+      return yield* fail6(new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: "Catalog correction does not have the exact prepared target/state pair." }));
+    }
+    const baseline = decodeCatalogManagedState(originalState);
+    if (baseline === undefined || baseline.status !== "active" || baseline.version !== correction.version) {
+      return yield* fail6(new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: "Catalog correction baseline is not the active state of this prepared release." }));
+    }
+    const current = yield* transport.observe(correction);
+    if (current.repository !== correction.repository || current.branch !== correction.branch || current.revision.length === 0)
+      return Inconclusive.make({ subject, reason: "Repository transport did not prove the configured catalog coordinate." });
+    if (current.targetBytes === undefined || current.stateBytes === undefined)
+      return Inconclusive.make({ subject, reason: "Catalog correction cannot distinguish missing files from a durable correction." });
+    if (!equal2(current.targetBytes, target2))
+      return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("target.bytes"), expected: "prepared catalog bytes", observed: "different catalog bytes" })] });
+    const currentState = decodeCatalogManagedState(current.stateBytes);
+    if (currentState === undefined)
+      return Inconclusive.make({ subject, reason: "Managed catalog correction state is malformed or noncanonical." });
+    if (currentState.status !== "active") {
+      return currentState.correctionId === intent.correctionId && currentState.status === correction.status && currentState.reason === correction.reason ? Equivalent.make({ subject }) : Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("managed.correction"), expected: intent.correctionId, observed: currentState.correctionId ?? currentState.status })] });
+    }
+    if (versionCompare(currentState.version.toString(), correction.version.toString()) > 0 || currentState.manifestDigest !== baseline.manifestDigest) {
+      return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("managed.generation"), expected: baseline.manifestDigest, observed: currentState.manifestDigest })] });
+    }
+    return NeedsMutation.make({ subject, precondition: revision(current.revision) });
+  }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason }))));
+  const mutate = (needs) => gen2(function* () {
+    if (needs.precondition.toString().startsWith("revision:") === false || target2 === undefined)
+      return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "Catalog correction lacks the exact revision precondition or target bytes." });
+    const result2 = yield* transport.write({
+      repository: correction.repository,
+      branch: correction.branch,
+      expectedRevision: revisionValue(needs.precondition),
+      targetPath: correction.targetPath,
+      targetBytes: target2,
+      statePath: correction.statePath,
+      stateBytes: correctedState,
+      commitMessage: correction.reason
+    });
+    return Applied.make({ subject, detail: `Catalog correction commit ${result2.revision}.` });
+  }).pipe(catchTag2("PublicationError", (cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }))));
+  return { id: subject, observe, mutate };
+};
+
+// ../../src/correction/npm.ts
+import { createHash as createHash3 } from "node:crypto";
+
+// ../../src/publication/http.ts
+var bodyText = (response) => typeof response.body === "string" ? response.body : new TextDecoder("utf-8", { fatal: true }).decode(response.body);
+var bodyJson = (response) => {
+  try {
+    return JSON.parse(bodyText(response));
+  } catch (cause) {
+    throw PublicationError.make({ phase: "decode", commitment: "before-dispatch", reason: cause instanceof Error ? cause.message : String(cause) });
+  }
+};
+var authHeaders = (credential) => ({
+  authorization: `Bearer ${credential}`,
+  accept: "application/json"
+});
+
+// ../../src/correction/npm.ts
+class NpmCorrectionError extends TaggedErrorClass()("NpmCorrectionError", { reason: String4 }) {
+}
+var registryFacts = (value2) => {
+  if (typeof value2 !== "object" || value2 === null)
+    return;
+  const record2 = value2;
+  if (record2.deprecated !== undefined && typeof record2.deprecated !== "string")
+    return;
+  if (typeof record2.dist !== "object" || record2.dist === null)
+    return;
+  const dist = record2.dist;
+  if (dist.integrity !== undefined && typeof dist.integrity !== "string")
+    return;
+  if (dist.shasum !== undefined && typeof dist.shasum !== "string")
+    return;
+  if (dist.integrity === undefined && dist.shasum === undefined)
+    return;
+  return {
+    ...dist.integrity === undefined ? {} : { integrity: dist.integrity },
+    ...dist.shasum === undefined ? {} : { shasum: dist.shasum },
+    ...record2.deprecated === undefined ? {} : { deprecated: record2.deprecated }
+  };
+};
+var sha1 = (bytes) => createHash3("sha1").update(bytes).digest("hex");
+var versionUrl = (correction) => `${correction.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(correction.packageName)}/${encodeURIComponent(correction.version)}`;
+var makeNpmDeprecationSubject = (bundle, correction, http2, credentials, process2) => {
+  const publication = bundle.manifest.publications.find((candidate) => candidate._tag === "PreparedNpmPublication" && candidate.id === correction.publicationId && candidate.registryUrl === correction.registryUrl && candidate.packageName === correction.packageName && candidate.version === correction.version);
+  const artifact = publication === undefined ? undefined : bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId);
+  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
+  const subject = NonEmptyName.make(`npm:deprecate:${correction.registryUrl}:${correction.packageName}@${correction.version}`);
+  const observe = () => gen2(function* () {
+    if (publication === undefined || bytes === undefined)
+      return yield* fail6(new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: "npm correction subject is not available in the prepared bundle." }));
+    const response = yield* http2.request({ method: "GET", url: versionUrl(correction), headers: authHeaders(credentials.read) });
+    if (response.status === 404)
+      return Inconclusive.make({ subject, reason: "npm correction target is absent; absence is not a durable correction state." });
+    if (response.status < 200 || response.status >= 300)
+      return Inconclusive.make({ subject, reason: `Registry correction observation returned HTTP ${response.status}.` });
+    let facts;
+    try {
+      facts = registryFacts(bodyJson(response));
+    } catch (cause) {
+      return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) });
+    }
+    if (facts === undefined)
+      return Inconclusive.make({ subject, reason: "Registry correction metadata was malformed or omitted integrity facts." });
+    const differences = [];
+    const expectedShasum = sha1(bytes);
+    if (facts.integrity !== undefined && facts.integrity !== correction.tarballIntegrity)
+      differences.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: correction.tarballIntegrity, observed: facts.integrity }));
+    if (facts.shasum !== undefined && facts.shasum !== expectedShasum)
+      differences.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum, observed: facts.shasum }));
+    if (differences.length > 0)
+      return Conflict.make({ subject, differences });
+    if (facts.deprecated === correction.message)
+      return Equivalent.make({ subject });
+    if (facts.deprecated === undefined || facts.deprecated.length === 0)
+      return NeedsMutation.make({ subject, precondition: NonEmptyName.make("deprecation-absent") });
+    return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("deprecated"), expected: correction.message, observed: facts.deprecated })] });
+  }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason }))));
+  const mutate = (needs) => gen2(function* () {
+    if (needs.precondition !== "deprecation-absent" || publication === undefined)
+      return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "npm correction lacks the exact empty-deprecation precondition." });
+    const result2 = yield* process2.deprecate({ registryUrl: correction.registryUrl, packageName: correction.packageName.toString(), version: correction.version.toString(), message: correction.message, credential: credentials.publish });
+    if (!result2.started)
+      return Rejected.make({ subject, phase: "before-dispatch", reason: "npm deprecation process did not start." });
+    return result2.exitCode === 0 ? Applied.make({ subject, detail: "npm deprecation exited successfully." }) : Rejected.make({ subject, phase: "provider", reason: `npm deprecation exited ${result2.exitCode}.` });
+  }).pipe(catchTag2("PublicationError", (cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }))));
+  return { id: subject, observe, mutate };
+};
+
+// ../../src/api/errors.ts
+class ReleaseInputError extends TaggedErrorClass()("ReleaseInputError", { reason: String4 }) {
+}
+
+// ../../src/api/input.ts
+import { existsSync as existsSync2, realpathSync, statSync } from "node:fs";
+import { dirname, isAbsolute, join, resolve as resolve2 } from "node:path";
+var configInput = Struct({ config: Unknown2, workspace: String4, preparedDirectory: optionalKey2(String4) });
+var inspectInput = Struct({ config: optionalKey2(Unknown2), prepared: optionalKey2(String4), workspace: optionalKey2(String4) });
+var credentials = Struct({ read: NonEmptyString, publish: NonEmptyString });
+var credentialInput = Struct({ npm: optionalKey2(credentials), github: optionalKey2(credentials) });
+var publishInput = Struct({ prepared: String4, credentials: optionalKey2(credentialInput) });
+var releaseInput = Struct({ config: Unknown2, workspace: String4, preparedDirectory: optionalKey2(String4), credentials: optionalKey2(credentialInput) });
+var correctInput = Struct({ prepared: String4, correction: String4, credentials: optionalKey2(credentialInput) });
+var decode = (schema, value2) => {
+  try {
+    return decodeUnknownSync(schema, { onExcessProperty: "error" })(value2);
+  } catch (cause) {
+    throw new ReleaseInputError({ reason: String(cause).split(`
+`).slice(0, 8).join(`
+`).slice(0, 500) });
+  }
+};
+var decodePrepareInput = (value2) => decode(configInput, value2);
+var decodeReleaseInput = (value2) => decode(releaseInput, value2);
+var decodePublishInput = (value2) => decode(publishInput, value2);
+var decodeCorrectInput = (value2) => decode(correctInput, value2);
+var decodeInspectInput = (value2) => {
+  const decoded = decode(inspectInput, value2);
+  if (decoded.config === undefined === (decoded.prepared === undefined))
+    throw new ReleaseInputError({ reason: "inspect requires exactly one of config or prepared." });
+  if (decoded.config !== undefined && decoded.workspace === undefined)
+    throw new ReleaseInputError({ reason: "inspect config requires workspace." });
+  return decoded;
+};
+var absoluteDirectory = (value2, field) => {
+  if (!isAbsolute(value2) || !existsSync2(value2))
+    throw new ReleaseInputError({ reason: `${field} must be an existing absolute directory.` });
+  const canonical2 = realpathSync(value2);
+  if (!statSync(canonical2).isDirectory())
+    throw new ReleaseInputError({ reason: `${field} must be a directory.` });
+  return canonical2;
+};
+var workspaceRoot = (value2) => absoluteDirectory(value2, "workspace");
+var preparedPath = (value2) => {
+  const resolved = isAbsolute(value2) ? resolve2(value2) : resolve2(process.cwd(), value2);
+  if (!existsSync2(resolved) || !statSync(resolved).isDirectory())
+    throw new ReleaseInputError({ reason: "prepared must name an existing bundle directory." });
+  const root = realpathSync(resolved);
+  if (dirname(root) === root || join(root, "prepared-release.json") === root)
+    throw new ReleaseInputError({ reason: "prepared bundle path is invalid." });
+  return root;
+};
+
+// ../../src/api/runtime.ts
+class ReleaseRuntimeError extends TaggedErrorClass()("ReleaseRuntimeError", { reason: String4 }) {
+}
+
+class ReleaseRuntime extends Service()("ReleaseRuntime") {
+}
+
+// ../../src/resolve/facts.ts
+var optional5 = optionalKey2;
+
+class ObservedFacts extends Class4("ObservedFacts")({
+  commit: optional5(NonEmptyName),
+  manifestName: optional5(NonEmptyString),
+  manifestVersion: optional5(Version),
+  repository: optional5(NonEmptyString),
+  headTagVersion: optional5(Version)
+}) {
+}
+
+// ../../src/resolve/encode.ts
+var toPlainJson = (value2) => {
+  if (Array.isArray(value2))
+    return value2.map(toPlainJson);
+  if (typeof value2 !== "object" || value2 === null)
+    return value2;
+  return Object.fromEntries(Object.entries(value2).filter(([, entry]) => entry !== undefined).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([key, entry]) => [key, toPlainJson(entry)]));
+};
+
+// ../../src/resolve/errors.ts
+class ResolveError extends Error {
+  field;
+  reason;
+  _tag = "ResolveError";
+  constructor(field, reason2) {
+    super(reason2);
+    this.field = field;
+    this.reason = reason2;
+    this.name = "ResolveError";
+  }
+}
+
+// ../../src/resolve/resolve.ts
+var refuse = (field, reason2) => {
+  throw new ResolveError(field, reason2);
+};
+var disagreement = (field, authored, observed, source) => refuse(`project.${field}`, `project.${field} is ${JSON.stringify(authored)} in the config but ${JSON.stringify(observed)} ${source}. Remove the authored value or correct the source; the resolver never picks.`);
+var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
+var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
+var version2 = (authored, facts) => {
+  const directive = authored.versionFrom;
+  const observed = directive === "manifest" ? facts.manifestVersion : directive === "git-tag" ? facts.headTagVersion : undefined;
+  const source = directive === "manifest" ? "in the package manifest" : "on the tag at HEAD";
+  if (authored.project.version !== undefined) {
+    if (observed !== undefined && observed !== authored.project.version) {
+      disagreement("version", authored.project.version, observed, source);
+    }
+    return authored.project.version;
+  }
+  if (directive === undefined) {
+    return refuse("project.version", 'project.version is required. State it, or set versionFrom to "manifest" or "git-tag" so it can be observed.');
+  }
+  if (observed === undefined) {
+    return refuse("project.version", `versionFrom is ${JSON.stringify(directive)} but no version was observed ${source}.`);
+  }
+  return observed;
+};
+var tag2 = (authored, resolved) => {
+  if (authored.project.tag !== undefined)
+    return authored.project.tag;
+  const template = authored.project.tagTemplate ?? "v{version}";
+  const rendered = template.replaceAll("{version}", resolved);
+  if (rendered.includes("{") || rendered.includes("}")) {
+    return refuse("project.tagTemplate", `project.tagTemplate supports only the {version} token, got ${JSON.stringify(template)}.`);
+  }
+  return NonEmptyName.make(rendered);
+};
+var commit = (authored, facts) => {
+  if (authored.project.commit !== undefined) {
+    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
+      disagreement("commit", authored.project.commit, facts.commit, "at HEAD");
+    }
+    return authored.project.commit;
+  }
+  if (facts.commit === undefined)
+    return refuse("project.commit", MISSING_COMMIT);
+  return facts.commit;
+};
+var names = (authored, facts) => {
+  const manifest = facts.manifestName;
+  if (manifest !== undefined && authored.project.packageName !== undefined && manifest !== authored.project.packageName) {
+    disagreement("packageName", authored.project.packageName, manifest, "in the package manifest");
+  }
+  const name = authored.project.name ?? manifest;
+  if (name === undefined) {
+    return refuse("project.name", "project.name is required when no package manifest is observed.");
+  }
+  const packageName = authored.project.packageName ?? manifest;
+  return { name, ...packageName === undefined ? {} : { packageName } };
+};
+var repository = (authored, facts) => {
+  if (authored.project.repository !== undefined && facts.repository !== undefined && authored.project.repository !== facts.repository) {
+    disagreement("repository", authored.project.repository, facts.repository, "in the observed repository");
+  }
+  return authored.project.repository ?? facts.repository;
+};
+var resolveConfig = (authored, facts) => {
+  const config = decodeAuthored(authored);
+  const observed = decodeFacts(facts);
+  const resolvedVersion = version2(config, observed);
+  const { project, versionFrom: _directive, ...rest } = config;
+  const { tagTemplate: _template, ...projectRest } = project;
+  return toPlainJson({
+    ...rest,
+    project: {
+      ...projectRest,
+      ...names(config, observed),
+      ...repository(config, observed) === undefined ? {} : { repository: repository(config, observed) },
+      version: resolvedVersion,
+      tag: tag2(config, resolvedVersion),
+      commit: commit(config, observed)
+    }
+  });
+};
+
+// ../../src/release/graph.ts
 class OutputDeclaration extends Class4("OutputDeclaration")({
   id: OutputId,
   path: SafeRelativePath,
-  kind: Literals([
-    "file",
-    "directory",
-    "executable",
-    "archive",
-    "digest",
-    "package",
-    "wheel",
-    "checksum-file",
-    "catalog-file",
-    "container-metadata",
-    "sbom",
-    "signature",
-    "notarized",
-    "attestation"
-  ]),
+  kind: Literals(["file", "directory", "executable", "archive", "digest", "package", "wheel", "checksum-file", "catalog-file", "container-metadata", "sbom", "signature", "notarized", "attestation"]),
   provenance: optionalKey2(Literals(["build", "import", "process", "catalog", "internal"])),
   mediaType: optionalKey2(NonEmptyString),
   platform: optionalKey2(Struct({
@@ -25127,30 +25931,6 @@ class OutputDeclaration extends Class4("OutputDeclaration")({
   }))
 }) {
 }
-var row = {
-  id: OperationId,
-  inputs: ArraySchema(OutputId),
-  outputs: ArraySchema(OutputDeclaration),
-  description: optionalKey2(NonEmptyString)
-};
-
-class ReadCredential extends Class4("ReadCredential")({ name: CredentialName }) {
-}
-
-class PublishCredential extends Class4("PublishCredential")({ name: CredentialName }) {
-}
-
-class WireContract extends Class4("WireContract")({
-  profileId: ProfileId,
-  contractFixtureId: NonEmptyString,
-  baseUrl: NonEmptyString,
-  pathTemplate: NonEmptyString,
-  responseShapeId: Literals(["json-object-v1", "empty-v1"]),
-  pagination: Literals(["none", "link-header"]),
-  commitment: Literals(["read-only", "status-2xx"]),
-  reconciliation: Literals(["none", "get-same-resource"])
-}) {
-}
 
 class ContentHole extends Class4("ContentHole")({
   fact: Literals(["sha256", "downloadUrl", "assetName"]),
@@ -25158,1412 +25938,1558 @@ class ContentHole extends Class4("ContentHole")({
 }) {
 }
 var ContentValue = Union2([String4, ArraySchema(Union2([String4, ContentHole]))]);
+var optional6 = optionalKey2;
+var argv = NonEmptyArray(String4);
 
-class Check extends TaggedClass()("Check", { ...row, path: SafeRelativePath }) {
-}
-
-class Write extends TaggedClass()("Write", {
-  ...row,
-  path: SafeRelativePath,
-  content: ContentValue
-}) {
-}
-
-class Pack extends TaggedClass()("Pack", {
-  ...row,
-  format: Literals(["tar.gz", "zip"]),
-  files: optionalKey2(NonEmptyArray(SafeArchivePattern))
-}) {
-}
-
-class DigestOp extends TaggedClass()("Digest", {
-  ...row,
-  algorithm: Literals(["sha256", "sha512"])
-}) {
-}
-
-class Exec extends TaggedClass()("Exec", {
-  ...row,
-  contractFixtureId: NonEmptyString,
-  argv: NonEmptyArray(String4),
+class GraphCommandCheck extends TaggedClass()("GraphCommandCheck", {
+  id: OperationId,
+  argv,
   cwd: SafeRelativePath,
-  environmentNames: ArraySchema(NonEmptyString)
-}) {
-}
-
-class HttpRead extends TaggedClass()("HttpRead", {
-  ...row,
-  method: Literals(["GET", "HEAD"]),
-  wire: WireContract,
-  credential: optionalKey2(ReadCredential)
-}) {
-}
-
-class ReviewedNoteTransform extends TaggedClass()("ReviewedNoteTransform", {
-  ...row,
-  profileId: Literal2("changelog.reviewed-transform/v1"),
-  policyDigest: NonEmptyString,
-  maximumOutputBytes: Number5,
-  credential: ReadCredential,
-  contractFixtureId: Literal2("contract.changelog.reviewed-transform/v1")
-}) {
-}
-
-class HttpPublish extends TaggedClass()("HttpPublish", {
-  ...row,
-  method: Literals(["POST", "PUT", "PATCH", "DELETE"]),
-  wire: WireContract,
-  credential: PublishCredential
-}) {
-}
-
-class ForgeRelease extends TaggedClass()("ForgeRelease", {
-  ...row,
-  repository: String4.check(makeFilter2((value2) => /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value2) ? undefined : "Repository must be owner/name.")),
-  tag: NonEmptyString,
-  title: NonEmptyString,
-  draft: Boolean3,
-  prerelease: Boolean3,
-  assets: ArraySchema(Struct({
-    outputId: OutputId,
-    path: SafeRelativePath,
-    name: NonEmptyString,
-    contentType: NonEmptyString
-  })),
-  credential: PublishCredential,
-  readCredential: optionalKey2(ReadCredential),
-  contractFixtureId: NonEmptyString
-}) {
-}
-
-class PackageRegistryRelease extends TaggedClass()("PackageRegistryRelease", {
-  ...row,
-  registryKind: Literals(["npm", "pypi"]),
-  packageName: NonEmptyString,
-  version: NonEmptyString,
-  registryUrl: NonEmptyString,
-  packagePath: SafeRelativePath,
-  artifactPaths: ArraySchema(SafeRelativePath),
-  clientExecutable: NonEmptyString,
-  publishArgv: NonEmptyArray(String4),
-  probeUrl: NonEmptyString,
-  trustedPublishing: Boolean3,
-  trustedProvider: optionalKey2(Literal2("github-actions")),
-  trustedWorkflow: optionalKey2(NonEmptyString),
-  verifyPackageExists: Boolean3,
-  verifyPublished: Boolean3,
-  access: optionalKey2(Literals(["public", "restricted"])),
-  provenance: optionalKey2(Boolean3),
   environmentNames: ArraySchema(NonEmptyString),
-  credential: PublishCredential,
-  readCredential: optionalKey2(ReadCredential),
-  contractFixtureId: NonEmptyString
-}) {
-}
-var BuildOp = Union2([Check, Write, Exec]);
-var ProcessOp = Union2([Check, Write, Pack, DigestOp, Exec]);
-var CatalogOp = Union2([Check, Write, Exec]);
-var ValidateOp = Union2([Check, Exec, HttpRead, ReviewedNoteTransform]);
-var PublishOp = Union2([
-  Exec,
-  HttpPublish,
-  ForgeRelease,
-  PackageRegistryRelease
-]);
-var AnnounceOp = Union2([HttpPublish]);
-var VerifyOp = Union2([Check, HttpRead]);
-var Operation = Union2([
-  Check,
-  Write,
-  Pack,
-  DigestOp,
-  Exec,
-  HttpRead,
-  ReviewedNoteTransform,
-  HttpPublish,
-  ForgeRelease,
-  PackageRegistryRelease
-]);
-var isRemotePublish = (operation) => operationAuthority(operation) === "RemotePublish";
-var operationAuthority = (operation) => {
-  switch (operation._tag) {
-    case "Check":
-      return "LocalRead";
-    case "Write":
-    case "Pack":
-    case "Digest":
-      return "LocalWrite";
-    case "Exec":
-      return "LocalExec";
-    case "HttpRead":
-    case "ReviewedNoteTransform":
-      return "RemoteRead";
-    case "HttpPublish":
-    case "ForgeRelease":
-    case "PackageRegistryRelease":
-      return "RemotePublish";
-  }
-};
-
-// ../../src/model/plan.ts
-class ReleaseIdentityV6 extends Class4("ReleaseIdentityV6")({
-  name: NonEmptyName,
-  version: Version,
-  tag: NonEmptyName,
-  commit: NonEmptyName,
-  snapshot: Boolean3
+  inputs: ArraySchema(OutputId),
+  sourceCommit: NonEmptyName
 }) {
 }
 
-class Annotation extends Class4("Annotation")({
-  key: NonEmptyString,
-  value: String4
+class GraphCommandArtifact extends TaggedClass()("GraphCommandArtifact", {
+  id: OperationId,
+  argv,
+  cwd: SafeRelativePath,
+  environmentNames: ArraySchema(NonEmptyString),
+  inputs: ArraySchema(OutputId),
+  outputs: NonEmptyArray(OutputDeclaration),
+  sourceCommit: NonEmptyName
 }) {
 }
 
-class ReleaseStages extends Class4("ReleaseStages")({
-  build: ArraySchema(BuildOp),
-  process: ArraySchema(ProcessOp),
-  catalog: ArraySchema(CatalogOp),
-  validate: ArraySchema(ValidateOp),
-  publish: ArraySchema(PublishOp),
-  announce: ArraySchema(AnnounceOp),
-  verify: ArraySchema(VerifyOp)
+class GraphArchive extends TaggedClass()("GraphArchive", {
+  id: OperationId,
+  inputs: ArraySchema(OutputId),
+  output: OutputDeclaration,
+  format: Literals(["tar.gz", "zip"]),
+  files: optional6(NonEmptyArray(String4))
 }) {
 }
 
-class ReleasePlanV6 extends Class4("ReleasePlanV6")({
-  schemaVersion: Literal2("release-plan/v6"),
-  identity: ReleaseIdentityV6,
-  stages: ReleaseStages,
-  annotations: ArraySchema(Annotation)
-}) {
-}
-
-// ../../src/model/secret-patterns.ts
-var secretPatterns = [
-  /ghp_[A-Za-z0-9]{20,}/u,
-  /gho_[A-Za-z0-9]{20,}/u,
-  /github_pat_[A-Za-z0-9_]{20,}/u,
-  /xox[abps]-[A-Za-z0-9-]{10,}/u,
-  /AKIA[0-9A-Z]{16}/u,
-  /npm_[A-Za-z0-9]{30,}/u,
-  /-----BEGIN [A-Z ]*PRIVATE KEY/u
-];
-
-// ../../src/model/validate.ts
-var stageOrder = [
-  "build",
-  "process",
-  "catalog",
-  "validate",
-  "publish",
-  "announce",
-  "verify"
-];
-var operationEntries = (plan) => stageOrder.flatMap((stage) => plan.stages[stage].map((operation) => ({ stage, operation })));
-var duplicate = (values, kind) => {
-  const seen = new Set;
-  for (const value2 of values) {
-    if (seen.has(value2))
-      return DuplicatePlanValueError.make({ kind, value: value2 });
-    seen.add(value2);
-  }
-  return;
-};
-var secretLike = (plan) => {
-  const text = encodeCanonicalJson(encodeSync2(ReleasePlanV6)(plan));
-  return secretPatterns.some((pattern) => pattern.test(text)) ? SecretLikePlanValueError.make({ field: "durable-plan" }) : undefined;
-};
-var credentialFailure = (entries) => {
-  const read = new Set;
-  const publish = new Set;
-  for (const { operation } of entries) {
-    if (operation._tag === "ReviewedNoteTransform")
-      read.add(operation.credential.name);
-    else if (operation._tag === "HttpRead" && operation.credential !== undefined)
-      read.add(operation.credential.name);
-    if (isRemotePublish(operation))
-      publish.add(operation.credential.name);
-  }
-  const dual2 = [...read].find((name) => publish.has(name));
-  return dual2 === undefined ? undefined : CredentialConfinementError.make({
-    credential: dual2,
-    reason: "One credential name cannot occupy read and publish slots."
-  });
-};
-var validatePlan = (plan) => {
-  const entries = operationEntries(plan);
-  const operationDuplicate = duplicate(entries.map(({ operation }) => operation.id), "operation-id");
-  if (operationDuplicate !== undefined)
-    return fail2(operationDuplicate);
-  const declarations = entries.flatMap(({ operation }) => operation.outputs);
-  const outputDuplicate = duplicate(declarations.map((output) => output.id), "output-id");
-  if (outputDuplicate !== undefined)
-    return fail2(outputDuplicate);
-  const pathDuplicate = duplicate(declarations.map((output) => output.path), "output-path");
-  if (pathDuplicate !== undefined)
-    return fail2(pathDuplicate);
-  const credential = credentialFailure(entries);
-  if (credential !== undefined)
-    return fail2(credential);
-  const secret = secretLike(plan);
-  if (secret !== undefined)
-    return fail2(secret);
-  const producer = new Map;
-  const outputs = [];
-  const dependencies = [];
-  for (const { operation, stage } of entries) {
-    for (const input of operation.inputs) {
-      const prior = producer.get(input);
-      if (prior === undefined) {
-        return fail2(OutputReferenceError.make({
-          operationId: operation.id,
-          outputId: input,
-          reason: "Output reference is missing, same-operation, or forward."
-        }));
-      }
-      dependencies.push({ operationId: operation.id, inputId: input, producerId: prior.id });
-    }
-    for (const output of operation.outputs) {
-      producer.set(output.id, { id: operation.id, stage });
-      outputs.push({ output, producerId: operation.id, stage });
-    }
-  }
-  const operationHashes = entries.map(({ operation }) => ({
-    operationId: operation.id,
-    hash: hashCanonical("ts-release/operation/v1", encodeSync2(Operation)(operation))
-  }));
-  return succeed2({ entries, outputs, dependencies, operationHashes });
-};
-
-// ../../src/model/permit.ts
-var fail7 = (reason) => {
-  throw ApprovalError.make({ reason });
-};
-
-class ExecutionPermit {
-  receipt;
-  constructor(receipt) {
-    this.receipt = receipt;
-  }
-  static from(receipt, runId, reviewId = receipt.reviewId) {
-    if (receipt.runId !== runId || receipt.reviewId !== reviewId)
-      fail7("Execution receipt cannot authorize this review or another run.");
-    return new ExecutionPermit(receipt);
-  }
-}
-
-class PublishPermit {
-  receipt;
-  constructor(receipt) {
-    this.receipt = receipt;
-  }
-  static from(receipt, execution, reviewId) {
-    if (receipt.executionReceiptId !== execution.receipt.receiptId || receipt.reviewId !== reviewId || receipt.runId !== execution.receipt.runId || receipt.logicalRunId !== execution.receipt.logicalRunId || receipt.topologyHash !== execution.receipt.topologyHash)
-      fail7("Publish receipt cannot authorize this material or execution.");
-    return new PublishPermit(receipt);
-  }
-}
-
-// ../../src/apply/approval.ts
-var fail8 = (reason) => {
-  throw ApprovalError.make({ reason });
-};
-var checked = (body) => try_2({
-  try: body,
-  catch: (cause) => cause instanceof ApprovalError ? cause : ApprovalError.make({ reason: String(cause) })
-});
-var selected = (accepted, scope2) => {
-  const ids = new Set(scope2.operationIds.map(String));
-  return accepted.operationHashes.filter(({ operationId }) => ids.has(operationId));
-};
-var deriveLogicalRunId = (accepted, scope2, topologyHash, nonce) => LogicalRunId.make(hashCanonical("ts-release/logical-run/v1", {
-  planId: accepted.planId,
-  operationIds: [...scope2.operationIds].map(String).sort(),
-  topologyHash,
-  ...nonce === undefined ? {} : { nonce }
-}));
-var executionReviewId = (accepted, scope2, topologyHash) => {
-  const operations = selected(accepted, scope2);
-  const ids = new Set(operations.map(({ operationId }) => operationId));
-  const trustedExecReviewSet = operationEntries(accepted.plan).filter(({ operation }) => ids.has(operation.id) && operation._tag === "Exec").map(({ operation }) => operation.id).sort();
-  const dependencyClosure = accepted.dependencies.filter((edge) => ids.has(edge.operationId)).map((edge) => edge.producerId).filter((id, index, all3) => all3.indexOf(id) === index).sort();
-  return ExecutionReviewId.make(hashCanonical("ts-release/execution-review/v1", {
-    planId: accepted.planId,
-    scopeOperationIdsAndHashes: operations,
-    dependencyClosure,
-    trustedExecReviewSet,
-    executionTopologyHash: topologyHash
-  }));
-};
-var mintExecutionReceipt = (accepted, scope2, topologyHash, confirmation) => {
-  const reviewId = executionReviewId(accepted, scope2, topologyHash);
-  if (confirmation.reviewId !== reviewId)
-    fail8("Execution confirmation does not match review.");
-  if (confirmation.reviewer.length === 0 || confirmation.approvedAt.length === 0)
-    fail8("Execution confirmation lacks reviewer or time.");
-  const logicalRunId = confirmation.logicalRunId ?? deriveLogicalRunId(accepted, scope2, topologyHash, confirmation.newRunReason === undefined ? undefined : confirmation.approvalNonce);
-  const body = {
-    reviewId,
-    runId: confirmation.runId,
-    logicalRunId,
-    reviewer: confirmation.reviewer,
-    approvalNonce: confirmation.approvalNonce,
-    approvedAt: confirmation.approvedAt,
-    topologyHash,
-    ...confirmation.newRunReason === undefined ? {} : { newRunReason: confirmation.newRunReason }
-  };
-  return ExecutionApprovalReceipt.make({
-    ...body,
-    receiptId: ReceiptId.make(hashCanonical("ts-release/execution-receipt/v1", body))
-  });
-};
-var publishReviewId = (accepted, executionReview, scope2, materials) => {
-  const publishIds = new Set(operationEntries(accepted.plan).filter(({ operation }) => isRemotePublish(operation)).map(({ operation }) => String(operation.id)));
-  const operations = selected(accepted, scope2).filter(({ operationId }) => publishIds.has(operationId));
-  const facts = materials.map((item) => ({
-    outputId: item.outputId,
-    snapshotId: item.snapshotId,
-    digest: item.digest,
-    size: item.size
-  })).sort((left, right) => String(left.outputId).localeCompare(String(right.outputId)));
-  return PublishReviewId.make(hashCanonical("ts-release/publish-review/v1", {
-    executionReviewId: executionReview,
-    sortedPublishInputFacts: facts,
-    selectedPublishOperationIdsAndHashes: operations
-  }));
-};
-var mintPublishReceipt = (receipt, expectedReviewId, confirmation) => {
-  if (confirmation.reviewId !== expectedReviewId)
-    fail8("Publish confirmation does not match bytes.");
-  if (confirmation.reviewer === "" || confirmation.approvedAt === "")
-    fail8("Publish confirmation lacks identity.");
-  const body = {
-    reviewId: expectedReviewId,
-    executionReceiptId: receipt.receiptId,
-    runId: receipt.runId,
-    logicalRunId: receipt.logicalRunId,
-    reviewer: confirmation.reviewer,
-    approvalNonce: confirmation.approvalNonce,
-    approvedAt: confirmation.approvedAt,
-    topologyHash: receipt.topologyHash
-  };
-  return PublishApprovalReceipt.make({
-    ...body,
-    receiptId: ReceiptId.make(hashCanonical("ts-release/publish-receipt/v1", body))
-  });
-};
-
-class ApprovalSigner extends Service()("ApprovalSigner") {
-}
-var LocalApprovalSignerLayer = succeed5(ApprovalSigner)({
-  execution: (receipt, runId, reviewId) => checked(() => {
-    const { receiptId, ...body } = receipt;
-    if (receiptId !== hashCanonical("ts-release/execution-receipt/v1", body))
-      fail8("Execution receipt identity is invalid.");
-    return ExecutionPermit.from(receipt, runId, reviewId);
-  }),
-  publish: (receipt, execution, reviewId) => checked(() => {
-    const { receiptId, ...body } = receipt;
-    if (receiptId !== hashCanonical("ts-release/publish-receipt/v1", body))
-      fail8("Publish receipt identity is invalid.");
-    return PublishPermit.from(receipt, execution, reviewId);
-  })
-});
-var reconciliationKey = (planId, logicalRunId, scope2, topologyHash, operationHash, checkpointId, target, materials) => hashCanonical("ts-release/reconciliation/v1", {
-  planId,
-  logicalRunId,
-  operationIds: [...scope2.operationIds].map(String).sort(),
-  topologyHash,
-  operationHash,
-  checkpointId,
-  target,
-  materials: materials.map((item) => [item.outputId, item.digest, item.size])
-});
-
-// ../../src/recipes/config.ts
-var optional2 = optionalKey2;
-var nonempty = NonEmptyString;
-var target = Literals([
-  "linux-x64",
-  "linux-arm64",
-  "linux-x64-musl",
-  "linux-arm64-musl",
-  "darwin-x64",
-  "darwin-arm64",
-  "windows-x64",
-  "windows-arm64"
-]);
-var os5 = Literals(["linux", "darwin", "windows"]);
-var arch2 = Literals(["x64", "arm64"]);
-
-class CandidateProject extends Class4("CandidateProject")({
-  name: NonEmptyName,
-  packageName: optional2(nonempty),
-  version: Version,
-  repository: optional2(nonempty),
-  packagePath: optional2(SafeRelativePath),
-  commit: optional2(nonempty),
-  tag: NonEmptyName,
-  notes: optional2(String4),
-  description: optional2(nonempty),
-  summary: optional2(nonempty),
-  homepage: optional2(nonempty),
-  license: optional2(nonempty)
-}) {
-}
-
-class CandidatePlatform extends Class4("CandidatePlatform")({
-  os: os5,
-  arch: arch2,
-  libc: optional2(Literals(["glibc", "musl"])),
-  binaryName: optional2(nonempty),
-  executableExtension: optional2(nonempty),
-  installPath: optional2(nonempty),
-  targetTriple: optional2(nonempty)
-}) {
-}
-
-class CandidateArtifact extends Class4("CandidateArtifact")({
-  id: OutputId,
-  path: SafeRelativePath,
-  format: Literals(["tarball", "zip", "file", "directory", "executable", "binary"]),
-  checksum: optional2(Struct({
-    algorithm: Literals(["sha256", "sha512"]),
-    value: String4
-  })),
-  variant: optional2(CandidatePlatform)
-}) {
-}
-var checksumName = SafeRelativePath.check(makeFilter2((value2) => {
-  const literal = value2.replaceAll("{version}", "").replaceAll("{name}", "");
-  return literal.includes("{") || literal.includes("}") ? "Checksum name supports only the {name} and {version} tokens." : undefined;
-}));
-
-class CandidateChecksum extends Class4("CandidateChecksum")({
-  algorithm: optional2(Literals(["sha256", "sha512"])),
-  nameTemplate: optional2(checksumName)
-}) {
-}
-var build = {
-  id: optional2(String4),
-  targets: ArraySchema(target),
-  output: optional2(SafeRelativePath),
-  binary: optional2(String4)
-};
-
-class CandidateBunBuild extends Class4("CandidateBunBuild")({
-  ...build,
-  builder: Literal2("bun"),
-  entry: SafeRelativePath,
-  binaryName: optional2(String4),
-  installPath: optional2(String4),
-  cpu: optional2(Literals(["baseline", "modern"])),
-  minify: optional2(Boolean3)
-}) {
-}
-
-class CandidateCommandBuild extends Class4("CandidateCommandBuild")({
-  ...build,
-  builder: Literal2("command"),
-  output: SafeRelativePath,
-  run: NonEmptyArray(String4)
-}) {
-}
-
-class CandidatePrebuiltBuild extends Class4("CandidatePrebuiltBuild")({
-  ...build,
-  builder: Literal2("prebuilt"),
-  output: SafeRelativePath
-}) {
-}
-var CandidateBuild = Union2([
-  CandidateBunBuild,
-  CandidateCommandBuild,
-  CandidatePrebuiltBuild
-]);
-
-class CandidateArchive extends Class4("CandidateArchive")({
-  id: optional2(nonempty),
-  ids: optional2(ArraySchema(nonempty)),
-  nameTemplate: optional2(nonempty),
-  formats: optional2(ArraySchema(Literals(["tar.gz", "zip"]))),
-  files: optional2(NonEmptyArray(SafeArchivePattern)),
-  wrapInDirectory: optional2(Union2([Boolean3, String4]))
-}) {
-}
-var preparationBase = {
-  id: NonEmptyName,
-  run: NonEmptyArray(String4),
-  cwd: optional2(SafeRelativePath),
-  environmentNames: optional2(ArraySchema(nonempty)),
-  inputs: optional2(ArraySchema(OutputId))
-};
-
-class CandidateCheckPreparation extends Class4("CandidateCheckPreparation")({
-  kind: Literal2("check"),
-  ...preparationBase
-}) {
-}
-
-class CandidateArtifactPreparation extends Class4("CandidateArtifactPreparation")({
-  kind: Literal2("artifact"),
-  ...preparationBase,
-  outputs: NonEmptyArray(Struct({
-    id: OutputId,
-    path: SafeRelativePath,
-    mediaType: optional2(nonempty)
-  }))
-}) {
-}
-var CandidatePreparation = Union2([
-  CandidateCheckPreparation,
-  CandidateArtifactPreparation
-]);
-
-class CandidateContentHole extends Class4("CandidateContentHole")({
-  fact: Literals(["sha256", "downloadUrl", "assetName"]),
-  artifact: OutputId
-}) {
-}
-
-class CandidateCatalog extends Class4("CandidateCatalog")({
-  id: nonempty,
-  repository: String4,
-  file: SafeRelativePath,
-  content: Union2([
-    String4,
-    ArraySchema(Union2([String4, CandidateContentHole]))
-  ])
-}) {
-}
-var trusted = {
-  provider: optional2(Literal2("github-actions")),
-  workflow: optional2(nonempty)
-};
-
-class CandidateNpmPublish extends Class4("CandidateNpmPublish")({
-  registry: optional2(String4),
-  packageName: optional2(nonempty),
-  packagePath: optional2(SafeRelativePath),
-  tokenEnv: optional2(String4),
-  trustedPublishing: optional2(Struct({
-    ...trusted,
-    verifyPackageExists: optional2(Boolean3)
-  })),
-  access: optional2(Literals(["public", "restricted"])),
-  provenance: optional2(Boolean3)
-}) {
-}
-
-class CandidatePyPiPublish extends Class4("CandidatePyPiPublish")({
-  repositoryUrl: optional2(String4),
-  pythonExecutable: optional2(String4),
-  trustedPublishing: optional2(Struct({
-    ...trusted,
-    publisherConfigured: optional2(Literal2(true))
-  })),
-  ids: optional2(NonEmptyArray(OutputId))
-}) {
-}
-
-class CandidateGitHubPublish extends Class4("CandidateGitHubPublish")({
-  repository: optional2(String4),
-  tokenEnv: optional2(String4),
-  draft: optional2(Boolean3),
-  prerelease: optional2(Union2([Boolean3, Literal2("auto")])),
-  bodyArtifact: optional2(OutputId)
-}) {
-}
-var catalogPreset = {
-  repository: String4,
-  ids: optional2(NonEmptyArray(OutputId)),
-  url: optional2(String4),
-  formulaName: optional2(String4),
-  manifestName: optional2(String4),
-  formulaPath: optional2(SafeRelativePath),
-  manifestPath: optional2(SafeRelativePath),
-  installPath: optional2(String4),
-  bin: optional2(Union2([String4, ArraySchema(String4)]))
-};
-
-class CandidateHomebrew extends Class4("CandidateHomebrew")(catalogPreset) {
-}
-
-class CandidateScoop extends Class4("CandidateScoop")(catalogPreset) {
-}
-
-class CandidatePublish extends Class4("CandidatePublish")({
-  npm: optional2(CandidateNpmPublish),
-  github: optional2(CandidateGitHubPublish),
-  homebrew: optional2(CandidateHomebrew),
-  scoop: optional2(CandidateScoop),
-  pypi: optional2(CandidatePyPiPublish)
-}) {
-}
-
-class CandidateConfig extends Class4("CandidateConfig")({
-  $schema: optional2(String4),
-  project: CandidateProject,
-  builds: optional2(ArraySchema(CandidateBuild)),
-  preparations: optional2(ArraySchema(CandidatePreparation)),
-  npmPackage: optional2(Struct({ path: optional2(SafeRelativePath) })),
-  artifacts: optional2(ArraySchema(CandidateArtifact)),
-  archives: optional2(ArraySchema(CandidateArchive)),
-  checksum: optional2(CandidateChecksum),
-  catalogs: optional2(ArraySchema(CandidateCatalog)),
-  publish: optional2(CandidatePublish)
-}) {
-}
-
-// ../../src/config/config.ts
-var jsonFailure = (value2, parents) => {
-  if (value2 === null || typeof value2 === "boolean" || typeof value2 === "string")
-    return;
-  if (typeof value2 === "number") {
-    return Number.isSafeInteger(value2) && !Object.is(value2, -0) ? undefined : "invalid number";
-  }
-  if (typeof value2 !== "object")
-    return `invalid ${typeof value2}`;
-  if (parents.has(value2))
-    return "cyclic value";
-  if (!Array.isArray(value2) && Object.getPrototypeOf(value2) !== Object.prototype) {
-    return "non-plain object";
-  }
-  parents.add(value2);
-  const items = Array.isArray(value2) ? value2 : Object.values(value2);
-  if (Array.isArray(value2) && items.length !== Object.keys(value2).length)
-    return "sparse array";
-  for (const item of items) {
-    const failure = jsonFailure(item, parents);
-    if (failure !== undefined)
-      return failure;
-  }
-  parents.delete(value2);
-  return;
-};
-var decodeConfig = fn2("decodeConfig")(function* (input) {
-  if (typeof input === "string") {
-    return yield* ConfigValueError.make({ reason: "Core config must be a value, not text or path." });
-  }
-  const failure = jsonFailure(input, new Set);
-  if (failure !== undefined)
-    return yield* ConfigValueError.make({ reason: failure });
-  const value2 = typeof input === "object" && input !== null && !Array.isArray(input) ? input : {};
-  const catalog = value2.catalogs?.find((entry) => ["directory", "submit", "commitMessage", "validate"].some((key) => (key in entry)));
-  if (catalog !== undefined) {
-    return yield* ConfigValueError.make({
-      reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
-    });
-  }
-  const publication = value2;
-  const catalogPreset2 = ["homebrew", "scoop"].map((key) => publication.publish?.[key]).find((entry) => typeof entry === "object" && entry !== null && ["submit", "validate", "tapDirectory", "bucketDirectory"].some((key) => (key in entry)));
-  if (catalogPreset2 !== undefined) {
-    return yield* ConfigValueError.make({
-      reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
-    });
-  }
-  return yield* decodeUnknownEffect2(CandidateConfig, {
-    onExcessProperty: "error"
-  })(input).pipe(mapError3((error2) => ConfigDecodeError.make({ reason: error2.message })));
-});
-
-// ../../src/recipes/current-shared.ts
-var emptyLegacyRows = () => ({
-  build: [],
-  process: [],
-  catalog: [],
-  validate: [],
-  publish: [],
-  announce: [],
-  verify: [],
-  outputs: new Map
-});
-var operationId = (value2) => OperationId.make(value2);
-var outputId = (value2) => OutputId.make(value2);
-var path = (value2) => SafeRelativePath.make(value2);
-var credentialName = (value2) => CredentialName.make(value2);
-var compactName = (value2) => value2.replace(/^@/u, "").replaceAll("/", "-").replace(/[^A-Za-z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
-var basename = (value2) => value2.replaceAll("\\", "/").split("/").at(-1) ?? value2;
-var render = (template, config, target2, binary) => {
-  const [os6 = "", arch3 = ""] = target2?.split("-") ?? [];
-  return template.replaceAll("{name}", compactName(config.project.name)).replaceAll("{version}", config.project.version).replaceAll("{tag}", config.project.tag).replaceAll("{targetTriple}", target2 ?? "").replaceAll("{target}", target2 ?? "").replaceAll("{os}", os6).replaceAll("{arch}", arch3).replaceAll("{binary}", binary ?? compactName(config.project.name)).replaceAll("{ext}", os6 === "windows" ? ".exe" : "");
-};
-var targetPlatform = (target2, binary, compile) => {
-  const [os6, arch3, libcToken] = target2.split("-");
-  if (!["linux", "darwin", "windows"].includes(os6 ?? "") || !["x64", "arm64"].includes(arch3 ?? "")) {
-    throw ConfigValueError.make({ reason: `Unsupported platform target ${target2}.` });
-  }
-  return {
-    os: os6,
-    arch: arch3,
-    ...os6 === "linux" ? { libc: libcToken === "musl" ? "musl" : "glibc" } : {},
-    binaryName: binary,
-    targetTriple: compile ? `bun-${target2}` : target2
-  };
-};
-var recordOutput = (rows, output) => {
-  if (rows.outputs.has(output.id))
-    throw ConfigValueError.make({ reason: `Duplicate output id ${output.id}.` });
-  return [{ ...rows, outputs: new Map([...rows.outputs, [output.id, output]]) }, output];
-};
-var selectedOutputs = (rows, ids, fallback) => ids === undefined ? [...rows.outputs.values()].filter(fallback) : ids.map((id) => {
-  const output = rows.outputs.get(id);
-  if (output === undefined)
-    throw ConfigValueError.make({ reason: `Missing selected output ${id}.` });
-  return output;
-});
-var command = (value2) => typeof value2 === "string" ? value2.trim().split(/\s+/u).filter(Boolean) : value2;
-var nonEmptyCommand = (value2) => {
-  const [first, ...rest] = value2;
-  if (first === undefined || first.length === 0)
-    throw ConfigValueError.make({ reason: "Command argv must be nonempty." });
-  return [first, ...rest];
-};
-
-// ../../src/recipes/current-build.ts
-var importedKinds = {
-  tarball: "archive",
-  zip: "archive",
-  file: "file",
-  directory: "directory",
-  executable: "executable",
-  binary: "executable"
-};
-var declare2 = (rows, id, location2, kind, provenance, platform2) => recordOutput(rows, OutputDeclaration.make({
-  id: outputId(id),
-  path: path(location2),
-  kind,
-  provenance,
-  ...platform2 === undefined ? {} : { platform: platform2 }
-}));
-var check = (id, declared, description, inputs = false) => Check.make({
-  id: operationId(id),
-  inputs: inputs ? [declared.id] : [],
-  outputs: inputs ? [] : [declared],
-  description,
-  path: declared.path
-});
-var lowerBuildTarget = (config, rows, build2, target2) => {
-  const binary = build2.binary ?? compactName(config.project.name);
-  const outputBinary = build2.builder === "bun" ? build2.binaryName ?? binary : binary;
-  const id = `${build2.id ?? (build2.builder === "command" ? "command" : build2.builder)}-${target2}`;
-  const fallback = `.release/artifacts/${binary}-${config.project.version}-${target2}${target2.startsWith("windows-") ? ".exe" : ""}`;
-  const location2 = render(build2.output ?? fallback, config, target2, binary);
-  let [next, declared] = declare2(rows, id, location2, "executable", "build", targetPlatform(target2, outputBinary, build2.builder === "bun"));
-  if (build2.builder === "prebuilt")
-    return {
-      ...next,
-      build: [...next.build, check(`build:prebuilt:${id}:exists`, declared, `Verify prebuilt artifact exists for ${target2}.`)]
-    };
-  const argv = build2.builder === "command" ? command(build2.run).map((part) => render(part, config, target2, binary)) : [
-    "bun",
-    "build",
-    render(build2.entry, config, target2, binary),
-    "--compile",
-    "--target",
-    `bun-${target2}${build2.cpu === undefined ? "" : `-${build2.cpu}`}`,
-    "--outfile",
-    location2,
-    ...build2.minify === true ? ["--minify"] : []
-  ];
-  next = { ...next, build: [...next.build, Exec.make({
-    id: operationId(`build:${build2.builder}:${id}`),
-    inputs: [],
-    outputs: [declared],
-    description: build2.builder === "command" ? `Run configured build command for ${target2}.` : `Compile ${binary} for ${target2} with Bun.`,
-    contractFixtureId: build2.builder === "command" ? "build.command/v1" : "build.bun-compile/v1",
-    argv: nonEmptyCommand(argv),
-    cwd: path("."),
-    environmentNames: []
-  })] };
-  return build2.builder === "command" ? { ...next, build: [...next.build, check(`build:command:${id}:exists`, declared, `Verify command build output exists for ${target2}.`, true)] } : next;
-};
-var lowerBuilds = (config, rows) => {
-  let next = rows;
-  for (const build2 of config.builds ?? []) {
-    for (const target2 of build2.targets)
-      next = lowerBuildTarget(config, next, build2, target2);
-  }
-  return next;
-};
-var lowerNpm = (config, rows) => {
-  if (config.npmPackage === undefined)
-    return rows;
-  const [next, declared] = declare2(rows, "npm-package", config.npmPackage.path ?? ".", "package", "build");
-  return { ...next, build: [...next.build, check("declare:npm-package", declared, "Declare npm package directory.")] };
-};
-var lowerImports = (config, rows) => {
-  let next = rows;
-  for (const artifact of config.artifacts ?? []) {
-    let declared;
-    [next, declared] = declare2(next, artifact.id, render(artifact.path, config), importedKinds[artifact.format], "import", artifact.variant);
-    next = { ...next, build: [...next.build, check(`import-artifacts:${artifact.id}:exists`, declared, `Verify imported artifact ${artifact.id} exists.`)] };
-  }
-  return next;
-};
-var lowerArchives = (config, rows) => {
-  let next = rows;
-  for (const archive of config.archives ?? []) {
-    const selected2 = selectedOutputs(next, archive.ids, () => true);
-    const formats = archive.formats ?? ["tar.gz"];
-    for (const format2 of formats) {
-      const base = render(archive.nameTemplate ?? `${compactName(config.project.name)}_{version}`, config);
-      const id = `${archive.id ?? "archive"}${formats.length > 1 ? `-${format2.replaceAll(".", "-")}` : ""}`;
-      let declared;
-      [next, declared] = declare2(next, id, `.release/artifacts/${base}.${format2}`, "archive", "process");
-      next = { ...next, process: [...next.process, Pack.make({
-        id: operationId(`archive:${id}`),
-        inputs: selected2.map((item) => item.id),
-        outputs: [declared],
-        description: `Create ${format2} archive ${basename(declared.path)}.`,
-        format: format2,
-        ...archive.files === undefined ? {} : { files: archive.files }
-      })] };
-    }
-  }
-  return next;
-};
-var lowerChecksum = (config, rows) => {
-  if (config.checksum === undefined)
-    return rows;
-  const inputs = [...rows.outputs.values()].filter((item) => !["directory", "package", "digest", "checksum-file", "catalog-file"].includes(item.kind)).sort((left, right) => basename(left.path).localeCompare(basename(right.path)));
-  const algorithm = config.checksum.algorithm ?? "sha256";
-  let [next, digest] = declare2(rows, "checksum-digests", `.release/facts/checksum-${algorithm}`, "digest", "internal");
-  next = { ...next, process: [...next.process, DigestOp.make({
-    id: operationId("checksum:digest"),
-    inputs: inputs.map((item) => item.id),
-    outputs: [digest],
-    description: `Compute ${algorithm} release digests.`,
-    algorithm
-  })] };
-  const fileName = render(config.checksum.nameTemplate ?? "{name}_{version}_checksums.txt", config);
-  let declared;
-  [next, declared] = declare2(next, "checksum", `.release/artifacts/${fileName}`, "checksum-file", "process");
-  next = { ...next, process: [...next.process, Write.make({
-    id: operationId("checksum:write"),
-    inputs: [digest.id],
-    outputs: [declared],
-    description: `Write ${algorithm} checksum file ${fileName}.`,
-    path: declared.path,
-    content: inputs.flatMap((item) => [
-      ContentHole.make({ fact: "sha256", outputId: item.id }),
-      `  ${basename(item.path)}
-`
-    ])
-  })] };
-  return next;
-};
-var lowerLegacyBuild = (config, rows) => {
-  let next = lowerImports(config, rows);
-  next = lowerBuilds(config, next);
-  next = lowerNpm(config, next);
-  next = lowerArchives(config, next);
-  return lowerChecksum(config, next);
-};
-
-// ../../src/recipes/current-catalog.ts
-var className = (value2) => value2.split(/[^A-Za-z0-9]+/u).filter(Boolean).map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("") || "GeneratedFormula";
-var downloadUrl = (config, output, explicit) => {
-  if (explicit !== undefined)
-    return explicit;
-  const repository = config.publish?.github?.repository ?? config.project.repository;
-  if (repository === undefined) {
-    throw ConfigValueError.make({
-      reason: "Catalog download URLs need publish.github.repository, project.repository, or an explicit url."
-    });
-  }
-  return `https://github.com/${repository}/releases/download/${config.project.tag}/${basename(output.path)}`;
-};
-var formulaTail = (name, installPath) => [
-  "",
-  "  def install",
-  installPath === undefined ? `    bin.install Dir["*"].find { |path| File.file?(path) } => ${JSON.stringify(name)}` : `    bin.install ${JSON.stringify(installPath)} => ${JSON.stringify(name)}`,
-  `    chmod 0755, bin/${JSON.stringify(name)}`,
-  "  end",
-  "",
-  "  test do",
-  `    assert File.exist?(bin/${JSON.stringify(name)})`,
-  `    assert File.executable?(bin/${JSON.stringify(name)})`,
-  "  end",
-  "end",
-  ""
-].join(`
-`);
-var formulaContent = (config, selected2, name, explicitUrl, installPath) => {
-  const common = [
-    `class ${className(name)} < Formula`,
-    `  desc ${JSON.stringify(config.project.description)}`,
-    `  homepage ${JSON.stringify(config.project.homepage)}`
-  ];
-  if (selected2.length === 1) {
-    const artifact = selected2[0];
-    return [
-      `${[
-        ...common,
-        `  url ${JSON.stringify(downloadUrl(config, artifact, explicitUrl))}`,
-        '  sha256 "'
-      ].join(`
-`)}`,
-      ContentHole.make({ fact: "sha256", outputId: artifact.id }),
-      `"
-  version ${JSON.stringify(config.project.version)}
-${formulaTail(name, installPath)}`
-    ];
-  }
-  return [
-    `${[
-      ...common,
-      `  version ${JSON.stringify(config.project.version)}`,
-      "",
-      "  on_macos do",
-      ""
-    ].join(`
-`)}`,
-    ...selected2.flatMap((artifact) => [
-      `${artifact.platform?.arch === "arm64" ? "    on_arm do" : "    on_intel do"}
-` + `      url ${JSON.stringify(downloadUrl(config, artifact, explicitUrl))}
-` + '      sha256 "',
-      ContentHole.make({ fact: "sha256", outputId: artifact.id }),
-      `"
-    end
-
-`
-    ]),
-    `  end
-${formulaTail(name, installPath)}`
-  ];
-};
-var homebrewRow = (config, rows) => {
-  const section = config.publish?.homebrew;
-  if (section === undefined)
-    return;
-  const name = section.formulaName ?? compactName(config.project.packageName ?? config.project.name);
-  const selected2 = selectedOutputs(rows, section.ids, (item) => item.kind === "executable" && item.platform?.os === "darwin");
-  if (selected2.length === 0 || config.project.description === undefined || config.project.homepage === undefined)
-    throw ConfigValueError.make({ reason: "Homebrew requires artifacts, project description, and homepage." });
-  return {
-    id: "homebrew",
-    repository: section.repository,
-    file: section.formulaPath ?? `.release/generated/${name}.rb`,
-    content: formulaContent(config, selected2, name, section.url, section.installPath),
-    inputs: selected2
-  };
-};
-var scoopRow = (config, rows) => {
-  const section = config.publish?.scoop;
-  if (section === undefined)
-    return;
-  const name = section.manifestName ?? compactName(config.project.packageName ?? config.project.name);
-  const selected2 = selectedOutputs(rows, section.ids, (item) => item.kind === "executable" && item.platform?.os === "windows");
-  if (selected2.length !== 1 || config.project.description === undefined || config.project.homepage === undefined)
-    throw ConfigValueError.make({ reason: "Scoop requires one artifact, project description, and homepage." });
-  const artifact = selected2[0];
-  const prefix = JSON.stringify({
-    version: config.project.version,
-    description: config.project.description,
-    homepage: config.project.homepage,
-    ...config.project.license === undefined ? {} : { license: config.project.license },
-    url: downloadUrl(config, artifact, section.url)
-  }, null, 2).slice(0, -2);
-  const bin = section.bin ?? (artifact.platform?.binaryName === undefined ? undefined : [[basename(artifact.path), artifact.platform.binaryName]]);
-  const suffix = bin === undefined ? `"
-}
-` : `",
-${JSON.stringify({ bin }, null, 2).slice(2, -2)}
-}
-`;
-  return {
-    id: "scoop",
-    repository: section.repository,
-    file: section.manifestPath ?? `.release/generated/${name}.json`,
-    content: [
-      `${prefix},
-  "hash": "`,
-      ContentHole.make({ fact: "sha256", outputId: artifact.id }),
-      suffix
-    ],
-    inputs: selected2
-  };
-};
-var requireOutput = (rows, catalogId, id) => {
-  const output = rows.outputs.get(id);
-  if (output === undefined) {
-    throw ConfigValueError.make({ reason: `Catalog ${catalogId} references missing output ${id}.` });
-  }
-  return output;
-};
-var genericRow = (config, rows, entry) => {
-  const content = typeof entry.content === "string" ? render(entry.content, config) : entry.content.map((part) => typeof part === "string" ? render(part, config) : part.fact === "downloadUrl" ? downloadUrl(config, requireOutput(rows, entry.id, part.artifact)) : ContentHole.make({ fact: part.fact, outputId: part.artifact }));
-  const ids = typeof content === "string" ? [] : content.flatMap((part) => typeof part === "string" ? [] : [part.outputId]);
-  return {
-    id: entry.id,
-    repository: entry.repository,
-    file: entry.file,
-    content,
-    inputs: ids.map((id) => requireOutput(rows, entry.id, id))
-  };
-};
-var lowerLegacyCatalogs = (config, rows) => {
-  const candidates = [
-    ...(config.catalogs ?? []).map((entry) => genericRow(config, rows, entry)),
-    homebrewRow(config, rows),
-    scoopRow(config, rows)
-  ].filter((row2) => row2 !== undefined);
-  let next = rows;
-  for (const row2 of candidates) {
-    const location2 = row2.file;
-    let declared;
-    [next, declared] = recordOutput(next, OutputDeclaration.make({
-      id: outputId(`catalog-file-${row2.id}`),
-      path: path(location2),
-      kind: "catalog-file",
-      provenance: "catalog"
-    }));
-    next = { ...next, catalog: [...next.catalog, Write.make({
-      id: operationId(`catalog:${row2.id}:render`),
-      inputs: row2.inputs.map((item) => item.id),
-      outputs: [declared],
-      description: `Render ${row2.id} catalog file ${location2}.`,
-      path: declared.path,
-      content: row2.content
-    })] };
-  }
-  return next;
-};
-
-// ../../src/recipes/current-publish.ts
-var publishCredential = (name) => PublishCredential.make({ name: credentialName(name) });
-var readCredential = (name) => ReadCredential.make({ name: credentialName(name) });
-var trusted2 = (value2) => value2 === undefined ? {} : {
-  trustedProvider: "github-actions",
-  trustedWorkflow: value2.workflow ?? "release.yml"
-};
-var normalizeProviderEndpoint = (value2) => {
-  const url = new URL(value2);
-  const host = url.hostname;
-  if (/(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/iu.test(value2) || url.protocol !== "https:" || url.username !== "" || url.password !== "" || url.search !== "" || url.hash !== "" || ["localhost", "::", "::1", "0.0.0.0"].includes(host) || ["127.", "169.254.", "224.", "255."].some((prefix) => host.startsWith(prefix)))
-    throw ConfigValueError.make({ reason: "Registry URL violates the closed HTTPS/DNS policy." });
-  return `${url.origin}${url.pathname.replace(/\/+$/u, "") || "/"}`;
-};
-var assertRegistryUrl = (value2) => {
-  normalizeProviderEndpoint(value2);
-  return value2;
-};
-var lowerNpm2 = (config, rows) => {
-  const section = config.publish?.npm;
-  if (section === undefined)
-    return;
-  const packageName = section.packageName ?? config.project.packageName ?? config.project.name;
-  const packagePath = section.packagePath ?? config.project.packagePath ?? ".";
-  const oidc = section.trustedPublishing !== undefined;
-  const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : [section.tokenEnv ?? "NPM_TOKEN"];
-  const packageOutput = rows.outputs.get("npm-package");
-  const registryUrl = assertRegistryUrl(section.registry ?? "https://registry.npmjs.org");
-  const publishArgv = [
-    "npm",
-    "publish",
-    packagePath,
-    "--registry",
-    registryUrl,
-    ...section.access === undefined ? [] : ["--access", section.access],
-    ...section.provenance === true ? ["--provenance"] : []
-  ];
-  return PackageRegistryRelease.make({
-    id: operationId("npm:npm-release"),
-    inputs: packageOutput === undefined ? [] : [packageOutput.id],
-    outputs: [],
-    description: `Publish ${packageName}@${config.project.version} to npm.`,
-    registryKind: "npm",
-    packageName,
-    version: config.project.version,
-    registryUrl,
-    packagePath: path(packagePath),
-    artifactPaths: [],
-    clientExecutable: "npm",
-    publishArgv,
-    probeUrl: `${registryUrl.replace(/\/+$/u, "")}/${encodeURIComponent(packageName)}/${config.project.version}`,
-    trustedPublishing: oidc,
-    ...trusted2(section.trustedPublishing),
-    verifyPackageExists: section.trustedPublishing?.verifyPackageExists === true,
-    verifyPublished: true,
-    ...section.access === undefined ? {} : { access: section.access },
-    ...section.provenance === undefined ? {} : { provenance: section.provenance },
-    environmentNames,
-    credential: publishCredential(environmentNames.at(-1)),
-    readCredential: readCredential("NPM_REGISTRY_READ"),
-    contractFixtureId: "registry.npm-publish/v1"
-  });
-};
-var lowerPyPi = (config, rows) => {
-  const section = config.publish?.pypi;
-  if (section === undefined)
-    return;
-  const artifacts = selectedOutputs(rows, section.ids, (item) => item.kind === "file");
-  if (artifacts.length === 0)
-    throw ConfigValueError.make({ reason: "PyPI requires imported distribution files." });
-  const oidc = section.trustedPublishing !== undefined;
-  const environmentNames = oidc ? ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"] : ["TWINE_USERNAME", "TWINE_PASSWORD"];
-  const registryUrl = assertRegistryUrl(section.repositoryUrl ?? "https://upload.pypi.org/legacy/");
-  const python = section.pythonExecutable ?? "python";
-  const artifactPaths = artifacts.map((item) => item.path);
-  return PackageRegistryRelease.make({
-    id: operationId("pypi:pypi-release"),
-    inputs: artifacts.map((item) => item.id),
-    outputs: [],
-    description: `Publish ${config.project.name}@${config.project.version} to PyPI-compatible registry.`,
-    registryKind: "pypi",
-    packageName: config.project.name,
-    version: config.project.version,
-    registryUrl,
-    packagePath: path("."),
-    artifactPaths,
-    clientExecutable: python,
-    publishArgv: [
-      python,
-      "-m",
-      "twine",
-      "upload",
-      "--non-interactive",
-      "--repository-url",
-      registryUrl,
-      ...artifactPaths
-    ],
-    probeUrl: `https://pypi.org/pypi/${encodeURIComponent(config.project.name)}/${encodeURIComponent(config.project.version)}/json`,
-    trustedPublishing: oidc,
-    ...trusted2(section.trustedPublishing),
-    verifyPackageExists: oidc,
-    verifyPublished: true,
-    environmentNames,
-    credential: publishCredential(environmentNames.at(-1)),
-    readCredential: readCredential("PYPI_REGISTRY_READ"),
-    contractFixtureId: "registry.pypi-publish/v1"
-  });
-};
-var lowerGitHub = (config, rows) => {
-  const section = config.publish?.github;
-  if (section === undefined)
-    return;
-  const repository = section.repository ?? config.project.repository;
-  if (repository === undefined)
-    throw ConfigValueError.make({ reason: "GitHub publishing requires a repository." });
-  const assets = [...rows.outputs.values()].filter((item) => ![
-    "package",
-    "wheel",
-    "catalog-file",
-    "directory",
-    "internal",
-    "digest"
-  ].includes(item.kind));
-  const credential = section.tokenEnv ?? "GH_TOKEN";
-  return ForgeRelease.make({
-    id: operationId("github:github-release"),
-    inputs: assets.map((item) => item.id),
-    outputs: [],
-    description: `Create GitHub release for ${config.project.name}@${config.project.version}.`,
-    repository,
-    tag: config.project.tag,
-    title: `${config.project.name} ${config.project.version}`,
-    draft: section.draft ?? true,
-    prerelease: section.prerelease === "auto" ? config.project.version.includes("-") : section.prerelease ?? false,
-    assets: assets.map((item) => ({
-      outputId: item.id,
-      path: item.path,
-      name: basename(item.path),
-      contentType: "application/octet-stream"
-    })),
-    credential: publishCredential(credential),
-    readCredential: readCredential(credential),
-    contractFixtureId: "forge.github-release/v1"
-  });
-};
-var lowerLegacyPublish = (config, rows) => {
-  const operations = [lowerNpm2(config, rows), lowerPyPi(config, rows), lowerGitHub(config, rows)].filter((item) => item !== undefined);
-  return { ...rows, publish: [...rows.publish, ...operations] };
-};
-
-// ../../src/recipes/current.ts
-var lowerLegacyConfig = fn2("lowerLegacyConfig")(function* (config) {
-  const rows = yield* try_2({
-    try: () => {
-      let rows2 = lowerLegacyBuild(config, emptyLegacyRows());
-      rows2 = lowerLegacyCatalogs(config, rows2);
-      return lowerLegacyPublish(config, rows2);
-    },
-    catch: (cause) => cause instanceof ConfigValueError ? cause : PlanningFactsError.make({
-      reason: cause instanceof Error ? cause.message : String(cause)
-    })
-  });
-  return ReleaseStages.make({
-    build: rows.build,
-    process: rows.process,
-    catalog: rows.catalog,
-    validate: rows.validate,
-    publish: rows.publish,
-    announce: rows.announce,
-    verify: rows.verify
-  });
-});
-
-// ../../src/recipes/definition.ts
-class StaticOutputRecipe extends TaggedClass()("StaticOutputRecipe", {
-  id: RecipeId,
-  output: OutputDeclaration
-}) {
-}
-
-class DigestRecipe extends TaggedClass()("DigestRecipe", {
-  id: RecipeId,
+class GraphChecksum extends TaggedClass()("GraphChecksum", {
+  id: OperationId,
   inputs: NonEmptyArray(OutputId),
   output: OutputDeclaration,
   algorithm: Literals(["sha256", "sha512"])
 }) {
 }
-var RecipeDefinition = Union2([StaticOutputRecipe, DigestRecipe]);
 
-// ../../src/plan/accepted.ts
-var decoder = new TextDecoder("utf-8", { fatal: true });
-var encoder2 = new TextEncoder;
-var freeze = (value2) => {
-  if (typeof value2 !== "object" || value2 === null || Object.isFrozen(value2))
-    return;
-  for (const item of Object.values(value2))
-    freeze(item);
-  Object.freeze(value2);
-};
-var equalBytes = (left, right) => left.length === right.length && left.every((value2, index) => value2 === right[index]);
-
-class AcceptedPlan {
-  plan;
-  planId;
-  outputs;
-  dependencies;
-  operationHashes;
-  #bytes;
-  constructor(plan, bytes, planId, projection) {
-    freeze(plan);
-    this.plan = plan;
-    this.#bytes = new Uint8Array(bytes);
-    this.planId = planId;
-    this.outputs = Object.freeze([...projection.outputs]);
-    this.dependencies = Object.freeze([...projection.dependencies]);
-    this.operationHashes = Object.freeze([...projection.operationHashes]);
-    Object.freeze(this);
-  }
-  get bytes() {
-    return new Uint8Array(this.#bytes);
-  }
-  static accept = fn2("acceptPlan")(function* (bytes) {
-    const plan = yield* try_2({
-      try: () => {
-        const value2 = parseStrictJson(decoder.decode(bytes));
-        return decodeUnknownSync(ReleasePlanV6, {
-          onExcessProperty: "error"
-        })(value2);
-      },
-      catch: (cause) => PlanDecodeError.make({ reason: String(cause) })
-    });
-    const canonical2 = encoder2.encode(encodeCanonicalJson(encodeSync2(ReleasePlanV6)(plan)));
-    if (!equalBytes(bytes, canonical2)) {
-      return yield* NonCanonicalPlanError.make({
-        reason: "Plan bytes differ from CanonicalJsonV1."
-      });
-    }
-    const projection = validatePlan(plan);
-    if (isFailure2(projection))
-      return yield* projection.failure;
-    const digest = hashFramed("ts-release/plan-id/v1", [canonical2]);
-    return new AcceptedPlan(plan, canonical2, PlanId.make(digest), projection.success);
-  });
-}
-var acceptPlan = AcceptedPlan.accept;
-var encodePlanBytes = (plan) => encoder2.encode(encodeCanonicalJson(encodeSync2(ReleasePlanV6)(plan)));
-
-// ../../src/plan/compiler.ts
-var decodePlanningConfig = decodeConfig;
-
-class Invocation extends Class4("Invocation")({
-  workspace: WorkspaceRoot,
-  commit: NonEmptyName,
-  snapshot: Boolean3
+class GraphCatalog extends TaggedClass()("GraphCatalog", {
+  id: OperationId,
+  inputs: ArraySchema(OutputId),
+  output: OutputDeclaration,
+  content: Union2([
+    String4,
+    ArraySchema(Union2([String4, Struct({
+      fact: Literals(["sha256", "downloadUrl", "assetName"]),
+      outputId: OutputId
+    })]))
+  ])
 }) {
 }
-var recipeDefinitions = (config) => {
-  const staticRecipes = (config.artifacts ?? []).map((artifact) => StaticOutputRecipe.make({
-    id: RecipeId.make(`artifact:${artifact.id}`),
-    output: OutputDeclaration.make({
-      id: artifact.id,
-      path: artifact.path,
-      kind: artifact.format === "tarball" || artifact.format === "zip" ? "archive" : artifact.format === "binary" ? "executable" : artifact.format,
-      provenance: "import",
-      ...artifact.variant === undefined ? {} : { platform: artifact.variant }
-    })
-  }));
-  if (config.checksum === undefined || staticRecipes.length === 0)
-    return staticRecipes;
-  const path2 = (config.checksum.nameTemplate ?? "checksums-{version}.txt").replaceAll("{name}", config.project.name).replaceAll("{version}", config.project.version);
-  return [
-    ...staticRecipes,
-    DigestRecipe.make({
-      id: RecipeId.make("checksum"),
-      inputs: [
-        staticRecipes[0].output.id,
-        ...staticRecipes.slice(1).map((recipe) => recipe.output.id)
-      ],
-      output: OutputDeclaration.make({
-        id: OutputId.make("checksum"),
-        path: SafeRelativePath.make(path2),
-        kind: "digest"
-      }),
-      algorithm: config.checksum.algorithm ?? "sha256"
-    })
-  ];
+var GraphPreparation = Union2([
+  GraphCommandCheck,
+  GraphCommandArtifact,
+  GraphArchive,
+  GraphChecksum,
+  GraphCatalog
+]);
+
+class GraphNpmPublication extends TaggedClass()("GraphNpmPublication", {
+  id: OperationId,
+  packageName: NonEmptyName,
+  version: NonEmptyName,
+  registryUrl: NonEmptyString,
+  artifactIds: ArraySchema(OutputId)
+}) {
+}
+
+class GraphGitHubPublication extends TaggedClass()("GraphGitHubPublication", {
+  id: OperationId,
+  repository: NonEmptyString,
+  tag: NonEmptyName,
+  title: NonEmptyName,
+  draft: Boolean3,
+  prerelease: Boolean3,
+  body: optional6(String4),
+  bodyArtifact: optional6(OutputId),
+  assetIds: ArraySchema(OutputId)
+}) {
+}
+var GraphPublication = Union2([GraphNpmPublication, GraphGitHubPublication]);
+
+class CapabilityContribution extends Class4("CapabilityContribution")({
+  artifacts: ArraySchema(OutputDeclaration),
+  preparations: ArraySchema(GraphPreparation),
+  publications: ArraySchema(GraphPublication)
+}) {
+}
+
+class ReleaseGraph extends Class4("ReleaseGraph")({
+  artifacts: ArraySchema(OutputDeclaration),
+  preparations: ArraySchema(GraphPreparation),
+  publications: ArraySchema(GraphPublication)
+}) {
+}
+
+class GraphLinkError extends TaggedErrorClass()("GraphLinkError", {
+  kind: Literals(["duplicate", "missing", "cycle", "path", "reference"]),
+  value: String4,
+  reason: String4
+}) {
+}
+var byId = (left, right) => {
+  const a = left.id.toString();
+  const b = right.id.toString();
+  return a < b ? -1 : a > b ? 1 : 0;
 };
-var lowerRecipes = (definitions) => {
-  const build2 = definitions.flatMap((definition) => definition._tag === "StaticOutputRecipe" ? [Check.make({
-    id: OperationId.make(`check:${definition.id}`),
-    inputs: [],
-    outputs: [definition.output],
-    path: definition.output.path
-  })] : []);
-  const process2 = definitions.flatMap((definition) => definition._tag === "DigestRecipe" ? [DigestOp.make({
-    id: OperationId.make(`digest:${definition.id}`),
-    inputs: definition.inputs,
-    outputs: [definition.output],
-    algorithm: definition.algorithm
-  })] : []);
-  return ReleaseStages.make({
-    build: build2,
-    process: process2,
-    catalog: [],
-    validate: [],
-    publish: [],
-    announce: [],
-    verify: []
+var preparationInputs = (preparation) => preparation.inputs;
+var preparationOutputs = (preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalog" ? [preparation.output] : [];
+var linkContributions = (contributions) => {
+  const declared = contributions.flatMap((item) => item.artifacts);
+  const allPreparationOutputs = contributions.flatMap((item) => item.preparations.flatMap(preparationOutputs));
+  const artifactIds = new Set;
+  for (const artifact of declared) {
+    if (artifactIds.has(artifact.id.toString()))
+      throw new GraphLinkError({
+        kind: "duplicate",
+        value: artifact.id.toString(),
+        reason: "Artifact id has more than one declaration."
+      });
+    artifactIds.add(artifact.id.toString());
+  }
+  for (const artifact of allPreparationOutputs)
+    artifactIds.add(artifact.id.toString());
+  const artifacts = [...declared, ...allPreparationOutputs.filter((item) => !declared.some((declaredArtifact) => declaredArtifact.id === item.id))].sort(byId);
+  const paths = new Map;
+  for (const artifact of artifacts) {
+    const path = artifact.path.toString();
+    const previous = paths.get(path);
+    if (previous !== undefined && previous !== artifact.id.toString())
+      throw new GraphLinkError({
+        kind: "path",
+        value: path,
+        reason: `Artifacts ${previous} and ${artifact.id} share one output path.`
+      });
+    paths.set(path, artifact.id.toString());
+  }
+  const preparations = contributions.flatMap((item) => item.preparations).sort(byId);
+  const operationIds = new Set;
+  const producers = new Map;
+  for (const preparation of preparations) {
+    const id = preparation.id.toString();
+    if (operationIds.has(id))
+      throw new GraphLinkError({
+        kind: "duplicate",
+        value: id,
+        reason: "Preparation id has more than one producer."
+      });
+    operationIds.add(id);
+    for (const input of preparationInputs(preparation)) {
+      if (!artifactIds.has(input.toString()))
+        throw new GraphLinkError({
+          kind: "missing",
+          value: input.toString(),
+          reason: `Preparation ${id} references no artifact.`
+        });
+    }
+    for (const output of preparationOutputs(preparation)) {
+      const outputId = output.id.toString();
+      if (declared.some((artifact) => artifact.id.toString() === outputId))
+        throw new GraphLinkError({
+          kind: "duplicate",
+          value: outputId,
+          reason: "A declared artifact cannot also be a preparation output."
+        });
+      if (producers.has(outputId))
+        throw new GraphLinkError({
+          kind: "duplicate",
+          value: outputId,
+          reason: "Output has more than one producer."
+        });
+      if (preparation._tag === "GraphCommandArtifact" && ["directory", "package"].includes(output.kind))
+        throw new GraphLinkError({
+          kind: "path",
+          value: outputId,
+          reason: "Generic command outputs must be regular files."
+        });
+      if (preparation._tag === "GraphCommandArtifact" && preparation.inputs.some((input) => input.toString() === outputId))
+        throw new GraphLinkError({
+          kind: "reference",
+          value: outputId,
+          reason: "Command inputs and outputs must be disjoint."
+        });
+      if (preparation._tag === "GraphCommandArtifact" && preparation.inputs.some((input) => artifacts.find((artifact) => artifact.id.toString() === input.toString())?.path === output.path))
+        throw new GraphLinkError({
+          kind: "path",
+          value: outputId,
+          reason: "Command outputs must not overwrite input paths."
+        });
+      producers.set(outputId, id);
+    }
+    const references = preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact" ? preparation.argv.flatMap((part) => [...part.matchAll(/\{(input|output):([^}]+)\}/gu)]) : [];
+    for (const reference of references) {
+      const direction = reference[1];
+      const referenced = reference[2] ?? "";
+      if (direction === "input" && !preparationInputs(preparation).some((input) => input.toString() === referenced)) {
+        throw new GraphLinkError({ kind: "reference", value: referenced, reason: "Command input reference is undeclared." });
+      }
+      if (direction === "output" && !preparationOutputs(preparation).some((output) => output.id.toString() === referenced)) {
+        throw new GraphLinkError({ kind: "reference", value: referenced, reason: "Command output reference is undeclared." });
+      }
+    }
+    if (preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact") {
+      for (const part of preparation.argv) {
+        for (const token of part.matchAll(/\{([^}]+)\}/gu)) {
+          const value2 = token[1] ?? "";
+          if (!value2.startsWith("input:") && !value2.startsWith("output:"))
+            throw new GraphLinkError({
+              kind: "reference",
+              value: value2,
+              reason: "Command paths only support {input:<id>} and {output:<id>} references."
+            });
+        }
+      }
+    }
+  }
+  const publications = contributions.flatMap((item) => item.publications).sort(byId);
+  for (const publication of publications) {
+    if (publication._tag === "GraphGitHubPublication" && publication.body !== undefined && publication.bodyArtifact !== undefined) {
+      throw new GraphLinkError({ kind: "reference", value: publication.id.toString(), reason: "GitHub body must be inline text or one text artifact, not both." });
+    }
+    const ids = publication._tag === "GraphGitHubPublication" ? [...publication.assetIds, ...publication.bodyArtifact === undefined ? [] : [publication.bodyArtifact]] : publication.artifactIds;
+    for (const id of ids)
+      if (!artifactIds.has(id.toString()) && !producers.has(id.toString())) {
+        throw new GraphLinkError({ kind: "missing", value: id.toString(), reason: "Publication references no artifact." });
+      }
+    if (publication._tag === "GraphGitHubPublication" && publication.bodyArtifact !== undefined) {
+      const body = artifacts.find((artifact) => artifact.id.toString() === publication.bodyArtifact.toString());
+      if (body !== undefined && (body.mediaType === undefined || !body.mediaType.startsWith("text/")))
+        throw new GraphLinkError({
+          kind: "reference",
+          value: publication.bodyArtifact.toString(),
+          reason: "GitHub body artifacts must declare a text/* media type."
+        });
+    }
+  }
+  const dependencies = new Map(preparations.map((preparation) => [preparation.id.toString(), new Set(preparationInputs(preparation).map((input) => producers.get(input.toString())).filter((value2) => value2 !== undefined))]));
+  const ordered = [];
+  const pending = new Map(preparations.map((preparation) => [preparation.id.toString(), preparation]));
+  while (pending.size > 0) {
+    const ready = [...pending.values()].filter((preparation) => [...dependencies.get(preparation.id.toString())].every((dependency) => !pending.has(dependency))).sort(byId);
+    if (ready.length === 0)
+      throw new GraphLinkError({
+        kind: "cycle",
+        value: [...pending.keys()].sort().join(","),
+        reason: "Preparation dependency cycle."
+      });
+    for (const preparation of ready) {
+      pending.delete(preparation.id.toString());
+      ordered.push(preparation);
+    }
+  }
+  return ReleaseGraph.make({ artifacts, preparations: ordered, publications });
+};
+
+// ../../src/release/capabilities.ts
+var output = (id, location2, kind, provenance, mediaType) => OutputDeclaration.make({
+  id: OutputId.make(id.toString()),
+  path: SafeRelativePath.make(location2),
+  kind,
+  provenance,
+  ...mediaType === undefined ? {} : { mediaType }
+});
+var compact = (name) => name.replace(/^@/u, "").replaceAll("/", "-").replace(/[^A-Za-z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
+var render = (value2, config, target2 = "", binary = compact(config.project.name)) => {
+  const [os6 = "", arch3 = ""] = target2.split("-");
+  return value2.replaceAll("{name}", compact(config.project.name)).replaceAll("{version}", config.project.version).replaceAll("{tag}", config.project.tag).replaceAll("{targetTriple}", target2).replaceAll("{target}", target2).replaceAll("{os}", os6).replaceAll("{arch}", arch3).replaceAll("{binary}", binary).replaceAll("{ext}", os6 === "windows" ? ".exe" : "");
+};
+var buildContribution = (config, context3) => {
+  const artifacts = [];
+  const preparations = [];
+  for (const artifact of config.artifacts ?? []) {
+    artifacts.push(output(artifact.id, render(artifact.path, config), artifact.format === "zip" || artifact.format === "tarball" ? "archive" : artifact.format === "binary" ? "executable" : artifact.format, "import"));
+  }
+  if (config.npmPackage !== undefined) {
+    const declaration = output("npm-package", config.npmPackage.path ?? ".", "package", "build");
+    artifacts.push(declaration);
+    preparations.push(GraphCommandCheck.make({
+      id: OperationId.make("declare:npm-package"),
+      argv: ["test", "-d", declaration.path],
+      cwd: SafeRelativePath.make("."),
+      environmentNames: [],
+      inputs: [declaration.id],
+      sourceCommit: context3.source.commit
+    }));
+  }
+  for (const build2 of config.builds ?? []) {
+    for (const target2 of build2.targets) {
+      const binary = build2.binary ?? compact(config.project.name);
+      const id = `${build2.id ?? build2.builder}-${target2}`;
+      const location2 = render(build2.output ?? `.release/artifacts/${binary}-${config.project.version}-${target2}${target2.startsWith("windows-") ? ".exe" : ""}`, config, target2, binary);
+      const declaration = output(id, location2, "executable", "build");
+      if (build2.builder === "prebuilt") {
+        artifacts.push(declaration);
+        preparations.push(GraphCommandCheck.make({
+          id: OperationId.make(`build:prebuilt:${id}:exists`),
+          argv: ["test", "-f", location2],
+          cwd: SafeRelativePath.make("."),
+          environmentNames: [],
+          inputs: [declaration.id],
+          sourceCommit: context3.source.commit
+        }));
+      } else {
+        const argv2 = build2.builder === "command" ? build2.run.map((part) => render(part, config, target2, binary)) : [
+          "bun",
+          "build",
+          render(build2.entry, config, target2, binary),
+          "--compile",
+          "--target",
+          `bun-${target2}`,
+          "--outfile",
+          location2,
+          ...build2.minify === true ? ["--minify"] : []
+        ];
+        preparations.push(GraphCommandArtifact.make({
+          id: OperationId.make(`build:${build2.builder}:${id}`),
+          argv: [argv2[0], ...argv2.slice(1)],
+          cwd: SafeRelativePath.make("."),
+          environmentNames: [],
+          inputs: [],
+          outputs: [declaration],
+          sourceCommit: context3.source.commit
+        }));
+      }
+    }
+  }
+  for (const preparation of config.preparations ?? []) {
+    const inputs = preparation.inputs ?? [];
+    const cwd = preparation.cwd ?? SafeRelativePath.make(".");
+    const environmentNames = preparation.environmentNames ?? [];
+    if (preparation.kind === "check")
+      preparations.push(GraphCommandCheck.make({
+        id: OperationId.make(`preparation:${preparation.id}`),
+        argv: preparation.run,
+        cwd,
+        environmentNames,
+        inputs,
+        sourceCommit: context3.source.commit
+      }));
+    else
+      preparations.push(GraphCommandArtifact.make({
+        id: OperationId.make(`preparation:${preparation.id}`),
+        argv: preparation.run,
+        cwd,
+        environmentNames,
+        inputs,
+        outputs: [
+          output(preparation.outputs[0].id, preparation.outputs[0].path, "file", "process", preparation.outputs[0].mediaType),
+          ...preparation.outputs.slice(1).map((item) => output(item.id, item.path, "file", "process", item.mediaType))
+        ],
+        sourceCommit: context3.source.commit
+      }));
+  }
+  return CapabilityContribution.make({ artifacts, preparations, publications: [] });
+};
+var packageContribution = (config, artifacts, _context) => {
+  const preparations = [];
+  const packageOutputs = [];
+  for (const archive of config.archives ?? []) {
+    const selected = archive.ids === undefined ? artifacts : archive.ids.map((id) => artifacts.find((item) => item.id.toString() === id));
+    const inputs = selected.filter((item) => item !== undefined).map((item) => item.id);
+    for (const format2 of archive.formats ?? ["tar.gz"]) {
+      const base = render(archive.nameTemplate ?? `${compact(config.project.name)}_{version}`, config);
+      const id = `${archive.id ?? "archive"}${(archive.formats ?? ["tar.gz"]).length > 1 ? `-${format2.replaceAll(".", "-")}` : ""}`;
+      const declaration = output(id, `.release/artifacts/${base}.${format2}`, "archive", "process");
+      packageOutputs.push(declaration);
+      preparations.push(GraphArchive.make({
+        id: OperationId.make(`archive:${id}`),
+        inputs,
+        output: declaration,
+        format: format2,
+        ...archive.files === undefined ? {} : { files: archive.files }
+      }));
+    }
+  }
+  const checksumInputs = [...artifacts, ...packageOutputs].filter((item) => !["directory", "package", "digest", "checksum-file", "catalog-file"].includes(item.kind));
+  if (config.checksum !== undefined && checksumInputs.length > 0) {
+    const algorithm = config.checksum.algorithm ?? "sha256";
+    preparations.push(GraphChecksum.make({
+      id: OperationId.make("checksum:digest"),
+      inputs: [checksumInputs[0].id, ...checksumInputs.slice(1).map((item) => item.id)],
+      output: output("checksum-digests", `.release/facts/checksum-${algorithm}`, "digest", "process"),
+      algorithm
+    }));
+  }
+  return CapabilityContribution.make({ artifacts: [], preparations, publications: [] });
+};
+var contributeRelease = (config, context3) => {
+  const build2 = buildContribution(config, context3);
+  const buildOutputs = [...build2.artifacts, ...build2.preparations.flatMap(preparationOutputs2)];
+  const packaged = packageContribution(config, buildOutputs, context3);
+  const allArtifacts = [...buildOutputs, ...packaged.preparations.flatMap(preparationOutputs2)];
+  const catalogs = (config.catalogs ?? []).map((catalog) => {
+    const content = typeof catalog.content === "string" ? render(catalog.content, config) : catalog.content.map((part) => typeof part === "string" ? render(part, config) : { fact: part.fact, outputId: part.artifact });
+    const inputs = typeof content === "string" ? [] : content.flatMap((part) => typeof part === "string" ? [] : [part.outputId]);
+    return GraphCatalog.make({
+      id: OperationId.make(`catalog:${catalog.id}:render`),
+      inputs,
+      output: output(`catalog-file-${catalog.id}`, catalog.file, "catalog-file", "catalog"),
+      content
+    });
   });
-};
-var finalizePlan = (config, invocation, stages) => {
-  return ReleasePlanV6.make({
-    schemaVersion: "release-plan/v6",
-    identity: ReleaseIdentityV6.make({
-      name: config.project.name,
-      version: config.project.version,
-      tag: config.project.tag,
-      commit: NonEmptyName.make(config.project.commit ?? invocation.commit),
-      snapshot: invocation.snapshot
+  const catalogContribution = CapabilityContribution.make({ artifacts: [], preparations: catalogs, publications: [] });
+  const allPrepared = [...allArtifacts, ...catalogs.map((catalog) => catalog.output)];
+  const publications = [
+    config.publish?.npm === undefined ? undefined : GraphNpmPublication.make({
+      id: OperationId.make("npm:npm-release"),
+      packageName: NonEmptyName.make(config.publish.npm.packageName ?? config.project.packageName ?? config.project.name),
+      version: NonEmptyName.make(config.project.version),
+      registryUrl: config.publish.npm.registry ?? "https://registry.npmjs.org",
+      artifactIds: allPrepared.filter((item) => item.kind === "package").map((item) => item.id)
     }),
-    stages,
-    annotations: []
-  });
+    config.publish?.github === undefined || (config.publish.github.repository ?? config.project.repository) === undefined ? undefined : GraphGitHubPublication.make({
+      id: OperationId.make("github:github-release"),
+      repository: config.publish.github.repository ?? config.project.repository,
+      tag: config.project.tag,
+      draft: config.publish.github.draft ?? true,
+      prerelease: config.publish.github.prerelease === "auto" ? config.project.version.includes("-") : config.publish.github.prerelease ?? false,
+      title: NonEmptyName.make(`${config.project.name} ${config.project.version}`),
+      ...config.publish.github.bodyArtifact === undefined && config.project.notes === undefined ? {} : {
+        ...config.publish.github.bodyArtifact === undefined ? { body: config.project.notes } : { bodyArtifact: config.publish.github.bodyArtifact }
+      },
+      assetIds: allPrepared.filter((item) => ["archive", "executable", "file"].includes(item.kind)).map((item) => item.id)
+    })
+  ].filter((item) => item !== undefined);
+  return [build2, packaged, catalogContribution, CapabilityContribution.make({ artifacts: [], preparations: [], publications })];
 };
-var minimalConfig = (config) => config.builds === undefined && config.npmPackage === undefined && config.archives === undefined && config.catalogs === undefined && Object.keys(config.publish ?? {}).length === 0 && Object.keys(config.project).every((key) => ["name", "version", "tag"].includes(key)) && (config.artifacts ?? []).every((artifact) => ["file", "directory", "executable"].includes(artifact.format) && artifact.checksum === undefined && artifact.variant === undefined);
-var compilePlan = fn2("compilePlan")(function* (input, invocation) {
-  const config = yield* decodeConfig(input);
-  const baseStages = minimalConfig(config) ? lowerRecipes(recipeDefinitions(config)) : yield* lowerLegacyConfig(config);
-  return yield* acceptPlan(encodePlanBytes(finalizePlan(config, invocation, baseStages)));
+var preparationOutputs2 = (preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalog" ? [preparation.output] : [];
+
+// ../../src/release/compiler.ts
+var compileReleaseGraph = (intent, context3) => linkContributions(contributeRelease(intent, context3));
+
+// ../../src/release/inspect.ts
+var optional7 = optionalKey2;
+
+class ReleaseInspection extends Class4("ReleaseInspection")({
+  source: Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Literal2(true), repository: optional7(NonEmptyString) }),
+  package: Struct({ name: NonEmptyName, version: NonEmptyString, path: SafeRelativePath }),
+  artifacts: ArraySchema(Struct({ id: OutputId, path: SafeRelativePath, kind: String4 })),
+  preparations: ArraySchema(Struct({ id: OperationId, kind: String4, inputs: ArraySchema(OutputId) })),
+  publications: ArraySchema(Struct({ id: OperationId, destination: String4, subject: NonEmptyString })),
+  requirements: ArraySchema(NonEmptyString),
+  capabilities: ArraySchema(NonEmptyString)
+}) {
+}
+var preparationKind = (value2) => value2._tag.replace(/^Graph/u, "");
+var requirements = (preparations) => [
+  ...new Set(preparations.flatMap((preparation) => preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact" ? [`command:${preparation.argv[0]}`, ...preparation.environmentNames.map((name) => `env:${name}`)] : []))
+].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+var publication = (value2) => value2._tag === "GraphNpmPublication" ? { id: value2.id, destination: "npm", subject: `${value2.packageName}@${value2.version} (${value2.registryUrl})` } : { id: value2.id, destination: "github", subject: `${value2.repository}#${value2.tag}` };
+var inspectRelease = (context3, graph, capabilities = []) => ReleaseInspection.make({
+  source: {
+    commit: context3.source.commit,
+    tree: context3.source.tree,
+    clean: true,
+    ...context3.source.repository === undefined ? {} : { repository: context3.source.repository }
+  },
+  package: { name: context3.package.name, version: context3.package.version, path: context3.package.path },
+  artifacts: graph.artifacts.map(({ id, path, kind }) => ({ id, path, kind })),
+  preparations: graph.preparations.map((preparation) => ({ id: preparation.id, kind: preparationKind(preparation), inputs: preparation.inputs })),
+  publications: graph.publications.map(publication),
+  requirements: requirements(graph.preparations),
+  capabilities: [...capabilities].sort((a, b) => a < b ? -1 : a > b ? 1 : 0).map((value2) => NonEmptyName.make(value2))
 });
 
+class PreparedReleaseInspection extends Class4("PreparedReleaseInspection")({
+  bundleDirectory: String4,
+  source: Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Literal2(true), packageManifestPath: SafeRelativePath, packageManifestDigest: Digest }),
+  project: Struct({ name: NonEmptyName, packageName: optionalKey2(NonEmptyName), version: NonEmptyString, tag: NonEmptyName, repository: optionalKey2(NonEmptyString) }),
+  artifacts: ArraySchema(Struct({ id: OutputId, path: SafeRelativePath, kind: String4, size: Number5, digest: Digest, mediaType: optionalKey2(NonEmptyString) })),
+  publications: ArraySchema(Struct({ id: NonEmptyName, destination: Literals(["npm", "github"]), subject: NonEmptyString }))
+}) {
+}
+var inspectPreparedRelease = (bundle) => PreparedReleaseInspection.make({
+  bundleDirectory: bundle.directory,
+  source: bundle.manifest.source,
+  project: bundle.manifest.project,
+  artifacts: bundle.manifest.artifacts,
+  publications: bundle.manifest.publications.map((publication2) => publication2._tag === "PreparedNpmPublication" ? { id: publication2.id, destination: "npm", subject: `${publication2.packageName}@${publication2.version} (${publication2.registryUrl})` } : { id: publication2.id, destination: "github", subject: `${publication2.repository}#${publication2.tag}` })
+});
+
+// ../../src/release/prepare.ts
+import { createHash as createHash6 } from "node:crypto";
+import { cpSync, lstatSync as lstatSync3, mkdirSync as mkdirSync3, mkdtempSync, readdirSync as readdirSync2, realpathSync as realpathSync4, rmSync as rmSync2 } from "node:fs";
+import { basename as basename2, join as join4 } from "node:path";
+import { tmpdir } from "node:os";
+
+// ../../src/drivers/workspace.ts
+import {
+  closeSync,
+  constants as constants3,
+  existsSync as existsSync3,
+  fstatSync,
+  fsyncSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  realpathSync as realpathSync2,
+  writeFileSync
+} from "node:fs";
+import { join as join2 } from "node:path";
+
+// ../../src/drivers/contain.ts
+import { isAbsolute as isAbsolute2, relative, sep } from "node:path";
+var contained = (root, path) => {
+  const value2 = relative(root, path);
+  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`) && !isAbsolute2(value2);
+};
+
+// ../../src/drivers/errors.ts
+class DriverError extends TaggedErrorClass()("DriverError", {
+  reason: String4,
+  commitment: Literals(["before-commit", "unknown"])
+}) {
+}
+
+// ../../src/drivers/workspace.ts
+var fail7 = (reason2) => DriverError.make({ reason: reason2, commitment: "before-commit" });
+var secureRead = (root, path) => {
+  let current = root;
+  for (const part of path.split(/[\\/]+/u)) {
+    current = join2(current, part);
+    if (lstatSync(current).isSymbolicLink())
+      throw fail7("Structured read encountered a symlink.");
+  }
+  const descriptor = openSync(current, constants3.O_RDONLY | constants3.O_NOFOLLOW);
+  try {
+    const opened = fstatSync(descriptor);
+    const resolved = realpathSync2(current);
+    if (!contained(root, resolved))
+      throw fail7("Opened file escaped the workspace root.");
+    const landed = lstatSync(resolved);
+    if (landed.ino !== opened.ino || landed.dev !== opened.dev)
+      throw fail7("Opened file changed identity.");
+    return { bytes: new Uint8Array(readFileSync(descriptor)), inode: opened.ino };
+  } finally {
+    closeSync(descriptor);
+  }
+};
+var secureWrite = (root, path, bytes) => {
+  const parts = path.split(/[\\/]+/u).filter((part) => part.length > 0);
+  let parent = root;
+  for (const part of parts.slice(0, -1)) {
+    parent = join2(parent, part);
+    mkdirSync(parent, { recursive: true });
+    if (lstatSync(parent).isSymbolicLink())
+      throw fail7("Structured write encountered a symlink.");
+  }
+  const target2 = join2(parent, parts.at(-1));
+  if (existsSync3(target2) && lstatSync(target2).isSymbolicLink())
+    throw fail7("Structured write encountered a symlink.");
+  const descriptor = openSync(target2, constants3.O_WRONLY | constants3.O_CREAT | constants3.O_TRUNC | constants3.O_NOFOLLOW, 420);
+  try {
+    writeFileSync(descriptor, bytes);
+    fsyncSync(descriptor);
+  } finally {
+    closeSync(descriptor);
+  }
+};
+
+// ../../src/drivers/archive.ts
+import { gzipSync } from "node:zlib";
+var text = (value2) => new TextEncoder().encode(value2);
+var concat = (parts) => {
+  const output2 = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    output2.set(part, offset);
+    offset += part.length;
+  }
+  return output2;
+};
+var integer = (bytes, value2) => {
+  const output2 = new Uint8Array(bytes);
+  const view = new DataView(output2.buffer);
+  if (bytes === 2)
+    view.setUint16(0, value2, true);
+  else
+    view.setUint32(0, value2, true);
+  return output2;
+};
+var crcTable = Array.from({ length: 256 }, (_, value2) => {
+  let crc = value2;
+  for (const bit of Array.from({ length: 8 }, (_2, index) => index)) {
+    crc = (crc & 1) === 1 ? 3988292384 ^ crc >>> 1 : crc >>> 1;
+  }
+  return crc >>> 0;
+});
+var crc32 = (data) => {
+  let crc = 4294967295;
+  for (const byte of data)
+    crc = crc >>> 8 ^ crcTable[(crc ^ byte) & 255];
+  return (crc ^ 4294967295) >>> 0;
+};
+var zip2 = (entries) => {
+  const bodies = [];
+  const central = [];
+  let offset = 0;
+  for (const entry of entries) {
+    const name = text(entry.path);
+    const crc = crc32(entry.data);
+    const local = concat([
+      integer(4, 67324752),
+      integer(2, 20),
+      integer(2, 2048),
+      integer(2, 0),
+      integer(2, 0),
+      integer(2, 0),
+      integer(4, crc),
+      integer(4, entry.data.length),
+      integer(4, entry.data.length),
+      integer(2, name.length),
+      integer(2, 0),
+      name
+    ]);
+    bodies.push(local, entry.data);
+    central.push(concat([
+      integer(4, 33639248),
+      integer(2, 788),
+      integer(2, 20),
+      integer(2, 2048),
+      integer(2, 0),
+      integer(2, 0),
+      integer(2, 0),
+      integer(4, crc),
+      integer(4, entry.data.length),
+      integer(4, entry.data.length),
+      integer(2, name.length),
+      integer(2, 0),
+      integer(2, 0),
+      integer(2, 0),
+      integer(2, 0),
+      integer(4, entry.mode << 16),
+      integer(4, offset),
+      name
+    ]));
+    offset += local.length + entry.data.length;
+  }
+  const directory = concat(central);
+  return concat([
+    ...bodies,
+    directory,
+    integer(4, 101010256),
+    integer(2, 0),
+    integer(2, 0),
+    integer(2, entries.length),
+    integer(2, entries.length),
+    integer(4, directory.length),
+    integer(4, offset),
+    integer(2, 0)
+  ]);
+};
+var ascii = (output2, offset, length, value2) => {
+  const bytes = text(value2);
+  if (bytes.length > length)
+    throw new Error(`Archive path is too long: ${value2}`);
+  output2.set(bytes, offset);
+};
+var octal = (output2, offset, length, value2) => {
+  ascii(output2, offset, length - 2, value2.toString(8).padStart(length - 2, "0"));
+  output2[offset + length - 2] = 0;
+  output2[offset + length - 1] = 32;
+};
+var tarHeader = (entry) => {
+  const header = new Uint8Array(512);
+  ascii(header, 0, 100, entry.path);
+  octal(header, 100, 8, entry.mode & 511);
+  octal(header, 108, 8, 0);
+  octal(header, 116, 8, 0);
+  octal(header, 124, 12, entry.data.length);
+  octal(header, 136, 12, 0);
+  header.fill(32, 148, 156);
+  header[156] = 48;
+  ascii(header, 257, 6, "ustar");
+  ascii(header, 263, 2, "00");
+  octal(header, 148, 8, header.reduce((sum, byte) => sum + byte, 0));
+  return header;
+};
+var tarGz = (entries) => {
+  const packed = new Uint8Array(gzipSync(concat(entries.flatMap((entry) => [
+    tarHeader(entry),
+    entry.data,
+    new Uint8Array(entry.data.length % 512 === 0 ? 0 : 512 - entry.data.length % 512)
+  ]).concat([new Uint8Array(1024)])), { level: 9 }));
+  packed.fill(0, 4, 8);
+  packed[9] = 255;
+  return packed;
+};
+
+// ../../src/drivers/utils.ts
+import { createHash as createHash4 } from "node:crypto";
+var failure = (reason2, commitment = "before-commit") => DriverError.make({ reason: reason2, commitment });
+var sha256 = (bytes) => createHash4("sha256").update(bytes).digest("hex");
+
+// ../../src/release/context.ts
+var optional8 = optionalKey2;
+
+class VerifiedSource extends Class4("VerifiedSource")({
+  commit: NonEmptyName,
+  tree: NonEmptyName,
+  clean: Literal2(true),
+  packageManifestPath: SafeRelativePath,
+  packageManifestDigest: NonEmptyName,
+  repository: optional8(NonEmptyString),
+  headTags: ArraySchema(NonEmptyName)
+}) {
+}
+
+class VerifiedPackage extends Class4("VerifiedPackage")({
+  name: NonEmptyName,
+  version: Version,
+  path: SafeRelativePath,
+  digest: NonEmptyName,
+  repository: optional8(NonEmptyString)
+}) {
+}
+
+class VerifiedReleaseContext extends Class4("VerifiedReleaseContext")({
+  workspace: WorkspaceRoot,
+  source: VerifiedSource,
+  package: VerifiedPackage
+}) {
+}
+
+class ReleaseContextError extends TaggedErrorClass()("ReleaseContextError", {
+  field: String4,
+  reason: String4
+}) {
+}
+
+class SourceObserver extends Service()("SourceObserver") {
+}
+var runtimeFailure = (field, cause) => ReleaseContextError.make({
+  field,
+  reason: cause instanceof Error ? cause.message : String(cause)
+});
+var command = (runtime, workspace, argv2, field) => runtime.command(workspace, argv2).pipe(mapError3((cause) => runtimeFailure(field, cause)));
+var repositoryCoordinate = (value2) => {
+  if (typeof value2 !== "string")
+    return;
+  const trimmed = value2.trim().replace(/\.git$/u, "");
+  const match6 = /(?:github\.com[/:]|^)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/u.exec(trimmed);
+  return match6?.[1];
+};
+var jsonObject = (bytes, path) => {
+  try {
+    const value2 = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof value2 !== "object" || value2 === null || Array.isArray(value2))
+      throw new Error("manifest root must be an object");
+    return value2;
+  } catch (cause) {
+    throw new Error(`${path} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+  }
+};
+var makeSourceObserver = (runtime) => ({
+  observe: fn2("observeVerifiedReleaseContext")(function* (workspace, packageManifestPath, expectedCommit) {
+    const canonical2 = yield* runtime.canonicalRoot(workspace).pipe(mapError3((cause) => runtimeFailure("workspace", cause)));
+    const root = WorkspaceRoot.make(canonical2);
+    const commit2 = yield* command(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value2) => value2.trim()));
+    const tree = yield* command(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value2) => value2.trim()));
+    const status = yield* command(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=all"], "source.clean");
+    if (status.trim().length > 0)
+      return yield* new ReleaseContextError({
+        field: "source.clean",
+        reason: "Preparation requires a clean tracked and untracked source tree."
+      });
+    const bytes = yield* runtime.read(workspace, packageManifestPath).pipe(mapError3((cause) => runtimeFailure("package.manifest", cause)));
+    let manifest;
+    try {
+      manifest = jsonObject(bytes, packageManifestPath);
+    } catch (cause) {
+      return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) });
+    }
+    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined;
+    const version3 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
+    if (name === undefined)
+      return yield* new ReleaseContextError({ field: "package.name", reason: "Manifest name is missing or empty." });
+    if (version3 === undefined)
+      return yield* new ReleaseContextError({ field: "package.version", reason: "Manifest version is missing or empty." });
+    const digest3 = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
+    const tags = yield* command(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value2) => value2.split(`
+`).map((tag3) => tag3.trim()).filter((tag3) => tag3.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
+    const remote = yield* command(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value2) => repositoryCoordinate(value2))).pipe(orElseSucceed2(() => {
+      return;
+    }));
+    const manifestRepository = repositoryCoordinate(manifest.repository);
+    if (remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository) {
+      return yield* new ReleaseContextError({
+        field: "source.repository",
+        reason: `Git remote ${remote} disagrees with manifest repository ${manifestRepository}.`
+      });
+    }
+    const repository2 = remote ?? manifestRepository;
+    const source = VerifiedSource.make({
+      commit: NonEmptyName.make(commit2),
+      tree: NonEmptyName.make(tree),
+      clean: true,
+      packageManifestPath,
+      packageManifestDigest: NonEmptyName.make(digest3),
+      headTags: tags.map((tag3) => NonEmptyName.make(tag3)),
+      ...repository2 === undefined ? {} : { repository: repository2 }
+    });
+    const context3 = VerifiedReleaseContext.make({
+      workspace: root,
+      source,
+      package: VerifiedPackage.make({
+        name: NonEmptyName.make(name),
+        version: Version.make(version3),
+        path: packageManifestPath,
+        digest: NonEmptyName.make(digest3),
+        ...manifestRepository === undefined ? {} : { repository: manifestRepository }
+      })
+    });
+    return yield* verifySource(context3, expectedCommit);
+  })
+});
+var verifySource = fn2("verifySource")(function* (context3, expectedCommit) {
+  if (expectedCommit !== undefined && context3.source.commit !== expectedCommit) {
+    return yield* new ReleaseContextError({
+      field: "source.commit",
+      reason: `Expected ${expectedCommit}, observed ${context3.source.commit}.`
+    });
+  }
+  if (context3.source.clean !== true) {
+    return yield* new ReleaseContextError({
+      field: "source.clean",
+      reason: "Preparation requires a clean verified source."
+    });
+  }
+  return context3;
+});
+
+// ../../src/release/prepared-store.ts
+import { constants as constants4, existsSync as existsSync4, lstatSync as lstatSync2, mkdirSync as mkdirSync2, openSync as openSync2, readdirSync, realpathSync as realpathSync3, renameSync, rmSync, statSync as statSync2, chmodSync as chmodSync2, closeSync as closeSync2, fsyncSync as fsyncSync2 } from "node:fs";
+import { createHash as createHash5, randomUUID as randomUUID2 } from "node:crypto";
+import { basename, join as join3 } from "node:path";
+class PreparedStoreError extends TaggedErrorClass()("PreparedStoreError", { reason: String4 }) {
+}
+var hex = /^[a-f0-9]{64}$/u;
+var hash2 = (bytes) => createHash5("sha256").update(bytes).digest("hex");
+var equal3 = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
+var fail8 = (reason2) => {
+  throw PreparedStoreError.make({ reason: reason2 });
+};
+var canonicalDirectory = (directory) => {
+  if (!existsSync4(directory))
+    mkdirSync2(directory, { recursive: true, mode: 448 });
+  const real = realpathSync3(directory);
+  if (real !== directory)
+    fail8("Prepared store root must not be a symlink.");
+  return real;
+};
+var syncDirectory = (directory) => {
+  const descriptor = openSync2(directory, constants4.O_RDONLY);
+  try {
+    fsyncSync2(descriptor);
+  } finally {
+    closeSync2(descriptor);
+  }
+};
+var artifactsById = (manifest) => {
+  const result2 = new Map;
+  for (const artifact of manifest.artifacts) {
+    const id = artifact.id.toString();
+    if (result2.has(id))
+      fail8(`Prepared manifest repeats artifact ${id}.`);
+    if (!hex.test(artifact.digest) || !hex.test(artifact.blob) || artifact.digest !== artifact.blob) {
+      fail8(`Prepared artifact ${id} does not carry a canonical SHA-256 blob reference.`);
+    }
+    result2.set(id, artifact);
+  }
+  return result2;
+};
+var validatePublications = (manifest, artifacts) => {
+  const ids = new Set;
+  for (const publication2 of manifest.publications) {
+    if (ids.has(publication2.id.toString()))
+      fail8(`Prepared manifest repeats publication ${publication2.id}.`);
+    ids.add(publication2.id.toString());
+    const references = publication2._tag === "PreparedNpmPublication" ? [publication2.artifactId] : publication2.assets.map((asset) => asset.artifactId);
+    for (const id of references)
+      if (!artifacts.has(id.toString()))
+        fail8(`Publication ${publication2.id} references missing artifact ${id}.`);
+    if (publication2._tag === "PreparedGitHubPublication" && publication2.body !== undefined && publication2.body.length === 0) {
+      fail8(`GitHub publication ${publication2.id} carries an empty body.`);
+    }
+  }
+};
+var readBundle = (directory) => {
+  const real = realpathSync3(directory);
+  if (real !== directory || lstatSync2(directory).isSymbolicLink())
+    fail8("Prepared bundle directory must not be a symlink.");
+  const bytes = secureRead(directory, "prepared-release.json").bytes;
+  const manifest = decodePreparedRelease(bytes);
+  const manifestDigest = hash2(bytes);
+  if (basename(directory) !== manifestDigest)
+    fail8("Prepared bundle directory does not match its manifest digest.");
+  const entries = readdirSync(directory, { withFileTypes: true });
+  if (entries.some((entry) => entry.name !== "prepared-release.json" && entry.name !== "blobs"))
+    fail8("Prepared bundle contains an unexpected top-level entry.");
+  const blobDirectory = join3(directory, "blobs");
+  if (!existsSync4(blobDirectory) || lstatSync2(blobDirectory).isSymbolicLink() || !statSync2(blobDirectory).isDirectory())
+    fail8("Prepared bundle is missing its real blobs directory.");
+  const artifacts = artifactsById(manifest);
+  validatePublications(manifest, artifacts);
+  const expectedBlobs = new Set([...artifacts.values()].map((artifact) => artifact.blob.toString()));
+  const actualBlobs = new Set(readdirSync(blobDirectory, { withFileTypes: true }).map((entry) => {
+    if (!entry.isFile() || !hex.test(entry.name))
+      fail8(`Prepared blob entry ${entry.name} is invalid.`);
+    return entry.name;
+  }));
+  if (actualBlobs.size !== expectedBlobs.size || [...expectedBlobs].some((blob) => !actualBlobs.has(blob)))
+    fail8("Prepared bundle blob set does not match its manifest.");
+  const blobs = new Map;
+  for (const artifact of artifacts.values()) {
+    const blob = secureRead(directory, `blobs/${artifact.blob}`).bytes;
+    if (blob.length !== artifact.size || hash2(blob) !== artifact.digest)
+      fail8(`Prepared blob ${artifact.id} failed size or digest verification.`);
+    blobs.set(artifact.id.toString(), new Uint8Array(blob));
+  }
+  return { directory: real, manifest, blobs };
+};
+var atomicWrite = (directory, target2, bytes) => {
+  const temporary = `${target2}.${randomUUID2()}.tmp`;
+  secureWrite(directory, temporary, bytes);
+  renameSync(join3(directory, temporary), join3(directory, target2));
+  chmodSync2(join3(directory, target2), 256);
+};
+var writeBundle = (storeDirectory, manifest, blobs) => {
+  const store = canonicalDirectory(storeDirectory);
+  const manifestBytes = encodePreparedRelease(manifest);
+  const manifestDigest = hash2(manifestBytes);
+  const artifacts = artifactsById(manifest);
+  validatePublications(manifest, artifacts);
+  for (const artifact of artifacts.values()) {
+    const bytes = blobs.get(artifact.id.toString()) ?? fail8(`No prepared bytes supplied for artifact ${artifact.id}.`);
+    if (bytes.length !== artifact.size || hash2(bytes) !== artifact.digest || artifact.blob !== artifact.digest)
+      fail8(`Prepared bytes do not match artifact ${artifact.id}.`);
+  }
+  const finalDirectory = join3(store, manifestDigest);
+  if (existsSync4(finalDirectory)) {
+    const existing = readBundle(finalDirectory);
+    if (!equal3(secureRead(finalDirectory, "prepared-release.json").bytes, manifestBytes))
+      fail8("Existing prepared bundle has a different manifest.");
+    return existing;
+  }
+  const temporary = join3(store, `.${manifestDigest}.${randomUUID2()}.tmp`);
+  mkdirSync2(join3(temporary, "blobs"), { recursive: true, mode: 448 });
+  try {
+    for (const artifact of artifacts.values())
+      atomicWrite(join3(temporary, "blobs"), artifact.blob.toString(), blobs.get(artifact.id.toString()));
+    atomicWrite(temporary, "prepared-release.json", manifestBytes);
+    syncDirectory(join3(temporary, "blobs"));
+    syncDirectory(temporary);
+    renameSync(temporary, finalDirectory);
+    syncDirectory(store);
+  } catch (cause) {
+    if (existsSync4(temporary))
+      rmSync(temporary, { recursive: true, force: true });
+    if (existsSync4(finalDirectory))
+      return readBundle(finalDirectory);
+    if (cause instanceof PreparedStoreError)
+      throw cause;
+    throw PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
+  }
+  return readBundle(finalDirectory);
+};
+var storePreparedRelease = fn2("storePreparedRelease")((storeDirectory, manifest, blobs) => try_2({
+  try: () => writeBundle(storeDirectory, manifest, blobs),
+  catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+}));
+var loadPreparedRelease = fn2("loadPreparedRelease")((directory) => try_2({
+  try: () => readBundle(directory),
+  catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+}));
+
+// ../../src/release/prepare.ts
+class PreparationError extends TaggedErrorClass()("PreparationError", { reason: String4 }) {
+}
+var failure2 = (cause) => PreparationError.make({
+  reason: cause instanceof Error ? cause.message : String(cause)
+});
+var attempt = (body) => try_2({
+  try: body,
+  catch: failure2
+});
+var outputId = (value2) => OutputId.make(value2);
+var pathOf = (context3, path) => join4(context3.workspace, path);
+var byCodepoint = (left, right) => {
+  const a = left.id.toString();
+  const b = right.id.toString();
+  return a < b ? -1 : a > b ? 1 : 0;
+};
+var hashBytes = (algorithm, bytes) => {
+  return createHash6(algorithm).update(bytes).digest("hex");
+};
+var capture = (context3, declaration) => attempt(() => {
+  if (declaration.kind === "directory" || declaration.kind === "package")
+    throw new Error(`Directory output ${declaration.id} cannot enter a blob store.`);
+  const bytes = secureRead(context3.workspace, declaration.path).bytes;
+  return new Uint8Array(bytes);
+});
+var commandInput = (declaration, bytes, context3) => attempt(() => {
+  if (declaration.kind === "directory" || declaration.kind === "package") {
+    const location2 = join4(context3.workspace, declaration.path);
+    if (lstatSync3(location2).isSymbolicLink() || !lstatSync3(location2).isDirectory())
+      throw new Error(`Input artifact ${declaration.id} is not a directory.`);
+    return;
+  }
+  const current = secureRead(context3.workspace, declaration.path).bytes;
+  const expected = bytes.get(declaration.id.toString());
+  if (expected !== undefined && sha256(current) !== sha256(expected))
+    throw new Error(`Input artifact ${declaration.id} changed before preparation.`);
+});
+var stageWorkspace = (workspace) => {
+  const sourceRoot = realpathSync4(workspace);
+  const stageRoot = mkdtempSync(join4(tmpdir(), "ts-release-prepare-"));
+  const excluded = (entry) => entry === ".git" || entry === ".release" || entry === ".npmrc" || entry === ".pypirc" || entry === ".env" || entry.startsWith(".env.");
+  const assertInSource = (candidate) => {
+    const resolved = realpathSync4(candidate);
+    if (!contained(sourceRoot, resolved))
+      throw new Error(`Preparation input ${candidate} escapes the workspace root.`);
+  };
+  try {
+    for (const entry of readdirSync2(sourceRoot)) {
+      if (excluded(entry))
+        continue;
+      const source = join4(sourceRoot, entry);
+      assertInSource(source);
+      cpSync(source, join4(stageRoot, entry), {
+        recursive: true,
+        dereference: true,
+        filter: (candidate) => {
+          assertInSource(candidate);
+          return true;
+        }
+      });
+    }
+    return stageRoot;
+  } catch (cause) {
+    rmSync2(stageRoot, { recursive: true, force: true });
+    throw cause;
+  }
+};
+var stagedContext = (context3, root) => VerifiedReleaseContext.make({
+  workspace: WorkspaceRoot.make(root),
+  source: context3.source,
+  package: context3.package
+});
+var inputFingerprint = (context3, declaration) => {
+  if (declaration.kind !== "directory" && declaration.kind !== "package")
+    return sha256(secureRead(context3.workspace, declaration.path).bytes);
+  const base = declaration.path.toString();
+  const walk = (relative2) => {
+    const location2 = join4(context3.workspace, relative2);
+    return readdirSync2(location2, { withFileTypes: true }).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0).flatMap((entry) => {
+      const child = relative2 === "." ? entry.name : `${relative2}/${entry.name}`;
+      if (entry.isSymbolicLink())
+        throw new Error(`Input artifact ${declaration.id} contains a symlink.`);
+      if (entry.isDirectory())
+        return walk(child);
+      if (!entry.isFile())
+        throw new Error(`Input artifact ${declaration.id} contains a non-file entry.`);
+      const bytes = secureRead(context3.workspace, SafeRelativePath.make(child)).bytes;
+      return [`${child}\x00${bytes.length}\x00${sha256(bytes)}`];
+    });
+  };
+  return sha256(new TextEncoder().encode(walk(base).join(`
+`)));
+};
+var replaceReferences = (value2, inputs, outputs) => value2.replace(/\{(input|output):([^}]+)\}/gu, (_match, direction, id) => {
+  const declarations = direction === "input" ? inputs : outputs;
+  const declaration = declarations.find((candidate) => candidate.id.toString() === id);
+  if (declaration === undefined)
+    throw new Error(`Unresolved command path reference ${direction}:${id}.`);
+  return declaration.path.toString();
+});
+var runCommand = (request, preparation, declarations, bytes) => gen2(function* () {
+  const inputs = preparation.inputs.map((id) => declarations.get(id.toString()) ?? (() => {
+    throw new Error(`Missing input ${id}.`);
+  })());
+  const before = new Map;
+  for (const input of inputs) {
+    yield* commandInput(input, bytes, request.context);
+    before.set(input.id.toString(), yield* attempt(() => inputFingerprint(request.context, input)));
+  }
+  const outputs = preparation._tag === "GraphCommandArtifact" ? preparation.outputs : [];
+  const argv2 = preparation.argv.map((part) => replaceReferences(part, inputs, outputs));
+  const outcome = yield* request.run({ argv: argv2, cwd: pathOf(request.context, preparation.cwd), environmentNames: preparation.environmentNames }).pipe(mapError3(failure2));
+  if (outcome.exitCode !== 0)
+    return yield* new PreparationError({ reason: `Command ${preparation.id} exited ${outcome.exitCode}: ${outcome.stderr.trim()}` });
+  for (const input of inputs) {
+    const after = yield* attempt(() => inputFingerprint(request.context, input));
+    if (after !== before.get(input.id.toString()))
+      return yield* new PreparationError({ reason: `Input artifact ${input.id} changed during ${preparation.id}.` });
+  }
+  if (preparation._tag === "GraphCommandCheck")
+    return [];
+  const produced = [];
+  for (const output2 of outputs) {
+    const value2 = yield* capture(request.context, output2);
+    produced.push([output2.id.toString(), value2]);
+  }
+  return produced;
+});
+var structured = (request, preparation, declarations, bytes) => {
+  switch (preparation._tag) {
+    case "GraphCommandCheck":
+    case "GraphCommandArtifact":
+      return runCommand(request, preparation, declarations, bytes);
+    case "GraphArchive":
+      return attempt(() => {
+        const entries = preparation.inputs.map((id) => {
+          const declaration = declarations.get(id.toString());
+          const value3 = bytes.get(id.toString());
+          if (declaration === undefined || value3 === undefined)
+            throw new Error(`Archive ${preparation.id} references unavailable artifact ${id}.`);
+          return { path: basename2(declaration.path), data: value3, mode: declaration.kind === "executable" ? 33261 : 33188 };
+        }).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+        if (entries.length === 0)
+          throw new Error(`Archive ${preparation.id} has no inputs.`);
+        const value2 = preparation.format === "zip" ? zip2(entries) : tarGz(entries);
+        secureWrite(request.context.workspace, preparation.output.path, value2);
+        return [[preparation.output.id.toString(), value2]];
+      });
+    case "GraphChecksum":
+      return attempt(() => {
+        const lines = preparation.inputs.map((id) => {
+          const value3 = bytes.get(id.toString());
+          const declaration = declarations.get(id.toString());
+          if (value3 === undefined || declaration === undefined)
+            throw new Error(`Checksum ${preparation.id} references unavailable artifact ${id}.`);
+          return `${hashBytes(preparation.algorithm, value3)}  ${basename2(declaration.path)}`;
+        });
+        const value2 = new TextEncoder().encode(`${lines.join(`
+`)}
+`);
+        secureWrite(request.context.workspace, preparation.output.path, value2);
+        return [[preparation.output.id.toString(), value2]];
+      });
+    case "GraphCatalog":
+      return attempt(() => {
+        const value2 = typeof preparation.content === "string" ? preparation.content : preparation.content.map((part) => typeof part === "string" ? part : part.fact === "sha256" ? sha256(bytes.get(part.outputId.toString()) ?? (() => {
+          throw new Error(`Catalog ${preparation.id} references unavailable artifact ${part.outputId}.`);
+        })()) : part.fact === "assetName" ? basename2(declarations.get(part.outputId.toString())?.path ?? (() => {
+          throw new Error(`Catalog ${preparation.id} references unavailable artifact ${part.outputId}.`);
+        })()) : (() => {
+          throw new Error(`Catalog ${preparation.id} contains an unresolved downloadUrl hole.`);
+        })()).join("");
+        const encoded = new TextEncoder().encode(value2);
+        secureWrite(request.context.workspace, preparation.output.path, encoded);
+        return [[preparation.output.id.toString(), encoded]];
+      });
+  }
+};
+var npmTarball = (request, publication2, declarations, bytes) => gen2(function* () {
+  const packageId = publication2.artifactIds.find((id) => declarations.get(id.toString())?.kind === "package");
+  if (packageId === undefined)
+    return yield* new PreparationError({ reason: `npm publication ${publication2.id} has no package artifact.` });
+  const destination = `.release/ts-release/npm/${publication2.id}`;
+  const cache = `.release/ts-release/npm-cache/${publication2.id}`;
+  mkdirSync3(join4(request.context.workspace, destination), { recursive: true });
+  mkdirSync3(join4(request.context.workspace, cache), { recursive: true });
+  const existing = readdirSync2(join4(request.context.workspace, destination));
+  if (existing.length > 0)
+    return yield* new PreparationError({ reason: `npm publication ${publication2.id} has a non-empty output directory.` });
+  const packagePath = declarations.get(packageId.toString()).path.toString();
+  const outcome = yield* request.run({ argv: ["npm", "pack", packagePath, "--json", "--pack-destination", destination, "--cache", cache], cwd: request.context.workspace, environmentNames: [] }).pipe(mapError3(failure2));
+  if (outcome.exitCode !== 0)
+    return yield* new PreparationError({ reason: `npm pack exited ${outcome.exitCode}: ${outcome.stderr.trim()}` });
+  const files = yield* attempt(() => readdirSync2(join4(request.context.workspace, destination)).filter((entry) => {
+    const candidate = join4(request.context.workspace, destination, entry);
+    return lstatSync3(candidate).isFile() && entry.endsWith(".tgz");
+  }));
+  const entries = yield* attempt(() => readdirSync2(join4(request.context.workspace, destination)));
+  if (entries.length !== 1 || files.length !== 1)
+    return yield* new PreparationError({ reason: `npm pack produced an invalid output directory.` });
+  if (outcome.stdout.trim().length > 0) {
+    yield* attempt(() => {
+      const parsed = JSON.parse(outcome.stdout);
+      const record2 = Array.isArray(parsed) ? parsed[0] : parsed;
+      if (typeof record2 !== "object" || record2 === null || !("filename" in record2) || typeof record2.filename !== "string" || record2.filename !== files[0]) {
+        throw new Error("npm pack result did not identify the captured tarball.");
+      }
+    });
+  }
+  const path = SafeRelativePath.make(`${destination}/${files[0]}`);
+  const artifactBytes = yield* capture(request.context, { ...declarations.get(packageId.toString()), id: outputId(`npm-tarball:${publication2.id}`), path, kind: "archive" });
+  const hash3 = sha256(artifactBytes);
+  return PreparedArtifact.make({
+    id: outputId(`npm-tarball:${publication2.id}`),
+    path,
+    kind: "archive",
+    size: artifactBytes.length,
+    digest: Digest.make(hash3),
+    blob: Digest.make(hash3),
+    mediaType: "application/gzip"
+  });
+});
+var prepareRelease = fn2("prepareRelease")(function* (input) {
+  let observed = yield* input.verifySource(input.context).pipe(mapError3(failure2));
+  const root = yield* attempt(() => stageWorkspace(observed.workspace));
+  try {
+    const request = {
+      ...input,
+      context: stagedContext(observed, root),
+      verifySource: () => input.verifySource(observed).pipe(mapError3(failure2), map5((next) => {
+        observed = next;
+        return stagedContext(next, root);
+      }))
+    };
+    let context3 = request.context;
+    const declarations = new Map(request.graph.artifacts.map((artifact) => [artifact.id.toString(), artifact]));
+    const bytes = new Map;
+    const produced = new Set(request.graph.preparations.flatMap((preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs.map((output2) => output2.id.toString()) : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalog" ? [preparation.output.id.toString()] : []));
+    for (const artifact of request.graph.artifacts) {
+      if (produced.has(artifact.id.toString()))
+        continue;
+      if (artifact.kind === "directory" || artifact.kind === "package")
+        continue;
+      bytes.set(artifact.id.toString(), yield* capture(request.context, artifact));
+    }
+    for (const preparation of request.graph.preparations) {
+      const outputs = yield* structured(request, preparation, declarations, bytes);
+      for (const [id, value2] of outputs)
+        bytes.set(id, value2);
+      context3 = yield* request.verifySource(context3);
+      if (context3.source.commit !== request.context.source.commit || context3.source.tree !== request.context.source.tree) {
+        return yield* new PreparationError({ reason: `Source identity changed during ${preparation.id}.` });
+      }
+    }
+    const preparedArtifacts = new Map;
+    for (const artifact of request.graph.artifacts) {
+      const value2 = bytes.get(artifact.id.toString());
+      if (value2 === undefined || artifact.kind === "directory" || artifact.kind === "package")
+        continue;
+      const contentHash = sha256(value2);
+      preparedArtifacts.set(artifact.id.toString(), PreparedArtifact.make({
+        id: artifact.id,
+        path: artifact.path,
+        kind: artifact.kind,
+        size: value2.length,
+        digest: Digest.make(contentHash),
+        blob: Digest.make(contentHash),
+        ...artifact.mediaType === undefined ? {} : { mediaType: artifact.mediaType }
+      }));
+    }
+    const publications = [];
+    for (const publication2 of request.graph.publications) {
+      if (publication2._tag === "GraphNpmPublication") {
+        const artifact = yield* npmTarball(request, publication2, declarations, bytes);
+        const artifactBytes = yield* capture(request.context, { id: artifact.id, path: artifact.path, kind: artifact.kind });
+        bytes.set(artifact.id.toString(), artifactBytes);
+        preparedArtifacts.set(artifact.id.toString(), artifact);
+        context3 = yield* request.verifySource(context3);
+        if (context3.source.commit !== request.context.source.commit || context3.source.tree !== request.context.source.tree) {
+          return yield* new PreparationError({ reason: `Source identity changed during ${publication2.id}.` });
+        }
+        publications.push(PreparedNpmPublication.make({
+          id: NonEmptyName.make(publication2.id),
+          packageName: publication2.packageName,
+          version: Version.make(publication2.version.toString()),
+          registryUrl: publication2.registryUrl,
+          artifactId: artifact.id
+        }));
+      } else {
+        const assets = publication2.assetIds.map((id) => {
+          const artifact = preparedArtifacts.get(id.toString());
+          if (artifact === undefined)
+            throw new Error(`GitHub publication ${publication2.id} references unavailable artifact ${id}.`);
+          return { artifactId: artifact.id, name: NonEmptyName.make(basename2(artifact.path)), mediaType: artifact.mediaType ?? "application/octet-stream" };
+        });
+        const body = publication2.bodyArtifact === undefined ? publication2.body : new TextDecoder().decode(bytes.get(publication2.bodyArtifact.toString()) ?? (() => {
+          throw new Error(`GitHub body artifact ${publication2.bodyArtifact} is unavailable.`);
+        })());
+        publications.push(PreparedGitHubPublication.make({
+          id: NonEmptyName.make(publication2.id),
+          repository: publication2.repository,
+          tag: publication2.tag,
+          title: publication2.title,
+          draft: publication2.draft,
+          prerelease: publication2.prerelease,
+          targetCommit: context3.source.commit,
+          ...body === undefined ? {} : { body },
+          assets
+        }));
+      }
+    }
+    const githubPublication = request.graph.publications.find((publication2) => publication2._tag === "GraphGitHubPublication");
+    const npmPublication = request.graph.publications.find((publication2) => publication2._tag === "GraphNpmPublication");
+    const manifest = PreparedReleaseV1.make({
+      schemaVersion: "prepared-release/v1",
+      source: PreparedSource.make({
+        commit: context3.source.commit,
+        tree: context3.source.tree,
+        clean: true,
+        packageManifestPath: context3.source.packageManifestPath,
+        packageManifestDigest: Digest.make(context3.source.packageManifestDigest.toString())
+      }),
+      project: PreparedProject.make({
+        name: context3.package.name,
+        version: context3.package.version,
+        tag: githubPublication?.tag ?? NonEmptyName.make(`v${context3.package.version}`),
+        ...npmPublication === undefined ? {} : { packageName: npmPublication.packageName },
+        ...context3.package.repository === undefined ? {} : { repository: context3.package.repository }
+      }),
+      artifacts: [...preparedArtifacts.values()].sort(byCodepoint),
+      publications
+    });
+    const blobMap = new Map([...bytes.entries()].filter(([id]) => preparedArtifacts.has(id)));
+    return yield* storePreparedRelease(request.storeDirectory, manifest, blobMap).pipe(mapError3((cause) => cause instanceof PreparedStoreError ? PreparationError.make({ reason: cause.reason }) : failure2(cause)));
+  } finally {
+    rmSync2(root, { recursive: true, force: true });
+  }
+});
+
+// ../../src/publication/github.ts
+var asObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2) ? value2 : undefined;
+var asString = (value2) => typeof value2 === "string" ? value2 : undefined;
+var asNumber = (value2) => typeof value2 === "number" && Number.isSafeInteger(value2) ? value2 : undefined;
+var asBoolean = (value2) => typeof value2 === "boolean" ? value2 : undefined;
+var parseAsset = (value2) => {
+  const object = asObject(value2);
+  if (object === undefined)
+    return;
+  const name = object === undefined ? undefined : asString(object.name);
+  const size = object === undefined ? undefined : asNumber(object.size);
+  const contentType = object === undefined ? undefined : asString(object.content_type);
+  if (name === undefined || size === undefined || contentType === undefined)
+    return;
+  const digest3 = asString(object.digest);
+  const downloadUrl = asString(object.browser_download_url);
+  return { name, size, contentType, ...digest3 === undefined ? {} : { digest: digest3 }, ...downloadUrl === undefined ? {} : { downloadUrl } };
+};
+var parseRelease = (value2) => {
+  const object = asObject(value2);
+  if (object === undefined)
+    return;
+  const id = asNumber(object.id), uploadUrl = asString(object.upload_url), tag3 = asString(object.tag_name);
+  const target2 = asString(object.target_commitish), title = asString(object.name);
+  const body = object.body === null ? "" : asString(object.body);
+  const draft = asBoolean(object.draft), prerelease = asBoolean(object.prerelease);
+  const assets = Array.isArray(object.assets) ? object.assets.map(parseAsset) : undefined;
+  if (id === undefined || uploadUrl === undefined || tag3 === undefined || target2 === undefined || title === undefined || body === undefined || draft === undefined || prerelease === undefined || assets === undefined || assets.some((asset) => asset === undefined))
+    return;
+  return { id, uploadUrl, tag: tag3, target: target2, title, body, draft, prerelease, assets };
+};
+var releaseUrl = (publication2) => `https://api.github.com/repos/${publication2.repository}/releases/tags/${encodeURIComponent(publication2.tag)}`;
+var assetSubject = (publication2, asset) => NonEmptyName.make(`github:asset:${publication2.repository}#${publication2.tag}/${asset.name}`);
+var differences = (expected, publication2) => {
+  const result2 = [];
+  const compare = (field, want, got) => {
+    if (want !== got)
+      result2.push(ObservationDifference.make({ field: NonEmptyName.make(field), expected: want, observed: got }));
+  };
+  compare("tag", publication2.tag.toString(), expected.tag);
+  compare("targetCommit", publication2.targetCommit.toString(), expected.target);
+  compare("title", publication2.title.toString(), expected.title);
+  compare("body", publication2.body ?? "", expected.body);
+  compare("draft", String(publication2.draft), String(expected.draft));
+  compare("prerelease", String(publication2.prerelease), String(expected.prerelease));
+  return result2;
+};
+var failureOutcome = (subject, cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }));
+var makeGithubSubjects = (bundle, publication2, http2, credentials2) => {
+  let release;
+  const releaseSubject = NonEmptyName.make(`github:release:${publication2.repository}#${publication2.tag}`);
+  const intendedNames = new Set(publication2.assets.map((asset) => asset.name));
+  const releaseSubjectValue = {
+    id: releaseSubject,
+    observe: () => gen2(function* () {
+      const response = yield* http2.request({ method: "GET", url: releaseUrl(publication2), headers: authHeaders(credentials2.read) });
+      if (response.status === 404)
+        return NeedsMutation.make({ subject: releaseSubject, precondition: NonEmptyName.make("release-absent") });
+      if (response.status < 200 || response.status >= 300)
+        return Inconclusive.make({ subject: releaseSubject, reason: `GitHub release observation returned HTTP ${response.status}.` });
+      let parsed;
+      try {
+        parsed = parseRelease(bodyJson(response));
+      } catch (cause) {
+        return Inconclusive.make({ subject: releaseSubject, reason: cause instanceof Error ? cause.message : String(cause) });
+      }
+      if (parsed === undefined)
+        return Inconclusive.make({ subject: releaseSubject, reason: "GitHub release response was malformed." });
+      release = parsed;
+      const mismatch = differences(parsed, publication2);
+      for (const asset of parsed.assets)
+        if (!intendedNames.has(asset.name))
+          mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("asset.name"), expected: "declared asset", observed: asset.name }));
+      return mismatch.length === 0 ? Equivalent.make({ subject: releaseSubject }) : Conflict.make({ subject: releaseSubject, differences: mismatch });
+    }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject: releaseSubject, reason: cause.reason })))),
+    mutate: (needs) => gen2(function* () {
+      if (needs.precondition !== "release-absent")
+        return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "GitHub release mutation lacks the exact absence precondition." });
+      const response = yield* http2.request({
+        method: "POST",
+        url: "https://api.github.com/repos/" + publication2.repository + "/releases",
+        headers: { ...authHeaders(credentials2.publish), "content-type": "application/json" },
+        body: JSON.stringify({ tag_name: publication2.tag, target_commitish: publication2.targetCommit, name: publication2.title, body: publication2.body ?? "", draft: publication2.draft, prerelease: publication2.prerelease })
+      });
+      if (response.status >= 200 && response.status < 300)
+        return Applied.make({ subject: releaseSubject, detail: `GitHub release HTTP ${response.status}.` });
+      return Rejected.make({ subject: releaseSubject, phase: "provider", reason: `GitHub release mutation returned HTTP ${response.status}.` });
+    }).pipe(catchTag2("PublicationError", (cause) => failureOutcome(releaseSubject, cause)))
+  };
+  const assets = publication2.assets.map((asset) => {
+    const subject = assetSubject(publication2, asset);
+    const artifact = bundle.manifest.artifacts.find((item) => item.id === asset.artifactId);
+    const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
+    const observe = () => gen2(function* () {
+      const response = yield* http2.request({ method: "GET", url: releaseUrl(publication2), headers: authHeaders(credentials2.read) });
+      if (response.status === 404)
+        return Inconclusive.make({ subject, reason: "GitHub release does not exist for the asset subject." });
+      if (response.status < 200 || response.status >= 300)
+        return Inconclusive.make({ subject, reason: `GitHub asset release lookup returned HTTP ${response.status}.` });
+      let parsed;
+      try {
+        parsed = parseRelease(bodyJson(response));
+      } catch (cause) {
+        return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) });
+      }
+      if (parsed === undefined)
+        return Inconclusive.make({ subject, reason: "GitHub asset release response was malformed." });
+      release = parsed;
+      const existing = parsed.assets.filter((candidate2) => candidate2.name === asset.name);
+      if (existing.length === 0)
+        return NeedsMutation.make({ subject, precondition: NonEmptyName.make("asset-absent") });
+      if (existing.length > 1)
+        return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("asset.name"), expected: "one asset", observed: "duplicate asset names" })] });
+      if (bytes === undefined || artifact === undefined)
+        return Inconclusive.make({ subject, reason: `Prepared GitHub asset ${asset.artifactId} is unavailable.` });
+      const candidate = existing[0];
+      const mismatch = [];
+      if (candidate.size !== bytes.length)
+        mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("size"), expected: String(bytes.length), observed: String(candidate.size) }));
+      if (candidate.contentType !== asset.mediaType)
+        mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("mediaType"), expected: asset.mediaType, observed: candidate.contentType }));
+      let digest3 = candidate.digest;
+      if (digest3 === undefined && candidate.downloadUrl !== undefined) {
+        const downloaded = yield* http2.request({ method: "GET", url: candidate.downloadUrl, headers: authHeaders(credentials2.read) });
+        if (downloaded.status < 200 || downloaded.status >= 300)
+          return Inconclusive.make({ subject, reason: `GitHub asset download returned HTTP ${downloaded.status}.` });
+        digest3 = sha256(typeof downloaded.body === "string" ? new TextEncoder().encode(downloaded.body) : downloaded.body);
+      }
+      const expectedDigest = `sha256:${sha256(bytes)}`;
+      if (digest3 === undefined)
+        return Inconclusive.make({ subject, reason: "GitHub asset response omitted digest and download URL." });
+      if (digest3 !== expectedDigest)
+        mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("digest"), expected: expectedDigest, observed: digest3 }));
+      return mismatch.length === 0 ? Equivalent.make({ subject }) : Conflict.make({ subject, differences: mismatch });
+    }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason }))));
+    const mutate = (needs) => gen2(function* () {
+      if (needs.precondition !== "asset-absent" || release === undefined || bytes === undefined)
+        return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "GitHub asset mutation lacks the exact absence precondition, release, or bytes." });
+      const response = yield* http2.request({ method: "POST", url: `${release.uploadUrl}?name=${encodeURIComponent(asset.name)}`, headers: { ...authHeaders(credentials2.publish), "content-type": asset.mediaType }, body: bytes });
+      if (response.status >= 200 && response.status < 300)
+        return Applied.make({ subject, detail: `GitHub asset HTTP ${response.status}.` });
+      return Rejected.make({ subject, phase: "provider", reason: `GitHub asset mutation returned HTTP ${response.status}.` });
+    }).pipe(catchTag2("PublicationError", (cause) => failureOutcome(subject, cause)));
+    return { id: subject, observe, mutate };
+  });
+  return [releaseSubjectValue, ...assets];
+};
+
+// ../../src/publication/npm.ts
+import { createHash as createHash7 } from "node:crypto";
+class NpmSubjectError extends TaggedErrorClass()("NpmSubjectError", { reason: String4 }) {
+}
+var integrity = (bytes) => `sha512-${createHash7("sha512").update(bytes).digest("base64")}`;
+var shasum = (bytes) => createHash7("sha1").update(bytes).digest("hex");
+var registryVersionUrl = (publication2) => `${publication2.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(publication2.packageName)}/${encodeURIComponent(publication2.version)}`;
+var stringValue = (value2) => typeof value2 === "string" && value2.length > 0 ? value2 : undefined;
+var registryFacts2 = (value2) => {
+  if (typeof value2 !== "object" || value2 === null)
+    return;
+  const deprecatedValue = value2.deprecated;
+  if (deprecatedValue !== undefined && deprecatedValue !== null && typeof deprecatedValue !== "string")
+    return;
+  const dist = value2.dist;
+  if (typeof dist !== "object" || dist === null)
+    return;
+  const integrityValue = stringValue(dist.integrity);
+  const shasumValue = stringValue(dist.shasum);
+  return integrityValue === undefined && shasumValue === undefined ? undefined : {
+    ...integrityValue === undefined ? {} : { integrity: integrityValue },
+    ...shasumValue === undefined ? {} : { shasum: shasumValue },
+    ...typeof deprecatedValue !== "string" || deprecatedValue.length === 0 ? {} : { deprecated: deprecatedValue }
+  };
+};
+var makeNpmSubject = (bundle, publication2, http2, credentials2, process2) => {
+  const artifact = bundle.manifest.artifacts.find((item) => item.id === publication2.artifactId);
+  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
+  const subject = NonEmptyName.make(`npm:${publication2.registryUrl}:${publication2.packageName}@${publication2.version}`);
+  const expectedIntegrity = bytes === undefined ? undefined : integrity(bytes);
+  const expectedShasum = bytes === undefined ? undefined : shasum(bytes);
+  const url = registryVersionUrl(publication2);
+  return {
+    id: subject,
+    observe: () => gen2(function* () {
+      if (bytes === undefined || artifact === undefined)
+        return yield* new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: `Prepared npm artifact ${publication2.artifactId} is unavailable.` });
+      const response = yield* http2.request({ method: "GET", url, headers: authHeaders(credentials2.read) });
+      if (response.status === 404)
+        return NeedsMutation.make({ subject, precondition: NonEmptyName.make("version-absent") });
+      if (response.status < 200 || response.status >= 300)
+        return Inconclusive.make({ subject, reason: `Registry observation returned HTTP ${response.status}.` });
+      let facts;
+      try {
+        facts = registryFacts2(bodyJson(response));
+      } catch (cause) {
+        return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) });
+      }
+      if (facts === undefined)
+        return Inconclusive.make({ subject, reason: "Registry metadata omitted both integrity and shasum." });
+      const differences2 = [];
+      if (facts.integrity !== undefined && facts.integrity !== expectedIntegrity)
+        differences2.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: expectedIntegrity, observed: facts.integrity }));
+      if (facts.shasum !== undefined && facts.shasum !== expectedShasum)
+        differences2.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum, observed: facts.shasum }));
+      if (facts.deprecated !== undefined)
+        differences2.push(ObservationDifference.make({ field: NonEmptyName.make("deprecated"), expected: "absent", observed: facts.deprecated }));
+      return differences2.length === 0 ? Equivalent.make({ subject }) : Conflict.make({ subject, differences: differences2 });
+    }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason })))),
+    mutate: (needs) => gen2(function* () {
+      if (needs.precondition !== "version-absent" || bytes === undefined)
+        return yield* fail6(new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "npm mutation lacks the exact absence precondition or bytes." }));
+      const result2 = yield* process2.publish({ registryUrl: publication2.registryUrl, packageName: publication2.packageName.toString(), version: publication2.version.toString(), bytes, credential: credentials2.publish });
+      if (!result2.started)
+        return Rejected.make({ subject, phase: "before-dispatch", reason: "npm publish process did not start." });
+      if (result2.exitCode === 0)
+        return Applied.make({ subject, detail: "npm publish exited successfully." });
+      return Rejected.make({ subject, phase: "provider", reason: `npm publish exited ${result2.exitCode}.` });
+    }).pipe(catchTag2("PublicationError", (cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }))))
+  };
+};
+
+// ../../src/publication/adapter.ts
+var subjectsForPreparedRelease = (input) => input.bundle.manifest.publications.flatMap((publication2) => publication2._tag === "PreparedNpmPublication" ? [makeNpmSubject(input.bundle, publication2, input.http, input.credentials.npm, input.npmProcess)] : makeGithubSubjects(input.bundle, publication2, input.http, input.credentials.github));
+var publishPreparedRelease = fn2("publishPreparedRelease")(function* (input) {
+  const outcomes = [];
+  for (const subject of subjectsForPreparedRelease(input)) {
+    const outcome = yield* publishSubject(subject);
+    outcomes.push(outcome);
+    if (outcome._tag !== "PublicationConverged")
+      return outcomes;
+  }
+  return outcomes;
+});
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Brand.js
 function nominal() {
   return Object.assign((input) => input, {
@@ -26589,15 +27515,15 @@ class SystemError extends Error3 {
 }
 
 class PlatformError extends (/* @__PURE__ */ TaggedError2("PlatformError")) {
-  constructor(reason) {
-    if ("cause" in reason) {
+  constructor(reason2) {
+    if ("cause" in reason2) {
       super({
-        reason,
-        cause: reason.cause
+        reason: reason2,
+        cause: reason2.cause
       });
     } else {
       super({
-        reason
+        reason: reason2
       });
     }
   }
@@ -27006,7 +27932,7 @@ var asyncQueue = (scope3, f, options) => make15({
   strategy: options?.strategy
 }).pipe(tap2((queue) => addFinalizer(scope3, shutdown(queue))), tap2((queue) => forkIn2(provide(f(queue), scope3), scope3)));
 var callbackArray = (f, options) => fromTransform((_, scope3) => map5(asyncQueue(scope3, f, options), takeAll2));
-var suspend4 = (evaluate2) => fromTransform((upstream, scope3) => suspend2(() => toTransform(evaluate2())(upstream, scope3)));
+var suspend3 = (evaluate2) => fromTransform((upstream, scope3) => suspend2(() => toTransform(evaluate2())(upstream, scope3)));
 var empty3 = /* @__PURE__ */ fromPull(/* @__PURE__ */ succeed6(/* @__PURE__ */ done3()));
 var fail9 = (error2) => fromPull(succeed6(fail6(error2)));
 var map7 = /* @__PURE__ */ dual(2, (self, f) => transformPull(self, (pull) => sync2(() => {
@@ -27015,7 +27941,7 @@ var map7 = /* @__PURE__ */ dual(2, (self, f) => transformPull(self, (pull) => sy
 })));
 var mapDone = /* @__PURE__ */ dual(2, (self, f) => mapDoneEffect(self, (o) => succeed6(f(o))));
 var mapDoneEffect = /* @__PURE__ */ dual(2, (self, f) => transformPull(self, (pull) => succeed6(catchDone(pull, (done4) => flatMap3(f(done4), done3)))));
-var merge3 = /* @__PURE__ */ dual((args2) => isChannel(args2[0]) && isChannel(args2[1]), (left, right, options) => fromTransformBracket(fnUntraced2(function* (upstream, _scope, forkedScope) {
+var merge2 = /* @__PURE__ */ dual((args2) => isChannel(args2[0]) && isChannel(args2[1]), (left, right, options) => fromTransformBracket(fnUntraced2(function* (upstream, _scope, forkedScope) {
   const strategy = options?.haltStrategy ?? "both";
   const queue = yield* bounded(0);
   yield* addFinalizer(forkedScope, shutdown(queue));
@@ -27220,25 +28146,25 @@ var transformPull2 = (self, f) => fromChannel3(fromTransform((_, scope3) => flat
 var toChannel2 = (stream) => stream.channel;
 var callback3 = (f, options) => fromChannel3(callbackArray(f, options));
 var empty4 = /* @__PURE__ */ fromChannel3(empty3);
-var suspend5 = (stream) => fromChannel3(suspend4(() => stream().channel));
+var suspend4 = (stream) => fromChannel3(suspend3(() => stream().channel));
 var fail10 = (error2) => fromChannel3(fail9(error2));
 var fromReadableStream = (options) => fromChannel3(fromTransform(fnUntraced2(function* (_, scope3) {
   const reader = options.evaluate().getReader();
   yield* addFinalizer(scope3, options.releaseLockOnEnd ? sync2(() => reader.releaseLock()) : promise2(() => reader.cancel().catch(constVoid)));
   return flatMap3(tryPromise2({
     try: () => reader.read(),
-    catch: (reason) => options.onError(reason)
+    catch: (reason2) => options.onError(reason2)
   }), ({
     done: done4,
     value: value2
   }) => done4 ? done3() : succeed6(of(value2)));
 })));
 var unwrap3 = (effect2) => fromChannel3(unwrap(map5(effect2, toChannel2)));
-var map8 = /* @__PURE__ */ dual(2, (self, f) => suspend5(() => {
+var map8 = /* @__PURE__ */ dual(2, (self, f) => suspend4(() => {
   let i = 0;
   return fromChannel3(map7(self.channel, map3((o) => f(o, i++))));
 }));
-var merge4 = /* @__PURE__ */ dual((args2) => isStream(args2[0]) && isStream(args2[1]), (self, that, options) => fromChannel3(merge3(toChannel2(self), toChannel2(that), options)));
+var merge3 = /* @__PURE__ */ dual((args2) => isStream(args2[0]) && isStream(args2[1]), (self, that, options) => fromChannel3(merge2(toChannel2(self), toChannel2(that), options)));
 var transduce = /* @__PURE__ */ dual(2, (self, sink) => transformPull2(self, (upstream, scope3) => sync2(() => {
   let done4;
   let leftover;
@@ -27259,15 +28185,15 @@ var transduce = /* @__PURE__ */ dual(2, (self, sink) => transformPull2(self, (up
   });
   return suspend2(() => done4 ? done4 : pull);
 })));
-var decodeText = /* @__PURE__ */ dual((args2) => isStream(args2[0]), (self, options) => suspend5(() => {
-  const decoder2 = new TextDecoder(options?.encoding);
-  return map8(self, (chunk) => decoder2.decode(chunk, {
+var decodeText = /* @__PURE__ */ dual((args2) => isStream(args2[0]), (self, options) => suspend4(() => {
+  const decoder = new TextDecoder(options?.encoding);
+  return map8(self, (chunk) => decoder.decode(chunk, {
     stream: true
   }));
 }));
 var splitLines2 = (self) => self.channel.pipe(pipeTo(splitLines()), fromChannel3);
 var ensuring4 = /* @__PURE__ */ dual(2, (self, finalizer) => fromChannel3(ensuring3(self.channel, finalizer)));
-var run3 = /* @__PURE__ */ dual(2, (self, sink) => scopedWith2((scope3) => toPullScoped(self.channel, scope3).pipe(flatMap3((upstream) => sink.transform(upstream, scope3)), map5(([a]) => a))));
+var run2 = /* @__PURE__ */ dual(2, (self, sink) => scopedWith2((scope3) => toPullScoped(self.channel, scope3).pipe(flatMap3((upstream) => sink.transform(upstream, scope3)), map5(([a]) => a))));
 var runCollect = (self) => runFold(self.channel, () => [], (acc, chunk) => {
   for (let i = 0;i < chunk.length; i++) {
     acc.push(chunk[i]);
@@ -27299,8 +28225,8 @@ var toReadableStreamWith = /* @__PURE__ */ dual((args2) => isStream(args2[0]), (
       });
     },
     pull() {
-      return new Promise((resolve2) => {
-        currentResolve = resolve2;
+      return new Promise((resolve3) => {
+        currentResolve = resolve3;
         latch.openUnsafe();
       });
     },
@@ -27322,8 +28248,8 @@ var FileSystem = /* @__PURE__ */ Service("effect/platform/FileSystem");
 var make16 = (impl) => FileSystem.of({
   ...impl,
   [TypeId22]: TypeId22,
-  exists: (path2) => pipe(impl.access(path2), as2(true), catchTag2("PlatformError", (e) => e.reason._tag === "NotFound" ? succeed6(false) : fail6(e))),
-  readFileString: (path2, encoding) => flatMap3(impl.readFile(path2), (_) => try_2({
+  exists: (path) => pipe(impl.access(path), as2(true), catchTag2("PlatformError", (e) => e.reason._tag === "NotFound" ? succeed6(false) : fail6(e))),
+  readFileString: (path, encoding) => flatMap3(impl.readFile(path), (_) => try_2({
     try: () => new TextDecoder(encoding).decode(_),
     catch: (cause) => badArgument({
       module: "FileSystem",
@@ -27332,8 +28258,8 @@ var make16 = (impl) => FileSystem.of({
       cause
     })
   })),
-  stream: fnUntraced2(function* (path2, options) {
-    const file = yield* impl.open(path2, {
+  stream: fnUntraced2(function* (path, options) {
+    const file = yield* impl.open(path, {
       flag: "r"
     });
     if (options?.offset) {
@@ -27356,11 +28282,11 @@ var make16 = (impl) => FileSystem.of({
       }
     }))));
   }, unwrap3),
-  sink: (path2, options) => pipe(impl.open(path2, {
+  sink: (path, options) => pipe(impl.open(path, {
     flag: "w",
     ...options
   }), map5((file) => forEach3((_) => file.writeAll(_))), unwrap2),
-  writeFileString: (path2, data, options) => flatMap3(try_2({
+  writeFileString: (path, data, options) => flatMap3(try_2({
     try: () => new TextEncoder().encode(data),
     catch: (cause) => badArgument({
       module: "FileSystem",
@@ -27368,7 +28294,7 @@ var make16 = (impl) => FileSystem.of({
       description: "could not encode string",
       cause
     })
-  }), (_) => impl.writeFile(path2, _, options))
+  }), (_) => impl.writeFile(path, _, options))
 });
 var FileTypeId = "~effect/platform/FileSystem/File";
 var FileDescriptor = /* @__PURE__ */ nominal();
@@ -27379,15 +28305,15 @@ class WatchBackend extends (/* @__PURE__ */ Service()("effect/platform/FileSyste
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Path.js
 var TypeId23 = "~effect/platform/Path";
 var Path = /* @__PURE__ */ Service("effect/Path");
-function normalizeStringPosix(path2, allowAboveRoot) {
+function normalizeStringPosix(path, allowAboveRoot) {
   let res = "";
   let lastSegmentLength = 0;
   let lastSlash = -1;
   let dots = 0;
   let code;
-  for (let i = 0;i <= path2.length; ++i) {
-    if (i < path2.length) {
-      code = path2.charCodeAt(i);
+  for (let i = 0;i <= path.length; ++i) {
+    if (i < path.length) {
+      code = path.charCodeAt(i);
     } else if (code === 47) {
       break;
     } else {
@@ -27428,9 +28354,9 @@ function normalizeStringPosix(path2, allowAboveRoot) {
         }
       } else {
         if (res.length > 0) {
-          res += "/" + path2.slice(lastSlash + 1, i);
+          res += "/" + path.slice(lastSlash + 1, i);
         } else {
-          res = path2.slice(lastSlash + 1, i);
+          res = path.slice(lastSlash + 1, i);
         }
         lastSegmentLength = i - lastSlash - 1;
       }
@@ -27444,7 +28370,7 @@ function normalizeStringPosix(path2, allowAboveRoot) {
   }
   return res;
 }
-function _format(sep, pathObject) {
+function _format(sep2, pathObject) {
   const dir = pathObject.dir || pathObject.root;
   const base = pathObject.base || (pathObject.name || "") + (pathObject.ext || "");
   if (!dir) {
@@ -27453,7 +28379,7 @@ function _format(sep, pathObject) {
   if (dir === pathObject.root) {
     return dir + base;
   }
-  return dir + sep + base;
+  return dir + sep2 + base;
 }
 function fromFileUrl(url) {
   if (url.protocol !== "file:") {
@@ -27484,26 +28410,26 @@ function fromFileUrl(url) {
   }
   return succeed6(decodeURIComponent(pathname));
 }
-var resolve2 = function resolve3() {
+var resolve3 = function resolve4() {
   let resolvedPath = "";
   let resolvedAbsolute = false;
   let cwd = undefined;
   for (let i = arguments.length - 1;i >= -1 && !resolvedAbsolute; i--) {
-    let path2;
+    let path;
     if (i >= 0) {
-      path2 = arguments[i];
+      path = arguments[i];
     } else {
       const process2 = globalThis.process;
       if (cwd === undefined && "process" in globalThis && typeof process2 === "object" && process2 !== null && typeof process2.cwd === "function") {
         cwd = process2.cwd();
       }
-      path2 = cwd;
+      path = cwd;
     }
-    if (path2.length === 0) {
+    if (path.length === 0) {
       continue;
     }
-    resolvedPath = path2 + "/" + resolvedPath;
-    resolvedAbsolute = path2.charCodeAt(0) === 47;
+    resolvedPath = path + "/" + resolvedPath;
+    resolvedAbsolute = path.charCodeAt(0) === 47;
   }
   resolvedPath = normalizeStringPosix(resolvedPath, !resolvedAbsolute);
   if (resolvedAbsolute) {
@@ -27521,7 +28447,7 @@ var resolve2 = function resolve3() {
 var CHAR_FORWARD_SLASH = 47;
 function toFileUrl(filepath) {
   const outURL = new URL("file://");
-  let resolved = resolve2(filepath);
+  let resolved = resolve3(filepath);
   const filePathLast = filepath.charCodeAt(filepath.length - 1);
   if (filePathLast === CHAR_FORWARD_SLASH && resolved[resolved.length - 1] !== "/") {
     resolved += "/";
@@ -27555,23 +28481,23 @@ function encodePathChars(filepath) {
 }
 var posixImpl = /* @__PURE__ */ Path.of({
   [TypeId23]: TypeId23,
-  resolve: resolve2,
-  normalize(path2) {
-    if (path2.length === 0)
+  resolve: resolve3,
+  normalize(path) {
+    if (path.length === 0)
       return ".";
-    const isAbsolute = path2.charCodeAt(0) === 47;
-    const trailingSeparator = path2.charCodeAt(path2.length - 1) === 47;
-    path2 = normalizeStringPosix(path2, !isAbsolute);
-    if (path2.length === 0 && !isAbsolute)
-      path2 = ".";
-    if (path2.length > 0 && trailingSeparator)
-      path2 += "/";
-    if (isAbsolute)
-      return "/" + path2;
-    return path2;
+    const isAbsolute3 = path.charCodeAt(0) === 47;
+    const trailingSeparator = path.charCodeAt(path.length - 1) === 47;
+    path = normalizeStringPosix(path, !isAbsolute3);
+    if (path.length === 0 && !isAbsolute3)
+      path = ".";
+    if (path.length > 0 && trailingSeparator)
+      path += "/";
+    if (isAbsolute3)
+      return "/" + path;
+    return path;
   },
-  isAbsolute(path2) {
-    return path2.length > 0 && path2.charCodeAt(0) === 47;
+  isAbsolute(path) {
+    return path.length > 0 && path.charCodeAt(0) === 47;
   },
   join() {
     if (arguments.length === 0) {
@@ -27664,15 +28590,15 @@ var posixImpl = /* @__PURE__ */ Path.of({
       return to.slice(toStart);
     }
   },
-  dirname(path2) {
-    if (path2.length === 0)
+  dirname(path) {
+    if (path.length === 0)
       return ".";
-    let code = path2.charCodeAt(0);
+    let code = path.charCodeAt(0);
     const hasRoot = code === 47;
     let end = -1;
     let matchedSlash = true;
-    for (let i = path2.length - 1;i >= 1; --i) {
-      code = path2.charCodeAt(i);
+    for (let i = path.length - 1;i >= 1; --i) {
+      code = path.charCodeAt(i);
       if (code === 47) {
         if (!matchedSlash) {
           end = i;
@@ -27686,20 +28612,20 @@ var posixImpl = /* @__PURE__ */ Path.of({
       return hasRoot ? "/" : ".";
     if (hasRoot && end === 1)
       return "//";
-    return path2.slice(0, end);
+    return path.slice(0, end);
   },
-  basename(path2, ext) {
+  basename(path, ext) {
     let start = 0;
     let end = -1;
     let matchedSlash = true;
     let i;
-    if (ext !== undefined && ext.length > 0 && ext.length <= path2.length) {
-      if (ext.length === path2.length && ext === path2)
+    if (ext !== undefined && ext.length > 0 && ext.length <= path.length) {
+      if (ext.length === path.length && ext === path)
         return "";
       let extIdx = ext.length - 1;
       let firstNonSlashEnd = -1;
-      for (i = path2.length - 1;i >= 0; --i) {
-        const code = path2.charCodeAt(i);
+      for (i = path.length - 1;i >= 0; --i) {
+        const code = path.charCodeAt(i);
         if (code === 47) {
           if (!matchedSlash) {
             start = i + 1;
@@ -27725,11 +28651,11 @@ var posixImpl = /* @__PURE__ */ Path.of({
       if (start === end)
         end = firstNonSlashEnd;
       else if (end === -1)
-        end = path2.length;
-      return path2.slice(start, end);
+        end = path.length;
+      return path.slice(start, end);
     } else {
-      for (i = path2.length - 1;i >= 0; --i) {
-        if (path2.charCodeAt(i) === 47) {
+      for (i = path.length - 1;i >= 0; --i) {
+        if (path.charCodeAt(i) === 47) {
           if (!matchedSlash) {
             start = i + 1;
             break;
@@ -27741,17 +28667,17 @@ var posixImpl = /* @__PURE__ */ Path.of({
       }
       if (end === -1)
         return "";
-      return path2.slice(start, end);
+      return path.slice(start, end);
     }
   },
-  extname(path2) {
+  extname(path) {
     let startDot = -1;
     let startPart = 0;
     let end = -1;
     let matchedSlash = true;
     let preDotState = 0;
-    for (let i = path2.length - 1;i >= 0; --i) {
-      const code = path2.charCodeAt(i);
+    for (let i = path.length - 1;i >= 0; --i) {
+      const code = path.charCodeAt(i);
       if (code === 47) {
         if (!matchedSlash) {
           startPart = i + 1;
@@ -27776,7 +28702,7 @@ var posixImpl = /* @__PURE__ */ Path.of({
     if (startDot === -1 || end === -1 || preDotState === 0 || preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
       return "";
     }
-    return path2.slice(startDot, end);
+    return path.slice(startDot, end);
   },
   format: function format2(pathObject) {
     if (pathObject === null || typeof pathObject !== "object") {
@@ -27784,7 +28710,7 @@ var posixImpl = /* @__PURE__ */ Path.of({
     }
     return _format("/", pathObject);
   },
-  parse(path2) {
+  parse(path) {
     const ret = {
       root: "",
       dir: "",
@@ -27792,12 +28718,12 @@ var posixImpl = /* @__PURE__ */ Path.of({
       ext: "",
       name: ""
     };
-    if (path2.length === 0)
+    if (path.length === 0)
       return ret;
-    let code = path2.charCodeAt(0);
-    const isAbsolute = code === 47;
+    let code = path.charCodeAt(0);
+    const isAbsolute3 = code === 47;
     let start;
-    if (isAbsolute) {
+    if (isAbsolute3) {
       ret.root = "/";
       start = 1;
     } else {
@@ -27807,10 +28733,10 @@ var posixImpl = /* @__PURE__ */ Path.of({
     let startPart = 0;
     let end = -1;
     let matchedSlash = true;
-    let i = path2.length - 1;
+    let i = path.length - 1;
     let preDotState = 0;
     for (;i >= start; --i) {
-      code = path2.charCodeAt(i);
+      code = path.charCodeAt(i);
       if (code === 47) {
         if (!matchedSlash) {
           startPart = i + 1;
@@ -27833,24 +28759,24 @@ var posixImpl = /* @__PURE__ */ Path.of({
     }
     if (startDot === -1 || end === -1 || preDotState === 0 || preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
       if (end !== -1) {
-        if (startPart === 0 && isAbsolute)
-          ret.base = ret.name = path2.slice(1, end);
+        if (startPart === 0 && isAbsolute3)
+          ret.base = ret.name = path.slice(1, end);
         else
-          ret.base = ret.name = path2.slice(startPart, end);
+          ret.base = ret.name = path.slice(startPart, end);
       }
     } else {
-      if (startPart === 0 && isAbsolute) {
-        ret.name = path2.slice(1, startDot);
-        ret.base = path2.slice(1, end);
+      if (startPart === 0 && isAbsolute3) {
+        ret.name = path.slice(1, startDot);
+        ret.base = path.slice(1, end);
       } else {
-        ret.name = path2.slice(startPart, startDot);
-        ret.base = path2.slice(startPart, end);
+        ret.name = path.slice(startPart, startDot);
+        ret.base = path.slice(startPart, end);
       }
-      ret.ext = path2.slice(startDot, end);
+      ret.ext = path.slice(startDot, end);
     }
     if (startPart > 0)
-      ret.dir = path2.slice(0, startPart - 1);
-    else if (isAbsolute)
+      ret.dir = path.slice(0, startPart - 1);
+    else if (isAbsolute3)
       ret.dir = "/";
     return ret;
   },
@@ -28022,36 +28948,36 @@ var concatTokens = (prevTokens, nextTokens, isSeparated) => isSeparated || prevT
 import * as NodeChildProcess from "node:child_process";
 
 // ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/internal/utils.js
-var handleErrnoException = (module, method) => (err, [path2]) => {
-  let reason = "Unknown";
+var handleErrnoException = (module, method) => (err, [path]) => {
+  let reason2 = "Unknown";
   switch (err.code) {
     case "ENOENT":
-      reason = "NotFound";
+      reason2 = "NotFound";
       break;
     case "EACCES":
-      reason = "PermissionDenied";
+      reason2 = "PermissionDenied";
       break;
     case "EEXIST":
-      reason = "AlreadyExists";
+      reason2 = "AlreadyExists";
       break;
     case "EISDIR":
-      reason = "BadResource";
+      reason2 = "BadResource";
       break;
     case "ENOTDIR":
-      reason = "BadResource";
+      reason2 = "BadResource";
       break;
     case "EBUSY":
-      reason = "Busy";
+      reason2 = "Busy";
       break;
     case "ELOOP":
-      reason = "BadResource";
+      reason2 = "BadResource";
       break;
   }
   return systemError({
-    _tag: reason,
+    _tag: reason2,
     module,
     method,
-    pathOrDescriptor: path2,
+    pathOrDescriptor: path,
     syscall: err.syscall,
     cause: err
   });
@@ -28170,12 +29096,12 @@ var toPlatformError = (method, error2, command2) => {
 };
 var make20 = /* @__PURE__ */ gen2(function* () {
   const fs3 = yield* FileSystem;
-  const path2 = yield* Path;
+  const path = yield* Path;
   const resolveWorkingDirectory = fnUntraced2(function* (options) {
     if (isUndefined(options.cwd))
       return;
     yield* fs3.access(options.cwd);
-    return path2.resolve(options.cwd);
+    return path.resolve(options.cwd);
   });
   const resolveEnvironment = (options) => {
     return options.extendEnv ? {
@@ -28291,7 +29217,7 @@ var make20 = /* @__PURE__ */ gen2(function* () {
             });
           }
           if (config.stream) {
-            yield* forkScoped2(run3(config.stream, sink));
+            yield* forkScoped2(run2(config.stream, sink));
           }
           inputSinks.set(fd, sink);
           break;
@@ -28328,7 +29254,7 @@ var make20 = /* @__PURE__ */ gen2(function* () {
       });
     }
     if (isStream(config.stream)) {
-      return as2(forkScoped2(run3(config.stream, sink)), sink);
+      return as2(forkScoped2(run2(config.stream, sink)), sink);
     }
     return succeed6(sink);
   });
@@ -28347,7 +29273,7 @@ var make20 = /* @__PURE__ */ gen2(function* () {
     if (isSink(stderrConfig.stream)) {
       stderr = transduce(stderr, stderrConfig.stream);
     }
-    const all3 = merge4(stdout, stderr);
+    const all3 = merge3(stdout, stderr);
     return {
       stdout,
       stderr,
@@ -28638,7 +29564,7 @@ var handleBadArgument = (method) => (err) => badArgument({
 });
 var access3 = /* @__PURE__ */ (() => {
   const nodeAccess = /* @__PURE__ */ effectify(NFS.access, /* @__PURE__ */ handleErrnoException("FileSystem", "access"), /* @__PURE__ */ handleBadArgument("access"));
-  return (path2, options) => {
+  return (path, options) => {
     let mode = NFS.constants.F_OK;
     if (options?.readable) {
       mode |= NFS.constants.R_OK;
@@ -28646,7 +29572,7 @@ var access3 = /* @__PURE__ */ (() => {
     if (options?.writable) {
       mode |= NFS.constants.W_OK;
     }
-    return nodeAccess(path2, mode);
+    return nodeAccess(path, mode);
   };
 })();
 var copy = /* @__PURE__ */ (() => {
@@ -28663,11 +29589,11 @@ var copyFile3 = /* @__PURE__ */ (() => {
 })();
 var chmod3 = /* @__PURE__ */ (() => {
   const nodeChmod = /* @__PURE__ */ effectify(NFS.chmod, /* @__PURE__ */ handleErrnoException("FileSystem", "chmod"), /* @__PURE__ */ handleBadArgument("chmod"));
-  return (path2, mode) => nodeChmod(path2, mode);
+  return (path, mode) => nodeChmod(path, mode);
 })();
 var chown2 = /* @__PURE__ */ (() => {
   const nodeChown = /* @__PURE__ */ effectify(NFS.chown, /* @__PURE__ */ handleErrnoException("FileSystem", "chown"), /* @__PURE__ */ handleBadArgument("chown"));
-  return (path2, uid, gid) => nodeChown(path2, uid, gid);
+  return (path, uid, gid) => nodeChown(path, uid, gid);
 })();
 var link3 = /* @__PURE__ */ (() => {
   const nodeLink = /* @__PURE__ */ effectify(NFS.link, /* @__PURE__ */ handleErrnoException("FileSystem", "link"), /* @__PURE__ */ handleBadArgument("link"));
@@ -28675,7 +29601,7 @@ var link3 = /* @__PURE__ */ (() => {
 })();
 var makeDirectory = /* @__PURE__ */ (() => {
   const nodeMkdir = /* @__PURE__ */ effectify(NFS.mkdir, /* @__PURE__ */ handleErrnoException("FileSystem", "makeDirectory"), /* @__PURE__ */ handleBadArgument("makeDirectory"));
-  return (path2, options) => nodeMkdir(path2, {
+  return (path, options) => nodeMkdir(path, {
     recursive: options?.recursive ?? false,
     mode: options?.mode
   });
@@ -28691,7 +29617,7 @@ var makeTempDirectoryFactory = (method) => {
 var makeTempDirectory = /* @__PURE__ */ makeTempDirectoryFactory("makeTempDirectory");
 var removeFactory = (method) => {
   const nodeRm = effectify(NFS.rm, handleErrnoException("FileSystem", method), handleBadArgument(method));
-  return (path2, options) => nodeRm(path2, {
+  return (path, options) => nodeRm(path, {
     recursive: options?.recursive ?? false,
     force: options?.force ?? false
   });
@@ -28707,7 +29633,7 @@ var makeTempDirectoryScoped = /* @__PURE__ */ (() => {
 var openFactory = (method) => {
   const nodeOpen = effectify(NFS.open, handleErrnoException("FileSystem", method), handleBadArgument(method));
   const nodeClose = effectify(NFS.close, handleErrnoException("FileSystem", method), handleBadArgument(method));
-  return (path2, options) => pipe(acquireRelease2(nodeOpen(path2, options?.flag ?? "r", options?.mode), (fd) => orDie2(nodeClose(fd))), map5((fd) => makeFile(FileDescriptor(fd), options?.flag?.startsWith("a") ?? false)));
+  return (path, options) => pipe(acquireRelease2(nodeOpen(path, options?.flag ?? "r", options?.mode), (fd) => orDie2(nodeClose(fd))), map5((fd) => makeFile(FileDescriptor(fd), options?.flag?.startsWith("a") ?? false)));
 };
 var open2 = /* @__PURE__ */ openFactory("open");
 var makeFile = /* @__PURE__ */ (() => {
@@ -28849,17 +29775,17 @@ var makeTempFileScoped = /* @__PURE__ */ (() => {
     recursive: true
   })));
 })();
-var readDirectory = (path2, options) => tryPromise2({
-  try: () => NFS.promises.readdir(path2, options),
-  catch: (err) => handleErrnoException("FileSystem", "readDirectory")(err, [path2])
+var readDirectory = (path, options) => tryPromise2({
+  try: () => NFS.promises.readdir(path, options),
+  catch: (err) => handleErrnoException("FileSystem", "readDirectory")(err, [path])
 });
-var readFile2 = (path2) => callback2((resume, signal) => {
+var readFile2 = (path) => callback2((resume, signal) => {
   try {
-    NFS.readFile(path2, {
+    NFS.readFile(path, {
       signal
     }, (err, data) => {
       if (err) {
-        resume(fail6(handleErrnoException("FileSystem", "readFile")(err, [path2])));
+        resume(fail6(handleErrnoException("FileSystem", "readFile")(err, [path])));
       } else {
         resume(succeed6(data));
       }
@@ -28870,11 +29796,11 @@ var readFile2 = (path2) => callback2((resume, signal) => {
 });
 var readLink = /* @__PURE__ */ (() => {
   const nodeReadLink = /* @__PURE__ */ effectify(NFS.readlink, /* @__PURE__ */ handleErrnoException("FileSystem", "readLink"), /* @__PURE__ */ handleBadArgument("readLink"));
-  return (path2) => nodeReadLink(path2);
+  return (path) => nodeReadLink(path);
 })();
 var realPath = /* @__PURE__ */ (() => {
   const nodeRealPath = /* @__PURE__ */ effectify(NFS.realpath, /* @__PURE__ */ handleErrnoException("FileSystem", "realPath"), /* @__PURE__ */ handleBadArgument("realPath"));
-  return (path2) => nodeRealPath(path2);
+  return (path) => nodeRealPath(path);
 })();
 var rename3 = /* @__PURE__ */ (() => {
   const nodeRename = /* @__PURE__ */ effectify(NFS.rename, /* @__PURE__ */ handleErrnoException("FileSystem", "rename"), /* @__PURE__ */ handleBadArgument("rename"));
@@ -28898,36 +29824,36 @@ var makeFileInfo = (stat3) => ({
 });
 var stat3 = /* @__PURE__ */ (() => {
   const nodeStat = /* @__PURE__ */ effectify(NFS.stat, /* @__PURE__ */ handleErrnoException("FileSystem", "stat"), /* @__PURE__ */ handleBadArgument("stat"));
-  return (path2) => map5(nodeStat(path2), makeFileInfo);
+  return (path) => map5(nodeStat(path), makeFileInfo);
 })();
 var symlink3 = /* @__PURE__ */ (() => {
   const nodeSymlink = /* @__PURE__ */ effectify(NFS.symlink, /* @__PURE__ */ handleErrnoException("FileSystem", "symlink"), /* @__PURE__ */ handleBadArgument("symlink"));
-  return (target2, path2) => nodeSymlink(target2, path2);
+  return (target2, path) => nodeSymlink(target2, path);
 })();
 var truncate2 = /* @__PURE__ */ (() => {
   const nodeTruncate = /* @__PURE__ */ effectify(NFS.truncate, /* @__PURE__ */ handleErrnoException("FileSystem", "truncate"), /* @__PURE__ */ handleBadArgument("truncate"));
-  return (path2, length) => nodeTruncate(path2, length !== undefined ? Number(length) : undefined);
+  return (path, length) => nodeTruncate(path, length !== undefined ? Number(length) : undefined);
 })();
 var utimes2 = /* @__PURE__ */ (() => {
   const nodeUtimes = /* @__PURE__ */ effectify(NFS.utimes, /* @__PURE__ */ handleErrnoException("FileSystem", "utime"), /* @__PURE__ */ handleBadArgument("utime"));
-  return (path2, atime, mtime) => nodeUtimes(path2, atime, mtime);
+  return (path, atime, mtime) => nodeUtimes(path, atime, mtime);
 })();
-var watchNode = (path2) => callback3((queue) => acquireRelease2(sync2(() => {
-  const watcher = NFS.watch(path2, {
+var watchNode = (path) => callback3((queue) => acquireRelease2(sync2(() => {
+  const watcher = NFS.watch(path, {
     recursive: true
-  }, (event, path3) => {
-    if (!path3)
+  }, (event, path2) => {
+    if (!path2)
       return;
     switch (event) {
       case "rename": {
-        runFork2(matchEffect3(stat3(path3), {
+        runFork2(matchEffect3(stat3(path2), {
           onSuccess: (_) => offer(queue, {
             _tag: "Create",
-            path: path3
+            path: path2
           }),
           onFailure: (_) => offer(queue, {
             _tag: "Remove",
-            path: path3
+            path: path2
           })
         }));
         return;
@@ -28935,7 +29861,7 @@ var watchNode = (path2) => callback3((queue) => acquireRelease2(sync2(() => {
       case "change": {
         offerUnsafe(queue, {
           _tag: "Update",
-          path: path3
+          path: path2
         });
         return;
       }
@@ -28946,7 +29872,7 @@ var watchNode = (path2) => callback3((queue) => acquireRelease2(sync2(() => {
       module: "FileSystem",
       _tag: "Unknown",
       method: "watch",
-      pathOrDescriptor: path2,
+      pathOrDescriptor: path,
       cause: error2
     })));
   });
@@ -28955,16 +29881,16 @@ var watchNode = (path2) => callback3((queue) => acquireRelease2(sync2(() => {
   });
   return watcher;
 }), (watcher) => sync2(() => watcher.close())));
-var watch2 = (backend, path2) => stat3(path2).pipe(map5((stat4) => backend.pipe(flatMap((_) => _.register(path2, stat4)), getOrElse(() => watchNode(path2)))), unwrap3);
-var writeFile3 = (path2, data, options) => callback2((resume, signal) => {
+var watch2 = (backend, path) => stat3(path).pipe(map5((stat4) => backend.pipe(flatMap((_) => _.register(path, stat4)), getOrElse(() => watchNode(path)))), unwrap3);
+var writeFile3 = (path, data, options) => callback2((resume, signal) => {
   try {
-    NFS.writeFile(path2, data, {
+    NFS.writeFile(path, data, {
       signal,
       flag: options?.flag,
       mode: options?.mode
     }, (err) => {
       if (err) {
-        resume(fail6(handleErrnoException("FileSystem", "writeFile")(err, [path2])));
+        resume(fail6(handleErrnoException("FileSystem", "writeFile")(err, [path])));
       } else {
         resume(void_3);
       }
@@ -28996,8 +29922,8 @@ var makeFileSystem = /* @__PURE__ */ map5(/* @__PURE__ */ serviceOption2(WatchBa
   symlink: symlink3,
   truncate: truncate2,
   utimes: utimes2,
-  watch(path2) {
-    return watch2(backend, path2);
+  watch(path) {
+    return watch2(backend, path);
   },
   writeFile: writeFile3
 }));
@@ -29255,7 +30181,7 @@ var setAll = /* @__PURE__ */ dual(2, (self, headers) => make21({
   ...self,
   ...fromInput(headers)
 }));
-var merge5 = /* @__PURE__ */ dual(2, (self, headers) => {
+var merge4 = /* @__PURE__ */ dual(2, (self, headers) => {
   const out = make21(self);
   Object.assign(out, headers);
   return out;
@@ -29320,8 +30246,8 @@ class HttpClientError extends (/* @__PURE__ */ TaggedError2("HttpClientError")) 
     return this.reason.message;
   }
 }
-var formatReason = (tag2) => tag2.endsWith("Error") ? tag2.slice(0, -5) : tag2;
-var formatMessage = (reason, description, info) => description ? `${reason}: ${description} (${info})` : `${reason} error (${info})`;
+var formatReason = (tag3) => tag3.endsWith("Error") ? tag3.slice(0, -5) : tag3;
+var formatMessage = (reason2, description, info) => description ? `${reason2}: ${description} (${info})` : `${reason2} error (${info})`;
 
 class TransportError extends (/* @__PURE__ */ TaggedError2("TransportError")) {
   get methodAndUrl() {
@@ -29438,7 +30364,7 @@ var setAll2 = /* @__PURE__ */ dual(2, (self, input) => {
 });
 class UrlParamsError extends (/* @__PURE__ */ TaggedError2("UrlParamsError")) {
 }
-var makeUrl = (url, params, hash2) => {
+var makeUrl = (url, params, hash3) => {
   try {
     const urlInstance = new URL(url, baseUrl());
     for (let i = 0;i < params.params.length; i++) {
@@ -29447,8 +30373,8 @@ var makeUrl = (url, params, hash2) => {
         urlInstance.searchParams.append(key, value2);
       }
     }
-    if (hash2 !== undefined) {
-      urlInstance.hash = hash2;
+    if (hash3 !== undefined) {
+      urlInstance.hash = hash3;
     }
     return succeed2(urlInstance);
   } catch (e) {
@@ -29514,9 +30440,6 @@ class Uint8Array3 extends Proto7 {
   }
 }
 var uint8Array = (body, contentType) => new Uint8Array3(body, contentType ?? "application/octet-stream", body.length);
-var encoder3 = /* @__PURE__ */ new TextEncoder;
-var text = (body, contentType) => uint8Array(encoder3.encode(body), contentType ?? "text/plain");
-var jsonUnsafe = (body, contentType) => text(JSON.stringify(body), contentType ?? "application/json");
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpMethod.js
 var allShort = [["GET", "get"], ["POST", "post"], ["PUT", "put"], ["DELETE", "del"], ["PATCH", "patch"], ["HEAD", "head"], ["OPTIONS", "options"], ["TRACE", "trace"]];
@@ -29541,12 +30464,12 @@ var Proto8 = {
     return pipeArguments(this, arguments);
   }
 };
-function makeWith(method, url, urlParams2, hash2, headers, body) {
+function makeWith(method, url, urlParams2, hash3, headers, body) {
   const self = Object.create(Proto8);
   self.method = method;
   self.url = url;
   self.urlParams = urlParams2;
-  self.hash = hash2;
+  self.hash = hash3;
   self.headers = headers;
   self.body = body;
   return self;
@@ -29557,8 +30480,6 @@ var make23 = (method) => (url, options) => modify(empty8, {
   url,
   ...options ?? undefined
 });
-var get2 = /* @__PURE__ */ make23("GET");
-var post = /* @__PURE__ */ make23("POST");
 var modify = /* @__PURE__ */ dual(2, (self, options) => {
   let result2 = self;
   if (options.method) {
@@ -29598,13 +30519,13 @@ var setUrl = /* @__PURE__ */ dual(2, (self, url) => {
   }
   const clone = new URL(url.toString());
   const urlParams2 = fromInput2(clone.searchParams);
-  const hash2 = fromNullishOr(clone.hash === "" ? undefined : clone.hash.slice(1));
+  const hash3 = fromNullishOr(clone.hash === "" ? undefined : clone.hash.slice(1));
   clone.search = "";
   clone.hash = "";
-  return makeWith(self.method, clone.toString(), urlParams2, hash2, self.headers, self.body);
+  return makeWith(self.method, clone.toString(), urlParams2, hash3, self.headers, self.body);
 });
 var setUrlParams = /* @__PURE__ */ dual(2, (self, input) => makeWith(self.method, self.url, setAll2(self.urlParams, input), self.hash, self.headers, self.body));
-var setHash = /* @__PURE__ */ dual(2, (self, hash2) => makeWith(self.method, self.url, self.urlParams, some2(hash2), self.headers, self.body));
+var setHash = /* @__PURE__ */ dual(2, (self, hash3) => makeWith(self.method, self.url, self.urlParams, some2(hash3), self.headers, self.body));
 var setBody = /* @__PURE__ */ dual(2, (self, body) => {
   let headers = self.headers;
   if (body._tag === "Empty" || body._tag === "FormData") {
@@ -29702,8 +30623,8 @@ class WebHttpClientResponse extends Class2 {
     }));
   }
   get json() {
-    return flatMap3(this.text, (text2) => try_2({
-      try: () => text2 === "" ? null : JSON.parse(text2),
+    return flatMap3(this.text, (text3) => try_2({
+      try: () => text3 === "" ? null : JSON.parse(text3),
       catch: (cause) => new HttpClientError({
         reason: new DecodeError({
           request: this.request,
@@ -29979,7 +30900,7 @@ class InterruptibleResponse {
     return this.applyInterrupt(this.original.arrayBuffer);
   }
   get stream() {
-    return suspend5(() => {
+    return suspend4(() => {
       responseRegistry.unregister(this.original);
       return ensuring4(this.original.stream, sync2(() => {
         this.controller.abort();
@@ -30007,7 +30928,7 @@ class RequestInit extends (/* @__PURE__ */ Service()("effect/http/FetchHttpClien
 var fetch = /* @__PURE__ */ make24((request, url, signal, fiber2) => {
   const fetch2 = fiber2.getRef(Fetch);
   const options = fiber2.context.mapUnsafe.get(RequestInit.key) ?? {};
-  let headers = options.headers ? merge5(fromInput(options.headers), request.headers) : request.headers;
+  let headers = options.headers ? merge4(fromInput(options.headers), request.headers) : request.headers;
   if (headers["content-length"]) {
     headers = remove3(headers, "content-length");
   }
@@ -30050,8 +30971,8 @@ var fromFileUrl2 = (url) => try_2({
     cause
   })
 });
-var toFileUrl2 = (path2) => try_2({
-  try: () => NodeUrl.pathToFileURL(path2),
+var toFileUrl2 = (path) => try_2({
+  try: () => NodeUrl.pathToFileURL(path),
   catch: (cause) => new BadArgument({
     module: "Path",
     method: "toFileUrl",
@@ -30079,678 +31000,6 @@ var layer5 = /* @__PURE__ */ succeed5(Path)({
 
 // ../../node_modules/.bun/@effect+platform-node@4.0.0-beta.83+57c66e18831c17f0/node_modules/@effect/platform-node/dist/NodePath.js
 var layer6 = layer5;
-
-// ../../src/apply/store.ts
-import {
-  closeSync,
-  constants as constants4,
-  existsSync as existsSync2,
-  fsyncSync,
-  mkdirSync,
-  openSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  statSync,
-  unlinkSync,
-  writeFileSync
-} from "node:fs";
-import { dirname as dirname2, join as join3 } from "node:path";
-import { randomUUID as randomUUID2 } from "node:crypto";
-class RunStore extends Service()("RunStore") {
-}
-var error2 = (reason) => RunStoreError.make({ reason });
-var exclusiveFlags = constants4.O_WRONLY | constants4.O_CREAT | constants4.O_EXCL | constants4.O_NOFOLLOW;
-var ledgerPath = (directory, logicalRunId) => join3(directory, `${logicalRunId}.run-ledger.json`);
-var encodeLedger = (ledger) => encodeCanonicalJson(encodeSync2(RunLedger)(ledger));
-var decodeLedger = (bytes) => {
-  const ledger = decodeUnknownSync(RunLedger, { onExcessProperty: "error" })(parseStrictJson(bytes));
-  if (encodeLedger(ledger) !== bytes)
-    throw error2("Ledger is not canonical.");
-  return ledger;
-};
-var assertExpected = (ledger, expected) => {
-  if (ledger.planId !== expected.planId || JSON.stringify(ledger.operationHashes) !== JSON.stringify(expected.operationHashes))
-    throw error2("Ledger is foreign to the requested plan.");
-};
-var readLedgerFile = (path2) => {
-  try {
-    const descriptor = openSync(path2, constants4.O_RDONLY | constants4.O_NOFOLLOW);
-    try {
-      return decodeLedger(readFileSync(descriptor, "utf8"));
-    } finally {
-      closeSync(descriptor);
-    }
-  } catch (cause) {
-    if (cause instanceof RunStoreError)
-      throw cause;
-    throw error2(`Ledger read refused: ${String(cause)}`);
-  }
-};
-var resolveLedgerPath = (path2) => {
-  let directory = false;
-  try {
-    directory = statSync(path2).isDirectory();
-  } catch {
-    return path2;
-  }
-  if (!directory)
-    return path2;
-  const ledgers = readdirSync(path2).filter((name) => name.endsWith(".run-ledger.json"));
-  if (ledgers.length !== 1) {
-    throw error2(`Runs directory ${path2} holds ${ledgers.length} run ledgers; name the ledger file to resume.`);
-  }
-  return join3(path2, ledgers[0]);
-};
-var staleLeaseMilliseconds = 3600000;
-var acquire = (path2) => {
-  const lock = `${path2}.lease`;
-  const open3 = () => {
-    const descriptor = openSync(lock, exclusiveFlags, 384);
-    writeFileSync(descriptor, `${process.pid}
-`);
-    fsyncSync(descriptor);
-    return descriptor;
-  };
-  try {
-    return open3();
-  } catch (cause) {
-    const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
-    if (code !== "EEXIST")
-      throw error2(`Exclusive run lease refused: ${String(cause)}`);
-    try {
-      const age = Date.now() - statSync(lock).mtimeMs;
-      if (age > staleLeaseMilliseconds) {
-        unlinkSync(lock);
-        return open3();
-      }
-      const holder = readFileSync(lock, "utf8").trim();
-      throw error2(`Exclusive run lease refused: held by pid ${holder} for ${Math.round(age / 1000)}s (${lock}). Delete the file if that process is dead.`);
-    } catch (secondary) {
-      if (secondary instanceof RunStoreError)
-        throw secondary;
-      throw error2(`Exclusive run lease refused: ${String(cause)}`);
-    }
-  }
-};
-var classifyDirectorySyncFailure = (code) => ["EINVAL", "ENOTSUP", "EISDIR"].includes(code) ? "degrade" : "raise";
-var syncDirectory = (directory) => {
-  let descriptor;
-  try {
-    descriptor = openSync(directory, constants4.O_RDONLY | constants4.O_DIRECTORY);
-    fsyncSync(descriptor);
-    return "file-rename-directory-sync";
-  } catch (cause) {
-    const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
-    if (classifyDirectorySyncFailure(code) === "raise")
-      throw cause;
-    return "file-rename";
-  } finally {
-    if (descriptor !== undefined)
-      closeSync(descriptor);
-  }
-};
-var atomicWrite = (path2, ledger) => {
-  const directory = dirname2(path2);
-  const temporary = join3(directory, `.${randomUUID2()}.run-ledger.tmp`);
-  let descriptor;
-  try {
-    descriptor = openSync(temporary, exclusiveFlags, 384);
-    writeFileSync(descriptor, encodeLedger(ledger));
-    fsyncSync(descriptor);
-    closeSync(descriptor);
-    descriptor = undefined;
-    renameSync(temporary, path2);
-    return syncDirectory(directory);
-  } finally {
-    if (descriptor !== undefined)
-      closeSync(descriptor);
-    if (existsSync2(temporary))
-      unlinkSync(temporary);
-  }
-};
-var withLease = (path2, body) => {
-  mkdirSync(dirname2(path2), { recursive: true, mode: 448 });
-  const descriptor = acquire(path2);
-  let bodyFailed = false;
-  try {
-    return body();
-  } catch (cause) {
-    bodyFailed = true;
-    throw cause;
-  } finally {
-    let releaseError;
-    try {
-      closeSync(descriptor);
-    } catch (cause) {
-      releaseError = cause;
-    }
-    try {
-      unlinkSync(`${path2}.lease`);
-    } catch (cause) {
-      const code = typeof cause === "object" && cause !== null && "code" in cause ? String(cause.code) : "";
-      if (code !== "ENOENT" && releaseError === undefined)
-        releaseError = cause;
-    }
-    if (!bodyFailed && releaseError !== undefined) {
-      throw error2(`Run lease release failed: ${String(releaseError)}`);
-    }
-  }
-};
-var attempt = (body) => try_2({ try: body, catch: (cause) => cause instanceof RunStoreError ? cause : error2(String(cause)) });
-var makeFileRunStore = () => ({
-  path: ledgerPath,
-  load: fn2("RunStore.load")((path2, expected) => attempt(() => {
-    const ledger = readLedgerFile(path2);
-    assertExpected(ledger, expected);
-    return ledger;
-  })),
-  create: fn2("RunStore.create")((path2, ledger) => attempt(() => withLease(path2, () => {
-    if (existsSync2(path2))
-      throw error2(`Logical run already exists at ${path2}. Resume it, or pass a reason to derive a new logical run.`);
-    if (ledger.revision !== 0)
-      throw error2("New ledger must begin at revision zero.");
-    return atomicWrite(path2, ledger);
-  }))),
-  save: fn2("RunStore.save")((path2, expectedRevision, ledger) => attempt(() => withLease(path2, () => {
-    const durable = readLedgerFile(path2);
-    if (durable.revision !== expectedRevision || ledger.revision !== expectedRevision + 1)
-      throw error2("Ledger revision compare-and-swap failed.");
-    if (durable.planId !== ledger.planId || durable.logicalRunId !== ledger.logicalRunId)
-      throw error2("Ledger identity changed.");
-    return atomicWrite(path2, ledger);
-  })))
-});
-var FileRunStoreLayer = succeed5(RunStore)({ ...makeFileRunStore() });
-
-// ../../src/drivers/local.ts
-import {
-  existsSync as existsSync4,
-  lstatSync as lstatSync2,
-  readdirSync as readdirSync2,
-  realpathSync as realpathSync2,
-  statSync as statSync2
-} from "node:fs";
-import { basename as basename2, join as join5, resolve as resolve4 } from "node:path";
-
-// ../../src/drivers/services.ts
-import { createHash as createHash2 } from "node:crypto";
-class ProcessRequest extends TaggedClass()("ProcessRequest", {
-  argv: NonEmptyArray(String4),
-  cwd: SafeRelativePath,
-  environmentNames: ArraySchema(NonEmptyString)
-}) {
-}
-
-class CatalogPublishRequest extends TaggedClass()("CatalogPublishRequest", {
-  operation: Union2([
-    HttpPublish,
-    ForgeRelease,
-    PackageRegistryRelease
-  ]),
-  root: WorkspaceRoot,
-  checkpointId: CheckpointId,
-  clientReconciliationKey: NonEmptyString
-}) {
-}
-
-class CatalogStructuredRequest extends TaggedClass()("CatalogStructuredRequest", {
-  operation: Operation,
-  root: WorkspaceRoot,
-  availableOutputs: ArraySchema(OutputDeclaration)
-}) {
-}
-
-class SnapshotRequest extends TaggedClass()("SnapshotRequest", {
-  root: WorkspaceRoot,
-  source: SafeRelativePath,
-  snapshotDirectory: NonEmptyString,
-  outputId: OutputId
-}) {
-}
-
-class ReadResult extends Class4("ReadResult")({
-  found: Boolean3,
-  remoteId: optionalKey2(NonEmptyString)
-}) {
-}
-
-class NotDispatched extends TaggedClass()("NotDispatched", { reason: String4, retryable: Boolean3 }) {
-}
-
-class Committed extends TaggedClass()("Committed", { observedOutcome: String4, transmittedDigest: optionalKey2(Digest) }) {
-}
-
-class CommitmentUnknown extends TaggedClass()("CommitmentUnknown", { failure: String4, observedRemoteId: optionalKey2(NonEmptyString) }) {
-}
-var MutationResult = Union2([NotDispatched, Committed, CommitmentUnknown]);
-
-class VerifiedContentHandle {
-  facts;
-  content;
-  constructor(facts, content) {
-    this.facts = facts;
-    this.content = content;
-  }
-  get bytes() {
-    return new Uint8Array(this.content);
-  }
-  static from(facts, bytes) {
-    const digest = createHash2("sha256").update(bytes).digest("hex");
-    if (facts.digest !== digest || facts.size !== bytes.length)
-      throw DriverError.make({ reason: "Snapshot verification failed.", commitment: "before-commit" });
-    return new VerifiedContentHandle(facts, new Uint8Array(bytes));
-  }
-}
-
-class WorkspaceStore extends Service()("WorkspaceStore") {
-}
-
-class CredentialStore extends Service()("CredentialStore") {
-}
-
-class DriverCatalog extends Service()("DriverCatalog") {
-}
-
-// ../../src/drivers/contain.ts
-import { isAbsolute, relative, sep } from "node:path";
-var contained = (root, path2) => {
-  const value2 = relative(root, path2);
-  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`) && !isAbsolute(value2);
-};
-
-// ../../src/drivers/workspace.ts
-import {
-  chmodSync,
-  closeSync as closeSync2,
-  constants as constants5,
-  existsSync as existsSync3,
-  fstatSync,
-  fsyncSync as fsyncSync2,
-  lstatSync,
-  mkdirSync as mkdirSync2,
-  openSync as openSync2,
-  readFileSync as readFileSync2,
-  realpathSync,
-  renameSync as renameSync2,
-  unlinkSync as unlinkSync2,
-  writeFileSync as writeFileSync2
-} from "node:fs";
-import { createHash as createHash3, randomUUID as randomUUID3 } from "node:crypto";
-import { join as join4 } from "node:path";
-var fail12 = (reason) => DriverError.make({ reason, commitment: "before-commit" });
-var secureRead = (root, path2) => {
-  let current = root;
-  for (const part of path2.split(/[\\/]+/u)) {
-    current = join4(current, part);
-    if (lstatSync(current).isSymbolicLink())
-      throw fail12("Structured read encountered a symlink.");
-  }
-  const descriptor = openSync2(current, constants5.O_RDONLY | constants5.O_NOFOLLOW);
-  try {
-    const opened = fstatSync(descriptor);
-    const resolved = realpathSync(current);
-    if (!contained(root, resolved))
-      throw fail12("Opened file escaped the workspace root.");
-    const landed = lstatSync(resolved);
-    if (landed.ino !== opened.ino || landed.dev !== opened.dev)
-      throw fail12("Opened file changed identity.");
-    return { bytes: readFileSync2(descriptor), inode: opened.ino };
-  } finally {
-    closeSync2(descriptor);
-  }
-};
-var secureWrite = (root, path2, bytes) => {
-  const parts = path2.split(/[\\/]+/u).filter((part) => part.length > 0);
-  let parent = root;
-  for (const part of parts.slice(0, -1)) {
-    parent = join4(parent, part);
-    mkdirSync2(parent, { recursive: true });
-    if (lstatSync(parent).isSymbolicLink())
-      throw fail12("Structured write encountered a symlink.");
-  }
-  const target2 = join4(parent, parts.at(-1));
-  if (existsSync3(target2) && lstatSync(target2).isSymbolicLink()) {
-    throw fail12("Structured write encountered a symlink.");
-  }
-  const flags = constants5.O_WRONLY | constants5.O_CREAT | constants5.O_TRUNC | constants5.O_NOFOLLOW;
-  const descriptor = openSync2(target2, flags, 420);
-  try {
-    writeFileSync2(descriptor, bytes);
-    fsyncSync2(descriptor);
-  } finally {
-    closeSync2(descriptor);
-  }
-};
-var persist = (directory, digest, bytes) => {
-  mkdirSync2(directory, { recursive: true, mode: 448 });
-  const root = realpathSync(directory);
-  if (root !== directory)
-    throw fail12("Snapshot directory was not realpath-normalized.");
-  const target2 = join4(root, digest);
-  if (existsSync3(target2))
-    return;
-  const temporary = join4(directory, `.${randomUUID3()}.snapshot.tmp`);
-  const flags = constants5.O_WRONLY | constants5.O_CREAT | constants5.O_EXCL | constants5.O_NOFOLLOW;
-  const descriptor = openSync2(temporary, flags, 384);
-  try {
-    writeFileSync2(descriptor, bytes);
-    fsyncSync2(descriptor);
-  } finally {
-    closeSync2(descriptor);
-  }
-  try {
-    renameSync2(temporary, target2);
-    chmodSync(target2, 256);
-  } finally {
-    if (existsSync3(temporary))
-      unlinkSync2(temporary);
-  }
-};
-var makeNodeWorkspaceStore = () => ({
-  snapshot: fn2("WorkspaceStore.snapshot")((request) => try_2({
-    try: () => {
-      const root = realpathSync(request.root);
-      if (root !== request.root)
-        throw fail12("WorkspaceRoot was not realpath-normalized.");
-      const source = secureRead(root, request.source);
-      const digest = createHash3("sha256").update(source.bytes).digest("hex");
-      persist(request.snapshotDirectory, digest, source.bytes);
-      return MaterializedOutput.make({
-        outputId: request.outputId,
-        snapshotId: SnapshotId.make(digest),
-        digest: Digest.make(digest),
-        size: source.bytes.length,
-        inode: source.inode
-      });
-    },
-    catch: (cause) => cause instanceof DriverError ? cause : fail12(String(cause))
-  })),
-  verify: fn2("WorkspaceStore.verify")((directory, facts) => try_2({
-    try: () => {
-      if (!/^[a-f0-9]{64}$/u.test(facts.snapshotId))
-        throw fail12("Snapshot id is not a digest.");
-      const path2 = join4(directory, facts.snapshotId);
-      const descriptor = openSync2(path2, constants5.O_RDONLY | constants5.O_NOFOLLOW);
-      try {
-        return VerifiedContentHandle.from(facts, readFileSync2(descriptor));
-      } finally {
-        closeSync2(descriptor);
-      }
-    },
-    catch: (cause) => cause instanceof DriverError ? cause : fail12(String(cause))
-  }))
-});
-
-// ../../src/drivers/archive.ts
-import { gzipSync } from "node:zlib";
-var text2 = (value2) => new TextEncoder().encode(value2);
-var concat = (parts) => {
-  const output = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
-  let offset = 0;
-  for (const part of parts) {
-    output.set(part, offset);
-    offset += part.length;
-  }
-  return output;
-};
-var integer = (bytes, value2) => {
-  const output = new Uint8Array(bytes);
-  const view = new DataView(output.buffer);
-  if (bytes === 2)
-    view.setUint16(0, value2, true);
-  else
-    view.setUint32(0, value2, true);
-  return output;
-};
-var crcTable = Array.from({ length: 256 }, (_, value2) => {
-  let crc = value2;
-  for (const bit of Array.from({ length: 8 }, (_2, index) => index)) {
-    crc = (crc & 1) === 1 ? 3988292384 ^ crc >>> 1 : crc >>> 1;
-  }
-  return crc >>> 0;
-});
-var crc32 = (data) => {
-  let crc = 4294967295;
-  for (const byte of data)
-    crc = crc >>> 8 ^ crcTable[(crc ^ byte) & 255];
-  return (crc ^ 4294967295) >>> 0;
-};
-var zip3 = (entries) => {
-  const bodies = [];
-  const central = [];
-  let offset = 0;
-  for (const entry of entries) {
-    const name = text2(entry.path);
-    const crc = crc32(entry.data);
-    const local = concat([
-      integer(4, 67324752),
-      integer(2, 20),
-      integer(2, 2048),
-      integer(2, 0),
-      integer(2, 0),
-      integer(2, 0),
-      integer(4, crc),
-      integer(4, entry.data.length),
-      integer(4, entry.data.length),
-      integer(2, name.length),
-      integer(2, 0),
-      name
-    ]);
-    bodies.push(local, entry.data);
-    central.push(concat([
-      integer(4, 33639248),
-      integer(2, 788),
-      integer(2, 20),
-      integer(2, 2048),
-      integer(2, 0),
-      integer(2, 0),
-      integer(2, 0),
-      integer(4, crc),
-      integer(4, entry.data.length),
-      integer(4, entry.data.length),
-      integer(2, name.length),
-      integer(2, 0),
-      integer(2, 0),
-      integer(2, 0),
-      integer(2, 0),
-      integer(4, entry.mode << 16),
-      integer(4, offset),
-      name
-    ]));
-    offset += local.length + entry.data.length;
-  }
-  const directory = concat(central);
-  return concat([
-    ...bodies,
-    directory,
-    integer(4, 101010256),
-    integer(2, 0),
-    integer(2, 0),
-    integer(2, entries.length),
-    integer(2, entries.length),
-    integer(4, directory.length),
-    integer(4, offset),
-    integer(2, 0)
-  ]);
-};
-var ascii = (output, offset, length, value2) => {
-  const bytes = text2(value2);
-  if (bytes.length > length)
-    throw new Error(`Archive path is too long: ${value2}`);
-  output.set(bytes, offset);
-};
-var octal = (output, offset, length, value2) => {
-  ascii(output, offset, length - 2, value2.toString(8).padStart(length - 2, "0"));
-  output[offset + length - 2] = 0;
-  output[offset + length - 1] = 32;
-};
-var tarHeader = (entry) => {
-  const header = new Uint8Array(512);
-  ascii(header, 0, 100, entry.path);
-  octal(header, 100, 8, entry.mode & 511);
-  octal(header, 108, 8, 0);
-  octal(header, 116, 8, 0);
-  octal(header, 124, 12, entry.data.length);
-  octal(header, 136, 12, 0);
-  header.fill(32, 148, 156);
-  header[156] = 48;
-  ascii(header, 257, 6, "ustar");
-  ascii(header, 263, 2, "00");
-  octal(header, 148, 8, header.reduce((sum, byte) => sum + byte, 0));
-  return header;
-};
-var tarGz = (entries) => {
-  const packed = new Uint8Array(gzipSync(concat(entries.flatMap((entry) => [
-    tarHeader(entry),
-    entry.data,
-    new Uint8Array(entry.data.length % 512 === 0 ? 0 : 512 - entry.data.length % 512)
-  ]).concat([new Uint8Array(1024)])), { level: 9 }));
-  packed.fill(0, 4, 8);
-  packed[9] = 255;
-  return packed;
-};
-
-// ../../src/drivers/glob.ts
-var alternativeLimit = 1024;
-var metacharacters = new Set(["\\", "^", "$", ".", "*", "+", "?", "(", ")", "[", "]", "{", "}", "|", "/"]);
-var literal = (value2) => metacharacters.has(value2) ? `\\${value2}` : value2;
-var classLiteral = (value2) => ["\\", "]", "^", "["].includes(value2) ? `\\${value2}` : value2;
-var classEnd = (pattern, open3) => {
-  let index = open3 + 1;
-  if (pattern[index] === "!" || pattern[index] === "^")
-    index += 1;
-  if (pattern[index] === "]")
-    index += 1;
-  while (index < pattern.length) {
-    if (pattern[index] === "\\")
-      index += 2;
-    else if (pattern[index] === "]")
-      return index;
-    else
-      index += 1;
-  }
-  return;
-};
-var characterClass = (body) => {
-  const negated = body.startsWith("!") || body.startsWith("^");
-  const members = negated ? body.slice(1) : body;
-  let source = "";
-  let index = 0;
-  while (index < members.length) {
-    const value2 = members[index];
-    if (value2 === "\\" && index + 1 < members.length) {
-      source += `\\${members[index + 1]}`;
-      index += 2;
-      continue;
-    }
-    source += value2 === "-" ? "-" : classLiteral(value2);
-    index += 1;
-  }
-  return `[${negated ? "^" : ""}${source}]`;
-};
-var expand = (pattern, start, depth) => {
-  const completed = [];
-  let current = [""];
-  let index = start;
-  const append4 = (text3) => {
-    current = current.map((value2) => value2 + text3);
-  };
-  const flush = () => {
-    completed.push(...current);
-    current = [""];
-  };
-  while (index < pattern.length) {
-    const value2 = pattern[index];
-    if (value2 === "\\") {
-      if (index + 1 >= pattern.length)
-        return;
-      append4(pattern.slice(index, index + 2));
-      index += 2;
-    } else if (value2 === "[") {
-      const end = classEnd(pattern, index);
-      if (end === undefined)
-        return;
-      append4(pattern.slice(index, end + 1));
-      index = end + 1;
-    } else if (value2 === "{") {
-      const group = expand(pattern, index + 1, depth + 1);
-      if (group === undefined)
-        return;
-      current = current.flatMap((prefix) => group.alternatives.map((suffix) => prefix + suffix));
-      if (current.length > alternativeLimit)
-        return;
-      index = group.next;
-    } else if (depth > 0 && value2 === "}") {
-      flush();
-      return { alternatives: completed, next: index + 1 };
-    } else if (depth > 0 && value2 === ",") {
-      flush();
-      index += 1;
-    } else {
-      append4(value2);
-      index += 1;
-    }
-  }
-  if (depth > 0)
-    return;
-  flush();
-  return { alternatives: completed, next: index };
-};
-var globstarAt = (pattern, index) => pattern.startsWith("**", index) && (index + 2 === pattern.length || pattern[index + 2] === "/");
-var compile = (pattern) => {
-  let source = "^";
-  let index = 0;
-  while (index < pattern.length) {
-    const value2 = pattern[index];
-    if (value2 === "\\") {
-      if (index + 1 >= pattern.length)
-        return;
-      source += literal(pattern[index + 1]);
-      index += 2;
-    } else if (value2 === "[") {
-      const end = classEnd(pattern, index);
-      if (end === undefined)
-        return;
-      source += characterClass(pattern.slice(index + 1, end));
-      index = end + 1;
-    } else if (value2 === "*") {
-      let run4 = 1;
-      while (pattern[index + run4] === "*")
-        run4 += 1;
-      const whole = (index === 0 || pattern[index - 1] === "/") && (index + run4 === pattern.length || pattern[index + run4] === "/");
-      const rest = index + run4 + 1;
-      if (run4 === 2 && whole && index + run4 === pattern.length)
-        source += ".*";
-      else if (run4 === 2 && whole) {
-        if (!globstarAt(pattern, rest)) {
-          source += rest === pattern.length ? "(?:[^/]*/)*" : "(?:[^/]*/)*(?=[\\s\\S])";
-        }
-        run4 += 1;
-      } else
-        source += "[^/]*";
-      index += run4;
-    } else if (value2 === "?") {
-      source += "[^/]";
-      index += 1;
-    } else {
-      source += literal(value2);
-      index += 1;
-    }
-  }
-  try {
-    return new RegExp(`${source}$`);
-  } catch {
-    return;
-  }
-};
-var matchGlob = (pattern) => {
-  const expanded = expand(pattern, 0, 0);
-  const compiled = expanded?.alternatives.map(compile);
-  if (compiled === undefined || compiled.some((item) => item === undefined))
-    return () => false;
-  return (path2) => compiled.some((item) => item.test(path2));
-};
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
 function makeValue(value2) {
@@ -30784,17 +31033,17 @@ var Proto10 = {
     };
   }
 };
-function make25(get3, mapInput2, prefix) {
+function make25(get2, mapInput2, prefix) {
   const self = Object.create(Proto10);
-  self.get = get3;
+  self.get = get2;
   self.mapInput = mapInput2;
   self.prefix = prefix;
-  self.load = (path2) => {
+  self.load = (path) => {
     if (mapInput2)
-      path2 = mapInput2(path2);
+      path = mapInput2(path);
     if (prefix)
-      path2 = [...prefix, ...path2];
-    return get3(path2);
+      path = [...prefix, ...path];
+    return get2(path);
   };
   return self;
 }
@@ -30804,7 +31053,7 @@ function fromEnv(options) {
     ...import.meta?.env
   };
   const trie = buildEnvTrie(env);
-  return make25((path2) => succeed6(nodeAtEnv(trie, env, path2)));
+  return make25((path) => succeed6(nodeAtEnv(trie, env, path)));
 }
 function buildEnvTrie(env) {
   const root = {};
@@ -30822,10 +31071,10 @@ function buildEnvTrie(env) {
   return root;
 }
 var NUMERIC_INDEX = /^(0|[1-9][0-9]*)$/;
-function nodeAtEnv(trie, env, path2) {
-  const key = path2.map(String).join("_");
+function nodeAtEnv(trie, env, path) {
+  const key = path.map(String).join("_");
   const leafValue = env[key];
-  const trieNode = trieNodeAt(trie, path2);
+  const trieNode = trieNodeAt(trie, path);
   const children = trieNode?.children ? Object.keys(trieNode.children) : [];
   if (children.length === 0) {
     return leafValue === undefined ? undefined : makeValue(leafValue);
@@ -30837,11 +31086,11 @@ function nodeAtEnv(trie, env, path2) {
   }
   return makeRecord(new Set(children), leafValue);
 }
-function trieNodeAt(root, path2) {
-  if (path2.length === 0)
+function trieNodeAt(root, path) {
+  if (path.length === 0)
     return root;
   let node = root;
-  for (const seg of path2) {
+  for (const seg of path) {
     node = node?.children?.[String(seg)];
     if (!node)
       return;
@@ -30888,7 +31137,7 @@ var map9 = /* @__PURE__ */ dual(2, (self, f) => {
   return make26((provider) => map5(self.parse(provider), f));
 });
 var orElse = /* @__PURE__ */ dual(2, (self, that) => {
-  return make26((provider) => catch_2(self.parse(provider), (error3) => that(error3).parse(provider)));
+  return make26((provider) => catch_2(self.parse(provider), (error2) => that(error2).parse(provider)));
 });
 function isMissingDataOnly(issue2) {
   switch (issue2._tag) {
@@ -30924,12 +31173,12 @@ var withDefault2 = /* @__PURE__ */ dual(2, (self, defaultValue) => {
         return succeed8(defaultValue);
       }
     }
-    return fail13(err.cause);
+    return fail12(err.cause);
   });
 });
 var option2 = (self) => self.pipe(map9(some2), withDefault2(none2()));
-var dump = /* @__PURE__ */ fnUntraced2(function* (provider, path2) {
-  const stat4 = yield* provider.load(path2);
+var dump = /* @__PURE__ */ fnUntraced2(function* (provider, path) {
+  const stat4 = yield* provider.load(path);
   if (stat4 === undefined)
     return;
   switch (stat4._tag) {
@@ -30940,7 +31189,7 @@ var dump = /* @__PURE__ */ fnUntraced2(function* (provider, path2) {
         return stat4.value;
       const out = {};
       for (const key of stat4.keys) {
-        const child = yield* dump(provider, [...path2, key]);
+        const child = yield* dump(provider, [...path, key]);
         if (child !== undefined)
           out[key] = child;
       }
@@ -30951,32 +31200,32 @@ var dump = /* @__PURE__ */ fnUntraced2(function* (provider, path2) {
         return stat4.value;
       const out = [];
       for (let i = 0;i < stat4.length; i++) {
-        out.push(yield* dump(provider, [...path2, i]));
+        out.push(yield* dump(provider, [...path, i]));
       }
       return out;
     }
   }
 });
-var recur2 = /* @__PURE__ */ fnUntraced2(function* (ast, provider, path2) {
+var recur2 = /* @__PURE__ */ fnUntraced2(function* (ast, provider, path) {
   switch (ast._tag) {
     case "Objects": {
       const out = {};
       for (const ps of ast.propertySignatures) {
         const name = ps.name;
         if (typeof name === "string") {
-          const value2 = yield* recur2(ps.type, provider, [...path2, name]);
+          const value2 = yield* recur2(ps.type, provider, [...path, name]);
           if (value2 !== undefined)
             out[name] = value2;
         }
       }
       if (ast.indexSignatures.length > 0) {
-        const stat4 = yield* provider.load(path2);
+        const stat4 = yield* provider.load(path);
         if (stat4 && stat4._tag === "Record") {
           for (const is2 of ast.indexSignatures) {
             const matches = _is(is2.parameter);
             for (const key of stat4.keys) {
               if (!Object.hasOwn(out, key) && matches(key)) {
-                const value2 = yield* recur2(is2.type, provider, [...path2, key]);
+                const value2 = yield* recur2(is2.type, provider, [...path, key]);
                 if (value2 !== undefined)
                   out[key] = value2;
               }
@@ -30987,21 +31236,21 @@ var recur2 = /* @__PURE__ */ fnUntraced2(function* (ast, provider, path2) {
       return out;
     }
     case "Arrays": {
-      const stat4 = yield* provider.load(path2);
+      const stat4 = yield* provider.load(path);
       if (stat4 && stat4._tag === "Value")
         return stat4.value;
       const out = [];
       for (let i = 0;i < ast.elements.length; i++) {
-        out.push(yield* recur2(ast.elements[i], provider, [...path2, i]));
+        out.push(yield* recur2(ast.elements[i], provider, [...path, i]));
       }
       return out;
     }
     case "Union":
-      return yield* dump(provider, path2);
+      return yield* dump(provider, path);
     case "Suspend":
-      return yield* recur2(ast.thunk(), provider, path2);
+      return yield* recur2(ast.thunk(), provider, path);
     default: {
-      const stat4 = yield* provider.load(path2);
+      const stat4 = yield* provider.load(path);
       if (stat4 === undefined)
         return;
       if (stat4._tag === "Value")
@@ -31014,17 +31263,17 @@ var recur2 = /* @__PURE__ */ fnUntraced2(function* (ast, provider, path2) {
     }
   }
 });
-function schema(codec, path2) {
+function schema(codec, path) {
   const codecStringTree = toCodecStringTree(codec);
   const decodeUnknownEffect3 = decodeUnknownEffect(codecStringTree);
   const codecStringTreeEncoded = toEncoded(codecStringTree.ast);
-  const defaultPath = typeof path2 === "string" ? [path2] : path2 ?? [];
+  const defaultPath = typeof path === "string" ? [path] : path ?? [];
   return make26((provider) => {
-    const path3 = provider.prefix ? [...provider.prefix, ...defaultPath] : defaultPath;
-    return recur2(codecStringTreeEncoded, provider, defaultPath).pipe(flatMapEager2((tree) => decodeUnknownEffect3(tree).pipe(mapErrorEager2((issue2) => new SchemaError(path3.length > 0 ? new Pointer(path3, issue2) : issue2)))), mapErrorEager2((cause) => new ConfigError(cause)));
+    const path2 = provider.prefix ? [...provider.prefix, ...defaultPath] : defaultPath;
+    return recur2(codecStringTreeEncoded, provider, defaultPath).pipe(flatMapEager2((tree) => decodeUnknownEffect3(tree).pipe(mapErrorEager2((issue2) => new SchemaError(path2.length > 0 ? new Pointer(path2, issue2) : issue2)))), mapErrorEager2((cause) => new ConfigError(cause)));
   });
 }
-function fail13(err) {
+function fail12(err) {
   return make26(() => fail6(new ConfigError(err)));
 }
 function succeed8(value2) {
@@ -31038,7 +31287,18 @@ function string3(name) {
 var readOptionalEnv = (name) => option2(string3(name)).pipe(map5(getOrUndefined), orElseSucceed2(() => {
   return;
 }));
-var readEnvironment = (names) => forEach2(["PATH", ...names], (name) => readOptionalEnv(name).pipe(map5((value2) => [name, value2]))).pipe(map5((entries) => Object.fromEntries(entries.flatMap(([name, value2]) => value2 === undefined ? [] : [[name, value2]]))));
+var readEnvironment = (names2) => forEach2(["PATH", ...names2], (name) => readOptionalEnv(name).pipe(map5((value2) => [name, value2]))).pipe(map5((entries) => Object.fromEntries(entries.flatMap(([name, value2]) => value2 === undefined ? [] : [[name, value2]]))));
+
+// ../../src/model/secret-patterns.ts
+var secretPatterns = [
+  /ghp_[A-Za-z0-9]{20,}/u,
+  /gho_[A-Za-z0-9]{20,}/u,
+  /github_pat_[A-Za-z0-9_]{20,}/u,
+  /xox[abps]-[A-Za-z0-9-]{10,}/u,
+  /AKIA[0-9A-Z]{16}/u,
+  /npm_[A-Za-z0-9]{30,}/u,
+  /-----BEGIN [A-Z ]*PRIVATE KEY/u
+];
 
 // ../../src/drivers/redact.ts
 var EXCERPT_LIMIT = 2000;
@@ -31053,11 +31313,6 @@ var redactOutput = (text3, env) => {
   return out.length > EXCERPT_LIMIT ? `${out.slice(0, EXCERPT_LIMIT)}…[truncated]` : out;
 };
 
-// ../../src/drivers/utils.ts
-import { createHash as createHash4 } from "node:crypto";
-var failure = (reason, commitment = "before-commit") => DriverError.make({ reason, commitment });
-var sha256 = (bytes) => createHash4("sha256").update(bytes).digest("hex");
-
 // ../../src/drivers/process.ts
 var collect = (stream2) => mkString(decodeText(stream2));
 var makeRunCommand = gen2(function* () {
@@ -31065,461 +31320,60 @@ var makeRunCommand = gen2(function* () {
   return (command2) => gen2(function* () {
     const env = yield* readEnvironment(command2.environmentNames);
     const handle = yield* spawner.spawn(make18(command2.argv[0], [...command2.argv.slice(1)], { cwd: command2.cwd, env, stdin: "ignore", stdout: "pipe", stderr: "pipe" }));
-    const output = yield* all2({
+    const output2 = yield* all2({
       stdout: collect(handle.stdout),
       stderr: collect(handle.stderr),
       exitCode: handle.exitCode
     }, { concurrency: "unbounded" });
     return {
-      stdout: redactOutput(output.stdout, env),
-      stderr: redactOutput(output.stderr, env),
-      exitCode: Number(output.exitCode)
+      stdout: redactOutput(output2.stdout, env),
+      stderr: redactOutput(output2.stderr, env),
+      exitCode: Number(output2.exitCode)
     };
   }).pipe(scoped2, mapError3((cause) => failure(String(cause))));
 });
-
-// ../../src/drivers/remote.ts
-var ok = (response) => response.status >= 200 && response.status < 300;
-var commandPublish = (transport, request, argv) => {
-  const operation = request.operation;
-  const names = operation._tag === "PackageRegistryRelease" ? operation.environmentNames : [];
-  return transport.run({ argv, cwd: request.root, environmentNames: names }).pipe(map5((result2) => result2.exitCode === 0 ? Committed.make({ observedOutcome: result2.stdout.trim() || "exit-0" }) : CommitmentUnknown.make({ failure: `Publisher exited ${result2.exitCode} after dispatch.` })), catch_2((cause) => succeed6(NotDispatched.make({ reason: `Publisher could not start: ${cause.reason}`, retryable: true }))));
-};
-var httpRequest = (transport, request, bytes, credential) => gen2(function* () {
-  const operation = request.operation;
-  if (operation._tag !== "HttpPublish")
-    return yield* fail6(failure("Expected HTTP publication."));
-  const response = yield* transport.client.execute(make23(operation.method)(`${operation.wire.baseUrl}${operation.wire.pathTemplate}`, {
-    headers: {
-      authorization: `Bearer ${credential}`,
-      "idempotency-key": request.clientReconciliationKey
-    },
-    ...bytes === undefined ? {} : { body: uint8Array(bytes) }
-  }));
-  return ok(response) ? Committed.make({ observedOutcome: String(response.status) }) : NotDispatched.make({ reason: `HTTP ${response.status}`, retryable: false });
+// ../../src/platform/release-runtime.ts
+var makePublicationHttp = (client) => ({
+  request: (request) => make23(request.method)(request.url, {
+    ...request.headers === undefined ? {} : { headers: request.headers },
+    ...request.body === undefined ? {} : { body: uint8Array(typeof request.body === "string" ? new TextEncoder().encode(request.body) : request.body) }
+  }).pipe((wire) => client.execute(wire), flatMap3((response) => response.arrayBuffer.pipe(map5((body) => ({
+    status: response.status,
+    headers: Object.fromEntries(Object.entries(response.headers)),
+    body: new Uint8Array(body)
+  })))), mapError3((cause) => PublicationError.make({ phase: "observe", commitment: "unknown", reason: String(cause) })))
 });
-var forgeRelease = (transport, request, credential) => gen2(function* () {
-  const operation = request.operation;
-  if (operation._tag !== "ForgeRelease")
-    return yield* fail6(failure("Expected forge release."));
-  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
-  const response = yield* transport.client.execute(post(`https://api.github.com/repos/${repoPath}/releases`, {
-    headers: {
-      authorization: `Bearer ${credential}`,
-      accept: "application/vnd.github+json"
-    },
-    body: jsonUnsafe({
-      tag_name: operation.tag,
-      name: operation.title,
-      draft: operation.draft,
-      prerelease: operation.prerelease
-    })
-  }));
-  return ok(response) ? Committed.make({ observedOutcome: String(response.status) }) : NotDispatched.make({ reason: `GitHub HTTP ${response.status}`, retryable: false });
-});
-var forgeAsset = (transport, request, bytes, credential) => gen2(function* () {
-  const operation = request.operation;
-  if (operation._tag !== "ForgeRelease")
-    return yield* fail6(failure("Expected forge release."));
-  const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
-  const headers = {
-    authorization: `Bearer ${credential}`,
-    accept: "application/vnd.github+json"
-  };
-  const release = yield* transport.client.execute(get2(`https://api.github.com/repos/${repoPath}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers }));
-  if (!ok(release)) {
-    return NotDispatched.make({
-      reason: `GitHub release lookup HTTP ${release.status}`,
-      retryable: false
-    });
-  }
-  const value2 = yield* release.json;
-  const outputId2 = String(request.checkpointId).replace(/^asset:/u, "");
-  const asset = operation.assets.find((item) => item.outputId === outputId2);
-  if (asset === undefined || bytes === undefined) {
-    return NotDispatched.make({ reason: "Forge asset bytes are unavailable.", retryable: false });
-  }
-  const uploaded = yield* transport.client.execute(post(`https://uploads.github.com/repos/${repoPath}/releases/${value2.id}/assets?name=${encodeURIComponent(asset.name)}`, { headers, body: uint8Array(bytes, asset.contentType) }));
-  return ok(uploaded) ? Committed.make({
-    observedOutcome: String(uploaded.status),
-    transmittedDigest: Digest.make(sha256(bytes))
-  }) : NotDispatched.make({ reason: `GitHub upload HTTP ${uploaded.status}`, retryable: false });
-});
-var remotePublish = (transport, request, bytes, credential) => (request.operation._tag === "HttpPublish" ? httpRequest(transport, request, bytes, credential) : request.checkpointId === "release" ? forgeRelease(transport, request, credential) : forgeAsset(transport, request, bytes, credential)).pipe(mapError3((cause) => failure(String(cause), "unknown")));
-var reconcile = (transport) => (request, credential) => gen2(function* () {
-  const operation = request.operation;
-  if (operation._tag === "ForgeRelease") {
-    const repoPath = operation.repository.split("/").map(encodeURIComponent).join("/");
-    const response = yield* transport.client.execute(get2(`https://api.github.com/repos/${repoPath}/releases/tags/${encodeURIComponent(operation.tag)}`, { headers: { authorization: `Bearer ${credential}`, accept: "application/vnd.github+json" } }));
-    if (!ok(response))
-      return ReadResult.make({ found: false });
-    if (request.checkpointId === "release")
-      return ReadResult.make({ found: true });
-    const value2 = yield* response.json;
-    const id = String(request.checkpointId).replace(/^asset:/u, "");
-    const name = operation.assets.find((item) => item.outputId === id)?.name;
-    return ReadResult.make({
-      found: value2.assets?.some((asset) => asset.name === name) === true
-    });
-  }
-  if (operation._tag === "HttpPublish") {
-    const response = yield* transport.client.execute(get2(`${operation.wire.baseUrl}${operation.wire.pathTemplate}`, { headers: { authorization: `Bearer ${credential}` } }));
-    return ReadResult.make({ found: ok(response) });
-  }
-  if (operation._tag !== "PackageRegistryRelease")
-    return yield* fail6(failure("Publication observation is unavailable for this operation."));
-  return ReadResult.make({ found: ok(yield* transport.client.get(operation.probeUrl)) });
-}).pipe(mapError3((cause) => cause instanceof DriverError ? cause : failure(String(cause))));
-var makeCatalog = (structured, transport) => ({
-  structured,
-  publish: (request, handle, credential) => {
-    if (request.operation._tag === "PackageRegistryRelease") {
-      return commandPublish(transport, request, request.operation.publishArgv);
-    }
-    return remotePublish(transport, request, handle?.bytes, credential);
-  },
-  reconcile: reconcile(transport)
-});
-
-// ../../src/drivers/local.ts
-var pathOf = (root, path2) => resolve4(root, path2);
-var outputFacts = (root, output) => {
-  const path2 = pathOf(root, output.path);
-  if (!existsSync4(path2) || lstatSync2(path2).isSymbolicLink() || !statSync2(path2).isFile()) {
-    throw failure(`Declared output ${output.id} was not materialized.`);
-  }
-  const source = secureRead(root, output.path);
-  const digest = sha256(source.bytes);
-  return MaterializedOutput.make({
-    outputId: output.id,
-    snapshotId: SnapshotId.make(digest),
-    digest: Digest.make(digest),
-    size: source.bytes.length,
-    inode: source.inode
-  });
+var unsupportedCatalog = {
+  observe: () => fail6(PublicationError.make({ phase: "observe", commitment: "before-dispatch", reason: "No live catalog repository transport is configured for this host." })),
+  write: () => fail6(PublicationError.make({ phase: "mutate", commitment: "before-dispatch", reason: "No live catalog repository transport is configured for this host." }))
 };
-var input = (request, id) => {
-  const found = request.availableOutputs.find((output) => output.id === id);
-  if (found === undefined)
-    throw failure(`Operation references unavailable output ${id}.`);
-  return found;
-};
-var byCodepoint = (left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0;
-var entries = (request) => request.operation.inputs.map((id) => {
-  const output = input(request, id);
-  const mode = output.kind === "executable" ? 33261 : 33188;
-  return { path: basename2(output.path), data: secureRead(request.root, output.path).bytes, mode };
-}).sort(byCodepoint);
-var normalizeSlashes = (value2) => value2.replaceAll("\\", "/");
-var containedRealPath = (realRoot, child, relative2) => {
-  const real = realpathSync2(child);
-  if (contained(realRoot, real))
-    return real;
-  throw failure(`Archive enumeration refused symlink escaping the workspace: ${relative2}.`);
-};
-var entryKind = (realRoot, entry, relative2, visited) => {
-  if (!entry.isSymbolicLink())
-    return entry;
-  const real = containedRealPath(realRoot, join5(realRoot, relative2), relative2);
-  if (visited.has(real))
-    return;
-  visited.add(real);
-  return statSync2(join5(realRoot, relative2));
-};
-var walkFiles = (realRoot, directory, visited) => {
-  const absolute = directory === "" ? realRoot : join5(realRoot, directory);
-  if (!existsSync4(absolute))
-    return [];
-  return readdirSync2(absolute, { withFileTypes: true }).flatMap((entry) => {
-    const relative2 = directory === "" ? entry.name : `${directory}/${entry.name}`;
-    const kind = entryKind(realRoot, entry, relative2, visited);
-    if (kind?.isDirectory() === true)
-      return walkFiles(realRoot, relative2, visited);
-    return kind?.isFile() === true ? [relative2] : [];
-  });
-};
-var patternCandidates = (realRoot, pattern) => {
-  const segments = pattern.split("/").filter((segment) => segment.length > 0);
-  const wildcard = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment));
-  if (wildcard >= 0) {
-    const prefix = segments.slice(0, wildcard).join("/");
-    if (prefix.length > 0 && existsSync4(join5(realRoot, prefix))) {
-      containedRealPath(realRoot, join5(realRoot, prefix), prefix);
-    }
-    return walkFiles(realRoot, prefix, new Set);
-  }
-  const absolute = join5(realRoot, pattern);
-  if (!existsSync4(absolute))
-    return [];
-  containedRealPath(realRoot, absolute, pattern);
-  return statSync2(absolute).isFile() ? [pattern] : [];
-};
-var matchedWorkspaceFiles = (realRoot, patterns, excluded) => [...new Set(patterns.flatMap((raw2) => {
-  const pattern = normalizeSlashes(raw2);
-  if (!isSafeRelativePath(pattern))
-    throw failure(`Archive pattern must stay inside the workspace: ${raw2}.`);
-  const matches = matchGlob(pattern);
-  return patternCandidates(realRoot, pattern).filter((path2) => matches(path2) && !excluded.has(path2));
-}))];
-var packEntries = (request, operation) => {
-  const patterns = operation.files ?? [];
-  const declared = entries(request);
-  let combined = declared;
-  if (patterns.length > 0) {
-    const realRoot = realpathSync2(request.root);
-    const excluded = new Set(operation.outputs.map((output) => normalizeSlashes(output.path)));
-    const matched = matchedWorkspaceFiles(realRoot, patterns, excluded);
-    if (matched.length === 0)
-      throw failure(`Archive ${operation.id} patterns matched no workspace files.`);
-    combined = [...declared, ...matched.map((path2) => ({
-      path: path2,
-      data: secureRead(realRoot, path2).bytes,
-      mode: 33188
-    }))];
-  }
-  if (combined.length === 0)
-    throw failure(`Archive ${operation.id} has zero entries.`);
-  const duplicate2 = combined.map((entry) => entry.path).find((path2, index, all3) => all3.indexOf(path2) !== index);
-  if (duplicate2 !== undefined)
-    throw failure(`Archive ${operation.id} has duplicate entry ${duplicate2}.`);
-  return [...combined].sort(byCodepoint);
-};
-var content = (request) => {
-  const operation = request.operation;
-  if (operation._tag !== "Write")
-    throw failure("Expected Write operation.");
-  if (typeof operation.content === "string")
-    return operation.content;
-  return operation.content.map((part) => {
-    if (typeof part === "string")
-      return part;
-    const output = input(request, part.outputId);
-    if (part.fact === "assetName")
-      return basename2(output.path);
-    if (part.fact === "sha256")
-      return sha256(secureRead(request.root, output.path).bytes);
-    throw failure("downloadUrl facts require a product-owned preset value (lowered plans resolve this at plan time).");
-  }).join("");
-};
-var observed = (request) => ({
-  outcome: "observed",
-  outputs: request.operation.outputs.map((output) => outputFacts(request.root, output))
-});
-var attempt2 = (body) => try_2({
-  try: body,
-  catch: (cause) => cause instanceof DriverError ? cause : failure(String(cause))
-});
-var executed = (run4, request, operation) => run4({
-  argv: operation.argv,
-  cwd: pathOf(request.root, operation.cwd),
-  environmentNames: operation.environmentNames
-}).pipe(flatMap3((result2) => result2.exitCode === 0 ? attempt2(() => observed(request)) : fail6(failure(`Command exited ${result2.exitCode}: ${result2.stderr.trim()}`))));
-var materialized = (request) => attempt2(() => {
-  const operation = request.operation;
-  switch (operation._tag) {
-    case "Check": {
-      const path2 = pathOf(request.root, operation.path);
-      let present = false;
-      try {
-        present = !lstatSync2(path2).isSymbolicLink();
-      } catch {
-        present = false;
-      }
-      if (!present)
-        throw failure(`Required path ${operation.path} is absent.`);
-      break;
-    }
-    case "Write": {
-      secureWrite(request.root, operation.path, content(request));
-      break;
-    }
-    case "Pack": {
-      const archive = packEntries(request, operation);
-      secureWrite(request.root, operation.outputs[0].path, operation.format === "zip" ? zip3(archive) : tarGz(archive));
-      break;
-    }
-    case "Digest": {
-      secureWrite(request.root, operation.outputs[0].path, operation.inputs.map((id) => {
-        const output = input(request, id);
-        return `${sha256(secureRead(request.root, output.path).bytes)}  ${basename2(output.path)}`;
-      }).join(`
-`) + `
-`);
-      break;
-    }
-    case "HttpRead":
-    case "ReviewedNoteTransform":
-      throw failure("Remote reads are not structured local operations.");
-    default:
-      throw failure(`Unsupported structured operation ${operation._tag}.`);
-  }
-  return observed(request);
-});
-var structured = (run4) => (request) => request.operation._tag === "Exec" ? executed(run4, request, request.operation) : materialized(request);
-var credentials = {
-  getRead: (slot) => readOptionalEnv(slot.name).pipe(map5((value2) => value2 ?? "")),
-  getPublish: (slot) => readOptionalEnv(slot.name).pipe(flatMap3((value2) => value2 === undefined || value2.length === 0 ? fail6(failure(`Credential ${slot.name} is unavailable.`)) : succeed6(value2)))
-};
-var LiveDriversLayer = mergeAll2(succeed5(WorkspaceStore)(makeNodeWorkspaceStore()), effect(DriverCatalog)(gen2(function* () {
-  const run4 = yield* makeRunCommand;
+var ReleaseRuntimeLive = effect(ReleaseRuntime, gen2(function* () {
+  const source = yield* SourceObserver;
+  const run3 = yield* makeRunCommand;
   const client = yield* HttpClient2;
-  return makeCatalog(structured(run4), { client, run: run4 });
-})), succeed5(CredentialStore)(credentials));
+  return { source, run: run3, http: makePublicationHttp(client), catalog: unsupportedCatalog };
+}));
 
 // ../../src/platform/services.ts
-var ReleaseServicesLive = mergeAll2(LiveDriversLayer, FileRunStoreLayer, LocalApprovalSignerLayer);
+var ReleaseServicesLive = ReleaseRuntimeLive;
 
 // ../../src/platform/source-observer.ts
-import { createHash as createHash5 } from "node:crypto";
-import { readFileSync as readFileSync3, realpathSync as realpathSync3 } from "node:fs";
-import { join as join6 } from "node:path";
+import { createHash as createHash8 } from "node:crypto";
+import { readFileSync as readFileSync3, realpathSync as realpathSync5 } from "node:fs";
+import { join as join7 } from "node:path";
 import { spawnSync } from "node:child_process";
-
-// ../../src/release/context.ts
-var optional3 = optionalKey2;
-
-class VerifiedSource extends Class4("VerifiedSource")({
-  commit: NonEmptyName,
-  tree: NonEmptyName,
-  clean: Literal2(true),
-  packageManifestPath: SafeRelativePath,
-  packageManifestDigest: NonEmptyName,
-  repository: optional3(NonEmptyString),
-  headTags: ArraySchema(NonEmptyName)
-}) {
-}
-
-class VerifiedPackage extends Class4("VerifiedPackage")({
-  name: NonEmptyName,
-  version: Version,
-  path: SafeRelativePath,
-  digest: NonEmptyName,
-  repository: optional3(NonEmptyString)
-}) {
-}
-
-class VerifiedReleaseContext extends Class4("VerifiedReleaseContext")({
-  workspace: WorkspaceRoot,
-  source: VerifiedSource,
-  package: VerifiedPackage
-}) {
-}
-
-class ReleaseContextError extends TaggedErrorClass()("ReleaseContextError", {
-  field: String4,
-  reason: String4
-}) {
-}
-
-class SourceObserver extends Service()("SourceObserver") {
-}
-var runtimeFailure = (field, cause) => ReleaseContextError.make({
-  field,
-  reason: cause instanceof Error ? cause.message : String(cause)
-});
-var command2 = (runtime, workspace, argv, field) => runtime.command(workspace, argv).pipe(mapError3((cause) => runtimeFailure(field, cause)));
-var repositoryCoordinate = (value2) => {
-  if (typeof value2 !== "string")
-    return;
-  const trimmed = value2.trim().replace(/\.git$/u, "");
-  const match6 = /(?:github\.com[/:]|^)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/u.exec(trimmed);
-  return match6?.[1];
-};
-var jsonObject = (bytes, path2) => {
-  try {
-    const value2 = JSON.parse(new TextDecoder().decode(bytes));
-    if (typeof value2 !== "object" || value2 === null || Array.isArray(value2))
-      throw new Error("manifest root must be an object");
-    return value2;
-  } catch (cause) {
-    throw new Error(`${path2} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
-  }
-};
-var makeSourceObserver = (runtime) => ({
-  observe: fn2("observeVerifiedReleaseContext")(function* (workspace, packageManifestPath, expectedCommit) {
-    const canonical2 = yield* runtime.canonicalRoot(workspace).pipe(mapError3((cause) => runtimeFailure("workspace", cause)));
-    const root = WorkspaceRoot.make(canonical2);
-    const commit = yield* command2(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value2) => value2.trim()));
-    const tree = yield* command2(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value2) => value2.trim()));
-    const status = yield* command2(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=all"], "source.clean");
-    if (status.trim().length > 0)
-      return yield* new ReleaseContextError({
-        field: "source.clean",
-        reason: "Preparation requires a clean tracked and untracked source tree."
-      });
-    const bytes = yield* runtime.read(workspace, packageManifestPath).pipe(mapError3((cause) => runtimeFailure("package.manifest", cause)));
-    let manifest;
-    try {
-      manifest = jsonObject(bytes, packageManifestPath);
-    } catch (cause) {
-      return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) });
-    }
-    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined;
-    const version2 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
-    if (name === undefined)
-      return yield* new ReleaseContextError({ field: "package.name", reason: "Manifest name is missing or empty." });
-    if (version2 === undefined)
-      return yield* new ReleaseContextError({ field: "package.version", reason: "Manifest version is missing or empty." });
-    const digest = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
-    const tags = yield* command2(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value2) => value2.split(`
-`).map((tag2) => tag2.trim()).filter((tag2) => tag2.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
-    const remote = yield* command2(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value2) => repositoryCoordinate(value2))).pipe(orElseSucceed2(() => {
-      return;
-    }));
-    const manifestRepository = repositoryCoordinate(manifest.repository);
-    const repository = remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository ? undefined : remote ?? manifestRepository;
-    const source = VerifiedSource.make({
-      commit: NonEmptyName.make(commit),
-      tree: NonEmptyName.make(tree),
-      clean: true,
-      packageManifestPath,
-      packageManifestDigest: NonEmptyName.make(digest),
-      headTags: tags.map((tag2) => NonEmptyName.make(tag2)),
-      ...repository === undefined ? {} : { repository }
-    });
-    const context3 = VerifiedReleaseContext.make({
-      workspace: root,
-      source,
-      package: VerifiedPackage.make({
-        name: NonEmptyName.make(name),
-        version: Version.make(version2),
-        path: packageManifestPath,
-        digest: NonEmptyName.make(digest),
-        ...manifestRepository === undefined ? {} : { repository: manifestRepository }
-      })
-    });
-    return yield* verifySource(context3, expectedCommit);
-  })
-});
-var verifySource = fn2("verifySource")(function* (context3, expectedCommit) {
-  if (expectedCommit !== undefined && context3.source.commit !== expectedCommit) {
-    return yield* new ReleaseContextError({
-      field: "source.commit",
-      reason: `Expected ${expectedCommit}, observed ${context3.source.commit}.`
-    });
-  }
-  if (context3.source.clean !== true) {
-    return yield* new ReleaseContextError({
-      field: "source.clean",
-      reason: "Preparation requires a clean verified source."
-    });
-  }
-  return context3;
-});
-
-// ../../src/platform/source-observer.ts
 var runtime = {
   canonicalRoot: (workspace) => try_2({
-    try: () => realpathSync3(workspace),
+    try: () => realpathSync5(workspace),
     catch: (cause) => cause
   }),
-  read: (workspace, path2) => try_2({
-    try: () => new Uint8Array(readFileSync3(join6(workspace, path2))),
+  read: (workspace, path) => try_2({
+    try: () => new Uint8Array(readFileSync3(join7(workspace, path))),
     catch: (cause) => cause
   }),
-  command: (workspace, argv) => try_2({
+  command: (workspace, argv2) => try_2({
     try: () => {
-      const result2 = spawnSync(argv[0], argv.slice(1), { cwd: workspace, encoding: "utf8", stdio: "pipe" });
+      const result2 = spawnSync("git", [...argv2], { cwd: workspace, encoding: "utf8", stdio: "pipe" });
       if (result2.error !== undefined)
         throw result2.error;
       if (result2.status !== 0)
@@ -31528,1206 +31382,205 @@ var runtime = {
     },
     catch: (cause) => cause
   }),
-  digest: (bytes) => sync2(() => `sha256:${createHash5("sha256").update(bytes).digest("hex")}`)
+  digest: (bytes) => sync2(() => `sha256:${createHash8("sha256").update(bytes).digest("hex")}`)
 };
 var SourceObserverLive = succeed5(SourceObserver, makeSourceObserver(runtime));
 
 // ../../src/platform/node.ts
-var NodeReleaseLayer = merge2(ReleaseServicesLive.pipe(provide2(mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4))), SourceObserverLive);
-
-// ../../src/api/apply-boundary.ts
-import { randomUUID as randomUUID4 } from "node:crypto";
-
-// ../../src/apply/ledger.ts
-var fail14 = (reason) => TransitionError.make({ reason });
-var attemptId = (index) => AttemptId.make(`attempt-${index + 1}`);
-var current = (record2) => {
-  const attempt3 = record2.attempts.at(-1);
-  if (attempt3 === undefined)
-    throw fail14("Operation has no attempt.");
-  return attempt3;
-};
-var progress2 = (state) => ("progress" in state) ? state.progress : [];
-var operationFor = (accepted, id) => {
-  const entry = operationEntries(accepted.plan).find(({ operation }) => operation.id === id);
-  if (entry === undefined)
-    throw fail14(`Unknown operation ${id}.`);
-  return entry.operation;
-};
-var checkpointIds = (operation) => {
-  switch (operation._tag) {
-    case "HttpPublish":
-      return [CheckpointId.make("dispatch")];
-    case "ForgeRelease":
-      return [
-        CheckpointId.make("release"),
-        ...operation.inputs.map((id) => CheckpointId.make(`asset:${id}`))
-      ];
-    case "PackageRegistryRelease":
-      return [CheckpointId.make("dispatch")];
-    case "Check":
-    case "Write":
-    case "Pack":
-    case "Digest":
-    case "Exec":
-    case "HttpRead":
-    case "ReviewedNoteTransform":
-      return [];
-  }
-};
-var assertReceipt = (ledger, receipt) => {
-  if (receipt.runId !== ledger.runId || receipt.logicalRunId !== ledger.logicalRunId || receipt.topologyHash !== ledger.executionTopologyHash) {
-    throw fail14("Execution receipt is foreign to this run.");
-  }
-};
-var assertScope = (accepted, scope3) => {
-  const ids = scope3.operationIds.map(String);
-  const known = new Set(operationEntries(accepted.plan).map(({ operation }) => String(operation.id)));
-  if (new Set(ids).size !== ids.length || ids.some((id) => !known.has(id)))
-    throw fail14("Execution scope is duplicate or unknown.");
-  const selected2 = new Set(ids);
-  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId)))
-    throw fail14("Execution scope omits a dependency.");
-};
-var assertProgress = (operation, state) => {
-  const actual = progress2(state);
-  if (actual.length === 0)
-    return;
-  if (JSON.stringify(actual.map((item) => item.checkpointId)) !== JSON.stringify(checkpointIds(operation)))
-    throw fail14("Checkpoint topology mismatch.");
-  if (state._tag === "Passed" && actual.some((item) => item._tag !== "CheckpointPassed"))
-    throw fail14("Passed publication has an incomplete checkpoint.");
-};
-var assertOutputs = (operation, state) => {
-  if (state._tag !== "Passed")
-    return;
-  const declared = new Set(operation.outputs.map((output) => String(output.id)));
-  const ids = state.materializedOutputs.map((output) => String(output.outputId));
-  if (new Set(ids).size !== ids.length || ids.some((id) => !declared.has(id)))
-    throw fail14("Materialized outputs do not match the operation.");
-};
-var assertRecord = (accepted, ledger, record2, index) => {
-  const expected = accepted.operationHashes[index];
-  if (expected === undefined || record2.operationId !== expected.operationId || record2.operationHash !== expected.hash || record2.attempts.length === 0)
-    throw fail14("Ledger operation roster mismatch.");
-  const operation = operationFor(accepted, record2.operationId);
-  for (const [attemptIndex, attempt3] of record2.attempts.entries()) {
-    if (attempt3.attemptId !== attemptId(attemptIndex))
-      throw fail14("Attempt ids are not monotonic.");
-    assertReceipt(ledger, attempt3.executionReceipt);
-    assertProgress(operation, attempt3.state);
-    assertOutputs(operation, attempt3.state);
-  }
-};
-var validateLedger = (accepted, ledger) => {
-  if (ledger.planId !== accepted.planId || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0)
-    throw fail14("Ledger identity or revision mismatch.");
-  assertScope(accepted, ledger.scope);
-  const hashes = accepted.operationHashes.map(({ hash: hash2 }) => hash2);
-  if (JSON.stringify(ledger.operationHashes) !== JSON.stringify(hashes) || ledger.operations.length !== hashes.length)
-    throw fail14("Ledger hash vector mismatch.");
-  ledger.operations.forEach((record2, index) => assertRecord(accepted, ledger, record2, index));
-};
-var createLedger = (accepted, request) => {
-  const ledger = RunLedger.make({
-    schemaVersion: "run-ledger/v1",
-    runId: request.runId,
-    logicalRunId: request.logicalRunId,
-    planId: accepted.planId,
-    operationHashes: accepted.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2)),
-    scope: request.scope,
-    frontier: request.frontier,
-    executionTopologyHash: request.topologyHash,
-    revision: 0,
-    operations: accepted.operationHashes.map(({ operationId: operationId2, hash: hash2 }) => OperationRunRecord.make({
-      operationId: OperationId.make(operationId2),
-      operationHash: OperationHash.make(hash2),
-      attempts: [AttemptRecord.make({
-        attemptId: attemptId(0),
-        executionReceipt: request.receipt,
-        state: Pending.make()
-      })]
-    }))
-  });
-  validateLedger(accepted, ledger);
-  return ledger;
-};
-
-// ../../src/apply/transition.ts
-var setState = (record2, state, receipt = current(record2).publishReceipt) => {
-  const prior = current(record2);
-  const next = AttemptRecord.make({
-    attemptId: prior.attemptId,
-    executionReceipt: prior.executionReceipt,
-    ...receipt === undefined ? {} : { publishReceipt: receipt },
-    state
-  });
-  return OperationRunRecord.make({
-    operationId: record2.operationId,
-    operationHash: record2.operationHash,
-    attempts: [...record2.attempts.slice(0, -1), next]
-  });
-};
-var mapCheckpoint = (record2, id, update) => {
-  const before = progress2(current(record2).state);
-  if (before.filter((item) => item.checkpointId === id).length !== 1)
-    throw fail14(`Unknown checkpoint ${id}.`);
-  return before.map((item) => item.checkpointId === id ? update(item) : item);
-};
-var evidence = (state) => ({
-  ..."clientReconciliationKey" in state && state.clientReconciliationKey !== undefined ? { clientReconciliationKey: state.clientReconciliationKey } : {},
-  ..."targetCoordinates" in state && state.targetCoordinates !== undefined ? { targetCoordinates: state.targetCoordinates } : {},
-  ..."subjectDigest" in state && state.subjectDigest !== undefined ? { subjectDigest: state.subjectDigest } : {}
-});
-var start = (record2, operation, command3) => {
-  if (current(record2).state._tag !== "Pending")
-    throw fail14("Operation is not pending.");
-  switch (command3._tag) {
-    case "BeginStructured":
-      if (operation._tag === "Exec" || operationAuthority(operation) === "RemotePublish")
-        throw fail14("Illegal structured start.");
-      return setState(record2, RunningStructured.make({ startedAt: command3.at }));
-    case "BeginTrustedExec":
-      if (operation._tag !== "Exec")
-        throw fail14("Only Exec is trusted execution.");
-      return setState(record2, RunningTrustedExec.make({ startedAt: command3.at }));
-  }
-};
-var resumeProgress = (record2) => {
-  const found = [...record2.attempts].reverse().map((attempt3) => progress2(attempt3.state)).find((items) => items.length > 0) ?? [];
-  return found.map((item) => item._tag === "CheckpointPassed" ? item : CheckpointPending.make({ checkpointId: item.checkpointId }));
-};
-var beginPublish = (ledger, record2, operation, receipt) => {
-  const attempt3 = current(record2);
-  if (attempt3.state._tag !== "Pending" || operationAuthority(operation) !== "RemotePublish")
-    throw fail14("Illegal publish start.");
-  if (receipt.runId !== ledger.runId || receipt.executionReceiptId !== attempt3.executionReceipt.receiptId) {
-    throw fail14("Publish receipt is foreign to this attempt.");
-  }
-  const carried = resumeProgress(record2);
-  const initial = carried.length > 0 ? carried : checkpointIds(operation).map((id) => CheckpointPending.make({ checkpointId: id }));
-  if (initial.length === 0)
-    throw fail14("Publication has no checkpoints.");
-  return setState(record2, DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: initial }), receipt);
-};
-var checkpoint2 = (record2, command3) => {
-  const attempt3 = current(record2);
-  if (attempt3.state._tag !== "DispatchingPublish")
-    throw fail14("Publication is not dispatching.");
-  const states = mapCheckpoint(record2, command3.checkpointId, (state) => {
-    switch (command3._tag) {
-      case "DispatchCheckpoint":
-        if (state._tag !== "CheckpointPending" || command3.key === undefined)
-          throw fail14("Checkpoint is not pending or has no key.");
-        return CheckpointDispatching.make({
-          checkpointId: state.checkpointId,
-          attemptId: attempt3.attemptId,
-          clientReconciliationKey: command3.key,
-          ...command3.targetCoordinates === undefined ? {} : {
-            targetCoordinates: command3.targetCoordinates
-          },
-          ...command3.subjectDigest === undefined ? {} : { subjectDigest: command3.subjectDigest }
-        });
-      case "PassCheckpoint":
-        if (state._tag !== "CheckpointDispatching")
-          throw fail14("Checkpoint was not dispatching.");
-        return CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command3.detail ?? "" });
-      case "FailCheckpoint":
-        if (state._tag !== "CheckpointDispatching")
-          throw fail14("Checkpoint was not dispatching.");
-        return CheckpointFailedBeforeCommit.make({
-          checkpointId: state.checkpointId,
-          ...evidence(state),
-          failure: command3.detail ?? "",
-          retryable: command3.retryable ?? false
-        });
-      case "UnknownCheckpoint":
-        if (state._tag !== "CheckpointDispatching")
-          throw fail14("Checkpoint was not dispatching.");
-        return CheckpointUnknown.make({
-          checkpointId: state.checkpointId,
-          ...evidence(state),
-          clientReconciliationKey: state.clientReconciliationKey,
-          ...command3.remoteId === undefined ? {} : { observedRemoteId: command3.remoteId },
-          failure: command3.detail ?? ""
-        });
-    }
-  });
-  return setState(record2, command3._tag === "UnknownCheckpoint" ? CommitUnknown.make({ progress: states, failure: command3.detail ?? "" }) : DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: states }));
-};
-var settle = (record2, command3) => {
-  const state = current(record2).state;
-  if (!["RunningStructured", "RunningTrustedExec", "DispatchingPublish"].includes(state._tag))
-    throw fail14("Operation is not running.");
-  switch (command3._tag) {
-    case "Pass":
-      return setState(record2, Passed.make({
-        progress: progress2(state),
-        outcome: command3.detail,
-        materializedOutputs: [...command3.outputs ?? []]
-      }));
-    case "FailBeforeCommit":
-      return setState(record2, FailedBeforeCommit.make({
-        progress: progress2(state),
-        failure: command3.detail,
-        retryable: command3.retryable ?? false
-      }));
-    case "CommitUnknown":
-      if (state._tag !== "DispatchingPublish")
-        throw fail14("No durable publication intent.");
-      return setState(record2, CommitUnknown.make({ progress: state.progress, failure: command3.detail }));
-  }
-};
-var resolve5 = (ledger, record2, command3) => {
-  const attempt3 = current(record2);
-  switch (command3._tag) {
-    case "Resolve": {
-      if (!["CommitUnknown", "ManualReview"].includes(attempt3.state._tag))
-        throw fail14("Only unknown or manual work can be resolved.");
-      const value2 = { operator: command3.operator, reason: command3.reason, timestamp: command3.at };
-      return setState(record2, command3.resolution === "committed" ? AssumedCommitted.make(value2) : AssumedAbsent.make(value2));
-    }
-    case "Reconcile": {
-      if (attempt3.state._tag !== "CommitUnknown")
-        throw fail14("Publication is not unknown.");
-      const states = mapCheckpoint(record2, command3.checkpointId, (state) => {
-        if (state._tag !== "CheckpointUnknown")
-          throw fail14("Checkpoint is not unknown.");
-        return command3.result === "committed" ? CheckpointPassed.make({ checkpointId: state.checkpointId, ...evidence(state), observedOutcome: command3.detail }) : CheckpointFailedBeforeCommit.make({
-          checkpointId: state.checkpointId,
-          ...evidence(state),
-          failure: command3.detail,
-          retryable: true
-        });
-      });
-      return setState(record2, command3.result === "committed" ? DispatchingPublish.make({ attemptId: attempt3.attemptId, progress: states }) : FailedBeforeCommit.make({ progress: states, failure: command3.detail, retryable: true }));
-    }
-    case "Retry":
-      if (attempt3.state._tag !== "AssumedAbsent" && !(attempt3.state._tag === "FailedBeforeCommit" && attempt3.state.retryable))
-        throw fail14("Operation is not eligible for retry.");
-      assertReceipt(ledger, command3.receipt);
-      return OperationRunRecord.make({
-        operationId: record2.operationId,
-        operationHash: record2.operationHash,
-        attempts: [...record2.attempts, AttemptRecord.make({
-          attemptId: attemptId(record2.attempts.length),
-          executionReceipt: command3.receipt,
-          state: Pending.make()
-        })]
-      });
-  }
-};
-var changeRecord = (accepted, ledger, record2, command3) => {
-  const operation = operationFor(accepted, record2.operationId);
-  switch (command3._tag) {
-    case "BeginStructured":
-    case "BeginTrustedExec":
-      return start(record2, operation, command3);
-    case "BeginPublish":
-      return beginPublish(ledger, record2, operation, command3.receipt);
-    case "DispatchCheckpoint":
-    case "PassCheckpoint":
-    case "FailCheckpoint":
-    case "UnknownCheckpoint":
-      return checkpoint2(record2, command3);
-    case "Pass":
-    case "FailBeforeCommit":
-    case "CommitUnknown":
-      return settle(record2, command3);
-    case "Resolve":
-    case "Reconcile":
-    case "Retry":
-      return resolve5(ledger, record2, command3);
-  }
-};
-var recovered = (record2) => {
-  const state = current(record2).state;
-  switch (state._tag) {
-    case "RunningStructured":
-      return setState(record2, FailedBeforeCommit.make({
-        progress: [],
-        failure: "Recovered interrupted replay-safe work.",
-        retryable: true
-      }));
-    case "RunningTrustedExec":
-      return setState(record2, ManualReview.make({ reason: "Recovered interrupted trusted exec." }));
-    case "DispatchingPublish": {
-      const states = state.progress.map((item) => item._tag === "CheckpointDispatching" ? CheckpointUnknown.make({
-        checkpointId: item.checkpointId,
-        ...evidence(item),
-        clientReconciliationKey: item.clientReconciliationKey,
-        failure: "Recovered after durable dispatch intent."
-      }) : item);
-      return setState(record2, CommitUnknown.make({ progress: states, failure: "Recovered in-flight publication." }));
-    }
-    default:
-      return record2;
-  }
-};
-var transition = (accepted, ledger, command3) => {
-  try {
-    validateLedger(accepted, ledger);
-    if (command3._tag === "AdvanceFrontier") {
-      if (stageOrder.indexOf(command3.frontier) < stageOrder.indexOf(ledger.frontier))
-        throw fail14("Frontier cannot move backward.");
-      const advanced = RunLedger.make({ ...ledger, frontier: command3.frontier, revision: ledger.revision + 1 });
-      validateLedger(accepted, advanced);
-      return succeed2(advanced);
-    }
-    const operations = command3._tag === "Recover" ? ledger.operations.map(recovered) : ledger.operations.map((record2) => record2.operationId === command3.operationId ? changeRecord(accepted, ledger, record2, command3) : record2);
-    if (command3._tag !== "Recover" && !ledger.operations.some((record2) => record2.operationId === command3.operationId))
-      throw fail14(`Unknown operation ${command3.operationId}.`);
-    const next = RunLedger.make({ ...ledger, revision: ledger.revision + 1, operations });
-    validateLedger(accepted, next);
-    return succeed2(next);
-  } catch (error3) {
-    return fail2(error3 instanceof TransitionError ? error3 : fail14(String(error3)));
-  }
-};
-var operationStatus = (ledger, operationId2) => ledger.operations.find((item) => item.operationId === operationId2)?.attempts.at(-1)?.state;
-var settled = (state) => state?._tag === "Passed" || state?._tag === "AssumedCommitted";
-
-// ../../src/apply/apply.ts
-var applied = (ledger) => ({ _tag: "Applied", ledger });
-var moved = (ctx, ledger, command3) => gen2(function* () {
-  const next = transition(ctx.accepted, ledger, command3);
-  if (isFailure2(next))
-    return yield* next.failure;
-  yield* ctx.store.save(ctx.request.run.path, ledger.revision, next.success);
-  return next.success;
-});
-var structured2 = (ctx, permit, ledger, operation) => gen2(function* () {
-  const start2 = operation._tag === "Exec" ? "BeginTrustedExec" : "BeginStructured";
-  const next = yield* moved(ctx, ledger, {
-    _tag: start2,
-    operationId: operation.id,
-    at: new Date().toISOString()
-  });
-  const secret = operation._tag === "ReviewedNoteTransform" ? yield* ctx.credential.getRead(operation.credential, permit) : undefined;
-  const result2 = yield* ctx.catalog.structured(CatalogStructuredRequest.make({
-    operation,
-    root: ctx.request.root,
-    availableOutputs: ctx.accepted.outputs.map(({ output }) => output)
-  }), secret).pipe(map5((value2) => ({ success: true, value: value2 })), catch_2((cause) => succeed6({ success: false, cause })));
-  const command3 = result2.success ? {
-    _tag: "Pass",
-    operationId: operation.id,
-    detail: result2.value.outcome,
-    outputs: result2.value.outputs
-  } : {
-    _tag: "FailBeforeCommit",
-    operationId: operation.id,
-    detail: result2.cause.reason,
-    retryable: false
-  };
-  return yield* moved(ctx, next, command3);
-});
-var localOperations = (ctx, permit, ledger, operations) => gen2(function* () {
-  let next = ledger;
-  for (const operation of operations.filter((item) => !isRemotePublish(item))) {
-    if (operationStatus(next, operation.id)?._tag === "Pending")
-      next = yield* structured2(ctx, permit, next, operation);
-    if (!settled(operationStatus(next, operation.id)))
-      return next;
-  }
-  return next;
-});
-var materialize = (ctx, selected2) => gen2(function* () {
-  const publishInputs = new Set(operationEntries(ctx.accepted.plan).filter(({ operation }) => selected2.has(operation.id) && isRemotePublish(operation)).flatMap(({ operation }) => operation.inputs).map(String));
-  return yield* forEach2(ctx.accepted.outputs.filter(({ output }) => publishInputs.has(String(output.id))), ({ output }) => ctx.workspace.snapshot(SnapshotRequest.make({
-    root: ctx.request.root,
-    source: output.path,
-    snapshotDirectory: ctx.request.snapshotDirectory,
-    outputId: output.id
-  })));
-});
-var dispatched = (effect2) => effect2.pipe(catch_2((cause) => succeed6(cause.commitment === "unknown" ? CommitmentUnknown.make({ failure: cause.reason }) : NotDispatched.make({ reason: cause.reason, retryable: false }))));
-var publishTarget = (operation) => {
-  switch (operation._tag) {
-    case "HttpPublish":
-      return operation.wire.baseUrl;
-    case "ForgeRelease":
-      return operation.repository;
-    case "PackageRegistryRelease":
-      return operation.registryUrl;
-  }
-};
-var checkpointCommand = (result2, operationId2, checkpointId) => {
-  switch (result2._tag) {
-    case "Committed":
-      return { _tag: "PassCheckpoint", operationId: operationId2, checkpointId, detail: result2.observedOutcome };
-    case "NotDispatched":
-      return {
-        _tag: "FailCheckpoint",
-        operationId: operationId2,
-        checkpointId,
-        detail: result2.reason,
-        retryable: result2.retryable
-      };
-    case "CommitmentUnknown":
-      return {
-        _tag: "UnknownCheckpoint",
-        operationId: operationId2,
-        checkpointId,
-        detail: result2.failure,
-        ...result2.observedRemoteId === undefined ? {} : { remoteId: result2.observedRemoteId }
-      };
-  }
-};
-var reconciliationKeyFor = (ctx, ledger, operation, operationHash, checkpointId, target2, materials, bindings) => {
-  return reconciliationKey(ctx.accepted.planId, ledger.logicalRunId, ledger.scope, ledger.executionTopologyHash, operationHash, checkpointId, target2, materials);
-};
-var publishOperation = (ctx, ledger, operation, materials, permit) => gen2(function* () {
-  const before = operationStatus(ledger, operation.id);
-  const operationHash = OperationHash.make(ctx.accepted.operationHashes.find((item) => item.operationId === operation.id).hash);
-  const bindings = materials.filter((item) => operation.inputs.includes(item.outputId));
-  const target2 = publishTarget(operation);
-  const pendingIds = before?._tag === "DispatchingPublish" ? before.progress.filter((item) => item._tag === "CheckpointPending").map((item) => item.checkpointId) : checkpointIds(operation);
-  if (pendingIds.length === 0) {
-    return yield* moved(ctx, ledger, { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." });
-  }
-  const handles = new Map;
-  for (const checkpointId of pendingIds) {
-    const subjectFromInputs = checkpointId === "dispatch";
-    const outputId2 = subjectFromInputs ? String(operation.inputs[0] ?? "") : String(checkpointId).replace(/^asset:/u, "");
-    const facts = materials.find((item) => item.outputId === outputId2);
-    handles.set(String(checkpointId), facts === undefined ? undefined : yield* ctx.workspace.verify(ctx.request.snapshotDirectory, facts));
-  }
-  const credential = yield* ctx.credential.getPublish(operation.credential, permit);
-  let next = before?._tag === "Pending" ? yield* moved(ctx, ledger, { _tag: "BeginPublish", operationId: operation.id, receipt: permit.receipt }) : ledger;
-  const status = operationStatus(next, operation.id);
-  const checkpoints = status?._tag === "DispatchingPublish" ? status.progress : [];
-  for (const checkpoint3 of checkpoints) {
-    if (checkpoint3._tag !== "CheckpointPending")
-      continue;
-    const key = reconciliationKeyFor(ctx, next, operation, operationHash, checkpoint3.checkpointId, target2, materials, bindings);
-    next = yield* moved(ctx, next, {
-      _tag: "DispatchCheckpoint",
-      operationId: operation.id,
-      checkpointId: checkpoint3.checkpointId,
-      key
-    });
-    const publish = CatalogPublishRequest.make({
-      operation,
-      root: ctx.request.root,
-      checkpointId: checkpoint3.checkpointId,
-      clientReconciliationKey: key
-    });
-    const result2 = yield* dispatched(ctx.catalog.publish(publish, handles.get(String(checkpoint3.checkpointId)), credential));
-    next = yield* moved(ctx, next, checkpointCommand(result2, operation.id, checkpoint3.checkpointId));
-    if (result2._tag !== "Committed")
-      return next;
-  }
-  return yield* moved(ctx, next, { _tag: "Pass", operationId: operation.id, detail: "All checkpoints observed." });
-});
-var blocksApply = (ledger) => ledger.operations.some((record2) => ["CommitUnknown", "ManualReview"].includes(record2.attempts.at(-1).state._tag));
-var reconcile2 = (ctx, ledger, recovery, permit) => gen2(function* () {
-  const operation = operationEntries(ctx.accepted.plan).map(({ operation: operation2 }) => operation2).find((item) => item.id === recovery.operationId && isRemotePublish(item));
-  const state = operationStatus(ledger, recovery.operationId);
-  const checkpoint3 = state?._tag === "CommitUnknown" ? state.progress.find((item) => item.checkpointId === recovery.checkpointId) : undefined;
-  if (operation === undefined || checkpoint3?._tag !== "CheckpointUnknown")
-    return yield* TransitionError.make({ reason: "Reconciliation does not name an unknown checkpoint." });
-  const credential = yield* ctx.credential.getPublish(operation.credential, permit);
-  const result2 = yield* ctx.catalog.reconcile(CatalogPublishRequest.make({
-    operation,
-    root: ctx.request.root,
-    checkpointId: recovery.checkpointId,
-    clientReconciliationKey: checkpoint3.clientReconciliationKey
-  }), credential);
-  return yield* moved(ctx, ledger, {
-    ...recovery,
-    result: result2.found ? "committed" : "absent",
-    detail: result2.remoteId ?? (result2.found ? "Observed committed." : "Observed absent.")
-  });
-});
-var openLedger = (ctx) => gen2(function* () {
-  const run4 = ctx.request.run;
-  let ledger = run4._tag === "NewRun" ? run4.ledger : yield* ctx.store.load(run4.path, run4.expected);
-  if (run4._tag === "NewRun")
-    yield* ctx.store.create(run4.path, ledger);
-  ledger = yield* moved(ctx, ledger, { _tag: "Recover" });
-  if (stageOrder.indexOf(ctx.request.through) > stageOrder.indexOf(ledger.frontier))
-    ledger = yield* moved(ctx, ledger, { _tag: "AdvanceFrontier", frontier: ctx.request.through });
-  return ledger;
-});
-var applyAcceptedPlan = fn2("applyAcceptedPlan")(function* (accepted, request) {
-  const ctx = {
-    accepted,
-    request,
-    store: yield* RunStore,
-    catalog: yield* DriverCatalog,
-    workspace: yield* WorkspaceStore,
-    credential: yield* CredentialStore
-  };
-  const signer = yield* ApprovalSigner;
-  let ledger = yield* openLedger(ctx);
-  const executionPermit = yield* signer.execution(request.executionReceipt, ledger.runId, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash));
-  for (const recovery of request.recoveries?.filter((item) => item._tag === "Resolve") ?? [])
-    ledger = yield* moved(ctx, ledger, recovery);
-  for (const recovery of request.recoveries?.filter((item) => item._tag === "Retry") ?? [])
-    ledger = yield* moved(ctx, ledger, {
-      _tag: "Retry",
-      operationId: recovery.operationId,
-      receipt: request.executionReceipt
-    });
-  const selected2 = new Set(ledger.scope.operationIds.map(String));
-  const entries2 = operationEntries(accepted.plan).filter(({ stage, operation }) => selected2.has(operation.id) && stageOrder.indexOf(stage) <= stageOrder.indexOf(request.through));
-  ledger = yield* localOperations(ctx, executionPermit, ledger, entries2.map(({ operation }) => operation));
-  const scoped4 = operationEntries(accepted.plan).filter(({ operation }) => selected2.has(operation.id));
-  if (scoped4.some(({ operation }) => operationAuthority(operation) !== "RemotePublish" && !settled(operationStatus(ledger, operation.id))))
-    return applied(ledger);
-  const publishEntries = entries2.map(({ operation }) => operation).filter(isRemotePublish);
-  if (!scoped4.some(({ operation }) => isRemotePublish(operation)))
-    return applied(ledger);
-  if (blocksApply(ledger) && !request.recoveries?.some((item) => item._tag === "Reconcile"))
-    return applied(ledger);
-  const materials = yield* materialize(ctx, selected2);
-  for (const material of materials) {
-    const producer = scoped4.map(({ operation }) => operation).find((operation) => operation.outputs.some((output) => String(output.id) === String(material.outputId)));
-    const state = producer === undefined ? undefined : operationStatus(ledger, producer.id);
-    if (state?._tag !== "Passed")
-      continue;
-    const recorded = state.materializedOutputs.find((output) => String(output.outputId) === String(material.outputId));
-    if (recorded !== undefined && (recorded.digest !== material.digest || recorded.size !== material.size)) {
-      return yield* TransitionError.make({
-        reason: `Output ${material.outputId} no longer matches its recorded digest; the workspace changed after it was built.`
-      });
-    }
-  }
-  const review = publishReviewId(accepted, executionReviewId(accepted, ledger.scope, ledger.executionTopologyHash), ledger.scope, materials);
-  if (request.publish === undefined)
-    return { _tag: "PublishReviewRequired", reviewId: review, ledger };
-  const permit = yield* signer.publish(request.publish.receipt, executionPermit, review);
-  for (const recovery of request.recoveries?.filter((item) => item._tag === "Reconcile") ?? [])
-    ledger = yield* reconcile2(ctx, ledger, recovery, permit);
-  if (blocksApply(ledger))
-    return applied(ledger);
-  for (const operation of publishEntries) {
-    const state = operationStatus(ledger, operation.id);
-    if (state?._tag === "Pending" || state?._tag === "DispatchingPublish")
-      ledger = yield* publishOperation(ctx, ledger, operation, materials, permit);
-    if (!settled(operationStatus(ledger, operation.id)))
-      return applied(ledger);
-  }
-  return applied(ledger);
-});
-
-// ../../src/plan/review.ts
-var encoder4 = new TextEncoder;
-var acceptExpected = (bytes, expected) => gen2(function* () {
-  const value2 = yield* acceptPlan(encoder4.encode(bytes));
-  if (value2.planId !== expected) {
-    return yield* PlanningFactsError.make({
-      reason: "Expected PlanId does not match canonical bytes."
-    });
-  }
-  return value2;
-});
-
-// ../../src/view/evidence.ts
-var projectEvidence = (ledger) => ({
-  schemaVersion: "evidence-projection/v1",
-  planId: ledger.planId,
-  runId: ledger.runId,
-  frontier: ledger.frontier,
-  operations: ledger.operations.map((record2) => ({
-    operationId: record2.operationId,
-    status: record2.attempts.at(-1)?.state._tag ?? "Missing"
-  }))
-});
-
-// ../../src/api/errors.ts
-class ReleaseApiError extends Error {
-  phase;
-  reason;
-  _tag = "ReleaseApiError";
-  constructor(phase, reason) {
-    super(`${phase}: ${reason}`);
-    this.phase = phase;
-    this.reason = reason;
-    this.name = "ReleaseApiError";
-  }
-  static from(phase, cause) {
-    if (cause instanceof ReleaseApiError)
-      return cause;
-    const reason = typeof cause === "object" && cause !== null && "reason" in cause ? String(cause.reason) : cause instanceof Error ? cause.message : "Operation failed.";
-    return new ReleaseApiError(phase, reason);
-  }
-}
-
-// ../../src/api/input.ts
-import { existsSync as existsSync5, realpathSync as realpathSync4, statSync as statSync3 } from "node:fs";
-import { dirname as dirname3, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve6, sep as sep2 } from "node:path";
-var ScopeInputSchema = Union2([
-  Literal2("all"),
-  Struct({ operationIds: NonEmptyArray(String4) })
-]);
-var PlanInputSchema = Struct({
-  config: Unknown2,
-  workspace: String4
-});
-var ReviewExecutionInputSchema = Struct({
-  planBytes: String4,
-  expectedPlanId: PlanId,
-  scope: ScopeInputSchema
-});
-var OperatorResolutionSchema = Struct({
-  operationId: String4,
-  outcome: Literals(["committed", "absent"]),
-  operator: NonEmptyString,
-  reason: NonEmptyString
-});
-var NewRunSchema = Struct({
-  path: String4,
-  scope: ScopeInputSchema,
-  executionReviewId: ExecutionReviewId,
-  reviewer: String4,
-  reason: optionalKey2(String4)
-});
-var PublishConfirmationSchema = Struct({
-  publishReviewId: PublishReviewId,
-  reviewer: String4
-});
-var ApplyInputSchema = Struct({
-  planBytes: String4,
-  expectedPlanId: PlanId,
-  workspace: String4,
-  newRun: optionalKey2(NewRunSchema),
-  resumeRunPath: optionalKey2(String4),
-  through: optionalKey2(Stage),
-  publishConfirmation: optionalKey2(PublishConfirmationSchema),
-  reconcile: optionalKey2(ArraySchema(String4)),
-  resolutions: optionalKey2(ArraySchema(OperatorResolutionSchema)),
-  retry: optionalKey2(ArraySchema(String4))
-}).check(makeFilter2((value2) => value2.newRun === undefined === (value2.resumeRunPath === undefined) ? "Choose exactly one of newRun or resumeRunPath." : undefined));
-var decodeInput = (phase, schema2, value2) => {
-  try {
-    return decodeUnknownSync(schema2, { onExcessProperty: "error" })(value2);
-  } catch (cause) {
-    throw new ReleaseApiError(phase, String(cause).split(`
-`).slice(0, 8).join(`
-`).slice(0, 500));
-  }
-};
-var workspace = (phase, value2) => {
-  if (!isAbsolute2(value2) || value2.length === 0) {
-    throw new ReleaseApiError(phase, "Workspace must be a nonempty absolute path.");
-  }
-  const canonical2 = realpathSync4(value2);
-  if (!statSync3(canonical2).isDirectory()) {
-    throw new ReleaseApiError(phase, "Workspace must be a directory.");
-  }
-  return WorkspaceRoot.make(canonical2);
-};
-var within = (root, value2) => {
-  const path2 = isAbsolute2(value2) ? resolve6(value2) : resolve6(root, value2);
-  const child = relative2(root, path2);
-  if (child === ".." || child.startsWith(`..${sep2}`)) {
-    throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
-  }
-  let ancestor = dirname3(path2);
-  while (!existsSync5(ancestor))
-    ancestor = dirname3(ancestor);
-  if (!contained(root, realpathSync4(ancestor))) {
-    throw new ReleaseApiError("apply", "Run path must remain inside the workspace.");
-  }
-  return path2;
-};
-var topology = () => ExecutionTopologyHash.make("single-machine/v1");
-var selectScope = (accepted, input2) => {
-  const available = accepted.operationHashes.map(({ operationId: operationId2 }) => operationId2);
-  const requested = input2 === "all" ? available : input2.operationIds;
-  if (requested.length === 0) {
-    throw new ReleaseApiError("review", "Execution scope must be nonempty.");
-  }
-  const ids = [...new Set(requested.map(String))];
-  if (ids.some((id) => !available.includes(id))) {
-    throw new ReleaseApiError("review", "Execution scope names an unknown operation.");
-  }
-  const selected2 = new Set(ids);
-  if (accepted.dependencies.some((edge) => selected2.has(edge.operationId) && !selected2.has(edge.producerId))) {
-    throw new ReleaseApiError("review", "Execution scope is not dependency-closed.");
-  }
-  return ExecutionScope.make({
-    operationIds: available.filter((id) => selected2.has(id)).map((id) => OperationId.make(id))
-  });
-};
-
-// ../../src/api/apply-boundary.ts
-var complete = (ledger) => ledger.operations.filter((record2) => ledger.scope.operationIds.includes(record2.operationId)).every((record2) => settled(record2.attempts.at(-1)?.state));
-var receipt = (ledger) => ledger.operations[0]?.attempts[0]?.executionReceipt;
-var expectedLedger = (plan) => ({
-  planId: plan.planId,
-  operationHashes: plan.operationHashes.map(({ hash: hash2 }) => OperationHash.make(hash2))
-});
-var recoveries = (ledger, input2) => [
-  ...(input2.resolutions ?? []).map((item) => ({
-    _tag: "Resolve",
-    operationId: OperationId.make(String(item.operationId)),
-    resolution: item.outcome,
-    operator: item.operator,
-    reason: item.reason,
-    at: new Date().toISOString()
-  })),
-  ...(input2.reconcile ?? []).flatMap((id) => {
-    const state = ledger.operations.find((item) => item.operationId === String(id))?.attempts.at(-1)?.state;
-    return state?._tag === "CommitUnknown" ? state.progress.filter((item) => item._tag === "CheckpointUnknown").map((item) => ({
-      _tag: "Reconcile",
-      operationId: OperationId.make(String(id)),
-      checkpointId: CheckpointId.make(item.checkpointId)
-    })) : [];
-  }),
-  ...(input2.retry ?? []).map((id) => ({
-    _tag: "Retry",
-    operationId: OperationId.make(String(id))
-  }))
-];
-var prepareNew = (plan, root, request) => {
-  const selected2 = selectScope(plan, request.scope);
-  const topologyHash = topology();
-  const execution = mintExecutionReceipt(plan, selected2, topologyHash, {
-    reviewId: request.executionReviewId,
-    runId: RunId.make(randomUUID4()),
-    reviewer: request.reviewer,
-    approvalNonce: ApprovalNonce.make(randomUUID4()),
-    approvedAt: new Date().toISOString(),
-    ...request.reason === undefined ? {} : { newRunReason: request.reason }
-  });
-  return {
-    execution,
-    runPath: ledgerPath(within(root, request.path), execution.logicalRunId),
-    ledger: createLedger(plan, {
-      runId: execution.runId,
-      logicalRunId: execution.logicalRunId,
-      scope: selected2,
-      frontier: "build",
-      topologyHash,
-      receipt: execution
-    })
-  };
-};
-var prepareResume = (plan, root, path2) => {
-  const contained2 = within(root, path2);
-  let runPath;
-  try {
-    runPath = resolveLedgerPath(contained2);
-  } catch (cause) {
-    throw new ReleaseApiError("apply", cause instanceof RunStoreError ? cause.reason : String(cause));
-  }
-  const ledger = readLedgerFile(runPath);
-  validateLedger(plan, ledger);
-  const execution = receipt(ledger);
-  if (execution === undefined) {
-    throw new ReleaseApiError("apply", "Run ledger has no execution receipt.");
-  }
-  return { runPath, ledger, execution };
-};
-var output = (prepared, ledger, status, extra = {}) => ({
-  runId: ledger.runId,
-  runPath: prepared.runPath,
-  ledger,
-  evidence: projectEvidence(ledger),
-  executionReceiptId: prepared.execution.receiptId,
-  status,
-  ...extra
-});
-var publishOutput = async (run4, plan, input2, prepared, review) => {
-  if (review._tag === "Applied") {
-    const ledger = review.ledger;
-    return output(prepared, ledger, complete(ledger) ? "complete" : "stopped");
-  }
-  if (input2.publishConfirmation === undefined) {
-    return output(prepared, review.ledger, "publish-review-required", {
-      nextPublishReviewId: review.reviewId
-    });
-  }
-  const publish = mintPublishReceipt(prepared.execution, review.reviewId, {
-    reviewId: input2.publishConfirmation.publishReviewId,
-    reviewer: input2.publishConfirmation.reviewer,
-    approvalNonce: ApprovalNonce.make(randomUUID4()),
-    approvedAt: new Date().toISOString()
-  });
-  const second = await run4("apply", applyAcceptedPlan(plan, {
-    root: workspace("apply", input2.workspace),
-    snapshotDirectory: `${prepared.runPath}.snapshots`,
-    through: input2.through ?? "verify",
-    executionReceipt: prepared.execution,
-    recoveries: recoveries(review.ledger, input2),
-    run: {
-      _tag: "ResumeRun",
-      path: prepared.runPath,
-      expected: expectedLedger(plan)
-    },
-    publish: { receipt: publish }
-  }));
-  if (second._tag !== "Applied") {
-    throw new ReleaseApiError("apply", "Publish review did not advance.");
-  }
-  return output(prepared, second.ledger, complete(second.ledger) ? "complete" : "stopped", {
-    publishReceiptId: publish.receiptId
-  });
-};
-var makeApply = (run4) => async (input2) => {
-  const decoded = decodeInput("apply", ApplyInputSchema, input2);
-  const selector = decoded.newRun !== undefined ? { _tag: "New", request: decoded.newRun } : decoded.resumeRunPath !== undefined ? { _tag: "Resume", path: decoded.resumeRunPath } : undefined;
-  if (selector === undefined) {
-    throw new ReleaseApiError("apply", "Choose exactly one of newRun or resumeRunPath.");
-  }
-  const plan = await run4("apply", acceptExpected(decoded.planBytes, decoded.expectedPlanId));
-  const root = workspace("apply", decoded.workspace);
-  const prepared = selector._tag === "New" ? prepareNew(plan, root, selector.request) : prepareResume(plan, root, selector.path);
-  const first = await run4("apply", applyAcceptedPlan(plan, {
-    root,
-    snapshotDirectory: `${prepared.runPath}.snapshots`,
-    through: decoded.through ?? "verify",
-    executionReceipt: prepared.execution,
-    recoveries: recoveries(prepared.ledger, decoded),
-    run: selector._tag === "Resume" ? {
-      _tag: "ResumeRun",
-      path: prepared.runPath,
-      expected: expectedLedger(plan)
-    } : { _tag: "NewRun", path: prepared.runPath, ledger: prepared.ledger }
-  }));
-  return publishOutput(run4, plan, decoded, prepared, first);
-};
+var NodeReleaseLayer = ReleaseServicesLive.pipe(provide2(mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4, SourceObserverLive)));
 
 // ../../src/api/api.ts
-var decoder2 = new TextDecoder;
+var manifestPath = (config) => {
+  const directory = String(config.project.packagePath ?? config.npmPackage?.path ?? ".");
+  return SafeRelativePath.make(directory === "." ? "package.json" : `${directory}/package.json`);
+};
+var releaseTagVersion = (tags) => {
+  const values = tags.map((tag3) => /^v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$/u.exec(tag3.toString())?.[1]).filter((value2) => value2 !== undefined);
+  return values.length === 1 ? values[0] : undefined;
+};
+var observeAndCompile = fn2("observeAndCompileRelease")(function* (input) {
+  const runtime2 = yield* ReleaseRuntime;
+  const authored = yield* decodeConfig(input.config);
+  const root = workspaceRoot(input.workspace);
+  const context3 = yield* runtime2.source.observe(WorkspaceRoot.make(root), manifestPath(authored), authored.project.commit === undefined ? undefined : NonEmptyName.make(authored.project.commit));
+  const facts = ObservedFacts.make({
+    commit: context3.source.commit,
+    manifestName: context3.package.name,
+    manifestVersion: context3.package.version,
+    ...releaseTagVersion(context3.source.headTags) === undefined ? {} : { headTagVersion: Version.make(releaseTagVersion(context3.source.headTags)) },
+    ...context3.source.repository === undefined ? {} : { repository: context3.source.repository }
+  });
+  const resolved = yield* try_2({ try: () => resolveConfig(input.config, facts), catch: (cause) => new ReleaseInputError({ reason: cause instanceof Error ? cause.message : String(cause) }) });
+  return { context: context3, config: resolved, graph: compileReleaseGraph(resolved, context3) };
+});
+var preparedDirectory = (workspace, value2) => {
+  const root = workspaceRoot(workspace);
+  return value2 === undefined ? join8(root, ".release", "ts-release", "prepared") : value2.startsWith("/") ? value2 : join8(root, value2);
+};
+var prepareProgram = fn2("prepareProgram")(function* (input) {
+  const compiled = yield* observeAndCompile({ config: input.config, workspace: input.workspace });
+  const runtime2 = yield* ReleaseRuntime;
+  return yield* prepareRelease({
+    context: compiled.context,
+    graph: compiled.graph,
+    storeDirectory: preparedDirectory(input.workspace, input.preparedDirectory),
+    run: runtime2.run,
+    verifySource: (context3) => runtime2.source.observe(context3.workspace, context3.source.packageManifestPath, context3.source.commit)
+  });
+});
+var credentialsFor = (bundle, credentials2) => {
+  const npm2 = bundle.manifest.publications.some((publication2) => publication2._tag === "PreparedNpmPublication");
+  const github2 = bundle.manifest.publications.some((publication2) => publication2._tag === "PreparedGitHubPublication");
+  if (npm2 && credentials2?.npm === undefined)
+    throw new ReleaseInputError({ reason: "publish requires separate npm read and publish credentials." });
+  if (github2 && credentials2?.github === undefined)
+    throw new ReleaseInputError({ reason: "publish requires separate GitHub read and publish credentials." });
+  return { ...credentials2?.npm === undefined ? {} : { npm: credentials2.npm }, ...credentials2?.github === undefined ? {} : { github: credentials2.github } };
+};
+var npmProcess = (runtime2) => ({
+  publish: (request) => try_2({
+    try: () => {
+      const directory = mkdtempSync2(join8(tmpdir3(), "ts-release-publish-"));
+      const tarball = join8(directory, `${request.packageName.replace(/[^A-Za-z0-9._-]+/gu, "-")}-${request.version}.tgz`);
+      const config = join8(directory, ".npmrc");
+      writeFileSync2(tarball, request.bytes, { mode: 384 });
+      writeFileSync2(config, `//${new URL(request.registryUrl).host}/:_authToken=${request.credential}
+`, { mode: 384 });
+      return { directory, tarball, config };
+    },
+    catch: (cause) => new class extends Error {
+      reason;
+      _tag = "PublicationError";
+      phase = "mutate";
+      commitment = "before-dispatch";
+      constructor(reason2) {
+        super(reason2);
+        this.reason = reason2;
+      }
+    }(cause instanceof Error ? cause.message : String(cause))
+  }).pipe(flatMap3(({ directory, tarball, config }) => runtime2.run({ argv: ["npm", "publish", tarball, "--registry", request.registryUrl, "--userconfig", config], cwd: directory, environmentNames: [] }).pipe(map5((result2) => {
+    rmSync3(directory, { recursive: true, force: true });
+    return { started: true, exitCode: result2.exitCode };
+  }), mapError3((cause) => new class extends Error {
+    reason;
+    _tag = "PublicationError";
+    phase = "mutate";
+    commitment = "before-dispatch";
+    constructor(reason2) {
+      super(reason2);
+      this.reason = reason2;
+    }
+  }(cause instanceof Error ? cause.message : String(cause))))))
+});
+var npmDeprecationProcess = (runtime2) => ({
+  deprecate: (request) => gen2(function* () {
+    const directory = mkdtempSync2(join8(tmpdir3(), "ts-release-correction-"));
+    const config = join8(directory, ".npmrc");
+    try {
+      writeFileSync2(config, `//${new URL(request.registryUrl).host}/:_authToken=${request.credential}
+`, { mode: 384 });
+      const result2 = yield* runtime2.run({ argv: ["npm", "deprecate", `${request.packageName}@${request.version}`, request.message, "--registry", request.registryUrl, "--userconfig", config], cwd: directory, environmentNames: [] });
+      return { started: true, exitCode: result2.exitCode };
+    } finally {
+      rmSync3(directory, { recursive: true, force: true });
+    }
+  }).pipe(mapError3((cause) => new class extends Error {
+    reason;
+    _tag = "PublicationError";
+    phase = "mutate";
+    commitment = "before-dispatch";
+    constructor(reason2) {
+      super(reason2);
+      this.reason = reason2;
+    }
+  }(cause instanceof Error ? cause.message : String(cause))))
+});
+var publishProgram = fn2("publishProgram")(function* (bundle, credentials2) {
+  const runtime2 = yield* ReleaseRuntime;
+  const selected = credentialsFor(bundle, credentials2);
+  return yield* publishPreparedRelease({ bundle, http: runtime2.http, credentials: selected, npmProcess: npmProcess(runtime2) });
+});
+var correctProgram = fn2("correctProgram")(function* (input) {
+  const runtime2 = yield* ReleaseRuntime;
+  const bundle = yield* loadPreparedRelease(preparedPath(input.prepared));
+  const intent = yield* try_2({ try: () => decodeCorrectionIntent(new Uint8Array(readFileSync4(input.correction))), catch: (cause) => new ReleaseInputError({ reason: cause instanceof Error ? cause.message : String(cause) }) });
+  const credentials2 = input.credentials;
+  const subject = intent.correction._tag === "NpmDeprecationCorrection" ? credentials2?.npm === undefined ? undefined : makeNpmDeprecationSubject(bundle, intent.correction, runtime2.http, credentials2.npm, npmDeprecationProcess(runtime2)) : intent.correction._tag === "CatalogCorrection" ? makeCatalogCorrectionSubject(bundle, intent, runtime2.catalog) : undefined;
+  if (intent.correction._tag === "NpmDeprecationCorrection" && subject === undefined)
+    return yield* fail6(new ReleaseInputError({ reason: "correct requires separate npm read and publish credentials." }));
+  return yield* correctPreparedRelease({ bundle, intent, ...subject === undefined ? {} : { subject } });
+});
 var makeReleaseApi = (layer7) => {
   const runtime2 = make6(layer7);
-  const run4 = (phase, effect2) => runtime2.runPromise(effect2).catch((cause) => {
-    throw ReleaseApiError.from(phase, cause);
-  });
-  const plan = async (input2) => {
-    const decoded = decodeInput("plan", PlanInputSchema, input2);
-    const config = await run4("plan", decodePlanningConfig(decoded.config));
-    const root = workspace("plan", decoded.workspace);
-    if (config.project.commit === undefined)
-      throw new ReleaseApiError("plan", MISSING_COMMIT);
-    const result2 = await run4("plan", compilePlan(decoded.config, Invocation.make({
-      workspace: root,
-      commit: NonEmptyName.make(config.project.commit),
-      snapshot: false
-    })));
-    return { plan: result2.plan, bytes: decoder2.decode(result2.bytes), planId: result2.planId };
+  const run3 = (effect2) => runtime2.runPromise(effect2);
+  const inspect2 = async (value2) => {
+    const input = decodeInspectInput(value2);
+    if (input.prepared !== undefined)
+      return inspectPreparedRelease(await run3(loadPreparedRelease(preparedPath(input.prepared))));
+    const compiled = await run3(observeAndCompile({ config: input.config, workspace: input.workspace }));
+    return inspectRelease(compiled.context, compiled.graph);
   };
-  const reviewExecution = async (input2) => {
-    const decoded = decodeInput("review", ReviewExecutionInputSchema, input2);
-    const accepted = await run4("review", acceptExpected(decoded.planBytes, decoded.expectedPlanId));
-    const scope3 = selectScope(accepted, decoded.scope);
-    return {
-      scope: scope3,
-      executionReviewId: executionReviewId(accepted, scope3, topology())
-    };
+  const prepare = async (value2) => run3(prepareProgram(decodePrepareInput(value2)));
+  const publish = async (value2) => {
+    const input = decodePublishInput(value2);
+    return run3(flatMap3(loadPreparedRelease(preparedPath(input.prepared)), (bundle) => publishProgram(bundle, input.credentials)));
   };
-  return Object.freeze({
-    plan,
-    reviewExecution,
-    apply: makeApply(run4),
-    dispose: () => runtime2.dispose()
-  });
+  const release = async (value2) => {
+    const input = decodeReleaseInput(value2);
+    const prepared = await run3(prepareProgram(input));
+    const publications = await run3(publishProgram(prepared, input.credentials));
+    return { prepared, publications };
+  };
+  const correct = async (value2) => run3(correctProgram(decodeCorrectInput(value2)));
+  return Object.freeze({ inspect: inspect2, prepare, publish, release, correct, dispose: () => runtime2.dispose() });
 };
 var defaultApi = makeReleaseApi(NodeReleaseLayer);
-var plan = defaultApi.plan;
-var reviewExecution = defaultApi.reviewExecution;
-var apply = defaultApi.apply;
+var inspect2 = defaultApi.inspect;
+var prepare = defaultApi.prepare;
+var publish = defaultApi.publish;
+var release = defaultApi.release;
+var correct = defaultApi.correct;
 // ../../src/platform/host-support.ts
 var unsupportedExecutionHost = (platform2) => platform2 === "linux" || platform2 === "darwin" ? undefined : "ts-release runs on Linux and macOS. Its Bun builder can produce Windows artifacts.";
-// ../../src/resolve/encode.ts
-var toPlainJson = (value2) => {
-  if (Array.isArray(value2))
-    return value2.map(toPlainJson);
-  if (typeof value2 !== "object" || value2 === null)
-    return value2;
-  return Object.fromEntries(Object.entries(value2).filter(([, entry]) => entry !== undefined).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([key, entry]) => [key, toPlainJson(entry)]));
-};
-var encodeResolvedConfig = (config) => `${JSON.stringify(toPlainJson(config), null, 2)}
-`;
-// ../../src/resolve/authored.ts
-var optional4 = optionalKey2;
-
-class AuthoredProject extends Class4("AuthoredProject")({
-  ...CandidateProject.fields,
-  name: optional4(NonEmptyName),
-  version: optional4(Version),
-  tag: optional4(NonEmptyName),
-  tagTemplate: optional4(NonEmptyString)
-}) {
-}
-
-class AuthoredConfig extends Class4("AuthoredConfig")({
-  ...CandidateConfig.fields,
-  project: AuthoredProject,
-  versionFrom: optional4(Literals(["manifest", "git-tag"]))
-}) {
-}
-
-// ../../src/resolve/errors.ts
-class ResolveError extends Error {
-  field;
-  reason;
-  _tag = "ResolveError";
-  constructor(field, reason) {
-    super(reason);
-    this.field = field;
-    this.reason = reason;
-    this.name = "ResolveError";
-  }
-}
-
-// ../../src/resolve/facts.ts
-var optional5 = optionalKey2;
-
-class ObservedFacts extends Class4("ObservedFacts")({
-  commit: optional5(NonEmptyName),
-  manifestName: optional5(NonEmptyString),
-  manifestVersion: optional5(Version),
-  headTagVersion: optional5(Version)
-}) {
-}
-
-// ../../src/resolve/resolve.ts
-var refuse = (field, reason) => {
-  throw new ResolveError(field, reason);
-};
-var disagreement = (field, authored, observed2, source) => refuse(`project.${field}`, `project.${field} is ${JSON.stringify(authored)} in the config but ${JSON.stringify(observed2)} ${source}. Remove the authored value or correct the source; the resolver never picks.`);
-var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
-var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
-var version2 = (authored, facts) => {
-  const directive = authored.versionFrom;
-  const observed2 = directive === "manifest" ? facts.manifestVersion : directive === "git-tag" ? facts.headTagVersion : undefined;
-  const source = directive === "manifest" ? "in the package manifest" : "on the tag at HEAD";
-  if (authored.project.version !== undefined) {
-    if (observed2 !== undefined && observed2 !== authored.project.version) {
-      disagreement("version", authored.project.version, observed2, source);
-    }
-    return authored.project.version;
-  }
-  if (directive === undefined) {
-    return refuse("project.version", 'project.version is required. State it, or set versionFrom to "manifest" or "git-tag" so it can be observed.');
-  }
-  if (observed2 === undefined) {
-    return refuse("project.version", `versionFrom is ${JSON.stringify(directive)} but no version was observed ${source}.`);
-  }
-  return observed2;
-};
-var tag2 = (authored, resolved) => {
-  if (authored.project.tag !== undefined)
-    return authored.project.tag;
-  const template = authored.project.tagTemplate ?? "v{version}";
-  const rendered = template.replaceAll("{version}", resolved);
-  if (rendered.includes("{") || rendered.includes("}")) {
-    return refuse("project.tagTemplate", `project.tagTemplate supports only the {version} token, got ${JSON.stringify(template)}.`);
-  }
-  return NonEmptyName.make(rendered);
-};
-var commit = (authored, facts) => {
-  if (authored.project.commit !== undefined) {
-    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
-      disagreement("commit", authored.project.commit, facts.commit, "at HEAD");
-    }
-    return authored.project.commit;
-  }
-  if (facts.commit === undefined)
-    return refuse("project.commit", MISSING_COMMIT);
-  return facts.commit;
-};
-var names = (authored, facts) => {
-  const manifest = facts.manifestName;
-  if (manifest !== undefined && authored.project.packageName !== undefined && manifest !== authored.project.packageName) {
-    disagreement("packageName", authored.project.packageName, manifest, "in the package manifest");
-  }
-  const name = authored.project.name ?? manifest;
-  if (name === undefined) {
-    return refuse("project.name", "project.name is required when no package manifest is observed.");
-  }
-  const packageName = authored.project.packageName ?? manifest;
-  return { name, ...packageName === undefined ? {} : { packageName } };
-};
-var resolveConfig = (authored, facts) => {
-  const config = decodeAuthored(authored);
-  const observed2 = decodeFacts(facts);
-  const resolvedVersion = version2(config, observed2);
-  const { project, versionFrom: _directive, ...rest } = config;
-  const { tagTemplate: _template, ...projectRest } = project;
-  return toPlainJson({
-    ...rest,
-    project: {
-      ...projectRest,
-      ...names(config, observed2),
-      version: resolvedVersion,
-      tag: tag2(config, resolvedVersion),
-      commit: commit(config, observed2)
-    }
-  });
-};
 // src/index.ts
 import {
-  mkdirSync as mkdirSync4,
-  readFileSync as readFileSync4,
+  mkdirSync as mkdirSync5,
+  readFileSync as readFileSync5,
   writeFileSync as writeFileSync3
 } from "node:fs";
-import { dirname as dirname5 } from "node:path";
+import { dirname as dirname4 } from "node:path";
 
 // src/commands.ts
-import { mkdirSync as mkdirSync3, realpathSync as realpathSync5 } from "node:fs";
-import { basename as basename3, dirname as dirname4, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve7, sep as sep3 } from "node:path";
-var actionCommands = ["plan", "apply", "doctor"];
-var optional6 = (runtime2, name) => {
-  const value2 = runtime2.input(name).trim();
-  return value2.length === 0 ? undefined : value2;
-};
+import { mkdirSync as mkdirSync4, realpathSync as realpathSync6 } from "node:fs";
+import { dirname as dirname3, isAbsolute as isAbsolute3, relative as relative2, resolve as resolve5, sep as sep2 } from "node:path";
 var inside = (root, candidate) => {
-  const fromRoot = relative3(root, candidate);
-  if (fromRoot === ".." || fromRoot.startsWith(`..${sep3}`) || isAbsolute3(fromRoot)) {
+  const child = relative2(root, candidate);
+  if (child === ".." || child.startsWith(`..${sep2}`) || isAbsolute3(child))
     throw new Error("Action path is outside GITHUB_WORKSPACE.");
-  }
   return candidate;
 };
-var contained2 = (root, path2) => inside(root, realpathSync5(isAbsolute3(path2) ? path2 : resolve7(root, path2)));
-var containedOutput = (root, path2) => {
-  const candidate = isAbsolute3(path2) ? resolve7(path2) : resolve7(root, path2);
-  mkdirSync3(dirname4(candidate), { recursive: true });
-  return inside(root, resolve7(realpathSync5(dirname4(candidate)), basename3(candidate)));
-};
-var scope3 = (value2) => value2 === undefined || value2 === "all" ? "all" : { operationIds: value2.split(",").filter(Boolean).map((id) => OperationId.make(id)) };
-var resolutions = (value2) => {
-  if (value2 === undefined)
-    return;
-  try {
-    return JSON.parse(value2);
-  } catch {
-    throw new Error("resolutions must be valid JSON.");
-  }
-};
-var accepted = (runtime2, root) => {
-  const path2 = optional6(runtime2, "plan-path");
-  const planId = optional6(runtime2, "plan-id");
-  if (path2 === undefined)
-    throw new Error("plan-path is required.");
-  if (planId === undefined)
-    throw new Error("plan-id is required.");
-  return {
-    planBytes: runtime2.read(contained2(root, path2)),
-    expectedPlanId: PlanId.make(planId)
-  };
-};
-var githubFacts = (runtime2, root) => {
-  const manifest = (() => {
-    try {
-      return JSON.parse(runtime2.read(contained2(root, "package.json")));
-    } catch {
-      return {};
-    }
-  })();
-  return {
-    ...runtime2.commit === undefined || runtime2.commit.length === 0 ? {} : { commit: runtime2.commit },
-    ...typeof manifest.name === "string" && manifest.name.length > 0 ? { manifestName: manifest.name } : {},
-    ...typeof manifest.version === "string" && manifest.version.length > 0 ? { manifestVersion: manifest.version } : {}
-  };
-};
-var planConfig = (runtime2, root, source, planPath) => {
-  const authored = JSON.parse(runtime2.read(source));
-  const mode = optional6(runtime2, "resolve");
-  if (mode === undefined)
-    return authored;
-  if (mode !== "github") {
-    throw new Error(`resolve must be empty or "github", got ${JSON.stringify(mode)}.`);
-  }
-  const config = resolveConfig(authored, githubFacts(runtime2, root));
-  runtime2.write(containedOutput(root, `${planPath}.resolved.json`), encodeResolvedConfig(config));
-  return config;
-};
-var planAction = async (api2, runtime2, root) => {
-  const source = contained2(root, optional6(runtime2, "config") ?? "release.config.json");
-  const output2 = containedOutput(root, optional6(runtime2, "plan-path") ?? "release-plan.json");
-  const result2 = await api2.plan({
-    config: planConfig(runtime2, root, source, optional6(runtime2, "plan-path") ?? "release-plan.json"),
-    workspace: root
-  });
-  runtime2.write(output2, result2.bytes);
-  runtime2.output("plan_id", result2.planId);
-  runtime2.output("status", "planned");
-};
-var reviewAction = async (api2, runtime2, root, command3) => {
-  const review = await api2.reviewExecution({
-    ...accepted(runtime2, root),
-    scope: scope3(optional6(runtime2, "scope"))
-  });
-  runtime2.output("execution_review_id", review.executionReviewId);
-  runtime2.output("status", command3 === "doctor" ? "valid" : "review-required");
-};
-var applyInput = (runtime2, root) => {
-  const reviewer = optional6(runtime2, "reviewer");
-  if (reviewer === undefined)
-    throw new Error("reviewer is required.");
-  const newRunPath = optional6(runtime2, "new-run");
-  const resumeRunPath = optional6(runtime2, "resume");
-  if (newRunPath === undefined === (resumeRunPath === undefined)) {
-    throw new Error("Choose exactly one of new-run or resume.");
-  }
-  const review = optional6(runtime2, "confirm-execution");
-  if (newRunPath !== undefined && review === undefined) {
-    throw new Error("confirm-execution is required for a new run.");
-  }
-  const publish = optional6(runtime2, "confirm-publish");
-  const throughInput = optional6(runtime2, "through");
-  const through = throughInput === undefined ? undefined : decodeUnknownSync(Stage)(throughInput);
-  const reconcile3 = optional6(runtime2, "reconcile");
-  const retry3 = optional6(runtime2, "retry");
-  const resolutionItems = resolutions(optional6(runtime2, "resolutions"));
-  const reason = optional6(runtime2, "reason");
-  return {
-    ...accepted(runtime2, root),
-    workspace: root,
-    ...newRunPath === undefined ? { resumeRunPath } : {
-      newRun: {
-        path: newRunPath,
-        scope: scope3(optional6(runtime2, "scope")),
-        executionReviewId: ExecutionReviewId.make(review),
-        reviewer,
-        ...reason === undefined ? {} : { reason }
-      }
-    },
-    ...through === undefined ? {} : { through },
-    ...publish === undefined ? {} : {
-      publishConfirmation: { publishReviewId: PublishReviewId.make(publish), reviewer }
-    },
-    ...reconcile3 === undefined ? {} : {
-      reconcile: reconcile3.split(",").filter(Boolean).map((id) => OperationId.make(id))
-    },
-    ...resolutionItems === undefined ? {} : { resolutions: resolutionItems },
-    ...retry3 === undefined ? {} : {
-      retry: retry3.split(",").filter(Boolean).map((id) => OperationId.make(id))
-    }
-  };
-};
-var applyAction = async (api2, runtime2, root) => {
-  const result2 = await api2.apply(applyInput(runtime2, root));
-  runtime2.output("execution_receipt_id", result2.executionReceiptId);
-  runtime2.output("run_id", result2.runId);
-  runtime2.output("run_path", result2.runPath);
-  runtime2.output("status", result2.status);
-  runtime2.output("evidence_path", `${result2.runPath}.evidence.json`);
-  if (result2.nextPublishReviewId !== undefined) {
-    runtime2.output("publish_review_id", result2.nextPublishReviewId);
-  }
-  if (result2.publishReceiptId !== undefined) {
-    runtime2.output("publish_receipt_id", result2.publishReceiptId);
-  }
-  runtime2.write(`${result2.runPath}.evidence.json`, JSON.stringify(result2.evidence, null, 2));
-};
+var pathInWorkspace = (root, value2) => inside(root, resolve5(root, value2));
 var runAction = async (api2, runtime2) => {
-  const root = realpathSync5(runtime2.workspace);
-  const command3 = optional6(runtime2, "command") ?? "plan";
-  if (!actionCommands.includes(command3))
-    throw new Error("command must be plan, apply, or doctor.");
-  if (command3 === "plan")
-    return planAction(api2, runtime2, root);
-  if (command3 === "doctor" || optional6(runtime2, "review-only") === "true") {
-    return reviewAction(api2, runtime2, root, command3);
-  }
-  return applyAction(api2, runtime2, root);
+  const root = realpathSync6(runtime2.workspace);
+  const configPath = pathInWorkspace(root, runtime2.input("config") || "release.config.json");
+  const output2 = runtime2.input("prepared") || ".release/ts-release/prepared";
+  const preparedDirectory2 = resolve5(root, output2);
+  mkdirSync4(dirname3(preparedDirectory2), { recursive: true });
+  const npmToken = runtime2.input("npm-token") || process.env.NPM_TOKEN;
+  const githubToken = runtime2.input("github-token") || process.env.GITHUB_TOKEN;
+  const result2 = await api2.release({
+    config: JSON.parse(runtime2.read(configPath)),
+    workspace: root,
+    preparedDirectory: preparedDirectory2,
+    ...npmToken === undefined && githubToken === undefined ? {} : {
+      credentials: {
+        ...npmToken === undefined ? {} : { npm: { read: npmToken, publish: npmToken } },
+        ...githubToken === undefined ? {} : { github: { read: githubToken, publish: githubToken } }
+      }
+    }
+  });
+  runtime2.output("prepared", result2.prepared.directory);
+  runtime2.output("status", "complete");
 };
 
 // src/index.ts
@@ -32743,10 +31596,10 @@ try {
     ...process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA },
     input: getInput,
     output: setOutput,
-    read: (path2) => readFileSync4(path2, "utf8"),
-    write: (path2, value2) => {
-      mkdirSync4(dirname5(path2), { recursive: true });
-      writeFileSync3(path2, value2);
+    read: (path) => readFileSync5(path, "utf8"),
+    write: (path, value2) => {
+      mkdirSync5(dirname4(path), { recursive: true });
+      writeFileSync3(path, value2);
     }
   });
 } catch (cause) {

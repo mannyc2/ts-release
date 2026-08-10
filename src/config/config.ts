@@ -4,7 +4,7 @@ import {
   ConfigDecodeError,
   ConfigValueError
 } from "../model/errors.js"
-import { CandidateConfig } from "../recipes/config.js"
+import { AuthoredConfig } from "../resolve/authored.js"
 
 export {
   CandidateArtifact,
@@ -59,7 +59,7 @@ export const decodeConfig = Effect.fn("decodeConfig")(function*(input: unknown) 
       reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
     })
   }
-  return yield* Schema.decodeUnknownEffect(CandidateConfig, {
+  return yield* Schema.decodeUnknownEffect(AuthoredConfig, {
     onExcessProperty: "error"
   })(input).pipe(
     Effect.mapError((error) => ConfigDecodeError.make({ reason: error.message }))

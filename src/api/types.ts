@@ -1,55 +1,31 @@
 import type * as Layer from "effect/Layer"
-import type { ApprovalSigner } from "../apply/approval.js"
-import type { RunStore } from "../apply/store.js"
-import type { CredentialStore, DriverCatalog, WorkspaceStore } from "../drivers/services.js"
-import type { ReleasePlanV6 } from "../model/plan.js"
-import type { ExecutionReviewId, OperationId, PlanId, PublishReviewId, RunId } from "../model/primitives.js"
-import type { ExecutionScope, RunLedger, Stage } from "../model/run.js"
-import type { EvidenceProjection } from "../view/evidence.js"
+import type { CorrectionOutcome } from "../correction/coordinator.js"
+import type { PreparedBundle } from "../release/prepared-store.js"
+import type { ReleaseInspection, PreparedReleaseInspection } from "../release/inspect.js"
+import type { PublicationCredentials, PublicationOutcome } from "../publication/observation.js"
+import type { ReleaseRuntime } from "./runtime.js"
 
-export type ExecutionScopeInput = "all" | {
-  readonly operationIds: ReadonlyArray<OperationId | string>
+export type ReleaseApiLayer = Layer.Layer<ReleaseRuntime>
+export type ReleaseApiServices = ReleaseRuntime
+export type InspectOutput = ReleaseInspection | PreparedReleaseInspection
+export type PublicationCredentialsInput = Partial<{
+  readonly npm: PublicationCredentials
+  readonly github: PublicationCredentials
+}>
+export interface PrepareInput { readonly config: unknown, readonly workspace: string, readonly preparedDirectory?: string }
+export interface InspectInput {
+  readonly config?: unknown, readonly prepared?: string, readonly workspace?: string
 }
-export type ReviewerIdentity = string
-export interface OperatorResolution {
-  readonly operationId: OperationId | string, readonly outcome: "committed" | "absent"
-  readonly operator: string, readonly reason: string
-}
-export type { EvidenceProjection } from "../view/evidence.js"
-export type ApplyStatus = "complete" | "stopped" | "publish-review-required"
-export type ReleaseApiServices = RunStore | DriverCatalog | WorkspaceStore | CredentialStore | ApprovalSigner
-export type ReleaseApiLayer = Layer.Layer<ReleaseApiServices>
-
-export interface PlanInput { readonly config: unknown, readonly workspace: string }
-export interface ReviewExecutionInput {
-  readonly planBytes: string, readonly expectedPlanId: PlanId, readonly scope: ExecutionScopeInput
-}
-export interface ApplyInput {
-  readonly planBytes: string, readonly expectedPlanId: PlanId, readonly workspace: string
-  readonly newRun?: {
-    readonly path: string, readonly scope: ExecutionScopeInput
-    readonly executionReviewId: ExecutionReviewId, readonly reviewer: ReviewerIdentity
-    readonly reason?: string
-  }
-  readonly resumeRunPath?: string, readonly through?: Stage
-  readonly publishConfirmation?: {
-    readonly publishReviewId: PublishReviewId, readonly reviewer: ReviewerIdentity
-  }
-  readonly reconcile?: ReadonlyArray<OperationId | string>, readonly resolutions?: ReadonlyArray<OperatorResolution>
-  readonly retry?: ReadonlyArray<OperationId | string>
-}
-export interface ApplyOutput {
-  readonly runId: RunId, readonly runPath: string, readonly ledger: RunLedger
-  readonly evidence: EvidenceProjection, readonly executionReceiptId: string
-  readonly nextPublishReviewId?: PublishReviewId, readonly publishReceiptId?: string
-  readonly status: ApplyStatus
+export interface PublishInput { readonly prepared: string, readonly credentials?: PublicationCredentialsInput }
+export interface ReleaseInput extends PrepareInput { readonly credentials?: PublicationCredentialsInput }
+export interface CorrectInput {
+  readonly prepared: string, readonly correction: string, readonly credentials?: PublicationCredentialsInput
 }
 export interface ReleaseApi {
-  readonly plan: (input: PlanInput) => Promise<{
-    readonly plan: ReleasePlanV6, readonly bytes: string, readonly planId: PlanId
-  }>
-  readonly reviewExecution: (input: ReviewExecutionInput) => Promise<{
-    readonly scope: ExecutionScope, readonly executionReviewId: ExecutionReviewId
-  }>
-  readonly apply: (input: ApplyInput) => Promise<ApplyOutput>, readonly dispose: () => Promise<void>
+  readonly inspect: (input: InspectInput) => Promise<InspectOutput>
+  readonly prepare: (input: PrepareInput) => Promise<PreparedBundle>
+  readonly publish: (input: PublishInput) => Promise<ReadonlyArray<PublicationOutcome>>
+  readonly release: (input: ReleaseInput) => Promise<{ readonly prepared: PreparedBundle, readonly publications: ReadonlyArray<PublicationOutcome> }>
+  readonly correct: (input: CorrectInput) => Promise<CorrectionOutcome>
+  readonly dispose: () => Promise<void>
 }

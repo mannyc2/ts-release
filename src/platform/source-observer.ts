@@ -17,7 +17,7 @@ const runtime: SourceObserverRuntime = {
   }),
   command: (workspace, argv) => Effect.try({
     try: () => {
-      const result = spawnSync(argv[0]!, argv.slice(1), { cwd: workspace, encoding: "utf8", stdio: "pipe" })
+      const result = spawnSync("git", [...argv], { cwd: workspace, encoding: "utf8", stdio: "pipe" })
       if (result.error !== undefined) throw result.error
       if (result.status !== 0) throw new Error(result.stderr.trim() || `Command exited ${result.status}.`)
       return result.stdout

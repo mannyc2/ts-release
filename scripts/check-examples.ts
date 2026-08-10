@@ -1,17 +1,13 @@
 #!/usr/bin/env bun
 
-import * as Effect from "effect/Effect"
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { dirname, join, resolve } from "node:path"
-import { BunReleaseLayer } from "../src/platform/bun.js"
-import { CatalogStructuredRequest, DriverCatalog } from "../src/drivers/services.js"
-import { WorkspaceRoot } from "../src/model/primitives.js"
-import { plan, resolveConfig } from "../src/index.js"
-import { encodeCanonicalJson } from "./lib/canonical-json.js"
+import * as Schema from "effect/Schema"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
+import { join, resolve } from "node:path"
+import { AuthoredConfig } from "../src/resolve/authored.js"
+import { commandNames } from "../apps/release-ts/src/cli/commands.js"
 
 const root = process.cwd()
-const configs: Array<string> = []
+const configs: string[] = []
 const walk = (directory: string): void => {
   if (!existsSync(directory)) return
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -23,38 +19,13 @@ const walk = (directory: string): void => {
 walk(resolve(root, "examples"))
 walk(resolve(root, "templates"))
 
-// Templates scaffold what a USER writes, so they state no commit — the CLI's
-// `--from-git` observes it. The gate therefore resolves them the same way, with
-// one fixed fact, instead of asking templates to carry a placeholder identity.
-const TEMPLATE_COMMIT = "0000000000000000000000000000000000000000"
 for (const path of configs) {
-  const workspace = dirname(path)
-  const authored = JSON.parse(readFileSync(path, "utf8")) as unknown
-  const config = path.includes("/templates/")
-    ? resolveConfig(authored, { commit: TEMPLATE_COMMIT })
-    : authored
-  const result = await plan({ config, workspace })
-  const returnedPlan = JSON.parse(JSON.stringify(result.plan)) as unknown
-  if (encodeCanonicalJson(returnedPlan) !== result.bytes) {
-    throw new Error(`${path}: public plan bytes differ from the returned plan.`)
-  }
-  const filesOnlyPacks = result.plan.stages.process.filter((operation) =>
-    operation._tag === "Pack" && operation.files !== undefined && operation.inputs.length === 0)
-  for (const operation of filesOnlyPacks) {
-    const temp = mkdtempSync(join(tmpdir(), "ts-release-example-archive-"))
-    try {
-      cpSync(workspace, temp, { recursive: true })
-      await Effect.runPromise(Effect.gen(function*() {
-        const catalog = yield* DriverCatalog
-        return yield* catalog.structured(CatalogStructuredRequest.make({
-          operation, root: WorkspaceRoot.make(realpathSync(temp)), availableOutputs: []
-        }))
-      }).pipe(Effect.provide(BunReleaseLayer)))
-    } catch (cause) {
-      throw new Error(`${path}: files-only archive ${operation.id} failed to materialize: ${String(cause)}`)
-    } finally {
-      rmSync(temp, { recursive: true, force: true })
-    }
+  try {
+    Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })(
+      JSON.parse(readFileSync(path, "utf8")) as unknown
+    )
+  } catch (cause) {
+    throw new Error(`${path}: authored configuration is invalid: ${String(cause)}`)
   }
 }
 
@@ -64,15 +35,16 @@ const workflows = existsSync(workflowRoot)
   : []
 for (const name of workflows) {
   const text = readFileSync(join(workflowRoot, name), "utf8")
-  if (/\bcommand:\s*(?:build|release|verify)\b/u.test(text)) {
+  if (/\bcommand:\s*(?:plan|apply|doctor|build|verify)\b/u.test(text)) {
     throw new Error(`${name}: workflow uses a removed lifecycle command.`)
   }
 }
 
-process.stdout.write(encodeCanonicalJson({
-  schemaVersion: "rewrite-examples-report/v1",
+console.log(JSON.stringify({
+  schemaVersion: "release-examples-report/v1",
   examples: configs.filter((path) => path.includes("/examples/")).length,
   templates: configs.filter((path) => path.includes("/templates/")).length,
   workflows: workflows.length,
+  commands: commandNames,
   status: "current"
 }))

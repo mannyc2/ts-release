@@ -1,33 +1,9 @@
-import { plan, reviewExecution } from "@mannyc1/ts-release"
-import {
-  readJson, readText, releaseConfigPath, releaseWorkflowPath, report, root,
-  selfReleaseConfig
-} from "./self-release-facts.js"
+import { readText, releaseWorkflowPath, report } from "./self-release-facts.js"
 
-const failures: Array<string> = []
-const planned = await plan({ config: selfReleaseConfig(), workspace: root })
-const review = await reviewExecution({
-  planBytes: planned.bytes,
-  expectedPlanId: planned.planId,
-  scope: "all"
-})
 const workflow = readText(releaseWorkflowPath)
-
-for (const command of ["plan", "apply"]) {
-  if (!workflow.includes(`command: ${command}`) && !workflow.includes(` ${command} `)) {
-    failures.push(`The release workflow does not contain the ${command} boundary.`)
-  }
-}
-for (const removed of ["command: build", "command: release", "command: verify"]) {
-  if (workflow.includes(removed)) failures.push(`The release workflow retains ${removed}.`)
-}
-if (!workflow.includes("environment: release")) {
-  failures.push("The publish job is not protected by the release environment.")
-}
-
-report("self-release-readiness-report/v2", failures, {
-  planId: planned.planId,
-  executionReviewId: review.executionReviewId,
-  operationCount: review.scope.operationIds.length,
-  networkChecks: 0
-})
+const failures: Array<string> = []
+if (!workflow.includes("apps/ts-release-action")) failures.push("The release workflow does not invoke the first-party Action.")
+if (!workflow.includes("config: apps/release-ts/release.config.json")) failures.push("The release workflow does not pass the self-release configuration.")
+if (!workflow.includes("environment: release")) failures.push("The publish job is not protected by the release environment.")
+if (/\b(?:plan|apply|doctor|ship)\b/u.test(workflow)) failures.push("The release workflow retains an obsolete lifecycle command.")
+report("self-release-readiness-report/v3", failures, { networkChecks: 0 })

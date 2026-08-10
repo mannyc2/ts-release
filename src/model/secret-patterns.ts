@@ -1,6 +1,5 @@
-// The one home for token-shaped denylist patterns. Load-bearing for three
-// surfaces: durable-plan validation, ledger output redaction, and the shipped
-// plugin checker — additions here are cheap and wide.
+// The one home for token-shaped denylist patterns. Load-bearing for child
+// output redaction and shipped-plugin checks.
 export const secretPatterns: ReadonlyArray<RegExp> = [
   /ghp_[A-Za-z0-9]{20,}/u,
   /gho_[A-Za-z0-9]{20,}/u,

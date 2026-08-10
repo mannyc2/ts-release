@@ -1,13 +1,10 @@
 # Portable CLI template
 
-This complete fixture plans one Bun CLI for GitHub Releases, npm, Homebrew,
+This complete fixture prepares one Bun CLI for GitHub Releases, npm, Homebrew,
 Scoop, and PyPI wrapper wheels. Update all product and provider identities
 before use.
 
 ```sh
-ts-release plan --config release.config.json --out release-plan.json
-ts-release apply release-plan.json --plan-id PLAN_ID --review-only --scope all
+ts-release inspect --config release.config.json
+ts-release release --config release.config.json
 ```
-
-Materialize through `validate`, review the observed publish challenge, then
-resume the same ledger through `verify`.

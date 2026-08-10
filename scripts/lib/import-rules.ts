@@ -122,17 +122,14 @@ const isNodeImport = (specifier: string): boolean =>
 const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   model: ["model"],
   recipes: ["recipes", "model"],
-  config: ["config", "model", "recipes"],
-  plan: ["plan", "model", "config", "recipes"],
+  config: ["config", "model", "recipes", "resolve"],
   drivers: ["drivers", "model"],
-  apply: ["apply", "model", "plan", "drivers"],
-  view: ["view", "model", "plan"],
-  platform: ["platform", "drivers", "apply", "release"],
+  platform: ["platform", "drivers", "release", "publication", "api"],
   // The resolver is pure authored→canonical semantics: it may read the config
   // vocabulary and the model, and nothing may read IT except the root export
   // and the apps (enforced below).
   resolve: ["resolve", "model", "recipes"],
-  api: ["api", "model", "plan", "apply", "view", "drivers", "platform"],
+  api: ["api", "model", "config", "correction", "release", "publication", "resolve", "drivers", "platform"],
   release: ["release", "model", "recipes", "drivers"],
   publication: ["publication", "model", "release", "drivers"],
   correction: ["correction", "model", "release", "publication"]
@@ -157,10 +154,9 @@ const hostPlatformPackages: Readonly<Record<string, string>> = {
   "@effect/platform-node": "src/platform/node.ts"
 }
 const fileSystemFiles: ReadonlySet<string> = new Set([
+  "src/api/api.ts",
   "src/api/input.ts",
-  "src/apply/store.ts",
   "src/drivers/contain.ts",
-  "src/drivers/local.ts",
   "src/drivers/workspace.ts",
   "src/platform/source-observer.ts",
   "src/release/prepare.ts",

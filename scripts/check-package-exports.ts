@@ -23,28 +23,18 @@ const expectedRootBin = {
   "ts-release": "./dist/bin/ts-release.js"
 } as const
 const expectedRootRuntimeExports = new Set([
-  "ApprovalSigner",
-  "CredentialStore",
-  "DriverCatalog",
-  "ExecutionPermit",
-  "ExecutionReviewId",
-  "OperationId",
-  "PlanId",
-  "PublishPermit",
-  "PublishReviewId",
-  "ReleaseApiError",
-  "ReleaseServicesLive",
-  "RunStore",
-  "Stage",
-  "unsupportedExecutionHost",
-  "WorkspaceStore",
-  "apply",
+  "ReleaseInputError",
+  "ReleaseRuntime",
+  "correct",
   "defineRelease",
   "encodeResolvedConfig",
+  "inspect",
   "makeReleaseApi",
-  "plan",
+  "prepare",
+  "publish",
+  "release",
   "resolveConfig",
-  "reviewExecution"
+  "unsupportedExecutionHost",
 ])
 const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {
   "./node": new Set(["NodeReleaseLayer"]),

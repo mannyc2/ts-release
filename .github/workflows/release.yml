@@ -4,19 +4,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  id-token: write
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  plan:
+  release:
     if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    outputs:
-      plan_id: ${{ steps.plan.outputs.plan_id }}
-      execution_review_id: ${{ steps.review.outputs.execution_review_id }}
+    environment: release
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -24,113 +23,9 @@ jobs:
           bun-version: 1.3.14
       - run: bun install --frozen-lockfile
       - run: bun run check:release
-      - id: plan
-        uses: ./apps/ts-release-action
-        with:
-          command: plan
-          config: apps/release-ts/release.config.json
-          plan-path: .release/release-plan.json
-          resolve: github
-      - id: review
-        uses: ./apps/ts-release-action
-        with:
-          command: apply
-          review-only: "true"
-          plan-path: .release/release-plan.json
-          plan-id: ${{ steps.plan.outputs.plan_id }}
-          scope: all
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-plan
-          path: .release/release-plan.json
-          # `.release` is a dot-directory and upload-artifact skips hidden files by
-          # default, silently uploading nothing and still passing.
-          include-hidden-files: true
-
-  materialize:
-    needs: plan
-    runs-on: ubuntu-latest
-    environment: release
-    outputs:
-      publish_review_id: ${{ steps.apply.outputs.publish_review_id }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-      - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: release-plan
-          path: .release
-      # Observed, not asserted: what the durable receipt claims about approval
-      # has to match what actually gates this job.
-      - id: reviewer
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/release" --jq '.protection_rules | length' 2>/dev/null || echo "unknown")
-          if [ "$rules" = "unknown" ]; then
-            echo "::warning::could not verify environment protection; recording reviewer as self:one-shot"
-          fi
-          if [ "$rules" != "unknown" ] && [ "$rules" -gt 0 ] 2>/dev/null; then
-            echo "identity=environment:release@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "identity=self:one-shot@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
-          fi
-      - id: apply
-        uses: ./apps/ts-release-action
-        with:
-          command: apply
-          plan-path: .release/release-plan.json
-          plan-id: ${{ needs.plan.outputs.plan_id }}
-          through: validate
-          new-run: .release/runs
-          scope: all
-          confirm-execution: ${{ needs.plan.outputs.execution_review_id }}
-          reviewer: ${{ steps.reviewer.outputs.identity }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: materialized-release
-          path: .release
-          include-hidden-files: true
-
-  publish:
-    needs: [plan, materialize]
-    runs-on: ubuntu-latest
-    environment: release
-    permissions:
-      contents: write
-      id-token: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-      - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: materialized-release
-          path: .release
-      - id: reviewer
-        run: |
-          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/release" --jq '.protection_rules | length' 2>/dev/null || echo "unknown")
-          if [ "$rules" = "unknown" ]; then
-            echo "::warning::could not verify environment protection; recording reviewer as self:one-shot"
-          fi
-          if [ "$rules" != "unknown" ] && [ "$rules" -gt 0 ] 2>/dev/null; then
-            echo "identity=environment:release@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "identity=self:one-shot@github:${{ github.actor }}" >> "$GITHUB_OUTPUT"
-          fi
       - uses: ./apps/ts-release-action
         with:
-          command: apply
-          plan-path: .release/release-plan.json
-          plan-id: ${{ needs.plan.outputs.plan_id }}
-          through: verify
-          resume: .release/runs
-          confirm-publish: ${{ needs.materialize.outputs.publish_review_id }}
-          reviewer: ${{ steps.reviewer.outputs.identity }}
+          config: apps/release-ts/release.config.json
+          prepared: .release/ts-release/prepared
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          github-token: ${{ github.token }}

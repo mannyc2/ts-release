@@ -5,7 +5,7 @@ import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner
 import { readEnvironment } from "./environment.js"
 import { redactOutput } from "./redact.js"
 import { failure } from "./utils.js"
-import type { DriverError } from "../model/run.js"
+import type { DriverError } from "./errors.js"
 
 export type CommandOutcome = {
   readonly exitCode: number, readonly stdout: string, readonly stderr: string

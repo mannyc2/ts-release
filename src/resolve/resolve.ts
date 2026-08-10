@@ -105,6 +105,13 @@ const names = (
   return { name, ...(packageName === undefined ? {} : { packageName }) }
 }
 
+const repository = (authored: AuthoredConfig, facts: ObservedFacts): string | undefined => {
+  if (authored.project.repository !== undefined && facts.repository !== undefined && authored.project.repository !== facts.repository) {
+    disagreement("repository", authored.project.repository, facts.repository, "in the observed repository")
+  }
+  return authored.project.repository ?? facts.repository
+}
+
 /**
  * Resolve an authored configuration and observed facts into the canonical
  * configuration. Pure and total: the same inputs always produce the same value,
@@ -127,6 +134,7 @@ export const resolveConfig = (authored: unknown, facts: unknown): CandidateConfi
     project: {
       ...projectRest,
       ...names(config, observed),
+      ...(repository(config, observed) === undefined ? {} : { repository: repository(config, observed) }),
       version: resolvedVersion,
       tag: tag(config, resolvedVersion),
       commit: commit(config, observed)

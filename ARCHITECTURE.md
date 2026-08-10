@@ -1,233 +1,58 @@
 # Architecture
 
-`ts-release` has one deterministic planning core and one receipt-gated apply
-machine. Applications translate files or CI inputs into public value calls;
-they do not own release semantics.
-
-## Eight concepts
-
-1. Config — strict JSON-compatible intent supplied as an in-memory value.
-2. Identity — name, version, tag, commit, and snapshot marker.
-3. Recipe — immutable product-owned lowering data.
-4. Op — a typed mechanism row with declared inputs and outputs.
-5. Plan — accepted canonical intent and its identity.
-6. Evidence — a derived, non-authoritative run projection.
-7. Driver — mechanism capability for local or remote effects.
-8. Invocation — canonical workspace and observed planning facts.
-
-## Permanent ownership
+The release engine has one value flow:
 
 ```text
-src/model     schemas, primitives, operations, state, canonical encoding
-src/recipes   deterministic feature/profile lowering
-src/config    strict value decoding
-src/resolve   authored configuration + observed facts → the canonical value
-src/plan      compilation, validation, canonical acceptance, review
-src/drivers   capability interfaces and live mechanism implementations
-src/apply     approvals, ledger, transitions, orchestration
-src/view      projections from accepted plans and ledgers
-src/platform  per-host layers closing the spawn and HTTP capabilities
-src/api       Promise boundary, exact inputs, immutable layer binding
-src/index.ts  sole package entrypoint
-apps/release-ts
-apps/ts-release-action
+authored JSON + observed source
+        ↓ pure resolution
+canonical release graph
+        ↓ local preparation
+prepared-release/v1 bytes + blobs
+        ↓ destination observation
+provider publication or typed correction
 ```
 
-There is no rewrite, legacy, compatibility, v5, mutable runtime, or
-translation namespace.
-
-## Dependency DAG
-
-```text
-model
-├── recipes
-│   ├── config
-│   └── resolve
-├── plan/accepted
-│   ├── plan ← config + recipes
-│   ├── apply ← drivers
-│   ├── view
-│   └── platform ← drivers + apply
-└── api ← plan + apply + view + drivers + platform
-    └── public root + ./node + ./bun + resolve
-        ├── CLI    → ./bun
-        └── Action → ./node
-```
-
-Model imports no product owner. Recipes depend only on model. Config decodes
-recipe configuration. Resolve turns an authored configuration plus observed
-facts into a canonical one; it depends on model and recipes, nothing in the
-library imports it, and it may not read the clock, the environment, or a random
-source — the gate enforces all of that. Accepted-plan code depends only on model. Planning may
-use model, config, recipes, and acceptance. Drivers depend only on model.
-Apply uses model, accepted plans, and drivers. Views use model and accepted
-plans. Platform closes host capabilities. The API is the composition
-boundary. Apps import only published package entrypoints.
-
-Architecture checks enforce this graph and reject runtime registration,
-dynamic evaluation, workflow-level Effect execution, provider-name branches
-inside generic drivers, temporary namespaces, and excluded test/oracle
-imports.
-
-## Host boundaries
-
-The drivers are written once. Only three capabilities differ or carry ambient
-authority across hosts, so only those are injected:
-
-```text
-src/drivers            LiveDriversLayer
-                         provides WorkspaceStore, DriverCatalog, CredentialStore
-                         requires ChildProcessSpawner, HttpClient
-                         reads environment through effect/Config
-src/platform/services  ReleaseServicesLive = live drivers + run store + signer
-src/platform/node.ts   NodeReleaseLayer  ("@mannyc1/ts-release/node")
-src/platform/bun.ts    BunReleaseLayer   ("@mannyc1/ts-release/bun")
-```
-
-The layer acquires the two capabilities once at construction and closes over
-them, so every service method keeps `R = never` and a fake is a plain shape.
-The CLI composes the Bun layer, the Action composes the Node layer, and the
-root convenience functions bind the Node layer, which is correct under both
-runtimes. The Bun module is unreachable from the package root, so importing
-`@mannyc1/ts-release` under Node never loads a Bun module.
-
-File I/O deliberately stays direct `node:fs`: it is identical on both hosts,
-and the security discipline it carries — `O_NOFOLLOW` opens with fstat/lstat
-identity comparison, `O_EXCL` leases, fsync, atomic rename — is not
-expressible through `effect/FileSystem` string open flags. `node:crypto` and
-`node:zlib` are pure computation. Import rules confine `node:fs` to the named
-files that hold that discipline and ban the `Bun` global and global `fetch`
-from `src/` outright.
-
-## Data flow
-
-```text
-config value
-  → validate and lower
-  → canonical release-plan/v6 bytes + PlanId
-  → select immutable scope
-  → execution review challenge
-  → new run-bound execution receipt
-  → apply through validate
-  → observe materialized outputs and read facts
-  → publish review challenge
-  → run-bound publish receipt
-  → apply through verify
-  → run-ledger/v1
-  → evidence projection
-```
-
-Planning never calls a driver. Apply never accepts configuration or calls the
-planner.
-
-## Durable documents
-
-Exactly two protocol documents persist:
-
-- `release-plan/v6` is immutable intent. Strict acceptance re-encodes and
-  compares exact canonical bytes before deriving `PlanId`.
-- `run-ledger/v1` is execution state. It binds plan id, operation hashes,
-  immutable scope, topology, monotonic frontier, receipts, attempts,
-  checkpoints, and materialized-output snapshots.
-
-Evidence is derived from the ledger and cannot authorize or resume work.
-There is no fallback reader for earlier plan or evidence formats.
-
-## Authority
-
-Mechanism determines authority:
-
-```text
-Check                                      LocalRead
-Write, Pack, Digest                        LocalWrite
-Exec                                       LocalExec
-HttpRead, ReviewedNoteTransform            RemoteRead
-HttpPublish, ForgeRelease,
-PackageRegistryRelease, PackageStorePublish,
-SupplyChainPublish, ProviderPublish,
-AnnouncementPublish, SmtpPublish,
-OpaquePublish                              RemotePublish
-```
-
-Recipes select mechanisms but cannot redefine their authority. Runtime
-configuration cannot register profiles. Homebrew, Scoop, package registry,
-and provider data is immutable and product-owned.
-
-The execution review challenge proves only what was reviewed. A nonce,
-reviewer, timestamp, topology, and run identity mint the execution receipt.
-Publication is separately authorized only after materialized inputs are
-observed. Credential VALUES never enter durable data: child output is
-recorded only as a bounded excerpt with the operation's declared environment
-values and known token shapes redacted, and HTTP authorization headers are
-redacted by the client.
-
-Receipts are validated by hash self-consistency. Anyone who can write the
-run ledger can mint consistent receipts: the trust boundary is the channel
-that carries the ledger between jobs (artifact integrity plus the protected
-release environment), by design, single-machine.
-
-## State and recovery
-
-The ledger frontier advances in fixed stage order:
-
-```text
-build → process → catalog → validate → publish → announce → verify
-```
-
-Structured local work is replay-aware. Trusted execution stops for manual
-review after interruption. Remote publication records durable dispatch
-intent and checkpoint reconciliation keys before network dispatch. An
-ambiguous outcome becomes `CommitUnknown`; read-only reconciliation or an
-explicit operator resolution is required before progress.
-
-Every resume revalidates, before reaching a driver: the plan identity and
-operation hashes the store expects, the ledger's operation roster and its
-receipt binding, the scope's dependency closure, and each publish input's
-digest against what its producing operation recorded when it passed. Scope
-and topology have no ledger-independent source on a single machine, so they
-are checked for internal consistency, not attested.
+The graph is ephemeral. It is recomputed inside the process that reads the
+authored configuration and is never used as transported authority. Prepared
+bytes are the explicit cross-process boundary: a publisher verifies the
+manifest digest, blob digests, source identity, and publication subjects before
+it can mutate a destination.
 
 ## Boundaries
 
-The library accepts only values and absolute existing workspaces. The API
-realpath-normalizes workspace roots and maps internal failures to stable
-plain errors. Its default functions share one immutable live layer bound to
-the Node host; `makeReleaseApi(layer)` supplies explicit alternate services,
-built from the exported service tags and shapes, a published host layer, or
-`ReleaseServicesLive` plus a platform of the caller's choosing.
+- `src/resolve` turns authored values and observed facts into canonical config.
+- `src/release` owns the graph, native preparation, inspection, and prepared
+  bundle store.
+- `src/publication` owns destination observation, mutation, and re-observation.
+- `src/correction` owns provider-specific forward correction intents.
+- `src/api` owns the five public lifecycle operations.
+- `src/platform` composes Node or Bun services once at the host boundary.
+- `apps/release-ts` owns CLI parsing and file I/O.
+- `apps/ts-release-action` owns Action inputs, contained paths, and outputs.
 
-The CLI owns one-read JSON loading and workspace selection. Its commands are
-`init`, `doctor`, `plan`, `apply`, and `ship`. `plan --from-git` and
-`ship --from-git` observe the repository's own facts — HEAD commit, the single
-release-shaped tag at HEAD, the package manifest — and resolve them into the
-canonical configuration before planning; the Action does the same under
-`resolve: github` from `GITHUB_SHA`. Observation lives in the apps; the
-resolution both share is one pure library function. `ship` composes the other
-lifecycle commands in one process for ungated releases; it adds no authority
-and records `self:one-shot` as the reviewer of the approvals it echoes.
+Review is a host concern. There is no review service, approval identity,
+execution ledger, or generic publication hook in the product runtime.
 
-The Action owns one-read, workspace-contained JSON loading. Its commands are
-`plan`, `doctor`, and `apply`. Its bundle is checked against source and then
-executed under real `node` against a fixture release covering every local
-mechanism, because the Action runs `node20` and a Bun-only call there fails
-mid-run rather than at load.
+## Preparation
 
-Both apps pass canonical plan bytes to apply. Neither can inject
-configuration, authority, credentials, scope changes, or risk changes into
-an accepted plan.
+Native command preparations are represented by typed graph primitives. They run
+in a staged workspace, with declared inputs, declared outputs, explicit
+environment names, and source re-observation after each trusted command. The
+preparer captures only declared bytes and writes them into the content-addressed
+prepared store.
 
-## Verification lanes
+The graph compiler retains user jobs as native primitives. It does not clone a
+provider's feature vocabulary or add capabilities without an executable
+vertical test.
 
-Behavior tests, fault injection, driver conformance, import rules, public
-package checks, and CLI/Action tests verify the release machinery. Driver
-conformance and the remote-driver suite run the live drivers under injected
-spawn and HTTP doubles; the action-bundle gate runs them for real under node.
-Verification does not dispatch publication.
+## Publication
 
-Gates compose in three layers. `check:core` runs the repo-wide checks
-(versions, import rules, tree shaking, types, tests, build, examples,
-README, package exports); `check:app` and `check:action` add each shipped
-surface's own typecheck and cutover suite; `check:portable` is the three
-together and is what CI runs. `check:release` adds the four offline
-self-release gates and runs before a tag. `check:summary` runs every gate
-without stopping at the first failure. `scripts/README.md` lists them all.
+Every publication subject observes first. A destination can be equivalent,
+absent and mutable, conflicting, or inconclusive. Mutation is allowed only for
+the exact absent/mutable observation and is followed by a fresh observation.
+Unknown provider responses remain unknown until destination observation proves
+the result.
+
+Corrections are separate typed intents. npm deprecation and managed catalog
+state have provider-specific correction paths; unsupported GitHub and PyPI
+corrections remain explicit typed outcomes.

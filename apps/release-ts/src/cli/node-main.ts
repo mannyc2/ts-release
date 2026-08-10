@@ -1,4 +1,4 @@
-// Invariant: this is the PUBLISHED executable. Same duties as main.ts — compose
+// Invariant: this is the published executable. Same duties as main.ts — compose
 // the host layer once, run exactly one decoded command, dispose what it created
 // — but on the Node host, because `npx ts-release` must work on a machine that
 // has never heard of Bun. main.ts stays the Bun-optimal dev entry.

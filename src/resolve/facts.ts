@@ -10,6 +10,7 @@ export class ObservedFacts extends Schema.Class<ObservedFacts>("ObservedFacts")(
   commit: optional(NonEmptyName),
   manifestName: optional(Schema.NonEmptyString),
   manifestVersion: optional(Version),
+  repository: optional(Schema.NonEmptyString),
   // The version carried by the single release-shaped tag at HEAD. Ambiguity is
   // resolved by the observer: several candidate tags means NO fact, so the
   // resolver refuses instead of picking one.

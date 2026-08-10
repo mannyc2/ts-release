@@ -16,7 +16,7 @@ export const executableCapabilities = [
   {
     id: "build.bun-compile",
     entrypoint: "src/release/capabilities.ts:contributeBuild",
-    verticalTest: "test/core/current-recipes.test.ts",
+    verticalTest: "test/core/release-graph.test.ts",
     support: "supported",
     executionHosts: ["linux", "darwin"],
     artifactTargets: ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64", "windows-x64", "windows-arm64"],
@@ -25,14 +25,14 @@ export const executableCapabilities = [
   {
     id: "artifact.archive",
     entrypoint: "src/release/capabilities.ts:contributeArchives",
-    verticalTest: "test/core/current-recipes.test.ts",
+    verticalTest: "test/core/prepared-release.test.ts",
     support: "supported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
     id: "artifact.checksum",
     entrypoint: "src/release/capabilities.ts:contributeArchives",
-    verticalTest: "test/core/current-recipes.test.ts",
+    verticalTest: "test/core/prepared-release.test.ts",
     support: "supported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
@@ -53,7 +53,7 @@ export const executableCapabilities = [
   {
     id: "catalog.render",
     entrypoint: "src/release/capabilities.ts:contributeCatalog",
-    verticalTest: "test/core/current-recipes.test.ts",
+    verticalTest: "test/publication/catalog-git.test.ts",
     support: "supported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },

@@ -1,64 +1,55 @@
 import { describe, expect, test } from "bun:test"
-import { mkdtempSync, realpathSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { apply, plan } from "../src/index.js"
+import { makeReleaseApi } from "../src/index.js"
+import { ReleaseInputError } from "../src/api/errors.js"
+import { fixtureConfig, runtimeLayer } from "./core/runtime-fixture.js"
 
-const config = {
-  project: { name: "api-contract", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
-  publish: {}
+const workspace = (): string => {
+  const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-api-"))
+  mkdirSync(join(root, "src"), { recursive: true })
+  writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0" }))
+  writeFileSync(join(root, "payload.txt"), "payload\n")
+  return root
 }
 
-describe("public plan API", () => {
-  test("returns canonical bytes and matching identity from an in-memory value", async () => {
-    const workspace = realpathSync(mkdtempSync(join(tmpdir(), "release-api-")))
-    const result = await plan({ config, workspace })
-    expect(JSON.parse(result.bytes)).toEqual(JSON.parse(JSON.stringify(result.plan)))
-    expect(result.planId.length).toBe(64)
-  })
-
-  test("a config without a commit is refused instead of planning an invented identity", async () => {
-    const workspace = realpathSync(mkdtempSync(join(tmpdir(), "release-api-")))
-    const { commit: _observed, ...project } = config.project
-    await expect(plan({ config: { ...config, project }, workspace })).rejects.toMatchObject({
-      _tag: "ReleaseApiError",
-      phase: "plan",
-      reason: expect.stringContaining("--from-git")
-    })
-  })
-
-  test("runtime rejects configPath as an excess outer field", async () => {
-    const workspace = realpathSync(mkdtempSync(join(tmpdir(), "release-api-")))
-    // @ts-expect-error configPath is intentionally absent from the public input.
-    await expect(plan({ config, workspace, configPath: "release.json" })).rejects.toMatchObject({
-      _tag: "ReleaseApiError",
-      phase: "plan"
-    })
-  })
-
-  test("the apply boundary decodes once: excess, malformed, and XOR refuse", async () => {
-    const base = {
-      planBytes: "{}",
-      expectedPlanId: "a".repeat(64),
-      workspace: "/tmp"
+describe("public lifecycle API", () => {
+  test("exposes inspect, prepare, publish, release, and correct", async () => {
+    const root = workspace()
+    const api = makeReleaseApi(runtimeLayer())
+    try {
+      const inspection = await api.inspect({ config: fixtureConfig, workspace: root })
+      expect(inspection.source.commit.toString()).toBe("abc123")
+      const prepared = await api.prepare({ config: fixtureConfig, workspace: root })
+      expect(prepared.manifest.schemaVersion).toBe("prepared-release/v1")
+      const published = await api.publish({ prepared: prepared.directory })
+      expect(published).toEqual([])
+    } finally {
+      await api.dispose()
+      rmSync(root, { recursive: true, force: true })
     }
-    await expect(apply({ ...base, resumeRunPath: "runs", extra: 1 } as never))
-      .rejects.toThrow(/extra/)
-    // The case the Action previously admitted: a malformed operator override.
-    await expect(apply({
-      ...base,
-      resumeRunPath: "runs",
-      resolutions: [{ operationId: "x", outcome: "maybe", operator: "o", reason: "r" }]
-    } as never)).rejects.toMatchObject({ _tag: "ReleaseApiError", phase: "apply" })
-    await expect(apply({
-      ...base,
-      resumeRunPath: "runs",
-      newRun: {
-        path: "runs",
-        scope: "all",
-        executionReviewId: "e".repeat(64),
-        reviewer: "reviewer"
-      }
-    } as never)).rejects.toThrow(/Choose exactly one of newRun or resumeRunPath/)
+  })
+
+  test("release composes preparation and publication automatically", async () => {
+    const root = workspace()
+    const api = makeReleaseApi(runtimeLayer())
+    try {
+      const result = await api.release({ config: fixtureConfig, workspace: root })
+      expect(result.prepared.manifest.schemaVersion).toBe("prepared-release/v1")
+      expect(result.publications).toEqual([])
+    } finally {
+      await api.dispose()
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("inspect has one exclusive input boundary", async () => {
+    const api = makeReleaseApi(runtimeLayer())
+    try {
+      await expect(api.inspect({ config: fixtureConfig, prepared: "/tmp/bundle", workspace: "/tmp" })).rejects.toBeInstanceOf(ReleaseInputError)
+      await expect(api.inspect({ workspace: "/tmp" })).rejects.toBeInstanceOf(ReleaseInputError)
+    } finally {
+      await api.dispose()
+    }
   })
 })

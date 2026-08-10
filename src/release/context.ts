@@ -119,8 +119,13 @@ export const makeSourceObserver = (runtime: SourceObserverRuntime): SourceObserv
       Effect.map((value) => repositoryCoordinate(value))
     ).pipe(Effect.orElseSucceed(() => undefined))
     const manifestRepository = repositoryCoordinate(manifest.repository)
-    const repository = remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository
-      ? undefined : remote ?? manifestRepository
+    if (remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository) {
+      return yield* new ReleaseContextError({
+        field: "source.repository",
+        reason: `Git remote ${remote} disagrees with manifest repository ${manifestRepository}.`
+      })
+    }
+    const repository = remote ?? manifestRepository
     const source = VerifiedSource.make({
       commit: NonEmptyName.make(commit), tree: NonEmptyName.make(tree), clean: true,
       packageManifestPath, packageManifestDigest: NonEmptyName.make(digest), headTags: tags.map((tag) => NonEmptyName.make(tag)),

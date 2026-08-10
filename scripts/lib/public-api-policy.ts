@@ -18,21 +18,17 @@ export const aggregateSourcePaths: ReadonlyArray<string> = [
 
 export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "api/input.ts",
-  "api/apply-boundary.ts",
-  "apply/store.ts",
   "drivers/archive.ts",
   "drivers/environment.ts",
   "drivers/glob.ts",
-  "drivers/local.ts",
   "drivers/process.ts",
-  "drivers/remote.ts",
-  "drivers/services.ts",
   "drivers/utils.ts",
   "drivers/workspace.ts",
   "model/canonical.ts",
   "platform/bun.ts",
   "platform/node.ts",
-  "platform/services.ts"
+  "platform/services.ts",
+  "platform/release-runtime.ts"
 ]
 
 export const bannedExternalPrefixes: ReadonlyArray<string> = [

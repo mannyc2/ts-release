@@ -1,146 +1,47 @@
-// Invariant: this module only declares argv shape and delegates; release policy
-// stays behind the api object handed to makeCli.
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import * as Argument from "effect/unstable/cli/Argument"
 import * as Command from "effect/unstable/cli/Command"
 import * as Flag from "effect/unstable/cli/Flag"
-import type { ReleaseApi } from "@mannyc1/ts-release"
-import {
-  runApply,
-  runInit,
-  runPlan,
-  runReview,
-  runShip,
-  type CliIo
-} from "./commands.js"
+import { commandNames, runCorrect, runInit, runInspect, runPrepare, runPublish, runRelease, type CliApi, type CliIo } from "./commands.js"
 
-export { commandNames, selectCliWorkspace, SELF_REVIEWER, type CliIo } from "./commands.js"
-
-type ReleaseCommands = Pick<ReleaseApi, "plan" | "reviewExecution" | "apply">
+export { commandNames, type CliApi, type CliIo } from "./commands.js"
+const text = (name: string, fallback?: string) => fallback === undefined ? Flag.string(name) : Flag.string(name).pipe(Flag.withDefault(fallback))
 const optionalText = (name: string) => Flag.string(name).pipe(Flag.optional)
-const text = (name: string, fallback: string) =>
-  Flag.string(name).pipe(Flag.withDefault(fallback))
-const planArgument = Argument.string("plan").pipe(
-  Argument.withDescription("Canonical release plan file.")
-)
-const planIdFlag = Flag.string("plan-id").pipe(
-  Flag.withDescription("Expected PlanId of the supplied plan bytes.")
-)
-const scopeFlag = optionalText("scope")
-// Observation is opt-in and explicit: without --from-git the CLI passes the
-// config through exactly as written.
-const fromGitFlag = Flag.boolean("from-git").pipe(
-  Flag.withDescription(
-    "Fill omitted project facts from the repository (HEAD commit, the release tag at HEAD, the package manifest) before planning."
-  ),
-  Flag.withDefault(false)
-)
-const emitResolvedFlag = Flag.string("emit-resolved").pipe(
-  Flag.withDescription(
-    "Where --from-git writes the resolved configuration for review; advisory output that no command reads back (default .release/resolved.config.json)."
-  ),
-  Flag.optional
-)
-const rootFlag = text("root", ".")
-const at = <A>(value: Option.Option<A>): A | undefined => Option.getOrUndefined(value)
+const at = <A>(value: import("effect/Option").Option<A>): A | undefined => value._tag === "Some" ? value.value : undefined
 
-const initCommand = (cwd: string, io: CliIo) => Command.make("init", {
-  template: text("template", "npm-only"),
-  config: text("config", "release.config.json"),
-  root: rootFlag,
-  package: text("package", "@scope/pkg"),
-  repo: text("repo", "owner/repo"),
-  tap: text("tap", "owner/homebrew-tap"),
-  bucket: text("bucket", "owner/scoop-bucket"),
-  write: Flag.boolean("write").pipe(Flag.withDefault(false))
-}, (options) => Effect.sync(() => runInit(options, cwd, io))).pipe(
-  Command.withDescription("Render a template release config.")
-)
-const planCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.make("plan", {
-  config: text("config", "release.config.json"),
-  root: optionalText("root"),
-  out: optionalText("out"),
-  fromGit: fromGitFlag,
-  emitResolved: emitResolvedFlag
-}, (options) => Effect.promise(() => runPlan(api, {
-  config: options.config, root: at(options.root), out: at(options.out),
-  fromGit: options.fromGit, emitResolved: at(options.emitResolved)
-}, cwd, io))).pipe(
-  Command.withDescription("Compile a config into canonical release plan bytes.")
-)
-const doctorCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.make("doctor", {
-  plan: planArgument,
-  planId: planIdFlag,
-  scope: scopeFlag
-}, (options) => Effect.promise(() => runReview(api, {
-  plan: options.plan, planId: options.planId, scope: at(options.scope), doctor: true
-}, cwd, io))).pipe(
-  Command.withDescription("Validate plan bytes and derive the execution review challenge.")
-)
-const applyCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.make("apply", {
-  plan: planArgument,
-  planId: planIdFlag,
-  scope: scopeFlag,
-  root: rootFlag,
-  reviewOnly: Flag.boolean("review-only").pipe(Flag.withDefault(false)),
-  reviewer: optionalText("reviewer"),
-  newRun: Flag.string("new-run").pipe(
-    Flag.withDescription("Directory that stores run ledgers; the file name is the derived logical-run id."),
-    Flag.optional
-  ),
-  resume: Flag.string("resume").pipe(
-    Flag.withDescription("Run-ledger file, or a runs directory holding exactly one."),
-    Flag.optional
-  ),
-  confirmExecution: optionalText("confirm-execution"),
-  confirmPublish: optionalText("confirm-publish"),
-  through: optionalText("through"),
-  reason: optionalText("reason"),
-  reconcile: optionalText("reconcile"),
-  resolutions: optionalText("resolutions"),
-  retry: optionalText("retry")
-}, (options) => Effect.promise(() => options.reviewOnly
-  ? runReview(api, {
-      plan: options.plan, planId: options.planId, scope: at(options.scope), doctor: false
-    }, cwd, io)
-  : runApply(api, {
-      plan: options.plan, planId: options.planId, root: options.root,
-      scope: at(options.scope), reviewer: at(options.reviewer), newRun: at(options.newRun),
-      resume: at(options.resume), confirmExecution: at(options.confirmExecution),
-      confirmPublish: at(options.confirmPublish), through: at(options.through),
-      reason: at(options.reason), reconcile: at(options.reconcile),
-      resolutions: at(options.resolutions), retry: at(options.retry)
-    }, cwd, io))).pipe(
-  Command.withDescription("Execute an approved plan against a durable run ledger.")
-)
-const shipCommand = (api: ReleaseCommands, cwd: string, io: CliIo) => Command.make("ship", {
-  config: text("config", "release.config.json"),
-  root: optionalText("root"),
-  out: text("out", ".release/release-plan.json"),
-  runs: text("runs", ".release/runs"),
-  scope: scopeFlag,
-  reason: optionalText("reason"),
-  fromGit: fromGitFlag,
-  emitResolved: emitResolvedFlag
-}, (options) => Effect.promise(() => runShip(api, {
-  config: options.config, root: at(options.root), out: options.out, runs: options.runs,
-  scope: at(options.scope), reason: at(options.reason),
-  fromGit: options.fromGit, emitResolved: at(options.emitResolved)
-}, cwd, io))).pipe(
-  Command.withDescription(
-    "Plan, self-confirm, and apply in one process; records reviewer self:one-shot. Use plan/apply for independently reviewed releases."
-  )
-)
+const initCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("init", {
+  config: text("config", "release.config.json"), root: text("root", "."), dryRun: Flag.boolean("dry-run").pipe(Flag.withDefault(false)), force: Flag.boolean("force").pipe(Flag.withDefault(false))
+}, (options) => Effect.promise(() => runInit(api, options, cwd, io))).pipe(Command.withDescription("Create the smallest authored release configuration."))
+const inspectCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("inspect", {
+  config: optionalText("config"), prepared: optionalText("prepared"), root: text("root", ".")
+}, (options) => Effect.promise(() => {
+  const config = at(options.config)
+  const prepared = at(options.prepared)
+  return runInspect(api, { root: options.root, ...(config === undefined ? {} : { config }), ...(prepared === undefined ? {} : { prepared }) }, cwd, io)
+})).pipe(Command.withDescription("Inspect authored configuration or a prepared release."))
+const prepareCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("prepare", {
+  config: text("config", "release.config.json"), root: text("root", "."), out: optionalText("out")
+}, (options) => Effect.promise(() => {
+  const out = at(options.out)
+  return runPrepare(api, { config: options.config, root: options.root, ...(out === undefined ? {} : { out }) }, cwd, io)
+})).pipe(Command.withDescription("Build and store an exact prepared release bundle."))
+const publishCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("publish", {
+  prepared: Argument.string("prepared").pipe(Argument.withDescription("Prepared release bundle directory."))
+}, (options) => Effect.promise(() => runPublish(api, { prepared: options.prepared }, cwd, io))).pipe(Command.withDescription("Observe and publish one prepared release."))
+const releaseCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("release", {
+  config: text("config", "release.config.json"), root: text("root", "."), out: optionalText("out")
+}, (options) => Effect.promise(() => {
+  const out = at(options.out)
+  return runRelease(api, { config: options.config, root: options.root, ...(out === undefined ? {} : { out }) }, cwd, io)
+})).pipe(Command.withDescription("Prepare and publish automatically."))
+const correctCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("correct", {
+  prepared: Argument.string("prepared").pipe(Argument.withDescription("Prepared release bundle directory.")), correction: Argument.string("correction").pipe(Argument.withDescription("Canonical correction intent file."))
+}, (options) => Effect.promise(() => runCorrect(api, options, cwd, io))).pipe(Command.withDescription("Apply one provider-specific forward correction."))
 
-export const makeCli = (api: ReleaseCommands, cwd: string, io: CliIo) =>
-  Command.make("ts-release").pipe(
-    Command.withDescription("Portable artifact and package-manager distribution planning."),
-    Command.withSubcommands([
-      initCommand(cwd, io),
-      doctorCommand(api, cwd, io),
-      planCommand(api, cwd, io),
-      applyCommand(api, cwd, io),
-      shipCommand(api, cwd, io)
-    ])
-  )
+export const makeCli = (api: CliApi, cwd: string, io: CliIo) => Command.make("ts-release").pipe(
+  Command.withDescription("Deterministic preparation, publication, and correction."),
+  Command.withSubcommands([
+    initCommand(api, cwd, io), inspectCommand(api, cwd, io), prepareCommand(api, cwd, io),
+    publishCommand(api, cwd, io), releaseCommand(api, cwd, io), correctCommand(api, cwd, io)
+  ])
+)

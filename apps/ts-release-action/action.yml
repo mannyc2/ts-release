@@ -1,82 +1,26 @@
 name: ts-release
-description: Plan, review, and apply canonical ts-release plans.
+description: Prepare and publish one release automatically.
 author: mannyc2
 inputs:
-  command:
-    description: plan, apply, or doctor.
-    required: false
-    default: plan
   config:
-    description: Workspace-contained JSON config path used only by plan.
+    description: Workspace-contained authored release configuration path.
     required: false
     default: release.config.json
-  plan-path:
-    description: Workspace-contained canonical release plan path.
+  prepared:
+    description: Workspace-contained directory for the exact prepared release bundle.
     required: false
-    default: release-plan.json
-  resolve:
-    description: Empty (default) or "github" to fill omitted project facts from GITHUB_SHA and the workspace package manifest before planning.
+    default: .release/ts-release/prepared
+  npm-token:
+    description: npm token used for read and publish observation when npm is configured.
     required: false
-  plan-id:
-    description: Expected PlanId for apply or doctor.
-    required: false
-  review-only:
-    description: Derive the execution review challenge without applying.
-    required: false
-    default: "false"
-  scope:
-    description: all or a comma-separated immutable operation-id subset.
-    required: false
-    default: all
-  new-run:
-    description: Workspace-contained directory that stores run ledgers; the file name is the derived logical-run id.
-    required: false
-  resume:
-    description: Workspace-contained run-ledger file, or a runs directory holding exactly one.
-    required: false
-  through:
-    description: Monotonic apply frontier.
-    required: false
-  confirm-execution:
-    description: Exact execution review id echoed for a new run.
-    required: false
-  confirm-publish:
-    description: Exact publish review id echoed after artifact observation.
-    required: false
-  reviewer:
-    description: Human or automation identity approving the run.
-    required: false
-  reason:
-    description: Explicit reason for a new logical run.
-    required: false
-  reconcile:
-    description: Comma-separated unknown operation ids for read-only reconciliation.
-    required: false
-  retry:
-    description: Comma-separated operation ids to retry after a failed-before-commit or assumed-absent outcome.
-    required: false
-  resolutions:
-    description: JSON operator resolutions with operation id, outcome, operator, and reason.
+  github-token:
+    description: GitHub token used for read and publish observation when GitHub is configured.
     required: false
 outputs:
-  plan_id:
-    description: Canonical plan identity.
-  execution_review_id:
-    description: Pure execution review challenge.
-  execution_receipt_id:
-    description: Run-bound execution approval receipt.
-  publish_review_id:
-    description: Observed-input publish review challenge.
-  publish_receipt_id:
-    description: Run-bound publish approval receipt.
-  run_id:
-    description: Durable run identity.
-  run_path:
-    description: Durable run-ledger path.
+  prepared:
+    description: Directory containing the exact prepared release bundle.
   status:
-    description: planned, valid, review-required, complete, stopped, or failed.
-  evidence_path:
-    description: Evidence projection path.
+    description: Release status.
 runs:
   using: node20
   main: dist/index.js

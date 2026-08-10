@@ -1,7 +1,21 @@
 import * as Schema from "effect/Schema"
-import { OutputDeclaration, type ContentValue } from "../model/operation.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
 
+export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
+  id: OutputId, path: SafeRelativePath,
+  kind: Schema.Literals(["file", "directory", "executable", "archive", "digest", "package", "wheel", "checksum-file", "catalog-file", "container-metadata", "sbom", "signature", "notarized", "attestation"]),
+  provenance: Schema.optionalKey(Schema.Literals(["build", "import", "process", "catalog", "internal"])),
+  mediaType: Schema.optionalKey(Schema.NonEmptyString),
+  platform: Schema.optionalKey(Schema.Struct({
+    os: Schema.Literals(["linux", "darwin", "windows"]), arch: Schema.Literals(["x64", "arm64"]),
+    libc: Schema.optionalKey(Schema.Literals(["glibc", "musl"])), binaryName: Schema.optionalKey(Schema.NonEmptyString), targetTriple: Schema.optionalKey(Schema.NonEmptyString)
+  }))
+}) {}
+export class ContentHole extends Schema.Class<ContentHole>("ContentHole")({
+  fact: Schema.Literals(["sha256", "downloadUrl", "assetName"]), outputId: OutputId
+}) {}
+export const ContentValue = Schema.Union([Schema.String, Schema.Array(Schema.Union([Schema.String, ContentHole]))])
+export type ContentValue = typeof ContentValue.Type
 const optional = Schema.optionalKey
 const argv = Schema.NonEmptyArray(Schema.String)
 

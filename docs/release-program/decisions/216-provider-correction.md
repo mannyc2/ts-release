@@ -1,7 +1,7 @@
 # Plan 216 — Provider-specific forward correction
 
 Input-Commit: 3d28302
-Result-Commit: PENDING
+Result-Commit: eec64ff
 Evidence-Commit: SELF
 Status: DONE
 Outcome: NPM-DEPRECATION-CATALOG-STATE / GITHUB-PYPI-UNSUPPORTED
@@ -61,7 +61,12 @@ being overwritten.
 
 ## Verification
 
-- `bun test test/correction test/publication/npm-adapter.test.ts test/publication/catalog-git.test.ts` — PASS: 20 tests, 68 expectations.
+- `bun test` — PASS: 223 tests, 928 expectations across 46 files.
+- `bun run check:import-rules` — PASS: 163 files examined.
+- `bun run check:config-schema` — PASS: schema matches `AuthoredConfig`.
+- `bun run check:docs-claims` — PASS: 9 claims across 3 files.
+- `bun run check:tree-shaking` — PASS: 85 files examined.
+- Focused correction/publication run — PASS: 28 tests, 103 expectations.
 - Canonical intent tests cover deterministic ids, byte determinism, unknown
   keys, and mismatched ids.
 - npm tests cover exact deprecation, absent/conflicting targets, lost process

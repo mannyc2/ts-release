@@ -3,12 +3,12 @@ import * as Effect from "effect/Effect"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { PreparedArtifact, PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
-import { CatalogFileIntent, CatalogManagedState, makeCatalogSubject, type CatalogRepositorySnapshot, type CatalogRepositoryTransport } from "../../src/publication/catalog-git.js"
+import { CatalogFileIntent, CatalogManagedState, encodeCatalogManagedState, makeCatalogSubject, type CatalogRepositorySnapshot, type CatalogRepositoryTransport } from "../../src/publication/catalog-git.js"
 import { PublicationError, publishSubject } from "../../src/publication/observation.js"
 
 const fixture = () => {
   const target = new TextEncoder().encode("formula bytes\n")
-  const managed = new TextEncoder().encode(JSON.stringify({ schemaVersion: "ts-release/catalog-state/v1", version: "1.0.0", manifestDigest: "a".repeat(64), status: "active" }))
+  const managed = encodeCatalogManagedState(CatalogManagedState.make({ schemaVersion: "ts-release/catalog-state/v1", version: Version.make("1.0.0"), manifestDigest: Digest.make("a".repeat(64)), status: "active" }))
   const artifact = (id: string, path: string, bytes: Uint8Array) => PreparedArtifact.make({ id: OutputId.make(id), path: SafeRelativePath.make(path), kind: "catalog-file", size: bytes.length,
     digest: Digest.make("a".repeat(64)), blob: Digest.make("a".repeat(64)) })
   const targetArtifact = artifact("catalog", "formula.rb", target)
@@ -50,7 +50,7 @@ describe("conditional catalog Git adapter", () => {
 
   test("wrong origin, half-present state, newer state, and transport loss never become writes", async () => {
     const { bundle, intent, target, managed } = fixture()
-    const newer = new TextEncoder().encode(JSON.stringify({ schemaVersion: "ts-release/catalog-state/v1", version: "2.0.0", manifestDigest: "b".repeat(64), status: "active" }))
+    const newer = encodeCatalogManagedState(CatalogManagedState.make({ schemaVersion: "ts-release/catalog-state/v1", version: Version.make("2.0.0"), manifestDigest: Digest.make("b".repeat(64)), status: "active" }))
     for (const current of [
       snapshot("github.com/other/tap", "main", "r1"),
       snapshot(intent.repository, "main", "r1", target),

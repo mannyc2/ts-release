@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
-import { encodeCanonicalJson } from "../model/canonical.js"
+import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
 import { Digest, NonEmptyName, SafeRelativePath, Version } from "../model/primitives.js"
 import {
@@ -24,10 +24,25 @@ export class CatalogFileIntent extends Schema.Class<CatalogFileIntent>("CatalogF
 
 export class CatalogManagedState extends Schema.Class<CatalogManagedState>("CatalogManagedState")({
   schemaVersion: Schema.Literal("ts-release/catalog-state/v1"), version: Version,
-  manifestDigest: Digest, status: Schema.Literal("active")
+  manifestDigest: Digest, status: Schema.Literals(["active", "corrected", "withdrawn", "superseded"]),
+  correctionId: Schema.optionalKey(Digest), reason: Schema.optionalKey(Schema.String),
+  replacement: Schema.optionalKey(NonEmptyName)
 }) {}
 export const encodeCatalogManagedState = (value: CatalogManagedState): Uint8Array =>
   new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(CatalogManagedState)(value)))
+
+export const decodeCatalogManagedState = (bytes: Uint8Array): CatalogManagedState | undefined => {
+  try {
+    const value = Schema.decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(parseStrictJson(new TextDecoder("utf-8", { fatal: true }).decode(bytes)))
+    const canonical = encodeCatalogManagedState(value)
+    if (canonical.length !== bytes.length || canonical.some((byte, index) => byte !== bytes[index])) return undefined
+    if (value.status === "active" && (value.correctionId !== undefined || value.reason !== undefined || value.replacement !== undefined)) return undefined
+    if (value.status !== "active" && (value.correctionId === undefined || value.reason === undefined || value.reason.length === 0)) return undefined
+    return value
+  } catch {
+    return undefined
+  }
+}
 
 export type CatalogRepositorySnapshot = {
   readonly repository: string, readonly branch: string, readonly revision: string,
@@ -46,9 +61,7 @@ export type CatalogRepositoryTransport = {
 const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
 const equal = (left: Uint8Array | undefined, right: Uint8Array): boolean => left !== undefined && left.length === right.length && left.every((value, index) => value === right[index])
 const state = (bytes: Uint8Array | undefined): CatalogManagedState | undefined => {
-  if (bytes === undefined) return undefined
-  try { return Schema.decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as unknown) }
-  catch { return undefined }
+  return bytes === undefined ? undefined : decodeCatalogManagedState(bytes)
 }
 const versionCompare = (left: string, right: string): number => {
   const parse = (value: string): [number[], string | undefined] => {

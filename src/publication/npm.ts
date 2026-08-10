@@ -26,15 +26,18 @@ const shasum = (bytes: Uint8Array): string => createHash("sha1").update(bytes).d
 const registryVersionUrl = (publication: PreparedNpmPublication): string =>
   `${publication.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(publication.packageName)}/${encodeURIComponent(publication.version)}`
 const stringValue = (value: unknown): string | undefined => typeof value === "string" && value.length > 0 ? value : undefined
-const registryFacts = (value: unknown): { readonly integrity?: string, readonly shasum?: string } | undefined => {
+const registryFacts = (value: unknown): { readonly integrity?: string, readonly shasum?: string, readonly deprecated?: string } | undefined => {
   if (typeof value !== "object" || value === null) return undefined
+  const deprecatedValue = (value as { readonly deprecated?: unknown }).deprecated
+  if (deprecatedValue !== undefined && deprecatedValue !== null && typeof deprecatedValue !== "string") return undefined
   const dist = (value as { readonly dist?: unknown }).dist
   if (typeof dist !== "object" || dist === null) return undefined
   const integrityValue = stringValue((dist as { readonly integrity?: unknown }).integrity)
   const shasumValue = stringValue((dist as { readonly shasum?: unknown }).shasum)
   return integrityValue === undefined && shasumValue === undefined ? undefined : {
     ...(integrityValue === undefined ? {} : { integrity: integrityValue }),
-    ...(shasumValue === undefined ? {} : { shasum: shasumValue })
+    ...(shasumValue === undefined ? {} : { shasum: shasumValue }),
+    ...(typeof deprecatedValue !== "string" || deprecatedValue.length === 0 ? {} : { deprecated: deprecatedValue })
   }
 }
 
@@ -55,7 +58,7 @@ export const makeNpmSubject = (
       const response = yield* http.request({ method: "GET", url, headers: authHeaders(credentials.read) })
       if (response.status === 404) return NeedsMutation.make({ subject, precondition: NonEmptyName.make("version-absent") })
       if (response.status < 200 || response.status >= 300) return Inconclusive.make({ subject, reason: `Registry observation returned HTTP ${response.status}.` })
-      let facts: { readonly integrity?: string, readonly shasum?: string } | undefined
+      let facts: { readonly integrity?: string, readonly shasum?: string, readonly deprecated?: string } | undefined
       try { facts = registryFacts(bodyJson(response)) } catch (cause) {
         return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) })
       }
@@ -63,6 +66,7 @@ export const makeNpmSubject = (
       const differences: ObservationDifference[] = []
       if (facts.integrity !== undefined && facts.integrity !== expectedIntegrity) differences.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: expectedIntegrity!, observed: facts.integrity }))
       if (facts.shasum !== undefined && facts.shasum !== expectedShasum) differences.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum!, observed: facts.shasum }))
+      if (facts.deprecated !== undefined) differences.push(ObservationDifference.make({ field: NonEmptyName.make("deprecated"), expected: "absent", observed: facts.deprecated }))
       return differences.length === 0 ? Equivalent.make({ subject }) : Conflict.make({ subject, differences })
     }).pipe(Effect.catchTag("PublicationError", (cause) => Effect.succeed(Inconclusive.make({ subject, reason: cause.reason })))),
     mutate: (needs): Effect.Effect<MutationResult, PublicationError> => Effect.gen(function*() {

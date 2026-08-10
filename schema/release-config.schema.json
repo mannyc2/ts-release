@@ -396,6 +396,16 @@
                 "path": {
                   "type": "string"
                 },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "file",
+                    "archive",
+                    "executable",
+                    "digest",
+                    "catalog-file"
+                  ]
+                },
                 "mediaType": {
                   "type": "string",
                   "allOf": [
@@ -426,6 +436,16 @@
               },
               "path": {
                 "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "archive",
+                  "executable",
+                  "digest",
+                  "catalog-file"
+                ]
               },
               "mediaType": {
                 "type": "string",
@@ -813,6 +833,17 @@
               "minLength": 1
             }
           ]
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
         }
       },
       "additionalProperties": false

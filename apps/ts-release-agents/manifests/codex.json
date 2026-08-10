@@ -1,0 +1,5 @@
+{
+  "name": "ts-release",
+  "description": "Operate automatic ts-release preparation, publication, and correction.",
+  "skills": "./skills/"
+}

@@ -118,7 +118,9 @@ export class CandidateCheckPreparation extends Schema.Class<CandidateCheckPrepar
 export class CandidateArtifactPreparation extends Schema.Class<CandidateArtifactPreparation>("CandidateArtifactPreparation")({
   kind: Schema.Literal("artifact"), ...preparationBase,
   outputs: Schema.NonEmptyArray(Schema.Struct({
-    id: OutputId, path: SafeRelativePath, mediaType: optional(nonempty)
+    id: OutputId, path: SafeRelativePath,
+    kind: optional(Schema.Literals(["file", "archive", "executable", "digest", "catalog-file"])),
+    mediaType: optional(nonempty)
   }))
 }) {}
 
@@ -174,7 +176,8 @@ export class CandidateGitHubPublish extends Schema.Class<CandidateGitHubPublish>
   tokenEnv: optional(Schema.String),
   draft: optional(Schema.Boolean),
   prerelease: optional(Schema.Union([Schema.Boolean, Schema.Literal("auto")])),
-  bodyArtifact: optional(OutputId)
+  bodyArtifact: optional(OutputId),
+  ids: optional(Schema.Array(OutputId))
 }) {}
 
 const catalogPreset = {

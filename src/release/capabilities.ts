@@ -68,8 +68,8 @@ const buildContribution = (config: CandidateConfig, context: VerifiedReleaseCont
       id: OperationId.make(`preparation:${preparation.id}`), argv: preparation.run,
       cwd, environmentNames, inputs,
       outputs: [
-        output(preparation.outputs[0]!.id, preparation.outputs[0]!.path, "file", "process", preparation.outputs[0]!.mediaType),
-        ...preparation.outputs.slice(1).map((item) => output(item.id, item.path, "file", "process", item.mediaType))
+        output(preparation.outputs[0]!.id, preparation.outputs[0]!.path, preparation.outputs[0]!.kind ?? "file", "process", preparation.outputs[0]!.mediaType),
+        ...preparation.outputs.slice(1).map((item) => output(item.id, item.path, item.kind ?? "file", "process", item.mediaType))
       ],
       sourceCommit: context.source.commit
     }))
@@ -130,7 +130,7 @@ export const contributeRelease = (config: CandidateConfig, context: VerifiedRele
       ...(config.publish.github.bodyArtifact === undefined && config.project.notes === undefined ? {} : {
         ...(config.publish.github.bodyArtifact === undefined ? { body: config.project.notes! } : { bodyArtifact: config.publish.github.bodyArtifact })
       }),
-      assetIds: allPrepared.filter((item) => ["archive", "executable", "file"].includes(item.kind)).map((item) => item.id)
+      assetIds: config.publish.github.ids ?? allPrepared.filter((item) => ["archive", "executable", "file", "digest"].includes(item.kind)).map((item) => item.id)
     })
   ].filter((item): item is GraphNpmPublication | GraphGitHubPublication => item !== undefined)
   return [build, packaged, catalogContribution, CapabilityContribution.make({ artifacts: [], preparations: [], publications })]

@@ -68,9 +68,12 @@ const preparedDirectory = (workspace: string, value: string | undefined): string
 const prepareProgram = Effect.fn("prepareProgram")(function*(input: PrepareInput) {
   const compiled = yield* observeAndCompile({ config: input.config, workspace: input.workspace })
   const runtime = yield* ReleaseRuntime
+  const sourceWorkspace = compiled.context.workspace
+  const sourceManifest = compiled.context.source.packageManifestPath
+  const sourceCommit = compiled.context.source.commit
   return yield* prepareRelease({
     context: compiled.context, graph: compiled.graph, storeDirectory: preparedDirectory(input.workspace, input.preparedDirectory), run: runtime.run,
-    verifySource: (context: VerifiedReleaseContext) => runtime.source.observe(context.workspace, context.source.packageManifestPath, context.source.commit)
+    verifySource: (_context: VerifiedReleaseContext) => runtime.source.observe(sourceWorkspace, sourceManifest, sourceCommit)
   })
 })
 

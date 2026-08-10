@@ -1,1 +1,72 @@
-{"project":{"name":"@mannyc1/ts-release","version":"0.2.0","tag":"v0.2.0","notes":"Automatic release is the default. Exact prepared-release/v1 bytes are the cross-process boundary; destination observation owns publication progress.","description":"Portable artifact and package-manager release engine for TypeScript projects.","homepage":"https://github.com/mannyc2/ts-release","license":"MIT"},"npmPackage":{"path":"."},"builds":[{"builder":"bun","id":"cli","entry":"apps/release-ts/src/cli/node-main.ts","targets":["linux-x64","linux-arm64","darwin-x64","darwin-arm64"],"output":".release/artifacts/ts-release-{version}-{targetTriple}{ext}","binaryName":"ts-release","installPath":"bin/ts-release"}],"archives":[{"id":"ts-release-plugin","ids":[],"nameTemplate":"ts-release-plugin-{version}","files":["ts-release-plugin/**"],"formats":["zip"]}],"checksum":{},"publish":{"npm":{"registry":"https://registry.npmjs.org","packageName":"@mannyc1/ts-release","packagePath":".","trustedPublishing":{"provider":"github-actions","workflow":"release.yml","verifyPackageExists":true},"access":"public","provenance":true},"github":{"repository":"mannyc2/ts-release","tokenEnv":"GH_TOKEN","draft":false,"prerelease":false}}}
+{
+  "project": {
+    "name": "@mannyc1/ts-release",
+    "version": "0.2.0",
+    "tag": "v0.2.0",
+    "notes": "Automatic release is the default. Exact prepared-release/v1 bytes are the cross-process boundary; destination observation owns publication progress.",
+    "description": "Portable artifact and package-manager release engine for TypeScript projects.",
+    "homepage": "https://github.com/mannyc2/ts-release",
+    "license": "MIT"
+  },
+  "npmPackage": { "path": "." },
+  "builds": [
+    {
+      "builder": "bun",
+      "id": "cli",
+      "entry": "apps/release-ts/src/cli/node-main.ts",
+      "targets": ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"],
+      "output": ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
+      "binaryName": "ts-release",
+      "installPath": "bin/ts-release"
+    }
+  ],
+  "preparations": [
+    {
+      "kind": "artifact",
+      "id": "agents",
+      "run": ["bun", "run", "apps/ts-release-agents/src/build.ts"],
+      "outputs": [
+        { "id": "agents-codex-manifest", "path": ".release/agents/codex/ts-release/.codex-plugin/plugin.json", "mediaType": "application/json" },
+        { "id": "agents-codex-readme", "path": ".release/agents/codex/ts-release/README.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-license", "path": ".release/agents/codex/ts-release/LICENSE", "mediaType": "text/plain" },
+        { "id": "agents-codex-evals", "path": ".release/agents/codex/ts-release/evals/cases.json", "mediaType": "application/json" },
+        { "id": "agents-codex-skill", "path": ".release/agents/codex/ts-release/skills/release/SKILL.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-configuration", "path": ".release/agents/codex/ts-release/skills/release/references/configuration.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-recovery", "path": ".release/agents/codex/ts-release/skills/release/references/recovery.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-staged", "path": ".release/agents/codex/ts-release/skills/release/references/staged-workflow.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-targets", "path": ".release/agents/codex/ts-release/skills/release/references/target-selection.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-verification", "path": ".release/agents/codex/ts-release/skills/release/references/verification.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-manifest", "path": ".release/agents/claude/ts-release/.claude-plugin/plugin.json", "mediaType": "application/json" },
+        { "id": "agents-claude-readme", "path": ".release/agents/claude/ts-release/README.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-license", "path": ".release/agents/claude/ts-release/LICENSE", "mediaType": "text/plain" },
+        { "id": "agents-claude-evals", "path": ".release/agents/claude/ts-release/evals/cases.json", "mediaType": "application/json" },
+        { "id": "agents-claude-skill", "path": ".release/agents/claude/ts-release/skills/release/SKILL.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-configuration", "path": ".release/agents/claude/ts-release/skills/release/references/configuration.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-recovery", "path": ".release/agents/claude/ts-release/skills/release/references/recovery.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-staged", "path": ".release/agents/claude/ts-release/skills/release/references/staged-workflow.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-targets", "path": ".release/agents/claude/ts-release/skills/release/references/target-selection.md", "mediaType": "text/markdown" },
+        { "id": "agents-claude-verification", "path": ".release/agents/claude/ts-release/skills/release/references/verification.md", "mediaType": "text/markdown" },
+        { "id": "agents-codex-archive", "path": ".release/agents/archives/ts-release-codex.zip", "kind": "archive", "mediaType": "application/zip" },
+        { "id": "agents-claude-archive", "path": ".release/agents/archives/ts-release-claude.zip", "kind": "archive", "mediaType": "application/zip" }
+      ]
+    }
+  ],
+  "checksum": {},
+  "publish": {
+    "npm": {
+      "registry": "https://registry.npmjs.org",
+      "packageName": "@mannyc1/ts-release",
+      "packagePath": ".",
+      "trustedPublishing": { "provider": "github-actions", "workflow": "release.yml", "verifyPackageExists": true },
+      "access": "public",
+      "provenance": true
+    },
+    "github": {
+      "repository": "mannyc2/ts-release",
+      "tokenEnv": "GH_TOKEN",
+      "draft": false,
+      "prerelease": false,
+      "ids": ["agents-codex-archive", "agents-claude-archive", "checksum-digests"]
+    }
+  }
+}

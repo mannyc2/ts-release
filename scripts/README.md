@@ -12,7 +12,7 @@ Every `check:*` script in the root `package.json`, and where it runs.
 
 Composites:
 
-- `check:portable` = `check:core` + `check:app` + `check:action`. What CI runs.
+- `check:portable` = `check:core` + `check:agents` + `check:app` + `check:action`. What CI runs.
 - `check:core` = `check:versions`, `check:import-rules`, `check:tree-shaking`,
   `check` (tsc), `bun test`, `build`, `check:examples`, `check:readme`,
   `check:package-exports` — cheap policy gates first, so a violation fails in
@@ -45,9 +45,8 @@ Individual gates:
   package import subpaths.
 - `check:action-bundle` (`check-action-bundle.ts`) — verifies the tracked
   GitHub Action bundle matches a fresh temporary build and runs under Node.
-- `check:skill-plugin` (`check-skill-plugin.ts`) — validates the shipped agent
-  plugin's structure, manifests, evals, and that every repo path and package
-  script its markdown names resolves.
+- `check:agents` — typechecks the single agent-distribution app, builds its
+  provider-native layouts and archives, and runs its contract checks.
 - `check:self-release-config` / `check:self-release-doctor` /
   `check:self-release-live` / `check:self-release-artifacts` — the offline
   dogfood gates, app-owned under `apps/release-ts/scripts/`.

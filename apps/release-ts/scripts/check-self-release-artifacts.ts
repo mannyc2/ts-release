@@ -1,7 +1,7 @@
 import { makeReleaseApi } from "../../../src/api/api.js"
 import { NodeReleaseLayer } from "../../../src/platform/node.js"
 import {
-  packagePath, readJson, report, root, selfReleaseConfig, stringField
+  report, root, selfReleaseConfig
 } from "./self-release-facts.js"
 
 const failures: Array<string> = []
@@ -13,10 +13,10 @@ try {
   if (inspection.artifacts.some((artifact) => artifact.path.toString().startsWith("/") || artifact.path.toString().includes("../"))) {
     failures.push("The self-release inspection contains a non-contained artifact path.")
   }
-  const version = stringField(readJson(packagePath), "version") ?? ""
-  for (const manifestPath of ["ts-release-plugin/.codex-plugin/plugin.json", "ts-release-plugin/.claude-plugin/plugin.json"]) {
-    if (stringField(readJson(manifestPath), "version") !== version) failures.push(`${manifestPath} version must equal the root package version.`)
-  }
+  const preparationIds = inspection.preparations.map((preparation) => preparation.id.toString())
+  if (!preparationIds.includes("preparation:agents")) failures.push("The self-release config does not declare the agent generator as a preparation.")
+  const agentArtifacts = inspection.artifacts.filter((artifact) => artifact.id.toString().startsWith("agents-"))
+  if (agentArtifacts.length < 2) failures.push("The self-release config does not declare the generated agent artifacts.")
   report("self-release-artifacts-report/v3", failures, {
     artifacts: inspection.artifacts.length, publications: inspection.publications.length
   })

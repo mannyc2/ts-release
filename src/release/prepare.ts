@@ -226,15 +226,10 @@ const npmTarball = (
   }))
   const entries = yield* attempt(() => readdirSync(join(request.context.workspace, destination)))
   if (entries.length !== 1 || files.length !== 1) return yield* new PreparationError({ reason: `npm pack produced an invalid output directory.` })
-  if (outcome.stdout.trim().length > 0) {
-    yield* attempt(() => {
-      const parsed: unknown = JSON.parse(outcome.stdout)
-      const record = Array.isArray(parsed) ? parsed[0] : parsed
-      if (typeof record !== "object" || record === null || !("filename" in record) || typeof record.filename !== "string" || record.filename !== files[0]) {
-        throw new Error("npm pack result did not identify the captured tarball.")
-      }
-    })
-  }
+  // The filename and single-file output directory are the durable npm-pack
+  // identity. Informational stdout is intentionally not parsed: npm and Bun
+  // versions may add warnings or progress text around their JSON mode without
+  // changing the captured tarball bytes.
   const path = SafeRelativePath.make(`${destination}/${files[0]}`)
   const artifactBytes = yield* capture(request.context, { ...declarations.get(packageId.toString())!, id: outputId(`npm-tarball:${publication.id}`), path, kind: "archive" })
   const hash = sha256(artifactBytes)

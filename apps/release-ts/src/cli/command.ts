@@ -13,7 +13,8 @@ const initCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("init"
   config: text("config", "release.config.json"), root: text("root", "."), dryRun: Flag.boolean("dry-run").pipe(Flag.withDefault(false)), force: Flag.boolean("force").pipe(Flag.withDefault(false))
 }, (options) => Effect.promise(() => runInit(api, options, cwd, io))).pipe(Command.withDescription("Create the smallest authored release configuration."))
 const inspectCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("inspect", {
-  config: optionalText("config"), prepared: optionalText("prepared"), root: text("root", ".")
+  config: optionalText("config"), prepared: optionalText("prepared"), root: text("root", "."),
+  json: Flag.boolean("json").pipe(Flag.withDefault(false))
 }, (options) => Effect.promise(() => {
   const config = at(options.config)
   const prepared = at(options.prepared)

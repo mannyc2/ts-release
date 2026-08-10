@@ -7,13 +7,14 @@ import {
 
 const failures: Array<string> = []
 const actionReference = candidateActionReference()
+const candidatePlaceholder = ["__TS_RELEASE_ACTION_", "REF__"].join("")
 const publicDocuments = [
   "README.md", "templates/github-actions/release.yml", "templates/github-actions/reviewed-release.yml"
 ]
 for (const path of publicDocuments) {
   const text = readText(path)
   if (!text.includes(actionReference)) failures.push(`${path} does not bind the exact candidate Action reference ${actionReference}.`)
-  if (text.includes("__TS_RELEASE_ACTION_REF__")) failures.push(`${path} retains the Action candidate placeholder.`)
+  if (text.includes(candidatePlaceholder)) failures.push(`${path} retains the Action candidate placeholder.`)
 }
 const workflow = readText(releaseWorkflowPath)
 if (!workflow.includes("uses: ./apps/ts-release-action")) failures.push("The automatic release workflow does not invoke the first-party Action.")

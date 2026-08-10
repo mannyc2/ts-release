@@ -26426,8 +26426,8 @@ var inspectPreparedRelease = (bundle) => PreparedReleaseInspection.make({
 
 // ../../src/release/prepare.ts
 import { createHash as createHash6 } from "node:crypto";
-import { cpSync, lstatSync as lstatSync3, mkdirSync as mkdirSync3, mkdtempSync, readdirSync as readdirSync2, realpathSync as realpathSync4, rmSync as rmSync2 } from "node:fs";
-import { basename as basename2, join as join4 } from "node:path";
+import { cpSync, lstatSync as lstatSync3, mkdirSync as mkdirSync3, mkdtempSync, readdirSync as readdirSync2, realpathSync as realpathSync4, rmSync as rmSync2, symlinkSync } from "node:fs";
+import { basename as basename2, join as join4, relative as relative2 } from "node:path";
 import { tmpdir } from "node:os";
 
 // ../../src/drivers/workspace.ts
@@ -26973,10 +26973,16 @@ var stageWorkspace = (workspace) => {
         continue;
       const source = join4(sourceRoot, entry);
       assertInSource(source);
+      if (entry === "node_modules") {
+        symlinkSync(source, join4(stageRoot, entry), "dir");
+        continue;
+      }
       cpSync(source, join4(stageRoot, entry), {
         recursive: true,
         dereference: true,
         filter: (candidate) => {
+          if (relative2(sourceRoot, candidate).split(/[\\/]/u).includes("node_modules"))
+            return false;
           assertInSource(candidate);
           return true;
         }
@@ -26997,10 +27003,10 @@ var inputFingerprint = (context3, declaration) => {
   if (declaration.kind !== "directory" && declaration.kind !== "package")
     return sha256(secureRead(context3.workspace, declaration.path).bytes);
   const base = declaration.path.toString();
-  const walk = (relative2) => {
-    const location2 = join4(context3.workspace, relative2);
-    return readdirSync2(location2, { withFileTypes: true }).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0).flatMap((entry) => {
-      const child = relative2 === "." ? entry.name : `${relative2}/${entry.name}`;
+  const walk = (relative3) => {
+    const location2 = join4(context3.workspace, relative3);
+    return readdirSync2(location2, { withFileTypes: true }).filter((entry) => ![".git", ".release", "node_modules"].includes(entry.name)).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0).flatMap((entry) => {
+      const child = relative3 === "." ? entry.name : `${relative3}/${entry.name}`;
       if (entry.isSymbolicLink())
         throw new Error(`Input artifact ${declaration.id} contains a symlink.`);
       if (entry.isDirectory())
@@ -27121,15 +27127,6 @@ var npmTarball = (request, publication2, declarations, bytes) => gen2(function* 
   const entries = yield* attempt(() => readdirSync2(join4(request.context.workspace, destination)));
   if (entries.length !== 1 || files.length !== 1)
     return yield* new PreparationError({ reason: `npm pack produced an invalid output directory.` });
-  if (outcome.stdout.trim().length > 0) {
-    yield* attempt(() => {
-      const parsed = JSON.parse(outcome.stdout);
-      const record2 = Array.isArray(parsed) ? parsed[0] : parsed;
-      if (typeof record2 !== "object" || record2 === null || !("filename" in record2) || typeof record2.filename !== "string" || record2.filename !== files[0]) {
-        throw new Error("npm pack result did not identify the captured tarball.");
-      }
-    });
-  }
   const path = SafeRelativePath.make(`${destination}/${files[0]}`);
   const artifactBytes = yield* capture(request.context, { ...declarations.get(packageId.toString()), id: outputId(`npm-tarball:${publication2.id}`), path, kind: "archive" });
   const hash3 = sha256(artifactBytes);
@@ -31557,12 +31554,12 @@ import { dirname as dirname3 } from "node:path";
 
 // src/commands.ts
 import { existsSync as existsSync5, realpathSync as realpathSync6 } from "node:fs";
-import { isAbsolute as isAbsolute3, relative as relative2, resolve as resolve5, sep as sep2 } from "node:path";
+import { isAbsolute as isAbsolute3, relative as relative3, resolve as resolve5, sep as sep2 } from "node:path";
 var actionCommands = ["prepare", "publish", "inspect", "correct"];
 var reportRelativePath = ".release/ts-release/action-report.json";
 var preparedRelativePath = ".release/ts-release/prepared";
 var inside = (root, candidate) => {
-  const child = relative2(root, candidate);
+  const child = relative3(root, candidate);
   if (child === ".." || child.startsWith(`..${sep2}`) || isAbsolute3(child))
     throw new Error("Action path is outside GITHUB_WORKSPACE.");
   return candidate;

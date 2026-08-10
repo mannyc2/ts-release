@@ -53,8 +53,8 @@ jobs:
       - name: Run portable package checks
         run: bun run check:portable
 
-  release-readiness:
-    name: Ubuntu release readiness
+  agent-host:
+    name: Agent host validation
     runs-on: ubuntu-latest
 
     steps:
@@ -78,14 +78,11 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Check self-release config
-        run: bun run check:self-release-config
+      - name: Install Claude Code validator
+        run: npm install --global @anthropic-ai/claude-code@2.1.219
 
-      - name: Check self-release doctor
-        run: bun run check:self-release-doctor
+      - name: Record Claude Code version
+        run: claude --version
 
-      - name: Check self-release live readiness
-        run: bun run check:self-release-live
-
-      - name: Check self-release artifacts
-        run: bun run check:self-release-artifacts
+      - name: Run generated agent host checks
+        run: bun run check:agents

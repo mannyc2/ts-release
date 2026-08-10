@@ -24757,6 +24757,7 @@ class CandidateArtifactPreparation extends Class4("CandidateArtifactPreparation"
   outputs: NonEmptyArray(Struct({
     id: OutputId,
     path: SafeRelativePath,
+    kind: optional(Literals(["file", "archive", "executable", "digest", "catalog-file"])),
     mediaType: optional(nonempty)
   }))
 }) {
@@ -24817,7 +24818,8 @@ class CandidateGitHubPublish extends Class4("CandidateGitHubPublish")({
   tokenEnv: optional(String4),
   draft: optional(Boolean3),
   prerelease: optional(Union2([Boolean3, Literal2("auto")])),
-  bodyArtifact: optional(OutputId)
+  bodyArtifact: optional(OutputId),
+  ids: optional(ArraySchema(OutputId))
 }) {
 }
 var catalogPreset = {
@@ -26288,8 +26290,8 @@ var buildContribution = (config, context3) => {
         environmentNames,
         inputs,
         outputs: [
-          output(preparation.outputs[0].id, preparation.outputs[0].path, "file", "process", preparation.outputs[0].mediaType),
-          ...preparation.outputs.slice(1).map((item) => output(item.id, item.path, "file", "process", item.mediaType))
+          output(preparation.outputs[0].id, preparation.outputs[0].path, preparation.outputs[0].kind ?? "file", "process", preparation.outputs[0].mediaType),
+          ...preparation.outputs.slice(1).map((item) => output(item.id, item.path, item.kind ?? "file", "process", item.mediaType))
         ],
         sourceCommit: context3.source.commit
       }));
@@ -26363,7 +26365,7 @@ var contributeRelease = (config, context3) => {
       ...config.publish.github.bodyArtifact === undefined && config.project.notes === undefined ? {} : {
         ...config.publish.github.bodyArtifact === undefined ? { body: config.project.notes } : { bodyArtifact: config.publish.github.bodyArtifact }
       },
-      assetIds: allPrepared.filter((item) => ["archive", "executable", "file"].includes(item.kind)).map((item) => item.id)
+      assetIds: config.publish.github.ids ?? allPrepared.filter((item) => ["archive", "executable", "file", "digest"].includes(item.kind)).map((item) => item.id)
     })
   ].filter((item) => item !== undefined);
   return [build2, packaged, catalogContribution, CapabilityContribution.make({ artifacts: [], preparations: [], publications })];
@@ -31420,12 +31422,15 @@ var preparedDirectory = (workspace, value2) => {
 var prepareProgram = fn2("prepareProgram")(function* (input) {
   const compiled = yield* observeAndCompile({ config: input.config, workspace: input.workspace });
   const runtime2 = yield* ReleaseRuntime;
+  const sourceWorkspace = compiled.context.workspace;
+  const sourceManifest = compiled.context.source.packageManifestPath;
+  const sourceCommit = compiled.context.source.commit;
   return yield* prepareRelease({
     context: compiled.context,
     graph: compiled.graph,
     storeDirectory: preparedDirectory(input.workspace, input.preparedDirectory),
     run: runtime2.run,
-    verifySource: (context3) => runtime2.source.observe(context3.workspace, context3.source.packageManifestPath, context3.source.commit)
+    verifySource: (_context) => runtime2.source.observe(sourceWorkspace, sourceManifest, sourceCommit)
   });
 });
 var credentialsFor = (bundle, credentials2) => {
@@ -31544,43 +31549,131 @@ var correct = defaultApi.correct;
 var unsupportedExecutionHost = (platform2) => platform2 === "linux" || platform2 === "darwin" ? undefined : "ts-release runs on Linux and macOS. Its Bun builder can produce Windows artifacts.";
 // src/index.ts
 import {
-  mkdirSync as mkdirSync5,
   readFileSync as readFileSync5,
+  mkdirSync as mkdirSync4,
   writeFileSync as writeFileSync3
 } from "node:fs";
-import { dirname as dirname4 } from "node:path";
+import { dirname as dirname3 } from "node:path";
 
 // src/commands.ts
-import { mkdirSync as mkdirSync4, realpathSync as realpathSync6 } from "node:fs";
-import { dirname as dirname3, isAbsolute as isAbsolute3, relative as relative2, resolve as resolve5, sep as sep2 } from "node:path";
+import { existsSync as existsSync5, realpathSync as realpathSync6 } from "node:fs";
+import { isAbsolute as isAbsolute3, relative as relative2, resolve as resolve5, sep as sep2 } from "node:path";
+var actionCommands = ["prepare", "publish", "inspect", "correct"];
+var reportRelativePath = ".release/ts-release/action-report.json";
+var preparedRelativePath = ".release/ts-release/prepared";
 var inside = (root, candidate) => {
   const child = relative2(root, candidate);
   if (child === ".." || child.startsWith(`..${sep2}`) || isAbsolute3(child))
     throw new Error("Action path is outside GITHUB_WORKSPACE.");
   return candidate;
 };
-var pathInWorkspace = (root, value2) => inside(root, resolve5(root, value2));
+var pathInWorkspace = (root, value2, mustExist) => {
+  const candidate = inside(root, resolve5(root, value2));
+  if (!mustExist)
+    return candidate;
+  if (!existsSync5(candidate))
+    throw new Error(`Action path does not exist: ${value2}`);
+  return inside(root, realpathSync6(candidate));
+};
+var present = (value2) => value2.length > 0;
+var fail13 = (reason2) => {
+  throw new Error(reason2);
+};
+var command2 = (value2) => {
+  if (actionCommands.includes(value2))
+    return value2;
+  return fail13(`Action command must be one of ${actionCommands.join(", ")}.`);
+};
+var configJson = (runtime2, path) => {
+  try {
+    return JSON.parse(runtime2.read(path));
+  } catch (cause) {
+    throw new Error(`Action configuration is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+  }
+};
+var token = (...names2) => {
+  for (const name of names2) {
+    const value2 = process.env[name];
+    if (value2 !== undefined && value2.length > 0)
+      return value2;
+  }
+  return;
+};
+var credentials2 = () => {
+  const npm2 = token("NPM_TOKEN");
+  const github2 = token("GITHUB_TOKEN", "GH_TOKEN");
+  if (npm2 === undefined && github2 === undefined)
+    return;
+  return {
+    ...npm2 === undefined ? {} : { npm: { read: npm2, publish: npm2 } },
+    ...github2 === undefined ? {} : { github: { read: github2, publish: github2 } }
+  };
+};
+var publishInput2 = (prepared) => {
+  const value2 = credentials2();
+  return value2 === undefined ? { prepared } : { prepared, credentials: value2 };
+};
+var correctInput2 = (prepared, correction) => {
+  const value2 = credentials2();
+  return value2 === undefined ? { prepared, correction } : { prepared, correction, credentials: value2 };
+};
+var redact4 = (value2) => {
+  const secrets = [process.env.NPM_TOKEN, process.env.GITHUB_TOKEN, process.env.GH_TOKEN].filter((secret) => secret !== undefined && secret.length > 0);
+  return secrets.reduce((result2, secret) => result2.replaceAll(secret, "[REDACTED]"), value2).replace(/(?:npm|ghp|ghs|github_pat)_[A-Za-z0-9_]+/gu, "[REDACTED]");
+};
+var printable = (value2) => JSON.stringify(value2, (_key, nested2) => {
+  if (typeof nested2 === "object" && nested2 !== null && "toString" in nested2 && Object.keys(nested2).length === 1)
+    return String(nested2);
+  return nested2;
+}, 2);
+var reportPath = (root) => inside(root, resolve5(root, reportRelativePath));
+var writeReport = (runtime2, root, value2) => {
+  const path = reportPath(root);
+  runtime2.write(path, `${redact4(printable(value2))}
+`);
+  runtime2.output("report_path", path);
+  return path;
+};
+var rejectExtra = (values, allowed) => {
+  for (const [name, value2] of Object.entries(values))
+    if (present(value2) && !allowed.includes(name)) {
+      fail13(`Action input '${name}' is not valid for command '${values.command}'.`);
+    }
+};
 var runAction = async (api2, runtime2) => {
   const root = realpathSync6(runtime2.workspace);
-  const configPath = pathInWorkspace(root, runtime2.input("config") || "release.config.json");
-  const output2 = runtime2.input("prepared") || ".release/ts-release/prepared";
-  const preparedDirectory2 = resolve5(root, output2);
-  mkdirSync4(dirname3(preparedDirectory2), { recursive: true });
-  const npmToken = runtime2.input("npm-token") || process.env.NPM_TOKEN;
-  const githubToken = runtime2.input("github-token") || process.env.GITHUB_TOKEN;
-  const result2 = await api2.release({
-    config: JSON.parse(runtime2.read(configPath)),
-    workspace: root,
-    preparedDirectory: preparedDirectory2,
-    ...npmToken === undefined && githubToken === undefined ? {} : {
-      credentials: {
-        ...npmToken === undefined ? {} : { npm: { read: npmToken, publish: npmToken } },
-        ...githubToken === undefined ? {} : { github: { read: githubToken, publish: githubToken } }
-      }
-    }
-  });
-  runtime2.output("prepared", result2.prepared.directory);
-  runtime2.output("status", "complete");
+  const values = {
+    command: runtime2.input("command"),
+    config: runtime2.input("config"),
+    prepared: runtime2.input("prepared"),
+    correction: runtime2.input("correction")
+  };
+  try {
+    const selected = command2(values.command);
+    rejectExtra(values, selected === "prepare" ? ["command", "config"] : selected === "inspect" ? ["command", "config", "prepared"] : selected === "publish" ? ["command", "prepared"] : ["command", "prepared", "correction"]);
+    if (selected === "inspect" && present(values.config) === present(values.prepared))
+      fail13("inspect requires exactly one of config or prepared.");
+    const actionResult = selected === "prepare" ? await api2.prepare({
+      config: configJson(runtime2, pathInWorkspace(root, values.config || fail13("prepare requires config."), true)),
+      workspace: root,
+      preparedDirectory: pathInWorkspace(root, preparedRelativePath, false)
+    }) : selected === "inspect" ? values.prepared.length > 0 ? await api2.inspect({ prepared: pathInWorkspace(root, values.prepared, true) }) : await api2.inspect({
+      config: configJson(runtime2, pathInWorkspace(root, values.config || fail13("inspect requires config or prepared."), true)),
+      workspace: root
+    }) : selected === "publish" ? await api2.publish(publishInput2(pathInWorkspace(root, values.prepared || fail13("publish requires prepared."), true))) : await api2.correct(correctInput2(pathInWorkspace(root, values.prepared || fail13("correct requires prepared."), true), pathInWorkspace(root, values.correction || fail13("correct requires correction."), true)));
+    const report = { schemaVersion: "ts-release-action-report/v1", command: selected, status: "complete", result: actionResult };
+    if (selected === "prepare")
+      runtime2.output("prepared_path", actionResult.directory);
+    writeReport(runtime2, root, report);
+    runtime2.output("status", "complete");
+  } catch (cause) {
+    const message = redact4(cause instanceof Error ? cause.message : String(cause));
+    try {
+      writeReport(runtime2, root, { schemaVersion: "ts-release-action-report/v1", command: values.command, status: "failed", error: message });
+    } catch {}
+    runtime2.output("status", "failed");
+    throw new Error(message);
+  }
 };
 
 // src/index.ts
@@ -31593,12 +31686,11 @@ var api2 = makeReleaseApi(NodeReleaseLayer);
 try {
   await runAction(api2, {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
-    ...process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA },
     input: getInput,
     output: setOutput,
     read: (path) => readFileSync5(path, "utf8"),
     write: (path, value2) => {
-      mkdirSync5(dirname4(path), { recursive: true });
+      mkdirSync4(dirname3(path), { recursive: true });
       writeFileSync3(path, value2);
     }
   });

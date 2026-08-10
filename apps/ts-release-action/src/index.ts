@@ -2,8 +2,8 @@ import * as core from "@actions/core"
 import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
 import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 import {
-  mkdirSync,
   readFileSync,
+  mkdirSync,
   writeFileSync
 } from "node:fs"
 import { dirname } from "node:path"
@@ -23,7 +23,6 @@ try {
     api,
     {
       workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
-      ...(process.env.GITHUB_SHA === undefined ? {} : { commit: process.env.GITHUB_SHA }),
       input: core.getInput,
       output: core.setOutput,
       read: (path) => readFileSync(path, "utf8"),

@@ -24,4 +24,4 @@ generator as an ordinary `CommandArtifact` and captures every generated file
 and archive in the prepared bundle.
 
 Distribution publication remains an explicit release-destination decision. No
-agent marketplace or mirror is implied by this repository-local build.
+agent marketplace publication is implied by this repository-local build.

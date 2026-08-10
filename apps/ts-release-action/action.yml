@@ -1,26 +1,26 @@
 name: ts-release
-description: Prepare and publish one release automatically.
+description: Prepare, publish, inspect, or correct one exact release boundary.
 author: mannyc2
 inputs:
+  command:
+    description: One of prepare, publish, inspect, or correct.
+    required: true
   config:
-    description: Workspace-contained authored release configuration path.
+    description: Workspace-contained authored configuration path for prepare or inspect.
     required: false
-    default: release.config.json
   prepared:
-    description: Workspace-contained directory for the exact prepared release bundle.
+    description: Workspace-contained exact prepared bundle path for publish, inspect, or correct.
     required: false
-    default: .release/ts-release/prepared
-  npm-token:
-    description: npm token used for read and publish observation when npm is configured.
-    required: false
-  github-token:
-    description: GitHub token used for read and publish observation when GitHub is configured.
+  correction:
+    description: Workspace-contained canonical provider-specific correction path for correct.
     required: false
 outputs:
-  prepared:
-    description: Directory containing the exact prepared release bundle.
   status:
-    description: Release status.
+    description: Command completion status.
+  prepared_path:
+    description: Exact prepared bundle path produced by prepare.
+  report_path:
+    description: Workspace-contained JSON report for the command result.
 runs:
   using: node20
   main: dist/index.js

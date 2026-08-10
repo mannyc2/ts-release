@@ -1,4 +1,4 @@
-name: Release
+name: Reviewed release
 
 on:
   workflow_dispatch:
@@ -37,6 +37,7 @@ jobs:
   publish:
     needs: prepare
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
       id-token: write

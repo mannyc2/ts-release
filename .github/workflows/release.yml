@@ -4,28 +4,81 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  prepare:
     if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: release
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
       - run: bun install --frozen-lockfile
-      - run: bun run check:release
-      - uses: ./apps/ts-release-action
+      - id: prepare
+        uses: ./apps/ts-release-action
         with:
+          command: prepare
           config: apps/release-ts/release.config.json
-          prepared: .release/ts-release/prepared
-          npm-token: ${{ secrets.NPM_TOKEN }}
-          github-token: ${{ github.token }}
+      - name: Stage the complete prepared bundle
+        run: |
+          set -euo pipefail
+          bundle='${{ steps.prepare.outputs.prepared_path }}'
+          test -d "$bundle"
+          digest="$(basename "$bundle")"
+          mkdir -p .release/ts-release/transfer
+          cp -a "$bundle" ".release/ts-release/transfer/$digest"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ts-release-prepared
+          path: .release/ts-release/transfer
+          include-hidden-files: true
+          if-no-files-found: error
+
+  publish:
+    needs: prepare
+    if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: ts-release-prepared
+          path: .release/ts-release/transfer
+      - id: bundle
+        name: Locate downloaded prepared bundle
+        run: |
+          set -euo pipefail
+          bundle="$(find .release/ts-release/transfer -mindepth 1 -maxdepth 1 -type d -print)"
+          test -n "$bundle"
+          test "$(printf '%s\n' "$bundle" | wc -l)" = 1
+          echo "path=$bundle" >> "$GITHUB_OUTPUT"
+      - name: Verify the complete bundle before credentials or publication
+        uses: ./apps/ts-release-action
+        with:
+          command: inspect
+          prepared: ${{ steps.bundle.outputs.path }}
+      - name: Publish the verified prepared bundle
+        uses: ./apps/ts-release-action
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          command: publish
+          prepared: ${{ steps.bundle.outputs.path }}

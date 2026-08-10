@@ -1,13 +1,6 @@
 {
-  "project": {
-    "name": "@mannyc1/ts-release",
-    "version": "0.2.0",
-    "tag": "v0.2.0",
-    "notes": "Automatic release is the default. Exact prepared-release/v1 bytes are the cross-process boundary; destination observation owns publication progress.",
-    "description": "Portable artifact and package-manager release engine for TypeScript projects.",
-    "homepage": "https://github.com/mannyc2/ts-release",
-    "license": "MIT"
-  },
+  "project": {},
+  "versionFrom": "manifest",
   "npmPackage": { "path": "." },
   "builds": [
     {
@@ -51,22 +44,27 @@
       ]
     }
   ],
+  "archives": [
+    {
+      "id": "cli",
+      "ids": ["cli-linux-x64", "cli-linux-arm64", "cli-darwin-x64", "cli-darwin-arm64"],
+      "formats": ["tar.gz", "zip"]
+    }
+  ],
   "checksum": {},
   "publish": {
     "npm": {
       "registry": "https://registry.npmjs.org",
-      "packageName": "@mannyc1/ts-release",
       "packagePath": ".",
       "trustedPublishing": { "provider": "github-actions", "workflow": "release.yml", "verifyPackageExists": true },
       "access": "public",
       "provenance": true
     },
     "github": {
-      "repository": "mannyc2/ts-release",
       "tokenEnv": "GH_TOKEN",
       "draft": false,
       "prerelease": false,
-      "ids": ["agents-codex-archive", "agents-claude-archive", "checksum-digests"]
+      "ids": ["cli-tar-gz", "cli-zip", "agents-codex-archive", "agents-claude-archive", "checksum-digests"]
     }
   }
 }

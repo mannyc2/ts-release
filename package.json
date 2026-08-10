@@ -69,10 +69,11 @@
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",
     "check:readme": "bun run scripts/check-readme.ts",
-    "check:self-release-config": "bun run apps/release-ts/scripts/check-self-release-config.ts",
-    "check:self-release-inspect": "bun run apps/release-ts/scripts/check-self-release-inspect.ts",
-    "check:self-release-live": "bun run apps/release-ts/scripts/check-self-release-live-readiness.ts",
+    "check:self-release-context": "bun run apps/release-ts/scripts/check-self-release-context.ts",
+    "check:self-release-prepare": "bun run apps/release-ts/scripts/check-self-release-prepare.ts",
+    "check:self-release-readiness": "bun run apps/release-ts/scripts/check-self-release-readiness.ts",
     "check:self-release-artifacts": "bun run apps/release-ts/scripts/check-self-release-artifacts.ts",
+    "check:self-release-correction": "bun run apps/release-ts/scripts/check-self-release-correction.ts",
     "check:action-bundle": "bun run scripts/check-action-bundle.ts",
     "check:cli-bundle": "bun run scripts/check-cli-bundle.ts",
     "check:config-schema": "bun run scripts/check-config-schema.ts",
@@ -87,7 +88,7 @@
     "check:app": "bun run --cwd apps/release-ts check && bun test test/core/cli-cutover.test.ts test/cli-command.test.ts",
     "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/core/action-cutover.test.ts test/action-command.test.ts",
     "check:portable": "bun run check:core && bun run check:agents && bun run check:app && bun run check:action",
-    "check:release": "bun run check:self-release-config && bun run check:self-release-inspect && bun run check:self-release-live && bun run check:self-release-artifacts && bun run check:portable",
+    "check:release-candidate": "bun run check:self-release-context && bun run check:self-release-prepare && bun run check:self-release-readiness && bun run check:self-release-artifacts && bun run check:self-release-correction && bun run check:portable",
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {

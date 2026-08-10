@@ -16,7 +16,7 @@ jobs:
           bun-version: "1.3.14"
       - run: bun install --frozen-lockfile
       - id: prepare
-        uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
+        uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
         with:
           command: prepare
           config: release.config.json
@@ -57,11 +57,11 @@ jobs:
           test -n "$bundle"
           test "$(printf '%s\n' "$bundle" | wc -l)" = 1
           echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
+      - uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
         with:
           command: inspect
           prepared: ${{ steps.bundle.outputs.path }}
-      - uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
+      - uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}

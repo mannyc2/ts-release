@@ -19,6 +19,7 @@ interface CodeBlock {
 
 interface PackageMetadata {
   readonly name: string
+  readonly version: string
   readonly exports: Record<string, unknown>
 }
 
@@ -56,8 +57,12 @@ const readPackageMetadata = Effect.fn("scripts.checkReadme.readPackageMetadata")
   }
 
   const packageName = parsed.name
+  const packageVersion = parsed.version
   if (typeof packageName !== "string" || packageName.length === 0) {
     return yield* Effect.fail(new Error("package.json name must be a non-empty string"))
+  }
+  if (typeof packageVersion !== "string" || packageVersion.length === 0) {
+    return yield* Effect.fail(new Error("package.json version must be a non-empty string"))
   }
 
   const packageExports = parsed.exports
@@ -67,6 +72,7 @@ const readPackageMetadata = Effect.fn("scripts.checkReadme.readPackageMetadata")
 
   return {
     name: packageName,
+    version: packageVersion,
     exports: packageExports
   }
 })
@@ -144,12 +150,14 @@ const checkShellBlock = (block: CodeBlock): ReadonlyArray<string> => {
   return failures
 }
 
-const checkYamlBlock = (block: CodeBlock): ReadonlyArray<string> => {
+const checkYamlBlock = (block: CodeBlock, packageMetadata: PackageMetadata): ReadonlyArray<string> => {
   const failures: Array<string> = []
+  const expectedActionReference = `mannyc2/ts-release/apps/ts-release-action@v${packageMetadata.version}`
   if (block.content.includes("mannyc2/ts-release/apps/ts-release-action@") &&
-    !block.content.includes("mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__")) {
-    failures.push(`README.md:${block.contentStartLine}:1 Action examples must use __TS_RELEASE_ACTION_REF__`)
+    !block.content.includes(expectedActionReference)) {
+    failures.push(`README.md:${block.contentStartLine}:1 Action examples must use ${expectedActionReference}`)
   }
+  if (block.content.includes("__TS_RELEASE_ACTION_REF__")) failures.push(`README.md:${block.contentStartLine}:1 Action examples retain the candidate placeholder`)
   if (/mannyc2\/ts-release-action@/u.test(block.content)) {
     failures.push(`README.md:${block.contentStartLine}:1 Action examples must use the monorepo subpath`)
   }
@@ -261,7 +269,7 @@ const checkCodeBlock = Effect.fn("scripts.checkReadme.checkCodeBlock")(function*
   }
 
   if (block.language === "yaml" || block.language === "yml") {
-    return { failures: checkYamlBlock(block), packageImportCount: 0 }
+    return { failures: checkYamlBlock(block, packageMetadata), packageImportCount: 0 }
   }
 
   if (block.language === "ts" || block.language === "typescript") {

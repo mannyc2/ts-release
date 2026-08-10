@@ -7,6 +7,9 @@ import { AuthoredConfig } from "../src/resolve/authored.js"
 import { commandNames } from "../apps/release-ts/src/cli/commands.js"
 
 const root = process.cwd()
+const packageVersion = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version?: unknown }).version
+if (typeof packageVersion !== "string" || packageVersion.length === 0) throw new Error("package.json version is required.")
+const candidateActionReference = `mannyc2/ts-release/apps/ts-release-action@v${packageVersion}`
 const configs: string[] = []
 const walk = (directory: string): void => {
   if (!existsSync(directory)) return
@@ -36,10 +39,10 @@ for (const name of workflows) {
   if (/\bcommand:\s*(?:plan|apply|doctor|build|verify)\b/u.test(text)) {
     throw new Error(`${name}: workflow uses a removed lifecycle command.`)
   }
-  if (text.includes("mannyc2/ts-release/apps/ts-release-action@") &&
-    !text.includes("mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__")) {
-    throw new Error(`${name}: Action reference must use __TS_RELEASE_ACTION_REF__ until candidate certification.`)
+  if (text.includes("mannyc2/ts-release/apps/ts-release-action@") && !text.includes(candidateActionReference)) {
+    throw new Error(`${name}: Action reference must use the candidate-bound ${candidateActionReference}.`)
   }
+  if (text.includes("__TS_RELEASE_ACTION_REF__")) throw new Error(`${name}: Action reference retains the candidate placeholder.`)
   if (/mannyc2\/ts-release-action@/u.test(text)) {
     throw new Error(`${name}: Action reference uses the retired standalone mirror.`)
   }

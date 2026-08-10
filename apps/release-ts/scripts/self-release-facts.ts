@@ -7,6 +7,7 @@ export const packagePath = "package.json"
 export const appPackagePath = "apps/release-ts/package.json"
 export const releaseConfigPath = "apps/release-ts/release.config.json"
 export const releaseWorkflowPath = ".github/workflows/release.yml"
+export const preparedRoot = ".release/ts-release/prepared"
 
 export const selfReleaseConfig = (): unknown => readJson(releaseConfigPath)
 
@@ -20,6 +21,11 @@ export const stringField = (value: unknown, key: string): string | undefined =>
   isJsonObject(value) && typeof value[key] === "string" && value[key].length > 0
     ? value[key]
     : undefined
+export const candidateActionReference = (): string => {
+  const version = stringField(readJson(packagePath), "version")
+  if (version === undefined) throw new Error("package.json version is required for the candidate Action reference.")
+  return `mannyc2/ts-release/apps/ts-release-action@v${version}`
+}
 export const report = (
   schemaVersion: string,
   failures: ReadonlyArray<string>,

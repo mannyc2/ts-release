@@ -19,8 +19,9 @@ Composites:
   violation fails in seconds rather than after a build.
 - `check:app` / `check:action` typecheck each shipped surface and run its
   cutover suite; `check:action` also runs `check:action-bundle`.
-- `check:release` = the four `check:self-release-*` gates + `check:portable`.
-  Runs before a tag.
+- `check:release-candidate` = context, public preparation, read-only
+  readiness, installed-artifact, correction, and `check:portable` gates. It
+  certifies a candidate without publishing or tagging it.
 - `check:summary` runs every gate without stopping at the first failure and
   prints a pass/fail/seconds table.
 
@@ -46,9 +47,10 @@ Individual gates:
   GitHub Action bundle matches a fresh temporary build and runs under Node.
 - `check:agents` — typechecks the single agent-distribution app, builds its
   provider-native layouts and archives, and runs its contract checks.
-- `check:self-release-config` / `check:self-release-inspect` /
-  `check:self-release-live` / `check:self-release-artifacts` — the offline
-  dogfood gates, app-owned under `apps/release-ts/scripts/`.
+- `check:self-release-context` / `check:self-release-prepare` /
+  `check:self-release-readiness` / `check:self-release-artifacts` /
+  `check:self-release-correction` — the offline candidate gates, app-owned
+  under `apps/release-ts/scripts/`.
 
 Self-release dogfood policy checks are app-owned under `apps/release-ts/scripts/`.
 Root package scripts delegate there for self-release config checks. Release

@@ -86,7 +86,7 @@ with one protected environment on publication.
 Consumer templates bind the Action only after candidate certification:
 
 ```yaml
-uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
+uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
 ```
 
 Plan 221 replaces that token with the exact immutable candidate version before

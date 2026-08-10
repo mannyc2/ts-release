@@ -109,7 +109,7 @@ const inputFingerprint = (context: VerifiedReleaseContext, declaration: ReleaseG
   const base = declaration.path.toString()
   const walk = (relative: string): string[] => {
     const location = join(context.workspace, relative)
-    return readdirSync(location, { withFileTypes: true }).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0).flatMap((entry) => {
+    return readdirSync(location, { withFileTypes: true }).filter((entry) => ![".git", ".release", "node_modules"].includes(entry.name)).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0).flatMap((entry) => {
       const child = relative === "." ? entry.name : `${relative}/${entry.name}`
       if (entry.isSymbolicLink()) throw new Error(`Input artifact ${declaration.id} contains a symlink.`)
       if (entry.isDirectory()) return walk(child)

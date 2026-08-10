@@ -49,6 +49,12 @@ export const executableCapabilities = [
     entrypoint: "src/release/capabilities.ts:contributeCatalog",
     verticalTest: "test/core/current-recipes.test.ts",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
+  },
+  {
+    id: "publish.catalog-git",
+    entrypoint: "src/publication/catalog-git.ts:makeCatalogSubject",
+    verticalTest: "test/publication/catalog-git.test.ts",
+    executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   }
 ] as const satisfies ReadonlyArray<ExecutableCapability>
 

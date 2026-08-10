@@ -13,7 +13,7 @@ try {
   const store = join(root, preparedRoot)
   if (!existsSync(store) || readdirSync(store).filter((entry) => !entry.startsWith(".")).length === 0) failures.push("Correction check requires the candidate prepared bundle.")
 } catch (cause) {
-  failures.push(`Correction preflight inspection failed: ${cause instanceof Error ? cause.message : String(cause)}`)
+  failures.push(`Correction preflight inspection failed: ${cause instanceof Error && cause.message.length > 0 ? cause.message : JSON.stringify(cause)}`)
 } finally {
   await api.dispose()
 }

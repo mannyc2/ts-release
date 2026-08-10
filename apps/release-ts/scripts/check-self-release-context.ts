@@ -50,7 +50,7 @@ try {
     if (!inspection.preparations.some((preparation) => preparation.id.toString() === "preparation:agents")) failures.push("Inspection omitted the agent preparation.")
   }
 } catch (cause) {
-  failures.push(`Public inspect failed: ${cause instanceof Error ? cause.message : String(cause)}`)
+  failures.push(`Public inspect failed: ${cause instanceof Error && cause.message.length > 0 ? cause.message : JSON.stringify(cause)}`)
 } finally {
   await api.dispose()
 }

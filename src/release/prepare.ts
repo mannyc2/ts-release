@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
-import { cpSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync } from "node:fs"
+import { cpSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync } from "node:fs"
 import { basename, join } from "node:path"
 import { tmpdir } from "node:os"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
@@ -76,6 +76,14 @@ const stageWorkspace = (workspace: string): string => {
       if (excluded(entry)) continue
       const source = join(sourceRoot, entry)
       assertInSource(source)
+      // Bun's isolated linker keeps transitive workspace dependencies in its
+      // hidden store. Copying node_modules dereferences the public links but
+      // loses that store topology in the stage, so preserve the dependency
+      // tree as a contained read-only-by-contract input while staging source.
+      if (entry === "node_modules") {
+        symlinkSync(source, join(stageRoot, entry), "dir")
+        continue
+      }
       cpSync(source, join(stageRoot, entry), {
         recursive: true,
         dereference: true,

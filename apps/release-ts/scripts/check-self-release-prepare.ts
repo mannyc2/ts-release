@@ -37,7 +37,7 @@ try {
     actionReference: candidateActionReference(), evidenceState: "contract-tested"
   })
 } catch (cause) {
-  report("self-release-prepare-report/v1", [`Public prepare failed: ${cause instanceof Error ? cause.message : String(cause)}`], { evidenceState: "contract-tested" })
+  report("self-release-prepare-report/v1", [`Public prepare failed: ${cause instanceof Error && cause.message.length > 0 ? cause.message : JSON.stringify(cause)}`], { evidenceState: "contract-tested" })
 } finally {
   await api.dispose()
 }

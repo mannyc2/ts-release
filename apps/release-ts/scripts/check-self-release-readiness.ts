@@ -29,7 +29,7 @@ try {
   if (!("preparations" in inspection)) failures.push("Readiness inspection did not return the authored graph projection.")
   else if (inspection.publications.length !== 2) failures.push(`Readiness expected npm and GitHub publication intents, found ${inspection.publications.length}.`)
 } catch (cause) {
-  failures.push(`Readiness inspection failed: ${cause instanceof Error ? cause.message : String(cause)}`)
+  failures.push(`Readiness inspection failed: ${cause instanceof Error && cause.message.length > 0 ? cause.message : JSON.stringify(cause)}`)
 } finally {
   await api.dispose()
 }

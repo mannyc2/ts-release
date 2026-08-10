@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
 import { cpSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync } from "node:fs"
-import { basename, join } from "node:path"
+import { basename, join, relative } from "node:path"
 import { tmpdir } from "node:os"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
 import { tarGz, zip, type ArchiveEntry } from "../drivers/archive.js"
@@ -88,6 +88,7 @@ const stageWorkspace = (workspace: string): string => {
         recursive: true,
         dereference: true,
         filter: (candidate) => {
+          if (relative(sourceRoot, candidate).split(/[\\/]/u).includes("node_modules")) return false
           assertInSource(candidate)
           return true
         }

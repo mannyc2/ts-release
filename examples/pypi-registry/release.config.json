@@ -14,12 +14,5 @@
       "format": "file"
     }
   ],
-  "publish": {
-    "pypi": {
-      "ids": [
-        "wheel"
-      ],
-      "repositoryUrl": "https://test.pypi.org/legacy/"
-    }
-  }
+  "publish": {}
 }

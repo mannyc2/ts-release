@@ -1,87 +1,83 @@
 # ts-release specification
 
-This document defines the public lifecycle boundary and the durable prepared
-release representation.
+## 1. Public operations
 
-## 1. Public lifecycle
+The root package exports `inspect`, `prepare`, `publish`, `release`, and
+`correct`, plus `makeReleaseApi`, host layers, configuration helpers, and
+tagged input/runtime errors. The constructed API adds `dispose` for its host
+runtime. CLI and Action boundaries call these same operations.
 
-The root runtime exports are exactly:
+## 2. Authored and verified forms
 
-- `correct`
-- `defineRelease`
-- `encodeResolvedConfig`
-- `inspect`
-- `makeReleaseApi`
-- `prepare`
-- `publish`
-- `release`
-- `ReleaseInputError`
-- `ReleaseRuntime`
-- `resolveConfig`
-- `unsupportedExecutionHost`
+Authored configuration is decoded strictly. Resolution combines it with
+observed package and Git facts; disagreement is an error. Verified context
+records the clean source commit/tree and package-manifest digest.
 
-The constructed API exposes `inspect`, `prepare`, `publish`, `release`,
-`correct`, and `dispose`. `release` prepares and publishes automatically.
+## 3. Derived graph
 
-## 2. Durable boundary
+The graph contains build, archive, checksum, catalog, command check, command
+artifact, npm publication, and GitHub publication primitives. It is sorted and
+linked inside one process. It is never serialized as authority and never
+crosses a runner boundary.
 
-`prepared-release/v1` is a canonical JSON manifest plus content-addressed
-blobs. The manifest records verified source identity, project identity,
-artifact digests, and provider publication subjects. A publisher accepts only a
-canonical manifest and matching blobs.
+## 4. Prepared release
 
-## 3. Observation
+`prepared-release/v1` is canonical JSON plus content-addressed blobs. The
+manifest records source identity, project coordinates, artifact IDs, exact
+sizes/digests/media types, and provider subjects. A prepared store refuses
+missing, altered, extra, symlinked, or non-canonical content.
 
-Publication observes the configured destination before mutation and observes
-again after mutation. Equivalent destinations converge without a write;
-conflicts and inconclusive observations block publication. Provider correction
-uses an explicit correction intent bound to the prepared digest.
+## 5. Observation
 
-## 4. Commands
+Publication is subject-based. Every subject is observed before mutation and
+afterward. Equivalent subjects are idempotent skips; safe absence permits one
+mutation; conflict or inconclusive state blocks. Provider correction is typed,
+forward, and bound to the prepared digest.
 
-The CLI commands are exactly `init`, `inspect`, `prepare`, `publish`, `release`,
-and `correct`. The Action invokes the automatic `release` operation and emits
-the prepared bundle path and status.
+## 6. Native preparation
 
-## 5. Host boundary
+`CommandCheck` runs trusted argv code against declared inputs. `CommandArtifact`
+generates or transforms declared regular-file outputs. `builder: "command"`
+lowers to the same primitive. Only declared environment names are available;
+there is no generic hook or remote-publisher escape hatch.
 
-Node and Bun layers provide the source observer, process runner, HTTP client,
-and host filesystem services. The root library is host-independent until a
-caller supplies one of those layers.
+## 7. Hosts
 
-## 6. Error contract
+The supported execution hosts are Linux and macOS. Bun cross-build targets may
+include Windows artifacts. Native Windows execution is not supported by this
+candidate. The capability registry owns the machine-checked host/target table.
 
-Failures remain tagged Effect errors across the API boundary. No public helper
-flattens a structured error into a generic string.
+## 8. Error and safety contract
 
-## 7. Verification
+Structured Effect errors cross the library boundary. Filesystem paths are
+contained and symlink-checked. Secrets are supplied through host layers and
+redacted at process output boundaries. The Action validates its inputs before
+calling the library.
 
-The repository's checks cover schema decoding, graph linking, staged native
-preparation, prepared-store integrity, provider observation, correction, CLI
-cutover, Action cutover, import rules, tree shaking, and package exports.
+## 9. Recovery limits
 
-## 8. Non-goals
+Rerun the same prepared bytes. A partial release is possible; atomic rollback,
+deletion, exactly-once publication, and universal correction are not claimed.
+Announcements and unsupported providers remain outside the retained product.
 
-The engine does not transport host review state, provide a generic rollback,
-maintain an execution ledger, or expose compatibility aliases for retired
-lifecycle protocols.
+## 10. Product evidence
 
-## 9. Release program
+[`docs/capabilities.md`](docs/capabilities.md) is generated from the executable
+registry joined one-to-one with [`docs/capability-evidence.json`](docs/capability-evidence.json).
+The evidence file records dated observations and sanitized references only; it
+cannot configure runtime support.
 
-The coordinated implementation and certification record is maintained in
-`docs/release-program/`.
+## 11. Distribution
 
-## 10. License
+The canonical package identity is `@mannyc1/ts-release`. The canonical Action
+is the monorepo subpath `apps/ts-release-action`; public consumer documents
+bind its immutable candidate version only during candidate certification.
 
-MIT.
+## 12. Non-goals
 
-## 11. Status
-
-The current source is the authoritative implementation.
-
-## 12. Compatibility
-
-There is no compatibility reader for obsolete lifecycle documents.
+The engine does not transport host-gate identity, persist a graph ledger,
+provide generic lifecycle hooks, or claim to be a language-specific clone of
+another release product.
 
 ## 13. Root export audit
 
@@ -100,4 +96,6 @@ The root runtime exports are exactly:
 - `resolveConfig`
 - `unsupportedExecutionHost`
 
-## 14. End
+## 14. License
+
+MIT.

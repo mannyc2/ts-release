@@ -38,15 +38,14 @@
       },
       "access": "public",
       "provenance": true
-    },
-    "homebrew": {
-      "repository": "owner/homebrew-tap",
-      "formulaName": "release-example-multi-target",
-      "formulaPath": ".release/generated/release-example-multi-target.rb",
-      "ids": [
-        "archive"
-      ],
-      "installPath": "bin/release-example-multi-target"
     }
-  }
+  },
+  "catalogs": [
+    {
+      "id": "homebrew-formula",
+      "repository": "owner/homebrew-tap",
+      "file": "Formula/release-example-multi-target.rb",
+      "content": "class ReleaseExampleMultiTarget < Formula\n  version \"{version}\"\nend\n"
+    }
+  ]
 }

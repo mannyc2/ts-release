@@ -49,23 +49,6 @@
       "tokenEnv": "GH_TOKEN",
       "draft": true,
       "prerelease": false
-    },
-    "homebrew": {
-      "repository": "owner/homebrew-portable-example",
-      "formulaName": "portable-example",
-      "formulaPath": ".release/generated/portable-example.rb",
-      "ids": [
-        "cli-darwin-arm64",
-        "cli-darwin-x64"
-      ]
-    },
-    "scoop": {
-      "repository": "owner/scoop-portable-example",
-      "manifestName": "portable-example",
-      "manifestPath": ".release/generated/portable-example.json",
-      "ids": [
-        "cli-windows-x64"
-      ]
     }
   }
 }

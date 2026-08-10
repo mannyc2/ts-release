@@ -17,16 +17,12 @@
       "format": "zip"
     }
   ],
-  "publish": {
-    "scoop": {
+  "catalogs": [
+    {
+      "id": "scoop-manifest",
       "repository": "owner/scoop-bucket",
-      "manifestName": "release-example-scoop",
-      "manifestPath": ".release/generated/release-example-scoop.json",
-      "ids": [
-        "archive"
-      ],
-      "url": "https://github.com/owner/release-example-scoop/releases/download/v0.1.0/release-example-scoop-0.1.0.zip",
-      "bin": "release-example-scoop.exe"
+      "file": "bucket/release-example-scoop.json",
+      "content": "{\"version\":\"{version}\",\"homepage\":\"https://github.com/owner/release-example-scoop\"}\n"
     }
-  }
+  ]
 }

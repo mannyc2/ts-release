@@ -19,7 +19,7 @@ export const renderConfigSchema = (): string => {
       $id: "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
       title: "ts-release configuration",
       description:
-        "The authored configuration: the canonical shape with the facts a repository can observe made optional. `ts-release plan --from-git` resolves it into the canonical value before planning.",
+        "The authored configuration: the canonical shape with the facts a repository can observe made optional. ts-release resolves it against the repository during inspect, prepare, publish, or release.",
       ...document.schema,
       $defs: document.definitions
     }, null, 2)

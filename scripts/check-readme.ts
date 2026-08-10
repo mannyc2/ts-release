@@ -1,9 +1,12 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import { writeFileSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import * as ts from "typescript"
+import { AuthoredConfig } from "../src/resolve/authored.js"
+import { commandNames } from "../apps/release-ts/src/cli/commands.js"
 import { makeRepoScratchDirectory, removeScratchDirectory } from "./lib/scratch-workspace.js"
 
 interface CodeBlock {
@@ -118,7 +121,10 @@ const checkJsonBlock = Effect.fn("scripts.checkReadme.checkJsonBlock")(function*
   return yield* Effect.sync(() => {
     const failures: Array<string> = []
     try {
-      JSON.parse(block.content)
+      const value = JSON.parse(block.content) as unknown
+      if (isRecord(value) && Object.hasOwn(value, "project")) {
+        Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })(value)
+      }
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause)
       failures.push(`README.md:${block.contentStartLine}:1 invalid JSON snippet: ${message}`)
@@ -126,6 +132,29 @@ const checkJsonBlock = Effect.fn("scripts.checkReadme.checkJsonBlock")(function*
     return failures
   })
 })
+
+const checkShellBlock = (block: CodeBlock): ReadonlyArray<string> => {
+  const failures: Array<string> = []
+  for (const match of block.content.matchAll(/\bts-release\s+([a-z-]+)/gu)) {
+    const command = match[1]
+    if (command !== undefined && !commandNames.includes(command as typeof commandNames[number])) {
+      failures.push(`README.md:${block.contentStartLine}:1 unknown ts-release command ${command}`)
+    }
+  }
+  return failures
+}
+
+const checkYamlBlock = (block: CodeBlock): ReadonlyArray<string> => {
+  const failures: Array<string> = []
+  if (block.content.includes("mannyc2/ts-release/apps/ts-release-action@") &&
+    !block.content.includes("mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__")) {
+    failures.push(`README.md:${block.contentStartLine}:1 Action examples must use __TS_RELEASE_ACTION_REF__`)
+  }
+  if (/mannyc2\/ts-release-action@/u.test(block.content)) {
+    failures.push(`README.md:${block.contentStartLine}:1 Action examples must use the monorepo subpath`)
+  }
+  return failures
+}
 
 const formatTypeScriptDiagnostic = (
   sourceFile: ts.SourceFile,
@@ -225,6 +254,14 @@ const checkCodeBlock = Effect.fn("scripts.checkReadme.checkCodeBlock")(function*
   if (block.language === "json") {
     const failures = yield* checkJsonBlock(block)
     return { failures, packageImportCount: 0 }
+  }
+
+  if (block.language === "sh" || block.language === "bash" || block.language === "shell") {
+    return { failures: checkShellBlock(block), packageImportCount: 0 }
+  }
+
+  if (block.language === "yaml" || block.language === "yml") {
+    return { failures: checkYamlBlock(block), packageImportCount: 0 }
   }
 
   if (block.language === "ts" || block.language === "typescript") {

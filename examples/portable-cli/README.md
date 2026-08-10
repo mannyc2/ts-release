@@ -1,13 +1,15 @@
 # Portable CLI example
 
-This fixture plans one CLI for GitHub Release assets, npm, Homebrew, Scoop,
-and PyPI wrapper wheels.
+This fixture demonstrates a Bun-built CLI with retained Linux, macOS, and
+Windows artifact targets. ts-release runs on Linux and macOS; Windows is an
+artifact target, not an execution-host claim.
+
+Use the public path from the repository root:
 
 ```sh
-bun ../../apps/release-ts/src/cli/main.ts plan \
-  --config release.config.json \
-  --out release-plan.json
+ts-release inspect --config examples/portable-cli/release.config.json
+ts-release prepare --config examples/portable-cli/release.config.json
 ```
 
-Files under `artifacts/` are tiny checked fixtures. The reviewed plan owns any
-real build and materialization operations.
+The prepared bundle contains exact executable bytes, archives, and checksum
+data when those effects are configured.

@@ -36,15 +36,14 @@
       "tokenEnv": "GH_TOKEN",
       "draft": true,
       "prerelease": false
-    },
-    "homebrew": {
-      "repository": "owner/homebrew-tap",
-      "formulaName": "pkg",
-      "formulaPath": ".release/generated/pkg.rb",
-      "ids": [
-        "archive"
-      ],
-      "installPath": "bin/pkg"
     }
-  }
+  },
+  "catalogs": [
+    {
+      "id": "homebrew-formula",
+      "repository": "owner/homebrew-tap",
+      "file": "Formula/pkg.rb",
+      "content": "class Pkg < Formula\n  version \"{version}\"\nend\n"
+    }
+  ]
 }

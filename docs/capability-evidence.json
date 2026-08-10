@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "ts-release-capability-evidence/v1",
+  "records": [
+    { "id": "build.bun-compile", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/core/release-graph.test.ts" }] },
+    { "id": "artifact.archive", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/core/prepared-release.test.ts" }] },
+    { "id": "artifact.checksum", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/core/prepared-release.test.ts" }] },
+    { "id": "publish.npm", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/publication/npm-adapter.test.ts" }] },
+    { "id": "publish.github", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/publication/github-adapter.test.ts" }] },
+    { "id": "catalog.render", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/publication/catalog-git.test.ts" }] },
+    { "id": "publish.catalog-git", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/publication/catalog-git.test.ts" }] },
+    { "id": "correct.npm-deprecation", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/correction/npm-deprecate.test.ts" }] },
+    { "id": "correct.catalog-state", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/correction/catalog-state.test.ts" }] },
+    { "id": "correct.github-release", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/correction/github-release.test.ts" }], "note": "Explicitly unsupported until a durable provider correction marker exists." },
+    { "id": "correct.pypi-file-yank", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/correction/pypi-file-yank.test.ts" }], "note": "Explicitly unsupported for arbitrary configured indexes." }
+  ]
+}

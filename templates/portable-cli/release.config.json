@@ -48,23 +48,6 @@
       "tokenEnv": "GH_TOKEN",
       "draft": true,
       "prerelease": false
-    },
-    "homebrew": {
-      "repository": "owner/homebrew-tap",
-      "formulaName": "pkg",
-      "formulaPath": ".release/generated/pkg.rb",
-      "ids": [
-        "cli-darwin-arm64",
-        "cli-darwin-x64"
-      ]
-    },
-    "scoop": {
-      "repository": "owner/scoop-bucket",
-      "manifestName": "pkg",
-      "manifestPath": ".release/generated/pkg.json",
-      "ids": [
-        "cli-windows-x64"
-      ]
     }
   }
 }

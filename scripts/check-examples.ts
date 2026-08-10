@@ -21,9 +21,7 @@ walk(resolve(root, "templates"))
 
 for (const path of configs) {
   try {
-    Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })(
-      JSON.parse(readFileSync(path, "utf8")) as unknown
-    )
+    Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })(JSON.parse(readFileSync(path, "utf8")) as unknown)
   } catch (cause) {
     throw new Error(`${path}: authored configuration is invalid: ${String(cause)}`)
   }
@@ -37,6 +35,13 @@ for (const name of workflows) {
   const text = readFileSync(join(workflowRoot, name), "utf8")
   if (/\bcommand:\s*(?:plan|apply|doctor|build|verify)\b/u.test(text)) {
     throw new Error(`${name}: workflow uses a removed lifecycle command.`)
+  }
+  if (text.includes("mannyc2/ts-release/apps/ts-release-action@") &&
+    !text.includes("mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__")) {
+    throw new Error(`${name}: Action reference must use __TS_RELEASE_ACTION_REF__ until candidate certification.`)
+  }
+  if (/mannyc2\/ts-release-action@/u.test(text)) {
+    throw new Error(`${name}: Action reference uses the retired standalone mirror.`)
   }
 }
 

@@ -1,78 +1,128 @@
 # ts-release
 
-`ts-release` is a TypeScript release engine for clean, reproducible artifact
-preparation and provider publication. Automatic release is the default; a host
-may add its own review policy without sending review state through the engine.
-
-## Install
+ts-release automatically prepares and publishes a configured software release.
+The normal path is one command:
 
 ```sh
-bun add -d @mannyc1/ts-release
+ts-release init
+ts-release release --config release.config.json
 ```
 
-The package exposes Node and Bun host layers. Its published command bundle runs
-under Node 20 or newer.
+`release` observes the clean source checkout, runs declared local preparation,
+stores one exact `prepared-release/v1` bundle, observes each destination, and
+publishes only subjects that are absent and safely mutable. An external host
+may place a gate around the publication job; that policy does not become
+engine state.
 
-## Lifecycle
+## Smallest authored configuration
 
-The root API has five operations and one constructor:
+`ts-release init` writes the facts a repository can observe as optional. A
+minimal package-and-GitHub release can therefore keep the authored file small:
+
+```json
+{
+  "project": {},
+  "versionFrom": "manifest",
+  "npmPackage": { "path": "." },
+  "publish": { "npm": {}, "github": {} }
+}
+```
+
+The resolver fills package name, version, tag, commit, and repository from the
+workspace when those facts agree. Deliberate overrides remain explicit, and a
+disagreement stops instead of guessing.
+
+## What is proven
+
+The [executable capability inventory](docs/capabilities.md) is generated from
+the runtime registry and dated evidence. The current retained slice includes
+Bun builds for Linux, macOS, and Windows artifact targets; deterministic
+archives and checksums; npm and GitHub publication adapters; managed catalog
+rendering and Git delivery; and npm/catalog forward correction. Unsupported
+correction variants remain visible as explicit boundaries.
+
+ts-release runs on Linux and macOS. Its Bun builder can produce Windows
+artifacts. It does not claim native Windows execution or native Windows tools.
+
+## Optional preparation boundary
+
+Use the two-operation form when a host must transfer bytes between jobs:
+
+```sh
+ts-release prepare --config release.config.json
+ts-release inspect --prepared .release/ts-release/prepared/<manifest-digest>
+ts-release publish .release/ts-release/prepared/<manifest-digest>
+```
+
+The publisher accepts only the complete prepared bundle. It does not rebuild
+from source or accept authored configuration as a publication fallback.
+
+Local preparation uses two native primitives. `CommandCheck` is a pass/fail
+gate; `CommandArtifact` generates or transforms declared regular-file bytes.
+Use artifact input/output references for data flow. Trusted argv commands may
+read only the declared environment names and are not a sandbox or a generic
+remote-effect mechanism. Durable test or compliance evidence must be a
+declared artifact. See [the preparation guide](docs/preparation.md).
+
+## Recovery
+
+Rerun the same prepared bundle. Equivalent subjects are skipped, a safe absent
+subject may be created, and conflicting or inconclusive observation stops
+without mutation. A release may partially succeed; publication is not an
+atomic transaction and there is no universal rollback. Provider-specific
+forward correction is explicit and repeatable where the capability inventory
+proves it. Announcements, deletion, and generic inverse operations are not
+configured destinations.
+
+## GitHub Actions
+
+The repository workflow prepares and uploads the complete bundle in an
+uncredentialed job, then downloads, verifies, and publishes it in a second
+job. Copy [`templates/github-actions/release.yml`](templates/github-actions/release.yml)
+for the automatic path. If a host gate is required, use the identical
+[`reviewed-release.yml`](templates/github-actions/reviewed-release.yml) flow
+with one protected environment on publication.
+
+Consumer templates bind the Action only after candidate certification:
+
+```yaml
+uses: mannyc2/ts-release/apps/ts-release-action@__TS_RELEASE_ACTION_REF__
+```
+
+Plan 221 replaces that token with the exact immutable candidate version before
+packaging. No public document may invent a floating Action tag.
+
+## Library API
+
+The root package exposes the same lifecycle used by the CLI and Action:
 
 ```ts
 import { makeReleaseApi } from "@mannyc1/ts-release"
 import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 
 const api = makeReleaseApi(NodeReleaseLayer)
-const result = await api.release({
-  config: { project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" } },
-  workspace: process.cwd()
-})
+const result = await api.release({ config: { project: {}, versionFrom: "manifest" }, workspace: process.cwd() })
 await api.dispose()
+console.log(result.prepared.directory)
 ```
 
-The operations are:
+The public operations are `inspect`, `prepare`, `publish`, `release`, and
+`correct`. The derived graph is ephemeral; the prepared manifest and blobs are
+the durable cross-process boundary.
 
-- `inspect` observes a workspace configuration or reads a prepared bundle.
-- `prepare` observes source, executes declared native preparations, and stores
-  an exact `prepared-release/v1` bundle.
-- `publish` accepts only that prepared bundle and observes destinations before
-  provider mutations.
-- `release` composes `prepare` and `publish` automatically.
-- `correct` consumes a prepared bundle and one canonical provider-specific
-  correction intent.
+## Agent integration and development
 
-The derived release graph is ephemeral and recomputable. The prepared bundle's
-canonical manifest and content-addressed blobs are the durable cross-process
-boundary.
-
-## CLI
+The single tracked agent source owner is
+[`apps/ts-release-agents`](apps/ts-release-agents/). Generated provider-native
+packages are build output under `.release/agents/` and are captured by the
+self-release preparation.
 
 ```sh
-ts-release init
-ts-release inspect --config release.config.json
-ts-release prepare --config release.config.json
-ts-release publish .release/ts-release/prepared/<manifest-digest>
-ts-release release --config release.config.json
-ts-release correct <prepared-bundle> <correction-intent.json>
-```
-
-`release` is the normal one-command path. `prepare` and `publish` are useful
-when a host intentionally transfers exact prepared bytes between processes.
-
-## Configuration
-
-The authored configuration schema is committed at
-`schema/release-config.schema.json`. Examples and templates live under
-`examples/` and `templates/`. The resolver accepts authored values plus
-observed source facts and refuses disagreements.
-
-## Development
-
-```sh
-bun install
-bun run check
-bun test
+bun install --frozen-lockfile
 bun run check:portable
+bun test
 ```
 
-Architecture notes are in [ARCHITECTURE.md](ARCHITECTURE.md). The release
-program's durable implementation record is under `docs/release-program/`.
+Architecture is documented in [ARCHITECTURE.md](ARCHITECTURE.md), the precise
+boundary in [SPEC.md](SPEC.md), and contributor operations in
+[docs/release-runbook.md](docs/release-runbook.md).

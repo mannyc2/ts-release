@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
   "title": "ts-release configuration",
-  "description": "The authored configuration: the canonical shape with the facts a repository can observe made optional. `ts-release plan --from-git` resolves it into the canonical value before planning.",
+  "description": "The authored configuration: the canonical shape with the facts a repository can observe made optional. ts-release resolves it against the repository during inspect, prepare, publish, or release.",
   "$ref": "#/$defs/AuthoredConfig",
   "$defs": {
     "AuthoredProject": {

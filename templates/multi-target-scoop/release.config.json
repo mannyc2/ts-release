@@ -37,15 +37,14 @@
       "tokenEnv": "GH_TOKEN",
       "draft": true,
       "prerelease": false
-    },
-    "scoop": {
-      "repository": "owner/scoop-bucket",
-      "manifestName": "pkg",
-      "manifestPath": ".release/generated/pkg.json",
-      "ids": [
-        "archive"
-      ],
-      "bin": "pkg.exe"
     }
-  }
+  },
+  "catalogs": [
+    {
+      "id": "scoop-manifest",
+      "repository": "owner/scoop-bucket",
+      "file": "bucket/pkg.json",
+      "content": "{\"version\":\"{version}\"}\n"
+    }
+  ]
 }

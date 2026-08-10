@@ -1,29 +1,35 @@
 # Release runbook
 
-The normal release path is one protected workflow job invoking the Action with
-the repository configuration. The engine observes source, prepares an exact
-bundle, observes destinations, and publishes.
+The default path is automatic: prepare one exact bundle, observe configured
+destinations, publish safe subjects, and retain the bundle for recovery.
 
-Before a release:
+Before a local release:
 
 ```sh
 bun install --frozen-lockfile
-bun run check:release
+bun run check:portable
 bun run build
 bun run check:cli-bundle
 bun run check:action-bundle
 ```
 
-Review is supplied by the host environment when required. It is not encoded in
-the prepared bundle and is not an engine input.
-
-For a local byte boundary, run:
+Run the CLI path:
 
 ```sh
-bun run cli prepare --config release.config.json
-bun run cli inspect --prepared .release/ts-release/prepared/<manifest-digest>
-bun run cli publish .release/ts-release/prepared/<manifest-digest>
+ts-release inspect --config apps/release-ts/release.config.json
+ts-release release --config apps/release-ts/release.config.json
 ```
 
-If a provider needs correction, create a canonical correction intent bound to
-the prepared digest and use `correct` with the same bundle.
+For a host boundary, use `prepare`, transfer the complete directory without
+rebuilding, inspect it on the destination runner, and then call `publish`.
+The repository workflow and the templates in `templates/github-actions/` show
+the durable artifact handoff. A host environment may gate publication; its
+identity and consent remain in the host deployment record.
+
+If publication stops, rerun `publish` with the same prepared directory. Stop
+on conflict or inconclusive observation and resolve the provider state through
+its typed correction path when one is supported. Do not delete or recreate a
+remote coordinate as a generic recovery action.
+
+Agent distribution is checked with `bun run check:agents`; generated output is
+captured as declared preparation artifacts, not stored as source.

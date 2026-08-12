@@ -1,12 +1,19 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { createHash } from "node:crypto"
 import { encodeCanonicalJson } from "../model/canonical.js"
-import { Digest } from "../model/primitives.js"
+import { digestEquals, sha256Digest, sha512Digest } from "../model/digest.js"
 import { encodePreparedRelease } from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
 import { publishSubject, type PublicationOutcome, type PublicationSubject } from "../publication/observation.js"
-import { encodeCorrectionIntent, type CatalogCorrection, type CorrectionIntent, type GithubReleaseCorrection, type NpmDeprecationCorrection, type PypiFileYankCorrection } from "./intent.js"
+import {
+  CorrectionIntentV2,
+  encodeCorrectionIntent,
+  type CatalogCorrection,
+  type CorrectionIntent,
+  type GithubReleaseCorrection,
+  type NpmDeprecationCorrection,
+  type PypiFileYankCorrection
+} from "./intent.js"
 
 export class CorrectionValidationError
   extends Schema.TaggedErrorClass<CorrectionValidationError>()("CorrectionValidationError", {
@@ -19,8 +26,7 @@ export class CorrectionUnsupported extends Schema.TaggedClass<CorrectionUnsuppor
 
 export type CorrectionOutcome = PublicationOutcome | CorrectionUnsupported
 
-const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
-const preparedDigest = (bundle: PreparedBundle): Digest => Digest.make(digest(encodePreparedRelease(bundle.manifest)))
+const preparedDigest = (bundle: PreparedBundle) => sha256Digest(encodePreparedRelease(bundle.manifest))
 const findPublication = (bundle: PreparedBundle, id: string) => bundle.manifest.publications.find((publication) => publication.id.toString() === id)
 const hasArtifact = (bundle: PreparedBundle, id: string): boolean => bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === id)
 
@@ -33,8 +39,10 @@ const verifyNpm = (bundle: PreparedBundle, correction: NpmDeprecationCorrection)
   const artifact = bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId)
   const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString())
   if (bytes === undefined) throw new Error("npm correction subject has no verified prepared tarball.")
-  const integrity = `sha512-${createHash("sha512").update(bytes).digest("base64")}`
-  if (integrity !== correction.tarballIntegrity) throw new Error("npm correction tarball integrity is not the prepared artifact integrity.")
+  const integrity = sha512Digest(bytes)
+  if (!digestEquals(integrity, correction.tarballIntegrity)) {
+    throw new Error("npm correction tarball integrity is not the prepared artifact integrity.")
+  }
 }
 
 const verifyGithub = (bundle: PreparedBundle, correction: GithubReleaseCorrection): void => {
@@ -58,7 +66,9 @@ const verifyPypi = (_bundle: PreparedBundle, _correction: PypiFileYankCorrection
 
 export const verifyCorrectionIntent = (bundle: PreparedBundle, intent: CorrectionIntent): void => {
   encodeCorrectionIntent(intent)
-  if (preparedDigest(bundle) !== intent.preparedDigest) throw new Error("Correction intent is bound to a different prepared release.")
+  if (!digestEquals(preparedDigest(bundle), intent.preparedDigest)) {
+    throw new Error("Correction intent is bound to a different prepared release.")
+  }
   switch (intent.correction._tag) {
     case "NpmDeprecationCorrection": return verifyNpm(bundle, intent.correction)
     case "GithubReleaseCorrection": return verifyGithub(bundle, intent.correction)
@@ -96,5 +106,11 @@ export const correctPreparedRelease = Effect.fn("correctPreparedRelease")(functi
   return yield* publishSubject(input.subject)
 })
 
-export const correctionEvidenceProjection = (intent: CorrectionIntent): string =>
-  encodeCanonicalJson({ correctionId: intent.correctionId, preparedDigest: intent.preparedDigest, provider: providerOf(intent) })
+export const correctionEvidenceProjection = (intent: CorrectionIntent): string => {
+  const encoded = Schema.encodeSync(CorrectionIntentV2)(intent)
+  return encodeCanonicalJson({
+    correctionId: encoded.correctionId,
+    preparedDigest: encoded.preparedDigest,
+    provider: providerOf(intent)
+  })
+}

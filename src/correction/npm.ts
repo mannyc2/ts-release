@@ -1,8 +1,17 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { createHash } from "node:crypto"
 import type { PreparedBundle } from "../release/prepared-store.js"
 import type { PreparedNpmPublication } from "../release/prepared.js"
+import {
+  type Sha1Digest,
+  type Sha512Digest,
+  digestEquals,
+  formatNpmSha1Shasum,
+  formatNpmSha512Sri,
+  parseNpmSha1Shasum,
+  parseNpmSha512Sri,
+  sha1Digest
+} from "../model/digest.js"
 import { NonEmptyName } from "../model/primitives.js"
 import { authHeaders, bodyJson, type PublicationHttp } from "../publication/http.js"
 import {
@@ -23,7 +32,11 @@ export type NpmDeprecationProcess = {
 export class NpmCorrectionError
   extends Schema.TaggedErrorClass<NpmCorrectionError>()("NpmCorrectionError", { reason: Schema.String }) {}
 
-type RegistryFacts = { readonly integrity?: string, readonly shasum?: string, readonly deprecated?: string }
+type RegistryFacts = {
+  readonly integrity?: Sha512Digest
+  readonly shasum?: Sha1Digest
+  readonly deprecated?: string
+}
 const registryFacts = (value: unknown): RegistryFacts | undefined => {
   if (typeof value !== "object" || value === null) return undefined
   const record = value as { readonly dist?: unknown, readonly deprecated?: unknown }
@@ -33,13 +46,16 @@ const registryFacts = (value: unknown): RegistryFacts | undefined => {
   if (dist.integrity !== undefined && typeof dist.integrity !== "string") return undefined
   if (dist.shasum !== undefined && typeof dist.shasum !== "string") return undefined
   if (dist.integrity === undefined && dist.shasum === undefined) return undefined
-  return {
-    ...(dist.integrity === undefined ? {} : { integrity: dist.integrity }),
-    ...(dist.shasum === undefined ? {} : { shasum: dist.shasum }),
-    ...(record.deprecated === undefined ? {} : { deprecated: record.deprecated })
+  try {
+    return {
+      ...(dist.integrity === undefined ? {} : { integrity: parseNpmSha512Sri(dist.integrity) }),
+      ...(dist.shasum === undefined ? {} : { shasum: parseNpmSha1Shasum(dist.shasum) }),
+      ...(record.deprecated === undefined ? {} : { deprecated: record.deprecated })
+    }
+  } catch {
+    return undefined
   }
 }
-const sha1 = (bytes: Uint8Array): string => createHash("sha1").update(bytes).digest("hex")
 const versionUrl = (correction: NpmDeprecationCorrection): string =>
   `${correction.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(correction.packageName)}/${encodeURIComponent(correction.version)}`
 
@@ -64,9 +80,21 @@ export const makeNpmDeprecationSubject = (
     }
     if (facts === undefined) return Inconclusive.make({ subject, reason: "Registry correction metadata was malformed or omitted integrity facts." })
     const differences: ObservationDifference[] = []
-    const expectedShasum = sha1(bytes)
-    if (facts.integrity !== undefined && facts.integrity !== correction.tarballIntegrity) differences.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: correction.tarballIntegrity, observed: facts.integrity }))
-    if (facts.shasum !== undefined && facts.shasum !== expectedShasum) differences.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum, observed: facts.shasum }))
+    const expectedShasum = sha1Digest(bytes)
+    if (facts.integrity !== undefined && !digestEquals(facts.integrity, correction.tarballIntegrity)) {
+      differences.push(ObservationDifference.make({
+        field: NonEmptyName.make("integrity"),
+        expected: formatNpmSha512Sri(correction.tarballIntegrity),
+        observed: formatNpmSha512Sri(facts.integrity)
+      }))
+    }
+    if (facts.shasum !== undefined && !digestEquals(facts.shasum, expectedShasum)) {
+      differences.push(ObservationDifference.make({
+        field: NonEmptyName.make("shasum"),
+        expected: formatNpmSha1Shasum(expectedShasum),
+        observed: formatNpmSha1Shasum(facts.shasum)
+      }))
+    }
     if (differences.length > 0) return Conflict.make({ subject, differences })
     if (facts.deprecated === correction.message) return Equivalent.make({ subject })
     if (facts.deprecated === undefined || facts.deprecated.length === 0) return NeedsMutation.make({ subject, precondition: NonEmptyName.make("deprecation-absent") })

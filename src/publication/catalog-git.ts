@@ -1,9 +1,9 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
-import { createHash } from "node:crypto"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
+import { Sha256Digest, formatSha256Hex, sha256Digest } from "../model/digest.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
-import { Digest, NonEmptyName, SafeRelativePath, Version } from "../model/primitives.js"
+import { NonEmptyName, SafeRelativePath, Version } from "../model/primitives.js"
 import {
   Applied, Conflict, Equivalent, Inconclusive, NeedsMutation, ObservationDifference,
   OutcomeUnknown, PublicationError, Rejected, type MutationResult, type Observation, type PublicationSubject
@@ -23,9 +23,9 @@ export class CatalogFileIntent extends Schema.Class<CatalogFileIntent>("CatalogF
 }) {}
 
 export class CatalogManagedState extends Schema.Class<CatalogManagedState>("CatalogManagedState")({
-  schemaVersion: Schema.Literal("ts-release/catalog-state/v1"), version: Version,
-  manifestDigest: Digest, status: Schema.Literals(["active", "corrected", "withdrawn", "superseded"]),
-  correctionId: Schema.optionalKey(Digest), reason: Schema.optionalKey(Schema.String),
+  schemaVersion: Schema.Literal("ts-release/catalog-state/v2"), version: Version,
+  manifestDigest: Sha256Digest, status: Schema.Literals(["active", "corrected", "withdrawn", "superseded"]),
+  correctionId: Schema.optionalKey(Sha256Digest), reason: Schema.optionalKey(Schema.String),
   replacement: Schema.optionalKey(NonEmptyName)
 }) {}
 export const encodeCatalogManagedState = (value: CatalogManagedState): Uint8Array =>
@@ -58,7 +58,7 @@ export type CatalogRepositoryTransport = {
   readonly write: (request: CatalogRepositoryWrite) => Effect.Effect<{ readonly revision: string }, PublicationError>
 }
 
-const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
+const digest = (bytes: Uint8Array): string => formatSha256Hex(sha256Digest(bytes))
 const equal = (left: Uint8Array | undefined, right: Uint8Array): boolean => left !== undefined && left.length === right.length && left.every((value, index) => value === right[index])
 const state = (bytes: Uint8Array | undefined): CatalogManagedState | undefined => {
   return bytes === undefined ? undefined : decodeCatalogManagedState(bytes)

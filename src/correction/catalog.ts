@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect"
 import type { PreparedBundle } from "../release/prepared-store.js"
+import { digestEquals, formatSha256Hex } from "../model/digest.js"
 import { NonEmptyName } from "../model/primitives.js"
 import {
   Applied, Conflict, Equivalent, Inconclusive, NeedsMutation, ObservationDifference,
@@ -38,7 +39,7 @@ export const makeCatalogCorrectionSubject = (
   const target = bundle.blobs.get(correction.artifactId.toString())
   const originalState = bundle.blobs.get(correction.stateArtifactId.toString())
   const correctedState = encodeCatalogManagedState(CatalogManagedState.make({
-    schemaVersion: "ts-release/catalog-state/v1", version: correction.version,
+    schemaVersion: "ts-release/catalog-state/v2", version: correction.version,
     manifestDigest: intent.preparedDigest, status: correction.status, correctionId: intent.correctionId,
     reason: correction.reason, ...(correction.replacement === undefined ? {} : { replacement: NonEmptyName.make(correction.replacement.coordinate) })
   }))
@@ -58,12 +59,24 @@ export const makeCatalogCorrectionSubject = (
     const currentState = decodeCatalogManagedState(current.stateBytes)
     if (currentState === undefined) return Inconclusive.make({ subject, reason: "Managed catalog correction state is malformed or noncanonical." })
     if (currentState.status !== "active") {
-      return currentState.correctionId === intent.correctionId && currentState.status === correction.status && currentState.reason === correction.reason
+      return currentState.correctionId !== undefined && digestEquals(currentState.correctionId, intent.correctionId) &&
+          currentState.status === correction.status && currentState.reason === correction.reason
         ? Equivalent.make({ subject })
-        : Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("managed.correction"), expected: intent.correctionId, observed: currentState.correctionId ?? currentState.status })] })
+        : Conflict.make({ subject, differences: [ObservationDifference.make({
+          field: NonEmptyName.make("managed.correction"),
+          expected: formatSha256Hex(intent.correctionId),
+          observed: currentState.correctionId === undefined
+            ? currentState.status
+            : formatSha256Hex(currentState.correctionId)
+        })] })
     }
-    if (versionCompare(currentState.version.toString(), correction.version.toString()) > 0 || currentState.manifestDigest !== baseline.manifestDigest) {
-      return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("managed.generation"), expected: baseline.manifestDigest, observed: currentState.manifestDigest })] })
+    if (versionCompare(currentState.version.toString(), correction.version.toString()) > 0 ||
+        !digestEquals(currentState.manifestDigest, baseline.manifestDigest)) {
+      return Conflict.make({ subject, differences: [ObservationDifference.make({
+        field: NonEmptyName.make("managed.generation"),
+        expected: formatSha256Hex(baseline.manifestDigest),
+        observed: formatSha256Hex(currentState.manifestDigest)
+      })] })
     }
     return NeedsMutation.make({ subject, precondition: revision(current.revision) })
   }).pipe(Effect.catchTag("PublicationError", (cause) => Effect.succeed(Inconclusive.make({ subject, reason: cause.reason }))))

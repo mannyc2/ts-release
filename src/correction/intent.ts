@@ -1,7 +1,12 @@
 import * as Schema from "effect/Schema"
-import { createHash } from "node:crypto"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import {
+  Sha256Digest,
+  Sha512Digest,
+  digestEquals,
+  sha256Digest
+} from "../model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 
 const optional = Schema.optionalKey
 const boundedText = Schema.String.check(Schema.makeFilter((value: string) =>
@@ -11,7 +16,6 @@ const boundedText = Schema.String.check(Schema.makeFilter((value: string) =>
   }) ? undefined : "Correction text must be bounded and contain no control characters."))
 const publicMessage = boundedText.pipe(Schema.check(Schema.makeFilter((value: string) =>
   value.length > 0 ? undefined : "Correction message must be nonempty.")))
-const sha256Hex = /^[a-f0-9]{64}$/u
 
 export class ReplacementCoordinate extends Schema.Class<ReplacementCoordinate>("ReplacementCoordinate")({
   provider: Schema.Literals(["npm", "github", "catalog-git", "pypi"]), coordinate: publicMessage
@@ -19,7 +23,7 @@ export class ReplacementCoordinate extends Schema.Class<ReplacementCoordinate>("
 
 export class NpmDeprecationCorrection extends Schema.TaggedClass<NpmDeprecationCorrection>()("NpmDeprecationCorrection", {
   provider: Schema.Literal("npm"), publicationId: NonEmptyName, registryUrl: Schema.NonEmptyString,
-  packageName: NonEmptyName, version: Version, tarballIntegrity: Schema.NonEmptyString,
+  packageName: NonEmptyName, version: Version, tarballIntegrity: Sha512Digest,
   message: publicMessage, replacement: optional(ReplacementCoordinate)
 }) {}
 
@@ -38,7 +42,7 @@ export class CatalogCorrection extends Schema.TaggedClass<CatalogCorrection>()("
 
 export class PypiFileYankCorrection extends Schema.TaggedClass<PypiFileYankCorrection>()("PypiFileYankCorrection", {
   provider: Schema.Literal("pypi"), publicationId: NonEmptyName, indexUrl: Schema.NonEmptyString,
-  project: NonEmptyName, version: Version, filename: NonEmptyName, fileDigest: Digest,
+  project: NonEmptyName, version: Version, filename: NonEmptyName, fileDigest: Sha256Digest,
   reason: publicMessage, replacement: optional(ReplacementCoordinate)
 }) {}
 
@@ -47,11 +51,17 @@ export const CorrectionVariant = Schema.Union([
 ])
 export type CorrectionVariant = typeof CorrectionVariant.Type
 
-export class CorrectionIntentV1 extends Schema.Class<CorrectionIntentV1>("CorrectionIntentV1")({
-  schemaVersion: Schema.Literal("correction-intent/v1"), preparedDigest: Digest,
-  correction: CorrectionVariant, correctionId: Digest
+const CorrectionIntentUnsignedV2 = Schema.Struct({
+  schemaVersion: Schema.Literal("correction-intent/v2"),
+  preparedDigest: Sha256Digest,
+  correction: CorrectionVariant
+})
+
+export class CorrectionIntentV2 extends Schema.Class<CorrectionIntentV2>("CorrectionIntentV2")({
+  schemaVersion: Schema.Literal("correction-intent/v2"), preparedDigest: Sha256Digest,
+  correction: CorrectionVariant, correctionId: Sha256Digest
 }) {}
-export type CorrectionIntent = typeof CorrectionIntentV1.Type
+export type CorrectionIntent = typeof CorrectionIntentV2.Type
 export type CorrectionIntentInput = Omit<CorrectionIntent, "correctionId">
 
 export class CorrectionIntentError
@@ -59,23 +69,27 @@ export class CorrectionIntentError
     reason: Schema.String
   }) {}
 
-const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
 const normalizeCorrection = (value: unknown): CorrectionVariant => Schema.decodeUnknownSync(CorrectionVariant)(value)
-const encodedCorrection = (value: CorrectionVariant): unknown => Schema.encodeSync(CorrectionVariant)(normalizeCorrection(value))
-const unsignedValue = (value: CorrectionIntentInput): Record<string, unknown> => ({
-  schemaVersion: value.schemaVersion,
-  preparedDigest: value.preparedDigest,
-  correction: encodedCorrection(value.correction)
-})
+const normalizeUnsigned = (value: CorrectionIntentInput): CorrectionIntentInput =>
+  Schema.decodeUnknownSync(CorrectionIntentUnsignedV2, { onExcessProperty: "error" })({
+    schemaVersion: value.schemaVersion,
+    preparedDigest: value.preparedDigest,
+    correction: normalizeCorrection(value.correction)
+  })
 
-export const correctionIdFor = (value: CorrectionIntentInput): Digest =>
-  Digest.make(digest(new TextEncoder().encode(encodeCanonicalJson(unsignedValue(value)))))
+const unsignedBytes = (value: CorrectionIntentInput): Uint8Array => {
+  const normalized = normalizeUnsigned(value)
+  const encoded = Schema.encodeSync(CorrectionIntentUnsignedV2)(normalized)
+  return new TextEncoder().encode(encodeCanonicalJson(encoded))
+}
+
+export const correctionIdFor = (value: CorrectionIntentInput): Sha256Digest =>
+  sha256Digest(unsignedBytes(value))
 
 export const makeCorrectionIntent = (value: CorrectionIntentInput): CorrectionIntent => {
-  const correction = normalizeCorrection(value.correction)
-  const normalized = { ...value, correction }
+  const normalized = normalizeUnsigned(value)
   const correctionId = correctionIdFor(normalized)
-  return CorrectionIntentV1.make({ ...normalized, correctionId })
+  return CorrectionIntentV2.make({ ...normalized, correctionId })
 }
 
 const equal = (left: Uint8Array, right: Uint8Array): boolean =>
@@ -83,12 +97,12 @@ const equal = (left: Uint8Array, right: Uint8Array): boolean =>
 
 export const encodeCorrectionIntent = (value: CorrectionIntent): Uint8Array => {
   try {
-    if (!sha256Hex.test(value.preparedDigest) || !sha256Hex.test(value.correctionId)) {
-      throw new Error("Correction intent digests must be lowercase SHA-256 values.")
+    const normalized = Schema.decodeUnknownSync(CorrectionIntentV2, { onExcessProperty: "error" })(value)
+    const expected = correctionIdFor(normalized)
+    if (!digestEquals(expected, normalized.correctionId)) {
+      throw new Error("Correction id does not match canonical unsigned V2 intent bytes.")
     }
-    const expected = correctionIdFor(value)
-    if (expected !== value.correctionId) throw new Error("Correction id does not match canonical intent bytes.")
-    return new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(CorrectionIntentV1)(value)))
+    return new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(CorrectionIntentV2)(normalized)))
   } catch (cause) {
     throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
   }
@@ -97,7 +111,7 @@ export const encodeCorrectionIntent = (value: CorrectionIntent): Uint8Array => {
 export const decodeCorrectionIntent = (bytes: Uint8Array): CorrectionIntent => {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-    const value = Schema.decodeUnknownSync(CorrectionIntentV1, { onExcessProperty: "error" })(parseStrictJson(text))
+    const value = Schema.decodeUnknownSync(CorrectionIntentV2, { onExcessProperty: "error" })(parseStrictJson(text))
     const canonical = encodeCorrectionIntent(value)
     if (!equal(canonical, bytes)) throw new Error("Correction intent bytes are not canonical.")
     return value

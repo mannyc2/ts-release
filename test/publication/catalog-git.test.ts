@@ -1,20 +1,21 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
-import { PreparedArtifact, PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
+import { parseSha256Hex, sha256Digest } from "../../src/model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
+import { PreparedArtifact, PreparedProject, PreparedReleaseV2, PreparedSource } from "../../src/release/prepared.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
 import { CatalogFileIntent, CatalogManagedState, encodeCatalogManagedState, makeCatalogSubject, type CatalogRepositorySnapshot, type CatalogRepositoryTransport } from "../../src/publication/catalog-git.js"
 import { PublicationError, publishSubject } from "../../src/publication/observation.js"
 
 const fixture = () => {
   const target = new TextEncoder().encode("formula bytes\n")
-  const managed = encodeCatalogManagedState(CatalogManagedState.make({ schemaVersion: "ts-release/catalog-state/v1", version: Version.make("1.0.0"), manifestDigest: Digest.make("a".repeat(64)), status: "active" }))
+  const managed = encodeCatalogManagedState(CatalogManagedState.make({ schemaVersion: "ts-release/catalog-state/v2", version: Version.make("1.0.0"), manifestDigest: parseSha256Hex("a".repeat(64)), status: "active" }))
   const artifact = (id: string, path: string, bytes: Uint8Array) => PreparedArtifact.make({ id: OutputId.make(id), path: SafeRelativePath.make(path), kind: "catalog-file", size: bytes.length,
-    digest: Digest.make("a".repeat(64)), blob: Digest.make("a".repeat(64)) })
+    digest: sha256Digest(bytes), blob: sha256Digest(bytes) })
   const targetArtifact = artifact("catalog", "formula.rb", target)
   const stateArtifact = artifact("catalog-state", ".release/state.json", managed)
-  const manifest = PreparedReleaseV1.make({ schemaVersion: "prepared-release/v1",
-    source: PreparedSource.make({ commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true, packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make("a".repeat(64)) }),
+  const manifest = PreparedReleaseV2.make({ schemaVersion: "prepared-release/v2",
+    source: PreparedSource.make({ commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true, packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: sha256Digest(new TextEncoder().encode("package manifest")) }),
     project: PreparedProject.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }), artifacts: [targetArtifact, stateArtifact], publications: [] })
   const bundle: PreparedBundle = { directory: "/tmp/prepared/catalog", manifest, blobs: new Map([["catalog", target], ["catalog-state", managed]]) }
   const intent = CatalogFileIntent.make({ id: NonEmptyName.make("homebrew"), repository: "github.com/owner/tap", branch: NonEmptyName.make("main"), targetPath: "Formula/fixture.rb", statePath: ".ts-release/state/homebrew.json",
@@ -50,7 +51,7 @@ describe("conditional catalog Git adapter", () => {
 
   test("wrong origin, half-present state, newer state, and transport loss never become writes", async () => {
     const { bundle, intent, target, managed } = fixture()
-    const newer = encodeCatalogManagedState(CatalogManagedState.make({ schemaVersion: "ts-release/catalog-state/v1", version: Version.make("2.0.0"), manifestDigest: Digest.make("b".repeat(64)), status: "active" }))
+    const newer = encodeCatalogManagedState(CatalogManagedState.make({ schemaVersion: "ts-release/catalog-state/v2", version: Version.make("2.0.0"), manifestDigest: parseSha256Hex("b".repeat(64)), status: "active" }))
     for (const current of [
       snapshot("github.com/other/tap", "main", "r1"),
       snapshot(intent.repository, "main", "r1", target),

@@ -15,7 +15,10 @@ import { inspectPreparedRelease, inspectRelease } from "../release/inspect.js"
 import { prepareRelease } from "../release/prepare.js"
 import { PreparationError } from "../release/prepare.js"
 import type { CompletePreparedReleaseRef } from "../release/prepared-ref.js"
-import { PreparedReleaseStore } from "../release/prepared-store.js"
+import {
+  PreparedReleaseStore,
+  type CommittedPreparedRelease
+} from "../release/prepared-store.js"
 import { ObservedFacts } from "../resolve/facts.js"
 import { resolveConfig } from "../resolve/resolve.js"
 import {
@@ -61,6 +64,33 @@ export { CorrectionReport } from "./types.js"
 export { ReleaseInputError } from "./errors.js"
 export { ReleaseRuntime } from "./runtime.js"
 
+const safeFailure = (failure: unknown, fallback: string): string => {
+  const value = typeof failure === "object" && failure !== null &&
+      "reason" in failure && typeof failure.reason === "string"
+    ? failure.reason
+    : failure instanceof Error
+    ? failure.message
+    : typeof failure === "string"
+    ? failure
+    : fallback
+  const normalized = [...value]
+    .map((character) => {
+      const codePoint = character.codePointAt(0) ?? 0
+      return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 0x20
+        ? character
+        : "?"
+    })
+    .slice(0, 2048)
+    .join("")
+  return normalized.length === 0 || secretPatterns.some((pattern) => pattern.test(normalized))
+    ? fallback
+    : normalized
+}
+
+const inputFailure = (cause: unknown): ReleaseInputError => new ReleaseInputError({
+  reason: safeFailure(cause, "Release input is invalid.")
+})
+
 const manifestPath = (config: {
   readonly project: { readonly packagePath?: SafeRelativePath }
   readonly npmPackage?: { readonly path?: SafeRelativePath }
@@ -83,8 +113,11 @@ const observeAndCompile = Effect.fn("observeAndCompileRelease")(function*(input:
   readonly workspace: string
 }) {
   const runtime = yield* ReleaseRuntime
-  const authored = yield* decodeConfig(input.config)
-  const root = workspaceRoot(input.workspace)
+  const authored = yield* decodeConfig(input.config).pipe(Effect.mapError(inputFailure))
+  const root = yield* Effect.try({
+    try: () => workspaceRoot(input.workspace),
+    catch: inputFailure
+  })
   const context = yield* runtime.source.observe(
     WorkspaceRoot.make(root),
     manifestPath(authored),
@@ -106,14 +139,16 @@ const observeAndCompile = Effect.fn("observeAndCompileRelease")(function*(input:
   })
   const resolved = yield* Effect.try({
     try: () => resolveConfig(input.config, facts),
-    catch: (cause) => new ReleaseInputError({
-      reason: cause instanceof Error ? cause.message : String(cause)
-    })
+    catch: inputFailure
+  })
+  const graph = yield* Effect.try({
+    try: () => compileReleaseGraph(resolved, context),
+    catch: inputFailure
   })
   return {
     context,
     config: resolved,
-    graph: compileReleaseGraph(resolved, context)
+    graph
   }
 })
 
@@ -158,27 +193,7 @@ const loadPrepared = Effect.fn("loadPreparedForApi")(function*(
 })
 
 const safeCause = <E>(cause: Cause.Cause<E>, fallback: string): string => {
-  const failure = Cause.squash(cause)
-  const value = typeof failure === "object" && failure !== null &&
-      "reason" in failure && typeof failure.reason === "string"
-    ? failure.reason
-    : failure instanceof Error
-    ? failure.message
-    : typeof failure === "string"
-    ? failure
-    : fallback
-  const normalized = [...value]
-    .map((character) => {
-      const codePoint = character.codePointAt(0) ?? 0
-      return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 0x20
-        ? character
-        : "?"
-    })
-    .slice(0, 2048)
-    .join("")
-  return normalized.length === 0 || secretPatterns.some((pattern) => pattern.test(normalized))
-    ? fallback
-    : normalized
+  return safeFailure(Cause.squash(cause), fallback)
 }
 
 const preparationFailure = <A, E, R>(
@@ -219,10 +234,31 @@ const observeProgram = (prepared: CompletePreparedReleaseRef) => afterCommitFail
   loadPrepared(prepared).pipe(Effect.flatMap(observePreparedRelease))
 )
 
-const publishProgram = (prepared: CompletePreparedReleaseRef) => afterCommitFailure(
-  prepared,
-  loadPrepared(prepared).pipe(Effect.flatMap(publishPreparedRelease))
-)
+const publishCommitted = Effect.fn("publishCommittedRelease")(function*(
+  committed: CommittedPreparedRelease
+) {
+  const report = yield* publishPreparedRelease(committed.bundle)
+  return { prepared: committed.ref, report }
+})
+
+const publishProgram = Effect.fn("publishProgram")(function*(
+  prepared: CompletePreparedReleaseRef
+) {
+  const result = yield* afterCommitFailure(
+    prepared,
+    loadPrepared(prepared).pipe(
+      Effect.flatMap((bundle) => publishCommitted({ ref: prepared, bundle }))
+    )
+  )
+  return result.report
+})
+
+const releaseProgram = Effect.fn("releaseProgram")(function*(input: ReleaseInput) {
+  const committed = yield* preparationFailure(prepareProgram(input, {
+    allowEmpty: input.allowEmpty === true
+  }))
+  return yield* afterCommitFailure(committed.ref, publishCommitted(committed))
+})
 
 const correctionUnavailableReason = SafeReason.make(
   "Authored correction execution is reserved for plan 229; the prepared release was verified and no provider mutation was attempted."
@@ -275,14 +311,7 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
 
   const release = async (value: ReleaseInput) => {
     const input = decodeReleaseInput(value)
-    const committed = await run(preparationFailure(prepareProgram(input, {
-      allowEmpty: input.allowEmpty === true
-    })))
-    const report = await run(afterCommitFailure(
-      committed.ref,
-      publishPreparedRelease(committed.bundle)
-    ))
-    return { prepared: committed.ref, report }
+    return run(releaseProgram(input))
   }
 
   const correct = async (value: CorrectInput) => {

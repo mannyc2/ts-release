@@ -3,13 +3,14 @@ import * as Effect from "effect/Effect"
 import { createHash } from "node:crypto"
 import { existsSync, mkdtempSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, join } from "node:path"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import {
   PreparedArtifact, PreparedGitHubPublication, PreparedProject, PreparedReleaseV1, PreparedSource,
   decodePreparedRelease, encodePreparedRelease
 } from "../../src/release/prepared.js"
-import { loadPreparedRelease, PreparedStoreError, storePreparedRelease } from "../../src/release/prepared-store.js"
+import { loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedStoreError, storePreparedRelease } from "../../src/release/prepared-store.js"
+import { makeGitHubActionsCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
 import { inspectPreparedRelease } from "../../src/release/inspect.js"
 
 const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
@@ -54,6 +55,30 @@ describe("PreparedReleaseV1 manifest and store", () => {
       const inspection = inspectPreparedRelease(loaded)
       expect(inspection.bundleDirectory).toBe(first.directory)
       expect(inspection.publications[0]?.subject).toContain("owner/fixture#v1.0.0")
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("commits and reloads through a digest-only durable local reference", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-prepared-"))
+    try {
+      const { manifest, bytes } = fixture()
+      const store = makeLocalPreparedReleaseStore(join(root, "prepared"))
+      const committed = await Effect.runPromise(store.commit(manifest, new Map([["cli", bytes]])))
+      expect(committed.ref.scheme).toBe("local")
+      expect(committed.ref.digest.toString()).toBe(basename(committed.bundle.directory))
+      const loaded = await Effect.runPromise(store.load(committed.ref))
+      expect(loaded.manifest).toEqual(committed.bundle.manifest)
+
+      const hosted = await Effect.runPromise(makeGitHubActionsCompletePreparedReleaseRef({
+        owner: "owner", repository: "repo", runId: "1", attempt: "1",
+        artifactName: "prepared", digest: committed.ref.digest
+      }))
+      await expect(Effect.runPromise(store.load(hosted))).rejects.toMatchObject({
+        _tag: "PreparedStoreError",
+        reason: expect.stringContaining("not loadable by the local store")
+      })
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

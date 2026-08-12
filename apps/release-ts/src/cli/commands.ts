@@ -10,7 +10,15 @@ const json = (io: CliIo, path: string): unknown => JSON.parse(io.read(realpathSy
 const pathFrom = (cwd: string, value: string): string => isAbsolute(value) ? value : resolve(cwd, value)
 const workspaceFor = (cwd: string, config: string, root: string | undefined): string => realpathSync(root === undefined ? isAbsolute(config) ? dirname(pathFrom(cwd, config)) : cwd : pathFrom(cwd, root))
 
-export interface InitOptions { readonly config: string, readonly root: string, readonly dryRun: boolean, readonly force: boolean }
+export type InitPreset = "bun-npm-github"
+export interface InitOptions {
+  readonly config: string
+  readonly root: string
+  readonly dryRun: boolean
+  readonly force: boolean
+  readonly preset?: InitPreset
+  readonly prepareOnly: boolean
+}
 export interface InspectOptions { readonly config?: string, readonly prepared?: string, readonly root: string }
 export interface PrepareOptions { readonly config: string, readonly root: string, readonly out?: string }
 export interface PublishOptions { readonly prepared: string }
@@ -20,8 +28,26 @@ export interface CorrectOptions { readonly prepared: string, readonly correction
 const printInspection = (io: CliIo, result: InspectOutput): void => io.log(JSON.stringify(result, (_key, value) => typeof value === "object" && value !== null && "toString" in value && Object.keys(value).length === 1 ? String(value) : value))
 
 export const runInit = async (api: CliApi, options: InitOptions, cwd: string, io: CliIo): Promise<void> => {
+  if (options.preset === undefined && !options.prepareOnly) {
+    throw new Error("Noninteractive init requires --preset bun-npm-github or --prepare-only; it never prompts or creates a green no-op release.")
+  }
   const workspace = realpathSync(pathFrom(cwd, options.root))
-  const config = { project: {}, versionFrom: "manifest" as const }
+  const config = options.prepareOnly
+    ? { project: {}, versionFrom: "manifest" as const, publish: {} }
+    : {
+      project: {},
+      versionFrom: "manifest" as const,
+      npmPackage: { path: "." },
+      publish: {
+        npm: {
+          registry: "https://registry.npmjs.org",
+          trustedPublishing: { provider: "github-actions" as const },
+          access: "public" as const,
+          provenance: true
+        },
+        github: { draft: true, prerelease: false }
+      }
+    }
   await api.inspect({ config, workspace })
   const output = pathFrom(workspace, options.config)
   if (!options.force) {

@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema"
 import { existsSync, realpathSync, statSync } from "node:fs"
 import { dirname, isAbsolute, join, resolve } from "node:path"
-import { ReleaseInputError } from "./errors.js"
+import { PreparationModeUnsupported, ReleaseInputError } from "./errors.js"
 import type { CorrectInput, InspectInput, PrepareInput, PublishInput, ReleaseInput } from "./types.js"
 
 const configInput = Schema.Struct({ config: Schema.Unknown, workspace: Schema.String, preparedDirectory: Schema.optionalKey(Schema.String) })
@@ -9,7 +9,13 @@ const inspectInput = Schema.Struct({ config: Schema.optionalKey(Schema.Unknown),
 const credentials = Schema.Struct({ read: Schema.NonEmptyString, publish: Schema.NonEmptyString })
 const credentialInput = Schema.Struct({ npm: Schema.optionalKey(credentials), github: Schema.optionalKey(credentials) })
 const publishInput = Schema.Struct({ prepared: Schema.String, credentials: Schema.optionalKey(credentialInput) })
-const releaseInput = Schema.Struct({ config: Schema.Unknown, workspace: Schema.String, preparedDirectory: Schema.optionalKey(Schema.String), credentials: Schema.optionalKey(credentialInput) })
+const releaseInput = Schema.Struct({
+  config: Schema.Unknown,
+  workspace: Schema.String,
+  preparedDirectory: Schema.optionalKey(Schema.String),
+  allowEmpty: Schema.optionalKey(Schema.Boolean),
+  credentials: Schema.optionalKey(credentialInput)
+})
 const correctInput = Schema.Struct({ prepared: Schema.String, correction: Schema.String, credentials: Schema.optionalKey(credentialInput) })
 
 const decode = <S extends Schema.Top & Schema.Decoder<unknown>>(schema: S, value: unknown): S["Type"] => {
@@ -17,8 +23,25 @@ const decode = <S extends Schema.Top & Schema.Decoder<unknown>>(schema: S, value
   catch (cause) { throw new ReleaseInputError({ reason: String(cause).split("\n").slice(0, 8).join("\n").slice(0, 500) }) }
 }
 
-export const decodePrepareInput = (value: unknown): PrepareInput => decode(configInput, value)
-export const decodeReleaseInput = (value: unknown): ReleaseInput => decode(releaseInput, value)
+const rejectReservedPreparationMode = (value: unknown): void => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return
+  const mode = (value as { readonly mode?: unknown }).mode
+  if (mode !== "partition" && mode !== "merge") return
+  throw PreparationModeUnsupported.make({
+    mode,
+    owner: "plan-235",
+    reason: `Preparation mode '${mode}' is reserved and unsupported until plan 235 adds its first certified producer.`
+  })
+}
+
+export const decodePrepareInput = (value: unknown): PrepareInput => {
+  rejectReservedPreparationMode(value)
+  return decode(configInput, value)
+}
+export const decodeReleaseInput = (value: unknown): ReleaseInput => {
+  rejectReservedPreparationMode(value)
+  return decode(releaseInput, value)
+}
 export const decodePublishInput = (value: unknown): PublishInput => decode(publishInput, value)
 export const decodeCorrectInput = (value: unknown): CorrectInput => decode(correctInput, value)
 export const decodeInspectInput = (value: unknown): InspectInput => {

@@ -65,8 +65,16 @@ const preparedDirectory = (workspace: string, value: string | undefined): string
   return value === undefined ? join(root, ".release", "ts-release", "prepared") : value.startsWith("/") ? value : join(root, value)
 }
 
-const prepareProgram = Effect.fn("prepareProgram")(function*(input: PrepareInput) {
+const prepareProgram = Effect.fn("prepareProgram")(function*(
+  input: PrepareInput,
+  options: { readonly allowEmpty: boolean }
+) {
   const compiled = yield* observeAndCompile({ config: input.config, workspace: input.workspace })
+  if (!options.allowEmpty && compiled.graph.artifacts.length === 0 && compiled.graph.publications.length === 0) {
+    return yield* Effect.fail(new ReleaseInputError({
+      reason: "release resolved to no artifacts and no publication subjects; use allowEmpty only for an explicit diagnostic run."
+    }))
+  }
   const runtime = yield* ReleaseRuntime
   const sourceWorkspace = compiled.context.workspace
   const sourceManifest = compiled.context.source.packageManifestPath
@@ -140,14 +148,14 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
     const compiled = await run(observeAndCompile({ config: input.config, workspace: input.workspace! }))
     return inspectRelease(compiled.context, compiled.graph)
   }
-  const prepare = async (value: PrepareInput) => run(prepareProgram(decodePrepareInput(value)))
+  const prepare = async (value: PrepareInput) => run(prepareProgram(decodePrepareInput(value), { allowEmpty: true }))
   const publish = async (value: PublishInput) => {
     const input = decodePublishInput(value)
     return run(Effect.flatMap(loadPreparedRelease(preparedPath(input.prepared)), (bundle) => publishProgram(bundle, input.credentials)))
   }
   const release = async (value: ReleaseInput) => {
     const input = decodeReleaseInput(value)
-    const prepared = await run(prepareProgram(input))
+    const prepared = await run(prepareProgram(input, { allowEmpty: input.allowEmpty === true }))
     const publications = await run(publishProgram(prepared, input.credentials))
     return { prepared, publications }
   }

@@ -17,7 +17,11 @@ export interface InspectInput {
   readonly config?: unknown, readonly prepared?: string, readonly workspace?: string
 }
 export interface PublishInput { readonly prepared: string, readonly credentials?: PublicationCredentialsInput }
-export interface ReleaseInput extends PrepareInput { readonly credentials?: PublicationCredentialsInput }
+export interface ReleaseInput extends PrepareInput {
+  /** Diagnostic-only opt-in for exercising an intentionally empty graph. */
+  readonly allowEmpty?: boolean
+  readonly credentials?: PublicationCredentialsInput
+}
 export interface CorrectInput {
   readonly prepared: string, readonly correction: string, readonly credentials?: PublicationCredentialsInput
 }

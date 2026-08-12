@@ -43,6 +43,24 @@ describe("public lifecycle API", () => {
     }
   })
 
+  test("release refuses an accidental empty graph unless diagnostics opt in", async () => {
+    const root = workspace()
+    const api = makeReleaseApi(runtimeLayer())
+    const config = {
+      project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
+      publish: {}
+    }
+    try {
+      await expect(api.release({ config, workspace: root })).rejects.toBeInstanceOf(ReleaseInputError)
+      const diagnostic = await api.release({ config, workspace: root, allowEmpty: true })
+      expect(diagnostic.prepared.manifest.artifacts).toEqual([])
+      expect(diagnostic.publications).toEqual([])
+    } finally {
+      await api.dispose()
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
   test("inspect has one exclusive input boundary", async () => {
     const api = makeReleaseApi(runtimeLayer())
     try {

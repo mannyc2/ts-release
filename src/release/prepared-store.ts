@@ -1,10 +1,12 @@
 import * as Effect from "effect/Effect"
+import * as Context from "effect/Context"
 import * as Schema from "effect/Schema"
 import { constants, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, chmodSync, closeSync, fsyncSync } from "node:fs"
 import { createHash, randomUUID } from "node:crypto"
 import { basename, join } from "node:path"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
 import { PreparedArtifact, PreparedReleaseV1, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
+import { type CompletePreparedReleaseRef, type LocalCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
 
 export class PreparedStoreError
   extends Schema.TaggedErrorClass<PreparedStoreError>()("PreparedStoreError", { reason: Schema.String }) {}
@@ -54,6 +56,11 @@ export interface PreparedBundle {
   readonly directory: string
   readonly manifest: PreparedReleaseV1
   readonly blobs: ReadonlyMap<string, Uint8Array>
+}
+
+export interface CommittedPreparedRelease {
+  readonly ref: LocalCompletePreparedReleaseRef
+  readonly bundle: PreparedBundle
 }
 
 const readBundle = (directory: string): PreparedBundle => {
@@ -135,3 +142,30 @@ export const loadPreparedRelease = Effect.fn("loadPreparedRelease")((directory: 
   try: () => readBundle(directory),
   catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
 }))
+
+/** The durable store boundary used by coordinators and host projections. */
+export interface PreparedReleaseStoreShape {
+  readonly commit: (
+    manifest: PreparedReleaseV1,
+    blobs: ReadonlyMap<string, Uint8Array>
+  ) => Effect.Effect<CommittedPreparedRelease, PreparedStoreError>
+  readonly load: (reference: CompletePreparedReleaseRef) => Effect.Effect<PreparedBundle, PreparedStoreError>
+}
+
+export class PreparedReleaseStore
+  extends Context.Service<PreparedReleaseStore, PreparedReleaseStoreShape>()("ts-release/PreparedReleaseStore") {}
+
+/** A local store resolves digest-only references against one explicit root. */
+export const makeLocalPreparedReleaseStore = (storeDirectory: string): PreparedReleaseStoreShape => ({
+  commit: (manifest, blobs) => storePreparedRelease(storeDirectory, manifest, blobs).pipe(
+    Effect.flatMap((bundle) => makeLocalCompletePreparedReleaseRef(basename(bundle.directory)).pipe(
+      Effect.map((ref) => ({ ref, bundle })),
+      Effect.mapError((cause) => PreparedStoreError.make({ reason: cause.reason }))
+    ))
+  ),
+  load: (reference) => reference.scheme === "local"
+    ? loadPreparedRelease(join(storeDirectory, reference.digest))
+    : Effect.fail(PreparedStoreError.make({
+      reason: "A GitHub Actions prepared reference is not loadable by the local store; rerun the failed workflow publish job or dispatch its recovery workflow."
+    }))
+})

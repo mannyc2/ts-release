@@ -10,8 +10,16 @@ const optionalText = (name: string) => Flag.string(name).pipe(Flag.optional)
 const at = <A>(value: import("effect/Option").Option<A>): A | undefined => value._tag === "Some" ? value.value : undefined
 
 const initCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("init", {
-  config: text("config", "release.config.json"), root: text("root", "."), dryRun: Flag.boolean("dry-run").pipe(Flag.withDefault(false)), force: Flag.boolean("force").pipe(Flag.withDefault(false))
-}, (options) => Effect.promise(() => runInit(api, options, cwd, io))).pipe(Command.withDescription("Create the smallest authored release configuration."))
+  config: text("config", "release.config.json"), root: text("root", "."),
+  dryRun: Flag.boolean("dry-run").pipe(Flag.withDefault(false)),
+  force: Flag.boolean("force").pipe(Flag.withDefault(false)),
+  preset: Flag.choice("preset", ["bun-npm-github"] as const).pipe(Flag.optional),
+  prepareOnly: Flag.boolean("prepare-only").pipe(Flag.withDefault(false))
+}, (options) => Effect.promise(() => {
+  const preset = at(options.preset) as "bun-npm-github" | undefined
+  const { preset: _preset, ...rest } = options
+  return runInit(api, { ...rest, ...(preset === undefined ? {} : { preset }) }, cwd, io)
+})).pipe(Command.withDescription("Create an explicit automatic-release preset or a preparation-only configuration."))
 const inspectCommand = (api: CliApi, cwd: string, io: CliIo) => Command.make("inspect", {
   config: optionalText("config"), prepared: optionalText("prepared"), root: text("root", "."),
   json: Flag.boolean("json").pipe(Flag.withDefault(false))

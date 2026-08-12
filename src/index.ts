@@ -7,7 +7,17 @@ export type {
   CorrectInput, InspectInput, InspectOutput, PrepareInput, PublishInput,
   PublicationCredentialsInput, ReleaseApi, ReleaseApiLayer, ReleaseInput
 } from "./api/types.js"
-export { ReleaseInputError } from "./api/errors.js"
+export {
+  PreparationModeUnsupported, ReleaseAbortedError, ReleaseIncompleteError,
+  ReleaseInputError, ReleasePreparationError
+} from "./api/errors.js"
+export {
+  CompletePreparedReleaseRef, GitHubActionsCompletePreparedReleaseRef,
+  LocalCompletePreparedReleaseRef, PreparedReleaseRefCodecError,
+  PreparedReleaseRefMalformedError, PreparedReleaseRefUnknownSchemeError,
+  decodeCompletePreparedReleaseRef, encodeCompletePreparedReleaseRef
+} from "./release/prepared-ref.js"
+export type { PreparedReleaseSha256 } from "./release/prepared-ref.js"
 export { ReleaseRuntime } from "./api/runtime.js"
 export { unsupportedExecutionHost } from "./platform/host-support.js"
 export { resolveConfig } from "./resolve/resolve.js"

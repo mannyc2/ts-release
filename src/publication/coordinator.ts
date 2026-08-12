@@ -1,3 +1,5 @@
+import * as Clock from "effect/Clock"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
@@ -53,6 +55,11 @@ import {
   type ReportConstructionError,
   type SubjectReport
 } from "./report.js"
+import {
+  RecoveryCapabilityProfile,
+  isReadConvergenceLagCapable,
+  type RecoveryCapabilityProfile as RecoveryCapabilityProfileType
+} from "./recovery.js"
 
 export class ReleaseSubjectError
   extends Schema.TaggedErrorClass<ReleaseSubjectError>()("ReleaseSubjectError", {
@@ -75,6 +82,8 @@ export type ReleaseObservationContext =
 
 export interface ReleaseSubject {
   readonly id: SubjectId
+  /** Durable provider policy. Coordinator retries are derived only from this value. */
+  readonly recovery: RecoveryCapabilityProfileType
   /** Earlier prepared subjects that must converge before this subject may run. */
   readonly prerequisites?: ReadonlyArray<SubjectId>
   readonly observationRequests: readonly [CredentialRequest, ...Array<CredentialRequest>]
@@ -139,6 +148,7 @@ const validateInput = (input: ReleaseSubjectsInput): Effect.Effect<void, Release
         if (subject.observationRequests.length === 0) {
           throw constructionFailure("Every remote subject requires at least one observation strategy.")
         }
+        Schema.decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(subject.recovery)
         subject.observationRequests.forEach((request, index) => {
           validateRequestIdentity(subject, request, "observe")
           if (request.strategy.kind === "anonymous" && index !== 0) {
@@ -246,15 +256,67 @@ const observeTrace = Effect.fn("observeReleaseSubject")(function*(
     const observed = yield* observeOnce(credentials, subject, request, context)
     let observation = observed.observation
     authorities.push(...observed.authorities)
-    if (context.phase === "pre-mutation" && observation._tag === "VisibilityPending") {
+    const visibilityPendingIsAdmitted = context.phase === "post-mutation" &&
+      context.attempt._tag !== "RejectedBeforeDispatch" &&
+      context.attempt._tag !== "RejectedByProvider" &&
+      isReadConvergenceLagCapable(subject.recovery)
+    if (observation._tag === "VisibilityPending" && !visibilityPendingIsAdmitted) {
       observation = InconclusiveObservation.make({
         subject: subject.id,
-        reason: SafeReason.make("VisibilityPending is invalid before mutation and was treated as inconclusive.")
+        reason: SafeReason.make(
+          "VisibilityPending was not admitted by a lag-capable same-invocation mutation profile and was treated as inconclusive."
+        )
       })
     }
     observations.push(observation)
     if (observation._tag !== "Inconclusive") break
   }
+  return {
+    observations: observations as [Observation, ...Array<Observation>],
+    authorities
+  }
+})
+
+const retryEligibleObservation = (observation: Observation): boolean =>
+  observation._tag === "VisibilityPending" || observation._tag === "Inconclusive"
+
+const retryDelayMs = (
+  profile: RecoveryCapabilityProfileType,
+  completedAttempts: number
+): number => {
+  const { baseMs, factor, capMs } = profile.readConvergence.observationRetry.backoff
+  const scaled = baseMs * factor ** Math.max(0, completedAttempts - 1)
+  return Math.min(capMs, scaled)
+}
+
+const observeAfterMutation = Effect.fn("observeReleaseSubjectAfterMutation")(function*(
+  credentials: CredentialProvider["Service"],
+  subject: ReleaseSubject,
+  attempt: MutationAttempt
+) {
+  const observations: Array<Observation> = []
+  const authorities: Array<AuthorityAcquired> = []
+  const policy = subject.recovery.readConvergence.observationRetry
+  const maxAttempts = attempt._tag === "RejectedBeforeDispatch" ? 1 : policy.maxAttempts
+  const startedAt = yield* Clock.currentTimeMillis
+  let completedAttempts = 0
+
+  while (completedAttempts < maxAttempts) {
+    if (completedAttempts > 0) {
+      const delayMs = retryDelayMs(subject.recovery, completedAttempts)
+      const now = yield* Clock.currentTimeMillis
+      const elapsedMs = Math.max(0, now - startedAt)
+      if (elapsedMs + delayMs > policy.totalBudgetMs) break
+      yield* Effect.sleep(Duration.millis(delayMs))
+    }
+
+    const observed = yield* observeTrace(credentials, subject, { phase: "post-mutation", attempt })
+    observations.push(...observed.observations)
+    authorities.push(...observed.authorities)
+    completedAttempts += 1
+    if (!retryEligibleObservation(observed.observations.at(-1)!)) break
+  }
+
   return {
     observations: observations as [Observation, ...Array<Observation>],
     authorities
@@ -336,12 +398,8 @@ const performMutation = (
 )
 
 const uncertainAttempt = (
-  attempt: MutationAttempt
-): Started | Applied | OutcomeUnknown => attempt._tag === "RejectedByProvider"
-  ? Started.make({ subject: attempt.subject })
-  : attempt._tag === "RejectedBeforeDispatch"
-  ? Started.make({ subject: attempt.subject })
-  : attempt
+  attempt: Exclude<MutationAttempt, RejectedBeforeDispatch>
+): Started | Applied | OutcomeUnknown | RejectedByProvider => attempt
 
 const convergedAttempt = (
   attempt: MutationAttempt
@@ -390,7 +448,7 @@ const publishSubject = Effect.fn("publishReleaseSubject")(function*(
       const grant = acquisition.grant
       const authority = yield* makeAuthority(subject.mutationRequest, grant)
       const attempt = yield* performMutation(subject, decision, grant)
-      const after = yield* observeTrace(credentials, subject, { phase: "post-mutation", attempt })
+      const after = yield* observeAfterMutation(credentials, subject, attempt)
       const observationAuthorities = [...before.authorities, ...after.authorities]
       if (attempt._tag === "RejectedBeforeDispatch") {
         const cause = yield* fromReportResult(makeAuthorityAcquiredButMutationNotDispatched({

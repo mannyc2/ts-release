@@ -348,7 +348,7 @@ class UncertainSubjectRecord
     observations: Schema.NonEmptyArray(Observation),
     decision: Schema.optionalKey(ProviderDecision),
     authority: AuthorityAcquired,
-    attempt: Schema.Union([Started, Applied, OutcomeUnknown]),
+    attempt: Schema.Union([Started, Applied, OutcomeUnknown, RejectedByProvider]),
     trace: Schema.NonEmptyArray(Observation)
   }) {}
 
@@ -521,7 +521,7 @@ export const makeUncertainSubject = (input: {
   readonly observations: readonly [Observation, ...Array<Observation>]
   readonly decision?: ProviderDecision
   readonly authority: AuthorityAcquired
-  readonly attempt: Started | Applied | OutcomeUnknown
+  readonly attempt: Started | Applied | OutcomeUnknown | RejectedByProvider
   readonly trace: readonly [Observation, ...Array<Observation>]
 }): Result.Result<UncertainSubject, ReportConstructionError> =>
   validateSubjectReport(new UncertainSubjectRecord(input))

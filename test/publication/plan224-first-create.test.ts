@@ -30,6 +30,7 @@ import {
   SafeReason,
   type Observation
 } from "../../src/publication/report.js"
+import { conservativeUnknownRecoveryProfile } from "../../src/publication/recovery.js"
 
 const prepared = SubjectId.make("prepared:plan224-first-create")
 const subjectId = SubjectId.make("npm:@fixture/first-create@1.0.0")
@@ -69,6 +70,7 @@ test("ProviderAuthorizedCreate acquires mutation authority lazily once and prese
 
   const subject: ReleaseSubject = {
     id: subjectId,
+    recovery: conservativeUnknownRecoveryProfile,
     observationRequests: [observationRequest],
     mutationRequest,
     observe: (grant, context: ReleaseObservationContext) => Effect.sync(() => {

@@ -51,6 +51,7 @@ import {
   type Observation,
   type ProviderDecision
 } from "../../src/publication/report.js"
+import { conservativeUnknownRecoveryProfile } from "../../src/publication/recovery.js"
 
 const prepared = SubjectId.make("prepared:fixture")
 const first = SubjectId.make("npm:@fixture/first@1.0.0")
@@ -221,6 +222,7 @@ const scriptedSubject = (options: ScriptedSubjectOptions): ReleaseSubject => {
   let observationIndex = 0
   return {
     id: options.id,
+    recovery: conservativeUnknownRecoveryProfile,
     ...(options.prerequisites === undefined ? {} : { prerequisites: options.prerequisites }),
     observationRequests: options.observationRequests ?? [anonymousRequest(options.id)],
     mutationRequest: tokenRequest(options.id, "publish"),

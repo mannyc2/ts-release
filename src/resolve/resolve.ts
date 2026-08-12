@@ -8,9 +8,16 @@
 // where each came from. Silence is never an option — a release that guesses its
 // own identity is the defect this module exists to prevent.
 import * as Schema from "effect/Schema"
+import * as Semver from "semver"
 import { MISSING_COMMIT } from "../model/errors.js"
-import { NonEmptyName, Version } from "../model/primitives.js"
-import type { CandidateConfig } from "../recipes/config.js"
+import { NonEmptyName, OutputId, Version } from "../model/primitives.js"
+import {
+  CandidateConfig,
+  type CandidateNpmPublish,
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag,
+  canonicalizeNpmRegistryEndpoint
+} from "../recipes/config.js"
 import { AuthoredConfig } from "./authored.js"
 import { toPlainJson } from "./encode.js"
 import { ResolveError } from "./errors.js"
@@ -31,6 +38,7 @@ const disagreement = (
 
 const decodeAuthored = Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })
 const decodeFacts = Schema.decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" })
+const decodeCandidate = Schema.decodeUnknownSync(CandidateConfig, { onExcessProperty: "error" })
 
 const version = (
   authored: AuthoredConfig, facts: ObservedFacts
@@ -112,6 +120,131 @@ const repository = (authored: AuthoredConfig, facts: ObservedFacts): string | un
   return authored.project.repository ?? facts.repository
 }
 
+const canonicalRegistry = (value: string | undefined): CanonicalNpmRegistryEndpoint => {
+  try {
+    return CanonicalNpmRegistryEndpoint.make(
+      canonicalizeNpmRegistryEndpoint(value ?? "https://registry.npmjs.org")
+    )
+  } catch (cause) {
+    return refuse(
+      "publish.npm.registry",
+      cause instanceof Error ? cause.message : String(cause)
+    )
+  }
+}
+
+const distTag = (versionValue: Version, authored: string | undefined): NpmDistTag => {
+  const normalized = Semver.valid(versionValue.toString())
+  if (normalized === null || normalized !== versionValue.toString()) {
+    return refuse(
+      "project.version",
+      `npm publication requires a canonical semantic version, got ${JSON.stringify(versionValue)}.`
+    )
+  }
+  const prerelease = Semver.prerelease(normalized) !== null
+  if (authored === undefined) {
+    if (prerelease) {
+      return refuse(
+        "publish.npm.distTag",
+        "Prerelease npm versions require an explicit non-latest distTag."
+      )
+    }
+    return NpmDistTag.make("latest")
+  }
+  let tag: NpmDistTag
+  try { tag = NpmDistTag.make(authored) } catch (cause) {
+    return refuse(
+      "publish.npm.distTag",
+      cause instanceof Error ? cause.message : String(cause)
+    )
+  }
+  if (prerelease && tag === "latest") {
+    return refuse(
+      "publish.npm.distTag",
+      "Prerelease npm versions cannot publish under the latest dist-tag."
+    )
+  }
+  return tag
+}
+
+type ResolvedProject = {
+  readonly name: string
+  readonly packageName?: string
+  readonly version: Version
+  readonly repository?: string
+}
+
+const npmPublish = (
+  authored: AuthoredConfig,
+  project: ResolvedProject
+): CandidateNpmPublish | undefined => {
+  const npm = authored.publish?.npm
+  if (npm === undefined) return undefined
+  if (authored.npmPackage === undefined) {
+    return refuse(
+      "npmPackage",
+      "publish.npm requires npmPackage to declare the exact package artifact prepared by npm pack."
+    )
+  }
+  const packageName = project.packageName ?? project.name
+  if (npm.packageName !== undefined && npm.packageName !== packageName) {
+    return refuse(
+      "publish.npm.packageName",
+      `publish.npm.packageName is ${JSON.stringify(npm.packageName)} but the resolved package name is ${
+        JSON.stringify(packageName)
+      }. State the package identity once under project.packageName or correct the manifest.`
+    )
+  }
+  if (npm.access === "restricted" && !packageName.startsWith("@")) {
+    return refuse(
+      "publish.npm.access",
+      "npm restricted access is valid only for scoped package names."
+    )
+  }
+  const registry = canonicalRegistry(npm.registry)
+  const authentication = npm.authentication
+  if (authentication.strategy === "trusted-publishing") {
+    if (registry !== "https://registry.npmjs.org/") {
+      return refuse(
+        "publish.npm.authentication",
+        "npm trusted publishing is certified only for https://registry.npmjs.org/."
+      )
+    }
+    if (project.repository === undefined) {
+      return refuse(
+        "project.repository",
+        "npm trusted publishing requires the exact GitHub owner/repository coordinate."
+      )
+    }
+    if (authentication.attestation.repository !== project.repository) {
+      return refuse(
+        "publish.npm.authentication.attestation.repository",
+        `The attested repository ${JSON.stringify(authentication.attestation.repository)} does not match ${
+          JSON.stringify(project.repository)
+        } resolved for the package.`
+      )
+    }
+  }
+  const provenance = npm.provenance ??
+    (authentication.strategy === "trusted-publishing" ? "automatic" : "disabled")
+  if (authentication.strategy === "token" && provenance === "automatic") {
+    return refuse(
+      "publish.npm.provenance",
+      "Automatic provenance is an npm trusted-publishing behavior; token mode must choose required or disabled."
+    )
+  }
+  return {
+    packageArtifact: OutputId.make("npm-package"),
+    packageName: NonEmptyName.make(packageName),
+    registry,
+    distTag: distTag(project.version, npm.distTag),
+    access: npm.access ?? "public",
+    authentication,
+    provenance,
+    publicationMode: npm.publicationMode ?? "direct"
+  }
+}
+
 /**
  * Resolve an authored configuration and observed facts into the canonical
  * configuration. Pure and total: the same inputs always produce the same value,
@@ -127,17 +260,27 @@ export const resolveConfig = (authored: unknown, facts: unknown): CandidateConfi
   // canonical world has never heard of them.
   const { project, versionFrom: _directive, ...rest } = config
   const { tagTemplate: _template, ...projectRest } = project
+  const resolvedNames = names(config, observed)
+  const resolvedRepository = repository(config, observed)
+  const resolvedProject = {
+    ...projectRest,
+    ...resolvedNames,
+    ...(resolvedRepository === undefined ? {} : { repository: resolvedRepository }),
+    version: resolvedVersion,
+    tag: tag(config, resolvedVersion),
+    commit: commit(config, observed)
+  }
+  const npm = npmPublish(config, resolvedProject)
+  const publish = config.publish === undefined ? undefined : {
+    ...config.publish,
+    ...(config.publish.npm === undefined ? {} : { npm })
+  }
   // Plain JSON, not class instances: this value goes straight to `plan`, whose
   // decoder refuses anything with a prototype.
-  return toPlainJson({
+  const plain = toPlainJson({
     ...rest,
-    project: {
-      ...projectRest,
-      ...names(config, observed),
-      ...(repository(config, observed) === undefined ? {} : { repository: repository(config, observed) }),
-      version: resolvedVersion,
-      tag: tag(config, resolvedVersion),
-      commit: commit(config, observed)
-    }
-  }) as CandidateConfig
+    project: resolvedProject,
+    ...(publish === undefined ? {} : { publish })
+  })
+  return toPlainJson(decodeCandidate(plain)) as CandidateConfig
 }

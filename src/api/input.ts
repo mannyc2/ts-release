@@ -2,6 +2,7 @@ import * as Schema from "effect/Schema"
 import { existsSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute } from "node:path"
 import { CompletePreparedReleaseRef } from "../release/prepared-ref.js"
+import { AuthoredCorrection } from "../correction/intent.js"
 import { PreparationModeUnsupported, ReleaseInputError } from "./errors.js"
 import type {
   CorrectInput,
@@ -33,16 +34,9 @@ const releaseInput = Schema.Struct({
   allowEmpty: Schema.optionalKey(Schema.Boolean)
 })
 
-const authoredCorrection = Schema.String.check(Schema.makeFilter((value: string) => {
-  const length = [...value].length
-  return length > 0 && length <= 65_536
-    ? undefined
-    : "correction must contain between 1 and 65536 code points."
-}))
-
 const correctInput = Schema.Struct({
   prepared: CompletePreparedReleaseRef,
-  correction: authoredCorrection
+  correction: AuthoredCorrection
 })
 
 const decode = <S extends Schema.Top & Schema.Decoder<unknown>>(

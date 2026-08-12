@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import { decodeConfig } from "../config/config.js"
 import { secretPatterns } from "../model/secret-patterns.js"
+import { bindAuthoredCorrection, correctPreparedRelease } from "../correction/coordinator.js"
 import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
 import {
   observePreparedRelease,
@@ -260,16 +261,18 @@ const releaseProgram = Effect.fn("releaseProgram")(function*(input: ReleaseInput
   return yield* afterCommitFailure(committed.ref, publishCommitted(committed))
 })
 
-const correctionUnavailableReason = SafeReason.make(
-  "Authored correction execution is reserved for plan 229; the prepared release was verified and no provider mutation was attempted."
-)
-
 const correctProgram = Effect.fn("correctProgram")(function*(input: CorrectInput) {
-  yield* loadPrepared(input.prepared)
+  const bundle = yield* loadPrepared(input.prepared)
+  const outcome = yield* Effect.try({
+    try: () => bindAuthoredCorrection(bundle, input.correction),
+    catch: inputFailure
+  }).pipe(Effect.flatMap((intent) => correctPreparedRelease({ bundle, intent })))
   return new CorrectionReport({
     prepared: input.prepared,
     status: "unsupported",
-    reason: correctionUnavailableReason
+    provider: outcome.provider,
+    reason: SafeReason.make(outcome.reason),
+    proposal: outcome.proposal ?? ""
   })
 })
 

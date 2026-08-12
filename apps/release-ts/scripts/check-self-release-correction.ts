@@ -19,14 +19,16 @@ try {
 }
 
 const tests = [
-  "test/correction/npm-deprecate.test.ts",
   "test/correction/catalog-state.test.ts",
   "test/correction/github-release.test.ts",
-  "test/correction/pypi-file-yank.test.ts"
+  "test/correction/pypi-file-yank.test.ts",
+  "test/correction/canonical-intent.test.ts"
 ]
 const result = spawnSync("bun", ["test", ...tests], { cwd: root, encoding: "utf8", stdio: "pipe" })
 if (result.status !== 0) failures.push(`Provider correction contract tests failed: ${result.stderr.trim()}`)
 report("self-release-correction-report/v1", failures, {
-  tests, ordinaryPublicationCannotUndoCorrection: result.status === 0,
+  tests,
+  conditionalMutationAdmitted: false,
+  authoredProposalBindingContractTested: result.status === 0,
   evidenceState: "contract-tested"
 })

@@ -1,4 +1,6 @@
 import * as Schema from "effect/Schema"
+import * as Semver from "semver"
+import { CredentialRef } from "../model/authority.js"
 import { NonEmptyName, OutputId, SafeArchivePattern, SafeRelativePath, Version } from "../model/primitives.js"
 
 const optional = Schema.optionalKey
@@ -143,23 +145,130 @@ export class CandidateCatalog extends Schema.Class<CandidateCatalog>("CandidateC
   ])
 }) {}
 
+export interface NpmRegistryEndpointPolicy {
+  /** Test servers must opt in; production-authored config never enables this. */
+  readonly allowInsecureLoopback?: true
+}
+
+/** Parse and normalize the complete npm credential audience, including base path. */
+export const canonicalizeNpmRegistryEndpoint = (
+  value: string,
+  policy: NpmRegistryEndpointPolicy = {}
+): string => {
+  let endpoint: URL
+  try { endpoint = new URL(value) } catch {
+    throw new Error("npm registry must be an absolute HTTPS URL.")
+  }
+  const loopback = endpoint.hostname === "localhost" || endpoint.hostname === "127.0.0.1" ||
+    endpoint.hostname === "[::1]"
+  if (endpoint.host.length === 0 || (endpoint.protocol !== "https:" &&
+      !(policy.allowInsecureLoopback === true && loopback && endpoint.protocol === "http:"))) {
+    throw new Error("npm registry must be HTTPS; HTTP is reserved for explicitly enabled loopback tests.")
+  }
+  if (endpoint.username.length > 0 || endpoint.password.length > 0) {
+    throw new Error("npm registry must not contain credentials.")
+  }
+  if (endpoint.search.length > 0 || endpoint.hash.length > 0) {
+    throw new Error("npm registry must not contain a query or fragment.")
+  }
+  endpoint.pathname = endpoint.pathname.replace(/\/{2,}/gu, "/").replace(/\/+$/u, "") || "/"
+  return `${endpoint.origin}${endpoint.pathname === "/" ? "/" : `${endpoint.pathname}/`}`
+}
+
+/** Canonical npm registry audience, including its normalized base path. */
+export const CanonicalNpmRegistryEndpoint = Schema.NonEmptyString.check(
+  Schema.makeFilter((value: string) => {
+    try {
+      return canonicalizeNpmRegistryEndpoint(value) === value
+        ? undefined
+        : "npm registry endpoint must be canonical."
+    } catch (cause) {
+      return cause instanceof Error ? cause.message : String(cause)
+    }
+  })
+).pipe(Schema.brand("CanonicalNpmRegistryEndpoint"))
+export type CanonicalNpmRegistryEndpoint = typeof CanonicalNpmRegistryEndpoint.Type
+
+/** npm distribution tags are URI-safe names that do not parse as SemVer ranges. */
+export const NpmDistTag = Schema.NonEmptyString.check(Schema.makeFilter((value: string) => {
+  if (Semver.validRange(value) !== null) {
+    return "npm dist-tag must not be a valid SemVer range."
+  }
+  if (value.trim() !== value || encodeURIComponent(value) !== value) {
+    return "npm dist-tag must be a nonempty URI-safe name without surrounding whitespace."
+  }
+  return undefined
+})).pipe(Schema.brand("NpmDistTag"))
+export type NpmDistTag = typeof NpmDistTag.Type
+
+export const NpmAccess = Schema.Literals(["public", "restricted"])
+export type NpmAccess = typeof NpmAccess.Type
+
+export const NpmProvenancePolicy = Schema.Literals(["automatic", "required", "disabled"])
+export type NpmProvenancePolicy = typeof NpmProvenancePolicy.Type
+
+export const NpmPublicationMode = Schema.Literal("direct")
+export type NpmPublicationMode = typeof NpmPublicationMode.Type
+
+export class NpmTokenAuthentication
+  extends Schema.Class<NpmTokenAuthentication>("NpmTokenAuthentication")({
+    strategy: Schema.Literal("token"),
+    credential: CredentialRef.check(Schema.makeFilter((value: string) =>
+      /^[A-Za-z_][A-Za-z0-9_]*$/u.test(value)
+        ? undefined
+        : "npm token credential must be a portable environment variable name."))
+  }) {}
+
+export const NpmTrustedPublisherRepository = Schema.NonEmptyString.check(Schema.makeFilter(
+  (value: string) => /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(value)
+    ? undefined
+    : "npm trusted-publisher repository must be an owner/repository coordinate."
+))
+
+export const NpmTrustedPublisherWorkflow = Schema.NonEmptyString.check(Schema.makeFilter(
+  (value: string) => /^[A-Za-z0-9_.-]+\.ya?ml$/u.test(value)
+    ? undefined
+    : "npm trusted-publisher workflow must be one YAML filename from .github/workflows/."
+))
+
+/** Operator-attested npm package trust relationship for one GitHub workflow. */
+export class NpmTrustedPublisherAttestation
+  extends Schema.Class<NpmTrustedPublisherAttestation>("NpmTrustedPublisherAttestation")({
+    provider: Schema.Literal("github-actions"),
+    runner: Schema.Literal("github-hosted"),
+    repository: NpmTrustedPublisherRepository,
+    workflow: NpmTrustedPublisherWorkflow,
+    allowedAction: Schema.Literal("npm-publish-direct")
+  }) {}
+
+export class NpmTrustedPublishingAuthentication
+  extends Schema.Class<NpmTrustedPublishingAuthentication>("NpmTrustedPublishingAuthentication")({
+    strategy: Schema.Literal("trusted-publishing"),
+    attestation: NpmTrustedPublisherAttestation
+  }) {}
+
+export const NpmAuthentication = Schema.Union([
+  NpmTokenAuthentication,
+  NpmTrustedPublishingAuthentication
+])
+export type NpmAuthentication = typeof NpmAuthentication.Type
+
+/** Fully resolved npm intent. Every field is durable and behavior-affecting. */
+export class CandidateNpmPublish extends Schema.Class<CandidateNpmPublish>("CandidateNpmPublish")({
+  packageArtifact: OutputId,
+  packageName: NonEmptyName,
+  registry: CanonicalNpmRegistryEndpoint,
+  distTag: NpmDistTag,
+  access: NpmAccess,
+  authentication: NpmAuthentication,
+  provenance: NpmProvenancePolicy,
+  publicationMode: NpmPublicationMode
+}) {}
+
 const trusted = {
   provider: optional(Schema.Literal("github-actions")),
   workflow: optional(nonempty)
 }
-
-export class CandidateNpmPublish extends Schema.Class<CandidateNpmPublish>("CandidateNpmPublish")({
-  registry: optional(Schema.String),
-  packageName: optional(nonempty),
-  packagePath: optional(SafeRelativePath),
-  tokenEnv: optional(Schema.String),
-  trustedPublishing: optional(Schema.Struct({
-    ...trusted,
-    verifyPackageExists: optional(Schema.Boolean)
-  })),
-  access: optional(Schema.Literals(["public", "restricted"])),
-  provenance: optional(Schema.Boolean)
-}) {}
 
 export class CandidatePyPiPublish extends Schema.Class<CandidatePyPiPublish>("CandidatePyPiPublish")({
   repositoryUrl: optional(Schema.String),

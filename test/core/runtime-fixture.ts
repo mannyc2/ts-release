@@ -12,8 +12,11 @@ import {
   type PreparedReleaseStoreShape
 } from "../../src/release/prepared-store.js"
 import {
+  AuthorizedMutationHttp,
+  CertifiedPublisherSpawn,
   CredentialPlatformError,
-  HttpAuthorizer
+  HttpAuthorizer,
+  NpmUserConfigResource
 } from "../../src/platform/credentials.js"
 import type { ReleaseApiLayer } from "../../src/api/types.js"
 
@@ -69,10 +72,21 @@ export const runtimeLayer = (
       reason: "fixture HTTP authorizer was not expected to be called"
     }))
   }
+  const unavailableMutation = () => Effect.fail(new CredentialPlatformError({
+    phase: "mutate",
+    commitment: "before-dispatch",
+    reason: "fixture mutation sink was not expected to be called"
+  }))
   return Layer.mergeAll(
     Layer.succeed(ReleaseRuntime, runtime),
     Layer.succeed(PreparedReleaseStore, preparedStore),
     Layer.succeed(CredentialProvider, credentials),
-    Layer.succeed(HttpAuthorizer, httpAuthorizer)
+    Layer.succeed(HttpAuthorizer, httpAuthorizer),
+    Layer.succeed(AuthorizedMutationHttp, { execute: unavailableMutation }),
+    Layer.succeed(NpmUserConfigResource, { acquire: unavailableMutation }),
+    Layer.succeed(CertifiedPublisherSpawn, {
+      preflightTrustedNpm: unavailableMutation,
+      spawn: unavailableMutation
+    })
   )
 }

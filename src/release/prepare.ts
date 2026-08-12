@@ -10,7 +10,7 @@ import { sha256 } from "../drivers/utils.js"
 import { contained } from "../drivers/contain.js"
 import type { RunCommand } from "../drivers/process.js"
 import { sha256Digest } from "../model/digest.js"
-import { NonEmptyName, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
+import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
 import { VerifiedReleaseContext } from "./context.js"
 import { GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact, GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, type GraphPreparation, type ReleaseGraph } from "./graph.js"
 import { PreparedArtifact, PreparedGitHubPublication, PreparedNpmPublication, PreparedProject, PreparedReleaseV2, PreparedSource } from "./prepared.js"
@@ -56,7 +56,6 @@ const verifyPreparationChildAuthority = Effect.fn("prepareRelease.verifyPreparat
     }
   }
 })
-const outputId = (value: string): OutputId => OutputId.make(value)
 const pathOf = (context: VerifiedReleaseContext, path: SafeRelativePath): string => join(context.workspace, path)
 const byCodepoint = (left: { readonly id: { toString(): string } }, right: { readonly id: { toString(): string } }): number => {
   const a = left.id.toString(); const b = right.id.toString()
@@ -230,8 +229,10 @@ const structured = (
 const npmTarball = (
   request: PreparationRequest, publication: GraphNpmPublication, declarations: Declarations, bytes: Bytes
 ): Effect.Effect<PreparedArtifact, PreparationError> => Effect.gen(function*() {
-  const packageId = publication.artifactIds.find((id) => declarations.get(id.toString())?.kind === "package")
-  if (packageId === undefined) return yield* new PreparationError({ reason: `npm publication ${publication.id} has no package artifact.` })
+  const packageId = publication.packageArtifact
+  if (declarations.get(packageId.toString())?.kind !== "package") return yield* new PreparationError({
+    reason: `npm publication ${publication.id} does not reference its declared package artifact.`
+  })
   const destination = `.release/ts-release/npm/${publication.id}`
   const cache = `.release/ts-release/npm-cache/${publication.id}`
   mkdirSync(join(request.context.workspace, destination), { recursive: true })
@@ -252,9 +253,11 @@ const npmTarball = (
   // versions may add warnings or progress text around their JSON mode without
   // changing the captured tarball bytes.
   const path = SafeRelativePath.make(`${destination}/${files[0]}`)
-  const artifactBytes = yield* capture(request.context, { ...declarations.get(packageId.toString())!, id: outputId(`npm-tarball:${publication.id}`), path, kind: "archive" })
+  const artifactBytes = yield* capture(request.context, {
+    ...declarations.get(packageId.toString())!, id: packageId, path, kind: "archive"
+  })
   const digest = sha256Digest(artifactBytes)
-  return PreparedArtifact.make({ id: outputId(`npm-tarball:${publication.id}`), path, kind: "archive", size: artifactBytes.length,
+  return PreparedArtifact.make({ id: packageId, path, kind: "archive", size: artifactBytes.length,
     digest, blob: digest, mediaType: "application/gzip" })
 })
 
@@ -312,7 +315,9 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         }
         publications.push(PreparedNpmPublication.make({ id: NonEmptyName.make(publication.id), packageName: publication.packageName,
           version: Version.make(publication.version.toString()), registryUrl: publication.registryUrl,
-          artifactId: artifact.id, authority: publication.authority }))
+          artifactId: artifact.id, distTag: publication.distTag, access: publication.access,
+          authentication: publication.authentication, provenance: publication.provenance,
+          publicationMode: publication.publicationMode, authority: publication.authority }))
       } else {
         const assets = publication.assetIds.map((id) => {
           const artifact = preparedArtifacts.get(id.toString())

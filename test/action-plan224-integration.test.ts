@@ -63,6 +63,7 @@ import {
   type PreparedReleaseStoreShape
 } from "../src/release/prepared-store.js"
 import { contextFor } from "./core/runtime-fixture.js"
+import { unavailableMutationServicesLayer } from "./fixtures/mutation-services.js"
 
 const candidateCommit = "c".repeat(40)
 const producer: ActionProducerContext = {
@@ -258,7 +259,8 @@ const apiLayer = (
   Layer.succeed(ReleaseRuntime, runtime),
   Layer.succeed(PreparedReleaseStore, store),
   Layer.succeed(CredentialProvider, credentials),
-  Layer.succeed(HttpAuthorizer, http)
+  Layer.succeed(HttpAuthorizer, http),
+  unavailableMutationServicesLayer
 )
 
 test("Action release durably verifies and exposes its artifact before mutation, then a fresh attempt resumes without rebuilding", async () => {

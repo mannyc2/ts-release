@@ -7,7 +7,15 @@
 // hand-mirrored schema is a drift machine.
 import * as Schema from "effect/Schema"
 import { NonEmptyName, Version } from "../model/primitives.js"
-import { CandidateConfig, CandidateProject } from "../recipes/config.js"
+import {
+  CandidateConfig,
+  CandidatePublish,
+  CandidateProject,
+  NpmAccess,
+  NpmAuthentication,
+  NpmProvenancePolicy,
+  NpmPublicationMode
+} from "../recipes/config.js"
 
 const optional = Schema.optionalKey
 
@@ -25,8 +33,25 @@ export class AuthoredProject extends Schema.Class<AuthoredProject>("AuthoredProj
   tagTemplate: optional(Schema.NonEmptyString)
 }) {}
 
+/** Human-authored npm policy. Resolution fills only documented deterministic defaults. */
+export class AuthoredNpmPublish extends Schema.Class<AuthoredNpmPublish>("AuthoredNpmPublish")({
+  registry: optional(Schema.NonEmptyString),
+  packageName: optional(Schema.NonEmptyString),
+  distTag: optional(Schema.NonEmptyString),
+  access: optional(NpmAccess),
+  authentication: NpmAuthentication,
+  provenance: optional(NpmProvenancePolicy),
+  publicationMode: optional(NpmPublicationMode)
+}) {}
+
+export class AuthoredPublish extends Schema.Class<AuthoredPublish>("AuthoredPublish")({
+  ...CandidatePublish.fields,
+  npm: optional(AuthoredNpmPublish)
+}) {}
+
 export class AuthoredConfig extends Schema.Class<AuthoredConfig>("AuthoredConfig")({
   ...CandidateConfig.fields,
   project: AuthoredProject,
+  publish: optional(AuthoredPublish),
   versionFrom: optional(Schema.Literals(["manifest", "git-tag"]))
 }) {}

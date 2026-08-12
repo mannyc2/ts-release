@@ -745,11 +745,106 @@
       ],
       "additionalProperties": false
     },
-    "CandidateNpmPublish": {
+    "NpmTokenAuthentication": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "token"
+          ]
+        },
+        "credential": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "strategy",
+        "credential"
+      ],
+      "additionalProperties": false
+    },
+    "NpmTrustedPublisherAttestation": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "github-actions"
+          ]
+        },
+        "runner": {
+          "type": "string",
+          "enum": [
+            "github-hosted"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "workflow": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "allowedAction": {
+          "type": "string",
+          "enum": [
+            "npm-publish-direct"
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "runner",
+        "repository",
+        "workflow",
+        "allowedAction"
+      ],
+      "additionalProperties": false
+    },
+    "NpmTrustedPublishingAuthentication": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "trusted-publishing"
+          ]
+        },
+        "attestation": {
+          "$ref": "#/$defs/NpmTrustedPublisherAttestation"
+        }
+      },
+      "required": [
+        "strategy",
+        "attestation"
+      ],
+      "additionalProperties": false
+    },
+    "AuthoredNpmPublish": {
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "packageName": {
           "type": "string",
@@ -759,34 +854,13 @@
             }
           ]
         },
-        "packagePath": {
-          "type": "string"
-        },
-        "tokenEnv": {
-          "type": "string"
-        },
-        "trustedPublishing": {
-          "type": "object",
-          "properties": {
-            "provider": {
-              "type": "string",
-              "enum": [
-                "github-actions"
-              ]
-            },
-            "workflow": {
-              "type": "string",
-              "allOf": [
-                {
-                  "minLength": 1
-                }
-              ]
-            },
-            "verifyPackageExists": {
-              "type": "boolean"
+        "distTag": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
             }
-          },
-          "additionalProperties": false
+          ]
         },
         "access": {
           "type": "string",
@@ -795,10 +869,34 @@
             "restricted"
           ]
         },
+        "authentication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NpmTokenAuthentication"
+            },
+            {
+              "$ref": "#/$defs/NpmTrustedPublishingAuthentication"
+            }
+          ]
+        },
         "provenance": {
-          "type": "boolean"
+          "type": "string",
+          "enum": [
+            "automatic",
+            "required",
+            "disabled"
+          ]
+        },
+        "publicationMode": {
+          "type": "string",
+          "enum": [
+            "direct"
+          ]
         }
       },
+      "required": [
+        "authentication"
+      ],
       "additionalProperties": false
     },
     "CandidateGitHubPublish": {
@@ -1038,11 +1136,11 @@
       },
       "additionalProperties": false
     },
-    "CandidatePublish": {
+    "AuthoredPublish": {
       "type": "object",
       "properties": {
         "npm": {
-          "$ref": "#/$defs/CandidateNpmPublish"
+          "$ref": "#/$defs/AuthoredNpmPublish"
         },
         "github": {
           "$ref": "#/$defs/CandidateGitHubPublish"
@@ -1128,7 +1226,7 @@
           }
         },
         "publish": {
-          "$ref": "#/$defs/CandidatePublish"
+          "$ref": "#/$defs/AuthoredPublish"
         },
         "versionFrom": {
           "type": "string",

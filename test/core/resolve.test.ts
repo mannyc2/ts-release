@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect"
 import { decodeConfig } from "../../src/config/config.js"
 import { encodeResolvedConfig } from "../../src/resolve/encode.js"
 import { MISSING_COMMIT, resolveConfig } from "../../src/resolve/resolve.js"
+import { canonicalizeNpmRegistryEndpoint } from "../../src/recipes/config.js"
 
 const canonical = {
   project: {
@@ -93,5 +94,118 @@ describe("resolveConfig", () => {
     )
     expect(String(resolved.project.name)).toBe("@scope/observed")
     expect(resolved.project.packageName).toBe("@scope/observed")
+  })
+
+  const tokenAuthentication = { strategy: "token", credential: "CUSTOM_NPM_TOKEN" } as const
+  const npmAuthored = (npm: Record<string, unknown>, version = "1.2.3") => ({
+    project: {
+      name: "@scope/pkg", packageName: "@scope/pkg", version, tag: `v${version}`,
+      commit: "0123456789abcdef", repository: "owner/pkg"
+    },
+    npmPackage: { path: "." },
+    publish: { npm: { authentication: tokenAuthentication, ...npm } }
+  })
+
+  test("resolves stable npm defaults into one complete canonical intent", () => {
+    const resolved = resolveConfig(npmAuthored({
+      registry: "https://REGISTRY.example.test/tenant///"
+    }), facts())
+    expect(resolved.publish?.npm).toEqual({
+      packageArtifact: "npm-package",
+      packageName: "@scope/pkg",
+      registry: "https://registry.example.test/tenant/",
+      distTag: "latest",
+      access: "public",
+      authentication: tokenAuthentication,
+      provenance: "disabled",
+      publicationMode: "direct"
+    } as never)
+  })
+
+  test("requires a non-latest npm channel for prerelease versions", () => {
+    expect(() => resolveConfig(npmAuthored({}, "1.2.3-beta.1"), facts()))
+      .toThrow(/explicit non-latest distTag/u)
+    expect(() => resolveConfig(npmAuthored({ distTag: "latest" }, "1.2.3-beta.1"), facts()))
+      .toThrow(/cannot publish under the latest/u)
+    expect(() => resolveConfig(npmAuthored({ distTag: "^1.2.3" }, "1.2.3-beta.1"), facts()))
+      .toThrow(/must not be a valid SemVer range/u)
+    expect(String(resolveConfig(npmAuthored({ distTag: "next" }, "1.2.3-beta.1"), facts()).publish?.npm?.distTag))
+      .toBe("next")
+  })
+
+  test("accepts only an exact direct npm trusted-publisher attestation", () => {
+    const authentication = {
+      strategy: "trusted-publishing",
+      attestation: {
+        provider: "github-actions", runner: "github-hosted", repository: "owner/pkg",
+        workflow: "publish.yml", allowedAction: "npm-publish-direct"
+      }
+    } as const
+    const resolved = resolveConfig(npmAuthored({ authentication }), facts())
+    expect(resolved.publish?.npm).toMatchObject({
+      registry: "https://registry.npmjs.org/", authentication,
+      provenance: "automatic", publicationMode: "direct"
+    } as never)
+    expect(() => resolveConfig(npmAuthored({
+      registry: "https://registry.example.test/", authentication
+    }), facts())).toThrow(/certified only for https:\/\/registry\.npmjs\.org\//u)
+    expect(() => resolveConfig(npmAuthored({
+      authentication: {
+        ...authentication,
+        attestation: { ...authentication.attestation, repository: "other/pkg" }
+      }
+    }), facts())).toThrow(/does not match/u)
+  })
+
+  test("rejects disconnected paths, contradictory auth, stage-only trust, and unsafe registries at config boundaries", async () => {
+    const base = npmAuthored({})
+    await expect(Effect.runPromise(decodeConfig({
+      ...base,
+      publish: { npm: { authentication: tokenAuthentication, packagePath: "." } }
+    }))).rejects.toThrow()
+    await expect(Effect.runPromise(decodeConfig({
+      ...base,
+      publish: { npm: {
+        authentication: { ...tokenAuthentication, attestation: { provider: "github-actions" } }
+      } }
+    }))).rejects.toThrow()
+    await expect(Effect.runPromise(decodeConfig({
+      ...base,
+      publish: { npm: {
+        authentication: {
+          strategy: "trusted-publishing",
+          attestation: {
+            provider: "github-actions", runner: "github-hosted", repository: "owner/pkg",
+            workflow: "publish.yml", allowedAction: "npm-stage-publish"
+          }
+        }
+      } }
+    }))).rejects.toThrow()
+    await expect(Effect.runPromise(decodeConfig({
+      ...base,
+      publish: { npm: { authentication: tokenAuthentication, publicationMode: "staged" } }
+    }))).rejects.toThrow()
+    expect(() => resolveConfig(npmAuthored({ registry: "http://registry.example.test/" }), facts()))
+      .toThrow(/must be HTTPS/u)
+    expect(() => resolveConfig({ ...base, npmPackage: undefined }, facts())).toThrow()
+  })
+
+  test("token mode rejects the misleading automatic-provenance policy", () => {
+    expect(() => resolveConfig(npmAuthored({ provenance: "automatic" }), facts()))
+      .toThrow(/trusted-publishing behavior/u)
+  })
+
+  test("registry canonicalization binds the base path and gates HTTP to explicit loopback tests", () => {
+    expect(canonicalizeNpmRegistryEndpoint("https://REGISTRY.example.test/tenant///"))
+      .toBe("https://registry.example.test/tenant/")
+    expect(() => canonicalizeNpmRegistryEndpoint("https://registry.example.test/?tenant=other"))
+      .toThrow(/query or fragment/u)
+    expect(() => canonicalizeNpmRegistryEndpoint("https://user:secret@registry.example.test/"))
+      .toThrow(/must not contain credentials/u)
+    expect(() => canonicalizeNpmRegistryEndpoint("http://localhost:4873/"))
+      .toThrow(/must be HTTPS/u)
+    expect(canonicalizeNpmRegistryEndpoint("http://localhost:4873/tenant", {
+      allowInsecureLoopback: true
+    })).toBe("http://localhost:4873/tenant/")
   })
 })

@@ -5,6 +5,7 @@ import {
   decodeCompletePreparedReleaseRef,
   encodeCompletePreparedReleaseRef,
   type CompletePreparedReleaseRef,
+  type CorrectInput,
   type InspectOutput,
   type LocalCompletePreparedReleaseRef,
   type ReleaseApi
@@ -310,6 +311,6 @@ export const runCorrect = async (
   io: CliIo
 ): Promise<void> => {
   const correctionPath = realpathSync(pathFrom(cwd, options.correction))
-  const correction = io.read(correctionPath)
+  const correction = json(io, correctionPath) as CorrectInput["correction"]
   printJson(io, await api.correct({ prepared: options.prepared, correction }))
 }

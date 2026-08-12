@@ -5,7 +5,15 @@ import { spawnSync } from "node:child_process"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { parseSha256Hex } from "../../src/model/digest.js"
+import { CredentialRef } from "../../src/model/authority.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../../src/model/primitives.js"
+import {
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag,
+  NpmTokenAuthentication,
+  NpmTrustedPublishingAuthentication,
+  NpmTrustedPublisherAttestation
+} from "../../src/recipes/config.js"
 import { OutputDeclaration } from "../../src/release/graph.js"
 import { DriverError } from "../../src/drivers/errors.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
@@ -138,13 +146,18 @@ describe("local preparation boundary", () => {
     mkdirSync(join(root, "lib"), { recursive: true })
     writeFileSync(join(root, "lib", "index.js"), "export const fixture = true\n")
     const packageArtifact = OutputDeclaration.make({ id: OutputId.make("npm-package"), path: SafeRelativePath.make("."), kind: "package", provenance: "build" })
+    const authentication = NpmTokenAuthentication.make({
+      strategy: "token", credential: CredentialRef.make("CUSTOM_NPM_TOKEN")
+    })
     const graph = linkContributions([CapabilityContribution.make({ artifacts: [packageArtifact], preparations: [], publications: [
       GraphNpmPublication.make({
         id: OperationId.make("npm-release"), packageName: NonEmptyName.make("fixture-pack"),
-        version: NonEmptyName.make("1.0.0"), registryUrl: "https://registry.npmjs.org/",
-        artifactIds: [packageArtifact.id], authority: makeNpmPublicationAuthorityIntent({
+        version: Version.make("1.0.0"), registryUrl: CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/"),
+        packageArtifact: packageArtifact.id, distTag: NpmDistTag.make("latest"), access: "public",
+        authentication, provenance: "required", publicationMode: "direct",
+        authority: makeNpmPublicationAuthorityIntent({
           packageName: "fixture-pack", version: "1.0.0", registryUrl: "https://registry.npmjs.org/",
-          tokenEnv: "CUSTOM_NPM_TOKEN"
+          distTag: "latest", authentication
         })
       })
     ] })])
@@ -158,17 +171,21 @@ describe("local preparation boundary", () => {
       verifySource: (value) => Effect.succeed(value) }))
     const publication = bundle.manifest.publications[0]
     expect(publication?._tag).toBe("PreparedNpmPublication")
-    expect(publication?._tag === "PreparedNpmPublication" ? publication.artifactId.toString() : "").toBe("npm-tarball:npm-release")
+    expect(publication?._tag === "PreparedNpmPublication" ? publication.artifactId.toString() : "").toBe("npm-package")
     expect(publication?._tag === "PreparedNpmPublication" ? publication.authority : undefined)
       .toEqual(graph.publications[0]!.authority)
     expect(publication?._tag === "PreparedNpmPublication" ? publication.authority.publishStrategy : undefined)
       .toMatchObject({ kind: "token", credential: "CUSTOM_NPM_TOKEN" })
     expect(publication?._tag === "PreparedNpmPublication" ? publication.authority.audience.toString() : undefined)
       .toBe("https://registry.npmjs.org/")
+    expect(publication).toMatchObject({
+      distTag: "latest", access: "public", provenance: "required", publicationMode: "direct",
+      authentication: { strategy: "token", credential: "CUSTOM_NPM_TOKEN" }
+    })
     const decoded = decodePreparedRelease(encodePreparedRelease(bundle.manifest))
     expect(decoded.publications[0]?.authority).toEqual(publication?.authority)
-    expect(bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === "npm-package")).toBe(false)
-    expect(bundle.blobs.has("npm-tarball:npm-release")).toBe(true)
+    expect(bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === "npm-package")).toBe(true)
+    expect(bundle.blobs.has("npm-package")).toBe(true)
   })
 
   test("trusted-publishing identity survives graph preparation and canonical manifest roundtrip", async () => {
@@ -179,15 +196,22 @@ describe("local preparation boundary", () => {
     const packageArtifact = OutputDeclaration.make({
       id: OutputId.make("npm-package"), path: SafeRelativePath.make("."), kind: "package", provenance: "build"
     })
+    const authentication = NpmTrustedPublishingAuthentication.make({
+      strategy: "trusted-publishing", attestation: NpmTrustedPublisherAttestation.make({
+        provider: "github-actions", runner: "github-hosted", repository: "owner/fixture",
+        workflow: "release.yml", allowedAction: "npm-publish-direct"
+      })
+    })
     const authority = makeNpmPublicationAuthorityIntent({
       packageName: "fixture-trusted", version: "1.0.0", registryUrl: "https://registry.npmjs.org/",
-      trustedPublishing: { provider: "github-actions" }
+      distTag: "latest", authentication
     })
     const graph = linkContributions([CapabilityContribution.make({ artifacts: [packageArtifact], preparations: [], publications: [
       GraphNpmPublication.make({
         id: OperationId.make("npm-release"), packageName: NonEmptyName.make("fixture-trusted"),
-        version: NonEmptyName.make("1.0.0"), registryUrl: "https://registry.npmjs.org/",
-        artifactIds: [packageArtifact.id], authority
+        version: Version.make("1.0.0"), registryUrl: CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/"),
+        packageArtifact: packageArtifact.id, distTag: NpmDistTag.make("latest"), access: "public",
+        authentication, provenance: "automatic", publicationMode: "direct", authority
       })
     ] })])
     const run: RunCommand = ({ argv, cwd }) => Effect.try({ try: () => {
@@ -209,6 +233,10 @@ describe("local preparation boundary", () => {
       workflow: ".github/workflows/release.yml"
     })
     expect(publication?.authority.observationStrategies).toEqual([{ kind: "anonymous" }])
+    expect(publication).toMatchObject({
+      authentication: { strategy: "trusted-publishing", attestation: { allowedAction: "npm-publish-direct" } },
+      provenance: "automatic", publicationMode: "direct"
+    })
     expect(decodePreparedRelease(encodePreparedRelease(bundle.manifest)).publications[0]?.authority)
       .toEqual(authority)
   })

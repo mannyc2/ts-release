@@ -2,14 +2,12 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import * as Config from "effect/Config"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Redacted from "effect/Redacted"
 import * as Schema from "effect/Schema"
-import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import type { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
@@ -29,26 +27,65 @@ import {
   CredentialSubjectMismatch,
   CredentialUnavailable,
   type AnonymousAccess,
-  type CredentialAuthorityError,
   type CredentialGrantAcquirer,
   type CredentialProviderShape,
-  type MutationCredentialGrant,
-  type PublisherOperation,
   type ScopedSecret,
   type WorkloadIdentity,
   makeCredentialProvider,
   validateGrantForOperation
 } from "../publication/authority.js"
 import {
+  AuthorizedMutationHttp,
   HttpAuthorizer,
+  type AuthorizedMutationHttpShape,
   type HttpAuthorizerShape,
   type HttpObservationRequest,
   type HttpResponse,
+  type MutationHttpRequest,
   type PublicationHttp
 } from "../publication/http.js"
+import {
+  CertifiedPublisherSpawn,
+  NpmUserConfigResource,
+  PublisherExited,
+  PublisherOutcomeUnknown,
+  RejectedBeforeStart,
+  makeNpmUserConfigHandle,
+  type CertifiedPublisherResult,
+  type CertifiedPublisherSpawnShape,
+  type CertifiedPublisherSpec,
+  type NpmPublishOperation,
+  type NpmPublisherSpec,
+  type NpmUserConfig,
+  type NpmUserConfigInput,
+  type NpmUserConfigResourceShape,
+  type WorkloadPublisherSpec
+} from "../publication/publisher.js"
 
-export { HttpAuthorizer }
-export type { HttpAuthorizerShape, HttpObservationRequest }
+export {
+  AuthorizedMutationHttp,
+  CertifiedPublisherSpawn,
+  HttpAuthorizer,
+  NpmUserConfigResource,
+  PublisherExited,
+  PublisherOutcomeUnknown,
+  RejectedBeforeStart
+}
+export type {
+  AuthorizedMutationHttpShape,
+  CertifiedPublisherResult,
+  CertifiedPublisherSpawnShape,
+  CertifiedPublisherSpec,
+  HttpAuthorizerShape,
+  HttpObservationRequest,
+  MutationHttpRequest,
+  NpmPublishOperation,
+  NpmPublisherSpec,
+  NpmUserConfig,
+  NpmUserConfigInput,
+  NpmUserConfigResourceShape,
+  WorkloadPublisherSpec
+}
 
 export class CredentialPlatformError
   extends Schema.TaggedErrorClass<CredentialPlatformError>()("CredentialPlatformError", {
@@ -56,110 +93,6 @@ export class CredentialPlatformError
     commitment: Schema.Literals(["before-dispatch", "unknown"]),
     reason: Schema.NonEmptyString
   }) {}
-
-export interface MutationHttpRequest {
-  readonly method: "POST"
-  readonly url: string
-  readonly headers?: Readonly<Record<string, string>>
-  readonly body?: Uint8Array | string
-}
-
-export interface AuthorizedMutationHttpShape {
-  readonly execute: (
-    operation: PublisherOperation,
-    request: MutationHttpRequest,
-    grant: ScopedSecret
-  ) => Effect.Effect<HttpResponse, CredentialAuthorityError | CredentialPlatformError>
-}
-
-export class AuthorizedMutationHttp
-  extends Context.Service<AuthorizedMutationHttp, AuthorizedMutationHttpShape>()(
-    "ts-release/AuthorizedMutationHttp"
-  ) {}
-
-const NpmUserConfigTypeId: unique symbol = Symbol("ts-release/NpmUserConfig")
-
-/** Opaque handle: only CertifiedPublisherSpawn can eliminate it to a path. */
-export interface NpmUserConfig {
-  readonly _tag: "NpmUserConfig"
-  readonly [NpmUserConfigTypeId]: typeof NpmUserConfigTypeId
-}
-
-export type NpmPublishOperation = Extract<PublisherOperation, { readonly _tag: "PublishOperation" }>
-
-export interface NpmUserConfigInput {
-  readonly operation: NpmPublishOperation
-  readonly registryUrl: string
-}
-
-export interface NpmUserConfigResourceShape {
-  readonly acquire: (
-    input: NpmUserConfigInput,
-    grant: ScopedSecret
-  ) => Effect.Effect<NpmUserConfig, CredentialAuthorityError | CredentialPlatformError, Scope.Scope>
-}
-
-export class NpmUserConfigResource
-  extends Context.Service<NpmUserConfigResource, NpmUserConfigResourceShape>()(
-    "ts-release/NpmUserConfigResource"
-  ) {}
-
-interface CertifiedPublisherSpecBase {
-  readonly operation: PublisherOperation
-  readonly argv: readonly [string, ...Array<string>]
-  readonly cwd: string
-}
-
-export interface NpmPublisherSpec extends CertifiedPublisherSpecBase {
-  readonly _tag: "NpmPublisherSpec"
-  readonly operation: NpmPublishOperation
-  readonly userConfig: NpmUserConfig
-}
-
-export interface WorkloadPublisherSpec extends CertifiedPublisherSpecBase {
-  readonly _tag: "WorkloadPublisherSpec"
-}
-
-export type CertifiedPublisherSpec = NpmPublisherSpec | WorkloadPublisherSpec
-
-export class RejectedBeforeStart
-  extends Schema.TaggedClass<RejectedBeforeStart>()("RejectedBeforeStart", {
-    commitment: Schema.Literal("before-dispatch"),
-    reason: Schema.NonEmptyString
-  }) {}
-
-export class PublisherExited
-  extends Schema.TaggedClass<PublisherExited>()("PublisherExited", {
-    commitment: Schema.Literal("started"),
-    exitCode: Schema.Int,
-    stdout: Schema.String,
-    stderr: Schema.String
-  }) {}
-
-export class PublisherOutcomeUnknown
-  extends Schema.TaggedClass<PublisherOutcomeUnknown>()("PublisherOutcomeUnknown", {
-    commitment: Schema.Literal("unknown"),
-    reason: Schema.NonEmptyString
-  }) {}
-
-export const CertifiedPublisherResult = Schema.Union([
-  RejectedBeforeStart,
-  PublisherExited,
-  PublisherOutcomeUnknown
-])
-export type CertifiedPublisherResult = typeof CertifiedPublisherResult.Type
-
-export interface CertifiedPublisherSpawnShape {
-  readonly spawn: (
-    spec: CertifiedPublisherSpec,
-    grant: MutationCredentialGrant
-  ) => Effect.Effect<CertifiedPublisherResult, CredentialAuthorityError | CredentialPlatformError>
-}
-
-export class CertifiedPublisherSpawn
-  extends Context.Service<CertifiedPublisherSpawn, CertifiedPublisherSpawnShape>()(
-    "ts-release/CertifiedPublisherSpawn"
-  ) {}
 
 export type CredentialPlatformServices =
   | CredentialProvider
@@ -346,11 +279,35 @@ const audienceAllows = (audience: CanonicalAudience, requested: string): boolean
   }
 }
 
+const githubUploadAudienceAllows = (audience: CanonicalAudience, requested: string): boolean => {
+  try {
+    const expected = new URL(audience)
+    const observed = new URL(requested)
+    if (expected.protocol !== "https:" || expected.hostname !== "api.github.com" ||
+      expected.port !== "" || expected.username !== "" || expected.password !== "" ||
+      expected.search !== "" || expected.hash !== "") return false
+    if (observed.protocol !== "https:" || observed.hostname !== "uploads.github.com" ||
+      observed.port !== "" || observed.username !== "" || observed.password !== "" ||
+      observed.hash !== "") return false
+    const repository = /^\/repos\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.exec(expected.pathname)?.[0]
+    if (repository === undefined ||
+      !new RegExp(`^${repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}\/releases\/[1-9][0-9]*\/assets$`, "u")
+        .test(observed.pathname)) return false
+    const keys = [...observed.searchParams.keys()]
+    return /^\?name=[^&]+(?:&label=[^&]*)?$/u.test(observed.search) &&
+      new Set(keys).size === keys.length && observed.searchParams.get("name")!.length > 0
+  } catch {
+    return false
+  }
+}
+
 const checkAudience = (
   subject: SubjectId,
   audience: CanonicalAudience,
-  requested: string
-): Effect.Effect<void, CredentialAudienceMismatch> => audienceAllows(audience, requested)
+  requested: string,
+  allowGithubUpload = false
+): Effect.Effect<void, CredentialAudienceMismatch> => audienceAllows(audience, requested) ||
+  (allowGithubUpload && githubUploadAudienceAllows(audience, requested))
   ? Effect.void
   : Effect.fail(new CredentialAudienceMismatch({
     subject,
@@ -466,16 +423,11 @@ const makeAuthorizedMutationHttp = (
 ): AuthorizedMutationHttpShape => ({
   execute: Effect.fn("AuthorizedMutationHttp.execute")(function*(operation, request, grant) {
     yield* validateGrantForOperation(operation, grant)
-    yield* checkAudience(operation.subject, operation.audience, request.url)
+    yield* checkAudience(operation.subject, operation.audience, request.url, operation.provider === "github")
     const token = yield* lookupToken(vault, grant.subject, grant.ref)
     return yield* sendAuthorized(http, request, token, "mutate")
   })
 })
-
-class NpmUserConfigHandle implements NpmUserConfig {
-  readonly _tag = "NpmUserConfig" as const
-  readonly [NpmUserConfigTypeId]: typeof NpmUserConfigTypeId = NpmUserConfigTypeId
-}
 
 type NpmUserConfigMetadata = {
   readonly directory: string
@@ -505,7 +457,7 @@ const makeNpmUserConfigResource = (
     yield* checkAudience(input.operation.subject, input.operation.audience, input.registryUrl)
     const token = yield* lookupToken(vault, grant.subject, grant.ref)
     const root = temporaryRoot ?? tmpdir()
-    const handle = new NpmUserConfigHandle()
+    const handle = makeNpmUserConfigHandle()
     const acquired = Effect.tryPromise({
       try: async () => {
         await mkdir(root, { recursive: true, mode: 0o700 })
@@ -538,6 +490,22 @@ const makeNpmUserConfigResource = (
 
 const collect = (stream: Stream.Stream<Uint8Array, unknown>): Effect.Effect<string, unknown> =>
   Stream.mkString(Stream.decodeText(stream))
+
+const minimumTrustedNode = [22, 14, 0] as const
+const minimumTrustedNpm = [11, 5, 1] as const
+
+const parseVersion = (value: string): readonly [number, number, number] | undefined => {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?\s*$/u.exec(value)
+  if (match === null) return undefined
+  return [Number(match[1]), Number(match[2]), Number(match[3])]
+}
+
+const versionAtLeast = (
+  value: readonly [number, number, number],
+  minimum: readonly [number, number, number]
+): boolean => value[0] > minimum[0] ||
+  (value[0] === minimum[0] && (value[1] > minimum[1] ||
+    (value[1] === minimum[1] && value[2] >= minimum[2])))
 
 const optionalPath = Config.option(Config.string("PATH")).pipe(
   Effect.map(Option.getOrUndefined),
@@ -633,7 +601,62 @@ const redactPublisherOutput = (
 const makeCertifiedPublisherSpawn = (
   spawner: ChildProcessSpawner["Service"],
   vault: SecretVault
-): CertifiedPublisherSpawnShape => ({
+): CertifiedPublisherSpawnShape => {
+  const runClosed = Effect.fn("CertifiedPublisherSpawn.runClosed")(function*(
+    argv: readonly [string, ...Array<string>]
+  ) {
+    const path = yield* optionalPath
+    const command = ChildProcess.make(argv[0], [...argv.slice(1)], {
+      env: closedBaseEnvironment(path),
+      extendEnv: false,
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe"
+    })
+    return yield* Effect.scoped(Effect.gen(function*() {
+      const spawned = yield* Effect.exit(spawner.spawn(command))
+      if (Exit.isFailure(spawned)) {
+        return yield* platformError("spawn", "before-dispatch", "Trusted npm preflight could not start its version probe.")
+      }
+      const output = yield* Effect.exit(Effect.all({
+        stdout: collect(spawned.value.stdout),
+        stderr: collect(spawned.value.stderr),
+        exitCode: spawned.value.exitCode
+      }, { concurrency: "unbounded" }))
+      if (Exit.isFailure(output)) {
+        return yield* platformError("spawn", "before-dispatch", "Trusted npm preflight could not observe its version probe.")
+      }
+      if (Number(output.value.exitCode) !== 0) {
+        return yield* platformError("spawn", "before-dispatch", "Trusted npm preflight version probe was rejected.")
+      }
+      return output.value.stdout
+    }))
+  })
+
+  return {
+  preflightTrustedNpm: Effect.fn("CertifiedPublisherSpawn.preflightTrustedNpm")(function*(operation, grant) {
+    yield* validateGrantForOperation(operation, grant)
+    if (grant._tag !== "WorkloadIdentity") {
+      return yield* new CredentialStrategyUnsupported({
+        subject: operation.subject,
+        provider: operation.provider,
+        strategy: "token",
+        reason: "Trusted npm preflight requires a workload-identity grant."
+      })
+    }
+    // Validate the exact host-held OIDC names before any provider authority is dispatched.
+    yield* workloadEnvironment(vault, grant)
+    const node = parseVersion(yield* runClosed(["node", "--version"]))
+    const npm = parseVersion(yield* runClosed(["npm", "--version"]))
+    if (node === undefined || !versionAtLeast(node, minimumTrustedNode) ||
+      npm === undefined || !versionAtLeast(npm, minimumTrustedNpm)) {
+      return yield* platformError(
+        "spawn",
+        "before-dispatch",
+        "Trusted npm publishing requires Node >=22.14.0 and npm >=11.5.1."
+      )
+    }
+  }),
   spawn: Effect.fn("CertifiedPublisherSpawn.spawn")(function*(spec, grant) {
     yield* validateGrantForOperation(spec.operation, grant)
     const env = yield* publisherEnvironment(vault, spec, grant)
@@ -675,7 +698,8 @@ const makeCertifiedPublisherSpawn = (
       } satisfies CertifiedPublisherResult
     }))
   })
-})
+  }
+}
 
 export interface EnvironmentCredentialPlatform {
   readonly credentialProvider: CredentialProviderShape

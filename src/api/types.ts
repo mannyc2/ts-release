@@ -1,9 +1,17 @@
 import type * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import type { CredentialProvider } from "../publication/authority.js"
+import type { AuthoredCorrection } from "../correction/intent.js"
 import type { ObservationReport, ReleaseReport } from "../publication/report.js"
 import { SafeReason } from "../publication/report.js"
-import type { HttpAuthorizer } from "../platform/credentials.js"
+import type {
+  AuthorizedMutationHttp,
+  HttpAuthorizer
+} from "../publication/http.js"
+import type {
+  CertifiedPublisherSpawn,
+  NpmUserConfigResource
+} from "../publication/publisher.js"
 import type { ReleaseInspection, PreparedReleaseInspection } from "../release/inspect.js"
 import {
   CompletePreparedReleaseRef,
@@ -17,6 +25,9 @@ export type ReleaseApiServices =
   | PreparedReleaseStore
   | CredentialProvider
   | HttpAuthorizer
+  | AuthorizedMutationHttp
+  | NpmUserConfigResource
+  | CertifiedPublisherSpawn
 
 export type ReleaseApiLayer = Layer.Layer<ReleaseApiServices>
 export type InspectOutput = ReleaseInspection | PreparedReleaseInspection
@@ -53,19 +64,20 @@ export interface ReleaseInput extends PrepareInput {
 
 export interface CorrectInput {
   readonly prepared: CompletePreparedReleaseRefValue
-  /** Authored correction content. It is not a filesystem path. */
-  readonly correction: string
+  /** Human-authored correction; destination facts are derived from prepared. */
+  readonly correction: AuthoredCorrection
 }
 
 /**
  * Plan 224 keeps correction on the durable-reference boundary while plan 229
  * owns the first executable authored-correction grammar.
  */
-export class CorrectionReport
-  extends Schema.Class<CorrectionReport>("CorrectionReport")({
+export class CorrectionReport extends Schema.Class<CorrectionReport>("CorrectionReport")({
     prepared: CompletePreparedReleaseRef,
     status: Schema.Literal("unsupported"),
-    reason: SafeReason
+    provider: Schema.Literals(["npm", "github"]),
+    reason: SafeReason,
+    proposal: Schema.String
   }) {}
 
 export interface ReleaseResult {

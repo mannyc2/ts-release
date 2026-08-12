@@ -2,8 +2,7 @@ import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/
 import type { CandidateConfig } from "../recipes/config.js"
 import { CapabilityContribution, GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact,
   GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, OutputDeclaration,
-  canonicalizeRegistryUrl, makeGitHubPublicationAuthorityIntent,
-  makeNpmPublicationAuthorityIntent } from "./graph.js"
+  makeGitHubPublicationAuthorityIntent, makeNpmPublicationAuthorityIntent } from "./graph.js"
 import type { VerifiedReleaseContext } from "./context.js"
 
 const output = (id: string | OutputId, location: string, kind: OutputDeclaration["kind"], provenance: "build" | "import" | "process" | "catalog", mediaType?: string) =>
@@ -105,30 +104,27 @@ const packageContribution = (config: CandidateConfig, artifacts: ReadonlyArray<O
 }
 
 const npmPublication = (
-  config: CandidateConfig,
-  artifacts: ReadonlyArray<OutputDeclaration>
+  config: CandidateConfig
 ): GraphNpmPublication | undefined => {
-  const authored = config.publish?.npm
-  if (authored === undefined) return undefined
-  const packageName = NonEmptyName.make(authored.packageName ?? config.project.packageName ?? config.project.name)
-  const registryUrl = canonicalizeRegistryUrl(authored.registry ?? "https://registry.npmjs.org")
+  const intent = config.publish?.npm
+  if (intent === undefined) return undefined
   return GraphNpmPublication.make({
     id: OperationId.make("npm:npm-release"),
-    packageName,
-    version: NonEmptyName.make(config.project.version),
-    registryUrl,
-    artifactIds: artifacts.filter((item) => item.kind === "package").map((item) => item.id),
+    packageArtifact: intent.packageArtifact,
+    packageName: intent.packageName,
+    version: config.project.version,
+    registryUrl: intent.registry,
+    distTag: intent.distTag,
+    access: intent.access,
+    authentication: intent.authentication,
+    provenance: intent.provenance,
+    publicationMode: intent.publicationMode,
     authority: makeNpmPublicationAuthorityIntent({
-      packageName: packageName.toString(),
+      packageName: intent.packageName.toString(),
       version: config.project.version.toString(),
-      registryUrl,
-      ...(authored.tokenEnv === undefined ? {} : { tokenEnv: authored.tokenEnv }),
-      ...(authored.trustedPublishing === undefined ? {} : {
-        trustedPublishing: {
-          ...(authored.trustedPublishing.provider === undefined ? {} : { provider: authored.trustedPublishing.provider }),
-          ...(authored.trustedPublishing.workflow === undefined ? {} : { workflow: authored.trustedPublishing.workflow })
-        }
-      })
+      registryUrl: intent.registry,
+      distTag: intent.distTag,
+      authentication: intent.authentication
     })
   })
 }
@@ -177,7 +173,7 @@ export const contributeRelease = (config: CandidateConfig, context: VerifiedRele
   const catalogContribution = CapabilityContribution.make({ artifacts: [], preparations: catalogs, publications: [] })
   const allPrepared = [...allArtifacts, ...catalogs.map((catalog) => catalog.output)]
   const publications = [
-    npmPublication(config, allPrepared),
+    npmPublication(config),
     githubPublication(config, allPrepared)
   ].filter((item): item is GraphNpmPublication | GraphGitHubPublication => item !== undefined)
   return [build, packaged, catalogContribution, CapabilityContribution.make({ artifacts: [], preparations: [], publications })]

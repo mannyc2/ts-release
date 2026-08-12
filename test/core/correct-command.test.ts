@@ -8,10 +8,10 @@ import { cliApi, ioFor, localPrepared } from "./cli-fixture.js"
 test("correct command reads and forwards authored correction contents", async () => {
   const root = mkdtempSync(join(tmpdir(), "ts-release-correct-cli-"))
   const correctionPath = join(root, "correction.json")
-  const authored = "{\n  \"kind\": \"deprecate\"\n}\n"
+  const authored = "{\n  \"provider\": \"npm\",\n  \"kind\": \"deprecate\",\n  \"message\": \"Use 1.0.1.\"\n}\n"
   writeFileSync(correctionPath, authored)
   let calls = 0
-  let received = ""
+  let received: unknown
   const io = ioFor({ [correctionPath]: authored })
   await runCorrect(cliApi({
     correct: async (input) => {
@@ -21,5 +21,5 @@ test("correct command reads and forwards authored correction contents", async ()
     }
   }), { prepared: localPrepared, correction: correctionPath }, root, io)
   expect(calls).toBe(1)
-  expect(received).toBe(authored)
+  expect(received).toEqual({ provider: "npm", kind: "deprecate", message: "Use 1.0.1." })
 })

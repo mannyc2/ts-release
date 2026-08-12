@@ -4,15 +4,14 @@ import { encodeCanonicalJson } from "../model/canonical.js"
 import { digestEquals, sha256Digest, sha512Digest } from "../model/digest.js"
 import { encodePreparedRelease } from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
-import { publishSubject, type PublicationOutcome, type PublicationSubject } from "../publication/observation.js"
 import {
+  type AuthoredCorrection,
   CorrectionIntentV2,
   encodeCorrectionIntent,
-  type CatalogCorrection,
+  makeCorrectionIntent,
   type CorrectionIntent,
   type GithubReleaseCorrection,
-  type NpmDeprecationCorrection,
-  type PypiFileYankCorrection
+  type NpmDeprecationCorrection
 } from "./intent.js"
 
 export class CorrectionValidationError
@@ -21,14 +20,76 @@ export class CorrectionValidationError
   }) {}
 
 export class CorrectionUnsupported extends Schema.TaggedClass<CorrectionUnsupported>()("CorrectionUnsupported", {
-  provider: Schema.Literals(["github", "pypi"]), reason: Schema.String, evidence: Schema.NonEmptyString
+  provider: Schema.Literals(["npm", "github"]), reason: Schema.String, evidence: Schema.NonEmptyString,
+  proposal: Schema.optionalKey(Schema.String)
 }) {}
 
-export type CorrectionOutcome = PublicationOutcome | CorrectionUnsupported
+export type CorrectionOutcome = typeof CorrectionUnsupported.Type
 
 const preparedDigest = (bundle: PreparedBundle) => sha256Digest(encodePreparedRelease(bundle.manifest))
 const findPublication = (bundle: PreparedBundle, id: string) => bundle.manifest.publications.find((publication) => publication.id.toString() === id)
-const hasArtifact = (bundle: PreparedBundle, id: string): boolean => bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === id)
+
+const choosePublication = <Tag extends "PreparedNpmPublication" | "PreparedGitHubPublication">(
+  bundle: PreparedBundle,
+  tag: Tag,
+  publicationId?: { readonly toString: () => string }
+): Extract<PreparedBundle["manifest"]["publications"][number], { readonly _tag: Tag }> => {
+  const candidates = bundle.manifest.publications.filter((publication): publication is Extract<
+    PreparedBundle["manifest"]["publications"][number],
+    { readonly _tag: Tag }
+  > => publication._tag === tag && (
+    publicationId === undefined || publication.id.toString() === publicationId.toString()
+  ))
+  if (candidates.length !== 1) {
+    throw new Error(publicationId === undefined
+      ? `Authored correction requires exactly one ${tag === "PreparedNpmPublication" ? "npm" : "GitHub"} publication; specify publicationId when more than one exists.`
+      : `Authored correction publicationId ${publicationId} does not identify exactly one prepared ${tag === "PreparedNpmPublication" ? "npm" : "GitHub"} publication.`)
+  }
+  return candidates[0]!
+}
+
+/** Resolve human intent only after the exact prepared bundle has been loaded. */
+export const bindAuthoredCorrection = (
+  bundle: PreparedBundle,
+  authored: AuthoredCorrection
+): CorrectionIntent => {
+  const digest = preparedDigest(bundle)
+  if (authored.provider === "npm") {
+    const publication = choosePublication(bundle, "PreparedNpmPublication", authored.publicationId)
+    const artifact = bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId)
+    const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString())
+    if (bytes === undefined) throw new Error("Prepared npm correction subject has no verified tarball bytes.")
+    return makeCorrectionIntent({
+      schemaVersion: "correction-intent/v2",
+      preparedDigest: digest,
+      correction: {
+        _tag: "NpmDeprecationCorrection",
+        provider: "npm",
+        publicationId: publication.id,
+        registryUrl: publication.registryUrl,
+        packageName: publication.packageName,
+        version: publication.version,
+        tarballIntegrity: sha512Digest(bytes),
+        message: authored.message,
+        ...(authored.replacement === undefined ? {} : { replacement: authored.replacement })
+      }
+    })
+  }
+  const publication = choosePublication(bundle, "PreparedGitHubPublication", authored.publicationId)
+  return makeCorrectionIntent({
+    schemaVersion: "correction-intent/v2",
+    preparedDigest: digest,
+    correction: {
+      _tag: "GithubReleaseCorrection",
+      provider: "github",
+      publicationId: publication.id,
+      repository: publication.repository,
+      tag: publication.tag,
+      marker: authored.message,
+      ...(authored.replacement === undefined ? {} : { replacement: authored.replacement })
+    }
+  })
+}
 
 const verifyNpm = (bundle: PreparedBundle, correction: NpmDeprecationCorrection): void => {
   const publication = findPublication(bundle, correction.publicationId.toString())
@@ -52,18 +113,6 @@ const verifyGithub = (bundle: PreparedBundle, correction: GithubReleaseCorrectio
   }
 }
 
-const verifyCatalog = (bundle: PreparedBundle, correction: CatalogCorrection): void => {
-  if (!hasArtifact(bundle, correction.artifactId.toString()) || !hasArtifact(bundle, correction.stateArtifactId.toString())) {
-    throw new Error("Catalog correction subject does not reference two verified prepared artifacts.")
-  }
-}
-
-const verifyPypi = (_bundle: PreparedBundle, _correction: PypiFileYankCorrection): void => {
-  // The variant is retained as explicit policy evidence. No PyPI publication
-  // shape exists in PreparedRelease, so the coordinator returns a typed
-  // unsupported result after validating the canonical intent.
-}
-
 export const verifyCorrectionIntent = (bundle: PreparedBundle, intent: CorrectionIntent): void => {
   encodeCorrectionIntent(intent)
   if (!digestEquals(preparedDigest(bundle), intent.preparedDigest)) {
@@ -72,38 +121,35 @@ export const verifyCorrectionIntent = (bundle: PreparedBundle, intent: Correctio
   switch (intent.correction._tag) {
     case "NpmDeprecationCorrection": return verifyNpm(bundle, intent.correction)
     case "GithubReleaseCorrection": return verifyGithub(bundle, intent.correction)
-    case "CatalogCorrection": return verifyCatalog(bundle, intent.correction)
-    case "PypiFileYankCorrection": return verifyPypi(bundle, intent.correction)
   }
 }
 
-const providerOf = (intent: CorrectionIntent): "npm" | "github" | "catalog-git" | "pypi" => intent.correction.provider
+const providerOf = (intent: CorrectionIntent): "npm" | "github" => intent.correction.provider
 
 /**
  * The only correction entry point. Provider adapters are built at the host
- * boundary and must be passed as one already-bound subject. This keeps
- * credentials and transports out of the durable correction document.
+ * boundary. Neither admitted provider currently exposes a conditional write
+ * that protects the exact observed generation, so a validated intent becomes
+ * an external proposal and never a read-then-unconditional mutation.
  */
 export const correctPreparedRelease = Effect.fn("correctPreparedRelease")(function*(input: {
   readonly bundle: PreparedBundle
   readonly intent: CorrectionIntent
-  readonly subject?: PublicationSubject
 }) {
   try {
     verifyCorrectionIntent(input.bundle, input.intent)
   } catch (cause) {
     return yield* Effect.fail(new CorrectionValidationError({ reason: cause instanceof Error ? cause.message : String(cause) }))
   }
-  if (input.intent.correction._tag === "GithubReleaseCorrection") {
-    return CorrectionUnsupported.make({ provider: "github", reason: "No durable, machine-readable GitHub withdrawal marker with a proven conditional update contract was admitted.", evidence: "docs/release-program/decisions/216-provider-correction.md" })
-  }
-  if (input.intent.correction._tag === "PypiFileYankCorrection") {
-    return CorrectionUnsupported.make({ provider: "pypi", reason: "Per-file yank observation and mutation are not proven for arbitrary configured indexes.", evidence: "docs/release-program/decisions/216-provider-correction.md" })
-  }
-  if (input.subject === undefined) {
-    return yield* Effect.fail(new CorrectionValidationError({ reason: `No provider-bound correction subject was supplied for ${providerOf(input.intent)}.` }))
-  }
-  return yield* publishSubject(input.subject)
+  const provider = providerOf(input.intent)
+  return CorrectionUnsupported.make({
+    provider,
+    reason: provider === "npm"
+      ? "npm exposes no proved conditional deprecation write for the observed package generation; use the exact external proposal instead."
+      : "GitHub exposes no proved conditional release-metadata write for the observed release generation.",
+    evidence: "docs/release-program/remediation/229-provider-recovery.md",
+    proposal: new TextDecoder().decode(encodeCorrectionIntent(input.intent))
+  })
 })
 
 export const correctionEvidenceProjection = (intent: CorrectionIntent): string => {

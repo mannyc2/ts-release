@@ -9,8 +9,11 @@ import {
   makeCustomReleaseLayer,
   makeSourceObserver,
   sha256Digest,
+  type AuthorizedMutationHttpShape,
+  type CertifiedPublisherSpawnShape,
   type CredentialRequest,
   type HttpAuthorizerShape,
+  type NpmUserConfigResourceShape,
   type ReleaseRuntimeShape
 } from "@mannyc1/ts-release/host"
 import {
@@ -56,6 +59,16 @@ export const exerciseCustomHost = async (input: {
       return Effect.succeed({ status: 404, headers: {}, body: "{}" })
     }
   }
+  const authorizedMutationHttp: AuthorizedMutationHttpShape = {
+    execute: () => Effect.die("The external fixture exposes no mutation HTTP sink.")
+  }
+  const npmUserConfigResource: NpmUserConfigResourceShape = {
+    acquire: () => Effect.die("The external fixture exposes no npm credential resource.")
+  }
+  const certifiedPublisherSpawn: CertifiedPublisherSpawnShape = {
+    preflightTrustedNpm: () => Effect.die("The external fixture exposes no trusted npm preflight."),
+    spawn: () => Effect.die("The external fixture exposes no publisher process sink.")
+  }
   const source = makeSourceObserver({
     canonicalRoot: (workspace) => Effect.try({
       try: () => realpathSync(workspace),
@@ -96,7 +109,10 @@ export const exerciseCustomHost = async (input: {
     runtime,
     preparedStore,
     credentialProvider,
-    httpAuthorizer
+    httpAuthorizer,
+    authorizedMutationHttp,
+    npmUserConfigResource,
+    certifiedPublisherSpawn
   }))
   try {
     const config = {

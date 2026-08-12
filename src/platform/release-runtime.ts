@@ -6,8 +6,7 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { ReleaseRuntime } from "../api/runtime.js"
 import { makeRunCommand } from "../drivers/process.js"
-import { PublicationError } from "../publication/observation.js"
-import type { HttpRequest, HttpResponse, PublicationHttp } from "../publication/http.js"
+import { PublicationHttpError, type HttpRequest, type HttpResponse, type PublicationHttp } from "../publication/http.js"
 import { SourceObserver } from "../release/context.js"
 
 export const makePublicationHttp = (client: HttpClient.HttpClient): PublicationHttp => ({
@@ -25,8 +24,7 @@ export const makePublicationHttp = (client: HttpClient.HttpClient): PublicationH
       headers: Object.fromEntries(Object.entries(response.headers)),
       body: new Uint8Array(body)
     } satisfies HttpResponse)))),
-    Effect.mapError(() => PublicationError.make({
-      phase: "observe",
+    Effect.mapError(() => PublicationHttpError.make({
       commitment: "unknown",
       reason: "The provider HTTP transport failed after dispatch."
     }))

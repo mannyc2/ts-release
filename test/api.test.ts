@@ -30,6 +30,7 @@ import {
   noopRun,
   runtimeLayer
 } from "./core/runtime-fixture.js"
+import { unavailableMutationServicesLayer } from "./fixtures/mutation-services.js"
 
 const workspace = (): string => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-api-"))
@@ -126,7 +127,8 @@ describe("public lifecycle API", () => {
       Layer.succeed(CredentialProvider, credentials),
       Layer.succeed(HttpAuthorizer, {
         execute: () => Effect.succeed({ status: 404, headers: {}, body: "{}" })
-      })
+      }),
+      unavailableMutationServicesLayer
     ))
     try {
       const result = await api.release({
@@ -214,13 +216,29 @@ describe("public lifecycle API", () => {
     const root = workspace()
     const api = testApi(root)
     try {
-      const prepared = await api.prepare({ config: fixtureConfig, workspace: root })
+      const prepared = await api.prepare({
+        config: {
+          ...fixtureConfig,
+          project: { ...fixtureConfig.project, repository: "owner/fixture" },
+          publish: { github: { repository: "owner/fixture" } }
+        },
+        workspace: root
+      })
       const report = await api.correct({
         prepared,
-        correction: JSON.stringify({ provider: "npm", kind: "deprecate", message: "Use 1.0.1." })
+        correction: {
+          provider: "github",
+          kind: "amend-release-metadata",
+          message: "Use 1.0.1."
+        }
       })
-      expect(report).toMatchObject({ prepared, status: "unsupported" })
-      expect(report.reason).toContain("plan 229")
+      expect(report).toMatchObject({
+        prepared,
+        status: "unsupported",
+        provider: "github"
+      })
+      expect(report.reason).toContain("conditional release-metadata")
+      expect(report.proposal).toContain("correction-intent/v2")
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })

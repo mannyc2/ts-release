@@ -25,6 +25,12 @@ export type {
   ReleaseResult
 } from "./api/types.js"
 export {
+  AuthoredGithubReleaseAmendment,
+  AuthoredNpmDeprecation,
+  decodeAuthoredCorrection
+} from "./correction/intent.js"
+export type { AuthoredCorrection } from "./correction/intent.js"
+export {
   PreparationModeUnsupported, ReleaseAbortedError, ReleaseIncompleteError,
   ReleaseInputError, ReleasePreparationError
 } from "./api/errors.js"

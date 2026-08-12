@@ -125,13 +125,19 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   config: ["config", "model", "recipes", "resolve"],
   drivers: ["drivers", "model"],
   platform: ["platform", "drivers", "model", "release", "publication", "api"],
+  // Executable capability values are the composition root shared by config
+  // resolution, graph compilation, prepared-subject dispatch, and generated
+  // support evidence. They may depend on the concepts they compose; those
+  // concepts may import the capability registry only at their outermost
+  // dispatcher/compiler boundary.
+  capabilities: ["capabilities", "model", "recipes", "resolve", "release", "publication"],
   // The resolver is pure authored→canonical semantics: it may read the config
   // vocabulary and the model, and nothing may read IT except the root export
   // and the apps (enforced below).
   resolve: ["resolve", "model", "recipes"],
-  api: ["api", "model", "config", "correction", "release", "publication", "resolve", "drivers", "platform"],
-  release: ["release", "model", "recipes", "drivers"],
-  publication: ["publication", "model", "release", "drivers"],
+  api: ["api", "model", "config", "correction", "release", "publication", "resolve", "drivers", "platform", "capabilities"],
+  release: ["release", "model", "recipes", "drivers", "capabilities"],
+  publication: ["publication", "model", "release", "drivers", "capabilities"],
   correction: ["correction", "model", "release", "publication"]
 }
 

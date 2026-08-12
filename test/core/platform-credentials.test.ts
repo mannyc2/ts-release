@@ -271,6 +271,65 @@ describe("environment credential platform", () => {
     expect(requests).toHaveLength(0)
   })
 
+  test("mutation HTTP admits only an exact same-repository GitHub upload asset URL", async () => {
+    const githubSubject = SubjectId.make("github:owner/project#v1.0.0")
+    const githubProvider = ProviderId.make("github")
+    const githubAudience = CanonicalAudience.make("https://api.github.com/repos/owner/project")
+    const githubRef = CredentialRef.make("FIXTURE_NPM_TOKEN")
+    const githubDecision = NeedsMutation.make({
+      subject: githubSubject,
+      precondition: MutationPrecondition.make({ kind: NonEmptyName.make("asset-absent") })
+    })
+    const githubOperation: PublisherOperation = {
+      _tag: "PublishOperation",
+      subject: githubSubject,
+      provider: githubProvider,
+      audience: githubAudience,
+      purpose: "publish",
+      decision: githubDecision
+    }
+    const githubRequest = CredentialRequest.make({
+      subject: githubSubject,
+      provider: githubProvider,
+      audience: githubAudience,
+      purpose: "publish",
+      strategy: TokenAuthStrategy.make({ kind: "token", credential: githubRef })
+    })
+    const { platform, requests } = platformFixture()
+    const grant = await Effect.runPromise(provideEnvironment(
+      platform.credentialProvider.acquireForMutation(githubRequest, githubDecision).pipe(
+        Effect.flatMap((value) => value._tag === "ScopedSecret"
+          ? Effect.succeed(value)
+          : Effect.die("expected scoped secret"))
+      )
+    ))
+
+    await Effect.runPromise(platform.authorizedMutationHttp.execute(githubOperation, {
+      method: "POST",
+      url: "https://uploads.github.com/repos/owner/project/releases/17/assets?name=artifact.zip"
+    }, grant))
+    expect(requests).toHaveLength(1)
+
+    const rejected = [
+      "https://uploads.github.com/repos/owner/other/releases/17/assets?name=artifact.zip",
+      "https://uploads.github.com/repos/owner/project/releases/not-numeric/assets?name=artifact.zip",
+      "https://uploads.github.com/repos/owner/project/releases/17/other?name=artifact.zip",
+      "https://uploads.github.com/repos/owner/project/releases/17/assets",
+      "https://uploads.github.com/repos/owner/project/releases/17/assets?label=artifact",
+      "https://uploads.github.com/repos/owner/project/releases/17/assets?name=artifact.zip&name=duplicate.zip",
+      "https://uploads.github.com/repos/owner/project/releases/17/assets?name=artifact.zip&unexpected=true",
+      "https://user@uploads.github.com/repos/owner/project/releases/17/assets?name=artifact.zip",
+      "https://uploads.github.com/repos/owner/project/releases/17/assets?name=artifact.zip#fragment"
+    ]
+    for (const url of rejected) {
+      await expect(Effect.runPromise(platform.authorizedMutationHttp.execute(githubOperation, {
+        method: "POST",
+        url
+      }, grant))).rejects.toMatchObject({ _tag: "CredentialAudienceMismatch" })
+    }
+    expect(requests).toHaveLength(1)
+  })
+
   test("npm user config is mode-0600, scoped, opaque, and the spawn environment is closed", async () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-platform-test-"))
     try {
@@ -387,5 +446,46 @@ describe("environment credential platform", () => {
     })
     expect(result._tag === "PublisherExited" ? result.stdout : "").toContain("[redacted:ACTIONS_ID_TOKEN_REQUEST_TOKEN]")
     expect(JSON.stringify(result)).not.toContain(environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
+  })
+
+  test("trusted npm preflight requires Node 22.14 and npm 11.5.1 before publish dispatch", async () => {
+    for (const fixture of [
+      { node: "v22.13.9", npm: "11.5.1", accepted: false },
+      { node: "v22.14.0", npm: "11.5.0", accepted: false },
+      { node: "v22.14.0", npm: "11.5.1", accepted: true },
+      { node: "v24.0.0", npm: "12.0.0", accepted: true }
+    ] as const) {
+      const { platform, commands } = platformFixture(undefined, (command) => ({
+        exitCode: 0,
+        stdout: command.argv[0] === "node" ? fixture.node : fixture.npm
+      }))
+      const grant = await Effect.runPromise(provideEnvironment(
+        platform.credentialProvider.acquireForMutation(trustedRequest(), decision).pipe(
+          Effect.flatMap((value) => value._tag === "WorkloadIdentity"
+            ? Effect.succeed(value as WorkloadIdentity)
+            : Effect.die("expected workload identity")))
+      ))
+      const preflight = provideEnvironment(platform.certifiedPublisherSpawn.preflightTrustedNpm(
+        operation as Extract<PublisherOperation, { readonly _tag: "PublishOperation" }>,
+        grant
+      ))
+      if (fixture.accepted) {
+        await Effect.runPromise(preflight)
+      } else {
+        await expect(Effect.runPromise(preflight)).rejects.toMatchObject({
+          _tag: "CredentialPlatformError",
+          commitment: "before-dispatch"
+        })
+      }
+      expect(commands.map((command) => command.argv)).toEqual([
+        ["node", "--version"],
+        ["npm", "--version"]
+      ])
+      for (const command of commands) {
+        expect(command.env).toEqual({ PATH: "/fixture/bin" })
+        expect(command.env).not.toHaveProperty("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+        expect(command.argv).not.toContain("publish")
+      }
+    }
   })
 })

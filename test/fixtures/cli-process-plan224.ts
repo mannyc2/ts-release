@@ -35,6 +35,7 @@ import {
   PreparedReleaseStore,
   makeLocalPreparedReleaseStore
 } from "../../src/release/prepared-store.js"
+import { unavailableMutationServicesLayer } from "./mutation-services.js"
 
 interface SafeCredentialRequest {
   readonly subject: string
@@ -258,7 +259,8 @@ const makeApi = (storeDirectory: string) => makeReleaseApi(Layer.mergeAll(
   }),
   Layer.succeed(PreparedReleaseStore, makeLocalPreparedReleaseStore(storeDirectory)),
   Layer.succeed(CredentialProvider, credentials),
-  Layer.succeed(HttpAuthorizer, http)
+  Layer.succeed(HttpAuthorizer, http),
+  unavailableMutationServicesLayer
 ))
 
 const cli = makeCli(makeApi, workspace, {

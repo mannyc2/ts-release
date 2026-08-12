@@ -3,6 +3,14 @@ import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
 import { Sha256Digest } from "../model/digest.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 import {
+  CanonicalNpmRegistryEndpoint,
+  NpmAccess,
+  NpmAuthentication,
+  NpmDistTag,
+  NpmProvenancePolicy,
+  NpmPublicationMode
+} from "../recipes/config.js"
+import {
   PublicationAuthorityIntent,
   githubPublicationAuthorityIssue,
   npmPublicationAuthorityIssue
@@ -32,8 +40,17 @@ export class PreparedArtifact extends Schema.Class<PreparedArtifact>("PreparedAr
 }) {}
 
 export class PreparedNpmPublication extends Schema.TaggedClass<PreparedNpmPublication>()("PreparedNpmPublication", {
-  id: NonEmptyName, packageName: NonEmptyName, version: Version, registryUrl: Schema.NonEmptyString,
-  artifactId: OutputId, authority: PublicationAuthorityIntent
+  id: NonEmptyName,
+  artifactId: OutputId,
+  packageName: NonEmptyName,
+  version: Version,
+  registryUrl: CanonicalNpmRegistryEndpoint,
+  distTag: NpmDistTag,
+  access: NpmAccess,
+  authentication: NpmAuthentication,
+  provenance: NpmProvenancePolicy,
+  publicationMode: NpmPublicationMode,
+  authority: PublicationAuthorityIntent
 }) {}
 
 export class PreparedGitHubAsset extends Schema.Class<PreparedGitHubAsset>("PreparedGitHubAsset")({

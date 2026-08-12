@@ -23,7 +23,7 @@ import { ReleaseRuntime, type ReleaseRuntimeShape } from "../../src/api/runtime.
 import type { ReleaseApiLayer } from "../../src/api/types.js"
 import { DriverError } from "../../src/drivers/errors.js"
 import type { RunCommand } from "../../src/drivers/process.js"
-import { formatNpmSha512Sri, parseSha256Hex, sha256Digest, sha512Digest } from "../../src/model/digest.js"
+import { parseSha256Hex, sha256Digest } from "../../src/model/digest.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
 import {
@@ -41,31 +41,23 @@ import {
 } from "../../src/release/prepared-store.js"
 import { resolveConfig } from "../../src/resolve/resolve.js"
 import { ObservedFacts } from "../../src/resolve/facts.js"
-import { publishSubject } from "../../src/publication/observation.js"
-import type { HttpResponse, PublicationHttp } from "../../src/publication/http.js"
 import { HttpAuthorizer } from "../../src/publication/http.js"
 import {
   CredentialProvider,
   CredentialUnavailable,
   makeCredentialProvider
 } from "../../src/publication/authority.js"
-import {
-  encodeCorrectionIntent, makeCorrectionIntent, type CorrectionIntent
-} from "../../src/correction/intent.js"
-import { makeNpmDeprecationSubject } from "../../src/correction/npm.js"
-import { makeCatalogCorrectionSubject } from "../../src/correction/catalog.js"
-import {
-  CatalogManagedState, encodeCatalogManagedState, type CatalogRepositorySnapshot,
-  type CatalogRepositoryTransport
-} from "../../src/publication/catalog-git.js"
 import { CredentialPlatformError } from "../../src/platform/credentials.js"
-import { makeNodeReleaseLayer } from "../../src/platform/node.js"
 import { contextFor, noopRun } from "../core/runtime-fixture.js"
+import {
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag,
+  NpmTokenAuthentication
+} from "../../src/recipes/config.js"
+import { CredentialRef } from "../../src/model/authority.js"
+import { unavailableMutationServicesLayer } from "../fixtures/mutation-services.js"
 
 const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
-const response = (status: number, body: unknown): HttpResponse => ({
-  status, headers: {}, body: typeof body === "string" ? body : JSON.stringify(body)
-})
 const temporary = (name: string): string => mkdtempSync(join(tmpdir(), `ts-release-223-${name}-`))
 
 const runCaptured = (
@@ -124,7 +116,8 @@ const runtimeLayer = (
     Layer.succeed(ReleaseRuntime, { source, run: noopRun, ...overrides }),
     Layer.succeed(PreparedReleaseStore, preparedStore),
     Layer.succeed(CredentialProvider, credentials),
-    Layer.succeed(HttpAuthorizer, http)
+    Layer.succeed(HttpAuthorizer, http),
+    unavailableMutationServicesLayer
   )
 }
 
@@ -141,7 +134,11 @@ const localRun: RunCommand = ({ argv, cwd }) => Effect.try({
 const npmFixture = (
   version = "1.0.0", registryUrl = "https://registry.example.test"
 ): { readonly bundle: PreparedBundle, readonly bytes: Uint8Array, readonly publication: PreparedNpmPublication } => {
-  const canonicalRegistry = canonicalizeRegistryUrl(registryUrl)
+  const canonicalRegistry = CanonicalNpmRegistryEndpoint.make(canonicalizeRegistryUrl(registryUrl))
+  const authentication = NpmTokenAuthentication.make({
+    strategy: "token",
+    credential: CredentialRef.make("NPM_TOKEN")
+  })
   const bytes = utf8("prepared npm bytes\n")
   const hash = sha256Digest(bytes)
   const artifact = PreparedArtifact.make({
@@ -151,8 +148,11 @@ const npmFixture = (
   const publication = PreparedNpmPublication.make({
     id: NonEmptyName.make("npm-release"), packageName: NonEmptyName.make("@fixture/package"),
     version: Version.make(version), registryUrl: canonicalRegistry, artifactId: artifact.id,
+    distTag: NpmDistTag.make("latest"), access: "public", authentication,
+    provenance: "disabled", publicationMode: "direct",
     authority: makeNpmPublicationAuthorityIntent({
-      packageName: "@fixture/package", version, registryUrl: canonicalRegistry
+      packageName: "@fixture/package", version, registryUrl: canonicalRegistry, distTag: "latest",
+      authentication
     })
   })
   const manifest = PreparedReleaseV2.make({
@@ -177,67 +177,6 @@ const commitFixture = async (root: string, bundle: PreparedBundle) => {
   const store = makeLocalPreparedReleaseStore(join(root, "store"))
   const committed = await Effect.runPromise(store.commit(bundle.manifest, bundle.blobs))
   return { store, committed }
-}
-
-const correctionFor = (bundle: PreparedBundle, message = "Use 1.0.1 instead."): CorrectionIntent => {
-  const publication = bundle.manifest.publications[0] as PreparedNpmPublication
-  const bytes = bundle.blobs.get(publication.artifactId.toString())!
-  return makeCorrectionIntent({
-    schemaVersion: "correction-intent/v2", preparedDigest: sha256Digest(encodePreparedRelease(bundle.manifest)),
-    correction: {
-      _tag: "NpmDeprecationCorrection", provider: "npm", publicationId: publication.id,
-      registryUrl: publication.registryUrl, packageName: publication.packageName, version: publication.version,
-      tarballIntegrity: sha512Digest(bytes),
-      message
-    }
-  })
-}
-
-const catalogCorrectionFixture = (): {
-  readonly bundle: PreparedBundle
-  readonly correction: CorrectionIntent
-  readonly target: Uint8Array
-  readonly activeState: Uint8Array
-} => {
-  const target = utf8("class Fixture < Formula\nend\n")
-  const activeState = encodeCatalogManagedState(CatalogManagedState.make({
-    schemaVersion: "ts-release/catalog-state/v2", version: Version.make("1.0.0"),
-    manifestDigest: parseSha256Hex("a".repeat(64)), status: "active"
-  }))
-  const targetHash = sha256Digest(target)
-  const stateHash = sha256Digest(activeState)
-  const targetId = OutputId.make("catalog-target")
-  const stateId = OutputId.make("catalog-state")
-  const manifest = PreparedReleaseV2.make({
-    schemaVersion: "prepared-release/v2",
-    source: PreparedSource.make({
-      commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64))
-    }),
-    project: PreparedProject.make({
-      name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0")
-    }),
-    artifacts: [
-      PreparedArtifact.make({ id: targetId, path: SafeRelativePath.make("Formula/fixture.rb"), kind: "catalog-file", size: target.length, digest: targetHash, blob: targetHash }),
-      PreparedArtifact.make({ id: stateId, path: SafeRelativePath.make(".release/state.json"), kind: "catalog-file", size: activeState.length, digest: stateHash, blob: stateHash })
-    ],
-    publications: []
-  })
-  const bundle: PreparedBundle = {
-    directory: "/not-stored", manifest,
-    blobs: new Map([[targetId.toString(), target], [stateId.toString(), activeState]])
-  }
-  const correction = makeCorrectionIntent({
-    schemaVersion: "correction-intent/v2", preparedDigest: sha256Digest(encodePreparedRelease(manifest)),
-    correction: {
-      _tag: "CatalogCorrection", provider: "catalog-git", publicationId: NonEmptyName.make("homebrew"),
-      repository: "github.com/owner/tap", branch: NonEmptyName.make("main"),
-      targetPath: SafeRelativePath.make("Formula/fixture.rb"), statePath: SafeRelativePath.make(".ts-release/state/homebrew.json"),
-      artifactId: targetId, stateArtifactId: stateId, version: Version.make("1.0.0"),
-      status: "withdrawn", reason: "Use fixture 1.0.1 instead."
-    }
-  })
-  return { bundle, correction, target, activeState }
 }
 
 describe("Plan 223 rejected-candidate containment reproductions", () => {
@@ -279,103 +218,6 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test("Plan 224 preserves npm authority fields while Plan 225 policy gaps remain characterized", () => {
-    const facts = ObservedFacts.make({ commit: NonEmptyName.make("abc123"), manifestName: NonEmptyName.make("fixture"), manifestVersion: Version.make("1.0.0-beta.1") })
-    const base = {
-      project: { name: "fixture", version: "1.0.0-beta.1", tag: "v1.0.0-beta.1", commit: "abc123" },
-      npmPackage: { path: "." }, publish: { npm: {} }
-    }
-    const graphFor = (npm: Record<string, unknown>) => compileReleaseGraph(resolveConfig({
-      ...base, publish: { npm }
-    }, facts), contextFor("/tmp/ts-release-223-graph"))
-    const publication = graphFor({}).publications[0]!
-    expect(publication._tag).toBe("GraphNpmPublication")
-    if (publication._tag !== "GraphNpmPublication") throw new Error("expected npm publication")
-    expect(publication.authority.publishStrategy).toMatchObject({ kind: "token", credential: "NPM_TOKEN" })
-    const token = graphFor({ tokenEnv: "CUSTOM_NPM_TOKEN" }).publications[0]!
-    expect(token._tag === "GraphNpmPublication" ? token.authority.publishStrategy : undefined)
-      .toMatchObject({ kind: "token", credential: "CUSTOM_NPM_TOKEN" })
-    const trustedDefault = graphFor({ trustedPublishing: { provider: "github-actions" } }).publications[0]!
-    expect(trustedDefault._tag === "GraphNpmPublication" ? trustedDefault.authority.publishStrategy : undefined)
-      .toMatchObject({
-        kind: "trusted-publishing",
-        identityProvider: "github-actions",
-        runnerClass: "github-hosted",
-        workflow: ".github/workflows/release.yml"
-      })
-    const trustedWorkflow = graphFor({ trustedPublishing: { workflow: "release.yml" } }).publications[0]!
-    expect(trustedWorkflow._tag === "GraphNpmPublication" ? trustedWorkflow.authority.publishStrategy : undefined)
-      .toMatchObject({
-        kind: "trusted-publishing",
-        identityProvider: "github-actions",
-        runnerClass: "github-hosted",
-        workflow: ".github/workflows/release.yml"
-      })
-    expect(JSON.stringify(graphFor({ trustedPublishing: {} })))
-      .toBe(JSON.stringify(graphFor({ trustedPublishing: { verifyPackageExists: true } })))
-    expect(JSON.stringify(graphFor({}))).toBe(JSON.stringify(graphFor({ access: "restricted" })))
-    expect(JSON.stringify(graphFor({}))).toBe(JSON.stringify(graphFor({ provenance: false })))
-    expect(Object.keys(publication)).not.toContain("distTag")
-    expect(Object.keys(publication)).not.toContain("provenance")
-    expect(Object.keys(publication)).not.toContain("access")
-  })
-
-  test("two npm correction actors pass the same observation and issue unconditional updates", async () => {
-    const fixture = npmFixture()
-    const correctionA = correctionFor(fixture.bundle, "Use 1.0.1 instead.").correction as Extract<CorrectionIntent["correction"], { _tag: "NpmDeprecationCorrection" }>
-    const correctionB = correctionFor(fixture.bundle, "Use 2.0.0 instead.").correction as Extract<CorrectionIntent["correction"], { _tag: "NpmDeprecationCorrection" }>
-    const integrity = formatNpmSha512Sri(correctionA.tarballIntegrity)
-    const http: PublicationHttp = {
-      request: () => Effect.succeed(response(200, { dist: { integrity } }))
-    }
-    const requests: unknown[] = []
-    const process = {
-      deprecate: (request: unknown) => Effect.sync(() => {
-        requests.push(request)
-        return { started: true, exitCode: 0 }
-      })
-    }
-    const first = makeNpmDeprecationSubject(fixture.bundle, correctionA, http, { read: "read", publish: "publish" }, process)
-    const second = makeNpmDeprecationSubject(fixture.bundle, correctionB, http, { read: "read", publish: "publish" }, process)
-    const firstObservation = await Effect.runPromise(first.observe())
-    const secondObservation = await Effect.runPromise(second.observe())
-    expect(firstObservation).toMatchObject({ _tag: "NeedsMutation", precondition: "deprecation-absent" })
-    expect(secondObservation).toMatchObject({ _tag: "NeedsMutation", precondition: "deprecation-absent" })
-    if (firstObservation._tag !== "NeedsMutation" || secondObservation._tag !== "NeedsMutation") throw new Error("fixture did not produce the race")
-    await Effect.runPromise(first.mutate(firstObservation))
-    await Effect.runPromise(second.mutate(secondObservation))
-    expect(requests).toHaveLength(2)
-    expect(requests.map((request) => (request as { readonly message: string }).message)).toEqual([
-      "Use 1.0.1 instead.", "Use 2.0.0 instead."
-    ])
-    expect(requests.every((request) => !Object.keys(request as object).some((key) => /revision|etag|precondition/iu.test(key)))).toBe(true)
-  })
-
-  test("catalog withdrawal mutates only managed sidecar while preserving ecosystem target bytes", async () => {
-    const fixture = catalogCorrectionFixture()
-    let current: CatalogRepositorySnapshot = {
-      repository: "github.com/owner/tap", branch: "main", revision: "r1",
-      targetBytes: fixture.target, stateBytes: fixture.activeState
-    }
-    let writtenTarget: Uint8Array | undefined
-    const transport: CatalogRepositoryTransport = {
-      observe: () => Effect.succeed(current),
-      write: (request) => Effect.sync(() => {
-        writtenTarget = request.targetBytes
-        current = {
-          repository: request.repository, branch: request.branch, revision: "r2",
-          targetBytes: request.targetBytes, stateBytes: request.stateBytes
-        }
-        return { revision: "r2" }
-      })
-    }
-    const result = await Effect.runPromise(publishSubject(makeCatalogCorrectionSubject(fixture.bundle, fixture.correction, transport)))
-    expect(result._tag).toBe("PublicationConverged")
-    expect(writtenTarget).toEqual(fixture.target)
-    expect(current.targetBytes).toEqual(fixture.target)
-    expect(new TextDecoder().decode(current.stateBytes)).toContain('"status":"withdrawn"')
-  })
-
   test("ignored package input changes prepared npm bytes under identical verified source facts", async () => {
     const prepare = async (contents: string): Promise<Uint8Array> => {
       const root = temporary("ignored-input")
@@ -389,7 +231,8 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
           workspace: root,
           config: {
             project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
-            npmPackage: { path: "." }, publish: { npm: {} }
+            npmPackage: { path: "." },
+            publish: { npm: { authentication: { strategy: "token", credential: "NPM_TOKEN" } } }
           }
         })
         const bundle = await Effect.runPromise(store.load(prepared))
@@ -419,27 +262,6 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
         }
       })
       expect(inspection.publications).toEqual([])
-    } finally {
-      await api.dispose()
-      rmSync(root, { recursive: true, force: true })
-    }
-  })
-
-  test("public correction verifies a durable reference and returns explicit unsupported data", async () => {
-    const root = temporary("catalog-default")
-    const fixture = catalogCorrectionFixture()
-    const { store, committed } = await commitFixture(root, fixture.bundle)
-    const api = makeReleaseApi(makeNodeReleaseLayer(store))
-    try {
-      const result = await api.correct({
-        prepared: committed.ref,
-        correction: new TextDecoder().decode(encodeCorrectionIntent(fixture.correction))
-      })
-      expect(result).toMatchObject({
-        prepared: committed.ref,
-        status: "unsupported"
-      })
-      expect(result.reason).not.toMatch(/credential|token|path/iu)
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })

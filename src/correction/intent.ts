@@ -6,7 +6,7 @@ import {
   digestEquals,
   sha256Digest
 } from "../model/digest.js"
-import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import { NonEmptyName, Version } from "../model/primitives.js"
 
 const optional = Schema.optionalKey
 const boundedText = Schema.String.check(Schema.makeFilter((value: string) =>
@@ -18,7 +18,7 @@ const publicMessage = boundedText.pipe(Schema.check(Schema.makeFilter((value: st
   value.length > 0 ? undefined : "Correction message must be nonempty.")))
 
 export class ReplacementCoordinate extends Schema.Class<ReplacementCoordinate>("ReplacementCoordinate")({
-  provider: Schema.Literals(["npm", "github", "catalog-git", "pypi"]), coordinate: publicMessage
+  provider: Schema.Literals(["npm", "github"]), coordinate: publicMessage
 }) {}
 
 export class NpmDeprecationCorrection extends Schema.TaggedClass<NpmDeprecationCorrection>()("NpmDeprecationCorrection", {
@@ -32,22 +32,38 @@ export class GithubReleaseCorrection extends Schema.TaggedClass<GithubReleaseCor
   tag: NonEmptyName, marker: publicMessage, replacement: optional(ReplacementCoordinate)
 }) {}
 
-export class CatalogCorrection extends Schema.TaggedClass<CatalogCorrection>()("CatalogCorrection", {
-  provider: Schema.Literal("catalog-git"), publicationId: NonEmptyName, repository: Schema.NonEmptyString,
-  branch: NonEmptyName, targetPath: SafeRelativePath, statePath: SafeRelativePath,
-  artifactId: OutputId, stateArtifactId: OutputId, version: Version,
-  status: Schema.Literals(["corrected", "withdrawn", "superseded"]), reason: publicMessage,
-  replacement: optional(ReplacementCoordinate)
-}) {}
+/** Human-authored correction request. Destination and immutable subject facts
+ * are deliberately absent: they are derived from the loaded prepared bundle. */
+export class AuthoredNpmDeprecation
+  extends Schema.Class<AuthoredNpmDeprecation>("AuthoredNpmDeprecation")({
+    provider: Schema.Literal("npm"),
+    kind: Schema.Literal("deprecate"),
+    publicationId: optional(NonEmptyName),
+    message: publicMessage,
+    replacement: optional(ReplacementCoordinate)
+  }) {}
 
-export class PypiFileYankCorrection extends Schema.TaggedClass<PypiFileYankCorrection>()("PypiFileYankCorrection", {
-  provider: Schema.Literal("pypi"), publicationId: NonEmptyName, indexUrl: Schema.NonEmptyString,
-  project: NonEmptyName, version: Version, filename: NonEmptyName, fileDigest: Sha256Digest,
-  reason: publicMessage, replacement: optional(ReplacementCoordinate)
-}) {}
+export class AuthoredGithubReleaseAmendment
+  extends Schema.Class<AuthoredGithubReleaseAmendment>("AuthoredGithubReleaseAmendment")({
+    provider: Schema.Literal("github"),
+    kind: Schema.Literal("amend-release-metadata"),
+    publicationId: optional(NonEmptyName),
+    message: publicMessage,
+    replacement: optional(ReplacementCoordinate)
+  }) {}
+
+export const AuthoredCorrection = Schema.Union([
+  AuthoredNpmDeprecation,
+  AuthoredGithubReleaseAmendment
+])
+export type AuthoredCorrection = typeof AuthoredCorrection.Type
+
+export const decodeAuthoredCorrection = Schema.decodeUnknownSync(AuthoredCorrection, {
+  onExcessProperty: "error"
+})
 
 export const CorrectionVariant = Schema.Union([
-  NpmDeprecationCorrection, GithubReleaseCorrection, CatalogCorrection, PypiFileYankCorrection
+  NpmDeprecationCorrection, GithubReleaseCorrection
 ])
 export type CorrectionVariant = typeof CorrectionVariant.Type
 

@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import * as Semver from "semver"
 import {
   AnonymousAuthStrategy,
   CanonicalAudience,
@@ -10,7 +11,17 @@ import {
   TokenAuthStrategy,
   TrustedPublishingAuthStrategy
 } from "../model/authority.js"
-import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
+import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import {
+  CanonicalNpmRegistryEndpoint,
+  NpmAccess,
+  NpmAuthentication,
+  NpmDistTag,
+  NpmProvenancePolicy,
+  NpmPublicationMode,
+  canonicalizeNpmRegistryEndpoint,
+  type NpmAuthentication as NpmAuthenticationValue
+} from "../recipes/config.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
   id: OutputId, path: SafeRelativePath,
@@ -74,8 +85,17 @@ export class PublicationAuthorityIntent
   }) {}
 
 export class GraphNpmPublication extends Schema.TaggedClass<GraphNpmPublication>()("GraphNpmPublication", {
-  id: OperationId, packageName: NonEmptyName, version: NonEmptyName, registryUrl: Schema.NonEmptyString,
-  artifactIds: Schema.Array(OutputId), authority: PublicationAuthorityIntent
+  id: OperationId,
+  packageArtifact: OutputId,
+  packageName: NonEmptyName,
+  version: Version,
+  registryUrl: CanonicalNpmRegistryEndpoint,
+  distTag: NpmDistTag,
+  access: NpmAccess,
+  authentication: NpmAuthentication,
+  provenance: NpmProvenancePolicy,
+  publicationMode: NpmPublicationMode,
+  authority: PublicationAuthorityIntent
 }) {}
 
 export class GraphGitHubPublication extends Schema.TaggedClass<GraphGitHubPublication>()("GraphGitHubPublication", {
@@ -112,21 +132,12 @@ const authorityError = (value: string, reason: string): GraphLinkError =>
  * audience.
  */
 export const canonicalizeRegistryUrl = (value: string): string => {
-  let endpoint: URL
-  try { endpoint = new URL(value) } catch {
-    throw authorityError("publish.npm.registry", "npm registry must be an absolute HTTP(S) URL.")
+  try { return canonicalizeNpmRegistryEndpoint(value) } catch (cause) {
+    throw authorityError(
+      "publish.npm.registry",
+      cause instanceof Error ? cause.message : String(cause)
+    )
   }
-  if ((endpoint.protocol !== "https:" && endpoint.protocol !== "http:") || endpoint.host.length === 0) {
-    throw authorityError("publish.npm.registry", "npm registry must be an absolute HTTP(S) URL.")
-  }
-  if (endpoint.username.length > 0 || endpoint.password.length > 0) {
-    throw authorityError("publish.npm.registry", "npm registry must not contain credentials.")
-  }
-  if (value.includes("?") || value.includes("#")) {
-    throw authorityError("publish.npm.registry", "npm registry must not contain a query or fragment.")
-  }
-  const basePath = endpoint.pathname.replace(/\/+$/u, "")
-  return `${endpoint.origin}${basePath.length === 0 ? "/" : `${basePath}/`}`
 }
 
 const tokenStrategy = (value: string, field: string): TokenAuthStrategy => {
@@ -139,56 +150,36 @@ const tokenStrategy = (value: string, field: string): TokenAuthStrategy => {
 
 const anonymousStrategy = (): AnonymousAuthStrategy => AnonymousAuthStrategy.make({ kind: "anonymous" })
 
-const githubWorkflowIdentity = (value: string | undefined): string => {
-  const workflow = value ?? "release.yml"
-  const canonical = workflow.startsWith(".github/workflows/")
-    ? workflow
-    : `.github/workflows/${workflow}`
-  if (!/^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(canonical)) {
-    throw authorityError(
-      "publish.npm.trustedPublishing.workflow",
-      "Trusted-publishing workflow must name one YAML file in .github/workflows/."
-    )
-  }
-  return canonical
-}
-
-const githubHostedIdentityProvider = (value: "github-actions" | undefined): ProviderId => {
-  if (value !== undefined && value !== "github-actions") {
-    throw authorityError(
-      "publish.npm.trustedPublishing.provider",
-      "The certified trusted-publishing identity provider is github-actions."
-    )
-  }
-  return ProviderId.make("github-actions")
-}
-
 export interface NpmPublicationAuthorityInput {
   readonly packageName: string
   readonly version: string
   readonly registryUrl: string
-  readonly tokenEnv?: string
-  readonly trustedPublishing?: {
-    readonly provider?: "github-actions"
-    readonly workflow?: string
-  }
+  readonly distTag: string
+  readonly authentication: NpmAuthenticationValue
 }
 
 /** Resolve npm auth once; no secret value enters the graph or prepared state. */
 export const makeNpmPublicationAuthorityIntent = (
   input: NpmPublicationAuthorityInput
 ): PublicationAuthorityIntent => {
-  if (input.tokenEnv !== undefined && input.trustedPublishing !== undefined) {
-    throw authorityError("publish.npm", "npm token and trusted-publishing strategies are mutually exclusive.")
+  const version = input.version
+  let tag: string
+  try { tag = NpmDistTag.make(input.distTag) } catch (cause) {
+    throw authorityError(
+      "publish.npm.distTag",
+      cause instanceof Error ? cause.message : String(cause)
+    )
+  }
+  if (Semver.prerelease(version) !== null && tag === "latest") {
+    throw authorityError("publish.npm.distTag", "npm prerelease publication requires a non-latest dist-tag.")
   }
   const provider = ProviderId.make("npm")
-  const publishStrategy: ResolvedAuthStrategy = input.trustedPublishing === undefined
-    ? tokenStrategy(input.tokenEnv ?? "NPM_TOKEN", "publish.npm.tokenEnv")
+  const publishStrategy: ResolvedAuthStrategy = input.authentication.strategy === "token"
+    ? tokenStrategy(input.authentication.credential, "publish.npm.authentication.credential")
     : TrustedPublishingAuthStrategy.make({
-      kind: "trusted-publishing",
-      identityProvider: githubHostedIdentityProvider(input.trustedPublishing.provider),
-      runnerClass: "github-hosted",
-      workflow: githubWorkflowIdentity(input.trustedPublishing.workflow)
+      kind: "trusted-publishing", identityProvider: ProviderId.make(input.authentication.attestation.provider),
+      runnerClass: input.authentication.attestation.runner,
+      workflow: `.github/workflows/${input.authentication.attestation.workflow}`
     })
   return PublicationAuthorityIntent.make({
     subject: SubjectId.make(`npm:${input.packageName}@${input.version}`),
@@ -237,8 +228,23 @@ export const npmPublicationAuthorityIssue = (publication: {
   readonly packageName: { readonly toString: () => string }
   readonly version: { readonly toString: () => string }
   readonly registryUrl: string
+  readonly distTag: string
+  readonly access: "public" | "restricted"
+  readonly authentication: NpmAuthenticationValue
+  readonly provenance: "automatic" | "required" | "disabled"
+  readonly publicationMode: "direct"
   readonly authority: PublicationAuthorityIntent
 }): string | undefined => {
+  const version = publication.version.toString()
+  if (Semver.valid(version) !== version) {
+    return "npm publication version must be canonical SemVer."
+  }
+  if (Semver.prerelease(version) !== null && publication.distTag === "latest") {
+    return "npm prerelease publication must use an explicit non-latest dist-tag."
+  }
+  if (publication.access === "restricted" && !publication.packageName.toString().startsWith("@")) {
+    return "npm restricted access is valid only for scoped package names."
+  }
   const expectedSubject = `npm:${publication.packageName}@${publication.version}`
   let expectedAudience: string
   try { expectedAudience = canonicalizeRegistryUrl(publication.registryUrl) } catch {
@@ -253,18 +259,24 @@ export const npmPublicationAuthorityIssue = (publication: {
     return "npm observation authority must attempt anonymous access first."
   }
   if (authority.publishStrategy.kind === "token") {
-    return authority.observationStrategies.length === 2 &&
+    return publication.authentication.strategy === "token" && publication.provenance !== "automatic" &&
+        authority.publishStrategy.credential === publication.authentication.credential &&
+        authority.observationStrategies.length === 2 &&
         sameTokenStrategy(authority.observationStrategies[1], authority.publishStrategy)
       ? undefined
-      : "npm token publication requires anonymous observation followed by the exact configured token reference."
+      : "npm token publication requires the exact configured token reference, explicit provenance, and anonymous-first observation."
   }
   if (authority.publishStrategy.kind === "trusted-publishing") {
-    return authority.observationStrategies.length === 1 &&
+    const authentication = publication.authentication
+    return authentication.strategy === "trusted-publishing" &&
+        publication.registryUrl === "https://registry.npmjs.org/" &&
+        authentication.attestation.allowedAction === "npm-publish-direct" &&
+        publication.publicationMode === "direct" && authority.observationStrategies.length === 1 &&
         authority.publishStrategy.identityProvider === "github-actions" &&
-        authority.publishStrategy.runnerClass === "github-hosted" &&
-        /^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(authority.publishStrategy.workflow)
+        authority.publishStrategy.runnerClass === authentication.attestation.runner &&
+        authority.publishStrategy.workflow === `.github/workflows/${authentication.attestation.workflow}`
       ? undefined
-      : "npm trusted publishing requires anonymous observation and the certified npm/GitHub Actions identity."
+      : "npm trusted publishing requires the exact direct-publish attestation and certified npm/GitHub Actions identity."
   }
   return "npm publication requires token or trusted-publishing mutation authority."
 }
@@ -400,9 +412,20 @@ export const linkContributions = (
     }
     const ids = publication._tag === "GraphGitHubPublication"
       ? [...publication.assetIds, ...(publication.bodyArtifact === undefined ? [] : [publication.bodyArtifact])]
-      : publication.artifactIds
+      : [publication.packageArtifact]
     for (const id of ids) if (!artifactIds.has(id.toString()) && !producers.has(id.toString())) {
       throw new GraphLinkError({ kind: "missing", value: id.toString(), reason: "Publication references no artifact." })
+    }
+    if (publication._tag === "GraphNpmPublication") {
+      const packageArtifact = artifacts.find((artifact) => artifact.id === publication.packageArtifact)
+      if (packageArtifact?.kind !== "package") throw new GraphLinkError({
+        kind: "reference", value: publication.packageArtifact.toString(),
+        reason: "npm publication must reference exactly one declared package artifact."
+      })
+      if (publication.access === "restricted" && !publication.packageName.startsWith("@")) throw new GraphLinkError({
+        kind: "reference", value: publication.packageName.toString(),
+        reason: "npm restricted access is valid only for scoped package names."
+      })
     }
     if (publication._tag === "GraphGitHubPublication" && publication.bodyArtifact !== undefined) {
       const body = artifacts.find((artifact) => artifact.id.toString() === publication.bodyArtifact!.toString())

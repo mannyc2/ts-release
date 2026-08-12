@@ -17,8 +17,14 @@ import {
   CandidateCheckPreparation,
   CandidateConfig,
   CandidateNpmPublish,
-  CandidatePreparation
+  CandidatePreparation,
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag,
+  NpmTokenAuthentication,
+  NpmTrustedPublishingAuthentication,
+  NpmTrustedPublisherAttestation
 } from "../../src/recipes/config.js"
+import { CredentialRef } from "../../src/model/authority.js"
 import { decodeReleaseIntent } from "../../src/release/config.js"
 import { inspectRelease } from "../../src/release/inspect.js"
 import { executableCapabilities } from "../../src/capabilities/registry.js"
@@ -39,6 +45,14 @@ const command = (id: string, input: string, output: string) => GraphCommandArtif
 })
 
 describe("immutable release graph", () => {
+  const tokenNpm = (overrides: Partial<CandidateNpmPublish> = {}): CandidateNpmPublish => CandidateNpmPublish.make({
+    packageArtifact: OutputId.make("npm-package"), packageName: NonEmptyName.make("fixture"),
+    registry: CanonicalNpmRegistryEndpoint.make("https://registry.example.test/custom/"),
+    distTag: NpmDistTag.make("latest"), access: "public",
+    authentication: NpmTokenAuthentication.make({ strategy: "token", credential: CredentialRef.make("CUSTOM_NPM_TOKEN") }),
+    provenance: "required", publicationMode: "direct", ...overrides
+  })
+
   test("compiles retained build inputs and links generated outputs", () => {
     const config = CandidateConfig.make({ project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }, builds: [CandidateBunBuild.make({
       builder: "bun", id: "cli", entry: SafeRelativePath.make("src/index.ts"), targets: ["linux-x64"]
@@ -93,13 +107,17 @@ describe("immutable release graph", () => {
       },
       npmPackage: { path: SafeRelativePath.make(".") },
       publish: {
-        npm: { registry: "https://REGISTRY.example.test/custom///", tokenEnv: "CUSTOM_NPM_TOKEN" },
+        npm: tokenNpm(),
         github: { repository: "owner/fixture", tokenEnv: "CUSTOM_GITHUB_TOKEN" }
       }
     }), context)
     const npm = tokenGraph.publications.find((item) => item._tag === "GraphNpmPublication")
     const github = tokenGraph.publications.find((item) => item._tag === "GraphGitHubPublication")
-    expect(npm?.registryUrl).toBe("https://registry.example.test/custom/")
+    expect(npm?.registryUrl.toString()).toBe("https://registry.example.test/custom/")
+    expect(npm).toMatchObject({
+      packageArtifact: "npm-package", distTag: "latest", access: "public",
+      provenance: "required", publicationMode: "direct"
+    })
     expect(npm?.authority).toMatchObject({
       subject: "npm:fixture@1.0.0",
       provider: "npm",
@@ -125,9 +143,20 @@ describe("immutable release graph", () => {
     }).publishStrategy).toMatchObject({ kind: "token", credential: "GITHUB_TOKEN" })
 
     const trustedGraph = compileReleaseGraph(CandidateConfig.make({
-      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
+      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
+        tag: NonEmptyName.make("v1.0.0"), repository: "owner/fixture" },
       npmPackage: { path: SafeRelativePath.make(".") },
-      publish: { npm: { trustedPublishing: { provider: "github-actions" } } }
+      publish: { npm: CandidateNpmPublish.make({
+        packageArtifact: OutputId.make("npm-package"), packageName: NonEmptyName.make("fixture"),
+        registry: CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/"),
+        distTag: NpmDistTag.make("latest"), access: "public", provenance: "automatic",
+        publicationMode: "direct", authentication: NpmTrustedPublishingAuthentication.make({
+          strategy: "trusted-publishing", attestation: NpmTrustedPublisherAttestation.make({
+            provider: "github-actions", runner: "github-hosted", repository: "owner/fixture",
+            workflow: "release.yml", allowedAction: "npm-publish-direct"
+          })
+        })
+      }) }
     }), context)
     const trusted = trustedGraph.publications.find((item) => item._tag === "GraphNpmPublication")
     expect(trusted?.authority.publishStrategy).toMatchObject({
@@ -142,14 +171,14 @@ describe("immutable release graph", () => {
       project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
       npmPackage: { path: SafeRelativePath.make(".") }, publish: { npm }
     })
-    expect(() => compileReleaseGraph(npmConfig(CandidateNpmPublish.make({
-      tokenEnv: "NPM_TOKEN", trustedPublishing: { provider: "github-actions" }
+    expect(() => compileReleaseGraph(npmConfig(tokenNpm({
+      packageArtifact: OutputId.make("missing-package")
     })), context)).toThrow(GraphLinkError)
-    expect(() => compileReleaseGraph(npmConfig(CandidateNpmPublish.make({
-      registry: "https://user:password@registry.example.test/?tenant=other"
-    })), context)).toThrow(GraphLinkError)
-    expect(() => compileReleaseGraph(npmConfig(CandidateNpmPublish.make({ tokenEnv: "not-portable-name" })), context))
-      .toThrow(GraphLinkError)
+    expect(() => CanonicalNpmRegistryEndpoint.make("https://user:password@registry.example.test/?tenant=other"))
+      .toThrow()
+    expect(() => NpmTokenAuthentication.make({
+      strategy: "token", credential: CredentialRef.make("not-portable-name")
+    })).toThrow()
   })
 
   test("strict preparation decoding rejects output fields on checks", () => {

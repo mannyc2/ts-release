@@ -28,6 +28,14 @@ import {
   type HttpResponse
 } from "./publication/http.js"
 import {
+  AuthorizedMutationHttp,
+  CertifiedPublisherSpawn,
+  NpmUserConfigResource,
+  type AuthorizedMutationHttpShape,
+  type CertifiedPublisherSpawnShape,
+  type NpmUserConfigResourceShape
+} from "./platform/credentials.js"
+import {
   ReleaseContextError,
   makeSourceObserver,
   type SourceObserverRuntime,
@@ -63,6 +71,9 @@ export type {
   HttpAuthorizerShape,
   HttpObservationRequest,
   HttpResponse,
+  AuthorizedMutationHttpShape,
+  CertifiedPublisherSpawnShape,
+  NpmUserConfigResourceShape,
   MutationCredentialGrant,
   ReleaseRuntimeShape,
   RunCommand,
@@ -77,6 +88,9 @@ export interface CustomReleaseLayerInput {
   readonly preparedStore: PreparedReleaseStoreShape
   readonly credentialProvider: CredentialProviderShape
   readonly httpAuthorizer: HttpAuthorizerShape
+  readonly authorizedMutationHttp: AuthorizedMutationHttpShape
+  readonly npmUserConfigResource: NpmUserConfigResourceShape
+  readonly certifiedPublisherSpawn: CertifiedPublisherSpawnShape
 }
 
 /**
@@ -90,5 +104,8 @@ export const makeCustomReleaseLayer = (
   Layer.succeed(ReleaseRuntime, input.runtime),
   Layer.succeed(PreparedReleaseStore, input.preparedStore),
   Layer.succeed(CredentialProvider, input.credentialProvider),
-  Layer.succeed(HttpAuthorizer, input.httpAuthorizer)
+  Layer.succeed(HttpAuthorizer, input.httpAuthorizer),
+  Layer.succeed(AuthorizedMutationHttp, input.authorizedMutationHttp),
+  Layer.succeed(NpmUserConfigResource, input.npmUserConfigResource),
+  Layer.succeed(CertifiedPublisherSpawn, input.certifiedPublisherSpawn)
 )

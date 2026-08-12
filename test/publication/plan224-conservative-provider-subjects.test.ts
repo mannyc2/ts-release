@@ -1,11 +1,24 @@
-import { createHash } from "node:crypto"
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import {
+  CredentialRef,
   EnvironmentName,
   type CredentialRequest
 } from "../../src/model/authority.js"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
+import {
+  formatNpmSha1Shasum,
+  formatNpmSha512Sri,
+  sha1Digest,
+  sha256Digest,
+  sha512Digest,
+  type Sha256Digest
+} from "../../src/model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
+import {
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag,
+  NpmTokenAuthentication
+} from "../../src/recipes/config.js"
 import {
   CredentialProvider,
   makeCredentialProvider,
@@ -15,7 +28,6 @@ import {
   publishPreparedRelease,
   subjectsForPreparedRelease
 } from "../../src/publication/adapter.js"
-import { makeGithubSubjects } from "../../src/publication/github.js"
 import type { HttpResponse } from "../../src/publication/http.js"
 import { makeNpmSubject } from "../../src/publication/npm.js"
 import {
@@ -32,7 +44,7 @@ import {
   PreparedGitHubPublication,
   PreparedNpmPublication,
   PreparedProject,
-  PreparedReleaseV1,
+  PreparedReleaseV2,
   PreparedSource
 } from "../../src/release/prepared.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
@@ -41,26 +53,29 @@ import {
   type HttpAuthorizerShape,
   type HttpObservationRequest
 } from "../../src/publication/http.js"
+import {
+  unavailableCertifiedPublisherSpawn,
+  unavailableMutationServicesLayer,
+  unavailableNpmUserConfigResource
+} from "../fixtures/mutation-services.js"
 
-const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
-
-const source = (digest: string): PreparedSource => PreparedSource.make({
+const source = (digest: Sha256Digest): PreparedSource => PreparedSource.make({
   commit: NonEmptyName.make("commit"),
   tree: NonEmptyName.make("tree"),
   clean: true,
   packageManifestPath: SafeRelativePath.make("package.json"),
-  packageManifestDigest: Digest.make(digest)
+  packageManifestDigest: digest
 })
 
 const artifact = (id: string, path: string, mediaType: string, bytes: Uint8Array): PreparedArtifact => {
-  const digest = sha256(bytes)
+  const digest = sha256Digest(bytes)
   return PreparedArtifact.make({
     id: OutputId.make(id),
     path: SafeRelativePath.make(path),
     kind: "archive",
     size: bytes.length,
-    digest: Digest.make(digest),
-    blob: Digest.make(digest),
+    digest,
+    blob: digest,
     mediaType
   })
 }
@@ -72,21 +87,27 @@ const npmFixture = (): {
 } => {
   const bytes = new TextEncoder().encode("exact npm tarball bytes\n")
   const preparedArtifact = artifact("npm-tarball", "package.tgz", "application/gzip", bytes)
+  const registryUrl = CanonicalNpmRegistryEndpoint.make("https://registry.example.test/")
+  const authentication = NpmTokenAuthentication.make({
+    strategy: "token", credential: CredentialRef.make("NPM_TOKEN")
+  })
   const publication = PreparedNpmPublication.make({
     id: NonEmptyName.make("npm-release"),
     packageName: NonEmptyName.make("@fixture/package"),
     version: Version.make("1.0.0"),
-    registryUrl: "https://registry.example.test/",
+    registryUrl,
     artifactId: preparedArtifact.id,
+    distTag: NpmDistTag.make("latest"), access: "public", authentication,
+    provenance: "disabled", publicationMode: "direct",
     authority: makeNpmPublicationAuthorityIntent({
       packageName: "@fixture/package",
       version: "1.0.0",
-      registryUrl: "https://registry.example.test/"
+      registryUrl, distTag: "latest", authentication
     })
   })
-  const digest = sha256(bytes)
-  const manifest = PreparedReleaseV1.make({
-    schemaVersion: "prepared-release/v1",
+  const digest = sha256Digest(bytes)
+  const manifest = PreparedReleaseV2.make({
+    schemaVersion: "prepared-release/v2",
     source: source(digest),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"),
@@ -134,9 +155,9 @@ const githubFixture = (): {
       tag: "v1.0.0"
     })
   })
-  const digest = sha256(bytes)
-  const manifest = PreparedReleaseV1.make({
-    schemaVersion: "prepared-release/v1",
+  const digest = sha256Digest(bytes)
+  const manifest = PreparedReleaseV2.make({
+    schemaVersion: "prepared-release/v2",
     source: source(digest),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"),
@@ -160,7 +181,7 @@ const githubFixture = (): {
 const response = (status: number, body: unknown): HttpResponse => ({
   status,
   headers: {},
-  body: typeof body === "string" ? body : JSON.stringify(body)
+  body: typeof body === "string" || body instanceof Uint8Array ? body : JSON.stringify(body)
 })
 
 const descriptorFor = (request: CredentialRequest): CredentialGrantDescriptor => {
@@ -215,32 +236,17 @@ const runPublish = async (
   const http = recordingHttp(responses, httpRequests)
   const report = await Effect.runPromise(publishPreparedRelease(bundle).pipe(
     Effect.provideService(HttpAuthorizer, http),
-    Effect.provideService(CredentialProvider, recordingCredentials(credentialRequests))
+    Effect.provideService(CredentialProvider, recordingCredentials(credentialRequests)),
+    Effect.provide(unavailableMutationServicesLayer)
   ))
   return { report, credentialRequests, httpRequests }
 }
 
 const npmMetadata = (bytes: Uint8Array): unknown => ({
   dist: {
-    integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
-    shasum: createHash("sha1").update(bytes).digest("hex")
+    integrity: formatNpmSha512Sri(sha512Digest(bytes)),
+    shasum: formatNpmSha1Shasum(sha1Digest(bytes))
   }
-})
-
-const githubMetadata = (bytes: Uint8Array, overrides: Readonly<Record<string, unknown>> = {}): unknown => ({
-  tag_name: "v1.0.0",
-  target_commitish: "a-provider-value-that-is-deliberately-not-trusted",
-  name: "Project 1.0.0",
-  body: "release notes",
-  draft: false,
-  prerelease: false,
-  assets: [{
-    name: "asset.zip",
-    size: bytes.length,
-    content_type: "application/zip",
-    digest: "sha256:a-provider-value-that-plan-224-does-not-trust"
-  }],
-  ...overrides
 })
 
 describe("Plan 224 conservative provider subjects", () => {
@@ -249,7 +255,7 @@ describe("Plan 224 conservative provider subjects", () => {
     const github = githubFixture()
     const bundle: PreparedBundle = {
       ...npm.bundle,
-      manifest: PreparedReleaseV1.make({
+      manifest: PreparedReleaseV2.make({
         ...npm.bundle.manifest,
         artifacts: [...npm.bundle.manifest.artifacts, ...github.bundle.manifest.artifacts],
         publications: [npm.publication, github.publication]
@@ -257,7 +263,8 @@ describe("Plan 224 conservative provider subjects", () => {
       blobs: new Map([...npm.bundle.blobs, ...github.bundle.blobs])
     }
     const subjects = await Effect.runPromise(subjectsForPreparedRelease(bundle).pipe(
-      Effect.provideService(HttpAuthorizer, recordingHttp([], []))
+      Effect.provideService(HttpAuthorizer, recordingHttp([], [])),
+      Effect.provide(unavailableMutationServicesLayer)
     ))
 
     expect(subjects).toHaveLength(2)
@@ -290,8 +297,20 @@ describe("Plan 224 conservative provider subjects", () => {
 
   test("npm recomputes both digests and turns a witnessed mismatch into a conflict without mutation authority", async () => {
     const { bundle } = npmFixture()
+    const differentBytes = new TextEncoder().encode("different npm tarball bytes\n")
     const { report, credentialRequests, httpRequests } = await runPublish(bundle, [response(200, {
-      dist: { integrity: "sha512-different", shasum: "different" }
+      name: "@fixture/package",
+      versions: {
+        "1.0.0": {
+          name: "@fixture/package",
+          version: "1.0.0",
+          dist: {
+            integrity: formatNpmSha512Sri(sha512Digest(differentBytes)),
+            shasum: formatNpmSha1Shasum(sha1Digest(differentBytes))
+          }
+        }
+      },
+      "dist-tags": { latest: "1.0.0" }
     })])
 
     expect(report.status).toBe("blocked")
@@ -304,11 +323,12 @@ describe("Plan 224 conservative provider subjects", () => {
     expect(httpRequests).toHaveLength(1)
   })
 
-  test("npm exact-looking, missing-digest, 404, status, and malformed reads remain inconclusive and blocked", async () => {
+  test("npm exact-looking, missing, malformed, 404, status, and malformed JSON reads remain inconclusive", async () => {
     const { bundle, bytes } = npmFixture()
     const cases: ReadonlyArray<HttpResponse> = [
       response(200, npmMetadata(bytes)),
       response(200, { dist: { integrity: (npmMetadata(bytes) as { dist: { integrity: string } }).dist.integrity } }),
+      response(200, { dist: { integrity: "sha512-malformed", shasum: "malformed" } }),
       response(404, {}),
       response(429, {}),
       response(200, "not-json")
@@ -326,93 +346,30 @@ describe("Plan 224 conservative provider subjects", () => {
     }
   })
 
-  test("GitHub reports only safe direct mismatches as conflicts", async () => {
-    const { bundle, bytes } = githubFixture()
-    const { report, credentialRequests } = await runPublish(bundle, [response(200, githubMetadata(bytes, {
-      tag_name: "v2.0.0",
-      name: "Different title",
-      body: "different notes",
-      draft: true,
-      prerelease: true,
-      assets: [{ name: "asset.zip", size: bytes.length + 1, content_type: "application/octet-stream" }]
-    }))])
-
-    expect(report.status).toBe("blocked")
-    expect(report.subjects[1]).toMatchObject({
-      _tag: "BlockedSubject",
-      cause: { _tag: "Conflict" },
-      observations: [{ _tag: "PresentDifferent" }]
+  test("an npm mutation without a matching observed plan fails before dispatch", async () => {
+    const fixture = npmFixture()
+    const httpRequests: Array<HttpObservationRequest> = []
+    const http = recordingHttp([], httpRequests)
+    const subject = makeNpmSubject(
+      fixture.bundle,
+      fixture.publication,
+      http,
+      unavailableNpmUserConfigResource,
+      unavailableCertifiedPublisherSpawn
+    )
+    const decision = NeedsMutation.make({
+      subject: subject.id,
+      precondition: MutationPrecondition.make({ kind: NonEmptyName.make("test-only") })
     })
-    const remote = report.subjects[1]
-    expect(remote?._tag === "BlockedSubject" && remote.observations[0]?._tag === "PresentDifferent"
-      ? remote.observations[0].differences.map((item) => item.field.toString())
-      : []).toEqual([
-      "tag",
-      "title",
-      "body",
-      "draft",
-      "prerelease",
-      "asset[0].size",
-      "asset[0].mediaType"
-    ])
-    expect(credentialRequests.map((request) => request.purpose)).toEqual(["observe"])
-  })
+    const credentials = recordingCredentials([])
+    const grant = await Effect.runPromise(credentials.acquireForMutation(subject.mutationRequest, decision))
+    const error = await Effect.runPromise(subject.mutate(decision, grant).pipe(Effect.flip))
 
-  test("GitHub detects duplicate provider assets with an intended name", async () => {
-    const { bundle, bytes } = githubFixture()
-    const duplicate = { name: "asset.zip", size: bytes.length, content_type: "application/zip" }
-    const { report } = await runPublish(bundle, [response(200, githubMetadata(bytes, {
-      assets: [duplicate, duplicate]
-    }))])
-    const remote = report.subjects[1]
-    expect(remote?._tag === "BlockedSubject" && remote.observations[0]?._tag === "PresentDifferent"
-      ? remote.observations[0].differences.map((item) => item.field.toString())
-      : []).toEqual(["asset[0].name-count"])
-  })
-
-  test("GitHub ignores target_commitish and provider digest as truth and never claims exactness or absence", async () => {
-    const { bundle, bytes } = githubFixture()
-    const cases: ReadonlyArray<HttpResponse> = [
-      response(200, githubMetadata(bytes)),
-      response(404, {}),
-      response(500, {}),
-      response(200, "not-json")
-    ]
-
-    for (const current of cases) {
-      const { report, credentialRequests } = await runPublish(bundle, [current, current])
-      expect(report.status).toBe("blocked")
-      expect(report.subjects[1]).toMatchObject({
-        _tag: "BlockedSubject",
-        cause: { _tag: "Blocked" },
-        observations: [{ _tag: "Inconclusive" }, { _tag: "Inconclusive" }]
-      })
-      expect(credentialRequests.map((request) => request.purpose)).toEqual(["observe", "observe"])
-    }
-  })
-
-  test("both Plan-224 provider mutations fail before dispatch without using HTTP", async () => {
-    const fixtures = [npmFixture(), githubFixture()] as const
-    for (const fixture of fixtures) {
-      const httpRequests: Array<HttpObservationRequest> = []
-      const http = recordingHttp([], httpRequests)
-      const subject = "packageName" in fixture.publication
-        ? makeNpmSubject(fixture.bundle, fixture.publication, http)
-        : makeGithubSubjects(fixture.bundle, fixture.publication, http)[0]
-      const decision = NeedsMutation.make({
-        subject: subject.id,
-        precondition: MutationPrecondition.make({ kind: NonEmptyName.make("test-only") })
-      })
-      const credentials = recordingCredentials([])
-      const grant = await Effect.runPromise(credentials.acquireForMutation(subject.mutationRequest, decision))
-      const error = await Effect.runPromise(subject.mutate(decision, grant).pipe(Effect.flip))
-
-      expect(error).toMatchObject({
-        _tag: "ReleaseSubjectError",
-        phase: "mutate",
-        commitment: "before-dispatch"
-      })
-      expect(httpRequests).toEqual([])
-    }
+    expect(error).toMatchObject({
+      _tag: "ReleaseSubjectError",
+      phase: "mutate",
+      commitment: "before-dispatch"
+    })
+    expect(httpRequests).toEqual([])
   })
 })

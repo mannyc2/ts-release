@@ -22,9 +22,15 @@ import { ReleaseRuntime } from "../src/api/runtime.js"
 import type { ReleaseApiLayer } from "../src/api/types.js"
 import { encodeCanonicalJson } from "../src/model/canonical.js"
 import {
+  CredentialRef,
   EnvironmentName,
   type CredentialRequest
 } from "../src/model/authority.js"
+import {
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag,
+  NpmTokenAuthentication
+} from "../src/recipes/config.js"
 import {
   NonEmptyName,
   OutputId,
@@ -51,6 +57,7 @@ import {
   type HttpObservationRequest,
   type HttpResponse
 } from "../src/publication/http.js"
+import { unavailableMutationServicesLayer } from "./fixtures/mutation-services.js"
 import { makeNpmPublicationAuthorityIntent } from "../src/release/graph.js"
 import {
   PreparedArtifact,
@@ -84,10 +91,18 @@ const response = (status: number, body: unknown): HttpResponse => ({
 const conflictResponse = (): HttpResponse => {
   const bytes = new TextEncoder().encode("different provider tarball bytes\n")
   return response(200, {
-    dist: {
-      integrity: formatNpmSha512Sri(sha512Digest(bytes)),
-      shasum: formatNpmSha1Shasum(sha1Digest(bytes))
-    }
+    name: "@fixture/package",
+    versions: {
+      "1.0.0": {
+        name: "@fixture/package",
+        version: "1.0.0",
+        dist: {
+          integrity: formatNpmSha512Sri(sha512Digest(bytes)),
+          shasum: formatNpmSha1Shasum(sha1Digest(bytes))
+        }
+      }
+    },
+    "dist-tags": { latest: "1.0.0" }
   })
 }
 
@@ -103,16 +118,22 @@ const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
     blob: digest,
     mediaType: "application/gzip"
   })
+  const registryUrl = CanonicalNpmRegistryEndpoint.make("https://registry.example.test/")
+  const authentication = NpmTokenAuthentication.make({
+    strategy: "token", credential: CredentialRef.make("NPM_TOKEN")
+  })
   const publication = PreparedNpmPublication.make({
     id: NonEmptyName.make("npm-release"),
     packageName: NonEmptyName.make("@fixture/package"),
     version: Version.make("1.0.0"),
-    registryUrl: "https://registry.example.test/",
+    registryUrl,
     artifactId: artifact.id,
+    distTag: NpmDistTag.make("latest"), access: "public", authentication,
+    provenance: "disabled", publicationMode: "direct",
     authority: makeNpmPublicationAuthorityIntent({
       packageName: "@fixture/package",
       version: "1.0.0",
-      registryUrl: "https://registry.example.test/"
+      registryUrl, distTag: "latest", authentication
     })
   })
   return {
@@ -220,7 +241,8 @@ const authorityLayer = (
     }),
     Layer.succeed(PreparedReleaseStore, store),
     Layer.succeed(CredentialProvider, credentials),
-    Layer.succeed(HttpAuthorizer, http)
+    Layer.succeed(HttpAuthorizer, http),
+    unavailableMutationServicesLayer
   )
 }
 

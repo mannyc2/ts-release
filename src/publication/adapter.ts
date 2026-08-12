@@ -9,8 +9,12 @@ import {
   type ReleaseSubject
 } from "./coordinator.js"
 import { makeGithubSubjects } from "./github.js"
-import { HttpAuthorizer } from "./http.js"
+import { AuthorizedMutationHttp, HttpAuthorizer } from "./http.js"
 import { makeNpmSubject } from "./npm.js"
+import {
+  CertifiedPublisherSpawn,
+  NpmUserConfigResource
+} from "./publisher.js"
 
 const preparedSubject = (bundle: PreparedBundle): SubjectId => SubjectId.make(
   `prepared:sha256-${sha256(encodePreparedRelease(bundle.manifest))}`
@@ -25,12 +29,15 @@ export const subjectsForPreparedRelease = Effect.fn("subjectsForPreparedRelease"
   bundle: PreparedBundle
 ) {
   const http = yield* HttpAuthorizer
+  const mutationHttp = yield* AuthorizedMutationHttp
+  const userConfigs = yield* NpmUserConfigResource
+  const publisher = yield* CertifiedPublisherSpawn
   const subjects: Array<ReleaseSubject> = []
   for (const publication of bundle.manifest.publications) {
     if (publication._tag === "PreparedNpmPublication") {
-      subjects.push(makeNpmSubject(bundle, publication, http))
+      subjects.push(makeNpmSubject(bundle, publication, http, userConfigs, publisher))
     } else {
-      subjects.push(...makeGithubSubjects(bundle, publication, http))
+      subjects.push(...makeGithubSubjects(bundle, publication, http, mutationHttp))
     }
   }
   return subjects as ReadonlyArray<ReleaseSubject>

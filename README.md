@@ -9,7 +9,7 @@ ts-release release --config release.config.json
 ```
 
 `release` observes the clean source checkout, runs declared local preparation,
-stores one exact `prepared-release/v1` bundle, observes each destination, and
+stores one exact `prepared-release/v2` bundle, observes each destination, and
 publishes only after a provider-specific decision authorizes the exact subject. An external host
 may place a gate around the publication job; that policy does not become
 engine state.
@@ -63,10 +63,12 @@ authored configuration as a publication fallback.
 
 Local preparation uses two native primitives. `CommandCheck` is a pass/fail
 gate; `CommandArtifact` generates or transforms declared regular-file bytes.
-Use artifact input/output references for data flow. Trusted argv commands may
-read only the declared environment names and are not a sandbox or a generic
-remote-effect mechanism. Durable test or compliance evidence must be a
-declared artifact. See [the preparation guide](docs/preparation.md).
+Use artifact input/output references for data flow. Generic preparation
+children receive no authored host environment values; any nonempty
+`environmentNames` request fails before a subprocess starts. The runner may
+retain only `PATH` as argv execution plumbing. Trusted argv commands are not a
+sandbox or a generic remote-effect mechanism. Durable test or compliance
+evidence must be a declared artifact. See [the preparation guide](docs/preparation.md).
 
 ## Recovery
 
@@ -116,6 +118,51 @@ The public operations are `inspect`, `prepare`, `observe`, `publish`,
 `release`, and `correct`. Public inputs contain neither credential values nor
 prepared paths. The derived graph is ephemeral; the prepared manifest and
 blobs are the durable cross-process boundary.
+
+Library hosts can replace all imperative boundaries without importing private
+service tags. The `store` subpath exposes the structural durable-store contract;
+the `host` subpath composes a runtime, store, credential provider, and HTTP
+authorizer into the same API layer. Credential acquisition returns opaque
+grants or typed errors—never secret values:
+
+```ts
+import { makeReleaseApi } from "@mannyc1/ts-release"
+import * as Effect from "effect/Effect"
+import {
+  CredentialUnavailable,
+  makeCredentialProvider,
+  makeCustomReleaseLayer,
+  type HttpAuthorizerShape,
+  type ReleaseRuntimeShape
+} from "@mannyc1/ts-release/host"
+import {
+  makeLocalPreparedReleaseStore,
+  type PreparedReleaseStoreShape
+} from "@mannyc1/ts-release/store"
+
+export const makeCustomApi = (
+  runtime: ReleaseRuntimeShape,
+  httpAuthorizer: HttpAuthorizerShape,
+  storeDirectory: string
+) => {
+  const local = makeLocalPreparedReleaseStore(storeDirectory)
+  const preparedStore: PreparedReleaseStoreShape = {
+    commit: (manifest, blobs) => local.commit(manifest, blobs),
+    load: (reference) => local.load(reference)
+  }
+  const credentialProvider = makeCredentialProvider({
+    acquire: (request) => Effect.fail(new CredentialUnavailable({
+      subject: request.subject,
+      provider: request.provider,
+      purpose: request.purpose,
+      reason: "This host has no credential for the prepared request."
+    }))
+  })
+  return makeReleaseApi(makeCustomReleaseLayer({
+    runtime, preparedStore, credentialProvider, httpAuthorizer
+  }))
+}
+```
 
 ## Agent integration and development
 

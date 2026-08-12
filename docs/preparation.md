@@ -43,7 +43,9 @@ artifact.
 
 The example is intentionally about data flow: the generated text artifact is
 declared as the GitHub body, and the transform consumes a declared input.
-Commands are trusted local code, argv-only, and receive only explicitly named
-environment values. Staging rejects input mutation and captures no undeclared
-path. A remote destination, approval gate, finalizer, or announcement belongs
-to its typed host/provider owner.
+Commands are trusted local code and argv-only. Generic preparation children
+receive no authored host environment values: a nonempty `environmentNames`
+request is rejected before any subprocess starts, and the runner may retain
+only `PATH` to locate the executable. Staging rejects input mutation and
+captures no undeclared path. A remote destination, approval gate, finalizer,
+or announcement belongs to its typed host/provider owner.

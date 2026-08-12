@@ -348,7 +348,9 @@ const typecheckPackageBlocks = async (
       paths: {
         "@mannyc1/ts-release": [join(root, "dist/index.d.ts")],
         "@mannyc1/ts-release/node": [join(root, "dist/platform/node.d.ts")],
-        "@mannyc1/ts-release/bun": [join(root, "dist/platform/bun.d.ts")]
+        "@mannyc1/ts-release/bun": [join(root, "dist/platform/bun.d.ts")],
+        "@mannyc1/ts-release/store": [join(root, "dist/store.d.ts")],
+        "@mannyc1/ts-release/host": [join(root, "dist/host.d.ts")]
       }
     }
     const program = ts.createProgram([...fileForBlock.keys()], options)

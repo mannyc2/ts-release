@@ -1,6 +1,6 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs"
 import { isAbsolute, join, normalize, resolve } from "node:path"
 import { cwd, exit } from "node:process"
 import { pathToFileURL } from "node:url"
@@ -61,7 +61,29 @@ const expectedRootRuntimeExports = new Set([
 ])
 const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {
   "./node": new Set(["NodeReleaseLayer", "makeNodeReleaseLayer"]),
-  "./bun": new Set(["BunReleaseLayer", "makeBunReleaseLayer"])
+  "./bun": new Set(["BunReleaseLayer", "makeBunReleaseLayer"]),
+  "./store": new Set([
+    "PreparedCommitHandoffError",
+    "PreparedManifestError",
+    "PreparedReleaseV2",
+    "PreparedStoreError",
+    "decodePreparedRelease",
+    "encodePreparedRelease",
+    "makeLocalPreparedReleaseStore"
+  ]),
+  "./host": new Set([
+    "CredentialAudienceMismatch",
+    "CredentialPurposeMismatch",
+    "CredentialStrategyUnsupported",
+    "CredentialSubjectMismatch",
+    "CredentialUnavailable",
+    "ReleaseContextError",
+    "Sha256Digest",
+    "makeCredentialProvider",
+    "makeCustomReleaseLayer",
+    "makeSourceObserver",
+    "sha256Digest"
+  ])
 }
 
 // SPEC §13 is normative about the root surface, so it is asserted, not
@@ -315,6 +337,190 @@ const checkConsumerTypeResolution = async (
   }
 }
 
+interface ExternalConsumerResult {
+  readonly calls: {
+    readonly source: number
+    readonly run: number
+    readonly commit: number
+    readonly load: number
+    readonly credential: number
+    readonly http: number
+  }
+  readonly observed: string
+  readonly published: string
+}
+
+const decodeText = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
+
+const runExternalCommand = (
+  argv: ReadonlyArray<string>,
+  directory: string
+): { readonly status: number, readonly stdout: string, readonly stderr: string } => {
+  const result = Bun.spawnSync([...argv], {
+    cwd: directory,
+    env: { PATH: process.env.PATH ?? "" },
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 30_000
+  })
+  return {
+    status: result.exitCode,
+    stdout: decodeText(result.stdout),
+    stderr: decodeText(result.stderr)
+  }
+}
+
+const checkExternalLibraryConsumer = async (
+  packageName: string,
+  failures: Array<string>
+): Promise<void> => {
+  const tempDir = await Effect.runPromise(
+    makeRepoScratchDirectory(".tmp-external-library-consumer-", root).pipe(
+      Effect.provide(ScriptLayer)
+    )
+  )
+  try {
+    const fixturePath = resolve(root, "test", "fixtures", "external-library-consumer.ts")
+    const consumerPath = resolve(tempDir, "consumer.ts")
+    const source = readFileSync(fixturePath, "utf8")
+    const sourceFile = ts.createSourceFile(
+      consumerPath,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS
+    )
+    const expectedPackageImports = new Set([
+      packageName,
+      `${packageName}/host`,
+      `${packageName}/store`
+    ])
+    const observedPackageImports = new Set<string>()
+    for (const statement of sourceFile.statements) {
+      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue
+      const specifier = statement.moduleSpecifier.text
+      if (specifier.startsWith(".")) {
+        failures.push(`external library consumer must not use relative import ${specifier}`)
+      }
+      if (specifier === packageName || specifier.startsWith(`${packageName}/`)) {
+        observedPackageImports.add(specifier)
+        if (!expectedPackageImports.has(specifier)) {
+          failures.push(`external library consumer imports unsupported package subpath ${specifier}`)
+        }
+      }
+    }
+    for (const specifier of expectedPackageImports) {
+      if (!observedPackageImports.has(specifier)) {
+        failures.push(`external library consumer must exercise ${specifier}`)
+      }
+    }
+
+    writeFileSync(consumerPath, source)
+    writeFileSync(resolve(tempDir, "package.json"), `${JSON.stringify({
+      name: "external-ts-release-consumer",
+      private: true,
+      type: "module"
+    }, null, 2)}\n`)
+    writeFileSync(resolve(tempDir, "tsconfig.json"), `${JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        strict: true,
+        skipLibCheck: false,
+        noEmit: true,
+        types: ["bun-types"]
+      }
+    }, null, 2)}\n`)
+    const packageScope = resolve(tempDir, "node_modules", "@mannyc1")
+    mkdirSync(packageScope, { recursive: true })
+    symlinkSync(root, resolve(packageScope, "ts-release"), "dir")
+
+    const options: ts.CompilerOptions = {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.NodeNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      strict: true,
+      skipLibCheck: false,
+      noEmit: true,
+      types: ["bun-types"]
+    }
+    const program = ts.createProgram([consumerPath], options)
+    for (const diagnostic of ts.getPreEmitDiagnostics(program)) {
+      failures.push(`external library consumer typecheck failed: ${formatDiagnostic(diagnostic)}`)
+    }
+
+    const workspace = resolve(tempDir, "workspace")
+    mkdirSync(workspace, { recursive: true })
+    writeFileSync(resolve(workspace, "package.json"), `${JSON.stringify({
+      name: "external-library-fixture",
+      version: "1.0.0",
+      repository: "https://github.com/owner/fixture.git"
+    }, null, 2)}\n`)
+    writeFileSync(resolve(workspace, "payload.txt"), "external package bytes\n")
+    for (const argv of [
+      ["git", "init", "--quiet"],
+      ["git", "add", "--all"],
+      [
+        "git", "-c", "user.name=External Library Fixture",
+        "-c", "user.email=external-library@example.test",
+        "commit", "--quiet", "-m", "fixture"
+      ]
+    ]) {
+      const initialized = runExternalCommand(argv, workspace)
+      if (initialized.status !== 0) {
+        failures.push(`external library consumer setup failed: ${initialized.stderr || initialized.stdout}`)
+        return
+      }
+    }
+
+    const executed = runExternalCommand([
+      process.execPath,
+      "run",
+      consumerPath,
+      workspace,
+      resolve(tempDir, "prepared-store")
+    ], tempDir)
+    if (executed.status !== 0) {
+      failures.push(`external library consumer execution failed: ${executed.stderr || executed.stdout}`)
+      return
+    }
+    let result: ExternalConsumerResult
+    try {
+      result = JSON.parse(executed.stdout.trim()) as ExternalConsumerResult
+    } catch {
+      failures.push(`external library consumer emitted invalid JSON: ${executed.stdout}`)
+      return
+    }
+    const expectedCalls: ExternalConsumerResult["calls"] = {
+      source: 3,
+      run: 1,
+      commit: 1,
+      load: 2,
+      credential: 4,
+      http: 2
+    }
+    for (const [boundary, expected] of Object.entries(expectedCalls)) {
+      const actual = result.calls[boundary as keyof ExternalConsumerResult["calls"]]
+      if (actual !== expected) {
+        failures.push(`external library consumer ${boundary} boundary calls were ${actual}, expected ${expected}`)
+      }
+    }
+    if (result.observed !== "inconclusive" || result.published !== "blocked") {
+      failures.push(
+        `external library consumer returned observe=${result.observed} publish=${result.published}, expected inconclusive/blocked`
+      )
+    }
+  } finally {
+    await Effect.runPromise(
+      removeScratchDirectory(tempDir, {
+        expectedParent: root,
+        allowedPrefixes: [".tmp-external-library-consumer-"]
+      }).pipe(Effect.provide(ScriptLayer))
+    )
+  }
+}
+
 const main = async (): Promise<void> => {
   const failures: Array<string> = []
   const manifest = readManifest(resolve(root, "package.json"), "package.json", failures)
@@ -378,6 +584,7 @@ const main = async (): Promise<void> => {
         }
       }
       await checkConsumerTypeResolution(packageName, exportsField, failures)
+      await checkExternalLibraryConsumer(packageName, failures)
       for (const subpath of Object.keys(exportsField)) {
         if (subpath.includes("*")) {
           failures.push(`package.json export ${subpath} must be explicit; wildcard exports are not allowed`)

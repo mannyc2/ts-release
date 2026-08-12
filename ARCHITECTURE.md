@@ -17,7 +17,7 @@ publication or provider correction
 Authored intent is human configuration. Verified context binds it to a clean
 source tree, package manifest, commit, and repository facts. The graph is a
 derived in-process execution plan: it is recomputable, not transported
-authority. A `prepared-release/v1` manifest plus content-addressed blobs is the
+authority. A `prepared-release/v2` manifest plus content-addressed blobs is the
 durable cross-process boundary. Applications carry only a content-addressed
 prepared reference; its host store owns path or artifact resolution and
 provenance verification. Destination observation is the authority for
@@ -47,11 +47,12 @@ prepared release. `builder: "command"` is authoring sugar for the same artifact
 primitive. Graph dependencies use declared artifact references, so independent
 node order is not a user contract.
 
-Commands are trusted local argv code with a closed declared environment. They
-are not a sandbox, plugin runtime, lifecycle hook system, or remote-effect
-escape hatch. Staging copies the source, rejects input mutation, re-observes
-source identity after each command, and captures only declared regular-file
-outputs.
+Commands are trusted local argv code with no authored host environment values;
+the runtime rejects every nonempty `environmentNames` request before starting
+a subprocess and may retain only `PATH` to locate the argv executable. They are
+not a sandbox, plugin runtime, lifecycle hook system, or remote-effect escape
+hatch. Staging copies the source, rejects input mutation, re-observes source
+identity after each command, and captures only declared regular-file outputs.
 
 ## Publication and correction
 
@@ -80,3 +81,10 @@ The CLI and Action call the same public operations. The automatic workflow
 persists the complete prepared release before the publication job receives
 credentials. A host environment can gate that publication job, but identity
 and consent remain host records rather than release-engine data.
+
+External library integrations use the supported `store` structural contract
+and the `host` layer constructor. The constructor installs custom source/run,
+prepared-store, credential-acquisition, and HTTP-authorization values behind
+the engine's private service tags. Credential values remain host-owned; the
+public seam carries only prepared requests, opaque grants, safe references,
+typed acquisition failures, and authorized HTTP results.

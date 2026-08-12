@@ -25,6 +25,8 @@ export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "drivers/utils.ts",
   "drivers/workspace.ts",
   "model/canonical.ts",
+  "host.ts",
+  "store.ts",
   "platform/bun.ts",
   "platform/node.ts",
   "platform/services.ts",
@@ -73,6 +75,26 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
     allowedExternalPrefixes: [
       "node:", "@effect/platform-bun", "effect/unstable/http", "effect/unstable/process"
     ],
+    allowsBunGlobal: false
+  },
+  {
+    subpath: "./store",
+    allowedRuntimeSourcePaths: [
+      "store.ts",
+      "drivers/workspace.ts",
+      "model/canonical.ts"
+    ],
+    allowedExternalPrefixes: ["node:"],
+    allowsBunGlobal: false
+  },
+  {
+    subpath: "./host",
+    allowedRuntimeSourcePaths: [
+      "host.ts",
+      "drivers/workspace.ts",
+      "model/canonical.ts"
+    ],
+    allowedExternalPrefixes: ["node:"],
     allowsBunGlobal: false
   }
 ]

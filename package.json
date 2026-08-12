@@ -46,6 +46,14 @@
     "./bun": {
       "types": "./dist/platform/bun.d.ts",
       "default": "./dist/platform/bun.js"
+    },
+    "./store": {
+      "types": "./dist/store.d.ts",
+      "default": "./dist/store.js"
+    },
+    "./host": {
+      "types": "./dist/host.d.ts",
+      "default": "./dist/host.js"
     }
   },
   "files": [

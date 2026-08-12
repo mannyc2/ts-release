@@ -261,6 +261,17 @@ const readSecret = (
     Effect.mapError(() => unavailable(request, `Credential reference ${name} is unavailable.`))
   )
 
+/**
+ * A raw environment token has no host-verifiable downscope metadata. Treat it
+ * conservatively as bundled provider authority instead of relabeling the same
+ * bearer as a purpose-specific secret merely because one method requested it.
+ */
+const environmentTokenPurposes = (
+  purpose: CredentialRequest["purpose"]
+): readonly ["observe", "publish", ...Array<"correct">] => purpose === "correct"
+  ? ["observe", "publish", "correct"]
+  : ["observe", "publish"]
+
 const makeEnvironmentAcquirer = (vault: SecretVault): CredentialGrantAcquirer => ({
   acquire: Effect.fn("EnvironmentCredentialProvider.acquire")(function*(request) {
     switch (request.strategy.kind) {
@@ -275,7 +286,7 @@ const makeEnvironmentAcquirer = (vault: SecretVault): CredentialGrantAcquirer =>
         vault.set(vaultKey(request.subject, name), value)
         return {
           _tag: "ScopedSecret",
-          purposes: [request.purpose],
+          purposes: environmentTokenPurposes(request.purpose),
           ref: request.strategy.credential
         } as const
       }

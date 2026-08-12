@@ -159,6 +159,7 @@ describe("environment credential platform", () => {
 
     const grant = await acquireToken(platform)
     expect(grant).toMatchObject({ subject, provider, audience, ref })
+    expect(grant.purposes).toEqual(new Set(["observe", "publish"]))
     expect("value" in grant).toBe(false)
     expect(JSON.stringify(grant)).not.toContain(secret)
 
@@ -245,13 +246,14 @@ describe("environment credential platform", () => {
     }, grant))).rejects.toMatchObject({ _tag: "CredentialAudienceMismatch" })
     expect(requests).toHaveLength(1)
 
-    const publishOnly = await acquireToken(platform)
-    await expect(Effect.runPromise(platform.httpAuthorizer.execute({
+    const bundled = await acquireToken(platform)
+    expect(bundled.purposes).toEqual(new Set(["observe", "publish"]))
+    await Effect.runPromise(platform.httpAuthorizer.execute({
       subject,
       method: "GET",
       url: "https://registry.npmjs.org/@fixture%2fpkg"
-    }, publishOnly))).rejects.toMatchObject({ _tag: "CredentialPurposeMismatch" })
-    expect(requests).toHaveLength(1)
+    }, bundled))
+    expect(requests).toHaveLength(2)
   })
 
   test("mutation HTTP rejects caller auth and audience mismatch before transport", async () => {

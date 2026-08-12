@@ -1,19 +1,75 @@
-import type { InspectOutput, ReleaseApi } from "../../src/api/types.js"
-import type { CliApi, CliIo } from "../../apps/release-ts/src/cli/commands.js"
+import * as Effect from "effect/Effect"
+import type { ReleaseApi } from "../../src/api/types.js"
+import type { ObservationReport, ReleaseReport } from "../../src/publication/report.js"
+import {
+  makeGitHubActionsCompletePreparedReleaseRef,
+  makeLocalCompletePreparedReleaseRef
+} from "../../src/release/prepared-ref.js"
+import type {
+  CliApi,
+  CliApiFactory,
+  CliIo
+} from "../../apps/release-ts/src/cli/commands.js"
 
-export const emptyInspection = {} as unknown as InspectOutput
-export const emptyBundle = { directory: "/tmp/prepared", manifest: {}, blobs: new Map() } as unknown as Awaited<ReturnType<ReleaseApi["prepare"]>>
+export const emptyInspection = {} as unknown as Awaited<ReturnType<ReleaseApi["inspect"]>>
+export const localPrepared = Effect.runSync(makeLocalCompletePreparedReleaseRef("a".repeat(64)))
+export const hostedPrepared = Effect.runSync(makeGitHubActionsCompletePreparedReleaseRef({
+  owner: "owner",
+  repository: "project",
+  runId: "7",
+  attempt: "2",
+  artifactName: "prepared-release",
+  digest: "b".repeat(64)
+}))
+
+export const completeReport = {
+  status: "complete",
+  subjects: [{ _tag: "AlreadyEquivalent" }]
+} as unknown as ReleaseReport
+
+export const blockedReport = {
+  status: "blocked",
+  subjects: [{ _tag: "BlockedSubject" }]
+} as unknown as ReleaseReport
+
+export const uncertainReport = {
+  status: "uncertain",
+  subjects: [{ _tag: "UncertainSubject" }]
+} as unknown as ReleaseReport
+
+export const observationReport = {
+  status: "equivalent",
+  subjects: [{ observation: { _tag: "Equivalent" } }]
+} as unknown as ObservationReport
 
 export const cliApi = (overrides: Partial<CliApi> = {}): CliApi => ({
   inspect: async () => emptyInspection,
-  prepare: async () => emptyBundle,
-  publish: async () => [],
-  release: async () => ({ prepared: emptyBundle, publications: [] }),
-  correct: async () => ({}) as never,
+  prepare: async () => localPrepared,
+  observe: async () => observationReport,
+  publish: async () => completeReport,
+  release: async () => ({ prepared: localPrepared, report: completeReport }),
+  correct: async ({ prepared }) => ({
+    prepared,
+    status: "unsupported",
+    reason: "fixture"
+  }) as Awaited<ReturnType<ReleaseApi["correct"]>>,
   ...overrides
 })
 
-export const ioFor = (files: Record<string, string> = {}): CliIo & { readonly logs: string[] } => {
+export const cliApiFactory = (
+  overrides: Partial<CliApi> = {},
+  onStore?: (storeDirectory: string) => void
+): CliApiFactory => (storeDirectory) => {
+  onStore?.(storeDirectory)
+  return {
+    ...cliApi(overrides),
+    dispose: async () => {}
+  }
+}
+
+export const ioFor = (
+  files: Record<string, string> = {}
+): CliIo & { readonly logs: string[] } => {
   const logs: string[] = []
   return {
     logs,

@@ -6,7 +6,7 @@
 import * as BunRuntime from "@effect/platform-bun/BunRuntime"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
-import { BunReleaseLayer } from "@mannyc1/ts-release/bun"
+import { makeBunReleaseLayer } from "@mannyc1/ts-release/bun"
 import * as Effect from "effect/Effect"
 import * as Command from "effect/unstable/cli/Command"
 import {
@@ -16,6 +16,7 @@ import {
 } from "node:fs"
 import { dirname } from "node:path"
 import packageManifest from "../../../../package.json" with { type: "json" }
+import { makeLocalPreparedReleaseStore } from "../../../../src/release/prepared-store.js"
 import { makeCli } from "./command.js"
 
 const hostRefusal = unsupportedExecutionHost(process.platform)
@@ -24,8 +25,9 @@ if (hostRefusal !== undefined) {
   process.exit(1)
 }
 
-const api = makeReleaseApi(BunReleaseLayer)
-const cli = makeCli(api, process.cwd(), {
+const cli = makeCli((storeDirectory) => makeReleaseApi(makeBunReleaseLayer(
+  makeLocalPreparedReleaseStore(storeDirectory)
+)), process.cwd(), {
   read: (path) => readFileSync(path, "utf8"),
   write: (path, value) => {
     mkdirSync(dirname(path), { recursive: true })
@@ -36,7 +38,6 @@ const cli = makeCli(api, process.cwd(), {
 
 BunRuntime.runMain(
   Command.run(cli, { version: packageManifest.version }).pipe(
-    Effect.ensuring(Effect.promise(() => api.dispose())),
     Effect.provide(BunServices.layer)
   )
 )

@@ -5,7 +5,7 @@
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeServices from "@effect/platform-node/NodeServices"
 import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
-import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
+import { makeNodeReleaseLayer } from "@mannyc1/ts-release/node"
 import * as Effect from "effect/Effect"
 import * as Command from "effect/unstable/cli/Command"
 import {
@@ -14,6 +14,7 @@ import {
   writeFileSync
 } from "node:fs"
 import { dirname } from "node:path"
+import { makeLocalPreparedReleaseStore } from "../../../../src/release/prepared-store.js"
 import { makeCli } from "./command.js"
 
 // The version is INJECTED by scripts/build-cli-bundle.ts rather than imported
@@ -30,8 +31,9 @@ if (hostRefusal !== undefined) {
   process.exit(1)
 }
 
-const api = makeReleaseApi(NodeReleaseLayer)
-const cli = makeCli(api, process.cwd(), {
+const cli = makeCli((storeDirectory) => makeReleaseApi(makeNodeReleaseLayer(
+  makeLocalPreparedReleaseStore(storeDirectory)
+)), process.cwd(), {
   read: (path) => readFileSync(path, "utf8"),
   write: (path, value) => {
     mkdirSync(dirname(path), { recursive: true })
@@ -42,7 +44,6 @@ const cli = makeCli(api, process.cwd(), {
 
 NodeRuntime.runMain(
   Command.run(cli, { version }).pipe(
-    Effect.ensuring(Effect.promise(() => api.dispose())),
     Effect.provide(NodeServices.layer)
   )
 )

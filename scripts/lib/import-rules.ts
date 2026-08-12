@@ -124,7 +124,7 @@ const directoryDependencies: Readonly<Record<string, ReadonlyArray<string>>> = {
   recipes: ["recipes", "model"],
   config: ["config", "model", "recipes", "resolve"],
   drivers: ["drivers", "model"],
-  platform: ["platform", "drivers", "release", "publication", "api"],
+  platform: ["platform", "drivers", "model", "release", "publication", "api"],
   // The resolver is pure authored→canonical semantics: it may read the config
   // vocabulary and the model, and nothing may read IT except the root export
   // and the apps (enforced below).
@@ -159,8 +159,14 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/drivers/contain.ts",
   "src/drivers/workspace.ts",
   "src/platform/source-observer.ts",
+  "src/platform/credentials.ts",
   "src/release/prepare.ts",
   "src/release/prepared-store.ts"
+])
+const credentialEliminationOwner = "src/platform/credentials.ts"
+const oidcRequestEnvironmentNames = new Set([
+  ["ACTIONS", "ID", "TOKEN", "REQUEST", "URL"].join("_"),
+  ["ACTIONS", "ID", "TOKEN", "REQUEST", "TOKEN"].join("_")
 ])
 const appEntryModules: ReadonlySet<string> = new Set([
   "apps/release-ts/src/cli/main.ts",
@@ -349,6 +355,36 @@ export const checkImportRules = (
       ts.ScriptKind.TS
     ))
 
+  const credentialEliminationUsage = (file: string): Array<string> => {
+    if (toDisplayPath(file) === credentialEliminationOwner) return []
+    const source = ts.createSourceFile(
+      file,
+      readFileSync(file, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS
+    )
+    const failures: Array<string> = []
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isImportDeclaration(node)
+        && ts.isStringLiteral(node.moduleSpecifier)
+        && node.moduleSpecifier.text === "effect/Redacted"
+      ) {
+        failures.push(`${location(source, node.getStart(source))} imports effect/Redacted; secret elimination is confined to ${credentialEliminationOwner}.`)
+      }
+      if (
+        (ts.isStringLiteralLike(node) || ts.isIdentifier(node))
+        && oidcRequestEnvironmentNames.has(node.text)
+      ) {
+        failures.push(`${location(source, node.getStart(source))} names a GitHub Actions OIDC request variable; OIDC material is confined to ${credentialEliminationOwner}.`)
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+    return failures
+  }
+
   const checkAppPlatformImports = (file: string): Array<string> => {
     const displayPath = toDisplayPath(file)
     if (appEntryModules.has(displayPath)) {
@@ -413,6 +449,7 @@ export const checkImportRules = (
   const appPlatformFiles = roots.appPlatform.flatMap((directory) =>
     collectTypeScriptFiles(requireDirectory(join(root, directory), "check-import-rules"))
   )
+  const credentialEliminationFiles = [...new Set([...files, ...appPlatformFiles])]
   const examinedFiles = new Set([
     ...files,
     ...bareEffectFiles,
@@ -422,6 +459,7 @@ export const checkImportRules = (
   const failures = [
     ...files.flatMap(checkFile),
     ...files.flatMap(checkAmbientHostUsage),
+    ...credentialEliminationFiles.flatMap(credentialEliminationUsage),
     ...files.flatMap(impureResolverUsage),
     ...appPlatformFiles.flatMap(checkAppPlatformImports),
     ...bareEffectFiles.flatMap(checkBareEffectImports),

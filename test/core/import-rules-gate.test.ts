@@ -56,6 +56,21 @@ describe("import-rules gate", () => {
     expect(failures.some((item) => item.includes("calls global fetch"))).toBe(true)
   })
 
+  test("secret elimination and OIDC request names are confined to the credential platform", () => {
+    const redacted = failuresFor({
+      "src/model/leak.ts": "import * as Redacted from \"effect/Redacted\"\nvoid Redacted.value\n"
+    })
+    expect(redacted.some((item) => item.includes("secret elimination is confined"))).toBe(true)
+
+    const oidc = failuresFor({
+      "src/model/leak.ts": [
+        "export const name = \"ACTIONS_ID_TOKEN_REQUEST_TOKEN\"",
+        "export const env = { ACTIONS_ID_TOKEN_REQUEST_URL: name }"
+      ].join("\n")
+    })
+    expect(oidc.filter((item) => item.includes("OIDC material is confined"))).toHaveLength(2)
+  })
+
   test("node:fs outside the secure-open list fails", () => {
     const failures = failuresFor({
       "src/apply/apply2.ts": "import { readFileSync } from \"node:fs\"\nvoid readFileSync\n"

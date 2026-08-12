@@ -1,82 +1,220 @@
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
 import { createHash } from "node:crypto"
-import type { PreparedBundle } from "../release/prepared-store.js"
-import type { PreparedNpmPublication } from "../release/prepared.js"
+import * as Effect from "effect/Effect"
+import type { CredentialRequest, ResolvedAuthStrategy } from "../model/authority.js"
+import { CredentialRequest as CredentialRequestSchema } from "../model/authority.js"
 import { NonEmptyName } from "../model/primitives.js"
-import { authHeaders, bodyJson, type PublicationHttp } from "./http.js"
+import type { PreparedNpmPublication } from "../release/prepared.js"
+import type { PreparedBundle } from "../release/prepared-store.js"
+import type { CredentialGrant } from "./authority.js"
+import type { HttpAuthorizerShape } from "./http.js"
 import {
-  Conflict, Equivalent, Inconclusive, NeedsMutation, ObservationDifference, OutcomeUnknown,
-  Applied, PublicationError, type PublicationCredentials, type PublicationSubject, Rejected, type MutationResult, type Observation
-} from "./observation.js"
+  ReleaseSubjectError,
+  type ReleaseObservationContext,
+  type ReleaseSubject
+} from "./coordinator.js"
+import {
+  Conflict,
+  Difference,
+  InconclusiveObservation,
+  PresentDifferent,
+  ProviderBlocked,
+  SafeReason,
+  type MutationDecision,
+  type Observation,
+  type ProviderDecision
+} from "./report.js"
 
-export type NpmPublishRequest = {
-  readonly registryUrl: string, readonly packageName: string, readonly version: string,
-  readonly bytes: Uint8Array, readonly credential: string
-}
-export type NpmPublishProcess = {
-  readonly publish: (request: NpmPublishRequest) => Effect.Effect<{ readonly started: boolean, readonly exitCode: number }, PublicationError>
-}
+const integrity = (bytes: Uint8Array): string =>
+  `sha512-${createHash("sha512").update(bytes).digest("base64")}`
 
-export class NpmSubjectError
-  extends Schema.TaggedErrorClass<NpmSubjectError>()("NpmSubjectError", { reason: Schema.String }) {}
+const shasum = (bytes: Uint8Array): string =>
+  createHash("sha1").update(bytes).digest("hex")
 
-const integrity = (bytes: Uint8Array): string => `sha512-${createHash("sha512").update(bytes).digest("base64")}`
-const shasum = (bytes: Uint8Array): string => createHash("sha1").update(bytes).digest("hex")
+const fingerprint = (value: string): SafeReason => SafeReason.make(
+  `provider value sha256-${createHash("sha256").update(value).digest("hex")}`
+)
+
 const registryVersionUrl = (publication: PreparedNpmPublication): string =>
-  `${publication.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(publication.packageName)}/${encodeURIComponent(publication.version)}`
-const stringValue = (value: unknown): string | undefined => typeof value === "string" && value.length > 0 ? value : undefined
-const registryFacts = (value: unknown): { readonly integrity?: string, readonly shasum?: string, readonly deprecated?: string } | undefined => {
-  if (typeof value !== "object" || value === null) return undefined
-  const deprecatedValue = (value as { readonly deprecated?: unknown }).deprecated
-  if (deprecatedValue !== undefined && deprecatedValue !== null && typeof deprecatedValue !== "string") return undefined
-  const dist = (value as { readonly dist?: unknown }).dist
-  if (typeof dist !== "object" || dist === null) return undefined
-  const integrityValue = stringValue((dist as { readonly integrity?: unknown }).integrity)
-  const shasumValue = stringValue((dist as { readonly shasum?: unknown }).shasum)
-  return integrityValue === undefined && shasumValue === undefined ? undefined : {
-    ...(integrityValue === undefined ? {} : { integrity: integrityValue }),
-    ...(shasumValue === undefined ? {} : { shasum: shasumValue }),
-    ...(typeof deprecatedValue !== "string" || deprecatedValue.length === 0 ? {} : { deprecated: deprecatedValue })
+  `${publication.registryUrl}${encodeURIComponent(publication.packageName)}/${encodeURIComponent(publication.version)}`
+
+const asObject = (value: unknown): Readonly<Record<string, unknown>> | undefined =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Readonly<Record<string, unknown>>
+    : undefined
+
+const parseJson = (body: Uint8Array | string): unknown | undefined => {
+  try {
+    const text = typeof body === "string"
+      ? body
+      : new TextDecoder("utf-8", { fatal: true }).decode(body)
+    return JSON.parse(text) as unknown
+  } catch {
+    return undefined
   }
 }
 
+const nonEmptyString = (value: unknown): string | undefined =>
+  typeof value === "string" && value.length > 0 ? value : undefined
+
+const registryDigests = (
+  value: unknown
+): { readonly integrity?: string, readonly shasum?: string } | undefined => {
+  const metadata = asObject(value)
+  const dist = metadata === undefined ? undefined : asObject(metadata.dist)
+  if (dist === undefined) return undefined
+  const integrityValue = nonEmptyString(dist.integrity)
+  const shasumValue = nonEmptyString(dist.shasum)
+  return {
+    ...(integrityValue === undefined ? {} : { integrity: integrityValue }),
+    ...(shasumValue === undefined ? {} : { shasum: shasumValue })
+  }
+}
+
+const observationRequests = (
+  publication: PreparedNpmPublication
+): readonly [CredentialRequest, ...Array<CredentialRequest>] => {
+  const make = (strategy: ResolvedAuthStrategy): CredentialRequest => CredentialRequestSchema.make({
+    subject: publication.authority.subject,
+    provider: publication.authority.provider,
+    audience: publication.authority.audience,
+    purpose: "observe",
+    strategy
+  })
+  const first = publication.authority.observationStrategies[0]!
+  return [make(first), ...publication.authority.observationStrategies.slice(1).map(make)]
+}
+
+const mutationRequest = (publication: PreparedNpmPublication): CredentialRequest =>
+  CredentialRequestSchema.make({
+    subject: publication.authority.subject,
+    provider: publication.authority.provider,
+    audience: publication.authority.audience,
+    purpose: "publish",
+    strategy: publication.authority.publishStrategy
+  })
+
+const inconclusive = (
+  publication: PreparedNpmPublication,
+  reason: string
+): InconclusiveObservation => InconclusiveObservation.make({
+  subject: publication.authority.subject,
+  reason: SafeReason.make(reason)
+})
+
+const difference = (field: "integrity" | "shasum", expected: string, observed: string): Difference =>
+  Difference.make({
+    field: NonEmptyName.make(field),
+    expected: SafeReason.make(expected),
+    observed: fingerprint(observed)
+  })
+
+const decide = (
+  publication: PreparedNpmPublication,
+  observation: Observation
+): ProviderDecision => observation._tag === "PresentDifferent"
+  ? Conflict.make({ subject: publication.authority.subject, differences: observation.differences })
+  : ProviderBlocked.make({
+    subject: publication.authority.subject,
+    reason: SafeReason.make(
+      "npm publication remains blocked until Plan 225 proves exact equivalence or authoritative absence."
+    )
+  })
+
+const unsupportedMutation = (
+  publication: PreparedNpmPublication,
+  _decision: MutationDecision
+): Effect.Effect<never, ReleaseSubjectError> => Effect.fail(new ReleaseSubjectError({
+  subject: publication.authority.subject,
+  phase: "mutate",
+  commitment: "before-dispatch",
+  reason: SafeReason.make(
+    "npm mutation is unavailable until Plan 225 installs the certified publisher path."
+  )
+}))
+
+/**
+ * Plan-224 npm subject. Observation may prove a conflict, but Plan 225 owns
+ * the evidence required to claim exact equivalence, absence, or mutation.
+ */
 export const makeNpmSubject = (
-  bundle: PreparedBundle, publication: PreparedNpmPublication, http: PublicationHttp,
-  credentials: PublicationCredentials, process: NpmPublishProcess
-): PublicationSubject => {
-  const artifact = bundle.manifest.artifacts.find((item) => item.id === publication.artifactId)
-  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString())
-  const subject = NonEmptyName.make(`npm:${publication.registryUrl}:${publication.packageName}@${publication.version}`)
+  bundle: PreparedBundle,
+  publication: PreparedNpmPublication,
+  http: HttpAuthorizerShape
+): ReleaseSubject => {
+  const bytes = bundle.blobs.get(publication.artifactId.toString())
   const expectedIntegrity = bytes === undefined ? undefined : integrity(bytes)
   const expectedShasum = bytes === undefined ? undefined : shasum(bytes)
-  const url = registryVersionUrl(publication)
+
+  const observe = Effect.fn("NpmReleaseSubject.observe")(function*(
+    grant: CredentialGrant,
+    _context: ReleaseObservationContext
+  ) {
+    if (bytes === undefined || expectedIntegrity === undefined || expectedShasum === undefined) {
+      return inconclusive(publication, "The exact prepared npm artifact bytes are unavailable.")
+    }
+    if (grant._tag === "WorkloadIdentity") {
+      return yield* new ReleaseSubjectError({
+        subject: publication.authority.subject,
+        phase: "observe",
+        commitment: "before-dispatch",
+        reason: SafeReason.make("Workload identity cannot authorize npm metadata observation.")
+      })
+    }
+    const response = yield* http.execute({
+      subject: publication.authority.subject,
+      method: "GET",
+      url: registryVersionUrl(publication),
+      headers: { accept: "application/json" }
+    }, grant).pipe(Effect.mapError((cause) => new ReleaseSubjectError({
+      subject: publication.authority.subject,
+      phase: "observe",
+      commitment: cause._tag === "CredentialPlatformError" ? cause.commitment : "before-dispatch",
+      reason: SafeReason.make("npm metadata observation could not be completed by the host HTTP boundary.")
+    })))
+
+    if (response.status === 404) {
+      return inconclusive(
+        publication,
+        "npm returned 404, which Plan 224 does not treat as authoritative package-version absence."
+      )
+    }
+    if (response.status < 200 || response.status >= 300) {
+      return inconclusive(publication, `npm metadata observation returned HTTP ${response.status}.`)
+    }
+
+    const facts = registryDigests(parseJson(response.body))
+    if (facts === undefined) {
+      return inconclusive(publication, "npm metadata was malformed or omitted its distribution object.")
+    }
+
+    const differences: Array<Difference> = []
+    if (facts.integrity !== undefined && facts.integrity !== expectedIntegrity) {
+      differences.push(difference("integrity", expectedIntegrity, facts.integrity))
+    }
+    if (facts.shasum !== undefined && facts.shasum !== expectedShasum) {
+      differences.push(difference("shasum", expectedShasum, facts.shasum))
+    }
+    if (differences.length > 0) {
+      return PresentDifferent.make({
+        subject: publication.authority.subject,
+        differences: differences as [Difference, ...Array<Difference>]
+      })
+    }
+    if (facts.integrity === undefined || facts.shasum === undefined) {
+      return inconclusive(publication, "npm metadata omitted either the sha512 integrity or sha1 shasum.")
+    }
+    return inconclusive(
+      publication,
+      "npm metadata digests look exact, but Plan 225 has not yet established complete equivalence evidence."
+    )
+  })
+
   return {
-    id: subject,
-    observe: (): Effect.Effect<Observation, PublicationError> => Effect.gen(function*() {
-      if (bytes === undefined || artifact === undefined) return yield* new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: `Prepared npm artifact ${publication.artifactId} is unavailable.` })
-      const response = yield* http.request({ method: "GET", url, headers: authHeaders(credentials.read) })
-      if (response.status === 404) return NeedsMutation.make({ subject, precondition: NonEmptyName.make("version-absent") })
-      if (response.status < 200 || response.status >= 300) return Inconclusive.make({ subject, reason: `Registry observation returned HTTP ${response.status}.` })
-      let facts: { readonly integrity?: string, readonly shasum?: string, readonly deprecated?: string } | undefined
-      try { facts = registryFacts(bodyJson(response)) } catch (cause) {
-        return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) })
-      }
-      if (facts === undefined) return Inconclusive.make({ subject, reason: "Registry metadata omitted both integrity and shasum." })
-      const differences: ObservationDifference[] = []
-      if (facts.integrity !== undefined && facts.integrity !== expectedIntegrity) differences.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: expectedIntegrity!, observed: facts.integrity }))
-      if (facts.shasum !== undefined && facts.shasum !== expectedShasum) differences.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum!, observed: facts.shasum }))
-      if (facts.deprecated !== undefined) differences.push(ObservationDifference.make({ field: NonEmptyName.make("deprecated"), expected: "absent", observed: facts.deprecated }))
-      return differences.length === 0 ? Equivalent.make({ subject }) : Conflict.make({ subject, differences })
-    }).pipe(Effect.catchTag("PublicationError", (cause) => Effect.succeed(Inconclusive.make({ subject, reason: cause.reason })))),
-    mutate: (needs): Effect.Effect<MutationResult, PublicationError> => Effect.gen(function*() {
-      if (needs.precondition !== "version-absent" || bytes === undefined) return yield* Effect.fail(new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "npm mutation lacks the exact absence precondition or bytes." }))
-      const result = yield* process.publish({ registryUrl: publication.registryUrl, packageName: publication.packageName.toString(), version: publication.version.toString(), bytes, credential: credentials.publish })
-      if (!result.started) return Rejected.make({ subject, phase: "before-dispatch", reason: "npm publish process did not start." })
-      if (result.exitCode === 0) return Applied.make({ subject, detail: "npm publish exited successfully." })
-      return Rejected.make({ subject, phase: "provider", reason: `npm publish exited ${result.exitCode}.` })
-    }).pipe(Effect.catchTag("PublicationError", (cause) => cause.commitment === "before-dispatch"
-      ? Effect.succeed<MutationResult>(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason }))
-      : Effect.succeed<MutationResult>(OutcomeUnknown.make({ subject, reason: cause.reason })))) as Effect.Effect<MutationResult, PublicationError>
+    id: publication.authority.subject,
+    observationRequests: observationRequests(publication),
+    mutationRequest: mutationRequest(publication),
+    observe,
+    decide: (observation) => decide(publication, observation),
+    mutate: (decision) => unsupportedMutation(publication, decision)
   }
 }

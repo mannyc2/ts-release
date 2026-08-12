@@ -39,7 +39,16 @@ import {
   makeCredentialProvider,
   validateGrantForOperation
 } from "../publication/authority.js"
-import type { HttpResponse, PublicationHttp } from "../publication/http.js"
+import {
+  HttpAuthorizer,
+  type HttpAuthorizerShape,
+  type HttpObservationRequest,
+  type HttpResponse,
+  type PublicationHttp
+} from "../publication/http.js"
+
+export { HttpAuthorizer }
+export type { HttpAuthorizerShape, HttpObservationRequest }
 
 export class CredentialPlatformError
   extends Schema.TaggedErrorClass<CredentialPlatformError>()("CredentialPlatformError", {
@@ -48,32 +57,12 @@ export class CredentialPlatformError
     reason: Schema.NonEmptyString
   }) {}
 
-export interface HttpObservationRequest {
-  readonly subject: SubjectId
-  readonly method: "GET"
-  readonly url: string
-  readonly headers?: Readonly<Record<string, string>>
-  readonly body?: Uint8Array | string
-}
-
 export interface MutationHttpRequest {
   readonly method: "POST"
   readonly url: string
   readonly headers?: Readonly<Record<string, string>>
   readonly body?: Uint8Array | string
 }
-
-export interface HttpAuthorizerShape {
-  readonly execute: (
-    input: HttpObservationRequest,
-    grant: AnonymousAccess | ScopedSecret
-  ) => Effect.Effect<HttpResponse, CredentialAuthorityError | CredentialPlatformError>
-}
-
-export class HttpAuthorizer
-  extends Context.Service<HttpAuthorizer, HttpAuthorizerShape>()(
-    "ts-release/HttpAuthorizer"
-  ) {}
 
 export interface AuthorizedMutationHttpShape {
   readonly execute: (

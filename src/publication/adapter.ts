@@ -1,39 +1,53 @@
 import * as Effect from "effect/Effect"
-import type { PreparedGitHubPublication, PreparedNpmPublication } from "../release/prepared.js"
+import { SubjectId } from "../model/authority.js"
+import { encodePreparedRelease } from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
-import { makeGithubSubjects } from "./github.js"
-import { makeNpmSubject, type NpmPublishProcess } from "./npm.js"
-import type { PublicationHttp } from "./http.js"
+import { sha256 } from "../drivers/utils.js"
 import {
-  PublicationConverged, PublicationError, type PublicationCredentials, type PublicationOutcome,
-  publishSubject, type PublicationSubject
-} from "./observation.js"
+  observeReleaseSubjects,
+  publishReleaseSubjects,
+  type ReleaseSubject
+} from "./coordinator.js"
+import { makeGithubSubjects } from "./github.js"
+import { HttpAuthorizer } from "./http.js"
+import { makeNpmSubject } from "./npm.js"
 
-export type PreparedPublicationCredentials = {
-  readonly npm: PublicationCredentials
-  readonly github: PublicationCredentials
-}
-export type PreparedPublicationAdapterInput = {
-  readonly bundle: PreparedBundle
-  readonly http: PublicationHttp
-  readonly credentials: PreparedPublicationCredentials
-  readonly npmProcess: NpmPublishProcess
-}
+const preparedSubject = (bundle: PreparedBundle): SubjectId => SubjectId.make(
+  `prepared:sha256-${sha256(encodePreparedRelease(bundle.manifest))}`
+)
 
-export const subjectsForPreparedRelease = (input: PreparedPublicationAdapterInput): ReadonlyArray<PublicationSubject> =>
-  input.bundle.manifest.publications.flatMap((publication) => publication._tag === "PreparedNpmPublication"
-    ? [makeNpmSubject(input.bundle, publication as PreparedNpmPublication, input.http, input.credentials.npm, input.npmProcess)]
-    : makeGithubSubjects(input.bundle, publication as PreparedGitHubPublication, input.http, input.credentials.github))
-
-/** Runs subjects in dependency order; a blocked release prevents its assets from uploading. */
-export const publishPreparedRelease = Effect.fn("publishPreparedRelease")(function*(input: PreparedPublicationAdapterInput) {
-  const outcomes: PublicationOutcome[] = []
-  for (const subject of subjectsForPreparedRelease(input)) {
-    const outcome = yield* publishSubject(subject)
-    outcomes.push(outcome)
-    if (outcome._tag !== "PublicationConverged") return outcomes
+/**
+ * Construct provider subjects only after the caller has loaded and verified
+ * the complete prepared bundle. The host authorizer is captured as an opaque
+ * sink; transports and credential values never enter the subject contract.
+ */
+export const subjectsForPreparedRelease = Effect.fn("subjectsForPreparedRelease")(function*(
+  bundle: PreparedBundle
+) {
+  const http = yield* HttpAuthorizer
+  const subjects: Array<ReleaseSubject> = []
+  for (const publication of bundle.manifest.publications) {
+    if (publication._tag === "PreparedNpmPublication") {
+      subjects.push(makeNpmSubject(bundle, publication, http))
+    } else {
+      subjects.push(...makeGithubSubjects(bundle, publication, http))
+    }
   }
-  return outcomes
+  return subjects as ReadonlyArray<ReleaseSubject>
 })
 
-export { PublicationConverged, PublicationError }
+/** Remote, read-only observation through the same provider subjects as publish. */
+export const observePreparedRelease = Effect.fn("observePreparedRelease")(function*(
+  bundle: PreparedBundle
+) {
+  const subjects = yield* subjectsForPreparedRelease(bundle)
+  return yield* observeReleaseSubjects({ prepared: preparedSubject(bundle), subjects })
+})
+
+/** Dependency-ordered conservative publication through the shared coordinator. */
+export const publishPreparedRelease = Effect.fn("publishPreparedRelease")(function*(
+  bundle: PreparedBundle
+) {
+  const subjects = yield* subjectsForPreparedRelease(bundle)
+  return yield* publishReleaseSubjects({ prepared: preparedSubject(bundle), subjects })
+})

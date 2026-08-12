@@ -9,8 +9,11 @@ import {
   type ActionArtifactTransport,
   type ActionProducerContext
 } from "../../apps/ts-release-action/src/prepared-store.js"
+import { makePreparedReferenceChannel } from "../../apps/ts-release-action/src/commands.js"
 import { Digest, NonEmptyName, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
+import { encodeCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
+import { PreparedCommitHandoffError } from "../../src/release/prepared-store.js"
 
 const context: ActionProducerContext = {
   repository: "owner/repository",
@@ -89,15 +92,23 @@ describe("GitHub Actions durable prepared store", () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-action-store-"))
     const artifacts = join(root, "artifacts")
     const events: string[] = []
+    const outputs: Record<string, string> = {}
     try {
+      const channel = makePreparedReferenceChannel({
+        output: (name, value) => {
+          events.push(`output:${name}`)
+          outputs[name] = value
+        },
+        summarize: async () => {
+          events.push("summary:failed")
+          throw new Error("prepared reference summary failed")
+        }
+      })
       const store = makeActionPreparedReleaseStore({
         workspace: join(root, "workspace"),
         context,
         artifacts: fakeArtifacts(artifacts, events),
-        onCommit: () => {
-          events.push("output:failed")
-          throw new Error("prepared reference output failed")
-        }
+        onCommit: (reference) => channel.emit(encodeCompletePreparedReleaseRef(reference))
       })
 
       let failure: unknown
@@ -115,7 +126,8 @@ describe("GitHub Actions durable prepared store", () => {
       expect(events).toEqual([
         `upload:${artifactName}`,
         `download:${artifactName}`,
-        "output:failed"
+        "output:prepared-ref",
+        "summary:failed"
       ])
       expect(existsSync(join(artifacts, artifactName!))).toBe(true)
       expect(mutations).toBe(0)
@@ -130,8 +142,14 @@ describe("GitHub Actions durable prepared store", () => {
           artifactName,
           digest: artifactName!.slice("ts-release-prepared-".length)
         },
-        reason: "prepared reference output failed"
+        reason: "prepared reference summary failed"
       })
+      if (!(failure instanceof PreparedCommitHandoffError)) {
+        throw new Error("Expected a post-commit handoff failure.")
+      }
+      const encoded = encodeCompletePreparedReleaseRef(failure.prepared)
+      expect(outputs["prepared-ref"]).toBe(encoded)
+      expect(channel.current()).toBe(encoded)
     } finally { rmSync(root, { recursive: true, force: true }) }
   })
 

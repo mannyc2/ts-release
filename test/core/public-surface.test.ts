@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import * as Release from "../../src/index.js"
+import { NodeReleaseLayer } from "../../src/platform/node.js"
 
 describe("hard public surface", () => {
   test("does not retain the obsolete review protocol", () => {
@@ -8,8 +9,20 @@ describe("hard public surface", () => {
     }
   })
 
-  test("the API object has only the six lifecycle operations plus disposal", () => {
-    const keys = ["inspect", "prepare", "publish", "release", "correct", "dispose"]
-    expect(keys).toHaveLength(6)
+  test("the API object exposes the six lifecycle operations plus disposal", async () => {
+    const api = Release.makeReleaseApi(NodeReleaseLayer)
+    try {
+      expect(Object.keys(api).sort()).toEqual([
+        "correct",
+        "dispose",
+        "inspect",
+        "observe",
+        "prepare",
+        "publish",
+        "release"
+      ])
+    } finally {
+      await api.dispose()
+    }
   })
 })

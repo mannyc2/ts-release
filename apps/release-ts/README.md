@@ -1,10 +1,11 @@
 # ts-release CLI
 
-The CLI exposes exactly six commands:
+The CLI exposes exactly seven commands:
 
 - `init` creates the smallest authored configuration.
 - `inspect` observes authored configuration or reads a prepared bundle.
 - `prepare` stages native preparations and stores an exact bundle.
+- `observe` reads the remote subjects for one prepared bundle without mutation.
 - `publish` observes and publishes one prepared bundle.
 - `release` composes preparation and publication automatically.
 - `correct` applies one provider-specific correction intent.

@@ -920,4 +920,3 @@ Inclusive product TypeScript count changed from the program baseline 7,175 to 5,
 Evidence classes: source-derived, contract-tested.
 
 Unresolved limitations: PyPI automatic recovery remains provisional pending Plan 208; catalog remote delivery belongs to Plan 215; the public lifecycle and old plan/apply/review protocol remain temporarily present until Plan 217. No publication, push, tag, workflow dispatch, or other external mutation occurred.
-

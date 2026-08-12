@@ -13,4 +13,3 @@ test("init asks the API to inspect once and writes minimal authored config", asy
   expect(calls).toBe(1)
   expect(io.logs.join("\n")).toContain("release.config.json")
 })
-

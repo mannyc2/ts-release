@@ -22,4 +22,3 @@ export const ioFor = (files: Record<string, string> = {}): CliIo & { readonly lo
     log: (value) => { logs.push(value) }
   }
 }
-

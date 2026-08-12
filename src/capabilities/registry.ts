@@ -50,7 +50,7 @@ export const executableCapabilities = [
     decoder: "src/config/config.ts:decodeConfig",
     observation: "src/publication/npm.ts:makeNpmSubject",
     verticalTest: "test/publication/npm-adapter.test.ts",
-    support: "supported",
+    support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
@@ -59,7 +59,7 @@ export const executableCapabilities = [
     decoder: "src/config/config.ts:decodeConfig",
     observation: "src/publication/github.ts:makeGithubSubjects",
     verticalTest: "test/publication/github-adapter.test.ts",
-    support: "supported",
+    support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
@@ -68,7 +68,7 @@ export const executableCapabilities = [
     decoder: "src/config/config.ts:decodeConfig",
     observation: "src/release/prepared-store.ts:loadPreparedRelease",
     verticalTest: "test/publication/catalog-git.test.ts",
-    support: "supported",
+    support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
@@ -77,7 +77,7 @@ export const executableCapabilities = [
     decoder: "src/config/config.ts:decodeConfig",
     observation: "src/publication/catalog-git.ts:makeCatalogSubject",
     verticalTest: "test/publication/catalog-git.test.ts",
-    support: "supported",
+    support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
@@ -86,7 +86,7 @@ export const executableCapabilities = [
     decoder: "src/correction/intent.ts:decodeCorrectionIntent",
     observation: "src/correction/npm.ts:makeNpmDeprecationSubject",
     verticalTest: "test/correction/npm-deprecate.test.ts",
-    support: "supported",
+    support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {
@@ -95,7 +95,7 @@ export const executableCapabilities = [
     decoder: "src/correction/intent.ts:decodeCorrectionIntent",
     observation: "src/correction/catalog.ts:makeCatalogCorrectionSubject",
     verticalTest: "test/correction/catalog-state.test.ts",
-    support: "supported",
+    support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
   {

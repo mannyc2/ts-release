@@ -45,4 +45,3 @@ export const runtimeLayer = (observations?: { readonly count: { value: number } 
   }
   return Layer.succeed(ReleaseRuntime, shape)
 }
-

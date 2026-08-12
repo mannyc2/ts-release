@@ -1,35 +1,14 @@
-# Release runbook
+# Release runbook — blocked candidate
 
-The default path is automatic: prepare one exact bundle, observe configured
-destinations, publish safe subjects, and retain the bundle for recovery.
+Candidate `1bc7828` must not be released. The Plan 221 certificate is
+invalidated, Plan 222 is superseded, and no live mutation occurred.
 
-Before a local release:
+Do not supply release credentials, dispatch the repository release workflow,
+publish a package, create a tag or GitHub release, or update a catalog from
+this candidate. The public-boundary blockers and successor handoffs are
+tracked in `docs/release-program/README.md` and
+`docs/release-program/remediation/223-candidate-invalidation.md`.
 
-```sh
-bun install --frozen-lockfile
-bun run check:portable
-bun run build
-bun run check:cli-bundle
-bun run check:action-bundle
-```
-
-Run the CLI path:
-
-```sh
-ts-release inspect --config apps/release-ts/release.config.json
-ts-release release --config apps/release-ts/release.config.json
-```
-
-For a host boundary, use `prepare`, transfer the complete directory without
-rebuilding, inspect it on the destination runner, and then call `publish`.
-The repository workflow and the templates in `templates/github-actions/` show
-the durable artifact handoff. A host environment may gate publication; its
-identity and consent remain in the host deployment record.
-
-If publication stops, rerun `publish` with the same prepared directory. Stop
-on conflict or inconclusive observation and resolve the provider state through
-its typed correction path when one is supported. Do not delete or recreate a
-remote coordinate as a generic recovery action.
-
-Agent distribution is checked with `bun run check:agents`; generated output is
-captured as declared preparation artifacts, not stored as source.
+Plan 233k will replace this notice with a tested runbook only after the
+corrected kernel passes clean-clone certification. Plan 234k remains the sole
+kernel live-mutation phase and requires an exact operator authority packet.

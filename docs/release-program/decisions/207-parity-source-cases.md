@@ -149,4 +149,3 @@
 | P034 | Custom template variables — `variables`, `.Var.*` | [Define reusable shared values](https://goreleaser.com/customization/general/templates/). | — | **CONFIG-EQUIVALENT** — ordinary TypeScript constants/functions [S-TS]. |
 | P035 | Offline licenses — `license-export`, offline `--key` | [Verify a signed Pro license without network access](https://goreleaser.com/pro/). | Since v2.14 | **OPEN-QUESTION** — this is product-licensing machinery, not release behavior; no recorded decision says whether it belongs in the parity denominator. |
 | P036 | Fallback license keys — repeated `--key` | [Try keys in order and use the first valid one](https://goreleaser.com/pro/). | Δ2.17: new | **OPEN-QUESTION** — same licensing-boundary question as P035; it is recorded rather than guessed away. |
-

@@ -1,10 +1,19 @@
 # Plan 221 — Refactored release candidate certification
 
+> **INVALIDATED 2026-08-12 by Plan 223.** The conclusion below is retained as
+> historical evidence, but it is not release authority. Deterministic
+> public-boundary reproductions found an unreachable CLI credential path,
+> false-green Action status, malformed GitHub asset upload, dropped npm
+> trusted-publishing intent, unsafe credential/process handling, unreachable
+> claimed capabilities, and preparation inputs not fully bound to verified
+> source bytes. No live mutation occurred. The successor program and current
+> handoffs are indexed in `docs/release-program/README.md`.
+
 Input-Commit: 142cfd0
 Result-Commit: ca7ce846d4bbec1c97b62172ed3ab9673e25bc46
 Evidence-Commit: SELF
-Status: DONE
-Outcome: CLEAN-CANDIDATE-CERTIFIED / LIVE-UNVERIFIED
+Status: INVALIDATED
+Outcome: FALSE-GREEN-CANDIDATE / DO-NOT-RELEASE
 Date: 2026-08-09
 
 ## Candidate boundary

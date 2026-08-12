@@ -1,12 +1,19 @@
 # Plan 222 — Live release certification
 
+> **SUPERSEDED 2026-08-12 by Plans 223–234k.** This plan must not be resumed,
+> even if its former credential/authorization conditions become available.
+> Candidate `1bc7828` is invalidated for the P0 blockers named in the Plan 223
+> audit. No live mutation occurred. Plan 234k is the only future kernel
+> live-release phase and requires a newly certified candidate plus a new exact
+> operator authority packet.
+
 Input-Commit: 9c80e2ff5c814d77f583de9898fe493c558f8c88
 Result-Commit: 9c80e2ff5c814d77f583de9898fe493c558f8c88
 Published-Candidate-Commit: ca7ce846d4bbec1c97b62172ed3ab9673e25bc46
 Certification-Evidence-Commit: 9c80e2ff5c814d77f583de9898fe493c558f8c88
 Evidence-Commit: SELF
-Status: BLOCKED
-Outcome: NOT-AUTHORIZED / MUTATION-CREDENTIALS-UNAVAILABLE
+Status: SUPERSEDED
+Outcome: INVALID-CANDIDATE / NO-LIVE-MUTATION
 Date: 2026-08-09
 
 ## Exact stop reason

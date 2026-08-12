@@ -9,4 +9,3 @@ test("correct command forwards one prepared bundle and one canonical intent", as
     { prepared: "/tmp/prepared", correction: "/tmp/correction.json" }, process.cwd(), io)
   expect(calls).toBe(1)
 })
-

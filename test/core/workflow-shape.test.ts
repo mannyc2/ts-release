@@ -13,8 +13,11 @@ test("CI delegates its required gate inventory to check:portable", () => {
   expect(ci).not.toMatch(/check:(?:versions|docs-claims|import-rules|tree-shaking|config-schema)/u)
 })
 
-test("release persists and verifies the complete prepared bundle before publish", () => {
+test("release workflow is quarantined while the candidate is invalid", () => {
   const release = workflow("release.yml")
+  expect(release).not.toContain("workflow_dispatch")
+  expect(release).toContain("__ts_release_quarantined__")
+  expect(release.match(/if: \$\{\{ false \}\}/gu)?.length).toBe(2)
   expect(release).toContain("command: prepare")
   expect(release).toContain("actions/upload-artifact@v4")
   expect(release).toContain("actions/download-artifact@v4")

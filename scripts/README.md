@@ -14,9 +14,10 @@ Composites:
 
 - `check:portable` = `check:core` + `check:agents` + `check:app` + `check:action`. What CI runs.
 - `check:core` = `check:versions`, `check:capabilities`, `check:import-rules`,
-  `check:tree-shaking`, `check` (tsc), `bun test`, `build`, `check:examples`,
-  `check:readme`, `check:package-exports` — cheap policy gates first, so a
-  violation fails in seconds rather than after a build.
+  `check:tree-shaking`, `check` (tsc), `bun test`, `build`,
+  `check:cli-bundle`, `check:config-schema`, `check:examples`, `check:readme`,
+  `check:package-exports` — cheap policy gates first, so a violation fails in
+  seconds rather than after a build.
 - `check:app` / `check:action` typecheck each shipped surface and run its
   cutover suite; `check:action` also runs `check:action-bundle`.
 - `check:release-candidate` = context, public preparation, read-only
@@ -45,6 +46,10 @@ Individual gates:
   package import subpaths.
 - `check:action-bundle` (`check-action-bundle.ts`) — verifies the tracked
   GitHub Action bundle matches a fresh temporary build and runs under Node.
+- `check:cli-bundle` (`check-cli-bundle.ts`) — verifies the published Node
+  executable bundle, command vocabulary, and library-plan parity.
+- `check:config-schema` (`check-config-schema.ts`) — proves the checked-in
+  authoring schema is a fresh rendering of the source Schema.
 - `check:agents` — typechecks the single agent-distribution app, builds its
   provider-native layouts and archives, and runs its contract checks.
 - `check:self-release-context` / `check:self-release-prepare` /

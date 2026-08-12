@@ -178,6 +178,3 @@ permanent adapter conformance tests cover the scenarios.
 - `bun test test/research/discovery-recovery-spike.test.ts -t "kill point"` — PASS.
 - Marker scan for unresolved rows and placeholders — no matches after finalization.
 - No production or public file changed; no credentials or external mutation were used.
-
-
-

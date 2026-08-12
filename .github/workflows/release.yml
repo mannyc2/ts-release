@@ -1,7 +1,11 @@
 name: Release
 
 on:
-  workflow_dispatch:
+  # Public mutation is quarantined by remediation step 223. Step 233k restores the
+  # certified release trigger after the corrected kernel passes its matrix.
+  push:
+    branches:
+      - __ts_release_quarantined__
 
 permissions:
   contents: read
@@ -12,7 +16,7 @@ concurrency:
 
 jobs:
   prepare:
-    if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +48,7 @@ jobs:
 
   publish:
     needs: prepare
-    if: github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main'
+    if: ${{ false }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

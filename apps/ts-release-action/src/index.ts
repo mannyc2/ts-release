@@ -1,40 +1,69 @@
 import * as core from "@actions/core"
-import { makeReleaseApi, unsupportedExecutionHost } from "@mannyc1/ts-release"
-import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 import {
-  readFileSync,
-  mkdirSync,
-  writeFileSync
-} from "node:fs"
+  encodeCompletePreparedReleaseRef,
+  makeReleaseApi,
+  unsupportedExecutionHost
+} from "@mannyc1/ts-release"
+import { makeNodeReleaseLayer } from "@mannyc1/ts-release/node"
+import * as Effect from "effect/Effect"
+import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
-import { runAction } from "./commands.js"
+import {
+  makePreparedReferenceChannel,
+  runAction
+} from "./commands.js"
+import {
+  actionProducerContextFromEnvironment,
+  decodeActionPreparedReference,
+  makeActionsArtifactTransport,
+  makeActionPreparedReleaseStore
+} from "./prepared-store.js"
 
-const hostRefusal = unsupportedExecutionHost(process.platform)
-if (hostRefusal !== undefined) {
-  core.setFailed(hostRefusal)
-  process.exit(1)
+const summarize = async (message: string): Promise<void> => {
+  await core.summary.addRaw(`${message}\n`).write()
 }
 
-// The Action runs under node20, so it composes the Node platform layer itself
-// and disposes the runtime it created.
-const api = makeReleaseApi(NodeReleaseLayer)
+let api: ReturnType<typeof makeReleaseApi> | undefined
 try {
-  await runAction(
-    api,
-    {
-      workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
-      input: core.getInput,
-      output: core.setOutput,
-      read: (path) => readFileSync(path, "utf8"),
-      write: (path, value) => {
-        mkdirSync(dirname(path), { recursive: true })
-        writeFileSync(path, value)
-      }
+  const hostRefusal = unsupportedExecutionHost(process.platform)
+  if (hostRefusal !== undefined) throw new Error(hostRefusal)
+
+  const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd()
+  const producer = actionProducerContextFromEnvironment(process.env)
+  const preparedReference = makePreparedReferenceChannel({
+    output: core.setOutput,
+    summarize
+  })
+  const store = makeActionPreparedReleaseStore({
+    workspace,
+    context: producer,
+    artifacts: makeActionsArtifactTransport(),
+    onCommit: async (reference) => {
+      await preparedReference.emit(encodeCompletePreparedReleaseRef(reference))
     }
-  )
+  })
+  api = makeReleaseApi(makeNodeReleaseLayer(() => store))
+
+  await runAction(api, {
+    workspace,
+    input: core.getInput,
+    output: core.setOutput,
+    read: (path) => readFileSync(path, "utf8"),
+    write: (path, value) => {
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, value)
+    },
+    resolvePrepared: async (value) => {
+      const reference = await Effect.runPromise(decodeActionPreparedReference(value))
+      await preparedReference.emit(encodeCompletePreparedReleaseRef(reference))
+      const bundle = await Effect.runPromise(store.load(reference))
+      return bundle.directory
+    },
+    preparedReference,
+    summarize
+  })
 } catch (cause) {
-  core.setOutput("status", "failed")
   core.setFailed(cause instanceof Error ? cause.message : String(cause))
 } finally {
-  await api.dispose()
+  await api?.dispose()
 }

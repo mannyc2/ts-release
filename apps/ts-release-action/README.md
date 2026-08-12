@@ -1,25 +1,28 @@
 # ts-release Action app
 
-This private first-party app owns GitHub Action input parsing, contained file
-I/O, outputs, and the bundled Node entrypoint. It imports only the public
-`@mannyc1/ts-release` root.
+This private first-party app is the GitHub Actions host boundary for the public
+release API. It exposes exactly three commands: `release`, `prepare`, and
+`publish`.
 
-The Action is a thin Node boundary over the public API. It exposes exactly four
-commands: `prepare`, `publish`, `inspect`, and `correct`. Credentials come from
-the host environment (`NPM_TOKEN`, `GITHUB_TOKEN`, or `GH_TOKEN`), never from a
-second Action-only input contract.
+`release` is the automatic one-call path. It prepares the complete release,
+uploads and verifies the content-addressed Actions artifact, emits
+`prepared-ref`, and only then allows publication to continue. `prepare` uses
+the same durable boundary for a reviewed split-job workflow. `publish` accepts
+only the canonical prepared reference and authenticates its repository,
+workflow, run, attempt, candidate commit, artifact name, and digest before
+calling the public publisher.
 
-`prepare` creates the exact durable bundle and emits `prepared_path`.
-`publish` consumes only that bundle. `inspect` reads authored configuration or
-an existing bundle, and `correct` consumes a canonical correction intent bound
-to a bundle. Every command emits a contained JSON `report_path` and `status`.
+The only outputs are `prepared-ref` and `report-ref`. A caught failure after a
+durable commit retains the `gha:` reference and writes workflow-specific rerun
+guidance to the step summary. It never recommends a local CLI command or an
+unimplemented cross-run recovery path for a hosted reference.
+
+GitHub job permissions and supplied tokens are job-scoped capabilities. The
+automatic topology can delay their use, but the reviewed prepare/publish job
+split is the stronger host authority boundary.
 
 ```sh
 bun run --cwd apps/ts-release-action check
 bun run --cwd apps/ts-release-action build
 bun run check:action-bundle
 ```
-
-The bundle check rebuilds the Node entrypoint and verifies the four commands and
-three outputs. Hosts can protect the publication job when a host gate is
-desired; the Action does not record host policy facts.

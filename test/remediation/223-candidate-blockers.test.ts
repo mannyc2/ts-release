@@ -14,7 +14,9 @@ import {
 } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, relative, resolve } from "node:path"
-import { runAction, type ActionRuntime } from "../../apps/ts-release-action/src/commands.js"
+import {
+  makePreparedReferenceChannel, runAction, type ActionRuntime
+} from "../../apps/ts-release-action/src/commands.js"
 import { buildCliBundle } from "../../scripts/build-cli-bundle.js"
 import { makeReleaseApi } from "../../src/api/api.js"
 import { ReleaseRuntime, type ReleaseRuntimeShape } from "../../src/api/runtime.js"
@@ -22,6 +24,11 @@ import { DriverError } from "../../src/drivers/errors.js"
 import type { RunCommand } from "../../src/drivers/process.js"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
+import {
+  canonicalizeRegistryUrl,
+  makeGitHubPublicationAuthorityIntent,
+  makeNpmPublicationAuthorityIntent
+} from "../../src/release/graph.js"
 import {
   PreparedArtifact, PreparedGitHubAsset, PreparedGitHubPublication, PreparedNpmPublication,
   PreparedProject, PreparedReleaseV1, PreparedSource, encodePreparedRelease
@@ -54,6 +61,30 @@ const response = (status: number, body: unknown): HttpResponse => ({
   status, headers: {}, body: typeof body === "string" ? body : JSON.stringify(body)
 })
 const temporary = (name: string): string => mkdtempSync(join(tmpdir(), `ts-release-223-${name}-`))
+const actionDigest = "a".repeat(64)
+const actionPreparedRef = `prepared:gha:owner/repository/runs/223/attempts/1/artifacts/ts-release-prepared-${actionDigest}#sha256-${actionDigest}`
+const actionRuntime = (
+  root: string,
+  values: Record<string, string>,
+  outputs: Record<string, string>
+): ActionRuntime => {
+  const output: ActionRuntime["output"] = (name, value) => { outputs[name] = value }
+  const summarize = async (): Promise<void> => {}
+  const preparedReference = makePreparedReferenceChannel({ output, summarize })
+  return {
+    workspace: root,
+    input: (name) => values[name] ?? "",
+    output,
+    read: (path) => readFileSync(path, "utf8"),
+    write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) },
+    resolvePrepared: async (reference) => {
+      await preparedReference.emit(reference)
+      return join(root, "prepared")
+    },
+    preparedReference,
+    summarize
+  }
+}
 const cliEnvironment = (): Record<string, string | undefined> => ({
   PATH: process.env.PATH,
   HOME: process.env.HOME,
@@ -141,6 +172,7 @@ const localRun: RunCommand = ({ argv, cwd }) => Effect.try({
 const npmFixture = (
   version = "1.0.0", registryUrl = "https://registry.example.test"
 ): { readonly bundle: PreparedBundle, readonly bytes: Uint8Array, readonly publication: PreparedNpmPublication } => {
+  const canonicalRegistry = canonicalizeRegistryUrl(registryUrl)
   const bytes = utf8("prepared npm bytes\n")
   const hash = Digest.make(sha256(bytes))
   const artifact = PreparedArtifact.make({
@@ -149,7 +181,10 @@ const npmFixture = (
   })
   const publication = PreparedNpmPublication.make({
     id: NonEmptyName.make("npm-release"), packageName: NonEmptyName.make("@fixture/package"),
-    version: Version.make(version), registryUrl, artifactId: artifact.id
+    version: Version.make(version), registryUrl: canonicalRegistry, artifactId: artifact.id,
+    authority: makeNpmPublicationAuthorityIntent({
+      packageName: "@fixture/package", version, registryUrl: canonicalRegistry
+    })
   })
   const manifest = PreparedReleaseV1.make({
     schemaVersion: "prepared-release/v1",
@@ -184,7 +219,8 @@ const githubFixture = (): {
     id: NonEmptyName.make("github-release"), repository: "owner/project", tag: NonEmptyName.make("v1.0.0"),
     title: NonEmptyName.make("Project 1.0.0"), draft: false, prerelease: false,
     targetCommit: NonEmptyName.make("commit"), body: "notes",
-    assets: [PreparedGitHubAsset.make({ artifactId: artifact.id, name: "asset.zip", mediaType: "application/zip" })]
+    assets: [PreparedGitHubAsset.make({ artifactId: artifact.id, name: "asset.zip", mediaType: "application/zip" })],
+    authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/project", tag: "v1.0.0" })
   })
   const manifest = PreparedReleaseV1.make({
     schemaVersion: "prepared-release/v1",
@@ -381,7 +417,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test.serial("Action marks blocked and uncertain resolved reports complete and reuses each token for read and write", async () => {
+  test.serial("Action fails blocked and uncertain reports closed without reading ambient tokens", async () => {
     const root = temporary("action")
     mkdirSync(join(root, "prepared"))
     const previousNpm = process.env.NPM_TOKEN
@@ -402,24 +438,15 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
       ]) {
         const outputs: Record<string, string> = {}
         let captured: unknown
-        const runtime: ActionRuntime = {
-          workspace: root,
-          input: (name) => ({ command: "publish", prepared: "prepared" } as Record<string, string>)[name] ?? "",
-          output: (name, value) => { outputs[name] = value },
-          read: (path) => readFileSync(path, "utf8"),
-          write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) }
-        }
-        await runAction({
+        const runtime = actionRuntime(root, { command: "publish", prepared: actionPreparedRef }, outputs)
+        await expect(runAction({
+          release: async () => ({}) as never,
           prepare: async () => ({}) as never,
-          inspect: async () => ({}) as never,
-          correct: async () => ({}) as never,
           publish: async (input) => { captured = input; return result }
-        }, runtime)
-        expect(outputs.status).toBe("complete")
-        expect(captured).toMatchObject({ credentials: {
-          npm: { read: "npm_223_sentinel", publish: "npm_223_sentinel" },
-          github: { read: "github_pat_223_sentinel", publish: "github_pat_223_sentinel" }
-        } })
+        }, runtime)).rejects.toThrow(/report is (?:blocked|uncertain)/u)
+        expect(outputs["prepared-ref"]).toBe(actionPreparedRef)
+        expect(outputs["report-ref"]).toBe(".release/ts-release/action-report.json")
+        expect(captured).toEqual({ prepared: join(root, "prepared") })
       }
     } finally {
       previousNpm === undefined ? delete process.env.NPM_TOKEN : process.env.NPM_TOKEN = previousNpm
@@ -428,49 +455,32 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test.serial("Action NPM_TOKEN crosses a configured foreign registry audience and still reports complete", async () => {
+  test.serial("Action does not forward an ambient NPM_TOKEN to a foreign registry", async () => {
     const root = temporary("action-foreign-registry")
     const registry = "https://registry.foreign.example/custom"
     const stored = await storeFixture(root, npmFixture("1.0.0", registry).bundle)
     const previousNpm = process.env.NPM_TOKEN
     const outputs: Record<string, string> = {}
-    let observedAuthorization = ""
-    let npmrc = ""
-    const api = makeReleaseApi(runtimeLayer({
-      http: { request: (request) => Effect.sync(() => {
-        observedAuthorization = request.headers?.authorization ?? ""
-        return response(404, {})
-      }) },
-      run: (request) => Effect.sync(() => {
-        const config = request.argv[request.argv.indexOf("--userconfig") + 1]!
-        npmrc = readFileSync(config, "utf8")
-        return { exitCode: 0, stdout: "", stderr: "" }
-      })
-    }))
+    let captured: unknown
     process.env.NPM_TOKEN = "npm_223_action_foreign_sentinel"
     try {
-      await runAction(api, {
-        workspace: root,
-        input: (name) => ({ command: "publish", prepared: relative(root, stored.directory) } as Record<string, string>)[name] ?? "",
-        output: (name, value) => { outputs[name] = value },
-        read: (path) => readFileSync(path, "utf8"),
-        write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) }
-      })
-      expect(observedAuthorization).toBe("Bearer npm_223_action_foreign_sentinel")
-      expect(npmrc).toContain("//registry.foreign.example/:_authToken=npm_223_action_foreign_sentinel")
-      expect(outputs.status).toBe("complete")
+      await runAction({
+        release: async () => ({}) as never,
+        prepare: async () => ({}) as never,
+        publish: async (input) => { captured = input; return [] }
+      }, actionRuntime(root, { command: "publish", prepared: actionPreparedRef }, outputs))
+      expect(captured).toEqual({ prepared: join(root, "prepared") })
+      expect(JSON.stringify(captured)).not.toContain("npm_223_action_foreign_sentinel")
+      expect(outputs["prepared-ref"]).toBe(actionPreparedRef)
     } finally {
       previousNpm === undefined ? delete process.env.NPM_TOKEN : process.env.NPM_TOKEN = previousNpm
-      await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
   })
 
-  test("fresh Node-target Action audit bundle executes blocked and uncertain results as complete", () => {
+  test("fresh Node-target Action bundle contains fail-closed reports and no status output", () => {
     const root = temporary("action-bundle")
     const bundle = join(root, "index.js")
-    const auditEntry = join(root, "audit-entry.ts")
-    const auditBundle = join(root, "audit-bundle.js")
     try {
       const built = runCaptured([
         process.execPath,
@@ -478,45 +488,9 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
       ], { cwd: resolve("apps/ts-release-action") })
       expect(built.status, `${built.stdout}\n${built.stderr}`).toBe(0)
       const bytes = readFileSync(bundle, "utf8")
-      expect(bytes).toContain("ts-release-action-report/v1")
-      expect(bytes).toMatch(/output\("status",\s*"complete"\)/u)
-      writeFileSync(auditEntry, `
-        import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-        import { dirname, join } from "node:path"
-        import { runAction } from ${JSON.stringify(resolve("apps/ts-release-action/src/commands.ts"))}
-        const root = process.argv[2]
-        mkdirSync(join(root, "prepared"), { recursive: true })
-        const variants = [
-          [{ _tag: "PublicationBlocked", subject: "blocked", observation: { _tag: "Inconclusive", subject: "blocked", reason: "blocked" } }],
-          [{ _tag: "PublicationObserved", subject: "uncertain", mutation: { _tag: "OutcomeUnknown", subject: "uncertain", reason: "response lost" }, observation: { _tag: "NeedsMutation", subject: "uncertain", precondition: "still-absent" } }]
-        ]
-        const statuses = []
-        for (const result of variants) {
-          const outputs = {}
-          await runAction({
-            prepare: async () => ({}), inspect: async () => ({}), correct: async () => ({}),
-            publish: async () => result
-          }, {
-            workspace: root,
-            input: (name) => ({ command: "publish", prepared: "prepared" })[name] ?? "",
-            output: (name, value) => { outputs[name] = value },
-            read: (path) => readFileSync(path, "utf8"),
-            write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) }
-          })
-          statuses.push(outputs.status)
-        }
-        process.stdout.write(JSON.stringify(statuses))
-      `)
-      const auditBuild = runCaptured([
-        process.execPath,
-        "build", auditEntry, "--target=node", "--format=esm", "--outfile", auditBundle
-      ], { cwd: process.cwd() })
-      expect(auditBuild.status, `${auditBuild.stdout}\n${auditBuild.stderr}`).toBe(0)
-      const probeRoot = join(root, "probe")
-      mkdirSync(probeRoot)
-      const probe = runCaptured(["node", auditBundle, probeRoot], { cwd: process.cwd() })
-      expect(probe, JSON.stringify(probe)).toMatchObject({ status: 0, timedOut: false, maxBufferExceeded: false })
-      expect(JSON.parse(probe.stdout)).toEqual(["complete", "complete"])
+      expect(bytes).toContain("ts-release-action-report/v2")
+      expect(bytes).toContain("no complete release is claimed")
+      expect(bytes).not.toMatch(/output\("status"/u)
     } finally { rmSync(root, { recursive: true, force: true }) }
   }, 20_000)
 
@@ -563,26 +537,32 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     expect(urls.some((url) => url.includes("git/ref/tags") || url.includes("git/tags"))).toBe(false)
   })
 
-  test("npm accepted auth/provenance fields are graph-equivalent and prerelease intent has no dist-tag", () => {
+  test("Plan 224 preserves npm authority fields while Plan 225 policy gaps remain characterized", () => {
     const facts = ObservedFacts.make({ commit: NonEmptyName.make("abc123"), manifestName: NonEmptyName.make("fixture"), manifestVersion: Version.make("1.0.0-beta.1") })
     const base = {
       project: { name: "fixture", version: "1.0.0-beta.1", tag: "v1.0.0-beta.1", commit: "abc123" },
       npmPackage: { path: "." }, publish: { npm: {} }
     }
-    const variants = [
-      { tokenEnv: "CUSTOM_NPM_TOKEN" },
-      { trustedPublishing: { provider: "github-actions" } },
-      { trustedPublishing: { workflow: "release.yml" } },
-      { trustedPublishing: { verifyPackageExists: true } },
-      { access: "restricted" },
-      { provenance: false }
-    ]
-    const graphs = [{}, ...variants].map((npm) => compileReleaseGraph(resolveConfig({
+    const graphFor = (npm: Record<string, unknown>) => compileReleaseGraph(resolveConfig({
       ...base, publish: { npm }
-    }, facts), contextFor("/tmp/ts-release-223-graph")))
-    expect(graphs.map((graph) => JSON.stringify(graph))).toEqual(graphs.map(() => JSON.stringify(graphs[0])))
-    const publication = graphs[0]!.publications[0]!
+    }, facts), contextFor("/tmp/ts-release-223-graph"))
+    const publication = graphFor({}).publications[0]!
     expect(publication._tag).toBe("GraphNpmPublication")
+    if (publication._tag !== "GraphNpmPublication") throw new Error("expected npm publication")
+    expect(publication.authority.publishStrategy).toMatchObject({ kind: "token", credential: "NPM_TOKEN" })
+    const token = graphFor({ tokenEnv: "CUSTOM_NPM_TOKEN" }).publications[0]!
+    expect(token._tag === "GraphNpmPublication" ? token.authority.publishStrategy : undefined)
+      .toMatchObject({ kind: "token", credential: "CUSTOM_NPM_TOKEN" })
+    const trustedDefault = graphFor({ trustedPublishing: { provider: "github-actions" } }).publications[0]!
+    expect(trustedDefault._tag === "GraphNpmPublication" ? trustedDefault.authority.publishStrategy : undefined)
+      .toMatchObject({ kind: "trusted-publishing", runner: "github-actions", workflow: ".github/workflows/release.yml" })
+    const trustedWorkflow = graphFor({ trustedPublishing: { workflow: "release.yml" } }).publications[0]!
+    expect(trustedWorkflow._tag === "GraphNpmPublication" ? trustedWorkflow.authority.publishStrategy : undefined)
+      .toMatchObject({ kind: "trusted-publishing", runner: "github-actions", workflow: "release.yml" })
+    expect(JSON.stringify(graphFor({ trustedPublishing: {} })))
+      .toBe(JSON.stringify(graphFor({ trustedPublishing: { verifyPackageExists: true } })))
+    expect(JSON.stringify(graphFor({}))).toBe(JSON.stringify(graphFor({ access: "restricted" })))
+    expect(JSON.stringify(graphFor({}))).toBe(JSON.stringify(graphFor({ provenance: false })))
     expect(Object.keys(publication)).not.toContain("distTag")
     expect(Object.keys(publication)).not.toContain("provenance")
     expect(Object.keys(publication)).not.toContain("access")
@@ -615,7 +595,9 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
           })
           expect(reads[0]?.headers?.authorization).toBe("Bearer npm_read_223")
           expect(command).toBeDefined()
-          expect(command!.argv).toEqual(expect.arrayContaining(["npm", "publish", "--registry", registry, "--userconfig"]))
+          expect(command!.argv).toEqual(expect.arrayContaining([
+            "npm", "publish", "--registry", canonicalizeRegistryUrl(registry), "--userconfig"
+          ]))
           expect(command!.argv).not.toContain("--tag")
           expect(command!.argv).not.toContain("--ignore-scripts")
           expect(command!.argv).not.toContain("--provenance")

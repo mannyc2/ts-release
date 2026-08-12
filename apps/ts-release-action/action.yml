@@ -1,26 +1,21 @@
 name: ts-release
-description: Prepare, publish, inspect, or correct one exact release boundary.
+description: Durably prepare, publish, or automatically release one exact release boundary.
 author: mannyc2
 inputs:
   command:
-    description: One of prepare, publish, inspect, or correct.
+    description: One of release, prepare, or publish.
     required: true
   config:
-    description: Workspace-contained authored configuration path for prepare or inspect.
+    description: Workspace-contained authored configuration path for release or prepare.
     required: false
   prepared:
-    description: Workspace-contained exact prepared bundle path for publish, inspect, or correct.
-    required: false
-  correction:
-    description: Workspace-contained canonical provider-specific correction path for correct.
+    description: Canonical prepared:gha reference for publish.
     required: false
 outputs:
-  status:
-    description: Command completion status.
-  prepared_path:
-    description: Exact prepared bundle path produced by prepare.
-  report_path:
-    description: Workspace-contained JSON report for the command result.
+  prepared-ref:
+    description: Durable content-addressed prepared release reference.
+  report-ref:
+    description: Workspace-contained redacted Action report reference.
 runs:
   using: node20
   main: dist/index.js

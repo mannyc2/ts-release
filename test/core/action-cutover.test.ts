@@ -1,50 +1,118 @@
 import { expect, test } from "bun:test"
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
-import { runAction, type ActionRuntime } from "../../apps/ts-release-action/src/commands.js"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import {
+  actionOutputs,
+  makePreparedReferenceChannel,
+  runAction,
+  type ActionRuntime
+} from "../../apps/ts-release-action/src/commands.js"
 
-const fixture = (command: string, root: string, extra: Record<string, string> = {}): [ActionRuntime, Record<string, string>] => {
+const digest = "c".repeat(64)
+const preparedRef = `prepared:gha:owner/repository/runs/99/attempts/2/artifacts/ts-release-prepared-${digest}#sha256-${digest}`
+
+const fixture = (command: string, root: string, extra: Record<string, string> = {}) => {
   const outputs: Record<string, string> = {}
+  const summaries: string[] = []
   const values: Record<string, string> = { command, ...extra }
-  return [{
+  const output = (name: typeof actionOutputs[number], value: string): void => { outputs[name] = value }
+  const summarize = async (message: string): Promise<void> => { summaries.push(message) }
+  const preparedReference = makePreparedReferenceChannel({ output, summarize })
+  const runtime: ActionRuntime = {
     workspace: root,
     input: (name) => values[name] ?? "",
-    output: (name, value) => { outputs[name] = value },
+    output,
     read: (path) => readFileSync(path, "utf8"),
-    write: (path, value) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, value) }
-  }, outputs]
+    write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) },
+    resolvePrepared: async (reference) => {
+      await preparedReference.emit(reference)
+      return join(root, "downloaded", digest)
+    },
+    preparedReference,
+    summarize
+  }
+  return { outputs, preparedReference, runtime, summaries }
 }
 
 test("each Action command invokes exactly its same-named public operation", async () => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
   writeFileSync(join(root, "release.config.json"), "{}")
-  mkdirSync(join(root, "prepared"))
-  writeFileSync(join(root, "correction.json"), "{}")
   const calls: string[] = []
+  let channel = fixture("release", root).preparedReference
   const api = {
-    prepare: async () => { calls.push("prepare"); return { directory: join(root, "prepared") } as never },
-    publish: async () => { calls.push("publish"); return [] },
-    inspect: async () => { calls.push("inspect"); return {} as never },
-    correct: async () => { calls.push("correct"); return {} as never }
+    release: async () => { calls.push("release"); await channel.emit(preparedRef); return { publications: [] } as never },
+    prepare: async () => { calls.push("prepare"); await channel.emit(preparedRef); return {} as never },
+    publish: async () => { calls.push("publish"); return [] }
   }
-  for (const [command, extra] of [["prepare", { config: "release.config.json" }], ["publish", { prepared: "prepared" }], ["inspect", { prepared: "prepared" }], ["correct", { prepared: "prepared", correction: "correction.json" }] ] as const) {
-    const [io] = fixture(command, root, extra)
-    await runAction(api, io)
+
+  for (const [command, extra] of [
+    ["release", { config: "release.config.json" }],
+    ["prepare", { config: "release.config.json" }],
+    ["publish", { prepared: preparedRef }]
+  ] as const) {
+    const current = fixture(command, root, extra)
+    channel = current.preparedReference
+    await runAction(api, current.runtime)
+    expect(Object.keys(current.outputs).sort()).toEqual(["prepared-ref", "report-ref"])
   }
-  expect(calls).toEqual(["prepare", "publish", "inspect", "correct"])
+  expect(calls).toEqual(["release", "prepare", "publish"])
 })
 
 test("invalid combinations and escaping paths fail before the API call", async () => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
   let calls = 0
-  const api = { prepare: async () => { calls += 1; return {} as never }, publish: async () => { calls += 1; return [] }, inspect: async () => { calls += 1; return {} as never }, correct: async () => { calls += 1; return {} as never }
+  const api = {
+    release: async () => { calls += 1; return {} as never },
+    prepare: async () => { calls += 1; return {} as never },
+    publish: async () => { calls += 1; return [] }
   }
-  const [invalid, invalidOutputs] = fixture("publish", root, { config: "release.config.json" })
-  await expect(runAction(api, invalid)).rejects.toThrow("not valid for command")
-  expect(invalidOutputs.status).toBe("failed")
-  const [escaping, escapingOutputs] = fixture("inspect", root, { config: "../outside.json" })
-  await expect(runAction(api, escaping)).rejects.toThrow("outside GITHUB_WORKSPACE")
-  expect(escapingOutputs.status).toBe("failed")
-  expect(existsSync(escapingOutputs.report_path!)).toBe(true)
+  const invalid = fixture("publish", root, { config: "release.config.json" })
+  await expect(runAction(api, invalid.runtime)).rejects.toThrow("not valid for command")
+  expect(invalid.outputs["report-ref"]).toBe(".release/ts-release/action-report.json")
+
+  const escaping = fixture("release", root, { config: "../outside.json" })
+  await expect(runAction(api, escaping.runtime)).rejects.toThrow("outside GITHUB_WORKSPACE")
+  expect(existsSync(join(root, escaping.outputs["report-ref"]!))).toBe(true)
   expect(calls).toBe(0)
+})
+
+test("a non-complete report fails closed after preserving recovery outputs", async () => {
+  const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
+  writeFileSync(join(root, "release.config.json"), "{}")
+  const current = fixture("release", root, { config: "release.config.json" })
+  await expect(runAction({
+    release: async () => {
+      await current.preparedReference.emit(preparedRef)
+      return { publications: [{ _tag: "PublicationBlocked" }] } as never
+    },
+    prepare: async () => ({}) as never,
+    publish: async () => []
+  }, current.runtime)).rejects.toThrow("report is blocked")
+
+  expect(current.outputs["prepared-ref"]).toBe(preparedRef)
+  const report = readFileSync(join(root, current.outputs["report-ref"]!), "utf8")
+  expect(report).toContain('"status": "blocked"')
+  expect(current.summaries.join("\n")).toContain("Re-run the failed publish job")
+  expect(current.summaries.join("\n")).not.toContain("ts-release publish")
+})
+
+test("a caught post-commit failure emits hosted rerun guidance without a local command", async () => {
+  const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
+  writeFileSync(join(root, "release.config.json"), "{}")
+  const current = fixture("release", root, { config: "release.config.json" })
+  await expect(runAction({
+    release: async () => {
+      await current.preparedReference.emit(preparedRef)
+      throw new Error("forced post-commit failure")
+    },
+    prepare: async () => ({}) as never,
+    publish: async () => []
+  }, current.runtime)).rejects.toThrow("forced post-commit failure")
+
+  expect(current.outputs["prepared-ref"]).toBe(preparedRef)
+  expect(current.outputs["report-ref"]).toBe(".release/ts-release/action-report.json")
+  const guidance = current.summaries.join("\n")
+  expect(guidance).toContain("Re-run the failed publish job")
+  expect(guidance).not.toContain("ts-release publish")
+  expect(guidance).not.toContain("dispatch")
 })

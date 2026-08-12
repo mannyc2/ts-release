@@ -43,18 +43,51 @@ describe("local preparation boundary", () => {
     writeFileSync(join(root, "package.json"), "{}")
     const seen: Array<ReadonlyArray<string>> = []
     const seenCwds: string[] = []
-    const run: RunCommand = ({ argv, cwd }) => Effect.sync(() => {
+    const seenEnvironmentNames: Array<ReadonlyArray<string>> = []
+    const run: RunCommand = ({ argv, cwd, environmentNames }) => Effect.sync(() => {
       seen.push(argv)
       seenCwds.push(cwd)
+      seenEnvironmentNames.push(environmentNames)
       if (argv[0] === "generate") writeFileSync(join(cwd, "generated.txt"), "generated\n")
       return { exitCode: 0, stdout: "", stderr: "" }
     })
     const { bundle } = await Effect.runPromise(prepareRelease(requestFor(root, run)))
     expect(seen).toEqual([["check"], ["generate", "generated.txt"]])
+    expect(seenEnvironmentNames).toEqual([[], []])
     expect(seenCwds.every((cwd) => cwd !== root)).toBe(true)
     expect(existsSync(join(root, "generated.txt"))).toBe(false)
     expect(bundle.manifest.artifacts.map((artifact) => artifact.id.toString())).toEqual(["generated"])
     expect(new TextDecoder().decode(bundle.blobs.get("generated"))).toBe("generated\n")
+  })
+
+  test.each([
+    ["job authority", ["GITHUB_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"]],
+    ["uncertified build input", ["CI"]]
+  ] as const)("rejects authored %s environment requests before any generic subprocess", async (_label, environmentNames) => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-prepare-authority-"))
+    writeFileSync(join(root, "package.json"), "{}")
+    const graph = linkContributions([CapabilityContribution.make({ artifacts: [], publications: [], preparations: [
+      GraphCommandCheck.make({
+        id: OperationId.make("first"), argv: ["first"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [],
+        sourceCommit: NonEmptyName.make("abc123")
+      }),
+      GraphCommandCheck.make({
+        id: OperationId.make("forbidden"), argv: ["forbidden"], cwd: SafeRelativePath.make("."), environmentNames: [...environmentNames], inputs: [],
+        sourceCommit: NonEmptyName.make("abc123")
+      })
+    ] })])
+    const seen: Array<ReadonlyArray<string>> = []
+    const run: RunCommand = ({ argv }) => Effect.sync(() => {
+      seen.push(argv)
+      return { exitCode: 0, stdout: "", stderr: "" }
+    })
+
+    await expect(Effect.runPromise(prepareRelease({
+      context: contextFor(root), graph, store: makeLocalPreparedReleaseStore(join(root, ".release", "prepared")), run,
+      verifySource: (value) => Effect.succeed(value)
+    }))).rejects.toBeInstanceOf(PreparationError)
+    expect(seen).toEqual([])
+    expect(existsSync(join(root, ".release", "prepared"))).toBe(false)
   })
 
   test("command failure produces no prepared bundle and no durable check receipt", async () => {

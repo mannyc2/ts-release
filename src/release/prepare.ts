@@ -46,6 +46,15 @@ const failure = (cause: unknown): PreparationError => PreparationError.make({
 const attempt = <A>(body: () => A): Effect.Effect<A, PreparationError> => Effect.try({
   try: body, catch: failure
 })
+const verifyPreparationChildAuthority = Effect.fn("prepareRelease.verifyPreparationChildAuthority")(function*(graph: ReleaseGraph) {
+  for (const preparation of graph.preparations) {
+    if ((preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact") && preparation.environmentNames.length > 0) {
+      return yield* new PreparationError({
+        reason: `Generic preparation ${preparation.id} requests host environment inheritance, but preparation children have no certified authority channel.`
+      })
+    }
+  }
+})
 const outputId = (value: string): OutputId => OutputId.make(value)
 const pathOf = (context: VerifiedReleaseContext, path: SafeRelativePath): string => join(context.workspace, path)
 const byCodepoint = (left: { readonly id: { toString(): string } }, right: { readonly id: { toString(): string } }): number => {
@@ -154,7 +163,7 @@ const runCommand = (
   }
   const outputs = preparation._tag === "GraphCommandArtifact" ? preparation.outputs : []
   const argv = preparation.argv.map((part) => replaceReferences(part, inputs, outputs))
-  const outcome = yield* request.run({ argv, cwd: pathOf(request.context, preparation.cwd), environmentNames: preparation.environmentNames }).pipe(Effect.mapError(failure))
+  const outcome = yield* request.run({ argv, cwd: pathOf(request.context, preparation.cwd), environmentNames: [] }).pipe(Effect.mapError(failure))
   if (outcome.exitCode !== 0) return yield* new PreparationError({ reason: `Command ${preparation.id} exited ${outcome.exitCode}: ${outcome.stderr.trim()}` })
   for (const input of inputs) {
     const after = yield* attempt(() => inputFingerprint(request.context, input))
@@ -249,6 +258,7 @@ const npmTarball = (
 })
 
 export const prepareRelease = Effect.fn("prepareRelease")(function*(input: PreparationRequest) {
+  yield* verifyPreparationChildAuthority(input.graph)
   let observed = yield* input.verifySource(input.context).pipe(Effect.mapError(failure))
   const root = yield* attempt(() => stageWorkspace(observed.workspace))
   try {

@@ -66,23 +66,27 @@ const applied = () => Applied.make({
 
 const get = <A, E>(result: Result.Result<A, E>): A => Result.getOrThrow(result)
 const authority = (
-  purposes: readonly [CredentialPurpose, ...Array<CredentialPurpose>] = ["publish"]
+  requestedPurpose: CredentialPurpose = "publish",
+  purposes: readonly [CredentialPurpose, ...Array<CredentialPurpose>] = [requestedPurpose],
+  authoritySubject: SubjectId = subject,
+  grantKind: "AnonymousAccess" | "ScopedSecret" | "WorkloadIdentity" = "ScopedSecret"
 ) => get(makeAuthorityAcquired({
-  subject,
+  subject: authoritySubject,
   provider: ProviderId.make("npm"),
   audience: CanonicalAudience.make("https://registry.npmjs.org/@scope/package"),
-  purpose: "publish",
-  grantKind: "ScopedSecret",
+  requestedPurpose,
+  grantKind,
   purposes
 }))
 
 describe("correlated publication reports", () => {
   test("constructs only same-subject outcomes with their required terminal observation", () => {
-    const already = get(makeAlreadyEquivalent(subject, [equivalent()]))
+    const already = get(makeAlreadyEquivalent(subject, [equivalent()], []))
     expect(already._tag).toBe("AlreadyEquivalent")
 
     const converged = get(makeConvergedAfterMutation({
       subject,
+      observationAuthorities: [],
       preObservations: [different()],
       decision: needsMutation(),
       authority: authority(),
@@ -91,11 +95,14 @@ describe("correlated publication reports", () => {
     }))
     expect(converged._tag).toBe("ConvergedAfterMutation")
 
-    expect(Result.isFailure(makeAlreadyEquivalent(subject, [
-      PresentEquivalent.make({ subject: otherSubject })
-    ]))).toBe(true)
+    expect(Result.isFailure(makeAlreadyEquivalent(
+      subject,
+      [PresentEquivalent.make({ subject: otherSubject })],
+      []
+    ))).toBe(true)
     expect(Result.isFailure(makeConvergedAfterMutation({
       subject,
+      observationAuthorities: [],
       preObservations: [different()],
       decision: needsMutation(),
       authority: authority(),
@@ -108,12 +115,14 @@ describe("correlated publication reports", () => {
     expect(() => Schema.decodeUnknownSync(SubjectReport)({
       _tag: "AlreadyEquivalent",
       subject,
+      observationAuthorities: [],
       observations: [{ _tag: "PresentEquivalent", subject: otherSubject }]
     })).toThrow("same-subject")
 
     expect(() => Schema.decodeUnknownSync(SubjectReport)({
       _tag: "ConvergedAfterMutation",
       subject,
+      observationAuthorities: [],
       preObservations: [different()],
       decision: needsMutation(),
       authority: authority(),
@@ -124,9 +133,10 @@ describe("correlated publication reports", () => {
 
   test("derives complete, blocked, and uncertain status centrally", () => {
     const complete = makeReleaseReport([
-      get(makeAlreadyEquivalent(subject, [equivalent()])),
+      get(makeAlreadyEquivalent(subject, [equivalent()], [])),
       get(makeConvergedAfterMutation({
         subject,
+        observationAuthorities: [],
         preObservations: [different()],
         decision: ProviderAuthorizedCreate.make({
           subject,
@@ -142,6 +152,7 @@ describe("correlated publication reports", () => {
     const blocked = makeReleaseReport([
       get(makeBlockedSubject({
         subject,
+        observationAuthorities: [],
         observations: [different()],
         cause: Conflict.make({ subject, differences: different().differences })
       })),
@@ -151,6 +162,7 @@ describe("correlated publication reports", () => {
 
     const uncertain = makeReleaseReport([get(makeUncertainSubject({
       subject,
+      observationAuthorities: [],
       observations: [different()],
       decision: Conflict.make({ subject, differences: different().differences }),
       authority: authority(),
@@ -161,7 +173,7 @@ describe("correlated publication reports", () => {
   })
 
   test("records bundled authority that was acquired but never dispatched", () => {
-    const acquired = authority(["observe", "publish"])
+    const acquired = authority("publish", ["observe", "publish"])
     const cause = get(makeAuthorityAcquiredButMutationNotDispatched({
       subject,
       authority: acquired,
@@ -172,6 +184,7 @@ describe("correlated publication reports", () => {
     }))
     const blocked = get(makeBlockedSubject({
       subject,
+      observationAuthorities: [],
       observations: [different()],
       cause
     }))
@@ -182,7 +195,7 @@ describe("correlated publication reports", () => {
       subject,
       provider: "npm",
       audience: "https://registry.npmjs.org/@scope/package",
-      purpose: "publish",
+      requestedPurpose: "publish",
       grantKind: "ScopedSecret",
       purposes: ["observe", "publish"]
     })
@@ -190,10 +203,121 @@ describe("correlated publication reports", () => {
     expect(JSON.stringify(blocked)).not.toContain("credential")
   })
 
+  test("records bundled authority acquired for equivalent, blocked, and read-only observations", () => {
+    const acquiredForObservation = authority("observe", ["observe", "publish"])
+    const already = get(makeAlreadyEquivalent(subject, [equivalent()], [acquiredForObservation]))
+    const blocked = get(makeBlockedSubject({
+      subject,
+      observationAuthorities: [acquiredForObservation],
+      observations: [different()],
+      cause: Conflict.make({ subject, differences: different().differences })
+    }))
+    const readOnly = makeObservationReport([
+      new ObservedSubject({
+        subject,
+        observationAuthorities: [acquiredForObservation],
+        observation: equivalentObservation()
+      })
+    ])
+
+    for (const recorded of [
+      already.observationAuthorities[0],
+      blocked.observationAuthorities[0],
+      readOnly.subjects[0].observationAuthorities[0]
+    ]) {
+      expect(recorded).toMatchObject({
+        subject,
+        provider: "npm",
+        audience: "https://registry.npmjs.org/@scope/package",
+        requestedPurpose: "observe",
+        grantKind: "ScopedSecret",
+        purposes: ["observe", "publish"]
+      })
+    }
+  })
+
+  test("rejects mismatched observation subjects and requested purposes", () => {
+    const wrongSubject = authority("observe", ["observe"], otherSubject)
+    const acquiredForMutation = authority()
+
+    expect(Result.isFailure(makeAlreadyEquivalent(subject, [equivalent()], [wrongSubject]))).toBe(true)
+    expect(Result.isFailure(makeBlockedSubject({
+      subject,
+      observationAuthorities: [acquiredForMutation],
+      observations: [different()],
+      cause: Conflict.make({ subject, differences: different().differences })
+    }))).toBe(true)
+
+    expect(() => Schema.decodeUnknownSync(ObservationReport)({
+      subjects: [{
+        subject,
+        observationAuthorities: [wrongSubject],
+        observation: equivalentObservation()
+      }],
+      status: "equivalent"
+    })).toThrow("report subject")
+    expect(() => Schema.decodeUnknownSync(ObservationReport)({
+      subjects: [{
+        subject,
+        observationAuthorities: [acquiredForMutation],
+        observation: equivalentObservation()
+      }],
+      status: "equivalent"
+    })).toThrow("observe purpose")
+  })
+
+  test("keeps dispatched and non-dispatched authority mutation-only", () => {
+    const acquiredForObservation = authority("observe", ["observe", "publish"])
+
+    expect(Result.isFailure(makeConvergedAfterMutation({
+      subject,
+      observationAuthorities: [acquiredForObservation],
+      preObservations: [different()],
+      decision: needsMutation(),
+      authority: acquiredForObservation,
+      attempt: applied(),
+      postObservations: [equivalent()]
+    }))).toBe(true)
+    expect(Result.isFailure(makeUncertainSubject({
+      subject,
+      observationAuthorities: [acquiredForObservation],
+      observations: [different()],
+      decision: needsMutation(),
+      authority: acquiredForObservation,
+      attempt: Started.make({ subject }),
+      trace: [different()]
+    }))).toBe(true)
+    expect(Result.isFailure(makeAuthorityAcquiredButMutationNotDispatched({
+      subject,
+      authority: acquiredForObservation,
+      attempt: RejectedBeforeDispatch.make({ subject, reason: reason("dispatch rejected") })
+    }))).toBe(true)
+  })
+
+  test("records the exact requested purpose and rejects incomplete or duplicate purpose sets", () => {
+    const base = {
+      subject,
+      provider: ProviderId.make("npm"),
+      audience: CanonicalAudience.make("https://registry.npmjs.org/@scope/package"),
+      requestedPurpose: "observe" as const,
+      grantKind: "ScopedSecret" as const
+    }
+    expect(Result.isFailure(makeAuthorityAcquired({ ...base, purposes: ["publish"] }))).toBe(true)
+    expect(Result.isFailure(makeAuthorityAcquired({ ...base, purposes: ["observe", "observe"] }))).toBe(true)
+
+    const anonymous = authority("observe", ["observe"], subject, "AnonymousAccess")
+    expect(anonymous).toMatchObject({
+      requestedPurpose: "observe",
+      grantKind: "AnonymousAccess",
+      purposes: ["observe"]
+    })
+  })
+
   test("requires acquired-authority evidence on dispatched outcomes", () => {
     const acquired = authority()
     const converged = get(makeConvergedAfterMutation({
       subject,
+      observationAuthorities: [],
       preObservations: [different()],
       decision: needsMutation(),
       authority: acquired,
@@ -202,6 +326,7 @@ describe("correlated publication reports", () => {
     }))
     const uncertain = get(makeUncertainSubject({
       subject,
+      observationAuthorities: [],
       observations: [different()],
       decision: needsMutation(),
       authority: acquired,
@@ -213,31 +338,44 @@ describe("correlated publication reports", () => {
     expect(uncertain.authority).toEqual(acquired)
   })
 
-  test("an equivalent outcome has no authority field", () => {
-    const already = get(makeAlreadyEquivalent(subject, [equivalent()]))
+  test("an equivalent outcome has no mutation authority field", () => {
+    const already = get(makeAlreadyEquivalent(subject, [equivalent()], []))
     expect(Object.hasOwn(already, "authority")).toBe(false)
+    expect(already.observationAuthorities).toEqual([])
     expect(Object.hasOwn(Schema.encodeSync(SubjectReport)(already), "authority")).toBe(false)
   })
 
   test("requires nonempty reports and rejects a caller-supplied false status", () => {
     expect(() => Schema.decodeUnknownSync(ObservationReport)({ subjects: [], status: "equivalent" })).toThrow()
     expect(() => Schema.decodeUnknownSync(ObservationReport)({
-      subjects: [new ObservedSubject({ subject, observation: inconclusiveObservation(reason("read timed out")) })],
+      subjects: [new ObservedSubject({
+        subject,
+        observationAuthorities: [],
+        observation: inconclusiveObservation(reason("read timed out"))
+      })],
       status: "equivalent"
     })).toThrow("derived")
+
+    const notReached = get(makeNotReached(otherSubject, new DependencyBlocked({ prerequisite: subject })))
+    expect(Object.hasOwn(notReached, "observationAuthorities")).toBe(false)
   })
 })
 
 describe("read-only observation reports", () => {
   test("derive status without exposing mutation decisions or attempts", () => {
     expect(makeObservationReport([
-      new ObservedSubject({ subject, observation: equivalentObservation() })
+      new ObservedSubject({ subject, observationAuthorities: [], observation: equivalentObservation() })
     ]).status).toBe("equivalent")
 
     expect(makeObservationReport([
-      new ObservedSubject({ subject, observation: differentObservation(different().differences) }),
+      new ObservedSubject({
+        subject,
+        observationAuthorities: [],
+        observation: differentObservation(different().differences)
+      }),
       new ObservedSubject({
         subject: otherSubject,
+        observationAuthorities: [],
         observation: absentObservation(new AbsenceBasis({
           kind: NonEmptyName.make("authoritative-404"),
           detail: reason("repository and namespace were authenticated")
@@ -246,7 +384,11 @@ describe("read-only observation reports", () => {
     ]).status).toBe("different")
 
     expect(makeObservationReport([
-      new ObservedSubject({ subject, observation: inconclusiveObservation(reason("visibility unknown")) })
+      new ObservedSubject({
+        subject,
+        observationAuthorities: [],
+        observation: inconclusiveObservation(reason("visibility unknown"))
+      })
     ]).status).toBe("inconclusive")
 
     expect(() => Schema.decodeUnknownSync(ObservationReport)({

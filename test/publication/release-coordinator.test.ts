@@ -150,18 +150,22 @@ const descriptorFor = (request: CredentialRequest): CredentialGrantDescriptor =>
   }
 }
 
-const recordingCredentials = (events: Array<string>) => makeCredentialProvider({
+const recordingCredentials = (
+  events: Array<string>,
+  describe: (request: CredentialRequest) => CredentialGrantDescriptor = descriptorFor
+) => makeCredentialProvider({
   acquire: (request) => Effect.sync(() => {
     events.push(`${request.subject}:authority:${request.purpose}:${request.strategy.kind}`)
-    return descriptorFor(request)
+    return describe(request)
   })
 })
 
 const run = <A, E>(
   effect: Effect.Effect<A, E, CredentialProvider>,
-  events: Array<string>
+  events: Array<string>,
+  describe?: (request: CredentialRequest) => CredentialGrantDescriptor
 ): Promise<A> => Effect.runPromise(effect.pipe(
-  Effect.provideService(CredentialProvider, recordingCredentials(events))
+  Effect.provideService(CredentialProvider, recordingCredentials(events, describe))
 ))
 
 interface ScriptedSubjectOptions {
@@ -264,6 +268,39 @@ describe("provider-neutral release coordinator", () => {
     }
   })
 
+  test("records bundled observation authority without dispatching mutation", async () => {
+    const events: Array<string> = []
+    const subject = scriptedSubject({
+      id: first,
+      events,
+      observations: [equivalent(first)],
+      observationRequests: [tokenRequest(first, "observe")],
+      decision: () => alreadyEquivalent(first)
+    })
+    const report = await run(
+      publishReleaseSubjects({ prepared, subjects: [subject] }),
+      events,
+      (request) => request.purpose === "observe" && request.strategy.kind === "token"
+        ? {
+          _tag: "ScopedSecret",
+          purposes: ["observe", "publish"],
+          ref: request.strategy.credential
+        }
+        : descriptorFor(request)
+    )
+
+    expect(report.subjects[1]).toMatchObject({
+      _tag: "AlreadyEquivalent",
+      observationAuthorities: [{
+        requestedPurpose: "observe",
+        grantKind: "ScopedSecret",
+        purposes: ["observe", "publish"]
+      }]
+    })
+    expect(events.some((event) => event.includes(":authority:publish:"))).toBe(false)
+    expect(events.some((event) => event.includes(":mutate:"))).toBe(false)
+  })
+
   test("acquires exact mutation authority lazily and reobserves every mutation result", async () => {
     const events: Array<string> = []
     const contexts: Array<ReleaseObservationContext> = []
@@ -302,7 +339,7 @@ describe("provider-neutral release coordinator", () => {
       subject: first,
       provider,
       audience,
-      purpose: "publish",
+      requestedPurpose: "publish",
       grantKind: "ScopedSecret"
     })
     expect(JSON.stringify(remote.authority)).not.toContain(mutationRef)
@@ -359,7 +396,7 @@ describe("provider-neutral release coordinator", () => {
     if (remote?._tag !== "BlockedSubject") throw new Error("Expected a blocked subject.")
     expect(remote.cause).toMatchObject({
       _tag: "AuthorityAcquiredButMutationNotDispatched",
-      authority: { _tag: "AuthorityAcquired", purpose: "publish" },
+      authority: { _tag: "AuthorityAcquired", requestedPurpose: "publish" },
       attempt: { _tag: "RejectedBeforeDispatch" }
     })
     expect(events.at(-1)).toBe(`${first}:observe:AnonymousAccess:PresentDifferent`)

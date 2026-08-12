@@ -173,20 +173,36 @@ const observeOnce = (
   subject: ReleaseSubject,
   request: CredentialRequest,
   context: ReleaseObservationContext
-): Effect.Effect<Observation, ReleaseCoordinatorConstructionError> =>
+): Effect.Effect<{
+  readonly observation: Observation
+  readonly authorities: ReadonlyArray<AuthorityAcquired>
+}, ReleaseCoordinatorConstructionError> =>
   credentials.acquireForObservation(request).pipe(
-    Effect.flatMap((grant) => subject.observe(grant, context).pipe(
-      Effect.catch((error) => subjectObservationFailure(subject, error))
+    Effect.flatMap((grant) => makeAuthority(request, grant).pipe(
+      Effect.flatMap((authority) => subject.observe(grant, context).pipe(
+        Effect.catch((error) => subjectObservationFailure(subject, error)),
+        Effect.map((observation) => ({ observation, authorities: [authority] }))
+      ))
     )),
     Effect.catchTags({
-      CredentialUnavailable: () => Effect.succeed(unavailableObservation(subject.id)),
-      CredentialAudienceMismatch: () => Effect.succeed(unavailableObservation(subject.id)),
-      CredentialPurposeMismatch: () => Effect.succeed(unavailableObservation(subject.id)),
-      CredentialStrategyUnsupported: () => Effect.succeed(unavailableObservation(subject.id)),
-      CredentialSubjectMismatch: () => Effect.succeed(unavailableObservation(subject.id))
+      CredentialUnavailable: () => Effect.succeed({
+        observation: unavailableObservation(subject.id), authorities: []
+      }),
+      CredentialAudienceMismatch: () => Effect.succeed({
+        observation: unavailableObservation(subject.id), authorities: []
+      }),
+      CredentialPurposeMismatch: () => Effect.succeed({
+        observation: unavailableObservation(subject.id), authorities: []
+      }),
+      CredentialStrategyUnsupported: () => Effect.succeed({
+        observation: unavailableObservation(subject.id), authorities: []
+      }),
+      CredentialSubjectMismatch: () => Effect.succeed({
+        observation: unavailableObservation(subject.id), authorities: []
+      })
     }),
-    Effect.flatMap((observation) => observation.subject === subject.id
-      ? Effect.succeed(observation)
+    Effect.flatMap((result) => result.observation.subject === subject.id
+      ? Effect.succeed(result)
       : Effect.fail(constructionFailure("An observation does not match its prepared subject identity.")))
   )
 
@@ -196,8 +212,11 @@ const observeTrace = Effect.fn("observeReleaseSubject")(function*(
   context: ReleaseObservationContext
 ) {
   const observations: Array<Observation> = []
+  const authorities: Array<AuthorityAcquired> = []
   for (const request of subject.observationRequests) {
-    let observation = yield* observeOnce(credentials, subject, request, context)
+    const observed = yield* observeOnce(credentials, subject, request, context)
+    let observation = observed.observation
+    authorities.push(...observed.authorities)
     if (context.phase === "pre-mutation" && observation._tag === "VisibilityPending") {
       observation = InconclusiveObservation.make({
         subject: subject.id,
@@ -207,7 +226,10 @@ const observeTrace = Effect.fn("observeReleaseSubject")(function*(
     observations.push(observation)
     if (observation._tag !== "Inconclusive") break
   }
-  return observations as [Observation, ...Array<Observation>]
+  return {
+    observations: observations as [Observation, ...Array<Observation>],
+    authorities
+  }
 })
 
 const classifyObservation = (observation: Observation): ObservationClassification => {
@@ -234,22 +256,22 @@ const providerBlockedFromAuthority = (
 })
 
 const makeAuthority = (
-  subject: ReleaseSubject,
-  grant: MutationCredentialGrant
+  request: CredentialRequest,
+  grant: CredentialGrant
 ): Effect.Effect<AuthorityAcquired, ReleaseCoordinatorConstructionError> => {
   const purposes = [...grant.purposes]
   if (purposes.length === 0) {
-    return Effect.fail(constructionFailure("A mutation grant carries no authority purpose."))
+    return Effect.fail(constructionFailure("A credential grant carries no authority purpose."))
   }
-  const purpose = subject.mutationRequest.purpose
-  if (purpose !== "publish" && purpose !== "correct") {
-    return Effect.fail(constructionFailure("A mutation request carries an observation purpose."))
+  if (grant.subject !== request.subject || grant.provider !== request.provider ||
+    grant.audience !== request.audience || !grant.purposes.has(request.purpose)) {
+    return Effect.fail(constructionFailure("A credential grant does not match the exact prepared request."))
   }
   return fromReportResult(makeAuthorityAcquired({
-    subject: subject.id,
-    provider: subject.mutationRequest.provider,
-    audience: subject.mutationRequest.audience,
-    purpose,
+    subject: request.subject,
+    provider: request.provider,
+    audience: request.audience,
+    requestedPurpose: request.purpose,
     grantKind: grant._tag,
     purposes: purposes as [typeof purposes[number], ...Array<typeof purposes[number]>]
   }))
@@ -302,15 +324,20 @@ const publishSubject = Effect.fn("publishReleaseSubject")(function*(
   subject: ReleaseSubject
 ) {
   const before = yield* observeTrace(credentials, subject, { phase: "pre-mutation" })
-  const decision = yield* decide(subject, before.at(-1)!)
+  const decision = yield* decide(subject, before.observations.at(-1)!)
   switch (decision._tag) {
     case "AlreadyEquivalent":
-      return yield* fromReportResult(makeAlreadyEquivalent(subject.id, before))
+      return yield* fromReportResult(makeAlreadyEquivalent(
+        subject.id,
+        before.observations,
+        before.authorities
+      ))
     case "Conflict":
     case "Blocked":
       return yield* fromReportResult(makeBlockedSubject({
         subject: subject.id,
-        observations: before,
+        observationAuthorities: before.authorities,
+        observations: before.observations,
         cause: decision
       }))
     case "NeedsMutation":
@@ -322,14 +349,16 @@ const publishSubject = Effect.fn("publishReleaseSubject")(function*(
       if (acquisition._tag === "Denied") {
         return yield* fromReportResult(makeBlockedSubject({
           subject: subject.id,
-          observations: before,
+          observationAuthorities: before.authorities,
+          observations: before.observations,
           cause: providerBlockedFromAuthority(subject.id, acquisition.error)
         }))
       }
       const grant = acquisition.grant
-      const authority = yield* makeAuthority(subject, grant)
+      const authority = yield* makeAuthority(subject.mutationRequest, grant)
       const attempt = yield* performMutation(subject, decision, grant)
       const after = yield* observeTrace(credentials, subject, { phase: "post-mutation", attempt })
+      const observationAuthorities = [...before.authorities, ...after.authorities]
       if (attempt._tag === "RejectedBeforeDispatch") {
         const cause = yield* fromReportResult(makeAuthorityAcquiredButMutationNotDispatched({
           subject: subject.id,
@@ -338,39 +367,44 @@ const publishSubject = Effect.fn("publishReleaseSubject")(function*(
         }))
         return yield* fromReportResult(makeBlockedSubject({
           subject: subject.id,
-          observations: [...before, ...after],
+          observationAuthorities,
+          observations: [...before.observations, ...after.observations],
           cause
         }))
       }
-      if (after.at(-1)?._tag === "PresentEquivalent") {
+      if (after.observations.at(-1)?._tag === "PresentEquivalent") {
         return yield* fromReportResult(makeConvergedAfterMutation({
           subject: subject.id,
-          preObservations: before,
+          observationAuthorities,
+          preObservations: before.observations,
           decision,
           authority,
           attempt: convergedAttempt(attempt),
-          postObservations: after
+          postObservations: after.observations
         }))
       }
       if (attempt._tag === "RejectedByProvider" &&
-        after.at(-1)?._tag !== "Inconclusive" && after.at(-1)?._tag !== "VisibilityPending") {
+        after.observations.at(-1)?._tag !== "Inconclusive" &&
+        after.observations.at(-1)?._tag !== "VisibilityPending") {
         return yield* fromReportResult(makeBlockedSubject({
           subject: subject.id,
-          observations: before,
+          observationAuthorities,
+          observations: before.observations,
           cause: ConclusiveProviderRejection.make({
             subject: subject.id,
             fact: attempt.fact,
-            postObservations: after
+            postObservations: after.observations
           })
         }))
       }
       return yield* fromReportResult(makeUncertainSubject({
         subject: subject.id,
-        observations: before,
+        observationAuthorities,
+        observations: before.observations,
         decision,
         authority,
         attempt: uncertainAttempt(attempt),
-        trace: after
+        trace: after.observations
       }))
     }
   }
@@ -383,13 +417,18 @@ export const observeReleaseSubjects = Effect.fn("observeReleaseSubjects")(functi
   yield* validateInput(input)
   const credentials = yield* CredentialProvider
   const observed: [ObservedSubject, ...Array<ObservedSubject>] = [
-    new ObservedSubject({ subject: input.prepared, observation: equivalentObservation() })
+    new ObservedSubject({
+      subject: input.prepared,
+      observationAuthorities: [],
+      observation: equivalentObservation()
+    })
   ]
   for (const subject of input.subjects) {
     const trace = yield* observeTrace(credentials, subject, { phase: "pre-mutation" })
     observed.push(new ObservedSubject({
       subject: subject.id,
-      observation: classifyObservation(trace.at(-1)!)
+      observationAuthorities: trace.authorities,
+      observation: classifyObservation(trace.observations.at(-1)!)
     }))
   }
   return makeObservationReport(observed)
@@ -402,7 +441,7 @@ export const publishReleaseSubjects = Effect.fn("publishReleaseSubjects")(functi
   yield* validateInput(input)
   const credentials = yield* CredentialProvider
   const localObservation = PresentEquivalent.make({ subject: input.prepared })
-  const local = yield* fromReportResult(makeAlreadyEquivalent(input.prepared, [localObservation]))
+  const local = yield* fromReportResult(makeAlreadyEquivalent(input.prepared, [localObservation], []))
   const reports: [SubjectReport, ...Array<SubjectReport>] = [local]
   const converged = new Map<SubjectId, boolean>([[input.prepared, true]])
   for (const subject of input.subjects) {

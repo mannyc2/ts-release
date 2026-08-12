@@ -10,6 +10,7 @@ import { DriverError } from "../../src/drivers/errors.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
 import { CapabilityContribution, GraphCommandArtifact, GraphCommandCheck, GraphNpmPublication, linkContributions } from "../../src/release/graph.js"
 import { prepareRelease, PreparationError, type PreparationRequest } from "../../src/release/prepare.js"
+import { makeLocalPreparedReleaseStore } from "../../src/release/prepared-store.js"
 import type { RunCommand } from "../../src/drivers/process.js"
 
 const contextFor = (root: string, commit = "abc123") => VerifiedReleaseContext.make({
@@ -25,7 +26,7 @@ const requestFor = (root: string, run: RunCommand, verifySource = (context: Veri
     GraphCommandCheck.make({ id: OperationId.make("check"), argv: ["check"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [], sourceCommit: NonEmptyName.make("abc123") }),
     GraphCommandArtifact.make({ id: OperationId.make("generate"), argv: ["generate", "{output:generated}"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [], outputs: [output], sourceCommit: NonEmptyName.make("abc123") })
   ] })])
-  return { context: contextFor(root), graph, storeDirectory: join(root, ".release", "prepared"), run, verifySource }
+  return { context: contextFor(root), graph, store: makeLocalPreparedReleaseStore(join(root, ".release", "prepared")), run, verifySource }
 }
 
 describe("local preparation boundary", () => {
@@ -40,7 +41,7 @@ describe("local preparation boundary", () => {
       if (argv[0] === "generate") writeFileSync(join(cwd, "generated.txt"), "generated\n")
       return { exitCode: 0, stdout: "", stderr: "" }
     })
-    const bundle = await Effect.runPromise(prepareRelease(requestFor(root, run)))
+    const { bundle } = await Effect.runPromise(prepareRelease(requestFor(root, run)))
     expect(seen).toEqual([["check"], ["generate", "generated.txt"]])
     expect(seenCwds.every((cwd) => cwd !== root)).toBe(true)
     expect(existsSync(join(root, "generated.txt"))).toBe(false)
@@ -84,7 +85,7 @@ describe("local preparation boundary", () => {
       writeFileSync(join(cwd, "output.txt"), "output\n")
       return { exitCode: 0, stdout: "", stderr: "" }
     })
-    await expect(Effect.runPromise(prepareRelease({ context: contextFor(root), graph, storeDirectory: join(root, ".release", "prepared"), run,
+    await expect(Effect.runPromise(prepareRelease({ context: contextFor(root), graph, store: makeLocalPreparedReleaseStore(join(root, ".release", "prepared")), run,
       verifySource: (value) => Effect.succeed(value) }))).rejects.toBeInstanceOf(PreparationError)
     expect(existsSync(join(root, ".release", "prepared"))).toBe(false)
   })
@@ -104,7 +105,7 @@ describe("local preparation boundary", () => {
       return { exitCode: result.status ?? 1, stdout: result.stdout, stderr: result.stderr }
     }, catch: (cause) => DriverError.make({ reason: cause instanceof Error ? cause.message : String(cause), commitment: "before-commit" }) })
     const context = contextFor(root)
-    const bundle = await Effect.runPromise(prepareRelease({ context, graph, storeDirectory: join(root, ".release", "prepared"), run,
+    const { bundle } = await Effect.runPromise(prepareRelease({ context, graph, store: makeLocalPreparedReleaseStore(join(root, ".release", "prepared")), run,
       verifySource: (value) => Effect.succeed(value) }))
     const publication = bundle.manifest.publications[0]
     expect(publication?._tag).toBe("PreparedNpmPublication")

@@ -15,7 +15,8 @@ export {
   CompletePreparedReleaseRef, GitHubActionsCompletePreparedReleaseRef,
   LocalCompletePreparedReleaseRef, PreparedReleaseRefCodecError,
   PreparedReleaseRefMalformedError, PreparedReleaseRefUnknownSchemeError,
-  decodeCompletePreparedReleaseRef, encodeCompletePreparedReleaseRef
+  decodeCompletePreparedReleaseRef, encodeCompletePreparedReleaseRef,
+  makeGitHubActionsCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef
 } from "./release/prepared-ref.js"
 export type { PreparedReleaseSha256 } from "./release/prepared-ref.js"
 export { ReleaseRuntime } from "./api/runtime.js"

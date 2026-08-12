@@ -9,6 +9,8 @@ import { PublicationError, type HttpRequest, type HttpResponse, type Publication
 import type { CatalogRepositoryTransport } from "../publication/catalog-git.js"
 import { ReleaseRuntime } from "../api/runtime.js"
 import { SourceObserver } from "../release/context.js"
+import { makeLocalPreparedReleaseStore, type PreparedReleaseStoreShape } from "../release/prepared-store.js"
+import { join } from "node:path"
 
 export const makePublicationHttp = (client: HttpClient.HttpClient): PublicationHttp => ({
   request: (request: HttpRequest) => HttpClientRequest.make(request.method)(request.url, {
@@ -30,9 +32,27 @@ const unsupportedCatalog: CatalogRepositoryTransport = {
   write: () => Effect.fail(PublicationError.make({ phase: "mutate", commitment: "before-dispatch", reason: "No live catalog repository transport is configured for this host." }))
 }
 
-export const ReleaseRuntimeLive: Layer.Layer<ReleaseRuntime, never, SourceObserver | ChildProcessSpawner | HttpClient.HttpClient> = Layer.effect(ReleaseRuntime, Effect.gen(function*() {
+export type PreparedStoreSelector = (
+  workspace: string,
+  explicitDirectory?: string
+) => PreparedReleaseStoreShape
+
+const localPreparedStore: PreparedStoreSelector = (workspace, explicitDirectory) =>
+  makeLocalPreparedReleaseStore(explicitDirectory ?? join(workspace, ".release", "ts-release", "prepared"))
+
+export const makeReleaseRuntimeLive = (
+  preparedStore: PreparedStoreSelector = localPreparedStore
+): Layer.Layer<ReleaseRuntime, never, SourceObserver | ChildProcessSpawner | HttpClient.HttpClient> => Layer.effect(ReleaseRuntime, Effect.gen(function*() {
   const source = yield* SourceObserver
   const run = yield* makeRunCommand
   const client = yield* HttpClient.HttpClient
-  return { source, run, http: makePublicationHttp(client), catalog: unsupportedCatalog }
+  return {
+    source,
+    run,
+    http: makePublicationHttp(client),
+    catalog: unsupportedCatalog,
+    preparedStore
+  }
 }))
+
+export const ReleaseRuntimeLive = makeReleaseRuntimeLive()

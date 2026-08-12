@@ -10,7 +10,8 @@ describe("root public API", () => {
       "PreparedReleaseRefUnknownSchemeError", "ReleaseAbortedError", "ReleaseIncompleteError",
       "ReleaseInputError", "ReleasePreparationError", "ReleaseRuntime", "correct",
       "decodeCompletePreparedReleaseRef", "defineRelease", "encodeCompletePreparedReleaseRef",
-      "encodeResolvedConfig", "inspect", "makeReleaseApi", "prepare", "publish", "release",
+      "encodeResolvedConfig", "inspect", "makeGitHubActionsCompletePreparedReleaseRef",
+      "makeLocalCompletePreparedReleaseRef", "makeReleaseApi", "prepare", "publish", "release",
       "resolveConfig", "unsupportedExecutionHost"
     ].sort())
   })

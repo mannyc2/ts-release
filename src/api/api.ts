@@ -60,10 +60,8 @@ const observeAndCompile = Effect.fn("observeAndCompileRelease")(function*(input:
   return { context, config: resolved, graph: compileReleaseGraph(resolved, context) }
 })
 
-const preparedDirectory = (workspace: string, value: string | undefined): string => {
-  const root = workspaceRoot(workspace)
-  return value === undefined ? join(root, ".release", "ts-release", "prepared") : value.startsWith("/") ? value : join(root, value)
-}
+const preparedDirectory = (workspace: string, value: string | undefined): string | undefined =>
+  value === undefined ? undefined : value.startsWith("/") ? value : join(workspaceRoot(workspace), value)
 
 const prepareProgram = Effect.fn("prepareProgram")(function*(
   input: PrepareInput,
@@ -80,7 +78,10 @@ const prepareProgram = Effect.fn("prepareProgram")(function*(
   const sourceManifest = compiled.context.source.packageManifestPath
   const sourceCommit = compiled.context.source.commit
   return yield* prepareRelease({
-    context: compiled.context, graph: compiled.graph, storeDirectory: preparedDirectory(input.workspace, input.preparedDirectory), run: runtime.run,
+    context: compiled.context,
+    graph: compiled.graph,
+    store: runtime.preparedStore(input.workspace, preparedDirectory(input.workspace, input.preparedDirectory)),
+    run: runtime.run,
     verifySource: (_context: VerifiedReleaseContext) => runtime.source.observe(sourceWorkspace, sourceManifest, sourceCommit)
   })
 })
@@ -148,16 +149,18 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
     const compiled = await run(observeAndCompile({ config: input.config, workspace: input.workspace! }))
     return inspectRelease(compiled.context, compiled.graph)
   }
-  const prepare = async (value: PrepareInput) => run(prepareProgram(decodePrepareInput(value), { allowEmpty: true }))
+  const prepare = async (value: PrepareInput) => run(prepareProgram(decodePrepareInput(value), { allowEmpty: true }).pipe(
+    Effect.map((committed) => committed.bundle)
+  ))
   const publish = async (value: PublishInput) => {
     const input = decodePublishInput(value)
     return run(Effect.flatMap(loadPreparedRelease(preparedPath(input.prepared)), (bundle) => publishProgram(bundle, input.credentials)))
   }
   const release = async (value: ReleaseInput) => {
     const input = decodeReleaseInput(value)
-    const prepared = await run(prepareProgram(input, { allowEmpty: input.allowEmpty === true }))
-    const publications = await run(publishProgram(prepared, input.credentials))
-    return { prepared, publications }
+    const committed = await run(prepareProgram(input, { allowEmpty: input.allowEmpty === true }))
+    const publications = await run(publishProgram(committed.bundle, input.credentials))
+    return { prepared: committed.bundle, publications }
   }
   const correct = async (value: CorrectInput) => run(correctProgram(decodeCorrectInput(value)))
   return Object.freeze({ inspect, prepare, publish, release, correct, dispose: () => runtime.dispose() })

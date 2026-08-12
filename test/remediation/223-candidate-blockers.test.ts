@@ -27,6 +27,7 @@ import {
   PreparedProject, PreparedReleaseV1, PreparedSource, encodePreparedRelease
 } from "../../src/release/prepared.js"
 import { storePreparedRelease, type PreparedBundle } from "../../src/release/prepared-store.js"
+import { makeLocalPreparedReleaseStore } from "../../src/release/prepared-store.js"
 import { resolveConfig } from "../../src/resolve/resolve.js"
 import { ObservedFacts } from "../../src/resolve/facts.js"
 import {
@@ -120,6 +121,9 @@ const runtimeLayer = (overrides: Partial<ReleaseRuntimeShape> = {}): Layer.Layer
     run: noopRun,
     http: { request: unsupported },
     catalog: { observe: unsupported, write: unsupported },
+    preparedStore: (workspace, explicitDirectory) => makeLocalPreparedReleaseStore(
+      explicitDirectory ?? join(workspace, ".release", "ts-release", "prepared")
+    ),
     ...overrides
   })
 }

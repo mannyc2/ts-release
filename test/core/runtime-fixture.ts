@@ -5,6 +5,8 @@ import { PublicationError } from "../../src/publication/observation.js"
 import { WorkspaceRoot, NonEmptyName, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
 import type { RunCommand } from "../../src/drivers/process.js"
+import { makeLocalPreparedReleaseStore } from "../../src/release/prepared-store.js"
+import { join } from "node:path"
 
 export const fixtureConfig = {
   project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
@@ -41,7 +43,10 @@ export const runtimeLayer = (observations?: { readonly count: { value: number } 
     source,
     run: noopRun,
     http: { request: unsupported },
-    catalog: { observe: unsupported, write: unsupported }
+    catalog: { observe: unsupported, write: unsupported },
+    preparedStore: (workspace, explicitDirectory) => makeLocalPreparedReleaseStore(
+      explicitDirectory ?? join(workspace, ".release", "ts-release", "prepared")
+    )
   }
   return Layer.succeed(ReleaseRuntime, shape)
 }

@@ -13,7 +13,9 @@ import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version, WorkspaceRoo
 import { VerifiedReleaseContext } from "./context.js"
 import { GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact, GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, type GraphPreparation, type ReleaseGraph } from "./graph.js"
 import { PreparedArtifact, PreparedGitHubPublication, PreparedNpmPublication, PreparedProject, PreparedReleaseV1, PreparedSource } from "./prepared.js"
-import { PreparedStoreError, storePreparedRelease, type PreparedBundle } from "./prepared-store.js"
+import {
+  PreparedStoreError, type PreparedReleaseStoreShape
+} from "./prepared-store.js"
 
 export class PreparationError
   extends Schema.TaggedErrorClass<PreparationError>()("PreparationError", { reason: Schema.String }) {}
@@ -21,7 +23,7 @@ export class PreparationError
 export interface PreparationRequest {
   readonly context: VerifiedReleaseContext
   readonly graph: ReleaseGraph
-  readonly storeDirectory: string
+  readonly store: PreparedReleaseStoreShape
   readonly run: RunCommand
   /** Re-observes the checkout after each trusted local command. */
   readonly verifySource: (context: VerifiedReleaseContext) => Effect.Effect<VerifiedReleaseContext, unknown>
@@ -313,7 +315,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         ...(context.package.repository === undefined ? {} : { repository: context.package.repository }) }),
       artifacts: [...preparedArtifacts.values()].sort(byCodepoint), publications })
     const blobMap = new Map([...bytes.entries()].filter(([id]) => preparedArtifacts.has(id)))
-    return yield* storePreparedRelease(request.storeDirectory, manifest, blobMap).pipe(Effect.mapError((cause) =>
+    return yield* request.store.commit(manifest, blobMap).pipe(Effect.mapError((cause) =>
       cause instanceof PreparedStoreError ? PreparationError.make({ reason: cause.reason }) : failure(cause)))
   } finally {
     rmSync(root, { recursive: true, force: true })

@@ -6,7 +6,7 @@ import { createHash, randomUUID } from "node:crypto"
 import { basename, join } from "node:path"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
 import { PreparedArtifact, PreparedReleaseV1, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
-import { type CompletePreparedReleaseRef, type LocalCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
+import { type CompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
 
 export class PreparedStoreError
   extends Schema.TaggedErrorClass<PreparedStoreError>()("PreparedStoreError", { reason: Schema.String }) {}
@@ -59,7 +59,7 @@ export interface PreparedBundle {
 }
 
 export interface CommittedPreparedRelease {
-  readonly ref: LocalCompletePreparedReleaseRef
+  readonly ref: CompletePreparedReleaseRef
   readonly bundle: PreparedBundle
 }
 

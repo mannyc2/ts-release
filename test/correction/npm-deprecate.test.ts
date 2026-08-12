@@ -8,7 +8,6 @@ import { makeNpmPublicationAuthorityIntent } from "../../src/release/graph.js"
 import { makeNpmDeprecationSubject, type NpmDeprecationProcess } from "../../src/correction/npm.js"
 import { makeCorrectionIntent, type CorrectionIntent } from "../../src/correction/intent.js"
 import { PublicationError, publishSubject } from "../../src/publication/observation.js"
-import { makeNpmSubject } from "../../src/publication/npm.js"
 import type { HttpResponse, PublicationHttp } from "../../src/publication/http.js"
 
 const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
@@ -66,12 +65,5 @@ describe("npm provider correction", () => {
     const result = await Effect.runPromise(publishSubject(makeNpmDeprecationSubject(bundle, correction.correction as Extract<CorrectionIntent["correction"], { _tag: "NpmDeprecationCorrection" }>, http, { read: "read", publish: "publish" }, process)))
     expect(result._tag).toBe("PublicationConverged")
     expect(result._tag === "PublicationConverged" ? result.mutation._tag : "").toBe("OutcomeUnknown")
-  })
-
-  test("ordinary publication surfaces deprecation as a conflict", async () => {
-    const { bundle, publication, tarballIntegrity } = fixture()
-    const http: PublicationHttp = { request: () => Effect.succeed(response({ dist: { integrity: tarballIntegrity }, deprecated: "Use fixture 1.0.1 instead." })) }
-    const result = await Effect.runPromise(publishSubject(makeNpmSubject(bundle, publication, http, { read: "read", publish: "publish" }, { publish: () => Effect.die("must not publish") })))
-    expect(result._tag).toBe("PublicationBlocked")
   })
 })

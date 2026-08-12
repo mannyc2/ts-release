@@ -49,7 +49,7 @@ export const executableCapabilities = [
     entrypoint: "src/publication/npm.ts:makeNpmSubject",
     decoder: "src/config/config.ts:decodeConfig",
     observation: "src/publication/npm.ts:makeNpmSubject",
-    verticalTest: "test/publication/npm-adapter.test.ts",
+    verticalTest: "test/publication/plan224-conservative-provider-subjects.test.ts",
     support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },
@@ -58,7 +58,7 @@ export const executableCapabilities = [
     entrypoint: "src/publication/github.ts:makeGithubSubjects",
     decoder: "src/config/config.ts:decodeConfig",
     observation: "src/publication/github.ts:makeGithubSubjects",
-    verticalTest: "test/publication/github-adapter.test.ts",
+    verticalTest: "test/publication/plan224-conservative-provider-subjects.test.ts",
     support: "unsupported",
     executionHosts: ["linux", "darwin"], artifactTargets: [], nativeToolHosts: []
   },

@@ -4,45 +4,51 @@
  * These assertions describe evidence that invalidates the candidate. They are
  * not the target contracts: each fixing plan should delete or invert its
  * reproduction when the corresponding defect is repaired.
+ *
+ * Plan 224 moved the repaired CLI, Action, provider-authority, and host-sink
+ * invariants into their focused suites. This file retains the unresolved
+ * Plan 225/229, catalog, staging, and producer-shape reproductions, plus the
+ * hard-cut verification-before-credential regressions.
  */
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { createHash } from "node:crypto"
 import {
-  existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
+  chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 } from "node:fs"
 import { tmpdir } from "node:os"
-import { dirname, join, relative, resolve } from "node:path"
-import {
-  makePreparedReferenceChannel, runAction, type ActionRuntime
-} from "../../apps/ts-release-action/src/commands.js"
-import { buildCliBundle } from "../../scripts/build-cli-bundle.js"
+import { join } from "node:path"
 import { makeReleaseApi } from "../../src/api/api.js"
 import { ReleaseRuntime, type ReleaseRuntimeShape } from "../../src/api/runtime.js"
+import type { ReleaseApiLayer } from "../../src/api/types.js"
 import { DriverError } from "../../src/drivers/errors.js"
 import type { RunCommand } from "../../src/drivers/process.js"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
 import {
-  canonicalizeRegistryUrl,
-  makeGitHubPublicationAuthorityIntent,
-  makeNpmPublicationAuthorityIntent
+  canonicalizeRegistryUrl, makeNpmPublicationAuthorityIntent
 } from "../../src/release/graph.js"
 import {
-  PreparedArtifact, PreparedGitHubAsset, PreparedGitHubPublication, PreparedNpmPublication,
-  PreparedProject, PreparedReleaseV1, PreparedSource, encodePreparedRelease
+  PreparedArtifact, PreparedNpmPublication, PreparedProject, PreparedReleaseV1,
+  PreparedSource, encodePreparedRelease
 } from "../../src/release/prepared.js"
-import { storePreparedRelease, type PreparedBundle } from "../../src/release/prepared-store.js"
-import { makeLocalPreparedReleaseStore } from "../../src/release/prepared-store.js"
+import {
+  makeLocalPreparedReleaseStore,
+  PreparedReleaseStore,
+  type PreparedBundle,
+  type PreparedReleaseStoreShape
+} from "../../src/release/prepared-store.js"
 import { resolveConfig } from "../../src/resolve/resolve.js"
 import { ObservedFacts } from "../../src/resolve/facts.js"
+import { publishSubject } from "../../src/publication/observation.js"
+import type { HttpResponse, PublicationHttp } from "../../src/publication/http.js"
+import { HttpAuthorizer } from "../../src/publication/http.js"
 import {
-  Inconclusive, NeedsMutation, OutcomeUnknown, PublicationBlocked, PublicationObserved,
-  PublicationError, publishSubject
-} from "../../src/publication/observation.js"
-import { makeGithubSubjects } from "../../src/publication/github.js"
-import type { HttpRequest, HttpResponse, PublicationHttp } from "../../src/publication/http.js"
+  CredentialProvider,
+  CredentialUnavailable,
+  makeCredentialProvider
+} from "../../src/publication/authority.js"
 import {
   encodeCorrectionIntent, makeCorrectionIntent, type CorrectionIntent
 } from "../../src/correction/intent.js"
@@ -52,7 +58,8 @@ import {
   CatalogManagedState, encodeCatalogManagedState, type CatalogRepositorySnapshot,
   type CatalogRepositoryTransport
 } from "../../src/publication/catalog-git.js"
-import { NodeReleaseLayer } from "../../src/platform/node.js"
+import { CredentialPlatformError } from "../../src/platform/credentials.js"
+import { makeNodeReleaseLayer } from "../../src/platform/node.js"
 import { contextFor, noopRun } from "../core/runtime-fixture.js"
 
 const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
@@ -61,58 +68,6 @@ const response = (status: number, body: unknown): HttpResponse => ({
   status, headers: {}, body: typeof body === "string" ? body : JSON.stringify(body)
 })
 const temporary = (name: string): string => mkdtempSync(join(tmpdir(), `ts-release-223-${name}-`))
-const actionDigest = "a".repeat(64)
-const actionPreparedRef = `prepared:gha:owner/repository/runs/223/attempts/1/artifacts/ts-release-prepared-${actionDigest}#sha256-${actionDigest}`
-const actionRuntime = (
-  root: string,
-  values: Record<string, string>,
-  outputs: Record<string, string>
-): ActionRuntime => {
-  const output: ActionRuntime["output"] = (name, value) => { outputs[name] = value }
-  const summarize = async (): Promise<void> => {}
-  const preparedReference = makePreparedReferenceChannel({ output, summarize })
-  return {
-    workspace: root,
-    input: (name) => values[name] ?? "",
-    output,
-    read: (path) => readFileSync(path, "utf8"),
-    write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) },
-    resolvePrepared: async (reference) => {
-      await preparedReference.emit(reference)
-      return join(root, "prepared")
-    },
-    preparedReference,
-    summarize
-  }
-}
-const cliEnvironment = (): Record<string, string | undefined> => ({
-  PATH: process.env.PATH,
-  HOME: process.env.HOME,
-  ...(process.env.TMPDIR === undefined ? {} : { TMPDIR: process.env.TMPDIR }),
-  npm_command: undefined,
-  npm_config_local_prefix: undefined,
-  npm_config_user_agent: undefined,
-  npm_execpath: undefined,
-  npm_node_execpath: undefined,
-  npm_package_json: undefined,
-  npm_package_name: undefined,
-  npm_package_version: undefined,
-  NPM_TOKEN: undefined,
-  GITHUB_TOKEN: undefined,
-  GH_TOKEN: undefined
-})
-const cliBuildRoot = temporary("cli-build")
-const nodeCliBundle = join(cliBuildRoot, "ts-release.js")
-// `bun run` adds a sandboxed process layer in this workspace, and a bundled
-// Node CLI then receives EPERM when its source observer spawns Git. The focused
-// `bun test <file>` gate runs the real Node/Bun processes; composite gates skip
-// only those two process tests and retain the same public application boundary.
-const processBoundaryTest = process.env.npm_command === "run-script" ? test.skip : test
-
-beforeAll(async () => {
-  await buildCliBundle(nodeCliBundle)
-})
-afterAll(() => { rmSync(cliBuildRoot, { recursive: true, force: true }) })
 
 const runCaptured = (
   argv: ReadonlyArray<string>, options: { readonly cwd: string, readonly env?: Record<string, string | undefined> }
@@ -139,24 +94,39 @@ const runCaptured = (
   }
 }
 
-const unsupported = () => Effect.fail(PublicationError.make({
-  phase: "observe", commitment: "before-dispatch", reason: "unused remediation fixture boundary"
-}))
-const runtimeLayer = (overrides: Partial<ReleaseRuntimeShape> = {}): Layer.Layer<ReleaseRuntime> => {
+const runtimeLayer = (
+  preparedStore: PreparedReleaseStoreShape,
+  overrides: Partial<ReleaseRuntimeShape> = {},
+  credentialCalls?: { value: number }
+): ReleaseApiLayer => {
   const source = {
     observe: (workspace: import("../../src/model/primitives.js").WorkspaceRoot) =>
       Effect.succeed(contextFor(workspace.toString()))
   }
-  return Layer.succeed(ReleaseRuntime, {
-    source,
-    run: noopRun,
-    http: { request: unsupported },
-    catalog: { observe: unsupported, write: unsupported },
-    preparedStore: (workspace, explicitDirectory) => makeLocalPreparedReleaseStore(
-      explicitDirectory ?? join(workspace, ".release", "ts-release", "prepared")
-    ),
-    ...overrides
+  const credentials = makeCredentialProvider({
+    acquire: (request) => {
+      if (credentialCalls !== undefined) credentialCalls.value += 1
+      return Effect.fail(new CredentialUnavailable({
+        subject: request.subject,
+        provider: request.provider,
+        purpose: request.purpose,
+        reason: "remediation fixture credentials are unavailable"
+      }))
+    }
   })
+  const http = {
+    execute: () => Effect.fail(new CredentialPlatformError({
+      phase: "observe",
+      commitment: "before-dispatch",
+      reason: "remediation fixture HTTP should not be reached"
+    }))
+  }
+  return Layer.mergeAll(
+    Layer.succeed(ReleaseRuntime, { source, run: noopRun, ...overrides }),
+    Layer.succeed(PreparedReleaseStore, preparedStore),
+    Layer.succeed(CredentialProvider, credentials),
+    Layer.succeed(HttpAuthorizer, http)
+  )
 }
 
 const localRun: RunCommand = ({ argv, cwd }) => Effect.try({
@@ -204,55 +174,11 @@ const npmFixture = (
   }
 }
 
-const githubFixture = (): {
-  readonly bundle: PreparedBundle
-  readonly bytes: Uint8Array
-  readonly publication: PreparedGitHubPublication
-} => {
-  const bytes = utf8("github asset bytes\n")
-  const hash = Digest.make(sha256(bytes))
-  const artifact = PreparedArtifact.make({
-    id: OutputId.make("asset"), path: SafeRelativePath.make("asset.zip"), kind: "archive",
-    size: bytes.length, digest: hash, blob: hash, mediaType: "application/zip"
-  })
-  const publication = PreparedGitHubPublication.make({
-    id: NonEmptyName.make("github-release"), repository: "owner/project", tag: NonEmptyName.make("v1.0.0"),
-    title: NonEmptyName.make("Project 1.0.0"), draft: false, prerelease: false,
-    targetCommit: NonEmptyName.make("commit"), body: "notes",
-    assets: [PreparedGitHubAsset.make({ artifactId: artifact.id, name: "asset.zip", mediaType: "application/zip" })],
-    authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/project", tag: "v1.0.0" })
-  })
-  const manifest = PreparedReleaseV1.make({
-    schemaVersion: "prepared-release/v1",
-    source: PreparedSource.make({
-      commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make("a".repeat(64))
-    }),
-    project: PreparedProject.make({
-      name: NonEmptyName.make("project"), version: Version.make("1.0.0"), tag: publication.tag
-    }),
-    artifacts: [artifact], publications: [publication]
-  })
-  return {
-    bundle: { directory: "/not-stored", manifest, blobs: new Map([[artifact.id.toString(), bytes]]) },
-    bytes, publication
-  }
+const commitFixture = async (root: string, bundle: PreparedBundle) => {
+  const store = makeLocalPreparedReleaseStore(join(root, "store"))
+  const committed = await Effect.runPromise(store.commit(bundle.manifest, bundle.blobs))
+  return { store, committed }
 }
-
-const releaseBody = (
-  bytes: Uint8Array,
-  assets: ReadonlyArray<Record<string, unknown>> = []
-): Record<string, unknown> => ({
-  id: 7,
-  upload_url: "https://uploads.github.example/repos/owner/project/releases/7/assets{?name,label}",
-  tag_name: "v1.0.0", target_commitish: "commit", name: "Project 1.0.0", body: "notes",
-  draft: false, prerelease: false, assets: assets.map((asset) => ({
-    name: "asset.zip", size: bytes.length, content_type: "application/zip", ...asset
-  }))
-})
-
-const storeFixture = async (root: string, bundle: PreparedBundle): Promise<PreparedBundle> =>
-  Effect.runPromise(storePreparedRelease(join(root, "store"), bundle.manifest, bundle.blobs))
 
 const correctionFor = (bundle: PreparedBundle, message = "Use 1.0.1 instead."): CorrectionIntent => {
   const publication = bundle.manifest.publications[0] as PreparedNpmPublication
@@ -315,226 +241,43 @@ const catalogCorrectionFixture = (): {
   return { bundle, correction, target, activeState }
 }
 
-const initializeCliWorkspace = (provider: "npm" | "github"): string => {
-  const root = temporary(`cli-${provider}`)
-  const config = provider === "npm"
-    ? { project: {}, versionFrom: "manifest", npmPackage: { path: "." }, publish: { npm: {} } }
-    : {
-      project: { repository: "owner/project" }, versionFrom: "manifest",
-      artifacts: [{ id: "payload", path: "payload.txt", format: "file" }],
-      publish: { github: { draft: true } }
-    }
-  writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0", files: ["index.js"] }))
-  writeFileSync(join(root, "index.js"), "export const fixture = true\n")
-  writeFileSync(join(root, "payload.txt"), "payload\n")
-  writeFileSync(join(root, "release.config.json"), JSON.stringify(config))
-  for (const argv of [
-    ["init", "-q"], ["config", "user.email", "fixture@example.test"],
-    ["config", "user.name", "Fixture"], ["add", "."], ["commit", "-qm", "fixture"]
-  ]) {
-    const result = runCaptured(["git", ...argv], { cwd: root })
-    if (result.status !== 0) throw new Error(result.stderr)
-  }
-  return root
-}
-
 describe("Plan 223 rejected-candidate containment reproductions", () => {
-  processBoundaryTest("public CLI processes under Bun and Node reach npm and GitHub missing-credential failures", async () => {
-    const bunEntry = resolve("apps/release-ts/src/cli/main.ts")
-    for (const provider of ["npm", "github"] as const) {
-      for (const [host, argv] of [
-        ["Node", [process.execPath.includes("bun") ? "node" : process.execPath, nodeCliBundle]],
-        ["Bun", [process.execPath, "run", bunEntry]]
-      ] as const) {
-        const root = initializeCliWorkspace(provider)
-        try {
-          const result = runCaptured([...argv, "release", "--config", "release.config.json", "--root", "."], {
-            cwd: root, env: cliEnvironment()
-          })
-          const output = `${result.stdout}\n${result.stderr}`
-          expect(result, `${host} ${provider}: ${JSON.stringify(result)}`).toMatchObject({
-            status: 1, timedOut: false, maxBufferExceeded: false
-          })
-          // The real CLI currently drops the tagged error's reason while rendering it.
-          expect(output, `${host} ${provider}: ${JSON.stringify(result)}`).toContain("ReleaseInputError")
-        } finally { rmSync(root, { recursive: true, force: true }) }
-      }
-    }
-
-  }, 30_000)
-
-  test("public application boundary names missing npm and GitHub credentials", async () => {
-    const api = makeReleaseApi(runtimeLayer())
-    const root = temporary("credential-reasons")
+  test("invalid public prepared inputs acquire zero credentials", async () => {
+    const root = temporary("invalid-ref")
+    const calls = { value: 0 }
+    const store = makeLocalPreparedReleaseStore(join(root, "store"))
+    const api = makeReleaseApi(runtimeLayer(store, {}, calls))
     try {
-      for (const [provider, fixture] of [["npm", npmFixture().bundle], ["GitHub", githubFixture().bundle]] as const) {
-        const stored = await storeFixture(root, fixture)
-        await expect(api.publish({ prepared: stored.directory })).rejects.toMatchObject({
-          _tag: "ReleaseInputError", reason: `publish requires separate ${provider} read and publish credentials.`
-        })
-      }
-    } finally {
-      await api.dispose()
-      rmSync(root, { recursive: true, force: true })
-    }
-  })
-
-  processBoundaryTest("public CLI correct reaches its npm missing-credential failure under Bun and Node", async () => {
-    const root = temporary("cli-correct")
-    try {
-      const stored = await storeFixture(root, npmFixture().bundle)
-      const correction = join(root, "correction.json")
-      writeFileSync(correction, encodeCorrectionIntent(correctionFor(stored)))
-      for (const argv of [
-        [process.execPath, "run", resolve("apps/release-ts/src/cli/main.ts")],
-        [process.execPath.includes("bun") ? "node" : process.execPath, nodeCliBundle]
-      ]) {
-        const result = runCaptured([...argv, "correct", stored.directory, correction], {
-          cwd: root, env: cliEnvironment()
-        })
-        const output = `${result.stdout}\n${result.stderr}`
-        expect(result, JSON.stringify(result)).toMatchObject({ status: 1, timedOut: false, maxBufferExceeded: false })
-        expect(output).toContain("ReleaseInputError")
-      }
-    } finally {
-      rmSync(root, { recursive: true, force: true })
-    }
-  }, 30_000)
-
-  test("public correction boundary names its missing npm credentials", async () => {
-    const root = temporary("correct-credentials")
-    const api = makeReleaseApi(runtimeLayer())
-    try {
-      const stored = await storeFixture(root, npmFixture().bundle)
-      const correction = join(root, "correction.json")
-      writeFileSync(correction, encodeCorrectionIntent(correctionFor(stored)))
-      await expect(api.correct({ prepared: stored.directory, correction })).rejects.toMatchObject({
-        _tag: "ReleaseInputError", reason: "correct requires separate npm read and publish credentials."
+      await expect(api.publish({ prepared: join(root, "plaintext-path") } as never)).rejects.toMatchObject({
+        _tag: "ReleaseInputError"
       })
+      expect(calls.value).toBe(0)
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
   })
 
-  test.serial("Action fails blocked and uncertain reports closed without reading ambient tokens", async () => {
-    const root = temporary("action")
-    mkdirSync(join(root, "prepared"))
-    const previousNpm = process.env.NPM_TOKEN
-    const previousGithub = process.env.GITHUB_TOKEN
-    process.env.NPM_TOKEN = "npm_223_sentinel"
-    process.env.GITHUB_TOKEN = "github_pat_223_sentinel"
+  test("a corrupt durable bundle aborts with its exact reference before credential acquisition", async () => {
+    const root = temporary("corrupt-ref")
+    const fixture = npmFixture()
+    const calls = { value: 0 }
+    const { store, committed } = await commitFixture(root, fixture.bundle)
+    const artifact = committed.bundle.manifest.artifacts[0]!
+    const blob = join(committed.bundle.directory, "blobs", artifact.blob.toString())
+    chmodSync(blob, 0o600)
+    writeFileSync(blob, "corrupt prepared bytes")
+    const api = makeReleaseApi(runtimeLayer(store, {}, calls))
     try {
-      for (const result of [
-        [PublicationBlocked.make({
-          subject: NonEmptyName.make("blocked"),
-          observation: Inconclusive.make({ subject: NonEmptyName.make("blocked"), reason: "blocked" })
-        })],
-        [PublicationObserved.make({
-          subject: NonEmptyName.make("uncertain"),
-          mutation: OutcomeUnknown.make({ subject: NonEmptyName.make("uncertain"), reason: "response lost" }),
-          observation: NeedsMutation.make({ subject: NonEmptyName.make("uncertain"), precondition: NonEmptyName.make("still absent") })
-        })]
-      ]) {
-        const outputs: Record<string, string> = {}
-        let captured: unknown
-        const runtime = actionRuntime(root, { command: "publish", prepared: actionPreparedRef }, outputs)
-        await expect(runAction({
-          release: async () => ({}) as never,
-          prepare: async () => ({}) as never,
-          publish: async (input) => { captured = input; return result }
-        }, runtime)).rejects.toThrow(/report is (?:blocked|uncertain)/u)
-        expect(outputs["prepared-ref"]).toBe(actionPreparedRef)
-        expect(outputs["report-ref"]).toBe(".release/ts-release/action-report.json")
-        expect(captured).toEqual({ prepared: join(root, "prepared") })
-      }
+      await expect(api.publish({ prepared: committed.ref })).rejects.toMatchObject({
+        _tag: "ReleaseAbortedError",
+        prepared: committed.ref
+      })
+      expect(calls.value).toBe(0)
     } finally {
-      previousNpm === undefined ? delete process.env.NPM_TOKEN : process.env.NPM_TOKEN = previousNpm
-      previousGithub === undefined ? delete process.env.GITHUB_TOKEN : process.env.GITHUB_TOKEN = previousGithub
+      await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
-  })
-
-  test.serial("Action does not forward an ambient NPM_TOKEN to a foreign registry", async () => {
-    const root = temporary("action-foreign-registry")
-    const registry = "https://registry.foreign.example/custom"
-    const stored = await storeFixture(root, npmFixture("1.0.0", registry).bundle)
-    const previousNpm = process.env.NPM_TOKEN
-    const outputs: Record<string, string> = {}
-    let captured: unknown
-    process.env.NPM_TOKEN = "npm_223_action_foreign_sentinel"
-    try {
-      await runAction({
-        release: async () => ({}) as never,
-        prepare: async () => ({}) as never,
-        publish: async (input) => { captured = input; return [] }
-      }, actionRuntime(root, { command: "publish", prepared: actionPreparedRef }, outputs))
-      expect(captured).toEqual({ prepared: join(root, "prepared") })
-      expect(JSON.stringify(captured)).not.toContain("npm_223_action_foreign_sentinel")
-      expect(outputs["prepared-ref"]).toBe(actionPreparedRef)
-    } finally {
-      previousNpm === undefined ? delete process.env.NPM_TOKEN : process.env.NPM_TOKEN = previousNpm
-      rmSync(root, { recursive: true, force: true })
-    }
-  })
-
-  test("fresh Node-target Action bundle contains fail-closed reports and no status output", () => {
-    const root = temporary("action-bundle")
-    const bundle = join(root, "index.js")
-    try {
-      const built = runCaptured([
-        process.execPath,
-        "build", "src/index.ts", "--target=node", "--format=esm", "--outfile", bundle
-      ], { cwd: resolve("apps/ts-release-action") })
-      expect(built.status, `${built.stdout}\n${built.stderr}`).toBe(0)
-      const bytes = readFileSync(bundle, "utf8")
-      expect(bytes).toContain("ts-release-action-report/v2")
-      expect(bytes).toContain("no complete release is claimed")
-      expect(bytes).not.toMatch(/output\("status"/u)
-    } finally { rmSync(root, { recursive: true, force: true }) }
-  }, 20_000)
-
-  test("GitHub realistic upload_url is retained as a template and receives a second query", async () => {
-    const { bundle, bytes, publication } = githubFixture()
-    const seen: HttpRequest[] = []
-    let observation = 0
-    const http: PublicationHttp = { request: (request) => Effect.sync(() => {
-      seen.push(request)
-      if (request.method === "POST") return response(201, {})
-      return response(200, releaseBody(bytes, observation++ === 0 ? [] : [{ digest: `sha256:${sha256(bytes)}` }]))
-    }) }
-    const result = await Effect.runPromise(publishSubject(makeGithubSubjects(bundle, publication, http, { read: "read", publish: "publish" })[1]!))
-    expect(result._tag).toBe("PublicationConverged")
-    expect(seen.find((request) => request.method === "POST")?.url)
-      .toBe("https://uploads.github.example/repos/owner/project/releases/7/assets{?name,label}?name=asset.zip")
-  })
-
-  test("GitHub fallback download hashes identical bytes without the sha256 prefix and reports conflict", async () => {
-    const { bundle, bytes, publication } = githubFixture()
-    const http: PublicationHttp = { request: (request) => Effect.succeed(
-      request.url === "https://downloads.github.example/asset.zip"
-        ? { status: 200, headers: {}, body: bytes }
-        : response(200, releaseBody(bytes, [{ browser_download_url: "https://downloads.github.example/asset.zip" }]))
-    ) }
-    const result = await Effect.runPromise(publishSubject(makeGithubSubjects(bundle, publication, http, { read: "read", publish: "publish" })[1]!))
-    expect(result._tag).toBe("PublicationBlocked")
-    const difference = result._tag === "PublicationBlocked" && result.observation._tag === "Conflict"
-      ? result.observation.differences.find((item) => item.field === "digest") : undefined
-    expect(difference?.expected).toBe(`sha256:${sha256(bytes)}`)
-    expect(difference?.observed).toBe(sha256(bytes))
-  })
-
-  test("GitHub release equality trusts target_commitish and never observes or peels the tag ref", async () => {
-    const { bundle, bytes, publication } = githubFixture()
-    const urls: string[] = []
-    const http: PublicationHttp = { request: (request) => Effect.sync(() => {
-      urls.push(request.url)
-      return response(200, releaseBody(bytes))
-    }) }
-    const result = await Effect.runPromise(publishSubject(makeGithubSubjects(bundle, publication, http, { read: "read", publish: "publish" })[0]!))
-    expect(result._tag).toBe("PublicationConverged")
-    expect(urls).toEqual(["https://api.github.com/repos/owner/project/releases/tags/v1.0.0"])
-    expect(urls.some((url) => url.includes("git/ref/tags") || url.includes("git/tags"))).toBe(false)
   })
 
   test("Plan 224 preserves npm authority fields while Plan 225 policy gaps remain characterized", () => {
@@ -576,54 +319,6 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     expect(Object.keys(publication)).not.toContain("distTag")
     expect(Object.keys(publication)).not.toContain("provenance")
     expect(Object.keys(publication)).not.toContain("access")
-  })
-
-  test("npm foreign-registry 404 authorizes dispatch; process failures collapse commitment and leave auth files", async () => {
-    const registry = "https://registry.foreign.example/custom"
-    const fixture = npmFixture("1.0.0-beta.1", registry)
-    const root = temporary("npm-live")
-    const stored = await storeFixture(root, fixture.bundle)
-    try {
-      for (const commitment of ["before-commit", "unknown"] as const) {
-        let command: { readonly argv: ReadonlyArray<string>, readonly cwd: string } | undefined
-        let npmrc = ""
-        const run: RunCommand = (request) => Effect.gen(function*() {
-          command = request
-          const userConfig = request.argv[request.argv.indexOf("--userconfig") + 1]!
-          npmrc = readFileSync(userConfig, "utf8")
-          return yield* Effect.fail(DriverError.make({ reason: `${commitment} failure`, commitment }))
-        })
-        const reads: HttpRequest[] = []
-        const api = makeReleaseApi(runtimeLayer({
-          run,
-          http: { request: (request) => Effect.sync(() => { reads.push(request); return response(404, {}) }) }
-        }))
-        try {
-          const outcomes = await api.publish({
-            prepared: stored.directory,
-            credentials: { npm: { read: "npm_read_223", publish: "npm_publish_223_sentinel" } }
-          })
-          expect(reads[0]?.headers?.authorization).toBe("Bearer npm_read_223")
-          expect(command).toBeDefined()
-          expect(command!.argv).toEqual(expect.arrayContaining([
-            "npm", "publish", "--registry", canonicalizeRegistryUrl(registry), "--userconfig"
-          ]))
-          expect(command!.argv).not.toContain("--tag")
-          expect(command!.argv).not.toContain("--ignore-scripts")
-          expect(command!.argv).not.toContain("--provenance")
-          expect(command!.argv).not.toContain("--access")
-          expect(npmrc).toContain("//registry.foreign.example/:_authToken=npm_publish_223_sentinel")
-          expect(existsSync(command!.cwd)).toBe(true)
-          const outcome = outcomes[0]
-          expect(outcome?._tag).toBe("PublicationObserved")
-          expect(outcome?._tag === "PublicationObserved" ? outcome.mutation : undefined)
-            .toMatchObject({ _tag: "Rejected", phase: "before-dispatch" })
-        } finally {
-          if (command !== undefined) rmSync(command.cwd, { recursive: true, force: true })
-          await api.dispose()
-        }
-      }
-    } finally { rmSync(root, { recursive: true, force: true }) }
   })
 
   test("two npm correction actors pass the same observation and issue unconditional updates", async () => {
@@ -688,15 +383,17 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
       writeFileSync(join(root, ".gitignore"), "payload.txt\n")
       writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0", files: ["payload.txt"] }))
       writeFileSync(join(root, "payload.txt"), contents)
-      const api = makeReleaseApi(runtimeLayer({ run: localRun }))
+      const store = makeLocalPreparedReleaseStore(join(root, "store"))
+      const api = makeReleaseApi(runtimeLayer(store, { run: localRun }))
       try {
-        const bundle = await api.prepare({
+        const prepared = await api.prepare({
           workspace: root,
           config: {
             project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
             npmPackage: { path: "." }, publish: { npm: {} }
           }
         })
+        const bundle = await Effect.runPromise(store.load(prepared))
         const publication = bundle.manifest.publications[0] as PreparedNpmPublication
         return bundle.blobs.get(publication.artifactId.toString())!
       } finally {
@@ -712,7 +409,8 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
   test("public config accepts catalog publication presets but inspection exposes no catalog destination", async () => {
     const root = temporary("catalog-unreachable")
     writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0" }))
-    const api = makeReleaseApi(runtimeLayer())
+    const store = makeLocalPreparedReleaseStore(join(root, "store"))
+    const api = makeReleaseApi(runtimeLayer(store))
     try {
       const inspection = await api.inspect({
         workspace: root,
@@ -728,19 +426,21 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test("public catalog correction enters the default Node runtime only to resolve blocked", async () => {
+  test("public correction verifies a durable reference and returns explicit unsupported data", async () => {
     const root = temporary("catalog-default")
     const fixture = catalogCorrectionFixture()
-    const api = makeReleaseApi(NodeReleaseLayer)
+    const { store, committed } = await commitFixture(root, fixture.bundle)
+    const api = makeReleaseApi(makeNodeReleaseLayer(store))
     try {
-      const stored = await storeFixture(root, fixture.bundle)
-      const correction = join(root, "catalog-correction.json")
-      writeFileSync(correction, encodeCorrectionIntent(fixture.correction))
-      const result = await api.correct({ prepared: stored.directory, correction })
-      expect(result._tag).toBe("PublicationBlocked")
-      expect(result._tag === "PublicationBlocked" ? result.observation : undefined).toMatchObject({
-        _tag: "Inconclusive", reason: "No live catalog repository transport is configured for this host."
+      const result = await api.correct({
+        prepared: committed.ref,
+        correction: new TextDecoder().decode(encodeCorrectionIntent(fixture.correction))
       })
+      expect(result).toMatchObject({
+        prepared: committed.ref,
+        status: "unsupported"
+      })
+      expect(result.reason).not.toMatch(/credential|token|path/iu)
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
@@ -752,11 +452,13 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     const graph = readFileSync("src/release/graph.ts", "utf8")
     const prepared = readFileSync("src/release/prepared.ts", "utf8")
     const apiTypes = readFileSync("src/api/types.ts", "utf8")
-    const runtime = readFileSync("src/platform/release-runtime.ts", "utf8")
+    const runtime = readFileSync("src/api/runtime.ts", "utf8")
     expect(authored).toContain("outputs: Schema.NonEmptyArray")
     expect(graph).toContain("outputs: Schema.NonEmptyArray(OutputDeclaration)")
     expect(prepared).toContain("Schema.Union([\n  PreparedNpmPublication, PreparedGitHubPublication\n])")
     expect(apiTypes).not.toMatch(/PrepareInput[^\n]*(?:mode|partition|merge)/u)
-    expect(runtime).toContain("No live catalog repository transport is configured for this host.")
+    expect(runtime).toContain("readonly source: SourceObserver")
+    expect(runtime).not.toContain("preparedStore")
+    expect(runtime).not.toContain("catalog")
   })
 })

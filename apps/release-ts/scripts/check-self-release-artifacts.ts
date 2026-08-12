@@ -1,8 +1,13 @@
 import { chmodSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { spawnSync } from "node:child_process"
+import * as Effect from "effect/Effect"
 import { makeReleaseApi } from "../../../src/api/api.js"
-import { NodeReleaseLayer } from "../../../src/platform/node.js"
+import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
+import { makeLocalPreparedReleaseStore } from "../../../src/release/prepared-store.js"
+import {
+  encodeCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef
+} from "../../../src/release/prepared-ref.js"
 import { preparedRoot, report, root, selfReleaseConfig } from "./self-release-facts.js"
 
 type Artifact = { readonly id: string, readonly digest: string, readonly path: string }
@@ -16,17 +21,20 @@ const outputText = (value: unknown): string => typeof value === "string" ? value
 const artifactBytes = (directory: string, artifact: Artifact): Uint8Array => new Uint8Array(readFileSync(join(directory, "blobs", artifact.digest)))
 const artifact = (manifest: Manifest, id: string): Artifact | undefined => manifest.artifacts.find((item) => item.id === id)
 
-const api = makeReleaseApi(NodeReleaseLayer)
+const storeDirectory = join(root, preparedRoot)
+const store = makeLocalPreparedReleaseStore(storeDirectory)
+const api = makeReleaseApi(makeNodeReleaseLayer(store))
 let scratch: string | undefined
 try {
-  const store = join(root, preparedRoot)
   const directories = (() => {
-    try { return readdirSync(store, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.startsWith(".")).map((entry) => entry.name) } catch { return [] }
+    try { return readdirSync(storeDirectory, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.startsWith(".")).map((entry) => entry.name) } catch { return [] }
   })()
-  const preparedDirectory = directories.length === 0
-    ? (await api.prepare({ config: selfReleaseConfig(), workspace: root, preparedDirectory: store })).directory
-    : join(store, directories.sort()[0]!)
-  const inspection = await api.inspect({ prepared: preparedDirectory })
+  const prepared = directories.length === 0
+    ? await api.prepare({ config: selfReleaseConfig(), workspace: root })
+    : await Effect.runPromise(makeLocalCompletePreparedReleaseRef(directories.sort()[0]!))
+  const bundle = await Effect.runPromise(store.load(prepared))
+  const preparedDirectory = bundle.directory
+  const inspection = await api.inspect({ prepared })
   if (!("project" in inspection)) failures.push("Prepared artifact inspection did not return the durable bundle projection.")
   const manifest = JSON.parse(readFileSync(join(preparedDirectory, "prepared-release.json"), "utf8")) as Manifest
   const npm = artifact(manifest, "npm-tarball:npm:npm-release")
@@ -64,7 +72,7 @@ try {
     if (check.status !== 0) failures.push(`Generated ${id} archive failed unzip validation.`)
   }
   report("self-release-artifacts-report/v4", failures, {
-    preparedDirectory, npmTarball: npm !== undefined, nativeLinuxBinary: native !== undefined,
+    preparedReference: encodeCompletePreparedReleaseRef(prepared), npmTarball: npm !== undefined, nativeLinuxBinary: native !== undefined,
     actionBundle: true, agentArchives: [codexArchive !== undefined, claudeArchive !== undefined].filter(Boolean).length,
     evidenceState: "contract-tested"
   })

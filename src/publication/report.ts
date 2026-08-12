@@ -1,6 +1,11 @@
 import * as Schema from "effect/Schema"
 import * as Result from "effect/Result"
-import { SubjectId } from "../model/authority.js"
+import {
+  CanonicalAudience,
+  CredentialPurpose,
+  ProviderId,
+  SubjectId
+} from "../model/authority.js"
 import { NonEmptyName } from "../model/primitives.js"
 import { secretPatterns } from "../model/secret-patterns.js"
 
@@ -173,6 +178,64 @@ export const MutationAttempt = Schema.Union([
 ])
 export type MutationAttempt = typeof MutationAttempt.Type
 
+export const MutationAuthorityPurpose = Schema.Literals(["publish", "correct"])
+export type MutationAuthorityPurpose = typeof MutationAuthorityPurpose.Type
+
+export const MutationAuthorityGrantKind = Schema.Literals(["ScopedSecret", "WorkloadIdentity"])
+export type MutationAuthorityGrantKind = typeof MutationAuthorityGrantKind.Type
+
+class AuthorityAcquiredRecord
+  extends Schema.TaggedClass<AuthorityAcquiredRecord>()("AuthorityAcquired", {
+    subject: SubjectId,
+    provider: ProviderId,
+    audience: CanonicalAudience,
+    purpose: MutationAuthorityPurpose,
+    grantKind: MutationAuthorityGrantKind,
+    purposes: Schema.NonEmptyArray(CredentialPurpose)
+  }) {}
+
+const authorityAcquiredIssue = (value: AuthorityAcquiredRecord): string | undefined => {
+  const purposes = new Set(value.purposes)
+  if (purposes.size !== value.purposes.length) return "Acquired authority purposes must be unique."
+  return purposes.has(value.purpose)
+    ? undefined
+    : "Acquired authority must include the mutation purpose it records."
+}
+
+export const AuthorityAcquired = AuthorityAcquiredRecord.pipe(Schema.check(
+  Schema.makeFilter((value) => authorityAcquiredIssue(value))
+))
+export type AuthorityAcquired = typeof AuthorityAcquired.Type
+
+class AuthorityAcquiredButMutationNotDispatchedRecord
+  extends Schema.TaggedClass<AuthorityAcquiredButMutationNotDispatchedRecord>()(
+    "AuthorityAcquiredButMutationNotDispatched",
+    {
+      subject: SubjectId,
+      authority: AuthorityAcquired,
+      attempt: RejectedBeforeDispatch
+    }
+  ) {}
+
+const authorityNotDispatchedIssue = (
+  value: AuthorityAcquiredButMutationNotDispatchedRecord
+): string | undefined => value.subject === value.authority.subject && value.subject === value.attempt.subject
+  ? undefined
+  : "Acquired authority and rejected attempt must describe the same subject."
+
+export const AuthorityAcquiredButMutationNotDispatched =
+  AuthorityAcquiredButMutationNotDispatchedRecord.pipe(Schema.check(
+    Schema.makeFilter((value) => authorityNotDispatchedIssue(value))
+  ))
+export type AuthorityAcquiredButMutationNotDispatched =
+  typeof AuthorityAcquiredButMutationNotDispatched.Type
+
+export const AuthorityEvidence = Schema.Union([
+  AuthorityAcquired,
+  AuthorityAcquiredButMutationNotDispatched
+])
+export type AuthorityEvidence = typeof AuthorityEvidence.Type
+
 export class DependencyBlocked
   extends Schema.TaggedClass<DependencyBlocked>()("DependencyBlocked", {
     prerequisite: SubjectId
@@ -197,6 +260,7 @@ export const BlockedSubjectCause = Schema.Union([
   Conflict,
   ProviderBlocked,
   RejectedBeforeDispatch,
+  AuthorityAcquiredButMutationNotDispatched,
   ConclusiveProviderRejection
 ])
 export type BlockedSubjectCause = typeof BlockedSubjectCause.Type
@@ -218,6 +282,7 @@ class ConvergedAfterMutationRecord
     subject: SubjectId,
     preObservations: Schema.NonEmptyArray(Observation),
     decision: MutationDecision,
+    authority: AuthorityAcquired,
     attempt: Schema.Union([Applied, OutcomeUnknown, RejectedByProvider]),
     postObservations: Schema.NonEmptyArray(Observation)
   }) {}
@@ -234,6 +299,7 @@ class UncertainSubjectRecord
     subject: SubjectId,
     observations: Schema.NonEmptyArray(Observation),
     decision: Schema.optionalKey(ProviderDecision),
+    authority: AuthorityAcquired,
     attempt: Schema.Union([Started, Applied, OutcomeUnknown]),
     trace: Schema.NonEmptyArray(Observation)
   }) {}
@@ -263,18 +329,25 @@ const subjectReportCorrelation = (
       return sameSubject(value.subject, [
         ...value.preObservations,
         value.decision,
+        value.authority,
         value.attempt,
         ...value.postObservations
-      ]) && value.postObservations.at(-1)?._tag === "PresentEquivalent"
+      ]) && authorityAcquiredIssue(value.authority) === undefined &&
+          value.postObservations.at(-1)?._tag === "PresentEquivalent"
         ? undefined
         : "ConvergedAfterMutation requires one subject and a final PresentEquivalent observation."
     case "BlockedSubject": {
       const nested = value.cause._tag === "ConclusiveProviderRejection"
         ? [value.cause, value.cause.fact, ...value.cause.postObservations]
+        : value.cause._tag === "AuthorityAcquiredButMutationNotDispatched"
+          ? [value.cause, value.cause.authority, value.cause.attempt]
         : value.cause._tag === "Conflict"
           ? [value.cause]
           : [value.cause]
-      return sameSubject(value.subject, [...value.observations, ...nested])
+      const evidenceIssue = value.cause._tag === "AuthorityAcquiredButMutationNotDispatched"
+        ? authorityAcquiredIssue(value.cause.authority) ?? authorityNotDispatchedIssue(value.cause)
+        : undefined
+      return sameSubject(value.subject, [...value.observations, ...nested]) && evidenceIssue === undefined
         ? undefined
         : "BlockedSubject evidence must describe the report subject."
     }
@@ -282,9 +355,10 @@ const subjectReportCorrelation = (
       return sameSubject(value.subject, [
         ...value.observations,
         ...(value.decision === undefined ? [] : [value.decision]),
+        value.authority,
         value.attempt,
         ...value.trace
-      ])
+      ]) && authorityAcquiredIssue(value.authority) === undefined
         ? undefined
         : "UncertainSubject evidence must describe the report subject."
   }
@@ -316,6 +390,29 @@ const validateSubjectReport = <A extends SubjectReport>(value: A): Result.Result
   return issue === undefined ? Result.succeed(value) : invalid(SafeReason.make(issue))
 }
 
+export const makeAuthorityAcquired = (input: {
+  readonly subject: SubjectId
+  readonly provider: ProviderId
+  readonly audience: CanonicalAudience
+  readonly purpose: MutationAuthorityPurpose
+  readonly grantKind: MutationAuthorityGrantKind
+  readonly purposes: readonly [CredentialPurpose, ...Array<CredentialPurpose>]
+}): Result.Result<AuthorityAcquired, ReportConstructionError> => {
+  const value = new AuthorityAcquiredRecord(input)
+  const issue = authorityAcquiredIssue(value)
+  return issue === undefined ? Result.succeed(value) : invalid(SafeReason.make(issue))
+}
+
+export const makeAuthorityAcquiredButMutationNotDispatched = (input: {
+  readonly subject: SubjectId
+  readonly authority: AuthorityAcquired
+  readonly attempt: RejectedBeforeDispatch
+}): Result.Result<AuthorityAcquiredButMutationNotDispatched, ReportConstructionError> => {
+  const value = new AuthorityAcquiredButMutationNotDispatchedRecord(input)
+  const issue = authorityAcquiredIssue(value.authority) ?? authorityNotDispatchedIssue(value)
+  return issue === undefined ? Result.succeed(value) : invalid(SafeReason.make(issue))
+}
+
 export const makeNotReached = (
   subject: SubjectId,
   reason: NotReachedReason
@@ -332,6 +429,7 @@ export const makeConvergedAfterMutation = (input: {
   readonly subject: SubjectId
   readonly preObservations: readonly [Observation, ...Array<Observation>]
   readonly decision: MutationDecision
+  readonly authority: AuthorityAcquired
   readonly attempt: Applied | OutcomeUnknown | RejectedByProvider
   readonly postObservations: readonly [Observation, ...Array<Observation>]
 }): Result.Result<ConvergedAfterMutation, ReportConstructionError> =>
@@ -348,6 +446,7 @@ export const makeUncertainSubject = (input: {
   readonly subject: SubjectId
   readonly observations: readonly [Observation, ...Array<Observation>]
   readonly decision?: ProviderDecision
+  readonly authority: AuthorityAcquired
   readonly attempt: Started | Applied | OutcomeUnknown
   readonly trace: readonly [Observation, ...Array<Observation>]
 }): Result.Result<UncertainSubject, ReportConstructionError> =>

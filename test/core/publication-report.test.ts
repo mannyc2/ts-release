@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
-import { SubjectId } from "../../src/model/authority.js"
+import {
+  CanonicalAudience,
+  CredentialPurpose,
+  ProviderId,
+  SubjectId
+} from "../../src/model/authority.js"
 import { NonEmptyName } from "../../src/model/primitives.js"
 import {
   AbsenceBasis,
@@ -18,6 +23,7 @@ import {
   PresentEquivalent,
   ProviderAuthorizedCreate,
   ProviderMutationFact,
+  RejectedBeforeDispatch,
   SafeReason,
   Started,
   SubjectReport,
@@ -26,6 +32,8 @@ import {
   equivalentObservation,
   inconclusiveObservation,
   makeAlreadyEquivalent,
+  makeAuthorityAcquired,
+  makeAuthorityAcquiredButMutationNotDispatched,
   makeBlockedSubject,
   makeConvergedAfterMutation,
   makeNotReached,
@@ -57,6 +65,16 @@ const applied = () => Applied.make({
 })
 
 const get = <A, E>(result: Result.Result<A, E>): A => Result.getOrThrow(result)
+const authority = (
+  purposes: readonly [CredentialPurpose, ...Array<CredentialPurpose>] = ["publish"]
+) => get(makeAuthorityAcquired({
+  subject,
+  provider: ProviderId.make("npm"),
+  audience: CanonicalAudience.make("https://registry.npmjs.org/@scope/package"),
+  purpose: "publish",
+  grantKind: "ScopedSecret",
+  purposes
+}))
 
 describe("correlated publication reports", () => {
   test("constructs only same-subject outcomes with their required terminal observation", () => {
@@ -67,6 +85,7 @@ describe("correlated publication reports", () => {
       subject,
       preObservations: [different()],
       decision: needsMutation(),
+      authority: authority(),
       attempt: applied(),
       postObservations: [equivalent()]
     }))
@@ -79,6 +98,7 @@ describe("correlated publication reports", () => {
       subject,
       preObservations: [different()],
       decision: needsMutation(),
+      authority: authority(),
       attempt: applied(),
       postObservations: [different()]
     }))).toBe(true)
@@ -96,6 +116,7 @@ describe("correlated publication reports", () => {
       subject,
       preObservations: [different()],
       decision: needsMutation(),
+      authority: authority(),
       attempt: applied(),
       postObservations: [different()]
     })).toThrow("final PresentEquivalent")
@@ -111,6 +132,7 @@ describe("correlated publication reports", () => {
           subject,
           proof: new CreateAuthorizationProof({ kind: NonEmptyName.make("trusted-publisher") })
         }),
+        authority: authority(),
         attempt: new OutcomeUnknown({ subject, reason: reason("response lost after dispatch") }),
         postObservations: [equivalent()]
       }))
@@ -131,10 +153,70 @@ describe("correlated publication reports", () => {
       subject,
       observations: [different()],
       decision: Conflict.make({ subject, differences: different().differences }),
+      authority: authority(),
       attempt: Started.make({ subject }),
       trace: [different()]
     }))])
     expect(uncertain.status).toBe("uncertain")
+  })
+
+  test("records bundled authority that was acquired but never dispatched", () => {
+    const acquired = authority(["observe", "publish"])
+    const cause = get(makeAuthorityAcquiredButMutationNotDispatched({
+      subject,
+      authority: acquired,
+      attempt: RejectedBeforeDispatch.make({
+        subject,
+        reason: reason("local request construction rejected the mutation")
+      })
+    }))
+    const blocked = get(makeBlockedSubject({
+      subject,
+      observations: [different()],
+      cause
+    }))
+
+    expect(blocked.cause._tag).toBe("AuthorityAcquiredButMutationNotDispatched")
+    if (blocked.cause._tag !== "AuthorityAcquiredButMutationNotDispatched") throw new Error("unexpected cause")
+    expect(blocked.cause.authority).toMatchObject({
+      subject,
+      provider: "npm",
+      audience: "https://registry.npmjs.org/@scope/package",
+      purpose: "publish",
+      grantKind: "ScopedSecret",
+      purposes: ["observe", "publish"]
+    })
+    expect(blocked.cause.attempt.reason.toString()).toBe("local request construction rejected the mutation")
+    expect(JSON.stringify(blocked)).not.toContain("credential")
+  })
+
+  test("requires acquired-authority evidence on dispatched outcomes", () => {
+    const acquired = authority()
+    const converged = get(makeConvergedAfterMutation({
+      subject,
+      preObservations: [different()],
+      decision: needsMutation(),
+      authority: acquired,
+      attempt: applied(),
+      postObservations: [equivalent()]
+    }))
+    const uncertain = get(makeUncertainSubject({
+      subject,
+      observations: [different()],
+      decision: needsMutation(),
+      authority: acquired,
+      attempt: Started.make({ subject }),
+      trace: [different()]
+    }))
+
+    expect(converged.authority).toEqual(acquired)
+    expect(uncertain.authority).toEqual(acquired)
+  })
+
+  test("an equivalent outcome has no authority field", () => {
+    const already = get(makeAlreadyEquivalent(subject, [equivalent()]))
+    expect(Object.hasOwn(already, "authority")).toBe(false)
+    expect(Object.hasOwn(Schema.encodeSync(SubjectReport)(already), "authority")).toBe(false)
   })
 
   test("requires nonempty reports and rejects a caller-supplied false status", () => {

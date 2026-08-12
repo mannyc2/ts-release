@@ -76,12 +76,13 @@ configured destinations.
 
 ## GitHub Actions
 
-The repository workflow prepares and uploads the complete bundle in an
-uncredentialed job, then downloads, verifies, and publishes it in a second
-job. Copy [`templates/github-actions/release.yml`](templates/github-actions/release.yml)
-for the automatic path. If a host gate is required, use the identical
-[`reviewed-release.yml`](templates/github-actions/reviewed-release.yml) flow
-with one protected environment on publication.
+The automatic workflow is one job and one `release` Action call. The Action
+durably uploads and verifies the prepared bundle before any provider mutation.
+Copy [`templates/github-actions/release.yml`](templates/github-actions/release.yml).
+If a host gate is required, use the two-job
+[`reviewed-release.yml`](templates/github-actions/reviewed-release.yml): its
+uncredentialed prepare job hands one exact hosted reference to a protected
+publish job.
 
 Consumer templates bind the Action only after candidate certification:
 

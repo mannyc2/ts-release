@@ -9,8 +9,12 @@ permissions:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    outputs:
+      prepared-ref: ${{ steps.prepare.outputs.prepared-ref }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
@@ -20,19 +24,6 @@ jobs:
         with:
           command: prepare
           config: release.config.json
-      - run: |
-          set -euo pipefail
-          bundle='${{ steps.prepare.outputs.prepared_path }}'
-          test -d "$bundle"
-          digest="$(basename "$bundle")"
-          mkdir -p .release/ts-release/transfer
-          cp -a "$bundle" ".release/ts-release/transfer/$digest"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ts-release-prepared
-          path: .release/ts-release/transfer
-          include-hidden-files: true
-          if-no-files-found: error
 
   publish:
     needs: prepare
@@ -43,29 +34,15 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
       - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: ts-release-prepared
-          path: .release/ts-release/transfer
-      - id: bundle
-        run: |
-          set -euo pipefail
-          bundle="$(find .release/ts-release/transfer -mindepth 1 -maxdepth 1 -type d -print)"
-          test -n "$bundle"
-          test "$(printf '%s\n' "$bundle" | wc -l)" = 1
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
-        with:
-          command: inspect
-          prepared: ${{ steps.bundle.outputs.path }}
       - uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         with:
           command: publish
-          prepared: ${{ steps.bundle.outputs.path }}
+          prepared: ${{ needs.prepare.outputs.prepared-ref }}

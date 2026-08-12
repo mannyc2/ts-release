@@ -1,8 +1,8 @@
 name: Release
 
 on:
-  # Public mutation is quarantined by remediation step 223. Step 233k restores the
-  # certified release trigger after the corrected kernel passes its matrix.
+  # Public mutation remains quarantined until step 233k certifies the corrected
+  # kernel. The dead trigger and job guard are independent containment layers.
   push:
     branches:
       - __ts_release_quarantined__
@@ -15,39 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  prepare:
-    if: ${{ false }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-      - run: bun install --frozen-lockfile
-      - id: prepare
-        uses: ./apps/ts-release-action
-        with:
-          command: prepare
-          config: apps/release-ts/release.config.json
-      - name: Stage the complete prepared bundle
-        run: |
-          set -euo pipefail
-          bundle='${{ steps.prepare.outputs.prepared_path }}'
-          test -d "$bundle"
-          digest="$(basename "$bundle")"
-          mkdir -p .release/ts-release/transfer
-          cp -a "$bundle" ".release/ts-release/transfer/$digest"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ts-release-prepared
-          path: .release/ts-release/transfer
-          include-hidden-files: true
-          if-no-files-found: error
-
-  publish:
-    needs: prepare
+  release:
     if: ${{ false }}
     runs-on: ubuntu-latest
     permissions:
@@ -61,28 +29,9 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: ts-release-prepared
-          path: .release/ts-release/transfer
-      - id: bundle
-        name: Locate downloaded prepared bundle
-        run: |
-          set -euo pipefail
-          bundle="$(find .release/ts-release/transfer -mindepth 1 -maxdepth 1 -type d -print)"
-          test -n "$bundle"
-          test "$(printf '%s\n' "$bundle" | wc -l)" = 1
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Verify the complete bundle before credentials or publication
-        uses: ./apps/ts-release-action
-        with:
-          command: inspect
-          prepared: ${{ steps.bundle.outputs.path }}
-      - name: Publish the verified prepared bundle
-        uses: ./apps/ts-release-action
+      - uses: ./apps/ts-release-action
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          command: publish
-          prepared: ${{ steps.bundle.outputs.path }}
+          command: release
+          config: apps/release-ts/release.config.json

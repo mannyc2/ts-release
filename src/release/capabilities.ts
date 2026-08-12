@@ -1,7 +1,9 @@
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
 import type { CandidateConfig } from "../recipes/config.js"
 import { CapabilityContribution, GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact,
-  GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, OutputDeclaration } from "./graph.js"
+  GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, OutputDeclaration,
+  canonicalizeRegistryUrl, makeGitHubPublicationAuthorityIntent,
+  makeNpmPublicationAuthorityIntent } from "./graph.js"
 import type { VerifiedReleaseContext } from "./context.js"
 
 const output = (id: string | OutputId, location: string, kind: OutputDeclaration["kind"], provenance: "build" | "import" | "process" | "catalog", mediaType?: string) =>
@@ -102,6 +104,64 @@ const packageContribution = (config: CandidateConfig, artifacts: ReadonlyArray<O
   return CapabilityContribution.make({ artifacts: [], preparations, publications: [] })
 }
 
+const npmPublication = (
+  config: CandidateConfig,
+  artifacts: ReadonlyArray<OutputDeclaration>
+): GraphNpmPublication | undefined => {
+  const authored = config.publish?.npm
+  if (authored === undefined) return undefined
+  const packageName = NonEmptyName.make(authored.packageName ?? config.project.packageName ?? config.project.name)
+  const registryUrl = canonicalizeRegistryUrl(authored.registry ?? "https://registry.npmjs.org")
+  return GraphNpmPublication.make({
+    id: OperationId.make("npm:npm-release"),
+    packageName,
+    version: NonEmptyName.make(config.project.version),
+    registryUrl,
+    artifactIds: artifacts.filter((item) => item.kind === "package").map((item) => item.id),
+    authority: makeNpmPublicationAuthorityIntent({
+      packageName: packageName.toString(),
+      version: config.project.version.toString(),
+      registryUrl,
+      ...(authored.tokenEnv === undefined ? {} : { tokenEnv: authored.tokenEnv }),
+      ...(authored.trustedPublishing === undefined ? {} : {
+        trustedPublishing: {
+          ...(authored.trustedPublishing.provider === undefined ? {} : { provider: authored.trustedPublishing.provider }),
+          ...(authored.trustedPublishing.workflow === undefined ? {} : { workflow: authored.trustedPublishing.workflow })
+        }
+      })
+    })
+  })
+}
+
+const githubPublication = (
+  config: CandidateConfig,
+  artifacts: ReadonlyArray<OutputDeclaration>
+): GraphGitHubPublication | undefined => {
+  const authored = config.publish?.github
+  const repository = authored?.repository ?? config.project.repository
+  if (authored === undefined || repository === undefined) return undefined
+  return GraphGitHubPublication.make({
+    id: OperationId.make("github:github-release"),
+    repository,
+    tag: config.project.tag,
+    draft: authored.draft ?? true,
+    prerelease: authored.prerelease === "auto"
+      ? config.project.version.includes("-")
+      : authored.prerelease ?? false,
+    title: NonEmptyName.make(`${config.project.name} ${config.project.version}`),
+    ...(authored.bodyArtifact === undefined && config.project.notes === undefined ? {} : {
+      ...(authored.bodyArtifact === undefined ? { body: config.project.notes! } : { bodyArtifact: authored.bodyArtifact })
+    }),
+    assetIds: authored.ids ?? artifacts.filter((item) =>
+      ["archive", "executable", "file", "digest"].includes(item.kind)).map((item) => item.id),
+    authority: makeGitHubPublicationAuthorityIntent({
+      repository,
+      tag: config.project.tag.toString(),
+      ...(authored.tokenEnv === undefined ? {} : { tokenEnv: authored.tokenEnv })
+    })
+  })
+}
+
 export const contributeRelease = (config: CandidateConfig, context: VerifiedReleaseContext): ReadonlyArray<CapabilityContribution> => {
   const build = buildContribution(config, context)
   const buildOutputs = [...build.artifacts, ...build.preparations.flatMap(preparationOutputs)]
@@ -117,21 +177,8 @@ export const contributeRelease = (config: CandidateConfig, context: VerifiedRele
   const catalogContribution = CapabilityContribution.make({ artifacts: [], preparations: catalogs, publications: [] })
   const allPrepared = [...allArtifacts, ...catalogs.map((catalog) => catalog.output)]
   const publications = [
-    config.publish?.npm === undefined ? undefined : GraphNpmPublication.make({
-      id: OperationId.make("npm:npm-release"), packageName: NonEmptyName.make(config.publish.npm.packageName ?? config.project.packageName ?? config.project.name),
-      version: NonEmptyName.make(config.project.version), registryUrl: config.publish.npm.registry ?? "https://registry.npmjs.org",
-      artifactIds: allPrepared.filter((item) => item.kind === "package").map((item) => item.id)
-    }),
-    config.publish?.github === undefined || (config.publish.github.repository ?? config.project.repository) === undefined ? undefined : GraphGitHubPublication.make({
-      id: OperationId.make("github:github-release"), repository: config.publish.github.repository ?? config.project.repository!, tag: config.project.tag,
-      draft: config.publish.github.draft ?? true,
-      prerelease: config.publish.github.prerelease === "auto" ? config.project.version.includes("-") : config.publish.github.prerelease ?? false,
-      title: NonEmptyName.make(`${config.project.name} ${config.project.version}`),
-      ...(config.publish.github.bodyArtifact === undefined && config.project.notes === undefined ? {} : {
-        ...(config.publish.github.bodyArtifact === undefined ? { body: config.project.notes! } : { bodyArtifact: config.publish.github.bodyArtifact })
-      }),
-      assetIds: config.publish.github.ids ?? allPrepared.filter((item) => ["archive", "executable", "file", "digest"].includes(item.kind)).map((item) => item.id)
-    })
+    npmPublication(config, allPrepared),
+    githubPublication(config, allPrepared)
   ].filter((item): item is GraphNpmPublication | GraphGitHubPublication => item !== undefined)
   return [build, packaged, catalogContribution, CapabilityContribution.make({ artifacts: [], preparations: [], publications })]
 }

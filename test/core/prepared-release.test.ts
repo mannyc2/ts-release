@@ -12,6 +12,7 @@ import {
 import { loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedStoreError, storePreparedRelease } from "../../src/release/prepared-store.js"
 import { makeGitHubActionsCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
 import { inspectPreparedRelease } from "../../src/release/inspect.js"
+import { makeGitHubPublicationAuthorityIntent } from "../../src/release/graph.js"
 
 const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
 const fixture = () => {
@@ -25,7 +26,8 @@ const fixture = () => {
     project: PreparedProject.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }),
     artifacts: [artifact], publications: [PreparedGitHubPublication.make({ id: NonEmptyName.make("github"), repository: "owner/fixture",
       tag: NonEmptyName.make("v1.0.0"), title: NonEmptyName.make("fixture 1.0.0"), draft: false, prerelease: false, targetCommit: NonEmptyName.make("abc123"),
-      assets: [{ artifactId: artifact.id, name: "cli.tgz", mediaType: "application/gzip" }] })] })
+      assets: [{ artifactId: artifact.id, name: "cli.tgz", mediaType: "application/gzip" }],
+      authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/fixture", tag: "v1.0.0" }) })] })
   return { manifest, bytes }
 }
 
@@ -34,6 +36,15 @@ describe("PreparedReleaseV1 manifest and store", () => {
     const { manifest } = fixture()
     const bytes = encodePreparedRelease(manifest)
     expect(decodePreparedRelease(bytes).schemaVersion).toBe("prepared-release/v1")
+    const github = manifest.publications[0]!
+    if (github._tag !== "PreparedGitHubPublication") throw new Error("expected GitHub fixture")
+    expect(() => encodePreparedRelease(PreparedReleaseV1.make({
+      ...manifest,
+      publications: [PreparedGitHubPublication.make({
+        ...github,
+        authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/fixture", tag: "v2.0.0" })
+      })]
+    }))).toThrow()
     const duplicate = new TextEncoder().encode('{"schemaVersion":"prepared-release/v1","schemaVersion":"prepared-release/v1"}')
     expect(() => decodePreparedRelease(duplicate)).toThrow()
     const reordered = new TextEncoder().encode(`${JSON.stringify({ schemaVersion: "prepared-release/v1", source: {}, project: {}, artifacts: [], publications: [] })}\n`)

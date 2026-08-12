@@ -1,6 +1,11 @@
 import * as Schema from "effect/Schema"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import {
+  PublicationAuthorityIntent,
+  githubPublicationAuthorityIssue,
+  npmPublicationAuthorityIssue
+} from "./graph.js"
 
 const optional = Schema.optionalKey
 const artifactKind = Schema.Literals([
@@ -27,7 +32,7 @@ export class PreparedArtifact extends Schema.Class<PreparedArtifact>("PreparedAr
 
 export class PreparedNpmPublication extends Schema.TaggedClass<PreparedNpmPublication>()("PreparedNpmPublication", {
   id: NonEmptyName, packageName: NonEmptyName, version: Version, registryUrl: Schema.NonEmptyString,
-  artifactId: OutputId
+  artifactId: OutputId, authority: PublicationAuthorityIntent
 }) {}
 
 export class PreparedGitHubAsset extends Schema.Class<PreparedGitHubAsset>("PreparedGitHubAsset")({
@@ -36,12 +41,18 @@ export class PreparedGitHubAsset extends Schema.Class<PreparedGitHubAsset>("Prep
 
 export class PreparedGitHubPublication extends Schema.TaggedClass<PreparedGitHubPublication>()("PreparedGitHubPublication", {
   id: NonEmptyName, repository: Schema.NonEmptyString, tag: NonEmptyName, title: NonEmptyName,
-  draft: Schema.Boolean, prerelease: Schema.Boolean, targetCommit: NonEmptyName, body: optional(Schema.String), assets: Schema.Array(PreparedGitHubAsset)
+  draft: Schema.Boolean, prerelease: Schema.Boolean, targetCommit: NonEmptyName, body: optional(Schema.String),
+  assets: Schema.Array(PreparedGitHubAsset), authority: PublicationAuthorityIntent
 }) {}
 
-export const PreparedPublication = Schema.Union([
+const PreparedPublicationVariants = Schema.Union([
   PreparedNpmPublication, PreparedGitHubPublication
 ])
+export const PreparedPublication = PreparedPublicationVariants.pipe(Schema.check(
+  Schema.makeFilter((publication) => publication._tag === "PreparedNpmPublication"
+    ? npmPublicationAuthorityIssue(publication)
+    : githubPublicationAuthorityIssue(publication))
+))
 export type PreparedPublication = typeof PreparedPublication.Type
 
 export class PreparedReleaseV1 extends Schema.Class<PreparedReleaseV1>("PreparedReleaseV1")({

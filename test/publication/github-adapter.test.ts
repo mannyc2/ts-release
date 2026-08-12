@@ -4,6 +4,7 @@ import { createHash } from "node:crypto"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { PreparedArtifact, PreparedGitHubAsset, PreparedGitHubPublication, PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
+import { makeGitHubPublicationAuthorityIntent } from "../../src/release/graph.js"
 import { makeGithubSubjects } from "../../src/publication/github.js"
 import { publishSubject } from "../../src/publication/observation.js"
 import type { HttpResponse, PublicationHttp } from "../../src/publication/http.js"
@@ -15,7 +16,8 @@ const fixture = (): { readonly bundle: PreparedBundle, readonly bytes: Uint8Arra
     size: bytes.length, digest: Digest.make(hash), blob: Digest.make(hash), mediaType: "application/zip" })
   const publication = PreparedGitHubPublication.make({ id: NonEmptyName.make("github-release"), repository: "owner/project", tag: NonEmptyName.make("v1.0.0"),
     title: NonEmptyName.make("Project 1.0.0"), draft: false, prerelease: false, targetCommit: NonEmptyName.make("commit"), body: "notes",
-    assets: [PreparedGitHubAsset.make({ artifactId: artifact.id, name: "asset.zip", mediaType: "application/zip" })] })
+    assets: [PreparedGitHubAsset.make({ artifactId: artifact.id, name: "asset.zip", mediaType: "application/zip" })],
+    authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/project", tag: "v1.0.0" }) })
   const manifest = PreparedReleaseV1.make({ schemaVersion: "prepared-release/v1",
     source: PreparedSource.make({ commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
       packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make(hash) }),

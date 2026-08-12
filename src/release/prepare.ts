@@ -291,7 +291,8 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
           return yield* new PreparationError({ reason: `Source identity changed during ${publication.id}.` })
         }
         publications.push(PreparedNpmPublication.make({ id: NonEmptyName.make(publication.id), packageName: publication.packageName,
-          version: Version.make(publication.version.toString()), registryUrl: publication.registryUrl, artifactId: artifact.id }))
+          version: Version.make(publication.version.toString()), registryUrl: publication.registryUrl,
+          artifactId: artifact.id, authority: publication.authority }))
       } else {
         const assets = publication.assetIds.map((id) => {
           const artifact = preparedArtifacts.get(id.toString())
@@ -301,7 +302,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         const body = publication.bodyArtifact === undefined ? publication.body : new TextDecoder().decode(bytes.get(publication.bodyArtifact.toString()) ?? (() => { throw new Error(`GitHub body artifact ${publication.bodyArtifact} is unavailable.`) })())
         publications.push(PreparedGitHubPublication.make({ id: NonEmptyName.make(publication.id), repository: publication.repository,
           tag: publication.tag, title: publication.title, draft: publication.draft, prerelease: publication.prerelease, targetCommit: context.source.commit,
-          ...(body === undefined ? {} : { body }), assets }))
+          ...(body === undefined ? {} : { body }), assets, authority: publication.authority }))
       }
     }
     const githubPublication = request.graph.publications.find((publication): publication is GraphGitHubPublication => publication._tag === "GraphGitHubPublication")

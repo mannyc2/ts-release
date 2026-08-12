@@ -4,6 +4,7 @@ import { createHash } from "node:crypto"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { encodePreparedRelease, PreparedArtifact, PreparedNpmPublication, PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
+import { makeNpmPublicationAuthorityIntent } from "../../src/release/graph.js"
 import { makeNpmDeprecationSubject, type NpmDeprecationProcess } from "../../src/correction/npm.js"
 import { makeCorrectionIntent, type CorrectionIntent } from "../../src/correction/intent.js"
 import { PublicationError, publishSubject } from "../../src/publication/observation.js"
@@ -16,7 +17,7 @@ const fixture = () => {
   const artifactId = OutputId.make("npm-tarball")
   const publicationId = NonEmptyName.make("npm-release")
   const artifact = PreparedArtifact.make({ id: artifactId, path: SafeRelativePath.make("dist/fixture.tgz"), kind: "package", size: bytes.length, digest: Digest.make(sha256(bytes)), blob: Digest.make(sha256(bytes)) })
-  const publication = PreparedNpmPublication.make({ id: publicationId, packageName: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), registryUrl: "https://registry.example.test", artifactId })
+  const publication = PreparedNpmPublication.make({ id: publicationId, packageName: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), registryUrl: "https://registry.example.test/", artifactId, authority: makeNpmPublicationAuthorityIntent({ packageName: "fixture", version: "1.0.0", registryUrl: "https://registry.example.test/" }) })
   const manifest = PreparedReleaseV1.make({ schemaVersion: "prepared-release/v1",
     source: PreparedSource.make({ commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true, packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make("a".repeat(64)) }),
     project: PreparedProject.make({ name: NonEmptyName.make("fixture"), packageName: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }), artifacts: [artifact], publications: [publication] })

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto"
 import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { PreparedArtifact, PreparedNpmPublication, PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
 import type { PreparedBundle } from "../../src/release/prepared-store.js"
+import { makeNpmPublicationAuthorityIntent } from "../../src/release/graph.js"
 import { PublicationError, publishSubject } from "../../src/publication/observation.js"
 import { makeNpmSubject } from "../../src/publication/npm.js"
 import type { HttpResponse, PublicationHttp } from "../../src/publication/http.js"
@@ -14,7 +15,8 @@ const fixture = (): { readonly bundle: PreparedBundle, readonly bytes: Uint8Arra
   const artifact = PreparedArtifact.make({ id: OutputId.make("npm-tarball"), path: SafeRelativePath.make("package.tgz"), kind: "archive",
     size: bytes.length, digest: Digest.make(hash), blob: Digest.make(hash), mediaType: "application/gzip" })
   const publication = PreparedNpmPublication.make({ id: NonEmptyName.make("npm-release"), packageName: NonEmptyName.make("@fixture/package"),
-    version: Version.make("1.0.0"), registryUrl: "https://registry.example", artifactId: artifact.id })
+    version: Version.make("1.0.0"), registryUrl: "https://registry.example/", artifactId: artifact.id,
+    authority: makeNpmPublicationAuthorityIntent({ packageName: "@fixture/package", version: "1.0.0", registryUrl: "https://registry.example/" }) })
   const manifest = PreparedReleaseV1.make({ schemaVersion: "prepared-release/v1",
     source: PreparedSource.make({ commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
       packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make(hash) }),

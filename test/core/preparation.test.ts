@@ -8,9 +8,17 @@ import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version, Workspa
 import { OutputDeclaration } from "../../src/release/graph.js"
 import { DriverError } from "../../src/drivers/errors.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
-import { CapabilityContribution, GraphCommandArtifact, GraphCommandCheck, GraphNpmPublication, linkContributions } from "../../src/release/graph.js"
+import {
+  CapabilityContribution,
+  GraphCommandArtifact,
+  GraphCommandCheck,
+  GraphNpmPublication,
+  linkContributions,
+  makeNpmPublicationAuthorityIntent
+} from "../../src/release/graph.js"
 import { prepareRelease, PreparationError, type PreparationRequest } from "../../src/release/prepare.js"
 import { makeLocalPreparedReleaseStore } from "../../src/release/prepared-store.js"
+import { decodePreparedRelease, encodePreparedRelease } from "../../src/release/prepared.js"
 import type { RunCommand } from "../../src/drivers/process.js"
 
 const contextFor = (root: string, commit = "abc123") => VerifiedReleaseContext.make({
@@ -97,7 +105,14 @@ describe("local preparation boundary", () => {
     writeFileSync(join(root, "lib", "index.js"), "export const fixture = true\n")
     const packageArtifact = OutputDeclaration.make({ id: OutputId.make("npm-package"), path: SafeRelativePath.make("."), kind: "package", provenance: "build" })
     const graph = linkContributions([CapabilityContribution.make({ artifacts: [packageArtifact], preparations: [], publications: [
-      GraphNpmPublication.make({ id: OperationId.make("npm-release"), packageName: NonEmptyName.make("fixture-pack"), version: NonEmptyName.make("1.0.0"), registryUrl: "https://registry.npmjs.org", artifactIds: [packageArtifact.id] })
+      GraphNpmPublication.make({
+        id: OperationId.make("npm-release"), packageName: NonEmptyName.make("fixture-pack"),
+        version: NonEmptyName.make("1.0.0"), registryUrl: "https://registry.npmjs.org/",
+        artifactIds: [packageArtifact.id], authority: makeNpmPublicationAuthorityIntent({
+          packageName: "fixture-pack", version: "1.0.0", registryUrl: "https://registry.npmjs.org/",
+          tokenEnv: "CUSTOM_NPM_TOKEN"
+        })
+      })
     ] })])
     const run: RunCommand = ({ argv, cwd }) => Effect.try({ try: () => {
       const result = spawnSync(argv[0]!, argv.slice(1), { cwd, encoding: "utf8", stdio: "pipe" })
@@ -110,7 +125,57 @@ describe("local preparation boundary", () => {
     const publication = bundle.manifest.publications[0]
     expect(publication?._tag).toBe("PreparedNpmPublication")
     expect(publication?._tag === "PreparedNpmPublication" ? publication.artifactId.toString() : "").toBe("npm-tarball:npm-release")
+    expect(publication?._tag === "PreparedNpmPublication" ? publication.authority : undefined)
+      .toEqual(graph.publications[0]!.authority)
+    expect(publication?._tag === "PreparedNpmPublication" ? publication.authority.publishStrategy : undefined)
+      .toMatchObject({ kind: "token", credential: "CUSTOM_NPM_TOKEN" })
+    expect(publication?._tag === "PreparedNpmPublication" ? publication.authority.audience.toString() : undefined)
+      .toBe("https://registry.npmjs.org/")
+    const decoded = decodePreparedRelease(encodePreparedRelease(bundle.manifest))
+    expect(decoded.publications[0]?.authority).toEqual(publication?.authority)
     expect(bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === "npm-package")).toBe(false)
     expect(bundle.blobs.has("npm-tarball:npm-release")).toBe(true)
+  })
+
+  test("trusted-publishing identity survives graph preparation and canonical manifest roundtrip", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-npm-trusted-"))
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture-trusted", version: "1.0.0", files: ["lib"] }))
+    mkdirSync(join(root, "lib"), { recursive: true })
+    writeFileSync(join(root, "lib", "index.js"), "export const fixture = true\n")
+    const packageArtifact = OutputDeclaration.make({
+      id: OutputId.make("npm-package"), path: SafeRelativePath.make("."), kind: "package", provenance: "build"
+    })
+    const authority = makeNpmPublicationAuthorityIntent({
+      packageName: "fixture-trusted", version: "1.0.0", registryUrl: "https://registry.npmjs.org/",
+      trustedPublishing: { provider: "github-actions" }
+    })
+    const graph = linkContributions([CapabilityContribution.make({ artifacts: [packageArtifact], preparations: [], publications: [
+      GraphNpmPublication.make({
+        id: OperationId.make("npm-release"), packageName: NonEmptyName.make("fixture-trusted"),
+        version: NonEmptyName.make("1.0.0"), registryUrl: "https://registry.npmjs.org/",
+        artifactIds: [packageArtifact.id], authority
+      })
+    ] })])
+    const run: RunCommand = ({ argv, cwd }) => Effect.try({ try: () => {
+      const result = spawnSync(argv[0]!, argv.slice(1), { cwd, encoding: "utf8", stdio: "pipe" })
+      if (result.error !== undefined) throw result.error
+      return { exitCode: result.status ?? 1, stdout: result.stdout, stderr: result.stderr }
+    }, catch: (cause) => DriverError.make({
+      reason: cause instanceof Error ? cause.message : String(cause), commitment: "before-commit"
+    }) })
+    const context = contextFor(root)
+    const { bundle } = await Effect.runPromise(prepareRelease({
+      context, graph, store: makeLocalPreparedReleaseStore(join(root, ".release", "prepared")), run,
+      verifySource: (value) => Effect.succeed(value)
+    }))
+    const publication = bundle.manifest.publications[0]
+    expect(publication?.authority).toEqual(authority)
+    expect(publication?.authority.publishStrategy).toMatchObject({
+      kind: "trusted-publishing", provider: "npm", runner: "github-actions",
+      workflow: ".github/workflows/release.yml"
+    })
+    expect(publication?.authority.observationStrategies).toEqual([{ kind: "anonymous" }])
+    expect(decodePreparedRelease(encodePreparedRelease(bundle.manifest)).publications[0]?.authority)
+      .toEqual(authority)
   })
 })

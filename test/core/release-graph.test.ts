@@ -2,8 +2,22 @@ import { describe, expect, test } from "bun:test"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../../src/model/primitives.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
-import { CapabilityContribution, GraphCommandArtifact, GraphGitHubPublication, GraphLinkError, linkContributions } from "../../src/release/graph.js"
-import { CandidateArtifactPreparation, CandidateBunBuild, CandidateCheckPreparation, CandidateConfig, CandidatePreparation } from "../../src/recipes/config.js"
+import {
+  CapabilityContribution,
+  GraphCommandArtifact,
+  GraphGitHubPublication,
+  GraphLinkError,
+  linkContributions,
+  makeGitHubPublicationAuthorityIntent
+} from "../../src/release/graph.js"
+import {
+  CandidateArtifactPreparation,
+  CandidateBunBuild,
+  CandidateCheckPreparation,
+  CandidateConfig,
+  CandidateNpmPublish,
+  CandidatePreparation
+} from "../../src/recipes/config.js"
 import { decodeReleaseIntent } from "../../src/release/config.js"
 import { inspectRelease } from "../../src/release/inspect.js"
 import { executableCapabilities } from "../../src/capabilities/registry.js"
@@ -70,6 +84,70 @@ describe("immutable release graph", () => {
     expect(graph.preparations.map((item) => item.id.toString())).toContain("preparation:tests")
   })
 
+  test("resolves publication authority options into exact graph intent", () => {
+    const tokenGraph = compileReleaseGraph(CandidateConfig.make({
+      project: {
+        name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
+        tag: NonEmptyName.make("v1.0.0"), repository: "owner/fixture"
+      },
+      npmPackage: { path: SafeRelativePath.make(".") },
+      publish: {
+        npm: { registry: "https://REGISTRY.example.test/custom///", tokenEnv: "CUSTOM_NPM_TOKEN" },
+        github: { repository: "owner/fixture" }
+      }
+    }), context)
+    const npm = tokenGraph.publications.find((item) => item._tag === "GraphNpmPublication")
+    const github = tokenGraph.publications.find((item) => item._tag === "GraphGitHubPublication")
+    expect(npm?.registryUrl).toBe("https://registry.example.test/custom/")
+    expect(npm?.authority).toMatchObject({
+      subject: "npm:fixture@1.0.0",
+      provider: "npm",
+      audience: "https://registry.example.test/custom/",
+      observationStrategies: [
+        { kind: "anonymous" },
+        { kind: "token", credential: "CUSTOM_NPM_TOKEN" }
+      ],
+      publishStrategy: { kind: "token", credential: "CUSTOM_NPM_TOKEN" }
+    })
+    expect(github?.authority).toMatchObject({
+      subject: "github:owner/fixture#v1.0.0",
+      provider: "github",
+      audience: "https://api.github.com/repos/owner/fixture",
+      observationStrategies: [
+        { kind: "anonymous" },
+        { kind: "token", credential: "GITHUB_TOKEN" }
+      ],
+      publishStrategy: { kind: "token", credential: "GITHUB_TOKEN" }
+    })
+
+    const trustedGraph = compileReleaseGraph(CandidateConfig.make({
+      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
+      npmPackage: { path: SafeRelativePath.make(".") },
+      publish: { npm: { trustedPublishing: { provider: "github-actions" } } }
+    }), context)
+    const trusted = trustedGraph.publications.find((item) => item._tag === "GraphNpmPublication")
+    expect(trusted?.authority.publishStrategy).toMatchObject({
+      kind: "trusted-publishing", provider: "npm", runner: "github-actions",
+      workflow: ".github/workflows/release.yml"
+    })
+    expect(trusted?.authority.observationStrategies).toEqual([{ kind: "anonymous" }])
+  })
+
+  test("rejects ambiguous or unsafe publication authority before graph linking", () => {
+    const npmConfig = (npm: CandidateNpmPublish) => CandidateConfig.make({
+      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
+      npmPackage: { path: SafeRelativePath.make(".") }, publish: { npm }
+    })
+    expect(() => compileReleaseGraph(npmConfig(CandidateNpmPublish.make({
+      tokenEnv: "NPM_TOKEN", trustedPublishing: { provider: "github-actions" }
+    })), context)).toThrow(GraphLinkError)
+    expect(() => compileReleaseGraph(npmConfig(CandidateNpmPublish.make({
+      registry: "https://user:password@registry.example.test/?tenant=other"
+    })), context)).toThrow(GraphLinkError)
+    expect(() => compileReleaseGraph(npmConfig(CandidateNpmPublish.make({ tokenEnv: "not-portable-name" })), context))
+      .toThrow(GraphLinkError)
+  })
+
   test("strict preparation decoding rejects output fields on checks", () => {
     expect(() => decodeReleaseIntent({
       project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
@@ -90,7 +168,8 @@ describe("immutable release graph", () => {
     })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [], preparations: [alias], publications: [] })])).toThrow(GraphLinkError)
     const body = GraphGitHubPublication.make({ id: OperationId.make("github"), repository: "owner/fixture", tag: NonEmptyName.make("v1"), draft: false, prerelease: false,
-      title: NonEmptyName.make("fixture"), bodyArtifact: OutputId.make("plain"), assetIds: [] })
+      title: NonEmptyName.make("fixture"), bodyArtifact: OutputId.make("plain"), assetIds: [],
+      authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/fixture", tag: "v1" }) })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [{ ...artifact("plain", "plain.md") }], preparations: [], publications: [body] })])).toThrow(GraphLinkError)
     const duplicatePath = CapabilityContribution.make({ artifacts: [artifact("first", "same.bin"), artifact("second", "same.bin")], preparations: [], publications: [] })
     expect(() => linkContributions([duplicatePath])).toThrow(GraphLinkError)

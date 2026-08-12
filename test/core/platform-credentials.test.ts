@@ -60,15 +60,15 @@ const tokenRequest = (purpose: "observe" | "publish" = "publish") => CredentialR
   strategy: TokenAuthStrategy.make({ kind: "token", credential: ref })
 })
 
-const trustedRequest = (runner = "github-actions") => CredentialRequest.make({
+const trustedRequest = (runnerClass = "github-hosted") => CredentialRequest.make({
   subject,
   provider,
   audience,
   purpose: "publish",
   strategy: TrustedPublishingAuthStrategy.make({
     kind: "trusted-publishing",
-    provider,
-    runner,
+    identityProvider: ProviderId.make("github-actions"),
+    runnerClass,
     workflow: ".github/workflows/release.yml"
   })
 })
@@ -163,7 +163,7 @@ describe("environment credential platform", () => {
     expect(JSON.stringify(grant)).not.toContain(secret)
 
     await expect(Effect.runPromise(provideEnvironment(
-      platform.credentialProvider.acquireForMutation(trustedRequest("local-runner"), decision)
+      platform.credentialProvider.acquireForMutation(trustedRequest("self-hosted"), decision)
     ))).rejects.toMatchObject({ _tag: "CredentialStrategyUnsupported" })
   })
 

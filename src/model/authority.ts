@@ -42,8 +42,8 @@ export class TokenAuthStrategy
 export class TrustedPublishingAuthStrategy
   extends Schema.Class<TrustedPublishingAuthStrategy>("TrustedPublishingAuthStrategy")({
     kind: Schema.Literal("trusted-publishing"),
-    provider: ProviderId,
-    runner: Schema.NonEmptyString,
+    identityProvider: ProviderId,
+    runnerClass: Schema.NonEmptyString,
     workflow: Schema.NonEmptyString
   }) {}
 

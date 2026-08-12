@@ -555,10 +555,20 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
       .toMatchObject({ kind: "token", credential: "CUSTOM_NPM_TOKEN" })
     const trustedDefault = graphFor({ trustedPublishing: { provider: "github-actions" } }).publications[0]!
     expect(trustedDefault._tag === "GraphNpmPublication" ? trustedDefault.authority.publishStrategy : undefined)
-      .toMatchObject({ kind: "trusted-publishing", runner: "github-actions", workflow: ".github/workflows/release.yml" })
+      .toMatchObject({
+        kind: "trusted-publishing",
+        identityProvider: "github-actions",
+        runnerClass: "github-hosted",
+        workflow: ".github/workflows/release.yml"
+      })
     const trustedWorkflow = graphFor({ trustedPublishing: { workflow: "release.yml" } }).publications[0]!
     expect(trustedWorkflow._tag === "GraphNpmPublication" ? trustedWorkflow.authority.publishStrategy : undefined)
-      .toMatchObject({ kind: "trusted-publishing", runner: "github-actions", workflow: "release.yml" })
+      .toMatchObject({
+        kind: "trusted-publishing",
+        identityProvider: "github-actions",
+        runnerClass: "github-hosted",
+        workflow: ".github/workflows/release.yml"
+      })
     expect(JSON.stringify(graphFor({ trustedPublishing: {} })))
       .toBe(JSON.stringify(graphFor({ trustedPublishing: { verifyPackageExists: true } })))
     expect(JSON.stringify(graphFor({}))).toBe(JSON.stringify(graphFor({ access: "restricted" })))

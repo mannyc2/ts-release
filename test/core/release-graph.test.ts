@@ -130,7 +130,7 @@ describe("immutable release graph", () => {
     }), context)
     const trusted = trustedGraph.publications.find((item) => item._tag === "GraphNpmPublication")
     expect(trusted?.authority.publishStrategy).toMatchObject({
-      kind: "trusted-publishing", provider: "npm", runner: "github-actions",
+      kind: "trusted-publishing", identityProvider: "github-actions", runnerClass: "github-hosted",
       workflow: ".github/workflows/release.yml"
     })
     expect(trusted?.authority.observationStrategies).toEqual([{ kind: "anonymous" }])

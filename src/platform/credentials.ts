@@ -280,11 +280,13 @@ const makeEnvironmentAcquirer = (vault: SecretVault): CredentialGrantAcquirer =>
         } as const
       }
       case "trusted-publishing": {
-        if (request.strategy.provider !== request.provider) {
-          return yield* unsupported(request, "Trusted-publishing provider does not match the prepared subject provider.")
-        }
-        if (request.strategy.runner !== "github-actions" || !certifiedWorkflow.test(request.strategy.workflow)) {
-          return yield* unsupported(request, "Trusted publishing requires a certified GitHub Actions workflow identity.")
+        if (request.strategy.identityProvider !== "github-actions" ||
+          request.strategy.runnerClass !== "github-hosted" ||
+          !certifiedWorkflow.test(request.strategy.workflow)) {
+          return yield* unsupported(
+            request,
+            "Trusted publishing requires a certified GitHub Actions identity on a GitHub-hosted runner."
+          )
         }
         for (const name of oidcNames) {
           const value = yield* readSecret(request, name)

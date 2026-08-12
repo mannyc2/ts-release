@@ -171,7 +171,7 @@ describe("local preparation boundary", () => {
     const publication = bundle.manifest.publications[0]
     expect(publication?.authority).toEqual(authority)
     expect(publication?.authority.publishStrategy).toMatchObject({
-      kind: "trusted-publishing", provider: "npm", runner: "github-actions",
+      kind: "trusted-publishing", identityProvider: "github-actions", runnerClass: "github-hosted",
       workflow: ".github/workflows/release.yml"
     })
     expect(publication?.authority.observationStrategies).toEqual([{ kind: "anonymous" }])

@@ -132,8 +132,8 @@ describe("opaque mutation authority", () => {
       purpose: "publish",
       strategy: TrustedPublishingAuthStrategy.make({
         kind: "trusted-publishing",
-        provider,
-        runner: "github-actions",
+        identityProvider: ProviderId.make("github-actions"),
+        runnerClass: "github-hosted",
         workflow: ".github/workflows/release.yml"
       })
     })

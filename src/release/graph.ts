@@ -139,6 +139,30 @@ const tokenStrategy = (value: string, field: string): TokenAuthStrategy => {
 
 const anonymousStrategy = (): AnonymousAuthStrategy => AnonymousAuthStrategy.make({ kind: "anonymous" })
 
+const githubWorkflowIdentity = (value: string | undefined): string => {
+  const workflow = value ?? "release.yml"
+  const canonical = workflow.startsWith(".github/workflows/")
+    ? workflow
+    : `.github/workflows/${workflow}`
+  if (!/^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(canonical)) {
+    throw authorityError(
+      "publish.npm.trustedPublishing.workflow",
+      "Trusted-publishing workflow must name one YAML file in .github/workflows/."
+    )
+  }
+  return canonical
+}
+
+const githubHostedIdentityProvider = (value: "github-actions" | undefined): ProviderId => {
+  if (value !== undefined && value !== "github-actions") {
+    throw authorityError(
+      "publish.npm.trustedPublishing.provider",
+      "The certified trusted-publishing identity provider is github-actions."
+    )
+  }
+  return ProviderId.make("github-actions")
+}
+
 export interface NpmPublicationAuthorityInput {
   readonly packageName: string
   readonly version: string
@@ -162,9 +186,9 @@ export const makeNpmPublicationAuthorityIntent = (
     ? tokenStrategy(input.tokenEnv ?? "NPM_TOKEN", "publish.npm.tokenEnv")
     : TrustedPublishingAuthStrategy.make({
       kind: "trusted-publishing",
-      provider,
-      runner: input.trustedPublishing.provider ?? "github-actions",
-      workflow: input.trustedPublishing.workflow ?? ".github/workflows/release.yml"
+      identityProvider: githubHostedIdentityProvider(input.trustedPublishing.provider),
+      runnerClass: "github-hosted",
+      workflow: githubWorkflowIdentity(input.trustedPublishing.workflow)
     })
   return PublicationAuthorityIntent.make({
     subject: SubjectId.make(`npm:${input.packageName}@${input.version}`),
@@ -235,8 +259,10 @@ export const npmPublicationAuthorityIssue = (publication: {
       : "npm token publication requires anonymous observation followed by the exact configured token reference."
   }
   if (authority.publishStrategy.kind === "trusted-publishing") {
-    return authority.observationStrategies.length === 1 && authority.publishStrategy.provider === authority.provider &&
-        authority.publishStrategy.runner === "github-actions"
+    return authority.observationStrategies.length === 1 &&
+        authority.publishStrategy.identityProvider === "github-actions" &&
+        authority.publishStrategy.runnerClass === "github-hosted" &&
+        /^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(authority.publishStrategy.workflow)
       ? undefined
       : "npm trusted publishing requires anonymous observation and the certified npm/GitHub Actions identity."
   }

@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { ReleaseRuntime, type ReleaseRuntimeShape } from "../../src/api/runtime.js"
+import { parseSha256Hex } from "../../src/model/digest.js"
 import { CredentialUnavailable, CredentialProvider, makeCredentialProvider } from "../../src/publication/authority.js"
 import { WorkspaceRoot, NonEmptyName, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
@@ -27,11 +28,11 @@ export const contextFor = (workspace: string, commit = "abc123"): VerifiedReleas
   source: VerifiedSource.make({
     commit: NonEmptyName.make(commit), tree: NonEmptyName.make("tree123"), clean: true,
     packageManifestPath: SafeRelativePath.make("package.json"),
-    packageManifestDigest: NonEmptyName.make("sha256:manifest"), headTags: []
+    packageManifestDigest: parseSha256Hex("a".repeat(64)), headTags: []
   }),
   package: VerifiedPackage.make({
     name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
-    path: SafeRelativePath.make("package.json"), digest: NonEmptyName.make("sha256:manifest")
+    path: SafeRelativePath.make("package.json"), digest: parseSha256Hex("a".repeat(64))
   })
 })
 

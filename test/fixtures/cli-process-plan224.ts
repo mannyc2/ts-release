@@ -2,7 +2,6 @@ import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Command from "effect/unstable/cli/Command"
-import { createHash } from "node:crypto"
 import {
   mkdirSync,
   readFileSync,
@@ -16,6 +15,7 @@ import { ReleaseRuntime } from "../../src/api/runtime.js"
 import { DriverError } from "../../src/drivers/errors.js"
 import type { RunCommand } from "../../src/drivers/process.js"
 import type { CredentialRequest } from "../../src/model/authority.js"
+import { sha256Digest } from "../../src/model/digest.js"
 import {
   CredentialProvider,
   CredentialUnavailable,
@@ -132,9 +132,7 @@ const sourceRuntime: SourceObserverRuntime = {
     },
     catch: (cause) => cause
   }),
-  digest: (bytes) => Effect.succeed(
-    `sha256:${createHash("sha256").update(bytes).digest("hex")}`
-  )
+  digest: (bytes) => Effect.succeed(sha256Digest(bytes))
 }
 
 const run: RunCommand = (command) => Effect.try({

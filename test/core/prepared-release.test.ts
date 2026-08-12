@@ -1,28 +1,28 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import { createHash } from "node:crypto"
-import { existsSync, mkdtempSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
+import { sha256Digest } from "../../src/model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import {
-  PreparedArtifact, PreparedGitHubPublication, PreparedProject, PreparedReleaseV1, PreparedSource,
+  PreparedArtifact, PreparedGitHubPublication, PreparedProject, PreparedReleaseV2, PreparedSource,
   decodePreparedRelease, encodePreparedRelease
 } from "../../src/release/prepared.js"
 import { loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedStoreError, storePreparedRelease } from "../../src/release/prepared-store.js"
+import type { PreparedStoreFaultPoint } from "../../src/release/prepared-store.js"
 import { makeGitHubActionsCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
 import { inspectPreparedRelease } from "../../src/release/inspect.js"
 import { makeGitHubPublicationAuthorityIntent } from "../../src/release/graph.js"
 
-const digest = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
 const fixture = () => {
   const bytes = new TextEncoder().encode("release bytes\n")
-  const hash = digest(bytes)
+  const digest = sha256Digest(bytes)
   const artifact = PreparedArtifact.make({ id: OutputId.make("cli"), path: SafeRelativePath.make("cli.tgz"), kind: "archive",
-    size: bytes.length, digest: Digest.make(hash), blob: Digest.make(hash), mediaType: "application/gzip" })
-  const manifest = PreparedReleaseV1.make({ schemaVersion: "prepared-release/v1",
+    size: bytes.length, digest, blob: digest, mediaType: "application/gzip" })
+  const manifest = PreparedReleaseV2.make({ schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({ commit: NonEmptyName.make("abc123"), tree: NonEmptyName.make("tree123"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make(hash) }),
+      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: digest }),
     project: PreparedProject.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }),
     artifacts: [artifact], publications: [PreparedGitHubPublication.make({ id: NonEmptyName.make("github"), repository: "owner/fixture",
       tag: NonEmptyName.make("v1.0.0"), title: NonEmptyName.make("fixture 1.0.0"), draft: false, prerelease: false, targetCommit: NonEmptyName.make("abc123"),
@@ -31,23 +31,23 @@ const fixture = () => {
   return { manifest, bytes }
 }
 
-describe("PreparedReleaseV1 manifest and store", () => {
+describe("PreparedReleaseV2 manifest and store", () => {
   test("canonical encoding rejects duplicates and noncanonical bytes", () => {
     const { manifest } = fixture()
     const bytes = encodePreparedRelease(manifest)
-    expect(decodePreparedRelease(bytes).schemaVersion).toBe("prepared-release/v1")
+    expect(decodePreparedRelease(bytes).schemaVersion).toBe("prepared-release/v2")
     const github = manifest.publications[0]!
     if (github._tag !== "PreparedGitHubPublication") throw new Error("expected GitHub fixture")
-    expect(() => encodePreparedRelease(PreparedReleaseV1.make({
+    expect(() => encodePreparedRelease(PreparedReleaseV2.make({
       ...manifest,
       publications: [PreparedGitHubPublication.make({
         ...github,
         authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/fixture", tag: "v2.0.0" })
       })]
     }))).toThrow()
-    const duplicate = new TextEncoder().encode('{"schemaVersion":"prepared-release/v1","schemaVersion":"prepared-release/v1"}')
+    const duplicate = new TextEncoder().encode('{"schemaVersion":"prepared-release/v2","schemaVersion":"prepared-release/v2"}')
     expect(() => decodePreparedRelease(duplicate)).toThrow()
-    const reordered = new TextEncoder().encode(`${JSON.stringify({ schemaVersion: "prepared-release/v1", source: {}, project: {}, artifacts: [], publications: [] })}\n`)
+    const reordered = new TextEncoder().encode(`${JSON.stringify({ schemaVersion: "prepared-release/v2", source: {}, project: {}, artifacts: [], publications: [] })}\n`)
     expect(() => decodePreparedRelease(reordered)).toThrow()
   })
 
@@ -100,16 +100,117 @@ describe("PreparedReleaseV1 manifest and store", () => {
     try {
       const { manifest, bytes } = fixture()
       const missing = await Effect.runPromise(storePreparedRelease(join(root, "missing"), manifest, new Map([["cli", bytes]])))
-      unlinkSync(join(missing.directory, "blobs", manifest.artifacts[0]!.blob.toString()))
+      unlinkSync(join(missing.directory, "blobs", manifest.artifacts[0]!.blob.hex))
       await expect(Effect.runPromise(loadPreparedRelease(missing.directory))).rejects.toBeInstanceOf(PreparedStoreError)
       const extra = await Effect.runPromise(storePreparedRelease(join(root, "extra"), manifest, new Map([["cli", bytes]])))
       writeFileSync(join(extra.directory, "blobs", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "extra")
       await expect(Effect.runPromise(loadPreparedRelease(extra.directory))).rejects.toBeInstanceOf(PreparedStoreError)
       const linked = await Effect.runPromise(storePreparedRelease(join(root, "linked"), manifest, new Map([["cli", bytes]])))
-      const linkedBlob = join(linked.directory, "blobs", manifest.artifacts[0]!.blob.toString())
+      const linkedBlob = join(linked.directory, "blobs", manifest.artifacts[0]!.blob.hex)
       unlinkSync(linkedBlob)
       symlinkSync("../prepared-release.json", linkedBlob)
       await expect(Effect.runPromise(loadPreparedRelease(linked.directory))).rejects.toBeInstanceOf(PreparedStoreError)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("faults before promotion leave no loadable complete bundle, including cleanup faults", async () => {
+    const points: ReadonlyArray<PreparedStoreFaultPoint> = [
+      "before-blob-write",
+      "after-blob-write",
+      "before-manifest-write",
+      "after-manifest-write",
+      "before-blob-directory-fsync",
+      "after-blob-directory-fsync",
+      "before-bundle-directory-fsync",
+      "after-bundle-directory-fsync",
+      "before-promotion"
+    ]
+    for (const point of points) {
+      const root = mkdtempSync(join(tmpdir(), "ts-release-prepared-fault-"))
+      try {
+        const { manifest, bytes } = fixture()
+        const manifestDigest = sha256Digest(encodePreparedRelease(manifest)).hex
+        let injected = false
+        await expect(Effect.runPromise(storePreparedRelease(root, manifest, new Map([["cli", bytes]]), {
+          onFaultPoint: (current) => {
+            if (!injected && current === point) {
+              injected = true
+              throw new Error(`fault:${point}`)
+            }
+          }
+        }))).rejects.toBeInstanceOf(PreparedStoreError)
+        expect(injected).toBe(true)
+        expect(existsSync(join(root, manifestDigest))).toBe(false)
+        expect(readdirSync(root).some((entry) => /^[a-f0-9]{64}$/u.test(entry))).toBe(false)
+      } finally {
+        rmSync(root, { recursive: true, force: true })
+      }
+    }
+
+    const cleanupRoot = mkdtempSync(join(tmpdir(), "ts-release-prepared-cleanup-fault-"))
+    try {
+      const { manifest, bytes } = fixture()
+      await expect(Effect.runPromise(storePreparedRelease(cleanupRoot, manifest, new Map([["cli", bytes]]), {
+        onFaultPoint: (point) => {
+          if (point === "after-manifest-write" || point === "before-cleanup") {
+            throw new Error(`fault:${point}`)
+          }
+        }
+      }))).rejects.toMatchObject({
+        _tag: "PreparedStoreError",
+        reason: expect.stringContaining("cleanup failed")
+      })
+      expect(readdirSync(cleanupRoot).some((entry) => /^[a-f0-9]{64}$/u.test(entry))).toBe(false)
+    } finally {
+      rmSync(cleanupRoot, { recursive: true, force: true })
+    }
+  })
+
+  test("post-promotion faults are reported instead of being converted to false success", async () => {
+    for (const point of ["after-promotion", "before-store-fsync", "after-store-fsync"] as const) {
+      const root = mkdtempSync(join(tmpdir(), "ts-release-prepared-post-promotion-"))
+      try {
+        const { manifest, bytes } = fixture()
+        const manifestDigest = sha256Digest(encodePreparedRelease(manifest)).hex
+        await expect(Effect.runPromise(storePreparedRelease(root, manifest, new Map([["cli", bytes]]), {
+          onFaultPoint: (current) => {
+            if (current === point) throw new Error(`fault:${point}`)
+          }
+        }))).rejects.toBeInstanceOf(PreparedStoreError)
+        const recovered = await Effect.runPromise(loadPreparedRelease(join(root, manifestDigest)))
+        expect(recovered.manifest).toEqual(manifest)
+      } finally {
+        rmSync(root, { recursive: true, force: true })
+      }
+    }
+  })
+
+  test("concurrent writers converge and a fresh process reloads the exact bundle", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-prepared-concurrent-"))
+    const fixturePath = join(process.cwd(), "test", "fixtures", "prepared-store-process.ts")
+    try {
+      const spawnWriter = () => Bun.spawn(["bun", "run", fixturePath, "write", root], {
+        cwd: process.cwd(), stdout: "pipe", stderr: "pipe"
+      })
+      const writers = [spawnWriter(), spawnWriter()]
+      const exits = await Promise.all(writers.map((writer) => writer.exited))
+      const errors = await Promise.all(writers.map((writer) => new Response(writer.stderr).text()))
+      expect(exits, errors.join("\n")).toEqual([0, 0])
+      const bundles = readdirSync(root).filter((entry) => /^[a-f0-9]{64}$/u.test(entry))
+      expect(bundles).toHaveLength(1)
+
+      const child = Bun.spawn([
+        "bun", "run", fixturePath, "load", root, join(root, bundles[0]!)
+      ], { cwd: process.cwd(), stdout: "pipe", stderr: "pipe" })
+      const [exit, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text()
+      ])
+      expect(exit, stderr).toBe(0)
+      expect(stdout.trim()).toBe("prepared-release/v2:1")
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

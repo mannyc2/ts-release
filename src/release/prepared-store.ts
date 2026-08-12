@@ -2,10 +2,11 @@ import * as Effect from "effect/Effect"
 import * as Context from "effect/Context"
 import * as Schema from "effect/Schema"
 import { constants, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, chmodSync, closeSync, fsyncSync } from "node:fs"
-import { createHash, randomUUID } from "node:crypto"
+import { randomUUID } from "node:crypto"
 import { basename, join } from "node:path"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
-import { PreparedArtifact, PreparedReleaseV1, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
+import { digestEquals, sha256Digest, Sha256Hex } from "../model/digest.js"
+import { PreparedArtifact, PreparedReleaseV2, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
 import { CompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
 
 export class PreparedStoreError
@@ -22,8 +23,29 @@ export class PreparedCommitHandoffError
     reason: Schema.String
   }) {}
 
-const hex = /^[a-f0-9]{64}$/u
-const hash = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
+export const PreparedStoreFaultPoint = Schema.Literals([
+  "before-blob-write",
+  "after-blob-write",
+  "before-manifest-write",
+  "after-manifest-write",
+  "before-blob-directory-fsync",
+  "after-blob-directory-fsync",
+  "before-bundle-directory-fsync",
+  "after-bundle-directory-fsync",
+  "before-promotion",
+  "after-promotion",
+  "before-store-fsync",
+  "after-store-fsync",
+  "before-cleanup",
+  "after-cleanup"
+])
+export type PreparedStoreFaultPoint = typeof PreparedStoreFaultPoint.Type
+
+/** Host-only fault seam used to prove the atomic store protocol. */
+export interface PreparedStoreOptions {
+  readonly onFaultPoint?: (point: PreparedStoreFaultPoint) => void
+}
+
 const equal = (left: Uint8Array, right: Uint8Array): boolean => left.length === right.length && left.every((byte, index) => byte === right[index])
 const fail = (reason: string): never => { throw PreparedStoreError.make({ reason }) }
 const canonicalDirectory = (directory: string): string => {
@@ -36,19 +58,19 @@ const syncDirectory = (directory: string): void => {
   const descriptor = openSync(directory, constants.O_RDONLY)
   try { fsyncSync(descriptor) } finally { closeSync(descriptor) }
 }
-const artifactsById = (manifest: PreparedReleaseV1): Map<string, PreparedArtifact> => {
+const artifactsById = (manifest: PreparedReleaseV2): Map<string, PreparedArtifact> => {
   const result = new Map<string, PreparedArtifact>()
   for (const artifact of manifest.artifacts) {
     const id = artifact.id.toString()
     if (result.has(id)) fail(`Prepared manifest repeats artifact ${id}.`)
-    if (!hex.test(artifact.digest) || !hex.test(artifact.blob) || artifact.digest !== artifact.blob) {
+    if (!digestEquals(artifact.digest, artifact.blob)) {
       fail(`Prepared artifact ${id} does not carry a canonical SHA-256 blob reference.`)
     }
     result.set(id, artifact)
   }
   return result
 }
-const validatePublications = (manifest: PreparedReleaseV1, artifacts: Map<string, PreparedArtifact>): void => {
+const validatePublications = (manifest: PreparedReleaseV2, artifacts: Map<string, PreparedArtifact>): void => {
   const ids = new Set<string>()
   for (const publication of manifest.publications) {
     if (ids.has(publication.id.toString())) fail(`Prepared manifest repeats publication ${publication.id}.`)
@@ -65,7 +87,7 @@ const validatePublications = (manifest: PreparedReleaseV1, artifacts: Map<string
 
 export interface PreparedBundle {
   readonly directory: string
-  readonly manifest: PreparedReleaseV1
+  readonly manifest: PreparedReleaseV2
   readonly blobs: ReadonlyMap<string, Uint8Array>
 }
 
@@ -79,7 +101,7 @@ const readBundle = (directory: string): PreparedBundle => {
   if (real !== directory || lstatSync(directory).isSymbolicLink()) fail("Prepared bundle directory must not be a symlink.")
   const bytes = secureRead(directory, "prepared-release.json").bytes
   const manifest = decodePreparedRelease(bytes)
-  const manifestDigest = hash(bytes)
+  const manifestDigest = sha256Digest(bytes).hex
   if (basename(directory) !== manifestDigest) fail("Prepared bundle directory does not match its manifest digest.")
   const entries = readdirSync(directory, { withFileTypes: true })
   if (entries.some((entry) => entry.name !== "prepared-release.json" && entry.name !== "blobs")) fail("Prepared bundle contains an unexpected top-level entry.")
@@ -87,16 +109,16 @@ const readBundle = (directory: string): PreparedBundle => {
   if (!existsSync(blobDirectory) || lstatSync(blobDirectory).isSymbolicLink() || !statSync(blobDirectory).isDirectory()) fail("Prepared bundle is missing its real blobs directory.")
   const artifacts = artifactsById(manifest)
   validatePublications(manifest, artifacts)
-  const expectedBlobs = new Set([...artifacts.values()].map((artifact) => artifact.blob.toString()))
+  const expectedBlobs = new Set([...artifacts.values()].map((artifact) => artifact.blob.hex))
   const actualBlobs = new Set(readdirSync(blobDirectory, { withFileTypes: true }).map((entry) => {
-    if (!entry.isFile() || !hex.test(entry.name)) fail(`Prepared blob entry ${entry.name} is invalid.`)
+    if (!entry.isFile() || !Schema.is(Sha256Hex)(entry.name)) fail(`Prepared blob entry ${entry.name} is invalid.`)
     return entry.name
   }))
   if (actualBlobs.size !== expectedBlobs.size || [...expectedBlobs].some((blob) => !actualBlobs.has(blob))) fail("Prepared bundle blob set does not match its manifest.")
   const blobs = new Map<string, Uint8Array>()
   for (const artifact of artifacts.values()) {
-    const blob = secureRead(directory, `blobs/${artifact.blob}`).bytes
-    if (blob.length !== artifact.size || hash(blob) !== artifact.digest) fail(`Prepared blob ${artifact.id} failed size or digest verification.`)
+    const blob = secureRead(directory, `blobs/${artifact.blob.hex}`).bytes
+    if (blob.length !== artifact.size || !digestEquals(sha256Digest(blob), artifact.digest)) fail(`Prepared blob ${artifact.id} failed size or digest verification.`)
     blobs.set(artifact.id.toString(), new Uint8Array(blob))
   }
   return { directory: real, manifest, blobs }
@@ -109,15 +131,21 @@ const atomicWrite = (directory: string, target: string, bytes: Uint8Array): void
   chmodSync(join(directory, target), 0o400)
 }
 
-const writeBundle = (storeDirectory: string, manifest: PreparedReleaseV1, blobs: ReadonlyMap<string, Uint8Array>): PreparedBundle => {
+const writeBundle = (
+  storeDirectory: string,
+  manifest: PreparedReleaseV2,
+  blobs: ReadonlyMap<string, Uint8Array>,
+  options: PreparedStoreOptions = {}
+): PreparedBundle => {
+  const fault = options.onFaultPoint ?? (() => undefined)
   const store = canonicalDirectory(storeDirectory)
   const manifestBytes = encodePreparedRelease(manifest)
-  const manifestDigest = hash(manifestBytes)
+  const manifestDigest = sha256Digest(manifestBytes).hex
   const artifacts = artifactsById(manifest)
   validatePublications(manifest, artifacts)
   for (const artifact of artifacts.values()) {
     const bytes = blobs.get(artifact.id.toString()) ?? fail(`No prepared bytes supplied for artifact ${artifact.id}.`)
-    if (bytes.length !== artifact.size || hash(bytes) !== artifact.digest || artifact.blob !== artifact.digest) fail(`Prepared bytes do not match artifact ${artifact.id}.`)
+    if (bytes.length !== artifact.size || !digestEquals(sha256Digest(bytes), artifact.digest) || !digestEquals(artifact.blob, artifact.digest)) fail(`Prepared bytes do not match artifact ${artifact.id}.`)
   }
   const finalDirectory = join(store, manifestDigest)
   if (existsSync(finalDirectory)) {
@@ -127,16 +155,52 @@ const writeBundle = (storeDirectory: string, manifest: PreparedReleaseV1, blobs:
   }
   const temporary = join(store, `.${manifestDigest}.${randomUUID()}.tmp`)
   mkdirSync(join(temporary, "blobs"), { recursive: true, mode: 0o700 })
+  let promoted = false
   try {
-    for (const artifact of artifacts.values()) atomicWrite(join(temporary, "blobs"), artifact.blob.toString(), blobs.get(artifact.id.toString())!)
+    for (const artifact of artifacts.values()) {
+      fault("before-blob-write")
+      atomicWrite(join(temporary, "blobs"), artifact.blob.hex, blobs.get(artifact.id.toString())!)
+      fault("after-blob-write")
+    }
+    fault("before-manifest-write")
     atomicWrite(temporary, "prepared-release.json", manifestBytes)
+    fault("after-manifest-write")
+    fault("before-blob-directory-fsync")
     syncDirectory(join(temporary, "blobs"))
+    fault("after-blob-directory-fsync")
+    fault("before-bundle-directory-fsync")
     syncDirectory(temporary)
+    fault("after-bundle-directory-fsync")
+    fault("before-promotion")
     renameSync(temporary, finalDirectory)
+    promoted = true
+    fault("after-promotion")
+    fault("before-store-fsync")
     syncDirectory(store)
+    fault("after-store-fsync")
   } catch (cause) {
-    if (existsSync(temporary)) rmSync(temporary, { recursive: true, force: true })
-    if (existsSync(finalDirectory)) return readBundle(finalDirectory)
+    let cleanupFailure: unknown
+    if (existsSync(temporary)) {
+      try {
+        fault("before-cleanup")
+        rmSync(temporary, { recursive: true, force: true })
+        fault("after-cleanup")
+      } catch (cleanupCause) {
+        cleanupFailure = cleanupCause
+      }
+    }
+    if (!promoted && existsSync(finalDirectory)) {
+      const existing = readBundle(finalDirectory)
+      if (!equal(secureRead(finalDirectory, "prepared-release.json").bytes, manifestBytes)) {
+        fail("Concurrent prepared-store promotion produced a different manifest.")
+      }
+      return existing
+    }
+    if (cleanupFailure !== undefined) {
+      throw PreparedStoreError.make({
+        reason: `Prepared-store cleanup failed after ${cause instanceof Error ? cause.message : String(cause)}: ${cleanupFailure instanceof Error ? cleanupFailure.message : String(cleanupFailure)}`
+      })
+    }
     if (cause instanceof PreparedStoreError) throw cause
     throw PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
   }
@@ -144,8 +208,11 @@ const writeBundle = (storeDirectory: string, manifest: PreparedReleaseV1, blobs:
 }
 
 export const storePreparedRelease = Effect.fn("storePreparedRelease")((
-  storeDirectory: string, manifest: PreparedReleaseV1, blobs: ReadonlyMap<string, Uint8Array>
-) => Effect.try({ try: () => writeBundle(storeDirectory, manifest, blobs), catch: (cause) =>
+  storeDirectory: string,
+  manifest: PreparedReleaseV2,
+  blobs: ReadonlyMap<string, Uint8Array>,
+  options?: PreparedStoreOptions
+) => Effect.try({ try: () => writeBundle(storeDirectory, manifest, blobs, options), catch: (cause) =>
   cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
 }))
 
@@ -157,7 +224,7 @@ export const loadPreparedRelease = Effect.fn("loadPreparedRelease")((directory: 
 /** The durable store boundary used by coordinators and host projections. */
 export interface PreparedReleaseStoreShape {
   readonly commit: (
-    manifest: PreparedReleaseV1,
+    manifest: PreparedReleaseV2,
     blobs: ReadonlyMap<string, Uint8Array>
   ) => Effect.Effect<CommittedPreparedRelease, PreparedStoreError | PreparedCommitHandoffError>
   readonly load: (reference: CompletePreparedReleaseRef) => Effect.Effect<PreparedBundle, PreparedStoreError>
@@ -167,8 +234,11 @@ export class PreparedReleaseStore
   extends Context.Service<PreparedReleaseStore, PreparedReleaseStoreShape>()("ts-release/PreparedReleaseStore") {}
 
 /** A local store resolves digest-only references against one explicit root. */
-export const makeLocalPreparedReleaseStore = (storeDirectory: string): PreparedReleaseStoreShape => ({
-  commit: (manifest, blobs) => storePreparedRelease(storeDirectory, manifest, blobs).pipe(
+export const makeLocalPreparedReleaseStore = (
+  storeDirectory: string,
+  options?: PreparedStoreOptions
+): PreparedReleaseStoreShape => ({
+  commit: (manifest, blobs) => storePreparedRelease(storeDirectory, manifest, blobs, options).pipe(
     Effect.flatMap((bundle) => makeLocalCompletePreparedReleaseRef(basename(bundle.directory)).pipe(
       Effect.map((ref) => ({ ref, bundle })),
       Effect.mapError((cause) => PreparedStoreError.make({ reason: cause.reason }))

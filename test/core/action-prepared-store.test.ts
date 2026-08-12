@@ -10,8 +10,9 @@ import {
   type ActionProducerContext
 } from "../../apps/ts-release-action/src/prepared-store.js"
 import { makePreparedReferenceChannel } from "../../apps/ts-release-action/src/commands.js"
-import { Digest, NonEmptyName, SafeRelativePath, Version } from "../../src/model/primitives.js"
-import { PreparedProject, PreparedReleaseV1, PreparedSource } from "../../src/release/prepared.js"
+import { parseSha256Hex } from "../../src/model/digest.js"
+import { NonEmptyName, SafeRelativePath, Version } from "../../src/model/primitives.js"
+import { PreparedProject, PreparedReleaseV2, PreparedSource } from "../../src/release/prepared.js"
 import { encodeCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
 import { PreparedCommitHandoffError } from "../../src/release/prepared-store.js"
 
@@ -24,14 +25,14 @@ const context: ActionProducerContext = {
   candidateCommit: "c".repeat(40)
 }
 
-const manifest = PreparedReleaseV1.make({
-  schemaVersion: "prepared-release/v1",
+const manifest = PreparedReleaseV2.make({
+  schemaVersion: "prepared-release/v2",
   source: PreparedSource.make({
     commit: NonEmptyName.make(context.candidateCommit),
     tree: NonEmptyName.make("tree"),
     clean: true,
     packageManifestPath: SafeRelativePath.make("package.json"),
-    packageManifestDigest: Digest.make("a".repeat(64))
+    packageManifestDigest: parseSha256Hex("a".repeat(64))
   }),
   project: PreparedProject.make({
     name: NonEmptyName.make("fixture"),

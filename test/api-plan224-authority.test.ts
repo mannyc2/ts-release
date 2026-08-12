@@ -26,13 +26,13 @@ import {
   type CredentialRequest
 } from "../src/model/authority.js"
 import {
-  Digest,
   NonEmptyName,
   OutputId,
   SafeRelativePath,
   Version,
   WorkspaceRoot
 } from "../src/model/primitives.js"
+import { sha256Digest } from "../src/model/digest.js"
 import {
   CredentialProvider,
   makeCredentialProvider,
@@ -50,7 +50,7 @@ import {
   PreparedArtifact,
   PreparedNpmPublication,
   PreparedProject,
-  PreparedReleaseV1,
+  PreparedReleaseV2,
   PreparedSource,
   encodePreparedRelease
 } from "../src/release/prepared.js"
@@ -81,7 +81,7 @@ const conflictResponse = (): HttpResponse => response(200, {
 
 const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
   const bytes = new TextEncoder().encode("exact prepared npm bytes\n")
-  const digest = Digest.make(sha256(bytes))
+  const digest = sha256Digest(bytes)
   const artifact = PreparedArtifact.make({
     id: OutputId.make("npm-tarball"),
     path: SafeRelativePath.make("package.tgz"),
@@ -105,14 +105,14 @@ const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
   })
   return {
     directory: "/not-stored",
-    manifest: PreparedReleaseV1.make({
-      schemaVersion: "prepared-release/v1",
+    manifest: PreparedReleaseV2.make({
+      schemaVersion: "prepared-release/v2",
       source: PreparedSource.make({
         commit: NonEmptyName.make(commit),
         tree: NonEmptyName.make("prepared-tree"),
         clean: true,
         packageManifestPath: SafeRelativePath.make("package.json"),
-        packageManifestDigest: Digest.make("a".repeat(64))
+        packageManifestDigest: sha256Digest(new TextEncoder().encode("package manifest"))
       }),
       project: PreparedProject.make({
         name: NonEmptyName.make("fixture"),
@@ -131,7 +131,7 @@ const localOnlyBundle = (): PreparedBundle => {
   const fixture = remoteBundle()
   return {
     ...fixture,
-    manifest: PreparedReleaseV1.make({
+    manifest: PreparedReleaseV2.make({
       ...fixture.manifest,
       publications: []
     })
@@ -232,7 +232,7 @@ const writeDigestValidInvalidBundle = async (
 ) => {
   const fixture = remoteBundle()
   const raw = JSON.parse(new TextDecoder().decode(encodePreparedRelease(fixture.manifest))) as {
-    artifacts: ReadonlyArray<{ readonly blob: string }>
+    artifacts: ReadonlyArray<{ readonly blob: { readonly hex: string } }>
     publications: [RawPreparedPublication]
   }
   mutate(raw.publications[0])
@@ -244,7 +244,7 @@ const writeDigestValidInvalidBundle = async (
   writeFileSync(join(directory, "prepared-release.json"), manifestBytes)
   const artifact = fixture.manifest.artifacts[0]!
   writeFileSync(
-    join(directory, "blobs", raw.artifacts[0]!.blob),
+    join(directory, "blobs", raw.artifacts[0]!.blob.hex),
     fixture.blobs.get(artifact.id.toString())!
   )
   return {
@@ -293,7 +293,7 @@ describe("Plan 224 public API authority ordering", () => {
         arrange: async (root) => {
           const { store, committed } = await commitLocal(root, remoteBundle())
           const artifact = committed.bundle.manifest.artifacts[0]!
-          const blob = join(committed.bundle.directory, "blobs", artifact.blob.toString())
+          const blob = join(committed.bundle.directory, "blobs", artifact.blob.hex)
           chmodSync(blob, 0o600)
           writeFileSync(blob, "corrupt bytes")
           return { store, prepared: committed.ref }

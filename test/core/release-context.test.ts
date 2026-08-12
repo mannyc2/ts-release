@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import { createHash } from "node:crypto"
 import { readFileSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { realpathSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { spawnSync } from "node:child_process"
+import { parseSha256Hex, sha256Digest } from "../../src/model/digest.js"
 import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../../src/model/primitives.js"
 import { makeSourceObserver, ReleaseContextError, type SourceObserverRuntime, VerifiedPackage, VerifiedReleaseContext, VerifiedSource, verifySource } from "../../src/release/context.js"
 
@@ -14,11 +14,11 @@ const context = (commit = "abc123", clean: true = true) => VerifiedReleaseContex
   source: VerifiedSource.make({
     commit: NonEmptyName.make(commit), tree: NonEmptyName.make("tree123"), clean,
     packageManifestPath: SafeRelativePath.make("package.json"),
-    packageManifestDigest: NonEmptyName.make("sha256:manifest"),
+    packageManifestDigest: parseSha256Hex("a".repeat(64)),
     headTags: []
   }),
   package: VerifiedPackage.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
-    path: SafeRelativePath.make("package.json"), digest: NonEmptyName.make("sha256:manifest") })
+    path: SafeRelativePath.make("package.json"), digest: parseSha256Hex("a".repeat(64)) })
 })
 
 describe("verified release context", () => {
@@ -51,7 +51,7 @@ describe("verified release context", () => {
       canonicalRoot: (workspace) => Effect.sync(() => realpathSync(workspace)),
       read: (workspace, path) => Effect.sync(() => new Uint8Array(readFileSync(join(workspace, path)))),
       command: (workspace, argv) => Effect.try({ try: () => git(workspace, ...argv), catch: (cause) => cause }),
-      digest: (bytes) => Effect.sync(() => `sha256:${createHash("sha256").update(bytes).digest("hex")}`)
+      digest: (bytes) => Effect.sync(() => sha256Digest(bytes))
     }
     return { root, observer: makeSourceObserver(runtime) }
   }

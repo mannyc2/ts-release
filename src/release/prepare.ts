@@ -9,10 +9,11 @@ import { tarGz, zip, type ArchiveEntry } from "../drivers/archive.js"
 import { sha256 } from "../drivers/utils.js"
 import { contained } from "../drivers/contain.js"
 import type { RunCommand } from "../drivers/process.js"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
+import { sha256Digest } from "../model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
 import { VerifiedReleaseContext } from "./context.js"
 import { GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact, GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, type GraphPreparation, type ReleaseGraph } from "./graph.js"
-import { PreparedArtifact, PreparedGitHubPublication, PreparedNpmPublication, PreparedProject, PreparedReleaseV1, PreparedSource } from "./prepared.js"
+import { PreparedArtifact, PreparedGitHubPublication, PreparedNpmPublication, PreparedProject, PreparedReleaseV2, PreparedSource } from "./prepared.js"
 import { CompletePreparedReleaseRef } from "./prepared-ref.js"
 import {
   PreparedCommitHandoffError, PreparedStoreError, type PreparedReleaseStoreShape
@@ -252,9 +253,9 @@ const npmTarball = (
   // changing the captured tarball bytes.
   const path = SafeRelativePath.make(`${destination}/${files[0]}`)
   const artifactBytes = yield* capture(request.context, { ...declarations.get(packageId.toString())!, id: outputId(`npm-tarball:${publication.id}`), path, kind: "archive" })
-  const hash = sha256(artifactBytes)
+  const digest = sha256Digest(artifactBytes)
   return PreparedArtifact.make({ id: outputId(`npm-tarball:${publication.id}`), path, kind: "archive", size: artifactBytes.length,
-    digest: Digest.make(hash), blob: Digest.make(hash), mediaType: "application/gzip" })
+    digest, blob: digest, mediaType: "application/gzip" })
 })
 
 export const prepareRelease = Effect.fn("prepareRelease")(function*(input: PreparationRequest) {
@@ -293,9 +294,9 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     for (const artifact of request.graph.artifacts) {
       const value = bytes.get(artifact.id.toString())
       if (value === undefined || artifact.kind === "directory" || artifact.kind === "package") continue
-      const contentHash = sha256(value)
+      const digest = sha256Digest(value)
       preparedArtifacts.set(artifact.id.toString(), PreparedArtifact.make({ id: artifact.id, path: artifact.path, kind: artifact.kind,
-        size: value.length, digest: Digest.make(contentHash), blob: Digest.make(contentHash),
+        size: value.length, digest, blob: digest,
         ...(artifact.mediaType === undefined ? {} : { mediaType: artifact.mediaType }) }))
     }
     const publications = [] as Array<PreparedNpmPublication | PreparedGitHubPublication>
@@ -326,9 +327,9 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     }
     const githubPublication = request.graph.publications.find((publication): publication is GraphGitHubPublication => publication._tag === "GraphGitHubPublication")
     const npmPublication = request.graph.publications.find((publication): publication is GraphNpmPublication => publication._tag === "GraphNpmPublication")
-    const manifest = PreparedReleaseV1.make({ schemaVersion: "prepared-release/v1",
+    const manifest = PreparedReleaseV2.make({ schemaVersion: "prepared-release/v2",
       source: PreparedSource.make({ commit: context.source.commit, tree: context.source.tree, clean: true,
-        packageManifestPath: context.source.packageManifestPath, packageManifestDigest: Digest.make(context.source.packageManifestDigest.toString()) }),
+        packageManifestPath: context.source.packageManifestPath, packageManifestDigest: context.source.packageManifestDigest }),
       project: PreparedProject.make({ name: context.package.name, version: context.package.version,
         tag: githubPublication?.tag ?? NonEmptyName.make(`v${context.package.version}`),
         ...(npmPublication === undefined ? {} : { packageName: npmPublication.packageName }),

@@ -1,18 +1,13 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import { Sha256Hex } from "../model/digest.js"
 
-const sha256Pattern = /^[a-f0-9]{64}$/u
 const referenceSegmentPattern = /^[A-Za-z0-9._~-]{1,255}$/u
 const positiveDecimalPattern = /^[1-9][0-9]*$/u
 
 /** The lowercase hexadecimal payload of a SHA-256 digest. */
-export const PreparedReleaseSha256 = Schema.String.check(
-  Schema.makeFilter((value: string) =>
-    sha256Pattern.test(value)
-      ? undefined
-      : "PreparedReleaseSha256 must contain exactly 64 lowercase hexadecimal characters.")
-).pipe(Schema.brand("PreparedReleaseSha256"))
-export type PreparedReleaseSha256 = typeof PreparedReleaseSha256.Type
+export const PreparedReleaseSha256 = Sha256Hex
+export type PreparedReleaseSha256 = Sha256Hex
 
 const GitHubReferenceSegment = Schema.String.check(
   Schema.makeFilter((value: string) =>
@@ -85,8 +80,8 @@ const malformed = (reason: string): PreparedReleaseRefMalformedError =>
   PreparedReleaseRefMalformedError.make({ reason })
 
 const validateDigest = (digest: string): Effect.Effect<PreparedReleaseSha256, PreparedReleaseRefMalformedError> =>
-  sha256Pattern.test(digest)
-    ? Effect.succeed(PreparedReleaseSha256.make(digest))
+  Schema.is(Sha256Hex)(digest)
+    ? Effect.succeed(digest)
     : Effect.fail(malformed("The digest must contain exactly 64 lowercase hexadecimal characters."))
 
 const validateSegment = (

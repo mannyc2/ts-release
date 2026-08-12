@@ -13,7 +13,6 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { createHash } from "node:crypto"
 import {
   chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 } from "node:fs"
@@ -24,13 +23,14 @@ import { ReleaseRuntime, type ReleaseRuntimeShape } from "../../src/api/runtime.
 import type { ReleaseApiLayer } from "../../src/api/types.js"
 import { DriverError } from "../../src/drivers/errors.js"
 import type { RunCommand } from "../../src/drivers/process.js"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
+import { formatNpmSha512Sri, parseSha256Hex, sha256Digest, sha512Digest } from "../../src/model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
 import {
   canonicalizeRegistryUrl, makeNpmPublicationAuthorityIntent
 } from "../../src/release/graph.js"
 import {
-  PreparedArtifact, PreparedNpmPublication, PreparedProject, PreparedReleaseV1,
+  PreparedArtifact, PreparedNpmPublication, PreparedProject, PreparedReleaseV2,
   PreparedSource, encodePreparedRelease
 } from "../../src/release/prepared.js"
 import {
@@ -63,7 +63,6 @@ import { makeNodeReleaseLayer } from "../../src/platform/node.js"
 import { contextFor, noopRun } from "../core/runtime-fixture.js"
 
 const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
-const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
 const response = (status: number, body: unknown): HttpResponse => ({
   status, headers: {}, body: typeof body === "string" ? body : JSON.stringify(body)
 })
@@ -144,7 +143,7 @@ const npmFixture = (
 ): { readonly bundle: PreparedBundle, readonly bytes: Uint8Array, readonly publication: PreparedNpmPublication } => {
   const canonicalRegistry = canonicalizeRegistryUrl(registryUrl)
   const bytes = utf8("prepared npm bytes\n")
-  const hash = Digest.make(sha256(bytes))
+  const hash = sha256Digest(bytes)
   const artifact = PreparedArtifact.make({
     id: OutputId.make("npm-tarball"), path: SafeRelativePath.make("package.tgz"), kind: "archive",
     size: bytes.length, digest: hash, blob: hash, mediaType: "application/gzip"
@@ -156,11 +155,11 @@ const npmFixture = (
       packageName: "@fixture/package", version, registryUrl: canonicalRegistry
     })
   })
-  const manifest = PreparedReleaseV1.make({
-    schemaVersion: "prepared-release/v1",
+  const manifest = PreparedReleaseV2.make({
+    schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({
       commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make("a".repeat(64))
+      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64))
     }),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"), packageName: publication.packageName,
@@ -184,11 +183,11 @@ const correctionFor = (bundle: PreparedBundle, message = "Use 1.0.1 instead."): 
   const publication = bundle.manifest.publications[0] as PreparedNpmPublication
   const bytes = bundle.blobs.get(publication.artifactId.toString())!
   return makeCorrectionIntent({
-    schemaVersion: "correction-intent/v1", preparedDigest: Digest.make(sha256(encodePreparedRelease(bundle.manifest))),
+    schemaVersion: "correction-intent/v2", preparedDigest: sha256Digest(encodePreparedRelease(bundle.manifest)),
     correction: {
       _tag: "NpmDeprecationCorrection", provider: "npm", publicationId: publication.id,
       registryUrl: publication.registryUrl, packageName: publication.packageName, version: publication.version,
-      tarballIntegrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
+      tarballIntegrity: sha512Digest(bytes),
       message
     }
   })
@@ -202,18 +201,18 @@ const catalogCorrectionFixture = (): {
 } => {
   const target = utf8("class Fixture < Formula\nend\n")
   const activeState = encodeCatalogManagedState(CatalogManagedState.make({
-    schemaVersion: "ts-release/catalog-state/v1", version: Version.make("1.0.0"),
-    manifestDigest: Digest.make("a".repeat(64)), status: "active"
+    schemaVersion: "ts-release/catalog-state/v2", version: Version.make("1.0.0"),
+    manifestDigest: parseSha256Hex("a".repeat(64)), status: "active"
   }))
-  const targetHash = Digest.make(sha256(target))
-  const stateHash = Digest.make(sha256(activeState))
+  const targetHash = sha256Digest(target)
+  const stateHash = sha256Digest(activeState)
   const targetId = OutputId.make("catalog-target")
   const stateId = OutputId.make("catalog-state")
-  const manifest = PreparedReleaseV1.make({
-    schemaVersion: "prepared-release/v1",
+  const manifest = PreparedReleaseV2.make({
+    schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({
       commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: Digest.make("a".repeat(64))
+      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64))
     }),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0")
@@ -229,7 +228,7 @@ const catalogCorrectionFixture = (): {
     blobs: new Map([[targetId.toString(), target], [stateId.toString(), activeState]])
   }
   const correction = makeCorrectionIntent({
-    schemaVersion: "correction-intent/v1", preparedDigest: Digest.make(sha256(encodePreparedRelease(manifest))),
+    schemaVersion: "correction-intent/v2", preparedDigest: sha256Digest(encodePreparedRelease(manifest)),
     correction: {
       _tag: "CatalogCorrection", provider: "catalog-git", publicationId: NonEmptyName.make("homebrew"),
       repository: "github.com/owner/tap", branch: NonEmptyName.make("main"),
@@ -264,7 +263,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     const calls = { value: 0 }
     const { store, committed } = await commitFixture(root, fixture.bundle)
     const artifact = committed.bundle.manifest.artifacts[0]!
-    const blob = join(committed.bundle.directory, "blobs", artifact.blob.toString())
+    const blob = join(committed.bundle.directory, "blobs", artifact.blob.hex)
     chmodSync(blob, 0o600)
     writeFileSync(blob, "corrupt prepared bytes")
     const api = makeReleaseApi(runtimeLayer(store, {}, calls))
@@ -325,7 +324,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     const fixture = npmFixture()
     const correctionA = correctionFor(fixture.bundle, "Use 1.0.1 instead.").correction as Extract<CorrectionIntent["correction"], { _tag: "NpmDeprecationCorrection" }>
     const correctionB = correctionFor(fixture.bundle, "Use 2.0.0 instead.").correction as Extract<CorrectionIntent["correction"], { _tag: "NpmDeprecationCorrection" }>
-    const integrity = correctionA.tarballIntegrity
+    const integrity = formatNpmSha512Sri(correctionA.tarballIntegrity)
     const http: PublicationHttp = {
       request: () => Effect.succeed(response(200, { dist: { integrity } }))
     }
@@ -403,7 +402,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
     const first = await prepare("first ignored bytes\n")
     const second = await prepare("second ignored bytes\n")
-    expect(sha256(first)).not.toBe(sha256(second))
+    expect(sha256Digest(first).hex).not.toBe(sha256Digest(second).hex)
   }, 20_000)
 
   test("public config accepts catalog publication presets but inspection exposes no catalog destination", async () => {

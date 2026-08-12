@@ -1,9 +1,9 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { createHash } from "node:crypto"
 import { readFileSync, realpathSync } from "node:fs"
 import { join } from "node:path"
 import { spawnSync } from "node:child_process"
+import { sha256Digest } from "../model/digest.js"
 import {
   makeSourceObserver, SourceObserver, type SourceObserverRuntime
 } from "../release/context.js"
@@ -24,7 +24,7 @@ const runtime: SourceObserverRuntime = {
     },
     catch: (cause) => cause
   }),
-  digest: (bytes) => Effect.sync(() => `sha256:${createHash("sha256").update(bytes).digest("hex")}`)
+  digest: (bytes) => Effect.sync(() => sha256Digest(bytes))
 }
 
 // Both supported runtimes use the same observation contract; only this host

@@ -1,6 +1,7 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import { Sha256Digest } from "../model/digest.js"
 import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
 
 const optional = Schema.optionalKey
@@ -10,7 +11,7 @@ export class VerifiedSource extends Schema.Class<VerifiedSource>("VerifiedSource
   tree: NonEmptyName,
   clean: Schema.Literal(true),
   packageManifestPath: SafeRelativePath,
-  packageManifestDigest: NonEmptyName,
+  packageManifestDigest: Sha256Digest,
   repository: optional(Schema.NonEmptyString),
   headTags: Schema.Array(NonEmptyName)
 }) {}
@@ -19,7 +20,7 @@ export class VerifiedPackage extends Schema.Class<VerifiedPackage>("VerifiedPack
   name: NonEmptyName,
   version: Version,
   path: SafeRelativePath,
-  digest: NonEmptyName,
+  digest: Sha256Digest,
   repository: optional(Schema.NonEmptyString)
 }) {}
 
@@ -48,7 +49,7 @@ export interface SourceObserverRuntime {
   readonly canonicalRoot: (workspace: WorkspaceRoot) => Effect.Effect<string, unknown>
   readonly read: (workspace: WorkspaceRoot, path: SafeRelativePath) => Effect.Effect<Uint8Array, unknown>
   readonly command: (workspace: WorkspaceRoot, argv: ReadonlyArray<string>) => Effect.Effect<string, unknown>
-  readonly digest: (bytes: Uint8Array) => Effect.Effect<string, unknown>
+  readonly digest: (bytes: Uint8Array) => Effect.Effect<Sha256Digest, unknown>
 }
 
 export class SourceObserver extends Context.Service<SourceObserver, SourceObserverShape>()(
@@ -128,13 +129,13 @@ export const makeSourceObserver = (runtime: SourceObserverRuntime): SourceObserv
     const repository = remote ?? manifestRepository
     const source = VerifiedSource.make({
       commit: NonEmptyName.make(commit), tree: NonEmptyName.make(tree), clean: true,
-      packageManifestPath, packageManifestDigest: NonEmptyName.make(digest), headTags: tags.map((tag) => NonEmptyName.make(tag)),
+      packageManifestPath, packageManifestDigest: digest, headTags: tags.map((tag) => NonEmptyName.make(tag)),
       ...(repository === undefined ? {} : { repository })
     })
     const context = VerifiedReleaseContext.make({
       workspace: root, source,
       package: VerifiedPackage.make({ name: NonEmptyName.make(name), version: Version.make(version),
-        path: packageManifestPath, digest: NonEmptyName.make(digest),
+        path: packageManifestPath, digest,
         ...(manifestRepository === undefined ? {} : { repository: manifestRepository }) })
     })
     return yield* verifySource(context, expectedCommit)

@@ -1,6 +1,7 @@
 import * as Schema from "effect/Schema"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
-import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import { Sha256Digest } from "../model/digest.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 import {
   PublicationAuthorityIntent,
   githubPublicationAuthorityIssue,
@@ -15,7 +16,7 @@ const artifactKind = Schema.Literals([
 
 export class PreparedSource extends Schema.Class<PreparedSource>("PreparedSource")({
   commit: NonEmptyName, tree: NonEmptyName, clean: Schema.Literal(true),
-  packageManifestPath: SafeRelativePath, packageManifestDigest: Digest
+  packageManifestPath: SafeRelativePath, packageManifestDigest: Sha256Digest
 }) {}
 
 export class PreparedProject extends Schema.Class<PreparedProject>("PreparedProject")({
@@ -27,7 +28,7 @@ export class PreparedArtifact extends Schema.Class<PreparedArtifact>("PreparedAr
   id: OutputId, path: SafeRelativePath, kind: artifactKind, size: Schema.Number.check(
     Schema.makeFilter((value: number) => Number.isSafeInteger(value) && value >= 0
       ? undefined : "Prepared artifact size must be a nonnegative safe integer.")
-  ), digest: Digest, blob: Digest, mediaType: optional(Schema.NonEmptyString)
+  ), digest: Sha256Digest, blob: Sha256Digest, mediaType: optional(Schema.NonEmptyString)
 }) {}
 
 export class PreparedNpmPublication extends Schema.TaggedClass<PreparedNpmPublication>()("PreparedNpmPublication", {
@@ -55,8 +56,8 @@ export const PreparedPublication = PreparedPublicationVariants.pipe(Schema.check
 ))
 export type PreparedPublication = typeof PreparedPublication.Type
 
-export class PreparedReleaseV1 extends Schema.Class<PreparedReleaseV1>("PreparedReleaseV1")({
-  schemaVersion: Schema.Literal("prepared-release/v1"), source: PreparedSource, project: PreparedProject,
+export class PreparedReleaseV2 extends Schema.Class<PreparedReleaseV2>("PreparedReleaseV2")({
+  schemaVersion: Schema.Literal("prepared-release/v2"), source: PreparedSource, project: PreparedProject,
   artifacts: Schema.Array(PreparedArtifact), publications: Schema.Array(PreparedPublication)
 }) {}
 
@@ -65,13 +66,13 @@ export class PreparedManifestError
     reason: Schema.String
   }) {}
 
-export const encodePreparedRelease = (manifest: PreparedReleaseV1): Uint8Array =>
-  new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(PreparedReleaseV1)(manifest)))
+export const encodePreparedRelease = (manifest: PreparedReleaseV2): Uint8Array =>
+  new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(PreparedReleaseV2)(manifest)))
 
-export const decodePreparedRelease = (bytes: Uint8Array): PreparedReleaseV1 => {
+export const decodePreparedRelease = (bytes: Uint8Array): PreparedReleaseV2 => {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-    const value = Schema.decodeUnknownSync(PreparedReleaseV1, { onExcessProperty: "error" })(parseStrictJson(text))
+    const value = Schema.decodeUnknownSync(PreparedReleaseV2, { onExcessProperty: "error" })(parseStrictJson(text))
     const canonical = encodePreparedRelease(value)
     if (canonical.length !== bytes.length || canonical.some((byte, index) => byte !== bytes[index])) {
       throw new Error("manifest bytes are not canonical")

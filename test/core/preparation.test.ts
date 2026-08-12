@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { parseSha256Hex } from "../../src/model/digest.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../../src/model/primitives.js"
 import { OutputDeclaration } from "../../src/release/graph.js"
 import { DriverError } from "../../src/drivers/errors.js"
@@ -24,9 +25,9 @@ import type { RunCommand } from "../../src/drivers/process.js"
 const contextFor = (root: string, commit = "abc123") => VerifiedReleaseContext.make({
   workspace: WorkspaceRoot.make(root),
   source: VerifiedSource.make({ commit: NonEmptyName.make(commit), tree: NonEmptyName.make("tree123"), clean: true,
-    packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: NonEmptyName.make("sha256:manifest"), headTags: [] }),
+    packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64)), headTags: [] }),
   package: VerifiedPackage.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
-    path: SafeRelativePath.make("package.json"), digest: NonEmptyName.make("sha256:manifest") })
+    path: SafeRelativePath.make("package.json"), digest: parseSha256Hex("a".repeat(64)) })
 })
 const requestFor = (root: string, run: RunCommand, verifySource = (context: VerifiedReleaseContext) => Effect.succeed(context)): PreparationRequest => {
   const output = OutputDeclaration.make({ id: OutputId.make("generated"), path: SafeRelativePath.make("generated.txt"), kind: "file", provenance: "process" })

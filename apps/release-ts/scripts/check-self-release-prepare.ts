@@ -23,7 +23,7 @@ try {
   const manifestBytes = new Uint8Array(readFileSync(join(bundle.directory, "prepared-release.json")))
   const manifestDigest = sha256(manifestBytes)
   if (prepared.scheme !== "local" || prepared.digest !== manifestDigest) failures.push("Prepared reference does not match the manifest SHA-256.")
-  if (bundle.manifest.schemaVersion !== "prepared-release/v1") failures.push("Prepared bundle has the wrong schema version.")
+  if (bundle.manifest.schemaVersion !== "prepared-release/v2") failures.push("Prepared bundle has the wrong schema version.")
   if (bundle.manifest.source.clean !== true) failures.push("Prepared source is not marked clean.")
   const artifactIds = new Set(bundle.manifest.artifacts.map((artifact) => artifact.id.toString()))
   for (const id of requiredArtifacts) if (!artifactIds.has(id)) failures.push(`Prepared bundle is missing artifact ${id}.`)

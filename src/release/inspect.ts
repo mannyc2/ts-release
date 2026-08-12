@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema"
-import { Digest, NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
+import { Sha256Digest } from "../model/digest.js"
+import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
 import type { VerifiedReleaseContext } from "./context.js"
 import type { GraphPreparation, GraphPublication, ReleaseGraph } from "./graph.js"
 import type { PreparedBundle } from "./prepared-store.js"
@@ -42,9 +43,9 @@ export const inspectRelease = (
 
 export class PreparedReleaseInspection extends Schema.Class<PreparedReleaseInspection>("PreparedReleaseInspection")({
   bundleDirectory: Schema.String,
-  source: Schema.Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Schema.Literal(true), packageManifestPath: SafeRelativePath, packageManifestDigest: Digest }),
+  source: Schema.Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Schema.Literal(true), packageManifestPath: SafeRelativePath, packageManifestDigest: Sha256Digest }),
   project: Schema.Struct({ name: NonEmptyName, packageName: Schema.optionalKey(NonEmptyName), version: Schema.NonEmptyString, tag: NonEmptyName, repository: Schema.optionalKey(Schema.NonEmptyString) }),
-  artifacts: Schema.Array(Schema.Struct({ id: OutputId, path: SafeRelativePath, kind: Schema.String, size: Schema.Number, digest: Digest, mediaType: Schema.optionalKey(Schema.NonEmptyString) })),
+  artifacts: Schema.Array(Schema.Struct({ id: OutputId, path: SafeRelativePath, kind: Schema.String, size: Schema.Number, digest: Sha256Digest, mediaType: Schema.optionalKey(Schema.NonEmptyString) })),
   publications: Schema.Array(Schema.Struct({ id: NonEmptyName, destination: Schema.Literals(["npm", "github"]), subject: Schema.NonEmptyString })),
 }) {}
 

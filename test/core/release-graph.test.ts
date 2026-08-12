@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { parseSha256Hex } from "../../src/model/digest.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../../src/model/primitives.js"
 import { VerifiedPackage, VerifiedReleaseContext, VerifiedSource } from "../../src/release/context.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
@@ -25,9 +26,9 @@ import { executableCapabilities } from "../../src/capabilities/registry.js"
 const context = VerifiedReleaseContext.make({
   workspace: WorkspaceRoot.make(process.cwd()),
   source: VerifiedSource.make({ commit: NonEmptyName.make("abc123"), tree: NonEmptyName.make("tree123"), clean: true,
-    packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: NonEmptyName.make("sha256:manifest"), headTags: [] }),
+    packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64)), headTags: [] }),
   package: VerifiedPackage.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
-    path: SafeRelativePath.make("package.json"), digest: NonEmptyName.make("sha256:manifest") })
+    path: SafeRelativePath.make("package.json"), digest: parseSha256Hex("a".repeat(64)) })
 })
 const artifact = (id: string, path: string) => ({
   id: OutputId.make(id), path: SafeRelativePath.make(path), kind: "file" as const, provenance: "process" as const

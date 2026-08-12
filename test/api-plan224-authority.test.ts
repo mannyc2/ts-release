@@ -32,7 +32,13 @@ import {
   Version,
   WorkspaceRoot
 } from "../src/model/primitives.js"
-import { sha256Digest } from "../src/model/digest.js"
+import {
+  formatNpmSha1Shasum,
+  formatNpmSha512Sri,
+  sha1Digest,
+  sha256Digest,
+  sha512Digest
+} from "../src/model/digest.js"
 import {
   CredentialProvider,
   makeCredentialProvider,
@@ -75,9 +81,15 @@ const response = (status: number, body: unknown): HttpResponse => ({
   body: typeof body === "string" ? body : JSON.stringify(body)
 })
 
-const conflictResponse = (): HttpResponse => response(200, {
-  dist: { integrity: "sha512-different", shasum: "different" }
-})
+const conflictResponse = (): HttpResponse => {
+  const bytes = new TextEncoder().encode("different provider tarball bytes\n")
+  return response(200, {
+    dist: {
+      integrity: formatNpmSha512Sri(sha512Digest(bytes)),
+      shasum: formatNpmSha1Shasum(sha1Digest(bytes))
+    }
+  })
+}
 
 const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
   const bytes = new TextEncoder().encode("exact prepared npm bytes\n")

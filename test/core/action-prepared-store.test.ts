@@ -74,7 +74,9 @@ describe("GitHub Actions durable prepared store", () => {
       expect(existsSync(committed.bundle.directory)).toBe(true)
 
       const second = makeActionPreparedReleaseStore({
-        workspace: join(root, "second"), context, artifacts: fakeArtifacts(artifacts, events)
+        workspace: join(root, "second"),
+        context: { ...context, runAttempt: "3" },
+        artifacts: fakeArtifacts(artifacts, events)
       })
       const loaded = await Effect.runPromise(second.load(committed.ref))
       expect(loaded.manifest.source.commit.toString()).toBe(context.candidateCommit)

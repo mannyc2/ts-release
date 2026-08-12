@@ -13,6 +13,7 @@ import { compileReleaseGraph } from "../release/compiler.js"
 import type { VerifiedReleaseContext } from "../release/context.js"
 import { inspectPreparedRelease, inspectRelease } from "../release/inspect.js"
 import { prepareRelease } from "../release/prepare.js"
+import { PreparationError } from "../release/prepare.js"
 import type { CompletePreparedReleaseRef } from "../release/prepared-ref.js"
 import { PreparedReleaseStore } from "../release/prepared-store.js"
 import { ObservedFacts } from "../resolve/facts.js"
@@ -182,11 +183,20 @@ const safeCause = <E>(cause: Cause.Cause<E>, fallback: string): string => {
 
 const preparationFailure = <A, E, R>(
   effect: Effect.Effect<A, E, R>
-): Effect.Effect<A, ReleaseInputError | ReleasePreparationError, R> => effect.pipe(
-  Effect.catchCause((cause): Effect.Effect<A, ReleaseInputError | ReleasePreparationError> => {
+): Effect.Effect<A, ReleaseInputError | ReleasePreparationError | ReleaseAbortedError, R> => effect.pipe(
+  Effect.catchCause((cause): Effect.Effect<
+    A,
+    ReleaseInputError | ReleasePreparationError | ReleaseAbortedError
+  > => {
     const failure = Cause.squash(cause)
     if (failure instanceof ReleaseInputError) {
-      return Effect.fail<ReleaseInputError | ReleasePreparationError>(failure)
+      return Effect.fail<ReleaseInputError | ReleasePreparationError | ReleaseAbortedError>(failure)
+    }
+    if (failure instanceof PreparationError && failure.prepared !== undefined) {
+      return Effect.fail(new ReleaseAbortedError({
+        prepared: failure.prepared,
+        cause: safeCause(cause, "The durable prepared reference could not be handed to the host.")
+      }))
     }
     return Effect.fail(new ReleasePreparationError({
       cause: safeCause(cause, "Release preparation failed before a durable prepared reference was committed.")

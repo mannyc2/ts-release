@@ -1,12 +1,20 @@
 import { describe, expect, test } from "bun:test"
+import * as Effect from "effect/Effect"
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { makeReleaseApi } from "../src/index.js"
 import {
   ReleaseInputError
 } from "../src/api/errors.js"
-import { encodeCompletePreparedReleaseRef } from "../src/release/prepared-ref.js"
-import { makeLocalPreparedReleaseStore } from "../src/release/prepared-store.js"
+import {
+  encodeCompletePreparedReleaseRef,
+  makeLocalCompletePreparedReleaseRef
+} from "../src/release/prepared-ref.js"
+import {
+  PreparedCommitHandoffError,
+  PreparedStoreError,
+  makeLocalPreparedReleaseStore
+} from "../src/release/prepared-store.js"
 import { fixtureConfig, runtimeLayer } from "./core/runtime-fixture.js"
 
 const workspace = (): string => {
@@ -112,6 +120,28 @@ describe("public lifecycle API", () => {
       await expect(api.publish({ prepared })).rejects.toMatchObject({
         _tag: "ReleaseAbortedError",
         prepared
+      })
+    } finally {
+      await api.dispose()
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("a failed host handoff after durable commit carries the exact recovery reference", async () => {
+    const root = workspace()
+    const prepared = await Effect.runPromise(makeLocalCompletePreparedReleaseRef("a".repeat(64)))
+    const api = makeReleaseApi(runtimeLayer(undefined, {
+      commit: () => Effect.fail(new PreparedCommitHandoffError({
+        prepared,
+        reason: "the host output channel rejected the durable reference"
+      })),
+      load: () => Effect.fail(new PreparedStoreError({ reason: "not used" }))
+    }))
+    try {
+      await expect(api.release({ config: fixtureConfig, workspace: root })).rejects.toMatchObject({
+        _tag: "ReleaseAbortedError",
+        prepared,
+        cause: "the host output channel rejected the durable reference"
       })
     } finally {
       await api.dispose()

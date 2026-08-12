@@ -13,12 +13,16 @@ import { Digest, NonEmptyName, OutputId, SafeRelativePath, Version, WorkspaceRoo
 import { VerifiedReleaseContext } from "./context.js"
 import { GraphArchive, GraphCatalog, GraphChecksum, GraphCommandArtifact, GraphCommandCheck, GraphGitHubPublication, GraphNpmPublication, type GraphPreparation, type ReleaseGraph } from "./graph.js"
 import { PreparedArtifact, PreparedGitHubPublication, PreparedNpmPublication, PreparedProject, PreparedReleaseV1, PreparedSource } from "./prepared.js"
+import { CompletePreparedReleaseRef } from "./prepared-ref.js"
 import {
-  PreparedStoreError, type PreparedReleaseStoreShape
+  PreparedCommitHandoffError, PreparedStoreError, type PreparedReleaseStoreShape
 } from "./prepared-store.js"
 
 export class PreparationError
-  extends Schema.TaggedErrorClass<PreparationError>()("PreparationError", { reason: Schema.String }) {}
+  extends Schema.TaggedErrorClass<PreparationError>()("PreparationError", {
+    reason: Schema.String,
+    prepared: Schema.optionalKey(CompletePreparedReleaseRef)
+  }) {}
 
 export interface PreparationRequest {
   readonly context: VerifiedReleaseContext
@@ -32,7 +36,12 @@ export interface PreparationRequest {
 type Bytes = Map<string, Uint8Array>
 type Declarations = Map<string, ReleaseGraph["artifacts"][number]>
 const failure = (cause: unknown): PreparationError => PreparationError.make({
-  reason: cause instanceof Error ? cause.message : String(cause)
+  reason: cause instanceof PreparedCommitHandoffError
+    ? cause.reason
+    : cause instanceof Error
+    ? cause.message
+    : String(cause),
+  ...(cause instanceof PreparedCommitHandoffError ? { prepared: cause.prepared } : {})
 })
 const attempt = <A>(body: () => A): Effect.Effect<A, PreparationError> => Effect.try({
   try: body, catch: failure

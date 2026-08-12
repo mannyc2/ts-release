@@ -6,10 +6,21 @@ import { createHash, randomUUID } from "node:crypto"
 import { basename, join } from "node:path"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
 import { PreparedArtifact, PreparedReleaseV1, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
-import { type CompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
+import { CompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from "./prepared-ref.js"
 
 export class PreparedStoreError
   extends Schema.TaggedErrorClass<PreparedStoreError>()("PreparedStoreError", { reason: Schema.String }) {}
+
+/**
+ * The bytes are already durable and verified, but the host failed to expose
+ * their recovery reference before publication could continue. This is a
+ * post-commit abort, never a preparation failure.
+ */
+export class PreparedCommitHandoffError
+  extends Schema.TaggedErrorClass<PreparedCommitHandoffError>()("PreparedCommitHandoffError", {
+    prepared: CompletePreparedReleaseRef,
+    reason: Schema.String
+  }) {}
 
 const hex = /^[a-f0-9]{64}$/u
 const hash = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex")
@@ -148,7 +159,7 @@ export interface PreparedReleaseStoreShape {
   readonly commit: (
     manifest: PreparedReleaseV1,
     blobs: ReadonlyMap<string, Uint8Array>
-  ) => Effect.Effect<CommittedPreparedRelease, PreparedStoreError>
+  ) => Effect.Effect<CommittedPreparedRelease, PreparedStoreError | PreparedCommitHandoffError>
   readonly load: (reference: CompletePreparedReleaseRef) => Effect.Effect<PreparedBundle, PreparedStoreError>
 }
 

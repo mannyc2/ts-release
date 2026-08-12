@@ -93,7 +93,7 @@ describe("immutable release graph", () => {
       npmPackage: { path: SafeRelativePath.make(".") },
       publish: {
         npm: { registry: "https://REGISTRY.example.test/custom///", tokenEnv: "CUSTOM_NPM_TOKEN" },
-        github: { repository: "owner/fixture" }
+        github: { repository: "owner/fixture", tokenEnv: "CUSTOM_GITHUB_TOKEN" }
       }
     }), context)
     const npm = tokenGraph.publications.find((item) => item._tag === "GraphNpmPublication")
@@ -115,10 +115,13 @@ describe("immutable release graph", () => {
       audience: "https://api.github.com/repos/owner/fixture",
       observationStrategies: [
         { kind: "anonymous" },
-        { kind: "token", credential: "GITHUB_TOKEN" }
+        { kind: "token", credential: "CUSTOM_GITHUB_TOKEN" }
       ],
-      publishStrategy: { kind: "token", credential: "GITHUB_TOKEN" }
+      publishStrategy: { kind: "token", credential: "CUSTOM_GITHUB_TOKEN" }
     })
+    expect(makeGitHubPublicationAuthorityIntent({
+      repository: "owner/fixture", tag: "v1.0.0"
+    }).publishStrategy).toMatchObject({ kind: "token", credential: "GITHUB_TOKEN" })
 
     const trustedGraph = compileReleaseGraph(CandidateConfig.make({
       project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },

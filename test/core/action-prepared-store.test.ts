@@ -85,6 +85,56 @@ describe("GitHub Actions durable prepared store", () => {
     } finally { rmSync(root, { recursive: true, force: true }) }
   })
 
+  test("treats a rejected reference notification as a post-commit failure", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-action-store-"))
+    const artifacts = join(root, "artifacts")
+    const events: string[] = []
+    try {
+      const store = makeActionPreparedReleaseStore({
+        workspace: join(root, "workspace"),
+        context,
+        artifacts: fakeArtifacts(artifacts, events),
+        onCommit: () => {
+          events.push("output:failed")
+          throw new Error("prepared reference output failed")
+        }
+      })
+
+      let failure: unknown
+      let mutations = 0
+      try {
+        await Effect.runPromise(store.commit(manifest, new Map()).pipe(
+          Effect.tap(() => Effect.sync(() => { mutations += 1 }))
+        ))
+      } catch (cause) {
+        failure = cause
+      }
+
+      const artifactName = events.find((event) => event.startsWith("upload:"))?.slice("upload:".length)
+      expect(artifactName).toMatch(/^ts-release-prepared-/u)
+      expect(events).toEqual([
+        `upload:${artifactName}`,
+        `download:${artifactName}`,
+        "output:failed"
+      ])
+      expect(existsSync(join(artifacts, artifactName!))).toBe(true)
+      expect(mutations).toBe(0)
+      expect(failure).toMatchObject({
+        _tag: "PreparedCommitHandoffError",
+        prepared: {
+          scheme: "gha",
+          owner: "owner",
+          repository: "repository",
+          runId: context.runId,
+          attempt: context.runAttempt,
+          artifactName,
+          digest: artifactName!.slice("ts-release-prepared-".length)
+        },
+        reason: "prepared reference output failed"
+      })
+    } finally { rmSync(root, { recursive: true, force: true }) }
+  })
+
   test("rejects a foreign run before artifact access and rejects tampered producer provenance", async () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-action-store-"))
     const artifacts = join(root, "artifacts")

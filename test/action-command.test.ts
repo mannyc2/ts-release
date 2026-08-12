@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import * as Effect from "effect/Effect"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import {
@@ -9,9 +10,12 @@ import {
   runAction,
   type ActionRuntime
 } from "../apps/ts-release-action/src/commands.js"
+import { decodeCompletePreparedReleaseRef } from "../src/release/prepared-ref.js"
 
 const digest = "a".repeat(64)
 const preparedRef = `prepared:gha:owner/repository/runs/123/attempts/1/artifacts/ts-release-prepared-${digest}#sha256-${digest}`
+const preparedReference = () => Effect.runPromise(decodeCompletePreparedReleaseRef(preparedRef))
+const completeReport = { status: "complete", subjects: [] } as never
 
 const harness = (root: string, values: Record<string, string>) => {
   const outputs: Record<string, string> = {}
@@ -25,10 +29,6 @@ const harness = (root: string, values: Record<string, string>) => {
     output,
     read: (path) => readFileSync(path, "utf8"),
     write: (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value) },
-    resolvePrepared: async (reference) => {
-      await preparedReference.emit(reference)
-      return join(root, "downloaded")
-    },
     preparedReference,
     summarize
   }
@@ -54,6 +54,7 @@ test("release makes one public call and receives the durable reference before it
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
   writeFileSync(join(root, "release.config.json"), JSON.stringify({ project: {} }))
   const fixture = harness(root, { command: "release", config: "release.config.json" })
+  const prepared = await preparedReference()
   const events: string[] = []
   let calls = 0
   await runAction({
@@ -62,32 +63,38 @@ test("release makes one public call and receives the durable reference before it
       events.push("release:start")
       expect(input.workspace).toBe(root)
       await fixture.preparedReference.emit(preparedRef)
+      events.push("release:prepared")
       events.push("release:return")
-      return { publications: [] } as never
+      return { prepared, report: completeReport }
     },
-    prepare: async () => ({}) as never,
-    publish: async () => []
+    prepare: async () => prepared,
+    publish: async () => completeReport
   }, fixture.runtime)
   expect(calls).toBe(1)
-  expect(events).toEqual(["release:start", "release:return"])
+  expect(events).toEqual(["release:start", "release:prepared", "release:return"])
   expect(fixture.outputs["prepared-ref"]).toBe(preparedRef)
   expect(fixture.outputs["report-ref"]).toBe(".release/ts-release/action-report.json")
   expect(existsSync(join(root, fixture.outputs["report-ref"]!))).toBe(true)
-  expect(readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")).toContain('"command": "release"')
+  const report = JSON.parse(readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")) as Record<string, unknown>
+  expect(report).toMatchObject({ command: "release", status: "complete", prepared: preparedRef })
+  expect(report).toHaveProperty("report", completeReport)
+  expect(report).not.toHaveProperty("result")
+  expect(JSON.stringify(report)).not.toContain("publications")
 })
 
 test("prepare emits only a reference projection, never its local bundle path", async () => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
   writeFileSync(join(root, "release.config.json"), "{}")
   const fixture = harness(root, { command: "prepare", config: "release.config.json" })
+  const prepared = await preparedReference()
   const secretDirectory = join(root, ".release", "ts-release", "prepared", digest)
   await runAction({
-    release: async () => ({}) as never,
+    release: async () => ({ prepared, report: completeReport }),
     prepare: async () => {
       await fixture.preparedReference.emit(preparedRef)
-      return { directory: secretDirectory } as never
+      return prepared
     },
-    publish: async () => []
+    publish: async () => completeReport
   }, fixture.runtime)
   const report = readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")
   expect(report).toContain(preparedRef)

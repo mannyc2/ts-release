@@ -17403,19 +17403,19 @@ var require_undici = __commonJS((exports, module) => {
 var require_json_typings = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.isJsonObject = exports.typeofJsonValue = undefined;
-  function typeofJsonValue(value2) {
-    let t = typeof value2;
+  function typeofJsonValue(value3) {
+    let t = typeof value3;
     if (t == "object") {
-      if (Array.isArray(value2))
+      if (Array.isArray(value3))
         return "array";
-      if (value2 === null)
+      if (value3 === null)
         return "null";
     }
     return t;
   }
   exports.typeofJsonValue = typeofJsonValue;
-  function isJsonObject(value2) {
-    return value2 !== null && typeof value2 == "object" && !Array.isArray(value2);
+  function isJsonObject(value3) {
+    return value3 !== null && typeof value3 == "object" && !Array.isArray(value3);
   }
   exports.isJsonObject = isJsonObject;
 });
@@ -17703,17 +17703,17 @@ var require_goog_varint = __commonJS((exports) => {
     return decimalFrom1e7(digitC, 0) + decimalFrom1e7(digitB, digitC) + decimalFrom1e7(digitA, 1);
   }
   exports.int64toString = int64toString;
-  function varint32write(value2, bytes) {
-    if (value2 >= 0) {
-      while (value2 > 127) {
-        bytes.push(value2 & 127 | 128);
-        value2 = value2 >>> 7;
+  function varint32write(value3, bytes) {
+    if (value3 >= 0) {
+      while (value3 > 127) {
+        bytes.push(value3 & 127 | 128);
+        value3 = value3 >>> 7;
       }
-      bytes.push(value2);
+      bytes.push(value3);
     } else {
       for (let i = 0;i < 9; i++) {
-        bytes.push(value2 & 127 | 128);
-        value2 = value2 >> 7;
+        bytes.push(value3 & 127 | 128);
+        value3 = value3 >> 7;
       }
       bytes.push(1);
     }
@@ -17801,51 +17801,51 @@ var require_pb_long = __commonJS((exports) => {
   }
 
   class PbULong extends SharedPbLong {
-    static from(value2) {
+    static from(value3) {
       if (BI)
-        switch (typeof value2) {
+        switch (typeof value3) {
           case "string":
-            if (value2 == "0")
+            if (value3 == "0")
               return this.ZERO;
-            if (value2 == "")
+            if (value3 == "")
               throw new Error("string is no integer");
-            value2 = BI.C(value2);
+            value3 = BI.C(value3);
           case "number":
-            if (value2 === 0)
+            if (value3 === 0)
               return this.ZERO;
-            value2 = BI.C(value2);
+            value3 = BI.C(value3);
           case "bigint":
-            if (!value2)
+            if (!value3)
               return this.ZERO;
-            if (value2 < BI.UMIN)
+            if (value3 < BI.UMIN)
               throw new Error("signed value for ulong");
-            if (value2 > BI.UMAX)
+            if (value3 > BI.UMAX)
               throw new Error("ulong too large");
-            BI.V.setBigUint64(0, value2, true);
+            BI.V.setBigUint64(0, value3, true);
             return new PbULong(BI.V.getInt32(0, true), BI.V.getInt32(4, true));
         }
       else
-        switch (typeof value2) {
+        switch (typeof value3) {
           case "string":
-            if (value2 == "0")
+            if (value3 == "0")
               return this.ZERO;
-            value2 = value2.trim();
-            if (!RE_DECIMAL_STR.test(value2))
+            value3 = value3.trim();
+            if (!RE_DECIMAL_STR.test(value3))
               throw new Error("string is no integer");
-            let [minus, lo, hi] = goog_varint_1.int64fromString(value2);
+            let [minus, lo, hi] = goog_varint_1.int64fromString(value3);
             if (minus)
               throw new Error("signed value for ulong");
             return new PbULong(lo, hi);
           case "number":
-            if (value2 == 0)
+            if (value3 == 0)
               return this.ZERO;
-            if (!Number.isSafeInteger(value2))
+            if (!Number.isSafeInteger(value3))
               throw new Error("number is no integer");
-            if (value2 < 0)
+            if (value3 < 0)
               throw new Error("signed value for ulong");
-            return new PbULong(value2, value2 / TWO_PWR_32_DBL);
+            return new PbULong(value3, value3 / TWO_PWR_32_DBL);
         }
-      throw new Error("unknown value " + typeof value2);
+      throw new Error("unknown value " + typeof value3);
     }
     toString() {
       return BI ? this.toBigInt().toString() : goog_varint_1.int64toString(this.lo, this.hi);
@@ -17861,38 +17861,38 @@ var require_pb_long = __commonJS((exports) => {
   PbULong.ZERO = new PbULong(0, 0);
 
   class PbLong extends SharedPbLong {
-    static from(value2) {
+    static from(value3) {
       if (BI)
-        switch (typeof value2) {
+        switch (typeof value3) {
           case "string":
-            if (value2 == "0")
+            if (value3 == "0")
               return this.ZERO;
-            if (value2 == "")
+            if (value3 == "")
               throw new Error("string is no integer");
-            value2 = BI.C(value2);
+            value3 = BI.C(value3);
           case "number":
-            if (value2 === 0)
+            if (value3 === 0)
               return this.ZERO;
-            value2 = BI.C(value2);
+            value3 = BI.C(value3);
           case "bigint":
-            if (!value2)
+            if (!value3)
               return this.ZERO;
-            if (value2 < BI.MIN)
+            if (value3 < BI.MIN)
               throw new Error("signed long too small");
-            if (value2 > BI.MAX)
+            if (value3 > BI.MAX)
               throw new Error("signed long too large");
-            BI.V.setBigInt64(0, value2, true);
+            BI.V.setBigInt64(0, value3, true);
             return new PbLong(BI.V.getInt32(0, true), BI.V.getInt32(4, true));
         }
       else
-        switch (typeof value2) {
+        switch (typeof value3) {
           case "string":
-            if (value2 == "0")
+            if (value3 == "0")
               return this.ZERO;
-            value2 = value2.trim();
-            if (!RE_DECIMAL_STR.test(value2))
+            value3 = value3.trim();
+            if (!RE_DECIMAL_STR.test(value3))
               throw new Error("string is no integer");
-            let [minus, lo, hi] = goog_varint_1.int64fromString(value2);
+            let [minus, lo, hi] = goog_varint_1.int64fromString(value3);
             if (minus) {
               if (hi > HALF_2_PWR_32 || hi == HALF_2_PWR_32 && lo != 0)
                 throw new Error("signed long too small");
@@ -17901,13 +17901,13 @@ var require_pb_long = __commonJS((exports) => {
             let pbl = new PbLong(lo, hi);
             return minus ? pbl.negate() : pbl;
           case "number":
-            if (value2 == 0)
+            if (value3 == 0)
               return this.ZERO;
-            if (!Number.isSafeInteger(value2))
+            if (!Number.isSafeInteger(value3))
               throw new Error("number is no integer");
-            return value2 > 0 ? new PbLong(value2, value2 / TWO_PWR_32_DBL) : new PbLong(-value2, -value2 / TWO_PWR_32_DBL).negate();
+            return value3 > 0 ? new PbLong(value3, value3 / TWO_PWR_32_DBL) : new PbLong(-value3, -value3 / TWO_PWR_32_DBL).negate();
         }
-      throw new Error("unknown value " + typeof value2);
+      throw new Error("unknown value " + typeof value3);
     }
     isNegative() {
       return (this.hi & HALF_2_PWR_32) !== 0;
@@ -18072,8 +18072,8 @@ var require_assert = __commonJS((exports) => {
     }
   }
   exports.assert = assert;
-  function assertNever(value2, msg) {
-    throw new Error(msg !== null && msg !== undefined ? msg : "Unexpected object: " + value2);
+  function assertNever(value3, msg) {
+    throw new Error(msg !== null && msg !== undefined ? msg : "Unexpected object: " + value3);
   }
   exports.assertNever = assertNever;
   var FLOAT32_MAX = 340282346638528860000000000000000000000;
@@ -18170,90 +18170,90 @@ var require_binary_writer = __commonJS((exports) => {
       this.chunks.push(chunk);
       return this;
     }
-    uint32(value2) {
-      assert_1.assertUInt32(value2);
-      while (value2 > 127) {
-        this.buf.push(value2 & 127 | 128);
-        value2 = value2 >>> 7;
+    uint32(value3) {
+      assert_1.assertUInt32(value3);
+      while (value3 > 127) {
+        this.buf.push(value3 & 127 | 128);
+        value3 = value3 >>> 7;
       }
-      this.buf.push(value2);
+      this.buf.push(value3);
       return this;
     }
-    int32(value2) {
-      assert_1.assertInt32(value2);
-      goog_varint_1.varint32write(value2, this.buf);
+    int32(value3) {
+      assert_1.assertInt32(value3);
+      goog_varint_1.varint32write(value3, this.buf);
       return this;
     }
-    bool(value2) {
-      this.buf.push(value2 ? 1 : 0);
+    bool(value3) {
+      this.buf.push(value3 ? 1 : 0);
       return this;
     }
-    bytes(value2) {
-      this.uint32(value2.byteLength);
-      return this.raw(value2);
+    bytes(value3) {
+      this.uint32(value3.byteLength);
+      return this.raw(value3);
     }
-    string(value2) {
-      let chunk = this.textEncoder.encode(value2);
+    string(value3) {
+      let chunk = this.textEncoder.encode(value3);
       this.uint32(chunk.byteLength);
       return this.raw(chunk);
     }
-    float(value2) {
-      assert_1.assertFloat32(value2);
+    float(value3) {
+      assert_1.assertFloat32(value3);
       let chunk = new Uint8Array(4);
-      new DataView(chunk.buffer).setFloat32(0, value2, true);
+      new DataView(chunk.buffer).setFloat32(0, value3, true);
       return this.raw(chunk);
     }
-    double(value2) {
+    double(value3) {
       let chunk = new Uint8Array(8);
-      new DataView(chunk.buffer).setFloat64(0, value2, true);
+      new DataView(chunk.buffer).setFloat64(0, value3, true);
       return this.raw(chunk);
     }
-    fixed32(value2) {
-      assert_1.assertUInt32(value2);
+    fixed32(value3) {
+      assert_1.assertUInt32(value3);
       let chunk = new Uint8Array(4);
-      new DataView(chunk.buffer).setUint32(0, value2, true);
+      new DataView(chunk.buffer).setUint32(0, value3, true);
       return this.raw(chunk);
     }
-    sfixed32(value2) {
-      assert_1.assertInt32(value2);
+    sfixed32(value3) {
+      assert_1.assertInt32(value3);
       let chunk = new Uint8Array(4);
-      new DataView(chunk.buffer).setInt32(0, value2, true);
+      new DataView(chunk.buffer).setInt32(0, value3, true);
       return this.raw(chunk);
     }
-    sint32(value2) {
-      assert_1.assertInt32(value2);
-      value2 = (value2 << 1 ^ value2 >> 31) >>> 0;
-      goog_varint_1.varint32write(value2, this.buf);
+    sint32(value3) {
+      assert_1.assertInt32(value3);
+      value3 = (value3 << 1 ^ value3 >> 31) >>> 0;
+      goog_varint_1.varint32write(value3, this.buf);
       return this;
     }
-    sfixed64(value2) {
+    sfixed64(value3) {
       let chunk = new Uint8Array(8);
       let view = new DataView(chunk.buffer);
-      let long = pb_long_1.PbLong.from(value2);
+      let long = pb_long_1.PbLong.from(value3);
       view.setInt32(0, long.lo, true);
       view.setInt32(4, long.hi, true);
       return this.raw(chunk);
     }
-    fixed64(value2) {
+    fixed64(value3) {
       let chunk = new Uint8Array(8);
       let view = new DataView(chunk.buffer);
-      let long = pb_long_1.PbULong.from(value2);
+      let long = pb_long_1.PbULong.from(value3);
       view.setInt32(0, long.lo, true);
       view.setInt32(4, long.hi, true);
       return this.raw(chunk);
     }
-    int64(value2) {
-      let long = pb_long_1.PbLong.from(value2);
+    int64(value3) {
+      let long = pb_long_1.PbLong.from(value3);
       goog_varint_1.varint64write(long.lo, long.hi, this.buf);
       return this;
     }
-    sint64(value2) {
-      let long = pb_long_1.PbLong.from(value2), sign = long.hi >> 31, lo = long.lo << 1 ^ sign, hi = (long.hi << 1 | long.lo >>> 31) ^ sign;
+    sint64(value3) {
+      let long = pb_long_1.PbLong.from(value3), sign = long.hi >> 31, lo = long.lo << 1 ^ sign, hi = (long.hi << 1 | long.lo >>> 31) ^ sign;
       goog_varint_1.varint64write(lo, hi, this.buf);
       return this;
     }
-    uint64(value2) {
-      let long = pb_long_1.PbULong.from(value2);
+    uint64(value3) {
+      let long = pb_long_1.PbULong.from(value3);
       goog_varint_1.varint64write(long.lo, long.hi, this.buf);
       return this;
     }
@@ -18424,23 +18424,23 @@ var require_oneof = __commonJS((exports) => {
     return oneof[kind];
   }
   exports.getOneofValue = getOneofValue;
-  function setOneofValue(oneof, kind, value2) {
+  function setOneofValue(oneof, kind, value3) {
     if (oneof.oneofKind !== undefined) {
       delete oneof[oneof.oneofKind];
     }
     oneof.oneofKind = kind;
-    if (value2 !== undefined) {
-      oneof[kind] = value2;
+    if (value3 !== undefined) {
+      oneof[kind] = value3;
     }
   }
   exports.setOneofValue = setOneofValue;
-  function setUnknownOneofValue(oneof, kind, value2) {
+  function setUnknownOneofValue(oneof, kind, value3) {
     if (oneof.oneofKind !== undefined) {
       delete oneof[oneof.oneofKind];
     }
     oneof.oneofKind = kind;
-    if (value2 !== undefined && kind !== undefined) {
-      oneof[kind] = value2;
+    if (value3 !== undefined && kind !== undefined) {
+      oneof[kind] = value3;
     }
   }
   exports.setUnknownOneofValue = setUnknownOneofValue;
@@ -18986,14 +18986,14 @@ var require_reflection_json_writer = __commonJS((exports) => {
       }
       return json2;
     }
-    field(field, value2, options) {
+    field(field, value3, options) {
       let jsonValue = undefined;
       if (field.kind == "map") {
-        assert_1.assert(typeof value2 == "object" && value2 !== null);
+        assert_1.assert(typeof value3 == "object" && value3 !== null);
         const jsonObj = {};
         switch (field.V.kind) {
           case "scalar":
-            for (const [entryKey, entryValue] of Object.entries(value2)) {
+            for (const [entryKey, entryValue] of Object.entries(value3)) {
               const val = this.scalar(field.V.T, entryValue, field.name, false, true);
               assert_1.assert(val !== undefined);
               jsonObj[entryKey.toString()] = val;
@@ -19001,7 +19001,7 @@ var require_reflection_json_writer = __commonJS((exports) => {
             break;
           case "message":
             const messageType = field.V.T();
-            for (const [entryKey, entryValue] of Object.entries(value2)) {
+            for (const [entryKey, entryValue] of Object.entries(value3)) {
               const val = this.message(messageType, entryValue, field.name, options);
               assert_1.assert(val !== undefined);
               jsonObj[entryKey.toString()] = val;
@@ -19009,7 +19009,7 @@ var require_reflection_json_writer = __commonJS((exports) => {
             break;
           case "enum":
             const enumInfo = field.V.T();
-            for (const [entryKey, entryValue] of Object.entries(value2)) {
+            for (const [entryKey, entryValue] of Object.entries(value3)) {
               assert_1.assert(entryValue === undefined || typeof entryValue == "number");
               const val = this.enum(enumInfo, entryValue, field.name, false, true, options.enumAsInteger);
               assert_1.assert(val !== undefined);
@@ -19020,29 +19020,29 @@ var require_reflection_json_writer = __commonJS((exports) => {
         if (options.emitDefaultValues || Object.keys(jsonObj).length > 0)
           jsonValue = jsonObj;
       } else if (field.repeat) {
-        assert_1.assert(Array.isArray(value2));
+        assert_1.assert(Array.isArray(value3));
         const jsonArr = [];
         switch (field.kind) {
           case "scalar":
-            for (let i = 0;i < value2.length; i++) {
-              const val = this.scalar(field.T, value2[i], field.name, field.opt, true);
+            for (let i = 0;i < value3.length; i++) {
+              const val = this.scalar(field.T, value3[i], field.name, field.opt, true);
               assert_1.assert(val !== undefined);
               jsonArr.push(val);
             }
             break;
           case "enum":
             const enumInfo = field.T();
-            for (let i = 0;i < value2.length; i++) {
-              assert_1.assert(value2[i] === undefined || typeof value2[i] == "number");
-              const val = this.enum(enumInfo, value2[i], field.name, field.opt, true, options.enumAsInteger);
+            for (let i = 0;i < value3.length; i++) {
+              assert_1.assert(value3[i] === undefined || typeof value3[i] == "number");
+              const val = this.enum(enumInfo, value3[i], field.name, field.opt, true, options.enumAsInteger);
               assert_1.assert(val !== undefined);
               jsonArr.push(val);
             }
             break;
           case "message":
             const messageType = field.T();
-            for (let i = 0;i < value2.length; i++) {
-              const val = this.message(messageType, value2[i], field.name, options);
+            for (let i = 0;i < value3.length; i++) {
+              const val = this.message(messageType, value3[i], field.name, options);
               assert_1.assert(val !== undefined);
               jsonArr.push(val);
             }
@@ -19053,103 +19053,103 @@ var require_reflection_json_writer = __commonJS((exports) => {
       } else {
         switch (field.kind) {
           case "scalar":
-            jsonValue = this.scalar(field.T, value2, field.name, field.opt, options.emitDefaultValues);
+            jsonValue = this.scalar(field.T, value3, field.name, field.opt, options.emitDefaultValues);
             break;
           case "enum":
-            jsonValue = this.enum(field.T(), value2, field.name, field.opt, options.emitDefaultValues, options.enumAsInteger);
+            jsonValue = this.enum(field.T(), value3, field.name, field.opt, options.emitDefaultValues, options.enumAsInteger);
             break;
           case "message":
-            jsonValue = this.message(field.T(), value2, field.name, options);
+            jsonValue = this.message(field.T(), value3, field.name, options);
             break;
         }
       }
       return jsonValue;
     }
-    enum(type, value2, fieldName, optional9, emitDefaultValues, enumAsInteger) {
+    enum(type, value3, fieldName, optional8, emitDefaultValues, enumAsInteger) {
       if (type[0] == "google.protobuf.NullValue")
-        return !emitDefaultValues && !optional9 ? undefined : null;
-      if (value2 === undefined) {
-        assert_1.assert(optional9);
+        return !emitDefaultValues && !optional8 ? undefined : null;
+      if (value3 === undefined) {
+        assert_1.assert(optional8);
         return;
       }
-      if (value2 === 0 && !emitDefaultValues && !optional9)
+      if (value3 === 0 && !emitDefaultValues && !optional8)
         return;
-      assert_1.assert(typeof value2 == "number");
-      assert_1.assert(Number.isInteger(value2));
-      if (enumAsInteger || !type[1].hasOwnProperty(value2))
-        return value2;
+      assert_1.assert(typeof value3 == "number");
+      assert_1.assert(Number.isInteger(value3));
+      if (enumAsInteger || !type[1].hasOwnProperty(value3))
+        return value3;
       if (type[2])
-        return type[2] + type[1][value2];
-      return type[1][value2];
+        return type[2] + type[1][value3];
+      return type[1][value3];
     }
-    message(type, value2, fieldName, options) {
-      if (value2 === undefined)
+    message(type, value3, fieldName, options) {
+      if (value3 === undefined)
         return options.emitDefaultValues ? null : undefined;
-      return type.internalJsonWrite(value2, options);
+      return type.internalJsonWrite(value3, options);
     }
-    scalar(type, value2, fieldName, optional9, emitDefaultValues) {
-      if (value2 === undefined) {
-        assert_1.assert(optional9);
+    scalar(type, value3, fieldName, optional8, emitDefaultValues) {
+      if (value3 === undefined) {
+        assert_1.assert(optional8);
         return;
       }
-      const ed = emitDefaultValues || optional9;
+      const ed = emitDefaultValues || optional8;
       switch (type) {
         case reflection_info_1.ScalarType.INT32:
         case reflection_info_1.ScalarType.SFIXED32:
         case reflection_info_1.ScalarType.SINT32:
-          if (value2 === 0)
+          if (value3 === 0)
             return ed ? 0 : undefined;
-          assert_1.assertInt32(value2);
-          return value2;
+          assert_1.assertInt32(value3);
+          return value3;
         case reflection_info_1.ScalarType.FIXED32:
         case reflection_info_1.ScalarType.UINT32:
-          if (value2 === 0)
+          if (value3 === 0)
             return ed ? 0 : undefined;
-          assert_1.assertUInt32(value2);
-          return value2;
+          assert_1.assertUInt32(value3);
+          return value3;
         case reflection_info_1.ScalarType.FLOAT:
-          assert_1.assertFloat32(value2);
+          assert_1.assertFloat32(value3);
         case reflection_info_1.ScalarType.DOUBLE:
-          if (value2 === 0)
+          if (value3 === 0)
             return ed ? 0 : undefined;
-          assert_1.assert(typeof value2 == "number");
-          if (Number.isNaN(value2))
+          assert_1.assert(typeof value3 == "number");
+          if (Number.isNaN(value3))
             return "NaN";
-          if (value2 === Number.POSITIVE_INFINITY)
+          if (value3 === Number.POSITIVE_INFINITY)
             return "Infinity";
-          if (value2 === Number.NEGATIVE_INFINITY)
+          if (value3 === Number.NEGATIVE_INFINITY)
             return "-Infinity";
-          return value2;
+          return value3;
         case reflection_info_1.ScalarType.STRING:
-          if (value2 === "")
+          if (value3 === "")
             return ed ? "" : undefined;
-          assert_1.assert(typeof value2 == "string");
-          return value2;
+          assert_1.assert(typeof value3 == "string");
+          return value3;
         case reflection_info_1.ScalarType.BOOL:
-          if (value2 === false)
+          if (value3 === false)
             return ed ? false : undefined;
-          assert_1.assert(typeof value2 == "boolean");
-          return value2;
+          assert_1.assert(typeof value3 == "boolean");
+          return value3;
         case reflection_info_1.ScalarType.UINT64:
         case reflection_info_1.ScalarType.FIXED64:
-          assert_1.assert(typeof value2 == "number" || typeof value2 == "string" || typeof value2 == "bigint");
-          let ulong = pb_long_1.PbULong.from(value2);
+          assert_1.assert(typeof value3 == "number" || typeof value3 == "string" || typeof value3 == "bigint");
+          let ulong = pb_long_1.PbULong.from(value3);
           if (ulong.isZero() && !ed)
             return;
           return ulong.toString();
         case reflection_info_1.ScalarType.INT64:
         case reflection_info_1.ScalarType.SFIXED64:
         case reflection_info_1.ScalarType.SINT64:
-          assert_1.assert(typeof value2 == "number" || typeof value2 == "string" || typeof value2 == "bigint");
-          let long = pb_long_1.PbLong.from(value2);
+          assert_1.assert(typeof value3 == "number" || typeof value3 == "string" || typeof value3 == "bigint");
+          let long = pb_long_1.PbLong.from(value3);
           if (long.isZero() && !ed)
             return;
           return long.toString();
         case reflection_info_1.ScalarType.BYTES:
-          assert_1.assert(value2 instanceof Uint8Array);
-          if (!value2.byteLength)
+          assert_1.assert(value3 instanceof Uint8Array);
+          if (!value3.byteLength)
             return ed ? "" : undefined;
-          return base64_1.base64encode(value2);
+          return base64_1.base64encode(value3);
       }
     }
   }
@@ -19370,15 +19370,15 @@ var require_reflection_binary_writer = __commonJS((exports) => {
     write(message, writer, options) {
       this.prepare();
       for (const field of this.fields) {
-        let value2, emitDefault, repeated = field.repeat, localName = field.localName;
+        let value3, emitDefault, repeated = field.repeat, localName = field.localName;
         if (field.oneof) {
           const group = message[field.oneof];
           if (group.oneofKind !== localName)
             continue;
-          value2 = group[localName];
+          value3 = group[localName];
           emitDefault = true;
         } else {
-          value2 = message[localName];
+          value3 = message[localName];
           emitDefault = false;
         }
         switch (field.kind) {
@@ -19386,29 +19386,29 @@ var require_reflection_binary_writer = __commonJS((exports) => {
           case "enum":
             let T = field.kind == "enum" ? reflection_info_1.ScalarType.INT32 : field.T;
             if (repeated) {
-              assert_1.assert(Array.isArray(value2));
+              assert_1.assert(Array.isArray(value3));
               if (repeated == reflection_info_1.RepeatType.PACKED)
-                this.packed(writer, T, field.no, value2);
+                this.packed(writer, T, field.no, value3);
               else
-                for (const item of value2)
+                for (const item of value3)
                   this.scalar(writer, T, field.no, item, true);
-            } else if (value2 === undefined)
+            } else if (value3 === undefined)
               assert_1.assert(field.opt);
             else
-              this.scalar(writer, T, field.no, value2, emitDefault || field.opt);
+              this.scalar(writer, T, field.no, value3, emitDefault || field.opt);
             break;
           case "message":
             if (repeated) {
-              assert_1.assert(Array.isArray(value2));
-              for (const item of value2)
+              assert_1.assert(Array.isArray(value3));
+              for (const item of value3)
                 this.message(writer, options, field.T(), field.no, item);
             } else {
-              this.message(writer, options, field.T(), field.no, value2);
+              this.message(writer, options, field.T(), field.no, value3);
             }
             break;
           case "map":
-            assert_1.assert(typeof value2 == "object" && value2 !== null);
-            for (const [key, val] of Object.entries(value2))
+            assert_1.assert(typeof value3 == "object" && value3 !== null);
+            for (const [key, val] of Object.entries(value3))
               this.mapEntry(writer, options, field, key, val);
             break;
         }
@@ -19417,7 +19417,7 @@ var require_reflection_binary_writer = __commonJS((exports) => {
       if (u !== false)
         (u === true ? binary_format_contract_1.UnknownFieldHandler.onWrite : u)(this.info.typeName, message, writer);
     }
-    mapEntry(writer, options, field, key, value2) {
+    mapEntry(writer, options, field, key, value3) {
       writer.tag(field.no, binary_format_contract_1.WireType.LengthDelimited);
       writer.fork();
       let keyValue = key;
@@ -19437,57 +19437,57 @@ var require_reflection_binary_writer = __commonJS((exports) => {
       this.scalar(writer, field.K, 1, keyValue, true);
       switch (field.V.kind) {
         case "scalar":
-          this.scalar(writer, field.V.T, 2, value2, true);
+          this.scalar(writer, field.V.T, 2, value3, true);
           break;
         case "enum":
-          this.scalar(writer, reflection_info_1.ScalarType.INT32, 2, value2, true);
+          this.scalar(writer, reflection_info_1.ScalarType.INT32, 2, value3, true);
           break;
         case "message":
-          this.message(writer, options, field.V.T(), 2, value2);
+          this.message(writer, options, field.V.T(), 2, value3);
           break;
       }
       writer.join();
     }
-    message(writer, options, handler, fieldNo, value2) {
-      if (value2 === undefined)
+    message(writer, options, handler, fieldNo, value3) {
+      if (value3 === undefined)
         return;
-      handler.internalBinaryWrite(value2, writer.tag(fieldNo, binary_format_contract_1.WireType.LengthDelimited).fork(), options);
+      handler.internalBinaryWrite(value3, writer.tag(fieldNo, binary_format_contract_1.WireType.LengthDelimited).fork(), options);
       writer.join();
     }
-    scalar(writer, type, fieldNo, value2, emitDefault) {
-      let [wireType, method, isDefault] = this.scalarInfo(type, value2);
+    scalar(writer, type, fieldNo, value3, emitDefault) {
+      let [wireType, method, isDefault] = this.scalarInfo(type, value3);
       if (!isDefault || emitDefault) {
         writer.tag(fieldNo, wireType);
-        writer[method](value2);
+        writer[method](value3);
       }
     }
-    packed(writer, type, fieldNo, value2) {
-      if (!value2.length)
+    packed(writer, type, fieldNo, value3) {
+      if (!value3.length)
         return;
       assert_1.assert(type !== reflection_info_1.ScalarType.BYTES && type !== reflection_info_1.ScalarType.STRING);
       writer.tag(fieldNo, binary_format_contract_1.WireType.LengthDelimited);
       writer.fork();
       let [, method] = this.scalarInfo(type);
-      for (let i = 0;i < value2.length; i++)
-        writer[method](value2[i]);
+      for (let i = 0;i < value3.length; i++)
+        writer[method](value3[i]);
       writer.join();
     }
-    scalarInfo(type, value2) {
+    scalarInfo(type, value3) {
       let t = binary_format_contract_1.WireType.Varint;
       let m;
-      let i = value2 === undefined;
-      let d = value2 === 0;
+      let i = value3 === undefined;
+      let d = value3 === 0;
       switch (type) {
         case reflection_info_1.ScalarType.INT32:
           m = "int32";
           break;
         case reflection_info_1.ScalarType.STRING:
-          d = i || !value2.length;
+          d = i || !value3.length;
           t = binary_format_contract_1.WireType.LengthDelimited;
           m = "string";
           break;
         case reflection_info_1.ScalarType.BOOL:
-          d = value2 === false;
+          d = value3 === false;
           m = "bool";
           break;
         case reflection_info_1.ScalarType.UINT32:
@@ -19502,20 +19502,20 @@ var require_reflection_binary_writer = __commonJS((exports) => {
           m = "float";
           break;
         case reflection_info_1.ScalarType.INT64:
-          d = i || pb_long_1.PbLong.from(value2).isZero();
+          d = i || pb_long_1.PbLong.from(value3).isZero();
           m = "int64";
           break;
         case reflection_info_1.ScalarType.UINT64:
-          d = i || pb_long_1.PbULong.from(value2).isZero();
+          d = i || pb_long_1.PbULong.from(value3).isZero();
           m = "uint64";
           break;
         case reflection_info_1.ScalarType.FIXED64:
-          d = i || pb_long_1.PbULong.from(value2).isZero();
+          d = i || pb_long_1.PbULong.from(value3).isZero();
           t = binary_format_contract_1.WireType.Bit64;
           m = "fixed64";
           break;
         case reflection_info_1.ScalarType.BYTES:
-          d = i || !value2.byteLength;
+          d = i || !value3.byteLength;
           t = binary_format_contract_1.WireType.LengthDelimited;
           m = "bytes";
           break;
@@ -19528,7 +19528,7 @@ var require_reflection_binary_writer = __commonJS((exports) => {
           m = "sfixed32";
           break;
         case reflection_info_1.ScalarType.SFIXED64:
-          d = i || pb_long_1.PbLong.from(value2).isZero();
+          d = i || pb_long_1.PbLong.from(value3).isZero();
           t = binary_format_contract_1.WireType.Bit64;
           m = "sfixed64";
           break;
@@ -19536,7 +19536,7 @@ var require_reflection_binary_writer = __commonJS((exports) => {
           m = "sint32";
           break;
         case reflection_info_1.ScalarType.SINT64:
-          d = i || pb_long_1.PbLong.from(value2).isZero();
+          d = i || pb_long_1.PbLong.from(value3).isZero();
           m = "sint64";
           break;
       }
@@ -19750,10 +19750,10 @@ var require_message_type = __commonJS((exports) => {
       this.refBinReader = new reflection_binary_reader_1.ReflectionBinaryReader(this);
       this.refBinWriter = new reflection_binary_writer_1.ReflectionBinaryWriter(this);
     }
-    create(value2) {
+    create(value3) {
       let message = reflection_create_1.reflectionCreate(this);
-      if (value2 !== undefined) {
-        reflection_merge_partial_1.reflectionMergePartial(this, message, value2);
+      if (value3 !== undefined) {
+        reflection_merge_partial_1.reflectionMergePartial(this, message, value3);
       }
       return message;
     }
@@ -19782,16 +19782,16 @@ var require_message_type = __commonJS((exports) => {
       return this.internalJsonRead(json2, json_format_contract_1.jsonReadOptions(options));
     }
     fromJsonString(json2, options) {
-      let value2 = JSON.parse(json2);
-      return this.fromJson(value2, options);
+      let value3 = JSON.parse(json2);
+      return this.fromJson(value3, options);
     }
     toJson(message, options) {
       return this.internalJsonWrite(message, json_format_contract_1.jsonWriteOptions(options));
     }
     toJsonString(message, options) {
       var _a;
-      let value2 = this.toJson(message, options);
-      return JSON.stringify(value2, null, (_a = options === null || options === undefined ? undefined : options.prettySpaces) !== null && _a !== undefined ? _a : 0);
+      let value3 = this.toJson(message, options);
+      return JSON.stringify(value3, null, (_a = options === null || options === undefined ? undefined : options.prettySpaces) !== null && _a !== undefined ? _a : 0);
     }
     toBinary(message, options) {
       let opt = binary_writer_1.binaryWriteOptions(options);
@@ -20232,8 +20232,8 @@ var require_deferred = __commonJS((exports) => {
   class Deferred {
     constructor(preventUnhandledRejectionWarning = true) {
       this._state = DeferredState.PENDING;
-      this._promise = new Promise((resolve6, reject) => {
-        this._resolve = resolve6;
+      this._promise = new Promise((resolve5, reject) => {
+        this._resolve = resolve5;
         this._reject = reject;
       });
       if (preventUnhandledRejectionWarning) {
@@ -20246,10 +20246,10 @@ var require_deferred = __commonJS((exports) => {
     get promise() {
       return this._promise;
     }
-    resolve(value2) {
+    resolve(value3) {
       if (this.state !== DeferredState.PENDING)
         throw new Error(`cannot resolve ${DeferredState[this.state].toLowerCase()}`);
-      this._resolve(value2);
+      this._resolve(value3);
       this._state = DeferredState.RESOLVED;
     }
     reject(reason2) {
@@ -20382,28 +20382,28 @@ var require_rpc_output_stream = __commonJS((exports) => {
 // ../../node_modules/.bun/@protobuf-ts+runtime-rpc@2.11.1/node_modules/@protobuf-ts/runtime-rpc/build/commonjs/unary-call.js
 var require_unary_call = __commonJS((exports) => {
   var __awaiter4 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-    function adopt(value2) {
-      return value2 instanceof P ? value2 : new P(function(resolve6) {
-        resolve6(value2);
+    function adopt(value3) {
+      return value3 instanceof P ? value3 : new P(function(resolve5) {
+        resolve5(value3);
       });
     }
-    return new (P || (P = Promise))(function(resolve6, reject) {
-      function fulfilled(value2) {
+    return new (P || (P = Promise))(function(resolve5, reject) {
+      function fulfilled(value3) {
         try {
-          step(generator.next(value2));
+          step(generator.next(value3));
         } catch (e) {
           reject(e);
         }
       }
-      function rejected(value2) {
+      function rejected(value3) {
         try {
-          step(generator["throw"](value2));
+          step(generator["throw"](value3));
         } catch (e) {
           reject(e);
         }
       }
       function step(result2) {
-        result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        result2.done ? resolve5(result2.value) : adopt(result2.value).then(fulfilled, rejected);
       }
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
@@ -20422,7 +20422,7 @@ var require_unary_call = __commonJS((exports) => {
       this.trailers = trailers;
     }
     then(onfulfilled, onrejected) {
-      return this.promiseFinished().then((value2) => onfulfilled ? Promise.resolve(onfulfilled(value2)) : value2, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
+      return this.promiseFinished().then((value3) => onfulfilled ? Promise.resolve(onfulfilled(value3)) : value3, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
     }
     promiseFinished() {
       return __awaiter4(this, undefined, undefined, function* () {
@@ -20445,28 +20445,28 @@ var require_unary_call = __commonJS((exports) => {
 // ../../node_modules/.bun/@protobuf-ts+runtime-rpc@2.11.1/node_modules/@protobuf-ts/runtime-rpc/build/commonjs/server-streaming-call.js
 var require_server_streaming_call = __commonJS((exports) => {
   var __awaiter4 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-    function adopt(value2) {
-      return value2 instanceof P ? value2 : new P(function(resolve6) {
-        resolve6(value2);
+    function adopt(value3) {
+      return value3 instanceof P ? value3 : new P(function(resolve5) {
+        resolve5(value3);
       });
     }
-    return new (P || (P = Promise))(function(resolve6, reject) {
-      function fulfilled(value2) {
+    return new (P || (P = Promise))(function(resolve5, reject) {
+      function fulfilled(value3) {
         try {
-          step(generator.next(value2));
+          step(generator.next(value3));
         } catch (e) {
           reject(e);
         }
       }
-      function rejected(value2) {
+      function rejected(value3) {
         try {
-          step(generator["throw"](value2));
+          step(generator["throw"](value3));
         } catch (e) {
           reject(e);
         }
       }
       function step(result2) {
-        result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        result2.done ? resolve5(result2.value) : adopt(result2.value).then(fulfilled, rejected);
       }
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
@@ -20485,7 +20485,7 @@ var require_server_streaming_call = __commonJS((exports) => {
       this.trailers = trailers;
     }
     then(onfulfilled, onrejected) {
-      return this.promiseFinished().then((value2) => onfulfilled ? Promise.resolve(onfulfilled(value2)) : value2, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
+      return this.promiseFinished().then((value3) => onfulfilled ? Promise.resolve(onfulfilled(value3)) : value3, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
     }
     promiseFinished() {
       return __awaiter4(this, undefined, undefined, function* () {
@@ -20507,28 +20507,28 @@ var require_server_streaming_call = __commonJS((exports) => {
 // ../../node_modules/.bun/@protobuf-ts+runtime-rpc@2.11.1/node_modules/@protobuf-ts/runtime-rpc/build/commonjs/client-streaming-call.js
 var require_client_streaming_call = __commonJS((exports) => {
   var __awaiter4 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-    function adopt(value2) {
-      return value2 instanceof P ? value2 : new P(function(resolve6) {
-        resolve6(value2);
+    function adopt(value3) {
+      return value3 instanceof P ? value3 : new P(function(resolve5) {
+        resolve5(value3);
       });
     }
-    return new (P || (P = Promise))(function(resolve6, reject) {
-      function fulfilled(value2) {
+    return new (P || (P = Promise))(function(resolve5, reject) {
+      function fulfilled(value3) {
         try {
-          step(generator.next(value2));
+          step(generator.next(value3));
         } catch (e) {
           reject(e);
         }
       }
-      function rejected(value2) {
+      function rejected(value3) {
         try {
-          step(generator["throw"](value2));
+          step(generator["throw"](value3));
         } catch (e) {
           reject(e);
         }
       }
       function step(result2) {
-        result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        result2.done ? resolve5(result2.value) : adopt(result2.value).then(fulfilled, rejected);
       }
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
@@ -20547,7 +20547,7 @@ var require_client_streaming_call = __commonJS((exports) => {
       this.trailers = trailers;
     }
     then(onfulfilled, onrejected) {
-      return this.promiseFinished().then((value2) => onfulfilled ? Promise.resolve(onfulfilled(value2)) : value2, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
+      return this.promiseFinished().then((value3) => onfulfilled ? Promise.resolve(onfulfilled(value3)) : value3, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
     }
     promiseFinished() {
       return __awaiter4(this, undefined, undefined, function* () {
@@ -20569,28 +20569,28 @@ var require_client_streaming_call = __commonJS((exports) => {
 // ../../node_modules/.bun/@protobuf-ts+runtime-rpc@2.11.1/node_modules/@protobuf-ts/runtime-rpc/build/commonjs/duplex-streaming-call.js
 var require_duplex_streaming_call = __commonJS((exports) => {
   var __awaiter4 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-    function adopt(value2) {
-      return value2 instanceof P ? value2 : new P(function(resolve6) {
-        resolve6(value2);
+    function adopt(value3) {
+      return value3 instanceof P ? value3 : new P(function(resolve5) {
+        resolve5(value3);
       });
     }
-    return new (P || (P = Promise))(function(resolve6, reject) {
-      function fulfilled(value2) {
+    return new (P || (P = Promise))(function(resolve5, reject) {
+      function fulfilled(value3) {
         try {
-          step(generator.next(value2));
+          step(generator.next(value3));
         } catch (e) {
           reject(e);
         }
       }
-      function rejected(value2) {
+      function rejected(value3) {
         try {
-          step(generator["throw"](value2));
+          step(generator["throw"](value3));
         } catch (e) {
           reject(e);
         }
       }
       function step(result2) {
-        result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        result2.done ? resolve5(result2.value) : adopt(result2.value).then(fulfilled, rejected);
       }
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
@@ -20609,7 +20609,7 @@ var require_duplex_streaming_call = __commonJS((exports) => {
       this.trailers = trailers;
     }
     then(onfulfilled, onrejected) {
-      return this.promiseFinished().then((value2) => onfulfilled ? Promise.resolve(onfulfilled(value2)) : value2, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
+      return this.promiseFinished().then((value3) => onfulfilled ? Promise.resolve(onfulfilled(value3)) : value3, (reason2) => onrejected ? Promise.resolve(onrejected(reason2)) : Promise.reject(reason2));
     }
     promiseFinished() {
       return __awaiter4(this, undefined, undefined, function* () {
@@ -20630,28 +20630,28 @@ var require_duplex_streaming_call = __commonJS((exports) => {
 // ../../node_modules/.bun/@protobuf-ts+runtime-rpc@2.11.1/node_modules/@protobuf-ts/runtime-rpc/build/commonjs/test-transport.js
 var require_test_transport = __commonJS((exports) => {
   var __awaiter4 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-    function adopt(value2) {
-      return value2 instanceof P ? value2 : new P(function(resolve6) {
-        resolve6(value2);
+    function adopt(value3) {
+      return value3 instanceof P ? value3 : new P(function(resolve5) {
+        resolve5(value3);
       });
     }
-    return new (P || (P = Promise))(function(resolve6, reject) {
-      function fulfilled(value2) {
+    return new (P || (P = Promise))(function(resolve5, reject) {
+      function fulfilled(value3) {
         try {
-          step(generator.next(value2));
+          step(generator.next(value3));
         } catch (e) {
           reject(e);
         }
       }
-      function rejected(value2) {
+      function rejected(value3) {
         try {
-          step(generator["throw"](value2));
+          step(generator["throw"](value3));
         } catch (e) {
           reject(e);
         }
       }
       function step(result2) {
-        result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        result2.done ? resolve5(result2.value) : adopt(result2.value).then(fulfilled, rejected);
       }
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
@@ -20818,11 +20818,11 @@ var require_test_transport = __commonJS((exports) => {
     responseTrailer: "test"
   };
   function delay3(ms, abort) {
-    return (v) => new Promise((resolve6, reject) => {
+    return (v) => new Promise((resolve5, reject) => {
       if (abort === null || abort === undefined ? undefined : abort.aborted) {
         reject(new rpc_error_1.RpcError("user cancel", "CANCELLED"));
       } else {
-        const id = setTimeout(() => resolve6(v), ms);
+        const id = setTimeout(() => resolve5(v), ms);
         if (abort) {
           abort.addEventListener("abort", (ev) => {
             clearTimeout(id);
@@ -21795,7 +21795,7 @@ var require_helpers = __commonJS((exports) => {
   };
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.req = exports.json = exports.toBuffer = undefined;
-  var http4 = __importStar(__require("http"));
+  var http3 = __importStar(__require("http"));
   var https3 = __importStar(__require("https"));
   async function toBuffer(stream2) {
     let length = 0;
@@ -21821,9 +21821,9 @@ var require_helpers = __commonJS((exports) => {
   exports.json = json2;
   function req(url, opts = {}) {
     const href = typeof url === "string" ? url : url.href;
-    const req2 = (href.startsWith("https:") ? https3 : http4).request(url, opts);
-    const promise3 = new Promise((resolve7, reject) => {
-      req2.once("response", resolve7).once("error", reject).end();
+    const req2 = (href.startsWith("https:") ? https3 : http3).request(url, opts);
+    const promise3 = new Promise((resolve6, reject) => {
+      req2.once("response", resolve6).once("error", reject).end();
     });
     req2.then = promise3.then.bind(promise3);
     return req2;
@@ -21873,12 +21873,12 @@ var require_dist = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.Agent = undefined;
   var net = __importStar(__require("net"));
-  var http4 = __importStar(__require("http"));
+  var http3 = __importStar(__require("http"));
   var https_1 = __require("https");
   __exportStar(require_helpers(), exports);
   var INTERNAL = Symbol("AgentBaseInternalState");
 
-  class Agent3 extends http4.Agent {
+  class Agent3 extends http3.Agent {
     constructor(opts) {
       super(opts);
       this[INTERNAL] = {};
@@ -21940,7 +21940,7 @@ var require_dist = __commonJS((exports) => {
       const fakeSocket = this.incrementSockets(name);
       Promise.resolve().then(() => this.connect(req, connectOpts)).then((socket) => {
         this.decrementSockets(name, fakeSocket);
-        if (socket instanceof http4.Agent) {
+        if (socket instanceof http3.Agent) {
           try {
             return socket.addRequest(req, connectOpts);
           } catch (err) {
@@ -21992,7 +21992,7 @@ var require_parse_proxy_response = __commonJS((exports) => {
   var debug_1 = __importDefault(require_src());
   var debug2 = (0, debug_1.default)("https-proxy-agent:parse-proxy-response");
   function parseProxyResponse(socket) {
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve6, reject) => {
       let buffersLength = 0;
       const buffers = [];
       function read2() {
@@ -22049,19 +22049,19 @@ var require_parse_proxy_response = __commonJS((exports) => {
             return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
           }
           const key = header.slice(0, firstColon).toLowerCase();
-          const value2 = header.slice(firstColon + 1).trimStart();
+          const value3 = header.slice(firstColon + 1).trimStart();
           const current = headers[key];
           if (typeof current === "string") {
-            headers[key] = [current, value2];
+            headers[key] = [current, value3];
           } else if (Array.isArray(current)) {
-            current.push(value2);
+            current.push(value3);
           } else {
-            headers[key] = value2;
+            headers[key] = value3;
           }
         }
         debug2("got proxy server response: %o %o", firstLine, headers);
         cleanup();
-        resolve7({
+        resolve6({
           connect: {
             statusCode,
             statusText,
@@ -22311,9 +22311,9 @@ var require_dist3 = __commonJS((exports) => {
         headers["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
       }
       for (const name of Object.keys(headers)) {
-        const value2 = headers[name];
-        if (value2) {
-          req.setHeader(name, value2);
+        const value3 = headers[name];
+        if (value3) {
+          req.setHeader(name, value3);
         }
       }
     }
@@ -23292,9 +23292,9 @@ var require_readdir_glob = __commonJS((exports, module) => {
   var fs5 = __require("fs");
   var { EventEmitter: EventEmitter3 } = __require("events");
   var { Minimatch } = require_minimatch();
-  var { resolve: resolve7 } = __require("path");
+  var { resolve: resolve6 } = __require("path");
   function readdir2(dir, strict) {
-    return new Promise((resolve8, reject) => {
+    return new Promise((resolve7, reject) => {
       fs5.readdir(dir, { withFileTypes: true }, (err, files) => {
         if (err) {
           switch (err.code) {
@@ -23302,14 +23302,14 @@ var require_readdir_glob = __commonJS((exports, module) => {
               if (strict) {
                 reject(err);
               } else {
-                resolve8([]);
+                resolve7([]);
               }
               break;
             case "ENOTSUP":
             case "ENOENT":
             case "ENAMETOOLONG":
             case "UNKNOWN":
-              resolve8([]);
+              resolve7([]);
               break;
             case "ELOOP":
             default:
@@ -23317,30 +23317,30 @@ var require_readdir_glob = __commonJS((exports, module) => {
               break;
           }
         } else {
-          resolve8(files);
+          resolve7(files);
         }
       });
     });
   }
   function stat4(file2, followSymlinks) {
-    return new Promise((resolve8, reject) => {
+    return new Promise((resolve7, reject) => {
       const statFunc = followSymlinks ? fs5.stat : fs5.lstat;
       statFunc(file2, (err, stats) => {
         if (err) {
           switch (err.code) {
             case "ENOENT":
               if (followSymlinks) {
-                resolve8(stat4(file2, false));
+                resolve7(stat4(file2, false));
               } else {
-                resolve8(null);
+                resolve7(null);
               }
               break;
             default:
-              resolve8(null);
+              resolve7(null);
               break;
           }
         } else {
-          resolve8(stats);
+          resolve7(stats);
         }
       });
     });
@@ -23425,7 +23425,7 @@ var require_readdir_glob = __commonJS((exports, module) => {
         const skipPatterns = Array.isArray(this.options.skip) ? this.options.skip : [this.options.skip];
         this.skipMatchers = skipPatterns.map((skip) => new Minimatch(skip, { dot: true }));
       }
-      this.iterator = explore(resolve7(cwd || "."), this.options.follow, this.options.stat, this._shouldSkipDirectory.bind(this));
+      this.iterator = explore(resolve6(cwd || "."), this.options.follow, this.options.stat, this._shouldSkipDirectory.bind(this));
       this.paused = false;
       this.inactive = false;
       this.aborted = false;
@@ -23554,15 +23554,15 @@ var require_async = __commonJS((exports, module) => {
       });
     }
     function handlePromise(promise3, callback4) {
-      return promise3.then((value2) => {
-        invokeCallback(callback4, null, value2);
+      return promise3.then((value3) => {
+        invokeCallback(callback4, null, value3);
       }, (err) => {
         invokeCallback(callback4, err && (err instanceof Error || err.message) ? err : new Error(err));
       });
     }
-    function invokeCallback(callback4, error2, value2) {
+    function invokeCallback(callback4, error2, value3) {
       try {
-        callback4(error2, value2);
+        callback4(error2, value3);
       } catch (err) {
         setImmediate$1((e) => {
           throw e;
@@ -23592,11 +23592,11 @@ var require_async = __commonJS((exports, module) => {
         if (typeof args2[arity - 1] === "function") {
           return asyncFn.apply(this, args2);
         }
-        return new Promise((resolve7, reject2) => {
+        return new Promise((resolve6, reject2) => {
           args2[arity - 1] = (err, ...cbArgs) => {
             if (err)
               return reject2(err);
-            resolve7(cbArgs.length > 1 ? cbArgs : cbArgs[0]);
+            resolve6(cbArgs.length > 1 ? cbArgs : cbArgs[0]);
           };
           asyncFn.apply(this, args2);
         });
@@ -23619,9 +23619,9 @@ var require_async = __commonJS((exports, module) => {
       var results = [];
       var counter = 0;
       var _iteratee = wrapAsync(iteratee);
-      return eachfn(arr, (value2, _2, iterCb) => {
+      return eachfn(arr, (value3, _2, iterCb) => {
         var index2 = counter++;
-        _iteratee(value2, (err, v) => {
+        _iteratee(value3, (err, v) => {
           results[index2] = v;
           iterCb(err);
         });
@@ -23629,8 +23629,8 @@ var require_async = __commonJS((exports, module) => {
         callback4(err, results);
       });
     }
-    function isArrayLike(value2) {
-      return value2 && typeof value2.length === "number" && value2.length >= 0 && value2.length % 1 === 0;
+    function isArrayLike(value3) {
+      return value3 && typeof value3.length === "number" && value3.length >= 0 && value3.length % 1 === 0;
     }
     const breakLoop = {};
     function once(fn3) {
@@ -23702,7 +23702,7 @@ var require_async = __commonJS((exports, module) => {
         if (running >= limit || awaiting || done4)
           return;
         awaiting = true;
-        generator.next().then(({ value: value2, done: iterDone }) => {
+        generator.next().then(({ value: value3, done: iterDone }) => {
           if (canceled || done4)
             return;
           awaiting = false;
@@ -23714,7 +23714,7 @@ var require_async = __commonJS((exports, module) => {
             return;
           }
           running++;
-          iteratee(value2, idx, iterateeCallback);
+          iteratee(value3, idx, iterateeCallback);
           idx++;
           replenish();
         }).catch(handleError);
@@ -23765,7 +23765,7 @@ var require_async = __commonJS((exports, module) => {
         var canceled = false;
         var running = 0;
         var looping = false;
-        function iterateeCallback(err, value2) {
+        function iterateeCallback(err, value3) {
           if (canceled)
             return;
           running -= 1;
@@ -23775,7 +23775,7 @@ var require_async = __commonJS((exports, module) => {
           } else if (err === false) {
             done4 = true;
             canceled = true;
-          } else if (value2 === breakLoop || done4 && running <= 0) {
+          } else if (value3 === breakLoop || done4 && running <= 0) {
             done4 = true;
             return callback4(null);
           } else if (!looping) {
@@ -23811,7 +23811,7 @@ var require_async = __commonJS((exports, module) => {
       if (length === 0) {
         callback4(null);
       }
-      function iteratorCallback(err, value2) {
+      function iteratorCallback(err, value3) {
         if (err === false) {
           canceled = true;
         }
@@ -23819,7 +23819,7 @@ var require_async = __commonJS((exports, module) => {
           return;
         if (err) {
           callback4(err);
-        } else if (++completed === length || value2 === breakLoop) {
+        } else if (++completed === length || value3 === breakLoop) {
           callback4(null);
         }
       }
@@ -23851,14 +23851,14 @@ var require_async = __commonJS((exports, module) => {
     var applyEachSeries = applyEach$1(mapSeries$1);
     const PROMISE_SYMBOL = Symbol("promiseCallback");
     function promiseCallback() {
-      let resolve7, reject2;
+      let resolve6, reject2;
       function callback4(err, ...args2) {
         if (err)
           return reject2(err);
-        resolve7(args2.length > 1 ? args2 : args2[0]);
+        resolve6(args2.length > 1 ? args2 : args2[0]);
       }
       callback4[PROMISE_SYMBOL] = new Promise((res, rej) => {
-        resolve7 = res, reject2 = rej;
+        resolve6 = res, reject2 = rej;
       });
       return callback4;
     }
@@ -24226,8 +24226,8 @@ Source:
           });
         }
         if (rejectOnError || !callback4) {
-          return new Promise((resolve7, reject2) => {
-            res = resolve7;
+          return new Promise((resolve6, reject2) => {
+            res = resolve6;
             rej = reject2;
           });
         }
@@ -24266,11 +24266,11 @@ Source:
       }
       const eventMethod = (name) => (handler) => {
         if (!handler) {
-          return new Promise((resolve7, reject2) => {
+          return new Promise((resolve6, reject2) => {
             once2(name, (err, data) => {
               if (err)
                 return reject2(err);
-              resolve7(data);
+              resolve6(data);
             });
           });
         }
@@ -24488,13 +24488,13 @@ Source:
         var testPassed = false;
         var testResult;
         const iteratee = wrapAsync(_iteratee);
-        eachfn(arr, (value2, _2, callback4) => {
-          iteratee(value2, (err, result2) => {
+        eachfn(arr, (value3, _2, callback4) => {
+          iteratee(value3, (err, result2) => {
             if (err || err === false)
               return callback4(err);
             if (check2(result2) && !testResult) {
               testPassed = true;
-              testResult = getResult(true, value2);
+              testResult = getResult(true, value3);
               return callback4(null, breakLoop);
             }
             callback4();
@@ -24565,7 +24565,7 @@ Source:
       }, callback4);
     }
     function _withoutIndex(iteratee) {
-      return (value2, index2, callback4) => iteratee(value2, callback4);
+      return (value3, index2, callback4) => iteratee(value3, callback4);
     }
     function eachLimit$2(coll, iteratee, callback4) {
       return eachOf$1(coll, _withoutIndex(wrapAsync(iteratee)), callback4);
@@ -24930,11 +24930,11 @@ Source:
             retVal.error = error2;
           }
           if (cbArgs.length > 0) {
-            var value2 = cbArgs;
+            var value3 = cbArgs;
             if (cbArgs.length <= 1) {
-              [value2] = cbArgs;
+              [value3] = cbArgs;
             }
-            retVal.value = value2;
+            retVal.value = value3;
           }
           reflectCallback(null, retVal);
         });
@@ -24955,8 +24955,8 @@ Source:
     }
     function reject$2(eachfn, arr, _iteratee, callback4) {
       const iteratee = wrapAsync(_iteratee);
-      return _filter(eachfn, arr, (value2, cb) => {
-        iteratee(value2, (err, v) => {
+      return _filter(eachfn, arr, (value3, cb) => {
+        iteratee(value3, (err, v) => {
           cb(err, !v);
         });
       }, callback4);
@@ -24973,9 +24973,9 @@ Source:
       return reject$2(eachOfSeries$1, coll, iteratee, callback4);
     }
     var rejectSeries$1 = awaitify(rejectSeries, 3);
-    function constant2(value2) {
+    function constant2(value3) {
       return function() {
-        return value2;
+        return value3;
       };
     }
     const DEFAULT_TIMES = 5;
@@ -25944,8 +25944,8 @@ GFS4: `);
       }
     }
     var fs$writeFile = fs6.writeFile;
-    fs6.writeFile = writeFile4;
-    function writeFile4(path, data, options, cb) {
+    fs6.writeFile = writeFile5;
+    function writeFile5(path, data, options, cb) {
       if (typeof options === "function")
         cb = options, options = null;
       return go$writeFile(path, data, options, cb);
@@ -26475,7 +26475,7 @@ var require_BufferList = __commonJS((exports, module) => {
       this.head = this.tail = null;
       this.length = 0;
     };
-    BufferList.prototype.join = function join10(s) {
+    BufferList.prototype.join = function join9(s) {
       if (this.length === 0)
         return "";
       var p = this.head;
@@ -27023,11 +27023,11 @@ var require__stream_writable = __commonJS((exports, module) => {
       }
       return this._writableState.destroyed;
     },
-    set: function(value2) {
+    set: function(value3) {
       if (!this._writableState) {
         return;
       }
-      this._writableState.destroyed = value2;
+      this._writableState.destroyed = value3;
     }
   });
   Writable.prototype.destroy = destroyImpl.destroy;
@@ -27100,12 +27100,12 @@ var require__stream_duplex = __commonJS((exports, module) => {
       }
       return this._readableState.destroyed && this._writableState.destroyed;
     },
-    set: function(value2) {
+    set: function(value3) {
       if (this._readableState === undefined || this._writableState === undefined) {
         return;
       }
-      this._readableState.destroyed = value2;
-      this._writableState.destroyed = value2;
+      this._readableState.destroyed = value3;
+      this._writableState.destroyed = value3;
     }
   });
   Duplex.prototype._destroy = function(err, cb) {
@@ -27480,11 +27480,11 @@ var require__stream_readable = __commonJS((exports, module) => {
       }
       return this._readableState.destroyed;
     },
-    set: function(value2) {
+    set: function(value3) {
       if (!this._readableState) {
         return;
       }
-      this._readableState.destroyed = value2;
+      this._readableState.destroyed = value3;
     }
   });
   Readable7.prototype.destroy = destroyImpl.destroy;
@@ -28348,8 +28348,8 @@ var require_normalize_path = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/identity.js
 var require_identity = __commonJS((exports, module) => {
-  function identity2(value2) {
-    return value2;
+  function identity2(value3) {
+    return value3;
   }
   module.exports = identity2;
 });
@@ -28397,9 +28397,9 @@ var require__overRest = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/constant.js
 var require_constant = __commonJS((exports, module) => {
-  function constant2(value2) {
+  function constant2(value3) {
     return function() {
-      return value2;
+      return value3;
     };
   }
   module.exports = constant2;
@@ -28433,18 +28433,18 @@ var require__getRawTag = __commonJS((exports, module) => {
   var hasOwnProperty = objectProto.hasOwnProperty;
   var nativeObjectToString = objectProto.toString;
   var symToStringTag = Symbol2 ? Symbol2.toStringTag : undefined;
-  function getRawTag(value2) {
-    var isOwn = hasOwnProperty.call(value2, symToStringTag), tag3 = value2[symToStringTag];
+  function getRawTag(value3) {
+    var isOwn = hasOwnProperty.call(value3, symToStringTag), tag3 = value3[symToStringTag];
     try {
-      value2[symToStringTag] = undefined;
+      value3[symToStringTag] = undefined;
       var unmasked = true;
     } catch (e) {}
-    var result2 = nativeObjectToString.call(value2);
+    var result2 = nativeObjectToString.call(value3);
     if (unmasked) {
       if (isOwn) {
-        value2[symToStringTag] = tag3;
+        value3[symToStringTag] = tag3;
       } else {
-        delete value2[symToStringTag];
+        delete value3[symToStringTag];
       }
     }
     return result2;
@@ -28456,8 +28456,8 @@ var require__getRawTag = __commonJS((exports, module) => {
 var require__objectToString = __commonJS((exports, module) => {
   var objectProto = Object.prototype;
   var nativeObjectToString = objectProto.toString;
-  function objectToString(value2) {
-    return nativeObjectToString.call(value2);
+  function objectToString(value3) {
+    return nativeObjectToString.call(value3);
   }
   module.exports = objectToString;
 });
@@ -28470,20 +28470,20 @@ var require__baseGetTag = __commonJS((exports, module) => {
   var nullTag = "[object Null]";
   var undefinedTag = "[object Undefined]";
   var symToStringTag = Symbol2 ? Symbol2.toStringTag : undefined;
-  function baseGetTag(value2) {
-    if (value2 == null) {
-      return value2 === undefined ? undefinedTag : nullTag;
+  function baseGetTag(value3) {
+    if (value3 == null) {
+      return value3 === undefined ? undefinedTag : nullTag;
     }
-    return symToStringTag && symToStringTag in Object(value2) ? getRawTag(value2) : objectToString(value2);
+    return symToStringTag && symToStringTag in Object(value3) ? getRawTag(value3) : objectToString(value3);
   }
   module.exports = baseGetTag;
 });
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/isObject.js
 var require_isObject = __commonJS((exports, module) => {
-  function isObject3(value2) {
-    var type = typeof value2;
-    return value2 != null && (type == "object" || type == "function");
+  function isObject3(value3) {
+    var type = typeof value3;
+    return value3 != null && (type == "object" || type == "function");
   }
   module.exports = isObject3;
 });
@@ -28496,11 +28496,11 @@ var require_isFunction = __commonJS((exports, module) => {
   var funcTag = "[object Function]";
   var genTag = "[object GeneratorFunction]";
   var proxyTag = "[object Proxy]";
-  function isFunction2(value2) {
-    if (!isObject3(value2)) {
+  function isFunction2(value3) {
+    if (!isObject3(value3)) {
       return false;
     }
-    var tag3 = baseGetTag(value2);
+    var tag3 = baseGetTag(value3);
     return tag3 == funcTag || tag3 == genTag || tag3 == asyncTag || tag3 == proxyTag;
   }
   module.exports = isFunction2;
@@ -28557,12 +28557,12 @@ var require__baseIsNative = __commonJS((exports, module) => {
   var funcToString = funcProto.toString;
   var hasOwnProperty = objectProto.hasOwnProperty;
   var reIsNative = RegExp("^" + funcToString.call(hasOwnProperty).replace(reRegExpChar, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$");
-  function baseIsNative(value2) {
-    if (!isObject3(value2) || isMasked(value2)) {
+  function baseIsNative(value3) {
+    if (!isObject3(value3) || isMasked(value3)) {
       return false;
     }
-    var pattern = isFunction2(value2) ? reIsNative : reIsHostCtor;
-    return pattern.test(toSource(value2));
+    var pattern = isFunction2(value3) ? reIsNative : reIsHostCtor;
+    return pattern.test(toSource(value3));
   }
   module.exports = baseIsNative;
 });
@@ -28580,8 +28580,8 @@ var require__getNative = __commonJS((exports, module) => {
   var baseIsNative = require__baseIsNative();
   var getValue = require__getValue();
   function getNative(object, key) {
-    var value2 = getValue(object, key);
-    return baseIsNative(value2) ? value2 : undefined;
+    var value3 = getValue(object, key);
+    return baseIsNative(value3) ? value3 : undefined;
   }
   module.exports = getNative;
 });
@@ -28659,8 +28659,8 @@ var require__baseRest = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/eq.js
 var require_eq = __commonJS((exports, module) => {
-  function eq(value2, other) {
-    return value2 === other || value2 !== value2 && other !== other;
+  function eq(value3, other) {
+    return value3 === other || value3 !== value3 && other !== other;
   }
   module.exports = eq;
 });
@@ -28668,8 +28668,8 @@ var require_eq = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/isLength.js
 var require_isLength = __commonJS((exports, module) => {
   var MAX_SAFE_INTEGER = 9007199254740991;
-  function isLength(value2) {
-    return typeof value2 == "number" && value2 > -1 && value2 % 1 == 0 && value2 <= MAX_SAFE_INTEGER;
+  function isLength(value3) {
+    return typeof value3 == "number" && value3 > -1 && value3 % 1 == 0 && value3 <= MAX_SAFE_INTEGER;
   }
   module.exports = isLength;
 });
@@ -28678,8 +28678,8 @@ var require_isLength = __commonJS((exports, module) => {
 var require_isArrayLike = __commonJS((exports, module) => {
   var isFunction2 = require_isFunction();
   var isLength = require_isLength();
-  function isArrayLike(value2) {
-    return value2 != null && isLength(value2.length) && !isFunction2(value2);
+  function isArrayLike(value3) {
+    return value3 != null && isLength(value3.length) && !isFunction2(value3);
   }
   module.exports = isArrayLike;
 });
@@ -28688,10 +28688,10 @@ var require_isArrayLike = __commonJS((exports, module) => {
 var require__isIndex = __commonJS((exports, module) => {
   var MAX_SAFE_INTEGER = 9007199254740991;
   var reIsUint = /^(?:0|[1-9]\d*)$/;
-  function isIndex(value2, length) {
-    var type = typeof value2;
+  function isIndex(value3, length) {
+    var type = typeof value3;
     length = length == null ? MAX_SAFE_INTEGER : length;
-    return !!length && (type == "number" || type != "symbol" && reIsUint.test(value2)) && (value2 > -1 && value2 % 1 == 0 && value2 < length);
+    return !!length && (type == "number" || type != "symbol" && reIsUint.test(value3)) && (value3 > -1 && value3 % 1 == 0 && value3 < length);
   }
   module.exports = isIndex;
 });
@@ -28702,13 +28702,13 @@ var require__isIterateeCall = __commonJS((exports, module) => {
   var isArrayLike = require_isArrayLike();
   var isIndex = require__isIndex();
   var isObject3 = require_isObject();
-  function isIterateeCall(value2, index, object) {
+  function isIterateeCall(value3, index, object) {
     if (!isObject3(object)) {
       return false;
     }
     var type = typeof index;
     if (type == "number" ? isArrayLike(object) && isIndex(index, object.length) : type == "string" && (index in object)) {
-      return eq(object[index], value2);
+      return eq(object[index], value3);
     }
     return false;
   }
@@ -28729,8 +28729,8 @@ var require__baseTimes = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/isObjectLike.js
 var require_isObjectLike = __commonJS((exports, module) => {
-  function isObjectLike(value2) {
-    return value2 != null && typeof value2 == "object";
+  function isObjectLike(value3) {
+    return value3 != null && typeof value3 == "object";
   }
   module.exports = isObjectLike;
 });
@@ -28740,8 +28740,8 @@ var require__baseIsArguments = __commonJS((exports, module) => {
   var baseGetTag = require__baseGetTag();
   var isObjectLike = require_isObjectLike();
   var argsTag = "[object Arguments]";
-  function baseIsArguments(value2) {
-    return isObjectLike(value2) && baseGetTag(value2) == argsTag;
+  function baseIsArguments(value3) {
+    return isObjectLike(value3) && baseGetTag(value3) == argsTag;
   }
   module.exports = baseIsArguments;
 });
@@ -28755,8 +28755,8 @@ var require_isArguments = __commonJS((exports, module) => {
   var propertyIsEnumerable = objectProto.propertyIsEnumerable;
   var isArguments = baseIsArguments(function() {
     return arguments;
-  }()) ? baseIsArguments : function(value2) {
-    return isObjectLike(value2) && hasOwnProperty.call(value2, "callee") && !propertyIsEnumerable.call(value2, "callee");
+  }()) ? baseIsArguments : function(value3) {
+    return isObjectLike(value3) && hasOwnProperty.call(value3, "callee") && !propertyIsEnumerable.call(value3, "callee");
   };
   module.exports = isArguments;
 });
@@ -28820,8 +28820,8 @@ var require__baseIsTypedArray = __commonJS((exports, module) => {
   var typedArrayTags = {};
   typedArrayTags[float32Tag] = typedArrayTags[float64Tag] = typedArrayTags[int8Tag] = typedArrayTags[int16Tag] = typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] = typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] = typedArrayTags[uint32Tag] = true;
   typedArrayTags[argsTag] = typedArrayTags[arrayTag] = typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] = typedArrayTags[dataViewTag] = typedArrayTags[dateTag] = typedArrayTags[errorTag] = typedArrayTags[funcTag] = typedArrayTags[mapTag] = typedArrayTags[numberTag] = typedArrayTags[objectTag] = typedArrayTags[regexpTag] = typedArrayTags[setTag] = typedArrayTags[stringTag] = typedArrayTags[weakMapTag] = false;
-  function baseIsTypedArray(value2) {
-    return isObjectLike(value2) && isLength(value2.length) && !!typedArrayTags[baseGetTag(value2)];
+  function baseIsTypedArray(value3) {
+    return isObjectLike(value3) && isLength(value3.length) && !!typedArrayTags[baseGetTag(value3)];
   }
   module.exports = baseIsTypedArray;
 });
@@ -28829,8 +28829,8 @@ var require__baseIsTypedArray = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_baseUnary.js
 var require__baseUnary = __commonJS((exports, module) => {
   function baseUnary(func) {
-    return function(value2) {
-      return func(value2);
+    return function(value3) {
+      return func(value3);
     };
   }
   module.exports = baseUnary;
@@ -28875,10 +28875,10 @@ var require__arrayLikeKeys = __commonJS((exports, module) => {
   var isTypedArray = require_isTypedArray();
   var objectProto = Object.prototype;
   var hasOwnProperty = objectProto.hasOwnProperty;
-  function arrayLikeKeys(value2, inherited) {
-    var isArr = isArray2(value2), isArg = !isArr && isArguments(value2), isBuff = !isArr && !isArg && isBuffer(value2), isType = !isArr && !isArg && !isBuff && isTypedArray(value2), skipIndexes = isArr || isArg || isBuff || isType, result2 = skipIndexes ? baseTimes(value2.length, String) : [], length = result2.length;
-    for (var key in value2) {
-      if ((inherited || hasOwnProperty.call(value2, key)) && !(skipIndexes && (key == "length" || isBuff && (key == "offset" || key == "parent") || isType && (key == "buffer" || key == "byteLength" || key == "byteOffset") || isIndex(key, length)))) {
+  function arrayLikeKeys(value3, inherited) {
+    var isArr = isArray2(value3), isArg = !isArr && isArguments(value3), isBuff = !isArr && !isArg && isBuffer(value3), isType = !isArr && !isArg && !isBuff && isTypedArray(value3), skipIndexes = isArr || isArg || isBuff || isType, result2 = skipIndexes ? baseTimes(value3.length, String) : [], length = result2.length;
+    for (var key in value3) {
+      if ((inherited || hasOwnProperty.call(value3, key)) && !(skipIndexes && (key == "length" || isBuff && (key == "offset" || key == "parent") || isType && (key == "buffer" || key == "byteLength" || key == "byteOffset") || isIndex(key, length)))) {
         result2.push(key);
       }
     }
@@ -28890,9 +28890,9 @@ var require__arrayLikeKeys = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_isPrototype.js
 var require__isPrototype = __commonJS((exports, module) => {
   var objectProto = Object.prototype;
-  function isPrototype(value2) {
-    var Ctor = value2 && value2.constructor, proto = typeof Ctor == "function" && Ctor.prototype || objectProto;
-    return value2 === proto;
+  function isPrototype(value3) {
+    var Ctor = value3 && value3.constructor, proto = typeof Ctor == "function" && Ctor.prototype || objectProto;
+    return value3 === proto;
   }
   module.exports = isPrototype;
 });
@@ -28967,8 +28967,8 @@ var require_defaults = __commonJS((exports, module) => {
       var propsLength = props.length;
       while (++propsIndex < propsLength) {
         var key = props[propsIndex];
-        var value2 = object[key];
-        if (value2 === undefined || eq(value2, objectProto[key]) && !hasOwnProperty.call(object, key)) {
+        var value3 = object[key];
+        if (value3 === undefined || eq(value3, objectProto[key]) && !hasOwnProperty.call(object, key)) {
           object[key] = source[key];
         }
       }
@@ -29064,8 +29064,8 @@ var require_primordials = __commonJS((exports, module) => {
       return Promise.resolve(val);
     },
     ReflectApply: Reflect.apply,
-    RegExpPrototypeTest(self2, value2) {
-      return self2.test(value2);
+    RegExpPrototypeTest(self2, value3) {
+      return self2.test(value3);
     },
     SafeSet: Set,
     String,
@@ -29114,29 +29114,29 @@ var require_inspect = __commonJS((exports, module) => {
         }
       });
     },
-    inspect(value2) {
-      switch (typeof value2) {
+    inspect(value3) {
+      switch (typeof value3) {
         case "string":
-          if (value2.includes("'")) {
-            if (!value2.includes('"')) {
-              return `"${value2}"`;
-            } else if (!value2.includes("`") && !value2.includes("${")) {
-              return `\`${value2}\``;
+          if (value3.includes("'")) {
+            if (!value3.includes('"')) {
+              return `"${value3}"`;
+            } else if (!value3.includes("`") && !value3.includes("${")) {
+              return `\`${value3}\``;
             }
           }
-          return `'${value2}'`;
+          return `'${value3}'`;
         case "number":
-          if (isNaN(value2)) {
+          if (isNaN(value3)) {
             return "NaN";
-          } else if (Object.is(value2, -0)) {
-            return String(value2);
+          } else if (Object.is(value3, -0)) {
+            return String(value3);
           }
-          return value2;
+          return value3;
         case "bigint":
-          return `${String(value2)}n`;
+          return `${String(value3)}n`;
         case "boolean":
         case "undefined":
-          return String(value2);
+          return String(value3);
         case "object":
           return "{}";
       }
@@ -29164,8 +29164,8 @@ var require_errors2 = __commonJS((exports, module) => {
   var classRegExp = /^([A-Z][a-z0-9]*)+$/;
   var nodeInternalPrefix = "__node_internal_";
   var codes = {};
-  function assert(value2, message) {
-    if (!value2) {
+  function assert(value3, message) {
+    if (!value3) {
       throw new codes.ERR_INTERNAL_ASSERTION(message);
     }
   }
@@ -29269,15 +29269,15 @@ var require_errors2 = __commonJS((exports, module) => {
     const types = [];
     const instances = [];
     const other = [];
-    for (const value2 of expected) {
-      assert(typeof value2 === "string", "All expected entries have to be of type string");
-      if (kTypes.includes(value2)) {
-        types.push(value2.toLowerCase());
-      } else if (classRegExp.test(value2)) {
-        instances.push(value2);
+    for (const value3 of expected) {
+      assert(typeof value3 === "string", "All expected entries have to be of type string");
+      if (kTypes.includes(value3)) {
+        types.push(value3.toLowerCase());
+      } else if (classRegExp.test(value3)) {
+        instances.push(value3);
       } else {
-        assert(value2 !== "object", 'The value "object" should be written as "Object"');
-        other.push(value2);
+        assert(value3 !== "object", 'The value "object" should be written as "Object"');
+        other.push(value3);
       }
     }
     if (instances.length > 0) {
@@ -29363,17 +29363,17 @@ var require_errors2 = __commonJS((exports, module) => {
     }
     return msg;
   }, TypeError);
-  E("ERR_INVALID_ARG_VALUE", (name, value2, reason2 = "is invalid") => {
-    let inspected = inspect4(value2);
+  E("ERR_INVALID_ARG_VALUE", (name, value3, reason2 = "is invalid") => {
+    let inspected = inspect4(value3);
     if (inspected.length > 128) {
       inspected = inspected.slice(0, 128) + "...";
     }
     const type = name.includes(".") ? "property" : "argument";
     return `The ${type} '${name}' ${reason2}. Received ${inspected}`;
   }, TypeError);
-  E("ERR_INVALID_RETURN_VALUE", (input, name, value2) => {
+  E("ERR_INVALID_RETURN_VALUE", (input, name, value3) => {
     var _value$constructor;
-    const type = value2 !== null && value2 !== undefined && (_value$constructor = value2.constructor) !== null && _value$constructor !== undefined && _value$constructor.name ? `instance of ${value2.constructor.name}` : `type ${typeof value2}`;
+    const type = value3 !== null && value3 !== undefined && (_value$constructor = value3.constructor) !== null && _value$constructor !== undefined && _value$constructor.name ? `instance of ${value3.constructor.name}` : `type ${typeof value3}`;
     return `Expected ${input} to be returned from the "${name}"` + ` function but got ${type}.`;
   }, TypeError);
   E("ERR_MISSING_ARGS", (...args2) => {
@@ -29550,8 +29550,8 @@ var require_event_target_shim = __commonJS((exports, module) => {
     get cancelBubble() {
       return pd(this).stopped;
     },
-    set cancelBubble(value2) {
-      if (!value2) {
+    set cancelBubble(value3) {
+      if (!value3) {
         return;
       }
       const data = pd(this);
@@ -29563,8 +29563,8 @@ var require_event_target_shim = __commonJS((exports, module) => {
     get returnValue() {
       return !pd(this).canceled;
     },
-    set returnValue(value2) {
-      if (!value2) {
+    set returnValue(value3) {
+      if (!value3) {
         setCancelFlag(pd(this));
       }
     },
@@ -29584,8 +29584,8 @@ var require_event_target_shim = __commonJS((exports, module) => {
       get() {
         return pd(this).event[key];
       },
-      set(value2) {
-        pd(this).event[key] = value2;
+      set(value3) {
+        pd(this).event[key] = value3;
       },
       configurable: true,
       enumerable: true
@@ -29975,9 +29975,9 @@ var require_util10 = __commonJS((exports, module) => {
       throw new ERR_INVALID_ARG_TYPE(name, "AbortSignal", signal);
     }
   };
-  var validateFunction = (value2, name) => {
-    if (typeof value2 !== "function") {
-      throw new ERR_INVALID_ARG_TYPE(name, "Function", value2);
+  var validateFunction = (value3, name) => {
+    if (typeof value3 !== "function") {
+      throw new ERR_INVALID_ARG_TYPE(name, "Function", value3);
     }
   };
   module.exports = {
@@ -29994,25 +29994,25 @@ var require_util10 = __commonJS((exports, module) => {
       };
     },
     createDeferredPromise: function() {
-      let resolve7;
+      let resolve6;
       let reject;
       const promise3 = new Promise((res, rej) => {
-        resolve7 = res;
+        resolve6 = res;
         reject = rej;
       });
       return {
         promise: promise3,
-        resolve: resolve7,
+        resolve: resolve6,
         reject
       };
     },
     promisify(fn3) {
-      return new Promise((resolve7, reject) => {
+      return new Promise((resolve6, reject) => {
         fn3((err, ...args2) => {
           if (err) {
             return reject(err);
           }
-          return resolve7(...args2);
+          return resolve6(...args2);
         });
       });
     },
@@ -30108,122 +30108,122 @@ var require_validators = __commonJS((exports, module) => {
   var { normalizeEncoding } = require_util10();
   var { isAsyncFunction, isArrayBufferView } = require_util10().types;
   var signals = {};
-  function isInt32(value2) {
-    return value2 === (value2 | 0);
+  function isInt32(value3) {
+    return value3 === (value3 | 0);
   }
-  function isUint32(value2) {
-    return value2 === value2 >>> 0;
+  function isUint32(value3) {
+    return value3 === value3 >>> 0;
   }
   var octalReg = /^[0-7]+$/;
   var modeDesc = "must be a 32-bit unsigned integer or an octal string";
-  function parseFileMode(value2, name, def) {
-    if (typeof value2 === "undefined") {
-      value2 = def;
+  function parseFileMode(value3, name, def) {
+    if (typeof value3 === "undefined") {
+      value3 = def;
     }
-    if (typeof value2 === "string") {
-      if (RegExpPrototypeExec(octalReg, value2) === null) {
-        throw new ERR_INVALID_ARG_VALUE(name, value2, modeDesc);
+    if (typeof value3 === "string") {
+      if (RegExpPrototypeExec(octalReg, value3) === null) {
+        throw new ERR_INVALID_ARG_VALUE(name, value3, modeDesc);
       }
-      value2 = NumberParseInt(value2, 8);
+      value3 = NumberParseInt(value3, 8);
     }
-    validateUint32(value2, name);
-    return value2;
+    validateUint32(value3, name);
+    return value3;
   }
-  var validateInteger = hideStackFrames((value2, name, min = NumberMIN_SAFE_INTEGER, max = NumberMAX_SAFE_INTEGER) => {
-    if (typeof value2 !== "number")
-      throw new ERR_INVALID_ARG_TYPE(name, "number", value2);
-    if (!NumberIsInteger(value2))
-      throw new ERR_OUT_OF_RANGE(name, "an integer", value2);
-    if (value2 < min || value2 > max)
-      throw new ERR_OUT_OF_RANGE(name, `>= ${min} && <= ${max}`, value2);
+  var validateInteger = hideStackFrames((value3, name, min = NumberMIN_SAFE_INTEGER, max = NumberMAX_SAFE_INTEGER) => {
+    if (typeof value3 !== "number")
+      throw new ERR_INVALID_ARG_TYPE(name, "number", value3);
+    if (!NumberIsInteger(value3))
+      throw new ERR_OUT_OF_RANGE(name, "an integer", value3);
+    if (value3 < min || value3 > max)
+      throw new ERR_OUT_OF_RANGE(name, `>= ${min} && <= ${max}`, value3);
   });
-  var validateInt32 = hideStackFrames((value2, name, min = -2147483648, max = 2147483647) => {
-    if (typeof value2 !== "number") {
-      throw new ERR_INVALID_ARG_TYPE(name, "number", value2);
+  var validateInt32 = hideStackFrames((value3, name, min = -2147483648, max = 2147483647) => {
+    if (typeof value3 !== "number") {
+      throw new ERR_INVALID_ARG_TYPE(name, "number", value3);
     }
-    if (!NumberIsInteger(value2)) {
-      throw new ERR_OUT_OF_RANGE(name, "an integer", value2);
+    if (!NumberIsInteger(value3)) {
+      throw new ERR_OUT_OF_RANGE(name, "an integer", value3);
     }
-    if (value2 < min || value2 > max) {
-      throw new ERR_OUT_OF_RANGE(name, `>= ${min} && <= ${max}`, value2);
+    if (value3 < min || value3 > max) {
+      throw new ERR_OUT_OF_RANGE(name, `>= ${min} && <= ${max}`, value3);
     }
   });
-  var validateUint32 = hideStackFrames((value2, name, positive = false) => {
-    if (typeof value2 !== "number") {
-      throw new ERR_INVALID_ARG_TYPE(name, "number", value2);
+  var validateUint32 = hideStackFrames((value3, name, positive = false) => {
+    if (typeof value3 !== "number") {
+      throw new ERR_INVALID_ARG_TYPE(name, "number", value3);
     }
-    if (!NumberIsInteger(value2)) {
-      throw new ERR_OUT_OF_RANGE(name, "an integer", value2);
+    if (!NumberIsInteger(value3)) {
+      throw new ERR_OUT_OF_RANGE(name, "an integer", value3);
     }
     const min = positive ? 1 : 0;
     const max = 4294967295;
-    if (value2 < min || value2 > max) {
-      throw new ERR_OUT_OF_RANGE(name, `>= ${min} && <= ${max}`, value2);
+    if (value3 < min || value3 > max) {
+      throw new ERR_OUT_OF_RANGE(name, `>= ${min} && <= ${max}`, value3);
     }
   });
-  function validateString(value2, name) {
-    if (typeof value2 !== "string")
-      throw new ERR_INVALID_ARG_TYPE(name, "string", value2);
+  function validateString(value3, name) {
+    if (typeof value3 !== "string")
+      throw new ERR_INVALID_ARG_TYPE(name, "string", value3);
   }
-  function validateNumber(value2, name, min = undefined, max) {
-    if (typeof value2 !== "number")
-      throw new ERR_INVALID_ARG_TYPE(name, "number", value2);
-    if (min != null && value2 < min || max != null && value2 > max || (min != null || max != null) && NumberIsNaN(value2)) {
-      throw new ERR_OUT_OF_RANGE(name, `${min != null ? `>= ${min}` : ""}${min != null && max != null ? " && " : ""}${max != null ? `<= ${max}` : ""}`, value2);
+  function validateNumber(value3, name, min = undefined, max) {
+    if (typeof value3 !== "number")
+      throw new ERR_INVALID_ARG_TYPE(name, "number", value3);
+    if (min != null && value3 < min || max != null && value3 > max || (min != null || max != null) && NumberIsNaN(value3)) {
+      throw new ERR_OUT_OF_RANGE(name, `${min != null ? `>= ${min}` : ""}${min != null && max != null ? " && " : ""}${max != null ? `<= ${max}` : ""}`, value3);
     }
   }
-  var validateOneOf = hideStackFrames((value2, name, oneOf) => {
-    if (!ArrayPrototypeIncludes(oneOf, value2)) {
+  var validateOneOf = hideStackFrames((value3, name, oneOf) => {
+    if (!ArrayPrototypeIncludes(oneOf, value3)) {
       const allowed = ArrayPrototypeJoin(ArrayPrototypeMap(oneOf, (v) => typeof v === "string" ? `'${v}'` : String5(v)), ", ");
       const reason2 = "must be one of: " + allowed;
-      throw new ERR_INVALID_ARG_VALUE(name, value2, reason2);
+      throw new ERR_INVALID_ARG_VALUE(name, value3, reason2);
     }
   });
-  function validateBoolean(value2, name) {
-    if (typeof value2 !== "boolean")
-      throw new ERR_INVALID_ARG_TYPE(name, "boolean", value2);
+  function validateBoolean(value3, name) {
+    if (typeof value3 !== "boolean")
+      throw new ERR_INVALID_ARG_TYPE(name, "boolean", value3);
   }
   function getOwnPropertyValueOrDefault(options, key, defaultValue) {
     return options == null || !ObjectPrototypeHasOwnProperty(options, key) ? defaultValue : options[key];
   }
-  var validateObject = hideStackFrames((value2, name, options = null) => {
+  var validateObject = hideStackFrames((value3, name, options = null) => {
     const allowArray = getOwnPropertyValueOrDefault(options, "allowArray", false);
     const allowFunction = getOwnPropertyValueOrDefault(options, "allowFunction", false);
     const nullable = getOwnPropertyValueOrDefault(options, "nullable", false);
-    if (!nullable && value2 === null || !allowArray && ArrayIsArray(value2) || typeof value2 !== "object" && (!allowFunction || typeof value2 !== "function")) {
-      throw new ERR_INVALID_ARG_TYPE(name, "Object", value2);
+    if (!nullable && value3 === null || !allowArray && ArrayIsArray(value3) || typeof value3 !== "object" && (!allowFunction || typeof value3 !== "function")) {
+      throw new ERR_INVALID_ARG_TYPE(name, "Object", value3);
     }
   });
-  var validateDictionary = hideStackFrames((value2, name) => {
-    if (value2 != null && typeof value2 !== "object" && typeof value2 !== "function") {
-      throw new ERR_INVALID_ARG_TYPE(name, "a dictionary", value2);
+  var validateDictionary = hideStackFrames((value3, name) => {
+    if (value3 != null && typeof value3 !== "object" && typeof value3 !== "function") {
+      throw new ERR_INVALID_ARG_TYPE(name, "a dictionary", value3);
     }
   });
-  var validateArray = hideStackFrames((value2, name, minLength = 0) => {
-    if (!ArrayIsArray(value2)) {
-      throw new ERR_INVALID_ARG_TYPE(name, "Array", value2);
+  var validateArray = hideStackFrames((value3, name, minLength = 0) => {
+    if (!ArrayIsArray(value3)) {
+      throw new ERR_INVALID_ARG_TYPE(name, "Array", value3);
     }
-    if (value2.length < minLength) {
+    if (value3.length < minLength) {
       const reason2 = `must be longer than ${minLength}`;
-      throw new ERR_INVALID_ARG_VALUE(name, value2, reason2);
+      throw new ERR_INVALID_ARG_VALUE(name, value3, reason2);
     }
   });
-  function validateStringArray(value2, name) {
-    validateArray(value2, name);
-    for (let i = 0;i < value2.length; i++) {
-      validateString(value2[i], `${name}[${i}]`);
+  function validateStringArray(value3, name) {
+    validateArray(value3, name);
+    for (let i = 0;i < value3.length; i++) {
+      validateString(value3[i], `${name}[${i}]`);
     }
   }
-  function validateBooleanArray(value2, name) {
-    validateArray(value2, name);
-    for (let i = 0;i < value2.length; i++) {
-      validateBoolean(value2[i], `${name}[${i}]`);
+  function validateBooleanArray(value3, name) {
+    validateArray(value3, name);
+    for (let i = 0;i < value3.length; i++) {
+      validateBoolean(value3[i], `${name}[${i}]`);
     }
   }
-  function validateAbortSignalArray(value2, name) {
-    validateArray(value2, name);
-    for (let i = 0;i < value2.length; i++) {
-      const signal = value2[i];
+  function validateAbortSignalArray(value3, name) {
+    validateArray(value3, name);
+    for (let i = 0;i < value3.length; i++) {
+      const signal = value3[i];
       const indexedName = `${name}[${i}]`;
       if (signal == null) {
         throw new ERR_INVALID_ARG_TYPE(indexedName, "AbortSignal", signal);
@@ -30263,27 +30263,27 @@ var require_validators = __commonJS((exports, module) => {
       throw new ERR_INVALID_ARG_TYPE(name, "AbortSignal", signal);
     }
   });
-  var validateFunction = hideStackFrames((value2, name) => {
-    if (typeof value2 !== "function")
-      throw new ERR_INVALID_ARG_TYPE(name, "Function", value2);
+  var validateFunction = hideStackFrames((value3, name) => {
+    if (typeof value3 !== "function")
+      throw new ERR_INVALID_ARG_TYPE(name, "Function", value3);
   });
-  var validatePlainFunction = hideStackFrames((value2, name) => {
-    if (typeof value2 !== "function" || isAsyncFunction(value2))
-      throw new ERR_INVALID_ARG_TYPE(name, "Function", value2);
+  var validatePlainFunction = hideStackFrames((value3, name) => {
+    if (typeof value3 !== "function" || isAsyncFunction(value3))
+      throw new ERR_INVALID_ARG_TYPE(name, "Function", value3);
   });
-  var validateUndefined = hideStackFrames((value2, name) => {
-    if (value2 !== undefined)
-      throw new ERR_INVALID_ARG_TYPE(name, "undefined", value2);
+  var validateUndefined = hideStackFrames((value3, name) => {
+    if (value3 !== undefined)
+      throw new ERR_INVALID_ARG_TYPE(name, "undefined", value3);
   });
-  function validateUnion(value2, name, union3) {
-    if (!ArrayPrototypeIncludes(union3, value2)) {
-      throw new ERR_INVALID_ARG_TYPE(name, `('${ArrayPrototypeJoin(union3, "|")}')`, value2);
+  function validateUnion(value3, name, union3) {
+    if (!ArrayPrototypeIncludes(union3, value3)) {
+      throw new ERR_INVALID_ARG_TYPE(name, `('${ArrayPrototypeJoin(union3, "|")}')`, value3);
     }
   }
   var linkValueRegExp = /^(?:<[^>]*>)(?:\s*;\s*[^;"\s]+(?:=(")?[^;"\s]*\1)?)*$/;
-  function validateLinkHeaderFormat(value2, name) {
-    if (typeof value2 === "undefined" || !RegExpPrototypeExec(linkValueRegExp, value2)) {
-      throw new ERR_INVALID_ARG_VALUE(name, value2, 'must be an array or string of format "</styles.css>; rel=preload; as=style"');
+  function validateLinkHeaderFormat(value3, name) {
+    if (typeof value3 === "undefined" || !RegExpPrototypeExec(linkValueRegExp, value3)) {
+      throw new ERR_INVALID_ARG_VALUE(name, value3, 'must be an array or string of format "</styles.css>; rel=preload; as=style"');
     }
   }
   function validateLinkHeaderValue(hints) {
@@ -30802,7 +30802,7 @@ var require_end_of_stream = __commonJS((exports, module) => {
       validateBoolean(opts.cleanup, "cleanup");
       autoCleanup = opts.cleanup;
     }
-    return new Promise2((resolve7, reject) => {
+    return new Promise2((resolve6, reject) => {
       const cleanup = eos(stream3, opts, (err) => {
         if (autoCleanup) {
           cleanup();
@@ -30810,7 +30810,7 @@ var require_end_of_stream = __commonJS((exports, module) => {
         if (err) {
           reject(err);
         } else {
-          resolve7();
+          resolve6();
         }
       });
     });
@@ -31379,12 +31379,12 @@ var require_state = __commonJS((exports, module) => {
   function getDefaultHighWaterMark(objectMode) {
     return objectMode ? defaultHighWaterMarkObjectMode : defaultHighWaterMarkBytes;
   }
-  function setDefaultHighWaterMark(objectMode, value2) {
-    validateInteger(value2, "value", 0);
+  function setDefaultHighWaterMark(objectMode, value3) {
+    validateInteger(value3, "value", 0);
     if (objectMode) {
-      defaultHighWaterMarkObjectMode = value2;
+      defaultHighWaterMarkObjectMode = value3;
     } else {
-      defaultHighWaterMarkBytes = value2;
+      defaultHighWaterMarkBytes = value3;
     }
   }
   function getHighWaterMark(state3, options, duplexKey, isDuplex) {
@@ -31766,25 +31766,25 @@ var require_from = __commonJS((exports, module) => {
       const hadError = error2 !== undefined && error2 !== null;
       const hasThrow = typeof iterator.throw === "function";
       if (hadError && hasThrow) {
-        const { value: value2, done: done4 } = await iterator.throw(error2);
-        await value2;
+        const { value: value3, done: done4 } = await iterator.throw(error2);
+        await value3;
         if (done4) {
           return;
         }
       }
       if (typeof iterator.return === "function") {
-        const { value: value2 } = await iterator.return();
-        await value2;
+        const { value: value3 } = await iterator.return();
+        await value3;
       }
     }
     async function next() {
       for (;; ) {
         try {
-          const { value: value2, done: done4 } = isAsync ? await iterator.next() : iterator.next();
+          const { value: value3, done: done4 } = isAsync ? await iterator.next() : iterator.next();
           if (done4) {
             readable.push(null);
           } else {
-            const res = value2 && typeof value2.then === "function" ? await value2 : value2;
+            const res = value3 && typeof value3.then === "function" ? await value3 : value3;
             if (res === null) {
               reading = false;
               throw new ERR_STREAM_NULL_VALUES;
@@ -31879,8 +31879,8 @@ var require_readable3 = __commonJS((exports, module) => {
       get() {
         return (this.state & bit) !== 0;
       },
-      set(value2) {
-        if (value2)
+      set(value3) {
+        if (value3)
           this.state |= bit;
         else
           this.state &= ~bit;
@@ -31972,7 +31972,7 @@ var require_readable3 = __commonJS((exports, module) => {
       error2 = this.readableEnded ? null : new AbortError4;
       this.destroy(error2);
     }
-    return new Promise2((resolve7, reject) => eos(this, (err) => err && err !== error2 ? reject(err) : resolve7(null)));
+    return new Promise2((resolve6, reject) => eos(this, (err) => err && err !== error2 ? reject(err) : resolve6(null)));
   };
   Readable7.prototype.push = function(chunk, encoding) {
     return readableAddChunk(this, chunk, encoding, false);
@@ -32550,12 +32550,12 @@ var require_readable3 = __commonJS((exports, module) => {
   }
   async function* createAsyncIterator(stream3, options) {
     let callback4 = nop;
-    function next(resolve7) {
+    function next(resolve6) {
       if (this === stream3) {
         callback4();
         callback4 = nop;
       } else {
-        callback4 = resolve7;
+        callback4 = resolve6;
       }
     }
     stream3.on("readable", next);
@@ -32685,11 +32685,11 @@ var require_readable3 = __commonJS((exports, module) => {
       get() {
         return this._readableState ? this._readableState.destroyed : false;
       },
-      set(value2) {
+      set(value3) {
         if (!this._readableState) {
           return;
         }
-        this._readableState.destroyed = value2;
+        this._readableState.destroyed = value3;
       }
     },
     readableEnded: {
@@ -32712,8 +32712,8 @@ var require_readable3 = __commonJS((exports, module) => {
       get() {
         return this[kPaused] !== false;
       },
-      set(value2) {
-        this[kPaused] = !!value2;
+      set(value3) {
+        this[kPaused] = !!value3;
       }
     }
   });
@@ -33307,9 +33307,9 @@ var require_writable = __commonJS((exports, module) => {
       get() {
         return this._writableState ? this._writableState.destroyed : false;
       },
-      set(value2) {
+      set(value3) {
         if (this._writableState) {
-          this._writableState.destroyed = value2;
+          this._writableState.destroyed = value3;
         }
       }
     },
@@ -33503,19 +33503,19 @@ var require_duplexify = __commonJS((exports, module) => {
       });
     }
     if (typeof body2 === "function") {
-      const { value: value2, write: write2, final, destroy: destroy2 } = fromAsyncGen(body2);
-      if (isIterable2(value2)) {
-        return from(Duplexify, value2, {
+      const { value: value3, write: write2, final, destroy: destroy2 } = fromAsyncGen(body2);
+      if (isIterable2(value3)) {
+        return from(Duplexify, value3, {
           objectMode: true,
           write: write2,
           final,
           destroy: destroy2
         });
       }
-      const then2 = value2 === null || value2 === undefined ? undefined : value2.then;
+      const then2 = value3 === null || value3 === undefined ? undefined : value3.then;
       if (typeof then2 === "function") {
         let d;
-        const promise3 = FunctionPrototypeCall(then2, value2, (val) => {
+        const promise3 = FunctionPrototypeCall(then2, value3, (val) => {
           if (val != null) {
             throw new ERR_INVALID_RETURN_VALUE("nully", "body", val);
           }
@@ -33539,7 +33539,7 @@ var require_duplexify = __commonJS((exports, module) => {
           destroy: destroy2
         });
       }
-      throw new ERR_INVALID_RETURN_VALUE("Iterable, AsyncIterable or AsyncFunction", name, value2);
+      throw new ERR_INVALID_RETURN_VALUE("Iterable, AsyncIterable or AsyncFunction", name, value3);
     }
     if (isBlob2(body2)) {
       return duplexify(body2.arrayBuffer());
@@ -33591,10 +33591,10 @@ var require_duplexify = __commonJS((exports, module) => {
     ], body2);
   };
   function fromAsyncGen(fn3) {
-    let { promise: promise3, resolve: resolve7 } = createDeferredPromise();
+    let { promise: promise3, resolve: resolve6 } = createDeferredPromise();
     const ac = new AbortController2;
     const signal = ac.signal;
-    const value2 = fn3(async function* () {
+    const value3 = fn3(async function* () {
       while (true) {
         const _promise = promise3;
         promise3 = null;
@@ -33606,17 +33606,17 @@ var require_duplexify = __commonJS((exports, module) => {
           throw new AbortError4(undefined, {
             cause: signal.reason
           });
-        ({ promise: promise3, resolve: resolve7 } = createDeferredPromise());
+        ({ promise: promise3, resolve: resolve6 } = createDeferredPromise());
         yield chunk;
       }
     }(), {
       signal
     });
     return {
-      value: value2,
+      value: value3,
       write(chunk, encoding, cb) {
-        const _resolve = resolve7;
-        resolve7 = null;
+        const _resolve = resolve6;
+        resolve6 = null;
         _resolve({
           chunk,
           done: false,
@@ -33624,8 +33624,8 @@ var require_duplexify = __commonJS((exports, module) => {
         });
       },
       final(cb) {
-        const _resolve = resolve7;
-        resolve7 = null;
+        const _resolve = resolve6;
+        resolve6 = null;
         _resolve({
           done: true,
           cb
@@ -33834,10 +33834,10 @@ var require_duplex = __commonJS((exports, module) => {
         }
         return this._readableState.destroyed && this._writableState.destroyed;
       },
-      set(value2) {
+      set(value3) {
         if (this._readableState && this._writableState) {
-          this._readableState.destroyed = value2;
-          this._writableState.destroyed = value2;
+          this._readableState.destroyed = value3;
+          this._writableState.destroyed = value3;
         }
       }
     }
@@ -34062,7 +34062,7 @@ var require_pipeline = __commonJS((exports, module) => {
         callback4();
       }
     };
-    const wait = () => new Promise2((resolve7, reject) => {
+    const wait = () => new Promise2((resolve6, reject) => {
       if (error2) {
         reject(error2);
       } else {
@@ -34070,7 +34070,7 @@ var require_pipeline = __commonJS((exports, module) => {
           if (error2) {
             reject(error2);
           } else {
-            resolve7();
+            resolve6();
           }
         };
       }
@@ -34148,7 +34148,7 @@ var require_pipeline = __commonJS((exports, module) => {
       disposable = addAbortListener(outerSignal, abort);
     }
     let error2;
-    let value2;
+    let value3;
     const destroys = [];
     let finishCount = 0;
     function finish(err) {
@@ -34171,7 +34171,7 @@ var require_pipeline = __commonJS((exports, module) => {
         if (!error2) {
           lastStreamCleanup.forEach((fn3) => fn3());
         }
-        process5.nextTick(callback4, error2, value2);
+        process5.nextTick(callback4, error2, value3);
       }
     }
     let ret;
@@ -34241,7 +34241,7 @@ var require_pipeline = __commonJS((exports, module) => {
           if (typeof then === "function") {
             finishCount++;
             then.call(ret, (val) => {
-              value2 = val;
+              value3 = val;
               if (val != null) {
                 pt.write(val);
               }
@@ -34525,8 +34525,8 @@ var require_compose = __commonJS((exports, module) => {
         d._read = async function() {
           while (true) {
             try {
-              const { value: value2, done: done4 } = await reader.read();
-              if (!d.push(value2)) {
+              const { value: value3, done: done4 } = await reader.read();
+              if (!d.push(value3)) {
                 return;
               }
               if (done4) {
@@ -34677,8 +34677,8 @@ var require_operators = __commonJS((exports, module) => {
               next = null;
             }
             if (!done4 && (queue.length >= highWaterMark || cnt >= concurrency)) {
-              await new Promise2((resolve7) => {
-                resume = resolve7;
+              await new Promise2((resolve6) => {
+                resume = resolve6;
               });
             }
           }
@@ -34712,8 +34712,8 @@ var require_operators = __commonJS((exports, module) => {
             queue.shift();
             maybeResume();
           }
-          await new Promise2((resolve7) => {
-            next = resolve7;
+          await new Promise2((resolve6) => {
+            next = resolve6;
           });
         }
       } finally {
@@ -34769,8 +34769,8 @@ var require_operators = __commonJS((exports, module) => {
     if (typeof fn3 !== "function") {
       throw new ERR_INVALID_ARG_TYPE("fn", ["Function", "AsyncFunction"], fn3);
     }
-    async function forEachFn(value2, options2) {
-      await fn3(value2, options2);
+    async function forEachFn(value3, options2) {
+      await fn3(value3, options2);
       return kEmpty;
     }
     for await (const unused of map10.call(this, forEachFn, options))
@@ -34780,9 +34780,9 @@ var require_operators = __commonJS((exports, module) => {
     if (typeof fn3 !== "function") {
       throw new ERR_INVALID_ARG_TYPE("fn", ["Function", "AsyncFunction"], fn3);
     }
-    async function filterFn(value2, options2) {
-      if (await fn3(value2, options2)) {
-        return value2;
+    async function filterFn(value3, options2) {
+      if (await fn3(value3, options2)) {
+        return value3;
       }
       return kEmpty;
     }
@@ -34827,17 +34827,17 @@ var require_operators = __commonJS((exports, module) => {
     }
     let gotAnyItemFromStream = false;
     try {
-      for await (const value2 of this) {
+      for await (const value3 of this) {
         var _options$signal3;
         gotAnyItemFromStream = true;
         if (options !== null && options !== undefined && (_options$signal3 = options.signal) !== null && _options$signal3 !== undefined && _options$signal3.aborted) {
           throw new AbortError4;
         }
         if (!hasInitialValue) {
-          initialValue = value2;
+          initialValue = value3;
           hasInitialValue = true;
         } else {
-          initialValue = await reducer(initialValue, value2, {
+          initialValue = await reducer(initialValue, value3, {
             signal
           });
         }
@@ -34965,7 +34965,7 @@ var require_promises = __commonJS((exports, module) => {
   var { finished } = require_end_of_stream();
   require_stream();
   function pipeline(...streams) {
-    return new Promise2((resolve7, reject) => {
+    return new Promise2((resolve6, reject) => {
       let signal;
       let end;
       const lastArg = streams[streams.length - 1];
@@ -34974,11 +34974,11 @@ var require_promises = __commonJS((exports, module) => {
         signal = options.signal;
         end = options.end;
       }
-      pl(streams, (err, value2) => {
+      pl(streams, (err, value3) => {
         if (err) {
           reject(err);
         } else {
-          resolve7(value2);
+          resolve6(value3);
         }
       }, {
         signal,
@@ -35100,8 +35100,8 @@ var require_stream = __commonJS((exports, module) => {
     }
   });
   Stream2.Stream = Stream2;
-  Stream2._isUint8Array = function isUint8Array(value2) {
-    return value2 instanceof Uint8Array;
+  Stream2._isUint8Array = function isUint8Array(value3) {
+    return value3 instanceof Uint8Array;
   };
   Stream2._uint8ArrayToBuffer = function _uint8ArrayToBuffer(chunk) {
     return Buffer3.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
@@ -35187,8 +35187,8 @@ var require__isFlattenable = __commonJS((exports, module) => {
   var isArguments = require_isArguments();
   var isArray2 = require_isArray();
   var spreadableSymbol = Symbol2 ? Symbol2.isConcatSpreadable : undefined;
-  function isFlattenable(value2) {
-    return isArray2(value2) || isArguments(value2) || !!(spreadableSymbol && value2 && value2[spreadableSymbol]);
+  function isFlattenable(value3) {
+    return isArray2(value3) || isArguments(value3) || !!(spreadableSymbol && value3 && value3[spreadableSymbol]);
   }
   module.exports = isFlattenable;
 });
@@ -35202,15 +35202,15 @@ var require__baseFlatten = __commonJS((exports, module) => {
     predicate || (predicate = isFlattenable);
     result2 || (result2 = []);
     while (++index < length) {
-      var value2 = array2[index];
-      if (depth > 0 && predicate(value2)) {
+      var value3 = array2[index];
+      if (depth > 0 && predicate(value3)) {
         if (depth > 1) {
-          baseFlatten(value2, depth - 1, predicate, isStrict, result2);
+          baseFlatten(value3, depth - 1, predicate, isStrict, result2);
         } else {
-          arrayPush(result2, value2);
+          arrayPush(result2, value3);
         }
       } else if (!isStrict) {
-        result2[result2.length] = value2;
+        result2[result2.length] = value3;
       }
     }
     return result2;
@@ -35288,10 +35288,10 @@ var require__hashHas = __commonJS((exports, module) => {
 var require__hashSet = __commonJS((exports, module) => {
   var nativeCreate = require__nativeCreate();
   var HASH_UNDEFINED = "__lodash_hash_undefined__";
-  function hashSet2(key, value2) {
+  function hashSet2(key, value3) {
     var data = this.__data__;
     this.size += this.has(key) ? 0 : 1;
-    data[key] = nativeCreate && value2 === undefined ? HASH_UNDEFINED : value2;
+    data[key] = nativeCreate && value3 === undefined ? HASH_UNDEFINED : value3;
     return this;
   }
   module.exports = hashSet2;
@@ -35388,13 +35388,13 @@ var require__listCacheHas = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_listCacheSet.js
 var require__listCacheSet = __commonJS((exports, module) => {
   var assocIndexOf = require__assocIndexOf();
-  function listCacheSet(key, value2) {
+  function listCacheSet(key, value3) {
     var data = this.__data__, index = assocIndexOf(data, key);
     if (index < 0) {
       ++this.size;
-      data.push([key, value2]);
+      data.push([key, value3]);
     } else {
-      data[index][1] = value2;
+      data[index][1] = value3;
     }
     return this;
   }
@@ -35450,9 +35450,9 @@ var require__mapCacheClear = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_isKeyable.js
 var require__isKeyable = __commonJS((exports, module) => {
-  function isKeyable(value2) {
-    var type = typeof value2;
-    return type == "string" || type == "number" || type == "symbol" || type == "boolean" ? value2 !== "__proto__" : value2 === null;
+  function isKeyable(value3) {
+    var type = typeof value3;
+    return type == "string" || type == "number" || type == "symbol" || type == "boolean" ? value3 !== "__proto__" : value3 === null;
   }
   module.exports = isKeyable;
 });
@@ -35499,9 +35499,9 @@ var require__mapCacheHas = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_mapCacheSet.js
 var require__mapCacheSet = __commonJS((exports, module) => {
   var getMapData = require__getMapData();
-  function mapCacheSet(key, value2) {
+  function mapCacheSet(key, value3) {
     var data = getMapData(this, key), size = data.size;
-    data.set(key, value2);
+    data.set(key, value3);
     this.size += data.size == size ? 0 : 1;
     return this;
   }
@@ -35534,8 +35534,8 @@ var require__MapCache = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_setCacheAdd.js
 var require__setCacheAdd = __commonJS((exports, module) => {
   var HASH_UNDEFINED = "__lodash_hash_undefined__";
-  function setCacheAdd(value2) {
-    this.__data__.set(value2, HASH_UNDEFINED);
+  function setCacheAdd(value3) {
+    this.__data__.set(value3, HASH_UNDEFINED);
     return this;
   }
   module.exports = setCacheAdd;
@@ -35543,8 +35543,8 @@ var require__setCacheAdd = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_setCacheHas.js
 var require__setCacheHas = __commonJS((exports, module) => {
-  function setCacheHas(value2) {
-    return this.__data__.has(value2);
+  function setCacheHas(value3) {
+    return this.__data__.has(value3);
   }
   module.exports = setCacheHas;
 });
@@ -35582,18 +35582,18 @@ var require__baseFindIndex = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_baseIsNaN.js
 var require__baseIsNaN = __commonJS((exports, module) => {
-  function baseIsNaN(value2) {
-    return value2 !== value2;
+  function baseIsNaN(value3) {
+    return value3 !== value3;
   }
   module.exports = baseIsNaN;
 });
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_strictIndexOf.js
 var require__strictIndexOf = __commonJS((exports, module) => {
-  function strictIndexOf(array2, value2, fromIndex) {
+  function strictIndexOf(array2, value3, fromIndex) {
     var index = fromIndex - 1, length = array2.length;
     while (++index < length) {
-      if (array2[index] === value2) {
+      if (array2[index] === value3) {
         return index;
       }
     }
@@ -35607,8 +35607,8 @@ var require__baseIndexOf = __commonJS((exports, module) => {
   var baseFindIndex = require__baseFindIndex();
   var baseIsNaN = require__baseIsNaN();
   var strictIndexOf = require__strictIndexOf();
-  function baseIndexOf(array2, value2, fromIndex) {
-    return value2 === value2 ? strictIndexOf(array2, value2, fromIndex) : baseFindIndex(array2, baseIsNaN, fromIndex);
+  function baseIndexOf(array2, value3, fromIndex) {
+    return value3 === value3 ? strictIndexOf(array2, value3, fromIndex) : baseFindIndex(array2, baseIsNaN, fromIndex);
   }
   module.exports = baseIndexOf;
 });
@@ -35616,19 +35616,19 @@ var require__baseIndexOf = __commonJS((exports, module) => {
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_arrayIncludes.js
 var require__arrayIncludes = __commonJS((exports, module) => {
   var baseIndexOf = require__baseIndexOf();
-  function arrayIncludes(array2, value2) {
+  function arrayIncludes(array2, value3) {
     var length = array2 == null ? 0 : array2.length;
-    return !!length && baseIndexOf(array2, value2, 0) > -1;
+    return !!length && baseIndexOf(array2, value3, 0) > -1;
   }
   module.exports = arrayIncludes;
 });
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_arrayIncludesWith.js
 var require__arrayIncludesWith = __commonJS((exports, module) => {
-  function arrayIncludesWith(array2, value2, comparator) {
+  function arrayIncludesWith(array2, value3, comparator) {
     var index = -1, length = array2 == null ? 0 : array2.length;
     while (++index < length) {
-      if (comparator(value2, array2[index])) {
+      if (comparator(value3, array2[index])) {
         return true;
       }
     }
@@ -35684,8 +35684,8 @@ var require__baseDifference = __commonJS((exports, module) => {
     }
     outer:
       while (++index < length) {
-        var value2 = array2[index], computed = iteratee == null ? value2 : iteratee(value2);
-        value2 = comparator || value2 !== 0 ? value2 : 0;
+        var value3 = array2[index], computed = iteratee == null ? value3 : iteratee(value3);
+        value3 = comparator || value3 !== 0 ? value3 : 0;
         if (isCommon && computed === computed) {
           var valuesIndex = valuesLength;
           while (valuesIndex--) {
@@ -35693,9 +35693,9 @@ var require__baseDifference = __commonJS((exports, module) => {
               continue outer;
             }
           }
-          result2.push(value2);
+          result2.push(value3);
         } else if (!includes(values, computed, comparator)) {
-          result2.push(value2);
+          result2.push(value3);
         }
       }
     return result2;
@@ -35707,8 +35707,8 @@ var require__baseDifference = __commonJS((exports, module) => {
 var require_isArrayLikeObject = __commonJS((exports, module) => {
   var isArrayLike = require_isArrayLike();
   var isObjectLike = require_isObjectLike();
-  function isArrayLikeObject(value2) {
-    return isObjectLike(value2) && isArrayLike(value2);
+  function isArrayLikeObject(value3) {
+    return isObjectLike(value3) && isArrayLike(value3);
   }
   module.exports = isArrayLikeObject;
 });
@@ -35719,10 +35719,10 @@ var require_difference = __commonJS((exports, module) => {
   var baseFlatten = require__baseFlatten();
   var baseRest = require__baseRest();
   var isArrayLikeObject = require_isArrayLikeObject();
-  var difference = baseRest(function(array2, values) {
+  var difference2 = baseRest(function(array2, values) {
     return isArrayLikeObject(array2) ? baseDifference(array2, baseFlatten(values, 1, isArrayLikeObject, true)) : [];
   });
-  module.exports = difference;
+  module.exports = difference2;
 });
 
 // ../../node_modules/.bun/lodash@4.18.1/node_modules/lodash/_Set.js
@@ -35743,8 +35743,8 @@ var require_noop = __commonJS((exports, module) => {
 var require__setToArray = __commonJS((exports, module) => {
   function setToArray(set5) {
     var index = -1, result2 = Array(set5.size);
-    set5.forEach(function(value2) {
-      result2[++index] = value2;
+    set5.forEach(function(value3) {
+      result2[++index] = value3;
     });
     return result2;
   }
@@ -35790,8 +35790,8 @@ var require__baseUniq = __commonJS((exports, module) => {
     }
     outer:
       while (++index < length) {
-        var value2 = array2[index], computed = iteratee ? iteratee(value2) : value2;
-        value2 = comparator || value2 !== 0 ? value2 : 0;
+        var value3 = array2[index], computed = iteratee ? iteratee(value3) : value3;
+        value3 = comparator || value3 !== 0 ? value3 : 0;
         if (isCommon && computed === computed) {
           var seenIndex = seen.length;
           while (seenIndex--) {
@@ -35802,12 +35802,12 @@ var require__baseUniq = __commonJS((exports, module) => {
           if (iteratee) {
             seen.push(computed);
           }
-          result2.push(value2);
+          result2.push(value3);
         } else if (!includes(seen, computed, comparator)) {
           if (seen !== result2) {
             seen.push(computed);
           }
-          result2.push(value2);
+          result2.push(value3);
         }
       }
     return result2;
@@ -35855,11 +35855,11 @@ var require_isPlainObject = __commonJS((exports, module) => {
   var funcToString = funcProto.toString;
   var hasOwnProperty = objectProto.hasOwnProperty;
   var objectCtorString = funcToString.call(Object);
-  function isPlainObject(value2) {
-    if (!isObjectLike(value2) || baseGetTag(value2) != objectTag) {
+  function isPlainObject(value3) {
+    if (!isObjectLike(value3) || baseGetTag(value3) != objectTag) {
       return false;
     }
-    var proto = getPrototype(value2);
+    var proto = getPrototype(value3);
     if (proto === null) {
       return true;
     }
@@ -37818,10 +37818,10 @@ var require_commonjs4 = __commonJS((exports) => {
     find(fn3, getOptions = {}) {
       for (const i of this.#indexes()) {
         const v = this.#valList[i];
-        const value2 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
-        if (value2 === undefined)
+        const value3 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
+        if (value3 === undefined)
           continue;
-        if (fn3(value2, this.#keyList[i], this)) {
+        if (fn3(value3, this.#keyList[i], this)) {
           return this.get(this.#keyList[i], getOptions);
         }
       }
@@ -37829,19 +37829,19 @@ var require_commonjs4 = __commonJS((exports) => {
     forEach(fn3, thisp = this) {
       for (const i of this.#indexes()) {
         const v = this.#valList[i];
-        const value2 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
-        if (value2 === undefined)
+        const value3 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
+        if (value3 === undefined)
           continue;
-        fn3.call(thisp, value2, this.#keyList[i], this);
+        fn3.call(thisp, value3, this.#keyList[i], this);
       }
     }
     rforEach(fn3, thisp = this) {
       for (const i of this.#rindexes()) {
         const v = this.#valList[i];
-        const value2 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
-        if (value2 === undefined)
+        const value3 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
+        if (value3 === undefined)
           continue;
-        fn3.call(thisp, value2, this.#keyList[i], this);
+        fn3.call(thisp, value3, this.#keyList[i], this);
       }
     }
     purgeStale() {
@@ -37859,10 +37859,10 @@ var require_commonjs4 = __commonJS((exports) => {
       if (i === undefined)
         return;
       const v = this.#valList[i];
-      const value2 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
-      if (value2 === undefined)
+      const value3 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
+      if (value3 === undefined)
         return;
-      const entry = { value: value2 };
+      const entry = { value: value3 };
       if (this.#ttls && this.#starts) {
         const ttl = this.#ttls[i];
         const start = this.#starts[i];
@@ -37882,10 +37882,10 @@ var require_commonjs4 = __commonJS((exports) => {
       for (const i of this.#indexes({ allowStale: true })) {
         const key = this.#keyList[i];
         const v = this.#valList[i];
-        const value2 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
-        if (value2 === undefined || key === undefined)
+        const value3 = this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
+        if (value3 === undefined || key === undefined)
           continue;
-        const entry = { value: value2 };
+        const entry = { value: value3 };
         if (this.#ttls && this.#starts) {
           entry.ttl = this.#ttls[i];
           const age = perf.now() - this.#starts[i];
@@ -38305,8 +38305,8 @@ var require_commonjs4 = __commonJS((exports) => {
       const { allowStale = this.allowStale, updateAgeOnGet = this.updateAgeOnGet, noDeleteOnStaleGet = this.noDeleteOnStaleGet, status } = getOptions;
       const index = this.#keyMap.get(k);
       if (index !== undefined) {
-        const value2 = this.#valList[index];
-        const fetching = this.#isBackgroundFetch(value2);
+        const value3 = this.#valList[index];
+        const fetching = this.#isBackgroundFetch(value3);
         if (status)
           this.#statusTTL(status, index);
         if (this.#isStale(index)) {
@@ -38318,24 +38318,24 @@ var require_commonjs4 = __commonJS((exports) => {
             }
             if (status && allowStale)
               status.returnedStale = true;
-            return allowStale ? value2 : undefined;
+            return allowStale ? value3 : undefined;
           } else {
-            if (status && allowStale && value2.__staleWhileFetching !== undefined) {
+            if (status && allowStale && value3.__staleWhileFetching !== undefined) {
               status.returnedStale = true;
             }
-            return allowStale ? value2.__staleWhileFetching : undefined;
+            return allowStale ? value3.__staleWhileFetching : undefined;
           }
         } else {
           if (status)
             status.get = "hit";
           if (fetching) {
-            return value2.__staleWhileFetching;
+            return value3.__staleWhileFetching;
           }
           this.#moveToTail(index);
           if (updateAgeOnGet) {
             this.#updateItemAge(index);
           }
-          return value2;
+          return value3;
         }
       } else if (status) {
         status.get = "miss";
@@ -39003,10 +39003,10 @@ var require_commonjs5 = __commonJS((exports) => {
       return this[ENCODING] ? buf.join("") : Buffer.concat(buf, buf.dataLength);
     }
     async promise() {
-      return new Promise((resolve7, reject) => {
+      return new Promise((resolve6, reject) => {
         this.on(DESTROYED, () => reject(new Error("stream destroyed")));
         this.on("error", (er) => reject(er));
-        this.on("end", () => resolve7());
+        this.on("end", () => resolve6());
       });
     }
     [Symbol.asyncIterator]() {
@@ -39025,7 +39025,7 @@ var require_commonjs5 = __commonJS((exports) => {
           return Promise.resolve({ done: false, value: res });
         if (this[EOF])
           return stop();
-        let resolve7;
+        let resolve6;
         let reject;
         const onerr = (er) => {
           this.off("data", ondata);
@@ -39034,24 +39034,24 @@ var require_commonjs5 = __commonJS((exports) => {
           stop();
           reject(er);
         };
-        const ondata = (value2) => {
+        const ondata = (value3) => {
           this.off("error", onerr);
           this.off("end", onend);
           this.off(DESTROYED, ondestroy);
           this.pause();
-          resolve7({ value: value2, done: !!this[EOF] });
+          resolve6({ value: value3, done: !!this[EOF] });
         };
         const onend = () => {
           this.off("error", onerr);
           this.off("data", ondata);
           this.off(DESTROYED, ondestroy);
           stop();
-          resolve7({ done: true, value: undefined });
+          resolve6({ done: true, value: undefined });
         };
         const ondestroy = () => onerr(new Error("stream destroyed"));
         return new Promise((res2, rej) => {
           reject = rej;
-          resolve7 = res2;
+          resolve6 = res2;
           this.once(DESTROYED, ondestroy);
           this.once("error", onerr);
           this.once("end", onend);
@@ -39082,8 +39082,8 @@ var require_commonjs5 = __commonJS((exports) => {
       const next = () => {
         if (stopped)
           return stop();
-        const value2 = this.read();
-        return value2 === null ? stop() : { done: false, value: value2 };
+        const value3 = this.read();
+        return value3 === null ? stop() : { done: false, value: value3 };
       };
       this.once("end", stop);
       this.once(ERROR, stop);
@@ -39799,8 +39799,8 @@ var require_commonjs6 = __commonJS((exports) => {
       if (this.#asyncReaddirInFlight) {
         await this.#asyncReaddirInFlight;
       } else {
-        let resolve7 = () => {};
-        this.#asyncReaddirInFlight = new Promise((res) => resolve7 = res);
+        let resolve6 = () => {};
+        this.#asyncReaddirInFlight = new Promise((res) => resolve6 = res);
         try {
           for (const e of await this.#fs.promises.readdir(fullpath, {
             withFileTypes: true
@@ -39813,7 +39813,7 @@ var require_commonjs6 = __commonJS((exports) => {
           children.provisional = 0;
         }
         this.#asyncReaddirInFlight = undefined;
-        resolve7();
+        resolve6();
       }
       return children.slice(0, children.provisional);
     }
@@ -41546,7 +41546,7 @@ var require_file2 = __commonJS((exports, module) => {
   var fs5 = require_graceful_fs();
   var path = __require("path");
   var flatten4 = require_flatten();
-  var difference = require_difference();
+  var difference2 = require_difference();
   var union3 = require_union();
   var isPlainObject = require_isPlainObject();
   var glob = require_commonjs7();
@@ -41561,7 +41561,7 @@ var require_file2 = __commonJS((exports, module) => {
       }
       var matches = fn3(pattern);
       if (exclusion) {
-        result2 = difference(result2, matches);
+        result2 = difference2(result2, matches);
       } else {
         result2 = union3(result2, matches);
       }
@@ -42297,11 +42297,11 @@ var require_core = __commonJS((exports, module) => {
       this._finalize();
     }
     var self2 = this;
-    return new Promise(function(resolve7, reject) {
+    return new Promise(function(resolve6, reject) {
       var errored;
       self2._module.on("end", function() {
         if (!errored) {
-          resolve7();
+          resolve6();
         }
       });
       self2._module.on("error", function(err) {
@@ -43172,8 +43172,8 @@ var require_zip_archive_output_stream = __commonJS((exports, module) => {
     var process5 = deflate ? new DeflateCRC32Stream(this.options.zlib) : new CRC32Stream;
     var error2 = null;
     function handleStuff() {
-      var digest3 = process5.digest().readUInt32BE(0);
-      ae.setCrc(digest3);
+      var digest = process5.digest().readUInt32BE(0);
+      ae.setCrc(digest);
       ae.setSize(process5.size());
       ae.setCompressedSize(process5.size(true));
       this._afterAppend(ae);
@@ -43565,8 +43565,8 @@ var require_fast_fifo = __commonJS((exports, module) => {
 
 // ../../node_modules/.bun/b4a@1.8.1/node_modules/b4a/index.js
 var require_b4a = __commonJS((exports, module) => {
-  function isBuffer(value2) {
-    return Buffer.isBuffer(value2) || value2 instanceof Uint8Array;
+  function isBuffer(value3) {
+    return Buffer.isBuffer(value3) || value3 instanceof Uint8Array;
   }
   function isEncoding(encoding) {
     return Buffer.isEncoding(encoding);
@@ -43595,20 +43595,20 @@ var require_b4a = __commonJS((exports, module) => {
   function equals3(a, b) {
     return toBuffer(a).equals(b);
   }
-  function fill(buffer3, value2, offset, end, encoding) {
-    return toBuffer(buffer3).fill(value2, offset, end, encoding);
+  function fill(buffer3, value3, offset, end, encoding) {
+    return toBuffer(buffer3).fill(value3, offset, end, encoding);
   }
-  function from(value2, encodingOrOffset, length) {
-    return Buffer.from(value2, encodingOrOffset, length);
+  function from(value3, encodingOrOffset, length) {
+    return Buffer.from(value3, encodingOrOffset, length);
   }
-  function includes(buffer3, value2, byteOffset, encoding) {
-    return toBuffer(buffer3).includes(value2, byteOffset, encoding);
+  function includes(buffer3, value3, byteOffset, encoding) {
+    return toBuffer(buffer3).includes(value3, byteOffset, encoding);
   }
-  function indexOf(buffer3, value2, byfeOffset, encoding) {
-    return toBuffer(buffer3).indexOf(value2, byfeOffset, encoding);
+  function indexOf(buffer3, value3, byfeOffset, encoding) {
+    return toBuffer(buffer3).indexOf(value3, byfeOffset, encoding);
   }
-  function lastIndexOf(buffer3, value2, byteOffset, encoding) {
-    return toBuffer(buffer3).lastIndexOf(value2, byteOffset, encoding);
+  function lastIndexOf(buffer3, value3, byteOffset, encoding) {
+    return toBuffer(buffer3).lastIndexOf(value3, byteOffset, encoding);
   }
   function swap16(buffer3) {
     return toBuffer(buffer3).swap16();
@@ -43654,29 +43654,29 @@ var require_b4a = __commonJS((exports, module) => {
   function readUInt32LE(buffer3, offset) {
     return toBuffer(buffer3).readUInt32LE(offset);
   }
-  function writeDoubleBE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeDoubleBE(value2, offset);
+  function writeDoubleBE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeDoubleBE(value3, offset);
   }
-  function writeDoubleLE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeDoubleLE(value2, offset);
+  function writeDoubleLE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeDoubleLE(value3, offset);
   }
-  function writeFloatBE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeFloatBE(value2, offset);
+  function writeFloatBE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeFloatBE(value3, offset);
   }
-  function writeFloatLE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeFloatLE(value2, offset);
+  function writeFloatLE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeFloatLE(value3, offset);
   }
-  function writeInt32BE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeInt32BE(value2, offset);
+  function writeInt32BE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeInt32BE(value3, offset);
   }
-  function writeInt32LE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeInt32LE(value2, offset);
+  function writeInt32LE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeInt32LE(value3, offset);
   }
-  function writeUInt32BE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeUInt32BE(value2, offset);
+  function writeUInt32BE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeUInt32BE(value3, offset);
   }
-  function writeUInt32LE(buffer3, value2, offset) {
-    return toBuffer(buffer3).writeUInt32LE(value2, offset);
+  function writeUInt32LE(buffer3, value3, offset) {
+    return toBuffer(buffer3).writeUInt32LE(value3, offset);
   }
   module.exports = {
     isBuffer,
@@ -44779,8 +44779,8 @@ var require_streamx = __commonJS((exports, module) => {
           return this;
         },
         next() {
-          return new Promise(function(resolve7, reject) {
-            promiseResolve = resolve7;
+          return new Promise(function(resolve6, reject) {
+            promiseResolve = resolve6;
             promiseReject = reject;
             const data = stream3.read();
             if (data !== null)
@@ -44818,14 +44818,14 @@ var require_streamx = __commonJS((exports, module) => {
       }
       function destroy2(err) {
         stream3.destroy(err);
-        return new Promise((resolve7, reject) => {
+        return new Promise((resolve6, reject) => {
           if (stream3._duplexState & DESTROYED)
-            return resolve7({ value: undefined, done: true });
+            return resolve6({ value: undefined, done: true });
           stream3.once("close", function() {
             if (err)
               reject(err);
             else
-              resolve7({ value: undefined, done: true });
+              resolve6({ value: undefined, done: true });
           });
         });
       }
@@ -44877,8 +44877,8 @@ var require_streamx = __commonJS((exports, module) => {
         return Promise.resolve(true);
       if (state3.drains === null)
         state3.drains = [];
-      return new Promise((resolve7) => {
-        state3.drains.push({ writes, resolve: resolve7 });
+      return new Promise((resolve6) => {
+        state3.drains.push({ writes, resolve: resolve6 });
       });
     }
     write(data) {
@@ -44992,11 +44992,11 @@ var require_streamx = __commonJS((exports, module) => {
     cb(null);
   }
   function pipelinePromise(...streams) {
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve6, reject) => {
       return pipeline(...streams, (err) => {
         if (err)
           return reject(err);
-        resolve7();
+        resolve6();
       });
     });
   }
@@ -45723,16 +45723,16 @@ var require_extract = __commonJS((exports, module) => {
         entryCallback = null;
         cb(err);
       }
-      function onnext(resolve7, reject) {
+      function onnext(resolve6, reject) {
         if (error2) {
           return reject(error2);
         }
         if (entryStream) {
-          resolve7({ value: entryStream, done: false });
+          resolve6({ value: entryStream, done: false });
           entryStream = null;
           return;
         }
-        promiseResolve = resolve7;
+        promiseResolve = resolve6;
         promiseReject = reject;
         consumeCallback(null);
         if (extract._finished && promiseResolve) {
@@ -45763,14 +45763,14 @@ var require_extract = __commonJS((exports, module) => {
       function destroy2(err) {
         extract.destroy(err);
         consumeCallback(err);
-        return new Promise((resolve7, reject) => {
+        return new Promise((resolve6, reject) => {
           if (extract.destroyed)
-            return resolve7({ value: undefined, done: true });
+            return resolve6({ value: undefined, done: true });
           extract.once("close", function() {
             if (err)
               reject(err);
             else
-              resolve7({ value: undefined, done: true });
+              resolve6({ value: undefined, done: true });
           });
         });
       }
@@ -46667,28 +46667,28 @@ var require_lib2 = __commonJS((exports) => {
     };
   }();
   var __awaiter9 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-    function adopt(value2) {
-      return value2 instanceof P ? value2 : new P(function(resolve7) {
-        resolve7(value2);
+    function adopt(value3) {
+      return value3 instanceof P ? value3 : new P(function(resolve6) {
+        resolve6(value3);
       });
     }
-    return new (P || (P = Promise))(function(resolve7, reject) {
-      function fulfilled(value2) {
+    return new (P || (P = Promise))(function(resolve6, reject) {
+      function fulfilled(value3) {
         try {
-          step(generator.next(value2));
+          step(generator.next(value3));
         } catch (e) {
           reject(e);
         }
       }
-      function rejected(value2) {
+      function rejected(value3) {
         try {
-          step(generator["throw"](value2));
+          step(generator["throw"](value3));
         } catch (e) {
           reject(e);
         }
       }
       function step(result2) {
-        result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
       }
       step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
@@ -46697,7 +46697,7 @@ var require_lib2 = __commonJS((exports) => {
   exports.HttpClient = exports.HttpClientResponse = exports.HttpClientError = exports.MediaTypes = exports.Headers = exports.HttpCodes = undefined;
   exports.getProxyUrl = getProxyUrl2;
   exports.isHttps = isHttps;
-  var http4 = __importStar(__require("http"));
+  var http3 = __importStar(__require("http"));
   var https3 = __importStar(__require("https"));
   var pm = __importStar(require_proxy());
   var tunnel2 = __importStar(require_tunnel());
@@ -46777,26 +46777,26 @@ var require_lib2 = __commonJS((exports) => {
     }
     readBody() {
       return __awaiter9(this, undefined, undefined, function* () {
-        return new Promise((resolve7) => __awaiter9(this, undefined, undefined, function* () {
+        return new Promise((resolve6) => __awaiter9(this, undefined, undefined, function* () {
           let output2 = Buffer.alloc(0);
           this.message.on("data", (chunk) => {
             output2 = Buffer.concat([output2, chunk]);
           });
           this.message.on("end", () => {
-            resolve7(output2.toString());
+            resolve6(output2.toString());
           });
         }));
       });
     }
     readBodyBuffer() {
       return __awaiter9(this, undefined, undefined, function* () {
-        return new Promise((resolve7) => __awaiter9(this, undefined, undefined, function* () {
+        return new Promise((resolve6) => __awaiter9(this, undefined, undefined, function* () {
           const chunks = [];
           this.message.on("data", (chunk) => {
             chunks.push(chunk);
           });
           this.message.on("end", () => {
-            resolve7(Buffer.concat(chunks));
+            resolve6(Buffer.concat(chunks));
           });
         }));
       });
@@ -46988,14 +46988,14 @@ var require_lib2 = __commonJS((exports) => {
     }
     requestRaw(info2, data) {
       return __awaiter9(this, undefined, undefined, function* () {
-        return new Promise((resolve7, reject) => {
+        return new Promise((resolve6, reject) => {
           function callbackForResult(err, res) {
             if (err) {
               reject(err);
             } else if (!res) {
               reject(new Error("Unknown error"));
             } else {
-              resolve7(res);
+              resolve6(res);
             }
           }
           this.requestRawWithCallback(info2, data, callbackForResult);
@@ -47062,7 +47062,7 @@ var require_lib2 = __commonJS((exports) => {
       const info2 = {};
       info2.parsedUrl = requestUrl;
       const usingSsl = info2.parsedUrl.protocol === "https:";
-      info2.httpModule = usingSsl ? https3 : http4;
+      info2.httpModule = usingSsl ? https3 : http3;
       const defaultPort = usingSsl ? 443 : 80;
       info2.options = {};
       info2.options.host = info2.parsedUrl.hostname;
@@ -47149,7 +47149,7 @@ var require_lib2 = __commonJS((exports) => {
       const usingSsl = parsedUrl.protocol === "https:";
       let maxSockets = 100;
       if (this.requestOptions) {
-        maxSockets = this.requestOptions.maxSockets || http4.globalAgent.maxSockets;
+        maxSockets = this.requestOptions.maxSockets || http3.globalAgent.maxSockets;
       }
       if (proxyUrl && proxyUrl.hostname) {
         const agentOptions = {
@@ -47171,7 +47171,7 @@ var require_lib2 = __commonJS((exports) => {
       }
       if (!agent) {
         const options = { keepAlive: this._keepAlive, maxSockets };
-        agent = usingSsl ? new https3.Agent(options) : new http4.Agent(options);
+        agent = usingSsl ? new https3.Agent(options) : new http3.Agent(options);
         this._agent = agent;
       }
       if (usingSsl && this._ignoreSslError) {
@@ -47214,12 +47214,12 @@ var require_lib2 = __commonJS((exports) => {
       return __awaiter9(this, undefined, undefined, function* () {
         retryNumber = Math.min(ExponentialBackoffCeiling2, retryNumber);
         const ms = ExponentialBackoffTimeSlice2 * Math.pow(2, retryNumber);
-        return new Promise((resolve7) => setTimeout(() => resolve7(), ms));
+        return new Promise((resolve6) => setTimeout(() => resolve6(), ms));
       });
     }
     _processResponse(res, options) {
       return __awaiter9(this, undefined, undefined, function* () {
-        return new Promise((resolve7, reject) => __awaiter9(this, undefined, undefined, function* () {
+        return new Promise((resolve6, reject) => __awaiter9(this, undefined, undefined, function* () {
           const statusCode = res.message.statusCode || 0;
           const response = {
             statusCode,
@@ -47227,16 +47227,16 @@ var require_lib2 = __commonJS((exports) => {
             headers: {}
           };
           if (statusCode === HttpCodes2.NotFound) {
-            resolve7(response);
+            resolve6(response);
           }
-          function dateTimeDeserializer(key, value2) {
-            if (typeof value2 === "string") {
-              const a = new Date(value2);
+          function dateTimeDeserializer(key, value3) {
+            if (typeof value3 === "string") {
+              const a = new Date(value3);
               if (!isNaN(a.valueOf())) {
                 return a;
               }
             }
-            return value2;
+            return value3;
           }
           let obj;
           let contents;
@@ -47265,7 +47265,7 @@ var require_lib2 = __commonJS((exports) => {
             err.result = response.result;
             reject(err);
           } else {
-            resolve7(response);
+            resolve6(response);
           }
         }));
       });
@@ -47342,20 +47342,20 @@ var require_dist5 = __commonJS((exports) => {
             index = skipOWS(header, index + 1, len);
             if (index < len && header.charCodeAt(index) === DQUOTE) {
               index++;
-              let value2 = "";
+              let value3 = "";
               while (index < len) {
                 const code2 = header.charCodeAt(index++);
                 if (code2 === DQUOTE) {
                   index = skipValue(header, index, len);
                   if (parameters[key] === undefined)
-                    parameters[key] = value2;
+                    parameters[key] = value3;
                   break;
                 }
                 if (code2 === BSLASH && index < len) {
-                  value2 += header[index++];
+                  value3 += header[index++];
                   continue;
                 }
-                value2 += String.fromCharCode(code2);
+                value3 += String.fromCharCode(code2);
               }
               continue parameter;
             }
@@ -47428,7 +47428,7 @@ var require_traverse = __commonJS((exports, module) => {
     }
     return node;
   };
-  Traverse.prototype.set = function(ps, value2) {
+  Traverse.prototype.set = function(ps, value3) {
     var node = this.value;
     for (var i = 0;i < ps.length - 1; i++) {
       var key = ps[i];
@@ -47436,8 +47436,8 @@ var require_traverse = __commonJS((exports, module) => {
         node[key] = {};
       node = node[key];
     }
-    node[ps[i]] = value2;
-    return value2;
+    node[ps[i]] = value3;
+    return value3;
   };
   Traverse.prototype.map = function(cb) {
     return walk(this.value, cb, true);
@@ -47460,11 +47460,11 @@ var require_traverse = __commonJS((exports, module) => {
     if (arguments.length !== 1) {
       throw new Error("deepEqual requires exactly one object to compare against");
     }
-    var equal4 = true;
+    var equal2 = true;
     var node = obj;
     this.forEach(function(y) {
       var notEqual = function() {
-        equal4 = false;
+        equal2 = false;
         return;
       }.bind(this);
       if (!this.isRoot) {
@@ -47518,7 +47518,7 @@ var require_traverse = __commonJS((exports, module) => {
         }
       }
     });
-    return equal4;
+    return equal2;
   };
   Traverse.prototype.paths = function() {
     var acc = [];
@@ -48021,7 +48021,7 @@ var require_buffers = __commonJS((exports, module) => {
 // ../../node_modules/.bun/binary@0.3.0/node_modules/binary/lib/vars.js
 var require_vars = __commonJS((exports, module) => {
   module.exports = function(store) {
-    function getset(name, value2) {
+    function getset(name, value3) {
       var node = vars.store;
       var keys2 = name.split(".");
       keys2.slice(0, -1).forEach(function(k) {
@@ -48033,15 +48033,15 @@ var require_vars = __commonJS((exports, module) => {
       if (arguments.length == 1) {
         return node[key];
       } else {
-        return node[key] = value2;
+        return node[key] = value3;
       }
     }
     var vars = {
       get: function(name) {
         return getset(name);
       },
-      set: function(name, value2) {
-        return getset(name, value2);
+      set: function(name, value3) {
+        return getset(name, value3);
       },
       store: store || {}
     };
@@ -49328,14 +49328,14 @@ var require_light = __commonJS((exports, module) => {
         this._last = null;
         this.length = 0;
       }
-      push(value2) {
+      push(value3) {
         var node;
         this.length++;
         if (typeof this.incr === "function") {
           this.incr();
         }
         node = {
-          value: value2,
+          value: value3,
           prev: this._last,
           next: null
         };
@@ -49348,7 +49348,7 @@ var require_light = __commonJS((exports, module) => {
         return;
       }
       shift() {
-        var value2;
+        var value3;
         if (this._first == null) {
           return;
         } else {
@@ -49357,13 +49357,13 @@ var require_light = __commonJS((exports, module) => {
             this.decr();
           }
         }
-        value2 = this._first.value;
+        value3 = this._first.value;
         if ((this._first = this._first.next) != null) {
           this._first.prev = null;
         } else {
           this._last = null;
         }
-        return value2;
+        return value3;
       }
       first() {
         if (this._first != null) {
@@ -49739,8 +49739,8 @@ var require_light = __commonJS((exports, module) => {
         return this.Promise.resolve();
       }
       yieldLoop(t = 0) {
-        return new this.Promise(function(resolve7, reject) {
-          return setTimeout(resolve7, t);
+        return new this.Promise(function(resolve6, reject) {
+          return setTimeout(resolve6, t);
         });
       }
       computePenalty() {
@@ -49951,15 +49951,15 @@ var require_light = __commonJS((exports, module) => {
         return this._queue.length === 0;
       }
       async _tryToRun() {
-        var args2, cb, error2, reject, resolve7, returned, task;
+        var args2, cb, error2, reject, resolve6, returned, task;
         if (this._running < 1 && this._queue.length > 0) {
           this._running++;
-          ({ task, args: args2, resolve: resolve7, reject } = this._queue.shift());
+          ({ task, args: args2, resolve: resolve6, reject } = this._queue.shift());
           cb = await async function() {
             try {
               returned = await task(...args2);
               return function() {
-                return resolve7(returned);
+                return resolve6(returned);
               };
             } catch (error1) {
               error2 = error1;
@@ -49974,13 +49974,13 @@ var require_light = __commonJS((exports, module) => {
         }
       }
       schedule(task, ...args2) {
-        var promise3, reject, resolve7;
-        resolve7 = reject = null;
+        var promise3, reject, resolve6;
+        resolve6 = reject = null;
         promise3 = new this.Promise(function(_resolve, _reject) {
-          resolve7 = _resolve;
+          resolve6 = _resolve;
           return reject = _reject;
         });
-        this._queue.push({ task, args: args2, resolve: resolve7, reject });
+        this._queue.push({ task, args: args2, resolve: resolve6, reject });
         this._tryToRun();
         return promise3;
       }
@@ -50195,10 +50195,10 @@ var require_light = __commonJS((exports, module) => {
     Bottleneck = function() {
 
       class Bottleneck2 {
-        constructor(options = {}, ...invalid2) {
+        constructor(options = {}, ...invalid3) {
           var storeInstanceOptions, storeOptions;
           this._addToQueue = this._addToQueue.bind(this);
-          this._validateOptions(options, invalid2);
+          this._validateOptions(options, invalid3);
           parser$5.load(options, this.instanceDefaults, this);
           this._queues = new Queues$1(NUM_PRIORITIES$1);
           this._scheduled = {};
@@ -50228,8 +50228,8 @@ var require_light = __commonJS((exports, module) => {
             return (ref = this._store.heartbeat) != null ? typeof ref.unref === "function" ? ref.unref() : undefined : undefined;
           });
         }
-        _validateOptions(options, invalid2) {
-          if (!(options != null && typeof options === "object" && invalid2.length === 0)) {
+        _validateOptions(options, invalid3) {
+          if (!(options != null && typeof options === "object" && invalid3.length === 0)) {
             throw new Bottleneck2.prototype.BottleneckError("Bottleneck v2 takes a single object argument. Refer to https://github.com/SGrondin/bottleneck#upgrading-to-v2 if you're upgrading from Bottleneck v1.");
           }
         }
@@ -50384,14 +50384,14 @@ var require_light = __commonJS((exports, module) => {
               counts = this._states.counts;
               return counts[0] + counts[1] + counts[2] + counts[3] === at;
             };
-            return new this.Promise((resolve7, reject) => {
+            return new this.Promise((resolve6, reject) => {
               if (finished()) {
-                return resolve7();
+                return resolve6();
               } else {
                 return this.on("done", () => {
                   if (finished()) {
                     this.removeAllListeners("done");
-                    return resolve7();
+                    return resolve6();
                   }
                 });
               }
@@ -50484,9 +50484,9 @@ var require_light = __commonJS((exports, module) => {
             options = parser$5.load(options, this.jobDefaults);
           }
           task = (...args3) => {
-            return new this.Promise(function(resolve7, reject) {
+            return new this.Promise(function(resolve6, reject) {
               return fn3(...args3, function(...args4) {
-                return (args4[0] != null ? reject : resolve7)(args4);
+                return (args4[0] != null ? reject : resolve6)(args4);
               });
             });
           };
@@ -53108,6 +53108,98 @@ var withMapUnsafe = (self2, f) => {
 };
 var Reference = Service;
 
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/array.js
+var isArrayNonEmpty = (self2) => self2.length > 0;
+
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Result.js
+var succeed2 = succeed;
+var fail2 = fail;
+var isFailure2 = isFailure;
+var match2 = /* @__PURE__ */ dual(2, (self2, {
+  onFailure,
+  onSuccess
+}) => isFailure2(self2) ? onFailure(self2.failure) : onSuccess(self2.success));
+
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Tuple.js
+var makeEquivalence = Tuple;
+
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Record.js
+var has = /* @__PURE__ */ dual(2, (self2, key) => Object.hasOwn(self2, key));
+var map2 = /* @__PURE__ */ dual(2, (self2, f) => {
+  const out = {
+    ...self2
+  };
+  for (const key of keys(self2)) {
+    out[key] = f(self2[key], key);
+  }
+  return out;
+});
+var keys = (self2) => Object.keys(self2);
+var isSubrecordBy = (equivalence) => dual(2, (self2, that) => {
+  for (const key of keys(self2)) {
+    if (!has(that, key) || !equivalence(self2[key], that[key])) {
+      return false;
+    }
+  }
+  return true;
+});
+var makeEquivalence2 = (equivalence) => {
+  const is = isSubrecordBy(equivalence);
+  return (self2, that) => is(self2, that) && is(that, self2);
+};
+
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Array.js
+var Array2 = globalThis.Array;
+var fromIterable = (collection) => Array2.isArray(collection) ? collection : Array2.from(collection);
+var append = /* @__PURE__ */ dual(2, (self2, last) => [...self2, last]);
+var appendAll = /* @__PURE__ */ dual(2, (self2, that) => fromIterable(self2).concat(fromIterable(that)));
+var isArray = Array2.isArray;
+var isArrayNonEmpty2 = isArrayNonEmpty;
+var isReadonlyArrayNonEmpty = isArrayNonEmpty;
+function isOutOfBounds(i, as) {
+  return i < 0 || i >= as.length;
+}
+var getUnsafe2 = /* @__PURE__ */ dual(2, (self2, index) => {
+  const i = Math.floor(index);
+  if (isOutOfBounds(i, self2)) {
+    throw new Error(`Index out of bounds: ${i}`);
+  }
+  return self2[i];
+});
+var headNonEmpty = /* @__PURE__ */ getUnsafe2(0);
+var tailNonEmpty = (self2) => self2.slice(1);
+var unionWith = /* @__PURE__ */ dual(3, (self2, that, isEquivalent) => {
+  const a = fromIterable(self2);
+  const b = fromIterable(that);
+  if (isReadonlyArrayNonEmpty(a)) {
+    if (isReadonlyArrayNonEmpty(b)) {
+      const dedupe = dedupeWith(isEquivalent);
+      return dedupe(appendAll(a, b));
+    }
+    return a;
+  }
+  return b;
+});
+var union = /* @__PURE__ */ dual(2, (self2, that) => unionWith(self2, that, asEquivalence()));
+var empty2 = () => [];
+var of = (a) => [a];
+var map3 = /* @__PURE__ */ dual(2, (self2, f) => self2.map(f));
+var makeEquivalence3 = Array_;
+var dedupeWith = /* @__PURE__ */ dual(2, (self2, isEquivalent) => {
+  const input = fromIterable(self2);
+  if (isReadonlyArrayNonEmpty(input)) {
+    const out = [headNonEmpty(input)];
+    const rest = tailNonEmpty(input);
+    for (const r of rest) {
+      if (out.every((a) => !isEquivalent(r, a))) {
+        out.push(r);
+      }
+    }
+    return out;
+  }
+  return [];
+});
+
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Duration.js
 var TypeId4 = "~effect/time/Duration";
 var bigint0 = /* @__PURE__ */ BigInt(0);
@@ -53130,10 +53222,10 @@ var fromInputUnsafe = (input) => {
       if (input === "-Infinity") {
         return negativeInfinity;
       }
-      const match2 = DURATION_REGEXP.exec(input);
-      if (!match2)
+      const match3 = DURATION_REGEXP.exec(input);
+      if (!match3)
         break;
-      const [_2, valueStr, unit] = match2;
+      const [_2, valueStr, unit] = match3;
       if (unit === "nano" || unit === "nanos") {
         return nanos(parseNanos(valueStr, bigint1));
       }
@@ -53309,7 +53401,7 @@ var minutes = (minutes2) => make4(minutes2 * 60000);
 var hours = (hours2) => make4(hours2 * 3600000);
 var days = (days2) => make4(days2 * 86400000);
 var weeks = (weeks2) => make4(weeks2 * 604800000);
-var toMillis = (self2) => match2(fromInputUnsafe(self2), {
+var toMillis = (self2) => match3(fromInputUnsafe(self2), {
   onMillis: identity,
   onNanos: (nanos2) => Number(nanos2) / 1e6,
   onInfinity: () => Infinity,
@@ -53327,7 +53419,7 @@ var toNanosUnsafe = (input) => {
       return roundMillisToNanos(self2.value.millis);
   }
 };
-var match2 = /* @__PURE__ */ dual(2, (self2, options) => {
+var match3 = /* @__PURE__ */ dual(2, (self2, options) => {
   switch (self2.value._tag) {
     case "Millis":
       return options.onMillis(self2.value.millis);
@@ -53354,98 +53446,6 @@ var Equivalence = (self2, that) => matchPair(self2, that, {
   onInfinity: (self3, that2) => self3.value._tag === that2.value._tag
 });
 var equals2 = /* @__PURE__ */ dual(2, (self2, that) => Equivalence(self2, that));
-
-// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/array.js
-var isArrayNonEmpty = (self2) => self2.length > 0;
-
-// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Result.js
-var succeed2 = succeed;
-var fail2 = fail;
-var isFailure2 = isFailure;
-var match3 = /* @__PURE__ */ dual(2, (self2, {
-  onFailure,
-  onSuccess
-}) => isFailure2(self2) ? onFailure(self2.failure) : onSuccess(self2.success));
-
-// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Tuple.js
-var makeEquivalence = Tuple;
-
-// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Record.js
-var has = /* @__PURE__ */ dual(2, (self2, key) => Object.hasOwn(self2, key));
-var map2 = /* @__PURE__ */ dual(2, (self2, f) => {
-  const out = {
-    ...self2
-  };
-  for (const key of keys(self2)) {
-    out[key] = f(self2[key], key);
-  }
-  return out;
-});
-var keys = (self2) => Object.keys(self2);
-var isSubrecordBy = (equivalence) => dual(2, (self2, that) => {
-  for (const key of keys(self2)) {
-    if (!has(that, key) || !equivalence(self2[key], that[key])) {
-      return false;
-    }
-  }
-  return true;
-});
-var makeEquivalence2 = (equivalence) => {
-  const is = isSubrecordBy(equivalence);
-  return (self2, that) => is(self2, that) && is(that, self2);
-};
-
-// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Array.js
-var Array2 = globalThis.Array;
-var fromIterable = (collection) => Array2.isArray(collection) ? collection : Array2.from(collection);
-var append = /* @__PURE__ */ dual(2, (self2, last) => [...self2, last]);
-var appendAll = /* @__PURE__ */ dual(2, (self2, that) => fromIterable(self2).concat(fromIterable(that)));
-var isArray = Array2.isArray;
-var isArrayNonEmpty2 = isArrayNonEmpty;
-var isReadonlyArrayNonEmpty = isArrayNonEmpty;
-function isOutOfBounds(i, as) {
-  return i < 0 || i >= as.length;
-}
-var getUnsafe2 = /* @__PURE__ */ dual(2, (self2, index) => {
-  const i = Math.floor(index);
-  if (isOutOfBounds(i, self2)) {
-    throw new Error(`Index out of bounds: ${i}`);
-  }
-  return self2[i];
-});
-var headNonEmpty = /* @__PURE__ */ getUnsafe2(0);
-var tailNonEmpty = (self2) => self2.slice(1);
-var unionWith = /* @__PURE__ */ dual(3, (self2, that, isEquivalent) => {
-  const a = fromIterable(self2);
-  const b = fromIterable(that);
-  if (isReadonlyArrayNonEmpty(a)) {
-    if (isReadonlyArrayNonEmpty(b)) {
-      const dedupe = dedupeWith(isEquivalent);
-      return dedupe(appendAll(a, b));
-    }
-    return a;
-  }
-  return b;
-});
-var union = /* @__PURE__ */ dual(2, (self2, that) => unionWith(self2, that, asEquivalence()));
-var empty2 = () => [];
-var of = (a) => [a];
-var map3 = /* @__PURE__ */ dual(2, (self2, f) => self2.map(f));
-var makeEquivalence3 = Array_;
-var dedupeWith = /* @__PURE__ */ dual(2, (self2, isEquivalent) => {
-  const input = fromIterable(self2);
-  if (isReadonlyArrayNonEmpty(input)) {
-    const out = [headNonEmpty(input)];
-    const rest = tailNonEmpty(input);
-    for (const r of rest) {
-      if (out.every((a) => !isEquivalent(r, a))) {
-        out.push(r);
-      }
-    }
-    return out;
-  }
-  return [];
-});
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Filter.js
 var composePassthrough = /* @__PURE__ */ dual(2, (left, right) => (input) => {
@@ -54200,7 +54200,7 @@ var suspend = /* @__PURE__ */ makePrimitive({
     return this[args]();
   }
 });
-var fromResult = /* @__PURE__ */ match3({
+var fromResult = /* @__PURE__ */ match2({
   onFailure: fail3,
   onSuccess: succeed3
 });
@@ -54476,6 +54476,7 @@ var flatten = (self2) => flatMap2(self2, identity);
 var map4 = /* @__PURE__ */ dual(2, (self2, f) => flatMap2(self2, (a) => succeed3(internalCall(() => f(a)))));
 var mapEager = /* @__PURE__ */ dual(2, (self2, f) => effectIsExit(self2) ? exitMap(self2, f) : map4(self2, f));
 var mapErrorEager = /* @__PURE__ */ dual(2, (self2, f) => effectIsExit(self2) ? exitMapError(self2, f) : mapError2(self2, f));
+var mapBothEager = /* @__PURE__ */ dual(2, (self2, options) => effectIsExit(self2) ? exitMapBoth(self2, options) : mapBoth(self2, options));
 var catchEager = /* @__PURE__ */ dual(2, (self2, f) => {
   if (effectIsExit(self2)) {
     if (self2._tag === "Success")
@@ -54489,6 +54490,7 @@ var catchEager = /* @__PURE__ */ dual(2, (self2, f) => {
 });
 var exitInterrupt = (fiberId) => exitFailCause(causeInterrupt(fiberId));
 var exitIsSuccess = (self2) => self2._tag === "Success";
+var exitIsFailure = (self2) => self2._tag === "Failure";
 var exitFilterCause = (self2) => self2._tag === "Failure" ? succeed2(self2.cause) : fail2(self2);
 var exitVoid = /* @__PURE__ */ exitSucceed(undefined);
 var exitMap = /* @__PURE__ */ dual(2, (self2, f) => self2._tag === "Success" ? exitSucceed(f(self2.value)) : self2);
@@ -54499,6 +54501,14 @@ var exitMapError = /* @__PURE__ */ dual(2, (self2, f) => {
   if (isFailure2(error2))
     return self2;
   return exitFail(f(error2.success));
+});
+var exitMapBoth = /* @__PURE__ */ dual(2, (self2, options) => {
+  if (self2._tag === "Success")
+    return exitSucceed(options.onSuccess(self2.value));
+  const error2 = findError(self2.cause);
+  if (isFailure2(error2))
+    return self2;
+  return exitFail(options.onFailure(error2.success));
 });
 var exitZipRight = /* @__PURE__ */ dual(2, (self2, that) => exitIsSuccess(self2) ? that : self2);
 var exitAsVoidAll = (exits) => {
@@ -54582,11 +54592,32 @@ var catchIf = /* @__PURE__ */ dual((args2) => isEffect(args2[0]), (self2, predic
   }
   return internalCall(() => f(error2.success));
 }));
+var catchFilter = /* @__PURE__ */ dual((args2) => isEffect(args2[0]), (self2, filter2, f, orElse) => catchCause(self2, (cause) => {
+  const error2 = findError(cause);
+  if (isFailure2(error2))
+    return failCause(error2.failure);
+  const result = filter2(error2.success);
+  if (isFailure2(result)) {
+    return orElse ? internalCall(() => orElse(result.failure)) : failCause(cause);
+  }
+  return internalCall(() => f(result.success));
+}));
 var catchTag = /* @__PURE__ */ dual((args2) => isEffect(args2[0]), (self2, k, f, orElse) => {
   const pred = Array.isArray(k) ? (e) => hasProperty(e, "_tag") && k.includes(e._tag) : isTagged(k);
   return catchIf(self2, pred, f, orElse);
 });
+var catchTags = /* @__PURE__ */ dual((args2) => isEffect(args2[0]), (self2, cases, orElse) => {
+  let keys2;
+  return catchFilter(self2, (e) => {
+    keys2 ??= Object.keys(cases);
+    return hasProperty(e, "_tag") && isString(e["_tag"]) && keys2.includes(e["_tag"]) ? succeed2(e) : fail2(e);
+  }, (e) => internalCall(() => cases[e["_tag"]](e)), orElse);
+});
 var mapError2 = /* @__PURE__ */ dual(2, (self2, f) => catch_(self2, (error2) => failSync(() => f(error2))));
+var mapBoth = /* @__PURE__ */ dual(2, (self2, options) => matchEffect(self2, {
+  onFailure: (e) => failSync(() => options.onFailure(e)),
+  onSuccess: (a) => sync(() => options.onSuccess(a))
+}));
 var orDie = (self2) => catch_(self2, die);
 var orElseSucceed = /* @__PURE__ */ dual(2, (self2, f) => catch_(self2, (_2) => sync(f)));
 var ignore = /* @__PURE__ */ dual((args2) => isEffect(args2[0]), (self2, options) => {
@@ -55573,12 +55604,23 @@ var tracerLogger = /* @__PURE__ */ loggerMake(({
   span.event(toStringUnknown(Array.isArray(message) && message.length === 1 ? message[0] : message), clock.currentTimeNanosUnsafe(), attributes);
 });
 
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Cause.js
+var fail4 = causeFail;
+var squash = causeSquash;
+var findError2 = findError;
+var hasInterrupts2 = hasInterrupts;
+var isDone2 = isDone;
+var Done2 = Done;
+var done2 = done;
+var UnknownError2 = UnknownError;
+
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Exit.js
 var succeed4 = exitSucceed;
 var failCause2 = exitFailCause;
-var fail4 = exitFail;
+var fail5 = exitFail;
 var void_2 = exitVoid;
 var isSuccess3 = exitIsSuccess;
+var isFailure3 = exitIsFailure;
 var getSuccess2 = exitGetSuccess;
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Deferred.js
@@ -55609,8 +55651,8 @@ var _await = (self2) => callback((resume) => {
   });
 });
 var completeWith = /* @__PURE__ */ dual(2, (self2, effect) => sync(() => doneUnsafe(self2, effect)));
-var done2 = completeWith;
-var isDone2 = (self2) => sync(() => isDoneUnsafe(self2));
+var done3 = completeWith;
+var isDone3 = (self2) => sync(() => isDoneUnsafe(self2));
 var isDoneUnsafe = (self2) => self2.effect !== undefined;
 var doneUnsafe = (self2, effect) => {
   if (self2.effect)
@@ -55681,7 +55723,7 @@ var memoMapBuild = (memoMap, layer, scope2, build) => {
   memoMap.map.set(layer, entry);
   return scopeAddFinalizerExit(scope2, entry.finalizer).pipe(flatMap2(() => build(memoMap, layerScope)), onExit((exit2) => {
     entry.effect = exit2;
-    return done2(deferred, exit2);
+    return done3(deferred, exit2);
   }));
 };
 
@@ -55739,16 +55781,6 @@ var mergeAll2 = (...layers) => fromBuild((memoMap, scope2) => mergeAllEffect(lay
 var provideWith = (self2, that, f) => fromBuild((memoMap, scope2) => flatMap2(Array.isArray(that) ? mergeAllEffect(that, memoMap, scope2) : that.build(memoMap, scope2), (context2) => self2.build(memoMap, scope2).pipe(provideContext(context2), map4((merged) => f(merged, context2)))));
 var provide2 = /* @__PURE__ */ dual(2, (self2, that) => provideWith(self2, that, identity));
 
-// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Cause.js
-var fail5 = causeFail;
-var squash = causeSquash;
-var findError2 = findError;
-var hasInterrupts2 = hasInterrupts;
-var isDone3 = isDone;
-var Done2 = Done;
-var done3 = done;
-var UnknownError2 = UnknownError;
-
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Data.js
 var Class3 = class extends Class {
   constructor(props) {
@@ -55764,9 +55796,9 @@ var TaggedError2 = TaggedError;
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Pull.js
 var catchDone = /* @__PURE__ */ dual(2, (effect2, f) => catchCauseFilter(effect2, filterDoneLeftover, (l) => f(l)));
 var isDoneCause = (cause) => cause.reasons.some(isDoneFailure);
-var isDoneFailure = (failure) => failure._tag === "Fail" && isDone3(failure.error);
-var filterDone = /* @__PURE__ */ composePassthrough(findError2, (e) => isDone3(e) ? succeed2(e) : fail2(e));
-var filterDoneLeftover = /* @__PURE__ */ composePassthrough(findError2, (e) => isDone3(e) ? succeed2(e.value) : fail2(e));
+var isDoneFailure = (failure) => failure._tag === "Fail" && isDone2(failure.error);
+var filterDone = /* @__PURE__ */ composePassthrough(findError2, (e) => isDone2(e) ? succeed2(e) : fail2(e));
+var filterDoneLeftover = /* @__PURE__ */ composePassthrough(findError2, (e) => isDone2(e) ? succeed2(e.value) : fail2(e));
 var doneExitFromCause = (cause) => {
   const halt = filterDone(cause);
   return !isFailure2(halt) ? succeed4(halt.success.value) : failCause2(halt.failure);
@@ -55809,6 +55841,7 @@ var as2 = as;
 var asVoid2 = asVoid;
 var catch_2 = catch_;
 var catchTag2 = catchTag;
+var catchTags2 = catchTags;
 var catchCause2 = catchCause;
 var mapError3 = mapError2;
 var orDie2 = orDie;
@@ -55865,6 +55898,7 @@ var effectify = (fn3, onError3, onSyncError) => (...args2) => callback2((resume)
 });
 var mapEager2 = mapEager;
 var mapErrorEager2 = mapErrorEager;
+var mapBothEager2 = mapBothEager;
 var flatMapEager2 = flatMapEager;
 var catchEager2 = catchEager;
 var fnUntracedEager2 = fnUntracedEager;
@@ -55944,11 +55978,6 @@ var make6 = (layer, options) => {
 function provide3(managed, effect2) {
   return flatMap3(managed.contextEffect, (context3) => provideContext2(effect2, context3));
 }
-
-// ../../src/api/api.ts
-import { mkdtempSync as mkdtempSync2, readFileSync as readFileSync4, rmSync as rmSync3, writeFileSync as writeFileSync2 } from "node:fs";
-import { join as join9 } from "node:path";
-import { tmpdir as tmpdir3 } from "node:os";
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Encoding.js
 var EncodingErrorTypeId = "~effect/encoding/EncodingError";
@@ -56071,6 +56100,13 @@ var escape = (string2) => string2.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/redacted.js
 var redactedRegistry = /* @__PURE__ */ new WeakMap;
+var value = (self2) => {
+  if (redactedRegistry.has(self2)) {
+    return redactedRegistry.get(self2);
+  } else {
+    throw new Error("Unable to get redacted value" + (self2.label ? ` with label: "${self2.label}"` : ""));
+  }
+};
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Redacted.js
 var TypeId9 = "~effect/data/Redacted";
@@ -56102,6 +56138,8 @@ var Proto2 = {
     return isRedacted(that) && equals(redactedRegistry.get(this), redactedRegistry.get(that));
   }
 };
+var value2 = value;
+var makeEquivalence4 = (isEquivalent) => make((x, y) => isEquivalent(value2(x), value2(y)));
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaIssue.js
 var TypeId10 = "~effect/SchemaIssue/Issue";
@@ -56207,6 +56245,18 @@ class InvalidValue extends Base {
     this.annotations = annotations;
   }
 }
+
+class Forbidden extends Base {
+  _tag = "Forbidden";
+  actual;
+  annotations;
+  constructor(actual, annotations) {
+    super();
+    this.actual = actual;
+    this.annotations = annotations;
+  }
+}
+
 class AnyOf extends Base {
   _tag = "AnyOf";
   ast;
@@ -56396,6 +56446,27 @@ function formatOption(actual) {
     return "no value provided";
   return format(actual.value);
 }
+function redact2(issue2) {
+  switch (issue2._tag) {
+    case "MissingKey":
+      return issue2;
+    case "Forbidden":
+      return new Forbidden(map(issue2.actual, make7), issue2.annotations);
+    case "Filter":
+      return new Filter(make7(issue2.actual), issue2.filter, redact2(issue2.issue));
+    case "Pointer":
+      return new Pointer(issue2.path, redact2(issue2.issue));
+    case "Encoding":
+    case "InvalidType":
+    case "InvalidValue":
+    case "Composite":
+      return new InvalidValue(map(issue2.actual, make7));
+    case "AnyOf":
+    case "OneOf":
+    case "UnexpectedKey":
+      return new InvalidValue(some2(make7(issue2.actual)));
+  }
+}
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaGetter.js
 class Getter extends Class {
@@ -56416,6 +56487,14 @@ class Getter extends Class {
     }
     return new Getter((oe, options) => this.run(oe, options).pipe(flatMapEager2((ot) => other.run(ot, options))));
   }
+}
+function fail7(f) {
+  return new Getter((oe) => fail6(f(oe)));
+}
+function forbidden(message) {
+  return fail7((oe) => new Forbidden(oe, {
+    message: message(oe)
+  }));
 }
 var passthrough_ = /* @__PURE__ */ new Getter(succeed6);
 function isPassthrough(getter) {
@@ -56465,6 +56544,18 @@ function decodeBase642() {
 }
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaTransformation.js
+class Middleware {
+  _tag = "Middleware";
+  decode;
+  encode;
+  constructor(decode, encode) {
+    this.decode = decode;
+    this.encode = encode;
+  }
+  flip() {
+    return new Middleware(this.encode, this.decode);
+  }
+}
 var TypeId11 = "~effect/SchemaTransformation/Transformation";
 
 class Transformation {
@@ -56825,8 +56916,8 @@ class Arrays extends Base2 {
 }
 var parseArray = /* @__PURE__ */ iterateEager()({
   onItem(s, item, i) {
-    const value2 = i < s.len ? some2(item) : none2();
-    return s.getParser(s.tailThreshold, i).parser(value2, s.options);
+    const value3 = i < s.len ? some2(item) : none2();
+    return s.getParser(s.tailThreshold, i).parser(value3, s.options);
   },
   step(s, _2, exit3, i) {
     if (exit3._tag === "Failure") {
@@ -56844,7 +56935,7 @@ var parseArray = /* @__PURE__ */ iterateEager()({
         else
           s.issues = [issue2];
       } else {
-        return fail4(new Composite(s.ast, s.oinput, [issue2]));
+        return fail5(new Composite(s.ast, s.oinput, [issue2]));
       }
     }
   }
@@ -56852,10 +56943,10 @@ var parseArray = /* @__PURE__ */ iterateEager()({
 function resolveTailThreshold(inputLen, elementLen, tailLen) {
   return Math.max(elementLen, inputLen - tailLen);
 }
-var resolveConcurrency = (value2) => {
-  value2 = value2 === "unbounded" ? Infinity : value2 ?? 1;
-  return value2 > 1 ? {
-    concurrency: value2
+var resolveConcurrency = (value3) => {
+  value3 = value3 === "unbounded" ? Infinity : value3 ?? 1;
+  return value3 > 1 ? {
+    concurrency: value3
   } : undefined;
 };
 var wrapPropertyKeyIssue = (s, ast, key, exit3) => {
@@ -56870,7 +56961,7 @@ var wrapPropertyKeyIssue = (s, ast, key, exit3) => {
     else
       s.issues = [issue2];
   } else {
-    return fail4(new Composite(ast, s.oinput, [issue2]));
+    return fail5(new Composite(ast, s.oinput, [issue2]));
   }
 };
 var FINITE_PATTERN = "[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?";
@@ -56962,9 +57053,9 @@ class Objects extends Base2 {
             yield* eff;
           return;
         }
-        const value2 = some2(s.input[key]);
+        const value3 = some2(s.input[key]);
         const parserValue = recur(is.type);
-        const effValue = parserValue(value2, s.options);
+        const effValue = parserValue(value3, s.options);
         const exitValue = effectIsExit(effValue) ? effValue : yield* exit2(effValue);
         if (exitValue._tag === "Failure") {
           const eff = wrapPropertyKeyIssue(s, ast, key, exitValue);
@@ -57092,8 +57183,8 @@ class Objects extends Base2 {
 }
 var parseProperties = /* @__PURE__ */ iterateEager()({
   onItem(s, p) {
-    const value2 = Object.hasOwn(s.input, p.name) ? some2(s.input[p.name]) : none2();
-    return p.parser(value2, s.options);
+    const value3 = Object.hasOwn(s.input, p.name) ? some2(s.input[p.name]) : none2();
+    return p.parser(value3, s.options);
   },
   step(s, p, exit3) {
     if (exit3._tag === "Failure") {
@@ -57109,7 +57200,7 @@ var parseProperties = /* @__PURE__ */ iterateEager()({
           s.issues = [issue2];
         return;
       } else {
-        return fail4(new Composite(s.ast, s.oinput, [issue2]));
+        return fail5(new Composite(s.ast, s.oinput, [issue2]));
       }
     }
   }
@@ -57360,7 +57451,7 @@ var parseUnion = /* @__PURE__ */ iterateEager()({
     } else {
       if (s.out && s.ast.mode === "oneOf") {
         s.successes.push(candidate);
-        return fail4(new OneOf(s.ast, s.input, s.successes));
+        return fail5(new OneOf(s.ast, s.input, s.successes));
       }
       s.out = exit3.value;
       s.successes.push(candidate);
@@ -57512,6 +57603,9 @@ function updateLastLink(encoding, f) {
 function applyToLastLink(f) {
   return (ast) => ast.encoding ? replaceEncoding(ast, updateLastLink(ast.encoding, f)) : ast;
 }
+function middlewareDecoding(ast, middleware) {
+  return appendTransformation(ast, middleware, toType(ast));
+}
 function appendTransformation(from, transformation, to) {
   const link = new Link(from, transformation);
   return replaceEncoding(to, to.encoding ? [...to.encoding, link] : [link]);
@@ -57640,13 +57734,13 @@ function handleTemplateLiteralASTPartParens(part, s, top) {
   }
   return `(${s})`;
 }
-function fromConst(ast, value2) {
-  const succeed7 = succeedSome2(value2);
+function fromConst(ast, value3) {
+  const succeed7 = succeedSome2(value3);
   return (oinput) => {
     if (oinput._tag === "None") {
       return succeedNone2;
     }
-    return oinput.value === value2 ? succeed7 : fail6(new InvalidType(ast, oinput));
+    return oinput.value === value3 ? succeed7 : fail6(new InvalidType(ast, oinput));
   };
 }
 function fromRefinement(ast, refinement) {
@@ -57692,15 +57786,15 @@ var BIGINT_PATTERN = "-?\\d+";
 var isStringBigIntRegExp = /* @__PURE__ */ new globalThis.RegExp(`^${BIGINT_PATTERN}$`);
 var REGEXP_PATTERN = "Symbol\\((.*)\\)";
 var isStringSymbolRegExp = /* @__PURE__ */ new globalThis.RegExp(`^${REGEXP_PATTERN}$`);
-function collectIssues(checks, value2, issues, ast, options) {
+function collectIssues(checks, value3, issues, ast, options) {
   for (let i = 0;i < checks.length; i++) {
     const check = checks[i];
     if (check._tag === "FilterGroup") {
-      collectIssues(check.checks, value2, issues, ast, options);
+      collectIssues(check.checks, value3, issues, ast, options);
     } else {
-      const issue2 = check.run(value2, ast, options);
+      const issue2 = check.run(value3, ast, options);
       if (issue2) {
-        issues.push(new Filter(value2, check, issue2));
+        issues.push(new Filter(value3, check, issue2));
         if (check.aborted || options?.errors !== "all") {
           return;
         }
@@ -57892,9 +57986,9 @@ var recur = /* @__PURE__ */ memoize((ast) => {
       }
       sroa = flatMapEager2(sroa, (oa) => {
         if (isSome2(oa)) {
-          const value2 = oa.value;
+          const value3 = oa.value;
           const issues = [];
-          collectIssues(checks, value2, issues, ast, options);
+          collectIssues(checks, value3, issues, ast, options);
           if (isArrayNonEmpty2(issues)) {
             return fail6(new Composite(ast, oa, issues));
           }
@@ -58102,6 +58196,11 @@ function brand2(identifier2) {
     identifier: identifier2
   });
 }
+function middlewareDecoding2(decode) {
+  return (schema) => make12(middlewareDecoding(schema.ast, new Middleware(decode, identity)), {
+    schema
+  });
+}
 function decodeTo2(to, transformation) {
   return (from) => {
     return make12(decodeTo(from.ast, to.ast, transformation ? make9(transformation) : passthrough2()), {
@@ -58118,9 +58217,9 @@ function withConstructorDefault2(defaultValue) {
 function tag(literal) {
   return Literal2(literal).pipe(withConstructorDefault2(succeed6(literal)));
 }
-function TaggedStruct(value2, fields) {
+function TaggedStruct(value3, fields) {
   return Struct({
-    _tag: tag(value2),
+    _tag: tag(value3),
     ...fields
   });
 }
@@ -58141,6 +58240,20 @@ function isBase64(annotations) {
     meta: {
       _tag: "isBase64",
       regExp
+    },
+    ...annotations
+  });
+}
+function isInt(annotations) {
+  return makeFilter2((n) => globalThis.Number.isSafeInteger(n), {
+    expected: "an integer",
+    meta: {
+      _tag: "isInt"
+    },
+    arbitrary: {
+      constraint: {
+        integer: true
+      }
     },
     ...annotations
   });
@@ -58166,6 +58279,55 @@ function isNonEmpty(annotations) {
   return isMinLength(1, annotations);
 }
 var NonEmptyString = /* @__PURE__ */ String4.check(/* @__PURE__ */ isNonEmpty());
+function Redacted(value3, options) {
+  const decodeLabel = typeof options?.label === "string" ? decodeUnknownEffect(Literal2(options.label)) : undefined;
+  const schema = declareConstructor()([value3], ([value4]) => (input, ast, poptions) => {
+    if (isRedacted(input)) {
+      const label = decodeLabel !== undefined ? mapErrorEager2(decodeLabel(input.label, poptions), (issue2) => new Pointer(["label"], issue2)) : void_3;
+      return flatMapEager2(label, () => mapBothEager2(decodeUnknownEffect(value4)(value2(input), poptions), {
+        onSuccess: () => input,
+        onFailure: () => {
+          const oinput = some2(input);
+          return new Composite(ast, oinput, [new Pointer(["value"], new InvalidValue(oinput))]);
+        }
+      }));
+    }
+    return fail6(new InvalidType(ast, some2(input)));
+  }, {
+    typeConstructor: {
+      _tag: "effect/Redacted",
+      options
+    },
+    generation: {
+      runtime: options !== undefined ? `Schema.Redacted(?, ${format(options)})` : `Schema.Redacted(?)`,
+      Type: `Redacted.Redacted<?>`,
+      importDeclaration: `import * as Redacted from "effect/Redacted"`
+    },
+    expected: "Redacted",
+    toCodecJson: ([value4]) => link()(redact3(value4), {
+      decode: transform((e) => make7(e, {
+        label: options?.label
+      })),
+      encode: options?.disallowJsonEncode ? forbidden((oe) => "Cannot serialize Redacted" + (isSome2(oe) && typeof oe.value.label === "string" ? ` with label: "${oe.value.label}"` : "")) : transform(value2)
+    }),
+    toArbitrary: ([value4]) => () => ({
+      arbitrary: value4.arbitrary.map((a) => make7(a, {
+        label: options?.label
+      })),
+      terminal: value4.terminal?.map((a) => make7(a, {
+        label: options?.label
+      }))
+    }),
+    toFormatter: () => globalThis.String,
+    toEquivalence: ([value4]) => makeEquivalence4(value4)
+  });
+  return make12(schema.ast, {
+    value: value3
+  });
+}
+function redact3(schema) {
+  return schema.pipe(middlewareDecoding2(mapErrorEager2(redact2)));
+}
 var RegExp3 = /* @__PURE__ */ instanceOf(globalThis.RegExp, {
   typeConstructor: {
     _tag: "RegExp"
@@ -58266,7 +58428,7 @@ var File = /* @__PURE__ */ instanceOf(globalThis.File, {
     name: String4,
     lastModified: Number5
   }), transformOrFail2({
-    decode: (e) => match3(decodeBase64(e.data), {
+    decode: (e) => match2(decodeBase64(e.data), {
       onFailure: (error2) => fail6(new InvalidValue(some2(e.data), {
         message: error2.message
       })),
@@ -58318,16 +58480,16 @@ var FormData2 = /* @__PURE__ */ instanceOf(globalThis.FormData, {
       return succeed6(out);
     },
     encode: (formData) => {
-      return succeed6(globalThis.Array.from(formData.entries()).map(([key, value2]) => {
-        if (typeof value2 === "string") {
+      return succeed6(globalThis.Array.from(formData.entries()).map(([key, value3]) => {
+        if (typeof value3 === "string") {
           return [key, {
             _tag: "String",
-            value: value2
+            value: value3
           }];
         } else {
           return [key, {
             _tag: "File",
-            value: value2
+            value: value3
           }];
         }
       }));
@@ -58350,6 +58512,7 @@ var URLSearchParams2 = /* @__PURE__ */ instanceOf(globalThis.URLSearchParams, {
     encode: (params) => params.toString()
   }))
 });
+var Int = /* @__PURE__ */ Number5.check(/* @__PURE__ */ isInt());
 var Base64String = /* @__PURE__ */ String4.annotate({
   expected: "a base64 encoded string that will be decoded as Uint8Array",
   format: "byte",
@@ -58636,10 +58799,10 @@ var OutputId = identifier2("OutputId");
 var Digest = identifier2("Digest");
 var NonEmptyName = identifier2("NonEmptyName");
 var Version = identifier2("Version");
-var isSafeRelativePath = (value2) => value2.trim().length > 0 && !value2.startsWith("/") && !value2.startsWith("\\") && !/^[A-Za-z]:[\\/]/u.test(value2) && !value2.split(/[\\/]+/u).includes("..");
-var SafeRelativePath = String4.check(makeFilter2((value2) => isSafeRelativePath(value2) ? undefined : "Path must be nonempty, relative, and contain no parent traversal.")).pipe(brand2("SafeRelativePath"));
-var SafeArchivePattern = String4.check(makeFilter2((value2) => isSafeRelativePath(value2) ? undefined : "Archive pattern must be relative and contain no parent traversal.")).pipe(brand2("SafeArchivePattern"));
-var WorkspaceRoot = String4.check(makeFilter2((value2) => value2.startsWith("/") ? undefined : "WorkspaceRoot must be absolute.")).pipe(brand2("WorkspaceRoot"));
+var isSafeRelativePath = (value3) => value3.trim().length > 0 && !value3.startsWith("/") && !value3.startsWith("\\") && !/^[A-Za-z]:[\\/]/u.test(value3) && !value3.split(/[\\/]+/u).includes("..");
+var SafeRelativePath = String4.check(makeFilter2((value3) => isSafeRelativePath(value3) ? undefined : "Path must be nonempty, relative, and contain no parent traversal.")).pipe(brand2("SafeRelativePath"));
+var SafeArchivePattern = String4.check(makeFilter2((value3) => isSafeRelativePath(value3) ? undefined : "Archive pattern must be relative and contain no parent traversal.")).pipe(brand2("SafeArchivePattern"));
+var WorkspaceRoot = String4.check(makeFilter2((value3) => value3.startsWith("/") ? undefined : "WorkspaceRoot must be absolute.")).pipe(brand2("WorkspaceRoot"));
 
 // ../../src/recipes/config.ts
 var optional = optionalKey2;
@@ -58695,8 +58858,8 @@ class CandidateArtifact extends Class4("CandidateArtifact")({
   variant: optional(CandidatePlatform)
 }) {
 }
-var checksumName = SafeRelativePath.check(makeFilter2((value2) => {
-  const literal = value2.replaceAll("{version}", "").replaceAll("{name}", "");
+var checksumName = SafeRelativePath.check(makeFilter2((value3) => {
+  const literal = value3.replaceAll("{version}", "").replaceAll("{name}", "");
   return literal.includes("{") || literal.includes("}") ? "Checksum name supports only the {name} and {version} tokens." : undefined;
 }));
 
@@ -58898,29 +59061,29 @@ class AuthoredConfig extends Class4("AuthoredConfig")({
 }
 
 // ../../src/config/config.ts
-var jsonFailure = (value2, parents) => {
-  if (value2 === null || typeof value2 === "boolean" || typeof value2 === "string")
+var jsonFailure = (value3, parents) => {
+  if (value3 === null || typeof value3 === "boolean" || typeof value3 === "string")
     return;
-  if (typeof value2 === "number") {
-    return Number.isSafeInteger(value2) && !Object.is(value2, -0) ? undefined : "invalid number";
+  if (typeof value3 === "number") {
+    return Number.isSafeInteger(value3) && !Object.is(value3, -0) ? undefined : "invalid number";
   }
-  if (typeof value2 !== "object")
-    return `invalid ${typeof value2}`;
-  if (parents.has(value2))
+  if (typeof value3 !== "object")
+    return `invalid ${typeof value3}`;
+  if (parents.has(value3))
     return "cyclic value";
-  if (!Array.isArray(value2) && Object.getPrototypeOf(value2) !== Object.prototype) {
+  if (!Array.isArray(value3) && Object.getPrototypeOf(value3) !== Object.prototype) {
     return "non-plain object";
   }
-  parents.add(value2);
-  const items = Array.isArray(value2) ? value2 : Object.values(value2);
-  if (Array.isArray(value2) && items.length !== Object.keys(value2).length)
+  parents.add(value3);
+  const items = Array.isArray(value3) ? value3 : Object.values(value3);
+  if (Array.isArray(value3) && items.length !== Object.keys(value3).length)
     return "sparse array";
   for (const item of items) {
     const failure = jsonFailure(item, parents);
     if (failure !== undefined)
       return failure;
   }
-  parents.delete(value2);
+  parents.delete(value3);
   return;
 };
 var decodeConfig = fn2("decodeConfig")(function* (input) {
@@ -58930,14 +59093,14 @@ var decodeConfig = fn2("decodeConfig")(function* (input) {
   const failure = jsonFailure(input, new Set);
   if (failure !== undefined)
     return yield* ConfigValueError.make({ reason: failure });
-  const value2 = typeof input === "object" && input !== null && !Array.isArray(input) ? input : {};
-  const catalog = value2.catalogs?.find((entry) => ["directory", "submit", "commitMessage", "validate"].some((key) => (key in entry)));
+  const value3 = typeof input === "object" && input !== null && !Array.isArray(input) ? input : {};
+  const catalog = value3.catalogs?.find((entry) => ["directory", "submit", "commitMessage", "validate"].some((key) => (key in entry)));
   if (catalog !== undefined) {
     return yield* ConfigValueError.make({
       reason: "Catalog publication is temporarily unsupported; prepare still renders the file."
     });
   }
-  const publication = value2;
+  const publication = value3;
   const catalogPreset2 = ["homebrew", "scoop"].map((key) => publication.publish?.[key]).find((entry) => typeof entry === "object" && entry !== null && ["submit", "validate", "tapDirectory", "bucketDirectory"].some((key) => (key in entry)));
   if (catalogPreset2 !== undefined) {
     return yield* ConfigValueError.make({
@@ -58949,8 +59112,58 @@ var decodeConfig = fn2("decodeConfig")(function* (input) {
   })(input).pipe(mapError3((error2) => ConfigDecodeError.make({ reason: error2.message })));
 });
 
-// ../../src/correction/coordinator.ts
-import { createHash as createHash2 } from "node:crypto";
+// ../../src/model/secret-patterns.ts
+var secretPatterns = [
+  /ghp_[A-Za-z0-9]{20,}/u,
+  /gho_[A-Za-z0-9]{20,}/u,
+  /github_pat_[A-Za-z0-9_]{20,}/u,
+  /xox[abps]-[A-Za-z0-9-]{10,}/u,
+  /AKIA[0-9A-Z]{16}/u,
+  /npm_[A-Za-z0-9]{30,}/u,
+  /-----BEGIN [A-Z ]*PRIVATE KEY/u
+];
+
+// ../../src/model/authority.ts
+var identifier3 = (name) => NonEmptyString.pipe(brand2(name));
+var SubjectId = identifier3("SubjectId");
+var ProviderId = identifier3("ProviderId");
+var CanonicalAudience = identifier3("CanonicalAudience");
+var CredentialRef = identifier3("CredentialRef");
+var EnvironmentName = String4.check(makeFilter2((value3) => /^[A-Za-z_][A-Za-z0-9_]*$/u.test(value3) ? undefined : "EnvironmentName must be a portable environment variable name.")).pipe(brand2("EnvironmentName"));
+var CredentialPurpose = Literals(["observe", "publish", "correct"]);
+
+class AnonymousAuthStrategy extends Class4("AnonymousAuthStrategy")({
+  kind: Literal2("anonymous")
+}) {
+}
+
+class TokenAuthStrategy extends Class4("TokenAuthStrategy")({
+  kind: Literal2("token"),
+  credential: CredentialRef
+}) {
+}
+
+class TrustedPublishingAuthStrategy extends Class4("TrustedPublishingAuthStrategy")({
+  kind: Literal2("trusted-publishing"),
+  identityProvider: ProviderId,
+  runnerClass: NonEmptyString,
+  workflow: NonEmptyString
+}) {
+}
+var ResolvedAuthStrategy = Union2([
+  AnonymousAuthStrategy,
+  TokenAuthStrategy,
+  TrustedPublishingAuthStrategy
+]);
+
+class CredentialRequest extends Class4("CredentialRequest")({
+  subject: SubjectId,
+  provider: ProviderId,
+  audience: CanonicalAudience,
+  purpose: CredentialPurpose,
+  strategy: ResolvedAuthStrategy
+}) {
+}
 
 // ../../src/model/canonical.ts
 class StrictJsonParser {
@@ -58961,11 +59174,11 @@ class StrictJsonParser {
   }
   parse() {
     this.space();
-    const value2 = this.value();
+    const value3 = this.value();
     this.space();
     if (this.index !== this.text.length)
       this.fail("trailing input");
-    return value2;
+    return value3;
   }
   fail(reason2) {
     throw new Error(`Invalid strict JSON at ${this.index}: ${reason2}`);
@@ -59011,10 +59224,10 @@ class StrictJsonParser {
       const character = this.text[this.index];
       if (!escaped && character === '"') {
         this.index += 1;
-        const value2 = JSON.parse(this.text.slice(start, this.index));
-        if (value2 !== value2.normalize("NFC"))
+        const value3 = JSON.parse(this.text.slice(start, this.index));
+        if (value3 !== value3.normalize("NFC"))
           this.fail("non-NFC string");
-        return value2;
+        return value3;
       }
       if (!escaped && character.codePointAt(0) < 32)
         this.fail("control character");
@@ -59032,10 +59245,10 @@ class StrictJsonParser {
     if (next === "." || next === "e" || next === "E")
       this.fail("float");
     this.index += token.length;
-    const value2 = Number(token);
-    if (!Number.isSafeInteger(value2) || Object.is(value2, -0))
+    const value3 = Number(token);
+    if (!Number.isSafeInteger(value3) || Object.is(value3, -0))
       this.fail("unsafe integer");
-    return value2;
+    return value3;
   }
   array() {
     this.index += 1;
@@ -59096,91 +59309,49 @@ var codePointOrder = (left, right) => {
   }
   return a.length - b.length;
 };
-var canonicalArray = (value2, parents) => {
+var canonicalArray = (value3, parents) => {
   let index = 0;
-  while (index < value2.length) {
-    if (!Object.hasOwn(value2, index))
+  while (index < value3.length) {
+    if (!Object.hasOwn(value3, index))
       throw new Error("sparse array");
     index += 1;
   }
-  return `[${value2.map((item) => canonical(item, parents)).join(",")}]`;
+  return `[${value3.map((item) => canonical(item, parents)).join(",")}]`;
 };
-var canonicalObject = (value2, parents) => {
-  if (Object.getPrototypeOf(value2) !== Object.prototype)
+var canonicalObject = (value3, parents) => {
+  if (Object.getPrototypeOf(value3) !== Object.prototype)
     throw new Error("non-plain object");
-  const entries = Object.entries(value2).map(([key, item]) => [key.normalize("NFC"), item]);
+  const entries = Object.entries(value3).map(([key, item]) => [key.normalize("NFC"), item]);
   if (new Set(entries.map(([key]) => key)).size !== entries.length) {
     throw new Error("normalized key collision");
   }
   entries.sort(([left], [right]) => codePointOrder(left, right));
   return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonical(item, parents)}`).join(",")}}`;
 };
-var canonical = (value2, parents) => {
-  if (value2 === null || typeof value2 === "boolean")
-    return JSON.stringify(value2);
-  if (typeof value2 === "string")
-    return JSON.stringify(value2.normalize("NFC"));
-  if (typeof value2 === "number") {
-    if (!Number.isSafeInteger(value2) || Object.is(value2, -0))
+var canonical = (value3, parents) => {
+  if (value3 === null || typeof value3 === "boolean")
+    return JSON.stringify(value3);
+  if (typeof value3 === "string")
+    return JSON.stringify(value3.normalize("NFC"));
+  if (typeof value3 === "number") {
+    if (!Number.isSafeInteger(value3) || Object.is(value3, -0))
       throw new Error("unsafe number");
-    return String(value2);
+    return String(value3);
   }
-  if (typeof value2 !== "object")
+  if (typeof value3 !== "object")
     throw new Error("non-JSON value");
-  if (parents.has(value2))
+  if (parents.has(value3))
     throw new Error("cyclic value");
-  parents.add(value2);
+  parents.add(value3);
   try {
-    return Array.isArray(value2) ? canonicalArray(value2, parents) : canonicalObject(value2, parents);
+    return Array.isArray(value3) ? canonicalArray(value3, parents) : canonicalObject(value3, parents);
   } finally {
-    parents.delete(value2);
+    parents.delete(value3);
   }
 };
 var parseStrictJson = (text) => new StrictJsonParser(text).parse();
-var encodeCanonicalJson = (value2) => `${canonical(value2, new Set)}
+var encodeCanonicalJson = (value3) => `${canonical(value3, new Set)}
 `;
-
-// ../../src/model/authority.ts
-var identifier3 = (name) => NonEmptyString.pipe(brand2(name));
-var SubjectId = identifier3("SubjectId");
-var ProviderId = identifier3("ProviderId");
-var CanonicalAudience = identifier3("CanonicalAudience");
-var CredentialRef = identifier3("CredentialRef");
-var EnvironmentName = String4.check(makeFilter2((value2) => /^[A-Za-z_][A-Za-z0-9_]*$/u.test(value2) ? undefined : "EnvironmentName must be a portable environment variable name.")).pipe(brand2("EnvironmentName"));
-var CredentialPurpose = Literals(["observe", "publish", "correct"]);
-
-class AnonymousAuthStrategy extends Class4("AnonymousAuthStrategy")({
-  kind: Literal2("anonymous")
-}) {
-}
-
-class TokenAuthStrategy extends Class4("TokenAuthStrategy")({
-  kind: Literal2("token"),
-  credential: CredentialRef
-}) {
-}
-
-class TrustedPublishingAuthStrategy extends Class4("TrustedPublishingAuthStrategy")({
-  kind: Literal2("trusted-publishing"),
-  provider: ProviderId,
-  runner: NonEmptyString,
-  workflow: NonEmptyString
-}) {
-}
-var ResolvedAuthStrategy = Union2([
-  AnonymousAuthStrategy,
-  TokenAuthStrategy,
-  TrustedPublishingAuthStrategy
-]);
-
-class CredentialRequest extends Class4("CredentialRequest")({
-  subject: SubjectId,
-  provider: ProviderId,
-  audience: CanonicalAudience,
-  purpose: CredentialPurpose,
-  strategy: ResolvedAuthStrategy
-}) {
-}
 
 // ../../src/release/graph.ts
 class OutputDeclaration extends Class4("OutputDeclaration")({
@@ -59321,11 +59492,11 @@ class GraphLinkError extends TaggedErrorClass()("GraphLinkError", {
   reason: String4
 }) {
 }
-var authorityError = (value2, reason2) => new GraphLinkError({ kind: "reference", value: value2, reason: reason2 });
-var canonicalizeRegistryUrl = (value2) => {
+var authorityError = (value3, reason2) => new GraphLinkError({ kind: "reference", value: value3, reason: reason2 });
+var canonicalizeRegistryUrl = (value3) => {
   let endpoint;
   try {
-    endpoint = new URL(value2);
+    endpoint = new URL(value3);
   } catch {
     throw authorityError("publish.npm.registry", "npm registry must be an absolute HTTP(S) URL.");
   }
@@ -59335,22 +59506,36 @@ var canonicalizeRegistryUrl = (value2) => {
   if (endpoint.username.length > 0 || endpoint.password.length > 0) {
     throw authorityError("publish.npm.registry", "npm registry must not contain credentials.");
   }
-  if (value2.includes("?") || value2.includes("#")) {
+  if (value3.includes("?") || value3.includes("#")) {
     throw authorityError("publish.npm.registry", "npm registry must not contain a query or fragment.");
   }
   const basePath = endpoint.pathname.replace(/\/+$/u, "");
   return `${endpoint.origin}${basePath.length === 0 ? "/" : `${basePath}/`}`;
 };
-var tokenStrategy = (value2, field) => {
+var tokenStrategy = (value3, field) => {
   let name;
   try {
-    name = EnvironmentName.make(value2);
+    name = EnvironmentName.make(value3);
   } catch {
     throw authorityError(field, "Credential references derived from tokenEnv must be portable environment variable names.");
   }
   return TokenAuthStrategy.make({ kind: "token", credential: CredentialRef.make(name) });
 };
 var anonymousStrategy = () => AnonymousAuthStrategy.make({ kind: "anonymous" });
+var githubWorkflowIdentity = (value3) => {
+  const workflow = value3 ?? "release.yml";
+  const canonical2 = workflow.startsWith(".github/workflows/") ? workflow : `.github/workflows/${workflow}`;
+  if (!/^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(canonical2)) {
+    throw authorityError("publish.npm.trustedPublishing.workflow", "Trusted-publishing workflow must name one YAML file in .github/workflows/.");
+  }
+  return canonical2;
+};
+var githubHostedIdentityProvider = (value3) => {
+  if (value3 !== undefined && value3 !== "github-actions") {
+    throw authorityError("publish.npm.trustedPublishing.provider", "The certified trusted-publishing identity provider is github-actions.");
+  }
+  return ProviderId.make("github-actions");
+};
 var makeNpmPublicationAuthorityIntent = (input) => {
   if (input.tokenEnv !== undefined && input.trustedPublishing !== undefined) {
     throw authorityError("publish.npm", "npm token and trusted-publishing strategies are mutually exclusive.");
@@ -59358,9 +59543,9 @@ var makeNpmPublicationAuthorityIntent = (input) => {
   const provider = ProviderId.make("npm");
   const publishStrategy = input.trustedPublishing === undefined ? tokenStrategy(input.tokenEnv ?? "NPM_TOKEN", "publish.npm.tokenEnv") : TrustedPublishingAuthStrategy.make({
     kind: "trusted-publishing",
-    provider,
-    runner: input.trustedPublishing.provider ?? "github-actions",
-    workflow: input.trustedPublishing.workflow ?? ".github/workflows/release.yml"
+    identityProvider: githubHostedIdentityProvider(input.trustedPublishing.provider),
+    runnerClass: "github-hosted",
+    workflow: githubWorkflowIdentity(input.trustedPublishing.workflow)
   });
   return PublicationAuthorityIntent.make({
     subject: SubjectId.make(`npm:${input.packageName}@${input.version}`),
@@ -59370,11 +59555,11 @@ var makeNpmPublicationAuthorityIntent = (input) => {
     publishStrategy
   });
 };
-var githubCoordinate = (value2) => {
-  if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(value2)) {
+var githubCoordinate = (value3) => {
+  if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(value3)) {
     throw authorityError("publish.github.repository", "GitHub repository must be an owner/repository coordinate.");
   }
-  return value2;
+  return value3;
 };
 var makeGitHubPublicationAuthorityIntent = (input) => {
   const repository = githubCoordinate(input.repository);
@@ -59408,7 +59593,7 @@ var npmPublicationAuthorityIssue = (publication) => {
     return authority.observationStrategies.length === 2 && sameTokenStrategy(authority.observationStrategies[1], authority.publishStrategy) ? undefined : "npm token publication requires anonymous observation followed by the exact configured token reference.";
   }
   if (authority.publishStrategy.kind === "trusted-publishing") {
-    return authority.observationStrategies.length === 1 && authority.publishStrategy.provider === authority.provider && authority.publishStrategy.runner === "github-actions" ? undefined : "npm trusted publishing requires anonymous observation and the certified npm/GitHub Actions identity.";
+    return authority.observationStrategies.length === 1 && authority.publishStrategy.identityProvider === "github-actions" && authority.publishStrategy.runnerClass === "github-hosted" && /^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u.test(authority.publishStrategy.workflow) ? undefined : "npm trusted publishing requires anonymous observation and the certified npm/GitHub Actions identity.";
   }
   return "npm publication requires token or trusted-publishing mutation authority.";
 };
@@ -59531,11 +59716,11 @@ var linkContributions = (contributions) => {
     if (preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact") {
       for (const part of preparation.argv) {
         for (const token of part.matchAll(/\{([^}]+)\}/gu)) {
-          const value2 = token[1] ?? "";
-          if (!value2.startsWith("input:") && !value2.startsWith("output:"))
+          const value3 = token[1] ?? "";
+          if (!value3.startsWith("input:") && !value3.startsWith("output:"))
             throw new GraphLinkError({
               kind: "reference",
-              value: value2,
+              value: value3,
               reason: "Command paths only support {input:<id>} and {output:<id>} references."
             });
         }
@@ -59569,7 +59754,7 @@ var linkContributions = (contributions) => {
         });
     }
   }
-  const dependencies = new Map(preparations.map((preparation) => [preparation.id.toString(), new Set(preparationInputs(preparation).map((input) => producers.get(input.toString())).filter((value2) => value2 !== undefined))]));
+  const dependencies = new Map(preparations.map((preparation) => [preparation.id.toString(), new Set(preparationInputs(preparation).map((input) => producers.get(input.toString())).filter((value3) => value3 !== undefined))]));
   const ordered = [];
   const pending = new Map(preparations.map((preparation) => [preparation.id.toString(), preparation]));
   while (pending.size > 0) {
@@ -59628,7 +59813,7 @@ class PreparedArtifact extends Class4("PreparedArtifact")({
   id: OutputId,
   path: SafeRelativePath,
   kind: artifactKind,
-  size: Number5.check(makeFilter2((value2) => Number.isSafeInteger(value2) && value2 >= 0 ? undefined : "Prepared artifact size must be a nonnegative safe integer.")),
+  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Prepared artifact size must be a nonnegative safe integer.")),
   digest: Digest,
   blob: Digest,
   mediaType: optional4(NonEmptyString)
@@ -59688,15 +59873,1118 @@ var encodePreparedRelease = (manifest) => new TextEncoder().encode(encodeCanonic
 var decodePreparedRelease = (bytes) => {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-    const value2 = decodeUnknownSync(PreparedReleaseV1, { onExcessProperty: "error" })(parseStrictJson(text));
-    const canonical2 = encodePreparedRelease(value2);
+    const value3 = decodeUnknownSync(PreparedReleaseV1, { onExcessProperty: "error" })(parseStrictJson(text));
+    const canonical2 = encodePreparedRelease(value3);
     if (canonical2.length !== bytes.length || canonical2.some((byte, index) => byte !== bytes[index])) {
       throw new Error("manifest bytes are not canonical");
     }
-    return value2;
+    return value3;
   } catch (cause) {
     throw PreparedManifestError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
   }
+};
+
+// ../../src/drivers/utils.ts
+import { createHash } from "node:crypto";
+
+// ../../src/drivers/errors.ts
+class DriverError extends TaggedErrorClass()("DriverError", {
+  reason: String4,
+  commitment: Literals(["before-commit", "unknown"])
+}) {
+}
+
+// ../../src/drivers/utils.ts
+var failure = (reason2, commitment = "before-commit") => DriverError.make({ reason: reason2, commitment });
+var sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+// ../../src/publication/authority.ts
+var CredentialGrantTypeId = Symbol("ts-release/CredentialGrant");
+
+class CredentialUnavailable extends TaggedErrorClass()("CredentialUnavailable", {
+  subject: String4,
+  provider: String4,
+  purpose: String4,
+  reason: String4
+}) {
+}
+
+class CredentialAudienceMismatch extends TaggedErrorClass()("CredentialAudienceMismatch", {
+  subject: String4,
+  expected: String4,
+  observed: String4
+}) {
+}
+
+class CredentialPurposeMismatch extends TaggedErrorClass()("CredentialPurposeMismatch", {
+  subject: String4,
+  required: String4,
+  granted: ArraySchema(String4)
+}) {
+}
+
+class CredentialStrategyUnsupported extends TaggedErrorClass()("CredentialStrategyUnsupported", {
+  subject: String4,
+  provider: String4,
+  strategy: String4,
+  reason: String4
+}) {
+}
+
+class CredentialSubjectMismatch extends TaggedErrorClass()("CredentialSubjectMismatch", {
+  expected: String4,
+  observed: String4
+}) {
+}
+
+class PublisherDispatchError extends TaggedErrorClass()("PublisherDispatchError", {
+  subject: String4,
+  reason: String4
+}) {
+}
+
+class CredentialProvider extends Service()("ts-release/CredentialProvider") {
+}
+var grantMetadata = new WeakMap;
+var purposeSet = (purposes) => new Set(purposes);
+var remember = (grant) => {
+  grantMetadata.set(grant, {
+    subject: grant.subject,
+    provider: grant.provider,
+    audience: grant.audience,
+    purposes: new Set(grant.purposes)
+  });
+  return grant;
+};
+
+class AnonymousAccessGrant {
+  subject;
+  provider;
+  audience;
+  [CredentialGrantTypeId] = "AnonymousAccess";
+  _tag = "AnonymousAccess";
+  purposes = purposeSet(["observe"]);
+  constructor(subject, provider, audience) {
+    this.subject = subject;
+    this.provider = provider;
+    this.audience = audience;
+    Object.freeze(this);
+  }
+}
+
+class ScopedSecretGrant {
+  subject;
+  provider;
+  audience;
+  ref;
+  [CredentialGrantTypeId] = "ScopedSecret";
+  _tag = "ScopedSecret";
+  purposes;
+  constructor(subject, provider, audience, purposes, ref) {
+    this.subject = subject;
+    this.provider = provider;
+    this.audience = audience;
+    this.ref = ref;
+    this.purposes = purposeSet(purposes);
+    Object.freeze(this);
+  }
+}
+
+class WorkloadIdentityGrant {
+  subject;
+  provider;
+  audience;
+  [CredentialGrantTypeId] = "WorkloadIdentity";
+  _tag = "WorkloadIdentity";
+  purposes;
+  names;
+  constructor(subject, provider, audience, purposes, names) {
+    this.subject = subject;
+    this.provider = provider;
+    this.audience = audience;
+    this.purposes = purposeSet(purposes);
+    this.names = new Set(names);
+    Object.freeze(this);
+  }
+}
+var unsupported = (request, reason2) => new CredentialStrategyUnsupported({
+  subject: request.subject,
+  provider: request.provider,
+  strategy: request.strategy.kind,
+  reason: reason2
+});
+var validatePurposes = (request, purposes) => {
+  const unique = new Set(purposes);
+  if (unique.size !== purposes.length) {
+    return fail6(unsupported(request, "The host returned duplicate credential purposes."));
+  }
+  if (!unique.has(request.purpose)) {
+    return fail6(new CredentialPurposeMismatch({
+      subject: request.subject,
+      required: request.purpose,
+      granted: [...unique]
+    }));
+  }
+  return succeed6(unique);
+};
+var mintGrant = fn2("CredentialProvider.mintGrant")(function* (request, descriptor) {
+  yield* validatePurposes(request, descriptor.purposes);
+  switch (descriptor._tag) {
+    case "AnonymousAccess":
+      if (request.strategy.kind !== "anonymous" || request.purpose !== "observe") {
+        return yield* unsupported(request, "Anonymous access is valid only for anonymous observation.");
+      }
+      return remember(new AnonymousAccessGrant(request.subject, request.provider, request.audience));
+    case "ScopedSecret":
+      if (request.strategy.kind !== "token" || descriptor.ref !== request.strategy.credential) {
+        return yield* unsupported(request, "The scoped-secret descriptor does not match the exact token strategy and credential reference.");
+      }
+      return remember(new ScopedSecretGrant(request.subject, request.provider, request.audience, descriptor.purposes, descriptor.ref));
+    case "WorkloadIdentity":
+      if (request.strategy.kind !== "trusted-publishing") {
+        return yield* unsupported(request, "Workload identity requires the prepared trusted-publishing strategy.");
+      }
+      if (new Set(descriptor.names).size !== descriptor.names.length) {
+        return yield* unsupported(request, "The certified workload environment-name set contains duplicates.");
+      }
+      return remember(new WorkloadIdentityGrant(request.subject, request.provider, request.audience, descriptor.purposes, descriptor.names));
+  }
+});
+var makeCredentialProvider = (host) => {
+  const acquire = fn2("CredentialProvider.acquire")(function* (request) {
+    const descriptor = yield* host.acquire(request);
+    return yield* mintGrant(request, descriptor);
+  });
+  return {
+    acquireForObservation: fn2("CredentialProvider.acquireForObservation")(function* (request) {
+      if (request.purpose !== "observe") {
+        return yield* new CredentialPurposeMismatch({
+          subject: request.subject,
+          required: "observe",
+          granted: [request.purpose]
+        });
+      }
+      return yield* acquire(request);
+    }),
+    acquireForMutation: fn2("CredentialProvider.acquireForMutation")(function* (request, decision) {
+      if (request.purpose === "observe") {
+        return yield* new CredentialPurposeMismatch({
+          subject: request.subject,
+          required: "publish-or-correct",
+          granted: [request.purpose]
+        });
+      }
+      if (decision.subject !== request.subject) {
+        return yield* new CredentialSubjectMismatch({
+          expected: request.subject,
+          observed: decision.subject
+        });
+      }
+      const grant = yield* acquire(request);
+      if (grant._tag === "AnonymousAccess") {
+        return yield* unsupported(request, "Anonymous access cannot authorize mutation.");
+      }
+      return grant;
+    })
+  };
+};
+
+class PublisherSink extends Service()("ts-release/PublisherSink") {
+}
+var validateGrantForOperation = fn2("validateGrantForOperation")(function* (operation, grant) {
+  const issued = grantMetadata.get(grant);
+  if (issued === undefined) {
+    return yield* new CredentialUnavailable({
+      subject: operation.subject,
+      provider: operation.provider,
+      purpose: operation.purpose,
+      reason: "The supplied grant was not issued by this authority boundary."
+    });
+  }
+  if (issued.subject !== operation.subject) {
+    return yield* new CredentialSubjectMismatch({
+      expected: operation.subject,
+      observed: issued.subject
+    });
+  }
+  if (operation.decision.subject !== operation.subject) {
+    return yield* new CredentialSubjectMismatch({
+      expected: operation.subject,
+      observed: operation.decision.subject
+    });
+  }
+  if (issued.provider !== operation.provider || issued.audience !== operation.audience) {
+    return yield* new CredentialAudienceMismatch({
+      subject: operation.subject,
+      expected: `${operation.provider}:${operation.audience}`,
+      observed: `${issued.provider}:${issued.audience}`
+    });
+  }
+  if (!issued.purposes.has(operation.purpose)) {
+    return yield* new CredentialPurposeMismatch({
+      subject: operation.subject,
+      required: operation.purpose,
+      granted: [...issued.purposes]
+    });
+  }
+});
+
+// ../../src/publication/report.ts
+var SafeReason = String4.check(makeFilter2((value3) => {
+  const length = [...value3].length;
+  if (length === 0 || length > 2048)
+    return "SafeReason must contain between 1 and 2048 code points.";
+  if (![...value3].every((character) => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32;
+  }))
+    return "SafeReason must not contain control characters.";
+  if (secretPatterns.some((pattern) => pattern.test(value3)))
+    return "SafeReason must not contain token-shaped material.";
+  return;
+})).pipe(brand2("SafeReason"));
+
+class Difference extends Class4("Difference")({
+  field: NonEmptyName,
+  expected: SafeReason,
+  observed: SafeReason
+}) {
+}
+
+class AbsenceBasis extends Class4("AbsenceBasis")({
+  kind: NonEmptyName,
+  detail: SafeReason
+}) {
+}
+
+class VisibilityBasis extends Class4("VisibilityBasis")({
+  kind: NonEmptyName,
+  detail: SafeReason
+}) {
+}
+
+class PresentEquivalent extends TaggedClass()("PresentEquivalent", {
+  subject: SubjectId
+}) {
+}
+
+class PresentDifferent extends TaggedClass()("PresentDifferent", {
+  subject: SubjectId,
+  differences: NonEmptyArray(Difference)
+}) {
+}
+
+class AuthoritativelyAbsent extends TaggedClass()("AuthoritativelyAbsent", {
+  subject: SubjectId,
+  basis: AbsenceBasis
+}) {
+}
+
+class VisibilityPending extends TaggedClass()("VisibilityPending", {
+  subject: SubjectId,
+  expectation: SafeReason,
+  basis: VisibilityBasis
+}) {
+}
+
+class InconclusiveObservation extends TaggedClass()("Inconclusive", {
+  subject: SubjectId,
+  reason: SafeReason
+}) {
+}
+var Observation = Union2([
+  PresentEquivalent,
+  PresentDifferent,
+  AuthoritativelyAbsent,
+  VisibilityPending,
+  InconclusiveObservation
+]);
+
+class MutationPrecondition extends Class4("MutationPrecondition")({
+  kind: NonEmptyName
+}) {
+}
+
+class CreateAuthorizationProof extends Class4("CreateAuthorizationProof")({
+  kind: NonEmptyName
+}) {
+}
+
+class NeedsMutation extends TaggedClass()("NeedsMutation", {
+  subject: SubjectId,
+  precondition: MutationPrecondition
+}) {
+}
+
+class ProviderAuthorizedCreate extends TaggedClass()("ProviderAuthorizedCreate", {
+  subject: SubjectId,
+  proof: CreateAuthorizationProof
+}) {
+}
+var MutationDecision = Union2([NeedsMutation, ProviderAuthorizedCreate]);
+
+class ProviderAlreadyEquivalent extends TaggedClass()("AlreadyEquivalent", {
+  subject: SubjectId
+}) {
+}
+
+class Conflict extends TaggedClass()("Conflict", {
+  subject: SubjectId,
+  differences: NonEmptyArray(Difference)
+}) {
+}
+
+class ProviderBlocked extends TaggedClass()("Blocked", {
+  subject: SubjectId,
+  reason: SafeReason
+}) {
+}
+var ProviderDecision = Union2([
+  ProviderAlreadyEquivalent,
+  NeedsMutation,
+  ProviderAuthorizedCreate,
+  Conflict,
+  ProviderBlocked
+]);
+
+class ProviderRejectionFact extends Class4("ProviderRejectionFact")({
+  subject: SubjectId,
+  code: NonEmptyName,
+  detail: SafeReason
+}) {
+}
+
+class ProviderMutationFact extends Class4("ProviderMutationFact")({
+  subject: SubjectId,
+  detail: SafeReason
+}) {
+}
+
+class RejectedBeforeDispatch extends TaggedClass()("RejectedBeforeDispatch", {
+  subject: SubjectId,
+  reason: SafeReason
+}) {
+}
+
+class Started extends TaggedClass()("Started", {
+  subject: SubjectId
+}) {
+}
+
+class RejectedByProvider extends TaggedClass()("RejectedByProvider", {
+  subject: SubjectId,
+  fact: ProviderRejectionFact
+}) {
+}
+
+class Applied extends TaggedClass()("Applied", {
+  subject: SubjectId,
+  fact: ProviderMutationFact
+}) {
+}
+
+class OutcomeUnknown extends TaggedClass()("OutcomeUnknown", {
+  subject: SubjectId,
+  reason: SafeReason
+}) {
+}
+var MutationAttempt = Union2([
+  RejectedBeforeDispatch,
+  Started,
+  RejectedByProvider,
+  Applied,
+  OutcomeUnknown
+]);
+var AuthorityGrantKind = Literals(["AnonymousAccess", "ScopedSecret", "WorkloadIdentity"]);
+
+class AuthorityAcquiredRecord extends TaggedClass()("AuthorityAcquired", {
+  subject: SubjectId,
+  provider: ProviderId,
+  audience: CanonicalAudience,
+  requestedPurpose: CredentialPurpose,
+  grantKind: AuthorityGrantKind,
+  purposes: NonEmptyArray(CredentialPurpose)
+}) {
+}
+var authorityAcquiredIssue = (value3) => {
+  const purposes = new Set(value3.purposes);
+  if (purposes.size !== value3.purposes.length)
+    return "Acquired authority purposes must be unique.";
+  if (!purposes.has(value3.requestedPurpose)) {
+    return "Acquired authority must include the purpose requested when it was acquired.";
+  }
+  if (value3.grantKind === "AnonymousAccess" && (value3.requestedPurpose !== "observe" || purposes.size !== 1 || !purposes.has("observe"))) {
+    return "Anonymous authority must be acquired for observation with exactly the observe purpose.";
+  }
+  return;
+};
+var AuthorityAcquired = AuthorityAcquiredRecord.pipe(check(makeFilter2((value3) => authorityAcquiredIssue(value3))));
+var observationAuthorityIssue = (value3) => authorityAcquiredIssue(value3) ?? (value3.requestedPurpose === "observe" && value3.purposes.includes("observe") ? undefined : "Observation authority must be acquired for and include the observe purpose.");
+var mutationAuthorityIssue = (value3) => authorityAcquiredIssue(value3) ?? (value3.requestedPurpose === "publish" || value3.requestedPurpose === "correct" ? undefined : "Mutation authority must be acquired for publish or correct.");
+
+class AuthorityAcquiredButMutationNotDispatchedRecord extends TaggedClass()("AuthorityAcquiredButMutationNotDispatched", {
+  subject: SubjectId,
+  authority: AuthorityAcquired,
+  attempt: RejectedBeforeDispatch
+}) {
+}
+var authorityNotDispatchedIssue = (value3) => {
+  const mutationIssue = mutationAuthorityIssue(value3.authority);
+  if (mutationIssue !== undefined)
+    return mutationIssue;
+  return value3.subject === value3.authority.subject && value3.subject === value3.attempt.subject ? undefined : "Acquired authority and rejected attempt must describe the same subject.";
+};
+var AuthorityAcquiredButMutationNotDispatched = AuthorityAcquiredButMutationNotDispatchedRecord.pipe(check(makeFilter2((value3) => authorityNotDispatchedIssue(value3))));
+var AuthorityEvidence = Union2([
+  AuthorityAcquired,
+  AuthorityAcquiredButMutationNotDispatched
+]);
+
+class DependencyBlocked extends TaggedClass()("DependencyBlocked", {
+  prerequisite: SubjectId
+}) {
+}
+
+class RunAborted extends TaggedClass()("RunAborted", {
+  cause: SafeReason
+}) {
+}
+var NotReachedReason = Union2([DependencyBlocked, RunAborted]);
+
+class ConclusiveProviderRejection extends TaggedClass()("ConclusiveProviderRejection", {
+  subject: SubjectId,
+  fact: ProviderRejectionFact,
+  postObservations: NonEmptyArray(Observation)
+}) {
+}
+var BlockedSubjectCause = Union2([
+  Conflict,
+  ProviderBlocked,
+  RejectedBeforeDispatch,
+  AuthorityAcquiredButMutationNotDispatched,
+  ConclusiveProviderRejection
+]);
+
+class NotReachedRecord extends TaggedClass()("NotReached", {
+  subject: SubjectId,
+  reason: NotReachedReason
+}) {
+}
+
+class AlreadyEquivalentRecord extends TaggedClass()("AlreadyEquivalent", {
+  subject: SubjectId,
+  observationAuthorities: ArraySchema(AuthorityAcquired),
+  observations: NonEmptyArray(Observation)
+}) {
+}
+
+class ConvergedAfterMutationRecord extends TaggedClass()("ConvergedAfterMutation", {
+  subject: SubjectId,
+  observationAuthorities: ArraySchema(AuthorityAcquired),
+  preObservations: NonEmptyArray(Observation),
+  decision: MutationDecision,
+  authority: AuthorityAcquired,
+  attempt: Union2([Applied, OutcomeUnknown, RejectedByProvider]),
+  postObservations: NonEmptyArray(Observation)
+}) {
+}
+
+class BlockedSubjectRecord extends TaggedClass()("BlockedSubject", {
+  subject: SubjectId,
+  observationAuthorities: ArraySchema(AuthorityAcquired),
+  observations: NonEmptyArray(Observation),
+  cause: BlockedSubjectCause
+}) {
+}
+
+class UncertainSubjectRecord extends TaggedClass()("UncertainSubject", {
+  subject: SubjectId,
+  observationAuthorities: ArraySchema(AuthorityAcquired),
+  observations: NonEmptyArray(Observation),
+  decision: optionalKey2(ProviderDecision),
+  authority: AuthorityAcquired,
+  attempt: Union2([Started, Applied, OutcomeUnknown]),
+  trace: NonEmptyArray(Observation)
+}) {
+}
+var sameSubject = (subject, values) => values.every((value3) => value3.subject === subject);
+var observationAuthoritiesIssue = (subject, authorities) => {
+  if (!sameSubject(subject, authorities)) {
+    return "Observation authority must describe the report subject.";
+  }
+  return authorities.map(observationAuthorityIssue).find((issue2) => issue2 !== undefined);
+};
+var subjectReportCorrelation = (value3) => {
+  switch (value3._tag) {
+    case "NotReached":
+      return;
+    case "AlreadyEquivalent": {
+      const observationIssue = observationAuthoritiesIssue(value3.subject, value3.observationAuthorities);
+      return observationIssue === undefined && sameSubject(value3.subject, value3.observations) && value3.observations.at(-1)?._tag === "PresentEquivalent" ? undefined : observationIssue ?? "AlreadyEquivalent requires same-subject observations ending in PresentEquivalent.";
+    }
+    case "ConvergedAfterMutation": {
+      const observationIssue = observationAuthoritiesIssue(value3.subject, value3.observationAuthorities);
+      const mutationIssue = mutationAuthorityIssue(value3.authority);
+      return sameSubject(value3.subject, [
+        ...value3.preObservations,
+        value3.decision,
+        value3.authority,
+        value3.attempt,
+        ...value3.postObservations
+      ]) && observationIssue === undefined && mutationIssue === undefined && value3.postObservations.at(-1)?._tag === "PresentEquivalent" ? undefined : observationIssue ?? mutationIssue ?? "ConvergedAfterMutation requires one subject and a final PresentEquivalent observation.";
+    }
+    case "BlockedSubject": {
+      const nested = value3.cause._tag === "ConclusiveProviderRejection" ? [value3.cause, value3.cause.fact, ...value3.cause.postObservations] : value3.cause._tag === "AuthorityAcquiredButMutationNotDispatched" ? [value3.cause, value3.cause.authority, value3.cause.attempt] : value3.cause._tag === "Conflict" ? [value3.cause] : [value3.cause];
+      const evidenceIssue = value3.cause._tag === "AuthorityAcquiredButMutationNotDispatched" ? authorityNotDispatchedIssue(value3.cause) : undefined;
+      const observationIssue = observationAuthoritiesIssue(value3.subject, value3.observationAuthorities);
+      return sameSubject(value3.subject, [...value3.observations, ...nested]) && evidenceIssue === undefined && observationIssue === undefined ? undefined : observationIssue ?? evidenceIssue ?? "BlockedSubject evidence must describe the report subject.";
+    }
+    case "UncertainSubject": {
+      const observationIssue = observationAuthoritiesIssue(value3.subject, value3.observationAuthorities);
+      const mutationIssue = mutationAuthorityIssue(value3.authority);
+      return sameSubject(value3.subject, [
+        ...value3.observations,
+        ...value3.decision === undefined ? [] : [value3.decision],
+        value3.authority,
+        value3.attempt,
+        ...value3.trace
+      ]) && observationIssue === undefined && mutationIssue === undefined ? undefined : observationIssue ?? mutationIssue ?? "UncertainSubject evidence must describe the report subject.";
+    }
+  }
+};
+var SubjectReportVariants = Union2([
+  NotReachedRecord,
+  AlreadyEquivalentRecord,
+  ConvergedAfterMutationRecord,
+  BlockedSubjectRecord,
+  UncertainSubjectRecord
+]);
+var SubjectReport = SubjectReportVariants.pipe(check(makeFilter2((value3) => subjectReportCorrelation(value3))));
+
+class ReportConstructionError extends TaggedErrorClass()("ReportConstructionError", {
+  reason: SafeReason
+}) {
+}
+var invalid2 = (reason2) => fail2(new ReportConstructionError({ reason: reason2 }));
+var validateSubjectReport = (value3) => {
+  const issue2 = subjectReportCorrelation(value3);
+  return issue2 === undefined ? succeed2(value3) : invalid2(SafeReason.make(issue2));
+};
+var makeAuthorityAcquired = (input) => {
+  const value3 = new AuthorityAcquiredRecord(input);
+  const issue2 = authorityAcquiredIssue(value3);
+  return issue2 === undefined ? succeed2(value3) : invalid2(SafeReason.make(issue2));
+};
+var makeAuthorityAcquiredButMutationNotDispatched = (input) => {
+  const value3 = new AuthorityAcquiredButMutationNotDispatchedRecord(input);
+  const issue2 = authorityAcquiredIssue(value3.authority) ?? authorityNotDispatchedIssue(value3);
+  return issue2 === undefined ? succeed2(value3) : invalid2(SafeReason.make(issue2));
+};
+var makeNotReached = (subject, reason2) => validateSubjectReport(new NotReachedRecord({ subject, reason: reason2 }));
+var makeAlreadyEquivalent = (subject, observations, observationAuthorities) => validateSubjectReport(new AlreadyEquivalentRecord({ subject, observationAuthorities, observations }));
+var makeConvergedAfterMutation = (input) => validateSubjectReport(new ConvergedAfterMutationRecord(input));
+var makeBlockedSubject = (input) => validateSubjectReport(new BlockedSubjectRecord(input));
+var makeUncertainSubject = (input) => validateSubjectReport(new UncertainSubjectRecord(input));
+var ReleaseStatus = Literals(["complete", "blocked", "uncertain"]);
+var deriveReleaseStatus = (subjects) => subjects.some((subject) => subject._tag === "UncertainSubject") ? "uncertain" : subjects.every((subject) => subject._tag === "AlreadyEquivalent" || subject._tag === "ConvergedAfterMutation") ? "complete" : "blocked";
+var ReleaseReportRecord = Struct({
+  subjects: NonEmptyArray(SubjectReport),
+  status: ReleaseStatus
+}).pipe(check(makeFilter2((value3) => value3.status === deriveReleaseStatus(value3.subjects) ? undefined : "ReleaseReport status must be derived from its subjects.")));
+var makeReleaseReport = (subjects) => ({ subjects, status: deriveReleaseStatus(subjects) });
+
+class ReadOnlyEquivalent extends TaggedClass()("Equivalent", {}) {
+}
+
+class ReadOnlyDifferent extends TaggedClass()("Different", {
+  differences: NonEmptyArray(Difference)
+}) {
+}
+
+class ReadOnlyAbsent extends TaggedClass()("Absent", {
+  basis: AbsenceBasis
+}) {
+}
+
+class ReadOnlyInconclusive extends TaggedClass()("Inconclusive", {
+  reason: SafeReason
+}) {
+}
+var ObservationClassification = Union2([
+  ReadOnlyEquivalent,
+  ReadOnlyDifferent,
+  ReadOnlyAbsent,
+  ReadOnlyInconclusive
+]);
+var equivalentObservation = () => new ReadOnlyEquivalent;
+var differentObservation = (differences) => new ReadOnlyDifferent({ differences });
+var absentObservation = (basis) => new ReadOnlyAbsent({ basis });
+var inconclusiveObservation = (reason2) => new ReadOnlyInconclusive({ reason: reason2 });
+
+class ObservedSubject extends Class4("ObservedSubject")({
+  subject: SubjectId,
+  observationAuthorities: ArraySchema(AuthorityAcquired),
+  observation: ObservationClassification
+}) {
+}
+var ObservationStatus = Literals(["equivalent", "different", "inconclusive"]);
+var deriveObservationStatus = (subjects) => subjects.some(({ observation }) => observation._tag === "Inconclusive") ? "inconclusive" : subjects.every(({ observation }) => observation._tag === "Equivalent") ? "equivalent" : "different";
+var observedSubjectIssue = (value3) => observationAuthoritiesIssue(value3.subject, value3.observationAuthorities);
+var ObservationReport = Struct({
+  subjects: NonEmptyArray(ObservedSubject),
+  status: ObservationStatus
+}).pipe(check(makeFilter2((value3) => value3.subjects.map(observedSubjectIssue).find((issue2) => issue2 !== undefined) ?? (value3.status === deriveObservationStatus(value3.subjects) ? undefined : "ObservationReport status must be derived from its subjects."))));
+var makeObservationReport = (subjects) => ({ subjects, status: deriveObservationStatus(subjects) });
+
+// ../../src/publication/coordinator.ts
+class ReleaseSubjectError extends TaggedErrorClass()("ReleaseSubjectError", {
+  subject: SubjectId,
+  phase: Literals(["observe", "mutate"]),
+  commitment: Literals(["before-dispatch", "unknown"]),
+  reason: SafeReason
+}) {
+}
+
+class ReleaseCoordinatorConstructionError extends TaggedErrorClass()("ReleaseCoordinatorConstructionError", { reason: SafeReason }) {
+}
+var constructionFailure = (reason2) => new ReleaseCoordinatorConstructionError({
+  reason: typeof reason2 === "string" ? SafeReason.make(reason2) : reason2
+});
+var validateRequestIdentity = (subject, request, purpose) => {
+  if (request.subject !== subject.id) {
+    throw constructionFailure("A credential request does not match its prepared subject identity.");
+  }
+  if (purpose === "observe" ? request.purpose !== "observe" : request.purpose === "observe") {
+    throw constructionFailure("A credential request is assigned to the wrong authority phase.");
+  }
+  if (purpose === "mutation" && request.strategy.kind === "anonymous") {
+    throw constructionFailure("A mutation credential request cannot use anonymous authority.");
+  }
+};
+var validateInput = (input) => try_2({
+  try: () => {
+    const identities = new Set([input.prepared]);
+    for (const subject of input.subjects) {
+      if (identities.has(subject.id)) {
+        throw constructionFailure("Prepared and remote subject identities must be unique.");
+      }
+      const prerequisites = new Set;
+      for (const prerequisite of subject.prerequisites ?? []) {
+        if (!identities.has(prerequisite)) {
+          throw constructionFailure("Every prerequisite must identify the prepared subject or an earlier remote subject.");
+        }
+        if (prerequisites.has(prerequisite)) {
+          throw constructionFailure("A release subject cannot declare the same prerequisite twice.");
+        }
+        prerequisites.add(prerequisite);
+      }
+      if (subject.observationRequests.length === 0) {
+        throw constructionFailure("Every remote subject requires at least one observation strategy.");
+      }
+      subject.observationRequests.forEach((request, index) => {
+        validateRequestIdentity(subject, request, "observe");
+        if (request.strategy.kind === "anonymous" && index !== 0) {
+          throw constructionFailure("Anonymous observation must be the first declared strategy.");
+        }
+      });
+      validateRequestIdentity(subject, subject.mutationRequest, "mutation");
+      identities.add(subject.id);
+    }
+  },
+  catch: (cause) => cause instanceof ReleaseCoordinatorConstructionError ? cause : constructionFailure("The release subject contract is invalid.")
+});
+var fromReportResult = (result2) => isFailure2(result2) ? fail6(constructionFailure(result2.failure.reason)) : succeed6(result2.success);
+var unavailableObservation = (subject) => InconclusiveObservation.make({
+  subject,
+  reason: SafeReason.make("Observation authority or provider read was unavailable.")
+});
+var subjectObservationFailure = (subject, error2) => error2.subject !== subject.id ? fail6(constructionFailure("A subject error does not match its prepared subject identity.")) : succeed6(InconclusiveObservation.make({ subject: subject.id, reason: error2.reason }));
+var observeOnce = (credentials, subject, request, context3) => credentials.acquireForObservation(request).pipe(flatMap3((grant) => makeAuthority(request, grant).pipe(flatMap3((authority) => subject.observe(grant, context3).pipe(catch_2((error2) => subjectObservationFailure(subject, error2)), map5((observation) => ({ observation, authorities: [authority] })))))), catchTags2({
+  CredentialUnavailable: () => succeed6({
+    observation: unavailableObservation(subject.id),
+    authorities: []
+  }),
+  CredentialAudienceMismatch: () => succeed6({
+    observation: unavailableObservation(subject.id),
+    authorities: []
+  }),
+  CredentialPurposeMismatch: () => succeed6({
+    observation: unavailableObservation(subject.id),
+    authorities: []
+  }),
+  CredentialStrategyUnsupported: () => succeed6({
+    observation: unavailableObservation(subject.id),
+    authorities: []
+  }),
+  CredentialSubjectMismatch: () => succeed6({
+    observation: unavailableObservation(subject.id),
+    authorities: []
+  })
+}), flatMap3((result2) => result2.observation.subject === subject.id ? succeed6(result2) : fail6(constructionFailure("An observation does not match its prepared subject identity."))));
+var observeTrace = fn2("observeReleaseSubject")(function* (credentials, subject, context3) {
+  const observations = [];
+  const authorities = [];
+  for (const request of subject.observationRequests) {
+    const observed = yield* observeOnce(credentials, subject, request, context3);
+    let observation = observed.observation;
+    authorities.push(...observed.authorities);
+    if (context3.phase === "pre-mutation" && observation._tag === "VisibilityPending") {
+      observation = InconclusiveObservation.make({
+        subject: subject.id,
+        reason: SafeReason.make("VisibilityPending is invalid before mutation and was treated as inconclusive.")
+      });
+    }
+    observations.push(observation);
+    if (observation._tag !== "Inconclusive")
+      break;
+  }
+  return {
+    observations,
+    authorities
+  };
+});
+var classifyObservation = (observation) => {
+  switch (observation._tag) {
+    case "PresentEquivalent":
+      return equivalentObservation();
+    case "PresentDifferent":
+      return differentObservation(observation.differences);
+    case "AuthoritativelyAbsent":
+      return absentObservation(observation.basis);
+    case "VisibilityPending":
+      return inconclusiveObservation(SafeReason.make("Provider visibility remains pending."));
+    case "Inconclusive":
+      return inconclusiveObservation(observation.reason);
+  }
+};
+var providerBlockedFromAuthority = (subject, _error) => ProviderBlocked.make({
+  subject,
+  reason: SafeReason.make("Mutation authority was unavailable for the exact prepared request.")
+});
+var makeAuthority = (request, grant) => {
+  const purposes = [...grant.purposes];
+  if (purposes.length === 0) {
+    return fail6(constructionFailure("A credential grant carries no authority purpose."));
+  }
+  if (grant.subject !== request.subject || grant.provider !== request.provider || grant.audience !== request.audience || !grant.purposes.has(request.purpose)) {
+    return fail6(constructionFailure("A credential grant does not match the exact prepared request."));
+  }
+  return fromReportResult(makeAuthorityAcquired({
+    subject: request.subject,
+    provider: request.provider,
+    audience: request.audience,
+    requestedPurpose: request.purpose,
+    grantKind: grant._tag,
+    purposes
+  }));
+};
+var decide = (subject, observation) => try_2({
+  try: () => subject.decide(observation),
+  catch: () => constructionFailure("The provider decision function did not return a total decision.")
+}).pipe(flatMap3((decision) => decision.subject === subject.id ? succeed6(decision) : fail6(constructionFailure("A provider decision does not match its prepared subject identity."))));
+var performMutation = (subject, decision, grant) => subject.mutate(decision, grant).pipe(catch_2((error2) => error2.subject !== subject.id ? fail6(constructionFailure("A mutation error does not match its prepared subject identity.")) : succeed6(error2.commitment === "before-dispatch" ? RejectedBeforeDispatch.make({ subject: subject.id, reason: error2.reason }) : OutcomeUnknown.make({ subject: subject.id, reason: error2.reason }))), flatMap3((attempt) => attempt.subject === subject.id ? succeed6(attempt) : fail6(constructionFailure("A mutation attempt does not match its prepared subject identity."))));
+var uncertainAttempt = (attempt) => attempt._tag === "RejectedByProvider" ? Started.make({ subject: attempt.subject }) : attempt._tag === "RejectedBeforeDispatch" ? Started.make({ subject: attempt.subject }) : attempt;
+var convergedAttempt = (attempt) => attempt._tag === "Started" ? OutcomeUnknown.make({
+  subject: attempt.subject,
+  reason: SafeReason.make("Mutation started without a terminal provider response before reobservation.")
+}) : attempt;
+var publishSubject = fn2("publishReleaseSubject")(function* (credentials, subject) {
+  const before = yield* observeTrace(credentials, subject, { phase: "pre-mutation" });
+  const decision = yield* decide(subject, before.observations.at(-1));
+  switch (decision._tag) {
+    case "AlreadyEquivalent":
+      return yield* fromReportResult(makeAlreadyEquivalent(subject.id, before.observations, before.authorities));
+    case "Conflict":
+    case "Blocked":
+      return yield* fromReportResult(makeBlockedSubject({
+        subject: subject.id,
+        observationAuthorities: before.authorities,
+        observations: before.observations,
+        cause: decision
+      }));
+    case "NeedsMutation":
+    case "ProviderAuthorizedCreate": {
+      const acquisition = yield* credentials.acquireForMutation(subject.mutationRequest, decision).pipe(map5((grant2) => ({ _tag: "Granted", grant: grant2 })), catch_2((error2) => succeed6({ _tag: "Denied", error: error2 })));
+      if (acquisition._tag === "Denied") {
+        return yield* fromReportResult(makeBlockedSubject({
+          subject: subject.id,
+          observationAuthorities: before.authorities,
+          observations: before.observations,
+          cause: providerBlockedFromAuthority(subject.id, acquisition.error)
+        }));
+      }
+      const grant = acquisition.grant;
+      const authority = yield* makeAuthority(subject.mutationRequest, grant);
+      const attempt = yield* performMutation(subject, decision, grant);
+      const after = yield* observeTrace(credentials, subject, { phase: "post-mutation", attempt });
+      const observationAuthorities = [...before.authorities, ...after.authorities];
+      if (attempt._tag === "RejectedBeforeDispatch") {
+        const cause = yield* fromReportResult(makeAuthorityAcquiredButMutationNotDispatched({
+          subject: subject.id,
+          authority,
+          attempt
+        }));
+        return yield* fromReportResult(makeBlockedSubject({
+          subject: subject.id,
+          observationAuthorities,
+          observations: [...before.observations, ...after.observations],
+          cause
+        }));
+      }
+      if (after.observations.at(-1)?._tag === "PresentEquivalent") {
+        return yield* fromReportResult(makeConvergedAfterMutation({
+          subject: subject.id,
+          observationAuthorities,
+          preObservations: before.observations,
+          decision,
+          authority,
+          attempt: convergedAttempt(attempt),
+          postObservations: after.observations
+        }));
+      }
+      if (attempt._tag === "RejectedByProvider" && after.observations.at(-1)?._tag !== "Inconclusive" && after.observations.at(-1)?._tag !== "VisibilityPending") {
+        return yield* fromReportResult(makeBlockedSubject({
+          subject: subject.id,
+          observationAuthorities,
+          observations: before.observations,
+          cause: ConclusiveProviderRejection.make({
+            subject: subject.id,
+            fact: attempt.fact,
+            postObservations: after.observations
+          })
+        }));
+      }
+      return yield* fromReportResult(makeUncertainSubject({
+        subject: subject.id,
+        observationAuthorities,
+        observations: before.observations,
+        decision,
+        authority,
+        attempt: uncertainAttempt(attempt),
+        trace: after.observations
+      }));
+    }
+  }
+});
+var observeReleaseSubjects = fn2("observeReleaseSubjects")(function* (input) {
+  yield* validateInput(input);
+  const credentials = yield* CredentialProvider;
+  const observed = [
+    new ObservedSubject({
+      subject: input.prepared,
+      observationAuthorities: [],
+      observation: equivalentObservation()
+    })
+  ];
+  for (const subject of input.subjects) {
+    const trace = yield* observeTrace(credentials, subject, { phase: "pre-mutation" });
+    observed.push(new ObservedSubject({
+      subject: subject.id,
+      observationAuthorities: trace.authorities,
+      observation: classifyObservation(trace.observations.at(-1))
+    }));
+  }
+  return makeObservationReport(observed);
+});
+var publishReleaseSubjects = fn2("publishReleaseSubjects")(function* (input) {
+  yield* validateInput(input);
+  const credentials = yield* CredentialProvider;
+  const localObservation = PresentEquivalent.make({ subject: input.prepared });
+  const local = yield* fromReportResult(makeAlreadyEquivalent(input.prepared, [localObservation], []));
+  const reports = [local];
+  const converged = new Map([[input.prepared, true]]);
+  for (const subject of input.subjects) {
+    const prerequisite = (subject.prerequisites ?? []).find((candidate) => converged.get(candidate) !== true);
+    if (prerequisite !== undefined) {
+      reports.push(yield* fromReportResult(makeNotReached(subject.id, new DependencyBlocked({ prerequisite }))));
+      converged.set(subject.id, false);
+      continue;
+    }
+    const report = yield* publishSubject(credentials, subject);
+    reports.push(report);
+    converged.set(subject.id, report._tag === "AlreadyEquivalent" || report._tag === "ConvergedAfterMutation");
+  }
+  return makeReleaseReport(reports);
+});
+
+// ../../src/publication/github.ts
+import { createHash as createHash2 } from "node:crypto";
+var asObject = (value3) => typeof value3 === "object" && value3 !== null && !Array.isArray(value3) ? value3 : undefined;
+var asString = (value3) => typeof value3 === "string" ? value3 : undefined;
+var asBoolean = (value3) => typeof value3 === "boolean" ? value3 : undefined;
+var asSize = (value3) => typeof value3 === "number" && Number.isSafeInteger(value3) && value3 >= 0 ? value3 : undefined;
+var parseJson2 = (body) => {
+  try {
+    const text = typeof body === "string" ? body : new TextDecoder("utf-8", { fatal: true }).decode(body);
+    return JSON.parse(text);
+  } catch {
+    return;
+  }
+};
+var parseAsset = (value3) => {
+  const asset = asObject(value3);
+  if (asset === undefined)
+    return {};
+  const name = asString(asset.name);
+  const size = asSize(asset.size);
+  const mediaType = asString(asset.content_type);
+  return {
+    ...name === undefined ? {} : { name },
+    ...size === undefined ? {} : { size },
+    ...mediaType === undefined ? {} : { mediaType }
+  };
+};
+var parseRelease = (value3) => {
+  const release = asObject(value3);
+  if (release === undefined)
+    return;
+  const tag2 = asString(release.tag_name);
+  const title = asString(release.name);
+  const body = release.body === null ? "" : asString(release.body);
+  const draft = asBoolean(release.draft);
+  const prerelease = asBoolean(release.prerelease);
+  const assets = Array.isArray(release.assets) ? release.assets.map(parseAsset) : undefined;
+  return {
+    ...tag2 === undefined ? {} : { tag: tag2 },
+    ...title === undefined ? {} : { title },
+    ...body === undefined ? {} : { body },
+    ...draft === undefined ? {} : { draft },
+    ...prerelease === undefined ? {} : { prerelease },
+    ...assets === undefined ? {} : { assets }
+  };
+};
+var releaseUrl = (publication) => `${publication.authority.audience}/releases/tags/${encodeURIComponent(publication.tag)}`;
+var observationRequests = (publication) => {
+  const make13 = (strategy) => CredentialRequest.make({
+    subject: publication.authority.subject,
+    provider: publication.authority.provider,
+    audience: publication.authority.audience,
+    purpose: "observe",
+    strategy
+  });
+  const first = publication.authority.observationStrategies[0];
+  return [make13(first), ...publication.authority.observationStrategies.slice(1).map(make13)];
+};
+var mutationRequest = (publication) => CredentialRequest.make({
+  subject: publication.authority.subject,
+  provider: publication.authority.provider,
+  audience: publication.authority.audience,
+  purpose: "publish",
+  strategy: publication.authority.publishStrategy
+});
+var valueFingerprint = (origin, value3) => SafeReason.make(`${origin} value sha256-${createHash2("sha256").update(value3).digest("hex")}`);
+var textDifference = (field, expected, observed) => Difference.make({
+  field: NonEmptyName.make(field),
+  expected: valueFingerprint("prepared", expected),
+  observed: valueFingerprint("provider", observed)
+});
+var scalarDifference = (field, expected, observed) => Difference.make({
+  field: NonEmptyName.make(field),
+  expected: SafeReason.make(String(expected)),
+  observed: SafeReason.make(String(observed))
+});
+var inconclusive = (publication, reason2) => InconclusiveObservation.make({
+  subject: publication.authority.subject,
+  reason: SafeReason.make(reason2)
+});
+var compareRelease = (bundle, publication, facts) => {
+  const differences = [];
+  const expectedBody = publication.body ?? "";
+  if (facts.tag !== undefined && facts.tag !== publication.tag.toString()) {
+    differences.push(textDifference("tag", publication.tag.toString(), facts.tag));
+  }
+  if (facts.title !== undefined && facts.title !== publication.title.toString()) {
+    differences.push(textDifference("title", publication.title.toString(), facts.title));
+  }
+  if (facts.body !== undefined && facts.body !== expectedBody) {
+    differences.push(textDifference("body", expectedBody, facts.body));
+  }
+  if (facts.draft !== undefined && facts.draft !== publication.draft) {
+    differences.push(scalarDifference("draft", publication.draft, facts.draft));
+  }
+  if (facts.prerelease !== undefined && facts.prerelease !== publication.prerelease) {
+    differences.push(scalarDifference("prerelease", publication.prerelease, facts.prerelease));
+  }
+  for (const [index, intended] of publication.assets.entries()) {
+    const candidates = facts.assets?.filter((candidate2) => candidate2.name === intended.name) ?? [];
+    if (candidates.length > 1) {
+      differences.push(scalarDifference(`asset[${index}].name-count`, 1, candidates.length));
+      continue;
+    }
+    const candidate = candidates[0];
+    const bytes = bundle.blobs.get(intended.artifactId.toString());
+    if (candidate === undefined || bytes === undefined)
+      continue;
+    if (candidate.size !== undefined && candidate.size !== bytes.length) {
+      differences.push(scalarDifference(`asset[${index}].size`, bytes.length, candidate.size));
+    }
+    if (candidate.mediaType !== undefined && candidate.mediaType !== intended.mediaType) {
+      differences.push(textDifference(`asset[${index}].mediaType`, intended.mediaType, candidate.mediaType));
+    }
+  }
+  return differences;
+};
+var decide2 = (publication, observation) => observation._tag === "PresentDifferent" ? Conflict.make({ subject: publication.authority.subject, differences: observation.differences }) : ProviderBlocked.make({
+  subject: publication.authority.subject,
+  reason: SafeReason.make("GitHub publication remains blocked until Plan 226 proves exact equivalence or authoritative absence.")
+});
+var unsupportedMutation = (publication, _decision) => fail6(new ReleaseSubjectError({
+  subject: publication.authority.subject,
+  phase: "mutate",
+  commitment: "before-dispatch",
+  reason: SafeReason.make("GitHub mutation is unavailable until Plan 226 installs truthful release and asset wires.")
+}));
+var makeGithubSubjects = (bundle, publication, http2) => {
+  const observe = fn2("GitHubReleaseSubject.observe")(function* (grant, _context) {
+    if (grant._tag === "WorkloadIdentity") {
+      return yield* new ReleaseSubjectError({
+        subject: publication.authority.subject,
+        phase: "observe",
+        commitment: "before-dispatch",
+        reason: SafeReason.make("Workload identity cannot authorize GitHub release observation.")
+      });
+    }
+    const response = yield* http2.execute({
+      subject: publication.authority.subject,
+      method: "GET",
+      url: releaseUrl(publication),
+      headers: {
+        accept: "application/vnd.github+json",
+        "x-github-api-version": "2022-11-28"
+      }
+    }, grant).pipe(mapError3((cause) => new ReleaseSubjectError({
+      subject: publication.authority.subject,
+      phase: "observe",
+      commitment: cause._tag === "CredentialPlatformError" ? cause.commitment : "before-dispatch",
+      reason: SafeReason.make("GitHub release observation could not be completed by the host HTTP boundary.")
+    })));
+    if (response.status === 404) {
+      return inconclusive(publication, "GitHub returned 404, which Plan 224 does not treat as authoritative release absence.");
+    }
+    if (response.status < 200 || response.status >= 300) {
+      return inconclusive(publication, `GitHub release observation returned HTTP ${response.status}.`);
+    }
+    const facts = parseRelease(parseJson2(response.body));
+    if (facts === undefined) {
+      return inconclusive(publication, "The GitHub release response was malformed.");
+    }
+    const differences = compareRelease(bundle, publication, facts);
+    if (differences.length > 0) {
+      return PresentDifferent.make({
+        subject: publication.authority.subject,
+        differences
+      });
+    }
+    return inconclusive(publication, "GitHub release metadata looks exact, but Plan 226 has not yet established commit and asset digest truth.");
+  });
+  return [{
+    id: publication.authority.subject,
+    observationRequests: observationRequests(publication),
+    mutationRequest: mutationRequest(publication),
+    observe,
+    decide: (observation) => decide2(publication, observation),
+    mutate: (decision) => unsupportedMutation(publication, decision)
+  }];
 };
 
 // ../../src/publication/observation.ts
@@ -59719,13 +61007,13 @@ class Equivalent extends TaggedClass()("Equivalent", {
 }) {
 }
 
-class NeedsMutation extends TaggedClass()("NeedsMutation", {
+class NeedsMutation2 extends TaggedClass()("NeedsMutation", {
   subject: NonEmptyName,
   precondition: NonEmptyName
 }) {
 }
 
-class Conflict extends TaggedClass()("Conflict", {
+class Conflict2 extends TaggedClass()("Conflict", {
   subject: NonEmptyName,
   differences: ArraySchema(ObservationDifference)
 }) {
@@ -59736,9 +61024,9 @@ class Inconclusive extends TaggedClass()("Inconclusive", {
   reason: String4
 }) {
 }
-var Observation = Union2([Equivalent, NeedsMutation, Conflict, Inconclusive]);
+var Observation2 = Union2([Equivalent, NeedsMutation2, Conflict2, Inconclusive]);
 
-class Applied extends TaggedClass()("Applied", {
+class Applied2 extends TaggedClass()("Applied", {
   subject: NonEmptyName,
   detail: String4
 }) {
@@ -59751,12 +61039,12 @@ class Rejected extends TaggedClass()("Rejected", {
 }) {
 }
 
-class OutcomeUnknown extends TaggedClass()("OutcomeUnknown", {
+class OutcomeUnknown2 extends TaggedClass()("OutcomeUnknown", {
   subject: NonEmptyName,
   reason: String4
 }) {
 }
-var MutationResult = Union2([Applied, Rejected, OutcomeUnknown]);
+var MutationResult = Union2([Applied2, Rejected, OutcomeUnknown2]);
 
 class PublicationConverged extends TaggedClass()("PublicationConverged", {
   subject: NonEmptyName,
@@ -59766,22 +61054,22 @@ class PublicationConverged extends TaggedClass()("PublicationConverged", {
 
 class PublicationBlocked extends TaggedClass()("PublicationBlocked", {
   subject: NonEmptyName,
-  observation: Union2([Conflict, Inconclusive])
+  observation: Union2([Conflict2, Inconclusive])
 }) {
 }
 
 class PublicationObserved extends TaggedClass()("PublicationObserved", {
   subject: NonEmptyName,
   mutation: MutationResult,
-  observation: Union2([Equivalent, NeedsMutation, Conflict, Inconclusive])
+  observation: Union2([Equivalent, NeedsMutation2, Conflict2, Inconclusive])
 }) {
 }
 var PublicationOutcome = Union2([PublicationConverged, PublicationBlocked, PublicationObserved]);
-var publishSubject = fn2("publishSubject")(function* (subject) {
+var publishSubject2 = fn2("publishSubject")(function* (subject) {
   const first = yield* subject.observe();
   switch (first._tag) {
     case "Equivalent":
-      return PublicationConverged.make({ subject: subject.id, mutation: Applied.make({ subject: subject.id, detail: "Already equivalent." }) });
+      return PublicationConverged.make({ subject: subject.id, mutation: Applied2.make({ subject: subject.id, detail: "Already equivalent." }) });
     case "Conflict":
     case "Inconclusive":
       return PublicationBlocked.make({ subject: subject.id, observation: first });
@@ -59795,755 +61083,162 @@ var publishSubject = fn2("publishSubject")(function* (subject) {
   }
 });
 
-// ../../src/correction/intent.ts
-import { createHash } from "node:crypto";
-var optional5 = optionalKey2;
-var boundedText = String4.check(makeFilter2((value2) => [...value2].length <= 2048 && [...value2].every((character) => {
-  const codePoint = character.codePointAt(0) ?? 0;
-  return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32;
-}) ? undefined : "Correction text must be bounded and contain no control characters."));
-var publicMessage = boundedText.pipe(check(makeFilter2((value2) => value2.length > 0 ? undefined : "Correction message must be nonempty.")));
-var sha256Hex = /^[a-f0-9]{64}$/u;
-
-class ReplacementCoordinate extends Class4("ReplacementCoordinate")({
-  provider: Literals(["npm", "github", "catalog-git", "pypi"]),
-  coordinate: publicMessage
-}) {
+// ../../src/publication/http.ts
+class HttpAuthorizer extends Service()("ts-release/HttpAuthorizer") {
 }
 
-class NpmDeprecationCorrection extends TaggedClass()("NpmDeprecationCorrection", {
-  provider: Literal2("npm"),
-  publicationId: NonEmptyName,
-  registryUrl: NonEmptyString,
-  packageName: NonEmptyName,
-  version: Version,
-  tarballIntegrity: NonEmptyString,
-  message: publicMessage,
-  replacement: optional5(ReplacementCoordinate)
-}) {
-}
-
-class GithubReleaseCorrection extends TaggedClass()("GithubReleaseCorrection", {
-  provider: Literal2("github"),
-  publicationId: NonEmptyName,
-  repository: NonEmptyString,
-  tag: NonEmptyName,
-  marker: publicMessage,
-  replacement: optional5(ReplacementCoordinate)
-}) {
-}
-
-class CatalogCorrection extends TaggedClass()("CatalogCorrection", {
-  provider: Literal2("catalog-git"),
-  publicationId: NonEmptyName,
-  repository: NonEmptyString,
-  branch: NonEmptyName,
-  targetPath: SafeRelativePath,
-  statePath: SafeRelativePath,
-  artifactId: OutputId,
-  stateArtifactId: OutputId,
-  version: Version,
-  status: Literals(["corrected", "withdrawn", "superseded"]),
-  reason: publicMessage,
-  replacement: optional5(ReplacementCoordinate)
-}) {
-}
-
-class PypiFileYankCorrection extends TaggedClass()("PypiFileYankCorrection", {
-  provider: Literal2("pypi"),
-  publicationId: NonEmptyName,
-  indexUrl: NonEmptyString,
-  project: NonEmptyName,
-  version: Version,
-  filename: NonEmptyName,
-  fileDigest: Digest,
-  reason: publicMessage,
-  replacement: optional5(ReplacementCoordinate)
-}) {
-}
-var CorrectionVariant = Union2([
-  NpmDeprecationCorrection,
-  GithubReleaseCorrection,
-  CatalogCorrection,
-  PypiFileYankCorrection
-]);
-
-class CorrectionIntentV1 extends Class4("CorrectionIntentV1")({
-  schemaVersion: Literal2("correction-intent/v1"),
-  preparedDigest: Digest,
-  correction: CorrectionVariant,
-  correctionId: Digest
-}) {
-}
-
-class CorrectionIntentError extends TaggedErrorClass()("CorrectionIntentError", {
-  reason: String4
-}) {
-}
-var digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
-var normalizeCorrection = (value2) => decodeUnknownSync(CorrectionVariant)(value2);
-var encodedCorrection = (value2) => encodeSync2(CorrectionVariant)(normalizeCorrection(value2));
-var unsignedValue = (value2) => ({
-  schemaVersion: value2.schemaVersion,
-  preparedDigest: value2.preparedDigest,
-  correction: encodedCorrection(value2.correction)
-});
-var correctionIdFor = (value2) => Digest.make(digest(new TextEncoder().encode(encodeCanonicalJson(unsignedValue(value2)))));
-var equal = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
-var encodeCorrectionIntent = (value2) => {
+// ../../src/publication/npm.ts
+import { createHash as createHash3 } from "node:crypto";
+var integrity = (bytes) => `sha512-${createHash3("sha512").update(bytes).digest("base64")}`;
+var shasum = (bytes) => createHash3("sha1").update(bytes).digest("hex");
+var fingerprint = (value3) => SafeReason.make(`provider value sha256-${createHash3("sha256").update(value3).digest("hex")}`);
+var registryVersionUrl = (publication) => `${publication.registryUrl}${encodeURIComponent(publication.packageName)}/${encodeURIComponent(publication.version)}`;
+var asObject2 = (value3) => typeof value3 === "object" && value3 !== null && !Array.isArray(value3) ? value3 : undefined;
+var parseJson3 = (body) => {
   try {
-    if (!sha256Hex.test(value2.preparedDigest) || !sha256Hex.test(value2.correctionId)) {
-      throw new Error("Correction intent digests must be lowercase SHA-256 values.");
-    }
-    const expected = correctionIdFor(value2);
-    if (expected !== value2.correctionId)
-      throw new Error("Correction id does not match canonical intent bytes.");
-    return new TextEncoder().encode(encodeCanonicalJson(encodeSync2(CorrectionIntentV1)(value2)));
-  } catch (cause) {
-    throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
-  }
-};
-var decodeCorrectionIntent = (bytes) => {
-  try {
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-    const value2 = decodeUnknownSync(CorrectionIntentV1, { onExcessProperty: "error" })(parseStrictJson(text));
-    const canonical2 = encodeCorrectionIntent(value2);
-    if (!equal(canonical2, bytes))
-      throw new Error("Correction intent bytes are not canonical.");
-    return value2;
-  } catch (cause) {
-    if (cause instanceof CorrectionIntentError)
-      throw cause;
-    throw CorrectionIntentError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
-  }
-};
-
-// ../../src/correction/coordinator.ts
-class CorrectionValidationError extends TaggedErrorClass()("CorrectionValidationError", {
-  reason: String4
-}) {
-}
-
-class CorrectionUnsupported extends TaggedClass()("CorrectionUnsupported", {
-  provider: Literals(["github", "pypi"]),
-  reason: String4,
-  evidence: NonEmptyString
-}) {
-}
-var digest2 = (bytes) => createHash2("sha256").update(bytes).digest("hex");
-var preparedDigest = (bundle) => Digest.make(digest2(encodePreparedRelease(bundle.manifest)));
-var findPublication = (bundle, id) => bundle.manifest.publications.find((publication) => publication.id.toString() === id);
-var hasArtifact = (bundle, id) => bundle.manifest.artifacts.some((artifact) => artifact.id.toString() === id);
-var verifyNpm = (bundle, correction) => {
-  const publication = findPublication(bundle, correction.publicationId.toString());
-  if (publication?._tag !== "PreparedNpmPublication" || publication.registryUrl !== correction.registryUrl || publication.packageName !== correction.packageName || publication.version !== correction.version) {
-    throw new Error("npm correction subject is not the exact npm publication in the prepared manifest.");
-  }
-  const artifact = bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId);
-  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
-  if (bytes === undefined)
-    throw new Error("npm correction subject has no verified prepared tarball.");
-  const integrity = `sha512-${createHash2("sha512").update(bytes).digest("base64")}`;
-  if (integrity !== correction.tarballIntegrity)
-    throw new Error("npm correction tarball integrity is not the prepared artifact integrity.");
-};
-var verifyGithub = (bundle, correction) => {
-  const publication = findPublication(bundle, correction.publicationId.toString());
-  if (publication?._tag !== "PreparedGitHubPublication" || publication.repository !== correction.repository || publication.tag !== correction.tag) {
-    throw new Error("GitHub correction subject is not the exact GitHub publication in the prepared manifest.");
-  }
-};
-var verifyCatalog = (bundle, correction) => {
-  if (!hasArtifact(bundle, correction.artifactId.toString()) || !hasArtifact(bundle, correction.stateArtifactId.toString())) {
-    throw new Error("Catalog correction subject does not reference two verified prepared artifacts.");
-  }
-};
-var verifyPypi = (_bundle, _correction) => {};
-var verifyCorrectionIntent = (bundle, intent) => {
-  encodeCorrectionIntent(intent);
-  if (preparedDigest(bundle) !== intent.preparedDigest)
-    throw new Error("Correction intent is bound to a different prepared release.");
-  switch (intent.correction._tag) {
-    case "NpmDeprecationCorrection":
-      return verifyNpm(bundle, intent.correction);
-    case "GithubReleaseCorrection":
-      return verifyGithub(bundle, intent.correction);
-    case "CatalogCorrection":
-      return verifyCatalog(bundle, intent.correction);
-    case "PypiFileYankCorrection":
-      return verifyPypi(bundle, intent.correction);
-  }
-};
-var providerOf = (intent) => intent.correction.provider;
-var correctPreparedRelease = fn2("correctPreparedRelease")(function* (input) {
-  try {
-    verifyCorrectionIntent(input.bundle, input.intent);
-  } catch (cause) {
-    return yield* fail6(new CorrectionValidationError({ reason: cause instanceof Error ? cause.message : String(cause) }));
-  }
-  if (input.intent.correction._tag === "GithubReleaseCorrection") {
-    return CorrectionUnsupported.make({ provider: "github", reason: "No durable, machine-readable GitHub withdrawal marker with a proven conditional update contract was admitted.", evidence: "docs/release-program/decisions/216-provider-correction.md" });
-  }
-  if (input.intent.correction._tag === "PypiFileYankCorrection") {
-    return CorrectionUnsupported.make({ provider: "pypi", reason: "Per-file yank observation and mutation are not proven for arbitrary configured indexes.", evidence: "docs/release-program/decisions/216-provider-correction.md" });
-  }
-  if (input.subject === undefined) {
-    return yield* fail6(new CorrectionValidationError({ reason: `No provider-bound correction subject was supplied for ${providerOf(input.intent)}.` }));
-  }
-  return yield* publishSubject(input.subject);
-});
-
-// ../../src/publication/catalog-git.ts
-var repositoryName = String4.check(makeFilter2((value2) => /^[A-Za-z0-9.-]+\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value2) ? undefined : "Repository must be host/owner/name."));
-var repositoryPath = String4.check(makeFilter2((value2) => value2.length > 0 && !value2.startsWith("/") && !value2.includes("\\") && !value2.split("/").includes("..") ? undefined : "Repository path must be a contained POSIX path."));
-
-class CatalogFileIntent extends Class4("CatalogFileIntent")({
-  id: NonEmptyName,
-  repository: repositoryName,
-  branch: NonEmptyName,
-  targetPath: repositoryPath,
-  statePath: repositoryPath,
-  artifactId: NonEmptyName,
-  stateArtifactId: NonEmptyName,
-  version: Version,
-  commitMessage: NonEmptyName
-}) {
-}
-
-class CatalogManagedState extends Class4("CatalogManagedState")({
-  schemaVersion: Literal2("ts-release/catalog-state/v1"),
-  version: Version,
-  manifestDigest: Digest,
-  status: Literals(["active", "corrected", "withdrawn", "superseded"]),
-  correctionId: optionalKey2(Digest),
-  reason: optionalKey2(String4),
-  replacement: optionalKey2(NonEmptyName)
-}) {
-}
-var encodeCatalogManagedState = (value2) => new TextEncoder().encode(encodeCanonicalJson(encodeSync2(CatalogManagedState)(value2)));
-var decodeCatalogManagedState = (bytes) => {
-  try {
-    const value2 = decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(parseStrictJson(new TextDecoder("utf-8", { fatal: true }).decode(bytes)));
-    const canonical2 = encodeCatalogManagedState(value2);
-    if (canonical2.length !== bytes.length || canonical2.some((byte, index) => byte !== bytes[index]))
-      return;
-    if (value2.status === "active" && (value2.correctionId !== undefined || value2.reason !== undefined || value2.replacement !== undefined))
-      return;
-    if (value2.status !== "active" && (value2.correctionId === undefined || value2.reason === undefined || value2.reason.length === 0))
-      return;
-    return value2;
+    const text = typeof body === "string" ? body : new TextDecoder("utf-8", { fatal: true }).decode(body);
+    return JSON.parse(text);
   } catch {
     return;
   }
 };
-
-// ../../src/correction/catalog.ts
-var equal2 = (left, right) => left !== undefined && left.length === right.length && left.every((byte, index) => byte === right[index]);
-var versionCompare = (left, right) => {
-  const parse = (value2) => {
-    const [core, suffix] = value2.replace(/^v/u, "").split("-", 2);
-    return [(core ?? "").split(".").map((part) => Number.parseInt(part, 10) || 0), suffix];
-  };
-  const [leftCore, leftSuffix] = parse(left), [rightCore, rightSuffix] = parse(right);
-  for (let index = 0;index < Math.max(leftCore.length, rightCore.length); index++) {
-    const difference = (leftCore[index] ?? 0) - (rightCore[index] ?? 0);
-    if (difference !== 0)
-      return difference;
-  }
-  if (leftSuffix === undefined && rightSuffix !== undefined)
-    return 1;
-  if (leftSuffix !== undefined && rightSuffix === undefined)
-    return -1;
-  return (leftSuffix ?? "") < (rightSuffix ?? "") ? -1 : (leftSuffix ?? "") > (rightSuffix ?? "") ? 1 : 0;
-};
-var revision = (value2) => NonEmptyName.make(`revision:${value2}`);
-var revisionValue = (value2) => value2.toString().slice("revision:".length);
-var makeCatalogCorrectionSubject = (bundle, intent, transport) => {
-  const correction = intent.correction;
-  const target2 = bundle.blobs.get(correction.artifactId.toString());
-  const originalState = bundle.blobs.get(correction.stateArtifactId.toString());
-  const correctedState = encodeCatalogManagedState(CatalogManagedState.make({
-    schemaVersion: "ts-release/catalog-state/v1",
-    version: correction.version,
-    manifestDigest: intent.preparedDigest,
-    status: correction.status,
-    correctionId: intent.correctionId,
-    reason: correction.reason,
-    ...correction.replacement === undefined ? {} : { replacement: NonEmptyName.make(correction.replacement.coordinate) }
-  }));
-  const subject = NonEmptyName.make(`catalog:correct:${correction.repository}:${correction.branch}:${correction.targetPath}`);
-  const observe = () => gen2(function* () {
-    if (intent.correction._tag !== "CatalogCorrection" || target2 === undefined || originalState === undefined) {
-      return yield* fail6(new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: "Catalog correction does not have the exact prepared target/state pair." }));
-    }
-    const baseline = decodeCatalogManagedState(originalState);
-    if (baseline === undefined || baseline.status !== "active" || baseline.version !== correction.version) {
-      return yield* fail6(new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: "Catalog correction baseline is not the active state of this prepared release." }));
-    }
-    const current = yield* transport.observe(correction);
-    if (current.repository !== correction.repository || current.branch !== correction.branch || current.revision.length === 0)
-      return Inconclusive.make({ subject, reason: "Repository transport did not prove the configured catalog coordinate." });
-    if (current.targetBytes === undefined || current.stateBytes === undefined)
-      return Inconclusive.make({ subject, reason: "Catalog correction cannot distinguish missing files from a durable correction." });
-    if (!equal2(current.targetBytes, target2))
-      return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("target.bytes"), expected: "prepared catalog bytes", observed: "different catalog bytes" })] });
-    const currentState = decodeCatalogManagedState(current.stateBytes);
-    if (currentState === undefined)
-      return Inconclusive.make({ subject, reason: "Managed catalog correction state is malformed or noncanonical." });
-    if (currentState.status !== "active") {
-      return currentState.correctionId === intent.correctionId && currentState.status === correction.status && currentState.reason === correction.reason ? Equivalent.make({ subject }) : Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("managed.correction"), expected: intent.correctionId, observed: currentState.correctionId ?? currentState.status })] });
-    }
-    if (versionCompare(currentState.version.toString(), correction.version.toString()) > 0 || currentState.manifestDigest !== baseline.manifestDigest) {
-      return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("managed.generation"), expected: baseline.manifestDigest, observed: currentState.manifestDigest })] });
-    }
-    return NeedsMutation.make({ subject, precondition: revision(current.revision) });
-  }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason }))));
-  const mutate = (needs) => gen2(function* () {
-    if (needs.precondition.toString().startsWith("revision:") === false || target2 === undefined)
-      return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "Catalog correction lacks the exact revision precondition or target bytes." });
-    const result2 = yield* transport.write({
-      repository: correction.repository,
-      branch: correction.branch,
-      expectedRevision: revisionValue(needs.precondition),
-      targetPath: correction.targetPath,
-      targetBytes: target2,
-      statePath: correction.statePath,
-      stateBytes: correctedState,
-      commitMessage: correction.reason
-    });
-    return Applied.make({ subject, detail: `Catalog correction commit ${result2.revision}.` });
-  }).pipe(catchTag2("PublicationError", (cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }))));
-  return { id: subject, observe, mutate };
-};
-
-// ../../src/correction/npm.ts
-import { createHash as createHash3 } from "node:crypto";
-
-// ../../src/publication/http.ts
-var bodyText = (response) => typeof response.body === "string" ? response.body : new TextDecoder("utf-8", { fatal: true }).decode(response.body);
-var bodyJson = (response) => {
-  try {
-    return JSON.parse(bodyText(response));
-  } catch (cause) {
-    throw PublicationError.make({ phase: "decode", commitment: "before-dispatch", reason: cause instanceof Error ? cause.message : String(cause) });
-  }
-};
-var authHeaders = (credential) => ({
-  authorization: `Bearer ${credential}`,
-  accept: "application/json"
-});
-
-// ../../src/correction/npm.ts
-class NpmCorrectionError extends TaggedErrorClass()("NpmCorrectionError", { reason: String4 }) {
-}
-var registryFacts = (value2) => {
-  if (typeof value2 !== "object" || value2 === null)
+var nonEmptyString = (value3) => typeof value3 === "string" && value3.length > 0 ? value3 : undefined;
+var registryDigests = (value3) => {
+  const metadata = asObject2(value3);
+  const dist = metadata === undefined ? undefined : asObject2(metadata.dist);
+  if (dist === undefined)
     return;
-  const record2 = value2;
-  if (record2.deprecated !== undefined && typeof record2.deprecated !== "string")
-    return;
-  if (typeof record2.dist !== "object" || record2.dist === null)
-    return;
-  const dist = record2.dist;
-  if (dist.integrity !== undefined && typeof dist.integrity !== "string")
-    return;
-  if (dist.shasum !== undefined && typeof dist.shasum !== "string")
-    return;
-  if (dist.integrity === undefined && dist.shasum === undefined)
-    return;
+  const integrityValue = nonEmptyString(dist.integrity);
+  const shasumValue = nonEmptyString(dist.shasum);
   return {
-    ...dist.integrity === undefined ? {} : { integrity: dist.integrity },
-    ...dist.shasum === undefined ? {} : { shasum: dist.shasum },
-    ...record2.deprecated === undefined ? {} : { deprecated: record2.deprecated }
+    ...integrityValue === undefined ? {} : { integrity: integrityValue },
+    ...shasumValue === undefined ? {} : { shasum: shasumValue }
   };
 };
-var sha1 = (bytes) => createHash3("sha1").update(bytes).digest("hex");
-var versionUrl = (correction) => `${correction.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(correction.packageName)}/${encodeURIComponent(correction.version)}`;
-var makeNpmDeprecationSubject = (bundle, correction, http2, credentials, process2) => {
-  const publication = bundle.manifest.publications.find((candidate) => candidate._tag === "PreparedNpmPublication" && candidate.id === correction.publicationId && candidate.registryUrl === correction.registryUrl && candidate.packageName === correction.packageName && candidate.version === correction.version);
-  const artifact = publication === undefined ? undefined : bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId);
-  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
-  const subject = NonEmptyName.make(`npm:deprecate:${correction.registryUrl}:${correction.packageName}@${correction.version}`);
-  const observe = () => gen2(function* () {
-    if (publication === undefined || bytes === undefined)
-      return yield* fail6(new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: "npm correction subject is not available in the prepared bundle." }));
-    const response = yield* http2.request({ method: "GET", url: versionUrl(correction), headers: authHeaders(credentials.read) });
-    if (response.status === 404)
-      return Inconclusive.make({ subject, reason: "npm correction target is absent; absence is not a durable correction state." });
-    if (response.status < 200 || response.status >= 300)
-      return Inconclusive.make({ subject, reason: `Registry correction observation returned HTTP ${response.status}.` });
-    let facts;
-    try {
-      facts = registryFacts(bodyJson(response));
-    } catch (cause) {
-      return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) });
+var observationRequests2 = (publication) => {
+  const make13 = (strategy) => CredentialRequest.make({
+    subject: publication.authority.subject,
+    provider: publication.authority.provider,
+    audience: publication.authority.audience,
+    purpose: "observe",
+    strategy
+  });
+  const first = publication.authority.observationStrategies[0];
+  return [make13(first), ...publication.authority.observationStrategies.slice(1).map(make13)];
+};
+var mutationRequest2 = (publication) => CredentialRequest.make({
+  subject: publication.authority.subject,
+  provider: publication.authority.provider,
+  audience: publication.authority.audience,
+  purpose: "publish",
+  strategy: publication.authority.publishStrategy
+});
+var inconclusive2 = (publication, reason2) => InconclusiveObservation.make({
+  subject: publication.authority.subject,
+  reason: SafeReason.make(reason2)
+});
+var difference = (field, expected, observed) => Difference.make({
+  field: NonEmptyName.make(field),
+  expected: SafeReason.make(expected),
+  observed: fingerprint(observed)
+});
+var decide3 = (publication, observation) => observation._tag === "PresentDifferent" ? Conflict.make({ subject: publication.authority.subject, differences: observation.differences }) : ProviderBlocked.make({
+  subject: publication.authority.subject,
+  reason: SafeReason.make("npm publication remains blocked until Plan 225 proves exact equivalence or authoritative absence.")
+});
+var unsupportedMutation2 = (publication, _decision) => fail6(new ReleaseSubjectError({
+  subject: publication.authority.subject,
+  phase: "mutate",
+  commitment: "before-dispatch",
+  reason: SafeReason.make("npm mutation is unavailable until Plan 225 installs the certified publisher path.")
+}));
+var makeNpmSubject = (bundle, publication, http2) => {
+  const bytes = bundle.blobs.get(publication.artifactId.toString());
+  const expectedIntegrity = bytes === undefined ? undefined : integrity(bytes);
+  const expectedShasum = bytes === undefined ? undefined : shasum(bytes);
+  const observe = fn2("NpmReleaseSubject.observe")(function* (grant, _context) {
+    if (bytes === undefined || expectedIntegrity === undefined || expectedShasum === undefined) {
+      return inconclusive2(publication, "The exact prepared npm artifact bytes are unavailable.");
     }
-    if (facts === undefined)
-      return Inconclusive.make({ subject, reason: "Registry correction metadata was malformed or omitted integrity facts." });
+    if (grant._tag === "WorkloadIdentity") {
+      return yield* new ReleaseSubjectError({
+        subject: publication.authority.subject,
+        phase: "observe",
+        commitment: "before-dispatch",
+        reason: SafeReason.make("Workload identity cannot authorize npm metadata observation.")
+      });
+    }
+    const response = yield* http2.execute({
+      subject: publication.authority.subject,
+      method: "GET",
+      url: registryVersionUrl(publication),
+      headers: { accept: "application/json" }
+    }, grant).pipe(mapError3((cause) => new ReleaseSubjectError({
+      subject: publication.authority.subject,
+      phase: "observe",
+      commitment: cause._tag === "CredentialPlatformError" ? cause.commitment : "before-dispatch",
+      reason: SafeReason.make("npm metadata observation could not be completed by the host HTTP boundary.")
+    })));
+    if (response.status === 404) {
+      return inconclusive2(publication, "npm returned 404, which Plan 224 does not treat as authoritative package-version absence.");
+    }
+    if (response.status < 200 || response.status >= 300) {
+      return inconclusive2(publication, `npm metadata observation returned HTTP ${response.status}.`);
+    }
+    const facts = registryDigests(parseJson3(response.body));
+    if (facts === undefined) {
+      return inconclusive2(publication, "npm metadata was malformed or omitted its distribution object.");
+    }
     const differences = [];
-    const expectedShasum = sha1(bytes);
-    if (facts.integrity !== undefined && facts.integrity !== correction.tarballIntegrity)
-      differences.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: correction.tarballIntegrity, observed: facts.integrity }));
-    if (facts.shasum !== undefined && facts.shasum !== expectedShasum)
-      differences.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum, observed: facts.shasum }));
-    if (differences.length > 0)
-      return Conflict.make({ subject, differences });
-    if (facts.deprecated === correction.message)
-      return Equivalent.make({ subject });
-    if (facts.deprecated === undefined || facts.deprecated.length === 0)
-      return NeedsMutation.make({ subject, precondition: NonEmptyName.make("deprecation-absent") });
-    return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("deprecated"), expected: correction.message, observed: facts.deprecated })] });
-  }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason }))));
-  const mutate = (needs) => gen2(function* () {
-    if (needs.precondition !== "deprecation-absent" || publication === undefined)
-      return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "npm correction lacks the exact empty-deprecation precondition." });
-    const result2 = yield* process2.deprecate({ registryUrl: correction.registryUrl, packageName: correction.packageName.toString(), version: correction.version.toString(), message: correction.message, credential: credentials.publish });
-    if (!result2.started)
-      return Rejected.make({ subject, phase: "before-dispatch", reason: "npm deprecation process did not start." });
-    return result2.exitCode === 0 ? Applied.make({ subject, detail: "npm deprecation exited successfully." }) : Rejected.make({ subject, phase: "provider", reason: `npm deprecation exited ${result2.exitCode}.` });
-  }).pipe(catchTag2("PublicationError", (cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }))));
-  return { id: subject, observe, mutate };
+    if (facts.integrity !== undefined && facts.integrity !== expectedIntegrity) {
+      differences.push(difference("integrity", expectedIntegrity, facts.integrity));
+    }
+    if (facts.shasum !== undefined && facts.shasum !== expectedShasum) {
+      differences.push(difference("shasum", expectedShasum, facts.shasum));
+    }
+    if (differences.length > 0) {
+      return PresentDifferent.make({
+        subject: publication.authority.subject,
+        differences
+      });
+    }
+    if (facts.integrity === undefined || facts.shasum === undefined) {
+      return inconclusive2(publication, "npm metadata omitted either the sha512 integrity or sha1 shasum.");
+    }
+    return inconclusive2(publication, "npm metadata digests look exact, but Plan 225 has not yet established complete equivalence evidence.");
+  });
+  return {
+    id: publication.authority.subject,
+    observationRequests: observationRequests2(publication),
+    mutationRequest: mutationRequest2(publication),
+    observe,
+    decide: (observation) => decide3(publication, observation),
+    mutate: (decision) => unsupportedMutation2(publication, decision)
+  };
 };
 
-// ../../src/release/prepared-ref.ts
-var sha256Pattern = /^[a-f0-9]{64}$/u;
-var referenceSegmentPattern = /^[A-Za-z0-9._~-]{1,255}$/u;
-var positiveDecimalPattern = /^[1-9][0-9]*$/u;
-var PreparedReleaseSha256 = String4.check(makeFilter2((value2) => sha256Pattern.test(value2) ? undefined : "PreparedReleaseSha256 must contain exactly 64 lowercase hexadecimal characters.")).pipe(brand2("PreparedReleaseSha256"));
-var GitHubReferenceSegment = String4.check(makeFilter2((value2) => referenceSegmentPattern.test(value2) && value2 !== "." && value2 !== ".." ? undefined : "GitHub prepared-reference segments must be nonempty URI-unreserved tokens.")).pipe(brand2("GitHubPreparedReferenceSegment"));
-var GitHubRunCoordinate = String4.check(makeFilter2((value2) => positiveDecimalPattern.test(value2) ? undefined : "GitHub run coordinates must be canonical positive decimal strings.")).pipe(brand2("GitHubPreparedReferenceRunCoordinate"));
-
-class LocalCompletePreparedReleaseRef extends TaggedClass()("LocalCompletePreparedReleaseRef", {
-  kind: Literal2("complete"),
-  scheme: Literal2("local"),
-  digest: PreparedReleaseSha256
-}) {
-}
-
-class GitHubActionsCompletePreparedReleaseRef extends TaggedClass()("GitHubActionsCompletePreparedReleaseRef", {
-  kind: Literal2("complete"),
-  scheme: Literal2("gha"),
-  owner: GitHubReferenceSegment,
-  repository: GitHubReferenceSegment,
-  runId: GitHubRunCoordinate,
-  attempt: GitHubRunCoordinate,
-  artifactName: GitHubReferenceSegment,
-  digest: PreparedReleaseSha256
-}) {
-}
-var CompletePreparedReleaseRef = Union2([
-  LocalCompletePreparedReleaseRef,
-  GitHubActionsCompletePreparedReleaseRef
-]);
-
-class PreparedReleaseRefMalformedError extends TaggedErrorClass()("PreparedReleaseRefMalformedError", {
-  reason: String4
-}) {
-}
-
-class PreparedReleaseRefUnknownSchemeError extends TaggedErrorClass()("PreparedReleaseRefUnknownSchemeError", {
-  scheme: String4
-}) {
-}
-var PreparedReleaseRefCodecError = Union2([
-  PreparedReleaseRefMalformedError,
-  PreparedReleaseRefUnknownSchemeError
-]);
-var malformed = (reason2) => PreparedReleaseRefMalformedError.make({ reason: reason2 });
-var validateDigest = (digest3) => sha256Pattern.test(digest3) ? succeed6(PreparedReleaseSha256.make(digest3)) : fail6(malformed("The digest must contain exactly 64 lowercase hexadecimal characters."));
-var validateSegment = (value2, field) => referenceSegmentPattern.test(value2) && value2 !== "." && value2 !== ".." ? succeed6(GitHubReferenceSegment.make(value2)) : fail6(malformed(`${field} must be a nonempty URI-unreserved token.`));
-var validateRunCoordinate = (value2, field) => positiveDecimalPattern.test(value2) ? succeed6(GitHubRunCoordinate.make(value2)) : fail6(malformed(`${field} must be a canonical positive decimal string.`));
-var makeLocalCompletePreparedReleaseRef = fn2("makeLocalCompletePreparedReleaseRef")(function* (digest3) {
-  return LocalCompletePreparedReleaseRef.make({
-    kind: "complete",
-    scheme: "local",
-    digest: yield* validateDigest(digest3)
-  });
+// ../../src/publication/adapter.ts
+var preparedSubject = (bundle) => SubjectId.make(`prepared:sha256-${sha256(encodePreparedRelease(bundle.manifest))}`);
+var subjectsForPreparedRelease = fn2("subjectsForPreparedRelease")(function* (bundle) {
+  const http2 = yield* HttpAuthorizer;
+  const subjects = [];
+  for (const publication of bundle.manifest.publications) {
+    if (publication._tag === "PreparedNpmPublication") {
+      subjects.push(makeNpmSubject(bundle, publication, http2));
+    } else {
+      subjects.push(...makeGithubSubjects(bundle, publication, http2));
+    }
+  }
+  return subjects;
 });
-var makeGitHubActionsCompletePreparedReleaseRef = fn2("makeGitHubActionsCompletePreparedReleaseRef")(function* (input) {
-  return GitHubActionsCompletePreparedReleaseRef.make({
-    kind: "complete",
-    scheme: "gha",
-    owner: yield* validateSegment(input.owner, "owner"),
-    repository: yield* validateSegment(input.repository, "repository"),
-    runId: yield* validateRunCoordinate(input.runId, "runId"),
-    attempt: yield* validateRunCoordinate(input.attempt, "attempt"),
-    artifactName: yield* validateSegment(input.artifactName, "artifactName"),
-    digest: yield* validateDigest(input.digest)
-  });
+var observePreparedRelease = fn2("observePreparedRelease")(function* (bundle) {
+  const subjects = yield* subjectsForPreparedRelease(bundle);
+  return yield* observeReleaseSubjects({ prepared: preparedSubject(bundle), subjects });
 });
-var encodeCompletePreparedReleaseRef = (reference) => reference.scheme === "local" ? `prepared:local:sha256-${reference.digest}` : `prepared:gha:${reference.owner}/${reference.repository}/runs/${reference.runId}/attempts/${reference.attempt}/artifacts/${reference.artifactName}#sha256-${reference.digest}`;
-var githubActionsPayloadPattern = /^([A-Za-z0-9._~-]{1,255})\/([A-Za-z0-9._~-]{1,255})\/runs\/([1-9][0-9]*)\/attempts\/([1-9][0-9]*)\/artifacts\/([A-Za-z0-9._~-]{1,255})#sha256-([a-f0-9]{64})$/u;
-var decodeCompletePreparedReleaseRef = fn2("decodeCompletePreparedReleaseRef")(function* (input) {
-  if (typeof input !== "string") {
-    return yield* malformed("A prepared reference must be a string.");
-  }
-  if (!input.startsWith("prepared:")) {
-    return yield* malformed("A prepared reference must start with 'prepared:'.");
-  }
-  const schemeEnd = input.indexOf(":", "prepared:".length);
-  if (schemeEnd < 0) {
-    return yield* malformed("A prepared reference must include a scheme and payload.");
-  }
-  const scheme = input.slice("prepared:".length, schemeEnd);
-  const payload = input.slice(schemeEnd + 1);
-  if (scheme !== "local" && scheme !== "gha") {
-    if (scheme.length === 0) {
-      return yield* malformed("A prepared reference scheme must be nonempty.");
-    }
-    return yield* PreparedReleaseRefUnknownSchemeError.make({ scheme });
-  }
-  if (scheme === "local") {
-    const match7 = /^sha256-([a-f0-9]{64})$/u.exec(payload);
-    if (match7 === null) {
-      return yield* malformed("A local reference payload must be 'sha256-' followed by 64 lowercase hexadecimal characters.");
-    }
-    return yield* makeLocalCompletePreparedReleaseRef(match7[1]);
-  }
-  const match6 = githubActionsPayloadPattern.exec(payload);
-  if (match6 === null || match6[1] === "." || match6[1] === ".." || match6[2] === "." || match6[2] === ".." || match6[5] === "." || match6[5] === "..") {
-    return yield* malformed("A GitHub Actions reference must contain canonical owner, repository, run, attempt, artifact, and SHA-256 coordinates.");
-  }
-  const reference = yield* makeGitHubActionsCompletePreparedReleaseRef({
-    owner: match6[1],
-    repository: match6[2],
-    runId: match6[3],
-    attempt: match6[4],
-    artifactName: match6[5],
-    digest: match6[6]
-  });
-  if (encodeCompletePreparedReleaseRef(reference) !== input) {
-    return yield* malformed("The prepared reference is not in canonical form.");
-  }
-  return reference;
+var publishPreparedRelease = fn2("publishPreparedRelease")(function* (bundle) {
+  const subjects = yield* subjectsForPreparedRelease(bundle);
+  return yield* publishReleaseSubjects({ prepared: preparedSubject(bundle), subjects });
 });
-
-// ../../src/api/errors.ts
-class ReleaseInputError extends TaggedErrorClass()("ReleaseInputError", { reason: String4 }) {
-}
-
-class PreparationModeUnsupported extends TaggedErrorClass()("PreparationModeUnsupported", {
-  mode: Literals(["partition", "merge"]),
-  owner: Literal2("plan-235"),
-  reason: String4
-}) {
-}
-
-class ReleasePreparationError extends TaggedErrorClass()("ReleasePreparationError", {
-  cause: String4
-}) {
-}
-
-class ReleaseAbortedError extends TaggedErrorClass()("ReleaseAbortedError", {
-  prepared: optionalKey2(CompletePreparedReleaseRef),
-  cause: String4
-}) {
-}
-
-class ReleaseIncompleteError extends TaggedErrorClass()("ReleaseIncompleteError", {
-  prepared: CompletePreparedReleaseRef,
-  status: Literals(["blocked", "uncertain"]),
-  reason: String4
-}) {
-}
-
-// ../../src/api/input.ts
-import { existsSync as existsSync2, realpathSync, statSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve as resolve2 } from "node:path";
-var configInput = Struct({ config: Unknown2, workspace: String4, preparedDirectory: optionalKey2(String4) });
-var inspectInput = Struct({ config: optionalKey2(Unknown2), prepared: optionalKey2(String4), workspace: optionalKey2(String4) });
-var credentials = Struct({ read: NonEmptyString, publish: NonEmptyString });
-var credentialInput = Struct({ npm: optionalKey2(credentials), github: optionalKey2(credentials) });
-var publishInput = Struct({ prepared: String4, credentials: optionalKey2(credentialInput) });
-var releaseInput = Struct({
-  config: Unknown2,
-  workspace: String4,
-  preparedDirectory: optionalKey2(String4),
-  allowEmpty: optionalKey2(Boolean3),
-  credentials: optionalKey2(credentialInput)
-});
-var correctInput = Struct({ prepared: String4, correction: String4, credentials: optionalKey2(credentialInput) });
-var decode = (schema, value2) => {
-  try {
-    return decodeUnknownSync(schema, { onExcessProperty: "error" })(value2);
-  } catch (cause) {
-    throw new ReleaseInputError({ reason: String(cause).split(`
-`).slice(0, 8).join(`
-`).slice(0, 500) });
-  }
-};
-var rejectReservedPreparationMode = (value2) => {
-  if (typeof value2 !== "object" || value2 === null || Array.isArray(value2))
-    return;
-  const mode = value2.mode;
-  if (mode !== "partition" && mode !== "merge")
-    return;
-  throw PreparationModeUnsupported.make({
-    mode,
-    owner: "plan-235",
-    reason: `Preparation mode '${mode}' is reserved and unsupported until plan 235 adds its first certified producer.`
-  });
-};
-var decodePrepareInput = (value2) => {
-  rejectReservedPreparationMode(value2);
-  return decode(configInput, value2);
-};
-var decodeReleaseInput = (value2) => {
-  rejectReservedPreparationMode(value2);
-  return decode(releaseInput, value2);
-};
-var decodePublishInput = (value2) => decode(publishInput, value2);
-var decodeCorrectInput = (value2) => decode(correctInput, value2);
-var decodeInspectInput = (value2) => {
-  const decoded = decode(inspectInput, value2);
-  if (decoded.config === undefined === (decoded.prepared === undefined))
-    throw new ReleaseInputError({ reason: "inspect requires exactly one of config or prepared." });
-  if (decoded.config !== undefined && decoded.workspace === undefined)
-    throw new ReleaseInputError({ reason: "inspect config requires workspace." });
-  return decoded;
-};
-var absoluteDirectory = (value2, field) => {
-  if (!isAbsolute(value2) || !existsSync2(value2))
-    throw new ReleaseInputError({ reason: `${field} must be an existing absolute directory.` });
-  const canonical2 = realpathSync(value2);
-  if (!statSync(canonical2).isDirectory())
-    throw new ReleaseInputError({ reason: `${field} must be a directory.` });
-  return canonical2;
-};
-var workspaceRoot = (value2) => absoluteDirectory(value2, "workspace");
-var preparedPath = (value2) => {
-  const resolved = isAbsolute(value2) ? resolve2(value2) : resolve2(process.cwd(), value2);
-  if (!existsSync2(resolved) || !statSync(resolved).isDirectory())
-    throw new ReleaseInputError({ reason: "prepared must name an existing bundle directory." });
-  const root = realpathSync(resolved);
-  if (dirname(root) === root || join(root, "prepared-release.json") === root)
-    throw new ReleaseInputError({ reason: "prepared bundle path is invalid." });
-  return root;
-};
-
-// ../../src/api/runtime.ts
-class ReleaseRuntimeError extends TaggedErrorClass()("ReleaseRuntimeError", { reason: String4 }) {
-}
-
-class ReleaseRuntime extends Service()("ReleaseRuntime") {
-}
-
-// ../../src/resolve/facts.ts
-var optional6 = optionalKey2;
-
-class ObservedFacts extends Class4("ObservedFacts")({
-  commit: optional6(NonEmptyName),
-  manifestName: optional6(NonEmptyString),
-  manifestVersion: optional6(Version),
-  repository: optional6(NonEmptyString),
-  headTagVersion: optional6(Version)
-}) {
-}
-
-// ../../src/resolve/encode.ts
-var toPlainJson = (value2) => {
-  if (Array.isArray(value2))
-    return value2.map(toPlainJson);
-  if (typeof value2 !== "object" || value2 === null)
-    return value2;
-  return Object.fromEntries(Object.entries(value2).filter(([, entry]) => entry !== undefined).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([key, entry]) => [key, toPlainJson(entry)]));
-};
-
-// ../../src/resolve/errors.ts
-class ResolveError extends Error {
-  field;
-  reason;
-  _tag = "ResolveError";
-  constructor(field, reason2) {
-    super(reason2);
-    this.field = field;
-    this.reason = reason2;
-    this.name = "ResolveError";
-  }
-}
-
-// ../../src/resolve/resolve.ts
-var refuse = (field, reason2) => {
-  throw new ResolveError(field, reason2);
-};
-var disagreement = (field, authored, observed, source) => refuse(`project.${field}`, `project.${field} is ${JSON.stringify(authored)} in the config but ${JSON.stringify(observed)} ${source}. Remove the authored value or correct the source; the resolver never picks.`);
-var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
-var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
-var version2 = (authored, facts) => {
-  const directive = authored.versionFrom;
-  const observed = directive === "manifest" ? facts.manifestVersion : directive === "git-tag" ? facts.headTagVersion : undefined;
-  const source = directive === "manifest" ? "in the package manifest" : "on the tag at HEAD";
-  if (authored.project.version !== undefined) {
-    if (observed !== undefined && observed !== authored.project.version) {
-      disagreement("version", authored.project.version, observed, source);
-    }
-    return authored.project.version;
-  }
-  if (directive === undefined) {
-    return refuse("project.version", 'project.version is required. State it, or set versionFrom to "manifest" or "git-tag" so it can be observed.');
-  }
-  if (observed === undefined) {
-    return refuse("project.version", `versionFrom is ${JSON.stringify(directive)} but no version was observed ${source}.`);
-  }
-  return observed;
-};
-var tag2 = (authored, resolved) => {
-  if (authored.project.tag !== undefined)
-    return authored.project.tag;
-  const template = authored.project.tagTemplate ?? "v{version}";
-  const rendered = template.replaceAll("{version}", resolved);
-  if (rendered.includes("{") || rendered.includes("}")) {
-    return refuse("project.tagTemplate", `project.tagTemplate supports only the {version} token, got ${JSON.stringify(template)}.`);
-  }
-  return NonEmptyName.make(rendered);
-};
-var commit = (authored, facts) => {
-  if (authored.project.commit !== undefined) {
-    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
-      disagreement("commit", authored.project.commit, facts.commit, "at HEAD");
-    }
-    return authored.project.commit;
-  }
-  if (facts.commit === undefined)
-    return refuse("project.commit", MISSING_COMMIT);
-  return facts.commit;
-};
-var names = (authored, facts) => {
-  const manifest = facts.manifestName;
-  if (manifest !== undefined && authored.project.packageName !== undefined && manifest !== authored.project.packageName) {
-    disagreement("packageName", authored.project.packageName, manifest, "in the package manifest");
-  }
-  const name = authored.project.name ?? manifest;
-  if (name === undefined) {
-    return refuse("project.name", "project.name is required when no package manifest is observed.");
-  }
-  const packageName = authored.project.packageName ?? manifest;
-  return { name, ...packageName === undefined ? {} : { packageName } };
-};
-var repository = (authored, facts) => {
-  if (authored.project.repository !== undefined && facts.repository !== undefined && authored.project.repository !== facts.repository) {
-    disagreement("repository", authored.project.repository, facts.repository, "in the observed repository");
-  }
-  return authored.project.repository ?? facts.repository;
-};
-var resolveConfig = (authored, facts) => {
-  const config = decodeAuthored(authored);
-  const observed = decodeFacts(facts);
-  const resolvedVersion = version2(config, observed);
-  const { project, versionFrom: _directive, ...rest } = config;
-  const { tagTemplate: _template, ...projectRest } = project;
-  return toPlainJson({
-    ...rest,
-    project: {
-      ...projectRest,
-      ...names(config, observed),
-      ...repository(config, observed) === undefined ? {} : { repository: repository(config, observed) },
-      version: resolvedVersion,
-      tag: tag2(config, resolvedVersion),
-      commit: commit(config, observed)
-    }
-  });
-};
 
 // ../../src/release/capabilities.ts
 var output = (id, location2, kind, provenance, mediaType) => OutputDeclaration.make({
@@ -60554,9 +61249,9 @@ var output = (id, location2, kind, provenance, mediaType) => OutputDeclaration.m
   ...mediaType === undefined ? {} : { mediaType }
 });
 var compact = (name) => name.replace(/^@/u, "").replaceAll("/", "-").replace(/[^A-Za-z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
-var render = (value2, config, target2 = "", binary = compact(config.project.name)) => {
+var render = (value3, config, target2 = "", binary = compact(config.project.name)) => {
   const [os6 = "", arch3 = ""] = target2.split("-");
-  return value2.replaceAll("{name}", compact(config.project.name)).replaceAll("{version}", config.project.version).replaceAll("{tag}", config.project.tag).replaceAll("{targetTriple}", target2).replaceAll("{target}", target2).replaceAll("{os}", os6).replaceAll("{arch}", arch3).replaceAll("{binary}", binary).replaceAll("{ext}", os6 === "windows" ? ".exe" : "");
+  return value3.replaceAll("{name}", compact(config.project.name)).replaceAll("{version}", config.project.version).replaceAll("{tag}", config.project.tag).replaceAll("{targetTriple}", target2).replaceAll("{target}", target2).replaceAll("{os}", os6).replaceAll("{arch}", arch3).replaceAll("{binary}", binary).replaceAll("{ext}", os6 === "windows" ? ".exe" : "");
 };
 var buildContribution = (config, context3) => {
   const artifacts = [];
@@ -60705,12 +61400,12 @@ var npmPublication = (config, artifacts) => {
 };
 var githubPublication = (config, artifacts) => {
   const authored = config.publish?.github;
-  const repository2 = authored?.repository ?? config.project.repository;
-  if (authored === undefined || repository2 === undefined)
+  const repository = authored?.repository ?? config.project.repository;
+  if (authored === undefined || repository === undefined)
     return;
   return GraphGitHubPublication.make({
     id: OperationId.make("github:github-release"),
-    repository: repository2,
+    repository,
     tag: config.project.tag,
     draft: authored.draft ?? true,
     prerelease: authored.prerelease === "auto" ? config.project.version.includes("-") : authored.prerelease ?? false,
@@ -60720,7 +61415,7 @@ var githubPublication = (config, artifacts) => {
     },
     assetIds: authored.ids ?? artifacts.filter((item) => ["archive", "executable", "file", "digest"].includes(item.kind)).map((item) => item.id),
     authority: makeGitHubPublicationAuthorityIntent({
-      repository: repository2,
+      repository,
       tag: config.project.tag.toString(),
       ...authored.tokenEnv === undefined ? {} : { tokenEnv: authored.tokenEnv }
     })
@@ -60755,10 +61450,10 @@ var preparationOutputs2 = (preparation) => preparation._tag === "GraphCommandArt
 var compileReleaseGraph = (intent, context3) => linkContributions(contributeRelease(intent, context3));
 
 // ../../src/release/inspect.ts
-var optional7 = optionalKey2;
+var optional5 = optionalKey2;
 
 class ReleaseInspection extends Class4("ReleaseInspection")({
-  source: Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Literal2(true), repository: optional7(NonEmptyString) }),
+  source: Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Literal2(true), repository: optional5(NonEmptyString) }),
   package: Struct({ name: NonEmptyName, version: NonEmptyString, path: SafeRelativePath }),
   artifacts: ArraySchema(Struct({ id: OutputId, path: SafeRelativePath, kind: String4 })),
   preparations: ArraySchema(Struct({ id: OperationId, kind: String4, inputs: ArraySchema(OutputId) })),
@@ -60767,11 +61462,11 @@ class ReleaseInspection extends Class4("ReleaseInspection")({
   capabilities: ArraySchema(NonEmptyString)
 }) {
 }
-var preparationKind = (value2) => value2._tag.replace(/^Graph/u, "");
+var preparationKind = (value3) => value3._tag.replace(/^Graph/u, "");
 var requirements = (preparations) => [
   ...new Set(preparations.flatMap((preparation) => preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact" ? [`command:${preparation.argv[0]}`, ...preparation.environmentNames.map((name) => `env:${name}`)] : []))
 ].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-var publication = (value2) => value2._tag === "GraphNpmPublication" ? { id: value2.id, destination: "npm", subject: `${value2.packageName}@${value2.version} (${value2.registryUrl})` } : { id: value2.id, destination: "github", subject: `${value2.repository}#${value2.tag}` };
+var publication = (value3) => value3._tag === "GraphNpmPublication" ? { id: value3.id, destination: "npm", subject: `${value3.packageName}@${value3.version} (${value3.registryUrl})` } : { id: value3.id, destination: "github", subject: `${value3.repository}#${value3.tag}` };
 var inspectRelease = (context3, graph, capabilities = []) => ReleaseInspection.make({
   source: {
     commit: context3.source.commit,
@@ -60784,7 +61479,7 @@ var inspectRelease = (context3, graph, capabilities = []) => ReleaseInspection.m
   preparations: graph.preparations.map((preparation) => ({ id: preparation.id, kind: preparationKind(preparation), inputs: preparation.inputs })),
   publications: graph.publications.map(publication),
   requirements: requirements(graph.preparations),
-  capabilities: [...capabilities].sort((a, b) => a < b ? -1 : a > b ? 1 : 0).map((value2) => NonEmptyName.make(value2))
+  capabilities: [...capabilities].sort((a, b) => a < b ? -1 : a > b ? 1 : 0).map((value3) => NonEmptyName.make(value3))
 });
 
 class PreparedReleaseInspection extends Class4("PreparedReleaseInspection")({
@@ -60804,59 +61499,52 @@ var inspectPreparedRelease = (bundle) => PreparedReleaseInspection.make({
 });
 
 // ../../src/release/prepare.ts
-import { createHash as createHash6 } from "node:crypto";
-import { cpSync, lstatSync as lstatSync3, mkdirSync as mkdirSync3, mkdtempSync, readdirSync as readdirSync2, realpathSync as realpathSync4, rmSync as rmSync2, symlinkSync } from "node:fs";
-import { basename as basename2, join as join4, relative as relative2 } from "node:path";
+import { createHash as createHash5 } from "node:crypto";
+import { cpSync, lstatSync as lstatSync3, mkdirSync as mkdirSync3, mkdtempSync, readdirSync as readdirSync2, realpathSync as realpathSync3, rmSync as rmSync2, symlinkSync } from "node:fs";
+import { basename as basename2, join as join3, relative as relative2 } from "node:path";
 import { tmpdir } from "node:os";
 
 // ../../src/drivers/workspace.ts
 import {
   closeSync,
   constants as constants3,
-  existsSync as existsSync3,
+  existsSync as existsSync2,
   fstatSync,
   fsyncSync,
   lstatSync,
   mkdirSync,
   openSync,
   readFileSync,
-  realpathSync as realpathSync2,
+  realpathSync,
   writeFileSync
 } from "node:fs";
-import { join as join2 } from "node:path";
+import { join } from "node:path";
 
 // ../../src/drivers/contain.ts
-import { isAbsolute as isAbsolute2, relative, sep } from "node:path";
+import { isAbsolute, relative, sep } from "node:path";
 var contained = (root, path) => {
-  const value2 = relative(root, path);
-  return value2 === "" || value2 !== ".." && !value2.startsWith(`..${sep}`) && !isAbsolute2(value2);
+  const value3 = relative(root, path);
+  return value3 === "" || value3 !== ".." && !value3.startsWith(`..${sep}`) && !isAbsolute(value3);
 };
 
-// ../../src/drivers/errors.ts
-class DriverError extends TaggedErrorClass()("DriverError", {
-  reason: String4,
-  commitment: Literals(["before-commit", "unknown"])
-}) {
-}
-
 // ../../src/drivers/workspace.ts
-var fail7 = (reason2) => DriverError.make({ reason: reason2, commitment: "before-commit" });
+var fail8 = (reason2) => DriverError.make({ reason: reason2, commitment: "before-commit" });
 var secureRead = (root, path) => {
   let current = root;
   for (const part of path.split(/[\\/]+/u)) {
-    current = join2(current, part);
+    current = join(current, part);
     if (lstatSync(current).isSymbolicLink())
-      throw fail7("Structured read encountered a symlink.");
+      throw fail8("Structured read encountered a symlink.");
   }
   const descriptor = openSync(current, constants3.O_RDONLY | constants3.O_NOFOLLOW);
   try {
     const opened = fstatSync(descriptor);
-    const resolved = realpathSync2(current);
+    const resolved = realpathSync(current);
     if (!contained(root, resolved))
-      throw fail7("Opened file escaped the workspace root.");
+      throw fail8("Opened file escaped the workspace root.");
     const landed = lstatSync(resolved);
     if (landed.ino !== opened.ino || landed.dev !== opened.dev)
-      throw fail7("Opened file changed identity.");
+      throw fail8("Opened file changed identity.");
     return { bytes: new Uint8Array(readFileSync(descriptor)), inode: opened.ino };
   } finally {
     closeSync(descriptor);
@@ -60866,14 +61554,14 @@ var secureWrite = (root, path, bytes) => {
   const parts = path.split(/[\\/]+/u).filter((part) => part.length > 0);
   let parent = root;
   for (const part of parts.slice(0, -1)) {
-    parent = join2(parent, part);
+    parent = join(parent, part);
     mkdirSync(parent, { recursive: true });
     if (lstatSync(parent).isSymbolicLink())
-      throw fail7("Structured write encountered a symlink.");
+      throw fail8("Structured write encountered a symlink.");
   }
-  const target2 = join2(parent, parts.at(-1));
-  if (existsSync3(target2) && lstatSync(target2).isSymbolicLink())
-    throw fail7("Structured write encountered a symlink.");
+  const target2 = join(parent, parts.at(-1));
+  if (existsSync2(target2) && lstatSync(target2).isSymbolicLink())
+    throw fail8("Structured write encountered a symlink.");
   const descriptor = openSync(target2, constants3.O_WRONLY | constants3.O_CREAT | constants3.O_TRUNC | constants3.O_NOFOLLOW, 420);
   try {
     writeFileSync(descriptor, bytes);
@@ -60885,7 +61573,7 @@ var secureWrite = (root, path, bytes) => {
 
 // ../../src/drivers/archive.ts
 import { gzipSync } from "node:zlib";
-var text = (value2) => new TextEncoder().encode(value2);
+var text = (value3) => new TextEncoder().encode(value3);
 var concat = (parts) => {
   const output2 = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
   let offset = 0;
@@ -60895,17 +61583,17 @@ var concat = (parts) => {
   }
   return output2;
 };
-var integer = (bytes, value2) => {
+var integer = (bytes, value3) => {
   const output2 = new Uint8Array(bytes);
   const view = new DataView(output2.buffer);
   if (bytes === 2)
-    view.setUint16(0, value2, true);
+    view.setUint16(0, value3, true);
   else
-    view.setUint32(0, value2, true);
+    view.setUint32(0, value3, true);
   return output2;
 };
-var crcTable = Array.from({ length: 256 }, (_2, value2) => {
-  let crc = value2;
+var crcTable = Array.from({ length: 256 }, (_2, value3) => {
+  let crc = value3;
   for (const bit of Array.from({ length: 8 }, (_3, index) => index)) {
     crc = (crc & 1) === 1 ? 3988292384 ^ crc >>> 1 : crc >>> 1;
   }
@@ -60975,14 +61663,14 @@ var zip2 = (entries) => {
     integer(2, 0)
   ]);
 };
-var ascii = (output2, offset, length, value2) => {
-  const bytes = text(value2);
+var ascii = (output2, offset, length, value3) => {
+  const bytes = text(value3);
   if (bytes.length > length)
-    throw new Error(`Archive path is too long: ${value2}`);
+    throw new Error(`Archive path is too long: ${value3}`);
   output2.set(bytes, offset);
 };
-var octal = (output2, offset, length, value2) => {
-  ascii(output2, offset, length - 2, value2.toString(8).padStart(length - 2, "0"));
+var octal = (output2, offset, length, value3) => {
+  ascii(output2, offset, length - 2, value3.toString(8).padStart(length - 2, "0"));
   output2[offset + length - 2] = 0;
   output2[offset + length - 1] = 32;
 };
@@ -61012,13 +61700,8 @@ var tarGz = (entries) => {
   return packed;
 };
 
-// ../../src/drivers/utils.ts
-import { createHash as createHash4 } from "node:crypto";
-var failure = (reason2, commitment = "before-commit") => DriverError.make({ reason: reason2, commitment });
-var sha256 = (bytes) => createHash4("sha256").update(bytes).digest("hex");
-
 // ../../src/release/context.ts
-var optional8 = optionalKey2;
+var optional6 = optionalKey2;
 
 class VerifiedSource extends Class4("VerifiedSource")({
   commit: NonEmptyName,
@@ -61026,7 +61709,7 @@ class VerifiedSource extends Class4("VerifiedSource")({
   clean: Literal2(true),
   packageManifestPath: SafeRelativePath,
   packageManifestDigest: NonEmptyName,
-  repository: optional8(NonEmptyString),
+  repository: optional6(NonEmptyString),
   headTags: ArraySchema(NonEmptyName)
 }) {
 }
@@ -61036,7 +61719,7 @@ class VerifiedPackage extends Class4("VerifiedPackage")({
   version: Version,
   path: SafeRelativePath,
   digest: NonEmptyName,
-  repository: optional8(NonEmptyString)
+  repository: optional6(NonEmptyString)
 }) {
 }
 
@@ -61060,19 +61743,19 @@ var runtimeFailure = (field, cause) => ReleaseContextError.make({
   reason: cause instanceof Error ? cause.message : String(cause)
 });
 var command = (runtime, workspace, argv2, field) => runtime.command(workspace, argv2).pipe(mapError3((cause) => runtimeFailure(field, cause)));
-var repositoryCoordinate = (value2) => {
-  if (typeof value2 !== "string")
+var repositoryCoordinate = (value3) => {
+  if (typeof value3 !== "string")
     return;
-  const trimmed = value2.trim().replace(/\.git$/u, "");
+  const trimmed = value3.trim().replace(/\.git$/u, "");
   const match6 = /(?:github\.com[/:]|^)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/u.exec(trimmed);
   return match6?.[1];
 };
 var jsonObject = (bytes, path) => {
   try {
-    const value2 = JSON.parse(new TextDecoder().decode(bytes));
-    if (typeof value2 !== "object" || value2 === null || Array.isArray(value2))
+    const value3 = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof value3 !== "object" || value3 === null || Array.isArray(value3))
       throw new Error("manifest root must be an object");
-    return value2;
+    return value3;
   } catch (cause) {
     throw new Error(`${path} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
@@ -61081,8 +61764,8 @@ var makeSourceObserver = (runtime) => ({
   observe: fn2("observeVerifiedReleaseContext")(function* (workspace, packageManifestPath, expectedCommit) {
     const canonical2 = yield* runtime.canonicalRoot(workspace).pipe(mapError3((cause) => runtimeFailure("workspace", cause)));
     const root = WorkspaceRoot.make(canonical2);
-    const commit2 = yield* command(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value2) => value2.trim()));
-    const tree = yield* command(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value2) => value2.trim()));
+    const commit = yield* command(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value3) => value3.trim()));
+    const tree = yield* command(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value3) => value3.trim()));
     const status = yield* command(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=all"], "source.clean");
     if (status.trim().length > 0)
       return yield* new ReleaseContextError({
@@ -61097,15 +61780,15 @@ var makeSourceObserver = (runtime) => ({
       return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) });
     }
     const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined;
-    const version3 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
+    const version2 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
     if (name === undefined)
       return yield* new ReleaseContextError({ field: "package.name", reason: "Manifest name is missing or empty." });
-    if (version3 === undefined)
+    if (version2 === undefined)
       return yield* new ReleaseContextError({ field: "package.version", reason: "Manifest version is missing or empty." });
-    const digest3 = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
-    const tags = yield* command(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value2) => value2.split(`
-`).map((tag3) => tag3.trim()).filter((tag3) => tag3.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
-    const remote = yield* command(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value2) => repositoryCoordinate(value2))).pipe(orElseSucceed2(() => {
+    const digest = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
+    const tags = yield* command(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value3) => value3.split(`
+`).map((tag2) => tag2.trim()).filter((tag2) => tag2.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
+    const remote = yield* command(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value3) => repositoryCoordinate(value3))).pipe(orElseSucceed2(() => {
       return;
     }));
     const manifestRepository = repositoryCoordinate(manifest.repository);
@@ -61115,24 +61798,24 @@ var makeSourceObserver = (runtime) => ({
         reason: `Git remote ${remote} disagrees with manifest repository ${manifestRepository}.`
       });
     }
-    const repository2 = remote ?? manifestRepository;
+    const repository = remote ?? manifestRepository;
     const source = VerifiedSource.make({
-      commit: NonEmptyName.make(commit2),
+      commit: NonEmptyName.make(commit),
       tree: NonEmptyName.make(tree),
       clean: true,
       packageManifestPath,
-      packageManifestDigest: NonEmptyName.make(digest3),
-      headTags: tags.map((tag3) => NonEmptyName.make(tag3)),
-      ...repository2 === undefined ? {} : { repository: repository2 }
+      packageManifestDigest: NonEmptyName.make(digest),
+      headTags: tags.map((tag2) => NonEmptyName.make(tag2)),
+      ...repository === undefined ? {} : { repository }
     });
     const context3 = VerifiedReleaseContext.make({
       workspace: root,
       source,
       package: VerifiedPackage.make({
         name: NonEmptyName.make(name),
-        version: Version.make(version3),
+        version: Version.make(version2),
         path: packageManifestPath,
-        digest: NonEmptyName.make(digest3),
+        digest: NonEmptyName.make(digest),
         ...manifestRepository === undefined ? {} : { repository: manifestRepository }
       })
     });
@@ -61155,24 +61838,143 @@ var verifySource = fn2("verifySource")(function* (context3, expectedCommit) {
   return context3;
 });
 
+// ../../src/release/prepared-ref.ts
+var sha256Pattern = /^[a-f0-9]{64}$/u;
+var referenceSegmentPattern = /^[A-Za-z0-9._~-]{1,255}$/u;
+var positiveDecimalPattern = /^[1-9][0-9]*$/u;
+var PreparedReleaseSha256 = String4.check(makeFilter2((value3) => sha256Pattern.test(value3) ? undefined : "PreparedReleaseSha256 must contain exactly 64 lowercase hexadecimal characters.")).pipe(brand2("PreparedReleaseSha256"));
+var GitHubReferenceSegment = String4.check(makeFilter2((value3) => referenceSegmentPattern.test(value3) && value3 !== "." && value3 !== ".." ? undefined : "GitHub prepared-reference segments must be nonempty URI-unreserved tokens.")).pipe(brand2("GitHubPreparedReferenceSegment"));
+var GitHubRunCoordinate = String4.check(makeFilter2((value3) => positiveDecimalPattern.test(value3) ? undefined : "GitHub run coordinates must be canonical positive decimal strings.")).pipe(brand2("GitHubPreparedReferenceRunCoordinate"));
+
+class LocalCompletePreparedReleaseRef extends TaggedClass()("LocalCompletePreparedReleaseRef", {
+  kind: Literal2("complete"),
+  scheme: Literal2("local"),
+  digest: PreparedReleaseSha256
+}) {
+}
+
+class GitHubActionsCompletePreparedReleaseRef extends TaggedClass()("GitHubActionsCompletePreparedReleaseRef", {
+  kind: Literal2("complete"),
+  scheme: Literal2("gha"),
+  owner: GitHubReferenceSegment,
+  repository: GitHubReferenceSegment,
+  runId: GitHubRunCoordinate,
+  attempt: GitHubRunCoordinate,
+  artifactName: GitHubReferenceSegment,
+  digest: PreparedReleaseSha256
+}) {
+}
+var CompletePreparedReleaseRef = Union2([
+  LocalCompletePreparedReleaseRef,
+  GitHubActionsCompletePreparedReleaseRef
+]);
+
+class PreparedReleaseRefMalformedError extends TaggedErrorClass()("PreparedReleaseRefMalformedError", {
+  reason: String4
+}) {
+}
+
+class PreparedReleaseRefUnknownSchemeError extends TaggedErrorClass()("PreparedReleaseRefUnknownSchemeError", {
+  scheme: String4
+}) {
+}
+var PreparedReleaseRefCodecError = Union2([
+  PreparedReleaseRefMalformedError,
+  PreparedReleaseRefUnknownSchemeError
+]);
+var malformed = (reason2) => PreparedReleaseRefMalformedError.make({ reason: reason2 });
+var validateDigest = (digest) => sha256Pattern.test(digest) ? succeed6(PreparedReleaseSha256.make(digest)) : fail6(malformed("The digest must contain exactly 64 lowercase hexadecimal characters."));
+var validateSegment = (value3, field) => referenceSegmentPattern.test(value3) && value3 !== "." && value3 !== ".." ? succeed6(GitHubReferenceSegment.make(value3)) : fail6(malformed(`${field} must be a nonempty URI-unreserved token.`));
+var validateRunCoordinate = (value3, field) => positiveDecimalPattern.test(value3) ? succeed6(GitHubRunCoordinate.make(value3)) : fail6(malformed(`${field} must be a canonical positive decimal string.`));
+var makeLocalCompletePreparedReleaseRef = fn2("makeLocalCompletePreparedReleaseRef")(function* (digest) {
+  return LocalCompletePreparedReleaseRef.make({
+    kind: "complete",
+    scheme: "local",
+    digest: yield* validateDigest(digest)
+  });
+});
+var makeGitHubActionsCompletePreparedReleaseRef = fn2("makeGitHubActionsCompletePreparedReleaseRef")(function* (input) {
+  return GitHubActionsCompletePreparedReleaseRef.make({
+    kind: "complete",
+    scheme: "gha",
+    owner: yield* validateSegment(input.owner, "owner"),
+    repository: yield* validateSegment(input.repository, "repository"),
+    runId: yield* validateRunCoordinate(input.runId, "runId"),
+    attempt: yield* validateRunCoordinate(input.attempt, "attempt"),
+    artifactName: yield* validateSegment(input.artifactName, "artifactName"),
+    digest: yield* validateDigest(input.digest)
+  });
+});
+var encodeCompletePreparedReleaseRef = (reference) => reference.scheme === "local" ? `prepared:local:sha256-${reference.digest}` : `prepared:gha:${reference.owner}/${reference.repository}/runs/${reference.runId}/attempts/${reference.attempt}/artifacts/${reference.artifactName}#sha256-${reference.digest}`;
+var githubActionsPayloadPattern = /^([A-Za-z0-9._~-]{1,255})\/([A-Za-z0-9._~-]{1,255})\/runs\/([1-9][0-9]*)\/attempts\/([1-9][0-9]*)\/artifacts\/([A-Za-z0-9._~-]{1,255})#sha256-([a-f0-9]{64})$/u;
+var decodeCompletePreparedReleaseRef = fn2("decodeCompletePreparedReleaseRef")(function* (input) {
+  if (typeof input !== "string") {
+    return yield* malformed("A prepared reference must be a string.");
+  }
+  if (!input.startsWith("prepared:")) {
+    return yield* malformed("A prepared reference must start with 'prepared:'.");
+  }
+  const schemeEnd = input.indexOf(":", "prepared:".length);
+  if (schemeEnd < 0) {
+    return yield* malformed("A prepared reference must include a scheme and payload.");
+  }
+  const scheme = input.slice("prepared:".length, schemeEnd);
+  const payload = input.slice(schemeEnd + 1);
+  if (scheme !== "local" && scheme !== "gha") {
+    if (scheme.length === 0) {
+      return yield* malformed("A prepared reference scheme must be nonempty.");
+    }
+    return yield* PreparedReleaseRefUnknownSchemeError.make({ scheme });
+  }
+  if (scheme === "local") {
+    const match7 = /^sha256-([a-f0-9]{64})$/u.exec(payload);
+    if (match7 === null) {
+      return yield* malformed("A local reference payload must be 'sha256-' followed by 64 lowercase hexadecimal characters.");
+    }
+    return yield* makeLocalCompletePreparedReleaseRef(match7[1]);
+  }
+  const match6 = githubActionsPayloadPattern.exec(payload);
+  if (match6 === null || match6[1] === "." || match6[1] === ".." || match6[2] === "." || match6[2] === ".." || match6[5] === "." || match6[5] === "..") {
+    return yield* malformed("A GitHub Actions reference must contain canonical owner, repository, run, attempt, artifact, and SHA-256 coordinates.");
+  }
+  const reference = yield* makeGitHubActionsCompletePreparedReleaseRef({
+    owner: match6[1],
+    repository: match6[2],
+    runId: match6[3],
+    attempt: match6[4],
+    artifactName: match6[5],
+    digest: match6[6]
+  });
+  if (encodeCompletePreparedReleaseRef(reference) !== input) {
+    return yield* malformed("The prepared reference is not in canonical form.");
+  }
+  return reference;
+});
+
 // ../../src/release/prepared-store.ts
-import { constants as constants4, existsSync as existsSync4, lstatSync as lstatSync2, mkdirSync as mkdirSync2, openSync as openSync2, readdirSync, realpathSync as realpathSync3, renameSync, rmSync, statSync as statSync2, chmodSync as chmodSync2, closeSync as closeSync2, fsyncSync as fsyncSync2 } from "node:fs";
-import { createHash as createHash5, randomUUID as randomUUID2 } from "node:crypto";
-import { basename, join as join3 } from "node:path";
+import { constants as constants4, existsSync as existsSync3, lstatSync as lstatSync2, mkdirSync as mkdirSync2, openSync as openSync2, readdirSync, realpathSync as realpathSync2, renameSync, rmSync, statSync, chmodSync as chmodSync2, closeSync as closeSync2, fsyncSync as fsyncSync2 } from "node:fs";
+import { createHash as createHash4, randomUUID as randomUUID2 } from "node:crypto";
+import { basename, join as join2 } from "node:path";
 class PreparedStoreError extends TaggedErrorClass()("PreparedStoreError", { reason: String4 }) {
 }
+
+class PreparedCommitHandoffError extends TaggedErrorClass()("PreparedCommitHandoffError", {
+  prepared: CompletePreparedReleaseRef,
+  reason: String4
+}) {
+}
 var hex = /^[a-f0-9]{64}$/u;
-var hash2 = (bytes) => createHash5("sha256").update(bytes).digest("hex");
-var equal3 = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
-var fail8 = (reason2) => {
+var hash2 = (bytes) => createHash4("sha256").update(bytes).digest("hex");
+var equal = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
+var fail9 = (reason2) => {
   throw PreparedStoreError.make({ reason: reason2 });
 };
 var canonicalDirectory = (directory) => {
-  if (!existsSync4(directory))
+  if (!existsSync3(directory))
     mkdirSync2(directory, { recursive: true, mode: 448 });
-  const real = realpathSync3(directory);
+  const real = realpathSync2(directory);
   if (real !== directory)
-    fail8("Prepared store root must not be a symlink.");
+    fail9("Prepared store root must not be a symlink.");
   return real;
 };
 var syncDirectory = (directory) => {
@@ -61188,9 +61990,9 @@ var artifactsById = (manifest) => {
   for (const artifact of manifest.artifacts) {
     const id = artifact.id.toString();
     if (result2.has(id))
-      fail8(`Prepared manifest repeats artifact ${id}.`);
+      fail9(`Prepared manifest repeats artifact ${id}.`);
     if (!hex.test(artifact.digest) || !hex.test(artifact.blob) || artifact.digest !== artifact.blob) {
-      fail8(`Prepared artifact ${id} does not carry a canonical SHA-256 blob reference.`);
+      fail9(`Prepared artifact ${id} does not carry a canonical SHA-256 blob reference.`);
     }
     result2.set(id, artifact);
   }
@@ -61200,47 +62002,47 @@ var validatePublications = (manifest, artifacts) => {
   const ids = new Set;
   for (const publication2 of manifest.publications) {
     if (ids.has(publication2.id.toString()))
-      fail8(`Prepared manifest repeats publication ${publication2.id}.`);
+      fail9(`Prepared manifest repeats publication ${publication2.id}.`);
     ids.add(publication2.id.toString());
     const references = publication2._tag === "PreparedNpmPublication" ? [publication2.artifactId] : publication2.assets.map((asset) => asset.artifactId);
     for (const id of references)
       if (!artifacts.has(id.toString()))
-        fail8(`Publication ${publication2.id} references missing artifact ${id}.`);
+        fail9(`Publication ${publication2.id} references missing artifact ${id}.`);
     if (publication2._tag === "PreparedGitHubPublication" && publication2.body !== undefined && publication2.body.length === 0) {
-      fail8(`GitHub publication ${publication2.id} carries an empty body.`);
+      fail9(`GitHub publication ${publication2.id} carries an empty body.`);
     }
   }
 };
 var readBundle = (directory) => {
-  const real = realpathSync3(directory);
+  const real = realpathSync2(directory);
   if (real !== directory || lstatSync2(directory).isSymbolicLink())
-    fail8("Prepared bundle directory must not be a symlink.");
+    fail9("Prepared bundle directory must not be a symlink.");
   const bytes = secureRead(directory, "prepared-release.json").bytes;
   const manifest = decodePreparedRelease(bytes);
   const manifestDigest = hash2(bytes);
   if (basename(directory) !== manifestDigest)
-    fail8("Prepared bundle directory does not match its manifest digest.");
+    fail9("Prepared bundle directory does not match its manifest digest.");
   const entries = readdirSync(directory, { withFileTypes: true });
   if (entries.some((entry) => entry.name !== "prepared-release.json" && entry.name !== "blobs"))
-    fail8("Prepared bundle contains an unexpected top-level entry.");
-  const blobDirectory = join3(directory, "blobs");
-  if (!existsSync4(blobDirectory) || lstatSync2(blobDirectory).isSymbolicLink() || !statSync2(blobDirectory).isDirectory())
-    fail8("Prepared bundle is missing its real blobs directory.");
+    fail9("Prepared bundle contains an unexpected top-level entry.");
+  const blobDirectory = join2(directory, "blobs");
+  if (!existsSync3(blobDirectory) || lstatSync2(blobDirectory).isSymbolicLink() || !statSync(blobDirectory).isDirectory())
+    fail9("Prepared bundle is missing its real blobs directory.");
   const artifacts = artifactsById(manifest);
   validatePublications(manifest, artifacts);
   const expectedBlobs = new Set([...artifacts.values()].map((artifact) => artifact.blob.toString()));
   const actualBlobs = new Set(readdirSync(blobDirectory, { withFileTypes: true }).map((entry) => {
     if (!entry.isFile() || !hex.test(entry.name))
-      fail8(`Prepared blob entry ${entry.name} is invalid.`);
+      fail9(`Prepared blob entry ${entry.name} is invalid.`);
     return entry.name;
   }));
   if (actualBlobs.size !== expectedBlobs.size || [...expectedBlobs].some((blob) => !actualBlobs.has(blob)))
-    fail8("Prepared bundle blob set does not match its manifest.");
+    fail9("Prepared bundle blob set does not match its manifest.");
   const blobs = new Map;
   for (const artifact of artifacts.values()) {
     const blob = secureRead(directory, `blobs/${artifact.blob}`).bytes;
     if (blob.length !== artifact.size || hash2(blob) !== artifact.digest)
-      fail8(`Prepared blob ${artifact.id} failed size or digest verification.`);
+      fail9(`Prepared blob ${artifact.id} failed size or digest verification.`);
     blobs.set(artifact.id.toString(), new Uint8Array(blob));
   }
   return { directory: real, manifest, blobs };
@@ -61248,8 +62050,8 @@ var readBundle = (directory) => {
 var atomicWrite = (directory, target2, bytes) => {
   const temporary = `${target2}.${randomUUID2()}.tmp`;
   secureWrite(directory, temporary, bytes);
-  renameSync(join3(directory, temporary), join3(directory, target2));
-  chmodSync2(join3(directory, target2), 256);
+  renameSync(join2(directory, temporary), join2(directory, target2));
+  chmodSync2(join2(directory, target2), 256);
 };
 var writeBundle = (storeDirectory, manifest, blobs) => {
   const store = canonicalDirectory(storeDirectory);
@@ -61258,31 +62060,31 @@ var writeBundle = (storeDirectory, manifest, blobs) => {
   const artifacts = artifactsById(manifest);
   validatePublications(manifest, artifacts);
   for (const artifact of artifacts.values()) {
-    const bytes = blobs.get(artifact.id.toString()) ?? fail8(`No prepared bytes supplied for artifact ${artifact.id}.`);
+    const bytes = blobs.get(artifact.id.toString()) ?? fail9(`No prepared bytes supplied for artifact ${artifact.id}.`);
     if (bytes.length !== artifact.size || hash2(bytes) !== artifact.digest || artifact.blob !== artifact.digest)
-      fail8(`Prepared bytes do not match artifact ${artifact.id}.`);
+      fail9(`Prepared bytes do not match artifact ${artifact.id}.`);
   }
-  const finalDirectory = join3(store, manifestDigest);
-  if (existsSync4(finalDirectory)) {
+  const finalDirectory = join2(store, manifestDigest);
+  if (existsSync3(finalDirectory)) {
     const existing = readBundle(finalDirectory);
-    if (!equal3(secureRead(finalDirectory, "prepared-release.json").bytes, manifestBytes))
-      fail8("Existing prepared bundle has a different manifest.");
+    if (!equal(secureRead(finalDirectory, "prepared-release.json").bytes, manifestBytes))
+      fail9("Existing prepared bundle has a different manifest.");
     return existing;
   }
-  const temporary = join3(store, `.${manifestDigest}.${randomUUID2()}.tmp`);
-  mkdirSync2(join3(temporary, "blobs"), { recursive: true, mode: 448 });
+  const temporary = join2(store, `.${manifestDigest}.${randomUUID2()}.tmp`);
+  mkdirSync2(join2(temporary, "blobs"), { recursive: true, mode: 448 });
   try {
     for (const artifact of artifacts.values())
-      atomicWrite(join3(temporary, "blobs"), artifact.blob.toString(), blobs.get(artifact.id.toString()));
+      atomicWrite(join2(temporary, "blobs"), artifact.blob.toString(), blobs.get(artifact.id.toString()));
     atomicWrite(temporary, "prepared-release.json", manifestBytes);
-    syncDirectory(join3(temporary, "blobs"));
+    syncDirectory(join2(temporary, "blobs"));
     syncDirectory(temporary);
     renameSync(temporary, finalDirectory);
     syncDirectory(store);
   } catch (cause) {
-    if (existsSync4(temporary))
+    if (existsSync3(temporary))
       rmSync(temporary, { recursive: true, force: true });
-    if (existsSync4(finalDirectory))
+    if (existsSync3(finalDirectory))
       return readBundle(finalDirectory);
     if (cause instanceof PreparedStoreError)
       throw cause;
@@ -61303,30 +62105,34 @@ class PreparedReleaseStore extends Service()("ts-release/PreparedReleaseStore") 
 }
 var makeLocalPreparedReleaseStore = (storeDirectory) => ({
   commit: (manifest, blobs) => storePreparedRelease(storeDirectory, manifest, blobs).pipe(flatMap3((bundle) => makeLocalCompletePreparedReleaseRef(basename(bundle.directory)).pipe(map5((ref) => ({ ref, bundle })), mapError3((cause) => PreparedStoreError.make({ reason: cause.reason }))))),
-  load: (reference) => reference.scheme === "local" ? loadPreparedRelease(join3(storeDirectory, reference.digest)) : fail6(PreparedStoreError.make({
+  load: (reference) => reference.scheme === "local" ? loadPreparedRelease(join2(storeDirectory, reference.digest)) : fail6(PreparedStoreError.make({
     reason: "A GitHub Actions prepared reference is not loadable by the local store; rerun the failed workflow publish job or dispatch its recovery workflow."
   }))
 });
 
 // ../../src/release/prepare.ts
-class PreparationError extends TaggedErrorClass()("PreparationError", { reason: String4 }) {
+class PreparationError extends TaggedErrorClass()("PreparationError", {
+  reason: String4,
+  prepared: optionalKey2(CompletePreparedReleaseRef)
+}) {
 }
 var failure2 = (cause) => PreparationError.make({
-  reason: cause instanceof Error ? cause.message : String(cause)
+  reason: cause instanceof PreparedCommitHandoffError ? cause.reason : cause instanceof Error ? cause.message : String(cause),
+  ...cause instanceof PreparedCommitHandoffError ? { prepared: cause.prepared } : {}
 });
 var attempt = (body) => try_2({
   try: body,
   catch: failure2
 });
-var outputId = (value2) => OutputId.make(value2);
-var pathOf = (context3, path) => join4(context3.workspace, path);
+var outputId = (value3) => OutputId.make(value3);
+var pathOf = (context3, path) => join3(context3.workspace, path);
 var byCodepoint = (left, right) => {
   const a = left.id.toString();
   const b = right.id.toString();
   return a < b ? -1 : a > b ? 1 : 0;
 };
 var hashBytes = (algorithm, bytes) => {
-  return createHash6(algorithm).update(bytes).digest("hex");
+  return createHash5(algorithm).update(bytes).digest("hex");
 };
 var capture = (context3, declaration) => attempt(() => {
   if (declaration.kind === "directory" || declaration.kind === "package")
@@ -61336,7 +62142,7 @@ var capture = (context3, declaration) => attempt(() => {
 });
 var commandInput = (declaration, bytes, context3) => attempt(() => {
   if (declaration.kind === "directory" || declaration.kind === "package") {
-    const location2 = join4(context3.workspace, declaration.path);
+    const location2 = join3(context3.workspace, declaration.path);
     if (lstatSync3(location2).isSymbolicLink() || !lstatSync3(location2).isDirectory())
       throw new Error(`Input artifact ${declaration.id} is not a directory.`);
     return;
@@ -61347,11 +62153,11 @@ var commandInput = (declaration, bytes, context3) => attempt(() => {
     throw new Error(`Input artifact ${declaration.id} changed before preparation.`);
 });
 var stageWorkspace = (workspace) => {
-  const sourceRoot = realpathSync4(workspace);
-  const stageRoot = mkdtempSync(join4(tmpdir(), "ts-release-prepare-"));
+  const sourceRoot = realpathSync3(workspace);
+  const stageRoot = mkdtempSync(join3(tmpdir(), "ts-release-prepare-"));
   const excluded = (entry) => entry === ".git" || entry === ".release" || entry === ".npmrc" || entry === ".pypirc" || entry === ".env" || entry.startsWith(".env.");
   const assertInSource = (candidate) => {
-    const resolved = realpathSync4(candidate);
+    const resolved = realpathSync3(candidate);
     if (!contained(sourceRoot, resolved))
       throw new Error(`Preparation input ${candidate} escapes the workspace root.`);
   };
@@ -61359,13 +62165,13 @@ var stageWorkspace = (workspace) => {
     for (const entry of readdirSync2(sourceRoot)) {
       if (excluded(entry))
         continue;
-      const source = join4(sourceRoot, entry);
+      const source = join3(sourceRoot, entry);
       assertInSource(source);
       if (entry === "node_modules") {
-        symlinkSync(source, join4(stageRoot, entry), "dir");
+        symlinkSync(source, join3(stageRoot, entry), "dir");
         continue;
       }
-      cpSync(source, join4(stageRoot, entry), {
+      cpSync(source, join3(stageRoot, entry), {
         recursive: true,
         dereference: true,
         filter: (candidate) => {
@@ -61392,7 +62198,7 @@ var inputFingerprint = (context3, declaration) => {
     return sha256(secureRead(context3.workspace, declaration.path).bytes);
   const base = declaration.path.toString();
   const walk = (relative3) => {
-    const location2 = join4(context3.workspace, relative3);
+    const location2 = join3(context3.workspace, relative3);
     return readdirSync2(location2, { withFileTypes: true }).filter((entry) => ![".git", ".release", "node_modules"].includes(entry.name)).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0).flatMap((entry) => {
       const child = relative3 === "." ? entry.name : `${relative3}/${entry.name}`;
       if (entry.isSymbolicLink())
@@ -61408,7 +62214,7 @@ var inputFingerprint = (context3, declaration) => {
   return sha256(new TextEncoder().encode(walk(base).join(`
 `)));
 };
-var replaceReferences = (value2, inputs, outputs) => value2.replace(/\{(input|output):([^}]+)\}/gu, (_match, direction, id) => {
+var replaceReferences = (value3, inputs, outputs) => value3.replace(/\{(input|output):([^}]+)\}/gu, (_match, direction, id) => {
   const declarations = direction === "input" ? inputs : outputs;
   const declaration = declarations.find((candidate) => candidate.id.toString() === id);
   if (declaration === undefined)
@@ -61438,8 +62244,8 @@ var runCommand = (request, preparation, declarations, bytes) => gen2(function* (
     return [];
   const produced = [];
   for (const output2 of outputs) {
-    const value2 = yield* capture(request.context, output2);
-    produced.push([output2.id.toString(), value2]);
+    const value3 = yield* capture(request.context, output2);
+    produced.push([output2.id.toString(), value3]);
   }
   return produced;
 });
@@ -61452,42 +62258,42 @@ var structured = (request, preparation, declarations, bytes) => {
       return attempt(() => {
         const entries = preparation.inputs.map((id) => {
           const declaration = declarations.get(id.toString());
-          const value3 = bytes.get(id.toString());
-          if (declaration === undefined || value3 === undefined)
+          const value4 = bytes.get(id.toString());
+          if (declaration === undefined || value4 === undefined)
             throw new Error(`Archive ${preparation.id} references unavailable artifact ${id}.`);
-          return { path: basename2(declaration.path), data: value3, mode: declaration.kind === "executable" ? 33261 : 33188 };
+          return { path: basename2(declaration.path), data: value4, mode: declaration.kind === "executable" ? 33261 : 33188 };
         }).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
         if (entries.length === 0)
           throw new Error(`Archive ${preparation.id} has no inputs.`);
-        const value2 = preparation.format === "zip" ? zip2(entries) : tarGz(entries);
-        secureWrite(request.context.workspace, preparation.output.path, value2);
-        return [[preparation.output.id.toString(), value2]];
+        const value3 = preparation.format === "zip" ? zip2(entries) : tarGz(entries);
+        secureWrite(request.context.workspace, preparation.output.path, value3);
+        return [[preparation.output.id.toString(), value3]];
       });
     case "GraphChecksum":
       return attempt(() => {
         const lines = preparation.inputs.map((id) => {
-          const value3 = bytes.get(id.toString());
+          const value4 = bytes.get(id.toString());
           const declaration = declarations.get(id.toString());
-          if (value3 === undefined || declaration === undefined)
+          if (value4 === undefined || declaration === undefined)
             throw new Error(`Checksum ${preparation.id} references unavailable artifact ${id}.`);
-          return `${hashBytes(preparation.algorithm, value3)}  ${basename2(declaration.path)}`;
+          return `${hashBytes(preparation.algorithm, value4)}  ${basename2(declaration.path)}`;
         });
-        const value2 = new TextEncoder().encode(`${lines.join(`
+        const value3 = new TextEncoder().encode(`${lines.join(`
 `)}
 `);
-        secureWrite(request.context.workspace, preparation.output.path, value2);
-        return [[preparation.output.id.toString(), value2]];
+        secureWrite(request.context.workspace, preparation.output.path, value3);
+        return [[preparation.output.id.toString(), value3]];
       });
     case "GraphCatalog":
       return attempt(() => {
-        const value2 = typeof preparation.content === "string" ? preparation.content : preparation.content.map((part) => typeof part === "string" ? part : part.fact === "sha256" ? sha256(bytes.get(part.outputId.toString()) ?? (() => {
+        const value3 = typeof preparation.content === "string" ? preparation.content : preparation.content.map((part) => typeof part === "string" ? part : part.fact === "sha256" ? sha256(bytes.get(part.outputId.toString()) ?? (() => {
           throw new Error(`Catalog ${preparation.id} references unavailable artifact ${part.outputId}.`);
         })()) : part.fact === "assetName" ? basename2(declarations.get(part.outputId.toString())?.path ?? (() => {
           throw new Error(`Catalog ${preparation.id} references unavailable artifact ${part.outputId}.`);
         })()) : (() => {
           throw new Error(`Catalog ${preparation.id} contains an unresolved downloadUrl hole.`);
         })()).join("");
-        const encoded = new TextEncoder().encode(value2);
+        const encoded = new TextEncoder().encode(value3);
         secureWrite(request.context.workspace, preparation.output.path, encoded);
         return [[preparation.output.id.toString(), encoded]];
       });
@@ -61499,20 +62305,20 @@ var npmTarball = (request, publication2, declarations, bytes) => gen2(function* 
     return yield* new PreparationError({ reason: `npm publication ${publication2.id} has no package artifact.` });
   const destination = `.release/ts-release/npm/${publication2.id}`;
   const cache = `.release/ts-release/npm-cache/${publication2.id}`;
-  mkdirSync3(join4(request.context.workspace, destination), { recursive: true });
-  mkdirSync3(join4(request.context.workspace, cache), { recursive: true });
-  const existing = readdirSync2(join4(request.context.workspace, destination));
+  mkdirSync3(join3(request.context.workspace, destination), { recursive: true });
+  mkdirSync3(join3(request.context.workspace, cache), { recursive: true });
+  const existing = readdirSync2(join3(request.context.workspace, destination));
   if (existing.length > 0)
     return yield* new PreparationError({ reason: `npm publication ${publication2.id} has a non-empty output directory.` });
   const packagePath = declarations.get(packageId.toString()).path.toString();
   const outcome = yield* request.run({ argv: ["npm", "pack", packagePath, "--json", "--pack-destination", destination, "--cache", cache], cwd: request.context.workspace, environmentNames: [] }).pipe(mapError3(failure2));
   if (outcome.exitCode !== 0)
     return yield* new PreparationError({ reason: `npm pack exited ${outcome.exitCode}: ${outcome.stderr.trim()}` });
-  const files = yield* attempt(() => readdirSync2(join4(request.context.workspace, destination)).filter((entry) => {
-    const candidate = join4(request.context.workspace, destination, entry);
+  const files = yield* attempt(() => readdirSync2(join3(request.context.workspace, destination)).filter((entry) => {
+    const candidate = join3(request.context.workspace, destination, entry);
     return lstatSync3(candidate).isFile() && entry.endsWith(".tgz");
   }));
-  const entries = yield* attempt(() => readdirSync2(join4(request.context.workspace, destination)));
+  const entries = yield* attempt(() => readdirSync2(join3(request.context.workspace, destination)));
   if (entries.length !== 1 || files.length !== 1)
     return yield* new PreparationError({ reason: `npm pack produced an invalid output directory.` });
   const path = SafeRelativePath.make(`${destination}/${files[0]}`);
@@ -61553,8 +62359,8 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
     }
     for (const preparation of request.graph.preparations) {
       const outputs = yield* structured(request, preparation, declarations, bytes);
-      for (const [id, value2] of outputs)
-        bytes.set(id, value2);
+      for (const [id, value3] of outputs)
+        bytes.set(id, value3);
       context3 = yield* request.verifySource(context3);
       if (context3.source.commit !== request.context.source.commit || context3.source.tree !== request.context.source.tree) {
         return yield* new PreparationError({ reason: `Source identity changed during ${preparation.id}.` });
@@ -61562,15 +62368,15 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
     }
     const preparedArtifacts = new Map;
     for (const artifact of request.graph.artifacts) {
-      const value2 = bytes.get(artifact.id.toString());
-      if (value2 === undefined || artifact.kind === "directory" || artifact.kind === "package")
+      const value3 = bytes.get(artifact.id.toString());
+      if (value3 === undefined || artifact.kind === "directory" || artifact.kind === "package")
         continue;
-      const contentHash = sha256(value2);
+      const contentHash = sha256(value3);
       preparedArtifacts.set(artifact.id.toString(), PreparedArtifact.make({
         id: artifact.id,
         path: artifact.path,
         kind: artifact.kind,
-        size: value2.length,
+        size: value3.length,
         digest: Digest.make(contentHash),
         blob: Digest.make(contentHash),
         ...artifact.mediaType === undefined ? {} : { mediaType: artifact.mediaType }
@@ -61647,238 +62453,241 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
   }
 });
 
-// ../../src/publication/github.ts
-var asObject = (value2) => typeof value2 === "object" && value2 !== null && !Array.isArray(value2) ? value2 : undefined;
-var asString = (value2) => typeof value2 === "string" ? value2 : undefined;
-var asNumber = (value2) => typeof value2 === "number" && Number.isSafeInteger(value2) ? value2 : undefined;
-var asBoolean = (value2) => typeof value2 === "boolean" ? value2 : undefined;
-var parseAsset = (value2) => {
-  const object = asObject(value2);
-  if (object === undefined)
-    return;
-  const name = object === undefined ? undefined : asString(object.name);
-  const size = object === undefined ? undefined : asNumber(object.size);
-  const contentType = object === undefined ? undefined : asString(object.content_type);
-  if (name === undefined || size === undefined || contentType === undefined)
-    return;
-  const digest3 = asString(object.digest);
-  const downloadUrl = asString(object.browser_download_url);
-  return { name, size, contentType, ...digest3 === undefined ? {} : { digest: digest3 }, ...downloadUrl === undefined ? {} : { downloadUrl } };
-};
-var parseRelease = (value2) => {
-  const object = asObject(value2);
-  if (object === undefined)
-    return;
-  const id = asNumber(object.id), uploadUrl = asString(object.upload_url), tag3 = asString(object.tag_name);
-  const target2 = asString(object.target_commitish), title = asString(object.name);
-  const body = object.body === null ? "" : asString(object.body);
-  const draft = asBoolean(object.draft), prerelease = asBoolean(object.prerelease);
-  const assets = Array.isArray(object.assets) ? object.assets.map(parseAsset) : undefined;
-  if (id === undefined || uploadUrl === undefined || tag3 === undefined || target2 === undefined || title === undefined || body === undefined || draft === undefined || prerelease === undefined || assets === undefined || assets.some((asset) => asset === undefined))
-    return;
-  return { id, uploadUrl, tag: tag3, target: target2, title, body, draft, prerelease, assets };
-};
-var releaseUrl = (publication2) => `https://api.github.com/repos/${publication2.repository}/releases/tags/${encodeURIComponent(publication2.tag)}`;
-var assetSubject = (publication2, asset) => NonEmptyName.make(`github:asset:${publication2.repository}#${publication2.tag}/${asset.name}`);
-var differences = (expected, publication2) => {
-  const result2 = [];
-  const compare = (field, want, got) => {
-    if (want !== got)
-      result2.push(ObservationDifference.make({ field: NonEmptyName.make(field), expected: want, observed: got }));
-  };
-  compare("tag", publication2.tag.toString(), expected.tag);
-  compare("targetCommit", publication2.targetCommit.toString(), expected.target);
-  compare("title", publication2.title.toString(), expected.title);
-  compare("body", publication2.body ?? "", expected.body);
-  compare("draft", String(publication2.draft), String(expected.draft));
-  compare("prerelease", String(publication2.prerelease), String(expected.prerelease));
-  return result2;
-};
-var failureOutcome = (subject, cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }));
-var makeGithubSubjects = (bundle, publication2, http2, credentials2) => {
-  let release;
-  const releaseSubject = NonEmptyName.make(`github:release:${publication2.repository}#${publication2.tag}`);
-  const intendedNames = new Set(publication2.assets.map((asset) => asset.name));
-  const releaseSubjectValue = {
-    id: releaseSubject,
-    observe: () => gen2(function* () {
-      const response = yield* http2.request({ method: "GET", url: releaseUrl(publication2), headers: authHeaders(credentials2.read) });
-      if (response.status === 404)
-        return NeedsMutation.make({ subject: releaseSubject, precondition: NonEmptyName.make("release-absent") });
-      if (response.status < 200 || response.status >= 300)
-        return Inconclusive.make({ subject: releaseSubject, reason: `GitHub release observation returned HTTP ${response.status}.` });
-      let parsed;
-      try {
-        parsed = parseRelease(bodyJson(response));
-      } catch (cause) {
-        return Inconclusive.make({ subject: releaseSubject, reason: cause instanceof Error ? cause.message : String(cause) });
-      }
-      if (parsed === undefined)
-        return Inconclusive.make({ subject: releaseSubject, reason: "GitHub release response was malformed." });
-      release = parsed;
-      const mismatch = differences(parsed, publication2);
-      for (const asset of parsed.assets)
-        if (!intendedNames.has(asset.name))
-          mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("asset.name"), expected: "declared asset", observed: asset.name }));
-      return mismatch.length === 0 ? Equivalent.make({ subject: releaseSubject }) : Conflict.make({ subject: releaseSubject, differences: mismatch });
-    }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject: releaseSubject, reason: cause.reason })))),
-    mutate: (needs) => gen2(function* () {
-      if (needs.precondition !== "release-absent")
-        return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "GitHub release mutation lacks the exact absence precondition." });
-      const response = yield* http2.request({
-        method: "POST",
-        url: "https://api.github.com/repos/" + publication2.repository + "/releases",
-        headers: { ...authHeaders(credentials2.publish), "content-type": "application/json" },
-        body: JSON.stringify({ tag_name: publication2.tag, target_commitish: publication2.targetCommit, name: publication2.title, body: publication2.body ?? "", draft: publication2.draft, prerelease: publication2.prerelease })
-      });
-      if (response.status >= 200 && response.status < 300)
-        return Applied.make({ subject: releaseSubject, detail: `GitHub release HTTP ${response.status}.` });
-      return Rejected.make({ subject: releaseSubject, phase: "provider", reason: `GitHub release mutation returned HTTP ${response.status}.` });
-    }).pipe(catchTag2("PublicationError", (cause) => failureOutcome(releaseSubject, cause)))
-  };
-  const assets = publication2.assets.map((asset) => {
-    const subject = assetSubject(publication2, asset);
-    const artifact = bundle.manifest.artifacts.find((item) => item.id === asset.artifactId);
-    const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
-    const observe = () => gen2(function* () {
-      const response = yield* http2.request({ method: "GET", url: releaseUrl(publication2), headers: authHeaders(credentials2.read) });
-      if (response.status === 404)
-        return Inconclusive.make({ subject, reason: "GitHub release does not exist for the asset subject." });
-      if (response.status < 200 || response.status >= 300)
-        return Inconclusive.make({ subject, reason: `GitHub asset release lookup returned HTTP ${response.status}.` });
-      let parsed;
-      try {
-        parsed = parseRelease(bodyJson(response));
-      } catch (cause) {
-        return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) });
-      }
-      if (parsed === undefined)
-        return Inconclusive.make({ subject, reason: "GitHub asset release response was malformed." });
-      release = parsed;
-      const existing = parsed.assets.filter((candidate2) => candidate2.name === asset.name);
-      if (existing.length === 0)
-        return NeedsMutation.make({ subject, precondition: NonEmptyName.make("asset-absent") });
-      if (existing.length > 1)
-        return Conflict.make({ subject, differences: [ObservationDifference.make({ field: NonEmptyName.make("asset.name"), expected: "one asset", observed: "duplicate asset names" })] });
-      if (bytes === undefined || artifact === undefined)
-        return Inconclusive.make({ subject, reason: `Prepared GitHub asset ${asset.artifactId} is unavailable.` });
-      const candidate = existing[0];
-      const mismatch = [];
-      if (candidate.size !== bytes.length)
-        mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("size"), expected: String(bytes.length), observed: String(candidate.size) }));
-      if (candidate.contentType !== asset.mediaType)
-        mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("mediaType"), expected: asset.mediaType, observed: candidate.contentType }));
-      let digest3 = candidate.digest;
-      if (digest3 === undefined && candidate.downloadUrl !== undefined) {
-        const downloaded = yield* http2.request({ method: "GET", url: candidate.downloadUrl, headers: authHeaders(credentials2.read) });
-        if (downloaded.status < 200 || downloaded.status >= 300)
-          return Inconclusive.make({ subject, reason: `GitHub asset download returned HTTP ${downloaded.status}.` });
-        digest3 = sha256(typeof downloaded.body === "string" ? new TextEncoder().encode(downloaded.body) : downloaded.body);
-      }
-      const expectedDigest = `sha256:${sha256(bytes)}`;
-      if (digest3 === undefined)
-        return Inconclusive.make({ subject, reason: "GitHub asset response omitted digest and download URL." });
-      if (digest3 !== expectedDigest)
-        mismatch.push(ObservationDifference.make({ field: NonEmptyName.make("digest"), expected: expectedDigest, observed: digest3 }));
-      return mismatch.length === 0 ? Equivalent.make({ subject }) : Conflict.make({ subject, differences: mismatch });
-    }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason }))));
-    const mutate = (needs) => gen2(function* () {
-      if (needs.precondition !== "asset-absent" || release === undefined || bytes === undefined)
-        return yield* new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "GitHub asset mutation lacks the exact absence precondition, release, or bytes." });
-      const response = yield* http2.request({ method: "POST", url: `${release.uploadUrl}?name=${encodeURIComponent(asset.name)}`, headers: { ...authHeaders(credentials2.publish), "content-type": asset.mediaType }, body: bytes });
-      if (response.status >= 200 && response.status < 300)
-        return Applied.make({ subject, detail: `GitHub asset HTTP ${response.status}.` });
-      return Rejected.make({ subject, phase: "provider", reason: `GitHub asset mutation returned HTTP ${response.status}.` });
-    }).pipe(catchTag2("PublicationError", (cause) => failureOutcome(subject, cause)));
-    return { id: subject, observe, mutate };
-  });
-  return [releaseSubjectValue, ...assets];
-};
+// ../../src/resolve/facts.ts
+var optional7 = optionalKey2;
 
-// ../../src/publication/npm.ts
-import { createHash as createHash7 } from "node:crypto";
-class NpmSubjectError extends TaggedErrorClass()("NpmSubjectError", { reason: String4 }) {
+class ObservedFacts extends Class4("ObservedFacts")({
+  commit: optional7(NonEmptyName),
+  manifestName: optional7(NonEmptyString),
+  manifestVersion: optional7(Version),
+  repository: optional7(NonEmptyString),
+  headTagVersion: optional7(Version)
+}) {
 }
-var integrity = (bytes) => `sha512-${createHash7("sha512").update(bytes).digest("base64")}`;
-var shasum = (bytes) => createHash7("sha1").update(bytes).digest("hex");
-var registryVersionUrl = (publication2) => `${publication2.registryUrl.replace(/\/$/u, "")}/${encodeURIComponent(publication2.packageName)}/${encodeURIComponent(publication2.version)}`;
-var stringValue = (value2) => typeof value2 === "string" && value2.length > 0 ? value2 : undefined;
-var registryFacts2 = (value2) => {
-  if (typeof value2 !== "object" || value2 === null)
-    return;
-  const deprecatedValue = value2.deprecated;
-  if (deprecatedValue !== undefined && deprecatedValue !== null && typeof deprecatedValue !== "string")
-    return;
-  const dist = value2.dist;
-  if (typeof dist !== "object" || dist === null)
-    return;
-  const integrityValue = stringValue(dist.integrity);
-  const shasumValue = stringValue(dist.shasum);
-  return integrityValue === undefined && shasumValue === undefined ? undefined : {
-    ...integrityValue === undefined ? {} : { integrity: integrityValue },
-    ...shasumValue === undefined ? {} : { shasum: shasumValue },
-    ...typeof deprecatedValue !== "string" || deprecatedValue.length === 0 ? {} : { deprecated: deprecatedValue }
-  };
-};
-var makeNpmSubject = (bundle, publication2, http2, credentials2, process2) => {
-  const artifact = bundle.manifest.artifacts.find((item) => item.id === publication2.artifactId);
-  const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString());
-  const subject = NonEmptyName.make(`npm:${publication2.registryUrl}:${publication2.packageName}@${publication2.version}`);
-  const expectedIntegrity = bytes === undefined ? undefined : integrity(bytes);
-  const expectedShasum = bytes === undefined ? undefined : shasum(bytes);
-  const url = registryVersionUrl(publication2);
-  return {
-    id: subject,
-    observe: () => gen2(function* () {
-      if (bytes === undefined || artifact === undefined)
-        return yield* new PublicationError({ phase: "observe", commitment: "before-dispatch", reason: `Prepared npm artifact ${publication2.artifactId} is unavailable.` });
-      const response = yield* http2.request({ method: "GET", url, headers: authHeaders(credentials2.read) });
-      if (response.status === 404)
-        return NeedsMutation.make({ subject, precondition: NonEmptyName.make("version-absent") });
-      if (response.status < 200 || response.status >= 300)
-        return Inconclusive.make({ subject, reason: `Registry observation returned HTTP ${response.status}.` });
-      let facts;
-      try {
-        facts = registryFacts2(bodyJson(response));
-      } catch (cause) {
-        return Inconclusive.make({ subject, reason: cause instanceof Error ? cause.message : String(cause) });
-      }
-      if (facts === undefined)
-        return Inconclusive.make({ subject, reason: "Registry metadata omitted both integrity and shasum." });
-      const differences2 = [];
-      if (facts.integrity !== undefined && facts.integrity !== expectedIntegrity)
-        differences2.push(ObservationDifference.make({ field: NonEmptyName.make("integrity"), expected: expectedIntegrity, observed: facts.integrity }));
-      if (facts.shasum !== undefined && facts.shasum !== expectedShasum)
-        differences2.push(ObservationDifference.make({ field: NonEmptyName.make("shasum"), expected: expectedShasum, observed: facts.shasum }));
-      if (facts.deprecated !== undefined)
-        differences2.push(ObservationDifference.make({ field: NonEmptyName.make("deprecated"), expected: "absent", observed: facts.deprecated }));
-      return differences2.length === 0 ? Equivalent.make({ subject }) : Conflict.make({ subject, differences: differences2 });
-    }).pipe(catchTag2("PublicationError", (cause) => succeed6(Inconclusive.make({ subject, reason: cause.reason })))),
-    mutate: (needs) => gen2(function* () {
-      if (needs.precondition !== "version-absent" || bytes === undefined)
-        return yield* fail6(new PublicationError({ phase: "mutate", commitment: "before-dispatch", reason: "npm mutation lacks the exact absence precondition or bytes." }));
-      const result2 = yield* process2.publish({ registryUrl: publication2.registryUrl, packageName: publication2.packageName.toString(), version: publication2.version.toString(), bytes, credential: credentials2.publish });
-      if (!result2.started)
-        return Rejected.make({ subject, phase: "before-dispatch", reason: "npm publish process did not start." });
-      if (result2.exitCode === 0)
-        return Applied.make({ subject, detail: "npm publish exited successfully." });
-      return Rejected.make({ subject, phase: "provider", reason: `npm publish exited ${result2.exitCode}.` });
-    }).pipe(catchTag2("PublicationError", (cause) => cause.commitment === "before-dispatch" ? succeed6(Rejected.make({ subject, phase: "before-dispatch", reason: cause.reason })) : succeed6(OutcomeUnknown.make({ subject, reason: cause.reason }))))
-  };
+
+// ../../src/resolve/encode.ts
+var toPlainJson = (value3) => {
+  if (Array.isArray(value3))
+    return value3.map(toPlainJson);
+  if (typeof value3 !== "object" || value3 === null)
+    return value3;
+  return Object.fromEntries(Object.entries(value3).filter(([, entry]) => entry !== undefined).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([key, entry]) => [key, toPlainJson(entry)]));
 };
 
-// ../../src/publication/adapter.ts
-var subjectsForPreparedRelease = (input) => input.bundle.manifest.publications.flatMap((publication2) => publication2._tag === "PreparedNpmPublication" ? [makeNpmSubject(input.bundle, publication2, input.http, input.credentials.npm, input.npmProcess)] : makeGithubSubjects(input.bundle, publication2, input.http, input.credentials.github));
-var publishPreparedRelease = fn2("publishPreparedRelease")(function* (input) {
-  const outcomes = [];
-  for (const subject of subjectsForPreparedRelease(input)) {
-    const outcome = yield* publishSubject(subject);
-    outcomes.push(outcome);
-    if (outcome._tag !== "PublicationConverged")
-      return outcomes;
+// ../../src/resolve/errors.ts
+class ResolveError extends Error {
+  field;
+  reason;
+  _tag = "ResolveError";
+  constructor(field, reason2) {
+    super(reason2);
+    this.field = field;
+    this.reason = reason2;
+    this.name = "ResolveError";
   }
-  return outcomes;
+}
+
+// ../../src/resolve/resolve.ts
+var refuse = (field, reason2) => {
+  throw new ResolveError(field, reason2);
+};
+var disagreement = (field, authored, observed, source) => refuse(`project.${field}`, `project.${field} is ${JSON.stringify(authored)} in the config but ${JSON.stringify(observed)} ${source}. Remove the authored value or correct the source; the resolver never picks.`);
+var decodeAuthored = decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" });
+var decodeFacts = decodeUnknownSync(ObservedFacts, { onExcessProperty: "error" });
+var version2 = (authored, facts) => {
+  const directive = authored.versionFrom;
+  const observed = directive === "manifest" ? facts.manifestVersion : directive === "git-tag" ? facts.headTagVersion : undefined;
+  const source = directive === "manifest" ? "in the package manifest" : "on the tag at HEAD";
+  if (authored.project.version !== undefined) {
+    if (observed !== undefined && observed !== authored.project.version) {
+      disagreement("version", authored.project.version, observed, source);
+    }
+    return authored.project.version;
+  }
+  if (directive === undefined) {
+    return refuse("project.version", 'project.version is required. State it, or set versionFrom to "manifest" or "git-tag" so it can be observed.');
+  }
+  if (observed === undefined) {
+    return refuse("project.version", `versionFrom is ${JSON.stringify(directive)} but no version was observed ${source}.`);
+  }
+  return observed;
+};
+var tag2 = (authored, resolved) => {
+  if (authored.project.tag !== undefined)
+    return authored.project.tag;
+  const template = authored.project.tagTemplate ?? "v{version}";
+  const rendered = template.replaceAll("{version}", resolved);
+  if (rendered.includes("{") || rendered.includes("}")) {
+    return refuse("project.tagTemplate", `project.tagTemplate supports only the {version} token, got ${JSON.stringify(template)}.`);
+  }
+  return NonEmptyName.make(rendered);
+};
+var commit = (authored, facts) => {
+  if (authored.project.commit !== undefined) {
+    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
+      disagreement("commit", authored.project.commit, facts.commit, "at HEAD");
+    }
+    return authored.project.commit;
+  }
+  if (facts.commit === undefined)
+    return refuse("project.commit", MISSING_COMMIT);
+  return facts.commit;
+};
+var names = (authored, facts) => {
+  const manifest = facts.manifestName;
+  if (manifest !== undefined && authored.project.packageName !== undefined && manifest !== authored.project.packageName) {
+    disagreement("packageName", authored.project.packageName, manifest, "in the package manifest");
+  }
+  const name = authored.project.name ?? manifest;
+  if (name === undefined) {
+    return refuse("project.name", "project.name is required when no package manifest is observed.");
+  }
+  const packageName = authored.project.packageName ?? manifest;
+  return { name, ...packageName === undefined ? {} : { packageName } };
+};
+var repository = (authored, facts) => {
+  if (authored.project.repository !== undefined && facts.repository !== undefined && authored.project.repository !== facts.repository) {
+    disagreement("repository", authored.project.repository, facts.repository, "in the observed repository");
+  }
+  return authored.project.repository ?? facts.repository;
+};
+var resolveConfig = (authored, facts) => {
+  const config = decodeAuthored(authored);
+  const observed = decodeFacts(facts);
+  const resolvedVersion = version2(config, observed);
+  const { project, versionFrom: _directive, ...rest } = config;
+  const { tagTemplate: _template, ...projectRest } = project;
+  return toPlainJson({
+    ...rest,
+    project: {
+      ...projectRest,
+      ...names(config, observed),
+      ...repository(config, observed) === undefined ? {} : { repository: repository(config, observed) },
+      version: resolvedVersion,
+      tag: tag2(config, resolvedVersion),
+      commit: commit(config, observed)
+    }
+  });
+};
+
+// ../../src/api/errors.ts
+class ReleaseInputError extends TaggedErrorClass()("ReleaseInputError", { reason: String4 }) {
+}
+
+class PreparationModeUnsupported extends TaggedErrorClass()("PreparationModeUnsupported", {
+  mode: Literals(["partition", "merge"]),
+  owner: Literal2("plan-235"),
+  reason: String4
+}) {
+}
+
+class ReleasePreparationError extends TaggedErrorClass()("ReleasePreparationError", {
+  cause: String4
+}) {
+}
+
+class ReleaseAbortedError extends TaggedErrorClass()("ReleaseAbortedError", {
+  prepared: optionalKey2(CompletePreparedReleaseRef),
+  cause: String4
+}) {
+}
+
+class ReleaseIncompleteError extends TaggedErrorClass()("ReleaseIncompleteError", {
+  prepared: CompletePreparedReleaseRef,
+  status: Literals(["blocked", "uncertain"]),
+  reason: String4
+}) {
+}
+
+// ../../src/api/input.ts
+import { existsSync as existsSync4, realpathSync as realpathSync4, statSync as statSync2 } from "node:fs";
+import { isAbsolute as isAbsolute2 } from "node:path";
+var prepareInput = Struct({
+  config: Unknown2,
+  workspace: String4
 });
+var inspectConfigInput = Struct({
+  config: Unknown2,
+  workspace: String4
+});
+var preparedInput = Struct({ prepared: CompletePreparedReleaseRef });
+var inspectInput = Union2([inspectConfigInput, preparedInput]);
+var publishInput = preparedInput;
+var observeInput = preparedInput;
+var releaseInput = Struct({
+  config: Unknown2,
+  workspace: String4,
+  allowEmpty: optionalKey2(Boolean3)
+});
+var authoredCorrection = String4.check(makeFilter2((value3) => {
+  const length = [...value3].length;
+  return length > 0 && length <= 65536 ? undefined : "correction must contain between 1 and 65536 code points.";
+}));
+var correctInput = Struct({
+  prepared: CompletePreparedReleaseRef,
+  correction: authoredCorrection
+});
+var decode = (schema, value3) => {
+  try {
+    return decodeUnknownSync(schema, { onExcessProperty: "error" })(value3);
+  } catch (cause) {
+    throw new ReleaseInputError({
+      reason: String(cause).split(`
+`).slice(0, 8).join(`
+`).slice(0, 500)
+    });
+  }
+};
+var rejectReservedPreparationMode = (value3) => {
+  if (typeof value3 !== "object" || value3 === null || Array.isArray(value3))
+    return;
+  const mode = value3.mode;
+  if (mode !== "partition" && mode !== "merge")
+    return;
+  throw PreparationModeUnsupported.make({
+    mode,
+    owner: "plan-235",
+    reason: `Preparation mode '${mode}' is reserved and unsupported until plan 235 adds its first certified producer.`
+  });
+};
+var decodePrepareInput = (value3) => {
+  rejectReservedPreparationMode(value3);
+  return decode(prepareInput, value3);
+};
+var decodeReleaseInput = (value3) => {
+  rejectReservedPreparationMode(value3);
+  return decode(releaseInput, value3);
+};
+var decodeObserveInput = (value3) => decode(observeInput, value3);
+var decodePublishInput = (value3) => decode(publishInput, value3);
+var decodeCorrectInput = (value3) => decode(correctInput, value3);
+var decodeInspectInput = (value3) => decode(inspectInput, value3);
+var absoluteDirectory = (value3, field) => {
+  if (!isAbsolute2(value3) || !existsSync4(value3)) {
+    throw new ReleaseInputError({ reason: `${field} must be an existing absolute directory.` });
+  }
+  const canonical2 = realpathSync4(value3);
+  if (!statSync2(canonical2).isDirectory()) {
+    throw new ReleaseInputError({ reason: `${field} must be a directory.` });
+  }
+  return canonical2;
+};
+var workspaceRoot = (value3) => absoluteDirectory(value3, "workspace");
+
+// ../../src/api/runtime.ts
+class ReleaseRuntimeError extends TaggedErrorClass()("ReleaseRuntimeError", { reason: String4 }) {
+}
+
+class ReleaseRuntime extends Service()("ReleaseRuntime") {
+}
+
+// ../../src/api/types.ts
+class CorrectionReport extends Class4("CorrectionReport")({
+  prepared: CompletePreparedReleaseRef,
+  status: Literal2("unsupported"),
+  reason: SafeReason
+}) {
+}
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Brand.js
 function nominal() {
   return Object.assign((input) => input, {
@@ -62015,9 +62824,9 @@ var MutableRefProto = {
     };
   }
 };
-var make14 = (value2) => {
+var make14 = (value3) => {
   const ref = Object.create(MutableRefProto);
-  ref.current = value2;
+  ref.current = value3;
   return ref;
 };
 
@@ -62109,15 +62918,15 @@ var failCauseUnsafe = (self2, cause) => {
     return false;
   }
   const exit3 = exitFailCause(cause);
-  const fail9 = exitZipRight(exit3, exitFailDone);
+  const fail10 = exitZipRight(exit3, exitFailDone);
   if (self2.state.offers.size === 0 && self2.messages.length === 0) {
-    finalize(self2, fail9);
+    finalize(self2, fail10);
     return true;
   }
   self2.state = {
     ...self2.state,
     _tag: "Closing",
-    exit: fail9
+    exit: fail10
   };
   return true;
 };
@@ -62322,14 +63131,14 @@ var asyncQueue = (scope3, f, options) => make15({
 }).pipe(tap2((queue) => addFinalizer(scope3, shutdown(queue))), tap2((queue) => forkIn2(provide(f(queue), scope3), scope3)));
 var callbackArray = (f, options) => fromTransform((_2, scope3) => map5(asyncQueue(scope3, f, options), takeAll2));
 var suspend3 = (evaluate2) => fromTransform((upstream, scope3) => suspend2(() => toTransform(evaluate2())(upstream, scope3)));
-var empty3 = /* @__PURE__ */ fromPull(/* @__PURE__ */ succeed6(/* @__PURE__ */ done3()));
-var fail9 = (error2) => fromPull(succeed6(fail6(error2)));
+var empty3 = /* @__PURE__ */ fromPull(/* @__PURE__ */ succeed6(/* @__PURE__ */ done2()));
+var fail10 = (error2) => fromPull(succeed6(fail6(error2)));
 var map7 = /* @__PURE__ */ dual(2, (self2, f) => transformPull(self2, (pull) => sync2(() => {
   let i = 0;
   return map5(pull, (o) => f(o, i++));
 })));
 var mapDone = /* @__PURE__ */ dual(2, (self2, f) => mapDoneEffect(self2, (o) => succeed6(f(o))));
-var mapDoneEffect = /* @__PURE__ */ dual(2, (self2, f) => transformPull(self2, (pull) => succeed6(catchDone(pull, (done4) => flatMap3(f(done4), done3)))));
+var mapDoneEffect = /* @__PURE__ */ dual(2, (self2, f) => transformPull(self2, (pull) => succeed6(catchDone(pull, (done4) => flatMap3(f(done4), done2)))));
 var merge2 = /* @__PURE__ */ dual((args2) => isChannel(args2[0]) && isChannel(args2[1]), (left, right, options) => fromTransformBracket(fnUntraced2(function* (upstream, _scope, forkedScope) {
   const strategy = options?.haltStrategy ?? "both";
   const queue = yield* bounded(0);
@@ -62353,7 +63162,7 @@ var merge2 = /* @__PURE__ */ dual((args2) => isChannel(args2[0]) && isChannel(ar
       }
     }
   }
-  const runSide = (side, channel, scope3) => toTransform(channel)(upstream, scope3).pipe(flatMap3((pull) => pull.pipe(flatMap3((value2) => offer(queue, value2)), forever2)), onError2((cause) => andThen2(close(scope3, doneExitFromCause(cause)), onExit3(side, cause))), forkIn2(forkedScope));
+  const runSide = (side, channel, scope3) => toTransform(channel)(upstream, scope3).pipe(flatMap3((pull) => pull.pipe(flatMap3((value3) => offer(queue, value3)), forever2)), onError2((cause) => andThen2(close(scope3, doneExitFromCause(cause)), onExit3(side, cause))), forkIn2(forkedScope));
   yield* runSide("left", left, forkUnsafe2(forkedScope));
   yield* runSide("right", right, forkUnsafe2(forkedScope));
   return take2(queue);
@@ -62416,7 +63225,7 @@ var splitLines = () => fromTransform((upstream, _scope) => sync2(() => {
   }
   const pullOrFlush = suspend2(() => {
     if (done4._tag === "Some") {
-      return done3(done4.value);
+      return done2(done4.value);
     }
     return matchEffect2(upstream, {
       onSuccess: loop,
@@ -62429,7 +63238,7 @@ var splitLines = () => fromTransform((upstream, _scope) => sync2(() => {
           midCRLF = false;
           return succeed6([last]);
         }
-        return done3(leftover);
+        return done2(leftover);
       }
     });
   });
@@ -62452,7 +63261,7 @@ var onExit3 = /* @__PURE__ */ dual(2, (self2, finalizer) => fromTransformBracket
 var ensuring3 = /* @__PURE__ */ dual(2, (self2, finalizer) => onExit3(self2, (_2) => finalizer));
 var runWith = (self2, f, onHalt) => suspend2(() => {
   const scope3 = makeUnsafe3();
-  const makePull = toTransform(self2)(done3(), scope3);
+  const makePull = toTransform(self2)(done2(), scope3);
   return catchDone(flatMap3(makePull, f), onHalt ? onHalt : succeed6).pipe(onExit2((exit3) => close(scope3, exit3)));
 });
 var runForEach = /* @__PURE__ */ dual(2, (self2, f) => runWith(self2, (pull) => forever2(flatMap3(pull, f), {
@@ -62463,12 +63272,12 @@ var runFold = /* @__PURE__ */ dual(3, (self2, initial, f) => suspend2(() => {
   return runWith(self2, (pull) => whileLoop2({
     while: constTrue,
     body: () => pull,
-    step: (value2) => {
-      state = f(state, value2);
+    step: (value3) => {
+      state = f(state, value3);
     }
   }), () => succeed6(state));
 }));
-var toPullScoped = (self2, scope3) => toTransform(self2)(done3(), scope3);
+var toPullScoped = (self2, scope3) => toTransform(self2)(done2(), scope3);
 
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/stream.js
 var TypeId19 = "~effect/Stream";
@@ -62514,7 +63323,7 @@ var fromTransform2 = (transform3) => {
   self2.transform = transform3;
   return self2;
 };
-var toChannel = (self2) => fromTransform((upstream, scope3) => succeed6(flatMap3(self2.transform(upstream, scope3), done3)));
+var toChannel = (self2) => fromTransform((upstream, scope3) => succeed6(flatMap3(self2.transform(upstream, scope3), done2)));
 var drain = /* @__PURE__ */ fromTransform2((upstream) => catchDone(forever2(upstream, {
   disableYield: true
 }), () => endVoid));
@@ -62536,7 +63345,7 @@ var toChannel2 = (stream) => stream.channel;
 var callback3 = (f, options) => fromChannel3(callbackArray(f, options));
 var empty4 = /* @__PURE__ */ fromChannel3(empty3);
 var suspend4 = (stream) => fromChannel3(suspend3(() => stream().channel));
-var fail10 = (error2) => fromChannel3(fail9(error2));
+var fail11 = (error2) => fromChannel3(fail10(error2));
 var fromReadableStream = (options) => fromChannel3(fromTransform(fnUntraced2(function* (_2, scope3) {
   const reader = options.evaluate().getReader();
   yield* addFinalizer(scope3, options.releaseLockOnEnd ? sync2(() => reader.releaseLock()) : promise2(() => reader.cancel().catch(constVoid)));
@@ -62545,8 +63354,8 @@ var fromReadableStream = (options) => fromChannel3(fromTransform(fnUntraced2(fun
     catch: (reason2) => options.onError(reason2)
   }), ({
     done: done4,
-    value: value2
-  }) => done4 ? done3() : succeed6(of(value2)));
+    value: value3
+  }) => done4 ? done2() : succeed6(of(value3)));
 })));
 var unwrap3 = (effect2) => fromChannel3(unwrap(map5(effect2, toChannel2)));
 var map8 = /* @__PURE__ */ dual(2, (self2, f) => suspend4(() => {
@@ -62565,12 +63374,12 @@ var transduce = /* @__PURE__ */ dual(2, (self2, sink) => transformPull2(self2, (
     }
     return upstream;
   }).pipe(catch_2((error2) => {
-    done4 = fail4(error2);
-    return done3();
+    done4 = fail5(error2);
+    return done2();
   }));
-  const pull = map5(suspend2(() => sink.transform(upstreamWithLeftover, scope3)), ([value2, leftover_]) => {
+  const pull = map5(suspend2(() => sink.transform(upstreamWithLeftover, scope3)), ([value3, leftover_]) => {
     leftover = leftover_;
-    return of(value2);
+    return of(value3);
   });
   return suspend2(() => done4 ? done4 : pull);
 })));
@@ -62614,8 +63423,8 @@ var toReadableStreamWith = /* @__PURE__ */ dual((args2) => isStream(args2[0]), (
       });
     },
     pull() {
-      return new Promise((resolve3) => {
-        currentResolve = resolve3;
+      return new Promise((resolve2) => {
+        currentResolve = resolve2;
         latch.openUnsafe();
       });
     },
@@ -62660,11 +63469,11 @@ var make16 = (impl) => FileSystem.of({
     const readChunk = file.readAlloc(chunkSize);
     return fromPull2(succeed6(flatMap3(suspend2(() => {
       if (bytesToRead !== undefined && bytesToRead <= totalBytesRead) {
-        return done3();
+        return done2();
       }
       return bytesToRead !== undefined && bytesToRead - totalBytesRead < chunkSize ? file.readAlloc(bytesToRead - totalBytesRead) : readChunk;
     }), match({
-      onNone: () => done3(),
+      onNone: () => done2(),
       onSome: (buf) => {
         totalBytesRead += BigInt(buf.length);
         return succeed6(of(buf));
@@ -62799,7 +63608,7 @@ function fromFileUrl(url) {
   }
   return succeed6(decodeURIComponent(pathname));
 }
-var resolve3 = function resolve4() {
+var resolve2 = function resolve3() {
   let resolvedPath = "";
   let resolvedAbsolute = false;
   let cwd = undefined;
@@ -62836,7 +63645,7 @@ var resolve3 = function resolve4() {
 var CHAR_FORWARD_SLASH = 47;
 function toFileUrl(filepath) {
   const outURL = new URL("file://");
-  let resolved = resolve3(filepath);
+  let resolved = resolve2(filepath);
   const filePathLast = filepath.charCodeAt(filepath.length - 1);
   if (filePathLast === CHAR_FORWARD_SLASH && resolved[resolved.length - 1] !== "/") {
     resolved += "/";
@@ -62870,7 +63679,7 @@ function encodePathChars(filepath) {
 }
 var posixImpl = /* @__PURE__ */ Path.of({
   [TypeId23]: TypeId23,
-  resolve: resolve3,
+  resolve: resolve2,
   normalize(path) {
     if (path.length === 0)
       return ".";
@@ -63404,10 +64213,10 @@ var pullIntoWritable = (options) => options.pull.pipe(flatMap3((chunk) => {
   });
 })), options.endOnDone !== false ? catchDone((_2) => {
   if ("closed" in options.writable && options.writable.closed) {
-    return done3(_2);
+    return done2(_2);
   }
   return callback2((resume) => {
-    options.writable.once("finish", () => resume(done3(_2)));
+    options.writable.once("finish", () => resume(done2(_2)));
     options.writable.end();
   });
 }) : identity);
@@ -63424,7 +64233,7 @@ var fromReadableChannel = (options) => fromTransform((_2, scope3) => readableToP
 var readableToPullUnsafe = (options) => {
   const readable = options.readable;
   if (readable.readableEnded)
-    return succeed6(done3());
+    return succeed6(done2());
   const closeOnDone = options.closeOnDone ?? true;
   const exit3 = options.exit ?? make14(undefined);
   const latch = makeUnsafe4(false);
@@ -63432,11 +64241,11 @@ var readableToPullUnsafe = (options) => {
     latch.openUnsafe();
   }
   function onError4(error2) {
-    exit3.current = fail4(options.onError(error2));
+    exit3.current = fail5(options.onError(error2));
     latch.openUnsafe();
   }
   function onEnd2() {
-    exit3.current = fail4(Done2());
+    exit3.current = fail5(Done2());
     latch.openUnsafe();
   }
   readable.on("readable", onReadable);
@@ -63765,7 +64574,7 @@ var make20 = /* @__PURE__ */ gen2(function* () {
           detached: cmd.options.detached ?? process.platform !== "win32",
           shell: cmd.options.shell
         }), fnUntraced2(function* ([childProcess2, exitSignal2]) {
-          const exited = yield* isDone2(exitSignal2);
+          const exited = yield* isDone3(exitSignal2);
           const killWithTimeout = withTimeout(childProcess2, cmd, cmd.options);
           if (exited) {
             const [code] = yield* _await(exitSignal2);
@@ -63810,7 +64619,7 @@ var make20 = /* @__PURE__ */ gen2(function* () {
           getInputFd,
           getOutputFd
         } = yield* setupAdditionalFds(cmd, childProcess, resolvedAdditionalFds);
-        const isRunning = map5(isDone2(exitSignal), (done4) => !done4);
+        const isRunning = map5(isDone3(exitSignal), (done4) => !done4);
         const exitCode = flatMap3(_await(exitSignal), ([code, signal]) => {
           if (isNotNull(code)) {
             return succeed6(ExitCode2(code));
@@ -64257,7 +65066,7 @@ var watchNode = (path) => callback3((queue) => acquireRelease2(sync2(() => {
     }
   });
   watcher.on("error", (error2) => {
-    failCauseUnsafe(queue, fail5(systemError({
+    failCauseUnsafe(queue, fail4(systemError({
       module: "FileSystem",
       _tag: "Unknown",
       method: "watch",
@@ -64374,11 +65183,11 @@ function parseSetCookie(header) {
     return;
   }
   const valueEncoded = parts[0].slice(firstEqual + 1);
-  const value2 = tryDecodeURIComponent(valueEncoded);
+  const value3 = tryDecodeURIComponent(valueEncoded);
   if (parts.length === 1) {
     return Object.assign(Object.create(CookieProto), {
       name,
-      value: value2,
+      value: value3,
       valueEncoded
     });
   }
@@ -64387,52 +65196,52 @@ function parseSetCookie(header) {
     const part = parts[i];
     const equalIndex = part.indexOf("=");
     const key = equalIndex === -1 ? part : part.slice(0, equalIndex).trim();
-    const value3 = equalIndex === -1 ? undefined : part.slice(equalIndex + 1).trim();
+    const value4 = equalIndex === -1 ? undefined : part.slice(equalIndex + 1).trim();
     switch (key.toLowerCase()) {
       case "domain": {
-        if (value3 === undefined) {
+        if (value4 === undefined) {
           break;
         }
-        const domain = value3.trim().replace(/^\./, "");
+        const domain = value4.trim().replace(/^\./, "");
         if (domain) {
           options.domain = domain;
         }
         break;
       }
       case "expires": {
-        if (value3 === undefined) {
+        if (value4 === undefined) {
           break;
         }
-        const date = new Date(value3);
+        const date = new Date(value4);
         if (!isNaN(date.getTime())) {
           options.expires = date;
         }
         break;
       }
       case "max-age": {
-        if (value3 === undefined) {
+        if (value4 === undefined) {
           break;
         }
-        const maxAge = parseInt(value3, 10);
+        const maxAge = parseInt(value4, 10);
         if (!isNaN(maxAge)) {
           options.maxAge = seconds(maxAge);
         }
         break;
       }
       case "path": {
-        if (value3 === undefined) {
+        if (value4 === undefined) {
           break;
         }
-        if (value3[0] === "/") {
-          options.path = value3;
+        if (value4[0] === "/") {
+          options.path = value4;
         }
         break;
       }
       case "priority": {
-        if (value3 === undefined) {
+        if (value4 === undefined) {
           break;
         }
-        switch (value3.toLowerCase()) {
+        switch (value4.toLowerCase()) {
           case "low":
             options.priority = "low";
             break;
@@ -64458,10 +65267,10 @@ function parseSetCookie(header) {
         break;
       }
       case "samesite": {
-        if (value3 === undefined) {
+        if (value4 === undefined) {
           break;
         }
-        switch (value3.toLowerCase()) {
+        switch (value4.toLowerCase()) {
           case "lax":
             options.sameSite = "lax";
             break;
@@ -64478,7 +65287,7 @@ function parseSetCookie(header) {
   }
   return Object.assign(Object.create(CookieProto), {
     name,
-    value: value2,
+    value: value3,
     valueEncoded,
     options: Object.keys(options).length > 0 ? options : undefined
   });
@@ -64512,7 +65321,7 @@ var Proto5 = /* @__PURE__ */ Object.defineProperties(/* @__PURE__ */ Object.crea
   },
   [symbolRedactable]: {
     value(context3) {
-      return redact3(this, get(context3, CurrentRedactedNames));
+      return redact4(this, get(context3, CurrentRedactedNames));
     }
   },
   toJSON: {
@@ -64561,9 +65370,9 @@ var fromInput = (input) => {
   return out;
 };
 var fromRecordUnsafe = (input) => Object.setPrototypeOf(input, Proto5);
-var set3 = /* @__PURE__ */ dual(3, (self2, key, value2) => {
+var set3 = /* @__PURE__ */ dual(3, (self2, key, value3) => {
   const out = make21(self2);
-  out[key.toLowerCase()] = value2;
+  out[key.toLowerCase()] = value3;
   return out;
 });
 var setAll = /* @__PURE__ */ dual(2, (self2, headers) => make21({
@@ -64580,7 +65389,7 @@ var remove3 = /* @__PURE__ */ dual(2, (self2, key) => {
   delete out[key.toLowerCase()];
   return out;
 });
-var redact3 = /* @__PURE__ */ dual(2, (self2, key) => {
+var redact4 = /* @__PURE__ */ dual(2, (self2, key) => {
   const out = {
     ...self2
   };
@@ -64705,8 +65514,8 @@ var fromInput2 = (input) => {
   const out = [];
   for (let i = 0;i < parsed.length; i++) {
     if (Array.isArray(parsed[i][0])) {
-      const [keys2, value2] = parsed[i];
-      out.push([`${keys2[0]}[${keys2.slice(1).join("][")}]`, value2]);
+      const [keys2, value3] = parsed[i];
+      out.push([`${keys2[0]}[${keys2.slice(1).join("][")}]`, value3]);
     } else {
       out.push(parsed[i]);
     }
@@ -64716,20 +65525,20 @@ var fromInput2 = (input) => {
 var fromInputNested = (input) => {
   const entries = typeof input[Symbol.iterator] === "function" ? fromIterable(input) : Object.entries(input);
   const out = [];
-  for (const [key, value2] of entries) {
-    if (Array.isArray(value2)) {
-      for (let i = 0;i < value2.length; i++) {
-        if (value2[i] !== undefined) {
-          out.push([key, String(value2[i])]);
+  for (const [key, value3] of entries) {
+    if (Array.isArray(value3)) {
+      for (let i = 0;i < value3.length; i++) {
+        if (value3[i] !== undefined) {
+          out.push([key, String(value3[i])]);
         }
       }
-    } else if (typeof value2 === "object") {
-      const nested = fromInputNested(value2);
+    } else if (typeof value3 === "object") {
+      const nested = fromInputNested(value3);
       for (const [k, v] of nested) {
         out.push([[key, ...typeof k === "string" ? [k] : k], v]);
       }
-    } else if (value2 !== undefined) {
-      out.push([key, String(value2)]);
+    } else if (value3 !== undefined) {
+      out.push([key, String(value3)]);
     }
   }
   return out;
@@ -64757,9 +65566,9 @@ var makeUrl = (url, params, hash3) => {
   try {
     const urlInstance = new URL(url, baseUrl());
     for (let i = 0;i < params.params.length; i++) {
-      const [key, value2] = params.params[i];
-      if (value2 !== undefined) {
-        urlInstance.searchParams.append(key, value2);
+      const [key, value3] = params.params[i];
+      if (value3 !== undefined) {
+        urlInstance.searchParams.append(key, value3);
       }
     }
     if (hash3 !== undefined) {
@@ -64898,7 +65707,7 @@ var modify = /* @__PURE__ */ dual(2, (self2, options) => {
   return result2;
 });
 var setMethod = /* @__PURE__ */ dual(2, (self2, method) => makeWith(method, self2.url, self2.urlParams, self2.hash, self2.headers, self2.body));
-var setHeader = /* @__PURE__ */ dual(3, (self2, key, value2) => makeWith(self2.method, self2.url, self2.urlParams, self2.hash, set3(self2.headers, key, value2), self2.body));
+var setHeader = /* @__PURE__ */ dual(3, (self2, key, value3) => makeWith(self2.method, self2.url, self2.urlParams, self2.hash, set3(self2.headers, key, value3), self2.body));
 var setHeaders = /* @__PURE__ */ dual(2, (self2, input) => makeWith(self2.method, self2.url, self2.urlParams, self2.hash, setAll(self2.headers, input), self2.body));
 var accept = /* @__PURE__ */ dual(2, (self2, mediaType) => setHeader(self2, "Accept", mediaType));
 var acceptJson = /* @__PURE__ */ accept("application/json");
@@ -65003,7 +65812,7 @@ class WebHttpClientResponse extends Class2 {
           cause
         })
       })
-    }) : fail10(new HttpClientError2({
+    }) : fail11(new HttpClientError2({
       reason: new EmptyBodyError({
         request: this.request,
         response: this,
@@ -65173,7 +65982,7 @@ var make24 = (f) => makeWith2((effect2) => flatMap3(effect2, (request) => withFi
       span.attribute("url.query", query);
     }
     const redactedHeaderNames = fiber2.getRef(CurrentRedactedNames);
-    const redactedHeaders = redact3(request.headers, redactedHeaderNames);
+    const redactedHeaders = redact4(request.headers, redactedHeaderNames);
     for (const name in redactedHeaders) {
       span.attribute(`http.request.header.${name}`, String(redactedHeaders[name]));
     }
@@ -65183,7 +65992,7 @@ var make24 = (f) => makeWith2((effect2) => flatMap3(effect2, (request) => withFi
     }), matchCauseEffect2({
       onSuccess: (response) => {
         span.attribute("http.response.status_code", response.status);
-        const redactedHeaders2 = redact3(response.headers, redactedHeaderNames);
+        const redactedHeaders2 = redact4(response.headers, redactedHeaderNames);
         for (const name in redactedHeaders2) {
           span.attribute(`http.response.header.${name}`, String(redactedHeaders2[name]));
         }
@@ -65390,25 +66199,57 @@ var layer5 = /* @__PURE__ */ succeed5(Path)({
 // ../../node_modules/.bun/@effect+platform-node@4.0.0-beta.83+57c66e18831c17f0/node_modules/@effect/platform-node/dist/NodePath.js
 var layer6 = layer5;
 
+// ../../src/platform/node.ts
+import { join as join8 } from "node:path";
+
+// ../../src/platform/source-observer.ts
+import { createHash as createHash6 } from "node:crypto";
+import { readFileSync as readFileSync3, realpathSync as realpathSync5 } from "node:fs";
+import { join as join6 } from "node:path";
+import { spawnSync } from "node:child_process";
+var runtime = {
+  canonicalRoot: (workspace) => try_2({
+    try: () => realpathSync5(workspace),
+    catch: (cause) => cause
+  }),
+  read: (workspace, path) => try_2({
+    try: () => new Uint8Array(readFileSync3(join6(workspace, path))),
+    catch: (cause) => cause
+  }),
+  command: (workspace, argv2) => try_2({
+    try: () => {
+      const result2 = spawnSync("git", [...argv2], { cwd: workspace, encoding: "utf8", stdio: "pipe" });
+      if (result2.error !== undefined)
+        throw result2.error;
+      if (result2.status !== 0)
+        throw new Error(result2.stderr.trim() || `Command exited ${result2.status}.`);
+      return result2.stdout;
+    },
+    catch: (cause) => cause
+  }),
+  digest: (bytes) => sync2(() => `sha256:${createHash6("sha256").update(bytes).digest("hex")}`)
+};
+var SourceObserverLive = succeed5(SourceObserver, makeSourceObserver(runtime));
+
 // ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
-function makeValue(value2) {
+function makeValue(value3) {
   return {
     _tag: "Value",
-    value: value2
+    value: value3
   };
 }
-function makeRecord(keys2, value2) {
+function makeRecord(keys2, value3) {
   return {
     _tag: "Record",
     keys: keys2,
-    value: value2
+    value: value3
   };
 }
-function makeArray(length, value2) {
+function makeArray(length, value3) {
   return {
     _tag: "Array",
     length,
-    value: value2
+    value: value3
   };
 }
 var ConfigProvider = /* @__PURE__ */ Reference("effect/ConfigProvider", {
@@ -65446,8 +66287,8 @@ function fromEnv(options) {
 }
 function buildEnvTrie(env) {
   const root = {};
-  for (const [name, value2] of Object.entries(env)) {
-    if (value2 === undefined)
+  for (const [name, value3] of Object.entries(env)) {
+    if (value3 === undefined)
       continue;
     const segments = name.split("_");
     let node = root;
@@ -65455,7 +66296,7 @@ function buildEnvTrie(env) {
       node.children ??= {};
       node = node.children[seg] ??= {};
     }
-    node.value = value2;
+    node.value = value3;
   }
   return root;
 }
@@ -65562,7 +66403,7 @@ var withDefault2 = /* @__PURE__ */ dual(2, (self2, defaultValue) => {
         return succeed8(defaultValue);
       }
     }
-    return fail12(err.cause);
+    return fail13(err.cause);
   });
 });
 var option2 = (self2) => self2.pipe(map9(some2), withDefault2(none2()));
@@ -65602,9 +66443,9 @@ var recur2 = /* @__PURE__ */ fnUntraced2(function* (ast, provider, path) {
       for (const ps of ast.propertySignatures) {
         const name = ps.name;
         if (typeof name === "string") {
-          const value2 = yield* recur2(ps.type, provider, [...path, name]);
-          if (value2 !== undefined)
-            out[name] = value2;
+          const value3 = yield* recur2(ps.type, provider, [...path, name]);
+          if (value3 !== undefined)
+            out[name] = value3;
         }
       }
       if (ast.indexSignatures.length > 0) {
@@ -65614,9 +66455,9 @@ var recur2 = /* @__PURE__ */ fnUntraced2(function* (ast, provider, path) {
             const matches = _is(is3.parameter);
             for (const key of stat4.keys) {
               if (!Object.hasOwn(out, key) && matches(key)) {
-                const value2 = yield* recur2(is3.type, provider, [...path, key]);
-                if (value2 !== undefined)
-                  out[key] = value2;
+                const value3 = yield* recur2(is3.type, provider, [...path, key]);
+                if (value3 !== undefined)
+                  out[key] = value3;
               }
             }
           }
@@ -65662,39 +66503,31 @@ function schema(codec, path) {
     return recur2(codecStringTreeEncoded, provider, defaultPath).pipe(flatMapEager2((tree) => decodeUnknownEffect3(tree).pipe(mapErrorEager2((issue2) => new SchemaError(path2.length > 0 ? new Pointer(path2, issue2) : issue2)))), mapErrorEager2((cause) => new ConfigError(cause)));
   });
 }
-function fail12(err) {
+function fail13(err) {
   return make26(() => fail6(new ConfigError(err)));
 }
-function succeed8(value2) {
-  return make26(() => succeed6(value2));
+function succeed8(value3) {
+  return make26(() => succeed6(value3));
 }
 function string3(name) {
   return schema(String4, name);
+}
+function redacted(name) {
+  return schema(Redacted(String4), name);
 }
 
 // ../../src/drivers/environment.ts
 var readOptionalEnv = (name) => option2(string3(name)).pipe(map5(getOrUndefined), orElseSucceed2(() => {
   return;
 }));
-var readEnvironment = (names2) => forEach2(["PATH", ...names2], (name) => readOptionalEnv(name).pipe(map5((value2) => [name, value2]))).pipe(map5((entries) => Object.fromEntries(entries.flatMap(([name, value2]) => value2 === undefined ? [] : [[name, value2]]))));
-
-// ../../src/model/secret-patterns.ts
-var secretPatterns = [
-  /ghp_[A-Za-z0-9]{20,}/u,
-  /gho_[A-Za-z0-9]{20,}/u,
-  /github_pat_[A-Za-z0-9_]{20,}/u,
-  /xox[abps]-[A-Za-z0-9-]{10,}/u,
-  /AKIA[0-9A-Z]{16}/u,
-  /npm_[A-Za-z0-9]{30,}/u,
-  /-----BEGIN [A-Z ]*PRIVATE KEY/u
-];
+var readEnvironment = (names2) => forEach2(["PATH", ...names2], (name) => readOptionalEnv(name).pipe(map5((value3) => [name, value3]))).pipe(map5((entries) => Object.fromEntries(entries.flatMap(([name, value3]) => value3 === undefined ? [] : [[name, value3]]))));
 
 // ../../src/drivers/redact.ts
 var EXCERPT_LIMIT = 2000;
 var redactOutput = (text3, env) => {
   let out = text3;
-  for (const [name, value2] of Object.entries(env).filter(([name2, value3]) => name2 !== "PATH" && value3.length >= 6).sort((left, right) => right[1].length - left[1].length)) {
-    out = out.split(value2).join(`[redacted:${name}]`);
+  for (const [name, value3] of Object.entries(env).filter(([name2, value4]) => name2 !== "PATH" && value4.length >= 6).sort((left, right) => right[1].length - left[1].length)) {
+    out = out.split(value3).join(`[redacted:${name}]`);
   }
   for (const pattern of secretPatterns) {
     out = out.replace(new RegExp(pattern.source, `${pattern.flags.replace("u", "")}gu`), "[redacted:token]");
@@ -65721,74 +66554,459 @@ var makeRunCommand = gen2(function* () {
     };
   }).pipe(scoped2, mapError3((cause) => failure(String(cause))));
 });
-// ../../src/platform/release-runtime.ts
+
+// ../../src/platform/credentials.ts
+import { mkdir as mkdir3, mkdtemp as mkdtemp2, rm as rm3, writeFile as writeFile4 } from "node:fs/promises";
+import { tmpdir as tmpdir3 } from "node:os";
 import { join as join7 } from "node:path";
+class CredentialPlatformError extends TaggedErrorClass()("CredentialPlatformError", {
+  phase: Literals(["observe", "mutate", "resource", "spawn"]),
+  commitment: Literals(["before-dispatch", "unknown"]),
+  reason: NonEmptyString
+}) {
+}
+
+class AuthorizedMutationHttp extends Service()("ts-release/AuthorizedMutationHttp") {
+}
+var NpmUserConfigTypeId = Symbol("ts-release/NpmUserConfig");
+
+class NpmUserConfigResource extends Service()("ts-release/NpmUserConfigResource") {
+}
+
+class RejectedBeforeStart extends TaggedClass()("RejectedBeforeStart", {
+  commitment: Literal2("before-dispatch"),
+  reason: NonEmptyString
+}) {
+}
+
+class PublisherExited extends TaggedClass()("PublisherExited", {
+  commitment: Literal2("started"),
+  exitCode: Int,
+  stdout: String4,
+  stderr: String4
+}) {
+}
+
+class PublisherOutcomeUnknown extends TaggedClass()("PublisherOutcomeUnknown", {
+  commitment: Literal2("unknown"),
+  reason: NonEmptyString
+}) {
+}
+var CertifiedPublisherResult = Union2([
+  RejectedBeforeStart,
+  PublisherExited,
+  PublisherOutcomeUnknown
+]);
+
+class CertifiedPublisherSpawn extends Service()("ts-release/CertifiedPublisherSpawn") {
+}
+var oidcRequestUrlName = EnvironmentName.make("ACTIONS_ID_TOKEN_REQUEST_URL");
+var oidcRequestTokenName = EnvironmentName.make("ACTIONS_ID_TOKEN_REQUEST_TOKEN");
+var oidcNames = [oidcRequestUrlName, oidcRequestTokenName];
+var portableEnvironmentName = /^[A-Za-z_][A-Za-z0-9_]*$/u;
+var certifiedWorkflow = /^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u;
+var rememberObservationGrant = (observationGrants, grant) => {
+  observationGrants.set(grant, grant._tag === "AnonymousAccess" ? {
+    _tag: grant._tag,
+    subject: grant.subject,
+    audience: grant.audience,
+    purposes: new Set(grant.purposes)
+  } : {
+    _tag: grant._tag,
+    subject: grant.subject,
+    audience: grant.audience,
+    purposes: new Set(grant.purposes),
+    ref: grant.ref
+  });
+};
+var vaultKey = (subject, name) => `${subject}\x00${name}`;
+var platformError = (phase, commitment, reason2) => new CredentialPlatformError({ phase, commitment, reason: reason2 });
+var unavailable = (request, reason2) => new CredentialUnavailable({
+  subject: request.subject,
+  provider: request.provider,
+  purpose: request.purpose,
+  reason: reason2
+});
+var unsupported2 = (request, reason2) => new CredentialStrategyUnsupported({
+  subject: request.subject,
+  provider: request.provider,
+  strategy: request.strategy.kind,
+  reason: reason2
+});
+var readSecret = (request, name) => redacted(name).pipe(mapError3(() => unavailable(request, `Credential reference ${name} is unavailable.`)));
+var environmentTokenPurposes = (purpose) => purpose === "correct" ? ["observe", "publish", "correct"] : ["observe", "publish"];
+var makeEnvironmentAcquirer = (vault) => ({
+  acquire: fn2("EnvironmentCredentialProvider.acquire")(function* (request) {
+    switch (request.strategy.kind) {
+      case "anonymous":
+        return { _tag: "AnonymousAccess", purposes: ["observe"] };
+      case "token": {
+        const name = request.strategy.credential.toString();
+        if (!portableEnvironmentName.test(name)) {
+          return yield* unsupported2(request, "Token credential references must be portable environment names.");
+        }
+        const value3 = yield* readSecret(request, name);
+        vault.set(vaultKey(request.subject, name), value3);
+        return {
+          _tag: "ScopedSecret",
+          purposes: environmentTokenPurposes(request.purpose),
+          ref: request.strategy.credential
+        };
+      }
+      case "trusted-publishing": {
+        if (request.strategy.identityProvider !== "github-actions" || request.strategy.runnerClass !== "github-hosted" || !certifiedWorkflow.test(request.strategy.workflow)) {
+          return yield* unsupported2(request, "Trusted publishing requires a certified GitHub Actions identity on a GitHub-hosted runner.");
+        }
+        for (const name of oidcNames) {
+          const value3 = yield* readSecret(request, name);
+          vault.set(vaultKey(request.subject, name), value3);
+        }
+        return {
+          _tag: "WorkloadIdentity",
+          purposes: [request.purpose],
+          names: oidcNames
+        };
+      }
+    }
+  })
+});
+var makeProvider = (vault, observationGrants) => {
+  const provider = makeCredentialProvider(makeEnvironmentAcquirer(vault));
+  return {
+    acquireForObservation: fn2("EnvironmentCredentialProvider.acquireForObservation")(function* (request) {
+      const grant = yield* provider.acquireForObservation(request);
+      if (grant._tag !== "WorkloadIdentity") {
+        rememberObservationGrant(observationGrants, grant);
+      }
+      return grant;
+    }),
+    acquireForMutation: fn2("EnvironmentCredentialProvider.acquireForMutation")(function* (request, decision) {
+      const grant = yield* provider.acquireForMutation(request, decision);
+      if (grant._tag === "ScopedSecret") {
+        rememberObservationGrant(observationGrants, grant);
+      }
+      return grant;
+    })
+  };
+};
+var hasAuthorizationHeader = (headers) => headers !== undefined && Object.keys(headers).some((name) => name.toLowerCase() === "authorization");
+var audienceAllows = (audience, requested) => {
+  try {
+    const expected = new URL(audience);
+    const observed = new URL(requested);
+    if (expected.protocol !== "https:" || observed.protocol !== "https:")
+      return false;
+    if (expected.username !== "" || expected.password !== "" || expected.search !== "" || expected.hash !== "")
+      return false;
+    if (expected.origin !== observed.origin)
+      return false;
+    const base = expected.pathname.endsWith("/") ? expected.pathname : `${expected.pathname}/`;
+    return observed.pathname === expected.pathname || observed.pathname.startsWith(base);
+  } catch {
+    return false;
+  }
+};
+var checkAudience = (subject, audience, requested) => audienceAllows(audience, requested) ? void_3 : fail6(new CredentialAudienceMismatch({
+  subject,
+  expected: audience,
+  observed: requested
+}));
+var lookupToken = (vault, subject, ref) => {
+  const value3 = vault.get(vaultKey(subject, ref));
+  return value3 === undefined ? fail6(new CredentialUnavailable({
+    subject,
+    provider: "unknown",
+    purpose: "unknown",
+    reason: "The credential grant has no host-owned secret in this platform boundary."
+  })) : succeed6(value3);
+};
+var validateObservationGrant = fn2("HttpAuthorizer.validateGrant")(function* (input, grant, observationGrants) {
+  const issued = observationGrants.get(grant);
+  if (issued === undefined) {
+    return yield* new CredentialUnavailable({
+      subject: input.subject,
+      provider: "unknown",
+      purpose: "observe",
+      reason: "The supplied observation grant was not issued by this platform boundary."
+    });
+  }
+  if (issued.subject !== input.subject) {
+    return yield* new CredentialSubjectMismatch({
+      expected: input.subject,
+      observed: issued.subject
+    });
+  }
+  if (!issued.purposes.has("observe")) {
+    return yield* new CredentialPurposeMismatch({
+      subject: input.subject,
+      required: "observe",
+      granted: [...issued.purposes]
+    });
+  }
+  yield* checkAudience(input.subject, issued.audience, input.url);
+  return issued;
+});
+var sendAnonymous = (http2, request) => {
+  if (hasAuthorizationHeader(request.headers)) {
+    return fail6(platformError("observe", "before-dispatch", "Callers may not supply an Authorization header."));
+  }
+  return http2.request({
+    method: request.method,
+    url: request.url,
+    ...request.headers === undefined ? {} : { headers: request.headers },
+    ...request.body === undefined ? {} : { body: request.body }
+  }).pipe(mapError3(() => platformError("observe", "unknown", "Observation HTTP transport failed after dispatch.")));
+};
+var sendAuthorized = (http2, request, token, phase) => {
+  if (hasAuthorizationHeader(request.headers)) {
+    return fail6(platformError(phase, "before-dispatch", "Callers may not supply an Authorization header."));
+  }
+  const headers = {
+    ...request.headers ?? {},
+    authorization: `Bearer ${value2(token)}`
+  };
+  return http2.request({
+    method: request.method,
+    url: request.url,
+    headers,
+    ...request.body === undefined ? {} : { body: request.body }
+  }).pipe(mapError3(() => platformError(phase, "unknown", "Authorized HTTP transport failed after dispatch.")));
+};
+var makeHttpAuthorizer = (http2, vault, observationGrants) => ({
+  execute: fn2("HttpAuthorizer.execute")(function* (input, grant) {
+    const issued = yield* validateObservationGrant(input, grant, observationGrants);
+    if (issued._tag === "AnonymousAccess") {
+      return yield* sendAnonymous(http2, input);
+    }
+    const token = yield* lookupToken(vault, issued.subject, issued.ref);
+    return yield* sendAuthorized(http2, input, token, "observe");
+  })
+});
+var makeAuthorizedMutationHttp = (http2, vault) => ({
+  execute: fn2("AuthorizedMutationHttp.execute")(function* (operation, request, grant) {
+    yield* validateGrantForOperation(operation, grant);
+    yield* checkAudience(operation.subject, operation.audience, request.url);
+    const token = yield* lookupToken(vault, grant.subject, grant.ref);
+    return yield* sendAuthorized(http2, request, token, "mutate");
+  })
+});
+
+class NpmUserConfigHandle {
+  _tag = "NpmUserConfig";
+  [NpmUserConfigTypeId] = NpmUserConfigTypeId;
+}
+var npmUserConfigs = new WeakMap;
+var npmAuthLine = (registryUrl, token) => {
+  const registry = new URL(registryUrl);
+  const pathname = registry.pathname.endsWith("/") ? registry.pathname : `${registry.pathname}/`;
+  return `//${registry.host}${pathname}:_authToken=${value2(token)}`;
+};
+var makeNpmUserConfigResource = (vault, temporaryRoot) => ({
+  acquire: fn2("NpmUserConfigResource.acquire")(function* (input, grant) {
+    yield* validateGrantForOperation(input.operation, grant);
+    if (input.operation.provider !== "npm") {
+      return yield* platformError("resource", "before-dispatch", "npm user config accepts only the npm provider.");
+    }
+    yield* checkAudience(input.operation.subject, input.operation.audience, input.registryUrl);
+    const token = yield* lookupToken(vault, grant.subject, grant.ref);
+    const root = temporaryRoot ?? tmpdir3();
+    const handle = new NpmUserConfigHandle;
+    const acquired = tryPromise2({
+      try: async () => {
+        await mkdir3(root, { recursive: true, mode: 448 });
+        const directory = await mkdtemp2(join7(root, "ts-release-npm-"));
+        try {
+          const path = join7(directory, "userconfig");
+          const contents = `${npmAuthLine(input.registryUrl, token)}
+ignore-scripts=true
+`;
+          await writeFile4(path, contents, { mode: 384, flag: "wx" });
+          npmUserConfigs.set(handle, { directory, path, subject: input.operation.subject, grant, token });
+          return handle;
+        } catch (cause) {
+          await rm3(directory, { recursive: true, force: true });
+          throw cause;
+        }
+      },
+      catch: () => platformError("resource", "before-dispatch", "Unable to create the scoped npm user config.")
+    });
+    return yield* acquireRelease2(acquired, (resource) => {
+      const metadata = npmUserConfigs.get(resource);
+      npmUserConfigs.delete(resource);
+      return metadata === undefined ? void_3 : tryPromise2({
+        try: () => rm3(metadata.directory, { recursive: true, force: true }),
+        catch: () => {
+          return;
+        }
+      }).pipe(catch_2(() => void_3));
+    });
+  })
+});
+var collect2 = (stream2) => mkString(decodeText(stream2));
+var optionalPath = option2(string3("PATH")).pipe(map5(getOrUndefined), orElseSucceed2(() => {
+  return;
+}));
+var closedBaseEnvironment = (path) => path === undefined ? {} : { PATH: path };
+var workloadEnvironment = fn2("CertifiedPublisherSpawn.workloadEnvironment")(function* (vault, grant) {
+  if (grant.names.size !== oidcNames.length || oidcNames.some((name) => !grant.names.has(name))) {
+    return yield* new CredentialStrategyUnsupported({
+      subject: grant.subject,
+      provider: grant.provider,
+      strategy: "trusted-publishing",
+      reason: "Workload identity lacks the exact certified GitHub Actions OIDC names."
+    });
+  }
+  const path = yield* optionalPath;
+  const env = closedBaseEnvironment(path);
+  for (const name of oidcNames) {
+    const value3 = vault.get(vaultKey(grant.subject, name));
+    if (value3 === undefined) {
+      return yield* new CredentialUnavailable({
+        subject: grant.subject,
+        provider: grant.provider,
+        purpose: "publish",
+        reason: "Certified workload identity material is unavailable in this platform boundary."
+      });
+    }
+    env[name] = value2(value3);
+  }
+  env.NPM_CONFIG_IGNORE_SCRIPTS = "true";
+  return env;
+});
+var publisherEnvironment = fn2("CertifiedPublisherSpawn.environment")(function* (vault, spec, grant) {
+  if (spec._tag === "NpmPublisherSpec") {
+    if (grant._tag !== "ScopedSecret") {
+      return yield* new CredentialStrategyUnsupported({
+        subject: spec.operation.subject,
+        provider: spec.operation.provider,
+        strategy: "trusted-publishing",
+        reason: "A scoped npm user config requires a scoped-secret grant."
+      });
+    }
+    const metadata = npmUserConfigs.get(spec.userConfig);
+    if (metadata === undefined || metadata.subject !== spec.operation.subject || metadata.grant !== grant) {
+      return yield* new CredentialUnavailable({
+        subject: spec.operation.subject,
+        provider: spec.operation.provider,
+        purpose: spec.operation.purpose,
+        reason: "The npm user config is not active for this exact operation and grant."
+      });
+    }
+    const path = yield* optionalPath;
+    return {
+      ...closedBaseEnvironment(path),
+      NPM_CONFIG_USERCONFIG: metadata.path,
+      NPM_CONFIG_IGNORE_SCRIPTS: "true"
+    };
+  }
+  if (grant._tag !== "WorkloadIdentity") {
+    return yield* new CredentialStrategyUnsupported({
+      subject: spec.operation.subject,
+      provider: spec.operation.provider,
+      strategy: "token",
+      reason: "The workload publisher requires a workload-identity grant."
+    });
+  }
+  return yield* workloadEnvironment(vault, grant);
+});
+var redactPublisherOutput = (value3, env, spec) => {
+  const metadata = spec._tag === "NpmPublisherSpec" ? npmUserConfigs.get(spec.userConfig) : undefined;
+  const known = metadata === undefined ? env : { ...env, PUBLISH_CREDENTIAL: value2(metadata.token) };
+  return redactOutput(value3, known);
+};
+var makeCertifiedPublisherSpawn = (spawner, vault) => ({
+  spawn: fn2("CertifiedPublisherSpawn.spawn")(function* (spec, grant) {
+    yield* validateGrantForOperation(spec.operation, grant);
+    const env = yield* publisherEnvironment(vault, spec, grant);
+    const command2 = make18(spec.argv[0], [...spec.argv.slice(1)], {
+      cwd: spec.cwd,
+      env,
+      extendEnv: false,
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe"
+    });
+    return yield* scoped2(gen2(function* () {
+      const spawned = yield* exit2(spawner.spawn(command2));
+      if (isFailure3(spawned)) {
+        return {
+          _tag: "RejectedBeforeStart",
+          commitment: "before-dispatch",
+          reason: "The certified publisher process did not return a started handle."
+        };
+      }
+      const output2 = yield* exit2(all2({
+        stdout: collect2(spawned.value.stdout),
+        stderr: collect2(spawned.value.stderr),
+        exitCode: spawned.value.exitCode
+      }, { concurrency: "unbounded" }));
+      if (isFailure3(output2)) {
+        return {
+          _tag: "PublisherOutcomeUnknown",
+          commitment: "unknown",
+          reason: "The certified publisher started, but its final outcome could not be observed."
+        };
+      }
+      return {
+        _tag: "PublisherExited",
+        commitment: "started",
+        exitCode: Number(output2.value.exitCode),
+        stdout: redactPublisherOutput(output2.value.stdout, env, spec),
+        stderr: redactPublisherOutput(output2.value.stderr, env, spec)
+      };
+    }));
+  })
+});
+var makeEnvironmentCredentialPlatform = (http2, spawner, options = {}) => {
+  const vault = new Map;
+  const observationGrants = new WeakMap;
+  return {
+    credentialProvider: makeProvider(vault, observationGrants),
+    httpAuthorizer: makeHttpAuthorizer(http2, vault, observationGrants),
+    authorizedMutationHttp: makeAuthorizedMutationHttp(http2, vault),
+    npmUserConfigResource: makeNpmUserConfigResource(vault, options.temporaryRoot),
+    certifiedPublisherSpawn: makeCertifiedPublisherSpawn(spawner, vault)
+  };
+};
+
+// ../../src/platform/release-runtime.ts
 var makePublicationHttp = (client) => ({
   request: (request) => make23(request.method)(request.url, {
     ...request.headers === undefined ? {} : { headers: request.headers },
-    ...request.body === undefined ? {} : { body: uint8Array(typeof request.body === "string" ? new TextEncoder().encode(request.body) : request.body) }
+    ...request.body === undefined ? {} : {
+      body: uint8Array(typeof request.body === "string" ? new TextEncoder().encode(request.body) : request.body)
+    }
   }).pipe((wire) => client.execute(wire), flatMap3((response) => response.arrayBuffer.pipe(map5((body) => ({
     status: response.status,
     headers: Object.fromEntries(Object.entries(response.headers)),
     body: new Uint8Array(body)
-  })))), mapError3((cause) => PublicationError.make({ phase: "observe", commitment: "unknown", reason: String(cause) })))
+  })))), mapError3(() => PublicationError.make({
+    phase: "observe",
+    commitment: "unknown",
+    reason: "The provider HTTP transport failed after dispatch."
+  })))
 });
-var unsupportedCatalog = {
-  observe: () => fail6(PublicationError.make({ phase: "observe", commitment: "before-dispatch", reason: "No live catalog repository transport is configured for this host." })),
-  write: () => fail6(PublicationError.make({ phase: "mutate", commitment: "before-dispatch", reason: "No live catalog repository transport is configured for this host." }))
-};
-var localPreparedStore = (workspace, explicitDirectory) => makeLocalPreparedReleaseStore(explicitDirectory ?? join7(workspace, ".release", "ts-release", "prepared"));
-var makeReleaseRuntimeLive = (preparedStore = localPreparedStore) => effect(ReleaseRuntime, gen2(function* () {
+var ReleaseRuntimeLive = effect(ReleaseRuntime, gen2(function* () {
+  const source = yield* SourceObserver;
+  const run3 = yield* makeRunCommand;
+  return { source, run: run3 };
+}));
+
+// ../../src/platform/services.ts
+var makeReleaseServicesLive = (preparedStore) => effectContext(gen2(function* () {
   const source = yield* SourceObserver;
   const run3 = yield* makeRunCommand;
   const client = yield* HttpClient2;
-  return {
-    source,
-    run: run3,
-    http: makePublicationHttp(client),
-    catalog: unsupportedCatalog,
-    preparedStore
-  };
+  const spawner = yield* ChildProcessSpawner;
+  const credentials = makeEnvironmentCredentialPlatform(makePublicationHttp(client), spawner);
+  return make3(ReleaseRuntime, { source, run: run3 }).pipe(add(PreparedReleaseStore, preparedStore), add(CredentialProvider, credentials.credentialProvider), add(HttpAuthorizer, credentials.httpAuthorizer), add(AuthorizedMutationHttp, credentials.authorizedMutationHttp), add(NpmUserConfigResource, credentials.npmUserConfigResource), add(CertifiedPublisherSpawn, credentials.certifiedPublisherSpawn));
 }));
-var ReleaseRuntimeLive = makeReleaseRuntimeLive();
-
-// ../../src/platform/services.ts
-var ReleaseServicesLive = ReleaseRuntimeLive;
-var makeReleaseServicesLive = (preparedStore) => makeReleaseRuntimeLive(preparedStore);
-
-// ../../src/platform/source-observer.ts
-import { createHash as createHash8 } from "node:crypto";
-import { readFileSync as readFileSync3, realpathSync as realpathSync5 } from "node:fs";
-import { join as join8 } from "node:path";
-import { spawnSync } from "node:child_process";
-var runtime = {
-  canonicalRoot: (workspace) => try_2({
-    try: () => realpathSync5(workspace),
-    catch: (cause) => cause
-  }),
-  read: (workspace, path) => try_2({
-    try: () => new Uint8Array(readFileSync3(join8(workspace, path))),
-    catch: (cause) => cause
-  }),
-  command: (workspace, argv2) => try_2({
-    try: () => {
-      const result2 = spawnSync("git", [...argv2], { cwd: workspace, encoding: "utf8", stdio: "pipe" });
-      if (result2.error !== undefined)
-        throw result2.error;
-      if (result2.status !== 0)
-        throw new Error(result2.stderr.trim() || `Command exited ${result2.status}.`);
-      return result2.stdout;
-    },
-    catch: (cause) => cause
-  }),
-  digest: (bytes) => sync2(() => `sha256:${createHash8("sha256").update(bytes).digest("hex")}`)
-};
-var SourceObserverLive = succeed5(SourceObserver, makeSourceObserver(runtime));
 
 // ../../src/platform/node.ts
-var provideNode = (services) => services.pipe(provide2(mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4, SourceObserverLive)));
-var makeNodeReleaseLayer = (preparedStore) => provideNode(makeReleaseServicesLive(preparedStore));
-var NodeReleaseLayer = provideNode(ReleaseServicesLive);
+var nodeHost = mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4, SourceObserverLive);
+var makeNodeReleaseLayer = (preparedStore) => makeReleaseServicesLive(preparedStore).pipe(provide2(nodeHost));
+var defaultNodeStore = makeLocalPreparedReleaseStore(join8(process.cwd(), ".release", "ts-release", "prepared"));
+var NodeReleaseLayer = makeNodeReleaseLayer(defaultNodeStore);
 
 // ../../src/api/api.ts
 var manifestPath = (config) => {
@@ -65796,7 +67014,7 @@ var manifestPath = (config) => {
   return SafeRelativePath.make(directory === "." ? "package.json" : `${directory}/package.json`);
 };
 var releaseTagVersion = (tags) => {
-  const values = tags.map((tag3) => /^v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$/u.exec(tag3.toString())?.[1]).filter((value2) => value2 !== undefined);
+  const values = tags.map((tag3) => /^v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$/u.exec(tag3.toString())?.[1]).filter((value3) => value3 !== undefined);
   return values.length === 1 ? values[0] : undefined;
 };
 var observeAndCompile = fn2("observeAndCompileRelease")(function* (input) {
@@ -65804,157 +67022,157 @@ var observeAndCompile = fn2("observeAndCompileRelease")(function* (input) {
   const authored = yield* decodeConfig(input.config);
   const root = workspaceRoot(input.workspace);
   const context3 = yield* runtime2.source.observe(WorkspaceRoot.make(root), manifestPath(authored), authored.project.commit === undefined ? undefined : NonEmptyName.make(authored.project.commit));
+  const observedTagVersion = releaseTagVersion(context3.source.headTags);
   const facts = ObservedFacts.make({
     commit: context3.source.commit,
     manifestName: context3.package.name,
     manifestVersion: context3.package.version,
-    ...releaseTagVersion(context3.source.headTags) === undefined ? {} : { headTagVersion: Version.make(releaseTagVersion(context3.source.headTags)) },
+    ...observedTagVersion === undefined ? {} : { headTagVersion: Version.make(observedTagVersion) },
     ...context3.source.repository === undefined ? {} : { repository: context3.source.repository }
   });
-  const resolved = yield* try_2({ try: () => resolveConfig(input.config, facts), catch: (cause) => new ReleaseInputError({ reason: cause instanceof Error ? cause.message : String(cause) }) });
-  return { context: context3, config: resolved, graph: compileReleaseGraph(resolved, context3) };
+  const resolved = yield* try_2({
+    try: () => resolveConfig(input.config, facts),
+    catch: (cause) => new ReleaseInputError({
+      reason: cause instanceof Error ? cause.message : String(cause)
+    })
+  });
+  return {
+    context: context3,
+    config: resolved,
+    graph: compileReleaseGraph(resolved, context3)
+  };
 });
-var preparedDirectory = (workspace, value2) => value2 === undefined ? undefined : value2.startsWith("/") ? value2 : join9(workspaceRoot(workspace), value2);
 var prepareProgram = fn2("prepareProgram")(function* (input, options) {
-  const compiled = yield* observeAndCompile({ config: input.config, workspace: input.workspace });
+  const compiled = yield* observeAndCompile({
+    config: input.config,
+    workspace: input.workspace
+  });
   if (!options.allowEmpty && compiled.graph.artifacts.length === 0 && compiled.graph.publications.length === 0) {
-    return yield* fail6(new ReleaseInputError({
+    return yield* new ReleaseInputError({
       reason: "release resolved to no artifacts and no publication subjects; use allowEmpty only for an explicit diagnostic run."
-    }));
+    });
   }
   const runtime2 = yield* ReleaseRuntime;
+  const store = yield* PreparedReleaseStore;
   const sourceWorkspace = compiled.context.workspace;
   const sourceManifest = compiled.context.source.packageManifestPath;
   const sourceCommit = compiled.context.source.commit;
   return yield* prepareRelease({
     context: compiled.context,
     graph: compiled.graph,
-    store: runtime2.preparedStore(input.workspace, preparedDirectory(input.workspace, input.preparedDirectory)),
+    store,
     run: runtime2.run,
     verifySource: (_context) => runtime2.source.observe(sourceWorkspace, sourceManifest, sourceCommit)
   });
 });
-var credentialsFor = (bundle, credentials2) => {
-  const npm2 = bundle.manifest.publications.some((publication2) => publication2._tag === "PreparedNpmPublication");
-  const github2 = bundle.manifest.publications.some((publication2) => publication2._tag === "PreparedGitHubPublication");
-  if (npm2 && credentials2?.npm === undefined)
-    throw new ReleaseInputError({ reason: "publish requires separate npm read and publish credentials." });
-  if (github2 && credentials2?.github === undefined)
-    throw new ReleaseInputError({ reason: "publish requires separate GitHub read and publish credentials." });
-  return { ...credentials2?.npm === undefined ? {} : { npm: credentials2.npm }, ...credentials2?.github === undefined ? {} : { github: credentials2.github } };
+var loadPrepared = fn2("loadPreparedForApi")(function* (prepared) {
+  const store = yield* PreparedReleaseStore;
+  return yield* store.load(prepared);
+});
+var safeCause = (cause, fallback) => {
+  const failure3 = squash(cause);
+  const value3 = typeof failure3 === "object" && failure3 !== null && "reason" in failure3 && typeof failure3.reason === "string" ? failure3.reason : failure3 instanceof Error ? failure3.message : typeof failure3 === "string" ? failure3 : fallback;
+  const normalized = [...value3].map((character) => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32 ? character : "?";
+  }).slice(0, 2048).join("");
+  return normalized.length === 0 || secretPatterns.some((pattern) => pattern.test(normalized)) ? fallback : normalized;
 };
-var npmProcess = (runtime2) => ({
-  publish: (request) => try_2({
-    try: () => {
-      const directory = mkdtempSync2(join9(tmpdir3(), "ts-release-publish-"));
-      const tarball = join9(directory, `${request.packageName.replace(/[^A-Za-z0-9._-]+/gu, "-")}-${request.version}.tgz`);
-      const config = join9(directory, ".npmrc");
-      writeFileSync2(tarball, request.bytes, { mode: 384 });
-      writeFileSync2(config, `//${new URL(request.registryUrl).host}/:_authToken=${request.credential}
-`, { mode: 384 });
-      return { directory, tarball, config };
-    },
-    catch: (cause) => new class extends Error {
-      reason;
-      _tag = "PublicationError";
-      phase = "mutate";
-      commitment = "before-dispatch";
-      constructor(reason2) {
-        super(reason2);
-        this.reason = reason2;
-      }
-    }(cause instanceof Error ? cause.message : String(cause))
-  }).pipe(flatMap3(({ directory, tarball, config }) => runtime2.run({ argv: ["npm", "publish", tarball, "--registry", request.registryUrl, "--userconfig", config], cwd: directory, environmentNames: [] }).pipe(map5((result2) => {
-    rmSync3(directory, { recursive: true, force: true });
-    return { started: true, exitCode: result2.exitCode };
-  }), mapError3((cause) => new class extends Error {
-    reason;
-    _tag = "PublicationError";
-    phase = "mutate";
-    commitment = "before-dispatch";
-    constructor(reason2) {
-      super(reason2);
-      this.reason = reason2;
-    }
-  }(cause instanceof Error ? cause.message : String(cause))))))
-});
-var npmDeprecationProcess = (runtime2) => ({
-  deprecate: (request) => gen2(function* () {
-    const directory = mkdtempSync2(join9(tmpdir3(), "ts-release-correction-"));
-    const config = join9(directory, ".npmrc");
-    try {
-      writeFileSync2(config, `//${new URL(request.registryUrl).host}/:_authToken=${request.credential}
-`, { mode: 384 });
-      const result2 = yield* runtime2.run({ argv: ["npm", "deprecate", `${request.packageName}@${request.version}`, request.message, "--registry", request.registryUrl, "--userconfig", config], cwd: directory, environmentNames: [] });
-      return { started: true, exitCode: result2.exitCode };
-    } finally {
-      rmSync3(directory, { recursive: true, force: true });
-    }
-  }).pipe(mapError3((cause) => new class extends Error {
-    reason;
-    _tag = "PublicationError";
-    phase = "mutate";
-    commitment = "before-dispatch";
-    constructor(reason2) {
-      super(reason2);
-      this.reason = reason2;
-    }
-  }(cause instanceof Error ? cause.message : String(cause))))
-});
-var publishProgram = fn2("publishProgram")(function* (bundle, credentials2) {
-  const runtime2 = yield* ReleaseRuntime;
-  const selected = credentialsFor(bundle, credentials2);
-  return yield* publishPreparedRelease({ bundle, http: runtime2.http, credentials: selected, npmProcess: npmProcess(runtime2) });
-});
+var preparationFailure = (effect2) => effect2.pipe(catchCause2((cause) => {
+  const failure3 = squash(cause);
+  if (failure3 instanceof ReleaseInputError) {
+    return fail6(failure3);
+  }
+  if (failure3 instanceof PreparationError && failure3.prepared !== undefined) {
+    return fail6(new ReleaseAbortedError({
+      prepared: failure3.prepared,
+      cause: safeCause(cause, "The durable prepared reference could not be handed to the host.")
+    }));
+  }
+  return fail6(new ReleasePreparationError({
+    cause: safeCause(cause, "Release preparation failed before a durable prepared reference was committed.")
+  }));
+}));
+var afterCommitFailure = (prepared, effect2) => effect2.pipe(catchCause2((cause) => fail6(new ReleaseAbortedError({
+  prepared,
+  cause: safeCause(cause, "The release operation stopped before a total report was available.")
+}))));
+var observeProgram = (prepared) => afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3(observePreparedRelease)));
+var publishProgram = (prepared) => afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3(publishPreparedRelease)));
+var correctionUnavailableReason = SafeReason.make("Authored correction execution is reserved for plan 229; the prepared release was verified and no provider mutation was attempted.");
 var correctProgram = fn2("correctProgram")(function* (input) {
-  const runtime2 = yield* ReleaseRuntime;
-  const bundle = yield* loadPreparedRelease(preparedPath(input.prepared));
-  const intent = yield* try_2({ try: () => decodeCorrectionIntent(new Uint8Array(readFileSync4(input.correction))), catch: (cause) => new ReleaseInputError({ reason: cause instanceof Error ? cause.message : String(cause) }) });
-  const credentials2 = input.credentials;
-  const subject = intent.correction._tag === "NpmDeprecationCorrection" ? credentials2?.npm === undefined ? undefined : makeNpmDeprecationSubject(bundle, intent.correction, runtime2.http, credentials2.npm, npmDeprecationProcess(runtime2)) : intent.correction._tag === "CatalogCorrection" ? makeCatalogCorrectionSubject(bundle, intent, runtime2.catalog) : undefined;
-  if (intent.correction._tag === "NpmDeprecationCorrection" && subject === undefined)
-    return yield* fail6(new ReleaseInputError({ reason: "correct requires separate npm read and publish credentials." }));
-  return yield* correctPreparedRelease({ bundle, intent, ...subject === undefined ? {} : { subject } });
+  yield* loadPrepared(input.prepared);
+  return new CorrectionReport({
+    prepared: input.prepared,
+    status: "unsupported",
+    reason: correctionUnavailableReason
+  });
 });
 var makeReleaseApi = (layer7) => {
   const runtime2 = make6(layer7);
   const run3 = (effect2) => runtime2.runPromise(effect2);
-  const inspect2 = async (value2) => {
-    const input = decodeInspectInput(value2);
-    if (input.prepared !== undefined)
-      return inspectPreparedRelease(await run3(loadPreparedRelease(preparedPath(input.prepared))));
-    const compiled = await run3(observeAndCompile({ config: input.config, workspace: input.workspace }));
+  const inspect2 = async (value3) => {
+    const input = decodeInspectInput(value3);
+    if ("prepared" in input) {
+      return inspectPreparedRelease(await run3(afterCommitFailure(input.prepared, loadPrepared(input.prepared))));
+    }
+    const compiled = await run3(observeAndCompile({
+      config: input.config,
+      workspace: input.workspace
+    }));
     return inspectRelease(compiled.context, compiled.graph);
   };
-  const prepare = async (value2) => run3(prepareProgram(decodePrepareInput(value2), { allowEmpty: true }).pipe(map5((committed) => committed.bundle)));
-  const publish = async (value2) => {
-    const input = decodePublishInput(value2);
-    return run3(flatMap3(loadPreparedRelease(preparedPath(input.prepared)), (bundle) => publishProgram(bundle, input.credentials)));
+  const prepare = async (value3) => {
+    const input = decodePrepareInput(value3);
+    const committed = await run3(preparationFailure(prepareProgram(input, { allowEmpty: true })));
+    return committed.ref;
   };
-  const release = async (value2) => {
-    const input = decodeReleaseInput(value2);
-    const committed = await run3(prepareProgram(input, { allowEmpty: input.allowEmpty === true }));
-    const publications = await run3(publishProgram(committed.bundle, input.credentials));
-    return { prepared: committed.bundle, publications };
+  const observe = async (value3) => {
+    const input = decodeObserveInput(value3);
+    return run3(observeProgram(input.prepared));
   };
-  const correct = async (value2) => run3(correctProgram(decodeCorrectInput(value2)));
-  return Object.freeze({ inspect: inspect2, prepare, publish, release, correct, dispose: () => runtime2.dispose() });
+  const publish = async (value3) => {
+    const input = decodePublishInput(value3);
+    return run3(publishProgram(input.prepared));
+  };
+  const release = async (value3) => {
+    const input = decodeReleaseInput(value3);
+    const committed = await run3(preparationFailure(prepareProgram(input, {
+      allowEmpty: input.allowEmpty === true
+    })));
+    const report = await run3(afterCommitFailure(committed.ref, publishPreparedRelease(committed.bundle)));
+    return { prepared: committed.ref, report };
+  };
+  const correct = async (value3) => {
+    const input = decodeCorrectInput(value3);
+    return run3(afterCommitFailure(input.prepared, correctProgram(input)));
+  };
+  return Object.freeze({
+    inspect: inspect2,
+    prepare,
+    observe,
+    publish,
+    release,
+    correct,
+    dispose: () => runtime2.dispose()
+  });
 };
 var defaultApi = makeReleaseApi(NodeReleaseLayer);
 var inspect2 = defaultApi.inspect;
 var prepare = defaultApi.prepare;
+var observe = defaultApi.observe;
 var publish = defaultApi.publish;
 var release = defaultApi.release;
 var correct = defaultApi.correct;
 // ../../src/platform/host-support.ts
 var unsupportedExecutionHost = (platform2) => platform2 === "linux" || platform2 === "darwin" ? undefined : "ts-release runs on Linux and macOS. Its Bun builder can produce Windows artifacts.";
 // src/index.ts
-import { readFileSync as readFileSync7, mkdirSync as mkdirSync5, writeFileSync as writeFileSync4 } from "node:fs";
-import { dirname as dirname3 } from "node:path";
+import { readFileSync as readFileSync6, mkdirSync as mkdirSync5, writeFileSync as writeFileSync3 } from "node:fs";
+import { dirname as dirname2 } from "node:path";
 
 // src/commands.ts
 import { existsSync as existsSync5, realpathSync as realpathSync6 } from "node:fs";
-import { isAbsolute as isAbsolute3, relative as relative3, resolve as resolve5, sep as sep2 } from "node:path";
+import { isAbsolute as isAbsolute3, relative as relative3, resolve as resolve4, sep as sep2 } from "node:path";
 var actionCommands = ["release", "prepare", "publish"];
 var makePreparedReferenceChannel = (input) => {
   let current;
@@ -65979,20 +67197,20 @@ var inside = (root, candidate) => {
   }
   return candidate;
 };
-var pathInWorkspace = (root, value2) => {
-  const candidate = inside(root, resolve5(root, value2));
+var pathInWorkspace = (root, value3) => {
+  const candidate = inside(root, resolve4(root, value3));
   if (!existsSync5(candidate))
-    throw new Error(`Action path does not exist: ${value2}`);
+    throw new Error(`Action path does not exist: ${value3}`);
   return inside(root, realpathSync6(candidate));
 };
-var present = (value2) => value2.length > 0;
-var fail13 = (reason2) => {
+var present = (value3) => value3.length > 0;
+var fail14 = (reason2) => {
   throw new Error(reason2);
 };
-var command2 = (value2) => {
-  if (actionCommands.includes(value2))
-    return value2;
-  return fail13(`Action command must be one of ${actionCommands.join(", ")}.`);
+var command2 = (value3) => {
+  if (actionCommands.includes(value3))
+    return value3;
+  return fail14(`Action command must be one of ${actionCommands.join(", ")}.`);
 };
 var configJson = (runtime2, path) => {
   try {
@@ -66001,50 +67219,25 @@ var configJson = (runtime2, path) => {
     throw new Error(`Action configuration is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
 };
-var redact4 = (value2) => value2.replace(/(?:npm|ghp|ghs|github_pat)_[A-Za-z0-9_]+/gu, "[REDACTED]").replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/giu, "Bearer [REDACTED]");
-var printable = (value2) => JSON.stringify(value2, (_key, nested2) => {
+var redact5 = (value3) => value3.replace(/(?:npm|ghp|ghs|github_pat)_[A-Za-z0-9_]+/gu, "[REDACTED]").replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/giu, "Bearer [REDACTED]");
+var printable = (value3) => JSON.stringify(value3, (_key, nested2) => {
   if (typeof nested2 === "object" && nested2 !== null && "toString" in nested2 && Object.keys(nested2).length === 1) {
     return String(nested2);
   }
   return nested2;
 }, 2);
-var reportPath = (root) => inside(root, resolve5(root, reportRelativePath));
-var writeReport = (runtime2, root, value2) => {
-  runtime2.write(reportPath(root), `${redact4(printable(value2))}
+var reportPath = (root) => inside(root, resolve4(root, reportRelativePath));
+var writeReport = (runtime2, root, value3) => {
+  runtime2.write(reportPath(root), `${redact5(printable(value3))}
 `);
   runtime2.output("report-ref", reportRelativePath);
 };
 var rejectExtra = (values, allowed) => {
-  for (const [name, value2] of Object.entries(values)) {
-    if (present(value2) && !allowed.includes(name)) {
-      fail13(`Action input '${name}' is not valid for command '${values.command}'.`);
+  for (const [name, value3] of Object.entries(values)) {
+    if (present(value3) && !allowed.includes(name)) {
+      fail14(`Action input '${name}' is not valid for command '${values.command}'.`);
     }
   }
-};
-var reportStatus = (result2) => {
-  if (Array.isArray(result2)) {
-    return result2.every((item) => typeof item === "object" && item !== null && item._tag === "PublicationConverged") ? "complete" : result2.some((item) => typeof item === "object" && item !== null && (item._tag === "PublicationObserved" || item._tag === "UncertainSubject")) ? "uncertain" : "blocked";
-  }
-  if (typeof result2 !== "object" || result2 === null)
-    return "blocked";
-  const record2 = result2;
-  if (record2.status === "complete" || record2.status === "blocked" || record2.status === "uncertain") {
-    return record2.status;
-  }
-  if (record2.report !== undefined)
-    return reportStatus(record2.report);
-  if (record2.publications !== undefined)
-    return reportStatus(record2.publications);
-  return "blocked";
-};
-var reportProjection = (command3, result2, prepared) => {
-  if (command3 === "prepare")
-    return { prepared };
-  if (command3 === "release" && typeof result2 === "object" && result2 !== null) {
-    const record2 = result2;
-    return { prepared, report: record2.report ?? record2.publications };
-  }
-  return result2;
 };
 
 class ReportedActionError extends Error {
@@ -66054,6 +67247,15 @@ var recoveryGuidance = (reference) => [
   "Re-run the failed publish job on this workflow run; artifacts persist across attempts."
 ].join(`
 `);
+var decodePrepared = (value3) => runPromise2(decodeCompletePreparedReleaseRef(value3));
+var confirmedPrepared = (reference, channel) => {
+  const encoded = encodeCompletePreparedReleaseRef(reference);
+  const emitted = channel.current() ?? fail14("Operation completed without a durable prepared reference.");
+  if (emitted !== encoded) {
+    fail14("Operation returned a different prepared reference than its durable store committed.");
+  }
+  return encoded;
+};
 var runAction = async (api, runtime2) => {
   const root = realpathSync6(runtime2.workspace);
   const values = {
@@ -66064,31 +67266,40 @@ var runAction = async (api, runtime2) => {
   try {
     const selected = command2(values.command);
     rejectExtra(values, selected === "publish" ? ["command", "prepared"] : ["command", "config"]);
-    let result2;
+    let prepared;
+    let report;
     if (selected === "publish") {
-      const reference = values.prepared || fail13("publish requires prepared.");
-      const directory = await runtime2.resolvePrepared(reference);
-      result2 = await api.publish({ prepared: directory });
+      const reference = await decodePrepared(values.prepared || fail14("publish requires prepared."));
+      prepared = encodeCompletePreparedReleaseRef(reference);
+      await runtime2.preparedReference.emit(prepared);
+      report = await api.publish({ prepared: reference });
     } else {
-      const config = configJson(runtime2, pathInWorkspace(root, values.config || fail13(`${selected} requires config.`)));
-      result2 = selected === "release" ? await api.release({ config, workspace: root }) : await api.prepare({ config, workspace: root });
+      const config = configJson(runtime2, pathInWorkspace(root, values.config || fail14(`${selected} requires config.`)));
+      if (selected === "release") {
+        const result2 = await api.release({ config, workspace: root });
+        prepared = confirmedPrepared(result2.prepared, runtime2.preparedReference);
+        report = result2.report;
+      } else {
+        const result2 = await api.prepare({ config, workspace: root });
+        prepared = confirmedPrepared(result2, runtime2.preparedReference);
+        report = undefined;
+      }
     }
-    const prepared = runtime2.preparedReference.current() ?? fail13(`${selected} completed without a durable prepared reference.`);
-    const status = selected === "prepare" ? "complete" : reportStatus(result2);
-    const report = {
+    const status = report?.status ?? "complete";
+    const actionReport = {
       schemaVersion: "ts-release-action-report/v2",
       command: selected,
       status,
       prepared,
-      result: reportProjection(selected, result2, prepared)
+      ...report === undefined ? {} : { report }
     };
-    writeReport(runtime2, root, report);
+    writeReport(runtime2, root, actionReport);
     if (status !== "complete") {
       await runtime2.summarize(recoveryGuidance(prepared));
       throw new ReportedActionError(`Action ${selected} report is ${status}; no complete release is claimed.`);
     }
   } catch (cause) {
-    const message = redact4(cause instanceof Error ? cause.message : String(cause));
+    const message = redact5(cause instanceof Error ? cause.message : String(cause));
     const prepared = runtime2.preparedReference.current();
     if (!(cause instanceof ReportedActionError)) {
       try {
@@ -66191,15 +67402,15 @@ import * as fs6 from "fs";
 import * as path2 from "path";
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/generated/google/protobuf/timestamp.js
-var import_runtime5 = __toESM(require_commonjs(), 1);
 var import_runtime6 = __toESM(require_commonjs(), 1);
 var import_runtime7 = __toESM(require_commonjs(), 1);
 var import_runtime8 = __toESM(require_commonjs(), 1);
 var import_runtime9 = __toESM(require_commonjs(), 1);
 var import_runtime10 = __toESM(require_commonjs(), 1);
 var import_runtime11 = __toESM(require_commonjs(), 1);
+var import_runtime12 = __toESM(require_commonjs(), 1);
 
-class Timestamp$Type extends import_runtime11.MessageType {
+class Timestamp$Type extends import_runtime12.MessageType {
   constructor() {
     super("google.protobuf.Timestamp", [
       { no: 1, name: "seconds", kind: "scalar", T: 3 },
@@ -66209,22 +67420,22 @@ class Timestamp$Type extends import_runtime11.MessageType {
   now() {
     const msg = this.create();
     const ms = Date.now();
-    msg.seconds = import_runtime10.PbLong.from(Math.floor(ms / 1000)).toString();
+    msg.seconds = import_runtime11.PbLong.from(Math.floor(ms / 1000)).toString();
     msg.nanos = ms % 1000 * 1e6;
     return msg;
   }
   toDate(message) {
-    return new Date(import_runtime10.PbLong.from(message.seconds).toNumber() * 1000 + Math.ceil(message.nanos / 1e6));
+    return new Date(import_runtime11.PbLong.from(message.seconds).toNumber() * 1000 + Math.ceil(message.nanos / 1e6));
   }
   fromDate(date) {
     const msg = this.create();
     const ms = date.getTime();
-    msg.seconds = import_runtime10.PbLong.from(Math.floor(ms / 1000)).toString();
+    msg.seconds = import_runtime11.PbLong.from(Math.floor(ms / 1000)).toString();
     msg.nanos = ms % 1000 * 1e6;
     return msg;
   }
   internalJsonWrite(message, options) {
-    let ms = import_runtime10.PbLong.from(message.seconds).toNumber() * 1000;
+    let ms = import_runtime11.PbLong.from(message.seconds).toNumber() * 1000;
     if (ms < Date.parse("0001-01-01T00:00:00Z") || ms > Date.parse("9999-12-31T23:59:59Z"))
       throw new Error("Unable to encode Timestamp to JSON. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.");
     if (message.nanos < 0)
@@ -66243,7 +67454,7 @@ class Timestamp$Type extends import_runtime11.MessageType {
   }
   internalJsonRead(json2, options, target2) {
     if (typeof json2 !== "string")
-      throw new Error("Unable to parse Timestamp from JSON " + import_runtime9.typeofJsonValue(json2) + ".");
+      throw new Error("Unable to parse Timestamp from JSON " + import_runtime10.typeofJsonValue(json2) + ".");
     let matches = json2.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:Z|\.([0-9]{3,9})Z|([+-][0-9][0-9]:[0-9][0-9]))$/);
     if (!matches)
       throw new Error("Unable to parse Timestamp from JSON. Invalid format.");
@@ -66254,17 +67465,17 @@ class Timestamp$Type extends import_runtime11.MessageType {
       throw new globalThis.Error("Unable to parse Timestamp from JSON. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.");
     if (!target2)
       target2 = this.create();
-    target2.seconds = import_runtime10.PbLong.from(ms / 1000).toString();
+    target2.seconds = import_runtime11.PbLong.from(ms / 1000).toString();
     target2.nanos = 0;
     if (matches[7])
       target2.nanos = parseInt("1" + matches[7] + "0".repeat(9 - matches[7].length)) - 1e9;
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { seconds: "0", nanos: 0 };
-    globalThis.Object.defineProperty(message, import_runtime8.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime7.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime9.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime8.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66284,33 +67495,33 @@ class Timestamp$Type extends import_runtime11.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime6.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime7.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.seconds !== "0")
-      writer.tag(1, import_runtime5.WireType.Varint).int64(message.seconds);
+      writer.tag(1, import_runtime6.WireType.Varint).int64(message.seconds);
     if (message.nanos !== 0)
-      writer.tag(2, import_runtime5.WireType.Varint).int32(message.nanos);
+      writer.tag(2, import_runtime6.WireType.Varint).int32(message.nanos);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime6.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime7.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var Timestamp = new Timestamp$Type;
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/generated/google/protobuf/wrappers.js
-var import_runtime12 = __toESM(require_commonjs(), 1);
 var import_runtime13 = __toESM(require_commonjs(), 1);
 var import_runtime14 = __toESM(require_commonjs(), 1);
 var import_runtime15 = __toESM(require_commonjs(), 1);
 var import_runtime16 = __toESM(require_commonjs(), 1);
 var import_runtime17 = __toESM(require_commonjs(), 1);
 var import_runtime18 = __toESM(require_commonjs(), 1);
+var import_runtime19 = __toESM(require_commonjs(), 1);
 
-class DoubleValue$Type extends import_runtime18.MessageType {
+class DoubleValue$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.DoubleValue", [
       { no: 1, name: "value", kind: "scalar", T: 1 }
@@ -66325,11 +67536,11 @@ class DoubleValue$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 1, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: 0 };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66346,23 +67557,23 @@ class DoubleValue$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== 0)
-      writer.tag(1, import_runtime14.WireType.Bit64).double(message.value);
+      writer.tag(1, import_runtime15.WireType.Bit64).double(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var DoubleValue = new DoubleValue$Type;
 
-class FloatValue$Type extends import_runtime18.MessageType {
+class FloatValue$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.FloatValue", [
       { no: 1, name: "value", kind: "scalar", T: 2 }
@@ -66377,11 +67588,11 @@ class FloatValue$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 1, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: 0 };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66398,42 +67609,42 @@ class FloatValue$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== 0)
-      writer.tag(1, import_runtime14.WireType.Bit32).float(message.value);
+      writer.tag(1, import_runtime15.WireType.Bit32).float(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var FloatValue = new FloatValue$Type;
 
-class Int64Value$Type extends import_runtime18.MessageType {
+class Int64Value$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.Int64Value", [
       { no: 1, name: "value", kind: "scalar", T: 3 }
     ]);
   }
   internalJsonWrite(message, options) {
-    return this.refJsonWriter.scalar(import_runtime12.ScalarType.INT64, message.value, "value", false, true);
+    return this.refJsonWriter.scalar(import_runtime13.ScalarType.INT64, message.value, "value", false, true);
   }
   internalJsonRead(json2, options, target2) {
     if (!target2)
       target2 = this.create();
-    target2.value = this.refJsonReader.scalar(json2, import_runtime12.ScalarType.INT64, import_runtime13.LongType.STRING, "value");
+    target2.value = this.refJsonReader.scalar(json2, import_runtime13.ScalarType.INT64, import_runtime14.LongType.STRING, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: "0" };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66450,42 +67661,42 @@ class Int64Value$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== "0")
-      writer.tag(1, import_runtime14.WireType.Varint).int64(message.value);
+      writer.tag(1, import_runtime15.WireType.Varint).int64(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var Int64Value = new Int64Value$Type;
 
-class UInt64Value$Type extends import_runtime18.MessageType {
+class UInt64Value$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.UInt64Value", [
       { no: 1, name: "value", kind: "scalar", T: 4 }
     ]);
   }
   internalJsonWrite(message, options) {
-    return this.refJsonWriter.scalar(import_runtime12.ScalarType.UINT64, message.value, "value", false, true);
+    return this.refJsonWriter.scalar(import_runtime13.ScalarType.UINT64, message.value, "value", false, true);
   }
   internalJsonRead(json2, options, target2) {
     if (!target2)
       target2 = this.create();
-    target2.value = this.refJsonReader.scalar(json2, import_runtime12.ScalarType.UINT64, import_runtime13.LongType.STRING, "value");
+    target2.value = this.refJsonReader.scalar(json2, import_runtime13.ScalarType.UINT64, import_runtime14.LongType.STRING, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: "0" };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66502,23 +67713,23 @@ class UInt64Value$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== "0")
-      writer.tag(1, import_runtime14.WireType.Varint).uint64(message.value);
+      writer.tag(1, import_runtime15.WireType.Varint).uint64(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var UInt64Value = new UInt64Value$Type;
 
-class Int32Value$Type extends import_runtime18.MessageType {
+class Int32Value$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.Int32Value", [
       { no: 1, name: "value", kind: "scalar", T: 5 }
@@ -66533,11 +67744,11 @@ class Int32Value$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 5, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: 0 };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66554,23 +67765,23 @@ class Int32Value$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== 0)
-      writer.tag(1, import_runtime14.WireType.Varint).int32(message.value);
+      writer.tag(1, import_runtime15.WireType.Varint).int32(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var Int32Value = new Int32Value$Type;
 
-class UInt32Value$Type extends import_runtime18.MessageType {
+class UInt32Value$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.UInt32Value", [
       { no: 1, name: "value", kind: "scalar", T: 13 }
@@ -66585,11 +67796,11 @@ class UInt32Value$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 13, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: 0 };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66606,23 +67817,23 @@ class UInt32Value$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== 0)
-      writer.tag(1, import_runtime14.WireType.Varint).uint32(message.value);
+      writer.tag(1, import_runtime15.WireType.Varint).uint32(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var UInt32Value = new UInt32Value$Type;
 
-class BoolValue$Type extends import_runtime18.MessageType {
+class BoolValue$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.BoolValue", [
       { no: 1, name: "value", kind: "scalar", T: 8 }
@@ -66637,11 +67848,11 @@ class BoolValue$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 8, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: false };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66658,23 +67869,23 @@ class BoolValue$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== false)
-      writer.tag(1, import_runtime14.WireType.Varint).bool(message.value);
+      writer.tag(1, import_runtime15.WireType.Varint).bool(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var BoolValue = new BoolValue$Type;
 
-class StringValue$Type extends import_runtime18.MessageType {
+class StringValue$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.StringValue", [
       { no: 1, name: "value", kind: "scalar", T: 9 }
@@ -66689,11 +67900,11 @@ class StringValue$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 9, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: "" };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66710,23 +67921,23 @@ class StringValue$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value !== "")
-      writer.tag(1, import_runtime14.WireType.LengthDelimited).string(message.value);
+      writer.tag(1, import_runtime15.WireType.LengthDelimited).string(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var StringValue = new StringValue$Type;
 
-class BytesValue$Type extends import_runtime18.MessageType {
+class BytesValue$Type extends import_runtime19.MessageType {
   constructor() {
     super("google.protobuf.BytesValue", [
       { no: 1, name: "value", kind: "scalar", T: 12 }
@@ -66741,11 +67952,11 @@ class BytesValue$Type extends import_runtime18.MessageType {
     target2.value = this.refJsonReader.scalar(json2, 12, undefined, "value");
     return target2;
   }
-  create(value2) {
+  create(value3) {
     const message = { value: new Uint8Array(0) };
-    globalThis.Object.defineProperty(message, import_runtime17.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime16.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime18.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime17.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66762,29 +67973,29 @@ class BytesValue$Type extends import_runtime18.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime15.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime16.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.value.length)
-      writer.tag(1, import_runtime14.WireType.LengthDelimited).bytes(message.value);
+      writer.tag(1, import_runtime15.WireType.LengthDelimited).bytes(message.value);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime15.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime16.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var BytesValue = new BytesValue$Type;
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/generated/results/api/v1/artifact.js
 var import_runtime_rpc = __toESM(require_commonjs2(), 1);
-var import_runtime19 = __toESM(require_commonjs(), 1);
 var import_runtime20 = __toESM(require_commonjs(), 1);
 var import_runtime21 = __toESM(require_commonjs(), 1);
 var import_runtime22 = __toESM(require_commonjs(), 1);
 var import_runtime23 = __toESM(require_commonjs(), 1);
-class CreateArtifactRequest$Type extends import_runtime23.MessageType {
+var import_runtime24 = __toESM(require_commonjs(), 1);
+class CreateArtifactRequest$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.CreateArtifactRequest", [
       { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 },
@@ -66795,11 +68006,11 @@ class CreateArtifactRequest$Type extends import_runtime23.MessageType {
       { no: 6, name: "mime_type", kind: "message", T: () => StringValue }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", name: "", version: 0 };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66831,44 +68042,44 @@ class CreateArtifactRequest$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.workflowRunBackendId !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.workflowRunBackendId);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.workflowRunBackendId);
     if (message.workflowJobRunBackendId !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
     if (message.name !== "")
-      writer.tag(3, import_runtime19.WireType.LengthDelimited).string(message.name);
+      writer.tag(3, import_runtime20.WireType.LengthDelimited).string(message.name);
     if (message.expiresAt)
-      Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(4, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(4, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     if (message.version !== 0)
-      writer.tag(5, import_runtime19.WireType.Varint).int32(message.version);
+      writer.tag(5, import_runtime20.WireType.Varint).int32(message.version);
     if (message.mimeType)
-      StringValue.internalBinaryWrite(message.mimeType, writer.tag(6, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      StringValue.internalBinaryWrite(message.mimeType, writer.tag(6, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var CreateArtifactRequest = new CreateArtifactRequest$Type;
 
-class CreateArtifactResponse$Type extends import_runtime23.MessageType {
+class CreateArtifactResponse$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.CreateArtifactResponse", [
       { no: 1, name: "ok", kind: "scalar", T: 8 },
       { no: 2, name: "signed_upload_url", kind: "scalar", T: 9 }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { ok: false, signedUploadUrl: "" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66888,25 +68099,25 @@ class CreateArtifactResponse$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.ok !== false)
-      writer.tag(1, import_runtime19.WireType.Varint).bool(message.ok);
+      writer.tag(1, import_runtime20.WireType.Varint).bool(message.ok);
     if (message.signedUploadUrl !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.signedUploadUrl);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.signedUploadUrl);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var CreateArtifactResponse = new CreateArtifactResponse$Type;
 
-class FinalizeArtifactRequest$Type extends import_runtime23.MessageType {
+class FinalizeArtifactRequest$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.FinalizeArtifactRequest", [
       { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 },
@@ -66916,11 +68127,11 @@ class FinalizeArtifactRequest$Type extends import_runtime23.MessageType {
       { no: 5, name: "hash", kind: "message", T: () => StringValue }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", name: "", size: "0" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -66949,42 +68160,42 @@ class FinalizeArtifactRequest$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.workflowRunBackendId !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.workflowRunBackendId);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.workflowRunBackendId);
     if (message.workflowJobRunBackendId !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
     if (message.name !== "")
-      writer.tag(3, import_runtime19.WireType.LengthDelimited).string(message.name);
+      writer.tag(3, import_runtime20.WireType.LengthDelimited).string(message.name);
     if (message.size !== "0")
-      writer.tag(4, import_runtime19.WireType.Varint).int64(message.size);
+      writer.tag(4, import_runtime20.WireType.Varint).int64(message.size);
     if (message.hash)
-      StringValue.internalBinaryWrite(message.hash, writer.tag(5, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      StringValue.internalBinaryWrite(message.hash, writer.tag(5, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var FinalizeArtifactRequest = new FinalizeArtifactRequest$Type;
 
-class FinalizeArtifactResponse$Type extends import_runtime23.MessageType {
+class FinalizeArtifactResponse$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.FinalizeArtifactResponse", [
       { no: 1, name: "ok", kind: "scalar", T: 8 },
       { no: 2, name: "artifact_id", kind: "scalar", T: 3 }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { ok: false, artifactId: "0" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67004,25 +68215,25 @@ class FinalizeArtifactResponse$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.ok !== false)
-      writer.tag(1, import_runtime19.WireType.Varint).bool(message.ok);
+      writer.tag(1, import_runtime20.WireType.Varint).bool(message.ok);
     if (message.artifactId !== "0")
-      writer.tag(2, import_runtime19.WireType.Varint).int64(message.artifactId);
+      writer.tag(2, import_runtime20.WireType.Varint).int64(message.artifactId);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var FinalizeArtifactResponse = new FinalizeArtifactResponse$Type;
 
-class ListArtifactsRequest$Type extends import_runtime23.MessageType {
+class ListArtifactsRequest$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.ListArtifactsRequest", [
       { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 },
@@ -67031,11 +68242,11 @@ class ListArtifactsRequest$Type extends import_runtime23.MessageType {
       { no: 4, name: "id_filter", kind: "message", T: () => Int64Value }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { workflowRunBackendId: "", workflowJobRunBackendId: "" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67061,39 +68272,39 @@ class ListArtifactsRequest$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.workflowRunBackendId !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.workflowRunBackendId);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.workflowRunBackendId);
     if (message.workflowJobRunBackendId !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
     if (message.nameFilter)
-      StringValue.internalBinaryWrite(message.nameFilter, writer.tag(3, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      StringValue.internalBinaryWrite(message.nameFilter, writer.tag(3, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     if (message.idFilter)
-      Int64Value.internalBinaryWrite(message.idFilter, writer.tag(4, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      Int64Value.internalBinaryWrite(message.idFilter, writer.tag(4, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var ListArtifactsRequest = new ListArtifactsRequest$Type;
 
-class ListArtifactsResponse$Type extends import_runtime23.MessageType {
+class ListArtifactsResponse$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.ListArtifactsResponse", [
       { no: 1, name: "artifacts", kind: "message", repeat: 2, T: () => ListArtifactsResponse_MonolithArtifact }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { artifacts: [] };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67110,23 +68321,23 @@ class ListArtifactsResponse$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     for (let i = 0;i < message.artifacts.length; i++)
-      ListArtifactsResponse_MonolithArtifact.internalBinaryWrite(message.artifacts[i], writer.tag(1, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      ListArtifactsResponse_MonolithArtifact.internalBinaryWrite(message.artifacts[i], writer.tag(1, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var ListArtifactsResponse = new ListArtifactsResponse$Type;
 
-class ListArtifactsResponse_MonolithArtifact$Type extends import_runtime23.MessageType {
+class ListArtifactsResponse_MonolithArtifact$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.ListArtifactsResponse.MonolithArtifact", [
       { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 },
@@ -67138,11 +68349,11 @@ class ListArtifactsResponse_MonolithArtifact$Type extends import_runtime23.Messa
       { no: 7, name: "digest", kind: "message", T: () => StringValue }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", databaseId: "0", name: "", size: "0" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67177,35 +68388,35 @@ class ListArtifactsResponse_MonolithArtifact$Type extends import_runtime23.Messa
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.workflowRunBackendId !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.workflowRunBackendId);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.workflowRunBackendId);
     if (message.workflowJobRunBackendId !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
     if (message.databaseId !== "0")
-      writer.tag(3, import_runtime19.WireType.Varint).int64(message.databaseId);
+      writer.tag(3, import_runtime20.WireType.Varint).int64(message.databaseId);
     if (message.name !== "")
-      writer.tag(4, import_runtime19.WireType.LengthDelimited).string(message.name);
+      writer.tag(4, import_runtime20.WireType.LengthDelimited).string(message.name);
     if (message.size !== "0")
-      writer.tag(5, import_runtime19.WireType.Varint).int64(message.size);
+      writer.tag(5, import_runtime20.WireType.Varint).int64(message.size);
     if (message.createdAt)
-      Timestamp.internalBinaryWrite(message.createdAt, writer.tag(6, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      Timestamp.internalBinaryWrite(message.createdAt, writer.tag(6, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     if (message.digest)
-      StringValue.internalBinaryWrite(message.digest, writer.tag(7, import_runtime19.WireType.LengthDelimited).fork(), options).join();
+      StringValue.internalBinaryWrite(message.digest, writer.tag(7, import_runtime20.WireType.LengthDelimited).fork(), options).join();
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var ListArtifactsResponse_MonolithArtifact = new ListArtifactsResponse_MonolithArtifact$Type;
 
-class GetSignedArtifactURLRequest$Type extends import_runtime23.MessageType {
+class GetSignedArtifactURLRequest$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.GetSignedArtifactURLRequest", [
       { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 },
@@ -67213,11 +68424,11 @@ class GetSignedArtifactURLRequest$Type extends import_runtime23.MessageType {
       { no: 3, name: "name", kind: "scalar", T: 9 }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", name: "" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67240,37 +68451,37 @@ class GetSignedArtifactURLRequest$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.workflowRunBackendId !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.workflowRunBackendId);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.workflowRunBackendId);
     if (message.workflowJobRunBackendId !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
     if (message.name !== "")
-      writer.tag(3, import_runtime19.WireType.LengthDelimited).string(message.name);
+      writer.tag(3, import_runtime20.WireType.LengthDelimited).string(message.name);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var GetSignedArtifactURLRequest = new GetSignedArtifactURLRequest$Type;
 
-class GetSignedArtifactURLResponse$Type extends import_runtime23.MessageType {
+class GetSignedArtifactURLResponse$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.GetSignedArtifactURLResponse", [
       { no: 1, name: "signed_url", kind: "scalar", T: 9 }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { signedUrl: "" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67287,23 +68498,23 @@ class GetSignedArtifactURLResponse$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.signedUrl !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.signedUrl);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.signedUrl);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var GetSignedArtifactURLResponse = new GetSignedArtifactURLResponse$Type;
 
-class DeleteArtifactRequest$Type extends import_runtime23.MessageType {
+class DeleteArtifactRequest$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.DeleteArtifactRequest", [
       { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 },
@@ -67311,11 +68522,11 @@ class DeleteArtifactRequest$Type extends import_runtime23.MessageType {
       { no: 3, name: "name", kind: "scalar", T: 9 }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", name: "" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67338,38 +68549,38 @@ class DeleteArtifactRequest$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.workflowRunBackendId !== "")
-      writer.tag(1, import_runtime19.WireType.LengthDelimited).string(message.workflowRunBackendId);
+      writer.tag(1, import_runtime20.WireType.LengthDelimited).string(message.workflowRunBackendId);
     if (message.workflowJobRunBackendId !== "")
-      writer.tag(2, import_runtime19.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
+      writer.tag(2, import_runtime20.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
     if (message.name !== "")
-      writer.tag(3, import_runtime19.WireType.LengthDelimited).string(message.name);
+      writer.tag(3, import_runtime20.WireType.LengthDelimited).string(message.name);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
 var DeleteArtifactRequest = new DeleteArtifactRequest$Type;
 
-class DeleteArtifactResponse$Type extends import_runtime23.MessageType {
+class DeleteArtifactResponse$Type extends import_runtime24.MessageType {
   constructor() {
     super("github.actions.results.api.v1.DeleteArtifactResponse", [
       { no: 1, name: "ok", kind: "scalar", T: 8 },
       { no: 2, name: "artifact_id", kind: "scalar", T: 3 }
     ]);
   }
-  create(value2) {
+  create(value3) {
     const message = { ok: false, artifactId: "0" };
-    globalThis.Object.defineProperty(message, import_runtime22.MESSAGE_TYPE, { enumerable: false, value: this });
-    if (value2 !== undefined)
-      import_runtime21.reflectionMergePartial(this, message, value2);
+    globalThis.Object.defineProperty(message, import_runtime23.MESSAGE_TYPE, { enumerable: false, value: this });
+    if (value3 !== undefined)
+      import_runtime22.reflectionMergePartial(this, message, value3);
     return message;
   }
   internalBinaryRead(reader, length, options, target2) {
@@ -67389,19 +68600,19 @@ class DeleteArtifactResponse$Type extends import_runtime23.MessageType {
             throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
           let d = reader.skip(wireType);
           if (u !== false)
-            (u === true ? import_runtime20.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            (u === true ? import_runtime21.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
       }
     }
     return message;
   }
   internalBinaryWrite(message, writer, options) {
     if (message.ok !== false)
-      writer.tag(1, import_runtime19.WireType.Varint).bool(message.ok);
+      writer.tag(1, import_runtime20.WireType.Varint).bool(message.ok);
     if (message.artifactId !== "0")
-      writer.tag(2, import_runtime19.WireType.Varint).int64(message.artifactId);
+      writer.tag(2, import_runtime20.WireType.Varint).int64(message.artifactId);
     let u = options.writeUnknownFields;
     if (u !== false)
-      (u == true ? import_runtime20.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+      (u == true ? import_runtime21.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
     return writer;
   }
 }
@@ -67737,28 +68948,28 @@ function maskSecretUrls(body) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/shared/artifact-twirp-client.js
 var __awaiter4 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve6) {
-      resolve6(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve5) {
+      resolve5(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve6, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve5, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve5(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -67874,7 +69085,7 @@ class ArtifactHttpClient {
   }
   sleep(milliseconds) {
     return __awaiter4(this, undefined, undefined, function* () {
-      return new Promise((resolve6) => setTimeout(resolve6, milliseconds));
+      return new Promise((resolve5) => setTimeout(resolve5, milliseconds));
     });
   }
   getExponentialRetryTimeMilliseconds(attempt2) {
@@ -67896,7 +69107,7 @@ function internalArtifactTwirpClient(options) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/upload/upload-zip-specification.js
 import * as fs3 from "fs";
-import { normalize, resolve as resolve6 } from "path";
+import { normalize, resolve as resolve5 } from "path";
 function validateRootDirectory(rootDirectory) {
   if (!fs3.existsSync(rootDirectory)) {
     throw new Error(`The provided rootDirectory ${rootDirectory} does not exist`);
@@ -67909,7 +69120,7 @@ function validateRootDirectory(rootDirectory) {
 function getUploadZipSpecification(filesToZip, rootDirectory) {
   const specification = [];
   rootDirectory = normalize(rootDirectory);
-  rootDirectory = resolve6(rootDirectory);
+  rootDirectory = resolve5(rootDirectory);
   for (let file2 of filesToZip) {
     const stats = fs3.lstatSync(file2, { throwIfNoEntry: false });
     if (!stats) {
@@ -67917,7 +69128,7 @@ function getUploadZipSpecification(filesToZip, rootDirectory) {
     }
     if (!stats.isDirectory()) {
       file2 = normalize(file2);
-      file2 = resolve6(file2);
+      file2 = resolve5(file2);
       if (!file2.startsWith(rootDirectory)) {
         throw new Error(`The rootDirectory: ${rootDirectory} is not a parent directory of the file: ${file2}`);
       }
@@ -67949,8 +69160,8 @@ function isTokenCredential(credential) {
 function normalizeName(name) {
   return name.toLowerCase();
 }
-function normalizeValue(value2) {
-  return String(value2).trim().replace(/[\r\n]/g, "");
+function normalizeValue(value3) {
+  return String(value3).trim().replace(/[\r\n]/g, "");
 }
 function* headerIterator(map10) {
   for (const entry of map10.values()) {
@@ -67968,8 +69179,8 @@ class HttpHeadersImpl {
       }
     }
   }
-  set(name, value2) {
-    this._headersMap.set(normalizeName(name), { name, value: normalizeValue(value2) });
+  set(name, value3) {
+    this._headersMap.set(normalizeName(name), { name, value: normalizeValue(value3) });
   }
   get(name) {
     return this._headersMap.get(normalizeName(name))?.value;
@@ -68310,42 +69521,42 @@ class Sanitizer {
   }
   sanitize(obj) {
     const seen = new Set;
-    return JSON.stringify(obj, (key, value2) => {
-      if (value2 instanceof Error) {
+    return JSON.stringify(obj, (key, value3) => {
+      if (value3 instanceof Error) {
         return {
-          ...value2,
-          name: value2.name,
-          message: value2.message
+          ...value3,
+          name: value3.name,
+          message: value3.message
         };
       }
-      if (key === "headers" && isObject2(value2)) {
-        return this.sanitizeHeaders(value2);
-      } else if (key === "url" && typeof value2 === "string") {
-        return this.sanitizeUrl(value2);
-      } else if (key === "query" && isObject2(value2)) {
-        return this.sanitizeQuery(value2);
+      if (key === "headers" && isObject2(value3)) {
+        return this.sanitizeHeaders(value3);
+      } else if (key === "url" && typeof value3 === "string") {
+        return this.sanitizeUrl(value3);
+      } else if (key === "query" && isObject2(value3)) {
+        return this.sanitizeQuery(value3);
       } else if (key === "body") {
         return;
       } else if (key === "response") {
         return;
       } else if (key === "operationSpec") {
         return;
-      } else if (Array.isArray(value2) || isObject2(value2)) {
-        if (seen.has(value2)) {
+      } else if (Array.isArray(value3) || isObject2(value3)) {
+        if (seen.has(value3)) {
           return "[Circular]";
         }
-        seen.add(value2);
+        seen.add(value3);
       }
-      return value2;
+      return value3;
     }, 2);
   }
-  sanitizeUrl(value2) {
-    if (typeof value2 !== "string" || value2 === null || value2 === "") {
-      return value2;
+  sanitizeUrl(value3) {
+    if (typeof value3 !== "string" || value3 === null || value3 === "") {
+      return value3;
     }
-    const url = new URL(value2);
+    const url = new URL(value3);
     if (!url.search) {
-      return value2;
+      return value3;
     }
     for (const [key] of url.searchParams) {
       if (!this.allowedQueryParameters.has(key.toLowerCase())) {
@@ -68365,14 +69576,14 @@ class Sanitizer {
     }
     return sanitized;
   }
-  sanitizeQuery(value2) {
-    if (typeof value2 !== "object" || value2 === null) {
-      return value2;
+  sanitizeQuery(value3) {
+    if (typeof value3 !== "object" || value3 === null) {
+      return value3;
     }
     const sanitized = {};
-    for (const k of Object.keys(value2)) {
+    for (const k of Object.keys(value3)) {
       if (this.allowedQueryParameters.has(k.toLowerCase())) {
-        sanitized[k] = value2[k];
+        sanitized[k] = value3[k];
       } else {
         sanitized[k] = RedactedString;
       }
@@ -68424,7 +69635,7 @@ function isRestError(e) {
   return isError2(e) && e.name === "RestError";
 }
 // ../../node_modules/.bun/@typespec+ts-http-runtime@0.3.8/node_modules/@typespec/ts-http-runtime/dist/esm/nodeHttpClient.js
-import http3 from "node:http";
+import http2 from "node:http";
 import https2 from "node:https";
 import zlib from "node:zlib";
 import { Transform } from "node:stream";
@@ -68712,9 +69923,9 @@ function isStreamComplete(stream2) {
   if (stream2.readable === false) {
     return Promise.resolve();
   }
-  return new Promise((resolve7) => {
+  return new Promise((resolve6) => {
     const handler = () => {
-      resolve7();
+      resolve6();
       stream2.removeListener("close", handler);
       stream2.removeListener("end", handler);
       stream2.removeListener("error", handler);
@@ -68863,8 +70074,8 @@ class NodeHttpClient {
       headers: request.headers.toJSON({ preserveCase: true }),
       ...request.requestOverrides
     };
-    return new Promise((resolve7, reject) => {
-      const req = isInsecure ? http3.request(options, resolve7) : https2.request(options, resolve7);
+    return new Promise((resolve6, reject) => {
+      const req = isInsecure ? http2.request(options, resolve6) : https2.request(options, resolve6);
       req.once("error", (err) => {
         reject(new RestError(err.message, { code: err.code ?? RestError.REQUEST_SEND_ERROR, request }));
       });
@@ -68893,10 +70104,10 @@ class NodeHttpClient {
     const disableKeepAlive = request.disableKeepAlive;
     if (isInsecure) {
       if (disableKeepAlive) {
-        return http3.globalAgent;
+        return http2.globalAgent;
       }
       if (!this.cachedHttpAgent) {
-        this.cachedHttpAgent = new http3.Agent({ keepAlive: true });
+        this.cachedHttpAgent = new http2.Agent({ keepAlive: true });
       }
       return this.cachedHttpAgent;
     } else {
@@ -68921,13 +70132,13 @@ class NodeHttpClient {
 function getResponseHeaders(res) {
   const headers = createHttpHeaders();
   for (const header of Object.keys(res.headers)) {
-    const value2 = res.headers[header];
-    if (Array.isArray(value2)) {
-      if (value2.length > 0) {
-        headers.set(header, value2[0]);
+    const value3 = res.headers[header];
+    if (Array.isArray(value3)) {
+      if (value3.length > 0) {
+        headers.set(header, value3[0]);
       }
-    } else if (value2) {
-      headers.set(header, value2);
+    } else if (value3) {
+      headers.set(header, value3);
     }
   }
   return headers;
@@ -68946,7 +70157,7 @@ function getDecodedResponseStream(stream2, headers) {
   return stream2;
 }
 function streamToText(stream2) {
-  return new Promise((resolve7, reject) => {
+  return new Promise((resolve6, reject) => {
     const buffer2 = [];
     stream2.on("data", (chunk) => {
       if (Buffer.isBuffer(chunk)) {
@@ -68956,7 +70167,7 @@ function streamToText(stream2) {
       }
     });
     stream2.on("end", () => {
-      resolve7(Buffer.concat(buffer2).toString("utf8"));
+      resolve6(Buffer.concat(buffer2).toString("utf8"));
     });
     stream2.on("error", (e) => {
       if (e && e?.name === "AbortError") {
@@ -69053,8 +70264,8 @@ function calculateRetryDelay(retryAttempt, config) {
 
 // ../../node_modules/.bun/@typespec+ts-http-runtime@0.3.8/node_modules/@typespec/ts-http-runtime/dist/esm/util/helpers.js
 var StandardAbortMessage = "The operation was aborted.";
-function delay3(delayInMs, value2, options) {
-  return new Promise((resolve7, reject) => {
+function delay3(delayInMs, value3, options) {
+  return new Promise((resolve6, reject) => {
     let timer = undefined;
     let onAborted = undefined;
     const rejectOnAbort = () => {
@@ -69077,7 +70288,7 @@ function delay3(delayInMs, value2, options) {
     }
     timer = setTimeout(() => {
       removeListeners();
-      resolve7(value2);
+      resolve6(value3);
     }, delayInMs);
     if (options?.abortSignal) {
       options.abortSignal.addEventListener("abort", onAborted);
@@ -69085,10 +70296,10 @@ function delay3(delayInMs, value2, options) {
   });
 }
 function parseHeaderValueAsNumber(response, headerName) {
-  const value2 = response.headers.get(headerName);
-  if (!value2)
+  const value3 = response.headers.get(headerName);
+  if (!value3)
     return;
-  const valueAsNum = Number(value2);
+  const valueAsNum = Number(value3);
   if (Number.isNaN(valueAsNum))
     return;
   return valueAsNum;
@@ -69276,20 +70487,20 @@ function defaultRetryPolicy(options = {}) {
 function uint8ArrayToString2(bytes, format3) {
   return Buffer.from(bytes).toString(format3);
 }
-function stringToUint8Array2(value2, format3) {
-  return Buffer.from(value2, format3);
+function stringToUint8Array2(value3, format3) {
+  return Buffer.from(value3, format3);
 }
 
 // ../../node_modules/.bun/@typespec+ts-http-runtime@0.3.8/node_modules/@typespec/ts-http-runtime/dist/esm/formData.js
 function convertBodyToFormDataMap(body) {
   if (typeof FormData !== "undefined" && body instanceof FormData) {
     const formDataMap = {};
-    for (const [key, value2] of body.entries()) {
+    for (const [key, value3] of body.entries()) {
       const existing = formDataMap[key];
       if (Array.isArray(existing)) {
-        existing.push(value2);
+        existing.push(value3);
       } else {
-        formDataMap[key] = existing !== undefined ? [existing, value2] : [value2];
+        formDataMap[key] = existing !== undefined ? [existing, value3] : [value3];
       }
     }
     return formDataMap;
@@ -69323,13 +70534,13 @@ function formDataPolicy() {
 }
 function wwwFormUrlEncode(formData2) {
   const urlSearchParams = new URLSearchParams;
-  for (const [key, value2] of Object.entries(formData2)) {
-    if (Array.isArray(value2)) {
-      for (const subValue of value2) {
+  for (const [key, value3] of Object.entries(formData2)) {
+    if (Array.isArray(value3)) {
+      for (const subValue of value3) {
         urlSearchParams.append(key, subValue.toString());
       }
     } else {
-      urlSearchParams.append(key, value2.toString());
+      urlSearchParams.append(key, value3.toString());
     }
   }
   return urlSearchParams.toString();
@@ -69342,24 +70553,24 @@ async function prepareFormData(formData2, request) {
   request.headers.set("Content-Type", contentType ?? "multipart/form-data");
   const parts = [];
   for (const [fieldName, values] of Object.entries(formData2)) {
-    for (const value2 of Array.isArray(values) ? values : [values]) {
-      if (typeof value2 === "string") {
+    for (const value3 of Array.isArray(values) ? values : [values]) {
+      if (typeof value3 === "string") {
         parts.push({
           headers: createHttpHeaders({
             "Content-Disposition": `form-data; name="${fieldName}"`
           }),
-          body: stringToUint8Array2(value2, "utf-8")
+          body: stringToUint8Array2(value3, "utf-8")
         });
-      } else if (value2 === undefined || value2 === null || typeof value2 !== "object") {
-        throw new Error(`Unexpected value for key ${fieldName}: ${value2}. Value should be serialized to string first.`);
+      } else if (value3 === undefined || value3 === null || typeof value3 !== "object") {
+        throw new Error(`Unexpected value for key ${fieldName}: ${value3}. Value should be serialized to string first.`);
       } else {
-        const fileName = value2.name || "blob";
+        const fileName = value3.name || "blob";
         const headers = createHttpHeaders();
         headers.set("Content-Disposition", `form-data; name="${fieldName}"; filename="${fileName}"`);
-        headers.set("Content-Type", value2.type || "application/octet-stream");
+        headers.set("Content-Type", value3.type || "application/octet-stream");
         parts.push({
           headers,
-          body: value2
+          body: value3
         });
       }
     }
@@ -69399,11 +70610,11 @@ async function* streamAsyncIterator() {
   const reader = this.getReader();
   try {
     while (true) {
-      const { done: done4, value: value2 } = await reader.read();
+      const { done: done4, value: value3 } = await reader.read();
       if (done4) {
         return;
       }
-      yield value2;
+      yield value3;
     }
   } finally {
     reader.releaseLock();
@@ -69453,8 +70664,8 @@ function generateBoundary() {
 }
 function encodeHeaders(headers) {
   let result2 = "";
-  for (const [key, value2] of headers) {
-    result2 += `${key}: ${value2}\r
+  for (const [key, value3] of headers) {
+    result2 += `${key}: ${value3}\r
 `;
   }
   return result2;
@@ -69774,8 +70985,8 @@ var SDK_VERSION = "1.25.0";
 // ../../node_modules/.bun/@azure+core-rest-pipeline@1.25.0/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgent.js
 function getUserAgentString2(telemetryInfo) {
   const parts = [];
-  for (const [key, value2] of telemetryInfo) {
-    const token = value2 ? `${key}/${value2}` : key;
+  for (const [key, value3] of telemetryInfo) {
+    const token = value3 ? `${key}/${value3}` : key;
     parts.push(token);
   }
   return parts.join(" ");
@@ -69865,7 +71076,7 @@ class AbortError3 extends Error {
 // ../../node_modules/.bun/@azure+core-util@1.14.0/node_modules/@azure/core-util/dist/esm/createAbortablePromise.js
 function createAbortablePromise(buildPromise, options) {
   const { cleanupBeforeAbort, abortSignal: abortSignal2, abortErrorMsg } = options ?? {};
-  return new Promise((resolve7, reject) => {
+  return new Promise((resolve6, reject) => {
     function rejectOnAbort() {
       reject(new AbortError3(abortErrorMsg ?? "The operation was aborted."));
     }
@@ -69883,7 +71094,7 @@ function createAbortablePromise(buildPromise, options) {
     try {
       buildPromise((x) => {
         removeListeners();
-        resolve7(x);
+        resolve6(x);
       }, (x) => {
         removeListeners();
         reject(x);
@@ -69900,8 +71111,8 @@ var StandardAbortMessage2 = "The delay was aborted.";
 function delay4(timeInMs, options) {
   let token;
   const { abortSignal: abortSignal2, abortErrorMsg } = options ?? {};
-  return createAbortablePromise((resolve7) => {
-    token = setTimeout(resolve7, timeInMs);
+  return createAbortablePromise((resolve6) => {
+    token = setTimeout(resolve6, timeInMs);
   }, {
     cleanupBeforeAbort: () => clearTimeout(token),
     abortSignal: abortSignal2,
@@ -69937,8 +71148,8 @@ var isNodeLike2 = isNodeLike;
 function uint8ArrayToString3(bytes, format3) {
   return uint8ArrayToString2(bytes, format3);
 }
-function stringToUint8Array3(value2, format3) {
-  return stringToUint8Array2(value2, format3);
+function stringToUint8Array3(value3, format3) {
+  return stringToUint8Array2(value3, format3);
 }
 
 // ../../node_modules/.bun/@azure+core-rest-pipeline@1.25.0/node_modules/@azure/core-rest-pipeline/dist/esm/policies/proxyPolicy.js
@@ -69993,9 +71204,9 @@ class TracingContextImpl {
   constructor(initialContext) {
     this._contextMap = initialContext instanceof TracingContextImpl ? new Map(initialContext._contextMap) : new Map;
   }
-  setValue(key, value2) {
+  setValue(key, value3) {
     const newContext = new TracingContextImpl(this);
-    newContext._contextMap.set(key, value2);
+    newContext._contextMap.set(key, value3);
     return newContext;
   }
   getValue(key) {
@@ -70171,8 +71382,8 @@ function tryCreateSpan(tracingClient, request, spanAttributes) {
       return;
     }
     const headers = tracingClient.createRequestHeaders(updatedOptions.tracingOptions.tracingContext);
-    for (const [key, value2] of Object.entries(headers)) {
-      request.headers.set(key, value2);
+    for (const [key, value3] of Object.entries(headers)) {
+      request.headers.set(key, value3);
     }
     return { span, tracingContext: updatedOptions.tracingOptions.tracingContext };
   } catch (e) {
@@ -70567,11 +71778,11 @@ function pipelineContainsDisableKeepAlivePolicy(pipeline) {
 }
 
 // ../../node_modules/.bun/@azure+core-client@1.11.0/node_modules/@azure/core-client/dist/esm/base64.js
-function encodeByteArray(value2) {
-  return uint8ArrayToString3(value2, "base64");
+function encodeByteArray(value3) {
+  return uint8ArrayToString3(value3, "base64");
 }
-function decodeString(value2) {
-  return stringToUint8Array3(value2, "base64");
+function decodeString(value3) {
+  return stringToUint8Array3(value3, "base64");
 }
 
 // ../../node_modules/.bun/@azure+core-client@1.11.0/node_modules/@azure/core-client/dist/esm/interfaces.js
@@ -70579,12 +71790,12 @@ var XML_ATTRKEY = "$";
 var XML_CHARKEY = "_";
 
 // ../../node_modules/.bun/@azure+core-client@1.11.0/node_modules/@azure/core-client/dist/esm/utils.js
-function isPrimitiveBody(value2, mapperTypeName) {
-  return mapperTypeName !== "Composite" && mapperTypeName !== "Dictionary" && (typeof value2 === "string" || typeof value2 === "number" || typeof value2 === "boolean" || mapperTypeName?.match(/^(Date|DateTime|DateTimeRfc1123|UnixTime|ByteArray|Base64Url)$/i) !== null || value2 === undefined || value2 === null);
+function isPrimitiveBody(value3, mapperTypeName) {
+  return mapperTypeName !== "Composite" && mapperTypeName !== "Dictionary" && (typeof value3 === "string" || typeof value3 === "number" || typeof value3 === "boolean" || mapperTypeName?.match(/^(Date|DateTime|DateTimeRfc1123|UnixTime|ByteArray|Base64Url)$/i) !== null || value3 === undefined || value3 === null);
 }
 var validateISODuration = /^(-|\+)?P(?:([-+]?[0-9,.]*)Y)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)W)?(?:([-+]?[0-9,.]*)D)?(?:T(?:([-+]?[0-9,.]*)H)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)S)?)?$/;
-function isDuration2(value2) {
-  return validateISODuration.test(value2);
+function isDuration2(value3) {
+  return validateISODuration.test(value3);
 }
 var validUuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
 function isValidUuid(uuid) {
@@ -70654,46 +71865,46 @@ class SerializerImpl {
     this.modelMappers = modelMappers;
     this.isXML = isXML;
   }
-  validateConstraints(mapper, value2, objectName) {
+  validateConstraints(mapper, value3, objectName) {
     const failValidation = (constraintName, constraintValue) => {
-      throw new Error(`"${objectName}" with value "${value2}" should satisfy the constraint "${constraintName}": ${constraintValue}.`);
+      throw new Error(`"${objectName}" with value "${value3}" should satisfy the constraint "${constraintName}": ${constraintValue}.`);
     };
-    if (mapper.constraints && value2 !== undefined && value2 !== null) {
+    if (mapper.constraints && value3 !== undefined && value3 !== null) {
       const { ExclusiveMaximum, ExclusiveMinimum, InclusiveMaximum, InclusiveMinimum, MaxItems, MaxLength, MinItems, MinLength, MultipleOf, Pattern, UniqueItems } = mapper.constraints;
-      if (ExclusiveMaximum !== undefined && value2 >= ExclusiveMaximum) {
+      if (ExclusiveMaximum !== undefined && value3 >= ExclusiveMaximum) {
         failValidation("ExclusiveMaximum", ExclusiveMaximum);
       }
-      if (ExclusiveMinimum !== undefined && value2 <= ExclusiveMinimum) {
+      if (ExclusiveMinimum !== undefined && value3 <= ExclusiveMinimum) {
         failValidation("ExclusiveMinimum", ExclusiveMinimum);
       }
-      if (InclusiveMaximum !== undefined && value2 > InclusiveMaximum) {
+      if (InclusiveMaximum !== undefined && value3 > InclusiveMaximum) {
         failValidation("InclusiveMaximum", InclusiveMaximum);
       }
-      if (InclusiveMinimum !== undefined && value2 < InclusiveMinimum) {
+      if (InclusiveMinimum !== undefined && value3 < InclusiveMinimum) {
         failValidation("InclusiveMinimum", InclusiveMinimum);
       }
-      if (MaxItems !== undefined && value2.length > MaxItems) {
+      if (MaxItems !== undefined && value3.length > MaxItems) {
         failValidation("MaxItems", MaxItems);
       }
-      if (MaxLength !== undefined && value2.length > MaxLength) {
+      if (MaxLength !== undefined && value3.length > MaxLength) {
         failValidation("MaxLength", MaxLength);
       }
-      if (MinItems !== undefined && value2.length < MinItems) {
+      if (MinItems !== undefined && value3.length < MinItems) {
         failValidation("MinItems", MinItems);
       }
-      if (MinLength !== undefined && value2.length < MinLength) {
+      if (MinLength !== undefined && value3.length < MinLength) {
         failValidation("MinLength", MinLength);
       }
-      if (MultipleOf !== undefined && value2 % MultipleOf !== 0) {
+      if (MultipleOf !== undefined && value3 % MultipleOf !== 0) {
         failValidation("MultipleOf", MultipleOf);
       }
       if (Pattern) {
         const pattern = typeof Pattern === "string" ? new RegExp(Pattern) : Pattern;
-        if (typeof value2 !== "string" || value2.match(pattern) === null) {
+        if (typeof value3 !== "string" || value3.match(pattern) === null) {
           failValidation("Pattern", Pattern);
         }
       }
-      if (UniqueItems && value2.some((item, i, ar) => ar.indexOf(item) !== i)) {
+      if (UniqueItems && value3.some((item, i, ar) => ar.indexOf(item) !== i)) {
         failValidation("UniqueItems", UniqueItems);
       }
     }
@@ -70882,95 +72093,95 @@ function unixTimeToDate(n) {
   }
   return new Date(n * 1000);
 }
-function serializeBasicTypes(typeName, objectName, value2) {
-  if (value2 !== null && value2 !== undefined) {
+function serializeBasicTypes(typeName, objectName, value3) {
+  if (value3 !== null && value3 !== undefined) {
     if (typeName.match(/^Number$/i) !== null) {
-      if (typeof value2 !== "number") {
-        throw new Error(`${objectName} with value ${value2} must be of type number.`);
+      if (typeof value3 !== "number") {
+        throw new Error(`${objectName} with value ${value3} must be of type number.`);
       }
     } else if (typeName.match(/^String$/i) !== null) {
-      if (typeof value2.valueOf() !== "string") {
-        throw new Error(`${objectName} with value "${value2}" must be of type string.`);
+      if (typeof value3.valueOf() !== "string") {
+        throw new Error(`${objectName} with value "${value3}" must be of type string.`);
       }
     } else if (typeName.match(/^Uuid$/i) !== null) {
-      if (!(typeof value2.valueOf() === "string" && isValidUuid(value2))) {
-        throw new Error(`${objectName} with value "${value2}" must be of type string and a valid uuid.`);
+      if (!(typeof value3.valueOf() === "string" && isValidUuid(value3))) {
+        throw new Error(`${objectName} with value "${value3}" must be of type string and a valid uuid.`);
       }
     } else if (typeName.match(/^Boolean$/i) !== null) {
-      if (typeof value2 !== "boolean") {
-        throw new Error(`${objectName} with value ${value2} must be of type boolean.`);
+      if (typeof value3 !== "boolean") {
+        throw new Error(`${objectName} with value ${value3} must be of type boolean.`);
       }
     } else if (typeName.match(/^Stream$/i) !== null) {
-      const objectType = typeof value2;
-      if (objectType !== "string" && typeof value2.pipe !== "function" && typeof value2.tee !== "function" && !(value2 instanceof ArrayBuffer) && !ArrayBuffer.isView(value2) && !((typeof Blob === "function" || typeof Blob === "object") && value2 instanceof Blob) && objectType !== "function") {
+      const objectType = typeof value3;
+      if (objectType !== "string" && typeof value3.pipe !== "function" && typeof value3.tee !== "function" && !(value3 instanceof ArrayBuffer) && !ArrayBuffer.isView(value3) && !((typeof Blob === "function" || typeof Blob === "object") && value3 instanceof Blob) && objectType !== "function") {
         throw new Error(`${objectName} must be a string, Blob, ArrayBuffer, ArrayBufferView, ReadableStream, or () => ReadableStream.`);
       }
     }
   }
-  return value2;
+  return value3;
 }
-function serializeEnumType(objectName, allowedValues, value2) {
+function serializeEnumType(objectName, allowedValues, value3) {
   if (!allowedValues) {
     throw new Error(`Please provide a set of allowedValues to validate ${objectName} as an Enum Type.`);
   }
   const isPresent = allowedValues.some((item) => {
     if (typeof item.valueOf() === "string") {
-      return item.toLowerCase() === value2.toLowerCase();
+      return item.toLowerCase() === value3.toLowerCase();
     }
-    return item === value2;
+    return item === value3;
   });
   if (!isPresent) {
-    throw new Error(`${value2} is not a valid value for ${objectName}. The valid values are: ${JSON.stringify(allowedValues)}.`);
+    throw new Error(`${value3} is not a valid value for ${objectName}. The valid values are: ${JSON.stringify(allowedValues)}.`);
   }
-  return value2;
+  return value3;
 }
-function serializeByteArrayType(objectName, value2) {
-  if (value2 !== undefined && value2 !== null) {
-    if (!(value2 instanceof Uint8Array)) {
+function serializeByteArrayType(objectName, value3) {
+  if (value3 !== undefined && value3 !== null) {
+    if (!(value3 instanceof Uint8Array)) {
       throw new Error(`${objectName} must be of type Uint8Array.`);
     }
-    value2 = encodeByteArray(value2);
+    value3 = encodeByteArray(value3);
   }
-  return value2;
+  return value3;
 }
-function serializeBase64UrlType(objectName, value2) {
-  if (value2 !== undefined && value2 !== null) {
-    if (!(value2 instanceof Uint8Array)) {
+function serializeBase64UrlType(objectName, value3) {
+  if (value3 !== undefined && value3 !== null) {
+    if (!(value3 instanceof Uint8Array)) {
       throw new Error(`${objectName} must be of type Uint8Array.`);
     }
-    value2 = bufferToBase64Url(value2);
+    value3 = bufferToBase64Url(value3);
   }
-  return value2;
+  return value3;
 }
-function serializeDateTypes(typeName, value2, objectName) {
-  if (value2 !== undefined && value2 !== null) {
+function serializeDateTypes(typeName, value3, objectName) {
+  if (value3 !== undefined && value3 !== null) {
     if (typeName.match(/^Date$/i) !== null) {
-      if (!(value2 instanceof Date || typeof value2.valueOf() === "string" && !isNaN(Date.parse(value2)))) {
+      if (!(value3 instanceof Date || typeof value3.valueOf() === "string" && !isNaN(Date.parse(value3)))) {
         throw new Error(`${objectName} must be an instanceof Date or a string in ISO8601 format.`);
       }
-      value2 = value2 instanceof Date ? value2.toISOString().substring(0, 10) : new Date(value2).toISOString().substring(0, 10);
+      value3 = value3 instanceof Date ? value3.toISOString().substring(0, 10) : new Date(value3).toISOString().substring(0, 10);
     } else if (typeName.match(/^DateTime$/i) !== null) {
-      if (!(value2 instanceof Date || typeof value2.valueOf() === "string" && !isNaN(Date.parse(value2)))) {
+      if (!(value3 instanceof Date || typeof value3.valueOf() === "string" && !isNaN(Date.parse(value3)))) {
         throw new Error(`${objectName} must be an instanceof Date or a string in ISO8601 format.`);
       }
-      value2 = value2 instanceof Date ? value2.toISOString() : new Date(value2).toISOString();
+      value3 = value3 instanceof Date ? value3.toISOString() : new Date(value3).toISOString();
     } else if (typeName.match(/^DateTimeRfc1123$/i) !== null) {
-      if (!(value2 instanceof Date || typeof value2.valueOf() === "string" && !isNaN(Date.parse(value2)))) {
+      if (!(value3 instanceof Date || typeof value3.valueOf() === "string" && !isNaN(Date.parse(value3)))) {
         throw new Error(`${objectName} must be an instanceof Date or a string in RFC-1123 format.`);
       }
-      value2 = value2 instanceof Date ? value2.toUTCString() : new Date(value2).toUTCString();
+      value3 = value3 instanceof Date ? value3.toUTCString() : new Date(value3).toUTCString();
     } else if (typeName.match(/^UnixTime$/i) !== null) {
-      if (!(value2 instanceof Date || typeof value2.valueOf() === "string" && !isNaN(Date.parse(value2)))) {
+      if (!(value3 instanceof Date || typeof value3.valueOf() === "string" && !isNaN(Date.parse(value3)))) {
         throw new Error(`${objectName} must be an instanceof Date or a string in RFC-1123/ISO8601 format ` + `for it to be serialized in UnixTime/Epoch format.`);
       }
-      value2 = dateToUnixTime(value2);
+      value3 = dateToUnixTime(value3);
     } else if (typeName.match(/^TimeSpan$/i) !== null) {
-      if (!isDuration2(value2)) {
-        throw new Error(`${objectName} must be a string in ISO 8601 format. Instead was "${value2}".`);
+      if (!isDuration2(value3)) {
+        throw new Error(`${objectName} must be a string in ISO 8601 format. Instead was "${value3}".`);
       }
     }
   }
-  return value2;
+  return value3;
 }
 function serializeSequenceType(serializer, mapper, object, objectName, isXml, options) {
   if (!Array.isArray(object)) {
@@ -71099,14 +72310,14 @@ function serializeCompositeType(serializer, mapper, object, objectName, isXml, o
         }
         const serializedValue = serializer.serialize(propertyMapper, toSerialize, propertyObjectName, options);
         if (serializedValue !== undefined && propName !== undefined && propName !== null) {
-          const value2 = getXmlObjectValue(propertyMapper, serializedValue, isXml, options);
+          const value3 = getXmlObjectValue(propertyMapper, serializedValue, isXml, options);
           if (isXml && propertyMapper.xmlIsAttribute) {
             parentObject[XML_ATTRKEY] = parentObject[XML_ATTRKEY] || {};
             parentObject[XML_ATTRKEY][propName] = serializedValue;
           } else if (isXml && propertyMapper.xmlIsWrapped) {
-            parentObject[propName] = { [propertyMapper.xmlElementName]: value2 };
+            parentObject[propName] = { [propertyMapper.xmlElementName]: value3 };
           } else {
-            parentObject[propName] = value2;
+            parentObject[propName] = value3;
           }
         }
       }
@@ -71278,14 +72489,14 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
   return instance;
 }
 function deserializeDictionaryType(serializer, mapper, responseBody, objectName, options) {
-  const value2 = mapper.type.value;
-  if (!value2 || typeof value2 !== "object") {
+  const value3 = mapper.type.value;
+  if (!value3 || typeof value3 !== "object") {
     throw new Error(`"value" metadata for a Dictionary must be defined in the ` + `mapper and it must of type "object" in ${objectName}`);
   }
   if (responseBody) {
     const tempDictionary = {};
     for (const key of Object.keys(responseBody)) {
-      tempDictionary[key] = serializer.deserialize(value2, responseBody[key], objectName, options);
+      tempDictionary[key] = serializer.deserialize(value3, responseBody[key], objectName, options);
     }
     return tempDictionary;
   }
@@ -71380,14 +72591,14 @@ var state2 = import_state_cjs2.state;
 function getOperationArgumentValueFromParameter(operationArguments, parameter, fallbackObject) {
   let parameterPath = parameter.parameterPath;
   const parameterMapper = parameter.mapper;
-  let value2;
+  let value3;
   if (typeof parameterPath === "string") {
     parameterPath = [parameterPath];
   }
   if (Array.isArray(parameterPath)) {
     if (parameterPath.length > 0) {
       if (parameterMapper.isConstant) {
-        value2 = parameterMapper.defaultValue;
+        value3 = parameterMapper.defaultValue;
       } else {
         let propertySearchResult = getPropertyFromParameterPath(operationArguments, parameterPath);
         if (!propertySearchResult.propertyFound && fallbackObject) {
@@ -71397,12 +72608,12 @@ function getOperationArgumentValueFromParameter(operationArguments, parameter, f
         if (!propertySearchResult.propertyFound) {
           useDefaultValue = parameterMapper.required || parameterPath[0] === "options" && parameterPath.length === 2;
         }
-        value2 = useDefaultValue ? parameterMapper.defaultValue : propertySearchResult.propertyValue;
+        value3 = useDefaultValue ? parameterMapper.defaultValue : propertySearchResult.propertyValue;
       }
     }
   } else {
     if (parameterMapper.required) {
-      value2 = {};
+      value3 = {};
     }
     for (const [propertyName, propertyPath] of Object.entries(parameterPath)) {
       const propertyMapper = parameterMapper.type.modelProperties[propertyName];
@@ -71411,10 +72622,10 @@ function getOperationArgumentValueFromParameter(operationArguments, parameter, f
         mapper: propertyMapper
       }, fallbackObject);
       if (propertyValue !== undefined) {
-        if (!value2) {
-          value2 = {};
+        if (!value3) {
+          value3 = {};
         }
-        Object.defineProperty(value2, propertyName, {
+        Object.defineProperty(value3, propertyName, {
           value: propertyValue,
           enumerable: true,
           configurable: true,
@@ -71423,7 +72634,7 @@ function getOperationArgumentValueFromParameter(operationArguments, parameter, f
       }
     }
   }
-  return value2;
+  return value3;
 }
 function getPropertyFromParameterPath(parent, parameterPath) {
   const result2 = { propertyFound: false };
@@ -71733,11 +72944,11 @@ function serializeRequestBody(request, operationArguments, operationSpec, string
         const isStream2 = typeName === MapperTypeNames.Stream;
         if (operationSpec.isXML) {
           const xmlnsKey = xmlNamespacePrefix ? `xmlns:${xmlNamespacePrefix}` : "xmlns";
-          const value2 = getXmlValueWithNamespace(xmlNamespace, xmlnsKey, typeName, request.body, updatedOptions);
+          const value3 = getXmlValueWithNamespace(xmlNamespace, xmlnsKey, typeName, request.body, updatedOptions);
           if (typeName === MapperTypeNames.Sequence) {
-            request.body = stringifyXML(prepareXMLRootList(value2, xmlElementName || xmlName || serializedName, xmlnsKey, xmlNamespace), { rootName: xmlName || serializedName, xmlCharKey });
+            request.body = stringifyXML(prepareXMLRootList(value3, xmlElementName || xmlName || serializedName, xmlnsKey, xmlNamespace), { rootName: xmlName || serializedName, xmlCharKey });
           } else if (!isStream2) {
-            request.body = stringifyXML(value2, {
+            request.body = stringifyXML(value3, {
               rootName: xmlName || serializedName,
               xmlCharKey
             });
@@ -71941,16 +73152,16 @@ function simpleParseQueryParams(queryString) {
   queryString = queryString.slice(1);
   const pairs = queryString.split("&");
   for (const pair of pairs) {
-    const [name, value2] = pair.split("=", 2);
+    const [name, value3] = pair.split("=", 2);
     const existingValue = result2.get(name);
     if (existingValue) {
       if (Array.isArray(existingValue)) {
-        existingValue.push(value2);
+        existingValue.push(value3);
       } else {
-        result2.set(name, [existingValue, value2]);
+        result2.set(name, [existingValue, value3]);
       }
     } else {
-      result2.set(name, value2);
+      result2.set(name, value3);
     }
   }
   return result2;
@@ -71961,39 +73172,39 @@ function appendQueryParams(url, queryParams, sequenceParams, noOverwrite = false
   }
   const parsedUrl = new URL(url);
   const combinedParams = simpleParseQueryParams(parsedUrl.search);
-  for (const [name, value2] of queryParams) {
+  for (const [name, value3] of queryParams) {
     const existingValue = combinedParams.get(name);
     if (Array.isArray(existingValue)) {
-      if (Array.isArray(value2)) {
-        existingValue.push(...value2);
+      if (Array.isArray(value3)) {
+        existingValue.push(...value3);
         const valueSet = new Set(existingValue);
         combinedParams.set(name, Array.from(valueSet));
       } else {
-        existingValue.push(value2);
+        existingValue.push(value3);
       }
     } else if (existingValue) {
-      if (Array.isArray(value2)) {
-        value2.unshift(existingValue);
+      if (Array.isArray(value3)) {
+        value3.unshift(existingValue);
       } else if (sequenceParams.has(name)) {
-        combinedParams.set(name, [existingValue, value2]);
+        combinedParams.set(name, [existingValue, value3]);
       }
       if (!noOverwrite) {
-        combinedParams.set(name, value2);
+        combinedParams.set(name, value3);
       }
     } else {
-      combinedParams.set(name, value2);
+      combinedParams.set(name, value3);
     }
   }
   const searchPieces = [];
-  for (const [name, value2] of combinedParams) {
-    if (typeof value2 === "string") {
-      searchPieces.push(`${name}=${value2}`);
-    } else if (Array.isArray(value2)) {
-      for (const subValue of value2) {
+  for (const [name, value3] of combinedParams) {
+    if (typeof value3 === "string") {
+      searchPieces.push(`${name}=${value3}`);
+    } else if (Array.isArray(value3)) {
+      for (const subValue of value3) {
         searchPieces.push(`${name}=${subValue}`);
       }
     } else {
-      searchPieces.push(`${name}=${value2}`);
+      searchPieces.push(`${name}=${value3}`);
     }
   }
   parsedUrl.search = searchPieces.length ? `?${searchPieces.join("&")}` : "";
@@ -72186,7 +73397,7 @@ function getChallenge(response) {
 function parseChallenge(challenge) {
   const bearerChallenge = challenge.slice("Bearer ".length);
   const challengeParts = `${bearerChallenge.trim()} `.split(" ").filter((x) => x);
-  const keyValuePairs = challengeParts.map((keyValue) => (([key, value2]) => ({ [key]: value2 }))(keyValue.trim().split("=")));
+  const keyValuePairs = challengeParts.map((keyValue) => (([key, value3]) => ({ [key]: value3 }))(keyValue.trim().split("=")));
   return keyValuePairs.reduce((a, b) => ({ ...a, ...b }), {});
 }
 function requestToOptions(request) {
@@ -72291,14 +73502,14 @@ function toWebResourceLike(request, options) {
         }
         return Reflect.get(target2, prop, receiver);
       },
-      set(target2, prop, value2, receiver) {
+      set(target2, prop, value3, receiver) {
         if (prop === "keepAlive") {
-          request.disableKeepAlive = !value2;
+          request.disableKeepAlive = !value3;
         }
         if (typeof prop === "string" && passThroughProps.has(prop)) {
-          request[prop] = value2;
+          request[prop] = value3;
         }
-        return Reflect.set(target2, prop, value2, receiver);
+        return Reflect.set(target2, prop, value3, receiver);
       }
     });
   } else {
@@ -72411,13 +73622,13 @@ function toCompatResponse(response, options) {
         }
         return Reflect.get(target2, prop, receiver);
       },
-      set(target2, prop, value2, receiver) {
+      set(target2, prop, value3, receiver) {
         if (prop === "headers") {
-          headers = value2;
+          headers = value3;
         } else if (prop === "request") {
-          request = value2;
+          request = value3;
         }
-        return Reflect.set(target2, prop, value2, receiver);
+        return Reflect.set(target2, prop, value3, receiver);
       }
     });
   } else {
@@ -72997,10 +74208,10 @@ class EntityDecoder {
     this._onExternalEntity = typeof options.onExternalEntity === "function" ? options.onExternalEntity : null;
     this._onInputEntity = typeof options.onInputEntity === "function" ? options.onInputEntity : null;
   }
-  _applyRegistrationHook(hook, name, value2, context5) {
+  _applyRegistrationHook(hook, name, value3, context5) {
     if (!hook)
       return true;
-    const action = hook(name, value2);
+    const action = hook(name, value3);
     if (action === ENTITY_ACTION.BLOCK)
       return false;
     if (action === ENTITY_ACTION.THROW) {
@@ -73020,18 +74231,18 @@ class EntityDecoder {
     }
     const flat = mergeEntityMaps(map10);
     const filtered = Object.create(null);
-    for (const [name, value2] of Object.entries(flat)) {
-      if (this._applyRegistrationHook(this._onExternalEntity, name, value2, "external")) {
-        filtered[name] = value2;
+    for (const [name, value3] of Object.entries(flat)) {
+      if (this._applyRegistrationHook(this._onExternalEntity, name, value3, "external")) {
+        filtered[name] = value3;
       }
     }
     this._externalMap = filtered;
   }
-  addExternalEntity(key, value2) {
+  addExternalEntity(key, value3) {
     validateEntityName(key);
-    if (typeof value2 === "string" && value2.indexOf("&") === -1) {
-      if (this._applyRegistrationHook(this._onExternalEntity, key, value2, "external")) {
-        this._externalMap[key] = value2;
+    if (typeof value3 === "string" && value3.indexOf("&") === -1) {
+      if (this._applyRegistrationHook(this._onExternalEntity, key, value3, "external")) {
+        this._externalMap[key] = value3;
       }
     }
   }
@@ -73044,9 +74255,9 @@ class EntityDecoder {
     }
     const flat = mergeEntityMaps(map10);
     const filtered = Object.create(null);
-    for (const [name, value2] of Object.entries(flat)) {
-      if (this._applyRegistrationHook(this._onInputEntity, name, value2, "input")) {
-        filtered[name] = value2;
+    for (const [name, value3] of Object.entries(flat)) {
+      if (this._applyRegistrationHook(this._onInputEntity, name, value3, "input")) {
+        filtered[name] = value3;
       }
     }
     this._inputMap = filtered;
@@ -73265,10 +74476,10 @@ function validatePropertyName(propertyName, optionName) {
     throw new Error(`[SECURITY] Invalid ${optionName}: "${propertyName}" is a reserved JavaScript keyword that could cause prototype pollution`);
   }
 }
-function normalizeProcessEntities(value2, htmlEntities) {
-  if (typeof value2 === "boolean") {
+function normalizeProcessEntities(value3, htmlEntities) {
+  if (typeof value3 === "boolean") {
     return {
-      enabled: value2,
+      enabled: value3,
       maxEntitySize: 1e4,
       maxExpansionDepth: 1e4,
       maxTotalExpansions: Infinity,
@@ -73279,17 +74490,17 @@ function normalizeProcessEntities(value2, htmlEntities) {
       appliesTo: "all"
     };
   }
-  if (typeof value2 === "object" && value2 !== null) {
+  if (typeof value3 === "object" && value3 !== null) {
     return {
-      enabled: value2.enabled !== false,
-      maxEntitySize: Math.max(1, value2.maxEntitySize ?? 1e4),
-      maxExpansionDepth: Math.max(1, value2.maxExpansionDepth ?? 1e4),
-      maxTotalExpansions: Math.max(1, value2.maxTotalExpansions ?? Infinity),
-      maxExpandedLength: Math.max(1, value2.maxExpandedLength ?? 1e5),
-      maxEntityCount: Math.max(1, value2.maxEntityCount ?? 1000),
-      allowedTags: value2.allowedTags ?? null,
-      tagFilter: value2.tagFilter ?? null,
-      appliesTo: value2.appliesTo ?? "all"
+      enabled: value3.enabled !== false,
+      maxEntitySize: Math.max(1, value3.maxEntitySize ?? 1e4),
+      maxExpansionDepth: Math.max(1, value3.maxExpansionDepth ?? 1e4),
+      maxTotalExpansions: Math.max(1, value3.maxTotalExpansions ?? Infinity),
+      maxExpandedLength: Math.max(1, value3.maxExpandedLength ?? 1e5),
+      maxEntityCount: Math.max(1, value3.maxEntityCount ?? 1000),
+      allowedTags: value3.allowedTags ?? null,
+      tagFilter: value3.tagFilter ?? null,
+      appliesTo: value3.appliesTo ?? "all"
     };
   }
   return normalizeProcessEntities(true);
@@ -73303,9 +74514,9 @@ var buildOptions = function(options) {
     { value: built.cdataPropName, name: "cdataPropName" },
     { value: built.commentPropName, name: "commentPropName" }
   ];
-  for (const { value: value2, name } of propertyNameOptions) {
-    if (value2) {
-      validatePropertyName(value2, name);
+  for (const { value: value3, name } of propertyNameOptions) {
+    if (value3) {
+      validatePropertyName(value3, name);
     }
   }
   if (built.onDangerousProperty === null) {
@@ -75207,9 +76418,9 @@ var VALID_CONTEXTS = Object.freeze({
   NOSQL: nosql_default,
   LOG: log_default
 });
-function assertString(value2) {
-  if (typeof value2 !== "string") {
-    throw new TypeError(`is-unsafe: first argument must be a string, got ${typeof value2}`);
+function assertString(value3) {
+  if (typeof value3 !== "string") {
+    throw new TypeError(`is-unsafe: first argument must be a string, got ${typeof value3}`);
   }
 }
 function assertContext(context5) {
@@ -75237,23 +76448,23 @@ function normalise(context5) {
     return { lists: context5, regex: null };
   return { lists: [context5], regex: null };
 }
-function matchList(value2, list) {
+function matchList(value3, list) {
   const label = list.label ?? "CUSTOM";
   for (const rule of list) {
-    if (rule.pattern.test(value2)) {
+    if (rule.pattern.test(value3)) {
       return { context: label, id: rule.id, description: rule.description, pattern: rule.pattern };
     }
   }
   return null;
 }
-function isUnsafe(value2, context5) {
-  assertString(value2);
+function isUnsafe(value3, context5) {
+  assertString(value3);
   assertContext(context5);
   const { lists, regex } = normalise(context5);
   if (regex)
-    return regex.test(value2);
+    return regex.test(value3);
   for (const list of lists) {
-    if (matchList(value2, list) !== null)
+    if (matchList(value3, list) !== null)
       return true;
   }
   return false;
@@ -75324,7 +76535,7 @@ class OrderedObjParser {
           maxExpandedLength: this.options.processEntities.maxExpandedLength,
           applyLimitsTo: this.options.processEntities.appliesTo
         },
-        onInputEntity: (name, value2) => isUnsafe(value2, [html_default, xml_default]) ? ENTITY_ACTION.BLOCK : ENTITY_ACTION.ALLOW
+        onInputEntity: (name, value3) => isUnsafe(value3, [html_default, xml_default]) ? ENTITY_ACTION.BLOCK : ENTITY_ACTION.ALLOW
       });
     }
     this.matcher = new Matcher;
@@ -76004,15 +77215,15 @@ class XMLParser {
     else
       return prettify(orderedResult, this.options, orderedObjParser.matcher, orderedObjParser.readonlyMatcher);
   }
-  addEntity(key, value2) {
-    if (value2.indexOf("&") !== -1) {
+  addEntity(key, value3) {
+    if (value3.indexOf("&") !== -1) {
       throw new Error("Entity value can't have '&'");
     } else if (key.indexOf("&") !== -1 || key.indexOf(";") !== -1) {
       throw new Error("An entity must be set without '&' and ';'. Eg. use '#xD' for '&#xD;'");
-    } else if (value2 === "&") {
+    } else if (value3 === "&") {
       throw new Error("An entity with value '&' is not permitted");
     } else {
-      this.externalEntities[key] = value2;
+      this.externalEntities[key] = value3;
     }
   }
   static getMetaDataSymbol() {
@@ -76618,11 +77829,11 @@ Builder.prototype.buildRawContent = function(obj) {
       continue;
     if (this.options.attributesGroupName && key === this.options.attributesGroupName)
       continue;
-    const value2 = obj[key];
+    const value3 = obj[key];
     if (key === this.options.textNodeName) {
-      content += value2;
-    } else if (Array.isArray(value2)) {
-      for (let item of value2) {
+      content += value3;
+    } else if (Array.isArray(value3)) {
+      for (let item of value3) {
         if (typeof item === "string" || typeof item === "number") {
           content += `<${key}>${item}</${key}>`;
         } else if (typeof item === "object" && item !== null) {
@@ -76635,16 +77846,16 @@ Builder.prototype.buildRawContent = function(obj) {
           }
         }
       }
-    } else if (typeof value2 === "object" && value2 !== null) {
-      const nestedContent = this.buildRawContent(value2);
-      const nestedAttrs = this.buildAttributesForStopNode(value2);
+    } else if (typeof value3 === "object" && value3 !== null) {
+      const nestedContent = this.buildRawContent(value3);
+      const nestedAttrs = this.buildAttributesForStopNode(value3);
       if (nestedContent === "") {
         content += `<${key}${nestedAttrs}/>`;
       } else {
         content += `<${key}${nestedAttrs}>${nestedContent}</${key}>`;
       }
     } else {
-      content += `<${key}>${value2}</${key}>`;
+      content += `<${key}>${value3}</${key}>`;
     }
   }
   return content;
@@ -76835,8 +78046,8 @@ async function parseXML(str, opts = {}) {
   if (!opts.includeRoot) {
     const key = Object.keys(parsedXml)[0];
     if (key !== undefined) {
-      const value2 = parsedXml[key];
-      return typeof value2 === "object" ? { ...value2 } : value2;
+      const value3 = parsedXml[key];
+      return typeof value3 === "object" ? { ...value3 } : value3;
     }
   }
   return parsedXml;
@@ -77003,7 +78214,7 @@ class BufferScheduler {
     this.encoding = encoding;
   }
   async do() {
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve6, reject) => {
       this.readable.on("data", (data) => {
         data = typeof data === "string" ? Buffer.from(data, this.encoding) : data;
         this.appendUnresolvedData(data);
@@ -77031,11 +78242,11 @@ class BufferScheduler {
         if (this.isStreamEnd && this.executingOutgoingHandlers === 0) {
           if (this.unresolvedLength > 0 && this.unresolvedLength < this.bufferSize) {
             const buffer3 = this.shiftBufferFromUnresolvedDataArray();
-            this.outgoingHandler(() => buffer3.getReadableStream(), buffer3.size, this.offset).then(resolve7).catch(reject);
+            this.outgoingHandler(() => buffer3.getReadableStream(), buffer3.size, this.offset).then(resolve6).catch(reject);
           } else if (this.unresolvedLength >= this.bufferSize) {
             return;
           } else {
-            resolve7();
+            resolve6();
           }
         }
       });
@@ -77116,8 +78327,8 @@ var NativeCRC64 = (() => {
     NativeCRC642 = NativeCRC642 || {};
     var Module = typeof NativeCRC642 != "undefined" ? NativeCRC642 : {};
     var readyPromiseResolve, readyPromiseReject;
-    Module["ready"] = new Promise(function(resolve7, reject) {
-      readyPromiseResolve = resolve7;
+    Module["ready"] = new Promise(function(resolve6, reject) {
+      readyPromiseResolve = resolve6;
       readyPromiseReject = reject;
     });
     ["_malloc", "_free", "_emscripten_bind_VoidPtr___destroy___0", "_emscripten_bind_Crc64Hash_Crc64Hash_0", "_emscripten_bind_Crc64Hash_OnAppend_2", "_emscripten_bind_Crc64Hash_OnFinal_3", "_emscripten_bind_Crc64Hash___destroy___0", "_fflush", "onRuntimeInitialized"].forEach((prop) => {
@@ -78428,33 +79639,33 @@ var NativeCRC64 = (() => {
     function ptrToString(ptr) {
       return "0x" + ptr.toString(16).padStart(8, "0");
     }
-    function setValue(ptr, value2, type = "i8") {
+    function setValue(ptr, value3, type = "i8") {
       if (type.endsWith("*"))
         type = "*";
       switch (type) {
         case "i1":
-          HEAP8[ptr >> 0] = value2;
+          HEAP8[ptr >> 0] = value3;
           break;
         case "i8":
-          HEAP8[ptr >> 0] = value2;
+          HEAP8[ptr >> 0] = value3;
           break;
         case "i16":
-          HEAP16[ptr >> 1] = value2;
+          HEAP16[ptr >> 1] = value3;
           break;
         case "i32":
-          HEAP32[ptr >> 2] = value2;
+          HEAP32[ptr >> 2] = value3;
           break;
         case "i64":
-          tempI64 = [value2 >>> 0, (tempDouble = value2, +Math.abs(tempDouble) >= 1 ? tempDouble > 0 ? (Math.min(+Math.floor(tempDouble / 4294967296), 4294967295) | 0) >>> 0 : ~~+Math.ceil((tempDouble - +(~~tempDouble >>> 0)) / 4294967296) >>> 0 : 0)], HEAP32[ptr >> 2] = tempI64[0], HEAP32[ptr + 4 >> 2] = tempI64[1];
+          tempI64 = [value3 >>> 0, (tempDouble = value3, +Math.abs(tempDouble) >= 1 ? tempDouble > 0 ? (Math.min(+Math.floor(tempDouble / 4294967296), 4294967295) | 0) >>> 0 : ~~+Math.ceil((tempDouble - +(~~tempDouble >>> 0)) / 4294967296) >>> 0 : 0)], HEAP32[ptr >> 2] = tempI64[0], HEAP32[ptr + 4 >> 2] = tempI64[1];
           break;
         case "float":
-          HEAPF32[ptr >> 2] = value2;
+          HEAPF32[ptr >> 2] = value3;
           break;
         case "double":
-          HEAPF64[ptr >> 3] = value2;
+          HEAPF64[ptr >> 3] = value3;
           break;
         case "*":
-          HEAPU32[ptr >> 2] = value2;
+          HEAPU32[ptr >> 2] = value3;
           break;
         default:
           abort("invalid type for setValue: " + type);
@@ -79188,54 +80399,54 @@ var NativeCRC64 = (() => {
         }
       }
     };
-    function ensureString(value2) {
-      if (typeof value2 === "string") {
-        var intArray = intArrayFromString(value2);
+    function ensureString(value3) {
+      if (typeof value3 === "string") {
+        var intArray = intArrayFromString(value3);
         var offset = ensureCache.alloc(intArray, HEAP8);
         ensureCache.copy(intArray, HEAP8, offset);
         return offset;
       }
-      return value2;
+      return value3;
     }
-    function ensureInt8(value2) {
-      if (typeof value2 === "object") {
-        var offset = ensureCache.alloc(value2, HEAP8);
-        ensureCache.copy(value2, HEAP8, offset);
+    function ensureInt8(value3) {
+      if (typeof value3 === "object") {
+        var offset = ensureCache.alloc(value3, HEAP8);
+        ensureCache.copy(value3, HEAP8, offset);
         return offset;
       }
-      return value2;
+      return value3;
     }
-    function ensureInt16(value2) {
-      if (typeof value2 === "object") {
-        var offset = ensureCache.alloc(value2, HEAP16);
-        ensureCache.copy(value2, HEAP16, offset);
+    function ensureInt16(value3) {
+      if (typeof value3 === "object") {
+        var offset = ensureCache.alloc(value3, HEAP16);
+        ensureCache.copy(value3, HEAP16, offset);
         return offset;
       }
-      return value2;
+      return value3;
     }
-    function ensureInt32(value2) {
-      if (typeof value2 === "object") {
-        var offset = ensureCache.alloc(value2, HEAP32);
-        ensureCache.copy(value2, HEAP32, offset);
+    function ensureInt32(value3) {
+      if (typeof value3 === "object") {
+        var offset = ensureCache.alloc(value3, HEAP32);
+        ensureCache.copy(value3, HEAP32, offset);
         return offset;
       }
-      return value2;
+      return value3;
     }
-    function ensureFloat32(value2) {
-      if (typeof value2 === "object") {
-        var offset = ensureCache.alloc(value2, HEAPF32);
-        ensureCache.copy(value2, HEAPF32, offset);
+    function ensureFloat32(value3) {
+      if (typeof value3 === "object") {
+        var offset = ensureCache.alloc(value3, HEAPF32);
+        ensureCache.copy(value3, HEAPF32, offset);
         return offset;
       }
-      return value2;
+      return value3;
     }
-    function ensureFloat64(value2) {
-      if (typeof value2 === "object") {
-        var offset = ensureCache.alloc(value2, HEAPF64);
-        ensureCache.copy(value2, HEAPF64, offset);
+    function ensureFloat64(value3) {
+      if (typeof value3 === "object") {
+        var offset = ensureCache.alloc(value3, HEAPF64);
+        ensureCache.copy(value3, HEAPF64, offset);
         return offset;
       }
-      return value2;
+      return value3;
     }
     function VoidPtr() {
       throw "cannot construct a VoidPtr, no constructor in IDL";
@@ -79530,12 +80741,12 @@ async function structuredMessageEncoding(source, contentLength) {
   throw new Error("The specified request body type is not supported for CRC64 checksum");
 }
 async function pump(reader, controller, encodingStream) {
-  const { done: done4, value: value2 } = await reader.read();
+  const { done: done4, value: value3 } = await reader.read();
   if (done4) {
     controller.close();
     return;
   }
-  encodingStream.sourceDataHandler(Buffer.from(value2));
+  encodingStream.sourceDataHandler(Buffer.from(value3));
 }
 async function BrowserStream(source, contentLength) {
   const sourceStream = source instanceof Blob ? source.stream() : source;
@@ -79966,10 +81177,10 @@ var HeaderConstants = {
 };
 
 // ../../node_modules/.bun/@azure+storage-common@12.5.0+8aa6b2d6c2ed9594/node_modules/@azure/storage-common/dist/esm/utils/utils.common.js
-function setURLParameter(url, name, value2) {
+function setURLParameter(url, name, value3) {
   const urlParsed = new URL(url);
   const encodedName = encodeURIComponent(name);
-  const encodedValue = value2 ? encodeURIComponent(value2) : undefined;
+  const encodedValue = value3 ? encodeURIComponent(value3) : undefined;
   const searchString = urlParsed.search === "" ? "?" : urlParsed.search;
   const searchPieces = [];
   for (const pair of searchString.slice(1).split("&")) {
@@ -80007,22 +81218,22 @@ function getURLQueries(url) {
   queryString = queryString.trim();
   queryString = queryString.startsWith("?") ? queryString.substring(1) : queryString;
   let querySubStrings = queryString.split("&");
-  querySubStrings = querySubStrings.filter((value2) => {
-    const indexOfEqual = value2.indexOf("=");
-    const lastIndexOfEqual = value2.lastIndexOf("=");
-    return indexOfEqual > 0 && indexOfEqual === lastIndexOfEqual && lastIndexOfEqual < value2.length - 1;
+  querySubStrings = querySubStrings.filter((value3) => {
+    const indexOfEqual = value3.indexOf("=");
+    const lastIndexOfEqual = value3.lastIndexOf("=");
+    return indexOfEqual > 0 && indexOfEqual === lastIndexOfEqual && lastIndexOfEqual < value3.length - 1;
   });
   const queries = {};
   for (const querySubString of querySubStrings) {
     const splitResults = querySubString.split("=");
     const key = splitResults[0];
-    const value2 = splitResults[1];
-    queries[key] = value2;
+    const value3 = splitResults[1];
+    queries[key] = value3;
   }
   return queries;
 }
 async function delay5(timeInMs, aborter, abortError) {
-  return new Promise((resolve7, reject) => {
+  return new Promise((resolve6, reject) => {
     let timeout2;
     const abortHandler = () => {
       if (timeout2 !== undefined) {
@@ -80034,7 +81245,7 @@ async function delay5(timeInMs, aborter, abortError) {
       if (aborter !== undefined) {
         aborter.removeEventListener("abort", abortHandler);
       }
-      resolve7();
+      resolve6();
     };
     timeout2 = setTimeout(resolveHandler, timeInMs);
     if (aborter !== undefined) {
@@ -80501,24 +81712,24 @@ class StorageSharedKeyCredentialPolicy extends CredentialPolicy {
     return request;
   }
   getHeaderValueToSign(request, headerName) {
-    const value2 = request.headers.get(headerName);
-    if (!value2) {
+    const value3 = request.headers.get(headerName);
+    if (!value3) {
       return "";
     }
-    if (headerName === HeaderConstants.CONTENT_LENGTH && value2 === "0") {
+    if (headerName === HeaderConstants.CONTENT_LENGTH && value3 === "0") {
       return "";
     }
-    return value2;
+    return value3;
   }
   getCanonicalizedHeadersString(request) {
-    let headersArray = request.headers.headersArray().filter((value2) => {
-      return value2.name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE);
+    let headersArray = request.headers.headersArray().filter((value3) => {
+      return value3.name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE);
     });
     headersArray.sort((a, b) => {
       return compareHeader(a.name.toLowerCase(), b.name.toLowerCase());
     });
-    headersArray = headersArray.filter((value2, index, array2) => {
-      if (index > 0 && value2.name.toLowerCase() === array2[index - 1].name.toLowerCase()) {
+    headersArray = headersArray.filter((value3, index, array2) => {
+      if (index > 0 && value3.name.toLowerCase() === array2[index - 1].name.toLowerCase()) {
         return false;
       }
       return true;
@@ -80905,27 +82116,27 @@ function storageSharedKeyCredentialPolicy(options) {
     request.headers.set(HeaderConstants.AUTHORIZATION, `SharedKey ${options.accountName}:${signature}`);
   }
   function getHeaderValueToSign(request, headerName) {
-    const value2 = request.headers.get(headerName);
-    if (!value2) {
+    const value3 = request.headers.get(headerName);
+    if (!value3) {
       return "";
     }
-    if (headerName === HeaderConstants.CONTENT_LENGTH && value2 === "0") {
+    if (headerName === HeaderConstants.CONTENT_LENGTH && value3 === "0") {
       return "";
     }
-    return value2;
+    return value3;
   }
   function getCanonicalizedHeadersString(request) {
     let headersArray = [];
-    for (const [name, value2] of request.headers) {
+    for (const [name, value3] of request.headers) {
       if (name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE)) {
-        headersArray.push({ name, value: value2 });
+        headersArray.push({ name, value: value3 });
       }
     }
     headersArray.sort((a, b) => {
       return compareHeader(a.name.toLowerCase(), b.name.toLowerCase());
     });
-    headersArray = headersArray.filter((value2, index, array2) => {
-      if (index > 0 && value2.name.toLowerCase() === array2[index - 1].name.toLowerCase()) {
+    headersArray = headersArray.filter((value3, index, array2) => {
+      if (index > 0 && value3.name.toLowerCase() === array2[index - 1].name.toLowerCase()) {
         return false;
       }
       return true;
@@ -94512,10 +95723,10 @@ function appendToURLPath(url2, name) {
   urlParsed.pathname = path;
   return urlParsed.toString();
 }
-function setURLParameter2(url2, name, value2) {
+function setURLParameter2(url2, name, value3) {
   const urlParsed = new URL(url2);
   const encodedName = encodeURIComponent(name);
-  const encodedValue = value2 ? encodeURIComponent(value2) : undefined;
+  const encodedValue = value3 ? encodeURIComponent(value3) : undefined;
   const searchString = urlParsed.search === "" ? "?" : urlParsed.search;
   const searchPieces = [];
   for (const pair of searchString.slice(1).split("&")) {
@@ -94624,8 +95835,8 @@ function toBlobTagsString(tags2) {
   const tagPairs = [];
   for (const key in tags2) {
     if (Object.prototype.hasOwnProperty.call(tags2, key)) {
-      const value2 = tags2[key];
-      tagPairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value2)}`);
+      const value3 = tags2[key];
+      tagPairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value3)}`);
     }
   }
   return tagPairs.join("&");
@@ -94639,10 +95850,10 @@ function toBlobTags(tags2) {
   };
   for (const key in tags2) {
     if (Object.prototype.hasOwnProperty.call(tags2, key)) {
-      const value2 = tags2[key];
+      const value3 = tags2[key];
       res.blobTagSet.push({
         key,
-        value: value2
+        value: value3
       });
     }
   }
@@ -95369,14 +96580,14 @@ class SASQueryParameters {
     }
     return queries.join("&");
   }
-  tryAppendQueryParameter(queries, key, value2) {
-    if (!value2) {
+  tryAppendQueryParameter(queries, key, value3) {
+    if (!value3) {
       return;
     }
     key = encodeURIComponent(key);
-    value2 = encodeURIComponent(value2);
-    if (key.length > 0 && value2.length > 0) {
-      queries.push(`${key}=${value2}`);
+    value3 = encodeURIComponent(value3);
+    if (key.length > 0 && value3.length > 0) {
+      queries.push(`${key}=${value3}`);
     }
   }
 }
@@ -96482,8 +97693,8 @@ class AvroParser {
   }
   static async readMapPair(stream2, readItemMethod, options = {}) {
     const key = await AvroParser.readString(stream2, options);
-    const value2 = await readItemMethod(stream2, options);
-    return { key, value: value2 };
+    const value3 = await readItemMethod(stream2, options);
+    return { key, value: value3 };
   }
   static async readMap(stream2, readItemMethod, options = {}) {
     const readPairMethod = (s, opts = {}) => {
@@ -96639,8 +97850,8 @@ class AvroEnumType extends AvroType {
     this._symbols = symbols;
   }
   async read(stream2, options = {}) {
-    const value2 = await AvroParser.readInt(stream2, options);
-    return this._symbols[value2];
+    const value3 = await AvroParser.readInt(stream2, options);
+    return this._symbols[value3];
   }
 }
 
@@ -96845,7 +98056,7 @@ class AvroReadableFromStream extends AvroReadable {
       this._position += chunk.length;
       return this.toUint8Array(chunk);
     } else {
-      return new Promise((resolve7, reject) => {
+      return new Promise((resolve6, reject) => {
         const cleanUp = () => {
           this._readable.removeListener("readable", readableCallback);
           this._readable.removeListener("error", rejectCallback);
@@ -96860,7 +98071,7 @@ class AvroReadableFromStream extends AvroReadable {
           if (callbackChunk) {
             this._position += callbackChunk.length;
             cleanUp();
-            resolve7(this.toUint8Array(callbackChunk));
+            resolve6(this.toUint8Array(callbackChunk));
           }
         };
         const rejectCallback = () => {
@@ -97191,8 +98402,8 @@ class Poller {
     this.stopped = true;
     this.pollProgressCallbacks = [];
     this.operation = operation;
-    this.promise = new Promise((resolve7, reject) => {
-      this.resolve = resolve7;
+    this.promise = new Promise((resolve6, reject) => {
+      this.resolve = resolve6;
       this.reject = reject;
     });
     this.promise.catch(() => {});
@@ -97378,11 +98589,11 @@ var update = async function update2(options = {}) {
   return makeBlobBeginCopyFromURLPollOperation(state3);
 };
 var toString = function toString2() {
-  return JSON.stringify({ state: this.state }, (key, value2) => {
+  return JSON.stringify({ state: this.state }, (key, value3) => {
     if (key === "blobClient") {
       return;
     }
-    return value2;
+    return value3;
   });
 };
 function makeBlobBeginCopyFromURLPollOperation(state3) {
@@ -97446,8 +98657,8 @@ class Batch {
       return Promise.resolve();
     }
     this.parallelExecute();
-    return new Promise((resolve7, reject) => {
-      this.emitter.on("finish", resolve7);
+    return new Promise((resolve6, reject) => {
+      this.emitter.on("finish", resolve6);
       this.emitter.on("error", (error2) => {
         this.state = BatchStates.Error;
         reject(error2);
@@ -97485,12 +98696,12 @@ import util2 from "node:util";
 async function streamToBuffer(stream2, buffer3, offset, end, encoding) {
   let pos = 0;
   const count = end - offset;
-  return new Promise((resolve7, reject) => {
+  return new Promise((resolve6, reject) => {
     const timeout2 = setTimeout(() => reject(new Error(`The operation cannot be completed in timeout.`)), REQUEST_TIMEOUT);
     stream2.on("readable", () => {
       if (pos >= count) {
         clearTimeout(timeout2);
-        resolve7();
+        resolve6();
         return;
       }
       let chunk;
@@ -97503,7 +98714,7 @@ async function streamToBuffer(stream2, buffer3, offset, end, encoding) {
         pos += chunkLength;
         if (pos >= count) {
           clearTimeout(timeout2);
-          resolve7();
+          resolve6();
           return;
         }
       }
@@ -97513,7 +98724,7 @@ async function streamToBuffer(stream2, buffer3, offset, end, encoding) {
       if (pos < count) {
         reject(new Error(`Stream drains before getting enough data needed. Data read: ${pos}, data need: ${count}`));
       }
-      resolve7();
+      resolve6();
     });
     stream2.on("error", (msg) => {
       clearTimeout(timeout2);
@@ -97522,7 +98733,7 @@ async function streamToBuffer(stream2, buffer3, offset, end, encoding) {
   });
 }
 async function readStreamToLocalFile(rs, file2) {
-  return new Promise((resolve7, reject) => {
+  return new Promise((resolve6, reject) => {
     const ws = fs4.createWriteStream(file2);
     rs.on("error", (err) => {
       reject(err);
@@ -97530,7 +98741,7 @@ async function readStreamToLocalFile(rs, file2) {
     ws.on("error", (err) => {
       reject(err);
     });
-    ws.on("close", resolve7);
+    ws.on("close", resolve6);
     rs.pipe(ws);
   });
 }
@@ -98110,7 +99321,7 @@ class BlobClient extends StorageClient2 {
     });
   }
   generateSasUrl(options) {
-    return new Promise((resolve7) => {
+    return new Promise((resolve6) => {
       if (!(this.credential instanceof StorageSharedKeyCredential)) {
         throw new RangeError("Can only generate the SAS when the client is initialized with a shared key credential");
       }
@@ -98121,7 +99332,7 @@ class BlobClient extends StorageClient2 {
         versionId: this._versionId,
         ...options
       }, this.credential).toString();
-      resolve7(appendToURLQuery(this.url, sas));
+      resolve6(appendToURLQuery(this.url, sas));
     });
   }
   generateSasStringToSign(options) {
@@ -98137,7 +99348,7 @@ class BlobClient extends StorageClient2 {
     }, this.credential).stringToSign;
   }
   generateUserDelegationSasUrl(options, userDelegationKey) {
-    return new Promise((resolve7) => {
+    return new Promise((resolve6) => {
       const sas = generateBlobSASQueryParameters({
         containerName: this._containerName,
         blobName: this._name,
@@ -98145,7 +99356,7 @@ class BlobClient extends StorageClient2 {
         versionId: this._versionId,
         ...options
       }, userDelegationKey, this.accountName).toString();
-      resolve7(appendToURLQuery(this.url, sas));
+      resolve6(appendToURLQuery(this.url, sas));
     });
   }
   generateUserDelegationSasStringToSign(options, userDelegationKey) {
@@ -99111,28 +100322,28 @@ class PageBlobClient extends BlobClient {
 import * as crypto2 from "crypto";
 import * as stream2 from "stream";
 var __awaiter5 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -99143,7 +100354,7 @@ function uploadToBlobStorage(authenticatedUploadURL, uploadStream, contentType2)
     let lastProgressTime = Date.now();
     const abortController = new AbortController;
     const chunkTimer = (interval) => __awaiter5(this, undefined, undefined, function* () {
-      return new Promise((resolve7, reject) => {
+      return new Promise((resolve6, reject) => {
         const timer = setInterval(() => {
           if (Date.now() - lastProgressTime > interval) {
             reject(new Error("Upload progress stalled."));
@@ -99151,7 +100362,7 @@ function uploadToBlobStorage(authenticatedUploadURL, uploadStream, contentType2)
         }, interval);
         abortController.signal.addEventListener("abort", () => {
           clearInterval(timer);
-          resolve7();
+          resolve6();
         });
       });
     });
@@ -99212,28 +100423,28 @@ import * as stream3 from "stream";
 import * as fs5 from "fs";
 import { realpath as realpath2 } from "fs/promises";
 var __awaiter6 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -99274,28 +100485,28 @@ function createRawFileUploadStream(filePath) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/upload/zip.js
 var __awaiter7 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -99414,28 +100625,28 @@ function getMimeType(filePath) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/upload/upload-artifact.js
 var __awaiter8 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -99525,7 +100736,7 @@ import * as stream4 from "stream";
 import * as path3 from "path";
 
 // ../../node_modules/.bun/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
-import { readFileSync as readFileSync5, existsSync as existsSync8 } from "fs";
+import { readFileSync as readFileSync4, existsSync as existsSync8 } from "fs";
 import { EOL as EOL7 } from "os";
 
 class Context2 {
@@ -99534,7 +100745,7 @@ class Context2 {
     this.payload = {};
     if (process.env.GITHUB_EVENT_PATH) {
       if (existsSync8(process.env.GITHUB_EVENT_PATH)) {
-        this.payload = JSON.parse(readFileSync5(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
+        this.payload = JSON.parse(readFileSync4(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
       } else {
         const path3 = process.env.GITHUB_EVENT_PATH;
         process.stdout.write(`GITHUB_EVENT_PATH ${path3} does not exist${EOL7}`);
@@ -99577,28 +100788,28 @@ class Context2 {
 var httpClient = __toESM(require_lib2(), 1);
 var import_undici2 = __toESM(require_undici(), 1);
 var __awaiter9 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -99780,16 +100991,16 @@ function lowercaseKeys2(object) {
     return newObj;
   }, {});
 }
-function isPlainObject(value2) {
-  if (typeof value2 !== "object" || value2 === null)
+function isPlainObject(value3) {
+  if (typeof value3 !== "object" || value3 === null)
     return false;
-  if (Object.prototype.toString.call(value2) !== "[object Object]")
+  if (Object.prototype.toString.call(value3) !== "[object Object]")
     return false;
-  const proto = Object.getPrototypeOf(value2);
+  const proto = Object.getPrototypeOf(value3);
   if (proto === null)
     return true;
   const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value2);
+  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value3);
 }
 function mergeDeep(defaults, options) {
   const result2 = Object.assign({}, defaults);
@@ -99878,53 +101089,53 @@ function encodeUnreserved(str) {
     return "%" + c.charCodeAt(0).toString(16).toUpperCase();
   });
 }
-function encodeValue(operator, value2, key) {
-  value2 = operator === "+" || operator === "#" ? encodeReserved(value2) : encodeUnreserved(value2);
+function encodeValue(operator, value3, key) {
+  value3 = operator === "+" || operator === "#" ? encodeReserved(value3) : encodeUnreserved(value3);
   if (key) {
-    return encodeUnreserved(key) + "=" + value2;
+    return encodeUnreserved(key) + "=" + value3;
   } else {
-    return value2;
+    return value3;
   }
 }
-function isDefined(value2) {
-  return value2 !== undefined && value2 !== null;
+function isDefined(value3) {
+  return value3 !== undefined && value3 !== null;
 }
 function isKeyOperator(operator) {
   return operator === ";" || operator === "&" || operator === "?";
 }
 function getValues(context5, operator, key, modifier) {
-  var value2 = context5[key], result2 = [];
-  if (isDefined(value2) && value2 !== "") {
-    if (typeof value2 === "string" || typeof value2 === "number" || typeof value2 === "bigint" || typeof value2 === "boolean") {
-      value2 = value2.toString();
+  var value3 = context5[key], result2 = [];
+  if (isDefined(value3) && value3 !== "") {
+    if (typeof value3 === "string" || typeof value3 === "number" || typeof value3 === "bigint" || typeof value3 === "boolean") {
+      value3 = value3.toString();
       if (modifier && modifier !== "*") {
-        value2 = value2.substring(0, parseInt(modifier, 10));
+        value3 = value3.substring(0, parseInt(modifier, 10));
       }
-      result2.push(encodeValue(operator, value2, isKeyOperator(operator) ? key : ""));
+      result2.push(encodeValue(operator, value3, isKeyOperator(operator) ? key : ""));
     } else {
       if (modifier === "*") {
-        if (Array.isArray(value2)) {
-          value2.filter(isDefined).forEach(function(value22) {
+        if (Array.isArray(value3)) {
+          value3.filter(isDefined).forEach(function(value22) {
             result2.push(encodeValue(operator, value22, isKeyOperator(operator) ? key : ""));
           });
         } else {
-          Object.keys(value2).forEach(function(k) {
-            if (isDefined(value2[k])) {
-              result2.push(encodeValue(operator, value2[k], k));
+          Object.keys(value3).forEach(function(k) {
+            if (isDefined(value3[k])) {
+              result2.push(encodeValue(operator, value3[k], k));
             }
           });
         }
       } else {
         const tmp = [];
-        if (Array.isArray(value2)) {
-          value2.filter(isDefined).forEach(function(value22) {
+        if (Array.isArray(value3)) {
+          value3.filter(isDefined).forEach(function(value22) {
             tmp.push(encodeValue(operator, value22));
           });
         } else {
-          Object.keys(value2).forEach(function(k) {
-            if (isDefined(value2[k])) {
+          Object.keys(value3).forEach(function(k) {
+            if (isDefined(value3[k])) {
               tmp.push(encodeUnreserved(k));
-              tmp.push(encodeValue(operator, value2[k].toString()));
+              tmp.push(encodeValue(operator, value3[k].toString()));
             }
           });
         }
@@ -99937,12 +101148,12 @@ function getValues(context5, operator, key, modifier) {
     }
   } else {
     if (operator === ";") {
-      if (isDefined(value2)) {
+      if (isDefined(value3)) {
         result2.push(encodeUnreserved(key));
       }
-    } else if (value2 === "" && (operator === "&" || operator === "?")) {
+    } else if (value3 === "" && (operator === "&" || operator === "?")) {
       result2.push(encodeUnreserved(key) + "=");
-    } else if (value2 === "") {
+    } else if (value3 === "") {
       result2.push("");
     }
   }
@@ -100236,11 +101447,11 @@ var stringifyIteratively = (rootValue, replacer, spaceParam) => {
   }
   return chunks.join("");
 };
-var JSONStringify = (value2, replacer, space) => {
+var JSONStringify = (value3, replacer, space) => {
   try {
     const supportsRawJSON = "rawJSON" in JSON;
     if (supportsRawJSON) {
-      return originalStringify(value2, (key, val) => {
+      return originalStringify(value3, (key, val) => {
         if (typeof val === "bigint")
           return JSON.rawJSON(val.toString());
         const hasFunctionReplacer = typeof replacer === "function";
@@ -100252,9 +101463,9 @@ var JSONStringify = (value2, replacer, space) => {
         return val;
       }, space);
     }
-    if (!value2)
-      return originalStringify(value2, replacer, space);
-    const convertedToCustomJSON = originalStringify(value2, (key, val) => {
+    if (!value3)
+      return originalStringify(value3, replacer, space);
+    const convertedToCustomJSON = originalStringify(value3, (key, val) => {
       const isNoise = typeof val === "string" && noiseValue.test(val);
       if (isNoise)
         return val.toString() + "n";
@@ -100273,7 +101484,7 @@ var JSONStringify = (value2, replacer, space) => {
     return denoisedJSON;
   } catch (error2) {
     if (error2 instanceof RangeError) {
-      const convertedJSON = stringifyIteratively(value2, replacer, space);
+      const convertedJSON = stringifyIteratively(value3, replacer, space);
       if (convertedJSON === undefined)
         return;
       const supportsRawJSON = "rawJSON" in JSON;
@@ -100300,31 +101511,31 @@ var isContextSourceSupported = () => {
     return false;
   }
 };
-var convertMarkedBigIntsReviver = (key, value2, context5, userReviver) => {
-  const isCustomFormatBigInt = typeof value2 === "string" && customFormat.test(value2);
+var convertMarkedBigIntsReviver = (key, value3, context5, userReviver) => {
+  const isCustomFormatBigInt = typeof value3 === "string" && customFormat.test(value3);
   if (isCustomFormatBigInt)
-    return BigInt(value2.slice(0, -1));
-  const isNoiseValue = typeof value2 === "string" && noiseValue.test(value2);
+    return BigInt(value3.slice(0, -1));
+  const isNoiseValue = typeof value3 === "string" && noiseValue.test(value3);
   if (isNoiseValue)
-    return value2.slice(0, -1);
+    return value3.slice(0, -1);
   const hasUserReviver = typeof userReviver === "function";
   if (!hasUserReviver)
-    return value2;
-  return userReviver(key, value2, context5);
+    return value3;
+  return userReviver(key, value3, context5);
 };
 var JSONParseV2 = (text3, reviver) => {
-  return JSON.parse(text3, (key, value2, context5) => {
-    const isNumber2 = typeof value2 === "number";
-    const isOutOfBounds2 = value2 > Number.MAX_SAFE_INTEGER || value2 < Number.MIN_SAFE_INTEGER;
+  return JSON.parse(text3, (key, value3, context5) => {
+    const isNumber2 = typeof value3 === "number";
+    const isOutOfBounds2 = value3 > Number.MAX_SAFE_INTEGER || value3 < Number.MIN_SAFE_INTEGER;
     const isBigNumber = isNumber2 && isOutOfBounds2;
-    const isInt = context5 && intRegex.test(context5.source);
-    const isBigInt2 = isBigNumber && isInt;
+    const isInt2 = context5 && intRegex.test(context5.source);
+    const isBigInt2 = isBigNumber && isInt2;
     if (isBigInt2)
       return BigInt(context5.source);
     const hasCustomReviver = typeof reviver === "function";
     if (!hasCustomReviver)
-      return value2;
-    return reviver(key, value2, context5);
+      return value3;
+    return reviver(key, value3, context5);
   });
 };
 var MAX_INT = Number.MAX_SAFE_INTEGER.toString();
@@ -100338,36 +101549,36 @@ var applyReviverIteratively = (parsed, userReviver) => {
     const node = stack[stack.length - 1];
     if (!node.visited) {
       node.visited = true;
-      const value2 = node.parent[node.key];
-      const isComplexObject = value2 !== null && typeof value2 === "object";
+      const value3 = node.parent[node.key];
+      const isComplexObject = value3 !== null && typeof value3 === "object";
       if (isComplexObject) {
-        const keys2 = Object.keys(value2);
+        const keys2 = Object.keys(value3);
         for (let i = keys2.length - 1;i >= 0; i--) {
-          stack.push({ parent: value2, key: keys2[i], visited: false });
+          stack.push({ parent: value3, key: keys2[i], visited: false });
         }
       }
     } else {
       const { parent, key } = node;
-      let value2 = parent[key];
-      if (typeof value2 === "string") {
-        const isCustomFormatBigInt = customFormat.test(value2);
+      let value3 = parent[key];
+      if (typeof value3 === "string") {
+        const isCustomFormatBigInt = customFormat.test(value3);
         if (isCustomFormatBigInt) {
-          value2 = BigInt(value2.slice(0, -1));
+          value3 = BigInt(value3.slice(0, -1));
         } else {
-          const isNoise = noiseValue.test(value2);
+          const isNoise = noiseValue.test(value3);
           if (isNoise)
-            value2 = value2.slice(0, -1);
+            value3 = value3.slice(0, -1);
         }
       }
       const hasUserReviver = typeof userReviver === "function";
       if (hasUserReviver) {
-        value2 = userReviver.call(parent, key, value2);
+        value3 = userReviver.call(parent, key, value3);
       }
-      const isDeleted = value2 === undefined;
+      const isDeleted = value3 === undefined;
       if (isDeleted) {
         delete parent[key];
       } else {
-        parent[key] = value2;
+        parent[key] = value3;
       }
       stack.pop();
     }
@@ -100395,7 +101606,7 @@ var JSONParse = (text3, reviver) => {
     if (isContextSourceSupported())
       return JSONParseV2(text3, reviver);
     const serializedData = serializeBigInts(text3);
-    return originalParse(serializedData, (key, value2, context5) => convertMarkedBigIntsReviver(key, value2, context5, reviver));
+    return originalParse(serializedData, (key, value3, context5) => convertMarkedBigIntsReviver(key, value3, context5, reviver));
   } catch (error2) {
     if (error2 instanceof RangeError) {
       const serializedData = serializeBigInts(text3);
@@ -100440,16 +101651,16 @@ var defaults_default = {
     "user-agent": `octokit-request.js/${VERSION2} ${getUserAgent()}`
   }
 };
-function isPlainObject2(value2) {
-  if (typeof value2 !== "object" || value2 === null)
+function isPlainObject2(value3) {
+  if (typeof value3 !== "object" || value3 === null)
     return false;
-  if (Object.prototype.toString.call(value2) !== "[object Object]")
+  if (Object.prototype.toString.call(value3) !== "[object Object]")
     return false;
-  const proto = Object.getPrototypeOf(value2);
+  const proto = Object.getPrototypeOf(value3);
   if (proto === null)
     return true;
   const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value2);
+  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value3);
 }
 var noop = () => "";
 async function fetchWrapper(requestOptions) {
@@ -100460,9 +101671,9 @@ async function fetchWrapper(requestOptions) {
   const log2 = requestOptions.request?.log || console;
   const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
   const body2 = isPlainObject2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
-  const requestHeaders = Object.fromEntries(Object.entries(requestOptions.headers).map(([name, value2]) => [
+  const requestHeaders = Object.fromEntries(Object.entries(requestOptions.headers).map(([name, value3]) => [
     name,
-    String(value2)
+    String(value3)
   ]));
   let fetchResponse;
   try {
@@ -100499,8 +101710,8 @@ async function fetchWrapper(requestOptions) {
   const status = fetchResponse.status;
   const url2 = fetchResponse.url;
   const responseHeaders = {};
-  for (const [key, value2] of fetchResponse.headers) {
-    responseHeaders[key] = value2;
+  for (const [key, value3] of fetchResponse.headers) {
+    responseHeaders[key] = value3;
   }
   const octokitResponse = {
     url: url2,
@@ -103190,8 +104401,8 @@ var handler = {
   ownKeys({ scope: scope3 }) {
     return [...endpointMethodsMap.get(scope3).keys()];
   },
-  set(target2, methodName, value2) {
-    return target2.cache[methodName] = value2;
+  set(target2, methodName, value3) {
+    return target2.cache[methodName] = value3;
   },
   get({ octokit, scope: scope3, cache }, methodName) {
     if (cache[methodName]) {
@@ -103414,28 +104625,28 @@ function getOctokit(token, options, ...additionalPlugins) {
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/download/download-artifact.js
 var import_unzip_stream = __toESM(require_unzip(), 1);
 var __awaiter10 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -103468,7 +104679,7 @@ function streamExtract(url2, directory, skipDecompress) {
       } catch (error2) {
         retryCount++;
         debug(`Failed to download artifact after ${retryCount} retries due to ${error2.message}. Retrying in 5 seconds...`);
-        yield new Promise((resolve7) => setTimeout(resolve7, 5000));
+        yield new Promise((resolve6) => setTimeout(resolve6, 5000));
       }
     }
     throw new Error(`Artifact download failed after ${retryCount} retries.`);
@@ -103498,7 +104709,7 @@ function streamExtractExternal(url_1, directory_1) {
     debug(`Content-Type: ${contentType2}, mimeType: ${mimeType}, urlEndsWithZip: ${urlEndsWithZip}, isZip: ${isZip}, skipDecompress: ${skipDecompress}`);
     debug(`Content-Disposition: ${contentDisposition}, fileName: ${fileName}`);
     let sha256Digest = undefined;
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve6, reject) => {
       const timerFn = () => {
         const timeoutError = new Error(`Blob storage chunk did not respond in ${timeout2}ms`);
         response.message.destroy(timeoutError);
@@ -103523,7 +104734,7 @@ function streamExtractExternal(url_1, directory_1) {
           sha256Digest = hashStream.read();
           info(`SHA256 digest of downloaded artifact is ${sha256Digest}`);
         }
-        resolve7({ sha256Digest: `sha256:${sha256Digest}` });
+        resolve6({ sha256Digest: `sha256:${sha256Digest}` });
       };
       if (isZip && !skipDecompress) {
         passThrough.pipe(import_unzip_stream.default.Extract({ path: directory })).on("close", onClose).on("error", onError4);
@@ -103536,15 +104747,15 @@ function streamExtractExternal(url_1, directory_1) {
     });
   });
 }
-function downloadArtifactPublic(artifactId, repositoryOwner, repositoryName2, token, options) {
+function downloadArtifactPublic(artifactId, repositoryOwner, repositoryName, token, options) {
   return __awaiter10(this, undefined, undefined, function* () {
     const downloadPath = yield resolveOrCreateDirectory(options === null || options === undefined ? undefined : options.path);
     const api = getOctokit(token);
     let digestMismatch = false;
-    info(`Downloading artifact '${artifactId}' from '${repositoryOwner}/${repositoryName2}'`);
+    info(`Downloading artifact '${artifactId}' from '${repositoryOwner}/${repositoryName}'`);
     const { headers, status } = yield api.rest.actions.downloadArtifact({
       owner: repositoryOwner,
-      repo: repositoryName2,
+      repo: repositoryName,
       artifact_id: artifactId,
       archive_format: "zip",
       request: {
@@ -103741,33 +104952,33 @@ retry3.VERSION = VERSION8;
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/find/get-artifact.js
 var __awaiter11 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
 };
-function getArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName2, token) {
+function getArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName, token) {
   return __awaiter11(this, undefined, undefined, function* () {
     var _a;
     const [retryOpts, requestOpts] = getRetryOptions(defaults);
@@ -103778,10 +104989,10 @@ function getArtifactPublic(artifactName, workflowRunId, repositoryOwner, reposit
       retry: retryOpts,
       request: requestOpts
     };
-    const github2 = getOctokit(token, opts, retry3, requestLog);
-    const getArtifactResp = yield github2.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts{?name}", {
+    const github = getOctokit(token, opts, retry3, requestLog);
+    const getArtifactResp = yield github.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts{?name}", {
       owner: repositoryOwner,
-      repo: repositoryName2,
+      repo: repositoryName,
       run_id: workflowRunId,
       name: artifactName
     });
@@ -103844,33 +105055,33 @@ function getArtifactInternal(artifactName) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/delete/delete-artifact.js
 var __awaiter12 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
 };
-function deleteArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName2, token) {
+function deleteArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName, token) {
   return __awaiter12(this, undefined, undefined, function* () {
     var _a;
     const [retryOpts, requestOpts] = getRetryOptions(defaults);
@@ -103881,11 +105092,11 @@ function deleteArtifactPublic(artifactName, workflowRunId, repositoryOwner, repo
       retry: retryOpts,
       request: requestOpts
     };
-    const github2 = getOctokit(token, opts, retry3, requestLog);
-    const getArtifactResp = yield getArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName2, token);
-    const deleteArtifactResp = yield github2.rest.actions.deleteArtifact({
+    const github = getOctokit(token, opts, retry3, requestLog);
+    const getArtifactResp = yield getArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName, token);
+    const deleteArtifactResp = yield github.rest.actions.deleteArtifact({
       owner: repositoryOwner,
-      repo: repositoryName2,
+      repo: repositoryName,
       artifact_id: getArtifactResp.artifact.id
     });
     if (deleteArtifactResp.status !== 204) {
@@ -103929,28 +105140,28 @@ function deleteArtifactInternal(artifactName) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/find/list-artifacts.js
 var __awaiter13 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -103959,8 +105170,8 @@ var maximumArtifactCount = getMaxArtifactListCount();
 var paginationCount = 100;
 var maxNumberOfPages = Math.ceil(maximumArtifactCount / paginationCount);
 function listArtifactsPublic(workflowRunId_1, repositoryOwner_1, repositoryName_1, token_1) {
-  return __awaiter13(this, arguments, undefined, function* (workflowRunId, repositoryOwner, repositoryName2, token, latest = false) {
-    info(`Fetching artifact list for workflow run ${workflowRunId} in repository ${repositoryOwner}/${repositoryName2}`);
+  return __awaiter13(this, arguments, undefined, function* (workflowRunId, repositoryOwner, repositoryName, token, latest = false) {
+    info(`Fetching artifact list for workflow run ${workflowRunId} in repository ${repositoryOwner}/${repositoryName}`);
     let artifacts = [];
     const [retryOpts, requestOpts] = getRetryOptions(defaults);
     const opts = {
@@ -103970,11 +105181,11 @@ function listArtifactsPublic(workflowRunId_1, repositoryOwner_1, repositoryName_
       retry: retryOpts,
       request: requestOpts
     };
-    const github2 = getOctokit(token, opts, retry3, requestLog);
+    const github = getOctokit(token, opts, retry3, requestLog);
     let currentPageNumber = 1;
-    const { data: listArtifactResponse } = yield github2.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", {
+    const { data: listArtifactResponse } = yield github.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", {
       owner: repositoryOwner,
-      repo: repositoryName2,
+      repo: repositoryName,
       run_id: workflowRunId,
       per_page: paginationCount,
       page: currentPageNumber
@@ -103997,9 +105208,9 @@ function listArtifactsPublic(workflowRunId_1, repositoryOwner_1, repositoryName_
     currentPageNumber++;
     for (currentPageNumber;currentPageNumber <= numberOfPages; currentPageNumber++) {
       debug(`Fetching page ${currentPageNumber} of artifact list`);
-      const { data: listArtifactResponse2 } = yield github2.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", {
+      const { data: listArtifactResponse2 } = yield github.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", {
         owner: repositoryOwner,
-        repo: repositoryName2,
+        repo: repositoryName,
         run_id: workflowRunId,
         per_page: paginationCount,
         page: currentPageNumber
@@ -104066,28 +105277,28 @@ function filterLatest(artifacts) {
 
 // ../../node_modules/.bun/@actions+artifact@6.2.1/node_modules/@actions/artifact/lib/internal/client.js
 var __awaiter14 = function(thisArg, _arguments, P, generator) {
-  function adopt(value2) {
-    return value2 instanceof P ? value2 : new P(function(resolve7) {
-      resolve7(value2);
+  function adopt(value3) {
+    return value3 instanceof P ? value3 : new P(function(resolve6) {
+      resolve6(value3);
     });
   }
-  return new (P || (P = Promise))(function(resolve7, reject) {
-    function fulfilled(value2) {
+  return new (P || (P = Promise))(function(resolve6, reject) {
+    function fulfilled(value3) {
       try {
-        step(generator.next(value2));
+        step(generator.next(value3));
       } catch (e) {
         reject(e);
       }
     }
-    function rejected(value2) {
+    function rejected(value3) {
       try {
-        step(generator["throw"](value2));
+        step(generator["throw"](value3));
       } catch (e) {
         reject(e);
       }
     }
     function step(result2) {
-      result2.done ? resolve7(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+      result2.done ? resolve6(result2.value) : adopt(result2.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -104130,8 +105341,8 @@ If the error persists, please check whether Actions is operating normally at [ht
           throw new GHESNotSupportedError;
         }
         if (options === null || options === undefined ? undefined : options.findBy) {
-          const { findBy: { repositoryOwner, repositoryName: repositoryName2, token } } = options, downloadOptions = __rest(options, ["findBy"]);
-          return downloadArtifactPublic(artifactId, repositoryOwner, repositoryName2, token, downloadOptions);
+          const { findBy: { repositoryOwner, repositoryName, token } } = options, downloadOptions = __rest(options, ["findBy"]);
+          return downloadArtifactPublic(artifactId, repositoryOwner, repositoryName, token, downloadOptions);
         }
         return downloadArtifactInternal(artifactId, options);
       } catch (error2) {
@@ -104151,8 +105362,8 @@ If the error persists, please check whether Actions and API requests are operati
           throw new GHESNotSupportedError;
         }
         if (options === null || options === undefined ? undefined : options.findBy) {
-          const { findBy: { workflowRunId, repositoryOwner, repositoryName: repositoryName2, token } } = options;
-          return listArtifactsPublic(workflowRunId, repositoryOwner, repositoryName2, token, options === null || options === undefined ? undefined : options.latest);
+          const { findBy: { workflowRunId, repositoryOwner, repositoryName, token } } = options;
+          return listArtifactsPublic(workflowRunId, repositoryOwner, repositoryName, token, options === null || options === undefined ? undefined : options.latest);
         }
         return listArtifactsInternal(options === null || options === undefined ? undefined : options.latest);
       } catch (error2) {
@@ -104172,8 +105383,8 @@ If the error persists, please check whether Actions and API requests are operati
           throw new GHESNotSupportedError;
         }
         if (options === null || options === undefined ? undefined : options.findBy) {
-          const { findBy: { workflowRunId, repositoryOwner, repositoryName: repositoryName2, token } } = options;
-          return getArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName2, token);
+          const { findBy: { workflowRunId, repositoryOwner, repositoryName, token } } = options;
+          return getArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName, token);
         }
         return getArtifactInternal(artifactName);
       } catch (error2) {
@@ -104193,8 +105404,8 @@ If the error persists, please check whether Actions and API requests are operati
           throw new GHESNotSupportedError;
         }
         if (options === null || options === undefined ? undefined : options.findBy) {
-          const { findBy: { repositoryOwner, repositoryName: repositoryName2, workflowRunId, token } } = options;
-          return deleteArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName2, token);
+          const { findBy: { repositoryOwner, repositoryName, workflowRunId, token } } = options;
+          return deleteArtifactPublic(artifactName, workflowRunId, repositoryOwner, repositoryName, token);
         }
         return deleteArtifactInternal(artifactName);
       } catch (error2) {
@@ -104216,21 +105427,21 @@ var artifact_default = client2;
 // src/prepared-store.ts
 import {
   cpSync as cpSync2,
-  mkdtempSync as mkdtempSync3,
+  mkdtempSync as mkdtempSync2,
   readdirSync as readdirSync3,
-  readFileSync as readFileSync6,
-  rmSync as rmSync4,
-  writeFileSync as writeFileSync3
+  readFileSync as readFileSync5,
+  rmSync as rmSync3,
+  writeFileSync as writeFileSync2
 } from "node:fs";
 import { tmpdir as tmpdir4 } from "node:os";
-import { basename as basename5, join as join11, relative as relative4 } from "node:path";
+import { basename as basename5, join as join10, relative as relative4 } from "node:path";
 var digestPattern = /^sha256:[a-f0-9]{64}$/u;
 var requiredEnvironment = (environment, name) => {
-  const value2 = environment[name]?.trim();
-  if (value2 === undefined || value2.length === 0) {
+  const value3 = environment[name]?.trim();
+  if (value3 === undefined || value3.length === 0) {
     throw PreparedStoreError.make({ reason: `${name} is required to authenticate the Action producer context.` });
   }
-  return value2;
+  return value3;
 };
 var actionProducerContextFromEnvironment = (environment) => {
   const repository2 = requiredEnvironment(environment, "GITHUB_REPOSITORY");
@@ -104274,16 +105485,16 @@ var producerBytes = (record2) => `${JSON.stringify({
 })}
 `;
 var decodeProducer = (bytes) => {
-  let value2;
+  let value3;
   try {
-    value2 = JSON.parse(bytes);
+    value3 = JSON.parse(bytes);
   } catch {
     throw PreparedStoreError.make({ reason: "Action producer context is not valid JSON." });
   }
-  if (typeof value2 !== "object" || value2 === null || Array.isArray(value2)) {
+  if (typeof value3 !== "object" || value3 === null || Array.isArray(value3)) {
     throw PreparedStoreError.make({ reason: "Action producer context must be an object." });
   }
-  const record2 = value2;
+  const record2 = value3;
   const fields = [
     "schemaVersion",
     "repository",
@@ -104307,7 +105518,7 @@ var allFiles = (root) => {
   const result2 = [];
   const walk = (directory) => {
     for (const entry of readdirSync3(directory, { withFileTypes: true })) {
-      const path4 = join11(directory, entry.name);
+      const path4 = join10(directory, entry.name);
       if (entry.isDirectory())
         walk(path4);
       else if (entry.isFile())
@@ -104337,17 +105548,17 @@ var verifyReferenceContext = (reference, context7) => {
   }
 };
 var makeActionPreparedReleaseStore = (input) => {
-  const local = makeLocalPreparedReleaseStore(join11(input.workspace, ".release", "ts-release", "prepared"));
+  const local = makeLocalPreparedReleaseStore(join10(input.workspace, ".release", "ts-release", "prepared"));
   splitRepository(input.context.repository);
   const loadHosted = (reference) => tryPromise2({
     try: async () => {
-      const transfer = mkdtempSync3(join11(tmpdir4(), "ts-release-action-download-"));
+      const transfer = mkdtempSync2(join10(tmpdir4(), "ts-release-action-download-"));
       try {
         const downloaded = await input.artifacts.download({ name: reference.artifactName, destination: transfer });
         if (downloaded.digestMismatch === true)
           throw PreparedStoreError.make({ reason: "Actions artifact transport digest mismatch." });
         const root = downloaded.path ?? transfer;
-        const producer = decodeProducer(readFileSync6(join11(root, "producer-context.json"), "utf8"));
+        const producer = decodeProducer(readFileSync5(join10(root, "producer-context.json"), "utf8"));
         const expected = {
           repository: input.context.repository,
           workflowRef: input.context.workflowRef,
@@ -104358,19 +105569,19 @@ var makeActionPreparedReleaseStore = (input) => {
           artifactName: reference.artifactName.toString(),
           preparedDigest: reference.digest.toString()
         };
-        for (const [field, value2] of Object.entries(expected)) {
-          if (producer[field] !== value2) {
+        for (const [field, value3] of Object.entries(expected)) {
+          if (producer[field] !== value3) {
             throw PreparedStoreError.make({ reason: `Action producer context failed ${field} verification.` });
           }
         }
-        const transferred = await runPromise2(loadPreparedRelease(join11(root, reference.digest)));
+        const transferred = await runPromise2(loadPreparedRelease(join10(root, reference.digest)));
         if (transferred.manifest.source.commit.toString() !== producer.candidateCommit || basename5(transferred.directory) !== producer.preparedDigest) {
           throw PreparedStoreError.make({ reason: "Prepared bundle does not match its authenticated producer context." });
         }
         const persisted = await runPromise2(local.commit(transferred.manifest, transferred.blobs));
         return persisted.bundle;
       } finally {
-        rmSync4(transfer, { recursive: true, force: true });
+        rmSync3(transfer, { recursive: true, force: true });
       }
     },
     catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
@@ -104380,18 +105591,18 @@ var makeActionPreparedReleaseStore = (input) => {
       try: async () => {
         if (committed.ref.scheme !== "local")
           throw PreparedStoreError.make({ reason: "Action staging requires a local content-addressed commit." });
-        const digest3 = committed.ref.digest.toString();
-        const artifactName = `ts-release-prepared-${digest3}`;
-        const transfer = mkdtempSync3(join11(tmpdir4(), "ts-release-action-artifact-"));
+        const digest = committed.ref.digest.toString();
+        const artifactName = `ts-release-prepared-${digest}`;
+        const transfer = mkdtempSync2(join10(tmpdir4(), "ts-release-action-artifact-"));
         try {
-          cpSync2(committed.bundle.directory, join11(transfer, digest3), { recursive: true, dereference: false });
+          cpSync2(committed.bundle.directory, join10(transfer, digest), { recursive: true, dereference: false });
           const producer = {
             schemaVersion: "ts-release-action-producer/v1",
             ...input.context,
             artifactName,
-            preparedDigest: digest3
+            preparedDigest: digest
           };
-          writeFileSync3(join11(transfer, "producer-context.json"), producerBytes(producer), { mode: 256 });
+          writeFileSync2(join10(transfer, "producer-context.json"), producerBytes(producer), { mode: 256 });
           const uploaded = await input.artifacts.upload({ name: artifactName, files: allFiles(transfer), rootDirectory: transfer });
           if (!Number.isSafeInteger(uploaded.id) || uploaded.id <= 0 || uploaded.digest === undefined || !digestPattern.test(uploaded.digest)) {
             throw PreparedStoreError.make({ reason: "Actions artifact upload did not return a canonical id and digest." });
@@ -104403,7 +105614,7 @@ var makeActionPreparedReleaseStore = (input) => {
             runId: input.context.runId,
             attempt: input.context.runAttempt,
             artifactName,
-            digest: digest3
+            digest
           }));
           {
             const verified = await runPromise2(loadHosted(ref));
@@ -104411,13 +105622,22 @@ var makeActionPreparedReleaseStore = (input) => {
               throw PreparedStoreError.make({ reason: "Actions artifact verification returned a different prepared release." });
             }
           }
-          await input.onCommit?.(ref);
+          if (input.onCommit !== undefined) {
+            try {
+              await input.onCommit(ref);
+            } catch (cause) {
+              throw new PreparedCommitHandoffError({
+                prepared: ref,
+                reason: cause instanceof Error ? cause.message : String(cause)
+              });
+            }
+          }
           return { ref, bundle: committed.bundle };
         } finally {
-          rmSync4(transfer, { recursive: true, force: true });
+          rmSync3(transfer, { recursive: true, force: true });
         }
       },
-      catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+      catch: (cause) => cause instanceof PreparedStoreError || cause instanceof PreparedCommitHandoffError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
     }))),
     load: (reference) => try_2({
       try: () => verifyReferenceContext(reference, input.context),
@@ -104429,7 +105649,6 @@ var makeActionPreparedReleaseStore = (input) => {
     }))
   };
 };
-var decodeActionPreparedReference = (value2) => decodeCompletePreparedReleaseRef(value2);
 
 // src/index.ts
 var summarize = async (message) => {
@@ -104455,21 +105674,15 @@ try {
       await preparedReference.emit(encodeCompletePreparedReleaseRef(reference));
     }
   });
-  api = makeReleaseApi(makeNodeReleaseLayer(() => store));
+  api = makeReleaseApi(makeNodeReleaseLayer(store));
   await runAction(api, {
     workspace,
     input: getInput,
     output: setOutput,
-    read: (path4) => readFileSync7(path4, "utf8"),
-    write: (path4, value2) => {
-      mkdirSync5(dirname3(path4), { recursive: true });
-      writeFileSync4(path4, value2);
-    },
-    resolvePrepared: async (value2) => {
-      const reference = await runPromise2(decodeActionPreparedReference(value2));
-      await preparedReference.emit(encodeCompletePreparedReleaseRef(reference));
-      const bundle = await runPromise2(store.load(reference));
-      return bundle.directory;
+    read: (path4) => readFileSync6(path4, "utf8"),
+    write: (path4, value3) => {
+      mkdirSync5(dirname2(path4), { recursive: true });
+      writeFileSync3(path4, value3);
     },
     preparedReference,
     summarize

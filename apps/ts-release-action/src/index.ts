@@ -5,7 +5,6 @@ import {
   unsupportedExecutionHost
 } from "@mannyc1/ts-release"
 import { makeNodeReleaseLayer } from "@mannyc1/ts-release/node"
-import * as Effect from "effect/Effect"
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
 import {
@@ -14,7 +13,6 @@ import {
 } from "./commands.js"
 import {
   actionProducerContextFromEnvironment,
-  decodeActionPreparedReference,
   makeActionsArtifactTransport,
   makeActionPreparedReleaseStore
 } from "./prepared-store.js"
@@ -42,7 +40,7 @@ try {
       await preparedReference.emit(encodeCompletePreparedReleaseRef(reference))
     }
   })
-  api = makeReleaseApi(makeNodeReleaseLayer(() => store))
+  api = makeReleaseApi(makeNodeReleaseLayer(store))
 
   await runAction(api, {
     workspace,
@@ -52,12 +50,6 @@ try {
     write: (path, value) => {
       mkdirSync(dirname(path), { recursive: true })
       writeFileSync(path, value)
-    },
-    resolvePrepared: async (value) => {
-      const reference = await Effect.runPromise(decodeActionPreparedReference(value))
-      await preparedReference.emit(encodeCompletePreparedReleaseRef(reference))
-      const bundle = await Effect.runPromise(store.load(reference))
-      return bundle.directory
     },
     preparedReference,
     summarize

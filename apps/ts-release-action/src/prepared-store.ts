@@ -6,12 +6,11 @@ import {
 import { tmpdir } from "node:os"
 import { basename, join, relative } from "node:path"
 import {
-  decodeCompletePreparedReleaseRef,
   makeGitHubActionsCompletePreparedReleaseRef,
   type CompletePreparedReleaseRef
 } from "@mannyc1/ts-release"
 import {
-  loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedStoreError,
+  loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedCommitHandoffError, PreparedStoreError,
   type PreparedReleaseStoreShape
 } from "../../../src/release/prepared-store.js"
 
@@ -236,11 +235,20 @@ export const makeActionPreparedReleaseStore = (input: {
               throw PreparedStoreError.make({ reason: "Actions artifact verification returned a different prepared release." })
             }
           }
-          await input.onCommit?.(ref)
+          if (input.onCommit !== undefined) {
+            try {
+              await input.onCommit(ref)
+            } catch (cause) {
+              throw new PreparedCommitHandoffError({
+                prepared: ref,
+                reason: cause instanceof Error ? cause.message : String(cause)
+              })
+            }
+          }
           return { ref, bundle: committed.bundle }
         } finally { rmSync(transfer, { recursive: true, force: true }) }
       },
-      catch: (cause) => cause instanceof PreparedStoreError
+      catch: (cause) => cause instanceof PreparedStoreError || cause instanceof PreparedCommitHandoffError
         ? cause
         : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
     }))),
@@ -255,5 +263,3 @@ export const makeActionPreparedReleaseStore = (input: {
     }))
   }
 }
-
-export const decodeActionPreparedReference = (value: string) => decodeCompletePreparedReleaseRef(value)

@@ -1,6 +1,12 @@
 import { existsSync, realpathSync } from "node:fs"
 import { isAbsolute, relative, resolve, sep } from "node:path"
-import type { ReleaseApi } from "@mannyc1/ts-release"
+import {
+  decodeCompletePreparedReleaseRef,
+  encodeCompletePreparedReleaseRef,
+  type CompletePreparedReleaseRef,
+  type ReleaseApi
+} from "@mannyc1/ts-release"
+import * as Effect from "effect/Effect"
 
 export const actionCommands = ["release", "prepare", "publish"] as const
 export const actionInputs = ["command", "config", "prepared"] as const
@@ -37,7 +43,6 @@ export interface ActionRuntime {
   readonly output: (name: ActionOutput, value: string) => void
   readonly read: (path: string) => string
   readonly write: (path: string, value: string) => void
-  readonly resolvePrepared: (reference: string) => Promise<string>
   readonly preparedReference: PreparedReferenceChannel
   readonly summarize: (message: string) => Promise<void>
 }
@@ -94,42 +99,27 @@ const rejectExtra = (values: Record<string, string>, allowed: ReadonlyArray<stri
   }
 }
 
-const reportStatus = (result: unknown): "complete" | "blocked" | "uncertain" => {
-  if (Array.isArray(result)) {
-    return result.every((item) => typeof item === "object" && item !== null &&
-      (item as { readonly _tag?: unknown })._tag === "PublicationConverged")
-      ? "complete"
-      : result.some((item) => typeof item === "object" && item !== null &&
-        ((item as { readonly _tag?: unknown })._tag === "PublicationObserved" ||
-          (item as { readonly _tag?: unknown })._tag === "UncertainSubject"))
-      ? "uncertain"
-      : "blocked"
-  }
-  if (typeof result !== "object" || result === null) return "blocked"
-  const record = result as Record<string, unknown>
-  if (record.status === "complete" || record.status === "blocked" || record.status === "uncertain") {
-    return record.status
-  }
-  if (record.report !== undefined) return reportStatus(record.report)
-  if (record.publications !== undefined) return reportStatus(record.publications)
-  return "blocked"
-}
-
-const reportProjection = (command: ActionCommand, result: unknown, prepared: string | undefined): unknown => {
-  if (command === "prepare") return { prepared }
-  if (command === "release" && typeof result === "object" && result !== null) {
-    const record = result as Record<string, unknown>
-    return { prepared, report: record.report ?? record.publications }
-  }
-  return result
-}
-
 class ReportedActionError extends Error {}
 
 const recoveryGuidance = (reference: string): string => [
   `Prepared release remains available as ${reference}.`,
   "Re-run the failed publish job on this workflow run; artifacts persist across attempts."
 ].join("\n")
+
+const decodePrepared = (value: string): Promise<CompletePreparedReleaseRef> =>
+  Effect.runPromise(decodeCompletePreparedReleaseRef(value))
+
+const confirmedPrepared = (
+  reference: CompletePreparedReleaseRef,
+  channel: PreparedReferenceChannel
+): string => {
+  const encoded = encodeCompletePreparedReleaseRef(reference)
+  const emitted = channel.current() ?? fail("Operation completed without a durable prepared reference.")
+  if (emitted !== encoded) {
+    fail("Operation returned a different prepared reference than its durable store committed.")
+  }
+  return encoded
+}
 
 export const runAction = async (
   api: Pick<ReleaseApi, "release" | "prepare" | "publish">,
@@ -145,29 +135,35 @@ export const runAction = async (
     const selected = command(values.command)
     rejectExtra(values, selected === "publish" ? ["command", "prepared"] : ["command", "config"])
 
-    let result: unknown
+    let prepared: string
+    let report: Awaited<ReturnType<ReleaseApi["publish"]>> | undefined
     if (selected === "publish") {
-      const reference = values.prepared || fail("publish requires prepared.")
-      const directory = await runtime.resolvePrepared(reference)
-      result = await api.publish({ prepared: directory })
+      const reference = await decodePrepared(values.prepared || fail("publish requires prepared."))
+      prepared = encodeCompletePreparedReleaseRef(reference)
+      await runtime.preparedReference.emit(prepared)
+      report = await api.publish({ prepared: reference })
     } else {
       const config = configJson(runtime, pathInWorkspace(root, values.config || fail(`${selected} requires config.`)))
-      result = selected === "release"
-        ? await api.release({ config, workspace: root })
-        : await api.prepare({ config, workspace: root })
+      if (selected === "release") {
+        const result = await api.release({ config, workspace: root })
+        prepared = confirmedPrepared(result.prepared, runtime.preparedReference)
+        report = result.report
+      } else {
+        const result = await api.prepare({ config, workspace: root })
+        prepared = confirmedPrepared(result, runtime.preparedReference)
+        report = undefined
+      }
     }
 
-    const prepared = runtime.preparedReference.current() ??
-      fail(`${selected} completed without a durable prepared reference.`)
-    const status = selected === "prepare" ? "complete" : reportStatus(result)
-    const report = {
+    const status = report?.status ?? "complete"
+    const actionReport = {
       schemaVersion: "ts-release-action-report/v2",
       command: selected,
       status,
       prepared,
-      result: reportProjection(selected, result, prepared)
+      ...(report === undefined ? {} : { report })
     }
-    writeReport(runtime, root, report)
+    writeReport(runtime, root, actionReport)
     if (status !== "complete") {
       await runtime.summarize(recoveryGuidance(prepared))
       throw new ReportedActionError(`Action ${selected} report is ${status}; no complete release is claimed.`)

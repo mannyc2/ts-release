@@ -60186,10 +60186,30 @@ class VisibilityPending extends TaggedClass()("VisibilityPending", {
   basis: VisibilityBasis
 }) {
 }
+var CredentialFailureStrategy = Literals(["anonymous", "token", "trusted-publishing"]);
+
+class CredentialUnavailableCause extends TaggedClass()("CredentialUnavailable", {
+  provider: ProviderId,
+  purpose: CredentialPurpose,
+  strategy: CredentialFailureStrategy
+}) {
+}
+
+class CredentialStrategyUnsupportedCause extends TaggedClass()("CredentialStrategyUnsupported", {
+  provider: ProviderId,
+  purpose: CredentialPurpose,
+  strategy: CredentialFailureStrategy
+}) {
+}
+var CredentialFailureCause = Union2([
+  CredentialUnavailableCause,
+  CredentialStrategyUnsupportedCause
+]);
 
 class InconclusiveObservation extends TaggedClass()("Inconclusive", {
   subject: SubjectId,
-  reason: SafeReason
+  reason: SafeReason,
+  cause: optionalKey2(CredentialFailureCause)
 }) {
 }
 var Observation = Union2([
@@ -60236,7 +60256,8 @@ class Conflict extends TaggedClass()("Conflict", {
 
 class ProviderBlocked extends TaggedClass()("Blocked", {
   subject: SubjectId,
-  reason: SafeReason
+  reason: SafeReason,
+  cause: optionalKey2(CredentialFailureCause)
 }) {
 }
 var ProviderDecision = Union2([
@@ -60507,7 +60528,8 @@ class ReadOnlyAbsent extends TaggedClass()("Absent", {
 }
 
 class ReadOnlyInconclusive extends TaggedClass()("Inconclusive", {
-  reason: SafeReason
+  reason: SafeReason,
+  cause: optionalKey2(CredentialFailureCause)
 }) {
 }
 var ObservationClassification = Union2([
@@ -60519,7 +60541,10 @@ var ObservationClassification = Union2([
 var equivalentObservation = () => new ReadOnlyEquivalent;
 var differentObservation = (differences) => new ReadOnlyDifferent({ differences });
 var absentObservation = (basis) => new ReadOnlyAbsent({ basis });
-var inconclusiveObservation = (reason2) => new ReadOnlyInconclusive({ reason: reason2 });
+var inconclusiveObservation = (reason2, cause) => new ReadOnlyInconclusive({
+  reason: reason2,
+  ...cause === undefined ? {} : { cause }
+});
 
 class ObservedSubject extends Class4("ObservedSubject")({
   subject: SubjectId,
@@ -60594,14 +60619,24 @@ var validateInput = (input) => try_2({
   catch: (cause) => cause instanceof ReleaseCoordinatorConstructionError ? cause : constructionFailure("The release subject contract is invalid.")
 });
 var fromReportResult = (result2) => isFailure2(result2) ? fail6(constructionFailure(result2.failure.reason)) : succeed6(result2.success);
-var unavailableObservation = (subject) => InconclusiveObservation.make({
+var credentialFailureCause = (request, error2) => error2._tag === "CredentialUnavailable" ? CredentialUnavailableCause.make({
+  provider: request.provider,
+  purpose: request.purpose,
+  strategy: request.strategy.kind
+}) : CredentialStrategyUnsupportedCause.make({
+  provider: request.provider,
+  purpose: request.purpose,
+  strategy: request.strategy.kind
+});
+var unavailableObservation = (subject, request, error2) => InconclusiveObservation.make({
   subject,
-  reason: SafeReason.make("Observation authority or provider read was unavailable.")
+  reason: SafeReason.make("Observation authority or provider read was unavailable."),
+  ...request === undefined || error2 === undefined ? {} : { cause: credentialFailureCause(request, error2) }
 });
 var subjectObservationFailure = (subject, error2) => error2.subject !== subject.id ? fail6(constructionFailure("A subject error does not match its prepared subject identity.")) : succeed6(InconclusiveObservation.make({ subject: subject.id, reason: error2.reason }));
 var observeOnce = (credentials, subject, request, context3) => credentials.acquireForObservation(request).pipe(flatMap3((grant) => makeAuthority(request, grant).pipe(flatMap3((authority) => subject.observe(grant, context3).pipe(catch_2((error2) => subjectObservationFailure(subject, error2)), map5((observation) => ({ observation, authorities: [authority] })))))), catchTags2({
-  CredentialUnavailable: () => succeed6({
-    observation: unavailableObservation(subject.id),
+  CredentialUnavailable: (error2) => succeed6({
+    observation: unavailableObservation(subject.id, request, error2),
     authorities: []
   }),
   CredentialAudienceMismatch: () => succeed6({
@@ -60612,8 +60647,8 @@ var observeOnce = (credentials, subject, request, context3) => credentials.acqui
     observation: unavailableObservation(subject.id),
     authorities: []
   }),
-  CredentialStrategyUnsupported: () => succeed6({
-    observation: unavailableObservation(subject.id),
+  CredentialStrategyUnsupported: (error2) => succeed6({
+    observation: unavailableObservation(subject.id, request, error2),
     authorities: []
   }),
   CredentialSubjectMismatch: () => succeed6({
@@ -60654,12 +60689,13 @@ var classifyObservation = (observation) => {
     case "VisibilityPending":
       return inconclusiveObservation(SafeReason.make("Provider visibility remains pending."));
     case "Inconclusive":
-      return inconclusiveObservation(observation.reason);
+      return inconclusiveObservation(observation.reason, observation.cause);
   }
 };
-var providerBlockedFromAuthority = (subject, _error) => ProviderBlocked.make({
+var providerBlockedFromAuthority = (subject, request, error2) => ProviderBlocked.make({
   subject,
-  reason: SafeReason.make("Mutation authority was unavailable for the exact prepared request.")
+  reason: SafeReason.make("Mutation authority was unavailable for the exact prepared request."),
+  ...error2._tag === "CredentialUnavailable" || error2._tag === "CredentialStrategyUnsupported" ? { cause: credentialFailureCause(request, error2) } : {}
 });
 var makeAuthority = (request, grant) => {
   const purposes = [...grant.purposes];
@@ -60710,7 +60746,7 @@ var publishSubject = fn2("publishReleaseSubject")(function* (credentials, subjec
           subject: subject.id,
           observationAuthorities: before.authorities,
           observations: before.observations,
-          cause: providerBlockedFromAuthority(subject.id, acquisition.error)
+          cause: providerBlockedFromAuthority(subject.id, subject.mutationRequest, acquisition.error)
         }));
       }
       const grant = acquisition.grant;
@@ -62124,6 +62160,15 @@ var attempt = (body) => try_2({
   try: body,
   catch: failure2
 });
+var verifyPreparationChildAuthority = fn2("prepareRelease.verifyPreparationChildAuthority")(function* (graph) {
+  for (const preparation of graph.preparations) {
+    if ((preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact") && preparation.environmentNames.length > 0) {
+      return yield* new PreparationError({
+        reason: `Generic preparation ${preparation.id} requests host environment inheritance, but preparation children have no certified authority channel.`
+      });
+    }
+  }
+});
 var outputId = (value3) => OutputId.make(value3);
 var pathOf = (context3, path) => join3(context3.workspace, path);
 var byCodepoint = (left, right) => {
@@ -62232,7 +62277,7 @@ var runCommand = (request, preparation, declarations, bytes) => gen2(function* (
   }
   const outputs = preparation._tag === "GraphCommandArtifact" ? preparation.outputs : [];
   const argv2 = preparation.argv.map((part) => replaceReferences(part, inputs, outputs));
-  const outcome = yield* request.run({ argv: argv2, cwd: pathOf(request.context, preparation.cwd), environmentNames: preparation.environmentNames }).pipe(mapError3(failure2));
+  const outcome = yield* request.run({ argv: argv2, cwd: pathOf(request.context, preparation.cwd), environmentNames: [] }).pipe(mapError3(failure2));
   if (outcome.exitCode !== 0)
     return yield* new PreparationError({ reason: `Command ${preparation.id} exited ${outcome.exitCode}: ${outcome.stderr.trim()}` });
   for (const input of inputs) {
@@ -62335,6 +62380,7 @@ var npmTarball = (request, publication2, declarations, bytes) => gen2(function* 
   });
 });
 var prepareRelease = fn2("prepareRelease")(function* (input) {
+  yield* verifyPreparationChildAuthority(input.graph);
   let observed = yield* input.verifySource(input.context).pipe(mapError3(failure2));
   const root = yield* attempt(() => stageWorkspace(observed.workspace));
   try {
@@ -67009,6 +67055,17 @@ var defaultNodeStore = makeLocalPreparedReleaseStore(join8(process.cwd(), ".rele
 var NodeReleaseLayer = makeNodeReleaseLayer(defaultNodeStore);
 
 // ../../src/api/api.ts
+var safeFailure = (failure3, fallback) => {
+  const value3 = typeof failure3 === "object" && failure3 !== null && "reason" in failure3 && typeof failure3.reason === "string" ? failure3.reason : failure3 instanceof Error ? failure3.message : typeof failure3 === "string" ? failure3 : fallback;
+  const normalized = [...value3].map((character) => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32 ? character : "?";
+  }).slice(0, 2048).join("");
+  return normalized.length === 0 || secretPatterns.some((pattern) => pattern.test(normalized)) ? fallback : normalized;
+};
+var inputFailure = (cause) => new ReleaseInputError({
+  reason: safeFailure(cause, "Release input is invalid.")
+});
 var manifestPath = (config) => {
   const directory = String(config.project.packagePath ?? config.npmPackage?.path ?? ".");
   return SafeRelativePath.make(directory === "." ? "package.json" : `${directory}/package.json`);
@@ -67019,8 +67076,11 @@ var releaseTagVersion = (tags) => {
 };
 var observeAndCompile = fn2("observeAndCompileRelease")(function* (input) {
   const runtime2 = yield* ReleaseRuntime;
-  const authored = yield* decodeConfig(input.config);
-  const root = workspaceRoot(input.workspace);
+  const authored = yield* decodeConfig(input.config).pipe(mapError3(inputFailure));
+  const root = yield* try_2({
+    try: () => workspaceRoot(input.workspace),
+    catch: inputFailure
+  });
   const context3 = yield* runtime2.source.observe(WorkspaceRoot.make(root), manifestPath(authored), authored.project.commit === undefined ? undefined : NonEmptyName.make(authored.project.commit));
   const observedTagVersion = releaseTagVersion(context3.source.headTags);
   const facts = ObservedFacts.make({
@@ -67032,14 +67092,16 @@ var observeAndCompile = fn2("observeAndCompileRelease")(function* (input) {
   });
   const resolved = yield* try_2({
     try: () => resolveConfig(input.config, facts),
-    catch: (cause) => new ReleaseInputError({
-      reason: cause instanceof Error ? cause.message : String(cause)
-    })
+    catch: inputFailure
+  });
+  const graph = yield* try_2({
+    try: () => compileReleaseGraph(resolved, context3),
+    catch: inputFailure
   });
   return {
     context: context3,
     config: resolved,
-    graph: compileReleaseGraph(resolved, context3)
+    graph
   };
 });
 var prepareProgram = fn2("prepareProgram")(function* (input, options) {
@@ -67070,13 +67132,7 @@ var loadPrepared = fn2("loadPreparedForApi")(function* (prepared) {
   return yield* store.load(prepared);
 });
 var safeCause = (cause, fallback) => {
-  const failure3 = squash(cause);
-  const value3 = typeof failure3 === "object" && failure3 !== null && "reason" in failure3 && typeof failure3.reason === "string" ? failure3.reason : failure3 instanceof Error ? failure3.message : typeof failure3 === "string" ? failure3 : fallback;
-  const normalized = [...value3].map((character) => {
-    const codePoint = character.codePointAt(0) ?? 0;
-    return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32 ? character : "?";
-  }).slice(0, 2048).join("");
-  return normalized.length === 0 || secretPatterns.some((pattern) => pattern.test(normalized)) ? fallback : normalized;
+  return safeFailure(squash(cause), fallback);
 };
 var preparationFailure = (effect2) => effect2.pipe(catchCause2((cause) => {
   const failure3 = squash(cause);
@@ -67098,7 +67154,20 @@ var afterCommitFailure = (prepared, effect2) => effect2.pipe(catchCause2((cause)
   cause: safeCause(cause, "The release operation stopped before a total report was available.")
 }))));
 var observeProgram = (prepared) => afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3(observePreparedRelease)));
-var publishProgram = (prepared) => afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3(publishPreparedRelease)));
+var publishCommitted = fn2("publishCommittedRelease")(function* (committed) {
+  const report = yield* publishPreparedRelease(committed.bundle);
+  return { prepared: committed.ref, report };
+});
+var publishProgram = fn2("publishProgram")(function* (prepared) {
+  const result2 = yield* afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3((bundle) => publishCommitted({ ref: prepared, bundle }))));
+  return result2.report;
+});
+var releaseProgram = fn2("releaseProgram")(function* (input) {
+  const committed = yield* preparationFailure(prepareProgram(input, {
+    allowEmpty: input.allowEmpty === true
+  }));
+  return yield* afterCommitFailure(committed.ref, publishCommitted(committed));
+});
 var correctionUnavailableReason = SafeReason.make("Authored correction execution is reserved for plan 229; the prepared release was verified and no provider mutation was attempted.");
 var correctProgram = fn2("correctProgram")(function* (input) {
   yield* loadPrepared(input.prepared);
@@ -67137,11 +67206,7 @@ var makeReleaseApi = (layer7) => {
   };
   const release = async (value3) => {
     const input = decodeReleaseInput(value3);
-    const committed = await run3(preparationFailure(prepareProgram(input, {
-      allowEmpty: input.allowEmpty === true
-    })));
-    const report = await run3(afterCommitFailure(committed.ref, publishPreparedRelease(committed.bundle)));
-    return { prepared: committed.ref, report };
+    return run3(releaseProgram(input));
   };
   const correct = async (value3) => {
     const input = decodeCorrectInput(value3);

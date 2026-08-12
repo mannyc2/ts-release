@@ -4,13 +4,13 @@ ts-release automatically prepares and publishes a configured software release.
 The normal path is one command:
 
 ```sh
-ts-release init
+ts-release init --preset bun-npm-github
 ts-release release --config release.config.json
 ```
 
 `release` observes the clean source checkout, runs declared local preparation,
 stores one exact `prepared-release/v1` bundle, observes each destination, and
-publishes only subjects that are absent and safely mutable. An external host
+publishes only after a provider-specific decision authorizes the exact subject. An external host
 may place a gate around the publication job; that policy does not become
 engine state.
 
@@ -35,11 +35,11 @@ disagreement stops instead of guessing.
 ## What is proven
 
 The [executable capability inventory](docs/capabilities.md) is generated from
-the runtime registry and dated evidence. The current retained slice includes
-Bun builds for Linux, macOS, and Windows artifact targets; deterministic
-archives and checksums; npm and GitHub publication adapters; managed catalog
-rendering and Git delivery; and npm/catalog forward correction. Unsupported
-correction variants remain visible as explicit boundaries.
+the runtime registry and dated evidence. Build, archive, and checksum
+preparation remain certified. npm and GitHub are present as conservative
+subjects: direct mismatches block, while equality, absence, and mutation stay
+unsupported until their provider contracts are certified. Catalog delivery
+and forward correction likewise remain explicit unsupported boundaries.
 
 ts-release runs on Linux and macOS. Its Bun builder can produce Windows
 artifacts. It does not claim native Windows execution or native Windows tools.
@@ -49,13 +49,17 @@ artifacts. It does not claim native Windows execution or native Windows tools.
 Use the two-operation form when a host must transfer bytes between jobs:
 
 ```sh
-ts-release prepare --config release.config.json
-ts-release inspect --prepared .release/ts-release/prepared/<manifest-digest>
-ts-release publish .release/ts-release/prepared/<manifest-digest>
+prepared_ref="$(ts-release prepare --config release.config.json)"
+ts-release inspect "$prepared_ref"
+ts-release observe "$prepared_ref"
+ts-release publish "$prepared_ref"
 ```
 
-The publisher accepts only the complete prepared bundle. It does not rebuild
-from source or accept authored configuration as a publication fallback.
+The value is a path-free `prepared:local:sha256-…` reference resolved against
+the default local store. Select another store explicitly with `--store`; the
+reference itself never embeds a filesystem location. The publisher accepts
+only a complete prepared reference. It does not rebuild from source or accept
+authored configuration as a publication fallback.
 
 Local preparation uses two native primitives. `CommandCheck` is a pass/fail
 gate; `CommandArtifact` generates or transforms declared regular-file bytes.
@@ -66,13 +70,13 @@ declared artifact. See [the preparation guide](docs/preparation.md).
 
 ## Recovery
 
-Rerun the same prepared bundle. Equivalent subjects are skipped, a safe absent
-subject may be created, and conflicting or inconclusive observation stops
-without mutation. A release may partially succeed; publication is not an
-atomic transaction and there is no universal rollback. Provider-specific
-forward correction is explicit and repeatable where the capability inventory
-proves it. Announcements, deletion, and generic inverse operations are not
-configured destinations.
+Rerun the same prepared reference. Every attempt reloads and verifies the
+exact bytes, then reobserves every subject. Equivalent subjects are skipped;
+conflicting or inconclusive observations stop without mutation. A release may
+partially succeed; publication is not an atomic transaction and there is no
+universal rollback. Provider-specific forward correction is explicit only
+where the capability inventory proves it. Announcements, deletion, and
+generic inverse operations are not configured destinations.
 
 ## GitHub Actions
 
@@ -90,26 +94,28 @@ Consumer templates bind the Action only after candidate certification:
 uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
 ```
 
-Plan 221 replaces that token with the exact immutable candidate version before
-packaging. No public document may invent a floating Action tag.
+Plan 233 certification will verify the exact immutable candidate reference
+before packaging. No public document may invent a floating Action tag.
 
 ## Library API
 
 The root package exposes the same lifecycle used by the CLI and Action:
 
 ```ts
-import { makeReleaseApi } from "@mannyc1/ts-release"
+import { encodeCompletePreparedReleaseRef, makeReleaseApi } from "@mannyc1/ts-release"
 import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 
 const api = makeReleaseApi(NodeReleaseLayer)
 const result = await api.release({ config: { project: {}, versionFrom: "manifest" }, workspace: process.cwd() })
 await api.dispose()
-console.log(result.prepared.directory)
+console.log(encodeCompletePreparedReleaseRef(result.prepared))
+console.log(result.report.status)
 ```
 
-The public operations are `inspect`, `prepare`, `publish`, `release`, and
-`correct`. The derived graph is ephemeral; the prepared manifest and blobs are
-the durable cross-process boundary.
+The public operations are `inspect`, `prepare`, `observe`, `publish`,
+`release`, and `correct`. Public inputs contain neither credential values nor
+prepared paths. The derived graph is ephemeral; the prepared manifest and
+blobs are the durable cross-process boundary.
 
 ## Agent integration and development
 

@@ -24,7 +24,7 @@ try {
   if (node.status !== 0) throw new Error("Node is unavailable for the published bundle.")
   const missing = commandNames.filter((name) => !bundle.includes(`\"${name}\"`))
   if (missing.length > 0) throw new Error(`CLI help omits ${missing.join(", ")}.`)
-  console.log("CLI bundle runs under Node and exposes the six public commands.")
+  console.log("CLI bundle runs under Node and exposes the seven public commands.")
 } catch (cause) {
   console.error(cause instanceof Error ? cause.message : String(cause))
   exit(1)

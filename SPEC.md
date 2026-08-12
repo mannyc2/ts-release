@@ -2,8 +2,8 @@
 
 ## 1. Public operations
 
-The root package exports `inspect`, `prepare`, `publish`, `release`, and
-`correct`, plus `makeReleaseApi`, host layers, configuration helpers, and
+The root package exports `inspect`, `prepare`, `observe`, `publish`, `release`,
+and `correct`, plus `makeReleaseApi`, durable-reference codecs, configuration helpers, and
 tagged input/runtime errors. The constructed API adds `dispose` for its host
 runtime. CLI and Action boundaries call these same operations.
 
@@ -22,17 +22,20 @@ crosses a runner boundary.
 
 ## 4. Prepared release
 
-`prepared-release/v1` is canonical JSON plus content-addressed blobs. The
+`prepared-release/v1` is canonical JSON plus content-addressed blobs. A
+`CompletePreparedReleaseRef` is the only public cross-process locator and
+contains content identity, never a local path. The
 manifest records source identity, project coordinates, artifact IDs, exact
 sizes/digests/media types, and provider subjects. A prepared store refuses
 missing, altered, extra, symlinked, or non-canonical content.
 
 ## 5. Observation
 
-Publication is subject-based. Every subject is observed before mutation and
-afterward. Equivalent subjects are idempotent skips; safe absence permits one
-mutation; conflict or inconclusive state blocks. Provider correction is typed,
-forward, and bound to the prepared digest.
+Publication is subject-based. `observe` uses a read-only report algebra.
+`publish` observes every subject before mutation and again afterward.
+Equivalent subjects are idempotent skips; only a typed provider decision may
+authorize mutation; conflict or inconclusive state blocks. Provider correction
+is typed, forward, and bound to the prepared digest.
 
 ## 6. Native preparation
 
@@ -49,10 +52,12 @@ candidate. The capability registry owns the machine-checked host/target table.
 
 ## 8. Error and safety contract
 
-Structured Effect errors cross the library boundary. Filesystem paths are
-contained and symlink-checked. Secrets are supplied through host layers and
-redacted at process output boundaries. The Action validates its inputs before
-calling the library.
+Structured Effect errors cross the library boundary. A pre-commit preparation
+failure proves no remote mutation; a post-commit abort carries the exact
+durable reference. Filesystem paths are contained and symlink-checked. Public
+inputs contain no credential values. Secrets are acquired through host layers,
+consumed only by audience- and purpose-checking sinks, and redacted at process
+output boundaries. The Action validates its inputs before calling the library.
 
 ## 9. Recovery limits
 
@@ -83,11 +88,27 @@ another release product.
 
 The root runtime exports are exactly:
 
+- `CompletePreparedReleaseRef`
+- `CorrectionReport`
+- `GitHubActionsCompletePreparedReleaseRef`
+- `LocalCompletePreparedReleaseRef`
+- `PreparationModeUnsupported`
+- `PreparedReleaseRefCodecError`
+- `PreparedReleaseRefMalformedError`
+- `PreparedReleaseRefUnknownSchemeError`
+- `ReleaseAbortedError`
+- `ReleaseIncompleteError`
+- `ReleasePreparationError`
 - `correct`
+- `decodeCompletePreparedReleaseRef`
 - `defineRelease`
+- `encodeCompletePreparedReleaseRef`
 - `encodeResolvedConfig`
 - `inspect`
+- `makeGitHubActionsCompletePreparedReleaseRef`
+- `makeLocalCompletePreparedReleaseRef`
 - `makeReleaseApi`
+- `observe`
 - `prepare`
 - `publish`
 - `release`

@@ -23,13 +23,29 @@ const expectedRootBin = {
   "ts-release": "./dist/bin/ts-release.js"
 } as const
 const expectedRootRuntimeExports = new Set([
+  "CompletePreparedReleaseRef",
+  "CorrectionReport",
+  "GitHubActionsCompletePreparedReleaseRef",
+  "LocalCompletePreparedReleaseRef",
+  "PreparationModeUnsupported",
+  "PreparedReleaseRefCodecError",
+  "PreparedReleaseRefMalformedError",
+  "PreparedReleaseRefUnknownSchemeError",
+  "ReleaseAbortedError",
+  "ReleaseIncompleteError",
   "ReleaseInputError",
+  "ReleasePreparationError",
   "ReleaseRuntime",
   "correct",
+  "decodeCompletePreparedReleaseRef",
   "defineRelease",
+  "encodeCompletePreparedReleaseRef",
   "encodeResolvedConfig",
   "inspect",
+  "makeGitHubActionsCompletePreparedReleaseRef",
+  "makeLocalCompletePreparedReleaseRef",
   "makeReleaseApi",
+  "observe",
   "prepare",
   "publish",
   "release",
@@ -37,8 +53,8 @@ const expectedRootRuntimeExports = new Set([
   "unsupportedExecutionHost",
 ])
 const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> = {
-  "./node": new Set(["NodeReleaseLayer"]),
-  "./bun": new Set(["BunReleaseLayer"])
+  "./node": new Set(["NodeReleaseLayer", "makeNodeReleaseLayer"]),
+  "./bun": new Set(["BunReleaseLayer", "makeBunReleaseLayer"])
 }
 
 // SPEC §13 is normative about the root surface, so it is asserted, not

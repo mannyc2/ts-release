@@ -18,7 +18,9 @@ Authored intent is human configuration. Verified context binds it to a clean
 source tree, package manifest, commit, and repository facts. The graph is a
 derived in-process execution plan: it is recomputable, not transported
 authority. A `prepared-release/v1` manifest plus content-addressed blobs is the
-durable cross-process boundary. Destination observation is the authority for
+durable cross-process boundary. Applications carry only a content-addressed
+prepared reference; its host store owns path or artifact resolution and
+provenance verification. Destination observation is the authority for
 publication progress.
 
 ## Ownership
@@ -26,14 +28,14 @@ publication progress.
 - `src/resolve` decodes authored intent and resolves observed facts.
 - `src/release` compiles the graph, executes native preparation, and stores or
   inspects the prepared release.
-- `src/publication` implements typed subject observation, mutation, and
-  re-observation for npm, GitHub, and the retained catalog transport.
+- `src/publication` owns the provider-neutral fact/decision/attempt/report
+  coordinator and provider subjects.
 - `src/correction` implements provider-specific forward correction intents.
 - `src/api` exposes the public lifecycle used by CLI, Action, and library users.
-- `src/platform` supplies Node or Bun filesystem, process, HTTP, and catalog
-  services at the host boundary.
+- `src/platform` supplies Node or Bun filesystem, process, HTTP, durable-store,
+  and opaque credential sinks at the host boundary.
 - `apps/release-ts` owns CLI parsing and file I/O.
-- `apps/ts-release-action` owns four contained Action commands and reports.
+- `apps/ts-release-action` owns three contained Action commands and reports.
 - `apps/ts-release-agents` owns the single tracked agent projection source.
 
 ## Preparation
@@ -54,10 +56,10 @@ outputs.
 ## Publication and correction
 
 Each destination subject is observed before mutation and again afterward.
-Equivalent content is skipped, authoritative absence can mutate, conflicts
-and inconclusive results stop, and an unknown response is resolved only by a
-later exact observation. The coordinator therefore tolerates reruns and lost
-responses without claiming exactly-once behavior or atomic rollback.
+Equivalent content is skipped; mutation requires a typed provider decision;
+conflicts and inconclusive results stop; and an unknown response is resolved
+only by a later exact observation. The coordinator therefore tolerates reruns
+and lost responses without claiming exactly-once behavior or atomic rollback.
 
 Corrections are separate typed intents. npm deprecation and managed catalog
 state have provider-specific forward paths. GitHub release correction and

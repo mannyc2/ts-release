@@ -1,35 +1,84 @@
 import type * as Layer from "effect/Layer"
-import type { CorrectionOutcome } from "../correction/coordinator.js"
-import type { PreparedBundle } from "../release/prepared-store.js"
+import * as Schema from "effect/Schema"
+import type { CredentialProvider } from "../publication/authority.js"
+import type { ObservationReport, ReleaseReport } from "../publication/report.js"
+import { SafeReason } from "../publication/report.js"
+import type { HttpAuthorizer } from "../platform/credentials.js"
 import type { ReleaseInspection, PreparedReleaseInspection } from "../release/inspect.js"
-import type { PublicationCredentials, PublicationOutcome } from "../publication/observation.js"
+import {
+  CompletePreparedReleaseRef,
+  type CompletePreparedReleaseRef as CompletePreparedReleaseRefValue
+} from "../release/prepared-ref.js"
+import type { PreparedReleaseStore } from "../release/prepared-store.js"
 import type { ReleaseRuntime } from "./runtime.js"
 
-export type ReleaseApiLayer = Layer.Layer<ReleaseRuntime>
-export type ReleaseApiServices = ReleaseRuntime
+export type ReleaseApiServices =
+  | ReleaseRuntime
+  | PreparedReleaseStore
+  | CredentialProvider
+  | HttpAuthorizer
+
+export type ReleaseApiLayer = Layer.Layer<ReleaseApiServices>
 export type InspectOutput = ReleaseInspection | PreparedReleaseInspection
-export type PublicationCredentialsInput = Partial<{
-  readonly npm: PublicationCredentials
-  readonly github: PublicationCredentials
-}>
-export interface PrepareInput { readonly config: unknown, readonly workspace: string, readonly preparedDirectory?: string }
-export interface InspectInput {
-  readonly config?: unknown, readonly prepared?: string, readonly workspace?: string
+
+export interface PrepareInput {
+  readonly config: unknown
+  readonly workspace: string
 }
-export interface PublishInput { readonly prepared: string, readonly credentials?: PublicationCredentialsInput }
+
+export type InspectInput =
+  | {
+    readonly config: unknown
+    readonly workspace: string
+    readonly prepared?: never
+  }
+  | {
+    readonly prepared: CompletePreparedReleaseRefValue
+    readonly config?: never
+    readonly workspace?: never
+  }
+
+export interface ObserveInput {
+  readonly prepared: CompletePreparedReleaseRefValue
+}
+
+export interface PublishInput {
+  readonly prepared: CompletePreparedReleaseRefValue
+}
+
 export interface ReleaseInput extends PrepareInput {
   /** Diagnostic-only opt-in for exercising an intentionally empty graph. */
   readonly allowEmpty?: boolean
-  readonly credentials?: PublicationCredentialsInput
 }
+
 export interface CorrectInput {
-  readonly prepared: string, readonly correction: string, readonly credentials?: PublicationCredentialsInput
+  readonly prepared: CompletePreparedReleaseRefValue
+  /** Authored correction content. It is not a filesystem path. */
+  readonly correction: string
 }
+
+/**
+ * Plan 224 keeps correction on the durable-reference boundary while plan 229
+ * owns the first executable authored-correction grammar.
+ */
+export class CorrectionReport
+  extends Schema.Class<CorrectionReport>("CorrectionReport")({
+    prepared: CompletePreparedReleaseRef,
+    status: Schema.Literal("unsupported"),
+    reason: SafeReason
+  }) {}
+
+export interface ReleaseResult {
+  readonly prepared: CompletePreparedReleaseRefValue
+  readonly report: ReleaseReport
+}
+
 export interface ReleaseApi {
   readonly inspect: (input: InspectInput) => Promise<InspectOutput>
-  readonly prepare: (input: PrepareInput) => Promise<PreparedBundle>
-  readonly publish: (input: PublishInput) => Promise<ReadonlyArray<PublicationOutcome>>
-  readonly release: (input: ReleaseInput) => Promise<{ readonly prepared: PreparedBundle, readonly publications: ReadonlyArray<PublicationOutcome> }>
-  readonly correct: (input: CorrectInput) => Promise<CorrectionOutcome>
+  readonly prepare: (input: PrepareInput) => Promise<CompletePreparedReleaseRefValue>
+  readonly observe: (input: ObserveInput) => Promise<ObservationReport>
+  readonly publish: (input: PublishInput) => Promise<ReleaseReport>
+  readonly release: (input: ReleaseInput) => Promise<ReleaseResult>
+  readonly correct: (input: CorrectInput) => Promise<CorrectionReport>
   readonly dispose: () => Promise<void>
 }

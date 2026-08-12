@@ -2,10 +2,27 @@ declare global {
   const SchemaErrorTypeId: unique symbol
 }
 // The root is the intentionally small public lifecycle surface.
-export { correct, inspect, makeReleaseApi, prepare, publish, release } from "./api/api.js"
+export {
+  CorrectionReport,
+  correct,
+  inspect,
+  makeReleaseApi,
+  observe,
+  prepare,
+  publish,
+  release
+} from "./api/api.js"
 export type {
-  CorrectInput, InspectInput, InspectOutput, PrepareInput, PublishInput,
-  PublicationCredentialsInput, ReleaseApi, ReleaseApiLayer, ReleaseInput
+  CorrectInput,
+  InspectInput,
+  InspectOutput,
+  ObserveInput,
+  PrepareInput,
+  PublishInput,
+  ReleaseApi,
+  ReleaseApiLayer,
+  ReleaseInput,
+  ReleaseResult
 } from "./api/types.js"
 export {
   PreparationModeUnsupported, ReleaseAbortedError, ReleaseIncompleteError,

@@ -3,19 +3,34 @@ import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem"
 import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient"
 import * as NodePath from "@effect/platform-node/NodePath"
 import * as Layer from "effect/Layer"
-import { ReleaseRuntime, type ReleaseRuntimeShape } from "../api/runtime.js"
-import { makeReleaseServicesLive, ReleaseServicesLive } from "./services.js"
-import type { PreparedStoreSelector } from "./release-runtime.js"
-import { SourceObserver } from "../release/context.js"
+import { join } from "node:path"
+import type { ReleaseApiLayer } from "../api/types.js"
 import { SourceObserverLive } from "./source-observer.js"
+import { makeReleaseServicesLive } from "./services.js"
+import {
+  makeLocalPreparedReleaseStore,
+  type PreparedReleaseStoreShape
+} from "../release/prepared-store.js"
 
-const provideNode = (services: import("./services.js").ReleaseServicesLayer): Layer.Layer<ReleaseRuntime> => services.pipe(Layer.provide(Layer.mergeAll(
-    NodeChildProcessSpawner.layer.pipe(Layer.provide(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
-    NodeHttpClient.layerFetch,
-    SourceObserverLive
-  )))
+const nodeHost = Layer.mergeAll(
+  NodeChildProcessSpawner.layer.pipe(Layer.provide(Layer.mergeAll(
+    NodeFileSystem.layer,
+    NodePath.layer
+  ))),
+  NodeHttpClient.layerFetch,
+  SourceObserverLive
+)
 
-export const makeNodeReleaseLayer = (preparedStore: PreparedStoreSelector): Layer.Layer<ReleaseRuntime> =>
-  provideNode(makeReleaseServicesLive(preparedStore))
+/** A custom Node host takes one already-selected durable store service. */
+export const makeNodeReleaseLayer = (
+  preparedStore: PreparedReleaseStoreShape
+): ReleaseApiLayer => makeReleaseServicesLive(preparedStore).pipe(Layer.provide(nodeHost))
 
-export const NodeReleaseLayer: Layer.Layer<ReleaseRuntime> = provideNode(ReleaseServicesLive)
+const defaultNodeStore = makeLocalPreparedReleaseStore(join(
+  process.cwd(),
+  ".release",
+  "ts-release",
+  "prepared"
+))
+
+export const NodeReleaseLayer: ReleaseApiLayer = makeNodeReleaseLayer(defaultNodeStore)

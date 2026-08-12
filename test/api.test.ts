@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test"
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { makeReleaseApi } from "../src/index.js"
-import { ReleaseInputError } from "../src/api/errors.js"
+import {
+  ReleaseInputError
+} from "../src/api/errors.js"
+import { encodeCompletePreparedReleaseRef } from "../src/release/prepared-ref.js"
+import { makeLocalPreparedReleaseStore } from "../src/release/prepared-store.js"
 import { fixtureConfig, runtimeLayer } from "./core/runtime-fixture.js"
 
 const workspace = (): string => {
@@ -13,30 +17,50 @@ const workspace = (): string => {
   return root
 }
 
+const testApi = (root: string) => makeReleaseApi(runtimeLayer(
+  undefined,
+  makeLocalPreparedReleaseStore(join(root, "prepared-store"))
+))
+
 describe("public lifecycle API", () => {
-  test("exposes inspect, prepare, publish, release, and correct", async () => {
+  test("uses durable references for prepare, inspect, observe, and publish", async () => {
     const root = workspace()
-    const api = makeReleaseApi(runtimeLayer())
+    const api = testApi(root)
     try {
       const inspection = await api.inspect({ config: fixtureConfig, workspace: root })
       expect(inspection.source.commit.toString()).toBe("abc123")
+
       const prepared = await api.prepare({ config: fixtureConfig, workspace: root })
-      expect(prepared.manifest.schemaVersion).toBe("prepared-release/v1")
-      const published = await api.publish({ prepared: prepared.directory })
-      expect(published).toEqual([])
+      expect(encodeCompletePreparedReleaseRef(prepared)).toMatch(
+        /^prepared:local:sha256-[a-f0-9]{64}$/u
+      )
+
+      const preparedInspection = await api.inspect({ prepared })
+      expect("project" in preparedInspection ? preparedInspection.project.version : undefined)
+        .toBe("1.0.0")
+
+      const observed = await api.observe({ prepared })
+      expect(observed.status).toBe("equivalent")
+      expect(observed.subjects).toHaveLength(1)
+
+      const published = await api.publish({ prepared })
+      expect(published.status).toBe("complete")
+      expect(published.subjects).toHaveLength(1)
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
   })
 
-  test("release composes preparation and publication automatically", async () => {
+  test("release composes durable preparation and a total publication report", async () => {
     const root = workspace()
-    const api = makeReleaseApi(runtimeLayer())
+    const api = testApi(root)
     try {
       const result = await api.release({ config: fixtureConfig, workspace: root })
-      expect(result.prepared.manifest.schemaVersion).toBe("prepared-release/v1")
-      expect(result.publications).toEqual([])
+      expect(encodeCompletePreparedReleaseRef(result.prepared)).toMatch(
+        /^prepared:local:sha256-[a-f0-9]{64}$/u
+      )
+      expect(result.report.status).toBe("complete")
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
@@ -45,7 +69,7 @@ describe("public lifecycle API", () => {
 
   test("release refuses an accidental empty graph unless diagnostics opt in", async () => {
     const root = workspace()
-    const api = makeReleaseApi(runtimeLayer())
+    const api = testApi(root)
     const config = {
       project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
       publish: {}
@@ -53,21 +77,61 @@ describe("public lifecycle API", () => {
     try {
       await expect(api.release({ config, workspace: root })).rejects.toBeInstanceOf(ReleaseInputError)
       const diagnostic = await api.release({ config, workspace: root, allowEmpty: true })
-      expect(diagnostic.prepared.manifest.artifacts).toEqual([])
-      expect(diagnostic.publications).toEqual([])
+      expect(diagnostic.report.status).toBe("complete")
+      expect(diagnostic.report.subjects).toHaveLength(1)
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
   })
 
-  test("inspect has one exclusive input boundary", async () => {
-    const api = makeReleaseApi(runtimeLayer())
+  test("correct verifies the reference and returns safe unsupported data", async () => {
+    const root = workspace()
+    const api = testApi(root)
     try {
-      await expect(api.inspect({ config: fixtureConfig, prepared: "/tmp/bundle", workspace: "/tmp" })).rejects.toBeInstanceOf(ReleaseInputError)
-      await expect(api.inspect({ workspace: "/tmp" })).rejects.toBeInstanceOf(ReleaseInputError)
+      const prepared = await api.prepare({ config: fixtureConfig, workspace: root })
+      const report = await api.correct({
+        prepared,
+        correction: JSON.stringify({ provider: "npm", kind: "deprecate", message: "Use 1.0.1." })
+      })
+      expect(report).toMatchObject({ prepared, status: "unsupported" })
+      expect(report.reason).toContain("plan 229")
     } finally {
       await api.dispose()
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("load failures after a prepared reference are carried as release aborts", async () => {
+    const root = workspace()
+    const storeDirectory = join(root, "prepared-store")
+    const api = makeReleaseApi(runtimeLayer(undefined, makeLocalPreparedReleaseStore(storeDirectory)))
+    try {
+      const prepared = await api.prepare({ config: fixtureConfig, workspace: root })
+      rmSync(storeDirectory, { recursive: true, force: true })
+      await expect(api.publish({ prepared })).rejects.toMatchObject({
+        _tag: "ReleaseAbortedError",
+        prepared
+      })
+    } finally {
+      await api.dispose()
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("inspect enforces its exclusive typed input boundary", async () => {
+    const root = workspace()
+    const api = testApi(root)
+    try {
+      await expect(api.inspect({
+        config: fixtureConfig,
+        prepared: "not-a-reference",
+        workspace: root
+      } as never)).rejects.toBeInstanceOf(ReleaseInputError)
+      await expect(api.inspect({ workspace: root } as never)).rejects.toBeInstanceOf(ReleaseInputError)
+    } finally {
+      await api.dispose()
+      rmSync(root, { recursive: true, force: true })
     }
   })
 })

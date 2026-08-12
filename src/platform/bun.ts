@@ -3,19 +3,34 @@ import * as BunFileSystem from "@effect/platform-bun/BunFileSystem"
 import * as BunHttpClient from "@effect/platform-bun/BunHttpClient"
 import * as BunPath from "@effect/platform-bun/BunPath"
 import * as Layer from "effect/Layer"
-import { ReleaseRuntime } from "../api/runtime.js"
-import { makeReleaseServicesLive, ReleaseServicesLive } from "./services.js"
-import type { PreparedStoreSelector } from "./release-runtime.js"
-import { SourceObserver } from "../release/context.js"
+import { join } from "node:path"
+import type { ReleaseApiLayer } from "../api/types.js"
 import { SourceObserverLive } from "./source-observer.js"
+import { makeReleaseServicesLive } from "./services.js"
+import {
+  makeLocalPreparedReleaseStore,
+  type PreparedReleaseStoreShape
+} from "../release/prepared-store.js"
 
-const provideBun = (services: import("./services.js").ReleaseServicesLayer): Layer.Layer<ReleaseRuntime> => services.pipe(Layer.provide(Layer.mergeAll(
-    BunChildProcessSpawner.layer.pipe(Layer.provide(Layer.mergeAll(BunFileSystem.layer, BunPath.layer))),
-    BunHttpClient.layer,
-    SourceObserverLive
-  )))
+const bunHost = Layer.mergeAll(
+  BunChildProcessSpawner.layer.pipe(Layer.provide(Layer.mergeAll(
+    BunFileSystem.layer,
+    BunPath.layer
+  ))),
+  BunHttpClient.layer,
+  SourceObserverLive
+)
 
-export const makeBunReleaseLayer = (preparedStore: PreparedStoreSelector): Layer.Layer<ReleaseRuntime> =>
-  provideBun(makeReleaseServicesLive(preparedStore))
+/** A custom Bun host takes one already-selected durable store service. */
+export const makeBunReleaseLayer = (
+  preparedStore: PreparedReleaseStoreShape
+): ReleaseApiLayer => makeReleaseServicesLive(preparedStore).pipe(Layer.provide(bunHost))
 
-export const BunReleaseLayer: Layer.Layer<ReleaseRuntime> = provideBun(ReleaseServicesLive)
+const defaultBunStore = makeLocalPreparedReleaseStore(join(
+  process.cwd(),
+  ".release",
+  "ts-release",
+  "prepared"
+))
+
+export const BunReleaseLayer: ReleaseApiLayer = makeBunReleaseLayer(defaultBunStore)

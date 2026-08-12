@@ -9,10 +9,14 @@ import {
   CredentialProvider,
   type CredentialAuthorityError,
   type CredentialGrant,
+  type CredentialStrategyUnsupported,
+  type CredentialUnavailable,
   type MutationCredentialGrant
 } from "./authority.js"
 import {
   ConclusiveProviderRejection,
+  CredentialStrategyUnsupportedCause,
+  CredentialUnavailableCause,
   DependencyBlocked,
   InconclusiveObservation,
   ObservedSubject,
@@ -37,6 +41,7 @@ import {
   makeUncertainSubject,
   type Applied,
   type AuthorityAcquired,
+  type CredentialFailureCause,
   type MutationAttempt,
   type MutationDecision,
   type Observation,
@@ -155,10 +160,34 @@ const fromReportResult = <A>(
   ? Effect.fail(constructionFailure(result.failure.reason))
   : Effect.succeed(result.success)
 
-const unavailableObservation = (subject: SubjectId): InconclusiveObservation =>
+type ReportableCredentialFailure = CredentialUnavailable | CredentialStrategyUnsupported
+
+// The error contributes only its closed tag. Host error fields, especially
+// `reason`, are transient diagnostics and may contain credential material.
+const credentialFailureCause = (
+  request: CredentialRequest,
+  error: ReportableCredentialFailure
+): CredentialFailureCause => error._tag === "CredentialUnavailable"
+  ? CredentialUnavailableCause.make({
+    provider: request.provider,
+    purpose: request.purpose,
+    strategy: request.strategy.kind
+  })
+  : CredentialStrategyUnsupportedCause.make({
+    provider: request.provider,
+    purpose: request.purpose,
+    strategy: request.strategy.kind
+  })
+
+const unavailableObservation = (
+  subject: SubjectId,
+  request?: CredentialRequest,
+  error?: ReportableCredentialFailure
+): InconclusiveObservation =>
   InconclusiveObservation.make({
     subject,
-    reason: SafeReason.make("Observation authority or provider read was unavailable.")
+    reason: SafeReason.make("Observation authority or provider read was unavailable."),
+    ...(request === undefined || error === undefined ? {} : { cause: credentialFailureCause(request, error) })
   })
 
 const subjectObservationFailure = (
@@ -185,8 +214,8 @@ const observeOnce = (
       ))
     )),
     Effect.catchTags({
-      CredentialUnavailable: () => Effect.succeed({
-        observation: unavailableObservation(subject.id), authorities: []
+      CredentialUnavailable: (error) => Effect.succeed({
+        observation: unavailableObservation(subject.id, request, error), authorities: []
       }),
       CredentialAudienceMismatch: () => Effect.succeed({
         observation: unavailableObservation(subject.id), authorities: []
@@ -194,8 +223,8 @@ const observeOnce = (
       CredentialPurposeMismatch: () => Effect.succeed({
         observation: unavailableObservation(subject.id), authorities: []
       }),
-      CredentialStrategyUnsupported: () => Effect.succeed({
-        observation: unavailableObservation(subject.id), authorities: []
+      CredentialStrategyUnsupported: (error) => Effect.succeed({
+        observation: unavailableObservation(subject.id, request, error), authorities: []
       }),
       CredentialSubjectMismatch: () => Effect.succeed({
         observation: unavailableObservation(subject.id), authorities: []
@@ -243,16 +272,20 @@ const classifyObservation = (observation: Observation): ObservationClassificatio
     case "VisibilityPending":
       return inconclusiveObservation(SafeReason.make("Provider visibility remains pending."))
     case "Inconclusive":
-      return inconclusiveObservation(observation.reason)
+      return inconclusiveObservation(observation.reason, observation.cause)
   }
 }
 
 const providerBlockedFromAuthority = (
   subject: SubjectId,
-  _error: CredentialAuthorityError
+  request: CredentialRequest,
+  error: CredentialAuthorityError
 ): ProviderBlocked => ProviderBlocked.make({
   subject,
-  reason: SafeReason.make("Mutation authority was unavailable for the exact prepared request.")
+  reason: SafeReason.make("Mutation authority was unavailable for the exact prepared request."),
+  ...(error._tag === "CredentialUnavailable" || error._tag === "CredentialStrategyUnsupported"
+    ? { cause: credentialFailureCause(request, error) }
+    : {})
 })
 
 const makeAuthority = (
@@ -351,7 +384,7 @@ const publishSubject = Effect.fn("publishReleaseSubject")(function*(
           subject: subject.id,
           observationAuthorities: before.authorities,
           observations: before.observations,
-          cause: providerBlockedFromAuthority(subject.id, acquisition.error)
+          cause: providerBlockedFromAuthority(subject.id, subject.mutationRequest, acquisition.error)
         }))
       }
       const grant = acquisition.grant

@@ -63,10 +63,35 @@ export class VisibilityPending
     basis: VisibilityBasis
   }) {}
 
+const CredentialFailureStrategy = Schema.Literals(["anonymous", "token", "trusted-publishing"])
+
+/** Secret-free durable projection of a transient credential acquisition failure. */
+export class CredentialUnavailableCause
+  extends Schema.TaggedClass<CredentialUnavailableCause>()("CredentialUnavailable", {
+    provider: ProviderId,
+    purpose: CredentialPurpose,
+    strategy: CredentialFailureStrategy
+  }) {}
+
+/** Secret-free durable projection of an unsupported prepared authentication strategy. */
+export class CredentialStrategyUnsupportedCause
+  extends Schema.TaggedClass<CredentialStrategyUnsupportedCause>()("CredentialStrategyUnsupported", {
+    provider: ProviderId,
+    purpose: CredentialPurpose,
+    strategy: CredentialFailureStrategy
+  }) {}
+
+export const CredentialFailureCause = Schema.Union([
+  CredentialUnavailableCause,
+  CredentialStrategyUnsupportedCause
+])
+export type CredentialFailureCause = typeof CredentialFailureCause.Type
+
 export class InconclusiveObservation
   extends Schema.TaggedClass<InconclusiveObservation>()("Inconclusive", {
     subject: SubjectId,
-    reason: SafeReason
+    reason: SafeReason,
+    cause: Schema.optionalKey(CredentialFailureCause)
   }) {}
 
 export const Observation = Schema.Union([
@@ -117,7 +142,8 @@ export class Conflict
 export class ProviderBlocked
   extends Schema.TaggedClass<ProviderBlocked>()("Blocked", {
     subject: SubjectId,
-    reason: SafeReason
+    reason: SafeReason,
+    cause: Schema.optionalKey(CredentialFailureCause)
   }) {}
 
 export const ProviderDecision = Schema.Union([
@@ -541,7 +567,8 @@ class ReadOnlyAbsent
 
 class ReadOnlyInconclusive
   extends Schema.TaggedClass<ReadOnlyInconclusive>()("Inconclusive", {
-    reason: SafeReason
+    reason: SafeReason,
+    cause: Schema.optionalKey(CredentialFailureCause)
   }) {}
 
 export const ObservationClassification = Schema.Union([
@@ -558,8 +585,13 @@ export const differentObservation = (
 ): ObservationClassification => new ReadOnlyDifferent({ differences })
 export const absentObservation = (basis: AbsenceBasis): ObservationClassification =>
   new ReadOnlyAbsent({ basis })
-export const inconclusiveObservation = (reason: SafeReason): ObservationClassification =>
-  new ReadOnlyInconclusive({ reason })
+export const inconclusiveObservation = (
+  reason: SafeReason,
+  cause?: CredentialFailureCause
+): ObservationClassification => new ReadOnlyInconclusive({
+  reason,
+  ...(cause === undefined ? {} : { cause })
+})
 
 export class ObservedSubject extends Schema.Class<ObservedSubject>("ObservedSubject")({
   subject: SubjectId,

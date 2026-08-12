@@ -4,8 +4,10 @@
 
 The root package exports `inspect`, `prepare`, `observe`, `publish`, `release`,
 and `correct`, plus `makeReleaseApi`, durable-reference codecs, configuration helpers, and
-tagged input/runtime errors. The constructed API adds `dispose` for its host
-runtime. CLI and Action boundaries call these same operations.
+tagged input/runtime errors. The total observation and release report schemas,
+transient credential acquisition errors, and their secret-free durable causes
+are also public. The constructed API adds `dispose` for its host runtime. CLI
+and Action boundaries call these same operations.
 
 ## 2. Authored and verified forms
 
@@ -35,14 +37,18 @@ Publication is subject-based. `observe` uses a read-only report algebra.
 `publish` observes every subject before mutation and again afterward.
 Equivalent subjects are idempotent skips; only a typed provider decision may
 authorize mutation; conflict or inconclusive state blocks. Provider correction
-is typed, forward, and bound to the prepared digest.
+is typed, forward, and bound to the prepared digest. Credential unavailability
+and unsupported authentication remain total report data with distinct tagged,
+secret-free causes; they do not escape as publication control flow.
 
 ## 6. Native preparation
 
 `CommandCheck` runs trusted argv code against declared inputs. `CommandArtifact`
 generates or transforms declared regular-file outputs. `builder: "command"`
-lowers to the same primitive. Only declared environment names are available;
-there is no generic hook or remote-publisher escape hatch.
+lowers to the same primitive. Generic preparation children inherit no host
+environment. A nonempty authored environment request is rejected unless a
+future dedicated capability certifies its safe build-time contract. There is
+no generic hook or remote-publisher escape hatch.
 
 ## 7. Hosts
 
@@ -57,7 +63,9 @@ failure proves no remote mutation; a post-commit abort carries the exact
 durable reference. Filesystem paths are contained and symlink-checked. Public
 inputs contain no credential values. Secrets are acquired through host layers,
 consumed only by audience- and purpose-checking sinks, and redacted at process
-output boundaries. The Action validates its inputs before calling the library.
+output boundaries. Host credential error text never enters durable reports;
+only request-derived, secret-free cause data does. The Action validates its
+inputs before calling the library.
 
 ## 9. Recovery limits
 
@@ -90,8 +98,14 @@ The root runtime exports are exactly:
 
 - `CompletePreparedReleaseRef`
 - `CorrectionReport`
+- `CredentialFailureCause`
+- `CredentialStrategyUnsupported`
+- `CredentialStrategyUnsupportedCause`
+- `CredentialUnavailable`
+- `CredentialUnavailableCause`
 - `GitHubActionsCompletePreparedReleaseRef`
 - `LocalCompletePreparedReleaseRef`
+- `ObservationReport`
 - `PreparationModeUnsupported`
 - `PreparedReleaseRefCodecError`
 - `PreparedReleaseRefMalformedError`
@@ -99,6 +113,7 @@ The root runtime exports are exactly:
 - `ReleaseAbortedError`
 - `ReleaseIncompleteError`
 - `ReleasePreparationError`
+- `ReleaseReport`
 - `correct`
 - `decodeCompletePreparedReleaseRef`
 - `defineRelease`

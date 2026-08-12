@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import {
   AnonymousAuthStrategy,
   CanonicalAudience,
@@ -14,6 +15,8 @@ import {
 import { NonEmptyName } from "../../src/model/primitives.js"
 import {
   CredentialProvider,
+  CredentialStrategyUnsupported,
+  CredentialUnavailable,
   makeCredentialProvider,
   type CredentialGrantDescriptor
 } from "../../src/publication/authority.js"
@@ -33,12 +36,14 @@ import {
   InconclusiveObservation,
   MutationPrecondition,
   NeedsMutation,
+  ObservationReport,
   PresentDifferent,
   PresentEquivalent,
   ProviderAlreadyEquivalent,
   ProviderBlocked,
   ProviderMutationFact,
   RejectedBeforeDispatch,
+  ReleaseReport,
   SafeReason,
   VisibilityBasis,
   VisibilityPending,
@@ -58,6 +63,7 @@ const publicAudience = CanonicalAudience.make("https://public.example.test/metad
 const readRef = CredentialRef.make("FIXTURE_READ_TOKEN")
 const mutationRef = CredentialRef.make("FIXTURE_PUBLISH_TOKEN")
 const workloadName = EnvironmentName.make("ACTIONS_ID_TOKEN_REQUEST_URL")
+const unsafeCredentialReason = "npm_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL"
 
 const anonymousRequest = (
   subject: SubjectId,
@@ -160,6 +166,38 @@ const recordingCredentials = (
   })
 })
 
+type ReportableCredentialFailureTag = "CredentialUnavailable" | "CredentialStrategyUnsupported"
+
+const credentialFailure = (
+  tag: ReportableCredentialFailureTag,
+  request: CredentialRequest
+): CredentialUnavailable | CredentialStrategyUnsupported => tag === "CredentialUnavailable"
+  ? new CredentialUnavailable({
+    subject: request.subject,
+    provider: request.provider,
+    purpose: request.purpose,
+    reason: unsafeCredentialReason
+  })
+  : new CredentialStrategyUnsupported({
+    subject: request.subject,
+    provider: request.provider,
+    strategy: unsafeCredentialReason,
+    reason: unsafeCredentialReason
+  })
+
+const rejectingCredentials = (
+  events: Array<string>,
+  rejectedPurpose: CredentialPurpose,
+  tag: ReportableCredentialFailureTag
+) => makeCredentialProvider({
+  acquire: (request) => {
+    events.push(`${request.subject}:authority:${request.purpose}:${request.strategy.kind}`)
+    return request.purpose === rejectedPurpose
+      ? Effect.fail(credentialFailure(tag, request))
+      : Effect.succeed(descriptorFor(request))
+  }
+})
+
 const run = <A, E>(
   effect: Effect.Effect<A, E, CredentialProvider>,
   events: Array<string>,
@@ -242,6 +280,78 @@ describe("provider-neutral release coordinator", () => {
       `${first}:authority:observe:token`,
       `${first}:observe:ScopedSecret:PresentEquivalent`
     ])
+  })
+
+  test.each([
+    "CredentialUnavailable",
+    "CredentialStrategyUnsupported"
+  ] as const)("reports observation acquisition %s as secret-free data", async (tag) => {
+    const events: Array<string> = []
+    const subject = scriptedSubject({
+      id: first,
+      events,
+      observations: [equivalent(first)],
+      observationRequests: [tokenRequest(first, "observe")],
+      decision: () => { throw new Error("read-only observation must not decide") }
+    })
+    const report = await Effect.runPromise(observeReleaseSubjects({ prepared, subjects: [subject] }).pipe(
+      Effect.provideService(CredentialProvider, rejectingCredentials(events, "observe", tag))
+    ))
+
+    expect(report).toMatchObject({
+      status: "inconclusive",
+      subjects: [{ observation: { _tag: "Equivalent" } }, {
+        observationAuthorities: [],
+        observation: {
+          _tag: "Inconclusive",
+          cause: { _tag: tag, provider, purpose: "observe", strategy: "token" }
+        }
+      }]
+    })
+    expect(events).toEqual([`${first}:authority:observe:token`])
+    expect(events.some((event) => event.startsWith(`${first}:observe:`) || event.startsWith(`${first}:mutate:`))).toBe(false)
+    const encoded = Schema.encodeSync(ObservationReport)(report)
+    const decoded = Schema.decodeUnknownSync(ObservationReport)(JSON.parse(JSON.stringify(encoded)))
+    expect(decoded.subjects[1]?.observation).toMatchObject({ cause: { _tag: tag } })
+    expect(JSON.stringify(encoded)).not.toContain(unsafeCredentialReason)
+  })
+
+  test.each([
+    "CredentialUnavailable",
+    "CredentialStrategyUnsupported"
+  ] as const)("reports mutation acquisition %s as blocked data with zero dispatch", async (tag) => {
+    const events: Array<string> = []
+    const subject = scriptedSubject({
+      id: first,
+      events,
+      observations: [absent(first)],
+      decision: () => needsMutation(first)
+    })
+    const report = await Effect.runPromise(publishReleaseSubjects({ prepared, subjects: [subject] }).pipe(
+      Effect.provideService(CredentialProvider, rejectingCredentials(events, "publish", tag))
+    ))
+
+    expect(report).toMatchObject({
+      status: "blocked",
+      subjects: [{ _tag: "AlreadyEquivalent" }, {
+        _tag: "BlockedSubject",
+        cause: {
+          _tag: "Blocked",
+          cause: { _tag: tag, provider, purpose: "publish", strategy: "token" }
+        }
+      }]
+    })
+    expect(events).toEqual([
+      `${first}:authority:observe:anonymous`,
+      `${first}:observe:AnonymousAccess:AuthoritativelyAbsent`,
+      `${first}:decide:AuthoritativelyAbsent:NeedsMutation`,
+      `${first}:authority:publish:token`
+    ])
+    expect(events.some((event) => event.includes(":mutate:"))).toBe(false)
+    const encoded = Schema.encodeSync(ReleaseReport)(report)
+    const decoded = Schema.decodeUnknownSync(ReleaseReport)(JSON.parse(JSON.stringify(encoded)))
+    expect(decoded.subjects[1]).toMatchObject({ cause: { cause: { _tag: tag } } })
+    expect(JSON.stringify(encoded)).not.toContain(unsafeCredentialReason)
   })
 
   test("equivalent, conflicting, and inconclusive observations acquire no mutation authority", async () => {

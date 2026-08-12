@@ -29,6 +29,17 @@ export {
   ReleaseInputError, ReleasePreparationError
 } from "./api/errors.js"
 export {
+  CredentialStrategyUnsupported,
+  CredentialUnavailable
+} from "./publication/authority.js"
+export {
+  CredentialFailureCause,
+  CredentialStrategyUnsupportedCause,
+  CredentialUnavailableCause,
+  ObservationReport,
+  ReleaseReport
+} from "./publication/report.js"
+export {
   CompletePreparedReleaseRef, GitHubActionsCompletePreparedReleaseRef,
   LocalCompletePreparedReleaseRef, PreparedReleaseRefCodecError,
   PreparedReleaseRefMalformedError, PreparedReleaseRefUnknownSchemeError,

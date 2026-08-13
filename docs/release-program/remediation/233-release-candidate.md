@@ -199,6 +199,17 @@ correctly owns that package at the root, so the test now resolves the installed
 that canonical package result. No certificate was issued and no public
 mutation occurred. A later candidate must restart both clones.
 
+Candidate `cd7b83d17d37a21bb6f9d4ba3fdecbedcf929d76` passed every
+self-release gate and all 348 tests in both fresh clones, including the
+linker-independent Actions-artifact contract. It was rejected by the later
+public examples gate: its closed command double had not been updated to report
+the exact Bun compile-runtime identity now required from every successful
+certified compile. The double now binds Linux x64 to its executing tool identity
+and each cross target to its canonical versioned cache filename. The examples
+gate also reports the exact example and structured API cause instead of
+allowing a blank tagged-error rendering. No certificate was issued and no
+public mutation occurred. A later candidate must restart both clones.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |

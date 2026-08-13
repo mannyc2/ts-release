@@ -123,6 +123,13 @@ const object = (value: unknown, label: string): Record<string, unknown> => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`${label} must be an object.`)
   return value as Record<string, unknown>
 }
+const failureReason = (cause: unknown): string => {
+  if (typeof cause === "object" && cause !== null) {
+    if ("cause" in cause && typeof cause.cause === "string" && cause.cause.length > 0) return cause.cause
+    if ("reason" in cause && typeof cause.reason === "string" && cause.reason.length > 0) return cause.reason
+  }
+  return cause instanceof Error && cause.message.length > 0 ? cause.message : String(cause)
+}
 const write = (workspace: string, path: string, contents: string, executable = false): void => {
   const target = join(workspace, path)
   mkdirSync(dirname(target), { recursive: true, mode: 0o700 })
@@ -206,7 +213,9 @@ for (const path of configs.sort((left, right) => codepoint(portable(left), porta
         subject === "GraphGitHubPublication" ? "github" : "npm")
       same(inspection.publications.map((publication) => publication.destination), expectedDestinations, `${name} root graph subjects`)
 
-      const prepared = await api.prepare({ config: value, workspace })
+      const prepared = await api.prepare({ config: value, workspace }).catch((cause: unknown) => {
+        throw new Error(`${name}: preparation failed: ${failureReason(cause)}`)
+      })
       const bundle = await Effect.runPromise(store.load(prepared))
       same(bundle.manifest.publications.map((publication) => publication._tag), expected.prepared, `${name} durable prepared subjects`)
       for (const publication of bundle.manifest.publications) preparedSubjects[publication._tag] += 1

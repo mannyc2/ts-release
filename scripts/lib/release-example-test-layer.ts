@@ -121,6 +121,11 @@ const npmTool = {
   command: "npm",
   sha256: "233".padEnd(64, "0")
 }
+const bunTool = {
+  protocol: "ts-release-executable/v1" as const,
+  command: "bun",
+  sha256: "234".padEnd(64, "0")
+}
 
 /**
  * Closed command double for the public example gate. It materializes only the
@@ -148,10 +153,25 @@ const run: RunCommand = Effect.fn("runDefaultReleaseExampleCommand")((command) =
     if (argv[0] === "bun" && argv[1] === "build") {
       if (command.network !== "deny") throw new Error("Bun builds must use the denied-network boundary.")
       const outputPath = resolve(command.cwd, argumentAfter(argv, "--outfile"))
+      const target = argumentAfter(argv, "--target") as
+        "bun-linux-x64" | "bun-linux-arm64" | "bun-darwin-x64" | "bun-darwin-arm64"
       mkdirSync(dirname(outputPath), { recursive: true, mode: 0o700 })
       writeFileSync(outputPath, `#!/bin/sh\n# deterministic example artifact: ${basename(outputPath)}\n`, { mode: 0o755 })
       chmodSync(outputPath, 0o755)
-      return outcome()
+      const executing = target === "bun-linux-x64"
+      const cachePlatform = target.slice(4).replace("arm64", "aarch64")
+      return {
+        ...outcome(),
+        tool: bunTool,
+        bunCompileRuntime: {
+          protocol: "ts-release-bun-compile-runtime/v1" as const,
+          target,
+          bunVersion: process.versions.bun,
+          source: executing ? "executing-bun" as const : "host-cache-private-copy" as const,
+          cacheFile: executing ? "executing-bun" : `bun-${cachePlatform}-v${process.versions.bun}`,
+          sha256: executing ? bunTool.sha256 : `${target.length}`.padEnd(64, "0")
+        }
+      }
     }
     if (argv[0] === "npm" && argv[1] === "--version") {
       if (command.network !== "offline-cli") throw new Error("npm version observation must use the offline CLI boundary.")

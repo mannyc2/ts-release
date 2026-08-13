@@ -1,10 +1,11 @@
 // The Action is a thin Linux/Bun composite boundary. Its gate checks the
-// manifest, rebuilds the checked-in bundle, and probes the exact command the
-// composite step executes.
-import { existsSync, readFileSync } from "node:fs"
+// manifest, compares the checked-in bundle to a disposable canonical build,
+// and probes the exact command the composite step executes.
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { cwd, exit } from "node:process"
 import { join } from "node:path"
+import { tmpdir } from "node:os"
 import { actionCommands, actionInputs, actionOutputs } from "../apps/ts-release-action/src/commands.js"
 
 const root = cwd()
@@ -34,12 +35,25 @@ try {
   for (const name of ["correction", "npm-token", "github-token", "plan-path", "reviewer", "scope", "through"]) {
     if (manifest.includes(`  ${name}:`)) throw new Error(`action.yml retains an obsolete input ${name}.`)
   }
-  const result = spawnSync("bun", ["build", "src/index.ts", "--target=node", "--format=esm", "--outfile", "dist/index.js"], {
-    cwd: join(root, "apps/ts-release-action"), encoding: "utf8", stdio: "pipe"
-  })
-  if (result.status !== 0) throw new Error([result.stdout, result.stderr].join("\n").trim())
-  if (!existsSync(join(root, "apps/ts-release-action/dist/index.js"))) throw new Error("Action bundle was not built.")
-  const probe = Bun.spawnSync(["bun", join(root, "apps/ts-release-action/dist/index.js")], {
+  const checkedBundle = join(root, "apps/ts-release-action/dist/index.js")
+  if (!existsSync(checkedBundle)) throw new Error("The checked-in Action bundle is missing.")
+  const scratch = mkdtempSync(join(tmpdir(), "ts-release-action-bundle-"))
+  try {
+    const generatedBundle = join(scratch, "index.js")
+    const result = spawnSync("bun", ["build", "src/index.ts", "--target=node", "--format=esm", "--outfile", generatedBundle], {
+      cwd: join(root, "apps/ts-release-action"), encoding: "utf8", stdio: "pipe"
+    })
+    if (result.status !== 0) throw new Error([result.stdout, result.stderr].join("\n").trim())
+    const checkedBytes = readFileSync(checkedBundle)
+    const generatedBytes = readFileSync(generatedBundle)
+    if (checkedBytes.length !== generatedBytes.length ||
+        checkedBytes.some((byte, index) => byte !== generatedBytes[index])) {
+      throw new Error("The checked-in Action bundle does not match a fresh canonical build.")
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
+  const probe = Bun.spawnSync(["bun", checkedBundle], {
     cwd: root, stdout: "pipe", stderr: "pipe",
     env: {
       ...process.env,

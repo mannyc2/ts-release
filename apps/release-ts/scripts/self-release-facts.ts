@@ -32,10 +32,10 @@ export const report = (
   details: Readonly<Record<string, unknown>>
 ): void => {
   console.log(JSON.stringify({
+    ...details,
     schemaVersion,
     status: failures.length === 0 ? "ready" : "failed",
-    failures,
-    ...details
+    failures
   }))
   if (failures.length > 0) process.exitCode = 1
 }

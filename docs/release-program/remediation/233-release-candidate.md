@@ -104,7 +104,7 @@ certification:
 | Plan 225 least-authority/host-admission focus | PASS; anonymous npm observation and exact GitHub repository/workflow/ref/hosted-runner/direct-sink admission were exercised without a public provider; final aggregate clean-X repeat remains required | contract-tested |
 | `bun run check:package-exports` | PASS after the stabilized build | contract-tested |
 | `bun run check:packed-consumers` with runner-bundled Node 24.15.0 / cached npm 11.17.0 | PASS; offline Bun and npm installs, exact Effect beta.83 alignment, Promise API plus Node CLI operation, 1/2-artifact durable reloads, 23 Markdown files and 5 relative links audited | contract-tested |
-| `bun test` with the cached npm 11.17.0 source contract enabled | PASS; 347 tests, 0 skips, 0 failures, 1,946 expectations | contract-tested |
+| `bun test` with the cached npm 11.17.0 source contract enabled | PASS; 348 tests, 0 skips, 0 failures, 1,948 expectations | contract-tested |
 | `npm 11.17.0 pack --json --ignore-scripts --dry-run` | PASS after rebuilding the public root package; 419 files, 627,276 compressed bytes, 3,172,117 unpacked bytes | source-derived |
 | Scoped handoff `git diff --check` plus explicit untracked-file whitespace audit | PASS; repository-wide exact-X rerun remains required | source-derived |
 
@@ -167,6 +167,16 @@ decoder, and is not admitted to durable diagnostics. Ordinary command output
 remains capped. A production-runner regression covers a valid protocol longer
 than the diagnostic limit. Any later candidate must restart both clones; the
 failed attempts issued no certificate and performed no public mutation.
+
+The next exact candidate, `1a254f38119b04204c3d0583c1e6a1f5d38f85df`,
+successfully produced the same 16-artifact durable manifest in both fresh
+clones, but its self-check rejected every blob. Independent byte inspection
+proved all 16 sizes, SHA-256 digests, and blob references matched. The checker
+had compared decoded digest class instances by JavaScript object identity
+instead of value; it now uses the canonical digest equality operation. The
+same report also allowed a detail field to overwrite its report protocol name;
+that detail is now `preparedSchemaVersion`. No certificate was issued and no
+public mutation occurred. A later candidate must restart both clones.
 
 ## Current failing or open gates
 

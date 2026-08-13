@@ -6,6 +6,7 @@ import { makeReleaseApi } from "../../../src/api/api.js"
 import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
 import { makeLocalPreparedReleaseStore } from "../../../src/release/prepared-store.js"
 import { encodeCompletePreparedReleaseRef } from "../../../src/release/prepared-ref.js"
+import { digestEquals } from "../../../src/model/digest.js"
 import { candidateActionReference, preparedRoot, report, root, selfReleaseConfig } from "./self-release-facts.js"
 
 const failures: Array<string> = []
@@ -46,7 +47,10 @@ try {
   for (const artifact of bundle.manifest.artifacts) {
     const bytes = bundle.blobs.get(artifact.id.toString())
     if (bytes === undefined) failures.push(`Prepared bundle is missing blob ${artifact.id}.`)
-    else if (bytes.length !== artifact.size || sha256(bytes) !== artifact.digest.toString() || artifact.blob !== artifact.digest) failures.push(`Prepared artifact ${artifact.id} failed size/digest verification.`)
+    else if (bytes.length !== artifact.size || sha256(bytes) !== artifact.digest.hex ||
+        !digestEquals(artifact.blob, artifact.digest)) {
+      failures.push(`Prepared artifact ${artifact.id} failed size/digest verification.`)
+    }
   }
   if (!bundle.manifest.publications.some((publication) => publication._tag === "PreparedNpmPublication")) failures.push("Prepared bundle has no npm publication intent.")
   if (!bundle.manifest.publications.some((publication) => publication._tag === "PreparedGitHubPublication")) failures.push("Prepared bundle has no GitHub publication intent.")
@@ -63,7 +67,8 @@ try {
   const inspection = await api.inspect({ prepared })
   if (!("project" in inspection)) failures.push("Prepared inspection did not return the durable bundle projection.")
   report("self-release-prepare-report/v1", failures, {
-    preparedReference: encodeCompletePreparedReleaseRef(prepared), manifestDigest, schemaVersion: bundle.manifest.schemaVersion,
+    preparedReference: encodeCompletePreparedReleaseRef(prepared), manifestDigest,
+    preparedSchemaVersion: bundle.manifest.schemaVersion,
     artifacts: bundle.manifest.artifacts.length, collections: bundle.manifest.collections.length,
     agentCollectionMembers: agentCollection?.members.length ?? 0, publications: bundle.manifest.publications.length,
     actionReference: candidateActionReference(), evidenceState: "contract-tested"

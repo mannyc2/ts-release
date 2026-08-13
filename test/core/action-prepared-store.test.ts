@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import {
   actionProducerContextFromEnvironment,
@@ -104,9 +104,10 @@ const recoveryArtifacts = (
 
 describe("GitHub Actions durable prepared store", () => {
   test("matches the installed artifact client's name and digest wire contracts", async () => {
+    const actionRoot = join(import.meta.dir, "../../apps/ts-release-action")
     const artifactRoot = join(
-      import.meta.dir,
-      "../../apps/ts-release-action/node_modules/@actions/artifact/lib/internal"
+      dirname(Bun.resolveSync("@actions/artifact", actionRoot)),
+      "internal"
     )
     const validator = await import(pathToFileURL(join(
       artifactRoot,

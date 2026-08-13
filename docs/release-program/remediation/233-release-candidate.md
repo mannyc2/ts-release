@@ -189,6 +189,16 @@ the digest hex value, while the npm tarball id is derived from the durable npm
 publication intent. No certificate was issued and no public mutation occurred;
 a later candidate must restart both clones.
 
+Candidate `2da4f1b01219c872915efb636e069d96cd1e505e` passed context,
+preparation, complete-byte reproducibility, readiness, artifact inspection,
+and correction gates in both fresh clones. It was rejected during the shared
+portable test suite because one Actions-artifact wire-contract test hard-coded
+the former app-local `node_modules` layout. The certified hoisted installation
+correctly owns that package at the root, so the test now resolves the installed
+`@actions/artifact` entry module and locates its internal evidence relative to
+that canonical package result. No certificate was issued and no public
+mutation occurred. A later candidate must restart both clones.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |

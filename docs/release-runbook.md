@@ -29,6 +29,12 @@ npm bytes during Plan 233 candidate certification.
    credential-free environment and verifies their pinned SHA-256 values before
    the offline preparation boundary starts. `publish` recovery skips bootstrap
    because it consumes an already-complete durable bundle.
+   A fresh GitHub runner must first prime Bun's package cache with the exact
+   frozen, script-disabled, no-save, hoisted install and then remove the source
+   workspace's root `node_modules` before invoking `release` or `prepare`.
+   The private preparation install may reuse cache bytes but must never share a
+   dependency inode with the source workspace. Recovery and publish-only jobs
+   do not install workspace dependencies.
 3. Run the complete release-candidate gate and every public-entrypoint smoke
    matrix. A skipped execution host is removed from the support claim.
 4. Prepare the self-release independently twice. Verify exact-commit

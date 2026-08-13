@@ -39,7 +39,11 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun add --global npm@11.5.1
-      - run: bun install --frozen-lockfile
+      - name: Prime isolated Bun dependency cache
+        if: ${{ inputs.prepared_ref == '' }}
+        run: |-
+          bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted
+          bun --no-env-file --no-install -e 'await (await import("node:fs/promises")).rm("node_modules", { recursive: true, force: true })'
       - id: release
         uses: ./apps/ts-release-action
         env:

@@ -224,6 +224,28 @@ gate also reports the exact example and structured API cause instead of
 allowing a blank tagged-error rendering. No certificate was issued and no
 public mutation occurred. A later candidate must restart both clones.
 
+The first accepted live candidate, `e3691f1e0b8e9a2eae688cfe7a3be38083ad22ba`,
+passed the complete local matrix but failed before preparation in GitHub Actions
+run `31753441090`. A fresh runner did not contain Bun's cross-target compile
+runtimes, so the closed preparation boundary correctly refused the attempted
+download. The composite Action now preloads only the exact Bun 1.3.14 runtime
+files, verifies their pinned SHA-256 values in a credential-free process, and
+does so only for `release` and `prepare`. The failed run emitted no prepared
+reference and created no tag, release, asset, or npm version; it was not retried.
+
+Corrected candidate `5cacae8694d0fd674a109804ad9ad760a5b8b360`
+proved that preload on GitHub in run `31755262196`, then stopped before durable
+preparation because the runner's ordinary root install and the private staged
+install hardlinked dependency files to the same Bun-cache inodes. The existing
+source-workspace alias invariant correctly rejected
+`jackspeak/package.json`; it is not weakened. Fresh preparation workflows now
+prime the cache with the exact frozen, script-disabled, no-save, hoisted
+install and remove source `node_modules` before invoking the Action. Recovery
+and publish-only jobs never install workspace dependencies. The failed run
+also emitted no prepared reference and created no public release subject, so it
+was not retried; a later exact candidate must repeat the fresh-runner topology
+and full clean-clone matrix.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |

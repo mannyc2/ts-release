@@ -126,6 +126,7 @@ interface WorkflowStep {
   readonly name?: string
   readonly uses?: string
   readonly if?: string
+  readonly run?: string
   readonly env?: Readonly<Record<string, string>>
   readonly with?: Readonly<Record<string, string>>
 }
@@ -163,6 +164,11 @@ const automaticCommand = "${{ inputs.prepared_ref == '' && 'release' || 'publish
 const automaticConfig = "${{ inputs.prepared_ref == '' && 'release.config.json' || '' }}"
 const automaticPrepared = "${{ inputs.prepared_ref }}"
 const templateAdmission = "${{ github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}"
+const freshDispatch = "${{ inputs.prepared_ref == '' }}"
+const cachePrimeRun = [
+  "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted",
+  "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
+].join("\n")
 
 const parseWorkflow = (name: string): {
   readonly source: string
@@ -556,7 +562,18 @@ describe("Plan 233 advertised workflow protocol", () => {
         const steps = job.steps ?? []
         for (const [index, step] of steps.entries()) {
           if (typeof step.uses !== "string" || !step.uses.includes("ts-release-action")) continue
-          expect(steps.slice(0, index).some((candidate) => candidate.uses === "oven-sh/setup-bun@v2")).toBe(true)
+          const before = steps.slice(0, index)
+          expect(before.some((candidate) => candidate.uses === "oven-sh/setup-bun@v2")).toBe(true)
+          if (step.with?.command === "publish") {
+            expect(before.some((candidate) => candidate.run?.includes("bun install"))).toBe(false)
+            continue
+          }
+          const prime = before.filter((candidate) => candidate.name === "Prime isolated Bun dependency cache")
+          expect(prime).toHaveLength(1)
+          expect(prime[0]?.run).toBe(cachePrimeRun)
+          expect(prime[0]?.if).toBe(step.with?.command === automaticCommand ? freshDispatch : undefined)
+          expect(before.some((candidate) => candidate.uses === "actions/setup-node@v4")).toBe(true)
+          expect(before.some((candidate) => candidate.run === "bun add --global npm@11.5.1")).toBe(true)
         }
       }
     }

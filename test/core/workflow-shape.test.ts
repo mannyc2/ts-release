@@ -17,6 +17,9 @@ interface ParsedWorkflow {
     readonly if?: string
     readonly permissions?: Readonly<Record<string, string>>
     readonly steps?: ReadonlyArray<{
+      readonly name?: unknown
+      readonly if?: unknown
+      readonly run?: unknown
       readonly uses?: unknown
       readonly env?: Readonly<Record<string, unknown>>
       readonly with?: Readonly<Record<string, unknown>>
@@ -48,6 +51,10 @@ const automaticCommand = "${{ inputs.prepared_ref == '' && 'release' || 'publish
 const automaticPrepared = "${{ inputs.prepared_ref }}"
 const templateAdmission = "${{ github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}"
 const repositoryAdmission = "${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}"
+const freshDispatch = "${{ inputs.prepared_ref == '' }}"
+const cachePrimeCommand = "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted"
+const dependencyCleanupCommand = "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
+const cachePrimeRun = `${cachePrimeCommand}\n${dependencyCleanupCommand}`
 
 const parseWorkflow = (value: string): ParsedWorkflow => Bun.YAML.parse(value) as ParsedWorkflow
 
@@ -114,6 +121,35 @@ const expectBunBeforeEveryActionInvocation = (value: string): void => {
   }
 }
 
+const expectIsolatedCacheBeforePreparingActions = (value: string): void => {
+  const parsed = parseWorkflow(value)
+  for (const [jobName, job] of Object.entries(parsed.jobs ?? {})) {
+    const steps = job.steps ?? []
+    for (const [index, step] of steps.entries()) {
+      if (typeof step.uses !== "string" || !step.uses.includes("ts-release-action")) continue
+      const before = steps.slice(0, index)
+      const command = step.with?.command
+      if (command === "publish") {
+        expect(before.some((candidate) => typeof candidate.run === "string" && candidate.run.includes("bun install")),
+          `${jobName} publish recovery must not materialize workspace dependencies.`
+        ).toBe(false)
+        continue
+      }
+      const prime = before.filter((candidate) => candidate.name === "Prime isolated Bun dependency cache")
+      expect(prime, `${jobName} must prime the cache exactly once before preparation.`).toHaveLength(1)
+      expect(prime[0]?.run).toBe(cachePrimeRun)
+      expect(prime[0]?.if).toBe(command === automaticCommand ? freshDispatch : undefined)
+      expect(before.some((candidate) => candidate.uses === "actions/setup-node@v4"),
+        `${jobName} must install the pinned Node runtime before preparation.`
+      ).toBe(true)
+      expect(before.some((candidate) => candidate.run === "bun add --global npm@11.5.1"),
+        `${jobName} must install the pinned npm CLI before preparation.`
+      ).toBe(true)
+      expect(before.filter((candidate) => typeof candidate.run === "string" && candidate.run.includes("bun install"))).toHaveLength(1)
+    }
+  }
+}
+
 const expectOnlyRedactedReportUploads = (value: string, count: number): void => {
   expect(value.match(/uses: actions\/upload-artifact@v4/gu)?.length).toBe(count)
   expect(reportUploads(value)).toHaveLength(count)
@@ -168,6 +204,7 @@ test("repository release is a candidate-bound manual dispatch with one mutually 
   expect(release).not.toMatch(/\b(?:plan|apply|doctor|reviewer|review_id|run_id|scope|resume|through)\b/iu)
   expect(release).not.toMatch(/bun run build/u)
   expectBunBeforeEveryActionInvocation(release)
+  expectIsolatedCacheBeforePreparingActions(release)
 })
 
 test("user templates preserve the same handoff, with the environment gate only on publish", () => {
@@ -179,6 +216,7 @@ test("user templates preserve the same handoff, with the environment gate only o
     expect(value).toContain("persist-credentials: false")
     expect(value).not.toContain("mannyc2/ts-release-action")
     expectBunBeforeEveryActionInvocation(value)
+    expectIsolatedCacheBeforePreparingActions(value)
   }
   expectDispatchInputs(automatic, { recovery: true })
   expectDispatchInputs(reviewed, { recovery: false })

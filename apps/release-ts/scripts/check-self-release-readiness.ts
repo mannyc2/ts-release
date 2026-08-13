@@ -29,6 +29,9 @@ interface WorkflowDocument {
     readonly if?: string
     readonly permissions?: Readonly<Record<string, string>>
     readonly steps?: ReadonlyArray<{
+      readonly name?: string
+      readonly if?: string
+      readonly run?: string
       readonly uses?: string
       readonly env?: Readonly<Record<string, unknown>>
       readonly with?: Readonly<Record<string, unknown>>
@@ -69,6 +72,25 @@ if (actionInputs?.command !== "${{ inputs.prepared_ref == '' && 'release' || 'pu
 if (actionInputs?.config !== `\${{ inputs.prepared_ref == '' && '${releaseConfigPath}' || '' }}` ||
     actionInputs.prepared !== "${{ inputs.prepared_ref }}") {
   failures.push("The automatic release Action must pass config and prepared inputs mutually exclusively.")
+}
+const releaseSteps = releaseJob?.steps ?? []
+const actionIndex = releaseSteps.findIndex((step) => step.uses === "./apps/ts-release-action")
+const beforeAction = actionIndex < 0 ? [] : releaseSteps.slice(0, actionIndex)
+const primeSteps = beforeAction.filter((step) => step.name === "Prime isolated Bun dependency cache")
+const expectedPrimeRun = [
+  "bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted",
+  "bun --no-env-file --no-install -e 'await (await import(\"node:fs/promises\")).rm(\"node_modules\", { recursive: true, force: true })'"
+].join("\n")
+if (primeSteps.length !== 1 || primeSteps[0]?.if !== "${{ inputs.prepared_ref == '' }}" ||
+    primeSteps[0]?.run !== expectedPrimeRun) {
+  failures.push("The automatic release workflow must prime Bun's cache once, remove root node_modules, and skip both operations during recovery.")
+}
+if (!beforeAction.some((step) => step.uses === "actions/setup-node@v4") ||
+    !beforeAction.some((step) => step.run === "bun add --global npm@11.5.1")) {
+  failures.push("The automatic release workflow must provision the pinned Node and npm tools before preparation.")
+}
+if (beforeAction.filter((step) => step.run?.includes("bun install")).length !== 1) {
+  failures.push("The automatic release workflow must contain exactly one dependency install, confined to cache priming.")
 }
 if (workflow.includes("${{ false }}") || workflow.includes("__ts_release_quarantined__")) {
   failures.push("The automatic release workflow retains a dead trigger or false guard.")

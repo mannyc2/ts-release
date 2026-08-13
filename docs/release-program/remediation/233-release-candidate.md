@@ -178,6 +178,17 @@ same report also allowed a detail field to overwrite its report protocol name;
 that detail is now `preparedSchemaVersion`. No certificate was issued and no
 public mutation occurred. A later candidate must restart both clones.
 
+Candidate `99d10e949af508bfcefa021df364e9c9e3b781dc` passed verified
+preparation and complete byte reproducibility in both fresh clones. Each clone
+produced the same manifest `c72b4d4b553e567bfe2b1c07b62d4277b92ec37f76e6330a7f3d20f967352ae6`
+twice, with identical bytes for all 16 artifacts. It was nevertheless rejected
+when the next artifact-inspection gate passed the encoded digest object to
+`path.join` instead of its hex field. That script also retained an obsolete
+hard-coded npm artifact id. Artifact reads and unique-byte accounting now use
+the digest hex value, while the npm tarball id is derived from the durable npm
+publication intent. No certificate was issued and no public mutation occurred;
+a later candidate must restart both clones.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |

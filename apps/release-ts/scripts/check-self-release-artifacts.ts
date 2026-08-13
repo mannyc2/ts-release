@@ -1,4 +1,6 @@
-import { chmodSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import {
+  chmodSync, closeSync, mkdtempSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync
+} from "node:fs"
 import { basename, join } from "node:path"
 import { spawnSync } from "node:child_process"
 import * as Effect from "effect/Effect"
@@ -12,16 +14,38 @@ import {
 } from "../../../src/release/prepared-ref.js"
 import { preparedRoot, report, root, selfReleaseConfig } from "./self-release-facts.js"
 
-type Artifact = { readonly id: string, readonly digest: string, readonly path: string, readonly size: number }
+type Artifact = {
+  readonly id: string
+  readonly digest: { readonly hex: string }
+  readonly path: string
+  readonly size: number
+}
 type Collection = { readonly contract: { readonly id: string }, readonly members: ReadonlyArray<{ readonly key: string, readonly artifactId: string }> }
 type Manifest = { readonly artifacts: ReadonlyArray<Artifact>, readonly collections: ReadonlyArray<Collection> }
 const failures: Array<string> = []
-const run = (command: string, args: ReadonlyArray<string>, cwd: string) => spawnSync(command, [...args], {
+const run = (
+  command: string,
+  args: ReadonlyArray<string>,
+  cwd: string,
+  environment: Readonly<Record<string, string>> = {}
+) => spawnSync(command, [...args], {
   cwd, encoding: "utf8", stdio: "pipe",
-  env: { ...process.env, BUN_TMPDIR: cwd, BUN_INSTALL: join(cwd, ".bun-install"), TMPDIR: cwd }
+  env: { ...process.env, ...environment }
 })
 const outputText = (value: unknown): string => typeof value === "string" ? value : value instanceof Uint8Array ? new TextDecoder().decode(value) : String(value)
-const artifactBytes = (directory: string, artifact: Artifact): Uint8Array => new Uint8Array(readFileSync(join(directory, "blobs", artifact.digest)))
+const runWithFileStdout = (command: string, args: ReadonlyArray<string>, cwd: string, path: string) => {
+  const descriptor = openSync(path, "w")
+  try {
+    const result = spawnSync(command, [...args], {
+      cwd, encoding: "utf8", stdio: ["ignore", descriptor, "pipe"], env: { ...process.env }
+    })
+    return { ...result, stdout: readFileSync(path, "utf8") }
+  } finally {
+    closeSync(descriptor)
+  }
+}
+const artifactBytes = (directory: string, artifact: Artifact): Uint8Array =>
+  new Uint8Array(readFileSync(join(directory, "blobs", artifact.digest.hex)))
 const artifact = (manifest: Manifest, id: string): Artifact | undefined => manifest.artifacts.find((item) => item.id === id)
 
 const storeDirectory = join(root, preparedRoot)
@@ -40,7 +64,9 @@ try {
   const inspection = await api.inspect({ prepared })
   if (!("project" in inspection)) failures.push("Prepared artifact inspection did not return the durable bundle projection.")
   const manifest = JSON.parse(readFileSync(join(preparedDirectory, "prepared-release.json"), "utf8")) as Manifest
-  const npm = artifact(manifest, "npm-tarball:npm:npm-release")
+  const npmPublication = bundle.manifest.publications.find((publication) =>
+    publication._tag === "PreparedNpmPublication")
+  const npm = npmPublication === undefined ? undefined : artifact(manifest, npmPublication.artifactId.toString())
   const native = artifact(manifest, "cli-linux-x64")
   if (npm === undefined) failures.push("Prepared bundle has no npm tarball artifact.")
   if (native === undefined) failures.push("Prepared bundle has no executable for the current Linux host.")
@@ -106,9 +132,29 @@ try {
     const execution = run(binary, ["--version"], scratch)
     if (execution.status !== 0) failures.push(`Native Linux candidate did not execute: ${execution.stderr.trim()}`)
   }
-  const cli = run("node", [join(root, "dist/bin/ts-release.js"), "--version"], root)
-  if (cli.status !== 0 || !/^ts-release v0\.2\.0\n?$/u.test(outputText(cli.stdout).trim())) failures.push("The Node CLI bundle did not report candidate version 0.2.0.")
-  const action = run("bun", [join(root, "apps/ts-release-action/dist/index.js")], root)
+  const cli = runWithFileStdout(
+    process.env.TS_RELEASE_NODE_BIN ?? "node",
+    [join(root, "dist/bin/ts-release.js"), "--version"],
+    root,
+    join(scratch, "node-cli.stdout")
+  )
+  if (cli.status !== 0 || !/^ts-release v0\.2\.0$/u.test(outputText(cli.stdout).trim())) {
+    failures.push(
+      `The Node CLI bundle did not report candidate version 0.2.0: status=${String(cli.status)} ` +
+      `stdout=${JSON.stringify(outputText(cli.stdout).trim())} stderr=${JSON.stringify(outputText(cli.stderr).trim())}.`
+    )
+  }
+  const candidateCommit = bundle.manifest.source.commit.toString()
+  const action = run("bun", [join(root, "apps/ts-release-action/dist/index.js")], root, {
+    GITHUB_WORKSPACE: root,
+    GITHUB_REPOSITORY: "mannyc2/ts-release",
+    GITHUB_WORKFLOW_REF: "mannyc2/ts-release/.github/workflows/release.yml@refs/heads/candidate",
+    GITHUB_WORKFLOW_SHA: candidateCommit,
+    GITHUB_RUN_ID: "1",
+    GITHUB_RUN_ATTEMPT: "1",
+    GITHUB_SHA: candidateCommit,
+    INPUT_COMMAND: "invalid"
+  })
   if (action.status === 0 || `${outputText(action.stdout)}\n${outputText(action.stderr)}`.includes("Action command must be one of") === false) failures.push("The Action bundle did not execute its exact Linux/Bun parser command.")
   for (const { member, artifact: value } of agentArchives) {
     if (value === undefined) continue
@@ -122,7 +168,7 @@ try {
     actionBundle: true, agentArchives: agentArchives.filter((entry) => entry.artifact !== undefined).length,
     artifactCount: manifest.artifacts.length,
     totalArtifactBytes: manifest.artifacts.reduce((total, item) => total + item.size, 0),
-    uniqueBlobBytes: [...new Map(manifest.artifacts.map((item) => [item.digest, item.size])).values()]
+    uniqueBlobBytes: [...new Map(manifest.artifacts.map((item) => [item.digest.hex, item.size])).values()]
       .reduce((total, size) => total + size, 0),
     targetMeasurements,
     totalExecutableBytes: targetMeasurements.reduce((total, item) => total + item.executableBytes, 0),

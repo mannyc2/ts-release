@@ -158,7 +158,15 @@ const materializeBunDependencies = Effect.fn("materializeBunDependencies")(funct
   }
 
   const outcome = yield* input.request.run({
-    argv: ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"],
+    argv: [
+      "bun",
+      "install",
+      "--offline",
+      "--frozen-lockfile",
+      "--ignore-scripts",
+      "--no-save",
+      "--linker=hoisted"
+    ],
     cwd: stageRoot,
     environmentNames: [],
     network: "offline-cli"
@@ -197,7 +205,7 @@ const materializeBunDependencies = Effect.fn("materializeBunDependencies")(funct
         .filter((entry) => entry.kind !== "directory")
         .reduce((sum, entry) => sum + entry.size, 0),
       digest: dependencySnapshot.digest,
-      materializer: `bun@${bunVersion}:install--offline--frozen-lockfile--ignore-scripts`,
+      materializer: `bun@${bunVersion}:install--offline--frozen-lockfile--ignore-scripts--no-save--linker=hoisted`,
       materializationBasis: [lockfile.digest, toolDigest]
     })
   } satisfies DependencyMaterialization

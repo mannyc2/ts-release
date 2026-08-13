@@ -30,8 +30,11 @@ architecture, and denied syscall set enter provenance. The standalone CLI
 still requires Bun and `libseccomp.so.2`; it is not a self-contained execution
 sandbox. The only
 `offline-cli` operations are the certified `npm pack --offline --ignore-scripts`
-and isolated `bun install --offline --frozen-lockfile --ignore-scripts`
-protocols. For that exact Bun install only, the parent canonicalizes an explicit
+and isolated
+`bun install --offline --frozen-lockfile --ignore-scripts --no-save --linker=hoisted`
+protocols. The hoisted linker keeps the admitted dependency closure beneath the
+single declared root `node_modules` instead of writing package-local workspace
+link farms. For that exact Bun install only, the parent canonicalizes an explicit
 `BUN_INSTALL_CACHE_DIR` or Bun's standard `$HOME/.bun/install/cache` and passes
 the child only `BUN_INSTALL_CACHE_DIR`; `HOME` and ambient Bun configuration
 remain absent. A command may persist only declared outputs. Source, explicit
@@ -59,7 +62,7 @@ producer can run. The graph carries the contract, not guessed filenames.
 |---|---|---|
 | Git source | exact verified commit/tree; canonical staging snapshot includes every blob, mode, and contained link | tracked drift, object disagreement, submodule, unsafe path/link, case collision, or package-manifest disagreement aborts before a command |
 | Ignored/untracked artifact | copied or reflinked only when the graph names its exact artifact path; digest, size, materializer, and basis enter provenance | undeclared bytes stay absent; overlap with Git source, symlinks, escapes, or missing paths abort |
-| Bun dependencies | admitted only for a Bun preparation with exactly one tracked root `bun.lock` or `bun.lockb`; one private offline frozen install creates a real `node_modules`; tree digest, Bun version, lock digest, and tool digest enter provenance | no lock, tracked `node_modules`, install failure, source/cache write, workspace inode alias, escaping link, or later dependency mutation aborts |
+| Bun dependencies | admitted only for a Bun preparation with exactly one tracked root `bun.lock` or `bun.lockb`; one private offline, frozen, hoisted install creates a real root `node_modules`; tree digest, Bun version, lock digest, and tool digest enter provenance | no lock, tracked `node_modules`, install failure, package-local `node_modules`, source/cache write, workspace inode alias, escaping link, or later dependency mutation aborts |
 | npm package | an optional explicit package build runs first with declared absent output roots; `npm pack` then reads the private staged package, uses a private output/cache, disables scripts and online resolution, and reports the selected file set; the exact npm version/executable and release graph enter provenance | undeclared build mutation, missing/linked/escaping build root, missing literal `files` entry, linked/escaped/unmaterialized selection, package mutation, malformed report, changed npm executable, or non-single tarball output aborts |
 | Command output | a graph-owned output root is the sole persistent writable area; captured bytes are hashed immediately | output/source or output/input overlap, undeclared mutation, linked capture, missing output, or nonzero exit aborts |
 | Runtime artifact collection | one empty, absent-before-run root is writable; post-run files are recursively enumerated in code-point order and receive stable ids derived from producer, collection contract, and normalized member key | root overlap, missing/non-directory root, symlink, escape, unsupported filesystem kind, non-portable/case-colliding key, suffix/kind/media disagreement, or producer/consumer cardinality violation aborts |

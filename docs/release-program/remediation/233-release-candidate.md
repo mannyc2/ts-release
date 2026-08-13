@@ -113,7 +113,7 @@ has an id, and an `always()` step uploads only that step's redacted
 `report-ref`. The workflow test continues to forbid generic prepared-bundle
 upload/download duplication.
 
-## Rejected rehearsal candidate
+## Rejected rehearsal candidates
 
 The first exact candidate rehearsal, commit
 `a5c0eec9b73444572817f28c3a408c857db8140e`, was rejected during its first
@@ -132,6 +132,17 @@ ambient-home exclusion, and fail-closed behavior when neither coordinate is
 available. The checked-in Action bundle carries the same corrected driver. Any
 candidate X must be a later commit and must restart both clean clones from the
 beginning.
+
+That replacement rehearsal, commit
+`e038ae44cc619d8e921110ed9a42f7c0a285c958`, reached the isolated install but
+was also rejected before any authored command or public operation. Bun's
+default workspace linker created package-local `node_modules` link farms
+outside the one dependency root admitted by the manifest, so the source/cache
+mutation guard refused them. The certified command now requires
+`--linker=hoisted`; a clean probe produced only the root `node_modules` tree and
+the app, Action, and agent gates resolved through it. A later candidate must
+repeat the entire matrix; the probe is implementation feedback, not
+certification evidence.
 
 ## Current failing or open gates
 

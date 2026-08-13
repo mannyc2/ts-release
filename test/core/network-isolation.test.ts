@@ -150,7 +150,15 @@ describe("fail-closed preparation network isolation", () => {
       } }))
       const run = await liveRunner()
       const result = await Effect.runPromise(run({
-        argv: ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"],
+        argv: [
+          "bun",
+          "install",
+          "--offline",
+          "--frozen-lockfile",
+          "--ignore-scripts",
+          "--no-save",
+          "--linker=hoisted"
+        ],
         cwd: root,
         environmentNames: ["HOME"],
         network: "offline-cli"
@@ -164,7 +172,15 @@ describe("fail-closed preparation network isolation", () => {
 
       const missingCacheEnvironment = ConfigProvider.layer(ConfigProvider.fromEnv({ env: { PATH: bin } }))
       const missingCache = await Effect.runPromise(run({
-        argv: ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"],
+        argv: [
+          "bun",
+          "install",
+          "--offline",
+          "--frozen-lockfile",
+          "--ignore-scripts",
+          "--no-save",
+          "--linker=hoisted"
+        ],
         cwd: root,
         environmentNames: [],
         network: "offline-cli"

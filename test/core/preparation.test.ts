@@ -393,6 +393,15 @@ describe("verified private preparation boundary", () => {
         [["bun", "install"], "offline-cli"],
         [["bun", "run"], "deny"]
       ])
+      expect(calls[1]?.argv).toEqual([
+        "bun",
+        "install",
+        "--offline",
+        "--frozen-lockfile",
+        "--ignore-scripts",
+        "--no-save",
+        "--linker=hoisted"
+      ])
       const dependency = bundle.manifest.provenance.externalInputs[0]
       expect(dependency).toMatchObject({ path: "node_modules", kind: "directory" })
       expect(dependency?.materializer).toContain("bun@1.3.14")

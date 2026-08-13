@@ -66564,7 +66564,15 @@ var materializeBunDependencies = fn2("materializeBunDependencies")(function* (in
     });
   }
   const outcome = yield* input.request.run({
-    argv: ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"],
+    argv: [
+      "bun",
+      "install",
+      "--offline",
+      "--frozen-lockfile",
+      "--ignore-scripts",
+      "--no-save",
+      "--linker=hoisted"
+    ],
     cwd: stageRoot,
     environmentNames: [],
     network: "offline-cli"
@@ -66601,7 +66609,7 @@ var materializeBunDependencies = fn2("materializeBunDependencies")(function* (in
       kind: "directory",
       size: dependencySnapshot.entries.filter((entry) => entry.kind !== "directory").reduce((sum, entry) => sum + entry.size, 0),
       digest: dependencySnapshot.digest,
-      materializer: `bun@${bunVersion}:install--offline--frozen-lockfile--ignore-scripts`,
+      materializer: `bun@${bunVersion}:install--offline--frozen-lockfile--ignore-scripts--no-save--linker=hoisted`,
       materializationBasis: [lockfile.digest, toolDigest]
     })
   };
@@ -71641,7 +71649,15 @@ var executableIdentity = (command2, cwd, path) => {
   };
 };
 var isDigest = (value3) => typeof value3 === "string" && /^[a-f0-9]{64}$/u.test(value3);
-var offlineBunInstallArgv = ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"];
+var offlineBunInstallArgv = [
+  "bun",
+  "install",
+  "--offline",
+  "--frozen-lockfile",
+  "--ignore-scripts",
+  "--no-save",
+  "--linker=hoisted"
+];
 var isOfflineBunInstall = (command2) => command2.network === "offline-cli" && command2.argv.length === offlineBunInstallArgv.length && command2.argv.every((value3, index) => value3 === offlineBunInstallArgv[index]);
 var readBunInstallCacheDirectory = fn2("readBunInstallCacheDirectory")(function* () {
   const configured = yield* readOptionalEnv("BUN_INSTALL_CACHE_DIR");

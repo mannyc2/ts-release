@@ -70,7 +70,15 @@ const executableIdentity = (command: string, cwd: string, path: string | undefin
 }
 
 const isDigest = (value: unknown): value is string => typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
-const offlineBunInstallArgv = ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"] as const
+const offlineBunInstallArgv = [
+  "bun",
+  "install",
+  "--offline",
+  "--frozen-lockfile",
+  "--ignore-scripts",
+  "--no-save",
+  "--linker=hoisted"
+] as const
 const isOfflineBunInstall = (command: Parameters<RunCommand>[0]): boolean =>
   command.network === "offline-cli" && command.argv.length === offlineBunInstallArgv.length &&
   command.argv.every((value, index) => value === offlineBunInstallArgv[index])

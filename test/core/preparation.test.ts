@@ -632,7 +632,7 @@ describe("verified private preparation boundary", () => {
     ] })])
     const commands: string[] = []
     let npmToolDigest = "a".repeat(64)
-    const run: RunCommand = ({ argv, cwd }) => Effect.try({
+    const run: RunCommand = ({ argv, cwd, stdout }) => Effect.try({
       try: () => {
         commands.push(argv.join(" "))
         if (argv[0] === "fixture-build") {
@@ -649,6 +649,7 @@ describe("verified private preparation boundary", () => {
           }
         }
         if (argv[0] !== "npm" || argv[1] !== "pack") throw new Error(`Unexpected npm fixture command: ${argv.join(" ")}`)
+        if (stdout !== "complete-protocol") throw new Error("npm pack fixture requires complete protocol stdout")
         const destinationIndex = argv.indexOf("--pack-destination")
         const destination = destinationIndex < 0 ? undefined : argv[destinationIndex + 1]
         if (destination === undefined) throw new Error("npm pack fixture omitted its private destination")
@@ -678,6 +679,7 @@ describe("verified private preparation boundary", () => {
       expect(publication?._tag).toBe("PreparedNpmPublication")
       expect(bundle.manifest.artifacts[0]).toMatchObject({ producer: "npm-pack:npm-release", mediaType: "application/gzip" })
       expect(bundle.manifest.provenance.execution.npmPack).toContain("ts-release-npm-pack/v1")
+      expect(bundle.manifest.provenance.execution.npmPack).toContain("complete-redacted-protocol")
       expect(bundle.manifest.provenance.execution.npmPack).toContain(`\"sha256\":\"${"a".repeat(64)}\"`)
       expect(bundle.manifest.provenance.execution.releaseGraph.hex).toMatch(/^[a-f0-9]{64}$/u)
       expect(commands[0]).toBe("fixture-build")

@@ -782,6 +782,7 @@ interface NpmPackIdentity {
   readonly version: string
   readonly executable: ExecutableIdentity
   readonly flags: ReadonlyArray<string>
+  readonly stdout: "complete-redacted-protocol"
 }
 
 const npmPackFlags = ["--json", "--offline", "--ignore-scripts", "--pack-destination", "{destination}", "--cache", "{cache}"] as const
@@ -812,7 +813,8 @@ const establishNpmPackIdentity = (
     protocol: "ts-release-npm-pack/v1",
     version,
     executable: outcome.tool,
-    flags: npmPackFlags
+    flags: npmPackFlags,
+    stdout: "complete-redacted-protocol"
   }
 })
 
@@ -849,6 +851,7 @@ const npmTarball = (
     argv: ["npm", "pack", packageDeclaration.path.toString(), "--json", "--offline", "--ignore-scripts", "--pack-destination", destination, "--cache", cache],
     cwd: request.context.workspace,
     environmentNames: [],
+    stdout: "complete-protocol",
     network: "offline-cli"
   }).pipe(Effect.mapError(failure))
   if (!sameExecutable(outcome.tool, npmPackIdentity.executable)) {

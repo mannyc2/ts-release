@@ -67122,7 +67122,8 @@ var establishNpmPackIdentity = (request) => gen2(function* () {
     protocol: "ts-release-npm-pack/v1",
     version: version3,
     executable: outcome.tool,
-    flags: npmPackFlags
+    flags: npmPackFlags,
+    stdout: "complete-redacted-protocol"
   };
 });
 var npmTarball = (request, publication2, declarations, sourceSnapshot, basis, npmPackIdentity) => gen2(function* () {
@@ -67148,6 +67149,7 @@ var npmTarball = (request, publication2, declarations, sourceSnapshot, basis, np
     argv: ["npm", "pack", packageDeclaration.path.toString(), "--json", "--offline", "--ignore-scripts", "--pack-destination", destination, "--cache", cache],
     cwd: request.context.workspace,
     environmentNames: [],
+    stdout: "complete-protocol",
     network: "offline-cli"
   }).pipe(mapError3(failure2));
   if (!sameExecutable(outcome.tool, npmPackIdentity.executable)) {
@@ -71559,7 +71561,7 @@ var readEnvironment = (names2) => forEach2(["PATH", ...names2], (name) => readOp
 
 // ../../src/drivers/redact.ts
 var EXCERPT_LIMIT = 2000;
-var redactOutput = (text3, env) => {
+var redact5 = (text3, env) => {
   let out = text3;
   for (const [name, value3] of Object.entries(env).filter(([name2, value4]) => name2 !== "PATH" && value4.length >= 6).sort((left, right) => right[1].length - left[1].length)) {
     out = out.split(value3).join(`[redacted:${name}]`);
@@ -71567,8 +71569,13 @@ var redactOutput = (text3, env) => {
   for (const pattern of secretPatterns) {
     out = out.replace(new RegExp(pattern.source, `${pattern.flags.replace("u", "")}gu`), "[redacted:token]");
   }
+  return out;
+};
+var redactOutput = (text3, env) => {
+  const out = redact5(text3, env);
   return out.length > EXCERPT_LIMIT ? `${out.slice(0, EXCERPT_LIMIT)}…[truncated]` : out;
 };
+var redactProtocolOutput = (text3, env) => redact5(text3, env);
 
 // ../../src/drivers/seccomp-helper-source.ts
 var makeNetworkIsolationHelperSource = (requiredLibrary = "libseccomp.so.2") => String.raw`import { dlopen, ptr } from "bun:ffi"
@@ -71888,7 +71895,7 @@ var makeRunCommand = gen2(function* () {
         catch: (cause) => failure(`Certified Bun compilation did not preserve its private runtime cache: ${String(cause)}`)
       });
     return {
-      stdout: redactOutput(output2.stdout, commandEnvironment),
+      stdout: command2.stdout === "complete-protocol" ? redactProtocolOutput(output2.stdout, commandEnvironment) : redactOutput(output2.stdout, commandEnvironment),
       stderr: redactOutput(output2.stderr, commandEnvironment),
       exitCode: Number(output2.exitCode),
       tool,
@@ -72846,7 +72853,7 @@ var configJson = (runtime2, path) => {
     throw new Error(`Action configuration is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
 };
-var redact5 = (value3) => value3.replace(/(?:npm|ghp|ghs|github_pat)_[A-Za-z0-9_]+/gu, "[REDACTED]").replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/giu, "Bearer [REDACTED]");
+var redact6 = (value3) => value3.replace(/(?:npm|ghp|ghs|github_pat)_[A-Za-z0-9_]+/gu, "[REDACTED]").replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/giu, "Bearer [REDACTED]");
 var printable = (value3) => JSON.stringify(value3, (_key, nested2) => {
   if (typeof nested2 === "object" && nested2 !== null && !Array.isArray(nested2) && Object.getPrototypeOf(nested2) !== Object.prototype && Object.getPrototypeOf(nested2) !== null && "toString" in nested2 && nested2.toString !== Object.prototype.toString && Object.keys(nested2).length === 1) {
     return String(nested2);
@@ -72855,7 +72862,7 @@ var printable = (value3) => JSON.stringify(value3, (_key, nested2) => {
 }, 2);
 var reportPath = (root) => inside(root, resolve9(root, reportRelativePath));
 var writeReport = (runtime2, root, value3) => {
-  runtime2.write(reportPath(root), `${redact5(printable(value3))}
+  runtime2.write(reportPath(root), `${redact6(printable(value3))}
 `);
   runtime2.output("report-ref", reportRelativePath);
 };
@@ -72922,7 +72929,7 @@ var runAction = async (api, runtime2) => {
       throw new ReportedActionError(`Action ${selected} report is ${status}; no complete release is claimed.`);
     }
   } catch (cause) {
-    const message = redact5(cause instanceof Error ? cause.message : String(cause));
+    const message = redact6(cause instanceof Error ? cause.message : String(cause));
     const prepared = runtime2.preparedReference.current();
     if (!(cause instanceof ReportedActionError)) {
       try {

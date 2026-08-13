@@ -21,7 +21,7 @@ import {
 import { tmpdir } from "node:os"
 import { delimiter, isAbsolute, join, resolve } from "node:path"
 import { readEnvironment, readOptionalEnv } from "./environment.js"
-import { redactOutput } from "./redact.js"
+import { redactOutput, redactProtocolOutput } from "./redact.js"
 import { networkIsolationHelperSource } from "./seccomp-helper-source.js"
 import { failure } from "./utils.js"
 import { DriverError } from "./errors.js"
@@ -64,6 +64,9 @@ export type CommandOutcome = {
 export type RunCommand = (command: {
   readonly argv: ReadonlyArray<string>, readonly cwd: string,
   readonly environmentNames: ReadonlyArray<string>,
+  /** Complete redacted stdout for an immediate machine-protocol decoder.
+   * The caller must not persist it as diagnostic output. */
+  readonly stdout?: "complete-protocol",
   /** Generic commands require the fail-closed Linux/libseccomp filter;
    * certified local-only tools additionally carry their own offline switch. */
   readonly network: "deny" | "offline-cli"
@@ -321,7 +324,9 @@ export const makeRunCommand: Effect.Effect<RunCommand, never, ChildProcessSpawne
         catch: (cause) => failure(`Certified Bun compilation did not preserve its private runtime cache: ${String(cause)}`)
       })
       return {
-        stdout: redactOutput(output.stdout, commandEnvironment),
+        stdout: command.stdout === "complete-protocol"
+          ? redactProtocolOutput(output.stdout, commandEnvironment)
+          : redactOutput(output.stdout, commandEnvironment),
         stderr: redactOutput(output.stderr, commandEnvironment),
         exitCode: Number(output.exitCode),
         tool,

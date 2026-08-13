@@ -195,4 +195,36 @@ describe("fail-closed preparation network isolation", () => {
       rmSync(root, { recursive: true, force: true })
     }
   })
+
+  test("complete machine-protocol stdout is redacted without diagnostic truncation", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-protocol-output-test-"))
+    try {
+      const bin = join(root, "bin")
+      mkdirSync(bin)
+      const protocol = JSON.stringify([{ files: Array.from({ length: 100 }, (_, index) => ({
+        path: `dist/file-${index.toString().padStart(3, "0")}.js`, size: index, mode: 0o644
+      })) }])
+      expect(protocol.length).toBeGreaterThan(2_000)
+      writeFileSync(join(bin, "npm"), `#!/bin/sh\nprintf '%s' '${protocol}'\n`, { mode: 0o500 })
+      const environment = ConfigProvider.layer(ConfigProvider.fromEnv({ env: { PATH: bin } }))
+      const run = await liveRunner()
+      const command = {
+        argv: ["npm", "pack", ".", "--json", "--offline", "--ignore-scripts"],
+        cwd: root,
+        environmentNames: [],
+        network: "offline-cli" as const
+      }
+      const bounded = await Effect.runPromise(run(command).pipe(Effect.provide(environment)))
+      expect(bounded.stdout).toEndWith("…[truncated]")
+      const complete = await Effect.runPromise(run({
+        ...command,
+        stdout: "complete-protocol"
+      }).pipe(Effect.provide(environment)))
+      expect(complete.stdout.length).toBe(protocol.length)
+      expect((JSON.parse(complete.stdout) as ReadonlyArray<{ readonly files: ReadonlyArray<unknown> }>)[0]?.files)
+        .toHaveLength(100)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
 })

@@ -104,8 +104,8 @@ certification:
 | Plan 225 least-authority/host-admission focus | PASS; anonymous npm observation and exact GitHub repository/workflow/ref/hosted-runner/direct-sink admission were exercised without a public provider; final aggregate clean-X repeat remains required | contract-tested |
 | `bun run check:package-exports` | PASS after the stabilized build | contract-tested |
 | `bun run check:packed-consumers` with runner-bundled Node 24.15.0 / cached npm 11.17.0 | PASS; offline Bun and npm installs, exact Effect beta.83 alignment, Promise API plus Node CLI operation, 1/2-artifact durable reloads, 23 Markdown files and 5 relative links audited | contract-tested |
-| `bun test` with the cached npm 11.17.0 source contract enabled | PASS; 346 tests, 0 skips, 0 failures, 1,941 expectations | contract-tested |
-| `npm 11.17.0 pack --json --ignore-scripts --dry-run` | PASS after rebuilding the public root package; 419 files, 626,626 compressed bytes, 3,169,534 unpacked bytes | source-derived |
+| `bun test` with the cached npm 11.17.0 source contract enabled | PASS; 347 tests, 0 skips, 0 failures, 1,946 expectations | contract-tested |
+| `npm 11.17.0 pack --json --ignore-scripts --dry-run` | PASS after rebuilding the public root package; 419 files, 627,276 compressed bytes, 3,172,117 unpacked bytes | source-derived |
 | Scoped handoff `git diff --check` plus explicit untracked-file whitespace audit | PASS; repository-wide exact-X rerun remains required | source-derived |
 
 The workflow output contract is no longer ornamental. Each Action invocation
@@ -157,6 +157,17 @@ identities enter durable execution provenance and the preparation basis, and
 cache mutation fails before output admission. A later candidate must again
 restart both clean clones.
 
+Commit `8abe820e89ec225e8d0ca195a32aaa9de217cb0f` then reached npm packaging in
+both fresh clones and was rejected identically. The process boundary applied
+its 2,000-character diagnostic cap to npm's successful `pack --json` machine
+protocol, truncating the 419-file report before the preparation decoder could
+validate it. Complete protocol stdout is now an explicit one-call capability:
+it remains value- and token-redacted, is consumed immediately by the npm pack
+decoder, and is not admitted to durable diagnostics. Ordinary command output
+remains capped. A production-runner regression covers a valid protocol longer
+than the diagnostic limit. Any later candidate must restart both clones; the
+failed attempts issued no certificate and performed no public mutation.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |
@@ -167,7 +178,7 @@ restart both clean clones.
 | `bun run check:self-release-context` | expected dirty-source refusal | Re-run from clean X. Do not weaken `source.clean`. |
 | `ts-release init --preset bun-npm-github` | local process green; clean X repeat pending | The preset discovers repository, emits explicit auth, strictly inspects the final object, and passed a real temporary-repository process smoke. Repeat with the built candidate CLI on clean X. |
 | Package metadata/changelog | outcome, coordinates, files, and pending changelog corrected; current-worktree local PASS; clean-X repeat OPEN | The root Node engine is `^22.22.2 || ^24.15.0 || >=26.0.0`, matching the authoritative transitive dependency floor. The complete offline consumer gate passed under genuine Node 24.15.0 / npm 11.17.0. Separately repeat the Action's Linux composite command with workflow-installed Bun 1.3.14. |
-| Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 419 files and is 626,626 compressed bytes / 3,169,534 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
+| Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 419 files and is 627,276 compressed bytes / 3,172,117 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
 | Immutable Action bootstrap | `v0.2.0` does not exist | The self-release context/prepared gates now assert GitHub-before-npm order. Run them on clean X and prove the workflow/provider sequence makes the Action coordinate usable before npm exposes its README; source ordering alone is insufficient. |
 
 The package `files` list excludes `docs/`, while `README.md`, `SPEC.md`,
@@ -303,8 +314,8 @@ property paths. Five installed capability modules and four explicit unsupported
 families are present. Retired command/review/authority vocabulary scans are
 empty.
 
-The current pre-X inventory contains 419 files, 626,626 compressed bytes, and
-3,169,534 unpacked bytes. The full offline consumer matrix passed with Node
+The current pre-X inventory contains 419 files, 627,276 compressed bytes, and
+3,172,117 unpacked bytes. The full offline consumer matrix passed with Node
 24.15.0 / npm 11.17.0. Exact-X certification must rerun every source and
 package measurement, and add prepared artifact totals, per-target compressed
 and uncompressed sizes, executable sizes, and reproducibility digests. These

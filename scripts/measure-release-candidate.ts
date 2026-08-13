@@ -149,7 +149,8 @@ const retiredCount = Object.values(retiredVocabulary).reduce((total, rows) => to
 const declaredTests = testFiles.reduce((total, path) =>
   total + ([...readFileSync(path, "utf8").matchAll(/\b(?:test|it)\s*\(/gu)].length), 0)
 const unsupportedFamilies = [
-  "adapter.third-party", "deliver.homebrew", "deliver.scoop", "publish.pypi"
+  "adapter.dynamic-config", "build.pypi-wrapper-wheel", "host.windows",
+  "prepare.merge", "prepare.partition"
 ] as const
 const installedIds = capabilityModules.map((module) => module.id).sort()
 for (const family of unsupportedFamilies) {

@@ -5,7 +5,7 @@ Result-Commit: SELF
 Evidence-Commit: SELF
 Status: IMPLEMENTATION COMPLETE / CLEAN-X CERTIFICATION PENDING
 Outcome: LOCAL GATES GREEN / CANDIDATE NOT YET CERTIFIED / ZERO LIVE MUTATION
-Date: 2026-08-12
+Date: 2026-08-13
 
 ## Non-authority statement
 
@@ -112,6 +112,26 @@ The workflow output contract is no longer ornamental. Each Action invocation
 has an id, and an `always()` step uploads only that step's redacted
 `report-ref`. The workflow test continues to forbid generic prepared-bundle
 upload/download duplication.
+
+## Rejected rehearsal candidate
+
+The first exact candidate rehearsal, commit
+`a5c0eec9b73444572817f28c3a408c857db8140e`, was rejected during its first
+clean-clone self-preparation. The production runner constructed the promised
+closed child environment but did not convey the host package-cache coordinate,
+so `bun install --offline` could not consume Bun's cache and attempted only
+unavailable registry resolution. No certificate was issued and no public read
+or write followed.
+
+The replacement implementation admits a cache coordinate only for the exact
+certified offline/frozen/script-disabled/no-save Bun install. It resolves and
+canonicalizes explicit `BUN_INSTALL_CACHE_DIR` or Bun's standard cache beneath
+the parent `HOME`, removes `HOME` from the child environment, and exposes only
+`BUN_INSTALL_CACHE_DIR`. A production-driver regression proves canonicalization,
+ambient-home exclusion, and fail-closed behavior when neither coordinate is
+available. The checked-in Action bundle carries the same corrected driver. Any
+candidate X must be a later commit and must restart both clean clones from the
+beginning.
 
 ## Current failing or open gates
 

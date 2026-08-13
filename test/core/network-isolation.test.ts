@@ -2,10 +2,11 @@ import { describe, expect, test } from "bun:test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import { createHash } from "node:crypto"
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import * as ConfigProvider from "effect/ConfigProvider"
 import { makeRunCommand } from "../../src/drivers/process.js"
 import {
   makeNetworkIsolationHelperSource,
@@ -122,6 +123,58 @@ describe("fail-closed preparation network isolation", () => {
       })
       expect(result.status).toBe(0)
       expect(result.stdout.trim()).toBe("closed")
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("offline Bun install receives only a canonical cache coordinate", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-bun-cache-test-"))
+    try {
+      const bin = join(root, "bin")
+      const home = join(root, "home")
+      const cache = join(home, ".bun", "install", "cache")
+      const canonicalCache = join(root, "canonical-cache")
+      mkdirSync(bin)
+      mkdirSync(join(home, ".bun", "install"), { recursive: true })
+      mkdirSync(canonicalCache)
+      symlinkSync(canonicalCache, cache, "dir")
+      writeFileSync(
+        join(bin, "bun"),
+        "#!/bin/sh\nprintf '%s\\n%s\\n' \"${BUN_INSTALL_CACHE_DIR-unset}\" \"${HOME-unset}\" > observed-environment\nprintf 'prepared\\n'\n",
+        { mode: 0o500 }
+      )
+      const environment = ConfigProvider.layer(ConfigProvider.fromEnv({ env: {
+        PATH: bin,
+        HOME: home
+      } }))
+      const run = await liveRunner()
+      const result = await Effect.runPromise(run({
+        argv: ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"],
+        cwd: root,
+        environmentNames: ["HOME"],
+        network: "offline-cli"
+      }).pipe(Effect.provide(environment)))
+      expect(result).toMatchObject({
+        exitCode: 0,
+        stdout: "prepared\n"
+      })
+      expect(readFileSync(join(root, "observed-environment"), "utf8"))
+        .toBe(`${canonicalCache}\nunset\n`)
+
+      const missingCacheEnvironment = ConfigProvider.layer(ConfigProvider.fromEnv({ env: { PATH: bin } }))
+      const missingCache = await Effect.runPromise(run({
+        argv: ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"],
+        cwd: root,
+        environmentNames: [],
+        network: "offline-cli"
+      }).pipe(
+        Effect.provide(missingCacheEnvironment),
+        Effect.flip
+      ))
+      expect(missingCache._tag).toBe("DriverError")
+      expect(missingCache.reason)
+        .toBe("Offline Bun installation requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located.")
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

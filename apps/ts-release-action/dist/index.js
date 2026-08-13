@@ -71641,6 +71641,27 @@ var executableIdentity = (command2, cwd, path) => {
   };
 };
 var isDigest = (value3) => typeof value3 === "string" && /^[a-f0-9]{64}$/u.test(value3);
+var offlineBunInstallArgv = ["bun", "install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--no-save"];
+var isOfflineBunInstall = (command2) => command2.network === "offline-cli" && command2.argv.length === offlineBunInstallArgv.length && command2.argv.every((value3, index) => value3 === offlineBunInstallArgv[index]);
+var readBunInstallCacheDirectory = fn2("readBunInstallCacheDirectory")(function* () {
+  const configured = yield* readOptionalEnv("BUN_INSTALL_CACHE_DIR");
+  const home = configured === undefined ? yield* readOptionalEnv("HOME") : undefined;
+  const candidate = configured ?? (home === undefined ? undefined : join9(home, ".bun", "install", "cache"));
+  if (candidate === undefined || candidate.length === 0) {
+    return yield* fail6(failure("Offline Bun installation requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located."));
+  }
+  return yield* try_2({
+    try: () => {
+      if (!isAbsolute6(candidate))
+        throw new Error("the cache path is not absolute");
+      const canonical2 = realpathSync7(candidate);
+      if (!statSync3(canonical2).isDirectory())
+        throw new Error("the cache path is not a directory");
+      return canonical2;
+    },
+    catch: (cause) => failure(`The offline Bun install cache is unavailable: ${String(cause)}`)
+  });
+});
 var parseIsolationIdentity = (path) => {
   const value3 = JSON.parse(readFileSync6(path, "utf8"));
   if (typeof value3 !== "object" || value3 === null || Array.isArray(value3))
@@ -71654,7 +71675,11 @@ var parseIsolationIdentity = (path) => {
 var makeRunCommand = gen2(function* () {
   const spawner = yield* ChildProcessSpawner;
   return (command2) => gen2(function* () {
-    const env = yield* readEnvironment(command2.environmentNames);
+    const baseEnvironment = yield* readEnvironment(command2.environmentNames);
+    const env = isOfflineBunInstall(command2) ? {
+      ...Object.fromEntries(Object.entries(baseEnvironment).filter(([name]) => name !== "HOME")),
+      BUN_INSTALL_CACHE_DIR: yield* readBunInstallCacheDirectory()
+    } : baseEnvironment;
     const executable = command2.network === "deny" ? "bun" : command2.argv[0];
     const tool = yield* try_2({
       try: () => executableIdentity(executable, command2.cwd, env.PATH),
@@ -71696,7 +71721,7 @@ var makeRunCommand = gen2(function* () {
       tool,
       ...networkIsolation === undefined ? {} : { networkIsolation }
     };
-  }).pipe(scoped2, mapError3((cause) => failure(String(cause))));
+  }).pipe(scoped2, mapError3((cause) => cause instanceof DriverError ? cause : failure(String(cause))));
 });
 
 // ../../src/platform/credentials.ts

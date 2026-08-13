@@ -5,7 +5,7 @@ Result-Commit: SELF
 Evidence-Commit: SELF
 Status: IMPLEMENTED / DETERMINISTIC CONTRACT TESTED / LIVE PUBLICATION NOT AUTHORIZED
 Outcome: EXACT-GIT-MATERIALIZATION / PRIVATE-STAGING / COMPLETE-BUNDLES-ONLY
-Date: 2026-08-12
+Date: 2026-08-13
 
 Commit convention: `SELF` means this completed implementation and its
 deterministic handoff are intentionally co-committed in candidate result X. It
@@ -31,7 +31,10 @@ still requires Bun and `libseccomp.so.2`; it is not a self-contained execution
 sandbox. The only
 `offline-cli` operations are the certified `npm pack --offline --ignore-scripts`
 and isolated `bun install --offline --frozen-lockfile --ignore-scripts`
-protocols. A command may persist only declared outputs. Source, explicit
+protocols. For that exact Bun install only, the parent canonicalizes an explicit
+`BUN_INSTALL_CACHE_DIR` or Bun's standard `$HOME/.bun/install/cache` and passes
+the child only `BUN_INSTALL_CACHE_DIR`; `HOME` and ambient Bun configuration
+remain absent. A command may persist only declared outputs. Source, explicit
 inputs, isolated dependencies, undeclared cache paths, and scratch paths are
 snapshotted before and after execution; any change aborts preparation.
 
@@ -160,10 +163,11 @@ and cold-versus-warm cache state before making an operational-cost claim.
   `libseccomp.so.2`. If the library, required syscall rules, or filter load is
   unavailable, command spawn fails closed; the implementation does not silently
   run with network access.
-- Bun's offline installer may read its host package cache. The produced private
-  dependency tree is independently snapshotted and included in the prepared
-  identity; the implementation does not claim that two hosts produce the same
-  tree, and `reproducibility` remains `not-asserted`.
+- Bun's offline installer may read the one canonical host package-cache
+  directory described above. The produced private dependency tree is
+  independently snapshotted and included in the prepared identity; the
+  implementation does not claim that two hosts produce the same tree, and
+  `reproducibility` remains `not-asserted`.
 - Host wall clock and randomness are not isolated. They are named as
   `host-*-not-isolated` in durable execution provenance, and any resulting
   byte difference changes the artifact and prepared-reference digests.

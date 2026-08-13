@@ -14,8 +14,10 @@ npm bytes during Plan 233 candidate certification.
    schema/capability pages, workflows, bundles, and tests. Push X to `main` and
    keep X as the exact `main` tip through the later Plan 234 dispatch.
 2. Check out X in two independent clean Linux workspaces. Install the locked
-   Bun dependencies without modifying either tree. macOS remains a
-   cross-compiled artifact target, not an execution-host certification.
+   Bun dependencies without modifying either tree. The self-preparation process
+   resolves `BUN_INSTALL_CACHE_DIR`, or the standard cache beneath `HOME`, but
+   exposes only the canonical cache directory to its offline Bun child. macOS
+   remains a cross-compiled artifact target, not an execution-host certification.
 3. Run the complete release-candidate gate and every public-entrypoint smoke
    matrix. A skipped execution host is removed from the support claim.
 4. Prepare the self-release independently twice. Verify exact-commit

@@ -2,11 +2,11 @@
 // manifest, compares the checked-in bundle to a disposable canonical build,
 // and probes the exact command the composite step executes.
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
-import { spawnSync } from "node:child_process"
 import { cwd, exit } from "node:process"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { actionCommands, actionInputs, actionOutputs } from "../apps/ts-release-action/src/commands.js"
+import { buildActionBundle } from "./build-action-bundle.js"
 
 const root = cwd()
 const manifest = readFileSync(join(root, "apps/ts-release-action/action.yml"), "utf8")
@@ -40,10 +40,7 @@ try {
   const scratch = mkdtempSync(join(tmpdir(), "ts-release-action-bundle-"))
   try {
     const generatedBundle = join(scratch, "index.js")
-    const result = spawnSync("bun", ["build", "src/index.ts", "--target=node", "--format=esm", "--outfile", generatedBundle], {
-      cwd: join(root, "apps/ts-release-action"), encoding: "utf8", stdio: "pipe"
-    })
-    if (result.status !== 0) throw new Error([result.stdout, result.stderr].join("\n").trim())
+    await buildActionBundle(generatedBundle)
     const checkedBytes = readFileSync(checkedBundle)
     const generatedBytes = readFileSync(generatedBundle)
     if (checkedBytes.length !== generatedBytes.length ||

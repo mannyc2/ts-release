@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc --noEmit -p tsconfig.json",
-    "build": "bun build src/index.ts --target=node --format=esm --outfile dist/index.js"
+    "build": "bun run ../../scripts/build-action-bundle.ts"
   },
   "dependencies": {
     "@actions/artifact": "6.2.1",

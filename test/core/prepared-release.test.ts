@@ -6,25 +6,41 @@ import { basename, join } from "node:path"
 import { sha256Digest } from "../../src/model/digest.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import {
-  PreparedArtifact, PreparedGitHubPublication, PreparedProject, PreparedReleaseV2, PreparedSource,
+  PreparedArtifact, PreparedGitHubPublication, PreparedManifestError, PreparedProject, PreparedReleaseV2, PreparedSource,
   decodePreparedRelease, encodePreparedRelease
 } from "../../src/release/prepared.js"
-import { loadPreparedRelease, makeLocalPreparedReleaseStore, PreparedStoreError, storePreparedRelease } from "../../src/release/prepared-store.js"
+import {
+  GitHubActionsPreparedStoreProvenance,
+  LocalPreparedStoreProvenance,
+  loadPreparedRelease,
+  makeLocalPreparedReleaseStore,
+  PreparedStoreError,
+  PreparedStoreProvenanceError,
+  storePreparedRelease,
+  verifyPreparedStoreProvenance
+} from "../../src/release/prepared-store.js"
 import type { PreparedStoreFaultPoint } from "../../src/release/prepared-store.js"
 import { makeGitHubActionsCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
 import { inspectPreparedRelease } from "../../src/release/inspect.js"
 import { makeGitHubPublicationAuthorityIntent } from "../../src/release/graph.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "../fixtures/prepared-provenance.js"
 
 const fixture = () => {
   const bytes = new TextEncoder().encode("release bytes\n")
   const digest = sha256Digest(bytes)
   const artifact = PreparedArtifact.make({ id: OutputId.make("cli"), path: SafeRelativePath.make("cli.tgz"), kind: "archive",
-    size: bytes.length, digest, blob: digest, mediaType: "application/gzip" })
-  const manifest = PreparedReleaseV2.make({ schemaVersion: "prepared-release/v2",
+    size: bytes.length, digest, blob: digest, mediaType: "application/gzip", ...fixtureArtifactProvenance() })
+  const manifest = PreparedReleaseV2.make({ kind: "complete", schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({ commit: NonEmptyName.make("abc123"), tree: NonEmptyName.make("tree123"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: digest }),
+      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: digest,
+      materialized: fixtureStagingSnapshot }),
     project: PreparedProject.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") }),
-    artifacts: [artifact], publications: [PreparedGitHubPublication.make({ id: NonEmptyName.make("github"), repository: "owner/fixture",
+    provenance: fixturePreparedProvenance,
+    artifacts: [artifact], collections: [], publications: [PreparedGitHubPublication.make({ id: NonEmptyName.make("github"), repository: "owner/fixture",
       tag: NonEmptyName.make("v1.0.0"), title: NonEmptyName.make("fixture 1.0.0"), draft: false, prerelease: false, targetCommit: NonEmptyName.make("abc123"),
       assets: [{ artifactId: artifact.id, name: "cli.tgz", mediaType: "application/gzip" }],
       authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/fixture", tag: "v1.0.0" }) })] })
@@ -49,6 +65,8 @@ describe("PreparedReleaseV2 manifest and store", () => {
     expect(() => decodePreparedRelease(duplicate)).toThrow()
     const reordered = new TextEncoder().encode(`${JSON.stringify({ schemaVersion: "prepared-release/v2", source: {}, project: {}, artifacts: [], publications: [] })}\n`)
     expect(() => decodePreparedRelease(reordered)).toThrow()
+    const partial = new TextEncoder().encode(new TextDecoder().decode(bytes).replace('"kind":"complete"', '"kind":"partial"'))
+    expect(() => decodePreparedRelease(partial)).toThrow(PreparedManifestError)
   })
 
   test("stores exact blobs atomically and loads them without config or graph state", async () => {
@@ -90,6 +108,55 @@ describe("PreparedReleaseV2 manifest and store", () => {
         _tag: "PreparedStoreError",
         reason: expect.stringContaining("not loadable by the local store")
       })
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("keeps local trust explicit and requires exact hosted producer provenance", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-prepared-provenance-"))
+    try {
+      const { manifest, bytes } = fixture()
+      const storeRoot = join(root, "prepared")
+      const committed = await Effect.runPromise(
+        makeLocalPreparedReleaseStore(storeRoot).commit(manifest, new Map([["cli", bytes]]))
+      )
+      const local = LocalPreparedStoreProvenance.make({
+        scheme: "local", filesystemRoot: storeRoot, operatorBoundary: "current local operator"
+      })
+      expect((await Effect.runPromise(verifyPreparedStoreProvenance({
+        reference: committed.ref, bundle: committed.bundle, evidence: local
+      }))).scheme).toBe("local")
+
+      const artifactName = `ts-release-prepared-2-${committed.ref.digest}`
+      const hosted = await Effect.runPromise(makeGitHubActionsCompletePreparedReleaseRef({
+        owner: "owner", repository: "fixture", runId: "7", attempt: "2", artifactName,
+        digest: committed.ref.digest
+      }))
+      await expect(Effect.runPromise(verifyPreparedStoreProvenance({
+        reference: hosted, bundle: committed.bundle, evidence: local
+      }))).rejects.toBeInstanceOf(PreparedStoreProvenanceError)
+
+      const evidence = GitHubActionsPreparedStoreProvenance.make({
+        scheme: "gha",
+        repository: "owner/fixture",
+        workflowRef: "owner/fixture/.github/workflows/release.yml@refs/heads/main",
+        workflowSha: "a".repeat(40),
+        runId: "7",
+        attempt: "2",
+        candidateCommit: manifest.source.commit,
+        artifactName,
+        artifactDigest: committed.ref.digest,
+        allowedWriter: "repository-workflow"
+      })
+      expect((await Effect.runPromise(verifyPreparedStoreProvenance({
+        reference: hosted, bundle: committed.bundle, evidence
+      }))).scheme).toBe("gha")
+      await expect(Effect.runPromise(verifyPreparedStoreProvenance({
+        reference: hosted,
+        bundle: committed.bundle,
+        evidence: GitHubActionsPreparedStoreProvenance.make({ ...evidence, attempt: "3" })
+      }))).rejects.toMatchObject({ reason: expect.stringContaining("attempt") })
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

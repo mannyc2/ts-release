@@ -40,53 +40,7 @@
             }
           ]
         },
-        "packagePath": {
-          "type": "string"
-        },
-        "commit": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
         "tag": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
-        "notes": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
-        "summary": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
-        "homepage": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
-        "license": {
           "type": "string",
           "allOf": [
             {
@@ -109,21 +63,34 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "targets": {
           "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "enum": [
+                "linux-x64",
+                "linux-arm64",
+                "darwin-x64",
+                "darwin-arm64"
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "type": "string",
             "enum": [
               "linux-x64",
               "linux-arm64",
-              "linux-x64-musl",
-              "linux-arm64-musl",
               "darwin-x64",
-              "darwin-arm64",
-              "windows-x64",
-              "windows-arm64"
+              "darwin-arm64"
             ]
           }
         },
@@ -131,7 +98,12 @@
           "type": "string"
         },
         "binary": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "builder": {
           "type": "string",
@@ -142,21 +114,11 @@
         "entry": {
           "type": "string"
         },
-        "binaryName": {
-          "type": "string"
-        },
-        "installPath": {
-          "type": "string"
-        },
-        "cpu": {
-          "type": "string",
-          "enum": [
-            "baseline",
-            "modern"
-          ]
-        },
         "minify": {
-          "type": "boolean"
+          "type": "boolean",
+          "enum": [
+            true
+          ]
         }
       },
       "required": [
@@ -170,21 +132,34 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "targets": {
           "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "enum": [
+                "linux-x64",
+                "linux-arm64",
+                "darwin-x64",
+                "darwin-arm64"
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "type": "string",
             "enum": [
               "linux-x64",
               "linux-arm64",
-              "linux-x64-musl",
-              "linux-arm64-musl",
               "darwin-x64",
-              "darwin-arm64",
-              "windows-x64",
-              "windows-arm64"
+              "darwin-arm64"
             ]
           }
         },
@@ -192,7 +167,12 @@
           "type": "string"
         },
         "binary": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "builder": {
           "type": "string",
@@ -225,21 +205,34 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "targets": {
           "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "enum": [
+                "linux-x64",
+                "linux-arm64",
+                "darwin-x64",
+                "darwin-arm64"
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "type": "string",
             "enum": [
               "linux-x64",
               "linux-arm64",
-              "linux-x64-musl",
-              "linux-arm64-musl",
               "darwin-x64",
-              "darwin-arm64",
-              "windows-x64",
-              "windows-arm64"
+              "darwin-arm64"
             ]
           }
         },
@@ -247,7 +240,12 @@
           "type": "string"
         },
         "binary": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "builder": {
           "type": "string",
@@ -294,17 +292,6 @@
         },
         "cwd": {
           "type": "string"
-        },
-        "environmentNames": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
         },
         "inputs": {
           "type": "array",
@@ -357,17 +344,6 @@
         "cwd": {
           "type": "string"
         },
-        "environmentNames": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
-        },
         "inputs": {
           "type": "array",
           "items": {
@@ -402,8 +378,7 @@
                     "file",
                     "archive",
                     "executable",
-                    "digest",
-                    "catalog-file"
+                    "digest"
                   ]
                 },
                 "mediaType": {
@@ -443,8 +418,7 @@
                   "file",
                   "archive",
                   "executable",
-                  "digest",
-                  "catalog-file"
+                  "digest"
                 ]
               },
               "mediaType": {
@@ -472,68 +446,266 @@
       ],
       "additionalProperties": false
     },
-    "CandidatePlatform": {
+    "OneArtifactCardinality": {
       "type": "object",
       "properties": {
-        "os": {
+        "kind": {
           "type": "string",
           "enum": [
-            "linux",
-            "darwin",
-            "windows"
+            "one"
           ]
-        },
-        "arch": {
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "OneOrMoreArtifactCardinality": {
+      "type": "object",
+      "properties": {
+        "kind": {
           "type": "string",
           "enum": [
-            "x64",
-            "arm64"
+            "one-or-more"
           ]
-        },
-        "libc": {
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "BoundedArtifactCardinality": {
+      "type": "object",
+      "properties": {
+        "kind": {
           "type": "string",
           "enum": [
-            "glibc",
-            "musl"
+            "bounded"
           ]
         },
-        "binaryName": {
-          "type": "string",
-          "allOf": [
+        "minimum": {
+          "anyOf": [
             {
-              "minLength": 1
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "NaN"
+              ]
+            },
+            {
+              "type": "string",
+              "enum": [
+                "Infinity"
+              ]
+            },
+            {
+              "type": "string",
+              "enum": [
+                "-Infinity"
+              ]
             }
           ]
         },
-        "executableExtension": {
-          "type": "string",
-          "allOf": [
+        "maximum": {
+          "anyOf": [
             {
-              "minLength": 1
-            }
-          ]
-        },
-        "installPath": {
-          "type": "string",
-          "allOf": [
+              "type": "number"
+            },
             {
-              "minLength": 1
-            }
-          ]
-        },
-        "targetTriple": {
-          "type": "string",
-          "allOf": [
+              "type": "string",
+              "enum": [
+                "NaN"
+              ]
+            },
             {
-              "minLength": 1
+              "type": "string",
+              "enum": [
+                "Infinity"
+              ]
+            },
+            {
+              "type": "string",
+              "enum": [
+                "-Infinity"
+              ]
             }
           ]
         }
       },
       "required": [
-        "os",
-        "arch"
+        "kind",
+        "minimum",
+        "maximum"
       ],
+      "additionalProperties": false
+    },
+    "CandidateArtifactCollection": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "type": "string"
+        },
+        "artifactKind": {
+          "type": "string",
+          "enum": [
+            "file",
+            "executable",
+            "archive",
+            "digest"
+          ]
+        },
+        "pathSuffix": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "mediaType": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "cardinality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OneArtifactCardinality"
+            },
+            {
+              "$ref": "#/$defs/OneOrMoreArtifactCardinality"
+            },
+            {
+              "$ref": "#/$defs/BoundedArtifactCardinality"
+            }
+          ]
+        }
+      },
+      "required": [
+        "root",
+        "artifactKind",
+        "pathSuffix",
+        "mediaType",
+        "cardinality"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateCollectionPreparation": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "artifact"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "run": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "collection": {
+          "$ref": "#/$defs/CandidateArtifactCollection"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "run",
+        "collection"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateNpmPackageBuild": {
+      "type": "object",
+      "properties": {
+        "run": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "outputRoots": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "run",
+        "outputRoots"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateNpmPackage": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "build": {
+          "$ref": "#/$defs/CandidateNpmPackageBuild"
+        }
+      },
       "additionalProperties": false
     },
     "CandidateArtifact": {
@@ -556,33 +728,8 @@
             "tarball",
             "zip",
             "file",
-            "directory",
-            "executable",
-            "binary"
+            "executable"
           ]
-        },
-        "checksum": {
-          "type": "object",
-          "properties": {
-            "algorithm": {
-              "type": "string",
-              "enum": [
-                "sha256",
-                "sha512"
-              ]
-            },
-            "value": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "algorithm",
-            "value"
-          ],
-          "additionalProperties": false
-        },
-        "variant": {
-          "$ref": "#/$defs/CandidatePlatform"
         }
       },
       "required": [
@@ -605,6 +752,17 @@
         },
         "ids": {
           "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "type": "string",
             "allOf": [
@@ -624,6 +782,16 @@
         },
         "formats": {
           "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "enum": [
+                "tar.gz",
+                "zip"
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "type": "string",
             "enum": [
@@ -631,28 +799,6 @@
               "zip"
             ]
           }
-        },
-        "files": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string"
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string"
-          }
-        },
-        "wrapInDirectory": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string"
-            }
-          ]
         }
       },
       "additionalProperties": false
@@ -666,82 +812,10 @@
             "sha256",
             "sha512"
           ]
-        },
-        "nameTemplate": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "CandidateContentHole": {
-      "type": "object",
-      "properties": {
-        "fact": {
-          "type": "string",
-          "enum": [
-            "sha256",
-            "downloadUrl",
-            "assetName"
-          ]
-        },
-        "artifact": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
         }
       },
       "required": [
-        "fact",
-        "artifact"
-      ],
-      "additionalProperties": false
-    },
-    "CandidateCatalog": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
-        "repository": {
-          "type": "string"
-        },
-        "file": {
-          "type": "string"
-        },
-        "content": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array",
-              "items": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/$defs/CandidateContentHole"
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      },
-      "required": [
-        "id",
-        "repository",
-        "file",
-        "content"
+        "algorithm"
       ],
       "additionalProperties": false
     },
@@ -800,6 +874,14 @@
             }
           ]
         },
+        "workflowRef": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
         "allowedAction": {
           "type": "string",
           "enum": [
@@ -812,6 +894,7 @@
         "runner",
         "repository",
         "workflow",
+        "workflowRef",
         "allowedAction"
       ],
       "additionalProperties": false
@@ -839,14 +922,6 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string",
-          "allOf": [
-            {
-              "minLength": 1
-            }
-          ]
-        },
-        "packageName": {
           "type": "string",
           "allOf": [
             {
@@ -886,12 +961,6 @@
             "required",
             "disabled"
           ]
-        },
-        "publicationMode": {
-          "type": "string",
-          "enum": [
-            "direct"
-          ]
         }
       },
       "required": [
@@ -899,14 +968,83 @@
       ],
       "additionalProperties": false
     },
+    "ArtifactCollectionSelector": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "artifactKind": {
+          "type": "string",
+          "enum": [
+            "file",
+            "executable",
+            "archive",
+            "digest"
+          ]
+        },
+        "pathSuffix": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "mediaType": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "cardinality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OneArtifactCardinality"
+            },
+            {
+              "$ref": "#/$defs/OneOrMoreArtifactCardinality"
+            },
+            {
+              "$ref": "#/$defs/BoundedArtifactCardinality"
+            }
+          ]
+        }
+      },
+      "required": [
+        "collection",
+        "artifactKind",
+        "pathSuffix",
+        "mediaType",
+        "cardinality"
+      ],
+      "additionalProperties": false
+    },
     "CandidateGitHubPublish": {
       "type": "object",
       "properties": {
         "repository": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "tokenEnv": {
-          "type": "string"
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
         },
         "draft": {
           "type": "boolean"
@@ -923,6 +1061,9 @@
               ]
             }
           ]
+        },
+        "body": {
+          "type": "string"
         },
         "bodyArtifact": {
           "type": "string",
@@ -942,195 +1083,17 @@
               }
             ]
           }
-        }
-      },
-      "additionalProperties": false
-    },
-    "CandidateHomebrew": {
-      "type": "object",
-      "properties": {
-        "repository": {
-          "type": "string"
         },
-        "ids": {
+        "collections": {
           "type": "array",
           "prefixItems": [
             {
-              "type": "string",
-              "allOf": [
-                {
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/$defs/ArtifactCollectionSelector"
             }
           ],
           "minItems": 1,
           "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
-        },
-        "url": {
-          "type": "string"
-        },
-        "formulaName": {
-          "type": "string"
-        },
-        "manifestName": {
-          "type": "string"
-        },
-        "formulaPath": {
-          "type": "string"
-        },
-        "manifestPath": {
-          "type": "string"
-        },
-        "installPath": {
-          "type": "string"
-        },
-        "bin": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          ]
-        }
-      },
-      "required": [
-        "repository"
-      ],
-      "additionalProperties": false
-    },
-    "CandidateScoop": {
-      "type": "object",
-      "properties": {
-        "repository": {
-          "type": "string"
-        },
-        "ids": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string",
-              "allOf": [
-                {
-                  "minLength": 1
-                }
-              ]
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
-          }
-        },
-        "url": {
-          "type": "string"
-        },
-        "formulaName": {
-          "type": "string"
-        },
-        "manifestName": {
-          "type": "string"
-        },
-        "formulaPath": {
-          "type": "string"
-        },
-        "manifestPath": {
-          "type": "string"
-        },
-        "installPath": {
-          "type": "string"
-        },
-        "bin": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          ]
-        }
-      },
-      "required": [
-        "repository"
-      ],
-      "additionalProperties": false
-    },
-    "CandidatePyPiPublish": {
-      "type": "object",
-      "properties": {
-        "repositoryUrl": {
-          "type": "string"
-        },
-        "pythonExecutable": {
-          "type": "string"
-        },
-        "trustedPublishing": {
-          "type": "object",
-          "properties": {
-            "provider": {
-              "type": "string",
-              "enum": [
-                "github-actions"
-              ]
-            },
-            "workflow": {
-              "type": "string",
-              "allOf": [
-                {
-                  "minLength": 1
-                }
-              ]
-            },
-            "publisherConfigured": {
-              "type": "boolean",
-              "enum": [
-                true
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        "ids": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "string",
-              "allOf": [
-                {
-                  "minLength": 1
-                }
-              ]
-            }
-          ],
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "allOf": [
-              {
-                "minLength": 1
-              }
-            ]
+            "$ref": "#/$defs/ArtifactCollectionSelector"
           }
         }
       },
@@ -1144,15 +1107,6 @@
         },
         "github": {
           "$ref": "#/$defs/CandidateGitHubPublish"
-        },
-        "homebrew": {
-          "$ref": "#/$defs/CandidateHomebrew"
-        },
-        "scoop": {
-          "$ref": "#/$defs/CandidateScoop"
-        },
-        "pypi": {
-          "$ref": "#/$defs/CandidatePyPiPublish"
         }
       },
       "additionalProperties": false
@@ -1168,6 +1122,22 @@
         },
         "builds": {
           "type": "array",
+          "prefixItems": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/CandidateBunBuild"
+                },
+                {
+                  "$ref": "#/$defs/CandidateCommandBuild"
+                },
+                {
+                  "$ref": "#/$defs/CandidatePrebuiltBuild"
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "anyOf": [
               {
@@ -1184,6 +1154,22 @@
         },
         "preparations": {
           "type": "array",
+          "prefixItems": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/CandidateCheckPreparation"
+                },
+                {
+                  "$ref": "#/$defs/CandidateArtifactPreparation"
+                },
+                {
+                  "$ref": "#/$defs/CandidateCollectionPreparation"
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
           "items": {
             "anyOf": [
               {
@@ -1191,39 +1177,42 @@
               },
               {
                 "$ref": "#/$defs/CandidateArtifactPreparation"
+              },
+              {
+                "$ref": "#/$defs/CandidateCollectionPreparation"
               }
             ]
           }
         },
         "npmPackage": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/$defs/CandidateNpmPackage"
         },
         "artifacts": {
           "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateArtifact"
+            }
+          ],
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/CandidateArtifact"
           }
         },
         "archives": {
           "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateArchive"
+            }
+          ],
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/CandidateArchive"
           }
         },
         "checksum": {
           "$ref": "#/$defs/CandidateChecksum"
-        },
-        "catalogs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/CandidateCatalog"
-          }
         },
         "publish": {
           "$ref": "#/$defs/AuthoredPublish"

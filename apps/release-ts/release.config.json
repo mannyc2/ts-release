@@ -1,7 +1,13 @@
 {
-  "project": {},
+  "project": { "repository": "mannyc2/ts-release" },
   "versionFrom": "manifest",
-  "npmPackage": { "path": "." },
+  "npmPackage": {
+    "path": ".",
+    "build": {
+      "run": ["bun", "--no-env-file", "--no-install", "run", "build"],
+      "outputRoots": ["dist"]
+    }
+  },
   "builds": [
     {
       "builder": "bun",
@@ -9,62 +15,85 @@
       "entry": "apps/release-ts/src/cli/node-main.ts",
       "targets": ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"],
       "output": ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
-      "binaryName": "ts-release",
-      "installPath": "bin/ts-release"
+      "binary": "ts-release"
     }
   ],
   "preparations": [
     {
       "kind": "artifact",
       "id": "agents",
-      "run": ["bun", "run", "apps/ts-release-agents/src/build.ts"],
-      "outputs": [
-        { "id": "agents-codex-manifest", "path": ".release/agents/codex/ts-release/.codex-plugin/plugin.json", "mediaType": "application/json" },
-        { "id": "agents-codex-readme", "path": ".release/agents/codex/ts-release/README.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-license", "path": ".release/agents/codex/ts-release/LICENSE", "mediaType": "text/plain" },
-        { "id": "agents-codex-evals", "path": ".release/agents/codex/ts-release/evals/cases.json", "mediaType": "application/json" },
-        { "id": "agents-codex-skill", "path": ".release/agents/codex/ts-release/skills/release/SKILL.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-configuration", "path": ".release/agents/codex/ts-release/skills/release/references/configuration.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-recovery", "path": ".release/agents/codex/ts-release/skills/release/references/recovery.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-staged", "path": ".release/agents/codex/ts-release/skills/release/references/staged-workflow.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-targets", "path": ".release/agents/codex/ts-release/skills/release/references/target-selection.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-verification", "path": ".release/agents/codex/ts-release/skills/release/references/verification.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-manifest", "path": ".release/agents/claude/ts-release/.claude-plugin/plugin.json", "mediaType": "application/json" },
-        { "id": "agents-claude-readme", "path": ".release/agents/claude/ts-release/README.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-license", "path": ".release/agents/claude/ts-release/LICENSE", "mediaType": "text/plain" },
-        { "id": "agents-claude-evals", "path": ".release/agents/claude/ts-release/evals/cases.json", "mediaType": "application/json" },
-        { "id": "agents-claude-skill", "path": ".release/agents/claude/ts-release/skills/release/SKILL.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-configuration", "path": ".release/agents/claude/ts-release/skills/release/references/configuration.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-recovery", "path": ".release/agents/claude/ts-release/skills/release/references/recovery.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-staged", "path": ".release/agents/claude/ts-release/skills/release/references/staged-workflow.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-targets", "path": ".release/agents/claude/ts-release/skills/release/references/target-selection.md", "mediaType": "text/markdown" },
-        { "id": "agents-claude-verification", "path": ".release/agents/claude/ts-release/skills/release/references/verification.md", "mediaType": "text/markdown" },
-        { "id": "agents-codex-archive", "path": ".release/agents/archives/ts-release-codex.zip", "kind": "archive", "mediaType": "application/zip" },
-        { "id": "agents-claude-archive", "path": ".release/agents/archives/ts-release-claude.zip", "kind": "archive", "mediaType": "application/zip" }
-      ]
+      "run": ["bun", "run", "apps/ts-release-agents/src/build.ts", "--archives-only"],
+      "collection": {
+        "root": ".release/agents/archives",
+        "artifactKind": "archive",
+        "pathSuffix": ".zip",
+        "mediaType": "application/zip",
+        "cardinality": { "kind": "bounded", "minimum": 2, "maximum": 2 }
+      }
     }
   ],
   "archives": [
     {
-      "id": "cli",
-      "ids": ["cli-linux-x64", "cli-linux-arm64", "cli-darwin-x64", "cli-darwin-arm64"],
+      "id": "cli-linux-x64",
+      "ids": ["cli-linux-x64"],
+      "nameTemplate": "ts-release_{version}_linux-x64",
+      "formats": ["tar.gz", "zip"]
+    },
+    {
+      "id": "cli-linux-arm64",
+      "ids": ["cli-linux-arm64"],
+      "nameTemplate": "ts-release_{version}_linux-arm64",
+      "formats": ["tar.gz", "zip"]
+    },
+    {
+      "id": "cli-darwin-x64",
+      "ids": ["cli-darwin-x64"],
+      "nameTemplate": "ts-release_{version}_darwin-x64",
+      "formats": ["tar.gz", "zip"]
+    },
+    {
+      "id": "cli-darwin-arm64",
+      "ids": ["cli-darwin-arm64"],
+      "nameTemplate": "ts-release_{version}_darwin-arm64",
       "formats": ["tar.gz", "zip"]
     }
   ],
-  "checksum": {},
+  "checksum": { "algorithm": "sha256" },
   "publish": {
     "npm": {
-      "registry": "https://registry.npmjs.org",
-      "packagePath": ".",
-      "trustedPublishing": { "provider": "github-actions", "workflow": "release.yml", "verifyPackageExists": true },
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "mannyc2/ts-release",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
+      },
       "access": "public",
-      "provenance": true
+      "provenance": "automatic"
     },
     "github": {
-      "tokenEnv": "GH_TOKEN",
+      "tokenEnv": "GITHUB_TOKEN",
       "draft": false,
       "prerelease": false,
-      "ids": ["cli-tar-gz", "cli-zip", "agents-codex-archive", "agents-claude-archive", "checksum-digests"]
+      "ids": [
+        "cli-linux-x64-tar-gz", "cli-linux-x64-zip",
+        "cli-linux-arm64-tar-gz", "cli-linux-arm64-zip",
+        "cli-darwin-x64-tar-gz", "cli-darwin-x64-zip",
+        "cli-darwin-arm64-tar-gz", "cli-darwin-arm64-zip",
+        "checksum-digests"
+      ],
+      "collections": [{
+        "collection": "agents",
+        "artifactKind": "archive",
+        "pathSuffix": ".zip",
+        "mediaType": "application/zip",
+        "cardinality": { "kind": "bounded", "minimum": 2, "maximum": 2 }
+      }]
     }
   }
 }

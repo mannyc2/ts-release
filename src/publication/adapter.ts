@@ -1,5 +1,9 @@
 import * as Effect from "effect/Effect"
 import { SubjectId } from "../model/authority.js"
+import {
+  githubPublicationCapability,
+  npmPublicationCapability
+} from "../capabilities/registry.js"
 import { encodePreparedRelease } from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
 import { sha256 } from "../drivers/utils.js"
@@ -8,13 +12,28 @@ import {
   publishReleaseSubjects,
   type ReleaseSubject
 } from "./coordinator.js"
-import { makeGithubSubjects } from "./github.js"
 import { AuthorizedMutationHttp, HttpAuthorizer } from "./http.js"
-import { makeNpmSubject } from "./npm.js"
 import {
   CertifiedPublisherSpawn,
   NpmUserConfigResource
 } from "./publisher.js"
+import {
+  validateRecoveryProfileSubjects,
+  type PublicationProfileRegistration
+} from "./recovery.js"
+export { installedPublicationProfiles } from "./profiles.js"
+
+const registerSubjects = (
+  registration: PublicationProfileRegistration,
+  subjects: ReadonlyArray<ReleaseSubject>
+): ReadonlyArray<ReleaseSubject> => {
+  validateRecoveryProfileSubjects(
+    registration.id,
+    registration.recovery,
+    subjects.map((subject) => subject.recovery)
+  )
+  return subjects
+}
 
 const preparedSubject = (bundle: PreparedBundle): SubjectId => SubjectId.make(
   `prepared:sha256-${sha256(encodePreparedRelease(bundle.manifest))}`
@@ -33,12 +52,32 @@ export const subjectsForPreparedRelease = Effect.fn("subjectsForPreparedRelease"
   const userConfigs = yield* NpmUserConfigResource
   const publisher = yield* CertifiedPublisherSpawn
   const subjects: Array<ReleaseSubject> = []
+  const priorPublicationSubjects: Array<SubjectId> = []
   for (const publication of bundle.manifest.publications) {
-    if (publication._tag === "PreparedNpmPublication") {
-      subjects.push(makeNpmSubject(bundle, publication, http, userConfigs, publisher))
-    } else {
-      subjects.push(...makeGithubSubjects(bundle, publication, http, mutationHttp))
-    }
+    const moduleSubjects = publication._tag === "PreparedNpmPublication"
+      ? npmPublicationCapability.subjects(bundle, publication, {
+        http, mutationHttp, userConfigs, publisher
+      })
+      : githubPublicationCapability.subjects(bundle, publication, {
+        http, mutationHttp, userConfigs, publisher
+      })
+    const registered = registerSubjects(
+      publication._tag === "PreparedNpmPublication"
+        ? npmPublicationCapability.profile
+        : githubPublicationCapability.profile,
+      moduleSubjects
+    )
+    const ordered = registered.map((subject): ReleaseSubject => priorPublicationSubjects.length === 0
+      ? subject
+      : {
+          ...subject,
+          prerequisites: [...new Set([
+            ...(subject.prerequisites ?? []),
+            ...priorPublicationSubjects
+          ])]
+        })
+    subjects.push(...ordered)
+    priorPublicationSubjects.push(...registered.map((subject) => subject.id))
   }
   return subjects as ReadonlyArray<ReleaseSubject>
 })

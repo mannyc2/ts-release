@@ -163,10 +163,14 @@ const fileSystemFiles: ReadonlySet<string> = new Set([
   "src/api/api.ts",
   "src/api/input.ts",
   "src/drivers/contain.ts",
+  // Exact executable hashing and fail-closed helper materialization are part
+  // of the same secure process boundary as no-follow workspace access.
+  "src/drivers/process.ts",
   "src/drivers/workspace.ts",
   "src/platform/source-observer.ts",
   "src/platform/credentials.ts",
   "src/release/prepare.ts",
+  "src/release/staging.ts",
   "src/release/prepared-store.ts"
 ])
 const credentialEliminationOwner = "src/platform/credentials.ts"

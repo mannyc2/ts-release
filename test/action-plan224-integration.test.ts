@@ -62,7 +62,7 @@ import {
   PreparedReleaseStore,
   type PreparedReleaseStoreShape
 } from "../src/release/prepared-store.js"
-import { contextFor } from "./core/runtime-fixture.js"
+import { contextFor, materializeFixtureWorkspace } from "./core/runtime-fixture.js"
 import { unavailableMutationServicesLayer } from "./fixtures/mutation-services.js"
 
 const candidateCommit = "c".repeat(40)
@@ -79,8 +79,7 @@ const config = {
   project: {
     name: "fixture",
     version: "1.0.0",
-    tag: "v1.0.0",
-    commit: candidateCommit
+    tag: "v1.0.0"
   },
   preparations: [{
     kind: "artifact",
@@ -100,7 +99,7 @@ const artifactTransport = (
     events.push(`${phase}:upload`)
     mkdirSync(artifactRoot, { recursive: true })
     cpSync(rootDirectory, join(artifactRoot, name), { recursive: true })
-    return { id: 224, digest: `sha256:${"e".repeat(64)}` }
+    return { id: 224, digest: "e".repeat(64) }
   },
   download: async ({ name, destination }) => {
     events.push(`${phase}:download-verify`)
@@ -290,7 +289,8 @@ test("Action release durably verifies and exposes its artifact before mutation, 
         observe: (workspace) => Effect.sync(() => {
           sourceObservations += 1
           return contextFor(workspace.toString(), candidateCommit)
-        })
+        }),
+        materialize: materializeFixtureWorkspace
       },
       run: (({ argv, cwd, environmentNames }) => Effect.sync(() => {
         preparationRuns += 1

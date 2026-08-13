@@ -27,6 +27,7 @@ const correction = NpmDeprecationCorrection.make({
   registryUrl: "https://registry.example.test",
   packageName: NonEmptyName.make("fixture"),
   version: Version.make("1.0.0"),
+  baselineDigest: parseSha256Hex("b".repeat(64)),
   tarballIntegrity: parseSha512Hex("c".repeat(128)),
   message: "Use fixture 1.0.1 instead."
 })
@@ -60,6 +61,7 @@ describe("canonical correction intents", () => {
       schemaVersion: "correction-intent/v2",
       preparedDigest: { _tag: "Sha256Digest", algorithm: "sha256", hex: "a".repeat(64) },
       correction: {
+        baselineDigest: { _tag: "Sha256Digest", algorithm: "sha256", hex: "b".repeat(64) },
         tarballIntegrity: { _tag: "Sha512Digest", algorithm: "sha512", hex: "c".repeat(128) }
       },
       correctionId: { _tag: "Sha256Digest", algorithm: "sha256" }

@@ -2,7 +2,7 @@
 
 Agent guidance has one tracked source owner: [`apps/ts-release-agents`](../apps/ts-release-agents/).
 It describes the current automatic release API and the safe prepared-bundle
-boundary; it does not recreate the retired review or run protocol.
+boundary without introducing a second orchestration protocol.
 
 Run the executable distribution checks with:
 

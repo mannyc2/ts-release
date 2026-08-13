@@ -1,28 +1,30 @@
 import { describe, expect, test } from "@effect/bun-test"
-import { executableCapabilities } from "../src/capabilities/registry.js"
+import { capabilityModules } from "../src/capabilities/registry.js"
+import type { CapabilityModule } from "../src/capabilities/module.js"
 import { readCapabilityEvidence, validateCapabilityTruth } from "../scripts/lib/capabilities.js"
 
 describe("executable capability documentation", () => {
-  test("every registry entry binds decoding, observation, and a vertical test", () => {
-    const root = process.cwd()
-    const report = validateCapabilityTruth(root)
+  test("installed module values own all fields and bind executable boundaries", () => {
+    const report = validateCapabilityTruth(process.cwd())
     expect(report.failures).toEqual([])
-    expect(report.capabilities).toBe(executableCapabilities.length)
+    expect(report.capabilities).toBe(capabilityModules.length)
+    expect(report.fields).toBeGreaterThan(60)
   })
 
-  test("a deleted adapter entrypoint fails the capability gate", () => {
-    const root = process.cwd()
-    const registry = executableCapabilities.map((entry, index) => index === 0 ? { ...entry, entrypoint: "src/not-a-driver.ts:missing" } : entry)
-    const report = validateCapabilityTruth(root, registry)
-    expect(report.failures.join("\n")).toContain("no reachable exported entrypoint")
+  test("detached prose cannot repair an incomplete installed module", () => {
+    const broken = capabilityModules.map((module, index) => index === 0
+      ? { ...module, fields: [] }
+      : module) as ReadonlyArray<CapabilityModule>
+    expect(validateCapabilityTruth(process.cwd(), broken).failures.join("\n"))
+      .toContain("owns no exact public config fields")
   })
 
   test("an extra or missing evidence id fails the exact join", () => {
     const root = process.cwd()
     const evidence = readCapabilityEvidence(root)
     const missing = { ...evidence, records: evidence.records.slice(1) }
-    expect(validateCapabilityTruth(root, executableCapabilities, missing).failures.join("\n")).toContain("has no evidence record")
+    expect(validateCapabilityTruth(root, capabilityModules, missing).failures.join("\n")).toContain("has no evidence record")
     const extra = { ...evidence, records: [...evidence.records, { ...evidence.records[0]!, id: "not-in-runtime" }] }
-    expect(validateCapabilityTruth(root, executableCapabilities, extra).failures.join("\n")).toContain("has no registry entry")
+    expect(validateCapabilityTruth(root, capabilityModules, extra).failures.join("\n")).toContain("has no registry entry")
   })
 })

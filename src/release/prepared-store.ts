@@ -3,7 +3,7 @@ import * as Context from "effect/Context"
 import * as Schema from "effect/Schema"
 import { constants, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, chmodSync, closeSync, fsyncSync } from "node:fs"
 import { randomUUID } from "node:crypto"
-import { basename, join } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
 import { digestEquals, sha256Digest, Sha256Hex } from "../model/digest.js"
 import { PreparedArtifact, PreparedReleaseV2, decodePreparedRelease, encodePreparedRelease } from "./prepared.js"
@@ -11,6 +11,111 @@ import { CompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef } from 
 
 export class PreparedStoreError
   extends Schema.TaggedErrorClass<PreparedStoreError>()("PreparedStoreError", { reason: Schema.String }) {}
+
+export class PreparedStoreProvenanceError
+  extends Schema.TaggedErrorClass<PreparedStoreProvenanceError>()("PreparedStoreProvenanceError", {
+    scheme: Schema.Literals(["local", "gha"]),
+    reason: Schema.String
+  }) {}
+
+export class LocalPreparedStoreProvenance
+  extends Schema.TaggedClass<LocalPreparedStoreProvenance>()("LocalPreparedStoreProvenance", {
+    scheme: Schema.Literal("local"),
+    filesystemRoot: Schema.NonEmptyString,
+    operatorBoundary: Schema.NonEmptyString
+  }) {}
+
+export class GitHubActionsPreparedStoreProvenance
+  extends Schema.TaggedClass<GitHubActionsPreparedStoreProvenance>()("GitHubActionsPreparedStoreProvenance", {
+    scheme: Schema.Literal("gha"),
+    repository: Schema.NonEmptyString,
+    workflowRef: Schema.NonEmptyString,
+    workflowSha: Schema.NonEmptyString,
+    runId: Schema.NonEmptyString,
+    attempt: Schema.NonEmptyString,
+    candidateCommit: Schema.NonEmptyString,
+    artifactName: Schema.NonEmptyString,
+    artifactDigest: Schema.NonEmptyString,
+    allowedWriter: Schema.Literal("repository-workflow")
+  }) {}
+
+export const PreparedStoreProvenance = Schema.Union([
+  LocalPreparedStoreProvenance,
+  GitHubActionsPreparedStoreProvenance
+])
+export type PreparedStoreProvenance = typeof PreparedStoreProvenance.Type
+
+const canonicalPathEquals = (left: string, right: string): boolean => {
+  try { return realpathSync(left) === realpathSync(right) } catch { return false }
+}
+
+/**
+ * GitHub artifact lookup is name-based and may span every rerun attempt in a
+ * workflow run. Bind the attempt as well as the content digest so an older
+ * prepared reference cannot be shadowed by a newer rerun's duplicate name.
+ */
+export const githubActionsPreparedArtifactName = (attempt: string, digest: string): string =>
+  `ts-release-prepared-${attempt}-${digest}`
+
+export const verifyPreparedStoreProvenance = Effect.fn("verifyPreparedStoreProvenance")(function*(input: {
+  readonly reference: CompletePreparedReleaseRef
+  readonly bundle: PreparedBundle
+  readonly evidence: PreparedStoreProvenance
+}) {
+  if (input.reference.kind !== "complete" || input.bundle.manifest.kind !== "complete") {
+    return yield* new PreparedStoreProvenanceError({
+      scheme: input.reference.scheme,
+      reason: "Prepared store provenance verifies only complete references and bundles."
+    })
+  }
+  const digest = sha256Digest(encodePreparedRelease(input.bundle.manifest)).hex
+  if (digest !== input.reference.digest.toString()) {
+    return yield* new PreparedStoreProvenanceError({
+      scheme: input.reference.scheme,
+      reason: "Prepared reference digest does not match canonical complete-bundle contents."
+    })
+  }
+  if (input.reference.scheme === "local") {
+    if (input.evidence.scheme !== "local" || input.evidence.filesystemRoot.trim().length === 0 ||
+        input.evidence.operatorBoundary.trim().length === 0 ||
+        !canonicalPathEquals(input.evidence.filesystemRoot, dirname(input.bundle.directory))) {
+      return yield* new PreparedStoreProvenanceError({
+        scheme: "local",
+        reason: "Local prepared bytes require an explicit filesystem/operator trust boundary."
+      })
+    }
+    return input.evidence
+  }
+  if (input.evidence.scheme !== "gha") {
+    return yield* new PreparedStoreProvenanceError({
+      scheme: "gha",
+      reason: "Local evidence cannot be promoted into GitHub Actions trust by copying bytes or a digest."
+    })
+  }
+  const coordinate = `${input.reference.owner}/${input.reference.repository}`
+  const mismatches = [
+    input.evidence.repository !== coordinate ? "repository" : undefined,
+    input.evidence.runId !== input.reference.runId.toString() ? "runId" : undefined,
+    input.evidence.attempt !== input.reference.attempt.toString() ? "attempt" : undefined,
+    input.evidence.candidateCommit !== input.bundle.manifest.source.commit.toString() ? "candidateCommit" : undefined,
+    input.evidence.artifactName !== input.reference.artifactName.toString() ? "artifactName" : undefined,
+    input.evidence.artifactDigest !== input.reference.digest.toString() ? "artifactDigest" : undefined,
+    !input.evidence.workflowRef.startsWith(`${coordinate}/.github/workflows/`) ||
+      !input.evidence.workflowRef.includes("@refs/") ? "workflowRef" : undefined,
+    !/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/u.test(input.evidence.workflowSha) ? "workflowSha" : undefined,
+    input.reference.artifactName.toString() !== githubActionsPreparedArtifactName(
+      input.reference.attempt.toString(),
+      input.reference.digest.toString()
+    ) ? "immutableArtifactName" : undefined
+  ].filter((field): field is string => field !== undefined)
+  if (mismatches.length > 0) {
+    return yield* new PreparedStoreProvenanceError({
+      scheme: "gha",
+      reason: `Hosted prepared-store provenance mismatched ${mismatches.join(", ")}.`
+    })
+  }
+  return input.evidence
+})
 
 /**
  * The bytes are already durable and verified, but the host failed to expose
@@ -48,6 +153,12 @@ export interface PreparedStoreOptions {
 
 const equal = (left: Uint8Array, right: Uint8Array): boolean => left.length === right.length && left.every((byte, index) => byte === right[index])
 const fail = (reason: string): never => { throw PreparedStoreError.make({ reason }) }
+const causeReason = (cause: unknown): string =>
+  typeof cause === "object" && cause !== null && "reason" in cause && typeof cause.reason === "string"
+    ? cause.reason
+    : cause instanceof Error
+    ? cause.message
+    : String(cause)
 const canonicalDirectory = (directory: string): string => {
   if (!existsSync(directory)) mkdirSync(directory, { recursive: true, mode: 0o700 })
   const real = realpathSync(directory)
@@ -59,6 +170,7 @@ const syncDirectory = (directory: string): void => {
   try { fsyncSync(descriptor) } finally { closeSync(descriptor) }
 }
 const artifactsById = (manifest: PreparedReleaseV2): Map<string, PreparedArtifact> => {
+  if (manifest.kind !== "complete") fail("Prepared store accepts only a kind:'complete' publication bundle.")
   const result = new Map<string, PreparedArtifact>()
   for (const artifact of manifest.artifacts) {
     const id = artifact.id.toString()
@@ -101,6 +213,7 @@ const readBundle = (directory: string): PreparedBundle => {
   if (real !== directory || lstatSync(directory).isSymbolicLink()) fail("Prepared bundle directory must not be a symlink.")
   const bytes = secureRead(directory, "prepared-release.json").bytes
   const manifest = decodePreparedRelease(bytes)
+  if (manifest.kind !== "complete") fail("Prepared store refuses every unknown or partial bundle kind.")
   const manifestDigest = sha256Digest(bytes).hex
   if (basename(directory) !== manifestDigest) fail("Prepared bundle directory does not match its manifest digest.")
   const entries = readdirSync(directory, { withFileTypes: true })
@@ -140,6 +253,7 @@ const writeBundle = (
   const fault = options.onFaultPoint ?? (() => undefined)
   const store = canonicalDirectory(storeDirectory)
   const manifestBytes = encodePreparedRelease(manifest)
+  if (manifest.kind !== "complete") fail("Prepared store commits only a kind:'complete' publication bundle.")
   const manifestDigest = sha256Digest(manifestBytes).hex
   const artifacts = artifactsById(manifest)
   validatePublications(manifest, artifacts)
@@ -213,12 +327,12 @@ export const storePreparedRelease = Effect.fn("storePreparedRelease")((
   blobs: ReadonlyMap<string, Uint8Array>,
   options?: PreparedStoreOptions
 ) => Effect.try({ try: () => writeBundle(storeDirectory, manifest, blobs, options), catch: (cause) =>
-  cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+  cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: causeReason(cause) })
 }))
 
 export const loadPreparedRelease = Effect.fn("loadPreparedRelease")((directory: string) => Effect.try({
   try: () => readBundle(directory),
-  catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: cause instanceof Error ? cause.message : String(cause) })
+  catch: (cause) => cause instanceof PreparedStoreError ? cause : PreparedStoreError.make({ reason: causeReason(cause) })
 }))
 
 /** The durable store boundary used by coordinators and host projections. */

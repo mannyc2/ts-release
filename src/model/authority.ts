@@ -28,6 +28,14 @@ export type EnvironmentName = typeof EnvironmentName.Type
 export const CredentialPurpose = Schema.Literals(["observe", "publish", "correct"])
 export type CredentialPurpose = typeof CredentialPurpose.Type
 
+/** Exact verified source revision projected into npm's GitHub provenance statement. */
+export const TrustedPublishingSourceCommit = Schema.String.check(
+  Schema.makeFilter((value: string) => /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/u.test(value)
+    ? undefined
+    : "TrustedPublishingSourceCommit must be a lowercase full Git SHA (40 or 64 hex characters).")
+).pipe(Schema.brand("TrustedPublishingSourceCommit"))
+export type TrustedPublishingSourceCommit = typeof TrustedPublishingSourceCommit.Type
+
 export class AnonymousAuthStrategy
   extends Schema.Class<AnonymousAuthStrategy>("AnonymousAuthStrategy")({
     kind: Schema.Literal("anonymous")
@@ -42,9 +50,15 @@ export class TokenAuthStrategy
 export class TrustedPublishingAuthStrategy
   extends Schema.Class<TrustedPublishingAuthStrategy>("TrustedPublishingAuthStrategy")({
     kind: Schema.Literal("trusted-publishing"),
-    identityProvider: ProviderId,
-    runnerClass: Schema.NonEmptyString,
-    workflow: Schema.NonEmptyString
+    identityProvider: Schema.Literal("github-actions"),
+    runnerClass: Schema.Literal("github-hosted"),
+    repository: Schema.NonEmptyString,
+    workflow: Schema.NonEmptyString,
+    workflowRef: Schema.NonEmptyString,
+    sourceCommit: TrustedPublishingSourceCommit,
+    provenanceEnvironmentContract: Schema.Literal("github-actions-npm-provenance-v1"),
+    allowedAction: Schema.Literal("npm-publish-direct"),
+    publisherSink: Schema.Literal("certified-npm-cli")
   }) {}
 
 export const ResolvedAuthStrategy = Schema.Union([

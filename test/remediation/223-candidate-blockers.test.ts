@@ -13,16 +13,12 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import {
-  chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync
-} from "node:fs"
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { makeReleaseApi } from "../../src/api/api.js"
 import { ReleaseRuntime, type ReleaseRuntimeShape } from "../../src/api/runtime.js"
 import type { ReleaseApiLayer } from "../../src/api/types.js"
-import { DriverError } from "../../src/drivers/errors.js"
-import type { RunCommand } from "../../src/drivers/process.js"
 import { parseSha256Hex, sha256Digest } from "../../src/model/digest.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../../src/model/primitives.js"
 import { compileReleaseGraph } from "../../src/release/compiler.js"
@@ -48,7 +44,7 @@ import {
   makeCredentialProvider
 } from "../../src/publication/authority.js"
 import { CredentialPlatformError } from "../../src/platform/credentials.js"
-import { contextFor, noopRun } from "../core/runtime-fixture.js"
+import { contextFor, materializeFixtureWorkspace, noopRun } from "../core/runtime-fixture.js"
 import {
   CanonicalNpmRegistryEndpoint,
   NpmDistTag,
@@ -56,34 +52,14 @@ import {
 } from "../../src/recipes/config.js"
 import { CredentialRef } from "../../src/model/authority.js"
 import { unavailableMutationServicesLayer } from "../fixtures/mutation-services.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "../fixtures/prepared-provenance.js"
 
 const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
 const temporary = (name: string): string => mkdtempSync(join(tmpdir(), `ts-release-223-${name}-`))
-
-const runCaptured = (
-  argv: ReadonlyArray<string>, options: { readonly cwd: string, readonly env?: Record<string, string | undefined> }
-): {
-  readonly status: number
-  readonly signal?: string
-  readonly timedOut: boolean
-  readonly maxBufferExceeded: boolean
-  readonly stdout: string
-  readonly stderr: string
-} => {
-  const result = Bun.spawnSync([...argv], {
-    cwd: options.cwd,
-    ...(options.env === undefined ? {} : { env: options.env }),
-    stdout: "pipe", stderr: "pipe", timeout: 20_000
-  })
-  return {
-    status: result.exitCode,
-    ...(result.signalCode === undefined ? {} : { signal: result.signalCode }),
-    timedOut: result.exitedDueToTimeout === true,
-    maxBufferExceeded: result.exitedDueToMaxBuffer === true,
-    stdout: new TextDecoder().decode(result.stdout),
-    stderr: new TextDecoder().decode(result.stderr)
-  }
-}
 
 const runtimeLayer = (
   preparedStore: PreparedReleaseStoreShape,
@@ -92,7 +68,8 @@ const runtimeLayer = (
 ): ReleaseApiLayer => {
   const source = {
     observe: (workspace: import("../../src/model/primitives.js").WorkspaceRoot) =>
-      Effect.succeed(contextFor(workspace.toString()))
+      Effect.succeed(contextFor(workspace.toString())),
+    materialize: materializeFixtureWorkspace
   }
   const credentials = makeCredentialProvider({
     acquire: (request) => {
@@ -121,16 +98,6 @@ const runtimeLayer = (
   )
 }
 
-const localRun: RunCommand = ({ argv, cwd }) => Effect.try({
-  try: () => {
-    const result = runCaptured(argv, { cwd })
-    return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr }
-  },
-  catch: (cause) => DriverError.make({
-    reason: cause instanceof Error ? cause.message : String(cause), commitment: "before-commit"
-  })
-})
-
 const npmFixture = (
   version = "1.0.0", registryUrl = "https://registry.example.test"
 ): { readonly bundle: PreparedBundle, readonly bytes: Uint8Array, readonly publication: PreparedNpmPublication } => {
@@ -143,29 +110,33 @@ const npmFixture = (
   const hash = sha256Digest(bytes)
   const artifact = PreparedArtifact.make({
     id: OutputId.make("npm-tarball"), path: SafeRelativePath.make("package.tgz"), kind: "archive",
-    size: bytes.length, digest: hash, blob: hash, mediaType: "application/gzip"
+    size: bytes.length, digest: hash, blob: hash, mediaType: "application/gzip", ...fixtureArtifactProvenance()
   })
   const publication = PreparedNpmPublication.make({
     id: NonEmptyName.make("npm-release"), packageName: NonEmptyName.make("@fixture/package"),
     version: Version.make(version), registryUrl: canonicalRegistry, artifactId: artifact.id,
     distTag: NpmDistTag.make("latest"), access: "public", authentication,
-    provenance: "disabled", publicationMode: "direct",
+    provenance: "disabled",
     authority: makeNpmPublicationAuthorityIntent({
       packageName: "@fixture/package", version, registryUrl: canonicalRegistry, distTag: "latest",
       authentication
     })
   })
   const manifest = PreparedReleaseV2.make({
+    kind: "complete",
     schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({
       commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
-      packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64))
+      packageManifestPath: SafeRelativePath.make("package.json"),
+      packageManifestDigest: parseSha256Hex("a".repeat(64)),
+      materialized: fixtureStagingSnapshot
     }),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"), packageName: publication.packageName,
       version: publication.version, tag: NonEmptyName.make(`v${version}`)
     }),
-    artifacts: [artifact], publications: [publication]
+    provenance: fixturePreparedProvenance,
+    artifacts: [artifact], collections: [], publications: [publication]
   })
   return {
     bundle: { directory: "/not-stored", manifest, blobs: new Map([[artifact.id.toString(), bytes]]) },
@@ -218,68 +189,81 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test("ignored package input changes prepared npm bytes under identical verified source facts", async () => {
-    const prepare = async (contents: string): Promise<Uint8Array> => {
-      const root = temporary("ignored-input")
-      writeFileSync(join(root, ".gitignore"), "payload.txt\n")
-      writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0", files: ["payload.txt"] }))
-      writeFileSync(join(root, "payload.txt"), contents)
-      const store = makeLocalPreparedReleaseStore(join(root, "store"))
-      const api = makeReleaseApi(runtimeLayer(store, { run: localRun }))
-      try {
-        const prepared = await api.prepare({
-          workspace: root,
-          config: {
-            project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
-            npmPackage: { path: "." },
-            publish: { npm: { authentication: { strategy: "token", credential: "NPM_TOKEN" } } }
-          }
-        })
-        const bundle = await Effect.runPromise(store.load(prepared))
-        const publication = bundle.manifest.publications[0] as PreparedNpmPublication
-        return bundle.blobs.get(publication.artifactId.toString())!
-      } finally {
-        await api.dispose()
-        rmSync(root, { recursive: true, force: true })
-      }
-    }
-    const first = await prepare("first ignored bytes\n")
-    const second = await prepare("second ignored bytes\n")
-    expect(sha256Digest(first).hex).not.toBe(sha256Digest(second).hex)
-  }, 20_000)
-
-  test("public config accepts catalog publication presets but inspection exposes no catalog destination", async () => {
+  test("public config rejects catalog presets until Plan 231 restores a full vertical slice", async () => {
     const root = temporary("catalog-unreachable")
     writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0" }))
     const store = makeLocalPreparedReleaseStore(join(root, "store"))
     const api = makeReleaseApi(runtimeLayer(store))
     try {
-      const inspection = await api.inspect({
+      await expect(api.inspect({
         workspace: root,
         config: {
-          project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
+          project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
           publish: { homebrew: { repository: "github.com/owner/tap" }, scoop: { repository: "github.com/owner/bucket" } }
         }
-      })
-      expect(inspection.publications).toEqual([])
+      })).rejects.toMatchObject({ _tag: "ReleaseInputError" })
     } finally {
       await api.dispose()
       rmSync(root, { recursive: true, force: true })
     }
   })
 
-  test("source-contract audit: catalog/runtime-collection/partial-prepare paths have no public producer", () => {
+  test("source-contract audit: runtime collections have a public producer while catalog and partial prepare remain absent", () => {
     const authored = readFileSync("src/recipes/config.ts", "utf8")
     const graph = readFileSync("src/release/graph.ts", "utf8")
     const prepared = readFileSync("src/release/prepared.ts", "utf8")
     const apiTypes = readFileSync("src/api/types.ts", "utf8")
     const runtime = readFileSync("src/api/runtime.ts", "utf8")
     expect(authored).toContain("outputs: Schema.NonEmptyArray")
+    expect(authored).toContain("CandidateCollectionPreparation")
     expect(graph).toContain("outputs: Schema.NonEmptyArray(OutputDeclaration)")
+    expect(graph).toContain("GraphCommandCollection")
+    expect(prepared).toContain("PreparedArtifactCollection")
     expect(prepared).toContain("Schema.Union([\n  PreparedNpmPublication, PreparedGitHubPublication\n])")
     expect(apiTypes).not.toMatch(/PrepareInput[^\n]*(?:mode|partition|merge)/u)
     expect(runtime).toContain("readonly source: SourceObserver")
     expect(runtime).not.toContain("preparedStore")
     expect(runtime).not.toContain("catalog")
+
+    const resolved = resolveConfig({
+      project: {
+        name: "fixture", version: "1.0.0", tag: "v1.0.0",
+        repository: "owner/fixture"
+      },
+      preparations: [{
+        kind: "artifact",
+        id: "dynamic-assets",
+        run: ["generate", "{collection:dynamic-assets}"],
+        collection: {
+          root: ".release/dynamic-assets",
+          artifactKind: "archive",
+          pathSuffix: ".zip",
+          mediaType: "application/zip",
+          cardinality: { kind: "one" }
+        }
+      }],
+      publish: {
+        github: {
+          repository: "owner/fixture",
+          ids: [],
+          collections: [{
+            collection: "dynamic-assets",
+            artifactKind: "archive",
+            pathSuffix: ".zip",
+            mediaType: "application/zip",
+            cardinality: { kind: "one" }
+          }]
+        }
+      }
+    }, ObservedFacts.make({
+      commit: NonEmptyName.make("abc123"),
+      manifestName: "fixture",
+      manifestVersion: Version.make("1.0.0")
+    }))
+    const linked = compileReleaseGraph(resolved, contextFor(process.cwd()))
+    expect(linked.collections.map((collection) => collection.id.toString())).toEqual(["dynamic-assets"])
+    expect(linked.preparations.some((preparation) => preparation._tag === "GraphCommandCollection")).toBe(true)
+    const github = linked.publications.find((publication) => publication._tag === "GraphGitHubPublication")
+    expect(github?._tag === "GraphGitHubPublication" ? github.assetCollections : []).toHaveLength(1)
   })
 })

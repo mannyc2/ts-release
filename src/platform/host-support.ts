@@ -1,4 +1,4 @@
 export const unsupportedExecutionHost = (platform: string): string | undefined =>
-  platform === "linux" || platform === "darwin"
+  platform === "linux"
     ? undefined
-    : "ts-release runs on Linux and macOS. Its Bun builder can produce Windows artifacts."
+    : "ts-release is currently certified to run on Linux. Its Bun builder can cross-compile the advertised macOS artifacts."

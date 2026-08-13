@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, isAbsolute, join, resolve } from "node:path"
 import * as Config from "effect/Config"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -11,12 +11,14 @@ import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 import * as ChildProcess from "effect/unstable/process/ChildProcess"
 import type { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
+import * as Semver from "semver"
 import {
   EnvironmentName,
   type CanonicalAudience,
   type CredentialRef,
   type CredentialRequest,
-  type SubjectId
+  type SubjectId,
+  type TrustedPublishingAuthStrategy
 } from "../model/authority.js"
 import { redactOutput } from "../drivers/redact.js"
 import {
@@ -29,6 +31,7 @@ import {
   type AnonymousAccess,
   type CredentialGrantAcquirer,
   type CredentialProviderShape,
+  type MutationCredentialGrant,
   type ScopedSecret,
   type WorkloadIdentity,
   makeCredentialProvider,
@@ -51,6 +54,7 @@ import {
   PublisherOutcomeUnknown,
   RejectedBeforeStart,
   makeNpmUserConfigHandle,
+  npmPublishArgv,
   type CertifiedPublisherResult,
   type CertifiedPublisherSpawnShape,
   type CertifiedPublisherSpec,
@@ -61,6 +65,7 @@ import {
   type NpmUserConfigResourceShape,
   type WorkloadPublisherSpec
 } from "../publication/publisher.js"
+import { canonicalizeRegistryUrl } from "../release/graph.js"
 
 export {
   AuthorizedMutationHttp,
@@ -106,11 +111,51 @@ export type CredentialPlatformServices =
 const oidcRequestUrlName = EnvironmentName.make("ACTIONS_ID_TOKEN_REQUEST_URL")
 const oidcRequestTokenName = EnvironmentName.make("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
 const oidcNames = [oidcRequestUrlName, oidcRequestTokenName] as const
+const githubActionsName = "GITHUB_ACTIONS"
+const githubRepositoryName = "GITHUB_REPOSITORY"
+const githubWorkflowRefName = "GITHUB_WORKFLOW_REF"
+const githubServerUrlName = "GITHUB_SERVER_URL"
+const githubEventName = "GITHUB_EVENT_NAME"
+const githubRepositoryIdName = "GITHUB_REPOSITORY_ID"
+const githubRepositoryOwnerIdName = "GITHUB_REPOSITORY_OWNER_ID"
+const githubRefName = "GITHUB_REF"
+const githubShaName = "GITHUB_SHA"
+const runnerEnvironmentName = "RUNNER_ENVIRONMENT"
+const githubRunIdName = "GITHUB_RUN_ID"
+const githubRunAttemptName = "GITHUB_RUN_ATTEMPT"
 
 const portableEnvironmentName = /^[A-Za-z_][A-Za-z0-9_]*$/u
 const certifiedWorkflow = /^\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/u
+const certifiedRepository = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u
+const certifiedWorkflowRef = /^(?:refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9._/-]*|[a-f0-9]{40}(?:[a-f0-9]{24})?)$/u
+const certifiedSourceCommit = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/u
+const certifiedEvent = /^[a-z][a-z0-9_]*$/u
+const certifiedDecimalId = /^[1-9][0-9]*$/u
+const certifiedSourceRef = /^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9._/-]*$/u
 
 type SecretVault = Map<string, Redacted.Redacted<string>>
+
+interface TrustedHostSnapshot {
+  readonly GITHUB_ACTIONS: "true"
+  readonly GITHUB_REPOSITORY: string
+  readonly GITHUB_WORKFLOW_REF: string
+  readonly GITHUB_SERVER_URL: "https://github.com"
+  readonly GITHUB_EVENT_NAME: string
+  readonly GITHUB_REPOSITORY_ID: string
+  readonly GITHUB_REPOSITORY_OWNER_ID: string
+  readonly GITHUB_REF: string
+  readonly GITHUB_SHA: string
+  readonly RUNNER_ENVIRONMENT: "github-hosted"
+  readonly GITHUB_RUN_ID: string
+  readonly GITHUB_RUN_ATTEMPT: string
+}
+
+interface TrustedWorkloadMaterial {
+  readonly snapshot: TrustedHostSnapshot
+  readonly oidc: ReadonlyMap<EnvironmentName, Redacted.Redacted<string>>
+}
+
+type TrustedWorkloadVault = WeakMap<WorkloadIdentity, TrustedWorkloadMaterial>
 
 type ObservationGrant = AnonymousAccess | ScopedSecret
 
@@ -183,6 +228,83 @@ const readSecret = (
     Effect.mapError(() => unavailable(request, `Credential reference ${name} is unavailable.`))
   )
 
+const trustedStrategyIssue = (request: CredentialRequest): string | undefined => {
+  const strategy = request.strategy
+  if (strategy.kind !== "trusted-publishing") return "The request does not carry trusted-publishing intent."
+  if (request.provider !== "npm" || request.audience !== "https://registry.npmjs.org/" ||
+    request.purpose !== "publish") {
+    return "Trusted publishing is certified only for npm publish at the canonical npm registry."
+  }
+  if (strategy.identityProvider !== "github-actions" || strategy.runnerClass !== "github-hosted" ||
+    !certifiedRepository.test(strategy.repository) || !certifiedWorkflow.test(strategy.workflow) ||
+    !certifiedWorkflowRef.test(strategy.workflowRef) ||
+    !certifiedSourceCommit.test(strategy.sourceCommit) ||
+    strategy.provenanceEnvironmentContract !== "github-actions-npm-provenance-v1" ||
+    strategy.allowedAction !== "npm-publish-direct" || strategy.publisherSink !== "certified-npm-cli") {
+    return "Trusted publishing requires one exact GitHub-hosted workflow/ref, source commit, provenance environment contract, and certified direct npm sink."
+  }
+  return undefined
+}
+
+/** Validate non-secret GitHub host facts before either OIDC request value is read. */
+const verifyTrustedHostIdentity = Effect.fn("EnvironmentCredentialProvider.verifyTrustedHostIdentity")(
+  function*(request: CredentialRequest) {
+    const issue = trustedStrategyIssue(request)
+    if (issue !== undefined) return yield* unsupported(request, issue)
+    if (request.strategy.kind !== "trusted-publishing") return yield* unsupported(request, issue ?? "Invalid strategy.")
+    const expected: ReadonlyArray<readonly [string, string]> = [
+      [githubActionsName, "true"],
+      [githubRepositoryName, request.strategy.repository],
+      [githubWorkflowRefName,
+        `${request.strategy.repository}/${request.strategy.workflow}@${request.strategy.workflowRef}`],
+      [githubServerUrlName, "https://github.com"],
+      [githubShaName, request.strategy.sourceCommit],
+      [runnerEnvironmentName, "github-hosted"]
+    ]
+    const values: Record<string, string> = {}
+    for (const [name, value] of expected) {
+      const observed = yield* Config.string(name).pipe(
+        Effect.mapError(() => unsupported(request, `Trusted publishing host identity ${name} is unavailable.`))
+      )
+      if (observed !== value) {
+        return yield* unsupported(request, `Trusted publishing host identity ${name} does not match prepared intent.`)
+      }
+      values[name] = observed
+    }
+    const shaped: ReadonlyArray<readonly [string, RegExp, string]> = [
+      [githubEventName, certifiedEvent, "a canonical GitHub event name"],
+      [githubRepositoryIdName, certifiedDecimalId, "a canonical positive decimal repository ID"],
+      [githubRepositoryOwnerIdName, certifiedDecimalId, "a canonical positive decimal repository-owner ID"],
+      [githubRefName, certifiedSourceRef, "a canonical heads/tags source ref"],
+      [githubRunIdName, certifiedDecimalId, "a canonical positive decimal run ID"],
+      [githubRunAttemptName, certifiedDecimalId, "a canonical positive decimal run attempt"]
+    ]
+    for (const [name, pattern, description] of shaped) {
+      const observed = yield* Config.string(name).pipe(
+        Effect.mapError(() => unsupported(request, `Trusted publishing provenance fact ${name} is unavailable.`))
+      )
+      if (!pattern.test(observed)) {
+        return yield* unsupported(request, `Trusted publishing provenance fact ${name} is not ${description}.`)
+      }
+      values[name] = observed
+    }
+    return Object.freeze({
+      GITHUB_ACTIONS: values[githubActionsName] as "true",
+      GITHUB_REPOSITORY: values[githubRepositoryName]!,
+      GITHUB_WORKFLOW_REF: values[githubWorkflowRefName]!,
+      GITHUB_SERVER_URL: values[githubServerUrlName] as "https://github.com",
+      GITHUB_EVENT_NAME: values[githubEventName]!,
+      GITHUB_REPOSITORY_ID: values[githubRepositoryIdName]!,
+      GITHUB_REPOSITORY_OWNER_ID: values[githubRepositoryOwnerIdName]!,
+      GITHUB_REF: values[githubRefName]!,
+      GITHUB_SHA: values[githubShaName]!,
+      RUNNER_ENVIRONMENT: values[runnerEnvironmentName] as "github-hosted",
+      GITHUB_RUN_ID: values[githubRunIdName]!,
+      GITHUB_RUN_ATTEMPT: values[githubRunAttemptName]!
+    }) satisfies TrustedHostSnapshot
+  }
+)
+
 /**
  * A raw environment token has no host-verifiable downscope metadata. Treat it
  * conservatively as bundled provider authority instead of relabeling the same
@@ -194,12 +316,21 @@ const environmentTokenPurposes = (
   ? ["observe", "publish", "correct"]
   : ["observe", "publish"]
 
-const makeEnvironmentAcquirer = (vault: SecretVault): CredentialGrantAcquirer => ({
+const makeEnvironmentAcquirer = (
+  vault: SecretVault,
+  onTrustedWorkload?: (material: TrustedWorkloadMaterial) => void
+): CredentialGrantAcquirer => ({
   acquire: Effect.fn("EnvironmentCredentialProvider.acquire")(function*(request) {
     switch (request.strategy.kind) {
       case "anonymous":
         return { _tag: "AnonymousAccess", purposes: ["observe"] } as const
       case "token": {
+        if (request.provider === "npm" && request.purpose === "observe") {
+          return yield* unsupported(
+            request,
+            "Authenticated npm observation is unsupported without a distinct typed read credential."
+          )
+        }
         const name = request.strategy.credential.toString()
         if (!portableEnvironmentName.test(name)) {
           return yield* unsupported(request, "Token credential references must be portable environment names.")
@@ -213,18 +344,16 @@ const makeEnvironmentAcquirer = (vault: SecretVault): CredentialGrantAcquirer =>
         } as const
       }
       case "trusted-publishing": {
-        if (request.strategy.identityProvider !== "github-actions" ||
-          request.strategy.runnerClass !== "github-hosted" ||
-          !certifiedWorkflow.test(request.strategy.workflow)) {
-          return yield* unsupported(
-            request,
-            "Trusted publishing requires a certified GitHub Actions identity on a GitHub-hosted runner."
-          )
+        if (onTrustedWorkload === undefined) {
+          return yield* unsupported(request, "Trusted workload acquisition requires a private host-material binding.")
         }
+        const snapshot = yield* verifyTrustedHostIdentity(request)
+        const oidcValues = new Map<EnvironmentName, Redacted.Redacted<string>>()
         for (const name of oidcNames) {
           const value = yield* readSecret(request, name)
-          vault.set(vaultKey(request.subject, name), value)
+          oidcValues.set(name, value)
         }
+        onTrustedWorkload(Object.freeze({ snapshot, oidc: oidcValues }))
         return {
           _tag: "WorkloadIdentity",
           purposes: [request.purpose],
@@ -237,6 +366,7 @@ const makeEnvironmentAcquirer = (vault: SecretVault): CredentialGrantAcquirer =>
 
 const makeProvider = (
   vault: SecretVault,
+  trustedWorkloads: TrustedWorkloadVault,
   observationGrants: ObservationGrantRegistry
 ): CredentialProviderShape => {
   const provider = makeCredentialProvider(makeEnvironmentAcquirer(vault))
@@ -249,8 +379,24 @@ const makeProvider = (
       return grant
     }),
     acquireForMutation: Effect.fn("EnvironmentCredentialProvider.acquireForMutation")(function*(request, decision) {
-      const grant = yield* provider.acquireForMutation(request, decision)
-      if (grant._tag === "ScopedSecret") {
+      let grant: MutationCredentialGrant
+      if (request.strategy.kind === "trusted-publishing") {
+        let material: TrustedWorkloadMaterial | undefined
+        const trustedProvider = makeCredentialProvider(makeEnvironmentAcquirer(
+          vault,
+          (acquired) => { material = acquired }
+        ))
+        grant = yield* trustedProvider.acquireForMutation(request, decision)
+        if (grant._tag !== "WorkloadIdentity" || material === undefined) {
+          return yield* unavailable(request, "Trusted publishing host evidence was not bound to its workload grant.")
+        }
+        trustedWorkloads.set(grant, material)
+      } else {
+        grant = yield* provider.acquireForMutation(request, decision)
+      }
+      // npm publication tokens never become observation capabilities. GitHub
+      // retains its truthfully bundled installation-token read/write model.
+      if (grant._tag === "ScopedSecret" && request.provider !== "npm") {
         rememberObservationGrant(observationGrants, grant)
       }
       return grant
@@ -260,7 +406,7 @@ const makeProvider = (
 
 /** Environment-backed provider projection for hosts that need no sinks. */
 export const makeEnvironmentCredentialProvider = (): CredentialProviderShape =>
-  makeProvider(new Map(), new WeakMap())
+  makeProvider(new Map(), new WeakMap(), new WeakMap())
 
 const hasAuthorizationHeader = (headers: Readonly<Record<string, string>> | undefined): boolean =>
   headers !== undefined && Object.keys(headers).some((name) => name.toLowerCase() === "authorization")
@@ -516,7 +662,7 @@ const closedBaseEnvironment = (path: string | undefined): Record<string, string>
   path === undefined ? {} : { PATH: path }
 
 const workloadEnvironment = Effect.fn("CertifiedPublisherSpawn.workloadEnvironment")(function*(
-  vault: SecretVault,
+  trustedWorkloads: TrustedWorkloadVault,
   grant: WorkloadIdentity
 ) {
   if (grant.names.size !== oidcNames.length || oidcNames.some((name) => !grant.names.has(name))) {
@@ -527,10 +673,19 @@ const workloadEnvironment = Effect.fn("CertifiedPublisherSpawn.workloadEnvironme
       reason: "Workload identity lacks the exact certified GitHub Actions OIDC names."
     })
   }
+  const material = trustedWorkloads.get(grant)
+  if (material === undefined) {
+    return yield* new CredentialUnavailable({
+      subject: grant.subject,
+      provider: grant.provider,
+      purpose: "publish",
+      reason: "Certified GitHub Actions provenance facts are unavailable in this platform boundary."
+    })
+  }
   const path = yield* optionalPath
   const env = closedBaseEnvironment(path)
   for (const name of oidcNames) {
-    const value = vault.get(vaultKey(grant.subject, name))
+    const value = material.oidc.get(name)
     if (value === undefined) {
       return yield* new CredentialUnavailable({
         subject: grant.subject,
@@ -541,15 +696,137 @@ const workloadEnvironment = Effect.fn("CertifiedPublisherSpawn.workloadEnvironme
     }
     env[name] = Redacted.value(value)
   }
+  // npm's OIDC exchange consumes the two host-held request values. Its
+  // libnpmpublish provenance builder separately consumes this exact validated
+  // non-secret GitHub run snapshot. No ambient environment is inherited.
+  Object.assign(env, material.snapshot)
   env.NPM_CONFIG_IGNORE_SCRIPTS = "true"
   return env
 })
 
+const validateTrustedNpmOperation = Effect.fn("CertifiedPublisherSpawn.validateTrustedNpmOperation")(
+  function*(operation: NpmPublishOperation, grant: WorkloadIdentity) {
+    if (operation.provider !== "npm" || operation.purpose !== "publish" ||
+      operation.audience !== "https://registry.npmjs.org/" ||
+      grant.strategy.identityProvider !== "github-actions" ||
+      grant.strategy.runnerClass !== "github-hosted" ||
+      grant.strategy.allowedAction !== "npm-publish-direct" ||
+      grant.strategy.publisherSink !== "certified-npm-cli") {
+      return yield* new CredentialStrategyUnsupported({
+        subject: operation.subject,
+        provider: operation.provider,
+        strategy: "trusted-publishing",
+        reason: "The workload grant is not bound to the certified direct npm publisher sink."
+      })
+    }
+  }
+)
+
+const publisherSpecKeys = Object.freeze({
+  NpmPublisherSpec: [
+    "_tag", "access", "cwd", "distTag", "operation", "packageName", "provenance",
+    "registryUrl", "tarballPath", "userConfig", "version"
+  ],
+  WorkloadPublisherSpec: [
+    "_tag", "access", "cwd", "distTag", "operation", "packageName", "provenance",
+    "registryUrl", "tarballPath", "version"
+  ]
+} satisfies Record<CertifiedPublisherSpec["_tag"], ReadonlyArray<string>>)
+
+const sameKeys = (value: object, expected: ReadonlyArray<string>): boolean => {
+  const observed = Object.keys(value).sort()
+  return observed.length === expected.length && observed.every((key, index) => key === expected[index])
+}
+
+const certifiedNpmSpecIssue = (spec: CertifiedPublisherSpec): string | undefined => {
+  const tagDescriptor = Object.getOwnPropertyDescriptor(spec, "_tag")
+  const tag: unknown = tagDescriptor !== undefined && "value" in tagDescriptor
+    ? tagDescriptor.value
+    : undefined
+  if (tag !== "NpmPublisherSpec" && tag !== "WorkloadPublisherSpec") {
+    return "The certified npm publisher accepts only its two closed typed spec variants."
+  }
+  const expectedKeys = publisherSpecKeys[tag]
+  const descriptors = Object.getOwnPropertyDescriptors(spec)
+  if (!sameKeys(spec, expectedKeys) || expectedKeys.some((key) => {
+    const descriptor = descriptors[key]
+    return descriptor === undefined || !("value" in descriptor)
+  })) {
+    return "The certified npm publisher accepts only its exact typed fields; generic argv and override fields are forbidden."
+  }
+  const operation = spec.operation
+  if (operation._tag !== "PublishOperation" || operation.provider !== "npm" || operation.purpose !== "publish") {
+    return "The certified npm publisher accepts only an npm publish operation."
+  }
+  if (typeof spec.packageName !== "string" || spec.packageName.length === 0 ||
+      typeof spec.version !== "string" || Semver.valid(spec.version) !== spec.version) {
+    return "The certified npm publisher requires one nonempty package name and canonical semantic version."
+  }
+  if (operation.subject !== `npm:${spec.packageName}@${spec.version}`) {
+    return "The certified npm publisher package and version do not match the authorized operation subject."
+  }
+  try {
+    if (canonicalizeRegistryUrl(spec.registryUrl) !== spec.registryUrl ||
+        operation.audience.toString() !== spec.registryUrl.toString()) {
+      return "The certified npm publisher registry does not match the authorized canonical audience."
+    }
+  } catch {
+    return "The certified npm publisher requires a canonical registry and npm distribution tag."
+  }
+  if (Semver.validRange(spec.distTag) !== null || spec.distTag.trim() !== spec.distTag ||
+      encodeURIComponent(spec.distTag) !== spec.distTag) {
+    return "The certified npm publisher requires a canonical registry and npm distribution tag."
+  }
+  if ((spec.access !== "public" && spec.access !== "restricted") ||
+      (spec.provenance !== "required" && spec.provenance !== "automatic" && spec.provenance !== "disabled") ||
+      (spec._tag === "NpmPublisherSpec" && spec.provenance === "automatic") ||
+      (spec.access === "restricted" && !spec.packageName.startsWith("@")) ||
+      (Semver.prerelease(spec.version) !== null && spec.distTag === "latest")) {
+    return "The certified npm publisher access, provenance, or dist-tag policy is not an allowed canonical value."
+  }
+  try {
+    const fileName = basename(spec.tarballPath)
+    if (!isAbsolute(spec.cwd) || resolve(spec.cwd) !== spec.cwd ||
+        !/^[a-f0-9]{64}$/u.test(fileName) ||
+        resolve(spec.cwd, "blobs", fileName) !== spec.tarballPath) {
+      return "The certified npm publisher tarball must be the canonical prepared-store blob path."
+    }
+  } catch {
+    return "The certified npm publisher tarball must be the canonical prepared-store blob path."
+  }
+  return undefined
+}
+
+const validateCertifiedNpmSpec = Effect.fn("CertifiedPublisherSpawn.validateCertifiedNpmSpec")(
+  function*(spec: CertifiedPublisherSpec) {
+    const issue = certifiedNpmSpecIssue(spec)
+    if (issue !== undefined) {
+      return yield* new CredentialStrategyUnsupported({
+        subject: spec.operation.subject,
+        provider: spec.operation.provider,
+        strategy: spec._tag === "WorkloadPublisherSpec" ? "trusted-publishing" : "token",
+        reason: issue
+      })
+    }
+  }
+)
+
+/** Snapshot caller data once so accessors or concurrent mutation cannot change the admitted command after validation. */
+const snapshotCertifiedNpmSpec = (spec: CertifiedPublisherSpec): CertifiedPublisherSpec => {
+  const operation = Object.freeze({
+    ...spec.operation,
+    decision: Object.freeze({ ...spec.operation.decision })
+  }) as NpmPublishOperation
+  return Object.freeze({ ...spec, operation }) as CertifiedPublisherSpec
+}
+
 const publisherEnvironment = Effect.fn("CertifiedPublisherSpawn.environment")(function*(
   vault: SecretVault,
+  trustedWorkloads: TrustedWorkloadVault,
   spec: CertifiedPublisherSpec,
   grant: ScopedSecret | WorkloadIdentity
 ) {
+  yield* validateCertifiedNpmSpec(spec)
   if (spec._tag === "NpmPublisherSpec") {
     if (grant._tag !== "ScopedSecret") {
       return yield* new CredentialStrategyUnsupported({
@@ -583,7 +860,8 @@ const publisherEnvironment = Effect.fn("CertifiedPublisherSpawn.environment")(fu
       reason: "The workload publisher requires a workload-identity grant."
     })
   }
-  return yield* workloadEnvironment(vault, grant)
+  yield* validateTrustedNpmOperation(spec.operation, grant)
+  return yield* workloadEnvironment(trustedWorkloads, grant)
 })
 
 const redactPublisherOutput = (
@@ -600,7 +878,8 @@ const redactPublisherOutput = (
 
 const makeCertifiedPublisherSpawn = (
   spawner: ChildProcessSpawner["Service"],
-  vault: SecretVault
+  vault: SecretVault,
+  trustedWorkloads: TrustedWorkloadVault
 ): CertifiedPublisherSpawnShape => {
   const runClosed = Effect.fn("CertifiedPublisherSpawn.runClosed")(function*(
     argv: readonly [string, ...Array<string>]
@@ -644,8 +923,9 @@ const makeCertifiedPublisherSpawn = (
         reason: "Trusted npm preflight requires a workload-identity grant."
       })
     }
+    yield* validateTrustedNpmOperation(operation, grant)
     // Validate the exact host-held OIDC names before any provider authority is dispatched.
-    yield* workloadEnvironment(vault, grant)
+    yield* workloadEnvironment(trustedWorkloads, grant)
     const node = parseVersion(yield* runClosed(["node", "--version"]))
     const npm = parseVersion(yield* runClosed(["npm", "--version"]))
     if (node === undefined || !versionAtLeast(node, minimumTrustedNode) ||
@@ -657,10 +937,13 @@ const makeCertifiedPublisherSpawn = (
       )
     }
   }),
-  spawn: Effect.fn("CertifiedPublisherSpawn.spawn")(function*(spec, grant) {
-    yield* validateGrantForOperation(spec.operation, grant)
-    const env = yield* publisherEnvironment(vault, spec, grant)
-    const command = ChildProcess.make(spec.argv[0], [...spec.argv.slice(1)], {
+  spawn: Effect.fn("CertifiedPublisherSpawn.spawn")(function*(inputSpec, grant) {
+    yield* validateGrantForOperation(inputSpec.operation, grant)
+    yield* validateCertifiedNpmSpec(inputSpec)
+    const spec = snapshotCertifiedNpmSpec(inputSpec)
+    const env = yield* publisherEnvironment(vault, trustedWorkloads, spec, grant)
+    const argv = npmPublishArgv(spec)
+    const command = ChildProcess.make(argv[0], [...argv.slice(1)], {
       cwd: spec.cwd,
       env,
       extendEnv: false,
@@ -720,13 +1003,14 @@ export const makeEnvironmentCredentialPlatform = (
   options: EnvironmentCredentialPlatformOptions = {}
 ): EnvironmentCredentialPlatform => {
   const vault: SecretVault = new Map()
+  const trustedWorkloads: TrustedWorkloadVault = new WeakMap()
   const observationGrants: ObservationGrantRegistry = new WeakMap()
   return {
-    credentialProvider: makeProvider(vault, observationGrants),
+    credentialProvider: makeProvider(vault, trustedWorkloads, observationGrants),
     httpAuthorizer: makeHttpAuthorizer(http, vault, observationGrants),
     authorizedMutationHttp: makeAuthorizedMutationHttp(http, vault),
     npmUserConfigResource: makeNpmUserConfigResource(vault, options.temporaryRoot),
-    certifiedPublisherSpawn: makeCertifiedPublisherSpawn(spawner, vault)
+    certifiedPublisherSpawn: makeCertifiedPublisherSpawn(spawner, vault, trustedWorkloads)
   }
 }
 

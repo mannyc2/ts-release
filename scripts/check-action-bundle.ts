@@ -1,5 +1,6 @@
-// The Action is a thin Node-hosted API boundary. Its gate checks the manifest,
-// rebuilds the checked-in bundle, and probes the emitted file under Node.
+// The Action is a thin Linux/Bun composite boundary. Its gate checks the
+// manifest, rebuilds the checked-in bundle, and probes the exact command the
+// composite step executes.
 import { existsSync, readFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { cwd, exit } from "node:process"
@@ -15,6 +16,21 @@ try {
   for (const name of [...actionInputs, ...actionOutputs]) {
     if (!manifest.includes(`  ${name}:`)) throw new Error(`action.yml omits ${name}.`)
   }
+  if (!manifest.includes("  using: composite")) throw new Error("action.yml must declare the certified composite runtime.")
+  if (!manifest.includes('run: bun "$GITHUB_ACTION_PATH/dist/index.js"')) {
+    throw new Error("action.yml must execute the checked-in bundle through Bun.")
+  }
+  for (const name of actionOutputs) {
+    if (!manifest.includes(`value: \${{ steps.execute.outputs.${name} }}`)) {
+      throw new Error(`action.yml does not forward ${name} from the execution step.`)
+    }
+  }
+  for (const name of actionInputs) {
+    const environmentName = `INPUT_${name.toUpperCase().replaceAll("-", "_")}`
+    if (!manifest.includes(`${environmentName}: \${{ inputs.${name} }}`)) {
+      throw new Error(`action.yml does not bind ${name} to ${environmentName}.`)
+    }
+  }
   for (const name of ["correction", "npm-token", "github-token", "plan-path", "reviewer", "scope", "through"]) {
     if (manifest.includes(`  ${name}:`)) throw new Error(`action.yml retains an obsolete input ${name}.`)
   }
@@ -23,7 +39,7 @@ try {
   })
   if (result.status !== 0) throw new Error([result.stdout, result.stderr].join("\n").trim())
   if (!existsSync(join(root, "apps/ts-release-action/dist/index.js"))) throw new Error("Action bundle was not built.")
-  const probe = Bun.spawnSync(["node", join(root, "apps/ts-release-action/dist/index.js")], {
+  const probe = Bun.spawnSync(["bun", join(root, "apps/ts-release-action/dist/index.js")], {
     cwd: root, stdout: "pipe", stderr: "pipe",
     env: {
       ...process.env,
@@ -41,7 +57,7 @@ try {
   })
   const probeOutput = `${new TextDecoder().decode(probe.stdout)}\n${new TextDecoder().decode(probe.stderr)}`
   if (probe.exitCode === 0 || !probeOutput.includes("Action command must be one of")) {
-    throw new Error("Node did not execute the Action command parser.")
+    throw new Error("Bun did not execute the Action command parser through the declared runtime boundary.")
   }
   console.log(`Action bundle exposes ${actionCommands.length} commands and ${actionOutputs.length} outputs.`)
 } catch (cause) {

@@ -48,7 +48,7 @@ from Git after Y is created. Decision-only plans may use their input as X.
 | 227 | `remediation/227-capability-composition.md` |
 | 228k | `remediation/228-verified-preparation.md` |
 | 229 | `remediation/229-provider-recovery.md`, `remediation/229-history-decision.md` |
-| 233k | `remediation/233-release-candidate.md` |
+| 233k | `remediation/233-release-candidate.md`; `certifications/233-release-candidate.md` remains a non-authoritative placeholder until X/Y issuance |
 | 234k | `remediation/234-live-release.md` |
 
 Post-0.2.0 capability-wave handoffs are added when their separately

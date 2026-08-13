@@ -2,10 +2,16 @@ import { describe, expect, test } from "bun:test"
 import * as Schema from "effect/Schema"
 import { githubRecoveryCapabilityProfile } from "../../src/publication/github.js"
 import { npmRecoveryCapabilityProfile } from "../../src/publication/npm.js"
+import { installedPublicationProfiles } from "../../src/publication/profiles.js"
 import {
   RecoveryCapabilityProfile,
+  RecoveryProfileRegistrationError,
+  assertRecoveryProfileMatches,
   conservativeUnknownRecoveryProfile,
-  makeRecoveryCapabilityProfile
+  makeRecoveryCapabilityProfile,
+  recoveryCapabilityProfilesEqual,
+  validatePublicationProfiles,
+  validateRecoveryProfileSubjects
 } from "../../src/publication/recovery.js"
 
 const validProfile = (): Record<string, unknown> => ({
@@ -112,5 +118,59 @@ describe("RecoveryCapabilityProfile", () => {
       backoff: { baseMs: 1_000, factor: 2, capMs: 15_000 },
       totalBudgetMs: 60_000
     })
+  })
+
+  test("registers the exact installed npm and GitHub profile values with no correction adapters", () => {
+    expect(installedPublicationProfiles.npm).toMatchObject({
+      id: "publish.npm",
+      provider: "npm",
+      preparedTag: "PreparedNpmPublication",
+      correctionAdapters: []
+    })
+    expect(installedPublicationProfiles.github).toMatchObject({
+      id: "publish.github",
+      provider: "github",
+      preparedTag: "PreparedGitHubPublication",
+      correctionAdapters: []
+    })
+    expect(installedPublicationProfiles.npm.recovery).toBe(npmRecoveryCapabilityProfile)
+    expect(installedPublicationProfiles.github.recovery).toBe(githubRecoveryCapabilityProfile)
+    expect(installedPublicationProfiles.npm.recovery.correction).toEqual([])
+    expect(installedPublicationProfiles.github.recovery.correction).toEqual([])
+  })
+
+  test("fails registration when a profile and installed correction adapters disagree", () => {
+    const recovery = makeRecoveryCapabilityProfile(validProfile())
+    expect(() => validatePublicationProfiles({
+      fixture: {
+        id: "publish.fixture",
+        provider: "fixture",
+        preparedTag: "PreparedFixturePublication",
+        recovery,
+        correctionAdapters: [],
+        evidence: {
+          reviewedAt: "2026-08-12",
+          observationSources: ["https://provider.example.test/observe"],
+          correctionSources: ["https://provider.example.test/correct"],
+          correctionFinding: "No conditional correction adapter is installed."
+        }
+      }
+    })).toThrow(RecoveryProfileRegistrationError)
+  })
+
+  test("fails subject construction on any canonical profile mismatch", () => {
+    const expected = makeRecoveryCapabilityProfile({ ...validProfile(), correction: [] })
+    const actual = makeRecoveryCapabilityProfile({ ...validProfile(), correction: [], replay: "unsafe" })
+    expect(recoveryCapabilityProfilesEqual(expected, { ...validProfile(), correction: [] })).toBe(true)
+    expect(recoveryCapabilityProfilesEqual(expected, actual)).toBe(false)
+    expect(() => assertRecoveryProfileMatches("publish.fixture", expected, actual)).toThrow(
+      RecoveryProfileRegistrationError
+    )
+    expect(() => validateRecoveryProfileSubjects("publish.fixture", expected, [])).toThrow(
+      RecoveryProfileRegistrationError
+    )
+    expect(() => validateRecoveryProfileSubjects("publish.fixture", expected, [expected, actual])).toThrow(
+      RecoveryProfileRegistrationError
+    )
   })
 })

@@ -23,13 +23,14 @@ export class ReplacementCoordinate extends Schema.Class<ReplacementCoordinate>("
 
 export class NpmDeprecationCorrection extends Schema.TaggedClass<NpmDeprecationCorrection>()("NpmDeprecationCorrection", {
   provider: Schema.Literal("npm"), publicationId: NonEmptyName, registryUrl: Schema.NonEmptyString,
-  packageName: NonEmptyName, version: Version, tarballIntegrity: Sha512Digest,
+  packageName: NonEmptyName, version: Version, baselineDigest: Sha256Digest, tarballIntegrity: Sha512Digest,
   message: publicMessage, replacement: optional(ReplacementCoordinate)
 }) {}
 
 export class GithubReleaseCorrection extends Schema.TaggedClass<GithubReleaseCorrection>()("GithubReleaseCorrection", {
   provider: Schema.Literal("github"), publicationId: NonEmptyName, repository: Schema.NonEmptyString,
-  tag: NonEmptyName, marker: publicMessage, replacement: optional(ReplacementCoordinate)
+  tag: NonEmptyName, baselineDigest: Sha256Digest, marker: publicMessage,
+  replacement: optional(ReplacementCoordinate)
 }) {}
 
 /** Human-authored correction request. Destination and immutable subject facts

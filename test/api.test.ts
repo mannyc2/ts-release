@@ -27,6 +27,7 @@ import {
 import {
   contextFor,
   fixtureConfig,
+  materializeFixtureWorkspace,
   noopRun,
   runtimeLayer
 } from "./core/runtime-fixture.js"
@@ -119,7 +120,8 @@ describe("public lifecycle API", () => {
         source: {
           observe: (currentWorkspace: WorkspaceRoot) => recordFiber().pipe(
             Effect.as(contextFor(currentWorkspace.toString()))
-          )
+          ),
+          materialize: materializeFixtureWorkspace
         },
         run: noopRun
       }),
@@ -159,7 +161,8 @@ describe("public lifecycle API", () => {
     const strictFailure = { ...fixtureConfig, unexpected: true }
     const resolutionFailure = {
       ...fixtureConfig,
-      project: { ...fixtureConfig.project, commit: "different-commit" }
+      project: { ...fixtureConfig.project, version: "2.0.0" },
+      versionFrom: "manifest"
     }
     try {
       for (const config of [strictFailure, resolutionFailure]) {
@@ -198,7 +201,7 @@ describe("public lifecycle API", () => {
     const root = workspace()
     const api = testApi(root)
     const config = {
-      project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc123" },
+      project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
       publish: {}
     }
     try {

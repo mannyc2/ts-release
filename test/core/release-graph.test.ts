@@ -27,21 +27,21 @@ import {
 import { CredentialRef } from "../../src/model/authority.js"
 import { decodeReleaseIntent } from "../../src/release/config.js"
 import { inspectRelease } from "../../src/release/inspect.js"
-import { executableCapabilities } from "../../src/capabilities/registry.js"
+import { capabilityModules } from "../../src/capabilities/registry.js"
 
 const context = VerifiedReleaseContext.make({
   workspace: WorkspaceRoot.make(process.cwd()),
-  source: VerifiedSource.make({ commit: NonEmptyName.make("abc123"), tree: NonEmptyName.make("tree123"), clean: true,
+  source: VerifiedSource.make({ commit: NonEmptyName.make("c".repeat(40)), tree: NonEmptyName.make("tree123"), clean: true,
     packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: parseSha256Hex("a".repeat(64)), headTags: [] }),
   package: VerifiedPackage.make({ name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"),
     path: SafeRelativePath.make("package.json"), digest: parseSha256Hex("a".repeat(64)) })
 })
 const artifact = (id: string, path: string) => ({
-  id: OutputId.make(id), path: SafeRelativePath.make(path), kind: "file" as const, provenance: "process" as const
+  id: OutputId.make(id), path: SafeRelativePath.make(path), kind: "file" as const
 })
 const command = (id: string, input: string, output: string) => GraphCommandArtifact.make({
   id: OperationId.make(id), argv: ["tool", `{input:${input}}`, `{output:${output}}`], cwd: SafeRelativePath.make("."),
-  environmentNames: [], inputs: [OutputId.make(input)], outputs: [artifact(output, `${output}.txt`)], sourceCommit: NonEmptyName.make("abc123")
+  inputs: [OutputId.make(input)], outputs: [artifact(output, `${output}.txt`)]
 })
 
 describe("immutable release graph", () => {
@@ -50,7 +50,7 @@ describe("immutable release graph", () => {
     registry: CanonicalNpmRegistryEndpoint.make("https://registry.example.test/custom/"),
     distTag: NpmDistTag.make("latest"), access: "public",
     authentication: NpmTokenAuthentication.make({ strategy: "token", credential: CredentialRef.make("CUSTOM_NPM_TOKEN") }),
-    provenance: "required", publicationMode: "direct", ...overrides
+    provenance: "required", ...overrides
   })
 
   test("compiles retained build inputs and links generated outputs", () => {
@@ -65,10 +65,39 @@ describe("immutable release graph", () => {
   test("registration order does not change the linked graph", () => {
     const left = CapabilityContribution.make({ artifacts: [artifact("input", "input.txt")], preparations: [command("b", "input", "b")], publications: [] })
     const right = CapabilityContribution.make({ artifacts: [], preparations: [GraphCommandArtifact.make({
-      id: OperationId.make("a"), argv: ["generate", "{output:a}"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [],
-      outputs: [artifact("a", "a.txt")], sourceCommit: NonEmptyName.make("abc123")
+      id: OperationId.make("a"), argv: ["generate", "{output:a}"], cwd: SafeRelativePath.make("."), inputs: [],
+      outputs: [artifact("a", "a.txt")]
     })], publications: [] })
     expect(linkContributions([left, right])).toEqual(linkContributions([right, left]))
+  })
+
+  test("npmPackage.build compiles into an exact package-scoped build and rejects ambiguous outputs", () => {
+    const config = CandidateConfig.make({
+      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
+      npmPackage: {
+        path: SafeRelativePath.make("package"),
+        build: {
+          run: ["bun", "--no-env-file", "--no-install", "run", "build"],
+          outputRoots: [SafeRelativePath.make("dist")]
+        }
+      }
+    })
+    const graph = compileReleaseGraph(config, context)
+    expect(graph.preparations.find((item) => item._tag === "GraphNpmPackageBuild")).toMatchObject({
+      id: "build:npm-package",
+      argv: ["bun", "--no-env-file", "--no-install", "run", "build"],
+      cwd: "package",
+      outputRoots: ["package/dist"]
+    })
+    expect(() => decodeReleaseIntent({
+      project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
+      npmPackage: { build: { run: [], outputRoots: ["dist"] } }
+    })).toThrow()
+    expect(() => compileReleaseGraph(CandidateConfig.make({
+      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
+      npmPackage: { build: { run: ["build"], outputRoots: [SafeRelativePath.make("generated")] } },
+      artifacts: [{ id: OutputId.make("collision"), path: SafeRelativePath.make("generated/file.js"), format: "file" }]
+    }), context)).toThrow(GraphLinkError)
   })
 
   test("missing references, duplicate producers, and cycles are typed failures", () => {
@@ -116,16 +145,13 @@ describe("immutable release graph", () => {
     expect(npm?.registryUrl.toString()).toBe("https://registry.example.test/custom/")
     expect(npm).toMatchObject({
       packageArtifact: "npm-package", distTag: "latest", access: "public",
-      provenance: "required", publicationMode: "direct"
+      provenance: "required"
     })
     expect(npm?.authority).toMatchObject({
       subject: "npm:fixture@1.0.0",
       provider: "npm",
       audience: "https://registry.example.test/custom/",
-      observationStrategies: [
-        { kind: "anonymous" },
-        { kind: "token", credential: "CUSTOM_NPM_TOKEN" }
-      ],
+      observationStrategies: [{ kind: "anonymous" }],
       publishStrategy: { kind: "token", credential: "CUSTOM_NPM_TOKEN" }
     })
     expect(github?.authority).toMatchObject({
@@ -150,10 +176,10 @@ describe("immutable release graph", () => {
         packageArtifact: OutputId.make("npm-package"), packageName: NonEmptyName.make("fixture"),
         registry: CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/"),
         distTag: NpmDistTag.make("latest"), access: "public", provenance: "automatic",
-        publicationMode: "direct", authentication: NpmTrustedPublishingAuthentication.make({
+        authentication: NpmTrustedPublishingAuthentication.make({
           strategy: "trusted-publishing", attestation: NpmTrustedPublisherAttestation.make({
             provider: "github-actions", runner: "github-hosted", repository: "owner/fixture",
-            workflow: "release.yml", allowedAction: "npm-publish-direct"
+            workflow: "release.yml", workflowRef: "refs/heads/main", allowedAction: "npm-publish-direct"
           })
         })
       }) }
@@ -161,7 +187,11 @@ describe("immutable release graph", () => {
     const trusted = trustedGraph.publications.find((item) => item._tag === "GraphNpmPublication")
     expect(trusted?.authority.publishStrategy).toMatchObject({
       kind: "trusted-publishing", identityProvider: "github-actions", runnerClass: "github-hosted",
-      workflow: ".github/workflows/release.yml"
+      repository: "owner/fixture", workflow: ".github/workflows/release.yml",
+      workflowRef: "refs/heads/main", sourceCommit: "c".repeat(40),
+      provenanceEnvironmentContract: "github-actions-npm-provenance-v1",
+      allowedAction: "npm-publish-direct",
+      publisherSink: "certified-npm-cli"
     })
     expect(trusted?.authority.observationStrategies).toEqual([{ kind: "anonymous" }])
   })
@@ -192,29 +222,30 @@ describe("immutable release graph", () => {
   test("linker rejects path vocabulary, input/output aliases, directories, and non-text body artifacts", () => {
     const badPath = GraphCommandArtifact.make({
       id: OperationId.make("bad-path"), argv: ["tool", "{custom:value}"], cwd: SafeRelativePath.make("."),
-      environmentNames: [], inputs: [], outputs: [artifact("bad", "bad.txt")], sourceCommit: NonEmptyName.make("abc123")
+      inputs: [], outputs: [artifact("bad", "bad.txt")]
     })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [], preparations: [badPath], publications: [] })])).toThrow(GraphLinkError)
     const alias = GraphCommandArtifact.make({
-      id: OperationId.make("alias"), argv: ["tool"], cwd: SafeRelativePath.make("."), environmentNames: [],
-      inputs: [OutputId.make("same")], outputs: [artifact("same", "same.txt")], sourceCommit: NonEmptyName.make("abc123")
+      id: OperationId.make("alias"), argv: ["tool"], cwd: SafeRelativePath.make("."),
+      inputs: [OutputId.make("same")], outputs: [artifact("same", "same.txt")]
     })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [], preparations: [alias], publications: [] })])).toThrow(GraphLinkError)
     const body = GraphGitHubPublication.make({ id: OperationId.make("github"), repository: "owner/fixture", tag: NonEmptyName.make("v1"), draft: false, prerelease: false,
       title: NonEmptyName.make("fixture"), bodyArtifact: OutputId.make("plain"), assetIds: [],
+      assetCollections: [],
       authority: makeGitHubPublicationAuthorityIntent({ repository: "owner/fixture", tag: "v1" }) })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [{ ...artifact("plain", "plain.md") }], preparations: [], publications: [body] })])).toThrow(GraphLinkError)
     const duplicatePath = CapabilityContribution.make({ artifacts: [artifact("first", "same.bin"), artifact("second", "same.bin")], preparations: [], publications: [] })
     expect(() => linkContributions([duplicatePath])).toThrow(GraphLinkError)
     const packageOutputArtifact = { ...artifact("package", "package"), kind: "package" as const }
     const packageOutput = GraphCommandArtifact.make({
-      id: OperationId.make("package-output"), argv: ["tool"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [],
-      outputs: [packageOutputArtifact], sourceCommit: NonEmptyName.make("abc123")
+      id: OperationId.make("package-output"), argv: ["tool"], cwd: SafeRelativePath.make("."), inputs: [],
+      outputs: [packageOutputArtifact]
     })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [], preparations: [packageOutput], publications: [] })])).toThrow(GraphLinkError)
     const overwrite = GraphCommandArtifact.make({
-      id: OperationId.make("overwrite"), argv: ["tool"], cwd: SafeRelativePath.make("."), environmentNames: [], inputs: [OutputId.make("input")],
-      outputs: [artifact("output", "input.txt")], sourceCommit: NonEmptyName.make("abc123")
+      id: OperationId.make("overwrite"), argv: ["tool"], cwd: SafeRelativePath.make("."), inputs: [OutputId.make("input")],
+      outputs: [artifact("output", "input.txt")]
     })
     expect(() => linkContributions([CapabilityContribution.make({ artifacts: [artifact("input", "input.txt")], preparations: [overwrite], publications: [] })])).toThrow(GraphLinkError)
   })
@@ -222,12 +253,12 @@ describe("immutable release graph", () => {
   test("inspection is a pure stable projection of verified context and graph", () => {
     const config = CandidateConfig.make({
       project: { name: NonEmptyName.make("fixture"), version: Version.make("1.0.0"), tag: NonEmptyName.make("v1.0.0") },
-      preparations: [CandidateCheckPreparation.make({ kind: "check", id: NonEmptyName.make("tests"), run: ["bun", "test"], environmentNames: ["CI"] })]
+      preparations: [CandidateCheckPreparation.make({ kind: "check", id: NonEmptyName.make("tests"), run: ["bun", "test"] })]
     })
     const graph = compileReleaseGraph(config, context)
-    const projection = inspectRelease(context, graph, executableCapabilities.map((item) => item.id))
-    expect(projection.source.commit.toString()).toBe("abc123")
-    expect(projection.requirements).toEqual(["command:bun", "env:CI"])
-    expect(projection.capabilities.length).toBe(executableCapabilities.length)
+    const projection = inspectRelease(context, graph, capabilityModules.map((item) => item.id))
+    expect(projection.source.commit.toString()).toBe("c".repeat(40))
+    expect(projection.requirements).toEqual(["command:bun"])
+    expect(projection.capabilities.length).toBe(capabilityModules.length)
   })
 })

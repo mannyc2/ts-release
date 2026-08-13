@@ -16,9 +16,10 @@ import {
   ProviderId,
   SubjectId,
   TokenAuthStrategy,
+  TrustedPublishingSourceCommit,
   TrustedPublishingAuthStrategy
 } from "../../src/model/authority.js"
-import { NonEmptyName } from "../../src/model/primitives.js"
+import { NonEmptyName, Version } from "../../src/model/primitives.js"
 import type { HttpRequest, PublicationHttp } from "../../src/publication/http.js"
 import type {
   AnonymousAccess,
@@ -27,6 +28,10 @@ import type {
   WorkloadIdentity
 } from "../../src/publication/authority.js"
 import { MutationPrecondition, NeedsMutation } from "../../src/publication/report.js"
+import {
+  CanonicalNpmRegistryEndpoint,
+  NpmDistTag
+} from "../../src/recipes/config.js"
 import {
   CredentialPlatformError,
   type EnvironmentCredentialPlatform,
@@ -37,6 +42,20 @@ import { recordingSpawner } from "./host-doubles.js"
 const subject = SubjectId.make("npm:@fixture/pkg@1.0.0")
 const provider = ProviderId.make("npm")
 const audience = CanonicalAudience.make("https://registry.npmjs.org/")
+const registryUrl = CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/")
+const packageName = NonEmptyName.make("@fixture/pkg")
+const packageVersion = Version.make("1.0.0")
+const tarballPath = `/workspace/blobs/${"a".repeat(64)}`
+const publisherFields = {
+  cwd: "/workspace",
+  tarballPath,
+  packageName,
+  version: packageVersion,
+  registryUrl,
+  distTag: NpmDistTag.make("latest"),
+  access: "public",
+  provenance: "required"
+} as const
 const ref = CredentialRef.make("FIXTURE_NPM_TOKEN")
 const secret = "sentinel-platform-secret-91b4"
 const decision = NeedsMutation.make({
@@ -60,16 +79,22 @@ const tokenRequest = (purpose: "observe" | "publish" = "publish") => CredentialR
   strategy: TokenAuthStrategy.make({ kind: "token", credential: ref })
 })
 
-const trustedRequest = (runnerClass = "github-hosted") => CredentialRequest.make({
+const trustedRequest = () => CredentialRequest.make({
   subject,
   provider,
   audience,
   purpose: "publish",
   strategy: TrustedPublishingAuthStrategy.make({
     kind: "trusted-publishing",
-    identityProvider: ProviderId.make("github-actions"),
-    runnerClass,
-    workflow: ".github/workflows/release.yml"
+    identityProvider: "github-actions",
+    runnerClass: "github-hosted",
+    repository: "owner/repository",
+    workflow: ".github/workflows/release.yml",
+    workflowRef: "refs/heads/main",
+    sourceCommit: TrustedPublishingSourceCommit.make("c".repeat(40)),
+    provenanceEnvironmentContract: "github-actions-npm-provenance-v1",
+    allowedAction: "npm-publish-direct",
+    publisherSink: "certified-npm-cli"
   })
 })
 
@@ -89,12 +114,28 @@ const environment = {
   FIXTURE_NPM_TOKEN: secret,
   ACTIONS_ID_TOKEN_REQUEST_URL: "https://oidc.example.test/token",
   ACTIONS_ID_TOKEN_REQUEST_TOKEN: "sentinel-oidc-request-token-73c1",
+  GITHUB_ACTIONS: "true",
+  GITHUB_REPOSITORY: "owner/repository",
+  GITHUB_WORKFLOW_REF: "owner/repository/.github/workflows/release.yml@refs/heads/main",
+  GITHUB_SERVER_URL: "https://github.com",
+  GITHUB_EVENT_NAME: "workflow_dispatch",
+  GITHUB_REPOSITORY_ID: "123456789",
+  GITHUB_REPOSITORY_OWNER_ID: "1234567",
+  GITHUB_REF: "refs/heads/main",
+  GITHUB_SHA: "c".repeat(40),
+  RUNNER_ENVIRONMENT: "github-hosted",
+  GITHUB_RUN_ID: "987654321",
+  GITHUB_RUN_ATTEMPT: "2",
   AMBIENT_MUST_NOT_LEAK: "ambient-value"
 }
 
-const provideEnvironment = <A, E, R>(effect: Effect.Effect<A, E, R>) => effect.pipe(
-  Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env: environment })))
-)
+const provideEnvironmentValues = <A, E, R>(
+  values: Readonly<Record<string, string>>,
+  effect: Effect.Effect<A, E, R>
+) => effect.pipe(Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env: values }))))
+
+const provideEnvironment = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  provideEnvironmentValues(environment, effect)
 
 const spawnerService = (
   reply: Parameters<typeof recordingSpawner>[0]
@@ -163,8 +204,12 @@ describe("environment credential platform", () => {
     expect("value" in grant).toBe(false)
     expect(JSON.stringify(grant)).not.toContain(secret)
 
+    const wrongRunner = {
+      ...trustedRequest(),
+      strategy: { ...trustedRequest().strategy, runnerClass: "self-hosted" }
+    } as unknown as CredentialRequest
     await expect(Effect.runPromise(provideEnvironment(
-      platform.credentialProvider.acquireForMutation(trustedRequest("self-hosted"), decision)
+      platform.credentialProvider.acquireForMutation(wrongRunner, decision)
     ))).rejects.toMatchObject({ _tag: "CredentialStrategyUnsupported" })
   })
 
@@ -226,34 +271,43 @@ describe("environment credential platform", () => {
     }
   })
 
-  test("observation authorization validates audience and sends without returning credentials", async () => {
+  test("npm observation is anonymous-only while GitHub bundled token authority stays truthful", async () => {
     const { platform, requests } = platformFixture()
-    const grant = await acquireToken(platform, "observe")
-    const response = await Effect.runPromise(platform.httpAuthorizer.execute({
-      subject,
-      method: "GET",
-      url: "https://registry.npmjs.org/@fixture%2fpkg"
-    }, grant))
-    expect(response.status).toBe(200)
-    expect(requests).toHaveLength(1)
-    expect(requests[0]?.headers?.authorization).toBe(`Bearer ${secret}`)
-    expect(JSON.stringify(response)).not.toContain(secret)
+    await expect(acquireToken(platform, "observe")).rejects.toMatchObject({
+      _tag: "CredentialStrategyUnsupported"
+    })
 
+    const bundledPublish = await acquireToken(platform)
+    expect(bundledPublish.purposes).toEqual(new Set(["observe", "publish"]))
     await expect(Effect.runPromise(platform.httpAuthorizer.execute({
       subject,
       method: "GET",
-      url: "https://registry.example.test/@fixture%2fpkg"
-    }, grant))).rejects.toMatchObject({ _tag: "CredentialAudienceMismatch" })
-    expect(requests).toHaveLength(1)
-
-    const bundled = await acquireToken(platform)
-    expect(bundled.purposes).toEqual(new Set(["observe", "publish"]))
-    await Effect.runPromise(platform.httpAuthorizer.execute({
-      subject,
-      method: "GET",
       url: "https://registry.npmjs.org/@fixture%2fpkg"
-    }, bundled))
-    expect(requests).toHaveLength(2)
+    }, bundledPublish))).rejects.toMatchObject({ _tag: "CredentialUnavailable" })
+    expect(requests).toHaveLength(0)
+
+    const githubSubject = SubjectId.make("github:owner/repository#v1.0.0")
+    const githubAudience = CanonicalAudience.make("https://api.github.com/repos/owner/repository")
+    const githubRequest = CredentialRequest.make({
+      subject: githubSubject,
+      provider: ProviderId.make("github"),
+      audience: githubAudience,
+      purpose: "observe",
+      strategy: TokenAuthStrategy.make({ kind: "token", credential: ref })
+    })
+    const githubGrant = await Effect.runPromise(provideEnvironment(
+      platform.credentialProvider.acquireForObservation(githubRequest)
+    )).then((value) => value._tag === "ScopedSecret"
+      ? value
+      : Promise.reject(new Error("expected bundled GitHub token")))
+    expect(githubGrant.purposes).toEqual(new Set(["observe", "publish"]))
+    await Effect.runPromise(platform.httpAuthorizer.execute({
+      subject: githubSubject,
+      method: "GET",
+      url: "https://api.github.com/repos/owner/repository/releases/tags/v1.0.0"
+    }, githubGrant))
+    expect(requests).toHaveLength(1)
+    expect(requests[0]?.headers?.authorization).toBe(`Bearer ${secret}`)
   })
 
   test("mutation HTTP rejects caller auth and audience mismatch before transport", async () => {
@@ -349,8 +403,7 @@ describe("environment credential platform", () => {
         const outcome = yield* platform.certifiedPublisherSpawn.spawn({
           _tag: "NpmPublisherSpec",
           operation: operation as Extract<PublisherOperation, { readonly _tag: "PublishOperation" }>,
-          argv: ["npm", "publish", "fixture.tgz"],
-          cwd: "/workspace",
+          ...publisherFields,
           userConfig
         }, grant)
         configPath = commands[0]?.env?.NPM_CONFIG_USERCONFIG ?? ""
@@ -371,6 +424,15 @@ describe("environment credential platform", () => {
         NPM_CONFIG_IGNORE_SCRIPTS: "true"
       })
       expect(commands[0]?.env).not.toHaveProperty("AMBIENT_MUST_NOT_LEAK")
+      expect(commands[0]?.argv).toEqual([
+        "npm", "publish", tarballPath,
+        "--ignore-scripts",
+        "--registry", registryUrl,
+        "--tag", "latest",
+        "--access", "public",
+        "--provenance",
+        "--json"
+      ])
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
@@ -421,7 +483,68 @@ describe("environment credential platform", () => {
     }
   })
 
-  test("trusted publishing passes only certified OIDC names in a closed environment", async () => {
+  test("trusted acquisition rejects every foreign host identity before reading OIDC material", async () => {
+    const { platform, commands } = platformFixture()
+    const { ACTIONS_ID_TOKEN_REQUEST_URL: _oidcUrl, ACTIONS_ID_TOKEN_REQUEST_TOKEN: _oidcToken,
+      AMBIENT_MUST_NOT_LEAK: _ambient, ...hostOnly } = environment
+    const baseRequest = trustedRequest()
+    const requestWith = (overrides: Readonly<Record<string, unknown>>) => ({
+      ...baseRequest,
+      strategy: { ...baseRequest.strategy, ...overrides }
+    }) as unknown as CredentialRequest
+    const without = (name: string): Readonly<Record<string, string>> => Object.fromEntries(
+      Object.entries(hostOnly).filter(([observed]) => observed !== name)
+    )
+    const requiredHostFacts = [
+      "GITHUB_ACTIONS",
+      "GITHUB_REPOSITORY",
+      "GITHUB_WORKFLOW_REF",
+      "GITHUB_SERVER_URL",
+      "GITHUB_EVENT_NAME",
+      "GITHUB_REPOSITORY_ID",
+      "GITHUB_REPOSITORY_OWNER_ID",
+      "GITHUB_REF",
+      "GITHUB_SHA",
+      "RUNNER_ENVIRONMENT",
+      "GITHUB_RUN_ID",
+      "GITHUB_RUN_ATTEMPT"
+    ] as const
+    const cases: ReadonlyArray<readonly [Readonly<Record<string, string>>, CredentialRequest]> = [
+      ...requiredHostFacts.map((name) => [without(name), baseRequest] as const),
+      [{ ...hostOnly, GITHUB_ACTIONS: "false" }, baseRequest],
+      [{ ...hostOnly, GITHUB_REPOSITORY: "other/repository" }, baseRequest],
+      [{ ...hostOnly,
+        GITHUB_WORKFLOW_REF: "owner/repository/.github/workflows/other.yml@refs/heads/main" }, baseRequest],
+      [{ ...hostOnly,
+        GITHUB_WORKFLOW_REF: "owner/repository/.github/workflows/release.yml@refs/heads/other" }, baseRequest],
+      [{ ...hostOnly, GITHUB_SERVER_URL: "https://github.enterprise.test" }, baseRequest],
+      [{ ...hostOnly, GITHUB_EVENT_NAME: "workflow dispatch" }, baseRequest],
+      [{ ...hostOnly, GITHUB_REPOSITORY_ID: "0123456789" }, baseRequest],
+      [{ ...hostOnly, GITHUB_REPOSITORY_OWNER_ID: "owner-id" }, baseRequest],
+      [{ ...hostOnly, GITHUB_REF: "refs/pull/1/merge" }, baseRequest],
+      [{ ...hostOnly, GITHUB_SHA: "d".repeat(40) }, baseRequest],
+      [{ ...hostOnly, RUNNER_ENVIRONMENT: "self-hosted" }, baseRequest],
+      [{ ...hostOnly, GITHUB_RUN_ID: "0" }, baseRequest],
+      [{ ...hostOnly, GITHUB_RUN_ATTEMPT: "02" }, baseRequest],
+      [hostOnly, requestWith({ sourceCommit: "d".repeat(40) })],
+      [hostOnly, requestWith({ provenanceEnvironmentContract: "generic-environment-v1" })],
+      [hostOnly, requestWith({ allowedAction: "npm-stage-publish" })],
+      [hostOnly, requestWith({ publisherSink: "generic-command" })]
+    ]
+    for (const [values, request] of cases) {
+      await expect(Effect.runPromise(provideEnvironmentValues(
+        values,
+        platform.credentialProvider.acquireForMutation(request, decision)
+      ))).rejects.toMatchObject({ _tag: "CredentialStrategyUnsupported" })
+    }
+    await expect(Effect.runPromise(provideEnvironmentValues(
+      hostOnly,
+      platform.credentialProvider.acquireForMutation(baseRequest, decision)
+    ))).rejects.toMatchObject({ _tag: "CredentialUnavailable" })
+    expect(commands).toHaveLength(0)
+  })
+
+  test("trusted publishing passes only certified OIDC and provenance facts in a closed environment", async () => {
     const { platform, commands } = platformFixture(undefined, () => ({
       exitCode: 0,
       stdout: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN
@@ -435,17 +558,107 @@ describe("environment credential platform", () => {
     const result = await Effect.runPromise(provideEnvironment(platform.certifiedPublisherSpawn.spawn({
       _tag: "WorkloadPublisherSpec",
       operation,
-      argv: ["npm", "publish", "fixture.tgz"],
-      cwd: "/workspace"
+      ...publisherFields
     }, grant)))
     expect(commands[0]?.env).toEqual({
       PATH: "/fixture/bin",
       ACTIONS_ID_TOKEN_REQUEST_URL: environment.ACTIONS_ID_TOKEN_REQUEST_URL,
       ACTIONS_ID_TOKEN_REQUEST_TOKEN: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
+      GITHUB_ACTIONS: "true",
+      GITHUB_REPOSITORY: environment.GITHUB_REPOSITORY,
+      GITHUB_WORKFLOW_REF: environment.GITHUB_WORKFLOW_REF,
+      GITHUB_SERVER_URL: environment.GITHUB_SERVER_URL,
+      GITHUB_EVENT_NAME: environment.GITHUB_EVENT_NAME,
+      GITHUB_REPOSITORY_ID: environment.GITHUB_REPOSITORY_ID,
+      GITHUB_REPOSITORY_OWNER_ID: environment.GITHUB_REPOSITORY_OWNER_ID,
+      GITHUB_REF: environment.GITHUB_REF,
+      GITHUB_SHA: environment.GITHUB_SHA,
+      RUNNER_ENVIRONMENT: environment.RUNNER_ENVIRONMENT,
+      GITHUB_RUN_ID: environment.GITHUB_RUN_ID,
+      GITHUB_RUN_ATTEMPT: environment.GITHUB_RUN_ATTEMPT,
       NPM_CONFIG_IGNORE_SCRIPTS: "true"
     })
     expect(result._tag === "PublisherExited" ? result.stdout : "").toContain("[redacted:ACTIONS_ID_TOKEN_REQUEST_TOKEN]")
     expect(JSON.stringify(result)).not.toContain(environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
+    expect(commands[0]?.argv).toEqual([
+      "npm", "publish", tarballPath,
+      "--ignore-scripts",
+      "--registry", registryUrl,
+      "--tag", "latest",
+      "--access", "public",
+      "--provenance",
+      "--json"
+    ])
+  })
+
+  test("typed publisher specs reject argv and flag-value injection before either credential mode dispatches", async () => {
+    const { platform, commands } = platformFixture()
+    const workloadGrant = await Effect.runPromise(provideEnvironment(
+      platform.credentialProvider.acquireForMutation(trustedRequest(), decision).pipe(
+        Effect.flatMap((value) => value._tag === "WorkloadIdentity"
+          ? Effect.succeed(value as WorkloadIdentity)
+          : Effect.die("expected workload identity")))
+    ))
+    const tokenGrant = await acquireToken(platform)
+    const hostileOverrides: ReadonlyArray<Readonly<Record<string, unknown>>> = [
+      { argv: ["npm", "publish", tarballPath, "--registry", "https://evil.example/", "--tag", "evil"] },
+      { registryUrl: "https://registry.npmjs.org/ --registry=https://evil.example/" },
+      { registryUrl: "https://registry.example.test/" },
+      { distTag: "latest --tag=evil" },
+      { access: "public --access=restricted" },
+      { provenance: "required --provenance=false" },
+      { packageName: "@fixture/other" },
+      { version: "2.0.0" },
+      { cwd: "workspace" },
+      { tarballPath: "/workspace/blobs/../hostile.tgz" }
+    ]
+    for (const override of hostileOverrides) {
+      const spec = {
+        _tag: "WorkloadPublisherSpec",
+        operation,
+        ...publisherFields,
+        ...override
+      } as unknown as Parameters<typeof platform.certifiedPublisherSpawn.spawn>[0]
+      await expect(Effect.runPromise(provideEnvironment(
+        platform.certifiedPublisherSpawn.spawn(spec, workloadGrant)
+      ))).rejects.toMatchObject({ _tag: "CredentialStrategyUnsupported" })
+    }
+    let registryGetterReads = 0
+    const accessorSpec = { _tag: "WorkloadPublisherSpec", operation, ...publisherFields }
+    Object.defineProperty(accessorSpec, "registryUrl", {
+      enumerable: true,
+      get: () => {
+        registryGetterReads += 1
+        return registryGetterReads === 1 ? registryUrl : "https://evil.example/"
+      }
+    })
+    await expect(Effect.runPromise(provideEnvironment(platform.certifiedPublisherSpawn.spawn(
+      accessorSpec as unknown as Parameters<typeof platform.certifiedPublisherSpawn.spawn>[0],
+      workloadGrant
+    )))).rejects.toMatchObject({ _tag: "CredentialStrategyUnsupported" })
+    expect(registryGetterReads).toBe(0)
+    await Effect.runPromise(provideEnvironment(Effect.scoped(Effect.gen(function*() {
+      const userConfig = yield* platform.npmUserConfigResource.acquire({
+        operation: operation as Extract<PublisherOperation, { readonly _tag: "PublishOperation" }>,
+        registryUrl: audience
+      }, tokenGrant)
+      for (const override of hostileOverrides) {
+        const hostileTokenSpec = {
+          _tag: "NpmPublisherSpec",
+          operation,
+          ...publisherFields,
+          userConfig,
+          ...override
+        } as unknown as Parameters<typeof platform.certifiedPublisherSpawn.spawn>[0]
+        yield* platform.certifiedPublisherSpawn.spawn(hostileTokenSpec, tokenGrant).pipe(
+          Effect.flip,
+          Effect.tap((error) => Effect.sync(() => expect(error).toMatchObject({
+            _tag: "CredentialStrategyUnsupported"
+          })))
+        )
+      }
+    }))))
+    expect(commands).toHaveLength(0)
   })
 
   test("trusted npm preflight requires Node 22.14 and npm 11.5.1 before publish dispatch", async () => {

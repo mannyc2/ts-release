@@ -7,6 +7,7 @@ import {
   sha256Digest
 } from "../../../src/model/digest.js"
 import { makeGithubSubjects } from "../../../src/publication/github.js"
+import type { MutationAttempt } from "../../../src/publication/report.js"
 import {
   encodeProtocolJsonLines,
   type HttpExchange
@@ -131,6 +132,26 @@ describe("GitHub protocol contract v1", () => {
     expect(encodeProtocolJsonLines(double.events)).toBe(golden("wrong-annotated-tag"))
   })
 
+  test("recursively peels a successful annotated-tag chain to the exact prepared commit", async () => {
+    const fixture = makeGithubFixture()
+    const double = makeGithubProtocolDouble(protocolScenario({
+      tagRef: { type: "tag", sha: annotatedTagSha },
+      tagObjects: {
+        [annotatedTagSha]: { type: "tag", sha: nestedTagSha },
+        [nestedTagSha]: { type: "commit", sha: preparedCommit }
+      },
+      release: releaseState(fixture)
+    }))
+    const report = await runGithubProtocol(fixture, double)
+    expect(report.subjects[1]?._tag).toBe("AlreadyEquivalent")
+    expect(double.mutationCount()).toBe(0)
+    expect(double.events.filter((event): event is HttpExchange => event._tag === "HttpExchange" &&
+      event.url.includes("/git/tags/")).map((event) => event.url)).toEqual([
+      `${apiBase}/git/tags/${annotatedTagSha}`,
+      `${apiBase}/git/tags/${nestedTagSha}`
+    ])
+  })
+
   test("treats unreadable or malformed annotated-tag state as inconclusive and never mutates", async () => {
     const fixture = makeGithubFixture()
     const double = makeGithubProtocolDouble(protocolScenario({
@@ -186,6 +207,8 @@ describe("GitHub protocol contract v1", () => {
       `${apiBase}/releases/700/assets?per_page=100&page=2`,
       `${apiBase}/releases/700/assets?per_page=100&page=3`
     ])
+    expect(double.events.some((event) => event._tag === "HttpExchange" &&
+      event.url.includes("/search/"))).toBe(false)
     expect(double.mutationCount()).toBe(0)
   })
 
@@ -212,6 +235,37 @@ describe("GitHub protocol contract v1", () => {
     expect(double.mutationCount()).toBe(0)
   })
 
+  test("missing or foreign asset API URIs are inconclusive and never authorize mutation", async () => {
+    const fixture = makeGithubFixture()
+    const listUrl = `${apiBase}/releases/700/assets?per_page=100&page=1`
+    for (const url of [undefined, "https://api.github.com/repos/owner/other/releases/assets/100"] as const) {
+      const asset = {
+        id: 100,
+        name: fixture.assets[0]!.name,
+        size: fixture.assets[0]!.bytes.length,
+        content_type: fixture.assets[0]!.mediaType,
+        state: "uploaded",
+        digest: formatGitHubSha256(sha256Digest(fixture.assets[0]!.bytes)),
+        ...(url === undefined ? {} : { url })
+      }
+      const double = makeGithubProtocolDouble(protocolScenario({
+        tagRef: { type: "commit", sha: preparedCommit },
+        release: releaseState(fixture),
+        faults: [{
+          phase: "observe",
+          method: "GET",
+          url: listUrl,
+          outcome: { _tag: "HttpResponse", status: 200, body: [asset] }
+        }]
+      }))
+      const subject = makeGithubSubjects(fixture.bundle, fixture.publication, double.http, double.mutationHttp)[0]
+      const grant = await acquire(fixture, 0)
+      expect((await Effect.runPromise(subject.observe(grant, { phase: "pre-mutation" })))._tag)
+        .toBe("Inconclusive")
+      expect(double.mutationCount()).toBe(0)
+    }
+  })
+
   test("conflicts on duplicate and extra provider asset names", async () => {
     const fixture = makeGithubFixture()
     for (const assets of [
@@ -229,6 +283,56 @@ describe("GitHub protocol contract v1", () => {
       })
       expect(double.mutationCount()).toBe(0)
     }
+  })
+
+  test("conflicts on exact-name assets with wrong media type or size", async () => {
+    const fixture = makeGithubFixture()
+    for (const asset of [
+      protocolAsset(fixture, 0, { mediaType: "application/octet-stream" }),
+      protocolAsset(fixture, 0, { bytes: new TextEncoder().encode("wrong-size") })
+    ]) {
+      const double = makeGithubProtocolDouble(protocolScenario({
+        tagRef: { type: "commit", sha: preparedCommit },
+        release: releaseState(fixture, [asset])
+      }))
+      const report = await runGithubProtocol(fixture, double)
+      expect(report.subjects[1]).toMatchObject({
+        _tag: "BlockedSubject",
+        cause: { _tag: "Conflict" }
+      })
+      expect(double.mutationCount()).toBe(0)
+    }
+  })
+
+  test("anonymous hidden 404 is inconclusive, authenticated absence authorizes create, and draft mismatch conflicts", async () => {
+    const fixture = makeGithubFixture()
+    const absentDouble = makeGithubProtocolDouble(protocolScenario({}))
+    const absentSubject = makeGithubSubjects(
+      fixture.bundle,
+      fixture.publication,
+      absentDouble.http,
+      absentDouble.mutationHttp
+    )[0]
+    const anonymous = await acquire(fixture, 0)
+    const authenticated = await acquire(fixture, 1)
+    const anonymousObservation = await Effect.runPromise(absentSubject.observe(anonymous, { phase: "pre-mutation" }))
+    const authenticatedObservation = await Effect.runPromise(
+      absentSubject.observe(authenticated, { phase: "pre-mutation" })
+    )
+    expect(anonymousObservation._tag).toBe("Inconclusive")
+    expect(authenticatedObservation._tag).toBe("AuthoritativelyAbsent")
+    expect(absentSubject.decide(authenticatedObservation)._tag).toBe("ProviderAuthorizedCreate")
+
+    const draftDouble = makeGithubProtocolDouble(protocolScenario({
+      tagRef: { type: "commit", sha: preparedCommit },
+      release: { ...releaseState(fixture), draft: true }
+    }))
+    const draftReport = await runGithubProtocol(fixture, draftDouble)
+    expect(draftReport.subjects[1]).toMatchObject({
+      _tag: "BlockedSubject",
+      cause: { _tag: "Conflict", differences: [{ field: "release.draft" }] }
+    })
+    expect(draftDouble.mutationCount()).toBe(0)
   })
 
   test("validates a missing API digest by downloading and hashing exact asset bytes", async () => {
@@ -363,6 +467,49 @@ describe("GitHub protocol contract v1", () => {
     expect(double.mutationCount()).toBe(1)
   })
 
+  test("two actors observe absence, one wins create, and the loser reobserves without replay", async () => {
+    const fixture = makeGithubFixture([])
+    const double = makeGithubProtocolDouble(protocolScenario({}))
+    const actors = [0, 1].map(() => makeGithubSubjects(
+      fixture.bundle,
+      fixture.publication,
+      double.http,
+      double.mutationHttp
+    )[0])
+    const credentials = githubProtocolCredentials()
+    const grants = await Promise.all(actors.map((actor) => Effect.runPromise(
+      credentials.acquireForObservation(actor.observationRequests[1]!)
+    )))
+    const before = await Promise.all(actors.map((actor, index) => Effect.runPromise(
+      actor.observe(grants[index]!, { phase: "pre-mutation" })
+    )))
+    const decisions = actors.map((actor, index) => actor.decide(before[index]!))
+    expect(decisions.map((decision) => decision._tag)).toEqual([
+      "ProviderAuthorizedCreate",
+      "ProviderAuthorizedCreate"
+    ])
+    const mutationGrants = await Promise.all(actors.map((actor, index) => {
+      const decision = decisions[index]!
+      if (decision._tag !== "ProviderAuthorizedCreate") throw new Error("Expected create decision.")
+      return Effect.runPromise(credentials.acquireForMutation(actor.mutationRequest, decision))
+    }))
+    const attempts: Array<MutationAttempt> = []
+    for (const [index, actor] of actors.entries()) {
+      const decision = decisions[index]!
+      if (decision._tag !== "ProviderAuthorizedCreate") throw new Error("Expected create decision.")
+      attempts.push(await Effect.runPromise(actor.mutate(decision, mutationGrants[index]!)))
+    }
+    const loserAfter = await Effect.runPromise(actors[1]!.observe(grants[1]!, {
+      phase: "post-mutation",
+      attempt: attempts[1]!
+    }))
+
+    expect(attempts.map((attempt) => attempt._tag)).toEqual(["Applied", "OutcomeUnknown"])
+    expect(loserAfter._tag).toBe("PresentEquivalent")
+    expect(double.mutationCount()).toBe(1)
+    expect(mutationEvents(double.events)).toHaveLength(2)
+  })
+
   test("classifies received statuses conservatively before any accepted write", async () => {
     for (const status of [401, 403, 404, 409, 422, 429, 500, 503] as const) {
       const fixture = makeGithubFixture([])
@@ -387,9 +534,7 @@ describe("GitHub protocol contract v1", () => {
       if (decision._tag !== "ProviderAuthorizedCreate") throw new Error("expected create decision")
       const mutationGrant = await Effect.runPromise(credentials.acquireForMutation(subject.mutationRequest, decision))
       const attempt = await Effect.runPromise(subject.mutate(decision, mutationGrant))
-      expect(attempt._tag).toBe(status === 401 || status === 403
-        ? "RejectedByProvider"
-        : "OutcomeUnknown")
+      expect(attempt._tag).toBe("OutcomeUnknown")
     }
   })
 })

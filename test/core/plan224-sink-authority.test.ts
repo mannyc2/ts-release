@@ -8,6 +8,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import {
+  AnonymousAuthStrategy,
   CanonicalAudience,
   CredentialRef,
   CredentialRequest,
@@ -15,7 +16,7 @@ import {
   SubjectId,
   TokenAuthStrategy
 } from "../../src/model/authority.js"
-import { NonEmptyName } from "../../src/model/primitives.js"
+import { NonEmptyName, Version } from "../../src/model/primitives.js"
 import {
   makeCredentialProvider,
   makePublisherSink,
@@ -25,7 +26,9 @@ import {
 } from "../../src/publication/authority.js"
 import type { HttpRequest, PublicationHttp } from "../../src/publication/http.js"
 import { MutationPrecondition, NeedsMutation } from "../../src/publication/report.js"
+import type { NpmPublisherSpec, WorkloadPublisherSpec } from "../../src/publication/publisher.js"
 import { makeEnvironmentCredentialPlatform } from "../../src/platform/credentials.js"
+import { CanonicalNpmRegistryEndpoint, NpmDistTag } from "../../src/recipes/config.js"
 import { recordingSpawner } from "./host-doubles.js"
 
 const subject = SubjectId.make("npm:@fixture/plan224-sinks@1.0.0")
@@ -33,6 +36,16 @@ const provider = ProviderId.make("npm")
 const audience = CanonicalAudience.make("https://registry.npmjs.org/")
 const wrongAudience = CanonicalAudience.make("https://registry.example.test/")
 const ref = CredentialRef.make("PLAN224_SINK_TOKEN")
+const publisherFields = {
+  cwd: "/workspace",
+  tarballPath: `/workspace/blobs/${"a".repeat(64)}`,
+  packageName: NonEmptyName.make("@fixture/plan224-sinks"),
+  version: Version.make("1.0.0"),
+  registryUrl: CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/"),
+  distTag: NpmDistTag.make("latest"),
+  access: "public",
+  provenance: "required"
+} as const
 const decision = NeedsMutation.make({
   subject,
   precondition: MutationPrecondition.make({ kind: NonEmptyName.make("version-absent") })
@@ -52,6 +65,14 @@ const requestFor = (purpose: "observe" | "publish" | "correct") => CredentialReq
   audience,
   purpose,
   strategy: TokenAuthStrategy.make({ kind: "token", credential: ref })
+})
+
+const anonymousRequest = CredentialRequest.make({
+  subject,
+  provider,
+  audience,
+  purpose: "observe",
+  strategy: AnonymousAuthStrategy.make({ kind: "anonymous" })
 })
 
 const environment = {
@@ -101,6 +122,12 @@ describe("Plan 224 host sink authority", () => {
       platform.npmUserConfigResource.acquire(npmInput, workload)
       // @ts-expect-error WorkloadIdentity cannot enter the observation HTTP sink.
       platform.httpAuthorizer.execute(observationInput, workload)
+      const tokenSpec = undefined as unknown as NpmPublisherSpec
+      const workloadSpec = undefined as unknown as WorkloadPublisherSpec
+      // @ts-expect-error Certified token publishers never accept caller-authored argv.
+      tokenSpec.argv
+      // @ts-expect-error Certified workload publishers never accept caller-authored argv.
+      workloadSpec.argv
     }
     expect(recorder.commands).toEqual([])
   })
@@ -124,10 +151,10 @@ describe("Plan 224 host sink authority", () => {
         platform.credentialProvider.acquireForMutation(requestFor("publish"), decision)
       )))
       const observeGrant = await Effect.runPromise(withEnvironment(
-        platform.credentialProvider.acquireForObservation(requestFor("observe")).pipe(
-          Effect.flatMap((grant) => grant._tag === "ScopedSecret"
+        platform.credentialProvider.acquireForObservation(anonymousRequest).pipe(
+          Effect.flatMap((grant) => grant._tag === "AnonymousAccess"
             ? Effect.succeed(grant)
-            : Effect.die("Expected a scoped secret."))
+            : Effect.die("Expected anonymous access."))
         )
       ))
       const wrongPurposeGrant = await correctionOnlyGrant()
@@ -161,8 +188,7 @@ describe("Plan 224 host sink authority", () => {
       const workloadSpec = {
         _tag: "WorkloadPublisherSpec" as const,
         operation,
-        argv: ["npm", "publish", "fixture.tgz"] as const,
-        cwd: "/workspace"
+        ...publisherFields
       }
       await expect(Effect.runPromise(withEnvironment(platform.certifiedPublisherSpawn.spawn({
         ...workloadSpec,

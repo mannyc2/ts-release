@@ -4,6 +4,7 @@
   "workspaces": {
     "": {
       "dependencies": {
+        "@effect/platform-node-shared": "4.0.0-beta.83",
         "semver": "^7.8.5",
       },
       "devDependencies": {
@@ -17,9 +18,9 @@
         "typescript": "^6.0.3",
       },
       "peerDependencies": {
-        "@effect/platform-bun": "^4.0.0-beta.83",
-        "@effect/platform-node": "^4.0.0-beta.83",
-        "effect": "^4.0.0-beta.83",
+        "@effect/platform-bun": "4.0.0-beta.83",
+        "@effect/platform-node": "4.0.0-beta.83",
+        "effect": "4.0.0-beta.83",
       },
     },
     "apps/release-ts": {
@@ -40,6 +41,7 @@
       "dependencies": {
         "@actions/artifact": "6.2.1",
         "@actions/core": "^3.0.1",
+        "@actions/github": "^9.1.1",
         "@effect/platform-node": "4.0.0-beta.83",
         "@mannyc1/ts-release": "file:../..",
         "effect": "4.0.0-beta.83",
@@ -433,8 +435,6 @@
 
     "@bufbuild/protoplugin/typescript": ["typescript@5.4.5", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ=="],
 
-    "@mannyc1/ts-release-action-app/@mannyc1/ts-release": ["@root:", {}],
-
     "@octokit/plugin-paginate-rest/@octokit/types": ["@octokit/types@16.0.0", "", { "dependencies": { "@octokit/openapi-types": "^27.0.0" } }, "sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg=="],
 
     "@octokit/plugin-rest-endpoint-methods/@octokit/types": ["@octokit/types@16.0.0", "", { "dependencies": { "@octokit/openapi-types": "^27.0.0" } }, "sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg=="],
@@ -456,8 +456,6 @@
     "wrap-ansi-cjs/string-width": ["string-width@4.2.3", "", { "dependencies": { "emoji-regex": "^8.0.0", "is-fullwidth-code-point": "^3.0.0", "strip-ansi": "^6.0.1" } }, "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g=="],
 
     "wrap-ansi-cjs/strip-ansi": ["strip-ansi@6.0.1", "", { "dependencies": { "ansi-regex": "^5.0.1" } }, "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A=="],
-
-    "@mannyc1/ts-release-action-app/@mannyc1/ts-release/@effect/bun-test": ["@effect/bun-test@file:vendor/effect-bun-test", { "peerDependencies": { "effect": "4.0.0-beta.83" } }],
 
     "@octokit/plugin-paginate-rest/@octokit/types/@octokit/openapi-types": ["@octokit/openapi-types@27.0.0", "", {}, "sha512-whrdktVs1h6gtR+09+QsNk2+FO+49j6ga1c55YZudfEG+oKJVvJLQi3zkOm5JjiUXAagWK2tI2kTGKJ2Ys7MGA=="],
 

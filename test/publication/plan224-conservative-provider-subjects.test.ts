@@ -58,13 +58,19 @@ import {
   unavailableMutationServicesLayer,
   unavailableNpmUserConfigResource
 } from "../fixtures/mutation-services.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "../fixtures/prepared-provenance.js"
 
 const source = (digest: Sha256Digest): PreparedSource => PreparedSource.make({
   commit: NonEmptyName.make("commit"),
   tree: NonEmptyName.make("tree"),
   clean: true,
   packageManifestPath: SafeRelativePath.make("package.json"),
-  packageManifestDigest: digest
+  packageManifestDigest: digest,
+  materialized: fixtureStagingSnapshot
 })
 
 const artifact = (id: string, path: string, mediaType: string, bytes: Uint8Array): PreparedArtifact => {
@@ -76,7 +82,8 @@ const artifact = (id: string, path: string, mediaType: string, bytes: Uint8Array
     size: bytes.length,
     digest,
     blob: digest,
-    mediaType
+    mediaType,
+    ...fixtureArtifactProvenance(`plan224-${id}`)
   })
 }
 
@@ -98,7 +105,7 @@ const npmFixture = (): {
     registryUrl,
     artifactId: preparedArtifact.id,
     distTag: NpmDistTag.make("latest"), access: "public", authentication,
-    provenance: "disabled", publicationMode: "direct",
+    provenance: "disabled",
     authority: makeNpmPublicationAuthorityIntent({
       packageName: "@fixture/package",
       version: "1.0.0",
@@ -107,6 +114,7 @@ const npmFixture = (): {
   })
   const digest = sha256Digest(bytes)
   const manifest = PreparedReleaseV2.make({
+    kind: "complete",
     schemaVersion: "prepared-release/v2",
     source: source(digest),
     project: PreparedProject.make({
@@ -115,7 +123,9 @@ const npmFixture = (): {
       version: publication.version,
       tag: NonEmptyName.make("v1.0.0")
     }),
+    provenance: fixturePreparedProvenance,
     artifacts: [preparedArtifact],
+    collections: [],
     publications: [publication]
   })
   return {
@@ -157,6 +167,7 @@ const githubFixture = (): {
   })
   const digest = sha256Digest(bytes)
   const manifest = PreparedReleaseV2.make({
+    kind: "complete",
     schemaVersion: "prepared-release/v2",
     source: source(digest),
     project: PreparedProject.make({
@@ -164,7 +175,9 @@ const githubFixture = (): {
       version: Version.make("1.0.0"),
       tag: publication.tag
     }),
+    provenance: fixturePreparedProvenance,
     artifacts: [preparedArtifact],
+    collections: [],
     publications: [publication]
   })
   return {
@@ -250,7 +263,7 @@ const npmMetadata = (bytes: Uint8Array): unknown => ({
 })
 
 describe("Plan 224 conservative provider subjects", () => {
-  test("derives exact credential requests and one composite GitHub subject from prepared authority", async () => {
+  test("derives exact credential requests and makes npm depend on the preceding GitHub publication", async () => {
     const npm = npmFixture()
     const github = githubFixture()
     const bundle: PreparedBundle = {
@@ -258,7 +271,7 @@ describe("Plan 224 conservative provider subjects", () => {
       manifest: PreparedReleaseV2.make({
         ...npm.bundle.manifest,
         artifacts: [...npm.bundle.manifest.artifacts, ...github.bundle.manifest.artifacts],
-        publications: [npm.publication, github.publication]
+        publications: [github.publication, npm.publication]
       }),
       blobs: new Map([...npm.bundle.blobs, ...github.bundle.blobs])
     }
@@ -269,12 +282,14 @@ describe("Plan 224 conservative provider subjects", () => {
 
     expect(subjects).toHaveLength(2)
     expect(subjects.map((subject) => subject.id)).toEqual([
-      npm.publication.authority.subject,
-      github.publication.authority.subject
+      github.publication.authority.subject,
+      npm.publication.authority.subject
     ])
+    expect(subjects[0]?.prerequisites).toBeUndefined()
+    expect(subjects[1]?.prerequisites).toEqual([github.publication.authority.subject])
     for (const [subject, publication] of [
-      [subjects[0]!, npm.publication],
-      [subjects[1]!, github.publication]
+      [subjects[0]!, github.publication],
+      [subjects[1]!, npm.publication]
     ] as const) {
       expect(subject.observationRequests.map((request) => request.strategy)).toEqual(
         [...publication.authority.observationStrategies]
@@ -293,6 +308,42 @@ describe("Plan 224 conservative provider subjects", () => {
         strategy: publication.authority.publishStrategy
       })
     }
+  })
+
+  test("a blocked GitHub publication makes npm not reached before any npm read or credential", async () => {
+    const npm = npmFixture()
+    const github = githubFixture()
+    const bundle: PreparedBundle = {
+      ...npm.bundle,
+      manifest: PreparedReleaseV2.make({
+        ...npm.bundle.manifest,
+        artifacts: [...npm.bundle.manifest.artifacts, ...github.bundle.manifest.artifacts],
+        publications: [github.publication, npm.publication]
+      }),
+      blobs: new Map([...npm.bundle.blobs, ...github.bundle.blobs])
+    }
+
+    const { report, credentialRequests, httpRequests } = await runPublish(bundle, [
+      response(500, { message: "fixture GitHub unavailable" })
+    ])
+
+    expect(report.status).toBe("blocked")
+    expect(report.subjects.map((subject) => subject._tag)).toEqual([
+      "AlreadyEquivalent",
+      "BlockedSubject",
+      "NotReached"
+    ])
+    expect(report.subjects[2]).toMatchObject({
+      subject: npm.publication.authority.subject,
+      reason: {
+        _tag: "DependencyBlocked",
+        prerequisite: github.publication.authority.subject
+      }
+    })
+    expect(credentialRequests.every((request) => request.provider === "github" && request.purpose === "observe")).toBe(true)
+    expect(httpRequests.every((request) => request.url.includes("api.github.com"))).toBe(true)
+    expect(credentialRequests.some((request) => request.provider === "npm")).toBe(false)
+    expect(httpRequests.some((request) => request.url.includes("registry"))).toBe(false)
   })
 
   test("npm recomputes both digests and turns a witnessed mismatch into a conflict without mutation authority", async () => {
@@ -323,6 +374,29 @@ describe("Plan 224 conservative provider subjects", () => {
     expect(httpRequests).toHaveLength(1)
   })
 
+  test("ordinary npm publication preserves an existing deprecation while proving package bytes equivalent", async () => {
+    const { bundle, bytes } = npmFixture()
+    const metadata = npmMetadata(bytes) as {
+      readonly dist: { readonly integrity: string, readonly shasum: string }
+    }
+    const { report, credentialRequests, httpRequests } = await runPublish(bundle, [response(200, {
+      name: "@fixture/package",
+      versions: {
+        "1.0.0": {
+          name: "@fixture/package",
+          version: "1.0.0",
+          deprecated: "Use 1.0.1.",
+          dist: metadata.dist
+        }
+      },
+      "dist-tags": { latest: "1.0.0" }
+    })])
+
+    expect(report.subjects[1]).toMatchObject({ _tag: "AlreadyEquivalent" })
+    expect(credentialRequests.map((request) => request.purpose)).toEqual(["observe"])
+    expect(httpRequests).toHaveLength(1)
+  })
+
   test("npm exact-looking, missing, malformed, 404, status, and malformed JSON reads remain inconclusive", async () => {
     const { bundle, bytes } = npmFixture()
     const cases: ReadonlyArray<HttpResponse> = [
@@ -335,14 +409,14 @@ describe("Plan 224 conservative provider subjects", () => {
     ]
 
     for (const current of cases) {
-      const { report, credentialRequests } = await runPublish(bundle, [current, current])
+      const { report, credentialRequests } = await runPublish(bundle, [current])
       expect(report.status).toBe("blocked")
       expect(report.subjects[1]).toMatchObject({
         _tag: "BlockedSubject",
         cause: { _tag: "Blocked" },
-        observations: [{ _tag: "Inconclusive" }, { _tag: "Inconclusive" }]
+        observations: [{ _tag: "Inconclusive" }]
       })
-      expect(credentialRequests.map((request) => request.purpose)).toEqual(["observe", "observe"])
+      expect(credentialRequests.map((request) => request.purpose)).toEqual(["observe"])
     }
   })
 

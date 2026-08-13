@@ -3,8 +3,8 @@
   "project": {
     "name": "@scope/release-example-first",
     "packageName": "@scope/release-example-first",
+    "repository": "owner/release-example-first",
     "version": "0.1.0",
-    "commit": "example",
     "tag": "v0.1.0"
   },
   "npmPackage": {
@@ -12,11 +12,20 @@
   },
   "publish": {
     "npm": {
-      "registry": "https://registry.npmjs.org",
-      "packageName": "@scope/release-example-first",
-      "packagePath": ".",
-      "tokenEnv": "NPM_TOKEN",
-      "access": "public"
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "owner/release-example-first",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
+      },
+      "access": "public",
+      "provenance": "automatic"
     }
   }
 }

@@ -23,6 +23,8 @@ const expectedRootBin = {
   "ts-release": "./dist/bin/ts-release.js"
 } as const
 const expectedRootRuntimeExports = new Set([
+  "AuthoredGithubReleaseAmendment",
+  "AuthoredNpmDeprecation",
   "CompletePreparedReleaseRef",
   "CorrectionReport",
   "CredentialFailureCause",
@@ -44,6 +46,7 @@ const expectedRootRuntimeExports = new Set([
   "ReleaseReport",
   "ReleaseRuntime",
   "correct",
+  "decodeAuthoredCorrection",
   "decodeCompletePreparedReleaseRef",
   "defineRelease",
   "encodeCompletePreparedReleaseRef",
@@ -63,13 +66,17 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
   "./node": new Set(["NodeReleaseLayer", "makeNodeReleaseLayer"]),
   "./bun": new Set(["BunReleaseLayer", "makeBunReleaseLayer"]),
   "./store": new Set([
+    "GitHubActionsPreparedStoreProvenance",
+    "LocalPreparedStoreProvenance",
     "PreparedCommitHandoffError",
     "PreparedManifestError",
     "PreparedReleaseV2",
     "PreparedStoreError",
+    "PreparedStoreProvenanceError",
     "decodePreparedRelease",
     "encodePreparedRelease",
-    "makeLocalPreparedReleaseStore"
+    "makeLocalPreparedReleaseStore",
+    "verifyPreparedStoreProvenance"
   ]),
   "./host": new Set([
     "CredentialAudienceMismatch",
@@ -78,7 +85,13 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
     "CredentialSubjectMismatch",
     "CredentialUnavailable",
     "ReleaseContextError",
+    "SafeRelativePath",
     "Sha256Digest",
+    "SourceMaterializationError",
+    "StagingEntry",
+    "StagingSnapshot",
+    "VerifiedSource",
+    "WorkspaceRoot",
     "makeCredentialProvider",
     "makeCustomReleaseLayer",
     "makeSourceObserver",
@@ -493,7 +506,7 @@ const checkExternalLibraryConsumer = async (
       return
     }
     const expectedCalls: ExternalConsumerResult["calls"] = {
-      source: 3,
+      source: 1,
       run: 1,
       commit: 1,
       load: 2,

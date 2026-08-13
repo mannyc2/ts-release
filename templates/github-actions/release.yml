@@ -2,27 +2,52 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact candidate commit; it must be the current main tip.
+        required: true
+        type: string
+      prepared_ref:
+        description: Optional prepared:gha reference for recovery; leave empty for a fresh release.
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   release:
+    if: ${{ github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.2"
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
+      - run: bun add --global npm@11.5.1
       - run: bun install --frozen-lockfile
-      - uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
+      - id: release
+        uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          command: release
-          config: release.config.json
+          command: ${{ inputs.prepared_ref == '' && 'release' || 'publish' }}
+          config: ${{ inputs.prepared_ref == '' && 'release.config.json' || '' }}
+          prepared: ${{ inputs.prepared_ref }}
+      - name: Upload redacted release report
+        if: ${{ always() && steps.release.outputs.report-ref != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-release-report-${{ github.run_attempt }}
+          path: ${{ steps.release.outputs.report-ref }}
+          if-no-files-found: error

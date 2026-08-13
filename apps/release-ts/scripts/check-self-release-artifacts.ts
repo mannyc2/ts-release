@@ -1,17 +1,20 @@
 import { chmodSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { basename, join } from "node:path"
 import { spawnSync } from "node:child_process"
 import * as Effect from "effect/Effect"
 import { makeReleaseApi } from "../../../src/api/api.js"
 import { makeNodeReleaseLayer } from "../../../src/platform/node.js"
 import { makeLocalPreparedReleaseStore } from "../../../src/release/prepared-store.js"
+import { bunArtifactTargets } from "../../../src/capabilities/bun-targets.js"
+import { inspectBunBinaryHeader } from "../../../scripts/lib/bun-targets.js"
 import {
   encodeCompletePreparedReleaseRef, makeLocalCompletePreparedReleaseRef
 } from "../../../src/release/prepared-ref.js"
 import { preparedRoot, report, root, selfReleaseConfig } from "./self-release-facts.js"
 
-type Artifact = { readonly id: string, readonly digest: string, readonly path: string }
-type Manifest = { readonly artifacts: ReadonlyArray<Artifact> }
+type Artifact = { readonly id: string, readonly digest: string, readonly path: string, readonly size: number }
+type Collection = { readonly contract: { readonly id: string }, readonly members: ReadonlyArray<{ readonly key: string, readonly artifactId: string }> }
+type Manifest = { readonly artifacts: ReadonlyArray<Artifact>, readonly collections: ReadonlyArray<Collection> }
 const failures: Array<string> = []
 const run = (command: string, args: ReadonlyArray<string>, cwd: string) => spawnSync(command, [...args], {
   cwd, encoding: "utf8", stdio: "pipe",
@@ -41,11 +44,54 @@ try {
   const native = artifact(manifest, "cli-linux-x64")
   if (npm === undefined) failures.push("Prepared bundle has no npm tarball artifact.")
   if (native === undefined) failures.push("Prepared bundle has no executable for the current Linux host.")
-  const codexArchive = artifact(manifest, "agents-codex-archive")
-  const claudeArchive = artifact(manifest, "agents-claude-archive")
-  if (codexArchive === undefined || claudeArchive === undefined) failures.push("Prepared bundle is missing a provider-native agent archive.")
+  const agentCollection = manifest.collections.find((collection) => collection.contract.id === "agents")
+  const expectedAgentKeys = ["ts-release-claude.zip", "ts-release-codex.zip"]
+  const agentMembers = agentCollection?.members ?? []
+  if (agentMembers.map((member) => member.key).join(",") !== expectedAgentKeys.join(",")) {
+    failures.push("Prepared bundle agent collection does not contain exactly the provider-native archives.")
+  }
+  const agentArchives = agentMembers.map((member) => ({ member, artifact: artifact(manifest, member.artifactId) }))
+  if (agentArchives.some((entry) => entry.artifact === undefined)) failures.push("Prepared agent collection references a missing artifact.")
 
   scratch = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-candidate-artifacts-"))
+  const targetMeasurements = bunArtifactTargets.map((target) => {
+    const executable = artifact(manifest, `cli-${target.id}`)
+    const tarGz = artifact(manifest, `cli-${target.id}-tar-gz`)
+    const zip = artifact(manifest, `cli-${target.id}-zip`)
+    if (executable === undefined || tarGz === undefined || zip === undefined) {
+      failures.push(`Prepared bundle is missing the per-target executable/archive set for ${target.id}.`)
+      return { target: target.id, executableBytes: 0, tarGzBytes: 0, zipBytes: 0 }
+    }
+    const executableBytes = artifactBytes(preparedDirectory, executable)
+    try {
+      const identity = inspectBunBinaryHeader(executableBytes.subarray(0, 4096))
+      if (identity.format !== target.format || identity.architecture !== target.architecture) {
+        failures.push(`${target.id} executable is ${identity.format}/${identity.architecture}, expected ${target.format}/${target.architecture}.`)
+      }
+    } catch (cause) {
+      failures.push(`${target.id} executable header is invalid: ${cause instanceof Error ? cause.message : String(cause)}`)
+    }
+    const expectedMember = basename(executable.path)
+    for (const [format, archiveValue, args] of [
+      ["tar.gz", tarGz, ["-tzf"]],
+      ["zip", zip, ["-Z1"]]
+    ] as const) {
+      const archivePath = join(scratch!, `${target.id}.${format === "zip" ? "zip" : "tar.gz"}`)
+      writeFileSync(archivePath, artifactBytes(preparedDirectory, archiveValue))
+      const listed = format === "zip"
+        ? run("unzip", [...args, archivePath], scratch!)
+        : run("tar", [...args, archivePath], scratch!)
+      if (listed.status !== 0 || outputText(listed.stdout).trim() !== expectedMember) {
+        failures.push(`${target.id} ${format} archive does not contain exactly ${expectedMember}.`)
+      }
+    }
+    return {
+      target: target.id,
+      executableBytes: executable.size,
+      tarGzBytes: tarGz.size,
+      zipBytes: zip.size
+    }
+  })
   if (npm !== undefined) {
     const tarball = join(scratch, "ts-release.tgz")
     writeFileSync(tarball, artifactBytes(preparedDirectory, npm))
@@ -62,18 +108,27 @@ try {
   }
   const cli = run("node", [join(root, "dist/bin/ts-release.js"), "--version"], root)
   if (cli.status !== 0 || !/^ts-release v0\.2\.0\n?$/u.test(outputText(cli.stdout).trim())) failures.push("The Node CLI bundle did not report candidate version 0.2.0.")
-  const action = run("node", [join(root, "apps/ts-release-action/dist/index.js")], root)
-  if (action.status === 0 || `${outputText(action.stdout)}\n${outputText(action.stderr)}`.includes("Action command must be one of") === false) failures.push("The Action bundle did not execute its parser under Node.")
-  for (const [id, value] of [["agents-codex-archive", codexArchive], ["agents-claude-archive", claudeArchive]] as const) {
+  const action = run("bun", [join(root, "apps/ts-release-action/dist/index.js")], root)
+  if (action.status === 0 || `${outputText(action.stdout)}\n${outputText(action.stderr)}`.includes("Action command must be one of") === false) failures.push("The Action bundle did not execute its exact Linux/Bun parser command.")
+  for (const { member, artifact: value } of agentArchives) {
     if (value === undefined) continue
-    const archive = join(scratch, `${id}.zip`)
+    const archive = join(scratch, member.key)
     writeFileSync(archive, artifactBytes(preparedDirectory, value))
     const check = run("unzip", ["-t", archive], scratch)
-    if (check.status !== 0) failures.push(`Generated ${id} archive failed unzip validation.`)
+    if (check.status !== 0) failures.push(`Generated ${member.key} archive failed unzip validation.`)
   }
   report("self-release-artifacts-report/v4", failures, {
     preparedReference: encodeCompletePreparedReleaseRef(prepared), npmTarball: npm !== undefined, nativeLinuxBinary: native !== undefined,
-    actionBundle: true, agentArchives: [codexArchive !== undefined, claudeArchive !== undefined].filter(Boolean).length,
+    actionBundle: true, agentArchives: agentArchives.filter((entry) => entry.artifact !== undefined).length,
+    artifactCount: manifest.artifacts.length,
+    totalArtifactBytes: manifest.artifacts.reduce((total, item) => total + item.size, 0),
+    uniqueBlobBytes: [...new Map(manifest.artifacts.map((item) => [item.digest, item.size])).values()]
+      .reduce((total, size) => total + size, 0),
+    targetMeasurements,
+    totalExecutableBytes: targetMeasurements.reduce((total, item) => total + item.executableBytes, 0),
+    totalTarGzBytes: targetMeasurements.reduce((total, item) => total + item.tarGzBytes, 0),
+    totalZipBytes: targetMeasurements.reduce((total, item) => total + item.zipBytes, 0),
+    totalArchiveBytes: targetMeasurements.reduce((total, item) => total + item.tarGzBytes + item.zipBytes, 0),
     evidenceState: "contract-tested"
   })
 } catch (cause) {

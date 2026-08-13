@@ -4,6 +4,7 @@ import { ReleaseRuntime } from "./api/runtime.js"
 import type { ReleaseApiLayer } from "./api/types.js"
 import type { RunCommand } from "./drivers/process.js"
 import { Sha256Digest, sha256Digest } from "./model/digest.js"
+import { SafeRelativePath, WorkspaceRoot } from "./model/primitives.js"
 import type { CredentialRequest } from "./model/authority.js"
 import {
   CredentialAudienceMismatch,
@@ -21,22 +22,26 @@ import {
   type MutationCredentialGrant
 } from "./publication/authority.js"
 import {
+  AuthorizedMutationHttp,
   HttpAuthorizer,
+  type AuthorizedMutationHttpShape,
   type HttpAuthorizationError,
   type HttpAuthorizerShape,
   type HttpObservationRequest,
   type HttpResponse
 } from "./publication/http.js"
 import {
-  AuthorizedMutationHttp,
   CertifiedPublisherSpawn,
   NpmUserConfigResource,
-  type AuthorizedMutationHttpShape,
   type CertifiedPublisherSpawnShape,
   type NpmUserConfigResourceShape
-} from "./platform/credentials.js"
+} from "./publication/publisher.js"
 import {
   ReleaseContextError,
+  SourceMaterializationError,
+  StagingEntry,
+  StagingSnapshot,
+  VerifiedSource,
   makeSourceObserver,
   type SourceObserverRuntime,
   type SourceObserverShape,
@@ -54,7 +59,13 @@ export {
   CredentialSubjectMismatch,
   CredentialUnavailable,
   ReleaseContextError,
+  SafeRelativePath,
   Sha256Digest,
+  SourceMaterializationError,
+  StagingEntry,
+  StagingSnapshot,
+  VerifiedSource,
+  WorkspaceRoot,
   makeCredentialProvider,
   makeSourceObserver,
   sha256Digest

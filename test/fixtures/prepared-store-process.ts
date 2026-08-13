@@ -11,6 +11,11 @@ import {
   loadPreparedRelease,
   storePreparedRelease
 } from "../../src/release/prepared-store.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "./prepared-provenance.js"
 
 const [mode, storeDirectory, bundleDirectory] = process.argv.slice(2)
 
@@ -24,23 +29,28 @@ if (mode === "write" && storeDirectory !== undefined) {
     size: bytes.length,
     digest,
     blob: digest,
-    mediaType: "application/gzip"
+    mediaType: "application/gzip",
+    ...fixtureArtifactProvenance()
   })
   const manifest = PreparedReleaseV2.make({
+    kind: "complete",
     schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({
       commit: NonEmptyName.make("abc123"),
       tree: NonEmptyName.make("tree123"),
       clean: true,
       packageManifestPath: SafeRelativePath.make("package.json"),
-      packageManifestDigest: sha256Digest(new TextEncoder().encode("package manifest"))
+      packageManifestDigest: sha256Digest(new TextEncoder().encode("package manifest")),
+      materialized: fixtureStagingSnapshot
     }),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"),
       version: Version.make("1.0.0"),
       tag: NonEmptyName.make("v1.0.0")
     }),
+    provenance: fixturePreparedProvenance,
     artifacts: [artifact],
+    collections: [],
     publications: []
   })
   const stored = await Effect.runPromise(storePreparedRelease(

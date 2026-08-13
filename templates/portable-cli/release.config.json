@@ -5,11 +5,7 @@
     "packageName": "@scope/pkg",
     "repository": "owner/repo",
     "version": "0.1.0",
-    "tag": "v0.1.0",
-    "description": "Portable CLI distribution for @scope/pkg",
-    "summary": "Portable CLI wrapper for @scope/pkg.",
-    "homepage": "https://github.com/owner/repo",
-    "license": "MIT"
+    "tag": "v0.1.0"
   },
   "npmPackage": {
     "path": "."
@@ -23,31 +19,35 @@
         "linux-x64",
         "linux-arm64",
         "darwin-x64",
-        "darwin-arm64",
-        "windows-x64"
+        "darwin-arm64"
       ],
       "output": "artifacts/pkg-{version}-{targetTriple}{ext}",
-      "binaryName": "pkg",
-      "installPath": "bin/pkg"
+      "binary": "pkg"
     }
   ],
   "publish": {
     "npm": {
-      "registry": "https://registry.npmjs.org",
-      "packageName": "@scope/pkg",
-      "packagePath": ".",
-      "trustedPublishing": {
-        "workflow": "release.yml",
-        "verifyPackageExists": true
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "owner/repo",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
       },
       "access": "public",
-      "provenance": true
+      "provenance": "automatic"
     },
     "github": {
       "repository": "owner/repo",
-      "tokenEnv": "GH_TOKEN",
+      "tokenEnv": "GITHUB_TOKEN",
       "draft": true,
-      "prerelease": false
+      "prerelease": false,
+      "body": "Portable CLI wrapper for @scope/pkg."
     }
   }
 }

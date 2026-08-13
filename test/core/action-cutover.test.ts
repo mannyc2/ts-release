@@ -11,7 +11,7 @@ import {
 import { decodeCompletePreparedReleaseRef } from "../../src/release/prepared-ref.js"
 
 const digest = "c".repeat(64)
-const preparedRef = `prepared:gha:owner/repository/runs/99/attempts/2/artifacts/ts-release-prepared-${digest}#sha256-${digest}`
+const preparedRef = `prepared:gha:owner/repository/runs/99/attempts/2/artifacts/ts-release-prepared-2-${digest}#sha256-${digest}`
 const preparedReference = () => Effect.runPromise(decodeCompletePreparedReleaseRef(preparedRef))
 const report = (status: "complete" | "blocked" | "uncertain") => ({ status, subjects: [] }) as never
 
@@ -148,7 +148,8 @@ test("a non-complete report fails closed after preserving recovery outputs", asy
   expect(written).toMatchObject({ status: "blocked", report: { status: "blocked" } })
   expect(written).not.toHaveProperty("result")
   expect(JSON.stringify(written)).not.toContain("publications")
-  expect(current.summaries.join("\n")).toContain("Re-run the failed publish job")
+  expect(current.summaries.join("\n")).toContain("prepared_ref=")
+  expect(current.summaries.join("\n")).toContain("re-run the failed publish job")
   expect(current.summaries.join("\n")).not.toContain("ts-release publish")
 })
 
@@ -188,7 +189,8 @@ test("a caught post-commit failure emits hosted rerun guidance without a local c
   expect(current.outputs["prepared-ref"]).toBe(preparedRef)
   expect(current.outputs["report-ref"]).toBe(".release/ts-release/action-report.json")
   const guidance = current.summaries.join("\n")
-  expect(guidance).toContain("Re-run the failed publish job")
+  expect(guidance).toContain(`prepared_ref=${preparedRef}`)
+  expect(guidance).toContain("re-run the failed publish job")
   expect(guidance).not.toContain("ts-release publish")
-  expect(guidance).not.toContain("dispatch")
+  expect(guidance).toContain("dispatch the same exact candidate")
 })

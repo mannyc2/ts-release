@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/mannyc2/ts-release/main/schema/release-config.schema.json",
+  "project": {
+    "name": "@scope/pkg",
+    "packageName": "@scope/pkg",
+    "repository": "owner/repo",
+    "version": "0.1.0",
+    "tag": "v0.1.0"
+  },
+  "npmPackage": {
+    "path": "."
+  },
+  "publish": {
+    "npm": {
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "owner/repo",
+          "workflow": "reviewed-release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
+      },
+      "access": "public",
+      "provenance": "automatic"
+    },
+    "github": {
+      "repository": "owner/repo",
+      "tokenEnv": "GITHUB_TOKEN",
+      "draft": true,
+      "prerelease": false
+    }
+  }
+}

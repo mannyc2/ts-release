@@ -22,7 +22,8 @@ const tests = [
   "test/correction/catalog-state.test.ts",
   "test/correction/github-release.test.ts",
   "test/correction/pypi-file-yank.test.ts",
-  "test/correction/canonical-intent.test.ts"
+  "test/correction/canonical-intent.test.ts",
+  "test/correction/plan229-authored-correction.test.ts"
 ]
 const result = spawnSync("bun", ["test", ...tests], { cwd: root, encoding: "utf8", stdio: "pipe" })
 if (result.status !== 0) failures.push(`Provider correction contract tests failed: ${result.stderr.trim()}`)

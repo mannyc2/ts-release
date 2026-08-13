@@ -1,80 +1,47 @@
 import * as Schema from "effect/Schema"
 import * as Semver from "semver"
+import { bunArtifactTargetIds } from "../model/bun-targets.js"
 import { CredentialRef } from "../model/authority.js"
-import { NonEmptyName, OutputId, SafeArchivePattern, SafeRelativePath, Version } from "../model/primitives.js"
+import {
+  ArtifactCollectionContract,
+  ArtifactCollectionSelector
+} from "../model/artifact-collection.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 
 const optional = Schema.optionalKey
 const nonempty = Schema.NonEmptyString
-const target = Schema.Literals([
-  "linux-x64", "linux-arm64", "linux-x64-musl", "linux-arm64-musl",
-  "darwin-x64", "darwin-arm64", "windows-x64", "windows-arm64"
-])
-const os = Schema.Literals(["linux", "darwin", "windows"])
-const arch = Schema.Literals(["x64", "arm64"])
+const target = Schema.Literals(bunArtifactTargetIds)
 
 export class CandidateProject extends Schema.Class<CandidateProject>("CandidateProject")({
   name: NonEmptyName,
   packageName: optional(nonempty),
   version: Version,
   repository: optional(nonempty),
-  packagePath: optional(SafeRelativePath),
-  commit: optional(nonempty),
-  tag: NonEmptyName,
-  notes: optional(Schema.String),
-  description: optional(nonempty),
-  summary: optional(nonempty),
-  homepage: optional(nonempty),
-  license: optional(nonempty)
-}) {}
-
-export class CandidatePlatform extends Schema.Class<CandidatePlatform>("CandidatePlatform")({
-  os,
-  arch,
-  libc: optional(Schema.Literals(["glibc", "musl"])),
-  binaryName: optional(nonempty),
-  executableExtension: optional(nonempty),
-  installPath: optional(nonempty),
-  targetTriple: optional(nonempty)
+  tag: NonEmptyName
 }) {}
 
 export class CandidateArtifact extends Schema.Class<CandidateArtifact>("CandidateArtifact")({
   id: OutputId,
   path: SafeRelativePath,
-  format: Schema.Literals(["tarball", "zip", "file", "directory", "executable", "binary"]),
-  checksum: optional(Schema.Struct({
-    algorithm: Schema.Literals(["sha256", "sha512"]),
-    value: Schema.String
-  })),
-  variant: optional(CandidatePlatform)
+  format: Schema.Literals(["tarball", "zip", "file", "executable"])
 }) {}
 
-const checksumName = SafeRelativePath.check(Schema.makeFilter((value: string) => {
-  const literal = value.replaceAll("{version}", "").replaceAll("{name}", "")
-  return literal.includes("{") || literal.includes("}")
-    ? "Checksum name supports only the {name} and {version} tokens."
-    : undefined
-}))
-
 export class CandidateChecksum extends Schema.Class<CandidateChecksum>("CandidateChecksum")({
-  algorithm: optional(Schema.Literals(["sha256", "sha512"])),
-  nameTemplate: optional(checksumName)
+  algorithm: Schema.Literals(["sha256", "sha512"])
 }) {}
 
 const build = {
-  id: optional(Schema.String),
-  targets: Schema.Array(target),
+  id: optional(nonempty),
+  targets: Schema.NonEmptyArray(target),
   output: optional(SafeRelativePath),
-  binary: optional(Schema.String)
+  binary: optional(NonEmptyName)
 }
 
 export class CandidateBunBuild extends Schema.Class<CandidateBunBuild>("CandidateBunBuild")({
   ...build,
   builder: Schema.Literal("bun"),
   entry: SafeRelativePath,
-  binaryName: optional(Schema.String),
-  installPath: optional(Schema.String),
-  cpu: optional(Schema.Literals(["baseline", "modern"])),
-  minify: optional(Schema.Boolean)
+  minify: optional(Schema.Literal(true))
 }) {}
 
 export class CandidateCommandBuild extends Schema.Class<CandidateCommandBuild>("CandidateCommandBuild")({
@@ -98,18 +65,15 @@ export const CandidateBuild = Schema.Union([
 
 export class CandidateArchive extends Schema.Class<CandidateArchive>("CandidateArchive")({
   id: optional(nonempty),
-  ids: optional(Schema.Array(nonempty)),
+  ids: optional(Schema.NonEmptyArray(OutputId)),
   nameTemplate: optional(nonempty),
-  formats: optional(Schema.Array(Schema.Literals(["tar.gz", "zip"]))),
-  files: optional(Schema.NonEmptyArray(SafeArchivePattern)),
-  wrapInDirectory: optional(Schema.Union([Schema.Boolean, Schema.String]))
+  formats: optional(Schema.NonEmptyArray(Schema.Literals(["tar.gz", "zip"])))
 }) {}
 
 const preparationBase = {
   id: NonEmptyName,
   run: Schema.NonEmptyArray(Schema.String),
   cwd: optional(SafeRelativePath),
-  environmentNames: optional(Schema.Array(nonempty)),
   inputs: optional(Schema.Array(OutputId))
 }
 
@@ -121,29 +85,32 @@ export class CandidateArtifactPreparation extends Schema.Class<CandidateArtifact
   kind: Schema.Literal("artifact"), ...preparationBase,
   outputs: Schema.NonEmptyArray(Schema.Struct({
     id: OutputId, path: SafeRelativePath,
-    kind: optional(Schema.Literals(["file", "archive", "executable", "digest", "catalog-file"])),
+    kind: optional(Schema.Literals(["file", "archive", "executable", "digest"])),
     mediaType: optional(nonempty)
   }))
 }) {}
 
+const {
+  id: _collectionId,
+  producer: _collectionProducer,
+  ...candidateCollectionFields
+} = ArtifactCollectionContract.fields
+
+/** Runtime-discovered outputs for one CommandArtifact preparation. */
+export class CandidateArtifactCollection
+  extends Schema.Class<CandidateArtifactCollection>("CandidateArtifactCollection")({
+    ...candidateCollectionFields
+  }) {}
+
+export class CandidateCollectionPreparation
+  extends Schema.Class<CandidateCollectionPreparation>("CandidateCollectionPreparation")({
+    kind: Schema.Literal("artifact"), ...preparationBase,
+    collection: CandidateArtifactCollection
+  }) {}
+
 export const CandidatePreparation = Schema.Union([
-  CandidateCheckPreparation, CandidateArtifactPreparation
+  CandidateCheckPreparation, CandidateArtifactPreparation, CandidateCollectionPreparation
 ])
-
-export class CandidateContentHole extends Schema.Class<CandidateContentHole>("CandidateContentHole")({
-  fact: Schema.Literals(["sha256", "downloadUrl", "assetName"]),
-  artifact: OutputId
-}) {}
-
-export class CandidateCatalog extends Schema.Class<CandidateCatalog>("CandidateCatalog")({
-  id: nonempty,
-  repository: Schema.String,
-  file: SafeRelativePath,
-  content: Schema.Union([
-    Schema.String,
-    Schema.Array(Schema.Union([Schema.String, CandidateContentHole]))
-  ])
-}) {}
 
 export interface NpmRegistryEndpointPolicy {
   /** Test servers must opt in; production-authored config never enables this. */
@@ -207,8 +174,10 @@ export type NpmAccess = typeof NpmAccess.Type
 export const NpmProvenancePolicy = Schema.Literals(["automatic", "required", "disabled"])
 export type NpmProvenancePolicy = typeof NpmProvenancePolicy.Type
 
-export const NpmPublicationMode = Schema.Literal("direct")
-export type NpmPublicationMode = typeof NpmPublicationMode.Type
+const environmentName = Schema.NonEmptyString.check(Schema.makeFilter((value: string) =>
+  /^[A-Za-z_][A-Za-z0-9_]*$/u.test(value)
+    ? undefined
+    : "Credential references must be portable environment variable names."))
 
 export class NpmTokenAuthentication
   extends Schema.Class<NpmTokenAuthentication>("NpmTokenAuthentication")({
@@ -231,6 +200,18 @@ export const NpmTrustedPublisherWorkflow = Schema.NonEmptyString.check(Schema.ma
     : "npm trusted-publisher workflow must be one YAML filename from .github/workflows/."
 ))
 
+export const NpmTrustedPublisherWorkflowRef = Schema.NonEmptyString.check(Schema.makeFilter(
+  (value: string) => {
+    if (/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/u.test(value)) return undefined
+    if (!/^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9._/-]*$/u.test(value) ||
+      value.endsWith("/") || value.endsWith(".") || value.endsWith(".lock") ||
+      value.includes("..") || value.includes("//") || value.includes("@{")) {
+      return "npm trusted-publisher workflowRef must be an exact heads/tags ref or lowercase 40/64-hex commit SHA."
+    }
+    return undefined
+  }
+))
+
 /** Operator-attested npm package trust relationship for one GitHub workflow. */
 export class NpmTrustedPublisherAttestation
   extends Schema.Class<NpmTrustedPublisherAttestation>("NpmTrustedPublisherAttestation")({
@@ -238,6 +219,7 @@ export class NpmTrustedPublisherAttestation
     runner: Schema.Literal("github-hosted"),
     repository: NpmTrustedPublisherRepository,
     workflow: NpmTrustedPublisherWorkflow,
+    workflowRef: NpmTrustedPublisherWorkflowRef,
     allowedAction: Schema.Literal("npm-publish-direct")
   }) {}
 
@@ -261,70 +243,46 @@ export class CandidateNpmPublish extends Schema.Class<CandidateNpmPublish>("Cand
   distTag: NpmDistTag,
   access: NpmAccess,
   authentication: NpmAuthentication,
-  provenance: NpmProvenancePolicy,
-  publicationMode: NpmPublicationMode
-}) {}
-
-const trusted = {
-  provider: optional(Schema.Literal("github-actions")),
-  workflow: optional(nonempty)
-}
-
-export class CandidatePyPiPublish extends Schema.Class<CandidatePyPiPublish>("CandidatePyPiPublish")({
-  repositoryUrl: optional(Schema.String),
-  pythonExecutable: optional(Schema.String),
-  trustedPublishing: optional(Schema.Struct({
-    ...trusted,
-    publisherConfigured: optional(Schema.Literal(true))
-  })),
-  ids: optional(Schema.NonEmptyArray(OutputId))
+  provenance: NpmProvenancePolicy
 }) {}
 
 export class CandidateGitHubPublish extends Schema.Class<CandidateGitHubPublish>("CandidateGitHubPublish")({
-  repository: optional(Schema.String),
-  tokenEnv: optional(Schema.String),
+  repository: optional(nonempty),
+  tokenEnv: optional(environmentName),
   draft: optional(Schema.Boolean),
   prerelease: optional(Schema.Union([Schema.Boolean, Schema.Literal("auto")])),
+  body: optional(Schema.String),
   bodyArtifact: optional(OutputId),
-  ids: optional(Schema.Array(OutputId))
+  ids: optional(Schema.Array(OutputId)),
+  collections: optional(Schema.NonEmptyArray(ArtifactCollectionSelector))
 }) {}
-
-const catalogPreset = {
-  repository: Schema.String,
-  ids: optional(Schema.NonEmptyArray(OutputId)),
-  url: optional(Schema.String),
-  formulaName: optional(Schema.String),
-  manifestName: optional(Schema.String),
-  formulaPath: optional(SafeRelativePath),
-  manifestPath: optional(SafeRelativePath),
-  installPath: optional(Schema.String),
-  bin: optional(Schema.Union([Schema.String, Schema.Array(Schema.String)]))
-}
-
-export class CandidateHomebrew extends Schema.Class<CandidateHomebrew>("CandidateHomebrew")(
-  catalogPreset
-) {}
-export class CandidateScoop extends Schema.Class<CandidateScoop>("CandidateScoop")(
-  catalogPreset
-) {}
 
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish),
-  github: optional(CandidateGitHubPublish),
-  homebrew: optional(CandidateHomebrew),
-  scoop: optional(CandidateScoop),
-  pypi: optional(CandidatePyPiPublish)
+  github: optional(CandidateGitHubPublish)
 }) {}
+
+/** Closed package build performed in private verified staging before npm pack. */
+export class CandidateNpmPackageBuild
+  extends Schema.Class<CandidateNpmPackageBuild>("CandidateNpmPackageBuild")({
+    run: Schema.NonEmptyArray(Schema.NonEmptyString),
+    outputRoots: Schema.NonEmptyArray(SafeRelativePath)
+  }) {}
+
+export class CandidateNpmPackage
+  extends Schema.Class<CandidateNpmPackage>("CandidateNpmPackage")({
+    path: optional(SafeRelativePath),
+    build: optional(CandidateNpmPackageBuild)
+  }) {}
 
 export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateConfig")({
   "$schema": optional(Schema.String),
   project: CandidateProject,
-  builds: optional(Schema.Array(CandidateBuild)),
-  preparations: optional(Schema.Array(CandidatePreparation)),
-  npmPackage: optional(Schema.Struct({ path: optional(SafeRelativePath) })),
-  artifacts: optional(Schema.Array(CandidateArtifact)),
-  archives: optional(Schema.Array(CandidateArchive)),
+  builds: optional(Schema.NonEmptyArray(CandidateBuild)),
+  preparations: optional(Schema.NonEmptyArray(CandidatePreparation)),
+  npmPackage: optional(CandidateNpmPackage),
+  artifacts: optional(Schema.NonEmptyArray(CandidateArtifact)),
+  archives: optional(Schema.NonEmptyArray(CandidateArchive)),
   checksum: optional(CandidateChecksum),
-  catalogs: optional(Schema.Array(CandidateCatalog)),
   publish: optional(CandidatePublish)
 }) {}

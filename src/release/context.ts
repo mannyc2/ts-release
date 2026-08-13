@@ -30,6 +30,48 @@ export class VerifiedReleaseContext extends Schema.Class<VerifiedReleaseContext>
   package: VerifiedPackage
 }) {}
 
+export class StagingEntry extends Schema.Class<StagingEntry>("StagingEntry")({
+  path: SafeRelativePath,
+  kind: Schema.Literals(["file", "executable", "directory", "symlink"]),
+  mode: Schema.Number.check(Schema.makeFilter((value: number) =>
+    Number.isSafeInteger(value) && value >= 0 && value <= 0o777
+      ? undefined
+      : "Staging entry mode must be a portable permission mask.")),
+  size: Schema.Number.check(Schema.makeFilter((value: number) =>
+    Number.isSafeInteger(value) && value >= 0
+      ? undefined
+      : "Staging entry size must be a nonnegative safe integer.")),
+  digest: Sha256Digest
+}) {}
+
+/** Canonical path/type/digest manifest of materialized private bytes. */
+export class StagingSnapshot extends Schema.Class<StagingSnapshot>("StagingSnapshot")({
+  entries: Schema.Array(StagingEntry),
+  digest: Sha256Digest
+}) {}
+
+/** A non-Git input admitted explicitly and copied into private staging. */
+export class ExplicitInputSnapshot extends Schema.Class<ExplicitInputSnapshot>("ExplicitInputSnapshot")({
+  id: Schema.NonEmptyString,
+  path: SafeRelativePath,
+  kind: Schema.Literals(["file", "directory"]),
+  size: Schema.Number.check(Schema.makeFilter((value: number) =>
+    Number.isSafeInteger(value) && value >= 0
+      ? undefined
+      : "Explicit input size must be a nonnegative safe integer.")),
+  digest: Sha256Digest,
+  /** The closed operation that copied or derived these bytes. */
+  materializer: Schema.NonEmptyString,
+  /** Exact source/tool digests that governed materialization. */
+  materializationBasis: Schema.Array(Sha256Digest)
+}) {}
+
+export class SourceMaterializationError
+  extends Schema.TaggedErrorClass<SourceMaterializationError>()("SourceMaterializationError", {
+    field: Schema.String,
+    reason: Schema.String
+  }) {}
+
 export class ReleaseContextError
   extends Schema.TaggedErrorClass<ReleaseContextError>()("ReleaseContextError", {
     field: Schema.String, reason: Schema.String
@@ -41,6 +83,12 @@ export interface SourceObserverShape {
     packageManifestPath: SafeRelativePath,
     expectedCommit?: NonEmptyName
   ) => Effect.Effect<VerifiedReleaseContext, ReleaseContextError>
+  /** Writes only blobs/modes/symlinks from the exact verified Git commit. */
+  readonly materialize: (
+    workspace: WorkspaceRoot,
+    source: VerifiedSource,
+    destination: WorkspaceRoot
+  ) => Effect.Effect<StagingSnapshot, SourceMaterializationError>
 }
 
 /** Runtime operations are the only imperative seam. The compiler and linker
@@ -50,6 +98,11 @@ export interface SourceObserverRuntime {
   readonly read: (workspace: WorkspaceRoot, path: SafeRelativePath) => Effect.Effect<Uint8Array, unknown>
   readonly command: (workspace: WorkspaceRoot, argv: ReadonlyArray<string>) => Effect.Effect<string, unknown>
   readonly digest: (bytes: Uint8Array) => Effect.Effect<Sha256Digest, unknown>
+  readonly materialize: (
+    workspace: WorkspaceRoot,
+    source: VerifiedSource,
+    destination: WorkspaceRoot
+  ) => Effect.Effect<StagingSnapshot, unknown>
 }
 
 export class SourceObserver extends Context.Service<SourceObserver, SourceObserverShape>()(
@@ -93,9 +146,9 @@ export const makeSourceObserver = (runtime: SourceObserverRuntime): SourceObserv
     const tree = yield* command(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(
       Effect.map((value) => value.trim())
     )
-    const status = yield* command(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=all"], "source.clean")
+    const status = yield* command(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=no"], "source.clean")
     if (status.trim().length > 0) return yield* new ReleaseContextError({
-      field: "source.clean", reason: "Preparation requires a clean tracked and untracked source tree."
+      field: "source.clean", reason: "Preparation requires a clean tracked source tree; untracked bytes require explicit input declaration."
     })
     const bytes = yield* runtime.read(workspace, packageManifestPath).pipe(
       Effect.mapError((cause) => runtimeFailure("package.manifest", cause))
@@ -139,7 +192,16 @@ export const makeSourceObserver = (runtime: SourceObserverRuntime): SourceObserv
         ...(manifestRepository === undefined ? {} : { repository: manifestRepository }) })
     })
     return yield* verifySource(context, expectedCommit)
-  })
+  }),
+  materialize: Effect.fn("materializeVerifiedSource")((workspace, source, destination) =>
+    runtime.materialize(workspace, source, destination).pipe(Effect.mapError((cause) =>
+      cause instanceof SourceMaterializationError
+        ? cause
+        : new SourceMaterializationError({
+          field: "source.materialization",
+          reason: cause instanceof Error ? cause.message : String(cause)
+        })))
+  )
 })
 
 export const verifySource = Effect.fn("verifySource")(function*(

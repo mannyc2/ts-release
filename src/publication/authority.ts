@@ -8,7 +8,8 @@ import type {
   CredentialRequest,
   EnvironmentName,
   ProviderId,
-  SubjectId
+  SubjectId,
+  TrustedPublishingAuthStrategy
 } from "../model/authority.js"
 import type { MutationDecision } from "./report.js"
 
@@ -34,6 +35,8 @@ export interface ScopedSecret extends CredentialGrantBase<"ScopedSecret"> {
 /** Certified workload identity names; token material remains host-owned. */
 export interface WorkloadIdentity extends CredentialGrantBase<"WorkloadIdentity"> {
   readonly names: ReadonlySet<EnvironmentName>
+  /** Exact non-secret prepared strategy rechecked by the certified sink. */
+  readonly strategy: TrustedPublishingAuthStrategy
 }
 
 export type CredentialGrant = AnonymousAccess | ScopedSecret | WorkloadIdentity
@@ -186,7 +189,8 @@ class WorkloadIdentityGrant implements WorkloadIdentity {
     readonly provider: ProviderId,
     readonly audience: CanonicalAudience,
     purposes: NonEmptyPurposes,
-    names: NonEmptyEnvironmentNames
+    names: NonEmptyEnvironmentNames,
+    readonly strategy: TrustedPublishingAuthStrategy
   ) {
     this.purposes = purposeSet(purposes)
     this.names = new Set(names)
@@ -254,7 +258,8 @@ const mintGrant = Effect.fn("CredentialProvider.mintGrant")(function*(
         request.provider,
         request.audience,
         descriptor.purposes,
-        descriptor.names
+        descriptor.names,
+        request.strategy
       ))
   }
 })

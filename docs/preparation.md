@@ -3,8 +3,16 @@
 Preparation is the local extension boundary. It has no generic lifecycle
 hooks and no second command executor.
 
+The installed execution host is Linux. Native preparation requires an external
+Bun executable and `libseccomp.so.2`; the standalone CLI still uses them for
+network-denied commands and is not a self-contained sandbox. Each generic
+command runs under a fail-closed libseccomp syscall filter, and the exact helper,
+Bun, loaded library, kernel, architecture, and denied syscall set enter prepared
+provenance. An npm package can additionally declare one explicit build command
+and absent output roots that are validated before offline `npm pack`.
+
 `CommandCheck` validates declared inputs and returns pass/fail. A successful
-check is not a durable receipt. `CommandArtifact` writes one or more declared
+check does not create durable evidence. `CommandArtifact` writes one or more declared
 regular files; those bytes are captured, hashed, and available to later graph
 nodes. `builder: "command"` uses the same lowering for a target-specific
 artifact.
@@ -46,6 +54,13 @@ declared as the GitHub body, and the transform consumes a declared input.
 Commands are trusted local code and argv-only. Generic preparation children
 receive no authored host environment values: a nonempty `environmentNames`
 request is rejected before any subprocess starts, and the runner may retain
-only `PATH` to locate the executable. Staging rejects input mutation and
-captures no undeclared path. A remote destination, approval gate, finalizer,
-or announcement belongs to its typed host/provider owner.
+only `PATH` to locate the executable. A fresh private staging root is
+materialized from the verified Git commit, not copied from ambient workspace
+bytes. Staging rejects input mutation and captures no undeclared path. Ignored
+or untracked workspace files are not implicit inputs.
+
+This same primitive owns generated release notes, manifests, and the Codex and
+Claude agent bundles in the self-release. Remote destinations remain typed npm
+or GitHub provider work. Environment protection and human authorization belong
+to the workflow host; finalizers and announcements are downstream workflow
+steps after a complete report.

@@ -171,12 +171,26 @@ describe("Plan 224 real CLI process", () => {
       expect(result.trace.mutationRequests).toEqual([])
       expect(result.trace.httpExchanges).toEqual([])
       expect(result.trace.sourceCommands.length).toBeGreaterThan(0)
+
+      const prepared = /"prepared":"(prepared:local:sha256-[a-f0-9]{64})"/u.exec(result.stdout)?.[1]
+      expect(prepared).toBeDefined()
+      const inspected = runCliProcess(fixture, "build-only-inspect", [
+        "inspect",
+        prepared!,
+        "--store",
+        fixture.store
+      ])
+      expect(inspected.exitCode, inspected.stderr).toBe(0)
+      expect(JSON.parse(inspected.stdout)).toMatchObject({
+        artifacts: [{ id: "payload", kind: "file" }]
+      })
+      expect(Array.isArray((JSON.parse(inspected.stdout) as { artifacts: unknown }).artifacts)).toBe(true)
     } finally {
       rmSync(fixture.root, { recursive: true, force: true })
     }
   }, 30_000)
 
-  test("npm and GitHub consume only their exact named read capabilities", () => {
+  test("a blocked GitHub prerequisite prevents every npm capability request", () => {
     const fixture = workspaceFixture("provider-capabilities", {
       project: {
         name: "plan224-fixture",
@@ -188,7 +202,11 @@ describe("Plan 224 real CLI process", () => {
       publish: {
         npm: {
           registry: "https://registry.example.test/",
-          tokenEnv: "PLAN224_NPM_TOKEN"
+          authentication: {
+            strategy: "token",
+            credential: "PLAN224_NPM_TOKEN"
+          },
+          provenance: "disabled"
         },
         github: {
           repository: "owner/fixture",
@@ -232,52 +250,22 @@ describe("Plan 224 real CLI process", () => {
           audience: "https://api.github.com/repos/owner/fixture",
           purpose: "observe",
           strategy: { kind: "token", credential: "PLAN224_GITHUB_TOKEN" }
-        },
-        {
-          subject: "npm:plan224-fixture@1.0.0",
-          provider: "npm",
-          audience: "https://registry.example.test/",
-          purpose: "observe",
-          strategy: { kind: "anonymous" }
-        },
-        {
-          subject: "npm:plan224-fixture@1.0.0",
-          provider: "npm",
-          audience: "https://registry.example.test/",
-          purpose: "observe",
-          strategy: { kind: "token", credential: "PLAN224_NPM_TOKEN" }
         }
       ])
-      expect(result.trace.consumedCredentialRefs).toEqual([
-        "PLAN224_GITHUB_TOKEN",
-        "PLAN224_NPM_TOKEN"
-      ])
+      expect(result.trace.consumedCredentialRefs).toEqual(["PLAN224_GITHUB_TOKEN"])
       expect(result.trace.httpExchanges).toEqual([
         {
           subject: "github:owner/fixture#v1.0.0",
           method: "GET",
-          url: "https://api.github.com/repos/owner/fixture/releases/tags/v1.0.0",
+          url: "https://api.github.com/repos/owner/fixture",
           grant: "AnonymousAccess"
         },
         {
           subject: "github:owner/fixture#v1.0.0",
           method: "GET",
-          url: "https://api.github.com/repos/owner/fixture/releases/tags/v1.0.0",
+          url: "https://api.github.com/repos/owner/fixture",
           grant: "ScopedSecret",
           credentialRef: "PLAN224_GITHUB_TOKEN"
-        },
-        {
-          subject: "npm:plan224-fixture@1.0.0",
-          method: "GET",
-          url: "https://registry.example.test/plan224-fixture/1.0.0",
-          grant: "AnonymousAccess"
-        },
-        {
-          subject: "npm:plan224-fixture@1.0.0",
-          method: "GET",
-          url: "https://registry.example.test/plan224-fixture/1.0.0",
-          grant: "ScopedSecret",
-          credentialRef: "PLAN224_NPM_TOKEN"
         }
       ])
       expect(result.trace.mutationRequests).toEqual([])
@@ -313,15 +301,33 @@ describe("Plan 224 real CLI process", () => {
       expect(init.trace.credentialRequests).toEqual([])
       expect(init.trace.httpExchanges).toEqual([])
       expect(JSON.parse(readFileSync(join(fixture.workspace, "release.config.json"), "utf8")))
-        .toMatchObject({
+        .toEqual({
+          project: { repository: "owner/fixture" },
           versionFrom: "manifest",
           npmPackage: { path: "." },
           publish: {
             npm: {
-              registry: "https://registry.npmjs.org",
-              trustedPublishing: { provider: "github-actions" }
+              registry: "https://registry.npmjs.org/",
+              authentication: {
+                strategy: "trusted-publishing",
+                attestation: {
+                  provider: "github-actions",
+                  runner: "github-hosted",
+                  repository: "owner/fixture",
+                  workflow: "release.yml",
+                  workflowRef: "refs/heads/main",
+                  allowedAction: "npm-publish-direct"
+                }
+              },
+              access: "public",
+              provenance: "automatic"
             },
-            github: { draft: true, prerelease: false }
+            github: {
+              repository: "owner/fixture",
+              tokenEnv: "GITHUB_TOKEN",
+              draft: true,
+              prerelease: false
+            }
           }
         })
 
@@ -364,8 +370,7 @@ describe("Plan 224 real CLI process", () => {
         kind: strategy.kind
       }))).toEqual([
         { provider: "github", purpose: "observe", kind: "anonymous" },
-        { provider: "github", purpose: "observe", kind: "token" },
-        { provider: "npm", purpose: "observe", kind: "anonymous" }
+        { provider: "github", purpose: "observe", kind: "token" }
       ])
       expect(release.trace.consumedCredentialRefs).toEqual(["GITHUB_TOKEN"])
       expect(release.trace.mutationRequests).toEqual([])

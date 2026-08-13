@@ -2,6 +2,7 @@ import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import { decodeConfig } from "../config/config.js"
+import { releaseIdentityCapability } from "../capabilities/registry.js"
 import { secretPatterns } from "../model/secret-patterns.js"
 import { bindAuthoredCorrection, correctPreparedRelease } from "../correction/coordinator.js"
 import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
@@ -21,7 +22,6 @@ import {
   type CommittedPreparedRelease
 } from "../release/prepared-store.js"
 import { ObservedFacts } from "../resolve/facts.js"
-import { resolveConfig } from "../resolve/resolve.js"
 import {
   PreparationModeUnsupported,
   ReleaseAbortedError,
@@ -93,10 +93,9 @@ const inputFailure = (cause: unknown): ReleaseInputError => new ReleaseInputErro
 })
 
 const manifestPath = (config: {
-  readonly project: { readonly packagePath?: SafeRelativePath }
   readonly npmPackage?: { readonly path?: SafeRelativePath }
 }): SafeRelativePath => {
-  const directory = String(config.project.packagePath ?? config.npmPackage?.path ?? ".")
+  const directory = String(config.npmPackage?.path ?? ".")
   return SafeRelativePath.make(directory === "." ? "package.json" : `${directory}/package.json`)
 }
 
@@ -121,10 +120,7 @@ const observeAndCompile = Effect.fn("observeAndCompileRelease")(function*(input:
   })
   const context = yield* runtime.source.observe(
     WorkspaceRoot.make(root),
-    manifestPath(authored),
-    authored.project.commit === undefined
-      ? undefined
-      : NonEmptyName.make(authored.project.commit)
+    manifestPath(authored)
   )
   const observedTagVersion = releaseTagVersion(context.source.headTags)
   const facts = ObservedFacts.make({
@@ -139,7 +135,7 @@ const observeAndCompile = Effect.fn("observeAndCompileRelease")(function*(input:
       : { repository: context.source.repository })
   })
   const resolved = yield* Effect.try({
-    try: () => resolveConfig(input.config, facts),
+    try: () => releaseIdentityCapability.resolve(input.config, facts),
     catch: inputFailure
   })
   const graph = yield* Effect.try({
@@ -171,18 +167,13 @@ const prepareProgram = Effect.fn("prepareProgram")(function*(
   const runtime = yield* ReleaseRuntime
   const store = yield* PreparedReleaseStore
   const sourceWorkspace = compiled.context.workspace
-  const sourceManifest = compiled.context.source.packageManifestPath
-  const sourceCommit = compiled.context.source.commit
   return yield* prepareRelease({
     context: compiled.context,
     graph: compiled.graph,
     store,
     run: runtime.run,
-    verifySource: (_context: VerifiedReleaseContext) => runtime.source.observe(
-      sourceWorkspace,
-      sourceManifest,
-      sourceCommit
-    )
+    materializeSource: (_context: VerifiedReleaseContext, destination) =>
+      runtime.source.materialize(sourceWorkspace, compiled.context.source, destination)
   })
 })
 

@@ -1,175 +1,287 @@
 # ts-release
 
-ts-release automatically prepares and publishes a configured software release.
-The normal path is one command:
+Automate multi-artifact releases and safely resume partial publication.
+
+## Release locally
+
+The normal path is one command from a clean Git checkout:
 
 ```sh
-ts-release init --preset bun-npm-github
 ts-release release --config release.config.json
 ```
 
-`release` observes the clean source checkout, runs declared local preparation,
-stores one exact `prepared-release/v2` bundle, observes each destination, and
-publishes only after a provider-specific decision authorizes the exact subject. An external host
-may place a gate around the publication job; that policy does not become
-engine state.
+`release` resolves observed package and Git facts, materializes the exact
+verified commit, runs declared local preparation, commits one complete
+`prepared-release/v2` bundle, observes every configured destination, and
+publishes only after a provider-specific decision authorizes that exact
+subject. The command prints the durable prepared reference and correlated
+report. A blocked or uncertain report is preserved and exits nonzero.
 
-## Smallest authored configuration
-
-`ts-release init` writes the facts a repository can observe as optional. A
-minimal package-and-GitHub release can therefore keep the authored file small:
+npm authentication is always explicit. A GitHub-hosted npm and GitHub release
+can use this authored configuration:
 
 ```json
 {
-  "project": {},
+  "project": { "repository": "owner/repo" },
   "versionFrom": "manifest",
   "npmPackage": { "path": "." },
-  "publish": { "npm": {}, "github": {} }
+  "publish": {
+    "npm": {
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "owner/repo",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
+      }
+    },
+    "github": {}
+  }
 }
 ```
 
-The resolver fills package name, version, tag, commit, and repository from the
-workspace when those facts agree. Deliberate overrides remain explicit, and a
-disagreement stops instead of guessing.
+`workflow` and `workflowRef` are local host-admission constraints, not claims
+about fields exposed by npm's trusted-publisher configuration. They must name
+the workflow that actually invokes publication: use `release.yml` with the
+automatic template and `reviewed-release.yml` with the reviewed template. The
+host must observe that exact repository/path/ref on a GitHub-hosted runner
+before it reads either OIDC request value. Public npm metadata reads are always
+anonymous; private or custom-registry authenticated reads are unsupported
+until configured with a distinct read credential.
 
-## What is proven
+The resolver fills package name, version, tag, commit, and repository only
+when observed facts agree with authored intent. For a non-OIDC host, use
+`{ "strategy": "token", "credential": "NPM_TOKEN" }` instead. The value of
+that environment variable remains host-owned and never enters configuration,
+prepared bytes, reports, or logs.
 
-The [executable capability inventory](docs/capabilities.md) is generated from
-the runtime registry and dated evidence. Build, archive, and checksum
-preparation remain certified. npm and GitHub are present as conservative
-subjects: direct mismatches block, while equality, absence, and mutation stay
-unsupported until their provider contracts are certified. Catalog delivery
-and forward correction likewise remain explicit unsupported boundaries.
+With the canonical GitHub origin or package repository configured, `init` can
+discover the exact owner/repository coordinate and write this explicit shape:
 
-ts-release runs on Linux and macOS. Its Bun builder can produce Windows
-artifacts. It does not claim native Windows execution or native Windows tools.
+```sh
+ts-release init --preset bun-npm-github
+```
 
-## Optional preparation boundary
+It refuses to guess when no repository coordinate is observable and strictly
+inspects the exact generated configuration before writing it.
 
-Use the two-operation form when a host must transfer bytes between jobs:
+## Automatic GitHub Actions release
+
+The default workflow is one job and one Action invocation. Copy the exact
+[automatic workflow template](templates/github-actions/release.yml). It is
+manual-only and requires `candidate_sha` to equal the current commit on
+`refs/heads/main` before the job can reach checkout. Its
+mutation job grants `contents: write` for the same-repository tag, release, and
+assets, `id-token: write` for npm trusted publishing, and `actions: read` for
+prepared-artifact recovery. It installs the publisher boundary explicitly,
+uses the job-scoped `GITHUB_TOKEN`, and uploads the redacted report as a
+recovery artifact.
+
+```yaml
+- id: release
+  uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
+  env:
+    GITHUB_TOKEN: ${{ github.token }}
+  with:
+    command: ${{ inputs.prepared_ref == '' && 'release' || 'publish' }}
+    config: ${{ inputs.prepared_ref == '' && 'release.config.json' || '' }}
+    prepared: ${{ inputs.prepared_ref }}
+```
+
+Leave `prepared_ref` empty for a fresh release. To resume after durable
+preparation, dispatch the same candidate with the exact emitted
+`prepared:gha:` reference; the job selects `publish`, loads and verifies the
+original bundle, and does not rebuild.
+
+`v0.2.0` is the immutable monorepo-subpath coordinate intended for this
+candidate. Packaging and release certification must stop unless that tag is
+created from the exact certified result commit before consumers can see a
+README that names it. A floating Action branch is never an alternative.
+
+## Optional environment-gated publication
+
+When a host policy requires a protected environment, use the
+[two-job workflow template](templates/github-actions/reviewed-release.yml).
+Copy its paired
+[reviewed configuration](templates/npm-github/reviewed-release.config.json)
+to the repository root with the same filename; the workflow loads that exact
+file.
+Its prepare job has read-only repository authority and no OIDC permission. It
+uploads one complete prepared bundle and passes only its content-addressed
+hosted reference. The environment-gated publish job installs the publisher
+toolchain, receives mutation permissions, reloads and verifies the bundle, and
+then observes destinations before any write. The environment gate remains a workflow
+fact; it is not release-engine identity or data.
+
+The reviewed configuration attests `workflow: "reviewed-release.yml"` and
+`workflowRef: "refs/heads/main"`. Keep the workflow filename and dispatch it
+from that ref with `candidate_sha` equal to the current commit, or deliberately
+update both constraints. Reusing an automatic configuration that attests
+`release.yml` fails before OIDC acquisition. Recover a failed reviewed
+publication by rerunning the publish job in the same workflow run, not by
+preparing again.
+
+## Prepare without publication
+
+Use the split local path for build-only work or when bytes must cross an
+explicit host boundary:
 
 ```sh
 prepared_ref="$(ts-release prepare --config release.config.json)"
 ts-release inspect "$prepared_ref"
-ts-release observe "$prepared_ref"
-ts-release publish "$prepared_ref"
 ```
 
 The value is a path-free `prepared:local:sha256-…` reference resolved against
-the default local store. Select another store explicitly with `--store`; the
-reference itself never embeds a filesystem location. The publisher accepts
-only a complete prepared reference. It does not rebuild from source or accept
-authored configuration as a publication fallback.
+the selected content-addressed store. `--store` selects another local store;
+the reference itself never embeds a filesystem path. Publication accepts only
+a complete reference and never rebuilds from source as a fallback.
 
-Local preparation uses two native primitives. `CommandCheck` is a pass/fail
-gate; `CommandArtifact` generates or transforms declared regular-file bytes.
-Use artifact input/output references for data flow. Generic preparation
-children receive no authored host environment values; any nonempty
-`environmentNames` request fails before a subprocess starts. The runner may
-retain only `PATH` as argv execution plumbing. Trusted argv commands are not a
-sandbox or a generic remote-effect mechanism. Durable test or compliance
-evidence must be a declared artifact. See [the preparation guide](docs/preparation.md).
+Local extension work uses two primitives. `CommandCheck` is a pass/fail gate.
+`CommandArtifact` generates or transforms declared regular-file bytes. Data
+flow uses declared input and output IDs. Generic preparation children receive
+no authored host environment values, and the runner may retain only `PATH` as
+argv execution plumbing. Trusted commands are not a sandbox or a generic
+remote-effect mechanism.
 
-## Recovery
+## Observe and recover
 
-Rerun the same prepared reference. Every attempt reloads and verifies the
-exact bytes, then reobserves every subject. Equivalent subjects are skipped;
-conflicting or inconclusive observations stop without mutation. A release may
-partially succeed; publication is not an atomic transaction and there is no
-universal rollback. Provider-specific forward correction is explicit only
-where the capability inventory proves it. Announcements, deletion, and
-generic inverse operations are not configured destinations.
+Observation is read-only:
 
-## GitHub Actions
-
-The automatic workflow is one job and one `release` Action call. The Action
-durably uploads and verifies the prepared bundle before any provider mutation.
-Copy [`templates/github-actions/release.yml`](templates/github-actions/release.yml).
-If a host gate is required, use the two-job
-[`reviewed-release.yml`](templates/github-actions/reviewed-release.yml): its
-uncredentialed prepare job hands one exact hosted reference to a protected
-publish job.
-
-Consumer templates bind the Action only after candidate certification:
-
-```yaml
-uses: mannyc2/ts-release/apps/ts-release-action@v0.2.0
+```sh
+ts-release observe "$prepared_ref"
 ```
 
-Plan 233 certification will verify the exact immutable candidate reference
-before packaging. No public document may invent a floating Action tag.
+To resume a partial or response-lost release, publish the same reference:
+
+```sh
+ts-release publish "$prepared_ref"
+```
+
+Every attempt verifies the manifest and blobs, then reobserves every subject.
+Equivalent subjects are skipped. Conflict and pre-mutation uncertainty stop
+without mutation. A post-dispatch unknown outcome stays uncertain until a new
+exact observation converges. Publication is not an atomic transaction, so a
+release may partially succeed and there is no universal rollback.
+
+## Provider-specific correction
+
+Correction is deliberately separate from ordinary publication:
+
+```sh
+ts-release correct "$prepared_ref" correction.json
+```
+
+The command binds authored intent to the exact prepared npm or GitHub subject.
+The installed kernel currently has no proved conditional correction write, so
+it returns a canonical external operator proposal and performs no corrective
+mutation. Deletion, arbitrary inverse operations, and announcements are not
+release destinations.
+
+## Capability and platform boundary
+
+A source checkout or accepted field is not support evidence. The generated
+capability inventory must join each supported row to its strict decoder,
+default-layer entrypoint, exact observation semantics, and vertical test, and
+the release-candidate matrix must exercise every claimed execution host.
+
+| Axis | Kernel candidate boundary |
+| --- | --- |
+| Local preparation | Bun compilation, prebuilt imports, command checks/artifacts, archives, and checksums are retained; final support requires the generated capability and clean-candidate gates to agree. |
+| Remote publication | npm and GitHub Releases are the only installed publication families. npm uses explicit trusted-publishing or token authentication. |
+| Correction | npm and GitHub authored proposals are exact-bound; no correction adapter is installed. |
+| Execution hosts | Linux is the only installed execution host. The checked-in Action is a Linux workflow boundary: its composite step requires Bash and a workflow-installed, pinned Bun runtime. macOS and Windows are not ts-release execution hosts. |
+| Artifact targets | The Bun builder advertises Linux and macOS x64/arm64 targets. macOS binaries are cross-compiled artifacts, not host-execution evidence. The self-release does not distribute a Windows ts-release binary. |
+| Native tools | Linux preparation requires an external Bun executable and `libseccomp.so.2`; network-denied commands record both identities. WSL, when used, is Linux. A standalone CLI binary is not a self-contained replacement for these tools. |
+
+Installed Node consumers must satisfy the package engine
+`^22.22.2 || ^24.15.0 || >=26.0.0`; Bun consumers require Bun 1.3.14 or newer.
+The checked-in Action is a Linux/Bun composite Action. Every advertised
+workflow installs Bun 1.3.14 before invoking it, and the composite step runs
+the checked-in `dist/index.js` through that Bun runtime. The Action does not
+change the Node engine of the installed library or CLI package.
+
+The current source tree is not a release certificate. A published support
+claim exists only after the clean-candidate evidence records all required
+gates green; skipped live facts remain `UNVERIFIED`.
+
+## Extension jobs and exclusions
+
+The kernel translates extension requests to the owner that can enforce them:
+
+| User job | Owner |
+| --- | --- |
+| Tests, policy checks, generated notes, and agent bundles | `CommandCheck` or declared `CommandArtifact` bytes |
+| npm and GitHub remote verification/publication | Installed provider modules |
+| Environment protection or human authorization | External workflow host |
+| Downstream announcements | External workflow step after a complete report |
+
+PyPI prebuilt distributions and trusted publication are a temporary regression
+from the live `0.0.7` release and belong to a post-0.2.0 capability wave.
+Homebrew and Scoop rendering/delivery are likewise temporarily absent and
+belong to their catalog-delivery wave. Wrapper wheels remain excluded from the
+initial PyPI recovery slice unless an explicit product decision reopens them.
+A third-party adapter SDK is also deferred to its own extension wave; generic
+hooks do not stand in for it.
 
 ## Library API
 
-The root package exposes the same lifecycle used by the CLI and Action:
+The Promise API uses the same lifecycle as the CLI and Action:
 
 ```ts
-import { encodeCompletePreparedReleaseRef, makeReleaseApi } from "@mannyc1/ts-release"
+import {
+  defineRelease,
+  encodeCompletePreparedReleaseRef,
+  makeReleaseApi
+} from "@mannyc1/ts-release"
 import { NodeReleaseLayer } from "@mannyc1/ts-release/node"
 
+const config = defineRelease({
+  project: { repository: "owner/repo" },
+  versionFrom: "manifest" as const,
+  npmPackage: { path: "." },
+  publish: {
+    npm: {
+      authentication: {
+        strategy: "trusted-publishing" as const,
+        attestation: {
+          provider: "github-actions" as const,
+          runner: "github-hosted" as const,
+          repository: "owner/repo",
+          workflow: "release.yml",
+          workflowRef: "refs/heads/main",
+          allowedAction: "npm-publish-direct" as const
+        }
+      }
+    },
+    github: {}
+  }
+})
+
 const api = makeReleaseApi(NodeReleaseLayer)
-const result = await api.release({ config: { project: {}, versionFrom: "manifest" }, workspace: process.cwd() })
-await api.dispose()
-console.log(encodeCompletePreparedReleaseRef(result.prepared))
-console.log(result.report.status)
+try {
+  const result = await api.release({ config, workspace: process.cwd() })
+  console.log(encodeCompletePreparedReleaseRef(result.prepared))
+  console.log(result.report.status)
+} finally {
+  await api.dispose()
+}
 ```
 
 The public operations are `inspect`, `prepare`, `observe`, `publish`,
 `release`, and `correct`. Public inputs contain neither credential values nor
-prepared paths. The derived graph is ephemeral; the prepared manifest and
-blobs are the durable cross-process boundary.
+prepared paths. The derived graph is ephemeral; the verified prepared
+manifest and blobs are the durable cross-process boundary.
 
-Library hosts can replace all imperative boundaries without importing private
-service tags. The `store` subpath exposes the structural durable-store contract;
-the `host` subpath composes a runtime, store, credential provider, and HTTP
-authorizer into the same API layer. Credential acquisition returns opaque
-grants or typed errors—never secret values:
+## Agent bundles and development
 
-```ts
-import { makeReleaseApi } from "@mannyc1/ts-release"
-import * as Effect from "effect/Effect"
-import {
-  CredentialUnavailable,
-  makeCredentialProvider,
-  makeCustomReleaseLayer,
-  type HttpAuthorizerShape,
-  type ReleaseRuntimeShape
-} from "@mannyc1/ts-release/host"
-import {
-  makeLocalPreparedReleaseStore,
-  type PreparedReleaseStoreShape
-} from "@mannyc1/ts-release/store"
-
-export const makeCustomApi = (
-  runtime: ReleaseRuntimeShape,
-  httpAuthorizer: HttpAuthorizerShape,
-  storeDirectory: string
-) => {
-  const local = makeLocalPreparedReleaseStore(storeDirectory)
-  const preparedStore: PreparedReleaseStoreShape = {
-    commit: (manifest, blobs) => local.commit(manifest, blobs),
-    load: (reference) => local.load(reference)
-  }
-  const credentialProvider = makeCredentialProvider({
-    acquire: (request) => Effect.fail(new CredentialUnavailable({
-      subject: request.subject,
-      provider: request.provider,
-      purpose: request.purpose,
-      reason: "This host has no credential for the prepared request."
-    }))
-  })
-  return makeReleaseApi(makeCustomReleaseLayer({
-    runtime, preparedStore, credentialProvider, httpAuthorizer
-  }))
-}
-```
-
-## Agent integration and development
-
-The single tracked agent source owner is
-[`apps/ts-release-agents`](apps/ts-release-agents/). Generated provider-native
-packages are build output under `.release/agents/` and are captured by the
-self-release preparation.
+The single tracked agent source owner is `apps/ts-release-agents`. Generated
+Codex and Claude layouts are ignored build output and are captured by the
+self-release as declared `CommandArtifact` outputs. No root marketplace tree
+is a second canonical owner.
 
 ```sh
 bun install --frozen-lockfile
@@ -177,6 +289,6 @@ bun run check:portable
 bun test
 ```
 
-Architecture is documented in [ARCHITECTURE.md](ARCHITECTURE.md), the precise
-boundary in [SPEC.md](SPEC.md), and contributor operations in
-[docs/release-runbook.md](docs/release-runbook.md).
+The durable model is documented in [ARCHITECTURE.md](ARCHITECTURE.md), and the
+precise public contract is in [SPEC.md](SPEC.md). Both files are included with the npm
+package; this README does not rely on an unpackaged relative document.

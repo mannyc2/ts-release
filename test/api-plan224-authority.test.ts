@@ -58,6 +58,11 @@ import {
   type HttpResponse
 } from "../src/publication/http.js"
 import { unavailableMutationServicesLayer } from "./fixtures/mutation-services.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "./fixtures/prepared-provenance.js"
 import { makeNpmPublicationAuthorityIntent } from "../src/release/graph.js"
 import {
   PreparedArtifact,
@@ -77,7 +82,7 @@ import {
   type PreparedBundle,
   type PreparedReleaseStoreShape
 } from "../src/release/prepared-store.js"
-import { contextFor, noopRun } from "./core/runtime-fixture.js"
+import { contextFor, materializeFixtureWorkspace, noopRun } from "./core/runtime-fixture.js"
 
 const sha256 = (bytes: Uint8Array): string =>
   createHash("sha256").update(bytes).digest("hex")
@@ -116,7 +121,8 @@ const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
     size: bytes.length,
     digest,
     blob: digest,
-    mediaType: "application/gzip"
+    mediaType: "application/gzip",
+    ...fixtureArtifactProvenance()
   })
   const registryUrl = CanonicalNpmRegistryEndpoint.make("https://registry.example.test/")
   const authentication = NpmTokenAuthentication.make({
@@ -129,7 +135,7 @@ const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
     registryUrl,
     artifactId: artifact.id,
     distTag: NpmDistTag.make("latest"), access: "public", authentication,
-    provenance: "disabled", publicationMode: "direct",
+    provenance: "disabled",
     authority: makeNpmPublicationAuthorityIntent({
       packageName: "@fixture/package",
       version: "1.0.0",
@@ -139,13 +145,15 @@ const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
   return {
     directory: "/not-stored",
     manifest: PreparedReleaseV2.make({
+      kind: "complete",
       schemaVersion: "prepared-release/v2",
       source: PreparedSource.make({
         commit: NonEmptyName.make(commit),
         tree: NonEmptyName.make("prepared-tree"),
         clean: true,
         packageManifestPath: SafeRelativePath.make("package.json"),
-        packageManifestDigest: sha256Digest(new TextEncoder().encode("package manifest"))
+        packageManifestDigest: sha256Digest(new TextEncoder().encode("package manifest")),
+        materialized: fixtureStagingSnapshot
       }),
       project: PreparedProject.make({
         name: NonEmptyName.make("fixture"),
@@ -154,6 +162,8 @@ const remoteBundle = (commit = "c".repeat(40)): PreparedBundle => {
         tag: NonEmptyName.make("v1.0.0")
       }),
       artifacts: [artifact],
+      collections: [],
+      provenance: fixturePreparedProvenance,
       publications: [publication]
     }),
     blobs: new Map([[artifact.id.toString(), bytes]])
@@ -235,7 +245,8 @@ const authorityLayer = (
   return Layer.mergeAll(
     Layer.succeed(ReleaseRuntime, {
       source: {
-        observe: (workspace: WorkspaceRoot) => Effect.succeed(contextFor(workspace.toString()))
+        observe: (workspace: WorkspaceRoot) => Effect.succeed(contextFor(workspace.toString())),
+        materialize: materializeFixtureWorkspace
       },
       run: noopRun
     }),
@@ -304,7 +315,7 @@ const artifactTransport = (
     events.push(`upload:${name}`)
     mkdirSync(root, { recursive: true })
     cpSync(rootDirectory, join(root, name), { recursive: true })
-    return { id: 224, digest: `sha256:${"b".repeat(64)}` }
+    return { id: 224, digest: "b".repeat(64) }
   },
   download: async ({ name, destination }) => {
     events.push(`download:${name}`)
@@ -408,21 +419,25 @@ describe("Plan 224 public API authority ordering", () => {
     }
   })
 
-  test("anonymous and authenticated observe remain read-only through the public API", async () => {
+  test("public npm observation remains anonymous-only through the public API", async () => {
     const scenarios = [
       {
         name: "anonymous",
         responses: [conflictResponse()],
         expectedStrategies: ["anonymous"],
         expectedGrants: ["AnonymousAccess"],
-        expectedSecretRequests: 0
+        expectedSecretRequests: 0,
+        expectedStatus: "different",
+        expectedObservation: "Different"
       },
       {
-        name: "authenticated retry",
-        responses: [response(404, {}), conflictResponse()],
-        expectedStrategies: ["anonymous", "token"],
-        expectedGrants: ["AnonymousAccess", "ScopedSecret"],
-        expectedSecretRequests: 1
+        name: "unobservable custom registry",
+        responses: [response(404, {})],
+        expectedStrategies: ["anonymous"],
+        expectedGrants: ["AnonymousAccess"],
+        expectedSecretRequests: 0,
+        expectedStatus: "inconclusive",
+        expectedObservation: "Inconclusive"
       }
     ] as const
 
@@ -434,9 +449,9 @@ describe("Plan 224 public API authority ordering", () => {
         const api = makeReleaseApi(authorityLayer(store, recorded))
         try {
           const report = await api.observe({ prepared: committed.ref })
-          expect(report.status, scenario.name).toBe("different")
+          expect(report.status, scenario.name).toBe(scenario.expectedStatus)
           expect(report.subjects[1], scenario.name).toMatchObject({
-            observation: { _tag: "Different" }
+            observation: { _tag: scenario.expectedObservation }
           })
           expect(recorded.credentialRequests.map((request) => request.purpose), scenario.name)
             .toEqual(scenario.expectedStrategies.map(() => "observe"))
@@ -447,6 +462,7 @@ describe("Plan 224 public API authority ordering", () => {
           expect(recorded.secretRequests, scenario.name).toHaveLength(scenario.expectedSecretRequests)
           expect(recorded.mutationRequests, scenario.name).toEqual([])
           expect(recorded.http.every(({ request }) => request.method === "GET"), scenario.name).toBe(true)
+          expect(recorded.responses, scenario.name).toEqual([])
         } finally {
           await api.dispose()
         }

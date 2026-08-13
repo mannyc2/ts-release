@@ -1,17 +1,80 @@
 # Changelog
 
-## 0.2.0 - blocked
+## 0.2.0 - pending
 
-Candidate `1bc7828` is not releasable. The earlier Plan 221 certificate is
-invalidated and Plan 222 is superseded; no public mutation occurred.
+This entry describes the intended `0.2.0` product relative to the published
+`0.0.7` release. The candidate is not certified or published yet, and this
+entry is not release authority.
 
-The deterministic candidate audit found release-blocking defects at the
-shipped boundaries, including an unreachable CLI credential path, false-green
-Action status, malformed GitHub asset upload, dropped npm trusted-publishing
-intent, unsafe credential/process handling, unreachable claimed capabilities,
-and preparation inputs not fully bound to verified source bytes.
+### Release lifecycle
 
-Do not use this pending entry as release instructions and do not provide npm,
-GitHub, or catalog credentials to this candidate. Remediation is tracked in
-`docs/release-program/README.md`; a complete replacement changelog is owned by
-Plan 233k after the corrected kernel is independently certified.
+- Replaced the previous `ship` and plan/apply/review command model with one
+  lifecycle: `release`, `prepare`, `inspect`, `observe`, `publish`, and
+  `correct`. The same lifecycle is available through the Promise API, CLI, and
+  GitHub Action.
+- Added complete, content-addressed `prepared-release/v2` bundles. Preparation
+  materializes the exact verified commit, binds declared source inputs, checks
+  the manifest and blobs, and commits the durable bundle only when every
+  declared output is present.
+- Added one-command local release and a one-job automatic GitHub Actions path.
+  Protected-environment publication remains an optional two-job host workflow,
+  not an identity inside ts-release.
+- Added a strict `bun-npm-github` init preset that discovers the canonical
+  repository coordinate and writes explicit npm and GitHub authentication
+  intent.
+
+### Publication, authentication, and recovery
+
+- Retained npm publication and restored explicit trusted-publishing intent.
+  npm authentication must select GitHub Actions OIDC or a named token
+  credential; credential values remain host-owned and do not enter
+  configuration, prepared bytes, reports, or logs.
+- Retained GitHub Releases and asset publication with exact tag, commit,
+  release, and asset observation before mutation.
+- Publication now observes every destination before writing. Equivalent
+  subjects are skipped, conflicts stop, and inconclusive pre-mutation reads do
+  not acquire credentials. A response-lost write remains uncertain until an
+  exact later observation converges.
+- Recovery always reloads and verifies the same prepared bundle. It never
+  rebuilds from the current checkout as a fallback. Reports preserve partial
+  and uncertain outcomes and are redacted before a workflow uploads them.
+- Correction is now proposal-only for the installed npm and GitHub providers.
+  `correct` binds intent to an exact prepared subject and emits a canonical
+  external-operator proposal; it does not delete or mutate provider state.
+
+### Executable capabilities
+
+- Retained Bun compilation, prebuilt-file imports, declared command checks and
+  artifact generation, archives, and checksums behind strict configuration and
+  default runtime layers.
+- Separated execution-host claims from artifact-target claims. Linux is the
+  only execution host, the advertised targets are Linux/macOS x64/arm64, and
+  Windows is neither an execution host nor a shipped target.
+- Added generated capability, recovery-profile, and agent-bundle evidence so a
+  documented support row must join to executable code and tests.
+
+### Breaking removals and migration
+
+- Removed the old `ship`, plan/apply/review, approval, and self-review
+  protocols. Migrate automation to `release`, or cross an explicit boundary
+  with `prepare` followed by `publish` of the returned prepared reference.
+- Replaced implicit npm credential selection with explicit
+  `publish.npm.authentication`. Existing token workflows must name their
+  environment credential; GitHub-hosted trusted publishing must author its
+  exact attestation relationship.
+- Installed Node consumers now require
+  `^22.22.2 || ^24.15.0 || >=26.0.0`. The checked-in GitHub Action is now a
+  Linux/Bun composite boundary: advertised workflows install pinned Bun
+  before the Action runs its checked-in entrypoint. This does not change the
+  installed library or CLI's Node engine.
+- PyPI prebuilt publication is temporarily removed despite being available in
+  `0.0.7`; it is assigned to a post-`0.2.0` provider-capability wave. PyPI
+  wrapper wheels are also removed, and will return only after an explicit
+  product decision based on native-wheel or cibuildwheel-class user demand.
+- Homebrew tap and Scoop bucket rendering and delivery are temporarily removed
+  despite being available in `0.0.7`; they are assigned to a separate catalog
+  delivery wave. Old PyPI, Homebrew, Scoop, and generic catalog configurations
+  are rejected rather than accepted as no-ops.
+- A third-party publication-adapter SDK is not part of `0.2.0`. Local extension
+  work must use declared command checks or artifact bytes; downstream effects
+  belong in the workflow host after a complete release report.

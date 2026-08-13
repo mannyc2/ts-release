@@ -45,6 +45,8 @@ export interface GithubProtocolFaultV1 {
   readonly phase: "observe" | "mutate"
   readonly method: "GET" | "POST"
   readonly url: string
+  /** Optional state threshold for deterministic post-mutation visibility faults. */
+  readonly afterMutationCount?: number
   readonly outcome:
     | { readonly _tag: "HttpStatus", readonly status: number }
     | {
@@ -144,10 +146,12 @@ const takeFault = (
   scenario: GithubProtocolScenarioV1,
   phase: "observe" | "mutate",
   method: "GET" | "POST",
-  url: string
+  url: string,
+  mutationCount: number
 ): GithubProtocolFaultV1 | undefined => {
   const index = scenario.faults?.findIndex((fault) =>
-    fault.phase === phase && fault.method === method && fault.url === url
+    fault.phase === phase && fault.method === method && fault.url === url &&
+    (fault.afterMutationCount === undefined || mutationCount >= fault.afterMutationCount)
   ) ?? -1
   if (index < 0) return undefined
   return scenario.faults!.splice(index, 1)[0]
@@ -176,7 +180,7 @@ export const makeGithubProtocolDouble = (
     headers: Readonly<Record<string, string>> | undefined,
     grant: Exclude<CredentialGrant, { readonly _tag: "WorkloadIdentity" }>
   ): Effect.Effect<HttpResponse, CredentialPlatformError> => Effect.gen(function*() {
-    const fault = takeFault(scenario, "observe", method, url)
+    const fault = takeFault(scenario, "observe", method, url, mutations)
     if (fault !== undefined) {
       events.push(faultInjected({
         provider: "github",
@@ -281,7 +285,7 @@ export const makeGithubProtocolDouble = (
 
   const mutationHttp: AuthorizedMutationHttpShape = {
     execute: (operation, request, grant: ScopedSecret) => Effect.gen(function*() {
-      const fault = takeFault(scenario, "mutate", request.method, request.url)
+      const fault = takeFault(scenario, "mutate", request.method, request.url, mutations)
       if (fault?.outcome._tag === "HttpStatus" || fault?.outcome._tag === "HttpResponse") {
         events.push(faultInjected({
           provider: "github", phase: "mutate", point: `${request.method} ${request.url}`,

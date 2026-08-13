@@ -1,28 +1,24 @@
 # Executable capabilities
 
-This page is generated from the runtime capability registry and the dated
-evidence records in [`capability-evidence.json`](capability-evidence.json).
-Neither configuration field names nor detached prose can add a capability.
+This page is generated from the actual module values composed by the compiler
+and runtime, plus the dated records in [`capability-evidence.json`](capability-evidence.json).
+A filename, schema field, test reference, or prose row cannot install support.
 
-Evidence classes are deliberately distinct: source inspection, external
-documentation, contract tests, live read observation, and live write
-dogfooding are not interchangeable. The current registry has no live service
-claim until a real release exercises and reobserves that destination.
+Evidence classes remain distinct. Contract-tested support is not a claim that
+a live provider mutation has been dogfooded.
 
-| Capability | Support | Reachable entrypoint | Strict decoder | Observation semantics | Vertical test | Execution hosts | Artifact targets | Native-tool hosts | Evidence | Observed |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `build.bun-compile` | supported | [src/release/capabilities.ts:contributeBuild](../src/release/capabilities.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/release/prepared-store.ts:loadPreparedRelease](../src/release/prepared-store.ts) | [test/core/release-graph.test.ts](../test/core/release-graph.test.ts) | linux, darwin | linux-x64, linux-arm64, darwin-x64, darwin-arm64, windows-x64, windows-arm64 | linux, darwin | contract-tested | 2026-08-09 |
-| `artifact.archive` | supported | [src/release/capabilities.ts:contributeArchives](../src/release/capabilities.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/release/prepared-store.ts:loadPreparedRelease](../src/release/prepared-store.ts) | [test/core/prepared-release.test.ts](../test/core/prepared-release.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-09 |
-| `artifact.checksum` | supported | [src/release/capabilities.ts:contributeArchives](../src/release/capabilities.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/release/prepared-store.ts:loadPreparedRelease](../src/release/prepared-store.ts) | [test/core/prepared-release.test.ts](../test/core/prepared-release.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-09 |
-| `publish.npm` | unsupported | [src/publication/npm.ts:makeNpmSubject](../src/publication/npm.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/publication/npm.ts:makeNpmSubject](../src/publication/npm.ts) | [test/publication/plan224-conservative-provider-subjects.test.ts](../test/publication/plan224-conservative-provider-subjects.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-12 |
-| `publish.github` | unsupported | [src/publication/github.ts:makeGithubSubjects](../src/publication/github.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/publication/github.ts:makeGithubSubjects](../src/publication/github.ts) | [test/publication/plan224-conservative-provider-subjects.test.ts](../test/publication/plan224-conservative-provider-subjects.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-12 |
-| `catalog.render` | unsupported | [src/release/capabilities.ts:contributeCatalog](../src/release/capabilities.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/release/prepared-store.ts:loadPreparedRelease](../src/release/prepared-store.ts) | [test/publication/catalog-git.test.ts](../test/publication/catalog-git.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-10 |
-| `publish.catalog-git` | unsupported | [src/publication/catalog-git.ts:makeCatalogSubject](../src/publication/catalog-git.ts) | [src/config/config.ts:decodeConfig](../src/config/config.ts) | [src/publication/catalog-git.ts:makeCatalogSubject](../src/publication/catalog-git.ts) | [test/publication/catalog-git.test.ts](../test/publication/catalog-git.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-10 |
-| `correct.npm-deprecation` | unsupported | [src/correction/npm.ts:makeNpmDeprecationSubject](../src/correction/npm.ts) | [src/correction/intent.ts:decodeCorrectionIntent](../src/correction/intent.ts) | [src/correction/npm.ts:makeNpmDeprecationSubject](../src/correction/npm.ts) | [test/correction/npm-deprecate.test.ts](../test/correction/npm-deprecate.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-10 |
-| `correct.catalog-state` | unsupported | [src/correction/catalog.ts:makeCatalogCorrectionSubject](../src/correction/catalog.ts) | [src/correction/intent.ts:decodeCorrectionIntent](../src/correction/intent.ts) | [src/correction/catalog.ts:makeCatalogCorrectionSubject](../src/correction/catalog.ts) | [test/correction/catalog-state.test.ts](../test/correction/catalog-state.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-10 |
-| `correct.github-release` | unsupported | [src/correction/coordinator.ts:correctPreparedRelease](../src/correction/coordinator.ts) | [src/correction/intent.ts:decodeCorrectionIntent](../src/correction/intent.ts) | [src/correction/coordinator.ts:correctPreparedRelease](../src/correction/coordinator.ts) | [test/correction/github-release.test.ts](../test/correction/github-release.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-09 |
-| `correct.pypi-file-yank` | unsupported | [src/correction/coordinator.ts:correctPreparedRelease](../src/correction/coordinator.ts) | [src/correction/intent.ts:decodeCorrectionIntent](../src/correction/intent.ts) | [src/correction/coordinator.ts:correctPreparedRelease](../src/correction/coordinator.ts) | [test/correction/pypi-file-yank.test.ts](../test/correction/pypi-file-yank.test.ts) | linux, darwin | — | — | contract-tested | 2026-08-09 |
+| Capability | State | Executable composition | Owned fields | Boundary | Certification | Declared execution hosts | Declared artifact targets | Native tools | Credentials | Evidence | Observed |
+| --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |
+| `release.identity` | installed | resolve | 9 | root-api | 2 executable tests | linux | — | git | — | contract-tested | 2026-08-12 |
+| `prepare.source` | installed | contribute:source | 38 | root-api | 3 executable tests | linux | linux-x64, linux-arm64, darwin-x64, darwin-arm64 | bun, libseccomp.so.2, declared-command | — | contract-tested | 2026-08-12 |
+| `prepare.package` | installed | contribute:package | 7 | root-api | 2 executable tests | linux | — | — | — | contract-tested | 2026-08-12 |
+| `publish.npm` | installed | contribute + subjects:PreparedNpmPublication | 15 | provider-protocol | 2 executable tests | linux | — | npm | token, trusted-publishing | contract-tested | 2026-08-12 |
+| `publish.github` | installed | contribute + subjects:PreparedGitHubPublication | 17 | provider-protocol | 3 executable tests | linux | — | — | token | contract-tested | 2026-08-12 |
 
-Plan 211 outcome: ts-release runs on Linux and macOS. Its Bun builder can
-produce Windows artifacts. Native Windows execution and native Windows tools
-are not claimed by this registry.
+Native Windows execution is not installed. The source-preparation module
+declares only the listed artifact targets and the Linux execution host.
+Release support requires separate public-entrypoint host smoke and target
+file-format/architecture gates; declarations alone are not certification.
+Linux preparation requires an external Bun executable and `libseccomp.so.2`.
+The standalone CLI still uses those native tools for network-denied commands
+and is not a self-contained preparation sandbox.

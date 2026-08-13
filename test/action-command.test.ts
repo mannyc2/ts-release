@@ -13,7 +13,7 @@ import {
 import { decodeCompletePreparedReleaseRef } from "../src/release/prepared-ref.js"
 
 const digest = "a".repeat(64)
-const preparedRef = `prepared:gha:owner/repository/runs/123/attempts/1/artifacts/ts-release-prepared-${digest}#sha256-${digest}`
+const preparedRef = `prepared:gha:owner/repository/runs/123/attempts/1/artifacts/ts-release-prepared-1-${digest}#sha256-${digest}`
 const preparedReference = () => Effect.runPromise(decodeCompletePreparedReleaseRef(preparedRef))
 const completeReport = { status: "complete", subjects: [] } as never
 
@@ -80,6 +80,44 @@ test("release makes one public call and receives the durable reference before it
   expect(report).toHaveProperty("report", completeReport)
   expect(report).not.toHaveProperty("result")
   expect(JSON.stringify(report)).not.toContain("publications")
+})
+
+test("Action report JSON preserves one-element arrays and ordinary one-field records", async () => {
+  const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
+  writeFileSync(join(root, "release.config.json"), JSON.stringify({ project: {} }))
+  const fixture = harness(root, { command: "release", config: "release.config.json" })
+  const prepared = await preparedReference()
+  const ordinary = { value: "ordinary-record" }
+  Object.defineProperty(ordinary, "toString", {
+    enumerable: false,
+    value: () => "must-not-render-as-scalar"
+  })
+  const structuredReport = {
+    status: "complete",
+    subjects: [{
+      _tag: "AlreadyEquivalent",
+      artifacts: [{ id: "only-artifact" }],
+      detail: ordinary
+    }]
+  } as never
+
+  await runAction({
+    release: async () => {
+      await fixture.preparedReference.emit(preparedRef)
+      return { prepared, report: structuredReport }
+    },
+    prepare: async () => prepared,
+    publish: async () => structuredReport
+  }, fixture.runtime)
+
+  const actionReport = JSON.parse(
+    readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")
+  ) as Record<string, unknown>
+  expect(actionReport).toHaveProperty("report.subjects", [{
+    _tag: "AlreadyEquivalent",
+    artifacts: [{ id: "only-artifact" }],
+    detail: { value: "ordinary-record" }
+  }])
 })
 
 test("prepare emits only a reference projection, never its local bundle path", async () => {

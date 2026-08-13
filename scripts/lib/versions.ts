@@ -15,6 +15,7 @@ export const checkVersions = (root: string): VersionsReport => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
     readonly packageManager?: string
     readonly engines?: { readonly bun?: string }
+    readonly dependencies?: Readonly<Record<string, string>>
     readonly peerDependencies?: Readonly<Record<string, string>>
     readonly devDependencies?: Readonly<Record<string, string>>
   }
@@ -48,9 +49,17 @@ export const checkVersions = (root: string): VersionsReport => {
     sites += 1
     const peer = manifest.peerDependencies?.[name]
     const dev = manifest.devDependencies?.[name]
-    if (peer === undefined || dev === undefined || peer.replace(/^\^/u, "") !== dev) {
-      failures.push(`${name} peer (${peer ?? "none"}) and dev (${dev ?? "none"}) versions disagree`)
+    if (peer === undefined || dev === undefined || peer !== dev) {
+      failures.push(`${name} peer (${peer ?? "none"}) and dev (${dev ?? "none"}) must use one exact version`)
     }
+  }
+  sites += 1
+  const nodeShared = manifest.dependencies?.["@effect/platform-node-shared"]
+  const effect = manifest.devDependencies?.effect
+  if (nodeShared === undefined || effect === undefined || nodeShared !== effect) {
+    failures.push(
+      `@effect/platform-node-shared dependency (${nodeShared ?? "none"}) and Effect (${effect ?? "none"}) must use one exact version`
+    )
   }
   return { failures, sitesChecked: sites }
 }

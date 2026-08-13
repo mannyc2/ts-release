@@ -107,11 +107,11 @@ type NpmPublicationContract = PreparedNpmPublication & {
         readonly runner: "github-hosted"
         readonly repository: string
         readonly workflow: string
+        readonly workflowRef: string
         readonly allowedAction: "npm-publish-direct"
       }
     }
   readonly provenance: "automatic" | "required" | "disabled"
-  readonly publicationMode: "direct"
 }
 
 const contractOf = (publication: PreparedNpmPublication): NpmPublicationContract =>
@@ -237,11 +237,17 @@ const visibleVersionAbsent = (publication: NpmPublicationContract): Authoritativ
   })
 
 const trustedDirectCreate = (publication: NpmPublicationContract): boolean =>
-  publication.publicationMode === "direct" &&
   publication.authentication.strategy === "trusted-publishing" &&
   publication.authentication.attestation.provider === "github-actions" &&
   publication.authentication.attestation.runner === "github-hosted" &&
-  publication.authentication.attestation.allowedAction === "npm-publish-direct"
+  publication.authentication.attestation.allowedAction === "npm-publish-direct" &&
+  publication.authority.publishStrategy.kind === "trusted-publishing" &&
+  publication.authority.publishStrategy.repository === publication.authentication.attestation.repository &&
+  publication.authority.publishStrategy.workflow ===
+    `.github/workflows/${publication.authentication.attestation.workflow}` &&
+  publication.authority.publishStrategy.workflowRef === publication.authentication.attestation.workflowRef &&
+  publication.authority.publishStrategy.allowedAction === "npm-publish-direct" &&
+  publication.authority.publishStrategy.publisherSink === "certified-npm-cli"
 
 const authorizedCreateAbsence = (publication: NpmPublicationContract): AuthoritativelyAbsent =>
   AuthoritativelyAbsent.make({
@@ -293,26 +299,6 @@ const decide = (
         reason: SafeReason.make("npm observation did not prove exact equivalence or an authorized absent coordinate.")
       })
   }
-}
-
-const publishArgv = (
-  publication: NpmPublicationContract,
-  tarballPath: string
-): readonly [string, ...Array<string>] => {
-  const provenance = publication.provenance === "required"
-    ? ["--provenance"]
-    : publication.provenance === "disabled"
-      ? ["--provenance=false"]
-      : []
-  return [
-    "npm", "publish", tarballPath,
-    "--ignore-scripts",
-    "--registry", registryEndpoint(publication),
-    "--tag", publication.distTag.toString(),
-    "--access", publication.access,
-    ...provenance,
-    "--json"
-  ]
 }
 
 const publishOperation = (
@@ -493,15 +479,23 @@ export const makeNpmSubject = (
       }))
     }
     const operation = publishOperation(intent, decision)
-    const argv = publishArgv(intent, tarballPath)
+    const publisherSpec = {
+      operation,
+      cwd: bundle.directory,
+      tarballPath,
+      packageName: intent.packageName,
+      version: intent.version,
+      registryUrl: intent.registryUrl,
+      distTag: intent.distTag,
+      access: intent.access,
+      provenance: intent.provenance
+    } as const
     return Effect.scoped(Effect.gen(function*() {
       if (grant._tag === "WorkloadIdentity") {
         yield* publisher.preflightTrustedNpm(operation, grant)
         return yield* publisher.spawn({
           _tag: "WorkloadPublisherSpec",
-          operation,
-          argv,
-          cwd: bundle.directory
+          ...publisherSpec
         }, grant)
       }
       const userConfig = yield* userConfigs.acquire({
@@ -510,9 +504,7 @@ export const makeNpmSubject = (
       }, grant)
       return yield* publisher.spawn({
         _tag: "NpmPublisherSpec",
-        operation,
-        argv,
-        cwd: bundle.directory,
+        ...publisherSpec,
         userConfig
       }, grant)
     })).pipe(

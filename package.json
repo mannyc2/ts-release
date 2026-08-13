@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "type": "module",
   "packageManager": "bun@1.3.14",
-  "description": "Portable artifact and package-manager distribution planning for TypeScript projects.",
+  "description": "Prepare, publish, observe, and safely resume npm and GitHub releases.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
   ],
   "engines": {
     "bun": ">=1.3.14",
-    "node": ">=20"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "bin": {
     "ts-release": "./dist/bin/ts-release.js"
@@ -58,6 +58,7 @@
   },
   "files": [
     "ARCHITECTURE.md",
+    "CHANGELOG.md",
     "apps/release-ts/src",
     "dist",
     "examples",
@@ -73,12 +74,14 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "check:package-exports": "bun run scripts/check-package-exports.ts",
+    "check:packed-consumers": "bun run scripts/check-packed-consumers.ts",
     "check:import-rules": "bun run scripts/check-import-rules.ts",
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",
     "check:readme": "bun run scripts/check-readme.ts",
     "check:self-release-context": "bun run apps/release-ts/scripts/check-self-release-context.ts",
     "check:self-release-prepare": "bun run apps/release-ts/scripts/check-self-release-prepare.ts",
+    "check:self-release-reproducibility": "bun run apps/release-ts/scripts/check-self-release-reproducibility.ts",
     "check:self-release-readiness": "bun run apps/release-ts/scripts/check-self-release-readiness.ts",
     "check:self-release-artifacts": "bun run apps/release-ts/scripts/check-self-release-artifacts.ts",
     "check:self-release-correction": "bun run apps/release-ts/scripts/check-self-release-correction.ts",
@@ -86,26 +89,32 @@
     "check:cli-bundle": "bun run scripts/check-cli-bundle.ts",
     "check:config-schema": "bun run scripts/check-config-schema.ts",
     "check:capabilities": "bun run scripts/check-capabilities.ts",
+    "check:recovery-docs": "bun run scripts/check-recovery-docs.ts",
+    "check:feature-translation": "bun run scripts/check-feature-translation.ts",
     "generate:capabilities": "bun run scripts/generate-capabilities.ts",
+    "generate:recovery-docs": "bun run scripts/generate-recovery-docs.ts",
     "generate:config-schema": "bun run scripts/generate-config-schema.ts",
     "build:agents": "bun run apps/ts-release-agents/src/build.ts",
     "check:agents": "bun run --cwd apps/ts-release-agents check && bun run --cwd apps/ts-release-agents build && bun run --cwd apps/ts-release-agents check:generated && bun test ./apps/ts-release-agents/test/contract.test.ts",
-    "check:core": "bun run check:versions && bun run check:capabilities && bun run check:import-rules && bun run check:tree-shaking && bun run check && bun test && bun run build && bun run check:cli-bundle && bun run check:config-schema && bun run check:examples && bun run check:readme && bun run check:package-exports",
+    "check:core": "bun run check:versions && bun run check:capabilities && bun run check:recovery-docs && bun run check:feature-translation && bun run check:import-rules && bun run check:tree-shaking && bun run check && bun test && bun run build && bun run check:cli-bundle && bun run check:config-schema && bun run check:examples && bun run check:readme && bun run check:package-exports && bun run check:packed-consumers",
     "check:versions": "bun run scripts/check-versions.ts",
     "check:summary": "bun run scripts/run-gates.ts",
+    "measure:release-candidate": "bun run scripts/measure-release-candidate.ts",
+    "replay:provider-reads": "bun run scripts/replay-provider-reads.ts",
     "check:app": "bun run --cwd apps/release-ts check && bun test test/core/cli-cutover.test.ts test/cli-command.test.ts",
     "check:action": "bun run --cwd apps/ts-release-action check && bun run check:action-bundle && bun test test/core/action-cutover.test.ts test/action-command.test.ts",
     "check:portable": "bun run check:core && bun run check:agents && bun run check:app && bun run check:action",
-    "check:release-candidate": "bun run build && bun run check:self-release-context && bun run check:self-release-prepare && bun run check:self-release-readiness && bun run check:self-release-artifacts && bun run check:self-release-correction && bun run check:portable",
+    "check:release-candidate": "bun run build && bun run check:self-release-context && bun run check:self-release-prepare && bun run check:self-release-reproducibility && bun run check:self-release-readiness && bun run check:self-release-artifacts && bun run check:self-release-correction && bun run check:portable",
     "cli": "bun run apps/release-ts/src/cli/main.ts"
   },
   "dependencies": {
+    "@effect/platform-node-shared": "4.0.0-beta.83",
     "semver": "^7.8.5"
   },
   "peerDependencies": {
-    "@effect/platform-bun": "^4.0.0-beta.83",
-    "@effect/platform-node": "^4.0.0-beta.83",
-    "effect": "^4.0.0-beta.83"
+    "@effect/platform-bun": "4.0.0-beta.83",
+    "@effect/platform-node": "4.0.0-beta.83",
+    "effect": "4.0.0-beta.83"
   },
   "devDependencies": {
     "@effect/bun-test": "file:vendor/effect-bun-test",

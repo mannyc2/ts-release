@@ -31,6 +31,7 @@ import {
   makeSourceObserver,
   type SourceObserverRuntime
 } from "../../src/release/context.js"
+import { materializeGitSource } from "../../src/platform/source-observer.js"
 import {
   PreparedReleaseStore,
   makeLocalPreparedReleaseStore
@@ -133,7 +134,10 @@ const sourceRuntime: SourceObserverRuntime = {
     },
     catch: (cause) => cause
   }),
-  digest: (bytes) => Effect.succeed(sha256Digest(bytes))
+  digest: (bytes) => Effect.succeed(sha256Digest(bytes)),
+  materialize: (workspace, source, destination) => Effect.try({
+    try: () => materializeGitSource(workspace, source, destination), catch: (cause) => cause
+  })
 }
 
 const run: RunCommand = (command) => Effect.try({
@@ -143,7 +147,16 @@ const run: RunCommand = (command) => Effect.try({
       environmentNames: [...command.environmentNames]
     })
     const result = spawn(command.argv, command.cwd)
-    return result
+    return command.argv[0] === "npm"
+      ? {
+        ...result,
+        tool: {
+          protocol: "ts-release-executable/v1" as const,
+          command: "npm",
+          sha256: "224".padEnd(64, "0")
+        }
+      }
+      : result
   },
   catch: (cause) => new DriverError({
     reason: cause instanceof Error ? cause.message : String(cause),
@@ -278,12 +291,21 @@ try {
   ))
 } catch (cause) {
   const failure = typeof cause === "object" && cause !== null
-    ? cause as { readonly _tag?: unknown, readonly status?: unknown, readonly message?: unknown }
+    ? cause as {
+      readonly _tag?: unknown
+      readonly status?: unknown
+      readonly reason?: unknown
+      readonly message?: unknown
+    }
     : undefined
   trace.failure = {
     tag: typeof failure?._tag === "string" ? failure._tag : "UnknownFailure",
     ...(typeof failure?.status === "string" ? { status: failure.status } : {}),
-    message: typeof failure?.message === "string" ? failure.message : String(cause)
+    message: typeof failure?.reason === "string"
+      ? failure.reason
+      : typeof failure?.message === "string"
+      ? failure.message
+      : String(cause)
   }
   console.error(`plan224 fixture failure: ${trace.failure.tag}`)
   process.exitCode = 1

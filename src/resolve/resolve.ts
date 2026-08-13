@@ -86,15 +86,8 @@ const tag = (authored: AuthoredConfig, resolved: Version): NonEmptyName => {
   return NonEmptyName.make(rendered)
 }
 
-const commit = (authored: AuthoredConfig, facts: ObservedFacts): string => {
-  if (authored.project.commit !== undefined) {
-    if (facts.commit !== undefined && facts.commit !== authored.project.commit) {
-      disagreement("commit", authored.project.commit, facts.commit, "at HEAD")
-    }
-    return authored.project.commit
-  }
-  if (facts.commit === undefined) return refuse("project.commit", MISSING_COMMIT)
-  return facts.commit
+const requireObservedCommit = (facts: ObservedFacts): void => {
+  if (facts.commit === undefined) refuse("source.commit", MISSING_COMMIT)
 }
 
 const names = (
@@ -187,14 +180,6 @@ const npmPublish = (
     )
   }
   const packageName = project.packageName ?? project.name
-  if (npm.packageName !== undefined && npm.packageName !== packageName) {
-    return refuse(
-      "publish.npm.packageName",
-      `publish.npm.packageName is ${JSON.stringify(npm.packageName)} but the resolved package name is ${
-        JSON.stringify(packageName)
-      }. State the package identity once under project.packageName or correct the manifest.`
-    )
-  }
   if (npm.access === "restricted" && !packageName.startsWith("@")) {
     return refuse(
       "publish.npm.access",
@@ -240,8 +225,7 @@ const npmPublish = (
     distTag: distTag(project.version, npm.distTag),
     access: npm.access ?? "public",
     authentication,
-    provenance,
-    publicationMode: npm.publicationMode ?? "direct"
+    provenance
   }
 }
 
@@ -258,17 +242,19 @@ export const resolveConfig = (authored: unknown, facts: unknown): CandidateConfi
   const resolvedVersion = version(config, observed)
   // The directives are CONSUMED here: they describe how to resolve, and the
   // canonical world has never heard of them.
-  const { project, versionFrom: _directive, ...rest } = config
+  const { project, versionFrom: _directive, $schema: _schema, ...rest } = config
   const { tagTemplate: _template, ...projectRest } = project
   const resolvedNames = names(config, observed)
   const resolvedRepository = repository(config, observed)
+  // Verified source identity is observation-owned. It must exist, but is not a
+  // human-authored config field and is not copied into canonical release intent.
+  requireObservedCommit(observed)
   const resolvedProject = {
     ...projectRest,
     ...resolvedNames,
     ...(resolvedRepository === undefined ? {} : { repository: resolvedRepository }),
     version: resolvedVersion,
-    tag: tag(config, resolvedVersion),
-    commit: commit(config, observed)
+    tag: tag(config, resolvedVersion)
   }
   const npm = npmPublish(config, resolvedProject)
   const publish = config.publish === undefined ? undefined : {

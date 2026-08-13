@@ -10,7 +10,16 @@ ts-release init
 ts-release release --config release.config.json
 ```
 
-The fixtures cover npm, GitHub Releases, portable binaries, archive/checksum
-preparation, and local catalog rendering. The PyPI fixture demonstrates an
-imported file only; PyPI publication remains outside the automatic set. See
-the generated [capability inventory](../docs/capabilities.md).
+Runnable fixtures cover npm, GitHub Releases, portable binaries, and
+archive/checksum preparation. PyPI, catalog Git, Homebrew, and Scoop are not
+accepted publication families in the current schema. Their directories contain
+migration notes only, never release configs that imply a no-op is supported.
+An example passing strict decode is necessary but not sufficient support
+evidence; the same capability must execute through the root API and default
+runtime in release-candidate certification.
+
+Trusted npm examples bind local host admission to the exact repository,
+workflow filename, and `workflowRef` they author. For the reviewed two-job
+workflow, start from the paired
+`templates/npm-github/reviewed-release.config.json`; the host refuses a foreign
+workflow/ref before reading OIDC request material.

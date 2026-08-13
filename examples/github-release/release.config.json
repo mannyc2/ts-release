@@ -4,9 +4,7 @@
     "name": "release-example-github",
     "packageName": "release-example-github",
     "version": "0.1.0",
-    "commit": "example",
-    "tag": "v0.1.0",
-    "notes": "Example GitHub release"
+    "tag": "v0.1.0"
   },
   "artifacts": [
     {
@@ -18,9 +16,11 @@
   "publish": {
     "github": {
       "repository": "owner/repo",
-      "tokenEnv": "GH_TOKEN",
+      "tokenEnv": "GITHUB_TOKEN",
       "draft": true,
-      "prerelease": false
+      "prerelease": false,
+      "body": "Example GitHub release",
+      "ids": ["archive"]
     }
   }
 }

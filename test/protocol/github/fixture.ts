@@ -20,6 +20,11 @@ import {
 } from "../../../src/release/prepared.js"
 import type { PreparedBundle } from "../../../src/release/prepared-store.js"
 import type { GithubProtocolDouble } from "./double.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "../../fixtures/prepared-provenance.js"
 
 export const preparedCommit = "1111111111111111111111111111111111111111"
 export const wrongCommit = "2222222222222222222222222222222222222222"
@@ -54,7 +59,8 @@ export const makeGithubFixture = (
       size: asset.bytes.length,
       digest,
       blob: digest,
-      mediaType: asset.mediaType
+      mediaType: asset.mediaType,
+      ...fixtureArtifactProvenance("github-protocol-artifact")
     })
   })
   const authority = makeGitHubPublicationAuthorityIntent({
@@ -80,20 +86,24 @@ export const makeGithubFixture = (
   })
   const manifestDigest = sha256Digest(new TextEncoder().encode("github protocol fixture"))
   const manifest = PreparedReleaseV2.make({
+    kind: "complete",
     schemaVersion: "prepared-release/v2",
     source: PreparedSource.make({
       commit: NonEmptyName.make(preparedCommit),
       tree: NonEmptyName.make("3333333333333333333333333333333333333333"),
       clean: true,
       packageManifestPath: SafeRelativePath.make("package.json"),
-      packageManifestDigest: manifestDigest
+      packageManifestDigest: manifestDigest,
+      materialized: fixtureStagingSnapshot
     }),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"),
       version: Version.make("1.0.0"),
       tag: publication.tag
     }),
+    provenance: fixturePreparedProvenance,
     artifacts,
+    collections: [],
     publications: [publication]
   })
   return {

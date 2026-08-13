@@ -14,7 +14,8 @@ import {
 import {
   actionProducerContextFromEnvironment,
   makeActionsArtifactTransport,
-  makeActionPreparedReleaseStore
+  makeActionPreparedReleaseStore,
+  makeGitHubRunAttemptAuthenticator
 } from "./prepared-store.js"
 
 const summarize = async (message: string): Promise<void> => {
@@ -28,6 +29,8 @@ try {
 
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd()
   const producer = actionProducerContextFromEnvironment(process.env)
+  const actionToken = process.env.GITHUB_TOKEN?.trim()
+  if (actionToken !== undefined && actionToken.length > 0) core.setSecret(actionToken)
   const preparedReference = makePreparedReferenceChannel({
     output: core.setOutput,
     summarize
@@ -36,6 +39,8 @@ try {
     workspace,
     context: producer,
     artifacts: makeActionsArtifactTransport(),
+    ...(actionToken === undefined || actionToken.length === 0 ? {} : { token: actionToken }),
+    runAttempts: makeGitHubRunAttemptAuthenticator(),
     onCommit: async (reference) => {
       await preparedReference.emit(encodeCompletePreparedReleaseRef(reference))
     }

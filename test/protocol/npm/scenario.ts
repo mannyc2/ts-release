@@ -10,6 +10,7 @@ import type {
   NpmUserConfig,
   NpmUserConfigResourceShape
 } from "../../../src/platform/credentials.js"
+import { npmPublishArgv } from "../../../src/publication/publisher.js"
 import {
   PublisherExited,
   PublisherOutcomeUnknown,
@@ -20,8 +21,10 @@ import {
   faultInjected,
   httpExchange,
   processExit,
+  processSignal,
   processSpawn,
   protocolBodyFingerprint,
+  streamFailure,
   type ProtocolEvent
 } from "../events.js"
 
@@ -32,7 +35,15 @@ export interface NpmProviderScenarioState {
   packageVisibility: "missing" | "visible"
   versionState: "absent" | "equivalent" | "different"
   distTagState: "missing" | "equivalent" | "different"
-  readonly publishResult: "exit-0" | "response-loss" | "before-start"
+  readonly publishResult:
+    | "exit-0"
+    | "exit-nonzero"
+    | "response-loss"
+    | "before-start"
+    | "stdout-failure"
+    | "stderr-failure"
+    | "signal"
+    | "coordinate-consumed"
   observationCount: number
   publishCount: number
 }
@@ -133,7 +144,7 @@ export const makeNpmProviderScenario = (input: NpmProviderScenarioInput): {
         provider: "npm",
         phase: "mutate",
         attempt: state.publishCount,
-        argv: spec.argv,
+        argv: npmPublishArgv(spec),
         cwd: spec.cwd,
         environmentNames: grant._tag === "WorkloadIdentity"
           ? [...grant.names].map(String).sort()
@@ -151,6 +162,73 @@ export const makeNpmProviderScenario = (input: NpmProviderScenarioInput): {
         return RejectedBeforeStart.make({
           commitment: "before-dispatch",
           reason: "protocol process did not start"
+        })
+      }
+      if (state.publishResult === "coordinate-consumed") {
+        events.push(processExit({
+          provider: "npm",
+          phase: "mutate",
+          attempt: state.publishCount,
+          exitCode: 1
+        }))
+        return PublisherExited.make({
+          commitment: "started",
+          exitCode: 1,
+          stdout: "",
+          stderr: "The exact package version coordinate was already consumed."
+        })
+      }
+      if (state.publishResult === "exit-nonzero") {
+        events.push(processExit({
+          provider: "npm",
+          phase: "mutate",
+          attempt: state.publishCount,
+          exitCode: 17
+        }))
+        return PublisherExited.make({
+          commitment: "started",
+          exitCode: 17,
+          stdout: "",
+          stderr: "The publisher rejected the prepared operation."
+        })
+      }
+      if (state.publishResult === "stdout-failure" || state.publishResult === "stderr-failure") {
+        events.push(streamFailure({
+          provider: "npm",
+          phase: "mutate",
+          attempt: state.publishCount,
+          stream: state.publishResult === "stdout-failure" ? "stdout" : "stderr",
+          reason: "Injected output collection failure."
+        }))
+        return PublisherOutcomeUnknown.make({
+          commitment: "unknown",
+          reason: "protocol output collection failed after process start"
+        })
+      }
+      if (state.publishResult === "signal") {
+        events.push(processSignal({
+          provider: "npm",
+          phase: "mutate",
+          attempt: state.publishCount,
+          signal: "SIGTERM"
+        }))
+        return PublisherOutcomeUnknown.make({
+          commitment: "unknown",
+          reason: "protocol process was interrupted after start"
+        })
+      }
+      if (state.packageVisibility === "visible" && state.versionState !== "absent") {
+        events.push(processExit({
+          provider: "npm",
+          phase: "mutate",
+          attempt: state.publishCount,
+          exitCode: 1
+        }))
+        return PublisherExited.make({
+          commitment: "started",
+          exitCode: 1,
+          stdout: "",
+          stderr: "The exact package version now exists."
         })
       }
       state.packageVisibility = "visible"

@@ -1,16 +1,53 @@
 {
   "schemaVersion": "ts-release-capability-evidence/v1",
   "records": [
-    { "id": "build.bun-compile", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/core/release-graph.test.ts" }] },
-    { "id": "artifact.archive", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/core/prepared-release.test.ts" }] },
-    { "id": "artifact.checksum", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/core/prepared-release.test.ts" }] },
-    { "id": "publish.npm", "evidenceClass": "contract-tested", "observedAt": "2026-08-12", "references": [{ "kind": "test", "path": "test/publication/plan224-conservative-provider-subjects.test.ts" }], "note": "Plan 224 reaches the prepared authority boundary but conservatively blocks exactness, absence, and mutation until Plan 225 certifies npm evidence and dispatch." },
-    { "id": "publish.github", "evidenceClass": "contract-tested", "observedAt": "2026-08-12", "references": [{ "kind": "test", "path": "test/publication/plan224-conservative-provider-subjects.test.ts" }], "note": "Plan 224 reaches the prepared authority boundary but conservatively blocks exactness, absence, and mutation until Plan 226 certifies GitHub wire and evidence semantics." },
-    { "id": "catalog.render", "evidenceClass": "contract-tested", "observedAt": "2026-08-10", "references": [{ "kind": "test", "path": "test/publication/catalog-git.test.ts" }], "note": "Blocked by Plan 223 pending a public preparation-path reproduction and total field-consumption proof." },
-    { "id": "publish.catalog-git", "evidenceClass": "contract-tested", "observedAt": "2026-08-10", "references": [{ "kind": "test", "path": "test/publication/catalog-git.test.ts" }], "note": "Blocked by Plan 223: the adapter is unreachable through root configuration, the public API, and the default runtime." },
-    { "id": "correct.npm-deprecation", "evidenceClass": "contract-tested", "observedAt": "2026-08-10", "references": [{ "kind": "test", "path": "test/correction/npm-deprecate.test.ts" }], "note": "Blocked by Plan 223: the shipped CLI has no credential path and the read-then-unconditional-write race is unresolved." },
-    { "id": "correct.catalog-state", "evidenceClass": "contract-tested", "observedAt": "2026-08-10", "references": [{ "kind": "test", "path": "test/correction/catalog-state.test.ts" }], "note": "Blocked by Plan 223: the capability is unreachable by default and changes only internal managed state, not ecosystem-consumed target bytes." },
-    { "id": "correct.github-release", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/correction/github-release.test.ts" }], "note": "Explicitly unsupported until a durable provider correction marker exists." },
-    { "id": "correct.pypi-file-yank", "evidenceClass": "contract-tested", "observedAt": "2026-08-09", "references": [{ "kind": "test", "path": "test/correction/pypi-file-yank.test.ts" }], "note": "Explicitly unsupported for arbitrary configured indexes." }
+    {
+      "id": "release.identity",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-12",
+      "references": [
+        { "kind": "test", "path": "test/api.test.ts" },
+        { "kind": "test", "path": "test/core/release-context.test.ts" }
+      ]
+    },
+    {
+      "id": "prepare.source",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-12",
+      "references": [
+        { "kind": "test", "path": "test/core/release-graph.test.ts" },
+        { "kind": "test", "path": "test/core/preparation.test.ts" }
+      ],
+      "note": "Owns imported/prebuilt blobs, Bun and explicit command builds, command checks/artifacts, and npm package selection as one closed source-preparation phase."
+    },
+    {
+      "id": "prepare.package",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-12",
+      "references": [
+        { "kind": "test", "path": "test/core/prepared-release.test.ts" },
+        { "kind": "test", "path": "test/core/preparation.test.ts" }
+      ]
+    },
+    {
+      "id": "publish.npm",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-12",
+      "references": [
+        { "kind": "test", "path": "test/api.test.ts" },
+        { "kind": "test", "path": "test/protocol/npm/npm-provider-protocol.test.ts" }
+      ],
+      "note": "Compiler contribution, prepared variant, provider subjects, recovery profile, and default host boundary are installed; no live-write dogfood claim is made."
+    },
+    {
+      "id": "publish.github",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-12",
+      "references": [
+        { "kind": "test", "path": "test/api.test.ts" },
+        { "kind": "test", "path": "test/protocol/github/github-protocol.test.ts" }
+      ],
+      "note": "Compiler contribution, prepared variant, provider subjects, recovery profile, and default host boundary are installed; no live-write dogfood claim is made."
+    }
   ]
 }

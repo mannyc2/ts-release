@@ -3,12 +3,9 @@
   "project": {
     "name": "release-example-multi-target",
     "packageName": "release-example-multi-target",
+    "repository": "owner/release-example-multi-target",
     "version": "0.1.0",
-    "commit": "example",
-    "tag": "v0.1.0",
-    "notes": "Example coordinated release",
-    "description": "release-example-multi-target 0.1.0 release artifact",
-    "homepage": "https://github.com/owner/release-example-multi-target"
+    "tag": "v0.1.0"
   },
   "npmPackage": {
     "path": "."
@@ -23,29 +20,27 @@
   "publish": {
     "github": {
       "repository": "owner/release-example-multi-target",
-      "tokenEnv": "GH_TOKEN",
+      "tokenEnv": "GITHUB_TOKEN",
       "draft": true,
-      "prerelease": false
+      "prerelease": false,
+      "body": "Example coordinated release",
+      "ids": ["archive"]
     },
     "npm": {
-      "registry": "https://registry.npmjs.org",
-      "packageName": "release-example-multi-target",
-      "packagePath": ".",
-      "trustedPublishing": {
-        "provider": "github-actions",
-        "workflow": "release.yml",
-        "verifyPackageExists": true
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "owner/release-example-multi-target",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
       },
       "access": "public",
-      "provenance": true
+      "provenance": "automatic"
     }
-  },
-  "catalogs": [
-    {
-      "id": "homebrew-formula",
-      "repository": "owner/homebrew-tap",
-      "file": "Formula/release-example-multi-target.rb",
-      "content": "class ReleaseExampleMultiTarget < Formula\n  version \"{version}\"\nend\n"
-    }
-  ]
+  }
 }

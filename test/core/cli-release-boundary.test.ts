@@ -16,6 +16,7 @@ import {
   runObserve,
   runPrepare,
   runPublish,
+  runInspect,
   runRelease
 } from "../../apps/release-ts/src/cli/commands.js"
 import {
@@ -44,6 +45,32 @@ const scopeWarning =
 const resume = `Resume: ts-release publish ${encodeCompletePreparedReleaseRef(localPrepared)}`
 
 describe("CLI durable-reference boundary", () => {
+  test("JSON projection preserves one-element arrays and renders one-field domain scalars", async () => {
+    const { root, configPath, io } = fixture()
+    class DomainScalar {
+      constructor(readonly value: string) {}
+      toString() { return `rendered-${this.value}` }
+    }
+    const scalar = new DomainScalar("domain-value")
+    const ordinary = { value: "ordinary-with-custom-to-string" }
+    Object.defineProperty(ordinary, "toString", {
+      enumerable: false,
+      value: () => "must-not-render-as-scalar"
+    })
+    await runInspect(cliApi({ inspect: async () => ({
+      artifacts: [{ id: "only-artifact" }],
+      record: { value: "ordinary-record" },
+      ordinary,
+      scalar
+    }) as never }), { config: configPath, root }, root, io)
+    expect(JSON.parse(io.logs[0]!)).toEqual({
+      artifacts: [{ id: "only-artifact" }],
+      record: { value: "ordinary-record" },
+      ordinary: { value: "ordinary-with-custom-to-string" },
+      scalar: "rendered-domain-value"
+    })
+  })
+
   test("prepare prints only the canonical encoded complete reference", async () => {
     const { root, configPath, io } = fixture()
     await runPrepare(cliApi(), { config: configPath, root }, root, io)

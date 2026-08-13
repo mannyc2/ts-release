@@ -24,12 +24,63 @@ test("noninteractive init fails promptly without a preset or prepare-only choice
 test("certified preset generates npm and GitHub publication intent", async () => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-init-"))
   const configPath = join(root, "release.config.json")
-  let inspected: unknown
+  const inspected: Array<unknown> = []
   const io = ioFor()
-  await runInit(cliApi({ inspect: async (input) => { inspected = input.config; return emptyInspection } }), {
+  await runInit(cliApi({ inspect: async (input) => {
+    inspected.push(input.config)
+    return inspected.length === 1
+      ? {
+        source: { repository: "owner/fixture" },
+        package: {}
+      } as typeof emptyInspection
+      : emptyInspection
+  } }), {
     config: "release.config.json", root: ".", dryRun: false, force: false,
     preset: "bun-npm-github", prepareOnly: false
   }, root, io)
-  expect(inspected).toMatchObject({ npmPackage: { path: "." }, publish: { npm: {}, github: {} } })
-  expect(JSON.parse(io.read(configPath))).toMatchObject({ publish: { npm: {}, github: {} } })
+  const generated = {
+    project: { repository: "owner/fixture" },
+    versionFrom: "manifest",
+    npmPackage: { path: "." },
+    publish: {
+      npm: {
+        registry: "https://registry.npmjs.org/",
+        authentication: {
+          strategy: "trusted-publishing",
+          attestation: {
+            provider: "github-actions",
+            runner: "github-hosted",
+            repository: "owner/fixture",
+            workflow: "release.yml",
+            workflowRef: "refs/heads/main",
+            allowedAction: "npm-publish-direct"
+          }
+        },
+        access: "public",
+        provenance: "automatic"
+      },
+      github: {
+        repository: "owner/fixture",
+        tokenEnv: "GITHUB_TOKEN",
+        draft: true,
+        prerelease: false
+      }
+    }
+  }
+  expect(inspected).toEqual([
+    { project: {}, versionFrom: "manifest", publish: {} },
+    generated
+  ])
+  expect(JSON.parse(io.read(configPath))).toEqual(generated)
+})
+
+test("publishing preset refuses to guess a missing repository coordinate", async () => {
+  const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-init-"))
+  await expect(runInit(cliApi({ inspect: async () => ({
+    source: {},
+    package: {}
+  } as typeof emptyInspection) }), {
+    config: "release.config.json", root: ".", dryRun: false, force: false,
+    preset: "bun-npm-github", prepareOnly: false
+  }, root, ioFor())).rejects.toThrow(/requires a GitHub owner\/repository coordinate/u)
 })

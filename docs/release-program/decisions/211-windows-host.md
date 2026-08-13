@@ -7,6 +7,12 @@ Status: DONE
 Outcome: TARGET-ONLY
 Date: 2026-08-09
 
+> **Superseded Action-runtime detail (2026-08-12):** The target-only Windows
+> decision remains current. The Node 20 Action verification below is historical;
+> the current Action is a Linux composite boundary with workflow-installed,
+> pinned Bun. Installed library and CLI macOS evidence remains a separate host
+> row.
+
 ## Decision
 
 ### TARGET-ONLY

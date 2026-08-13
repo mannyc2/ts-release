@@ -19,5 +19,10 @@ export const readEnvironment = (
 ): Effect.Effect<Record<string, string>> =>
   Effect.forEach(["PATH", ...names], (name) =>
     readOptionalEnv(name).pipe(Effect.map((value) => [name, value] as const))).pipe(
-    Effect.map((entries) => Object.fromEntries(entries.flatMap(([name, value]) =>
-      value === undefined ? [] : [[name, value]]))))
+    Effect.map((entries) => ({
+      ...Object.fromEntries(entries.flatMap(([name, value]) => value === undefined ? [] : [[name, value]])),
+      TZ: "UTC",
+      LC_ALL: "C",
+      LANG: "C",
+      SOURCE_DATE_EPOCH: "0"
+    })))

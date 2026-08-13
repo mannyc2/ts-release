@@ -13,8 +13,7 @@ import {
   CandidateProject,
   NpmAccess,
   NpmAuthentication,
-  NpmProvenancePolicy,
-  NpmPublicationMode
+  NpmProvenancePolicy
 } from "../recipes/config.js"
 
 const optional = Schema.optionalKey
@@ -25,7 +24,8 @@ export class AuthoredProject extends Schema.Class<AuthoredProject>("AuthoredProj
   // nothing observes one.
   name: optional(NonEmptyName),
   // Observed or derived when omitted: version from a manifest or the tag at
-  // HEAD, tag from the template, commit from the repository.
+  // HEAD, and tag from the template. Source commit is always observed; a
+  // human-authored commit expectation would only validate and then disappear.
   version: optional(Version),
   tag: optional(NonEmptyName),
   // `{version}` is the only token, and it is the only one this repo will ever
@@ -36,12 +36,10 @@ export class AuthoredProject extends Schema.Class<AuthoredProject>("AuthoredProj
 /** Human-authored npm policy. Resolution fills only documented deterministic defaults. */
 export class AuthoredNpmPublish extends Schema.Class<AuthoredNpmPublish>("AuthoredNpmPublish")({
   registry: optional(Schema.NonEmptyString),
-  packageName: optional(Schema.NonEmptyString),
   distTag: optional(Schema.NonEmptyString),
   access: optional(NpmAccess),
   authentication: NpmAuthentication,
-  provenance: optional(NpmProvenancePolicy),
-  publicationMode: optional(NpmPublicationMode)
+  provenance: optional(NpmProvenancePolicy)
 }) {}
 
 export class AuthoredPublish extends Schema.Class<AuthoredPublish>("AuthoredPublish")({

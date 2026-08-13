@@ -18,15 +18,22 @@ import {
   PreparedSource,
   encodePreparedRelease
 } from "../../src/release/prepared.js"
+import {
+  fixtureArtifactProvenance,
+  fixturePreparedProvenance,
+  fixtureStagingSnapshot
+} from "../fixtures/prepared-provenance.js"
 
 const digest = parseSha256Hex("a".repeat(64))
+const sourceCommit = "c".repeat(40)
 const source = PreparedSource.make({
-  commit: NonEmptyName.make("commit"), tree: NonEmptyName.make("tree"), clean: true,
-  packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: digest
+  commit: NonEmptyName.make(sourceCommit), tree: NonEmptyName.make("tree"), clean: true,
+  packageManifestPath: SafeRelativePath.make("package.json"), packageManifestDigest: digest,
+  materialized: fixtureStagingSnapshot
 })
 const artifact = (id: string) => PreparedArtifact.make({
   id: OutputId.make(id), path: SafeRelativePath.make(`${id}.tgz`), kind: "archive",
-  size: 7, digest, blob: digest, mediaType: "application/gzip"
+  size: 7, digest, blob: digest, mediaType: "application/gzip", ...fixtureArtifactProvenance()
 })
 
 type Intent = {
@@ -55,27 +62,35 @@ const bytes = (intent: Intent): Uint8Array => {
     id: NonEmptyName.make("npm-release"), artifactId: OutputId.make(intent.artifactId),
     packageName: NonEmptyName.make(intent.packageName), version: Version.make(intent.version),
     registryUrl, distTag: NpmDistTag.make(intent.distTag), access: intent.access,
-    authentication, provenance: intent.provenance, publicationMode: "direct",
+    authentication, provenance: intent.provenance,
     authority: makeNpmPublicationAuthorityIntent({
       packageName: intent.packageName, version: intent.version, registryUrl,
       distTag: intent.distTag, authentication
     })
   })
   return encodePreparedRelease(PreparedReleaseV2.make({
+    kind: "complete",
     schemaVersion: "prepared-release/v2", source,
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"), packageName: publication.packageName,
       version: publication.version, tag: NonEmptyName.make(`v${intent.version}`)
     }),
-    artifacts: [artifact(intent.artifactId)], publications: [publication]
+    provenance: fixturePreparedProvenance,
+    artifacts: [artifact(intent.artifactId)], collections: [], publications: [publication]
   }))
 }
 
-const trustedBytes = (repository: string, workflow: string): Uint8Array => {
+const trustedBytes = (
+  repository: string,
+  workflow: string,
+  workflowRef = "refs/heads/main",
+  trustedSourceCommit = sourceCommit
+): Uint8Array => {
   const authentication = NpmTrustedPublishingAuthentication.make({
     strategy: "trusted-publishing",
     attestation: NpmTrustedPublisherAttestation.make({
       provider: "github-actions", runner: "github-hosted", repository, workflow,
+      workflowRef,
       allowedAction: "npm-publish-direct"
     })
   })
@@ -84,19 +99,22 @@ const trustedBytes = (repository: string, workflow: string): Uint8Array => {
     id: NonEmptyName.make("npm-release"), artifactId: OutputId.make("npm-tarball"),
     packageName: NonEmptyName.make("@fixture/package"), version: Version.make("1.0.0"),
     registryUrl, distTag: NpmDistTag.make("latest"), access: "public", authentication,
-    provenance: "automatic", publicationMode: "direct",
+    provenance: "automatic",
     authority: makeNpmPublicationAuthorityIntent({
       packageName: "@fixture/package", version: "1.0.0", registryUrl,
-      distTag: "latest", authentication
+      distTag: "latest", authentication, sourceCommit: trustedSourceCommit
     })
   })
   return encodePreparedRelease(PreparedReleaseV2.make({
-    schemaVersion: "prepared-release/v2", source,
+    kind: "complete",
+    schemaVersion: "prepared-release/v2",
+    source: PreparedSource.make({ ...source, commit: NonEmptyName.make(trustedSourceCommit) }),
     project: PreparedProject.make({
       name: NonEmptyName.make("fixture"), packageName: publication.packageName,
       version: publication.version, tag: NonEmptyName.make("v1.0.0")
     }),
-    artifacts: [artifact("npm-tarball")], publications: [publication]
+    provenance: fixturePreparedProvenance,
+    artifacts: [artifact("npm-tarball")], collections: [], publications: [publication]
   }))
 }
 
@@ -116,9 +134,8 @@ describe("durable npm publication intent", () => {
     for (const variant of variants) expect(bytes(variant)).not.toEqual(baseline)
   })
 
-  test("direct publication mode is explicit in the durable document", () => {
+  test("authentication strategy is explicit in the durable document", () => {
     const encoded = new TextDecoder().decode(bytes(base))
-    expect(encoded).toContain('"publicationMode":"direct"')
     expect(encoded).toContain('"authentication":{"credential":"NPM_TOKEN","strategy":"token"}')
   })
 
@@ -128,5 +145,8 @@ describe("durable npm publication intent", () => {
     expect(trusted).not.toEqual(token)
     expect(trustedBytes("other/package", "publish.yml")).not.toEqual(trusted)
     expect(trustedBytes("owner/package", "release.yml")).not.toEqual(trusted)
+    expect(trustedBytes("owner/package", "publish.yml", "refs/tags/v1.0.0")).not.toEqual(trusted)
+    expect(trustedBytes("owner/package", "publish.yml", "refs/heads/main", "d".repeat(40)))
+      .not.toEqual(trusted)
   })
 })

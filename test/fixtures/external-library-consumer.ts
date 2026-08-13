@@ -5,15 +5,15 @@ import { join } from "node:path"
 import { spawnSync } from "node:child_process"
 import {
   CredentialUnavailable,
+  SafeRelativePath,
+  StagingEntry,
+  StagingSnapshot,
   makeCredentialProvider,
   makeCustomReleaseLayer,
   makeSourceObserver,
   sha256Digest,
-  type AuthorizedMutationHttpShape,
-  type CertifiedPublisherSpawnShape,
   type CredentialRequest,
   type HttpAuthorizerShape,
-  type NpmUserConfigResourceShape,
   type ReleaseRuntimeShape
 } from "@mannyc1/ts-release/host"
 import {
@@ -59,13 +59,13 @@ export const exerciseCustomHost = async (input: {
       return Effect.succeed({ status: 404, headers: {}, body: "{}" })
     }
   }
-  const authorizedMutationHttp: AuthorizedMutationHttpShape = {
+  const authorizedMutationHttp = {
     execute: () => Effect.die("The external fixture exposes no mutation HTTP sink.")
   }
-  const npmUserConfigResource: NpmUserConfigResourceShape = {
+  const npmUserConfigResource = {
     acquire: () => Effect.die("The external fixture exposes no npm credential resource.")
   }
-  const certifiedPublisherSpawn: CertifiedPublisherSpawnShape = {
+  const certifiedPublisherSpawn = {
     preflightTrustedNpm: () => Effect.die("The external fixture exposes no trusted npm preflight."),
     spawn: () => Effect.die("The external fixture exposes no publisher process sink.")
   }
@@ -91,14 +91,46 @@ export const exerciseCustomHost = async (input: {
       },
       catch: (cause) => cause
     }),
-    digest: (bytes) => Effect.sync(() => sha256Digest(bytes))
+    digest: (bytes) => Effect.sync(() => sha256Digest(bytes)),
+    materialize: (workspace, verified, destination) => Effect.try({
+      try: () => {
+        const archive = spawnSync("git", ["archive", "--format=tar", verified.commit], {
+          cwd: workspace, encoding: null, stdio: "pipe"
+        })
+        if (archive.status !== 0) throw new Error(Buffer.from(archive.stderr).toString("utf8"))
+        const extracted = spawnSync("tar", ["-xf", "-", "-C", destination], {
+          input: archive.stdout, encoding: null, stdio: ["pipe", "pipe", "pipe"]
+        })
+        if (extracted.status !== 0) throw new Error(Buffer.from(extracted.stderr).toString("utf8"))
+        const listed = spawnSync("git", ["ls-tree", "-r", "--name-only", verified.commit], {
+          cwd: workspace, encoding: "utf8", stdio: "pipe"
+        })
+        if (listed.status !== 0) throw new Error(listed.stderr.trim())
+        const entries = listed.stdout.trim().split("\n").filter((path) => path.length > 0)
+          .sort().map((path) => {
+            const bytes = new Uint8Array(readFileSync(join(destination, path)))
+            return StagingEntry.make({
+              path: SafeRelativePath.make(path),
+              kind: "file",
+              mode: 0o644,
+              size: bytes.length,
+              digest: sha256Digest(bytes)
+            })
+          })
+        return StagingSnapshot.make({
+          entries,
+          digest: sha256Digest(new TextEncoder().encode(JSON.stringify(entries)))
+        })
+      }, catch: (cause) => cause
+    })
   })
   const runtime: ReleaseRuntimeShape = {
     source: {
       observe: (...args: Parameters<typeof source.observe>) => {
         calls.source += 1
         return source.observe(...args)
-      }
+      },
+      materialize: (...args: Parameters<typeof source.materialize>) => source.materialize(...args)
     },
     run: (_command) => {
       calls.run += 1

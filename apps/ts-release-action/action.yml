@@ -14,11 +14,20 @@ inputs:
 outputs:
   prepared-ref:
     description: Durable content-addressed prepared release reference.
+    value: ${{ steps.execute.outputs.prepared-ref }}
   report-ref:
     description: Workspace-contained redacted Action report reference.
+    value: ${{ steps.execute.outputs.report-ref }}
 runs:
-  using: node20
-  main: dist/index.js
+  using: composite
+  steps:
+    - id: execute
+      shell: bash
+      env:
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_PREPARED: ${{ inputs.prepared }}
+      run: bun "$GITHUB_ACTION_PATH/dist/index.js"
 branding:
   icon: package
   color: blue

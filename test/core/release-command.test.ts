@@ -7,7 +7,7 @@ import { cliApi, completeReport, ioFor, localPrepared } from "./cli-fixture.js"
 test("release command invokes the automatic release API once", async () => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-cli-"))
   const configPath = join(root, "release.config.json")
-  writeFileSync(configPath, JSON.stringify({ project: { name: "fixture", version: "1.0.0", tag: "v1.0.0", commit: "abc" } }))
+  writeFileSync(configPath, JSON.stringify({ project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" } }))
   let calls = 0
   const io = ioFor({ [configPath]: "{}" })
   await runRelease(cliApi({

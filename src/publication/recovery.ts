@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema"
+import { encodeCanonicalJson } from "../model/canonical.js"
 import { SafeReason } from "./report.js"
 
 /** Independent recovery axes. None of these values implies another axis. */
@@ -192,9 +193,133 @@ export const RecoveryCapabilityProfile = RecoveryCapabilityProfileRecord.pipe(Sc
 ))
 export type RecoveryCapabilityProfile = typeof RecoveryCapabilityProfile.Type
 
+/**
+ * One executable publication adapter and the durable recovery profile it
+ * promises to honor. `correctionAdapters` names only actually installed
+ * conditional correction implementations; an authored operator proposal is
+ * not an adapter.
+ */
+export interface PublicationProfileRegistration {
+  readonly id: string
+  readonly provider: string
+  readonly preparedTag: string
+  readonly recovery: RecoveryCapabilityProfile
+  readonly correctionAdapters: ReadonlyArray<CorrectionKind>
+  readonly evidence: {
+    readonly reviewedAt: string
+    readonly observationSources: ReadonlyArray<string>
+    readonly correctionSources: ReadonlyArray<string>
+    readonly correctionFinding: string
+  }
+}
+
+export class RecoveryProfileRegistrationError
+  extends Schema.TaggedErrorClass<RecoveryProfileRegistrationError>()("RecoveryProfileRegistrationError", {
+    registration: Schema.NonEmptyString,
+    reason: SafeReason
+  }) {}
+
+const decodeRecoveryCapabilityProfile = (value: unknown): RecoveryCapabilityProfile =>
+  Schema.decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(value)
+
+/** Canonical profile bytes are shared by registration checks and generators. */
+export const encodeRecoveryCapabilityProfile = (value: unknown): string =>
+  encodeCanonicalJson(Schema.encodeSync(RecoveryCapabilityProfile)(decodeRecoveryCapabilityProfile(value)))
+
+export const recoveryCapabilityProfilesEqual = (left: unknown, right: unknown): boolean =>
+  encodeRecoveryCapabilityProfile(left) === encodeRecoveryCapabilityProfile(right)
+
+const registrationFailure = (registration: string, reason: string): RecoveryProfileRegistrationError =>
+  RecoveryProfileRegistrationError.make({
+    registration,
+    reason: SafeReason.make(reason)
+  })
+
+/**
+ * Fail module registration before any provider operation when the declared
+ * profile or installed correction behavior is incoherent.
+ */
+export const validatePublicationProfiles = <
+  const Profiles extends Readonly<Record<string, PublicationProfileRegistration>>
+>(profiles: Profiles): Profiles => {
+  const ids = new Set<string>()
+  const preparedTags = new Set<string>()
+  for (const [name, registration] of Object.entries(profiles)) {
+    try {
+      if (registration.id.length === 0 || registration.provider.length === 0 || registration.preparedTag.length === 0) {
+        throw registrationFailure(name, "Registration id, provider, and prepared tag must be nonempty.")
+      }
+      if (ids.has(registration.id)) throw registrationFailure(name, "Publication profile ids must be unique.")
+      if (preparedTags.has(registration.preparedTag)) {
+        throw registrationFailure(name, "Prepared publication tags must be unique.")
+      }
+      ids.add(registration.id)
+      preparedTags.add(registration.preparedTag)
+
+      const recovery = decodeRecoveryCapabilityProfile(registration.recovery)
+      const adapters = Schema.decodeUnknownSync(Schema.Array(CorrectionKind), {
+        onExcessProperty: "error"
+      })(registration.correctionAdapters)
+      if (new Set(adapters).size !== adapters.length) {
+        throw registrationFailure(name, "Installed correction adapter kinds must be unique.")
+      }
+      if (encodeCanonicalJson(adapters) !== encodeCanonicalJson(recovery.correction)) {
+        throw registrationFailure(
+          name,
+          "Installed correction adapters do not exactly match the recovery profile correction axis."
+        )
+      }
+      Schema.decodeUnknownSync(calendarDate)(registration.evidence.reviewedAt)
+      if (registration.evidence.observationSources.length === 0 ||
+        registration.evidence.correctionSources.length === 0) {
+        throw registrationFailure(name, "A publication profile requires observation and correction evidence sources.")
+      }
+      for (const url of [
+        ...registration.evidence.observationSources,
+        ...registration.evidence.correctionSources
+      ]) Schema.decodeUnknownSync(documentedUrl)(url)
+      Schema.decodeUnknownSync(SafeReason)(registration.evidence.correctionFinding)
+    } catch (cause) {
+      if (cause instanceof RecoveryProfileRegistrationError) throw cause
+      throw registrationFailure(name, "Publication profile registration failed strict schema validation.")
+    }
+  }
+  return profiles
+}
+
+/** Refuse a subject factory whose executable subject advertises another policy. */
+export const assertRecoveryProfileMatches = (
+  registration: string,
+  expected: RecoveryCapabilityProfile,
+  actual: unknown
+): void => {
+  try {
+    if (!recoveryCapabilityProfilesEqual(expected, actual)) {
+      throw registrationFailure(
+        registration,
+        "Executable subject recovery behavior does not match its registered profile."
+      )
+    }
+  } catch (cause) {
+    if (cause instanceof RecoveryProfileRegistrationError) throw cause
+    throw registrationFailure(registration, "Executable subject recovery profile failed strict schema validation.")
+  }
+}
+
+export const validateRecoveryProfileSubjects = (
+  registration: string,
+  expected: RecoveryCapabilityProfile,
+  actualProfiles: ReadonlyArray<unknown>
+): void => {
+  if (actualProfiles.length === 0) {
+    throw registrationFailure(registration, "A registered publication adapter produced no release subject.")
+  }
+  for (const actual of actualProfiles) assertRecoveryProfileMatches(registration, expected, actual)
+}
+
 /** Decode at module/registration boundaries so malformed policies never run. */
 export const makeRecoveryCapabilityProfile = (value: unknown): RecoveryCapabilityProfile =>
-  Schema.decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(value)
+  decodeRecoveryCapabilityProfile(value)
 
 /** Unknown provider timing permits the mandatory first reread and nothing else. */
 export const conservativeUnknownRecoveryProfile = makeRecoveryCapabilityProfile({

@@ -126,9 +126,22 @@ export interface CorrectOptions {
   readonly correction: string
 }
 
+const repositoryFromInspection = (inspection: InspectOutput): string => {
+  if (!("package" in inspection) || inspection.source.repository === undefined) {
+    throw new Error(
+      "The bun-npm-github preset requires a GitHub owner/repository coordinate " +
+      "from the origin remote or package.json repository field."
+    )
+  }
+  return inspection.source.repository
+}
+
 const printJson = (io: CliIo, value: unknown): void =>
   io.log(JSON.stringify(value, (_key, item) =>
-    typeof item === "object" && item !== null && "toString" in item && Object.keys(item).length === 1
+    typeof item === "object" && item !== null && !Array.isArray(item) &&
+      Object.getPrototypeOf(item) !== Object.prototype && Object.getPrototypeOf(item) !== null &&
+      "toString" in item && item.toString !== Object.prototype.toString &&
+      Object.keys(item).length === 1
       ? String(item)
       : item))
 
@@ -188,20 +201,42 @@ export const runInit = async (
   const workspace = realpathSync(pathFrom(cwd, options.root))
   const config = options.prepareOnly
     ? { project: {}, versionFrom: "manifest" as const, publish: {} }
-    : {
-      project: {},
-      versionFrom: "manifest" as const,
-      npmPackage: { path: "." },
-      publish: {
-        npm: {
-          registry: "https://registry.npmjs.org",
-          trustedPublishing: { provider: "github-actions" as const },
-          access: "public" as const,
-          provenance: true
-        },
-        github: { draft: true, prerelease: false }
+    : await (async () => {
+      const discovered = await api.inspect({
+        config: { project: {}, versionFrom: "manifest", publish: {} },
+        workspace
+      })
+      const repository = repositoryFromInspection(discovered)
+      return {
+        project: { repository },
+        versionFrom: "manifest" as const,
+        npmPackage: { path: "." },
+        publish: {
+          npm: {
+            registry: "https://registry.npmjs.org/",
+            authentication: {
+              strategy: "trusted-publishing" as const,
+              attestation: {
+                provider: "github-actions" as const,
+                runner: "github-hosted" as const,
+                repository,
+                workflow: "release.yml",
+                workflowRef: "refs/heads/main",
+                allowedAction: "npm-publish-direct" as const
+              }
+            },
+            access: "public" as const,
+            provenance: "automatic" as const
+          },
+          github: {
+            repository,
+            tokenEnv: "GITHUB_TOKEN",
+            draft: true,
+            prerelease: false
+          }
+        }
       }
-    }
+    })()
   await api.inspect({ config, workspace })
   const output = pathFrom(workspace, options.config)
   if (!options.force) {

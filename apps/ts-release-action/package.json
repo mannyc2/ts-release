@@ -10,6 +10,7 @@
   "dependencies": {
     "@actions/artifact": "6.2.1",
     "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
     "@effect/platform-node": "4.0.0-beta.83",
     "@mannyc1/ts-release": "file:../..",
     "effect": "4.0.0-beta.83"

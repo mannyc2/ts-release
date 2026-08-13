@@ -2,6 +2,8 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
+import type { NonEmptyName, Version } from "../model/primitives.js"
+import type { PreparedNpmPublication } from "../release/prepared.js"
 import type { CredentialAuthorityError, MutationCredentialGrant, ScopedSecret, WorkloadIdentity } from "./authority.js"
 import type { HttpAuthorizationError } from "./http.js"
 import type { PublisherOperation } from "./authority.js"
@@ -39,9 +41,15 @@ export class NpmUserConfigResource
   ) {}
 
 interface CertifiedPublisherSpecBase {
-  readonly operation: PublisherOperation
-  readonly argv: readonly [string, ...Array<string>]
+  readonly operation: NpmPublishOperation
   readonly cwd: string
+  readonly tarballPath: string
+  readonly packageName: NonEmptyName
+  readonly version: Version
+  readonly registryUrl: PreparedNpmPublication["registryUrl"]
+  readonly distTag: PreparedNpmPublication["distTag"]
+  readonly access: PreparedNpmPublication["access"]
+  readonly provenance: PreparedNpmPublication["provenance"]
 }
 
 export interface NpmPublisherSpec extends CertifiedPublisherSpecBase {
@@ -55,6 +63,28 @@ export interface WorkloadPublisherSpec extends CertifiedPublisherSpecBase {
 }
 
 export type CertifiedPublisherSpec = NpmPublisherSpec | WorkloadPublisherSpec
+
+/** The credential-bearing host owns the only admitted npm mutation argv. */
+export const npmPublishArgv = (
+  spec: CertifiedPublisherSpec
+): readonly [string, ...Array<string>] => [
+  "npm",
+  "publish",
+  spec.tarballPath,
+  "--ignore-scripts",
+  "--registry",
+  spec.registryUrl,
+  "--tag",
+  spec.distTag,
+  "--access",
+  spec.access,
+  ...(spec.provenance === "required"
+    ? ["--provenance"]
+    : spec.provenance === "disabled"
+      ? ["--provenance=false"]
+      : []),
+  "--json"
+]
 
 export class RejectedBeforeStart
   extends Schema.TaggedClass<RejectedBeforeStart>()("RejectedBeforeStart", {

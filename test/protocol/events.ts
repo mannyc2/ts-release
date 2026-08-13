@@ -90,7 +90,7 @@ export const faultInjected = (input: EventInput<FaultInjected>): FaultInjected =
 
 const credentialHeader = /^(?:authorization|proxy-authorization|npm-auth-type|npm-token|x-auth-token)$/iu
 const credentialQuery = /(?:token|auth|password|secret|key)/iu
-const tokenLike = /(?:gh[pousr]_[A-Za-z0-9_]{20,}|npm_[A-Za-z0-9]{20,}|Bearer\s+\S+|Basic\s+\S+)/giu
+const tokenLike = /(?:gh[pousr]_[A-Za-z0-9_]{20,}|npm_[A-Za-z0-9]{20,}|Bearer\s+\S+|Basic\s+\S+|sentinel-(?:token|secret|authority)[A-Za-z0-9_.-]*)/giu
 
 const scrubText = (value: string): string => value.replace(tokenLike, "<redacted>")
 

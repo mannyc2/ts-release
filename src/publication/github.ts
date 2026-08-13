@@ -46,8 +46,6 @@ import {
   ProviderAuthorizedCreate,
   ProviderBlocked,
   ProviderMutationFact,
-  ProviderRejectionFact,
-  RejectedByProvider,
   SafeReason,
   VisibilityBasis,
   VisibilityPending,
@@ -555,18 +553,6 @@ const unknownAttempt = (
   reason: SafeReason.make(reason)
 })
 
-const rejectedAttempt = (
-  publication: PreparedGitHubPublication,
-  status: 401 | 403
-): RejectedByProvider => RejectedByProvider.make({
-  subject: publication.authority.subject,
-  fact: ProviderRejectionFact.make({
-    subject: publication.authority.subject,
-    code: NonEmptyName.make(`github-http-${status}`),
-    detail: SafeReason.make("GitHub conclusively rejected the mutation request before accepting this subject's first write.")
-  })
-})
-
 const appliedAttempt = (publication: PreparedGitHubPublication): Applied => Applied.make({
   subject: publication.authority.subject,
   fact: ProviderMutationFact.make({
@@ -898,12 +884,6 @@ export const makeGithubSubjects = (
       if (exchange.response.status === 201) {
         acceptedWrites += 1
         return { _tag: "Accepted", response: exchange.response } as const
-      }
-      if (acceptedWrites === 0 && (exchange.response.status === 401 || exchange.response.status === 403)) {
-        return {
-          _tag: "Attempt",
-          attempt: rejectedAttempt(publication, exchange.response.status)
-        } as const
       }
       return { _tag: "Attempt", attempt: unknownAttempt(
         publication,

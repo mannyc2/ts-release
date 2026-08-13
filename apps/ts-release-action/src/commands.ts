@@ -19,6 +19,12 @@ export interface PreparedReferenceChannel {
   readonly current: () => string | undefined
 }
 
+const workflowRecoveryGuidance = (reference: string): string => [
+  `Prepared release: ${reference}`,
+  `Automatic workflow recovery: dispatch the same exact candidate with prepared_ref=${reference}.`,
+  "Reviewed workflow recovery: re-run the failed publish job in the producer workflow run."
+].join("\n")
+
 export const makePreparedReferenceChannel = (input: {
   readonly output: (name: ActionOutput, value: string) => void
   readonly summarize: (message: string) => Promise<void>
@@ -28,10 +34,7 @@ export const makePreparedReferenceChannel = (input: {
     emit: async (reference) => {
       current = reference
       input.output("prepared-ref", reference)
-      await input.summarize([
-        `Prepared release: ${reference}`,
-        "Recovery: re-run the failed publish job on this workflow run; artifacts persist across attempts."
-      ].join("\n"))
+      await input.summarize(workflowRecoveryGuidance(reference))
     },
     current: () => current
   }
@@ -79,7 +82,12 @@ const redact = (value: string): string => value
   .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/giu, "Bearer [REDACTED]")
 
 const printable = (value: unknown): string => JSON.stringify(value, (_key, nested) => {
-  if (typeof nested === "object" && nested !== null && "toString" in nested && Object.keys(nested).length === 1) {
+  if (
+    typeof nested === "object" && nested !== null && !Array.isArray(nested) &&
+    Object.getPrototypeOf(nested) !== Object.prototype && Object.getPrototypeOf(nested) !== null &&
+    "toString" in nested && nested.toString !== Object.prototype.toString &&
+    Object.keys(nested).length === 1
+  ) {
     return String(nested)
   }
   return nested
@@ -101,10 +109,7 @@ const rejectExtra = (values: Record<string, string>, allowed: ReadonlyArray<stri
 
 class ReportedActionError extends Error {}
 
-const recoveryGuidance = (reference: string): string => [
-  `Prepared release remains available as ${reference}.`,
-  "Re-run the failed publish job on this workflow run; artifacts persist across attempts."
-].join("\n")
+const recoveryGuidance = workflowRecoveryGuidance
 
 const decodePrepared = (value: string): Promise<CompletePreparedReleaseRef> =>
   Effect.runPromise(decodeCompletePreparedReleaseRef(value))

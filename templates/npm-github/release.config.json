@@ -3,6 +3,7 @@
   "project": {
     "name": "@scope/pkg",
     "packageName": "@scope/pkg",
+    "repository": "owner/repo",
     "version": "0.1.0",
     "tag": "v0.1.0"
   },
@@ -11,20 +12,24 @@
   },
   "publish": {
     "npm": {
-      "registry": "https://registry.npmjs.org",
-      "packageName": "@scope/pkg",
-      "packagePath": ".",
-      "trustedPublishing": {
-        "provider": "github-actions",
-        "workflow": "release.yml",
-        "verifyPackageExists": true
+      "registry": "https://registry.npmjs.org/",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "attestation": {
+          "provider": "github-actions",
+          "runner": "github-hosted",
+          "repository": "owner/repo",
+          "workflow": "release.yml",
+          "workflowRef": "refs/heads/main",
+          "allowedAction": "npm-publish-direct"
+        }
       },
       "access": "public",
-      "provenance": true
+      "provenance": "automatic"
     },
     "github": {
       "repository": "owner/repo",
-      "tokenEnv": "GH_TOKEN",
+      "tokenEnv": "GITHUB_TOKEN",
       "draft": true,
       "prerelease": false
     }

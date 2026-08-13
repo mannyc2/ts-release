@@ -2,7 +2,11 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { encodeCanonicalJson } from "../model/canonical.js"
 import { digestEquals, sha256Digest, sha512Digest } from "../model/digest.js"
-import { encodePreparedRelease } from "../release/prepared.js"
+import {
+  PreparedPublication,
+  encodePreparedRelease,
+  type PreparedPublication as PreparedPublicationType
+} from "../release/prepared.js"
 import type { PreparedBundle } from "../release/prepared-store.js"
 import {
   type AuthoredCorrection,
@@ -27,6 +31,9 @@ export class CorrectionUnsupported extends Schema.TaggedClass<CorrectionUnsuppor
 export type CorrectionOutcome = typeof CorrectionUnsupported.Type
 
 const preparedDigest = (bundle: PreparedBundle) => sha256Digest(encodePreparedRelease(bundle.manifest))
+const publicationBaselineDigest = (publication: PreparedPublicationType) => sha256Digest(
+  new TextEncoder().encode(encodeCanonicalJson(Schema.encodeSync(PreparedPublication)(publication)))
+)
 const findPublication = (bundle: PreparedBundle, id: string) => bundle.manifest.publications.find((publication) => publication.id.toString() === id)
 
 const choosePublication = <Tag extends "PreparedNpmPublication" | "PreparedGitHubPublication">(
@@ -69,6 +76,7 @@ export const bindAuthoredCorrection = (
         registryUrl: publication.registryUrl,
         packageName: publication.packageName,
         version: publication.version,
+        baselineDigest: publicationBaselineDigest(publication),
         tarballIntegrity: sha512Digest(bytes),
         message: authored.message,
         ...(authored.replacement === undefined ? {} : { replacement: authored.replacement })
@@ -85,6 +93,7 @@ export const bindAuthoredCorrection = (
       publicationId: publication.id,
       repository: publication.repository,
       tag: publication.tag,
+      baselineDigest: publicationBaselineDigest(publication),
       marker: authored.message,
       ...(authored.replacement === undefined ? {} : { replacement: authored.replacement })
     }
@@ -96,6 +105,9 @@ const verifyNpm = (bundle: PreparedBundle, correction: NpmDeprecationCorrection)
   if (publication?._tag !== "PreparedNpmPublication" || publication.registryUrl !== correction.registryUrl ||
     publication.packageName !== correction.packageName || publication.version !== correction.version) {
     throw new Error("npm correction subject is not the exact npm publication in the prepared manifest.")
+  }
+  if (!digestEquals(publicationBaselineDigest(publication), correction.baselineDigest)) {
+    throw new Error("npm correction baseline digest is not the exact prepared publication digest.")
   }
   const artifact = bundle.manifest.artifacts.find((candidate) => candidate.id === publication.artifactId)
   const bytes = artifact === undefined ? undefined : bundle.blobs.get(artifact.id.toString())
@@ -110,6 +122,9 @@ const verifyGithub = (bundle: PreparedBundle, correction: GithubReleaseCorrectio
   const publication = findPublication(bundle, correction.publicationId.toString())
   if (publication?._tag !== "PreparedGitHubPublication" || publication.repository !== correction.repository || publication.tag !== correction.tag) {
     throw new Error("GitHub correction subject is not the exact GitHub publication in the prepared manifest.")
+  }
+  if (!digestEquals(publicationBaselineDigest(publication), correction.baselineDigest)) {
+    throw new Error("GitHub correction baseline digest is not the exact prepared publication digest.")
   }
 }
 

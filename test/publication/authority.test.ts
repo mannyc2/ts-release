@@ -9,7 +9,8 @@ import {
   ProviderId,
   SubjectId,
   TokenAuthStrategy,
-  TrustedPublishingAuthStrategy
+  TrustedPublishingAuthStrategy,
+  TrustedPublishingSourceCommit
 } from "../../src/model/authority.js"
 import { NonEmptyName } from "../../src/model/primitives.js"
 import {
@@ -107,7 +108,7 @@ describe("opaque mutation authority", () => {
       .rejects.toBeInstanceOf(CredentialPurposeMismatch)
   })
 
-  test("anonymous access is observe-only and workload identity carries names only", async () => {
+  test("anonymous access is observe-only and workload identity retains safe prepared sink intent", async () => {
     const anonymousRequest = CredentialRequest.make({
       subject,
       provider,
@@ -132,9 +133,15 @@ describe("opaque mutation authority", () => {
       purpose: "publish",
       strategy: TrustedPublishingAuthStrategy.make({
         kind: "trusted-publishing",
-        identityProvider: ProviderId.make("github-actions"),
+        identityProvider: "github-actions",
         runnerClass: "github-hosted",
-        workflow: ".github/workflows/release.yml"
+        repository: "owner/repository",
+        workflow: ".github/workflows/release.yml",
+        workflowRef: "refs/heads/main",
+        sourceCommit: TrustedPublishingSourceCommit.make("c".repeat(40)),
+        provenanceEnvironmentContract: "github-actions-npm-provenance-v1",
+        allowedAction: "npm-publish-direct",
+        publisherSink: "certified-npm-cli"
       })
     })
     const trusted = makeCredentialProvider({
@@ -143,6 +150,15 @@ describe("opaque mutation authority", () => {
     const identity = await Effect.runPromise(trusted.acquireForMutation(trustedRequest, decision))
     expect(identity).toMatchObject({ _tag: "WorkloadIdentity" })
     expect(identity._tag === "WorkloadIdentity" ? identity.names : undefined).toEqual(new Set(names))
+    expect(identity._tag === "WorkloadIdentity" ? identity.strategy : undefined).toMatchObject({
+      repository: "owner/repository",
+      workflow: ".github/workflows/release.yml",
+      workflowRef: "refs/heads/main",
+      sourceCommit: TrustedPublishingSourceCommit.make("c".repeat(40)),
+      provenanceEnvironmentContract: "github-actions-npm-provenance-v1",
+      allowedAction: "npm-publish-direct",
+      publisherSink: "certified-npm-cli"
+    })
     expect("value" in identity).toBe(false)
   })
 

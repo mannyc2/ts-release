@@ -40,8 +40,10 @@ Individual gates:
   SPEC section 13 names exactly the root runtime exports.
 - `check:capabilities` (`check-capabilities.ts`) — joins the live executable
   registry to dated evidence and the generated capability inventory.
-- `check:examples` (`check-examples.ts`) — validates every example and template
-  against the authored schema and rejects retired lifecycle commands.
+- `check:examples` (`check-examples.ts`) — strictly decodes the exact retained
+  example/template inventory, resolves deterministic observed facts, compiles
+  and prepares each config through the root API with exact publication-subject
+  assertions, and enforces unsupported-family migration refusals.
 - `check:readme` (`check-readme.ts`) — validates README fenced snippets and
   package import subpaths.
 - `check:action-bundle` (`check-action-bundle.ts`) — verifies the tracked
@@ -51,7 +53,9 @@ Individual gates:
 - `check:config-schema` (`check-config-schema.ts`) — proves the checked-in
   authoring schema is a fresh rendering of the source Schema.
 - `check:agents` — typechecks the single agent-distribution app, builds its
-  provider-native layouts and archives, and runs its contract checks.
+  deterministic provider-native archives, installs archive-only outputs into
+  disposable provider cache layouts, rejects root canonical owners, and runs
+  its contract checks.
 - `check:self-release-context` / `check:self-release-prepare` /
   `check:self-release-readiness` / `check:self-release-artifacts` /
   `check:self-release-correction` — the offline candidate gates, app-owned

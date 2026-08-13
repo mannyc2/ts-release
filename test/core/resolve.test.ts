@@ -10,8 +10,7 @@ import { canonicalizeNpmRegistryEndpoint } from "../../src/recipes/config.js"
 
 const canonical = {
   project: {
-    name: "@scope/pkg", packageName: "@scope/pkg", version: "1.2.3", tag: "v1.2.3",
-    commit: "0123456789abcdef"
+    name: "@scope/pkg", packageName: "@scope/pkg", version: "1.2.3", tag: "v1.2.3"
   },
   npmPackage: { path: "." },
   publish: {}
@@ -23,19 +22,22 @@ const without = (value: Record<string, unknown>): Record<string, unknown> =>
 const authored = (project: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
   ...canonical, ...extra, project: without({ ...canonical.project, ...project })
 })
-const facts = (value: Record<string, unknown> = {}) => value
+const facts = (value: Record<string, unknown> = {}) => without({
+  commit: "0123456789abcdef",
+  ...value
+})
 
 describe("resolveConfig", () => {
   test("a canonical config with agreeing facts resolves to itself", () => {
     const resolved = resolveConfig(canonical, facts({
       commit: "0123456789abcdef", manifestName: "@scope/pkg", manifestVersion: "1.2.3"
     }))
-    expect(resolved).toEqual(canonical as never)
+    expect(encodeResolvedConfig(resolved)).toBe(encodeResolvedConfig(canonical))
   })
 
   test("every output is accepted by the canonical decoder", async () => {
     const resolved = resolveConfig(
-      authored({ version: undefined, tag: undefined, commit: undefined }, { versionFrom: "manifest" }),
+      authored({ version: undefined, tag: undefined }, { versionFrom: "manifest" }),
       facts({ commit: "abc123", manifestVersion: "4.5.6" })
     )
     const decoded = await Effect.runPromise(decodeConfig(resolved))
@@ -69,8 +71,10 @@ describe("resolveConfig", () => {
   })
 
   test("a fact that contradicts the author is refused, naming both values", () => {
-    expect(() => resolveConfig(canonical, facts({ commit: "deadbeef" })))
-      .toThrow(/"0123456789abcdef".*"deadbeef".*at HEAD/su)
+    expect(() => resolveConfig(
+      authored({ repository: "owner/package" }),
+      facts({ repository: "other/package" })
+    )).toThrow(/"owner\/package".*"other\/package".*observed repository/su)
     expect(() =>
       resolveConfig(authored({}, { versionFrom: "manifest" }), facts({ manifestVersion: "9.9.9" }))
     ).toThrow(/"1.2.3".*"9.9.9".*package manifest/su)
@@ -79,7 +83,7 @@ describe("resolveConfig", () => {
   })
 
   test("an unfillable field refuses and teaches how to observe it", () => {
-    expect(() => resolveConfig(authored({ commit: undefined }), facts())).toThrow(MISSING_COMMIT)
+    expect(() => resolveConfig(canonical, {})).toThrow(MISSING_COMMIT)
     expect(() => resolveConfig(authored({ version: undefined }), facts()))
       .toThrow(/versionFrom to "manifest" or "git-tag"/u)
     expect(() =>
@@ -89,7 +93,7 @@ describe("resolveConfig", () => {
 
   test("a manifest name fills both names when the author states neither", () => {
     const resolved = resolveConfig(
-      { ...canonical, project: { version: "1.2.3", tag: "v1.2.3", commit: "abc123" } },
+      { ...canonical, project: { version: "1.2.3", tag: "v1.2.3" } },
       facts({ manifestName: "@scope/observed" })
     )
     expect(String(resolved.project.name)).toBe("@scope/observed")
@@ -100,7 +104,7 @@ describe("resolveConfig", () => {
   const npmAuthored = (npm: Record<string, unknown>, version = "1.2.3") => ({
     project: {
       name: "@scope/pkg", packageName: "@scope/pkg", version, tag: `v${version}`,
-      commit: "0123456789abcdef", repository: "owner/pkg"
+      repository: "owner/pkg"
     },
     npmPackage: { path: "." },
     publish: { npm: { authentication: tokenAuthentication, ...npm } }
@@ -117,8 +121,7 @@ describe("resolveConfig", () => {
       distTag: "latest",
       access: "public",
       authentication: tokenAuthentication,
-      provenance: "disabled",
-      publicationMode: "direct"
+      provenance: "disabled"
     } as never)
   })
 
@@ -138,13 +141,13 @@ describe("resolveConfig", () => {
       strategy: "trusted-publishing",
       attestation: {
         provider: "github-actions", runner: "github-hosted", repository: "owner/pkg",
-        workflow: "publish.yml", allowedAction: "npm-publish-direct"
+        workflow: "publish.yml", workflowRef: "refs/heads/main", allowedAction: "npm-publish-direct"
       }
     } as const
     const resolved = resolveConfig(npmAuthored({ authentication }), facts())
     expect(resolved.publish?.npm).toMatchObject({
       registry: "https://registry.npmjs.org/", authentication,
-      provenance: "automatic", publicationMode: "direct"
+      provenance: "automatic"
     } as never)
     expect(() => resolveConfig(npmAuthored({
       registry: "https://registry.example.test/", authentication
@@ -176,14 +179,14 @@ describe("resolveConfig", () => {
           strategy: "trusted-publishing",
           attestation: {
             provider: "github-actions", runner: "github-hosted", repository: "owner/pkg",
-            workflow: "publish.yml", allowedAction: "npm-stage-publish"
+            workflow: "publish.yml", workflowRef: "refs/heads/main", allowedAction: "npm-stage-publish"
           }
         }
       } }
     }))).rejects.toThrow()
     await expect(Effect.runPromise(decodeConfig({
       ...base,
-      publish: { npm: { authentication: tokenAuthentication, publicationMode: "staged" } }
+      publish: { npm: { authentication: tokenAuthentication, unsupportedMode: "staged" } }
     }))).rejects.toThrow()
     expect(() => resolveConfig(npmAuthored({ registry: "http://registry.example.test/" }), facts()))
       .toThrow(/must be HTTPS/u)

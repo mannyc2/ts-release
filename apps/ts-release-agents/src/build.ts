@@ -76,7 +76,12 @@ const packageFiles = (provider: "codex" | "claude", packageRoot: string, package
   copyTree(join(app, "skills"), join(packageRoot, "skills"), filesUnder(join(app, "skills")))
 }
 
-export const buildAgents = (): ReadonlyArray<string> => {
+export interface BuildAgentsOptions {
+  /** Release preparation captures archives only; standalone checks retain installable layouts. */
+  readonly archivesOnly?: true
+}
+
+export const buildAgents = (options: BuildAgentsOptions = {}): ReadonlyArray<string> => {
   const packageVersion = version()
   rmSync(output, { recursive: true, force: true })
   const created: string[] = []
@@ -89,10 +94,12 @@ export const buildAgents = (): ReadonlyArray<string> => {
     const archive = join(output, "archives", `ts-release-${provider}.zip`)
     write(archive, zip(entries))
     created.push(archive)
+    if (options.archivesOnly === true) rmSync(join(output, provider), { recursive: true, force: true })
   }
   return created
 }
 
 if (import.meta.main) {
-  for (const path of buildAgents()) console.log(path.slice(root.length + 1))
+  const archivesOnly = process.argv.slice(2).includes("--archives-only")
+  for (const path of buildAgents(archivesOnly ? { archivesOnly: true } : {})) console.log(path.slice(root.length + 1))
 }

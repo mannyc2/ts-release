@@ -5,6 +5,7 @@ import {
   CanonicalAudience,
   CredentialRef,
   EnvironmentName,
+  ExternalTrustedPublishingAuthStrategy,
   ProviderId,
   ResolvedAuthStrategy,
   SubjectId,
@@ -19,6 +20,13 @@ import {
   cardinalityIssue,
   collectionContractIssue
 } from "../model/artifact-collection.js"
+import {
+  CatalogRenderSource,
+  CatalogRenderer,
+  CatalogRepositoryPath,
+  GitBranchName,
+  GitHubRepositoryCoordinate
+} from "../model/catalog.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 import {
   CanonicalNpmRegistryEndpoint,
@@ -26,8 +34,14 @@ import {
   NpmAuthentication,
   NpmDistTag,
   NpmProvenancePolicy,
+  PyPiAuthentication,
+  PyPiProjectName,
+  PyPiRepository,
   canonicalizeNpmRegistryEndpoint,
-  type NpmAuthentication as NpmAuthenticationValue
+  normalizePyPiProjectName,
+  pypiRepositoryEndpoints,
+  type NpmAuthentication as NpmAuthenticationValue,
+  type PyPiAuthentication as PyPiAuthenticationValue
 } from "../recipes/config.js"
 
 export class OutputDeclaration extends Schema.Class<OutputDeclaration>("OutputDeclaration")({
@@ -71,9 +85,18 @@ export class GraphChecksum extends Schema.TaggedClass<GraphChecksum>()("GraphChe
   algorithm: Schema.Literals(["sha256", "sha512"])
 }) {}
 
+export class GraphCatalogRender extends Schema.TaggedClass<GraphCatalogRender>()("GraphCatalogRender", {
+  id: OperationId,
+  inputs: Schema.NonEmptyArray(OutputId),
+  output: OutputDeclaration,
+  version: Version,
+  renderer: CatalogRenderer,
+  sources: Schema.NonEmptyArray(CatalogRenderSource)
+}) {}
+
 export const GraphPreparation = Schema.Union([
   GraphCommandCheck, GraphCommandArtifact, GraphCommandCollection, GraphNpmPackageBuild,
-  GraphArchive, GraphChecksum
+  GraphArchive, GraphChecksum, GraphCatalogRender
 ])
 export type GraphPreparation = typeof GraphPreparation.Type
 
@@ -107,7 +130,43 @@ export class GraphGitHubPublication extends Schema.TaggedClass<GraphGitHubPublic
   authority: PublicationAuthorityIntent
 }) {}
 
-export const GraphPublication = Schema.Union([GraphNpmPublication, GraphGitHubPublication])
+export class GraphPyPiDistribution extends Schema.Class<GraphPyPiDistribution>("GraphPyPiDistribution")({
+  artifactId: OutputId,
+  filename: NonEmptyName,
+  authority: PublicationAuthorityIntent
+}) {}
+
+export class GraphPyPiPublication extends Schema.TaggedClass<GraphPyPiPublication>()("GraphPyPiPublication", {
+  id: OperationId,
+  project: PyPiProjectName,
+  version: Version,
+  repository: PyPiRepository,
+  simpleBaseUrl: Schema.NonEmptyString,
+  projectUrl: Schema.NonEmptyString,
+  uploadUrl: Schema.NonEmptyString,
+  authentication: PyPiAuthentication,
+  files: Schema.NonEmptyArray(GraphPyPiDistribution)
+}) {}
+
+export class GraphCatalogPublication extends Schema.TaggedClass<GraphCatalogPublication>()("GraphCatalogPublication", {
+  id: OperationId,
+  catalogId: NonEmptyName,
+  targetArtifact: OutputId,
+  repository: GitHubRepositoryCoordinate,
+  branch: GitBranchName,
+  targetPath: CatalogRepositoryPath,
+  statePath: CatalogRepositoryPath,
+  version: Version,
+  sourceRepository: GitHubRepositoryCoordinate,
+  sourceTag: NonEmptyName,
+  renderer: CatalogRenderer,
+  sources: Schema.NonEmptyArray(CatalogRenderSource),
+  authority: PublicationAuthorityIntent
+}) {}
+
+export const GraphPublication = Schema.Union([
+  GraphNpmPublication, GraphPyPiPublication, GraphGitHubPublication, GraphCatalogPublication
+])
 export type GraphPublication = typeof GraphPublication.Type
 
 export class CapabilityContribution extends Schema.Class<CapabilityContribution>("CapabilityContribution")({
@@ -212,6 +271,92 @@ export const makeNpmPublicationAuthorityIntent = (
     // unsupported until they receive a distinct typed read credential.
     observationStrategies: [anonymousStrategy()],
     publishStrategy
+  })
+}
+
+export interface PyPiPublicationAuthorityInput {
+  readonly project: string
+  readonly version: string
+  readonly filename: string
+  readonly repository: PyPiRepository
+  readonly authentication: PyPiAuthenticationValue
+  readonly sourceCommit?: string
+}
+
+const externalPyPiStrategy = (
+  input: PyPiPublicationAuthorityInput,
+  authentication: Extract<PyPiAuthenticationValue, { readonly strategy: "trusted-publishing" }>
+): ExternalTrustedPublishingAuthStrategy => {
+  let sourceCommit: TrustedPublishingSourceCommit
+  try { sourceCommit = TrustedPublishingSourceCommit.make(input.sourceCommit ?? "") } catch {
+    throw authorityError("source.commit", "External PyPI trusted publishing requires a lowercase full Git SHA.")
+  }
+  return ExternalTrustedPublishingAuthStrategy.make({
+    kind: "trusted-publishing",
+    identityProvider: "github-actions",
+    runnerClass: "github-hosted",
+    repository: authentication.repository,
+    workflow: `.github/workflows/${authentication.workflow}`,
+    workflowRef: authentication.workflowRef,
+    sourceCommit,
+    provenanceEnvironmentContract: "external-pypa-action-v1",
+    allowedAction: "external-pypa-action",
+    publisherSink: "external-host-owned",
+    environment: authentication.environment,
+    projects: authentication.projects.map(normalizePyPiProjectName) as [string, ...Array<string>]
+  })
+}
+
+/** Exact per-file PyPI authority; OIDC remains external-host-owned. */
+export const makePyPiPublicationAuthorityIntent = (
+  input: PyPiPublicationAuthorityInput
+): PublicationAuthorityIntent => {
+  const endpoints = pypiRepositoryEndpoints(input.repository)
+  const project = PyPiProjectName.make(normalizePyPiProjectName(input.project))
+  const provider = ProviderId.make("pypi")
+  const publishStrategy: ResolvedAuthStrategy = input.authentication.strategy === "token"
+    ? tokenStrategy(input.authentication.credential, "publish.pypi.authentication.credential")
+    : externalPyPiStrategy(input, input.authentication)
+  return PublicationAuthorityIntent.make({
+    subject: SubjectId.make(`pypi:${input.repository}:${project}@${input.version}#${input.filename}`),
+    provider,
+    audience: CanonicalAudience.make(endpoints.uploadUrl),
+    observationStrategies: [anonymousStrategy()],
+    publishStrategy
+  })
+}
+
+export const makeCatalogPublicationAuthorityIntent = (input: {
+  readonly repository: string
+  readonly branch: string
+  readonly targetPath: string
+  readonly statePath: string
+  readonly tokenEnv: string
+}): PublicationAuthorityIntent => {
+  let repository: GitHubRepositoryCoordinate
+  let branch: GitBranchName
+  let targetPath: CatalogRepositoryPath
+  let statePath: CatalogRepositoryPath
+  try {
+    repository = GitHubRepositoryCoordinate.make(input.repository)
+    branch = GitBranchName.make(input.branch)
+    targetPath = CatalogRepositoryPath.make(input.targetPath)
+    statePath = CatalogRepositoryPath.make(input.statePath)
+  } catch (cause) {
+    throw authorityError("publish.catalogGit", cause instanceof Error ? cause.message : String(cause))
+  }
+  if (targetPath.toString() === statePath.toString()) {
+    throw authorityError("publish.catalogGit", "Catalog target and managed-state paths must be distinct.")
+  }
+  const provider = ProviderId.make("catalog-git")
+  const audience = CanonicalAudience.make(`https://api.github.com/repos/${repository}`)
+  const token = tokenStrategy(input.tokenEnv, "publish.catalogGit[].tokenEnv")
+  return PublicationAuthorityIntent.make({
+    subject: SubjectId.make(`catalog-git:${repository}#refs/heads/${branch}:${targetPath}+${statePath}`),
+    provider,
+    audience,
+    observationStrategies: [anonymousStrategy(), token],
+    publishStrategy: token
   })
 }
 
@@ -330,6 +475,93 @@ export const githubPublicationAuthorityIssue = (publication: {
   return undefined
 }
 
+export const pyPiPublicationAuthorityIssue = (publication: {
+  readonly project: string
+  readonly version: { readonly toString: () => string }
+  readonly repository: PyPiRepository
+  readonly simpleBaseUrl: string
+  readonly projectUrl: string
+  readonly uploadUrl: string
+  readonly authentication: PyPiAuthenticationValue
+  readonly files: ReadonlyArray<{
+    readonly filename: { readonly toString: () => string }
+    readonly authority: PublicationAuthorityIntent
+  }>
+}): string | undefined => {
+  let project: string
+  try { project = normalizePyPiProjectName(publication.project) } catch {
+    return "PyPI publication must carry a valid normalized project name."
+  }
+  const endpoints = pypiRepositoryEndpoints(publication.repository)
+  const expectedProjectUrl = `${endpoints.simpleBaseUrl}${encodeURIComponent(project)}/`
+  if (publication.project !== project || publication.simpleBaseUrl !== endpoints.simpleBaseUrl ||
+      publication.projectUrl !== expectedProjectUrl || publication.uploadUrl !== endpoints.uploadUrl) {
+    return "PyPI publication endpoints must match its closed repository and normalized project coordinate."
+  }
+  if (publication.files.length === 0) return "PyPI publication requires at least one distribution file."
+  const names = new Set<string>()
+  for (const file of publication.files) {
+    const filename = file.filename.toString()
+    if (filename.length === 0 || filename.includes("/") || filename.includes("\\") || names.has(filename)) {
+      return "PyPI publication filenames must be nonempty, unique basenames."
+    }
+    names.add(filename)
+    const authority = file.authority
+    if (authority.subject !== `pypi:${publication.repository}:${project}@${publication.version}#${filename}` ||
+        authority.provider !== "pypi" || authority.audience !== endpoints.uploadUrl ||
+        authority.observationStrategies.length !== 1 || authority.observationStrategies[0]?.kind !== "anonymous") {
+      return "PyPI file authority must match its exact repository, project, version, filename, upload audience, and anonymous read strategy."
+    }
+    if (publication.authentication.strategy === "token") {
+      if (authority.publishStrategy.kind !== "token" ||
+          authority.publishStrategy.credential !== publication.authentication.credential) {
+        return "PyPI token publication requires its exact project-scoped configured credential."
+      }
+    } else if (authority.publishStrategy.kind !== "trusted-publishing" ||
+        authority.publishStrategy.publisherSink !== "external-host-owned" ||
+        authority.publishStrategy.allowedAction !== "external-pypa-action" ||
+        authority.publishStrategy.repository !== publication.authentication.repository ||
+        authority.publishStrategy.workflow !== `.github/workflows/${publication.authentication.workflow}` ||
+        authority.publishStrategy.workflowRef !== publication.authentication.workflowRef ||
+        authority.publishStrategy.environment !== publication.authentication.environment ||
+        authority.publishStrategy.projects.join("\n") !== publication.authentication.projects.map(normalizePyPiProjectName).join("\n")) {
+      return "PyPI trusted publication must remain bound to the exact external PyPA Action workflow and complete bundled project set."
+    }
+  }
+  return undefined
+}
+
+export const catalogPublicationAuthorityIssue = (publication: {
+  readonly repository: string
+  readonly branch: { readonly toString: () => string }
+  readonly targetPath: { readonly toString: () => string }
+  readonly statePath: { readonly toString: () => string }
+  readonly authority: PublicationAuthorityIntent
+}): string | undefined => {
+  let repository: string
+  let branch: string
+  let targetPath: string
+  let statePath: string
+  try {
+    repository = GitHubRepositoryCoordinate.make(publication.repository)
+    branch = GitBranchName.make(publication.branch.toString())
+    targetPath = CatalogRepositoryPath.make(publication.targetPath.toString())
+    statePath = CatalogRepositoryPath.make(publication.statePath.toString())
+  } catch {
+    return "Catalog publication must carry canonical GitHub repository, branch, and file paths."
+  }
+  const { authority } = publication
+  const token = authority.publishStrategy
+  if (targetPath === statePath || targetPath.startsWith(`${statePath}/`) || statePath.startsWith(`${targetPath}/`) ||
+      authority.subject !== `catalog-git:${repository}#refs/heads/${branch}:${targetPath}+${statePath}` ||
+      authority.provider !== "catalog-git" || authority.audience !== `https://api.github.com/repos/${repository}` ||
+      authority.observationStrategies.length !== 2 || authority.observationStrategies[0]?.kind !== "anonymous" ||
+      token.kind !== "token" || !sameTokenStrategy(authority.observationStrategies[1], token)) {
+    return "Catalog publication authority must bind its exact GitHub repository/ref/path pair and one bundled read/write token."
+  }
+  return undefined
+}
+
 // `localeCompare` is environment-dependent. Graph order is an internal
 // identity, so it uses the repository's plain code-point order instead.
 const byId = (left: { readonly id: { toString(): string } }, right: { readonly id: { toString(): string } }) => {
@@ -341,7 +573,7 @@ const byId = (left: { readonly id: { toString(): string } }, right: { readonly i
 const preparationInputs = (preparation: GraphPreparation): ReadonlyArray<OutputId> => preparation.inputs
 const preparationOutputs = (preparation: GraphPreparation): ReadonlyArray<OutputDeclaration> =>
   preparation._tag === "GraphCommandArtifact" ? preparation.outputs
-    : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum"
+    : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalogRender"
     ? [preparation.output] : []
 
 const pathsOverlap = (left: string, right: string): boolean =>
@@ -506,7 +738,11 @@ export const linkContributions = (
   for (const publication of publications) {
     const authorityIssue = publication._tag === "GraphNpmPublication"
       ? npmPublicationAuthorityIssue(publication)
-      : githubPublicationAuthorityIssue(publication)
+      : publication._tag === "GraphPyPiPublication"
+      ? pyPiPublicationAuthorityIssue(publication)
+      : publication._tag === "GraphGitHubPublication"
+      ? githubPublicationAuthorityIssue(publication)
+      : catalogPublicationAuthorityIssue(publication)
     if (authorityIssue !== undefined) throw new GraphLinkError({
       kind: "reference", value: publication.id.toString(), reason: authorityIssue
     })
@@ -540,6 +776,10 @@ export const linkContributions = (
     }
     const ids = publication._tag === "GraphGitHubPublication"
       ? [...publication.assetIds, ...(publication.bodyArtifact === undefined ? [] : [publication.bodyArtifact])]
+      : publication._tag === "GraphPyPiPublication"
+      ? publication.files.map((file) => file.artifactId)
+      : publication._tag === "GraphCatalogPublication"
+      ? [publication.targetArtifact]
       : [publication.packageArtifact]
     for (const id of ids) if (!artifactIds.has(id.toString()) && !producers.has(id.toString())) {
       throw new GraphLinkError({ kind: "missing", value: id.toString(), reason: "Publication references no artifact." })
@@ -555,6 +795,19 @@ export const linkContributions = (
         reason: "npm restricted access is valid only for scoped package names."
       })
     }
+    if (publication._tag === "GraphPyPiPublication") {
+      for (const file of publication.files) {
+        const artifact = artifacts.find((candidate) => candidate.id.toString() === file.artifactId.toString())
+        if (artifact === undefined || artifact.kind === "package") throw new GraphLinkError({
+          kind: "reference", value: file.artifactId.toString(),
+          reason: "PyPI distributions must reference capturable file artifacts."
+        })
+        if (artifact.path.toString().split("/").at(-1) !== file.filename.toString()) throw new GraphLinkError({
+          kind: "reference", value: file.artifactId.toString(),
+          reason: "PyPI distribution authority filename must equal the declared artifact basename."
+        })
+      }
+    }
     if (publication._tag === "GraphGitHubPublication" && publication.bodyArtifact !== undefined) {
       const body = artifacts.find((artifact) => artifact.id.toString() === publication.bodyArtifact!.toString())
       if (body === undefined || body.mediaType === undefined || !body.mediaType.startsWith("text/")) throw new GraphLinkError({
@@ -568,6 +821,24 @@ export const linkContributions = (
           kind: "reference", value: id.toString(), reason: "GitHub assets must be capturable file artifacts."
         })
       }
+    }
+    if (publication._tag === "GraphCatalogPublication") {
+      const artifact = artifacts.find((candidate) => candidate.id.toString() === publication.targetArtifact.toString())
+      const producer = preparations.find((candidate) => preparationOutputs(candidate).some((output) =>
+        output.id.toString() === publication.targetArtifact.toString()))
+      if (artifact === undefined || artifact.kind !== "file" || producer?._tag !== "GraphCatalogRender" ||
+          producer.renderer._tag !== publication.renderer._tag ||
+          producer.sources.map((source) => source.artifactId.toString()).join("\n") !==
+            publication.sources.map((source) => source.artifactId.toString()).join("\n")) {
+        throw new GraphLinkError({
+          kind: "reference", value: publication.targetArtifact.toString(),
+          reason: "Catalog delivery must reference its exact typed catalog-render output."
+        })
+      }
+      if (publication.targetPath.toString() === publication.statePath.toString()) throw new GraphLinkError({
+        kind: "path", value: publication.targetPath.toString(),
+        reason: "Catalog target and managed-state paths must be distinct."
+      })
     }
   }
   const dependencies = new Map<string, Set<string>>(

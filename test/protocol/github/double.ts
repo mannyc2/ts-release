@@ -43,7 +43,7 @@ export interface GithubReleaseStateV1 {
 
 export interface GithubProtocolFaultV1 {
   readonly phase: "observe" | "mutate"
-  readonly method: "GET" | "POST"
+  readonly method: "GET" | "POST" | "PATCH"
   readonly url: string
   /** Optional state threshold for deterministic post-mutation visibility faults. */
   readonly afterMutationCount?: number
@@ -118,7 +118,7 @@ const recordExchange = (
   events: Array<ProtocolEvent>,
   input: {
     readonly phase: "observe" | "mutate"
-    readonly method: "GET" | "POST"
+    readonly method: "GET" | "POST" | "PATCH"
     readonly url: string
     readonly headers?: Readonly<Record<string, string>>
     readonly body?: Uint8Array | string
@@ -145,7 +145,7 @@ const recordExchange = (
 const takeFault = (
   scenario: GithubProtocolScenarioV1,
   phase: "observe" | "mutate",
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   url: string,
   mutationCount: number
 ): GithubProtocolFaultV1 | undefined => {

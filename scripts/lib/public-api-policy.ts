@@ -26,6 +26,8 @@ export const runtimeBearingSourcePaths: ReadonlyArray<string> = [
   "drivers/workspace.ts",
   "model/canonical.ts",
   "host.ts",
+  "provider-sdk.ts",
+  "extensions/provider-adapter.ts",
   "store.ts",
   "platform/bun.ts",
   "platform/node.ts",
@@ -92,6 +94,16 @@ export const publicExportPolicies: ReadonlyArray<PublicExportPolicy> = [
     allowedRuntimeSourcePaths: [
       "host.ts",
       "drivers/workspace.ts",
+      "model/canonical.ts"
+    ],
+    allowedExternalPrefixes: ["node:"],
+    allowsBunGlobal: false
+  },
+  {
+    subpath: "./provider-sdk",
+    allowedRuntimeSourcePaths: [
+      "provider-sdk.ts",
+      "extensions/provider-adapter.ts",
       "model/canonical.ts"
     ],
     allowedExternalPrefixes: ["node:"],

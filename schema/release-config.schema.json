@@ -819,6 +819,209 @@
       ],
       "additionalProperties": false
     },
+    "CandidateCatalogSource": {
+      "type": "object",
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "architecture": {
+          "type": "string",
+          "enum": [
+            "x64",
+            "arm64"
+          ]
+        }
+      },
+      "required": [
+        "artifact",
+        "architecture"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateHomebrewCatalog": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "description": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "homepage": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "license": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateCatalogSource"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateCatalogSource"
+          }
+        },
+        "formulaName": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "installPath": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "homepage",
+        "sources",
+        "formulaName",
+        "installPath"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateScoopCatalog": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "description": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "homepage": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "license": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateCatalogSource"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateCatalogSource"
+          }
+        },
+        "manifestName": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "bin": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "homepage",
+        "sources",
+        "manifestName",
+        "bin"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateCatalogs": {
+      "type": "object",
+      "properties": {
+        "homebrew": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateHomebrewCatalog"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateHomebrewCatalog"
+          }
+        },
+        "scoop": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateScoopCatalog"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateScoopCatalog"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "NpmTokenAuthentication": {
       "type": "object",
       "properties": {
@@ -968,6 +1171,226 @@
       ],
       "additionalProperties": false
     },
+    "PyPiTokenAuthentication": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "token"
+          ]
+        },
+        "credential": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "project"
+          ]
+        }
+      },
+      "required": [
+        "strategy",
+        "credential",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "PyPiExternalTrustedPublishingAuthentication": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "trusted-publishing"
+          ]
+        },
+        "owner": {
+          "type": "string",
+          "enum": [
+            "external"
+          ]
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "pypa/gh-action-pypi-publish@release/v1"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "workflow": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "workflowRef": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "environment": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "projects": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "strategy",
+        "owner",
+        "action",
+        "repository",
+        "workflow",
+        "workflowRef",
+        "environment",
+        "projects"
+      ],
+      "additionalProperties": false
+    },
+    "AuthoredPyPiPublish": {
+      "type": "object",
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "allOf": [
+                {
+                  "minLength": 1
+                }
+              ]
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "allOf": [
+              {
+                "minLength": 1
+              }
+            ]
+          }
+        },
+        "repository": {
+          "type": "string",
+          "enum": [
+            "pypi",
+            "testpypi"
+          ]
+        },
+        "authentication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PyPiTokenAuthentication"
+            },
+            {
+              "$ref": "#/$defs/PyPiExternalTrustedPublishingAuthentication"
+            }
+          ]
+        }
+      },
+      "required": [
+        "artifacts",
+        "authentication"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateCatalogGitDestination": {
+      "type": "object",
+      "properties": {
+        "catalog": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "branch": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "targetPath": {
+          "type": "string"
+        },
+        "statePath": {
+          "type": "string"
+        },
+        "tokenEnv": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "catalog",
+        "repository",
+        "branch",
+        "targetPath",
+        "statePath",
+        "tokenEnv"
+      ],
+      "additionalProperties": false
+    },
     "ArtifactCollectionSelector": {
       "type": "object",
       "properties": {
@@ -1105,6 +1528,21 @@
         "npm": {
           "$ref": "#/$defs/AuthoredNpmPublish"
         },
+        "pypi": {
+          "$ref": "#/$defs/AuthoredPyPiPublish"
+        },
+        "catalogGit": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidateCatalogGitDestination"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidateCatalogGitDestination"
+          }
+        },
         "github": {
           "$ref": "#/$defs/CandidateGitHubPublish"
         }
@@ -1213,6 +1651,9 @@
         },
         "checksum": {
           "$ref": "#/$defs/CandidateChecksum"
+        },
+        "catalogs": {
+          "$ref": "#/$defs/CandidateCatalogs"
         },
         "publish": {
           "$ref": "#/$defs/AuthoredPublish"

@@ -59,6 +59,41 @@ when observed facts agree with authored intent. For a non-OIDC host, use
 that environment variable remains host-owned and never enters configuration,
 prepared bytes, reports, or logs.
 
+Prebuilt Python distributions can be published to the closed `pypi` or
+`testpypi` destination. Each named artifact must be a valid wheel or gzip
+sdist whose filename and embedded metadata agree with the configured project
+and version:
+
+```json
+{
+  "project": { "name": "fixture", "version": "1.0.0", "tag": "v1.0.0" },
+  "artifacts": [
+    { "id": "wheel", "path": "dist/fixture-1.0.0-py3-none-any.whl", "format": "file" }
+  ],
+  "publish": {
+    "pypi": {
+      "artifacts": ["wheel"],
+      "repository": "pypi",
+      "authentication": {
+        "strategy": "token",
+        "credential": "PYPI_TOKEN",
+        "scope": "project"
+      }
+    }
+  }
+}
+```
+
+PyPI token upload additionally requires the host to install a shared,
+durable terminal `PublicationClaimStore`; runner-local files and memory do not
+satisfy that contract. The stock CLI and Action deliberately fail closed
+without one. Library hosts can pass it to `makeNodeReleaseLayer`,
+`makeBunReleaseLayer`, or `makeCustomReleaseLayer`. The token is projected as
+PyPI Basic authentication only inside the authorized HTTP sink. PyPI trusted
+publishing is represented as an external, host-owned
+`pypa/gh-action-pypi-publish@release/v1` path; the stock coordinator neither
+exchanges its OIDC token nor claims to recover that external upload.
+
 With the canonical GitHub origin or package repository configured, `init` can
 discover the exact owner/repository coordinate and write this explicit shape:
 
@@ -175,10 +210,12 @@ Correction is deliberately separate from ordinary publication:
 ts-release correct "$prepared_ref" correction.json
 ```
 
-The command binds authored intent to the exact prepared npm or GitHub subject.
-The installed kernel currently has no proved conditional correction write, so
-it returns a canonical external operator proposal and performs no corrective
-mutation. Deletion, arbitrary inverse operations, and announcements are not
+The command binds authored intent to the exact prepared provider subject. npm
+and GitHub Release corrections remain canonical external operator proposals.
+Catalog Git installs one conditional `forward-catalog-state` correction: it
+requires a SemVer-newer replacement and changes both the consumer formula or
+manifest and its managed-state record against the exact observed branch
+generation. Deletion, arbitrary inverse operations, and announcements are not
 release destinations.
 
 ## Capability and platform boundary
@@ -191,8 +228,8 @@ the release-candidate matrix must exercise every claimed execution host.
 | Axis | Kernel candidate boundary |
 | --- | --- |
 | Local preparation | Bun compilation, prebuilt imports, command checks/artifacts, archives, and checksums are retained; final support requires the generated capability and clean-candidate gates to agree. |
-| Remote publication | npm and GitHub Releases are the only installed publication families. npm uses explicit trusted-publishing or token authentication. |
-| Correction | npm and GitHub authored proposals are exact-bound; no correction adapter is installed. |
+| Remote publication | npm, prebuilt PyPI distributions, GitHub Releases, and typed Homebrew/Scoop catalog Git delivery are installed. npm uses explicit trusted-publishing or token authentication; PyPI token writes require a host-supplied shared terminal claim store, and its trusted-publishing strategy is external-host-owned. |
+| Correction | npm and GitHub authored proposals are exact-bound; PyPI yanking is observation-only; catalog Git installs exact paired SemVer-forward correction. |
 | Execution hosts | Linux is the only installed execution host. The checked-in Action is a Linux workflow boundary: its composite step requires Bash and a workflow-installed, pinned Bun runtime. macOS and Windows are not ts-release execution hosts. |
 | Artifact targets | The Bun builder advertises Linux and macOS x64/arm64 targets. macOS binaries are cross-compiled artifacts, not host-execution evidence. The self-release does not distribute a Windows ts-release binary. |
 | Native tools | Linux preparation requires an external Bun executable and `libseccomp.so.2`; network-denied commands record both identities. WSL, when used, is Linux. A standalone CLI binary is not a self-contained replacement for these tools. |
@@ -215,17 +252,18 @@ The kernel translates extension requests to the owner that can enforce them:
 | User job | Owner |
 | --- | --- |
 | Tests, policy checks, generated notes, and agent bundles | `CommandCheck` or declared `CommandArtifact` bytes |
-| npm and GitHub remote verification/publication | Installed provider modules |
+| npm, prebuilt PyPI, GitHub Release, and catalog Git remote verification/publication | Installed provider modules; PyPI token mutation also requires the shared terminal claim boundary |
 | Environment protection or human authorization | External workflow host |
 | Downstream announcements | External workflow step after a complete report |
 
-PyPI prebuilt distributions and trusted publication are a temporary regression
-from the live `0.0.7` release and belong to a post-0.2.0 capability wave.
-Homebrew and Scoop rendering/delivery are likewise temporarily absent and
-belong to their catalog-delivery wave. Wrapper wheels remain excluded from the
-initial PyPI recovery slice unless an explicit product decision reopens them.
-A third-party adapter SDK is also deferred to its own extension wave; generic
-hooks do not stand in for it.
+Homebrew and Scoop rendering/delivery use typed renderers and an exact paired
+Git Data subject; arbitrary whole-file catalog templating remains excluded.
+Wrapper wheels remain excluded from the prebuilt PyPI slice unless an explicit product decision reopens them. PyPI
+support is contract-tested but has not been live-write-dogfooded in this wave.
+Custom library applications may compose full provider subjects through the
+[`provider-sdk`](https://github.com/mannyc2/ts-release/blob/main/docs/native-extensions.md)
+subpath. The stock CLI and Action
+do not discover packages or treat generic hooks as remote publishers.
 
 ## Library API
 

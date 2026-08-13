@@ -37,6 +37,14 @@ import {
   type NpmUserConfigResourceShape
 } from "./publication/publisher.js"
 import {
+  PublicationClaimOccupied,
+  PublicationClaimRequest,
+  PublicationClaimStore,
+  PublicationClaimUnavailable,
+  type PublicationClaimError,
+  type PublicationClaimStoreShape
+} from "./publication/claim.js"
+import {
   ReleaseContextError,
   SourceMaterializationError,
   StagingEntry,
@@ -58,6 +66,9 @@ export {
   CredentialStrategyUnsupported,
   CredentialSubjectMismatch,
   CredentialUnavailable,
+  PublicationClaimOccupied,
+  PublicationClaimRequest,
+  PublicationClaimUnavailable,
   ReleaseContextError,
   SafeRelativePath,
   Sha256Digest,
@@ -85,6 +96,8 @@ export type {
   AuthorizedMutationHttpShape,
   CertifiedPublisherSpawnShape,
   NpmUserConfigResourceShape,
+  PublicationClaimError,
+  PublicationClaimStoreShape,
   MutationCredentialGrant,
   ReleaseRuntimeShape,
   RunCommand,
@@ -102,6 +115,8 @@ export interface CustomReleaseLayerInput {
   readonly authorizedMutationHttp: AuthorizedMutationHttpShape
   readonly npmUserConfigResource: NpmUserConfigResourceShape
   readonly certifiedPublisherSpawn: CertifiedPublisherSpawnShape
+  /** Required before a durable-cas-required publication can acquire mutation credentials. */
+  readonly publicationClaimStore?: PublicationClaimStoreShape
 }
 
 /**
@@ -118,5 +133,8 @@ export const makeCustomReleaseLayer = (
   Layer.succeed(HttpAuthorizer, input.httpAuthorizer),
   Layer.succeed(AuthorizedMutationHttp, input.authorizedMutationHttp),
   Layer.succeed(NpmUserConfigResource, input.npmUserConfigResource),
-  Layer.succeed(CertifiedPublisherSpawn, input.certifiedPublisherSpawn)
+  Layer.succeed(CertifiedPublisherSpawn, input.certifiedPublisherSpawn),
+  ...(input.publicationClaimStore === undefined
+    ? []
+    : [Layer.succeed(PublicationClaimStore, input.publicationClaimStore)])
 )

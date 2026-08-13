@@ -4,6 +4,8 @@ import * as ManagedRuntime from "effect/ManagedRuntime"
 import { decodeConfig } from "../config/config.js"
 import { releaseIdentityCapability } from "../capabilities/registry.js"
 import { secretPatterns } from "../model/secret-patterns.js"
+import { CredentialProvider } from "../publication/authority.js"
+import { AuthorizedMutationHttp, HttpAuthorizer } from "../publication/http.js"
 import { bindAuthoredCorrection, correctPreparedRelease } from "../correction/coordinator.js"
 import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
 import {
@@ -47,6 +49,7 @@ import {
   type PublishInput,
   type ReleaseApi,
   type ReleaseApiLayer,
+  type ReleaseApiOptions,
   type ReleaseApiServices,
   type ReleaseInput
 } from "./types.js"
@@ -59,6 +62,7 @@ export type {
   PublishInput,
   ReleaseApi,
   ReleaseApiLayer,
+  ReleaseApiOptions,
   ReleaseInput
 } from "./types.js"
 export { CorrectionReport } from "./types.js"
@@ -221,43 +225,66 @@ const afterCommitFailure = <A, E, R>(
   })))
 )
 
-const observeProgram = (prepared: CompletePreparedReleaseRef) => afterCommitFailure(
+const observeProgram = (
+  prepared: CompletePreparedReleaseRef,
+  adapters: NonNullable<ReleaseApiOptions["providerAdapters"]>
+) => afterCommitFailure(
   prepared,
-  loadPrepared(prepared).pipe(Effect.flatMap(observePreparedRelease))
+  loadPrepared(prepared).pipe(Effect.flatMap((bundle) => observePreparedRelease(bundle, adapters)))
 )
 
 const publishCommitted = Effect.fn("publishCommittedRelease")(function*(
-  committed: CommittedPreparedRelease
+  committed: CommittedPreparedRelease,
+  adapters: NonNullable<ReleaseApiOptions["providerAdapters"]>
 ) {
-  const report = yield* publishPreparedRelease(committed.bundle)
+  const report = yield* publishPreparedRelease(committed.bundle, adapters)
   return { prepared: committed.ref, report }
 })
 
 const publishProgram = Effect.fn("publishProgram")(function*(
-  prepared: CompletePreparedReleaseRef
+  prepared: CompletePreparedReleaseRef,
+  adapters: NonNullable<ReleaseApiOptions["providerAdapters"]>
 ) {
   const result = yield* afterCommitFailure(
     prepared,
     loadPrepared(prepared).pipe(
-      Effect.flatMap((bundle) => publishCommitted({ ref: prepared, bundle }))
+      Effect.flatMap((bundle) => publishCommitted({ ref: prepared, bundle }, adapters))
     )
   )
   return result.report
 })
 
-const releaseProgram = Effect.fn("releaseProgram")(function*(input: ReleaseInput) {
+const releaseProgram = Effect.fn("releaseProgram")(function*(
+  input: ReleaseInput,
+  adapters: NonNullable<ReleaseApiOptions["providerAdapters"]>
+) {
   const committed = yield* preparationFailure(prepareProgram(input, {
     allowEmpty: input.allowEmpty === true
   }))
-  return yield* afterCommitFailure(committed.ref, publishCommitted(committed))
+  return yield* afterCommitFailure(committed.ref, publishCommitted(committed, adapters))
 })
 
 const correctProgram = Effect.fn("correctProgram")(function*(input: CorrectInput) {
   const bundle = yield* loadPrepared(input.prepared)
+  const credentials = yield* CredentialProvider
+  const http = yield* HttpAuthorizer
+  const mutationHttp = yield* AuthorizedMutationHttp
   const outcome = yield* Effect.try({
     try: () => bindAuthoredCorrection(bundle, input.correction),
     catch: inputFailure
-  }).pipe(Effect.flatMap((intent) => correctPreparedRelease({ bundle, intent })))
+  }).pipe(Effect.flatMap((intent) => correctPreparedRelease({
+    bundle,
+    intent,
+    services: { credentials, http, mutationHttp }
+  })))
+  if (outcome._tag === "CorrectionExecuted") return new CorrectionReport({
+    prepared: input.prepared,
+    status: outcome.report.status,
+    provider: outcome.provider,
+    reason: SafeReason.make("Catalog correction completed through the exact conditional Git-data subject report."),
+    proposal: "",
+    report: outcome.report
+  })
   return new CorrectionReport({
     prepared: input.prepared,
     status: "unsupported",
@@ -267,8 +294,9 @@ const correctProgram = Effect.fn("correctProgram")(function*(input: CorrectInput
   })
 })
 
-export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
+export const makeReleaseApi = (layer: ReleaseApiLayer, options: ReleaseApiOptions = {}): ReleaseApi => {
   const runtime = ManagedRuntime.make(layer)
+  const adapters = options.providerAdapters ?? []
   const run = <A, E>(effect: Effect.Effect<A, E, ReleaseApiServices>): Promise<A> =>
     runtime.runPromise(effect)
 
@@ -295,17 +323,17 @@ export const makeReleaseApi = (layer: ReleaseApiLayer): ReleaseApi => {
 
   const observe = async (value: ObserveInput) => {
     const input = decodeObserveInput(value)
-    return run(observeProgram(input.prepared))
+    return run(observeProgram(input.prepared, adapters))
   }
 
   const publish = async (value: PublishInput) => {
     const input = decodePublishInput(value)
-    return run(publishProgram(input.prepared))
+    return run(publishProgram(input.prepared, adapters))
   }
 
   const release = async (value: ReleaseInput) => {
     const input = decodeReleaseInput(value)
-    return run(releaseProgram(input))
+    return run(releaseProgram(input, adapters))
   }
 
   const correct = async (value: CorrectInput) => {

@@ -11,6 +11,7 @@ import {
   makeLocalPreparedReleaseStore,
   type PreparedReleaseStoreShape
 } from "../release/prepared-store.js"
+import type { PublicationClaimStoreShape } from "../publication/claim.js"
 
 const bunHost = Layer.mergeAll(
   BunChildProcessSpawner.layer.pipe(Layer.provide(Layer.mergeAll(
@@ -23,8 +24,9 @@ const bunHost = Layer.mergeAll(
 
 /** A custom Bun host takes one already-selected durable store service. */
 export const makeBunReleaseLayer = (
-  preparedStore: PreparedReleaseStoreShape
-): ReleaseApiLayer => makeReleaseServicesLive(preparedStore).pipe(Layer.provide(bunHost))
+  preparedStore: PreparedReleaseStoreShape,
+  publicationClaimStore?: PublicationClaimStoreShape
+): ReleaseApiLayer => makeReleaseServicesLive(preparedStore, publicationClaimStore).pipe(Layer.provide(bunHost))
 
 const defaultBunStore = makeLocalPreparedReleaseStore(join(
   process.cwd(),

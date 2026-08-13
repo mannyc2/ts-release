@@ -1,17 +1,24 @@
 import { makeGithubSubjects } from "../publication/github.js"
 import { makeNpmSubject } from "../publication/npm.js"
+import { makePyPiSubjects } from "../publication/pypi.js"
+import { makeCatalogPublicationSubject } from "../publication/catalog-git.js"
 import { installedPublicationProfiles } from "../publication/profiles.js"
 import {
   contributeGitHubPublication,
   contributeNpmPublication,
+  contributePyPiPublication,
+  contributeCatalogPublications,
+  contributeCatalogRendering,
   contributePackages,
   contributeSourceArtifacts
 } from "../release/capabilities.js"
 import { resolveConfig } from "../resolve/resolve.js"
 import type {
   CapabilityModule,
+  CatalogPublicationCapability,
   GitHubPublicationCapability,
   NpmPublicationCapability,
+  PyPiPublicationCapability,
   OwnedConfigField,
   PreparationCapability,
   ResolutionCapability
@@ -108,6 +115,55 @@ export const packagePreparationCapability = Object.freeze({
     contributePackages(config, availableArtifacts, context)
 } satisfies PreparationCapability)
 
+export const homebrewRenderCapability = Object.freeze({
+  _tag: "PreparationCapability",
+  id: "render.homebrew",
+  phase: "render",
+  fields: graphFields([
+    "catalogs", "catalogs.homebrew", "catalogs.homebrew[].description",
+    "catalogs.homebrew[].formulaName", "catalogs.homebrew[].homepage",
+    "catalogs.homebrew[].id", "catalogs.homebrew[].installPath",
+    "catalogs.homebrew[].license", "catalogs.homebrew[].sources",
+    "catalogs.homebrew[].sources[].architecture", "catalogs.homebrew[].sources[].artifact"
+  ]),
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: []
+  },
+  certification: {
+    boundary: "root-api",
+    tests: ["test/core/catalog-rendering.test.ts"]
+  },
+  contribute: ({ config, availableArtifacts }) =>
+    contributeCatalogRendering(config, availableArtifacts, "homebrew")
+} satisfies PreparationCapability)
+
+export const scoopRenderCapability = Object.freeze({
+  _tag: "PreparationCapability",
+  id: "render.scoop",
+  phase: "render",
+  fields: graphFields([
+    "catalogs.scoop", "catalogs.scoop[].bin", "catalogs.scoop[].description",
+    "catalogs.scoop[].homepage", "catalogs.scoop[].id", "catalogs.scoop[].license",
+    "catalogs.scoop[].manifestName", "catalogs.scoop[].sources",
+    "catalogs.scoop[].sources[].architecture", "catalogs.scoop[].sources[].artifact"
+  ]),
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: []
+  },
+  certification: {
+    boundary: "root-api",
+    tests: ["test/core/catalog-rendering.test.ts"]
+  },
+  contribute: ({ config, availableArtifacts }) =>
+    contributeCatalogRendering(config, availableArtifacts, "scoop")
+} satisfies PreparationCapability)
+
 export const npmPublicationCapability = Object.freeze({
   _tag: "PublicationCapability",
   id: "publish.npm",
@@ -182,6 +238,68 @@ export const githubPublicationCapability = Object.freeze({
     makeGithubSubjects(bundle, publication, services.http, services.mutationHttp)
 } satisfies GitHubPublicationCapability)
 
+export const pyPiPublicationCapability = Object.freeze({
+  _tag: "PublicationCapability",
+  id: "publish.pypi",
+  preparedTag: "PreparedPyPiPublication",
+  profile: installedPublicationProfiles.pypi,
+  fields: [
+    ...resolvedFields([
+      "publish.pypi", "publish.pypi.artifacts", "publish.pypi.authentication",
+      "publish.pypi.authentication.action", "publish.pypi.authentication.credential",
+      "publish.pypi.authentication.environment", "publish.pypi.authentication.owner",
+      "publish.pypi.authentication.projects", "publish.pypi.authentication.repository",
+      "publish.pypi.authentication.scope", "publish.pypi.authentication.strategy",
+      "publish.pypi.authentication.workflow", "publish.pypi.authentication.workflowRef",
+      "publish.pypi.repository"
+    ])
+  ],
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: ["project-token", "external-pypa-action"]
+  },
+  certification: {
+    boundary: "provider-protocol",
+    tests: [
+      "test/core/pypi-preparation.test.ts",
+      "test/protocol/pypi/pypi-provider-protocol.test.ts"
+    ]
+  },
+  contribute: ({ config, context, availableArtifacts }) =>
+    contributePyPiPublication(config, context, availableArtifacts),
+  subjects: (bundle, publication, services) =>
+    makePyPiSubjects(bundle, publication, services.http, services.mutationHttp, services.claims)
+} satisfies PyPiPublicationCapability)
+
+export const catalogPublicationCapability = Object.freeze({
+  _tag: "PublicationCapability",
+  id: "publish.catalog-git",
+  preparedTag: "PreparedCatalogPublication",
+  profile: installedPublicationProfiles.catalogGit,
+  fields: graphFields([
+    "publish.catalogGit", "publish.catalogGit[].branch", "publish.catalogGit[].catalog",
+    "publish.catalogGit[].repository", "publish.catalogGit[].statePath",
+    "publish.catalogGit[].targetPath", "publish.catalogGit[].tokenEnv"
+  ]),
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: ["token"]
+  },
+  certification: {
+    boundary: "provider-protocol",
+    tests: ["test/core/catalog-rendering.test.ts", "test/protocol/catalog/catalog-git-protocol.test.ts"]
+  },
+  contribute: ({ config, availableArtifacts }) =>
+    contributeCatalogPublications(config, availableArtifacts),
+  subjects: (bundle, publication, services) => [
+    makeCatalogPublicationSubject(bundle, publication, services.http, services.mutationHttp)
+  ] as const
+} satisfies CatalogPublicationCapability)
+
 /**
  * The only installed capability registry. There are no support booleans and
  * no symbol-path strings: deleting a module value deletes support.
@@ -190,18 +308,26 @@ export const capabilityModules = Object.freeze([
   releaseIdentityCapability,
   sourcePreparationCapability,
   packagePreparationCapability,
+  homebrewRenderCapability,
+  scoopRenderCapability,
   npmPublicationCapability,
-  githubPublicationCapability
+  pyPiPublicationCapability,
+  githubPublicationCapability,
+  catalogPublicationCapability
 ] as const satisfies ReadonlyArray<CapabilityModule>)
 
 export const preparationCapabilities = Object.freeze([
   sourcePreparationCapability,
-  packagePreparationCapability
+  packagePreparationCapability,
+  homebrewRenderCapability,
+  scoopRenderCapability
 ] as const satisfies ReadonlyArray<PreparationCapability>)
 
 export const publicationCapabilities = Object.freeze([
   npmPublicationCapability,
-  githubPublicationCapability
+  pyPiPublicationCapability,
+  githubPublicationCapability,
+  catalogPublicationCapability
 ] as const)
 
 export const capabilityIds = Object.freeze(capabilityModules.map((module) => module.id))

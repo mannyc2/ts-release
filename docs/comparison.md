@@ -11,7 +11,7 @@ GoReleaser behavior beyond those cited pages.
 | Automatic default | `ts-release release` prepares and publishes automatically; one-command release is the usability floor | `goreleaser release` is documented as the one-command build/archive/publish path | external-docs-derived |
 | Optional separation | `prepare` creates exact bytes; `publish` consumes only those bytes | `goreleaser build`, `--skip=publish`, and Pro split/merge provide separate execution modes | external-docs-derived |
 | Build ecosystem | Bun compilation, prebuilt artifacts, declared commands, archives, and checksums; host and target claims remain separate | Official docs list Go, Rust, Zig, TypeScript with Bun/Deno, and Python | external-docs-derived |
-| Packaging ecosystem | The kernel installs npm and GitHub publication only; PyPI and catalog delivery are deferred capability waves | Official docs list a broader package, signer, container, and destination ecosystem | external-docs-derived |
+| Packaging ecosystem | The kernel installs npm, prebuilt wheel/sdist PyPI publication, GitHub Releases, and typed Homebrew/Scoop catalog Git delivery | Official docs list a broader package, signer, container, and destination ecosystem | external-docs-derived |
 | Recovery distinction | Safe partial-effect recovery is the intended differentiator: each adapter observes exact subjects before and after mutation, and conflict or uncertainty stops | This comparison makes no recovery claim about GoReleaser because this repository did not execute it | contract-tested / source-derived |
 | Operational tradeoff | Narrower surface, explicit prepared boundary, typed provider correction | Broader mature ecosystem and GoReleaser Pro distributed preparation | external-docs-derived |
 

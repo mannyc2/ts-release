@@ -14,6 +14,7 @@ import {
   makeEnvironmentCredentialPlatform
 } from "./credentials.js"
 import { CredentialProvider } from "../publication/authority.js"
+import { PublicationClaimStore, type PublicationClaimStoreShape } from "../publication/claim.js"
 import { SourceObserver } from "../release/context.js"
 import {
   PreparedReleaseStore,
@@ -33,7 +34,8 @@ export type ReleaseServicesLayer = Layer.Layer<
  * and the direct prepared store enter the API environment.
  */
 export const makeReleaseServicesLive = (
-  preparedStore: PreparedReleaseStoreShape
+  preparedStore: PreparedReleaseStoreShape,
+  publicationClaimStore?: PublicationClaimStoreShape
 ): ReleaseServicesLayer => Layer.effectContext(Effect.gen(function*() {
   const source = yield* SourceObserver
   const run = yield* makeRunCommand
@@ -41,7 +43,7 @@ export const makeReleaseServicesLive = (
   const spawner = yield* ChildProcessSpawner
   const credentials = makeEnvironmentCredentialPlatform(makePublicationHttp(client), spawner)
 
-  return Context.make(ReleaseRuntime, { source, run }).pipe(
+  const context = Context.make(ReleaseRuntime, { source, run }).pipe(
     Context.add(PreparedReleaseStore, preparedStore),
     Context.add(CredentialProvider, credentials.credentialProvider),
     Context.add(HttpAuthorizer, credentials.httpAuthorizer),
@@ -49,4 +51,7 @@ export const makeReleaseServicesLive = (
     Context.add(NpmUserConfigResource, credentials.npmUserConfigResource),
     Context.add(CertifiedPublisherSpawn, credentials.certifiedPublisherSpawn)
   )
+  return publicationClaimStore === undefined
+    ? context
+    : Context.add(context, PublicationClaimStore, publicationClaimStore)
 }))

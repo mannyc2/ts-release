@@ -33,7 +33,15 @@ import {
   type ArtifactCollectionContract
 } from "../model/artifact-collection.js"
 import { sha256Digest } from "../model/digest.js"
-import { NonEmptyName, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
+import {
+  CatalogManagedState,
+  PreparedCatalogDownload,
+  PreparedCatalogRenderer,
+  encodeCatalogManagedState,
+  renderCatalog
+} from "../model/catalog.js"
+import { inspectPythonDistribution } from "../model/python-distribution.js"
+import { NonEmptyName, OutputId, SafeRelativePath, Version, WorkspaceRoot } from "../model/primitives.js"
 import {
   ExplicitInputSnapshot,
   type StagingSnapshot,
@@ -41,11 +49,13 @@ import {
 } from "./context.js"
 import {
   GraphArchive,
+  GraphCatalogRender,
   GraphChecksum,
   GraphCommandArtifact,
   GraphCommandCheck,
   GraphCommandCollection,
   GraphGitHubPublication,
+  GraphCatalogPublication,
   GraphNpmPackageBuild,
   GraphNpmPublication,
   OutputDeclaration,
@@ -55,9 +65,12 @@ import {
 import {
   PreparedArtifact,
   PreparedArtifactCollection,
+  PreparedCatalogPublication,
   PreparedExecutionInputs,
   PreparedGitHubPublication,
   PreparedNpmPublication,
+  PreparedPyPiFile,
+  PreparedPyPiPublication,
   PreparedProject,
   PreparedProvenance,
   PreparedReleaseV2,
@@ -719,6 +732,27 @@ const structured = (
         assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source")
         return { outputs: [[preparation.output.id.toString(), value]], declarations: [] }
       })
+    case "GraphCatalogRender":
+      return attempt(() => {
+        assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source")
+        const downloads = preparation.sources.map((source) => {
+          const value = bytes.get(source.artifactId.toString())
+          const declaration = declarations.get(source.artifactId.toString())
+          if (value === undefined || declaration === undefined || basename(declaration.path) !== source.filename.toString()) {
+            throw new Error(`Catalog renderer ${preparation.id} references unavailable or renamed artifact ${source.artifactId}.`)
+          }
+          return PreparedCatalogDownload.make({
+            architecture: source.architecture,
+            url: source.url,
+            filename: source.filename,
+            sha256: sha256Digest(value)
+          })
+        }) as [PreparedCatalogDownload, ...Array<PreparedCatalogDownload>]
+        const value = renderCatalog(preparation.version, preparation.renderer, downloads)
+        secureWrite(request.context.workspace, preparation.output.path, value)
+        assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source")
+        return { outputs: [[preparation.output.id.toString(), value]], declarations: [] }
+      })
   }
 }
 
@@ -935,7 +969,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     const produced = new Set(input.graph.preparations.flatMap((preparation) =>
       preparation._tag === "GraphCommandArtifact"
         ? preparation.outputs.map((output) => output.id.toString())
-        : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum"
+        : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalogRender"
         ? [preparation.output.id.toString()]
         : []))
     const externalInputs: ExplicitInputSnapshot[] = []
@@ -1075,7 +1109,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         inputBasis: basis
       }))
     }
-    const publications: Array<PreparedNpmPublication | PreparedGitHubPublication> = []
+    const publications: Array<PreparedNpmPublication | PreparedPyPiPublication | PreparedGitHubPublication | PreparedCatalogPublication> = []
     for (const publication of input.graph.publications) {
       if (publication._tag === "GraphNpmPublication") {
         const artifact = yield* npmTarball(request, publication, declarations, sourceSnapshot, basis, npmPackIdentity!)
@@ -1094,7 +1128,49 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
           provenance: publication.provenance,
           authority: publication.authority
         }))
-      } else {
+      } else if (publication._tag === "GraphPyPiPublication") {
+        const files = publication.files.map((file) => {
+          const artifact = preparedArtifacts.get(file.artifactId.toString())
+          const value = bytes.get(file.artifactId.toString())
+          if (artifact === undefined || value === undefined) {
+            throw new Error(`PyPI publication ${publication.id} references unavailable artifact ${file.artifactId}.`)
+          }
+          if (basename(artifact.path.toString()) !== file.filename.toString()) {
+            throw new Error(`PyPI artifact ${file.artifactId} filename changed after graph linking.`)
+          }
+          const distribution = inspectPythonDistribution(
+            file.filename.toString(), value, publication.project.toString(), publication.version.toString()
+          )
+          if (artifact.mediaType !== undefined && artifact.mediaType !== distribution.mediaType) {
+            throw new Error(`PyPI artifact ${file.artifactId} declared media type disagrees with its verified distribution type.`)
+          }
+          const typedArtifact = artifact.mediaType === distribution.mediaType
+            ? artifact
+            : PreparedArtifact.make({ ...artifact, mediaType: distribution.mediaType })
+          preparedArtifacts.set(file.artifactId.toString(), typedArtifact)
+          const digest = sha256Digest(value)
+          return PreparedPyPiFile.make({
+            artifactId: typedArtifact.id,
+            filename: file.filename,
+            size: value.length,
+            sha256: digest,
+            mediaType: distribution.mediaType,
+            distribution,
+            authority: file.authority
+          })
+        }) as [PreparedPyPiFile, ...Array<PreparedPyPiFile>]
+        publications.push(PreparedPyPiPublication.make({
+          id: NonEmptyName.make(publication.id),
+          project: publication.project,
+          version: publication.version,
+          repository: publication.repository,
+          simpleBaseUrl: publication.simpleBaseUrl,
+          projectUrl: publication.projectUrl,
+          uploadUrl: publication.uploadUrl,
+          authentication: publication.authentication,
+          files
+        }))
+      } else if (publication._tag === "GraphGitHubPublication") {
         const selectedIds = publication.assetCollections.flatMap((selector) => {
           const collection = preparedCollections.get(selector.collection.toString())
           if (collection === undefined) {
@@ -1140,6 +1216,73 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
           targetCommit: context.source.commit,
           ...(body === undefined ? {} : { body }),
           assets,
+          authority: publication.authority
+        }))
+      } else {
+        const target = preparedArtifacts.get(publication.targetArtifact.toString())
+        const targetBytes = bytes.get(publication.targetArtifact.toString())
+        const render = input.graph.preparations.find((candidate): candidate is GraphCatalogRender =>
+          candidate._tag === "GraphCatalogRender" && candidate.output.id.toString() === publication.targetArtifact.toString())
+        if (target === undefined || targetBytes === undefined || render === undefined) {
+          throw new Error(`Catalog publication ${publication.id} references no verified renderer output.`)
+        }
+        const downloads = publication.sources.map((source) => {
+          const value = bytes.get(source.artifactId.toString())
+          const declaration = declarations.get(source.artifactId.toString())
+          if (value === undefined || declaration === undefined || basename(declaration.path) !== source.filename.toString()) {
+            throw new Error(`Catalog publication ${publication.id} references unavailable source ${source.artifactId}.`)
+          }
+          return PreparedCatalogDownload.make({
+            architecture: source.architecture,
+            url: source.url,
+            filename: source.filename,
+            sha256: sha256Digest(value)
+          })
+        }) as [PreparedCatalogDownload, ...Array<PreparedCatalogDownload>]
+        const targetDigest = sha256Digest(targetBytes)
+        const stateBytes = encodeCatalogManagedState(CatalogManagedState.make({
+          schemaVersion: "ts-release/catalog-state/v2",
+          catalogId: publication.catalogId,
+          renderer: publication.renderer._tag,
+          generation: publication.version,
+          status: "active",
+          targetDigest,
+          sourceRepository: publication.sourceRepository,
+          sourceTag: publication.sourceTag
+        }))
+        const stateDigest = sha256Digest(stateBytes)
+        const stateArtifactId = OutputId.make(`catalog-state-${publication.catalogId}`)
+        if (preparedArtifacts.has(stateArtifactId.toString()) || bytes.has(stateArtifactId.toString())) {
+          throw new Error(`Catalog state artifact ${stateArtifactId} collides with another prepared artifact.`)
+        }
+        const stateArtifact = PreparedArtifact.make({
+          id: stateArtifactId,
+          path: SafeRelativePath.make(`.release/catalog-state/${publication.catalogId}.json`),
+          kind: "file",
+          size: stateBytes.length,
+          digest: stateDigest,
+          blob: stateDigest,
+          mediaType: "application/json",
+          producer: NonEmptyName.make(publication.id.toString()),
+          inputBasis: basis
+        })
+        bytes.set(stateArtifactId.toString(), stateBytes)
+        preparedArtifacts.set(stateArtifactId.toString(), stateArtifact)
+        publications.push(PreparedCatalogPublication.make({
+          id: NonEmptyName.make(publication.id.toString()),
+          catalogId: publication.catalogId,
+          targetArtifactId: target.id,
+          stateArtifactId,
+          targetDigest,
+          stateDigest,
+          repository: publication.repository,
+          branch: publication.branch,
+          targetPath: publication.targetPath,
+          statePath: publication.statePath,
+          version: publication.version,
+          sourceRepository: publication.sourceRepository,
+          sourceTag: publication.sourceTag,
+          renderer: PreparedCatalogRenderer.make({ renderer: publication.renderer, downloads }),
           authority: publication.authority
         }))
       }

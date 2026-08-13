@@ -31,8 +31,8 @@ the authority for publication progress.
   inspects the prepared release.
 - `src/publication` owns the provider-neutral fact/decision/attempt/report
   coordinator and provider subjects.
-- `src/correction` binds provider-specific correction proposals to exact
-  prepared subjects; no conditional correction writer is installed.
+- `src/correction` binds provider-specific correction requests to exact
+  prepared subjects; catalog Git installs the sole conditional correction writer.
 - `src/api` exposes the public lifecycle used by CLI, Action, and library users.
 - `src/platform` supplies Node or Bun filesystem, process, HTTP, durable-store,
   and opaque credential sinks at the host boundary.
@@ -67,11 +67,23 @@ conflicts and inconclusive results stop; and an unknown response is resolved
 only by a later exact observation. The coordinator therefore tolerates reruns
 and lost responses without claiming exactly-once behavior or atomic rollback.
 
+PyPI adds a stricter history boundary because a filename is permanently
+consumed and an upload is unsafe to replay after response loss. Every PyPI
+token subject is an exact file and must atomically acquire a terminal claim
+from a durable store shared by all runners before mutation authority is read.
+The stock CLI and Action install no pretend runner-local substitute and fail
+closed; external hosts can supply the claim store through the Node, Bun, or
+custom host layer constructors. Trusted publishing remains owned by the
+official external PyPA Action rather than an undocumented in-process OIDC
+exchange.
+
 Corrections are separate typed intents. npm deprecation and GitHub release
-amendment requests are bound to exact prepared subjects and can produce
-canonical external proposals. Neither provider exposes a proved conditional
-write for the observed generation in this kernel, so no correction adapter is
-installed and `correct` performs no remote mutation.
+amendment requests are bound to exact prepared subjects and produce canonical
+external proposals because neither provider exposes a proved conditional
+write for the observed generation. Catalog Git installs one
+`forward-catalog-state` adapter: a SemVer-newer replacement deterministically
+renders new consumer bytes and a corrected state record, then conditionally
+updates both against the exact old pair and observed branch commit.
 
 ## Hosts and targets
 
@@ -94,7 +106,8 @@ prepared bundle continues to use the dedicated content-addressed Action store.
 
 External library integrations use the supported `store` structural contract
 and the `host` layer constructor. The constructor installs custom source/run,
-prepared-store, credential-acquisition, and HTTP-authorization values behind
+prepared-store, credential-acquisition, HTTP-authorization, and optional
+shared publication-claim values behind
 the engine's private service tags. Credential values remain host-owned; the
 public seam carries only prepared requests, opaque grants, safe references,
 typed acquisition failures, and authorized HTTP results.
@@ -106,9 +119,12 @@ The kernel admits extensions only through an owner with a narrow invariant:
 - tests and policy gates become `CommandCheck` nodes;
 - generated notes, manifests, and agent bundles become declared
   `CommandArtifact` bytes;
-- npm and GitHub reads/writes remain provider-module operations;
+- npm, prebuilt PyPI, GitHub Release, and catalog Git reads/writes remain provider-module operations;
 - environment protection and human authorization remain workflow-host state;
 - announcements remain downstream workflow steps after a complete report.
 
-PyPI, Homebrew, Scoop, and a third-party adapter SDK are deferred capability
-waves, not generic hook behavior hidden inside the kernel.
+Homebrew and Scoop are typed render modules feeding one exact catalog Git
+provider module. Custom applications may install full provider subjects through
+the library-only SDK; the stock CLI and Action do not discover them from
+configuration. Arbitrary catalog templates are not generic hook behavior hidden inside the kernel. Wrapper-wheel generation
+is not part of the installed prebuilt PyPI capability.

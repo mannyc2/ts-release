@@ -65,5 +65,42 @@ export const validateFeatureTranslation = (root: string): FeatureTranslationRepo
   for (const section of assignments.keys()) {
     if (!familyRows.some(([id]) => id === section)) failures.push(`${section} has no declared config family`)
   }
+  const requiredExtensionCases = [
+    "C010", "C011", "C027", "C033", "C046", "C052", "C054", "C055", "C056", "C057",
+    "C059", "C071", "C079", "C081", "C083", "C086", "C087", "C088", "C089", "C090",
+    "C091", "C092", "C093", "C094", "C095", "C096", "C097", "C098", "C099", "C100",
+    "C101", "P001", "P006", "P012", "P024", "P025", "P032"
+  ]
+  const extensionRows = [...ledger.matchAll(
+    /^\| `([^`]+)` \| ([^|]+) \| ([^|]+) \| ([A-Z-]+) \| ([^|]+) \| ([^|]+) \|$/gmu
+  )]
+  const extensionSeen = new Map<string, string>()
+  const dispositions = new Set([
+    "REJECT-STOCK", "TRANSLATE-EXTERNAL", "TRANSLATE", "DEFER-TYPED",
+    "SPLIT-FAMILY", "EXTERNALIZE", "LIBRARY-COMPOSE", "RETAIN-NATIVE"
+  ])
+  for (const match of extensionRows) {
+    const [cases, job, owner, disposition, failure, reopen] = match.slice(1) as [string, string, string, string, string, string]
+    if (!dispositions.has(disposition)) failures.push(`native-extension row ${cases} has unknown disposition ${disposition}`)
+    if ([job, owner, failure, reopen].some((value) => value.trim().length < 8)) {
+      failures.push(`native-extension row ${cases} lacks a concrete job, owner, failure, or re-open bar`)
+    }
+    for (const id of cases.split(",")) {
+      if (!/^[CP]\d{3}$/u.test(id)) failures.push(`native-extension matrix names malformed source case ${id}`)
+      const previous = extensionSeen.get(id)
+      if (previous !== undefined) failures.push(`native-extension source case ${id} appears in both ${previous} and ${cases}`)
+      extensionSeen.set(id, cases)
+    }
+  }
+  for (const id of requiredExtensionCases) if (!extensionSeen.has(id)) {
+    failures.push(`hook/custom-publish/verification/announcement/supply-chain case ${id} has no Plan 232 disposition`)
+  }
+  for (const id of extensionSeen.keys()) if (!requiredExtensionCases.includes(id)) {
+    failures.push(`Plan 232 extension matrix includes unreviewed source case ${id}`)
+  }
+  const npmRow = extensionRows.find((match) => match[1] === "C071")
+  if (npmRow === undefined || !npmRow[2]!.toLowerCase().includes("npm package") || npmRow[4] !== "SPLIT-FAMILY") {
+    failures.push("C071 must split exact npm publication from platform-wrapper generation instead of assigning it to an adjacent family")
+  }
   return { families: familyRows.length, paths: pathRows.length, failures }
 }

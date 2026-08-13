@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test"
 import * as Schema from "effect/Schema"
 import { githubRecoveryCapabilityProfile } from "../../src/publication/github.js"
 import { npmRecoveryCapabilityProfile } from "../../src/publication/npm.js"
+import { pypiRecoveryCapabilityProfile } from "../../src/publication/pypi.js"
+import { catalogRecoveryCapabilityProfile } from "../../src/publication/catalog-git.js"
 import { installedPublicationProfiles } from "../../src/publication/profiles.js"
 import {
   RecoveryCapabilityProfile,
@@ -101,8 +103,8 @@ describe("RecoveryCapabilityProfile", () => {
     })
   })
 
-  test("labels every current npm and GitHub numeric default ASSUMED/UNVERIFIED", () => {
-    for (const profile of [npmRecoveryCapabilityProfile, githubRecoveryCapabilityProfile]) {
+  test("labels every installed provider numeric default ASSUMED/UNVERIFIED", () => {
+    for (const profile of [npmRecoveryCapabilityProfile, pypiRecoveryCapabilityProfile, githubRecoveryCapabilityProfile]) {
       expect(profile.readConvergence.contract._tag).toBe("assumed")
       if (profile.readConvergence.contract._tag !== "assumed") throw new Error("Expected an assumed contract.")
       expect(profile.readConvergence.contract.basis).toContain("ASSUMED/UNVERIFIED")
@@ -118,9 +120,14 @@ describe("RecoveryCapabilityProfile", () => {
       backoff: { baseMs: 1_000, factor: 2, capMs: 15_000 },
       totalBudgetMs: 60_000
     })
+    expect(pypiRecoveryCapabilityProfile.readConvergence.observationRetry).toMatchObject({
+      maxAttempts: 6,
+      backoff: { baseMs: 2_000, factor: 2, capMs: 30_000 },
+      totalBudgetMs: 120_000
+    })
   })
 
-  test("registers the exact installed npm and GitHub profile values with no correction adapters", () => {
+  test("registers exact provider profiles and only the catalog correction adapter", () => {
     expect(installedPublicationProfiles.npm).toMatchObject({
       id: "publish.npm",
       provider: "npm",
@@ -133,10 +140,26 @@ describe("RecoveryCapabilityProfile", () => {
       preparedTag: "PreparedGitHubPublication",
       correctionAdapters: []
     })
+    expect(installedPublicationProfiles.pypi).toMatchObject({
+      id: "publish.pypi",
+      provider: "pypi",
+      preparedTag: "PreparedPyPiPublication",
+      correctionAdapters: []
+    })
+    expect(installedPublicationProfiles.catalogGit).toMatchObject({
+      id: "publish.catalog-git",
+      provider: "catalog-git",
+      preparedTag: "PreparedCatalogPublication",
+      correctionAdapters: ["forward-catalog-state"]
+    })
     expect(installedPublicationProfiles.npm.recovery).toBe(npmRecoveryCapabilityProfile)
     expect(installedPublicationProfiles.github.recovery).toBe(githubRecoveryCapabilityProfile)
+    expect(installedPublicationProfiles.pypi.recovery).toBe(pypiRecoveryCapabilityProfile)
+    expect(installedPublicationProfiles.catalogGit.recovery).toBe(catalogRecoveryCapabilityProfile)
     expect(installedPublicationProfiles.npm.recovery.correction).toEqual([])
     expect(installedPublicationProfiles.github.recovery.correction).toEqual([])
+    expect(installedPublicationProfiles.pypi.recovery.correction).toEqual([])
+    expect(installedPublicationProfiles.catalogGit.recovery.correction).toEqual(["forward-catalog-state"])
   })
 
   test("fails registration when a profile and installed correction adapters disagree", () => {

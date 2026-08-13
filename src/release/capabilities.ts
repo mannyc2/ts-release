@@ -1,3 +1,4 @@
+import { basename } from "node:path"
 import * as Schema from "effect/Schema"
 import {
   ArtifactCardinality,
@@ -6,11 +7,28 @@ import {
   ArtifactCollectionSelector
 } from "../model/artifact-collection.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
+import {
+  CatalogRenderSource,
+  HomebrewRenderer,
+  ScoopRenderer,
+  GitHubRepositoryCoordinate,
+  canonicalCatalogVersion,
+  type CatalogRenderer
+} from "../model/catalog.js"
 import { bunArtifactTarget } from "../capabilities/bun-targets.js"
-import { NpmAuthentication, type CandidateConfig } from "../recipes/config.js"
+import {
+  NpmAuthentication,
+  PyPiAuthentication,
+  pypiRepositoryEndpoints,
+  type CandidateConfig,
+  type CandidateHomebrewCatalog,
+  type CandidateScoopCatalog
+} from "../recipes/config.js"
 import { CapabilityContribution, GraphArchive, GraphChecksum, GraphCommandArtifact, GraphCommandCollection, GraphLinkError,
-  GraphCommandCheck, GraphGitHubPublication, GraphNpmPackageBuild, GraphNpmPublication, OutputDeclaration,
-  makeGitHubPublicationAuthorityIntent, makeNpmPublicationAuthorityIntent } from "./graph.js"
+  GraphCommandCheck, GraphGitHubPublication, GraphNpmPackageBuild, GraphNpmPublication, GraphPyPiDistribution,
+  GraphPyPiPublication, GraphCatalogRender, GraphCatalogPublication, OutputDeclaration,
+  makeCatalogPublicationAuthorityIntent, makeGitHubPublicationAuthorityIntent,
+  makeNpmPublicationAuthorityIntent, makePyPiPublicationAuthorityIntent } from "./graph.js"
 import type { VerifiedReleaseContext } from "./context.js"
 
 const output = (id: string | OutputId, location: string, kind: OutputDeclaration["kind"], mediaType?: string) =>
@@ -152,6 +170,160 @@ export const contributePackages = (
   return CapabilityContribution.make({ artifacts: [], preparations, publications: [] })
 }
 
+interface CatalogRenderRow {
+  readonly id: string
+  readonly renderer: CatalogRenderer
+  readonly sources: readonly [CatalogRenderSource, ...Array<CatalogRenderSource>]
+  readonly output: OutputDeclaration
+}
+
+const catalogRows = (
+  config: CandidateConfig,
+  artifacts: ReadonlyArray<OutputDeclaration>,
+  selected: "homebrew" | "scoop" | "all" = "all"
+): ReadonlyArray<CatalogRenderRow> => {
+  const repository = config.publish?.github?.repository ?? config.project.repository
+  const rows: Array<CatalogRenderRow> = []
+  const build = (
+    kind: "homebrew" | "scoop",
+    catalog: NonNullable<NonNullable<CandidateConfig["catalogs"]>[typeof kind]>[number]
+  ): CatalogRenderRow => {
+    if (repository === undefined || !/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(repository)) {
+      throw new GraphLinkError({
+        kind: "reference", value: `catalogs.${kind}`,
+        reason: "Catalog download URLs require one exact GitHub source repository."
+      })
+    }
+    const sources = catalog.sources.map((source) => {
+      const artifact = artifacts.find((candidate) => candidate.id.toString() === source.artifact.toString())
+      if (artifact === undefined || artifact.kind !== "archive") throw new GraphLinkError({
+        kind: "reference", value: source.artifact.toString(),
+        reason: `${kind} catalogs require declared archive artifacts.`
+      })
+      const filename = NonEmptyName.make(basename(artifact.path.toString()))
+      return CatalogRenderSource.make({
+        artifactId: source.artifact,
+        architecture: source.architecture,
+        filename,
+        url: `https://github.com/${repository}/releases/download/${encodeURIComponent(config.project.tag)}/${encodeURIComponent(filename)}`
+      })
+    }).sort((left, right) => left.architecture < right.architecture ? -1 : left.architecture > right.architecture ? 1 : 0)
+    if (new Set(sources.map((source) => source.architecture)).size !== sources.length) throw new GraphLinkError({
+      kind: "duplicate", value: catalog.id.toString(), reason: `${kind} catalog repeats one architecture.`
+    })
+    if (kind === "scoop" && sources.some((source) => !source.filename.toString().endsWith(".zip"))) throw new GraphLinkError({
+      kind: "reference", value: catalog.id.toString(), reason: "Scoop catalogs support ZIP archives only."
+    })
+    const renderer = kind === "homebrew"
+      ? HomebrewRenderer.make({
+        name: (catalog as CandidateHomebrewCatalog).formulaName,
+        description: catalog.description,
+        homepage: catalog.homepage,
+        ...(catalog.license === undefined ? {} : { license: catalog.license }),
+        installPath: (catalog as CandidateHomebrewCatalog).installPath
+      })
+      : ScoopRenderer.make({
+        name: (catalog as CandidateScoopCatalog).manifestName,
+        description: catalog.description,
+        homepage: catalog.homepage,
+        ...(catalog.license === undefined ? {} : { license: catalog.license }),
+        bin: (catalog as CandidateScoopCatalog).bin
+      })
+    return {
+      id: catalog.id.toString(),
+      renderer,
+      sources: sources as [CatalogRenderSource, ...Array<CatalogRenderSource>],
+      output: output(
+        `catalog-${catalog.id}`,
+        `.release/catalogs/${catalog.id}.${kind === "homebrew" ? "rb" : "json"}`,
+        "file",
+        kind === "homebrew" ? "text/x-ruby" : "application/json"
+      )
+    }
+  }
+  if (selected !== "scoop") for (const catalog of config.catalogs?.homebrew ?? []) rows.push(build("homebrew", catalog))
+  if (selected !== "homebrew") for (const catalog of config.catalogs?.scoop ?? []) rows.push(build("scoop", catalog))
+  if (new Set(rows.map((row) => row.id)).size !== rows.length) throw new GraphLinkError({
+    kind: "duplicate", value: "catalogs", reason: "Catalog renderer ids must be unique across Homebrew and Scoop."
+  })
+  if (rows.length > 0) canonicalCatalogVersion(config.project.version.toString())
+  return rows
+}
+
+export const contributeCatalogRendering = (
+  config: CandidateConfig,
+  artifacts: ReadonlyArray<OutputDeclaration>,
+  kind: "homebrew" | "scoop"
+): CapabilityContribution => CapabilityContribution.make({
+  artifacts: [],
+  preparations: catalogRows(config, artifacts, kind).map((row) => GraphCatalogRender.make({
+    id: OperationId.make(`catalog:render:${row.id}`),
+    inputs: row.sources.map((source) => source.artifactId) as [OutputId, ...Array<OutputId>],
+    output: row.output,
+    version: config.project.version,
+    renderer: row.renderer,
+    sources: row.sources
+  })),
+  publications: []
+})
+
+export const contributeCatalogPublications = (
+  config: CandidateConfig,
+  artifacts: ReadonlyArray<OutputDeclaration>
+): CapabilityContribution => {
+  const destinations = config.publish?.catalogGit
+  if (destinations === undefined) return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] })
+  const rows = catalogRows(config, artifacts)
+  const sourceRepository = config.publish?.github?.repository ?? config.project.repository
+  if (config.publish?.github === undefined || sourceRepository === undefined) throw new GraphLinkError({
+    kind: "reference", value: "publish.catalogGit",
+    reason: "Catalog delivery requires an installed GitHub release publication for every referenced download."
+  })
+  const selectedGithubIds = config.publish.github.ids ?? artifacts.filter((artifact) =>
+    ["archive", "executable", "file", "digest"].includes(artifact.kind)).map((artifact) => artifact.id)
+  const publications = destinations.map((destination) => {
+    const row = rows.find((candidate) => candidate.id === destination.catalog.toString())
+    if (row === undefined) throw new GraphLinkError({
+      kind: "missing", value: destination.catalog.toString(), reason: "Catalog delivery references no typed renderer."
+    })
+    if (row.sources.some((source) => !selectedGithubIds.some((id) => id.toString() === source.artifactId.toString()))) {
+      throw new GraphLinkError({
+        kind: "reference", value: destination.catalog.toString(),
+        reason: "Catalog delivery is blocked unless every download artifact belongs to the exact GitHub release publication."
+      })
+    }
+    const targetPath = destination.targetPath.toString()
+    const statePath = destination.statePath.toString()
+    if (targetPath === statePath || targetPath.startsWith(`${statePath}/`) || statePath.startsWith(`${targetPath}/`)) {
+      throw new GraphLinkError({
+        kind: "path", value: targetPath, reason: "Catalog target and managed-state paths must be disjoint files."
+      })
+    }
+    return GraphCatalogPublication.make({
+      id: OperationId.make(`zz:catalog-git:${row.id}`),
+      catalogId: NonEmptyName.make(row.id),
+      targetArtifact: row.output.id,
+      repository: destination.repository,
+      branch: destination.branch,
+      targetPath: destination.targetPath,
+      statePath: destination.statePath,
+      version: config.project.version,
+      sourceRepository: GitHubRepositoryCoordinate.make(sourceRepository),
+      sourceTag: config.project.tag,
+      renderer: row.renderer,
+      sources: row.sources,
+      authority: makeCatalogPublicationAuthorityIntent({
+        repository: destination.repository,
+        branch: destination.branch,
+        targetPath: destination.targetPath,
+        statePath: destination.statePath,
+        tokenEnv: destination.tokenEnv
+      })
+    })
+  })
+  return CapabilityContribution.make({ artifacts: [], preparations: [], publications })
+}
+
 export const contributeNpmPublication = (
   config: CandidateConfig,
   context: VerifiedReleaseContext
@@ -216,20 +388,72 @@ export const contributeGitHubPublication = (
   return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [publication] })
 }
 
+export const contributePyPiPublication = (
+  config: CandidateConfig,
+  context: VerifiedReleaseContext,
+  artifacts: ReadonlyArray<OutputDeclaration>
+): CapabilityContribution => {
+  const intent = config.publish?.pypi
+  if (intent === undefined) return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] })
+  const authentication = Schema.decodeUnknownSync(PyPiAuthentication, {
+    onExcessProperty: "error"
+  })(intent.authentication)
+  const endpoints = pypiRepositoryEndpoints(intent.repository)
+  const files = intent.artifacts.map((id) => {
+    const declaration = artifacts.find((artifact) => artifact.id.toString() === id.toString())
+    if (declaration === undefined) throw new GraphLinkError({
+      kind: "missing", value: id.toString(), reason: "PyPI publication references no declared artifact."
+    })
+    const filename = basename(declaration.path.toString())
+    return GraphPyPiDistribution.make({
+      artifactId: id,
+      filename: NonEmptyName.make(filename),
+      authority: makePyPiPublicationAuthorityIntent({
+        project: intent.project,
+        version: intent.version,
+        filename,
+        repository: intent.repository,
+        authentication,
+        sourceCommit: context.source.commit.toString()
+      })
+    })
+  }) as [GraphPyPiDistribution, ...Array<GraphPyPiDistribution>]
+  return CapabilityContribution.make({
+    artifacts: [], preparations: [], publications: [GraphPyPiPublication.make({
+      id: OperationId.make("pypi:pypi-release"),
+      project: intent.project,
+      version: intent.version,
+      repository: intent.repository,
+      simpleBaseUrl: endpoints.simpleBaseUrl,
+      projectUrl: `${endpoints.simpleBaseUrl}${encodeURIComponent(intent.project)}/`,
+      uploadUrl: endpoints.uploadUrl,
+      authentication,
+      files
+    })]
+  })
+}
+
 export const contributeRelease = (config: CandidateConfig, context: VerifiedReleaseContext): ReadonlyArray<CapabilityContribution> => {
   const build = contributeSourceArtifacts(config, context)
   const buildOutputs = [...build.artifacts, ...build.preparations.flatMap(preparationOutputs)]
   const packaged = contributePackages(config, buildOutputs, context)
   const allArtifacts = [...buildOutputs, ...packaged.preparations.flatMap(preparationOutputs)]
+  const homebrew = contributeCatalogRendering(config, allArtifacts, "homebrew")
+  const scoop = contributeCatalogRendering(config, allArtifacts, "scoop")
+  const renderedArtifacts = [...allArtifacts, ...homebrew.preparations.flatMap(preparationOutputs), ...scoop.preparations.flatMap(preparationOutputs)]
   return [
     build,
     packaged,
+    homebrew,
+    scoop,
     contributeNpmPublication(config, context),
-    contributeGitHubPublication(config, allArtifacts)
+    contributePyPiPublication(config, context, renderedArtifacts),
+    contributeGitHubPublication(config, renderedArtifacts),
+    contributeCatalogPublications(config, renderedArtifacts)
   ]
 }
 
 const preparationOutputs = (preparation: CapabilityContribution["preparations"][number]): ReadonlyArray<OutputDeclaration> =>
   preparation._tag === "GraphCommandArtifact" ? preparation.outputs
-    : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum"
+    : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalogRender"
     ? [preparation.output] : []

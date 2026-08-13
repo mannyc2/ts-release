@@ -20,10 +20,11 @@ ignored, or untracked workspace bytes are never implicit inputs.
 ## 3. Derived graph
 
 The graph contains imported artifacts, build, archive, checksum, command check,
-command artifact, npm publication, and GitHub publication primitives. It is
+command artifact, typed Homebrew/Scoop rendering, npm publication, exact-file
+PyPI publication, GitHub Release publication, and catalog Git publication
+primitives. It is
 sorted and linked inside one process. It is never serialized as authority and
-never crosses a runner boundary. PyPI and catalog subjects are absent from the
-kernel graph.
+never crosses a runner boundary.
 
 ## 4. Prepared release
 
@@ -41,17 +42,39 @@ all npm-consumed GitHub run facts before reading OIDC authority, snapshots them
 privately onto the issued workload grant, and projects only that snapshot plus
 the two OIDC request values into the closed npm child.
 
+A PyPI publication records one independent subject per prebuilt wheel or gzip
+sdist. Preparation parses archive structure and embedded metadata and requires
+project/version/filename agreement before the file can enter a prepared
+manifest. Each subject binds the closed PyPI/TestPyPI Simple and upload
+endpoints, exact filename, size, SHA-256, media type, and distribution tags.
+
 ## 5. Observation
 
 Publication is subject-based. `observe` uses a read-only report algebra.
 `publish` observes every subject before mutation and again afterward.
 Equivalent subjects are idempotent skips; only a typed provider decision may
 authorize mutation; conflict or inconclusive state blocks. Provider correction
-intent is typed and bound to the prepared digest. No conditional correction
-write is installed, so a valid correction request produces an external
-operator proposal rather than a provider mutation. Credential unavailability
+intent is typed and bound to the prepared digest. npm and GitHub Release
+requests produce external proposals; catalog Git admits one SemVer-forward
+conditional replacement of its exact target/state pair. Credential unavailability
 and unsupported authentication remain total report data with distinct tagged,
 secret-free causes; they do not escape as publication control flow.
+
+PyPI observation accepts only a standards-shaped JSON Simple response with
+API major 1 and the API 1.1 equality fields. A visible project page that omits
+the exact filename can authorize token upload only after the host atomically
+creates a shared, durable, terminal claim for the prepared subject. Claim
+unavailability or occupation blocks before credential acquisition. A project
+404 never authorizes first creation. Yanked files conflict; no yank mutation
+is installed. Trusted publishing is an external PyPA Action path and is
+rejected by the stock coordinator before dispatch.
+
+Catalog observation reads the exact branch ref, commit, complete untruncated
+recursive tree, and both managed blobs. Mutation creates exact blobs and a tree
+with the observed root as `base_tree`, verifies every unrelated object and mode
+in the proposed full tree, creates a commit with the observed commit as its
+sole parent, and updates the ref with `force: false`. A catalog subject depends
+on convergence of its configured GitHub release asset subjects.
 
 ## 6. Native preparation
 
@@ -97,6 +120,9 @@ inputs before calling the library.
 
 Rerun the same prepared bytes. A partial release is possible; atomic rollback,
 deletion, exactly-once publication, and universal correction are not claimed.
+PyPI filenames remain consumed after deletion and uncertain token uploads are
+never blindly replayed; the required terminal claim survives process loss and
+must be shared by every runner capable of dispatching that subject.
 Read-convergence timing defaults are conservative assumed bounds until live
 post-write evidence measures them. Announcements and unsupported providers
 remain outside the retained product.
@@ -127,14 +153,16 @@ Linux execution host, `libseccomp.so.2`.
 
 The engine does not transport host-gate identity or persist execution history as authority,
 provide generic lifecycle hooks, or claim to be a language-specific clone of
-another release product. PyPI, Homebrew, Scoop, downstream announcements, and
-a third-party adapter SDK are not capabilities installed in this kernel.
+another release product. Arbitrary catalog templates, engine-owned downstream
+announcements, dynamic adapter discovery, and command publishers are not
+capabilities installed in the stock kernel.
 
 ## 13. Root export audit
 
 The root runtime exports are exactly:
 
 - `AuthoredGithubReleaseAmendment`
+- `AuthoredCatalogForwardCorrection`
 - `AuthoredNpmDeprecation`
 - `CompletePreparedReleaseRef`
 - `CorrectionReport`

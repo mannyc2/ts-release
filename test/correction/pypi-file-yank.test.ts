@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema"
 import * as CorrectionIntentModule from "../../src/correction/intent.js"
 import { CorrectionVariant } from "../../src/correction/intent.js"
 
-test("PyPI correction is absent until a prepared PyPI subject is installed", () => {
+test("installed PyPI publication does not imply an unsupported file-yank correction", () => {
   expect(() => Schema.decodeUnknownSync(CorrectionVariant, {
     onExcessProperty: "error"
   })({

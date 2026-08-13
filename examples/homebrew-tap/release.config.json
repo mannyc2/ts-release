@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/release-config.schema.json",
+  "project": {
+    "name": "fixture",
+    "version": "1.0.0",
+    "tag": "v1.0.0",
+    "repository": "owner/fixture"
+  },
+  "artifacts": [
+    {
+      "id": "fixture-darwin-arm64",
+      "path": "dist/fixture-darwin-arm64.tar.gz",
+      "format": "tarball"
+    }
+  ],
+  "catalogs": {
+    "homebrew": [
+      {
+        "id": "fixture-homebrew",
+        "formulaName": "fixture",
+        "description": "Fixture command",
+        "homepage": "https://example.com/fixture",
+        "license": "MIT",
+        "installPath": "fixture",
+        "sources": [
+          { "artifact": "fixture-darwin-arm64", "architecture": "arm64" }
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "github": {
+      "repository": "owner/fixture",
+      "ids": ["fixture-darwin-arm64"]
+    },
+    "catalogGit": [
+      {
+        "catalog": "fixture-homebrew",
+        "repository": "owner/homebrew-tap",
+        "branch": "main",
+        "targetPath": "Formula/fixture.rb",
+        "statePath": ".ts-release/fixture-homebrew.json",
+        "tokenEnv": "GITHUB_TOKEN"
+      }
+    ]
+  }
+}

@@ -43,8 +43,8 @@ const walk = (directory: string): void => {
 walk(resolve(root, "examples"))
 walk(resolve(root, "templates"))
 
-type GraphSubject = "GraphGitHubPublication" | "GraphNpmPublication"
-type PreparedSubject = "PreparedGitHubPublication" | "PreparedNpmPublication"
+type GraphSubject = "GraphGitHubPublication" | "GraphNpmPublication" | "GraphPyPiPublication" | "GraphCatalogPublication"
+type PreparedSubject = "PreparedGitHubPublication" | "PreparedNpmPublication" | "PreparedPyPiPublication" | "PreparedCatalogPublication"
 
 interface ExpectedPublicConfig {
   readonly graph: ReadonlyArray<GraphSubject>
@@ -60,6 +60,11 @@ const fourPortableTargets = [
 ] as const
 
 const expectedConfigs: Readonly<Record<string, ExpectedPublicConfig>> = {
+  "examples/homebrew-tap/release.config.json": {
+    graph: ["GraphGitHubPublication", "GraphCatalogPublication"],
+    prepared: ["PreparedGitHubPublication", "PreparedCatalogPublication"],
+    targets: []
+  },
   "examples/github-release/release.config.json": {
     graph: ["GraphGitHubPublication"],
     prepared: ["PreparedGitHubPublication"],
@@ -78,6 +83,21 @@ const expectedConfigs: Readonly<Record<string, ExpectedPublicConfig>> = {
   "examples/npm-only/release.config.json": {
     graph: ["GraphNpmPublication"],
     prepared: ["PreparedNpmPublication"],
+    targets: []
+  },
+  "examples/scoop-bucket/release.config.json": {
+    graph: ["GraphGitHubPublication", "GraphCatalogPublication"],
+    prepared: ["PreparedGitHubPublication", "PreparedCatalogPublication"],
+    targets: []
+  },
+  "templates/multi-target-homebrew/release.config.json": {
+    graph: ["GraphGitHubPublication", "GraphCatalogPublication"],
+    prepared: ["PreparedGitHubPublication", "PreparedCatalogPublication"],
+    targets: []
+  },
+  "templates/multi-target-scoop/release.config.json": {
+    graph: ["GraphGitHubPublication", "GraphCatalogPublication"],
+    prepared: ["PreparedGitHubPublication", "PreparedCatalogPublication"],
     targets: []
   },
   "examples/portable-cli/release.config.json": {
@@ -145,11 +165,15 @@ let compiledCount = 0
 let preparedCount = 0
 const graphSubjects: Record<GraphSubject, number> = {
   GraphGitHubPublication: 0,
-  GraphNpmPublication: 0
+  GraphNpmPublication: 0,
+  GraphPyPiPublication: 0,
+  GraphCatalogPublication: 0
 }
 const preparedSubjects: Record<PreparedSubject, number> = {
   PreparedGitHubPublication: 0,
-  PreparedNpmPublication: 0
+  PreparedNpmPublication: 0,
+  PreparedPyPiPublication: 0,
+  PreparedCatalogPublication: 0
 }
 let targetArtifactCount = 0
 
@@ -210,7 +234,10 @@ for (const path of configs.sort((left, right) => codepoint(portable(left), porta
       const inspection = await api.inspect({ config: value, workspace })
       if (!("preparations" in inspection)) throw new Error(`${name}: root inspect did not return the graph projection.`)
       const expectedDestinations = expected.graph.map((subject) =>
-        subject === "GraphGitHubPublication" ? "github" : "npm")
+        subject === "GraphGitHubPublication" ? "github"
+          : subject === "GraphPyPiPublication" ? "pypi"
+          : subject === "GraphCatalogPublication" ? "catalog-git"
+          : "npm")
       same(inspection.publications.map((publication) => publication.destination), expectedDestinations, `${name} root graph subjects`)
 
       const prepared = await api.prepare({ config: value, workspace }).catch((cause: unknown) => {
@@ -246,30 +273,21 @@ const unsupported = [
     family: "Homebrew",
     field: '["publish"]["homebrew"]',
     value: { ...unsupportedBase, publish: { homebrew: { repository: "owner/homebrew-tap" } } },
-    notes: [
-      { path: "examples/homebrew-tap/README.md", snippets: ["not a runnable ts-release example", "no Homebrew or generic catalog destination"] },
-      { path: "templates/multi-target-homebrew/README.md", snippets: ["no runnable Homebrew template", "generic catalog destinations are absent"] }
-    ],
-    directories: ["examples/homebrew-tap", "templates/multi-target-homebrew"]
+    notes: [],
+    directories: []
   },
   {
     family: "Scoop",
     field: '["publish"]["scoop"]',
     value: { ...unsupportedBase, publish: { scoop: { repository: "owner/scoop-bucket" } } },
-    notes: [
-      { path: "examples/scoop-bucket/README.md", snippets: ["not a runnable ts-release example", "no Scoop or generic catalog destination"] },
-      { path: "templates/multi-target-scoop/README.md", snippets: ["no runnable Scoop template", "generic catalog destinations are absent"] }
-    ],
-    directories: ["examples/scoop-bucket", "templates/multi-target-scoop"]
+    notes: [],
+    directories: []
   },
   {
     family: "catalog",
     field: '["catalogs"]',
     value: { ...unsupportedBase, catalogs: [{ id: "catalog", repository: "owner/catalog", file: "fixture.json" }] },
-    notes: [
-      { path: "examples/homebrew-tap/README.md", snippets: ["generic catalog destination", "removed instead of being retained as an accepted no-op"] },
-      { path: "templates/multi-target-homebrew/README.md", snippets: ["generic catalog destinations are absent", "provider-owned implementation"] }
-    ],
+    notes: [],
     directories: []
   }
 ] as const

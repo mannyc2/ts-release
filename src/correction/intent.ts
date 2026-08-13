@@ -2,11 +2,13 @@ import * as Schema from "effect/Schema"
 import { encodeCanonicalJson, parseStrictJson } from "../model/canonical.js"
 import {
   Sha256Digest,
+  Sha256Hex,
   Sha512Digest,
   digestEquals,
   sha256Digest
 } from "../model/digest.js"
 import { NonEmptyName, Version } from "../model/primitives.js"
+import { CatalogArchitecture, PreparedCatalogDownload } from "../model/catalog.js"
 
 const optional = Schema.optionalKey
 const boundedText = Schema.String.check(Schema.makeFilter((value: string) =>
@@ -33,6 +35,18 @@ export class GithubReleaseCorrection extends Schema.TaggedClass<GithubReleaseCor
   replacement: optional(ReplacementCoordinate)
 }) {}
 
+export class CatalogForwardCorrection extends Schema.TaggedClass<CatalogForwardCorrection>()("CatalogForwardCorrection", {
+  provider: Schema.Literal("catalog-git"),
+  publicationId: NonEmptyName,
+  baselineDigest: Sha256Digest,
+  baselineTargetDigest: Sha256Digest,
+  baselineStateDigest: Sha256Digest,
+  replacementVersion: Version,
+  replacementTag: NonEmptyName,
+  downloads: Schema.NonEmptyArray(PreparedCatalogDownload),
+  reason: publicMessage
+}) {}
+
 /** Human-authored correction request. Destination and immutable subject facts
  * are deliberately absent: they are derived from the loaded prepared bundle. */
 export class AuthoredNpmDeprecation
@@ -53,9 +67,28 @@ export class AuthoredGithubReleaseAmendment
     replacement: optional(ReplacementCoordinate)
   }) {}
 
+export class AuthoredCatalogDownload extends Schema.Class<AuthoredCatalogDownload>("AuthoredCatalogDownload")({
+  architecture: CatalogArchitecture,
+  url: Schema.NonEmptyString,
+  filename: NonEmptyName,
+  sha256: Sha256Hex
+}) {}
+
+export class AuthoredCatalogForwardCorrection
+  extends Schema.Class<AuthoredCatalogForwardCorrection>("AuthoredCatalogForwardCorrection")({
+    provider: Schema.Literal("catalog-git"),
+    kind: Schema.Literal("forward-catalog-state"),
+    publicationId: optional(NonEmptyName),
+    replacementVersion: Version,
+    replacementTag: NonEmptyName,
+    downloads: Schema.NonEmptyArray(AuthoredCatalogDownload),
+    reason: publicMessage
+  }) {}
+
 export const AuthoredCorrection = Schema.Union([
   AuthoredNpmDeprecation,
-  AuthoredGithubReleaseAmendment
+  AuthoredGithubReleaseAmendment,
+  AuthoredCatalogForwardCorrection
 ])
 export type AuthoredCorrection = typeof AuthoredCorrection.Type
 
@@ -64,7 +97,7 @@ export const decodeAuthoredCorrection = Schema.decodeUnknownSync(AuthoredCorrect
 })
 
 export const CorrectionVariant = Schema.Union([
-  NpmDeprecationCorrection, GithubReleaseCorrection
+  NpmDeprecationCorrection, GithubReleaseCorrection, CatalogForwardCorrection
 ])
 export type CorrectionVariant = typeof CorrectionVariant.Type
 

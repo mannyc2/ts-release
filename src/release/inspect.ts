@@ -26,7 +26,11 @@ const requirements = (preparations: ReadonlyArray<GraphPreparation>): ReadonlyAr
 ].sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
 const publication = (value: GraphPublication) => value._tag === "GraphNpmPublication"
   ? { id: value.id, destination: "npm", subject: `${value.packageName}@${value.version} (${value.registryUrl})` }
-  : { id: value.id, destination: "github", subject: `${value.repository}#${value.tag}` }
+  : value._tag === "GraphPyPiPublication"
+  ? { id: value.id, destination: "pypi", subject: `${value.project}==${value.version} (${value.repository})` }
+  : value._tag === "GraphGitHubPublication"
+  ? { id: value.id, destination: "github", subject: `${value.repository}#${value.tag}` }
+  : { id: value.id, destination: "catalog-git", subject: `${value.repository}#${value.branch}:${value.targetPath}` }
 
 /** Pure user projection. It does not encode, persist, approve, or execute the graph. */
 export const inspectRelease = (
@@ -55,7 +59,7 @@ export class PreparedReleaseInspection extends Schema.Class<PreparedReleaseInspe
     root: SafeRelativePath,
     members: Schema.Array(Schema.Struct({ key: SafeRelativePath, artifactId: OutputId }))
   })),
-  publications: Schema.Array(Schema.Struct({ id: NonEmptyName, destination: Schema.Literals(["npm", "github"]), subject: Schema.NonEmptyString })),
+  publications: Schema.Array(Schema.Struct({ id: NonEmptyName, destination: Schema.Literals(["npm", "pypi", "github", "catalog-git"]), subject: Schema.NonEmptyString })),
 }) {}
 
 export const inspectPreparedRelease = (bundle: PreparedBundle): PreparedReleaseInspection => PreparedReleaseInspection.make({
@@ -71,5 +75,9 @@ export const inspectPreparedRelease = (bundle: PreparedBundle): PreparedReleaseI
   })),
   publications: bundle.manifest.publications.map((publication) => publication._tag === "PreparedNpmPublication"
     ? { id: publication.id, destination: "npm", subject: `${publication.packageName}@${publication.version} (${publication.registryUrl})` }
-    : { id: publication.id, destination: "github", subject: `${publication.repository}#${publication.tag}` })
+    : publication._tag === "PreparedPyPiPublication"
+    ? { id: publication.id, destination: "pypi", subject: `${publication.project}==${publication.version} (${publication.repository})` }
+    : publication._tag === "PreparedGitHubPublication"
+    ? { id: publication.id, destination: "github", subject: `${publication.repository}#${publication.tag}` }
+    : { id: publication.id, destination: "catalog-git", subject: `${publication.repository}#${publication.branch}:${publication.targetPath}` })
 })

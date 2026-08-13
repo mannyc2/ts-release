@@ -4,6 +4,8 @@ import {
 import {
   npmRecoveryCapabilityProfile
 } from "./npm.js"
+import { pypiRecoveryCapabilityProfile } from "./pypi.js"
+import { catalogRecoveryCapabilityProfile } from "./catalog-git.js"
 import { validatePublicationProfiles } from "./recovery.js"
 
 /**
@@ -29,6 +31,43 @@ export const installedPublicationProfiles = validatePublicationProfiles(Object.f
         "https://docs.npmjs.com/policies/unpublish/"
       ]),
       correctionFinding: "Official npm documentation exposes deprecation but no conditional update bound to an observed package generation."
+    })
+  }),
+  pypi: Object.freeze({
+    id: "publish.pypi",
+    provider: "pypi",
+    preparedTag: "PreparedPyPiPublication",
+    recovery: pypiRecoveryCapabilityProfile,
+    correctionAdapters: [] as const,
+    evidence: Object.freeze({
+      reviewedAt: "2026-08-13",
+      observationSources: Object.freeze([
+        "https://packaging.python.org/en/latest/specifications/simple-repository-api/",
+        "https://packaging.python.org/en/latest/specifications/file-yanking/"
+      ]),
+      correctionSources: Object.freeze([
+        "https://docs.pypi.org/project-management/yanking/"
+      ]),
+      correctionFinding: "PyPI documents yanking behavior but no stable exact conditional per-file update API; no correction adapter is installed."
+    })
+  }),
+  catalogGit: Object.freeze({
+    id: "publish.catalog-git",
+    provider: "catalog-git",
+    preparedTag: "PreparedCatalogPublication",
+    recovery: catalogRecoveryCapabilityProfile,
+    correctionAdapters: ["forward-catalog-state"] as const,
+    evidence: Object.freeze({
+      reviewedAt: "2026-08-13",
+      observationSources: Object.freeze([
+        "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28",
+        "https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28"
+      ]),
+      correctionSources: Object.freeze([
+        "https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28#create-a-tree",
+        "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28#update-a-reference"
+      ]),
+      correctionFinding: "Catalog correction is an exact forward SemVer replacement of the managed target/state pair on one observed Git commit; the ref update is non-forced."
     })
   }),
   github: Object.freeze({

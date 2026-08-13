@@ -17,9 +17,9 @@ describe("Plan 207 feature-family ownership", () => {
     expect(report.fields).toBe(authoredConfigPropertyPaths().length)
     expect(report.witnesses).toBeGreaterThan(70)
     expect(report.invariantGroups).toBeGreaterThan(5)
-    // $schema is authoring-only; three trusted-attestation literals admit one
-    // exact value and are instead proven by negative strict-decode witnesses.
-    expect(report.resolvedDeltas).toBe(report.witnesses - 4)
+    // $schema is authoring-only; six trust-boundary literals admit one exact
+    // value and are instead proven by negative strict-decode witnesses.
+    expect(report.resolvedDeltas).toBe(report.witnesses - 7)
     expect(report.graphDeltas).toBeGreaterThan(50)
     expect(report.preparedBasisDeltas).toBeGreaterThan(40)
   })

@@ -24,11 +24,13 @@ No correctness-critical `ReleaseHistory` service or mutation journal is added.
 Losing local history must not block a fresh exact observation, and retaining a
 journal must never authorize mutation replay.
 
-This conclusion is limited to the installed npm and GitHub publication
-adapters. It does not certify future PyPI or catalog modules, and it does not
-admit an automated correction adapter. npm deprecation and GitHub release
-amendment remain operator proposals because no conditional write bound to an
-observed generation was proven.
+This kernel conclusion is limited to npm and GitHub. Plan 230 subsequently
+installed a PyPI profile with `historyRequirement: "durable-cas-required"`;
+its mutation path implements the future-adapter rule below and fails closed
+unless the host supplies a shared terminal claim store. Catalog modules remain
+uninstalled. No automated correction adapter is admitted: npm deprecation and
+GitHub release amendment remain operator proposals, and PyPI yanking remains
+observation-only.
 
 ## Fault evidence
 
@@ -93,16 +95,20 @@ authority:
 - a journal must not carry graph bytes as an alternate authority;
 - no event, lease, timeout, or runner identity permits blind replay.
 
-Because no installed profile requires durable CAS and the fault cases recover
-from provider truth or stop uncertain, adding a history service now would add
-state without reducing the current correctness state space. The canonical
-subject/profile gate prevents a future adapter from silently advertising a
-different history requirement. A future `durable-cas-required` module must
-also add an availability/durability gate and shared-store fault tests before
-its mutation becomes reachable.
+The kernel npm/GitHub profiles still need no history service because their
+fault cases recover from provider truth or stop uncertain. Plan 230's PyPI
+profile is the first installed `durable-cas-required` module: coordinator
+construction requires its claim boundary, the claim executes before mutation
+credential acquisition, and unavailable or occupied claims block dispatch.
+The host contract requires a terminal store shared by every runner; the stock
+CLI and Action provide none and therefore cannot dispatch PyPI token uploads.
+Protocol tests carry one shared store across fresh subject graphs and prove a
+lost response cannot produce a second POST. A process-memory test double is
+evidence for the seam and transition only, never a production durability
+claim.
 
 ## Verification boundary
 
 All evidence above is local and uses versioned, stateful protocol doubles. No
-live npm package, GitHub repository, release, tag, asset, credential, or
-external journal was read or mutated for this decision.
+live npm package, PyPI project/file, GitHub repository, release, tag, asset,
+credential, or external journal was read or mutated for this decision.

@@ -14,9 +14,12 @@ import { NonEmptyName, OutputId, Version } from "../model/primitives.js"
 import {
   CandidateConfig,
   type CandidateNpmPublish,
+  type CandidatePyPiPublish,
   CanonicalNpmRegistryEndpoint,
   NpmDistTag,
-  canonicalizeNpmRegistryEndpoint
+  PyPiProjectName,
+  canonicalizeNpmRegistryEndpoint,
+  normalizePyPiProjectName
 } from "../recipes/config.js"
 import { AuthoredConfig } from "./authored.js"
 import { toPlainJson } from "./encode.js"
@@ -229,6 +232,57 @@ const npmPublish = (
   }
 }
 
+const pypiPublish = (
+  authored: AuthoredConfig,
+  project: ResolvedProject
+): CandidatePyPiPublish | undefined => {
+  const pypi = authored.publish?.pypi
+  if (pypi === undefined) return undefined
+  const artifacts = pypi.artifacts.map((id) => OutputId.make(id)) as [OutputId, ...Array<OutputId>]
+  if (new Set(artifacts).size !== artifacts.length) {
+    return refuse("publish.pypi.artifacts", "PyPI publication cannot repeat one distribution artifact.")
+  }
+  if (pypi.authentication.strategy === "trusted-publishing") {
+    if (project.repository === undefined) {
+      return refuse("project.repository", "External PyPI trusted publishing requires the exact GitHub owner/repository coordinate.")
+    }
+    if (pypi.authentication.repository !== project.repository) {
+      return refuse(
+        "publish.pypi.authentication.repository",
+        `The external PyPI publisher repository ${JSON.stringify(pypi.authentication.repository)} does not match ${JSON.stringify(project.repository)}.`
+      )
+    }
+    let projectName: string
+    let projects: ReadonlyArray<string>
+    try {
+      projectName = normalizePyPiProjectName(project.name)
+      projects = pypi.authentication.projects.map(normalizePyPiProjectName)
+    } catch (cause) {
+      return refuse("publish.pypi", cause instanceof Error ? cause.message : String(cause))
+    }
+    if (!projects.includes(projectName)) {
+      return refuse(
+        "publish.pypi.authentication.projects",
+        `The external PyPI publisher authority set does not include ${JSON.stringify(projectName)}.`
+      )
+    }
+    if (new Set(projects).size !== projects.length) {
+      return refuse("publish.pypi.authentication.projects", "External PyPI publisher project coordinates must be unique after normalization.")
+    }
+  }
+  let projectName: PyPiProjectName
+  try { projectName = PyPiProjectName.make(normalizePyPiProjectName(project.name)) } catch (cause) {
+    return refuse("publish.pypi", cause instanceof Error ? cause.message : String(cause))
+  }
+  return {
+    artifacts,
+    project: projectName,
+    version: project.version,
+    repository: pypi.repository ?? "pypi",
+    authentication: pypi.authentication
+  }
+}
+
 /**
  * Resolve an authored configuration and observed facts into the canonical
  * configuration. Pure and total: the same inputs always produce the same value,
@@ -257,9 +311,11 @@ export const resolveConfig = (authored: unknown, facts: unknown): CandidateConfi
     tag: tag(config, resolvedVersion)
   }
   const npm = npmPublish(config, resolvedProject)
+  const pypi = pypiPublish(config, resolvedProject)
   const publish = config.publish === undefined ? undefined : {
     ...config.publish,
-    ...(config.publish.npm === undefined ? {} : { npm })
+    ...(config.publish.npm === undefined ? {} : { npm }),
+    ...(config.publish.pypi === undefined ? {} : { pypi })
   }
   // Plain JSON, not class instances: this value goes straight to `plan`, whose
   // decoder refuses anything with a prototype.

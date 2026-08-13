@@ -48,8 +48,13 @@ from Git after Y is created. Decision-only plans may use their input as X.
 | 227 | `remediation/227-capability-composition.md` |
 | 228k | `remediation/228-verified-preparation.md` |
 | 229 | `remediation/229-provider-recovery.md`, `remediation/229-history-decision.md` |
-| 233k | `remediation/233-release-candidate.md`; `certifications/233-release-candidate.md` remains a non-authoritative placeholder until X/Y issuance |
-| 234k | `remediation/234-live-release.md` |
+| 230 | `remediation/230-pypi-publication.md` (local implementation; delta certification/live release gated by 234k) |
+| 231 | `remediation/231-catalog-delivery.md` (local implementation; delta certification/live release gated by 234k) |
+| 232 | `remediation/232-native-extensions.md` (local implementation; delta certification/live release gated by 234k) |
+| 233k | `remediation/233-release-candidate.md`; accepted certificate `certifications/233-release-candidate.md` (X `8ae505ae`, Y `410c316`) |
+| 234k | success handoff `remediation/234-live-release.md` remains absent; exact pre-dispatch blockers are recorded in `decisions/234-235-external-gates.md` |
+| 235 | dormant until both the 234k live certificate and a named multi-host trigger exist; gate audit in `decisions/234-235-external-gates.md` |
+| inventory | all ignored plans, tracked handoffs, historical advisor material, local closure, and sole external gates reconciled in `decisions/all-plan-completion-audit.md` |
 
 Post-0.2.0 capability-wave handoffs are added when their separately
 authorized waves are dispatched; no wave inherits plan 234k's mutation

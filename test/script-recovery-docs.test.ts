@@ -12,9 +12,11 @@ describe("generated provider recovery documentation", () => {
     expect(report.profiles).toBe(Object.keys(installedPublicationProfiles).length)
     const rendered = renderProviderRecovery()
     expect(rendered).toContain("`publish.npm`")
+    expect(rendered).toContain("`publish.pypi`")
+    expect(rendered).toContain("`publish.catalog-git`")
     expect(rendered).toContain("`publish.github`")
-    expect(rendered).not.toContain("PreparedPypiPublication")
-    expect(rendered).not.toContain("PreparedCatalogPublication")
+    expect(rendered).toContain("`PreparedPyPiPublication`")
+    expect(rendered).toContain("`PreparedCatalogPublication`")
   })
 
   test("changes when a registered profile value changes", () => {

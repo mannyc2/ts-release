@@ -189,8 +189,19 @@ const validatePublications = (manifest: PreparedReleaseV2, artifacts: Map<string
     ids.add(publication.id.toString())
     const references = publication._tag === "PreparedNpmPublication"
       ? [publication.artifactId]
-      : publication.assets.map((asset) => asset.artifactId)
+      : publication._tag === "PreparedPyPiPublication"
+      ? publication.files.map((file) => file.artifactId)
+      : publication._tag === "PreparedGitHubPublication"
+      ? publication.assets.map((asset) => asset.artifactId)
+      : [publication.targetArtifactId, publication.stateArtifactId]
     for (const id of references) if (!artifacts.has(id.toString())) fail(`Publication ${publication.id} references missing artifact ${id}.`)
+    if (publication._tag === "PreparedPyPiPublication") for (const file of publication.files) {
+      const artifact = artifacts.get(file.artifactId.toString())!
+      if (artifact.size !== file.size || !digestEquals(artifact.digest, file.sha256) ||
+          artifact.mediaType !== file.mediaType || artifact.path.toString().split("/").at(-1) !== file.filename.toString()) {
+        fail(`PyPI publication ${publication.id} file ${file.filename} disagrees with its prepared artifact.`)
+      }
+    }
     if (publication._tag === "PreparedGitHubPublication" && publication.body !== undefined && publication.body.length === 0) {
       fail(`GitHub publication ${publication.id} carries an empty body.`)
     }

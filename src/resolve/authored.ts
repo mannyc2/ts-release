@@ -13,7 +13,9 @@ import {
   CandidateProject,
   NpmAccess,
   NpmAuthentication,
-  NpmProvenancePolicy
+  NpmProvenancePolicy,
+  PyPiAuthentication,
+  PyPiRepository
 } from "../recipes/config.js"
 
 const optional = Schema.optionalKey
@@ -42,9 +44,16 @@ export class AuthoredNpmPublish extends Schema.Class<AuthoredNpmPublish>("Author
   provenance: optional(NpmProvenancePolicy)
 }) {}
 
+export class AuthoredPyPiPublish extends Schema.Class<AuthoredPyPiPublish>("AuthoredPyPiPublish")({
+  artifacts: Schema.NonEmptyArray(Schema.NonEmptyString),
+  repository: optional(PyPiRepository),
+  authentication: PyPiAuthentication
+}) {}
+
 export class AuthoredPublish extends Schema.Class<AuthoredPublish>("AuthoredPublish")({
   ...CandidatePublish.fields,
-  npm: optional(AuthoredNpmPublish)
+  npm: optional(AuthoredNpmPublish),
+  pypi: optional(AuthoredPyPiPublish)
 }) {}
 
 export class AuthoredConfig extends Schema.Class<AuthoredConfig>("AuthoredConfig")({

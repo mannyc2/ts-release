@@ -1,6 +1,7 @@
 import * as Clock from "effect/Clock"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import {
@@ -88,6 +89,10 @@ export interface ReleaseSubject {
   readonly prerequisites?: ReadonlyArray<SubjectId>
   readonly observationRequests: readonly [CredentialRequest, ...Array<CredentialRequest>]
   readonly mutationRequest: CredentialRequest
+  /** Required by every durable-cas-required recovery profile. Runs before mutation authority acquisition. */
+  readonly claimMutation?: (
+    decision: MutationDecision
+  ) => Effect.Effect<void, ReleaseSubjectError>
   readonly observe: (
     grant: CredentialGrant,
     context: ReleaseObservationContext
@@ -149,6 +154,9 @@ const validateInput = (input: ReleaseSubjectsInput): Effect.Effect<void, Release
           throw constructionFailure("Every remote subject requires at least one observation strategy.")
         }
         Schema.decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(subject.recovery)
+        if (subject.recovery.historyRequirement === "durable-cas-required" && subject.claimMutation === undefined) {
+          throw constructionFailure("A durable-cas-required subject has no terminal mutation-claim boundary.")
+        }
         subject.observationRequests.forEach((request, index) => {
           validateRequestIdentity(subject, request, "observe")
           if (request.strategy.kind === "anonymous" && index !== 0) {
@@ -433,6 +441,20 @@ const publishSubject = Effect.fn("publishReleaseSubject")(function*(
       }))
     case "NeedsMutation":
     case "ProviderAuthorizedCreate": {
+      if (subject.claimMutation !== undefined) {
+        const claimed = yield* Effect.exit(subject.claimMutation(decision))
+        if (Exit.isFailure(claimed)) {
+          return yield* fromReportResult(makeBlockedSubject({
+            subject: subject.id,
+            observationAuthorities: before.authorities,
+            observations: before.observations,
+            cause: ProviderBlocked.make({
+              subject: subject.id,
+              reason: SafeReason.make("The terminal publication claim was unavailable or already occupied.")
+            })
+          }))
+        }
+      }
       const acquisition = yield* credentials.acquireForMutation(subject.mutationRequest, decision).pipe(
         Effect.map((grant) => ({ _tag: "Granted", grant } as const)),
         Effect.catch((error) => Effect.succeed({ _tag: "Denied", error } as const))

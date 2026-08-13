@@ -917,6 +917,41 @@ Toolchain: Bun 1.3.14, TypeScript 6.0.3, Effect 4.0.0-beta.83, Node v22.22.0.
 
 Inclusive product TypeScript count changed from the program baseline 7,175 to 5,958 lines (−1,217). This is a causal delta, not a quota: disconnected profile tables, schema-only families, closed remote-operation variants, catalog submission commands, and detached tests were removed; the executable registry, strict migration refusal, case validator, and vertical claim test remain verification and authority code.
 
++## Plan 232 native-extension reconciliation
+
+The original S001–S044 grouping above is retained as historical Plan-207
+family/path evidence. This matrix is the authoritative Plan-232 disposition for
+every hook-shaped, custom-publisher, verification, announcement, and
+secret-bearing supply-chain source case. It names user jobs rather than copying
+upstream lifecycle nouns. `scripts/lib/feature-translation.ts` requires exact,
+duplicate-free coverage of this set.
+
+| Source cases | Concrete user job | Native owner | Disposition | Failure semantics | Re-open bar |
+| --- | --- | --- | --- | --- | --- |
+| `C010` | Give a local build public or secret environment values | Typed credentialed preparation capability | REJECT-STOCK | Strict config rejects the environment overlay; generic commands receive a closed environment | A dedicated capability scopes each value, host/tool, lifetime, and captured output |
+| `C011,P032` | Validate before preparation; run a downstream task after complete publication | `CommandCheck`; host workflow consuming `ReleaseReport` | TRANSLATE-EXTERNAL | A failed check aborts before prepared commit; downstream failure does not rewrite the release report | A distinct engine-owned remote subject with exact observation and recovery |
+| `C027` | Run pre/post steps around one build | One declared `CommandArtifact` or explicit dependency nodes | TRANSLATE | Any nonzero command or undeclared/mutated input/output aborts preparation | A user job needing cross-node semantics not expressible as dependencies |
+| `C033,P024` | Validate or transform archive inputs/outputs | `CommandCheck` / `CommandArtifact` dependency nodes | TRANSLATE | Exact declared inputs and outputs only; no lifecycle callback | A typed archive transform requiring privileged state |
+| `C046` | Build container images and SBOMs | Future container provider; local non-secret SBOM may be `CommandArtifact` | DEFER-TYPED | Stock config rejects container publication; local artifact failure aborts preparation | Exact image identity, registry authority, equality, commitment, and recovery |
+| `C052` | Generate a local SBOM from exact artifacts | Non-secret `CommandArtifact` | TRANSLATE | Captured SBOM bytes must be declared; no signing/transparency secret is available | A credentialed or remote attestation requires its own typed provider |
+| `C054,C055` | Produce detached local signatures | Future typed offline signer | DEFER-TYPED | Stock config rejects signing; generic commands receive no key | Exact input digest, key audience/lifetime, host/tool, signature identity, cleanup, cancellation tests |
+| `C056` | Sign a remote container manifest | Future registry signing provider | DEFER-TYPED | No command fallback or success boolean; stock config rejects it | Exact manifest observation, credential purpose, commitment, transparency exposure, recovery |
+| `C057,P006` | Sign and notarize Apple artifacts | Future Apple signing/notarization providers | DEFER-TYPED | Stock config rejects signing/notarization and does not expose Apple credentials | Certified macOS host/tool plus exact ticket observation and unknown-outcome matrix |
+| `C059,P012` | Check or transform exact artifacts before their publishers run | Preparation dependency graph | TRANSLATE | Publication cannot begin unless the prepared transform/check succeeded | A provider-owned precondition that depends on live remote state |
+| `C071` | Publish an npm package or generate platform wrapper packages | Installed npm publisher; wrapper generator remains separate | SPLIT-FAMILY | Exact npm package publication is supported; implicit wrapper generation is rejected | A wrapper builder with exact package graph and archive selection |
+| `C079` | Create keyless artifact attestation | External GitHub Actions attestation step | EXTERNALIZE | Release report remains authoritative; attestation failure is not called rollback-safe | Typed attestation subject with exact statement equality and transparency recovery |
+| `C081` | Upload artifacts to an arbitrary HTTP endpoint | Future named provider adapter | DEFER-TYPED | No generic authenticated HTTP write in config | Named destination protocol with equality, absence, commitment, audience, replay, and recovery |
+| `C083` | Add a third-party observable publisher | Custom application composition through `./provider-sdk` | LIBRARY-COMPOSE | Adapter registration or coordinator construction rejects missing identity/recovery/authority contracts | Stock config only after a named adapter is bundled and vertically certified |
+| `C086,P001` | Verify exact published npm/GitHub/PyPI/catalog facts | Existing provider subjects through `observe` | RETAIN-NATIVE | Inconclusive or different provider facts remain total read-only report data; never mutate | A distinct remote fact not represented by an installed provider subject |
+| `C087,C088,C089,C090,C091,C092,C093,C094,C095,C096,C097,C098,C099,C100,C101` | Announce a completed release to a channel | Downstream host workflow consuming complete `ReleaseReport` | EXTERNALIZE | Channel failure is downstream and is never described as release rollback or exactly-once delivery | A specific channel adapter with conclusive observation or replay-safe idempotency |
+| `P025` | Pause/approve/continue a provider-native staged publication | External provider/workflow orchestration | EXTERNALIZE | No local receipt impersonates provider stage state | Exact staged subject observer and conditional continuation contract |
+
+### Cross-wave pointer
+
+Agent-generator preparation remains owned and certified by Plan 233. Plan 232
+does not create a second generator or tracked plugin owner.
+
+
 Evidence classes: source-derived, contract-tested.
 
 Unresolved limitations: PyPI automatic recovery remains provisional pending Plan 208; catalog remote delivery belongs to Plan 215; the public lifecycle and old plan/apply/review protocol remain temporarily present until Plan 217. No publication, push, tag, workflow dispatch, or other external mutation occurred.

@@ -1,9 +1,10 @@
-# Scoop migration note
+# Scoop bucket delivery
 
-This directory is not a runnable ts-release example. The current authored
-schema has no Scoop or generic catalog destination, so the old configuration
-was removed instead of being retained as an accepted no-op.
+This runnable example prepares a typed Scoop manifest from the exact digest of
+a GitHub release ZIP, then models delivery of the manifest and its canonical
+managed-state record to `owner/scoop-bucket`.
 
-The archived fixture bytes remain only as migration input for a future
-provider-owned Scoop slice. Do not infer publication support from their
-presence.
+Catalog delivery runs only after the GitHub release subjects converge. The
+bucket branch is updated through the same conditional, non-force Git Data
+protocol used by the Homebrew example. Replace every `owner/*` coordinate and
+the credential reference before use.

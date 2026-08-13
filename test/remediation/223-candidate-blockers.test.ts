@@ -7,7 +7,7 @@
  *
  * Plan 224 moved the repaired CLI, Action, provider-authority, and host-sink
  * invariants into their focused suites. This file retains the unresolved
- * Plan 225/229, catalog, staging, and producer-shape reproductions, plus the
+ * Plan 225/229, staging, and producer-shape reproductions, plus the
  * hard-cut verification-before-credential regressions.
  */
 import { describe, expect, test } from "bun:test"
@@ -189,7 +189,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test("public config rejects catalog presets until Plan 231 restores a full vertical slice", async () => {
+  test("public config rejects obsolete untyped Homebrew/Scoop publication shapes", async () => {
     const root = temporary("catalog-unreachable")
     writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", version: "1.0.0" }))
     const store = makeLocalPreparedReleaseStore(join(root, "store"))
@@ -208,7 +208,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     }
   })
 
-  test("source-contract audit: runtime collections have a public producer while catalog and partial prepare remain absent", () => {
+  test("source-contract audit: runtime collections and catalog have public producers while partial prepare remains absent", () => {
     const authored = readFileSync("src/recipes/config.ts", "utf8")
     const graph = readFileSync("src/release/graph.ts", "utf8")
     const prepared = readFileSync("src/release/prepared.ts", "utf8")
@@ -219,7 +219,7 @@ describe("Plan 223 rejected-candidate containment reproductions", () => {
     expect(graph).toContain("outputs: Schema.NonEmptyArray(OutputDeclaration)")
     expect(graph).toContain("GraphCommandCollection")
     expect(prepared).toContain("PreparedArtifactCollection")
-    expect(prepared).toContain("Schema.Union([\n  PreparedNpmPublication, PreparedGitHubPublication\n])")
+    expect(prepared).toContain("PreparedNpmPublication, PreparedPyPiPublication, PreparedGitHubPublication, PreparedCatalogPublication")
     expect(apiTypes).not.toMatch(/PrepareInput[^\n]*(?:mode|partition|merge)/u)
     expect(runtime).toContain("readonly source: SourceObserver")
     expect(runtime).not.toContain("preparedStore")

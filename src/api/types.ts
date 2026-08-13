@@ -2,7 +2,7 @@ import type * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import type { CredentialProvider } from "../publication/authority.js"
 import type { AuthoredCorrection } from "../correction/intent.js"
-import type { ObservationReport, ReleaseReport } from "../publication/report.js"
+import type { ObservationReport, ReleaseReport as ReleaseReportType } from "../publication/report.js"
 import { SafeReason } from "../publication/report.js"
 import type {
   AuthorizedMutationHttp,
@@ -19,6 +19,7 @@ import {
 } from "../release/prepared-ref.js"
 import type { PreparedReleaseStore } from "../release/prepared-store.js"
 import type { ReleaseRuntime } from "./runtime.js"
+import type { CustomProviderAdapter } from "../extensions/provider-adapter.js"
 
 export type ReleaseApiServices =
   | ReleaseRuntime
@@ -31,6 +32,11 @@ export type ReleaseApiServices =
 
 export type ReleaseApiLayer = Layer.Layer<ReleaseApiServices>
 export type InspectOutput = ReleaseInspection | PreparedReleaseInspection
+
+/** Custom application composition only; stock CLI/Action pass no adapters. */
+export interface ReleaseApiOptions {
+  readonly providerAdapters?: ReadonlyArray<CustomProviderAdapter>
+}
 
 export interface PrepareInput {
   readonly config: unknown
@@ -74,22 +80,23 @@ export interface CorrectInput {
  */
 export class CorrectionReport extends Schema.Class<CorrectionReport>("CorrectionReport")({
     prepared: CompletePreparedReleaseRef,
-    status: Schema.Literal("unsupported"),
-    provider: Schema.Literals(["npm", "github"]),
+    status: Schema.Literals(["unsupported", "complete", "blocked", "uncertain"]),
+    provider: Schema.Literals(["npm", "github", "catalog-git"]),
     reason: SafeReason,
-    proposal: Schema.String
+    proposal: Schema.String,
+    report: Schema.optionalKey(Schema.Unknown)
   }) {}
 
 export interface ReleaseResult {
   readonly prepared: CompletePreparedReleaseRefValue
-  readonly report: ReleaseReport
+  readonly report: ReleaseReportType
 }
 
 export interface ReleaseApi {
   readonly inspect: (input: InspectInput) => Promise<InspectOutput>
   readonly prepare: (input: PrepareInput) => Promise<CompletePreparedReleaseRefValue>
   readonly observe: (input: ObserveInput) => Promise<ObservationReport>
-  readonly publish: (input: PublishInput) => Promise<ReleaseReport>
+  readonly publish: (input: PublishInput) => Promise<ReleaseReportType>
   readonly release: (input: ReleaseInput) => Promise<ReleaseResult>
   readonly correct: (input: CorrectInput) => Promise<CorrectionReport>
   readonly dispose: () => Promise<void>

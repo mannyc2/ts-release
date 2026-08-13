@@ -1,9 +1,11 @@
-# Homebrew migration note
+# Homebrew tap delivery
 
-This directory is not a runnable ts-release example. The current authored
-schema has no Homebrew or generic catalog destination, so the old configuration
-was removed instead of being retained as an accepted no-op.
+This runnable example prepares a typed Homebrew formula from the exact digest
+of a GitHub release archive, then models delivery of the formula and its
+canonical managed-state record to `owner/homebrew-tap`.
 
-The archived fixture bytes remain only as migration input for a future
-provider-owned Homebrew slice. Do not infer publication support from their
-presence.
+Catalog delivery runs only after the GitHub release subjects converge. The Git
+Data adapter preserves unrelated repository objects, creates a commit with the
+observed branch commit as its sole parent, and updates the branch without
+force. Replace every `owner/*` coordinate and the credential reference before
+using the example.

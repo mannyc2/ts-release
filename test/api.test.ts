@@ -9,11 +9,20 @@ import {
 } from "../src/api/errors.js"
 import { ReleaseRuntime } from "../src/api/runtime.js"
 import { WorkspaceRoot } from "../src/model/primitives.js"
+import { sha256Digest } from "../src/model/digest.js"
 import {
   CredentialProvider,
   makeCredentialProvider
 } from "../src/publication/authority.js"
 import { HttpAuthorizer } from "../src/publication/http.js"
+import { PublicationClaimOccupied, PublicationClaimStore } from "../src/publication/claim.js"
+import { SafeReason } from "../src/publication/report.js"
+import {
+  AuthorizedMutationHttp,
+  CertifiedPublisherSpawn,
+  NpmUserConfigResource,
+  makeEnvironmentCredentialPlatform
+} from "../src/platform/credentials.js"
 import {
   encodeCompletePreparedReleaseRef,
   makeLocalCompletePreparedReleaseRef
@@ -32,6 +41,7 @@ import {
   runtimeLayer
 } from "./core/runtime-fixture.js"
 import { unavailableMutationServicesLayer } from "./fixtures/mutation-services.js"
+import { wheelFixture } from "./fixtures/python-distributions.js"
 
 const workspace = (): string => {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-api-"))
@@ -47,6 +57,94 @@ const testApi = (root: string) => makeReleaseApi(runtimeLayer(
 ))
 
 describe("public lifecycle API", () => {
+  test("public config reaches the default host boundary for exact PyPI token publication", async () => {
+    const root = workspace()
+    const wheel = wheelFixture("fixture", "1.0.0")
+    mkdirSync(join(root, "dist"), { recursive: true })
+    writeFileSync(join(root, "dist", wheel.filename), wheel.bytes)
+    const store = makeLocalPreparedReleaseStore(join(root, "prepared-store"))
+    const present = new Set<string>()
+    const credentialName = "TS_RELEASE_TEST_PYPI_TOKEN"
+    const token = "pypi-protocol-secret"
+    const prior = process.env[credentialName]
+    process.env[credentialName] = token
+    let uploads = 0
+    const claims = new Set<string>()
+    const platform = makeEnvironmentCredentialPlatform({
+      request: (request) => Effect.sync(() => {
+        if (request.method === "GET") {
+          return {
+            status: 200,
+            headers: { "content-type": "application/vnd.pypi.simple.v1+json" },
+            body: JSON.stringify({
+              meta: { "api-version": "1.1" }, name: "fixture", versions: ["1.0.0"],
+              files: present.has(wheel.filename) ? [{
+                filename: wheel.filename, url: `https://files.pythonhosted.org/${wheel.filename}`,
+                hashes: { sha256: sha256Digest(wheel.bytes).hex },
+                size: wheel.bytes.length, yanked: false
+              }] : []
+            })
+          }
+        }
+        uploads += 1
+        expect(request.url).toBe("https://upload.pypi.org/legacy/")
+        expect(request.headers?.authorization).toBe(`Basic ${Buffer.from(`__token__:${token}`, "utf8").toString("base64")}`)
+        expect(typeof request.body === "string" ? request.body : new TextDecoder().decode(request.body)).not.toContain(token)
+        present.add(wheel.filename)
+        return { status: 200, headers: {}, body: "OK" }
+      })
+    }, { spawn: () => Effect.die("PyPI HTTP publication never spawns a process") } as never)
+    const api = makeReleaseApi(Layer.mergeAll(
+      Layer.succeed(ReleaseRuntime, {
+        source: {
+          observe: (current: WorkspaceRoot) => Effect.succeed(contextFor(current.toString())),
+          materialize: materializeFixtureWorkspace
+        },
+        run: noopRun
+      }),
+      Layer.succeed(PreparedReleaseStore, store),
+      Layer.succeed(CredentialProvider, platform.credentialProvider),
+      Layer.succeed(HttpAuthorizer, platform.httpAuthorizer),
+      Layer.succeed(AuthorizedMutationHttp, platform.authorizedMutationHttp),
+      Layer.succeed(NpmUserConfigResource, platform.npmUserConfigResource),
+      Layer.succeed(CertifiedPublisherSpawn, platform.certifiedPublisherSpawn),
+      Layer.succeed(PublicationClaimStore, {
+        claim: (request) => claims.has(request.subject)
+          ? Effect.fail(PublicationClaimOccupied.make({
+            subject: request.subject, reason: SafeReason.make("test terminal claim occupied")
+          }))
+          : Effect.sync(() => { claims.add(request.subject) })
+      })
+    ))
+    try {
+      const result = await api.release({
+        workspace: root,
+        config: {
+          project: { name: "fixture", version: "1.0.0", tag: "v1.0.0" },
+          artifacts: [{ id: "wheel", path: `dist/${wheel.filename}`, format: "file" }],
+          publish: { pypi: {
+            artifacts: ["wheel"],
+            authentication: { strategy: "token", credential: credentialName, scope: "project" }
+          } }
+        }
+      })
+      expect(result.report.status).toBe("complete")
+      expect(result.report.subjects[1]).toMatchObject({ _tag: "ConvergedAfterMutation" })
+      expect(uploads).toBe(1)
+      const inspection = await api.inspect({ prepared: result.prepared })
+      expect(("publications" in inspection ? inspection.publications : []).map((publication) => ({
+        ...publication, id: publication.id.toString()
+      }))).toEqual([
+        { id: "pypi:pypi-release", destination: "pypi", subject: "fixture==1.0.0 (pypi)" }
+      ])
+    } finally {
+      await api.dispose()
+      if (prior === undefined) delete process.env[credentialName]
+      else process.env[credentialName] = prior
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
   test("uses durable references for prepare, inspect, observe, and publish", async () => {
     const root = workspace()
     const api = testApi(root)

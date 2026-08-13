@@ -23,6 +23,7 @@ const expectedRootBin = {
   "ts-release": "./dist/bin/ts-release.js"
 } as const
 const expectedRootRuntimeExports = new Set([
+  "AuthoredCatalogForwardCorrection",
   "AuthoredGithubReleaseAmendment",
   "AuthoredNpmDeprecation",
   "CompletePreparedReleaseRef",
@@ -84,6 +85,9 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
     "CredentialStrategyUnsupported",
     "CredentialSubjectMismatch",
     "CredentialUnavailable",
+    "PublicationClaimOccupied",
+    "PublicationClaimRequest",
+    "PublicationClaimUnavailable",
     "ReleaseContextError",
     "SafeRelativePath",
     "Sha256Digest",
@@ -96,6 +100,14 @@ const expectedHostRuntimeExports: Readonly<Record<string, ReadonlySet<string>>> 
     "makeCustomReleaseLayer",
     "makeSourceObserver",
     "sha256Digest"
+  ]),
+  "./provider-sdk": new Set([
+    "AuthoritativelyAbsent", "CanonicalAudience", "CredentialRef", "CredentialRequest",
+    "InconclusiveObservation", "MutationPrecondition", "NeedsMutation", "OutcomeUnknown",
+    "PresentDifferent", "PresentEquivalent", "ProviderAdapterContract",
+    "ProviderAlreadyEquivalent", "ProviderBlocked", "ProviderId", "RejectedByProvider",
+    "SafeReason", "Started", "SubjectId", "conservativeUnknownRecoveryProfile",
+    "customProviderSubjects", "makeProviderAdapter", "makeRecoveryCapabilityProfile"
   ])
 }
 
@@ -406,6 +418,7 @@ const checkExternalLibraryConsumer = async (
     const expectedPackageImports = new Set([
       packageName,
       `${packageName}/host`,
+      `${packageName}/provider-sdk`,
       `${packageName}/store`
     ])
     const observedPackageImports = new Set<string>()

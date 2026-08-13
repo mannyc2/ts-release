@@ -11,6 +11,7 @@ import {
   makeLocalPreparedReleaseStore,
   type PreparedReleaseStoreShape
 } from "../release/prepared-store.js"
+import type { PublicationClaimStoreShape } from "../publication/claim.js"
 
 const nodeHost = Layer.mergeAll(
   NodeChildProcessSpawner.layer.pipe(Layer.provide(Layer.mergeAll(
@@ -23,8 +24,9 @@ const nodeHost = Layer.mergeAll(
 
 /** A custom Node host takes one already-selected durable store service. */
 export const makeNodeReleaseLayer = (
-  preparedStore: PreparedReleaseStoreShape
-): ReleaseApiLayer => makeReleaseServicesLive(preparedStore).pipe(Layer.provide(nodeHost))
+  preparedStore: PreparedReleaseStoreShape,
+  publicationClaimStore?: PublicationClaimStoreShape
+): ReleaseApiLayer => makeReleaseServicesLive(preparedStore, publicationClaimStore).pipe(Layer.provide(nodeHost))
 
 const defaultNodeStore = makeLocalPreparedReleaseStore(join(
   process.cwd(),

@@ -17260,7 +17260,7 @@ var require_eventsource = __commonJS((exports, module) => {
   };
 });
 
-// ../../node_modules/semver/internal/constants.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/constants.js
 var require_constants6 = __commonJS((exports, module) => {
   var SEMVER_SPEC_VERSION = "2.0.0";
   var MAX_LENGTH = 256;
@@ -17288,13 +17288,13 @@ var require_constants6 = __commonJS((exports, module) => {
   };
 });
 
-// ../../node_modules/semver/internal/debug.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/debug.js
 var require_debug = __commonJS((exports, module) => {
   var debug2 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args2) => console.error("SEMVER", ...args2) : () => {};
   module.exports = debug2;
 });
 
-// ../../node_modules/semver/internal/re.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/re.js
 var require_re = __commonJS((exports, module) => {
   var {
     MAX_SAFE_COMPONENT_LENGTH,
@@ -17379,7 +17379,7 @@ var require_re = __commonJS((exports, module) => {
   createToken("GTE0PRE", "^\\s*>=\\s*0\\.0\\.0-0\\s*$");
 });
 
-// ../../node_modules/semver/internal/parse-options.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/parse-options.js
 var require_parse_options = __commonJS((exports, module) => {
   var looseOption = Object.freeze({ loose: true });
   var emptyOpts = Object.freeze({});
@@ -17395,7 +17395,7 @@ var require_parse_options = __commonJS((exports, module) => {
   module.exports = parseOptions;
 });
 
-// ../../node_modules/semver/internal/identifiers.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/identifiers.js
 var require_identifiers = __commonJS((exports, module) => {
   var numeric = /^[0-9]+$/;
   var compareIdentifiers = (a, b) => {
@@ -17417,7 +17417,7 @@ var require_identifiers = __commonJS((exports, module) => {
   };
 });
 
-// ../../node_modules/semver/classes/semver.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/classes/semver.js
 var require_semver = __commonJS((exports, module) => {
   var debug2 = require_debug();
   var { MAX_LENGTH, MAX_SAFE_INTEGER } = require_constants6();
@@ -17699,7 +17699,7 @@ var require_semver = __commonJS((exports, module) => {
   module.exports = SemVer;
 });
 
-// ../../node_modules/semver/functions/parse.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/parse.js
 var require_parse2 = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var parse = (version2, options, throwErrors = false) => {
@@ -17718,7 +17718,7 @@ var require_parse2 = __commonJS((exports, module) => {
   module.exports = parse;
 });
 
-// ../../node_modules/semver/functions/valid.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/valid.js
 var require_valid = __commonJS((exports, module) => {
   var parse = require_parse2();
   var valid = (version2, options) => {
@@ -17728,7 +17728,7 @@ var require_valid = __commonJS((exports, module) => {
   module.exports = valid;
 });
 
-// ../../node_modules/semver/functions/clean.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/clean.js
 var require_clean = __commonJS((exports, module) => {
   var parse = require_parse2();
   var clean = (version2, options) => {
@@ -17738,7 +17738,7 @@ var require_clean = __commonJS((exports, module) => {
   module.exports = clean;
 });
 
-// ../../node_modules/semver/functions/inc.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/inc.js
 var require_inc = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var inc = (version2, release, options, identifier3, identifierBase) => {
@@ -17756,7 +17756,7 @@ var require_inc = __commonJS((exports, module) => {
   module.exports = inc;
 });
 
-// ../../node_modules/semver/functions/diff.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/diff.js
 var require_diff = __commonJS((exports, module) => {
   var parse = require_parse2();
   var diff = (version1, version2) => {
@@ -17797,28 +17797,28 @@ var require_diff = __commonJS((exports, module) => {
   module.exports = diff;
 });
 
-// ../../node_modules/semver/functions/major.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/major.js
 var require_major = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var major = (a, loose) => new SemVer(a, loose).major;
   module.exports = major;
 });
 
-// ../../node_modules/semver/functions/minor.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/minor.js
 var require_minor = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var minor = (a, loose) => new SemVer(a, loose).minor;
   module.exports = minor;
 });
 
-// ../../node_modules/semver/functions/patch.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/patch.js
 var require_patch = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var patch = (a, loose) => new SemVer(a, loose).patch;
   module.exports = patch;
 });
 
-// ../../node_modules/semver/functions/prerelease.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/prerelease.js
 var require_prerelease = __commonJS((exports, module) => {
   var parse = require_parse2();
   var prerelease = (version2, options) => {
@@ -17828,28 +17828,28 @@ var require_prerelease = __commonJS((exports, module) => {
   module.exports = prerelease;
 });
 
-// ../../node_modules/semver/functions/compare.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/compare.js
 var require_compare = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var compare = (a, b, loose) => new SemVer(a, loose).compare(new SemVer(b, loose));
   module.exports = compare;
 });
 
-// ../../node_modules/semver/functions/rcompare.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/rcompare.js
 var require_rcompare = __commonJS((exports, module) => {
   var compare = require_compare();
   var rcompare = (a, b, loose) => compare(b, a, loose);
   module.exports = rcompare;
 });
 
-// ../../node_modules/semver/functions/compare-loose.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/compare-loose.js
 var require_compare_loose = __commonJS((exports, module) => {
   var compare = require_compare();
   var compareLoose = (a, b) => compare(a, b, true);
   module.exports = compareLoose;
 });
 
-// ../../node_modules/semver/functions/compare-build.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/compare-build.js
 var require_compare_build = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var compareBuild = (a, b, loose) => {
@@ -17860,63 +17860,63 @@ var require_compare_build = __commonJS((exports, module) => {
   module.exports = compareBuild;
 });
 
-// ../../node_modules/semver/functions/sort.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/sort.js
 var require_sort = __commonJS((exports, module) => {
   var compareBuild = require_compare_build();
   var sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose));
   module.exports = sort;
 });
 
-// ../../node_modules/semver/functions/rsort.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/rsort.js
 var require_rsort = __commonJS((exports, module) => {
   var compareBuild = require_compare_build();
   var rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose));
   module.exports = rsort;
 });
 
-// ../../node_modules/semver/functions/gt.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/gt.js
 var require_gt = __commonJS((exports, module) => {
   var compare = require_compare();
   var gt = (a, b, loose) => compare(a, b, loose) > 0;
   module.exports = gt;
 });
 
-// ../../node_modules/semver/functions/lt.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/lt.js
 var require_lt = __commonJS((exports, module) => {
   var compare = require_compare();
   var lt = (a, b, loose) => compare(a, b, loose) < 0;
   module.exports = lt;
 });
 
-// ../../node_modules/semver/functions/eq.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/eq.js
 var require_eq = __commonJS((exports, module) => {
   var compare = require_compare();
   var eq = (a, b, loose) => compare(a, b, loose) === 0;
   module.exports = eq;
 });
 
-// ../../node_modules/semver/functions/neq.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/neq.js
 var require_neq = __commonJS((exports, module) => {
   var compare = require_compare();
   var neq = (a, b, loose) => compare(a, b, loose) !== 0;
   module.exports = neq;
 });
 
-// ../../node_modules/semver/functions/gte.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/gte.js
 var require_gte = __commonJS((exports, module) => {
   var compare = require_compare();
   var gte = (a, b, loose) => compare(a, b, loose) >= 0;
   module.exports = gte;
 });
 
-// ../../node_modules/semver/functions/lte.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/lte.js
 var require_lte = __commonJS((exports, module) => {
   var compare = require_compare();
   var lte = (a, b, loose) => compare(a, b, loose) <= 0;
   module.exports = lte;
 });
 
-// ../../node_modules/semver/functions/cmp.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/cmp.js
 var require_cmp = __commonJS((exports, module) => {
   var eq = require_eq();
   var neq = require_neq();
@@ -17963,7 +17963,7 @@ var require_cmp = __commonJS((exports, module) => {
   module.exports = cmp;
 });
 
-// ../../node_modules/semver/functions/coerce.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/coerce.js
 var require_coerce = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var parse = require_parse2();
@@ -18006,7 +18006,7 @@ var require_coerce = __commonJS((exports, module) => {
   module.exports = coerce;
 });
 
-// ../../node_modules/semver/functions/truncate.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/truncate.js
 var require_truncate = __commonJS((exports, module) => {
   var parse = require_parse2();
   var constants3 = require_constants6();
@@ -18044,7 +18044,7 @@ var require_truncate = __commonJS((exports, module) => {
   module.exports = truncate;
 });
 
-// ../../node_modules/semver/internal/lrucache.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/internal/lrucache.js
 var require_lrucache = __commonJS((exports, module) => {
   class LRUCache {
     constructor() {
@@ -18079,7 +18079,7 @@ var require_lrucache = __commonJS((exports, module) => {
   module.exports = LRUCache;
 });
 
-// ../../node_modules/semver/classes/range.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/classes/range.js
 var require_range = __commonJS((exports, module) => {
   var SPACE_CHARACTERS = /\s+/g;
 
@@ -18461,7 +18461,7 @@ var require_range = __commonJS((exports, module) => {
   };
 });
 
-// ../../node_modules/semver/classes/comparator.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/classes/comparator.js
 var require_comparator = __commonJS((exports, module) => {
   var ANY = Symbol("SemVer ANY");
 
@@ -18572,7 +18572,7 @@ var require_comparator = __commonJS((exports, module) => {
   var Range = require_range();
 });
 
-// ../../node_modules/semver/functions/satisfies.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/functions/satisfies.js
 var require_satisfies = __commonJS((exports, module) => {
   var Range = require_range();
   var satisfies = (version2, range, options) => {
@@ -18586,14 +18586,14 @@ var require_satisfies = __commonJS((exports, module) => {
   module.exports = satisfies;
 });
 
-// ../../node_modules/semver/ranges/to-comparators.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/to-comparators.js
 var require_to_comparators = __commonJS((exports, module) => {
   var Range = require_range();
   var toComparators = (range, options) => new Range(range, options).set.map((comp) => comp.map((c) => c.value).join(" ").trim().split(" "));
   module.exports = toComparators;
 });
 
-// ../../node_modules/semver/ranges/max-satisfying.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/max-satisfying.js
 var require_max_satisfying = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var Range = require_range();
@@ -18619,7 +18619,7 @@ var require_max_satisfying = __commonJS((exports, module) => {
   module.exports = maxSatisfying;
 });
 
-// ../../node_modules/semver/ranges/min-satisfying.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/min-satisfying.js
 var require_min_satisfying = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var Range = require_range();
@@ -18645,7 +18645,7 @@ var require_min_satisfying = __commonJS((exports, module) => {
   module.exports = minSatisfying;
 });
 
-// ../../node_modules/semver/ranges/min-version.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/min-version.js
 var require_min_version = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var Range = require_range();
@@ -18699,7 +18699,7 @@ var require_min_version = __commonJS((exports, module) => {
   module.exports = minVersion;
 });
 
-// ../../node_modules/semver/ranges/valid.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/valid.js
 var require_valid2 = __commonJS((exports, module) => {
   var Range = require_range();
   var validRange = (range, options) => {
@@ -18712,7 +18712,7 @@ var require_valid2 = __commonJS((exports, module) => {
   module.exports = validRange;
 });
 
-// ../../node_modules/semver/ranges/outside.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/outside.js
 var require_outside = __commonJS((exports, module) => {
   var SemVer = require_semver();
   var Comparator = require_comparator();
@@ -18778,21 +18778,21 @@ var require_outside = __commonJS((exports, module) => {
   module.exports = outside;
 });
 
-// ../../node_modules/semver/ranges/gtr.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/gtr.js
 var require_gtr = __commonJS((exports, module) => {
   var outside = require_outside();
   var gtr = (version2, range, options) => outside(version2, range, ">", options);
   module.exports = gtr;
 });
 
-// ../../node_modules/semver/ranges/ltr.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/ltr.js
 var require_ltr = __commonJS((exports, module) => {
   var outside = require_outside();
   var ltr = (version2, range, options) => outside(version2, range, "<", options);
   module.exports = ltr;
 });
 
-// ../../node_modules/semver/ranges/intersects.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/intersects.js
 var require_intersects = __commonJS((exports, module) => {
   var Range = require_range();
   var intersects = (r1, r2, options) => {
@@ -18803,7 +18803,7 @@ var require_intersects = __commonJS((exports, module) => {
   module.exports = intersects;
 });
 
-// ../../node_modules/semver/ranges/simplify.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/simplify.js
 var require_simplify = __commonJS((exports, module) => {
   var satisfies = require_satisfies();
   var compare = require_compare();
@@ -18850,7 +18850,7 @@ var require_simplify = __commonJS((exports, module) => {
   };
 });
 
-// ../../node_modules/semver/ranges/subset.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/ranges/subset.js
 var require_subset = __commonJS((exports, module) => {
   var Range = require_range();
   var Comparator = require_comparator();
@@ -19010,7 +19010,7 @@ var require_subset = __commonJS((exports, module) => {
   module.exports = subset;
 });
 
-// ../../node_modules/semver/index.js
+// ../../node_modules/.bun/semver@7.8.5/node_modules/semver/index.js
 var require_semver2 = __commonJS((exports, module) => {
   var internalRe = require_re();
   var constants3 = require_constants6();
@@ -20770,14 +20770,14 @@ var require_reflection_json_writer = __commonJS((exports) => {
       }
       return jsonValue;
     }
-    enum(type, value3, fieldName, optional9, emitDefaultValues, enumAsInteger) {
+    enum(type, value3, fieldName, optional10, emitDefaultValues, enumAsInteger) {
       if (type[0] == "google.protobuf.NullValue")
-        return !emitDefaultValues && !optional9 ? undefined : null;
+        return !emitDefaultValues && !optional10 ? undefined : null;
       if (value3 === undefined) {
-        assert_1.assert(optional9);
+        assert_1.assert(optional10);
         return;
       }
-      if (value3 === 0 && !emitDefaultValues && !optional9)
+      if (value3 === 0 && !emitDefaultValues && !optional10)
         return;
       assert_1.assert(typeof value3 == "number");
       assert_1.assert(Number.isInteger(value3));
@@ -20792,12 +20792,12 @@ var require_reflection_json_writer = __commonJS((exports) => {
         return options.emitDefaultValues ? null : undefined;
       return type.internalJsonWrite(value3, options);
     }
-    scalar(type, value3, fieldName, optional9, emitDefaultValues) {
+    scalar(type, value3, fieldName, optional10, emitDefaultValues) {
       if (value3 === undefined) {
-        assert_1.assert(optional9);
+        assert_1.assert(optional10);
         return;
       }
-      const ed = emitDefaultValues || optional9;
+      const ed = emitDefaultValues || optional10;
       switch (type) {
         case reflection_info_1.ScalarType.INT32:
         case reflection_info_1.ScalarType.SFIXED32:
@@ -23745,16 +23745,16 @@ var require_parse_proxy_response = __commonJS((exports) => {
         const statusCode = +firstLineParts[1];
         const statusText = firstLineParts.slice(2).join(" ");
         const headers = {};
-        for (const header of headerParts) {
-          if (!header)
+        for (const header2 of headerParts) {
+          if (!header2)
             continue;
-          const firstColon = header.indexOf(":");
+          const firstColon = header2.indexOf(":");
           if (firstColon === -1) {
             socket.destroy();
-            return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
+            return reject(new Error(`Invalid header from proxy CONNECT response: "${header2}"`));
           }
-          const key = header.slice(0, firstColon).toLowerCase();
-          const value3 = header.slice(firstColon + 1).trimStart();
+          const key = header2.slice(0, firstColon).toLowerCase();
+          const value3 = header2.slice(firstColon + 1).trimStart();
           const current = headers[key];
           if (typeof current === "string") {
             headers[key] = [current, value3];
@@ -25711,26 +25711,26 @@ var require_async = __commonJS((exports, module) => {
     var ARROW_FN_ARGS = /^(?:async\s)?\s*(?:\(\s*)?((?:[^)=\s]\s*)*)(?:\)\s*)?=>/;
     var FN_ARG_SPLIT = /,/;
     var FN_ARG = /(=.+)?(\s*)$/;
-    function stripComments(string4) {
+    function stripComments(string5) {
       let stripped = "";
       let index2 = 0;
-      let endBlockComment = string4.indexOf("*/");
-      while (index2 < string4.length) {
-        if (string4[index2] === "/" && string4[index2 + 1] === "/") {
-          let endIndex = string4.indexOf(`
+      let endBlockComment = string5.indexOf("*/");
+      while (index2 < string5.length) {
+        if (string5[index2] === "/" && string5[index2 + 1] === "/") {
+          let endIndex = string5.indexOf(`
 `, index2);
-          index2 = endIndex === -1 ? string4.length : endIndex;
-        } else if (endBlockComment !== -1 && string4[index2] === "/" && string4[index2 + 1] === "*") {
-          let endIndex = string4.indexOf("*/", index2);
+          index2 = endIndex === -1 ? string5.length : endIndex;
+        } else if (endBlockComment !== -1 && string5[index2] === "/" && string5[index2 + 1] === "*") {
+          let endIndex = string5.indexOf("*/", index2);
           if (endIndex !== -1) {
             index2 = endIndex + 2;
-            endBlockComment = string4.indexOf("*/", index2);
+            endBlockComment = string5.indexOf("*/", index2);
           } else {
-            stripped += string4[index2];
+            stripped += string5[index2];
             index2++;
           }
         } else {
-          stripped += string4[index2];
+          stripped += string5[index2];
           index2++;
         }
       }
@@ -27969,33 +27969,33 @@ var require_isarray = __commonJS((exports, module) => {
 // ../../node_modules/lazystream/node_modules/readable-stream/node_modules/safe-buffer/index.js
 var require_safe_buffer = __commonJS((exports, module) => {
   var buffer3 = __require("buffer");
-  var Buffer3 = buffer3.Buffer;
+  var Buffer4 = buffer3.Buffer;
   function copyProps(src, dst) {
     for (var key in src) {
       dst[key] = src[key];
     }
   }
-  if (Buffer3.from && Buffer3.alloc && Buffer3.allocUnsafe && Buffer3.allocUnsafeSlow) {
+  if (Buffer4.from && Buffer4.alloc && Buffer4.allocUnsafe && Buffer4.allocUnsafeSlow) {
     module.exports = buffer3;
   } else {
     copyProps(buffer3, exports);
     exports.Buffer = SafeBuffer;
   }
   function SafeBuffer(arg, encodingOrOffset, length) {
-    return Buffer3(arg, encodingOrOffset, length);
+    return Buffer4(arg, encodingOrOffset, length);
   }
-  copyProps(Buffer3, SafeBuffer);
+  copyProps(Buffer4, SafeBuffer);
   SafeBuffer.from = function(arg, encodingOrOffset, length) {
     if (typeof arg === "number") {
       throw new TypeError("Argument must not be a number");
     }
-    return Buffer3(arg, encodingOrOffset, length);
+    return Buffer4(arg, encodingOrOffset, length);
   };
   SafeBuffer.alloc = function(size, fill, encoding) {
     if (typeof size !== "number") {
       throw new TypeError("Argument must be a number");
     }
-    var buf = Buffer3(size);
+    var buf = Buffer4(size);
     if (fill !== undefined) {
       if (typeof encoding === "string") {
         buf.fill(fill, encoding);
@@ -28011,7 +28011,7 @@ var require_safe_buffer = __commonJS((exports, module) => {
     if (typeof size !== "number") {
       throw new TypeError("Argument must be a number");
     }
-    return Buffer3(size);
+    return Buffer4(size);
   };
   SafeBuffer.allocUnsafeSlow = function(size) {
     if (typeof size !== "number") {
@@ -28137,7 +28137,7 @@ var require_BufferList = __commonJS((exports, module) => {
       throw new TypeError("Cannot call a class as a function");
     }
   }
-  var Buffer3 = require_safe_buffer().Buffer;
+  var Buffer4 = require_safe_buffer().Buffer;
   var util4 = __require("util");
   function copyBuffer(src, target2, offset) {
     src.copy(target2, offset);
@@ -28192,8 +28192,8 @@ var require_BufferList = __commonJS((exports, module) => {
     };
     BufferList.prototype.concat = function concat3(n) {
       if (this.length === 0)
-        return Buffer3.alloc(0);
-      var ret = Buffer3.allocUnsafe(n >>> 0);
+        return Buffer4.alloc(0);
+      var ret = Buffer4.allocUnsafe(n >>> 0);
       var p = this.head;
       var i = 0;
       while (p) {
@@ -28305,13 +28305,13 @@ var require__stream_writable = __commonJS((exports, module) => {
     deprecate: require_node2()
   };
   var Stream2 = __require("stream");
-  var Buffer3 = require_safe_buffer().Buffer;
+  var Buffer4 = require_safe_buffer().Buffer;
   var OurUint8Array = (typeof global !== "undefined" ? global : typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : {}).Uint8Array || function() {};
   function _uint8ArrayToBuffer(chunk) {
-    return Buffer3.from(chunk);
+    return Buffer4.from(chunk);
   }
   function _isUint8Array(obj) {
-    return Buffer3.isBuffer(obj) || obj instanceof OurUint8Array;
+    return Buffer4.isBuffer(obj) || obj instanceof OurUint8Array;
   }
   var destroyImpl = require_destroy();
   util4.inherits(Writable, Stream2);
@@ -28382,17 +28382,17 @@ var require__stream_writable = __commonJS((exports, module) => {
   if (typeof Symbol === "function" && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === "function") {
     realHasInstance = Function.prototype[Symbol.hasInstance];
     Object.defineProperty(Writable, Symbol.hasInstance, {
-      value: function(object) {
-        if (realHasInstance.call(this, object))
+      value: function(object2) {
+        if (realHasInstance.call(this, object2))
           return true;
         if (this !== Writable)
           return false;
-        return object && object._writableState instanceof WritableState;
+        return object2 && object2._writableState instanceof WritableState;
       }
     });
   } else {
-    realHasInstance = function(object) {
-      return object instanceof this;
+    realHasInstance = function(object2) {
+      return object2 instanceof this;
     };
   }
   function Writable(options) {
@@ -28423,7 +28423,7 @@ var require__stream_writable = __commonJS((exports, module) => {
     pna.nextTick(cb, er);
   }
   function validChunk(stream3, state3, chunk, cb) {
-    var valid4 = true;
+    var valid5 = true;
     var er = false;
     if (chunk === null) {
       er = new TypeError("May not write null values to stream");
@@ -28433,15 +28433,15 @@ var require__stream_writable = __commonJS((exports, module) => {
     if (er) {
       stream3.emit("error", er);
       pna.nextTick(cb, er);
-      valid4 = false;
+      valid5 = false;
     }
-    return valid4;
+    return valid5;
   }
   Writable.prototype.write = function(chunk, encoding, cb) {
     var state3 = this._writableState;
     var ret = false;
     var isBuf = !state3.objectMode && _isUint8Array(chunk);
-    if (isBuf && !Buffer3.isBuffer(chunk)) {
+    if (isBuf && !Buffer4.isBuffer(chunk)) {
       chunk = _uint8ArrayToBuffer(chunk);
     }
     if (typeof encoding === "function") {
@@ -28484,7 +28484,7 @@ var require__stream_writable = __commonJS((exports, module) => {
   };
   function decodeChunk(state3, chunk, encoding) {
     if (!state3.objectMode && state3.decodeStrings !== false && typeof chunk === "string") {
-      chunk = Buffer3.from(chunk, encoding);
+      chunk = Buffer4.from(chunk, encoding);
     }
     return chunk;
   }
@@ -28822,8 +28822,8 @@ var require__stream_duplex = __commonJS((exports, module) => {
 
 // ../../node_modules/lazystream/node_modules/readable-stream/node_modules/string_decoder/lib/string_decoder.js
 var require_string_decoder = __commonJS((exports) => {
-  var Buffer3 = require_safe_buffer().Buffer;
-  var isEncoding = Buffer3.isEncoding || function(encoding) {
+  var Buffer4 = require_safe_buffer().Buffer;
+  var isEncoding = Buffer4.isEncoding || function(encoding) {
     encoding = "" + encoding;
     switch (encoding && encoding.toLowerCase()) {
       case "hex":
@@ -28873,7 +28873,7 @@ var require_string_decoder = __commonJS((exports) => {
   }
   function normalizeEncoding(enc) {
     var nenc = _normalizeEncoding(enc);
-    if (typeof nenc !== "string" && (Buffer3.isEncoding === isEncoding || !isEncoding(enc)))
+    if (typeof nenc !== "string" && (Buffer4.isEncoding === isEncoding || !isEncoding(enc)))
       throw new Error("Unknown encoding: " + enc);
     return nenc || enc;
   }
@@ -28903,7 +28903,7 @@ var require_string_decoder = __commonJS((exports) => {
     }
     this.lastNeed = 0;
     this.lastTotal = 0;
-    this.lastChar = Buffer3.allocUnsafe(nb);
+    this.lastChar = Buffer4.allocUnsafe(nb);
   }
   StringDecoder.prototype.write = function(buf) {
     if (buf.length === 0)
@@ -29089,13 +29089,13 @@ var require__stream_readable = __commonJS((exports, module) => {
     return emitter.listeners(type).length;
   };
   var Stream2 = __require("stream");
-  var Buffer3 = require_safe_buffer().Buffer;
+  var Buffer4 = require_safe_buffer().Buffer;
   var OurUint8Array = (typeof global !== "undefined" ? global : typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : {}).Uint8Array || function() {};
   function _uint8ArrayToBuffer(chunk) {
-    return Buffer3.from(chunk);
+    return Buffer4.from(chunk);
   }
   function _isUint8Array(obj) {
-    return Buffer3.isBuffer(obj) || obj instanceof OurUint8Array;
+    return Buffer4.isBuffer(obj) || obj instanceof OurUint8Array;
   }
   var util4 = Object.create(require_util9());
   util4.inherits = require_inherits();
@@ -29205,7 +29205,7 @@ var require__stream_readable = __commonJS((exports, module) => {
       if (typeof chunk === "string") {
         encoding = encoding || state3.defaultEncoding;
         if (encoding !== state3.encoding) {
-          chunk = Buffer3.from(chunk, encoding);
+          chunk = Buffer4.from(chunk, encoding);
           encoding = "";
         }
         skipChunkCheck = true;
@@ -29230,7 +29230,7 @@ var require__stream_readable = __commonJS((exports, module) => {
       if (er) {
         stream3.emit("error", er);
       } else if (state3.objectMode || chunk && chunk.length > 0) {
-        if (typeof chunk !== "string" && !state3.objectMode && Object.getPrototypeOf(chunk) !== Buffer3.prototype) {
+        if (typeof chunk !== "string" && !state3.objectMode && Object.getPrototypeOf(chunk) !== Buffer4.prototype) {
           chunk = _uint8ArrayToBuffer(chunk);
         }
         if (addToFront) {
@@ -29773,7 +29773,7 @@ var require__stream_readable = __commonJS((exports, module) => {
     return ret;
   }
   function copyFromBuffer(n, list) {
-    var ret = Buffer3.allocUnsafe(n);
+    var ret = Buffer4.allocUnsafe(n);
     var p = list.head;
     var c = 1;
     p.data.copy(ret);
@@ -30274,8 +30274,8 @@ var require__baseIsNative = __commonJS((exports, module) => {
 
 // ../../node_modules/lodash/_getValue.js
 var require__getValue = __commonJS((exports, module) => {
-  function getValue(object, key) {
-    return object == null ? undefined : object[key];
+  function getValue(object2, key) {
+    return object2 == null ? undefined : object2[key];
   }
   module.exports = getValue;
 });
@@ -30284,8 +30284,8 @@ var require__getValue = __commonJS((exports, module) => {
 var require__getNative = __commonJS((exports, module) => {
   var baseIsNative = require__baseIsNative();
   var getValue = require__getValue();
-  function getNative(object, key) {
-    var value3 = getValue(object, key);
+  function getNative(object2, key) {
+    var value3 = getValue(object2, key);
     return baseIsNative(value3) ? value3 : undefined;
   }
   module.exports = getNative;
@@ -30309,11 +30309,11 @@ var require__baseSetToString = __commonJS((exports, module) => {
   var constant2 = require_constant();
   var defineProperty = require__defineProperty();
   var identity2 = require_identity();
-  var baseSetToString = !defineProperty ? identity2 : function(func, string4) {
+  var baseSetToString = !defineProperty ? identity2 : function(func, string5) {
     return defineProperty(func, "toString", {
       configurable: true,
       enumerable: false,
-      value: constant2(string4),
+      value: constant2(string5),
       writable: true
     });
   };
@@ -30407,13 +30407,13 @@ var require__isIterateeCall = __commonJS((exports, module) => {
   var isArrayLike = require_isArrayLike();
   var isIndex = require__isIndex();
   var isObject3 = require_isObject();
-  function isIterateeCall(value3, index, object) {
-    if (!isObject3(object)) {
+  function isIterateeCall(value3, index, object2) {
+    if (!isObject3(object2)) {
       return false;
     }
     var type = typeof index;
-    if (type == "number" ? isArrayLike(object) && isIndex(index, object.length) : type == "string" && (index in object)) {
-      return eq(object[index], value3);
+    if (type == "number" ? isArrayLike(object2) && isIndex(index, object2.length) : type == "string" && (index in object2)) {
+      return eq(object2[index], value3);
     }
     return false;
   }
@@ -30487,8 +30487,8 @@ var require_isBuffer = __commonJS((exports, module) => {
   var freeExports = typeof exports == "object" && exports && !exports.nodeType && exports;
   var freeModule = freeExports && typeof module == "object" && module && !module.nodeType && module;
   var moduleExports = freeModule && freeModule.exports === freeExports;
-  var Buffer3 = moduleExports ? root.Buffer : undefined;
-  var nativeIsBuffer = Buffer3 ? Buffer3.isBuffer : undefined;
+  var Buffer4 = moduleExports ? root.Buffer : undefined;
+  var nativeIsBuffer = Buffer4 ? Buffer4.isBuffer : undefined;
   var isBuffer = nativeIsBuffer || stubFalse;
   module.exports = isBuffer;
 });
@@ -30604,10 +30604,10 @@ var require__isPrototype = __commonJS((exports, module) => {
 
 // ../../node_modules/lodash/_nativeKeysIn.js
 var require__nativeKeysIn = __commonJS((exports, module) => {
-  function nativeKeysIn(object) {
+  function nativeKeysIn(object2) {
     var result2 = [];
-    if (object != null) {
-      for (var key in Object(object)) {
+    if (object2 != null) {
+      for (var key in Object(object2)) {
         result2.push(key);
       }
     }
@@ -30623,13 +30623,13 @@ var require__baseKeysIn = __commonJS((exports, module) => {
   var nativeKeysIn = require__nativeKeysIn();
   var objectProto = Object.prototype;
   var hasOwnProperty = objectProto.hasOwnProperty;
-  function baseKeysIn(object) {
-    if (!isObject3(object)) {
-      return nativeKeysIn(object);
+  function baseKeysIn(object2) {
+    if (!isObject3(object2)) {
+      return nativeKeysIn(object2);
     }
-    var isProto = isPrototype(object), result2 = [];
-    for (var key in object) {
-      if (!(key == "constructor" && (isProto || !hasOwnProperty.call(object, key)))) {
+    var isProto = isPrototype(object2), result2 = [];
+    for (var key in object2) {
+      if (!(key == "constructor" && (isProto || !hasOwnProperty.call(object2, key)))) {
         result2.push(key);
       }
     }
@@ -30643,8 +30643,8 @@ var require_keysIn = __commonJS((exports, module) => {
   var arrayLikeKeys = require__arrayLikeKeys();
   var baseKeysIn = require__baseKeysIn();
   var isArrayLike = require_isArrayLike();
-  function keysIn(object) {
-    return isArrayLike(object) ? arrayLikeKeys(object, true) : baseKeysIn(object);
+  function keysIn(object2) {
+    return isArrayLike(object2) ? arrayLikeKeys(object2, true) : baseKeysIn(object2);
   }
   module.exports = keysIn;
 });
@@ -30657,8 +30657,8 @@ var require_defaults = __commonJS((exports, module) => {
   var keysIn = require_keysIn();
   var objectProto = Object.prototype;
   var hasOwnProperty = objectProto.hasOwnProperty;
-  var defaults = baseRest(function(object, sources) {
-    object = Object(object);
+  var defaults = baseRest(function(object2, sources) {
+    object2 = Object(object2);
     var index = -1;
     var length = sources.length;
     var guard = length > 2 ? sources[2] : undefined;
@@ -30672,13 +30672,13 @@ var require_defaults = __commonJS((exports, module) => {
       var propsLength = props.length;
       while (++propsIndex < propsLength) {
         var key = props[propsIndex];
-        var value3 = object[key];
-        if (value3 === undefined || eq(value3, objectProto[key]) && !hasOwnProperty.call(object, key)) {
-          object[key] = source[key];
+        var value3 = object2[key];
+        if (value3 === undefined || eq(value3, objectProto[key]) && !hasOwnProperty.call(object2, key)) {
+          object2[key] = source[key];
         }
       }
     }
-    return object;
+    return object2;
   });
   module.exports = defaults;
 });
@@ -32915,7 +32915,7 @@ var require_add_abort_signal = __commonJS((exports, module) => {
 // ../../node_modules/readable-stream/lib/internal/streams/buffer_list.js
 var require_buffer_list = __commonJS((exports, module) => {
   var { StringPrototypeSlice, SymbolIterator, TypedArrayPrototypeSet, Uint8Array: Uint8Array4 } = require_primordials();
-  var { Buffer: Buffer3 } = __require("buffer");
+  var { Buffer: Buffer4 } = __require("buffer");
   var { inspect: inspect4 } = require_util10();
   module.exports = class BufferList {
     constructor() {
@@ -32971,8 +32971,8 @@ var require_buffer_list = __commonJS((exports, module) => {
     }
     concat(n) {
       if (this.length === 0)
-        return Buffer3.alloc(0);
-      const ret = Buffer3.allocUnsafe(n >>> 0);
+        return Buffer4.alloc(0);
+      const ret = Buffer4.allocUnsafe(n >>> 0);
       let p = this.head;
       let i = 0;
       while (p) {
@@ -33032,7 +33032,7 @@ var require_buffer_list = __commonJS((exports, module) => {
       return ret;
     }
     _getBuffer(n) {
-      const ret = Buffer3.allocUnsafe(n);
+      const ret = Buffer4.allocUnsafe(n);
       const retLen = n;
       let p = this.head;
       let c = 0;
@@ -33114,34 +33114,34 @@ var require_state = __commonJS((exports, module) => {
 var require_safe_buffer2 = __commonJS((exports, module) => {
   /*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
   var buffer3 = __require("buffer");
-  var Buffer3 = buffer3.Buffer;
+  var Buffer4 = buffer3.Buffer;
   function copyProps(src, dst) {
     for (var key in src) {
       dst[key] = src[key];
     }
   }
-  if (Buffer3.from && Buffer3.alloc && Buffer3.allocUnsafe && Buffer3.allocUnsafeSlow) {
+  if (Buffer4.from && Buffer4.alloc && Buffer4.allocUnsafe && Buffer4.allocUnsafeSlow) {
     module.exports = buffer3;
   } else {
     copyProps(buffer3, exports);
     exports.Buffer = SafeBuffer;
   }
   function SafeBuffer(arg, encodingOrOffset, length) {
-    return Buffer3(arg, encodingOrOffset, length);
+    return Buffer4(arg, encodingOrOffset, length);
   }
-  SafeBuffer.prototype = Object.create(Buffer3.prototype);
-  copyProps(Buffer3, SafeBuffer);
+  SafeBuffer.prototype = Object.create(Buffer4.prototype);
+  copyProps(Buffer4, SafeBuffer);
   SafeBuffer.from = function(arg, encodingOrOffset, length) {
     if (typeof arg === "number") {
       throw new TypeError("Argument must not be a number");
     }
-    return Buffer3(arg, encodingOrOffset, length);
+    return Buffer4(arg, encodingOrOffset, length);
   };
   SafeBuffer.alloc = function(size, fill, encoding) {
     if (typeof size !== "number") {
       throw new TypeError("Argument must be a number");
     }
-    var buf = Buffer3(size);
+    var buf = Buffer4(size);
     if (fill !== undefined) {
       if (typeof encoding === "string") {
         buf.fill(fill, encoding);
@@ -33157,7 +33157,7 @@ var require_safe_buffer2 = __commonJS((exports, module) => {
     if (typeof size !== "number") {
       throw new TypeError("Argument must be a number");
     }
-    return Buffer3(size);
+    return Buffer4(size);
   };
   SafeBuffer.allocUnsafeSlow = function(size) {
     if (typeof size !== "number") {
@@ -33169,8 +33169,8 @@ var require_safe_buffer2 = __commonJS((exports, module) => {
 
 // ../../node_modules/string_decoder/lib/string_decoder.js
 var require_string_decoder2 = __commonJS((exports) => {
-  var Buffer3 = require_safe_buffer2().Buffer;
-  var isEncoding = Buffer3.isEncoding || function(encoding) {
+  var Buffer4 = require_safe_buffer2().Buffer;
+  var isEncoding = Buffer4.isEncoding || function(encoding) {
     encoding = "" + encoding;
     switch (encoding && encoding.toLowerCase()) {
       case "hex":
@@ -33220,7 +33220,7 @@ var require_string_decoder2 = __commonJS((exports) => {
   }
   function normalizeEncoding(enc) {
     var nenc = _normalizeEncoding(enc);
-    if (typeof nenc !== "string" && (Buffer3.isEncoding === isEncoding || !isEncoding(enc)))
+    if (typeof nenc !== "string" && (Buffer4.isEncoding === isEncoding || !isEncoding(enc)))
       throw new Error("Unknown encoding: " + enc);
     return nenc || enc;
   }
@@ -33250,7 +33250,7 @@ var require_string_decoder2 = __commonJS((exports) => {
     }
     this.lastNeed = 0;
     this.lastTotal = 0;
-    this.lastChar = Buffer3.allocUnsafe(nb);
+    this.lastChar = Buffer4.allocUnsafe(nb);
   }
   StringDecoder.prototype.write = function(buf) {
     if (buf.length === 0)
@@ -33428,11 +33428,11 @@ var require_string_decoder2 = __commonJS((exports) => {
 var require_from = __commonJS((exports, module) => {
   var process5 = require_process();
   var { PromisePrototypeThen, SymbolAsyncIterator, SymbolIterator } = require_primordials();
-  var { Buffer: Buffer3 } = __require("buffer");
+  var { Buffer: Buffer4 } = __require("buffer");
   var { ERR_INVALID_ARG_TYPE, ERR_STREAM_NULL_VALUES } = require_errors2().codes;
   function from(Readable7, iterable, opts) {
     let iterator;
-    if (typeof iterable === "string" || iterable instanceof Buffer3) {
+    if (typeof iterable === "string" || iterable instanceof Buffer4) {
       return new Readable7({
         objectMode: true,
         ...opts,
@@ -33531,7 +33531,7 @@ var require_readable3 = __commonJS((exports, module) => {
   Readable7.ReadableState = ReadableState;
   var { EventEmitter: EE } = __require("events");
   var { Stream: Stream2, prependListener } = require_legacy();
-  var { Buffer: Buffer3 } = __require("buffer");
+  var { Buffer: Buffer4 } = __require("buffer");
   var { addAbortSignal } = require_add_abort_signal();
   var eos = require_end_of_stream();
   var debug2 = require_util10().debuglog("stream", (fn3) => {
@@ -33694,13 +33694,13 @@ var require_readable3 = __commonJS((exports, module) => {
         encoding = encoding || state3.defaultEncoding;
         if (state3.encoding !== encoding) {
           if (addToFront && state3.encoding) {
-            chunk = Buffer3.from(chunk, encoding).toString(state3.encoding);
+            chunk = Buffer4.from(chunk, encoding).toString(state3.encoding);
           } else {
-            chunk = Buffer3.from(chunk, encoding);
+            chunk = Buffer4.from(chunk, encoding);
             encoding = "";
           }
         }
-      } else if (chunk instanceof Buffer3) {
+      } else if (chunk instanceof Buffer4) {
         encoding = "";
       } else if (Stream2._isUint8Array(chunk)) {
         chunk = Stream2._uint8ArrayToBuffer(chunk);
@@ -34518,7 +34518,7 @@ var require_writable = __commonJS((exports, module) => {
   Writable.WritableState = WritableState;
   var { EventEmitter: EE } = __require("events");
   var Stream2 = require_legacy().Stream;
-  var { Buffer: Buffer3 } = __require("buffer");
+  var { Buffer: Buffer4 } = __require("buffer");
   var destroyImpl = require_destroy2();
   var { addAbortSignal } = require_add_abort_signal();
   var { getHighWaterMark, getDefaultHighWaterMark } = require_state();
@@ -34620,12 +34620,12 @@ var require_writable = __commonJS((exports, module) => {
   }
   ObjectDefineProperty(Writable, SymbolHasInstance, {
     __proto__: null,
-    value: function(object) {
-      if (FunctionPrototypeSymbolHasInstance(this, object))
+    value: function(object2) {
+      if (FunctionPrototypeSymbolHasInstance(this, object2))
         return true;
       if (this !== Writable)
         return false;
-      return object && object._writableState instanceof WritableState;
+      return object2 && object2._writableState instanceof WritableState;
     }
   });
   Writable.prototype.pipe = function() {
@@ -34639,7 +34639,7 @@ var require_writable = __commonJS((exports, module) => {
     } else {
       if (!encoding)
         encoding = state3.defaultEncoding;
-      else if (encoding !== "buffer" && !Buffer3.isEncoding(encoding))
+      else if (encoding !== "buffer" && !Buffer4.isEncoding(encoding))
         throw new ERR_UNKNOWN_ENCODING(encoding);
       if (typeof cb !== "function")
         cb = nop;
@@ -34649,10 +34649,10 @@ var require_writable = __commonJS((exports, module) => {
     } else if (!state3.objectMode) {
       if (typeof chunk === "string") {
         if (state3.decodeStrings !== false) {
-          chunk = Buffer3.from(chunk, encoding);
+          chunk = Buffer4.from(chunk, encoding);
           encoding = "buffer";
         }
-      } else if (chunk instanceof Buffer3) {
+      } else if (chunk instanceof Buffer4) {
         encoding = "buffer";
       } else if (Stream2._isUint8Array(chunk)) {
         chunk = Stream2._uint8ArrayToBuffer(chunk);
@@ -34692,7 +34692,7 @@ var require_writable = __commonJS((exports, module) => {
   Writable.prototype.setDefaultEncoding = function setDefaultEncoding(encoding) {
     if (typeof encoding === "string")
       encoding = StringPrototypeToLowerCase(encoding);
-    if (!Buffer3.isEncoding(encoding))
+    if (!Buffer4.isEncoding(encoding))
       throw new ERR_UNKNOWN_ENCODING(encoding);
     this._writableState.defaultEncoding = encoding;
     return this;
@@ -36699,7 +36699,7 @@ var require_promises = __commonJS((exports, module) => {
 
 // ../../node_modules/readable-stream/lib/stream.js
 var require_stream = __commonJS((exports, module) => {
-  var { Buffer: Buffer3 } = __require("buffer");
+  var { Buffer: Buffer4 } = __require("buffer");
   var { ObjectDefineProperty, ObjectKeys, ReflectApply } = require_primordials();
   var {
     promisify: { custom: customPromisify }
@@ -36809,7 +36809,7 @@ var require_stream = __commonJS((exports, module) => {
     return value3 instanceof Uint8Array;
   };
   Stream2._uint8ArrayToBuffer = function _uint8ArrayToBuffer(chunk) {
-    return Buffer3.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    return Buffer4.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
   };
 });
 
@@ -37424,10 +37424,10 @@ var require_difference = __commonJS((exports, module) => {
   var baseFlatten = require__baseFlatten();
   var baseRest = require__baseRest();
   var isArrayLikeObject = require_isArrayLikeObject();
-  var difference2 = baseRest(function(array2, values) {
+  var difference4 = baseRest(function(array2, values) {
     return isArrayLikeObject(array2) ? baseDifference(array2, baseFlatten(values, 1, isArrayLikeObject, true)) : [];
   });
-  module.exports = difference2;
+  module.exports = difference4;
 });
 
 // ../../node_modules/lodash/_Set.js
@@ -41622,16 +41622,16 @@ var require_commonjs6 = __commonJS((exports) => {
       if (rootPath === this.root.name) {
         return this.root;
       }
-      for (const [compare, root] of Object.entries(this.roots)) {
-        if (this.sameRoot(rootPath, compare)) {
+      for (const [compare2, root] of Object.entries(this.roots)) {
+        if (this.sameRoot(rootPath, compare2)) {
           return this.roots[rootPath] = root;
         }
       }
       return this.roots[rootPath] = new PathScurryWin32(rootPath, this).root;
     }
-    sameRoot(rootPath, compare = this.root.name) {
+    sameRoot(rootPath, compare2 = this.root.name) {
       rootPath = rootPath.toUpperCase().replace(/\//g, "\\").replace(uncDriveRegexp, "$1\\");
-      return rootPath === compare;
+      return rootPath === compare2;
     }
   }
   exports.PathWin32 = PathWin32;
@@ -43251,7 +43251,7 @@ var require_file2 = __commonJS((exports, module) => {
   var fs5 = require_graceful_fs();
   var path = __require("path");
   var flatten4 = require_flatten();
-  var difference2 = require_difference();
+  var difference4 = require_difference();
   var union3 = require_union();
   var isPlainObject = require_isPlainObject();
   var glob = require_commonjs7();
@@ -43266,7 +43266,7 @@ var require_file2 = __commonJS((exports, module) => {
       }
       var matches = fn3(pattern);
       if (exclusion) {
-        result2 = difference2(result2, matches);
+        result2 = difference4(result2, matches);
       } else {
         result2 = union3(result2, matches);
       }
@@ -43438,7 +43438,7 @@ var require_archiver_utils = __commonJS((exports, module) => {
     }
     return dateish;
   };
-  utils.defaults = function(object, source, guard) {
+  utils.defaults = function(object2, source, guard) {
     var args2 = arguments;
     args2[0] = args2[0] || {};
     return defaults(...args2);
@@ -44664,7 +44664,7 @@ var require_crc32 = __commonJS((exports) => {
 // ../../node_modules/crc32-stream/lib/crc32-stream.js
 var require_crc32_stream = __commonJS((exports, module) => {
   var { Transform: Transform2 } = require_ours();
-  var crc322 = require_crc32();
+  var crc323 = require_crc32();
 
   class CRC32Stream extends Transform2 {
     constructor(options) {
@@ -44675,7 +44675,7 @@ var require_crc32_stream = __commonJS((exports, module) => {
     }
     _transform(chunk, encoding, callback4) {
       if (chunk) {
-        this.checksum = crc322.buf(chunk, this.checksum) >>> 0;
+        this.checksum = crc323.buf(chunk, this.checksum) >>> 0;
         this.rawSize += chunk.length;
       }
       callback4(null, chunk);
@@ -44698,7 +44698,7 @@ var require_crc32_stream = __commonJS((exports, module) => {
 // ../../node_modules/crc32-stream/lib/deflate-crc32-stream.js
 var require_deflate_crc32_stream = __commonJS((exports, module) => {
   var { DeflateRaw } = __require("zlib");
-  var crc322 = require_crc32();
+  var crc323 = require_crc32();
 
   class DeflateCRC32Stream extends DeflateRaw {
     constructor(options) {
@@ -44716,7 +44716,7 @@ var require_deflate_crc32_stream = __commonJS((exports, module) => {
     }
     _transform(chunk, encoding, callback4) {
       if (chunk) {
-        this.checksum = crc322.buf(chunk, this.checksum) >>> 0;
+        this.checksum = crc323.buf(chunk, this.checksum) >>> 0;
         this.rawSize += chunk.length;
       }
       super._transform(chunk, encoding, callback4);
@@ -44751,7 +44751,7 @@ var require_lib = __commonJS((exports, module) => {
 // ../../node_modules/compress-commons/lib/archivers/zip/zip-archive-output-stream.js
 var require_zip_archive_output_stream = __commonJS((exports, module) => {
   var inherits = __require("util").inherits;
-  var crc322 = require_crc32();
+  var crc323 = require_crc32();
   var { CRC32Stream } = require_lib();
   var { DeflateCRC32Stream } = require_lib();
   var ArchiveOutputStream = require_archive_output_stream();
@@ -44799,7 +44799,7 @@ var require_zip_archive_output_stream = __commonJS((exports, module) => {
     if (method === constants8.METHOD_STORED) {
       ae.setSize(source.length);
       ae.setCompressedSize(source.length);
-      ae.setCrc(crc322.buf(source) >>> 0);
+      ae.setCrc(crc323.buf(source) >>> 0);
     }
     this._writeLocalFileHeader(ae);
     if (method === constants8.METHOD_STORED) {
@@ -45285,10 +45285,10 @@ var require_b4a = __commonJS((exports, module) => {
   function allocUnsafeSlow(size) {
     return Buffer.allocUnsafeSlow(size);
   }
-  function byteLength(string4, encoding) {
-    return Buffer.byteLength(string4, encoding);
+  function byteLength(string5, encoding) {
+    return Buffer.byteLength(string5, encoding);
   }
-  function compare(a, b) {
+  function compare2(a, b) {
     return Buffer.compare(a, b);
   }
   function concat3(buffers, totalLength) {
@@ -45332,8 +45332,8 @@ var require_b4a = __commonJS((exports, module) => {
   function toString3(buffer3, encoding, start, end) {
     return toBuffer(buffer3).toString(encoding, start, end);
   }
-  function write2(buffer3, string4, offset, length, encoding) {
-    return toBuffer(buffer3).write(string4, offset, length, encoding);
+  function write2(buffer3, string5, offset, length, encoding) {
+    return toBuffer(buffer3).write(string5, offset, length, encoding);
   }
   function readDoubleBE(buffer3, offset) {
     return toBuffer(buffer3).readDoubleBE(offset);
@@ -45390,7 +45390,7 @@ var require_b4a = __commonJS((exports, module) => {
     allocUnsafe,
     allocUnsafeSlow,
     byteLength,
-    compare,
+    compare: compare2,
     concat: concat3,
     copy: copy2,
     equals: equals3,
@@ -46849,10 +46849,10 @@ var require_headers2 = __commonJS((exports) => {
     if (opts.linkname)
       result2 += addLength(" linkpath=" + opts.linkname + `
 `);
-    const pax = opts.pax;
-    if (pax) {
-      for (const key in pax) {
-        result2 += addLength(" " + key + "=" + pax[key] + `
+    const pax2 = opts.pax;
+    if (pax2) {
+      for (const key in pax2) {
+        result2 += addLength(" " + key + "=" + pax2[key] + `
 `);
       }
     }
@@ -47178,9 +47178,9 @@ var require_extract = __commonJS((exports, module) => {
   }
 
   class Source extends Readable7 {
-    constructor(self2, header, offset) {
+    constructor(self2, header2, offset) {
       super();
-      this.header = header;
+      this.header = header2;
       this.offset = offset;
       this._parent = self2;
     }
@@ -47445,7 +47445,7 @@ var require_extract = __commonJS((exports, module) => {
           promiseResolve = promiseReject = null;
         }
       }
-      function onentry(header, stream3, callback4) {
+      function onentry(header2, stream3, callback4) {
         entryCallback = callback4;
         stream3.on("error", noop);
         if (promiseResolve) {
@@ -47519,14 +47519,14 @@ var require_pack = __commonJS((exports, module) => {
   var END_OF_TAR = b4a.alloc(1024);
 
   class Sink extends Writable {
-    constructor(pack, header, callback4) {
+    constructor(pack, header2, callback4) {
       super({ mapWritable, eagerOpen: true });
       this.written = 0;
-      this.header = header;
+      this.header = header2;
       this._callback = callback4;
       this._linkname = null;
-      this._isLinkname = header.type === "symlink" && !header.linkname;
-      this._isVoid = header.type !== "file" && header.type !== "contiguous-file";
+      this._isLinkname = header2.type === "symlink" && !header2.linkname;
+      this._isVoid = header2.type !== "file" && header2.type !== "contiguous-file";
       this._finished = false;
       this._pack = pack;
       this._openCallback = null;
@@ -47624,7 +47624,7 @@ var require_pack = __commonJS((exports, module) => {
       this._pending = [];
       this._stream = null;
     }
-    entry(header, buffer3, callback4) {
+    entry(header2, buffer3, callback4) {
       if (this._finalized || this.destroying)
         throw new Error("already finalized or destroyed");
       if (typeof buffer3 === "function") {
@@ -47633,23 +47633,23 @@ var require_pack = __commonJS((exports, module) => {
       }
       if (!callback4)
         callback4 = noop;
-      if (!header.size || header.type === "symlink")
-        header.size = 0;
-      if (!header.type)
-        header.type = modeToType(header.mode);
-      if (!header.mode)
-        header.mode = header.type === "directory" ? DMODE : FMODE;
-      if (!header.uid)
-        header.uid = 0;
-      if (!header.gid)
-        header.gid = 0;
-      if (!header.mtime)
-        header.mtime = new Date;
+      if (!header2.size || header2.type === "symlink")
+        header2.size = 0;
+      if (!header2.type)
+        header2.type = modeToType(header2.mode);
+      if (!header2.mode)
+        header2.mode = header2.type === "directory" ? DMODE : FMODE;
+      if (!header2.uid)
+        header2.uid = 0;
+      if (!header2.gid)
+        header2.gid = 0;
+      if (!header2.mtime)
+        header2.mtime = new Date;
       if (typeof buffer3 === "string")
         buffer3 = b4a.from(buffer3);
-      const sink = new Sink(this, header, callback4);
+      const sink = new Sink(this, header2, callback4);
       if (b4a.isBuffer(buffer3)) {
-        header.size = buffer3.byteLength;
+        header2.size = buffer3.byteLength;
         sink.write(buffer3);
         sink.end();
         return sink;
@@ -47679,41 +47679,41 @@ var require_pack = __commonJS((exports, module) => {
       if (this._pending.length)
         this._pending.shift()._continueOpen();
     }
-    _encode(header) {
-      if (!header.pax) {
-        const buf = headers.encode(header);
+    _encode(header2) {
+      if (!header2.pax) {
+        const buf = headers.encode(header2);
         if (buf) {
           this.push(buf);
           return;
         }
       }
-      this._encodePax(header);
+      this._encodePax(header2);
     }
-    _encodePax(header) {
+    _encodePax(header2) {
       const paxHeader = headers.encodePax({
-        name: header.name,
-        linkname: header.linkname,
-        pax: header.pax
+        name: header2.name,
+        linkname: header2.linkname,
+        pax: header2.pax
       });
       const newHeader = {
         name: "PaxHeader",
-        mode: header.mode,
-        uid: header.uid,
-        gid: header.gid,
+        mode: header2.mode,
+        uid: header2.uid,
+        gid: header2.gid,
         size: paxHeader.byteLength,
-        mtime: header.mtime,
+        mtime: header2.mtime,
         type: "pax-header",
-        linkname: header.linkname && "PaxHeader",
-        uname: header.uname,
-        gname: header.gname,
-        devmajor: header.devmajor,
-        devminor: header.devminor
+        linkname: header2.linkname && "PaxHeader",
+        uname: header2.uname,
+        gname: header2.gname,
+        devmajor: header2.devmajor,
+        devminor: header2.devminor
       };
       this.push(headers.encode(newHeader));
       this.push(paxHeader);
       overflow(this, paxHeader.byteLength);
-      newHeader.size = header.size;
-      newHeader.type = header.type;
+      newHeader.size = header2.size;
+      newHeader.type = header2.type;
       this.push(headers.encode(newHeader));
     }
     _doDrain() {
@@ -48139,16 +48139,16 @@ var require_dist4 = __commonJS((exports, module) => {
     }
     return crc ^ -1;
   }
-  function crc322() {
+  function crc323() {
     return bufferizeInt(_crc32.apply(null, arguments));
   }
-  crc322.signed = function() {
+  crc323.signed = function() {
     return _crc32.apply(null, arguments);
   };
-  crc322.unsigned = function() {
+  crc323.unsigned = function() {
     return _crc32.apply(null, arguments) >>> 0;
   };
-  var bufferCrc32 = crc322;
+  var bufferCrc32 = crc323;
   var index = /* @__PURE__ */ getDefaultExportFromCjs(bufferCrc32);
   module.exports = index;
 });
@@ -48157,7 +48157,7 @@ var require_dist4 = __commonJS((exports, module) => {
 var require_json = __commonJS((exports, module) => {
   var inherits = __require("util").inherits;
   var Transform2 = require_ours().Transform;
-  var crc322 = require_dist4();
+  var crc323 = require_dist4();
   var util4 = require_archiver_utils();
   var Json2 = function(options) {
     if (!(this instanceof Json2)) {
@@ -48188,7 +48188,7 @@ var require_json = __commonJS((exports, module) => {
         return;
       }
       data.size = sourceBuffer.length || 0;
-      data.crc32 = crc322.unsigned(sourceBuffer);
+      data.crc32 = crc323.unsigned(sourceBuffer);
       self2.files.push(data);
       callback4(null, data);
     }
@@ -49052,16 +49052,16 @@ var require_util13 = __commonJS((exports, module) => {
   function isStream2(obj) {
     return obj && typeof obj === "object" && typeof obj.pipe === "function" && typeof obj.on === "function";
   }
-  function isBlobLike(object) {
-    if (object === null) {
+  function isBlobLike(object2) {
+    if (object2 === null) {
       return false;
-    } else if (object instanceof Blob2) {
+    } else if (object2 instanceof Blob2) {
       return true;
-    } else if (typeof object !== "object") {
+    } else if (typeof object2 !== "object") {
       return false;
     } else {
-      const sTag = object[Symbol.toStringTag];
-      return (sTag === "Blob" || sTag === "File") && (("stream" in object) && typeof object.stream === "function" || ("arrayBuffer" in object) && typeof object.arrayBuffer === "function");
+      const sTag = object2[Symbol.toStringTag];
+      return (sTag === "Blob" || sTag === "File") && (("stream" in object2) && typeof object2.stream === "function" || ("arrayBuffer" in object2) && typeof object2.arrayBuffer === "function");
     }
   }
   function buildURL(url2, queryParams) {
@@ -49343,8 +49343,8 @@ var require_util13 = __commonJS((exports, module) => {
       type: "bytes"
     });
   }
-  function isFormDataLike(object) {
-    return object && typeof object === "object" && typeof object.append === "function" && typeof object.delete === "function" && typeof object.get === "function" && typeof object.getAll === "function" && typeof object.has === "function" && typeof object.set === "function" && object[Symbol.toStringTag] === "FormData";
+  function isFormDataLike(object2) {
+    return object2 && typeof object2 === "object" && typeof object2.append === "function" && typeof object2.delete === "function" && typeof object2.get === "function" && typeof object2.getAll === "function" && typeof object2.has === "function" && typeof object2.set === "function" && object2[Symbol.toStringTag] === "FormData";
   }
   function addAbortListener(signal, listener) {
     if ("addEventListener" in signal) {
@@ -49762,11 +49762,11 @@ var require_request3 = __commonJS((exports, module) => {
         }
       } else if (headers && typeof headers === "object") {
         if (headers[Symbol.iterator]) {
-          for (const header of headers) {
-            if (!Array.isArray(header) || header.length !== 2) {
+          for (const header2 of headers) {
+            if (!Array.isArray(header2) || header2.length !== 2) {
               throw new InvalidArgumentError2("headers must be in key-value pair format");
             }
-            processHeader(this, header[0], header[1]);
+            processHeader(this, header2[0], header2[1]);
           }
         } else {
           const keys2 = Object.keys(headers);
@@ -50800,14 +50800,14 @@ var require_constants10 = __commonJS((exports) => {
 
 // ../../node_modules/@actions/github/node_modules/undici/lib/llhttp/llhttp-wasm.js
 var require_llhttp_wasm2 = __commonJS((exports, module) => {
-  var { Buffer: Buffer3 } = __require("node:buffer");
-  module.exports = Buffer3.from("AGFzbQEAAAABJwdgAX8Bf2ADf39/AX9gAX8AYAJ/fwBgBH9/f38Bf2AAAGADf39/AALLAQgDZW52GHdhc21fb25faGVhZGVyc19jb21wbGV0ZQAEA2VudhV3YXNtX29uX21lc3NhZ2VfYmVnaW4AAANlbnYLd2FzbV9vbl91cmwAAQNlbnYOd2FzbV9vbl9zdGF0dXMAAQNlbnYUd2FzbV9vbl9oZWFkZXJfZmllbGQAAQNlbnYUd2FzbV9vbl9oZWFkZXJfdmFsdWUAAQNlbnYMd2FzbV9vbl9ib2R5AAEDZW52GHdhc21fb25fbWVzc2FnZV9jb21wbGV0ZQAAAy0sBQYAAAIAAAAAAAACAQIAAgICAAADAAAAAAMDAwMBAQEBAQEBAQEAAAIAAAAEBQFwARISBQMBAAIGCAF/AUGA1AQLB9EFIgZtZW1vcnkCAAtfaW5pdGlhbGl6ZQAIGV9faW5kaXJlY3RfZnVuY3Rpb25fdGFibGUBAAtsbGh0dHBfaW5pdAAJGGxsaHR0cF9zaG91bGRfa2VlcF9hbGl2ZQAvDGxsaHR0cF9hbGxvYwALBm1hbGxvYwAxC2xsaHR0cF9mcmVlAAwEZnJlZQAMD2xsaHR0cF9nZXRfdHlwZQANFWxsaHR0cF9nZXRfaHR0cF9tYWpvcgAOFWxsaHR0cF9nZXRfaHR0cF9taW5vcgAPEWxsaHR0cF9nZXRfbWV0aG9kABAWbGxodHRwX2dldF9zdGF0dXNfY29kZQAREmxsaHR0cF9nZXRfdXBncmFkZQASDGxsaHR0cF9yZXNldAATDmxsaHR0cF9leGVjdXRlABQUbGxodHRwX3NldHRpbmdzX2luaXQAFQ1sbGh0dHBfZmluaXNoABYMbGxodHRwX3BhdXNlABcNbGxodHRwX3Jlc3VtZQAYG2xsaHR0cF9yZXN1bWVfYWZ0ZXJfdXBncmFkZQAZEGxsaHR0cF9nZXRfZXJybm8AGhdsbGh0dHBfZ2V0X2Vycm9yX3JlYXNvbgAbF2xsaHR0cF9zZXRfZXJyb3JfcmVhc29uABwUbGxodHRwX2dldF9lcnJvcl9wb3MAHRFsbGh0dHBfZXJybm9fbmFtZQAeEmxsaHR0cF9tZXRob2RfbmFtZQAfEmxsaHR0cF9zdGF0dXNfbmFtZQAgGmxsaHR0cF9zZXRfbGVu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PgtBhwEMPQtBiAEMPAtBiQEMOwtBigEMOgtBiwEMOQtBjAEMOAtBjQEMNwtBjgEMNgtBjwEMNQtBkAEMNAtBkQEMMwtBkgEMMgtBkwEMMQtBlAEMMAtBlQEMLwtBlgEMLgtBlwEMLQtBmAEMLAtBmQEMKwtBmgEMKgtBmwEMKQtBnAEMKAtBnQEMJwtBngEMJgtBnwEMJQtBoAEMJAtBoQEMIwtBogEMIgtBowEMIQtBpAEMIAtBpQEMHwtBpgEMHgtBpwEMHQtBqAEMHAtBqQEMGwtBqgEMGgtBqwEMGQtBrAEMGAtBrQEMFwtBrgEMFgtBAQwVC0GvAQwUC0GwAQwTC0GxAQwSC0GzAQwRC0GyAQwQC0G0AQwPC0G1AQwOC0G2AQwNC0G3AQwMC0G4AQwLC0G5AQwKC0G6AQwJC0G7AQwIC0HGAQwHC0G8AQwGC0G9AQwFC0G+AQwEC0G/AQwDC0HAAQwCC0HCAQwBC0HBAQshAwNAAkACQAJAAkACQAJAAkACQAJAIAICfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAgAgJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACfwJAAkACfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAC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iQEhAwykAgtBASABLQAAQd8ARw1nGiABQQFqIQEMXgtBigEhAyABIARGDaICIAIoAgAiACAEIAFraiEFIAEgAGtBAWohBgNAIAEtAAAgAEGMzwBqLQAARw1kIABBAUYN+gEgAEEBaiEAIAQgAUEBaiIBRw0ACyACIAU2AgAMogILQYsBIQMgASAERg2hAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGOzwBqLQAARw1kIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyiAgsgAkEANgIAIAZBAWohAUECDGULQYwBIQMgASAERg2gAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHwzwBqLQAARw1jIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyhAgsgAkEANgIAIAZBAWohAUEfDGQLQY0BIQMgASAERg2fAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHyzwBqLQAARw1iIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAygAgsgAkEANgIAIAZBAWohAUEJDGMLIAEgBEYEQEGOASEDDJ8CCwJAAkAgAS0AAEHJAGsOBwBiYmJiYgFiCyABQQFqIQFB+AAhAwyGAgsgAUEBaiEBQfkAIQMMhQILQY8BIQMgASAERg2dAiACKAIAIgAgBCABa2ohBSABIABrQQVqIQYCQANAIAEtAAAgAEGRzwBqLQAARw1gIABBBUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyeAgsgAkEANgIAIAZBAWohAUEYDGELQZABIQMgASAERg2cAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGXzwBqLQAARw1fIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAydAgsgAkEANgIAIAZBAWohAUEXDGALQZEBIQMgASAERg2bAiACKAIAIgAgBCABa2ohBSABIABrQQZqIQYCQANAIAEtAAAgAEGazwBqLQAARw1eIABBBkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAycAgsgAkEANgIAIAZBAWohAUEV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JSIARQ0RIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMtAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0gIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMswELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0iIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMsgELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0OIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMsQELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0dIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMsAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0fIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMrwELIABBP0cNASABQQFqCyEBQQUhAwyUAQtBACEDIAJBADYCHCACIAE2AhQgAkH9EjYCECACQQc2AgwMrAELIAJBADYCHCACIAE2AhQgAkHcCDYCECACQQc2AgxBACEDDKsBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNByACQeUANgIcIAIgATYCFCACIAA2AgxBACEDDKoBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNFiACQdMANgIcIAIgATYCFCACIAA2AgxBACEDDKkBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNGCACQdIANgIcIAIgATYCFCACIAA2AgxBACEDDKgBCyACQQA2AhwgAiABNgIUIAJBxgo2AhAgAkEHNgIMQQAhAwynAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQMgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwymAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRIgAkHTADYCHCACIAE2AhQgAiAANgIMQQAhAwylAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRQgAkHSADYCHCACIAE2AhQgAiAANgIMQQAhAwykAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQAgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwyjAQtB1QAhAwyJAQsgAEEVRwRAIAJBADYCHCACIAE2AhQgAkG5DTYCECACQRo2AgxB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AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAIABB5ABrDvQDY2IAAWFhYWFhYQIDBAVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhBgcICQoLDA0OD2FhYWFhEGFhYWFhYWFhYWFhEWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYRITFBUWFxgZGhthYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2YTc4OTphYWFhYWFhYTthYWE8YWFhYT0+P2FhYWFhYWFhQGFhQWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYUJDREVGR0hJSktMTU5PUFFSU2FhYWFhYWFhVFVWV1hZWlthXF1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFeYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhX2BhC0HhJw8LQaQhDwtByywPC0H+MQ8LQcAkDwtBqyQPC0GNKA8LQeImDwtBgDAPC0G5Lw8LQdckDwtB7x8PC0HhHw8LQfofDwtB8iAPC0GoLw8LQa4yDwtBiDAPC0HsJw8LQYIiDwtBjh0PC0HQLg8LQcojDwtBxTIPC0HfHA8LQdIcDwtBxCAPC0HXIA8LQaIfDwtB7S4PC0GrMA8LQdQlDwtBzC4PC0H6Lg8LQfwrDwtB0jAPC0HxHQ8LQbsgDwtB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CABB3AgLii1JbnZhbGlkIGNoYXIgaW4gdXJsIHF1ZXJ5AFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fYm9keQBDb250ZW50LUxlbmd0aCBvdmVyZmxvdwBDaHVuayBzaXplIG92ZXJmbG93AFJlc3BvbnNlIG92ZXJmbG93AEludmFsaWQgbWV0aG9kIGZvciBIVFRQL3gueCByZXF1ZXN0AEludmFsaWQgbWV0aG9kIGZvciBSVFNQL3gueCByZXF1ZXN0AEV4cGVjdGVkIFNPVVJDRSBtZXRob2QgZm9yIElDRS94LnggcmVxdWVzdABJbnZhbGlkIGNoYXIgaW4gdXJsIGZyYWdtZW50IHN0YXJ0AEV4cGVjdGVkIGRvdABTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX3N0YXR1cwBJbnZhbGlkIHJlc3BvbnNlIHN0YXR1cwBJbnZhbGlkIGNoYXJhY3RlciBpbiBjaHVuayBleHRlbnNpb25zAFVzZXIgY2FsbGJhY2sgZXJyb3IAYG9uX3Jlc2V0YCBjYWxsYmFjayBlcnJvcgBgb25fY2h1bmtfaGVhZGVyYCBjYWxsYmFjayBlcnJvcgBgb25fbWVzc2FnZV9iZWdpbmAgY2FsbGJhY2sgZXJyb3IAYG9uX2NodW5rX2V4dGVuc2lvbl92YWx1ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX3N0YXR1c19jb21wbGV0ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX3ZlcnNpb25fY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl91cmxfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9jaHVua19jb21wbGV0ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX2hlYWRlcl92YWx1ZV9jb21wbGV0ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX21lc3NhZ2VfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9tZXRob2RfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9oZWFkZXJfZmllbGRfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9jaHVua19leHRlbnNpb25fbmFtZWAgY2FsbGJhY2sgZXJyb3IAVW5leHBlY3RlZCBjaGFyIGluIHVybCBzZXJ2ZXIASW52YWxpZCBoZWFkZXIgdmFsdWUgY2hhcgBJbnZhbGlkIGhlYWRlciBmaWVsZCBjaGFyAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fdmVyc2lvbgBJbnZhbGlkIG1pbm9yIHZlcnNpb24ASW52YWxpZCBtYWpvciB2ZXJzaW9uAEV4cGVjdGVkIHNwYWNlIGFmdGVyIHZlcnNpb24ARXhwZWN0ZWQgQ1JMRiBhZnRlciB2ZXJzaW9uAEludmFsaWQgSFRUUCB2ZXJzaW9uAEludmFsaWQgaGVhZGVyIHRva2VuAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fdXJsAEludmFsaWQgY2hhcmFjdGVycyBpbiB1cmwAVW5leHBlY3RlZCBzdGFydCBjaGFyIGluIHVybABEb3VibGUgQCBpbiB1cmwARW1wdHkgQ29udGVudC1MZW5ndGgASW52YWxpZCBjaGFyYWN0ZXIgaW4gQ29udGVudC1MZW5ndGgARHVwbGljYXRlIENvbnRlbnQtTGVuZ3RoAEludmFsaWQgY2hhciBpbiB1cmwgcGF0aABDb250ZW50LUxlbmd0aCBjYW4ndCBiZSBwcmVzZW50IHdpdGggVHJhbnNmZXItRW5jb2RpbmcASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgc2l6ZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2hlYWRlcl92YWx1ZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2NodW5rX2V4dGVuc2lvbl92YWx1ZQBJbnZhbGlkIGNoYXJhY3RlciBpbiBjaHVuayBleHRlbnNpb25zIHZhbHVlAE1pc3NpbmcgZXhwZWN0ZWQgTEYgYWZ0ZXIgaGVhZGVyIHZhbHVlAEludmFsaWQgYFRyYW5zZmVyLUVuY29kaW5nYCBoZWFkZXIgdmFsdWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyBxdW90ZSB2YWx1ZQBJbnZhbGlkIGNoYXJhY3RlciBpbiBjaHVuayBleHRlbnNpb25zIHF1b3RlZCB2YWx1ZQBQYXVzZWQgYnkgb25faGVhZGVyc19jb21wbGV0ZQBJbnZhbGlkIEVPRiBzdGF0ZQBvbl9yZXNldCBwYXVzZQBvbl9jaHVua19oZWFkZXIgcGF1c2UAb25fbWVzc2FnZV9iZWdpbiBwYXVzZQBvbl9jaHVua19leHRlbnNpb25fdmFsdWUgcGF1c2UAb25fc3RhdHVzX2NvbXBsZXRlIHBhdXNlAG9uX3ZlcnNpb25fY29tcGxldGUgcGF1c2UAb25fdXJsX2NvbXBsZXRlIHBhdXNlAG9uX2NodW5rX2NvbXBsZXRlIHBhdXNlAG9uX2hlYWRlcl92YWx1ZV9jb21wbGV0ZSBwYXVzZQBvbl9tZXNzYWdlX2NvbXBsZXRlIHBhdXNlAG9uX21ldGhvZF9jb21wbGV0ZSBwYXVzZQBvbl9oZWFkZXJfZmllbGRfY29tcGxldGUgcGF1c2UAb25fY2h1bmtfZXh0ZW5zaW9uX25hbWUgcGF1c2UAVW5leHBlY3RlZCBzcGFjZSBhZnRlciBzdGFydCBsaW5lAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fY2h1bmtfZXh0ZW5zaW9uX25hbWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyBuYW1lAFBhdXNlIG9uIENPTk5FQ1QvVXBncmFkZQBQYXVzZSBvbiBQUkkvVXBncmFkZQBFeHBlY3RlZCBIVFRQLzIgQ29ubmVjdGlvbiBQcmVmYWNlAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fbWV0aG9kAEV4cGVjdGVkIHNwYWNlIGFmdGVyIG1ldGhvZABTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2hlYWRlcl9maWVsZABQYXVzZWQASW52YWxpZCB3b3JkIGVuY291bnRlcmVkAEludmFsaWQgbWV0aG9kIGVuY291bnRlcmVkAFVuZXhwZWN0ZWQgY2hhciBpbiB1cmwgc2NoZW1hAFJlcXVlc3QgaGFzIGludmFsaWQgYFRyYW5zZmVyLUVuY29kaW5nYABTV0lUQ0hfUFJPWFkAVVNFX1BST1hZAE1LQUNUSVZJVFkAVU5QUk9DRVNTQUJMRV9FTlRJVFkAQ09QWQBNT1ZFRF9QRVJNQU5FTlRMWQBUT09fRUFSTFkATk9USUZZAEZBSUxFRF9ERVBFTkRFTkNZAEJBRF9HQVRFV0FZAFBMQVkAUFVUAENIRUNLT1VUAEdBVEVXQVlfVElNRU9VVABSRVFVRVNUX1RJTUVPVVQATkVUV09SS19DT05ORUNUX1RJTUVPVVQAQ09OTkVDVElPTl9USU1FT1VUAExPR0lOX1RJTUVPVVQATkVUV09SS19SRUFEX1RJTUVPVVQAUE9TVABNSVNESVJFQ1RFRF9SRVFVRVNUAENMSUVOVF9DTE9TRURfUkVRVUVTVABDTElFTlRfQ0xPU0VEX0xPQURfQkFMQU5DRURfUkVRVUVTVABCQURfUkVRVUVTVABIVFRQX1JFUVVFU1RfU0VOVF9UT19IVFRQU19QT1JUAFJFUE9SVABJTV9BX1RFQVBPVABSRVNFVF9DT05URU5UAE5PX0NPTlRFTlQAUEFSVElBTF9DT05URU5UAEhQRV9JTlZBTElEX0NPTlNUQU5UAEhQRV9DQl9SRVNFVABHRVQASFBFX1NUUklDVABDT05GTElDVABURU1QT1JBUllfUkVESVJFQ1QAUEVSTUFORU5UX1JFRElSRUNUAENPTk5FQ1QATVVMVElfU1RBVFVTAEhQRV9JTlZBTElEX1NUQVRVUwBUT09fTUFOWV9SRVFVRVNUUwBFQVJMWV9ISU5UUwBVTkFWQUlMQUJMRV9GT1JfTEVHQUxfUkVBU09OUwBPUFRJT05TAFNXSVRDSElOR19QUk9UT0NPTFMAVkFSSUFOVF9BTFNPX05FR09USUFURVMATVVMVElQTEVfQ0hPSUNFUwBJTlRFUk5BTF9TRVJWRVJfRVJST1IAV0VCX1NFUlZFUl9VTktOT1dOX0VSUk9SAFJBSUxHVU5fRVJST1IASURFTlRJVFlfUFJPVklERVJfQVVUSEVOVElDQVRJT05fRVJST1IAU1NMX0NFUlRJRklDQVRFX0VSUk9SAElOVkFMSURfWF9GT1JXQVJERURfRk9SAFNFVF9QQVJBTUVURVIAR0VUX1BBUkFNRVRFUgBIUEVfVVNFUgBTRUVfT1RIRVIASFBFX0NCX0NIVU5LX0hFQURFUgBNS0NBTEVOREFSAFNFVFVQAFdFQl9TRVJWRVJfSVNfRE9XTgBURUFSRE9XTgBIUEVfQ0xPU0VEX0NPTk5FQ1RJT04ASEVVUklTVElDX0VYUElSQVRJT04ARElTQ09OTkVDVEVEX09QRVJBVElPTgBOT05fQVVUSE9SSVRBVElWRV9JTkZPUk1BVElPTgBIUEVfSU5WQUxJRF9WRVJTSU9OAEhQRV9DQl9NRVNTQUdFX0JFR0lOAFNJVEVfSVNfRlJPWkVOAEhQRV9JTlZBTElEX0hFQURFUl9UT0tFTgBJTlZBTElEX1RPS0VOAEZPUkJJRERFTgBFTkhBTkNFX1lPVVJfQ0FMTQBIUEVfSU5WQUxJRF9VUkwAQkxPQ0tFRF9CWV9QQVJFTlRBTF9DT05UUk9MAE1LQ09MAEFDTABIUEVfSU5URVJOQUwAUkVRVUVTVF9IRUFERVJfRklFTERTX1RPT19MQVJHRV9VTk9GRklDSUFMAEhQRV9PSwBVTkxJTksAVU5MT0NLAFBSSQBSRVRSWV9XSVRIAEhQRV9JTlZBTElEX0NPTlRFTlRfTEVOR1RIAEhQRV9VTkVYUEVDVEVEX0NPTlRFTlRfTEVOR1RIAEZMVVNIAFBST1BQQVRDSABNLVNFQVJDSABVUklfVE9PX0xPTkcAUFJPQ0VTU0lORwBNSVNDRUxMQU5FT1VTX1BFUlNJU1RFTlRfV0FSTklORwBNSVNDRUxMQU5FT1VTX1dBUk5JTkcASFBFX0lOVkFMSURfVFJBTlNGRVJfRU5DT0RJTkcARXhwZWN0ZWQgQ1JMRgBIUEVfSU5WQUxJRF9DSFVOS19TSVpFAE1PVkUAQ09OVElOVUUASFBFX0NCX1NUQVRVU19DT01QTEVURQBIUEVfQ0JfSEVBREVSU19DT01QTEVURQBIUEVfQ0JfVkVSU0lPTl9DT01QTEVURQBIUEVfQ0JfVVJMX0NPTVBMRVRFAEhQRV9DQl9DSFVOS19DT01QTEVURQBIUEVfQ0JfSEVBREVSX1ZBTFVFX0NPTVBMRVRFAEhQRV9DQl9DSFVOS19FWFRFTlNJT05fVkFMVUVfQ09NUExFVEUASFBFX0NCX0NIVU5LX0VYVEVOU0lPTl9OQU1FX0NPTVBMRVRFAEhQRV9DQl9NRVNTQUdFX0NPTVBMRVRFAEhQRV9DQl9NRVRIT0RfQ09NUExFVEUASFBFX0NCX0hFQURFUl9GSUVMRF9DT01QTEVURQBERUxFVEUASFBFX0lOVkFMSURfRU9GX1NUQVRFAElOVkFMSURfU1NMX0NFUlRJRklDQVRFAFBBVVNFAE5PX1JFU1BPTlNFAFVOU1VQUE9SVEVEX01FRElBX1RZUEUAR09ORQBOT1RfQUNDRVBUQUJMRQBTRVJWSUNFX1VOQVZBSUxBQkxFAFJBTkdFX05PVF9TQVRJU0ZJQUJMRQBPUklHSU5fSVNfVU5SRUFDSEFCTEUAUkVTUE9OU0VfSVNfU1RBTEUAUFVSR0UATUVSR0UAUkVRVUVTVF9IRUFERVJfRklFTERTX1RPT19MQVJHRQBSRVFVRVNUX0hFQURFUl9UT09fTEFSR0UAUEFZTE9BRF9UT09fTEFSR0UASU5TVUZGSUNJRU5UX1NUT1JBR0UASFBFX1BBVVNFRF9VUEdSQURFAEhQRV9QQVVTRURfSDJfVVBHUkFERQBTT1VSQ0UAQU5OT1VOQ0UAVFJBQ0UASFBFX1VORVhQRUNURURfU1BBQ0UAREVTQ1JJQkUAVU5TVUJTQ1JJQkUAUkVDT1JEAEhQRV9JTlZBTElEX01FVEhPRABOT1RfRk9VTkQAUFJPUEZJTkQAVU5CSU5EAFJFQklORABVTkFVVEhPUklaRUQATUVUSE9EX05PVF9BTExPV0VEAEhUVFBfVkVSU0lPTl9OT1RfU1VQUE9SVEVEAEFMUkVBRFlfUkVQT1JURUQAQUNDRVBURUQATk9UX0lNUExFTUVOVEVEAExPT1BfREVURUNURUQASFBFX0NSX0VYUEVDVEVEAEhQRV9MRl9FWFBFQ1RFRABDUkVBVEVEAElNX1VTRUQASFBFX1BBVVNFRABUSU1FT1VUX09DQ1VSRUQAUEFZTUVOVF9SRVFVSVJFRABQUkVDT05ESVRJT05fUkVRVUlSRUQAUFJPWFlfQVVUSEVOVElDQVRJT05fUkVRVUlSRUQATkVUV09SS19BVVRIRU5USUNBVElPTl9SRVFVSVJFRABMRU5HVEhfUkVRVUlSRUQAU1NMX0NFUlRJRklDQVRFX1JFUVVJUkVEAFVQR1JBREVfUkVRVUlSRUQAUEFHRV9FWFBJUkVEAFBSRUNPTkRJVElPTl9GQUlMRUQARVhQRUNUQVRJT05fRkFJTEVEAFJFVkFMSURBVElPTl9GQUlMRUQAU1NMX0hBTkRTSEFLRV9GQUlMRUQATE9DS0VEAFRSQU5TRk9STUFUSU9OX0FQUExJRUQATk9UX01PRElGSUVEAE5PVF9FWFRFTkRFRABCQU5EV0lEVEhfTElNSVRfRVhDRUVERUQAU0lURV9JU19PVkVSTE9BREVEAEhFQUQARXhwZWN0ZWQgSFRUUC8AAF4TAAAmEwAAMBAAAPAXAACdEwAAFRIAADkXAADwEgAAChAAAHUSAACtEgAAghMAAE8UAAB/EAAAoBUAACMUAACJEgAAixQAAE0VAADUEQAAzxQAABAYAADJFgAA3BYAAMERAADgFwAAuxQAAHQUAAB8FQAA5RQAAAgXAAAfEAAAZRUAAKMUAAAoFQAAAhUAAJkVAAAsEAAAixkAAE8PAADUDgAAahAAAM4QAAACFwAAiQ4AAG4TAAAcEwAAZhQAAFYXAADBEwAAzRMAAGwTAABoFwAAZhcAAF8XAAAiEwAAzg8AAGkOAADYDgAAYxYAAMsTAACqDgAAKBcAACYXAADFEwAAXRYAAOgRAABnEwAAZRMAAPIWAABzEwAAHRcAAPkWAADzEQAAzw4AAM4VAAAMEgAAsxEAAKURAABhEAAAMhcAALsTAEH5NQsBAQBBkDYL4AEBAQIBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB/TcLAQEAQZE4C14CAwICAgICAAACAgACAgACAgICAgICAgICAAQAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAAgACAEH9OQsBAQBBkToLXgIAAgICAgIAAAICAAICAAICAgICAgICAgIAAwAEAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgIAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgACAAIAQfA7Cw1sb3NlZWVwLWFsaXZlAEGJPAsBAQBBoDwL4AEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBBiT4LAQEAQaA+C+cBAQEBAQEBAQEBAQEBAgEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQFjaHVua2VkAEGwwAALXwEBAAEBAQEBAAABAQABAQABAQEBAQEBAQEBAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQABAEGQwgALIWVjdGlvbmVudC1sZW5ndGhvbnJveHktY29ubmVjdGlvbgBBwMIACy1yYW5zZmVyLWVuY29kaW5ncGdyYWRlDQoNCg0KU00NCg0KVFRQL0NFL1RTUC8AQfnCAAsFAQIAAQMAQZDDAAvgAQQBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAEH5xAALBQECAAEDAEGQxQAL4AEEAQEFAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB+cYACwQBAAABAEGRxwAL3wEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAEH6yAALBAEAAAIAQZDJAAtfAwQAAAQEBAQEBAQEBAQEBQQEBAQEBAQEBAQEBAAEAAYHBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQABAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAQAQfrKAAsEAQAAAQBBkMsACwEBAEGqywALQQIAAAAAAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwAAAAAAAAMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAEH6zAALBAEAAAEAQZDNAAsBAQBBms0ACwYCAAAAAAIAQbHNAAs6AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAAAAAAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwBB8M4AC5YBTk9VTkNFRUNLT1VUTkVDVEVURUNSSUJFTFVTSEVURUFEU0VBUkNIUkdFQ1RJVklUWUxFTkRBUlZFT1RJRllQVElPTlNDSFNFQVlTVEFUQ0hHRU9SRElSRUNUT1JUUkNIUEFSQU1FVEVSVVJDRUJTQ1JJQkVBUkRPV05BQ0VJTkROS0NLVUJTQ1JJQkVIVFRQL0FEVFAv", "base64");
+  var { Buffer: Buffer4 } = __require("node:buffer");
+  module.exports = Buffer4.from("AGFzbQEAAAABJwdgAX8Bf2ADf39/AX9gAX8AYAJ/fwBgBH9/f38Bf2AAAGADf39/AALLAQgDZW52GHdhc21fb25faGVhZGVyc19jb21wbGV0ZQAEA2VudhV3YXNtX29uX21lc3NhZ2VfYmVnaW4AAANlbnYLd2FzbV9vbl91cmwAAQNlbnYOd2FzbV9vbl9zdGF0dXMAAQNlbnYUd2FzbV9vbl9oZWFkZXJfZmllbGQAAQNlbnYUd2FzbV9vbl9oZWFkZXJfdmFsdWUAAQNlbnYMd2FzbV9vbl9ib2R5AAEDZW52GHdhc21fb25fbWVzc2FnZV9jb21wbGV0ZQAAAy0sBQYAAAIAAAAAAAACAQIAAgICAAADAAAAAAMDAwMBAQEBAQEBAQEAAAIAAAAEBQFwARISBQMBAAIGCAF/AUGA1AQLB9EFIgZtZW1vcnkCAAtfaW5pdGlhbGl6ZQAIGV9faW5kaXJlY3RfZnVuY3Rpb25fdGFibGUBAAtsbGh0dHBfaW5pdAAJGGxsaHR0cF9zaG91bGRfa2VlcF9hbGl2ZQAvDGxsaHR0cF9hbGxvYwALBm1hbGxvYwAxC2xsaHR0cF9mcmVlAAwEZnJlZQAMD2xsaHR0cF9nZXRfdHlwZQANFWxsaHR0cF9nZXRfaHR0cF9tYWpvcgAOFWxsaHR0cF9nZXRfaHR0cF9taW5vcgAPEWxsaHR0cF9nZXRfbWV0aG9kABAWbGxodHRwX2dldF9zdGF0dXNfY29kZQAREmxsaHR0cF9nZXRfdXBncmFkZQASDGxsaHR0cF9yZXNldAATDmxsaHR0cF9leGVjdXRlABQUbGxodHRwX3NldHRpbmdzX2luaXQAFQ1sbGh0dHBfZmluaXNoABYMbGxodHRwX3BhdXNlABcNbGxodHRwX3Jlc3VtZQAYG2xsaHR0cF9yZXN1bWVfYWZ0ZXJfdXBncmFkZQAZEGxsaHR0cF9nZXRfZXJybm8AGhdsbGh0dHBfZ2V0X2Vycm9yX3JlYXNvbgAbF2xsaHR0cF9zZXRfZXJyb3JfcmVhc29uABwUbGxodHRwX2dldF9lcnJvcl9wb3MAHRFsbGh0dHBfZXJybm9fbmFtZQAeEmxsaHR0cF9tZXRob2RfbmFtZQAfEmxsaHR0cF9zdGF0dXNfbmFtZQAgGmxsaHR0cF9zZXRfbGVu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PgtBhwEMPQtBiAEMPAtBiQEMOwtBigEMOgtBiwEMOQtBjAEMOAtBjQEMNwtBjgEMNgtBjwEMNQtBkAEMNAtBkQEMMwtBkgEMMgtBkwEMMQtBlAEMMAtBlQEMLwtBlgEMLgtBlwEMLQtBmAEMLAtBmQEMKwtBmgEMKgtBmwEMKQtBnAEMKAtBnQEMJwtBngEMJgtBnwEMJQtBoAEMJAtBoQEMIwtBogEMIgtBowEMIQtBpAEMIAtBpQEMHwtBpgEMHgtBpwEMHQtBqAEMHAtBqQEMGwtBqgEMGgtBqwEMGQtBrAEMGAtBrQEMFwtBrgEMFgtBAQwVC0GvAQwUC0GwAQwTC0GxAQwSC0GzAQwRC0GyAQwQC0G0AQwPC0G1AQwOC0G2AQwNC0G3AQwMC0G4AQwLC0G5AQwKC0G6AQwJC0G7AQwIC0HGAQwHC0G8AQwGC0G9AQwFC0G+AQwEC0G/AQwDC0HAAQwCC0HCAQwBC0HBAQshAwNAAkACQAJAAkACQAJAAkACQAJAIAICfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAgAgJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACfwJAAkACfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAC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iQEhAwykAgtBASABLQAAQd8ARw1nGiABQQFqIQEMXgtBigEhAyABIARGDaICIAIoAgAiACAEIAFraiEFIAEgAGtBAWohBgNAIAEtAAAgAEGMzwBqLQAARw1kIABBAUYN+gEgAEEBaiEAIAQgAUEBaiIBRw0ACyACIAU2AgAMogILQYsBIQMgASAERg2hAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGOzwBqLQAARw1kIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyiAgsgAkEANgIAIAZBAWohAUECDGULQYwBIQMgASAERg2gAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHwzwBqLQAARw1jIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyhAgsgAkEANgIAIAZBAWohAUEfDGQLQY0BIQMgASAERg2fAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHyzwBqLQAARw1iIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAygAgsgAkEANgIAIAZBAWohAUEJDGMLIAEgBEYEQEGOASEDDJ8CCwJAAkAgAS0AAEHJAGsOBwBiYmJiYgFiCyABQQFqIQFB+AAhAwyGAgsgAUEBaiEBQfkAIQMMhQILQY8BIQMgASAERg2dAiACKAIAIgAgBCABa2ohBSABIABrQQVqIQYCQANAIAEtAAAgAEGRzwBqLQAARw1gIABBBUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyeAgsgAkEANgIAIAZBAWohAUEYDGELQZABIQMgASAERg2cAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGXzwBqLQAARw1fIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAydAgsgAkEANgIAIAZBAWohAUEXDGALQZEBIQMgASAERg2bAiACKAIAIgAgBCABa2ohBSABIABrQQZqIQYCQANAIAEtAAAgAEGazwBqLQAARw1eIABBBkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAycAgsgAkEANgIAIAZBAWohAUEV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JSIARQ0RIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMtAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0gIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMswELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0iIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMsgELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0OIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMsQELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0dIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMsAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0fIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMrwELIABBP0cNASABQQFqCyEBQQUhAwyUAQtBACEDIAJBADYCHCACIAE2AhQgAkH9EjYCECACQQc2AgwMrAELIAJBADYCHCACIAE2AhQgAkHcCDYCECACQQc2AgxBACEDDKsBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNByACQeUANgIcIAIgATYCFCACIAA2AgxBACEDDKoBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNFiACQdMANgIcIAIgATYCFCACIAA2AgxBACEDDKkBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNGCACQdIANgIcIAIgATYCFCACIAA2AgxBACEDDKgBCyACQQA2AhwgAiABNgIUIAJBxgo2AhAgAkEHNgIMQQAhAwynAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQMgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwymAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRIgAkHTADYCHCACIAE2AhQgAiAANgIMQQAhAwylAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRQgAkHSADYCHCACIAE2AhQgAiAANgIMQQAhAwykAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQAgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwyjAQtB1QAhAwyJAQsgAEEVRwRAIAJBADYCHCACIAE2AhQgAkG5DTYCECACQRo2AgxB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AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAIABB5ABrDvQDY2IAAWFhYWFhYQIDBAVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhBgcICQoLDA0OD2FhYWFhEGFhYWFhYWFhYWFhEWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYRITFBUWFxgZGhthYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2YTc4OTphYWFhYWFhYTthYWE8YWFhYT0+P2FhYWFhYWFhQGFhQWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYUJDREVGR0hJSktMTU5PUFFSU2FhYWFhYWFhVFVWV1hZWlthXF1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFeYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhX2BhC0HhJw8LQaQhDwtByywPC0H+MQ8LQcAkDwtBqyQPC0GNKA8LQeImDwtBgDAPC0G5Lw8LQdckDwtB7x8PC0HhHw8LQfofDwtB8iAPC0GoLw8LQa4yDwtBiDAPC0HsJw8LQYIiDwtBjh0PC0HQLg8LQcojDwtBxTIPC0HfHA8LQdIcDwtBxCAPC0HXIA8LQaIfDwtB7S4PC0GrMA8LQdQlDwtBzC4PC0H6Lg8LQfwrDwtB0jAPC0HxHQ8LQbsgDwtB9ysPC0GQMQ8LQdcxDwtBoi0PC0HUJw8LQeArDwtBnywPC0HrMQ8LQdUfDwtByjEPC0HeJQ8LQdQeDwtB9BwPC0GnMg8LQbEdDwtBoB0PC0G5MQ8LQbwwDwtBkiEPC0GzJg8LQeksDwtBrB4PC0HUKw8LQfcmDwtBgCYPC0GwIQ8LQf4eDwtBjSMPC0GJLQ8LQfciDwtBoDEPC0GuHw8LQcYlDwtB6B4PC0GTIg8LQcIvDwtBwx0PC0GLLA8LQeEdDwtBjS8PC0HqIQ8LQbQtDwtB0i8PC0HfMg8LQdIyDwtB8DAPC0GpIg8LQfkjDwtBmR4PC0G1LA8LQZswDwtBkjIPC0G2Kw8LQcIiDwtB+DIPC0GeJQ8LQdAiDwtBuh4PC0GBHg8LAAtB1iEhAQsgAQsWACAAIAAtAC1B/gFxIAFBAEdyOgAtCxkAIAAgAC0ALUH9AXEgAUEAR0EBdHI6AC0LGQAgACAALQAtQfsBcSABQQBHQQJ0cjoALQsZACAAIAAtAC1B9wFxIAFBAEdBA3RyOgAtCz4BAn8CQCAAKAI4IgNFDQAgAygCBCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABBxhE2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCCCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABB9go2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCDCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABB7Ro2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCECIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABBlRA2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCFCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABBqhs2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCGCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABB7RM2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCKCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABB9gg2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCHCIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABBwhk2AhBBGCEECyAECz4BAn8CQCAAKAI4IgNFDQAgAygCICIDRQ0AIAAgASACIAFrIAMRAQAiBEF/Rw0AIABBlBQ2AhBBGCEECyAEC1kBAn8CQCAALQAoQQFGDQAgAC8BMiIBQeQAa0HkAEkNACABQcwBRg0AIAFBsAJGDQAgAC8BMCIAQcAAcQ0AQQEhAiAAQYgEcUGABEYNACAAQShxRSECCyACC4wBAQJ/AkACQAJAIAAtACpFDQAgAC0AK0UNACAALwEwIgFBAnFFDQEMAgsgAC8BMCIBQQFxRQ0BC0EBIQIgAC0AKEEBRg0AIAAvATIiAEHkAGtB5ABJDQAgAEHMAUYNACAAQbACRg0AIAFBwABxDQBBACECIAFBiARxQYAERg0AIAFBKHFBAEchAgsgAgtXACAAQRhqQgA3AwAgAEIANwMAIABBOGpCADcDACAAQTBqQgA3AwAgAEEoakIANwMAIABBIGpCADcDACAAQRBqQgA3AwAgAEEIakIANwMAIABB3QE2AhwLBgAgABAyC5otAQt/IwBBEGsiCiQAQaTQACgCACIJRQRAQeTTACgCACIFRQRAQfDTAEJ/NwIAQejTAEKAgISAgIDAADcCAEHk0wAgCkEIakFwcUHYqtWqBXMiBTYCAEH40wBBADYCAEHI0wBBADYCAAtBzNMAQYDUBDYCAEGc0ABBgNQENgIAQbDQACAFNgIAQazQAEF/NgIAQdDTAEGArAM2AgADQCABQcjQAGogAUG80ABqIgI2AgAgAiABQbTQAGoiAzYCACABQcDQAGogAzYCACABQdDQAGogAUHE0ABqIgM2AgAgAyACNgIAIAFB2NAAaiABQczQAGoiAjYCACACIAM2AgAgAUHU0ABqIAI2AgAgAUEgaiIBQYACRw0AC0GM1ARBwasDNgIAQajQAEH00wAoAgA2AgBBmNAAQcCrAzYCAEGk0ABBiNQENgIAQcz/B0E4NgIAQYjUBCEJCwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAIABB7AFNBEBBjNAAKAIAIgZBECAAQRNqQXBxIABBC0kbIgRBA3YiAHYiAUEDcQRAAkAgAUEBcSAAckEBcyICQQN0IgBBtNAAaiIBIABBvNAAaigCACIAKAIIIgNGBEBBjNAAIAZBfiACd3E2AgAMAQsgASADNgIIIAMgATYCDAsgAEEIaiEBIAAgAkEDdCICQQNyNgIEIAAgAmoiACAAKAIEQQFyNgIEDBELQZTQACgCACIIIARPDQEgAQRAAkBBAiAAdCICQQAgAmtyIAEgAHRxaCIAQQN0IgJBtNAAaiIBIAJBvNAAaigCACICKAIIIgNGBEBBjNAAIAZBfiAAd3EiBjYCAAwBCyABIAM2AgggAyABNgIMCyACIARBA3I2AgQgAEEDdCIAIARrIQUgACACaiAFNgIAIAIgBGoiBCAFQQFyNgIEIAgEQCAIQXhxQbTQAGohAEGg0AAoAgAhAwJ/QQEgCEEDdnQiASAGcUUEQEGM0AAgASAGcjYCACAADAELIAAoAggLIgEgAzYCDCAAIAM2AgggAyAANgIMIAMgATYCCAsgAkEIaiEBQaDQACAENgIAQZTQACAFNgIADBELQZDQACgCACILRQ0BIAtoQQJ0QbzSAGooAgAiACgCBEF4cSAEayEFIAAhAgNAAkAgAigCECIBRQRAIAJBFGooAgAiAUUNAQsgASgCBEF4cSAEayIDIAVJIQIgAyAFIAIbIQUgASAAIAIbIQAgASECDAELCyAAKAIYIQkgACgCDCIDIABHBEBBnNAAKAIAGiADIAAoAggiATYCCCABIAM2AgwMEAsgAEEUaiICKAIAIgFFBEAgACgCECIBRQ0DIABBEGohAgsDQCACIQcgASIDQRRqIgIoAgAiAQ0AIANBEGohAiADKAIQIgENAAsgB0EANgIADA8LQX8hBCAAQb9/Sw0AIABBE2oiAUFwcSEEQZDQACgCACIIRQ0AQQAgBGshBQJAAkACQAJ/QQAgBEGAAkkNABpBHyAEQf///wdLDQAaIARBJiABQQh2ZyIAa3ZBAXEgAEEBdGtBPmoLIgZBAnRBvNIAaigCACICRQRAQQAhAUEAIQMMAQtBACEBIARBGSAGQQF2a0EAIAZBH0cbdCEAQQAhAwNAAkAgAigCBEF4cSAEayIHIAVPDQAgAiEDIAciBQ0AQQAhBSACIQEMAwsgASACQRRqKAIAIgcgByACIABBHXZBBHFqQRBqKAIAIgJGGyABIAcbIQEgAEEBdCEAIAINAAsLIAEgA3JFBEBBACEDQQIgBnQiAEEAIABrciAIcSIARQ0DIABoQQJ0QbzSAGooAgAhAQsgAUUNAQsDQCABKAIEQXhxIARrIgIgBUkhACACIAUgABshBSABIAMgABshAyABKAIQIgAEfyAABSABQRRqKAIACyIBDQALCyADRQ0AIAVBlNAAKAIAIARrTw0AIAMoAhghByADIAMoAgwiAEcEQEGc0AAoAgAaIAAgAygCCCIBNgIIIAEgADYCDAwOCyADQRRqIgIoAgAiAUUEQCADKAIQIgFFDQMgA0EQaiECCwNAIAIhBiABIgBBFGoiAigCACIBDQAgAEEQaiECIAAoAhAiAQ0ACyAGQQA2AgAMDQtBlNAAKAIAIgMgBE8EQEGg0AAoAgAhAQJAIAMgBGsiAkEQTwRAIAEgBGoiACACQQFyNgIEIAEgA2ogAjYCACABIARBA3I2AgQMAQsgASADQQNyNgIEIAEgA2oiACAAKAIEQQFyNgIEQQAhAEEAIQILQZTQACACNgIAQaDQACAANgIAIAFBCGohAQwPC0GY0AAoAgAiAyAESwRAIAQgCWoiACADIARrIgFBAXI2AgRBpNAAIAA2AgBBmNAAIAE2AgAgCSAEQQNyNgIEIAlBCGohAQwPC0EAIQEgBAJ/QeTTACgCAARAQezTACgCAAwBC0Hw0wBCfzcCAEHo0wBCgICEgICAwAA3AgBB5NMAIApBDGpBcHFB2KrVqgVzNgIAQfjTAEEANgIAQcjTAEEANgIAQYCABAsiACAEQccAaiIFaiIGQQAgAGsiB3EiAk8EQEH80wBBMDYCAAwPCwJAQcTTACgCACIBRQ0AQbzTACgCACIIIAJqIQAgACABTSAAIAhLcQ0AQQAhAUH80wBBMDYCAAwPC0HI0wAtAABBBHENBAJAAkAgCQRAQczTACEBA0AgASgCACIAIAlNBEAgACABKAIEaiAJSw0DCyABKAIIIgENAAsLQQAQMyIAQX9GDQUgAiEGQejTACgCACIBQQFrIgMgAHEEQCACIABrIAAgA2pBACABa3FqIQYLIAQgBk8NBSAGQf7///8HSw0FQcTTACgCACIDBEBBvNMAKAIAIgcgBmohASABIAdNDQYgASADSw0GCyAGEDMiASAARw0BDAcLIAYgA2sgB3EiBkH+////B0sNBCAGEDMhACAAIAEoAgAgASgCBGpGDQMgACEBCwJAIAYgBEHIAGpPDQAgAUF/Rg0AQezTACgCACIAIAUgBmtqQQAgAGtxIgBB/v///wdLBEAgASEADAcLIAAQM0F/RwRAIAAgBmohBiABIQAMBwtBACAGaxAzGgwECyABIgBBf0cNBQwDC0EAIQMMDAtBACEADAoLIABBf0cNAgtByNMAQcjTACgCAEEEcjYCAAsgAkH+////B0sNASACEDMhAEEAEDMhASAAQX9GDQEgAUF/Rg0BIAAgAU8NASABIABrIgYgBEE4ak0NAQtBvNMAQbzTACgCACAGaiIBNgIAQcDTACgCACABSQRAQcDTACABNgIACwJAAkACQEGk0AAoAgAiAgRAQczTACEBA0AgACABKAIAIgMgASgCBCIFakYNAiABKAIIIgENAAsMAgtBnNAAKAIAIgFBAEcgACABT3FFBEBBnNAAIAA2AgALQQAhAUHQ0wAgBjYCAEHM0wAgADYCAEGs0ABBfzYCAEGw0ABB5NMAKAIANgIAQdjTAEEANgIAA0AgAUHI0ABqIAFBvNAAaiICNgIAIAIgAUG00ABqIgM2AgAgAUHA0ABqIAM2AgAgAUHQ0ABqIAFBxNAAaiIDNgIAIAMgAjYCACABQdjQAGogAUHM0ABqIgI2AgAgAiADNgIAIAFB1NAAaiACNgIAIAFBIGoiAUGAAkcNAAtBeCAAa0EPcSIBIABqIgIgBkE4ayIDIAFrIgFBAXI2AgRBqNAAQfTTACgCADYCAEGY0AAgATYCAEGk0AAgAjYCACAAIANqQTg2AgQMAgsgACACTQ0AIAIgA0kNACABKAIMQQhxDQBBeCACa0EPcSIAIAJqIgNBmNAAKAIAIAZqIgcgAGsiAEEBcjYCBCABIAUgBmo2AgRBqNAAQfTTACgCADYCAEGY0AAgADYCAEGk0AAgAzYCACACIAdqQTg2AgQMAQsgAEGc0AAoAgBJBEBBnNAAIAA2AgALIAAgBmohA0HM0wAhAQJAAkACQANAIAMgASgCAEcEQCABKAIIIgENAQwCCwsgAS0ADEEIcUUNAQtBzNMAIQEDQCABKAIAIgMgAk0EQCADIAEoAgRqIgUgAksNAwsgASgCCCEBDAALAAsgASAANgIAIAEgASgCBCAGajYCBCAAQXggAGtBD3FqIgkgBEEDcjYCBCADQXggA2tBD3FqIgYgBCAJaiIEayEBIAIgBkYEQEGk0AAgBDYCAEGY0ABBmNAAKAIAIAFqIgA2AgAgBCAAQQFyNgIEDAgLQaDQACgCACAGRgRAQaDQACAENgIAQZTQAEGU0AAoAgAgAWoiADYCACAEIABBAXI2AgQgACAEaiAANgIADAgLIAYoAgQiBUEDcUEBRw0GIAVBeHEhCCAFQf8BTQRAIAVBA3YhAyAGKAIIIgAgBigCDCICRgRAQYzQAEGM0AAoAgBBfiADd3E2AgAMBwsgAiAANgIIIAAgAjYCDAwGCyAGKAIYIQcgBiAGKAIMIgBHBEAgACAGKAIIIgI2AgggAiAANgIMDAULIAZBFGoiAigCACIFRQRAIAYoAhAiBUUNBCAGQRBqIQILA0AgAiEDIAUiAEEUaiICKAIAIgUNACAAQRBqIQIgACgCECIFDQALIANBADYCAAwEC0F4IABrQQ9xIgEgAGoiByAGQThrIgMgAWsiAUEBcjYCBCAAIANqQTg2AgQgAiAFQTcgBWtBD3FqQT9rIgMgAyACQRBqSRsiA0EjNgIEQajQAEH00wAoAgA2AgBBmNAAIAE2AgBBpNAAIAc2AgAgA0EQakHU0wApAgA3AgAgA0HM0wApAgA3AghB1NMAIANBCGo2AgBB0NMAIAY2AgBBzNMAIAA2AgBB2NMAQQA2AgAgA0EkaiEBA0AgAUEHNgIAIAUgAUEEaiIBSw0ACyACIANGDQAgAyADKAIEQX5xNgIEIAMgAyACayIFNgIAIAIgBUEBcjYCBCAFQf8BTQRAIAVBeHFBtNAAaiEAAn9BjNAAKAIAIgFBASAFQQN2dCIDcUUEQEGM0AAgASADcjYCACAADAELIAAoAggLIgEgAjYCDCAAIAI2AgggAiAANgIMIAIgATYCCAwBC0EfIQEgBUH///8HTQRAIAVBJiAFQQh2ZyIAa3ZBAXEgAEEBdGtBPmohAQsgAiABNgIcIAJCADcCECABQQJ0QbzSAGohAEGQ0AAoAgAiA0EBIAF0IgZxRQRAIAAgAjYCAEGQ0AAgAyAGcjYCACACIAA2AhggAiACNgIIIAIgAjYCDAwBCyAFQRkgAUEBdmtBACABQR9HG3QhASAAKAIAIQMCQANAIAMiACgCBEF4cSAFRg0BIAFBHXYhAyABQQF0IQEgACADQQRxakEQaiIGKAIAIgMNAAsgBiACNgIAIAIgADYCGCACIAI2AgwgAiACNgIIDAELIAAoAggiASACNgIMIAAgAjYCCCACQQA2AhggAiAANgIMIAIgATYCCAtBmNAAKAIAIgEgBE0NAEGk0AAoAgAiACAEaiICIAEgBGsiAUEBcjYCBEGY0AAgATYCAEGk0AAgAjYCACAAIARBA3I2AgQgAEEIaiEBDAgLQQAhAUH80wBBMDYCAAwHC0EAIQALIAdFDQACQCAGKAIcIgJBAnRBvNIAaiIDKAIAIAZGBEAgAyAANgIAIAANAUGQ0ABBkNAAKAIAQX4gAndxNgIADAILIAdBEEEUIAcoAhAgBkYbaiAANgIAIABFDQELIAAgBzYCGCAGKAIQIgIEQCAAIAI2AhAgAiAANgIYCyAGQRRqKAIAIgJFDQAgAEEUaiACNgIAIAIgADYCGAsgASAIaiEBIAYgCGoiBigCBCEFCyAGIAVBfnE2AgQgASAEaiABNgIAIAQgAUEBcjYCBCABQf8BTQRAIAFBeHFBtNAAaiEAAn9BjNAAKAIAIgJBASABQQN2dCIBcUUEQEGM0AAgASACcjYCACAADAELIAAoAggLIgEgBDYCDCAAIAQ2AgggBCAANgIMIAQgATYCCAwBC0EfIQUgAUH///8HTQRAIAFBJiABQQh2ZyIAa3ZBAXEgAEEBdGtBPmohBQsgBCAFNgIcIARCADcCECAFQQJ0QbzSAGohAEGQ0AAoAgAiAkEBIAV0IgNxRQRAIAAgBDYCAEGQ0AAgAiADcjYCACAEIAA2AhggBCAENgIIIAQgBDYCDAwBCyABQRkgBUEBdmtBACAFQR9HG3QhBSAAKAIAIQACQANAIAAiAigCBEF4cSABRg0BIAVBHXYhACAFQQF0IQUgAiAAQQRxakEQaiIDKAIAIgANAAsgAyAENgIAIAQgAjYCGCAEIAQ2AgwgBCAENgIIDAELIAIoAggiACAENgIMIAIgBDYCCCAEQQA2AhggBCACNgIMIAQgADYCCAsgCUEIaiEBDAILAkAgB0UNAAJAIAMoAhwiAUECdEG80gBqIgIoAgAgA0YEQCACIAA2AgAgAA0BQZDQACAIQX4gAXdxIgg2AgAMAgsgB0EQQRQgBygCECADRhtqIAA2AgAgAEUNAQsgACAHNgIYIAMoAhAiAQRAIAAgATYCECABIAA2AhgLIANBFGooAgAiAUUNACAAQRRqIAE2AgAgASAANgIYCwJAIAVBD00EQCADIAQgBWoiAEEDcjYCBCAAIANqIgAgACgCBEEBcjYCBAwBCyADIARqIgIgBUEBcjYCBCADIARBA3I2AgQgAiAFaiAFNgIAIAVB/wFNBEAgBUF4cUG00ABqIQACf0GM0AAoAgAiAUEBIAVBA3Z0IgVxRQRAQYzQACABIAVyNgIAIAAMAQsgACgCCAsiASACNgIMIAAgAjYCCCACIAA2AgwgAiABNgIIDAELQR8hASAFQf///wdNBEAgBUEmIAVBCHZnIgBrdkEBcSAAQQF0a0E+aiEBCyACIAE2AhwgAkIANwIQIAFBAnRBvNIAaiEAQQEgAXQiBCAIcUUEQCAAIAI2AgBBkNAAIAQgCHI2AgAgAiAANgIYIAIgAjYCCCACIAI2AgwMAQsgBUEZIAFBAXZrQQAgAUEfRxt0IQEgACgCACEEAkADQCAEIgAoAgRBeHEgBUYNASABQR12IQQgAUEBdCEBIAAgBEEEcWpBEGoiBigCACIEDQALIAYgAjYCACACIAA2AhggAiACNgIMIAIgAjYCCAwBCyAAKAIIIgEgAjYCDCAAIAI2AgggAkEANgIYIAIgADYCDCACIAE2AggLIANBCGohAQwBCwJAIAlFDQACQCAAKAIcIgFBAnRBvNIAaiICKAIAIABGBEAgAiADNgIAIAMNAUGQ0AAgC0F+IAF3cTYCAAwCCyAJQRBBFCAJKAIQIABGG2ogAzYCACADRQ0BCyADIAk2AhggACgCECIBBEAgAyABNgIQIAEgAzYCGAsgAEEUaigCACIBRQ0AIANBFGogATYCACABIAM2AhgLAkAgBUEPTQRAIAAgBCAFaiIBQQNyNgIEIAAgAWoiASABKAIEQQFyNgIEDAELIAAgBGoiByAFQQFyNgIEIAAgBEEDcjYCBCAFIAdqIAU2AgAgCARAIAhBeHFBtNAAaiEBQaDQACgCACEDAn9BASAIQQN2dCICIAZxRQRAQYzQACACIAZyNgIAIAEMAQsgASgCCAsiAiADNgIMIAEgAzYCCCADIAE2AgwgAyACNgIIC0Gg0AAgBzYCAEGU0AAgBTYCAAsgAEEIaiEBCyAKQRBqJAAgAQtDACAARQRAPwBBEHQPCwJAIABB//8DcQ0AIABBAEgNACAAQRB2QAAiAEF/RgRAQfzTAEEwNgIAQX8PCyAAQRB0DwsACwvcPyIAQYAICwkBAAAAAgAAAAMAQZQICwUEAAAABQBBpAgLCQYAAAAHAAAACABB3AgLii1JbnZhbGlkIGNoYXIgaW4gdXJsIHF1ZXJ5AFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fYm9keQBDb250ZW50LUxlbmd0aCBvdmVyZmxvdwBDaHVuayBzaXplIG92ZXJmbG93AFJlc3BvbnNlIG92ZXJmbG93AEludmFsaWQgbWV0aG9kIGZvciBIVFRQL3gueCByZXF1ZXN0AEludmFsaWQgbWV0aG9kIGZvciBSVFNQL3gueCByZXF1ZXN0AEV4cGVjdGVkIFNPVVJDRSBtZXRob2QgZm9yIElDRS94LnggcmVxdWVzdABJbnZhbGlkIGNoYXIgaW4gdXJsIGZyYWdtZW50IHN0YXJ0AEV4cGVjdGVkIGRvdABTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX3N0YXR1cwBJbnZhbGlkIHJlc3BvbnNlIHN0YXR1cwBJbnZhbGlkIGNoYXJhY3RlciBpbiBjaHVuayBleHRlbnNpb25zAFVzZXIgY2FsbGJhY2sgZXJyb3IAYG9uX3Jlc2V0YCBjYWxsYmFjayBlcnJvcgBgb25fY2h1bmtfaGVhZGVyYCBjYWxsYmFjayBlcnJvcgBgb25fbWVzc2FnZV9iZWdpbmAgY2FsbGJhY2sgZXJyb3IAYG9uX2NodW5rX2V4dGVuc2lvbl92YWx1ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX3N0YXR1c19jb21wbGV0ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX3ZlcnNpb25fY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl91cmxfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9jaHVua19jb21wbGV0ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX2hlYWRlcl92YWx1ZV9jb21wbGV0ZWAgY2FsbGJhY2sgZXJyb3IAYG9uX21lc3NhZ2VfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9tZXRob2RfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9oZWFkZXJfZmllbGRfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9jaHVua19leHRlbnNpb25fbmFtZWAgY2FsbGJhY2sgZXJyb3IAVW5leHBlY3RlZCBjaGFyIGluIHVybCBzZXJ2ZXIASW52YWxpZCBoZWFkZXIgdmFsdWUgY2hhcgBJbnZhbGlkIGhlYWRlciBmaWVsZCBjaGFyAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fdmVyc2lvbgBJbnZhbGlkIG1pbm9yIHZlcnNpb24ASW52YWxpZCBtYWpvciB2ZXJzaW9uAEV4cGVjdGVkIHNwYWNlIGFmdGVyIHZlcnNpb24ARXhwZWN0ZWQgQ1JMRiBhZnRlciB2ZXJzaW9uAEludmFsaWQgSFRUUCB2ZXJzaW9uAEludmFsaWQgaGVhZGVyIHRva2VuAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fdXJsAEludmFsaWQgY2hhcmFjdGVycyBpbiB1cmwAVW5leHBlY3RlZCBzdGFydCBjaGFyIGluIHVybABEb3VibGUgQCBpbiB1cmwARW1wdHkgQ29udGVudC1MZW5ndGgASW52YWxpZCBjaGFyYWN0ZXIgaW4gQ29udGVudC1MZW5ndGgARHVwbGljYXRlIENvbnRlbnQtTGVuZ3RoAEludmFsaWQgY2hhciBpbiB1cmwgcGF0aABDb250ZW50LUxlbmd0aCBjYW4ndCBiZSBwcmVzZW50IHdpdGggVHJhbnNmZXItRW5jb2RpbmcASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgc2l6ZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2hlYWRlcl92YWx1ZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2NodW5rX2V4dGVuc2lvbl92YWx1ZQBJbnZhbGlkIGNoYXJhY3RlciBpbiBjaHVuayBleHRlbnNpb25zIHZhbHVlAE1pc3NpbmcgZXhwZWN0ZWQgTEYgYWZ0ZXIgaGVhZGVyIHZhbHVlAEludmFsaWQgYFRyYW5zZmVyLUVuY29kaW5nYCBoZWFkZXIgdmFsdWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyBxdW90ZSB2YWx1ZQBJbnZhbGlkIGNoYXJhY3RlciBpbiBjaHVuayBleHRlbnNpb25zIHF1b3RlZCB2YWx1ZQBQYXVzZWQgYnkgb25faGVhZGVyc19jb21wbGV0ZQBJbnZhbGlkIEVPRiBzdGF0ZQBvbl9yZXNldCBwYXVzZQBvbl9jaHVua19oZWFkZXIgcGF1c2UAb25fbWVzc2FnZV9iZWdpbiBwYXVzZQBvbl9jaHVua19leHRlbnNpb25fdmFsdWUgcGF1c2UAb25fc3RhdHVzX2NvbXBsZXRlIHBhdXNlAG9uX3ZlcnNpb25fY29tcGxldGUgcGF1c2UAb25fdXJsX2NvbXBsZXRlIHBhdXNlAG9uX2NodW5rX2NvbXBsZXRlIHBhdXNlAG9uX2hlYWRlcl92YWx1ZV9jb21wbGV0ZSBwYXVzZQBvbl9tZXNzYWdlX2NvbXBsZXRlIHBhdXNlAG9uX21ldGhvZF9jb21wbGV0ZSBwYXVzZQBvbl9oZWFkZXJfZmllbGRfY29tcGxldGUgcGF1c2UAb25fY2h1bmtfZXh0ZW5zaW9uX25hbWUgcGF1c2UAVW5leHBlY3RlZCBzcGFjZSBhZnRlciBzdGFydCBsaW5lAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fY2h1bmtfZXh0ZW5zaW9uX25hbWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyBuYW1lAFBhdXNlIG9uIENPTk5FQ1QvVXBncmFkZQBQYXVzZSBvbiBQUkkvVXBncmFkZQBFeHBlY3RlZCBIVFRQLzIgQ29ubmVjdGlvbiBQcmVmYWNlAFNwYW4gY2FsbGJhY2sgZXJyb3IgaW4gb25fbWV0aG9kAEV4cGVjdGVkIHNwYWNlIGFmdGVyIG1ldGhvZABTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2hlYWRlcl9maWVsZABQYXVzZWQASW52YWxpZCB3b3JkIGVuY291bnRlcmVkAEludmFsaWQgbWV0aG9kIGVuY291bnRlcmVkAFVuZXhwZWN0ZWQgY2hhciBpbiB1cmwgc2NoZW1hAFJlcXVlc3QgaGFzIGludmFsaWQgYFRyYW5zZmVyLUVuY29kaW5nYABTV0lUQ0hfUFJPWFkAVVNFX1BST1hZAE1LQUNUSVZJVFkAVU5QUk9DRVNTQUJMRV9FTlRJVFkAQ09QWQBNT1ZFRF9QRVJNQU5FTlRMWQBUT09fRUFSTFkATk9USUZZAEZBSUxFRF9ERVBFTkRFTkNZAEJBRF9HQVRFV0FZAFBMQVkAUFVUAENIRUNLT1VUAEdBVEVXQVlfVElNRU9VVABSRVFVRVNUX1RJTUVPVVQATkVUV09SS19DT05ORUNUX1RJTUVPVVQAQ09OTkVDVElPTl9USU1FT1VUAExPR0lOX1RJTUVPVVQATkVUV09SS19SRUFEX1RJTUVPVVQAUE9TVABNSVNESVJFQ1RFRF9SRVFVRVNUAENMSUVOVF9DTE9TRURfUkVRVUVTVABDTElFTlRfQ0xPU0VEX0xPQURfQkFMQU5DRURfUkVRVUVTVABCQURfUkVRVUVTVABIVFRQX1JFUVVFU1RfU0VOVF9UT19IVFRQU19QT1JUAFJFUE9SVABJTV9BX1RFQVBPVABSRVNFVF9DT05URU5UAE5PX0NPTlRFTlQAUEFSVElBTF9DT05URU5UAEhQRV9JTlZBTElEX0NPTlNUQU5UAEhQRV9DQl9SRVNFVABHRVQASFBFX1NUUklDVABDT05GTElDVABURU1QT1JBUllfUkVESVJFQ1QAUEVSTUFORU5UX1JFRElSRUNUAENPTk5FQ1QATVVMVElfU1RBVFVTAEhQRV9JTlZBTElEX1NUQVRVUwBUT09fTUFOWV9SRVFVRVNUUwBFQVJMWV9ISU5UUwBVTkFWQUlMQUJMRV9GT1JfTEVHQUxfUkVBU09OUwBPUFRJT05TAFNXSVRDSElOR19QUk9UT0NPTFMAVkFSSUFOVF9BTFNPX05FR09USUFURVMATVVMVElQTEVfQ0hPSUNFUwBJTlRFUk5BTF9TRVJWRVJfRVJST1IAV0VCX1NFUlZFUl9VTktOT1dOX0VSUk9SAFJBSUxHVU5fRVJST1IASURFTlRJVFlfUFJPVklERVJfQVVUSEVOVElDQVRJT05fRVJST1IAU1NMX0NFUlRJRklDQVRFX0VSUk9SAElOVkFMSURfWF9GT1JXQVJERURfRk9SAFNFVF9QQVJBTUVURVIAR0VUX1BBUkFNRVRFUgBIUEVfVVNFUgBTRUVfT1RIRVIASFBFX0NCX0NIVU5LX0hFQURFUgBNS0NBTEVOREFSAFNFVFVQAFdFQl9TRVJWRVJfSVNfRE9XTgBURUFSRE9XTgBIUEVfQ0xPU0VEX0NPTk5FQ1RJT04ASEVVUklTVElDX0VYUElSQVRJT04ARElTQ09OTkVDVEVEX09QRVJBVElPTgBOT05fQVVUSE9SSVRBVElWRV9JTkZPUk1BVElPTgBIUEVfSU5WQUxJRF9WRVJTSU9OAEhQRV9DQl9NRVNTQUdFX0JFR0lOAFNJVEVfSVNfRlJPWkVOAEhQRV9JTlZBTElEX0hFQURFUl9UT0tFTgBJTlZBTElEX1RPS0VOAEZPUkJJRERFTgBFTkhBTkNFX1lPVVJfQ0FMTQBIUEVfSU5WQUxJRF9VUkwAQkxPQ0tFRF9CWV9QQVJFTlRBTF9DT05UUk9MAE1LQ09MAEFDTABIUEVfSU5URVJOQUwAUkVRVUVTVF9IRUFERVJfRklFTERTX1RPT19MQVJHRV9VTk9GRklDSUFMAEhQRV9PSwBVTkxJTksAVU5MT0NLAFBSSQBSRVRSWV9XSVRIAEhQRV9JTlZBTElEX0NPTlRFTlRfTEVOR1RIAEhQRV9VTkVYUEVDVEVEX0NPTlRFTlRfTEVOR1RIAEZMVVNIAFBST1BQQVRDSABNLVNFQVJDSABVUklfVE9PX0xPTkcAUFJPQ0VTU0lORwBNSVNDRUxMQU5FT1VTX1BFUlNJU1RFTlRfV0FSTklORwBNSVNDRUxMQU5FT1VTX1dBUk5JTkcASFBFX0lOVkFMSURfVFJBTlNGRVJfRU5DT0RJTkcARXhwZWN0ZWQgQ1JMRgBIUEVfSU5WQUxJRF9DSFVOS19TSVpFAE1PVkUAQ09OVElOVUUASFBFX0NCX1NUQVRVU19DT01QTEVURQBIUEVfQ0JfSEVBREVSU19DT01QTEVURQBIUEVfQ0JfVkVSU0lPTl9DT01QTEVURQBIUEVfQ0JfVVJMX0NPTVBMRVRFAEhQRV9DQl9DSFVOS19DT01QTEVURQBIUEVfQ0JfSEVBREVSX1ZBTFVFX0NPTVBMRVRFAEhQRV9DQl9DSFVOS19FWFRFTlNJT05fVkFMVUVfQ09NUExFVEUASFBFX0NCX0NIVU5LX0VYVEVOU0lPTl9OQU1FX0NPTVBMRVRFAEhQRV9DQl9NRVNTQUdFX0NPTVBMRVRFAEhQRV9DQl9NRVRIT0RfQ09NUExFVEUASFBFX0NCX0hFQURFUl9GSUVMRF9DT01QTEVURQBERUxFVEUASFBFX0lOVkFMSURfRU9GX1NUQVRFAElOVkFMSURfU1NMX0NFUlRJRklDQVRFAFBBVVNFAE5PX1JFU1BPTlNFAFVOU1VQUE9SVEVEX01FRElBX1RZUEUAR09ORQBOT1RfQUNDRVBUQUJMRQBTRVJWSUNFX1VOQVZBSUxBQkxFAFJBTkdFX05PVF9TQVRJU0ZJQUJMRQBPUklHSU5fSVNfVU5SRUFDSEFCTEUAUkVTUE9OU0VfSVNfU1RBTEUAUFVSR0UATUVSR0UAUkVRVUVTVF9IRUFERVJfRklFTERTX1RPT19MQVJHRQBSRVFVRVNUX0hFQURFUl9UT09fTEFSR0UAUEFZTE9BRF9UT09fTEFSR0UASU5TVUZGSUNJRU5UX1NUT1JBR0UASFBFX1BBVVNFRF9VUEdSQURFAEhQRV9QQVVTRURfSDJfVVBHUkFERQBTT1VSQ0UAQU5OT1VOQ0UAVFJBQ0UASFBFX1VORVhQRUNURURfU1BBQ0UAREVTQ1JJQkUAVU5TVUJTQ1JJQkUAUkVDT1JEAEhQRV9JTlZBTElEX01FVEhPRABOT1RfRk9VTkQAUFJPUEZJTkQAVU5CSU5EAFJFQklORABVTkFVVEhPUklaRUQATUVUSE9EX05PVF9BTExPV0VEAEhUVFBfVkVSU0lPTl9OT1RfU1VQUE9SVEVEAEFMUkVBRFlfUkVQT1JURUQAQUNDRVBURUQATk9UX0lNUExFTUVOVEVEAExPT1BfREVURUNURUQASFBFX0NSX0VYUEVDVEVEAEhQRV9MRl9FWFBFQ1RFRABDUkVBVEVEAElNX1VTRUQASFBFX1BBVVNFRABUSU1FT1VUX09DQ1VSRUQAUEFZTUVOVF9SRVFVSVJFRABQUkVDT05ESVRJT05fUkVRVUlSRUQAUFJPWFlfQVVUSEVOVElDQVRJT05fUkVRVUlSRUQATkVUV09SS19BVVRIRU5USUNBVElPTl9SRVFVSVJFRABMRU5HVEhfUkVRVUlSRUQAU1NMX0NFUlRJRklDQVRFX1JFUVVJUkVEAFVQR1JBREVfUkVRVUlSRUQAUEFHRV9FWFBJUkVEAFBSRUNPTkRJVElPTl9GQUlMRUQARVhQRUNUQVRJT05fRkFJTEVEAFJFVkFMSURBVElPTl9GQUlMRUQAU1NMX0hBTkRTSEFLRV9GQUlMRUQATE9DS0VEAFRSQU5TRk9STUFUSU9OX0FQUExJRUQATk9UX01PRElGSUVEAE5PVF9FWFRFTkRFRABCQU5EV0lEVEhfTElNSVRfRVhDRUVERUQAU0lURV9JU19PVkVSTE9BREVEAEhFQUQARXhwZWN0ZWQgSFRUUC8AAF4TAAAmEwAAMBAAAPAXAACdEwAAFRIAADkXAADwEgAAChAAAHUSAACtEgAAghMAAE8UAAB/EAAAoBUAACMUAACJEgAAixQAAE0VAADUEQAAzxQAABAYAADJFgAA3BYAAMERAADgFwAAuxQAAHQUAAB8FQAA5RQAAAgXAAAfEAAAZRUAAKMUAAAoFQAAAhUAAJkVAAAsEAAAixkAAE8PAADUDgAAahAAAM4QAAACFwAAiQ4AAG4TAAAcEwAAZhQAAFYXAADBEwAAzRMAAGwTAABoFwAAZhcAAF8XAAAiEwAAzg8AAGkOAADYDgAAYxYAAMsTAACqDgAAKBcAACYXAADFEwAAXRYAAOgRAABnEwAAZRMAAPIWAABzEwAAHRcAAPkWAADzEQAAzw4AAM4VAAAMEgAAsxEAAKURAABhEAAAMhcAALsTAEH5NQsBAQBBkDYL4AEBAQIBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB/TcLAQEAQZE4C14CAwICAgICAAACAgACAgACAgICAgICAgICAAQAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAAgACAEH9OQsBAQBBkToLXgIAAgICAgIAAAICAAICAAICAgICAgICAgIAAwAEAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgIAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgACAAIAQfA7Cw1sb3NlZWVwLWFsaXZlAEGJPAsBAQBBoDwL4AEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBBiT4LAQEAQaA+C+cBAQEBAQEBAQEBAQEBAgEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQFjaHVua2VkAEGwwAALXwEBAAEBAQEBAAABAQABAQABAQEBAQEBAQEBAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQABAEGQwgALIWVjdGlvbmVudC1sZW5ndGhvbnJveHktY29ubmVjdGlvbgBBwMIACy1yYW5zZmVyLWVuY29kaW5ncGdyYWRlDQoNCg0KU00NCg0KVFRQL0NFL1RTUC8AQfnCAAsFAQIAAQMAQZDDAAvgAQQBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAEH5xAALBQECAAEDAEGQxQAL4AEEAQEFAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB+cYACwQBAAABAEGRxwAL3wEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAEH6yAALBAEAAAIAQZDJAAtfAwQAAAQEBAQEBAQEBAQEBQQEBAQEBAQEBAQEBAAEAAYHBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQABAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAQAQfrKAAsEAQAAAQBBkMsACwEBAEGqywALQQIAAAAAAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwAAAAAAAAMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAEH6zAALBAEAAAEAQZDNAAsBAQBBms0ACwYCAAAAAAIAQbHNAAs6AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAAAAAAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwBB8M4AC5YBTk9VTkNFRUNLT1VUTkVDVEVURUNSSUJFTFVTSEVURUFEU0VBUkNIUkdFQ1RJVklUWUxFTkRBUlZFT1RJRllQVElPTlNDSFNFQVlTVEFUQ0hHRU9SRElSRUNUT1JUUkNIUEFSQU1FVEVSVVJDRUJTQ1JJQkVBUkRPV05BQ0VJTkROS0NLVUJTQ1JJQkVIVFRQL0FEVFAv", "base64");
 });
 
 // ../../node_modules/@actions/github/node_modules/undici/lib/llhttp/llhttp_simd-wasm.js
 var require_llhttp_simd_wasm2 = __commonJS((exports, module) => {
-  var { Buffer: Buffer3 } = __require("node:buffer");
-  module.exports = Buffer3.from("AGFzbQEAAAABJwdgAX8Bf2ADf39/AX9gAX8AYAJ/fwBgBH9/f38Bf2AAAGADf39/AALLAQgDZW52GHdhc21fb25faGVhZGVyc19jb21wbGV0ZQAEA2VudhV3YXNtX29uX21lc3NhZ2VfYmVnaW4AAANlbnYLd2FzbV9vbl91cmwAAQNlbnYOd2FzbV9vbl9zdGF0dXMAAQNlbnYUd2FzbV9vbl9oZWFkZXJfZmllbGQAAQNlbnYUd2FzbV9vbl9oZWFkZXJfdmFsdWUAAQNlbnYMd2FzbV9vbl9ib2R5AAEDZW52GHdhc21fb25fbWVzc2FnZV9jb21wbGV0ZQAAAy0sBQYAAAIAAAAAAAACAQIAAgICAAADAAAAAAMDAwMBAQEBAQEBAQEAAAIAAAAEBQFwARISBQMBAAIGCAF/AUGA1AQLB9EFIgZtZW1vcnkCAAtfaW5pdGlhbGl6ZQAIGV9faW5kaXJlY3RfZnVuY3Rpb25fdGFibGUBAAtsbGh0dHBfaW5pdAAJGGxsaHR0cF9zaG91bGRfa2VlcF9hbGl2ZQAvDGxsaHR0cF9hbGxvYwALBm1hbGxvYwAxC2xsaHR0cF9mcmVlAAwEZnJlZQAMD2xsaHR0cF9nZXRfdHlwZQANFWxsaHR0cF9nZXRfaHR0cF9tYWpvcgAOFWxsaHR0cF9nZXRfaHR0cF9taW5vcgAPEWxsaHR0cF9nZXRfbWV0aG9kABAWbGxodHRwX2dldF9zdGF0dXNfY29kZQAREmxsaHR0cF9nZXRfdXBncmFkZQASDGxsaHR0cF9yZXNldAATDmxsaHR0cF9leGVjdXRlABQUbGxodHRwX3NldHRpbmdzX2luaXQAFQ1sbGh0dHBfZmluaXNoABYMbGxodHRwX3BhdXNlABcNbGxodHRwX3Jlc3VtZQAYG2xsaHR0cF9yZXN1bWVfYWZ0ZXJfdXBncmFkZQAZEGxsaHR0cF9nZXRfZXJybm8AGhdsbGh0dHBfZ2V0X2Vycm9yX3JlYXNvbgAbF2xsaHR0cF9zZXRfZXJyb3JfcmVhc29uABwUbGxodHRwX2dldF9lcnJvcl9wb3MAHRFsbGh0dHBfZXJybm9fbmFtZQAeEmxsaHR0cF9tZXRob2RfbmFtZQAfEmxsaHR0cF9zdGF0dXNfbmFtZQAgGmxsaHR0cF9zZXRfbGVu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PgtBhwEMPQtBiAEMPAtBiQEMOwtBigEMOgtBiwEMOQtBjAEMOAtBjQEMNwtBjgEMNgtBjwEMNQtBkAEMNAtBkQEMMwtBkgEMMgtBkwEMMQtBlAEMMAtBlQEMLwtBlgEMLgtBlwEMLQtBmAEMLAtBmQEMKwtBmgEMKgtBmwEMKQtBnAEMKAtBnQEMJwtBngEMJgtBnwEMJQtBoAEMJAtBoQEMIwtBogEMIgtBowEMIQtBpAEMIAtBpQEMHwtBpgEMHgtBpwEMHQtBqAEMHAtBqQEMGwtBqgEMGgtBqwEMGQtBrAEMGAtBrQEMFwtBrgEMFgtBAQwVC0GvAQwUC0GwAQwTC0GxAQwSC0GzAQwRC0GyAQwQC0G0AQwPC0G1AQwOC0G2AQwNC0G3AQwMC0G4AQwLC0G5AQwKC0G6AQwJC0G7AQwIC0HGAQwHC0G8AQwGC0G9AQwFC0G+AQwEC0G/AQwDC0HAAQwCC0HCAQwBC0HBAQshAwNAAkACQAJAAkACQAJAAkACQAJAIAICfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAgAgJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACfwJAAkACfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAC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iQEhAwykAgtBASABLQAAQd8ARw1nGiABQQFqIQEMXgtBigEhAyABIARGDaICIAIoAgAiACAEIAFraiEFIAEgAGtBAWohBgNAIAEtAAAgAEGMzwBqLQAARw1kIABBAUYN+gEgAEEBaiEAIAQgAUEBaiIBRw0ACyACIAU2AgAMogILQYsBIQMgASAERg2hAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGOzwBqLQAARw1kIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyiAgsgAkEANgIAIAZBAWohAUECDGULQYwBIQMgASAERg2gAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHwzwBqLQAARw1jIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyhAgsgAkEANgIAIAZBAWohAUEfDGQLQY0BIQMgASAERg2fAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHyzwBqLQAARw1iIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAygAgsgAkEANgIAIAZBAWohAUEJDGMLIAEgBEYEQEGOASEDDJ8CCwJAAkAgAS0AAEHJAGsOBwBiYmJiYgFiCyABQQFqIQFB+AAhAwyGAgsgAUEBaiEBQfkAIQMMhQILQY8BIQMgASAERg2dAiACKAIAIgAgBCABa2ohBSABIABrQQVqIQYCQANAIAEtAAAgAEGRzwBqLQAARw1gIABBBUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyeAgsgAkEANgIAIAZBAWohAUEYDGELQZABIQMgASAERg2cAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGXzwBqLQAARw1fIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAydAgsgAkEANgIAIAZBAWohAUEXDGALQZEBIQMgASAERg2bAiACKAIAIgAgBCABa2ohBSABIABrQQZqIQYCQANAIAEtAAAgAEGazwBqLQAARw1eIABBBkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAycAgsgAkEANgIAIAZBAWohAUEV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JSIARQ0RIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMtAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0gIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMswELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0iIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMsgELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0OIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMsQELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0dIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMsAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0fIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMrwELIABBP0cNASABQQFqCyEBQQUhAwyUAQtBACEDIAJBADYCHCACIAE2AhQgAkH9EjYCECACQQc2AgwMrAELIAJBADYCHCACIAE2AhQgAkHcCDYCECACQQc2AgxBACEDDKsBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNByACQeUANgIcIAIgATYCFCACIAA2AgxBACEDDKoBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNFiACQdMANgIcIAIgATYCFCACIAA2AgxBACEDDKkBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNGCACQdIANgIcIAIgATYCFCACIAA2AgxBACEDDKgBCyACQQA2AhwgAiABNgIUIAJBxgo2AhAgAkEHNgIMQQAhAwynAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQMgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwymAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRIgAkHTADYCHCACIAE2AhQgAiAANgIMQQAhAwylAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRQgAkHSADYCHCACIAE2AhQgAiAANgIMQQAhAwykAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQAgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwyjAQtB1QAhAwyJAQsgAEEVRwRAIAJBADYCHCACIAE2AhQgAkG5DTYCECACQRo2AgxBACEDDKIBCyACQeQANgIcIAIgATYCFCACQeMXNgIQIAJBFTYCDEEAIQMMoQELIAJBADYCACAGQQFqIQEgAi0AKSIAQSNrQQtJDQQCQCAAQQZLDQBBASAAdEHKAHFFDQAMBQtBACEDIAJBADYCHCACIAE2AhQgAkH3CTYCECACQQg2AgwMoAELIAJBADYCACAGQQFqIQEgAi0AKUEhRg0DIAJBADYCHCACIAE2AhQgAkGbCjYCECACQQg2AgxBACEDDJ8BCyACQQA2AgALQQAhAyACQQA2AhwgAiABNgIUIAJBkDM2AhAgAkEINgIMDJ0BCyACQQA2AgAgBkEBaiEBIAItAClBI0kNACACQQA2AhwgAiABNgIUIAJB0wk2AhAgAkEINgIMQQAhAwycAQtB0QAhAwyCAQsgAS0AAEEwayIAQf8BcUEKSQRAIAIgADoAKiABQQFqIQFBzwAhAwyCAQsgAigCBCEAIAJBADYCBCACIAAgARAoIgBFDYYBIAJB3gA2AhwgAiABNgIUIAIgADYCDEEAIQMMmgELIAIoAgQhACACQQA2AgQgAiAAIAEQKCIARQ2GASACQdwANgIcIAIgATYCFCACIAA2AgxBACEDDJkBCyACKAIEIQAgAkEANgIEIAIgACAFECgiAEUEQCAFIQEMhwELIAJB2gA2AhwgAiAFNgIUIAIgADYCDAyYAQtBACEBQQEhAwsgAiADOgArIAVBAWohAwJAAkACQCACLQAtQRBxDQACQAJAAkAgAi0AKg4DAQACBAsgBkUNAwwCCyAADQEMAgsgAUUNAQsgAigCBCEAIAJBADYCBCACIAAgAxAoIgBFBEAgAyEBDAILIAJB2AA2AhwgAiADNgIUIAIgADYCDEEAIQMMmAELIAIoAgQhACACQQA2AgQgAiAAIAMQKCIARQRAIAMhAQyHAQsgAkHZADYCHCACIAM2AhQgAiAANgIMQQAhAwyXAQtBzAAhAwx9CyAAQRVHBEAgAkEANgIcIAIgATYCFCACQZQNNgIQIAJBITYCDEEAIQMMlgELIAJB1wA2AhwgAiABNgIUIAJByRc2AhAgAkEVNgIMQQAhAwyVAQtBACEDIAJBADYCHCACIAE2AhQgAkGAETYCECACQQk2AgwMlAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0AIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMkwELQckAIQMMeQsgAkEANgIcIAIgATYCFCACQcEoNgIQIAJBBzYCDCACQQA2AgBBACEDDJEBCyACKAIEIQBBACEDIAJBADYCBCACIAAgARAlIgBFDQAgAkHSADYCHCACIAE2AhQgAiAANgIMDJABC0HIACEDDHYLIAJBADYCACAFIQELIAJBgBI7ASogAUEBaiEBQQAhAAJAIAIoAjgiA0UNACADKAIwIgNFDQAgAiADEQAAIQALIAANAQtBxwAhAwxzCyAAQRVGBEAgAkHRADYCHCACIAE2AhQgAkHjFzYCECACQRU2AgxBACEDDIwBC0EAIQMgAkEANgIcIAIgATYCFCACQbkNNgIQIAJBGjYCDAyLAQtBACEDIAJBADYCHCACIAE2AhQgAkGgGTYCECACQR42AgwMigELIAEtAABBOkYEQCACKAIEIQBBACEDIAJBADYCBCACIAAgARApIgBFDQEgAkHDADYCHCACIAA2AgwgAiABQQFqNgIUDIoBC0EAIQMgAkEANgIcIAIgATYCFCACQbERNgIQIAJBCjYCDAyJAQsgAUEBaiEBQTshAwxvCyACQcMANgIcIAIgADYCDCACIAFBAWo2AhQMhwELQQAhAyACQQA2AhwgAiABNgIUIAJB8A42AhAgAkEcNgIMDIYBCyACIAIvATBBEHI7ATAMZgsCQCACLwEwIgBBCHFFDQAgAi0AKEEBRw0AIAItAC1BCHFFDQMLIAIgAEH3+wNxQYAEcjsBMAwECyABIARHBEACQANAIAEtAABBMGsiAEH/AXFBCk8EQEE1IQMMbgsgAikDICIKQpmz5syZs+bMGVYNASACIApCCn4iCjcDICAKIACtQv8BgyILQn+FVg0BIAIgCiALfDcDICAEIAFBAWoiAUcNAAtBOSEDDIUBCyACKAIEIQBBACEDIAJBADYCBCACIAAgAUEBaiIBECoiAA0MDHcLQTkhAwyDAQsgAi0AMEEgcQ0GQcUBIQMMaQtBACEDIAJBADYCBCACIAEgARAqIgBFDQQgAkE6NgIcIAIgADYCDCACIAFBAWo2AhQMgQELIAItAChBAUcNACACLQAtQQhxRQ0BC0E3IQMMZgsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEQKiIABEAgAkE7NgIcIAIgADYCDCACIAFBAWo2AhQMfwsgAUEBaiEBDG4LIAJBCDoALAwECyABQQFqIQEMbQtBACEDIAJBADYCHCACIAE2AhQgAkHkEjYCECACQQQ2AgwMewsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEQKiIARQ1sIAJBNzYCHCACIAE2AhQgAiAANgIMDHoLIAIgAi8BMEEgcjsBMAtBMCEDDF8LIAJBNjYCHCACIAE2AhQgAiAANgIMDHcLIABBLEcNASABQQFqIQBBASEBAkACQAJAAkACQCACLQAsQQVrDgQDAQIEAAsgACEBDAQLQQIhAQwBC0EEIQELIAJBAToALCACIAIvATAgAXI7ATAgACEBDAELIAIgAi8BMEEIcjsBMCAAIQELQTkhAwxcCyACQQA6ACwLQTQhAwxaCyABIARGBEBBLSEDDHMLAkACQANAAkAgAS0AAEEKaw4EAgAAAwALIAQgAUEBaiIBRw0AC0EtIQMMdAsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEQKiIARQ0CIAJBLDYCHCACIAE2AhQgAiAANgIMDHMLIAIoAgQhAEEAIQMgAkEANgIEIAIgACABECoiAEUEQCABQQFqIQEMAgsgAkEsNgIcIAIgADYCDCACIAFBAWo2AhQMcgsgAS0AAEENRgRAIAIoAgQhAEEAIQMgAkEANgIEIAIgACABECoiAEUEQCABQQFqIQEMAgsgAkEsNgIcIAIgADYCDCACIAFBAWo2AhQMcgsgAi0ALUEBcQRAQcQBIQMMWQsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEQKiIADQEMZQtBLyEDDFcLIAJBLjYCHCACIAE2AhQgAiAANgIMDG8LQQAhAyACQQA2AhwgAiABNgIUIAJB8BQ2AhAgAkEDNgIMDG4LQQEhAwJAAkACQAJAIAItACxBBWsOBAMBAgAECyACIAIvATBBCHI7ATAMAwtBAiEDDAELQQQhAwsgAkEBOgAsIAIgAi8BMCADcjsBMAtBKiEDDFMLQQAhAyACQQA2AhwgAiABNgIUIAJB4Q82AhAgAkEKNgIMDGsLQQEhAwJAAkACQAJAAkACQCACLQAsQQJrDgcFBAQDAQIABAsgAiACLwEwQQhyOwEwDAMLQQIhAwwBC0EEIQMLIAJBAToALCACIAIvATAgA3I7ATALQSshAwxSC0EAIQMgAkEANgIcIAIgATYCFCACQasSNgIQIAJBCzYCDAxqC0EAIQMgAkEANgIcIAIgATYCFCACQf0NNgIQIAJBHTYCDAxpCyABIARHBEADQCABLQAAQSBHDUggBCABQQFqIgFHDQALQSUhAwxpC0ElIQMMaAsgAi0ALUEBcQRAQcMBIQMMTwsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEQKSIABEAgAkEmNgIcIAIgADYCDCACIAFBAWo2AhQMaAsgAUEBaiEBDFwLIAFBAWohASACLwEwIgBBgAFxBEBBACEAAkAgAigCOCIDRQ0AIAMoAlQiA0UNACACIAMRAAAhAAsgAEUNBiAAQRVHDR8gAkEFNgIcIAIgATYCFCACQfkXNgIQIAJBFTYCDEEAIQMMZwsCQCAAQaAEcUGgBEcNACACLQAtQQJxDQBBACEDIAJBADYCHCACIAE2AhQgAkGWEzYCECACQQQ2AgwMZwsgAgJ/IAIvATBBFHFBFEYEQEEBIAItAChBAUYNARogAi8BMkHlAEYMAQsgAi0AKUEFRgs6AC5BACEAAkAgAigCOCIDRQ0AIAMoAiQiA0UNACACIAMRAAAhAAsCQAJAAkACQAJAIAAOFgIBAAQEBAQEBAQEBAQEBAQEBAQEBAMECyACQQE6AC4LIAIgAi8BMEHAAHI7ATALQSchAwxPCyACQSM2AhwgAiABNgIUIAJBpRY2AhAgAkEVNgIMQQAhAwxnC0EAIQMgAkEANgIcIAIgATYCFCACQdULNgIQIAJBETYCDAxmC0EAIQACQCACKAI4IgNFDQAgAygCLCIDRQ0AIAIgAxEAACEACyAADQELQQ4hAwxLCyAAQRVGBEAgAkECNgIcIAIgATYCFCACQbAYNgIQIAJBFTYCDEEAIQMMZAtBACEDIAJBADYCHCACIAE2AhQgAkGnDjYCECACQRI2AgwMYwtBACEDIAJBADYCHCACIAE2AhQgAkGqHDYCECACQQ82AgwMYgsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEgCqdqIgEQKyIARQ0AIAJBBTYCHCACIAE2AhQgAiAANgIMDGELQQ8hAwxHC0EAIQMgAkEANgIcIAIgATYCFCACQc0TNgIQIAJBDDYCDAxfC0IBIQoLIAFBAWohAQJAIAIpAyAiC0L//////////w9YBEAgAiALQgSGIAqENwMgDAELQQAhAyACQQA2AhwgAiABNgIUIAJBrQk2AhAgAkEMNgIMDF4LQSQhAwxEC0EAIQMgAkEANgIcIAIgATYCFCACQc0TNgIQIAJBDDYCDAxcCyACKAIEIQBBACEDIAJBADYCBCACIAAgARAsIgBFBEAgAUEBaiEBDFILIAJBFzYCHCACIAA2AgwgAiABQQFqNgIUDFsLIAIoAgQhAEEAIQMgAkEANgIEAkAgAiAAIAEQLCIARQRAIAFBAWohAQwBCyACQRY2AhwgAiAANgIMIAIgAUEBajYCFAxbC0EfIQMMQQtBACEDIAJBADYCHCACIAE2AhQgAkGaDzYCECACQSI2AgwMWQsgAigCBCEAQQAhAyACQQA2AgQgAiAAIAEQLSIARQRAIAFBAWohAQxQCyACQRQ2AhwgAiAANgIMIAIgAUEBajYCFAxYCyACKAIEIQBBACEDIAJBADYCBAJAIAIgACABEC0iAEUEQCABQQFqIQEMAQsgAkETNgIcIAIgADYCDCACIAFBAWo2AhQMWAtBHiEDDD4LQQAhAyACQQA2AhwgAiABNgIUIAJBxgw2AhAgAkEjNgIMDFYLIAIoAgQhAEEAIQMgAkEANgIEIAIgACABEC0iAEUEQCABQQFqIQEMTgsgAkERNgIcIAIgADYCDCACIAFBAWo2AhQMVQsgAkEQNgIcIAIgATYCFCACIAA2AgwMVAtBACEDIAJBADYCHCACIAE2AhQgAkHGDDYCECACQSM2AgwMUwtBACEDIAJBADYCHCACIAE2AhQgAkHAFTYCECACQQI2AgwMUgsgAigCBCEAQQAhAyACQQA2AgQCQCACIAAgARAtIgBFBEAgAUEBaiEBDAELIAJBDjYCHCACIAA2AgwgAiABQQFqNgIUDFILQRshAww4C0EAIQMgAkEANgIcIAIgATYCFCACQcYMNgIQIAJBIzYCDAxQCyACKAIEIQBBACEDIAJBADYCBAJAIAIgACABECwiAEUEQCABQQFqIQEMAQsgAkENNgIcIAIgADYCDCACIAFBAWo2AhQMUAtBGiEDDDYLQQAhAyACQQA2AhwgAiABNgIUIAJBmg82AhAgAkEiNgIMDE4LIAIoAgQhAEEAIQMgAkEANgIEAkAgAiAAIAEQLCIARQRAIAFBAWohAQwBCyACQQw2AhwgAiAANgIMIAIgAUEBajYCFAxOC0EZIQMMNAtBACEDIAJBADYCHCACIAE2AhQgAkGaDzYCECACQSI2AgwMTAsgAEEVRwRAQQAhAyACQQA2AhwgAiABNgIUIAJBgww2AhAgAkETNgIMDEwLIAJBCjYCHCACIAE2AhQgAkHkFjYCECACQRU2AgxBACEDDEsLIAIoAgQhAEEAIQMgAkEANgIEIAIgACABIAqnaiIBECsiAARAIAJBBzYCHCACIAE2AhQgAiAANgIMDEsLQRMhAwwxCyAAQRVHBEBBACEDIAJBADYCHCACIAE2AhQgAkHaDTYCECACQRQ2AgwMSgsgAkEeNgIcIAIgATYCFCACQfkXNgIQIAJBFTYCDEEAIQMMSQtBACEAAkAgAigCOCIDRQ0AIAMoAiwiA0UNACACIAMRAAAhAAsgAEUNQSAAQRVGBEAgAkEDNgIcIAIgATYCFCACQbAYNgIQIAJBFTYCDEEAIQMMSQtBACEDIAJBADYCHCACIAE2AhQgAkGnDjYCECACQRI2AgwMSAtBACEDIAJBADYCHCACIAE2AhQgAkHaDTYCECACQRQ2AgwMRwtBACEDIAJBADYCHCACIAE2AhQgAkGnDjYCECACQRI2AgwMRgsgAkEAOgAvIAItAC1BBHFFDT8LIAJBADoALyACQQE6ADRBACEDDCsLQQAhAyACQQA2AhwgAkHkETYCECACQQc2AgwgAiABQQFqNgIUDEMLAkADQAJAIAEtAABBCmsOBAACAgACCyAEIAFBAWoiAUcNAAtB3QEhAwxDCwJAAkAgAi0ANEEBRw0AQQAhAAJAIAIoAjgiA0UNACADKAJYIgNFDQAgAiADEQAAIQALIABFDQAgAEEVRw0BIAJB3AE2AhwgAiABNgIUIAJB1RY2AhAgAkEVNgIMQQAhAwxEC0HBASEDDCoLIAJBADYCHCACIAE2AhQgAkHpCzYCECACQR82AgxBACEDDEILAkACQCACLQAoQQFrDgIEAQALQcABIQMMKQtBuQEhAwwoCyACQQI6AC9BACEAAkAgAigCOCIDRQ0AIAMoAgAiA0UNACACIAMRAAAhAAsgAEUEQEHCASEDDCgLIABBFUcEQCACQQA2AhwgAiABNgIUIAJBpAw2AhAgAkEQNgIMQQAhAwxBCyACQdsBNgIcIAIgATYCFCACQfoWNgIQIAJBFTYCDEEAIQMMQAsgASAERgRAQdoBIQMMQAsgAS0AAEHIAEYNASACQQE6ACgLQawBIQMMJQtBvwEhAwwkCyABIARHBEAgAkEQNgIIIAIgATYCBEG+ASEDDCQLQdkBIQMMPAsgASAERgRAQdgBIQMMPAsgAS0AAEHIAEcNBCABQQFqIQFBvQEhAwwiCyABIARGBEBB1wEhAww7CwJAAkAgAS0AAEHFAGsOEAAFBQUFBQUFBQUFBQUFBQEFCyABQQFqIQFBuwEhAwwiCyABQQFqIQFBvAEhAwwhC0HWASEDIAEgBEYNOSACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGD0ABqLQAARw0DIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAw6CyACKAIEIQAgAkIANwMAIAIgACAGQQFqIgEQJyIARQRAQcYBIQMMIQsgAkHVATYCHCACIAE2AhQgAiAANgIMQQAhAww5C0HUASEDIAEgBEYNOCACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEGB0ABqLQAARw0CIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAw5CyACQYEEOwEoIAIoAgQhACACQgA3AwAgAiAAIAZBAWoiARAnIgANAwwCCyACQQA2AgALQQAhAyACQQA2AhwgAiABNgIUIAJB2Bs2AhAgAkEINgIMDDYLQboBIQMMHAsgAkHTATYCHCACIAE2AhQgAiAANgIMQQAhAww0C0EAIQACQCACKAI4IgNFDQAgAygCOCIDRQ0AIAIgAxEAACEACyAARQ0AIABBFUYNASACQQA2AhwgAiABNgIUIAJBzA42AhAgAkEgNgIMQQAhAwwzC0HkACEDDBkLIAJB+AA2AhwgAiABNgIUIAJByhg2AhAgAkEVNgIMQQAhAwwxC0HSASEDIAQgASIARg0wIAQgAWsgAigCACIBaiEFIAAgAWtBBGohBgJAA0AgAC0AACABQfzPAGotAABHDQEgAUEERg0DIAFBAWohASAEIABBAWoiAEcNAAsgAiAFNgIADDELIAJBADYCHCACIAA2AhQgAkGQMzYCECACQQg2AgwgAkEANgIAQQAhAwwwCyABIARHBEAgAkEONgIIIAIgATYCBEG3ASEDDBcLQdEBIQMMLwsgAkEANgIAIAZBAWohAQtBuAEhAwwUCyABIARGBEBB0AEhAwwtCyABLQAAQTBrIgBB/wFxQQpJBEAgAiAAOgAqIAFBAWohAUG2ASEDDBQLIAIoAgQhACACQQA2AgQgAiAAIAEQKCIARQ0UIAJBzwE2AhwgAiABNgIUIAIgADYCDEEAIQMMLAsgASAERgRAQc4BIQMMLAsCQCABLQAAQS5GBEAgAUEBaiEBDAELIAIoAgQhACACQQA2AgQgAiAAIAEQKCIARQ0VIAJBzQE2AhwgAiABNgIUIAIgADYCDEEAIQMMLAtBtQEhAwwSCyAEIAEiBUYEQEHMASEDDCsLQQAhAEEBIQFBASEGQQAhAwJAAkACQAJAAkACfwJAAkACQAJAAkACQAJAIAUtAABBMGsOCgoJAAECAwQFBggLC0ECDAYLQQMMBQtBBAwEC0EFDAMLQQYMAgtBBwwBC0EICyEDQQAhAUEAIQYMAgtBCSEDQQEhAEEAIQFBACEGDAELQQAhAUEBIQMLIAIgAzoAKyAFQQFqIQMCQAJAIAItAC1BEHENAAJAAkACQCACLQAqDgMBAAIECyAGRQ0DDAILIAANAQwCCyABRQ0BCyACKAIEIQAgAkEANgIEIAIgACADECgiAEUEQCADIQEMAwsgAkHJATYCHCACIAM2AhQgAiAANgIMQQAhAwwtCyACKAIEIQAgAkEANgIEIAIgACADECgiAEUEQCADIQEMGAsgAkHKATYCHCACIAM2AhQgAiAANgIMQQAhAwwsCyACKAIEIQAgAkEANgIEIAIgACAFECgiAEUEQCAFIQEMFgsgAkHLATYCHCACIAU2AhQgAiAANgIMDCsLQbQBIQMMEQtBACEAAkAgAigCOCIDRQ0AIAMoAjwiA0UNACACIAMRAAAhAAsCQCAABEAgAEEVRg0BIAJBADYCHCACIAE2AhQgAkGUDTYCECACQSE2AgxBACEDDCsLQbIBIQMMEQsgAkHIATYCHCACIAE2AhQgAkHJFzYCECACQRU2AgxBACEDDCkLIAJBADYCACAGQQFqIQFB9QAhAwwPCyACLQApQQVGBEBB4wAhAwwPC0HiACEDDA4LIAAhASACQQA2AgALIAJBADoALEEJIQMMDAsgAkEANgIAIAdBAWohAUHAACEDDAsLQQELOgAsIAJBADYCACAGQQFqIQELQSkhAwwIC0E4IQMMBwsCQCABIARHBEADQCABLQAAQYA+ai0AACIAQQFHBEAgAEECRw0DIAFBAWohAQwFCyAEIAFBAWoiAUcNAAtBPiEDDCELQT4hAwwgCwsgAkEAOgAsDAELQQshAwwEC0E6IQMMAwsgAUEBaiEBQS0hAwwCCyACIAE6ACwgAkEANgIAIAZBAWohAUEMIQMMAQsgAkEANgIAIAZBAWohAUEKIQMMAAsAC0EAIQMgAkEANgIcIAIgATYCFCACQc0QNgIQIAJBCTYCDAwXC0EAIQMgAkEANgIcIAIgATYCFCACQekKNgIQIAJBCTYCDAwWC0EAIQMgAkEANgIcIAIgATYCFCACQbcQNgIQIAJBCTYCDAwVC0EAIQMgAkEANgIcIAIgATYCFCACQZwRNgIQIAJBCTYCDAwUC0EAIQMgAkEANgIcIAIgATYCFCACQc0QNgIQIAJBCTYCDAwTC0EAIQMgAkEANgIcIAIgATYCFCACQekKNgIQIAJBCTYCDAwSC0EAIQMgAkEANgIcIAIgATYCFCACQbcQNgIQIAJBCTYCDAwRC0EAIQMgAkEANgIcIAIgATYCFCACQZwRNgIQIAJBCTYCDAwQC0EAIQMgAkEANgIcIAIgATYCFCACQZcVNgIQIAJBDzYCDAwPC0EAIQMgAkEANgIcIAIgATYCFCACQZcVNgIQIAJBDzYCDAwOC0EAIQMgAkEANgIcIAIgATYCFCACQcASNgIQIAJBCzYCDAwNC0EAIQMgAkEANgIcIAIgATYCFCACQZUJNgIQIAJBCzYCDAwMC0EAIQMgAkEANgIcIAIgATYCFCACQeEPNgIQIAJBCjYCDAwLC0EAIQMgAkEANgIcIAIgATYCFCACQfsPNgIQIAJBCjYCDAwKC0EAIQMgAkEANgIcIAIgATYCFCACQfEZNgIQIAJBAjYCDAwJC0EAIQMgAkEANgIcIAIgATYCFCACQcQUNgIQIAJBAjYCDAwIC0EAIQMgAkEANgIcIAIgATYCFCACQfIVNgIQIAJBAjYCDAwHCyACQQI2AhwgAiABNgIUIAJBnBo2AhAgAkEWNgIMQQAhAwwGC0EBIQMMBQtB1AAhAyABIARGDQQgCEEIaiEJIAIoAgAhBQJAAkAgASAERwRAIAVB2MIAaiEHIAQgBWogAWshACAFQX9zQQpqIgUgAWohBgNAIAEtAAAgBy0AAEcEQEECIQcMAwsgBUUEQEEAIQcgBiEBDAMLIAVBAWshBSAHQQFqIQcgBCABQQFqIgFHDQALIAAhBSAEIQELIAlBATYCACACIAU2AgAMAQsgAkEANgIAIAkgBzYCAAsgCSABNgIEIAgoAgwhACAIKAIIDgMBBAIACwALIAJBADYCHCACQbUaNgIQIAJBFzYCDCACIABBAWo2AhRBACEDDAILIAJBADYCHCACIAA2AhQgAkHKGjYCECACQQk2AgxBACEDDAELIAEgBEYEQEEiIQMMAQsgAkEJNgIIIAIgATYCBEEhIQMLIAhBEGokACADRQRAIAIoAgwhAAwBCyACIAM2AhxBACEAIAIoAgQiAUUNACACIAEgBCACKAIIEQEAIgFFDQAgAiAENgIUIAIgATYCDCABIQALIAALvgIBAn8gAEEAOgAAIABB3ABqIgFBAWtBADoAACAAQQA6AAIgAEEAOgABIAFBA2tBADoAACABQQJrQQA6AAAgAEEAOgADIAFBBGtBADoAAEEAIABrQQNxIgEgAGoiAEEANgIAQdwAIAFrQXxxIgIgAGoiAUEEa0EANgIAAkAgAkEJSQ0AIABBADYCCCAAQQA2AgQgAUEIa0EANgIAIAFBDGtBADYCACACQRlJDQAgAEEANgIYIABBADYCFCAAQQA2AhAgAEEANgIMIAFBEGtBADYCACABQRRrQQA2AgAgAUEYa0EANgIAIAFBHGtBADYCACACIABBBHFBGHIiAmsiAUEgSQ0AIAAgAmohAANAIABCADcDGCAAQgA3AxAgAEIANwMIIABCADcDACAAQSBqIQAgAUEgayIBQR9LDQALCwtWAQF/AkAgACgCDA0AAkACQAJAAkAgAC0ALw4DAQADAgsgACgCOCIBRQ0AIAEoAiwiAUUNACAAIAERAAAiAQ0DC0EADwsACyAAQcMWNgIQQQ4hAQsgAQsaACAAKAIMRQRAIABB0Rs2AhAgAEEVNgIMCwsUACAAKAIMQRVGBEAgAEEANgIMCwsUACAAKAIMQRZGBEAgAEEANgIMCwsHACAAKAIMCwcAIAAoAhALCQAgACABNgIQCwcAIAAoAhQLFwAgAEEkTwRAAAsgAEECdEGgM2ooAgALFwAgAEEuTwRAAAsgAEECdEGwNGooAgALvwkBAX9B6yghAQJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAIABB5ABrDvQDY2IAAWFhYWFhYQIDBAVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhBgcICQoLDA0OD2FhYWFhEGFhYWFhYWFhYWFhEWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYRITFBUWFxgZGhthYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2YTc4OTphYWFhYWFhYTthYWE8YWFhYT0+P2FhYWFhYWFhQGFhQWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYUJDREVGR0hJSktMTU5PUFFSU2FhYWFhYWFhVFVWV1hZWlthXF1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFeYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhX2BhC0HhJw8LQaQhDwtByywPC0H+MQ8LQcAkDwtBqyQPC0GNKA8LQeImDwtBgDAPC0G5Lw8LQdckDwtB7x8PC0HhHw8LQfofDwtB8iAPC0GoLw8LQa4yDwtBiDAPC0HsJw8LQYIiDwtBjh0PC0HQLg8LQcojDwtBxTIPC0HfHA8LQdIcDwtBxCAPC0HXIA8LQaIfDwtB7S4PC0GrMA8LQdQlDwtBzC4PC0H6Lg8LQfwrDwtB0jAPC0HxHQ8LQbsgDwtB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AAADAEGUCAsFBAAAAAUAQaQICwkGAAAABwAAAAgAQdwIC4otSW52YWxpZCBjaGFyIGluIHVybCBxdWVyeQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2JvZHkAQ29udGVudC1MZW5ndGggb3ZlcmZsb3cAQ2h1bmsgc2l6ZSBvdmVyZmxvdwBSZXNwb25zZSBvdmVyZmxvdwBJbnZhbGlkIG1ldGhvZCBmb3IgSFRUUC94LnggcmVxdWVzdABJbnZhbGlkIG1ldGhvZCBmb3IgUlRTUC94LnggcmVxdWVzdABFeHBlY3RlZCBTT1VSQ0UgbWV0aG9kIGZvciBJQ0UveC54IHJlcXVlc3QASW52YWxpZCBjaGFyIGluIHVybCBmcmFnbWVudCBzdGFydABFeHBlY3RlZCBkb3QAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9zdGF0dXMASW52YWxpZCByZXNwb25zZSBzdGF0dXMASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucwBVc2VyIGNhbGxiYWNrIGVycm9yAGBvbl9yZXNldGAgY2FsbGJhY2sgZXJyb3IAYG9uX2NodW5rX2hlYWRlcmAgY2FsbGJhY2sgZXJyb3IAYG9uX21lc3NhZ2VfYmVnaW5gIGNhbGxiYWNrIGVycm9yAGBvbl9jaHVua19leHRlbnNpb25fdmFsdWVgIGNhbGxiYWNrIGVycm9yAGBvbl9zdGF0dXNfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl92ZXJzaW9uX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fdXJsX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fY2h1bmtfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9oZWFkZXJfdmFsdWVfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9tZXNzYWdlX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fbWV0aG9kX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25faGVhZGVyX2ZpZWxkX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fY2h1bmtfZXh0ZW5zaW9uX25hbWVgIGNhbGxiYWNrIGVycm9yAFVuZXhwZWN0ZWQgY2hhciBpbiB1cmwgc2VydmVyAEludmFsaWQgaGVhZGVyIHZhbHVlIGNoYXIASW52YWxpZCBoZWFkZXIgZmllbGQgY2hhcgBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX3ZlcnNpb24ASW52YWxpZCBtaW5vciB2ZXJzaW9uAEludmFsaWQgbWFqb3IgdmVyc2lvbgBFeHBlY3RlZCBzcGFjZSBhZnRlciB2ZXJzaW9uAEV4cGVjdGVkIENSTEYgYWZ0ZXIgdmVyc2lvbgBJbnZhbGlkIEhUVFAgdmVyc2lvbgBJbnZhbGlkIGhlYWRlciB0b2tlbgBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX3VybABJbnZhbGlkIGNoYXJhY3RlcnMgaW4gdXJsAFVuZXhwZWN0ZWQgc3RhcnQgY2hhciBpbiB1cmwARG91YmxlIEAgaW4gdXJsAEVtcHR5IENvbnRlbnQtTGVuZ3RoAEludmFsaWQgY2hhcmFjdGVyIGluIENvbnRlbnQtTGVuZ3RoAER1cGxpY2F0ZSBDb250ZW50LUxlbmd0aABJbnZhbGlkIGNoYXIgaW4gdXJsIHBhdGgAQ29udGVudC1MZW5ndGggY2FuJ3QgYmUgcHJlc2VudCB3aXRoIFRyYW5zZmVyLUVuY29kaW5nAEludmFsaWQgY2hhcmFjdGVyIGluIGNodW5rIHNpemUAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9oZWFkZXJfdmFsdWUAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9jaHVua19leHRlbnNpb25fdmFsdWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyB2YWx1ZQBNaXNzaW5nIGV4cGVjdGVkIExGIGFmdGVyIGhlYWRlciB2YWx1ZQBJbnZhbGlkIGBUcmFuc2Zlci1FbmNvZGluZ2AgaGVhZGVyIHZhbHVlAEludmFsaWQgY2hhcmFjdGVyIGluIGNodW5rIGV4dGVuc2lvbnMgcXVvdGUgdmFsdWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyBxdW90ZWQgdmFsdWUAUGF1c2VkIGJ5IG9uX2hlYWRlcnNfY29tcGxldGUASW52YWxpZCBFT0Ygc3RhdGUAb25fcmVzZXQgcGF1c2UAb25fY2h1bmtfaGVhZGVyIHBhdXNlAG9uX21lc3NhZ2VfYmVnaW4gcGF1c2UAb25fY2h1bmtfZXh0ZW5zaW9uX3ZhbHVlIHBhdXNlAG9uX3N0YXR1c19jb21wbGV0ZSBwYXVzZQBvbl92ZXJzaW9uX2NvbXBsZXRlIHBhdXNlAG9uX3VybF9jb21wbGV0ZSBwYXVzZQBvbl9jaHVua19jb21wbGV0ZSBwYXVzZQBvbl9oZWFkZXJfdmFsdWVfY29tcGxldGUgcGF1c2UAb25fbWVzc2FnZV9jb21wbGV0ZSBwYXVzZQBvbl9tZXRob2RfY29tcGxldGUgcGF1c2UAb25faGVhZGVyX2ZpZWxkX2NvbXBsZXRlIHBhdXNlAG9uX2NodW5rX2V4dGVuc2lvbl9uYW1lIHBhdXNlAFVuZXhwZWN0ZWQgc3BhY2UgYWZ0ZXIgc3RhcnQgbGluZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2NodW5rX2V4dGVuc2lvbl9uYW1lAEludmFsaWQgY2hhcmFjdGVyIGluIGNodW5rIGV4dGVuc2lvbnMgbmFtZQBQYXVzZSBvbiBDT05ORUNUL1VwZ3JhZGUAUGF1c2Ugb24gUFJJL1VwZ3JhZGUARXhwZWN0ZWQgSFRUUC8yIENvbm5lY3Rpb24gUHJlZmFjZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX21ldGhvZABFeHBlY3RlZCBzcGFjZSBhZnRlciBtZXRob2QAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9oZWFkZXJfZmllbGQAUGF1c2VkAEludmFsaWQgd29yZCBlbmNvdW50ZXJlZABJbnZhbGlkIG1ldGhvZCBlbmNvdW50ZXJlZABVbmV4cGVjdGVkIGNoYXIgaW4gdXJsIHNjaGVtYQBSZXF1ZXN0IGhhcyBpbnZhbGlkIGBUcmFuc2Zlci1FbmNvZGluZ2AAU1dJVENIX1BST1hZAFVTRV9QUk9YWQBNS0FDVElWSVRZAFVOUFJPQ0VTU0FCTEVfRU5USVRZAENPUFkATU9WRURfUEVSTUFORU5UTFkAVE9PX0VBUkxZAE5PVElGWQBGQUlMRURfREVQRU5ERU5DWQBCQURfR0FURVdBWQBQTEFZAFBVVABDSEVDS09VVABHQVRFV0FZX1RJTUVPVVQAUkVRVUVTVF9USU1FT1VUAE5FVFdPUktfQ09OTkVDVF9USU1FT1VUAENPTk5FQ1RJT05fVElNRU9VVABMT0dJTl9USU1FT1VUAE5FVFdPUktfUkVBRF9USU1FT1VUAFBPU1QATUlTRElSRUNURURfUkVRVUVTVABDTElFTlRfQ0xPU0VEX1JFUVVFU1QAQ0xJRU5UX0NMT1NFRF9MT0FEX0JBTEFOQ0VEX1JFUVVFU1QAQkFEX1JFUVVFU1QASFRUUF9SRVFVRVNUX1NFTlRfVE9fSFRUUFNfUE9SVABSRVBPUlQASU1fQV9URUFQT1QAUkVTRVRfQ09OVEVOVABOT19DT05URU5UAFBBUlRJQUxfQ09OVEVOVABIUEVfSU5WQUxJRF9DT05TVEFOVABIUEVfQ0JfUkVTRVQAR0VUAEhQRV9TVFJJQ1QAQ09ORkxJQ1QAVEVNUE9SQVJZX1JFRElSRUNUAFBFUk1BTkVOVF9SRURJUkVDVABDT05ORUNUAE1VTFRJX1NUQVRVUwBIUEVfSU5WQUxJRF9TVEFUVVMAVE9PX01BTllfUkVRVUVTVFMARUFSTFlfSElOVFMAVU5BVkFJTEFCTEVfRk9SX0xFR0FMX1JFQVNPTlMAT1BUSU9OUwBTV0lUQ0hJTkdfUFJPVE9DT0xTAFZBUklBTlRfQUxTT19ORUdPVElBVEVTAE1VTFRJUExFX0NIT0lDRVMASU5URVJOQUxfU0VSVkVSX0VSUk9SAFdFQl9TRVJWRVJfVU5LTk9XTl9FUlJPUgBSQUlMR1VOX0VSUk9SAElERU5USVRZX1BST1ZJREVSX0FVVEhFTlRJQ0FUSU9OX0VSUk9SAFNTTF9DRVJUSUZJQ0FURV9FUlJPUgBJTlZBTElEX1hfRk9SV0FSREVEX0ZPUgBTRVRfUEFSQU1FVEVSAEdFVF9QQVJBTUVURVIASFBFX1VTRVIAU0VFX09USEVSAEhQRV9DQl9DSFVOS19IRUFERVIATUtDQUxFTkRBUgBTRVRVUABXRUJfU0VSVkVSX0lTX0RPV04AVEVBUkRPV04ASFBFX0NMT1NFRF9DT05ORUNUSU9OAEhFVVJJU1RJQ19FWFBJUkFUSU9OAERJU0NPTk5FQ1RFRF9PUEVSQVRJT04ATk9OX0FVVEhPUklUQVRJVkVfSU5GT1JNQVRJT04ASFBFX0lOVkFMSURfVkVSU0lPTgBIUEVfQ0JfTUVTU0FHRV9CRUdJTgBTSVRFX0lTX0ZST1pFTgBIUEVfSU5WQUxJRF9IRUFERVJfVE9LRU4ASU5WQUxJRF9UT0tFTgBGT1JCSURERU4ARU5IQU5DRV9ZT1VSX0NBTE0ASFBFX0lOVkFMSURfVVJMAEJMT0NLRURfQllfUEFSRU5UQUxfQ09OVFJPTABNS0NPTABBQ0wASFBFX0lOVEVSTkFMAFJFUVVFU1RfSEVBREVSX0ZJRUxEU19UT09fTEFSR0VfVU5PRkZJQ0lBTABIUEVfT0sAVU5MSU5LAFVOTE9DSwBQUkkAUkVUUllfV0lUSABIUEVfSU5WQUxJRF9DT05URU5UX0xFTkdUSABIUEVfVU5FWFBFQ1RFRF9DT05URU5UX0xFTkdUSABGTFVTSABQUk9QUEFUQ0gATS1TRUFSQ0gAVVJJX1RPT19MT05HAFBST0NFU1NJTkcATUlTQ0VMTEFORU9VU19QRVJTSVNURU5UX1dBUk5JTkcATUlTQ0VMTEFORU9VU19XQVJOSU5HAEhQRV9JTlZBTElEX1RSQU5TRkVSX0VOQ09ESU5HAEV4cGVjdGVkIENSTEYASFBFX0lOVkFMSURfQ0hVTktfU0laRQBNT1ZFAENPTlRJTlVFAEhQRV9DQl9TVEFUVVNfQ09NUExFVEUASFBFX0NCX0hFQURFUlNfQ09NUExFVEUASFBFX0NCX1ZFUlNJT05fQ09NUExFVEUASFBFX0NCX1VSTF9DT01QTEVURQBIUEVfQ0JfQ0hVTktfQ09NUExFVEUASFBFX0NCX0hFQURFUl9WQUxVRV9DT01QTEVURQBIUEVfQ0JfQ0hVTktfRVhURU5TSU9OX1ZBTFVFX0NPTVBMRVRFAEhQRV9DQl9DSFVOS19FWFRFTlNJT05fTkFNRV9DT01QTEVURQBIUEVfQ0JfTUVTU0FHRV9DT01QTEVURQBIUEVfQ0JfTUVUSE9EX0NPTVBMRVRFAEhQRV9DQl9IRUFERVJfRklFTERfQ09NUExFVEUAREVMRVRFAEhQRV9JTlZBTElEX0VPRl9TVEFURQBJTlZBTElEX1NTTF9DRVJUSUZJQ0FURQBQQVVTRQBOT19SRVNQT05TRQBVTlNVUFBPUlRFRF9NRURJQV9UWVBFAEdPTkUATk9UX0FDQ0VQVEFCTEUAU0VSVklDRV9VTkFWQUlMQUJMRQBSQU5HRV9OT1RfU0FUSVNGSUFCTEUAT1JJR0lOX0lTX1VOUkVBQ0hBQkxFAFJFU1BPTlNFX0lTX1NUQUxFAFBVUkdFAE1FUkdFAFJFUVVFU1RfSEVBREVSX0ZJRUxEU19UT09fTEFSR0UAUkVRVUVTVF9IRUFERVJfVE9PX0xBUkdFAFBBWUxPQURfVE9PX0xBUkdFAElOU1VGRklDSUVOVF9TVE9SQUdFAEhQRV9QQVVTRURfVVBHUkFERQBIUEVfUEFVU0VEX0gyX1VQR1JBREUAU09VUkNFAEFOTk9VTkNFAFRSQUNFAEhQRV9VTkVYUEVDVEVEX1NQQUNFAERFU0NSSUJFAFVOU1VCU0NSSUJFAFJFQ09SRABIUEVfSU5WQUxJRF9NRVRIT0QATk9UX0ZPVU5EAFBST1BGSU5EAFVOQklORABSRUJJTkQAVU5BVVRIT1JJWkVEAE1FVEhPRF9OT1RfQUxMT1dFRABIVFRQX1ZFUlNJT05fTk9UX1NVUFBPUlRFRABBTFJFQURZX1JFUE9SVEVEAEFDQ0VQVEVEAE5PVF9JTVBMRU1FTlRFRABMT09QX0RFVEVDVEVEAEhQRV9DUl9FWFBFQ1RFRABIUEVfTEZfRVhQRUNURUQAQ1JFQVRFRABJTV9VU0VEAEhQRV9QQVVTRUQAVElNRU9VVF9PQ0NVUkVEAFBBWU1FTlRfUkVRVUlSRUQAUFJFQ09ORElUSU9OX1JFUVVJUkVEAFBST1hZX0FVVEhFTlRJQ0FUSU9OX1JFUVVJUkVEAE5FVFdPUktfQVVUSEVOVElDQVRJT05fUkVRVUlSRUQATEVOR1RIX1JFUVVJUkVEAFNTTF9DRVJUSUZJQ0FURV9SRVFVSVJFRABVUEdSQURFX1JFUVVJUkVEAFBBR0VfRVhQSVJFRABQUkVDT05ESVRJT05fRkFJTEVEAEVYUEVDVEFUSU9OX0ZBSUxFRABSRVZBTElEQVRJT05fRkFJTEVEAFNTTF9IQU5EU0hBS0VfRkFJTEVEAExPQ0tFRABUUkFOU0ZPUk1BVElPTl9BUFBMSUVEAE5PVF9NT0RJRklFRABOT1RfRVhURU5ERUQAQkFORFdJRFRIX0xJTUlUX0VYQ0VFREVEAFNJVEVfSVNfT1ZFUkxPQURFRABIRUFEAEV4cGVjdGVkIEhUVFAvAABeEwAAJhMAADAQAADwFwAAnRMAABUSAAA5FwAA8BIAAAoQAAB1EgAArRIAAIITAABPFAAAfxAAAKAVAAAjFAAAiRIAAIsUAABNFQAA1BEAAM8UAAAQGAAAyRYAANwWAADBEQAA4BcAALsUAAB0FAAAfBUAAOUUAAAIFwAAHxAAAGUVAACjFAAAKBUAAAIVAACZFQAALBAAAIsZAABPDwAA1A4AAGoQAADOEAAAAhcAAIkOAABuEwAAHBMAAGYUAABWFwAAwRMAAM0TAABsEwAAaBcAAGYXAABfFwAAIhMAAM4PAABpDgAA2A4AAGMWAADLEwAAqg4AACgXAAAmFwAAxRMAAF0WAADoEQAAZxMAAGUTAADyFgAAcxMAAB0XAAD5FgAA8xEAAM8OAADOFQAADBIAALMRAAClEQAAYRAAADIXAAC7EwBB+TULAQEAQZA2C+ABAQECAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQf03CwEBAEGROAteAgMCAgICAgAAAgIAAgIAAgICAgICAgICAgAEAAAAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAAIAAgBB/TkLAQEAQZE6C14CAAICAgICAAACAgACAgACAgICAgICAgICAAMABAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAAgACAEHwOwsNbG9zZWVlcC1hbGl2ZQBBiTwLAQEAQaA8C+ABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQYk+CwEBAEGgPgvnAQEBAQEBAQEBAQEBAQIBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBY2h1bmtlZABBsMAAC18BAQABAQEBAQAAAQEAAQEAAQEBAQEBAQEBAQAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEAAQBBkMIACyFlY3Rpb25lbnQtbGVuZ3Rob25yb3h5LWNvbm5lY3Rpb24AQcDCAAstcmFuc2Zlci1lbmNvZGluZ3BncmFkZQ0KDQoNClNNDQoNClRUUC9DRS9UU1AvAEH5wgALBQECAAEDAEGQwwAL4AEEAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB+cQACwUBAgABAwBBkMUAC+ABBAEBBQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQfnGAAsEAQAAAQBBkccAC98BAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB+sgACwQBAAACAEGQyQALXwMEAAAEBAQEBAQEBAQEBAUEBAQEBAQEBAQEBAQABAAGBwQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEAAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEAEH6ygALBAEAAAEAQZDLAAsBAQBBqssAC0ECAAAAAAAAAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAAAAAAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwBB+swACwQBAAABAEGQzQALAQEAQZrNAAsGAgAAAAACAEGxzQALOgMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAAAAAAAAAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAQfDOAAuWAU5PVU5DRUVDS09VVE5FQ1RFVEVDUklCRUxVU0hFVEVBRFNFQVJDSFJHRUNUSVZJVFlMRU5EQVJWRU9USUZZUFRJT05TQ0hTRUFZU1RBVENIR0VPUkRJUkVDVE9SVFJDSFBBUkFNRVRFUlVSQ0VCU0NSSUJFQVJET1dOQUNFSU5ETktDS1VCU0NSSUJFSFRUUC9BRFRQLw==", "base64");
+  var { Buffer: Buffer4 } = __require("node:buffer");
+  module.exports = Buffer4.from("AGFzbQEAAAABJwdgAX8Bf2ADf39/AX9gAX8AYAJ/fwBgBH9/f38Bf2AAAGADf39/AALLAQgDZW52GHdhc21fb25faGVhZGVyc19jb21wbGV0ZQAEA2VudhV3YXNtX29uX21lc3NhZ2VfYmVnaW4AAANlbnYLd2FzbV9vbl91cmwAAQNlbnYOd2FzbV9vbl9zdGF0dXMAAQNlbnYUd2FzbV9vbl9oZWFkZXJfZmllbGQAAQNlbnYUd2FzbV9vbl9oZWFkZXJfdmFsdWUAAQNlbnYMd2FzbV9vbl9ib2R5AAEDZW52GHdhc21fb25fbWVzc2FnZV9jb21wbGV0ZQAAAy0sBQYAAAIAAAAAAAACAQIAAgICAAADAAAAAAMDAwMBAQEBAQEBAQEAAAIAAAAEBQFwARISBQMBAAIGCAF/AUGA1AQLB9EFIgZtZW1vcnkCAAtfaW5pdGlhbGl6ZQAIGV9faW5kaXJlY3RfZnVuY3Rpb25fdGFibGUBAAtsbGh0dHBfaW5pdAAJGGxsaHR0cF9zaG91bGRfa2VlcF9hbGl2ZQAvDGxsaHR0cF9hbGxvYwALBm1hbGxvYwAxC2xsaHR0cF9mcmVlAAwEZnJlZQAMD2xsaHR0cF9nZXRfdHlwZQANFWxsaHR0cF9nZXRfaHR0cF9tYWpvcgAOFWxsaHR0cF9nZXRfaHR0cF9taW5vcgAPEWxsaHR0cF9nZXRfbWV0aG9kABAWbGxodHRwX2dldF9zdGF0dXNfY29kZQAREmxsaHR0cF9nZXRfdXBncmFkZQASDGxsaHR0cF9yZXNldAATDmxsaHR0cF9leGVjdXRlABQUbGxodHRwX3NldHRpbmdzX2luaXQAFQ1sbGh0dHBfZmluaXNoABYMbGxodHRwX3BhdXNlABcNbGxodHRwX3Jlc3VtZQAYG2xsaHR0cF9yZXN1bWVfYWZ0ZXJfdXBncmFkZQAZEGxsaHR0cF9nZXRfZXJybm8AGhdsbGh0dHBfZ2V0X2Vycm9yX3JlYXNvbgAbF2xsaHR0cF9zZXRfZXJyb3JfcmVhc29uABwUbGxodHRwX2dldF9lcnJvcl9wb3MAHRFsbGh0dHBfZXJybm9fbmFtZQAeEmxsaHR0cF9tZXRob2RfbmFtZQAfEmxsaHR0cF9zdGF0dXNfbmFtZQAgGmxsaHR0cF9zZXRfbGVu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PgtBhwEMPQtBiAEMPAtBiQEMOwtBigEMOgtBiwEMOQtBjAEMOAtBjQEMNwtBjgEMNgtBjwEMNQtBkAEMNAtBkQEMMwtBkgEMMgtBkwEMMQtBlAEMMAtBlQEMLwtBlgEMLgtBlwEMLQtBmAEMLAtBmQEMKwtBmgEMKgtBmwEMKQtBnAEMKAtBnQEMJwtBngEMJgtBnwEMJQtBoAEMJAtBoQEMIwtBogEMIgtBowEMIQtBpAEMIAtBpQEMHwtBpgEMHgtBpwEMHQtBqAEMHAtBqQEMGwtBqgEMGgtBqwEMGQtBrAEMGAtBrQEMFwtBrgEMFgtBAQwVC0GvAQwUC0GwAQwTC0GxAQwSC0GzAQwRC0GyAQwQC0G0AQwPC0G1AQwOC0G2AQwNC0G3AQwMC0G4AQwLC0G5AQwKC0G6AQwJC0G7AQwIC0HGAQwHC0G8AQwGC0G9AQwFC0G+AQwEC0G/AQwDC0HAAQwCC0HCAQwBC0HBAQshAwNAAkACQAJAAkACQAJAAkACQAJAIAICfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAgAgJ/AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACfwJAAkACfwJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAC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iQEhAwykAgtBASABLQAAQd8ARw1nGiABQQFqIQEMXgtBigEhAyABIARGDaICIAIoAgAiACAEIAFraiEFIAEgAGtBAWohBgNAIAEtAAAgAEGMzwBqLQAARw1kIABBAUYN+gEgAEEBaiEAIAQgAUEBaiIBRw0ACyACIAU2AgAMogILQYsBIQMgASAERg2hAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGOzwBqLQAARw1kIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyiAgsgAkEANgIAIAZBAWohAUECDGULQYwBIQMgASAERg2gAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHwzwBqLQAARw1jIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyhAgsgAkEANgIAIAZBAWohAUEfDGQLQY0BIQMgASAERg2fAiACKAIAIgAgBCABa2ohBSABIABrQQFqIQYCQANAIAEtAAAgAEHyzwBqLQAARw1iIABBAUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAygAgsgAkEANgIAIAZBAWohAUEJDGMLIAEgBEYEQEGOASEDDJ8CCwJAAkAgAS0AAEHJAGsOBwBiYmJiYgFiCyABQQFqIQFB+AAhAwyGAgsgAUEBaiEBQfkAIQMMhQILQY8BIQMgASAERg2dAiACKAIAIgAgBCABa2ohBSABIABrQQVqIQYCQANAIAEtAAAgAEGRzwBqLQAARw1gIABBBUYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAyeAgsgAkEANgIAIAZBAWohAUEYDGELQZABIQMgASAERg2cAiACKAIAIgAgBCABa2ohBSABIABrQQJqIQYCQANAIAEtAAAgAEGXzwBqLQAARw1fIABBAkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAydAgsgAkEANgIAIAZBAWohAUEXDGALQZEBIQMgASAERg2bAiACKAIAIgAgBCABa2ohBSABIABrQQZqIQYCQANAIAEtAAAgAEGazwBqLQAARw1eIABBBkYNASAAQQFqIQAgBCABQQFqIgFHDQALIAIgBTYCAAycAgsgAkEANgIAIAZBAWohAUEV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JSIARQ0RIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMtAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0gIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMswELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0iIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMsgELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0OIAJB5QA2AhwgAiABNgIUIAIgADYCDEEAIQMMsQELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0dIAJB0wA2AhwgAiABNgIUIAIgADYCDEEAIQMMsAELIAIoAgQhACACQQA2AgQgAiAAIAEQJSIARQ0fIAJB0gA2AhwgAiABNgIUIAIgADYCDEEAIQMMrwELIABBP0cNASABQQFqCyEBQQUhAwyUAQtBACEDIAJBADYCHCACIAE2AhQgAkH9EjYCECACQQc2AgwMrAELIAJBADYCHCACIAE2AhQgAkHcCDYCECACQQc2AgxBACEDDKsBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNByACQeUANgIcIAIgATYCFCACIAA2AgxBACEDDKoBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNFiACQdMANgIcIAIgATYCFCACIAA2AgxBACEDDKkBCyACKAIEIQAgAkEANgIEIAIgACABECUiAEUNGCACQdIANgIcIAIgATYCFCACIAA2AgxBACEDDKgBCyACQQA2AhwgAiABNgIUIAJBxgo2AhAgAkEHNgIMQQAhAwynAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQMgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwymAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRIgAkHTADYCHCACIAE2AhQgAiAANgIMQQAhAwylAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDRQgAkHSADYCHCACIAE2AhQgAiAANgIMQQAhAwykAQsgAigCBCEAIAJBADYCBCACIAAgARAlIgBFDQAgAkHlADYCHCACIAE2AhQgAiAANgIMQQAhAwyjAQtB1QAhAwyJAQsgAEEVRwRAIAJBADYCHCACIAE2AhQgAkG5DTYCECACQRo2AgxB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AkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAIABB5ABrDvQDY2IAAWFhYWFhYQIDBAVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhBgcICQoLDA0OD2FhYWFhEGFhYWFhYWFhYWFhEWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYRITFBUWFxgZGhthYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2YTc4OTphYWFhYWFhYTthYWE8YWFhYT0+P2FhYWFhYWFhQGFhQWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYUJDREVGR0hJSktMTU5PUFFSU2FhYWFhYWFhVFVWV1hZWlthXF1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFeYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhX2BhC0HhJw8LQaQhDwtByywPC0H+MQ8LQcAkDwtBqyQPC0GNKA8LQeImDwtBgDAPC0G5Lw8LQdckDwtB7x8PC0HhHw8LQfofDwtB8iAPC0GoLw8LQa4yDwtBiDAPC0HsJw8LQYIiDwtBjh0PC0HQLg8LQcojDwtBxTIPC0HfHA8LQdIcDwtBxCAPC0HXIA8LQaIfDwtB7S4PC0GrMA8LQdQlDwtBzC4PC0H6Lg8LQfwrDwtB0jAPC0HxHQ8LQbsgDwtB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AAADAEGUCAsFBAAAAAUAQaQICwkGAAAABwAAAAgAQdwIC4otSW52YWxpZCBjaGFyIGluIHVybCBxdWVyeQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2JvZHkAQ29udGVudC1MZW5ndGggb3ZlcmZsb3cAQ2h1bmsgc2l6ZSBvdmVyZmxvdwBSZXNwb25zZSBvdmVyZmxvdwBJbnZhbGlkIG1ldGhvZCBmb3IgSFRUUC94LnggcmVxdWVzdABJbnZhbGlkIG1ldGhvZCBmb3IgUlRTUC94LnggcmVxdWVzdABFeHBlY3RlZCBTT1VSQ0UgbWV0aG9kIGZvciBJQ0UveC54IHJlcXVlc3QASW52YWxpZCBjaGFyIGluIHVybCBmcmFnbWVudCBzdGFydABFeHBlY3RlZCBkb3QAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9zdGF0dXMASW52YWxpZCByZXNwb25zZSBzdGF0dXMASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucwBVc2VyIGNhbGxiYWNrIGVycm9yAGBvbl9yZXNldGAgY2FsbGJhY2sgZXJyb3IAYG9uX2NodW5rX2hlYWRlcmAgY2FsbGJhY2sgZXJyb3IAYG9uX21lc3NhZ2VfYmVnaW5gIGNhbGxiYWNrIGVycm9yAGBvbl9jaHVua19leHRlbnNpb25fdmFsdWVgIGNhbGxiYWNrIGVycm9yAGBvbl9zdGF0dXNfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl92ZXJzaW9uX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fdXJsX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fY2h1bmtfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9oZWFkZXJfdmFsdWVfY29tcGxldGVgIGNhbGxiYWNrIGVycm9yAGBvbl9tZXNzYWdlX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fbWV0aG9kX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25faGVhZGVyX2ZpZWxkX2NvbXBsZXRlYCBjYWxsYmFjayBlcnJvcgBgb25fY2h1bmtfZXh0ZW5zaW9uX25hbWVgIGNhbGxiYWNrIGVycm9yAFVuZXhwZWN0ZWQgY2hhciBpbiB1cmwgc2VydmVyAEludmFsaWQgaGVhZGVyIHZhbHVlIGNoYXIASW52YWxpZCBoZWFkZXIgZmllbGQgY2hhcgBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX3ZlcnNpb24ASW52YWxpZCBtaW5vciB2ZXJzaW9uAEludmFsaWQgbWFqb3IgdmVyc2lvbgBFeHBlY3RlZCBzcGFjZSBhZnRlciB2ZXJzaW9uAEV4cGVjdGVkIENSTEYgYWZ0ZXIgdmVyc2lvbgBJbnZhbGlkIEhUVFAgdmVyc2lvbgBJbnZhbGlkIGhlYWRlciB0b2tlbgBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX3VybABJbnZhbGlkIGNoYXJhY3RlcnMgaW4gdXJsAFVuZXhwZWN0ZWQgc3RhcnQgY2hhciBpbiB1cmwARG91YmxlIEAgaW4gdXJsAEVtcHR5IENvbnRlbnQtTGVuZ3RoAEludmFsaWQgY2hhcmFjdGVyIGluIENvbnRlbnQtTGVuZ3RoAER1cGxpY2F0ZSBDb250ZW50LUxlbmd0aABJbnZhbGlkIGNoYXIgaW4gdXJsIHBhdGgAQ29udGVudC1MZW5ndGggY2FuJ3QgYmUgcHJlc2VudCB3aXRoIFRyYW5zZmVyLUVuY29kaW5nAEludmFsaWQgY2hhcmFjdGVyIGluIGNodW5rIHNpemUAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9oZWFkZXJfdmFsdWUAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9jaHVua19leHRlbnNpb25fdmFsdWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyB2YWx1ZQBNaXNzaW5nIGV4cGVjdGVkIExGIGFmdGVyIGhlYWRlciB2YWx1ZQBJbnZhbGlkIGBUcmFuc2Zlci1FbmNvZGluZ2AgaGVhZGVyIHZhbHVlAEludmFsaWQgY2hhcmFjdGVyIGluIGNodW5rIGV4dGVuc2lvbnMgcXVvdGUgdmFsdWUASW52YWxpZCBjaGFyYWN0ZXIgaW4gY2h1bmsgZXh0ZW5zaW9ucyBxdW90ZWQgdmFsdWUAUGF1c2VkIGJ5IG9uX2hlYWRlcnNfY29tcGxldGUASW52YWxpZCBFT0Ygc3RhdGUAb25fcmVzZXQgcGF1c2UAb25fY2h1bmtfaGVhZGVyIHBhdXNlAG9uX21lc3NhZ2VfYmVnaW4gcGF1c2UAb25fY2h1bmtfZXh0ZW5zaW9uX3ZhbHVlIHBhdXNlAG9uX3N0YXR1c19jb21wbGV0ZSBwYXVzZQBvbl92ZXJzaW9uX2NvbXBsZXRlIHBhdXNlAG9uX3VybF9jb21wbGV0ZSBwYXVzZQBvbl9jaHVua19jb21wbGV0ZSBwYXVzZQBvbl9oZWFkZXJfdmFsdWVfY29tcGxldGUgcGF1c2UAb25fbWVzc2FnZV9jb21wbGV0ZSBwYXVzZQBvbl9tZXRob2RfY29tcGxldGUgcGF1c2UAb25faGVhZGVyX2ZpZWxkX2NvbXBsZXRlIHBhdXNlAG9uX2NodW5rX2V4dGVuc2lvbl9uYW1lIHBhdXNlAFVuZXhwZWN0ZWQgc3BhY2UgYWZ0ZXIgc3RhcnQgbGluZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX2NodW5rX2V4dGVuc2lvbl9uYW1lAEludmFsaWQgY2hhcmFjdGVyIGluIGNodW5rIGV4dGVuc2lvbnMgbmFtZQBQYXVzZSBvbiBDT05ORUNUL1VwZ3JhZGUAUGF1c2Ugb24gUFJJL1VwZ3JhZGUARXhwZWN0ZWQgSFRUUC8yIENvbm5lY3Rpb24gUHJlZmFjZQBTcGFuIGNhbGxiYWNrIGVycm9yIGluIG9uX21ldGhvZABFeHBlY3RlZCBzcGFjZSBhZnRlciBtZXRob2QAU3BhbiBjYWxsYmFjayBlcnJvciBpbiBvbl9oZWFkZXJfZmllbGQAUGF1c2VkAEludmFsaWQgd29yZCBlbmNvdW50ZXJlZABJbnZhbGlkIG1ldGhvZCBlbmNvdW50ZXJlZABVbmV4cGVjdGVkIGNoYXIgaW4gdXJsIHNjaGVtYQBSZXF1ZXN0IGhhcyBpbnZhbGlkIGBUcmFuc2Zlci1FbmNvZGluZ2AAU1dJVENIX1BST1hZAFVTRV9QUk9YWQBNS0FDVElWSVRZAFVOUFJPQ0VTU0FCTEVfRU5USVRZAENPUFkATU9WRURfUEVSTUFORU5UTFkAVE9PX0VBUkxZAE5PVElGWQBGQUlMRURfREVQRU5ERU5DWQBCQURfR0FURVdBWQBQTEFZAFBVVABDSEVDS09VVABHQVRFV0FZX1RJTUVPVVQAUkVRVUVTVF9USU1FT1VUAE5FVFdPUktfQ09OTkVDVF9USU1FT1VUAENPTk5FQ1RJT05fVElNRU9VVABMT0dJTl9USU1FT1VUAE5FVFdPUktfUkVBRF9USU1FT1VUAFBPU1QATUlTRElSRUNURURfUkVRVUVTVABDTElFTlRfQ0xPU0VEX1JFUVVFU1QAQ0xJRU5UX0NMT1NFRF9MT0FEX0JBTEFOQ0VEX1JFUVVFU1QAQkFEX1JFUVVFU1QASFRUUF9SRVFVRVNUX1NFTlRfVE9fSFRUUFNfUE9SVABSRVBPUlQASU1fQV9URUFQT1QAUkVTRVRfQ09OVEVOVABOT19DT05URU5UAFBBUlRJQUxfQ09OVEVOVABIUEVfSU5WQUxJRF9DT05TVEFOVABIUEVfQ0JfUkVTRVQAR0VUAEhQRV9TVFJJQ1QAQ09ORkxJQ1QAVEVNUE9SQVJZX1JFRElSRUNUAFBFUk1BTkVOVF9SRURJUkVDVABDT05ORUNUAE1VTFRJX1NUQVRVUwBIUEVfSU5WQUxJRF9TVEFUVVMAVE9PX01BTllfUkVRVUVTVFMARUFSTFlfSElOVFMAVU5BVkFJTEFCTEVfRk9SX0xFR0FMX1JFQVNPTlMAT1BUSU9OUwBTV0lUQ0hJTkdfUFJPVE9DT0xTAFZBUklBTlRfQUxTT19ORUdPVElBVEVTAE1VTFRJUExFX0NIT0lDRVMASU5URVJOQUxfU0VSVkVSX0VSUk9SAFdFQl9TRVJWRVJfVU5LTk9XTl9FUlJPUgBSQUlMR1VOX0VSUk9SAElERU5USVRZX1BST1ZJREVSX0FVVEhFTlRJQ0FUSU9OX0VSUk9SAFNTTF9DRVJUSUZJQ0FURV9FUlJPUgBJTlZBTElEX1hfRk9SV0FSREVEX0ZPUgBTRVRfUEFSQU1FVEVSAEdFVF9QQVJBTUVURVIASFBFX1VTRVIAU0VFX09USEVSAEhQRV9DQl9DSFVOS19IRUFERVIATUtDQUxFTkRBUgBTRVRVUABXRUJfU0VSVkVSX0lTX0RPV04AVEVBUkRPV04ASFBFX0NMT1NFRF9DT05ORUNUSU9OAEhFVVJJU1RJQ19FWFBJUkFUSU9OAERJU0NPTk5FQ1RFRF9PUEVSQVRJT04ATk9OX0FVVEhPUklUQVRJVkVfSU5GT1JNQVRJT04ASFBFX0lOVkFMSURfVkVSU0lPTgBIUEVfQ0JfTUVTU0FHRV9CRUdJTgBTSVRFX0lTX0ZST1pFTgBIUEVfSU5WQUxJRF9IRUFERVJfVE9LRU4ASU5WQUxJRF9UT0tFTgBGT1JCSURERU4ARU5IQU5DRV9ZT1VSX0NBTE0ASFBFX0lOVkFMSURfVVJMAEJMT0NLRURfQllfUEFSRU5UQUxfQ09OVFJPTABNS0NPTABBQ0wASFBFX0lOVEVSTkFMAFJFUVVFU1RfSEVBREVSX0ZJRUxEU19UT09fTEFSR0VfVU5PRkZJQ0lBTABIUEVfT0sAVU5MSU5LAFVOTE9DSwBQUkkAUkVUUllfV0lUSABIUEVfSU5WQUxJRF9DT05URU5UX0xFTkdUSABIUEVfVU5FWFBFQ1RFRF9DT05URU5UX0xFTkdUSABGTFVTSABQUk9QUEFUQ0gATS1TRUFSQ0gAVVJJX1RPT19MT05HAFBST0NFU1NJTkcATUlTQ0VMTEFORU9VU19QRVJTSVNURU5UX1dBUk5JTkcATUlTQ0VMTEFORU9VU19XQVJOSU5HAEhQRV9JTlZBTElEX1RSQU5TRkVSX0VOQ09ESU5HAEV4cGVjdGVkIENSTEYASFBFX0lOVkFMSURfQ0hVTktfU0laRQBNT1ZFAENPTlRJTlVFAEhQRV9DQl9TVEFUVVNfQ09NUExFVEUASFBFX0NCX0hFQURFUlNfQ09NUExFVEUASFBFX0NCX1ZFUlNJT05fQ09NUExFVEUASFBFX0NCX1VSTF9DT01QTEVURQBIUEVfQ0JfQ0hVTktfQ09NUExFVEUASFBFX0NCX0hFQURFUl9WQUxVRV9DT01QTEVURQBIUEVfQ0JfQ0hVTktfRVhURU5TSU9OX1ZBTFVFX0NPTVBMRVRFAEhQRV9DQl9DSFVOS19FWFRFTlNJT05fTkFNRV9DT01QTEVURQBIUEVfQ0JfTUVTU0FHRV9DT01QTEVURQBIUEVfQ0JfTUVUSE9EX0NPTVBMRVRFAEhQRV9DQl9IRUFERVJfRklFTERfQ09NUExFVEUAREVMRVRFAEhQRV9JTlZBTElEX0VPRl9TVEFURQBJTlZBTElEX1NTTF9DRVJUSUZJQ0FURQBQQVVTRQBOT19SRVNQT05TRQBVTlNVUFBPUlRFRF9NRURJQV9UWVBFAEdPTkUATk9UX0FDQ0VQVEFCTEUAU0VSVklDRV9VTkFWQUlMQUJMRQBSQU5HRV9OT1RfU0FUSVNGSUFCTEUAT1JJR0lOX0lTX1VOUkVBQ0hBQkxFAFJFU1BPTlNFX0lTX1NUQUxFAFBVUkdFAE1FUkdFAFJFUVVFU1RfSEVBREVSX0ZJRUxEU19UT09fTEFSR0UAUkVRVUVTVF9IRUFERVJfVE9PX0xBUkdFAFBBWUxPQURfVE9PX0xBUkdFAElOU1VGRklDSUVOVF9TVE9SQUdFAEhQRV9QQVVTRURfVVBHUkFERQBIUEVfUEFVU0VEX0gyX1VQR1JBREUAU09VUkNFAEFOTk9VTkNFAFRSQUNFAEhQRV9VTkVYUEVDVEVEX1NQQUNFAERFU0NSSUJFAFVOU1VCU0NSSUJFAFJFQ09SRABIUEVfSU5WQUxJRF9NRVRIT0QATk9UX0ZPVU5EAFBST1BGSU5EAFVOQklORABSRUJJTkQAVU5BVVRIT1JJWkVEAE1FVEhPRF9OT1RfQUxMT1dFRABIVFRQX1ZFUlNJT05fTk9UX1NVUFBPUlRFRABBTFJFQURZX1JFUE9SVEVEAEFDQ0VQVEVEAE5PVF9JTVBMRU1FTlRFRABMT09QX0RFVEVDVEVEAEhQRV9DUl9FWFBFQ1RFRABIUEVfTEZfRVhQRUNURUQAQ1JFQVRFRABJTV9VU0VEAEhQRV9QQVVTRUQAVElNRU9VVF9PQ0NVUkVEAFBBWU1FTlRfUkVRVUlSRUQAUFJFQ09ORElUSU9OX1JFUVVJUkVEAFBST1hZX0FVVEhFTlRJQ0FUSU9OX1JFUVVJUkVEAE5FVFdPUktfQVVUSEVOVElDQVRJT05fUkVRVUlSRUQATEVOR1RIX1JFUVVJUkVEAFNTTF9DRVJUSUZJQ0FURV9SRVFVSVJFRABVUEdSQURFX1JFUVVJUkVEAFBBR0VfRVhQSVJFRABQUkVDT05ESVRJT05fRkFJTEVEAEVYUEVDVEFUSU9OX0ZBSUxFRABSRVZBTElEQVRJT05fRkFJTEVEAFNTTF9IQU5EU0hBS0VfRkFJTEVEAExPQ0tFRABUUkFOU0ZPUk1BVElPTl9BUFBMSUVEAE5PVF9NT0RJRklFRABOT1RfRVhURU5ERUQAQkFORFdJRFRIX0xJTUlUX0VYQ0VFREVEAFNJVEVfSVNfT1ZFUkxPQURFRABIRUFEAEV4cGVjdGVkIEhUVFAvAABeEwAAJhMAADAQAADwFwAAnRMAABUSAAA5FwAA8BIAAAoQAAB1EgAArRIAAIITAABPFAAAfxAAAKAVAAAjFAAAiRIAAIsUAABNFQAA1BEAAM8UAAAQGAAAyRYAANwWAADBEQAA4BcAALsUAAB0FAAAfBUAAOUUAAAIFwAAHxAAAGUVAACjFAAAKBUAAAIVAACZFQAALBAAAIsZAABPDwAA1A4AAGoQAADOEAAAAhcAAIkOAABuEwAAHBMAAGYUAABWFwAAwRMAAM0TAABsEwAAaBcAAGYXAABfFwAAIhMAAM4PAABpDgAA2A4AAGMWAADLEwAAqg4AACgXAAAmFwAAxRMAAF0WAADoEQAAZxMAAGUTAADyFgAAcxMAAB0XAAD5FgAA8xEAAM8OAADOFQAADBIAALMRAAClEQAAYRAAADIXAAC7EwBB+TULAQEAQZA2C+ABAQECAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQf03CwEBAEGROAteAgMCAgICAgAAAgIAAgIAAgICAgICAgICAgAEAAAAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAAIAAgBB/TkLAQEAQZE6C14CAAICAgICAAACAgACAgACAgICAgICAgICAAMABAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAAgACAEHwOwsNbG9zZWVlcC1hbGl2ZQBBiTwLAQEAQaA8C+ABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQYk+CwEBAEGgPgvnAQEBAQEBAQEBAQEBAQIBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBY2h1bmtlZABBsMAAC18BAQABAQEBAQAAAQEAAQEAAQEBAQEBAQEBAQAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEAAQBBkMIACyFlY3Rpb25lbnQtbGVuZ3Rob25yb3h5LWNvbm5lY3Rpb24AQcDCAAstcmFuc2Zlci1lbmNvZGluZ3BncmFkZQ0KDQoNClNNDQoNClRUUC9DRS9UU1AvAEH5wgALBQECAAEDAEGQwwAL4AEEAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB+cQACwUBAgABAwBBkMUAC+ABBAEBBQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQfnGAAsEAQAAAQBBkccAC98BAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBB+sgACwQBAAACAEGQyQALXwMEAAAEBAQEBAQEBAQEBAUEBAQEBAQEBAQEBAQABAAGBwQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEAAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEAEH6ygALBAEAAAEAQZDLAAsBAQBBqssAC0ECAAAAAAAAAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAAAAAAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwBB+swACwQBAAABAEGQzQALAQEAQZrNAAsGAgAAAAACAEGxzQALOgMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAAAAAAAAAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAQfDOAAuWAU5PVU5DRUVDS09VVE5FQ1RFVEVDUklCRUxVU0hFVEVBRFNFQVJDSFJHRUNUSVZJVFlMRU5EQVJWRU9USUZZUFRJT05TQ0hTRUFZU1RBVENIR0VPUkRJUkVDVE9SVFJDSFBBUkFNRVRFUlVSQ0VCU0NSSUJFQVJET1dOQUNFSU5ETktDS1VCU0NSSUJFSFRUUC9BRFRQLw==", "base64");
 });
 
 // ../../node_modules/@actions/github/node_modules/undici/lib/web/fetch/constants.js
@@ -51793,8 +51793,8 @@ var require_util14 = __commonJS((exports, module) => {
     }
     return "allowed";
   }
-  function isErrorLike(object) {
-    return object instanceof Error || (object?.constructor?.name === "Error" || object?.constructor?.name === "DOMException");
+  function isErrorLike(object2) {
+    return object2 instanceof Error || (object2?.constructor?.name === "Error" || object2?.constructor?.name === "DOMException");
   }
   function isValidReasonPhrase(statusText) {
     for (let i = 0;i < statusText.length; ++i) {
@@ -51837,9 +51837,9 @@ var require_util14 = __commonJS((exports, module) => {
     return "success";
   }
   function appendFetchMetadata(httpRequest) {
-    let header = null;
-    header = httpRequest.mode;
-    httpRequest.headersList.set("sec-fetch-mode", header, true);
+    let header2 = null;
+    header2 = httpRequest.mode;
+    httpRequest.headersList.set("sec-fetch-mode", header2, true);
   }
   function appendRequestOriginHeader(request) {
     let serializedOrigin = request.origin;
@@ -52197,7 +52197,7 @@ var require_util14 = __commonJS((exports, module) => {
       return new FastIterableIterator(target2, kind);
     };
   }
-  function iteratorMixin(name, object, kInternalIterator, keyIndex = 0, valueIndex = 1) {
+  function iteratorMixin(name, object2, kInternalIterator, keyIndex = 0, valueIndex = 1) {
     const makeIterator = createIterator(name, kInternalIterator, keyIndex, valueIndex);
     const properties = {
       keys: {
@@ -52205,7 +52205,7 @@ var require_util14 = __commonJS((exports, module) => {
         enumerable: true,
         configurable: true,
         value: function keys2() {
-          webidl.brandCheck(this, object);
+          webidl.brandCheck(this, object2);
           return makeIterator(this, "key");
         }
       },
@@ -52214,7 +52214,7 @@ var require_util14 = __commonJS((exports, module) => {
         enumerable: true,
         configurable: true,
         value: function values() {
-          webidl.brandCheck(this, object);
+          webidl.brandCheck(this, object2);
           return makeIterator(this, "value");
         }
       },
@@ -52223,7 +52223,7 @@ var require_util14 = __commonJS((exports, module) => {
         enumerable: true,
         configurable: true,
         value: function entries() {
-          webidl.brandCheck(this, object);
+          webidl.brandCheck(this, object2);
           return makeIterator(this, "key+value");
         }
       },
@@ -52232,7 +52232,7 @@ var require_util14 = __commonJS((exports, module) => {
         enumerable: true,
         configurable: true,
         value: function forEach4(callbackfn, thisArg = globalThis) {
-          webidl.brandCheck(this, object);
+          webidl.brandCheck(this, object2);
           webidl.argumentLengthCheck(arguments, 1, `${name}.forEach`);
           if (typeof callbackfn !== "function") {
             throw new TypeError(`Failed to execute 'forEach' on '${name}': parameter 1 is not of type 'Function'.`);
@@ -52243,7 +52243,7 @@ var require_util14 = __commonJS((exports, module) => {
         }
       }
     };
-    return Object.defineProperties(object.prototype, {
+    return Object.defineProperties(object2.prototype, {
       ...properties,
       [Symbol.iterator]: {
         writable: true,
@@ -52609,8 +52609,8 @@ var require_file3 = __commonJS((exports, module) => {
     }
   }
   webidl.converters.Blob = webidl.interfaceConverter(Blob2);
-  function isFileLike(object) {
-    return object instanceof File2 || object && (typeof object.stream === "function" || typeof object.arrayBuffer === "function") && object[Symbol.toStringTag] === "File";
+  function isFileLike(object2) {
+    return object2 instanceof File2 || object2 && (typeof object2.stream === "function" || typeof object2.arrayBuffer === "function") && object2[Symbol.toStringTag] === "File";
   }
   module.exports = { FileLike, isFileLike };
 });
@@ -52827,7 +52827,7 @@ var require_formdata_parser2 = __commonJS((exports, module) => {
       if (result2 === "failure") {
         return "failure";
       }
-      let { name, filename, contentType: contentType2, encoding } = result2;
+      let { name, filename, contentType: contentType3, encoding } = result2;
       position.position += 2;
       let body2;
       {
@@ -52848,11 +52848,11 @@ var require_formdata_parser2 = __commonJS((exports, module) => {
       }
       let value3;
       if (filename !== null) {
-        contentType2 ??= "text/plain";
-        if (!isAsciiString(contentType2)) {
-          contentType2 = "";
+        contentType3 ??= "text/plain";
+        if (!isAsciiString(contentType3)) {
+          contentType3 = "";
         }
-        value3 = new File2([body2], filename, { type: contentType2 });
+        value3 = new File2([body2], filename, { type: contentType3 });
       } else {
         value3 = utf8DecodeBytes(Buffer.from(body2));
       }
@@ -52864,14 +52864,14 @@ var require_formdata_parser2 = __commonJS((exports, module) => {
   function parseMultipartFormDataHeaders(input, position) {
     let name = null;
     let filename = null;
-    let contentType2 = null;
+    let contentType3 = null;
     let encoding = null;
     while (true) {
       if (input[position.position] === 13 && input[position.position + 1] === 10) {
         if (name === null) {
           return "failure";
         }
-        return { name, filename, contentType: contentType2, encoding };
+        return { name, filename, contentType: contentType3, encoding };
       }
       let headerName = collectASequenceOfBytes((char) => char !== 10 && char !== 13 && char !== 58, input, position);
       headerName = removeChars(headerName, true, true, (char) => char === 9 || char === 32);
@@ -52914,7 +52914,7 @@ var require_formdata_parser2 = __commonJS((exports, module) => {
         case "content-type": {
           let headerValue = collectASequenceOfBytes((char) => char !== 10 && char !== 13, input, position);
           headerValue = removeChars(headerValue, false, true, (char) => char === 9 || char === 32);
-          contentType2 = isomorphicDecode(headerValue);
+          contentType3 = isomorphicDecode(headerValue);
           break;
         }
         case "content-transfer-encoding": {
@@ -53024,12 +53024,12 @@ var require_body2 = __commonJS((exports, module) => {
       }
     });
   }
-  function extractBody(object, keepalive = false) {
+  function extractBody(object2, keepalive = false) {
     let stream4 = null;
-    if (object instanceof ReadableStream) {
-      stream4 = object;
-    } else if (isBlobLike(object)) {
-      stream4 = object.stream();
+    if (object2 instanceof ReadableStream) {
+      stream4 = object2;
+    } else if (isBlobLike(object2)) {
+      stream4 = object2.stream();
     } else {
       stream4 = new ReadableStream({
         async pull(controller) {
@@ -53048,17 +53048,17 @@ var require_body2 = __commonJS((exports, module) => {
     let source = null;
     let length = null;
     let type = null;
-    if (typeof object === "string") {
-      source = object;
+    if (typeof object2 === "string") {
+      source = object2;
       type = "text/plain;charset=UTF-8";
-    } else if (object instanceof URLSearchParams) {
-      source = object.toString();
+    } else if (object2 instanceof URLSearchParams) {
+      source = object2.toString();
       type = "application/x-www-form-urlencoded;charset=UTF-8";
-    } else if (isArrayBuffer2(object)) {
-      source = new Uint8Array(object.slice());
-    } else if (ArrayBuffer.isView(object)) {
-      source = new Uint8Array(object.buffer.slice(object.byteOffset, object.byteOffset + object.byteLength));
-    } else if (util4.isFormDataLike(object)) {
+    } else if (isArrayBuffer2(object2)) {
+      source = new Uint8Array(object2.slice());
+    } else if (ArrayBuffer.isView(object2)) {
+      source = new Uint8Array(object2.buffer.slice(object2.byteOffset, object2.byteOffset + object2.byteLength));
+    } else if (util4.isFormDataLike(object2)) {
       const boundary = `----formdata-undici-0${`${random2(100000000000)}`.padStart(11, "0")}`;
       const prefix2 = `--${boundary}\r
 Content-Disposition: form-data`;
@@ -53070,7 +53070,7 @@ Content-Disposition: form-data`;
       const rn = new Uint8Array([13, 10]);
       length = 0;
       let hasUnknownSizeValue = false;
-      for (const [name, value3] of object) {
+      for (const [name, value3] of object2) {
         if (typeof value3 === "string") {
           const chunk2 = textEncoder.encode(prefix2 + `; name="${escape3(normalizeLinefeeds(name))}"` + `\r
 \r
@@ -53098,7 +53098,7 @@ ${normalizeLinefeeds(value3)}\r
       if (hasUnknownSizeValue) {
         length = null;
       }
-      source = object;
+      source = object2;
       action5 = async function* () {
         for (const part of blobParts) {
           if (part.stream) {
@@ -53109,20 +53109,20 @@ ${normalizeLinefeeds(value3)}\r
         }
       };
       type = `multipart/form-data; boundary=${boundary}`;
-    } else if (isBlobLike(object)) {
-      source = object;
-      length = object.size;
-      if (object.type) {
-        type = object.type;
+    } else if (isBlobLike(object2)) {
+      source = object2;
+      length = object2.size;
+      if (object2.type) {
+        type = object2.type;
       }
-    } else if (typeof object[Symbol.asyncIterator] === "function") {
+    } else if (typeof object2[Symbol.asyncIterator] === "function") {
       if (keepalive) {
         throw new TypeError("keepalive");
       }
-      if (util4.isDisturbed(object) || object.locked) {
+      if (util4.isDisturbed(object2) || object2.locked) {
         throw new TypeError("Response body object should not be disturbed or locked");
       }
-      stream4 = object instanceof ReadableStream ? object : ReadableStreamFrom(object);
+      stream4 = object2 instanceof ReadableStream ? object2 : ReadableStreamFrom(object2);
     }
     if (typeof source === "string" || util4.isBuffer(source)) {
       length = Buffer.byteLength(source);
@@ -53131,7 +53131,7 @@ ${normalizeLinefeeds(value3)}\r
       let iterator;
       stream4 = new ReadableStream({
         async start() {
-          iterator = action5(object)[Symbol.asyncIterator]();
+          iterator = action5(object2)[Symbol.asyncIterator]();
         },
         async pull(controller) {
           const { value: value3, done: done4 } = await iterator.next();
@@ -53159,12 +53159,12 @@ ${normalizeLinefeeds(value3)}\r
     const body2 = { stream: stream4, source, length };
     return [body2, type];
   }
-  function safelyExtractBody(object, keepalive = false) {
-    if (object instanceof ReadableStream) {
-      assert(!util4.isDisturbed(object), "The body has already been consumed.");
-      assert(!object.locked, "The stream is locked.");
+  function safelyExtractBody(object2, keepalive = false) {
+    if (object2 instanceof ReadableStream) {
+      assert(!util4.isDisturbed(object2), "The body has already been consumed.");
+      assert(!object2.locked, "The stream is locked.");
     }
-    return extractBody(object, keepalive);
+    return extractBody(object2, keepalive);
   }
   function cloneBody(instance, body2) {
     const [out1, out2] = body2.stream.tee();
@@ -53242,12 +53242,12 @@ ${normalizeLinefeeds(value3)}\r
   function mixinBody(prototype) {
     Object.assign(prototype.prototype, bodyMixinMethods(prototype));
   }
-  async function consumeBody(object, convertBytesToJSValue, instance) {
-    webidl.brandCheck(object, instance);
-    if (bodyUnusable(object)) {
+  async function consumeBody(object2, convertBytesToJSValue, instance) {
+    webidl.brandCheck(object2, instance);
+    if (bodyUnusable(object2)) {
       throw new TypeError("Body is unusable: Body has already been read");
     }
-    throwIfAborted(object[kState]);
+    throwIfAborted(object2[kState]);
     const promise3 = createDeferredPromise();
     const errorSteps = (error2) => promise3.reject(error2);
     const successSteps = (data) => {
@@ -53257,15 +53257,15 @@ ${normalizeLinefeeds(value3)}\r
         errorSteps(e);
       }
     };
-    if (object[kState].body == null) {
+    if (object2[kState].body == null) {
       successSteps(Buffer.allocUnsafe(0));
       return promise3.promise;
     }
-    await fullyReadBody(object[kState].body, successSteps, errorSteps);
+    await fullyReadBody(object2[kState].body, successSteps, errorSteps);
     return promise3.promise;
   }
-  function bodyUnusable(object) {
-    const body2 = object[kState].body;
+  function bodyUnusable(object2) {
+    const body2 = object2[kState].body;
     return body2 != null && (body2.stream.locked || util4.isDisturbed(body2.stream));
   }
   function parseJSONFromBytes(bytes) {
@@ -54015,9 +54015,9 @@ var require_client_h12 = __commonJS((exports, module) => {
       if (!extractBody) {
         extractBody = require_body2().extractBody;
       }
-      const [bodyStream, contentType2] = extractBody(body2);
+      const [bodyStream, contentType3] = extractBody(body2);
       if (request.contentType == null) {
-        headers.push("content-type", contentType2);
+        headers.push("content-type", contentType3);
       }
       body2 = bodyStream.stream;
       contentLength2 = bodyStream.length;
@@ -54075,23 +54075,23 @@ var require_client_h12 = __commonJS((exports, module) => {
     if (blocking) {
       socket[kBlocking] = true;
     }
-    let header = `${method} ${path3} HTTP/1.1\r
+    let header2 = `${method} ${path3} HTTP/1.1\r
 `;
     if (typeof host === "string") {
-      header += `host: ${host}\r
+      header2 += `host: ${host}\r
 `;
     } else {
-      header += client[kHostHeader];
+      header2 += client[kHostHeader];
     }
     if (upgrade) {
-      header += `connection: upgrade\r
+      header2 += `connection: upgrade\r
 upgrade: ${upgrade}\r
 `;
     } else if (client[kPipelining] && !socket[kReset]) {
-      header += `connection: keep-alive\r
+      header2 += `connection: keep-alive\r
 `;
     } else {
-      header += `connection: close\r
+      header2 += `connection: close\r
 `;
     }
     if (Array.isArray(headers)) {
@@ -54100,41 +54100,41 @@ upgrade: ${upgrade}\r
         const val = headers[n + 1];
         if (Array.isArray(val)) {
           for (let i = 0;i < val.length; i++) {
-            header += `${key}: ${val[i]}\r
+            header2 += `${key}: ${val[i]}\r
 `;
           }
         } else {
-          header += `${key}: ${val}\r
+          header2 += `${key}: ${val}\r
 `;
         }
       }
     }
     if (channels.sendHeaders.hasSubscribers) {
-      channels.sendHeaders.publish({ request, headers: header, socket });
+      channels.sendHeaders.publish({ request, headers: header2, socket });
     }
     if (!body2 || bodyLength === 0) {
-      writeBuffer(abort, null, client, request, socket, contentLength2, header, expectsPayload);
+      writeBuffer(abort, null, client, request, socket, contentLength2, header2, expectsPayload);
     } else if (util4.isBuffer(body2)) {
-      writeBuffer(abort, body2, client, request, socket, contentLength2, header, expectsPayload);
+      writeBuffer(abort, body2, client, request, socket, contentLength2, header2, expectsPayload);
     } else if (util4.isBlobLike(body2)) {
       if (typeof body2.stream === "function") {
-        writeIterable(abort, body2.stream(), client, request, socket, contentLength2, header, expectsPayload);
+        writeIterable(abort, body2.stream(), client, request, socket, contentLength2, header2, expectsPayload);
       } else {
-        writeBlob(abort, body2, client, request, socket, contentLength2, header, expectsPayload);
+        writeBlob(abort, body2, client, request, socket, contentLength2, header2, expectsPayload);
       }
     } else if (util4.isStream(body2)) {
-      writeStream(abort, body2, client, request, socket, contentLength2, header, expectsPayload);
+      writeStream(abort, body2, client, request, socket, contentLength2, header2, expectsPayload);
     } else if (util4.isIterable(body2)) {
-      writeIterable(abort, body2, client, request, socket, contentLength2, header, expectsPayload);
+      writeIterable(abort, body2, client, request, socket, contentLength2, header2, expectsPayload);
     } else {
       assert(false);
     }
     return true;
   }
-  function writeStream(abort, body2, client, request, socket, contentLength2, header, expectsPayload) {
+  function writeStream(abort, body2, client, request, socket, contentLength2, header2, expectsPayload) {
     assert(contentLength2 !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
     let finished = false;
-    const writer = new AsyncWriter({ abort, socket, request, contentLength: contentLength2, client, expectsPayload, header });
+    const writer = new AsyncWriter({ abort, socket, request, contentLength: contentLength2, client, expectsPayload, header: header2 });
     const onData = function(chunk) {
       if (finished) {
         return;
@@ -54200,22 +54200,22 @@ upgrade: ${upgrade}\r
       setImmediate(onClose);
     }
   }
-  function writeBuffer(abort, body2, client, request, socket, contentLength2, header, expectsPayload) {
+  function writeBuffer(abort, body2, client, request, socket, contentLength2, header2, expectsPayload) {
     try {
       if (!body2) {
         if (contentLength2 === 0) {
-          socket.write(`${header}content-length: 0\r
+          socket.write(`${header2}content-length: 0\r
 \r
 `, "latin1");
         } else {
           assert(contentLength2 === null, "no body must not have content length");
-          socket.write(`${header}\r
+          socket.write(`${header2}\r
 `, "latin1");
         }
       } else if (util4.isBuffer(body2)) {
         assert(contentLength2 === body2.byteLength, "buffer body must have content length");
         socket.cork();
-        socket.write(`${header}content-length: ${contentLength2}\r
+        socket.write(`${header2}content-length: ${contentLength2}\r
 \r
 `, "latin1");
         socket.write(body2);
@@ -54231,7 +54231,7 @@ upgrade: ${upgrade}\r
       abort(err);
     }
   }
-  async function writeBlob(abort, body2, client, request, socket, contentLength2, header, expectsPayload) {
+  async function writeBlob(abort, body2, client, request, socket, contentLength2, header2, expectsPayload) {
     assert(contentLength2 === body2.size, "blob body must have content length");
     try {
       if (contentLength2 != null && contentLength2 !== body2.size) {
@@ -54239,7 +54239,7 @@ upgrade: ${upgrade}\r
       }
       const buffer3 = Buffer.from(await body2.arrayBuffer());
       socket.cork();
-      socket.write(`${header}content-length: ${contentLength2}\r
+      socket.write(`${header2}content-length: ${contentLength2}\r
 \r
 `, "latin1");
       socket.write(buffer3);
@@ -54254,7 +54254,7 @@ upgrade: ${upgrade}\r
       abort(err);
     }
   }
-  async function writeIterable(abort, body2, client, request, socket, contentLength2, header, expectsPayload) {
+  async function writeIterable(abort, body2, client, request, socket, contentLength2, header2, expectsPayload) {
     assert(contentLength2 !== 0 || client[kRunning] === 0, "iterator body cannot be pipelined");
     let callback4 = null;
     function onDrain() {
@@ -54273,7 +54273,7 @@ upgrade: ${upgrade}\r
       }
     });
     socket.on("close", onDrain).on("drain", onDrain);
-    const writer = new AsyncWriter({ abort, socket, request, contentLength: contentLength2, client, expectsPayload, header });
+    const writer = new AsyncWriter({ abort, socket, request, contentLength: contentLength2, client, expectsPayload, header: header2 });
     try {
       for await (const chunk of body2) {
         if (socket[kError]) {
@@ -54292,19 +54292,19 @@ upgrade: ${upgrade}\r
   }
 
   class AsyncWriter {
-    constructor({ abort, socket, request, contentLength: contentLength2, client, expectsPayload, header }) {
+    constructor({ abort, socket, request, contentLength: contentLength2, client, expectsPayload, header: header2 }) {
       this.socket = socket;
       this.request = request;
       this.contentLength = contentLength2;
       this.client = client;
       this.bytesWritten = 0;
       this.expectsPayload = expectsPayload;
-      this.header = header;
+      this.header = header2;
       this.abort = abort;
       socket[kWriting] = true;
     }
     write(chunk) {
-      const { socket, request, contentLength: contentLength2, client, bytesWritten, expectsPayload, header } = this;
+      const { socket, request, contentLength: contentLength2, client, bytesWritten, expectsPayload, header: header2 } = this;
       if (socket[kError]) {
         throw socket[kError];
       }
@@ -54327,10 +54327,10 @@ upgrade: ${upgrade}\r
           socket[kReset] = true;
         }
         if (contentLength2 === null) {
-          socket.write(`${header}transfer-encoding: chunked\r
+          socket.write(`${header2}transfer-encoding: chunked\r
 `, "latin1");
         } else {
-          socket.write(`${header}content-length: ${contentLength2}\r
+          socket.write(`${header2}content-length: ${contentLength2}\r
 \r
 `, "latin1");
         }
@@ -54354,7 +54354,7 @@ ${len.toString(16)}\r
       return ret;
     }
     end() {
-      const { socket, contentLength: contentLength2, client, bytesWritten, expectsPayload, header, request } = this;
+      const { socket, contentLength: contentLength2, client, bytesWritten, expectsPayload, header: header2, request } = this;
       request.onRequestSent();
       socket[kWriting] = false;
       if (socket[kError]) {
@@ -54365,11 +54365,11 @@ ${len.toString(16)}\r
       }
       if (bytesWritten === 0) {
         if (expectsPayload) {
-          socket.write(`${header}content-length: 0\r
+          socket.write(`${header2}content-length: 0\r
 \r
 `, "latin1");
         } else {
-          socket.write(`${header}\r
+          socket.write(`${header2}\r
 `, "latin1");
         }
       } else if (contentLength2 === null) {
@@ -54681,8 +54681,8 @@ var require_client_h22 = __commonJS((exports, module) => {
     let contentLength2 = util4.bodyLength(body2);
     if (util4.isFormDataLike(body2)) {
       extractBody ??= require_body2().extractBody;
-      const [bodyStream, contentType2] = extractBody(body2);
-      headers["content-type"] = contentType2;
+      const [bodyStream, contentType3] = extractBody(body2);
+      headers["content-type"] = contentType3;
       body2 = bodyStream.stream;
       contentLength2 = bodyStream.length;
     }
@@ -55007,15 +55007,15 @@ var require_redirect_handler2 = __commonJS((exports, module) => {
       }
     }
   }
-  function shouldRemoveHeader(header, removeContent, unknownOrigin) {
-    if (header.length === 4) {
-      return util4.headerNameToString(header) === "host";
+  function shouldRemoveHeader(header2, removeContent, unknownOrigin) {
+    if (header2.length === 4) {
+      return util4.headerNameToString(header2) === "host";
     }
-    if (removeContent && util4.headerNameToString(header).startsWith("content-")) {
+    if (removeContent && util4.headerNameToString(header2).startsWith("content-")) {
       return true;
     }
-    if (unknownOrigin && (header.length === 13 || header.length === 6 || header.length === 19)) {
-      const name = util4.headerNameToString(header);
+    if (unknownOrigin && (header2.length === 13 || header2.length === 6 || header2.length === 19)) {
+      const name = util4.headerNameToString(header2);
       return name === "authorization" || name === "cookie" || name === "proxy-authorization";
     }
     return false;
@@ -56773,7 +56773,7 @@ var require_readable4 = __commonJS((exports, module) => {
     constructor({
       resume,
       abort,
-      contentType: contentType2 = "",
+      contentType: contentType3 = "",
       contentLength: contentLength2,
       highWaterMark = 64 * 1024
     }) {
@@ -56786,7 +56786,7 @@ var require_readable4 = __commonJS((exports, module) => {
       this[kAbort] = abort;
       this[kConsume] = null;
       this[kBody] = null;
-      this[kContentType] = contentType2;
+      this[kContentType] = contentType3;
       this[kContentLength] = contentLength2;
       this[kReading] = false;
     }
@@ -57042,7 +57042,7 @@ var require_util15 = __commonJS((exports, module) => {
   } = require_errors4();
   var { chunksDecode } = require_readable4();
   var CHUNK_LIMIT = 128 * 1024;
-  async function getResolveErrorBodyCallback({ callback: callback4, body: body2, contentType: contentType2, statusCode, statusMessage, headers }) {
+  async function getResolveErrorBodyCallback({ callback: callback4, body: body2, contentType: contentType3, statusCode, statusMessage, headers }) {
     assert(body2);
     let chunks = [];
     let length = 0;
@@ -57061,7 +57061,7 @@ var require_util15 = __commonJS((exports, module) => {
       length = 0;
     }
     const message = `Response status code ${statusCode}${statusMessage ? `: ${statusMessage}` : ""}`;
-    if (statusCode === 204 || !contentType2 || !length) {
+    if (statusCode === 204 || !contentType3 || !length) {
       queueMicrotask(() => callback4(new ResponseStatusCodeError(message, statusCode, headers)));
       return;
     }
@@ -57069,9 +57069,9 @@ var require_util15 = __commonJS((exports, module) => {
     Error.stackTraceLimit = 0;
     let payload;
     try {
-      if (isContentTypeApplicationJson(contentType2)) {
+      if (isContentTypeApplicationJson(contentType3)) {
         payload = JSON.parse(chunksDecode(chunks, length));
-      } else if (isContentTypeText(contentType2)) {
+      } else if (isContentTypeText(contentType3)) {
         payload = chunksDecode(chunks, length);
       }
     } catch {} finally {
@@ -57079,11 +57079,11 @@ var require_util15 = __commonJS((exports, module) => {
     }
     queueMicrotask(() => callback4(new ResponseStatusCodeError(message, statusCode, headers, payload)));
   }
-  var isContentTypeApplicationJson = (contentType2) => {
-    return contentType2.length > 15 && contentType2[11] === "/" && contentType2[0] === "a" && contentType2[1] === "p" && contentType2[2] === "p" && contentType2[3] === "l" && contentType2[4] === "i" && contentType2[5] === "c" && contentType2[6] === "a" && contentType2[7] === "t" && contentType2[8] === "i" && contentType2[9] === "o" && contentType2[10] === "n" && contentType2[12] === "j" && contentType2[13] === "s" && contentType2[14] === "o" && contentType2[15] === "n";
+  var isContentTypeApplicationJson = (contentType3) => {
+    return contentType3.length > 15 && contentType3[11] === "/" && contentType3[0] === "a" && contentType3[1] === "p" && contentType3[2] === "p" && contentType3[3] === "l" && contentType3[4] === "i" && contentType3[5] === "c" && contentType3[6] === "a" && contentType3[7] === "t" && contentType3[8] === "i" && contentType3[9] === "o" && contentType3[10] === "n" && contentType3[12] === "j" && contentType3[13] === "s" && contentType3[14] === "o" && contentType3[15] === "n";
   };
-  var isContentTypeText = (contentType2) => {
-    return contentType2.length > 4 && contentType2[4] === "/" && contentType2[0] === "t" && contentType2[1] === "e" && contentType2[2] === "x" && contentType2[3] === "t";
+  var isContentTypeText = (contentType3) => {
+    return contentType3.length > 4 && contentType3[4] === "/" && contentType3[0] === "t" && contentType3[1] === "e" && contentType3[2] === "x" && contentType3[3] === "t";
   };
   module.exports = {
     getResolveErrorBodyCallback,
@@ -57189,12 +57189,12 @@ var require_api_request2 = __commonJS((exports, module) => {
         return;
       }
       const parsedHeaders = responseHeaders === "raw" ? util4.parseHeaders(rawHeaders) : headers;
-      const contentType2 = parsedHeaders["content-type"];
+      const contentType3 = parsedHeaders["content-type"];
       const contentLength2 = parsedHeaders["content-length"];
       const res = new Readable7({
         resume,
         abort,
-        contentType: contentType2,
+        contentType: contentType3,
         contentLength: this.method !== "HEAD" && contentLength2 ? Number(contentLength2) : null,
         highWaterMark
       });
@@ -57205,7 +57205,7 @@ var require_api_request2 = __commonJS((exports, module) => {
       this.res = res;
       if (callback4 !== null) {
         if (this.throwOnError && statusCode >= 400) {
-          this.runInAsyncScope(getResolveErrorBodyCallback, null, { callback: callback4, body: res, contentType: contentType2, statusCode, statusMessage, headers });
+          this.runInAsyncScope(getResolveErrorBodyCallback, null, { callback: callback4, body: res, contentType: contentType3, statusCode, statusMessage, headers });
         } else {
           this.runInAsyncScope(callback4, null, null, {
             statusCode,
@@ -57400,10 +57400,10 @@ var require_api_stream2 = __commonJS((exports, module) => {
       let res;
       if (this.throwOnError && statusCode >= 400) {
         const parsedHeaders = responseHeaders === "raw" ? util4.parseHeaders(rawHeaders) : headers;
-        const contentType2 = parsedHeaders["content-type"];
+        const contentType3 = parsedHeaders["content-type"];
         res = new PassThrough2;
         this.callback = null;
-        this.runInAsyncScope(getResolveErrorBodyCallback, null, { callback: callback4, body: res, contentType: contentType2, statusCode, statusMessage, headers });
+        this.runInAsyncScope(getResolveErrorBodyCallback, null, { callback: callback4, body: res, contentType: contentType3, statusCode, statusMessage, headers });
       } else {
         if (factory === null) {
           return;
@@ -59107,22 +59107,22 @@ var require_headers3 = __commonJS((exports, module) => {
       ++i;
     return i === 0 && j === potentialValue.length ? potentialValue : potentialValue.substring(i, j);
   }
-  function fill(headers, object) {
-    if (Array.isArray(object)) {
-      for (let i = 0;i < object.length; ++i) {
-        const header = object[i];
-        if (header.length !== 2) {
+  function fill(headers, object2) {
+    if (Array.isArray(object2)) {
+      for (let i = 0;i < object2.length; ++i) {
+        const header2 = object2[i];
+        if (header2.length !== 2) {
           throw webidl.errors.exception({
             header: "Headers constructor",
-            message: `expected name/value pair to be length 2, found ${header.length}.`
+            message: `expected name/value pair to be length 2, found ${header2.length}.`
           });
         }
-        appendHeader(headers, header[0], header[1]);
+        appendHeader(headers, header2[0], header2[1]);
       }
-    } else if (typeof object === "object" && object !== null) {
-      const keys2 = Object.keys(object);
+    } else if (typeof object2 === "object" && object2 !== null) {
+      const keys2 = Object.keys(object2);
       for (let i = 0;i < keys2.length; ++i) {
-        appendHeader(headers, keys2[i], object[keys2[i]]);
+        appendHeader(headers, keys2[i], object2[keys2[i]]);
       }
     } else {
       throw webidl.errors.conversionFailed({
@@ -60167,10 +60167,10 @@ var require_request4 = __commonJS((exports, module) => {
       }
       let initBody = null;
       if (init.body != null) {
-        const [extractedBody, contentType2] = extractBody(init.body, request.keepalive);
+        const [extractedBody, contentType3] = extractBody(init.body, request.keepalive);
         initBody = extractedBody;
-        if (contentType2 && !getHeadersList(this[kHeaders]).contains("content-type", true)) {
-          this[kHeaders].append("content-type", contentType2);
+        if (contentType3 && !getHeadersList(this[kHeaders]).contains("content-type", true)) {
+          this[kHeaders].append("content-type", contentType3);
         }
       }
       const inputOrInitBody = initBody ?? inputBody;
@@ -62273,10 +62273,10 @@ var require_util17 = __commonJS((exports, module) => {
     const serializedB = URLSerializer(B, excludeFragment);
     return serializedA === serializedB;
   }
-  function getFieldValues(header) {
-    assert(header !== null);
+  function getFieldValues(header2) {
+    assert(header2 !== null);
     const values = [];
-    for (let value3 of header.split(",")) {
+    for (let value3 of header2.split(",")) {
       value3 = value3.trim();
       if (isValidHeaderName(value3)) {
         values.push(value3);
@@ -63036,20 +63036,20 @@ var require_parse3 = __commonJS((exports, module) => {
   var { isCTLExcludingHtab } = require_util18();
   var { collectASequenceOfCodePointsFast } = require_data_url2();
   var assert = __require("node:assert");
-  function parseSetCookie2(header) {
-    if (isCTLExcludingHtab(header)) {
+  function parseSetCookie2(header2) {
+    if (isCTLExcludingHtab(header2)) {
       return null;
     }
     let nameValuePair = "";
     let unparsedAttributes = "";
     let name = "";
     let value3 = "";
-    if (header.includes(";")) {
+    if (header2.includes(";")) {
       const position = { position: 0 };
-      nameValuePair = collectASequenceOfCodePointsFast(";", header, position);
-      unparsedAttributes = header.slice(position.position);
+      nameValuePair = collectASequenceOfCodePointsFast(";", header2, position);
+      unparsedAttributes = header2.slice(position.position);
     } else {
-      nameValuePair = header;
+      nameValuePair = header2;
     }
     if (!nameValuePair.includes("=")) {
       value3 = nameValuePair;
@@ -65179,8 +65179,8 @@ var require_eventsource2 = __commonJS((exports, module) => {
             return;
           }
         }
-        const contentType2 = response.headersList.get("content-type", true);
-        const mimeType = contentType2 !== null ? parseMIMEType2(contentType2) : "failure";
+        const contentType3 = response.headersList.get("content-type", true);
+        const mimeType = contentType3 !== null ? parseMIMEType2(contentType3) : "failure";
         const contentTypeValid = mimeType !== "failure" && mimeType.essence === "text/event-stream";
         if (response.status !== 200 || contentTypeValid === false) {
           this.close();
@@ -65797,9 +65797,9 @@ var require_lib2 = __commonJS((exports) => {
             }
             yield response.readBody();
             if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
-              for (const header in headers) {
-                if (header.toLowerCase() === "authorization") {
-                  delete headers[header];
+              for (const header2 in headers) {
+                if (header2.toLowerCase() === "authorization") {
+                  delete headers[header2];
                 }
               }
             }
@@ -65926,15 +65926,15 @@ var require_lib2 = __commonJS((exports) => {
       }
       return lowercaseKeys2(headers || {});
     }
-    _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
+    _getExistingOrDefaultHeader(additionalHeaders, header2, _default) {
       let clientHeader;
       if (this.requestOptions && this.requestOptions.headers) {
-        const headerValue = lowercaseKeys2(this.requestOptions.headers)[header];
+        const headerValue = lowercaseKeys2(this.requestOptions.headers)[header2];
         if (headerValue) {
           clientHeader = typeof headerValue === "number" ? headerValue.toString() : headerValue;
         }
       }
-      const additionalValue = additionalHeaders[header];
+      const additionalValue = additionalHeaders[header2];
       if (additionalValue !== undefined) {
         return typeof additionalValue === "number" ? additionalValue.toString() : additionalValue;
       }
@@ -66149,14 +66149,14 @@ var require_dist5 = __commonJS((exports) => {
     }
     return result2;
   }
-  function parse3(header, options) {
-    const len = header.length;
-    let index = skipOWS(header, 0, len);
+  function parse3(header2, options) {
+    const len = header2.length;
+    let index = skipOWS(header2, 0, len);
     const valueStart = index;
-    index = skipValue(header, index, len);
-    const valueEnd = trailingOWS(header, valueStart, index);
-    const type = header.slice(valueStart, valueEnd).toLowerCase();
-    const parameters = options?.parameters === false ? new NullObject : parseParameters(header, index, len);
+    index = skipValue(header2, index, len);
+    const valueEnd = trailingOWS(header2, valueStart, index);
+    const type = header2.slice(valueStart, valueEnd).toLowerCase();
+    const parameters = options?.parameters === false ? new NullObject : parseParameters(header2, index, len);
     return { type, parameters };
   }
   var SP = 32;
@@ -66165,33 +66165,33 @@ var require_dist5 = __commonJS((exports) => {
   var EQ = 61;
   var DQUOTE = 34;
   var BSLASH = 92;
-  function parseParameters(header, index, len) {
+  function parseParameters(header2, index, len) {
     const parameters = new NullObject;
     parameter:
       while (index < len) {
-        index = skipOWS(header, index + 1, len);
+        index = skipOWS(header2, index + 1, len);
         const keyStart = index;
         while (index < len) {
-          const code = header.charCodeAt(index);
+          const code = header2.charCodeAt(index);
           if (code === SEMI)
             continue parameter;
           if (code === EQ) {
-            const keyEnd = trailingOWS(header, keyStart, index);
-            const key = header.slice(keyStart, keyEnd).toLowerCase();
-            index = skipOWS(header, index + 1, len);
-            if (index < len && header.charCodeAt(index) === DQUOTE) {
+            const keyEnd = trailingOWS(header2, keyStart, index);
+            const key = header2.slice(keyStart, keyEnd).toLowerCase();
+            index = skipOWS(header2, index + 1, len);
+            if (index < len && header2.charCodeAt(index) === DQUOTE) {
               index++;
               let value3 = "";
               while (index < len) {
-                const code2 = header.charCodeAt(index++);
+                const code2 = header2.charCodeAt(index++);
                 if (code2 === DQUOTE) {
-                  index = skipValue(header, index, len);
+                  index = skipValue(header2, index, len);
                   if (parameters[key] === undefined)
                     parameters[key] = value3;
                   break;
                 }
                 if (code2 === BSLASH && index < len) {
-                  value3 += header[index++];
+                  value3 += header2[index++];
                   continue;
                 }
                 value3 += String.fromCharCode(code2);
@@ -66199,10 +66199,10 @@ var require_dist5 = __commonJS((exports) => {
               continue parameter;
             }
             const valueStart = index;
-            index = skipValue(header, index, len);
+            index = skipValue(header2, index, len);
             if (parameters[key] === undefined) {
-              const valueEnd = trailingOWS(header, valueStart, index);
-              parameters[key] = header.slice(valueStart, valueEnd);
+              const valueEnd = trailingOWS(header2, valueStart, index);
+              parameters[key] = header2.slice(valueStart, valueEnd);
             }
             continue parameter;
           }
@@ -66220,18 +66220,18 @@ var require_dist5 = __commonJS((exports) => {
     }
     return index;
   }
-  function skipOWS(header, index, len) {
+  function skipOWS(header2, index, len) {
     while (index < len) {
-      const char = header.charCodeAt(index);
+      const char = header2.charCodeAt(index);
       if (char !== SP && char !== HTAB)
         break;
       index++;
     }
     return index;
   }
-  function trailingOWS(header, start, end) {
+  function trailingOWS(header2, start, end) {
     while (end > start) {
-      const char = header.charCodeAt(end - 1);
+      const char = header2.charCodeAt(end - 1);
       if (char !== SP && char !== HTAB)
         break;
       end--;
@@ -66791,7 +66791,7 @@ var require_buffers = __commonJS((exports, module) => {
       bi++;
     }
   };
-  Buffers.prototype.get = function get3(i) {
+  Buffers.prototype.get = function get4(i) {
     var pos = this.pos(i);
     return this.buffers[pos.buf].get(pos.offset);
   };
@@ -70575,7 +70575,7 @@ function info(message) {
   process.stdout.write(message + os4.EOL);
 }
 
-// ../../node_modules/effect/dist/Pipeable.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Pipeable.js
 var pipeArguments = (self2, args) => {
   switch (args.length) {
     case 0:
@@ -70618,7 +70618,7 @@ var Class = /* @__PURE__ */ function() {
   return PipeableBase;
 }();
 
-// ../../node_modules/effect/dist/Function.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Function.js
 var dual = function(arity, body) {
   if (typeof arity === "function") {
     return function() {
@@ -70719,7 +70719,7 @@ function memoize(f) {
   };
 }
 
-// ../../node_modules/effect/dist/internal/equal.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/equal.js
 var getAllObjectKeys = (obj) => {
   const keys = new Set(Reflect.ownKeys(obj));
   if (obj.constructor === Object)
@@ -70743,7 +70743,7 @@ var getAllObjectKeys = (obj) => {
 };
 var byReferenceInstances = /* @__PURE__ */ new WeakSet;
 
-// ../../node_modules/effect/dist/Predicate.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Predicate.js
 function isString(input) {
   return typeof input === "string";
 }
@@ -70780,7 +70780,7 @@ function isIterable(input) {
   return hasProperty(input, Symbol.iterator) || isString(input);
 }
 
-// ../../node_modules/effect/dist/Hash.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Hash.js
 var symbol = "~effect/interfaces/Hash";
 var hash = (self2) => {
   switch (typeof self2) {
@@ -70899,7 +70899,7 @@ function withVisitedTracking(obj, fn) {
   return result;
 }
 
-// ../../node_modules/effect/dist/Equal.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Equal.js
 var symbol2 = "~effect/interfaces/Equal";
 function equals() {
   if (arguments.length === 1) {
@@ -71082,7 +71082,7 @@ var compareSets = /* @__PURE__ */ makeCompareSet(compareBoth);
 var isEqual = (u) => hasProperty(u, symbol2);
 var asEquivalence = () => equals;
 
-// ../../node_modules/effect/dist/Redactable.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Redactable.js
 var symbolRedactable = /* @__PURE__ */ Symbol.for("~effect/Redactable");
 var isRedactable = (u) => hasProperty(u, symbolRedactable);
 function redact(u) {
@@ -71102,7 +71102,7 @@ var emptyContext = {
   }
 };
 
-// ../../node_modules/effect/dist/Formatter.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Formatter.js
 function format(input, options) {
   const space = options?.space ?? 0;
   const seen = new WeakSet;
@@ -71211,7 +71211,7 @@ function formatJson(input, options) {
   }, options?.space);
 }
 
-// ../../node_modules/effect/dist/Inspectable.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Inspectable.js
 var NodeInspectSymbol = /* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom");
 var toJson = (input) => {
   try {
@@ -71258,7 +71258,7 @@ class Class2 {
   }
 }
 
-// ../../node_modules/effect/dist/Utils.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Utils.js
 class SingleShotGen {
   called = false;
   self;
@@ -71297,7 +71297,7 @@ var pickInternalCall = () => {
 };
 var internalCall = /* @__PURE__ */ pickInternalCall();
 
-// ../../node_modules/effect/dist/internal/core.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/core.js
 var EffectTypeId = `~effect/Effect`;
 var ExitTypeId = `~effect/Exit`;
 var effectVariance = {
@@ -71657,13 +71657,13 @@ var done = (value) => {
   return exitFail(Done(value));
 };
 
-// ../../node_modules/effect/dist/Effectable.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Effectable.js
 var Prototype2 = (options) => makePrimitiveProto({
   op: options.label,
   [evaluate]: options.evaluate
 });
 
-// ../../node_modules/effect/dist/Equivalence.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Equivalence.js
 var make = (isEquivalent) => (self2, that) => self2 === that || isEquivalent(self2, that);
 var isStrictEquivalent = (x, y) => x === y;
 var strictEqual = () => isStrictEquivalent;
@@ -71692,7 +71692,7 @@ function Array_(item) {
   });
 }
 
-// ../../node_modules/effect/dist/internal/option.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/option.js
 var TypeId = "~effect/data/Option";
 var CommonProto = {
   [TypeId]: {
@@ -71758,7 +71758,7 @@ var some = (value) => {
   return a;
 };
 
-// ../../node_modules/effect/dist/internal/result.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/result.js
 var TypeId2 = "~effect/data/Result";
 var CommonProto2 = {
   [TypeId2]: {
@@ -71824,7 +71824,7 @@ var succeed = (success) => {
   return a;
 };
 
-// ../../node_modules/effect/dist/Order.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Order.js
 function make2(compare) {
   return (self2, that) => self2 === that ? 0 : compare(self2, that);
 }
@@ -71841,7 +71841,7 @@ var mapInput = /* @__PURE__ */ dual(2, (self2, f) => make2((b1, b2) => self2(f(b
 var Date2 = /* @__PURE__ */ mapInput(Number2, (date) => date.getTime());
 var isGreaterThan = (O) => dual(2, (self2, that) => O(self2, that) === 1);
 
-// ../../node_modules/effect/dist/Option.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Option.js
 var none2 = () => none;
 var some2 = some;
 var isNone2 = isNone;
@@ -71857,7 +71857,7 @@ var map = /* @__PURE__ */ dual(2, (self2, f) => isNone2(self2) ? none2() : some2
 var flatMap = /* @__PURE__ */ dual(2, (self2, f) => isNone2(self2) ? none2() : f(self2.value));
 var filter = /* @__PURE__ */ dual(2, (self2, predicate) => isNone2(self2) ? none2() : predicate(self2.value) ? some2(self2.value) : none2());
 
-// ../../node_modules/effect/dist/Context.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Context.js
 var ServiceTypeId = "~effect/Context/Service";
 var Service = function() {
   const prevLimit = Error.stackTraceLimit;
@@ -72044,10 +72044,10 @@ var withMapUnsafe = (self2, f) => {
 };
 var Reference = Service;
 
-// ../../node_modules/effect/dist/internal/array.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/array.js
 var isArrayNonEmpty = (self2) => self2.length > 0;
 
-// ../../node_modules/effect/dist/Result.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Result.js
 var succeed2 = succeed;
 var fail2 = fail;
 var isFailure2 = isFailure;
@@ -72056,10 +72056,10 @@ var match2 = /* @__PURE__ */ dual(2, (self2, {
   onSuccess
 }) => isFailure2(self2) ? onFailure(self2.failure) : onSuccess(self2.success));
 
-// ../../node_modules/effect/dist/Tuple.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Tuple.js
 var makeEquivalence = Tuple;
 
-// ../../node_modules/effect/dist/Record.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Record.js
 var has = /* @__PURE__ */ dual(2, (self2, key) => Object.hasOwn(self2, key));
 var map2 = /* @__PURE__ */ dual(2, (self2, f) => {
   const out = {
@@ -72084,7 +72084,7 @@ var makeEquivalence2 = (equivalence) => {
   return (self2, that) => is(self2, that) && is(that, self2);
 };
 
-// ../../node_modules/effect/dist/Array.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Array.js
 var Array2 = globalThis.Array;
 var fromIterable = (collection) => Array2.isArray(collection) ? collection : Array2.from(collection);
 var append = /* @__PURE__ */ dual(2, (self2, last) => [...self2, last]);
@@ -72136,7 +72136,7 @@ var dedupeWith = /* @__PURE__ */ dual(2, (self2, isEquivalent) => {
   return [];
 });
 
-// ../../node_modules/effect/dist/Duration.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Duration.js
 var TypeId4 = "~effect/time/Duration";
 var bigint0 = /* @__PURE__ */ BigInt(0);
 var bigint1 = /* @__PURE__ */ BigInt(1);
@@ -72383,7 +72383,7 @@ var Equivalence = (self2, that) => matchPair(self2, that, {
 });
 var equals2 = /* @__PURE__ */ dual(2, (self2, that) => Equivalence(self2, that));
 
-// ../../node_modules/effect/dist/Filter.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Filter.js
 var composePassthrough = /* @__PURE__ */ dual(2, (left, right) => (input) => {
   const leftOut = left(input);
   if (isFailure2(leftOut))
@@ -72394,7 +72394,7 @@ var composePassthrough = /* @__PURE__ */ dual(2, (left, right) => (input) => {
   return rightOut;
 });
 
-// ../../node_modules/effect/dist/Scheduler.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Scheduler.js
 var Scheduler = /* @__PURE__ */ Reference("effect/Scheduler", {
   defaultValue: () => new MixedScheduler
 });
@@ -72491,7 +72491,7 @@ var PreventSchedulerYield = /* @__PURE__ */ Reference("effect/Scheduler/PreventS
   defaultValue: () => false
 });
 
-// ../../node_modules/effect/dist/Tracer.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Tracer.js
 var ParentSpanKey = "effect/Tracer/ParentSpan";
 
 class ParentSpan extends (/* @__PURE__ */ Service()(ParentSpanKey)) {
@@ -72573,10 +72573,10 @@ var randomHexString = /* @__PURE__ */ function() {
   };
 }();
 
-// ../../node_modules/effect/dist/internal/metric.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/metric.js
 var FiberRuntimeMetricsKey = "effect/observability/Metric/FiberRuntimeMetricsKey";
 
-// ../../node_modules/effect/dist/internal/references.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/references.js
 var CurrentConcurrency = /* @__PURE__ */ Reference("effect/References/CurrentConcurrency", {
   defaultValue: () => "unbounded"
 });
@@ -72608,7 +72608,7 @@ var CurrentLogSpans = /* @__PURE__ */ Reference("effect/References/CurrentLogSpa
   defaultValue: () => []
 });
 
-// ../../node_modules/effect/dist/internal/tracer.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/tracer.js
 var addSpanStackTrace = (options) => {
   if (options?.captureStackTrace === false) {
     return options;
@@ -72642,10 +72642,10 @@ var makeStackCleaner = (line) => (stack) => {
 };
 var spanCleaner = /* @__PURE__ */ makeStackCleaner(3);
 
-// ../../node_modules/effect/dist/internal/version.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/version.js
 var version = "dev";
 
-// ../../node_modules/effect/dist/internal/effect.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/effect.js
 class Interrupt extends ReasonBase {
   fiberId;
   constructor(fiberId, annotations = constEmptyAnnotations) {
@@ -74541,7 +74541,7 @@ var tracerLogger = /* @__PURE__ */ loggerMake(({
   span.event(toStringUnknown(Array.isArray(message) && message.length === 1 ? message[0] : message), clock.currentTimeNanosUnsafe(), attributes);
 });
 
-// ../../node_modules/effect/dist/Cause.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Cause.js
 var fail4 = causeFail;
 var squash = causeSquash;
 var findError2 = findError;
@@ -74551,7 +74551,7 @@ var Done2 = Done;
 var done2 = done;
 var UnknownError2 = UnknownError;
 
-// ../../node_modules/effect/dist/Exit.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Exit.js
 var succeed4 = exitSucceed;
 var failCause2 = exitFailCause;
 var fail5 = exitFail;
@@ -74560,7 +74560,7 @@ var isSuccess3 = exitIsSuccess;
 var isFailure3 = exitIsFailure;
 var getSuccess2 = exitGetSuccess;
 
-// ../../node_modules/effect/dist/Deferred.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Deferred.js
 var TypeId5 = "~effect/Deferred";
 var DeferredProto = {
   [TypeId5]: {
@@ -74604,7 +74604,7 @@ var doneUnsafe = (self2, effect) => {
   return true;
 };
 
-// ../../node_modules/effect/dist/Scope.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Scope.js
 var makeUnsafe3 = scopeMakeUnsafe;
 var provide = provideScope;
 var addFinalizerExit = scopeAddFinalizerExit;
@@ -74612,7 +74612,7 @@ var addFinalizer = scopeAddFinalizer;
 var forkUnsafe2 = scopeForkUnsafe;
 var close = scopeClose;
 
-// ../../node_modules/effect/dist/Layer.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Layer.js
 var TypeId6 = "~effect/Layer";
 var MemoMapTypeId = "~effect/Layer/MemoMap";
 var memoMapReuse = (entry, scope2) => {
@@ -74718,7 +74718,7 @@ var mergeAll2 = (...layers) => fromBuild((memoMap, scope2) => mergeAllEffect(lay
 var provideWith = (self2, that, f) => fromBuild((memoMap, scope2) => flatMap2(Array.isArray(that) ? mergeAllEffect(that, memoMap, scope2) : that.build(memoMap, scope2), (context2) => self2.build(memoMap, scope2).pipe(provideContext(context2), map4((merged) => f(merged, context2)))));
 var provide2 = /* @__PURE__ */ dual(2, (self2, that) => provideWith(self2, that, identity));
 
-// ../../node_modules/effect/dist/Data.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Data.js
 var Class3 = class extends Class {
   constructor(props) {
     super();
@@ -74730,10 +74730,10 @@ var Class3 = class extends Class {
 var Error3 = Error2;
 var TaggedError2 = TaggedError;
 
-// ../../node_modules/effect/dist/Clock.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Clock.js
 var currentTimeMillis2 = currentTimeMillis;
 
-// ../../node_modules/effect/dist/Pull.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Pull.js
 var catchDone = /* @__PURE__ */ dual(2, (effect2, f) => catchCauseFilter(effect2, filterDoneLeftover, (l) => f(l)));
 var isDoneCause = (cause) => cause.reasons.some(isDoneFailure);
 var isDoneFailure = (failure) => failure._tag === "Fail" && isDone2(failure.error);
@@ -74751,7 +74751,7 @@ var matchEffect2 = /* @__PURE__ */ dual(2, (self2, options) => matchCauseEffect(
   }
 }));
 
-// ../../node_modules/effect/dist/Effect.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Effect.js
 var all2 = all;
 var forEach2 = forEach;
 var whileLoop2 = whileLoop;
@@ -74797,6 +74797,7 @@ var contextWith2 = contextWith;
 var provideContext2 = provideContext;
 var serviceOption2 = serviceOption;
 var updateContext2 = updateContext;
+var provideService2 = provideService;
 var scoped2 = scoped;
 var scopedWith2 = scopedWith;
 var acquireRelease2 = acquireRelease;
@@ -74844,13 +74845,13 @@ var flatMapEager2 = flatMapEager;
 var catchEager2 = catchEager;
 var fnUntracedEager2 = fnUntracedEager;
 
-// ../../node_modules/effect/dist/Fiber.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Fiber.js
 var TypeId7 = `~effect/Fiber/${version}`;
 var await_ = fiberAwait;
 var interrupt2 = fiberInterrupt;
 var runIn = fiberRunIn;
 
-// ../../node_modules/effect/dist/ManagedRuntime.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ManagedRuntime.js
 var TypeId8 = "~effect/ManagedRuntime";
 var make6 = (layer, options) => {
   const memoMap = options?.memoMap ?? makeMemoMapUnsafe();
@@ -74920,7 +74921,7 @@ function provide3(managed, effect2) {
   return flatMap3(managed.contextEffect, (context3) => provideContext2(effect2, context3));
 }
 
-// ../../node_modules/effect/dist/Encoding.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Encoding.js
 var EncodingErrorTypeId = "~effect/encoding/EncodingError";
 
 class EncodingError extends (/* @__PURE__ */ TaggedError2("EncodingError")) {
@@ -75004,7 +75005,7 @@ function getBase64Code(charCode) {
 var base64abc = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"];
 var base64codes = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 62, 255, 255, 255, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 255, 255, 255, 0, 255, 255, 255, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 255, 255, 255, 255, 255, 255, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51];
 
-// ../../node_modules/effect/dist/internal/schema/annotations.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/schema/annotations.js
 function resolve(ast) {
   return ast.checks ? ast.checks[ast.checks.length - 1].annotations : ast.annotations;
 }
@@ -75020,7 +75021,7 @@ var getExpected = /* @__PURE__ */ memoize((ast) => {
   return ast.getExpected(getExpected);
 });
 
-// ../../node_modules/effect/dist/internal/record.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/record.js
 function set(self2, key, value) {
   if (key === "__proto__") {
     Object.defineProperty(self2, key, {
@@ -75035,11 +75036,11 @@ function set(self2, key, value) {
   return self2;
 }
 
-// ../../node_modules/effect/dist/RegExp.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/RegExp.js
 var RegExp2 = globalThis.RegExp;
 var escape = (string2) => string2.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
 
-// ../../node_modules/effect/dist/internal/redacted.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/redacted.js
 var redactedRegistry = /* @__PURE__ */ new WeakMap;
 var value = (self2) => {
   if (redactedRegistry.has(self2)) {
@@ -75049,7 +75050,7 @@ var value = (self2) => {
   }
 };
 
-// ../../node_modules/effect/dist/Redacted.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Redacted.js
 var TypeId9 = "~effect/data/Redacted";
 var isRedacted = (u) => hasProperty(u, TypeId9);
 var make7 = (value2, options) => {
@@ -75082,7 +75083,7 @@ var Proto2 = {
 var value2 = value;
 var makeEquivalence4 = (isEquivalent) => make((x, y) => isEquivalent(value2(x), value2(y)));
 
-// ../../node_modules/effect/dist/SchemaIssue.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaIssue.js
 var TypeId10 = "~effect/SchemaIssue/Issue";
 function isIssue(u) {
   return hasProperty(u, TypeId10);
@@ -75409,7 +75410,7 @@ function redact2(issue2) {
   }
 }
 
-// ../../node_modules/effect/dist/SchemaGetter.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaGetter.js
 class Getter extends Class {
   run;
   constructor(run) {
@@ -75484,7 +75485,7 @@ function decodeBase642() {
   })));
 }
 
-// ../../node_modules/effect/dist/SchemaTransformation.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaTransformation.js
 class Middleware {
   _tag = "Middleware";
   decode;
@@ -75547,7 +75548,7 @@ var urlFromString = /* @__PURE__ */ transformOrFail2({
 });
 var uint8ArrayFromBase64String = /* @__PURE__ */ new Transformation(/* @__PURE__ */ decodeBase642(), /* @__PURE__ */ encodeBase642());
 
-// ../../node_modules/effect/dist/SchemaAST.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaAST.js
 function makeGuard(tag) {
   return (ast) => ast._tag === tag;
 }
@@ -76771,10 +76772,10 @@ var StringTree = /* @__PURE__ */ new Declaration([], () => (input, ast) => isStr
 });
 var unknownToStringTree = /* @__PURE__ */ new Link(StringTree, /* @__PURE__ */ passthrough2());
 
-// ../../node_modules/effect/dist/Struct.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Struct.js
 var lambda = (f) => f;
 
-// ../../node_modules/effect/dist/SchemaParser.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/SchemaParser.js
 var recurDefaults = /* @__PURE__ */ memoize((ast) => {
   switch (ast._tag) {
     case "Declaration": {
@@ -76944,7 +76945,7 @@ var recur = /* @__PURE__ */ memoize((ast) => {
   };
 });
 
-// ../../node_modules/effect/dist/internal/schema/schema.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/schema/schema.js
 var TypeId13 = "~effect/Schema/Schema";
 var SchemaProto = {
   [TypeId13]: TypeId13,
@@ -77012,7 +77013,7 @@ function makeReorder(getPriority) {
   };
 }
 
-// ../../node_modules/effect/dist/Schema.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Schema.js
 var TypeId14 = TypeId13;
 function declareConstructor() {
   return (typeParameters, run2, annotations) => {
@@ -77750,7 +77751,7 @@ var SafeArchivePattern = String4.check(makeFilter2((value3) => isSafeRelativePat
 var WorkspaceRoot = String4.check(makeFilter2((value3) => value3.startsWith("/") ? undefined : "WorkspaceRoot must be absolute.")).pipe(brand2("WorkspaceRoot"));
 
 // ../../src/recipes/config.ts
-var Semver = __toESM(require_semver2(), 1);
+var Semver2 = __toESM(require_semver2(), 1);
 
 // ../../src/model/bun-targets.ts
 var bunArtifactTargets = Object.freeze([
@@ -77798,10 +77799,30 @@ class TrustedPublishingAuthStrategy extends Class4("TrustedPublishingAuthStrateg
   publisherSink: Literal2("certified-npm-cli")
 }) {
 }
+
+class ExternalTrustedPublishingAuthStrategy extends Class4("ExternalTrustedPublishingAuthStrategy")({
+  kind: Literal2("trusted-publishing"),
+  identityProvider: Literal2("github-actions"),
+  runnerClass: Literal2("github-hosted"),
+  repository: NonEmptyString,
+  workflow: NonEmptyString,
+  workflowRef: NonEmptyString,
+  sourceCommit: TrustedPublishingSourceCommit,
+  provenanceEnvironmentContract: Literal2("external-pypa-action-v1"),
+  allowedAction: Literal2("external-pypa-action"),
+  publisherSink: Literal2("external-host-owned"),
+  environment: NonEmptyString,
+  projects: NonEmptyArray(NonEmptyString)
+}) {
+}
+var ResolvedTrustedPublishingAuthStrategy = Union2([
+  TrustedPublishingAuthStrategy,
+  ExternalTrustedPublishingAuthStrategy
+]);
 var ResolvedAuthStrategy = Union2([
   AnonymousAuthStrategy,
   TokenAuthStrategy,
-  TrustedPublishingAuthStrategy
+  ResolvedTrustedPublishingAuthStrategy
 ]);
 
 class CredentialRequest extends Class4("CredentialRequest")({
@@ -78271,16 +78292,192 @@ var collectionMemberId = (contract, key) => OutputId.make(`collection-sha256-${s
 }))).hex}`);
 var collectionMemberPath = (contract, key) => SafeRelativePath.make(`${contract.root}/${key}`);
 
-// ../../src/recipes/config.ts
+// ../../src/model/pypi.ts
+var PyPiRepository = Literals(["pypi", "testpypi"]);
+var normalizePyPiProjectName = (value3) => {
+  if (!/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/u.test(value3)) {
+    throw new Error("PyPI project names may contain only ASCII letters, digits, period, underscore, and hyphen.");
+  }
+  return value3.toLowerCase().replace(/[-_.]+/gu, "-");
+};
+var PyPiProjectName = NonEmptyString.check(makeFilter2((value3) => {
+  try {
+    return normalizePyPiProjectName(value3) === value3 ? undefined : "PyPI project name must be normalized.";
+  } catch (cause) {
+    return cause instanceof Error ? cause.message : String(cause);
+  }
+})).pipe(brand2("PyPiProjectName"));
+var pypiRepositoryEndpoints = (repository) => repository === "pypi" ? { simpleBaseUrl: "https://pypi.org/simple/", uploadUrl: "https://upload.pypi.org/legacy/" } : { simpleBaseUrl: "https://test.pypi.org/simple/", uploadUrl: "https://test.pypi.org/legacy/" };
+
+// ../../src/model/catalog.ts
+var Semver = __toESM(require_semver2(), 1);
 var optional = optionalKey2;
+var GitHubRepositoryCoordinate = NonEmptyString.check(makeFilter2((value3) => /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(value3) ? undefined : "Catalog repository must be an owner/repository coordinate.")).pipe(brand2("GitHubRepositoryCoordinate"));
+var GitBranchName = NonEmptyString.check(makeFilter2((value3) => !value3.startsWith("-") && !value3.startsWith("/") && !value3.endsWith("/") && !value3.endsWith(".") && !value3.endsWith(".lock") && !value3.includes("..") && !value3.includes("//") && !value3.includes("@{") && !/[~^:?*[\\\u0000-\u001f\u007f]/u.test(value3) ? undefined : "Catalog branch must be one canonical Git branch name.")).pipe(brand2("GitBranchName"));
+var CatalogRepositoryPath = SafeRelativePath.check(makeFilter2((value3) => value3.toString() !== "." ? undefined : "Catalog repository paths must identify files.")).pipe(brand2("CatalogRepositoryPath"));
+var CatalogArchitecture = Literals(["x64", "arm64"]);
+
+class CatalogRenderSource extends Class4("CatalogRenderSource")({
+  artifactId: OutputId,
+  architecture: CatalogArchitecture,
+  url: NonEmptyString,
+  filename: NonEmptyName
+}) {
+}
+
+class PreparedCatalogDownload extends Class4("PreparedCatalogDownload")({
+  architecture: CatalogArchitecture,
+  url: NonEmptyString,
+  filename: NonEmptyName,
+  sha256: Sha256Digest
+}) {
+}
+var rendererFields = {
+  name: NonEmptyName,
+  description: NonEmptyString,
+  homepage: NonEmptyString,
+  license: optional(NonEmptyString)
+};
+
+class HomebrewRenderer extends TaggedClass()("homebrew", {
+  ...rendererFields,
+  installPath: NonEmptyName
+}) {
+}
+
+class ScoopRenderer extends TaggedClass()("scoop", {
+  ...rendererFields,
+  bin: NonEmptyName
+}) {
+}
+var CatalogRenderer = Union2([HomebrewRenderer, ScoopRenderer]);
+
+class PreparedCatalogRenderer extends Class4("PreparedCatalogRenderer")({
+  renderer: CatalogRenderer,
+  downloads: NonEmptyArray(PreparedCatalogDownload)
+}) {
+}
+var CatalogManagedStatus = Literals(["active", "corrected", "superseded"]);
+
+class CatalogManagedState extends Class4("CatalogManagedState")({
+  schemaVersion: Literal2("ts-release/catalog-state/v2"),
+  catalogId: NonEmptyName,
+  renderer: Literals(["homebrew", "scoop"]),
+  generation: Version,
+  status: CatalogManagedStatus,
+  targetDigest: Sha256Digest,
+  sourceRepository: GitHubRepositoryCoordinate,
+  sourceTag: NonEmptyName,
+  correctionId: optional(Sha256Digest),
+  reason: optional(NonEmptyString),
+  replacementVersion: optional(Version)
+}) {
+}
+var encodeCatalogManagedState = (value3) => new TextEncoder().encode(encodeCanonicalJson(encodeSync2(CatalogManagedState)(value3)));
+var decodeCatalogManagedState = (bytes) => {
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const value3 = decodeUnknownSync(CatalogManagedState, { onExcessProperty: "error" })(parseStrictJson(text));
+    if (Semver.valid(value3.generation.toString()) !== value3.generation.toString())
+      return;
+    const canonical2 = encodeCatalogManagedState(value3);
+    return canonical2.length === bytes.length && canonical2.every((byte, index) => byte === bytes[index]) ? value3 : undefined;
+  } catch {
+    return;
+  }
+};
+var canonicalCatalogVersion = (value3) => {
+  const parsed = Semver.valid(value3);
+  if (parsed === null || parsed !== value3)
+    throw new Error(`Catalog generation requires a canonical semantic version, got ${JSON.stringify(value3)}.`);
+  return Version.make(value3);
+};
+var compareCatalogVersions = (left, right) => {
+  canonicalCatalogVersion(left);
+  canonicalCatalogVersion(right);
+  return Semver.compare(left, right);
+};
+var assertDownloads = (downloads) => {
+  if (downloads.length === 0)
+    throw new Error("Catalog renderer requires at least one download.");
+  const architectures = downloads.map((download) => download.architecture);
+  if (new Set(architectures).size !== architectures.length) {
+    throw new Error("Catalog renderer repeats an architecture.");
+  }
+  for (const download of downloads) {
+    const url = new URL(download.url);
+    if (url.protocol !== "https:" || url.username !== "" || url.password !== "" || url.hash !== "") {
+      throw new Error("Catalog download URLs must be credential-free HTTPS URLs.");
+    }
+  }
+};
+var rubyString = (value3) => JSON.stringify(value3);
+var formulaClass = (value3) => value3.split(/[^A-Za-z0-9]+/u).filter(Boolean).map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join("") || "GeneratedFormula";
+var homebrewDownload = (download, indent) => [
+  `${indent}url ${rubyString(download.url)}`,
+  `${indent}sha256 ${rubyString(download.sha256.hex)}`
+];
+var renderHomebrew = (version2, renderer, downloads) => {
+  const lines = [
+    `class ${formulaClass(renderer.name)} < Formula`,
+    `  desc ${rubyString(renderer.description)}`,
+    `  homepage ${rubyString(renderer.homepage)}`,
+    ...renderer.license === undefined ? [] : [`  license ${rubyString(renderer.license)}`],
+    `  version ${rubyString(version2.toString())}`
+  ];
+  if (downloads.length === 1) {
+    lines.push(...homebrewDownload(downloads[0], "  "));
+  } else {
+    lines.push("", "  on_macos do");
+    for (const architecture of ["arm64", "x64"]) {
+      const download = downloads.find((candidate) => candidate.architecture === architecture);
+      if (download === undefined)
+        continue;
+      lines.push(`    ${architecture === "arm64" ? "on_arm" : "on_intel"} do`);
+      lines.push(...homebrewDownload(download, "      "));
+      lines.push("    end");
+    }
+    lines.push("  end");
+  }
+  lines.push("", "  def install", `    bin.install ${rubyString(renderer.installPath)} => ${rubyString(renderer.name)}`, "  end", "", "  test do", `    assert_predicate bin/${rubyString(renderer.name)}, :executable?`, "  end", "end", "");
+  return lines.join(`
+`);
+};
+var scoopDownload = (download) => ({
+  url: download.url,
+  hash: download.sha256.hex
+});
+var renderScoop = (version2, renderer, downloads) => {
+  const common = {
+    version: version2.toString(),
+    description: renderer.description,
+    homepage: renderer.homepage,
+    ...renderer.license === undefined ? {} : { license: renderer.license }
+  };
+  const value3 = downloads.length === 1 ? { ...common, ...scoopDownload(downloads[0]), bin: renderer.bin.toString() } : {
+    ...common,
+    architecture: Object.fromEntries(downloads.slice().sort((left, right) => left.architecture < right.architecture ? -1 : 1).map((download) => [download.architecture === "x64" ? "64bit" : "arm64", scoopDownload(download)])),
+    bin: renderer.bin.toString()
+  };
+  return `${JSON.stringify(value3, null, 2)}
+`;
+};
+var renderCatalog = (version2, renderer, downloads) => {
+  canonicalCatalogVersion(version2.toString());
+  assertDownloads(downloads);
+  return new TextEncoder().encode(renderer._tag === "homebrew" ? renderHomebrew(version2, renderer, downloads) : renderScoop(version2, renderer, downloads));
+};
+
+// ../../src/recipes/config.ts
+var optional2 = optionalKey2;
 var nonempty = NonEmptyString;
 var target = Literals(bunArtifactTargetIds);
 
 class CandidateProject extends Class4("CandidateProject")({
   name: NonEmptyName,
-  packageName: optional(nonempty),
+  packageName: optional2(nonempty),
   version: Version,
-  repository: optional(nonempty),
+  repository: optional2(nonempty),
   tag: NonEmptyName
 }) {
 }
@@ -78297,17 +78494,17 @@ class CandidateChecksum extends Class4("CandidateChecksum")({
 }) {
 }
 var build = {
-  id: optional(nonempty),
+  id: optional2(nonempty),
   targets: NonEmptyArray(target),
-  output: optional(SafeRelativePath),
-  binary: optional(NonEmptyName)
+  output: optional2(SafeRelativePath),
+  binary: optional2(NonEmptyName)
 };
 
 class CandidateBunBuild extends Class4("CandidateBunBuild")({
   ...build,
   builder: Literal2("bun"),
   entry: SafeRelativePath,
-  minify: optional(Literal2(true))
+  minify: optional2(Literal2(true))
 }) {
 }
 
@@ -78332,17 +78529,17 @@ var CandidateBuild = Union2([
 ]);
 
 class CandidateArchive extends Class4("CandidateArchive")({
-  id: optional(nonempty),
-  ids: optional(NonEmptyArray(OutputId)),
-  nameTemplate: optional(nonempty),
-  formats: optional(NonEmptyArray(Literals(["tar.gz", "zip"])))
+  id: optional2(nonempty),
+  ids: optional2(NonEmptyArray(OutputId)),
+  nameTemplate: optional2(nonempty),
+  formats: optional2(NonEmptyArray(Literals(["tar.gz", "zip"])))
 }) {
 }
 var preparationBase = {
   id: NonEmptyName,
   run: NonEmptyArray(String4),
-  cwd: optional(SafeRelativePath),
-  inputs: optional(ArraySchema(OutputId))
+  cwd: optional2(SafeRelativePath),
+  inputs: optional2(ArraySchema(OutputId))
 };
 
 class CandidateCheckPreparation extends Class4("CandidateCheckPreparation")({
@@ -78357,8 +78554,8 @@ class CandidateArtifactPreparation extends Class4("CandidateArtifactPreparation"
   outputs: NonEmptyArray(Struct({
     id: OutputId,
     path: SafeRelativePath,
-    kind: optional(Literals(["file", "archive", "executable", "digest"])),
-    mediaType: optional(nonempty)
+    kind: optional2(Literals(["file", "archive", "executable", "digest"])),
+    mediaType: optional2(nonempty)
   }))
 }) {
 }
@@ -78412,7 +78609,7 @@ var CanonicalNpmRegistryEndpoint = NonEmptyString.check(makeFilter2((value3) => 
   }
 })).pipe(brand2("CanonicalNpmRegistryEndpoint"));
 var NpmDistTag = NonEmptyString.check(makeFilter2((value3) => {
-  if (Semver.validRange(value3) !== null) {
+  if (Semver2.validRange(value3) !== null) {
     return "npm dist-tag must not be a valid SemVer range.";
   }
   if (value3.trim() !== value3 || encodeURIComponent(value3) !== value3) {
@@ -78471,21 +78668,98 @@ class CandidateNpmPublish extends Class4("CandidateNpmPublish")({
 }) {
 }
 
+class PyPiTokenAuthentication extends Class4("PyPiTokenAuthentication")({
+  strategy: Literal2("token"),
+  credential: CredentialRef.check(makeFilter2((value3) => /^[A-Za-z_][A-Za-z0-9_]*$/u.test(value3) ? undefined : "PyPI token credential must be a portable environment variable name.")),
+  scope: Literal2("project")
+}) {
+}
+
+class PyPiExternalTrustedPublishingAuthentication extends Class4("PyPiExternalTrustedPublishingAuthentication")({
+  strategy: Literal2("trusted-publishing"),
+  owner: Literal2("external"),
+  action: Literal2("pypa/gh-action-pypi-publish@release/v1"),
+  repository: NpmTrustedPublisherRepository,
+  workflow: NpmTrustedPublisherWorkflow,
+  workflowRef: NpmTrustedPublisherWorkflowRef,
+  environment: nonempty,
+  projects: NonEmptyArray(nonempty)
+}) {
+}
+var PyPiAuthentication = Union2([
+  PyPiTokenAuthentication,
+  PyPiExternalTrustedPublishingAuthentication
+]);
+
+class CandidatePyPiPublish extends Class4("CandidatePyPiPublish")({
+  artifacts: NonEmptyArray(OutputId),
+  project: PyPiProjectName,
+  version: Version,
+  repository: PyPiRepository,
+  authentication: PyPiAuthentication
+}) {
+}
+
+class CandidateCatalogSource extends Class4("CandidateCatalogSource")({
+  artifact: OutputId,
+  architecture: CatalogArchitecture
+}) {
+}
+var catalogRendererFields = {
+  id: NonEmptyName,
+  description: nonempty,
+  homepage: nonempty,
+  license: optional2(nonempty),
+  sources: NonEmptyArray(CandidateCatalogSource)
+};
+
+class CandidateHomebrewCatalog extends Class4("CandidateHomebrewCatalog")({
+  ...catalogRendererFields,
+  formulaName: NonEmptyName,
+  installPath: NonEmptyName
+}) {
+}
+
+class CandidateScoopCatalog extends Class4("CandidateScoopCatalog")({
+  ...catalogRendererFields,
+  manifestName: NonEmptyName,
+  bin: NonEmptyName
+}) {
+}
+
+class CandidateCatalogs extends Class4("CandidateCatalogs")({
+  homebrew: optional2(NonEmptyArray(CandidateHomebrewCatalog)),
+  scoop: optional2(NonEmptyArray(CandidateScoopCatalog))
+}) {
+}
+
+class CandidateCatalogGitDestination extends Class4("CandidateCatalogGitDestination")({
+  catalog: NonEmptyName,
+  repository: GitHubRepositoryCoordinate,
+  branch: GitBranchName,
+  targetPath: CatalogRepositoryPath,
+  statePath: CatalogRepositoryPath,
+  tokenEnv: environmentName
+}) {
+}
+
 class CandidateGitHubPublish extends Class4("CandidateGitHubPublish")({
-  repository: optional(nonempty),
-  tokenEnv: optional(environmentName),
-  draft: optional(Boolean3),
-  prerelease: optional(Union2([Boolean3, Literal2("auto")])),
-  body: optional(String4),
-  bodyArtifact: optional(OutputId),
-  ids: optional(ArraySchema(OutputId)),
-  collections: optional(NonEmptyArray(ArtifactCollectionSelector))
+  repository: optional2(nonempty),
+  tokenEnv: optional2(environmentName),
+  draft: optional2(Boolean3),
+  prerelease: optional2(Union2([Boolean3, Literal2("auto")])),
+  body: optional2(String4),
+  bodyArtifact: optional2(OutputId),
+  ids: optional2(ArraySchema(OutputId)),
+  collections: optional2(NonEmptyArray(ArtifactCollectionSelector))
 }) {
 }
 
 class CandidatePublish extends Class4("CandidatePublish")({
-  npm: optional(CandidateNpmPublish),
-  github: optional(CandidateGitHubPublish)
+  npm: optional2(CandidateNpmPublish),
+  pypi: optional2(CandidatePyPiPublish),
+  catalogGit: optional2(NonEmptyArray(CandidateCatalogGitDestination)),
+  github: optional2(CandidateGitHubPublish)
 }) {
 }
 
@@ -78496,56 +78770,65 @@ class CandidateNpmPackageBuild extends Class4("CandidateNpmPackageBuild")({
 }
 
 class CandidateNpmPackage extends Class4("CandidateNpmPackage")({
-  path: optional(SafeRelativePath),
-  build: optional(CandidateNpmPackageBuild)
+  path: optional2(SafeRelativePath),
+  build: optional2(CandidateNpmPackageBuild)
 }) {
 }
 
 class CandidateConfig extends Class4("CandidateConfig")({
-  $schema: optional(String4),
+  $schema: optional2(String4),
   project: CandidateProject,
-  builds: optional(NonEmptyArray(CandidateBuild)),
-  preparations: optional(NonEmptyArray(CandidatePreparation)),
-  npmPackage: optional(CandidateNpmPackage),
-  artifacts: optional(NonEmptyArray(CandidateArtifact)),
-  archives: optional(NonEmptyArray(CandidateArchive)),
-  checksum: optional(CandidateChecksum),
-  publish: optional(CandidatePublish)
+  builds: optional2(NonEmptyArray(CandidateBuild)),
+  preparations: optional2(NonEmptyArray(CandidatePreparation)),
+  npmPackage: optional2(CandidateNpmPackage),
+  artifacts: optional2(NonEmptyArray(CandidateArtifact)),
+  archives: optional2(NonEmptyArray(CandidateArchive)),
+  checksum: optional2(CandidateChecksum),
+  catalogs: optional2(CandidateCatalogs),
+  publish: optional2(CandidatePublish)
 }) {
 }
 
 // ../../src/resolve/authored.ts
-var optional2 = optionalKey2;
+var optional3 = optionalKey2;
 
 class AuthoredProject extends Class4("AuthoredProject")({
   ...CandidateProject.fields,
-  name: optional2(NonEmptyName),
-  version: optional2(Version),
-  tag: optional2(NonEmptyName),
-  tagTemplate: optional2(NonEmptyString)
+  name: optional3(NonEmptyName),
+  version: optional3(Version),
+  tag: optional3(NonEmptyName),
+  tagTemplate: optional3(NonEmptyString)
 }) {
 }
 
 class AuthoredNpmPublish extends Class4("AuthoredNpmPublish")({
-  registry: optional2(NonEmptyString),
-  distTag: optional2(NonEmptyString),
-  access: optional2(NpmAccess),
+  registry: optional3(NonEmptyString),
+  distTag: optional3(NonEmptyString),
+  access: optional3(NpmAccess),
   authentication: NpmAuthentication,
-  provenance: optional2(NpmProvenancePolicy)
+  provenance: optional3(NpmProvenancePolicy)
+}) {
+}
+
+class AuthoredPyPiPublish extends Class4("AuthoredPyPiPublish")({
+  artifacts: NonEmptyArray(NonEmptyString),
+  repository: optional3(PyPiRepository),
+  authentication: PyPiAuthentication
 }) {
 }
 
 class AuthoredPublish extends Class4("AuthoredPublish")({
   ...CandidatePublish.fields,
-  npm: optional2(AuthoredNpmPublish)
+  npm: optional3(AuthoredNpmPublish),
+  pypi: optional3(AuthoredPyPiPublish)
 }) {
 }
 
 class AuthoredConfig extends Class4("AuthoredConfig")({
   ...CandidateConfig.fields,
   project: AuthoredProject,
-  publish: optional2(AuthoredPublish),
-  versionFrom: optional2(Literals(["manifest", "git-tag"]))
+  publish: optional3(AuthoredPublish),
+  versionFrom: optional3(Literals(["manifest", "git-tag"]))
 }) {
 }
 
@@ -79540,6 +79823,9 @@ var validateInput = (input) => try_2({
         throw constructionFailure("Every remote subject requires at least one observation strategy.");
       }
       decodeUnknownSync(RecoveryCapabilityProfile, { onExcessProperty: "error" })(subject.recovery);
+      if (subject.recovery.historyRequirement === "durable-cas-required" && subject.claimMutation === undefined) {
+        throw constructionFailure("A durable-cas-required subject has no terminal mutation-claim boundary.");
+      }
       subject.observationRequests.forEach((request, index) => {
         validateRequestIdentity(subject, request, "observe");
         if (request.strategy.kind === "anonymous" && index !== 0) {
@@ -79709,6 +79995,20 @@ var publishSubject = fn2("publishReleaseSubject")(function* (credentials, subjec
       }));
     case "NeedsMutation":
     case "ProviderAuthorizedCreate": {
+      if (subject.claimMutation !== undefined) {
+        const claimed = yield* exit2(subject.claimMutation(decision));
+        if (isFailure3(claimed)) {
+          return yield* fromReportResult(makeBlockedSubject({
+            subject: subject.id,
+            observationAuthorities: before.authorities,
+            observations: before.observations,
+            cause: ProviderBlocked.make({
+              subject: subject.id,
+              reason: SafeReason.make("The terminal publication claim was unavailable or already occupied.")
+            })
+          }));
+        }
+      }
       const acquisition = yield* credentials.acquireForMutation(subject.mutationRequest, decision).pipe(map5((grant2) => ({ _tag: "Granted", grant: grant2 })), catch_2((error2) => succeed6({ _tag: "Denied", error: error2 })));
       if (acquisition._tag === "Denied") {
         return yield* fromReportResult(makeBlockedSubject({
@@ -80717,51 +81017,546 @@ var makeNpmSubject = (bundle, publication, http2, userConfigs, publisher) => {
   };
 };
 
-// ../../src/publication/profiles.ts
-var installedPublicationProfiles = validatePublicationProfiles(Object.freeze({
-  npm: Object.freeze({
-    id: "publish.npm",
-    provider: "npm",
-    preparedTag: "PreparedNpmPublication",
-    recovery: npmRecoveryCapabilityProfile,
-    correctionAdapters: [],
-    evidence: Object.freeze({
-      reviewedAt: "2026-08-12",
-      observationSources: Object.freeze([
-        "https://github.com/npm/registry/blob/main/docs/responses/package-metadata.md",
-        "https://docs.npmjs.com/cli/v11/commands/npm-publish/"
-      ]),
-      correctionSources: Object.freeze([
-        "https://docs.npmjs.com/cli/v11/commands/npm-deprecate/",
-        "https://docs.npmjs.com/policies/unpublish/"
-      ]),
-      correctionFinding: "Official npm documentation exposes deprecation but no conditional update bound to an observed package generation."
-    })
+// ../../src/model/python-distribution.ts
+import { gunzipSync, inflateRawSync } from "node:zlib";
+var metadataLimit = 4 * 1024 * 1024;
+var archiveLimit = 512 * 1024 * 1024;
+
+class PythonDistributionError extends TaggedErrorClass()("PythonDistributionError", {
+  filename: NonEmptyString,
+  reason: NonEmptyString
+}) {
+}
+
+class WheelDistribution extends TaggedClass()("wheel", {
+  project: PyPiProjectName,
+  version: Version,
+  metadataVersion: NonEmptyName,
+  pythonTag: NonEmptyName,
+  abiTag: NonEmptyName,
+  platformTag: NonEmptyName,
+  mediaType: Literal2("application/zip")
+}) {
+}
+
+class SourceDistribution extends TaggedClass()("sdist", {
+  project: PyPiProjectName,
+  version: Version,
+  metadataVersion: NonEmptyName,
+  pythonTag: Literal2("source"),
+  mediaType: Literal2("application/gzip")
+}) {
+}
+var PythonDistribution = Union2([WheelDistribution, SourceDistribution]);
+var fail8 = (filename, reason2) => {
+  throw PythonDistributionError.make({ filename, reason: reason2 });
+};
+var safePath = (filename, path) => {
+  const checked = path.endsWith("/") ? path.slice(0, -1) : path;
+  if (path.length === 0 || path.includes("\x00") || path.includes("\\") || path.startsWith("/") || checked.length === 0 || /^[A-Za-z]:/u.test(path) || checked.split("/").some((part) => part === ".." || part === "")) {
+    fail8(filename, "Distribution archive contains a malformed or escaping path.");
+  }
+  return path;
+};
+var utf8 = (filename, bytes) => {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return fail8(filename, "Distribution metadata or archive path is not valid UTF-8.");
+  }
+};
+var coreMetadata = (filename, bytes) => {
+  if (bytes.length === 0 || bytes.length > metadataLimit)
+    fail8(filename, "Distribution core metadata has an invalid size.");
+  const lines = utf8(filename, bytes).replaceAll(`\r
+`, `
+`).split(`
+`);
+  const values = new Map;
+  let current;
+  for (const line of lines) {
+    if (line === "")
+      break;
+    if (/^[ \t]/u.test(line)) {
+      if (current === undefined)
+        fail8(filename, "Distribution core metadata begins with a continuation line.");
+      const prior = values.get(current);
+      prior[prior.length - 1] = `${prior.at(-1)}
+${line.slice(1)}`;
+      continue;
+    }
+    const index = line.indexOf(":");
+    if (index <= 0)
+      fail8(filename, "Distribution core metadata contains a malformed header.");
+    current = line.slice(0, index).toLowerCase();
+    const value3 = line.slice(index + 1).trim();
+    values.set(current, [...values.get(current) ?? [], value3]);
+  }
+  const one = (name2) => {
+    const found = values.get(name2);
+    const value3 = found?.length === 1 ? found[0] : undefined;
+    if (value3 === undefined || value3.length === 0)
+      fail8(filename, `Distribution metadata requires exactly one ${name2} field.`);
+    return value3;
+  };
+  const name = one("name");
+  const version2 = one("version");
+  const metadataVersion = one("metadata-version");
+  if (!/^\d+\.\d+$/u.test(metadataVersion))
+    fail8(filename, "Distribution Metadata-Version must use major.minor form.");
+  if (!/^[A-Za-z0-9][A-Za-z0-9.!+_-]*$/u.test(version2))
+    fail8(filename, "Distribution Version is not a conservative Python package version.");
+  let project;
+  try {
+    project = normalizePyPiProjectName(name);
+  } catch {
+    return fail8(filename, "Distribution Name is not a valid PyPI project name.");
+  }
+  return { name, project, version: version2, metadataVersion };
+};
+var u16 = (filename, view, offset) => {
+  if (offset < 0 || offset + 2 > view.byteLength)
+    fail8(filename, "ZIP structure is truncated.");
+  return view.getUint16(offset, true);
+};
+var u32 = (filename, view, offset) => {
+  if (offset < 0 || offset + 4 > view.byteLength)
+    fail8(filename, "ZIP structure is truncated.");
+  return view.getUint32(offset, true);
+};
+var crcTable = Array.from({ length: 256 }, (_2, value3) => {
+  let crc = value3;
+  for (let bit = 0;bit < 8; bit += 1)
+    crc = (crc & 1) === 1 ? 3988292384 ^ crc >>> 1 : crc >>> 1;
+  return crc >>> 0;
+});
+var crc32 = (data) => {
+  let crc = 4294967295;
+  for (const byte of data)
+    crc = crc >>> 8 ^ crcTable[(crc ^ byte) & 255];
+  return (crc ^ 4294967295) >>> 0;
+};
+var zipEntries = (filename, bytes) => {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  const minimum = Math.max(0, bytes.length - 65557);
+  for (let offset2 = bytes.length - 22;offset2 >= minimum; offset2 -= 1) {
+    if (u32(filename, view, offset2) === 101010256) {
+      eocd = offset2;
+      break;
+    }
+  }
+  if (eocd < 0 || u16(filename, view, eocd + 4) !== 0 || u16(filename, view, eocd + 6) !== 0) {
+    fail8(filename, "Wheel ZIP must be a single-disk archive with an end record.");
+  }
+  const count = u16(filename, view, eocd + 10);
+  const size = u32(filename, view, eocd + 12);
+  const start = u32(filename, view, eocd + 16);
+  if (count === 0 || count === 65535 || start === 4294967295 || size === 4294967295 || start + size > eocd) {
+    fail8(filename, "Wheel ZIP central directory is invalid or requires unsupported ZIP64 fields.");
+  }
+  const entries = [];
+  const paths = new Set;
+  let offset = start;
+  for (let index = 0;index < count; index += 1) {
+    if (u32(filename, view, offset) !== 33639248)
+      fail8(filename, "Wheel ZIP central directory entry is malformed.");
+    const flags = u16(filename, view, offset + 8);
+    const method = u16(filename, view, offset + 10);
+    const crc322 = u32(filename, view, offset + 16);
+    const compressedSize = u32(filename, view, offset + 20);
+    const uncompressedSize = u32(filename, view, offset + 24);
+    const nameLength = u16(filename, view, offset + 28);
+    const extraLength = u16(filename, view, offset + 30);
+    const commentLength = u16(filename, view, offset + 32);
+    const externalAttributes = u32(filename, view, offset + 38);
+    const localOffset = u32(filename, view, offset + 42);
+    const end = offset + 46 + nameLength + extraLength + commentLength;
+    if (end > start + size || (flags & 1) !== 0 || ![0, 8].includes(method)) {
+      fail8(filename, "Wheel ZIP uses an encrypted, unsupported, or truncated entry.");
+    }
+    const path = safePath(filename, utf8(filename, bytes.subarray(offset + 46, offset + 46 + nameLength)));
+    const mode = externalAttributes >>> 16;
+    if ((mode & 61440) === 40960)
+      fail8(filename, "Wheel ZIP contains a symbolic link.");
+    if (paths.has(path))
+      fail8(filename, "Wheel ZIP repeats an archive path.");
+    paths.add(path);
+    if ([compressedSize, uncompressedSize, localOffset].includes(4294967295)) {
+      fail8(filename, "Wheel ZIP entry requires unsupported ZIP64 fields.");
+    }
+    entries.push({ path, flags, method, crc32: crc322, compressedSize, uncompressedSize, localOffset });
+    offset = end;
+  }
+  if (offset !== start + size)
+    fail8(filename, "Wheel ZIP central directory has trailing or missing data.");
+  return entries;
+};
+var zipContents = (filename, archive, entry) => {
+  if (entry.uncompressedSize > metadataLimit)
+    fail8(filename, "Wheel metadata entry exceeds the supported bound.");
+  const view = new DataView(archive.buffer, archive.byteOffset, archive.byteLength);
+  if (u32(filename, view, entry.localOffset) !== 67324752)
+    fail8(filename, "Wheel ZIP local entry is malformed.");
+  if (u16(filename, view, entry.localOffset + 6) !== entry.flags || u16(filename, view, entry.localOffset + 8) !== entry.method || u32(filename, view, entry.localOffset + 14) !== entry.crc32 || u32(filename, view, entry.localOffset + 18) !== entry.compressedSize || u32(filename, view, entry.localOffset + 22) !== entry.uncompressedSize) {
+    fail8(filename, "Wheel ZIP local entry disagrees with its central directory.");
+  }
+  const nameLength = u16(filename, view, entry.localOffset + 26);
+  const extraLength = u16(filename, view, entry.localOffset + 28);
+  const start = entry.localOffset + 30 + nameLength + extraLength;
+  const localPath = safePath(filename, utf8(filename, archive.subarray(entry.localOffset + 30, entry.localOffset + 30 + nameLength)));
+  if (localPath !== entry.path)
+    fail8(filename, "Wheel ZIP local path disagrees with its central directory.");
+  const end = start + entry.compressedSize;
+  if (end > archive.length)
+    fail8(filename, "Wheel ZIP entry bytes are truncated.");
+  const compressed = archive.subarray(start, end);
+  let result2;
+  try {
+    result2 = entry.method === 0 ? new Uint8Array(compressed) : new Uint8Array(inflateRawSync(compressed, { maxOutputLength: metadataLimit }));
+  } catch {
+    return fail8(filename, "Wheel ZIP metadata could not be decompressed.");
+  }
+  if (result2.length !== entry.uncompressedSize)
+    fail8(filename, "Wheel ZIP metadata size disagrees with its central directory.");
+  if (crc32(result2) !== entry.crc32)
+    fail8(filename, "Wheel ZIP metadata CRC disagrees with its central directory.");
+  return result2;
+};
+var wheel = (filename, bytes, expectedProject, expectedVersion) => {
+  const entries = zipEntries(filename, bytes);
+  const metadataEntries = entries.filter((entry) => /^[^/]+\.dist-info\/METADATA$/u.test(entry.path));
+  if (metadataEntries.length !== 1)
+    fail8(filename, "Wheel requires exactly one top-level dist-info/METADATA entry.");
+  const metadataEntry = metadataEntries[0];
+  const distInfo = metadataEntry.path.slice(0, -"/METADATA".length);
+  const wheelEntry = entries.find((entry) => entry.path === `${distInfo}/WHEEL`);
+  if (wheelEntry === undefined)
+    fail8(filename, "Wheel requires WHEEL metadata beside core metadata.");
+  const metadata = coreMetadata(filename, zipContents(filename, bytes, metadataEntry));
+  if (metadata.project !== expectedProject || metadata.version !== expectedVersion) {
+    fail8(filename, "Wheel embedded project/version disagrees with the resolved publication coordinate.");
+  }
+  const wheelProject = metadata.project.replaceAll("-", "_");
+  const wheelVersion = metadata.version.replaceAll("-", "_");
+  if (distInfo !== `${wheelProject}-${wheelVersion}.dist-info`) {
+    fail8(filename, "Wheel dist-info directory disagrees with embedded project/version metadata.");
+  }
+  const escaped = (value3) => value3.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const match6 = new RegExp(`^${escaped(wheelProject)}-${escaped(wheelVersion)}(?:-[0-9][0-9A-Za-z_]*)?-([A-Za-z0-9_.]+)-([A-Za-z0-9_.]+)-([A-Za-z0-9_.]+)\\.whl$`, "u").exec(filename);
+  if (match6 === null)
+    fail8(filename, "Wheel filename disagrees with embedded project/version or has malformed compatibility tags.");
+  const [pythonTag, abiTag, platformTag] = match6.slice(1);
+  const expanded = new Set(pythonTag.split(".").flatMap((python) => abiTag.split(".").flatMap((abi) => platformTag.split(".").map((platform2) => `${python}-${abi}-${platform2}`))));
+  const wheelTags = utf8(filename, zipContents(filename, bytes, wheelEntry)).replaceAll(`\r
+`, `
+`).split(`
+`).filter((line) => line.startsWith("Tag: ")).map((line) => line.slice(5).trim());
+  if (wheelTags.length === 0 || wheelTags.some((tag2) => !expanded.has(tag2))) {
+    fail8(filename, "Wheel WHEEL tags do not agree with its filename compatibility tags.");
+  }
+  return WheelDistribution.make({
+    project: PyPiProjectName.make(metadata.project),
+    version: Version.make(metadata.version),
+    metadataVersion: NonEmptyName.make(metadata.metadataVersion),
+    pythonTag: NonEmptyName.make(pythonTag),
+    abiTag: NonEmptyName.make(abiTag),
+    platformTag: NonEmptyName.make(platformTag),
+    mediaType: "application/zip"
+  });
+};
+var tarString = (bytes) => {
+  const nul = bytes.indexOf(0);
+  return new TextDecoder("utf-8", { fatal: true }).decode(nul < 0 ? bytes : bytes.subarray(0, nul));
+};
+var tarOctal = (filename, bytes) => {
+  const value3 = tarString(bytes).trim().replace(/^0+/u, "") || "0";
+  if (!/^[0-7]+$/u.test(value3))
+    fail8(filename, "Source distribution tar contains an invalid octal field.");
+  const parsed = Number.parseInt(value3, 8);
+  if (!Number.isSafeInteger(parsed) || parsed < 0)
+    fail8(filename, "Source distribution tar size is out of range.");
+  return parsed;
+};
+var pax = (filename, bytes) => {
+  const text = utf8(filename, bytes);
+  const values = {};
+  let offset = 0;
+  while (offset < text.length) {
+    const space = text.indexOf(" ", offset);
+    if (space < 0)
+      fail8(filename, "Source distribution PAX record is malformed.");
+    const length = Number(text.slice(offset, space));
+    if (!Number.isSafeInteger(length) || length <= space - offset + 1 || offset + length > text.length || text[offset + length - 1] !== `
+`) {
+      fail8(filename, "Source distribution PAX record has an invalid length.");
+    }
+    const record2 = text.slice(space + 1, offset + length - 1);
+    const equals3 = record2.indexOf("=");
+    if (equals3 <= 0)
+      fail8(filename, "Source distribution PAX record is missing a key.");
+    values[record2.slice(0, equals3)] = record2.slice(equals3 + 1);
+    offset += length;
+  }
+  return values;
+};
+var sdist = (filename, bytes, expectedProject, expectedVersion) => {
+  let tar;
+  try {
+    tar = new Uint8Array(gunzipSync(bytes, { maxOutputLength: archiveLimit }));
+  } catch {
+    return fail8(filename, "Source distribution is not a bounded valid gzip stream.");
+  }
+  let offset = 0;
+  let pendingPax = {};
+  const metadata = [];
+  while (offset + 512 <= tar.length) {
+    const header = tar.subarray(offset, offset + 512);
+    if (header.every((byte) => byte === 0)) {
+      if (!tar.subarray(offset).every((byte) => byte === 0))
+        fail8(filename, "Source distribution tar has nonzero data after its end marker.");
+      break;
+    }
+    let checksum = 0;
+    for (let index = 0;index < 512; index += 1)
+      checksum += index >= 148 && index < 156 ? 32 : header[index];
+    if (checksum !== tarOctal(filename, header.subarray(148, 156)))
+      fail8(filename, "Source distribution tar header checksum is invalid.");
+    const size = tarOctal(filename, header.subarray(124, 136));
+    const dataStart = offset + 512;
+    const dataEnd = dataStart + size;
+    if (dataEnd > tar.length)
+      fail8(filename, "Source distribution tar entry is truncated.");
+    const type = String.fromCharCode(header[156]);
+    const rawName = tarString(header.subarray(0, 100));
+    const prefix = tarString(header.subarray(345, 500));
+    const rawPath = prefix.length === 0 ? rawName : `${prefix}/${rawName}`;
+    if (type === "x") {
+      pendingPax = pax(filename, tar.subarray(dataStart, dataEnd));
+    } else {
+      const path = safePath(filename, pendingPax.path ?? rawPath);
+      pendingPax = {};
+      if (type === "1" || type === "2")
+        fail8(filename, "Source distribution tar contains a hard or symbolic link.");
+      if (!["\x00", "0", "5"].includes(type))
+        fail8(filename, "Source distribution tar contains an unsupported entry type.");
+      if ((type === "\x00" || type === "0") && /\/PKG-INFO$/u.test(path)) {
+        if (size > metadataLimit)
+          fail8(filename, "Source distribution PKG-INFO exceeds the supported bound.");
+        metadata.push({ path, bytes: tar.subarray(dataStart, dataEnd) });
+      }
+    }
+    offset = dataStart + Math.ceil(size / 512) * 512;
+  }
+  if (metadata.length !== 1 || metadata[0].path.split("/").length !== 2) {
+    fail8(filename, "Source distribution requires exactly one root-directory PKG-INFO entry.");
+  }
+  const parsed = coreMetadata(filename, metadata[0].bytes);
+  if (parsed.project !== expectedProject || parsed.version !== expectedVersion) {
+    fail8(filename, "Source distribution embedded project/version disagrees with the resolved publication coordinate.");
+  }
+  const suffix = `-${parsed.version}.tar.gz`;
+  if (!filename.endsWith(suffix) || normalizePyPiProjectName(filename.slice(0, -suffix.length)) !== parsed.project) {
+    fail8(filename, "Source distribution filename disagrees with embedded project/version metadata.");
+  }
+  const root = metadata[0].path.split("/")[0];
+  if (!root.endsWith(`-${parsed.version}`) || normalizePyPiProjectName(root.slice(0, -`-${parsed.version}`.length)) !== parsed.project) {
+    fail8(filename, "Source distribution root directory disagrees with embedded project/version metadata.");
+  }
+  return SourceDistribution.make({
+    project: PyPiProjectName.make(parsed.project),
+    version: Version.make(parsed.version),
+    metadataVersion: NonEmptyName.make(parsed.metadataVersion),
+    pythonTag: "source",
+    mediaType: "application/gzip"
+  });
+};
+var inspectPythonDistribution = (filename, bytes, expectedProject, expectedVersion) => {
+  if (filename.includes("/") || filename.includes("\\") || filename.length === 0)
+    fail8(filename || "<empty>", "Distribution filename must be a basename.");
+  if (filename.endsWith(".whl"))
+    return wheel(filename, bytes, expectedProject, expectedVersion);
+  if (filename.endsWith(".tar.gz"))
+    return sdist(filename, bytes, expectedProject, expectedVersion);
+  return fail8(filename, "Only .whl and .tar.gz source distributions are supported.");
+};
+
+// ../../src/release/context.ts
+var optional4 = optionalKey2;
+
+class VerifiedSource extends Class4("VerifiedSource")({
+  commit: NonEmptyName,
+  tree: NonEmptyName,
+  clean: Literal2(true),
+  packageManifestPath: SafeRelativePath,
+  packageManifestDigest: Sha256Digest,
+  repository: optional4(NonEmptyString),
+  headTags: ArraySchema(NonEmptyName)
+}) {
+}
+
+class VerifiedPackage extends Class4("VerifiedPackage")({
+  name: NonEmptyName,
+  version: Version,
+  path: SafeRelativePath,
+  digest: Sha256Digest,
+  repository: optional4(NonEmptyString)
+}) {
+}
+
+class VerifiedReleaseContext extends Class4("VerifiedReleaseContext")({
+  workspace: WorkspaceRoot,
+  source: VerifiedSource,
+  package: VerifiedPackage
+}) {
+}
+
+class StagingEntry extends Class4("StagingEntry")({
+  path: SafeRelativePath,
+  kind: Literals(["file", "executable", "directory", "symlink"]),
+  mode: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 && value3 <= 511 ? undefined : "Staging entry mode must be a portable permission mask.")),
+  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Staging entry size must be a nonnegative safe integer.")),
+  digest: Sha256Digest
+}) {
+}
+
+class StagingSnapshot extends Class4("StagingSnapshot")({
+  entries: ArraySchema(StagingEntry),
+  digest: Sha256Digest
+}) {
+}
+
+class ExplicitInputSnapshot extends Class4("ExplicitInputSnapshot")({
+  id: NonEmptyString,
+  path: SafeRelativePath,
+  kind: Literals(["file", "directory"]),
+  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Explicit input size must be a nonnegative safe integer.")),
+  digest: Sha256Digest,
+  materializer: NonEmptyString,
+  materializationBasis: ArraySchema(Sha256Digest)
+}) {
+}
+
+class SourceMaterializationError extends TaggedErrorClass()("SourceMaterializationError", {
+  field: String4,
+  reason: String4
+}) {
+}
+
+class ReleaseContextError extends TaggedErrorClass()("ReleaseContextError", {
+  field: String4,
+  reason: String4
+}) {
+}
+
+class SourceObserver extends Service()("SourceObserver") {
+}
+var runtimeFailure = (field, cause) => ReleaseContextError.make({
+  field,
+  reason: cause instanceof Error ? cause.message : String(cause)
+});
+var command = (runtime, workspace, argv, field) => runtime.command(workspace, argv).pipe(mapError3((cause) => runtimeFailure(field, cause)));
+var repositoryCoordinate = (value3) => {
+  if (typeof value3 !== "string")
+    return;
+  const trimmed = value3.trim().replace(/\.git$/u, "");
+  const match6 = /(?:github\.com[/:]|^)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/u.exec(trimmed);
+  return match6?.[1];
+};
+var jsonObject = (bytes, path) => {
+  try {
+    const value3 = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof value3 !== "object" || value3 === null || Array.isArray(value3))
+      throw new Error("manifest root must be an object");
+    return value3;
+  } catch (cause) {
+    throw new Error(`${path} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+  }
+};
+var makeSourceObserver = (runtime) => ({
+  observe: fn2("observeVerifiedReleaseContext")(function* (workspace, packageManifestPath, expectedCommit) {
+    const canonical2 = yield* runtime.canonicalRoot(workspace).pipe(mapError3((cause) => runtimeFailure("workspace", cause)));
+    const root = WorkspaceRoot.make(canonical2);
+    const commit = yield* command(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value3) => value3.trim()));
+    const tree = yield* command(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value3) => value3.trim()));
+    const status = yield* command(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=no"], "source.clean");
+    if (status.trim().length > 0)
+      return yield* new ReleaseContextError({
+        field: "source.clean",
+        reason: "Preparation requires a clean tracked source tree; untracked bytes require explicit input declaration."
+      });
+    const bytes = yield* runtime.read(workspace, packageManifestPath).pipe(mapError3((cause) => runtimeFailure("package.manifest", cause)));
+    let manifest;
+    try {
+      manifest = jsonObject(bytes, packageManifestPath);
+    } catch (cause) {
+      return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) });
+    }
+    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined;
+    const version2 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
+    if (name === undefined)
+      return yield* new ReleaseContextError({ field: "package.name", reason: "Manifest name is missing or empty." });
+    if (version2 === undefined)
+      return yield* new ReleaseContextError({ field: "package.version", reason: "Manifest version is missing or empty." });
+    const digest = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
+    const tags = yield* command(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value3) => value3.split(`
+`).map((tag2) => tag2.trim()).filter((tag2) => tag2.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
+    const remote = yield* command(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value3) => repositoryCoordinate(value3))).pipe(orElseSucceed2(() => {
+      return;
+    }));
+    const manifestRepository = repositoryCoordinate(manifest.repository);
+    if (remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository) {
+      return yield* new ReleaseContextError({
+        field: "source.repository",
+        reason: `Git remote ${remote} disagrees with manifest repository ${manifestRepository}.`
+      });
+    }
+    const repository = remote ?? manifestRepository;
+    const source = VerifiedSource.make({
+      commit: NonEmptyName.make(commit),
+      tree: NonEmptyName.make(tree),
+      clean: true,
+      packageManifestPath,
+      packageManifestDigest: digest,
+      headTags: tags.map((tag2) => NonEmptyName.make(tag2)),
+      ...repository === undefined ? {} : { repository }
+    });
+    const context3 = VerifiedReleaseContext.make({
+      workspace: root,
+      source,
+      package: VerifiedPackage.make({
+        name: NonEmptyName.make(name),
+        version: Version.make(version2),
+        path: packageManifestPath,
+        digest,
+        ...manifestRepository === undefined ? {} : { repository: manifestRepository }
+      })
+    });
+    return yield* verifySource(context3, expectedCommit);
   }),
-  github: Object.freeze({
-    id: "publish.github",
-    provider: "github",
-    preparedTag: "PreparedGitHubPublication",
-    recovery: githubRecoveryCapabilityProfile,
-    correctionAdapters: [],
-    evidence: Object.freeze({
-      reviewedAt: "2026-08-12",
-      observationSources: Object.freeze([
-        "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28",
-        "https://docs.github.com/en/rest/git/tags?apiVersion=2022-11-28",
-        "https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28",
-        "https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28"
-      ]),
-      correctionSources: Object.freeze([
-        "https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#update-a-release",
-        "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api?apiVersion=2022-11-28#use-conditional-requests"
-      ]),
-      correctionFinding: "GitHub documents conditional reads, but unsafe-method conditions are unsupported unless an endpoint says otherwise; the release update endpoint documents none."
-    })
-  })
-}));
+  materialize: fn2("materializeVerifiedSource")((workspace, source, destination) => runtime.materialize(workspace, source, destination).pipe(mapError3((cause) => cause instanceof SourceMaterializationError ? cause : new SourceMaterializationError({
+    field: "source.materialization",
+    reason: cause instanceof Error ? cause.message : String(cause)
+  }))))
+});
+var verifySource = fn2("verifySource")(function* (context3, expectedCommit) {
+  if (expectedCommit !== undefined && context3.source.commit !== expectedCommit) {
+    return yield* new ReleaseContextError({
+      field: "source.commit",
+      reason: `Expected ${expectedCommit}, observed ${context3.source.commit}.`
+    });
+  }
+  if (context3.source.clean !== true) {
+    return yield* new ReleaseContextError({
+      field: "source.clean",
+      reason: "Preparation requires a clean verified source."
+    });
+  }
+  return context3;
+});
+
 // ../../src/release/graph.ts
-var Semver2 = __toESM(require_semver2(), 1);
+var Semver3 = __toESM(require_semver2(), 1);
 class OutputDeclaration extends Class4("OutputDeclaration")({
   id: OutputId,
   path: SafeRelativePath,
@@ -80769,7 +81564,7 @@ class OutputDeclaration extends Class4("OutputDeclaration")({
   mediaType: optionalKey2(NonEmptyString)
 }) {
 }
-var optional3 = optionalKey2;
+var optional5 = optionalKey2;
 var argv = NonEmptyArray(String4);
 
 class GraphCommandCheck extends TaggedClass()("GraphCommandCheck", {
@@ -80822,13 +81617,24 @@ class GraphChecksum extends TaggedClass()("GraphChecksum", {
   algorithm: Literals(["sha256", "sha512"])
 }) {
 }
+
+class GraphCatalogRender extends TaggedClass()("GraphCatalogRender", {
+  id: OperationId,
+  inputs: NonEmptyArray(OutputId),
+  output: OutputDeclaration,
+  version: Version,
+  renderer: CatalogRenderer,
+  sources: NonEmptyArray(CatalogRenderSource)
+}) {
+}
 var GraphPreparation = Union2([
   GraphCommandCheck,
   GraphCommandArtifact,
   GraphCommandCollection,
   GraphNpmPackageBuild,
   GraphArchive,
-  GraphChecksum
+  GraphChecksum,
+  GraphCatalogRender
 ]);
 
 class PublicationAuthorityIntent extends Class4("PublicationAuthorityIntent")({
@@ -80861,14 +81667,56 @@ class GraphGitHubPublication extends TaggedClass()("GraphGitHubPublication", {
   title: NonEmptyName,
   draft: Boolean3,
   prerelease: Boolean3,
-  body: optional3(String4),
-  bodyArtifact: optional3(OutputId),
+  body: optional5(String4),
+  bodyArtifact: optional5(OutputId),
   assetIds: ArraySchema(OutputId),
   assetCollections: ArraySchema(ArtifactCollectionSelector),
   authority: PublicationAuthorityIntent
 }) {
 }
-var GraphPublication = Union2([GraphNpmPublication, GraphGitHubPublication]);
+
+class GraphPyPiDistribution extends Class4("GraphPyPiDistribution")({
+  artifactId: OutputId,
+  filename: NonEmptyName,
+  authority: PublicationAuthorityIntent
+}) {
+}
+
+class GraphPyPiPublication extends TaggedClass()("GraphPyPiPublication", {
+  id: OperationId,
+  project: PyPiProjectName,
+  version: Version,
+  repository: PyPiRepository,
+  simpleBaseUrl: NonEmptyString,
+  projectUrl: NonEmptyString,
+  uploadUrl: NonEmptyString,
+  authentication: PyPiAuthentication,
+  files: NonEmptyArray(GraphPyPiDistribution)
+}) {
+}
+
+class GraphCatalogPublication extends TaggedClass()("GraphCatalogPublication", {
+  id: OperationId,
+  catalogId: NonEmptyName,
+  targetArtifact: OutputId,
+  repository: GitHubRepositoryCoordinate,
+  branch: GitBranchName,
+  targetPath: CatalogRepositoryPath,
+  statePath: CatalogRepositoryPath,
+  version: Version,
+  sourceRepository: GitHubRepositoryCoordinate,
+  sourceTag: NonEmptyName,
+  renderer: CatalogRenderer,
+  sources: NonEmptyArray(CatalogRenderSource),
+  authority: PublicationAuthorityIntent
+}) {
+}
+var GraphPublication = Union2([
+  GraphNpmPublication,
+  GraphPyPiPublication,
+  GraphGitHubPublication,
+  GraphCatalogPublication
+]);
 
 class CapabilityContribution extends Class4("CapabilityContribution")({
   artifacts: ArraySchema(OutputDeclaration),
@@ -80917,7 +81765,7 @@ var makeNpmPublicationAuthorityIntent = (input) => {
   } catch (cause) {
     throw authorityError("publish.npm.distTag", cause instanceof Error ? cause.message : String(cause));
   }
-  if (Semver2.prerelease(version2) !== null && tag2 === "latest") {
+  if (Semver3.prerelease(version2) !== null && tag2 === "latest") {
     throw authorityError("publish.npm.distTag", "npm prerelease publication requires a non-latest dist-tag.");
   }
   const provider = ProviderId.make("npm");
@@ -80949,6 +81797,68 @@ var makeNpmPublicationAuthorityIntent = (input) => {
     publishStrategy
   });
 };
+var externalPyPiStrategy = (input, authentication) => {
+  let sourceCommit;
+  try {
+    sourceCommit = TrustedPublishingSourceCommit.make(input.sourceCommit ?? "");
+  } catch {
+    throw authorityError("source.commit", "External PyPI trusted publishing requires a lowercase full Git SHA.");
+  }
+  return ExternalTrustedPublishingAuthStrategy.make({
+    kind: "trusted-publishing",
+    identityProvider: "github-actions",
+    runnerClass: "github-hosted",
+    repository: authentication.repository,
+    workflow: `.github/workflows/${authentication.workflow}`,
+    workflowRef: authentication.workflowRef,
+    sourceCommit,
+    provenanceEnvironmentContract: "external-pypa-action-v1",
+    allowedAction: "external-pypa-action",
+    publisherSink: "external-host-owned",
+    environment: authentication.environment,
+    projects: authentication.projects.map(normalizePyPiProjectName)
+  });
+};
+var makePyPiPublicationAuthorityIntent = (input) => {
+  const endpoints = pypiRepositoryEndpoints(input.repository);
+  const project = PyPiProjectName.make(normalizePyPiProjectName(input.project));
+  const provider = ProviderId.make("pypi");
+  const publishStrategy = input.authentication.strategy === "token" ? tokenStrategy(input.authentication.credential, "publish.pypi.authentication.credential") : externalPyPiStrategy(input, input.authentication);
+  return PublicationAuthorityIntent.make({
+    subject: SubjectId.make(`pypi:${input.repository}:${project}@${input.version}#${input.filename}`),
+    provider,
+    audience: CanonicalAudience.make(endpoints.uploadUrl),
+    observationStrategies: [anonymousStrategy()],
+    publishStrategy
+  });
+};
+var makeCatalogPublicationAuthorityIntent = (input) => {
+  let repository;
+  let branch;
+  let targetPath;
+  let statePath;
+  try {
+    repository = GitHubRepositoryCoordinate.make(input.repository);
+    branch = GitBranchName.make(input.branch);
+    targetPath = CatalogRepositoryPath.make(input.targetPath);
+    statePath = CatalogRepositoryPath.make(input.statePath);
+  } catch (cause) {
+    throw authorityError("publish.catalogGit", cause instanceof Error ? cause.message : String(cause));
+  }
+  if (targetPath.toString() === statePath.toString()) {
+    throw authorityError("publish.catalogGit", "Catalog target and managed-state paths must be distinct.");
+  }
+  const provider = ProviderId.make("catalog-git");
+  const audience = CanonicalAudience.make(`https://api.github.com/repos/${repository}`);
+  const token = tokenStrategy(input.tokenEnv, "publish.catalogGit[].tokenEnv");
+  return PublicationAuthorityIntent.make({
+    subject: SubjectId.make(`catalog-git:${repository}#refs/heads/${branch}:${targetPath}+${statePath}`),
+    provider,
+    audience,
+    observationStrategies: [anonymousStrategy(), token],
+    publishStrategy: token
+  });
+};
 var githubCoordinate = (value3) => {
   if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(value3)) {
     throw authorityError("publish.github.repository", "GitHub repository must be an owner/repository coordinate.");
@@ -80970,10 +81880,10 @@ var makeGitHubPublicationAuthorityIntent = (input) => {
 var sameTokenStrategy = (left, right) => left?.kind === "token" && left.credential === right.credential;
 var npmPublicationAuthorityIssue = (publication) => {
   const version2 = publication.version.toString();
-  if (Semver2.valid(version2) !== version2) {
+  if (Semver3.valid(version2) !== version2) {
     return "npm publication version must be canonical SemVer.";
   }
-  if (Semver2.prerelease(version2) !== null && publication.distTag === "latest") {
+  if (Semver3.prerelease(version2) !== null && publication.distTag === "latest") {
     return "npm prerelease publication must use an explicit non-latest dist-tag.";
   }
   if (publication.access === "restricted" && !publication.packageName.toString().startsWith("@")) {
@@ -81018,13 +81928,70 @@ var githubPublicationAuthorityIssue = (publication) => {
   }
   return;
 };
+var pyPiPublicationAuthorityIssue = (publication) => {
+  let project;
+  try {
+    project = normalizePyPiProjectName(publication.project);
+  } catch {
+    return "PyPI publication must carry a valid normalized project name.";
+  }
+  const endpoints = pypiRepositoryEndpoints(publication.repository);
+  const expectedProjectUrl = `${endpoints.simpleBaseUrl}${encodeURIComponent(project)}/`;
+  if (publication.project !== project || publication.simpleBaseUrl !== endpoints.simpleBaseUrl || publication.projectUrl !== expectedProjectUrl || publication.uploadUrl !== endpoints.uploadUrl) {
+    return "PyPI publication endpoints must match its closed repository and normalized project coordinate.";
+  }
+  if (publication.files.length === 0)
+    return "PyPI publication requires at least one distribution file.";
+  const names = new Set;
+  for (const file of publication.files) {
+    const filename = file.filename.toString();
+    if (filename.length === 0 || filename.includes("/") || filename.includes("\\") || names.has(filename)) {
+      return "PyPI publication filenames must be nonempty, unique basenames.";
+    }
+    names.add(filename);
+    const authority = file.authority;
+    if (authority.subject !== `pypi:${publication.repository}:${project}@${publication.version}#${filename}` || authority.provider !== "pypi" || authority.audience !== endpoints.uploadUrl || authority.observationStrategies.length !== 1 || authority.observationStrategies[0]?.kind !== "anonymous") {
+      return "PyPI file authority must match its exact repository, project, version, filename, upload audience, and anonymous read strategy.";
+    }
+    if (publication.authentication.strategy === "token") {
+      if (authority.publishStrategy.kind !== "token" || authority.publishStrategy.credential !== publication.authentication.credential) {
+        return "PyPI token publication requires its exact project-scoped configured credential.";
+      }
+    } else if (authority.publishStrategy.kind !== "trusted-publishing" || authority.publishStrategy.publisherSink !== "external-host-owned" || authority.publishStrategy.allowedAction !== "external-pypa-action" || authority.publishStrategy.repository !== publication.authentication.repository || authority.publishStrategy.workflow !== `.github/workflows/${publication.authentication.workflow}` || authority.publishStrategy.workflowRef !== publication.authentication.workflowRef || authority.publishStrategy.environment !== publication.authentication.environment || authority.publishStrategy.projects.join(`
+`) !== publication.authentication.projects.map(normalizePyPiProjectName).join(`
+`)) {
+      return "PyPI trusted publication must remain bound to the exact external PyPA Action workflow and complete bundled project set.";
+    }
+  }
+  return;
+};
+var catalogPublicationAuthorityIssue = (publication) => {
+  let repository;
+  let branch;
+  let targetPath;
+  let statePath;
+  try {
+    repository = GitHubRepositoryCoordinate.make(publication.repository);
+    branch = GitBranchName.make(publication.branch.toString());
+    targetPath = CatalogRepositoryPath.make(publication.targetPath.toString());
+    statePath = CatalogRepositoryPath.make(publication.statePath.toString());
+  } catch {
+    return "Catalog publication must carry canonical GitHub repository, branch, and file paths.";
+  }
+  const { authority } = publication;
+  const token = authority.publishStrategy;
+  if (targetPath === statePath || targetPath.startsWith(`${statePath}/`) || statePath.startsWith(`${targetPath}/`) || authority.subject !== `catalog-git:${repository}#refs/heads/${branch}:${targetPath}+${statePath}` || authority.provider !== "catalog-git" || authority.audience !== `https://api.github.com/repos/${repository}` || authority.observationStrategies.length !== 2 || authority.observationStrategies[0]?.kind !== "anonymous" || token.kind !== "token" || !sameTokenStrategy(authority.observationStrategies[1], token)) {
+    return "Catalog publication authority must bind its exact GitHub repository/ref/path pair and one bundled read/write token.";
+  }
+  return;
+};
 var byId2 = (left, right) => {
   const a = left.id.toString();
   const b = right.id.toString();
   return a < b ? -1 : a > b ? 1 : 0;
 };
 var preparationInputs = (preparation) => preparation.inputs;
-var preparationOutputs = (preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" ? [preparation.output] : [];
+var preparationOutputs = (preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalogRender" ? [preparation.output] : [];
 var pathsOverlap = (left, right) => left === right || left.startsWith(`${right}/`) || right.startsWith(`${left}/`);
 var portablePathsOverlap = (left, right) => pathsOverlap(left.toLocaleLowerCase("en-US"), right.toLocaleLowerCase("en-US"));
 var linkContributions = (contributions) => {
@@ -81220,7 +82187,7 @@ var linkContributions = (contributions) => {
   }
   const publications = contributions.flatMap((item) => item.publications).sort(byId2);
   for (const publication of publications) {
-    const authorityIssue = publication._tag === "GraphNpmPublication" ? npmPublicationAuthorityIssue(publication) : githubPublicationAuthorityIssue(publication);
+    const authorityIssue = publication._tag === "GraphNpmPublication" ? npmPublicationAuthorityIssue(publication) : publication._tag === "GraphPyPiPublication" ? pyPiPublicationAuthorityIssue(publication) : publication._tag === "GraphGitHubPublication" ? githubPublicationAuthorityIssue(publication) : catalogPublicationAuthorityIssue(publication);
     if (authorityIssue !== undefined)
       throw new GraphLinkError({
         kind: "reference",
@@ -81265,7 +82232,7 @@ var linkContributions = (contributions) => {
           });
       }
     }
-    const ids = publication._tag === "GraphGitHubPublication" ? [...publication.assetIds, ...publication.bodyArtifact === undefined ? [] : [publication.bodyArtifact]] : [publication.packageArtifact];
+    const ids = publication._tag === "GraphGitHubPublication" ? [...publication.assetIds, ...publication.bodyArtifact === undefined ? [] : [publication.bodyArtifact]] : publication._tag === "GraphPyPiPublication" ? publication.files.map((file) => file.artifactId) : publication._tag === "GraphCatalogPublication" ? [publication.targetArtifact] : [publication.packageArtifact];
     for (const id of ids)
       if (!artifactIds.has(id.toString()) && !producers.has(id.toString())) {
         throw new GraphLinkError({ kind: "missing", value: id.toString(), reason: "Publication references no artifact." });
@@ -81284,6 +82251,23 @@ var linkContributions = (contributions) => {
           value: publication.packageName.toString(),
           reason: "npm restricted access is valid only for scoped package names."
         });
+    }
+    if (publication._tag === "GraphPyPiPublication") {
+      for (const file of publication.files) {
+        const artifact = artifacts.find((candidate) => candidate.id.toString() === file.artifactId.toString());
+        if (artifact === undefined || artifact.kind === "package")
+          throw new GraphLinkError({
+            kind: "reference",
+            value: file.artifactId.toString(),
+            reason: "PyPI distributions must reference capturable file artifacts."
+          });
+        if (artifact.path.toString().split("/").at(-1) !== file.filename.toString())
+          throw new GraphLinkError({
+            kind: "reference",
+            value: file.artifactId.toString(),
+            reason: "PyPI distribution authority filename must equal the declared artifact basename."
+          });
+      }
     }
     if (publication._tag === "GraphGitHubPublication" && publication.bodyArtifact !== undefined) {
       const body = artifacts.find((artifact) => artifact.id.toString() === publication.bodyArtifact.toString());
@@ -81305,6 +82289,25 @@ var linkContributions = (contributions) => {
           });
       }
     }
+    if (publication._tag === "GraphCatalogPublication") {
+      const artifact = artifacts.find((candidate) => candidate.id.toString() === publication.targetArtifact.toString());
+      const producer = preparations.find((candidate) => preparationOutputs(candidate).some((output) => output.id.toString() === publication.targetArtifact.toString()));
+      if (artifact === undefined || artifact.kind !== "file" || producer?._tag !== "GraphCatalogRender" || producer.renderer._tag !== publication.renderer._tag || producer.sources.map((source) => source.artifactId.toString()).join(`
+`) !== publication.sources.map((source) => source.artifactId.toString()).join(`
+`)) {
+        throw new GraphLinkError({
+          kind: "reference",
+          value: publication.targetArtifact.toString(),
+          reason: "Catalog delivery must reference its exact typed catalog-render output."
+        });
+      }
+      if (publication.targetPath.toString() === publication.statePath.toString())
+        throw new GraphLinkError({
+          kind: "path",
+          value: publication.targetPath.toString(),
+          reason: "Catalog target and managed-state paths must be distinct."
+        });
+    }
   }
   const dependencies = new Map(preparations.map((preparation) => [preparation.id.toString(), new Set(preparationInputs(preparation).map((input) => producers.get(input.toString())).filter((value3) => value3 !== undefined))]));
   const ordered = [];
@@ -81325,7 +82328,1172 @@ var linkContributions = (contributions) => {
   return ReleaseGraph.make({ artifacts, collections, preparations: ordered, publications });
 };
 
+// ../../src/release/prepared.ts
+var optional6 = optionalKey2;
+var artifactKind = Literals(["file", "executable", "archive", "package", "digest"]);
+
+class PreparedSource extends Class4("PreparedSource")({
+  commit: NonEmptyName,
+  tree: NonEmptyName,
+  clean: Literal2(true),
+  packageManifestPath: SafeRelativePath,
+  packageManifestDigest: Sha256Digest,
+  materialized: StagingSnapshot
+}) {
+}
+
+class PreparedProject extends Class4("PreparedProject")({
+  name: NonEmptyName,
+  packageName: optional6(NonEmptyName),
+  version: Version,
+  tag: NonEmptyName,
+  repository: optional6(NonEmptyString)
+}) {
+}
+
+class PreparedArtifact extends Class4("PreparedArtifact")({
+  id: OutputId,
+  path: SafeRelativePath,
+  kind: artifactKind,
+  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Prepared artifact size must be a nonnegative safe integer.")),
+  digest: Sha256Digest,
+  blob: Sha256Digest,
+  mediaType: optional6(NonEmptyString),
+  producer: NonEmptyName,
+  inputBasis: Sha256Digest
+}) {
+}
+
+class PreparedArtifactCollection extends Class4("PreparedArtifactCollection")({
+  contract: ArtifactCollectionContract,
+  members: ArraySchema(ArtifactCollectionMember)
+}) {
+}
+
+class PreparedExecutionInputs extends Class4("PreparedExecutionInputs")({
+  environment: Literal2("closed"),
+  network: Literal2("prohibited"),
+  timezone: Literal2("UTC"),
+  locale: Literal2("C"),
+  clock: Literal2("source-date-epoch=0;host-clock-not-isolated"),
+  randomness: Literal2("host-randomness-not-isolated"),
+  platform: NonEmptyString,
+  runtime: NonEmptyString,
+  networkIsolation: NonEmptyString,
+  bunCompileRuntimes: NonEmptyString,
+  npmPack: NonEmptyString,
+  releaseGraph: Sha256Digest,
+  preparer: NonEmptyString
+}) {
+}
+
+class PreparedProvenance extends Class4("PreparedProvenance")({
+  source: StagingSnapshot,
+  externalInputs: ArraySchema(ExplicitInputSnapshot),
+  execution: PreparedExecutionInputs,
+  inputBasis: Sha256Digest,
+  reproducibility: Literal2("not-asserted")
+}) {
+}
+
+class PreparedNpmPublication extends TaggedClass()("PreparedNpmPublication", {
+  id: NonEmptyName,
+  artifactId: OutputId,
+  packageName: NonEmptyName,
+  version: Version,
+  registryUrl: CanonicalNpmRegistryEndpoint,
+  distTag: NpmDistTag,
+  access: NpmAccess,
+  authentication: NpmAuthentication,
+  provenance: NpmProvenancePolicy,
+  authority: PublicationAuthorityIntent
+}) {
+}
+
+class PreparedGitHubAsset extends Class4("PreparedGitHubAsset")({
+  artifactId: OutputId,
+  name: NonEmptyString,
+  mediaType: NonEmptyString
+}) {
+}
+
+class PreparedGitHubPublication extends TaggedClass()("PreparedGitHubPublication", {
+  id: NonEmptyName,
+  repository: NonEmptyString,
+  tag: NonEmptyName,
+  title: NonEmptyName,
+  draft: Boolean3,
+  prerelease: Boolean3,
+  targetCommit: NonEmptyName,
+  body: optional6(String4),
+  assets: ArraySchema(PreparedGitHubAsset),
+  authority: PublicationAuthorityIntent
+}) {
+}
+
+class PreparedPyPiFile extends Class4("PreparedPyPiFile")({
+  artifactId: OutputId,
+  filename: NonEmptyName,
+  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "PyPI file size must be a nonnegative safe integer.")),
+  sha256: Sha256Digest,
+  mediaType: Literals(["application/zip", "application/gzip"]),
+  distribution: PythonDistribution,
+  authority: PublicationAuthorityIntent
+}) {
+}
+
+class PreparedPyPiPublication extends TaggedClass()("PreparedPyPiPublication", {
+  id: NonEmptyName,
+  project: PyPiProjectName,
+  version: Version,
+  repository: PyPiRepository,
+  simpleBaseUrl: NonEmptyString,
+  projectUrl: NonEmptyString,
+  uploadUrl: NonEmptyString,
+  authentication: PyPiAuthentication,
+  files: NonEmptyArray(PreparedPyPiFile)
+}) {
+}
+
+class PreparedCatalogPublication extends TaggedClass()("PreparedCatalogPublication", {
+  id: NonEmptyName,
+  catalogId: NonEmptyName,
+  targetArtifactId: OutputId,
+  stateArtifactId: OutputId,
+  targetDigest: Sha256Digest,
+  stateDigest: Sha256Digest,
+  repository: GitHubRepositoryCoordinate,
+  branch: GitBranchName,
+  targetPath: CatalogRepositoryPath,
+  statePath: CatalogRepositoryPath,
+  version: Version,
+  sourceRepository: GitHubRepositoryCoordinate,
+  sourceTag: NonEmptyName,
+  renderer: PreparedCatalogRenderer,
+  authority: PublicationAuthorityIntent
+}) {
+}
+var PreparedPublicationVariants = Union2([
+  PreparedNpmPublication,
+  PreparedPyPiPublication,
+  PreparedGitHubPublication,
+  PreparedCatalogPublication
+]);
+var PreparedPublication = PreparedPublicationVariants.pipe(check(makeFilter2((publication) => publication._tag === "PreparedNpmPublication" ? npmPublicationAuthorityIssue(publication) : publication._tag === "PreparedPyPiPublication" ? pyPiPublicationAuthorityIssue(publication) : publication._tag === "PreparedGitHubPublication" ? githubPublicationAuthorityIssue(publication) : catalogPublicationAuthorityIssue(publication))));
+
+class PreparedReleaseV2 extends Class4("PreparedReleaseV2")({
+  kind: Literal2("complete"),
+  schemaVersion: Literal2("prepared-release/v2"),
+  source: PreparedSource,
+  project: PreparedProject,
+  provenance: PreparedProvenance,
+  artifacts: ArraySchema(PreparedArtifact),
+  collections: ArraySchema(PreparedArtifactCollection),
+  publications: ArraySchema(PreparedPublication)
+}) {
+}
+
+class PreparedManifestError extends TaggedErrorClass()("PreparedManifestError", {
+  reason: String4
+}) {
+}
+var assertCompletePreparedRelease = (manifest) => {
+  if (manifest.kind !== "complete")
+    throw new Error("prepared manifest kind must be 'complete'");
+  if (manifest.source.materialized.digest.hex !== manifest.provenance.source.digest.hex) {
+    throw new Error("prepared source materialization must match provenance source");
+  }
+  for (const publication of manifest.publications) {
+    if (publication._tag === "PreparedNpmPublication" && publication.authority.publishStrategy.kind === "trusted-publishing" && publication.authority.publishStrategy.sourceCommit.toString() !== manifest.source.commit.toString()) {
+      throw new Error(`prepared npm publication ${publication.id} source commit disagrees with the verified source`);
+    }
+    if (publication._tag === "PreparedPyPiPublication" && publication.authentication.strategy === "trusted-publishing" && publication.files.some((file) => file.authority.publishStrategy.kind !== "trusted-publishing" || file.authority.publishStrategy.sourceCommit.toString() !== manifest.source.commit.toString())) {
+      throw new Error(`prepared PyPI publication ${publication.id} source commit disagrees with the verified source`);
+    }
+  }
+  for (const artifact of manifest.artifacts) {
+    if (artifact.inputBasis.hex !== manifest.provenance.inputBasis.hex) {
+      throw new Error(`prepared artifact ${artifact.id} has a foreign input basis`);
+    }
+  }
+  const artifacts = new Map(manifest.artifacts.map((artifact) => [artifact.id.toString(), artifact]));
+  for (const publication of manifest.publications) {
+    if (publication._tag !== "PreparedCatalogPublication")
+      continue;
+    const target2 = artifacts.get(publication.targetArtifactId.toString());
+    const state = artifacts.get(publication.stateArtifactId.toString());
+    if (target2 === undefined || state === undefined || target2.digest.hex !== publication.targetDigest.hex || state.digest.hex !== publication.stateDigest.hex || target2.kind !== "file" || state.kind !== "file") {
+      throw new Error(`prepared catalog publication ${publication.id} does not bind its exact target/state artifacts`);
+    }
+  }
+  const collectionIds = new Set;
+  const collectionRoots = new Map;
+  const collectionProducers = new Set;
+  const memberArtifacts = new Set;
+  let previousCollection = "";
+  for (const collection of manifest.collections) {
+    const { contract } = collection;
+    const id = contract.id.toString();
+    if (id <= previousCollection)
+      throw new Error("prepared artifact collections must have unique code-point-sorted ids");
+    previousCollection = id;
+    const foldedId = id.toLocaleLowerCase("en-US");
+    if (collectionIds.has(foldedId))
+      throw new Error(`prepared artifact collection ${id} has a case-colliding id`);
+    collectionIds.add(foldedId);
+    const foldedRoot = contract.root.toString().toLocaleLowerCase("en-US");
+    const overlappingRoot = [...collectionRoots.entries()].find(([root]) => foldedRoot === root || foldedRoot.startsWith(`${root}/`) || root.startsWith(`${foldedRoot}/`));
+    if (overlappingRoot !== undefined) {
+      throw new Error(`prepared artifact collection ${id} root overlaps collection ${overlappingRoot[1]}`);
+    }
+    collectionRoots.set(foldedRoot, id);
+    if (collectionProducers.has(contract.producer.toString())) {
+      throw new Error(`prepared artifact collection ${id} repeats producer ${contract.producer}`);
+    }
+    collectionProducers.add(contract.producer.toString());
+    const issue2 = cardinalityIssue(contract.cardinality);
+    if (issue2 !== undefined)
+      throw new Error(`prepared artifact collection ${id}: ${issue2}`);
+    const contractIssue = collectionContractIssue(contract);
+    if (contractIssue !== undefined)
+      throw new Error(`prepared artifact collection ${id}: ${contractIssue}`);
+    if (!cardinalityAccepts(contract.cardinality, collection.members.length)) {
+      throw new Error(`prepared artifact collection ${id} has ${collection.members.length} members outside its declared cardinality`);
+    }
+    const keys2 = new Set;
+    let previousKey = "";
+    for (const member of collection.members) {
+      const key = member.key.toString();
+      if (key <= previousKey)
+        throw new Error(`prepared artifact collection ${id} member keys must be unique and code-point sorted`);
+      previousKey = key;
+      const foldedKey = key.toLocaleLowerCase("en-US");
+      if (keys2.has(foldedKey))
+        throw new Error(`prepared artifact collection ${id} has duplicate normalized member key ${key}`);
+      keys2.add(foldedKey);
+      const expectedId = collectionMemberId(contract, member.key);
+      if (member.artifactId !== expectedId)
+        throw new Error(`prepared artifact collection ${id} member ${key} has an invalid stable artifact id`);
+      const artifact = artifacts.get(member.artifactId.toString());
+      if (artifact === undefined)
+        throw new Error(`prepared artifact collection ${id} member ${key} references no artifact`);
+      if (artifact.path !== collectionMemberPath(contract, member.key) || artifact.kind !== contract.artifactKind || artifact.mediaType !== contract.mediaType || artifact.producer.toString() !== contract.producer.toString()) {
+        throw new Error(`prepared artifact collection ${id} member ${key} disagrees with its contract`);
+      }
+      if (memberArtifacts.has(member.artifactId.toString())) {
+        throw new Error(`prepared artifact ${member.artifactId} belongs to more than one collection`);
+      }
+      memberArtifacts.add(member.artifactId.toString());
+    }
+  }
+  for (const artifact of manifest.artifacts) {
+    if (collectionProducers.has(artifact.producer.toString()) && !memberArtifacts.has(artifact.id.toString())) {
+      throw new Error(`prepared collection producer ${artifact.producer} has unclaimed artifact ${artifact.id}`);
+    }
+  }
+};
+var encodePreparedRelease = (manifest) => {
+  assertCompletePreparedRelease(manifest);
+  return new TextEncoder().encode(encodeCanonicalJson(encodeSync2(PreparedReleaseV2)(manifest)));
+};
+var decodePreparedRelease = (bytes) => {
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const value3 = decodeUnknownSync(PreparedReleaseV2, { onExcessProperty: "error" })(parseStrictJson(text));
+    assertCompletePreparedRelease(value3);
+    const canonical2 = encodePreparedRelease(value3);
+    if (canonical2.length !== bytes.length || canonical2.some((byte, index) => byte !== bytes[index])) {
+      throw new Error("manifest bytes are not canonical");
+    }
+    return value3;
+  } catch (cause) {
+    throw PreparedManifestError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
+  }
+};
+
+// ../../src/publication/claim.ts
+class PublicationClaimRequest extends Class4("PublicationClaimRequest")({
+  subject: SubjectId,
+  preparedDigest: Sha256Digest
+}) {
+}
+
+class PublicationClaimUnavailable extends TaggedErrorClass()("PublicationClaimUnavailable", {
+  subject: SubjectId,
+  reason: SafeReason
+}) {
+}
+
+class PublicationClaimOccupied extends TaggedErrorClass()("PublicationClaimOccupied", {
+  subject: SubjectId,
+  reason: SafeReason
+}) {
+}
+
+class PublicationClaimStore extends Service()("ts-release/PublicationClaimStore") {
+}
+var unavailablePublicationClaimStore = {
+  claim: (request) => fail6(PublicationClaimUnavailable.make({
+    subject: request.subject,
+    reason: SafeReason.make("A shared durable terminal publication-claim store is not installed by this host.")
+  }))
+};
+
+// ../../src/publication/pypi.ts
+var pypiRecoveryCapabilityProfile = makeRecoveryCapabilityProfile({
+  observation: "exact",
+  authoritativeAbsence: "provider-specific",
+  createAuthorization: "none",
+  replay: "unsafe",
+  identifierReuse: "consumed-after-delete",
+  correction: [],
+  exposure: "persistent-to-consumers",
+  historyRequirement: "durable-cas-required",
+  readConvergence: {
+    contract: {
+      _tag: "assumed",
+      basis: "ASSUMED/UNVERIFIED: no authorized live mutation evidence establishes PyPI Simple API read-convergence timing."
+    },
+    observationRetry: {
+      maxAttempts: 6,
+      backoff: { baseMs: 2000, factor: 2, capMs: 30000 },
+      totalBudgetMs: 120000
+    },
+    retryEligible: "VisibilityPending | Inconclusive",
+    exhaustion: "UncertainSubject with full trace"
+  }
+});
+var pypiProviderProtocolDocumentation = Object.freeze({
+  reviewedAt: "2026-08-13",
+  simpleApi: "https://packaging.python.org/en/latest/specifications/simple-repository-api/",
+  yanking: "https://packaging.python.org/en/latest/specifications/file-yanking/",
+  upload: "https://docs.pypi.org/api/upload/",
+  trustedPublishing: "https://docs.pypi.org/trusted-publishers/using-a-publisher/"
+});
+
+class PyPiYankUnsupported extends TaggedErrorClass()("PyPiYankUnsupported", {
+  filename: NonEmptyString,
+  reason: SafeReason
+}) {
+}
+var asObject3 = (value3) => typeof value3 === "object" && value3 !== null && !Array.isArray(value3) ? value3 : undefined;
+var parseJson4 = (body) => {
+  try {
+    const text = typeof body === "string" ? body : new TextDecoder("utf-8", { fatal: true }).decode(body);
+    return JSON.parse(text);
+  } catch {
+    return;
+  }
+};
+var header = (response, name) => {
+  const found = Object.entries(response.headers).find(([candidate]) => candidate.toLowerCase() === name.toLowerCase());
+  return found?.[1];
+};
+var contentType = (value3) => value3?.split(";", 1)[0]?.trim().toLowerCase();
+var simpleProject = (value3) => {
+  const root = asObject3(value3);
+  const meta = root === undefined ? undefined : asObject3(root.meta);
+  if (root === undefined || meta === undefined || typeof meta["api-version"] !== "string" || typeof root.name !== "string" || !Array.isArray(root.files))
+    return;
+  const files = [];
+  const filenames = new Set;
+  for (const raw of root.files) {
+    const file = asObject3(raw);
+    const hashes = file === undefined ? undefined : asObject3(file.hashes);
+    if (file === undefined || hashes === undefined || typeof file.filename !== "string" || !Number.isSafeInteger(file.size) || file.size < 0 || typeof hashes.sha256 !== "string" || !/^[a-f0-9]{64}$/u.test(hashes.sha256))
+      return;
+    if (filenames.has(file.filename))
+      return;
+    filenames.add(file.filename);
+    const rawYanked = file.yanked;
+    if (rawYanked !== undefined && typeof rawYanked !== "boolean" && typeof rawYanked !== "string")
+      return;
+    files.push({
+      filename: file.filename,
+      size: file.size,
+      sha256: hashes.sha256,
+      yanked: rawYanked === true ? "yanked without a reason" : typeof rawYanked === "string" && rawYanked.length > 0 ? rawYanked : false
+    });
+  }
+  return { apiVersion: meta["api-version"], name: root.name, files };
+};
+var fingerprint2 = (value3) => SafeReason.make(`provider value sha256-${formatSha256Hex(sha256Digest(new TextEncoder().encode(value3)))}`);
+var difference2 = (field, expected, observed) => Difference.make({
+  field: NonEmptyName.make(field),
+  expected: SafeReason.make(expected),
+  observed: fingerprint2(observed)
+});
+var inconclusive3 = (file, reason2) => InconclusiveObservation.make({ subject: file.authority.subject, reason: SafeReason.make(reason2) });
+var observationRequests3 = (publication, file) => {
+  const strategy = file.authority.observationStrategies[0];
+  return [CredentialRequest.make({
+    subject: file.authority.subject,
+    provider: file.authority.provider,
+    audience: CanonicalAudience.make(publication.projectUrl),
+    purpose: "observe",
+    strategy
+  })];
+};
+var mutationRequest3 = (file) => CredentialRequest.make({
+  subject: file.authority.subject,
+  provider: file.authority.provider,
+  audience: file.authority.audience,
+  purpose: "publish",
+  strategy: file.authority.publishStrategy
+});
+var visibilityPending2 = (file) => VisibilityPending.make({
+  subject: file.authority.subject,
+  expectation: SafeReason.make("The exact uploaded PyPI filename, size, and SHA-256 become visible."),
+  basis: VisibilityBasis.make({
+    kind: NonEmptyName.make("pypi-post-upload-simple-read"),
+    detail: SafeReason.make("The same invocation dispatched one exact upload and is rereading the JSON Simple API only.")
+  })
+});
+var visibleFileAbsent = (file) => AuthoritativelyAbsent.make({
+  subject: file.authority.subject,
+  basis: AbsenceBasis.make({
+    kind: NonEmptyName.make("pypi-visible-project-file-absent"),
+    detail: SafeReason.make("A standards-compliant visible project page omitted the exact prepared filename.")
+  })
+});
+var decide3 = (file, observation) => {
+  switch (observation._tag) {
+    case "PresentEquivalent":
+      return ProviderAlreadyEquivalent.make({ subject: file.authority.subject });
+    case "PresentDifferent":
+      return Conflict.make({ subject: file.authority.subject, differences: observation.differences });
+    case "AuthoritativelyAbsent":
+      return observation.basis.kind === "pypi-visible-project-file-absent" ? NeedsMutation.make({
+        subject: file.authority.subject,
+        precondition: MutationPrecondition.make({ kind: NonEmptyName.make("pypi-visible-project-file-absent") })
+      }) : ProviderBlocked.make({
+        subject: file.authority.subject,
+        reason: SafeReason.make("PyPI absence lacks a visible-project exact-filename proof.")
+      });
+    case "VisibilityPending":
+    case "Inconclusive":
+      return ProviderBlocked.make({
+        subject: file.authority.subject,
+        reason: SafeReason.make("PyPI observation did not prove exact equivalence or visible-project file absence.")
+      });
+  }
+};
+var bytesConcat = (parts) => {
+  const length = parts.reduce((sum, part) => sum + part.length, 0);
+  const result2 = new Uint8Array(length);
+  let offset = 0;
+  for (const part of parts) {
+    result2.set(part, offset);
+    offset += part.length;
+  }
+  return result2;
+};
+var containsBytes = (haystack, needle) => {
+  if (needle.length === 0 || needle.length > haystack.length)
+    return false;
+  outer:
+    for (let offset = 0;offset <= haystack.length - needle.length; offset += 1) {
+      for (let index = 0;index < needle.length; index += 1) {
+        if (haystack[offset + index] !== needle[index])
+          continue outer;
+      }
+      return true;
+    }
+  return false;
+};
+var multipart = (publication, file, bytes) => {
+  const encode = (value3) => new TextEncoder().encode(value3);
+  const boundaryBase = `ts-release-${file.sha256.hex}`;
+  let boundary = boundaryBase;
+  for (let suffix = 0;containsBytes(bytes, encode(boundary)); suffix += 1) {
+    boundary = `${boundaryBase}-${suffix + 1}`;
+  }
+  const fields = [
+    [":action", "file_upload"],
+    ["protocol_version", "1"],
+    ["sha256_digest", file.sha256.hex],
+    ["filetype", file.distribution._tag === "wheel" ? "bdist_wheel" : "sdist"],
+    ["pyversion", file.distribution.pythonTag],
+    ["metadata_version", file.distribution.metadataVersion],
+    ["name", publication.project],
+    ["version", publication.version]
+  ];
+  const parts = [];
+  for (const [name, value3] of fields)
+    parts.push(encode(`--${boundary}\r
+Content-Disposition: form-data; name="${name}"\r
+\r
+${value3}\r
+`));
+  parts.push(encode(`--${boundary}\r
+Content-Disposition: form-data; name="content"; filename="${file.filename}"\r
+` + `Content-Type: ${file.mediaType}\r
+\r
+`));
+  parts.push(bytes);
+  parts.push(encode(`\r
+--${boundary}--\r
+`));
+  return { contentType: `multipart/form-data; boundary=${boundary}`, body: bytesConcat(parts) };
+};
+var validDecision = (decision) => decision._tag === "NeedsMutation" && decision.precondition.kind === "pypi-visible-project-file-absent";
+var mutationFailure2 = (file, cause) => new ReleaseSubjectError({
+  subject: file.authority.subject,
+  phase: "mutate",
+  commitment: typeof cause === "object" && cause !== null && "commitment" in cause && cause.commitment === "unknown" ? "unknown" : "before-dispatch",
+  reason: SafeReason.make("The typed PyPI upload boundary rejected or lost the exact prepared file operation.")
+});
+var makePyPiSubject = (bundle, publication, file, http2, mutationHttp, prerequisites = [], claims = unavailablePublicationClaimStore) => {
+  const bytes = bundle.blobs.get(file.artifactId.toString());
+  const preparedDigest = sha256Digest(encodePreparedRelease(bundle.manifest));
+  const observe = fn2("PyPiFileSubject.observe")(function* (grant, context3) {
+    if (grant._tag !== "AnonymousAccess") {
+      return inconclusive3(file, "PyPI Simple API observation requires the prepared anonymous strategy.");
+    }
+    if (bytes === undefined || bytes.length !== file.size || !digestEquals(sha256Digest(bytes), file.sha256)) {
+      return inconclusive3(file, "The exact prepared PyPI artifact bytes are unavailable.");
+    }
+    const response = yield* http2.execute({
+      subject: file.authority.subject,
+      method: "GET",
+      url: publication.projectUrl,
+      headers: { accept: "application/vnd.pypi.simple.v1+json" }
+    }, grant).pipe(mapError3((cause) => new ReleaseSubjectError({
+      subject: file.authority.subject,
+      phase: "observe",
+      commitment: cause._tag === "CredentialPlatformError" ? cause.commitment : "before-dispatch",
+      reason: SafeReason.make("PyPI Simple API observation could not be completed by the host HTTP boundary.")
+    })));
+    if (response.status === 404) {
+      return context3.phase === "post-mutation" && context3.attempt._tag !== "RejectedBeforeDispatch" ? visibilityPending2(file) : inconclusive3(file, "A PyPI project 404 does not prove public absence, private absence, or first-create authority.");
+    }
+    if (response.status < 200 || response.status >= 300) {
+      return inconclusive3(file, `PyPI Simple API observation returned HTTP ${response.status}.`);
+    }
+    if (contentType(header(response, "content-type")) !== "application/vnd.pypi.simple.v1+json") {
+      return inconclusive3(file, "PyPI Simple API response did not negotiate the required v1 JSON media type.");
+    }
+    const project = simpleProject(parseJson4(response.body));
+    if (project === undefined)
+      return inconclusive3(file, "PyPI Simple API response was malformed or omitted exact file equality fields.");
+    const version2 = /^(\d+)\.(\d+)$/u.exec(project.apiVersion);
+    if (version2 === null || Number(version2[1]) !== 1 || Number(version2[2]) < 1) {
+      return inconclusive3(file, "PyPI Simple API version is older than 1.1 or has an unsupported major version.");
+    }
+    if (project.name !== publication.project) {
+      return PresentDifferent.make({
+        subject: file.authority.subject,
+        differences: [difference2("project", publication.project, project.name)]
+      });
+    }
+    const observed = project.files.find((candidate) => candidate.filename === file.filename);
+    if (observed === undefined) {
+      return context3.phase === "post-mutation" && context3.attempt._tag !== "RejectedBeforeDispatch" ? visibilityPending2(file) : visibleFileAbsent(file);
+    }
+    const differences = [];
+    if (observed.size !== file.size)
+      differences.push(difference2("size", String(file.size), String(observed.size)));
+    try {
+      if (!digestEquals(parseSha256Hex(observed.sha256), file.sha256)) {
+        differences.push(difference2("sha256", file.sha256.hex, observed.sha256));
+      }
+    } catch {
+      return inconclusive3(file, "PyPI Simple API returned a malformed SHA-256 digest.");
+    }
+    if (observed.yanked !== false)
+      differences.push(difference2("yanked", "false", observed.yanked));
+    return differences.length === 0 ? PresentEquivalent.make({ subject: file.authority.subject }) : PresentDifferent.make({
+      subject: file.authority.subject,
+      differences
+    });
+  });
+  const mutate = (decision, grant) => {
+    if (!validDecision(decision) || bytes === undefined)
+      return fail6(new ReleaseSubjectError({
+        subject: file.authority.subject,
+        phase: "mutate",
+        commitment: "before-dispatch",
+        reason: SafeReason.make("PyPI mutation lacks its exact visible-project file-absence proof or prepared bytes.")
+      }));
+    if (grant._tag === "WorkloadIdentity" || publication.authentication.strategy !== "token") {
+      return fail6(new ReleaseSubjectError({
+        subject: file.authority.subject,
+        phase: "mutate",
+        commitment: "before-dispatch",
+        reason: SafeReason.make("PyPI trusted publishing is owned externally by pypa/gh-action-pypi-publish@release/v1.")
+      }));
+    }
+    const operation = {
+      _tag: "PublishOperation",
+      subject: file.authority.subject,
+      provider: file.authority.provider,
+      audience: file.authority.audience,
+      purpose: "publish",
+      decision
+    };
+    const form = multipart(publication, file, bytes);
+    return mutationHttp.execute(operation, {
+      method: "POST",
+      url: publication.uploadUrl,
+      credentialScheme: "pypi-token-basic",
+      headers: {
+        accept: "text/plain, application/json;q=0.1",
+        "content-type": form.contentType,
+        "content-length": String(form.body.length)
+      },
+      body: form.body
+    }, grant).pipe(map5((response) => response.status >= 200 && response.status < 300 ? Started.make({ subject: file.authority.subject }) : response.status >= 300 && response.status < 400 ? OutcomeUnknown.make({
+      subject: file.authority.subject,
+      reason: SafeReason.make("PyPI upload returned a redirect that the typed boundary did not follow.")
+    }) : RejectedByProvider.make({
+      subject: file.authority.subject,
+      fact: ProviderRejectionFact.make({
+        subject: file.authority.subject,
+        code: NonEmptyName.make(`pypi-http-${response.status}`),
+        detail: SafeReason.make(`PyPI upload returned HTTP ${response.status}; exact reobservation determines remote state.`)
+      })
+    })), mapError3((cause) => mutationFailure2(file, cause)));
+  };
+  const claimMutation = (decision) => publication.authentication.strategy !== "token" ? fail6(new ReleaseSubjectError({
+    subject: file.authority.subject,
+    phase: "mutate",
+    commitment: "before-dispatch",
+    reason: SafeReason.make("PyPI trusted publishing is external-host-owned and cannot enter the stock terminal-claim or upload path.")
+  })) : !validDecision(decision) ? fail6(new ReleaseSubjectError({
+    subject: file.authority.subject,
+    phase: "mutate",
+    commitment: "before-dispatch",
+    reason: SafeReason.make("PyPI terminal claim requires the exact visible-project file-absence decision.")
+  })) : claims.claim(PublicationClaimRequest.make({
+    subject: file.authority.subject,
+    preparedDigest
+  })).pipe(mapError3(() => new ReleaseSubjectError({
+    subject: file.authority.subject,
+    phase: "mutate",
+    commitment: "before-dispatch",
+    reason: SafeReason.make("The shared terminal PyPI publication claim was unavailable or occupied.")
+  })));
+  return {
+    id: file.authority.subject,
+    recovery: pypiRecoveryCapabilityProfile,
+    ...prerequisites.length === 0 ? {} : { prerequisites: prerequisites.map((prior) => prior.authority.subject) },
+    observationRequests: observationRequests3(publication, file),
+    mutationRequest: mutationRequest3(file),
+    claimMutation,
+    observe,
+    decide: (observation) => decide3(file, observation),
+    mutate
+  };
+};
+var makePyPiSubjects = (bundle, publication, http2, mutationHttp, claims = unavailablePublicationClaimStore) => publication.files.map((file, index) => makePyPiSubject(bundle, publication, file, http2, mutationHttp, publication.files.slice(0, index), claims));
+
+// ../../src/publication/catalog-git.ts
+import { createHash as createHash2 } from "node:crypto";
+var apiVersion = "2022-11-28";
+var jsonHeaders = {
+  accept: "application/vnd.github+json",
+  "x-github-api-version": apiVersion
+};
+var objectSha = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u;
+var catalogRecoveryCapabilityProfile = makeRecoveryCapabilityProfile({
+  observation: "exact",
+  authoritativeAbsence: "provider-specific",
+  createAuthorization: "none",
+  replay: "conditional",
+  identifierReuse: "reusable",
+  correction: ["forward-catalog-state"],
+  exposure: "persistent-to-consumers",
+  historyRequirement: "optional-evidence",
+  readConvergence: {
+    contract: {
+      _tag: "assumed",
+      basis: "ASSUMED/UNVERIFIED: no authorized live mutation evidence establishes GitHub Git-data read-convergence timing."
+    },
+    observationRetry: {
+      maxAttempts: 5,
+      backoff: { baseMs: 1000, factor: 2, capMs: 15000 },
+      totalBudgetMs: 60000
+    },
+    retryEligible: "VisibilityPending | Inconclusive",
+    exhaustion: "UncertainSubject with full trace"
+  }
+});
+var object = (value3) => typeof value3 === "object" && value3 !== null && !Array.isArray(value3) ? value3 : undefined;
+var string3 = (value3) => typeof value3 === "string" ? value3 : undefined;
+var parseJson5 = (body) => {
+  try {
+    return JSON.parse(typeof body === "string" ? body : new TextDecoder("utf-8", { fatal: true }).decode(body));
+  } catch {
+    return;
+  }
+};
+var bytesEqual = (left, right) => left !== undefined && left.length === right.length && left.every((byte, index) => byte === right[index]);
+var observationRequests4 = (publication, subject) => publication.authority.observationStrategies.map((strategy) => CredentialRequest.make({
+  subject,
+  provider: publication.authority.provider,
+  audience: publication.authority.audience,
+  purpose: "observe",
+  strategy
+}));
+var mutationRequest4 = (publication, subject, purpose) => CredentialRequest.make({
+  subject,
+  provider: publication.authority.provider,
+  audience: publication.authority.audience,
+  purpose,
+  strategy: publication.authority.publishStrategy
+});
+var failure = (subject, phase, commitment, reason2) => new ReleaseSubjectError({
+  subject,
+  phase,
+  commitment,
+  reason: SafeReason.make(reason2)
+});
+var inconclusive4 = (subject, reason2) => InconclusiveObservation.make({ subject, reason: SafeReason.make(reason2) });
+var difference3 = (field, expected, observed) => Difference.make({
+  field: NonEmptyName.make(field),
+  expected: SafeReason.make(expected),
+  observed: SafeReason.make(observed)
+});
+var fingerprint3 = (bytes) => `sha256-${sha256Digest(bytes).hex}`;
+var get3 = (subject, http2, grant, url) => http2.execute({
+  subject,
+  method: "GET",
+  url,
+  headers: jsonHeaders
+}, grant).pipe(mapError3((cause) => failure(subject, "observe", cause._tag === "CredentialPlatformError" ? cause.commitment : "before-dispatch", "GitHub catalog observation failed at the authorized HTTP boundary.")));
+var treeEntries = (value3, expectedSha) => {
+  const root = object(value3);
+  if (root?.sha !== expectedSha || root.truncated !== false || !Array.isArray(root.tree))
+    return;
+  const result2 = [];
+  const paths = new Set;
+  for (const raw of root.tree) {
+    const entry = object(raw);
+    const path = string3(entry?.path);
+    const mode = string3(entry?.mode);
+    const type = entry?.type;
+    const sha = string3(entry?.sha);
+    if (path === undefined || path.length === 0 || path.startsWith("/") || path.includes("\\") || path.split("/").some((part) => part === "" || part === "..") || paths.has(path) || mode === undefined || !/^[0-7]{6}$/u.test(mode) || type !== "blob" && type !== "tree" && type !== "commit" || sha === undefined || !objectSha.test(sha)) {
+      return;
+    }
+    paths.add(path);
+    result2.push({ path, mode, type, sha });
+  }
+  return result2;
+};
+var gitObjectDigest = (bytes, length) => {
+  const header2 = new TextEncoder().encode(`blob ${bytes.length}\x00`);
+  const content = new Uint8Array(header2.length + bytes.length);
+  content.set(header2);
+  content.set(bytes, header2.length);
+  return createHash2(length === 40 ? "sha1" : "sha256").update(content).digest("hex");
+};
+var blobBytes = (value3, expectedSha) => {
+  const blob = object(value3);
+  const content = string3(blob?.content)?.replaceAll(/\s/gu, "");
+  if (blob?.sha !== expectedSha || blob.encoding !== "base64" || content === undefined || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(content))
+    return;
+  const bytes = new Uint8Array(Buffer.from(content, "base64"));
+  return gitObjectDigest(bytes, expectedSha.length) === expectedSha ? bytes : undefined;
+};
+var readSnapshot = fn2("CatalogGitSubject.readSnapshot")(function* (publication, subject, http2, grant) {
+  const base = publication.authority.audience.toString();
+  const repository = yield* get3(subject, http2, grant, base);
+  if (repository.status === 404)
+    return { _tag: "Inconclusive", reason: "Catalog repository is missing or hidden." };
+  if (repository.status !== 200 || object(parseJson5(repository.body))?.full_name !== publication.repository) {
+    return { _tag: "Inconclusive", reason: "Catalog repository visibility or identity was not proved." };
+  }
+  const fullRef = `refs/heads/${publication.branch}`;
+  const ref = yield* get3(subject, http2, grant, `${base}/git/ref/heads/${encodeURIComponent(publication.branch)}`);
+  const refObject = object(parseJson5(ref.body));
+  const commit = string3(object(refObject?.object)?.sha);
+  if (ref.status !== 200 || refObject?.ref !== fullRef || commit === undefined || !objectSha.test(commit)) {
+    return { _tag: "Inconclusive", reason: "Catalog branch ref is missing, hidden, or malformed." };
+  }
+  const commitResponse = yield* get3(subject, http2, grant, `${base}/git/commits/${commit}`);
+  const commitObject = object(parseJson5(commitResponse.body));
+  const rootTree = string3(object(commitObject?.tree)?.sha);
+  if (commitResponse.status !== 200 || commitObject?.sha !== commit || rootTree === undefined || !objectSha.test(rootTree)) {
+    return { _tag: "Inconclusive", reason: "Catalog branch commit/root tree was malformed." };
+  }
+  const treeResponse = yield* get3(subject, http2, grant, `${base}/git/trees/${rootTree}?recursive=1`);
+  const entries = treeResponse.status === 200 ? treeEntries(parseJson5(treeResponse.body), rootTree) : undefined;
+  if (entries === undefined)
+    return { _tag: "Inconclusive", reason: "Catalog full tree was truncated, malformed, or unavailable." };
+  const tree = new Map(entries.map((entry) => [entry.path, entry]));
+  const targetEntry = tree.get(publication.targetPath.toString());
+  const stateEntry = tree.get(publication.statePath.toString());
+  if (targetEntry !== undefined && (targetEntry.type !== "blob" || !["100644", "100755"].includes(targetEntry.mode)) || stateEntry !== undefined && (stateEntry.type !== "blob" || stateEntry.mode !== "100644")) {
+    return { _tag: "Inconclusive", reason: "Catalog managed paths have unsupported Git object types or modes." };
+  }
+  const readBlob = (entry) => entry === undefined ? succeed6(undefined) : get3(subject, http2, grant, `${base}/git/blobs/${entry.sha}`).pipe(map5((response) => response.status === 200 ? blobBytes(parseJson5(response.body), entry.sha) : undefined));
+  const target2 = yield* readBlob(targetEntry);
+  const state = yield* readBlob(stateEntry);
+  if (targetEntry !== undefined && target2 === undefined || stateEntry !== undefined && state === undefined) {
+    return { _tag: "Inconclusive", reason: "Catalog target or managed-state blob was malformed or unavailable." };
+  }
+  return {
+    _tag: "Snapshot",
+    snapshot: { commit, rootTree, tree, ...target2 === undefined ? {} : { target: target2 }, ...state === undefined ? {} : { state } }
+  };
+});
+var pairObservation = (publication, subject, pair, snapshot, context3, setPlan) => {
+  const absentPair = snapshot.target === undefined && snapshot.state === undefined;
+  if (absentPair) {
+    if (context3.phase === "post-mutation" && context3.attempt._tag !== "RejectedBeforeDispatch" && context3.attempt._tag !== "RejectedByProvider")
+      return VisibilityPending.make({
+        subject,
+        expectation: SafeReason.make("The exact catalog target/state pair becomes visible at the updated branch ref."),
+        basis: VisibilityBasis.make({
+          kind: NonEmptyName.make("catalog-git-ref-convergence"),
+          detail: SafeReason.make("The same invocation attempted one conditional GitHub ref update.")
+        })
+      });
+    setPlan({ snapshot });
+    return AuthoritativelyAbsent.make({
+      subject,
+      basis: AbsenceBasis.make({
+        kind: NonEmptyName.make("catalog-visible-repository-pair-absent"),
+        detail: SafeReason.make("The visible branch full tree omits both exact managed paths.")
+      })
+    });
+  }
+  if (snapshot.target === undefined || snapshot.state === undefined)
+    return PresentDifferent.make({
+      subject,
+      differences: [difference3("catalog.pair", "both files present or absent", "half-present")]
+    });
+  if (bytesEqual(snapshot.target, pair.target) && bytesEqual(snapshot.state, pair.state)) {
+    return PresentEquivalent.make({ subject });
+  }
+  if (pair.baselineTarget !== undefined && pair.baselineState !== undefined && bytesEqual(snapshot.target, pair.baselineTarget) && bytesEqual(snapshot.state, pair.baselineState)) {
+    if (context3.phase === "post-mutation" && context3.attempt._tag !== "RejectedBeforeDispatch" && context3.attempt._tag !== "RejectedByProvider")
+      return VisibilityPending.make({
+        subject,
+        expectation: SafeReason.make("The forward catalog correction becomes visible at the branch ref."),
+        basis: VisibilityBasis.make({
+          kind: NonEmptyName.make("catalog-git-ref-convergence"),
+          detail: SafeReason.make("The old exact pair remains visible immediately after one conditional update attempt.")
+        })
+      });
+    setPlan({ snapshot });
+    return PresentDifferent.make({
+      subject,
+      differences: [difference3("catalog.correction", "forward replacement", "exact prepared baseline")]
+    });
+  }
+  const observedState = decodeCatalogManagedState(snapshot.state);
+  const expectedState = decodeCatalogManagedState(pair.state);
+  if (observedState === undefined || expectedState === undefined)
+    return inconclusive4(subject, "Catalog managed state is malformed or noncanonical.");
+  if (!digestEquals(observedState.targetDigest, sha256Digest(snapshot.target)) || !digestEquals(expectedState.targetDigest, sha256Digest(pair.target)))
+    return inconclusive4(subject, "Catalog managed state does not bind the exact adjacent target bytes.");
+  if (pair.baselineTarget === undefined && observedState.status === "active" && expectedState.status === "active") {
+    const ordering = compareCatalogVersions(observedState.generation.toString(), expectedState.generation.toString());
+    if (ordering < 0 && observedState.catalogId === expectedState.catalogId && observedState.renderer === expectedState.renderer && observedState.sourceRepository === expectedState.sourceRepository) {
+      setPlan({ snapshot });
+      return PresentDifferent.make({
+        subject,
+        differences: [difference3("catalog.generation", expectedState.generation.toString(), observedState.generation.toString())]
+      });
+    }
+  }
+  return PresentDifferent.make({
+    subject,
+    differences: [
+      difference3("catalog.target", fingerprint3(pair.target), fingerprint3(snapshot.target)),
+      difference3("catalog.state", fingerprint3(pair.state), fingerprint3(snapshot.state))
+    ]
+  });
+};
+var managedAncestors = (paths) => {
+  const result2 = new Set;
+  for (const path of paths) {
+    const parts = path.split("/");
+    for (let index = 1;index < parts.length; index += 1)
+      result2.add(parts.slice(0, index).join("/"));
+  }
+  return result2;
+};
+var treePreserved = (before, after, targetPath, targetSha, statePath, stateSha) => {
+  const afterMap = new Map(after.map((entry) => [entry.path, entry]));
+  const managed = new Set([targetPath, statePath]);
+  const ancestors = managedAncestors([targetPath, statePath]);
+  const target2 = afterMap.get(targetPath);
+  const state = afterMap.get(statePath);
+  if (target2?.type !== "blob" || target2.mode !== "100644" || target2.sha !== targetSha || state?.type !== "blob" || state.mode !== "100644" || state.sha !== stateSha)
+    return false;
+  for (const [path, entry] of before) {
+    if (managed.has(path) || ancestors.has(path))
+      continue;
+    const candidate = afterMap.get(path);
+    if (candidate === undefined || candidate.mode !== entry.mode || candidate.type !== entry.type || candidate.sha !== entry.sha)
+      return false;
+  }
+  for (const path of afterMap.keys()) {
+    if (!before.has(path) && !managed.has(path) && !ancestors.has(path))
+      return false;
+  }
+  return true;
+};
+var mutationAttempt = (subject, code, detail) => RejectedByProvider.make({
+  subject,
+  fact: ProviderRejectionFact.make({
+    subject,
+    code: NonEmptyName.make(code),
+    detail: SafeReason.make(detail)
+  })
+});
+var makeCatalogSubject = (publication, http2, mutationHttp, pair) => {
+  const subject = pair.id ?? publication.authority.subject;
+  const purpose = pair.purpose ?? "publish";
+  let plan;
+  const observe = fn2("CatalogGitSubject.observe")(function* (grant, context3) {
+    plan = undefined;
+    if (grant._tag === "WorkloadIdentity")
+      return inconclusive4(subject, "Catalog Git observation does not accept workload identity.");
+    const result2 = yield* readSnapshot(publication, subject, http2, grant);
+    if (result2._tag === "Inconclusive")
+      return inconclusive4(subject, result2.reason);
+    return pairObservation(publication, subject, pair, result2.snapshot, context3, (value3) => {
+      plan = value3;
+    });
+  });
+  const decide4 = (observation) => {
+    if (observation._tag === "PresentEquivalent")
+      return ProviderAlreadyEquivalent.make({ subject });
+    if (plan !== undefined && (observation._tag === "AuthoritativelyAbsent" || observation._tag === "PresentDifferent")) {
+      return NeedsMutation.make({
+        subject,
+        precondition: MutationPrecondition.make({ kind: NonEmptyName.make("catalog-observed-ref-and-root-tree") })
+      });
+    }
+    if (observation._tag === "PresentDifferent")
+      return Conflict.make({ subject, differences: observation.differences });
+    return ProviderBlocked.make({
+      subject,
+      reason: SafeReason.make("Catalog observation did not prove an exact conditional pair update.")
+    });
+  };
+  const mutate = fn2("CatalogGitSubject.mutate")(function* (decision, grant) {
+    const selected = plan;
+    plan = undefined;
+    if (decision._tag !== "NeedsMutation" || decision.precondition.kind !== "catalog-observed-ref-and-root-tree" || selected === undefined || grant._tag !== "ScopedSecret") {
+      return yield* failure(subject, "mutate", "before-dispatch", "Catalog mutation lacks its exact observed ref/tree plan or token grant.");
+    }
+    const operation = purpose === "publish" ? {
+      _tag: "PublishOperation",
+      subject,
+      provider: publication.authority.provider,
+      audience: publication.authority.audience,
+      purpose,
+      decision
+    } : {
+      _tag: "CorrectionOperation",
+      subject,
+      provider: publication.authority.provider,
+      audience: publication.authority.audience,
+      purpose,
+      decision
+    };
+    const dispatch = (request) => mutationHttp.execute(operation, request, grant).pipe(mapError3((cause) => failure(subject, "mutate", cause._tag === "CredentialPlatformError" ? cause.commitment : "before-dispatch", "GitHub catalog mutation failed at the authorized HTTP boundary.")));
+    const json = (value3) => {
+      const body = JSON.stringify(value3);
+      return {
+        body,
+        headers: { ...jsonHeaders, "content-type": "application/json", "content-length": String(new TextEncoder().encode(body).length) }
+      };
+    };
+    const base = publication.authority.audience.toString();
+    const createBlob = fn2("CatalogGitSubject.createBlob")(function* (bytes) {
+      const response = yield* dispatch({
+        method: "POST",
+        url: `${base}/git/blobs`,
+        credentialScheme: "bearer",
+        ...json({ content: Buffer.from(bytes).toString("base64"), encoding: "base64" })
+      });
+      const sha = string3(object(parseJson5(response.body))?.sha);
+      return response.status === 201 && sha !== undefined && objectSha.test(sha) && gitObjectDigest(bytes, sha.length) === sha ? { _tag: "Created", sha } : { _tag: "Rejected", attempt: mutationAttempt(subject, `catalog-blob-http-${response.status}`, "GitHub did not prove exact catalog blob creation.") };
+    });
+    const targetBlob = yield* createBlob(pair.target);
+    if (targetBlob._tag === "Rejected")
+      return targetBlob.attempt;
+    const stateBlob = yield* createBlob(pair.state);
+    if (stateBlob._tag === "Rejected")
+      return stateBlob.attempt;
+    const treeResponse = yield* dispatch({
+      method: "POST",
+      url: `${base}/git/trees`,
+      credentialScheme: "bearer",
+      ...json({
+        base_tree: selected.snapshot.rootTree,
+        tree: [
+          { path: publication.targetPath, mode: "100644", type: "blob", sha: targetBlob.sha },
+          { path: publication.statePath, mode: "100644", type: "blob", sha: stateBlob.sha }
+        ]
+      })
+    });
+    const proposedTree = string3(object(parseJson5(treeResponse.body))?.sha);
+    if (treeResponse.status !== 201 || proposedTree === undefined || !objectSha.test(proposedTree)) {
+      return mutationAttempt(subject, `catalog-tree-http-${treeResponse.status}`, "GitHub did not prove base-tree catalog tree creation.");
+    }
+    const proposedResponse = yield* get3(subject, http2, grant, `${base}/git/trees/${proposedTree}?recursive=1`);
+    const proposedEntries = proposedResponse.status === 200 ? treeEntries(parseJson5(proposedResponse.body), proposedTree) : undefined;
+    if (proposedEntries === undefined || !treePreserved(selected.snapshot.tree, proposedEntries, publication.targetPath.toString(), targetBlob.sha, publication.statePath.toString(), stateBlob.sha))
+      return mutationAttempt(subject, "catalog-tree-preservation-refused", "Proposed GitHub tree did not preserve every unrelated path, object, and mode.");
+    const commitResponse = yield* dispatch({
+      method: "POST",
+      url: `${base}/git/commits`,
+      credentialScheme: "bearer",
+      ...json({
+        message: purpose === "correct" ? `Correct ${publication.catalogId} catalog state` : `Publish ${publication.catalogId} ${publication.version}`,
+        tree: proposedTree,
+        parents: [selected.snapshot.commit]
+      })
+    });
+    const commit = string3(object(parseJson5(commitResponse.body))?.sha);
+    if (commitResponse.status !== 201 || commit === undefined || !objectSha.test(commit)) {
+      return mutationAttempt(subject, `catalog-commit-http-${commitResponse.status}`, "GitHub did not prove exact-parent catalog commit creation.");
+    }
+    const refResponse = yield* dispatch({
+      method: "PATCH",
+      url: `${base}/git/refs/heads/${encodeURIComponent(publication.branch)}`,
+      credentialScheme: "bearer",
+      ...json({ sha: commit, force: false })
+    });
+    if (refResponse.status === 409 || refResponse.status === 422) {
+      return mutationAttempt(subject, `catalog-ref-http-${refResponse.status}`, "The catalog branch moved or refused the non-force update; reobservation is required.");
+    }
+    if (refResponse.status !== 200) {
+      return OutcomeUnknown.make({
+        subject,
+        reason: SafeReason.make(`GitHub catalog ref update returned HTTP ${refResponse.status}; exact reobservation decides the outcome.`)
+      });
+    }
+    const ref = object(parseJson5(refResponse.body));
+    if (ref?.ref !== `refs/heads/${publication.branch}` || object(ref.object)?.sha !== commit) {
+      return OutcomeUnknown.make({
+        subject,
+        reason: SafeReason.make("GitHub accepted the catalog ref request but returned no exact updated-ref proof.")
+      });
+    }
+    return Started.make({ subject });
+  });
+  return {
+    id: subject,
+    recovery: catalogRecoveryCapabilityProfile,
+    observationRequests: observationRequests4(publication, subject),
+    mutationRequest: mutationRequest4(publication, subject, purpose),
+    observe,
+    decide: decide4,
+    mutate
+  };
+};
+var makeCatalogPublicationSubject = (bundle, publication, http2, mutationHttp) => {
+  const target2 = bundle.blobs.get(publication.targetArtifactId.toString());
+  const state = bundle.blobs.get(publication.stateArtifactId.toString());
+  if (target2 === undefined || state === undefined || !digestEquals(sha256Digest(target2), publication.targetDigest) || !digestEquals(sha256Digest(state), publication.stateDigest)) {
+    const invalid3 = makeCatalogSubject(publication, http2, mutationHttp, {
+      target: new Uint8Array,
+      state: new Uint8Array
+    });
+    return {
+      ...invalid3,
+      observe: () => succeed6(inconclusive4(invalid3.id, "Prepared catalog target/state bytes are missing or disagree with their durable digests.")),
+      decide: () => ProviderBlocked.make({
+        subject: invalid3.id,
+        reason: SafeReason.make("Prepared catalog target/state evidence is unavailable.")
+      }),
+      mutate: () => fail6(failure(invalid3.id, "mutate", "before-dispatch", "Prepared catalog target/state evidence is unavailable."))
+    };
+  }
+  return makeCatalogSubject(publication, http2, mutationHttp, { target: target2, state });
+};
+
+// ../../src/publication/profiles.ts
+var installedPublicationProfiles = validatePublicationProfiles(Object.freeze({
+  npm: Object.freeze({
+    id: "publish.npm",
+    provider: "npm",
+    preparedTag: "PreparedNpmPublication",
+    recovery: npmRecoveryCapabilityProfile,
+    correctionAdapters: [],
+    evidence: Object.freeze({
+      reviewedAt: "2026-08-12",
+      observationSources: Object.freeze([
+        "https://github.com/npm/registry/blob/main/docs/responses/package-metadata.md",
+        "https://docs.npmjs.com/cli/v11/commands/npm-publish/"
+      ]),
+      correctionSources: Object.freeze([
+        "https://docs.npmjs.com/cli/v11/commands/npm-deprecate/",
+        "https://docs.npmjs.com/policies/unpublish/"
+      ]),
+      correctionFinding: "Official npm documentation exposes deprecation but no conditional update bound to an observed package generation."
+    })
+  }),
+  pypi: Object.freeze({
+    id: "publish.pypi",
+    provider: "pypi",
+    preparedTag: "PreparedPyPiPublication",
+    recovery: pypiRecoveryCapabilityProfile,
+    correctionAdapters: [],
+    evidence: Object.freeze({
+      reviewedAt: "2026-08-13",
+      observationSources: Object.freeze([
+        "https://packaging.python.org/en/latest/specifications/simple-repository-api/",
+        "https://packaging.python.org/en/latest/specifications/file-yanking/"
+      ]),
+      correctionSources: Object.freeze([
+        "https://docs.pypi.org/project-management/yanking/"
+      ]),
+      correctionFinding: "PyPI documents yanking behavior but no stable exact conditional per-file update API; no correction adapter is installed."
+    })
+  }),
+  catalogGit: Object.freeze({
+    id: "publish.catalog-git",
+    provider: "catalog-git",
+    preparedTag: "PreparedCatalogPublication",
+    recovery: catalogRecoveryCapabilityProfile,
+    correctionAdapters: ["forward-catalog-state"],
+    evidence: Object.freeze({
+      reviewedAt: "2026-08-13",
+      observationSources: Object.freeze([
+        "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28",
+        "https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28"
+      ]),
+      correctionSources: Object.freeze([
+        "https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28#create-a-tree",
+        "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28#update-a-reference"
+      ]),
+      correctionFinding: "Catalog correction is an exact forward SemVer replacement of the managed target/state pair on one observed Git commit; the ref update is non-forced."
+    })
+  }),
+  github: Object.freeze({
+    id: "publish.github",
+    provider: "github",
+    preparedTag: "PreparedGitHubPublication",
+    recovery: githubRecoveryCapabilityProfile,
+    correctionAdapters: [],
+    evidence: Object.freeze({
+      reviewedAt: "2026-08-12",
+      observationSources: Object.freeze([
+        "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28",
+        "https://docs.github.com/en/rest/git/tags?apiVersion=2022-11-28",
+        "https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28",
+        "https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28"
+      ]),
+      correctionSources: Object.freeze([
+        "https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#update-a-release",
+        "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api?apiVersion=2022-11-28#use-conditional-requests"
+      ]),
+      correctionFinding: "GitHub documents conditional reads, but unsafe-method conditions are unsupported unless an endpoint says otherwise; the release update endpoint documents none."
+    })
+  })
+}));
+
 // ../../src/release/capabilities.ts
+import { basename } from "node:path";
 var output = (id, location2, kind, mediaType) => OutputDeclaration.make({
   id: OutputId.make(id.toString()),
   path: SafeRelativePath.make(location2),
@@ -81477,6 +83645,154 @@ var contributePackages = (config, artifacts, _context) => {
   }
   return CapabilityContribution.make({ artifacts: [], preparations, publications: [] });
 };
+var catalogRows = (config, artifacts, selected = "all") => {
+  const repository = config.publish?.github?.repository ?? config.project.repository;
+  const rows = [];
+  const build2 = (kind, catalog) => {
+    if (repository === undefined || !/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/u.test(repository)) {
+      throw new GraphLinkError({
+        kind: "reference",
+        value: `catalogs.${kind}`,
+        reason: "Catalog download URLs require one exact GitHub source repository."
+      });
+    }
+    const sources = catalog.sources.map((source) => {
+      const artifact = artifacts.find((candidate) => candidate.id.toString() === source.artifact.toString());
+      if (artifact === undefined || artifact.kind !== "archive")
+        throw new GraphLinkError({
+          kind: "reference",
+          value: source.artifact.toString(),
+          reason: `${kind} catalogs require declared archive artifacts.`
+        });
+      const filename = NonEmptyName.make(basename(artifact.path.toString()));
+      return CatalogRenderSource.make({
+        artifactId: source.artifact,
+        architecture: source.architecture,
+        filename,
+        url: `https://github.com/${repository}/releases/download/${encodeURIComponent(config.project.tag)}/${encodeURIComponent(filename)}`
+      });
+    }).sort((left, right) => left.architecture < right.architecture ? -1 : left.architecture > right.architecture ? 1 : 0);
+    if (new Set(sources.map((source) => source.architecture)).size !== sources.length)
+      throw new GraphLinkError({
+        kind: "duplicate",
+        value: catalog.id.toString(),
+        reason: `${kind} catalog repeats one architecture.`
+      });
+    if (kind === "scoop" && sources.some((source) => !source.filename.toString().endsWith(".zip")))
+      throw new GraphLinkError({
+        kind: "reference",
+        value: catalog.id.toString(),
+        reason: "Scoop catalogs support ZIP archives only."
+      });
+    const renderer = kind === "homebrew" ? HomebrewRenderer.make({
+      name: catalog.formulaName,
+      description: catalog.description,
+      homepage: catalog.homepage,
+      ...catalog.license === undefined ? {} : { license: catalog.license },
+      installPath: catalog.installPath
+    }) : ScoopRenderer.make({
+      name: catalog.manifestName,
+      description: catalog.description,
+      homepage: catalog.homepage,
+      ...catalog.license === undefined ? {} : { license: catalog.license },
+      bin: catalog.bin
+    });
+    return {
+      id: catalog.id.toString(),
+      renderer,
+      sources,
+      output: output(`catalog-${catalog.id}`, `.release/catalogs/${catalog.id}.${kind === "homebrew" ? "rb" : "json"}`, "file", kind === "homebrew" ? "text/x-ruby" : "application/json")
+    };
+  };
+  if (selected !== "scoop")
+    for (const catalog of config.catalogs?.homebrew ?? [])
+      rows.push(build2("homebrew", catalog));
+  if (selected !== "homebrew")
+    for (const catalog of config.catalogs?.scoop ?? [])
+      rows.push(build2("scoop", catalog));
+  if (new Set(rows.map((row) => row.id)).size !== rows.length)
+    throw new GraphLinkError({
+      kind: "duplicate",
+      value: "catalogs",
+      reason: "Catalog renderer ids must be unique across Homebrew and Scoop."
+    });
+  if (rows.length > 0)
+    canonicalCatalogVersion(config.project.version.toString());
+  return rows;
+};
+var contributeCatalogRendering = (config, artifacts, kind) => CapabilityContribution.make({
+  artifacts: [],
+  preparations: catalogRows(config, artifacts, kind).map((row) => GraphCatalogRender.make({
+    id: OperationId.make(`catalog:render:${row.id}`),
+    inputs: row.sources.map((source) => source.artifactId),
+    output: row.output,
+    version: config.project.version,
+    renderer: row.renderer,
+    sources: row.sources
+  })),
+  publications: []
+});
+var contributeCatalogPublications = (config, artifacts) => {
+  const destinations = config.publish?.catalogGit;
+  if (destinations === undefined)
+    return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] });
+  const rows = catalogRows(config, artifacts);
+  const sourceRepository = config.publish?.github?.repository ?? config.project.repository;
+  if (config.publish?.github === undefined || sourceRepository === undefined)
+    throw new GraphLinkError({
+      kind: "reference",
+      value: "publish.catalogGit",
+      reason: "Catalog delivery requires an installed GitHub release publication for every referenced download."
+    });
+  const selectedGithubIds = config.publish.github.ids ?? artifacts.filter((artifact) => ["archive", "executable", "file", "digest"].includes(artifact.kind)).map((artifact) => artifact.id);
+  const publications = destinations.map((destination) => {
+    const row = rows.find((candidate) => candidate.id === destination.catalog.toString());
+    if (row === undefined)
+      throw new GraphLinkError({
+        kind: "missing",
+        value: destination.catalog.toString(),
+        reason: "Catalog delivery references no typed renderer."
+      });
+    if (row.sources.some((source) => !selectedGithubIds.some((id) => id.toString() === source.artifactId.toString()))) {
+      throw new GraphLinkError({
+        kind: "reference",
+        value: destination.catalog.toString(),
+        reason: "Catalog delivery is blocked unless every download artifact belongs to the exact GitHub release publication."
+      });
+    }
+    const targetPath = destination.targetPath.toString();
+    const statePath = destination.statePath.toString();
+    if (targetPath === statePath || targetPath.startsWith(`${statePath}/`) || statePath.startsWith(`${targetPath}/`)) {
+      throw new GraphLinkError({
+        kind: "path",
+        value: targetPath,
+        reason: "Catalog target and managed-state paths must be disjoint files."
+      });
+    }
+    return GraphCatalogPublication.make({
+      id: OperationId.make(`zz:catalog-git:${row.id}`),
+      catalogId: NonEmptyName.make(row.id),
+      targetArtifact: row.output.id,
+      repository: destination.repository,
+      branch: destination.branch,
+      targetPath: destination.targetPath,
+      statePath: destination.statePath,
+      version: config.project.version,
+      sourceRepository: GitHubRepositoryCoordinate.make(sourceRepository),
+      sourceTag: config.project.tag,
+      renderer: row.renderer,
+      sources: row.sources,
+      authority: makeCatalogPublicationAuthorityIntent({
+        repository: destination.repository,
+        branch: destination.branch,
+        targetPath: destination.targetPath,
+        statePath: destination.statePath,
+        tokenEnv: destination.tokenEnv
+      })
+    });
+  });
+  return CapabilityContribution.make({ artifacts: [], preparations: [], publications });
+};
 var contributeNpmPublication = (config, context3) => {
   const intent = config.publish?.npm;
   if (intent === undefined)
@@ -81528,9 +83844,55 @@ var contributeGitHubPublication = (config, artifacts) => {
   });
   return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [publication] });
 };
+var contributePyPiPublication = (config, context3, artifacts) => {
+  const intent = config.publish?.pypi;
+  if (intent === undefined)
+    return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] });
+  const authentication = decodeUnknownSync(PyPiAuthentication, {
+    onExcessProperty: "error"
+  })(intent.authentication);
+  const endpoints = pypiRepositoryEndpoints(intent.repository);
+  const files = intent.artifacts.map((id) => {
+    const declaration = artifacts.find((artifact) => artifact.id.toString() === id.toString());
+    if (declaration === undefined)
+      throw new GraphLinkError({
+        kind: "missing",
+        value: id.toString(),
+        reason: "PyPI publication references no declared artifact."
+      });
+    const filename = basename(declaration.path.toString());
+    return GraphPyPiDistribution.make({
+      artifactId: id,
+      filename: NonEmptyName.make(filename),
+      authority: makePyPiPublicationAuthorityIntent({
+        project: intent.project,
+        version: intent.version,
+        filename,
+        repository: intent.repository,
+        authentication,
+        sourceCommit: context3.source.commit.toString()
+      })
+    });
+  });
+  return CapabilityContribution.make({
+    artifacts: [],
+    preparations: [],
+    publications: [GraphPyPiPublication.make({
+      id: OperationId.make("pypi:pypi-release"),
+      project: intent.project,
+      version: intent.version,
+      repository: intent.repository,
+      simpleBaseUrl: endpoints.simpleBaseUrl,
+      projectUrl: `${endpoints.simpleBaseUrl}${encodeURIComponent(intent.project)}/`,
+      uploadUrl: endpoints.uploadUrl,
+      authentication,
+      files
+    })]
+  });
+};
 
 // ../../src/resolve/resolve.ts
-var Semver3 = __toESM(require_semver2(), 1);
+var Semver4 = __toESM(require_semver2(), 1);
 
 // ../../src/resolve/encode.ts
 var toPlainJson = (value3) => {
@@ -81555,14 +83917,14 @@ class ResolveError extends Error {
 }
 
 // ../../src/resolve/facts.ts
-var optional4 = optionalKey2;
+var optional7 = optionalKey2;
 
 class ObservedFacts extends Class4("ObservedFacts")({
-  commit: optional4(NonEmptyName),
-  manifestName: optional4(NonEmptyString),
-  manifestVersion: optional4(Version),
-  repository: optional4(NonEmptyString),
-  headTagVersion: optional4(Version)
+  commit: optional7(NonEmptyName),
+  manifestName: optional7(NonEmptyString),
+  manifestVersion: optional7(Version),
+  repository: optional7(NonEmptyString),
+  headTagVersion: optional7(Version)
 }) {
 }
 
@@ -81632,11 +83994,11 @@ var canonicalRegistry = (value3) => {
   }
 };
 var distTag = (versionValue, authored) => {
-  const normalized = Semver3.valid(versionValue.toString());
+  const normalized = Semver4.valid(versionValue.toString());
   if (normalized === null || normalized !== versionValue.toString()) {
     return refuse("project.version", `npm publication requires a canonical semantic version, got ${JSON.stringify(versionValue)}.`);
   }
-  const prerelease3 = Semver3.prerelease(normalized) !== null;
+  const prerelease3 = Semver4.prerelease(normalized) !== null;
   if (authored === undefined) {
     if (prerelease3) {
       return refuse("publish.npm.distTag", "Prerelease npm versions require an explicit non-latest distTag.");
@@ -81692,6 +84054,50 @@ var npmPublish = (authored, project) => {
     provenance
   };
 };
+var pypiPublish = (authored, project) => {
+  const pypi = authored.publish?.pypi;
+  if (pypi === undefined)
+    return;
+  const artifacts = pypi.artifacts.map((id) => OutputId.make(id));
+  if (new Set(artifacts).size !== artifacts.length) {
+    return refuse("publish.pypi.artifacts", "PyPI publication cannot repeat one distribution artifact.");
+  }
+  if (pypi.authentication.strategy === "trusted-publishing") {
+    if (project.repository === undefined) {
+      return refuse("project.repository", "External PyPI trusted publishing requires the exact GitHub owner/repository coordinate.");
+    }
+    if (pypi.authentication.repository !== project.repository) {
+      return refuse("publish.pypi.authentication.repository", `The external PyPI publisher repository ${JSON.stringify(pypi.authentication.repository)} does not match ${JSON.stringify(project.repository)}.`);
+    }
+    let projectName2;
+    let projects;
+    try {
+      projectName2 = normalizePyPiProjectName(project.name);
+      projects = pypi.authentication.projects.map(normalizePyPiProjectName);
+    } catch (cause) {
+      return refuse("publish.pypi", cause instanceof Error ? cause.message : String(cause));
+    }
+    if (!projects.includes(projectName2)) {
+      return refuse("publish.pypi.authentication.projects", `The external PyPI publisher authority set does not include ${JSON.stringify(projectName2)}.`);
+    }
+    if (new Set(projects).size !== projects.length) {
+      return refuse("publish.pypi.authentication.projects", "External PyPI publisher project coordinates must be unique after normalization.");
+    }
+  }
+  let projectName;
+  try {
+    projectName = PyPiProjectName.make(normalizePyPiProjectName(project.name));
+  } catch (cause) {
+    return refuse("publish.pypi", cause instanceof Error ? cause.message : String(cause));
+  }
+  return {
+    artifacts,
+    project: projectName,
+    version: project.version,
+    repository: pypi.repository ?? "pypi",
+    authentication: pypi.authentication
+  };
+};
 var resolveConfig = (authored, facts) => {
   const config = decodeAuthored(authored);
   const observed = decodeFacts(facts);
@@ -81709,9 +84115,11 @@ var resolveConfig = (authored, facts) => {
     tag: tag2(config, resolvedVersion)
   };
   const npm = npmPublish(config, resolvedProject);
+  const pypi = pypiPublish(config, resolvedProject);
   const publish = config.publish === undefined ? undefined : {
     ...config.publish,
-    ...config.publish.npm === undefined ? {} : { npm }
+    ...config.publish.npm === undefined ? {} : { npm },
+    ...config.publish.pypi === undefined ? {} : { pypi }
   };
   const plain = toPlainJson({
     ...rest,
@@ -81836,6 +84244,63 @@ var packagePreparationCapability = Object.freeze({
   },
   contribute: ({ config, availableArtifacts, context: context3 }) => contributePackages(config, availableArtifacts, context3)
 });
+var homebrewRenderCapability = Object.freeze({
+  _tag: "PreparationCapability",
+  id: "render.homebrew",
+  phase: "render",
+  fields: graphFields([
+    "catalogs",
+    "catalogs.homebrew",
+    "catalogs.homebrew[].description",
+    "catalogs.homebrew[].formulaName",
+    "catalogs.homebrew[].homepage",
+    "catalogs.homebrew[].id",
+    "catalogs.homebrew[].installPath",
+    "catalogs.homebrew[].license",
+    "catalogs.homebrew[].sources",
+    "catalogs.homebrew[].sources[].architecture",
+    "catalogs.homebrew[].sources[].artifact"
+  ]),
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: []
+  },
+  certification: {
+    boundary: "root-api",
+    tests: ["test/core/catalog-rendering.test.ts"]
+  },
+  contribute: ({ config, availableArtifacts }) => contributeCatalogRendering(config, availableArtifacts, "homebrew")
+});
+var scoopRenderCapability = Object.freeze({
+  _tag: "PreparationCapability",
+  id: "render.scoop",
+  phase: "render",
+  fields: graphFields([
+    "catalogs.scoop",
+    "catalogs.scoop[].bin",
+    "catalogs.scoop[].description",
+    "catalogs.scoop[].homepage",
+    "catalogs.scoop[].id",
+    "catalogs.scoop[].license",
+    "catalogs.scoop[].manifestName",
+    "catalogs.scoop[].sources",
+    "catalogs.scoop[].sources[].architecture",
+    "catalogs.scoop[].sources[].artifact"
+  ]),
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: []
+  },
+  certification: {
+    boundary: "root-api",
+    tests: ["test/core/catalog-rendering.test.ts"]
+  },
+  contribute: ({ config, availableArtifacts }) => contributeCatalogRendering(config, availableArtifacts, "scoop")
+});
 var npmPublicationCapability = Object.freeze({
   _tag: "PublicationCapability",
   id: "publish.npm",
@@ -81919,425 +84384,114 @@ var githubPublicationCapability = Object.freeze({
   contribute: ({ config, availableArtifacts }) => contributeGitHubPublication(config, availableArtifacts),
   subjects: (bundle, publication, services) => makeGithubSubjects(bundle, publication, services.http, services.mutationHttp)
 });
+var pyPiPublicationCapability = Object.freeze({
+  _tag: "PublicationCapability",
+  id: "publish.pypi",
+  preparedTag: "PreparedPyPiPublication",
+  profile: installedPublicationProfiles.pypi,
+  fields: [
+    ...resolvedFields([
+      "publish.pypi",
+      "publish.pypi.artifacts",
+      "publish.pypi.authentication",
+      "publish.pypi.authentication.action",
+      "publish.pypi.authentication.credential",
+      "publish.pypi.authentication.environment",
+      "publish.pypi.authentication.owner",
+      "publish.pypi.authentication.projects",
+      "publish.pypi.authentication.repository",
+      "publish.pypi.authentication.scope",
+      "publish.pypi.authentication.strategy",
+      "publish.pypi.authentication.workflow",
+      "publish.pypi.authentication.workflowRef",
+      "publish.pypi.repository"
+    ])
+  ],
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: ["project-token", "external-pypa-action"]
+  },
+  certification: {
+    boundary: "provider-protocol",
+    tests: [
+      "test/core/pypi-preparation.test.ts",
+      "test/protocol/pypi/pypi-provider-protocol.test.ts"
+    ]
+  },
+  contribute: ({ config, context: context3, availableArtifacts }) => contributePyPiPublication(config, context3, availableArtifacts),
+  subjects: (bundle, publication, services) => makePyPiSubjects(bundle, publication, services.http, services.mutationHttp, services.claims)
+});
+var catalogPublicationCapability = Object.freeze({
+  _tag: "PublicationCapability",
+  id: "publish.catalog-git",
+  preparedTag: "PreparedCatalogPublication",
+  profile: installedPublicationProfiles.catalogGit,
+  fields: graphFields([
+    "publish.catalogGit",
+    "publish.catalogGit[].branch",
+    "publish.catalogGit[].catalog",
+    "publish.catalogGit[].repository",
+    "publish.catalogGit[].statePath",
+    "publish.catalogGit[].targetPath",
+    "publish.catalogGit[].tokenEnv"
+  ]),
+  requirements: {
+    executionHosts: hosts,
+    nativeTools: [],
+    artifactTargets: [],
+    credentialStrategies: ["token"]
+  },
+  certification: {
+    boundary: "provider-protocol",
+    tests: ["test/core/catalog-rendering.test.ts", "test/protocol/catalog/catalog-git-protocol.test.ts"]
+  },
+  contribute: ({ config, availableArtifacts }) => contributeCatalogPublications(config, availableArtifacts),
+  subjects: (bundle, publication, services) => [
+    makeCatalogPublicationSubject(bundle, publication, services.http, services.mutationHttp)
+  ]
+});
 var capabilityModules = Object.freeze([
   releaseIdentityCapability,
   sourcePreparationCapability,
   packagePreparationCapability,
+  homebrewRenderCapability,
+  scoopRenderCapability,
   npmPublicationCapability,
-  githubPublicationCapability
+  pyPiPublicationCapability,
+  githubPublicationCapability,
+  catalogPublicationCapability
 ]);
 var preparationCapabilities = Object.freeze([
   sourcePreparationCapability,
-  packagePreparationCapability
+  packagePreparationCapability,
+  homebrewRenderCapability,
+  scoopRenderCapability
 ]);
 var publicationCapabilities = Object.freeze([
   npmPublicationCapability,
-  githubPublicationCapability
+  pyPiPublicationCapability,
+  githubPublicationCapability,
+  catalogPublicationCapability
 ]);
 var capabilityIds = Object.freeze(capabilityModules.map((module) => module.id));
 
-// ../../src/release/context.ts
-var optional5 = optionalKey2;
-
-class VerifiedSource extends Class4("VerifiedSource")({
-  commit: NonEmptyName,
-  tree: NonEmptyName,
-  clean: Literal2(true),
-  packageManifestPath: SafeRelativePath,
-  packageManifestDigest: Sha256Digest,
-  repository: optional5(NonEmptyString),
-  headTags: ArraySchema(NonEmptyName)
-}) {
-}
-
-class VerifiedPackage extends Class4("VerifiedPackage")({
-  name: NonEmptyName,
-  version: Version,
-  path: SafeRelativePath,
-  digest: Sha256Digest,
-  repository: optional5(NonEmptyString)
-}) {
-}
-
-class VerifiedReleaseContext extends Class4("VerifiedReleaseContext")({
-  workspace: WorkspaceRoot,
-  source: VerifiedSource,
-  package: VerifiedPackage
-}) {
-}
-
-class StagingEntry extends Class4("StagingEntry")({
-  path: SafeRelativePath,
-  kind: Literals(["file", "executable", "directory", "symlink"]),
-  mode: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 && value3 <= 511 ? undefined : "Staging entry mode must be a portable permission mask.")),
-  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Staging entry size must be a nonnegative safe integer.")),
-  digest: Sha256Digest
-}) {
-}
-
-class StagingSnapshot extends Class4("StagingSnapshot")({
-  entries: ArraySchema(StagingEntry),
-  digest: Sha256Digest
-}) {
-}
-
-class ExplicitInputSnapshot extends Class4("ExplicitInputSnapshot")({
-  id: NonEmptyString,
-  path: SafeRelativePath,
-  kind: Literals(["file", "directory"]),
-  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Explicit input size must be a nonnegative safe integer.")),
-  digest: Sha256Digest,
-  materializer: NonEmptyString,
-  materializationBasis: ArraySchema(Sha256Digest)
-}) {
-}
-
-class SourceMaterializationError extends TaggedErrorClass()("SourceMaterializationError", {
-  field: String4,
+// ../../src/publication/http.ts
+class PublicationHttpError extends TaggedErrorClass()("PublicationHttpError", {
+  commitment: Literals(["before-dispatch", "unknown"]),
   reason: String4
 }) {
 }
 
-class ReleaseContextError extends TaggedErrorClass()("ReleaseContextError", {
-  field: String4,
-  reason: String4
-}) {
+class AuthorizedMutationHttp extends Service()("ts-release/AuthorizedMutationHttp") {
 }
 
-class SourceObserver extends Service()("SourceObserver") {
+class HttpAuthorizer extends Service()("ts-release/HttpAuthorizer") {
 }
-var runtimeFailure = (field, cause) => ReleaseContextError.make({
-  field,
-  reason: cause instanceof Error ? cause.message : String(cause)
-});
-var command = (runtime, workspace, argv2, field) => runtime.command(workspace, argv2).pipe(mapError3((cause) => runtimeFailure(field, cause)));
-var repositoryCoordinate = (value3) => {
-  if (typeof value3 !== "string")
-    return;
-  const trimmed = value3.trim().replace(/\.git$/u, "");
-  const match6 = /(?:github\.com[/:]|^)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/u.exec(trimmed);
-  return match6?.[1];
-};
-var jsonObject = (bytes, path) => {
-  try {
-    const value3 = JSON.parse(new TextDecoder().decode(bytes));
-    if (typeof value3 !== "object" || value3 === null || Array.isArray(value3))
-      throw new Error("manifest root must be an object");
-    return value3;
-  } catch (cause) {
-    throw new Error(`${path} is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
-  }
-};
-var makeSourceObserver = (runtime) => ({
-  observe: fn2("observeVerifiedReleaseContext")(function* (workspace, packageManifestPath, expectedCommit) {
-    const canonical2 = yield* runtime.canonicalRoot(workspace).pipe(mapError3((cause) => runtimeFailure("workspace", cause)));
-    const root = WorkspaceRoot.make(canonical2);
-    const commit = yield* command(runtime, workspace, ["rev-parse", "HEAD"], "source.commit").pipe(map5((value3) => value3.trim()));
-    const tree = yield* command(runtime, workspace, ["rev-parse", "HEAD^{tree}"], "source.tree").pipe(map5((value3) => value3.trim()));
-    const status = yield* command(runtime, workspace, ["status", "--porcelain=v1", "--untracked-files=no"], "source.clean");
-    if (status.trim().length > 0)
-      return yield* new ReleaseContextError({
-        field: "source.clean",
-        reason: "Preparation requires a clean tracked source tree; untracked bytes require explicit input declaration."
-      });
-    const bytes = yield* runtime.read(workspace, packageManifestPath).pipe(mapError3((cause) => runtimeFailure("package.manifest", cause)));
-    let manifest;
-    try {
-      manifest = jsonObject(bytes, packageManifestPath);
-    } catch (cause) {
-      return yield* new ReleaseContextError({ field: "package.manifest", reason: cause instanceof Error ? cause.message : String(cause) });
-    }
-    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : undefined;
-    const version3 = typeof manifest.version === "string" && manifest.version.trim().length > 0 ? manifest.version.trim() : undefined;
-    if (name === undefined)
-      return yield* new ReleaseContextError({ field: "package.name", reason: "Manifest name is missing or empty." });
-    if (version3 === undefined)
-      return yield* new ReleaseContextError({ field: "package.version", reason: "Manifest version is missing or empty." });
-    const digest = yield* runtime.digest(bytes).pipe(mapError3((cause) => runtimeFailure("package.manifestDigest", cause)));
-    const tags = yield* command(runtime, workspace, ["tag", "--points-at", "HEAD"], "source.headTags").pipe(map5((value3) => value3.split(`
-`).map((tag3) => tag3.trim()).filter((tag3) => tag3.length > 0).sort((a, b) => a < b ? -1 : a > b ? 1 : 0)));
-    const remote = yield* command(runtime, workspace, ["remote", "get-url", "origin"], "source.repository").pipe(map5((value3) => repositoryCoordinate(value3))).pipe(orElseSucceed2(() => {
-      return;
-    }));
-    const manifestRepository = repositoryCoordinate(manifest.repository);
-    if (remote !== undefined && manifestRepository !== undefined && remote !== manifestRepository) {
-      return yield* new ReleaseContextError({
-        field: "source.repository",
-        reason: `Git remote ${remote} disagrees with manifest repository ${manifestRepository}.`
-      });
-    }
-    const repository2 = remote ?? manifestRepository;
-    const source = VerifiedSource.make({
-      commit: NonEmptyName.make(commit),
-      tree: NonEmptyName.make(tree),
-      clean: true,
-      packageManifestPath,
-      packageManifestDigest: digest,
-      headTags: tags.map((tag3) => NonEmptyName.make(tag3)),
-      ...repository2 === undefined ? {} : { repository: repository2 }
-    });
-    const context3 = VerifiedReleaseContext.make({
-      workspace: root,
-      source,
-      package: VerifiedPackage.make({
-        name: NonEmptyName.make(name),
-        version: Version.make(version3),
-        path: packageManifestPath,
-        digest,
-        ...manifestRepository === undefined ? {} : { repository: manifestRepository }
-      })
-    });
-    return yield* verifySource(context3, expectedCommit);
-  }),
-  materialize: fn2("materializeVerifiedSource")((workspace, source, destination) => runtime.materialize(workspace, source, destination).pipe(mapError3((cause) => cause instanceof SourceMaterializationError ? cause : new SourceMaterializationError({
-    field: "source.materialization",
-    reason: cause instanceof Error ? cause.message : String(cause)
-  }))))
-});
-var verifySource = fn2("verifySource")(function* (context3, expectedCommit) {
-  if (expectedCommit !== undefined && context3.source.commit !== expectedCommit) {
-    return yield* new ReleaseContextError({
-      field: "source.commit",
-      reason: `Expected ${expectedCommit}, observed ${context3.source.commit}.`
-    });
-  }
-  if (context3.source.clean !== true) {
-    return yield* new ReleaseContextError({
-      field: "source.clean",
-      reason: "Preparation requires a clean verified source."
-    });
-  }
-  return context3;
-});
-
-// ../../src/release/prepared.ts
-var optional6 = optionalKey2;
-var artifactKind = Literals(["file", "executable", "archive", "package", "digest"]);
-
-class PreparedSource extends Class4("PreparedSource")({
-  commit: NonEmptyName,
-  tree: NonEmptyName,
-  clean: Literal2(true),
-  packageManifestPath: SafeRelativePath,
-  packageManifestDigest: Sha256Digest,
-  materialized: StagingSnapshot
-}) {
-}
-
-class PreparedProject extends Class4("PreparedProject")({
-  name: NonEmptyName,
-  packageName: optional6(NonEmptyName),
-  version: Version,
-  tag: NonEmptyName,
-  repository: optional6(NonEmptyString)
-}) {
-}
-
-class PreparedArtifact extends Class4("PreparedArtifact")({
-  id: OutputId,
-  path: SafeRelativePath,
-  kind: artifactKind,
-  size: Number5.check(makeFilter2((value3) => Number.isSafeInteger(value3) && value3 >= 0 ? undefined : "Prepared artifact size must be a nonnegative safe integer.")),
-  digest: Sha256Digest,
-  blob: Sha256Digest,
-  mediaType: optional6(NonEmptyString),
-  producer: NonEmptyName,
-  inputBasis: Sha256Digest
-}) {
-}
-
-class PreparedArtifactCollection extends Class4("PreparedArtifactCollection")({
-  contract: ArtifactCollectionContract,
-  members: ArraySchema(ArtifactCollectionMember)
-}) {
-}
-
-class PreparedExecutionInputs extends Class4("PreparedExecutionInputs")({
-  environment: Literal2("closed"),
-  network: Literal2("prohibited"),
-  timezone: Literal2("UTC"),
-  locale: Literal2("C"),
-  clock: Literal2("source-date-epoch=0;host-clock-not-isolated"),
-  randomness: Literal2("host-randomness-not-isolated"),
-  platform: NonEmptyString,
-  runtime: NonEmptyString,
-  networkIsolation: NonEmptyString,
-  bunCompileRuntimes: NonEmptyString,
-  npmPack: NonEmptyString,
-  releaseGraph: Sha256Digest,
-  preparer: NonEmptyString
-}) {
-}
-
-class PreparedProvenance extends Class4("PreparedProvenance")({
-  source: StagingSnapshot,
-  externalInputs: ArraySchema(ExplicitInputSnapshot),
-  execution: PreparedExecutionInputs,
-  inputBasis: Sha256Digest,
-  reproducibility: Literal2("not-asserted")
-}) {
-}
-
-class PreparedNpmPublication extends TaggedClass()("PreparedNpmPublication", {
-  id: NonEmptyName,
-  artifactId: OutputId,
-  packageName: NonEmptyName,
-  version: Version,
-  registryUrl: CanonicalNpmRegistryEndpoint,
-  distTag: NpmDistTag,
-  access: NpmAccess,
-  authentication: NpmAuthentication,
-  provenance: NpmProvenancePolicy,
-  authority: PublicationAuthorityIntent
-}) {
-}
-
-class PreparedGitHubAsset extends Class4("PreparedGitHubAsset")({
-  artifactId: OutputId,
-  name: NonEmptyString,
-  mediaType: NonEmptyString
-}) {
-}
-
-class PreparedGitHubPublication extends TaggedClass()("PreparedGitHubPublication", {
-  id: NonEmptyName,
-  repository: NonEmptyString,
-  tag: NonEmptyName,
-  title: NonEmptyName,
-  draft: Boolean3,
-  prerelease: Boolean3,
-  targetCommit: NonEmptyName,
-  body: optional6(String4),
-  assets: ArraySchema(PreparedGitHubAsset),
-  authority: PublicationAuthorityIntent
-}) {
-}
-var PreparedPublicationVariants = Union2([
-  PreparedNpmPublication,
-  PreparedGitHubPublication
-]);
-var PreparedPublication = PreparedPublicationVariants.pipe(check(makeFilter2((publication) => publication._tag === "PreparedNpmPublication" ? npmPublicationAuthorityIssue(publication) : githubPublicationAuthorityIssue(publication))));
-
-class PreparedReleaseV2 extends Class4("PreparedReleaseV2")({
-  kind: Literal2("complete"),
-  schemaVersion: Literal2("prepared-release/v2"),
-  source: PreparedSource,
-  project: PreparedProject,
-  provenance: PreparedProvenance,
-  artifacts: ArraySchema(PreparedArtifact),
-  collections: ArraySchema(PreparedArtifactCollection),
-  publications: ArraySchema(PreparedPublication)
-}) {
-}
-
-class PreparedManifestError extends TaggedErrorClass()("PreparedManifestError", {
-  reason: String4
-}) {
-}
-var assertCompletePreparedRelease = (manifest) => {
-  if (manifest.kind !== "complete")
-    throw new Error("prepared manifest kind must be 'complete'");
-  if (manifest.source.materialized.digest.hex !== manifest.provenance.source.digest.hex) {
-    throw new Error("prepared source materialization must match provenance source");
-  }
-  for (const publication of manifest.publications) {
-    if (publication._tag === "PreparedNpmPublication" && publication.authority.publishStrategy.kind === "trusted-publishing" && publication.authority.publishStrategy.sourceCommit.toString() !== manifest.source.commit.toString()) {
-      throw new Error(`prepared npm publication ${publication.id} source commit disagrees with the verified source`);
-    }
-  }
-  for (const artifact of manifest.artifacts) {
-    if (artifact.inputBasis.hex !== manifest.provenance.inputBasis.hex) {
-      throw new Error(`prepared artifact ${artifact.id} has a foreign input basis`);
-    }
-  }
-  const artifacts = new Map(manifest.artifacts.map((artifact) => [artifact.id.toString(), artifact]));
-  const collectionIds = new Set;
-  const collectionRoots = new Map;
-  const collectionProducers = new Set;
-  const memberArtifacts = new Set;
-  let previousCollection = "";
-  for (const collection of manifest.collections) {
-    const { contract } = collection;
-    const id = contract.id.toString();
-    if (id <= previousCollection)
-      throw new Error("prepared artifact collections must have unique code-point-sorted ids");
-    previousCollection = id;
-    const foldedId = id.toLocaleLowerCase("en-US");
-    if (collectionIds.has(foldedId))
-      throw new Error(`prepared artifact collection ${id} has a case-colliding id`);
-    collectionIds.add(foldedId);
-    const foldedRoot = contract.root.toString().toLocaleLowerCase("en-US");
-    const overlappingRoot = [...collectionRoots.entries()].find(([root]) => foldedRoot === root || foldedRoot.startsWith(`${root}/`) || root.startsWith(`${foldedRoot}/`));
-    if (overlappingRoot !== undefined) {
-      throw new Error(`prepared artifact collection ${id} root overlaps collection ${overlappingRoot[1]}`);
-    }
-    collectionRoots.set(foldedRoot, id);
-    if (collectionProducers.has(contract.producer.toString())) {
-      throw new Error(`prepared artifact collection ${id} repeats producer ${contract.producer}`);
-    }
-    collectionProducers.add(contract.producer.toString());
-    const issue2 = cardinalityIssue(contract.cardinality);
-    if (issue2 !== undefined)
-      throw new Error(`prepared artifact collection ${id}: ${issue2}`);
-    const contractIssue = collectionContractIssue(contract);
-    if (contractIssue !== undefined)
-      throw new Error(`prepared artifact collection ${id}: ${contractIssue}`);
-    if (!cardinalityAccepts(contract.cardinality, collection.members.length)) {
-      throw new Error(`prepared artifact collection ${id} has ${collection.members.length} members outside its declared cardinality`);
-    }
-    const keys2 = new Set;
-    let previousKey = "";
-    for (const member of collection.members) {
-      const key = member.key.toString();
-      if (key <= previousKey)
-        throw new Error(`prepared artifact collection ${id} member keys must be unique and code-point sorted`);
-      previousKey = key;
-      const foldedKey = key.toLocaleLowerCase("en-US");
-      if (keys2.has(foldedKey))
-        throw new Error(`prepared artifact collection ${id} has duplicate normalized member key ${key}`);
-      keys2.add(foldedKey);
-      const expectedId = collectionMemberId(contract, member.key);
-      if (member.artifactId !== expectedId)
-        throw new Error(`prepared artifact collection ${id} member ${key} has an invalid stable artifact id`);
-      const artifact = artifacts.get(member.artifactId.toString());
-      if (artifact === undefined)
-        throw new Error(`prepared artifact collection ${id} member ${key} references no artifact`);
-      if (artifact.path !== collectionMemberPath(contract, member.key) || artifact.kind !== contract.artifactKind || artifact.mediaType !== contract.mediaType || artifact.producer.toString() !== contract.producer.toString()) {
-        throw new Error(`prepared artifact collection ${id} member ${key} disagrees with its contract`);
-      }
-      if (memberArtifacts.has(member.artifactId.toString())) {
-        throw new Error(`prepared artifact ${member.artifactId} belongs to more than one collection`);
-      }
-      memberArtifacts.add(member.artifactId.toString());
-    }
-  }
-  for (const artifact of manifest.artifacts) {
-    if (collectionProducers.has(artifact.producer.toString()) && !memberArtifacts.has(artifact.id.toString())) {
-      throw new Error(`prepared collection producer ${artifact.producer} has unclaimed artifact ${artifact.id}`);
-    }
-  }
-};
-var encodePreparedRelease = (manifest) => {
-  assertCompletePreparedRelease(manifest);
-  return new TextEncoder().encode(encodeCanonicalJson(encodeSync2(PreparedReleaseV2)(manifest)));
-};
-var decodePreparedRelease = (bytes) => {
-  try {
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-    const value3 = decodeUnknownSync(PreparedReleaseV2, { onExcessProperty: "error" })(parseStrictJson(text));
-    assertCompletePreparedRelease(value3);
-    const canonical2 = encodePreparedRelease(value3);
-    if (canonical2.length !== bytes.length || canonical2.some((byte, index) => byte !== bytes[index])) {
-      throw new Error("manifest bytes are not canonical");
-    }
-    return value3;
-  } catch (cause) {
-    throw PreparedManifestError.make({ reason: cause instanceof Error ? cause.message : String(cause) });
-  }
-};
 
 // ../../src/correction/intent.ts
-var optional7 = optionalKey2;
+var optional8 = optionalKey2;
 var boundedText = String4.check(makeFilter2((value3) => [...value3].length <= 2048 && [...value3].every((character) => {
   const codePoint = character.codePointAt(0) ?? 0;
   return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32;
@@ -82359,7 +84513,7 @@ class NpmDeprecationCorrection extends TaggedClass()("NpmDeprecationCorrection",
   baselineDigest: Sha256Digest,
   tarballIntegrity: Sha512Digest,
   message: publicMessage,
-  replacement: optional7(ReplacementCoordinate)
+  replacement: optional8(ReplacementCoordinate)
 }) {
 }
 
@@ -82370,37 +84524,71 @@ class GithubReleaseCorrection extends TaggedClass()("GithubReleaseCorrection", {
   tag: NonEmptyName,
   baselineDigest: Sha256Digest,
   marker: publicMessage,
-  replacement: optional7(ReplacementCoordinate)
+  replacement: optional8(ReplacementCoordinate)
+}) {
+}
+
+class CatalogForwardCorrection extends TaggedClass()("CatalogForwardCorrection", {
+  provider: Literal2("catalog-git"),
+  publicationId: NonEmptyName,
+  baselineDigest: Sha256Digest,
+  baselineTargetDigest: Sha256Digest,
+  baselineStateDigest: Sha256Digest,
+  replacementVersion: Version,
+  replacementTag: NonEmptyName,
+  downloads: NonEmptyArray(PreparedCatalogDownload),
+  reason: publicMessage
 }) {
 }
 
 class AuthoredNpmDeprecation extends Class4("AuthoredNpmDeprecation")({
   provider: Literal2("npm"),
   kind: Literal2("deprecate"),
-  publicationId: optional7(NonEmptyName),
+  publicationId: optional8(NonEmptyName),
   message: publicMessage,
-  replacement: optional7(ReplacementCoordinate)
+  replacement: optional8(ReplacementCoordinate)
 }) {
 }
 
 class AuthoredGithubReleaseAmendment extends Class4("AuthoredGithubReleaseAmendment")({
   provider: Literal2("github"),
   kind: Literal2("amend-release-metadata"),
-  publicationId: optional7(NonEmptyName),
+  publicationId: optional8(NonEmptyName),
   message: publicMessage,
-  replacement: optional7(ReplacementCoordinate)
+  replacement: optional8(ReplacementCoordinate)
+}) {
+}
+
+class AuthoredCatalogDownload extends Class4("AuthoredCatalogDownload")({
+  architecture: CatalogArchitecture,
+  url: NonEmptyString,
+  filename: NonEmptyName,
+  sha256: Sha256Hex
+}) {
+}
+
+class AuthoredCatalogForwardCorrection extends Class4("AuthoredCatalogForwardCorrection")({
+  provider: Literal2("catalog-git"),
+  kind: Literal2("forward-catalog-state"),
+  publicationId: optional8(NonEmptyName),
+  replacementVersion: Version,
+  replacementTag: NonEmptyName,
+  downloads: NonEmptyArray(AuthoredCatalogDownload),
+  reason: publicMessage
 }) {
 }
 var AuthoredCorrection = Union2([
   AuthoredNpmDeprecation,
-  AuthoredGithubReleaseAmendment
+  AuthoredGithubReleaseAmendment,
+  AuthoredCatalogForwardCorrection
 ]);
 var decodeAuthoredCorrection = decodeUnknownSync(AuthoredCorrection, {
   onExcessProperty: "error"
 });
 var CorrectionVariant = Union2([
   NpmDeprecationCorrection,
-  GithubReleaseCorrection
+  GithubReleaseCorrection,
+  CatalogForwardCorrection
 ]);
 var CorrectionIntentUnsignedV2 = Struct({
   schemaVersion: Literal2("correction-intent/v2"),
@@ -82457,7 +84645,7 @@ class CorrectionValidationError extends TaggedErrorClass()("CorrectionValidation
 }
 
 class CorrectionUnsupported extends TaggedClass()("CorrectionUnsupported", {
-  provider: Literals(["npm", "github"]),
+  provider: Literals(["npm", "github", "catalog-git"]),
   reason: String4,
   evidence: NonEmptyString,
   proposal: optionalKey2(String4)
@@ -82469,7 +84657,7 @@ var findPublication = (bundle, id) => bundle.manifest.publications.find((publica
 var choosePublication = (bundle, tag3, publicationId) => {
   const candidates = bundle.manifest.publications.filter((publication) => publication._tag === tag3 && (publicationId === undefined || publication.id.toString() === publicationId.toString()));
   if (candidates.length !== 1) {
-    throw new Error(publicationId === undefined ? `Authored correction requires exactly one ${tag3 === "PreparedNpmPublication" ? "npm" : "GitHub"} publication; specify publicationId when more than one exists.` : `Authored correction publicationId ${publicationId} does not identify exactly one prepared ${tag3 === "PreparedNpmPublication" ? "npm" : "GitHub"} publication.`);
+    throw new Error(publicationId === undefined ? `Authored correction requires exactly one ${tag3 === "PreparedNpmPublication" ? "npm" : tag3 === "PreparedGitHubPublication" ? "GitHub" : "catalog Git"} publication; specify publicationId when more than one exists.` : `Authored correction publicationId ${publicationId} does not identify exactly one prepared ${tag3 === "PreparedNpmPublication" ? "npm" : tag3 === "PreparedGitHubPublication" ? "GitHub" : "catalog Git"} publication.`);
   }
   return candidates[0];
 };
@@ -82495,6 +84683,56 @@ var bindAuthoredCorrection = (bundle, authored) => {
         tarballIntegrity: sha512Digest(bytes),
         message: authored.message,
         ...authored.replacement === undefined ? {} : { replacement: authored.replacement }
+      }
+    });
+  }
+  if (authored.provider === "catalog-git") {
+    const publication2 = choosePublication(bundle, "PreparedCatalogPublication", authored.publicationId);
+    if (compareCatalogVersions(publication2.version.toString(), authored.replacementVersion.toString()) >= 0) {
+      throw new Error("Catalog correction replacementVersion must be SemVer-greater than the prepared generation.");
+    }
+    const expectedArchitectures = publication2.renderer.downloads.map((download) => download.architecture).sort();
+    const observedArchitectures = authored.downloads.map((download) => download.architecture).sort();
+    if (new Set(observedArchitectures).size !== observedArchitectures.length || expectedArchitectures.join(`
+`) !== observedArchitectures.join(`
+`)) {
+      throw new Error("Catalog correction downloads must replace the exact prepared architecture set.");
+    }
+    const downloads = authored.downloads.map((download) => {
+      const expectedUrl = `https://github.com/${publication2.sourceRepository}/releases/download/${encodeURIComponent(authored.replacementTag)}/${encodeURIComponent(download.filename)}`;
+      if (download.url !== expectedUrl) {
+        throw new Error("Catalog correction download URL must be the exact replacement GitHub release asset coordinate.");
+      }
+      return PreparedCatalogDownload.make({
+        architecture: download.architecture,
+        url: download.url,
+        filename: download.filename,
+        sha256: parseSha256Hex(download.sha256)
+      });
+    });
+    const target2 = bundle.blobs.get(publication2.targetArtifactId.toString());
+    const state = bundle.blobs.get(publication2.stateArtifactId.toString());
+    if (target2 === undefined || state === undefined || !digestEquals(sha256Digest(target2), publication2.targetDigest) || !digestEquals(sha256Digest(state), publication2.stateDigest)) {
+      throw new Error("Prepared catalog correction subject has no exact target/state baseline bytes.");
+    }
+    const managed = decodeCatalogManagedState(state);
+    if (managed === undefined || managed.status !== "active" || managed.generation !== publication2.version || !digestEquals(managed.targetDigest, publication2.targetDigest)) {
+      throw new Error("Prepared catalog correction baseline is not one canonical active managed pair.");
+    }
+    return makeCorrectionIntent({
+      schemaVersion: "correction-intent/v2",
+      preparedDigest: digest,
+      correction: {
+        _tag: "CatalogForwardCorrection",
+        provider: "catalog-git",
+        publicationId: publication2.id,
+        baselineDigest: publicationBaselineDigest(publication2),
+        baselineTargetDigest: publication2.targetDigest,
+        baselineStateDigest: publication2.stateDigest,
+        replacementVersion: authored.replacementVersion,
+        replacementTag: authored.replacementTag,
+        downloads,
+        reason: authored.reason
       }
     });
   }
@@ -82540,6 +84778,30 @@ var verifyGithub = (bundle, correction) => {
     throw new Error("GitHub correction baseline digest is not the exact prepared publication digest.");
   }
 };
+var verifyCatalog = (bundle, correction) => {
+  const publication = findPublication(bundle, correction.publicationId.toString());
+  if (publication?._tag !== "PreparedCatalogPublication") {
+    throw new Error("Catalog correction subject is not the exact catalog publication in the prepared manifest.");
+  }
+  if (!digestEquals(publicationBaselineDigest(publication), correction.baselineDigest) || !digestEquals(publication.targetDigest, correction.baselineTargetDigest) || !digestEquals(publication.stateDigest, correction.baselineStateDigest)) {
+    throw new Error("Catalog correction baseline digest is not the exact prepared target/state publication.");
+  }
+  if (compareCatalogVersions(publication.version.toString(), correction.replacementVersion.toString()) >= 0) {
+    throw new Error("Catalog correction is not a SemVer-forward replacement.");
+  }
+  const expectedArchitectures = publication.renderer.downloads.map((download) => download.architecture).sort().join(`
+`);
+  const replacementArchitectures = correction.downloads.map((download) => download.architecture).sort().join(`
+`);
+  if (expectedArchitectures !== replacementArchitectures) {
+    throw new Error("Catalog correction replacement architecture set differs from the prepared renderer.");
+  }
+  for (const download of correction.downloads) {
+    const expected = `https://github.com/${publication.sourceRepository}/releases/download/${encodeURIComponent(correction.replacementTag)}/${encodeURIComponent(download.filename)}`;
+    if (download.url !== expected)
+      throw new Error("Catalog correction carries a foreign replacement download coordinate.");
+  }
+};
 var verifyCorrectionIntent = (bundle, intent) => {
   encodeCorrectionIntent(intent);
   if (!digestEquals(preparedDigest(bundle), intent.preparedDigest)) {
@@ -82550,6 +84812,8 @@ var verifyCorrectionIntent = (bundle, intent) => {
       return verifyNpm(bundle, intent.correction);
     case "GithubReleaseCorrection":
       return verifyGithub(bundle, intent.correction);
+    case "CatalogForwardCorrection":
+      return verifyCatalog(bundle, intent.correction);
   }
 };
 var providerOf = (intent) => intent.correction.provider;
@@ -82560,6 +84824,59 @@ var correctPreparedRelease = fn2("correctPreparedRelease")(function* (input) {
     return yield* fail6(new CorrectionValidationError({ reason: cause instanceof Error ? cause.message : String(cause) }));
   }
   const provider = providerOf(input.intent);
+  if (input.intent.correction._tag === "CatalogForwardCorrection") {
+    if (input.services === undefined)
+      return CorrectionUnsupported.make({
+        provider,
+        reason: "Catalog correction requires the host-owned credential and GitHub HTTP authority boundary.",
+        evidence: "docs/release-program/remediation/231-catalog-delivery.md",
+        proposal: new TextDecoder().decode(encodeCorrectionIntent(input.intent))
+      });
+    const correction = input.intent.correction;
+    const publication = findPublication(input.bundle, correction.publicationId.toString());
+    if (publication?._tag !== "PreparedCatalogPublication") {
+      return yield* new CorrectionValidationError({ reason: "Verified catalog correction publication disappeared." });
+    }
+    const baselineTarget = input.bundle.blobs.get(publication.targetArtifactId.toString());
+    const baselineState = input.bundle.blobs.get(publication.stateArtifactId.toString());
+    if (baselineTarget === undefined || baselineState === undefined) {
+      return yield* new CorrectionValidationError({ reason: "Verified catalog correction baseline bytes disappeared." });
+    }
+    const target2 = renderCatalog(correction.replacementVersion, publication.renderer.renderer, correction.downloads);
+    const state = encodeCatalogManagedState(CatalogManagedState.make({
+      schemaVersion: "ts-release/catalog-state/v2",
+      catalogId: publication.catalogId,
+      renderer: publication.renderer.renderer._tag,
+      generation: correction.replacementVersion,
+      status: "corrected",
+      targetDigest: sha256Digest(target2),
+      sourceRepository: publication.sourceRepository,
+      sourceTag: correction.replacementTag,
+      correctionId: input.intent.correctionId,
+      reason: correction.reason,
+      replacementVersion: correction.replacementVersion
+    }));
+    const subject = makeCatalogSubject(publication, input.services.http, input.services.mutationHttp, {
+      id: SubjectId.make(`${publication.authority.subject}#correction-${input.intent.correctionId.hex}`),
+      purpose: "correct",
+      target: target2,
+      state,
+      baselineTarget,
+      baselineState
+    });
+    const report = yield* publishReleaseSubjects({
+      prepared: SubjectId.make(`correction:sha256-${input.intent.correctionId.hex}`),
+      subjects: [subject]
+    }).pipe(provideService2(CredentialProvider, input.services.credentials));
+    return {
+      _tag: "CorrectionExecuted",
+      provider: "catalog-git",
+      report,
+      reason: "Catalog correction ran through the exact conditional Git-data subject.",
+      evidence: "docs/release-program/remediation/231-catalog-delivery.md",
+      proposal: ""
+    };
+  }
   return CorrectionUnsupported.make({
     provider,
     reason: provider === "npm" ? "npm exposes no proved conditional deprecation write for the observed package generation; use the exact external proposal instead." : "GitHub exposes no proved conditional release-metadata write for the observed release generation.",
@@ -82569,7 +84886,7 @@ var correctPreparedRelease = fn2("correctPreparedRelease")(function* (input) {
 });
 
 // ../../src/drivers/utils.ts
-import { createHash as createHash2 } from "node:crypto";
+import { createHash as createHash3 } from "node:crypto";
 
 // ../../src/drivers/errors.ts
 class DriverError extends TaggedErrorClass()("DriverError", {
@@ -82579,21 +84896,8 @@ class DriverError extends TaggedErrorClass()("DriverError", {
 }
 
 // ../../src/drivers/utils.ts
-var failure = (reason2, commitment = "before-commit") => DriverError.make({ reason: reason2, commitment });
-var sha256 = (bytes) => createHash2("sha256").update(bytes).digest("hex");
-
-// ../../src/publication/http.ts
-class PublicationHttpError extends TaggedErrorClass()("PublicationHttpError", {
-  commitment: Literals(["before-dispatch", "unknown"]),
-  reason: String4
-}) {
-}
-
-class AuthorizedMutationHttp extends Service()("ts-release/AuthorizedMutationHttp") {
-}
-
-class HttpAuthorizer extends Service()("ts-release/HttpAuthorizer") {
-}
+var failure2 = (reason2, commitment = "before-commit") => DriverError.make({ reason: reason2, commitment });
+var sha256 = (bytes) => createHash3("sha256").update(bytes).digest("hex");
 
 // ../../src/publication/publisher.ts
 var NpmUserConfigTypeId = Symbol("ts-release/NpmUserConfig");
@@ -82647,32 +84951,60 @@ var CertifiedPublisherResult = Union2([
 class CertifiedPublisherSpawn extends Service()("ts-release/CertifiedPublisherSpawn") {
 }
 
+// ../../src/extensions/provider-adapter.ts
+class ProviderAdapterContract extends Class4("ProviderAdapterContract")({
+  schemaVersion: Literal2("ts-release/provider-adapter-contract/v1"),
+  preparedSubject: Literal2("typed-canonical-data"),
+  identity: Literal2("canonical-subject-id"),
+  observation: Literal2("exact-equality-and-authoritative-absence"),
+  mutation: Literal2("typed-precondition-and-commitment"),
+  credentials: Literal2("audience-and-purpose-scoped"),
+  recovery: Literal2("coordinator-profile"),
+  certification: Literal2("provider-protocol-and-public-boundary-tests")
+}) {
+}
+var decodeContract = decodeUnknownSync(ProviderAdapterContract, {
+  onExcessProperty: "error"
+});
+var customProviderSubjects = (bundle, adapters, services, reservedIds = new Set) => {
+  const result2 = [];
+  const ids = new Set(reservedIds);
+  for (const adapter of adapters) {
+    const subjects = adapter.subjects(bundle, services);
+    for (const subject of subjects) {
+      if (ids.has(subject.id.toString())) {
+        throw new Error(`Custom provider adapter ${adapter.id} repeats subject ${subject.id}.`);
+      }
+      assertRecoveryProfileMatches(adapter.profile.id, adapter.profile.recovery, subject.recovery);
+      if (subject.observationRequests.some((request) => request.provider.toString() !== adapter.profile.provider) || subject.mutationRequest.provider.toString() !== adapter.profile.provider) {
+        throw new Error(`Custom provider adapter ${adapter.id} emitted credential authority for a foreign provider.`);
+      }
+      ids.add(subject.id.toString());
+      result2.push(subject);
+    }
+  }
+  return result2;
+};
+
 // ../../src/publication/adapter.ts
 var registerSubjects = (registration, subjects) => {
   validateRecoveryProfileSubjects(registration.id, registration.recovery, subjects.map((subject) => subject.recovery));
   return subjects;
 };
 var preparedSubject = (bundle) => SubjectId.make(`prepared:sha256-${sha256(encodePreparedRelease(bundle.manifest))}`);
-var subjectsForPreparedRelease = fn2("subjectsForPreparedRelease")(function* (bundle) {
+var subjectsForPreparedRelease = fn2("subjectsForPreparedRelease")(function* (bundle, adapters = []) {
   const http2 = yield* HttpAuthorizer;
   const mutationHttp = yield* AuthorizedMutationHttp;
   const userConfigs = yield* NpmUserConfigResource;
   const publisher = yield* CertifiedPublisherSpawn;
+  const claimOption = yield* serviceOption2(PublicationClaimStore);
+  const claims = getOrElse(claimOption, () => unavailablePublicationClaimStore);
   const subjects = [];
   const priorPublicationSubjects = [];
+  const services = { http: http2, mutationHttp, userConfigs, publisher, claims };
   for (const publication of bundle.manifest.publications) {
-    const moduleSubjects = publication._tag === "PreparedNpmPublication" ? npmPublicationCapability.subjects(bundle, publication, {
-      http: http2,
-      mutationHttp,
-      userConfigs,
-      publisher
-    }) : githubPublicationCapability.subjects(bundle, publication, {
-      http: http2,
-      mutationHttp,
-      userConfigs,
-      publisher
-    });
-    const registered = registerSubjects(publication._tag === "PreparedNpmPublication" ? npmPublicationCapability.profile : githubPublicationCapability.profile, moduleSubjects);
+    const moduleSubjects = publication._tag === "PreparedNpmPublication" ? npmPublicationCapability.subjects(bundle, publication, services) : publication._tag === "PreparedPyPiPublication" ? pyPiPublicationCapability.subjects(bundle, publication, services) : publication._tag === "PreparedGitHubPublication" ? githubPublicationCapability.subjects(bundle, publication, services) : catalogPublicationCapability.subjects(bundle, publication, services);
+    const registered = registerSubjects(publication._tag === "PreparedNpmPublication" ? npmPublicationCapability.profile : publication._tag === "PreparedPyPiPublication" ? pyPiPublicationCapability.profile : publication._tag === "PreparedGitHubPublication" ? githubPublicationCapability.profile : catalogPublicationCapability.profile, moduleSubjects);
     const ordered = registered.map((subject) => priorPublicationSubjects.length === 0 ? subject : {
       ...subject,
       prerequisites: [...new Set([
@@ -82683,14 +85015,22 @@ var subjectsForPreparedRelease = fn2("subjectsForPreparedRelease")(function* (bu
     subjects.push(...ordered);
     priorPublicationSubjects.push(...registered.map((subject) => subject.id));
   }
+  const custom = customProviderSubjects(bundle, adapters, services, new Set([preparedSubject(bundle).toString(), ...priorPublicationSubjects.map((id) => id.toString())])).map((subject) => priorPublicationSubjects.length === 0 ? subject : {
+    ...subject,
+    prerequisites: [...new Set([
+      ...subject.prerequisites ?? [],
+      ...priorPublicationSubjects
+    ])]
+  });
+  subjects.push(...custom);
   return subjects;
 });
-var observePreparedRelease = fn2("observePreparedRelease")(function* (bundle) {
-  const subjects = yield* subjectsForPreparedRelease(bundle);
+var observePreparedRelease = fn2("observePreparedRelease")(function* (bundle, adapters = []) {
+  const subjects = yield* subjectsForPreparedRelease(bundle, adapters);
   return yield* observeReleaseSubjects({ prepared: preparedSubject(bundle), subjects });
 });
-var publishPreparedRelease = fn2("publishPreparedRelease")(function* (bundle) {
-  const subjects = yield* subjectsForPreparedRelease(bundle);
+var publishPreparedRelease = fn2("publishPreparedRelease")(function* (bundle, adapters = []) {
+  const subjects = yield* subjectsForPreparedRelease(bundle, adapters);
   return yield* publishReleaseSubjects({ prepared: preparedSubject(bundle), subjects });
 });
 
@@ -82698,7 +85038,7 @@ var publishPreparedRelease = fn2("publishPreparedRelease")(function* (bundle) {
 var compileReleaseGraph = (intent, context3) => {
   const contributions = [];
   let artifacts = [];
-  for (const phase of ["source", "package"]) {
+  for (const phase of ["source", "package", "render"]) {
     for (const module of preparationCapabilities.filter((candidate) => candidate.phase === phase)) {
       contributions.push(module.contribute({ config: intent, context: context3, availableArtifacts: artifacts }));
     }
@@ -82711,10 +85051,10 @@ var compileReleaseGraph = (intent, context3) => {
 };
 
 // ../../src/release/inspect.ts
-var optional8 = optionalKey2;
+var optional9 = optionalKey2;
 
 class ReleaseInspection extends Class4("ReleaseInspection")({
-  source: Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Literal2(true), repository: optional8(NonEmptyString) }),
+  source: Struct({ commit: NonEmptyName, tree: NonEmptyName, clean: Literal2(true), repository: optional9(NonEmptyString) }),
   package: Struct({ name: NonEmptyName, version: NonEmptyString, path: SafeRelativePath }),
   artifacts: ArraySchema(Struct({ id: OutputId, path: SafeRelativePath, kind: String4 })),
   collections: ArraySchema(Struct({ id: ArtifactCollectionId, producer: OperationId, root: SafeRelativePath })),
@@ -82728,7 +85068,7 @@ var preparationKind = (value3) => value3._tag.replace(/^Graph/u, "");
 var requirements = (preparations) => [
   ...new Set(preparations.flatMap((preparation) => preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact" || preparation._tag === "GraphCommandCollection" || preparation._tag === "GraphNpmPackageBuild" ? [`command:${preparation.argv[0]}`] : []))
 ].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-var publication = (value3) => value3._tag === "GraphNpmPublication" ? { id: value3.id, destination: "npm", subject: `${value3.packageName}@${value3.version} (${value3.registryUrl})` } : { id: value3.id, destination: "github", subject: `${value3.repository}#${value3.tag}` };
+var publication = (value3) => value3._tag === "GraphNpmPublication" ? { id: value3.id, destination: "npm", subject: `${value3.packageName}@${value3.version} (${value3.registryUrl})` } : value3._tag === "GraphPyPiPublication" ? { id: value3.id, destination: "pypi", subject: `${value3.project}==${value3.version} (${value3.repository})` } : value3._tag === "GraphGitHubPublication" ? { id: value3.id, destination: "github", subject: `${value3.repository}#${value3.tag}` } : { id: value3.id, destination: "catalog-git", subject: `${value3.repository}#${value3.branch}:${value3.targetPath}` };
 var inspectRelease = (context3, graph, capabilities = []) => ReleaseInspection.make({
   source: {
     commit: context3.source.commit,
@@ -82756,7 +85096,7 @@ class PreparedReleaseInspection extends Class4("PreparedReleaseInspection")({
     root: SafeRelativePath,
     members: ArraySchema(Struct({ key: SafeRelativePath, artifactId: OutputId }))
   })),
-  publications: ArraySchema(Struct({ id: NonEmptyName, destination: Literals(["npm", "github"]), subject: NonEmptyString }))
+  publications: ArraySchema(Struct({ id: NonEmptyName, destination: Literals(["npm", "pypi", "github", "catalog-git"]), subject: NonEmptyString }))
 }) {
 }
 var inspectPreparedRelease = (bundle) => PreparedReleaseInspection.make({
@@ -82770,11 +85110,11 @@ var inspectPreparedRelease = (bundle) => PreparedReleaseInspection.make({
     root: contract.root,
     members
   })),
-  publications: bundle.manifest.publications.map((publication2) => publication2._tag === "PreparedNpmPublication" ? { id: publication2.id, destination: "npm", subject: `${publication2.packageName}@${publication2.version} (${publication2.registryUrl})` } : { id: publication2.id, destination: "github", subject: `${publication2.repository}#${publication2.tag}` })
+  publications: bundle.manifest.publications.map((publication2) => publication2._tag === "PreparedNpmPublication" ? { id: publication2.id, destination: "npm", subject: `${publication2.packageName}@${publication2.version} (${publication2.registryUrl})` } : publication2._tag === "PreparedPyPiPublication" ? { id: publication2.id, destination: "pypi", subject: `${publication2.project}==${publication2.version} (${publication2.repository})` } : publication2._tag === "PreparedGitHubPublication" ? { id: publication2.id, destination: "github", subject: `${publication2.repository}#${publication2.tag}` } : { id: publication2.id, destination: "catalog-git", subject: `${publication2.repository}#${publication2.branch}:${publication2.targetPath}` })
 });
 
 // ../../src/release/prepare.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 import {
   existsSync as existsSync5,
   lstatSync as lstatSync4,
@@ -82785,7 +85125,7 @@ import {
   realpathSync as realpathSync4,
   rmSync as rmSync2
 } from "node:fs";
-import { basename as basename2, isAbsolute as isAbsolute3, join as join5, relative as relative3, resolve as resolve3, sep as sep3 } from "node:path";
+import { basename as basename3, isAbsolute as isAbsolute3, join as join5, relative as relative3, resolve as resolve3, sep as sep3 } from "node:path";
 import { tmpdir } from "node:os";
 
 // ../../src/drivers/archive.ts
@@ -82809,17 +85149,17 @@ var integer = (bytes, value3) => {
     view.setUint32(0, value3, true);
   return output2;
 };
-var crcTable = Array.from({ length: 256 }, (_2, value3) => {
+var crcTable2 = Array.from({ length: 256 }, (_2, value3) => {
   let crc = value3;
   for (const bit of Array.from({ length: 8 }, (_3, index) => index)) {
     crc = (crc & 1) === 1 ? 3988292384 ^ crc >>> 1 : crc >>> 1;
   }
   return crc >>> 0;
 });
-var crc32 = (data) => {
+var crc322 = (data) => {
   let crc = 4294967295;
   for (const byte of data)
-    crc = crc >>> 8 ^ crcTable[(crc ^ byte) & 255];
+    crc = crc >>> 8 ^ crcTable2[(crc ^ byte) & 255];
   return (crc ^ 4294967295) >>> 0;
 };
 var zip2 = (entries) => {
@@ -82828,7 +85168,7 @@ var zip2 = (entries) => {
   let offset = 0;
   for (const entry of entries) {
     const name = text(entry.path);
-    const crc = crc32(entry.data);
+    const crc = crc322(entry.data);
     const local = concat([
       integer(4, 67324752),
       integer(2, 20),
@@ -82892,19 +85232,19 @@ var octal = (output2, offset, length, value3) => {
   output2[offset + length - 1] = 32;
 };
 var tarHeader = (entry) => {
-  const header = new Uint8Array(512);
-  ascii(header, 0, 100, entry.path);
-  octal(header, 100, 8, entry.mode & 511);
-  octal(header, 108, 8, 0);
-  octal(header, 116, 8, 0);
-  octal(header, 124, 12, entry.data.length);
-  octal(header, 136, 12, 0);
-  header.fill(32, 148, 156);
-  header[156] = 48;
-  ascii(header, 257, 6, "ustar");
-  ascii(header, 263, 2, "00");
-  octal(header, 148, 8, header.reduce((sum, byte) => sum + byte, 0));
-  return header;
+  const header2 = new Uint8Array(512);
+  ascii(header2, 0, 100, entry.path);
+  octal(header2, 100, 8, entry.mode & 511);
+  octal(header2, 108, 8, 0);
+  octal(header2, 116, 8, 0);
+  octal(header2, 124, 12, entry.data.length);
+  octal(header2, 136, 12, 0);
+  header2.fill(32, 148, 156);
+  header2[156] = 48;
+  ascii(header2, 257, 6, "ustar");
+  ascii(header2, 263, 2, "00");
+  octal(header2, 148, 8, header2.reduce((sum, byte) => sum + byte, 0));
+  return header2;
 };
 var tarGz = (entries) => {
   const packed = new Uint8Array(gzipSync(concat(entries.flatMap((entry) => [
@@ -82941,23 +85281,23 @@ var contained = (root, path) => {
 };
 
 // ../../src/drivers/workspace.ts
-var fail8 = (reason2) => DriverError.make({ reason: reason2, commitment: "before-commit" });
+var fail9 = (reason2) => DriverError.make({ reason: reason2, commitment: "before-commit" });
 var secureRead = (root, path) => {
   let current = root;
   for (const part of path.split(/[\\/]+/u)) {
     current = join2(current, part);
     if (lstatSync(current).isSymbolicLink())
-      throw fail8("Structured read encountered a symlink.");
+      throw fail9("Structured read encountered a symlink.");
   }
   const descriptor = openSync(current, constants3.O_RDONLY | constants3.O_NOFOLLOW);
   try {
     const opened = fstatSync(descriptor);
     const resolved = realpathSync(current);
     if (!contained(root, resolved))
-      throw fail8("Opened file escaped the workspace root.");
+      throw fail9("Opened file escaped the workspace root.");
     const landed = lstatSync(resolved);
     if (landed.ino !== opened.ino || landed.dev !== opened.dev)
-      throw fail8("Opened file changed identity.");
+      throw fail9("Opened file changed identity.");
     return { bytes: new Uint8Array(readFileSync(descriptor)), inode: opened.ino };
   } finally {
     closeSync(descriptor);
@@ -82970,11 +85310,11 @@ var secureWrite = (root, path, bytes) => {
     parent = join2(parent, part);
     mkdirSync(parent, { recursive: true });
     if (lstatSync(parent).isSymbolicLink())
-      throw fail8("Structured write encountered a symlink.");
+      throw fail9("Structured write encountered a symlink.");
   }
   const target2 = join2(parent, parts.at(-1));
   if (existsSync2(target2) && lstatSync(target2).isSymbolicLink())
-    throw fail8("Structured write encountered a symlink.");
+    throw fail9("Structured write encountered a symlink.");
   const descriptor = openSync(target2, constants3.O_WRONLY | constants3.O_CREAT | constants3.O_TRUNC | constants3.O_NOFOLLOW, 420);
   try {
     writeFileSync(descriptor, bytes);
@@ -83099,7 +85439,7 @@ var decodeCompletePreparedReleaseRef = fn2("decodeCompletePreparedReleaseRef")(f
 // ../../src/release/prepared-store.ts
 import { constants as constants4, existsSync as existsSync3, lstatSync as lstatSync2, mkdirSync as mkdirSync2, openSync as openSync2, readdirSync, realpathSync as realpathSync2, renameSync, rmSync, statSync, chmodSync as chmodSync2, closeSync as closeSync2, fsyncSync as fsyncSync2 } from "node:fs";
 import { randomUUID as randomUUID2 } from "node:crypto";
-import { basename, dirname, join as join3 } from "node:path";
+import { basename as basename2, dirname, join as join3 } from "node:path";
 class PreparedStoreError extends TaggedErrorClass()("PreparedStoreError", { reason: String4 }) {
 }
 
@@ -83213,7 +85553,7 @@ var PreparedStoreFaultPoint = Literals([
   "after-cleanup"
 ]);
 var equal = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
-var fail9 = (reason2) => {
+var fail10 = (reason2) => {
   throw PreparedStoreError.make({ reason: reason2 });
 };
 var causeReason = (cause) => typeof cause === "object" && cause !== null && ("reason" in cause) && typeof cause.reason === "string" ? cause.reason : cause instanceof Error ? cause.message : String(cause);
@@ -83222,7 +85562,7 @@ var canonicalDirectory = (directory) => {
     mkdirSync2(directory, { recursive: true, mode: 448 });
   const real = realpathSync2(directory);
   if (real !== directory)
-    fail9("Prepared store root must not be a symlink.");
+    fail10("Prepared store root must not be a symlink.");
   return real;
 };
 var syncDirectory = (directory) => {
@@ -83235,14 +85575,14 @@ var syncDirectory = (directory) => {
 };
 var artifactsById = (manifest) => {
   if (manifest.kind !== "complete")
-    fail9("Prepared store accepts only a kind:'complete' publication bundle.");
+    fail10("Prepared store accepts only a kind:'complete' publication bundle.");
   const result2 = new Map;
   for (const artifact of manifest.artifacts) {
     const id = artifact.id.toString();
     if (result2.has(id))
-      fail9(`Prepared manifest repeats artifact ${id}.`);
+      fail10(`Prepared manifest repeats artifact ${id}.`);
     if (!digestEquals(artifact.digest, artifact.blob)) {
-      fail9(`Prepared artifact ${id} does not carry a canonical SHA-256 blob reference.`);
+      fail10(`Prepared artifact ${id} does not carry a canonical SHA-256 blob reference.`);
     }
     result2.set(id, artifact);
   }
@@ -83252,49 +85592,56 @@ var validatePublications = (manifest, artifacts) => {
   const ids = new Set;
   for (const publication2 of manifest.publications) {
     if (ids.has(publication2.id.toString()))
-      fail9(`Prepared manifest repeats publication ${publication2.id}.`);
+      fail10(`Prepared manifest repeats publication ${publication2.id}.`);
     ids.add(publication2.id.toString());
-    const references = publication2._tag === "PreparedNpmPublication" ? [publication2.artifactId] : publication2.assets.map((asset) => asset.artifactId);
+    const references = publication2._tag === "PreparedNpmPublication" ? [publication2.artifactId] : publication2._tag === "PreparedPyPiPublication" ? publication2.files.map((file) => file.artifactId) : publication2._tag === "PreparedGitHubPublication" ? publication2.assets.map((asset) => asset.artifactId) : [publication2.targetArtifactId, publication2.stateArtifactId];
     for (const id of references)
       if (!artifacts.has(id.toString()))
-        fail9(`Publication ${publication2.id} references missing artifact ${id}.`);
+        fail10(`Publication ${publication2.id} references missing artifact ${id}.`);
+    if (publication2._tag === "PreparedPyPiPublication")
+      for (const file of publication2.files) {
+        const artifact = artifacts.get(file.artifactId.toString());
+        if (artifact.size !== file.size || !digestEquals(artifact.digest, file.sha256) || artifact.mediaType !== file.mediaType || artifact.path.toString().split("/").at(-1) !== file.filename.toString()) {
+          fail10(`PyPI publication ${publication2.id} file ${file.filename} disagrees with its prepared artifact.`);
+        }
+      }
     if (publication2._tag === "PreparedGitHubPublication" && publication2.body !== undefined && publication2.body.length === 0) {
-      fail9(`GitHub publication ${publication2.id} carries an empty body.`);
+      fail10(`GitHub publication ${publication2.id} carries an empty body.`);
     }
   }
 };
 var readBundle = (directory) => {
   const real = realpathSync2(directory);
   if (real !== directory || lstatSync2(directory).isSymbolicLink())
-    fail9("Prepared bundle directory must not be a symlink.");
+    fail10("Prepared bundle directory must not be a symlink.");
   const bytes = secureRead(directory, "prepared-release.json").bytes;
   const manifest = decodePreparedRelease(bytes);
   if (manifest.kind !== "complete")
-    fail9("Prepared store refuses every unknown or partial bundle kind.");
+    fail10("Prepared store refuses every unknown or partial bundle kind.");
   const manifestDigest = sha256Digest(bytes).hex;
-  if (basename(directory) !== manifestDigest)
-    fail9("Prepared bundle directory does not match its manifest digest.");
+  if (basename2(directory) !== manifestDigest)
+    fail10("Prepared bundle directory does not match its manifest digest.");
   const entries = readdirSync(directory, { withFileTypes: true });
   if (entries.some((entry) => entry.name !== "prepared-release.json" && entry.name !== "blobs"))
-    fail9("Prepared bundle contains an unexpected top-level entry.");
+    fail10("Prepared bundle contains an unexpected top-level entry.");
   const blobDirectory = join3(directory, "blobs");
   if (!existsSync3(blobDirectory) || lstatSync2(blobDirectory).isSymbolicLink() || !statSync(blobDirectory).isDirectory())
-    fail9("Prepared bundle is missing its real blobs directory.");
+    fail10("Prepared bundle is missing its real blobs directory.");
   const artifacts = artifactsById(manifest);
   validatePublications(manifest, artifacts);
   const expectedBlobs = new Set([...artifacts.values()].map((artifact) => artifact.blob.hex));
   const actualBlobs = new Set(readdirSync(blobDirectory, { withFileTypes: true }).map((entry) => {
     if (!entry.isFile() || !is2(Sha256Hex)(entry.name))
-      fail9(`Prepared blob entry ${entry.name} is invalid.`);
+      fail10(`Prepared blob entry ${entry.name} is invalid.`);
     return entry.name;
   }));
   if (actualBlobs.size !== expectedBlobs.size || [...expectedBlobs].some((blob) => !actualBlobs.has(blob)))
-    fail9("Prepared bundle blob set does not match its manifest.");
+    fail10("Prepared bundle blob set does not match its manifest.");
   const blobs = new Map;
   for (const artifact of artifacts.values()) {
     const blob = secureRead(directory, `blobs/${artifact.blob.hex}`).bytes;
     if (blob.length !== artifact.size || !digestEquals(sha256Digest(blob), artifact.digest))
-      fail9(`Prepared blob ${artifact.id} failed size or digest verification.`);
+      fail10(`Prepared blob ${artifact.id} failed size or digest verification.`);
     blobs.set(artifact.id.toString(), new Uint8Array(blob));
   }
   return { directory: real, manifest, blobs };
@@ -83312,20 +85659,20 @@ var writeBundle = (storeDirectory, manifest, blobs, options = {}) => {
   const store = canonicalDirectory(storeDirectory);
   const manifestBytes = encodePreparedRelease(manifest);
   if (manifest.kind !== "complete")
-    fail9("Prepared store commits only a kind:'complete' publication bundle.");
+    fail10("Prepared store commits only a kind:'complete' publication bundle.");
   const manifestDigest = sha256Digest(manifestBytes).hex;
   const artifacts = artifactsById(manifest);
   validatePublications(manifest, artifacts);
   for (const artifact of artifacts.values()) {
-    const bytes = blobs.get(artifact.id.toString()) ?? fail9(`No prepared bytes supplied for artifact ${artifact.id}.`);
+    const bytes = blobs.get(artifact.id.toString()) ?? fail10(`No prepared bytes supplied for artifact ${artifact.id}.`);
     if (bytes.length !== artifact.size || !digestEquals(sha256Digest(bytes), artifact.digest) || !digestEquals(artifact.blob, artifact.digest))
-      fail9(`Prepared bytes do not match artifact ${artifact.id}.`);
+      fail10(`Prepared bytes do not match artifact ${artifact.id}.`);
   }
   const finalDirectory = join3(store, manifestDigest);
   if (existsSync3(finalDirectory)) {
     const existing = readBundle(finalDirectory);
     if (!equal(secureRead(finalDirectory, "prepared-release.json").bytes, manifestBytes))
-      fail9("Existing prepared bundle has a different manifest.");
+      fail10("Existing prepared bundle has a different manifest.");
     return existing;
   }
   const temporary = join3(store, `.${manifestDigest}.${randomUUID2()}.tmp`);
@@ -83367,7 +85714,7 @@ var writeBundle = (storeDirectory, manifest, blobs, options = {}) => {
     if (!promoted && existsSync3(finalDirectory)) {
       const existing = readBundle(finalDirectory);
       if (!equal(secureRead(finalDirectory, "prepared-release.json").bytes, manifestBytes)) {
-        fail9("Concurrent prepared-store promotion produced a different manifest.");
+        fail10("Concurrent prepared-store promotion produced a different manifest.");
       }
       return existing;
     }
@@ -83394,7 +85741,7 @@ var loadPreparedRelease = fn2("loadPreparedRelease")((directory) => try_2({
 class PreparedReleaseStore extends Service()("ts-release/PreparedReleaseStore") {
 }
 var makeLocalPreparedReleaseStore = (storeDirectory, options) => ({
-  commit: (manifest, blobs) => storePreparedRelease(storeDirectory, manifest, blobs, options).pipe(flatMap3((bundle) => makeLocalCompletePreparedReleaseRef(basename(bundle.directory)).pipe(map5((ref) => ({ ref, bundle })), mapError3((cause) => PreparedStoreError.make({ reason: cause.reason }))))),
+  commit: (manifest, blobs) => storePreparedRelease(storeDirectory, manifest, blobs, options).pipe(flatMap3((bundle) => makeLocalCompletePreparedReleaseRef(basename2(bundle.directory)).pipe(map5((ref) => ({ ref, bundle })), mapError3((cause) => PreparedStoreError.make({ reason: cause.reason }))))),
   load: (reference) => reference.scheme === "local" ? loadPreparedRelease(join3(storeDirectory, reference.digest)) : fail6(PreparedStoreError.make({
     reason: "A GitHub Actions prepared reference is not loadable by the local store; rerun the failed workflow publish job or dispatch its recovery workflow."
   }))
@@ -83414,15 +85761,15 @@ import {
   symlinkSync
 } from "node:fs";
 import { dirname as dirname2, isAbsolute as isAbsolute2, join as join4, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
-var utf8 = new TextEncoder;
+var utf82 = new TextEncoder;
 var byCodepoint = (left, right) => left < right ? -1 : left > right ? 1 : 0;
-var fail10 = (reason2) => {
+var fail11 = (reason2) => {
   throw new Error(reason2);
 };
 var canonicalStagingPath = (value3) => {
   const path = value3.split(sep2).join("/");
   if (path === "." || path.includes("\\") || path.includes("\x00") || path.split("/").some((part) => part.length === 0 || part === "." || part === "..")) {
-    return fail10(`Staging path ${JSON.stringify(value3)} is not canonical and portable.`);
+    return fail11(`Staging path ${JSON.stringify(value3)} is not canonical and portable.`);
   }
   return SafeRelativePath.make(path);
 };
@@ -83433,29 +85780,29 @@ var lexicalContainment = (root, candidate) => {
 var relativePath = (root, path) => canonicalStagingPath(relative2(root, path));
 var entryDigest = (kind, path) => {
   if (kind === "directory")
-    return { digest: sha256Digest(utf8.encode("")), size: 0 };
-  const bytes = kind === "symlink" ? utf8.encode(readlinkSync(path)) : new Uint8Array(readFileSync3(path));
+    return { digest: sha256Digest(utf82.encode("")), size: 0 };
+  const bytes = kind === "symlink" ? utf82.encode(readlinkSync(path)) : new Uint8Array(readFileSync3(path));
   return { digest: sha256Digest(bytes), size: bytes.length };
 };
 var assertSafeSymlink = (root, path) => {
   const target2 = readlinkSync(path);
   if (target2.length === 0 || isAbsolute2(target2))
-    fail10(`Staging symlink ${relative2(root, path)} has an absolute or empty target.`);
+    fail11(`Staging symlink ${relative2(root, path)} has an absolute or empty target.`);
   const landed = resolve2(dirname2(path), target2);
   if (!lexicalContainment(root, landed))
-    fail10(`Staging symlink ${relative2(root, path)} escapes the private root.`);
+    fail11(`Staging symlink ${relative2(root, path)} escapes the private root.`);
   if (!existsSync4(landed))
-    fail10(`Staging symlink ${relative2(root, path)} is dangling.`);
+    fail11(`Staging symlink ${relative2(root, path)} is dangling.`);
   const real = realpathSync3(path);
   if (!lexicalContainment(root, real))
-    fail10(`Staging symlink ${relative2(root, path)} resolves outside the private root.`);
+    fail11(`Staging symlink ${relative2(root, path)} resolves outside the private root.`);
 };
 var isExcluded = (path, excluded) => excluded.some((root) => path === root || path.startsWith(`${root}/`));
 var isExcludedAncestor = (path, excluded) => excluded.some((root) => root.startsWith(`${path}/`));
 var snapshotStaging = (rootValue, options = {}) => {
   const root = realpathSync3(rootValue);
   if (lstatSync3(root).isSymbolicLink() || !lstatSync3(root).isDirectory())
-    fail10("Staging root must be a real directory.");
+    fail11("Staging root must be a real directory.");
   const excluded = (options.exclude ?? []).map(String).sort(byCodepoint);
   const entries = [];
   const folded = new Map;
@@ -83467,10 +85814,10 @@ var snapshotStaging = (rootValue, options = {}) => {
         continue;
       const collision = folded.get(name.toLocaleLowerCase("en-US"));
       if (collision !== undefined && collision !== name)
-        fail10(`Staging paths ${collision} and ${name} collide under case folding.`);
+        fail11(`Staging paths ${collision} and ${name} collide under case folding.`);
       folded.set(name.toLocaleLowerCase("en-US"), name);
       const stat2 = lstatSync3(path);
-      const kind = stat2.isSymbolicLink() ? "symlink" : stat2.isDirectory() ? "directory" : stat2.isFile() ? (stat2.mode & 73) === 0 ? "file" : "executable" : fail10(`Staging path ${name} has an unsupported filesystem kind.`);
+      const kind = stat2.isSymbolicLink() ? "symlink" : stat2.isDirectory() ? "directory" : stat2.isFile() ? (stat2.mode & 73) === 0 ? "file" : "executable" : fail11(`Staging path ${name} has an unsupported filesystem kind.`);
       if (kind === "symlink")
         assertSafeSymlink(root, path);
       const value3 = entryDigest(kind, path);
@@ -83495,10 +85842,10 @@ var snapshotStaging = (rootValue, options = {}) => {
     size: entry.size,
     digest: entry.digest.hex
   })));
-  return StagingSnapshot.make({ entries, digest: sha256Digest(utf8.encode(canonical2)) });
+  return StagingSnapshot.make({ entries, digest: sha256Digest(utf82.encode(canonical2)) });
 };
 var snapshotsEqual = (left, right) => left.digest.hex === right.digest.hex;
-var snapshotDigest = (entries) => sha256Digest(utf8.encode(encodeCanonicalJson(entries.map((entry) => ({
+var snapshotDigest = (entries) => sha256Digest(utf82.encode(encodeCanonicalJson(entries.map((entry) => ({
   path: entry.path.toString(),
   kind: entry.kind,
   mode: entry.mode,
@@ -83536,7 +85883,7 @@ var assertSnapshotPresent = (root, expected, label, options = {}) => {
       continue;
     const actual = available.get(entry.path.toString());
     if (actual === undefined || actual.kind !== entry.kind || actual.mode !== entry.mode || actual.size !== entry.size || actual.digest.hex !== entry.digest.hex) {
-      fail10(`${label} changed at ${entry.path}.`);
+      fail11(`${label} changed at ${entry.path}.`);
     }
   }
 };
@@ -83547,7 +85894,7 @@ var copyPrivateTree = (sourceRoot, destinationRoot) => {
     if (stat2.isSymbolicLink()) {
       const landed = realpathSync3(from);
       if (!lexicalContainment(source, landed))
-        fail10(`Explicit input symlink ${from} escapes its declared root.`);
+        fail11(`Explicit input symlink ${from} escapes its declared root.`);
       const target2 = readlinkSync(from);
       symlinkSync(target2, to, stat2.isDirectory() ? "dir" : "file");
       return;
@@ -83559,7 +85906,7 @@ var copyPrivateTree = (sourceRoot, destinationRoot) => {
       return;
     }
     if (!stat2.isFile())
-      fail10(`Explicit input ${from} has an unsupported filesystem kind.`);
+      fail11(`Explicit input ${from} has an unsupported filesystem kind.`);
     copyFileSync(from, to, constants5.COPYFILE_FICLONE);
   };
   walk(sourceRoot, destinationRoot);
@@ -83571,16 +85918,16 @@ var materializeExplicitInput = (input) => {
   const source = join4(sourceRoot, input.path.toString());
   const destination = join4(input.stageRoot, input.path.toString());
   if (!lexicalContainment(sourceRoot, source) || !lexicalContainment(realpathSync3(input.stageRoot), destination)) {
-    return fail10(`Explicit input ${input.id} escapes its declared root.`);
+    return fail11(`Explicit input ${input.id} escapes its declared root.`);
   }
   if (!existsSync4(source))
-    return fail10(`Explicit input ${input.id} does not exist at ${input.path}.`);
+    return fail11(`Explicit input ${input.id} does not exist at ${input.path}.`);
   if (existsSync4(destination))
-    return fail10(`Explicit input ${input.id} overlaps verified source at ${input.path}.`);
+    return fail11(`Explicit input ${input.id} overlaps verified source at ${input.path}.`);
   mkdirSync3(dirname2(destination), { recursive: true, mode: 448 });
   const sourceStat = lstatSync3(source);
   if (sourceStat.isSymbolicLink())
-    return fail10(`Explicit input ${input.id} cannot be a symlink.`);
+    return fail11(`Explicit input ${input.id} cannot be a symlink.`);
   copyPrivateTree(source, destination);
   const kind = sourceStat.isDirectory() ? "directory" : "file";
   const snapshot = sourceStat.isDirectory() ? snapshotStaging(destination) : undefined;
@@ -83596,7 +85943,7 @@ var materializeExplicitInput = (input) => {
     materializationBasis: [digest]
   });
 };
-var preparationBasisDigest = (source, inputs, execution) => sha256Digest(utf8.encode(encodeCanonicalJson({
+var preparationBasisDigest = (source, inputs, execution) => sha256Digest(utf82.encode(encodeCanonicalJson({
   source: source.digest.hex,
   inputs: [...inputs].sort((left, right) => byCodepoint(left.id, right.id)).map((input) => ({
     id: input.id,
@@ -83616,13 +85963,13 @@ class PreparationError extends TaggedErrorClass()("PreparationError", {
   prepared: optionalKey2(CompletePreparedReleaseRef)
 }) {
 }
-var failure2 = (cause) => PreparationError.make({
+var failure3 = (cause) => PreparationError.make({
   reason: cause instanceof PreparedCommitHandoffError ? cause.reason : cause instanceof Error ? cause.message : String(cause),
   ...cause instanceof PreparedCommitHandoffError ? { prepared: cause.prepared } : {}
 });
 var attempt = (body) => try_2({
   try: body,
-  catch: failure2
+  catch: failure3
 });
 var bunCompileTargets = new Set([
   "bun-linux-x64",
@@ -83678,7 +86025,7 @@ var materializeBunDependencies = fn2("materializeBunDependencies")(function* (in
     cwd: stageRoot,
     environmentNames: [],
     network: "offline-cli"
-  }).pipe(mapError3(failure2));
+  }).pipe(mapError3(failure3));
   const bunVersion = versionOutcome.stdout.trim();
   if (versionOutcome.exitCode !== 0 || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(bunVersion)) {
     return yield* new PreparationError({
@@ -83698,7 +86045,7 @@ var materializeBunDependencies = fn2("materializeBunDependencies")(function* (in
     cwd: stageRoot,
     environmentNames: [],
     network: "offline-cli"
-  }).pipe(mapError3(failure2));
+  }).pipe(mapError3(failure3));
   if (outcome.exitCode !== 0) {
     return yield* new PreparationError({
       reason: `Isolated Bun dependency install exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
@@ -83791,7 +86138,7 @@ var assertNoWorkspaceInodeAliases = (stageDependencies, workspaceDependencies) =
   };
   walk(stageDependencies);
 };
-var hashBytes = (algorithm, bytes) => createHash3(algorithm).update(bytes).digest("hex");
+var hashBytes = (algorithm, bytes) => createHash4(algorithm).update(bytes).digest("hex");
 var stagedContext = (context3, root) => VerifiedReleaseContext.make({
   workspace: WorkspaceRoot.make(root),
   source: context3.source,
@@ -83919,7 +86266,7 @@ var runNpmPackageBuild = (request, preparation, sourceSnapshot, explicitInputs) 
       cwd,
       environmentNames: [],
       network: "deny"
-    }).pipe(mapError3(failure2));
+    }).pipe(mapError3(failure3));
     if (outcome.exitCode !== 0) {
       return yield* new PreparationError({
         reason: `npm package build exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
@@ -84049,7 +86396,7 @@ var runCommand = (request, preparation, declarations, sourceSnapshot, explicitIn
     cwd: pathOf(request.context, preparation.cwd),
     environmentNames: [],
     network: "deny"
-  }).pipe(mapError3(failure2));
+  }).pipe(mapError3(failure3));
   if (outcome.exitCode !== 0) {
     return yield* new PreparationError({
       reason: `Command ${preparation.id} exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
@@ -84107,7 +86454,7 @@ var structured = (request, preparation, declarations, bytes, sourceSnapshot, exp
             throw new Error(`Archive ${preparation.id} references unavailable artifact ${id}.`);
           }
           return {
-            path: basename2(declaration.path),
+            path: basename3(declaration.path),
             data: value4,
             mode: declaration.kind === "executable" ? 33261 : 33188
           };
@@ -84131,11 +86478,32 @@ var structured = (request, preparation, declarations, bytes, sourceSnapshot, exp
           if (value4 === undefined || declaration === undefined) {
             throw new Error(`Checksum ${preparation.id} references unavailable artifact ${id}.`);
           }
-          return `${hashBytes(preparation.algorithm, value4)}  ${basename2(declaration.path)}`;
+          return `${hashBytes(preparation.algorithm, value4)}  ${basename3(declaration.path)}`;
         });
         const value3 = new TextEncoder().encode(`${lines.join(`
 `)}
 `);
+        secureWrite(request.context.workspace, preparation.output.path, value3);
+        assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source");
+        return { outputs: [[preparation.output.id.toString(), value3]], declarations: [] };
+      });
+    case "GraphCatalogRender":
+      return attempt(() => {
+        assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source");
+        const downloads = preparation.sources.map((source) => {
+          const value4 = bytes.get(source.artifactId.toString());
+          const declaration = declarations.get(source.artifactId.toString());
+          if (value4 === undefined || declaration === undefined || basename3(declaration.path) !== source.filename.toString()) {
+            throw new Error(`Catalog renderer ${preparation.id} references unavailable or renamed artifact ${source.artifactId}.`);
+          }
+          return PreparedCatalogDownload.make({
+            architecture: source.architecture,
+            url: source.url,
+            filename: source.filename,
+            sha256: sha256Digest(value4)
+          });
+        });
+        const value3 = renderCatalog(preparation.version, preparation.renderer, downloads);
         secureWrite(request.context.workspace, preparation.output.path, value3);
         assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source");
         return { outputs: [[preparation.output.id.toString(), value3]], declarations: [] };
@@ -84200,7 +86568,7 @@ var establishNpmPackIdentity = (request) => gen2(function* () {
     cwd: request.context.workspace.toString(),
     environmentNames: [],
     network: "offline-cli"
-  }).pipe(mapError3(failure2));
+  }).pipe(mapError3(failure3));
   const version3 = outcome.stdout.trim();
   if (outcome.exitCode !== 0 || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(version3)) {
     return yield* new PreparationError({
@@ -84243,7 +86611,7 @@ var npmTarball = (request, publication2, declarations, sourceSnapshot, basis, np
     environmentNames: [],
     stdout: "complete-protocol",
     network: "offline-cli"
-  }).pipe(mapError3(failure2));
+  }).pipe(mapError3(failure3));
   if (!sameExecutable(outcome.tool, npmPackIdentity.executable)) {
     return yield* new PreparationError({
       reason: "npm pack executable identity disagrees with the preflighted npm executable."
@@ -84306,10 +86674,10 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
   const sourceRoot = input.context.workspace.toString();
   const root = yield* attempt(() => mkdtempSync(join5(tmpdir(), "ts-release-prepare-")));
   try {
-    const sourceSnapshot = yield* input.materializeSource(input.context, WorkspaceRoot.make(root)).pipe(mapError3(failure2));
+    const sourceSnapshot = yield* input.materializeSource(input.context, WorkspaceRoot.make(root)).pipe(mapError3(failure3));
     const context3 = stagedContext(input.context, root);
     const declarations = new Map(input.graph.artifacts.map((artifact) => [artifact.id.toString(), artifact]));
-    const produced = new Set(input.graph.preparations.flatMap((preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs.map((output2) => output2.id.toString()) : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" ? [preparation.output.id.toString()] : []));
+    const produced = new Set(input.graph.preparations.flatMap((preparation) => preparation._tag === "GraphCommandArtifact" ? preparation.outputs.map((output2) => output2.id.toString()) : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalogRender" ? [preparation.output.id.toString()] : []));
     const externalInputs = [];
     for (const artifact of input.graph.artifacts) {
       if (produced.has(artifact.id.toString()) || artifact.kind === "package")
@@ -84459,7 +86827,45 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
           provenance: publication2.provenance,
           authority: publication2.authority
         }));
-      } else {
+      } else if (publication2._tag === "GraphPyPiPublication") {
+        const files = publication2.files.map((file) => {
+          const artifact = preparedArtifacts.get(file.artifactId.toString());
+          const value3 = bytes.get(file.artifactId.toString());
+          if (artifact === undefined || value3 === undefined) {
+            throw new Error(`PyPI publication ${publication2.id} references unavailable artifact ${file.artifactId}.`);
+          }
+          if (basename3(artifact.path.toString()) !== file.filename.toString()) {
+            throw new Error(`PyPI artifact ${file.artifactId} filename changed after graph linking.`);
+          }
+          const distribution = inspectPythonDistribution(file.filename.toString(), value3, publication2.project.toString(), publication2.version.toString());
+          if (artifact.mediaType !== undefined && artifact.mediaType !== distribution.mediaType) {
+            throw new Error(`PyPI artifact ${file.artifactId} declared media type disagrees with its verified distribution type.`);
+          }
+          const typedArtifact = artifact.mediaType === distribution.mediaType ? artifact : PreparedArtifact.make({ ...artifact, mediaType: distribution.mediaType });
+          preparedArtifacts.set(file.artifactId.toString(), typedArtifact);
+          const digest = sha256Digest(value3);
+          return PreparedPyPiFile.make({
+            artifactId: typedArtifact.id,
+            filename: file.filename,
+            size: value3.length,
+            sha256: digest,
+            mediaType: distribution.mediaType,
+            distribution,
+            authority: file.authority
+          });
+        });
+        publications.push(PreparedPyPiPublication.make({
+          id: NonEmptyName.make(publication2.id),
+          project: publication2.project,
+          version: publication2.version,
+          repository: publication2.repository,
+          simpleBaseUrl: publication2.simpleBaseUrl,
+          projectUrl: publication2.projectUrl,
+          uploadUrl: publication2.uploadUrl,
+          authentication: publication2.authentication,
+          files
+        }));
+      } else if (publication2._tag === "GraphGitHubPublication") {
         const selectedIds = publication2.assetCollections.flatMap((selector) => {
           const collection = preparedCollections.get(selector.collection.toString());
           if (collection === undefined) {
@@ -84476,7 +86882,7 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
             throw new Error(`GitHub publication ${publication2.id} references unavailable artifact ${id}.`);
           return {
             artifactId: artifact.id,
-            name: NonEmptyName.make(basename2(artifact.path)),
+            name: NonEmptyName.make(basename3(artifact.path)),
             mediaType: artifact.mediaType ?? "application/octet-stream"
           };
         });
@@ -84502,6 +86908,72 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
           targetCommit: context3.source.commit,
           ...body === undefined ? {} : { body },
           assets,
+          authority: publication2.authority
+        }));
+      } else {
+        const target2 = preparedArtifacts.get(publication2.targetArtifact.toString());
+        const targetBytes = bytes.get(publication2.targetArtifact.toString());
+        const render2 = input.graph.preparations.find((candidate) => candidate._tag === "GraphCatalogRender" && candidate.output.id.toString() === publication2.targetArtifact.toString());
+        if (target2 === undefined || targetBytes === undefined || render2 === undefined) {
+          throw new Error(`Catalog publication ${publication2.id} references no verified renderer output.`);
+        }
+        const downloads = publication2.sources.map((source) => {
+          const value3 = bytes.get(source.artifactId.toString());
+          const declaration = declarations.get(source.artifactId.toString());
+          if (value3 === undefined || declaration === undefined || basename3(declaration.path) !== source.filename.toString()) {
+            throw new Error(`Catalog publication ${publication2.id} references unavailable source ${source.artifactId}.`);
+          }
+          return PreparedCatalogDownload.make({
+            architecture: source.architecture,
+            url: source.url,
+            filename: source.filename,
+            sha256: sha256Digest(value3)
+          });
+        });
+        const targetDigest = sha256Digest(targetBytes);
+        const stateBytes = encodeCatalogManagedState(CatalogManagedState.make({
+          schemaVersion: "ts-release/catalog-state/v2",
+          catalogId: publication2.catalogId,
+          renderer: publication2.renderer._tag,
+          generation: publication2.version,
+          status: "active",
+          targetDigest,
+          sourceRepository: publication2.sourceRepository,
+          sourceTag: publication2.sourceTag
+        }));
+        const stateDigest = sha256Digest(stateBytes);
+        const stateArtifactId = OutputId.make(`catalog-state-${publication2.catalogId}`);
+        if (preparedArtifacts.has(stateArtifactId.toString()) || bytes.has(stateArtifactId.toString())) {
+          throw new Error(`Catalog state artifact ${stateArtifactId} collides with another prepared artifact.`);
+        }
+        const stateArtifact = PreparedArtifact.make({
+          id: stateArtifactId,
+          path: SafeRelativePath.make(`.release/catalog-state/${publication2.catalogId}.json`),
+          kind: "file",
+          size: stateBytes.length,
+          digest: stateDigest,
+          blob: stateDigest,
+          mediaType: "application/json",
+          producer: NonEmptyName.make(publication2.id.toString()),
+          inputBasis: basis
+        });
+        bytes.set(stateArtifactId.toString(), stateBytes);
+        preparedArtifacts.set(stateArtifactId.toString(), stateArtifact);
+        publications.push(PreparedCatalogPublication.make({
+          id: NonEmptyName.make(publication2.id.toString()),
+          catalogId: publication2.catalogId,
+          targetArtifactId: target2.id,
+          stateArtifactId,
+          targetDigest,
+          stateDigest,
+          repository: publication2.repository,
+          branch: publication2.branch,
+          targetPath: publication2.targetPath,
+          statePath: publication2.statePath,
+          version: publication2.version,
+          sourceRepository: publication2.sourceRepository,
+          sourceTag: publication2.sourceTag,
+          renderer: PreparedCatalogRenderer.make({ renderer: publication2.renderer, downloads }),
           authority: publication2.authority
         }));
       }
@@ -84539,7 +87011,7 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
       publications
     });
     const blobMap = new Map([...bytes.entries()].filter(([id]) => preparedArtifacts.has(id)));
-    return yield* input.store.commit(manifest, blobMap).pipe(mapError3((cause) => cause instanceof PreparedStoreError ? PreparationError.make({ reason: cause.reason }) : failure2(cause)));
+    return yield* input.store.commit(manifest, blobMap).pipe(mapError3((cause) => cause instanceof PreparedStoreError ? PreparationError.make({ reason: cause.reason }) : failure3(cause)));
   } finally {
     rmSync2(root, { recursive: true, force: true });
   }
@@ -84655,13 +87127,14 @@ class ReleaseRuntime extends Service()("ReleaseRuntime") {
 // ../../src/api/types.ts
 class CorrectionReport extends Class4("CorrectionReport")({
   prepared: CompletePreparedReleaseRef,
-  status: Literal2("unsupported"),
-  provider: Literals(["npm", "github"]),
+  status: Literals(["unsupported", "complete", "blocked", "uncertain"]),
+  provider: Literals(["npm", "github", "catalog-git"]),
   reason: SafeReason,
-  proposal: String4
+  proposal: String4,
+  report: optionalKey2(Unknown2)
 }) {
 }
-// ../../node_modules/effect/dist/Brand.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Brand.js
 function nominal() {
   return Object.assign((input) => input, {
     option: (input) => some2(input),
@@ -84670,7 +87143,7 @@ function nominal() {
   });
 }
 
-// ../../node_modules/effect/dist/PlatformError.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/PlatformError.js
 var TypeId15 = "~effect/platform/PlatformError";
 
 class BadArgument extends (/* @__PURE__ */ TaggedError2("BadArgument")) {
@@ -84706,10 +87179,10 @@ class PlatformError extends (/* @__PURE__ */ TaggedError2("PlatformError")) {
 var systemError = (options) => new PlatformError(new SystemError(options));
 var badArgument = (options) => new PlatformError(new BadArgument(options));
 
-// ../../node_modules/effect/dist/Latch.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Latch.js
 var makeUnsafe4 = makeLatchUnsafe;
 
-// ../../node_modules/effect/dist/MutableList.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/MutableList.js
 var Empty = /* @__PURE__ */ Symbol.for("effect/MutableList/Empty");
 var make13 = () => ({
   head: undefined,
@@ -84785,7 +87258,7 @@ var take = (self2) => {
   return message;
 };
 
-// ../../node_modules/effect/dist/MutableRef.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/MutableRef.js
 var TypeId16 = "~effect/MutableRef";
 var MutableRefProto = {
   [TypeId16]: TypeId16,
@@ -84803,7 +87276,7 @@ var make14 = (value3) => {
   return ref;
 };
 
-// ../../node_modules/effect/dist/Queue.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Queue.js
 var TypeId17 = "~effect/Queue";
 var EnqueueTypeId = "~effect/Queue/Enqueue";
 var DequeueTypeId = "~effect/Queue/Dequeue";
@@ -84891,15 +87364,15 @@ var failCauseUnsafe = (self2, cause) => {
     return false;
   }
   const exit3 = exitFailCause(cause);
-  const fail11 = exitZipRight(exit3, exitFailDone);
+  const fail12 = exitZipRight(exit3, exitFailDone);
   if (self2.state.offers.size === 0 && self2.messages.length === 0) {
-    finalize(self2, fail11);
+    finalize(self2, fail12);
     return true;
   }
   self2.state = {
     ...self2.state,
     _tag: "Closing",
-    exit: fail11
+    exit: fail12
   };
   return true;
 };
@@ -85069,7 +87542,7 @@ var finalize = (self2, exit3) => {
   openState.awaiters.clear();
 };
 
-// ../../node_modules/effect/dist/Channel.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Channel.js
 var TypeId18 = "~effect/Channel";
 var isChannel = (u) => hasProperty(u, TypeId18);
 var ChannelProto = {
@@ -85105,7 +87578,7 @@ var asyncQueue = (scope3, f, options) => make15({
 var callbackArray = (f, options) => fromTransform((_2, scope3) => map5(asyncQueue(scope3, f, options), takeAll2));
 var suspend3 = (evaluate2) => fromTransform((upstream, scope3) => suspend2(() => toTransform(evaluate2())(upstream, scope3)));
 var empty3 = /* @__PURE__ */ fromPull(/* @__PURE__ */ succeed6(/* @__PURE__ */ done2()));
-var fail11 = (error2) => fromPull(succeed6(fail6(error2)));
+var fail12 = (error2) => fromPull(succeed6(fail6(error2)));
 var map7 = /* @__PURE__ */ dual(2, (self2, f) => transformPull(self2, (pull) => sync2(() => {
   let i = 0;
   return map5(pull, (o) => f(o, i++));
@@ -85252,7 +87725,7 @@ var runFold = /* @__PURE__ */ dual(3, (self2, initial, f) => suspend2(() => {
 }));
 var toPullScoped = (self2, scope3) => toTransform(self2)(done2(), scope3);
 
-// ../../node_modules/effect/dist/internal/stream.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/internal/stream.js
 var TypeId19 = "~effect/Stream";
 var streamVariance = {
   _R: identity,
@@ -85271,7 +87744,7 @@ var fromChannel = (channel) => {
   return self2;
 };
 
-// ../../node_modules/effect/dist/Sink.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Sink.js
 var TypeId20 = "~effect/Sink";
 var endVoid = /* @__PURE__ */ succeed6([undefined]);
 var sinkVariance = {
@@ -85308,7 +87781,7 @@ var forEachArray = (f) => fromTransform2((upstream) => upstream.pipe(flatMap3(f)
 }), catchDone(() => endVoid)));
 var unwrap2 = (effect2) => fromChannel2(unwrap(map5(effect2, toChannel)));
 
-// ../../node_modules/effect/dist/Stream.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Stream.js
 var TypeId21 = "~effect/Stream";
 var isStream = (u) => hasProperty(u, TypeId21);
 var fromChannel3 = fromChannel;
@@ -85318,7 +87791,7 @@ var toChannel2 = (stream) => stream.channel;
 var callback3 = (f, options) => fromChannel3(callbackArray(f, options));
 var empty4 = /* @__PURE__ */ fromChannel3(empty3);
 var suspend4 = (stream) => fromChannel3(suspend3(() => stream().channel));
-var fail12 = (error2) => fromChannel3(fail11(error2));
+var fail13 = (error2) => fromChannel3(fail12(error2));
 var fromReadableStream = (options) => fromChannel3(fromTransform(fnUntraced2(function* (_2, scope3) {
   const reader = options.evaluate().getReader();
   yield* addFinalizer(scope3, options.releaseLockOnEnd ? sync2(() => reader.releaseLock()) : promise2(() => reader.cancel().catch(constVoid)));
@@ -85410,7 +87883,7 @@ var toReadableStreamWith = /* @__PURE__ */ dual((args2) => isStream(args2[0]), (
 });
 var toReadableStreamEffect = /* @__PURE__ */ dual((args2) => isStream(args2[0]), (self2, options) => map5(context2(), (context3) => toReadableStreamWith(self2, context3, options)));
 
-// ../../node_modules/effect/dist/FileSystem.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/FileSystem.js
 var TypeId22 = "~effect/platform/FileSystem";
 var Size = (bytes) => typeof bytes === "bigint" ? bytes : BigInt(bytes);
 var bigint1024 = /* @__PURE__ */ BigInt(1024);
@@ -85473,7 +87946,7 @@ var FileDescriptor = /* @__PURE__ */ nominal();
 class WatchBackend extends (/* @__PURE__ */ Service()("effect/platform/FileSystem/WatchBackend")) {
 }
 
-// ../../node_modules/effect/dist/Path.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Path.js
 var TypeId23 = "~effect/platform/Path";
 var Path = /* @__PURE__ */ Service("effect/Path");
 function normalizeStringPosix(path, allowAboveRoot) {
@@ -85957,7 +88430,7 @@ var posixImpl = /* @__PURE__ */ Path.of({
   toNamespacedPath: identity
 });
 
-// ../../node_modules/effect/dist/unstable/process/ChildProcessSpawner.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/process/ChildProcessSpawner.js
 var ExitCode2 = /* @__PURE__ */ nominal();
 var ProcessId = /* @__PURE__ */ nominal();
 var HandleTypeId = "~effect/ChildProcessSpawner/ChildProcessHandle";
@@ -85988,7 +88461,7 @@ var make17 = (spawn) => {
 class ChildProcessSpawner extends (/* @__PURE__ */ Service()("effect/process/ChildProcessSpawner")) {
 }
 
-// ../../node_modules/effect/dist/unstable/process/ChildProcess.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/process/ChildProcess.js
 var TypeId24 = "~effect/unstable/process/ChildProcess";
 var Proto3 = {
   .../* @__PURE__ */ Prototype2({
@@ -86115,10 +88588,10 @@ var splitByWhitespaces = (template, rawTemplate) => {
 };
 var concatTokens = (prevTokens, nextTokens, isSeparated) => isSeparated || prevTokens.length === 0 || nextTokens.length === 0 ? [...prevTokens, ...nextTokens] : [...prevTokens.slice(0, -1), `${prevTokens.at(-1)}${nextTokens.at(0)}`, ...nextTokens.slice(1)];
 
-// ../../node_modules/@effect/platform-node-shared/dist/NodeChildProcessSpawner.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/NodeChildProcessSpawner.js
 import * as NodeChildProcess from "node:child_process";
 
-// ../../node_modules/@effect/platform-node-shared/dist/internal/utils.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/internal/utils.js
 var handleErrnoException = (module, method) => (err, [path]) => {
   let reason2 = "Unknown";
   switch (err.code) {
@@ -86154,7 +88627,7 @@ var handleErrnoException = (module, method) => (err, [path]) => {
   });
 };
 
-// ../../node_modules/@effect/platform-node-shared/dist/NodeSink.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/NodeSink.js
 var fromWritable = (options) => fromChannel2(mapDone(fromWritableChannel(options), (_2) => [_2]));
 var fromWritableChannel = (options) => fromTransform((pull) => {
   const writable = options.evaluate();
@@ -86194,7 +88667,7 @@ var pullIntoWritable = (options) => options.pull.pipe(flatMap3((chunk) => {
   });
 }) : identity);
 
-// ../../node_modules/@effect/platform-node-shared/dist/NodeStream.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/NodeStream.js
 var fromReadable = (options) => fromChannel3(fromReadableChannel(options));
 var fromReadableChannel = (options) => fromTransform((_2, scope3) => readableToPullUnsafe({
   scope: scope3,
@@ -86253,7 +88726,7 @@ var readableToPullUnsafe = (options) => {
 };
 var defaultOnError = (error2) => new UnknownError2(error2);
 
-// ../../node_modules/@effect/platform-node-shared/dist/NodeChildProcessSpawner.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/NodeChildProcessSpawner.js
 var toError = (error2) => error2 instanceof globalThis.Error ? error2 : new globalThis.Error(String(error2));
 var toPlatformError = (method, error2, command2) => {
   const {
@@ -86723,7 +89196,7 @@ var flattenCommand = (command2) => {
   };
 };
 
-// ../../node_modules/@effect/platform-node-shared/dist/NodeFileSystem.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/NodeFileSystem.js
 import * as Crypto from "node:crypto";
 import * as NFS from "node:fs";
 import * as OS from "node:os";
@@ -87100,10 +89573,10 @@ var makeFileSystem = /* @__PURE__ */ map5(/* @__PURE__ */ serviceOption2(WatchBa
 }));
 var layer2 = /* @__PURE__ */ effect(FileSystem)(makeFileSystem);
 
-// ../../node_modules/@effect/platform-node/dist/NodeFileSystem.js
+// ../../node_modules/.bun/@effect+platform-node@4.0.0-beta.83+57c66e18831c17f0/node_modules/@effect/platform-node/dist/NodeFileSystem.js
 var layer3 = layer2;
 
-// ../../node_modules/effect/dist/unstable/http/Cookies.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/Cookies.js
 var TypeId25 = "~effect/http/Cookies";
 var CookieTypeId = "~effect/http/Cookies/Cookie";
 var Proto4 = {
@@ -87134,16 +89607,16 @@ var fromIterable2 = (cookies) => {
 var fromSetCookie = (headers) => {
   const arrayHeaders = typeof headers === "string" ? [headers] : headers;
   const cookies = [];
-  for (const header of arrayHeaders) {
-    const cookie = parseSetCookie(header.trim());
+  for (const header2 of arrayHeaders) {
+    const cookie = parseSetCookie(header2.trim());
     if (cookie) {
       cookies.push(cookie);
     }
   }
   return fromIterable2(cookies);
 };
-function parseSetCookie(header) {
-  const parts = header.split(";").map((_2) => _2.trim()).filter((_2) => _2 !== "");
+function parseSetCookie(header2) {
+  const parts = header2.split(";").map((_2) => _2.trim()).filter((_2) => _2 !== "");
   if (parts.length === 0) {
     return;
   }
@@ -87286,7 +89759,7 @@ var tryDecodeURIComponent = (str) => {
   }
 };
 
-// ../../node_modules/effect/dist/unstable/http/Headers.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/Headers.js
 var TypeId26 = /* @__PURE__ */ Symbol.for("~effect/http/Headers");
 var Proto5 = /* @__PURE__ */ Object.defineProperties(/* @__PURE__ */ Object.create(null), {
   [TypeId26]: {
@@ -87393,7 +89866,7 @@ var CurrentRedactedNames = /* @__PURE__ */ Reference("effect/Headers/CurrentReda
   defaultValue: () => ["authorization", "cookie", "set-cookie", "x-api-key"]
 });
 
-// ../../node_modules/effect/dist/unstable/http/HttpClientError.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpClientError.js
 var TypeId27 = "~effect/http/HttpClientError";
 class HttpClientError2 extends (/* @__PURE__ */ TaggedError2("HttpClientError")) {
   constructor(props) {
@@ -87456,7 +89929,7 @@ class EmptyBodyError extends (/* @__PURE__ */ TaggedError2("EmptyBodyError")) {
   }
 }
 
-// ../../node_modules/effect/dist/unstable/http/UrlParams.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/UrlParams.js
 var TypeId28 = "~effect/http/UrlParams";
 var Proto6 = {
   ...PipeInspectableProto,
@@ -87561,7 +90034,7 @@ var baseUrl = () => {
   return;
 };
 
-// ../../node_modules/effect/dist/unstable/http/HttpBody.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpBody.js
 var TypeId29 = "~effect/http/HttpBody";
 class Proto7 {
   [TypeId29];
@@ -87593,10 +90066,10 @@ class Uint8Array3 extends Proto7 {
   body;
   contentType;
   contentLength;
-  constructor(body, contentType, contentLength) {
+  constructor(body, contentType2, contentLength) {
     super();
     this.body = body;
-    this.contentType = contentType;
+    this.contentType = contentType2;
     this.contentLength = contentLength;
   }
   toJSON() {
@@ -87610,12 +90083,12 @@ class Uint8Array3 extends Proto7 {
     };
   }
 }
-var uint8Array = (body, contentType) => new Uint8Array3(body, contentType ?? "application/octet-stream", body.length);
+var uint8Array = (body, contentType2) => new Uint8Array3(body, contentType2 ?? "application/octet-stream", body.length);
 
-// ../../node_modules/effect/dist/unstable/http/HttpMethod.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpMethod.js
 var allShort = [["GET", "get"], ["POST", "post"], ["PUT", "put"], ["DELETE", "del"], ["PATCH", "patch"], ["HEAD", "head"], ["OPTIONS", "options"], ["TRACE", "trace"]];
 
-// ../../node_modules/effect/dist/unstable/http/HttpClientRequest.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpClientRequest.js
 var TypeId30 = "~effect/http/HttpClientRequest";
 var Proto8 = {
   [TypeId30]: TypeId30,
@@ -87712,16 +90185,16 @@ var setBody = /* @__PURE__ */ dual(2, (self2, body) => {
   return makeWith(self2.method, self2.url, self2.urlParams, self2.hash, headers, body);
 });
 
-// ../../node_modules/effect/dist/unstable/http/HttpIncomingMessage.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpIncomingMessage.js
 var TypeId31 = "~effect/http/HttpIncomingMessage";
 var inspect = (self2, that) => {
-  const contentType = self2.headers["content-type"] ?? "";
+  const contentType2 = self2.headers["content-type"] ?? "";
   let body;
-  if (contentType.includes("application/json")) {
+  if (contentType2.includes("application/json")) {
     try {
       body = runSync2(self2.json);
     } catch (_2) {}
-  } else if (contentType.includes("text/") || contentType.includes("urlencoded")) {
+  } else if (contentType2.includes("text/") || contentType2.includes("urlencoded")) {
     try {
       body = runSync2(self2.text);
     } catch (_2) {}
@@ -87737,7 +90210,7 @@ var inspect = (self2, that) => {
   return obj;
 };
 
-// ../../node_modules/effect/dist/unstable/http/HttpClientResponse.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpClientResponse.js
 var TypeId32 = "~effect/http/HttpClientResponse";
 var fromWeb = (request, source) => new WebHttpClientResponse(request, source);
 class WebHttpClientResponse extends Class2 {
@@ -87785,7 +90258,7 @@ class WebHttpClientResponse extends Class2 {
           cause
         })
       })
-    }) : fail12(new HttpClientError2({
+    }) : fail13(new HttpClientError2({
       reason: new EmptyBodyError({
         request: this.request,
         response: this,
@@ -87871,7 +90344,7 @@ class WebHttpClientResponse extends Class2 {
   }
 }
 
-// ../../node_modules/effect/dist/unstable/http/HttpTraceContext.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpTraceContext.js
 var toHeaders = (span) => fromRecordUnsafe({
   b3: `${span.traceId}-${span.spanId}-${span.sampled ? "1" : "0"}${match(span.parent, {
     onNone: () => "",
@@ -87880,7 +90353,7 @@ var toHeaders = (span) => fromRecordUnsafe({
   traceparent: `00-${span.traceId}-${span.spanId}-${span.sampled ? "01" : "00"}`
 });
 
-// ../../node_modules/effect/dist/unstable/http/HttpClient.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/HttpClient.js
 var TypeId33 = "~effect/http/HttpClient";
 var HttpClient2 = /* @__PURE__ */ Service("effect/HttpClient");
 var transformResponse = /* @__PURE__ */ dual(2, (self2, f) => makeWith2((request) => f(self2.postprocess(request)), self2.preprocess));
@@ -88089,7 +90562,7 @@ class InterruptibleResponse {
   }
 }
 
-// ../../node_modules/effect/dist/unstable/http/FetchHttpClient.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/unstable/http/FetchHttpClient.js
 var Fetch = /* @__PURE__ */ Reference("effect/http/FetchHttpClient/Fetch", {
   defaultValue: () => globalThis.fetch
 });
@@ -88131,7 +90604,7 @@ var fetch = /* @__PURE__ */ make24((request, url, signal, fiber2) => {
   return send(undefined);
 });
 var layer4 = /* @__PURE__ */ layerMergedContext(/* @__PURE__ */ succeed6(fetch));
-// ../../node_modules/@effect/platform-node-shared/dist/NodePath.js
+// ../../node_modules/.bun/@effect+platform-node-shared@4.0.0-beta.83+43902b222b0d7d3e/node_modules/@effect/platform-node-shared/dist/NodePath.js
 import * as NodePath from "node:path";
 import * as NodeUrl from "node:url";
 var fromFileUrl2 = (url) => try_2({
@@ -88169,7 +90642,7 @@ var layer5 = /* @__PURE__ */ succeed5(Path)({
   toFileUrl: toFileUrl2
 });
 
-// ../../node_modules/@effect/platform-node/dist/NodePath.js
+// ../../node_modules/.bun/@effect+platform-node@4.0.0-beta.83+57c66e18831c17f0/node_modules/@effect/platform-node/dist/NodePath.js
 var layer6 = layer5;
 
 // ../../src/platform/node.ts
@@ -88223,11 +90696,11 @@ var parseTree = (workspace, source) => {
     const tab = record2.indexOf(9);
     if (tab < 0)
       throw materializationFailure("source.tree", "Git tree output omitted its pathname separator.");
-    const header = decoded.decode(record2.slice(0, tab));
-    const match6 = /^(100644|100755|120000) blob ([a-f0-9]+)$/u.exec(header);
+    const header2 = decoded.decode(record2.slice(0, tab));
+    const match6 = /^(100644|100755|120000) blob ([a-f0-9]+)$/u.exec(header2);
     if (match6 === null) {
-      const unsupported2 = /^(\d+) (\w+) /u.exec(header);
-      throw materializationFailure("source.tree", unsupported2?.[2] === "commit" ? "Verified source contains a submodule; declare and verify it as a separate input before preparation." : `Verified source contains unsupported Git entry ${header}.`);
+      const unsupported2 = /^(\d+) (\w+) /u.exec(header2);
+      throw materializationFailure("source.tree", unsupported2?.[2] === "commit" ? "Verified source contains a submodule; declare and verify it as a separate input before preparation." : `Verified source contains unsupported Git entry ${header2}.`);
     }
     const pathText = decoded.decode(record2.slice(tab + 1));
     const path = canonicalStagingPath(pathText);
@@ -88335,7 +90808,7 @@ var runtime = {
 var SourceObserverLive = succeed5(SourceObserver, makeSourceObserver(runtime));
 
 // ../../src/drivers/process.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 import {
   accessSync,
   chmodSync as chmodSync4,
@@ -88354,7 +90827,7 @@ import {
 import { tmpdir as tmpdir3 } from "node:os";
 import { delimiter, isAbsolute as isAbsolute6, join as join9, resolve as resolve7 } from "node:path";
 
-// ../../node_modules/effect/dist/ConfigProvider.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/ConfigProvider.js
 function makeValue(value3) {
   return {
     _tag: "Value",
@@ -88386,9 +90859,9 @@ var Proto10 = {
     };
   }
 };
-function make25(get3, mapInput2, prefix) {
+function make25(get4, mapInput2, prefix) {
   const self2 = Object.create(Proto10);
-  self2.get = get3;
+  self2.get = get4;
   self2.mapInput = mapInput2;
   self2.prefix = prefix;
   self2.load = (path) => {
@@ -88396,7 +90869,7 @@ function make25(get3, mapInput2, prefix) {
       path = mapInput2(path);
     if (prefix)
       path = [...prefix, ...path];
-    return get3(path);
+    return get4(path);
   };
   return self2;
 }
@@ -88451,7 +90924,7 @@ function trieNodeAt(root, path) {
   return node;
 }
 
-// ../../node_modules/effect/dist/Config.js
+// ../../node_modules/.bun/effect@4.0.0-beta.83/node_modules/effect/dist/Config.js
 var TypeId34 = "~effect/Config";
 class ConfigError {
   _tag = "ConfigError";
@@ -88526,7 +90999,7 @@ var withDefault2 = /* @__PURE__ */ dual(2, (self2, defaultValue) => {
         return succeed8(defaultValue);
       }
     }
-    return fail14(err.cause);
+    return fail15(err.cause);
   });
 });
 var option2 = (self2) => self2.pipe(map9(some2), withDefault2(none2()));
@@ -88626,13 +91099,13 @@ function schema(codec, path) {
     return recur2(codecStringTreeEncoded, provider, defaultPath).pipe(flatMapEager2((tree) => decodeUnknownEffect3(tree).pipe(mapErrorEager2((issue2) => new SchemaError(path2.length > 0 ? new Pointer(path2, issue2) : issue2)))), mapErrorEager2((cause) => new ConfigError(cause)));
   });
 }
-function fail14(err) {
+function fail15(err) {
   return make26(() => fail6(new ConfigError(err)));
 }
 function succeed8(value3) {
   return make26(() => succeed6(value3));
 }
-function string3(name) {
+function string4(name) {
   return schema(String4, name);
 }
 function redacted(name) {
@@ -88640,7 +91113,7 @@ function redacted(name) {
 }
 
 // ../../src/drivers/environment.ts
-var readOptionalEnv = (name) => option2(string3(name)).pipe(map5(getOrUndefined), orElseSucceed2(() => {
+var readOptionalEnv = (name) => option2(string4(name)).pipe(map5(getOrUndefined), orElseSucceed2(() => {
   return;
 }));
 var readEnvironment = (names2) => forEach2(["PATH", ...names2], (name) => readOptionalEnv(name).pipe(map5((value3) => [name, value3]))).pipe(map5((entries) => ({
@@ -88788,7 +91261,7 @@ process.exit(await child.exited)
 var networkIsolationHelperSource = makeNetworkIsolationHelperSource();
 
 // ../../src/drivers/process.ts
-var helperDigest = createHash4("sha256").update(networkIsolationHelperSource).digest("hex");
+var helperDigest = createHash5("sha256").update(networkIsolationHelperSource).digest("hex");
 var collect = (stream2) => mkString(decodeText(stream2));
 var executableIdentity = (command2, cwd, path) => {
   const candidates = command2.includes("/") ? [isAbsolute6(command2) ? command2 : resolve7(cwd, command2)] : (path ?? "").split(delimiter).filter((entry) => entry.length > 0).map((entry) => resolve7(entry, command2));
@@ -88806,7 +91279,7 @@ var executableIdentity = (command2, cwd, path) => {
   return {
     protocol: "ts-release-executable/v1",
     command: command2,
-    sha256: createHash4("sha256").update(readFileSync6(canonical2)).digest("hex")
+    sha256: createHash5("sha256").update(readFileSync6(canonical2)).digest("hex")
   };
 };
 var isDigest = (value3) => typeof value3 === "string" && /^[a-f0-9]{64}$/u.test(value3);
@@ -88825,7 +91298,7 @@ var readBunCacheDirectory = fn2("readBunCacheDirectory")(function* () {
   const home = configured === undefined ? yield* readOptionalEnv("HOME") : undefined;
   const candidate = configured ?? (home === undefined ? undefined : join9(home, ".bun", "install", "cache"));
   if (candidate === undefined || candidate.length === 0) {
-    return yield* fail6(failure("Certified Bun cache access requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located."));
+    return yield* fail6(failure2("Certified Bun cache access requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located."));
   }
   return yield* try_2({
     try: () => {
@@ -88836,7 +91309,7 @@ var readBunCacheDirectory = fn2("readBunCacheDirectory")(function* () {
         throw new Error("the cache path is not a directory");
       return canonical2;
     },
-    catch: (cause) => failure(`The offline Bun install cache is unavailable: ${String(cause)}`)
+    catch: (cause) => failure2(`The offline Bun install cache is unavailable: ${String(cause)}`)
   });
 });
 var compileRuntimeFiles = {
@@ -88859,7 +91332,7 @@ var certifiedBunCompileTarget = (command2) => {
 var resolveBunCompileRuntime = fn2("resolveBunCompileRuntime")(function* (target2, tool) {
   const bunVersion = process.versions.bun;
   if (bunVersion === undefined || bunVersion.length === 0) {
-    return yield* fail6(failure("Certified Bun compilation requires a Bun parent runtime."));
+    return yield* fail6(failure2("Certified Bun compilation requires a Bun parent runtime."));
   }
   if (target2 === "bun-linux-x64") {
     return {
@@ -88890,11 +91363,11 @@ var resolveBunCompileRuntime = fn2("resolveBunCompileRuntime")(function* (target
           bunVersion,
           source: "host-cache-private-copy",
           cacheFile,
-          sha256: createHash4("sha256").update(readFileSync6(sourcePath)).digest("hex")
+          sha256: createHash5("sha256").update(readFileSync6(sourcePath)).digest("hex")
         }
       };
     },
-    catch: (cause) => failure(`The certified Bun compile runtime is unavailable: ${String(cause)}`)
+    catch: (cause) => failure2(`The certified Bun compile runtime is unavailable: ${String(cause)}`)
   });
 });
 var parseIsolationIdentity = (path) => {
@@ -88918,7 +91391,7 @@ var makeRunCommand = gen2(function* () {
     const executable = command2.network === "deny" ? "bun" : command2.argv[0];
     const tool = yield* try_2({
       try: () => executableIdentity(executable, command2.cwd, env.PATH),
-      catch: (cause) => failure(String(cause))
+      catch: (cause) => failure2(String(cause))
     });
     const compileTarget = certifiedBunCompileTarget(command2);
     const compileRuntime = compileTarget === undefined ? undefined : yield* resolveBunCompileRuntime(compileTarget, tool);
@@ -88964,10 +91437,10 @@ var makeRunCommand = gen2(function* () {
     }, { concurrency: "unbounded" });
     const networkIsolation = isolationResources === undefined ? undefined : yield* try_2({
       try: () => parseIsolationIdentity(isolationResources.identity),
-      catch: (cause) => failure(String(cause))
+      catch: (cause) => failure2(String(cause))
     });
     if (networkIsolation !== undefined && networkIsolation.bunSha256 !== tool.sha256) {
-      return yield* fail6(failure("The Bun executable changed between parent resolution and the isolation helper."));
+      return yield* fail6(failure2("The Bun executable changed between parent resolution and the isolation helper."));
     }
     if (compileResources !== undefined && compileRuntime !== undefined)
       yield* try_2({
@@ -88979,12 +91452,12 @@ var makeRunCommand = gen2(function* () {
           }
           if (expected[0] !== undefined) {
             const runtime2 = join9(compileResources.cache, expected[0]);
-            if (lstatSync6(runtime2).isSymbolicLink() || !lstatSync6(runtime2).isFile() || createHash4("sha256").update(readFileSync6(runtime2)).digest("hex") !== compileRuntime.identity.sha256) {
+            if (lstatSync6(runtime2).isSymbolicLink() || !lstatSync6(runtime2).isFile() || createHash5("sha256").update(readFileSync6(runtime2)).digest("hex") !== compileRuntime.identity.sha256) {
               throw new Error("the private runtime cache changed bytes or type");
             }
           }
         },
-        catch: (cause) => failure(`Certified Bun compilation did not preserve its private runtime cache: ${String(cause)}`)
+        catch: (cause) => failure2(`Certified Bun compilation did not preserve its private runtime cache: ${String(cause)}`)
       });
     return {
       stdout: command2.stdout === "complete-protocol" ? redactProtocolOutput(output2.stdout, commandEnvironment) : redactOutput(output2.stdout, commandEnvironment),
@@ -88994,14 +91467,15 @@ var makeRunCommand = gen2(function* () {
       ...networkIsolation === undefined ? {} : { networkIsolation },
       ...compileRuntime === undefined ? {} : { bunCompileRuntime: compileRuntime.identity }
     };
-  }).pipe(scoped2, mapError3((cause) => cause instanceof DriverError ? cause : failure(String(cause))));
+  }).pipe(scoped2, mapError3((cause) => cause instanceof DriverError ? cause : failure2(String(cause))));
 });
 
 // ../../src/platform/credentials.ts
+import { Buffer as Buffer2 } from "node:buffer";
 import { mkdir as mkdir3, mkdtemp as mkdtemp2, rm as rm3, writeFile as writeFile4 } from "node:fs/promises";
 import { tmpdir as tmpdir4 } from "node:os";
-import { basename as basename3, isAbsolute as isAbsolute7, join as join10, resolve as resolve8 } from "node:path";
-var Semver4 = __toESM(require_semver2(), 1);
+import { basename as basename4, isAbsolute as isAbsolute7, join as join10, resolve as resolve8 } from "node:path";
+var Semver5 = __toESM(require_semver2(), 1);
 class CredentialPlatformError extends TaggedErrorClass()("CredentialPlatformError", {
   phase: Literals(["observe", "mutate", "resource", "spawn"]),
   commitment: Literals(["before-dispatch", "unknown"]),
@@ -89091,7 +91565,7 @@ var verifyTrustedHostIdentity = fn2("EnvironmentCredentialProvider.verifyTrusted
   ];
   const values = {};
   for (const [name, value3] of expected) {
-    const observed = yield* string3(name).pipe(mapError3(() => unsupported2(request, `Trusted publishing host identity ${name} is unavailable.`)));
+    const observed = yield* string4(name).pipe(mapError3(() => unsupported2(request, `Trusted publishing host identity ${name} is unavailable.`)));
     if (observed !== value3) {
       return yield* unsupported2(request, `Trusted publishing host identity ${name} does not match prepared intent.`);
     }
@@ -89106,7 +91580,7 @@ var verifyTrustedHostIdentity = fn2("EnvironmentCredentialProvider.verifyTrusted
     [githubRunAttemptName, certifiedDecimalId, "a canonical positive decimal run attempt"]
   ];
   for (const [name, pattern, description] of shaped) {
-    const observed = yield* string3(name).pipe(mapError3(() => unsupported2(request, `Trusted publishing provenance fact ${name} is unavailable.`)));
+    const observed = yield* string4(name).pipe(mapError3(() => unsupported2(request, `Trusted publishing provenance fact ${name} is unavailable.`)));
     if (!pattern.test(observed)) {
       return yield* unsupported2(request, `Trusted publishing provenance fact ${name} is not ${description}.`);
     }
@@ -89286,13 +91760,13 @@ var sendAnonymous = (http2, request) => {
     ...request.body === undefined ? {} : { body: request.body }
   }).pipe(mapError3(() => platformError("observe", "unknown", "Observation HTTP transport failed after dispatch.")));
 };
-var sendAuthorized = (http2, request, token, phase) => {
+var sendAuthorized = (http2, request, token, phase, credentialScheme = "bearer") => {
   if (hasAuthorizationHeader(request.headers)) {
     return fail6(platformError(phase, "before-dispatch", "Callers may not supply an Authorization header."));
   }
   const headers = {
     ...request.headers ?? {},
-    authorization: `Bearer ${value2(token)}`
+    authorization: credentialScheme === "pypi-token-basic" ? `Basic ${Buffer2.from(`__token__:${value2(token)}`, "utf8").toString("base64")}` : `Bearer ${value2(token)}`
   };
   return http2.request({
     method: request.method,
@@ -89314,9 +91788,12 @@ var makeHttpAuthorizer = (http2, vault, observationGrants) => ({
 var makeAuthorizedMutationHttp = (http2, vault) => ({
   execute: fn2("AuthorizedMutationHttp.execute")(function* (operation, request, grant) {
     yield* validateGrantForOperation(operation, grant);
+    if (operation.provider === "pypi" !== (request.credentialScheme === "pypi-token-basic")) {
+      return yield* platformError("mutate", "before-dispatch", "The PyPI Basic credential projection is accepted only for typed PyPI mutations and is mandatory for them.");
+    }
     yield* checkAudience(operation.subject, operation.audience, request.url, operation.provider === "github");
     const token = yield* lookupToken(vault, grant.subject, grant.ref);
-    return yield* sendAuthorized(http2, request, token, "mutate");
+    return yield* sendAuthorized(http2, request, token, "mutate", request.credentialScheme);
   })
 });
 var npmUserConfigs = new WeakMap;
@@ -89376,7 +91853,7 @@ var parseVersion = (value3) => {
   return [Number(match6[1]), Number(match6[2]), Number(match6[3])];
 };
 var versionAtLeast = (value3, minimum) => value3[0] > minimum[0] || value3[0] === minimum[0] && (value3[1] > minimum[1] || value3[1] === minimum[1] && value3[2] >= minimum[2]);
-var optionalPath = option2(string3("PATH")).pipe(map5(getOrUndefined), orElseSucceed2(() => {
+var optionalPath = option2(string4("PATH")).pipe(map5(getOrUndefined), orElseSucceed2(() => {
   return;
 }));
 var closedBaseEnvironment = (path) => path === undefined ? {} : { PATH: path };
@@ -89475,7 +91952,7 @@ var certifiedNpmSpecIssue = (spec) => {
   if (operation._tag !== "PublishOperation" || operation.provider !== "npm" || operation.purpose !== "publish") {
     return "The certified npm publisher accepts only an npm publish operation.";
   }
-  if (typeof spec.packageName !== "string" || spec.packageName.length === 0 || typeof spec.version !== "string" || Semver4.valid(spec.version) !== spec.version) {
+  if (typeof spec.packageName !== "string" || spec.packageName.length === 0 || typeof spec.version !== "string" || Semver5.valid(spec.version) !== spec.version) {
     return "The certified npm publisher requires one nonempty package name and canonical semantic version.";
   }
   if (operation.subject !== `npm:${spec.packageName}@${spec.version}`) {
@@ -89488,14 +91965,14 @@ var certifiedNpmSpecIssue = (spec) => {
   } catch {
     return "The certified npm publisher requires a canonical registry and npm distribution tag.";
   }
-  if (Semver4.validRange(spec.distTag) !== null || spec.distTag.trim() !== spec.distTag || encodeURIComponent(spec.distTag) !== spec.distTag) {
+  if (Semver5.validRange(spec.distTag) !== null || spec.distTag.trim() !== spec.distTag || encodeURIComponent(spec.distTag) !== spec.distTag) {
     return "The certified npm publisher requires a canonical registry and npm distribution tag.";
   }
-  if (spec.access !== "public" && spec.access !== "restricted" || spec.provenance !== "required" && spec.provenance !== "automatic" && spec.provenance !== "disabled" || spec._tag === "NpmPublisherSpec" && spec.provenance === "automatic" || spec.access === "restricted" && !spec.packageName.startsWith("@") || Semver4.prerelease(spec.version) !== null && spec.distTag === "latest") {
+  if (spec.access !== "public" && spec.access !== "restricted" || spec.provenance !== "required" && spec.provenance !== "automatic" && spec.provenance !== "disabled" || spec._tag === "NpmPublisherSpec" && spec.provenance === "automatic" || spec.access === "restricted" && !spec.packageName.startsWith("@") || Semver5.prerelease(spec.version) !== null && spec.distTag === "latest") {
     return "The certified npm publisher access, provenance, or dist-tag policy is not an allowed canonical value.";
   }
   try {
-    const fileName = basename3(spec.tarballPath);
+    const fileName = basename4(spec.tarballPath);
     if (!isAbsolute7(spec.cwd) || resolve8(spec.cwd) !== spec.cwd || !/^[a-f0-9]{64}$/u.test(fileName) || resolve8(spec.cwd, "blobs", fileName) !== spec.tarballPath) {
       return "The certified npm publisher tarball must be the canonical prepared-store blob path.";
     }
@@ -89695,24 +92172,25 @@ var ReleaseRuntimeLive = effect(ReleaseRuntime, gen2(function* () {
 }));
 
 // ../../src/platform/services.ts
-var makeReleaseServicesLive = (preparedStore) => effectContext(gen2(function* () {
+var makeReleaseServicesLive = (preparedStore, publicationClaimStore) => effectContext(gen2(function* () {
   const source = yield* SourceObserver;
   const run3 = yield* makeRunCommand;
   const client = yield* HttpClient2;
   const spawner = yield* ChildProcessSpawner;
   const credentials = makeEnvironmentCredentialPlatform(makePublicationHttp(client), spawner);
-  return make3(ReleaseRuntime, { source, run: run3 }).pipe(add(PreparedReleaseStore, preparedStore), add(CredentialProvider, credentials.credentialProvider), add(HttpAuthorizer, credentials.httpAuthorizer), add(AuthorizedMutationHttp, credentials.authorizedMutationHttp), add(NpmUserConfigResource, credentials.npmUserConfigResource), add(CertifiedPublisherSpawn, credentials.certifiedPublisherSpawn));
+  const context3 = make3(ReleaseRuntime, { source, run: run3 }).pipe(add(PreparedReleaseStore, preparedStore), add(CredentialProvider, credentials.credentialProvider), add(HttpAuthorizer, credentials.httpAuthorizer), add(AuthorizedMutationHttp, credentials.authorizedMutationHttp), add(NpmUserConfigResource, credentials.npmUserConfigResource), add(CertifiedPublisherSpawn, credentials.certifiedPublisherSpawn));
+  return publicationClaimStore === undefined ? context3 : add(context3, PublicationClaimStore, publicationClaimStore);
 }));
 
 // ../../src/platform/node.ts
 var nodeHost = mergeAll2(layer.pipe(provide2(mergeAll2(layer3, layer6))), layer4, SourceObserverLive);
-var makeNodeReleaseLayer = (preparedStore) => makeReleaseServicesLive(preparedStore).pipe(provide2(nodeHost));
+var makeNodeReleaseLayer = (preparedStore, publicationClaimStore) => makeReleaseServicesLive(preparedStore, publicationClaimStore).pipe(provide2(nodeHost));
 var defaultNodeStore = makeLocalPreparedReleaseStore(join11(process.cwd(), ".release", "ts-release", "prepared"));
 var NodeReleaseLayer = makeNodeReleaseLayer(defaultNodeStore);
 
 // ../../src/api/api.ts
-var safeFailure = (failure3, fallback) => {
-  const value3 = typeof failure3 === "object" && failure3 !== null && "reason" in failure3 && typeof failure3.reason === "string" ? failure3.reason : failure3 instanceof Error ? failure3.message : typeof failure3 === "string" ? failure3 : fallback;
+var safeFailure = (failure4, fallback) => {
+  const value3 = typeof failure4 === "object" && failure4 !== null && "reason" in failure4 && typeof failure4.reason === "string" ? failure4.reason : failure4 instanceof Error ? failure4.message : typeof failure4 === "string" ? failure4 : fallback;
   const normalized = [...value3].map((character) => {
     const codePoint = character.codePointAt(0) ?? 0;
     return codePoint === 9 || codePoint === 10 || codePoint === 13 || codePoint >= 32 ? character : "?";
@@ -89789,13 +92267,13 @@ var safeCause = (cause, fallback) => {
   return safeFailure(squash(cause), fallback);
 };
 var preparationFailure = (effect2) => effect2.pipe(catchCause2((cause) => {
-  const failure3 = squash(cause);
-  if (failure3 instanceof ReleaseInputError) {
-    return fail6(failure3);
+  const failure4 = squash(cause);
+  if (failure4 instanceof ReleaseInputError) {
+    return fail6(failure4);
   }
-  if (failure3 instanceof PreparationError && failure3.prepared !== undefined) {
+  if (failure4 instanceof PreparationError && failure4.prepared !== undefined) {
     return fail6(new ReleaseAbortedError({
-      prepared: failure3.prepared,
+      prepared: failure4.prepared,
       cause: safeCause(cause, "The durable prepared reference could not be handed to the host.")
     }));
   }
@@ -89807,27 +92285,43 @@ var afterCommitFailure = (prepared, effect2) => effect2.pipe(catchCause2((cause)
   prepared,
   cause: safeCause(cause, "The release operation stopped before a total report was available.")
 }))));
-var observeProgram = (prepared) => afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3(observePreparedRelease)));
-var publishCommitted = fn2("publishCommittedRelease")(function* (committed) {
-  const report = yield* publishPreparedRelease(committed.bundle);
+var observeProgram = (prepared, adapters) => afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3((bundle) => observePreparedRelease(bundle, adapters))));
+var publishCommitted = fn2("publishCommittedRelease")(function* (committed, adapters) {
+  const report = yield* publishPreparedRelease(committed.bundle, adapters);
   return { prepared: committed.ref, report };
 });
-var publishProgram = fn2("publishProgram")(function* (prepared) {
-  const result2 = yield* afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3((bundle) => publishCommitted({ ref: prepared, bundle }))));
+var publishProgram = fn2("publishProgram")(function* (prepared, adapters) {
+  const result2 = yield* afterCommitFailure(prepared, loadPrepared(prepared).pipe(flatMap3((bundle) => publishCommitted({ ref: prepared, bundle }, adapters))));
   return result2.report;
 });
-var releaseProgram = fn2("releaseProgram")(function* (input) {
+var releaseProgram = fn2("releaseProgram")(function* (input, adapters) {
   const committed = yield* preparationFailure(prepareProgram(input, {
     allowEmpty: input.allowEmpty === true
   }));
-  return yield* afterCommitFailure(committed.ref, publishCommitted(committed));
+  return yield* afterCommitFailure(committed.ref, publishCommitted(committed, adapters));
 });
 var correctProgram = fn2("correctProgram")(function* (input) {
   const bundle = yield* loadPrepared(input.prepared);
+  const credentials = yield* CredentialProvider;
+  const http2 = yield* HttpAuthorizer;
+  const mutationHttp = yield* AuthorizedMutationHttp;
   const outcome = yield* try_2({
     try: () => bindAuthoredCorrection(bundle, input.correction),
     catch: inputFailure
-  }).pipe(flatMap3((intent) => correctPreparedRelease({ bundle, intent })));
+  }).pipe(flatMap3((intent) => correctPreparedRelease({
+    bundle,
+    intent,
+    services: { credentials, http: http2, mutationHttp }
+  })));
+  if (outcome._tag === "CorrectionExecuted")
+    return new CorrectionReport({
+      prepared: input.prepared,
+      status: outcome.report.status,
+      provider: outcome.provider,
+      reason: SafeReason.make("Catalog correction completed through the exact conditional Git-data subject report."),
+      proposal: "",
+      report: outcome.report
+    });
   return new CorrectionReport({
     prepared: input.prepared,
     status: "unsupported",
@@ -89836,8 +92330,9 @@ var correctProgram = fn2("correctProgram")(function* (input) {
     proposal: outcome.proposal ?? ""
   });
 });
-var makeReleaseApi = (layer7) => {
+var makeReleaseApi = (layer7, options = {}) => {
   const runtime2 = make6(layer7);
+  const adapters = options.providerAdapters ?? [];
   const run3 = (effect2) => runtime2.runPromise(effect2);
   const inspect2 = async (value3) => {
     const input = decodeInspectInput(value3);
@@ -89857,15 +92352,15 @@ var makeReleaseApi = (layer7) => {
   };
   const observe = async (value3) => {
     const input = decodeObserveInput(value3);
-    return run3(observeProgram(input.prepared));
+    return run3(observeProgram(input.prepared, adapters));
   };
   const publish = async (value3) => {
     const input = decodePublishInput(value3);
-    return run3(publishProgram(input.prepared));
+    return run3(publishProgram(input.prepared, adapters));
   };
   const release = async (value3) => {
     const input = decodeReleaseInput(value3);
-    return run3(releaseProgram(input));
+    return run3(releaseProgram(input, adapters));
   };
   const correct = async (value3) => {
     const input = decodeCorrectInput(value3);
@@ -89930,13 +92425,13 @@ var pathInWorkspace = (root, value3) => {
   return inside(root, realpathSync8(candidate));
 };
 var present = (value3) => value3.length > 0;
-var fail15 = (reason2) => {
+var fail16 = (reason2) => {
   throw new Error(reason2);
 };
 var command2 = (value3) => {
   if (actionCommands.includes(value3))
     return value3;
-  return fail15(`Action command must be one of ${actionCommands.join(", ")}.`);
+  return fail16(`Action command must be one of ${actionCommands.join(", ")}.`);
 };
 var configJson = (runtime2, path) => {
   try {
@@ -89961,7 +92456,7 @@ var writeReport = (runtime2, root, value3) => {
 var rejectExtra = (values, allowed) => {
   for (const [name, value3] of Object.entries(values)) {
     if (present(value3) && !allowed.includes(name)) {
-      fail15(`Action input '${name}' is not valid for command '${values.command}'.`);
+      fail16(`Action input '${name}' is not valid for command '${values.command}'.`);
     }
   }
 };
@@ -89972,9 +92467,9 @@ var recoveryGuidance = workflowRecoveryGuidance;
 var decodePrepared = (value3) => runPromise2(decodeCompletePreparedReleaseRef(value3));
 var confirmedPrepared = (reference, channel) => {
   const encoded = encodeCompletePreparedReleaseRef(reference);
-  const emitted = channel.current() ?? fail15("Operation completed without a durable prepared reference.");
+  const emitted = channel.current() ?? fail16("Operation completed without a durable prepared reference.");
   if (emitted !== encoded) {
-    fail15("Operation returned a different prepared reference than its durable store committed.");
+    fail16("Operation returned a different prepared reference than its durable store committed.");
   }
   return encoded;
 };
@@ -89991,12 +92486,12 @@ var runAction = async (api2, runtime2) => {
     let prepared;
     let report;
     if (selected === "publish") {
-      const reference = await decodePrepared(values.prepared || fail15("publish requires prepared."));
+      const reference = await decodePrepared(values.prepared || fail16("publish requires prepared."));
       prepared = encodeCompletePreparedReleaseRef(reference);
       await runtime2.preparedReference.emit(prepared);
       report = await api2.publish({ prepared: reference });
     } else {
-      const config = configJson(runtime2, pathInWorkspace(root, values.config || fail15(`${selected} requires config.`)));
+      const config = configJson(runtime2, pathInWorkspace(root, values.config || fail16(`${selected} requires config.`)));
       if (selected === "release") {
         const result2 = await api2.release({ config, workspace: root });
         prepared = confirmedPrepared(result2.prepared, runtime2.preparedReference);
@@ -91717,12 +94212,12 @@ class ArtifactHttpClient {
       new BearerCredentialHandler(token)
     ]);
   }
-  request(service3, method, contentType, data) {
+  request(service3, method, contentType2, data) {
     return __awaiter4(this, undefined, undefined, function* () {
       const url = new URL(`/twirp/${service3}/${method}`, this.baseUrl).href;
       debug(`[Request] ${method} ${url}`);
       const headers = {
-        "Content-Type": contentType
+        "Content-Type": contentType2
       };
       try {
         const { body } = yield this.retryableRequest(() => __awaiter4(this, undefined, undefined, function* () {
@@ -92853,14 +95348,14 @@ class NodeHttpClient {
 }
 function getResponseHeaders(res) {
   const headers = createHttpHeaders();
-  for (const header of Object.keys(res.headers)) {
-    const value3 = res.headers[header];
+  for (const header2 of Object.keys(res.headers)) {
+    const value3 = res.headers[header2];
     if (Array.isArray(value3)) {
       if (value3.length > 0) {
-        headers.set(header, value3[0]);
+        headers.set(header2, value3[0]);
       }
     } else if (value3) {
-      headers.set(header, value3);
+      headers.set(header2, value3);
     }
   }
   return headers;
@@ -93034,10 +95529,10 @@ function getRetryAfterInMs(response) {
   if (!(response && [429, 503].includes(response.status)))
     return;
   try {
-    for (const header of AllRetryAfterHeaders) {
-      const retryAfterValue = parseHeaderValueAsNumber(response, header);
+    for (const header2 of AllRetryAfterHeaders) {
+      const retryAfterValue = parseHeaderValueAsNumber(response, header2);
       if (retryAfterValue === 0 || retryAfterValue) {
-        const multiplyingFactor = header === RetryAfterHeader ? 1000 : 1;
+        const multiplyingFactor = header2 === RetryAfterHeader ? 1000 : 1;
         return retryAfterValue * multiplyingFactor;
       }
     }
@@ -93242,8 +95737,8 @@ function formDataPolicy() {
         request.body = undefined;
       }
       if (request.formData) {
-        const contentType = request.headers.get("Content-Type");
-        if (contentType && contentType.indexOf("application/x-www-form-urlencoded") !== -1) {
+        const contentType2 = request.headers.get("Content-Type");
+        if (contentType2 && contentType2.indexOf("application/x-www-form-urlencoded") !== -1) {
           request.body = wwwFormUrlEncode(request.formData);
         } else {
           await prepareFormData(request.formData, request);
@@ -93268,11 +95763,11 @@ function wwwFormUrlEncode(formData2) {
   return urlSearchParams.toString();
 }
 async function prepareFormData(formData2, request) {
-  const contentType = request.headers.get("Content-Type");
-  if (contentType && !contentType.startsWith("multipart/form-data")) {
+  const contentType2 = request.headers.get("Content-Type");
+  if (contentType2 && !contentType2.startsWith("multipart/form-data")) {
     return;
   }
-  request.headers.set("Content-Type", contentType ?? "multipart/form-data");
+  request.headers.set("Content-Type", contentType2 ?? "multipart/form-data");
   const parts = [];
   for (const [fieldName, values] of Object.entries(formData2)) {
     for (const value3 of Array.isArray(values) ? values : [values]) {
@@ -93463,7 +95958,7 @@ function multipartPolicy() {
       if (!parsedHeader) {
         throw new Error(`Got multipart request body, but content-type header was not multipart: ${contentTypeHeader}`);
       }
-      const [, contentType, parsedBoundary] = parsedHeader;
+      const [, contentType2, parsedBoundary] = parsedHeader;
       if (parsedBoundary && boundary && parsedBoundary !== boundary) {
         throw new Error(`Multipart boundary was specified as ${parsedBoundary} in the header, but got ${boundary} in the request body`);
       }
@@ -93473,7 +95968,7 @@ function multipartPolicy() {
       } else {
         boundary = generateBoundary();
       }
-      request.headers.set("Content-Type", `${contentType}; boundary=${boundary}`);
+      request.headers.set("Content-Type", `${contentType2}; boundary=${boundary}`);
       await buildRequestBody(request, request.multipartBody.parts, boundary);
       request.multipartBody = undefined;
       return next(request);
@@ -94631,7 +97126,7 @@ class SerializerImpl {
       }
     }
   }
-  serialize(mapper, object, objectName, options = { xml: {} }) {
+  serialize(mapper, object2, objectName, options = { xml: {} }) {
     const updatedOptions = {
       xml: {
         rootName: options.xml.rootName ?? "",
@@ -94648,40 +97143,40 @@ class SerializerImpl {
       payload = [];
     }
     if (mapper.isConstant) {
-      object = mapper.defaultValue;
+      object2 = mapper.defaultValue;
     }
     const { required, nullable } = mapper;
-    if (required && nullable && object === undefined) {
+    if (required && nullable && object2 === undefined) {
       throw new Error(`${objectName} cannot be undefined.`);
     }
-    if (required && !nullable && (object === undefined || object === null)) {
+    if (required && !nullable && (object2 === undefined || object2 === null)) {
       throw new Error(`${objectName} cannot be null or undefined.`);
     }
-    if (!required && nullable === false && object === null) {
+    if (!required && nullable === false && object2 === null) {
       throw new Error(`${objectName} cannot be null.`);
     }
-    if (object === undefined || object === null) {
-      payload = object;
+    if (object2 === undefined || object2 === null) {
+      payload = object2;
     } else {
       if (mapperType.match(/^any$/i) !== null) {
-        payload = object;
+        payload = object2;
       } else if (mapperType.match(/^(Number|String|Boolean|Object|Stream|Uuid)$/i) !== null) {
-        payload = serializeBasicTypes(mapperType, objectName, object);
+        payload = serializeBasicTypes(mapperType, objectName, object2);
       } else if (mapperType.match(/^Enum$/i) !== null) {
         const enumMapper = mapper;
-        payload = serializeEnumType(objectName, enumMapper.type.allowedValues, object);
+        payload = serializeEnumType(objectName, enumMapper.type.allowedValues, object2);
       } else if (mapperType.match(/^(Date|DateTime|TimeSpan|DateTimeRfc1123|UnixTime)$/i) !== null) {
-        payload = serializeDateTypes(mapperType, object, objectName);
+        payload = serializeDateTypes(mapperType, object2, objectName);
       } else if (mapperType.match(/^ByteArray$/i) !== null) {
-        payload = serializeByteArrayType(objectName, object);
+        payload = serializeByteArrayType(objectName, object2);
       } else if (mapperType.match(/^Base64Url$/i) !== null) {
-        payload = serializeBase64UrlType(objectName, object);
+        payload = serializeBase64UrlType(objectName, object2);
       } else if (mapperType.match(/^Sequence$/i) !== null) {
-        payload = serializeSequenceType(this, mapper, object, objectName, Boolean(this.isXML), updatedOptions);
+        payload = serializeSequenceType(this, mapper, object2, objectName, Boolean(this.isXML), updatedOptions);
       } else if (mapperType.match(/^Dictionary$/i) !== null) {
-        payload = serializeDictionaryType(this, mapper, object, objectName, Boolean(this.isXML), updatedOptions);
+        payload = serializeDictionaryType(this, mapper, object2, objectName, Boolean(this.isXML), updatedOptions);
       } else if (mapperType.match(/^Composite$/i) !== null) {
-        payload = serializeCompositeType(this, mapper, object, objectName, Boolean(this.isXML), updatedOptions);
+        payload = serializeCompositeType(this, mapper, object2, objectName, Boolean(this.isXML), updatedOptions);
       }
     }
     return payload;
@@ -94905,8 +97400,8 @@ function serializeDateTypes(typeName, value3, objectName) {
   }
   return value3;
 }
-function serializeSequenceType(serializer, mapper, object, objectName, isXml, options) {
-  if (!Array.isArray(object)) {
+function serializeSequenceType(serializer, mapper, object2, objectName, isXml, options) {
+  if (!Array.isArray(object2)) {
     throw new Error(`${objectName} must be of type Array.`);
   }
   let elementType = mapper.type.element;
@@ -94917,8 +97412,8 @@ function serializeSequenceType(serializer, mapper, object, objectName, isXml, op
     elementType = serializer.modelMappers[elementType.type.className] ?? elementType;
   }
   const tempArray = [];
-  for (let i = 0;i < object.length; i++) {
-    const serializedValue = serializer.serialize(elementType, object[i], objectName, options);
+  for (let i = 0;i < object2.length; i++) {
+    const serializedValue = serializer.serialize(elementType, object2[i], objectName, options);
     if (isXml && elementType.xmlNamespace) {
       const xmlnsKey = elementType.xmlNamespacePrefix ? `xmlns:${elementType.xmlNamespacePrefix}` : "xmlns";
       if (elementType.type.name === "Composite") {
@@ -94935,8 +97430,8 @@ function serializeSequenceType(serializer, mapper, object, objectName, isXml, op
   }
   return tempArray;
 }
-function serializeDictionaryType(serializer, mapper, object, objectName, isXml, options) {
-  if (typeof object !== "object") {
+function serializeDictionaryType(serializer, mapper, object2, objectName, isXml, options) {
+  if (typeof object2 !== "object") {
     throw new Error(`${objectName} must be of type object.`);
   }
   const valueType = mapper.type.value;
@@ -94944,8 +97439,8 @@ function serializeDictionaryType(serializer, mapper, object, objectName, isXml, 
     throw new Error(`"value" metadata for a Dictionary must be defined in the ` + `mapper and it must of type "object" in ${objectName}.`);
   }
   const tempDictionary = {};
-  for (const key of Object.keys(object)) {
-    const serializedValue = serializer.serialize(valueType, object[key], objectName, options);
+  for (const key of Object.keys(object2)) {
+    const serializedValue = serializer.serialize(valueType, object2[key], objectName, options);
     tempDictionary[key] = getXmlObjectValue(valueType, serializedValue, isXml, options);
   }
   if (isXml && mapper.xmlNamespace) {
@@ -94985,11 +97480,11 @@ function resolveModelProperties(serializer, mapper, objectName) {
   }
   return modelProps;
 }
-function serializeCompositeType(serializer, mapper, object, objectName, isXml, options) {
+function serializeCompositeType(serializer, mapper, object2, objectName, isXml, options) {
   if (getPolymorphicDiscriminatorRecursively(serializer, mapper)) {
-    mapper = getPolymorphicMapper(serializer, mapper, object, "clientName");
+    mapper = getPolymorphicMapper(serializer, mapper, object2, "clientName");
   }
-  if (object !== undefined && object !== null) {
+  if (object2 !== undefined && object2 !== null) {
     const payload = {};
     const modelProps = resolveModelProperties(serializer, mapper, objectName);
     for (const key of Object.keys(modelProps)) {
@@ -95010,7 +97505,7 @@ function serializeCompositeType(serializer, mapper, object, objectName, isXml, o
         propName = paths.pop();
         for (const pathName of paths) {
           const childObject = parentObject[pathName];
-          if ((childObject === undefined || childObject === null) && (object[key] !== undefined && object[key] !== null || propertyMapper.defaultValue !== undefined)) {
+          if ((childObject === undefined || childObject === null) && (object2[key] !== undefined && object2[key] !== null || propertyMapper.defaultValue !== undefined)) {
             parentObject[pathName] = {};
           }
           parentObject = parentObject[pathName];
@@ -95025,7 +97520,7 @@ function serializeCompositeType(serializer, mapper, object, objectName, isXml, o
           };
         }
         const propertyObjectName = propertyMapper.serializedName !== "" ? objectName + "." + propertyMapper.serializedName : objectName;
-        let toSerialize = object[key];
+        let toSerialize = object2[key];
         const polymorphicDiscriminator = getPolymorphicDiscriminatorRecursively(serializer, mapper);
         if (polymorphicDiscriminator && polymorphicDiscriminator.clientName === key && (toSerialize === undefined || toSerialize === null)) {
           toSerialize = mapper.serializedName;
@@ -95047,11 +97542,11 @@ function serializeCompositeType(serializer, mapper, object, objectName, isXml, o
     const additionalPropertiesMapper = resolveAdditionalProperties(serializer, mapper, objectName);
     if (additionalPropertiesMapper) {
       const propNames = Object.keys(modelProps);
-      for (const clientPropName of Object.keys(object)) {
+      for (const clientPropName of Object.keys(object2)) {
         const isAdditionalProperty = propNames.every((pn) => pn !== clientPropName);
         if (isAdditionalProperty) {
           Object.defineProperty(payload, clientPropName, {
-            value: serializer.serialize(additionalPropertiesMapper, object[clientPropName], objectName + '["' + clientPropName + '"]', options),
+            value: serializer.serialize(additionalPropertiesMapper, object2[clientPropName], objectName + '["' + clientPropName + '"]', options),
             enumerable: true,
             configurable: true,
             writable: true
@@ -95061,7 +97556,7 @@ function serializeCompositeType(serializer, mapper, object, objectName, isXml, o
     }
     return payload;
   }
-  return object;
+  return object2;
 }
 function getXmlObjectValue(propertyMapper, serializedValue, isXml, options) {
   if (!isXml || !propertyMapper.xmlNamespace) {
@@ -95261,7 +97756,7 @@ function getIndexDiscriminator(discriminators, discriminatorValue, typeName) {
   }
   return;
 }
-function getPolymorphicMapper(serializer, mapper, object, polymorphicPropertyName) {
+function getPolymorphicMapper(serializer, mapper, object2, polymorphicPropertyName) {
   const polymorphicDiscriminator = getPolymorphicDiscriminatorRecursively(serializer, mapper);
   if (polymorphicDiscriminator) {
     let discriminatorName = polymorphicDiscriminator[polymorphicPropertyName];
@@ -95269,7 +97764,7 @@ function getPolymorphicMapper(serializer, mapper, object, polymorphicPropertyNam
       if (polymorphicPropertyName === "serializedName") {
         discriminatorName = discriminatorName.replace(/\\/gi, "");
       }
-      const discriminatorValue = object[discriminatorName];
+      const discriminatorValue = object2[discriminatorName];
       const typeName = mapper.type.uberParent ?? mapper.type.className;
       if (typeof discriminatorValue === "string" && typeName) {
         const polymorphicMapper = getIndexDiscriminator(serializer.modelMappers.discriminators, discriminatorValue, typeName);
@@ -95548,8 +98043,8 @@ function handleErrorResponse(parsedResponse, operationSpec, responseSpec, option
 async function parse(jsonContentTypes, xmlContentTypes, operationResponse, opts, parseXML) {
   if (!operationResponse.request.streamResponseStatusCodes?.has(operationResponse.status) && operationResponse.bodyAsText) {
     const text3 = operationResponse.bodyAsText;
-    const contentType = operationResponse.headers.get("Content-Type") || "";
-    const contentComponents = !contentType ? [] : contentType.split(";").map((component) => component.toLowerCase());
+    const contentType2 = operationResponse.headers.get("Content-Type") || "";
+    const contentComponents = !contentType2 ? [] : contentType2.split(";").map((component) => component.toLowerCase());
     try {
       if (contentComponents.length === 0 || contentComponents.some((component) => jsonContentTypes.indexOf(component) !== -1)) {
         operationResponse.parsedBody = JSON.parse(text3);
@@ -95977,9 +98472,9 @@ class ServiceClient {
     const operationInfo = getOperationRequestInfo(request);
     operationInfo.operationSpec = operationSpec;
     operationInfo.operationArguments = operationArguments;
-    const contentType = operationSpec.contentType || this._requestContentType;
-    if (contentType && operationSpec.requestBody) {
-      request.headers.set("Content-Type", contentType);
+    const contentType2 = operationSpec.contentType || this._requestContentType;
+    if (contentType2 && operationSpec.requestBody) {
+      request.headers.set("Content-Type", contentType2);
     }
     const options = operationArguments.options;
     if (options) {
@@ -96262,8 +98757,8 @@ class HttpHeaders {
     };
   }
   get(headerName) {
-    const header = this._headersMap[getHeaderKey(headerName)];
-    return !header ? undefined : header.value;
+    const header2 = this._headersMap[getHeaderKey(headerName)];
+    return !header2 ? undefined : header2.value;
   }
   contains(headerName) {
     return !!this._headersMap[getHeaderKey(headerName)];
@@ -96303,13 +98798,13 @@ class HttpHeaders {
     const result2 = {};
     if (options.preserveCase) {
       for (const headerKey in this._headersMap) {
-        const header = this._headersMap[headerKey];
-        result2[header.name] = header.value;
+        const header2 = this._headersMap[headerKey];
+        result2[header2.name] = header2.value;
       }
     } else {
       for (const headerKey in this._headersMap) {
-        const header = this._headersMap[headerKey];
-        result2[getHeaderKey(header.name)] = header.value;
+        const header2 = this._headersMap[headerKey];
+        result2[getHeaderKey(header2.name)] = header2.value;
       }
     }
     return result2;
@@ -96320,8 +98815,8 @@ class HttpHeaders {
   clone() {
     const resultPreservingCasing = {};
     for (const headerKey in this._headersMap) {
-      const header = this._headersMap[headerKey];
-      resultPreservingCasing[header.name] = header.value;
+      const header2 = this._headersMap[headerKey];
+      resultPreservingCasing[header2.name] = header2.value;
     }
     return new HttpHeaders(resultPreservingCasing);
   }
@@ -96461,9 +98956,9 @@ var nameStartChar = ":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u037
 var nameChar = nameStartChar + "\\-.\\d\\u00B7\\u0300-\\u036F\\u203F-\\u2040";
 var nameRegexp = "[" + nameStartChar + "][" + nameChar + "]*";
 var regexName = new RegExp("^" + nameRegexp + "$");
-function getAllMatches(string4, regex) {
+function getAllMatches(string5, regex) {
   const matches = [];
-  let match6 = regex.exec(string4);
+  let match6 = regex.exec(string5);
   while (match6) {
     const allmatches = [];
     allmatches.startIndex = regex.lastIndex - match6[0].length;
@@ -96472,12 +98967,12 @@ function getAllMatches(string4, regex) {
       allmatches.push(match6[index]);
     }
     matches.push(allmatches);
-    match6 = regex.exec(string4);
+    match6 = regex.exec(string5);
   }
   return matches;
 }
-var isName = function(string4) {
-  const match6 = regexName.exec(string4);
+var isName = function(string5) {
+  const match6 = regexName.exec(string5);
   return !(match6 === null || typeof match6 === "undefined");
 };
 function isExist(v) {
@@ -100486,22 +102981,22 @@ Builder.prototype.buildAttrPairStr = function(attrName, val, isStopNode) {
   } else
     return " " + attrName + '="' + escapeAttribute(val) + '"';
 };
-function processTextOrObjNode(object, key, level, matcher, qNameValidator) {
-  const attrValues = this.extractAttributes(object);
+function processTextOrObjNode(object2, key, level, matcher, qNameValidator) {
+  const attrValues = this.extractAttributes(object2);
   matcher.push(key, attrValues);
   const isStopNode = this.checkStopNode(matcher);
   if (isStopNode) {
-    const rawContent2 = this.buildRawContent(object);
-    const attrStr = this.buildAttributesForStopNode(object);
+    const rawContent2 = this.buildRawContent(object2);
+    const attrStr = this.buildAttributesForStopNode(object2);
     matcher.pop();
     return this.buildObjectNode(rawContent2, key, attrStr, level);
   }
-  const result2 = this.j2x(object, level + 1, matcher, qNameValidator);
+  const result2 = this.j2x(object2, level + 1, matcher, qNameValidator);
   matcher.pop();
   if (key[0] === "?") {
     return this.buildTextValNode("", key, result2.attrStr, level, matcher);
-  } else if (object[this.options.textNodeName] !== undefined && Object.keys(object).length === 1) {
-    return this.buildTextValNode(object[this.options.textNodeName], key, result2.attrStr, level, matcher);
+  } else if (object2[this.options.textNodeName] !== undefined && Object.keys(object2).length === 1) {
+    return this.buildTextValNode(object2[this.options.textNodeName], key, result2.attrStr, level, matcher);
   } else {
     return this.buildObjectNode(result2.val, key, result2.attrStr, level);
   }
@@ -103049,10 +105544,10 @@ var NativeCRC64 = (() => {
       delete getCache(obj.__class__)[obj.ptr];
     }
     Module["destroy"] = destroy2;
-    function compare(obj1, obj2) {
+    function compare2(obj1, obj2) {
       return obj1.ptr === obj2.ptr;
     }
-    Module["compare"] = compare;
+    Module["compare"] = compare2;
     function getPointer(obj) {
       return obj.ptr;
     }
@@ -104457,8 +106952,8 @@ class StorageSharedKeyCredentialPolicy extends CredentialPolicy {
       return true;
     });
     let canonicalizedHeadersStringToSign = "";
-    headersArray.forEach((header) => {
-      canonicalizedHeadersStringToSign += `${header.name.toLowerCase().trimRight()}:${header.value.trimLeft()}
+    headersArray.forEach((header2) => {
+      canonicalizedHeadersStringToSign += `${header2.name.toLowerCase().trimRight()}:${header2.value.trimLeft()}
 `;
     });
     return canonicalizedHeadersStringToSign;
@@ -104864,8 +107359,8 @@ function storageSharedKeyCredentialPolicy(options) {
       return true;
     });
     let canonicalizedHeadersStringToSign = "";
-    headersArray.forEach((header) => {
-      canonicalizedHeadersStringToSign += `${header.name.toLowerCase().trimRight()}:${header.value.trimLeft()}
+    headersArray.forEach((header2) => {
+      canonicalizedHeadersStringToSign += `${header2.name.toLowerCase().trimRight()}:${header2.value.trimLeft()}
 `;
     });
     return canonicalizedHeadersStringToSign;
@@ -113934,7 +116429,7 @@ var BlockBlobGetBlockListExceptionHeaders = {
 };
 
 // ../../node_modules/@azure/storage-blob/dist/esm/generated/src/models/parameters.js
-var contentType = {
+var contentType2 = {
   parameterPath: ["options", "contentType"],
   mapper: {
     defaultValue: "application/xml",
@@ -115724,7 +118219,7 @@ var setPropertiesOperationSpec = {
   ],
   urlParameters: [url],
   headerParameters: [
-    contentType,
+    contentType2,
     accept2,
     version4,
     requestId
@@ -115839,7 +118334,7 @@ var getUserDelegationKeyOperationSpec = {
   ],
   urlParameters: [url],
   headerParameters: [
-    contentType,
+    contentType2,
     accept2,
     version4,
     requestId
@@ -116160,7 +118655,7 @@ var setAccessPolicyOperationSpec = {
   ],
   urlParameters: [url],
   headerParameters: [
-    contentType,
+    contentType2,
     accept2,
     version4,
     requestId,
@@ -117324,7 +119819,7 @@ var queryOperationSpec = {
   ],
   urlParameters: [url],
   headerParameters: [
-    contentType,
+    contentType2,
     accept2,
     version4,
     requestId,
@@ -117397,7 +119892,7 @@ var setTagsOperationSpec = {
   ],
   urlParameters: [url],
   headerParameters: [
-    contentType,
+    contentType2,
     accept2,
     version4,
     requestId,
@@ -118225,7 +120720,7 @@ var commitBlockListOperationSpec = {
   queryParameters: [timeoutInSeconds, comp25],
   urlParameters: [url],
   headerParameters: [
-    contentType,
+    contentType2,
     accept2,
     version4,
     requestId,
@@ -119105,7 +121600,7 @@ class SASQueryParameters {
     }
     return;
   }
-  constructor(version5, signature, permissionsOrOptions, services, resourceTypes, protocol, startsOn, expiresOn2, ipRange, identifier4, resource, cacheControl, contentDisposition, contentEncoding, contentLanguage, contentType2, userDelegationKey, preauthorizedAgentObjectId, correlationId, encryptionScope2, delegatedUserObjectId, requestHeaderKeys, requestQueryParameterKeys, directoryDepth) {
+  constructor(version5, signature, permissionsOrOptions, services, resourceTypes, protocol, startsOn, expiresOn2, ipRange, identifier4, resource, cacheControl, contentDisposition, contentEncoding, contentLanguage, contentType3, userDelegationKey, preauthorizedAgentObjectId, correlationId, encryptionScope2, delegatedUserObjectId, requestHeaderKeys, requestQueryParameterKeys, directoryDepth) {
     this.version = version5;
     this.signature = signature;
     if (permissionsOrOptions !== undefined && typeof permissionsOrOptions !== "string") {
@@ -119155,7 +121650,7 @@ class SASQueryParameters {
       this.contentDisposition = contentDisposition;
       this.contentEncoding = contentEncoding;
       this.contentLanguage = contentLanguage;
-      this.contentType = contentType2;
+      this.contentType = contentType3;
       this.requestHeaderKeys = requestHeaderKeys;
       this.requestQueryParameterKeys = requestQueryParameterKeys;
       this.directoryDepth = directoryDepth;
@@ -120665,10 +123160,10 @@ class AvroReader {
     this._initialBlockOffset = currentBlockOffset || 0;
   }
   async initialize(options = {}) {
-    const header = await AvroParser.readFixedBytes(this._headerStream, AVRO_INIT_BYTES.length, {
+    const header2 = await AvroParser.readFixedBytes(this._headerStream, AVRO_INIT_BYTES.length, {
       abortSignal: options.abortSignal
     });
-    if (!arraysEqual(header, AVRO_INIT_BYTES)) {
+    if (!arraysEqual(header2, AVRO_INIT_BYTES)) {
       throw new Error("Stream is not an Avro file.");
     }
     this._metadata = await AvroParser.readMap(this._headerStream, AvroParser.readString, {
@@ -120740,7 +123235,7 @@ class AvroReadable {
 }
 
 // ../../node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReadableFromStream.js
-import { Buffer as Buffer2 } from "buffer";
+import { Buffer as Buffer3 } from "buffer";
 var ABORT_ERROR = new AbortError3("Reading from the avro stream was aborted.");
 
 class AvroReadableFromStream extends AvroReadable {
@@ -120748,7 +123243,7 @@ class AvroReadableFromStream extends AvroReadable {
   _readable;
   toUint8Array(data) {
     if (typeof data === "string") {
-      return Buffer2.from(data);
+      return Buffer3.from(data);
     }
     return data;
   }
@@ -123070,7 +125565,7 @@ var __awaiter5 = function(thisArg, _arguments, P, generator) {
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
 };
-function uploadToBlobStorage(authenticatedUploadURL, uploadStream, contentType2) {
+function uploadToBlobStorage(authenticatedUploadURL, uploadStream, contentType3) {
   return __awaiter5(this, undefined, undefined, function* () {
     let uploadByteCount = 0;
     let lastProgressTime = Date.now();
@@ -123092,14 +125587,14 @@ function uploadToBlobStorage(authenticatedUploadURL, uploadStream, contentType2)
     const bufferSize = getUploadChunkSize();
     const blobClient = new BlobClient(authenticatedUploadURL);
     const blockBlobClient = blobClient.getBlockBlobClient();
-    debug(`Uploading artifact to blob storage with maxConcurrency: ${maxConcurrency}, bufferSize: ${bufferSize}, contentType: ${contentType2}`);
+    debug(`Uploading artifact to blob storage with maxConcurrency: ${maxConcurrency}, bufferSize: ${bufferSize}, contentType: ${contentType3}`);
     const uploadCallback = (progress) => {
       info(`Uploaded bytes ${progress.loadedBytes}`);
       uploadByteCount = progress.loadedBytes;
       lastProgressTime = Date.now();
     };
     const options = {
-      blobHTTPHeaders: { blobContentType: contentType2 },
+      blobHTTPHeaders: { blobContentType: contentType3 },
       onProgress: uploadCallback,
       abortSignal: abortController.signal
     };
@@ -123398,14 +125893,14 @@ function uploadArtifact(name, files, rootDirectory, options) {
         throw new FilesNotFoundError(zipSpecification.flatMap((s) => s.sourcePath ? [s.sourcePath] : []));
       }
     }
-    const contentType2 = getMimeType(artifactFileName);
+    const contentType3 = getMimeType(artifactFileName);
     const backendIds = getBackendIdsFromToken();
     const artifactClient = internalArtifactTwirpClient();
     const createArtifactReq = {
       workflowRunBackendId: backendIds.workflowRunBackendId,
       workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
       name,
-      mimeType: StringValue.create({ value: contentType2 }),
+      mimeType: StringValue.create({ value: contentType3 }),
       version: 7
     };
     const expiresAt = getExpiration(options === null || options === undefined ? undefined : options.retentionDays);
@@ -123423,7 +125918,7 @@ function uploadArtifact(name, files, rootDirectory, options) {
       stream4 = yield createZipUploadStream(zipSpecification, options === null || options === undefined ? undefined : options.compressionLevel);
     }
     info(`Uploading artifact: ${artifactFileName}`);
-    const uploadResult = yield uploadToBlobStorage(createArtifactResp.signedUploadUrl, stream4, contentType2);
+    const uploadResult = yield uploadToBlobStorage(createArtifactResp.signedUploadUrl, stream4, contentType3);
     const finalizeArtifactReq = {
       workflowRunBackendId: backendIds.workflowRunBackendId,
       workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
@@ -123704,12 +126199,12 @@ var DEFAULTS = {
     format: ""
   }
 };
-function lowercaseKeys2(object) {
-  if (!object) {
+function lowercaseKeys2(object2) {
+  if (!object2) {
     return {};
   }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
+  return Object.keys(object2).reduce((newObj, key) => {
+    newObj[key.toLowerCase()] = object2[key];
     return newObj;
   }, {});
 }
@@ -123789,11 +126284,11 @@ function extractUrlVariableNames(url2) {
   }
   return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
 }
-function omit2(object, keysToOmit) {
+function omit2(object2, keysToOmit) {
   const result2 = { __proto__: null };
-  for (const key of Object.keys(object)) {
+  for (const key of Object.keys(object2)) {
     if (keysToOmit.indexOf(key) === -1) {
-      result2[key] = object[key];
+      result2[key] = object2[key];
     }
   }
   return result2;
@@ -124476,11 +126971,11 @@ async function fetchWrapper(requestOptions) {
   return octokitResponse;
 }
 async function getResponseData(response) {
-  const contentType2 = response.headers.get("content-type");
-  if (!contentType2) {
+  const contentType3 = response.headers.get("content-type");
+  if (!contentType3) {
     return response.text().catch(noop);
   }
-  const mimetype = import_content_type.parse(contentType2);
+  const mimetype = import_content_type.parse(contentType3);
   if (isJSONResponse(mimetype)) {
     let text3 = "";
     try {
@@ -127415,8 +129910,8 @@ function streamExtractExternal(url_1, directory_1) {
     if (response.message.statusCode !== 200) {
       throw new Error(`Unexpected HTTP response from blob storage: ${response.message.statusCode} ${response.message.statusMessage}`);
     }
-    const contentType2 = response.message.headers["content-type"] || "";
-    const mimeType = contentType2.split(";", 1)[0].trim().toLowerCase();
+    const contentType3 = response.message.headers["content-type"] || "";
+    const mimeType = contentType3.split(";", 1)[0].trim().toLowerCase();
     const urlPath = new URL(url2).pathname.toLowerCase();
     const urlEndsWithZip = urlPath.endsWith(".zip");
     const isZip = mimeType === "application/zip" || mimeType === "application/x-zip-compressed" || mimeType === "application/zip-compressed" || urlEndsWithZip;
@@ -127428,7 +129923,7 @@ function streamExtractExternal(url_1, directory_1) {
     if (rawName) {
       fileName = path3.basename(decodeURIComponent(rawName.trim()));
     }
-    debug(`Content-Type: ${contentType2}, mimeType: ${mimeType}, urlEndsWithZip: ${urlEndsWithZip}, isZip: ${isZip}, skipDecompress: ${skipDecompress}`);
+    debug(`Content-Type: ${contentType3}, mimeType: ${mimeType}, urlEndsWithZip: ${urlEndsWithZip}, isZip: ${isZip}, skipDecompress: ${skipDecompress}`);
     debug(`Content-Disposition: ${contentDisposition}, fileName: ${fileName}`);
     let sha256Digest2 = undefined;
     return new Promise((resolve11, reject) => {
@@ -128156,7 +130651,7 @@ import {
   writeFileSync as writeFileSync4
 } from "node:fs";
 import { tmpdir as tmpdir5 } from "node:os";
-import { basename as basename6, join as join13, relative as relative6 } from "node:path";
+import { basename as basename7, join as join13, relative as relative6 } from "node:path";
 var artifactUploadDigestPattern = /^[a-f0-9]{64}$/u;
 var artifactLookupDigestPattern = /^sha256:[a-f0-9]{64}$/u;
 var gitObjectIdPattern = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u;
@@ -128447,7 +130942,7 @@ var makeActionPreparedReleaseStore = (input) => {
           }
         }
         const transferred = await runPromise2(loadPreparedRelease(join13(root, reference.digest)));
-        if (transferred.manifest.source.commit.toString() !== producer.candidateCommit || basename6(transferred.directory) !== producer.preparedDigest) {
+        if (transferred.manifest.source.commit.toString() !== producer.candidateCommit || basename7(transferred.directory) !== producer.preparedDigest) {
           throw PreparedStoreError.make({ reason: "Prepared bundle does not match its authenticated producer context." });
         }
         await runPromise2(verifyPreparedStoreProvenance({

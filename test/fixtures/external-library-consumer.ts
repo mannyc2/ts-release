@@ -20,6 +20,41 @@ import {
   makeLocalPreparedReleaseStore,
   type PreparedReleaseStoreShape
 } from "@mannyc1/ts-release/store"
+import {
+  ProviderAdapterContract,
+  conservativeUnknownRecoveryProfile,
+  makeProviderAdapter
+} from "@mannyc1/ts-release/provider-sdk"
+
+const externalAdapter = makeProviderAdapter({
+  id: "publish.external-fixture",
+  contract: ProviderAdapterContract.make({
+    schemaVersion: "ts-release/provider-adapter-contract/v1",
+    preparedSubject: "typed-canonical-data",
+    identity: "canonical-subject-id",
+    observation: "exact-equality-and-authoritative-absence",
+    mutation: "typed-precondition-and-commitment",
+    credentials: "audience-and-purpose-scoped",
+    recovery: "coordinator-profile",
+    certification: "provider-protocol-and-public-boundary-tests"
+  }),
+  profile: {
+    id: "publish.external-fixture",
+    provider: "external-fixture",
+    preparedTag: "PreparedExternalFixture",
+    recovery: conservativeUnknownRecoveryProfile,
+    correctionAdapters: [],
+    evidence: {
+      reviewedAt: "2026-08-13",
+      observationSources: ["https://provider.example.test/docs/observation"],
+      correctionSources: ["https://provider.example.test/docs/correction"],
+      correctionFinding: "The external fixture installs no correction adapter."
+    }
+  },
+  // A third-party adapter can be installed without claiming applicability to
+  // every prepared release. Non-empty output is checked by the coordinator.
+  subjects: () => []
+})
 
 const unavailable = (request: CredentialRequest): CredentialUnavailable =>
   new CredentialUnavailable({
@@ -145,7 +180,7 @@ export const exerciseCustomHost = async (input: {
     authorizedMutationHttp,
     npmUserConfigResource,
     certifiedPublisherSpawn
-  }))
+  }), { providerAdapters: [externalAdapter] })
   try {
     const config = {
       project: {

@@ -14,7 +14,7 @@ interface EventContext {
 
 export interface HttpExchange extends EventContext {
   readonly _tag: "HttpExchange"
-  readonly method: "GET" | "POST"
+  readonly method: "GET" | "POST" | "PATCH"
   readonly url: string
   readonly status?: number
   readonly grantKind?: GrantKind

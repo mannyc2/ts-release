@@ -1,26 +1,32 @@
 import { describe, expect, test } from "bun:test"
-import * as Schema from "effect/Schema"
 import * as CorrectionIntentModule from "../../src/correction/intent.js"
-import { CorrectionVariant } from "../../src/correction/intent.js"
+import { decodeAuthoredCorrection } from "../../src/correction/intent.js"
 
-describe("catalog correction interim hard cut", () => {
-  test("rejects catalog coordinates before a prepared catalog publication exists", () => {
-    expect(() => Schema.decodeUnknownSync(CorrectionVariant, {
-      onExcessProperty: "error"
-    })({
-      _tag: "CatalogCorrection",
+describe("catalog forward-correction grammar", () => {
+  test("admits only an explicit replacement version, tag, architecture, URL, and digest", () => {
+    const correction = decodeAuthoredCorrection({
       provider: "catalog-git",
+      kind: "forward-catalog-state",
       publicationId: "homebrew",
-      repository: "owner/tap",
-      branch: "main",
-      targetPath: "Formula/fixture.rb",
-      statePath: ".ts-release/state/homebrew.json",
-      artifactId: "catalog",
-      stateArtifactId: "catalog-state",
-      version: "1.0.0",
-      status: "withdrawn",
-      reason: "Use 1.0.1."
+      replacementVersion: "1.0.1",
+      replacementTag: "v1.0.1",
+      downloads: [{
+        architecture: "arm64",
+        url: "https://github.com/owner/tool/releases/download/v1.0.1/tool.tar.gz",
+        filename: "tool.tar.gz",
+        sha256: "a".repeat(64)
+      }],
+      reason: "Use the repaired archive."
+    })
+    expect(correction.provider).toBe("catalog-git")
+    expect(Object.hasOwn(CorrectionIntentModule, "CatalogForwardCorrection")).toBe(true)
+    expect(() => decodeAuthoredCorrection({
+      provider: "catalog-git",
+      kind: "forward-catalog-state",
+      replacementVersion: "1.0.1",
+      replacementTag: "v1.0.1",
+      downloads: [],
+      reason: "missing replacement evidence"
     })).toThrow()
-    expect(Object.hasOwn(CorrectionIntentModule, "CatalogCorrection")).toBe(false)
   })
 })

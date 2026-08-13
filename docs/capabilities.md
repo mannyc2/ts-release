@@ -12,8 +12,12 @@ a live provider mutation has been dogfooded.
 | `release.identity` | installed | resolve | 9 | root-api | 2 executable tests | linux | — | git | — | contract-tested | 2026-08-12 |
 | `prepare.source` | installed | contribute:source | 38 | root-api | 3 executable tests | linux | linux-x64, linux-arm64, darwin-x64, darwin-arm64 | bun, libseccomp.so.2, declared-command | — | contract-tested | 2026-08-12 |
 | `prepare.package` | installed | contribute:package | 7 | root-api | 2 executable tests | linux | — | — | — | contract-tested | 2026-08-12 |
+| `render.homebrew` | installed | contribute:render | 11 | root-api | 1 executable test | linux | — | — | — | contract-tested | 2026-08-13 |
+| `render.scoop` | installed | contribute:render | 10 | root-api | 1 executable test | linux | — | — | — | contract-tested | 2026-08-13 |
 | `publish.npm` | installed | contribute + subjects:PreparedNpmPublication | 15 | provider-protocol | 2 executable tests | linux | — | npm | token, trusted-publishing | contract-tested | 2026-08-12 |
+| `publish.pypi` | installed | contribute + subjects:PreparedPyPiPublication | 14 | provider-protocol | 2 executable tests | linux | — | — | project-token, external-pypa-action | contract-tested | 2026-08-13 |
 | `publish.github` | installed | contribute + subjects:PreparedGitHubPublication | 17 | provider-protocol | 3 executable tests | linux | — | — | token | contract-tested | 2026-08-12 |
+| `publish.catalog-git` | installed | contribute + subjects:PreparedCatalogPublication | 7 | provider-protocol | 2 executable tests | linux | — | — | token | contract-tested | 2026-08-13 |
 
 Native Windows execution is not installed. The source-preparation module
 declares only the listed artifact targets and the Linux execution host.

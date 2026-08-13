@@ -61,10 +61,36 @@ export class TrustedPublishingAuthStrategy
     publisherSink: Schema.Literal("certified-npm-cli")
   }) {}
 
+/**
+ * A supported external workflow owner. The stock coordinator persists and
+ * reports this identity but deliberately cannot mint or consume its token.
+ */
+export class ExternalTrustedPublishingAuthStrategy
+  extends Schema.Class<ExternalTrustedPublishingAuthStrategy>("ExternalTrustedPublishingAuthStrategy")({
+    kind: Schema.Literal("trusted-publishing"),
+    identityProvider: Schema.Literal("github-actions"),
+    runnerClass: Schema.Literal("github-hosted"),
+    repository: Schema.NonEmptyString,
+    workflow: Schema.NonEmptyString,
+    workflowRef: Schema.NonEmptyString,
+    sourceCommit: TrustedPublishingSourceCommit,
+    provenanceEnvironmentContract: Schema.Literal("external-pypa-action-v1"),
+    allowedAction: Schema.Literal("external-pypa-action"),
+    publisherSink: Schema.Literal("external-host-owned"),
+    environment: Schema.NonEmptyString,
+    projects: Schema.NonEmptyArray(Schema.NonEmptyString)
+  }) {}
+
+export const ResolvedTrustedPublishingAuthStrategy = Schema.Union([
+  TrustedPublishingAuthStrategy,
+  ExternalTrustedPublishingAuthStrategy
+])
+export type ResolvedTrustedPublishingAuthStrategy = typeof ResolvedTrustedPublishingAuthStrategy.Type
+
 export const ResolvedAuthStrategy = Schema.Union([
   AnonymousAuthStrategy,
   TokenAuthStrategy,
-  TrustedPublishingAuthStrategy
+  ResolvedTrustedPublishingAuthStrategy
 ])
 export type ResolvedAuthStrategy = typeof ResolvedAuthStrategy.Type
 

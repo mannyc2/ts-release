@@ -52,6 +52,7 @@ import {
   type ProviderDecision
 } from "../../src/publication/report.js"
 import { conservativeUnknownRecoveryProfile } from "../../src/publication/recovery.js"
+import { pypiRecoveryCapabilityProfile } from "../../src/publication/pypi.js"
 
 const prepared = SubjectId.make("prepared:fixture")
 const first = SubjectId.make("npm:@fixture/first@1.0.0")
@@ -249,6 +250,24 @@ const scriptedSubject = (options: ScriptedSubjectOptions): ReleaseSubject => {
 }
 
 describe("provider-neutral release coordinator", () => {
+  test("rejects a durable-CAS subject without a terminal claim boundary before observation", async () => {
+    const events: Array<string> = []
+    const subject = {
+      ...scriptedSubject({
+        id: first,
+        events,
+        observations: [absent(first)],
+        decision: () => needsMutation(first)
+      }),
+      recovery: pypiRecoveryCapabilityProfile
+    }
+
+    await expect(run(publishReleaseSubjects({ prepared, subjects: [subject] }), events)).rejects.toBeInstanceOf(
+      ReleaseCoordinatorConstructionError
+    )
+    expect(events).toEqual([])
+  })
+
   test("keeps the verified local prepared subject explicit and reports zero remote subjects", async () => {
     const events: Array<string> = []
     const observation = await run(observeReleaseSubjects({ prepared, subjects: [] }), events)

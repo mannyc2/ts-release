@@ -7,6 +7,25 @@ import {
   ArtifactCollectionSelector
 } from "../model/artifact-collection.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import {
+  PyPiProjectName,
+  PyPiRepository,
+  normalizePyPiProjectName,
+  pypiRepositoryEndpoints
+} from "../model/pypi.js"
+import {
+  CatalogArchitecture,
+  CatalogRepositoryPath,
+  GitBranchName,
+  GitHubRepositoryCoordinate
+} from "../model/catalog.js"
+export {
+  PyPiProjectName,
+  PyPiRepository,
+  normalizePyPiProjectName,
+  pypiRepositoryEndpoints
+} from "../model/pypi.js"
+export type { PyPiRepositoryEndpoints } from "../model/pypi.js"
 
 const optional = Schema.optionalKey
 const nonempty = Schema.NonEmptyString
@@ -246,6 +265,91 @@ export class CandidateNpmPublish extends Schema.Class<CandidateNpmPublish>("Cand
   provenance: NpmProvenancePolicy
 }) {}
 
+/** Closed PyPI destination set with standards-defined Simple and upload APIs. */
+export class PyPiTokenAuthentication
+  extends Schema.Class<PyPiTokenAuthentication>("PyPiTokenAuthentication")({
+    strategy: Schema.Literal("token"),
+    credential: CredentialRef.check(Schema.makeFilter((value: string) =>
+      /^[A-Za-z_][A-Za-z0-9_]*$/u.test(value)
+        ? undefined
+        : "PyPI token credential must be a portable environment variable name.")),
+    /** PyPI project-scoped tokens are the only token authority admitted here. */
+    scope: Schema.Literal("project")
+  }) {}
+
+/**
+ * Durable description of the supported external Trusted Publisher owner.
+ * ts-release observes these publications but never exchanges OIDC assertions
+ * or dispatches their upload itself.
+ */
+export class PyPiExternalTrustedPublishingAuthentication
+  extends Schema.Class<PyPiExternalTrustedPublishingAuthentication>("PyPiExternalTrustedPublishingAuthentication")({
+    strategy: Schema.Literal("trusted-publishing"),
+    owner: Schema.Literal("external"),
+    action: Schema.Literal("pypa/gh-action-pypi-publish@release/v1"),
+    repository: NpmTrustedPublisherRepository,
+    workflow: NpmTrustedPublisherWorkflow,
+    workflowRef: NpmTrustedPublisherWorkflowRef,
+    environment: nonempty,
+    /** Complete bundled authority set for the configured publisher identity. */
+    projects: Schema.NonEmptyArray(nonempty)
+  }) {}
+
+export const PyPiAuthentication = Schema.Union([
+  PyPiTokenAuthentication,
+  PyPiExternalTrustedPublishingAuthentication
+])
+export type PyPiAuthentication = typeof PyPiAuthentication.Type
+
+/** Fully resolved prebuilt-distribution publication intent. */
+export class CandidatePyPiPublish extends Schema.Class<CandidatePyPiPublish>("CandidatePyPiPublish")({
+  artifacts: Schema.NonEmptyArray(OutputId),
+  project: PyPiProjectName,
+  version: Version,
+  repository: PyPiRepository,
+  authentication: PyPiAuthentication
+}) {}
+
+export class CandidateCatalogSource extends Schema.Class<CandidateCatalogSource>("CandidateCatalogSource")({
+  artifact: OutputId,
+  architecture: CatalogArchitecture
+}) {}
+
+const catalogRendererFields = {
+  id: NonEmptyName,
+  description: nonempty,
+  homepage: nonempty,
+  license: optional(nonempty),
+  sources: Schema.NonEmptyArray(CandidateCatalogSource)
+}
+
+export class CandidateHomebrewCatalog extends Schema.Class<CandidateHomebrewCatalog>("CandidateHomebrewCatalog")({
+  ...catalogRendererFields,
+  formulaName: NonEmptyName,
+  installPath: NonEmptyName
+}) {}
+
+export class CandidateScoopCatalog extends Schema.Class<CandidateScoopCatalog>("CandidateScoopCatalog")({
+  ...catalogRendererFields,
+  manifestName: NonEmptyName,
+  bin: NonEmptyName
+}) {}
+
+export class CandidateCatalogs extends Schema.Class<CandidateCatalogs>("CandidateCatalogs")({
+  homebrew: optional(Schema.NonEmptyArray(CandidateHomebrewCatalog)),
+  scoop: optional(Schema.NonEmptyArray(CandidateScoopCatalog))
+}) {}
+
+export class CandidateCatalogGitDestination
+  extends Schema.Class<CandidateCatalogGitDestination>("CandidateCatalogGitDestination")({
+    catalog: NonEmptyName,
+    repository: GitHubRepositoryCoordinate,
+    branch: GitBranchName,
+    targetPath: CatalogRepositoryPath,
+    statePath: CatalogRepositoryPath,
+    tokenEnv: environmentName
+  }) {}
+
 export class CandidateGitHubPublish extends Schema.Class<CandidateGitHubPublish>("CandidateGitHubPublish")({
   repository: optional(nonempty),
   tokenEnv: optional(environmentName),
@@ -259,6 +363,8 @@ export class CandidateGitHubPublish extends Schema.Class<CandidateGitHubPublish>
 
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish),
+  pypi: optional(CandidatePyPiPublish),
+  catalogGit: optional(Schema.NonEmptyArray(CandidateCatalogGitDestination)),
   github: optional(CandidateGitHubPublish)
 }) {}
 
@@ -284,5 +390,6 @@ export class CandidateConfig extends Schema.Class<CandidateConfig>("CandidateCon
   artifacts: optional(Schema.NonEmptyArray(CandidateArtifact)),
   archives: optional(Schema.NonEmptyArray(CandidateArchive)),
   checksum: optional(CandidateChecksum),
+  catalogs: optional(CandidateCatalogs),
   publish: optional(CandidatePublish)
 }) {}

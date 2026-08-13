@@ -18,7 +18,7 @@ export class PublicationHttpError
   }) {}
 
 export type HttpRequest = {
-  readonly method: "GET" | "POST"
+  readonly method: "GET" | "POST" | "PATCH"
   readonly url: string
   readonly headers?: Readonly<Record<string, string>>
   readonly body?: Uint8Array | string
@@ -50,10 +50,12 @@ export interface HttpAuthorizationError {
 }
 
 export interface MutationHttpRequest {
-  readonly method: "POST"
+  readonly method: "POST" | "PATCH"
   readonly url: string
   readonly headers?: Readonly<Record<string, string>>
   readonly body?: Uint8Array | string
+  /** Host-owned credential projection; callers still never receive the secret. */
+  readonly credentialScheme?: "bearer" | "pypi-token-basic"
 }
 
 export interface AuthorizedMutationHttpShape {

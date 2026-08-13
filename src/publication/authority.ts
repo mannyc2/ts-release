@@ -9,7 +9,7 @@ import type {
   EnvironmentName,
   ProviderId,
   SubjectId,
-  TrustedPublishingAuthStrategy
+  ResolvedTrustedPublishingAuthStrategy
 } from "../model/authority.js"
 import type { MutationDecision } from "./report.js"
 
@@ -36,7 +36,7 @@ export interface ScopedSecret extends CredentialGrantBase<"ScopedSecret"> {
 export interface WorkloadIdentity extends CredentialGrantBase<"WorkloadIdentity"> {
   readonly names: ReadonlySet<EnvironmentName>
   /** Exact non-secret prepared strategy rechecked by the certified sink. */
-  readonly strategy: TrustedPublishingAuthStrategy
+  readonly strategy: ResolvedTrustedPublishingAuthStrategy
 }
 
 export type CredentialGrant = AnonymousAccess | ScopedSecret | WorkloadIdentity
@@ -190,7 +190,7 @@ class WorkloadIdentityGrant implements WorkloadIdentity {
     readonly audience: CanonicalAudience,
     purposes: NonEmptyPurposes,
     names: NonEmptyEnvironmentNames,
-    readonly strategy: TrustedPublishingAuthStrategy
+    readonly strategy: ResolvedTrustedPublishingAuthStrategy
   ) {
     this.purposes = purposeSet(purposes)
     this.names = new Set(names)

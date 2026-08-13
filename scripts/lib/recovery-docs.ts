@@ -50,10 +50,13 @@ Evidence was reviewed ${profile.evidence.reviewedAt}. Observation sources:
 ${linkList(profile.evidence.observationSources)}. Correction sources:
 ${linkList(profile.evidence.correctionSources)}.
 
-Correction conclusion: ${profile.evidence.correctionFinding} Therefore the
-installed correction-adapter list and the profile's correction axis are both
+Correction conclusion: ${profile.evidence.correctionFinding} ${profile.correctionAdapters.length === 0
+    ? `Therefore the installed correction-adapter list and the profile's correction axis are both
 empty. The public authored request remains useful only as a canonical,
-exactly-bound operator proposal; ts-release sends no corrective mutation.
+exactly-bound operator proposal; ts-release sends no corrective mutation.`
+    : `The installed adapter list is ${profile.correctionAdapters.map((kind) => `\`${kind}\``).join(", ")}.
+It may mutate only through its exact observed-generation precondition and total
+provider report.`}
 `).join("\n")
 
 export const renderProviderRecovery = (
@@ -67,8 +70,8 @@ Date: 2026-08-12
 This document is generated from \`installedPublicationProfiles\`, the same
 registered values consumed by the publication adapter and recovery coordinator.
 Edit the registry, not this table, then run \`bun run generate:recovery-docs\`.
-Only installed npm and GitHub publication modules appear here. PyPI and catalog
-profiles remain owned by Plans 230 and 231 and are not presented as installed.
+Only installed npm, PyPI, GitHub Release, and catalog Git publication modules
+appear here.
 
 ## Independent recovery axes
 
@@ -113,11 +116,14 @@ bundle. Its canonical intent carries the whole prepared digest, the selected
 publication id and destination, and an internally derived SHA-256 of that
 exact prepared publication subject. npm additionally binds the prepared
 tarball SHA-512 integrity. Authored input cannot supply or override destination
-or baseline fields. Catalog and PyPI correction variants are unreachable.
+or baseline fields. PyPI correction variants remain unreachable. Catalog Git
+admits only a SemVer-forward replacement whose exact download coordinates and
+digests deterministically change both consumer target bytes and managed state.
 
-Two actors cannot silently overwrite each other: absent an installed
-conditional correction adapter, both receive independently canonical operator
-proposals and neither sends a provider mutation. Ordinary publication cannot
+Two actors cannot silently overwrite each other: unsupported adapters return
+independently canonical operator proposals without mutation, while catalog Git
+binds its correction to the exact old target/state pair and observed branch
+commit. Ordinary publication cannot
 apply those proposals, erase a correction, resurrect a consumed npm coordinate,
 or interpret deletion as rollback.
 
@@ -126,8 +132,9 @@ or interpret deletion as rollback.
 The local contract suite exercises canonical profile equality, registration
 mismatch rejection, bounded reread behavior, exact provider observations,
 pagination failure, authored correction binding, baseline tampering, and two
-concurrent unsupported correction actors. This plan performed no live npm or
-GitHub provider-resource read or mutation and acquired no credentials.
+concurrent unsupported correction actors, and exact catalog paired correction.
+This plan performed no live npm, PyPI, GitHub Release, or catalog Git
+provider-resource read or mutation and acquired no credentials.
 `
 
 export const checkProviderRecoveryOutput = (root: string): RecoveryDocsReport => {

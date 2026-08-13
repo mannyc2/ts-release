@@ -39,9 +39,8 @@ it from `refs/heads/main`, or update the exact config fields deliberately. A
 repository, workflow path/ref, hosted-runner, direct action, or certified-sink
 mismatch fails before OIDC request material is read.
 
-Runnable configuration templates cover npm, GitHub Releases, and portable
-binaries. Homebrew and Scoop directories are migration notes only because the
-current schema accepts neither catalog family. Templates are schema-checked;
+Runnable configuration templates cover npm, GitHub Releases, portable
+binaries, typed Homebrew formulas, and typed Scoop manifests. Templates are schema-checked;
 support still requires a default-layer vertical test and clean-candidate
 evidence, not merely a field appearing in a template.
 

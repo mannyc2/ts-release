@@ -89,6 +89,81 @@ const npmConfig = (overrides: JsonObject = {}) => base({
   npmPackage: { path: "." },
   publish: { npm: npm(overrides) }
 })
+const pypiToken = (overrides: JsonObject = {}) => ({
+  strategy: "token", credential: "PYPI_TOKEN", scope: "project", ...overrides
+})
+const pypiExternalAuth = (overrides: JsonObject = {}) => ({
+  strategy: "trusted-publishing", owner: "external",
+  action: "pypa/gh-action-pypi-publish@release/v1",
+  repository: "owner/fixture", workflow: "release.yml", workflowRef: "refs/heads/main",
+  environment: "pypi", projects: ["fixture"], ...overrides
+})
+const pypiConfig = (overrides: JsonObject = {}) => base({
+  project: project({ name: "fixture", packageName: "fixture" }),
+  artifacts: [artifact("pypi-wheel", "dist/fixture-1.0.0-py3-none-any.whl", "file")],
+  publish: { pypi: { artifacts: ["pypi-wheel"], authentication: pypiToken(), ...overrides } }
+})
+const pypiExternal = (overrides: JsonObject = {}) => base({
+  project: project({ name: "fixture", packageName: "fixture" }),
+  artifacts: [artifact("pypi-wheel", "dist/fixture-1.0.0-py3-none-any.whl", "file")],
+  publish: { pypi: { artifacts: ["pypi-wheel"], authentication: pypiExternalAuth(overrides) } }
+})
+const catalogSource = (artifactId: string, architecture: "x64" | "arm64") => ({ artifact: artifactId, architecture })
+const homebrewCatalog = (overrides: JsonObject = {}) => ({
+  id: "homebrew-a",
+  formulaName: "fixture",
+  description: "Fixture command",
+  homepage: "https://example.test/fixture",
+  license: "MIT",
+  installPath: "fixture",
+  sources: [catalogSource("darwin-a", "arm64")],
+  ...overrides
+})
+const scoopCatalog = (overrides: JsonObject = {}) => ({
+  id: "scoop-a",
+  manifestName: "fixture",
+  description: "Fixture command",
+  homepage: "https://example.test/fixture",
+  license: "MIT",
+  bin: "fixture.exe",
+  sources: [catalogSource("windows-a", "x64")],
+  ...overrides
+})
+const catalogArtifacts = [
+  artifact("darwin-a", "dist/fixture-darwin-arm64.tar.gz", "tarball"),
+  artifact("darwin-b", "dist/fixture-darwin-x64.tar.gz", "tarball"),
+  artifact("windows-a", "dist/fixture-windows-x64.zip", "zip"),
+  artifact("windows-b", "dist/fixture-windows-arm64.zip", "zip")
+]
+const homebrewConfig = (overrides: JsonObject = {}) => base({
+  artifacts: catalogArtifacts,
+  catalogs: { homebrew: [homebrewCatalog(overrides)] }
+})
+const scoopConfig = (overrides: JsonObject = {}) => base({
+  artifacts: catalogArtifacts,
+  catalogs: { scoop: [scoopCatalog(overrides)] }
+})
+const bothCatalogs = () => base({
+  artifacts: catalogArtifacts,
+  catalogs: { homebrew: [homebrewCatalog()], scoop: [scoopCatalog()] }
+})
+const catalogDestination = (overrides: JsonObject = {}) => ({
+  catalog: "homebrew-a",
+  repository: "owner/homebrew-tap",
+  branch: "main",
+  targetPath: "Formula/fixture.rb",
+  statePath: ".ts-release/fixture.json",
+  tokenEnv: "GITHUB_TOKEN",
+  ...overrides
+})
+const catalogPublish = (overrides: JsonObject = {}) => base({
+  artifacts: catalogArtifacts,
+  catalogs: { homebrew: [homebrewCatalog()], scoop: [scoopCatalog()] },
+  publish: {
+    github: github({ ids: catalogArtifacts.map((item) => item.id) }),
+    catalogGit: [catalogDestination(overrides)]
+  }
+})
 const outputPreparation = (overrides: JsonObject = {}) => ({
   kind: "artifact",
   id: "generate-a",
@@ -214,6 +289,29 @@ const witnesses: ReadonlyArray<MutationWitness> = [
   presence("checksum", "checksum", artifactBase, base({ artifacts: [artifact()], checksum: { algorithm: "sha256" } })),
   mutate("checksum-algorithm", "checksum.algorithm", base({ artifacts: [artifact()], checksum: { algorithm: "sha256" } }), "sha512"),
 
+  presence("catalogs", "catalogs", bare, homebrewConfig()),
+  presence("catalogs-homebrew", "catalogs.homebrew", scoopConfig(), bothCatalogs()),
+  mutate("homebrew-description", "catalogs.homebrew[].description", homebrewConfig(), "Other command"),
+  mutate("homebrew-formula", "catalogs.homebrew[].formulaName", homebrewConfig(), "fixture-other"),
+  mutate("homebrew-homepage", "catalogs.homebrew[].homepage", homebrewConfig(), "https://example.test/other"),
+  mutate("homebrew-id", "catalogs.homebrew[].id", homebrewConfig(), "homebrew-b"),
+  mutate("homebrew-install", "catalogs.homebrew[].installPath", homebrewConfig(), "fixture-real"),
+  mutate("homebrew-license", "catalogs.homebrew[].license", homebrewConfig(), "Apache-2.0"),
+  mutate("homebrew-sources", "catalogs.homebrew[].sources", homebrewConfig(), [catalogSource("darwin-b", "x64")]),
+  mutate("homebrew-source-arch", "catalogs.homebrew[].sources[].architecture", homebrewConfig(), "x64"),
+  mutate("homebrew-source-artifact", "catalogs.homebrew[].sources[].artifact", homebrewConfig(), "darwin-b"),
+
+  presence("catalogs-scoop", "catalogs.scoop", homebrewConfig(), bothCatalogs()),
+  mutate("scoop-bin", "catalogs.scoop[].bin", scoopConfig(), "fixture-real.exe"),
+  mutate("scoop-description", "catalogs.scoop[].description", scoopConfig(), "Other command"),
+  mutate("scoop-homepage", "catalogs.scoop[].homepage", scoopConfig(), "https://example.test/other"),
+  mutate("scoop-id", "catalogs.scoop[].id", scoopConfig(), "scoop-b"),
+  mutate("scoop-license", "catalogs.scoop[].license", scoopConfig(), "Apache-2.0"),
+  mutate("scoop-manifest", "catalogs.scoop[].manifestName", scoopConfig(), "fixture-other"),
+  mutate("scoop-sources", "catalogs.scoop[].sources", scoopConfig(), [catalogSource("windows-b", "arm64")]),
+  mutate("scoop-source-arch", "catalogs.scoop[].sources[].architecture", scoopConfig(), "arm64"),
+  mutate("scoop-source-artifact", "catalogs.scoop[].sources[].artifact", scoopConfig(), "windows-b"),
+
   presence("publish", "publish", bare, githubBase),
   presence("publish-github", "publish.github", base({ publish: {} }), githubBase),
   mutate("github-body", "publish.github.body", githubBase, "body-b"),
@@ -233,6 +331,17 @@ const witnesses: ReadonlyArray<MutationWitness> = [
   mutate("github-repository", "publish.github.repository", githubBase, "owner/other"),
   mutate("github-token", "publish.github.tokenEnv", githubBase, "OTHER_GITHUB_TOKEN"),
 
+  presence("publish-catalog-git", "publish.catalogGit", base({
+    ...bothCatalogs(),
+    publish: { github: github({ ids: catalogArtifacts.map((item) => item.id) }) }
+  }), catalogPublish()),
+  mutate("catalog-git-branch", "publish.catalogGit[].branch", catalogPublish(), "release"),
+  mutate("catalog-git-catalog", "publish.catalogGit[].catalog", catalogPublish(), "scoop-a"),
+  mutate("catalog-git-repository", "publish.catalogGit[].repository", catalogPublish(), "owner/other-tap"),
+  mutate("catalog-git-state", "publish.catalogGit[].statePath", catalogPublish(), ".ts-release/other.json"),
+  mutate("catalog-git-target", "publish.catalogGit[].targetPath", catalogPublish(), "Formula/other.rb"),
+  mutate("catalog-git-token", "publish.catalogGit[].tokenEnv", catalogPublish(), "OTHER_GITHUB_TOKEN"),
+
   presence("publish-npm", "publish.npm", base({ npmPackage: { path: "." }, publish: {} }), npmConfig()),
   mutate("npm-access", "publish.npm.access", npmConfig({ access: "public" }), "restricted"),
   invariant("npm-authentication", ["publish.npm.authentication"], npmConfig(), trusted, base({ npmPackage: { path: "." }, publish: { npm: {} } })),
@@ -248,6 +357,30 @@ const witnesses: ReadonlyArray<MutationWitness> = [
   mutate("npm-dist-tag", "publish.npm.distTag", npmConfig({ distTag: "latest" }), "next"),
   mutate("npm-provenance", "publish.npm.provenance", npmConfig({ provenance: "disabled" }), "required"),
   mutate("npm-registry", "publish.npm.registry", npmConfig({ registry: "https://registry.npmjs.org/" }), "https://registry.example.test/custom/")
+
+  , presence("publish-pypi", "publish.pypi", base({ publish: {} }), pypiConfig())
+  , mutate("pypi-artifacts", "publish.pypi.artifacts", base({
+    project: project({ name: "fixture", packageName: "fixture" }),
+    artifacts: [artifact("pypi-a", "dist/fixture-1.0.0-py3-none-any.whl"), artifact("pypi-b", "dist/fixture-1.0.0.tar.gz")],
+    publish: { pypi: { artifacts: ["pypi-a"], authentication: pypiToken() } }
+  }), ["pypi-b"])
+  , invariant("pypi-authentication", ["publish.pypi.authentication"], pypiConfig(), pypiExternal(),
+    set(pypiConfig(), "publish.pypi.authentication", {}))
+  , invariant("pypi-auth-strategy", ["publish.pypi.authentication.strategy"], pypiConfig(), pypiExternal(),
+    set(pypiConfig(), "publish.pypi.authentication.strategy", "trusted-publishing"))
+  , mutate("pypi-auth-credential", "publish.pypi.authentication.credential", pypiConfig(), "OTHER_PYPI_TOKEN")
+  , literalInvariant("pypi-auth-scope", "publish.pypi.authentication.scope", pypiConfig(),
+    set(pypiConfig(), "publish.pypi.authentication.scope", "account"))
+  , literalInvariant("pypi-external-owner", "publish.pypi.authentication.owner", pypiExternal(),
+    set(pypiExternal(), "publish.pypi.authentication.owner", "stock"))
+  , literalInvariant("pypi-external-action", "publish.pypi.authentication.action", pypiExternal(),
+    set(pypiExternal(), "publish.pypi.authentication.action", "owner/custom@v1"))
+  , refusal("pypi-external-repository", "publish.pypi.authentication.repository", pypiExternal(), "owner/other", "resolve")
+  , mutate("pypi-external-workflow", "publish.pypi.authentication.workflow", pypiExternal(), "publish.yml")
+  , mutate("pypi-external-workflow-ref", "publish.pypi.authentication.workflowRef", pypiExternal(), "refs/tags/v1.0.0")
+  , mutate("pypi-external-environment", "publish.pypi.authentication.environment", pypiExternal(), "testpypi")
+  , mutate("pypi-external-projects", "publish.pypi.authentication.projects", pypiExternal(), ["fixture", "other"])
+  , mutate("pypi-repository", "publish.pypi.repository", pypiConfig({ repository: "pypi" }), "testpypi")
 ]
 
 const decode = Schema.decodeUnknownSync(AuthoredConfig, { onExcessProperty: "error" })

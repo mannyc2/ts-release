@@ -10,10 +10,11 @@ ts-release init
 ts-release release --config release.config.json
 ```
 
-Runnable fixtures cover npm, GitHub Releases, portable binaries, and
-archive/checksum preparation. PyPI, catalog Git, Homebrew, and Scoop are not
-accepted publication families in the current schema. Their directories contain
-migration notes only, never release configs that imply a no-op is supported.
+Runnable fixtures cover npm, GitHub Releases, portable binaries,
+archive/checksum preparation, and typed Homebrew/Scoop catalog Git delivery.
+Catalog fixtures prepare locally during checks and never mutate a provider.
+The PyPI directory remains a migration note until it carries an independently
+runnable prebuilt-distribution fixture.
 An example passing strict decode is necessary but not sufficient support
 evidence; the same capability must execute through the root API and default
 runtime in release-candidate certification.

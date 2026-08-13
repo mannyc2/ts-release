@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer"
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { basename, isAbsolute, join, resolve } from "node:path"
@@ -18,7 +19,7 @@ import {
   type CredentialRef,
   type CredentialRequest,
   type SubjectId,
-  type TrustedPublishingAuthStrategy
+  type ResolvedTrustedPublishingAuthStrategy
 } from "../model/authority.js"
 import { redactOutput } from "../drivers/redact.js"
 import {
@@ -529,14 +530,17 @@ const sendAuthorized = (
   http: PublicationHttp,
   request: HttpObservationRequest | MutationHttpRequest,
   token: Redacted.Redacted<string>,
-  phase: "observe" | "mutate"
+  phase: "observe" | "mutate",
+  credentialScheme: "bearer" | "pypi-token-basic" = "bearer"
 ): Effect.Effect<HttpResponse, CredentialPlatformError> => {
   if (hasAuthorizationHeader(request.headers)) {
     return Effect.fail(platformError(phase, "before-dispatch", "Callers may not supply an Authorization header."))
   }
   const headers = {
     ...(request.headers ?? {}),
-    authorization: `Bearer ${Redacted.value(token)}`
+    authorization: credentialScheme === "pypi-token-basic"
+      ? `Basic ${Buffer.from(`__token__:${Redacted.value(token)}`, "utf8").toString("base64")}`
+      : `Bearer ${Redacted.value(token)}`
   }
   return http.request({
     method: request.method,
@@ -569,9 +573,15 @@ const makeAuthorizedMutationHttp = (
 ): AuthorizedMutationHttpShape => ({
   execute: Effect.fn("AuthorizedMutationHttp.execute")(function*(operation, request, grant) {
     yield* validateGrantForOperation(operation, grant)
+    if ((operation.provider === "pypi") !== (request.credentialScheme === "pypi-token-basic")) {
+      return yield* platformError(
+        "mutate", "before-dispatch",
+        "The PyPI Basic credential projection is accepted only for typed PyPI mutations and is mandatory for them."
+      )
+    }
     yield* checkAudience(operation.subject, operation.audience, request.url, operation.provider === "github")
     const token = yield* lookupToken(vault, grant.subject, grant.ref)
-    return yield* sendAuthorized(http, request, token, "mutate")
+    return yield* sendAuthorized(http, request, token, "mutate", request.credentialScheme)
   })
 })
 

@@ -15,7 +15,7 @@ export const compileReleaseGraph = (
 ): ReleaseGraph => {
   const contributions: Array<CapabilityContribution> = []
   let artifacts: ReleaseGraph["artifacts"] = []
-  for (const phase of ["source", "package"] as const) {
+  for (const phase of ["source", "package", "render"] as const) {
     for (const module of preparationCapabilities.filter((candidate) => candidate.phase === phase)) {
       contributions.push(module.contribute({ config: intent, context, availableArtifacts: artifacts }))
     }

@@ -10,6 +10,13 @@ import {
   collectionMemberPath
 } from "../model/artifact-collection.js"
 import { Sha256Digest } from "../model/digest.js"
+import {
+  CatalogRepositoryPath,
+  GitBranchName,
+  GitHubRepositoryCoordinate,
+  PreparedCatalogRenderer
+} from "../model/catalog.js"
+import { PythonDistribution } from "../model/python-distribution.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
 import { ExplicitInputSnapshot, StagingSnapshot } from "./context.js"
 import {
@@ -17,12 +24,17 @@ import {
   NpmAccess,
   NpmAuthentication,
   NpmDistTag,
-  NpmProvenancePolicy
+  NpmProvenancePolicy,
+  PyPiAuthentication,
+  PyPiProjectName,
+  PyPiRepository
 } from "../recipes/config.js"
 import {
   PublicationAuthorityIntent,
+  catalogPublicationAuthorityIssue,
   githubPublicationAuthorityIssue,
-  npmPublicationAuthorityIssue
+  npmPublicationAuthorityIssue,
+  pyPiPublicationAuthorityIssue
 } from "./graph.js"
 
 const optional = Schema.optionalKey
@@ -102,13 +114,59 @@ export class PreparedGitHubPublication extends Schema.TaggedClass<PreparedGitHub
   assets: Schema.Array(PreparedGitHubAsset), authority: PublicationAuthorityIntent
 }) {}
 
+export class PreparedPyPiFile extends Schema.Class<PreparedPyPiFile>("PreparedPyPiFile")({
+  artifactId: OutputId,
+  filename: NonEmptyName,
+  size: Schema.Number.check(Schema.makeFilter((value: number) =>
+    Number.isSafeInteger(value) && value >= 0 ? undefined : "PyPI file size must be a nonnegative safe integer.")),
+  sha256: Sha256Digest,
+  mediaType: Schema.Literals(["application/zip", "application/gzip"]),
+  distribution: PythonDistribution,
+  authority: PublicationAuthorityIntent
+}) {}
+
+export class PreparedPyPiPublication extends Schema.TaggedClass<PreparedPyPiPublication>()("PreparedPyPiPublication", {
+  id: NonEmptyName,
+  project: PyPiProjectName,
+  version: Version,
+  repository: PyPiRepository,
+  simpleBaseUrl: Schema.NonEmptyString,
+  projectUrl: Schema.NonEmptyString,
+  uploadUrl: Schema.NonEmptyString,
+  authentication: PyPiAuthentication,
+  files: Schema.NonEmptyArray(PreparedPyPiFile)
+}) {}
+
+export class PreparedCatalogPublication
+  extends Schema.TaggedClass<PreparedCatalogPublication>()("PreparedCatalogPublication", {
+    id: NonEmptyName,
+    catalogId: NonEmptyName,
+    targetArtifactId: OutputId,
+    stateArtifactId: OutputId,
+    targetDigest: Sha256Digest,
+    stateDigest: Sha256Digest,
+    repository: GitHubRepositoryCoordinate,
+    branch: GitBranchName,
+    targetPath: CatalogRepositoryPath,
+    statePath: CatalogRepositoryPath,
+    version: Version,
+    sourceRepository: GitHubRepositoryCoordinate,
+    sourceTag: NonEmptyName,
+    renderer: PreparedCatalogRenderer,
+    authority: PublicationAuthorityIntent
+  }) {}
+
 const PreparedPublicationVariants = Schema.Union([
-  PreparedNpmPublication, PreparedGitHubPublication
+  PreparedNpmPublication, PreparedPyPiPublication, PreparedGitHubPublication, PreparedCatalogPublication
 ])
 export const PreparedPublication = PreparedPublicationVariants.pipe(Schema.check(
   Schema.makeFilter((publication) => publication._tag === "PreparedNpmPublication"
     ? npmPublicationAuthorityIssue(publication)
-    : githubPublicationAuthorityIssue(publication))
+    : publication._tag === "PreparedPyPiPublication"
+    ? pyPiPublicationAuthorityIssue(publication)
+    : publication._tag === "PreparedGitHubPublication"
+    ? githubPublicationAuthorityIssue(publication)
+    : catalogPublicationAuthorityIssue(publication))
 ))
 export type PreparedPublication = typeof PreparedPublication.Type
 
@@ -137,6 +195,12 @@ const assertCompletePreparedRelease = (manifest: PreparedReleaseV2): void => {
       publication.authority.publishStrategy.sourceCommit.toString() !== manifest.source.commit.toString()) {
       throw new Error(`prepared npm publication ${publication.id} source commit disagrees with the verified source`)
     }
+    if (publication._tag === "PreparedPyPiPublication" &&
+      publication.authentication.strategy === "trusted-publishing" &&
+      publication.files.some((file) => file.authority.publishStrategy.kind !== "trusted-publishing" ||
+        file.authority.publishStrategy.sourceCommit.toString() !== manifest.source.commit.toString())) {
+      throw new Error(`prepared PyPI publication ${publication.id} source commit disagrees with the verified source`)
+    }
   }
   for (const artifact of manifest.artifacts) {
     if (artifact.inputBasis.hex !== manifest.provenance.inputBasis.hex) {
@@ -144,6 +208,15 @@ const assertCompletePreparedRelease = (manifest: PreparedReleaseV2): void => {
     }
   }
   const artifacts = new Map(manifest.artifacts.map((artifact) => [artifact.id.toString(), artifact]))
+  for (const publication of manifest.publications) {
+    if (publication._tag !== "PreparedCatalogPublication") continue
+    const target = artifacts.get(publication.targetArtifactId.toString())
+    const state = artifacts.get(publication.stateArtifactId.toString())
+    if (target === undefined || state === undefined || target.digest.hex !== publication.targetDigest.hex ||
+        state.digest.hex !== publication.stateDigest.hex || target.kind !== "file" || state.kind !== "file") {
+      throw new Error(`prepared catalog publication ${publication.id} does not bind its exact target/state artifacts`)
+    }
+  }
   const collectionIds = new Set<string>()
   const collectionRoots = new Map<string, string>()
   const collectionProducers = new Set<string>()

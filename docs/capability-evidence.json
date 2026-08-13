@@ -30,6 +30,26 @@
       ]
     },
     {
+      "id": "render.homebrew",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-13",
+      "references": [
+        { "kind": "test", "path": "test/core/catalog-rendering.test.ts" },
+        { "kind": "url", "path": "https://docs.brew.sh/Formula-Cookbook" }
+      ],
+      "note": "Renders one typed Homebrew formula from exact prepared GitHub release asset digests; no live-write claim is made."
+    },
+    {
+      "id": "render.scoop",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-13",
+      "references": [
+        { "kind": "test", "path": "test/core/catalog-rendering.test.ts" },
+        { "kind": "url", "path": "https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests" }
+      ],
+      "note": "Renders one typed Scoop manifest from exact prepared ZIP asset digests; no live-write claim is made."
+    },
+    {
       "id": "publish.npm",
       "evidenceClass": "contract-tested",
       "observedAt": "2026-08-12",
@@ -40,6 +60,18 @@
       "note": "Compiler contribution, prepared variant, provider subjects, recovery profile, and default host boundary are installed; no live-write dogfood claim is made."
     },
     {
+      "id": "publish.pypi",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-13",
+      "references": [
+        { "kind": "test", "path": "test/core/pypi-preparation.test.ts" },
+        { "kind": "test", "path": "test/protocol/pypi/pypi-provider-protocol.test.ts" },
+        { "kind": "url", "path": "https://packaging.python.org/en/latest/specifications/simple-repository-api/" },
+        { "kind": "url", "path": "https://docs.pypi.org/api/upload/" }
+      ],
+      "note": "Prebuilt wheel/sdist validation, exact per-file Simple API subjects, scoped-token upload, recovery profile, and external-only PyPA Action trusted publishing are installed; no live-write claim is made."
+    },
+    {
       "id": "publish.github",
       "evidenceClass": "contract-tested",
       "observedAt": "2026-08-12",
@@ -48,6 +80,18 @@
         { "kind": "test", "path": "test/protocol/github/github-protocol.test.ts" }
       ],
       "note": "Compiler contribution, prepared variant, provider subjects, recovery profile, and default host boundary are installed; no live-write dogfood claim is made."
+    },
+    {
+      "id": "publish.catalog-git",
+      "evidenceClass": "contract-tested",
+      "observedAt": "2026-08-13",
+      "references": [
+        { "kind": "test", "path": "test/core/catalog-rendering.test.ts" },
+        { "kind": "test", "path": "test/protocol/catalog/catalog-git-protocol.test.ts" },
+        { "kind": "url", "path": "https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28#create-a-tree" },
+        { "kind": "url", "path": "https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28#update-a-reference" }
+      ],
+      "note": "Publishes an exact rendered target plus managed-state pair through GitHub Git Data with an explicit base tree, exact parent commit, preserved unrelated objects, and a non-force ref update; no live-write claim is made."
     }
   ]
 }

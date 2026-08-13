@@ -1,10 +1,10 @@
-# Scoop template migration note
+# Multi-target Scoop template
 
-There is no runnable Scoop template in the current release kernel. Scoop and
-generic catalog destinations are absent from the authored schema until a
-provider-owned implementation can prepare, publish, observe, and recover the
-same exact subject.
+This template renders one Scoop manifest with x64 and arm64 ZIP downloads.
+Both archives must be selected by the paired GitHub release publication; the
+catalog subject is dependency-blocked until those upstream asset subjects
+converge.
 
-Start from `../bun-cli-github/release.config.json` for the retained binary and
-GitHub release slice. Add Scoop only after the capability inventory marks a
-future implementation supported.
+Replace the project, bucket, homepage, artifact, and credential coordinates.
+A repository check can prepare this template without publishing, but an actual
+release requires explicit provider authority.

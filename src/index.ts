@@ -21,10 +21,12 @@ export type {
   PublishInput,
   ReleaseApi,
   ReleaseApiLayer,
+  ReleaseApiOptions,
   ReleaseInput,
   ReleaseResult
 } from "./api/types.js"
 export {
+  AuthoredCatalogForwardCorrection,
   AuthoredGithubReleaseAmendment,
   AuthoredNpmDeprecation,
   decodeAuthoredCorrection

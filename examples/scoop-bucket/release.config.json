@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/release-config.schema.json",
+  "project": {
+    "name": "fixture",
+    "version": "1.0.0",
+    "tag": "v1.0.0",
+    "repository": "owner/fixture"
+  },
+  "artifacts": [
+    {
+      "id": "fixture-windows-x64",
+      "path": "dist/fixture-windows-x64.zip",
+      "format": "zip"
+    }
+  ],
+  "catalogs": {
+    "scoop": [
+      {
+        "id": "fixture-scoop",
+        "manifestName": "fixture",
+        "description": "Fixture command",
+        "homepage": "https://example.com/fixture",
+        "license": "MIT",
+        "bin": "fixture.exe",
+        "sources": [
+          { "artifact": "fixture-windows-x64", "architecture": "x64" }
+        ]
+      }
+    ]
+  },
+  "publish": {
+    "github": {
+      "repository": "owner/fixture",
+      "ids": ["fixture-windows-x64"]
+    },
+    "catalogGit": [
+      {
+        "catalog": "fixture-scoop",
+        "repository": "owner/scoop-bucket",
+        "branch": "main",
+        "targetPath": "bucket/fixture.json",
+        "statePath": ".ts-release/fixture-scoop.json",
+        "tokenEnv": "GITHUB_TOKEN"
+      }
+    ]
+  }
+}

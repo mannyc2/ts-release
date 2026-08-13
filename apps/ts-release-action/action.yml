@@ -21,6 +21,12 @@ outputs:
 runs:
   using: composite
   steps:
+    - if: ${{ inputs.command != 'publish' }}
+      shell: bash
+      run: |
+        cache="${BUN_INSTALL_CACHE_DIR:-$HOME/.bun/install/cache}"
+        env -i PATH="$PATH" HOME="$HOME" BUN_INSTALL_CACHE_DIR="$cache" \
+          bun --no-env-file --no-install "$GITHUB_ACTION_PATH/scripts/preload-bun-compile-runtimes.ts"
     - id: execute
       shell: bash
       env:

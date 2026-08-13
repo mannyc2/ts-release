@@ -8,6 +8,7 @@ import { makeNodeReleaseLayer } from "@mannyc1/ts-release/node"
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
 import {
+  actionErrorMessage,
   makePreparedReferenceChannel,
   runAction
 } from "./commands.js"
@@ -60,7 +61,7 @@ try {
     summarize
   })
 } catch (cause) {
-  core.setFailed(cause instanceof Error ? cause.message : String(cause))
+  core.setFailed(actionErrorMessage(cause))
 } finally {
   await api?.dispose()
 }

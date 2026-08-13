@@ -81,6 +81,23 @@ const redact = (value: string): string => value
   .replace(/(?:npm|ghp|ghs|github_pat)_[A-Za-z0-9_]+/gu, "[REDACTED]")
   .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/giu, "Bearer [REDACTED]")
 
+const nonEmptyString = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim().length > 0 ? value : undefined
+
+/** Effect/schema errors can be Error instances with an empty `message` and a
+ * durable string in `reason` or `cause`. Preserve that diagnostic without
+ * serializing arbitrary error objects or secrets. */
+export const actionErrorMessage = (cause: unknown): string => {
+  const direct = cause instanceof Error ? nonEmptyString(cause.message) : nonEmptyString(cause)
+  if (direct !== undefined) return redact(direct)
+  if (typeof cause === "object" && cause !== null) {
+    const record = cause as { readonly reason?: unknown, readonly cause?: unknown }
+    const structured = nonEmptyString(record.reason) ?? nonEmptyString(record.cause)
+    if (structured !== undefined) return redact(structured)
+  }
+  return "Action failed without a diagnostic message."
+}
+
 const printable = (value: unknown): string => JSON.stringify(value, (_key, nested) => {
   if (
     typeof nested === "object" && nested !== null && !Array.isArray(nested) &&
@@ -174,7 +191,7 @@ export const runAction = async (
       throw new ReportedActionError(`Action ${selected} report is ${status}; no complete release is claimed.`)
     }
   } catch (cause) {
-    const message = redact(cause instanceof Error ? cause.message : String(cause))
+    const message = actionErrorMessage(cause)
     const prepared = runtime.preparedReference.current()
     if (!(cause instanceof ReportedActionError)) {
       try {

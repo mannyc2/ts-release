@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import {
+  actionErrorMessage,
   actionCommands,
   actionInputs,
   actionOutputs,
@@ -47,7 +48,29 @@ test("Action metadata exposes only release, prepare, publish and two reference o
   expect(actionOutputs).toEqual(["prepared-ref", "report-ref"])
   expect(sectionKeys(manifest, "inputs", "outputs")).toEqual(actionInputs)
   expect(sectionKeys(manifest, "outputs", "runs")).toEqual(actionOutputs)
+  expect(manifest).toContain("inputs.command != 'publish'")
+  expect(manifest).toContain("preload-bun-compile-runtimes.ts")
+  expect(manifest).toContain("env -i")
+  expect(manifest).toContain("bun --no-env-file --no-install")
   expect(manifest).not.toMatch(/\b(?:ship|inspect|correct|status|prepared_path|report_path|approval|reviewer)\b/iu)
+})
+
+test("Action errors retain structured Effect diagnostics and redact credentials", async () => {
+  const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "ts-release-action-"))
+  writeFileSync(join(root, "release.config.json"), "{}")
+  const fixture = harness(root, { command: "release", config: "release.config.json" })
+  const silent = Object.assign(new Error(""), {
+    cause: "Missing certified runtime near npm_secret123"
+  })
+  await expect(runAction({
+    release: async () => { throw silent },
+    prepare: async () => preparedReference(),
+    publish: async () => completeReport
+  }, fixture.runtime)).rejects.toThrow("Missing certified runtime near [REDACTED]")
+  const report = JSON.parse(readFileSync(join(root, fixture.outputs["report-ref"]!), "utf8")) as Record<string, unknown>
+  expect(report.error).toBe("Missing certified runtime near [REDACTED]")
+  expect(actionErrorMessage(Object.assign(new Error(""), { reason: "exact reason" }))).toBe("exact reason")
+  expect(actionErrorMessage(Object.create(null))).toBe("Action failed without a diagnostic message.")
 })
 
 test("release makes one public call and receives the durable reference before it returns", async () => {

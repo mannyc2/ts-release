@@ -20,6 +20,10 @@ npm bytes during Plan 233 candidate certification.
    remains a cross-compiled artifact target, not an execution-host certification.
    The certified install uses Bun's hoisted linker so every admitted dependency
    byte remains under the one provenance root `node_modules`.
+   Before preparation, provision the exact Bun-version runtime files for every
+   advertised cross target in the host cache. The process driver copies one
+   verified runtime at a time into a disposable read-only cache; self-preparation
+   must not download a target runtime.
 3. Run the complete release-candidate gate and every public-entrypoint smoke
    matrix. A skipped execution host is removed from the support claim.
 4. Prepare the self-release independently twice. Verify exact-commit

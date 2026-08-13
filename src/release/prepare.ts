@@ -15,7 +15,13 @@ import { basename, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { tmpdir } from "node:os"
 import { tarGz, zip, type ArchiveEntry } from "../drivers/archive.js"
 import { secureRead, secureWrite } from "../drivers/workspace.js"
-import type { ExecutableIdentity, NetworkIsolationIdentity, RunCommand } from "../drivers/process.js"
+import type {
+  BunCompileRuntimeIdentity,
+  CommandOutcome,
+  ExecutableIdentity,
+  NetworkIsolationIdentity,
+  RunCommand
+} from "../drivers/process.js"
 import { encodeCanonicalJson } from "../model/canonical.js"
 import {
   ArtifactCollectionMember,
@@ -113,6 +119,45 @@ const attempt = <A>(body: () => A): Effect.Effect<A, PreparationError> => Effect
   try: body,
   catch: failure
 })
+
+const bunCompileTargets = new Set<BunCompileRuntimeIdentity["target"]>([
+  "bun-linux-x64",
+  "bun-linux-arm64",
+  "bun-darwin-x64",
+  "bun-darwin-arm64"
+])
+
+const expectedBunCompileTarget = (argv: ReadonlyArray<string>): BunCompileRuntimeIdentity["target"] | undefined =>
+  (argv.length === 8 || argv.length === 9) && argv[0] === "bun" && argv[1] === "build" &&
+    argv[2]?.startsWith("-") === false && argv[3] === "--compile" && argv[4] === "--target" &&
+    argv[6] === "--outfile" && argv[7]?.startsWith("-") === false &&
+    (argv.length === 8 || argv[8] === "--minify") && bunCompileTargets.has(argv[5] as never)
+    ? argv[5] as BunCompileRuntimeIdentity["target"]
+    : undefined
+
+const assertBunCompileRuntime = (argv: ReadonlyArray<string>, outcome: CommandOutcome): void => {
+  const expected = expectedBunCompileTarget(argv)
+  const runtime = outcome.bunCompileRuntime
+  if (expected === undefined) {
+    if (runtime !== undefined) throw new Error("A non-certified command reported a Bun compile runtime identity.")
+    return
+  }
+  if (runtime === undefined || runtime.target !== expected || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(runtime.bunVersion) ||
+      !/^[a-f0-9]{64}$/u.test(runtime.sha256)) {
+    throw new Error(`Certified Bun compile target ${expected} did not report its exact runtime identity.`)
+  }
+  if (expected === "bun-linux-x64") {
+    if (runtime.source !== "executing-bun" || runtime.cacheFile !== "executing-bun" ||
+        outcome.tool?.protocol !== "ts-release-executable/v1" || outcome.tool.sha256 !== runtime.sha256) {
+      throw new Error("Certified Linux x64 compilation did not bind the executing Bun bytes.")
+    }
+    return
+  }
+  const platform = expected.slice(4).replace("arm64", "aarch64")
+  if (runtime.source !== "host-cache-private-copy" || runtime.cacheFile !== `bun-${platform}-v${runtime.bunVersion}`) {
+    throw new Error(`Certified Bun compile target ${expected} did not bind its canonical private cache file.`)
+  }
+}
 
 const materializeBunDependencies = Effect.fn("materializeBunDependencies")(function*(input: {
   readonly request: PreparationRequest
@@ -362,6 +407,7 @@ interface CommandExecutionResult {
   readonly declarations: ReadonlyArray<OutputDeclaration>
   readonly collection?: PreparedArtifactCollection
   readonly networkIsolation?: NetworkIsolationIdentity
+  readonly bunCompileRuntime?: BunCompileRuntimeIdentity
 }
 
 const assertRealDirectoryTree = (stageRoot: string, root: SafeRelativePath): void => {
@@ -425,6 +471,7 @@ const runNpmPackageBuild = (
         reason: `npm package build exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
       })
     }
+    yield* attempt(() => assertBunCompileRuntime(preparation.argv, outcome))
     const after = yield* attempt(() => snapshotStaging(stageRoot, { exclude: writable }))
     if (!snapshotsEqual(before, after)) {
       return yield* new PreparationError({
@@ -437,7 +484,8 @@ const runNpmPackageBuild = (
     })
     return {
       outputs: [], declarations: [],
-      ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation })
+      ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }),
+      ...(outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime })
     }
   }).pipe(
     Effect.onError(() => Effect.sync(cleanup))
@@ -583,6 +631,7 @@ const runCommand = (
       reason: `Command ${preparation.id} exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
     })
   }
+  yield* attempt(() => assertBunCompileRuntime(argv, outcome))
   const after = yield* attempt(() => snapshotStaging(request.context.workspace, { exclude: writable }))
   if (!snapshotsEqual(before, after)) {
     return yield* new PreparationError({
@@ -593,13 +642,15 @@ const runCommand = (
   yield* attempt(() => assertSnapshotPresent(request.context.workspace, sourceSnapshot, "Verified source", { exclude: writable }))
   if (preparation._tag === "GraphCommandCheck") return {
     outputs: [], declarations: [],
-    ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation })
+    ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }),
+    ...(outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime })
   }
   if (preparation._tag === "GraphCommandCollection") {
     const discovered = yield* attempt(() => discoverCollection(request.context, preparation.collection))
     return {
       ...discovered,
-      ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation })
+      ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }),
+      ...(outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime })
     }
   }
   const produced: Array<[string, Uint8Array]> = []
@@ -608,7 +659,8 @@ const runCommand = (
   }
   return {
     outputs: produced, declarations: [],
-    ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation })
+    ...(outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }),
+    ...(outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime })
   }
 })
 
@@ -847,6 +899,7 @@ const npmTarball = (
 const runtimeIdentity = (
   bunVersion: string | undefined,
   isolation: NetworkIsolationIdentity | undefined,
+  bunCompileRuntimes: ReadonlyArray<BunCompileRuntimeIdentity>,
   npmPack: NpmPackIdentity | undefined,
   releaseGraph: ReturnType<typeof sha256Digest>
 ): PreparedExecutionInputs => PreparedExecutionInputs.make({
@@ -861,6 +914,9 @@ const runtimeIdentity = (
   networkIsolation: isolation === undefined
     ? "host-provided-network-deny/no-helper-identity"
     : encodeCanonicalJson(isolation),
+  bunCompileRuntimes: bunCompileRuntimes.length === 0
+    ? "not-used"
+    : encodeCanonicalJson(bunCompileRuntimes),
   npmPack: npmPack === undefined ? "not-used" : encodeCanonicalJson(npmPack),
   releaseGraph,
   preparer: "@mannyc1/ts-release@0.2.0"
@@ -904,6 +960,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     const producers: Producers = new Map()
     const preparedCollections = new Map<string, PreparedArtifactCollection>()
     const isolationIdentities: NetworkIsolationIdentity[] = []
+    const bunCompileRuntimes = new Map<string, BunCompileRuntimeIdentity>()
     for (const artifact of input.graph.artifacts) {
       if (produced.has(artifact.id.toString()) || artifact.kind === "package") continue
       bytes.set(artifact.id.toString(), yield* capture(context, artifact))
@@ -914,6 +971,15 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     for (const preparation of input.graph.preparations) {
       const result = yield* structured(request, preparation, declarations, bytes, sourceSnapshot, externalInputs)
       if (result.networkIsolation !== undefined) isolationIdentities.push(result.networkIsolation)
+      if (result.bunCompileRuntime !== undefined) {
+        const prior = bunCompileRuntimes.get(result.bunCompileRuntime.target)
+        if (prior !== undefined && encodeCanonicalJson(prior) !== encodeCanonicalJson(result.bunCompileRuntime)) {
+          return yield* new PreparationError({
+            reason: `Bun compile target ${result.bunCompileRuntime.target} reported inconsistent private runtime identities.`
+          })
+        }
+        bunCompileRuntimes.set(result.bunCompileRuntime.target, result.bunCompileRuntime)
+      }
       for (const declaration of result.declarations) {
         const id = declaration.id.toString()
         const idCollision = [...declarations.keys()].find((candidate) =>
@@ -967,7 +1033,13 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     const releaseGraph = sha256Digest(new TextEncoder().encode(encodeCanonicalJson(
       Schema.encodeSync(ReleaseGraph)(input.graph)
     )))
-    const execution = runtimeIdentity(dependencies?.bunVersion, isolation, npmPackIdentity, releaseGraph)
+    const execution = runtimeIdentity(
+      dependencies?.bunVersion,
+      isolation,
+      [...bunCompileRuntimes.values()].sort((left, right) => left.target < right.target ? -1 : left.target > right.target ? 1 : 0),
+      npmPackIdentity,
+      releaseGraph
+    )
     const basis = preparationBasisDigest(sourceSnapshot, externalInputs, {
       environment: execution.environment,
       network: execution.network,
@@ -978,6 +1050,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
       platform: execution.platform,
       runtime: execution.runtime,
       networkIsolation: execution.networkIsolation,
+      bunCompileRuntimes: execution.bunCompileRuntimes,
       npmPack: execution.npmPack,
       releaseGraph: execution.releaseGraph.hex,
       preparer: execution.preparer

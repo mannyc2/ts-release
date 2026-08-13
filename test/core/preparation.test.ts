@@ -134,6 +134,45 @@ const bunRequestFor = (fixture: ReturnType<typeof repository>, run: RunCommand):
   }
 }
 
+const bunCompileRequestFor = (
+  fixture: ReturnType<typeof repository>,
+  run: RunCommand,
+  operation = "fixture-build"
+): PreparationRequest => {
+  const output = OutputDeclaration.make({
+    id: OutputId.make("compiled"),
+    path: SafeRelativePath.make(".release/compiled"),
+    kind: "executable"
+  })
+  const graph = linkContributions([CapabilityContribution.make({
+    artifacts: [],
+    publications: [],
+    preparations: [GraphCommandArtifact.make({
+      id: OperationId.make(operation),
+      argv: [
+        "bun",
+        "build",
+        "src/index.ts",
+        "--compile",
+        "--target",
+        "bun-darwin-arm64",
+        "--outfile",
+        ".release/compiled"
+      ],
+      cwd: SafeRelativePath.make("."),
+      inputs: [],
+      outputs: [output]
+    })]
+  })])
+  return {
+    context: fixture.context,
+    graph,
+    store: makeLocalPreparedReleaseStore(join(fixture.root, ".release", "prepared")),
+    run,
+    materializeSource: materialize
+  }
+}
+
 const npmBuildRequestFor = (
   fixture: ReturnType<typeof repository>,
   run: RunCommand,
@@ -240,14 +279,22 @@ describe("verified private preparation boundary", () => {
     } finally { rmSync(fixture.root, { recursive: true, force: true }) }
   })
 
-  test("helper identity and release graph independently change the preparation basis", async () => {
+  test("helper, Bun compile runtime, and release graph independently change the preparation basis", async () => {
     const fixture = repository({
-      ".gitignore": "dist\n",
-      "package.json": JSON.stringify({ name: "fixture", version: "1.0.0" })
+      ".gitignore": ".release\n",
+      "bun.lock": "fixture lock\n",
+      "package.json": JSON.stringify({ name: "fixture", version: "1.0.0" }),
+      "src/index.ts": "console.log('fixture')\n"
     })
     let helper = "1".repeat(64)
-    const run: RunCommand = ({ cwd }) => Effect.sync(() => {
-      mkdirSync(join(cwd, "dist")); writeFileSync(join(cwd, "dist", "index.js"), "same bytes\n")
+    let compileRuntime = "5".repeat(64)
+    const run: RunCommand = ({ argv, cwd }) => Effect.sync(() => {
+      if (argv[1] === "--version") return { exitCode: 0, stdout: "1.3.14\n", stderr: "" }
+      if (argv[1] === "install") {
+        mkdirSync(join(cwd, "node_modules"))
+        return { exitCode: 0, stdout: "", stderr: "" }
+      }
+      mkdirSync(join(cwd, ".release")); writeFileSync(join(cwd, ".release", "compiled"), "same bytes\n")
       return {
         exitCode: 0, stdout: "", stderr: "",
         networkIsolation: {
@@ -259,22 +306,62 @@ describe("verified private preparation boundary", () => {
           kernel: "fixture-kernel",
           architecture: "x64",
           deniedSyscalls: ["socket"]
+        },
+        bunCompileRuntime: {
+          protocol: "ts-release-bun-compile-runtime/v1",
+          target: "bun-darwin-arm64",
+          bunVersion: "1.3.14",
+          source: "host-cache-private-copy",
+          cacheFile: "bun-darwin-aarch64-v1.3.14",
+          sha256: compileRuntime
         }
       }
     })
     try {
-      const first = await Effect.runPromise(prepareRelease(npmBuildRequestFor(fixture, run, ["fixture-build-a"])))
+      const first = await Effect.runPromise(prepareRelease(bunCompileRequestFor(fixture, run, "fixture-build-a")))
       helper = "4".repeat(64)
-      const changedHelper = await Effect.runPromise(prepareRelease(npmBuildRequestFor(fixture, run, ["fixture-build-a"])))
-      const changedGraph = await Effect.runPromise(prepareRelease(npmBuildRequestFor(fixture, run, ["fixture-build-b"])))
+      const changedHelper = await Effect.runPromise(prepareRelease(bunCompileRequestFor(fixture, run, "fixture-build-a")))
+      compileRuntime = "6".repeat(64)
+      const changedRuntime = await Effect.runPromise(prepareRelease(bunCompileRequestFor(fixture, run, "fixture-build-a")))
+      const changedGraph = await Effect.runPromise(prepareRelease(bunCompileRequestFor(fixture, run, "fixture-build-b")))
       expect(changedHelper.bundle.manifest.provenance.execution.releaseGraph.hex)
         .toBe(first.bundle.manifest.provenance.execution.releaseGraph.hex)
       expect(changedHelper.bundle.manifest.provenance.inputBasis.hex)
         .not.toBe(first.bundle.manifest.provenance.inputBasis.hex)
-      expect(changedGraph.bundle.manifest.provenance.execution.releaseGraph.hex)
-        .not.toBe(changedHelper.bundle.manifest.provenance.execution.releaseGraph.hex)
-      expect(changedGraph.bundle.manifest.provenance.inputBasis.hex)
+      expect(changedRuntime.bundle.manifest.provenance.execution.bunCompileRuntimes)
+        .toContain(`\"sha256\":\"${"6".repeat(64)}\"`)
+      expect(changedRuntime.bundle.manifest.provenance.inputBasis.hex)
         .not.toBe(changedHelper.bundle.manifest.provenance.inputBasis.hex)
+      expect(changedGraph.bundle.manifest.provenance.execution.releaseGraph.hex)
+        .not.toBe(changedRuntime.bundle.manifest.provenance.execution.releaseGraph.hex)
+      expect(changedGraph.bundle.manifest.provenance.inputBasis.hex)
+        .not.toBe(changedRuntime.bundle.manifest.provenance.inputBasis.hex)
+    } finally { rmSync(fixture.root, { recursive: true, force: true }) }
+  })
+
+  test("refuses a successful certified Bun compile without an exact runtime identity", async () => {
+    const fixture = repository({
+      ".gitignore": ".release\n",
+      "bun.lock": "fixture lock\n",
+      "package.json": JSON.stringify({ name: "fixture", version: "1.0.0" }),
+      "src/index.ts": "console.log('fixture')\n"
+    })
+    const run: RunCommand = ({ argv, cwd }) => Effect.sync(() => {
+      if (argv[1] === "--version") return { exitCode: 0, stdout: "1.3.14\n", stderr: "" }
+      if (argv[1] === "install") {
+        mkdirSync(join(cwd, "node_modules"))
+      } else {
+        mkdirSync(join(cwd, ".release"))
+        writeFileSync(join(cwd, ".release", "compiled"), "compiled\n")
+      }
+      return { exitCode: 0, stdout: "", stderr: "" }
+    })
+    try {
+      await expect(Effect.runPromise(prepareRelease(bunCompileRequestFor(fixture, run))))
+        .rejects.toMatchObject({
+          _tag: "PreparationError",
+          reason: expect.stringContaining("did not report its exact runtime identity")
+        })
     } finally { rmSync(fixture.root, { recursive: true, force: true }) }
   })
 

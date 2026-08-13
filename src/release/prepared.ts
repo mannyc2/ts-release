@@ -65,6 +65,7 @@ export class PreparedExecutionInputs extends Schema.Class<PreparedExecutionInput
   platform: Schema.NonEmptyString,
   runtime: Schema.NonEmptyString,
   networkIsolation: Schema.NonEmptyString,
+  bunCompileRuntimes: Schema.NonEmptyString,
   npmPack: Schema.NonEmptyString,
   releaseGraph: Sha256Digest,
   preparer: Schema.NonEmptyString

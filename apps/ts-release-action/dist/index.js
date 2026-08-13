@@ -65070,6 +65070,7 @@ class PreparedExecutionInputs extends Class4("PreparedExecutionInputs")({
   platform: NonEmptyString,
   runtime: NonEmptyString,
   networkIsolation: NonEmptyString,
+  bunCompileRuntimes: NonEmptyString,
   npmPack: NonEmptyString,
   releaseGraph: Sha256Digest,
   preparer: NonEmptyString
@@ -66531,6 +66532,35 @@ var attempt = (body) => try_2({
   try: body,
   catch: failure2
 });
+var bunCompileTargets = new Set([
+  "bun-linux-x64",
+  "bun-linux-arm64",
+  "bun-darwin-x64",
+  "bun-darwin-arm64"
+]);
+var expectedBunCompileTarget = (argv2) => (argv2.length === 8 || argv2.length === 9) && argv2[0] === "bun" && argv2[1] === "build" && argv2[2]?.startsWith("-") === false && argv2[3] === "--compile" && argv2[4] === "--target" && argv2[6] === "--outfile" && argv2[7]?.startsWith("-") === false && (argv2.length === 8 || argv2[8] === "--minify") && bunCompileTargets.has(argv2[5]) ? argv2[5] : undefined;
+var assertBunCompileRuntime = (argv2, outcome) => {
+  const expected = expectedBunCompileTarget(argv2);
+  const runtime = outcome.bunCompileRuntime;
+  if (expected === undefined) {
+    if (runtime !== undefined)
+      throw new Error("A non-certified command reported a Bun compile runtime identity.");
+    return;
+  }
+  if (runtime === undefined || runtime.target !== expected || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(runtime.bunVersion) || !/^[a-f0-9]{64}$/u.test(runtime.sha256)) {
+    throw new Error(`Certified Bun compile target ${expected} did not report its exact runtime identity.`);
+  }
+  if (expected === "bun-linux-x64") {
+    if (runtime.source !== "executing-bun" || runtime.cacheFile !== "executing-bun" || outcome.tool?.protocol !== "ts-release-executable/v1" || outcome.tool.sha256 !== runtime.sha256) {
+      throw new Error("Certified Linux x64 compilation did not bind the executing Bun bytes.");
+    }
+    return;
+  }
+  const platform2 = expected.slice(4).replace("arm64", "aarch64");
+  if (runtime.source !== "host-cache-private-copy" || runtime.cacheFile !== `bun-${platform2}-v${runtime.bunVersion}`) {
+    throw new Error(`Certified Bun compile target ${expected} did not bind its canonical private cache file.`);
+  }
+};
 var materializeBunDependencies = fn2("materializeBunDependencies")(function* (input) {
   const requiresBun = input.request.graph.preparations.some((preparation) => (preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact" || preparation._tag === "GraphCommandCollection" || preparation._tag === "GraphNpmPackageBuild") && preparation.argv[0] === "bun");
   if (!requiresBun)
@@ -66803,6 +66833,7 @@ var runNpmPackageBuild = (request, preparation, sourceSnapshot, explicitInputs) 
         reason: `npm package build exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
       });
     }
+    yield* attempt(() => assertBunCompileRuntime(preparation.argv, outcome));
     const after = yield* attempt(() => snapshotStaging(stageRoot, { exclude: writable }));
     if (!snapshotsEqual(before, after)) {
       return yield* new PreparationError({
@@ -66817,7 +66848,8 @@ var runNpmPackageBuild = (request, preparation, sourceSnapshot, explicitInputs) 
     return {
       outputs: [],
       declarations: [],
-      ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }
+      ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation },
+      ...outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime }
     };
   }).pipe(onError2(() => sync2(cleanup)));
 };
@@ -66931,6 +66963,7 @@ var runCommand = (request, preparation, declarations, sourceSnapshot, explicitIn
       reason: `Command ${preparation.id} exited ${outcome.exitCode}: ${outcome.stderr.trim()}`
     });
   }
+  yield* attempt(() => assertBunCompileRuntime(argv2, outcome));
   const after = yield* attempt(() => snapshotStaging(request.context.workspace, { exclude: writable }));
   if (!snapshotsEqual(before, after)) {
     return yield* new PreparationError({
@@ -66942,13 +66975,15 @@ var runCommand = (request, preparation, declarations, sourceSnapshot, explicitIn
     return {
       outputs: [],
       declarations: [],
-      ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }
+      ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation },
+      ...outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime }
     };
   if (preparation._tag === "GraphCommandCollection") {
     const discovered = yield* attempt(() => discoverCollection(request.context, preparation.collection));
     return {
       ...discovered,
-      ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }
+      ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation },
+      ...outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime }
     };
   }
   const produced = [];
@@ -66958,7 +66993,8 @@ var runCommand = (request, preparation, declarations, sourceSnapshot, explicitIn
   return {
     outputs: produced,
     declarations: [],
-    ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation }
+    ...outcome.networkIsolation === undefined ? {} : { networkIsolation: outcome.networkIsolation },
+    ...outcome.bunCompileRuntime === undefined ? {} : { bunCompileRuntime: outcome.bunCompileRuntime }
   };
 });
 var structured = (request, preparation, declarations, bytes, sourceSnapshot, explicitInputs) => {
@@ -67157,7 +67193,7 @@ var npmTarball = (request, publication2, declarations, sourceSnapshot, basis, np
     inputBasis: basis
   });
 });
-var runtimeIdentity = (bunVersion, isolation, npmPack, releaseGraph) => PreparedExecutionInputs.make({
+var runtimeIdentity = (bunVersion, isolation, bunCompileRuntimes, npmPack, releaseGraph) => PreparedExecutionInputs.make({
   environment: "closed",
   network: "prohibited",
   timezone: "UTC",
@@ -67167,6 +67203,7 @@ var runtimeIdentity = (bunVersion, isolation, npmPack, releaseGraph) => Prepared
   platform: `${process.platform}-${process.arch}`,
   runtime: bunVersion === undefined ? `bun@${process.versions.bun}` : `bun@${bunVersion}`,
   networkIsolation: isolation === undefined ? "host-provided-network-deny/no-helper-identity" : encodeCanonicalJson(isolation),
+  bunCompileRuntimes: bunCompileRuntimes.length === 0 ? "not-used" : encodeCanonicalJson(bunCompileRuntimes),
   npmPack: npmPack === undefined ? "not-used" : encodeCanonicalJson(npmPack),
   releaseGraph,
   preparer: "@mannyc1/ts-release@0.2.0"
@@ -67206,6 +67243,7 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
     const producers = new Map;
     const preparedCollections = new Map;
     const isolationIdentities = [];
+    const bunCompileRuntimes = new Map;
     for (const artifact of input.graph.artifacts) {
       if (produced.has(artifact.id.toString()) || artifact.kind === "package")
         continue;
@@ -67216,6 +67254,15 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
       const result2 = yield* structured(request, preparation, declarations, bytes, sourceSnapshot, externalInputs);
       if (result2.networkIsolation !== undefined)
         isolationIdentities.push(result2.networkIsolation);
+      if (result2.bunCompileRuntime !== undefined) {
+        const prior = bunCompileRuntimes.get(result2.bunCompileRuntime.target);
+        if (prior !== undefined && encodeCanonicalJson(prior) !== encodeCanonicalJson(result2.bunCompileRuntime)) {
+          return yield* new PreparationError({
+            reason: `Bun compile target ${result2.bunCompileRuntime.target} reported inconsistent private runtime identities.`
+          });
+        }
+        bunCompileRuntimes.set(result2.bunCompileRuntime.target, result2.bunCompileRuntime);
+      }
       for (const declaration of result2.declarations) {
         const id = declaration.id.toString();
         const idCollision = [...declarations.keys()].find((candidate) => candidate.toLocaleLowerCase("en-US") === id.toLocaleLowerCase("en-US"));
@@ -67265,7 +67312,7 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
       });
     const npmPackIdentity = hasNpmPublication ? yield* establishNpmPackIdentity(request) : undefined;
     const releaseGraph = sha256Digest(new TextEncoder().encode(encodeCanonicalJson(encodeSync2(ReleaseGraph)(input.graph))));
-    const execution = runtimeIdentity(dependencies?.bunVersion, isolation, npmPackIdentity, releaseGraph);
+    const execution = runtimeIdentity(dependencies?.bunVersion, isolation, [...bunCompileRuntimes.values()].sort((left, right) => left.target < right.target ? -1 : left.target > right.target ? 1 : 0), npmPackIdentity, releaseGraph);
     const basis = preparationBasisDigest(sourceSnapshot, externalInputs, {
       environment: execution.environment,
       network: execution.network,
@@ -67276,6 +67323,7 @@ var prepareRelease = fn2("prepareRelease")(function* (input) {
       platform: execution.platform,
       runtime: execution.runtime,
       networkIsolation: execution.networkIsolation,
+      bunCompileRuntimes: execution.bunCompileRuntimes,
       npmPack: execution.npmPack,
       releaseGraph: execution.releaseGraph.hex,
       preparer: execution.preparer
@@ -71194,7 +71242,21 @@ var SourceObserverLive = succeed5(SourceObserver, makeSourceObserver(runtime));
 
 // ../../src/drivers/process.ts
 import { createHash as createHash4 } from "node:crypto";
-import { accessSync, constants as constants7, mkdtempSync as mkdtempSync2, readFileSync as readFileSync6, realpathSync as realpathSync7, rmSync as rmSync3, statSync as statSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import {
+  accessSync,
+  chmodSync as chmodSync4,
+  constants as constants7,
+  copyFileSync as copyFileSync2,
+  lstatSync as lstatSync6,
+  mkdirSync as mkdirSync6,
+  mkdtempSync as mkdtempSync2,
+  readFileSync as readFileSync6,
+  readdirSync as readdirSync5,
+  realpathSync as realpathSync7,
+  rmSync as rmSync3,
+  statSync as statSync3,
+  writeFileSync as writeFileSync3
+} from "node:fs";
 import { tmpdir as tmpdir3 } from "node:os";
 import { delimiter, isAbsolute as isAbsolute6, join as join9, resolve as resolve7 } from "node:path";
 
@@ -71659,12 +71721,12 @@ var offlineBunInstallArgv = [
   "--linker=hoisted"
 ];
 var isOfflineBunInstall = (command2) => command2.network === "offline-cli" && command2.argv.length === offlineBunInstallArgv.length && command2.argv.every((value3, index) => value3 === offlineBunInstallArgv[index]);
-var readBunInstallCacheDirectory = fn2("readBunInstallCacheDirectory")(function* () {
+var readBunCacheDirectory = fn2("readBunCacheDirectory")(function* () {
   const configured = yield* readOptionalEnv("BUN_INSTALL_CACHE_DIR");
   const home = configured === undefined ? yield* readOptionalEnv("HOME") : undefined;
   const candidate = configured ?? (home === undefined ? undefined : join9(home, ".bun", "install", "cache"));
   if (candidate === undefined || candidate.length === 0) {
-    return yield* fail6(failure("Offline Bun installation requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located."));
+    return yield* fail6(failure("Certified Bun cache access requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located."));
   }
   return yield* try_2({
     try: () => {
@@ -71676,6 +71738,64 @@ var readBunInstallCacheDirectory = fn2("readBunInstallCacheDirectory")(function*
       return canonical2;
     },
     catch: (cause) => failure(`The offline Bun install cache is unavailable: ${String(cause)}`)
+  });
+});
+var compileRuntimeFiles = {
+  "bun-linux-arm64": (version3) => `bun-linux-aarch64-v${version3}`,
+  "bun-darwin-x64": (version3) => `bun-darwin-x64-v${version3}`,
+  "bun-darwin-arm64": (version3) => `bun-darwin-aarch64-v${version3}`
+};
+var certifiedBunCompileTargets = new Set([
+  "bun-linux-x64",
+  "bun-linux-arm64",
+  "bun-darwin-x64",
+  "bun-darwin-arm64"
+]);
+var certifiedBunCompileTarget = (command2) => {
+  const argv2 = command2.argv;
+  if (command2.network !== "deny" || argv2.length !== 8 && argv2.length !== 9 || argv2[0] !== "bun" || argv2[1] !== "build" || argv2[2]?.startsWith("-") !== false || argv2[3] !== "--compile" || argv2[4] !== "--target" || argv2[6] !== "--outfile" || argv2[7]?.startsWith("-") !== false || argv2.length === 9 && argv2[8] !== "--minify")
+    return;
+  return certifiedBunCompileTargets.has(argv2[5]) ? argv2[5] : undefined;
+};
+var resolveBunCompileRuntime = fn2("resolveBunCompileRuntime")(function* (target2, tool) {
+  const bunVersion = process.versions.bun;
+  if (bunVersion === undefined || bunVersion.length === 0) {
+    return yield* fail6(failure("Certified Bun compilation requires a Bun parent runtime."));
+  }
+  if (target2 === "bun-linux-x64") {
+    return {
+      sourcePath: undefined,
+      identity: {
+        protocol: "ts-release-bun-compile-runtime/v1",
+        target: target2,
+        bunVersion,
+        source: "executing-bun",
+        cacheFile: "executing-bun",
+        sha256: tool.sha256
+      }
+    };
+  }
+  const cache = yield* readBunCacheDirectory();
+  const cacheFile = compileRuntimeFiles[target2](bunVersion);
+  return yield* try_2({
+    try: () => {
+      const sourcePath = join9(cache, cacheFile);
+      if (lstatSync6(sourcePath).isSymbolicLink() || !lstatSync6(sourcePath).isFile() || realpathSync7(sourcePath) !== sourcePath) {
+        throw new Error("the target runtime is not a canonical regular file");
+      }
+      return {
+        sourcePath,
+        identity: {
+          protocol: "ts-release-bun-compile-runtime/v1",
+          target: target2,
+          bunVersion,
+          source: "host-cache-private-copy",
+          cacheFile,
+          sha256: createHash4("sha256").update(readFileSync6(sourcePath)).digest("hex")
+        }
+      };
+    },
+    catch: (cause) => failure(`The certified Bun compile runtime is unavailable: ${String(cause)}`)
   });
 });
 var parseIsolationIdentity = (path) => {
@@ -71694,26 +71814,43 @@ var makeRunCommand = gen2(function* () {
     const baseEnvironment = yield* readEnvironment(command2.environmentNames);
     const env = isOfflineBunInstall(command2) ? {
       ...Object.fromEntries(Object.entries(baseEnvironment).filter(([name]) => name !== "HOME")),
-      BUN_INSTALL_CACHE_DIR: yield* readBunInstallCacheDirectory()
+      BUN_INSTALL_CACHE_DIR: yield* readBunCacheDirectory()
     } : baseEnvironment;
     const executable = command2.network === "deny" ? "bun" : command2.argv[0];
     const tool = yield* try_2({
       try: () => executableIdentity(executable, command2.cwd, env.PATH),
       catch: (cause) => failure(String(cause))
     });
-    const resources = command2.network === "deny" ? yield* acquireRelease2(sync2(() => {
+    const compileTarget = certifiedBunCompileTarget(command2);
+    const compileRuntime = compileTarget === undefined ? undefined : yield* resolveBunCompileRuntime(compileTarget, tool);
+    const compileResources = compileRuntime === undefined ? undefined : yield* acquireRelease2(sync2(() => {
+      const directory = mkdtempSync2(join9(tmpdir3(), "ts-release-bun-runtime-"));
+      const cache = join9(directory, "cache");
+      mkdirSync6(cache, { mode: 448 });
+      if (compileRuntime.sourcePath !== undefined) {
+        copyFileSync2(compileRuntime.sourcePath, join9(cache, compileRuntime.identity.cacheFile));
+        chmodSync4(join9(cache, compileRuntime.identity.cacheFile), 320);
+      }
+      chmodSync4(cache, 320);
+      return { directory, cache };
+    }), ({ cache, directory }) => sync2(() => {
+      chmodSync4(cache, 448);
+      rmSync3(directory, { recursive: true, force: true });
+    }));
+    const isolationResources = command2.network === "deny" ? yield* acquireRelease2(sync2(() => {
       const directory = mkdtempSync2(join9(tmpdir3(), "ts-release-seccomp-"));
       const helper = join9(directory, "network-deny.mjs");
       const identity2 = join9(directory, "identity.json");
       writeFileSync3(helper, networkIsolationHelperSource, { mode: 320 });
       return { directory, helper, identity: identity2 };
     }), ({ directory }) => sync2(() => rmSync3(directory, { recursive: true, force: true }))) : undefined;
-    const argv2 = command2.network === "deny" ? ["--no-env-file", "--no-install", resources.helper, ...command2.argv] : [...command2.argv.slice(1)];
+    const argv2 = command2.network === "deny" ? ["--no-env-file", "--no-install", isolationResources.helper, ...command2.argv] : [...command2.argv.slice(1)];
+    const commandEnvironment = compileResources === undefined ? env : { ...env, BUN_INSTALL_CACHE_DIR: compileResources.cache };
     const handle = yield* spawner.spawn(make18(executable, argv2, {
       cwd: command2.cwd,
-      env: resources === undefined ? env : {
-        ...env,
-        TS_RELEASE_NETWORK_IDENTITY_FILE: resources.identity,
+      env: isolationResources === undefined ? commandEnvironment : {
+        ...commandEnvironment,
+        TS_RELEASE_NETWORK_IDENTITY_FILE: isolationResources.identity,
         TS_RELEASE_NETWORK_HELPER_SHA256: helperDigest,
         TS_RELEASE_NETWORK_LIBRARY: "libseccomp.so.2"
       },
@@ -71726,16 +71863,37 @@ var makeRunCommand = gen2(function* () {
       stderr: collect(handle.stderr),
       exitCode: handle.exitCode
     }, { concurrency: "unbounded" });
-    const networkIsolation = resources === undefined ? undefined : yield* try_2({ try: () => parseIsolationIdentity(resources.identity), catch: (cause) => failure(String(cause)) });
+    const networkIsolation = isolationResources === undefined ? undefined : yield* try_2({
+      try: () => parseIsolationIdentity(isolationResources.identity),
+      catch: (cause) => failure(String(cause))
+    });
     if (networkIsolation !== undefined && networkIsolation.bunSha256 !== tool.sha256) {
       return yield* fail6(failure("The Bun executable changed between parent resolution and the isolation helper."));
     }
+    if (compileResources !== undefined && compileRuntime !== undefined)
+      yield* try_2({
+        try: () => {
+          const entries = readdirSync5(compileResources.cache);
+          const expected = compileRuntime.sourcePath === undefined ? [] : [compileRuntime.identity.cacheFile];
+          if (entries.length !== expected.length || entries.some((entry, index) => entry !== expected[index])) {
+            throw new Error("the private runtime cache changed shape");
+          }
+          if (expected[0] !== undefined) {
+            const runtime2 = join9(compileResources.cache, expected[0]);
+            if (lstatSync6(runtime2).isSymbolicLink() || !lstatSync6(runtime2).isFile() || createHash4("sha256").update(readFileSync6(runtime2)).digest("hex") !== compileRuntime.identity.sha256) {
+              throw new Error("the private runtime cache changed bytes or type");
+            }
+          }
+        },
+        catch: (cause) => failure(`Certified Bun compilation did not preserve its private runtime cache: ${String(cause)}`)
+      });
     return {
-      stdout: redactOutput(output2.stdout, env),
-      stderr: redactOutput(output2.stderr, env),
+      stdout: redactOutput(output2.stdout, commandEnvironment),
+      stderr: redactOutput(output2.stderr, commandEnvironment),
       exitCode: Number(output2.exitCode),
       tool,
-      ...networkIsolation === undefined ? {} : { networkIsolation }
+      ...networkIsolation === undefined ? {} : { networkIsolation },
+      ...compileRuntime === undefined ? {} : { bunCompileRuntime: compileRuntime.identity }
     };
   }).pipe(scoped2, mapError3((cause) => cause instanceof DriverError ? cause : failure(String(cause))));
 });
@@ -72634,7 +72792,7 @@ var correct = defaultApi.correct;
 // ../../src/platform/host-support.ts
 var unsupportedExecutionHost = (platform2) => platform2 === "linux" ? undefined : "ts-release is currently certified to run on Linux. Its Bun builder can cross-compile the advertised macOS artifacts.";
 // src/index.ts
-import { readFileSync as readFileSync9, mkdirSync as mkdirSync7, writeFileSync as writeFileSync5 } from "node:fs";
+import { readFileSync as readFileSync9, mkdirSync as mkdirSync8, writeFileSync as writeFileSync5 } from "node:fs";
 import { dirname as dirname5 } from "node:path";
 
 // src/commands.ts
@@ -110893,7 +111051,7 @@ var artifact_default = client2;
 import {
   cpSync,
   mkdtempSync as mkdtempSync3,
-  readdirSync as readdirSync5,
+  readdirSync as readdirSync6,
   readFileSync as readFileSync8,
   rmSync as rmSync4,
   writeFileSync as writeFileSync4
@@ -111012,7 +111170,7 @@ var decodeProducer = (bytes) => {
 var allFiles = (root) => {
   const result2 = [];
   const walk = (directory) => {
-    for (const entry of readdirSync5(directory, { withFileTypes: true })) {
+    for (const entry of readdirSync6(directory, { withFileTypes: true })) {
       const path4 = join13(directory, entry.name);
       if (entry.isDirectory())
         walk(path4);
@@ -111317,7 +111475,7 @@ try {
     output: setOutput,
     read: (path4) => readFileSync9(path4, "utf8"),
     write: (path4, value3) => {
-      mkdirSync7(dirname5(path4), { recursive: true });
+      mkdirSync8(dirname5(path4), { recursive: true });
       writeFileSync5(path4, value3);
     },
     preparedReference,

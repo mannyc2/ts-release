@@ -26,6 +26,7 @@ export const fixturePreparedProvenance = PreparedProvenance.make({
     platform: "fixture-platform",
     runtime: "fixture-runtime",
     networkIsolation: "fixture-network-isolation/v1",
+    bunCompileRuntimes: "not-used",
     npmPack: "not-used",
     releaseGraph: sha256Digest(new TextEncoder().encode("fixture release graph")),
     preparer: "fixture-preparer"

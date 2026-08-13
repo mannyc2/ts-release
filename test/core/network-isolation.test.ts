@@ -190,7 +190,7 @@ describe("fail-closed preparation network isolation", () => {
       ))
       expect(missingCache._tag).toBe("DriverError")
       expect(missingCache.reason)
-        .toBe("Offline Bun installation requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located.")
+        .toBe("Certified Bun cache access requires BUN_INSTALL_CACHE_DIR or HOME so the host cache can be located.")
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

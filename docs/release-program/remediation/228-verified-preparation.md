@@ -41,6 +41,15 @@ remain absent. A command may persist only declared outputs. Source, explicit
 inputs, isolated dependencies, undeclared cache paths, and scratch paths are
 snapshotted before and after execution; any change aborts preparation.
 
+Certified Bun cross-compilation uses a separate, narrower cache boundary. The
+parent selects the exact target-runtime file for the executing Bun version,
+rejects links or noncanonical files, copies that one file into a new private
+read-only cache, and gives only that disposable cache to the exact built-in
+`bun build ... --compile --target ... --outfile ...` command shape. The Linux
+x64 target binds the executing Bun bytes directly. Target, version, source,
+filename, and SHA-256 enter durable execution provenance and the preparation
+basis. Cache shape or byte mutation aborts before output admission.
+
 Prepared releases have one admitted durable form: `kind: "complete"`. The
 manifest records the exact source snapshot, explicit inputs and their
 materializers, tool/lockfile basis, closed execution facts, every artifact's
@@ -63,6 +72,7 @@ producer can run. The graph carries the contract, not guessed filenames.
 | Git source | exact verified commit/tree; canonical staging snapshot includes every blob, mode, and contained link | tracked drift, object disagreement, submodule, unsafe path/link, case collision, or package-manifest disagreement aborts before a command |
 | Ignored/untracked artifact | copied or reflinked only when the graph names its exact artifact path; digest, size, materializer, and basis enter provenance | undeclared bytes stay absent; overlap with Git source, symlinks, escapes, or missing paths abort |
 | Bun dependencies | admitted only for a Bun preparation with exactly one tracked root `bun.lock` or `bun.lockb`; one private offline, frozen, hoisted install creates a real root `node_modules`; tree digest, Bun version, lock digest, and tool digest enter provenance | no lock, tracked `node_modules`, install failure, package-local `node_modules`, source/cache write, workspace inode alias, escaping link, or later dependency mutation aborts |
+| Bun compile runtime | the exact current Bun bytes serve Linux x64; each other advertised target requires one canonical version-matched runtime in the host cache that is copied alone into a disposable read-only cache; all runtime identities enter the preparation basis | missing/linked/wrong-version runtime, uncertified command shape or target, private-cache mutation, target download attempt, or inconsistent repeated identity aborts |
 | npm package | an optional explicit package build runs first with declared absent output roots; `npm pack` then reads the private staged package, uses a private output/cache, disables scripts and online resolution, and reports the selected file set; the exact npm version/executable and release graph enter provenance | undeclared build mutation, missing/linked/escaping build root, missing literal `files` entry, linked/escaped/unmaterialized selection, package mutation, malformed report, changed npm executable, or non-single tarball output aborts |
 | Command output | a graph-owned output root is the sole persistent writable area; captured bytes are hashed immediately | output/source or output/input overlap, undeclared mutation, linked capture, missing output, or nonzero exit aborts |
 | Runtime artifact collection | one empty, absent-before-run root is writable; post-run files are recursively enumerated in code-point order and receive stable ids derived from producer, collection contract, and normalized member key | root overlap, missing/non-directory root, symlink, escape, unsupported filesystem kind, non-portable/case-colliding key, suffix/kind/media disagreement, or producer/consumer cardinality violation aborts |
@@ -171,6 +181,9 @@ and cold-versus-warm cache state before making an operational-cost claim.
   independently snapshotted and included in the prepared identity; the
   implementation does not claim that two hosts produce the same tree, and
   `reproducibility` remains `not-asserted`.
+- Cross-target Bun runtime files must already exist in that cache during host
+  provisioning. Preparation never downloads them: it consumes only verified
+  private copies while the command remains under the fail-closed network filter.
 - Host wall clock and randomness are not isolated. They are named as
   `host-*-not-isolated` in durable execution provenance, and any resulting
   byte difference changes the artifact and prepared-reference digests.

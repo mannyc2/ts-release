@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   symlinkSync,
   writeFileSync
@@ -99,6 +100,17 @@ const archiveRun = (
   customize?.(root)
   return { exitCode: 0, stdout: "", stderr: "" }
 })
+
+const supportsCaseDistinctPaths = (): boolean => {
+  const root = mkdtempSync(join(tmpdir(), "ts-release-case-probe-"))
+  try {
+    writeFileSync(join(root, "A"), "probe\n")
+    writeFileSync(join(root, "a"), "probe\n")
+    return readdirSync(root).length === 2
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+}
 
 describe("runtime artifact collections", () => {
   test("root API links, captures, publishes, stores, and reloads stable collection members", async () => {
@@ -238,12 +250,12 @@ describe("runtime artifact collections", () => {
         run: archiveRun(["only.zip"]),
         cause: "discovered 1 members outside its declared cardinality"
       },
-      {
+      ...(supportsCaseDistinctPaths() ? [{
         name: "portable case collision",
         count: 2,
         run: archiveRun(["A.zip", "a.zip"]),
         cause: "collide under portable case folding"
-      },
+      }] : []),
       {
         name: "unsafe path",
         count: 1,

@@ -35,9 +35,15 @@ const positiveSafeInteger = (value: string, field: string): number => {
 export const makeActionsArtifactTransport = (
   client: ArtifactClient = artifactClient
 ): ActionArtifactTransport => ({
-  upload: ({ name, files, rootDirectory }) => client.uploadArtifact(
-    name, [...files], rootDirectory, { compressionLevel: 0 }
-  ),
+  upload: async ({ name, files, rootDirectory }) => {
+    const uploaded = await client.uploadArtifact(
+      name, [...files], rootDirectory, { compressionLevel: 0 }
+    )
+    return {
+      ...(uploaded.id === undefined ? {} : { id: uploaded.id }),
+      ...(uploaded.digest === undefined ? {} : { digest: uploaded.digest })
+    }
+  },
   download: async ({ name, destination, findBy }) => {
     const options = findBy === undefined ? undefined : {
       findBy: {

@@ -1,3 +1,4 @@
+import type { ArtifactClient } from "@actions/artifact"
 import { expect, test } from "bun:test"
 import { readFileSync, writeFileSync } from "node:fs"
 import {
@@ -7,7 +8,18 @@ import {
   type ArtifactBridgeRequest,
   type ArtifactBridgeSpawnInput
 } from "../apps/ts-release-action/src/artifact-bridge.js"
+import { makeActionsArtifactTransport } from "../apps/ts-release-action/src/artifact-client.js"
 import type { ActionArtifactFindBy, ActionArtifactTransport } from "../apps/ts-release-action/src/prepared-store.js"
+
+test("native artifact client normalizes official upload metadata before the bridge", async () => {
+  const artifacts = makeActionsArtifactTransport({
+    uploadArtifact: async () => ({ id: 17, digest: "a".repeat(64), size: 776_269_773 })
+  } as unknown as ArtifactClient)
+
+  expect(await artifacts.upload({
+    name: "prepared", files: ["/fixture/source"], rootDirectory: "/fixture"
+  })).toEqual({ id: 17, digest: "a".repeat(64) })
+})
 
 test("native artifact bridge protocol never serializes the GitHub token", async () => {
   const calls: Array<{ readonly spawn: ArtifactBridgeSpawnInput, readonly request: ArtifactBridgeRequest }> = []

@@ -284,6 +284,25 @@ existing producer/run/digest verification remains unchanged. A later
 candidate must rebuild all three checked-in bundles and repeat the complete
 certification and fresh-runner matrices.
 
+Candidate `832999295e4c2f035cb28f8b56b98fbeb0451772` passed those
+matrices, was fast-forwarded to `main`, and was dispatched once as run
+`31762334996`. Native Node uploaded and finalized the complete
+776,269,773-byte prepared artifact in approximately six seconds, proving the
+X4 Bun upload stall was removed. The official artifact client also returned
+its `size` metadata field. The strict bridge response decoder correctly
+rejected that undeclared field with
+`Artifact bridge output has an unexpected shape.` before the prepared store
+could commit or emit a `prepared:gha:` reference. The run published no tag,
+release, configured asset, Action ref, or npm version. Its unreferenced
+prepared artifact is not eligible for recovery under the operator's
+immutable-emitted-reference restriction.
+
+The next correction keeps the strict bridge protocol and normalizes the
+official client result at the native Node boundary to the two admitted upload
+fields, `id` and `digest`. A focused regression feeds the real official
+result shape, including `size`, through that adapter and requires the exact
+canonical two-field projection before the bridge serializes its response.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |

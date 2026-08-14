@@ -1,81 +1,86 @@
-# Plan 233 — Corrected release-candidate certificate
+# Plan 233 — 0.2.2 release-candidate certificate
 
-Input-Commit: 3a5b7cef4437c5f59bc547481535ebbc83cf437f
-Result-Commit: 8ae505ae9548a21c951fb8e16a5f918d8e5bc102
+Input-Commit: a4e79d758529b412629e75367582d03baaa12bf2
+Result-Commit: 528bdf9969985e2cb8238192d30c4a2f680ce8c3
 Evidence-Commit: SELF
 Status: ACCEPTED — LOCAL RELEASE CANDIDATE
-Outcome: CLEAN-X MATRIX PASS / COMPLETE BYTES REPRODUCED / ZERO LIVE MUTATION
-Date: 2026-08-13
+Outcome: TWO CLEAN-X MATRICES PASS / COMPLETE BYTES REPRODUCED / ZERO LIVE MUTATION
+Date: 2026-08-14
 
-## Scope and non-authority statement
+## Scope and disposition
 
-This certificate accepts result commit X as the corrected local release
-candidate. It is not Plan 234 live-release authority. It authorizes no npm or
-GitHub read or write, no tag, release, asset, branch, package, Action ref,
-catalog, PyPI file, or marketplace mutation, and no credential acquisition.
-The invalidated Plan 221 certificate remains invalid and live certificate 222
-remains superseded.
+This certificate accepts result commit X as the immutable `0.2.2` local
+release candidate. X repairs the deterministic npm failure observed after the
+`0.2.1` GitHub subjects completed: npm interprets a suffixless digest blob path
+as a package directory. The admitted input remains the exact canonical
+prepared-store blob; the publisher now copies those bytes to a private,
+mode-0600 `package.tgz` only for the lifetime of the npm process. Tests prove
+cleanup after success, provider failure, and interruption.
 
-The clean matrix ran without `NPM_TOKEN`, `GITHUB_TOKEN`, or `GH_TOKEN`.
-`check:self-release-readiness` therefore performed zero network checks and
-truthfully reported both npm and GitHub as `UNVERIFIED`. Normal-registry
-installation, public `v0.2.0` absence/equivalence, provider visibility, OIDC,
-and post-write convergence remain `UNVERIFIED` by this certificate.
+The existing `v0.2.0` and `v0.2.1` subjects were not changed. This certificate
+itself performed no live provider mutation and grants none. The separately
+recorded operator authorization governs the subsequent candidate-bound
+workflow dispatch.
 
 ## Evidence topology
 
-- X: `8ae505ae9548a21c951fb8e16a5f918d8e5bc102`
-- X tree: `9552081511e669a2600699fd8ca8b7c4b08e0151`
+- X: `528bdf9969985e2cb8238192d30c4a2f680ce8c3`
+- X parent: `a4e79d758529b412629e75367582d03baaa12bf2`
+- X tree: `11e657586355ecc18afa1f8abf684c19dee2e792`
 - Y: this evidence-only commit (`Evidence-Commit: SELF`)
 - required relation: `Y^ = X`
 - required diff: only
   `docs/release-program/certifications/233-release-candidate.md`
 - clean clones:
-  `/tmp/ts-release-plan233-m.nIfklW` and
-  `/tmp/ts-release-plan233-n.yDJnvO`
+  `/tmp/ts-release-x8-cert-a.LivvwY/repo` and
+  `/tmp/ts-release-x8-cert-b.3UkZTe/repo`
 
 Each clone was created independently with `git clone --no-local`, detached at
-X, and materialized 195 packages using Bun 1.3.14's repository-configured
-hoisted linker plus exact offline/frozen/script-disabled/no-save installation.
-Both were source-clean before the matrix and remained completely clean after
-it; `git status --porcelain` emitted no path.
+X, and installed with Bun's frozen offline mode. Both worktrees reported no
+tracked or untracked path after certification.
 
 ## Host and tool identities
 
 | Coordinate | Certified value |
 | --- | --- |
-| Host | Linux 6.8.0-101-generic x86_64 GNU/Linux |
+| Host | Linux 6.8.0-101-generic x86_64 |
 | Bun | 1.3.14; SHA-256 `9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74` |
-| Node | 24.15.0; SHA-256 `d1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c` |
-| npm CLI source | 11.17.0; SHA-256 `8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7` |
+| Node | 22.22.2; SHA-256 `81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90` |
+| npm pack basis | 10.9.7; executable entry SHA-256 `8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7` |
+| npm trusted-publishing source check | 11.5.1; same exact CLI entry digest; passed independently in both clones |
 | Effect family | exact `4.0.0-beta.83`, including platform-bun, platform-node, and platform-node-shared |
-| Action bundle | SHA-256 `578f30b8da101187b0fc54dce881a6ae862f5e25ac67dd5b0fa3684565ff2bec` |
-
-The Action gate built into a disposable directory, byte-compared that output
-to the tracked bundle, executed the tracked bundle through Bun, and left both
-clone worktrees unchanged.
+| Action bundle | SHA-256 `4153371a97c08bd5e3e79f5cf190326deb322dfa2c5281414e682e5886d9432d` |
 
 ## Prepared result and reproducibility
 
 Both clones independently produced this exact result, and each clone produced
-it twice using a distinct prepared store and private staging root:
+it twice using distinct prepared stores and private staging roots:
 
 - prepared reference:
-  `prepared:local:sha256-d62350c0df19d6614cb75683abe7db496b607c9a5dff9ea320c749eb683474f5`;
+  `prepared:local:sha256-7bf2a2d40d900d6954787dfc481b0c561e3c1da407403b710589fd64a5d4b6d9`;
 - manifest SHA-256:
-  `d62350c0df19d6614cb75683abe7db496b607c9a5dff9ea320c749eb683474f5`;
+  `7bf2a2d40d900d6954787dfc481b0c561e3c1da407403b710589fd64a5d4b6d9`;
 - schema: `prepared-release/v2`;
-- source: X and tree `9552081511e669a2600699fd8ca8b7c4b08e0151`;
+- source: X and tree `11e657586355ecc18afa1f8abf684c19dee2e792`;
 - 16 artifacts, one collection, two agent members, and two publication
   intents;
 - manifests equal, artifact bytes equal, zero differing manifest paths;
 - classification: `complete-bytes-equal`.
 
-The durable execution basis binds Bun 1.3.14 and exact target-runtime bytes for
-Linux x64, Linux arm64, macOS x64, and macOS arm64. Cross-target cache files
-were copied singly into disposable read-only private caches; Linux x64 was
-bound to the executing Bun SHA-256. The npm pack basis binds npm 11.17.0, its
-executable digest, exact offline flags, and complete redacted protocol output.
+The npm artifact is blob
+`1664ecc664cfcaf1bc5f63b15b9715424629ba4c160e3a8500836fca39056024`,
+746,691 bytes, with logical name `mannyc1-ts-release-0.2.2.tgz`. Exact npm
+11.5.1 accepted those bytes from a mode-0600 `.tgz` alias in an offline
+publish dry-run and reported:
+
+- package `@mannyc1/ts-release@0.2.2`;
+- 462 entries and 3,812,384 unpacked bytes;
+- shasum `0d1e3b26841fee7cb191a3eb7f416f8f675290b7`;
+- integrity
+  `sha512-VOEKfGxbp+J+t8ZgzwTUMVt4dMVJx2U2FawEr4LYIBw0GmYb3hZ5EltgWZvCXyvJEt/BaKMzYrclPThXGJ18MA==`.
+
+This proof reproduces the exact classification boundary that failed for
+`0.2.1`; no registry write was attempted.
 
 ## Artifact verification
 
@@ -83,61 +88,44 @@ Both clone reports agreed on all measurements:
 
 | Target | Executable | tar.gz | zip |
 | --- | ---: | ---: | ---: |
-| linux-x64 | 95,844,480 | 35,999,259 | 95,844,630 |
-| linux-arm64 | 94,939,280 | 35,690,977 | 94,939,434 |
-| darwin-x64 | 70,434,896 | 26,599,294 | 70,435,048 |
-| darwin-arm64 | 64,717,538 | 24,060,349 | 64,717,694 |
+| linux-x64 | 95,963,264 | 36,024,909 | 95,963,414 |
+| linux-arm64 | 95,070,352 | 35,716,370 | 95,070,506 |
+| darwin-x64 | 70,549,584 | 26,623,687 | 70,549,736 |
+| darwin-arm64 | 64,833,122 | 24,086,117 | 64,833,278 |
 
-Total artifact bytes were 774,869,931; unique blob bytes were 774,869,931.
-The verifier decoded matching ELF/Mach-O architectures, inspected every target
-archive, installed the npm tarball offline, ran the Linux native executable,
-ran the Node 24 CLI bundle, ran the composite/Bun Action parser, and validated
-both provider-native agent ZIPs.
-
-The exact packed public package contained 418 files, 625,996 compressed bytes,
-and 3,160,362 unpacked bytes. Its offline Bun and npm consumers passed with 23
-Markdown files, five relative links, exact Effect alignment, the Promise API,
-the Node CLI, and durable one- and two-artifact array reloads.
+Total and unique prepared artifact bytes were both 776,051,977. The verifier
+decoded matching ELF/Mach-O architectures, inspected every target archive,
+installed the npm tarball offline, ran the native Linux executable and Node
+CLI, exercised the tracked Action bundle, and installed both provider-native
+agent ZIPs into disposable layouts. Strict Claude validation passed.
 
 ## Complete clean-X gate result
 
-The following aggregate ran successfully in both clones:
+`bun run check:release-candidate` completed successfully in both clones. Each
+matrix included:
 
-`bun run check:release-candidate`
-
-It covered:
-
-- exact source context, preparation, independent reproduction, readiness,
+- exact source context, preparation, two-pass byte reproduction, readiness,
   artifact inspection, and correction containment;
-- versions, five executable capabilities, four retained targets, two recovery
-  profiles, 260 historical paths, 44 field families, all 87 accepted fields,
-  86 executable witnesses, 14 invariants, and import/tree-shaking gates;
-- 348 tests across 61 files, zero failures, and 1,948 expectations;
-- built declarations and JavaScript, seven-command Node CLI, generated schema,
-  five examples plus five templates, README snippets, package exports, and
-  packed consumers;
+- 383 core tests passed across 70 files, one npm-version-specific source test
+  deliberately separated, zero failures, and 2,273 expectations;
+- that separated npm 11.5.1 provenance-source contract passed in both clones;
+- declarations, JavaScript, the seven-command Node CLI, generated schemas,
+  examples, README snippets, package exports, and packed Bun/npm consumers;
 - two byte-deterministic provider-native agent archives and disposable native
   installs;
-- the CLI and composite/Bun Action entrypoints, three Action commands, two
-  outputs, workflow producer authentication, same-run and cross-run recovery,
-  credential confinement, provider protocol goldens, and bounded convergence;
-- unsupported PyPI, Homebrew, Scoop, catalog, Windows, partition, and merge
-  families remaining strict refusals rather than accepted no-ops.
+- CLI, app, and Action matrices, including 19 Action tests and 90 Action
+  expectations;
+- the npm OIDC loopback success path plus issuer, redirect, exchange, expiry,
+  and package-binding rejection paths;
+- scoped tarball byte equality, mode 0600, closed environment, and cleanup on
+  normal completion and fiber interruption.
 
-The canonical npm/GitHub protocol transcripts used by the suite are sanitized
-tracked JSONL fixtures. Their global credential denylist and persistence
-sanitizer gates passed. These are contract evidence, not claims about current
-public provider state.
+## Publication disposition
 
-## Bootstrap and publication disposition
-
-Prepared publication order is exactly GitHub then npm, so a future authorized
-Plan 234 execution must establish the immutable Action tag/release coordinate
-before npm exposes documentation that references it. The workflow and Action
-protocol tests proved this ordering and recovery contract without contacting a
-public provider.
-
-No publication operation was executed. Plan 234 remains the only live-write
-phase and requires a new exact operator packet and explicit authority bound to
-this accepted X (or a later separately certified candidate). Plan 235 remains
-dormant until a real cross-host partial-preparation requirement exists.
+Prepared publication order is exactly GitHub then npm. Before any live
+dispatch, the operator must observe that `origin/main` is still X's parent and
+that the `0.2.2` npm version, GitHub tag, release, and candidate-bound workflow
+run are absent. A fresh run may use only X with an empty `prepared_ref`. Any
+recovery may use only the immutable reference emitted by that run; no rebuild,
+force, deletion, correction, mutable major tag, PyPI, catalog, marketplace, or
+trust mutation is admitted.

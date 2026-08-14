@@ -1,7 +1,7 @@
 import {
   chmodSync, closeSync, mkdtempSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync
 } from "node:fs"
-import { basename, join } from "node:path"
+import { basename, isAbsolute, join } from "node:path"
 import { spawnSync } from "node:child_process"
 import * as Effect from "effect/Effect"
 import { makeReleaseApi } from "../../../src/api/api.js"
@@ -132,8 +132,17 @@ try {
     const execution = run(binary, ["--version"], scratch)
     if (execution.status !== 0) failures.push(`Native Linux candidate did not execute: ${execution.stderr.trim()}`)
   }
+  const nodeCommand = process.env.TS_RELEASE_NODE_BIN ?? "node"
+  const nodeIdentity = run(nodeCommand, ["-p", "process.execPath"], root)
+  const nodeExecutable = outputText(nodeIdentity.stdout).trim()
+  if (nodeIdentity.status !== 0 || !isAbsolute(nodeExecutable)) {
+    failures.push(
+      `The native Node executable could not be resolved: status=${String(nodeIdentity.status)} ` +
+      `stdout=${JSON.stringify(nodeExecutable)} stderr=${JSON.stringify(outputText(nodeIdentity.stderr).trim())}.`
+    )
+  }
   const cli = runWithFileStdout(
-    process.env.TS_RELEASE_NODE_BIN ?? "node",
+    nodeCommand,
     [join(root, "dist/bin/ts-release.js"), "--version"],
     root,
     join(scratch, "node-cli.stdout")
@@ -153,7 +162,9 @@ try {
     GITHUB_RUN_ID: "1",
     GITHUB_RUN_ATTEMPT: "1",
     GITHUB_SHA: candidateCommit,
-    INPUT_COMMAND: "invalid"
+    INPUT_COMMAND: "invalid",
+    TS_RELEASE_ACTION_NODE: nodeExecutable,
+    TS_RELEASE_ARTIFACT_BRIDGE: join(root, "apps/ts-release-action/dist/artifact-bridge.cjs")
   })
   if (action.status === 0 || `${outputText(action.stdout)}\n${outputText(action.stderr)}`.includes("Action command must be one of") === false) failures.push("The Action bundle did not execute its exact Linux/Bun parser command.")
   for (const { member, artifact: value } of agentArchives) {

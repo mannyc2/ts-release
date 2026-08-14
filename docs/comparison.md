@@ -26,7 +26,7 @@ Primary sources:
   — Pro distributed preparation and merge, accessed 2026-08-09.
 
 A provisional local measurement on 2026-08-12 compiled the current
-`apps/release-ts/src/cli/node-main.ts` entrypoint with Bun 1.3.14 for
+`apps/release-ts/src/cli/main.ts` entrypoint with Bun 1.3.14 for
 `bun-linux-x64`: the unstripped ELF was 95,766,656 bytes, and the local build
 reported 0.30 seconds elapsed with 386,560 KiB maximum RSS. This is cost
 context, not a GoReleaser comparison or candidate certificate. The clean

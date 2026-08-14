@@ -157,8 +157,12 @@ const expectOnlyRedactedReportUploads = (value: string, count: number): void => 
   expect(value).not.toContain("actions/download-artifact@v4")
 }
 
-test("repository workflow topology has only CI and release", () => {
-  expect(readdirSync(".github/workflows").filter((name) => name.endsWith(".yml")).sort()).toEqual(["ci.yml", "release.yml"])
+test("repository workflow topology has only CI and the two explicit release paths", () => {
+  expect(readdirSync(".github/workflows").filter((name) => name.endsWith(".yml")).sort()).toEqual([
+    "ci.yml",
+    "pypi-release.yml",
+    "release.yml"
+  ])
 })
 
 test("CI separates portable gates from installed agent-host validation", () => {

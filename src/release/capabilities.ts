@@ -113,8 +113,9 @@ export const contributeSourceArtifacts = (
         id, argv: preparation.run,
         cwd, inputs,
         outputs: [
-          output(preparation.outputs[0]!.id, preparation.outputs[0]!.path, preparation.outputs[0]!.kind ?? "file", preparation.outputs[0]!.mediaType),
-          ...preparation.outputs.slice(1).map((item) => output(item.id, item.path, item.kind ?? "file", item.mediaType))
+          output(preparation.outputs[0]!.id, render(preparation.outputs[0]!.path, config), preparation.outputs[0]!.kind ?? "file", preparation.outputs[0]!.mediaType),
+          ...preparation.outputs.slice(1).map((item) =>
+            output(item.id, render(item.path, config), item.kind ?? "file", item.mediaType))
         ]
       }))
       else preparations.push(GraphCommandCollection.make({

@@ -1,0 +1,79 @@
+{
+  "project": {
+    "name": "ts-release",
+    "packageName": "@mannyc1/ts-release",
+    "repository": "mannyc2/ts-release"
+  },
+  "versionFrom": "manifest",
+  "builds": [
+    {
+      "builder": "bun",
+      "id": "cli",
+      "entry": "apps/release-ts/src/cli/main.ts",
+      "targets": ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"],
+      "output": ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
+      "binary": "ts-release"
+    }
+  ],
+  "preparations": [
+    {
+      "kind": "artifact",
+      "id": "pypi-wheels",
+      "inputs": ["cli-linux-x64", "cli-linux-arm64", "cli-darwin-x64", "cli-darwin-arm64"],
+      "run": [
+        "bun", "run", "scripts/build-pypi-wheels.ts",
+        "linux-x64", "{input:cli-linux-x64}", "{output:pypi-wheel-linux-x64}",
+        "linux-arm64", "{input:cli-linux-arm64}", "{output:pypi-wheel-linux-arm64}",
+        "darwin-x64", "{input:cli-darwin-x64}", "{output:pypi-wheel-darwin-x64}",
+        "darwin-arm64", "{input:cli-darwin-arm64}", "{output:pypi-wheel-darwin-arm64}"
+      ],
+      "outputs": [
+        {
+          "id": "pypi-wheel-linux-x64",
+          "path": ".release/pypi-wheels/ts_release-{version}-py3-none-manylinux_2_17_x86_64.whl",
+          "kind": "file",
+          "mediaType": "application/zip"
+        },
+        {
+          "id": "pypi-wheel-linux-arm64",
+          "path": ".release/pypi-wheels/ts_release-{version}-py3-none-manylinux_2_17_aarch64.whl",
+          "kind": "file",
+          "mediaType": "application/zip"
+        },
+        {
+          "id": "pypi-wheel-darwin-x64",
+          "path": ".release/pypi-wheels/ts_release-{version}-py3-none-macosx_13_0_x86_64.whl",
+          "kind": "file",
+          "mediaType": "application/zip"
+        },
+        {
+          "id": "pypi-wheel-darwin-arm64",
+          "path": ".release/pypi-wheels/ts_release-{version}-py3-none-macosx_13_0_arm64.whl",
+          "kind": "file",
+          "mediaType": "application/zip"
+        }
+      ]
+    }
+  ],
+  "publish": {
+    "pypi": {
+      "artifacts": [
+        "pypi-wheel-linux-x64",
+        "pypi-wheel-linux-arm64",
+        "pypi-wheel-darwin-x64",
+        "pypi-wheel-darwin-arm64"
+      ],
+      "repository": "pypi",
+      "authentication": {
+        "strategy": "trusted-publishing",
+        "owner": "external",
+        "action": "pypa/gh-action-pypi-publish@release/v1",
+        "repository": "mannyc2/ts-release",
+        "workflow": "pypi-release.yml",
+        "workflowRef": "refs/heads/main",
+        "environment": "pypi",
+        "projects": ["ts-release"]
+      }
+    }
+  }
+}

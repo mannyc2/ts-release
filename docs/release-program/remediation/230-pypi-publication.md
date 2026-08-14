@@ -13,8 +13,29 @@ This handoff records the post-kernel implementation. It is not a delta release
 certificate and authorizes no PyPI or TestPyPI upload. Plan 230 requires the
 successful Plan 234 kernel live certificate and published `0.2.0` coordinates
 before delta certification or a separately authorized PyPI live plan can run.
-Those prerequisites do not exist. No public provider credential was acquired,
-and no public file, publisher, project, or correction was read or mutated.
+Those prerequisites did not exist when this handoff was written. No public
+provider credential was acquired, and no public file, publisher, project, or
+correction was read or mutated.
+
+## 2026-08-14 product-decision addendum
+
+The `0.2.2` npm/GitHub release now satisfies the historical kernel-coordinate
+prerequisite, and the product owner explicitly selected four embedded-binary
+`ts-release` wheels. The repository implementation therefore reopens only its
+own wrapper-wheel decision:
+
+- manylinux 2.17 x64 and arm64;
+- macOS 13 x64 and arm64;
+- one executable, Python launcher, and exact compatibility tag per wheel;
+- a dedicated `pypi-release.yml` whose isolated publisher job invokes only
+  `pypa/gh-action-pypi-publish@release/v1` with OIDC.
+
+This addendum does not authorize a live upload or publisher/configuration
+mutation. The exact new candidate and prepared distribution evidence must be
+certified after the implementation is committed. PyPI must then be configured
+for the documented repository/workflow/branch/environment identity before a
+separately authorized one-time dispatch. The cross-compiled macOS wheel tags
+remain artifact-target evidence, not macOS execution-host certification.
 
 ## Implemented vertical slice
 

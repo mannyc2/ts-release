@@ -1,4 +1,4 @@
-import { gzipSync } from "node:zlib"
+import { deflateRawSync, gzipSync } from "node:zlib"
 
 export interface ArchiveEntry {
   readonly path: string
@@ -34,27 +34,36 @@ const crc32 = (data: Uint8Array): number => {
   for (const byte of data) crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 0xff]!
   return (crc ^ 0xffffffff) >>> 0
 }
-export const zip = (entries: ReadonlyArray<ArchiveEntry>): Uint8Array => {
+export type ZipCompression = "store" | "deflate"
+
+export const zip = (
+  entries: ReadonlyArray<ArchiveEntry>,
+  compression: ZipCompression = "store"
+): Uint8Array => {
   const bodies: Array<Uint8Array> = []
   const central: Array<Uint8Array> = []
   let offset = 0
   for (const entry of entries) {
     const name = text(entry.path)
     const crc = crc32(entry.data)
+    const method = compression === "deflate" ? 8 : 0
+    const body = compression === "deflate"
+      ? new Uint8Array(deflateRawSync(entry.data, { level: 9 }))
+      : entry.data
     const local = concat([
-      integer(4, 0x04034b50), integer(2, 20), integer(2, 0x0800), integer(2, 0),
-      integer(2, 0), integer(2, 0), integer(4, crc), integer(4, entry.data.length),
+      integer(4, 0x04034b50), integer(2, 20), integer(2, 0x0800), integer(2, method),
+      integer(2, 0), integer(2, 0), integer(4, crc), integer(4, body.length),
       integer(4, entry.data.length), integer(2, name.length), integer(2, 0), name
     ])
-    bodies.push(local, entry.data)
+    bodies.push(local, body)
     central.push(concat([
       integer(4, 0x02014b50), integer(2, 0x0314), integer(2, 20), integer(2, 0x0800),
-      integer(2, 0), integer(2, 0), integer(2, 0), integer(4, crc),
-      integer(4, entry.data.length), integer(4, entry.data.length), integer(2, name.length),
+      integer(2, method), integer(2, 0), integer(2, 0), integer(4, crc),
+      integer(4, body.length), integer(4, entry.data.length), integer(2, name.length),
       integer(2, 0), integer(2, 0), integer(2, 0), integer(2, 0),
       integer(4, entry.mode << 16), integer(4, offset), name
     ]))
-    offset += local.length + entry.data.length
+    offset += local.length + body.length
   }
   const directory = concat(central)
   return concat([

@@ -30,3 +30,10 @@ The preset binds trusted publication to `.github/workflows/release.yml` at
 `refs/heads/main`. Change both `workflow` and `workflowRef` when another exact
 workflow/ref is the intended host; a mismatch is rejected before OIDC request
 material is read.
+
+The repository-specific PyPI self-release is separate from that npm/GitHub
+path. `pypi-release.config.json` builds the four Linux/macOS x64/arm64 native
+wheel artifacts, and `scripts/prepare-pypi-distributions.ts` materializes the
+verified set for `.github/workflows/pypi-release.yml`. Its external publisher
+identity is the official PyPA Action bound to the `pypi` GitHub environment;
+the script prepares bytes only and never exchanges OIDC or uploads them.

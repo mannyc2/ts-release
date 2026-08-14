@@ -79,6 +79,8 @@
     "test:coverage": "bun test --coverage",
     "check:package-exports": "bun run scripts/check-package-exports.ts",
     "check:packed-consumers": "bun run scripts/check-packed-consumers.ts",
+    "build:pypi-wheels": "bun run scripts/build-pypi-wheels.ts",
+    "prepare:pypi-distributions": "bun run apps/release-ts/scripts/prepare-pypi-distributions.ts",
     "check:import-rules": "bun run scripts/check-import-rules.ts",
     "check:tree-shaking": "bun run scripts/check-tree-shaking.ts",
     "check:examples": "bun run scripts/check-examples.ts",

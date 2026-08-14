@@ -104,7 +104,7 @@ const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes).trim
  */
 export const certifyAdvertisedBunTargets = (
   root: string,
-  entry = "apps/release-ts/src/cli/node-main.ts"
+  entry = "apps/release-ts/src/cli/main.ts"
 ): BunTargetCertificationReport => {
   const directory = mkdtempSync(join(tmpdir(), "ts-release-bun-targets-"))
   const failures: Array<string> = []

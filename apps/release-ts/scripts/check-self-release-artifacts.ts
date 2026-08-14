@@ -130,7 +130,14 @@ try {
     writeFileSync(binary, artifactBytes(preparedDirectory, native))
     chmodSync(binary, 0o755)
     const execution = run(binary, ["--version"], scratch)
-    if (execution.status !== 0) failures.push(`Native Linux candidate did not execute: ${execution.stderr.trim()}`)
+    const expectedVersion = `ts-release v${bundle.manifest.project.version.toString()}`
+    if (execution.status !== 0 || outputText(execution.stdout).trim() !== expectedVersion) {
+      failures.push(
+        `Native Linux candidate did not report ${expectedVersion}: status=${String(execution.status)} ` +
+        `stdout=${JSON.stringify(outputText(execution.stdout).trim())} ` +
+        `stderr=${JSON.stringify(outputText(execution.stderr).trim())}.`
+      )
+    }
   }
   const nodeCommand = process.env.TS_RELEASE_NODE_BIN ?? "node"
   const nodeIdentity = run(nodeCommand, ["-p", "process.execPath"], root)

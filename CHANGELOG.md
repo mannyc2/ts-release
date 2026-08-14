@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### PyPI embedded-binary distributions
+
+- Reopen the repository-specific PyPI wrapper-wheel decision with four
+  deterministic `ts-release` wheels: manylinux 2.17 and macOS 13, each for
+  x64 and arm64. Every wheel embeds exactly one Bun-compiled executable and
+  exposes the `ts-release` Python console script.
+- Add an isolated manual PyPI workflow. Its build job has read-only repository
+  authority; its separate `pypi` environment job grants only `id-token: write`
+  and invokes `pypa/gh-action-pypi-publish@release/v1` over the transferred
+  four-wheel artifact set.
+- Make native self-release builds use the version-bearing Bun entrypoint and
+  require the Linux candidate executable to report the exact manifest version.
+
 ## 0.2.2 - 2026-08-14
 
 This release delivers the intended `0.2` product relative to `0.0.7` and

@@ -12,7 +12,7 @@
     {
       "builder": "bun",
       "id": "cli",
-      "entry": "apps/release-ts/src/cli/node-main.ts",
+      "entry": "apps/release-ts/src/cli/main.ts",
       "targets": ["linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64"],
       "output": ".release/artifacts/ts-release-{version}-{targetTriple}{ext}",
       "binary": "ts-release"

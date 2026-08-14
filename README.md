@@ -94,6 +94,25 @@ publishing is represented as an external, host-owned
 `pypa/gh-action-pypi-publish@release/v1` path; the stock coordinator neither
 exchanges its OIDC token nor claims to recover that external upload.
 
+This repository's selected self-release shape is declared in
+`apps/release-ts/pypi-release.config.json`. It deterministically embeds one
+native executable in each of these `ts-release` wheels:
+
+- `py3-none-manylinux_2_17_x86_64`
+- `py3-none-manylinux_2_17_aarch64`
+- `py3-none-macosx_13_0_x86_64`
+- `py3-none-macosx_13_0_arm64`
+
+`.github/workflows/pypi-release.yml` prepares the exact four-file set in a
+read-only build job, transfers it with GitHub Actions artifact retention, and
+gives only the separate `pypi` environment job `id-token: write`. That job has
+no checkout or arbitrary command step; it downloads the prepared wheels and
+invokes the official PyPA trusted-publishing Action. The PyPI publisher must
+be configured for owner `mannyc2`, repository `ts-release`, workflow
+`pypi-release.yml`, branch `main`, and environment `pypi` before dispatch.
+The macOS wheel tags certify the cross-compiled artifact targets; they do not
+expand the product's Linux-only execution-host claim.
+
 With the canonical GitHub origin or package repository configured, `init` can
 discover the exact owner/repository coordinate and write this explicit shape:
 
@@ -262,7 +281,9 @@ The kernel translates extension requests to the owner that can enforce them:
 
 Homebrew and Scoop rendering/delivery use typed renderers and an exact paired
 Git Data subject; arbitrary whole-file catalog templating remains excluded.
-Wrapper wheels remain excluded from the prebuilt PyPI slice unless an explicit product decision reopens them. PyPI
+Generic wrapper-wheel generation remains excluded from the prebuilt PyPI
+capability. The repository-specific four-wheel `ts-release` self-release is an
+explicit product decision and is prepared by its dedicated workflow. PyPI
 support is contract-tested but has not been live-write-dogfooded in this wave.
 Custom library applications may compose full provider subjects through the
 [`provider-sdk`](https://github.com/mannyc2/ts-release/blob/main/docs/native-extensions.md)

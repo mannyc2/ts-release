@@ -62,6 +62,21 @@ describe("immutable release graph", () => {
     expect(graph.preparations.some((item) => item._tag === "GraphCommandArtifact")).toBe(true)
   })
 
+  test("renders the resolved version into declared command artifact paths", () => {
+    const config = CandidateConfig.make({
+      project: { name: NonEmptyName.make("fixture"), version: Version.make("1.2.3"), tag: NonEmptyName.make("v1.2.3") },
+      preparations: [CandidateArtifactPreparation.make({
+        kind: "artifact",
+        id: NonEmptyName.make("wheel"),
+        run: ["build", "{output:wheel}"],
+        outputs: [{ id: OutputId.make("wheel"), path: SafeRelativePath.make("dist/fixture-{version}.whl") }]
+      })]
+    })
+    const graph = compileReleaseGraph(config, context)
+    expect(graph.artifacts.find((item) => item.id.toString() === "wheel")?.path.toString())
+      .toBe("dist/fixture-1.2.3.whl")
+  })
+
   test("registration order does not change the linked graph", () => {
     const left = CapabilityContribution.make({ artifacts: [artifact("input", "input.txt")], preparations: [command("b", "input", "b")], publications: [] })
     const right = CapabilityContribution.make({ artifacts: [], preparations: [GraphCommandArtifact.make({

@@ -1,0 +1,108 @@
+import { describe, expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { resolveConfig } from "../src/resolve/resolve.js"
+
+interface WorkflowStep {
+  readonly name?: string
+  readonly uses?: string
+  readonly run?: string
+  readonly with?: Readonly<Record<string, unknown>>
+}
+
+interface WorkflowJob {
+  readonly if?: string
+  readonly needs?: string
+  readonly environment?: string
+  readonly permissions?: Readonly<Record<string, string>>
+  readonly steps?: ReadonlyArray<WorkflowStep>
+}
+
+interface Workflow {
+  readonly permissions?: Readonly<Record<string, string>>
+  readonly jobs?: Readonly<Record<string, WorkflowJob>>
+}
+
+interface PyPiConfig {
+  readonly builds: ReadonlyArray<{ readonly entry: string }>
+  readonly preparations: ReadonlyArray<{
+    readonly id: string
+    readonly outputs: ReadonlyArray<{ readonly id: string, readonly path: string }>
+  }>
+  readonly publish: {
+    readonly pypi: {
+      readonly artifacts: ReadonlyArray<string>
+      readonly authentication: {
+        readonly strategy: string
+        readonly owner: string
+        readonly action: string
+        readonly environment: string
+        readonly projects: ReadonlyArray<string>
+        readonly repository: string
+        readonly workflow: string
+        readonly workflowRef: string
+      }
+    }
+  }
+}
+
+const workflow = Bun.YAML.parse(readFileSync(".github/workflows/pypi-release.yml", "utf8")) as Workflow
+const config = JSON.parse(readFileSync("apps/release-ts/pypi-release.config.json", "utf8")) as PyPiConfig
+
+describe("official PyPA trusted-publishing workflow", () => {
+  test("keeps OIDC in a minimal isolated publication job", () => {
+    expect(workflow.permissions).toEqual({})
+    expect(Object.keys(workflow.jobs ?? {})).toEqual(["build", "publish"])
+    const build = workflow.jobs?.build
+    const publish = workflow.jobs?.publish
+    expect(build?.if).toBe("${{ github.repository == 'mannyc2/ts-release' && github.ref == 'refs/heads/main' && github.sha == inputs.candidate_sha }}")
+    expect(build?.permissions).toEqual({ contents: "read" })
+    expect(build?.environment).toBeUndefined()
+    expect(build?.steps?.some(({ uses }) => uses === "actions/upload-artifact@v4")).toBe(true)
+    const upload = build?.steps?.find(({ uses }) => uses === "actions/upload-artifact@v4")
+    expect(upload?.with).not.toHaveProperty("retention-days")
+
+    expect(publish?.needs).toBe("build")
+    expect(publish?.environment).toBe("pypi")
+    expect(publish?.permissions).toEqual({ "id-token": "write" })
+    expect(publish?.steps?.map(({ uses }) => uses)).toEqual([
+      "actions/download-artifact@v4",
+      "pypa/gh-action-pypi-publish@release/v1"
+    ])
+    expect(JSON.stringify(publish?.steps)).not.toMatch(/password|username|api-token|secret/iu)
+  })
+
+  test("binds the prepared four-wheel set to the exact external publisher identity", () => {
+    const resolved = resolveConfig(config, {
+      commit: "c".repeat(40),
+      manifestName: "@mannyc1/ts-release",
+      manifestVersion: "0.2.2",
+      repository: "mannyc2/ts-release"
+    })
+    expect(resolved.project).toMatchObject({
+      name: "ts-release",
+      packageName: "@mannyc1/ts-release",
+      version: "0.2.2"
+    })
+    expect(config.builds.map(({ entry }) => entry)).toEqual(["apps/release-ts/src/cli/main.ts"])
+    const pypi = config.publish.pypi
+    expect(pypi.authentication).toEqual({
+      strategy: "trusted-publishing",
+      owner: "external",
+      action: "pypa/gh-action-pypi-publish@release/v1",
+      repository: "mannyc2/ts-release",
+      workflow: "pypi-release.yml",
+      workflowRef: "refs/heads/main",
+      environment: "pypi",
+      projects: ["ts-release"]
+    })
+    expect(pypi.artifacts).toHaveLength(4)
+    const outputs = config.preparations.find(({ id }) => id === "pypi-wheels")?.outputs ?? []
+    expect(outputs.map(({ id }) => id)).toEqual([...pypi.artifacts])
+    expect(outputs.map(({ path }) => path)).toEqual([
+      ".release/pypi-wheels/ts_release-{version}-py3-none-manylinux_2_17_x86_64.whl",
+      ".release/pypi-wheels/ts_release-{version}-py3-none-manylinux_2_17_aarch64.whl",
+      ".release/pypi-wheels/ts_release-{version}-py3-none-macosx_13_0_x86_64.whl",
+      ".release/pypi-wheels/ts_release-{version}-py3-none-macosx_13_0_arm64.whl"
+    ])
+  })
+})

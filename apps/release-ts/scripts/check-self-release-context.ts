@@ -36,6 +36,9 @@ else {
       builds[0].targets.join(",") !== requiredTargets.join(",")) {
     failures.push("Self-release build must contain exactly the four advertised Linux/macOS artifact targets.")
   }
+  if (!isJsonObject(builds[0]) || builds[0].entry !== "apps/release-ts/src/cli/main.ts") {
+    failures.push("Self-release native builds must use the version-bearing Bun CLI entrypoint.")
+  }
   const archives = Array.isArray(config.archives) ? config.archives : []
   if (archives.length !== requiredTargets.length || requiredTargets.some((target) => {
     const archive = archives.find((item) => isJsonObject(item) && item.id === `cli-${target}`)

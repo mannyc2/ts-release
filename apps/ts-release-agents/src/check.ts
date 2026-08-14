@@ -25,6 +25,11 @@ const generatedFiles = (directory: string): string[] => readdirSync(directory, {
 const containsFiles = (directory: string): boolean => readdirSync(directory, { withFileTypes: true }).some((entry) => {
   return entry.isDirectory() ? containsFiles(join(directory, entry.name)) : true
 })
+const commandFailure = (result: ReturnType<typeof spawnSync>): string => {
+  const stderr = typeof result.stderr === "string" ? result.stderr.trim() : ""
+  const stdout = typeof result.stdout === "string" ? result.stdout.trim() : ""
+  return stderr || stdout || result.error?.message || "unknown command failure"
+}
 
 const firstPaths = buildAgents()
 const first = firstPaths.map((path) => bytes(path))
@@ -54,7 +59,7 @@ for (const path of ["SKILL.md", join("skills", "release", "SKILL.md")]) {
   if (existsSync(join(root, path))) fail(`Root canonical agent owner remains: ${path}`)
 }
 const tracked = spawnSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8", stdio: "pipe" })
-if (tracked.status !== 0) fail(`Could not inspect tracked agent owners: ${tracked.stderr.trim() || tracked.stdout.trim()}`)
+if (tracked.status !== 0) fail(`Could not inspect tracked agent owners: ${commandFailure(tracked)}`)
 const trackedFiles = tracked.stdout.split("\0").filter((path) => path.length > 0)
 const canonicalRootOwners = trackedFiles.filter((path) =>
   path === ".codex-plugin/plugin.json" ||
@@ -95,7 +100,7 @@ try {
         stdio: "pipe"
       })
       if (validated.status !== 0) {
-        fail(`Installed Claude plugin validator failed: ${validated.stderr.trim() || validated.stdout.trim()}`)
+        fail(`Installed Claude plugin validator failed: ${commandFailure(validated)}`)
       }
     }
     providerLayouts.push(relative(disposableRoot, installation.packageRoot).replaceAll("\\", "/"))

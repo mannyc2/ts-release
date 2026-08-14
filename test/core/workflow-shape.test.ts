@@ -161,10 +161,16 @@ test("repository workflow topology has only CI and release", () => {
   expect(readdirSync(".github/workflows").filter((name) => name.endsWith(".yml")).sort()).toEqual(["ci.yml", "release.yml"])
 })
 
-test("CI delegates its required gate inventory to check:portable", () => {
+test("CI separates portable gates from installed agent-host validation", () => {
   const ci = workflow("ci.yml")
   expect(ci.match(/bun run check:portable/gu)?.length).toBe(1)
+  expect(ci.match(/bun run check:agents/gu)?.length).toBe(1)
   expect(ci).not.toMatch(/check:(?:versions|docs-claims|import-rules|tree-shaking|config-schema)/u)
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+    readonly scripts: Readonly<Record<string, string>>
+  }
+  expect(packageJson.scripts["check:portable"]).not.toContain("check:agents")
+  expect(packageJson.scripts["check:release-candidate"]).toContain("bun run check:portable && bun run check:agents")
 })
 
 test("repository release is a candidate-bound manual dispatch with one mutually exclusive automatic handoff", () => {

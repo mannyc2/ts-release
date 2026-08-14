@@ -6,6 +6,7 @@ import { cwd, exit } from "node:process"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { actionCommands, actionInputs, actionOutputs } from "../apps/ts-release-action/src/commands.js"
+import { unsupportedExecutionHost } from "../src/platform/host-support.js"
 import {
   buildActionArtifactBridge,
   buildActionBundle,
@@ -101,8 +102,9 @@ try {
     }
   })
   const probeOutput = `${new TextDecoder().decode(probe.stdout)}\n${new TextDecoder().decode(probe.stderr)}`
-  if (probe.exitCode === 0 || !probeOutput.includes("publish requires prepared")) {
-    throw new Error("Node did not execute the Bun Action parser through the declared native launcher boundary.")
+  const expectedProbeDiagnostic = unsupportedExecutionHost(process.platform) ?? "publish requires prepared"
+  if (probe.exitCode === 0 || !probeOutput.includes(expectedProbeDiagnostic)) {
+    throw new Error("Node did not execute the Bun Action entry through the declared native launcher boundary.")
   }
   console.log(`Action bundle exposes ${actionCommands.length} commands and ${actionOutputs.length} outputs.`)
 } catch (cause) {

@@ -81,11 +81,12 @@ describe("embedded PyPI wheel build", () => {
       }))
       const arguments_: string[] = []
       for (const target of embeddedPythonWheelTargets) {
-        const input = join(workspace, "inputs", target.id)
-        const output = join(workspace, "outputs", embeddedPythonWheelFilename(target, metadata.version))
+        const inputPath = join("inputs", target.id)
+        const outputPath = join("outputs", embeddedPythonWheelFilename(target, metadata.version))
+        const input = join(workspace, inputPath)
         mkdirSync(join(workspace, "inputs"), { recursive: true })
         writeFileSync(input, executable(target), { mode: 0o755 })
-        arguments_.push(target.id, input, output)
+        arguments_.push(target.id, inputPath, outputPath)
       }
       const result = Bun.spawnSync([
         process.execPath,

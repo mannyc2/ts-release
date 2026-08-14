@@ -5,7 +5,7 @@ import {
   realpathSync,
   writeFileSync
 } from "node:fs"
-import { basename, dirname, relative, resolve } from "node:path"
+import { basename, dirname, isAbsolute, relative, resolve } from "node:path"
 import { exit } from "node:process"
 import { createHash } from "node:crypto"
 import {
@@ -40,6 +40,7 @@ const textField = (manifest: PackageManifest, field: keyof PackageManifest): str
     : fail(`package.json must provide a nonempty ${field}.`)
 }
 const workspacePath = (value: string, label: string): string => {
+  if (isAbsolute(value)) return fail(`${label} must be a workspace-relative child path.`)
   const path = resolve(root, value)
   const fromRoot = relative(root, path)
   if (fromRoot === "" || fromRoot === ".." || fromRoot.startsWith("../") || resolve(root, fromRoot) !== path) {

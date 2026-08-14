@@ -11,6 +11,7 @@ import {
 import { dirname, join, posix, resolve } from "node:path"
 import { exit } from "node:process"
 import semver from "semver"
+import { unsupportedExecutionHost } from "../src/platform/host-support.js"
 import {
   makeSystemScratchDirectory,
   removeScratchDirectory
@@ -498,10 +499,28 @@ const main = async (): Promise<void> => {
     }
 
     const cli = join(npmConsumer, "node_modules", ...manifest.name.split("/"), "dist", "bin", "ts-release.js")
+    const unsupportedHost = unsupportedExecutionHost(process.platform)
     for (const [index, reference] of bunSmoke.references.entries()) {
-      const inspected = successful([
+      const inspected = run([
         selectedRuntime.node, cli, "--store", storeDirectory, "inspect", reference
       ], npmConsumer)
+      if (unsupportedHost !== undefined) {
+        if (inspected.status === 0 || !inspected.stderr.includes(unsupportedHost)) {
+          throw new Error([
+            `Packed CLI must refuse unsupported ${process.platform} execution with the canonical diagnostic.`,
+            inspected.stdout.trim(),
+            inspected.stderr.trim()
+          ].filter((line) => line.length > 0).join("\n"))
+        }
+        continue
+      }
+      if (inspected.status !== 0) {
+        throw new Error([
+          `${selectedRuntime.node} ${cli} inspect exited ${inspected.status}.`,
+          inspected.stdout.trim(),
+          inspected.stderr.trim()
+        ].filter((line) => line.length > 0).join("\n"))
+      }
       const value = parseJson<{ readonly artifacts?: unknown }>(inspected.stdout.trim(), "packed CLI inspect")
       if (!Array.isArray(value.artifacts) || value.artifacts.length !== index + 1) {
         throw new Error(`Packed CLI must preserve the ${index + 1}-element artifacts array.`)
@@ -528,6 +547,7 @@ const main = async (): Promise<void> => {
       artifactArrayShapes: [1, 2],
       node: nodeSmoke.node,
       nodeRuntimeSupported,
+      cliHostSupported: unsupportedHost === undefined,
       status: "current-worktree-only"
     }))
   } finally {

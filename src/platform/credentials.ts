@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { chmod, copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { basename, isAbsolute, join, resolve } from "node:path"
 import * as Config from "effect/Config"
@@ -886,10 +886,52 @@ const redactPublisherOutput = (
   return redactOutput(value, known)
 }
 
+interface NpmPublishTransport {
+  readonly directory: string
+  readonly path: string
+}
+
+/**
+ * npm classifies a suffixless local path as a package directory. Prepared
+ * artifacts deliberately use digest-only blob names, so expose the already
+ * admitted bytes through a private `.tgz` transport name only while npm runs.
+ */
+const makeNpmPublishTransport = (
+  sourcePath: string,
+  temporaryRoot?: string
+) => {
+  const root = temporaryRoot ?? tmpdir()
+  const acquired = Effect.tryPromise({
+    try: async () => {
+      await mkdir(root, { recursive: true, mode: 0o700 })
+      const directory = await mkdtemp(join(root, "ts-release-npm-tarball-"))
+      try {
+        const path = join(directory, "package.tgz")
+        await copyFile(sourcePath, path)
+        await chmod(path, 0o600)
+        return { directory, path }
+      } catch (cause) {
+        await rm(directory, { recursive: true, force: true })
+        throw cause
+      }
+    },
+    catch: () => platformError(
+      "resource",
+      "before-dispatch",
+      "Unable to materialize the verified npm tarball transport path."
+    )
+  })
+  return Effect.acquireRelease(acquired, ({ directory }) => Effect.tryPromise({
+    try: () => rm(directory, { recursive: true, force: true }),
+    catch: () => undefined
+  }).pipe(Effect.catch(() => Effect.void)))
+}
+
 const makeCertifiedPublisherSpawn = (
   spawner: ChildProcessSpawner["Service"],
   vault: SecretVault,
-  trustedWorkloads: TrustedWorkloadVault
+  trustedWorkloads: TrustedWorkloadVault,
+  temporaryRoot?: string
 ): CertifiedPublisherSpawnShape => {
   const runClosed = Effect.fn("CertifiedPublisherSpawn.runClosed")(function*(
     argv: readonly [string, ...Array<string>]
@@ -952,16 +994,17 @@ const makeCertifiedPublisherSpawn = (
     yield* validateCertifiedNpmSpec(inputSpec)
     const spec = snapshotCertifiedNpmSpec(inputSpec)
     const env = yield* publisherEnvironment(vault, trustedWorkloads, spec, grant)
-    const argv = npmPublishArgv(spec)
-    const command = ChildProcess.make(argv[0], [...argv.slice(1)], {
-      cwd: spec.cwd,
-      env,
-      extendEnv: false,
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe"
-    })
     return yield* Effect.scoped(Effect.gen(function*() {
+      const transport = yield* makeNpmPublishTransport(spec.tarballPath, temporaryRoot)
+      const argv = npmPublishArgv({ ...spec, tarballPath: transport.path })
+      const command = ChildProcess.make(argv[0], [...argv.slice(1)], {
+        cwd: spec.cwd,
+        env,
+        extendEnv: false,
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe"
+      })
       const spawned = yield* Effect.exit(spawner.spawn(command))
       if (Exit.isFailure(spawned)) {
         return {
@@ -1020,7 +1063,7 @@ export const makeEnvironmentCredentialPlatform = (
     httpAuthorizer: makeHttpAuthorizer(http, vault, observationGrants),
     authorizedMutationHttp: makeAuthorizedMutationHttp(http, vault),
     npmUserConfigResource: makeNpmUserConfigResource(vault, options.temporaryRoot),
-    certifiedPublisherSpawn: makeCertifiedPublisherSpawn(spawner, vault, trustedWorkloads)
+    certifiedPublisherSpawn: makeCertifiedPublisherSpawn(spawner, vault, trustedWorkloads, options.temporaryRoot)
   }
 }
 

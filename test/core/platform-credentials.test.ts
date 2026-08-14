@@ -1,5 +1,14 @@
-import { describe, expect, test } from "bun:test"
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs"
+import { afterAll, describe, expect, test } from "bun:test"
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import * as ConfigProvider from "effect/ConfigProvider"
@@ -7,7 +16,15 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import * as Layer from "effect/Layer"
-import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
+import * as Sink from "effect/Sink"
+import * as Stream from "effect/Stream"
+import {
+  ChildProcessSpawner,
+  ExitCode,
+  make as makeChildProcessSpawner,
+  makeHandle,
+  ProcessId
+} from "effect/unstable/process/ChildProcessSpawner"
 import {
   AnonymousAuthStrategy,
   CanonicalAudience,
@@ -45,9 +62,14 @@ const audience = CanonicalAudience.make("https://registry.npmjs.org/")
 const registryUrl = CanonicalNpmRegistryEndpoint.make("https://registry.npmjs.org/")
 const packageName = NonEmptyName.make("@fixture/pkg")
 const packageVersion = Version.make("1.0.0")
-const tarballPath = `/workspace/blobs/${"a".repeat(64)}`
+const publisherWorkspace = mkdtempSync(join(tmpdir(), "ts-release-publisher-workspace-"))
+const tarballBytes = Buffer.from("fixture npm tarball bytes")
+const tarballPath = join(publisherWorkspace, "blobs", "a".repeat(64))
+mkdirSync(join(publisherWorkspace, "blobs"))
+writeFileSync(tarballPath, tarballBytes)
+afterAll(() => rmSync(publisherWorkspace, { recursive: true, force: true }))
 const publisherFields = {
-  cwd: "/workspace",
+  cwd: publisherWorkspace,
   tarballPath,
   packageName,
   version: packageVersion,
@@ -387,11 +409,19 @@ describe("environment credential platform", () => {
   test("npm user config is mode-0600, scoped, opaque, and the spawn environment is closed", async () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-platform-test-"))
     try {
-      const { platform, commands } = platformFixture(root, () => ({
-        exitCode: 0,
-        stdout: `published with ${secret}`,
-        stderr: ""
-      }))
+      let transportPath = ""
+      let transportMode = 0
+      let transportedBytes = Buffer.alloc(0)
+      const { platform, commands } = platformFixture(root, (command) => {
+        transportPath = command.argv[2] ?? ""
+        transportMode = statSync(transportPath).mode & 0o777
+        transportedBytes = readFileSync(transportPath)
+        return {
+          exitCode: 0,
+          stdout: `published with ${secret}`,
+          stderr: ""
+        }
+      })
       const grant = await acquireToken(platform)
       let configPath = ""
       const result = await Effect.runPromise(provideEnvironment(Effect.scoped(Effect.gen(function*() {
@@ -424,8 +454,14 @@ describe("environment credential platform", () => {
         NPM_CONFIG_IGNORE_SCRIPTS: "true"
       })
       expect(commands[0]?.env).not.toHaveProperty("AMBIENT_MUST_NOT_LEAK")
+      expect(transportPath).toEndWith(".tgz")
+      expect(transportPath).not.toBe(tarballPath)
+      expect(transportMode).toBe(0o600)
+      expect(transportedBytes).toEqual(tarballBytes)
+      expect(existsSync(transportPath)).toBe(false)
+      expect(readdirSync(root)).toEqual([])
       expect(commands[0]?.argv).toEqual([
-        "npm", "publish", tarballPath,
+        "npm", "publish", transportPath,
         "--ignore-scripts",
         "--registry", registryUrl,
         "--tag", "latest",
@@ -477,6 +513,54 @@ describe("environment credential platform", () => {
       await acquired
       expect(readdirSync(root)).toHaveLength(1)
       await Effect.runPromise(Fiber.interrupt(fiber))
+      expect(readdirSync(root)).toEqual([])
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("npm tarball transport finalizes when a running publisher is interrupted", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-platform-transport-interrupt-"))
+    try {
+      let transportPath = ""
+      let signal!: () => void
+      const started = new Promise<void>((resolve) => { signal = resolve })
+      const spawner = makeChildProcessSpawner((command) => {
+        if (command._tag !== "StandardCommand") return Effect.die("Piped commands are not used.")
+        transportPath = command.args[1] ?? ""
+        signal()
+        return Effect.succeed(makeHandle({
+          pid: ProcessId(1),
+          exitCode: Effect.never,
+          isRunning: Effect.succeed(true),
+          kill: () => Effect.void,
+          stdin: Sink.drain,
+          stdout: Stream.never,
+          stderr: Stream.never,
+          all: Stream.never,
+          getInputFd: () => Sink.drain,
+          getOutputFd: () => Stream.never,
+          unref: Effect.succeed(Effect.void)
+        }))
+      })
+      const platform = makeEnvironmentCredentialPlatform(httpRecorder().http, spawner, { temporaryRoot: root })
+      const grant = await Effect.runPromise(provideEnvironment(
+        platform.credentialProvider.acquireForMutation(trustedRequest(), decision).pipe(
+          Effect.flatMap((value) => value._tag === "WorkloadIdentity"
+            ? Effect.succeed(value as WorkloadIdentity)
+            : Effect.die("expected workload identity")))
+      ))
+      const fiber = Effect.runFork(provideEnvironment(platform.certifiedPublisherSpawn.spawn({
+        _tag: "WorkloadPublisherSpec",
+        operation,
+        ...publisherFields
+      }, grant)))
+      await started
+      expect(transportPath).toEndWith(".tgz")
+      expect(existsSync(transportPath)).toBe(true)
+      expect(readFileSync(transportPath)).toEqual(tarballBytes)
+      await Effect.runPromise(Fiber.interrupt(fiber))
+      expect(existsSync(transportPath)).toBe(false)
       expect(readdirSync(root)).toEqual([])
     } finally {
       rmSync(root, { recursive: true, force: true })
@@ -545,50 +629,64 @@ describe("environment credential platform", () => {
   })
 
   test("trusted publishing passes only certified OIDC and provenance facts in a closed environment", async () => {
-    const { platform, commands } = platformFixture(undefined, () => ({
-      exitCode: 0,
-      stdout: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN
-    }))
-    const grant = await Effect.runPromise(provideEnvironment(
-      platform.credentialProvider.acquireForMutation(trustedRequest(), decision).pipe(
-        Effect.flatMap((value) => value._tag === "WorkloadIdentity"
-          ? Effect.succeed(value as WorkloadIdentity)
-          : Effect.die("expected workload identity")))
-    ))
-    const result = await Effect.runPromise(provideEnvironment(platform.certifiedPublisherSpawn.spawn({
-      _tag: "WorkloadPublisherSpec",
-      operation,
-      ...publisherFields
-    }, grant)))
-    expect(commands[0]?.env).toEqual({
-      PATH: "/fixture/bin",
-      ACTIONS_ID_TOKEN_REQUEST_URL: environment.ACTIONS_ID_TOKEN_REQUEST_URL,
-      ACTIONS_ID_TOKEN_REQUEST_TOKEN: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
-      GITHUB_ACTIONS: "true",
-      GITHUB_REPOSITORY: environment.GITHUB_REPOSITORY,
-      GITHUB_WORKFLOW_REF: environment.GITHUB_WORKFLOW_REF,
-      GITHUB_SERVER_URL: environment.GITHUB_SERVER_URL,
-      GITHUB_EVENT_NAME: environment.GITHUB_EVENT_NAME,
-      GITHUB_REPOSITORY_ID: environment.GITHUB_REPOSITORY_ID,
-      GITHUB_REPOSITORY_OWNER_ID: environment.GITHUB_REPOSITORY_OWNER_ID,
-      GITHUB_REF: environment.GITHUB_REF,
-      GITHUB_SHA: environment.GITHUB_SHA,
-      RUNNER_ENVIRONMENT: environment.RUNNER_ENVIRONMENT,
-      GITHUB_RUN_ID: environment.GITHUB_RUN_ID,
-      GITHUB_RUN_ATTEMPT: environment.GITHUB_RUN_ATTEMPT,
-      NPM_CONFIG_IGNORE_SCRIPTS: "true"
-    })
-    expect(result._tag === "PublisherExited" ? result.stdout : "").toContain("[redacted:ACTIONS_ID_TOKEN_REQUEST_TOKEN]")
-    expect(JSON.stringify(result)).not.toContain(environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
-    expect(commands[0]?.argv).toEqual([
-      "npm", "publish", tarballPath,
-      "--ignore-scripts",
-      "--registry", registryUrl,
-      "--tag", "latest",
-      "--access", "public",
-      "--provenance",
-      "--json"
-    ])
+    const root = mkdtempSync(join(tmpdir(), "ts-release-platform-workload-"))
+    try {
+      let transportPath = ""
+      const { platform, commands } = platformFixture(root, (command) => {
+        transportPath = command.argv[2] ?? ""
+        expect(readFileSync(transportPath)).toEqual(tarballBytes)
+        return {
+          exitCode: 0,
+          stdout: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN
+        }
+      })
+      const grant = await Effect.runPromise(provideEnvironment(
+        platform.credentialProvider.acquireForMutation(trustedRequest(), decision).pipe(
+          Effect.flatMap((value) => value._tag === "WorkloadIdentity"
+            ? Effect.succeed(value as WorkloadIdentity)
+            : Effect.die("expected workload identity")))
+      ))
+      const result = await Effect.runPromise(provideEnvironment(platform.certifiedPublisherSpawn.spawn({
+        _tag: "WorkloadPublisherSpec",
+        operation,
+        ...publisherFields
+      }, grant)))
+      expect(commands[0]?.env).toEqual({
+        PATH: "/fixture/bin",
+        ACTIONS_ID_TOKEN_REQUEST_URL: environment.ACTIONS_ID_TOKEN_REQUEST_URL,
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
+        GITHUB_ACTIONS: "true",
+        GITHUB_REPOSITORY: environment.GITHUB_REPOSITORY,
+        GITHUB_WORKFLOW_REF: environment.GITHUB_WORKFLOW_REF,
+        GITHUB_SERVER_URL: environment.GITHUB_SERVER_URL,
+        GITHUB_EVENT_NAME: environment.GITHUB_EVENT_NAME,
+        GITHUB_REPOSITORY_ID: environment.GITHUB_REPOSITORY_ID,
+        GITHUB_REPOSITORY_OWNER_ID: environment.GITHUB_REPOSITORY_OWNER_ID,
+        GITHUB_REF: environment.GITHUB_REF,
+        GITHUB_SHA: environment.GITHUB_SHA,
+        RUNNER_ENVIRONMENT: environment.RUNNER_ENVIRONMENT,
+        GITHUB_RUN_ID: environment.GITHUB_RUN_ID,
+        GITHUB_RUN_ATTEMPT: environment.GITHUB_RUN_ATTEMPT,
+        NPM_CONFIG_IGNORE_SCRIPTS: "true"
+      })
+      expect(result._tag === "PublisherExited" ? result.stdout : "")
+        .toContain("[redacted:ACTIONS_ID_TOKEN_REQUEST_TOKEN]")
+      expect(JSON.stringify(result)).not.toContain(environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
+      expect(transportPath).toEndWith(".tgz")
+      expect(commands[0]?.argv).toEqual([
+        "npm", "publish", transportPath,
+        "--ignore-scripts",
+        "--registry", registryUrl,
+        "--tag", "latest",
+        "--access", "public",
+        "--provenance",
+        "--json"
+      ])
+      expect(existsSync(transportPath)).toBe(false)
+      expect(readdirSync(root)).toEqual([])
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   test("typed publisher specs reject argv and flag-value injection before either credential mode dispatches", async () => {

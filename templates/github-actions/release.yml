@@ -41,7 +41,7 @@ jobs:
           bun install --frozen-lockfile --ignore-scripts --no-save --linker=hoisted
           bun --no-env-file --no-install -e 'await (await import("node:fs/promises")).rm("node_modules", { recursive: true, force: true })'
       - id: release
-        uses: mannyc2/ts-release/apps/ts-release-action@v0.2.1
+        uses: mannyc2/ts-release/apps/ts-release-action@v0.2.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

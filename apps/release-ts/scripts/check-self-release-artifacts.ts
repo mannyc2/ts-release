@@ -147,9 +147,9 @@ try {
     root,
     join(scratch, "node-cli.stdout")
   )
-  if (cli.status !== 0 || !/^ts-release v0\.2\.1$/u.test(outputText(cli.stdout).trim())) {
+  if (cli.status !== 0 || !/^ts-release v0\.2\.2$/u.test(outputText(cli.stdout).trim())) {
     failures.push(
-      `The Node CLI bundle did not report candidate version 0.2.1: status=${String(cli.status)} ` +
+      `The Node CLI bundle did not report candidate version 0.2.2: status=${String(cli.status)} ` +
       `stdout=${JSON.stringify(outputText(cli.stdout).trim())} stderr=${JSON.stringify(outputText(cli.stderr).trim())}.`
     )
   }

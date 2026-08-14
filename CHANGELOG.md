@@ -1,9 +1,27 @@
 # Changelog
 
-## 0.2.1 - 2026-08-14
+## 0.2.2 - 2026-08-14
 
 This release delivers the intended `0.2` product relative to `0.0.7` and
-supersedes the incomplete immutable `v0.2.0` GitHub release.
+supersedes the incomplete immutable `v0.2.1` release.
+
+### npm release repair
+
+- Preserve the canonical, digest-only prepared-store blob as the admitted npm
+  publication input, while materializing its exact bytes through a private,
+  mode-0600 `.tgz` transport path only for the lifetime of the npm process.
+  npm treats a suffixless local path as a package directory; the scoped alias
+  gives npm the required file classification without weakening prepared-bundle
+  validation or leaving transport bytes behind after success, failure, or
+  interruption.
+
+## 0.2.1 - incomplete (2026-08-14)
+
+The immutable GitHub tag, release, and configured assets were created, but npm
+did not publish because npm classified the verified digest-only blob path as a
+directory. Those subjects remain an audit record and are superseded by
+`0.2.2`; no `0.2.1` subject was rewritten. This candidate otherwise contained
+the following release content and repairs.
 
 ### Release repair
 
@@ -79,14 +97,14 @@ supersedes the incomplete immutable `v0.2.0` GitHub release.
   client uses native Node streams; bridge requests never serialize the GitHub
   token. This does not change the installed library or CLI's Node engine.
 - PyPI prebuilt publication is temporarily removed despite being available in
-  `0.0.7`; it is assigned to a post-`0.2.1` provider-capability wave. PyPI
+  `0.0.7`; it is assigned to a post-`0.2.2` provider-capability wave. PyPI
   wrapper wheels are also removed, and will return only after an explicit
   product decision based on native-wheel or cibuildwheel-class user demand.
 - Homebrew tap and Scoop bucket rendering and delivery are temporarily removed
   despite being available in `0.0.7`; they are assigned to a separate catalog
   delivery wave. Old PyPI, Homebrew, Scoop, and generic catalog configurations
   are rejected rather than accepted as no-ops.
-- A third-party publication-adapter SDK is not part of `0.2.1`. Local extension
+- A third-party publication-adapter SDK is not part of `0.2.2`. Local extension
   work must use declared command checks or artifact bytes; downstream effects
   belong in the workflow host after a complete release report.
 

@@ -21,7 +21,7 @@ describe("agent distribution contract", () => {
       const native = provider === "codex" ? ".codex-plugin" : ".claude-plugin"
       const manifest = join(root, ".release", "agents", provider, "ts-release", native, "plugin.json")
       expect(existsSync(manifest)).toBe(true)
-      expect(JSON.parse(readFileSync(manifest, "utf8")).version).toBe("0.2.1")
+      expect(JSON.parse(readFileSync(manifest, "utf8")).version).toBe("0.2.2")
     }
   })
 
@@ -43,7 +43,7 @@ describe("agent distribution contract", () => {
           "local-archive",
           "ts-release"
         ))
-        expect(installed.version).toBe("0.2.1")
+        expect(installed.version).toBe("0.2.2")
         expect(installed.packageRoot).toBe(join(installed.providerRoot, installed.version))
         expect(existsSync(join(installed.packageRoot, provider === "codex" ? ".codex-plugin" : ".claude-plugin", "plugin.json"))).toBe(true)
         expect(existsSync(join(installed.packageRoot, "skills", "release", "SKILL.md"))).toBe(true)

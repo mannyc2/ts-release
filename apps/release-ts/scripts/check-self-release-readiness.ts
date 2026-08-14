@@ -126,6 +126,6 @@ const githubState = process.env.GITHUB_TOKEN === undefined && process.env.GH_TOK
   : "UNVERIFIED: credential present; remote read is reserved for the operator packet."
 report("self-release-readiness-report/v1", failures, {
   actionReference, npm: npmState, github: githubState,
-  selectedCoordinates: { npmVersion: "0.2.1", githubTag: "v0.2.1", action: actionReference },
+  selectedCoordinates: { npmVersion: "0.2.2", githubTag: "v0.2.2", action: actionReference },
   evidenceState: "UNVERIFIED", readOnlyNetworkChecks: 0
 })

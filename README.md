@@ -118,7 +118,7 @@ recovery artifact.
 
 ```yaml
 - id: release
-  uses: mannyc2/ts-release/apps/ts-release-action@v0.2.1
+  uses: mannyc2/ts-release/apps/ts-release-action@v0.2.2
   env:
     GITHUB_TOKEN: ${{ github.token }}
   with:
@@ -132,7 +132,7 @@ preparation, dispatch the same candidate with the exact emitted
 `prepared:gha:` reference; the job selects `publish`, loads and verifies the
 original bundle, and does not rebuild.
 
-`v0.2.1` is the immutable monorepo-subpath coordinate intended for this
+`v0.2.2` is the immutable monorepo-subpath coordinate intended for this
 candidate. Packaging and release certification must stop unless that tag is
 created from the exact certified result commit before consumers can see a
 README that names it. A floating Action branch is never an alternative.

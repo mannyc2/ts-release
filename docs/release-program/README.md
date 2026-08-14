@@ -56,7 +56,7 @@ from Git after Y is created. Decision-only plans may use their input as X.
 | 235 | dormant until both the 234k live certificate and a named multi-host trigger exist; gate audit in `decisions/234-235-external-gates.md` |
 | inventory | all ignored plans, tracked handoffs, historical advisor material, local closure, and sole external gates reconciled in `decisions/all-plan-completion-audit.md` |
 
-Post-0.2.1 capability-wave handoffs are added when their separately
+Post-0.2.2 capability-wave handoffs are added when their separately
 authorized waves are dispatched; no wave inherits plan 234k's mutation
 authority.
 

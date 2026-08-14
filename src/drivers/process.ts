@@ -10,7 +10,6 @@ import {
   copyFileSync,
   lstatSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -18,13 +17,13 @@ import {
   statSync,
   writeFileSync
 } from "node:fs"
-import { tmpdir } from "node:os"
 import { delimiter, isAbsolute, join, resolve } from "node:path"
 import { readEnvironment, readOptionalEnv } from "./environment.js"
 import { redactOutput, redactProtocolOutput } from "./redact.js"
 import { networkIsolationHelperSource } from "./seccomp-helper-source.js"
 import { failure } from "./utils.js"
 import { DriverError } from "./errors.js"
+import { makeCanonicalTemporaryDirectory } from "./workspace.js"
 
 export interface NetworkIsolationIdentity {
   readonly protocol: "ts-release-seccomp-network-deny/v1"
@@ -242,7 +241,7 @@ export const makeRunCommand: Effect.Effect<RunCommand, never, ChildProcessSpawne
         ? undefined
         : yield* Effect.acquireRelease(
           Effect.sync(() => {
-            const directory = mkdtempSync(join(tmpdir(), "ts-release-bun-runtime-"))
+            const directory = makeCanonicalTemporaryDirectory("ts-release-bun-runtime-")
             const cache = join(directory, "cache")
             mkdirSync(cache, { mode: 0o700 })
             if (compileRuntime.sourcePath !== undefined) {
@@ -260,7 +259,7 @@ export const makeRunCommand: Effect.Effect<RunCommand, never, ChildProcessSpawne
       const isolationResources = command.network === "deny"
         ? yield* Effect.acquireRelease(
           Effect.sync(() => {
-            const directory = mkdtempSync(join(tmpdir(), "ts-release-seccomp-"))
+            const directory = makeCanonicalTemporaryDirectory("ts-release-seccomp-")
             const helper = join(directory, "network-deny.mjs")
             const identity = join(directory, "identity.json")
             writeFileSync(helper, networkIsolationHelperSource, { mode: 0o500 })

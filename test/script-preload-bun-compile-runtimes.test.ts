@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { createHash } from "node:crypto"
-import { mkdtempSync, writeFileSync } from "node:fs"
+import { mkdtempSync, symlinkSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   certifiedBunVersion,
@@ -62,4 +62,13 @@ test("runtime preload fails closed on wrong bytes, version, and download failure
     runtimes: [runtime],
     spawn: () => 7
   })).toThrow("exited 7")
+})
+
+test("runtime verification canonicalizes an aliased cache ancestor", () => {
+  const directory = cache()
+  const aliases = cache()
+  const alias = join(aliases, "cache")
+  symlinkSync(directory, alias, "dir")
+  writeFileSync(join(directory, runtime.cacheFile), bytes)
+  expect(verifyBunCompileRuntime(alias, runtime)).toEqual(runtime)
 })

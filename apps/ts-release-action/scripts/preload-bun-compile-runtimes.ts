@@ -80,7 +80,7 @@ export const verifyBunCompileRuntime = (
   cacheDirectory: string,
   runtime: BunCompileRuntimeSpec
 ): { readonly target: BunCompileRuntimeSpec["target"], readonly cacheFile: string, readonly sha256: string } => {
-  const path = join(cacheDirectory, runtime.cacheFile)
+  const path = join(realpathSync(cacheDirectory), runtime.cacheFile)
   const stat = lstatSync(path)
   if (stat.isSymbolicLink() || !stat.isFile() || realpathSync(path) !== path) {
     throw new Error(`Bun compile runtime ${runtime.cacheFile} is not a canonical regular file.`)

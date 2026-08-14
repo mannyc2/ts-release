@@ -5,16 +5,14 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   readdirSync,
   realpathSync,
   rmSync
 } from "node:fs"
 import { basename, isAbsolute, join, relative, resolve, sep } from "node:path"
-import { tmpdir } from "node:os"
 import { tarGz, zip, type ArchiveEntry } from "../drivers/archive.js"
-import { secureRead, secureWrite } from "../drivers/workspace.js"
+import { makeCanonicalTemporaryDirectory, secureRead, secureWrite } from "../drivers/workspace.js"
 import type {
   BunCompileRuntimeIdentity,
   CommandOutcome,
@@ -961,7 +959,7 @@ const runtimeIdentity = (
 
 export const prepareRelease = Effect.fn("prepareRelease")(function*(input: PreparationRequest) {
   const sourceRoot = input.context.workspace.toString()
-  const root = yield* attempt(() => mkdtempSync(join(tmpdir(), "ts-release-prepare-")))
+  const root = yield* attempt(() => makeCanonicalTemporaryDirectory("ts-release-prepare-"))
   try {
     const sourceSnapshot = yield* input.materializeSource(input.context, WorkspaceRoot.make(root)).pipe(Effect.mapError(failure))
     const context = stagedContext(input.context, root)

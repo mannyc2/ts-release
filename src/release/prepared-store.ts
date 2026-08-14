@@ -161,8 +161,9 @@ const causeReason = (cause: unknown): string =>
     : String(cause)
 const canonicalDirectory = (directory: string): string => {
   if (!existsSync(directory)) mkdirSync(directory, { recursive: true, mode: 0o700 })
+  if (lstatSync(directory).isSymbolicLink()) fail("Prepared store root must not be a symlink.")
   const real = realpathSync(directory)
-  if (real !== directory) fail("Prepared store root must not be a symlink.")
+  if (!lstatSync(real).isDirectory()) fail("Prepared store root must be a directory.")
   return real
 }
 const syncDirectory = (directory: string): void => {
@@ -220,16 +221,16 @@ export interface CommittedPreparedRelease {
 }
 
 const readBundle = (directory: string): PreparedBundle => {
+  if (lstatSync(directory).isSymbolicLink()) fail("Prepared bundle directory must not be a symlink.")
   const real = realpathSync(directory)
-  if (real !== directory || lstatSync(directory).isSymbolicLink()) fail("Prepared bundle directory must not be a symlink.")
-  const bytes = secureRead(directory, "prepared-release.json").bytes
+  const bytes = secureRead(real, "prepared-release.json").bytes
   const manifest = decodePreparedRelease(bytes)
   if (manifest.kind !== "complete") fail("Prepared store refuses every unknown or partial bundle kind.")
   const manifestDigest = sha256Digest(bytes).hex
-  if (basename(directory) !== manifestDigest) fail("Prepared bundle directory does not match its manifest digest.")
-  const entries = readdirSync(directory, { withFileTypes: true })
+  if (basename(real) !== manifestDigest) fail("Prepared bundle directory does not match its manifest digest.")
+  const entries = readdirSync(real, { withFileTypes: true })
   if (entries.some((entry) => entry.name !== "prepared-release.json" && entry.name !== "blobs")) fail("Prepared bundle contains an unexpected top-level entry.")
-  const blobDirectory = join(directory, "blobs")
+  const blobDirectory = join(real, "blobs")
   if (!existsSync(blobDirectory) || lstatSync(blobDirectory).isSymbolicLink() || !statSync(blobDirectory).isDirectory()) fail("Prepared bundle is missing its real blobs directory.")
   const artifacts = artifactsById(manifest)
   validatePublications(manifest, artifacts)
@@ -241,7 +242,7 @@ const readBundle = (directory: string): PreparedBundle => {
   if (actualBlobs.size !== expectedBlobs.size || [...expectedBlobs].some((blob) => !actualBlobs.has(blob))) fail("Prepared bundle blob set does not match its manifest.")
   const blobs = new Map<string, Uint8Array>()
   for (const artifact of artifacts.values()) {
-    const blob = secureRead(directory, `blobs/${artifact.blob.hex}`).bytes
+    const blob = secureRead(real, `blobs/${artifact.blob.hex}`).bytes
     if (blob.length !== artifact.size || !digestEquals(sha256Digest(blob), artifact.digest)) fail(`Prepared blob ${artifact.id} failed size or digest verification.`)
     blobs.set(artifact.id.toString(), new Uint8Array(blob))
   }

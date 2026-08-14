@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import {
   actionErrorMessage,
@@ -83,7 +83,7 @@ test("release makes one public call and receives the durable reference before it
     release: async (input) => {
       calls += 1
       events.push("release:start")
-      expect(input.workspace).toBe(root)
+      expect(input.workspace).toBe(realpathSync(root))
       await fixture.preparedReference.emit(preparedRef)
       events.push("release:prepared")
       events.push("release:return")

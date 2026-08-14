@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import { createHash } from "node:crypto"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -16,7 +16,7 @@ import {
 const liveRunner = () => Effect.runPromise(makeRunCommand.pipe(Effect.provide(BunServices.layer)))
 
 describe("fail-closed preparation network isolation", () => {
-  test("ordinary commands succeed while TCP, UDP, DNS, and HTTP cannot communicate", async () => {
+  test.skipIf(process.platform !== "linux")("ordinary commands succeed while TCP, UDP, DNS, and HTTP cannot communicate", async () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-network-test-"))
     try {
       const run = await liveRunner()
@@ -74,7 +74,7 @@ describe("fail-closed preparation network isolation", () => {
     }
   }, 20_000)
 
-  test("an unavailable libseccomp filter refuses execution", () => {
+  test.skipIf(process.platform !== "linux")("an unavailable libseccomp filter refuses execution", () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-network-filter-test-"))
     try {
       const source = makeNetworkIsolationHelperSource("libseccomp-ts-release-missing.so.2")
@@ -100,7 +100,7 @@ describe("fail-closed preparation network isolation", () => {
     }
   })
 
-  test("the helper does not pass a non-stdio descriptor to the isolated child", () => {
+  test.skipIf(process.platform !== "linux")("the helper does not pass a non-stdio descriptor to the isolated child", () => {
     const root = mkdtempSync(join(tmpdir(), "ts-release-network-fd-test-"))
     try {
       const helper = join(root, "helper.mjs")
@@ -168,7 +168,7 @@ describe("fail-closed preparation network isolation", () => {
         stdout: "prepared\n"
       })
       expect(readFileSync(join(root, "observed-environment"), "utf8"))
-        .toBe(`${canonicalCache}\nunset\n`)
+        .toBe(`${realpathSync(canonicalCache)}\nunset\n`)
 
       const missingCacheEnvironment = ConfigProvider.layer(ConfigProvider.fromEnv({ env: { PATH: bin } }))
       const missingCache = await Effect.runPromise(run({

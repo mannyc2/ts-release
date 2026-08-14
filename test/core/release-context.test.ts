@@ -139,9 +139,15 @@ describe("verified release context", () => {
       const destination = mkdtempSync(join(tmpdir(), "ts-release-context-unsafe-stage-"))
       try {
         if (kind === "case") {
-          writeFileSync(join(fixture.root, "Case.txt"), "one\n")
-          writeFileSync(join(fixture.root, "case.txt"), "two\n")
-          git(fixture.root, "add", "Case.txt", "case.txt")
+          // Construct both index entries directly so the witness does not depend
+          // on whether the host worktree filesystem is case-sensitive.
+          writeFileSync(join(fixture.root, "Case.txt"), "collision\n")
+          writeFileSync(join(fixture.root, "case.txt"), "collision\n")
+          const blob = git(fixture.root, "hash-object", "-w", "Case.txt").trim()
+          git(fixture.root, "config", "core.ignorecase", "false")
+          git(fixture.root, "update-index", "--add", "--cacheinfo", "100644", blob, "Case.txt")
+          git(fixture.root, "update-index", "--add", "--cacheinfo", "100644", blob, "case.txt")
+          expect(git(fixture.root, "ls-files", "Case.txt", "case.txt").trim().split("\n")).toEqual(["Case.txt", "case.txt"])
         } else {
           symlinkSync("../outside", join(fixture.root, "escape"))
           git(fixture.root, "add", "escape")

@@ -1,4 +1,6 @@
 import * as Effect from "effect/Effect"
+import { realpathSync } from "node:fs"
+import { basename, dirname, join } from "node:path"
 import type { ReleaseApi } from "../../src/api/types.js"
 import type { ObservationReport, ReleaseReport } from "../../src/publication/report.js"
 import {
@@ -71,10 +73,14 @@ export const ioFor = (
   files: Record<string, string> = {}
 ): CliIo & { readonly logs: string[] } => {
   const logs: string[] = []
+  const key = (path: string): string => {
+    try { return join(realpathSync(dirname(path)), basename(path)) } catch { return path }
+  }
+  const values = Object.fromEntries(Object.entries(files).map(([path, value]) => [key(path), value]))
   return {
     logs,
-    read: (path) => files[path] ?? (() => { throw new Error(`missing ${path}`) })(),
-    write: (path, value) => { files[path] = value },
+    read: (path) => values[key(path)] ?? (() => { throw new Error(`missing ${path}`) })(),
+    write: (path, value) => { values[key(path)] = value },
     log: (value) => { logs.push(value) }
   }
 }

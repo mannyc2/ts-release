@@ -1,12 +1,18 @@
 import {
   chmodSync, closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync,
-  mkdirSync, openSync, readFileSync, realpathSync, writeFileSync
+  mkdirSync, mkdtempSync, openSync, readFileSync, realpathSync, writeFileSync
 } from "node:fs"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { contained } from "./contain.js"
 import { DriverError } from "./errors.js"
 
 const fail = (reason: string): DriverError => DriverError.make({ reason, commitment: "before-commit" })
+
+/** Create private scratch beneath the host temp root and return its canonical path.
+ * macOS commonly exposes that root through /var while realpath resolves /private/var. */
+export const makeCanonicalTemporaryDirectory = (prefix: string): string =>
+  realpathSync(mkdtempSync(join(realpathSync(tmpdir()), prefix)))
 
 export const secureRead = (root: string, path: string): { readonly bytes: Uint8Array, readonly inode: number } => {
   let current = root

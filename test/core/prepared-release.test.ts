@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import { existsSync, mkdtempSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { sha256Digest } from "../../src/model/digest.js"
@@ -109,6 +109,33 @@ describe("PreparedReleaseV2 manifest and store", () => {
         reason: expect.stringContaining("not loadable by the local store")
       })
     } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  test("canonicalizes an aliased ancestor while refusing a symlinked store root", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ts-release-prepared-alias-"))
+    const aliasRoot = mkdtempSync(join(tmpdir(), "ts-release-prepared-alias-link-"))
+    try {
+      const { manifest, bytes } = fixture()
+      const ancestorAlias = join(aliasRoot, "ancestor")
+      symlinkSync(root, ancestorAlias, "dir")
+      const aliasedStore = join(ancestorAlias, "prepared")
+      const store = makeLocalPreparedReleaseStore(aliasedStore)
+      const committed = await Effect.runPromise(store.commit(manifest, new Map([["cli", bytes]])))
+      const loaded = await Effect.runPromise(store.load(committed.ref))
+      expect(loaded.directory).toBe(committed.bundle.directory)
+      expect(loaded.manifest).toEqual(manifest)
+
+      const realStore = join(root, "direct-store")
+      mkdirSync(realStore)
+      const directAlias = join(aliasRoot, "direct-store")
+      symlinkSync(realStore, directAlias, "dir")
+      await expect(Effect.runPromise(
+        makeLocalPreparedReleaseStore(directAlias).commit(manifest, new Map([["cli", bytes]]))
+      )).rejects.toMatchObject({ reason: "Prepared store root must not be a symlink." })
+    } finally {
+      rmSync(aliasRoot, { recursive: true, force: true })
       rmSync(root, { recursive: true, force: true })
     }
   })

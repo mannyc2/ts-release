@@ -1,10 +1,18 @@
 # Changelog
 
-## 0.2.0 - pending
+## 0.2.1 - 2026-08-14
 
-This entry describes the intended `0.2.0` product relative to the published
-`0.0.7` release. The candidate is not certified or published yet, and this
-entry is not release authority.
+This release delivers the intended `0.2` product relative to `0.0.7` and
+supersedes the incomplete immutable `v0.2.0` GitHub release.
+
+### Release repair
+
+- Preserve caller-declared HTTP body media types through the Effect transport,
+  so GitHub agent archives retain `application/zip` instead of being rewritten
+  to `application/octet-stream`.
+- Authenticate recovery against the canonical workflow path and `head_branch`
+  fields returned by GitHub's run-attempt API, allowing an emitted immutable
+  prepared reference to be reloaded in a later workflow run.
 
 ### Release lifecycle
 
@@ -71,13 +79,19 @@ entry is not release authority.
   client uses native Node streams; bridge requests never serialize the GitHub
   token. This does not change the installed library or CLI's Node engine.
 - PyPI prebuilt publication is temporarily removed despite being available in
-  `0.0.7`; it is assigned to a post-`0.2.0` provider-capability wave. PyPI
+  `0.0.7`; it is assigned to a post-`0.2.1` provider-capability wave. PyPI
   wrapper wheels are also removed, and will return only after an explicit
   product decision based on native-wheel or cibuildwheel-class user demand.
 - Homebrew tap and Scoop bucket rendering and delivery are temporarily removed
   despite being available in `0.0.7`; they are assigned to a separate catalog
   delivery wave. Old PyPI, Homebrew, Scoop, and generic catalog configurations
   are rejected rather than accepted as no-ops.
-- A third-party publication-adapter SDK is not part of `0.2.0`. Local extension
+- A third-party publication-adapter SDK is not part of `0.2.1`. Local extension
   work must use declared command checks or artifact bytes; downstream effects
   belong in the workflow host after a complete release report.
+
+## 0.2.0 - incomplete (2026-08-14)
+
+The immutable GitHub tag and release were created, but asset publication did
+not complete and npm was not published. Those immutable subjects remain as an
+audit record and are superseded by `0.2.1`; no `0.2.0` subject was rewritten.

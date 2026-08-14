@@ -80,7 +80,8 @@ const runAttemptResponse = (overrides: Partial<GitHubRunAttemptResponse> = {}): 
   id: Number(recoveryContext.runId),
   run_attempt: Number(recoveryContext.runAttempt),
   head_sha: recoveryContext.candidateCommit,
-  path: ".github/workflows/release.yml@main",
+  head_branch: "main",
+  path: ".github/workflows/release.yml",
   repository: { full_name: recoveryContext.repository },
   head_repository: { full_name: recoveryContext.repository },
   ...overrides
@@ -253,8 +254,9 @@ describe("GitHub Actions durable prepared store", () => {
         { name: "run id", response: runAttemptResponse({ id: 1235 }), reason: "run/attempt/repository/head/workflow commit" },
         { name: "run attempt", response: runAttemptResponse({ run_attempt: 3 }), reason: "run/attempt/repository/head/workflow commit" },
         { name: "candidate SHA", response: runAttemptResponse({ head_sha: "e".repeat(40) }), reason: "run/attempt/repository/head/workflow commit" },
-        { name: "workflow path", response: runAttemptResponse({ path: ".github/workflows/other.yml@main" }), reason: "workflow path/ref" },
-        { name: "workflow ref", response: runAttemptResponse({ path: ".github/workflows/release.yml@other" }), reason: "workflow path/ref" },
+        { name: "workflow path", response: runAttemptResponse({ path: ".github/workflows/other.yml" }), reason: "workflow path/ref" },
+        { name: "workflow ref", response: runAttemptResponse({ head_branch: "other" }), reason: "workflow path/ref" },
+        { name: "workflow path with synthetic ref", response: runAttemptResponse({ path: ".github/workflows/release.yml@main" }), reason: "workflow path/ref" },
         {
           name: "repository",
           response: runAttemptResponse({ repository: { full_name: "owner/other" } }),

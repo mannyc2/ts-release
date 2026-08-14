@@ -49,6 +49,7 @@ export interface GitHubRunAttemptResponse {
   readonly id: number
   readonly run_attempt?: number
   readonly head_sha: string
+  readonly head_branch: string | null
   readonly path: string
   readonly repository: { readonly full_name: string }
   readonly head_repository: { readonly full_name: string }
@@ -186,35 +187,30 @@ const canonicalWorkflowIdentity = (workflowRef: string): CanonicalWorkflowIdenti
   return { repository: match[1]!, workflowPath: match[2]!, workflowRef: match[3]! }
 }
 
-const canonicalApiWorkflowPath = (path: string, expected: CanonicalWorkflowIdentity): {
+const canonicalApiWorkflowPath = (
+  path: string,
+  headBranch: string | null,
+  expected: CanonicalWorkflowIdentity
+): {
   readonly workflowPath: string
   readonly workflowRef: string
 } => {
   const withoutRepository = path.startsWith(`${expected.repository}/`)
     ? path.slice(expected.repository.length + 1)
     : path
-  const separator = withoutRepository.lastIndexOf("@")
-  if (separator <= 0 || separator === withoutRepository.length - 1) {
-    throw PreparedStoreError.make({ reason: "GitHub workflow run attempt returned a non-canonical workflow path/ref." })
-  }
-  const workflowPath = withoutRepository.slice(0, separator)
-  const refValue = withoutRepository.slice(separator + 1)
   const expectedShortRef = expected.workflowRef.replace(/^refs\/(?:heads|tags)\//u, "")
-  const workflowRef = refValue === expected.workflowRef || refValue === expectedShortRef
-    ? expected.workflowRef
-    : ""
-  if (!workflowFilePattern.test(workflowPath) ||
-    !/^refs\/(?:heads|tags)\/[A-Za-z0-9][A-Za-z0-9._\/-]*$/u.test(workflowRef)) {
+  if (!workflowFilePattern.test(withoutRepository) || headBranch !== expectedShortRef) {
     throw PreparedStoreError.make({ reason: "GitHub workflow run attempt returned a non-canonical workflow path/ref." })
   }
-  return { workflowPath, workflowRef }
+  return { workflowPath: withoutRepository, workflowRef: expected.workflowRef }
 }
 
 const exactWorkflowRefFromApiPath = (
   path: string,
+  headBranch: string | null,
   expected: CanonicalWorkflowIdentity
 ): string => {
-  const canonical = canonicalApiWorkflowPath(path, expected)
+  const canonical = canonicalApiWorkflowPath(path, headBranch, expected)
   if (canonical.workflowPath !== expected.workflowPath || canonical.workflowRef !== expected.workflowRef) {
     throw PreparedStoreError.make({ reason: "GitHub workflow run attempt failed exact workflow path/ref verification." })
   }
@@ -248,7 +244,7 @@ export const makeGitHubRunAttemptAuthenticator = (
       runId,
       runAttempt: attempt
     })
-    const apiWorkflowRef = exactWorkflowRefFromApiPath(run.path, expected)
+    const apiWorkflowRef = exactWorkflowRefFromApiPath(run.path, run.head_branch, expected)
     if (run.id !== runId || run.run_attempt !== attempt || run.repository.full_name !== current.repository ||
       run.head_repository.full_name !== current.repository || !gitObjectIdPattern.test(run.head_sha) ||
       run.head_sha !== current.candidateCommit || run.head_sha !== current.workflowSha) {

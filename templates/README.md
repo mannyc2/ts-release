@@ -49,7 +49,7 @@ explicit token-mode migration template for non-OIDC hosts; it names a
 credential reference but never contains a credential value.
 
 All public Action templates use the exact intended monorepo coordinate
-`mannyc2/ts-release/apps/ts-release-action@v0.2.0`. Do not switch it to a
+`mannyc2/ts-release/apps/ts-release-action@v0.2.1`. Do not switch it to a
 floating branch. Candidate certification must stop unless the immutable tag
 can exist at the exact result commit before a package README naming it is
 published.

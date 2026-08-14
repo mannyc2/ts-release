@@ -73,7 +73,7 @@ unsupported advertised row, or unexercised claimed host stops certification.
 ## Bootstrap requirement
 
 The packaged README names the immutable Action coordinate
-`mannyc2/ts-release/apps/ts-release-action@v0.2.0`. Consumers must not see that
+`mannyc2/ts-release/apps/ts-release-action@v0.2.1`. Consumers must not see that
 README before the tag exists at exact result commit X. The live-release packet
 therefore needs a proven order that makes the immutable GitHub Action ref
 available before npm publication, or another tested bootstrap with the same

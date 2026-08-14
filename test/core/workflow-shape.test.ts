@@ -211,7 +211,7 @@ test("user templates preserve the same handoff, with the environment gate only o
   const automatic = workflowTemplate("release.yml")
   const reviewed = workflowTemplate("reviewed-release.yml")
   for (const value of [automatic, reviewed]) {
-    expect(value).toContain("mannyc2/ts-release/apps/ts-release-action@v0.2.0")
+    expect(value).toContain("mannyc2/ts-release/apps/ts-release-action@v0.2.1")
     expect(value).not.toContain("__TS_RELEASE_ACTION_REF__")
     expect(value).toContain("persist-credentials: false")
     expect(value).not.toContain("mannyc2/ts-release-action")

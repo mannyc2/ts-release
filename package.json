@@ -1,6 +1,6 @@
 {
   "name": "@mannyc1/ts-release",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "packageManager": "bun@1.3.14",
   "description": "Prepare, publish, observe, and safely resume npm, PyPI, GitHub, Homebrew, and Scoop releases.",

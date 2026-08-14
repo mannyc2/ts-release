@@ -9,15 +9,17 @@ import { makeRunCommand } from "../drivers/process.js"
 import { PublicationHttpError, type HttpRequest, type HttpResponse, type PublicationHttp } from "../publication/http.js"
 import { SourceObserver } from "../release/context.js"
 
+const makeWireRequest = (request: HttpRequest): HttpClientRequest.HttpClientRequest => {
+  const wire = HttpClientRequest.make(request.method)(request.url, request.body === undefined ? {} : {
+    body: HttpBody.uint8Array(typeof request.body === "string"
+      ? new TextEncoder().encode(request.body)
+      : request.body)
+  })
+  return request.headers === undefined ? wire : HttpClientRequest.setHeaders(wire, request.headers)
+}
+
 export const makePublicationHttp = (client: HttpClient.HttpClient): PublicationHttp => ({
-  request: (request: HttpRequest) => HttpClientRequest.make(request.method)(request.url, {
-    ...(request.headers === undefined ? {} : { headers: request.headers }),
-    ...(request.body === undefined ? {} : {
-      body: HttpBody.uint8Array(typeof request.body === "string"
-        ? new TextEncoder().encode(request.body)
-        : request.body)
-    })
-  }).pipe(
+  request: (request: HttpRequest) => makeWireRequest(request).pipe(
     (wire) => client.execute(wire),
     Effect.flatMap((response) => response.arrayBuffer.pipe(Effect.map((body) => ({
       status: response.status,

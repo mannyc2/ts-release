@@ -1,44 +1,55 @@
-# Plan 233 — Corrected release-candidate certificate
+# Plan 233 — 0.2.1 corrected release-candidate certificate
 
-Input-Commit: 3a5b7cef4437c5f59bc547481535ebbc83cf437f
-Result-Commit: 8ae505ae9548a21c951fb8e16a5f918d8e5bc102
+Input-Commit: fd230356e1935bb60e74d2cef3016e6754cc491e
+Result-Commit: a4e79d758529b412629e75367582d03baaa12bf2
 Evidence-Commit: SELF
 Status: ACCEPTED — LOCAL RELEASE CANDIDATE
-Outcome: CLEAN-X MATRIX PASS / COMPLETE BYTES REPRODUCED / ZERO LIVE MUTATION
-Date: 2026-08-13
+Outcome: CLEAN-X MATRIX PASS / COMPLETE BYTES REPRODUCED / REMOTE PREFLIGHT PASS
+Date: 2026-08-14
 
-## Scope and non-authority statement
+## Scope and immutable predecessor
 
-This certificate accepts result commit X as the corrected local release
-candidate. It is not Plan 234 live-release authority. It authorizes no npm or
-GitHub read or write, no tag, release, asset, branch, package, Action ref,
-catalog, PyPI file, or marketplace mutation, and no credential acquisition.
-The invalidated Plan 221 certificate remains invalid and live certificate 222
-remains superseded.
+This certificate accepts result commit X7 as the corrected `0.2.1` release
+candidate. It supersedes the incomplete immutable `v0.2.0` GitHub release at
+X6 without deleting, rewriting, force-moving, or otherwise correcting any
+`0.2.0` subject. At preflight time, npm `@mannyc1/ts-release@0.2.0` remained
+absent.
 
-The clean matrix ran without `NPM_TOKEN`, `GITHUB_TOKEN`, or `GH_TOKEN`.
-`check:self-release-readiness` therefore performed zero network checks and
-truthfully reported both npm and GitHub as `UNVERIFIED`. Normal-registry
-installation, public `v0.2.0` absence/equivalence, provider visibility, OIDC,
-and post-write convergence remain `UNVERIFIED` by this certificate.
+The certificate itself performed no public mutation. It records the local
+candidate matrix, the fresh-runner topology, and read-only absence checks that
+must hold immediately before the separately authorized release dispatch.
 
 ## Evidence topology
 
-- X: `8ae505ae9548a21c951fb8e16a5f918d8e5bc102`
-- X tree: `9552081511e669a2600699fd8ca8b7c4b08e0151`
-- Y: this evidence-only commit (`Evidence-Commit: SELF`)
-- required relation: `Y^ = X`
+- X7: `a4e79d758529b412629e75367582d03baaa12bf2`;
+- X7 tree: `00194b89e1b9539d4b65509496beaf397847bb79`;
+- Y7: this evidence-only commit (`Evidence-Commit: SELF`);
+- required relation: `Y7^ = X7`;
 - required diff: only
-  `docs/release-program/certifications/233-release-candidate.md`
+  `docs/release-program/certifications/233-release-candidate.md`;
 - clean clones:
-  `/tmp/ts-release-plan233-m.nIfklW` and
-  `/tmp/ts-release-plan233-n.yDJnvO`
+  `/tmp/ts-release-x7-cert-a.v6OK7Y/repo` and
+  `/tmp/ts-release-x7-cert-b.tjYOX9/repo`;
+- fresh automatic-runner clone:
+  `/tmp/ts-release-x7-runner.lPwlTX/repo`.
 
-Each clone was created independently with `git clone --no-local`, detached at
-X, and materialized 195 packages using Bun 1.3.14's repository-configured
-hoisted linker plus exact offline/frozen/script-disabled/no-save installation.
-Both were source-clean before the matrix and remained completely clean after
-it; `git status --porcelain` emitted no path.
+Each certification clone was detached at exact X7 and installed the frozen
+lockfile with Bun's hoisted, offline, script-disabled materialization. Both
+clone worktrees remained source-clean after all gates.
+
+## Fixes certified at X7
+
+1. The Effect HTTP adapter now constructs the body before applying explicit
+   request headers. A regression test proves `application/zip`, exact content
+   length, and caller metadata survive to the real `HttpClient` boundary.
+2. Cross-run recovery now authenticates the workflow file from GitHub's
+   canonical `path` field and the exact short ref from `head_branch`. The test
+   fixture matches the live run-attempt response shape, and foreign paths,
+   branches, repositories, runs, attempts, and commits all fail before artifact
+   download.
+3. Every current package, bundle, manifest expectation, public template, and
+   immutable Action example is bound to `0.2.1` / `v0.2.1`. Historical
+   `0.2.0` evidence remains historical.
 
 ## Host and tool identities
 
@@ -46,98 +57,99 @@ it; `git status --porcelain` emitted no path.
 | --- | --- |
 | Host | Linux 6.8.0-101-generic x86_64 GNU/Linux |
 | Bun | 1.3.14; SHA-256 `9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74` |
-| Node | 24.15.0; SHA-256 `d1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c` |
-| npm CLI source | 11.17.0; SHA-256 `8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7` |
-| Effect family | exact `4.0.0-beta.83`, including platform-bun, platform-node, and platform-node-shared |
-| Action bundle | SHA-256 `578f30b8da101187b0fc54dce881a6ae862f5e25ac67dd5b0fa3684565ff2bec` |
+| Workflow Node | 22.22.2; SHA-256 `81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90` |
+| Publisher npm CLI | 11.5.1; SHA-256 `8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7` |
+| Effect family | exact `4.0.0-beta.83` across Effect and all installed platform packages |
+| Action bundle | SHA-256 `742de1ed68b717186a60a4efd0bd5f4c12d502a22ee8fe4c2ee87778a0a2ccdc` |
 
-The Action gate built into a disposable directory, byte-compared that output
-to the tracked bundle, executed the tracked bundle through Bun, and left both
-clone worktrees unchanged.
+The portable consumer matrix used Node 22.22.2 with its bundled npm. The
+publisher-specific provenance source contract was also executed separately
+and passed against exact npm 11.5.1, matching `release.yml` without conflating
+the consumer installer and trusted-publisher boundaries.
 
 ## Prepared result and reproducibility
 
-Both clones independently produced this exact result, and each clone produced
-it twice using a distinct prepared store and private staging root:
+Both clean clones independently produced this exact result twice using
+distinct prepared stores and private staging roots:
 
 - prepared reference:
-  `prepared:local:sha256-d62350c0df19d6614cb75683abe7db496b607c9a5dff9ea320c749eb683474f5`;
+  `prepared:local:sha256-17d7c5edcab094b25513b8e204fbdd6366fa9cb7b6b8d907f2795f026357d70c`;
 - manifest SHA-256:
-  `d62350c0df19d6614cb75683abe7db496b607c9a5dff9ea320c749eb683474f5`;
-- schema: `prepared-release/v2`;
-- source: X and tree `9552081511e669a2600699fd8ca8b7c4b08e0151`;
-- 16 artifacts, one collection, two agent members, and two publication
-  intents;
-- manifests equal, artifact bytes equal, zero differing manifest paths;
+  `17d7c5edcab094b25513b8e204fbdd6366fa9cb7b6b8d907f2795f026357d70c`;
+- source: exact X7 and tree
+  `00194b89e1b9539d4b65509496beaf397847bb79`;
+- 16 artifacts, one collection, two agent members, and two publications;
+- manifests equal, artifact bytes equal, and zero differing manifest paths;
 - classification: `complete-bytes-equal`.
 
-The durable execution basis binds Bun 1.3.14 and exact target-runtime bytes for
-Linux x64, Linux arm64, macOS x64, and macOS arm64. Cross-target cache files
-were copied singly into disposable read-only private caches; Linux x64 was
-bound to the executing Bun SHA-256. The npm pack basis binds npm 11.17.0, its
-executable digest, exact offline flags, and complete redacted protocol output.
+The exact workflow npm 11.5.1 boundary intentionally changes the execution
+basis and produced local manifest digest
+`37c0763381d3d97c00dd8360c4bf5f9d8c5e0157b3f3203e9edfad91e581136d`
+in the fresh-runner topology. That difference is expected, explicit, and
+bound to the npm executable identity.
 
-## Artifact verification
+## Artifact and package verification
 
 Both clone reports agreed on all measurements:
 
 | Target | Executable | tar.gz | zip |
 | --- | ---: | ---: | ---: |
-| linux-x64 | 95,844,480 | 35,999,259 | 95,844,630 |
-| linux-arm64 | 94,939,280 | 35,690,977 | 94,939,434 |
-| darwin-x64 | 70,434,896 | 26,599,294 | 70,435,048 |
-| darwin-arm64 | 64,717,538 | 24,060,349 | 64,717,694 |
+| linux-x64 | 95,963,264 | 36,024,703 | 95,963,414 |
+| linux-arm64 | 95,070,352 | 35,716,183 | 95,070,506 |
+| darwin-x64 | 70,549,584 | 26,623,518 | 70,549,736 |
+| darwin-arm64 | 64,833,122 | 24,085,911 | 64,833,278 |
 
-Total artifact bytes were 774,869,931; unique blob bytes were 774,869,931.
-The verifier decoded matching ELF/Mach-O architectures, inspected every target
-archive, installed the npm tarball offline, ran the Linux native executable,
-ran the Node 24 CLI bundle, ran the composite/Bun Action parser, and validated
+Total and unique artifact bytes were both `776,049,769`. The verifier decoded
+the expected ELF and Mach-O targets, inspected every archive, ran the Linux
+native executable, ran the Node CLI, executed the Action parser, and validated
 both provider-native agent ZIPs.
 
-The exact packed public package contained 418 files, 625,996 compressed bytes,
-and 3,160,362 unpacked bytes. Its offline Bun and npm consumers passed with 23
-Markdown files, five relative links, exact Effect alignment, the Promise API,
-the Node CLI, and durable one- and two-artifact array reloads.
+The exact packed public package contained 462 files, 745,120 compressed bytes,
+and 3,805,917 unpacked bytes. Bun and npm offline consumers passed with 23
+Markdown files, five relative links, exact Effect alignment, the public API,
+the Node CLI, and one- and two-artifact durable reloads.
 
 ## Complete clean-X gate result
 
-The following aggregate ran successfully in both clones:
+Across both clones the candidate passed context, preparation, independent
+complete-byte reproduction, readiness, artifact inspection, correction
+containment, typechecking, import and tree-shaking rules, generated schema and
+documentation, package exports, packed consumers, agents, CLI, and Action
+bundles. The portable suite reported 382 passes, one intentionally skipped
+npm-source check, zero failures, and 2,258 expectations. The skipped
+publisher-source check then passed separately against exact npm 11.5.1 with
+five more expectations, covering all 383 tests. The Action-specific matrix
+reported 19 passes and 90 expectations.
 
-`bun run check:release-candidate`
+## Fresh automatic one-job topology
 
-It covered:
+The runner clone repeated the workflow's exact fresh path:
 
-- exact source context, preparation, independent reproduction, readiness,
-  artifact inspection, and correction containment;
-- versions, five executable capabilities, four retained targets, two recovery
-  profiles, 260 historical paths, 44 field families, all 87 accepted fields,
-  86 executable witnesses, 14 invariants, and import/tree-shaking gates;
-- 348 tests across 61 files, zero failures, and 1,948 expectations;
-- built declarations and JavaScript, seven-command Node CLI, generated schema,
-  five examples plus five templates, README snippets, package exports, and
-  packed consumers;
-- two byte-deterministic provider-native agent archives and disposable native
-  installs;
-- the CLI and composite/Bun Action entrypoints, three Action commands, two
-  outputs, workflow producer authentication, same-run and cross-run recovery,
-  credential confinement, provider protocol goldens, and bounded convergence;
-- unsupported PyPI, Homebrew, Scoop, catalog, Windows, partition, and merge
-  families remaining strict refusals rather than accepted no-ops.
+1. frozen, script-disabled, no-save hoisted install primed the Bun cache;
+2. root `node_modules` was removed and remained absent;
+3. the native Node 22.22.2 Action launcher verified the three pinned Bun
+   1.3.14 cross-target runtimes;
+4. the bundled Action prepared the complete npm-11.5.1 result from exact X7;
+5. the official Actions artifact client validated the artifact name and root;
+6. the proof stopped only when the deliberately invalid Actions credential was
+   parsed, before hosted commit or any provider observation/mutation.
 
-The canonical npm/GitHub protocol transcripts used by the suite are sanitized
-tracked JSONL fixtures. Their global credential denylist and persistence
-sanitizer gates passed. These are contract evidence, not claims about current
-public provider state.
+No hosted prepared reference was emitted. The Action retained only its local
+redacted report reference, proving the automatic topology reaches the native
+artifact boundary without source `node_modules` or hidden dependency state.
 
-## Bootstrap and publication disposition
+## Read-only remote preflight
 
-Prepared publication order is exactly GitHub then npm, so a future authorized
-Plan 234 execution must establish the immutable Action tag/release coordinate
-before npm exposes documentation that references it. The workflow and Action
-protocol tests proved this ordering and recovery contract without contacting a
-public provider.
+Immediately before Y7 was committed:
 
-No publication operation was executed. Plan 234 remains the only live-write
-phase and requires a new exact operator packet and explicit authority bound to
-this accepted X (or a later separately certified candidate). Plan 235 remains
-dormant until a real cross-host partial-preparation requirement exists.
+- `origin/main` was exact X6
+  `fd230356e1935bb60e74d2cef3016e6754cc491e`;
+- `refs/tags/v0.2.1` was absent;
+- the GitHub release lookup for `v0.2.1` returned authoritative `404`;
+- npm lookup for `@mannyc1/ts-release@0.2.1` returned authoritative `E404`;
+- the 100 most recent `release.yml` runs contained no X7 run.
+
+These observations admit one non-force fast-forward of `main` from X6 to X7
+and one fresh `release.yml` dispatch with `candidate_sha=X7` and an empty
+`prepared_ref`. Recovery, if needed, must use only the immutable
+`prepared:gha:` reference emitted by that run.

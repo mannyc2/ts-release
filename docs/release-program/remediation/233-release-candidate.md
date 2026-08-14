@@ -228,7 +228,7 @@ The first accepted live candidate, `e3691f1e0b8e9a2eae688cfe7a3be38083ad22ba`,
 passed the complete local matrix but failed before preparation in GitHub Actions
 run `31753441090`. A fresh runner did not contain Bun's cross-target compile
 runtimes, so the closed preparation boundary correctly refused the attempted
-download. The composite Action now preloads only the exact Bun 1.3.14 runtime
+download. The Action runtime preloader now admits only the exact Bun 1.3.14
 files, verifies their pinned SHA-256 values in a credential-free process, and
 does so only for `release` and `prepare`. The failed run emitted no prepared
 reference and created no tag, release, asset, or npm version; it was not retried.
@@ -246,6 +246,22 @@ also emitted no prepared reference and created no public release subject, so it
 was not retried; a later exact candidate must repeat the fresh-runner topology
 and full clean-clone matrix.
 
+Candidate `48ec3002b6d18ebd24667230b5ecda2c698afe10` passed that
+empty-cache topology and two complete clean-clone matrices, then repeated the
+same preparation successfully in authorized GitHub Actions run `31756937008`.
+It stopped after local durable commit but before Actions-artifact upload because
+the composite shell process did not receive `ACTIONS_RUNTIME_TOKEN`. The
+redacted report uploaded independently, no `prepared:gha:` reference was
+emitted, and read-only observation found no tag, release, asset, or npm version;
+the run was not retried. GitHub runner source makes the missing boundary exact:
+the native JavaScript Action handler injects `ACTIONS_RUNTIME_TOKEN` and
+`ACTIONS_RESULTS_URL`, while the composite handler does not. The Action now
+uses a checked-in Node 24 launcher. It refuses before preparation if either
+artifact credential is absent, launches the Bun runtime preloader without
+credentials, and passes the native Action environment only to the existing Bun
+release bundle. A later candidate must rebuild both checked-in bundles and
+repeat the complete certification matrix.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |
@@ -255,7 +271,7 @@ and full clean-clone matrix.
 | `bun run check:package-exports` | stabilized local PASS | Repeat declarations, built-JavaScript imports, and the external-consumer operation from clean X. |
 | `bun run check:self-release-context` | expected dirty-source refusal | Re-run from clean X. Do not weaken `source.clean`. |
 | `ts-release init --preset bun-npm-github` | local process green; clean X repeat pending | The preset discovers repository, emits explicit auth, strictly inspects the final object, and passed a real temporary-repository process smoke. Repeat with the built candidate CLI on clean X. |
-| Package metadata/changelog | outcome, coordinates, files, and pending changelog corrected; current-worktree local PASS; clean-X repeat OPEN | The root Node engine is `^22.22.2 || ^24.15.0 || >=26.0.0`, matching the authoritative transitive dependency floor. The complete offline consumer gate passed under genuine Node 24.15.0 / npm 11.17.0. Separately repeat the Action's Linux composite command with workflow-installed Bun 1.3.14. |
+| Package metadata/changelog | outcome, coordinates, files, and pending changelog corrected; current-worktree local PASS; clean-X repeat OPEN | The root Node engine is `^22.22.2 || ^24.15.0 || >=26.0.0`, matching the authoritative transitive dependency floor. The complete offline consumer gate passed under genuine Node 24.15.0 / npm 11.17.0. Separately repeat the Action's native Node launcher with workflow-installed Bun 1.3.14. |
 | Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 419 files and is 627,276 compressed bytes / 3,172,117 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
 | Immutable Action bootstrap | `v0.2.0` does not exist | The self-release context/prepared gates now assert GitHub-before-npm order. Run them on clean X and prove the workflow/provider sequence makes the Action coordinate usable before npm exposes its README; source ordering alone is insufficient. |
 
@@ -296,9 +312,9 @@ new exact-X audit.
 - **OPEN:** real-process Node CLI smoke on the only claimed execution host,
   Linux, including preparation/isolated-command paths that require external Bun
   and `libseccomp.so.2`.
-- **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Action declares a Linux
-  composite runtime, every advertised workflow installs Bun 1.3.14 before the
-  Action, and `check:action-bundle` executes the exact Bun entrypoint command.
+- **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Action declares a native Node
+  24 launcher, every advertised workflow installs Bun 1.3.14 before the Action,
+  and `check:action-bundle` executes the exact launcher-to-Bun entrypoint.
 - **LOCAL PASS / CLEAN-X REPEAT REQUIRED:** the Promise consumer against built
   declarations and JavaScript plus the packed Bun and admitted-Node operation
   smokes passed, including exact 1/2-element artifact arrays.
@@ -407,7 +423,7 @@ pre-X figures are implementation feedback, not candidate evidence.
   sandbox DNS failure and rejected network escalation, so that distinct
   normal-registry row is `UNVERIFIED`, not an offline-consumer failure.
 - A clean Linux workflow host must install pinned Bun before every Action
-  invocation and execute the composite Action entrypoint independently of the
+  invocation and execute the native Node launcher independently of the
   installed package's Node engine.
 - `v0.2.0` is absent from the canonical Git remote and npm latest is `0.0.7`.
   This is expected before live release but blocks immutable-reference claims.

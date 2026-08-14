@@ -9,8 +9,8 @@ Date: 2026-08-09
 
 > **Superseded runtime detail (2026-08-12):** The monorepo-subpath identity
 > remains current, but the Node 20 runtime statement below is historical. The
-> current Action declares a Linux composite boundary and runs its checked-in
-> entrypoint with workflow-installed, pinned Bun.
+> current Action declares a native Node 24 launcher boundary and runs its
+> checked-in release entrypoint with workflow-installed, pinned Bun.
 
 ## Decision A — npm package identity
 

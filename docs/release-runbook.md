@@ -24,11 +24,13 @@ npm bytes during Plan 233 candidate certification.
    advertised cross target in the host cache. The process driver copies one
    verified runtime at a time into a disposable read-only cache; self-preparation
    must not download a target runtime.
-   The composite Action performs this host bootstrap before `release` or
-   `prepare`: it downloads only the versioned Bun runtime files in a closed,
-   credential-free environment and verifies their pinned SHA-256 values before
-   the offline preparation boundary starts. `publish` recovery skips bootstrap
-   because it consumes an already-complete durable bundle.
+   The native Node 24 Action launcher performs this host bootstrap before
+   `release` or `prepare`: it downloads only the versioned Bun runtime files in
+   a closed, credential-free child and verifies their pinned SHA-256 values
+   before the offline preparation boundary starts. The runner's private
+   Actions-artifact transport enters only the subsequent Bun release child.
+   `publish` recovery skips bootstrap because it consumes an already-complete
+   durable bundle.
    A fresh GitHub runner must first prime Bun's package cache with the exact
    frozen, script-disabled, no-save, hoisted install and then remove the source
    workspace's root `node_modules` before invoking `release` or `prepare`.
@@ -45,7 +47,7 @@ npm bytes during Plan 233 candidate certification.
    exact runtime admitted by the root package engine. Validate every packaged
    relative link, the Promise API against built declarations and JavaScript,
    and the bundled CLI as a real process. Separately execute the Action's exact
-   Linux composite command after installing its pinned Bun runtime, and prove
+   native Node launcher after installing its pinned Bun runtime, and prove
    every advertised workflow installs Bun before the Action; one claim cannot
    stand in for the other.
 6. Run automatic and environment-gated workflow fixtures against protocol

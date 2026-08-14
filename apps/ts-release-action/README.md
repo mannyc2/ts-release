@@ -35,11 +35,14 @@ GitHub job permissions and supplied tokens are job-scoped capabilities. The
 automatic workflow acquires them lazily, while the environment-gated
 prepare/publish job split provides the stronger host authority boundary.
 
-The Action metadata declares a Linux composite boundary. Each advertised
-workflow installs pinned Bun before invoking the Action, and the composite
-step runs the checked-in `dist/index.js` through that Bun runtime. The Action
-bundle has its own entrypoint smoke gate; installed library and CLI consumers
-still follow the root package engine.
+The Action metadata declares GitHub's native Node 24 handler so the runner
+injects the private Actions-artifact transport only at the Action process
+boundary. The checked-in launcher refuses before preparation if that transport
+is unavailable, launches the Bun runtime preloader with no credentials, and
+then passes the native Action environment to the checked-in Bun `dist/index.js`
+bundle. Each advertised workflow installs pinned Bun before invoking it. Both
+checked-in bundles have disposable rebuild and entrypoint gates; installed
+library and CLI consumers still follow the root package engine.
 
 ```sh
 bun run --cwd apps/ts-release-action check

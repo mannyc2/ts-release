@@ -230,16 +230,17 @@ the release-candidate matrix must exercise every claimed execution host.
 | Local preparation | Bun compilation, prebuilt imports, command checks/artifacts, archives, and checksums are retained; final support requires the generated capability and clean-candidate gates to agree. |
 | Remote publication | npm, prebuilt PyPI distributions, GitHub Releases, and typed Homebrew/Scoop catalog Git delivery are installed. npm uses explicit trusted-publishing or token authentication; PyPI token writes require a host-supplied shared terminal claim store, and its trusted-publishing strategy is external-host-owned. |
 | Correction | npm and GitHub authored proposals are exact-bound; PyPI yanking is observation-only; catalog Git installs exact paired SemVer-forward correction. |
-| Execution hosts | Linux is the only installed execution host. The checked-in Action is a Linux workflow boundary: its composite step requires Bash and a workflow-installed, pinned Bun runtime. macOS and Windows are not ts-release execution hosts. |
+| Execution hosts | Linux is the only installed execution host. The checked-in Action is a native Node 24 launcher around a workflow-installed, pinned Bun runtime. macOS and Windows are not ts-release execution hosts. |
 | Artifact targets | The Bun builder advertises Linux and macOS x64/arm64 targets. macOS binaries are cross-compiled artifacts, not host-execution evidence. The self-release does not distribute a Windows ts-release binary. |
 | Native tools | Linux preparation requires an external Bun executable and `libseccomp.so.2`; network-denied commands record both identities. WSL, when used, is Linux. A standalone CLI binary is not a self-contained replacement for these tools. |
 
 Installed Node consumers must satisfy the package engine
 `^22.22.2 || ^24.15.0 || >=26.0.0`; Bun consumers require Bun 1.3.14 or newer.
-The checked-in Action is a Linux/Bun composite Action. Every advertised
-workflow installs Bun 1.3.14 before invoking it, and the composite step runs
-the checked-in `dist/index.js` through that Bun runtime. The Action does not
-change the Node engine of the installed library or CLI package.
+The checked-in Action uses GitHub's native Node 24 Action handler so the runner
+can inject its Actions-artifact transport credentials. Its tiny checked-in
+launcher passes no credentials to the Bun 1.3.14 runtime preloader, then runs
+the checked-in `dist/index.js` through the workflow-installed Bun runtime. The
+Action does not change the Node engine of the installed library or CLI package.
 
 The current source tree is not a release certificate. A published support
 claim exists only after the clean-candidate evidence records all required

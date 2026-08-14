@@ -10,6 +10,8 @@ import { exit } from "node:process"
 const root = join(import.meta.dir, "..")
 export const actionBundleEntryPath = join(root, "apps", "ts-release-action", "src", "index.ts")
 export const actionBundlePath = join(root, "apps", "ts-release-action", "dist", "index.js")
+export const actionLauncherEntryPath = join(root, "apps", "ts-release-action", "src", "launcher-main.ts")
+export const actionLauncherPath = join(root, "apps", "ts-release-action", "dist", "launcher.cjs")
 
 export const buildActionBundle = async (outputPath: string = actionBundlePath): Promise<void> => {
   const built = await Bun.build({
@@ -29,10 +31,30 @@ export const buildActionBundle = async (outputPath: string = actionBundlePath): 
   writeFileSync(outputPath, canonical)
 }
 
+export const buildActionLauncher = async (outputPath: string = actionLauncherPath): Promise<void> => {
+  const built = await Bun.build({
+    entrypoints: [actionLauncherEntryPath],
+    target: "node",
+    format: "cjs",
+    minify: true
+  })
+  if (!built.success || built.outputs[0] === undefined) {
+    throw new Error([
+      "Action launcher build failed.",
+      ...built.logs.map((entry) => String(entry))
+    ].join("\n"))
+  }
+  const canonical = (await built.outputs[0].text()).replace(/[ \t]+$/gmu, "")
+  mkdirSync(dirname(outputPath), { recursive: true })
+  writeFileSync(outputPath, canonical)
+}
+
 if (import.meta.main) {
   try {
     await buildActionBundle()
+    await buildActionLauncher()
     console.log(`Built ${relative(root, actionBundlePath)} from ${relative(root, actionBundleEntryPath)}.`)
+    console.log(`Built ${relative(root, actionLauncherPath)} from ${relative(root, actionLauncherEntryPath)}.`)
   } catch (cause) {
     console.error(cause instanceof Error ? cause.message : String(cause))
     exit(1)

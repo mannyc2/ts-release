@@ -115,7 +115,7 @@ const expectBunBeforeEveryActionInvocation = (value: string): void => {
       if (typeof step.uses !== "string" || !step.uses.includes("ts-release-action")) continue
       expect(
         steps.slice(0, index).some((candidate) => candidate.uses === "oven-sh/setup-bun@v2"),
-        `${jobName} must install Bun before invoking the composite ts-release Action.`
+        `${jobName} must install Bun before invoking the native ts-release Action.`
       ).toBe(true)
     }
   }

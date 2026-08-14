@@ -48,10 +48,9 @@ test("Action metadata exposes only release, prepare, publish and two reference o
   expect(actionOutputs).toEqual(["prepared-ref", "report-ref"])
   expect(sectionKeys(manifest, "inputs", "outputs")).toEqual(actionInputs)
   expect(sectionKeys(manifest, "outputs", "runs")).toEqual(actionOutputs)
-  expect(manifest).toContain("inputs.command != 'publish'")
-  expect(manifest).toContain("preload-bun-compile-runtimes.ts")
-  expect(manifest).toContain("env -i")
-  expect(manifest).toContain("bun --no-env-file --no-install")
+  expect(manifest).toContain("using: node24")
+  expect(manifest).toContain("main: dist/launcher.cjs")
+  expect(manifest).not.toMatch(/\b(?:steps|shell|run):/u)
   expect(manifest).not.toMatch(/\b(?:ship|inspect|correct|status|prepared_path|report_path|approval|reviewer)\b/iu)
 })
 

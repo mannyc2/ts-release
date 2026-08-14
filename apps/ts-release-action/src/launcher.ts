@@ -30,10 +30,12 @@ const required = (environment: ActionLauncherEnvironment, name: string): string 
 
 export const runActionLauncher = (input: {
   readonly actionDirectory: string
+  readonly nodeExecutable: string
   readonly environment: ActionLauncherEnvironment
   readonly spawn?: ActionLauncherSpawn
 }): number => {
   if (!isAbsolute(input.actionDirectory)) throw new Error("Native Action directory must be absolute.")
+  if (!isAbsolute(input.nodeExecutable)) throw new Error("Native Action Node executable must be absolute.")
   const spawn = input.spawn ?? defaultSpawn
   const command = required(input.environment, "INPUT_COMMAND")
   const path = required(input.environment, "PATH")
@@ -62,6 +64,10 @@ export const runActionLauncher = (input: {
   return spawn({
     executable: "bun",
     argv: [join(input.actionDirectory, "dist", "index.js")],
-    environment: input.environment
+    environment: {
+      ...input.environment,
+      TS_RELEASE_ACTION_NODE: input.nodeExecutable,
+      TS_RELEASE_ARTIFACT_BRIDGE: join(input.actionDirectory, "dist", "artifact-bridge.cjs")
+    }
   })
 }

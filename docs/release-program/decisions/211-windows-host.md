@@ -10,8 +10,8 @@ Date: 2026-08-09
 > **Superseded Action-runtime detail (2026-08-12):** The target-only Windows
 > decision remains current. The Node 20 Action verification below is historical;
 > the current Action is a native Node 24 launcher around workflow-installed,
-> pinned Bun. Installed library and CLI macOS evidence remains a separate host
-> row.
+> pinned Bun, with a native Node 24 bridge for hosted artifact transfer.
+> Installed library and CLI macOS evidence remains a separate host row.
 
 ## Decision
 

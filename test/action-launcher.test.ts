@@ -6,6 +6,7 @@ import {
 } from "../apps/ts-release-action/src/launcher.js"
 
 const root = "/tmp/ts-release-action-fixture"
+const node = "/fixture/node"
 const environment = (command: string): Record<string, string> => ({
   PATH: "/fixture/bin",
   HOME: "/fixture/home",
@@ -23,6 +24,7 @@ test("native Action launcher confines runner credentials to the Bun release chil
   const source = environment("release")
   expect(runActionLauncher({
     actionDirectory: root,
+    nodeExecutable: node,
     environment: source,
     spawn: (input) => { calls.push(input); return 0 }
   })).toBe(0)
@@ -38,7 +40,11 @@ test("native Action launcher confines runner credentials to the Bun release chil
   expect(calls[1]).toEqual({
     executable: "bun",
     argv: [join(root, "dist", "index.js")],
-    environment: source
+    environment: {
+      ...source,
+      TS_RELEASE_ACTION_NODE: node,
+      TS_RELEASE_ARTIFACT_BRIDGE: join(root, "dist", "artifact-bridge.cjs")
+    }
   })
   expect(JSON.stringify(calls[0])).not.toContain("sentinel")
 })
@@ -47,6 +53,7 @@ test("native Action launcher skips preload for publish and stops on preload fail
   const publishCalls: ActionLauncherSpawnInput[] = []
   expect(runActionLauncher({
     actionDirectory: root,
+    nodeExecutable: node,
     environment: environment("publish"),
     spawn: (input) => { publishCalls.push(input); return 0 }
   })).toBe(0)
@@ -56,6 +63,7 @@ test("native Action launcher skips preload for publish and stops on preload fail
   const failedCalls: ActionLauncherSpawnInput[] = []
   expect(runActionLauncher({
     actionDirectory: root,
+    nodeExecutable: node,
     environment: environment("prepare"),
     spawn: (input) => { failedCalls.push(input); return 23 }
   })).toBe(23)
@@ -69,6 +77,7 @@ test("native Action launcher refuses before preparation without runner artifact 
     let calls = 0
     expect(() => runActionLauncher({
       actionDirectory: root,
+      nodeExecutable: node,
       environment: selected,
       spawn: () => { calls += 1; return 0 }
     })).toThrow(`Native Action launcher requires ${name}.`)

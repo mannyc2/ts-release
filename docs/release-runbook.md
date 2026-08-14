@@ -28,7 +28,11 @@ npm bytes during Plan 233 candidate certification.
    `release` or `prepare`: it downloads only the versioned Bun runtime files in
    a closed, credential-free child and verifies their pinned SHA-256 values
    before the offline preparation boundary starts. The runner's private
-   Actions-artifact transport enters only the subsequent Bun release child.
+   Actions-artifact transport enters only the subsequent Bun release child,
+   which delegates artifact upload/download to the checked-in native Node 24
+   bridge. The bridge request contains paths and public coordinates but never
+   serializes `GITHUB_TOKEN`; cross-run authority is reconstructed only at the
+   Node artifact sink.
    `publish` recovery skips bootstrap because it consumes an already-complete
    durable bundle.
    A fresh GitHub runner must first prime Bun's package cache with the exact
@@ -38,7 +42,9 @@ npm bytes during Plan 233 candidate certification.
    dependency inode with the source workspace. Recovery and publish-only jobs
    do not install workspace dependencies.
 3. Run the complete release-candidate gate and every public-entrypoint smoke
-   matrix. A skipped execution host is removed from the support claim.
+   matrix. A skipped execution host is removed from the support claim. Rebuild
+   and byte-compare the Bun release bundle, native launcher, and native
+   artifact bridge.
 4. Prepare the self-release independently twice. Verify exact-commit
    materialization, every manifest/blob, agent bundle, npm tarball, archive,
    checksum, and target file format. Record whether complete bytes reproduce;

@@ -12,6 +12,8 @@ export const actionBundleEntryPath = join(root, "apps", "ts-release-action", "sr
 export const actionBundlePath = join(root, "apps", "ts-release-action", "dist", "index.js")
 export const actionLauncherEntryPath = join(root, "apps", "ts-release-action", "src", "launcher-main.ts")
 export const actionLauncherPath = join(root, "apps", "ts-release-action", "dist", "launcher.cjs")
+export const actionArtifactBridgeEntryPath = join(root, "apps", "ts-release-action", "src", "artifact-bridge-main.ts")
+export const actionArtifactBridgePath = join(root, "apps", "ts-release-action", "dist", "artifact-bridge.cjs")
 
 export const buildActionBundle = async (outputPath: string = actionBundlePath): Promise<void> => {
   const built = await Bun.build({
@@ -49,12 +51,32 @@ export const buildActionLauncher = async (outputPath: string = actionLauncherPat
   writeFileSync(outputPath, canonical)
 }
 
+export const buildActionArtifactBridge = async (outputPath: string = actionArtifactBridgePath): Promise<void> => {
+  const built = await Bun.build({
+    entrypoints: [actionArtifactBridgeEntryPath],
+    target: "node",
+    format: "cjs",
+    minify: true
+  })
+  if (!built.success || built.outputs[0] === undefined) {
+    throw new Error([
+      "Action artifact bridge build failed.",
+      ...built.logs.map((entry) => String(entry))
+    ].join("\n"))
+  }
+  const canonical = (await built.outputs[0].text()).replace(/[ \t]+$/gmu, "")
+  mkdirSync(dirname(outputPath), { recursive: true })
+  writeFileSync(outputPath, canonical)
+}
+
 if (import.meta.main) {
   try {
     await buildActionBundle()
     await buildActionLauncher()
+    await buildActionArtifactBridge()
     console.log(`Built ${relative(root, actionBundlePath)} from ${relative(root, actionBundleEntryPath)}.`)
     console.log(`Built ${relative(root, actionLauncherPath)} from ${relative(root, actionLauncherEntryPath)}.`)
+    console.log(`Built ${relative(root, actionArtifactBridgePath)} from ${relative(root, actionArtifactBridgeEntryPath)}.`)
   } catch (cause) {
     console.error(cause instanceof Error ? cause.message : String(cause))
     exit(1)

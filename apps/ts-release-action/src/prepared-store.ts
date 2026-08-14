@@ -1,4 +1,3 @@
-import artifactClient, { type ArtifactClient } from "@actions/artifact"
 import { getOctokit } from "@actions/github"
 import * as Effect from "effect/Effect"
 import {
@@ -16,9 +15,11 @@ import {
   verifyPreparedStoreProvenance,
   type PreparedReleaseStoreShape
 } from "../../../src/release/prepared-store.js"
+import type { ActionArtifactFindBy, ActionArtifactTransport } from "./artifact-client.js"
+export { makeActionsArtifactTransport } from "./artifact-client.js"
+export type { ActionArtifactFindBy, ActionArtifactTransport } from "./artifact-client.js"
 
 const artifactUploadDigestPattern = /^[a-f0-9]{64}$/u
-const artifactLookupDigestPattern = /^sha256:[a-f0-9]{64}$/u
 const gitObjectIdPattern = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u
 const positiveDecimalPattern = /^[1-9][0-9]*$/u
 const workflowFilePattern = /^\.github\/workflows\/[A-Za-z0-9][A-Za-z0-9_.-]*\.ya?ml$/u
@@ -35,13 +36,6 @@ export interface ActionProducerContext {
 export type ActionEnvironment = Readonly<Record<string, string | undefined>>
 
 type GitHubActionsPreparedReleaseRef = Extract<CompletePreparedReleaseRef, { readonly scheme: "gha" }>
-
-export interface ActionArtifactFindBy {
-  readonly token: string
-  readonly workflowRunId: string
-  readonly repositoryOwner: string
-  readonly repositoryName: string
-}
 
 export interface ActionRunAttemptEvidence {
   readonly repository: string
@@ -107,19 +101,6 @@ export const actionProducerContextFromEnvironment = (
   return { repository, workflowRef, workflowSha, runId, runAttempt, candidateCommit }
 }
 
-export interface ActionArtifactTransport {
-  readonly upload: (input: {
-    readonly name: string
-    readonly files: ReadonlyArray<string>
-    readonly rootDirectory: string
-  }) => Promise<{ readonly id?: number, readonly digest?: string }>
-  readonly download: (input: {
-    readonly name: string
-    readonly destination: string
-    readonly findBy?: ActionArtifactFindBy
-  }) => Promise<{ readonly path?: string, readonly digestMismatch?: boolean }>
-}
-
 const positiveSafeInteger = (value: string, field: string): number => {
   if (!positiveDecimalPattern.test(value)) {
     throw PreparedStoreError.make({ reason: `${field} must be a canonical positive decimal string.` })
@@ -130,38 +111,6 @@ const positiveSafeInteger = (value: string, field: string): number => {
   }
   return parsed
 }
-
-export const makeActionsArtifactTransport = (
-  client: ArtifactClient = artifactClient
-): ActionArtifactTransport => ({
-  upload: ({ name, files, rootDirectory }) => client.uploadArtifact(
-    name, [...files], rootDirectory, { compressionLevel: 0 }
-  ),
-  download: async ({ name, destination, findBy }) => {
-    const options = findBy === undefined ? undefined : {
-      findBy: {
-        token: findBy.token,
-        workflowRunId: positiveSafeInteger(findBy.workflowRunId, "prepared reference run id"),
-        repositoryOwner: findBy.repositoryOwner,
-        repositoryName: findBy.repositoryName
-      }
-    }
-    const found = await client.getArtifact(name, options)
-    if (found.artifact.name !== name || !Number.isSafeInteger(found.artifact.id) || found.artifact.id <= 0 ||
-      found.artifact.digest === undefined || !artifactLookupDigestPattern.test(found.artifact.digest)) {
-      throw PreparedStoreError.make({ reason: "Actions artifact lookup returned non-canonical artifact identity metadata." })
-    }
-    const downloaded = await client.downloadArtifact(found.artifact.id, {
-      path: destination,
-      expectedHash: found.artifact.digest,
-      ...options
-    })
-    return {
-      ...(downloaded.downloadPath === undefined ? {} : { path: downloaded.downloadPath }),
-      ...(downloaded.digestMismatch === undefined ? {} : { digestMismatch: downloaded.digestMismatch })
-    }
-  }
-})
 
 interface ProducerRecord extends ActionProducerContext {
   readonly schemaVersion: "ts-release-action-producer/v1"

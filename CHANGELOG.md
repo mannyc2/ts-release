@@ -66,8 +66,10 @@ entry is not release authority.
   `^22.22.2 || ^24.15.0 || >=26.0.0`. The checked-in GitHub Action is now a
   native Node 24 launcher around a Linux/Bun boundary: advertised workflows
   install pinned Bun, the runtime preloader receives no credentials, and the
-  Bun release child receives the runner's Actions-artifact transport. This
-  does not change the installed library or CLI's Node engine.
+  Bun release child receives the runner's Actions-artifact transport. Artifact
+  upload/download is executed by a checked-in Node 24 bridge so the official
+  client uses native Node streams; bridge requests never serialize the GitHub
+  token. This does not change the installed library or CLI's Node engine.
 - PyPI prebuilt publication is temporarily removed despite being available in
   `0.0.7`; it is assigned to a post-`0.2.0` provider-capability wave. PyPI
   wrapper wheels are also removed, and will return only after an explicit

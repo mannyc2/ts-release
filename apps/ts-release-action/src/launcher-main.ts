@@ -4,6 +4,7 @@ import { runActionLauncher } from "./launcher.js"
 try {
   process.exitCode = runActionLauncher({
     actionDirectory: join(dirname(process.argv[1] ?? ""), ".."),
+    nodeExecutable: process.execPath,
     environment: process.env
   })
 } catch (cause) {

@@ -1,12 +1,16 @@
 // The Action is a thin native Node launcher around the Linux/Bun boundary. Its
-// gate checks the manifest, compares both checked-in bundles to disposable
+// gate checks the manifest, compares all three checked-in bundles to disposable
 // canonical builds, and probes the exact native launcher command.
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { cwd, exit } from "node:process"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { actionCommands, actionInputs, actionOutputs } from "../apps/ts-release-action/src/commands.js"
-import { buildActionBundle, buildActionLauncher } from "./build-action-bundle.js"
+import {
+  buildActionArtifactBridge,
+  buildActionBundle,
+  buildActionLauncher
+} from "./build-action-bundle.js"
 
 const root = cwd()
 const manifest = readFileSync(join(root, "apps/ts-release-action/action.yml"), "utf8")
@@ -25,14 +29,18 @@ try {
   }
   const checkedBundle = join(root, "apps/ts-release-action/dist/index.js")
   const checkedLauncher = join(root, "apps/ts-release-action/dist/launcher.cjs")
+  const checkedBridge = join(root, "apps/ts-release-action/dist/artifact-bridge.cjs")
   if (!existsSync(checkedBundle)) throw new Error("The checked-in Action bundle is missing.")
   if (!existsSync(checkedLauncher)) throw new Error("The checked-in Action launcher is missing.")
+  if (!existsSync(checkedBridge)) throw new Error("The checked-in Action artifact bridge is missing.")
   const scratch = mkdtempSync(join(tmpdir(), "ts-release-action-bundle-"))
   try {
     const generatedBundle = join(scratch, "index.js")
     const generatedLauncher = join(scratch, "launcher.cjs")
+    const generatedBridge = join(scratch, "artifact-bridge.cjs")
     await buildActionBundle(generatedBundle)
     await buildActionLauncher(generatedLauncher)
+    await buildActionArtifactBridge(generatedBridge)
     const checkedBytes = readFileSync(checkedBundle)
     const generatedBytes = readFileSync(generatedBundle)
     if (checkedBytes.length !== generatedBytes.length ||
@@ -48,8 +56,31 @@ try {
     if (checkedLauncherBytes.toString("utf8").includes(root)) {
       throw new Error("The checked-in Action launcher retains its build-workspace path.")
     }
+    const checkedBridgeBytes = readFileSync(checkedBridge)
+    const generatedBridgeBytes = readFileSync(generatedBridge)
+    if (checkedBridgeBytes.length !== generatedBridgeBytes.length ||
+        checkedBridgeBytes.some((byte, index) => byte !== generatedBridgeBytes[index])) {
+      throw new Error("The checked-in Action artifact bridge does not match a fresh canonical build.")
+    }
+    if (checkedBridgeBytes.toString("utf8").includes(root)) {
+      throw new Error("The checked-in Action artifact bridge retains its build-workspace path.")
+    }
   } finally {
     rmSync(scratch, { recursive: true, force: true })
+  }
+  const bridgeProbeRoot = mkdtempSync(join(tmpdir(), "ts-release-action-bridge-probe-"))
+  try {
+    const request = join(bridgeProbeRoot, "request.json")
+    const response = join(bridgeProbeRoot, "response.json")
+    writeFileSync(request, '{"operation":"unknown"}\n')
+    const bridgeProbe = Bun.spawnSync([
+      process.env.TS_RELEASE_NODE_BIN ?? "node", checkedBridge, request, response
+    ], { cwd: root, stdout: "pipe", stderr: "pipe", env: process.env })
+    if (bridgeProbe.exitCode === 0 || !readFileSync(response, "utf8").includes("unknown operation")) {
+      throw new Error("Node did not execute the checked-in artifact bridge protocol.")
+    }
+  } finally {
+    rmSync(bridgeProbeRoot, { recursive: true, force: true })
   }
   const probe = Bun.spawnSync([process.env.TS_RELEASE_NODE_BIN ?? "node", checkedLauncher], {
     cwd: root, stdout: "pipe", stderr: "pipe",

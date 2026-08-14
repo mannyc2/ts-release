@@ -262,6 +262,28 @@ credentials, and passes the native Action environment only to the existing Bun
 release bundle. A later candidate must rebuild both checked-in bundles and
 repeat the complete certification matrix.
 
+Candidate `b64758a18e10246f2d9ec5420d9374f53f795aaf` then passed two
+complete clean-clone matrices and crossed that native runner boundary in the
+single authorized GitHub Actions run `31759373097`. Local preparation
+completed and the Actions client created upload intent for
+`ts-release-prepared-1-46db6332c4641df83642fd4570c5533ce0fab8327f52476735750ee9365ee0a8.zip`.
+The upload produced zero progress for the client's five-minute watchdog and
+failed with `Upload progress stalled.` No prepared artifact or
+`prepared:gha:` reference was committed, the redacted report was retained as
+artifact `9204207502`, and read-only observation found no tag, release, asset,
+or npm version. The run was not retried.
+
+That run exposed a second host boundary: `@actions/artifact` and its Azure
+stream client were still executing inside Bun. The corrected Action keeps
+preparation and provider coordination in Bun but executes artifact upload and
+download through a separately bundled Node 24 bridge. The native launcher
+binds the absolute runner Node executable and bridge path into the Bun child;
+bridge requests contain only paths and public repository/run coordinates, not
+`GITHUB_TOKEN`. Cross-run authority is reconstructed at the Node sink and the
+existing producer/run/digest verification remains unchanged. A later
+candidate must rebuild all three checked-in bundles and repeat the complete
+certification and fresh-runner matrices.
+
 ## Current failing or open gates
 
 | Gate | Current disposition | Required closure |
@@ -272,7 +294,7 @@ repeat the complete certification matrix.
 | `bun run check:self-release-context` | expected dirty-source refusal | Re-run from clean X. Do not weaken `source.clean`. |
 | `ts-release init --preset bun-npm-github` | local process green; clean X repeat pending | The preset discovers repository, emits explicit auth, strictly inspects the final object, and passed a real temporary-repository process smoke. Repeat with the built candidate CLI on clean X. |
 | Package metadata/changelog | outcome, coordinates, files, and pending changelog corrected; current-worktree local PASS; clean-X repeat OPEN | The root Node engine is `^22.22.2 || ^24.15.0 || >=26.0.0`, matching the authoritative transitive dependency floor. The complete offline consumer gate passed under genuine Node 24.15.0 / npm 11.17.0. Separately repeat the Action's native Node launcher with workflow-installed Bun 1.3.14. |
-| Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 419 files and is 627,276 compressed bytes / 3,172,117 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
+| Packed package | final inventory and admitted-Node consumer matrix PASS; clean-X/normal-registry rows OPEN | The current npm 11.17.0 dry-run tarball contains 463 files and is 745,959 compressed bytes / 3,816,656 unpacked bytes. Offline Bun/npm installs, exact Effect alignment, Promise API, Node CLI inspection, and 1/2-artifact bundle reloads passed under Node 24.15.0. Repeat the matrix from X. A normal-registry install remains a separate `UNVERIFIED` row. |
 | Immutable Action bootstrap | `v0.2.0` does not exist | The self-release context/prepared gates now assert GitHub-before-npm order. Run them on clean X and prove the workflow/provider sequence makes the Action coordinate usable before npm exposes its README; source ordering alone is insufficient. |
 
 The package `files` list excludes `docs/`, while `README.md`, `SPEC.md`,

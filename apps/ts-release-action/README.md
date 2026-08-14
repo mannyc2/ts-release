@@ -40,7 +40,10 @@ injects the private Actions-artifact transport only at the Action process
 boundary. The checked-in launcher refuses before preparation if that transport
 is unavailable, launches the Bun runtime preloader with no credentials, and
 then passes the native Action environment to the checked-in Bun `dist/index.js`
-bundle. Each advertised workflow installs pinned Bun before invoking it. Both
+bundle. The Bun release process delegates only Actions-artifact upload and
+download to the checked-in Node 24 bridge; cross-run tokens are reconstructed
+at that Node sink and are never serialized into its request file. Each
+advertised workflow installs pinned Bun before invoking it. All three
 checked-in bundles have disposable rebuild and entrypoint gates; installed
 library and CLI consumers still follow the root package engine.
 

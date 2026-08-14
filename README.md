@@ -239,8 +239,11 @@ Installed Node consumers must satisfy the package engine
 The checked-in Action uses GitHub's native Node 24 Action handler so the runner
 can inject its Actions-artifact transport credentials. Its tiny checked-in
 launcher passes no credentials to the Bun 1.3.14 runtime preloader, then runs
-the checked-in `dist/index.js` through the workflow-installed Bun runtime. The
-Action does not change the Node engine of the installed library or CLI package.
+the checked-in `dist/index.js` through the workflow-installed Bun runtime.
+Preparation stays in Bun, while every Actions-artifact upload or download is
+delegated to the checked-in Node 24 bridge so the official artifact client runs
+on its native stream implementation. The Action does not change the Node
+engine of the installed library or CLI package.
 
 The current source tree is not a release certificate. A published support
 claim exists only after the clean-candidate evidence records all required

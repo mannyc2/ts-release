@@ -14,10 +14,10 @@ import {
 } from "./commands.js"
 import {
   actionProducerContextFromEnvironment,
-  makeActionsArtifactTransport,
   makeActionPreparedReleaseStore,
   makeGitHubRunAttemptAuthenticator
 } from "./prepared-store.js"
+import { makeNodeArtifactBridgeTransport } from "./artifact-bridge.js"
 
 const summarize = async (message: string): Promise<void> => {
   await core.summary.addRaw(`${message}\n`).write()
@@ -39,7 +39,11 @@ try {
   const store = makeActionPreparedReleaseStore({
     workspace,
     context: producer,
-    artifacts: makeActionsArtifactTransport(),
+    artifacts: makeNodeArtifactBridgeTransport({
+      nodeExecutable: process.env.TS_RELEASE_ACTION_NODE ?? "",
+      bridgePath: process.env.TS_RELEASE_ARTIFACT_BRIDGE ?? "",
+      environment: process.env
+    }),
     ...(actionToken === undefined || actionToken.length === 0 ? {} : { token: actionToken }),
     runAttempts: makeGitHubRunAttemptAuthenticator(),
     onCommit: async (reference) => {

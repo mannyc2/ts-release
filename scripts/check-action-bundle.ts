@@ -7,6 +7,7 @@ import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { actionCommands, actionInputs, actionOutputs } from "../apps/ts-release-action/src/commands.js"
 import { unsupportedExecutionHost } from "../src/platform/host-support.js"
+import { checkPrepackedActionConsumer } from "./lib/prepacked-action-consumer.js"
 import {
   buildActionArtifactBridge,
   buildActionBundle,
@@ -106,7 +107,14 @@ try {
   if (probe.exitCode === 0 || !probeOutput.includes(expectedProbeDiagnostic)) {
     throw new Error("Node did not execute the Bun Action entry through the declared native launcher boundary.")
   }
+  const prepacked = checkPrepackedActionConsumer({
+    actionBundle: checkedBundle,
+    ...(process.env.TS_RELEASE_NODE_BIN === undefined
+      ? {}
+      : { nodeExecutable: process.env.TS_RELEASE_NODE_BIN })
+  })
   console.log(`Action bundle exposes ${actionCommands.length} commands and ${actionOutputs.length} outputs.`)
+  console.log(`Prepacked Action consumer: ${JSON.stringify(prepacked)}`)
 } catch (cause) {
   console.error(cause instanceof Error ? cause.message : String(cause))
   exit(1)

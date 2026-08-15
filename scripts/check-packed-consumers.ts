@@ -1,6 +1,7 @@
 import * as BunServices from "@effect/platform-bun/BunServices"
 import * as Effect from "effect/Effect"
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -11,6 +12,7 @@ import {
 import { dirname, join, posix, resolve } from "node:path"
 import { exit } from "node:process"
 import semver from "semver"
+import { sha256Digest } from "../src/model/digest.js"
 import { unsupportedExecutionHost } from "../src/platform/host-support.js"
 import {
   makeSystemScratchDirectory,
@@ -50,6 +52,7 @@ interface PackageManifest {
 interface BunSmokeResult {
   readonly references: ReadonlyArray<string>
   readonly artifactCounts: ReadonlyArray<number>
+  readonly publicationCounts: ReadonlyArray<number>
 }
 
 interface NodeSmokeResult {
@@ -261,6 +264,89 @@ const createWorkspace = (path: string, artifactCount: number): void => {
   ], path)
 }
 
+const prepackedCandidates = [
+  { id: "q-core", packageName: "effect-build" },
+  { id: "a-bun", packageName: "effect-build-bun" },
+  { id: "z-deno", packageName: "effect-build-deno" },
+  { id: "b-esbuild", packageName: "effect-build-esbuild" },
+  { id: "y-node-sea", packageName: "effect-build-node-sea" }
+] as const
+
+const createPrepackedWorkspace = (
+  workspace: string,
+  sources: string,
+  npm: ReadonlyArray<string>,
+  npmCache: string
+): void => {
+  mkdirSync(workspace, { recursive: true })
+  mkdirSync(sources, { recursive: true })
+  const destination = join(workspace, ".release", "candidate")
+  mkdirSync(destination, { recursive: true })
+  const subjects = prepackedCandidates.map(({ id, packageName }) => {
+    const source = join(sources, id)
+    mkdirSync(source, { recursive: true })
+    writeFileSync(join(source, "package.json"), `${JSON.stringify({
+      name: packageName,
+      version: "0.3.0",
+      type: "module",
+      files: ["index.js"],
+      ...(packageName === "effect-build" ? {} : { dependencies: { "effect-build": "0.3.0" } })
+    }, null, 2)}\n`)
+    writeFileSync(join(source, "index.js"), `export const packageName = ${JSON.stringify(packageName)}\n`)
+    const result = successful([
+      ...npm, "pack", source, "--json", "--ignore-scripts",
+      "--pack-destination", destination, "--cache", npmCache
+    ], workspace)
+    const packed = parseJson<ReadonlyArray<PackResult>>(result.stdout, `${packageName} candidate pack`)
+    if (packed.length !== 1 || packed[0] === undefined) throw new Error(`${packageName} candidate pack returned no tarball.`)
+    const path = `.release/candidate/${packed[0].filename}`
+    const bytes = new Uint8Array(readFileSync(join(workspace, path)))
+    return {
+      id,
+      path,
+      packageName,
+      version: "0.3.0",
+      sha256: sha256Digest(bytes).hex,
+      registry: "https://registry.npmjs.org/",
+      distTag: "latest",
+      access: "public",
+      authentication: { strategy: "token", credential: "NPM_TOKEN" },
+      provenance: "disabled"
+    }
+  })
+  writeFileSync(join(workspace, "package.json"), `${JSON.stringify({
+    name: "effect-build",
+    version: "0.3.0",
+    repository: "https://github.com/owner/packed-consumer.git"
+  }, null, 2)}\n`)
+  writeFileSync(join(workspace, "release.config.json"), `${JSON.stringify({
+    project: {
+      name: "effect-build",
+      version: "0.3.0",
+      tag: "v0.3.0",
+      repository: "owner/packed-consumer"
+    },
+    publish: {
+      prepackedNpm: subjects,
+      github: {
+        repository: "owner/packed-consumer",
+        tokenEnv: "GITHUB_TOKEN",
+        draft: false,
+        prerelease: false,
+        ids: subjects.map(({ id }) => `prepacked-npm:${id}`)
+      }
+    }
+  }, null, 2)}\n`)
+  successful(["git", "init", "--quiet"], workspace)
+  successful(["git", "add", "package.json", "release.config.json"], workspace)
+  successful([
+    "git",
+    "-c", "user.name=Packed Consumer Gate",
+    "-c", "user.email=packed-consumer@example.test",
+    "commit", "--quiet", "-m", "prepacked fixture"
+  ], workspace)
+}
+
 const bunSmokeSource = `
 import {
   defineRelease,
@@ -270,15 +356,17 @@ import {
 import { makeBunReleaseLayer } from "@mannyc1/ts-release/bun"
 import { sha256Digest } from "@mannyc1/ts-release/host"
 import { makeLocalPreparedReleaseStore } from "@mannyc1/ts-release/store"
+import { join } from "node:path"
 
 const [storeDirectory, ...workspaces] = Bun.argv.slice(2)
-if (storeDirectory === undefined || workspaces.length !== 2) throw new Error("usage: smoke store one two")
+if (storeDirectory === undefined || workspaces.length !== 3) throw new Error("usage: smoke store one two prepacked")
 const store = makeLocalPreparedReleaseStore(storeDirectory)
 const api = makeReleaseApi(makeBunReleaseLayer(store))
 try {
   const references = []
   const artifactCounts = []
-  for (const [index, workspace] of workspaces.entries()) {
+  const publicationCounts = []
+  for (const [index, workspace] of workspaces.slice(0, 2).entries()) {
     const count = index + 1
     const config = defineRelease({
       project: { repository: "owner/packed-consumer" },
@@ -296,10 +384,24 @@ try {
     const prepared = await api.prepare({ config, workspace })
     references.push(encodeCompletePreparedReleaseRef(prepared))
     artifactCounts.push(inspection.artifacts.length)
+    publicationCounts.push(inspection.publications.length)
   }
+  const prepackedWorkspace = workspaces[2]
+  const prepackedConfig = await Bun.file(join(prepackedWorkspace, "release.config.json")).json()
+  const prepackedInspection = await api.inspect({ config: prepackedConfig, workspace: prepackedWorkspace })
+  if (prepackedInspection.artifacts.length !== 5 ||
+      prepackedInspection.publications.map((publication) => publication.destination).join(",") !==
+        "npm,npm,npm,npm,npm,github") {
+    throw new Error("Bun inspection did not preserve five ordered npm subjects followed by GitHub.")
+  }
+  const prepacked = await api.prepare({ config: prepackedConfig, workspace: prepackedWorkspace })
+  references.push(encodeCompletePreparedReleaseRef(prepacked))
+  artifactCounts.push(prepackedInspection.artifacts.length)
+  publicationCounts.push(prepackedInspection.publications.length)
   console.log(JSON.stringify({
     references,
     artifactCounts,
+    publicationCounts,
     digest: sha256Digest(new TextEncoder().encode("packed-consumer")),
     storeMethods: [typeof store.commit, typeof store.load]
   }))
@@ -322,8 +424,8 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const [storeDirectory, expectedVersion, ...encoded] = process.argv.slice(2)
-if (storeDirectory === undefined || expectedVersion === undefined || encoded.length !== 2) {
-  throw new Error("usage: smoke store effect-version one two")
+if (storeDirectory === undefined || expectedVersion === undefined || encoded.length !== 3) {
+  throw new Error("usage: smoke store effect-version one two prepacked")
 }
 const root = dirname(fileURLToPath(import.meta.url))
 const names = ["effect", "@effect/platform-bun", "@effect/platform-node", "@effect/platform-node-shared"]
@@ -339,9 +441,19 @@ try {
   for (const [index, value] of encoded.entries()) {
     const prepared = await Effect.runPromise(decodeCompletePreparedReleaseRef(value))
     const inspection = await api.inspect({ prepared })
-    const expected = index + 1
+    const expected = [1, 2, 5][index]
     if (!Array.isArray(inspection.artifacts) || inspection.artifacts.length !== expected) {
       throw new Error(\`Node inspection expected \${expected} artifacts.\`)
+    }
+    if (index === 2) {
+      if (inspection.publications.map((publication) => publication.destination).join(",") !==
+          "npm,npm,npm,npm,npm,github") {
+        throw new Error("Node inspection did not preserve the ordered prepacked publication sequence.")
+      }
+      const loaded = await Effect.runPromise(store.load(prepared))
+      if (loaded.manifest.provenance.execution.npmPack !== "not-used" || loaded.blobs.size !== 5) {
+        throw new Error("Packed consumer reloaded a repacked or non-five-blob candidate.")
+      }
     }
     artifactCounts.push(inspection.artifacts.length)
   }
@@ -477,16 +589,24 @@ const main = async (): Promise<void> => {
 
     const workspaceOne = join(scratch, "workspace-one")
     const workspaceTwo = join(scratch, "workspace-two")
+    const prepackedWorkspace = join(scratch, "workspace-prepacked")
     createWorkspace(workspaceOne, 1)
     createWorkspace(workspaceTwo, 2)
+    createPrepackedWorkspace(
+      prepackedWorkspace,
+      join(scratch, "prepacked-sources"),
+      selectedRuntime.npm,
+      npmCache
+    )
     const storeDirectory = join(scratch, "prepared-store")
     writeFileSync(join(bunConsumer, "smoke.ts"), bunSmokeSource)
     const bunSmokeCommand = successful([
-      "bun", "run", "smoke.ts", storeDirectory, workspaceOne, workspaceTwo
+      "bun", "run", "smoke.ts", storeDirectory, workspaceOne, workspaceTwo, prepackedWorkspace
     ], bunConsumer, bunEnvironment)
     const bunSmoke = parseJson<BunSmokeResult>(bunSmokeCommand.stdout.trim(), "Bun consumer smoke")
-    if (bunSmoke.references.length !== 2 || bunSmoke.artifactCounts.join(",") !== "1,2") {
-      throw new Error("Bun consumer did not prepare one- and two-artifact bundles.")
+    if (bunSmoke.references.length !== 3 || bunSmoke.artifactCounts.join(",") !== "1,2,5" ||
+        bunSmoke.publicationCounts.join(",") !== "0,0,6") {
+      throw new Error("Bun consumer did not prepare ordinary and five-subject prepacked bundles.")
     }
 
     writeFileSync(join(npmConsumer, "smoke.mjs"), nodeSmokeSource)
@@ -494,12 +614,13 @@ const main = async (): Promise<void> => {
       selectedRuntime.node, "smoke.mjs", storeDirectory, effectVersion, ...bunSmoke.references
     ], npmConsumer)
     const nodeSmoke = parseJson<NodeSmokeResult>(nodeSmokeCommand.stdout.trim(), "Node consumer smoke")
-    if (nodeSmoke.artifactCounts.join(",") !== "1,2") {
-      throw new Error("Node consumer did not load one- and two-artifact bundles.")
+    if (nodeSmoke.artifactCounts.join(",") !== "1,2,5") {
+      throw new Error("Node consumer did not load ordinary and five-subject prepacked bundles.")
     }
 
     const cli = join(npmConsumer, "node_modules", ...manifest.name.split("/"), "dist", "bin", "ts-release.js")
     const unsupportedHost = unsupportedExecutionHost(process.platform)
+    const expectedArtifactCounts = [1, 2, 5]
     for (const [index, reference] of bunSmoke.references.entries()) {
       const inspected = run([
         selectedRuntime.node, cli, "--store", storeDirectory, "inspect", reference
@@ -522,8 +643,38 @@ const main = async (): Promise<void> => {
         ].filter((line) => line.length > 0).join("\n"))
       }
       const value = parseJson<{ readonly artifacts?: unknown }>(inspected.stdout.trim(), "packed CLI inspect")
-      if (!Array.isArray(value.artifacts) || value.artifacts.length !== index + 1) {
-        throw new Error(`Packed CLI must preserve the ${index + 1}-element artifacts array.`)
+      if (!Array.isArray(value.artifacts) || value.artifacts.length !== expectedArtifactCounts[index]) {
+        throw new Error(`Packed CLI must preserve the ${expectedArtifactCounts[index]}-element artifacts array.`)
+      }
+    }
+
+    if (unsupportedHost === undefined) {
+      const sentinelDirectory = join(scratch, "no-repack-bin")
+      mkdirSync(sentinelDirectory, { recursive: true })
+      const sentinel = join(sentinelDirectory, "npm")
+      writeFileSync(sentinel, "#!/bin/sh\necho 'prepacked CLI attempted npm' >&2\nexit 91\n")
+      chmodSync(sentinel, 0o755)
+      const cliStore = join(scratch, "prepacked-cli-store")
+      const prepared = successful([
+        selectedRuntime.node, cli,
+        "prepare", "--config", "release.config.json", "--root", ".", "--store", cliStore
+      ], prepackedWorkspace, {
+        PATH: `${sentinelDirectory}:${process.env.PATH ?? ""}`
+      }).stdout.trim()
+      if (!/^prepared:local:sha256-[a-f0-9]{64}$/u.test(prepared)) {
+        throw new Error("Packed CLI did not emit one complete prepacked prepared reference.")
+      }
+      const inspected = successful([
+        selectedRuntime.node, cli, "inspect", prepared, "--store", cliStore
+      ], prepackedWorkspace)
+      const inspection = parseJson<{
+        readonly artifacts?: unknown
+        readonly publications?: ReadonlyArray<{ readonly destination?: unknown }>
+      }>(inspected.stdout.trim(), "prepacked CLI inspect")
+      if (!Array.isArray(inspection.artifacts) || inspection.artifacts.length !== 5 ||
+          inspection.publications?.map((publication) => publication.destination).join(",") !==
+            "npm,npm,npm,npm,npm,github") {
+        throw new Error("Packed CLI did not reload five exact npm subjects followed by GitHub.")
       }
     }
 
@@ -544,7 +695,9 @@ const main = async (): Promise<void> => {
       markdownFiles: markdown.markdownFiles,
       relativeLinks: markdown.relativeLinks,
       effectVersions: { bun: bunVersions, npm: npmVersions },
-      artifactArrayShapes: [1, 2],
+      artifactArrayShapes: [1, 2, 5],
+      prepackedPublicationOrder: ["npm", "npm", "npm", "npm", "npm", "github"],
+      prepackedNpmPack: "not-used",
       node: nodeSmoke.node,
       nodeRuntimeSupported,
       cliHostSupported: unsupportedHost === undefined,

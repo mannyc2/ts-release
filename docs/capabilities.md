@@ -14,7 +14,7 @@ a live provider mutation has been dogfooded.
 | `prepare.package` | installed | contribute:package | 7 | root-api | 2 executable tests | linux | — | — | — | contract-tested | 2026-08-12 |
 | `render.homebrew` | installed | contribute:render | 11 | root-api | 1 executable test | linux | — | — | — | contract-tested | 2026-08-13 |
 | `render.scoop` | installed | contribute:render | 10 | root-api | 1 executable test | linux | — | — | — | contract-tested | 2026-08-13 |
-| `publish.npm` | installed | contribute + subjects:PreparedNpmPublication | 15 | provider-protocol | 2 executable tests | linux | — | npm | token, trusted-publishing | contract-tested | 2026-08-12 |
+| `publish.npm` | installed | contribute + subjects:PreparedNpmPublication | 35 | provider-protocol | 5 executable tests | linux | — | npm | token, trusted-publishing | contract-tested | 2026-08-12 |
 | `publish.pypi` | installed | contribute + subjects:PreparedPyPiPublication | 14 | provider-protocol | 2 executable tests | linux | — | — | project-token, external-pypa-action | contract-tested | 2026-08-13 |
 | `publish.github` | installed | contribute + subjects:PreparedGitHubPublication | 17 | provider-protocol | 3 executable tests | linux | — | — | token | contract-tested | 2026-08-12 |
 | `publish.catalog-git` | installed | contribute + subjects:PreparedCatalogPublication | 7 | provider-protocol | 2 executable tests | linux | — | — | token | contract-tested | 2026-08-13 |

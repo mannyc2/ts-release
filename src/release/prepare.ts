@@ -32,6 +32,10 @@ import {
 } from "../model/artifact-collection.js"
 import { sha256Digest } from "../model/digest.js"
 import {
+  inspectPrepackedNpmTarball,
+  npmTarballCompressedBytesLimit
+} from "../model/npm-tarball.js"
+import {
   CatalogManagedState,
   PreparedCatalogDownload,
   PreparedCatalogRenderer,
@@ -56,6 +60,7 @@ import {
   GraphCatalogPublication,
   GraphNpmPackageBuild,
   GraphNpmPublication,
+  GraphPrepackedNpmPublication,
   OutputDeclaration,
   type GraphPreparation,
   ReleaseGraph
@@ -970,19 +975,29 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         : preparation._tag === "GraphArchive" || preparation._tag === "GraphChecksum" || preparation._tag === "GraphCatalogRender"
         ? [preparation.output.id.toString()]
         : []))
+    const prepackedArtifacts = new Set(input.graph.publications.flatMap((publication) =>
+      publication._tag === "GraphPrepackedNpmPublication"
+        ? [publication.packageArtifact.toString()]
+        : []))
     const externalInputs: ExplicitInputSnapshot[] = []
+    const bytes: Bytes = new Map()
     for (const artifact of input.graph.artifacts) {
       if (produced.has(artifact.id.toString()) || artifact.kind === "package") continue
       const path = artifact.path.toString()
       const tracked = sourceSnapshot.entries.some((entry) =>
         entry.path.toString() === path || entry.path.toString().startsWith(`${path}/`))
       if (tracked) continue
-      externalInputs.push(yield* attempt(() => materializeExplicitInput({
+      const materialized = yield* attempt(() => materializeExplicitInput({
         id: artifact.id.toString(),
         sourceWorkspace: sourceRoot,
         stageRoot: root,
-        path: artifact.path
-      })))
+        path: artifact.path,
+        ...(prepackedArtifacts.has(artifact.id.toString())
+          ? { maxFileBytes: npmTarballCompressedBytesLimit }
+          : {})
+      }))
+      externalInputs.push(materialized.snapshot)
+      if (materialized.bytes !== undefined) bytes.set(artifact.id.toString(), materialized.bytes)
     }
     const request: PreparationRequest = { ...input, context }
     const dependencies = yield* materializeBunDependencies({
@@ -991,14 +1006,15 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
       sourceSnapshot
     })
     if (dependencies !== undefined) externalInputs.push(dependencies.input)
-    const bytes: Bytes = new Map()
     const producers: Producers = new Map()
     const preparedCollections = new Map<string, PreparedArtifactCollection>()
     const isolationIdentities: NetworkIsolationIdentity[] = []
     const bunCompileRuntimes = new Map<string, BunCompileRuntimeIdentity>()
     for (const artifact of input.graph.artifacts) {
       if (produced.has(artifact.id.toString()) || artifact.kind === "package") continue
-      bytes.set(artifact.id.toString(), yield* capture(context, artifact))
+      if (!bytes.has(artifact.id.toString())) {
+        bytes.set(artifact.id.toString(), yield* capture(context, artifact))
+      }
       producers.set(artifact.id.toString(), externalInputs.some((item) => item.id === artifact.id.toString())
         ? `explicit-input:${artifact.id}`
         : "verified-source")
@@ -1053,8 +1069,8 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         reason: "Network-isolated commands reported inconsistent helper, libseccomp, kernel, architecture, or syscall identities."
       })
     }
-    const hasNpmPublication = input.graph.publications.some((publication) => publication._tag === "GraphNpmPublication")
-    if (hasNpmPublication) yield* attempt(() => {
+    const hasSourceNpmPublication = input.graph.publications.some((publication) => publication._tag === "GraphNpmPublication")
+    if (hasSourceNpmPublication) yield* attempt(() => {
       for (const publication of input.graph.publications) {
         if (publication._tag !== "GraphNpmPublication") continue
         const declaration = declarations.get(publication.packageArtifact.toString())
@@ -1064,7 +1080,7 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         assertNpmLiteralSelectionsPresent(resolve(root, declaration.path.toString()))
       }
     })
-    const npmPackIdentity = hasNpmPublication ? yield* establishNpmPackIdentity(request) : undefined
+    const npmPackIdentity = hasSourceNpmPublication ? yield* establishNpmPackIdentity(request) : undefined
     const releaseGraph = sha256Digest(new TextEncoder().encode(encodeCanonicalJson(
       Schema.encodeSync(ReleaseGraph)(input.graph)
     )))
@@ -1114,6 +1130,40 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
         const artifactBytes = yield* capture(context, { id: artifact.id, path: artifact.path, kind: artifact.kind })
         bytes.set(artifact.id.toString(), artifactBytes)
         preparedArtifacts.set(artifact.id.toString(), artifact)
+        publications.push(PreparedNpmPublication.make({
+          id: NonEmptyName.make(publication.id),
+          packageName: publication.packageName,
+          version: Version.make(publication.version.toString()),
+          registryUrl: publication.registryUrl,
+          artifactId: artifact.id,
+          distTag: publication.distTag,
+          access: publication.access,
+          authentication: publication.authentication,
+          provenance: publication.provenance,
+          authority: publication.authority
+        }))
+      } else if (publication._tag === "GraphPrepackedNpmPublication") {
+        const artifact = preparedArtifacts.get(publication.packageArtifact.toString())
+        const artifactBytes = bytes.get(publication.packageArtifact.toString())
+        if (artifact === undefined || artifactBytes === undefined || artifact.kind !== "archive" ||
+            artifact.mediaType !== "application/gzip") {
+          return yield* new PreparationError({
+            reason: `Prepacked npm publication ${publication.id} does not reference one gzip archive artifact.`
+          })
+        }
+        const digest = sha256Digest(artifactBytes)
+        if (digest.hex !== publication.sha256.hex || artifact.digest.hex !== publication.sha256.hex ||
+            artifact.blob.hex !== publication.sha256.hex || artifact.size !== artifactBytes.length) {
+          return yield* new PreparationError({
+            reason: `Prepacked npm publication ${publication.id} SHA-256 disagrees with its exact tarball bytes.`
+          })
+        }
+        yield* attempt(() => inspectPrepackedNpmTarball(
+          basename(artifact.path.toString()),
+          artifactBytes,
+          publication.packageName.toString(),
+          publication.version.toString()
+        ))
         publications.push(PreparedNpmPublication.make({
           id: NonEmptyName.make(publication.id),
           packageName: publication.packageName,
@@ -1288,8 +1338,8 @@ export const prepareRelease = Effect.fn("prepareRelease")(function*(input: Prepa
     assertSnapshotPresent(root, sourceSnapshot, "Verified source")
     const githubPublication = input.graph.publications.find((publication): publication is GraphGitHubPublication =>
       publication._tag === "GraphGitHubPublication")
-    const npmPublication = input.graph.publications.find((publication): publication is GraphNpmPublication =>
-      publication._tag === "GraphNpmPublication")
+    const npmPublication = input.graph.publications.find((publication): publication is GraphNpmPublication | GraphPrepackedNpmPublication =>
+      publication._tag === "GraphNpmPublication" || publication._tag === "GraphPrepackedNpmPublication")
     const manifest = PreparedReleaseV2.make({
       kind: "complete",
       schemaVersion: "prepared-release/v2",

@@ -11,6 +11,7 @@ import {
   symlinkSync
 } from "node:fs"
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
+import { secureRead } from "../drivers/workspace.js"
 import { encodeCanonicalJson } from "../model/canonical.js"
 import { sha256Digest, type Sha256Digest } from "../model/digest.js"
 import { SafeRelativePath } from "../model/primitives.js"
@@ -204,12 +205,19 @@ const copyPrivateTree = (sourceRoot: string, destinationRoot: string): void => {
  * already exist; source bytes can therefore never overwrite verified Git
  * materialization.
  */
+export interface MaterializedExplicitInput {
+  readonly snapshot: ExplicitInputSnapshot
+  readonly bytes?: Uint8Array
+}
+
 export const materializeExplicitInput = (input: {
   readonly id: string
   readonly sourceWorkspace: string
   readonly stageRoot: string
   readonly path: SafeRelativePath
-}): ExplicitInputSnapshot => {
+  readonly maxFileBytes?: number
+  readonly readFile?: typeof secureRead
+}): MaterializedExplicitInput => {
   const sourceRoot = realpathSync(input.sourceWorkspace)
   const source = join(sourceRoot, input.path.toString())
   const destination = join(input.stageRoot, input.path.toString())
@@ -221,24 +229,35 @@ export const materializeExplicitInput = (input: {
   mkdirSync(dirname(destination), { recursive: true, mode: 0o700 })
   const sourceStat = lstatSync(source)
   if (sourceStat.isSymbolicLink()) return fail(`Explicit input ${input.id} cannot be a symlink.`)
+  if (input.maxFileBytes !== undefined && sourceStat.isFile() && sourceStat.size > input.maxFileBytes) {
+    return fail(`Explicit input ${input.id} size ${sourceStat.size} exceeds the ${input.maxFileBytes}-byte limit.`)
+  }
   copyPrivateTree(source, destination)
   const kind = sourceStat.isDirectory() ? "directory" : "file"
   const snapshot = sourceStat.isDirectory() ? snapshotStaging(destination) : undefined
+  const fileBytes = sourceStat.isDirectory()
+    ? undefined
+    : (input.readFile ?? secureRead)(input.stageRoot, input.path.toString(), {
+      ...(input.maxFileBytes === undefined ? {} : { maxBytes: input.maxFileBytes })
+    }).bytes
   const size = sourceStat.isDirectory()
     ? snapshot!.entries.filter((entry) => entry.kind !== "directory").reduce((sum, entry) => sum + entry.size, 0)
-    : sourceStat.size
+    : fileBytes!.length
   const digest = sourceStat.isDirectory()
     ? snapshot!.digest
-    : sha256Digest(new Uint8Array(readFileSync(destination)))
-  return ExplicitInputSnapshot.make({
-    id: input.id,
-    path: input.path,
-    kind,
-    size,
-    digest,
-    materializer: "private-copy-or-reflink/v1",
-    materializationBasis: [digest]
-  })
+    : sha256Digest(fileBytes!)
+  return {
+    snapshot: ExplicitInputSnapshot.make({
+      id: input.id,
+      path: input.path,
+      kind,
+      size,
+      digest,
+      materializer: "private-copy-or-reflink/v1",
+      materializationBasis: [digest]
+    }),
+    ...(fileBytes === undefined ? {} : { bytes: fileBytes })
+  }
 }
 
 /** Digest a set of preparation influences without asserting reproducibility. */

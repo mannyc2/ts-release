@@ -59,6 +59,26 @@ when observed facts agree with authored intent. For a non-OIDC host, use
 that environment variable remains host-owned and never enters configuration,
 prepared bytes, reports, or logs.
 
+Already-packed multi-package candidates use `publish.prepackedNpm`, a
+nonempty array whose authored order is publication order. Every entry names
+one relative `.tgz` file plus its exact npm package name, version, lowercase
+SHA-256, registry, dist-tag, access, authentication, and provenance policy.
+Preparation verifies the bounded archive, its `package/package.json`
+identity, safe member paths, and absence of workspace/file/link dependency
+references, then stores those exact bytes. It never calls `npm pack` in this
+mode. `npmPackage` and `publish.npm` are mutually exclusive with
+`publish.prepackedNpm`; mixed mode is rejected rather than inferred. When a
+GitHub publication follows the array, its subject runs only after every npm
+subject has converged and uploads the same prepared blobs.
+
+The effect-build five-package candidate uses only the checked-in bundled
+GitHub Action at an immutable qualified commit, with the stock Action's empty
+custom-provider-adapter set. The npm-installed package and CLI remain
+unqualified for effect-build's `effect@4.0.0-rc.108` tree: release 0.2.2 peers
+on `4.0.0-beta.83`, so a strict clean npm install rejects that combination
+with `ERESOLVE`. Widening only the peer declaration would not make the
+repo-wide Effect API breakage compatible.
+
 Prebuilt Python distributions can be published to the closed `pypi` or
 `testpypi` destination. Each named artifact must be a valid wheel or gzip
 sdist whose filename and embedded metadata agree with the configured project
@@ -218,7 +238,8 @@ ts-release publish "$prepared_ref"
 Every attempt verifies the manifest and blobs, then reobserves every subject.
 Equivalent subjects are skipped. Conflict and pre-mutation uncertainty stop
 without mutation. A post-dispatch unknown outcome stays uncertain until a new
-exact observation converges. Publication is not an atomic transaction, so a
+exact observation converges. Prepacked candidates must be resumed from the
+same prepared reference; repacking is not a recovery operation. Publication is not an atomic transaction, so a
 release may partially succeed and there is no universal rollback.
 
 ## Provider-specific correction
@@ -246,8 +267,8 @@ the release-candidate matrix must exercise every claimed execution host.
 
 | Axis | Kernel candidate boundary |
 | --- | --- |
-| Local preparation | Bun compilation, prebuilt imports, command checks/artifacts, archives, and checksums are retained; final support requires the generated capability and clean-candidate gates to agree. |
-| Remote publication | npm, prebuilt PyPI distributions, GitHub Releases, and typed Homebrew/Scoop catalog Git delivery are installed. npm uses explicit trusted-publishing or token authentication; PyPI token writes require a host-supplied shared terminal claim store, and its trusted-publishing strategy is external-host-owned. |
+| Local preparation | Bun compilation, prebuilt imports, exact prepacked npm tarball capture, command checks/artifacts, archives, and checksums are retained; final support requires the generated capability and clean-candidate gates to agree. |
+| Remote publication | Ordered source-packed or prepacked npm subjects, prebuilt PyPI distributions, GitHub Releases, and typed Homebrew/Scoop catalog Git delivery are installed. npm uses explicit trusted-publishing or token authentication; PyPI token writes require a host-supplied shared terminal claim store, and its trusted-publishing strategy is external-host-owned. |
 | Correction | npm and GitHub authored proposals are exact-bound; PyPI yanking is observation-only; catalog Git installs exact paired SemVer-forward correction. |
 | Execution hosts | Linux is the only installed execution host. The checked-in Action is a native Node 24 launcher around a workflow-installed, pinned Bun runtime. macOS and Windows are not ts-release execution hosts. |
 | Artifact targets | The Bun builder advertises Linux and macOS x64/arm64 targets. macOS binaries are cross-compiled artifacts, not host-execution evidence. The self-release does not distribute a Windows ts-release binary. |

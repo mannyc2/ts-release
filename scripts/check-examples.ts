@@ -43,7 +43,7 @@ const walk = (directory: string): void => {
 walk(resolve(root, "examples"))
 walk(resolve(root, "templates"))
 
-type GraphSubject = "GraphGitHubPublication" | "GraphNpmPublication" | "GraphPyPiPublication" | "GraphCatalogPublication"
+type GraphSubject = "GraphGitHubPublication" | "GraphNpmPublication" | "GraphPrepackedNpmPublication" | "GraphPyPiPublication" | "GraphCatalogPublication"
 type PreparedSubject = "PreparedGitHubPublication" | "PreparedNpmPublication" | "PreparedPyPiPublication" | "PreparedCatalogPublication"
 
 interface ExpectedPublicConfig {
@@ -166,6 +166,7 @@ let preparedCount = 0
 const graphSubjects: Record<GraphSubject, number> = {
   GraphGitHubPublication: 0,
   GraphNpmPublication: 0,
+  GraphPrepackedNpmPublication: 0,
   GraphPyPiPublication: 0,
   GraphCatalogPublication: 0
 }

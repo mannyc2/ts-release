@@ -24,7 +24,7 @@ const requirements = (preparations: ReadonlyArray<GraphPreparation>): ReadonlyAr
   ...new Set(preparations.flatMap((preparation) => preparation._tag === "GraphCommandCheck" || preparation._tag === "GraphCommandArtifact" || preparation._tag === "GraphCommandCollection" || preparation._tag === "GraphNpmPackageBuild"
     ? [`command:${preparation.argv[0]!}`] : []))
 ].sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
-const publication = (value: GraphPublication) => value._tag === "GraphNpmPublication"
+const publication = (value: GraphPublication) => value._tag === "GraphNpmPublication" || value._tag === "GraphPrepackedNpmPublication"
   ? { id: value.id, destination: "npm", subject: `${value.packageName}@${value.version} (${value.registryUrl})` }
   : value._tag === "GraphPyPiPublication"
   ? { id: value.id, destination: "pypi", subject: `${value.project}==${value.version} (${value.repository})` }

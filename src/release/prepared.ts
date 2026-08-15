@@ -208,7 +208,28 @@ const assertCompletePreparedRelease = (manifest: PreparedReleaseV2): void => {
     }
   }
   const artifacts = new Map(manifest.artifacts.map((artifact) => [artifact.id.toString(), artifact]))
+  const publicationIds = new Set<string>()
+  const npmCoordinates = new Set<string>()
+  const npmArtifacts = new Set<string>()
   for (const publication of manifest.publications) {
+    const publicationId = publication.id.toString().toLocaleLowerCase("en-US")
+    if (publicationIds.has(publicationId)) throw new Error(`prepared publication ${publication.id} has a duplicate or case-colliding id`)
+    publicationIds.add(publicationId)
+    if (publication._tag === "PreparedNpmPublication") {
+      const coordinate = `${publication.packageName.toString().toLocaleLowerCase("en-US")}@${publication.version}`
+      if (npmCoordinates.has(coordinate)) throw new Error(`prepared npm publication ${publication.id} repeats coordinate ${coordinate}`)
+      npmCoordinates.add(coordinate)
+      const artifactId = publication.artifactId.toString()
+      if (npmArtifacts.has(artifactId)) throw new Error(`prepared npm publication ${publication.id} repeats tarball artifact ${artifactId}`)
+      npmArtifacts.add(artifactId)
+      const artifact = artifacts.get(artifactId)
+      if (artifact === undefined || (artifact.kind !== "archive" && artifact.kind !== "package") ||
+          artifact.mediaType !== "application/gzip" ||
+          !artifact.path.toString().endsWith(".tgz") || artifact.digest.hex !== artifact.blob.hex) {
+        throw new Error(`prepared npm publication ${publication.id} does not bind one exact gzip tarball artifact`)
+      }
+      continue
+    }
     if (publication._tag !== "PreparedCatalogPublication") continue
     const target = artifacts.get(publication.targetArtifactId.toString())
     const state = artifacts.get(publication.stateArtifactId.toString())

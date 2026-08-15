@@ -181,7 +181,22 @@ export const npmPublicationCapability = Object.freeze({
       "publish.npm.authentication.attestation.workflowRef",
       "publish.npm.authentication.credential",
       "publish.npm.authentication.strategy", "publish.npm.distTag",
-      "publish.npm.provenance", "publish.npm.registry"
+      "publish.npm.provenance", "publish.npm.registry",
+      "publish.prepackedNpm", "publish.prepackedNpm[].access",
+      "publish.prepackedNpm[].authentication",
+      "publish.prepackedNpm[].authentication.attestation",
+      "publish.prepackedNpm[].authentication.attestation.allowedAction",
+      "publish.prepackedNpm[].authentication.attestation.provider",
+      "publish.prepackedNpm[].authentication.attestation.repository",
+      "publish.prepackedNpm[].authentication.attestation.runner",
+      "publish.prepackedNpm[].authentication.attestation.workflow",
+      "publish.prepackedNpm[].authentication.attestation.workflowRef",
+      "publish.prepackedNpm[].authentication.credential",
+      "publish.prepackedNpm[].authentication.strategy",
+      "publish.prepackedNpm[].distTag", "publish.prepackedNpm[].id",
+      "publish.prepackedNpm[].packageName", "publish.prepackedNpm[].path",
+      "publish.prepackedNpm[].provenance", "publish.prepackedNpm[].registry",
+      "publish.prepackedNpm[].sha256", "publish.prepackedNpm[].version"
     ])
   ],
   requirements: {
@@ -194,6 +209,9 @@ export const npmPublicationCapability = Object.freeze({
     boundary: "provider-protocol",
     tests: [
       "test/api-plan224-authority.test.ts",
+      "test/core/prepacked-npm-config.test.ts",
+      "test/core/prepacked-npm-preparation.test.ts",
+      "test/publication/prepacked-multipackage-release.test.ts",
       "test/protocol/npm/npm-provider-protocol.test.ts"
     ]
   },

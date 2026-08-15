@@ -14,7 +14,11 @@ const fail = (reason: string): DriverError => DriverError.make({ reason, commitm
 export const makeCanonicalTemporaryDirectory = (prefix: string): string =>
   realpathSync(mkdtempSync(join(realpathSync(tmpdir()), prefix)))
 
-export const secureRead = (root: string, path: string): { readonly bytes: Uint8Array, readonly inode: number } => {
+export const secureRead = (
+  root: string,
+  path: string,
+  options: { readonly maxBytes?: number } = {}
+): { readonly bytes: Uint8Array, readonly inode: number } => {
   let current = root
   for (const part of path.split(/[\\/]+/u)) {
     current = join(current, part)
@@ -27,6 +31,9 @@ export const secureRead = (root: string, path: string): { readonly bytes: Uint8A
     if (!contained(root, resolved)) throw fail("Opened file escaped the workspace root.")
     const landed = lstatSync(resolved)
     if (landed.ino !== opened.ino || landed.dev !== opened.dev) throw fail("Opened file changed identity.")
+    if (options.maxBytes !== undefined && opened.size > options.maxBytes) {
+      throw fail(`Structured read size ${opened.size} exceeds the ${options.maxBytes}-byte limit.`)
+    }
     return { bytes: new Uint8Array(readFileSync(descriptor)), inode: opened.ino }
   } finally { closeSync(descriptor) }
 }

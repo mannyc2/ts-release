@@ -185,9 +185,12 @@ const artifactsById = (manifest: PreparedReleaseV2): Map<string, PreparedArtifac
 }
 const validatePublications = (manifest: PreparedReleaseV2, artifacts: Map<string, PreparedArtifact>): void => {
   const ids = new Set<string>()
+  const npmCoordinates = new Set<string>()
+  const npmArtifacts = new Set<string>()
   for (const publication of manifest.publications) {
-    if (ids.has(publication.id.toString())) fail(`Prepared manifest repeats publication ${publication.id}.`)
-    ids.add(publication.id.toString())
+    const publicationId = publication.id.toString().toLocaleLowerCase("en-US")
+    if (ids.has(publicationId)) fail(`Prepared manifest repeats or case-collides publication ${publication.id}.`)
+    ids.add(publicationId)
     const references = publication._tag === "PreparedNpmPublication"
       ? [publication.artifactId]
       : publication._tag === "PreparedPyPiPublication"
@@ -196,6 +199,19 @@ const validatePublications = (manifest: PreparedReleaseV2, artifacts: Map<string
       ? publication.assets.map((asset) => asset.artifactId)
       : [publication.targetArtifactId, publication.stateArtifactId]
     for (const id of references) if (!artifacts.has(id.toString())) fail(`Publication ${publication.id} references missing artifact ${id}.`)
+    if (publication._tag === "PreparedNpmPublication") {
+      const coordinate = `${publication.packageName.toString().toLocaleLowerCase("en-US")}@${publication.version}`
+      if (npmCoordinates.has(coordinate)) fail(`Prepared npm publication ${publication.id} repeats coordinate ${coordinate}.`)
+      npmCoordinates.add(coordinate)
+      const artifactId = publication.artifactId.toString()
+      if (npmArtifacts.has(artifactId)) fail(`Prepared npm publication ${publication.id} repeats tarball artifact ${artifactId}.`)
+      npmArtifacts.add(artifactId)
+      const artifact = artifacts.get(artifactId)!
+      if ((artifact.kind !== "archive" && artifact.kind !== "package") || artifact.mediaType !== "application/gzip" ||
+          !artifact.path.toString().endsWith(".tgz") || !digestEquals(artifact.digest, artifact.blob)) {
+        fail(`Prepared npm publication ${publication.id} does not bind one exact gzip tarball artifact.`)
+      }
+    }
     if (publication._tag === "PreparedPyPiPublication") for (const file of publication.files) {
       const artifact = artifacts.get(file.artifactId.toString())!
       if (artifact.size !== file.size || !digestEquals(artifact.digest, file.sha256) ||

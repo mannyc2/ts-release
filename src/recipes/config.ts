@@ -7,6 +7,7 @@ import {
   ArtifactCollectionSelector
 } from "../model/artifact-collection.js"
 import { NonEmptyName, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import { Sha256Hex } from "../model/digest.js"
 import {
   PyPiProjectName,
   PyPiRepository,
@@ -265,6 +266,30 @@ export class CandidateNpmPublish extends Schema.Class<CandidateNpmPublish>("Cand
   provenance: NpmProvenancePolicy
 }) {}
 
+/** One exact already-packed npm tarball. Collection position is release order. */
+export class CandidatePrepackedNpmPublication
+  extends Schema.Class<CandidatePrepackedNpmPublication>("CandidatePrepackedNpmPublication")({
+    id: NonEmptyName,
+    path: SafeRelativePath.check(Schema.makeFilter((value: string) => {
+      const segments = value.split("/")
+      return value.endsWith(".tgz") && !value.includes("\\") && !value.includes("//") &&
+          segments.every((segment) => segment.length > 0 && segment !== ".")
+        ? undefined
+        : "Prepacked npm path must name one normalized relative .tgz file."
+    })),
+    packageName: Schema.NonEmptyString.check(Schema.makeFilter((value: string) =>
+      value.length <= 214 && /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/u.test(value)
+        ? undefined
+        : "Prepacked npm packageName must be one canonical lowercase npm package name.")),
+    version: Version,
+    sha256: Sha256Hex,
+    registry: CanonicalNpmRegistryEndpoint,
+    distTag: NpmDistTag,
+    access: NpmAccess,
+    authentication: NpmAuthentication,
+    provenance: NpmProvenancePolicy
+  }) {}
+
 /** Closed PyPI destination set with standards-defined Simple and upload APIs. */
 export class PyPiTokenAuthentication
   extends Schema.Class<PyPiTokenAuthentication>("PyPiTokenAuthentication")({
@@ -363,6 +388,7 @@ export class CandidateGitHubPublish extends Schema.Class<CandidateGitHubPublish>
 
 export class CandidatePublish extends Schema.Class<CandidatePublish>("CandidatePublish")({
   npm: optional(CandidateNpmPublish),
+  prepackedNpm: optional(Schema.NonEmptyArray(CandidatePrepackedNpmPublication)),
   pypi: optional(CandidatePyPiPublish),
   catalogGit: optional(Schema.NonEmptyArray(CandidateCatalogGitDestination)),
   github: optional(CandidateGitHubPublish)

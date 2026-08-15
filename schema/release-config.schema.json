@@ -1171,6 +1171,95 @@
       ],
       "additionalProperties": false
     },
+    "CandidatePrepackedNpmPublication": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "packageName": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "version": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "registry": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "distTag": {
+          "type": "string",
+          "allOf": [
+            {
+              "minLength": 1
+            }
+          ]
+        },
+        "access": {
+          "type": "string",
+          "enum": [
+            "public",
+            "restricted"
+          ]
+        },
+        "authentication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NpmTokenAuthentication"
+            },
+            {
+              "$ref": "#/$defs/NpmTrustedPublishingAuthentication"
+            }
+          ]
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "automatic",
+            "required",
+            "disabled"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "packageName",
+        "version",
+        "sha256",
+        "registry",
+        "distTag",
+        "access",
+        "authentication",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
     "PyPiTokenAuthentication": {
       "type": "object",
       "properties": {
@@ -1527,6 +1616,18 @@
       "properties": {
         "npm": {
           "$ref": "#/$defs/AuthoredNpmPublish"
+        },
+        "prepackedNpm": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/CandidatePrepackedNpmPublication"
+            }
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/CandidatePrepackedNpmPublication"
+          }
         },
         "pypi": {
           "$ref": "#/$defs/AuthoredPyPiPublish"

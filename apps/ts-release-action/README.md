@@ -47,6 +47,14 @@ advertised workflow installs pinned Bun before invoking it. All three
 checked-in bundles have disposable rebuild and entrypoint gates; installed
 library and CLI consumers still follow the root package engine.
 
+The effect-build five-package release path is qualified only through this
+checked-in Action bundle at an immutable reviewed commit. That stock boundary
+supplies no custom provider adapters and preserves the authored core, Bun,
+Deno, Esbuild, Node SEA, then GitHub order. The npm-installed 0.2.2 package and
+CLI remain unqualified for effect-build's `effect@4.0.0-rc.108` tree because
+their exact `4.0.0-beta.83` peers fail a strict clean npm install with
+`ERESOLVE`; the Action bundle carries its already-built compatible runtime.
+
 ```sh
 bun run --cwd apps/ts-release-action check
 bun run --cwd apps/ts-release-action build

@@ -23,7 +23,9 @@ The graph contains imported artifacts, build, archive, checksum, command check,
 command artifact, typed Homebrew/Scoop rendering, npm publication, exact-file
 PyPI publication, GitHub Release publication, and catalog Git publication
 primitives. It is
-sorted and linked inside one process. It is never serialized as authority and
+linked inside one process. Preparation nodes retain their canonical graph
+order; an authored `publish.prepackedNpm` array retains its semantic package
+publication order. It is never serialized as authority and
 never crosses a runner boundary.
 
 ## 4. Prepared release
@@ -35,6 +37,24 @@ materialized source identity, project coordinates, artifact IDs, exact
 sizes/digests/media types, input basis, execution provenance, and provider
 subjects. A prepared store refuses missing, altered, extra, symlinked,
 non-canonical, or producer-mismatched content.
+
+`publish.prepackedNpm` is a nonempty ordered collection and is mutually
+exclusive with source-pack `npmPackage`/`publish.npm`. Each entry binds one
+relative `.tgz` path, package name, canonical version, lowercase SHA-256,
+registry, dist-tag, access, authentication, and provenance policy.
+Preparation treats the tarball as an explicit input, never runs `npm pack`,
+and admits it only when the declared digest, gzip/tar structure, safe member
+paths, exact `package/package.json` identity, and dependency references all
+validate. The resulting `PreparedNpmPublication` references that exact blob;
+encode/decode, store reload, observation, and publisher dispatch preserve the
+same bytes and authored subject order.
+
+The qualified effect-build host is the immutable checked-in bundled Action
+with no custom provider adapters. `@mannyc1/ts-release@0.2.2` as an installed
+package or CLI is not qualified for effect-build's exact
+`effect@4.0.0-rc.108` dependency tree: its exact beta.83 peers make strict npm
+resolution fail, while moving the repository itself to rc.108 requires an
+independent Effect API migration rather than a peer-range fallback.
 
 An npm trusted-publishing subject also binds the exact verified source commit
 and a versioned GitHub/npm provenance-environment contract. The host validates
@@ -120,6 +140,9 @@ inputs before calling the library.
 
 Rerun the same prepared bytes. A partial release is possible; atomic rollback,
 deletion, exactly-once publication, and universal correction are not claimed.
+Candidate tarballs are packed outside prepacked preparation exactly once;
+consumer verification and publication consume the same stored blob bytes.
+Manual repacking is not a recovery fallback.
 PyPI filenames remain consumed after deletion and uncertain token uploads are
 never blindly replayed; the required terminal claim survives process loss and
 must be shared by every runner capable of dispatching that subject.

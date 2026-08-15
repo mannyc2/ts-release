@@ -49,6 +49,14 @@ prepared release. `builder: "command"` is authoring sugar for the same artifact
 primitive. Graph dependencies use declared artifact references, so independent
 node order is not a user contract.
 
+Prepacked npm mode is the deliberate exception for publication order, not a
+second coordinator. Its authored nonempty array declares exact `.tgz` inputs;
+the graph retains that array order, preparation validates SHA-256 and embedded
+package identity, and the prepared store persists the original bytes. It
+cannot be combined with source-pack `npmPackage`/`publish.npm`, and it never
+invokes `npm pack`. Both modes lower to the existing
+`PreparedNpmPublication`, npm provider subject, and publication coordinator.
+
 Commands are trusted local argv code with no authored host environment values;
 the runtime rejects every nonempty `environmentNames` request before starting
 a subprocess and may retain only `PATH` to locate the argv executable. They are
@@ -66,6 +74,10 @@ Equivalent content is skipped; mutation requires a typed provider decision;
 conflicts and inconclusive results stop; and an unknown response is resolved
 only by a later exact observation. The coordinator therefore tolerates reruns
 and lost responses without claiming exactly-once behavior or atomic rollback.
+The adapter adds all earlier publication subjects as prerequisites. Thus an
+authored prepacked package sequence remains ordered through store reload and
+resumption, and a following GitHub Release cannot run before every package
+coordinate converges.
 
 PyPI adds a stricter history boundary because a filename is permanently
 consumed and an upload is unsafe to replay after response loss. Every PyPI

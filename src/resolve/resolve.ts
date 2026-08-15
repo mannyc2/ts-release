@@ -14,6 +14,7 @@ import { NonEmptyName, OutputId, Version } from "../model/primitives.js"
 import {
   CandidateConfig,
   type CandidateNpmPublish,
+  type CandidatePrepackedNpmPublication,
   type CandidatePyPiPublish,
   CanonicalNpmRegistryEndpoint,
   NpmDistTag,
@@ -232,6 +233,83 @@ const npmPublish = (
   }
 }
 
+const prepackedNpmPublish = (
+  authored: AuthoredConfig,
+  project: ResolvedProject
+): ReadonlyArray<CandidatePrepackedNpmPublication> | undefined => {
+  const subjects = authored.publish?.prepackedNpm
+  if (subjects === undefined) return undefined
+  if (authored.npmPackage !== undefined || authored.publish?.npm !== undefined) {
+    return refuse(
+      "publish.prepackedNpm",
+      "Source-pack npmPackage/publish.npm mode and prepacked npm mode are mutually exclusive."
+    )
+  }
+  const ids = new Set<string>()
+  const coordinates = new Set<string>()
+  const paths = new Set<string>()
+  for (const subject of subjects) {
+    const id = subject.id.toString().toLocaleLowerCase("en-US")
+    if (ids.has(id)) {
+      return refuse("publish.prepackedNpm", `Prepacked npm subjects contain duplicate id ${JSON.stringify(subject.id)}.`)
+    }
+    ids.add(id)
+    const coordinate = `${subject.packageName}@${subject.version}`
+    if (coordinates.has(coordinate)) {
+      return refuse(
+        "publish.prepackedNpm",
+        `Prepacked npm subjects contain duplicate package coordinate ${JSON.stringify(coordinate)}.`
+      )
+    }
+    coordinates.add(coordinate)
+    const path = subject.path.toString().toLocaleLowerCase("en-US")
+    if (paths.has(path)) {
+      return refuse("publish.prepackedNpm", `Prepacked npm subjects contain duplicate path ${JSON.stringify(subject.path)}.`)
+    }
+    paths.add(path)
+    const versionValue = subject.version.toString()
+    if (Semver.valid(versionValue) !== versionValue) {
+      return refuse(
+        "publish.prepackedNpm[].version",
+        `Prepacked npm publication requires a canonical semantic version, got ${JSON.stringify(versionValue)}.`
+      )
+    }
+    if (Semver.prerelease(versionValue) !== null && subject.distTag === "latest") {
+      return refuse(
+        "publish.prepackedNpm[].distTag",
+        "Prepacked npm prerelease publication requires an explicit non-latest distTag."
+      )
+    }
+    if (subject.access === "restricted" && !subject.packageName.startsWith("@")) {
+      return refuse(
+        "publish.prepackedNpm[].access",
+        "npm restricted access is valid only for scoped package names."
+      )
+    }
+    if (subject.authentication.strategy === "trusted-publishing") {
+      if (subject.registry !== "https://registry.npmjs.org/") {
+        return refuse(
+          "publish.prepackedNpm[].authentication",
+          "npm trusted publishing is certified only for https://registry.npmjs.org/."
+        )
+      }
+      if (project.repository === undefined ||
+          subject.authentication.attestation.repository !== project.repository) {
+        return refuse(
+          "publish.prepackedNpm[].authentication.attestation.repository",
+          "The prepacked npm trusted-publisher repository must match the resolved project repository."
+        )
+      }
+    } else if (subject.provenance === "automatic") {
+      return refuse(
+        "publish.prepackedNpm[].provenance",
+        "Automatic provenance is an npm trusted-publishing behavior; token mode must choose required or disabled."
+      )
+    }
+  }
+  return subjects
+}
+
 const pypiPublish = (
   authored: AuthoredConfig,
   project: ResolvedProject
@@ -310,11 +388,13 @@ export const resolveConfig = (authored: unknown, facts: unknown): CandidateConfi
     version: resolvedVersion,
     tag: tag(config, resolvedVersion)
   }
+  const prepackedNpm = prepackedNpmPublish(config, resolvedProject)
   const npm = npmPublish(config, resolvedProject)
   const pypi = pypiPublish(config, resolvedProject)
   const publish = config.publish === undefined ? undefined : {
     ...config.publish,
     ...(config.publish.npm === undefined ? {} : { npm }),
+    ...(prepackedNpm === undefined ? {} : { prepackedNpm }),
     ...(config.publish.pypi === undefined ? {} : { pypi })
   }
   // Plain JSON, not class instances: this value goes straight to `plan`, whose

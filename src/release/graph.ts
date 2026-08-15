@@ -28,6 +28,7 @@ import {
   GitHubRepositoryCoordinate
 } from "../model/catalog.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath, Version } from "../model/primitives.js"
+import { Sha256Digest } from "../model/digest.js"
 import {
   CanonicalNpmRegistryEndpoint,
   NpmAccess,
@@ -123,6 +124,22 @@ export class GraphNpmPublication extends Schema.TaggedClass<GraphNpmPublication>
   authority: PublicationAuthorityIntent
 }) {}
 
+/** Exact prepacked npm bytes; unlike GraphNpmPublication this never authorizes npm pack. */
+export class GraphPrepackedNpmPublication
+  extends Schema.TaggedClass<GraphPrepackedNpmPublication>()("GraphPrepackedNpmPublication", {
+    id: OperationId,
+    packageArtifact: OutputId,
+    packageName: NonEmptyName,
+    version: Version,
+    sha256: Sha256Digest,
+    registryUrl: CanonicalNpmRegistryEndpoint,
+    distTag: NpmDistTag,
+    access: NpmAccess,
+    authentication: NpmAuthentication,
+    provenance: NpmProvenancePolicy,
+    authority: PublicationAuthorityIntent
+  }) {}
+
 export class GraphGitHubPublication extends Schema.TaggedClass<GraphGitHubPublication>()("GraphGitHubPublication", {
   id: OperationId, repository: Schema.NonEmptyString, tag: NonEmptyName, title: NonEmptyName,
   draft: Schema.Boolean, prerelease: Schema.Boolean, body: optional(Schema.String), bodyArtifact: optional(OutputId),
@@ -165,7 +182,8 @@ export class GraphCatalogPublication extends Schema.TaggedClass<GraphCatalogPubl
 }) {}
 
 export const GraphPublication = Schema.Union([
-  GraphNpmPublication, GraphPyPiPublication, GraphGitHubPublication, GraphCatalogPublication
+  GraphNpmPublication, GraphPrepackedNpmPublication,
+  GraphPyPiPublication, GraphGitHubPublication, GraphCatalogPublication
 ])
 export type GraphPublication = typeof GraphPublication.Type
 
@@ -734,9 +752,29 @@ export const linkContributions = (
       }
     }
   }
-  const publications = contributions.flatMap((item) => item.publications).sort(byId)
+  const contributedPublications = contributions.flatMap((item) => item.publications)
+  const hasPrepackedNpm = contributedPublications.some((publication) =>
+    publication._tag === "GraphPrepackedNpmPublication")
+  if (hasPrepackedNpm && contributedPublications.some((publication) => publication._tag === "GraphNpmPublication")) {
+    throw new GraphLinkError({
+      kind: "reference",
+      value: "publish.prepackedNpm",
+      reason: "Source-pack and prepacked npm graph publications are mutually exclusive."
+    })
+  }
+  // Singular source-pack compatibility retains the historical canonical id
+  // order. Prepacked list position is authored release authority and must not
+  // be reconstructed lexically.
+  const publications = hasPrepackedNpm ? contributedPublications : contributedPublications.sort(byId)
+  const publicationIds = new Set<string>()
   for (const publication of publications) {
-    const authorityIssue = publication._tag === "GraphNpmPublication"
+    const foldedPublicationId = publication.id.toString().toLocaleLowerCase("en-US")
+    if (publicationIds.has(foldedPublicationId)) throw new GraphLinkError({
+      kind: "duplicate", value: publication.id.toString(), reason: "Publication id is not unique."
+    })
+    publicationIds.add(foldedPublicationId)
+    const authorityIssue = publication._tag === "GraphNpmPublication" ||
+        publication._tag === "GraphPrepackedNpmPublication"
       ? npmPublicationAuthorityIssue(publication)
       : publication._tag === "GraphPyPiPublication"
       ? pyPiPublicationAuthorityIssue(publication)
@@ -784,12 +822,18 @@ export const linkContributions = (
     for (const id of ids) if (!artifactIds.has(id.toString()) && !producers.has(id.toString())) {
       throw new GraphLinkError({ kind: "missing", value: id.toString(), reason: "Publication references no artifact." })
     }
-    if (publication._tag === "GraphNpmPublication") {
+    if (publication._tag === "GraphNpmPublication" || publication._tag === "GraphPrepackedNpmPublication") {
       const packageArtifact = artifacts.find((artifact) => artifact.id === publication.packageArtifact)
-      if (packageArtifact?.kind !== "package") throw new GraphLinkError({
+      const expectedKind = publication._tag === "GraphNpmPublication" ? "package" : "archive"
+      if (packageArtifact?.kind !== expectedKind ||
+          (publication._tag === "GraphPrepackedNpmPublication" && packageArtifact.mediaType !== "application/gzip")) {
+        throw new GraphLinkError({
         kind: "reference", value: publication.packageArtifact.toString(),
-        reason: "npm publication must reference exactly one declared package artifact."
-      })
+        reason: publication._tag === "GraphNpmPublication"
+          ? "npm publication must reference exactly one declared package artifact."
+          : "prepacked npm publication must reference exactly one declared gzip archive artifact."
+        })
+      }
       if (publication.access === "restricted" && !publication.packageName.startsWith("@")) throw new GraphLinkError({
         kind: "reference", value: publication.packageName.toString(),
         reason: "npm restricted access is valid only for scoped package names."

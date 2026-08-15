@@ -89,6 +89,22 @@ const npmConfig = (overrides: JsonObject = {}) => base({
   npmPackage: { path: "." },
   publish: { npm: npm(overrides) }
 })
+const prepackedNpm = (overrides: JsonObject = {}) => ({
+  id: "fixture",
+  path: ".release/candidate/fixture.tgz",
+  packageName: "@scope/fixture",
+  version: "1.0.0",
+  sha256: "1".repeat(64),
+  registry: "https://registry.npmjs.org/",
+  distTag: "latest",
+  access: "public",
+  authentication: token(),
+  provenance: "disabled",
+  ...overrides
+})
+const prepackedNpmConfig = (overrides: JsonObject = {}) => base({
+  publish: { prepackedNpm: [prepackedNpm(overrides)] }
+})
 const pypiToken = (overrides: JsonObject = {}) => ({
   strategy: "token", credential: "PYPI_TOKEN", scope: "project", ...overrides
 })
@@ -227,6 +243,20 @@ const trusted = base({ npmPackage: { path: "." }, publish: { npm: npm({
     }
   }
 }) } })
+const prepackedTrusted = prepackedNpmConfig({
+  authentication: {
+    strategy: "trusted-publishing",
+    attestation: {
+      provider: "github-actions",
+      runner: "github-hosted",
+      repository: "owner/fixture",
+      workflow: "release.yml",
+      workflowRef: "refs/heads/main",
+      allowedAction: "npm-publish-direct"
+    }
+  },
+  provenance: "automatic"
+})
 
 const witnesses: ReadonlyArray<MutationWitness> = [
   { id: "schema", fields: ["$schema"], valid: set(bare, "$schema", "https://example.test/a.json"), mutated: set(bare, "$schema", "https://example.test/b.json"), authoringOnly: true },
@@ -357,6 +387,36 @@ const witnesses: ReadonlyArray<MutationWitness> = [
   mutate("npm-dist-tag", "publish.npm.distTag", npmConfig({ distTag: "latest" }), "next"),
   mutate("npm-provenance", "publish.npm.provenance", npmConfig({ provenance: "disabled" }), "required"),
   mutate("npm-registry", "publish.npm.registry", npmConfig({ registry: "https://registry.npmjs.org/" }), "https://registry.example.test/custom/")
+
+  , presence("publish-prepacked-npm", "publish.prepackedNpm", base({ publish: {} }), prepackedNpmConfig())
+  , mutate("prepacked-npm-access", "publish.prepackedNpm[].access", prepackedNpmConfig(), "restricted")
+  , invariant("prepacked-npm-authentication", ["publish.prepackedNpm[].authentication"], prepackedNpmConfig(), prepackedTrusted,
+    set(prepackedNpmConfig(), "publish.prepackedNpm[].authentication", {}))
+  , invariant("prepacked-npm-auth-attestation", ["publish.prepackedNpm[].authentication.attestation"], prepackedTrusted,
+    prepackedNpmConfig(), set(prepackedTrusted, "publish.prepackedNpm[].authentication", { strategy: "trusted-publishing" }))
+  , invariant("prepacked-npm-auth-strategy", ["publish.prepackedNpm[].authentication.strategy"], prepackedNpmConfig(),
+    prepackedTrusted, set(prepackedNpmConfig(), "publish.prepackedNpm[].authentication.strategy", "trusted-publishing"))
+  , mutate("prepacked-npm-auth-credential", "publish.prepackedNpm[].authentication.credential", prepackedNpmConfig(), "OTHER_NPM_TOKEN")
+  , literalInvariant("prepacked-npm-attestation-action", "publish.prepackedNpm[].authentication.attestation.allowedAction",
+    prepackedTrusted, set(prepackedTrusted, "publish.prepackedNpm[].authentication.attestation.allowedAction", "other-action"))
+  , literalInvariant("prepacked-npm-attestation-provider", "publish.prepackedNpm[].authentication.attestation.provider",
+    prepackedTrusted, set(prepackedTrusted, "publish.prepackedNpm[].authentication.attestation.provider", "other-provider"))
+  , refusal("prepacked-npm-attestation-repository", "publish.prepackedNpm[].authentication.attestation.repository",
+    prepackedTrusted, "owner/other", "resolve")
+  , literalInvariant("prepacked-npm-attestation-runner", "publish.prepackedNpm[].authentication.attestation.runner",
+    prepackedTrusted, set(prepackedTrusted, "publish.prepackedNpm[].authentication.attestation.runner", "self-hosted"))
+  , mutate("prepacked-npm-attestation-workflow", "publish.prepackedNpm[].authentication.attestation.workflow",
+    prepackedTrusted, "publish.yml")
+  , mutate("prepacked-npm-attestation-workflow-ref", "publish.prepackedNpm[].authentication.attestation.workflowRef",
+    prepackedTrusted, "refs/tags/v1.0.0")
+  , mutate("prepacked-npm-dist-tag", "publish.prepackedNpm[].distTag", prepackedNpmConfig(), "next")
+  , mutate("prepacked-npm-id", "publish.prepackedNpm[].id", prepackedNpmConfig(), "fixture-other")
+  , mutate("prepacked-npm-package-name", "publish.prepackedNpm[].packageName", prepackedNpmConfig(), "@scope/fixture-other")
+  , mutate("prepacked-npm-path", "publish.prepackedNpm[].path", prepackedNpmConfig(), ".release/candidate/fixture-other.tgz")
+  , mutate("prepacked-npm-provenance", "publish.prepackedNpm[].provenance", prepackedNpmConfig(), "required")
+  , mutate("prepacked-npm-registry", "publish.prepackedNpm[].registry", prepackedNpmConfig(), "https://registry.example.test/custom/")
+  , mutate("prepacked-npm-sha256", "publish.prepackedNpm[].sha256", prepackedNpmConfig(), "2".repeat(64))
+  , mutate("prepacked-npm-version", "publish.prepackedNpm[].version", prepackedNpmConfig(), "1.0.1")
 
   , presence("publish-pypi", "publish.pypi", base({ publish: {} }), pypiConfig())
   , mutate("pypi-artifacts", "publish.pypi.artifacts", base({

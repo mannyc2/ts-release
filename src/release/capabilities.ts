@@ -7,6 +7,7 @@ import {
   ArtifactCollectionSelector
 } from "../model/artifact-collection.js"
 import { NonEmptyName, OperationId, OutputId, SafeRelativePath } from "../model/primitives.js"
+import { parseSha256Hex } from "../model/digest.js"
 import {
   CatalogRenderSource,
   HomebrewRenderer,
@@ -25,7 +26,8 @@ import {
   type CandidateScoopCatalog
 } from "../recipes/config.js"
 import { CapabilityContribution, GraphArchive, GraphChecksum, GraphCommandArtifact, GraphCommandCollection, GraphLinkError,
-  GraphCommandCheck, GraphGitHubPublication, GraphNpmPackageBuild, GraphNpmPublication, GraphPyPiDistribution,
+  GraphCommandCheck, GraphGitHubPublication, GraphNpmPackageBuild, GraphNpmPublication,
+  GraphPrepackedNpmPublication, GraphPyPiDistribution,
   GraphPyPiPublication, GraphCatalogRender, GraphCatalogPublication, OutputDeclaration,
   makeCatalogPublicationAuthorityIntent, makeGitHubPublicationAuthorityIntent,
   makeNpmPublicationAuthorityIntent, makePyPiPublicationAuthorityIntent } from "./graph.js"
@@ -54,6 +56,14 @@ export const contributeSourceArtifacts = (
   for (const artifact of config.artifacts ?? []) {
     artifacts.push(output(artifact.id, render(artifact.path, config),
       artifact.format === "zip" || artifact.format === "tarball" ? "archive" : artifact.format))
+  }
+  for (const publication of config.publish?.prepackedNpm ?? []) {
+    artifacts.push(output(
+      `prepacked-npm:${publication.id}`,
+      publication.path.toString(),
+      "archive",
+      "application/gzip"
+    ))
   }
   if (config.npmPackage !== undefined) {
     const declaration = output("npm-package", config.npmPackage.path ?? ".", "package")
@@ -330,6 +340,40 @@ export const contributeNpmPublication = (
   context: VerifiedReleaseContext
 ): CapabilityContribution => {
   const intent = config.publish?.npm
+  const prepacked = config.publish?.prepackedNpm
+  if (intent !== undefined && prepacked !== undefined) throw new GraphLinkError({
+    kind: "reference",
+    value: "publish.prepackedNpm",
+    reason: "Source-pack and prepacked npm publication modes are mutually exclusive."
+  })
+  if (prepacked !== undefined) {
+    const publications = prepacked.map((subject) => {
+      const authentication = Schema.decodeUnknownSync(NpmAuthentication, {
+        onExcessProperty: "error"
+      })(subject.authentication)
+      return GraphPrepackedNpmPublication.make({
+        id: OperationId.make(`npm:${subject.id}`),
+        packageArtifact: OutputId.make(`prepacked-npm:${subject.id}`),
+        packageName: NonEmptyName.make(subject.packageName),
+        version: subject.version,
+        sha256: parseSha256Hex(subject.sha256),
+        registryUrl: subject.registry,
+        distTag: subject.distTag,
+        access: subject.access,
+        authentication,
+        provenance: subject.provenance,
+        authority: makeNpmPublicationAuthorityIntent({
+          packageName: subject.packageName,
+          version: subject.version.toString(),
+          registryUrl: subject.registry,
+          distTag: subject.distTag,
+          authentication,
+          sourceCommit: context.source.commit.toString()
+        })
+      })
+    })
+    return CapabilityContribution.make({ artifacts: [], preparations: [], publications })
+  }
   if (intent === undefined) return CapabilityContribution.make({ artifacts: [], preparations: [], publications: [] })
   // Resolution is intentionally plain durable data. Decode the nested variant
   // exactly once as it enters the class-backed graph IR.

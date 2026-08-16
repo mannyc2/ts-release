@@ -1,4 +1,6 @@
-import { check } from "./core.mjs"
+import { readFile } from "node:fs/promises"
+import { join } from "node:path"
+import { check, loadPrepared, makeProvider } from "./core.mjs"
 import { child, remote, root } from "./helpers.mjs"
 
 export async function beforeSend() {
@@ -15,10 +17,21 @@ export async function beforeSend() {
 export async function responseLoss() {
   const path = await root("response-loss")
   await child(["a", path, "response-loss"])
+  const { prepared } = await loadPrepared(path, makeProvider("v1"))
+  const key = prepared.request.headers.find(([name]) => name === "idempotency-key")?.[1]
+  const durableText = `${await readFile(join(path, "plan.json"), "utf8")}
+${await readFile(join(path, "journal.json"), "utf8")}`
+  check(key && !durableText.includes(key), "plaintext idempotency key entered durable state")
+  check(durableText.includes(prepared.replayProtection.keyFingerprint), "key fingerprint missing from durable state")
   const b = await child(["b", path, "v1", "dispatch-0002"])
   const r = await remote(path)
   check(b.sent && r.requests === 2 && r.effects === 1, "response-loss replay duplicated effect")
-  return { remoteRequests: r.requests, remoteEffects: r.effects }
+  return {
+    remoteRequests: r.requests,
+    remoteEffects: r.effects,
+    plaintextKeyDurable: false,
+    keyFingerprintDurable: true
+  }
 }
 
 export async function providerV2() {
